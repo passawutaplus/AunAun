@@ -1,59 +1,73 @@
 # Ops Hub — Wireframe
 
-โดเมนแนะนำ: **`hq.solofreelancer.com`**  
-บทบาท: ศูนย์บัญชาการ Ecosystem — **monitor + deep link** (ไม่ duplicate admin ทั้งหมด)
+โดเมน: **`hq.solofreelancer.com`**  
+บทบาท: PM Workspace + Ecosystem monitor (Linear-style)
 
-## หน้า Login (`/login`)
-
-```
-┌────────────────────────────────────────────┐
-│  [S1] [a1h]   So1o Ops Hub                │
-│                                            │
-│  เข้าสู่ระบบสำหรับ Admin เท่านั้น           │
-│  ┌──────────────────────────────────────┐  │
-│  │ อีเมล                                │  │
-│  └──────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────┐  │
-│  │ รหัสผ่าน                              │  │
-│  └──────────────────────────────────────┘  │
-│  [ เข้าสู่ระบบ ]                           │
-└────────────────────────────────────────────┘
-```
-
-## หน้า Dashboard (`/`)
+## Layout (App Shell)
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│ Ops Hub          [ รวม | So1o | an1hem ]     user@...  [ออก]     │
-├──────────────────────────────────────────────────────────────────┤
-│ ⚠ ต้องดูแล (7)                                                  │
-│  • ตั๋ว So1o (3)  • KYC (2)  • รายงานเนื้อหา (1)  • ถอน PX (1)   │
-├──────────────────────────────────────────────────────────────────┤
-│ KPI (ตามมุมมองที่เลือก)                                           │
-│ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐                      │
-│ │ Users  │ │ Pro    │ │ New24h │ │ Active │                      │
-│ └────────┘ └────────┘ └────────┘ └────────┘                      │
-├──────────────────────────────────────────────────────────────────┤
-│ เปิด Admin ลึก                    │  กิจกรรมล่าสุด (optional)     │
-│ ┌─────────────┐ ┌─────────────┐   │  • user signed up            │
-│ │ So1o Admin  │ │ an1hem Admin│   │  • project published         │
-│ │ tickets     │ │ KYC queue   │   │  • ticket opened             │
-│ │ early access│ │ AML flags   │   │                              │
-│ └─────────────┘ └─────────────┘   │                              │
-└──────────────────────────────────────────────────────────────────┘
+┌────────────┬──────────────────────────────────────────────────────────┐
+│ [S1][a1]   │  Inbox (12)                              [Filter] [↻]     │
+│ Ops Hub    ├──────────────────────────────────────────────────────────┤
+│            │  [!] TKT-0042  So1o   Login หลัง OAuth ไม่เสถียร            │
+│ Overview   │  [ ] FS-018    So1o   Export PDF หลายหน้า                 │
+│ Inbox ●12  │  [!] RPT-009   an1hem รายงานเนื้อหาไม่เหมาะสม               │
+│ Board      ├──────────────────────────────────────────────────────────┤
+│ Issues     │  Activity: user.signup · project.published · ...           │
+│ Hub Work   │                                                          │
+│ Cycles     │                                                          │
+│ Roadmap    │                                                          │
+│ Activity   │                                                          │
+│────────────│                                                          │
+│ [รวม]      │                                                          │
+│ [So1o]     │                                                          │
+│ [an1hem]   │                                                          │
+│ user@...   │                                                          │
+│ [ออก]      │                                                          │
+└────────────┴──────────────────────────────────────────────────────────┘
 ```
 
-## มุมมองสลับ (View)
+## Routes
 
-| View | แสดง KPI / Alerts |
-|------|-------------------|
-| **รวม** | ทุกอย่างรวมกัน + alert ทั้งสองแอป |
-| **So1o** | profiles, quotations, tickets, early access, Pro tier |
-| **an1hem** | projects, jobs, gifts, KYC/AML, reports |
+| Route | หน้า | บทบาท |
+|-------|------|--------|
+| `/login` | Login | Admin email/password |
+| `/` | Overview | KPI + alerts + deep links (เดิม) |
+| `/inbox` | Inbox | Triage queue — priority + อายุ |
+| `/board` | Board | Kanban 4 คอลัมน์ + drag-drop |
+| `/issues` | Issues | List + search/filter |
+| `/work` | Hub Work | `ops.issues` ภายใน |
+| `/cycles` | Cycles | Sprint ปัจจุบัน + burndown ง่าย |
+| `/roadmap` | Roadmap | Quarter timeline |
+| `/activity` | Activity | `platform_events` feed |
+
+## Board columns
+
+| Column | support_tickets | feature_suggestions | app_feedback | user_reports |
+|--------|-----------------|---------------------|--------------|--------------|
+| Triage | new | new | new | open |
+| In Progress | in_progress | reviewing | reviewing | reviewing |
+| In Review | qa | planned | — | — |
+| Done | resolved/closed | shipped | resolved | resolved/dismissed |
+
+## Issue drawer (คลิกรายการ)
+
+- เปลี่ยน status / priority / admin note
+- ปุ่ม **เปิดใน Admin** (deep link)
+- ปุ่ม **สร้าง Hub Issue** (promote → `ops.issues`)
+
+## View switcher (sidebar)
+
+| View | กรอง |
+|------|------|
+| รวม | ทุกแอป + ecosystem |
+| So1o | tickets, feature_suggestions |
+| an1hem | feedback, reports |
 
 ## User flow
 
-1. Admin login ที่ `hq.solofreelancer.com`
-2. ตรวจ `user_roles.role = admin`
-3. ดู alert + KPI ที่เดียว
-4. กด deep link → เปิดแท็บใหม่ไป `solofreelancer.com/admin?...` หรือ `an1hem.app/admin/...`
+1. Login → redirect `/inbox`
+2. ดู Triage ใน Inbox → คลิกเปิด drawer → ย้ายสถานะหรือ promote
+3. Board ลากการ์ดเปลี่ยน column
+4. Hub Work สร้างงานภายใน / Cycles / Roadmap
+5. Overview ยังใช้ monitor KPI + deep link compliance (KYC, AML, cashout)

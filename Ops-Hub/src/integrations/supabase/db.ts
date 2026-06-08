@@ -24,6 +24,7 @@ function makeClient(schema: string): SupabaseClient {
 export const publicDb = makeClient("public");
 export const anthemDb = makeClient("anthem");
 export const sharedDb = makeClient("shared");
+export const opsDb = makeClient("ops");
 
 const PUBLIC_TABLES = new Set([
   "profiles",
@@ -33,19 +34,31 @@ const PUBLIC_TABLES = new Set([
   "beta_feedback",
   "quotations",
   "tester_applications",
+  "feature_suggestions",
+  "platform_events",
+  "app_feedback",
+  "user_reports",
 ]);
 
 const SHARED_TABLES = new Set([
   "cashout_requests",
   "kyc_requests",
   "aml_flags",
-  "platform_events",
   "notifications",
 ]);
 
-export function schemaForTable(table: string): "public" | "anthem" | "shared" {
+const OPS_TABLES = new Set([
+  "projects",
+  "cycles",
+  "issues",
+  "issue_comments",
+  "roadmap_items",
+]);
+
+export function schemaForTable(table: string): "public" | "anthem" | "shared" | "ops" {
   if (PUBLIC_TABLES.has(table)) return "public";
   if (SHARED_TABLES.has(table)) return "shared";
+  if (OPS_TABLES.has(table)) return "ops";
   return "anthem";
 }
 
@@ -53,6 +66,7 @@ export function fromTable(table: string) {
   const schema = schemaForTable(table);
   if (schema === "public") return publicDb.from(table);
   if (schema === "shared") return sharedDb.from(table);
+  if (schema === "ops") return opsDb.from(table);
   return anthemDb.from(table);
 }
 

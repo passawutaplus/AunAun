@@ -2,76 +2,84 @@
 
 โปรเจกต์ Supabase: **`rvnzjiskqliexysicfmh`**
 
-## Schema routing (เหมือน an1hem `db.ts`)
+## Schema routing
 
-| Schema | ตารางที่ Hub อ่าน |
+| Schema | ตารางที่ Hub ใช้ |
 |--------|-------------------|
-| `public` | `profiles`, `user_roles`, `support_tickets`, `beta_feedback`, `subscriptions` |
-| `anthem` | `projects`, `studios`, `job_posts`, `hiring_requests`, `collab_requests`, `user_reports`, `app_feedback` |
-| `shared` | `cashout_requests`, `kyc_requests`, `aml_flags`, `platform_events` (future feed) |
+| `public` | `profiles`, `user_roles`, `support_tickets`, `feature_suggestions`, `platform_events`, `app_feedback`, `user_reports`, … |
+| `anthem` | `projects`, `job_posts`, `hiring_requests`, … |
+| `shared` | `cashout_requests`, `kyc_requests`, `aml_flags`, `notifications` |
+| `ops` | `projects`, `cycles`, `issues`, `issue_comments`, `roadmap_items` |
 
 ## Auth
 
 ```sql
--- ตรวจสิทธิ์ admin
 SELECT 1 FROM public.user_roles
 WHERE user_id = auth.uid() AND role = 'admin';
-
--- หรือ RPC
-SELECT public.has_role(auth.uid(), 'admin');
 ```
 
-## Metrics ที่ Hub ดึง (MVP)
+## Work items (Phase 1 — aggregate)
 
-### So1o (`public`)
+| Source | Table | Inbox filter |
+|--------|-------|--------------|
+| support_ticket | `public.support_tickets` | status IN (new, in_progress, qa, resolved) |
+| feature_suggestion | `public.feature_suggestions` | status IN (new, reviewing, planned) |
+| app_feedback | `public.app_feedback` | status IN (new, reviewing) |
+| user_report | `public.user_reports` | status IN (open, reviewing) |
+| ops_issue | `ops.issues` | status NOT IN (done, cancelled) |
 
-| Metric | Query |
-|--------|-------|
-| total_users | `profiles` count |
-| pro_users | `profiles` where `subscription_tier = 'pro'` |
-| new_users_24h | `profiles` created_at >= now()-24h |
-| open_tickets | `support_tickets` status NOT IN (closed, wont_fix) |
-| early_access_pending | `tester_applications` count |
-| quotations_7d | `quotations` (if accessible) or RPC |
+Client adapter: `src/lib/work-items.ts` → unified `WorkItem` type.
 
-### an1hem (`anthem` + `shared`)
+### Mutations (admin RLS)
 
-| Metric | Query |
-|--------|-------|
-| published_projects | `projects` status = Published |
-| open_jobs | `job_posts` status = open |
-| pending_hiring | `hiring_requests` status = ใหม่ |
-| open_reports | `user_reports` status IN (open, reviewing) |
-| pending_cashouts | `cashout_requests` status = pending |
-| pending_kyc | `kyc_requests` status = pending |
-| open_aml | `aml_flags` status = open |
+| Source | Fields |
+|--------|--------|
+| support_tickets | status, priority, admin_note |
+| feature_suggestions | status, admin_note |
+| app_feedback | status, admin_note |
+| user_reports | status, admin_note |
+| ops.issues | status, priority, cycle_id, project_id, … |
 
-## Alert queue (รวม)
+## Native PM (Phase 2 — `ops` schema)
 
-```typescript
-type HubAlert = {
-  id: string;
-  app: "so1o" | "an1hem";
-  severity: "high" | "medium";
-  label: string;
-  count: number;
-  deepLink: string; // full URL to admin page
-};
+Migration: `Solo-Code/supabase/migrations/20260610120000_ops_hub_pm_schema.sql`
+
+```sql
+ops.projects     -- Ecosystem, So1o Platform, an1hem
+ops.cycles       -- Sprint (planned/active/completed)
+ops.issues       -- OPS-0001, link source_type/source_id
+ops.roadmap_items
+ops.issue_comments
 ```
 
-## Deep links
+### Promote RPC
 
-| Alert | URL |
-|-------|-----|
-| So1o tickets | `{SO1O}/admin?section=tickets` |
-| So1o early access | `{SO1O}/admin?section=early_access` |
-| an1hem KYC | `{ANTHEM}/admin/kyc` |
-| an1hem AML | `{ANTHEM}/admin/aml` |
-| an1hem reports | `{ANTHEM}/admin/reports` |
-| an1hem cashouts | `{ANTHEM}/admin/gifts` |
+```sql
+SELECT public.ops_promote_work_item(
+  'support_ticket',  -- source_type
+  'uuid',            -- source_id
+  'title',
+  'description'
+);
+```
 
-## Phase 2 (optional)
+## Activity feed
 
-- RPC `ops_hub_snapshot()` — aggregate ใน Postgres ลด round-trips
-- Realtime `shared.notifications` where `kind LIKE 'admin_%'`
-- `platform_events` timeline รวม
+```sql
+SELECT * FROM public.platform_events
+ORDER BY created_at DESC LIMIT 50;
+-- admin SELECT policy via has_role(admin)
+```
+
+## Metrics (Overview — unchanged)
+
+ดู [useHubMetrics.ts](../src/hooks/useHubMetrics.ts) สำหรับ KPI counts และ alert queue.
+
+## Deploy migration
+
+```bash
+cd Solo-Code
+export SUPABASE_ACCESS_TOKEN=sbp_...
+npx supabase db push
+# หรือ apply 20260610120000_ops_hub_pm_schema.sql บน dashboard
+```

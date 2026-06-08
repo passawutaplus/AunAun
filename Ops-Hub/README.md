@@ -1,75 +1,76 @@
 # So1o Ops Hub
 
-ศูนย์บัญชาการ Ecosystem — monitor **So1o + an1hem** จากที่เดียว พร้อม deep link เข้า admin ลึก
+PM Workspace + ศูนย์บัญชาการ Ecosystem — monitor **So1o + an1hem** แบบ Linear-style
 
 | | |
 |---|---|
 | **Production** | `https://hq.solofreelancer.com` |
 | **Dev** | `http://localhost:3090` |
-| **Supabase** | `rvnzjiskqliexysicfmh` (บัญชีเดียวกับ So1o/an1hem) |
+| **Supabase** | `rvnzjiskqliexysicfmh` |
 
 ## Quick start
 
 ```bash
 cd Ops-Hub
-./scripts/sync-env-from-solo.sh   # คัดลอก key จาก Solo-Code/.env
+./scripts/sync-env-from-solo.sh
 npm install
 npm run dev
 ```
 
-Login ด้วยบัญชีที่มี `public.user_roles.role = 'admin'`
+Login ด้วยบัญชี `public.user_roles.role = 'admin'` → เข้า **Inbox**
 
-## ฟีเจอร์
+## ฟีเจอร์ PM (Linear-style)
 
-- สลับมุมมอง **รวม | So1o | an1hem**
-- Alert queue (ตั๋ว, KYC, AML, ถอน Pixel, …) → กดเปิด admin ลึก
-- KPI cards + deep links
-- Realtime refresh เมื่อมี `shared.notifications` แบบ `admin_*`
-- ลิงก์จาก So1o Mission Control และ an1hem Admin sidebar
+| หน้า | คำอธิบาย |
+|------|----------|
+| **Inbox** | คิว Triage รวม tickets, feedback, reports, suggestions |
+| **Board** | Kanban 4 คอลัมน์ — ลากย้ายสถานะ |
+| **Issues** | List + filter/search |
+| **Hub Work** | งานภายใน `ops.issues` (OPS-0001) |
+| **Cycles** | Sprint + burndown ง่าย |
+| **Roadmap** | Timeline ตาม quarter |
+| **Activity** | `platform_events` |
+| **Overview** | KPI + alerts + deep links (เดิม) |
+
+- Drawer รายละเอียด: เปลี่ยน status, priority, admin note
+- **Promote** คิวภายนอก → Hub Issue (`ops_promote_work_item`)
+- View switcher: รวม / So1o / an1hem
+
+## Schema
+
+รัน migration ก่อนใช้ Hub Work / Cycles / Roadmap:
+
+```bash
+cd Solo-Code
+npx supabase db push
+```
+
+ดู [DATA-SCHEMA.md](docs/DATA-SCHEMA.md)
 
 ## Deploy
 
 ### Docker Compose (VPS)
 
-รวมใน `docker compose up` ที่ root repo แล้ว — service `ops-hub` + nginx `hq.solofreelancer.com`
-
 ```bash
 # root .env
 VITE_OPS_HUB_URL=https://hq.solofreelancer.com
-
 docker compose up --build -d ops-hub
-```
-
-แก้ `deploy/nginx/default.conf` → `server_name hq.solofreelancer.com`
-
-### Static only
-
-```bash
-npm run build
-# deploy dist/ ไป hq.solofreelancer.com (Cloudflare Pages, nginx, ฯลฯ)
 ```
 
 ### Supabase Auth redirect URLs
 
 ```bash
 cd Solo-Code
-export SUPABASE_ACCESS_TOKEN=sbp_...
 ./scripts/supabase-setup-project.sh
 ```
 
-หรือเพิ่มเอง: `https://hq.solofreelancer.com/**`, `http://localhost:3090/**`
-
-### DNS
-
-```
-CNAME hq → VPS หรือ hosting ของคุณ
-```
+เพิ่ม: `https://hq.solofreelancer.com/**`, `http://localhost:3090/**`
 
 ## เอกสาร
 
 - [Wireframe](docs/WIREFRAME.md)
 - [Data schema](docs/DATA-SCHEMA.md)
 
-## ไม่ใช่
+## ไม่ duplicate
 
-Hub นี้ **ไม่แทน** admin เต็มรูปแบบ — เป็น monitor + alert + deep link เท่านั้น
+KYC document review, cashout approval, chat support — ยัง deep link ไป admin ลึก
