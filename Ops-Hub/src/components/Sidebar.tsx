@@ -8,6 +8,7 @@ import {
   Map,
   Repeat,
   Briefcase,
+  ClipboardList,
   LogOut,
 } from "lucide-react";
 import { useHubAuth } from "@/auth/AuthProvider";
@@ -26,6 +27,7 @@ const NAV = [
   { to: "/cycles", icon: Repeat, label: NAV_LABELS.cycles, hint: "รอบงาน / Sprint" },
   { to: "/roadmap", icon: Map, label: NAV_LABELS.roadmap, hint: "แผนงานตามไตรมาส" },
   { to: "/activity", icon: Activity, label: NAV_LABELS.activity, hint: "เหตุการณ์ล่าสุดในระบบ" },
+  { to: "/tracking", icon: ClipboardList, label: NAV_LABELS.tracking, hint: "สรุปฟีเจอร์ทุกเว็บ % ความพร้อม" },
 ];
 
 export function Sidebar() {

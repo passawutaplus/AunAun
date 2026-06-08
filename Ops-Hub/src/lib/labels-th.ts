@@ -9,6 +9,7 @@ export const NAV_LABELS = {
   cycles: "รอบงาน",
   roadmap: "แผนงาน",
   activity: "กิจกรรม",
+  tracking: "ติดตามระบบ",
 } as const;
 
 export const BOARD_COLUMN_LABELS: Record<BoardColumn, string> = {

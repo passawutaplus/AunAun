@@ -12,6 +12,7 @@ import WorkPage from "@/pages/WorkPage";
 import CyclesPage from "@/pages/CyclesPage";
 import RoadmapPage from "@/pages/RoadmapPage";
 import ActivityPage from "@/pages/ActivityPage";
+import TrackingPage from "@/pages/TrackingPage";
 import LoginPage from "@/pages/LoginPage";
 
 const qc = new QueryClient({
@@ -49,6 +50,7 @@ export default function App() {
               <Route path="/cycles" element={<CyclesPage />} />
               <Route path="/roadmap" element={<RoadmapPage />} />
               <Route path="/activity" element={<ActivityPage />} />
+              <Route path="/tracking" element={<TrackingPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/inbox" replace />} />
           </Routes>
