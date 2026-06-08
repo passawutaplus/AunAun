@@ -26,7 +26,6 @@ async function fetchWorkItems(): Promise<WorkItem[]> {
     supabase
       .from("app_feedback")
       .select("*")
-      .in("status", ["new", "reviewing"])
       .order("created_at", { ascending: false })
       .limit(100),
     supabase
@@ -42,6 +41,28 @@ async function fetchWorkItems(): Promise<WorkItem[]> {
       .order("created_at", { ascending: false })
       .limit(200),
   ]);
+
+  // #region agent log
+  fetch("http://127.0.0.1:7706/ingest/3280a2f8-8fa2-40c7-88fc-16d5430418e8", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "88285d" },
+    body: JSON.stringify({
+      sessionId: "88285d",
+      runId: "post-fix",
+      hypothesisId: "A",
+      location: "useWorkItems.ts:fetchWorkItems",
+      message: "work item query errors",
+      data: {
+        tickets: tickets.error?.message ?? null,
+        suggestions: suggestions.error?.message ?? null,
+        feedback: feedback.error?.message ?? null,
+        reports: reports.error?.message ?? null,
+        opsIssues: opsIssues.error?.message ?? null,
+      },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
 
   const coreErrors = [tickets.error, suggestions.error, feedback.error, reports.error].filter(Boolean);
   if (coreErrors.length > 0) throw new Error(coreErrors[0]!.message);

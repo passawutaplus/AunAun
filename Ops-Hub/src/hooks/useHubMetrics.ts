@@ -160,7 +160,7 @@ export function useHubMetrics() {
         supabase.from("cashout_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("aml_flags").select("*", { count: "exact", head: true }).eq("status", "open"),
-        supabase.from("app_feedback").select("*", { count: "exact", head: true }).eq("status", "new"),
+        supabase.from("app_feedback").select("*", { count: "exact", head: true }),
       ]);
 
       const core = {
@@ -184,6 +184,25 @@ export function useHubMetrics() {
           openFeedback: feedback.count ?? 0,
         },
       };
+
+      // #region agent log
+      fetch("http://127.0.0.1:7706/ingest/3280a2f8-8fa2-40c7-88fc-16d5430418e8", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "88285d" },
+        body: JSON.stringify({
+          sessionId: "88285d",
+          runId: "post-fix",
+          hypothesisId: "A",
+          location: "useHubMetrics.ts:queryFn",
+          message: "hub metrics query errors",
+          data: {
+            feedback: feedback.error?.message ?? null,
+            feedbackCount: feedback.count,
+          },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
 
       return { ...core, alerts: buildAlerts(core) };
     },
