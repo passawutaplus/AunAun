@@ -1,5 +1,5 @@
 -- Ops Hub: missing schema pieces on rvnzjiskqliexysicfmh
--- Apply via Supabase SQL editor or: cd Solo-Code && npx supabase db push
+-- Applied remotely as: 20260608120001_ops_hub_schema_gaps
 
 -- 1) app_feedback admin workflow columns (anthem schema)
 ALTER TABLE anthem.app_feedback
@@ -40,5 +40,5 @@ CREATE POLICY "admin reads platform_events"
 GRANT SELECT ON public.platform_events TO authenticated;
 GRANT ALL ON public.platform_events TO service_role;
 
--- 3) ops PM schema: run Solo-Code/supabase/migrations/20260610120000_ops_hub_pm_schema.sql
--- 4) Supabase Dashboard → Settings → API → Exposed schemas: add "ops"
+-- 3) ops PM schema: applied as 20260610120000_ops_hub_pm_schema
+-- 4) Exposed schemas: ops added via Management API (db_schema)
