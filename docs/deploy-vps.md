@@ -43,11 +43,44 @@ docker compose up --build -d
 docker compose ps
 ```
 
-## HTTPS (แนะนำ)
+## Deploy เร็ว (สคริปต์)
 
-ใส่ **Caddy** หรือ **certbot** หน้า nginx หรือแทนที่ `proxy` ด้วย Caddy ที่ออกใบรับรอง Let's Encrypt อัตโนมัติ
+```bash
+cp .env.vps.example .env   # แก้ keys + URLs
+chmod +x scripts/*.sh
 
-ตัวอย่าง: เปิดพอร์ต 443 บน proxy + volume ใบรับรอง (ขึ้นกับเครื่องมือที่เลือก)
+# HTTP (ทดสอบบน VPS)
+./scripts/deploy-ecosystem.sh
+
+# HTTPS + Let's Encrypt (แชร์ให้ UX reviewer — ต้องตั้ง DNS ก่อน)
+./scripts/deploy-ecosystem.sh --https
+```
+
+DNS ที่ต้องชี้มา VPS:
+
+```
+solofreelancer.com, www.solofreelancer.com
+an1hem.app, www.an1hem.app
+hq.solofreelancer.com
+```
+
+## HTTPS (Caddy)
+
+ใช้ `docker-compose.https.yml` + [deploy/caddy/Caddyfile](../deploy/caddy/Caddyfile) — Caddy รับ 80/443 แล้วส่งต่อ nginx `proxy` (route ตาม Host)
+
+```bash
+./scripts/deploy-ecosystem.sh --https
+```
+
+OAuth / Google login **ต้องการ HTTPS** บน production
+
+## Demo สำหรับ UX reviewer
+
+```bash
+./scripts/prepare-demo.sh    # Auth URLs + ops migration + seed 50 creators
+```
+
+ส่งลิงก์ + คู่มือ: [demo-pack.md](demo-pack.md)
 
 ## Edge Functions (an1hem AI)
 
