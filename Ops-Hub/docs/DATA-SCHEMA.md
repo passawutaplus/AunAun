@@ -6,8 +6,8 @@
 
 | Schema | ตารางที่ Hub ใช้ |
 |--------|-------------------|
-| `public` | `profiles`, `user_roles`, `support_tickets`, `feature_suggestions`, `platform_events`, `app_feedback`, `user_reports`, … |
-| `anthem` | `projects`, `job_posts`, `hiring_requests`, … |
+| `public` | `profiles`, `user_roles`, `support_tickets`, `feature_suggestions`, `platform_events`, … |
+| `anthem` | `app_feedback`, `user_reports`, `projects`, `job_posts`, `hiring_requests`, … |
 | `shared` | `cashout_requests`, `kyc_requests`, `aml_flags`, `notifications` |
 | `ops` | `projects`, `cycles`, `issues`, `issue_comments`, `roadmap_items` |
 
@@ -24,8 +24,8 @@ WHERE user_id = auth.uid() AND role = 'admin';
 |--------|-------|--------------|
 | support_ticket | `public.support_tickets` | status IN (new, in_progress, qa, resolved) |
 | feature_suggestion | `public.feature_suggestions` | status IN (new, reviewing, planned) |
-| app_feedback | `public.app_feedback` | status IN (new, reviewing) |
-| user_report | `public.user_reports` | status IN (open, reviewing) |
+| app_feedback | `anthem.app_feedback` | status IN (new, reviewing) |
+| user_report | `anthem.user_reports` | status IN (open, reviewing) |
 | ops_issue | `ops.issues` | status NOT IN (done, cancelled) |
 
 Client adapter: `src/lib/work-items.ts` → unified `WorkItem` type.
