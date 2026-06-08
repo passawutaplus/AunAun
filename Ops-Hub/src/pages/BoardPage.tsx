@@ -6,6 +6,7 @@ import { WorkItemFilters } from "@/components/WorkItemFilters";
 import { useHubView } from "@/contexts/HubViewContext";
 import { useWorkItems } from "@/hooks/useWorkItems";
 import { filterByHubView, type WorkItemFilters as Filters } from "@/lib/work-items";
+import { friendlyError } from "@/lib/friendly-error";
 
 const DEFAULT_FILTERS: Filters = {
   search: "",
@@ -23,13 +24,13 @@ export default function BoardPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <PageHeader
-        title="Board"
-        subtitle="ลากการ์ดเพื่อเปลี่ยนสถานะ — รวมคิว So1o + an1hem + Hub Work"
+        title="บอร์ดงาน"
+        subtitle="ลากการ์ดไปคอลัมน์อื่นเพื่อเปลี่ยนสถานะ — รวมงานจาก So1o, an1hem และงานภายใน"
         actions={<WorkItemFilters filters={filters} onChange={setFilters} />}
       />
       <div className="flex-1 overflow-x-auto p-6">
         {error ? (
-          <p className="text-sm text-red-600">{(error as Error).message}</p>
+          <p className="text-sm text-red-600">{friendlyError("โหลดบอร์ดงานไม่สำเร็จ")}</p>
         ) : isLoading ? (
           <div className="flex justify-center py-12 text-muted">
             <Loader2 className="h-6 w-6 animate-spin" />

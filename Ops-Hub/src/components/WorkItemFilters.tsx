@@ -1,5 +1,6 @@
 import type { WorkItemFilters as Filters } from "@/lib/work-items";
 import { BOARD_COLUMNS, SOURCE_LABELS, type WorkItemSource } from "@/lib/work-items";
+import { PRIORITY_LABELS } from "@/lib/labels-th";
 
 const SOURCES: (WorkItemSource | "all")[] = [
   "all",
@@ -60,11 +61,12 @@ export function WorkItemFilters({
         }
         className="rounded-lg border border-border px-2 py-1.5 text-sm"
       >
-        <option value="all">ทุก priority</option>
-        <option value="urgent">Urgent</option>
-        <option value="high">High</option>
-        <option value="medium">Medium</option>
-        <option value="low">Low</option>
+        <option value="all">ทุกระดับความสำคัญ</option>
+        {(Object.keys(PRIORITY_LABELS) as Array<keyof typeof PRIORITY_LABELS>).map((p) => (
+          <option key={p} value={p}>
+            {PRIORITY_LABELS[p]}
+          </option>
+        ))}
       </select>
     </div>
   );

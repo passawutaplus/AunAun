@@ -23,7 +23,7 @@ export function ActivityFeed({ compact = false }: { compact?: boolean }) {
 
   if (error) {
     return (
-      <p className="text-sm text-red-600">โหลด activity ไม่สำเร็จ: {(error as Error).message}</p>
+      <p className="text-sm text-red-600">โหลดกิจกรรมไม่สำเร็จ — ลองรีเฟรชหน้านี้</p>
     );
   }
 

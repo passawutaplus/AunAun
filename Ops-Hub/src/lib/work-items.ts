@@ -1,5 +1,6 @@
 import { anthemAdmin, so1oAdmin } from "@/lib/links";
 import type { HubView } from "@/hooks/useHubMetrics";
+import { BOARD_COLUMN_LABELS, SOURCE_LABELS_TH } from "@/lib/labels-th";
 
 export type WorkItemSource =
   | "support_ticket"
@@ -45,10 +46,10 @@ const PRIORITY_ORDER: Record<WorkItemPriority, number> = {
 };
 
 export const BOARD_COLUMNS: { id: BoardColumn; label: string }[] = [
-  { id: "triage", label: "Triage" },
-  { id: "in_progress", label: "In Progress" },
-  { id: "in_review", label: "In Review" },
-  { id: "done", label: "Done" },
+  { id: "triage", label: BOARD_COLUMN_LABELS.triage },
+  { id: "in_progress", label: BOARD_COLUMN_LABELS.in_progress },
+  { id: "in_review", label: BOARD_COLUMN_LABELS.in_review },
+  { id: "done", label: BOARD_COLUMN_LABELS.done },
 ];
 
 export function columnToRawStatus(
@@ -300,10 +301,4 @@ export function parseWorkItemId(compositeId: string): { source: WorkItemSource; 
   return { source, sourceId };
 }
 
-export const SOURCE_LABELS: Record<WorkItemSource, string> = {
-  support_ticket: "Support Ticket",
-  feature_suggestion: "Feature Suggestion",
-  app_feedback: "App Feedback",
-  user_report: "Content Report",
-  ops_issue: "Hub Issue",
-};
+export const SOURCE_LABELS: Record<WorkItemSource, string> = SOURCE_LABELS_TH;

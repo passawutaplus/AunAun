@@ -83,22 +83,6 @@ export function useOpsIssues() {
         .select("*, projects(*)")
         .order("updated_at", { ascending: false });
 
-      // #region agent log
-      fetch("http://127.0.0.1:7706/ingest/3280a2f8-8fa2-40c7-88fc-16d5430418e8", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "88285d" },
-        body: JSON.stringify({
-          sessionId: "88285d",
-          runId: "post-fix",
-          hypothesisId: "C",
-          location: "useOpsIssues.ts:useOpsIssues",
-          message: "ops issues query",
-          data: { code: error?.code ?? null, message: error?.message ?? null },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
-
       if (error) throw error;
       return (data ?? []) as OpsIssue[];
     },

@@ -1,30 +1,65 @@
 import type { LucideIcon } from "lucide-react";
+import { ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function KpiCard({
   label,
   value,
-  sub,
+  hint,
   icon: Icon,
   accent,
+  href,
+  external = true,
 }: {
   label: string;
   value: string | number;
-  sub?: string;
+  hint?: string;
   icon: LucideIcon;
   accent?: boolean;
+  href?: string;
+  external?: boolean;
 }) {
-  return (
-    <div
-      className={`rounded-xl border bg-white p-4 shadow-sm ${
-        accent ? "border-brand/30 bg-brand-soft/40" : "border-border"
-      }`}
-    >
+  const className = `group rounded-xl border bg-white p-4 shadow-sm transition ${
+    accent ? "border-brand/30 bg-brand-soft/40" : "border-border"
+  } ${href ? "cursor-pointer hover:border-brand/40 hover:shadow-md" : ""}`;
+
+  const content = (
+    <>
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-muted">{label}</p>
-        <Icon className={`h-4 w-4 shrink-0 ${accent ? "text-brand" : "text-muted"}`} />
+        <p className="text-sm font-medium text-ink">{label}</p>
+        <div className="flex shrink-0 items-center gap-1">
+          {href ? (
+            <ExternalLink className="h-3.5 w-3.5 text-muted opacity-0 transition group-hover:opacity-100" />
+          ) : null}
+          <Icon className={`h-4 w-4 ${accent ? "text-brand" : "text-muted"}`} />
+        </div>
       </div>
       <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-      {sub ? <p className="mt-1 text-xs text-muted">{sub}</p> : null}
-    </div>
+      {hint ? <p className="mt-1.5 text-xs leading-relaxed text-muted">{hint}</p> : null}
+    </>
+  );
+
+  if (!href) {
+    return <div className={className}>{content}</div>;
+  }
+
+  if (external) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+        title={`เปิดดูรายละเอียด: ${label}`}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <Link to={href} className={className} title={`ไปที่: ${label}`}>
+      {content}
+    </Link>
   );
 }

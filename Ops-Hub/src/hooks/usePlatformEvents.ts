@@ -20,8 +20,8 @@ const EVENT_LABELS: Record<string, string> = {
   "feedback.created": "ฟีดแบ็กใหม่",
   "cashout.request": "ขอถอน Pixel",
   "kyc.submitted": "ส่ง KYC",
-  "aml.flagged": "AML flag",
-  "ticket.created": "ตั๋ว support",
+  "aml.flagged": "แจ้งเตือน AML",
+  "ticket.created": "ตั๋วซัพพอร์ตใหม่",
 };
 
 export function eventLabel(type: string) {
@@ -37,22 +37,6 @@ export function usePlatformEvents(limit = 50) {
         .select("*")
         .order("created_at", { ascending: false })
         .limit(limit);
-
-      // #region agent log
-      fetch("http://127.0.0.1:7706/ingest/3280a2f8-8fa2-40c7-88fc-16d5430418e8", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "88285d" },
-        body: JSON.stringify({
-          sessionId: "88285d",
-          runId: "post-fix",
-          hypothesisId: "B",
-          location: "usePlatformEvents.ts:queryFn",
-          message: "platform events query",
-          data: { code: error?.code ?? null, message: error?.message ?? null, count: data?.length ?? 0 },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
 
       if (error?.code === "PGRST205") return [];
       if (error) throw error;

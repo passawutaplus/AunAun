@@ -6,6 +6,7 @@ import { useHubView } from "@/contexts/HubViewContext";
 import { useWorkItemDrawer } from "@/contexts/WorkItemDrawerContext";
 import { useWorkItems } from "@/hooks/useWorkItems";
 import { filterByHubView, inboxItems } from "@/lib/work-items";
+import { friendlyError } from "@/lib/friendly-error";
 
 export default function InboxPage() {
   const { view } = useHubView();
@@ -16,8 +17,8 @@ export default function InboxPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <PageHeader
-        title={`Inbox (${items.length})`}
-        subtitle="รายการ Triage — เรียงตาม priority และอายุ"
+        title={`กล่องขาเข้า (${items.length})`}
+        subtitle="งานใหม่ที่ต้องจัดการ — เรียงตามความสำคัญและวันที่รับมา"
         actions={
           <button
             type="button"
@@ -31,14 +32,14 @@ export default function InboxPage() {
       <div className="grid flex-1 gap-6 p-6 lg:grid-cols-3">
         <div className="space-y-2 lg:col-span-2">
           {error ? (
-            <p className="text-sm text-red-600">{(error as Error).message}</p>
+            <p className="text-sm text-red-600">{friendlyError("โหลดกล่องขาเข้าไม่สำเร็จ")}</p>
           ) : isLoading ? (
             <div className="flex justify-center py-12 text-muted">
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           ) : items.length === 0 ? (
             <p className="rounded-xl border border-dashed border-border py-12 text-center text-sm text-muted">
-              Inbox ว่าง — ไม่มีรายการ Triage
+              ไม่มีงานค้าง — ทุกอย่างเรียบร้อยแล้ว
             </p>
           ) : (
             items.map((item) => (

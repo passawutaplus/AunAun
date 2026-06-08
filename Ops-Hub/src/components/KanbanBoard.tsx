@@ -6,6 +6,7 @@ import {
   type WorkItem,
   type WorkItemFilters,
 } from "@/lib/work-items";
+import { APP_LABELS, PRIORITY_LABELS } from "@/lib/labels-th";
 import { useWorkItemMutations } from "@/hooks/useWorkItemMutations";
 import { useWorkItemDrawer } from "@/contexts/WorkItemDrawerContext";
 
@@ -96,11 +97,11 @@ export function KanbanBoard({
                 <div className="mb-1 font-mono text-[10px] text-muted">{item.key}</div>
                 <p className="line-clamp-2 text-sm font-medium">{item.title}</p>
                 <div className="mt-2 flex gap-1">
-                  <span className="rounded bg-surface px-1.5 py-0.5 text-[10px] capitalize">
-                    {item.priority}
+                  <span className="rounded bg-surface px-1.5 py-0.5 text-[10px]">
+                    {PRIORITY_LABELS[item.priority]}
                   </span>
                   <span className="rounded bg-surface px-1.5 py-0.5 text-[10px]">
-                    {item.app}
+                    {APP_LABELS[item.app]}
                   </span>
                 </div>
               </div>

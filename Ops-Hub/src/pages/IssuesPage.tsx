@@ -12,6 +12,7 @@ import {
   sortInboxItems,
   type WorkItemFilters as Filters,
 } from "@/lib/work-items";
+import { friendlyError } from "@/lib/friendly-error";
 
 const DEFAULT_FILTERS: Filters = {
   search: "",
@@ -32,19 +33,19 @@ export default function IssuesPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <PageHeader
-        title="Issues"
-        subtitle="รายการทั้งหมดจาก support, feedback, reports และ Hub Work"
+        title="รายการทั้งหมด"
+        subtitle="ตั๋วซัพพอร์ต ฟีดแบ็ก รายงานเนื้อหา และงานภายใน — ค้นหาและกรองได้"
         actions={<WorkItemFilters filters={filters} onChange={setFilters} />}
       />
       <div className="space-y-2 p-6">
         {error ? (
-          <p className="text-sm text-red-600">{(error as Error).message}</p>
+          <p className="text-sm text-red-600">{friendlyError("โหลดรายการไม่สำเร็จ")}</p>
         ) : isLoading ? (
           <div className="flex justify-center py-12 text-muted">
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : items.length === 0 ? (
-          <p className="text-sm text-muted">ไม่พบรายการตาม filter</p>
+          <p className="text-sm text-muted">ไม่พบรายการตามที่ค้นหา — ลองเปลี่ยนตัวกรอง</p>
         ) : (
           items.map((item) => (
             <WorkItemRow key={item.id} item={item} onClick={() => open(item)} />

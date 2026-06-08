@@ -9,6 +9,7 @@ import {
   type BoardColumn,
   type WorkItemPriority,
 } from "@/lib/work-items";
+import { PRIORITY_LABELS } from "@/lib/labels-th";
 
 export function WorkItemDrawer() {
   const { item, close } = useWorkItemDrawer();
@@ -63,8 +64,8 @@ export function WorkItemDrawer() {
 
           {err ? <p className="text-sm text-red-600">{err}</p> : null}
 
-          <label className="block text-xs font-semibold uppercase text-muted">
-            สถานะ (Board)
+          <label className="block text-xs font-semibold text-muted">
+            สถานะงาน
             <select
               disabled={busy}
               value={item.boardColumn}
@@ -87,8 +88,8 @@ export function WorkItemDrawer() {
           </label>
 
           {canPriority ? (
-            <label className="block text-xs font-semibold uppercase text-muted">
-              Priority
+            <label className="block text-xs font-semibold text-muted">
+              ระดับความสำคัญ
               <select
                 disabled={busy}
                 value={item.priority}
@@ -102,17 +103,18 @@ export function WorkItemDrawer() {
                 }
                 className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
               >
-                <option value="urgent">Urgent</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
+                {(Object.keys(PRIORITY_LABELS) as WorkItemPriority[]).map((p) => (
+                  <option key={p} value={p}>
+                    {PRIORITY_LABELS[p]}
+                  </option>
+                ))}
               </select>
             </label>
           ) : null}
 
           {canNote ? (
-            <label className="block text-xs font-semibold uppercase text-muted">
-              Admin note
+            <label className="block text-xs font-semibold text-muted">
+              บันทึกสำหรับทีม
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
@@ -125,7 +127,7 @@ export function WorkItemDrawer() {
                 onClick={() => patch(() => updateAdminNote.mutateAsync({ item, adminNote: note }))}
                 className="mt-2 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white"
               >
-                บันทึก note
+                บันทึก
               </button>
             </label>
           ) : null}
@@ -151,7 +153,7 @@ export function WorkItemDrawer() {
                 {promote.isPending ? (
                   <Loader2 className="inline h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  "สร้าง Hub Issue"
+                  "สร้างงานภายใน"
                 )}
               </button>
             ) : null}

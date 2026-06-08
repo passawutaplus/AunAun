@@ -5,8 +5,8 @@ export default function ActivityPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <PageHeader
-        title="Activity"
-        subtitle="platform_events จากทั้ง ecosystem"
+        title="กิจกรรม"
+        subtitle="เหตุการณ์ล่าสุดในระบบ เช่น สมัครใหม่ สร้างผลงาน หรือรายงานปัญหา"
       />
       <div className="max-w-2xl p-6">
         <ActivityFeed />

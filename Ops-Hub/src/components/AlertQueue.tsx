@@ -5,7 +5,7 @@ export function AlertQueue({ alerts }: { alerts: HubAlert[] }) {
   if (alerts.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-white px-4 py-6 text-center text-sm text-muted">
-        ไม่มีรายการค้าง — สบายดี ✓
+        ไม่มีอะไรต้องดูแลด่วน — ทุกอย่างเรียบร้อย ✓
       </div>
     );
   }
@@ -16,7 +16,7 @@ export function AlertQueue({ alerts }: { alerts: HubAlert[] }) {
     <div className="rounded-xl border border-brand/25 bg-brand-soft/50 p-4">
       <div className="mb-3 flex items-center gap-2">
         <AlertTriangle className="h-4 w-4 text-brand" />
-        <h2 className="text-sm font-semibold">ต้องดูแล ({total})</h2>
+        <h2 className="text-sm font-semibold">ต้องจัดการด่วน ({total} รายการ)</h2>
       </div>
       <div className="flex flex-wrap gap-2">
         {alerts.map((a) => (

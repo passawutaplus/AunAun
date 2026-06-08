@@ -89,7 +89,7 @@ function buildAlerts(m: Omit<HubMetrics, "alerts">): HubAlert[] {
     id: "an1hem-aml",
     app: "an1hem",
     severity: "high",
-    label: "AML flags",
+    label: "AML ต้องดู",
     count: m.an1hem.openAml,
     href: anthemAdmin("/aml"),
   });
@@ -105,7 +105,7 @@ function buildAlerts(m: Omit<HubMetrics, "alerts">): HubAlert[] {
     id: "an1hem-collab",
     app: "an1hem",
     severity: "medium",
-    label: "คำขอ Collab",
+    label: "คำขอร่วมงาน",
     count: m.an1hem.pendingCollabs,
     href: anthemAdmin("/collabs"),
   });
@@ -184,25 +184,6 @@ export function useHubMetrics() {
           openFeedback: feedback.count ?? 0,
         },
       };
-
-      // #region agent log
-      fetch("http://127.0.0.1:7706/ingest/3280a2f8-8fa2-40c7-88fc-16d5430418e8", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "88285d" },
-        body: JSON.stringify({
-          sessionId: "88285d",
-          runId: "post-fix",
-          hypothesisId: "A",
-          location: "useHubMetrics.ts:queryFn",
-          message: "hub metrics query errors",
-          data: {
-            feedback: feedback.error?.message ?? null,
-            feedbackCount: feedback.count,
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
 
       return { ...core, alerts: buildAlerts(core) };
     },

@@ -1,6 +1,7 @@
 import { AlertCircle, ChevronRight } from "lucide-react";
 import type { WorkItem } from "@/lib/work-items";
 import { SOURCE_LABELS } from "@/lib/work-items";
+import { APP_LABELS } from "@/lib/labels-th";
 
 const PRIORITY_STYLES: Record<string, string> = {
   urgent: "text-red-600",
@@ -35,7 +36,7 @@ export function WorkItemRow({
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-xs text-muted">{item.key}</span>
           <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${APP_BADGE[item.app]}`}>
-            {item.app === "so1o" ? "So1o" : item.app === "an1hem" ? "an1hem" : "Eco"}
+            {APP_LABELS[item.app]}
           </span>
           <span className="text-[10px] text-muted">{SOURCE_LABELS[item.source]}</span>
         </div>

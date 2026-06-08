@@ -1,9 +1,9 @@
 import type { HubView } from "@/hooks/useHubMetrics";
 
-const VIEWS: { id: HubView; label: string }[] = [
-  { id: "all", label: "รวม" },
-  { id: "so1o", label: "So1o" },
-  { id: "an1hem", label: "an1hem" },
+const VIEWS: { id: HubView; label: string; title: string }[] = [
+  { id: "all", label: "ทั้งหมด", title: "แสดงข้อมูล So1o และ an1hem" },
+  { id: "so1o", label: "So1o", title: "แสดงเฉพาะแพลตฟอร์ม So1o" },
+  { id: "an1hem", label: "an1hem", title: "แสดงเฉพาะแพลตฟอร์ม an1hem" },
 ];
 
 export function ViewSwitcher({
@@ -23,6 +23,7 @@ export function ViewSwitcher({
         <button
           key={v.id}
           type="button"
+          title={v.title}
           onClick={() => onChange(v.id)}
           className={`rounded-lg ${compact ? "w-full px-2 py-1 text-xs" : "px-4 py-1.5 text-sm"} font-medium transition ${
             value === v.id

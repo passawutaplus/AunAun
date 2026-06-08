@@ -15,23 +15,24 @@ import { useHubView } from "@/contexts/HubViewContext";
 import { ViewSwitcher } from "@/components/ViewSwitcher";
 import { useWorkItems } from "@/hooks/useWorkItems";
 import { inboxItems } from "@/lib/work-items";
+import { NAV_LABELS } from "@/lib/labels-th";
 
 const NAV = [
-  { to: "/", icon: LayoutDashboard, label: "Overview", end: true },
-  { to: "/inbox", icon: Inbox, label: "Inbox", badge: true },
-  { to: "/board", icon: Columns3, label: "Board" },
-  { to: "/issues", icon: ListTodo, label: "Issues" },
-  { to: "/work", icon: Briefcase, label: "Hub Work" },
-  { to: "/cycles", icon: Repeat, label: "Cycles" },
-  { to: "/roadmap", icon: Map, label: "Roadmap" },
-  { to: "/activity", icon: Activity, label: "Activity" },
+  { to: "/", icon: LayoutDashboard, label: NAV_LABELS.overview, end: true, hint: "ดูตัวเลขและรายการด่วน" },
+  { to: "/inbox", icon: Inbox, label: NAV_LABELS.inbox, badge: true, hint: "งานใหม่ที่ต้องจัดการ" },
+  { to: "/board", icon: Columns3, label: NAV_LABELS.board, hint: "ลากการ์ดเปลี่ยนสถานะ" },
+  { to: "/issues", icon: ListTodo, label: NAV_LABELS.issues, hint: "รายการทั้งหมดพร้อมค้นหา" },
+  { to: "/work", icon: Briefcase, label: NAV_LABELS.work, hint: "งานภายในทีม" },
+  { to: "/cycles", icon: Repeat, label: NAV_LABELS.cycles, hint: "รอบงาน / Sprint" },
+  { to: "/roadmap", icon: Map, label: NAV_LABELS.roadmap, hint: "แผนงานตามไตรมาส" },
+  { to: "/activity", icon: Activity, label: NAV_LABELS.activity, hint: "เหตุการณ์ล่าสุดในระบบ" },
 ];
 
 export function Sidebar() {
   const { user, signOut } = useHubAuth();
   const { view, setView } = useHubView();
   const { data } = useWorkItems();
-  const inboxCount = inboxItems(data?.items ?? []).length;
+  const inboxCount = inboxItems(data ?? []).length;
 
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-white">
@@ -47,17 +48,18 @@ export function Sidebar() {
           </div>
           <div>
             <p className="text-sm font-semibold leading-tight">Ops Hub</p>
-            <p className="text-[10px] text-muted">PM Workspace</p>
+            <p className="text-[10px] text-muted">ศูนย์ควบคุมทีมดูแล</p>
           </div>
         </div>
       </div>
 
       <nav className="flex-1 space-y-0.5 p-2">
-        {NAV.map(({ to, icon: Icon, label, end, badge }) => (
+        {NAV.map(({ to, icon: Icon, label, end, badge, hint }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
+            title={hint}
             className={({ isActive }) =>
               `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition ${
                 isActive ? "bg-brand-soft text-brand" : "text-muted hover:bg-surface hover:text-ink"
@@ -76,7 +78,10 @@ export function Sidebar() {
       </nav>
 
       <div className="space-y-3 border-t border-border p-3">
-        <ViewSwitcher value={view} onChange={setView} compact />
+        <div>
+          <p className="mb-1 text-[10px] font-medium text-muted">แสดงข้อมูลจาก</p>
+          <ViewSwitcher value={view} onChange={setView} compact />
+        </div>
         <div className="truncate text-[10px] text-muted">{user?.email}</div>
         <button
           type="button"

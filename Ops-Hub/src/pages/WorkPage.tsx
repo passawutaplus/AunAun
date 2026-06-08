@@ -9,6 +9,7 @@ import {
   useOpsProjects,
 } from "@/hooks/useOpsIssues";
 import { mapOpsIssue } from "@/lib/work-items";
+import { friendlyError } from "@/lib/friendly-error";
 
 export default function WorkPage() {
   const { data: issues, isLoading, error } = useOpsIssues();
@@ -40,15 +41,15 @@ export default function WorkPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <PageHeader
-        title="Hub Work"
-        subtitle="งานภายใน ecosystem — ops.issues"
+        title="งานภายใน"
+        subtitle="งานที่ทีมสร้างเองหรือย้ายมาจากคิวอื่น — ใช้จัดการงานภายในองค์กร"
         actions={
           <button
             type="button"
             onClick={() => setShowForm((v) => !v)}
             className="inline-flex items-center gap-1 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white"
           >
-            <Plus className="h-3.5 w-3.5" /> สร้าง Issue
+            <Plus className="h-3.5 w-3.5" /> สร้างงานใหม่
           </button>
         }
       />
@@ -85,9 +86,9 @@ export default function WorkPage() {
 
         {error ? (
           <p className="text-sm text-red-600">
-            {(error as Error).message}
+            {friendlyError("โหลดงานภายในไม่สำเร็จ")}
             <span className="mt-1 block text-xs text-muted">
-              รัน migration ops schema บน Supabase ก่อนใช้ Hub Work
+              ฟีเจอร์นี้ต้องตั้งค่าฐานข้อมูลก่อน — ติดต่อทีมเทคนิคเพื่อเปิดใช้งาน
             </span>
           </p>
         ) : isLoading ? (
@@ -95,7 +96,7 @@ export default function WorkPage() {
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : items.length === 0 ? (
-          <p className="text-sm text-muted">ยังไม่มี Hub issue — กดสร้าง Issue หรือ Promote จากคิว Ops</p>
+          <p className="text-sm text-muted">ยังไม่มีงาน — กดสร้างงานใหม่ หรือย้ายมาจากกล่องขาเข้า</p>
         ) : (
           items.map((item) => (
             <WorkItemRow key={item.id} item={item} onClick={() => open(item)} />

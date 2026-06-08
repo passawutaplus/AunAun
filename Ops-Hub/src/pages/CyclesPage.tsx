@@ -3,12 +3,18 @@ import { PageHeader } from "@/components/PageHeader";
 import { useOpsCycles, useOpsIssues } from "@/hooks/useOpsIssues";
 
 const STATUS_LABELS: Record<string, string> = {
-  backlog: "Backlog",
-  todo: "Todo",
-  in_progress: "In Progress",
-  in_review: "In Review",
-  done: "Done",
-  cancelled: "Cancelled",
+  backlog: "คิวรอ",
+  todo: "รอเริ่ม",
+  in_progress: "กำลังทำ",
+  in_review: "รอตรวจ",
+  done: "เสร็จแล้ว",
+  cancelled: "ยกเลิก",
+};
+
+const CYCLE_STATUS: Record<string, string> = {
+  planned: "วางแผน",
+  active: "กำลังดำเนินการ",
+  completed: "จบแล้ว",
 };
 
 export default function CyclesPage() {
@@ -28,18 +34,21 @@ export default function CyclesPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <PageHeader
-        title="Cycles"
-        subtitle="Sprint ปัจจุบัน — นับงานตามสถานะ"
+        title="รอบงาน"
+        subtitle="ดูงานในรอบ Sprint ปัจจุบัน — แยกตามสถานะว่าทำไปถึงไหนแล้ว"
       />
       <div className="space-y-6 p-6">
         {cyclesErr ? (
-          <p className="text-sm text-red-600">{(cyclesErr as Error).message}</p>
+          <div className="text-sm text-red-600">
+            <p>โหลดข้อมูลรอบงานไม่สำเร็จ</p>
+            <p className="mt-1 text-xs text-muted">ฟีเจอร์นี้ต้องตั้งค่าฐานข้อมูลก่อน — ติดต่อทีมเทคนิค</p>
+          </div>
         ) : loading ? (
           <div className="flex justify-center py-12 text-muted">
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : !active ? (
-          <p className="text-sm text-muted">ยังไม่มี cycle — seed จาก migration</p>
+          <p className="text-sm text-muted">ยังไม่มีรอบงาน — รอทีมเทคนิคตั้งค่าให้</p>
         ) : (
           <>
             <div className="rounded-xl border border-border bg-white p-4">
@@ -47,10 +56,10 @@ export default function CyclesPage() {
               <p className="text-sm text-muted">
                 {active.start_date} → {active.end_date}
                 <span className="ml-2 rounded bg-brand-soft px-2 py-0.5 text-xs text-brand">
-                  {active.status}
+                  {CYCLE_STATUS[active.status] ?? active.status}
                 </span>
               </p>
-              <p className="mt-2 text-sm">{cycleIssues.length} issues ใน cycle นี้</p>
+              <p className="mt-2 text-sm">มี {cycleIssues.length} งานในรอบนี้</p>
             </div>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
               {byStatus.map((s) => (
@@ -61,7 +70,7 @@ export default function CyclesPage() {
               ))}
             </div>
             <section>
-              <h3 className="mb-2 text-xs font-semibold uppercase text-muted">Issues ใน Cycle</h3>
+              <h3 className="mb-2 text-xs font-semibold text-muted">งานในรอบนี้</h3>
               <ul className="space-y-2">
                 {cycleIssues.map((i) => (
                   <li
@@ -71,21 +80,21 @@ export default function CyclesPage() {
                     <span>
                       <span className="font-mono text-xs text-muted">{i.issue_number}</span> {i.title}
                     </span>
-                    <span className="text-xs text-muted">{i.status}</span>
+                    <span className="text-xs text-muted">{STATUS_LABELS[i.status] ?? i.status}</span>
                   </li>
                 ))}
                 {cycleIssues.length === 0 ? (
-                  <li className="text-sm text-muted">ยังไม่มี issue ใน cycle</li>
+                  <li className="text-sm text-muted">ยังไม่มีงานในรอบนี้</li>
                 ) : null}
               </ul>
             </section>
             {(cycles ?? []).length > 1 ? (
               <section>
-                <h3 className="mb-2 text-xs font-semibold uppercase text-muted">Cycles ทั้งหมด</h3>
+                <h3 className="mb-2 text-xs font-semibold text-muted">รอบงานทั้งหมด</h3>
                 <ul className="space-y-1 text-sm">
                   {(cycles ?? []).map((c) => (
                     <li key={c.id} className="text-muted">
-                      {c.name} ({c.status})
+                      {c.name} ({CYCLE_STATUS[c.status] ?? c.status})
                     </li>
                   ))}
                 </ul>

@@ -32,14 +32,14 @@ export default function LoginPage() {
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-an1hem text-sm font-bold text-white">a1</span>
           </div>
           <div>
-            <h1 className="text-lg font-semibold">So1o Ops Hub</h1>
-            <p className="text-xs text-muted">hq.solofreelancer.com · Admin only</p>
+            <h1 className="text-lg font-semibold">Ops Hub</h1>
+            <p className="text-xs text-muted">ศูนย์ควบคุมสำหรับทีมดูแลระบบ</p>
           </div>
         </div>
 
         <div className="mb-4 flex items-center gap-2 rounded-lg bg-brand-soft/60 px-3 py-2 text-xs text-muted">
           <ShieldCheck className="h-4 w-4 text-brand" />
-          ต้องมี role <strong className="text-ink">admin</strong> ใน user_roles
+          เข้าได้เฉพาะบัญชีที่ได้รับสิทธิ์ <strong className="text-ink">ผู้ดูแลระบบ</strong> เท่านั้น
         </div>
 
         <form onSubmit={submit} className="space-y-4">
