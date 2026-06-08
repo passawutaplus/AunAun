@@ -17,7 +17,7 @@ import {
   LogOut,
   RefreshCw,
 } from "lucide-react";
-import { useHubAuth } from "@/hooks/useHubAuth";
+import { useHubAuth } from "@/auth/AuthProvider";
 import { useHubAlertWatcher } from "@/hooks/useHubAlertWatcher";
 import { filterAlerts, useHubMetrics, type HubView } from "@/hooks/useHubMetrics";
 import { ViewSwitcher } from "@/components/ViewSwitcher";

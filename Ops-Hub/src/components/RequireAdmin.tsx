@@ -1,19 +1,14 @@
 import { Navigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
-import { useHubAuth } from "@/hooks/useHubAuth";
+import { useHubAuth } from "@/auth/AuthProvider";
+import { AuthLoading } from "@/components/AuthLoading";
 
 export function RequireAdmin({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, loading } = useHubAuth();
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-muted">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <AuthLoading />;
 
   if (!user) return <Navigate to="/login" replace />;
+
   if (!isAdmin) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">

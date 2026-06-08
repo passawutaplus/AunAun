@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Loader2, ShieldCheck } from "lucide-react";
-import { useHubAuth } from "@/hooks/useHubAuth";
+import { useHubAuth } from "@/auth/AuthProvider";
 
 export default function LoginPage() {
   const { signIn } = useHubAuth();
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +15,7 @@ export default function LoginPage() {
     setBusy(true);
     try {
       await signIn(email.trim(), password);
-      navigate("/", { replace: true });
+      // Redirect handled by LoginRoute when auth state updates
     } catch (err) {
       setError(err instanceof Error ? err.message : "เข้าสู่ระบบไม่สำเร็จ");
     } finally {
