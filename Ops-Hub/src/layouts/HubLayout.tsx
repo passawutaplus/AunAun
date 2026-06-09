@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "@/components/Sidebar";
+import { SourceDegradedBanner } from "@/components/SourceDegradedBanner";
 import { WorkItemDrawer } from "@/components/WorkItemDrawer";
 import { HubViewProvider } from "@/contexts/HubViewContext";
 import { WorkItemDrawerProvider } from "@/contexts/WorkItemDrawerContext";
@@ -14,6 +15,7 @@ function HubLayoutInner() {
     <div className="flex min-h-screen">
       <Sidebar />
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        <SourceDegradedBanner />
         <Outlet />
       </div>
       <WorkItemDrawer />

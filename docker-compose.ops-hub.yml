@@ -1,0 +1,36 @@
+# Standalone Ops Hub — no So1o/an1hem containers required.
+# Usage: docker compose -f docker-compose.ops-hub.yml up --build -d
+
+services:
+  proxy:
+    image: nginx:1.27-alpine
+    ports:
+      - "${HTTP_PORT:-3091}:80"
+    volumes:
+      - ./deploy/nginx/ops-hub-only.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/nginx/502.html:/etc/nginx/custom/502.html:ro
+    depends_on:
+      ops-hub:
+        condition: service_started
+    restart: unless-stopped
+
+  ops-hub:
+    build:
+      context: ./Ops-Hub
+      dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+        VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID:-rvnzjiskqliexysicfmh}
+        VITE_SO1O_APP_URL: ${VITE_SO1O_APP_URL:-https://www.solofreelancer.com}
+        VITE_ANTHEM_APP_URL: ${VITE_ANTHEM_APP_URL:-https://an1hem.app}
+        VITE_SITE_URL: ${VITE_OPS_HUB_URL:-https://hq.solofreelancer.com}
+    expose:
+      - "80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped

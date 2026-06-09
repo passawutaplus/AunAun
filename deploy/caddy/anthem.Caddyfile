@@ -1,0 +1,3 @@
+an1hem.app, www.an1hem.app {
+	reverse_proxy proxy:80
+}

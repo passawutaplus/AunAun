@@ -19,7 +19,7 @@ export default function BoardPage() {
   const { view } = useHubView();
   const { data, isLoading, error } = useWorkItems();
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
-  const items = filterByHubView(data ?? [], view);
+  const items = filterByHubView(data?.items ?? [], view);
 
   return (
     <div className="flex min-h-screen flex-col">

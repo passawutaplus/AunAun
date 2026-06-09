@@ -34,7 +34,7 @@ export function Sidebar() {
   const { user, signOut } = useHubAuth();
   const { view, setView } = useHubView();
   const { data } = useWorkItems();
-  const inboxCount = inboxItems(data ?? []).length;
+  const inboxCount = inboxItems(data?.items ?? []).length;
 
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-white">

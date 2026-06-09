@@ -1,0 +1,24 @@
+# HTTPS for standalone an1hem — use with docker-compose.anthem.yml
+# Requires DNS A record → VPS and ports 80/443 open.
+
+services:
+  proxy:
+    ports: []
+
+  caddy:
+    image: caddy:2.8-alpine
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./deploy/caddy/anthem.Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_anthem_data:/data
+      - caddy_anthem_config:/config
+    depends_on:
+      proxy:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  caddy_anthem_data:
+  caddy_anthem_config:

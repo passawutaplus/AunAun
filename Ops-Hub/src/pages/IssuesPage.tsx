@@ -27,7 +27,7 @@ export default function IssuesPage() {
   const { data, isLoading, error } = useWorkItems();
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const items = sortInboxItems(
-    filterWorkItems(filterByHubView(data ?? [], view), filters),
+    filterWorkItems(filterByHubView(data?.items ?? [], view), filters),
   );
 
   return (

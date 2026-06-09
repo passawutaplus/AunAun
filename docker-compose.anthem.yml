@@ -1,0 +1,40 @@
+# Standalone an1hem — no So1o/Ops Hub required.
+# Usage: docker compose -f docker-compose.anthem.yml up --build -d
+# With HTTPS: docker compose -f docker-compose.anthem.yml -f docker-compose.anthem.https.yml up -d
+
+services:
+  proxy:
+    image: nginx:1.27-alpine
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - ./deploy/nginx/anthem-only.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/nginx/502.html:/etc/nginx/custom/502.html:ro
+    depends_on:
+      anthem:
+        condition: service_started
+    restart: unless-stopped
+
+  anthem:
+    build:
+      context: ./Anthem-Code
+      dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${ANTHEM_VITE_SUPABASE_URL:-${VITE_SUPABASE_URL}}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${ANTHEM_VITE_SUPABASE_PUBLISHABLE_KEY:-${VITE_SUPABASE_PUBLISHABLE_KEY}}
+        VITE_SUPABASE_PROJECT_ID: ${ANTHEM_VITE_SUPABASE_PROJECT_ID:-${VITE_SUPABASE_PROJECT_ID:-}}
+        VITE_SO1O_APP_URL: ${VITE_SO1O_APP_URL:-https://www.solofreelancer.com}
+        VITE_LEGAL_WEBSITE: ${VITE_ANTHEM_APP_URL:-https://an1hem.app}
+        VITE_OPS_HUB_URL: ${VITE_OPS_HUB_URL:-https://hq.solofreelancer.com}
+        VITE_DEMO_MODE: ${VITE_DEMO_MODE:-true}
+    env_file:
+      - ./Anthem-Code/.env
+    expose:
+      - "80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped

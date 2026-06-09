@@ -1,0 +1,3 @@
+hq.solofreelancer.com {
+	reverse_proxy proxy:80
+}

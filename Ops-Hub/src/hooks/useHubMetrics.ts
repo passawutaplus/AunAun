@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/db";
+import { safeCount } from "@/lib/resilient-query";
 import { anthemAdmin, so1oAdmin } from "@/lib/links";
 
 export type HubView = "all" | "so1o" | "an1hem";
@@ -34,12 +35,14 @@ export interface HubMetrics {
     openFeedback: number;
   };
   alerts: HubAlert[];
+  degradedSources?: string[];
+  partial?: boolean;
 }
 
 const since = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
 const sinceDays = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString();
 
-function buildAlerts(m: Omit<HubMetrics, "alerts">): HubAlert[] {
+function buildAlerts(m: Omit<HubMetrics, "alerts" | "degradedSources" | "partial">): HubAlert[] {
   const out: HubAlert[] = [];
   const push = (a: HubAlert) => {
     if (a.count > 0) out.push(a);
@@ -126,66 +129,103 @@ export function useHubMetrics() {
     queryKey: ["hub-metrics"],
     refetchInterval: 30_000,
     queryFn: async () => {
-      const [
-        users,
-        proUsers,
-        newUsers,
-        tickets,
-        earlyPending,
-        quotes7d,
-        projects,
-        jobs,
-        hiring,
-        collabs,
-        reports,
-        cashouts,
-        kyc,
-        aml,
-        feedback,
-      ] = await Promise.all([
-        supabase.from("profiles").select("*", { count: "exact", head: true }),
-        supabase.from("profiles").select("*", { count: "exact", head: true }).eq("subscription_tier", "pro"),
-        supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
-        supabase
-          .from("support_tickets")
-          .select("*", { count: "exact", head: true })
-          .or("status.eq.new,status.eq.in_progress,status.eq.qa,status.eq.resolved"),
-        supabase.from("tester_applications").select("*", { count: "exact", head: true }),
-        supabase.from("quotations").select("*", { count: "exact", head: true }).gte("created_at", sinceDays(7)),
-        supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "Published"),
-        supabase.from("job_posts").select("*", { count: "exact", head: true }).eq("status", "open"),
-        supabase.from("hiring_requests").select("*", { count: "exact", head: true }).eq("status", "ใหม่"),
-        supabase.from("collab_requests").select("*", { count: "exact", head: true }).eq("status", "ใหม่"),
-        supabase.from("user_reports").select("*", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
-        supabase.from("cashout_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("aml_flags").select("*", { count: "exact", head: true }).eq("status", "open"),
-        supabase.from("app_feedback").select("*", { count: "exact", head: true }),
+      const results = await Promise.all([
+        safeCount("profiles", supabase.from("profiles").select("*", { count: "exact", head: true })),
+        safeCount(
+          "profiles_pro",
+          supabase.from("profiles").select("*", { count: "exact", head: true }).eq("subscription_tier", "pro"),
+        ),
+        safeCount(
+          "profiles_new",
+          supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
+        ),
+        safeCount(
+          "support_tickets",
+          supabase
+            .from("support_tickets")
+            .select("*", { count: "exact", head: true })
+            .or("status.eq.new,status.eq.in_progress,status.eq.qa,status.eq.resolved"),
+        ),
+        safeCount(
+          "tester_applications",
+          supabase.from("tester_applications").select("*", { count: "exact", head: true }),
+        ),
+        safeCount(
+          "quotations",
+          supabase.from("quotations").select("*", { count: "exact", head: true }).gte("created_at", sinceDays(7)),
+        ),
+        safeCount(
+          "projects",
+          supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "Published"),
+        ),
+        safeCount(
+          "job_posts",
+          supabase.from("job_posts").select("*", { count: "exact", head: true }).eq("status", "open"),
+        ),
+        safeCount(
+          "hiring_requests",
+          supabase.from("hiring_requests").select("*", { count: "exact", head: true }).eq("status", "ใหม่"),
+        ),
+        safeCount(
+          "collab_requests",
+          supabase.from("collab_requests").select("*", { count: "exact", head: true }).eq("status", "ใหม่"),
+        ),
+        safeCount(
+          "user_reports",
+          supabase
+            .from("user_reports")
+            .select("*", { count: "exact", head: true })
+            .in("status", ["open", "reviewing"]),
+        ),
+        safeCount(
+          "cashout_requests",
+          supabase.from("cashout_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        ),
+        safeCount(
+          "kyc_requests",
+          supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        ),
+        safeCount(
+          "aml_flags",
+          supabase.from("aml_flags").select("*", { count: "exact", head: true }).eq("status", "open"),
+        ),
+        safeCount(
+          "app_feedback",
+          supabase.from("app_feedback").select("*", { count: "exact", head: true }),
+        ),
       ]);
+
+      const degradedSources = results.filter((r) => r.error).map((r) => r.source);
+      const n = (i: number) => results[i]?.data ?? 0;
 
       const core = {
         so1o: {
-          totalUsers: users.count ?? 0,
-          proUsers: proUsers.count ?? 0,
-          newUsers24h: newUsers.count ?? 0,
-          openTickets: tickets.count ?? 0,
-          earlyAccessPending: earlyPending.count ?? 0,
-          quotations7d: quotes7d.count ?? 0,
+          totalUsers: n(0),
+          proUsers: n(1),
+          newUsers24h: n(2),
+          openTickets: n(3),
+          earlyAccessPending: n(4),
+          quotations7d: n(5),
         },
         an1hem: {
-          publishedProjects: projects.count ?? 0,
-          openJobs: jobs.count ?? 0,
-          pendingHiring: hiring.count ?? 0,
-          pendingCollabs: collabs.count ?? 0,
-          openReports: reports.count ?? 0,
-          pendingCashouts: cashouts.count ?? 0,
-          pendingKyc: kyc.count ?? 0,
-          openAml: aml.count ?? 0,
-          openFeedback: feedback.count ?? 0,
+          publishedProjects: n(6),
+          openJobs: n(7),
+          pendingHiring: n(8),
+          pendingCollabs: n(9),
+          openReports: n(10),
+          pendingCashouts: n(11),
+          pendingKyc: n(12),
+          openAml: n(13),
+          openFeedback: n(14),
         },
       };
 
-      return { ...core, alerts: buildAlerts(core) };
+      return {
+        ...core,
+        alerts: buildAlerts(core),
+        degradedSources: degradedSources.length ? degradedSources : undefined,
+        partial: degradedSources.length > 0,
+      };
     },
   });
 }

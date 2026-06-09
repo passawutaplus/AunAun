@@ -12,7 +12,7 @@ export default function InboxPage() {
   const { view } = useHubView();
   const { open } = useWorkItemDrawer();
   const { data, isLoading, isFetching, refetch, error } = useWorkItems();
-  const items = inboxItems(filterByHubView(data ?? [], view));
+  const items = inboxItems(filterByHubView(data?.items ?? [], view));
 
   return (
     <div className="flex min-h-screen flex-col">

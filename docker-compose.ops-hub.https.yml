@@ -1,0 +1,23 @@
+# HTTPS for standalone Ops Hub — use with docker-compose.ops-hub.yml
+
+services:
+  proxy:
+    ports: []
+
+  caddy:
+    image: caddy:2.8-alpine
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./deploy/caddy/ops-hub.Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_hub_data:/data
+      - caddy_hub_config:/config
+    depends_on:
+      proxy:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  caddy_hub_data:
+  caddy_hub_config:

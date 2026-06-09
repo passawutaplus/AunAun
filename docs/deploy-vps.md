@@ -105,6 +105,33 @@ supabase functions deploy embed-project similar-images generate-contract sync-so
 cd Anthem-Code && node scripts/run-seed.mjs
 ```
 
+## แยกความล้มเหลว (failure isolation)
+
+Proxy **ไม่รอ** healthcheck ทั้ง 3 แอป — แอปใดล่มได้ 502 เฉพาะโดเมนนั้น (`deploy/nginx/502.html`)
+
+Restart แอปเดียว:
+
+```bash
+docker compose up -d --no-deps anthem
+docker compose up -d --no-deps solo
+docker compose up -d --no-deps ops-hub
+```
+
+Deploy แยก host (an1hem / Ops Hub ไม่พึ่ง So1o container):
+
+```bash
+cp anthem.env.example .env && ./scripts/deploy-anthem-production.sh
+cp ops-hub.env.example .env && ./scripts/deploy-ops-hub-production.sh
+```
+
+รายละเอียด topology + DNS + runbook: [ecosystem-hosting.md](ecosystem-hosting.md)
+
+Health check (cron / manual):
+
+```bash
+./scripts/health-check.sh
+```
+
 ## อัปเดตเวอร์ชัน
 
 ```bash
