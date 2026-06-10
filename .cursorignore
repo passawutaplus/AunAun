@@ -1,0 +1,47 @@
+# Cursor indexing / agent search exclusions for AunAun monorepo
+# Keeps prompts fast by skipping generated, vendor, and duplicate build output.
+
+# Dependencies & package caches
+**/node_modules/**
+**/.pnpm-store/**
+**/.bun/**
+
+# Build / bundler output (duplicate of src — slows grep & semantic search)
+**/dist/**
+**/dist-ssr/**
+**/.output/**
+**/.vinxi/**
+**/.tanstack/**
+**/.nitro/**
+**/.wrangler/**
+**/coverage/**
+
+# Logs & local env (secrets + noise)
+**/*.log
+**/.env
+**/.env.*
+!**/.env.example
+**/.dev.vars
+
+# Supabase generated types (7k+ lines — rarely edited by hand)
+**/integrations/supabase/types.ts
+
+# SQL migrations (187+ files — schema reference lives in docs/SCHEMA.md)
+**/supabase/migrations/**
+
+# Nested git metadata (root repo already tracks workspace)
+Solo-Code/.git/**
+Anthem-Code/.git/**
+
+# Large manual SQL bundles (regenerated from migrations)
+**/supabase/manual/**
+
+# Lockfiles (huge, not useful for code reasoning)
+**/package-lock.json
+**/pnpm-lock.yaml
+**/bun.lockb
+
+# Editor / OS junk
+**/.DS_Store
+**/.idea/**
+**/.vscode/**
