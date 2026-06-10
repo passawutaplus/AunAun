@@ -74,6 +74,15 @@ hq.solofreelancer.com
 
 OAuth / Google login **ต้องการ HTTPS** บน production
 
+## SEO หลัง Deploy
+
+Checklist เต็ม: [`Solo-Code/docs/seo-deploy.md`](../Solo-Code/docs/seo-deploy.md)
+
+1. ตั้ง `VITE_SITE_URL=https://solofreelancer.com` ใน `.env`
+2. ตรวจ `https://solofreelancer.com/robots.txt` และ `/sitemap.xml`
+3. Google Search Console → submit sitemap
+4. ทดสอบ OG preview หน้า `/` และ `/pricing`
+
 ## Demo สำหรับ UX reviewer
 
 ```bash

@@ -45,3 +45,10 @@ Anthem-Code/.git/**
 **/.DS_Store
 **/.idea/**
 **/.vscode/**
+
+# Supabase deploy bundles (inline full function source — huge JSON, slows agent search)
+**/supabase/.bundle-*.json
+**/supabase/.tmp-*.json
+**/supabase/.mcp-payload.json
+**/supabase/.deploy-payloads/**
+**/supabase/.temp/**
