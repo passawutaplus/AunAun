@@ -28,6 +28,7 @@ if [[ ! -f "$ENV_FILE" ]]; then
   LINE_CHANNEL_ID=ใส่จากช่อง LINE Login → Basic settings
   LINE_CHANNEL_SECRET=ใส่จากช่อง LINE Login → Basic settings
   LINE_CHANNEL_ACCESS_TOKEN=ใส่จากช่อง Messaging API → Issue token
+  LINE_MESSAGING_CHANNEL_SECRET=ใส่จากช่อง Messaging API → Basic settings (สำหรับ webhook AI)
   VITE_LINE_LIFF_ID=ใส่หลังสร้าง LIFF (ไม่บังคับ)
 
 ถ้าหา Callback URL ไม่เจอ → อ่าน docs/setup-line.md หัวข้อ「ทำไมหา Callback ไม่เจอ」
@@ -47,14 +48,24 @@ source "$ENV_FILE"
 
 echo "[1/3] ตั้ง Supabase secrets..."
 cd "$SOLO"
-supabase secrets set \
-  LINE_CHANNEL_ID="$LINE_CHANNEL_ID" \
-  LINE_CHANNEL_SECRET="$LINE_CHANNEL_SECRET" \
-  ${LINE_CHANNEL_ACCESS_TOKEN:+LINE_CHANNEL_ACCESS_TOKEN="$LINE_CHANNEL_ACCESS_TOKEN"} \
-  --project-ref "$PROJECT_REF"
+SECRET_ARGS=(
+  "LINE_CHANNEL_ID=$LINE_CHANNEL_ID"
+  "LINE_CHANNEL_SECRET=$LINE_CHANNEL_SECRET"
+)
+[[ -n "${LINE_CHANNEL_ACCESS_TOKEN:-}" ]] && SECRET_ARGS+=("LINE_CHANNEL_ACCESS_TOKEN=$LINE_CHANNEL_ACCESS_TOKEN")
+[[ -n "${LINE_MESSAGING_CHANNEL_SECRET:-}" ]] && SECRET_ARGS+=("LINE_MESSAGING_CHANNEL_SECRET=$LINE_MESSAGING_CHANNEL_SECRET")
+# LINE AI assistant shares Gemini with web Assistant
+if [[ -n "${GEMINI_API_KEY:-}" ]]; then
+  SECRET_ARGS+=("GEMINI_API_KEY=$GEMINI_API_KEY")
+elif [[ -f "$SOLO/.env" ]]; then
+  # shellcheck disable=SC1090
+  GEMINI_FROM_ENV="$(grep -E '^GEMINI_API_KEY=' "$SOLO/.env" | cut -d= -f2- | tr -d '"' | tr -d "'")"
+  [[ -n "$GEMINI_FROM_ENV" ]] && SECRET_ARGS+=("GEMINI_API_KEY=$GEMINI_FROM_ENV")
+fi
+supabase secrets set "${SECRET_ARGS[@]}" --project-ref "$PROJECT_REF"
 
 echo "[2/3] Deploy edge functions..."
-supabase functions deploy line-connect line-queue-process notify-hire-request \
+supabase functions deploy line-connect line-queue-process line-webhook notify-hire-request \
   --project-ref "$PROJECT_REF"
 
 echo "[3/3] ตรวจ client env ใน Solo-Code/.env"

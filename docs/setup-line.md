@@ -86,6 +86,19 @@ http://localhost:3000/line-link
 
 คัดลอก token → ใส่ `LINE_CHANNEL_ACCESS_TOKEN` (ส่ง Push — คนละช่องกับ Login)
 
+### 1.2b Webhook URL (AI Assistant ใน LINE — ใช้เครดิตร่วมกับ Assistant บนเว็บ)
+
+ช่อง **Messaging API** → แท็บ **Messaging API** → **Webhook settings**:
+
+| ช่อง | ค่า |
+|------|-----|
+| Webhook URL | `https://rvnzjiskqliexysicfmh.supabase.co/functions/v1/line-webhook` |
+| Use webhook | **Enabled** |
+
+คัดลอก **Channel secret** จากแท็บ **Basic settings** ของช่อง Messaging API (ไม่ใช่ช่อง Login) → ใส่ `LINE_MESSAGING_CHANNEL_SECRET` ใน Supabase secrets
+
+**การใช้งาน:** พิมพ์คำถามในแชท @solofreelancer → หักเครดิต `ai_assistant_mentor` / `ai_assistant_business` จาก pool เดียวกับ So1o Assistant บนเว็บ · พิมพ์ `ทีมงาน` เพื่อส่งตั๋วให้แอดมิน
+
 ### 1.3 LIFF app (แนะนำ — ไม่บังคับแต่เปิดใน LINE ลื่นกว่า)
 
 แท็บ **LIFF** → **Add** → ตั้งค่า:
