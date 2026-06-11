@@ -264,7 +264,7 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
             percent: 80,
             status: "partial",
             done: ["Send/receive gifts", "Wallet balance", "AML guardrails (RPC)"],
-            improve: ["เติมเงินจริงยังเป็น mock (topup_wallet_mock)", "ปิด mock ก่อน production"],
+            improve: ["ตั้ง payment_settings.mock_topup_enabled=false ก่อน production"],
           },
           {
             name: "ถอนเงิน & KYC",
