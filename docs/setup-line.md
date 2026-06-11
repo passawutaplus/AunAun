@@ -99,6 +99,22 @@ http://localhost:3000/line-link
 
 **การใช้งาน:** พิมพ์คำถามในแชท @solofreelancer → หักเครดิต `ai_assistant_mentor` / `ai_assistant_business` จาก pool เดียวกับ So1o Assistant บนเว็บ · พิมพ์ `ทีมงาน` เพื่อส่งตั๋วให้แอดมิน
 
+**ต้องมี `GEMINI_API_KEY` บน Supabase** (ไม่ใช่ค่าว่าง):
+
+```bash
+# ใส่ใน Solo-Code/.env ก่อน
+GEMINI_API_KEY=your_google_ai_studio_key
+
+cd Solo-Code && source .env
+npx supabase secrets set GEMINI_API_KEY="$GEMINI_API_KEY" --project-ref rvnzjiskqliexysicfmh
+```
+
+ทดสอบ push ตรงไป LINE (ไม่ผ่าน webhook):
+
+```bash
+node scripts/line-ai-test.mjs
+```
+
 ### 1.3 LIFF app (แนะนำ — ไม่บังคับแต่เปิดใน LINE ลื่นกว่า)
 
 แท็บ **LIFF** → **Add** → ตั้งค่า:
