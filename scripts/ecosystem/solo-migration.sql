@@ -11,7 +11,7 @@ DECLARE
   new_seats integer := 1;
   sub record;
 BEGIN
-  SELECT price_id, status, current_period_end, environment
+  SELECT price_id, status, current_period_end, environment, seat_quantity
     INTO sub
     FROM public.subscriptions
    WHERE user_id = _user_id
@@ -25,7 +25,7 @@ BEGIN
    LIMIT 1;
 
   IF NOT FOUND THEN
-    SELECT price_id, status, current_period_end, environment
+    SELECT price_id, status, current_period_end, environment, seat_quantity
       INTO sub
       FROM public.subscriptions
      WHERE user_id = _user_id
@@ -40,8 +40,11 @@ BEGIN
   END IF;
 
   IF FOUND THEN
+    new_seats := GREATEST(1, COALESCE(sub.seat_quantity, 1));
     IF sub.price_id IN ('inhouse_monthly', 'inhouse_yearly') THEN
       new_tier := 'inhouse';
+    ELSIF sub.price_id IN ('pro_plus_monthly', 'pro_plus_yearly') THEN
+      new_tier := 'pro_plus';
     ELSE
       new_tier := 'pro';
     END IF;
