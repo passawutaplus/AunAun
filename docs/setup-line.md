@@ -15,13 +15,62 @@
 
 ---
 
+## ทำไมหา Callback URL ไม่เจอ?
+
+ช่อง **2010369565** ของ @solofreelancer น่าจะเป็นช่องประเภท **Messaging API** — แท็บจะเป็นแบบนี้:
+
+- Basic settings
+- **Messaging API** (Webhook URL อยู่ตรงนี้ — ไม่ใช่ Callback)
+- LIFF (ถ้ามี)
+- ไม่มีแท็บ **LINE Login** → **ไม่มีช่อง Callback URL**
+
+**Callback URL อยู่เฉพาะช่องประเภท LINE Login** — ต้องสร้างช่องใหม่แยก (Provider เดียวกับ OA)
+
+### สร้างช่อง LINE Login (ครั้งเดียว)
+
+1. เปิด [developers.line.biz/console](https://developers.line.biz/console/)
+2. เลือก **Provider** เดียวกับ @solofreelancer
+3. กด **Create a new channel** → เลือก **LINE Login** (ไม่ใช่ Messaging API)
+4. กรอกฟอร์ม:
+   - Channel name: `So1o LINE Login` (ห้ามมีคำว่า LINE ในชื่อ — ใช้ So1o Login ก็ได้)
+   - App types: **Web app** ✅
+   - Region: Thailand
+5. สร้างเสร็จ → เปิดช่องใหม่
+
+### ผูก OA กับช่อง Login
+
+ช่อง LINE Login → แท็บ **Basic settings** → **Linked LINE Official Account** → เลือก **@solofreelancer**
+
+### ใส่ Callback URL (ช่อง LINE Login เท่านั้น)
+
+ช่อง **LINE Login ที่สร้างใหม่** → แท็บ **LINE Login** → **Callback URL** → Edit → วางทีละบรรทัด:
+
+```
+https://www.solofreelancer.com/line-link
+https://solofreelancer.com/line-link
+http://localhost:3000/line-link
+```
+
+กด **Update**
+
+> ถ้ายังไม่เห็นแท็บ LINE Login = เปิดผิดช่อง (ยังเป็นช่อง Messaging API)
+
+### Channel ID คนละตัว — สำคัญ
+
+| ใช้ทำอะไร | เอาจากช่องไหน | ใส่ env ชื่ออะไร |
+|-----------|---------------|------------------|
+| ล็อกอิน OAuth / LIFF | **LINE Login** (ช่องใหม่) | `VITE_LINE_CHANNEL_ID` + `LINE_CHANNEL_SECRET` |
+| ส่ง Push แจ้งเตือน | **Messaging API** (2010369565) | `LINE_CHANNEL_ACCESS_TOKEN` |
+
+คัดลอก **Channel ID + Secret จากช่อง LINE Login ใหม่** (ไม่ใช่ 2010369565) ไปใส่ `.env.line`
+
+---
+
 ## ขั้นที่ 1 — LINE Developers Console (คุณทำเอง ~10 นาที)
 
-เข้า [developers.line.biz](https://developers.line.biz/) → ช่อง **@solofreelancer** (Channel ID `2010369565`)
+### 1.1 Callback URL (ช่อง LINE Login — ดูด้านบน)
 
-### 1.1 LINE Login → Callback URL
-
-แท็บ **LINE Login** → **Callback URL** → เพิ่มทั้งหมด:
+แท็บ **LINE Login** ของช่อง Login → **Callback URL** → เพิ่มทั้งหมด:
 
 ```
 https://www.solofreelancer.com/line-link
@@ -31,12 +80,11 @@ http://localhost:3000/line-link
 
 กด **Update** / Save
 
-### 1.2 Messaging API → Channel access token
+### 1.2 Channel access token (ช่อง Messaging API เดิม 2010369565)
 
-แท็บ **Messaging API** → **Channel access token** → **Issue** (long-lived)
+เปิดช่อง **Messaging API** @solofreelancer → แท็บ **Messaging API** → **Channel access token** → **Issue** (long-lived)
 
-คัดลอก token ไว้ → ใส่ในขั้นที่ 2 ชื่อ `LINE_CHANNEL_ACCESS_TOKEN`  
-(ใช้ส่ง Push แจ้งเตือนจริง)
+คัดลอก token → ใส่ `LINE_CHANNEL_ACCESS_TOKEN` (ส่ง Push — คนละช่องกับ Login)
 
 ### 1.3 LIFF app (แนะนำ — ไม่บังคับแต่เปิดใน LINE ลื่นกว่า)
 

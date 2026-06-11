@@ -24,11 +24,13 @@ if [[ ! -f "$ENV_FILE" ]]; then
 สร้างไฟล์นี้ (ห้าม commit):
   Solo-Code/.env.line
 
-เนื้อหาตัวอย่าง:
-  LINE_CHANNEL_ID=2010369565
-  LINE_CHANNEL_SECRET=ใส่จาก LINE Console
-  LINE_CHANNEL_ACCESS_TOKEN=ใส่จาก Messaging API (Issue token)
+เนื้อหาตัวอย่าง (Channel ID = ช่อง LINE Login ใหม่ ไม่ใช่ Messaging API 2010369565):
+  LINE_CHANNEL_ID=ใส่จากช่อง LINE Login → Basic settings
+  LINE_CHANNEL_SECRET=ใส่จากช่อง LINE Login → Basic settings
+  LINE_CHANNEL_ACCESS_TOKEN=ใส่จากช่อง Messaging API → Issue token
   VITE_LINE_LIFF_ID=ใส่หลังสร้าง LIFF (ไม่บังคับ)
+
+ถ้าหา Callback URL ไม่เจอ → อ่าน docs/setup-line.md หัวข้อ「ทำไมหา Callback ไม่เจอ」
 
 จากนั้นรันอีกครั้ง:
   ./scripts/setup-line.sh
