@@ -18,7 +18,7 @@ Deferred items from the Ecosystem Master Plan (Phase 4+). Phase 1–3 implementa
 | ปิดลูปโพสต์ผลงาน | Stub | `PostToAnthemBanner` ใน Job Tracker → `/portfolio/new?from=so1o` |
 | Gifts/PX cashout | ยังไม่ทำ | Stripe Connect / payout |
 | Boost/โฆษณาผลงาน | ยังไม่ทำ | tier-gated |
-| In-House workspace | Marketing only | org, invites, roles, shared library |
+| In-House workspace | **Shipped (MVP)** | org, invites, roles, kanban, chat, monitor — migration `inhouse-workspace.sql` |
 | SSO ข้ามโดเมน | ยังไม่ทำ | parallel กับ unified `profiles` |
 | ไลฟ์ทำงาน | เลื่อนออก | scope แยก |
 | Escrow marketplace | ยังไม่ทำ | ชำระเงินลูกค้าผ่านแพลตฟอร์ม |
