@@ -56,6 +56,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS wallet_topups_stripe_session_id_key
 
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS stripe_connect_account_id text,
+  ADD COLUMN IF NOT EXISTS stripe_connect_accounts jsonb NOT NULL DEFAULT '{}'::jsonb,
   ADD COLUMN IF NOT EXISTS connect_onboarding_complete boolean NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS connect_payouts_enabled boolean NOT NULL DEFAULT false;
 
@@ -270,15 +271,22 @@ CREATE OR REPLACE FUNCTION public.sync_connect_account(
   _user_id uuid,
   _account_id text,
   _onboarding_complete boolean,
-  _payouts_enabled boolean
+  _payouts_enabled boolean,
+  _environment text DEFAULT 'sandbox'
 ) RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+  IF _environment NOT IN ('sandbox', 'live') THEN
+    RAISE EXCEPTION 'INVALID_ENVIRONMENT';
+  END IF;
+
   UPDATE public.profiles SET
     stripe_connect_account_id = COALESCE(_account_id, stripe_connect_account_id),
+    stripe_connect_accounts = COALESCE(stripe_connect_accounts, '{}'::jsonb)
+      || jsonb_build_object(_environment, _account_id),
     connect_onboarding_complete = _onboarding_complete,
     connect_payouts_enabled = _payouts_enabled,
     updated_at = now()
@@ -286,8 +294,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.sync_connect_account(uuid, text, boolean, boolean) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.sync_connect_account(uuid, text, boolean, boolean) TO service_role;
+REVOKE ALL ON FUNCTION public.sync_connect_account(uuid, text, boolean, boolean, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.sync_connect_account(uuid, text, boolean, boolean, text) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.mark_cashout_processing(
   _cashout_id uuid,
@@ -356,3 +364,34 @@ $$;
 
 REVOKE ALL ON FUNCTION public.mark_cashout_failed_stripe(uuid, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.mark_cashout_failed_stripe(uuid, text) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.mark_cashout_reversed_stripe(
+  _cashout_id uuid,
+  _reason text DEFAULT NULL
+) RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, shared
+AS $$
+DECLARE
+  _row shared.cashout_requests%ROWTYPE;
+BEGIN
+  SELECT * INTO _row FROM shared.cashout_requests WHERE id = _cashout_id FOR UPDATE;
+  IF NOT FOUND THEN RETURN; END IF;
+  IF _row.status NOT IN ('processing', 'paid') THEN RETURN; END IF;
+
+  UPDATE shared.wallets SET
+    earned_px = earned_px + _row.gross_px,
+    updated_at = now()
+  WHERE user_id = _row.user_id;
+
+  UPDATE shared.cashout_requests SET
+    status = 'failed',
+    failure_reason = COALESCE(_reason, 'transfer_reversed'),
+    processed_at = now()
+  WHERE id = _cashout_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.mark_cashout_reversed_stripe(uuid, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.mark_cashout_reversed_stripe(uuid, text) TO service_role;
