@@ -1,0 +1,59 @@
+---
+description: Deploy demo/preview or production เมื่อผู้ใช้สั่ง "อัปขึ้นเดโม่" หรือ "อัปขึ้น production"
+alwaysApply: true
+---
+
+# Deploy workflow (เดโม่ / Production)
+
+เมื่อผู้ใช้สั่ง deploy ด้วยภาษาไทยหรืออังกฤษ ให้ทำตามนี้ทันที — **ไม่ต้องถามยืนยันซ้ำ** ยกเว้น production มี migration ค้าง
+
+## คำสั่งที่รู้จัก
+
+| ผู้ใช้พูด | ความหมาย |
+|-----------|----------|
+| อัปขึ้นเดโม่, ขึ้นเดโม่, deploy demo, อัป demo | Vercel **preview** — แชร์ให้คนอื่นลอง |
+| อัปขึ้น production, ขึ้น prod, deploy production, อัปจริง | Vercel **production** — พนักงานใช้งานจริง |
+
+ระบุแอปได้: `1px`, `anthem`, `an1hem`, `solo`, `so1o` — ถ้าไม่ระบุ ให้เดาจากไฟล์ที่กำลังแก้ (Anthem-Code → 1px, Solo-Code → solo)
+
+## เดโม่ (preview)
+
+```bash
+./scripts/deploy-vercel.sh demo <app>
+# หรือ
+cd Anthem-Code && npm run deploy:demo   # 1px
+cd Solo-Code && npm run deploy:demo     # solo
+```
+
+หลัง deploy สำเร็จ ส่งให้ผู้ใช้:
+- **Preview URL** จาก output
+- ลิงก์คู่มือ: `docs/demo-pack.md`
+- Login demo 1px: `phatsawut@demo.an1hem.app` / `an1hem-demo-seed`
+
+## Production
+
+1. เช็ค migration ค้างก่อนเสมอ:
+   ```bash
+   ./scripts/check-migrations-pending.sh
+   ```
+2. ถ้ามี migration ค้าง → **หยุด** แจ้งรายการ แล้วบอกให้ `cd Solo-Code && ./scripts/supabase-push-via-api.sh` ก่อน
+3. ถ้าไม่มี migration ค้าง → deploy:
+   ```bash
+   ./scripts/deploy-vercel.sh production <app>
+   ```
+
+Production URLs:
+- 1px → https://an1hem.app
+- solo → https://solofreelancer.com
+
+หลัง production deploy แนะนำ smoke test:
+```bash
+BASE_URL=https://an1hem.app Anthem-Code/scripts/smoke-public.sh
+BASE_URL=https://solofreelancer.com Solo-Code/scripts/smoke-public.sh
+```
+
+## ข้อห้าม
+
+- ห้ามใช้ `deploy-demo-vercel.sh` กับ `--prod`
+- Production ต้อง `VITE_DEMO_MODE=false` เสมอ
+- ห้าม deploy production ถ้า migration ค้าง (ยกเว้นผู้ใช้ยืนยันชัดเจนว่ารับความเสี่ยง)

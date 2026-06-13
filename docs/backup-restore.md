@@ -65,9 +65,14 @@ export SUPABASE_DB_PASSWORD='...'   # หรือใส่ใน .env
 
 ### Cron ตัวอย่าง (รายวัน 03:00)
 
-```cron
-0 3 * * * cd /path/to/AunAun/Solo-Code && SUPABASE_DB_PASSWORD='...' ./scripts/supabase-backup.sh >> /var/log/supabase-backup.log 2>&1
+```bash
+cd Solo-Code
+./scripts/install-backup-cron.sh   # ติดตั้ง crontab อัตโนมัติ
+# หรือ manual:
+# 0 3 * * * /path/to/AunAun/Solo-Code/scripts/cron-supabase-backup.sh
 ```
+
+Log: `logs/supabase-backup.log` (repo root)
 
 เก็บ off-site: sync `backups/` ไป S3 / Google Drive (encrypted) / VPS อื่น
 
@@ -149,6 +154,8 @@ Checklist จาก [`scale-readiness-checklist.md`](./scale-readiness-checklist
 |---|---|
 | `Solo-Code/scripts/supabase-backup-status.sh` | ดู org plan + จำนวน scheduled backup |
 | `Solo-Code/scripts/supabase-backup.sh` | pg_dump logical backup |
+| `Solo-Code/scripts/cron-supabase-backup.sh` | cron entrypoint + log |
+| `Solo-Code/scripts/install-backup-cron.sh` | `crontab` 03:00 daily |
 | `Solo-Code/scripts/supabase-storage-backup.sh` | inventory / download Storage |
 
 ---
