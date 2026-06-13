@@ -11,6 +11,7 @@
 - [`Solo-Code/docs/performance.md`](../Solo-Code/docs/performance.md)
 - [`Anthem-Code/docs/performance.md`](../Anthem-Code/docs/performance.md)
 - [`docs/ecosystem-hosting.md`](./ecosystem-hosting.md)
+- [`docs/backup-restore.md`](./backup-restore.md)
 - [`docs/deploy-vps.md`](./deploy-vps.md)
 - [`docs/ECOSYSTEM_ROADMAP.md`](./ECOSYSTEM_ROADMAP.md)
 
@@ -81,10 +82,10 @@ Supabase Edge Functions (legacy + ecosystem)
 
 #### Tier 100 CCU
 
-- [ ] ใช้ **Supabase Pro** ($25/mo) ขึ้นต่ำ
+- [ ] ใช้ **Supabase Pro** ($25/mo) ขึ้นต่ำ — org ปัจจุบัน **free** (ตรวจ: `Solo-Code/scripts/supabase-backup-status.sh`)
 - [ ] เปิด **Supavisor (connection pooler)** — transaction mode สำหรับ server-side, session mode สำหรับ Realtime
 - [ ] ตั้ง **Database password rotation** schedule (ทุก 90 วัน)
-- [ ] เปิด **Daily backup** (รวมใน Pro) และทดสอบ restore 1 ครั้ง
+- [ ] เปิด **Daily backup** (รวมใน Pro) และทดสอบ restore 1 ครั้ง — runbook [`backup-restore.md`](./backup-restore.md); ระหว่าง Free ใช้ `supabase-backup.sh` cron
 - [ ] เปิด **pg_stat_statements** ใน Dashboard → ดู slow query รายสัปดาห์
 - [ ] ตั้ง **Statement timeout** ที่เหมาะสม (เช่น 15–30s สำหรับ report หนัก)
 - [ ] ตรวจ **Auth URL Configuration** ครบทุกโดเมน production (ดู [`ecosystem-hosting.md`](./ecosystem-hosting.md))

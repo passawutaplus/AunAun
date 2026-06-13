@@ -134,7 +134,7 @@ UptimeRobot / Better Stack — monitor แยก 3 URL:
 |---------|------------|
 | Staging project | optional สำหรับทดสอบ migration |
 | Migration gate | `Solo-Code/scripts/supabase-push-via-api.sh` ทีละไฟล์ |
-| Backup | Supabase daily backup (Pro) หรือ `pg_dump` schedule |
+| Backup | Supabase daily backup (Pro) หรือ `pg_dump` schedule — ดู [`backup-restore.md`](./backup-restore.md) |
 | Health probe | `scripts/health-check.sh` curl REST `/rest/v1/` |
 
 **ไม่แนะนำ** แยก Supabase เป็น 2 project ตอนนี้ — จะทิ้ง unified auth / Pro tier
