@@ -44,25 +44,33 @@ async function curlTiming(label, url) {
 
 function runLighthouse(name, url) {
   const out = join(outDir, `lighthouse-${name.toLowerCase()}.json`);
+  const seoThreshold = Number(process.env.LH_SEO_MIN ?? 80);
   try {
     execSync(
-      `npx --yes lighthouse "${url}" --only-categories=performance --form-factor=mobile --screenEmulation.mobile=true --throttling.cpuSlowdownMultiplier=4 --output=json --output-path="${out}" --chrome-flags="--headless --no-sandbox --disable-gpu" --quiet`,
+      `npx --yes lighthouse "${url}" --only-categories=performance,seo --form-factor=mobile --screenEmulation.mobile=true --throttling.cpuSlowdownMultiplier=4 --output=json --output-path="${out}" --chrome-flags="--headless --no-sandbox --disable-gpu" --quiet`,
       { stdio: "pipe", timeout: 180000, cwd: root },
     );
     const data = JSON.parse(readFileSync(out, "utf8"));
     const perf = Math.round((data.categories?.performance?.score ?? 0) * 100);
+    const seo = Math.round((data.categories?.seo?.score ?? 0) * 100);
     const audits = data.audits || {};
     const lcp = audits["largest-contentful-paint"]?.numericValue;
     const cls = audits["cumulative-layout-shift"]?.numericValue;
     const inp = audits["interaction-to-next-paint"]?.numericValue ?? audits["experimental-interaction-to-next-paint"]?.numericValue;
+    const perfPass = perf >= 70;
+    const seoPass = seo >= seoThreshold;
     return {
       name,
       url,
       score: perf,
+      seoScore: seo,
       lcpMs: lcp ? Math.round(lcp) : null,
       cls: cls != null ? Number(cls.toFixed(3)) : null,
       inpMs: inp ? Math.round(inp) : null,
-      pass: perf >= 70,
+      pass: perfPass && seoPass,
+      perfPass,
+      seoPass,
+      seoThreshold,
       out,
     };
   } catch (e) {
@@ -112,7 +120,7 @@ for (const t of TARGETS) {
 }
 
 // 2. Lighthouse (landing only — faster)
-console.log("\n→ Lighthouse (mobile, landing)");
+console.log("\n→ Lighthouse (mobile, landing — performance + SEO)");
 const lhRows = [];
 for (const t of TARGETS) {
   process.stdout.write(`  … ${t.name} `);
@@ -121,7 +129,7 @@ for (const t of TARGETS) {
   if (row.error) console.log(`skip (${row.error.slice(0, 60)}…)`);
   else {
     const icon = row.pass ? "✓" : "✗";
-    console.log(`${icon} score ${row.score} LCP ${row.lcpMs}ms CLS ${row.cls}`);
+    console.log(`${icon} perf ${row.score} seo ${row.seoScore} LCP ${row.lcpMs}ms CLS ${row.cls}`);
   }
 }
 

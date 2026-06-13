@@ -28,14 +28,31 @@ ALTER TABLE public.stripe_checkout_fulfillments ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE IF NOT EXISTS public.payment_settings (
   id integer PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-  mock_topup_enabled boolean NOT NULL DEFAULT true,
+  mock_topup_enabled boolean NOT NULL DEFAULT false,
+  mock_ad_pay_enabled boolean NOT NULL DEFAULT false,
   stripe_px_enabled boolean NOT NULL DEFAULT true,
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-INSERT INTO public.payment_settings (id, mock_topup_enabled, stripe_px_enabled)
-VALUES (1, true, true)
+INSERT INTO public.payment_settings (id, mock_topup_enabled, mock_ad_pay_enabled, stripe_px_enabled)
+VALUES (1, false, false, true)
 ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE public.payment_settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS payment_settings_admin_select ON public.payment_settings;
+CREATE POLICY payment_settings_admin_select ON public.payment_settings
+  FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+
+DROP POLICY IF EXISTS payment_settings_admin_update ON public.payment_settings;
+CREATE POLICY payment_settings_admin_update ON public.payment_settings
+  FOR UPDATE TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+REVOKE ALL ON TABLE public.payment_settings FROM anon;
+GRANT SELECT, UPDATE ON TABLE public.payment_settings TO authenticated;
 
 -- ---------------------------------------------------------------------------
 -- shared.wallet_topups — Stripe columns

@@ -1,0 +1,93 @@
+name: Anthem-Code tests
+
+on:
+  push:
+    paths:
+      - "Anthem-Code/**"
+      - ".github/workflows/anthem-code-test.yml"
+  pull_request:
+    paths:
+      - "Anthem-Code/**"
+
+defaults:
+  run:
+    working-directory: Anthem-Code
+
+jobs:
+  unit-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        run: npm install
+
+      - name: Sync ecosystem shared modules
+        run: node ../Solo-Code/scripts/vendor-ecosystem-shared.mjs
+
+      - name: Check vendored files are committed
+        run: git diff --exit-code src/lib/safeUrl.ts src/lib/lineNotificationKinds.vendored.ts src/data/plans.vendored.ts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Production build env guard
+        run: DEPLOY_TARGET=production VITE_DEMO_MODE=false node scripts/check-build-env.mjs
+
+      - name: Unit tests (Vitest)
+        run: npm run test
+
+      - name: npm audit (high+)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Public smoke (curl)
+        run: BASE_URL=https://1px-demo.vercel.app npm run smoke:public
+
+  security-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        run: npm install
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Security smoke (Playwright)
+        run: npm run e2e:smoke
+        env:
+          CI: true
+          E2E_NO_SERVER: "1"
+          E2E_BASE_URL: https://1px-demo.vercel.app
+
+  seo-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        run: npm install
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: SEO e2e (Playwright)
+        run: npm run e2e:seo
+        env:
+          CI: true
+          E2E_NO_SERVER: "1"
+          E2E_BASE_URL: https://1px-demo.vercel.app

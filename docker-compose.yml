@@ -82,7 +82,7 @@ services:
         VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
         VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID:-rvnzjiskqliexysicfmh}
         VITE_SO1O_APP_URL: ${VITE_SO1O_APP_URL:-https://www.solofreelancer.com}
-        VITE_ANTHEM_APP_URL: ${VITE_ANTHEM_APP_URL:-https://an1hem.app}
+        VITE_ANTHEM_APP_URL: ${VITE_ANTHEM_APP_URL:-https://1px-demo.vercel.app}
         VITE_SITE_URL: ${VITE_OPS_HUB_URL:-https://hq.solofreelancer.com}
     expose:
       - "80"

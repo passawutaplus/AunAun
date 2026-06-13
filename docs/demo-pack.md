@@ -8,7 +8,7 @@
 
 | App | URL | คู่มือละเอียด |
 |-----|-----|---------------|
-| **1PX** | https://an1hem.app | [ux-research-review.md](../Anthem-Code/docs/ux-research-review.md) · [/research](https://an1hem.app/research) |
+| **1PX** | https://1px-demo.vercel.app | [ux-research-review.md](../Anthem-Code/docs/ux-research-review.md) · [/research](https://1px-demo.vercel.app/research) |
 | **So1o** | https://www.solofreelancer.com | [ux-research-demo.md](../Solo-Code/docs/ux-research-demo.md) |
 
 > **Ops Hub** — admin only ไม่แนะนำให้ reviewer ทั่วไป

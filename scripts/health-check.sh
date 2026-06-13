@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SO1O_URL="${SO1O_URL:-https://www.solofreelancer.com}"
-ANTHEM_URL="${ANTHEM_URL:-https://an1hem.app}"
+ANTHEM_URL="${ANTHEM_URL:-https://1px-demo.vercel.app}"
 HUB_URL="${HUB_URL:-https://hq.solofreelancer.com}"
 SUPABASE_URL="${SUPABASE_URL:-https://rvnzjiskqliexysicfmh.supabase.co}"
 TIMEOUT="${TIMEOUT:-10}"

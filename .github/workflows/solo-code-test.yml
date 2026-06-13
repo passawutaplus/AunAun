@@ -1,0 +1,48 @@
+name: Solo-Code tests
+
+on:
+  push:
+    paths:
+      - "Solo-Code/**"
+      - ".github/workflows/solo-code-test.yml"
+  pull_request:
+    paths:
+      - "Solo-Code/**"
+
+defaults:
+  run:
+    working-directory: Solo-Code
+
+jobs:
+  unit-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        run: npm install
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests (Vitest)
+        run: npm run test
+
+      - name: Build + service_role bundle guard
+        run: |
+          npm run build
+          if grep -r 'service_role' dist/; then
+            echo "FAIL: service_role found in client bundle"
+            exit 1
+          fi
+
+      - name: npm audit (high+)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Public smoke (curl)
+        run: BASE_URL=https://solofreelancer.com npm run smoke:public
