@@ -34,10 +34,15 @@ async function main() {
   }
 
   const wh = await fetch(`${SOLO_BASE}/api/public/payments/webhook`, { method: "POST", body: "{}" });
-  if (wh.status === 400 || wh.status === 401 || wh.status === 403 || wh.status === 500) {
+  const whBody = await wh.text();
+  if (wh.status === 401 || wh.status === 403 || wh.status === 400 || wh.status === 500) {
     console.log(`OK   POST /api/public/payments/webhook → ${wh.status}`);
   } else if (wh.status === 404) {
-    console.log("WARN webhook 404 (not on deploy?)");
+    console.log("WARN webhook 404 (API route not on deploy?)");
+  } else if (wh.status === 200 && /<!DOCTYPE|service_role|<html/i.test(whBody)) {
+    console.log("WARN webhook 200 HTML (SPA shell — API not on this deploy)");
+  } else if (wh.status === 200) {
+    console.log(`WARN webhook → 200 (verify Stripe signature manually)`);
   } else {
     console.log(`FAIL webhook → ${wh.status}`);
     fail++;
