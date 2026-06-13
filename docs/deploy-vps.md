@@ -91,16 +91,21 @@ Checklist เต็ม: [`Solo-Code/docs/seo-deploy.md`](../Solo-Code/docs/seo-d
 
 ส่งลิงก์ + คู่มือ: [demo-pack.md](demo-pack.md)
 
-## Edge Functions (an1hem AI)
+## Edge Functions (unified project)
 
-ฟังก์ชัน `embed-project`, `similar-images`, `generate-contract` ใช้ **GEMINI_API_KEY** (ไม่ใช้ Lovable gateway แล้ว)
+ฟังก์ชัน AI + notify + LINE อยู่ที่ `Solo-Code/supabase/functions/` บนโปรเจกต์ **`rvnzjiskqliexysicfmh`**
 
 ```bash
-cd Anthem-Code
-supabase link --project-ref YOUR_ANTHEM_REF
-supabase secrets set GEMINI_API_KEY=...
-supabase functions deploy embed-project similar-images generate-contract sync-so1o-tier
+cd Solo-Code
+export SUPABASE_ACCESS_TOKEN=sbp_...
+supabase secrets set GEMINI_API_KEY=... ANTHEM_APP_URL=https://an1hem.app
+supabase functions deploy embed-project similar-images generate-contract \
+  notify-anthem notify-anthem-chat notify-anthem-collab notify-hire-request \
+  line-connect line-webhook line-queue-process \
+  --project-ref rvnzjiskqliexysicfmh
 ```
+
+> `sync-so1o-tier` เป็น legacy — ไม่ต้อง deploy เมื่อใช้ unified project
 
 ## Seed ข้อมูลชุมชน
 

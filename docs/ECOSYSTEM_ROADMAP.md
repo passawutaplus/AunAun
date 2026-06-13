@@ -9,32 +9,51 @@ Deferred items from the Ecosystem Master Plan (Phase 4+). Phase 1–3 implementa
 - **Storage:** แยก 2 กระเป๋า (Anthem / So1o) + UI Settings + upload enforcement บน Anthem
 - **Free caps + วิดีโอ:** published/draft limits, `video_urls`, editor + detail page
 - **AI:** Shared credits (`ecosystem-ai-usage`, `anthem-assistant`), `AnthemAssistantFab`, `generate-contract` debit
-- **LINE:** LIFF page `/line-link`, `line-link-account`, `anthem_*` notify kinds, enqueue on hire
+- **LINE:** LIFF page `/line-link`, `line-connect`, `anthem_*` + `inhouse_*` notify kinds, enqueue on hire
+- **Stripe PX:** top-up (`px_*` lookup keys) + Connect cashout workflow
+- **Notifications:** email templates + `notify-anthem*` edge functions
 
 ## Phase 4 — Deferred (ทีหลัง)
 
 | หัวข้อ | สถานะ | หมายเหตุ |
 |--------|--------|----------|
 | ปิดลูปโพสต์ผลงาน | Stub | `PostToAnthemBanner` ใน Job Tracker → `/portfolio/new?from=so1o` |
-| Gifts/PX cashout | ยังไม่ทำ | Stripe Connect / payout |
 | Boost/โฆษณาผลงาน | ยังไม่ทำ | tier-gated |
-| In-House workspace | **Shipped (MVP)** | org, invites, roles, kanban, chat, monitor — migration `inhouse-workspace.sql` |
 | SSO ข้ามโดเมน | ยังไม่ทำ | parallel กับ unified `profiles` |
 | ไลฟ์ทำงาน | เลื่อนออก | scope แยก |
 | Escrow marketplace | ยังไม่ทำ | ชำระเงินลูกค้าผ่านแพลตฟอร์ม |
 | Ecosystem auto-link Pro+ | ยังไม่ทำ | Brief จากแชท → CRM + Quote draft อัตโนมัติ |
+| In-House workspace | **Shipped (MVP)** | org, invites, roles, kanban, chat, monitor — `inhouse-workspace.sql` |
+| Gifts/PX cashout | **Shipped** | Stripe Connect + admin transfer — ดู `aml-compliance.md` |
 
 ## Deploy checklist
 
 ```bash
-# Edge functions (unified project rvnzjiskqliexysicfmh)
-supabase functions deploy notify-hire-request anthem-assistant ecosystem-ai-usage line-link-account line-queue-process
+cd Solo-Code
+export SUPABASE_ACCESS_TOKEN=sbp_...
 
-# SQL (manual)
-psql ... -f scripts/ecosystem/ecosystem-phase1.sql
+# Notify + LINE
+supabase functions deploy \
+  notify-anthem notify-anthem-chat notify-anthem-collab notify-hire-request \
+  job-match-dispatch line-connect line-webhook line-queue-process \
+  --project-ref rvnzjiskqliexysicfmh
+
+# AI + ecosystem
+supabase functions deploy anthem-assistant ecosystem-ai-usage generate-contract \
+  --project-ref rvnzjiskqliexysicfmh
+
+# SQL (manual if needed)
+# scripts/ecosystem/ecosystem-phase1.sql
+# scripts/ecosystem/stripe-payments.sql
+# scripts/ecosystem/inhouse-workspace.sql
 ```
 
 ## Env
 
-- `VITE_LINE_LIFF_ID` — So1o + Anthem link to `/line-link`
-- Stripe lookup keys: `pro_plus_monthly`, `pro_plus_yearly`
+- `VITE_LINE_LIFF_ID` + `VITE_LINE_CHANNEL_ID` — So1o + Anthem link to `/line-link`
+- Stripe lookup keys: `pro_plus_monthly`, `pro_plus_yearly`, `inhouse_monthly`, `px_500`, `px_2000`, `px_10000`
+
+## เอกสารที่เกี่ยวข้อง
+
+- [ecosystem-notifications.md](./ecosystem-notifications.md)
+- [Solo-Code/docs/stripe.md](../Solo-Code/docs/stripe.md)

@@ -63,7 +63,7 @@ Browser (So1o / an1hem)
 
 Supabase Edge Functions (legacy + ecosystem)
   ├─ AI: anthem-assistant, ai-design-chat, color-mentor, ...
-  ├─ LINE: line-webhook, line-queue-process, line-link-account
+  ├─ LINE: line-webhook, line-queue-process, line-connect
   └─ Async: notify-hire-request, job-match-dispatch
 ```
 
@@ -254,7 +254,7 @@ Shared ecosystem credits: `ecosystem-ai-usage`, Edge Function `anthem-assistant`
 - [ ] Daily trends: อ่านจาก cache เท่านั้น (`dailyTrends.server.ts`)
 - [ ] Background warm-up ไม่ block UI (`useDailyTrendsPrefetch.ts`)
 
-#### In-House (future — marketing only ตอนนี้)
+#### In-House (shipped MVP)
 
 - [ ] เมื่อเปิดจริง: workspace-scoped Realtime, seat limits, shared storage 10 GB/seat
 
@@ -345,7 +345,7 @@ Shared ecosystem credits: `ecosystem-ai-usage`, Edge Function `anthem-assistant`
 | `similar-images` | auth | CPU/API heavy — cap |
 | `embed-project` | owner/admin | background job |
 | `job-match-dispatch` | internal pg_net | queue-friendly |
-| `sync-so1o-tier` | internal | ต่ำ volume |
+| `sync-so1o-tier` | internal | **legacy** — ไม่ต้อง deploy (unified project) |
 
 - [ ] Deploy ครบ: `supabase functions deploy ...` (ดู ECOSYSTEM_ROADMAP)
 - [ ] ทุก function validate JWT — missing env → 500 ไม่ skip
@@ -389,7 +389,7 @@ Deploy จากโปรเจกต์ unified (`Solo-Code/supabase/functions/
 ### LINE
 
 - [ ] `line-webhook` — verify signature
-- [ ] `line-link-account`
+- [ ] `line-connect`
 - [ ] `line-connect`
 - [ ] `line-queue-process` — worker concurrency
 
@@ -397,7 +397,8 @@ Deploy จากโปรเจกต์ unified (`Solo-Code/supabase/functions/
 
 - [ ] `notify-hire-request` — enqueue email + LINE
 - [ ] `job-match-dispatch` — pg_net trigger
-- [ ] `sync-so1o-tier`
+- [ ] `notify-anthem`, `notify-anthem-chat`, `notify-anthem-collab` — email + LINE dispatch
+- [ ] ~~`sync-so1o-tier`~~ — legacy, skip on unified project
 
 ### Media / ML
 

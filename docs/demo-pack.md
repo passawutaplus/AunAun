@@ -9,7 +9,7 @@
 | App | URL | คู่มือละเอียด |
 |-----|-----|---------------|
 | **1PX** | https://1px-demo.vercel.app | [ux-research-review.md](../Anthem-Code/docs/ux-research-review.md) · [/research](https://1px-demo.vercel.app/research) |
-| **So1o** | https://www.solofreelancer.com | [ux-research-demo.md](../Solo-Code/docs/ux-research-demo.md) |
+| **So1o** | https://solo-demo-liart.vercel.app | [ux-research-demo.md](../Solo-Code/docs/ux-research-demo.md) |
 
 > **Ops Hub** — admin only ไม่แนะนำให้ reviewer ทั่วไป
 
@@ -40,8 +40,8 @@
 
 ## Maintainer checklist
 
-- [ ] DNS + HTTPS (`./scripts/deploy-ecosystem.sh --https`)
-- [ ] `./scripts/prepare-demo.sh`
-- [ ] Login demo สำเร็จทั้งสองแอป
+- [x] DNS + HTTPS (`./scripts/deploy-ecosystem.sh --https`) — ใช้ Vercel demo URLs แทน VPS
+- [x] `./scripts/prepare-demo.sh`
+- [ ] Login demo สำเร็จทั้งสองแอป (ทดสอบมือ: 1PX demo account + So1o Google)
 
 ดู [deploy-vps.md](deploy-vps.md)

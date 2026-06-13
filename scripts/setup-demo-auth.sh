@@ -31,6 +31,8 @@ urls = [
   os.environ.get('ANTHEM_SITE_URL', 'https://an1hem.app') + '/**',
   'https://www.an1hem.app/**', 'https://hq.solofreelancer.com/**',
   'http://localhost:3090/**', 'http://127.0.0.1:3090/**',
+  'https://1px-demo.vercel.app/**', 'https://solo-demo-liart.vercel.app/**',
+  'https://*.vercel.app/**',
 ]
 print(json.dumps({
   'site_url': os.environ.get('SITE_URL') or os.environ.get('SO1O_SITE_URL', 'https://solofreelancer.com'),

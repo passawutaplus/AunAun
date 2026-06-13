@@ -70,6 +70,9 @@ cd Solo-Code
 
 - [Wireframe](docs/WIREFRAME.md)
 - [Data schema](docs/DATA-SCHEMA.md)
+- [Ecosystem notifications](../docs/ecosystem-notifications.md)
+- [Manual QA](../docs/MANUAL-TESTING.md) (item 61 — Ops Hub PM routes)
+- [Ecosystem hosting](../docs/ecosystem-hosting.md)
 
 ## ไม่ duplicate
 

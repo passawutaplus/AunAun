@@ -48,6 +48,9 @@
 ```
 https://www.solofreelancer.com/line-link
 https://solofreelancer.com/line-link
+https://an1hem.app/line-link
+http://localhost:5173/line-link
+http://localhost:8080/line-link
 http://localhost:3000/line-link
 ```
 
@@ -75,6 +78,9 @@ http://localhost:3000/line-link
 ```
 https://www.solofreelancer.com/line-link
 https://solofreelancer.com/line-link
+https://an1hem.app/line-link
+http://localhost:5173/line-link
+http://localhost:8080/line-link
 http://localhost:3000/line-link
 ```
 
@@ -143,9 +149,10 @@ node scripts/line-ai-test.mjs
 ```bash
 # 1) สร้างไฟล์ secrets (ห้าม commit)
 cat > Solo-Code/.env.line <<'EOF'
-LINE_CHANNEL_ID=2010369565
+LINE_CHANNEL_ID=ใส่จากช่อง_LINE_Login_ใหม่
 LINE_CHANNEL_SECRET=ใส่จากขั้น 1.4
 LINE_CHANNEL_ACCESS_TOKEN=ใส่จากขั้น 1.2
+LINE_MESSAGING_CHANNEL_SECRET=ใส่จาก_Messaging_API_Basic_settings
 VITE_LINE_LIFF_ID=ใส่จากขั้น 1.3 หรือเว้นว่าง
 EOF
 
@@ -156,19 +163,20 @@ supabase login
 ./scripts/setup-line.sh
 ```
 
-สคริปต์จะ: ตั้ง secrets → deploy `line-connect`, `line-queue-process`, `notify-hire-request` → เติม `VITE_LINE_CHANNEL_ID` ใน `.env`
+สคริปต์จะ: ตั้ง secrets → deploy `line-connect`, `line-webhook`, `line-queue-process`, `notify-hire-request` → เติม `VITE_LINE_CHANNEL_ID` ใน `.env`
 
 ### วิธี B — มือ
 
 ```bash
 cd Solo-Code
 supabase secrets set \
-  LINE_CHANNEL_ID=2010369565 \
+  LINE_CHANNEL_ID='ใส่จากช่อง_LINE_Login' \
   LINE_CHANNEL_SECRET='...' \
   LINE_CHANNEL_ACCESS_TOKEN='...' \
+  LINE_MESSAGING_CHANNEL_SECRET='...' \
   --project-ref rvnzjiskqliexysicfmh
 
-supabase functions deploy line-connect line-queue-process notify-hire-request \
+supabase functions deploy line-connect line-webhook line-queue-process notify-hire-request \
   --project-ref rvnzjiskqliexysicfmh
 ```
 
@@ -177,7 +185,7 @@ supabase functions deploy line-connect line-queue-process notify-hire-request \
 เพิ่มใน env ที่ deploy So1o:
 
 ```
-VITE_LINE_CHANNEL_ID=2010369565
+VITE_LINE_CHANNEL_ID=ใส่จากช่อง_LINE_Login
 VITE_LINE_LIFF_ID=...   # ถ้ามีจากขั้น 1.3
 ```
 

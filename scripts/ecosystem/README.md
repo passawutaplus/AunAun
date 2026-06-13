@@ -16,11 +16,15 @@ Then apply SQL on Supabase (see below) and deploy apps per `docs/deploy-vps.md`.
 
 ## SQL files
 
-| File | Project |
+| File | ใช้เมื่อ |
 |------|---------|
+| `ecosystem-phase1.sql` | ecosystem links, tier, storage caps |
+| `inhouse-workspace.sql` | In-House MVP (org, kanban, chat, canvas) |
+| `inhouse-invite-pending.sql` | pending invites inbox |
+| `stripe-payments.sql` | PX wallet + Stripe RPCs |
+| `seed-catalog.sql` | demo community seed |
 | `anthem-migration.sql` | เก่า — ใช้ `Solo-Code/supabase/manual/apply-anthem-ecosystem.sql` แทน |
 | `solo-migration.sql` | เก่า — รวมใน migrations So1o แล้ว |
-| `seed-catalog.sql` | an1hem — auth.users + profiles + projects + studios + jobs |
 
 หลังรัน `seed-catalog.sql` ฟีด/ดีไซเนอร์/สตูดิโอ/งานจะดึงจาก Supabase เท่านั้น (ไม่มี mock ฝั่ง client แล้ว)
 

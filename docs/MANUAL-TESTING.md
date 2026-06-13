@@ -39,21 +39,25 @@ cd Anthem-Code && npm run test:gate
 10. Smart Brief → share `/brief/:token` → client เปิดได้
 11. Quotation → PDF mockup → share `/track/:token`
 12. Income, Tax sandbox, 50 ทวิ scan (AI)
-13. Subscription Stripe checkout (sandbox)
-14. Clients / Suppliers / Assets / Legal Desk
-15. Planner: Content calendar, To Do, Feedback
-16. Settings: profile, theme, **LINE link** (`/line-link`)
-17. Onboarding ครั้งแรก + Command menu (⌘K)
+13. **Stripe subscriptions** — Pro checkout (sandbox card 4242…)
+14. **Stripe Pro+** — upgrade path จาก Pro (`pro_plus_monthly` / `yearly`)
+15. **Stripe In-House** — per-seat checkout (min 2 seats) → org seat limit sync
+16. Clients / Suppliers / Assets / Legal Desk
+17. Planner: Content calendar, To Do, Feedback
+18. Settings: profile, theme, **LINE link** (`/line-link`), LINE prefs matrix
+19. Onboarding ครั้งแรก + Command menu (⌘K)
 
 ### Token / public pages
 
 18. `/supplier/:token`, `/license/:token`, `/vision/:token`, `/planner/:token`
 19. Invalid token → empty state สุภาพ
 
-### Inhouse
+### Inhouse (shipped MVP)
 
-20. Invite `/inhouse/invite/:token`, kanban, todos, chat, canvas, monitor
-21. Owner vs member permissions
+20. Create org จาก `/pricing` → first workspace
+21. Invite `/inhouse/invite/:token`, pending invites inbox
+22. kanban, todos, chat, canvas, monitor — owner vs member vs viewer
+23. Seat limit enforcement หลัง Stripe seat change
 
 ### Admin (ทุก tab ใน Mission Control)
 
@@ -65,12 +69,14 @@ cd Anthem-Code && npm run test:gate
 
 25. Stripe checkout + webhook (`/api/public/payments/webhook`)
 26. Cron: deadline reminders, payment reminders, daily trends (secret header)
-27. LINE webhook + push (`scripts/line-ai-test.mjs`, `send-line-test-samples.mjs`)
-28. AI assistant stream + quota หมด
+27. LINE webhook + push — OA AI chat (`ทีมงาน`), test samples จาก Settings
+28. LINE prefs: portal + anthem + inhouse kinds เปิด/ปิดแยกกลุ่ม
+29. AI assistant stream + quota หมด
 
-### อีเมล
+### อีเมล / notifications
 
-29. `node scripts/send-test-emails.mjs` / preview transactional templates
+30. `node scripts/send-test-emails.mjs` / preview transactional templates
+31. Anthem `npm run email:preview` — ตรวจ notification templates
 
 ---
 
@@ -83,8 +89,9 @@ cd Anthem-Code && npm run test:gate
 32. Jobs: โพสต์, apply, `/jobs/:id`
 33. Hiring + Collab requests (portfolio manage tabs)
 34. Chat: ส่งข้อความ, กลุ่ม, pin, upload (นอก demo E2E)
-35. Wallet / Earnings / **cashout**
-36. Gifts ส่งข้าม user
+35. Wallet / Earnings / **PX top-up** (`px_*` lookup keys) → `?topup=success`
+36. **Stripe Connect onboard** + cashout submit → admin transfer ที่ `/admin/gifts`
+37. Gifts ส่งข้าม user (welcome_px / holding rules)
 37. Ads: สร้าง campaign, `/ads/:id`
 38. Contracts: `/contracts`, `/contracts/new`, generate PDF
 39. Collections + Inspire boards
@@ -111,30 +118,31 @@ cd Anthem-Code && npm run test:gate
 51. aml, kyc, ads, wallet, contracts, notifications, storage
 52. audit, reports, feedback, system, applications
 
-### Edge / integration
+### Edge / integration / notifications
 
 53. `generate-contract`, `embed-project`, `similar-images` (`/similar/:id`)
-54. `job-match-dispatch` notification
-55. `npm run line-test-push.mjs`
-56. Seed QA data: `npm run db:qa-full` แล้วเดิน flow
+54. `job-match-dispatch` → email + LINE + in-app
+55. Hire / gift / follow → ตรวจ email preview + LINE push
+56. Settings → ปิด `notify_hire` → ส่ง hire อีกครั้ง → ไม่ควรได้ email
+57. Seed QA data: `npm run db:qa-full` แล้วเดิน flow
 
 ---
 
 ## Ecosystem (ข้ามแอป)
 
-57. ลิงก์ So1o → an1hem Showcase ทำงาน
-58. Handoff quotation So1o ↔ Anthem (ถ้าเปิดใช้)
-59. `sync-so1o-tier` หลัง upgrade Anthem
-60. Ops Hub (`hq.solofreelancer.com`) ถ้า deploy
-61. `bash scripts/health-check.sh` ผ่านทุก URL production
+58. ลิงก์ So1o → an1hem (`an1hem.app` / demo `1px-demo.vercel.app`) ทำงาน
+59. Handoff quotation So1o ↔ Anthem (ecosystem_links)
+60. Tier sync Pro/Pro+ ข้ามแอป (unified `profiles.subscription_tier`)
+61. Ops Hub (`hq.solofreelancer.com`) — Inbox, Board, Issues, Hub Work, Cycles, Roadmap
+62. `bash scripts/health-check.sh` ผ่านทุก URL production
 
 ---
 
 ## Security / ก่อน go-live
 
-62. Pentest scope ตาม `Solo-Code/docs/pentest-scope.md` / `Anthem-Code/docs/pentest-scope.md`
-63. Open redirect, XSS paste test (qa-checklist security smoke)
-64. Network: ไม่มี `service_role` ใน response
+63. Pentest scope ตาม `Solo-Code/docs/pentest-scope.md` / `Anthem-Code/docs/pentest-scope.md`
+64. Open redirect, XSS paste test (qa-checklist security smoke)
+65. Network: ไม่มี `service_role` ใน response
 
 ---
 
