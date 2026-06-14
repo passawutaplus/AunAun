@@ -13,7 +13,12 @@ import CyclesPage from "@/pages/CyclesPage";
 import RoadmapPage from "@/pages/RoadmapPage";
 import ActivityPage from "@/pages/ActivityPage";
 import TrackingPage from "@/pages/TrackingPage";
+import MonitorPage from "@/pages/MonitorPage";
 import LoginPage from "@/pages/LoginPage";
+import ConnectionsPage from "@/pages/ConnectionsPage";
+import UsersPage from "@/pages/UsersPage";
+import UserDetailPage from "@/pages/UserDetailPage";
+import RadarPage from "@/pages/RadarPage";
 
 const qc = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 20_000 } },
@@ -51,6 +56,11 @@ export default function App() {
               <Route path="/roadmap" element={<RoadmapPage />} />
               <Route path="/activity" element={<ActivityPage />} />
               <Route path="/tracking" element={<TrackingPage />} />
+              <Route path="/monitor" element={<MonitorPage />} />
+              <Route path="/connections" element={<ConnectionsPage />} />
+              <Route path="/users" element={<UsersPage />} />
+              <Route path="/users/:userId" element={<UserDetailPage />} />
+              <Route path="/radar" element={<RadarPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/inbox" replace />} />
           </Routes>

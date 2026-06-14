@@ -1,4 +1,4 @@
-import { CheckCircle2, Lightbulb } from "lucide-react";
+import { CheckCircle2, Lightbulb, Loader2, Plus } from "lucide-react";
 import type { TrackingFeature } from "@/lib/ecosystem-tracking";
 import { percentBarColor, percentColor, statusLabel } from "@/lib/ecosystem-tracking";
 
@@ -8,7 +8,15 @@ const STATUS_BADGE: Record<TrackingFeature["status"], string> = {
   planned: "bg-surface text-muted border-border",
 };
 
-export function TrackingFeatureCard({ feature }: { feature: TrackingFeature }) {
+type Props = {
+  feature: TrackingFeature;
+  onCreate?: () => void;
+  creating?: boolean;
+};
+
+export function TrackingFeatureCard({ feature, onCreate, creating }: Props) {
+  const canCreate = feature.improve.length > 0 && onCreate;
+
   return (
     <article className="rounded-xl border border-border bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -16,11 +24,24 @@ export function TrackingFeatureCard({ feature }: { feature: TrackingFeature }) {
           <h4 className="font-semibold text-ink">{feature.name}</h4>
           <p className="mt-1 text-sm leading-relaxed text-muted">{feature.description}</p>
         </div>
-        <span
-          className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[feature.status]}`}
-        >
-          {statusLabel(feature.status)}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <span
+            className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[feature.status]}`}
+          >
+            {statusLabel(feature.status)}
+          </span>
+          {canCreate ? (
+            <button
+              type="button"
+              disabled={creating}
+              onClick={onCreate}
+              className="inline-flex items-center gap-1 rounded-lg border border-brand/30 bg-brand/5 px-2 py-1 text-[10px] font-medium text-brand transition hover:bg-brand/10 disabled:opacity-50"
+            >
+              {creating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+              สร้างงาน ({feature.improve.length})
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-3">

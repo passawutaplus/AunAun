@@ -19,18 +19,35 @@ npm run dev
 
 Login ด้วยบัญชี `public.user_roles.role = 'admin'` → เข้า **Inbox**
 
-## ฟีเจอร์ PM (Linear-style)
+## ฟีเจอร์
 
-| หน้า | คำอธิบาย |
-|------|----------|
-| **Inbox** | คิว Triage รวม tickets, feedback, reports, suggestions |
-| **Board** | Kanban 4 คอลัมน์ — ลากย้ายสถานะ |
-| **Issues** | List + filter/search |
-| **Hub Work** | งานภายใน `ops.issues` (OPS-0001) |
-| **Cycles** | Sprint + burndown ง่าย |
-| **Roadmap** | Timeline ตาม quarter |
-| **Activity** | `platform_events` |
-| **Overview** | KPI + alerts + deep links (เดิม) |
+### ภาพรวม & สุขภาพ
+
+| หน้า | Route | คำอธิบาย |
+|------|-------|----------|
+| **ภาพรวม** | `/` | KPI, Flywheel Health, alerts, cross-app smoke |
+| **มอนิเตอร์** | `/monitor` | Health probe, Supabase/Vercel usage, playbooks |
+| **ติดตามระบบ** | `/tracking` | % ความพร้อม 3 เว็บ + sync จาก monitor |
+
+### Ecosystem
+
+| หน้า | Route | คำอธิบาย |
+|------|-------|----------|
+| **เชื่อมต่อ Ecosystem** | `/connections` | Flywheel conversion, SSO metrics, funnel alerts |
+| **User 360** | `/users`, `/users/:id` | ค้นหาบัญชีข้าม So1o + an1hem |
+| **เรดาร์เทรนด์** | `/radar` | Product intel → promote เป็น Hub Issue |
+
+### PM (Linear-style)
+
+| หน้า | Route | คำอธิบาย |
+|------|-------|----------|
+| **Inbox** | `/inbox` | Triage + ecosystem anomalies |
+| **Board** | `/board` | Kanban 4 คอลัมน์ |
+| **Issues** | `/issues` | List + filter/search |
+| **Hub Work** | `/work` | `ops.issues` |
+| **Cycles** | `/cycles` | Sprint |
+| **Roadmap** | `/roadmap` | Quarter + Ecosystem board |
+| **Activity** | `/activity` | `platform_events` (realtime) |
 
 - Drawer รายละเอียด: เปลี่ยน status, priority, admin note
 - **Promote** คิวภายนอก → Hub Issue (`ops_promote_work_item`)

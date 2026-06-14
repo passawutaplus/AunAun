@@ -7,7 +7,8 @@ export type WorkItemSource =
   | "feature_suggestion"
   | "app_feedback"
   | "user_report"
-  | "ops_issue";
+  | "ops_issue"
+  | "ecosystem_alert";
 
 export type BoardColumn = "triage" | "in_progress" | "in_review" | "done";
 
@@ -87,6 +88,12 @@ export function columnToRawStatus(
       in_review: "in_review",
       done: "done",
     },
+    ecosystem_alert: {
+      triage: "open",
+      in_progress: "reviewing",
+      in_review: "reviewing",
+      done: "resolved",
+    },
   };
   return map[source][column] ?? null;
 }
@@ -126,6 +133,11 @@ function toBoardColumn(source: WorkItemSource, status: string): BoardColumn {
       in_review: "in_review",
       done: "done",
       cancelled: "done",
+    },
+    ecosystem_alert: {
+      open: "triage",
+      reviewing: "in_progress",
+      resolved: "done",
     },
   };
   return maps[source][status] ?? "triage";
@@ -290,6 +302,10 @@ export function sortInboxItems(items: WorkItem[]): WorkItem[] {
 
 export function inboxItems(items: WorkItem[]): WorkItem[] {
   return sortInboxItems(items.filter((i) => i.boardColumn === "triage"));
+}
+
+export function ecosystemAlertItems(items: WorkItem[]): WorkItem[] {
+  return inboxItems(items).filter((i) => i.source === "ecosystem_alert");
 }
 
 export function parseWorkItemId(compositeId: string): { source: WorkItemSource; sourceId: string } | null {

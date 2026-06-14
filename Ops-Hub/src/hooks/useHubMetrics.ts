@@ -7,11 +7,12 @@ export type HubView = "all" | "so1o" | "an1hem";
 
 export interface HubAlert {
   id: string;
-  app: "so1o" | "an1hem";
+  app: "so1o" | "an1hem" | "ecosystem";
   severity: "high" | "medium";
   label: string;
   count: number;
   href: string;
+  external?: boolean;
 }
 
 export interface HubMetrics {
@@ -42,7 +43,10 @@ export interface HubMetrics {
 const since = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
 const sinceDays = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString();
 
-function buildAlerts(m: Omit<HubMetrics, "alerts" | "degradedSources" | "partial">): HubAlert[] {
+function buildAlerts(
+  m: Omit<HubMetrics, "alerts" | "degradedSources" | "partial">,
+  funnel?: { stuck_48h: number; clicks_7d: number; converted_7d: number },
+): HubAlert[] {
   const out: HubAlert[] = [];
   const push = (a: HubAlert) => {
     if (a.count > 0) out.push(a);
@@ -120,6 +124,32 @@ function buildAlerts(m: Omit<HubMetrics, "alerts" | "degradedSources" | "partial
     count: m.an1hem.openFeedback,
     href: anthemAdmin("/feedback"),
   });
+
+  if (funnel?.stuck_48h) {
+    push({
+      id: "eco-stuck",
+      app: "ecosystem",
+      severity: funnel.stuck_48h >= 5 ? "high" : "medium",
+      label: "Cross-link ค้าง >48h",
+      count: funnel.stuck_48h,
+      href: "/connections",
+      external: false,
+    });
+  }
+
+  const rate =
+    funnel && funnel.clicks_7d > 0 ? (funnel.converted_7d / funnel.clicks_7d) * 100 : 100;
+  if (funnel && funnel.clicks_7d >= 5 && rate < 15) {
+    push({
+      id: "eco-conversion",
+      app: "ecosystem",
+      severity: "medium",
+      label: "Flywheel conversion ต่ำ",
+      count: Math.round(rate),
+      href: "/connections",
+      external: false,
+    });
+  }
 
   return out.sort((a, b) => (a.severity === "high" ? -1 : 1) - (b.severity === "high" ? -1 : 1));
 }
@@ -220,9 +250,23 @@ export function useHubMetrics() {
         },
       };
 
+      let funnelTotals: { stuck_48h: number; clicks_7d: number; converted_7d: number } | undefined;
+      try {
+        const { data: funnelData } = await supabase.rpc("admin_ecosystem_funnel", { _days: 7 });
+        if (funnelData?.totals) {
+          funnelTotals = {
+            stuck_48h: Number(funnelData.totals.stuck_48h ?? 0),
+            clicks_7d: Number(funnelData.totals.clicks_7d ?? 0),
+            converted_7d: Number(funnelData.totals.converted_7d ?? 0),
+          };
+        }
+      } catch {
+        /* optional */
+      }
+
       return {
         ...core,
-        alerts: buildAlerts(core),
+        alerts: buildAlerts(core, funnelTotals),
         degradedSources: degradedSources.length ? degradedSources : undefined,
         partial: degradedSources.length > 0,
       };
@@ -232,5 +276,6 @@ export function useHubMetrics() {
 
 export function filterAlerts(alerts: HubAlert[], view: HubView) {
   if (view === "all") return alerts;
-  return alerts.filter((a) => a.app === view);
+  if (view === "so1o") return alerts.filter((a) => a.app === "so1o");
+  return alerts.filter((a) => a.app === "an1hem");
 }

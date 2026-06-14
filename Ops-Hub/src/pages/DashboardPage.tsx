@@ -4,8 +4,12 @@ import { useHubView } from "@/contexts/HubViewContext";
 import { useHubMetrics, filterAlerts } from "@/hooks/useHubMetrics";
 import { PageHeader } from "@/components/PageHeader";
 import { AlertQueue } from "@/components/AlertQueue";
+import { FlywheelStrip } from "@/components/FlywheelStrip";
 import { KpiCard } from "@/components/KpiCard";
 import { DeepLinks } from "@/components/DeepLinks";
+import { InfraSummaryStrip } from "@/components/infra/InfraSummaryStrip";
+import { FlywheelHealthScore } from "@/components/FlywheelHealthScore";
+import { CrossAppSmokeSection } from "@/components/CrossAppSmokeSection";
 import { anthemAdmin, so1oAdmin } from "@/lib/links";
 import {
   Users,
@@ -247,6 +251,12 @@ export default function DashboardPage() {
           </div>
         ) : null}
 
+        <InfraSummaryStrip />
+
+        <FlywheelHealthScore />
+
+        <FlywheelStrip />
+
         <section>
           <div className="mb-3">
             <h2 className="text-sm font-semibold text-ink">รายการที่ต้องดูแลด่วน</h2>
@@ -307,6 +317,8 @@ export default function DashboardPage() {
           </div>
           <DeepLinks view={view} />
         </section>
+
+        <CrossAppSmokeSection />
       </main>
     </div>
   );

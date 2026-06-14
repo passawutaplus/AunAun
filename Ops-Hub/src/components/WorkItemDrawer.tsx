@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ExternalLink, Loader2, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useWorkItemDrawer } from "@/contexts/WorkItemDrawerContext";
 import { useWorkItemMutations } from "@/hooks/useWorkItemMutations";
 import { usePromoteWorkItem } from "@/hooks/useOpsIssues";
@@ -29,6 +30,7 @@ export function WorkItemDrawer() {
   const canNote = item.source !== "ops_issue";
   const canPriority = item.source === "support_ticket" || item.source === "ops_issue";
   const canPromote = item.source !== "ops_issue";
+  const isInternalLink = item.deepLink.startsWith("/");
 
   const patch = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -133,14 +135,24 @@ export function WorkItemDrawer() {
           ) : null}
 
           <div className="flex flex-wrap gap-2 pt-2">
-            <a
-              href={item.deepLink}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-surface"
-            >
-              <ExternalLink className="h-3.5 w-3.5" /> เปิดใน Admin
-            </a>
+            {isInternalLink ? (
+              <Link
+                to={item.deepLink}
+                onClick={close}
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-surface"
+              >
+                {item.source === "ecosystem_alert" ? "ไป Connections" : "เปิดหน้า"}
+              </Link>
+            ) : (
+              <a
+                href={item.deepLink}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-surface"
+              >
+                <ExternalLink className="h-3.5 w-3.5" /> เปิดใน Admin
+              </a>
+            )}
             {canPromote ? (
               <button
                 type="button"

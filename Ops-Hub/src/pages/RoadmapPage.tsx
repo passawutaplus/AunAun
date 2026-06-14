@@ -1,6 +1,8 @@
 import { Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { useRoadmapItems } from "@/hooks/useOpsIssues";
+import { DEFERRED_ROADMAP, type DeferredRoadmapItem } from "@/lib/ecosystem-roadmap-deferred";
 
 const ROADMAP_STATUS: Record<string, string> = {
   idea: "ไอเดีย",
@@ -8,6 +10,18 @@ const ROADMAP_STATUS: Record<string, string> = {
   in_progress: "กำลังทำ",
   shipped: "ปล่อยแล้ว",
 };
+
+const DEFERRED_STATUS: Record<string, string> = {
+  stub: "Stub",
+  deferred: "เลื่อนออก",
+  shipped: "ปล่อยแล้ว",
+};
+
+const BOARD_COLUMNS: { id: DeferredRoadmapItem["status"]; title: string }[] = [
+  { id: "stub", title: "Stub / MVP" },
+  { id: "deferred", title: "เลื่อนออก" },
+  { id: "shipped", title: "ปล่อยแล้ว" },
+];
 
 export default function RoadmapPage() {
   const { data, isLoading, error } = useRoadmapItems();
@@ -19,7 +33,7 @@ export default function RoadmapPage() {
     <div className="flex min-h-screen flex-col">
       <PageHeader
         title="แผนงาน"
-        subtitle="ดูว่าจะทำอะไรในแต่ละไตรมาส — รวมข้อเสนอฟีเจอร์จากผู้ใช้ So1o ด้วย"
+        subtitle="Timeline ไตรมาส + ข้อเสนอผู้ใช้ + Ecosystem deferred items"
       />
       <div className="space-y-8 p-6">
         {error ? (
@@ -82,6 +96,62 @@ export default function RoadmapPage() {
                 </div>
               </section>
             ) : null}
+
+            <section>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h2 className="text-sm font-semibold">Ecosystem Roadmap Board</h2>
+                <Link to="/radar" className="text-xs text-brand hover:underline">
+                  ดู Radar →
+                </Link>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-3">
+                {BOARD_COLUMNS.map((col) => (
+                  <div key={col.id} className="rounded-xl border border-border bg-surface/20 p-3">
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                      {col.title}
+                    </h3>
+                    <div className="space-y-2">
+                      {DEFERRED_ROADMAP.filter((i) => i.status === col.id).map((item) => (
+                        <div key={item.id} className="rounded-lg border border-border bg-white px-3 py-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-medium">{item.title}</span>
+                            <span className="text-[10px] text-muted">{item.quarter}</span>
+                          </div>
+                          <p className="mt-1 text-xs text-muted">{item.note}</p>
+                          <Link
+                            to="/radar"
+                            className="mt-1 inline-block text-[10px] text-brand hover:underline"
+                          >
+                            id: {item.id}
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <h2 className="mb-3 text-sm font-semibold">Ecosystem Roadmap (รายการทั้งหมด)</h2>
+              <div className="space-y-2">
+                {DEFERRED_ROADMAP.map((item) => (
+                  <div
+                    key={item.id}
+                    className="rounded-xl border border-border bg-white px-4 py-3"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium">{item.title}</span>
+                      <span className="rounded bg-surface px-2 py-0.5 text-[10px]">
+                        {DEFERRED_STATUS[item.status] ?? item.status}
+                      </span>
+                      <span className="text-[10px] text-muted">{item.quarter}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted">{item.note}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
           </>
         )}
       </div>

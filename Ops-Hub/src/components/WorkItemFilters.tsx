@@ -9,6 +9,7 @@ const SOURCES: (WorkItemSource | "all")[] = [
   "app_feedback",
   "user_report",
   "ops_issue",
+  "ecosystem_alert",
 ];
 
 export function WorkItemFilters({

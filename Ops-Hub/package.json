@@ -7,6 +7,7 @@
     "dev": "vite --port 3090",
     "build": "vite build",
     "preview": "vite preview --port 3090",
+    "deploy:demo": "bash scripts/deploy-demo-vercel.sh",
     "lint": "eslint ."
   },
   "dependencies": {

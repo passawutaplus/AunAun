@@ -37,6 +37,7 @@ const PUBLIC_TABLES = new Set([
   "tester_applications",
   "feature_suggestions",
   "platform_events",
+  "ecosystem_links",
 ]);
 
 /** an1hem marketplace tables (unified project stores these in anthem, not public). */
@@ -58,7 +59,15 @@ const SHARED_TABLES = new Set([
 ]);
 
 /** ops.* PM tables — use opsDb directly for projects/cycles to avoid clashing with anthem.projects */
-const OPS_TABLES = new Set(["cycles", "issues", "issue_comments", "roadmap_items"]);
+const OPS_TABLES = new Set([
+  "cycles",
+  "issues",
+  "issue_comments",
+  "roadmap_items",
+  "radar_items",
+  "settings",
+  "playbook_runs",
+]);
 
 export function schemaForTable(table: string): "public" | "anthem" | "shared" | "ops" {
   if (PUBLIC_TABLES.has(table)) return "public";

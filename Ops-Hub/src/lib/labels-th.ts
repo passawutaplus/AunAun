@@ -10,6 +10,10 @@ export const NAV_LABELS = {
   roadmap: "แผนงาน",
   activity: "กิจกรรม",
   tracking: "ติดตามระบบ",
+  monitor: "มอนิเตอร์",
+  connections: "เชื่อมต่อ Ecosystem",
+  users: "User 360",
+  radar: "เรดาร์เทรนด์",
 } as const;
 
 export const BOARD_COLUMN_LABELS: Record<BoardColumn, string> = {
@@ -25,6 +29,7 @@ export const SOURCE_LABELS_TH: Record<WorkItemSource, string> = {
   app_feedback: "ฟีดแบ็กแอป",
   user_report: "รายงานเนื้อหา",
   ops_issue: "งานภายใน Hub",
+  ecosystem_alert: "แจ้งเตือน Ecosystem",
 };
 
 export const PRIORITY_LABELS: Record<WorkItemPriority, string> = {

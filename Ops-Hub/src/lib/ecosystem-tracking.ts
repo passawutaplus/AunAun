@@ -55,7 +55,7 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
     url: "https://www.solofreelancer.com",
     tagline: "โต๊ะทำงานฟรีแลนซ์ — ใบเสนอราคา งาน ภาษี CRM สำหรับครีเอทีฟไทย",
     overallPercent: 82,
-    tech: "TanStack Start · React 19 · Supabase · Gemini AI · Stripe",
+    tech: "TanStack Start · React 19 · Supabase · Vercel SSR · Gemini AI · Stripe",
     categories: [
       {
         id: "so1o-desk",
@@ -181,6 +181,29 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
           },
         ],
       },
+      {
+        id: "so1o-monitoring",
+        title: "Monitoring & Infra",
+        summary: "Uptime, smoke, Stripe, AI, SEO — รวมศูนย์ที่ Ops Hub /monitor",
+        features: [
+          {
+            name: "Health & smoke",
+            description: "health-check.sh + smoke-public.sh บน production",
+            percent: 85,
+            status: "done",
+            done: ["health-check.sh", "smoke-public CI", "Hub /monitor live probe"],
+            improve: ["Cron health บน VPS", "UptimeRobot 3 URL"],
+          },
+          {
+            name: "Supabase & Vercel usage",
+            description: "Plan, DB/storage %, คำแนะนำอัปเกรด Pro",
+            percent: 90,
+            status: "done",
+            done: ["ops-infra-monitor edge fn", "Ops Hub /monitor page"],
+            improve: ["VERCEL_TOKEN สำหรับ billing API"],
+          },
+        ],
+      },
     ],
   },
   {
@@ -189,7 +212,7 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
     url: "https://an1hem.app",
     tagline: "ตลาดผลงานครีเอทีฟ — โชว์ผลงาน จ้างงาน แชท ของขวัญ Pixel",
     overallPercent: 78,
-    tech: "React 18 · Vite · Supabase · Edge Functions · Recharts",
+    tech: "React 18 · Vite · Supabase · Vercel · Edge Functions · Recharts",
     categories: [
       {
         id: "an1hem-showcase",
@@ -318,7 +341,7 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
             percent: 90,
             status: "done",
             done: ["Overview", "Activity (platform_events)", "Analytics funnel"],
-            improve: ["Session/page analytics ยังไม่ทำ", "System health ยัง placeholder"],
+            improve: ["Session/page analytics ยังไม่ทำ", "System health → ดูที่ Ops Hub /monitor"],
           },
           {
             name: "จัดการเนื้อหา",
@@ -353,6 +376,29 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
           },
         ],
       },
+      {
+        id: "an1hem-monitoring",
+        title: "Monitoring & Infra",
+        summary: "Moderation alerts, wallet queue, Supabase usage — Hub /monitor",
+        features: [
+          {
+            name: "Ops Hub alerts",
+            description: "Reports, cashout, KYC, AML, feedback ใน Overview",
+            percent: 92,
+            status: "done",
+            done: ["Hub KPI + alert queue", "Deep links admin"],
+            improve: ["Realtime platform_events ครบทุก trigger"],
+          },
+          {
+            name: "Supabase Usage admin",
+            description: "admin-supabase-usage + หน้า an1hem admin",
+            percent: 95,
+            status: "done",
+            done: ["Edge function", "AdminSupabaseUsagePage", "รวมใน Ops Hub /monitor"],
+            improve: ["Egress/MAU จาก dashboard billing"],
+          },
+        ],
+      },
     ],
   },
   {
@@ -383,6 +429,14 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
             status: "done",
             done: ["Inbox (5 แหล่งข้อมูล)", "Kanban Board", "Filters", "Drawer แก้ status/note"],
             improve: ["Filter app_feedback ด้วย status (column พร้อมแล้ว)", "Bulk actions"],
+          },
+          {
+            name: "Infra Monitor (/monitor)",
+            description: "Health probe, Supabase/Vercel usage, คำแนะนำ Pro",
+            percent: 95,
+            status: "done",
+            done: ["ops-infra-monitor", "เช็คลิสต์ต่อเว็บ", "Overview infra strip"],
+            improve: ["Snapshot history รายวัน", "UptimeRobot API"],
           },
           {
             name: "รายการทั้งหมด",
@@ -443,8 +497,8 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
             description: "public / anthem / shared / ops routing อัตโนมัติ",
             percent: 90,
             status: "done",
-            done: ["db.ts proxy", "4 schema clients", "Admin RLS"],
-            improve: ["Health check หน้า settings"],
+            done: ["db.ts proxy", "4 schema clients", "Admin RLS", "Health ใน /monitor"],
+            improve: ["Settings page แยก"],
           },
           {
             name: "Migrations ล่าสุด",
@@ -488,4 +542,4 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
   },
 ];
 
-export const TRACKING_UPDATED = "8 มิ.ย. 2026";
+export const TRACKING_UPDATED = "14 มิ.ย. 2026";

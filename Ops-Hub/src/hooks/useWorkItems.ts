@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/db";
 import { safeRows } from "@/lib/resilient-query";
+import { buildEcosystemAnomalies } from "@/lib/ecosystem-anomalies";
+import type { EcosystemFunnelData } from "@/hooks/useEcosystemFunnel";
 import {
   mapAppFeedback,
   mapFeatureSuggestion,
@@ -15,8 +17,39 @@ export type WorkItemsResult = {
   degradedSources: string[];
 };
 
+async function fetchEcosystemFunnelBrief(): Promise<EcosystemFunnelData | undefined> {
+  try {
+    const { data, error } = await supabase.rpc("admin_ecosystem_funnel", { _days: 7 });
+    if (error || !data) return undefined;
+    const parsed = data as {
+      flows: EcosystemFunnelData["flows"];
+      totals: EcosystemFunnelData["totals"];
+    };
+    return {
+      days: 7,
+      since: "",
+      flows: (parsed.flows ?? []).map((f) => ({
+        id: f.id,
+        label: f.label,
+        direction: f.direction,
+        clicks: Number(f.clicks ?? 0),
+        converted: Number(f.converted ?? 0),
+        stuck: Number(f.stuck ?? 0),
+      })),
+      totals: {
+        clicks_24h: Number(parsed.totals?.clicks_24h ?? 0),
+        clicks_7d: Number(parsed.totals?.clicks_7d ?? 0),
+        converted_7d: Number(parsed.totals?.converted_7d ?? 0),
+        stuck_48h: Number(parsed.totals?.stuck_48h ?? 0),
+      },
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 async function fetchWorkItems(): Promise<WorkItemsResult> {
-  const [tickets, suggestions, feedback, reports, opsIssues] = await Promise.all([
+  const [tickets, suggestions, feedback, reports, opsIssues, funnel] = await Promise.all([
     safeRows(
       "support_tickets",
       supabase
@@ -61,6 +94,7 @@ async function fetchWorkItems(): Promise<WorkItemsResult> {
         .order("created_at", { ascending: false })
         .limit(200),
     ),
+    fetchEcosystemFunnelBrief(),
   ]);
 
   const degradedSources: string[] = [];
@@ -86,6 +120,8 @@ async function fetchWorkItems(): Promise<WorkItemsResult> {
       }),
     );
   }
+
+  items.push(...buildEcosystemAnomalies(funnel));
 
   items.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
