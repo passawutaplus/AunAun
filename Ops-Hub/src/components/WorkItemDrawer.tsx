@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { useWorkItemDrawer } from "@/contexts/WorkItemDrawerContext";
 import { useWorkItemMutations } from "@/hooks/useWorkItemMutations";
 import { usePromoteWorkItem } from "@/hooks/useOpsIssues";
+import { IssueCommentsSection } from "@/components/IssueCommentsSection";
+import { OpsIssueFields } from "@/components/OpsIssueFields";
 import {
   BOARD_COLUMNS,
   SOURCE_LABELS,
@@ -27,9 +29,10 @@ export function WorkItemDrawer() {
 
   if (!item) return null;
 
-  const canNote = item.source !== "ops_issue";
+  const canNote = item.source !== "ops_issue" && item.source !== "ecosystem_alert";
   const canPriority = item.source === "support_ticket" || item.source === "ops_issue";
-  const canPromote = item.source !== "ops_issue";
+  const canPromote = item.source !== "ops_issue" && item.source !== "ecosystem_alert";
+  const isOpsIssue = item.source === "ops_issue";
   const isInternalLink = item.deepLink.startsWith("/");
 
   const patch = async (fn: () => Promise<unknown>) => {
@@ -69,7 +72,7 @@ export function WorkItemDrawer() {
           <label className="block text-xs font-semibold text-muted">
             สถานะงาน
             <select
-              disabled={busy}
+              disabled={busy || isOpsIssue}
               value={item.boardColumn}
               onChange={(e) =>
                 patch(() =>
@@ -112,6 +115,13 @@ export function WorkItemDrawer() {
                 ))}
               </select>
             </label>
+          ) : null}
+
+          {isOpsIssue ? (
+            <>
+              <OpsIssueFields item={item} busy={busy} onPatch={patch} />
+              <IssueCommentsSection issueId={item.sourceId} />
+            </>
           ) : null}
 
           {canNote ? (

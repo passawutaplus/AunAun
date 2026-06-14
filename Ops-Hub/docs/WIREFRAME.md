@@ -43,9 +43,9 @@
 | `/inbox` | Inbox | Triage + ecosystem_alert |
 | `/board` | Board | Kanban 4 คอลัมน์ |
 | `/issues` | Issues | List + search/filter |
-| `/work` | Hub Work | `ops.issues` |
-| `/cycles` | Cycles | Sprint |
-| `/roadmap` | Roadmap | Quarter + Ecosystem board |
+| `/work` | Hub Work | `ops.issues` + comments ใน drawer |
+| `/cycles` | Cycles | สร้าง/แก้ Sprint, assign งาน |
+| `/roadmap` | Roadmap | แก้ timeline + ลิงก์ issue |
 | `/activity` | Activity | `platform_events` realtime |
 
 ## Issue drawer

@@ -5,6 +5,7 @@ import { WorkItemRow } from "@/components/WorkItemRow";
 import { useWorkItemDrawer } from "@/contexts/WorkItemDrawerContext";
 import {
   useCreateOpsIssue,
+  useOpsCycles,
   useOpsIssues,
   useOpsProjects,
 } from "@/hooks/useOpsIssues";
@@ -14,10 +15,12 @@ import { friendlyError } from "@/lib/friendly-error";
 export default function WorkPage() {
   const { data: issues, isLoading, error } = useOpsIssues();
   const { data: projects } = useOpsProjects();
+  const { data: cycles } = useOpsCycles();
   const createIssue = useCreateOpsIssue();
   const { open } = useWorkItemDrawer();
   const [title, setTitle] = useState("");
   const [projectId, setProjectId] = useState("");
+  const [cycleId, setCycleId] = useState("");
   const [showForm, setShowForm] = useState(false);
 
   const items = (issues ?? []).map((row) =>
@@ -33,8 +36,10 @@ export default function WorkPage() {
     await createIssue.mutateAsync({
       title: title.trim(),
       project_id: projectId || undefined,
+      cycle_id: cycleId || undefined,
     });
     setTitle("");
+    setCycleId("");
     setShowForm(false);
   };
 
@@ -71,6 +76,18 @@ export default function WorkPage() {
               {(projects ?? []).map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={cycleId}
+              onChange={(e) => setCycleId(e.target.value)}
+              className="mb-3 w-full rounded-lg border border-border px-3 py-2 text-sm"
+            >
+              <option value="">รอบงาน (ไม่ระบุ)</option>
+              {(cycles ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
               ))}
             </select>

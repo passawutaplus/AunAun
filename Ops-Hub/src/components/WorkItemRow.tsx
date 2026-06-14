@@ -19,30 +19,45 @@ const APP_BADGE: Record<string, string> = {
 export function WorkItemRow({
   item,
   onClick,
+  selected,
+  onToggleSelect,
 }: {
   item: WorkItem;
   onClick?: () => void;
+  selected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl border border-border bg-white px-4 py-3 text-left transition hover:border-brand/40 hover:shadow-sm"
-    >
-      {(item.priority === "urgent" || item.priority === "high") && (
-        <AlertCircle className={`h-4 w-4 shrink-0 ${PRIORITY_STYLES[item.priority]}`} />
-      )}
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-xs text-muted">{item.key}</span>
-          <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${APP_BADGE[item.app]}`}>
-            {APP_LABELS[item.app]}
-          </span>
-          <span className="text-[10px] text-muted">{SOURCE_LABELS[item.source]}</span>
+    <div className="flex items-center gap-2">
+      {onToggleSelect ? (
+        <input
+          type="checkbox"
+          checked={!!selected}
+          onChange={() => onToggleSelect(item.id)}
+          className="ml-1 h-4 w-4 shrink-0 rounded border-border"
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : null}
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex flex-1 items-center gap-3 rounded-xl border border-border bg-white px-4 py-3 text-left transition hover:border-brand/40 hover:shadow-sm"
+      >
+        {(item.priority === "urgent" || item.priority === "high") && (
+          <AlertCircle className={`h-4 w-4 shrink-0 ${PRIORITY_STYLES[item.priority]}`} />
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-xs text-muted">{item.key}</span>
+            <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${APP_BADGE[item.app]}`}>
+              {APP_LABELS[item.app]}
+            </span>
+            <span className="text-[10px] text-muted">{SOURCE_LABELS[item.source]}</span>
+          </div>
+          <p className="truncate text-sm font-medium">{item.title}</p>
         </div>
-        <p className="truncate text-sm font-medium">{item.title}</p>
-      </div>
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted" />
-    </button>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted" />
+      </button>
+    </div>
   );
 }

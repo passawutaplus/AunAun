@@ -20,6 +20,8 @@ function tableForSource(source: WorkItemSource): string {
       return "user_reports";
     case "ops_issue":
       return "issues";
+    case "ecosystem_alert":
+      throw new Error("แจ้งเตือน Ecosystem อ่านอย่างเดียว — ดูที่ Connections");
   }
 }
 
@@ -103,5 +105,28 @@ export function useWorkItemMutations() {
     onSuccess: invalidate,
   });
 
-  return { updateStatus, updatePriority, updateAdminNote };
+  const bulkUpdateStatus = useMutation({
+    mutationFn: async ({
+      items,
+      column,
+    }: {
+      items: WorkItem[];
+      column: BoardColumn;
+    }) => {
+      for (const item of items) {
+        if (item.source === "ecosystem_alert") continue;
+        const status = columnToRawStatus(item.source, column);
+        if (!status) continue;
+        const table = tableForSource(item.source);
+        const { error } = await supabase
+          .from(table)
+          .update({ status, updated_at: new Date().toISOString() })
+          .eq("id", item.sourceId);
+        if (error) throw error;
+      }
+    },
+    onSuccess: invalidate,
+  });
+
+  return { updateStatus, updatePriority, updateAdminNote, bulkUpdateStatus };
 }

@@ -175,7 +175,9 @@ export function useUpdateOpsIssue() {
       patch,
     }: {
       id: string;
-      patch: Partial<Pick<OpsIssue, "status" | "priority" | "cycle_id" | "project_id" | "title" | "description">>;
+      patch: Partial<
+        Pick<OpsIssue, "status" | "priority" | "cycle_id" | "project_id" | "title" | "description">
+      >;
     }) => {
       const { error } = await opsDb.from("issues").update(patch).eq("id", id);
       if (error) throw error;
@@ -183,6 +185,103 @@ export function useUpdateOpsIssue() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["ops-issues"] });
       void qc.invalidateQueries({ queryKey: ["work-items"] });
+    },
+  });
+}
+
+export function useCreateCycle() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      name: string;
+      start_date: string;
+      end_date: string;
+      status?: OpsCycle["status"];
+    }) => {
+      const { error } = await opsDb.from("cycles").insert({
+        name: input.name,
+        start_date: input.start_date,
+        end_date: input.end_date,
+        status: input.status ?? "planned",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["ops-cycles"] }),
+  });
+}
+
+export function useUpdateCycle() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      patch,
+    }: {
+      id: string;
+      patch: Partial<Pick<OpsCycle, "name" | "start_date" | "end_date" | "status">>;
+    }) => {
+      const { error } = await opsDb.from("cycles").update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["ops-cycles"] }),
+  });
+}
+
+export function useSetActiveCycle() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (cycleId: string) => {
+      await opsDb.from("cycles").update({ status: "planned" }).eq("status", "active");
+      const { error } = await opsDb.from("cycles").update({ status: "active" }).eq("id", cycleId);
+      if (error) throw error;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["ops-cycles"] }),
+  });
+}
+
+export function useCreateRoadmapItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      title: string;
+      description?: string;
+      quarter: string;
+      status?: string;
+      project_id?: string;
+      issue_id?: string;
+    }) => {
+      const { error } = await opsDb.from("roadmap_items").insert({
+        title: input.title,
+        description: input.description ?? null,
+        quarter: input.quarter,
+        status: input.status ?? "planned",
+        project_id: input.project_id ?? null,
+        issue_id: input.issue_id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["ops-roadmap"] }),
+  });
+}
+
+export function useUpdateRoadmapItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      patch,
+    }: {
+      id: string;
+      patch: Partial<
+        Pick<RoadmapItem, "title" | "description" | "quarter" | "status" | "project_id" | "issue_id">
+      >;
+    }) => {
+      const { error } = await opsDb.from("roadmap_items").update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["ops-roadmap"] });
+      void qc.invalidateQueries({ queryKey: ["ops-issues"] });
     },
   });
 }

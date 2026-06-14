@@ -268,7 +268,7 @@ export function mapOpsIssue(row: Record<string, unknown>): WorkItem {
     adminNote: null,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at ?? row.created_at),
-    deepLink: `/work/${id}`,
+    deepLink: "/work",
     category: row.labels ? (row.labels as string[]).join(", ") : null,
   };
 }
@@ -306,6 +306,11 @@ export function inboxItems(items: WorkItem[]): WorkItem[] {
 
 export function ecosystemAlertItems(items: WorkItem[]): WorkItem[] {
   return inboxItems(items).filter((i) => i.source === "ecosystem_alert");
+}
+
+/** Items backed by DB rows (can mutate status). */
+export function isPersistedWorkItem(item: WorkItem): boolean {
+  return item.source !== "ecosystem_alert";
 }
 
 export function parseWorkItemId(compositeId: string): { source: WorkItemSource; sourceId: string } | null {
