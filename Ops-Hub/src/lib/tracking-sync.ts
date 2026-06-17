@@ -44,7 +44,10 @@ export function computeTrackingSyncOverlay(
     healthOk(data.health, "an1hem") ||
     healthOk(data.health, "1px-demo") ||
     healthOk(data.health, "pixel100");
-  const hubOk = healthOk(data.health, "hq.") || healthOk(data.health, "ops");
+  const hubOk =
+    healthOk(data.health, "so1o-ops-hub") ||
+    healthOk(data.health, "hq.") ||
+    healthOk(data.health, "ops");
   const overlays: TrackingSyncOverlay[] = [];
 
   if (so1oOk) {

@@ -404,7 +404,7 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
   {
     id: "ops_hub",
     name: "Ops Hub",
-    url: "https://hq.solofreelancer.com",
+    url: "https://so1o-ops-hub.vercel.app",
     tagline: "ศูนย์ควบคุมทีมดูแล — รวมคิวงาน KPI และ PM ภายใน",
     overallPercent: 80,
     tech: "React 18 · Vite · TanStack Query · Supabase multi-schema",
@@ -518,7 +518,7 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
             description: "Docker + nginx สำหรับ production",
             percent: 85,
             status: "done",
-            done: ["Dockerfile", "nginx.conf", "hq.solofreelancer.com"],
+            done: ["Dockerfile", "nginx.conf", "so1o-ops-hub.vercel.app"],
             improve: ["CI/CD pipeline อัตโนมัติ"],
           },
         ],

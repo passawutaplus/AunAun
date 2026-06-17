@@ -176,12 +176,12 @@ export const MONITOR_SITES: MonitorSite[] = [
   {
     id: "ops_hub",
     name: "Ops Hub",
-    url: "https://hq.solofreelancer.com",
+    url: "https://so1o-ops-hub.vercel.app",
     items: [
       {
         id: "hub-uptime",
         label: "Uptime",
-        description: "hq.solofreelancer.com health probe",
+        description: "so1o-ops-hub.vercel.app health probe",
         status: "live",
         automated: true,
         healthKey: "Ops Hub",
