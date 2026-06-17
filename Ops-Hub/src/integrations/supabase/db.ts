@@ -14,7 +14,7 @@ const authOpts = {
   flowType: "pkce",
 } as const;
 
-function makeClient(schema: string): SupabaseClient {
+function makeClient(schema: string): SupabaseClient<any, any, any> {
   return createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: authOpts,
     db: { schema },

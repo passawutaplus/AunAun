@@ -12,7 +12,10 @@ export type TrackingSyncOverlay = {
 };
 
 function healthOk(probes: InfraMonitorResponse["health"], urlPart: string) {
-  const probe = probes.find((p) => p.url.includes(urlPart) || p.label.toLowerCase().includes(urlPart));
+  const needle = urlPart.toLowerCase();
+  const probe = probes.find(
+    (p) => p.url.toLowerCase().includes(needle) || p.name.toLowerCase().includes(needle),
+  );
   return probe?.ok === true;
 }
 
@@ -37,7 +40,10 @@ export function computeTrackingSyncOverlay(
 
   const syncedAt = data.generated_at;
   const so1oOk = healthOk(data.health, "solofreelancer");
-  const an1hemOk = healthOk(data.health, "an1hem");
+  const an1hemOk =
+    healthOk(data.health, "an1hem") ||
+    healthOk(data.health, "1px-demo") ||
+    healthOk(data.health, "pixel100");
   const hubOk = healthOk(data.health, "hq.") || healthOk(data.health, "ops");
   const overlays: TrackingSyncOverlay[] = [];
 
@@ -73,7 +79,7 @@ export function computeTrackingSyncOverlay(
     });
   }
 
-  if (hubOk && data.overall_verdict !== "critical") {
+  if (hubOk && data.overall_verdict !== "upgrade_required") {
     overlays.push({
       siteId: "ops_hub",
       syncedAt,
