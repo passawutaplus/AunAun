@@ -21,7 +21,7 @@ function statusFromRoadmap(roadmapId: string): ConnectionFlow["status"] | undefi
 const BASE_FLOWS: ConnectionFlow[] = [
   {
     id: "anthem_hire_quotation",
-    label: "an1hem จ้าง → So1o ใบเสนอราคา",
+    label: "Pixel100 จ้าง → So1o ใบเสนอราคา",
     direction: "anthem_to_so1o",
     description: "Hire CTA + deep-link handoff ไป Quotations tab",
     status: "live",
@@ -29,7 +29,7 @@ const BASE_FLOWS: ConnectionFlow[] = [
   },
   {
     id: "so1o_job_portfolio",
-    label: "So1o งานเสร็จ → an1hem โพสต์ผลงาน",
+    label: "So1o งานเสร็จ → Pixel100 โพสต์ผลงาน",
     direction: "so1o_to_anthem",
     description: "PostToAnthemBanner จาก Job Tracker",
     status: "partial",

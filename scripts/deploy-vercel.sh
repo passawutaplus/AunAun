@@ -96,7 +96,13 @@ deploy_production() {
 
   echo ""
   echo "✓ Production deployed${DEPLOY_URL:+: $DEPLOY_URL}"
-  echo "  Smoke: BASE_URL=${site_url} $dir/scripts/smoke-public.sh"
+  echo "  Smoke (Vercel): BASE_URL=${DEPLOY_URL:-$site_url} $dir/scripts/smoke-public.sh"
+
+  if [[ "$dir" == *Solo-Code* ]]; then
+    echo ""
+    echo "→ Custom domain ${site_url} must point to Vercel (A → 76.76.21.21)."
+    echo "  Run: ./scripts/cutover-solo-dns-vercel.sh"
+  fi
 }
 
 case "$APP_KEY" in

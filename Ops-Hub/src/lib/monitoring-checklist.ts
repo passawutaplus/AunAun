@@ -109,13 +109,13 @@ export const MONITOR_SITES: MonitorSite[] = [
   },
   {
     id: "an1hem",
-    name: "an1hem",
-    url: "https://an1hem.app",
+    name: "Pixel100",
+    url: "https://pixel100.com",
     items: [
       {
         id: "an1hem-uptime",
         label: "Uptime (production)",
-        description: "an1hem.app ตอบ HTTP 2xx/3xx",
+        description: "pixel100.com (canonical) / 1px-demo.vercel.app (demo)",
         status: "live",
         automated: true,
         healthKey: "an1hem",
@@ -240,7 +240,7 @@ export const MONITOR_SITES: MonitorSite[] = [
       {
         id: "eco-vercel",
         label: "Vercel (2 projects)",
-        description: "1px-demo (an1hem) + solo-demo-liart (So1o)",
+        description: "1px-demo (Pixel100) + solo-demo-liart (So1o)",
         status: "live",
         automated: true,
         href: "https://vercel.com/dashboard",

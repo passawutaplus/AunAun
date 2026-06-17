@@ -10,7 +10,7 @@ const FILTER_OPTIONS: { id: ActivityFilter; label: string }[] = [
   { id: "all", label: "ทั้งหมด" },
   { id: "ecosystem", label: "Ecosystem" },
   { id: "so1o", label: "So1o" },
-  { id: "an1hem", label: "an1hem" },
+  { id: "an1hem", label: "Pixel100" },
 ];
 
 function timeAgo(iso: string) {

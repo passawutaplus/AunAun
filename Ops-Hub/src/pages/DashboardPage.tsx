@@ -140,7 +140,7 @@ export default function DashboardPage() {
     ? [
         {
           label: "ผลงานเผยแพร่แล้ว",
-          hint: "โปรเจกต์บน an1hem ที่สถานะ Published — กดเพื่อดูและจัดการ",
+          hint: "โปรเจกต์บน Pixel100 ที่สถานะ Published — กดเพื่อดูและจัดการ",
           value: data?.an1hem.publishedProjects ?? "—",
           icon: FolderKanban,
           href: anthemAdmin("/projects"),
@@ -204,7 +204,7 @@ export default function DashboardPage() {
     ? [
         {
           label: "ฟีดแบ็กใหม่",
-          hint: "ความคิดเห็นจากผู้ใช้ an1hem — กดเพื่ออ่านและตอบกลับ",
+          hint: "ความคิดเห็นจากผู้ใช้ Pixel100 — กดเพื่ออ่านและตอบกลับ",
           value: data?.an1hem.openFeedback ?? "—",
           icon: MessageSquare,
           href: anthemAdmin("/feedback"),
@@ -225,7 +225,7 @@ export default function DashboardPage() {
     <div className="flex min-h-screen flex-col">
       <PageHeader
         title="ภาพรวม"
-        subtitle="ดูสถิติสำคัญของ So1o และ an1hem ในที่เดียว — กดที่กล่องตัวเลขเพื่อเปิดหน้าจัดการ"
+        subtitle="ดูสถิติสำคัญของ So1o และ Pixel100 ในที่เดียว — กดที่กล่องตัวเลขเพื่อเปิดหน้าจัดการ"
         actions={
           <button
             type="button"
@@ -289,17 +289,17 @@ export default function DashboardPage() {
             {showAn1hem ? (
               <div className="space-y-6">
                 <KpiSection
-                  title="an1hem — ผลงาน & งาน"
+                  title="Pixel100 — ผลงาน & งาน"
                   description="ผลงานที่เผยแพร่ ประกาศจ้าง และคำขอจ้าง"
                   items={an1hemContent}
                 />
                 <KpiSection
-                  title="an1hem — ความปลอดภัย & การเงิน"
+                  title="Pixel100 — ความปลอดภัย & การเงิน"
                   description="รายงานเนื้อหา การถอนเงิน ยืนยันตัวตน และ AML"
                   items={an1hemSafety}
                 />
                 <KpiSection
-                  title="an1hem — ความคิดเห็น & คิวงาน"
+                  title="Pixel100 — ความคิดเห็น & คิวงาน"
                   description="ฟีดแบ็กจากผู้ใช้และทางลัดไปกล่องขาเข้า"
                   items={an1hemFeedback}
                 />
@@ -312,7 +312,7 @@ export default function DashboardPage() {
           <div className="mb-3">
             <h2 className="text-sm font-semibold text-ink">เปิดหน้า Admin แต่ละแอป</h2>
             <p className="mt-0.5 text-xs text-muted">
-              ลิงก์ไปยังหน้าจัดการลึกของ So1o และ an1hem
+              ลิงก์ไปยังหน้าจัดการลึกของ So1o และ Pixel100
             </p>
           </div>
           <DeepLinks view={view} />

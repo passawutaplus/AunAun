@@ -131,7 +131,7 @@ const jobTitles = [
 
 async function ensureAuthUser(i) {
   const id = catalogUid(i);
-  const email = `${usernames[i]}@demo.an1hem.app`;
+  const email = `${usernames[i]}@demo.pixel100.com`;
   const { data: existing } = await supabase.auth.admin.getUserById(id);
   if (existing?.user) return id;
 
@@ -166,7 +166,7 @@ async function main() {
     id: catalogUid(i),
     display_name: names[i],
     username: usernames[i],
-    email: `${usernames[i]}@demo.an1hem.app`,
+    email: `${usernames[i]}@demo.pixel100.com`,
     role: roles[i],
     bio: bios[i],
     skills: i === 0 ? ["Logo", "Branding", "Illustrator"] : i === 1 ? ["Branding", "Packaging", "Figma"] : i === 2 ? ["Procreate", "Illustration", "Character"] : ["Design", "Creative"],

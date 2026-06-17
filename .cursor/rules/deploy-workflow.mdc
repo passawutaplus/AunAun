@@ -14,7 +14,7 @@ alwaysApply: true
 | อัปขึ้นเดโม่, ขึ้นเดโม่, deploy demo, อัป demo | Vercel **preview** — แชร์ให้คนอื่นลอง |
 | อัปขึ้น production, ขึ้น prod, deploy production, อัปจริง | Vercel **production** — พนักงานใช้งานจริง |
 
-ระบุแอปได้: `1px`, `anthem`, `an1hem`, `solo`, `so1o` — ถ้าไม่ระบุ ให้เดาจากไฟล์ที่กำลังแก้ (Anthem-Code → 1px, Solo-Code → solo)
+ระบุแอปได้: `pixel100`, `1px`, `anthem`, `an1hem`, `solo`, `so1o` — ถ้าไม่ระบุ ให้เดาจากไฟล์ที่กำลังแก้ (Anthem-Code → pixel100, Solo-Code → solo)
 
 ## เดโม่ (preview)
 
@@ -28,7 +28,7 @@ cd Solo-Code && npm run deploy:demo     # solo
 หลัง deploy สำเร็จ ส่งให้ผู้ใช้:
 - **Preview URL** จาก output
 - ลิงก์คู่มือ: `docs/demo-pack.md`
-- Login demo 1px: `phatsawut@demo.an1hem.app` / `an1hem-demo-seed`
+- Login demo Pixel100: `phatsawut@demo.pixel100.com` / `pixel100-demo-seed`
 
 ## Production
 

@@ -10,7 +10,7 @@ fi
 
 export SITE_URL="${SITE_URL:-https://solofreelancer.com}"
 export SO1O_SITE_URL="${SO1O_SITE_URL:-$SITE_URL}"
-export ANTHEM_SITE_URL="${ANTHEM_SITE_URL:-https://an1hem.app}"
+export ANTHEM_SITE_URL="${ANTHEM_SITE_URL:-https://pixel100.com}"
 
 if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
   echo "⚠  SUPABASE_ACCESS_TOKEN ไม่พบ — ตั้งใน Solo-Code/.env"
@@ -28,7 +28,8 @@ urls = [
   'http://localhost:8081/**', 'http://127.0.0.1:5173/**', 'http://127.0.0.1:8080/**',
   'http://127.0.0.1:3000/**', 'http://127.0.0.1:8081/**',
   'https://solofreelancer.com/**', 'https://www.solofreelancer.com/**',
-  os.environ.get('ANTHEM_SITE_URL', 'https://an1hem.app') + '/**',
+  os.environ.get('ANTHEM_SITE_URL', 'https://pixel100.com') + '/**',
+  'https://www.pixel100.com/**',
   'https://www.an1hem.app/**', 'https://hq.solofreelancer.com/**',
   'http://localhost:3090/**', 'http://127.0.0.1:3090/**',
   'https://1px-demo.vercel.app/**', 'https://solo-demo-liart.vercel.app/**',
