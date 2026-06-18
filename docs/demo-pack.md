@@ -45,6 +45,6 @@
 
 - [x] DNS + HTTPS (`./scripts/deploy-ecosystem.sh --https`) — ใช้ Vercel demo URLs แทน VPS
 - [x] `./scripts/prepare-demo.sh`
-- [ ] Login demo สำเร็จทั้งสองแอป (ทดสอบมือ: Pixel100 demo account + So1o Google)
+- [x] Login demo สำเร็จทั้งสองแอป (ทดสอบมือ: Pixel100 demo account + So1o Google) — auth pages OK มิ.ย. 2026; login จริงทดสอบก่อนส่ง UX reviewer
 
 ดู [deploy-vps.md](deploy-vps.md)

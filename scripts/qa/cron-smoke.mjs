@@ -9,6 +9,7 @@ const CRON_PATHS = [
   "/api/public/cron/deadline-reminders",
   "/api/public/cron/payment-reminders",
   "/api/public/cron/fetch-daily-trends",
+  "/api/public/cron/meeting-capture-cleanup",
 ];
 
 async function main() {

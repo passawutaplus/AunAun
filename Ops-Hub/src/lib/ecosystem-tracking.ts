@@ -81,10 +81,10 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
           {
             name: "Smart Brief & แผนงาน",
             description: "รับบรีฟจากลูกค้า วางแผนโพสต์ และรอบ feedback",
-            percent: 88,
+            percent: 92,
             status: "done",
-            done: ["Smart Brief + ลิงก์ให้ลูกค้ากรอก", "Content Planner", "Feedback rounds", "To Do / Work projects"],
-            improve: ["AI สรุปบรีฟเป็น scope งานอัตโนมัติ"],
+            done: ["Smart Brief + ลิงก์ให้ลูกค้ากรอก", "Meeting Capture (จดประชุม AI)", "Content Planner", "Feedback rounds", "To Do / Work projects"],
+            improve: ["Paste transcript จาก Otter (Phase 2)"],
           },
           {
             name: "CRM & ข้อมูลลูกค้า",
@@ -128,10 +128,10 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
           {
             name: "แพ็กเกจ Pro & ชำระเงิน",
             description: "สมัคร Pro ผ่าน Stripe",
-            percent: 65,
+            percent: 78,
             status: "partial",
-            done: ["Stripe webhook ทำงาน", "แสดงสถานะ subscription"],
-            improve: ["หน้า Pricing บางแพ็กยัง Coming Soon", "In-House workspace ยังไม่เปิด"],
+            done: ["Stripe webhook ทำงาน", "แสดงสถานะ subscription", "In-House workspace (MVP)"],
+            improve: ["หน้า Pricing บางแพ็กยัง Coming Soon"],
           },
         ],
       },
