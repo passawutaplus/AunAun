@@ -1,4 +1,4 @@
--- Paste into Lovable Cloud → So1o (jdqrrzaleapablabphmw) → SQL Editor → Run
+-- Paste into Supabase SQL Editor → project rvnzjiskqliexysicfmh → Run
 
 CREATE OR REPLACE FUNCTION public.sync_user_tier(_user_id uuid)
 RETURNS void

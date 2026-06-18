@@ -1,0 +1,41 @@
+name: Gemini models sync
+
+on:
+  schedule:
+    # Monday 03:00 UTC (10:00 Bangkok)
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: Solo-Code
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Sync Gemini model pins
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node scripts/sync-gemini-models.mjs
+
+      - name: Create PR if models changed
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: chore/gemini-models-sync
+          delete-branch: true
+          title: "chore: sync Gemini model pins"
+          body: |
+            อัปเดตอัตโนมัติจาก `scripts/sync-gemini-models.mjs`
+
+            - ดู `Solo-Code/docs/gemini-models-changelog.md`
+            - แอดมิน: Admin → AI Monitor จะแสดงการเปลี่ยนแปลง
+          commit-message: "chore: sync Gemini model pins"
+          labels: dependencies,automated
