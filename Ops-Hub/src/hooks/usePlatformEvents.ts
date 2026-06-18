@@ -27,6 +27,7 @@ const EVENT_LABELS: Record<string, string> = {
   "ticket.created": "ตั๋วซัพพอร์ตใหม่",
   "ecosystem.cross_link": "Cross-link ข้ามแอป",
   "ecosystem.handoff_completed": "Handoff สำเร็จ",
+  "ecosystem.design_drill": "Design Drill handoff",
   "subscription.upgraded": "อัปเกรด Pro",
 };
 

@@ -17,9 +17,30 @@ export type User360Data = {
     subscription_tier: string | null;
     created_at: string;
   };
-  so1o: { quotations: number; open_tickets: number };
-  an1hem: { projects: number; published: number; feedback: number };
-  ecosystem: { cross_links: number; converted_links: number };
+  so1o: {
+    quotations: number;
+    open_tickets: number;
+    meeting_captures?: number;
+    meeting_captures_recent?: {
+      id: string;
+      title: string | null;
+      status: string;
+      duration_sec: number | null;
+      created_at: string;
+    }[];
+    drill_rerolls_today?: number;
+  };
+  an1hem: {
+    projects: number;
+    published: number;
+    feedback: number;
+    drill_posts?: number;
+  };
+  ecosystem: {
+    cross_links: number;
+    converted_links: number;
+    drill_links?: number;
+  };
   recent_links: {
     id: string;
     source_app: string;

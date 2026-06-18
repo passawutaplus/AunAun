@@ -37,6 +37,14 @@ const BASE_FLOWS: ConnectionFlow[] = [
     roadmapId: "post-loop",
   },
   {
+    id: "so1o_design_drill",
+    label: "So1o Design Drill → an1hem โพสต์",
+    direction: "so1o_to_anthem",
+    description: "Daily drill จาก So1o → portfolio editor + Drill Gallery",
+    status: "live",
+    sourcePages: ["design_drill"],
+  },
+  {
     id: "pro_unified",
     label: "Pro ครั้งเดียว ใช้ทั้ง 2 แอป",
     direction: "other",

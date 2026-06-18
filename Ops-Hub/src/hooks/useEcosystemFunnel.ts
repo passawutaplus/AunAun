@@ -47,6 +47,13 @@ async function fetchLinksFallback(days: number): Promise<EcosystemFunnelData> {
     if (sourceApp === "so1o" && (sourcePage ?? "").includes("post_anthem")) {
       return { id: "so1o_job_portfolio", label: "So1o งานเสร็จ → an1hem โพสต์", direction: "so1o_to_anthem" };
     }
+    if (sourceApp === "so1o" && sourcePage === "design_drill") {
+      return {
+        id: "so1o_design_drill",
+        label: "So1o Design Drill → an1hem โพสต์",
+        direction: "so1o_to_anthem",
+      };
+    }
     if (sourceApp === "so1o") {
       return { id: "so1o_to_anthem", label: "So1o → an1hem", direction: "so1o_to_anthem" };
     }

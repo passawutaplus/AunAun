@@ -4,6 +4,7 @@ import { Loader2, Search, User } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { useUserSearch } from "@/hooks/useUser360";
 import { NAV_LABELS } from "@/lib/labels-th";
+import { formatMemberCode } from "@/lib/memberCode";
 
 export default function UsersPage() {
   const [query, setQuery] = useState("");
@@ -30,7 +31,7 @@ export default function UsersPage() {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="ชื่อ, username หรือ user_id..."
+              placeholder="ชื่อ, username, user_id หรือรหัสสมาชิก S…"
               className="w-full rounded-xl border border-border py-2.5 pl-10 pr-4 text-sm"
             />
           </div>
@@ -67,7 +68,7 @@ export default function UsersPage() {
                     </p>
                     <p className="text-xs text-muted truncate">
                       {u.username ? `@${u.username} · ` : ""}
-                      {u.subscription_tier ?? "free"} · {u.user_id.slice(0, 8)}…
+                      {formatMemberCode(u.user_id)} · {u.subscription_tier ?? "free"}
                     </p>
                   </div>
                 </Link>

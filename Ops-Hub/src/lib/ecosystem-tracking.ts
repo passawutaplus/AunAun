@@ -94,6 +94,19 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
             done: ["Clients CRM", "Suppliers", "Assets vault", "Legal Desk (สิทธิ์ใช้งาน/สัญญา)"],
             improve: ["Shared Squad — ทำงานเป็นทีม (DB พร้อม แต่ UI ยังปิด)"],
           },
+          {
+            name: "Design Drill (Ecosystem)",
+            description: "โจทย์ฝึกออกแบบรายวัน + handoff ไป an1hem โพสต์ผลงาน",
+            percent: 88,
+            status: "done",
+            done: [
+              "Daily drill บน My Desk",
+              "Reroll quota + edge fn",
+              "Cross-link → portfolio editor",
+              "Drill Gallery /drill",
+            ],
+            improve: ["Gamification streak", "แจ้งเตือนเมื่อมีผลงานใหม่ใน gallery"],
+          },
         ],
       },
       {
@@ -145,7 +158,7 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
             description: "KPI สมาชิก กิจกรรม และ analytics",
             percent: 93,
             status: "done",
-            done: ["Overview KPI", "Activity feed", "Users", "Feature usage", "Device analytics"],
+            done: ["Overview KPI", "Activity feed", "Users + member code", "Feature usage", "Device analytics"],
             improve: ["แจ้งเตือน Slack/Email เมื่อมีเหตุการณ์สำคัญ"],
           },
           {
@@ -163,6 +176,14 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
             status: "done",
             done: ["Payments/Stripe", "AI Center + HQ", "Articles CMS", "Banners", "Health check"],
             improve: ["รายงาน MRR รายเดือนอัตโนมัติ"],
+          },
+          {
+            name: "Ecosystem Ops dashboard",
+            description: "Design Drill + Meeting Capture stats ใน Mission Control",
+            percent: 90,
+            status: "done",
+            done: ["section ecosystem_ops", "admin_ecosystem_ops_stats RPC", "ลิงก์ Ops Hub User 360"],
+            improve: ["Cron health สำหรับ meeting cleanup"],
           },
         ],
       },
@@ -423,6 +444,19 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
             improve: ["กราฟแนวโน้ม 7/30 วัน"],
           },
           {
+            name: "User 360 & member code",
+            description: "ค้นหาบัญชีข้ามแอปด้วยรหัส S… + drill/meeting stats",
+            percent: 92,
+            status: "done",
+            done: [
+              "/users search (admin_search_users)",
+              "User 360 drill + meeting",
+              "Deep links ไป So1o/an1hem admin",
+              "Flywheel flow design_drill",
+            ],
+            improve: ["SSO ข้ามโดเมน"],
+          },
+          {
             name: "กล่องขาเข้า & บอร์ด",
             description: "Triage งานใหม่ ลากการ์ดเปลี่ยนสถานะ",
             percent: 88,
@@ -542,4 +576,4 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
   },
 ];
 
-export const TRACKING_UPDATED = "14 มิ.ย. 2026";
+export const TRACKING_UPDATED = "18 มิ.ย. 2026";
