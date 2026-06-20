@@ -306,7 +306,7 @@ async function main() {
     "Positioning: Freelance OS ไทย — แข่ง \"Excel + Line + นักบัญชี\" ไม่ใช่ FlowAccount ตรงๆ",
     "จุดแข็ง So1o: ภาษีไทย (WHT/50ทวิ), Smart Brief, Creative Labs, AI Mentor",
     "จุดแข็ง an1hem: ฟีดชุมชน, จ้างงาน/Collab, Pixel gifting, AI similar images",
-    "Monetization: Stripe subscription (So1o Pro), Credit top-up, โฆษณา an1hem, ค่าธรรมเนียมถอน 15%",
+    "Monetization: Stripe subscription, Credit top-up, โฆษณา/Boost an1hem, ถอน Pixel tier 15%/10%, Escrow 5%/2.5%",
   ]);
 
   // ── 2 Brand CI ──
@@ -366,7 +366,7 @@ async function main() {
     { title: "Social", items: ["ไลค์ · คอมเมนต์ · แชร์", "คอลเลกชัน · Inspire boards", "ติดตามครีเอเตอร์", "รายงานเนื้อหา", "นับยอดวิว"] },
     { title: "จ้างงาน & งาน", items: ["ปุ่มสนใจจ้าง (Hire)", "Collab requests", "บอร์ดงาน /jobs", "สมัครงาน", "แจ้งเตือนงานตรงสกิล"] },
     { title: "สตูดิโอ", items: ["สร้าง/จัดการสตูดิโอ", "โปรไฟล์ /s/:slug", "คำเชิญร่วมก่อตั้ง", "เครดิตทีมบนผลงาน", "Studio manage"] },
-    { title: "Pixel & การเงิน", items: ["กระเป๋า Pixel (PX)", "ส่งของขวัญบนผลงาน", "เติม Pixel · ถอนเงิน", "ค่าธรรมเนียมถอน 15%", "AML/KYC compliance"] },
+    { title: "Pixel & การเงิน", items: ["กระเป๋า Pixel (PX)", "ส่งของขวัญบนผลงาน", "เติม Pixel ใช้ทันที", "ถอน Free 15% / Pro 10%", "Welcome Bonus 100 px", "AML/KYC compliance"] },
     { title: "สัญญา & กฎหมาย", items: ["ร่างสัญญา AI", "Freelance / พนักงาน", "PDPA · ลบบัญชี", "ลิขสิทธิ์ /legal/ip", "Cookie consent"] },
     { title: "Admin (19+ หน้า)", items: ["Users · Projects · Jobs", "Wallet · Gifts · Ads", "AML · KYC · Reports", "Chats · Analytics", "Storage · Audit"] },
   ]);
@@ -396,8 +396,8 @@ async function main() {
     ["Auth", "Supabase Auth · Google OAuth · PKCE flow"],
     ["Payments", "Stripe (subscription + credits) · webhook อัปเดต tier"],
     ["AI", "Google Gemini 2.0 Flash (Edge Functions)"],
-    ["Storage", "Supabase Storage + Cloudflare R2 (an1hem media)"],
-    ["Deploy", "So1o: Cloudflare Workers · an1hem: Vite SPA"],
+    ["Storage", "Supabase Storage (project-media + So1o buckets)"],
+    ["Deploy", "So1o: Vercel SSR · an1hem: Vercel SPA · Ops Hub: Vercel"],
   ], [110, CONTENT_W - 110]);
 
   // ── 6 Competitors ──
@@ -430,8 +430,10 @@ async function main() {
     ["Credit top-up", "AI credits 99–1,290฿", "พร้อม", "ไม่หมดอายุ"],
     ["Team plan", "In-House 599฿/ที่นั่ง", "Coming soon", "2–50 seats"],
     ["Ads", "an1hem 990–5,900฿", "พร้อม", "Basic/Standard/Premium"],
-    ["Platform fee", "ถอน Pixel 15%", "พร้อม (บางส่วน mock)", "AML 24hr hold"],
-    ["Client payment", "QR/Payment link", "Roadmap Q4 2026", "ยังไม่ครบ loop เก็บเงิน"],
+    ["Platform fee", "ถอน Pixel Free 15% / Pro 10%", "พร้อม", "config ใน gift_limits_config"],
+    ["Boost", "an1hem 99–499฿", "พร้อม (Stripe)", "Self-serve + dashboard /portfolio"],
+    ["Escrow", "งานจ้าง Free 5% / Pro 2.5%", "พร้อม (Stripe)", "Optional trust layer /pay/:token"],
+    ["Client payment", "QR/Payment link (job tracker)", "พร้อมบางส่วน", "โอนตรง ไม่รับประกัน refund"],
   ], [95, 150, 80, CONTENT_W - 325]);
 
   subTitle(doc, "Unit Economics (อ้างอิงจากราคาในโค้ด)");
@@ -439,7 +441,7 @@ async function main() {
     "Pro รายปี: 2,388฿ (~199฿/เดือน) ประหยัด 600฿/ปี vs รายเดือน",
     "Credit Pro Pack: ~0.65฿/credit — margin จาก Gemini API cost",
     "Ad Premium: 5,900฿/30 วัน ≈ 30,000 impressions",
-    "Pixel cashout: สุทธิหลังหัก 15% platform fee",
+    "Pixel cashout: Free 15% · Pro 10% · Welcome Bonus สูงสุด 100 px",
   ]);
 
   // ── 8 Marketing ──
@@ -463,8 +465,8 @@ async function main() {
   doc.addPage();
   sectionTitle(doc, 9, "เทคโนโลยี & โครงสร้างข้อมูล");
   table(doc, ["แอป", "Frontend", "Backend", "Deploy"], [
-    ["So1o", "TanStack Start + React 19 + Vite 7", "Supabase + Edge Functions + CF Workers", "Cloudflare Workers"],
-    ["an1hem", "React 18 + Vite + React Router", "Supabase (anthem schema) + R2", "Static SPA / VPS"],
+    ["So1o", "TanStack Start + React 19 + Vite 7", "Supabase + Edge Functions", "Vercel"],
+    ["an1hem", "React 18 + Vite + React Router", "Supabase (anthem schema)", "Vercel SPA"],
   ], [60, 170, 170, CONTENT_W - 400]);
 
   subTitle(doc, "AI Stack (Gemini)");
@@ -497,8 +499,9 @@ async function main() {
     ["Guest Mentor limit", "5 ครั้ง/วัน", "LandingMentorChat"],
     ["Pro ประหยัดรายปี", "600 ฿/ปี", "pricing.tsx"],
     ["In-House seats", "2–50 ที่นั่ง", "pricing.tsx"],
-    ["Platform fee ถอน", "15%", "CashoutDialog"],
-    ["Pixel hold period", "24 ชม.", "amlErrors.ts"],
+    ["Platform fee ถอน", "Free 15% / Pro 10%", "gift_limits_config"],
+    ["Welcome Bonus", "100 px cap", "claim_welcome_mission"],
+    ["PX hold", "0 ชม.", "ใช้ส่ง gift ทันที"],
     ["Migrations applied", "118+", "Supabase (มิ.ย. 2026)"],
   ], [140, 120, CONTENT_W - 260]);
 

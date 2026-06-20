@@ -74,7 +74,7 @@ export function computeTrackingSyncOverlay(
       boosts: [
         {
           categoryId: "an1hem-monitoring",
-          featureName: "System health",
+          featureName: "Ops Hub alerts",
           delta: checklistPct >= 80 ? 3 : 2,
           reason: checklistPct >= 80 ? `Probe OK + checklist ${checklistPct}%` : "Live probe OK",
         },

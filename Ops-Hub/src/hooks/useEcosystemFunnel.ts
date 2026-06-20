@@ -37,7 +37,28 @@ async function fetchLinksFallback(days: number): Promise<EcosystemFunnelData> {
   const rows = data ?? [];
   const flowMap = new Map<string, FunnelFlow>();
 
-  const classify = (sourceApp: string, sourcePage: string | null) => {
+  const classify = (sourceApp: string, sourcePage: string | null, meta: Record<string, unknown>) => {
+    if (meta.escrow_id != null) {
+      if (meta.escrow_released_at != null) {
+        return {
+          id: "escrow_released",
+          label: "Escrow ชำระ → ปล่อยเงิน",
+          direction: "cross_app",
+        };
+      }
+      if (meta.escrow_funded_at != null) {
+        return {
+          id: "escrow_paid",
+          label: "Escrow สร้าง → ลูกค้าชำระ",
+          direction: "cross_app",
+        };
+      }
+      return {
+        id: "escrow_created",
+        label: "Hire/Quotation → Escrow",
+        direction: "cross_app",
+      };
+    }
     if (sourceApp === "anthem" && (sourcePage ?? "").includes("hire")) {
       return { id: "anthem_hire_quotation", label: "an1hem จ้าง → So1o ใบเสนอราคา", direction: "anthem_to_so1o" };
     }
@@ -79,7 +100,11 @@ async function fetchLinksFallback(days: number): Promise<EcosystemFunnelData> {
     }
     if (!converted && ageH >= 48 && ageH <= 720) stuck48h++;
 
-    const c = classify(String(row.source_app), row.source_page ? String(row.source_page) : null);
+    const c = classify(
+      String(row.source_app),
+      row.source_page ? String(row.source_page) : null,
+      meta,
+    );
     const existing = flowMap.get(c.id) ?? { ...c, clicks: 0, converted: 0, stuck: 0 };
     if (created >= new Date(since).getTime()) {
       existing.clicks++;

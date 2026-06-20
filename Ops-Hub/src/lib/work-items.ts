@@ -1,6 +1,7 @@
 import { anthemAdmin, so1oAdmin } from "@/lib/links";
 import type { HubView } from "@/hooks/useHubMetrics";
 import { BOARD_COLUMN_LABELS, SOURCE_LABELS_TH } from "@/lib/labels-th";
+import { triageReport, REPORT_REC_LABEL } from "@/lib/report-ai-triage";
 
 export type WorkItemSource =
   | "support_ticket"
@@ -30,6 +31,9 @@ export type WorkItem = {
   updatedAt: string;
   deepLink: string;
   category: string | null;
+  /** AI triage summary (reports/KYC) — read-only, no auto-action */
+  aiSummary?: string | null;
+  aiMeta?: string | null;
 };
 
 export type WorkItemFilters = {
@@ -229,6 +233,32 @@ export function mapUserReport(row: Record<string, unknown>): WorkItem {
   const id = String(row.id);
   const status = String(row.status);
   const reason = String(row.reason ?? "report");
+  const evidenceFiles = row.evidence_files;
+  const evCount = Array.isArray(evidenceFiles) ? evidenceFiles.length : 0;
+
+  let aiPriority = row.ai_priority != null ? Number(row.ai_priority) : null;
+  let aiSummary = row.ai_summary ? String(row.ai_summary) : null;
+  let aiRec = row.ai_recommendation ? String(row.ai_recommendation) : null;
+
+  if (!aiSummary) {
+    const triage = triageReport({
+      reason,
+      target_type: String(row.target_type ?? "content"),
+      details: row.details ? String(row.details) : "",
+      evidence_count: evCount,
+    });
+    aiPriority = triage.priority_score;
+    aiSummary = triage.summary;
+    aiRec = triage.recommendation;
+  }
+
+  const priority: WorkItemPriority =
+    aiRec === "urgent" || reason === "scam" || reason === "harassment"
+      ? "urgent"
+      : aiPriority != null && aiPriority >= 45
+        ? "high"
+        : "high";
+
   return {
     id: `user_report:${id}`,
     source: "user_report",
@@ -239,12 +269,14 @@ export function mapUserReport(row: Record<string, unknown>): WorkItem {
     description: row.details ? String(row.details) : null,
     rawStatus: status,
     boardColumn: toBoardColumn("user_report", status),
-    priority: reason === "scam" || reason === "harassment" ? "urgent" : "high",
+    priority,
     adminNote: row.admin_note ? String(row.admin_note) : null,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at ?? row.created_at),
     deepLink: anthemAdmin("/reports"),
     category: row.reason ? String(row.reason) : null,
+    aiSummary,
+    aiMeta: `ลำดับ ${aiPriority ?? "—"}/100 · ${REPORT_REC_LABEL[aiRec ?? ""] ?? aiRec ?? "—"}`,
   };
 }
 

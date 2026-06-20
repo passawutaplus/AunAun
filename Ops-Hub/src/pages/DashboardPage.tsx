@@ -4,6 +4,7 @@ import { useHubView } from "@/contexts/HubViewContext";
 import { useHubMetrics, filterAlerts } from "@/hooks/useHubMetrics";
 import { PageHeader } from "@/components/PageHeader";
 import { AlertQueue } from "@/components/AlertQueue";
+import { AdminTriagePanel } from "@/components/AdminTriagePanel";
 import { FlywheelStrip } from "@/components/FlywheelStrip";
 import { KpiCard } from "@/components/KpiCard";
 import { DeepLinks } from "@/components/DeepLinks";
@@ -35,6 +36,7 @@ type KpiDef = {
   icon: LucideIcon;
   href: string;
   accent?: boolean;
+  critical?: boolean;
   external?: boolean;
 };
 
@@ -66,6 +68,7 @@ function KpiSection({
             href={kpi.href}
             external={kpi.external ?? true}
             accent={kpi.accent}
+            critical={kpi.critical}
           />
         ))}
       </div>
@@ -167,11 +170,15 @@ export default function DashboardPage() {
     ? [
         {
           label: "รายงานเนื้อหา",
-          hint: "รายงานเนื้อหาที่ไม่เหมาะสมที่ยังเปิดอยู่ — กดเพื่อตรวจสอบ",
+          hint:
+            data?.an1hem.urgentReports
+              ? `${data.an1hem.urgentReports} รายการ AI จัดเป็น "ด่วน" — ไม่ auto-resolve`
+              : "รายงานเนื้อหาที่ไม่เหมาะสมที่ยังเปิดอยู่ — กดเพื่อตรวจสอบ",
           value: data?.an1hem.openReports ?? "—",
           icon: Flag,
           href: anthemAdmin("/reports"),
           accent: !!data?.an1hem.openReports,
+          critical: !!data?.an1hem.urgentReports,
         },
         {
           label: "คำขอถอน Pixel",
@@ -183,11 +190,15 @@ export default function DashboardPage() {
         },
         {
           label: "KYC รอตรวจ",
-          hint: "เอกสารยืนยันตัวตนที่รอการตรวจสอบ",
+          hint:
+            data?.an1hem.highRiskKyc
+              ? `มี ${data.an1hem.highRiskKyc} รายการ AI ความเสี่ยงสูง — ต้องกดอนุมัติเอง`
+              : "เอกสารยืนยันตัวตนที่รอการตรวจสอบ",
           value: data?.an1hem.pendingKyc ?? "—",
           icon: ShieldCheck,
           href: anthemAdmin("/kyc"),
           accent: !!data?.an1hem.pendingKyc,
+          critical: !!data?.an1hem.highRiskKyc,
         },
         {
           label: "AML ที่ต้องดู",
@@ -266,6 +277,8 @@ export default function DashboardPage() {
           </div>
           <AlertQueue alerts={alerts} />
         </section>
+
+        {(view === "all" || view === "an1hem") && <AdminTriagePanel />}
 
         {isLoading ? (
           <p className="text-sm text-muted">กำลังโหลดตัวเลข...</p>

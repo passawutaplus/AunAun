@@ -37,14 +37,14 @@ GRANT SELECT, UPDATE ON TABLE public.payment_settings TO authenticated;
 -- ---------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.mock_pay_ad_application(_id uuid)
-RETURNS public.ad_applications
+RETURNS anthem.ad_applications
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
   _uid uuid := auth.uid();
-  _row public.ad_applications%ROWTYPE;
+  _row anthem.ad_applications%ROWTYPE;
 BEGIN
   IF _uid IS NULL THEN
     RAISE EXCEPTION 'UNAUTHORIZED';
@@ -58,7 +58,7 @@ BEGIN
   END IF;
 
   SELECT * INTO _row
-  FROM public.ad_applications
+  FROM anthem.ad_applications
   WHERE id = _id
   FOR UPDATE;
 
@@ -74,7 +74,7 @@ BEGIN
     RAISE EXCEPTION 'INVALID_STATUS';
   END IF;
 
-  UPDATE public.ad_applications SET
+  UPDATE anthem.ad_applications SET
     status = 'paid',
     paid_at = now(),
     updated_at = now()

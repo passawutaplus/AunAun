@@ -18,10 +18,10 @@ Deferred items from the Ecosystem Master Plan (Phase 4+). Phase 1–3 implementa
 | หัวข้อ | สถานะ | หมายเหตุ |
 |--------|--------|----------|
 | ปิดลูปโพสต์ผลงาน | Stub | `PostToAnthemBanner` ใน Job Tracker → `/portfolio/new?from=so1o` |
-| Boost/โฆษณาผลงาน | ยังไม่ทำ | tier-gated |
+| Boost/โฆษณาผลงาน | **Shipped** | Self-serve `post_boosts` + Stripe `boost_*` (แยกจาก Ads แบรนด์) |
 | SSO ข้ามโดเมน | ยังไม่ทำ | parallel กับ unified `profiles` |
 | ไลฟ์ทำงาน | เลื่อนออก | scope แยก |
-| Escrow marketplace | ยังไม่ทำ | ชำระเงินลูกค้าผ่านแพลตฟอร์ม |
+| Escrow marketplace | **Shipped** | `marketplace_escrows` + `/pay/:token` + admin release |
 | Ecosystem auto-link Pro+ | ยังไม่ทำ | Brief จากแชท → CRM + Quote draft อัตโนมัติ |
 | In-House workspace | **Shipped (MVP)** | org, invites, roles, kanban, chat, monitor — `inhouse-workspace.sql` |
 | Gifts/PX cashout | **Shipped** | Stripe Connect + admin transfer — ดู `aml-compliance.md` |

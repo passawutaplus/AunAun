@@ -39,6 +39,7 @@ nano deploy/nginx/default.conf
 #    และเปิด Google OAuth provider
 
 # 4) Build & run
+sudo ./scripts/setup-vps-firewall.sh   # optional — ufw 22/80/443 only
 docker compose up --build -d
 docker compose ps
 ```
@@ -73,6 +74,16 @@ hq.solofreelancer.com
 ```
 
 OAuth / Google login **ต้องการ HTTPS** บน production
+
+## Firewall & security headers
+
+Production ใช้ **Vercel** — ดู [`firewall.md`](./firewall.md)
+
+VPS self-host:
+
+- `scripts/setup-vps-firewall.sh` — UFW baseline
+- `deploy/nginx/security-headers.conf` — HSTS, Permissions-Policy, X-Frame-Options
+- `limit_req` บน So1o `/api/` ใน `deploy/nginx/default.conf`
 
 ## SEO หลัง Deploy
 

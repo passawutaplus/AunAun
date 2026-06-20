@@ -41,7 +41,11 @@ export function WorkItemRow({
       <button
         type="button"
         onClick={onClick}
-        className="flex flex-1 items-center gap-3 rounded-xl border border-border bg-white px-4 py-3 text-left transition hover:border-brand/40 hover:shadow-sm"
+        className={`flex flex-1 items-center gap-3 rounded-xl border bg-white px-4 py-3 text-left transition hover:border-brand/40 hover:shadow-sm ${
+          item.aiSummary && item.priority === "urgent"
+            ? "border-red-200 ring-1 ring-red-100"
+            : "border-border"
+        }`}
       >
         {(item.priority === "urgent" || item.priority === "high") && (
           <AlertCircle className={`h-4 w-4 shrink-0 ${PRIORITY_STYLES[item.priority]}`} />
@@ -55,6 +59,9 @@ export function WorkItemRow({
             <span className="text-[10px] text-muted">{SOURCE_LABELS[item.source]}</span>
           </div>
           <p className="truncate text-sm font-medium">{item.title}</p>
+          {item.aiSummary ? (
+            <p className="mt-0.5 line-clamp-1 text-xs text-violet-700/90">{item.aiSummary}</p>
+          ) : null}
         </div>
         <ChevronRight className="h-4 w-4 shrink-0 text-muted" />
       </button>

@@ -131,7 +131,7 @@ BEGIN
         ELSE ARRAY['Design','Creative']
       END,
       CASE WHEN i % 3 = 0 THEN 'Bangkok' WHEN i % 3 = 1 THEN 'Chiang Mai' ELSE 'Phuket' END,
-      'https://api.dicebear.com/7.x/shapes/svg?seed=' || usernames[i + 1] || '&backgroundColor=fff4e6,ffe8cc'
+      public.pick_avatar_pool_url_by_seed(usernames[i + 1])
     )
     ON CONFLICT (user_id) DO UPDATE SET
       display_name = EXCLUDED.display_name,
@@ -197,7 +197,7 @@ BEGIN
       studio_names[i + 1],
       'สตูดิโอครีเอทีฟไทย',
       'ทีมดีไซน์และคราฟต์จากชุมชน an1hem',
-      'https://api.dicebear.com/7.x/shapes/svg?seed=studio-' || studio_slugs[i + 1],
+      public.pick_avatar_pool_url_by_seed('studio-' || studio_slugs[i + 1]),
       'https://picsum.photos/seed/an1hem-studio-' || i::text || '/1200/400',
       CASE WHEN i % 2 = 0 THEN 'Bangkok' ELSE 'Chiang Mai' END,
       i % 3 = 0,
@@ -249,6 +249,60 @@ BEGIN
       'project'
     )
     ON CONFLICT (id) DO NOTHING;
+  END LOOP;
+
+  -- Designer Area: 3 community posts per work category (24 total)
+  FOR ci IN 0..7 LOOP
+    FOR pi IN 0..2 LOOP
+      uid := public._catalog_demo_uid((ci * 3 + pi) % 20);
+      INSERT INTO anthem.community_posts (
+        id, author_id, post_kind, title, body, category, tags,
+        gallery_urls, video_urls, question_topic, status,
+        reply_count, like_count, view_count
+      ) VALUES (
+        ('00000000-0000-0000-0004-0000000000' || lpad(to_hex(ci * 3 + pi), 2, '0'))::uuid,
+        uid,
+        CASE pi
+          WHEN 2 THEN 'question'
+          ELSE 'tip'
+        END,
+        CASE ci
+          WHEN 0 THEN CASE pi WHEN 0 THEN 'จัด Hierarchy โปสเตอร์ให้อ่านง่ายใน 3 วินาที' WHEN 1 THEN 'เช็กสี Pantone ก่อนส่งไฟล์พิมพ์' ELSE 'ส่งไฟล์โลโก้ให้ลูกค้าแบบไหนดีที่สุด?' END
+          WHEN 1 THEN CASE pi WHEN 0 THEN 'Brush 3 ตัวที่ใช้บ่อยใน Procreate' WHEN 1 THEN 'ขอ feedback สไตล์ภาพประกอบ character' ELSE 'ส่ง line art ให้ art director ตรวจก่อนลงสี' END
+          WHEN 2 THEN CASE pi WHEN 0 THEN 'ตั้ง White Balance ในสตูดิโอสินค้า' WHEN 1 THEN 'เรตถ่ายพรีเวดดิ้งช่วง low season ควรอยู่ที่เท่าไหร่?' ELSE 'แสงธรรมชาติ vs Softbox สำหรับพอร์ตเทรต' END
+          WHEN 3 THEN CASE pi WHEN 0 THEN 'Export Premiere สำหรับ Reels / TikTok' WHEN 1 THEN 'Color grade โทนอบอุ่นแบบ cinematic' ELSE 'Laptop ตัดตอบ 4K แนะนำสเปกเท่าไหร่?' END
+          WHEN 4 THEN CASE pi WHEN 0 THEN 'เผาเซรามิกไม่ให้แตก — คุมความชื้นก่อนเข้าเตา' WHEN 1 THEN 'ขายงาน craft ออนไลน์ช่องทางไหนดี?' ELSE 'จัด composition งานจักสานให้ดูพรีเมียม' END
+          WHEN 5 THEN CASE pi WHEN 0 THEN 'Figma Auto Layout ที่ใช้บ่อยใน design system' WHEN 1 THEN 'Portfolio web ควรมีกี่โปรเจกต์?' ELSE 'เช็ก contrast ก่อนส่งมอบ UI' END
+          WHEN 6 THEN CASE pi WHEN 0 THEN 'Hook 3 วิแรกของ TikTok ที่ยึดคนไว้' WHEN 1 THEN 'โพสต์ IG กี่ครั้งต่อสัปดาห์ถึงจะโต?' ELSE 'เขียน caption ให้คนอ่านจบ' END
+          ELSE CASE pi WHEN 0 THEN 'Mix vocal podcast ให้ชัดบนมือถือ' WHEN 1 THEN 'ใช้ sample ในงาน commercial ต้องระวังอะไร?' ELSE 'เลือก BPM ตาม mood board' END
+        END,
+        'เนื้อหา mock สำหรับ Designer Area — หมวด ' || (ARRAY['Graphic','Illustration','Photography','Video','Craft','Web/UI','Content','Music/Audio'])[ci + 1],
+        (ARRAY['Graphic','Illustration','Photography','Video','Craft','Web/UI','Content','Music/Audio'])[ci + 1],
+        ARRAY['designer-area', 'seed', 'mock'],
+        CASE WHEN pi < 2 THEN ARRAY['https://picsum.photos/seed/an1hem-community-' || ci::text || '-' || pi::text || '/800/1000'] ELSE ARRAY[]::text[] END,
+        ARRAY[]::text[],
+        CASE WHEN pi = 2 THEN
+          CASE ci % 7
+            WHEN 0 THEN 'client' WHEN 1 THEN 'feedback' WHEN 2 THEN 'career'
+            WHEN 3 THEN 'tools' WHEN 4 THEN 'career' WHEN 5 THEN 'feedback'
+            WHEN 6 THEN 'technique' ELSE 'other'
+          END
+        ELSE NULL END,
+        'published',
+        (ci + pi) % 5,
+        3 + ((ci * 7 + pi * 11) % 40),
+        40 + ((ci * 13 + pi * 17) % 350)
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title,
+        body = EXCLUDED.body,
+        category = EXCLUDED.category,
+        tags = EXCLUDED.tags,
+        gallery_urls = EXCLUDED.gallery_urls,
+        like_count = EXCLUDED.like_count,
+        view_count = EXCLUDED.view_count,
+        updated_at = now();
+    END LOOP;
   END LOOP;
 END;
 $seed$;

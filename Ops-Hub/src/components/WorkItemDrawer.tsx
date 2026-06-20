@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ExternalLink, Loader2, X } from "lucide-react";
+import { ExternalLink, Loader2, X, Bot } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useWorkItemDrawer } from "@/contexts/WorkItemDrawerContext";
 import { useWorkItemMutations } from "@/hooks/useWorkItemMutations";
@@ -65,6 +65,18 @@ export function WorkItemDrawer() {
           <h2 className="text-lg font-semibold">{item.title}</h2>
           {item.description ? (
             <p className="whitespace-pre-wrap text-sm text-muted">{item.description}</p>
+          ) : null}
+
+          {item.aiSummary ? (
+            <div className="rounded-lg border border-violet-200 bg-violet-50/60 p-3 text-sm">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-violet-800">
+                <Bot className="h-3.5 w-3.5" /> AI สรุป (ไม่อนุมัติแทน)
+              </p>
+              {item.aiMeta ? (
+                <p className="mt-1 text-[11px] text-violet-700/80">{item.aiMeta}</p>
+              ) : null}
+              <p className="mt-1.5 leading-relaxed text-ink/90">{item.aiSummary}</p>
+            </div>
           ) : null}
 
           {err ? <p className="text-sm text-red-600">{err}</p> : null}

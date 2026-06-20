@@ -8,10 +8,11 @@ export type HubView = "all" | "so1o" | "an1hem";
 export interface HubAlert {
   id: string;
   app: "so1o" | "an1hem" | "ecosystem";
-  severity: "high" | "medium";
+  severity: "critical" | "high" | "medium";
   label: string;
   count: number;
   href: string;
+  hint?: string;
   external?: boolean;
 }
 
@@ -34,6 +35,8 @@ export interface HubMetrics {
     pendingKyc: number;
     openAml: number;
     openFeedback: number;
+    highRiskKyc: number;
+    urgentReports: number;
   };
   alerts: HubAlert[];
   degradedSources?: string[];
@@ -92,6 +95,28 @@ function buildAlerts(
     count: m.an1hem.pendingKyc,
     href: anthemAdmin("/kyc"),
   });
+  if (m.an1hem.highRiskKyc > 0) {
+    push({
+      id: "an1hem-kyc-high-risk",
+      app: "an1hem",
+      severity: "critical",
+      label: "KYC ความเสี่ยงสูง (AI)",
+      count: m.an1hem.highRiskKyc,
+      href: anthemAdmin("/kyc"),
+      hint: "AI สรุปแล้ว — ต้องกดอนุมัติ/ปฏิเสธเอง",
+    });
+  }
+  if (m.an1hem.urgentReports > 0) {
+    push({
+      id: "an1hem-reports-urgent",
+      app: "an1hem",
+      severity: "critical",
+      label: "รายงานด่วน (AI)",
+      count: m.an1hem.urgentReports,
+      href: anthemAdmin("/reports"),
+      hint: "scam/harassment ฯลฯ — ไม่ auto-resolve",
+    });
+  }
   push({
     id: "an1hem-aml",
     app: "an1hem",
@@ -151,7 +176,8 @@ function buildAlerts(
     });
   }
 
-  return out.sort((a, b) => (a.severity === "high" ? -1 : 1) - (b.severity === "high" ? -1 : 1));
+  const rank = (s: HubAlert["severity"]) => (s === "critical" ? 0 : s === "high" ? 1 : 2);
+  return out.sort((a, b) => rank(a.severity) - rank(b.severity));
 }
 
 export function useHubMetrics() {
@@ -223,6 +249,22 @@ export function useHubMetrics() {
           "app_feedback",
           supabase.from("app_feedback").select("*", { count: "exact", head: true }),
         ),
+        safeCount(
+          "kyc_high_risk",
+          supabase
+            .from("kyc_requests")
+            .select("*", { count: "exact", head: true })
+            .eq("status", "pending")
+            .gt("ai_risk_score", 40),
+        ),
+        safeCount(
+          "reports_urgent",
+          supabase
+            .from("user_reports")
+            .select("*", { count: "exact", head: true })
+            .in("status", ["open", "reviewing"])
+            .or("ai_priority.gte.70,ai_recommendation.eq.urgent"),
+        ),
       ]);
 
       const degradedSources = results.filter((r) => r.error).map((r) => r.source);
@@ -247,6 +289,8 @@ export function useHubMetrics() {
           pendingKyc: n(12),
           openAml: n(13),
           openFeedback: n(14),
+          highRiskKyc: n(15),
+          urgentReports: n(16),
         },
       };
 

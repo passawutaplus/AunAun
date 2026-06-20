@@ -232,8 +232,8 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
     name: "an1hem",
     url: "https://an1hem.app",
     tagline: "ตลาดผลงานครีเอทีฟ — โชว์ผลงาน จ้างงาน แชท ของขวัญ Pixel",
-    overallPercent: 78,
-    tech: "React 18 · Vite · Supabase · Vercel · Edge Functions · Recharts",
+    overallPercent: 82,
+    tech: "React 18 · Vite · Supabase · Vercel · Edge Functions · Gemini AI · Recharts",
     categories: [
       {
         id: "an1hem-showcase",
@@ -243,10 +243,24 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
           {
             name: "ฟีด & ผลงาน",
             description: "Explore / For You / Following โพสต์ผลงาน ไลค์ คอมเมนต์",
-            percent: 92,
+            percent: 94,
             status: "done",
-            done: ["Home feed", "Project CRUD + editor", "Project detail", "Explore by tag/tool", "Similar images (AI)"],
-            improve: ["Algorithm แนะนำผลงานปรับตามพฤติกรรม"],
+            done: [
+              "Home feed + For You blend (interest + search signals)",
+              "Project CRUD + editor",
+              "Community posts (Tips/Q&A) ในฟีด",
+              "Explore by tag/tool",
+              "Similar images (AI)",
+            ],
+            improve: ["A/B test น้ำหนัก For You vs Explore"],
+          },
+          {
+            name: "Boost โพสต์",
+            description: "ครีเอเตอร์ boost ผลงาน/โพสต์ชุมชน — แพ็ก 99/249/499฿",
+            percent: 88,
+            status: "done",
+            done: ["Boost dialog + Stripe price lookup", "Boosted badge ในฟีด", "boostFeedSort จัดลำดับ"],
+            improve: ["Admin ดูรายการ boost ที่ active", "รายงานรายได้ boost รายเดือน"],
           },
           {
             name: "โปรไฟล์ & คอลเลกชัน",
@@ -311,12 +325,26 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
             improve: ["ตั้ง payment_settings.mock_topup_enabled=false ก่อน production"],
           },
           {
-            name: "ถอนเงิน & KYC",
-            description: "ขอถอน Pixel ยืนยันตัวตน",
-            percent: 75,
+            name: "Creator Eligibility & KYC",
+            description: "เกณฑ์เปิดรับของขวัญ/ถอนเงิน + ยืนยันตัวตนพร้อมเอกสาร",
+            percent: 88,
+            status: "done",
+            done: [
+              "Eligibility gates (welcome → publish → followers → verify)",
+              "อัปโหลดเอกสาร KYC (บัตร/เซลฟี่/สมุดบัญชี)",
+              "PDPA consent + สิทธิ์ข้อมูล (Data Rights)",
+              "Admin KYC approve/reject + audit log การเข้าถึงเอกสาร",
+              "AI Pre-review: สรุปความเสี่ยง + คำแนะนำ (คนกดอนุมัติเท่านั้น)",
+            ],
+            improve: ["Stripe Connect payout จริง", "แจ้งเตือน LINE เมื่อ KYC ผ่าน/ปฏิเสธ"],
+          },
+          {
+            name: "ถอนเงิน (Cashout)",
+            description: "ขอถอน Pixel หลังผ่าน KYC",
+            percent: 78,
             status: "partial",
-            done: ["Cashout request", "KYC flow", "Admin approve/reject"],
-            improve: ["อัปโหลดเอกสาร KYC ยังไม่มี", "Stripe/Omise payout จริง"],
+            done: ["Cashout request queue", "Admin approve ใน /admin/gifts", "Hub alert คิวถอน"],
+            improve: ["Stripe/Omise payout อัตโนมัติ", "สถานะ transfer แบบ real-time"],
           },
           {
             name: "AML & ความปลอดภัย",
@@ -331,7 +359,7 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
       {
         id: "an1hem-ads-mod",
         title: "โฆษณา & กลั่นกรอง",
-        summary: "แคมเปญโฆษณา รายงานเนื้อหา ฟีดแบ็ก",
+        summary: "แคมเปญโฆษณา รายงานเนื้อหา ฟีดแบ็ก และ moderation",
         features: [
           {
             name: "โฆษณา",
@@ -342,43 +370,101 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
             improve: ["ชำระเงินโฆษณายัง mock"],
           },
           {
-            name: "รายงาน & ฟีดแบ็ก",
-            description: "รายงานเนื้อหาไม่เหมาะสม และ feedback จากผู้ใช้",
+            name: "รายงานเนื้อหา (Reports)",
+            description: "คำร้องเรียนจากผู้ใช้ — แอดมินตัดสินใจเองทุกเคส",
+            percent: 92,
+            status: "done",
+            done: [
+              "Report dialog + evidence upload",
+              "Admin /reports: ตรวจสอบ/ดำเนินการ/ปัด + CSV",
+              "Strike / แบน 3 วัน จากรายงาน (คนกด)",
+              "Ops Hub inbox + alert badge",
+            ],
+            improve: ["AI สรุปรายงานใน queue — ทำแล้ว (ไม่ auto-resolve)", "Bulk hide community posts"],
+          },
+          {
+            name: "Moderation & โทษอัตโนมัติ (เบา)",
+            description: "Strike/ban/mute + โทษคำหยาบอัตโนมัติเท่านั้น",
             percent: 90,
             status: "done",
-            done: ["Report dialog + evidence", "Feedback FAB", "Admin moderation workflow"],
-            improve: ["เชื่อม Ops Hub inbox อัตโนมัติ"],
+            done: [
+              "record_profanity_strike → strike/ban อัตโนมัติ (โทษเบา)",
+              "maskProfanity + CommunityProfanityHint",
+              "Admin /moderation: ประวัติ action + ปลดแบน",
+              "check_user_can_post gate ก่อนโพสต์",
+            ],
+            improve: ["Admin dashboard สรุป strike 7 วัน", "Appeal flow ให้ user อุทธรณ์"],
+          },
+          {
+            name: "ฟีดแบ็ก & โพสต์ชุมชน",
+            description: "Feedback FAB + จัดการ community posts",
+            percent: 88,
+            status: "done",
+            done: ["Feedback FAB + /admin/feedback", "Admin /community ซ่อนโพสต์", "Hub alert ฟีดแบ็กใหม่"],
+            improve: ["Bulk hide community posts"],
           },
         ],
       },
       {
         id: "an1hem-admin",
-        title: "Admin (27 หมวด)",
-        summary: "หน้าจัดการ an1hem",
+        title: "Admin Control Center (30+ หน้า)",
+        summary: "หน้าจัดการ an1hem — badge คิว + Realtime + Ops Hub",
         features: [
           {
             name: "Dashboard & Analytics",
-            description: "KPI กราฟ 14 วัน เหตุการณ์สด",
-            percent: 90,
+            description: "KPI กราฟ 14 วัน เหตุการณ์สด + แผนพัฒนา",
+            percent: 92,
             status: "done",
-            done: ["Overview", "Activity (platform_events)", "Analytics funnel"],
-            improve: ["Session/page analytics ยังไม่ทำ", "System health → ดูที่ Ops Hub /monitor"],
+            done: [
+              "Overview + AdminAlertBanner",
+              "Activity (platform_events)",
+              "Analytics funnel",
+              "Dev tasks roadmap",
+              "Realtime invalidate คิว",
+            ],
+            improve: ["Session/page analytics", "System health → Ops Hub /monitor"],
           },
           {
-            name: "จัดการเนื้อหา",
-            description: "ผู้ใช้ ผลงาน คอมเมนต์ คอลเลกชัน",
-            percent: 85,
+            name: "จัดการเนื้อหา & ชุมชน",
+            description: "ผู้ใช้ ผลงาน คอมเมนต์ คอลเลกชัน โพสต์ชุมชน",
+            percent: 88,
             status: "done",
-            done: ["Users (role/freeze)", "Projects (status/delete)", "Comments/Collections delete"],
-            improve: ["Studios/Inspire — monitor อย่างเดียว"],
+            done: [
+              "Users (role/freeze)",
+              "Projects (status/delete)",
+              "Comments/Collections/Inspire",
+              "Community posts admin",
+              "Jobs + applications + hiring/collab",
+            ],
+            improve: ["Studios — แก้/ลบจาก admin", "Bulk actions"],
           },
           {
             name: "Wallet & Compliance",
-            description: "กระเป๋า ของขวัญ ถอน KYC AML",
-            percent: 88,
+            description: "กระเป๋า ของขวัญ ถอน KYC AML — คิว badge บน sidebar",
+            percent: 92,
             status: "done",
-            done: ["Wallet ledger", "Gifts + cashout approve", "KYC/AML admin"],
-            improve: ["Stripe payout จริง"],
+            done: [
+              "Wallet ledger",
+              "Gifts + cashout approve",
+              "KYC admin + เอกสาร signed URL + PDPA mask",
+              "AML flags freeze/unfreeze",
+              "Sidebar badges: reports/cashout/kyc/aml",
+            ],
+            improve: ["Stripe payout จริง", "One-click จาก Hub → admin deep link"],
+          },
+          {
+            name: "AI-assisted Admin (สรุปเท่านั้น)",
+            description: "AI ช่วยอ่าน/สรุป — ไม่อนุมัติแทนคน (ยกเว้นโทษเบาอัตโนมัติ)",
+            percent: 85,
+            status: "done",
+            done: [
+              "KYC AI Pre-review card (risk score + summary + แนะนำ)",
+              "AI Monitor /admin/ai (credits, by feature, top users)",
+              "Admin audit log (KYC document access)",
+              "นโยบาย: KYC/Reports/Ads → คนกด approve เสมอ",
+              "ข้อยกเว้น: profanity strike/ban → ระบบลงโทษเอง",
+            ],
+            improve: ["AI สรุปรายงานเนื้อหาใน queue", "Confidence threshold แสดงใน UI"],
           },
         ],
       },
@@ -404,11 +490,16 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
         features: [
           {
             name: "Ops Hub alerts",
-            description: "Reports, cashout, KYC, AML, feedback ใน Overview",
-            percent: 92,
+            description: "Reports, cashout, KYC, AML, feedback, hiring — Overview + Inbox",
+            percent: 94,
             status: "done",
-            done: ["Hub KPI + alert queue", "Deep links admin"],
-            improve: ["Realtime platform_events ครบทุก trigger"],
+            done: [
+              "Hub KPI + alert queue (7 แหล่ง)",
+              "Deep links → an1hem admin tabs",
+              "Inbox triage user_reports + app_feedback",
+              "Admin sidebar badge sync คิวเดียวกัน",
+            ],
+            improve: ["Realtime platform_events ครบทุก trigger", "Alert เมื่อ KYC มี AI risk สูง"],
           },
           {
             name: "Supabase Usage admin",
@@ -427,7 +518,7 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
     name: "Ops Hub",
     url: "https://so1o-ops-hub.vercel.app",
     tagline: "ศูนย์ควบคุมทีมดูแล — รวมคิวงาน KPI และ PM ภายใน",
-    overallPercent: 80,
+    overallPercent: 83,
     tech: "React 18 · Vite · TanStack Query · Supabase multi-schema",
     categories: [
       {
@@ -438,9 +529,14 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
           {
             name: "ภาพรวม (Overview)",
             description: "KPI แยกหมวด กดลิงก์ไป Admin ได้ แจ้งเตือนด่วน",
-            percent: 92,
+            percent: 94,
             status: "done",
-            done: ["KPI cards แยกหมวด So1o/an1hem", "Alert queue", "Deep links", "ภาษาไทย + คำอธิบาย"],
+            done: [
+              "KPI cards แยกหมวด So1o/an1hem",
+              "Alert queue: tickets, reports, KYC, cashout, AML, feedback, hiring",
+              "Deep links → admin tabs",
+              "นโยบาย AI: สรุปช่วย triage — อนุมัติต้องกดเอง",
+            ],
             improve: ["กราฟแนวโน้ม 7/30 วัน"],
           },
           {
@@ -564,10 +660,16 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
         features: [
           {
             name: "Ecosystem Tracker",
-            description: "สรุปฟีเจอร์ % ความพร้อม และสิ่งที่พัฒนาต่อได้",
+            description: "สรุปฟีเจอร์ % ความพร้อม + นโยบาย AI admin",
             percent: 100,
             status: "done",
-            done: ["แยกเว็บ แยกหมวด", "คำอธิบายภาษาไทย", "% + สิ่งที่ทำแล้ว/พัฒนาต่อ"],
+            done: [
+              "แยกเว็บ แยกหมวด",
+              "คำอธิบายภาษาไทย",
+              "% + สิ่งที่ทำแล้ว/พัฒนาต่อ",
+              "AI policy: สรุปช่วย triage · อนุมัติคนกด · profanity auto",
+              "Sync overlay จาก /monitor health probe",
+            ],
             improve: ["อัปเดตอัตโนมัติจาก git/DB", "ประวัติการเปลี่ยนแปลงตามวันที่"],
           },
         ],
@@ -576,4 +678,4 @@ export const ECOSYSTEM_SITES: TrackingSite[] = [
   },
 ];
 
-export const TRACKING_UPDATED = "18 มิ.ย. 2026";
+export const TRACKING_UPDATED = "19 มิ.ย. 2026";

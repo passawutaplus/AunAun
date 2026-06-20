@@ -119,6 +119,21 @@ Brand/email domain: `1px.app` / `notify.1px.app` (ไม่ใช่ app URL ห
 | Collab request | `CollabDialog.tsx` | `notify-anthem-collab` | `collab-request` | `anthem_collab` |
 | Job match | DB trigger | `job-match-dispatch` | `job-match` | `anthem_job_match` |
 
+### Boost & Escrow (Stripe webhook → payment_notifications)
+
+| เหตุการณ์ | Trigger | In-app (`payment_notifications`) | Email |
+|-----------|---------|----------------------------------|-------|
+| Boost สำเร็จ | Stripe webhook `kind=boost` | `boost.purchased` | — |
+| Ads ชำระแล้ว | Stripe webhook `kind=ad` | `ad.paid` | — |
+| Escrow ลูกค้าชำระ | Stripe webhook `kind=escrow` | `escrow.funded` | `deposit-received` (freelancer) |
+| Escrow ปล่อยเงิน | Admin `/api/payments/escrow/release` | `escrow.released` | — |
+| Escrow ลูกค้าอนุมัติ | RPC `client_approve_escrow` | — (admin release ตาม) | — |
+| Escrow ข้อพิพาท | RPC `client_dispute_escrow` | — (admin panel) | — |
+
+LINE kinds ที่แนะนำเพิ่มใน `lineNotificationKinds.ts`: `portal_escrow_funded`, `portal_escrow_released` (MVP ใช้ in-app + email ก่อน)
+
+Client portal: `https://solofreelancer.com/pay/:portal_token` (anon RPC token-gated)
+
 Client helper: `Anthem-Code/src/lib/notifyAnthem.ts` (fire-and-forget)
 
 Shared dispatch: `Solo-Code/supabase/functions/_shared/anthem-notify-dispatch.ts`

@@ -188,7 +188,7 @@ BEGIN
   END IF;
 
   SELECT hold_hours INTO _hold_hours FROM shared.gift_limits_config WHERE id = 1;
-  _hold_hours := COALESCE(_hold_hours, 24);
+  _hold_hours := COALESCE(_hold_hours, 0);
 
   INSERT INTO public.stripe_checkout_fulfillments (
     stripe_session_id, user_id, kind, price_id, quantity, environment
@@ -258,7 +258,7 @@ BEGIN
   END IF;
 
   SELECT hold_hours INTO _hold_hours FROM shared.gift_limits_config WHERE id = 1;
-  _hold_hours := COALESCE(_hold_hours, 24);
+  _hold_hours := COALESCE(_hold_hours, 0);
 
   INSERT INTO shared.wallet_topups (
     user_id, amount_px, method, status, payment_provider, available_at

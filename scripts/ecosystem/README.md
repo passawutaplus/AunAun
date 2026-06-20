@@ -39,6 +39,29 @@ Then apply SQL on Supabase (see below) and deploy apps per `docs/deploy-vps.md`.
 cd Anthem-Code && node scripts/run-seed.mjs
 ```
 
+### Avatar pool (Magnific หรือ Gemini)
+
+สคริปต์ `generate-avatar-pool.mjs` สร้างรูป avatar ล่วงหน้า อัปโหลด Supabase Storage แล้วบันทึกใน `avatar_pool` — seed จะแจกให้ demo profiles อัตโนมัติ
+
+ใส่ใน `scripts/ecosystem/.env.seed.local`:
+
+```bash
+MAGNIFIC_API_KEY=your_magnific_api_key   # จาก magnific.com → Settings → API Keys
+SUPABASE_URL=https://....supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+# optional
+AVATAR_POOL_COUNT=80
+MAGNIFIC_IMAGE_MODEL=hyperflux             # hyperflux | flux-2-klein | flux-2-turbo
+```
+
+รัน:
+
+```bash
+node scripts/ecosystem/generate-avatar-pool.mjs
+```
+
+ถ้าไม่มี `MAGNIFIC_API_KEY` จะ fallback ไป Gemini (`GEMINI_API_KEY`) — บังคับ provider ได้ด้วย `--provider=gemini` หรือ `--provider=magnific`
+
 ## Long term
 
 Merge both apps onto one Supabase project — see `docs/ecosystem-unified-account.md`.

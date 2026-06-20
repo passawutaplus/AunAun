@@ -11,6 +11,7 @@
 | `test-ecosystem.sh` | unit + curl smoke + health |
 | `test-ecosystem-full.sh` | ทุกอย่างด้านล่าง + `stripe:verify` |
 | `qa/security-smoke.mjs` | service_role + open redirect |
+| `qa/security-headers-smoke.mjs` | HSTS + baseline headers (Vercel production) |
 | `qa/performance-timing.mjs` | TTFB curl (default gate `QA_TTFB_MS=2500`) |
 | `qa/invalid-token.mjs` | invalid share tokens |
 | `qa/cron-smoke.mjs` | cron/webhook ต้องไม่ open |

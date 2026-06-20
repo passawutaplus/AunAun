@@ -70,8 +70,8 @@ Supabase Edge Functions (legacy + ecosystem)
 
 | แอป | รูปแบบ deploy | หมายเหตุ |
 |---|---|---|
-| **So1o** | TanStack Start SSR — Vercel / Cloudflare Worker / VPS Node | มี server routes + AI streaming |
-| **an1hem** | Vite static SPA — nginx / Cloudflare Pages | เรียก Supabase จาก browser โดยตรง |
+| **So1o** | TanStack Start SSR — **Vercel** (production) / VPS Docker (fallback) | มี server routes + AI streaming |
+| **an1hem** | Vite static SPA — **Vercel** / nginx VPS | เรียก Supabase จาก browser โดยตรง |
 | **Supabase** | Managed Postgres + Realtime + Storage | SPOF ของทั้ง ecosystem |
 
 ---
@@ -130,7 +130,7 @@ Supabase Edge Functions (legacy + ecosystem)
 - [ ] Enforcement quota ฝั่ง upload ทำงาน (Anthem + So1o)
 - [ ] Client-side compress ก่อน upload (`Solo-Code/src/lib/imageCompress.ts`, Anthem upload flow)
 - [ ] ที่ 400 Pro users × ~300 MB → วางแผน overage (comment ใน storageQuotas แล้ว)
-- [ ] ที่ 1,000 CCU: **CDN หน้า public media** — Supabase transform URL หรือ Cloudflare หน้า bucket
+- [ ] ที่ 1,000 CCU: **CDN หน้า public media** — Supabase transform URL หรือ Vercel CDN หน้า bucket
 - [ ] ตั้ง **Storage bandwidth alert** ใน Supabase Dashboard
 - [ ] Lifecycle policy สำหรับ temp upload / draft ที่ไม่ใช้แล้ว
 
@@ -161,8 +161,9 @@ Shared ecosystem credits: `ecosystem-ai-usage`, Edge Function `anthem-assistant`
 - [ ] `service_role` ไม่ปรากฏใน client bundle — `grep -r "service_role" dist/` ก่อน deploy
 - [ ] Webhook verify signature ก่อน process (`/api/public/payments/webhook`)
 - [ ] Cron routes ใช้ `authorizeCronBearer` (`cronAuth.server.ts`)
-- [ ] CSP / security headers เปิด (`Solo-Code/src/start.ts`)
-- [ ] WAF / rate limit ที่ edge (Cloudflare) สำหรับ `/api/*` และ auth endpoints
+- [x] CSP / security headers เปิด (`Solo-Code/src/start.ts` + `vercel.json`)
+- [x] App rate limit บน public API (`Solo-Code/src/lib/rateLimit.server.ts`)
+- [ ] Vercel Firewall rate rules ที่ edge สำหรับ `/api/*` และ auth endpoints — ดู [`firewall.md`](./firewall.md)
 - [ ] Pentest scope อ่านแล้ว — logical rate-limit test อยู่ใน scope ([`pentest-scope.md`](../Solo-Code/docs/pentest-scope.md))
 
 ### 2.8 Monitoring & Ops
@@ -184,7 +185,7 @@ Shared ecosystem credits: `ecosystem-ai-usage`, Edge Function `anthem-assistant`
 ## 3. So1o Freelancer — Scale Checklist
 
 **Stack:** React 19 + TanStack Start SSR + Supabase client + server functions  
-**Deploy:** Vercel (`vercel.json` — 60s, 1GB) หรือ VPS Docker หรือ Cloudflare Worker
+**Deploy:** Vercel (`vercel.json` — 60s, 1GB) — production; VPS Docker เป็น fallback
 
 ### 3.1 Frontend & Caching
 
@@ -286,7 +287,7 @@ Shared ecosystem credits: `ecosystem-ai-usage`, Edge Function `anthem-assistant`
 ## 4. an1hem Showcase — Scale Checklist
 
 **Stack:** React 18 + Vite SPA + Supabase client โดยตรง  
-**Deploy:** static nginx / Cloudflare Pages — **scale ง่ายที่สุด**
+**Deploy:** Vercel static — **scale ง่ายที่สุด**; nginx VPS เป็น fallback
 
 ### 4.1 Frontend & Caching
 
@@ -294,7 +295,7 @@ Shared ecosystem credits: `ecosystem-ai-usage`, Edge Function `anthem-assistant`
 - [ ] Admin / legal / earnings / advertise → `React.lazy()` ใน `App.tsx`
 - [ ] ทุก `<img>` มี width + height (CLS)
 - [ ] WebP + lazy loading below fold
-- [ ] ที่ 1,000 CCU: **Cloudflare Pages / CDN** — ไม่ serve static จาก VPS เดียว
+- [ ] ที่ 1,000 CCU: **Vercel CDN** — ไม่ serve static จาก VPS เดียว
 
 ### 4.2 Read-Heavy Pages (Hot path)
 
@@ -362,7 +363,7 @@ Shared ecosystem credits: `ecosystem-ai-usage`, Edge Function `anthem-assistant`
 
 #### 100 CCU
 
-- [ ] Static deploy บน Cloudflare Pages หรือ nginx บน VPS
+- [ ] Static deploy บน Vercel (production) หรือ nginx บน VPS (fallback)
 - [ ] `VITE_SUPABASE_*` + `VITE_SO1O_APP_URL` ถูกต้อง
 - [ ] CORS / CSP อนุญาต Supabase domain
 
@@ -481,8 +482,7 @@ Deploy จากโปรเจกต์ unified (`Solo-Code/supabase/functions/
 | รายการ | ประมาณ |
 |---|---|
 | Supabase Pro | ~$25/mo |
-| Vercel Pro / VPS | ~$20–50/mo |
-| Cloudflare (free/pro) | $0–20/mo |
+| Vercel Pro | ~$20–50/mo |
 | Gemini API | ขึ้นกับ AI usage — ตั้ง budget cap |
 | Stripe | % transaction |
 | **รวม infra** | **~฿2,000–4,000/mo** |
@@ -493,7 +493,7 @@ Deploy จากโปรเจกต์ unified (`Solo-Code/supabase/functions/
 |---|---|
 | Supabase Team + compute | ~$100–300/mo |
 | Multi-instance SSR / Vercel | ~$50–200/mo |
-| CDN + WAF | ~$20–100/mo |
+| Vercel Firewall + CDN | ~$20–100/mo |
 | Gemini API | **รายการใหญ่** — ต้อง cap + monitor |
 | Storage overage | วางแผนตาม quota/user |
 | Monitoring (Sentry, uptime) | ~$30–100/mo |
@@ -519,7 +519,7 @@ Deploy จากโปรเจกต์ unified (`Solo-Code/supabase/functions/
 ### Phase 2 — Hardening (เป้า 1 เดือน)
 
 - [ ] Staging project + migration gate
-- [ ] WAF rate limits ที่ edge
+- [ ] Vercel Firewall rate rules ที่ edge — ดู [`firewall.md`](./firewall.md)
 - [ ] Queue depth alerting
 - [ ] Runbook + incident drill 1 ครั้ง
 - [ ] Storage CDN สำหรับ public media

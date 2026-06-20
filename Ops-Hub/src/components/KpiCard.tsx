@@ -8,6 +8,7 @@ export function KpiCard({
   hint,
   icon: Icon,
   accent,
+  critical,
   href,
   external = true,
 }: {
@@ -16,11 +17,16 @@ export function KpiCard({
   hint?: string;
   icon: LucideIcon;
   accent?: boolean;
+  critical?: boolean;
   href?: string;
   external?: boolean;
 }) {
   const className = `group rounded-xl border bg-white p-4 shadow-sm transition ${
-    accent ? "border-brand/30 bg-brand-soft/40" : "border-border"
+    critical
+      ? "border-red-300 bg-red-50/50 ring-1 ring-red-200"
+      : accent
+        ? "border-brand/30 bg-brand-soft/40"
+        : "border-border"
   } ${href ? "cursor-pointer hover:border-brand/40 hover:shadow-md" : ""}`;
 
   const content = (
@@ -31,7 +37,7 @@ export function KpiCard({
           {href ? (
             <ExternalLink className="h-3.5 w-3.5 text-muted opacity-0 transition group-hover:opacity-100" />
           ) : null}
-          <Icon className={`h-4 w-4 ${accent ? "text-brand" : "text-muted"}`} />
+          <Icon className={`h-4 w-4 ${critical ? "text-red-600" : accent ? "text-brand" : "text-muted"}`} />
         </div>
       </div>
       <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>

@@ -6,11 +6,17 @@
  */
 import { readFileSync, existsSync } from "fs";
 import { dirname, join } from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
+import { resolveSeedAvatarUrls, poolUrlForSeed } from "./avatar-pool-utils.mjs";
+import { buildCommunitySeedPosts } from "./community-posts-seed-data.mjs";
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
-const anthemRoot = join(root, "Anthem-Code");
+const anthemCandidates = [join(root, "Anthem-Code"), "F:/So1o/Anthem Code"];
+const anthemRoot =
+  anthemCandidates.find((p) =>
+    existsSync(join(p, "node_modules/@supabase/supabase-js/dist/index.mjs")),
+  ) ?? anthemCandidates[0];
 const { createClient } = await import(
-  join(anthemRoot, "node_modules/@supabase/supabase-js/dist/module/index.js")
+  pathToFileURL(join(anthemRoot, "node_modules/@supabase/supabase-js/dist/index.mjs")).href
 );
 const envPath = join(dirname(fileURLToPath(import.meta.url)), ".env.seed.local");
 
@@ -38,6 +44,10 @@ if (!url || !key) {
 
 const supabase = createClient(url, key, {
   auth: { autoRefreshToken: false, persistSession: false },
+});
+const anthemDb = createClient(url, key, {
+  auth: { autoRefreshToken: false, persistSession: false },
+  db: { schema: "anthem" },
 });
 
 const catalogUid = (i) => {
@@ -162,6 +172,12 @@ async function main() {
   }
   console.log("Auth users OK (20)");
 
+  const poolUrls = await resolveSeedAvatarUrls(supabase);
+  if (!poolUrls.length) {
+    console.warn("⚠ avatar pool empty — run: node scripts/ecosystem/generate-avatar-pool.mjs");
+  }
+  const avatarFor = (seed) => poolUrlForSeed(poolUrls, seed) ?? "";
+
   const profiles = Array.from({ length: 20 }, (_, i) => ({
     id: catalogUid(i),
     display_name: names[i],
@@ -171,7 +187,7 @@ async function main() {
     bio: bios[i],
     skills: i === 0 ? ["Logo", "Branding", "Illustrator"] : i === 1 ? ["Branding", "Packaging", "Figma"] : i === 2 ? ["Procreate", "Illustration", "Character"] : ["Design", "Creative"],
     location: i % 3 === 0 ? "Bangkok" : i % 3 === 1 ? "Chiang Mai" : "Phuket",
-    avatar_url: `https://api.dicebear.com/7.x/shapes/svg?seed=${usernames[i]}&backgroundColor=fff4e6,ffe8cc`,
+    avatar_url: avatarFor(usernames[i]),
   }));
   const { error: pErr } = await supabase.from("profiles").upsert(profiles, { onConflict: "id" });
   if (pErr) throw new Error(`profiles: ${pErr.message}`);
@@ -204,7 +220,7 @@ async function main() {
     name: studioNames[i],
     tagline: "สตูดิโอครีเอทีฟไทย",
     bio: "ทีมดีไซน์และคราฟต์จากชุมชน an1hem",
-    avatar_url: `https://api.dicebear.com/7.x/shapes/svg?seed=studio-${studioSlugs[i]}`,
+    avatar_url: avatarFor(`studio-${studioSlugs[i]}`),
     cover_url: `https://picsum.photos/seed/an1hem-studio-${i}/1200/400`,
     location: i % 2 === 0 ? "Bangkok" : "Chiang Mai",
     verified: i % 3 === 0,
@@ -245,6 +261,17 @@ async function main() {
   const { error: jobErr } = await supabase.from("job_posts").upsert(jobs, { onConflict: "id" });
   if (jobErr) throw new Error(`job_posts: ${jobErr.message}`);
   console.log("Job posts upserted:", jobs.length);
+
+  const communityPosts = buildCommunitySeedPosts(catalogUid);
+  const { error: commErr } = await anthemDb.from("community_posts").upsert(communityPosts, { onConflict: "id" });
+  if (commErr) throw new Error(`community_posts: ${commErr.message}`);
+  console.log("Community posts upserted:", communityPosts.length, "(3 per category × 8 categories)");
+
+  const { count: commCount } = await anthemDb
+    .from("community_posts")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "published");
+  console.log("Published community posts:", commCount ?? 0);
 
   const { count: after } = await supabase
     .from("projects")

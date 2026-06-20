@@ -68,10 +68,13 @@ cd Anthem-Code && npm run test:gate
 ### API / backend (curl หรือ Stripe dashboard)
 
 25. Stripe checkout + webhook (`/api/public/payments/webhook`)
-26. Cron: deadline reminders, payment reminders, daily trends (secret header)
-27. LINE webhook + push — OA AI chat (`ทีมงาน`), test samples จาก Settings
-28. LINE prefs: portal + anthem + inhouse kinds เปิด/ปิดแยกกลุ่ม
-29. AI assistant stream + quota หมด
+26. **Boost checkout** — metadata `boostId` → `activate_post_boost_stripe`
+27. **Ad checkout** — metadata `applicationId` → `fulfill_ad_payment_stripe`
+28. **Escrow** — Quotation → สร้างลิงก์ → `/pay/:token` → client checkout → approve → admin release (`/admin?section=payments`)
+29. Cron: deadline reminders, payment reminders, daily trends (secret header)
+30. LINE webhook + push — OA AI chat (`ทีมงาน`), test samples จาก Settings
+31. LINE prefs: portal + anthem + inhouse kinds เปิด/ปิดแยกกลุ่ม
+32. AI assistant stream + quota หมด
 
 ### อีเมล / notifications
 
@@ -93,7 +96,9 @@ cd Anthem-Code && npm run test:gate
 36. **Stripe Connect onboard** + cashout submit → admin transfer ที่ `/admin/gifts`
 37. Gifts ส่งข้าม user (welcome_px / holding rules)
 37. Ads: สร้าง campaign, `/ads/:id`
-38. Contracts: `/contracts`, `/contracts/new`, generate PDF
+38. **Boost โพสต์ตัวเอง** — ปุ่ม Boost บน `/project/:id` และ community post · แพ็ก 99/249/499฿ · badge **Boosted** ในฟีด 3–14 วัน
+39. **Brand Ads (แยกจาก Boost)** — `/advertise` · Stripe `ad_*` (demo mode ใช้ mock pay) · รอ admin อนุมัติ → AdCard
+40. Contracts: `/contracts`, `/contracts/new`, generate PDF
 39. Collections + Inspire boards
 40. Studio: `/studio/new`, invites, manage, `/s/:slug` public
 41. `/upgrade` + tier sync กับ So1o
@@ -132,9 +137,28 @@ cd Anthem-Code && npm run test:gate
 
 58. ลิงก์ So1o → an1hem (`an1hem.app` / demo `1px-demo.vercel.app`) ทำงาน
 59. Handoff quotation So1o ↔ Anthem (ecosystem_links)
-60. Tier sync Pro/Pro+ ข้ามแอป (unified `profiles.subscription_tier`)
-61. Ops Hub (`hq.solofreelancer.com`) — Inbox, Board, Issues, Hub Work, Cycles, Roadmap
-62. `bash scripts/health-check.sh` ผ่านทุก URL production
+60. **Escrow funnel** — Hire (an1hem) → Quotation/Escrow (So1o) → `/pay/:token` → funded → released (Ops Hub funnel)
+61. **Boost vs Ads** — Boost = ดันโพสต์ตัวเอง · Ads = แบรนด์ `/advertise` + admin approve
+62. Tier sync Pro/Pro+ ข้ามแอป (unified `profiles.subscription_tier`)
+63. Ops Hub (`hq.solofreelancer.com`) — Inbox, Board, Issues, Hub Work, Cycles, Roadmap
+64. `bash scripts/health-check.sh` ผ่านทุก URL production
+
+---
+
+## Test plan — Boost + Escrow + Payment policy (Stripe sandbox)
+
+| Scenario | Expected |
+|----------|----------|
+| Top-up 500 px → ส่ง gift ทันที | ไม่ block holding |
+| Cashout Free 1,000 px | fee 150 · net 850 |
+| Cashout Pro 1,000 px | fee 100 · net 900 |
+| Welcome missions ครบ | รวมไม่เกิน 100 px |
+| Boost dashboard | `/portfolio` แสดง impressions/clicks |
+| Ad + linked project | คลิกฟีด → `/project/:id?sponsor=` |
+| Escrow 10,000 Free | fee 500 · net 9,500 |
+| Escrow 10,000 Pro | fee 250 · net 9,750 |
+
+Card ทดสอบ: `4242 4242 4242 4242` · Apply: `scripts/ecosystem/payment-policy-2026.sql` + `boost-escrow-payments.sql`
 
 ---
 

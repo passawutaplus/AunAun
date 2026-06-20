@@ -18,9 +18,9 @@ export const DEFERRED_ROADMAP: DeferredRoadmapItem[] = [
   {
     id: "boost",
     title: "Boost/โฆษณาผลงาน",
-    status: "deferred",
-    note: "tier-gated",
-    quarter: "2026-Q4",
+    status: "shipped",
+    note: "Self-serve post_boosts + Stripe boost_* checkout",
+    quarter: "2026-Q2",
   },
   {
     id: "sso",
@@ -39,9 +39,9 @@ export const DEFERRED_ROADMAP: DeferredRoadmapItem[] = [
   {
     id: "escrow",
     title: "Escrow marketplace",
-    status: "deferred",
-    note: "ชำระเงินลูกค้าผ่านแพลตฟอร์ม",
-    quarter: "2027-Q1",
+    status: "shipped",
+    note: "marketplace_escrows + /pay/:token + Connect release",
+    quarter: "2026-Q2",
   },
   {
     id: "pro-plus-auto",
