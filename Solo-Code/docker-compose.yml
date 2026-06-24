@@ -1,0 +1,50 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+        VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID:-}
+        VITE_EARLY_ACCESS: ${VITE_EARLY_ACCESS:-false}
+        VITE_PAYMENTS_CLIENT_TOKEN: ${VITE_PAYMENTS_CLIENT_TOKEN:-}
+        VITE_ANTHEM_APP_URL: ${VITE_ANTHEM_APP_URL:-}
+        VITE_OPS_HUB_URL: ${VITE_OPS_HUB_URL:-}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    env_file:
+      - .env
+    environment:
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      NODE_ENV: production
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+    restart: unless-stopped
+
+  # Optional: hot-reload dev server
+  dev:
+    profiles: ["dev"]
+    image: oven/bun:1.2
+    working_dir: /app
+    volumes:
+      - .:/app
+      - dev_node_modules:/app/node_modules
+    ports:
+      - "${DEV_PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8080"
+    command: sh -c "bun install && bun run dev"
+    stdin_open: true
+    tty: true
+
+volumes:
+  dev_node_modules:

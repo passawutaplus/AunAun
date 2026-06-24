@@ -1,12 +1,7 @@
 .env
 .env.*
 !.env.example
-
-# Vite cache (Anthem-Code junction workaround)
-.vite-cache/
-
-# Cursor debug logs (local session traces)
-.cursor/debug-*.log
+!.env.*.example
 
 # Local database / storage dumps (never commit)
 backups/

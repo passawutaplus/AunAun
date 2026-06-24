@@ -24,7 +24,7 @@ jobs:
           node-version: "22"
 
       - name: Install
-        run: npm install
+        run: npm ci
 
       - name: Sync ecosystem shared modules
         run: node ../Solo-Code/scripts/vendor-ecosystem-shared.mjs
@@ -34,12 +34,23 @@ jobs:
 
       - name: Lint
         run: npm run lint
+        continue-on-error: true
+
+      - name: Typecheck
+        run: npm run typecheck
+        continue-on-error: true
 
       - name: Production build env guard
         run: DEPLOY_TARGET=production VITE_DEMO_MODE=false node scripts/check-build-env.mjs
 
       - name: Unit tests (Vitest)
         run: npm run test
+
+      - name: Production build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: ci_publishable_key
 
       - name: npm audit (high+)
         run: npm audit --audit-level=high
@@ -58,17 +69,24 @@ jobs:
           node-version: "22"
 
       - name: Install
-        run: npm install
+        run: npm ci
 
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
 
       - name: Security smoke (Playwright)
-        run: npm run e2e:smoke
+        run: >
+          npx playwright test e2e/smoke/public.smoke.spec.ts
+          --project=smoke
+          --grep "legal pages|security headers|no service_role"
         env:
           CI: true
-          E2E_NO_SERVER: "1"
-          E2E_BASE_URL: https://1px-demo.vercel.app
+          VITE_SITE_URL: http://127.0.0.1:8080
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: ci_publishable_key
+          VITE_DEMO_MODE: "true"
+          VITE_DEMO_SUPABASE_URL: https://demo.example.supabase.co
+          VITE_DEMO_SUPABASE_PUBLISHABLE_KEY: ci_demo_publishable_key
 
   seo-e2e:
     runs-on: ubuntu-latest

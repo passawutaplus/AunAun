@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anthem — สรุปฟีเจอร์ทั้งเว็บ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #e85d24;
+      --text: #1a1a1a;
+      --muted: #5c5c5c;
+      --border: #e8e8e8;
+      --bg-soft: #faf8f6;
+      --accent: #fff4ee;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Sarabun", "Noto Sans Thai", sans-serif;
+      color: var(--text);
+      line-height: 1.55;
+      font-size: 11pt;
+      background: #fff;
+    }
+    .page {
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 14mm 16mm 18mm;
+    }
+    header.cover {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2419 55%, #4a2c1a 100%);
+      color: #fff;
+      border-radius: 14px;
+      padding: 22px 26px;
+      margin-bottom: 22px;
+    }
+    header.cover .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    header.cover .logo {
+      width: 42px; height: 42px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #ff7a3d, #e85d24);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 11px;
+    }
+    header.cover h1 { font-size: 22pt; font-weight: 700; letter-spacing: -0.02em; }
+    header.cover .sub { color: #d4c4b8; font-size: 10.5pt; margin-top: 4px; }
+    header.cover .meta {
+      margin-top: 14px;
+      display: flex; flex-wrap: wrap; gap: 8px;
+      font-size: 9pt;
+    }
+    header.cover .pill {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    h2.section {
+      font-size: 13pt;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 20px 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--accent);
+      page-break-after: avoid;
+    }
+    h2.section .num {
+      display: inline-block;
+      width: 26px; height: 26px;
+      background: var(--accent);
+      color: var(--primary);
+      border-radius: 6px;
+      text-align: center;
+      line-height: 26px;
+      font-size: 11pt;
+      margin-right: 8px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .card {
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      page-break-inside: avoid;
+    }
+    .card h3 {
+      font-size: 10.5pt;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #222;
+    }
+    ul { padding-left: 18px; }
+    li { margin-bottom: 3px; color: #333; }
+    li strong { color: #111; }
+    .route {
+      font-family: ui-monospace, monospace;
+      font-size: 8.5pt;
+      color: var(--primary);
+      background: var(--accent);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px;
+      font-size: 9.5pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 7px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--accent); font-weight: 600; }
+    .status-ok { color: #15803d; font-weight: 600; }
+    .status-pending { color: #b45309; font-weight: 600; }
+    .mindmap {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin: 10px 0 16px;
+      page-break-inside: avoid;
+    }
+    .mindmap .center {
+      text-align: center;
+      font-weight: 700;
+      font-size: 12pt;
+      color: #fff;
+      background: var(--primary);
+      padding: 10px 20px;
+      border-radius: 999px;
+      display: inline-block;
+      margin: 0 auto 14px;
+      width: 100%;
+      max-width: 200px;
+    }
+    .mindmap-wrap { text-align: center; }
+    .branches {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .branch {
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 9pt;
+    }
+    .branch b { display: block; color: var(--primary); margin-bottom: 4px; font-size: 9.5pt; }
+    footer {
+      margin-top: 24px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      font-size: 8.5pt;
+      color: var(--muted);
+      text-align: center;
+    }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page { padding: 10mm 12mm; }
+      h2.section { page-break-before: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="cover">
+      <div class="brand">
+        <div class="logo">a1h</div>
+        <div>
+          <h1>Anthem (an1hem)</h1>
+          <p class="sub">สรุปฟีเจอร์ทั้งเว็บ — Feature Map</p>
+        </div>
+      </div>
+      <p style="font-size:10pt; opacity:0.9; max-width:520px;">
+        แพลตฟอร์มพอร์ตโฟลิโอ + จับคู่งานสำหรับครีเอเตอร์ไทย
+        รวมโชว์ผลงาน จ้างงาน สตูดิโอ กระเป๋า PX และหลังบ้านแอดมิน
+      </p>
+      <div class="meta">
+        <span class="pill">React + Vite + TypeScript</span>
+        <span class="pill">Supabase</span>
+        <span class="pill">อัปเดต มิ.ย. 2026</span>
+      </div>
+    </header>
+
+    <h2 class="section"><span class="num">1</span>หน้าแรก &amp; การค้นหา</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>ฟีด &amp; โหมด</h3>
+        <ul>
+          <li>ฟีดผลงาน <span class="route">/</span></li>
+          <li>โหมด: Explore, For You, Following, Newest, Top 1, Collections</li>
+          <li>มุมมอง: Projects / Designers / Studios</li>
+          <li>ค้นหา + กรองหมวด (Graphic, Illustration, Web/UI ฯลฯ)</li>
+          <li>Hero สถิติดีไซเนอร์ &amp; ผลงาน</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>นำทาง</h3>
+        <ul>
+          <li>ปุ่ม <strong>+</strong> ลงผลงานใหม่ (header)</li>
+          <li>Bottom nav มือถือ: Home, Jobs, New, Alerts, Profile</li>
+          <li>โฆษณาแทรกในฟีด (AdCard)</li>
+          <li>Skeleton โหลด — ไม่กระพริบ empty</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 class="section"><span class="num">2</span>ผลงาน (Portfolio)</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>ดู &amp; จัดการ</h3>
+        <ul>
+          <li>รายละเอียด <span class="route">/project/:id</span></li>
+          <li>ลง/แก้ <span class="route">/portfolio/new</span></li>
+          <li>จัดการ <span class="route">/portfolio/manage</span></li>
+          <li>พอร์ตตัวเอง <span class="route">/portfolio</span></li>
+          <li>Explore เครื่องมือ/แท็ก <span class="route">/explore/...</span></li>
+          <li>ภาพคล้าย AI <span class="route">/similar/:id</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>ตอนลงผลงาน</h3>
+        <ul>
+          <li>ภาพปก + แกลเลอรี (สูงสุด 20, WebP)</li>
+          <li>Draft / Published / Private</li>
+          <li>เปิด-ปิดปุ่มจ้าง &amp; Collab</li>
+          <li><strong>พรีวิวตา</strong> — ดูเหมือนหน้าจริง</li>
+          <li><strong>ลิขสิทธิ์</strong> 6 preset + ยืนยันสิทธิ์</li>
+          <li>ToolPicker &amp; TagPicker (แนะนำที่ใช้บ่อย)</li>
+          <li>เครดิตสตูดิโอ / ทีม</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 class="section"><span class="num">3</span>โปรไฟล์ &amp; ชุมชน</h2>
+    <ul>
+      <li>โปรไฟล์สาธารณะ <span class="route">/u/:userId</span> — ติดตาม, ผลงานล่าสุด</li>
+      <li>ไลค์ผลงาน / ไลค์รายภาพ · คอมเมนต์ · แชร์ลิงก์</li>
+      <li>คอลเลกชัน <span class="route">/collections</span> · Inspire boards <span class="route">/inspire/:id</span></li>
+      <li>รายงานเนื้อหา (ละเมิดลิขสิทธิ์ ฯลฯ) · นับยอดวิว (ต้อง consent)</li>
+      <li>บล็อกลิขสิทธิ์บนหน้า detail (หุบได้) — ไม่แสดงบนการ์ดฟีด</li>
+    </ul>
+
+    <h2 class="section"><span class="num">4</span>จ้างงาน &amp; ร่วมงาน</h2>
+    <ul>
+      <li>ปุ่ม <strong>สนใจจ้างงาน</strong> → HireDialog</li>
+      <li>ปุ่ม <strong>อยากร่วมงานด้วย</strong> → CollabDialog</li>
+      <li>คำขอจ้าง / Collab ใน Portfolio Manage</li>
+      <li>แสดงงบประมาณงานบนหน้า project</li>
+    </ul>
+
+    <h2 class="section"><span class="num">5</span>งาน &amp; สตูดิโอ</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>บอร์ดงาน</h3>
+        <ul>
+          <li>ประกาศงาน <span class="route">/jobs</span></li>
+          <li>รายละเอียด + สมัคร <span class="route">/jobs/:id</span></li>
+          <li>แจ้งเตือนงานตรงสกิล (Settings)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>สตูดิโอ</h3>
+        <ul>
+          <li>โปรไฟล์ <span class="route">/s/:slug</span></li>
+          <li>สร้าง <span class="route">/studio/new</span></li>
+          <li>จัดการ <span class="route">/studio/manage</span></li>
+          <li>คำเชิญร่วมก่อตั้ง <span class="route">/studio/invites</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 class="section"><span class="num">6</span>แชต &amp; แจ้งเตือน</h2>
+    <ul>
+      <li>รายการแชต <span class="route">/chat</span> · แชตสด <span class="route">/chat/:id</span></li>
+      <li>การแจ้งเตือน <span class="route">/notifications</span></li>
+    </ul>
+
+    <h2 class="section"><span class="num">7</span>การเงิน &amp; โฆษณา (PX)</h2>
+    <ul>
+      <li>กระเป๋า PX (WalletBadge) · ส่งของขวัญบนผลงาน</li>
+      <li>รายได้ <span class="route">/earnings</span> — earned / top-up / cashout</li>
+      <li>โฆษณา <span class="route">/advertise</span> · รายละเอียดแคมเปญ <span class="route">/ads/:id</span></li>
+      <li>ยืนยันตัวตน KYC <span class="route">/verify</span></li>
+    </ul>
+
+    <h2 class="section"><span class="num">8</span>สัญญา &amp; กฎหมาย</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>สัญญา AI</h3>
+        <ul>
+          <li>ร่างสัญญา <span class="route">/contracts/new</span></li>
+          <li>Freelance / พนักงานประจำ</li>
+          <li>ดึงลิขสิทธิ์จากผลงาน → ip_owner</li>
+          <li>รายการร่าง <span class="route">/contracts</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>กฎหมาย &amp; PDPA</h3>
+        <ul>
+          <li>Privacy · Terms · Cookies · สิทธิข้อมูล</li>
+          <li>ลิขสิทธิ์ <span class="route">/legal/ip</span></li>
+          <li>Cookie consent · ฟีดแบ็ก (FAB)</li>
+          <li>รายงาน/ฟีดแบ็กของฉัน</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 class="section"><span class="num">9</span>บัญชี &amp; ตั้งค่า</h2>
+    <ul>
+      <li>สมัคร / Login <span class="route">/auth</span> · OAuth callback</li>
+      <li>ตั้งค่า <span class="route">/settings</span> — โปรไฟล์, สกิล, ประสบการณ์, ติดต่อ</li>
+      <li>การแจ้งเตือน · หมวดงานที่สนใจ · ธีมสว่าง/มืด</li>
+      <li>PDPA · ลบบัญชี · ลิงก์แอดมิน (role admin)</li>
+    </ul>
+
+    <h2 class="section"><span class="num">10</span>หลังบ้านแอดมิน <span class="route">/admin</span></h2>
+    <table>
+      <thead>
+        <tr><th>หมวด</th><th>หน้าที่มี</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ภาพรวม</td><td>Dashboard, Activity, Analytics</td></tr>
+        <tr><td>ผู้ใช้</td><td>Users, Studios</td></tr>
+        <tr><td>คอนเทนต์</td><td>Projects, Collections, Comments, Inspire</td></tr>
+        <tr><td>ตลาดงาน</td><td>Jobs, Applications, Hiring, Collabs, Contracts</td></tr>
+        <tr><td>การเงิน</td><td>Wallet &amp; Ledger, Gifts, Ads</td></tr>
+        <tr><td>สื่อสาร</td><td>Chats, Notifications</td></tr>
+        <tr><td>ความปลอดภัย</td><td>AML, KYC, Reports, Feedback</td></tr>
+        <tr><td>ระบบ</td><td>Storage, Audit log, System health</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:9.5pt; color:var(--muted);">Badge แจ้งเตือน sidebar · Admin alert banner · platform_events</p>
+
+    <h2 class="section"><span class="num">11</span>Mind Map (ภาพรวม)</h2>
+    <div class="mindmap">
+      <div class="mindmap-wrap"><div class="center">Anthem</div></div>
+      <div class="branches">
+        <div class="branch"><b>Feed</b>ฟีด · ค้นหา · Designers · Studios</div>
+        <div class="branch"><b>Portfolio</b>ลงงาน · พรีวิว · ลิขสิทธิ์ · Explore</div>
+        <div class="branch"><b>Social</b>ไลค์ · คอมเมนต์ · คอลเลกชัน · รายงาน</div>
+        <div class="branch"><b>จ้างงาน</b>Hire · Collab · คำขอ</div>
+        <div class="branch"><b>งาน/สตูดิโอ</b>Jobs · สมัคร · สตูดิโอ</div>
+        <div class="branch"><b>สื่อสาร</b>แชต · แจ้งเตือน</div>
+        <div class="branch"><b>การเงิน</b>PX · ของขวัญ · โฆษณา · KYC</div>
+        <div class="branch"><b>กฎหมาย</b>สัญญา AI · PDPA · ลิขสิทธิ์</div>
+        <div class="branch"><b>Admin</b>Dashboard · Moderation · Wallet</div>
+      </div>
+    </div>
+
+    <h2 class="section"><span class="num">12</span>สถานะ &amp; สิ่งที่ยังไม่ทำ</h2>
+    <table>
+      <thead>
+        <tr><th>หมวด</th><th>สถานะ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ฟีด, ผลงาน, ลิขสิทธิ์, Explore</td><td class="status-ok">ใช้งานได้</td></tr>
+        <tr><td>จ้าง/Collab, งาน, สตูดิโอ, แชต</td><td class="status-ok">ใช้งานได้</td></tr>
+        <tr><td>PX / ของขวัญ / โฆษณา</td><td class="status-ok">ใช้งานได้ (cashout จำลอง)</td></tr>
+        <tr><td>แอดมิน</td><td class="status-ok">ครบใน repo — บาง migration ต้อง push</td></tr>
+        <tr><td>Stripe cashout จริง</td><td class="status-pending">ยังไม่ทำ</td></tr>
+        <tr><td>Email/Slack webhook นอกแอป</td><td class="status-pending">ยังไม่ทำ</td></tr>
+        <tr><td>Watermark / ใบอนุญาต PDF</td><td class="status-pending">แผนอนาคต</td></tr>
+      </tbody>
+    </table>
+
+    <footer>
+      Anthem Feature Map · สร้างอัตโนมัติจาก codebase · docs/anthem-feature-map.pdf<br />
+      Demo: phatsawut@demo.an1hem.app · Admin: passawut.a.plus@gmail.com
+    </footer>
+  </div>
+</body>
+</html>

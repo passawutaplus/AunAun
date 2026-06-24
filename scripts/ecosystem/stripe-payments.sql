@@ -278,7 +278,8 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.topup_wallet_mock(integer) TO authenticated;
+REVOKE ALL ON FUNCTION public.topup_wallet_mock(integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.topup_wallet_mock(integer) TO service_role;
 
 -- ---------------------------------------------------------------------------
 -- RPC: Connect profile sync + cashout Stripe lifecycle

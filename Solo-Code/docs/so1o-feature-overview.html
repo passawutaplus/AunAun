@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>So1o Freelancer — Feature Overview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --brand: #FF5F05;
+      --ink: #1a1a1a;
+      --muted: #5c5c5c;
+      --border: #e8e8e8;
+      --bg: #fafafa;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "IBM Plex Sans Thai", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.55;
+      font-size: 11pt;
+    }
+    @page { size: A4; margin: 14mm 16mm; }
+    @media print {
+      body { background: white; }
+      .page { box-shadow: none; margin: 0; max-width: none; }
+      .no-print { display: none !important; }
+      .section { break-inside: avoid; }
+      h2 { break-after: avoid; }
+    }
+    .page {
+      max-width: 210mm;
+      margin: 0 auto;
+      background: white;
+      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+    }
+    .cover {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 60%, #FF5F05 160%);
+      color: white;
+      padding: 28mm 18mm 22mm;
+      min-height: 90mm;
+    }
+    .cover .badge {
+      display: inline-block;
+      background: var(--brand);
+      color: white;
+      font-size: 8pt;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+    .cover h1 {
+      font-size: 26pt;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      line-height: 1.15;
+      margin-bottom: 8px;
+    }
+    .cover p { opacity: .85; font-size: 11pt; max-width: 140mm; }
+    .cover .meta {
+      margin-top: 18px;
+      font-size: 9pt;
+      opacity: .7;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .content { padding: 14mm 18mm 20mm; }
+    .toc {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 22px;
+    }
+    .toc h2 { font-size: 12pt; margin-bottom: 10px; color: var(--brand); }
+    .toc ol { padding-left: 18px; columns: 2; column-gap: 24px; }
+    .toc li { font-size: 10pt; margin-bottom: 4px; }
+    h2.section-title {
+      font-size: 14pt;
+      font-weight: 700;
+      color: var(--ink);
+      border-left: 4px solid var(--brand);
+      padding-left: 10px;
+      margin: 22px 0 12px;
+    }
+    h2.section-title:first-of-type { margin-top: 0; }
+    h3 {
+      font-size: 10.5pt;
+      font-weight: 600;
+      color: #333;
+      margin: 14px 0 6px;
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: var(--card);
+    }
+    .card h3 { margin-top: 0; font-size: 10pt; color: var(--brand); }
+    ul { padding-left: 16px; }
+    li { margin-bottom: 3px; font-size: 9.5pt; color: #333; }
+    li strong { color: var(--ink); font-weight: 600; }
+    .route {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 8pt;
+      background: #f3f3f3;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: #555;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9pt;
+      margin: 8px 0 12px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #f5f5f5; font-weight: 600; }
+    .mindmap {
+      background: #f8f8f8;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 12px 0;
+      font-size: 9pt;
+    }
+    .mindmap .root {
+      text-align: center;
+      font-weight: 700;
+      font-size: 12pt;
+      color: var(--brand);
+      margin-bottom: 14px;
+    }
+    .mindmap .branch {
+      display: inline-block;
+      vertical-align: top;
+      width: 31%;
+      margin: 0 1% 10px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+    .mindmap .branch-title {
+      font-weight: 600;
+      font-size: 9pt;
+      color: var(--brand);
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 3px;
+    }
+    .mindmap .branch ul { padding-left: 12px; margin: 0; }
+    .mindmap .branch li { font-size: 8pt; margin-bottom: 2px; }
+    .footer {
+      margin-top: 24px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      font-size: 8pt;
+      color: var(--muted);
+      text-align: center;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 7.5pt;
+      background: #fff3eb;
+      color: var(--brand);
+      border: 1px solid #ffd4b8;
+      padding: 1px 6px;
+      border-radius: 10px;
+      margin-left: 4px;
+      font-weight: 500;
+    }
+    .print-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      background: var(--brand);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(255,95,5,.35);
+      z-index: 100;
+    }
+    .print-btn:hover { filter: brightness(1.05); }
+  </style>
+</head>
+<body>
+  <button class="print-btn no-print" onclick="window.print()">บันทึกเป็น PDF</button>
+
+  <div class="page">
+    <div class="cover">
+      <div class="badge">Feature Map</div>
+      <h1>So1o Freelancer</h1>
+      <p>สรุปฟีเจอร์ทั้งเว็บ — หลังบ้านฟรีแลนซ์ครบวงจร สำหรับเช็คและวางแผนพัฒนา</p>
+      <div class="meta">อัปเดต: มิถุนายน 2026 · solofreelancer.com · TanStack + Supabase + Gemini AI</div>
+    </div>
+
+    <div class="content">
+      <div class="toc">
+        <h2>สารบัญ</h2>
+        <ol>
+          <li>หน้าสาธารณะ / Marketing</li>
+          <li>เข้าสู่ระบบ (Auth)</li>
+          <li>My Desk — หลังบ้านฟรีแลนซ์</li>
+          <li>Support & Feedback</li>
+          <li>Mission Control (Admin)</li>
+          <li>ลิงก์สาธารณะให้ลูกค้า</li>
+          <li>AI & Edge Functions</li>
+          <li>Ecosystem (an1hem)</li>
+          <li>กำลังพัฒนา / ยังไม่ ship</li>
+          <li>Mind Map ภาพรวม</li>
+        </ol>
+      </div>
+
+      <!-- 1 PUBLIC -->
+      <section class="section">
+        <h2 class="section-title">1. หน้าสาธารณะ / Marketing</h2>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Landing <span class="route">/</span></h3>
+            <ul>
+              <li>Hero + นับ Early Access Tester (100 คนแรก)</li>
+              <li><strong>Fair Price Calculator</strong> — คำนวณราคางานฟรี</li>
+              <li><strong>So1o Mentor AI</strong> — guest 5 ครั้ง/วัน</li>
+              <li>ฟีเจอร์หลัก 9 ชิ้น, Blog insights, PWA, Dark/Light</li>
+              <li>ลิงก์ an1hem Showcase + เครื่องมือใบเสนอราคาออนไลน์</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>หน้าอื่นๆ</h3>
+            <ul>
+              <li><strong>Pricing</strong> <span class="route">/pricing</span> — Free/Pro/In-House, Stripe, SO1OBETA</li>
+              <li><strong>Creative Partner</strong> <span class="route">/creative-partner</span> — AI ดีไซน์</li>
+              <li><strong>Blog</strong> <span class="route">/blog</span> — SEO articles</li>
+              <li><strong>Apply</strong> <span class="route">/apply</span> — สมัคร Tester</li>
+              <li><strong>Survey</strong> <span class="route">/survey</span> — ปรับ AI persona</li>
+              <li><strong>Labs</strong> <span class="route">/labs</span> — Color Lab</li>
+            </ul>
+          </div>
+        </div>
+        <h3>กฎหมาย & ระบบ</h3>
+        <ul>
+          <li><span class="route">/privacy</span> PDPA · <span class="route">/terms</span> · <span class="route">/cookies</span> · <span class="route">/refund</span></li>
+          <li><span class="route">/unsubscribe</span> — ยกเลิกรับอีเมล</li>
+        </ul>
+      </section>
+
+      <!-- 2 AUTH -->
+      <section class="section">
+        <h2 class="section-title">2. เข้าสู่ระบบ (Auth)</h2>
+        <table>
+          <tr><th>Route</th><th>ฟังก์ชัน</th></tr>
+          <tr><td><span class="route">/auth</span></td><td>Login / Signup (อีเมล + Google OAuth)</td></tr>
+          <tr><td><span class="route">/auth/callback</span></td><td>OAuth callback</td></tr>
+          <tr><td><span class="route">/auth/forgot</span></td><td>ลืมรหัสผ่าน → อีเมลรีเซ็ต</td></tr>
+          <tr><td><span class="route">/reset-password</span></td><td>ตั้งรหัสผ่านใหม่</td></tr>
+        </table>
+        <ul>
+          <li>Redirect: admin → <span class="route">/admin</span>, user → <span class="route">/dashboard</span></li>
+          <li>Early Access mode — บัญชีไม่ active ถูกจำกัดสิทธิ์</li>
+        </ul>
+      </section>
+
+      <!-- 3 MY DESK -->
+      <section class="section">
+        <h2 class="section-title">3. My Desk — หลังบ้านฟรีแลนซ์ <span class="route">/dashboard</span></h2>
+        <p style="font-size:9pt;color:var(--muted);margin-bottom:10px;">URL: <span class="route">/dashboard?tab=&lt;section&gt;&amp;sub=&lt;sub&gt;</span> · Command Menu Ctrl+K · Notification · PWA · Support FAB</p>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>งานลูกค้า</h3>
+            <ul>
+              <li><strong>Pipeline</strong> — Kanban ดีล, สัญญาจ้าง, Usage Rights</li>
+              <li><strong>Smart Brief</strong> — AI วิเคราะห์, แชร์ลิงก์ลูกค้า</li>
+              <li><strong>Quotation</strong> — ใบเสนอราคา/ใบแจ้งหนี้/ใบเสร็จ, PDF, อีเมล</li>
+              <li><strong>Job Tracker</strong> — ติดตามงาน, สลิป, QR, License Certificate</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>การเงิน</h3>
+            <ul>
+              <li><strong>รายได้</strong> — ซิงค์จาก Quotation, กราฟ, CSV</li>
+              <li><strong>ภาษี</strong> — ประมาณการ, ลดหย่อน, VAT, 50ทวิ + AI scan</li>
+              <li><strong>Subscription</strong> — ติดตามค่า SaaS รายเดือน</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>วางแผน</h3>
+            <ul>
+              <li><strong>Content Planner</strong> — ปฏิทิน, AI caption, แชร์ลูกค้า</li>
+              <li><strong>To Do List</strong> — โปรเจกต์ Kanban</li>
+              <li><strong>Feedback ลูกค้า</strong> — รอบแก้ไข (revision rounds)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>ข้อมูล</h3>
+            <ul>
+              <li><strong>Client</strong> — CRM, ใบแจ้งหนี้ค้างชำระ</li>
+              <li><strong>Suppliers</strong> — คลัง supplier, แชร์การ์ด</li>
+              <li><strong>Assets</strong> — Fonts, Brands, Links, Snippets, Vault</li>
+              <li><strong>Legal Desk</strong> — กฎหมาย, เช็กลิสต์, Legal Guardian AI</li>
+            </ul>
+          </div>
+        </div>
+        <h3>อื่นๆ & ตั้งค่า</h3>
+        <ul>
+          <li><strong>ข่าวสาร & เทรนด์</strong> — ข่าวรายวัน (AI) · <strong>Inspire</strong> — ลิงก์แรงบันดาลใจ</li>
+          <li><strong>Settings</strong> — โปรไฟล์แบรนด์, Billing (Stripe), Export/ลบบัญชี, Theme</li>
+          <li><strong>Overview</strong> — widgets, Onboarding, สร้างดีลใหม่</li>
+        </ul>
+      </section>
+
+      <!-- 4 SUPPORT -->
+      <section class="section">
+        <h2 class="section-title">4. Support & Feedback</h2>
+        <ul>
+          <li><strong>Support FAB</strong> — แชททีม, FAQ, เสนอฟีเจอร์, Changelog, แจ้งบั๊ก</li>
+          <li><strong>ตั๋วของฉัน</strong> — ติดตามสถานะ ticket</li>
+          <li><strong>Give Feedback</strong> — ฟีดแบ็ก + สร้าง Support Ticket อัตโนมัติ</li>
+        </ul>
+      </section>
+
+      <!-- 5 ADMIN -->
+      <section class="section">
+        <h2 class="section-title">5. Mission Control — Admin <span class="route">/admin</span></h2>
+        <table>
+          <tr><th>กลุ่ม</th><th>เมนู</th></tr>
+          <tr><td>ภาพรวม</td><td>ภาพรวม KPI, ไทม์ไลน์กิจกรรม</td></tr>
+          <tr><td>ผู้ใช้ & Support</td><td>สมาชิก, ตั๋ว & ฟีดแบ็ก, แชท, Early Access</td></tr>
+          <tr><td>วิเคราะห์การใช้งาน</td><td>ฟีเจอร์ยอดนิยม, รูปแบบการใช้, อุปกรณ์, AI Quota</td></tr>
+          <tr><td>ธุรกิจ</td><td>KPI, Subscriptions, Payments (Stripe)</td></tr>
+          <tr><td>คอนเทนต์</td><td>ประกาศ, แบนเนอร์, บทความ Blog</td></tr>
+          <tr><td>ระบบ</td><td>AI Center, สุขภาพระบบ, Storage, Supabase</td></tr>
+        </table>
+      </section>
+
+      <!-- 6 CLIENT LINKS -->
+      <section class="section">
+        <h2 class="section-title">6. ลิงก์สาธารณะให้ลูกค้า</h2>
+        <table>
+          <tr><th>Route</th><th>ใช้กับ</th></tr>
+          <tr><td><span class="route">/brief/$token</span></td><td>ลูกค้ากรอก Smart Brief</td></tr>
+          <tr><td><span class="route">/track/$token</span></td><td>ดูความคืบหน้า Job Tracker</td></tr>
+          <tr><td><span class="route">/planner/$token</span></td><td>อนุมัติ Content Planner</td></tr>
+          <tr><td><span class="route">/vision/$token</span></td><td>Vision Canvas + voting</td></tr>
+          <tr><td><span class="route">/supplier/$token</span></td><td>Supplier card</td></tr>
+          <tr><td><span class="route">/license/$token</span></td><td>ใบรับรองสิทธิลิขสิทธิ์</td></tr>
+        </table>
+      </section>
+
+      <!-- 7 AI -->
+      <section class="section">
+        <h2 class="section-title">7. AI & Edge Functions</h2>
+        <div class="grid-2">
+          <div class="card">
+            <h3>AI ในแอป</h3>
+            <ul>
+              <li>So1o Mentor — Landing, FAB, Creative Partner</li>
+              <li>Brief AI — วิเคราะห์บรีฟ, รูป→บรีฟ</li>
+              <li>Content AI — caption/hashtag</li>
+              <li>ภาษี — scan สลิป 50ทวิ</li>
+              <li>Legal Guardian + ร่างสัญญา</li>
+              <li>Color Lab — color-mentor</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Edge Functions</h3>
+            <ul>
+              <li><span class="route">ai-design-chat</span></li>
+              <li><span class="route">ai-price-suggest</span></li>
+              <li><span class="route">planner-ai-assist</span></li>
+              <li><span class="route">generate-contract</span></li>
+              <li><span class="route">color-mentor</span></li>
+              <li><span class="route">sync-so1o-tier</span></li>
+            </ul>
+            <p style="font-size:8.5pt;margin-top:8px;color:var(--muted);">
+              <strong>Quota:</strong> Free — AI 10 ครั้ง/เดือน, Job 3/เดือน · Pro — ไม่จำกัด
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8 ECOSYSTEM -->
+      <section class="section">
+        <h2 class="section-title">8. Ecosystem (an1hem)</h2>
+        <ul>
+          <li>แอปแยก — Portfolio, Showcase <span class="tag">VITE_ANTHEM_APP_URL</span></li>
+          <li>Pro plan = บัญชีเดียว So1o + an1hem</li>
+          <li>Tier sync ผ่าน <span class="route">sync-so1o-tier</span></li>
+          <li>Shared Squad — ยังไม่เปิดใน UI</li>
+        </ul>
+      </section>
+
+      <!-- 9 WIP -->
+      <section class="section">
+        <h2 class="section-title">9. กำลังพัฒนา / ยังไม่ ship</h2>
+        <ul>
+          <li>Creative Labs — Vision Canvas, Typo Matcher, Mockup Box (meta มี แต่ UI ยังไม่ครบ)</li>
+          <li>In-House workspace</li>
+          <li>Portfolio หลัก — อยู่ที่ an1hem ไม่ใช่ My Desk</li>
+        </ul>
+      </section>
+
+      <!-- MIND MAP -->
+      <section class="section">
+        <h2 class="section-title">10. Mind Map ภาพรวม</h2>
+        <div class="mindmap">
+          <div class="root">So1o Freelancer</div>
+          <div style="text-align:center;">
+            <div class="branch">
+              <div class="branch-title">Public</div>
+              <ul>
+                <li>Landing / Pricing</li>
+                <li>Creative Partner</li>
+                <li>Blog / Apply / Survey</li>
+                <li>Labs / Legal pages</li>
+              </ul>
+            </div>
+            <div class="branch">
+              <div class="branch-title">My Desk</div>
+              <ul>
+                <li>Pipeline · Brief · Quote</li>
+                <li>Job Tracker</li>
+                <li>รายได้ · ภาษี · Subs</li>
+                <li>Content · To Do · Feedback</li>
+                <li>Client · Supplier · Assets</li>
+                <li>Legal Desk</li>
+              </ul>
+            </div>
+            <div class="branch">
+              <div class="branch-title">Admin & More</div>
+              <ul>
+                <li>Mission Control</li>
+                <li>Support / Tickets</li>
+                <li>Client token links</li>
+                <li>AI + Edge Functions</li>
+                <li>an1hem ecosystem</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="footer">
+        So1o Freelancer Feature Overview · สร้างอัตโนมัติจาก codebase · solofreelancer.com
+      </div>
+    </div>
+  </div>
+</body>
+</html>

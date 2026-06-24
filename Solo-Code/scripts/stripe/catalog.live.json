@@ -1,0 +1,64 @@
+{
+  "synced_at": "2026-06-11",
+  "stripe_account": "acct_1TbitVGfB0bl0FEI",
+  "mode": "live",
+  "note": "Sandbox catalog: set STRIPE_SANDBOX_API_KEY in .env then run npm run stripe:sync",
+  "products": {
+    "so1o_pro": {
+      "name": "So1o Pro",
+      "id": "prod_UgVqawUPm0OoPu",
+      "prices": {
+        "pro_monthly": "price_1Th8wmGfB0bl0FEIFihejnAN",
+        "pro_yearly": "price_1Th8x1GfB0bl0FEIVy17sXzD"
+      }
+    },
+    "so1o_pro_plus": {
+      "name": "So1o Pro+",
+      "id": "prod_UgVyOdiLrhUaYZ",
+      "prices": {
+        "pro_plus_monthly": "price_1Th8x1GfB0bl0FEI4VOfpBS7",
+        "pro_plus_yearly": "price_1Th8x2GfB0bl0FEIbFzTaEhR"
+      }
+    },
+    "so1o_inhouse": {
+      "name": "So1o In-House",
+      "id": "prod_UgVy6DrrVW9SFk",
+      "prices": {
+        "inhouse_monthly": "price_1Th8x2GfB0bl0FEIhNzDK9rb",
+        "inhouse_yearly": "price_1Th8x2GfB0bl0FEI7BBMZSTe"
+      }
+    },
+    "so1o_ai_credits": {
+      "name": "So1o AI Credits",
+      "id": "prod_UgVyoOTpbOQ3Iw",
+      "prices": {
+        "credits_100": "price_1Th8x8GfB0bl0FEImuSZ3BYY",
+        "credits_500": "price_1Th8x8GfB0bl0FEIUZKEgexP",
+        "credits_2000": "price_1Th8x8GfB0bl0FEIduLggRqm"
+      }
+    },
+    "an1hem_px": {
+      "name": "an1hem Pixel (PX)",
+      "id": "prod_UgVyZFHLNiCFOf",
+      "prices": {
+        "px_500": "price_1Th8x8GfB0bl0FEI83pbrxAq",
+        "px_2000": "price_1Th8x8GfB0bl0FEIgBi8grph",
+        "px_10000": "price_1Th8x8GfB0bl0FEIyFoW0g9s"
+      }
+    }
+  },
+  "amounts_thb": {
+    "pro_monthly": 249,
+    "pro_yearly": 2388,
+    "pro_plus_monthly": 399,
+    "pro_plus_yearly": 3828,
+    "inhouse_monthly": 599,
+    "inhouse_yearly": 5750,
+    "credits_100": 99,
+    "credits_500": 399,
+    "credits_2000": 1290,
+    "px_500": 500,
+    "px_2000": 2000,
+    "px_10000": 10000
+  }
+}

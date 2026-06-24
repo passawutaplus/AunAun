@@ -1,0 +1,50 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./useAuth";
+import type { TablesInsert, Database } from "@/integrations/supabase/types";
+
+export type CollabStatus = Database["public"]["Enums"]["collab_status"];
+
+export const useCreateCollabRequest = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: TablesInsert<"collab_requests">) => {
+      const { data, error } = await supabase.from("collab_requests").insert(payload).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["collab-requests"] });
+    },
+  });
+};
+
+export const useReceivedCollabRequests = () => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["collab-requests", "received", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("collab_requests")
+        .select("*")
+        .eq("recipient_id", user!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+};
+
+export const useUpdateCollabStatus = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: CollabStatus }) => {
+      const { error } = await supabase.from("collab_requests").update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["collab-requests"] });
+    },
+  });
+};

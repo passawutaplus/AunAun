@@ -1,0 +1,33 @@
+-- Daily trends cron: fetches RSS + AI summary at 05:00 ICT (22:00 UTC)
+--
+-- POST-MIGRATION STEPS (project-specific — apply after deploy):
+-- 1. Store service_role key in vault:
+--    SELECT vault.create_secret('<SERVICE_ROLE_KEY>', 'cron_service_role_key');
+-- 2. Store app URL in vault:
+--    SELECT vault.create_secret('https://your-app.example.com', 'cron_app_url');
+-- 3. Schedule the job (replace URL from vault):
+--
+-- DO $$
+-- BEGIN
+--   PERFORM cron.unschedule('fetch-daily-trends')
+--     WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'fetch-daily-trends');
+-- EXCEPTION WHEN OTHERS THEN NULL;
+-- END $$;
+--
+-- SELECT cron.schedule(
+--   'fetch-daily-trends',
+--   '0 22 * * *',
+--   $$
+--   SELECT net.http_post(
+--     url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'cron_app_url')
+--            || '/api/public/cron/fetch-daily-trends',
+--     headers := jsonb_build_object(
+--       'Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'cron_service_role_key'),
+--       'Content-Type', 'application/json'
+--     ),
+--     body := '{}'::jsonb
+--   );
+--   $$
+-- );
+--
+-- To revert: SELECT cron.unschedule('fetch-daily-trends');

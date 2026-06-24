@@ -1,0 +1,106 @@
+// Serializable mapping between icon string keys and LucideIcon components.
+// Used to persist subscription / payment-method icons to the database.
+import {
+  CreditCard,
+  Wallet,
+  Smartphone,
+  Banknote,
+  ShoppingBag,
+  Palette,
+  Music,
+  Code2,
+  Wifi,
+  Sparkles,
+  MessageSquare,
+  Cloud,
+  Box,
+  Home,
+  Tv,
+  Film,
+  Gamepad2,
+  BookOpen,
+  Briefcase,
+  Database,
+  Building2,
+  Zap,
+  Phone,
+  Droplet,
+  Brain,
+  Bot,
+  Image as ImageIcon,
+  Languages,
+  Video,
+  Headphones,
+  Newspaper,
+  Heart,
+  Dumbbell,
+  Scissors,
+  Shield,
+  TrendingUp,
+  Users,
+  PawPrint,
+  GraduationCap,
+  Settings,
+  HandCoins,
+  Receipt,
+  type LucideIcon,
+} from "lucide-react";
+
+export const ICON_REGISTRY: Record<string, LucideIcon> = {
+  CreditCard,
+  Wallet,
+  Smartphone,
+  Banknote,
+  ShoppingBag,
+  Palette,
+  Music,
+  Code2,
+  Wifi,
+  Sparkles,
+  MessageSquare,
+  Cloud,
+  Box,
+  Home,
+  Tv,
+  Film,
+  Gamepad2,
+  BookOpen,
+  Briefcase,
+  Database,
+  Building2,
+  Zap,
+  Phone,
+  Droplet,
+  Brain,
+  Bot,
+  ImageIcon,
+  Languages,
+  Video,
+  Headphones,
+  Newspaper,
+  Heart,
+  Dumbbell,
+  Scissors,
+  Shield,
+  TrendingUp,
+  Users,
+  PawPrint,
+  GraduationCap,
+  Settings,
+  HandCoins,
+  Receipt,
+};
+
+const NAME_BY_ICON = new Map<LucideIcon, string>(
+  Object.entries(ICON_REGISTRY).map(([k, v]) => [v, k]),
+);
+
+export function iconKey(icon: LucideIcon | undefined): string {
+  if (!icon) return "CreditCard";
+  return NAME_BY_ICON.get(icon) ?? "CreditCard";
+}
+
+export function iconFromKey(key: string | undefined | null): LucideIcon {
+  if (!key) return CreditCard;
+  return ICON_REGISTRY[key] ?? CreditCard;
+}

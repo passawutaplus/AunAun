@@ -1,0 +1,26 @@
+{
+  "folders": [
+    {
+      "name": "Solo-Code",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.watcherExclude": {
+      "**/node_modules/**": true,
+      "**/dist/**": true,
+      "**/.tanstack/**": true,
+      "**/supabase/.bundle-*.json": true,
+      "**/supabase/.tmp-*.json": true,
+      "**/supabase/.deploy-payloads/**": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/supabase/migrations": true,
+      "**/supabase/.bundle-*.json": true,
+      "**/supabase/.tmp-*.json": true,
+      "**/supabase/.deploy-payloads": true
+    }
+  }
+}

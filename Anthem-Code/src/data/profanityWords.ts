@@ -1,0 +1,106 @@
+/**
+ * Curated banned terms for community moderation (Thai + English).
+ */
+
+export const PROFANITY_CATEGORIES = {
+  thai_vulgar: [
+    "ควาย",
+    "สัส",
+    "เหี้ย",
+    "ไอ้สัส",
+    "ไอ้เหี้ย",
+    "ไอ้ควาย",
+    "ไอ้สัตว์",
+    "ชิบหาย",
+    "แม่ง",
+    "แม่มึง",
+    "พ่อมึง",
+    "ห่า",
+    "ส้นตีน",
+    "ระยำ",
+    "อีดอก",
+    "อีตัว",
+    "อีชาติ",
+    "ชาติชั่ว",
+    "หน้าตัว",
+    "หน้าหี",
+    "ไอ้บ้า",
+    "สถุน",
+    "สถุนย์",
+    "อีห่า",
+    "อีสัส",
+    "อีเหี้ย",
+    "อีควาย",
+  ],
+  thai_insult: [
+    "มึง",
+    "กู",
+    "มรึง",
+    "ขี้ขลาด",
+    "ขี้โม้",
+    "ขี้โกง",
+  ],
+  thai_sexual: [
+    "เย็ด",
+    "ควย",
+    "หี",
+    "จู๋",
+    "แตด",
+    "เงี่ยน",
+    "โป๊",
+    "xxx",
+    "porn",
+    "hentai",
+  ],
+  english_vulgar: [
+    "fuck",
+    "fucking",
+    "fucker",
+    "fucked",
+    "motherfucker",
+    "shit",
+    "shitty",
+    "bullshit",
+    "bitch",
+    "bastard",
+    "asshole",
+    "cunt",
+    "dick",
+    "dickhead",
+    "pussy",
+    "whore",
+    "slut",
+    "cock",
+    "wanker",
+    "twat",
+  ],
+  english_slurs: [
+    "nigger",
+    "nigga",
+    "retard",
+    "retarded",
+    "faggot",
+    "fag",
+  ],
+  harassment: [
+    "kill yourself",
+    "kys",
+    "go die",
+    "ไปตาย",
+    "ไปฆ่าตัวตาย",
+    "ฆ่าตัวตายซะ",
+    "ขู่ฆ่า",
+    "ข่มขืน",
+    "ข่มเหง",
+  ],
+} as const;
+
+export type ProfanityCategory = keyof typeof PROFANITY_CATEGORIES;
+
+export const PROFANITY_WORDS: string[] = [
+  ...new Set(
+    Object.values(PROFANITY_CATEGORIES).flatMap((words) => words.map((w) => w.toLowerCase())),
+  ),
+];
+
+export const PROFANITY_ALLOWLIST: string[] = ["damn"];

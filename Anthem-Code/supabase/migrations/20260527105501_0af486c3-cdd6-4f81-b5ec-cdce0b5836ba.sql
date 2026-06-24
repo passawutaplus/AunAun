@@ -1,0 +1,5 @@
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS skills text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS experience jsonb NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS location text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS cover_url text NOT NULL DEFAULT '';

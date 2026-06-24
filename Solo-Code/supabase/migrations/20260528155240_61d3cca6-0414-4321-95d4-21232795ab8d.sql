@@ -1,0 +1,1 @@
+ALTER TABLE public.quotations ADD COLUMN IF NOT EXISTS timeline_enabled boolean NOT NULL DEFAULT true;

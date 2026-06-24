@@ -1,0 +1,14 @@
+Temporary Stripe sandbox (expires 2026-06-18)
+Claim to get full sk_test_ access, then run: npm run stripe:sync
+
+Claim URL:
+https://dashboard.stripe.com/onboard_sandbox/YWNjdF8xVGgzRlZHYWo0TTBJWWdULDE3ODE3OTA1NDkv100ogEGKs6L
+
+After claim, copy Test mode keys from Dashboard → Developers → API keys into Solo-Code/.env:
+  STRIPE_SANDBOX_API_KEY=sk_test_...
+  VITE_PAYMENTS_CLIENT_TOKEN=pk_test_...
+
+SO1O FREELANCER test keys:
+  https://dashboard.stripe.com/acct_1TbitVGfB0bl0FEI/apikeys
+
+Then: npm run stripe:sync && npm run stripe:verify

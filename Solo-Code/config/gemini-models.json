@@ -1,0 +1,55 @@
+{
+  "updated_at": "2026-06-18T06:18:00.001Z",
+  "models": {
+    "fast": "gemini-3.1-flash-lite",
+    "default": "gemini-3.5-flash",
+    "vision": "gemini-3.5-flash",
+    "embedding": "text-embedding-004"
+  },
+  "aliases": {
+    "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite",
+    "gemini-3-flash-preview": "gemini-3.5-flash",
+    "gemini-2.0-flash-lite": "gemini-3.1-flash-lite",
+    "gemini-2.0-flash": "gemini-3.5-flash",
+    "gemini-1.5-flash": "gemini-3.5-flash",
+    "gemini-1.5-flash-8b": "gemini-3.1-flash-lite",
+    "gemini-1.5-pro": "gemini-3.5-flash",
+    "gemini-2.5-flash-lite": "gemini-3.1-flash-lite",
+    "gemini-2.5-flash": "gemini-3.5-flash",
+    "openai/text-embedding-3-small": "text-embedding-004"
+  },
+  "changelog": [
+    {
+      "at": "2026-06-18T00:00:00.000Z",
+      "changes": [
+        {
+          "slot": "vision",
+          "from": "gemini-1.5-flash",
+          "to": "gemini-2.5-flash"
+        }
+      ],
+      "source": "manual"
+    },
+    {
+      "at": "2026-06-18T06:18:00.001Z",
+      "changes": [
+        {
+          "slot": "fast",
+          "from": "gemini-2.5-flash-lite",
+          "to": "gemini-3.1-flash-lite"
+        },
+        {
+          "slot": "default",
+          "from": "gemini-2.5-flash",
+          "to": "gemini-3.5-flash"
+        },
+        {
+          "slot": "vision",
+          "from": "gemini-2.5-flash",
+          "to": "gemini-3.5-flash"
+        }
+      ],
+      "source": "google_api"
+    }
+  ]
+}

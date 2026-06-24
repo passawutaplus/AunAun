@@ -1,0 +1,1 @@
+ALTER TABLE public.suppliers ADD COLUMN IF NOT EXISTS share_hidden_fields TEXT[] NOT NULL DEFAULT '{}';
