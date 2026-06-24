@@ -33,8 +33,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    let requestId = 0;
 
     async function applyUser(nextUser: User | null) {
+      const currentRequestId = ++requestId;
       if (cancelled) return;
       setUser(nextUser);
       if (!nextUser) {
@@ -44,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setLoading(true);
       const admin = await resolveIsAdmin(nextUser.id);
-      if (cancelled) return;
+      if (cancelled || currentRequestId !== requestId) return;
       setIsAdmin(admin);
       setLoading(false);
     }

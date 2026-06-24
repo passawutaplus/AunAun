@@ -1,0 +1,1 @@
+ALTER TABLE public.finance_incomes DROP CONSTRAINT IF EXISTS finance_incomes_category_check;

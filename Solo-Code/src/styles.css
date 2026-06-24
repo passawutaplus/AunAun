@@ -1,0 +1,948 @@
+/* Font is preloaded via <link> in __root.tsx (non-render-blocking) */
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --shadow-soft: 0 4px 20px -8px oklch(0.65 0.18 45 / 0.18);
+  --shadow-card: 0 2px 12px -4px oklch(0.2 0.02 60 / 0.06);
+  --shadow-elevated: 0 8px 32px -12px oklch(0.65 0.18 45 / 0.22);
+}
+
+:root {
+  --radius: 1rem;
+
+  /* Brand: warm orange #E8740C, light gray #F2F1EE, white */
+  --background: oklch(0.985 0.006 70);
+  --foreground: oklch(0.18 0.02 60);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.02 60);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.02 60);
+
+  --primary: oklch(0.66 0.21 45);
+  --primary-foreground: oklch(1 0 0);
+  --primary-soft: oklch(0.96 0.05 55);
+  --primary-glow: oklch(0.78 0.18 55);
+  --primary-deep: oklch(0.52 0.2 35);
+
+  --secondary: oklch(0.96 0.008 70);
+  --secondary-foreground: oklch(0.22 0.02 60);
+
+  --muted: oklch(0.96 0.008 70);
+  --muted-foreground: oklch(0.42 0.02 60);
+
+  --accent: oklch(0.95 0.05 55);
+  --accent-foreground: oklch(0.45 0.18 45);
+
+  --destructive: oklch(0.6 0.22 25);
+  --destructive-foreground: oklch(1 0 0);
+
+  --success: oklch(0.65 0.15 155);
+  --success-foreground: oklch(1 0 0);
+
+  --warning: oklch(0.78 0.15 75);
+  --warning-foreground: oklch(0.25 0.05 60);
+
+  --border: oklch(0.92 0.008 70);
+  --input: oklch(0.92 0.008 70);
+  --ring: oklch(0.66 0.21 45);
+
+  --chart-1: oklch(0.66 0.21 45);
+  --chart-2: oklch(0.78 0.16 60);
+  --chart-3: oklch(0.55 0.12 200);
+  --chart-4: oklch(0.65 0.15 155);
+  --chart-5: oklch(0.6 0.18 320);
+
+  /* Signature gradients */
+  --gradient-primary: linear-gradient(135deg, var(--primary-deep) 0%, var(--primary) 45%, var(--primary-glow) 100%);
+  --gradient-mesh: radial-gradient(60% 80% at 80% 0%, oklch(0.78 0.18 55 / 0.55), transparent 70%),
+                   radial-gradient(50% 70% at 0% 100%, oklch(0.66 0.21 45 / 0.35), transparent 70%);
+  --gradient-soft-radial: radial-gradient(80% 80% at 50% 0%, oklch(0.96 0.05 55 / 0.9), transparent 70%);
+
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.22 0.02 60);
+  --sidebar-primary: oklch(0.66 0.21 45);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.96 0.008 70);
+  --sidebar-accent-foreground: oklch(0.22 0.02 60);
+  --sidebar-border: oklch(0.92 0.008 70);
+  --sidebar-ring: oklch(0.66 0.21 45);
+}
+
+.dark {
+  --background: oklch(0.18 0.015 60);
+  --foreground: oklch(0.95 0.005 70);
+  --card: oklch(0.22 0.018 60);
+  --card-foreground: oklch(0.95 0.005 70);
+  --popover: oklch(0.22 0.018 60);
+  --popover-foreground: oklch(0.95 0.005 70);
+  --primary: oklch(0.7 0.18 45);
+  --primary-foreground: oklch(0.18 0.015 60);
+  --primary-soft: oklch(0.3 0.06 50);
+  --secondary: oklch(0.28 0.02 60);
+  --secondary-foreground: oklch(0.95 0.005 70);
+  --muted: oklch(0.28 0.02 60);
+  --muted-foreground: oklch(0.78 0.02 60);
+  --accent: oklch(0.34 0.06 50);
+  --accent-foreground: oklch(0.92 0.1 55);
+  --destructive: oklch(0.68 0.2 25);
+  --destructive-foreground: oklch(1 0 0);
+  --success: oklch(0.74 0.15 155);
+  --success-foreground: oklch(0.18 0.015 60);
+  --warning: oklch(0.82 0.15 75);
+  --warning-foreground: oklch(0.18 0.015 60);
+  --border: oklch(1 0 0 / 18%);
+  --input: oklch(1 0 0 / 20%);
+  --ring: oklch(0.74 0.18 45);
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+@keyframes overdue-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px) rotate(-0.6deg); }
+  40% { transform: translateX(3px) rotate(0.6deg); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+@keyframes input-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html, body {
+    font-family: var(--font-sans);
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+    font-weight: 400;
+    line-height: 1.65;
+    letter-spacing: 0.01em;
+  }
+  .font-mono, code, pre { font-family: var(--font-mono); }
+
+  /* Minimal weight scale — ภาษาไทยอ่านง่ายขึ้น ไม่เบียด */
+  .font-black     { font-weight: 600; }
+  .font-extrabold { font-weight: 600; }
+  .font-bold      { font-weight: 500; }
+  .font-semibold  { font-weight: 500; }
+  .font-medium    { font-weight: 450; }
+
+  /* Headings โปร่งขึ้น */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    line-height: 1.35;
+  }
+
+  /* CTA / shadcn buttons น้ำหนักเบาสม่ำเสมอ */
+  button { font-weight: 500; letter-spacing: 0.005em; }
+}
+
+@layer utilities {
+  .animate-fade-up { animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .animate-fade-in { animation: fade-in 0.3s ease-out both; }
+  .animate-scale-in { animation: scale-in 0.25s ease-out both; }
+  .animate-blob { animation: blob-float 14s ease-in-out infinite; }
+  .animate-overdue-shake { animation: overdue-shake 0.9s ease-in-out infinite; }
+  .animate-input-shake { animation: input-shake 0.4s ease-in-out; }
+
+  /* So1o branded input focus */
+  .input-so1o:focus-visible {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 20%, transparent);
+  }
+
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
+  .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  /* Signature gradient utilities */
+  .bg-gradient-primary { background-image: var(--gradient-primary); }
+  .bg-gradient-mesh { background-image: var(--gradient-mesh); }
+  .bg-gradient-soft { background-image: var(--gradient-soft-radial); }
+
+  /* Frosted glass card — adapts to light/dark for proper contrast */
+  .glass {
+    background: color-mix(in oklab, var(--card) 72%, transparent);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+    color: var(--card-foreground);
+  }
+  .dark .glass {
+    background: color-mix(in oklab, var(--card) 78%, transparent);
+    border-color: color-mix(in oklab, var(--foreground) 14%, transparent);
+  }
+
+  /* Glow on signature gradient cards */
+  .glow-edge {
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 0.28),
+      0 24px 60px -20px oklch(0.66 0.21 45 / 0.55),
+      0 8px 24px -12px oklch(0.52 0.2 35 / 0.4);
+  }
+
+  /* Ambient orange blobs for page background */
+  .ambient-blobs {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .ambient-blobs::before,
+  .ambient-blobs::after {
+    content: "";
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(90px);
+    opacity: 0.7;
+    will-change: transform;
+  }
+  .ambient-blobs::before {
+    width: 520px; height: 520px;
+    background: radial-gradient(circle, oklch(0.78 0.18 55 / 0.85), transparent 70%);
+    top: -160px; right: -140px;
+    animation: blob-float 16s ease-in-out infinite;
+  }
+  .ambient-blobs::after {
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, oklch(0.62 0.22 35 / 0.6), transparent 70%);
+    bottom: -120px; left: -100px;
+    animation: blob-float 22s ease-in-out infinite reverse;
+  }
+}
+
+/* ─────────── Dashboard sidebar gradient (desktop + mobile drawer) ─────────── */
+body.dash-sidebar-gradient [data-sidebar="sidebar"] {
+  background: linear-gradient(180deg, #ff914d 0%, #ff3131 100%) !important;
+  color: #ffffff !important;
+}
+body.dash-sidebar-gradient [data-sidebar="sidebar"] [data-sidebar="group-label"] {
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+
+/* ─────────── Receipt-style decoration ─────────── */
+.receipt-edge {
+  height: 10px;
+  background:
+    linear-gradient(45deg, transparent 33.333%, white 33.333%, white 66.667%, transparent 66.667%),
+    linear-gradient(-45deg, transparent 33.333%, white 33.333%, white 66.667%, transparent 66.667%);
+  background-size: 14px 14px;
+  background-position: 0 -7px;
+  background-color: oklch(0.92 0.008 70);
+}
+.receipt-edge-bottom {
+  background-position: 0 7px;
+  transform: scaleY(-1);
+}
+
+/* ─────────── Print: only show quotation ───────────
+   IMPORTANT: this legacy block must NOT run when we're printing a Smart
+   Brief (body.printing-brief) or the A4 mockup dialog (body.printing-mockup) —
+   both have their own dedicated print payloads below.
+*/
+@media print {
+  .no-print { display: none !important; }
+  @page { margin: 14mm; size: A4; }
+
+  /* ─── Legacy quotation-only print (no mockup dialog, no brief) ─── */
+  body:not(.printing-brief):not(.printing-mockup):not(.printing-track):not(.printing-meeting-report) * { visibility: hidden !important; }
+  body:not(.printing-brief):not(.printing-mockup):not(.printing-track):not(.printing-meeting-report) #quotation-printable,
+  body:not(.printing-brief):not(.printing-mockup):not(.printing-track):not(.printing-meeting-report) #quotation-printable * { visibility: visible !important; }
+  body:not(.printing-brief):not(.printing-mockup):not(.printing-track):not(.printing-meeting-report) #quotation-printable {
+    position: absolute !important;
+    left: 0; top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: #1f2937 !important;
+    font-size: 11pt !important;
+  }
+  body:not(.printing-brief):not(.printing-mockup):not(.printing-track):not(.printing-meeting-report) #quotation-printable .receipt-edge { display: none !important; }
+  body:not(.printing-brief):not(.printing-mockup):not(.printing-track):not(.printing-meeting-report) #quotation-printable > div > div { page-break-inside: avoid; }
+
+}
+
+/* Quotation mockup — print payload portaled to <body> (no :has() — Safari-safe) */
+.mockup-print-only { display: none; }
+
+@media print {
+  body.printing-mockup > *:not(.mockup-print-only) { display: none !important; }
+  body.printing-mockup .mockup-print-only {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body.printing-mockup .mockup-print-only .mockup-print-root,
+  body.printing-mockup .mockup-print-only .mockup-print-root > * {
+    position: static !important;
+    max-width: none !important;
+    max-height: none !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    transform: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body.printing-mockup #quotation-printable {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: #1f2937 !important;
+    font-size: 11pt !important;
+    page-break-inside: auto;
+  }
+  body.printing-mockup #quotation-printable .receipt-edge { display: none !important; }
+  body.printing-mockup #quotation-printable > div > div { page-break-inside: avoid; }
+  body.printing-mockup .quotation-print-appendix {
+    display: block !important;
+    page-break-before: always !important;
+    break-before: page !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+/* Client track — full quotation dialog print */
+.track-print-only { display: none; }
+
+@media print {
+  body.printing-track > *:not(.track-print-only) { display: none !important; }
+  body.printing-track .track-print-only {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body.printing-track #quotation-print-area {
+    box-shadow: none !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+}
+
+.license-cert-print-only { display: none; }
+
+@media print {
+  body.printing-license-cert > *:not(.license-cert-print-only) { display: none !important; }
+  body.printing-license-cert .license-cert-print-only {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+
+/* Thai vowel rendering — prevent มาตรา/สระ being clipped or overlapping */
+.thai-text,
+.thai-text * {
+  line-height: 1.6;
+  overflow: visible;
+  text-rendering: optimizeLegibility;
+}
+.thai-text p,
+.thai-text span,
+.thai-text li,
+.thai-text h1,
+.thai-text h2,
+.thai-text h3 {
+  padding-top: 0.05em;
+}
+
+/* Smooth column / collapse transitions inside the editor */
+.editor-smooth,
+.editor-smooth * {
+  transition-property: height, max-height, transform, opacity;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Radix Collapsible / Accordion smooth open-close */
+@keyframes accordion-down {
+  from { height: 0; opacity: 0; }
+  to { height: var(--radix-collapsible-content-height); opacity: 1; }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-collapsible-content-height); opacity: 1; }
+  to { height: 0; opacity: 0; }
+}
+.animate-accordion-down { animation: accordion-down 220ms cubic-bezier(0.22, 1, 0.36, 1); }
+.animate-accordion-up { animation: accordion-up 180ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* ============================================================
+   Smart Brief — print / PDF styles
+   ============================================================ */
+.brief-print-only { display: none; }
+
+@media print {
+  @page { size: A4; margin: 14mm 12mm; }
+  html, body { background: #fff !important; }
+
+  /* Hide EVERYTHING in the app, then re-show only the print payload.
+     The print payload is portaled to <body> as a direct child so this rule
+     is reliable regardless of where the trigger came from (dialog, etc.). */
+  body.printing-brief > *:not(.brief-print-only) { display: none !important; }
+  body.printing-brief .brief-print-only {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body.printing-brief .brief-print-only * {
+    color: #111 !important;
+    box-shadow: none !important;
+    /* IMPORTANT: do NOT hide <header>/<aside>/<footer> here — the template uses them. */
+  }
+
+  body.printing-meeting-report > *:not(.meeting-report-print-only) { display: none !important; }
+  body.printing-meeting-report .meeting-report-print-only {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body.printing-meeting-report .meeting-report-print-only * {
+    color: #111 !important;
+    box-shadow: none !important;
+  }
+}
+
+.meeting-report-print-only { display: none; }
+
+.meeting-report-pdf-root {
+  font-family: "Inter", "IBM Plex Sans Thai", system-ui, -apple-system, sans-serif;
+  color: #1a1a1a;
+  background: #fff;
+  padding: 0;
+  font-size: 11pt;
+  line-height: 1.6;
+}
+.meeting-report-pdf-header { margin-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 1rem; }
+.meeting-report-pdf-kicker { font-size: 9pt; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.25rem; }
+.meeting-report-pdf-title { font-size: 18pt; font-weight: 700; margin: 0 0 0.35rem; }
+.meeting-report-pdf-meta { font-size: 10pt; color: #6b7280; margin: 0; }
+.meeting-report-pdf-body h1 { font-size: 16pt; margin: 1.25rem 0 0.5rem; }
+.meeting-report-pdf-body h2 { font-size: 12pt; font-weight: 600; margin: 1rem 0 0.35rem; color: #374151; }
+.meeting-report-pdf-body p { margin: 0.35rem 0; }
+.meeting-report-pdf-body ul { margin: 0.35rem 0 0.75rem 1.25rem; padding: 0; }
+.meeting-report-pdf-body li { margin: 0.2rem 0; }
+
+.brief-pdf-root {
+  font-family: "Inter", "IBM Plex Sans Thai", system-ui, -apple-system, sans-serif;
+  color: #1a1a1a;
+  background: #fff;
+  padding: 0;
+  font-size: 10.5px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  --doc-accent: #FF6B00;
+}
+
+/* ===== Cover ===== */
+.brief-pdf-cover-v2 {
+  padding-bottom: 18px;
+  margin-bottom: 24px;
+  position: relative;
+}
+.brief-pdf-cover-brand { display: flex; align-items: center; gap: 10px; }
+.brief-pdf-cover-logo { width: 40px; height: 40px; object-fit: contain; border-radius: 6px; }
+.brief-pdf-cover-brandname { font-weight: 700; font-size: 13px; letter-spacing: 0.04em; }
+.brief-pdf-cover-tagline { font-size: 10px; color: #777; }
+.brief-pdf-cover-titleblock { margin-top: 28px; }
+.brief-pdf-cover-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  color: #111;
+}
+.brief-pdf-cover-title {
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin: 2px 0 0;
+  color: #111;
+}
+.brief-pdf-cover-title-thin { font-weight: 200; letter-spacing: 0.02em; }
+.brief-pdf-cover-rule {
+  margin: 14px 0 18px;
+  height: 10px;
+  background: var(--doc-accent);
+  border-radius: 2px;
+}
+.brief-pdf-cover-intro {
+  font-size: 11px;
+  color: #444;
+  max-width: 90%;
+  margin: 0 0 14px;
+}
+.brief-pdf-cover-meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px 14px;
+  font-size: 10.5px;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+.brief-pdf-cover-meta > div { display: flex; flex-direction: column; gap: 2px; }
+.brief-pdf-cover-meta span { font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: #888; }
+.brief-pdf-cover-meta strong { font-weight: 600; color: #111; }
+
+/* ===== Section (sidebar layout) ===== */
+.brief-pdf-section-v2 {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 18px;
+  padding: 14px 0;
+  border-top: 1px solid #eee;
+  page-break-inside: avoid;
+}
+.brief-pdf-aside {
+  position: relative;
+  padding-top: 2px;
+}
+.brief-pdf-aside-num {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--doc-accent);
+  letter-spacing: 0.18em;
+  margin-bottom: 4px;
+}
+.brief-pdf-aside-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  margin: 0;
+  color: #111;
+  text-transform: uppercase;
+}
+.brief-pdf-aside-sub {
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 0.18em;
+  color: #777;
+  margin: 2px 0 0;
+  text-transform: uppercase;
+}
+.brief-pdf-content { padding-top: 2px; }
+
+/* ===== Rows ===== */
+.brief-pdf-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px;
+  padding: 5px 0;
+  border-bottom: 1px dashed #ececec;
+}
+.brief-pdf-row:last-child { border-bottom: none; }
+.brief-pdf-row-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #666;
+  letter-spacing: 0.02em;
+}
+.brief-pdf-row-value {
+  font-size: 11px;
+  color: #111;
+  word-break: break-word;
+}
+
+/* ===== Swatches ===== */
+.brief-pdf-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.brief-pdf-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  padding: 3px 6px 3px 3px;
+  background: #fafafa;
+}
+.brief-pdf-swatch-chip {
+  width: 16px; height: 16px; border-radius: 2px;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+.brief-pdf-swatch-code { font-size: 9.5px; font-family: "JetBrains Mono", monospace; color: #333; }
+
+/* ===== Scope list ===== */
+.brief-pdf-scope-list { list-style: none; padding: 0; margin: 0; }
+.brief-pdf-scope-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 0;
+  border-bottom: 1px dashed #ececec;
+  font-size: 11px;
+}
+.brief-pdf-scope-list li:last-child { border-bottom: none; }
+.brief-pdf-scope-list li::before {
+  content: "—";
+  color: var(--doc-accent);
+  font-weight: 700;
+}
+.brief-pdf-scope-name { font-weight: 600; color: #111; }
+.brief-pdf-scope-qty { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--doc-accent); font-weight: 700; }
+.brief-pdf-scope-note { color: #666; font-size: 10.5px; }
+
+/* ===== Brand CI ===== */
+.brief-pdf-ci-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.brief-pdf-ci-block { display: flex; flex-direction: column; gap: 4px; }
+.brief-pdf-ci-caption {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #888;
+}
+.brief-pdf-ci-imgwrap {
+  border: 1px solid #eee;
+  border-radius: 6px;
+  background: #fafafa;
+  overflow: hidden;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.brief-pdf-ci-imgwrap img { width: 100%; height: 100%; object-fit: cover; }
+.brief-pdf-ci-imgwrap--logo { background: #fff; padding: 8px; }
+.brief-pdf-ci-imgwrap--logo img { object-fit: contain; }
+
+/* ===== References ===== */
+.brief-pdf-refs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.brief-pdf-refs img {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e5e5e5;
+}
+
+/* ===== Notes ===== */
+.brief-pdf-notes { white-space: pre-wrap; font-size: 11px; color: #222; }
+
+/* ===== Sign-off ===== */
+.brief-pdf-signoff {
+  margin-top: 18px;
+  padding: 14px 0;
+  border-top: 1px solid #eee;
+  page-break-inside: avoid;
+}
+.brief-pdf-confirmed { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.brief-pdf-stamp {
+  border: 3px solid #16a34a;
+  color: #16a34a !important;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  padding: 10px 18px;
+  border-radius: 8px;
+  transform: rotate(-6deg);
+  font-size: 14px;
+}
+.brief-pdf-sig { text-align: right; }
+.brief-pdf-sig-line {
+  font-family: "Brush Script MT", cursive;
+  font-style: italic;
+  font-size: 22px;
+  border-bottom: 1px solid #111;
+  padding-bottom: 2px;
+  min-width: 180px;
+}
+.brief-pdf-sig-meta { font-size: 10px; color: #555; margin-top: 4px; }
+.brief-pdf-unsigned { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 8px; }
+.brief-pdf-sig-box {
+  border-bottom: 1px solid #111;
+  height: 60px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-size: 10px;
+  color: #777;
+  padding-bottom: 4px;
+}
+
+/* ===== Footer ===== */
+.brief-pdf-footer {
+  margin-top: 18px;
+  padding-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  color: #888;
+}
+.brief-pdf-footer-rule { flex: 1; height: 1px; background: #ddd; }
+.brief-pdf-powered {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 8.5px;
+  color: #aaa;
+  letter-spacing: 0.02em;
+}
+
+
+/* =====================================================================
+   Universal Cross-Platform Foundation
+   macOS / Windows / iOS / Android — native-feel base layer
+   ===================================================================== */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  text-size-adjust: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-family: "IBM Plex Sans Thai", -apple-system, BlinkMacSystemFont,
+    "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif;
+  /* Prevent browser pull-to-refresh / overscroll bounce at the page level */
+  overscroll-behavior-y: none;
+}
+
+/* Safe-area padding only when running as installed PWA, so browser UI isn't double-padded */
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+  }
+}
+
+/* Safe-area utility classes for fixed elements (bottom nav, headers, FABs) */
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-left { padding-left: env(safe-area-inset-left); }
+.safe-right { padding-right: env(safe-area-inset-right); }
+.safe-x { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+.safe-y { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+
+/* Mobile dashboard: scroll padding + fixed bars above BottomNav (64px + safe-area) */
+@media (max-width: 1023px) {
+  .quotation-editor-root {
+    padding-bottom: calc(4rem + 52px + 1rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* iOS: prevent automatic zoom when focusing form fields (font-size must be >= 16px on mobile) */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* Touch devices: enforce >= 44px hit targets per Apple/Google HIG */
+@media (pointer: coarse) {
+  button:not([data-compact-touch]),
+  a[role="button"]:not([data-compact-touch]),
+  [role="button"]:not([data-compact-touch]),
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
+    min-height: 44px;
+  }
+}
+
+/* Custom scrollbar — minimal on macOS, visible enough on Windows */
+@media (pointer: fine) {
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklab, var(--foreground) 20%, transparent);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklab, var(--foreground) 40%, transparent);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--foreground) 20%, transparent) transparent;
+  }
+}
+
+/* Momentum scrolling + contained overscroll for internal scroll containers */
+.scroll-area,
+.overflow-y-auto,
+.overflow-x-auto,
+.overflow-auto {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Brand orange focus ring — accessible, replaces harsh default outlines */
+:where(button, a, [role="button"], input, textarea, select, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 35%, transparent);
+}
+
+/* Disable text selection on UI chrome (buttons / nav / tabs / sidebar)
+   Content (p, h*, article, [data-content]) stays selectable. */
+button,
+[role="button"],
+[role="tab"],
+[role="menuitem"],
+nav,
+aside,
+.sidebar,
+[data-sidebar],
+[data-no-select] {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Glassmorphism helper — Safari-safe */
+.glass {
+  background-color: color-mix(in oklab, var(--background) 70%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--foreground) 6%, transparent);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass { background-color: var(--background); }
+}
+
+/* Hover-only effects: only apply on devices that actually have a hover-capable, fine pointer */
+@media (hover: hover) and (pointer: fine) {
+  .hover-lift { transition: transform 150ms ease; }
+  .hover-lift:hover { transform: translateY(-1px); }
+}
+
+/* Native form controls: remove iOS rounded inputs / default appearance */
+input,
+textarea,
+select {
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="checkbox"],
+input[type="radio"] {
+  -webkit-appearance: auto;
+  appearance: auto;
+}

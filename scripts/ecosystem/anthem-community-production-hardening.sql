@@ -1,0 +1,5 @@
+-- Canonical source:
+-- Solo-Code/supabase/migrations/20260622120000_anthem_community_production_hardening.sql
+--
+-- Keep deployment automation pointed at the canonical migration so this file cannot
+-- silently diverge. It exists as a discoverability marker for ecosystem operators.

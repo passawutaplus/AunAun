@@ -1,0 +1,40 @@
+name: E2E Smoke
+
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SITE_URL: https://pixel100.com
+      VITE_SUPABASE_URL: https://example.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiZXhwIjo0MTAyNDQ0ODAwfQ.test-signature
+      VITE_DEMO_MODE: "true"
+      VITE_DEMO_SUPABASE_URL: https://demo.example.supabase.co
+      VITE_DEMO_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiZXhwIjo0MTAyNDQ0ODAwfQ.test-signature
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Public security smoke
+        run: >
+          npx playwright test e2e/smoke/public.smoke.spec.ts
+          --project=smoke
+          --grep "legal pages|security headers|no service_role"
+      - name: SEO smoke
+        run: npm run e2e:seo
+      - name: Mobile public security smoke
+        run: >
+          npx playwright test e2e/smoke/public.smoke.spec.ts
+          --project=mobile-smoke
+          --grep "legal pages|security headers|no service_role"
+        env:
+          CI: true

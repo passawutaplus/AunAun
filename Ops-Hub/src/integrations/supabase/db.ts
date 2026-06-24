@@ -3,8 +3,14 @@
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+function requireEnv(name: "VITE_SUPABASE_URL" | "VITE_SUPABASE_PUBLISHABLE_KEY"): string {
+  const value = import.meta.env[name] as string | undefined;
+  if (!value) throw new Error(`Missing required environment variable: ${name}`);
+  return value;
+}
+
+const SUPABASE_URL = requireEnv("VITE_SUPABASE_URL");
+const SUPABASE_KEY = requireEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
 
 const authOpts = {
   storage: localStorage,

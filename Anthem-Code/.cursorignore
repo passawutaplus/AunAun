@@ -1,0 +1,19 @@
+# an1hem — Cursor exclusions
+
+node_modules/**
+dist/**
+dist-ssr/**
+.output/**
+.tanstack/**
+coverage/**
+*.log
+.env
+.env.*
+!.env.example
+
+src/integrations/supabase/types.ts
+supabase/migrations/**
+
+package-lock.json
+pnpm-lock.yaml
+bun.lockb

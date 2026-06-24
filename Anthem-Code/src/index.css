@@ -1,0 +1,370 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@100;200;300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Pure White */
+    --background: 0 0% 100%;
+    /* Coal Black #141517 */
+    --foreground: 210 7% 9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 7% 9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 7% 9%;
+
+    /* Radiant Orange #FF4F18 */
+    --primary: 14 100% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Fog Gray #F2F4F7 */
+    --secondary: 220 20% 96%;
+    --secondary-foreground: 210 7% 12%;
+
+    --muted: 220 20% 96%;
+    --muted-foreground: 215 10% 40%;
+
+    --accent: 220 20% 96%;
+    --accent-foreground: 210 7% 9%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 38%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 220 16% 92%;
+    --input: 220 16% 92%;
+    --ring: 14 100% 55%;
+
+    --radius: 0.875rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 210 7% 26%;
+    --sidebar-primary: 210 7% 9%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 220 20% 96%;
+    --sidebar-accent-foreground: 210 7% 9%;
+    --sidebar-border: 220 16% 92%;
+    --sidebar-ring: 14 100% 55%;
+
+    /* Chat persona tokens */
+    --chat-hire: 215 88% 52%;
+    --chat-hire-soft: 215 90% 96%;
+    --chat-collab: 14 100% 55%;
+    --chat-collab-soft: 14 100% 96%;
+  }
+
+  .dark {
+    /* Coal Black base — lifted surfaces for clearer hierarchy */
+    --background: 210 8% 7%;
+    --foreground: 0 0% 97%;
+    --card: 210 8% 13%;
+    --card-foreground: 0 0% 97%;
+    --popover: 210 8% 12%;
+    --popover-foreground: 0 0% 97%;
+    --primary: 14 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 8% 18%;
+    --secondary-foreground: 0 0% 94%;
+    --muted: 210 8% 18%;
+    --muted-foreground: 215 12% 72%;
+    --accent: 210 8% 22%;
+    --accent-foreground: 0 0% 97%;
+    --destructive: 0 72% 52%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 62% 48%;
+    --success-foreground: 0 0% 100%;
+    --border: 210 8% 26%;
+    --input: 210 8% 22%;
+    --ring: 14 100% 60%;
+    --sidebar-background: 210 8% 9%;
+    --sidebar-foreground: 0 0% 92%;
+    --sidebar-primary: 14 100% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 8% 16%;
+    --sidebar-accent-foreground: 0 0% 94%;
+    --sidebar-border: 210 8% 26%;
+    --sidebar-ring: 14 100% 60%;
+
+    /* Chat persona tokens */
+    --chat-hire: 215 88% 62%;
+    --chat-hire-soft: 215 45% 18%;
+    --chat-collab: 14 100% 60%;
+    --chat-collab-soft: 14 55% 16%;
+  }
+
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-weight: 200;
+    letter-spacing: 0.012em;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Smooth crossfade when toggling light/dark (View Transitions API) */
+  @media (prefers-reduced-motion: no-preference) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 0.45s;
+      animation-timing-function: ease-in-out;
+    }
+  }
+
+  /* Fallback for browsers without View Transitions */
+  html.theme-fade-active,
+  html.theme-fade-active body {
+    transition:
+      background-color 0.45s ease,
+      color 0.45s ease;
+  }
+
+  html.theme-fade-active .bg-app-ambient,
+  html.theme-fade-active .glass-panel,
+  html.theme-fade-active .glass-panel-strong,
+  html.theme-fade-active .glass-chip,
+  html.theme-fade-active [class*="bg-card"],
+  html.theme-fade-active [class*="bg-muted"],
+  html.theme-fade-active [class*="bg-secondary"],
+  html.theme-fade-active [class*="bg-background"] {
+    transition:
+      background-color 0.45s ease,
+      color 0.45s ease,
+      border-color 0.45s ease,
+      box-shadow 0.45s ease;
+  }
+
+  /* Thai text needs more leading to avoid tone-mark collision */
+  :lang(th), body {
+    line-height: 1.65;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-weight: 300;
+    letter-spacing: 0;
+    line-height: 1.3;
+  }
+
+  /* Buttons inherit lighter weight by default */
+  button {
+    font-weight: 400;
+  }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes input-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+@layer utilities {
+  .animate-fade-up { animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .animate-fade-in { animation: fade-in 0.3s ease-out both; }
+  .animate-scale-in { animation: scale-in 0.25s ease-out both; }
+  .animate-input-shake { animation: input-shake 0.4s ease-in-out; }
+
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Thai typography fine-tuning utilities */
+  .thai-leading-tight  { line-height: 1.5; }
+  .thai-leading        { line-height: 1.7; }
+  .thai-leading-loose  { line-height: 1.85; }
+  .thai-tracking-tight { letter-spacing: 0; }
+  .thai-tracking       { letter-spacing: 0.015em; }
+  .thai-tracking-wide  { letter-spacing: 0.03em; }
+  .thai-display { line-height: 1.35; letter-spacing: 0; }
+  .thai-body    { line-height: 1.75; letter-spacing: 0.015em; }
+
+
+  /* Hide page scrollbar on mobile (touch devices) — scroll still works */
+  @media (max-width: 1023px) {
+    html, body { scrollbar-width: none; -ms-overflow-style: none; }
+    html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    *::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    * { scrollbar-width: none; -ms-overflow-style: none; }
+  }
+
+
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(18 100% 62%) 0%, hsl(14 100% 55%) 50%, hsl(10 95% 48%) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .bg-gradient-brand {
+    background-image: linear-gradient(135deg, hsl(18 100% 62%) 0%, hsl(14 100% 55%) 50%, hsl(10 95% 48%) 100%);
+  }
+
+  .bg-gradient-brand-soft {
+    background-image: linear-gradient(135deg, hsl(18 100% 70% / 0.32) 0%, hsl(14 100% 60% / 0.28) 50%, hsl(10 95% 55% / 0.22) 100%);
+  }
+
+  .bg-gradient-brand-radial {
+    background-image: radial-gradient(circle at 30% 30%, hsl(18 100% 65% / 0.55), transparent 60%), radial-gradient(circle at 70% 70%, hsl(10 95% 55% / 0.45), transparent 65%);
+  }
+
+  .dark .text-gradient,
+  .dark .bg-gradient-brand {
+    background-image: linear-gradient(135deg, hsl(20 100% 65%) 0%, hsl(14 100% 58%) 50%, hsl(10 95% 52%) 100%);
+  }
+
+
+  .bg-gradient-subtle {
+    background-image: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--secondary) / 0.4) 100%);
+  }
+
+  /* === Clean Surface System (was glass) === */
+  .glass-panel {
+    background-color: hsl(0 0% 100%);
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 2px hsl(0 0% 0% / 0.04);
+  }
+  .dark .glass-panel {
+    background-color: hsl(var(--card));
+    border-color: hsl(var(--border));
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.05),
+      0 2px 10px hsl(0 0% 0% / 0.35);
+  }
+
+  .glass-panel-strong {
+    background-color: hsl(0 0% 100% / 0.85);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 2px 8px hsl(0 0% 0% / 0.04);
+  }
+  .dark .glass-panel-strong {
+    background-color: hsl(var(--card) / 0.92);
+    border-color: hsl(var(--border));
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.04),
+      0 4px 16px hsl(0 0% 0% / 0.4);
+  }
+
+  .glass-chip {
+    background-color: hsl(0 0% 100%);
+    border: 1px solid hsl(var(--border));
+  }
+  .dark .glass-chip {
+    background-color: hsl(var(--secondary));
+    border-color: hsl(var(--border));
+  }
+
+  .glass-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .glass-hover:hover {
+    transform: translateY(-1px);
+    border-color: hsl(var(--primary) / 0.4);
+    box-shadow: 0 4px 16px -6px hsl(14 100% 50% / 0.18);
+
+  }
+
+  /* Clean white app background (formerly orange ambient) */
+  .bg-app-ambient {
+    position: relative;
+    background-color: hsl(var(--background));
+  }
+  .dark .bg-app-ambient {
+    background-color: hsl(var(--background));
+  }
+
+  /* Dark mode contrast lifts — opacity utilities that sink on coal black */
+  .dark .text-foreground\/65 {
+    color: hsl(var(--foreground) / 0.78);
+  }
+  .dark .text-foreground\/70 {
+    color: hsl(var(--foreground) / 0.84);
+  }
+  .dark .text-foreground\/80 {
+    color: hsl(var(--foreground) / 0.9);
+  }
+  .dark .text-foreground\/85 {
+    color: hsl(var(--foreground) / 0.94);
+  }
+  .dark .text-muted-foreground\/50 {
+    color: hsl(var(--muted-foreground) / 0.72);
+  }
+  .dark .text-muted-foreground\/70 {
+    color: hsl(var(--muted-foreground) / 0.88);
+  }
+  .dark .hover\:bg-foreground\/5:hover {
+    background-color: hsl(var(--accent));
+  }
+  .dark .border-border\/35,
+  .dark .border-border\/40,
+  .dark .border-border\/50 {
+    border-color: hsl(var(--border) / 0.8);
+  }
+  .dark .ring-border\/35 {
+    --tw-ring-color: hsl(var(--border) / 0.7);
+  }
+  .dark .bg-secondary\/60 {
+    background-color: hsl(var(--secondary));
+  }
+  .dark .bg-muted\/50 {
+    background-color: hsl(var(--muted));
+  }
+
+}
+
+
+@layer base {
+  .admin-theme {
+    --admin-bg: 0 0% 99%;
+    --admin-fg: 0 0% 6%;
+    --admin-surface: 0 0% 97%;
+    --admin-border: 0 0% 90%;
+    --admin-muted: 0 0% 45%;
+    --admin-hover: 0 0% 94%;
+    --admin-accent: 22 100% 50%;
+    font-feature-settings: "ss01", "cv11";
+  }
+  .dark .admin-theme,
+  .admin-theme.dark {
+    --admin-bg: 0 0% 5%;
+    --admin-fg: 0 0% 96%;
+    --admin-surface: 0 0% 8%;
+    --admin-border: 0 0% 16%;
+    --admin-muted: 0 0% 55%;
+    --admin-hover: 0 0% 12%;
+    --admin-accent: 22 100% 55%;
+  }
+  .admin-dot-grid {
+    background-image: radial-gradient(hsl(var(--admin-border)) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+}

@@ -1,0 +1,40 @@
+# Solo-Code — Cursor exclusions (use when opening this folder alone)
+
+node_modules/**
+dist/**
+dist-ssr/**
+.output/**
+.vinxi/**
+.tanstack/**
+.nitro/**
+.wrangler/**
+coverage/**
+*.log
+.env
+.env.*
+!.env.example
+.dev.vars
+
+# Auto-generated Supabase types (~7k lines)
+src/integrations/supabase/types.ts
+
+# Migrations — use supabase/SCHEMA.md or specific migration @-mentions instead
+supabase/migrations/**
+
+# Regenerated SQL bundles
+supabase/manual/**
+
+package-lock.json
+pnpm-lock.yaml
+bun.lockb
+
+.DS_Store
+.idea/**
+.vscode/**
+
+# Deploy bundles (inline edge function source — slows agent search)
+supabase/.bundle-*.json
+supabase/.tmp-*.json
+supabase/.mcp-payload.json
+supabase/.deploy-payloads/**
+supabase/.temp/**

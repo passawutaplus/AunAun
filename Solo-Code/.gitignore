@@ -1,0 +1,46 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+bin/supabase
+dist
+dist-ssr
+test-results
+playwright-report
+*.tsbuildinfo
+.output
+.vinxi
+.tanstack/**
+.nitro
+*.local
+
+# Env secrets (never commit)
+.env
+.env.*
+!.env.example
+
+# Wrangler / Cloudflare
+.wrangler/
+.dev.vars
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vercel
+supabase/.temp/
+supabase/.deploy-payloads/
+supabase/.mcp-payload.json
+supabase/.tmp-*

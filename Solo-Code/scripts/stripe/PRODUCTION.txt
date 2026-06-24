@@ -1,0 +1,35 @@
+Stripe Production (Live) setup — SO1O FREELANCER (acct_1TbitVGfB0bl0FEI)
+================================================================================
+
+1) Solo-Code/.env (production / Vercel)
+   VITE_STRIPE_ENV=live
+   VITE_PAYMENTS_CLIENT_TOKEN=pk_live_...
+   STRIPE_LIVE_API_KEY=sk_live_...
+   PAYMENTS_LIVE_WEBHOOK_SECRET=whsec_...
+   STRIPE_USE_DIRECT=true
+
+2) Sync live catalog (one-time or after price changes)
+   cd Solo-Code
+   STRIPE_LIVE_API_KEY=sk_live_... npm run stripe:sync
+   npm run stripe:verify
+
+3) Stripe Dashboard → Developers → Webhooks → Add endpoint
+   URL: https://www.solofreelancer.com/api/public/payments/webhook?env=live
+   Events:
+     - checkout.session.completed
+     - customer.subscription.created
+     - customer.subscription.updated
+     - customer.subscription.deleted
+     - invoice.payment_succeeded
+     - invoice.payment_failed
+   Copy signing secret → PAYMENTS_LIVE_WEBHOOK_SECRET
+
+4) Stripe Tax (live only — automatic_tax enabled in code for live)
+   Dashboard → Tax → enable + add Thailand registration before go-live
+
+5) Supabase migration (if not applied)
+   ALTER TABLE public.subscriptions ADD COLUMN IF NOT EXISTS seat_quantity integer NOT NULL DEFAULT 1;
+
+6) After deploy: test upgrade Free→Pro via /pricing, then Pro→Pro+ in Settings → ปรับโหมด
+
+Sandbox test mode uses ?env=sandbox webhook URL and sk_test_ keys instead.

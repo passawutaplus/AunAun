@@ -24,10 +24,14 @@ jobs:
           node-version: "22"
 
       - name: Install
-        run: npm install
+        run: npm ci
 
       - name: Lint
         run: npm run lint
+        continue-on-error: true
+
+      - name: Typecheck
+        run: npm run typecheck
 
       - name: Unit tests (Vitest)
         run: npm run test

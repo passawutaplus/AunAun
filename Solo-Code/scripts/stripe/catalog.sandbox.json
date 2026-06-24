@@ -1,0 +1,44 @@
+{
+  "synced_at": "2026-06-11",
+  "mode": "sandbox",
+  "stripe_account": "acct_1Ta6jPGsQus4Drjb",
+  "products": {
+    "so1o_pro": {
+      "name": "So1o Pro",
+      "prices": {
+        "pro_monthly": "price_1Th9isGsQus4DrjbCcJpUyKT",
+        "pro_yearly": "price_1Th9iuGsQus4Drjb7zFQ7hCV"
+      }
+    },
+    "so1o_pro_plus": {
+      "name": "So1o Pro+",
+      "prices": {
+        "pro_plus_monthly": "price_1Th9ivGsQus4Drjb2wSdrutX",
+        "pro_plus_yearly": "price_1Th9iwGsQus4DrjbBr7C8hux"
+      }
+    },
+    "so1o_inhouse": {
+      "name": "So1o In-House",
+      "prices": {
+        "inhouse_monthly": "price_1Th9ixGsQus4DrjblbnA7VNp",
+        "inhouse_yearly": "price_1Th9izGsQus4DrjbDtUWIExq"
+      }
+    },
+    "so1o_ai_credits": {
+      "name": "So1o AI Credits",
+      "prices": {
+        "credits_100": "price_1Th9j1GsQus4Drjb3wN2pC3C",
+        "credits_500": "price_1Th9j2GsQus4DrjbZOiron8a",
+        "credits_2000": "price_1Th9j3GsQus4Drjb6PMYNd5a"
+      }
+    },
+    "an1hem_px": {
+      "name": "an1hem Pixel (PX)",
+      "prices": {
+        "px_500": "price_1Th9j5GsQus4DrjbjdJFiBSO",
+        "px_2000": "price_1Th9j5GsQus4DrjbaKbhKxub",
+        "px_10000": "price_1Th9j6GsQus4DrjbS0lyzY0w"
+      }
+    }
+  }
+}
