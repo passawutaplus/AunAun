@@ -7,7 +7,7 @@ alwaysApply: true
 
 Index: [docs/ai-skills/README.md](../../docs/ai-skills/README.md)
 
-ก่อนแก้โค้ดที่กระทบ product direction, UX, security, payment, referral, wallet, RLS, auth หรือ deploy — **อ่าน skill ที่เกี่ยวข้องก่อน** แล้วสรุปสั้น ๆ ก่อนลงมือ (ไม่ต้องถามยืนยันถ้างานชัด)
+ก่อนแก้โค้ดที่กระทบ product direction, UX, security, payment, referral, wallet, RLS, auth, scaling หรือ deploy — **อ่าน skill ที่เกี่ยวข้องก่อน** แล้วสรุปสั้น ๆ ก่อนลงมือ (ไม่ต้องถามยืนยันถ้างานชัด)
 
 ## Shared (ทุกงานใน monorepo)
 
@@ -18,6 +18,7 @@ Index: [docs/ai-skills/README.md](../../docs/ai-skills/README.md)
 | `docs/ai-skills/SECURITY_CHECKLIST.md` | auth, RLS, secrets, payment |
 | `docs/ai-skills/UX_UI_RULES.md` | หน้าเว็บ, copy ไทย, hierarchy |
 | `docs/ai-skills/RELEASE_CHECKLIST.md` | ก่อน merge / deploy production |
+| `docs/ai-skills/SCALING_READINESS_SKILL.md` | user/traffic/data เพิ่ม, performance, capacity |
 
 Deploy จริง: ใช้ร่วมกับ [deploy-workflow.mdc](./deploy-workflow.mdc) และ [ecosystem-deploy-policy.md](../../docs/ecosystem-deploy-policy.md)
 
@@ -33,6 +34,7 @@ Index: `Anthem-Code/docs/ai-skills/README.md`
 | `ANTHEM_COMMUNITY_SAFETY_SKILL.md` | moderation, report, profanity |
 | `ANTHEM_MOBILE_APP_SKILL.md` | PWA / mobile app |
 | `ANTHEM_MARKETING_SKILL.md` | launch, campaign |
+| `ANTHEM_COMMUNITY_SCALING_SKILL.md` | feed/notification/moderation scale |
 
 ## Solo (`Solo-Code/`)
 
@@ -45,6 +47,7 @@ Index: `Solo-Code/docs/ai-skills/README.md`
 | `SOLO_INHOUSE_SKILL.md` | inhouse workspace |
 | `SOLO_UX_WORKFLOW_SKILL.md` | freelancer workflow UX |
 | `SOLO_PRODUCTION_OPS_SKILL.md` | prod ops, cron, backup |
+| `SOLO_SCALE_AND_RELIABILITY_SKILL.md` | payment throughput, webhook, reliability |
 
 ## กติกา
 
