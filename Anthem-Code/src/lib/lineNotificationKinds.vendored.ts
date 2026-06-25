@@ -1,4 +1,4 @@
-/** AUTO-GENERATED - do not edit. Source: Solo-Code/src/lib/lineNotificationKinds.ts */
+/** AUTO-GENERATED — do not edit. Source: Solo-Code/F:\So1o\AunAun-fresh\Solo-Code\src\lib\lineNotificationKinds.ts */
 /** LINE notification preference keys (stored in profiles.line_notify_prefs). */
 
 export type LineNotifyKind =

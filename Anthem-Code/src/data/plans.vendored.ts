@@ -1,4 +1,4 @@
-/** AUTO-GENERATED - do not edit. Source: Solo-Code/src/data/plans.ts */
+/** AUTO-GENERATED — do not edit. Source: Solo-Code/F:\So1o\AunAun-fresh\Solo-Code\src\data\plans.ts */
 export type PlanId = "free" | "pro" | "pro_plus" | "inhouse";
 export type BillingCycle = "monthly" | "yearly";
 

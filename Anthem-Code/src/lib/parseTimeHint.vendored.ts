@@ -1,4 +1,4 @@
-/** AUTO-GENERATED — sync from Solo-Code/src/lib/parseTimeHint.ts */
+/** AUTO-GENERATED — do not edit. Source: Solo-Code/F:\So1o\AunAun-fresh\Solo-Code\src\lib\parseTimeHint.ts */
 import {
   DRILL_DIFFICULTY_META,
   type DrillDifficulty,

@@ -1,4 +1,4 @@
-/** AUTO-GENERATED — sync from Solo-Code/src/lib/dailySeedPick.ts */
+/** AUTO-GENERATED — do not edit. Source: Solo-Code/F:\So1o\AunAun-fresh\Solo-Code\src\lib\dailySeedPick.ts */
 export function hashSeed(input: string): number {
   let h = 2166136261;
   for (let i = 0; i < input.length; i++) {
