@@ -9,6 +9,7 @@
 - In-house org/workspace/task/chat: `SOLO_INHOUSE_SKILL.md`
 - Dashboard/admin/workflow UX: `SOLO_UX_WORKFLOW_SKILL.md`
 - Deploy/env/Supabase/CI/ops: `SOLO_PRODUCTION_OPS_SKILL.md`
+- Scale/reliability/payment throughput: `SOLO_SCALE_AND_RELIABILITY_SKILL.md`
 
 ## Shared skills ที่ควรอ่านร่วม
 
@@ -19,6 +20,7 @@
 - `docs/ai-skills/SECURITY_CHECKLIST.md`
 - `docs/ai-skills/UX_UI_RULES.md`
 - `docs/ai-skills/RELEASE_CHECKLIST.md`
+- `docs/ai-skills/SCALING_READINESS_SKILL.md`
 
 ## Prompt แนะนำ
 
@@ -37,3 +39,4 @@ Solo ต้อง optimize ไปที่:
 3. in-house permission ไม่รั่ว
 4. production deploy stable
 5. operational UI ใช้งานซ้ำได้ ไม่ใช่แค่สวย
+6. payment/workspace/admin รองรับ volume เพิ่มขึ้นและ recover ได้

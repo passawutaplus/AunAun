@@ -26,6 +26,7 @@
 3. `SECURITY_CHECKLIST.md` - security baseline สำหรับทั้งสองเว็บ
 4. `UX_UI_RULES.md` - design/UX rules สำหรับงานหน้าเว็บ
 5. `RELEASE_CHECKLIST.md` - checklist ก่อน push/merge/deploy
+6. `SCALING_READINESS_SKILL.md` - playbook รองรับผู้ใช้/ข้อมูล/traffic เพิ่มขึ้น
 
 ## Anthem Skills
 
@@ -37,6 +38,7 @@
 4. `ANTHEM_COMMUNITY_SAFETY_SKILL.md`
 5. `ANTHEM_MOBILE_APP_SKILL.md`
 6. `ANTHEM_MARKETING_SKILL.md`
+7. `ANTHEM_COMMUNITY_SCALING_SKILL.md`
 
 ## Solo Skills
 
@@ -47,6 +49,7 @@
 3. `SOLO_INHOUSE_SKILL.md`
 4. `SOLO_UX_WORKFLOW_SKILL.md`
 5. `SOLO_PRODUCTION_OPS_SKILL.md`
+6. `SOLO_SCALE_AND_RELIABILITY_SKILL.md`
 
 ## กติกาสำคัญ
 

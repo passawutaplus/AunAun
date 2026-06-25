@@ -10,6 +10,7 @@
 - Report/moderation/profanity/community trust: `ANTHEM_COMMUNITY_SAFETY_SKILL.md`
 - Android/iOS/app readiness: `ANTHEM_MOBILE_APP_SKILL.md`
 - Launch/content/referral campaign: `ANTHEM_MARKETING_SKILL.md`
+- รองรับ community/user/post/referral เพิ่มขึ้น: `ANTHEM_COMMUNITY_SCALING_SKILL.md`
 
 ## Shared skills ที่ควรอ่านร่วม
 
@@ -20,6 +21,7 @@
 - `docs/ai-skills/SECURITY_CHECKLIST.md`
 - `docs/ai-skills/UX_UI_RULES.md`
 - `docs/ai-skills/RELEASE_CHECKLIST.md`
+- `docs/ai-skills/SCALING_READINESS_SKILL.md`
 
 ## Prompt แนะนำ
 
@@ -38,3 +40,4 @@ Anthem ต้อง optimize ไปที่:
 3. publish/post งานแรกได้
 4. referral/reward ชัดและกัน abuse
 5. community รู้สึกปลอดภัยพอสำหรับ public beta
+6. feed/referral/moderation รองรับ user เพิ่มขึ้นโดยไม่พัง
