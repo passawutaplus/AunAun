@@ -7,9 +7,11 @@ interface Props {
   collection: CollectionWithCovers;
   to?: string;
   className?: string;
+  /** กริด 2 คอลัมน์บนมือถือ — ตัวอักษรกะทัดรัด */
+  compact?: boolean;
 }
 
-const CollectionCard = ({ collection, to, className }: Props) => {
+const CollectionCard = ({ collection, to, className, compact = false }: Props) => {
   const href = to ?? `/collections/${collection.id}`;
   const covers = collection.covers ?? [];
   const placeholders = Array.from({ length: 4 - covers.length });
@@ -49,9 +51,21 @@ const CollectionCard = ({ collection, to, className }: Props) => {
           </span>
         )}
       </div>
-      <div className="px-3 py-2.5">
-        <h3 className="font-semibold text-sm text-foreground line-clamp-1">{collection.name}</h3>
-        <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-0.5">
+      <div className={cn("px-2 py-2 sm:px-3 sm:py-2.5", !compact && "sm:py-2.5")}>
+        <h3
+          className={cn(
+            "font-medium text-foreground thai-body leading-snug",
+            compact ? "text-xs sm:text-sm line-clamp-2" : "text-sm font-semibold line-clamp-1",
+          )}
+        >
+          {collection.name}
+        </h3>
+        <div
+          className={cn(
+            "flex items-center justify-between text-muted-foreground mt-0.5",
+            compact ? "text-[10px] sm:text-[11px]" : "text-[11px]",
+          )}
+        >
           <span>{collection.item_count} ผลงาน</span>
           {collection.category && <span className="truncate ml-2">{collection.category}</span>}
         </div>

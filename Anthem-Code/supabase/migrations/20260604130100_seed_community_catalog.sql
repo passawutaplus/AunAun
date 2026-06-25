@@ -16,10 +16,10 @@ DECLARE
   sid uuid;
   cover text;
   names text[] := ARRAY[
-    'ภัสวุฒิ ศรีวงค์','นภัสรา ทองดี','พิมพ์ชนก ใจดี','วรรณกร พันธ์ทอง','ธัญญา รัตนพร',
-    'ฉัตรชัย วรกุล','อาทิตยา จันทร์เพ็ญ','พลอยไพลิน ขจร','ธนกร แสงทอง','อนุชา ภูมิดี',
-    'ปาริชาต สวยงาม','เจษฎา ท่องเที่ยว','สุพัตรา โมชั่น','วทัญญู เสียงดี','กฤษณา เมโลดี้',
-    'ศิริพร เงินงาม','กิตติพงษ์ ดิจิทัล','มนัสนันท์ อาร์ต','ณัฐวุฒิ ภาพถ่าย','ภัทรานิษฐ์ คอนเทนต์'
+    'à¸ à¸±à¸ªà¸§à¸¸à¸’à¸´ à¸¨à¸£à¸µà¸§à¸‡à¸„à¹Œ','à¸™à¸ à¸±à¸ªà¸£à¸² à¸—à¸­à¸‡à¸”à¸µ','à¸žà¸´à¸¡à¸žà¹Œà¸Šà¸™à¸ à¹ƒà¸ˆà¸”à¸µ','à¸§à¸£à¸£à¸“à¸à¸£ à¸žà¸±à¸™à¸˜à¹Œà¸—à¸­à¸‡','à¸˜à¸±à¸à¸à¸² à¸£à¸±à¸•à¸™à¸žà¸£',
+    'à¸‰à¸±à¸•à¸£à¸Šà¸±à¸¢ à¸§à¸£à¸à¸¸à¸¥','à¸­à¸²à¸—à¸´à¸•à¸¢à¸² à¸ˆà¸±à¸™à¸—à¸£à¹Œà¹€à¸žà¹‡à¸','à¸žà¸¥à¸­à¸¢à¹„à¸žà¸¥à¸´à¸™ à¸‚à¸ˆà¸£','à¸˜à¸™à¸à¸£ à¹à¸ªà¸‡à¸—à¸­à¸‡','à¸­à¸™à¸¸à¸Šà¸² à¸ à¸¹à¸¡à¸´à¸”à¸µ',
+    'à¸›à¸²à¸£à¸´à¸Šà¸²à¸• à¸ªà¸§à¸¢à¸‡à¸²à¸¡','à¹€à¸ˆà¸©à¸Žà¸² à¸—à¹ˆà¸­à¸‡à¹€à¸—à¸µà¹ˆà¸¢à¸§','à¸ªà¸¸à¸žà¸±à¸•à¸£à¸² à¹‚à¸¡à¸Šà¸±à¹ˆà¸™','à¸§à¸—à¸±à¸à¸à¸¹ à¹€à¸ªà¸µà¸¢à¸‡à¸”à¸µ','à¸à¸¤à¸©à¸“à¸² à¹€à¸¡à¹‚à¸¥à¸”à¸µà¹‰',
+    'à¸¨à¸´à¸£à¸´à¸žà¸£ à¹€à¸‡à¸´à¸™à¸‡à¸²à¸¡','à¸à¸´à¸•à¸•à¸´à¸žà¸‡à¸©à¹Œ à¸”à¸´à¸ˆà¸´à¸—à¸±à¸¥','à¸¡à¸™à¸±à¸ªà¸™à¸±à¸™à¸—à¹Œ à¸­à¸²à¸£à¹Œà¸•','à¸“à¸±à¸à¸§à¸¸à¸’à¸´ à¸ à¸²à¸žà¸–à¹ˆà¸²à¸¢','à¸ à¸±à¸—à¸£à¸²à¸™à¸´à¸©à¸à¹Œ à¸„à¸­à¸™à¹€à¸—à¸™à¸•à¹Œ'
   ];
   usernames text[] := ARRAY[
     'phatsawut','napatsara','pimchanok','wannakorn','thanya','chatchai','atittaya','ploypailin',
@@ -34,22 +34,22 @@ DECLARE
     'Street Photographer','Content Strategist'
   ];
   bios text[] := ARRAY[
-    'ออกแบบโลโก้ & แบรนด์ดิ้งสไตล์มินิมอล','สร้างแบรนด์ขนมไทยและร้านคาเฟ่','ภาพประกอบเด็ก & Pop Art',
-    'ลายผ้าไทยสไตล์โมเดิร์น','เซรามิกแฮนด์เมด Earth Tone','เว็บไซต์ร้านอาหาร & โปสเตอร์หนัง',
-    'ออกแบบแอป & เว็บโรงแรม Boutique','TikTok สายอาหารเหนือ','รีวิวคาเฟ่สไตล์มินิมอล',
-    'ถ่ายสินค้า OTOP & ผ้าทอ','พรีเวดดิ้งสไตล์มินิมอล','ตัดต่อ Vlog ท่องเที่ยว',
-    'Motion Graphic อธิบายสินค้า','Sound Design พอดแคสต์','เพลงประกอบโฆษณา',
-    'เครื่องประดับเงินแฮนด์เมด','Landing page & E-commerce','ภาพประกอบดิจิทัล & สติกเกอร์',
-    'ภาพสตรีท กรุงเทพ & ต่างจังหวัด','วางแผนคอนเทนต์แบรนด์'
+    'à¸­à¸­à¸à¹à¸šà¸šà¹‚à¸¥à¹‚à¸à¹‰ & à¹à¸šà¸£à¸™à¸”à¹Œà¸”à¸´à¹‰à¸‡à¸ªà¹„à¸•à¸¥à¹Œà¸¡à¸´à¸™à¸´à¸¡à¸­à¸¥','à¸ªà¸£à¹‰à¸²à¸‡à¹à¸šà¸£à¸™à¸”à¹Œà¸‚à¸™à¸¡à¹„à¸—à¸¢à¹à¸¥à¸°à¸£à¹‰à¸²à¸™à¸„à¸²à¹€à¸Ÿà¹ˆ','à¸ à¸²à¸žà¸›à¸£à¸°à¸à¸­à¸šà¹€à¸”à¹‡à¸ & Pop Art',
+    'à¸¥à¸²à¸¢à¸œà¹‰à¸²à¹„à¸—à¸¢à¸ªà¹„à¸•à¸¥à¹Œà¹‚à¸¡à¹€à¸”à¸´à¸£à¹Œà¸™','à¹€à¸‹à¸£à¸²à¸¡à¸´à¸à¹à¸®à¸™à¸”à¹Œà¹€à¸¡à¸” Earth Tone','à¹€à¸§à¹‡à¸šà¹„à¸‹à¸•à¹Œà¸£à¹‰à¸²à¸™à¸­à¸²à¸«à¸²à¸£ & à¹‚à¸›à¸ªà¹€à¸•à¸­à¸£à¹Œà¸«à¸™à¸±à¸‡',
+    'à¸­à¸­à¸à¹à¸šà¸šà¹à¸­à¸› & à¹€à¸§à¹‡à¸šà¹‚à¸£à¸‡à¹à¸£à¸¡ Boutique','TikTok à¸ªà¸²à¸¢à¸­à¸²à¸«à¸²à¸£à¹€à¸«à¸™à¸·à¸­','à¸£à¸µà¸§à¸´à¸§à¸„à¸²à¹€à¸Ÿà¹ˆà¸ªà¹„à¸•à¸¥à¹Œà¸¡à¸´à¸™à¸´à¸¡à¸­à¸¥',
+    'à¸–à¹ˆà¸²à¸¢à¸ªà¸´à¸™à¸„à¹‰à¸² OTOP & à¸œà¹‰à¸²à¸—à¸­','à¸žà¸£à¸µà¹€à¸§à¸”à¸”à¸´à¹‰à¸‡à¸ªà¹„à¸•à¸¥à¹Œà¸¡à¸´à¸™à¸´à¸¡à¸­à¸¥','à¸•à¸±à¸”à¸•à¹ˆà¸­ Vlog à¸—à¹ˆà¸­à¸‡à¹€à¸—à¸µà¹ˆà¸¢à¸§',
+    'Motion Graphic à¸­à¸˜à¸´à¸šà¸²à¸¢à¸ªà¸´à¸™à¸„à¹‰à¸²','Sound Design à¸žà¸­à¸”à¹à¸„à¸ªà¸•à¹Œ','à¹€à¸žà¸¥à¸‡à¸›à¸£à¸°à¸à¸­à¸šà¹‚à¸†à¸©à¸“à¸²',
+    'à¹€à¸„à¸£à¸·à¹ˆà¸­à¸‡à¸›à¸£à¸°à¸”à¸±à¸šà¹€à¸‡à¸´à¸™à¹à¸®à¸™à¸”à¹Œà¹€à¸¡à¸”','Landing page & E-commerce','à¸ à¸²à¸žà¸›à¸£à¸°à¸à¸­à¸šà¸”à¸´à¸ˆà¸´à¸—à¸±à¸¥ & à¸ªà¸•à¸´à¸à¹€à¸à¸­à¸£à¹Œ',
+    'à¸ à¸²à¸žà¸ªà¸•à¸£à¸µà¸— à¸à¸£à¸¸à¸‡à¹€à¸—à¸ž & à¸•à¹ˆà¸²à¸‡à¸ˆà¸±à¸‡à¸«à¸§à¸±à¸”','à¸§à¸²à¸‡à¹à¸œà¸™à¸„à¸­à¸™à¹€à¸—à¸™à¸•à¹Œà¹à¸šà¸£à¸™à¸”à¹Œ'
   ];
   proj_titles text[] := ARRAY[
-    'โลโก้ร้านกาแฟเชียงใหม่ Doi Brew','แบรนด์ดิ้งร้านขนมไทย แม่ละมุน','ภาพประกอบหนังสือเด็ก ช้างน้อยกับดวงดาว',
-    'Pattern ผ้าขาวม้าโมเดิร์น','เซรามิกสไตล์มินิมอล Earth Tone','เว็บไซต์ร้านอาหารอีสาน ส้มตำลำซิ่ง',
-    'UI App จองคิวสปา Thai Wellness','Landing Page คอร์สเรียนทำขนม','คอนเทนต์ TikTok สายอาหารเหนือ',
-    'รีวิวคาเฟ่สไตล์ minimal บน IG','ถ่ายภาพสินค้า OTOP ผ้าทอภาคเหนือ','พรีเวดดิ้งสไตล์มินิมอลเชียงราย',
-    'ตัดต่อ Vlog ท่องเที่ยวภาคใต้','Motion Graphic อธิบายสินค้า','Sound Design พอดแคสต์ไทย คุยเรื่องผี',
-    'เพลงประกอบโฆษณาแบรนด์ไทย','Mascot น้องหมูเด้ง Pop Art','เครื่องประดับเงินแฮนด์เมด',
-    'โปสเตอร์เทศกาลภาพยนตร์อิสระ','เว็บไซต์โรงแรม Boutique หัวหิน'
+    'à¹‚à¸¥à¹‚à¸à¹‰à¸£à¹‰à¸²à¸™à¸à¸²à¹à¸Ÿà¹€à¸Šà¸µà¸¢à¸‡à¹ƒà¸«à¸¡à¹ˆ Doi Brew','à¹à¸šà¸£à¸™à¸”à¹Œà¸”à¸´à¹‰à¸‡à¸£à¹‰à¸²à¸™à¸‚à¸™à¸¡à¹„à¸—à¸¢ à¹à¸¡à¹ˆà¸¥à¸°à¸¡à¸¸à¸™','à¸ à¸²à¸žà¸›à¸£à¸°à¸à¸­à¸šà¸«à¸™à¸±à¸‡à¸ªà¸·à¸­à¹€à¸”à¹‡à¸ à¸Šà¹‰à¸²à¸‡à¸™à¹‰à¸­à¸¢à¸à¸±à¸šà¸”à¸§à¸‡à¸”à¸²à¸§',
+    'Pattern à¸œà¹‰à¸²à¸‚à¸²à¸§à¸¡à¹‰à¸²à¹‚à¸¡à¹€à¸”à¸´à¸£à¹Œà¸™','à¹€à¸‹à¸£à¸²à¸¡à¸´à¸à¸ªà¹„à¸•à¸¥à¹Œà¸¡à¸´à¸™à¸´à¸¡à¸­à¸¥ Earth Tone','à¹€à¸§à¹‡à¸šà¹„à¸‹à¸•à¹Œà¸£à¹‰à¸²à¸™à¸­à¸²à¸«à¸²à¸£à¸­à¸µà¸ªà¸²à¸™ à¸ªà¹‰à¸¡à¸•à¸³à¸¥à¸³à¸‹à¸´à¹ˆà¸‡',
+    'UI App à¸ˆà¸­à¸‡à¸„à¸´à¸§à¸ªà¸›à¸² Thai Wellness','Landing Page à¸„à¸­à¸£à¹Œà¸ªà¹€à¸£à¸µà¸¢à¸™à¸—à¸³à¸‚à¸™à¸¡','à¸„à¸­à¸™à¹€à¸—à¸™à¸•à¹Œ TikTok à¸ªà¸²à¸¢à¸­à¸²à¸«à¸²à¸£à¹€à¸«à¸™à¸·à¸­',
+    'à¸£à¸µà¸§à¸´à¸§à¸„à¸²à¹€à¸Ÿà¹ˆà¸ªà¹„à¸•à¸¥à¹Œ minimal à¸šà¸™ IG','à¸–à¹ˆà¸²à¸¢à¸ à¸²à¸žà¸ªà¸´à¸™à¸„à¹‰à¸² OTOP à¸œà¹‰à¸²à¸—à¸­à¸ à¸²à¸„à¹€à¸«à¸™à¸·à¸­','à¸žà¸£à¸µà¹€à¸§à¸”à¸”à¸´à¹‰à¸‡à¸ªà¹„à¸•à¸¥à¹Œà¸¡à¸´à¸™à¸´à¸¡à¸­à¸¥à¹€à¸Šà¸µà¸¢à¸‡à¸£à¸²à¸¢',
+    'à¸•à¸±à¸”à¸•à¹ˆà¸­ Vlog à¸—à¹ˆà¸­à¸‡à¹€à¸—à¸µà¹ˆà¸¢à¸§à¸ à¸²à¸„à¹ƒà¸•à¹‰','Motion Graphic à¸­à¸˜à¸´à¸šà¸²à¸¢à¸ªà¸´à¸™à¸„à¹‰à¸²','Sound Design à¸žà¸­à¸”à¹à¸„à¸ªà¸•à¹Œà¹„à¸—à¸¢ à¸„à¸¸à¸¢à¹€à¸£à¸·à¹ˆà¸­à¸‡à¸œà¸µ',
+    'à¹€à¸žà¸¥à¸‡à¸›à¸£à¸°à¸à¸­à¸šà¹‚à¸†à¸©à¸“à¸²à¹à¸šà¸£à¸™à¸”à¹Œà¹„à¸—à¸¢','Mascot à¸™à¹‰à¸­à¸‡à¸«à¸¡à¸¹à¹€à¸”à¹‰à¸‡ Pop Art','à¹€à¸„à¸£à¸·à¹ˆà¸­à¸‡à¸›à¸£à¸°à¸”à¸±à¸šà¹€à¸‡à¸´à¸™à¹à¸®à¸™à¸”à¹Œà¹€à¸¡à¸”',
+    'à¹‚à¸›à¸ªà¹€à¸•à¸­à¸£à¹Œà¹€à¸—à¸¨à¸à¸²à¸¥à¸ à¸²à¸žà¸¢à¸™à¸•à¸£à¹Œà¸­à¸´à¸ªà¸£à¸°','à¹€à¸§à¹‡à¸šà¹„à¸‹à¸•à¹Œà¹‚à¸£à¸‡à¹à¸£à¸¡ Boutique à¸«à¸±à¸§à¸«à¸´à¸™'
   ];
   proj_cats text[] := ARRAY[
     'Graphic','Graphic','Illustration','Craft','Craft','Web/UI','Web/UI','Web/UI','Content','Content',
@@ -70,16 +70,16 @@ BEGIN
     SELECT 1 FROM information_schema.tables
     WHERE table_schema = 'anthem' AND table_name = 'projects'
   ) THEN
-    RAISE NOTICE 'seed-catalog: skip — apply supabase/manual/apply-anthem-ecosystem.sql first';
+    RAISE NOTICE 'seed-catalog: skip â€” apply supabase/manual/apply-anthem-ecosystem.sql first';
     RETURN;
   END IF;
 
   CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-  -- public.profiles.user_id → auth.users(id); create demo auth rows first (SQL Editor / postgres only).
+  -- public.profiles.user_id â†’ auth.users(id); create demo auth rows first (SQL Editor / postgres only).
   FOR i IN 0..19 LOOP
     uid := public._catalog_demo_uid(i);
-    demo_email := usernames[i + 1] || '@demo.an1hem.app';
+    demo_email := usernames[i + 1] || '@demo.pixel100.com';
 
     INSERT INTO auth.users (
       id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -90,7 +90,7 @@ BEGIN
       'authenticated',
       'authenticated',
       demo_email,
-      crypt(encode(gen_random_bytes(24), 'hex'), gen_salt('bf')),
+      crypt('pixel100-demo-seed', gen_salt('bf')),
       now(),
       '{"provider":"email","providers":["email"]}',
       jsonb_build_object('display_name', names[i + 1], 'username', usernames[i + 1]),
@@ -121,7 +121,7 @@ BEGIN
       uid,
       names[i + 1],
       usernames[i + 1],
-      usernames[i + 1] || '@demo.an1hem.app',
+      usernames[i + 1] || '@demo.pixel100.com',
       roles[i + 1],
       bios[i + 1],
       CASE i
@@ -131,7 +131,7 @@ BEGIN
         ELSE ARRAY['Design','Creative']
       END,
       CASE WHEN i % 3 = 0 THEN 'Bangkok' WHEN i % 3 = 1 THEN 'Chiang Mai' ELSE 'Phuket' END,
-      'https://api.dicebear.com/7.x/shapes/svg?seed=' || usernames[i + 1] || '&backgroundColor=fff4e6,ffe8cc'
+      public.format('https://api.dicebear.com/7.x/notionists/svg?seed=%s&backgroundColor=f5f0e8,e8dcc8', usernames[i + 1])
     )
     ON CONFLICT (user_id) DO UPDATE SET
       display_name = EXCLUDED.display_name,
@@ -181,7 +181,7 @@ BEGIN
       120 + (i * 37) % 900,
       8 + (i * 11) % 120,
       proj_prices[i + 1],
-      'ผลงานจากชุมชนครีเอทีฟไทย — โพสต์เพื่อแสดงใน an1hem'
+      'à¸œà¸¥à¸‡à¸²à¸™à¸ˆà¸²à¸à¸Šà¸¸à¸¡à¸Šà¸™à¸„à¸£à¸µà¹€à¸­à¸—à¸µà¸Ÿà¹„à¸—à¸¢ â€” à¹‚à¸žà¸ªà¸•à¹Œà¹€à¸žà¸·à¹ˆà¸­à¹à¸ªà¸”à¸‡à¹ƒà¸™ an1hem'
     )
     ON CONFLICT (id) DO NOTHING;
   END LOOP;
@@ -195,9 +195,9 @@ BEGIN
       sid,
       studio_slugs[i + 1],
       studio_names[i + 1],
-      'สตูดิโอครีเอทีฟไทย',
-      'ทีมดีไซน์และคราฟต์จากชุมชน an1hem',
-      'https://api.dicebear.com/7.x/shapes/svg?seed=studio-' || studio_slugs[i + 1],
+      'à¸ªà¸•à¸¹à¸”à¸´à¹‚à¸­à¸„à¸£à¸µà¹€à¸­à¸—à¸µà¸Ÿà¹„à¸—à¸¢',
+      'à¸—à¸µà¸¡à¸”à¸µà¹„à¸‹à¸™à¹Œà¹à¸¥à¸°à¸„à¸£à¸²à¸Ÿà¸•à¹Œà¸ˆà¸²à¸à¸Šà¸¸à¸¡à¸Šà¸™ an1hem',
+      public.pick_avatar_pool_url_by_seed('studio-' || studio_slugs[i + 1]),
       'https://picsum.photos/seed/an1hem-studio-' || i::text || '/1200/400',
       CASE WHEN i % 2 = 0 THEN 'Bangkok' ELSE 'Chiang Mai' END,
       i % 3 = 0,
@@ -222,21 +222,21 @@ BEGIN
       sid,
       uid,
       CASE i
-        WHEN 0 THEN 'หา UI Designer ทำแอป Wellness'
-        WHEN 1 THEN 'Graphic Designer ทำ Packaging ขนมไทย'
-        WHEN 2 THEN 'Brand Designer สำหรับสตาร์ทอัป Fintech'
-        WHEN 3 THEN 'Illustrator วาดภาพประกอบหนังสือเด็ก'
-        WHEN 4 THEN 'Motion Designer ทำคลิปสินค้า 30 วินาที'
-        WHEN 5 THEN 'Photographer ถ่าย Lookbook คอลเลกชันใหม่'
-        WHEN 6 THEN 'Webflow Developer สร้าง Landing Page'
-        WHEN 7 THEN 'Content Creator สาย TikTok อาหาร'
-        WHEN 8 THEN 'Logo Designer สำหรับคลินิกใหม่'
-        WHEN 9 THEN 'Wedding Photographer พรีเวดดิ้ง'
-        WHEN 10 THEN 'Music Producer เพลง Jingle 10s'
-        ELSE 'Senior Designer เข้าทำงานประจำ Studio'
+        WHEN 0 THEN 'à¸«à¸² UI Designer à¸—à¸³à¹à¸­à¸› Wellness'
+        WHEN 1 THEN 'Graphic Designer à¸—à¸³ Packaging à¸‚à¸™à¸¡à¹„à¸—à¸¢'
+        WHEN 2 THEN 'Brand Designer à¸ªà¸³à¸«à¸£à¸±à¸šà¸ªà¸•à¸²à¸£à¹Œà¸—à¸­à¸±à¸› Fintech'
+        WHEN 3 THEN 'Illustrator à¸§à¸²à¸”à¸ à¸²à¸žà¸›à¸£à¸°à¸à¸­à¸šà¸«à¸™à¸±à¸‡à¸ªà¸·à¸­à¹€à¸”à¹‡à¸'
+        WHEN 4 THEN 'Motion Designer à¸—à¸³à¸„à¸¥à¸´à¸›à¸ªà¸´à¸™à¸„à¹‰à¸² 30 à¸§à¸´à¸™à¸²à¸—à¸µ'
+        WHEN 5 THEN 'Photographer à¸–à¹ˆà¸²à¸¢ Lookbook à¸„à¸­à¸¥à¹€à¸¥à¸à¸Šà¸±à¸™à¹ƒà¸«à¸¡à¹ˆ'
+        WHEN 6 THEN 'Webflow Developer à¸ªà¸£à¹‰à¸²à¸‡ Landing Page'
+        WHEN 7 THEN 'Content Creator à¸ªà¸²à¸¢ TikTok à¸­à¸²à¸«à¸²à¸£'
+        WHEN 8 THEN 'Logo Designer à¸ªà¸³à¸«à¸£à¸±à¸šà¸„à¸¥à¸´à¸™à¸´à¸à¹ƒà¸«à¸¡à¹ˆ'
+        WHEN 9 THEN 'Wedding Photographer à¸žà¸£à¸µà¹€à¸§à¸”à¸”à¸´à¹‰à¸‡'
+        WHEN 10 THEN 'Music Producer à¹€à¸žà¸¥à¸‡ Jingle 10s'
+        ELSE 'Senior Designer à¹€à¸‚à¹‰à¸²à¸—à¸³à¸‡à¸²à¸™à¸›à¸£à¸°à¸ˆà¸³ Studio'
       END,
       'Design',
-      'ประกาศงานจากสตูดิโอในชุมชน an1hem',
+      'à¸›à¸£à¸°à¸à¸²à¸¨à¸‡à¸²à¸™à¸ˆà¸²à¸à¸ªà¸•à¸¹à¸”à¸´à¹‚à¸­à¹ƒà¸™à¸Šà¸¸à¸¡à¸Šà¸™ an1hem',
       ARRAY['Figma','Branding'],
       15000 + i * 2000,
       28000 + i * 3500,
@@ -250,7 +250,62 @@ BEGIN
     )
     ON CONFLICT (id) DO NOTHING;
   END LOOP;
+
+  -- Designer Area: 3 community posts per work category (24 total)
+  FOR ci IN 0..7 LOOP
+    FOR pi IN 0..2 LOOP
+      uid := public._catalog_demo_uid((ci * 3 + pi) % 20);
+      INSERT INTO anthem.community_posts (
+        id, author_id, post_kind, title, body, category, tags,
+        gallery_urls, video_urls, question_topic, status,
+        reply_count, like_count, view_count
+      ) VALUES (
+        ('00000000-0000-0000-0004-0000000000' || lpad(to_hex(ci * 3 + pi), 2, '0'))::uuid,
+        uid,
+        CASE pi
+          WHEN 2 THEN 'question'
+          ELSE 'tip'
+        END,
+        CASE ci
+          WHEN 0 THEN CASE pi WHEN 0 THEN 'à¸ˆà¸±à¸” Hierarchy à¹‚à¸›à¸ªà¹€à¸•à¸­à¸£à¹Œà¹ƒà¸«à¹‰à¸­à¹ˆà¸²à¸™à¸‡à¹ˆà¸²à¸¢à¹ƒà¸™ 3 à¸§à¸´à¸™à¸²à¸—à¸µ' WHEN 1 THEN 'à¹€à¸Šà¹‡à¸à¸ªà¸µ Pantone à¸à¹ˆà¸­à¸™à¸ªà¹ˆà¸‡à¹„à¸Ÿà¸¥à¹Œà¸žà¸´à¸¡à¸žà¹Œ' ELSE 'à¸ªà¹ˆà¸‡à¹„à¸Ÿà¸¥à¹Œà¹‚à¸¥à¹‚à¸à¹‰à¹ƒà¸«à¹‰à¸¥à¸¹à¸à¸„à¹‰à¸²à¹à¸šà¸šà¹„à¸«à¸™à¸”à¸µà¸—à¸µà¹ˆà¸ªà¸¸à¸”?' END
+          WHEN 1 THEN CASE pi WHEN 0 THEN 'Brush 3 à¸•à¸±à¸§à¸—à¸µà¹ˆà¹ƒà¸Šà¹‰à¸šà¹ˆà¸­à¸¢à¹ƒà¸™ Procreate' WHEN 1 THEN 'à¸‚à¸­ feedback à¸ªà¹„à¸•à¸¥à¹Œà¸ à¸²à¸žà¸›à¸£à¸°à¸à¸­à¸š character' ELSE 'à¸ªà¹ˆà¸‡ line art à¹ƒà¸«à¹‰ art director à¸•à¸£à¸§à¸ˆà¸à¹ˆà¸­à¸™à¸¥à¸‡à¸ªà¸µ' END
+          WHEN 2 THEN CASE pi WHEN 0 THEN 'à¸•à¸±à¹‰à¸‡ White Balance à¹ƒà¸™à¸ªà¸•à¸¹à¸”à¸´à¹‚à¸­à¸ªà¸´à¸™à¸„à¹‰à¸²' WHEN 1 THEN 'à¹€à¸£à¸•à¸–à¹ˆà¸²à¸¢à¸žà¸£à¸µà¹€à¸§à¸”à¸”à¸´à¹‰à¸‡à¸Šà¹ˆà¸§à¸‡ low season à¸„à¸§à¸£à¸­à¸¢à¸¹à¹ˆà¸—à¸µà¹ˆà¹€à¸—à¹ˆà¸²à¹„à¸«à¸£à¹ˆ?' ELSE 'à¹à¸ªà¸‡à¸˜à¸£à¸£à¸¡à¸Šà¸²à¸•à¸´ vs Softbox à¸ªà¸³à¸«à¸£à¸±à¸šà¸žà¸­à¸£à¹Œà¸•à¹€à¸—à¸£à¸•' END
+          WHEN 3 THEN CASE pi WHEN 0 THEN 'Export Premiere à¸ªà¸³à¸«à¸£à¸±à¸š Reels / TikTok' WHEN 1 THEN 'Color grade à¹‚à¸—à¸™à¸­à¸šà¸­à¸¸à¹ˆà¸™à¹à¸šà¸š cinematic' ELSE 'Laptop à¸•à¸±à¸”à¸•à¸­à¸š 4K à¹à¸™à¸°à¸™à¸³à¸ªà¹€à¸›à¸à¹€à¸—à¹ˆà¸²à¹„à¸«à¸£à¹ˆ?' END
+          WHEN 4 THEN CASE pi WHEN 0 THEN 'à¹€à¸œà¸²à¹€à¸‹à¸£à¸²à¸¡à¸´à¸à¹„à¸¡à¹ˆà¹ƒà¸«à¹‰à¹à¸•à¸ â€” à¸„à¸¸à¸¡à¸„à¸§à¸²à¸¡à¸Šà¸·à¹‰à¸™à¸à¹ˆà¸­à¸™à¹€à¸‚à¹‰à¸²à¹€à¸•à¸²' WHEN 1 THEN 'à¸‚à¸²à¸¢à¸‡à¸²à¸™ craft à¸­à¸­à¸™à¹„à¸¥à¸™à¹Œà¸Šà¹ˆà¸­à¸‡à¸—à¸²à¸‡à¹„à¸«à¸™à¸”à¸µ?' ELSE 'à¸ˆà¸±à¸” composition à¸‡à¸²à¸™à¸ˆà¸±à¸à¸ªà¸²à¸™à¹ƒà¸«à¹‰à¸”à¸¹à¸žà¸£à¸µà¹€à¸¡à¸µà¸¢à¸¡' END
+          WHEN 5 THEN CASE pi WHEN 0 THEN 'Figma Auto Layout à¸—à¸µà¹ˆà¹ƒà¸Šà¹‰à¸šà¹ˆà¸­à¸¢à¹ƒà¸™ design system' WHEN 1 THEN 'Portfolio web à¸„à¸§à¸£à¸¡à¸µà¸à¸µà¹ˆà¹‚à¸›à¸£à¹€à¸ˆà¸à¸•à¹Œ?' ELSE 'à¹€à¸Šà¹‡à¸ contrast à¸à¹ˆà¸­à¸™à¸ªà¹ˆà¸‡à¸¡à¸­à¸š UI' END
+          WHEN 6 THEN CASE pi WHEN 0 THEN 'Hook 3 à¸§à¸´à¹à¸£à¸à¸‚à¸­à¸‡ TikTok à¸—à¸µà¹ˆà¸¢à¸¶à¸”à¸„à¸™à¹„à¸§à¹‰' WHEN 1 THEN 'à¹‚à¸žà¸ªà¸•à¹Œ IG à¸à¸µà¹ˆà¸„à¸£à¸±à¹‰à¸‡à¸•à¹ˆà¸­à¸ªà¸±à¸›à¸”à¸²à¸«à¹Œà¸–à¸¶à¸‡à¸ˆà¸°à¹‚à¸•?' ELSE 'à¹€à¸‚à¸µà¸¢à¸™ caption à¹ƒà¸«à¹‰à¸„à¸™à¸­à¹ˆà¸²à¸™à¸ˆà¸š' END
+          ELSE CASE pi WHEN 0 THEN 'Mix vocal podcast à¹ƒà¸«à¹‰à¸Šà¸±à¸”à¸šà¸™à¸¡à¸·à¸­à¸–à¸·à¸­' WHEN 1 THEN 'à¹ƒà¸Šà¹‰ sample à¹ƒà¸™à¸‡à¸²à¸™ commercial à¸•à¹‰à¸­à¸‡à¸£à¸°à¸§à¸±à¸‡à¸­à¸°à¹„à¸£?' ELSE 'à¹€à¸¥à¸·à¸­à¸ BPM à¸•à¸²à¸¡ mood board' END
+        END,
+        'à¹€à¸™à¸·à¹‰à¸­à¸«à¸² mock à¸ªà¸³à¸«à¸£à¸±à¸š Designer Area â€” à¸«à¸¡à¸§à¸” ' || (ARRAY['Graphic','Illustration','Photography','Video','Craft','Web/UI','Content','Music/Audio'])[ci + 1],
+        (ARRAY['Graphic','Illustration','Photography','Video','Craft','Web/UI','Content','Music/Audio'])[ci + 1],
+        ARRAY['designer-area', 'seed', 'mock'],
+        CASE WHEN pi < 2 THEN ARRAY['https://picsum.photos/seed/an1hem-community-' || ci::text || '-' || pi::text || '/800/1000'] ELSE ARRAY[]::text[] END,
+        ARRAY[]::text[],
+        CASE WHEN pi = 2 THEN
+          CASE ci % 7
+            WHEN 0 THEN 'client' WHEN 1 THEN 'feedback' WHEN 2 THEN 'career'
+            WHEN 3 THEN 'tools' WHEN 4 THEN 'career' WHEN 5 THEN 'feedback'
+            WHEN 6 THEN 'technique' ELSE 'other'
+          END
+        ELSE NULL END,
+        'published',
+        (ci + pi) % 5,
+        3 + ((ci * 7 + pi * 11) % 40),
+        40 + ((ci * 13 + pi * 17) % 350)
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title,
+        body = EXCLUDED.body,
+        category = EXCLUDED.category,
+        tags = EXCLUDED.tags,
+        gallery_urls = EXCLUDED.gallery_urls,
+        like_count = EXCLUDED.like_count,
+        view_count = EXCLUDED.view_count,
+        updated_at = now();
+    END LOOP;
+  END LOOP;
 END;
 $seed$;
 
 COMMENT ON FUNCTION public._catalog_demo_uid(integer) IS 'Internal: demo catalog user ids (seed migration only).';
+

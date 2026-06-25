@@ -22,7 +22,7 @@
 
 | App | วิธี |
 |-----|------|
-| Pixel100 | `phatsawut@demo.an1hem.app` / `pixel100-demo-seed` — [รายชื่อเพิ่ม](../Anthem-Code/docs/demo-catalog.md) |
+| Pixel100 | `phatsawut@demo.pixel100.com` / `pixel100-demo-seed` — [รายชื่อเพิ่ม](../Anthem-Code/docs/demo-catalog.md) |
 | So1o | Google หรือสมัครอีเมล — บันทึกถาวร ชำระเงิน sandbox |
 
 ---

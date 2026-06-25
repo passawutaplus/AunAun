@@ -12,6 +12,7 @@ interface Props {
   variant?: "full" | "compact";
   iconOnly?: boolean;
   tone?: "primary" | "muted";
+  showFollowerCount?: boolean;
   className?: string;
 }
 
@@ -21,6 +22,7 @@ const FollowButton = ({
   variant = "full",
   iconOnly = false,
   tone = "primary",
+  showFollowerCount = true,
   className,
 }: Props) => {
   const { user } = useAuth();
@@ -59,7 +61,9 @@ const FollowButton = ({
     >
       {isFollowing ? <UserCheck className={cn("w-4 h-4", !iconOnly && "mr-1")} /> : <UserPlus className={cn("w-4 h-4", !iconOnly && "mr-1")} />}
       {!iconOnly && (isFollowing ? "กำลังติดตาม" : "ติดตาม")}
-      {!iconOnly && variant === "full" && <span className="ml-1 opacity-70">· {followers}</span>}
+      {!iconOnly && showFollowerCount && variant === "full" && (
+        <span className="ml-1 opacity-70">· {followers}</span>
+      )}
     </Button>
   );
 };

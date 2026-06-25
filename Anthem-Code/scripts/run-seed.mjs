@@ -274,6 +274,7 @@ async function main() {
     "โปสเตอร์เทศกาลหนังอิสระ A2 limited colour",
     "เว็บไซต์โรงแรม boutique หัวหิน ไทย–อังกฤษ",
   ];
+  const attestedAt = new Date().toISOString();
   const projects = Array.from({ length: 20 }, (_, i) => {
     const cover = unsplashArt(i);
     return {
@@ -289,6 +290,8 @@ async function main() {
       likes: 24 + ((i * 17) % 180),
       price_thb: projPrices[i],
       description: projDescriptions[i],
+      rights_attested_at: attestedAt,
+      rights_attestation_version: "2026-06-14",
     };
   });
   const { error: projErr } = await anthemDb.from("projects").upsert(projects, { onConflict: "id" });

@@ -8,6 +8,7 @@ import { useSupportSlots } from "@/hooks/useSupportSlots";
 import { SUPPORT_SLOT_MAX } from "@/lib/supportSlots";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import DonationModal from "./DonationModal";
+import { cn } from "@/lib/utils";
 
 interface Props {
   recipientId: string;
@@ -15,11 +16,12 @@ interface Props {
   recipientAvatar?: string;
   projectId?: string | null;
   variant?: "default" | "outline" | "compact";
+  hideSubtext?: boolean;
   className?: string;
 }
 
 const SupportButton = ({
-  recipientId, recipientName, recipientAvatar, projectId, variant = "outline", className,
+  recipientId, recipientName, recipientAvatar, projectId, variant = "outline", hideSubtext = false, className,
 }: Props) => {
   const { user } = useAuth();
   const openAuth = useAuthDialog((s) => s.openLogin);
@@ -58,20 +60,28 @@ const SupportButton = ({
   );
 
   if (variant === "compact") {
+    const chipClass = cn(
+      "inline-flex items-center justify-center gap-1.5 rounded-full glass-chip w-full",
+      hideSubtext ? "h-10 px-3 text-sm font-medium" : "px-3 py-2 text-xs sm:text-sm",
+    );
     if (!isOwn && !canReceive) {
       return wrapTooltip(
-        <span className="inline-flex flex-col items-start gap-0.5">
-          <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full glass-chip text-xs text-muted-foreground">
-            <Lock className="w-3.5 h-3.5" /> เตรียมรับสนับสนุน
+        <span className={cn("inline-flex flex-col items-stretch gap-0.5 w-full", className)}>
+          <span className={cn(chipClass, "text-muted-foreground")}>
+            <Lock className="w-4 h-4 shrink-0" />
+            <span className="truncate">เตรียมรับสนับสนุน</span>
           </span>
-          <span className="text-[10px] text-muted-foreground px-1">ลงผลงานแรกเพื่อเปิด {SUPPORT_SLOT_MAX} ช่อง</span>
+          {!hideSubtext && (
+            <span className="text-[10px] text-muted-foreground px-1">ลงผลงานแรกเพื่อเปิด {SUPPORT_SLOT_MAX} ช่อง</span>
+          )}
         </span>,
       );
     }
     if (!isOwn && slotsFull) {
       return wrapTooltip(
-        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full glass-chip text-xs text-muted-foreground">
-          <Lock className="w-3.5 h-3.5" /> รับครบ {SUPPORT_SLOT_MAX} ช่องแล้ว
+        <span className={cn(chipClass, "text-muted-foreground", className)}>
+          <Lock className="w-4 h-4 shrink-0" />
+          <span className="truncate">รับครบ {SUPPORT_SLOT_MAX} ช่อง</span>
         </span>,
       );
     }
@@ -81,13 +91,13 @@ const SupportButton = ({
           <button
             onClick={handleOpen}
             aria-label={tooltipText}
-            className={`inline-flex flex-col items-start gap-0.5 ${className ?? ""}`}
+            className={cn("inline-flex flex-col items-stretch gap-0.5 w-full", className)}
           >
-            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full glass-chip text-xs font-medium text-primary hover:shadow-md hover:shadow-primary/20 transition">
-              {isOwn ? <Eye className="w-3.5 h-3.5" /> : <HandHeart className="w-3.5 h-3.5" />}
-              {isOwn ? "พรีวิว" : "สนับสนุน"}
+            <span className={cn(chipClass, "text-primary hover:shadow-md hover:shadow-primary/20 transition")}>
+              {isOwn ? <Eye className="w-4 h-4 shrink-0" /> : <HandHeart className="w-4 h-4 shrink-0" />}
+              <span className="truncate">{isOwn ? "พรีวิว" : "สนับสนุน"}</span>
             </span>
-            {!isOwn && canReceive && (
+            {!hideSubtext && !isOwn && canReceive && (
               <span className="text-[10px] text-muted-foreground px-1">
                 เหลือ {remaining}/{SUPPORT_SLOT_MAX} ช่อง · มาเป็นกำลังใจ
               </span>

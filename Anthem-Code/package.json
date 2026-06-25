@@ -28,6 +28,8 @@
     "smoke:public": "bash scripts/smoke-public.sh",
     "sitemap:gen": "node scripts/generate-sitemap.mjs",
     "seed:demo": "node scripts/run-seed.mjs",
+    "seed:demo-profiles": "node scripts/seed-demo-profiles.mjs",
+    "seed:demo-full": "node scripts/seed-demo-full-20.mjs",
     "avatar-pool:generate": "node ../scripts/ecosystem/generate-avatar-pool.mjs",
     "seed:demo-chats": "node scripts/seed-demo-chats.mjs",
     "admin:create-user": "node scripts/create-admin-user.mjs",

@@ -6,15 +6,25 @@ import { DrillProjectBadge } from "@/components/drill/DrillProjectBadge";
 import { StaggerGrid } from "@/components/motion/StaggerGrid";
 import { smoothEase } from "@/lib/motion";
 import type { Tables } from "@/integrations/supabase/types";
+import { cn } from "@/lib/utils";
 
 type Project = Tables<"projects">;
 
-const PortfolioGrid = ({ projects }: { projects: Project[] }) => {
+type Props = {
+  projects: Project[];
+};
+
+const PortfolioGrid = ({ projects }: Props) => {
   if (!projects.length) {
     return null;
   }
   return (
-    <StaggerGrid className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4" dense>
+    <StaggerGrid
+      className={cn(
+        "grid gap-2 sm:gap-3 md:gap-4 grid-cols-2 md:grid-cols-3",
+      )}
+      dense
+    >
       {projects.map((p) => (
         <motion.div
           key={p.id}
@@ -45,12 +55,16 @@ const PortfolioGrid = ({ projects }: { projects: Project[] }) => {
                 <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{p.likes}</span>
               </div>
             </div>
-            <div className="p-3">
+            <div className="p-2 sm:p-3">
               <div className="flex flex-wrap items-center gap-1 mb-1">
-                <Badge className="bg-primary/15 text-primary border-0 hover:bg-primary/15 text-[10px]">{p.category}</Badge>
+                <Badge className="bg-primary/15 text-primary border-0 hover:bg-primary/15 text-[10px] sm:text-xs font-normal">
+                  {p.category}
+                </Badge>
                 <DrillProjectBadge tags={p.tags as string[] | null} />
               </div>
-              <h3 className="text-sm font-semibold text-foreground line-clamp-1">{p.title}</h3>
+              <h3 className="text-xs sm:text-sm font-medium text-foreground leading-snug line-clamp-2 thai-body">
+                {p.title}
+              </h3>
             </div>
           </Link>
         </motion.div>

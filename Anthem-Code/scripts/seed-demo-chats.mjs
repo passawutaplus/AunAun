@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Seed 5 demo chat conversations for phatsawut@demo.pixel100.com
- * — mix of hire (จ้าง) and collab (คอลแลป) badges with 5 different partners.
+ * Seed 8 demo chat conversations for phatsawut + chatchai personas
+ * — mix of hire (จ้าง) and collab (คอลแลป) badges.
  *
  * Run: node scripts/seed-demo-chats.mjs
  * Env: scripts/ecosystem/.env.seed.local or ../Solo-Code/.env (service role)
@@ -78,6 +78,8 @@ const emails = [
   "thanya@demo.pixel100.com",
   "chatchai@demo.pixel100.com",
 ];
+
+const CHATCHAI = uid(5);
 
 const CHATS = [
   {
@@ -167,18 +169,83 @@ const CHATS = [
       { fromPartner: true, content: "งบประมาณประมาณ 42k ครับ ส่ง brief ให้ได้เลย", read: false },
     ],
   },
+  {
+    n: 6,
+    kind: "hire",
+    partnerIdx: 1,
+    projectIdx: 1,
+    freelancerId: uid(1),
+    clientId: CHATCHAI,
+    title: "จ้าง napatsara ทำแบรนด์ขนมไทย",
+    hire: {
+      client_name: "ฉัตรชัย วรกุล",
+      budget_amount: 32000,
+      budget: "5k-20k",
+      message: "สนใจจ้างออกแบบแบรนด์ขนมไทย premium",
+      deadline: "2026-08-15",
+    },
+    messages: [
+      { fromPartner: false, content: "สวัสดีครับ สนใจจ้างออกแบบแบรนด์ขนมไทย งบประมาณประมาณ 32k", read: true },
+      { fromPartner: true, content: "ได้เลยค่ะ ขอรายละเอียด brief เพิ่มหน่อยนะคะ", read: true },
+      { fromPartner: false, content: "ส่ง mood board ให้แล้วครับ รบกวนดูให้หน่อย", read: false },
+    ],
+  },
+  {
+    n: 7,
+    kind: "collab",
+    partnerIdx: 6,
+    projectIdx: 6,
+    freelancerId: uid(6),
+    clientId: CHATCHAI,
+    title: "UI Wellness + Motion",
+    collab: {
+      collab_types: ["joint-project"],
+      timeline: "8 สัปดาห์",
+      message: "chatchai ชวน atittaya collab แอป wellness",
+    },
+    messages: [
+      { fromPartner: false, content: "สวัสดีครับ มีโปรเจกต์ wellness อยากชวนร่วม UI + motion", read: true },
+      { fromPartner: true, content: "สนใจค่ะ ส่ง timeline มาได้เลย", read: false },
+    ],
+  },
+  {
+    n: 8,
+    kind: "hire",
+    partnerIdx: 0,
+    projectIdx: 0,
+    freelancerId: PHAT,
+    clientId: CHATCHAI,
+    title: "โลโก้สตาร์ทอัป EdTech",
+    hire: {
+      client_name: "ฉัตรชัย วรกุล",
+      budget_amount: 28000,
+      budget: "5k-20k",
+      message: "หา designer ทำโลโก้ EdTech",
+      deadline: "2026-07-30",
+    },
+    messages: [
+      { fromPartner: false, content: "สวัสดีครับ มีงานโลโก้ EdTech สนใจไหม", read: true },
+      { fromPartner: true, content: "สนใจครับ ขอดู brief เพิ่มได้เลย", read: true },
+    ],
+  },
 ];
 
+function chatParties(chat) {
+  const freelancer = chat.freelancerId ?? PHAT;
+  const client = chat.clientId ?? uid(chat.partnerIdx);
+  return { freelancer, client };
+}
+
 async function upsertHire(chat) {
-  const partner = uid(chat.partnerIdx);
+  const { freelancer, client } = chatParties(chat);
   const row = {
     id: hireReqId(chat.n),
-    freelancer_id: PHAT,
-    client_id: partner,
+    freelancer_id: freelancer,
+    client_id: client,
     project_id: projectId(chat.projectIdx),
     project_title: chat.title,
     client_name: chat.hire.client_name,
-    email: emails[chat.partnerIdx - 1],
+    email: chat.clientId ? "chatchai@demo.pixel100.com" : emails[chat.partnerIdx - 1],
     phone: "0891234567",
     budget: chat.hire.budget,
     budget_amount: chat.hire.budget_amount,
@@ -193,10 +260,12 @@ async function upsertHire(chat) {
 
 async function upsertCollab(chat) {
   const partner = uid(chat.partnerIdx);
+  const sender = chat.clientId ?? partner;
+  const recipient = chat.freelancerId ?? PHAT;
   const row = {
     id: collabReqId(chat.n),
-    sender_id: partner,
-    recipient_id: PHAT,
+    sender_id: sender,
+    recipient_id: recipient,
     project_id: projectId(chat.projectIdx),
     collab_types: chat.collab.collab_types,
     timeline: chat.collab.timeline,
@@ -210,15 +279,15 @@ async function upsertCollab(chat) {
 }
 
 async function upsertConversation(chat, requestId) {
-  const partner = uid(chat.partnerIdx);
-  const lastAt = new Date(Date.now() - (5 - chat.n) * 3600_000).toISOString();
+  const { freelancer, client } = chatParties(chat);
+  const lastAt = new Date(Date.now() - (9 - chat.n) * 3600_000).toISOString();
 
   const row = {
     id: convId(chat.n),
     kind: chat.kind,
     request_id: requestId,
-    client_id: partner,
-    freelancer_id: PHAT,
+    client_id: client,
+    freelancer_id: freelancer,
     project_id: projectId(chat.projectIdx),
     project_title: chat.title,
     last_message_at: lastAt,
@@ -227,8 +296,19 @@ async function upsertConversation(chat, requestId) {
   if (error) throw new Error(`conversations ${chat.n}: ${error.message}`);
 }
 
-async function upsertMessages(chat) {
+function messageSender(chat, m) {
+  const { freelancer, client } = chatParties(chat);
+  if (chat.kind === "hire") {
+    return m.fromPartner ? client : freelancer;
+  }
+  if (chat.clientId) {
+    return m.fromPartner ? freelancer : client;
+  }
   const partner = uid(chat.partnerIdx);
+  return m.fromPartner ? partner : PHAT;
+}
+
+async function upsertMessages(chat) {
   const base = Date.now() - chat.messages.length * 600_000;
 
   await shared.from("messages").delete().eq("conversation_id", convId(chat.n));
@@ -236,7 +316,7 @@ async function upsertMessages(chat) {
   const rows = chat.messages.map((m, i) => ({
     id: msgId(chat.n, i),
     conversation_id: convId(chat.n),
-    sender_id: m.fromPartner ? partner : PHAT,
+    sender_id: messageSender(chat, m),
     content: m.content,
     attachment_url: null,
     read_at: m.read ? new Date(base + i * 600_000).toISOString() : null,
@@ -248,13 +328,15 @@ async function upsertMessages(chat) {
 }
 
 async function main() {
-  console.log("Seeding 5 demo chats for", PHAT);
+  console.log("Seeding 8 demo chats (phatsawut + chatchai personas)");
 
-  const { error: pwErr } = await admin.auth.admin.updateUserById(PHAT, {
-    password: DEMO_PASSWORD,
-  });
-  if (pwErr) console.warn("  password reset:", pwErr.message);
-  else console.log("  ✓ reset demo password for phatsawut@demo.pixel100.com");
+  for (const userId of [PHAT, CHATCHAI]) {
+    const { error: pwErr } = await admin.auth.admin.updateUserById(userId, {
+      password: DEMO_PASSWORD,
+    });
+    if (pwErr) console.warn("  password reset:", userId, pwErr.message);
+  }
+  console.log("  ✓ demo passwords synced");
 
   for (const chat of CHATS) {
     const requestId =
@@ -262,7 +344,7 @@ async function main() {
     await upsertConversation(chat, requestId);
     await upsertMessages(chat);
     console.log(
-      `  ✓ ${chat.kind === "hire" ? "จ้าง" : "คอลแลป"} — ${names[chat.partnerIdx - 1]} (${chat.title})`,
+      `  ✓ ${chat.kind === "hire" ? "จ้าง" : "คอลแลป"} — ${names[Math.max(0, chat.partnerIdx - 1)] ?? "chatchai"} (${chat.title})`,
     );
   }
 
@@ -270,7 +352,7 @@ async function main() {
   const { data: all } = await shared
     .from("conversations")
     .select("id")
-    .or(`client_id.eq.${PHAT},freelancer_id.eq.${PHAT}`);
+    .or(`client_id.eq.${PHAT},freelancer_id.eq.${PHAT},client_id.eq.${CHATCHAI},freelancer_id.eq.${CHATCHAI}`);
 
   const extra = (all ?? []).filter((c) => !keepIds.includes(c.id));
   if (extra.length) {

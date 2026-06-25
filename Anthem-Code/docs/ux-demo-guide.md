@@ -12,14 +12,14 @@ VITE_DEMO_MODE=true
 
 จะแสดงแถบบนสุดพร้อมวิธี login demo
 
-## รัน seed (ข้อมูลจริงจำลอง 50 ครีเอเตอร์ + กิจกรรมครบ)
+## รัน seed (ข้อมูลจำลอง 20 ครีเอเตอร์ + กิจกรรมครบ)
 
 ```bash
 export SUPABASE_ACCESS_TOKEN=sbp_...   # Dashboard → Account → Access Tokens
-npm run db:qa-full
+npm run seed:demo-full
 ```
 
-หรือขั้นตอนแยก: `npm run db:apply-anthem` แล้ว `npm run seed:demo`
+หรือขั้นตอนแยก: `npm run seed:demo` แล้ว `npm run seed:demo-chats`
 
 | อีเมล | รหัส |
 |--------|------|

@@ -48,7 +48,7 @@ const BUNDLE = join(monoRoot, "Solo-Code", "supabase", "manual", "apply-anthem-e
 const SEED_FILES = [
   "20260604130100_seed_community_catalog.sql",
   "20260604200000_seed_art_design_enriched.sql",
-  "20260604250000_seed_50_users_full_activity.sql",
+  "20260604250000_seed_20_users_full_activity.sql",
 ].map((f) => join(anthemRoot, "supabase", "migrations", f));
 
 async function runQuery(sql, label) {
@@ -152,7 +152,7 @@ async function report() {
   const demoUsers = await pub
     .from("profiles")
     .select("user_id", { count: "exact", head: true })
-    .like("email", "%@demo.an1hem.app");
+    .like("email", "%@demo.pixel100.com");
 
   console.log("\n=== QA dataset summary ===");
   console.log({

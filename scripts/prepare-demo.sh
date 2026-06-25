@@ -26,9 +26,9 @@ node "$ROOT/scripts/apply-ops-schema.mjs" || echo "⚠  ops schema skipped"
 node "$ROOT/Ops-Hub/scripts/expose-ops-schema.mjs" 2>/dev/null || echo "⚠  expose ops schema skipped"
 
 echo ""
-echo "=== 3/3 Demo seed (50 creators) ==="
+echo "=== 3/3 Demo seed (20 creators, full activity) ==="
 cd "$ROOT/Anthem-Code"
-npm run db:qa-full
+npm run seed:demo-full
 
 echo ""
 echo "✓ Demo environment prepared"
