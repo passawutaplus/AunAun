@@ -1,0 +1,53 @@
+---
+description: อ่าน AI skill pack ก่อนแก้ Anthem/Solo — product, security, UX, deploy
+alwaysApply: true
+---
+
+# AI Skills (memory pack)
+
+Index: [docs/ai-skills/README.md](../../docs/ai-skills/README.md)
+
+ก่อนแก้โค้ดที่กระทบ product direction, UX, security, payment, referral, wallet, RLS, auth หรือ deploy — **อ่าน skill ที่เกี่ยวข้องก่อน** แล้วสรุปสั้น ๆ ก่อนลงมือ (ไม่ต้องถามยืนยันถ้างานชัด)
+
+## Shared (ทุกงานใน monorepo)
+
+| ไฟล์ | อ่านเมื่อ |
+|------|-----------|
+| `docs/ai-skills/PRODUCT_CONTEXT.md` | ไม่แน่ใจว่าแอป/repo ไหน |
+| `docs/ai-skills/CODING_RULES.md` | refactor, โครงสร้าง repo |
+| `docs/ai-skills/SECURITY_CHECKLIST.md` | auth, RLS, secrets, payment |
+| `docs/ai-skills/UX_UI_RULES.md` | หน้าเว็บ, copy ไทย, hierarchy |
+| `docs/ai-skills/RELEASE_CHECKLIST.md` | ก่อน merge / deploy production |
+
+Deploy จริง: ใช้ร่วมกับ [deploy-workflow.mdc](./deploy-workflow.mdc) และ [ecosystem-deploy-policy.md](../../docs/ecosystem-deploy-policy.md)
+
+## Anthem (`Anthem-Code/`)
+
+Index: `Anthem-Code/docs/ai-skills/README.md`
+
+| Skill | งาน |
+|-------|-----|
+| `ANTHEM_PRODUCT_SKILL.md` | feature ใหม่, feed, portfolio |
+| `ANTHEM_UX_RESEARCH_SKILL.md` | UX/demo/usability |
+| `ANTHEM_REFERRAL_REWARD_SKILL.md` | referral, PX, reward |
+| `ANTHEM_COMMUNITY_SAFETY_SKILL.md` | moderation, report, profanity |
+| `ANTHEM_MOBILE_APP_SKILL.md` | PWA / mobile app |
+| `ANTHEM_MARKETING_SKILL.md` | launch, campaign |
+
+## Solo (`Solo-Code/`)
+
+Index: `Solo-Code/docs/ai-skills/README.md`
+
+| Skill | งาน |
+|-------|-----|
+| `SOLO_PRODUCT_SKILL.md` | quotation, pipeline, income |
+| `SOLO_PAYMENT_SECURITY_SKILL.md` | Stripe, wallet, cashout |
+| `SOLO_INHOUSE_SKILL.md` | inhouse workspace |
+| `SOLO_UX_WORKFLOW_SKILL.md` | freelancer workflow UX |
+| `SOLO_PRODUCTION_OPS_SKILL.md` | prod ops, cron, backup |
+
+## กติกา
+
+- Workspace หลัก: `AunAun-fresh` — อย่าใช้โฟลเดอร์เก่าที่มี `.git` แยกเป็น source of truth
+- ห้าม commit secrets / service role / production tokens
+- เอกสาร ops เดิม (เช่น `ux-research-review.md`, `production-readiness.md`) ยังใช้ได้ — skill pack เป็นชั้นสำหรับ AI ไม่แทนที่ runbook มนุษย์
