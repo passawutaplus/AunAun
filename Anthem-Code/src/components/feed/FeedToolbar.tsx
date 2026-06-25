@@ -16,15 +16,12 @@ import { FilterPanel, type DesignerSort } from "@/components/feed/DesignerToolba
 import type { Category, FeedFilter } from "@/data/projectTypes";
 import type { CommunityFeedFilter } from "@/data/communityTopics";
 import { DESIGN_DRILL_CHIP, type ProjectChipFilter } from "@/lib/drillProject";
+import { FEED_MODE_LABELS, FEED_MODE_ORDER } from "@/lib/feedModeLabels";
 
-type FeedModeOption = "Explore" | "Following" | "Newest" | "Top 1";
-
-const FEED_MODE_OPTIONS: { value: FeedModeOption; label: string }[] = [
-  { value: "Explore", label: "Explore" },
-  { value: "Following", label: "Following" },
-  { value: "Newest", label: "Newest" },
-  { value: "Top 1", label: "Top 1" },
-];
+const FEED_MODE_OPTIONS = FEED_MODE_ORDER.map((value) => ({
+  value,
+  label: FEED_MODE_LABELS[value],
+}));
 
 type Props = {
   mode: FeedMode;

@@ -5,26 +5,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 export const JOB_TYPES = [
-  { id: "branding", label: "Branding / Identity" },
-  { id: "web-ui", label: "Web / UI Design" },
-  { id: "motion", label: "Motion / Video" },
-  { id: "print", label: "Print / Packaging" },
+  { id: "branding", label: "แบรนด์ / อัตลักษณ์" },
+  { id: "web-ui", label: "เว็บ / UI Design" },
+  { id: "motion", label: "โมชัน / วิดีโอ" },
+  { id: "print", label: "สิ่งพิมพ์ / บรรจุภัณฑ์" },
   { id: "other", label: "อื่นๆ" },
 ] as const;
 
 export const DELIVERABLES = [
-  "Logo & Visual Identity",
-  "Social Media Kit",
-  "Website / Landing",
-  "Presentation Deck",
-  "Packaging",
-  "Brand Guidelines",
+  "โลโก้และอัตลักษณ์แบรนด์",
+  "ชุดโซเชียลมีเดีย",
+  "เว็บไซต์ / Landing Page",
+  "สไลด์นำเสนอ",
+  "บรรจุภัณฑ์",
+  "คู่มือแบรนด์",
 ] as const;
 
 export const STUDIO_SERVICES = [
-  { id: "design", label: "Design / Branding" },
-  { id: "motion", label: "Motion / Video" },
-  { id: "campaign", label: "Full Campaign" },
+  { id: "design", label: "ดีไซน์ / แบรนด์" },
+  { id: "motion", label: "โมชัน / วิดีโอ" },
+  { id: "campaign", label: "แคมเปญครบวงจร" },
 ] as const;
 
 export type HireWizardForm = {
@@ -56,7 +56,7 @@ export const emptyHireWizardForm = (): HireWizardForm => ({
 export const buildHireMessage = (form: HireWizardForm, extras?: { studio?: boolean }) => {
   const meta = [
     extras?.studio ? `บริการ: ${STUDIO_SERVICES.find((s) => s.id === form.serviceType)?.label ?? form.serviceType}` : `ประเภทงาน: ${JOB_TYPES.find((j) => j.id === form.jobType)?.label ?? form.jobType}`,
-    form.deliverables.length ? `Deliverables: ${form.deliverables.join(", ")}` : null,
+    form.deliverables.length ? `สิ่งที่ต้องการส่งมอบ: ${form.deliverables.join(", ")}` : null,
     form.referenceUrl ? `อ้างอิง: ${form.referenceUrl}` : null,
   ].filter(Boolean);
 
@@ -151,7 +151,7 @@ export const HireWizardStepOne = ({ form, setForm, studio }: StepProps) => (
         />
       </div>
       <div>
-        <Label>Timeline</Label>
+        <Label>กำหนดส่งงาน</Label>
         <Input
           value={form.deadline}
           onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
@@ -204,10 +204,10 @@ export const HireWizardSummary = ({ form, studio }: StepProps) => (
         : JOB_TYPES.find((j) => j.id === form.jobType)?.label}
     </p>
     {form.deliverables.length > 0 && (
-      <p><span className="text-muted-foreground">Deliverables:</span> {form.deliverables.join(", ")}</p>
+      <p><span className="text-muted-foreground">สิ่งที่ส่งมอบ:</span> {form.deliverables.join(", ")}</p>
     )}
     {form.budgetAmount && <p><span className="text-muted-foreground">งบ:</span> ฿{form.budgetAmount}</p>}
-    {form.deadline && <p><span className="text-muted-foreground">Timeline:</span> {form.deadline}</p>}
+    {form.deadline && <p><span className="text-muted-foreground">กำหนดส่ง:</span> {form.deadline}</p>}
     <p><span className="text-muted-foreground">ติดต่อ:</span> {form.clientName} · {form.email}</p>
     {form.referenceUrl && <p className="break-all"><span className="text-muted-foreground">อ้างอิง:</span> {form.referenceUrl}</p>}
     {form.message && <p className="text-muted-foreground whitespace-pre-wrap">{form.message}</p>}

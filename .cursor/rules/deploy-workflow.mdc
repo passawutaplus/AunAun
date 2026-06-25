@@ -5,6 +5,7 @@ alwaysApply: true
 
 # Deploy workflow (เดโม่ / Production)
 
+นโยบาย DB รวม/แยก: [docs/ecosystem-deploy-policy.md](../../docs/ecosystem-deploy-policy.md)  
 เมื่อผู้ใช้สั่ง deploy ด้วยภาษาไทยหรืออังกฤษ ให้ทำตามนี้ทันที — **ไม่ต้องถามยืนยันซ้ำ** ยกเว้น production มี migration ค้าง
 
 ## คำสั่งที่รู้จัก

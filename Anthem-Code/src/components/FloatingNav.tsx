@@ -40,7 +40,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     to: "/?mode=community",
-    label: "Area",
+    label: "คอมมูนิตี้",
     icon: Orbit,
     match: (p, mode) => p === "/" && mode === "community",
   },

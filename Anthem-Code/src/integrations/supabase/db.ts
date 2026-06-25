@@ -16,15 +16,16 @@ const authOpts = {
 function requireSupabaseEnv() {
   const demoMode = import.meta.env.VITE_DEMO_MODE === "true";
   const url = demoMode
-    ? import.meta.env.VITE_DEMO_SUPABASE_URL
+    ? import.meta.env.VITE_DEMO_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL
     : import.meta.env.VITE_SUPABASE_URL;
   const key = demoMode
-    ? import.meta.env.VITE_DEMO_SUPABASE_PUBLISHABLE_KEY
+    ? import.meta.env.VITE_DEMO_SUPABASE_PUBLISHABLE_KEY ||
+      import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
     : import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) {
     throw new Error(
       demoMode
-        ? "Demo builds require VITE_DEMO_SUPABASE_URL and VITE_DEMO_SUPABASE_PUBLISHABLE_KEY."
+        ? "Demo builds require VITE_DEMO_SUPABASE_* or VITE_SUPABASE_* at build time."
         : "Missing Supabase environment variables. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY at build time.",
     );
   }
@@ -135,7 +136,8 @@ export const supabase = new Proxy({} as SupabaseClient<Database>, {
     if (prop === "from") {
       return (table: string) => fromTable(table);
     }
-    return Reflect.get(getPublicDb(), prop, receiver);
+    // auth, rpc, storage, realtime — root client only (schema clients omit these).
+    return Reflect.get(getRootDb(), prop, receiver);
   },
 }) as SupabaseClient<Database>;
 

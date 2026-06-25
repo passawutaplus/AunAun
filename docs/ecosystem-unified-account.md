@@ -4,6 +4,8 @@
 
 **`rvnzjiskqliexysicfmh`** — ทั้ง So1o และ an1hem ใช้ URL + anon key ชุดเดียวกัน
 
+> Deploy / demo / staging policy: [docs/ecosystem-deploy-policy.md](../docs/ecosystem-deploy-policy.md)
+
 | Schema | หน้าที่ |
 |--------|---------|
 | `public` | `profiles` (`user_id` = auth), billing, roles |

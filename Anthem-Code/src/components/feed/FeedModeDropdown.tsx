@@ -15,18 +15,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import type { FeedFilter, SpecialFilter } from "@/data/projectTypes";
+import { FEED_MODE_LABELS, FEED_MODE_ORDER, type FeedModeOption } from "@/lib/feedModeLabels";
 
 
 
-type ModeOption = "Explore" | SpecialFilter;
-
-
-
-const ORDER: ModeOption[] = ["Explore", "Following", "Newest", "Top 1", "Collections"];
-
-
-
-const ICONS: Record<ModeOption, LucideIcon> = {
+const ICONS: Record<FeedModeOption, LucideIcon> = {
 
   Explore: Compass,
 
@@ -46,7 +39,7 @@ interface Props {
 
   value: FeedFilter;
 
-  onChange: (m: ModeOption) => void;
+  onChange: (m: FeedModeOption) => void;
 
 }
 
@@ -54,9 +47,11 @@ interface Props {
 
 const FeedModeDropdown = ({ value, onChange }: Props) => {
 
-  const current: ModeOption = (ORDER as string[]).includes(value as string) ? (value as ModeOption) : "Explore";
-
+  const current: FeedModeOption = (FEED_MODE_ORDER as string[]).includes(value as string)
+    ? (value as FeedModeOption)
+    : "Explore";
   const Icon = ICONS[current];
+  const label = FEED_MODE_LABELS[current];
 
   return (
 
@@ -74,7 +69,7 @@ const FeedModeDropdown = ({ value, onChange }: Props) => {
 
           <Icon className="w-3.5 h-3.5" />
 
-          <span className="text-sm font-medium">{current}</span>
+          <span className="text-sm font-medium">{label}</span>
 
           <ChevronDown className="w-3.5 h-3.5 opacity-60" />
 
@@ -84,27 +79,17 @@ const FeedModeDropdown = ({ value, onChange }: Props) => {
 
       <DropdownMenuContent align="start" className="w-48 rounded-xl">
 
-        {ORDER.map((opt) => {
-
+        {FEED_MODE_ORDER.map((opt) => {
           const O = ICONS[opt];
-
           const active = opt === current;
-
           return (
-
             <DropdownMenuItem
-
               key={opt}
-
               onClick={() => onChange(opt)}
-
               className="flex items-center gap-2 cursor-pointer"
-
             >
-
               <O className="w-4 h-4 opacity-70" />
-
-              <span className="flex-1 text-sm">{opt}</span>
+              <span className="flex-1 text-sm">{FEED_MODE_LABELS[opt]}</span>
 
               {active && <Check className="w-4 h-4 text-primary" />}
 

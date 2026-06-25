@@ -13,10 +13,10 @@ const deployTarget = (env.DEPLOY_TARGET || env.VERCEL_ENV || "").toLowerCase();
 const demoMode = (env.VITE_DEMO_MODE || "false").toLowerCase();
 const demoEnabled = demoMode === "true" || demoMode === "1";
 
+// Only block demo credentials when explicitly targeting production deploy (an1hem.app / solofreelancer.com).
+// Demo project uses `vercel deploy --prod` too — set DEPLOY_TARGET=demo on those builds.
 const isProductionTarget =
-  deployTarget === "production" ||
-  deployTarget === "prod" ||
-  env.VERCEL_ENV === "production";
+  deployTarget === "production" || deployTarget === "prod";
 
 if (isProductionTarget && demoEnabled) {
   console.error(
@@ -27,20 +27,24 @@ if (isProductionTarget && demoEnabled) {
 }
 
 if (demoEnabled) {
-  const required = [
-    "VITE_DEMO_SUPABASE_URL",
-    "VITE_DEMO_SUPABASE_PUBLISHABLE_KEY",
-  ];
-  const missing = required.filter((key) => !env[key]?.trim());
-  if (missing.length) {
-    console.error(`[security] Demo build is missing: ${missing.join(", ")}`);
+  const url =
+    env.VITE_DEMO_SUPABASE_URL?.trim() || env.VITE_SUPABASE_URL?.trim();
+  const key =
+    env.VITE_DEMO_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+  if (!url || !key) {
+    console.error(
+      "[security] Demo build is missing Supabase URL/key (VITE_DEMO_SUPABASE_* or VITE_SUPABASE_*).",
+    );
     process.exit(1);
   }
   if (
     env.VITE_SUPABASE_URL?.trim() &&
-    env.VITE_DEMO_SUPABASE_URL.trim() === env.VITE_SUPABASE_URL.trim()
+    env.VITE_DEMO_SUPABASE_URL?.trim() &&
+    env.VITE_DEMO_SUPABASE_URL.trim() === env.VITE_SUPABASE_URL.trim() &&
+    isProductionTarget
   ) {
-    console.error("[security] Demo and production Supabase URLs must be different.");
+    console.error("[security] Demo and production Supabase URLs must be different on production deploys.");
     process.exit(1);
   }
 }

@@ -103,7 +103,7 @@ const EarningsPage = () => {
           </div>
           <Button asChild variant="outline" className="rounded-full shrink-0">
             <Link to="/referrals">
-              <UserPlus className="w-4 h-4 mr-1.5" /> เปิดลิงก์ Affiliate
+              <UserPlus className="w-4 h-4 mr-1.5" /> ดูลิงก์ชวนเพื่อน
             </Link>
           </Button>
         </div>

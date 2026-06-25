@@ -22,7 +22,7 @@
 
 | App | วิธี |
 |-----|------|
-| Pixel100 | `phatsawut@demo.pixel100.com` / `pixel100-demo-seed` — [รายชื่อเพิ่ม](../Anthem-Code/docs/demo-catalog.md) |
+| Pixel100 | `phatsawut@demo.an1hem.app` / `pixel100-demo-seed` — [รายชื่อเพิ่ม](../Anthem-Code/docs/demo-catalog.md) |
 | So1o | Google หรือสมัครอีเมล — บันทึกถาวร ชำระเงิน sandbox |
 
 ---
@@ -56,5 +56,6 @@
 - [x] DNS + HTTPS (`./scripts/deploy-ecosystem.sh --https`) — ใช้ Vercel demo URLs แทน VPS
 - [x] `./scripts/prepare-demo.sh`
 - [x] Login demo สำเร็จทั้งสองแอป (ทดสอบมือ: Pixel100 demo account + So1o Google) — auth pages OK มิ.ย. 2026; login จริงทดสอบก่อนส่ง UX reviewer
+- [x] Pixel100 demo deploy 25 มิ.ย. 2026 — UX polish + referral E2E API pass
 
-ดู [deploy-vps.md](deploy-vps.md)
+ดู [deploy-vps.md](deploy-vps.md) · [ecosystem-deploy-policy.md](ecosystem-deploy-policy.md)

@@ -47,14 +47,14 @@ export default function ReferralPage() {
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> กลับ
           </button>
-          <h1 className="text-sm font-semibold">Referral & Affiliate</h1>
+          <h1 className="text-sm font-semibold">ชวนเพื่อนรับ Pixel</h1>
           <span className="w-12" />
         </div>
       </header>
 
       <main className="mx-auto max-w-4xl space-y-6 px-4 py-8 pb-24">
         <section className="border-b border-border pb-7">
-          <p className="text-xs font-semibold uppercase text-primary">Pay per performance</p>
+          <p className="text-xs font-semibold uppercase text-primary">รับรางวัลตามผลงาน</p>
           <h2 className="mt-2 text-3xl font-semibold">ชวนเพื่อนมาสร้างผลงาน รับ 50 px</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
             คุณจะได้รับรางวัลเมื่อเพื่อนสมัครผ่านลิงก์และเผยแพร่ผลงานหรือโพสต์ Community ครั้งแรกสำเร็จ
@@ -64,7 +64,7 @@ export default function ReferralPage() {
         {isLoading ? (
           <p className="py-12 text-center text-sm text-muted-foreground">กำลังเตรียมลิงก์ของคุณ...</p>
         ) : error || !data ? (
-          <p className="py-12 text-center text-sm text-destructive">โหลดข้อมูล Referral ไม่สำเร็จ</p>
+          <p className="py-12 text-center text-sm text-destructive">โหลดข้อมูลชวนเพื่อนไม่สำเร็จ — ลองรีเฟรชหรือเข้าสู่ระบบใหม่</p>
         ) : (
           <>
             <section className="rounded-lg border border-border bg-card p-5">
@@ -73,7 +73,7 @@ export default function ReferralPage() {
                   <Share2 className="h-5 w-5 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">ลิงก์ Affiliate ส่วนตัว</p>
+                  <p className="text-sm font-semibold">ลิงก์ชวนเพื่อนของคุณ</p>
                   <p className="mt-1 break-all text-xs text-muted-foreground">{referralLink}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Button type="button" onClick={copyLink} variant="outline" className="gap-2">

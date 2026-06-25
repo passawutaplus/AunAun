@@ -26,11 +26,16 @@ set -a && source .env && set +a
 export VITE_DEMO_MODE=true
 # ไม่บังคับ VITE_SITE_URL — ให้ OAuth ใช้ *.vercel.app อัตโนมัติบน preview
 
-: "${VITE_DEMO_SUPABASE_URL:?Set VITE_DEMO_SUPABASE_URL in .env}"
-: "${VITE_DEMO_SUPABASE_PUBLISHABLE_KEY:?Set VITE_DEMO_SUPABASE_PUBLISHABLE_KEY in .env}"
-if [[ -n "${VITE_SUPABASE_URL:-}" && "${VITE_DEMO_SUPABASE_URL}" == "${VITE_SUPABASE_URL}" ]]; then
-  echo "ERROR: Demo and production must use different Supabase projects." >&2
-  exit 1
+# Phase A (pre-launch): same rvnzjisk project — set VITE_SUPABASE_* only.
+# Phase B: separate demo project — set VITE_DEMO_SUPABASE_* (must differ from prod URL).
+VITE_DEMO_SUPABASE_URL="${VITE_DEMO_SUPABASE_URL:-${VITE_SUPABASE_URL:-}}"
+VITE_DEMO_SUPABASE_PUBLISHABLE_KEY="${VITE_DEMO_SUPABASE_PUBLISHABLE_KEY:-${VITE_SUPABASE_PUBLISHABLE_KEY:-}}"
+: "${VITE_DEMO_SUPABASE_URL:?Set VITE_DEMO_SUPABASE_URL or VITE_SUPABASE_URL in .env}"
+: "${VITE_DEMO_SUPABASE_PUBLISHABLE_KEY:?Set VITE_DEMO_SUPABASE_PUBLISHABLE_KEY or VITE_SUPABASE_PUBLISHABLE_KEY in .env}"
+if [[ -n "${VITE_SUPABASE_URL:-}" && -n "${VITE_DEMO_SUPABASE_URL:-}" && "${VITE_DEMO_SUPABASE_URL}" != "${VITE_SUPABASE_URL}" ]]; then
+  echo "→ Phase B demo: separate Supabase project"
+elif [[ -n "${VITE_SUPABASE_URL:-}" && "${VITE_DEMO_SUPABASE_URL}" == "${VITE_SUPABASE_URL}" ]]; then
+  echo "→ Phase A demo: shared Supabase project (rvnzjisk)"
 fi
 
 echo "→ Deploying demo to 1px-demo.vercel.app (production slot on demo project)…"
@@ -40,6 +45,7 @@ if [[ "${1:-}" == "--prod" ]]; then
   exit 1
 fi
 BUILD_ENVS=(
+  --build-env "DEPLOY_TARGET=demo"
   --build-env "VITE_DEMO_SUPABASE_URL=${VITE_DEMO_SUPABASE_URL}"
   --build-env "VITE_DEMO_SUPABASE_PUBLISHABLE_KEY=${VITE_DEMO_SUPABASE_PUBLISHABLE_KEY}"
   --build-env "VITE_DEMO_MODE=true"
