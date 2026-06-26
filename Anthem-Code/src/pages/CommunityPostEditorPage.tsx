@@ -15,7 +15,12 @@ import { toast } from "sonner";
 import ModerationBanBanner from "@/components/moderation/ModerationBanBanner";
 import { uploadProjectVideo } from "@/lib/uploadVideo";
 import { useSubscription } from "@/core/subscription";
-import { getCommunityMediaLimits } from "@/lib/communityLimits";
+import {
+  canAddCommunityImage,
+  canAddCommunityVideo,
+  communityMediaLimitMessage,
+  getCommunityMediaLimits,
+} from "@/lib/communityLimits";
 import {
   countMediaByKind,
   mediaItemFromUrl,
@@ -64,7 +69,7 @@ const CommunityPostEditorPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { tier } = useSubscription();
-  const limits = getCommunityMediaLimits(tier);
+  const limits = getCommunityMediaLimits();
   const folderRef = useRef(`community-${crypto.randomUUID()}`);
   const publish = usePublishCommunityPost();
   const saveDraft = useSaveCommunityDraft();
@@ -95,6 +100,7 @@ const CommunityPostEditorPage = () => {
       folder: folderRef.current,
       tier,
       maxImages: limits.images,
+      maxTotal: limits.total,
       aspect: mediaAspect,
       setMediaItems,
       mediaItems,
@@ -104,11 +110,12 @@ const CommunityPostEditorPage = () => {
   const uploading = uploadingGallery || uploadingVideo;
   const imageCount = countMediaByKind(mediaItems, "image");
   const videoCount = countMediaByKind(mediaItems, "video");
+  const mediaCount = mediaItems.length;
   const pickDisabled =
     uploading ||
     recropping ||
     cropFile !== null ||
-    (imageCount >= limits.images && videoCount >= limits.videos);
+    mediaCount >= limits.total;
   const aspectLocked = imageCount > 0;
 
   const autosave = useCommunityAutosave({
@@ -224,8 +231,8 @@ const CommunityPostEditorPage = () => {
 
   const handleVideo = async (file: File) => {
     if (!user) return;
-    if (videoCount >= limits.videos) {
-      toast.error(`อัปโหลดวิดีโอได้สูงสุด ${limits.videos} คลิป/โพสต์`);
+    if (!canAddCommunityVideo(imageCount, videoCount)) {
+      toast.error(communityMediaLimitMessage("video", imageCount, videoCount));
       return;
     }
     setUploadingVideo(true);

@@ -1,8 +1,40 @@
 import { z } from "zod";
 import { LICENSE_TYPES } from "@/lib/licenses";
+import {
+  COMMUNITY_MEDIA_MAX_IMAGES,
+  COMMUNITY_MEDIA_MAX_ITEMS,
+  COMMUNITY_MEDIA_MAX_VIDEOS,
+} from "@/lib/communityLimits";
 
 export const communityMediaAspectSchema = z.enum(["square", "portrait", "landscape"]);
 export type CommunityMediaAspectInput = z.infer<typeof communityMediaAspectSchema>;
+
+function refineCommunityMedia(
+  val: { galleryUrls: string[]; videoUrls: string[] },
+  ctx: z.RefinementCtx,
+) {
+  if (val.galleryUrls.length > COMMUNITY_MEDIA_MAX_IMAGES) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `รูปไม่เกิน ${COMMUNITY_MEDIA_MAX_IMAGES} ภาพ/โพสต์`,
+      path: ["galleryUrls"],
+    });
+  }
+  if (val.videoUrls.length > COMMUNITY_MEDIA_MAX_VIDEOS) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `วิดีโอไม่เกิน ${COMMUNITY_MEDIA_MAX_VIDEOS} คลิป/โพสต์`,
+      path: ["videoUrls"],
+    });
+  }
+  if (val.galleryUrls.length + val.videoUrls.length > COMMUNITY_MEDIA_MAX_ITEMS) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `สื่อรวมไม่เกิน ${COMMUNITY_MEDIA_MAX_ITEMS} ไฟล์/โพสต์ (รูป+วิดีโอ)`,
+      path: ["galleryUrls"],
+    });
+  }
+}
 
 export const thaiPhoneRegex = /^(0[6-9]\d{8}|\+66[6-9]\d{8})$/;
 
@@ -55,9 +87,9 @@ export const communityPostSchema = z.object({
   mentionedProjectIds: z.array(z.string().uuid()).max(3).optional().default([]),
   taggedUserIds: z.array(z.string().uuid()).max(5).optional().default([]),
   mediaAspect: communityMediaAspectSchema.optional().default("square"),
-  galleryUrls: z.array(z.string().url()).max(20).optional().default([]),
-  videoUrls: z.array(z.string().url()).max(3).optional().default([]),
-});
+  galleryUrls: z.array(z.string().url()).max(COMMUNITY_MEDIA_MAX_IMAGES).optional().default([]),
+  videoUrls: z.array(z.string().url()).max(COMMUNITY_MEDIA_MAX_VIDEOS).optional().default([]),
+}).superRefine(refineCommunityMedia);
 
 export type CommunityPostInput = z.infer<typeof communityPostSchema>;
 
@@ -69,9 +101,9 @@ export const communityPostDraftSchema = z.object({
   mentionedProjectIds: z.array(z.string().uuid()).max(3).optional().default([]),
   taggedUserIds: z.array(z.string().uuid()).max(5).optional().default([]),
   mediaAspect: communityMediaAspectSchema.optional().default("square"),
-  galleryUrls: z.array(z.string().url()).max(20).optional().default([]),
-  videoUrls: z.array(z.string().url()).max(3).optional().default([]),
-});
+  galleryUrls: z.array(z.string().url()).max(COMMUNITY_MEDIA_MAX_IMAGES).optional().default([]),
+  videoUrls: z.array(z.string().url()).max(COMMUNITY_MEDIA_MAX_VIDEOS).optional().default([]),
+}).superRefine(refineCommunityMedia);
 
 export type CommunityPostDraftInput = z.infer<typeof communityPostDraftSchema>;
 

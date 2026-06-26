@@ -2,6 +2,10 @@ import { useCallback, useRef, useState, type Dispatch, type SetStateAction } fro
 import { toast } from "sonner";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { prefetchAnthemStorageUsage } from "@/lib/anthemStorageUsage";
+import {
+  canAddCommunityImage,
+  communityMediaLimitMessage,
+} from "@/lib/communityLimits";
 import type { CommunityMediaAspect } from "@/lib/communityMediaAspect";
 import {
   countMediaByKind,
@@ -21,6 +25,7 @@ type Options = {
   folder: string;
   tier: Tier;
   maxImages: number;
+  maxTotal: number;
   aspect: CommunityMediaAspect;
   setMediaItems: Dispatch<SetStateAction<PortfolioMediaItem[]>>;
   mediaItems: PortfolioMediaItem[];
@@ -41,6 +46,7 @@ export function useCommunityImageUpload({
   folder,
   tier,
   maxImages,
+  maxTotal,
   aspect,
   setMediaItems,
   mediaItems,
@@ -54,6 +60,7 @@ export function useCommunityImageUpload({
   const recroppingRef = useRef(false);
 
   const imageCount = countMediaByKind(mediaItems, "image");
+  const videoCount = countMediaByKind(mediaItems, "video");
 
   const uploadOne = useCallback(
     async (file: File, replaceUrl: string | null) => {
@@ -115,19 +122,21 @@ export function useCommunityImageUpload({
   const enqueueImages = useCallback(
     (files: FileList) => {
       if (!userId) return;
-      if (imageCount >= maxImages) {
-        toast.error(`อัปโหลดรูปได้สูงสุด ${maxImages} รูป/โพสต์`);
+      if (!canAddCommunityImage(imageCount, videoCount)) {
+        toast.error(communityMediaLimitMessage("image", imageCount, videoCount));
         return;
       }
-      const room = maxImages - imageCount;
+      const roomByImages = maxImages - imageCount;
+      const roomByTotal = maxTotal - mediaItems.length;
+      const room = Math.min(roomByImages, roomByTotal);
       const incoming = Array.from(files).slice(0, room);
       if (incoming.length < files.length) {
-        toast.message(`เพิ่มได้อีก ${room} รูปในโพสต์นี้`);
+        toast.message(`เพิ่มได้อีก ${room} ไฟล์ในโพสต์นี้`);
       }
       queueRef.current.push(...incoming.map((file) => ({ file })));
       void processQueue();
     },
-    [userId, imageCount, maxImages, processQueue, setUploadingGallery],
+    [userId, imageCount, videoCount, maxImages, maxTotal, mediaItems.length, processQueue],
   );
 
   const recropImages = useCallback(
