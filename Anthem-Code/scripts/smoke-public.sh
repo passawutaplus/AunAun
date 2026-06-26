@@ -2,7 +2,7 @@
 # Public-route smoke — no auth, no Playwright required.
 # Usage:
 #   ./scripts/smoke-public.sh
-#   BASE_URL=https://1px-demo.vercel.app ./scripts/smoke-public.sh
+#   BASE_URL=https://aplus1-demo.vercel.app ./scripts/smoke-public.sh
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8080}"

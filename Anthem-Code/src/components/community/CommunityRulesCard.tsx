@@ -1,39 +1,25 @@
 import { Link } from "react-router-dom";
 import { Shield } from "lucide-react";
-import {
-  COMMUNITY_CONTENT_RULES,
-  COMMUNITY_GUIDELINES_PATH,
-  COMMUNITY_STRIKE_LADDER,
-  COMMUNITY_STRIKE_RESET_DAYS,
-} from "@/data/communityModerationPolicy";
+import { COMMUNITY_GUIDELINES_PATH } from "@/data/communityModerationPolicy";
 
 const CommunityRulesCard = () => (
-  <aside className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3 text-sm">
-    <p className="font-medium flex items-center gap-2">
-      <Shield className="w-4 h-4 text-primary" />
-      กฎ Designer Area
-    </p>
-    <ul className="space-y-2 text-xs text-muted-foreground">
-      {COMMUNITY_CONTENT_RULES.map((rule) => (
-        <li key={rule.id}>
-          <span className="font-medium text-foreground">{rule.title}</span>
-          <span className="block mt-0.5">{rule.desc}</span>
-        </li>
-      ))}
-    </ul>
-    <div className="text-xs text-muted-foreground border-t border-border/50 pt-3 space-y-1">
-      <p className="font-medium text-foreground">โทษจากคำหยาบ (strike)</p>
-      {COMMUNITY_STRIKE_LADDER.map((row) => (
-        <p key={row.strikes}>
-          ครั้งที่ {row.strikes}: {row.effect}
-          {row.banDays > 0 ? ` ${row.banDays} วัน` : ""}
-        </p>
-      ))}
-      <p className="pt-1">รีเซ็ต strike หลัง {COMMUNITY_STRIKE_RESET_DAYS} วันไม่มีเหตุการณ์ใหม่</p>
+  <aside className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm">
+    <div className="flex items-start justify-between gap-3">
+      <p className="font-medium flex items-center gap-2 min-w-0">
+        <Shield className="w-4 h-4 text-primary shrink-0" />
+        กฎ Designer Area
+      </p>
+      <Link
+        to={COMMUNITY_GUIDELINES_PATH}
+        className="shrink-0 text-xs text-primary hover:underline"
+      >
+        อ่านฉบับเต็ม
+      </Link>
     </div>
-    <Link to={COMMUNITY_GUIDELINES_PATH} className="text-xs text-primary hover:underline">
-      อ่านกฎชุมชนฉบับเต็ม
-    </Link>
+    <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+      โพสต์สุภาพ ไม่หยาบคาย ไม่ spam ไม่ NSFW เคารพลิขสิทธิ์ — ละเมิดซ้ำอาจโดน strike
+      และจำกัดการโพสต์ชั่วคราว
+    </p>
   </aside>
 );
 

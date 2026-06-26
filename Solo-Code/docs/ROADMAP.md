@@ -7,7 +7,7 @@
 | Product | URL | บทบาท |
 |---------|-----|--------|
 | **So1o Freelancer (My Desk)** | solofreelancer.com | หลังบ้าน: ลูกค้า, ใบเสนอราคา, งาน, การเงิน, ภาษี, Brief, Labs |
-| **an1hem Showcase** | [an1hem.app](https://an1hem.app) (demo: [1px-demo.vercel.app](https://1px-demo.vercel.app)) | หน้าร้าน: ฟีดผลงานชุมชนสไตล์ Pinterest |
+| **an1hem Showcase** | [an1hem.app](https://an1hem.app) (demo: [aplus1-demo.vercel.app](https://aplus1-demo.vercel.app)) | หน้าร้าน: ฟีดผลงานชุมชนสไตล์ Pinterest |
 | **Free Quotation (legacy)** | freelance-invoice-taupe.vercel.app | เครื่องมือใบเสนอราคาออนไลน์แยก (จะรวมเข้า My Desk ในอนาคต) |
 
 ---

@@ -455,7 +455,7 @@ export function QuotationEditor({ id, onBack }: Props) {
               title={
                 q.quotationKind === "inhouse"
                   ? "สมาชิกทีม (In-House)"
-                  : "สมาชิก Studio (Pixel100 nest)"
+                  : "สมาชิก Studio (Aplus1 nest)"
               }
               icon={<Users className="h-3.5 w-3.5" />}
             >

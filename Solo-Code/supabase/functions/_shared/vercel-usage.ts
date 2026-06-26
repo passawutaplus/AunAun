@@ -51,8 +51,9 @@ export type VercelUsageSnapshot = {
 };
 
 const VERCEL_PROJECTS = [
-  { slug: "1px-demo", label: "Pixel100", prodUrl: "https://pixel100.com" },
-  { slug: "solo-demo-liart", label: "So1o", prodUrl: "https://www.solofreelancer.com" },
+  { slug: "aplus1-prod", label: "Aplus1", prodUrl: "https://aplus1.app" },
+  { slug: "aplus1-demo", label: "Aplus1 demo", prodUrl: "https://aplus1-demo.vercel.app" },
+  { slug: "solo-demo", label: "So1o", prodUrl: "https://www.solofreelancer.com" },
 ] as const;
 
 /** Hobby plan approximate monthly limits (for % estimation when billing API unavailable). */
@@ -93,7 +94,7 @@ function buildVercelUpgradeAdvice(
   if (plan === "hobby" || plan === "free") {
     reasons.push("Vercel Hobby — ไม่มี spend management และอาจ pause เมื่อเกิน quota");
     if (soloProject) {
-      reasons.push("So1o ใช้ SSR บน Vercel — ใช้ serverless มากกว่า static SPA (Pixel100)");
+      reasons.push("So1o ใช้ SSR บน Vercel — ใช้ serverless มากกว่า static SPA (Aplus1)");
       verdict = "watch";
     }
   }

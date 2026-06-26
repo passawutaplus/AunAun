@@ -5,7 +5,7 @@
  * `@/core/*` keep working when extraction happens.
  *
  * Rule: anything imported from `@/core/*` MUST be safe to share
- * verbatim between Anthem and So1o. No app-specific business logic.
+ * verbatim between Aplus1 and So1o. No app-specific business logic.
  */
 export * from "./auth";
 export * from "./wallet";

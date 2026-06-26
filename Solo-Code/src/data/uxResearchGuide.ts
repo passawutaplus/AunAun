@@ -124,7 +124,7 @@ export const NEW_USER_JOURNEY: JourneyStep[] = [
 export const DESIGN_CHECKLIST: ChecklistItem[] = [
   {
     id: "d-brand",
-    text: "Brand & messaging — “หลังบ้านฟรีแลนซ์” สื่อสารได้ ไม่ปนกับ Pixel100",
+    text: "Brand & messaging — “หลังบ้านฟรีแลนซ์” สื่อสารได้ ไม่ปนกับ Aplus1",
   },
   { id: "d-thai", text: "Typography ไทย — อ่านง่ายใน dashboard ที่ข้อมูลหนาแน่น" },
   { id: "d-hierarchy", text: "Visual hierarchy — Sidebar / Bottom nav / sub-tab แยกชัด" },
@@ -139,7 +139,7 @@ export const DESIGN_CHECKLIST: ChecklistItem[] = [
   { id: "d-a11y", text: "Accessibility — focus, labels ฟอร์ม QT, contrast ปุ่มหลัก" },
   {
     id: "d-solo-vs-px",
-    text: "So1o (หลังบ้านจัดการงาน) vs Pixel100 (หน้าร้านโชว์ผลงาน) — เข้าใจความต่างไหม",
+    text: "So1o (หลังบ้านจัดการงาน) vs Aplus1 (หน้าร้านโชว์ผลงาน) — เข้าใจความต่างไหม",
   },
 ];
 
@@ -158,7 +158,7 @@ export const FEATURE_SECTIONS: FeatureSection[] = [
     uxCriteria: [
       "First impression ชัดว่าเป็นแอปหลังบ้านฟรีแลนซ์",
       "CTA สมัคร Tester ไม่กดยาก",
-      "ลิงก์ Pixel100 / Help ทำงาน",
+      "ลิงก์ Aplus1 / Help ทำงาน",
     ],
     success: "Guest เข้าใจว่า So1o ทำอะไรและอยากลองสมัคร",
     items: [
@@ -166,7 +166,7 @@ export const FEATURE_SECTIONS: FeatureSection[] = [
       { id: "a2", text: "Fair Price calculator ใช้ได้ไม่ต้อง login" },
       { id: "a3", text: "So1o Mentor ทดลองได้ (guest quota)" },
       { id: "a4", text: "CTA สมัคร Tester ไม่กดยาก" },
-      { id: "a5", text: "ลิงก์ไป Pixel100 / Help / Pricing ทำงาน" },
+      { id: "a5", text: "ลิงก์ไป Aplus1 / Help / Pricing ทำงาน" },
     ],
   },
   {
@@ -266,7 +266,7 @@ export const FEATURE_SECTIONS: FeatureSection[] = [
       { id: "f3", text: "มัดจำ / WHT คำนวณถูก" },
       { id: "f4", text: "ส่งอีเมล QT (ถ้ามี)" },
       { id: "f5", text: "Duplicate / template" },
-      { id: "f6", text: "Handoff จาก Pixel100 (ถ้าทดลอง)" },
+      { id: "f6", text: "Handoff จาก Aplus1 (ถ้าทดลอง)" },
     ],
   },
   {
@@ -500,10 +500,10 @@ export const MODERATED_TASKS: ModeratedTask[] = [
     title: "First impression (Guest)",
     persona: "Guest",
     steps: ["เปิด / บน mobile", "อ่าน hero + pain points", "ลอง Fair Price calculator 1 ครั้ง"],
-    success: "เข้าใจว่า So1o ต่างจาก Pixel100 อย่างไร",
+    success: "เข้าใจว่า So1o ต่างจาก Aplus1 อย่างไร",
     interviewQuestions: [
       "ภายใน 10 วินาที รู้ว่าแอปนี้ทำอะไรไหม?",
-      "ความต่างหลังบ้าน vs หน้าร้าน Pixel100 ชัดไหม?",
+      "ความต่างหลังบ้าน vs หน้าร้าน Aplus1 ชัดไหม?",
     ],
   },
   {
@@ -633,7 +633,7 @@ export const PAGE_MAP: PageMapGroup[] = [
   },
   {
     group: "Ecosystem",
-    pages: [{ path: "https://1px-demo.vercel.app", label: "Pixel100 (หน้าร้านโชว์ผลงาน)" }],
+    pages: [{ path: "https://aplus1-demo.vercel.app", label: "Aplus1 (หน้าร้านโชว์ผลงาน)" }],
   },
 ];
 
@@ -651,7 +651,7 @@ export const FEEDBACK_TEMPLATE = {
     "First impression 10 วินาที — เข้าใจไหม",
     "Flow รับงาน→เก็บเงิน — ติดตรงไหน",
     "Mobile vs Desktop — จุดที่ใช้ยากสุด",
-    "So1o vs Pixel100 — เข้าใจความต่างไหม",
+    "So1o vs Aplus1 — เข้าใจความต่างไหม",
     "Empty / loading / error — เข้าใจไหม",
   ],
 };

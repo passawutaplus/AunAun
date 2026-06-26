@@ -21,7 +21,7 @@ type LineNotifyKind =
   | "billing";
 
 export const LINE_NOTIFICATION_HEADER = "[So1o Freelancer Notification]";
-export const ANTHEM_LINE_HEADER = "[Pixel100 Notification]";
+export const ANTHEM_LINE_HEADER = "[Aplus1 Notification]";
 
 const ANTHEM_KINDS = new Set<string>([
   "anthem_hire",
@@ -43,7 +43,11 @@ const SOLO_BASE = (Deno.env.get("SOLO_SITE_URL") ?? "https://solofreelancer.com"
   /\/$/,
   "",
 );
-const ANTHEM_BASE = (Deno.env.get("ANTHEM_APP_URL") ?? "https://pixel100.com").replace(/\/$/, "");
+const ANTHEM_BASE = (
+  Deno.env.get("APLUS1_APP_URL") ??
+  Deno.env.get("ANTHEM_APP_URL") ??
+  "https://aplus1.app"
+).replace(/\/$/, "");
 
 type KindCopy = {
   hook: string;

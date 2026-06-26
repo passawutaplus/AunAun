@@ -20,12 +20,12 @@ export function LandingShowcase({ user }: Props) {
                 <span className="text-muted-foreground font-semibold"> สไตล์ Pinterest</span>
               </h3>
               <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-xl">
-                <strong className="text-foreground font-medium">Pixel100</strong>{" "}
+                <strong className="text-foreground font-medium">Aplus1</strong>{" "}
                 คือแพลตฟอร์มโชว์เคสและค้นพบผลงานของครีเอทีฟ — ไม่ได้อยู่ใน My Desk แต่เชื่อมกับ
                 ecosystem เดียวกัน
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                So1o Freelancer = หลังบ้านงาน · Pixel100 = หน้าร้านโชว์ผลงาน
+                So1o Freelancer = หลังบ้านงาน · Aplus1 = หน้าร้านโชว์ผลงาน
               </p>
             </div>
             <div className="shrink-0 flex flex-col sm:flex-row lg:flex-col gap-3">
@@ -35,7 +35,7 @@ export function LandingShowcase({ user }: Props) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow-elevated hover:opacity-90 transition-opacity"
               >
-                เปิด Pixel100 Showcase
+                เปิด Aplus1 Showcase
                 <ExternalLink className="h-4 w-4" />
               </a>
               <Link

@@ -57,6 +57,7 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick }: Props) => {
             p.title.toLowerCase().includes(q) ||
             p.body.toLowerCase().includes(q) ||
             p.tags.some((t) => t.toLowerCase().includes(q)) ||
+            (p.tools ?? []).some((t) => t.toLowerCase().includes(q)) ||
             (p.profile?.display_name ?? "").toLowerCase().includes(q),
         );
     return sortByBoostedIds(base, boostedPosts);

@@ -32,7 +32,7 @@ urls = [
   'https://www.pixel100.com/**',
   'https://www.an1hem.app/**', 'https://so1o-ops-hub.vercel.app/**',
   'http://localhost:3090/**', 'http://127.0.0.1:3090/**',
-  'https://1px-demo.vercel.app/**', 'https://solo-demo-liart.vercel.app/**',
+  'https://aplus1-demo.vercel.app/**', 'https://solo-demo-liart.vercel.app/**',
   'https://*.vercel.app/**',
 ]
 print(json.dumps({

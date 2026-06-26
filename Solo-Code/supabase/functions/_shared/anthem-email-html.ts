@@ -18,15 +18,19 @@ const brand = {
 
 const LINE_URL = "https://lin.ee/q3W9Qds";
 const LINE_ID = "@solofreelancer";
-const FOOTER_NOTE = "ปิดการแจ้งเตือนได้ที่ Pixel100 → Settings → การแจ้งเตือน";
+const FOOTER_NOTE = "ปิดการแจ้งเตือนได้ที่ Aplus1 → Settings → การแจ้งเตือน";
 
 export function anthemSiteUrl(): string {
-  return (Deno.env.get("ANTHEM_APP_URL") ?? "https://1px-demo.vercel.app").replace(/\/$/, "");
+  return (
+    Deno.env.get("APLUS1_APP_URL") ??
+    Deno.env.get("ANTHEM_APP_URL") ??
+    "https://aplus1.app"
+  ).replace(/\/$/, "");
 }
 
 export function anthemEmailFrom(): { from: string; senderDomain: string } {
-  const from = Deno.env.get("ANTHEM_EMAIL_FROM") ?? "Pixel100 <noreply@pixel100.com>";
-  const senderDomain = Deno.env.get("ANTHEM_EMAIL_SENDER_DOMAIN") ?? "notify.pixel100.com";
+  const from = Deno.env.get("APLUS1_EMAIL_FROM") ?? Deno.env.get("ANTHEM_EMAIL_FROM") ?? "Aplus1 <noreply@aplus1.app>";
+  const senderDomain = Deno.env.get("APLUS1_EMAIL_SENDER_DOMAIN") ?? Deno.env.get("ANTHEM_EMAIL_SENDER_DOMAIN") ?? "notify.aplus1.app";
   return { from, senderDomain };
 }
 

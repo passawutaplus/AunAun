@@ -1,41 +1,53 @@
 /**
- * Pixel100 brand — ทุกคนคือ 1 pixel รวมกันเป็นภาพใหญ่ของชุมชนครีเอทีฟ
- * อ่านแบรนด์: "พิกเซลร้อย" · คอนเซปต์: 1 pixel = 1 freelancer
+ * Aplus1 brand — creative social app สำหรับคนสร้างสรรค์
+ * One profile. One space. Endless creative opportunities.
  */
 
 /** ชื่อทางการ / SEO / กฎหมาย */
-export const BRAND_NAME = "Pixel100";
+export const BRAND_NAME = "Aplus1";
 
-/** โดเมนหลัก (canonical — จดก่อน production) */
-export const BRAND_DOMAIN = "pixel100.com";
+/** โดเมนหลัก (production) */
+export const BRAND_DOMAIN = "aplus1.app";
 
-/** URL เดโม่บน Vercel — ใช้จนกว่าจะซื้อโดเมนและ deploy production */
-export const ANTHEM_DEMO_URL = "https://1px-demo.vercel.app";
+/** Production URL */
+export const APLUS1_PRODUCTION_URL = "https://aplus1.app";
 
-export const BRAND_TAGLINE = "ชุมชนฟรีแลนซ์ครีเอทีฟ — ทุกคนคือ 1 pixel";
+/** URL เดโม่บน Vercel */
+export const APLUS1_DEMO_URL = "https://aplus1-demo.vercel.app";
+
+/** @deprecated use APLUS1_PRODUCTION_URL */
+export const ANTHEM_PRODUCTION_URL = APLUS1_PRODUCTION_URL;
+
+/** @deprecated use APLUS1_DEMO_URL */
+export const ANTHEM_DEMO_URL = APLUS1_DEMO_URL;
+
+export const BRAND_TAGLINE = "โปรไฟล์เดียว เชื่อมต่อทุกโอกาสของครีเอทีฟ";
+
+export const BRAND_TAGLINE_EN = "One profile. One space. Endless creative opportunities.";
 
 export const BRAND_DESCRIPTION =
-  "ลงผลงาน ติดตามครีเอเตอร์ จ้างงาน ขอคอลแลป และหางานดีไซน์ — ชุมชนพอร์ตโฟลิโอสำหรับฟรีแลนซ์ไทย";
+  "Aplus1 คือ creative social app สำหรับคนสร้างสรรค์ — รวมโปรไฟล์ ผลงาน คอมมูนิตี้ การคอลแลป และโอกาสในการจ้างงานไว้ในที่เดียว";
 
 /** ใช้บริบทที่ต้องการมุมมองเพิ่ม — อย่าแสดงคู่กับ BRAND_TAGLINE ในหน้าเดียว */
-export const BRAND_CONCEPT = "ยิ่งมีคน ยิ่งคม — รวมกันเป็นภาพใหญ่ของครีเอทีฟไทย";
+export const BRAND_CONCEPT =
+  "ครีเอทีฟไม่ควรกระจายตัวตนไว้หลายที่จนโอกาสหลุดหาย — ทุกโพสต์และทุกผลงานมีโอกาสต่อยอดเป็นคอนเนกชัน งานจ้าง หรือโปรเจกต์ใหม่";
 
-export const BRAND_HERO_SUBTITLE = "พื้นที่ของฟรีแลนซ์";
+export const BRAND_HERO_SUBTITLE = "creative social app";
 
-/** โลโก้ mark ในกล่อง */
-export const BRAND_MARK = "100";
+/** โลโก้ mark ในกล่อง (visual คงเดิม — เปลี่ยนเมื่อมีโลโก้ใหม่) */
+export const BRAND_MARK = "1";
 
-export const BRAND_COMPANY = "Pixel100 Platform";
+export const BRAND_COMPANY = "Aplus1 Platform";
 
-export const BRAND_SUPPORT_EMAIL = "support@pixel100.com";
-export const BRAND_PRIVACY_EMAIL = "privacy@pixel100.com";
+export const BRAND_SUPPORT_EMAIL = "support@aplus1.app";
+export const BRAND_PRIVACY_EMAIL = "privacy@aplus1.app";
 
 /** คีย์ภายใน (คงเดิมเพื่อไม่รีเซ็ต localStorage / session ของผู้ใช้เดิม) */
 export const BRAND_STORAGE_THEME = "an1hem-theme";
 export const BRAND_STORAGE_ONBOARDING = "an1hem_onboarding";
 export const BRAND_STORAGE_NO_PERSIST = "an1hem_no_persist";
 
-/** คีย์ ecosystem ข้ามแอป (So1o อาจอ้างอิงค่านี้) */
+/** คีย์ ecosystem ข้ามแอป (So1o อาจอ้างอิงค่านี้) — อย่าเปลี่ยน */
 export const BRAND_ECOSYSTEM_KEY = "anthem";
 
 export function defaultSiteUrl(): string {
@@ -44,5 +56,5 @@ export function defaultSiteUrl(): string {
       ? (import.meta.env?.VITE_SITE_URL as string | undefined)
       : undefined;
   if (fromEnv) return fromEnv.replace(/\/$/, "");
-  return ANTHEM_DEMO_URL;
+  return APLUS1_DEMO_URL;
 }

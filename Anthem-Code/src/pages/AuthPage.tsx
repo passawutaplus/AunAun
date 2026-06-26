@@ -22,6 +22,7 @@ import {
   BRAND_HERO_SUBTITLE,
   BRAND_NAME,
   BRAND_STORAGE_NO_PERSIST,
+  BRAND_TAGLINE,
 } from "@/lib/brandConfig";
 
 const PasswordInput = ({ id, value, onChange, placeholder, autoComplete, minLength, required, invalid }: {
@@ -117,10 +118,10 @@ const AuthPage = () => {
                 <Sparkles className="w-3.5 h-3.5" /> {BRAND_NAME} · {BRAND_HERO_SUBTITLE}
               </div>
               <h2 className="mt-8 text-4xl xl:text-5xl font-semibold thai-display">
-                โชว์ผลงาน<br />หาคนร่วมงาน<br />รับงานจ้าง — ที่เดียวจบ
+                โปรไฟล์เดียว<br />เชื่อมต่อทุกโอกาส<br />ของครีเอทีฟ
               </h2>
               <p className="mt-4 text-white/85 text-sm xl:text-base thai-body max-w-md">
-                สร้างพอร์ตโฟลิโอฟรี หาคนร่วมงาน รับงานจ้าง — ในชุมชนเดียวกัน
+                {BRAND_TAGLINE} — สร้างโปรไฟล์ ลงผลงาน ไถฟีดหาแรงบันดาลใจ คอลแลป และรับงาน ในที่เดียว
               </p>
             </div>
 
@@ -171,6 +172,8 @@ const AuthPage = () => {
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4 mt-0">
+                <SocialButtons redirectTo={redirect} />
+                <AuthEmailSeparator />
                 <SignupForm onSwitch={() => setTab("login")} />
               </TabsContent>
             </Tabs>

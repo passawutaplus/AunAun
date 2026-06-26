@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { MemberCodeCopy } from "@/components/MemberCodeCopy";
 import { useEcosystemOpsStats } from "@/hooks/useEcosystemOpsStats";
-import { OPS_HUB_URL, ANTHEM_SHOWCASE_URL } from "@/lib/productLinks";
+import { OPS_HUB_URL, APLUS1_SHOWCASE_URL } from "@/lib/productLinks";
 
 function fmtWhen(iso: string) {
   try {
@@ -46,8 +46,8 @@ export function EcosystemOpsSection() {
     );
   }
 
-  const anthemBase = ANTHEM_SHOWCASE_URL.replace(/\/$/, "");
-  const drillGallery = `${anthemBase}/drill`;
+  const aplus1Base = APLUS1_SHOWCASE_URL.replace(/\/$/, "");
+  const drillGallery = `${aplus1Base}/drill`;
 
   return (
     <div className="space-y-5">

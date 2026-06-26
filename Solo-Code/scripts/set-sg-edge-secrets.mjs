@@ -10,6 +10,7 @@ const REF = "zkflkpbmbozrchqncpzi";
 
 const SECRET_KEYS = [
   "GEMINI_API_KEY",
+  "APLUS1_APP_URL",
   "ANTHEM_APP_URL",
   "LINE_CHANNEL_ACCESS_TOKEN",
   "LINE_CHANNEL_SECRET",

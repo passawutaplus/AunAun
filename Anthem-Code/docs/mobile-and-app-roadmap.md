@@ -2,7 +2,7 @@
 
 > **อัปเดต:** 2026-06-18  
 > **เป้าหมาย:** มือถือใช้งานได้ดี → PWA ติดตั้งได้ → ขึ้น App Store + Google Play  
-> **Production:** https://an1hem.app · **Demo:** https://1px-demo.vercel.app
+> **Production:** https://an1hem.app · **Demo:** https://aplus1-demo.vercel.app
 
 ---
 

@@ -19,7 +19,7 @@ Updated: 2026-06-25 (cutover completed)
 | Edge functions | 24 deployed |
 | Auth redirect URLs | ✓ configured via API |
 | Vercel production | ✓ Solo, Anthem (1px), Ops-Hub redeployed |
-| Smoke | ✓ Solo (`solofreelancer.com`), ✓ Anthem (`1px-demo.vercel.app`) |
+| Smoke | ✓ Solo (`solofreelancer.com`), ✓ Anthem (`aplus1-demo.vercel.app`) |
 
 `pg_dump`/`pg_restore` was **not** used (CLI login role lacks auth schema; no DB password in env). Data copied via Management API + `finalize-sg-data.mjs`.
 

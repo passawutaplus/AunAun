@@ -41,6 +41,6 @@ export const PRIORITY_LABELS: Record<WorkItemPriority, string> = {
 
 export const APP_LABELS = {
   so1o: "So1o",
-  an1hem: "Pixel100",
+  an1hem: "Aplus1",
   ecosystem: "ทั้งระบบ",
 } as const;

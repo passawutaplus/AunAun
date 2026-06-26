@@ -29,7 +29,7 @@ export default function ReferralPage() {
     if (!navigator.share) return copyLink();
     try {
       await navigator.share({
-        title: "มาสร้างผลงานบน Pixel100",
+        title: "มาสร้างผลงานบน Aplus1",
         text: `สมัครผ่านลิงก์นี้ รับ ${data?.signup_reward_px ?? 20} px เริ่มต้น`,
         url: referralLink,
       });

@@ -14,7 +14,7 @@
 | ชั้น | คำสั่ง | ผล |
 |------|--------|-----|
 | Unit (Vitest) | `npm run test` | ✅ 12 files, 61 tests |
-| Public smoke (curl) | `BASE_URL=https://1px-demo.vercel.app npm run smoke:public` | ✅ |
+| Public smoke (curl) | `BASE_URL=https://aplus1-demo.vercel.app npm run smoke:public` | ✅ |
 | Puppeteer smoke | `npm run e2e:puppeteer:smoke` | ต้อง Chrome + libs |
 | Puppeteer chat | `npm run e2e:puppeteer:chat` | demo account บน demo URL |
 | Playwright | `npm run e2e:smoke` | ต้อง OS รองรับ |
@@ -26,7 +26,7 @@
 | Environment | URL |
 |-------------|-----|
 | Local | `http://localhost:8080` |
-| Demo | `https://1px-demo.vercel.app` |
+| Demo | `https://aplus1-demo.vercel.app` |
 | Production | `https://an1hem.app` |
 
 ```bash
@@ -45,7 +45,7 @@ cp .env.example .env.local        # E2E_* + VITE_*
 ```bash
 npm run test
 npm run smoke:public
-E2E_BASE_URL=https://1px-demo.vercel.app npm run smoke:public
+E2E_BASE_URL=https://aplus1-demo.vercel.app npm run smoke:public
 npm run e2e:puppeteer:smoke
 npm run e2e:puppeteer:chat      # demo chat บน demo URL
 npm run e2e                     # Playwright full (ถ้ารองรับ)
@@ -149,7 +149,7 @@ Browsers + viewports ตาม `qa-checklist.md` — **iPhone จริง** ส
 ```bash
 npm run dev
 npm run test
-BASE_URL=https://1px-demo.vercel.app npm run smoke:public
-E2E_BASE_URL=https://1px-demo.vercel.app npm run e2e:puppeteer:chat
+BASE_URL=https://aplus1-demo.vercel.app npm run smoke:public
+E2E_BASE_URL=https://aplus1-demo.vercel.app npm run e2e:puppeteer:chat
 npm run e2e:puppeteer:smoke
 ```

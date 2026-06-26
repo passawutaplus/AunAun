@@ -17,7 +17,7 @@ export const ChatMessageEmail = ({
   senderName = 'มีคนส่งข้อความ',
   conversationTitle = 'แชท',
   preview = '',
-  actionUrl = 'https://1px-demo.vercel.app/chat',
+  actionUrl = 'https://aplus1-demo.vercel.app/chat',
 }: ChatMessageEmailProps) => (
   <EmailLayout
     preview={`${senderName}: ${preview.slice(0, 60) || 'ข้อความใหม่'}`}
@@ -44,14 +44,14 @@ export const ChatMessageEmail = ({
 export const chatMessageTemplate = {
   component: ChatMessageEmail,
   subject: (data: Record<string, unknown>) =>
-    `[Pixel100] ข้อความใหม่จาก ${(data.senderName as string) ?? 'แชท'}`,
+    `[Aplus1] ข้อความใหม่จาก ${(data.senderName as string) ?? 'แชท'}`,
   displayName: 'Chat message',
   previewData: {
     recipientName: 'พี่บอส',
     senderName: 'น้องมิ้นท์',
     conversationTitle: 'Rebrand Sundae Cafe',
     preview: 'สวัสดีครับ อยากคุยรายละเอียดงาน logo เพิ่มเติมได้ไหมครับ',
-    actionUrl: 'https://1px-demo.vercel.app/chat/example',
+    actionUrl: 'https://aplus1-demo.vercel.app/chat/example',
   },
 }
 

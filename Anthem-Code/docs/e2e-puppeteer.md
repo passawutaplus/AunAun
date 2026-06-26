@@ -20,21 +20,21 @@ Fallback ไม่ต้อง browser: `npm run smoke:public`
 
 ```bash
 npm run e2e:puppeteer:smoke
-E2E_BASE_URL=https://1px-demo.vercel.app npm run e2e:puppeteer:smoke
+E2E_BASE_URL=https://aplus1-demo.vercel.app npm run e2e:puppeteer:smoke
 
 # Auth + project editor — ต้อง .env.local
 npm run e2e:puppeteer
 
 # Chat demo (default demo seed account)
 npm run e2e:puppeteer:chat
-E2E_BASE_URL=https://1px-demo.vercel.app npm run e2e:puppeteer:chat
+E2E_BASE_URL=https://aplus1-demo.vercel.app npm run e2e:puppeteer:chat
 
 E2E_HEADED=1 npm run e2e:puppeteer:smoke
 ```
 
 ## Env vars (`.env.local`)
 
-- `E2E_BASE_URL` — default `http://localhost:8080`; demo deploy `https://1px-demo.vercel.app`
+- `E2E_BASE_URL` — default `http://localhost:8080`; demo deploy `https://aplus1-demo.vercel.app`
 - `E2E_USER_EMAIL` / `E2E_USER_PASSWORD`
 - `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`
 - `E2E_DEMO_EMAIL` / `E2E_DEMO_PASSWORD` — chat suite (มี default seed)

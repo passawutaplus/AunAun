@@ -288,11 +288,11 @@ const AdvertisePage = () => {
                 required
               />
               <p className="text-[11px] text-muted-foreground mt-1">
-                คลิกจากฟีดจะเปิดลิงก์นี้โดยตรง (หรือเลือกผลงานด้านล่างเพื่อ landing ใน an1hem)
+                คลิกจากฟีดจะเปิดลิงก์นี้โดยตรง (หรือเลือกผลงานด้านล่างเพื่อ landing ใน Aplus1)
               </p>
             </div>
             <div>
-              <Label>ผลงาน an1hem (ไม่บังคับ)</Label>
+              <Label>ผลงาน Aplus1 (ไม่บังคับ)</Label>
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={linkedProjectId}

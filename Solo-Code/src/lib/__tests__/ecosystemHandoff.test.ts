@@ -47,10 +47,18 @@ describe("parseStudioDashboardParams", () => {
   });
 });
 
-describe("parseAnthemDashboardParams", () => {
+describe("parseAplus1DashboardParams", () => {
   it("ignores studio handoff URLs", () => {
     expect(parseAnthemDashboardParams("?from=anthem&handoff=studio&studio_id=s1")).toEqual({
+      fromAplus1: false,
       fromAnthem: false,
+    });
+  });
+
+  it("accepts from=aplus1 for solo quotation handoff", () => {
+    expect(parseAnthemDashboardParams("?from=aplus1&project_title=Logo")).toMatchObject({
+      fromAplus1: true,
+      projectTitle: "Logo",
     });
   });
 });

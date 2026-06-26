@@ -1,5 +1,5 @@
 /**
- * Anthem feature domains. Import as:
+ * Aplus1 feature domains. Import as:
  *   import { useProjects } from "@/features/projects";
  *
  * Files currently live in `src/hooks/` and are re-exported here.

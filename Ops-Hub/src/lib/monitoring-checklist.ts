@@ -115,13 +115,13 @@ export function buildMonitorSites(): MonitorSite[] {
   },
   {
     id: "an1hem",
-    name: "Pixel100",
+    name: "Aplus1",
     url: "https://pixel100.com",
     items: [
       {
         id: "an1hem-uptime",
         label: "Uptime (production)",
-        description: "pixel100.com (canonical) / 1px-demo.vercel.app (demo)",
+        description: "pixel100.com (canonical) / aplus1-demo.vercel.app (demo)",
         status: "live",
         automated: true,
         healthKey: "an1hem",
@@ -283,7 +283,7 @@ export function buildMonitorSites(): MonitorSite[] {
       {
         id: "eco-vercel",
         label: "Vercel (2 projects)",
-        description: "1px-demo (Pixel100) + solo-demo-liart (So1o)",
+        description: "aplus1-demo (Aplus1) + solo-demo-liart (So1o)",
         status: "live",
         automated: true,
         href: "https://vercel.com/dashboard",

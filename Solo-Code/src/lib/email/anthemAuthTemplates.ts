@@ -1,5 +1,5 @@
 /**
- * Re-exports 1PX auth email templates from the Anthem-Code package (monorepo sibling).
+ * Re-exports 1PX auth email templates from the Aplus1-Code package (monorepo sibling).
  * Used by the shared Supabase auth email webhook.
  */
 import type { ComponentType } from "react";

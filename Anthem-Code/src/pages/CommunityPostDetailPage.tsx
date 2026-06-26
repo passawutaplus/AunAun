@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import PageLoader from "@/components/ui/PageLoader";
+import { HttpErrorPage } from "@/components/HttpErrorPage";
 import { useCommunityPost } from "@/hooks/useCommunityPosts";
 import { useCommunityPostView } from "@/hooks/useCommunityPostView";
 import CommunityCommentSection from "@/components/community/CommunityCommentSection";
@@ -9,13 +9,17 @@ import CommunityPostMedia from "@/components/community/CommunityPostMedia";
 import CommunityPostMenu from "@/components/community/CommunityPostMenu";
 import CommunityPostActionBar from "@/components/community/CommunityPostActionBar";
 import { formatThaiDate } from "@/lib/format";
-import { questionTopicLabel } from "@/data/communityTopics";
+import { titlesMatch } from "@/lib/classifyCommunityPost";
+import { exploreProjectsUrl } from "@/lib/exploreRoutes";
+import ToolIcon from "@/components/ToolIcon";
 import BoostButton from "@/components/boost/BoostButton";
 import FollowButton from "@/components/FollowButton";
 import Footer from "@/components/Footer";
 import UserAvatar from "@/components/UserAvatar";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { profilePublicPath } from "@/lib/profileRoutes";
+import { communityDisplayTags, hasCommunityQaBadge } from "@/lib/communityQaTag";
+import { CommunityQaBadge } from "@/components/community/CommunityQaBadge";
 import { cn } from "@/lib/utils";
 
 const CommunityPostDetailPage = () => {
@@ -25,18 +29,11 @@ const CommunityPostDetailPage = () => {
   useCommunityPostView(id);
 
   if (isLoading) return <PageLoader label="กำลังโหลด..." />;
-  if (!post) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">ไม่พบโพสต์</p>
-      </div>
-    );
-  }
+  if (!post) return <HttpErrorPage kind="404" homeTo="/community" />;
 
-  const isTip = post.post_kind === "tip";
   const hasMedia = (post.gallery_urls?.length ?? 0) > 0 || (post.video_urls?.length ?? 0) > 0;
-  const authorPath = profilePublicPath({
-    user_id: post.author_id,
+  const showTitle = !titlesMatch(post.title, post.body);
+  const authorPath = profilePublicPath({    user_id: post.author_id,
     username: post.profile?.username,
   });
 
@@ -101,19 +98,28 @@ const CommunityPostDetailPage = () => {
           />
 
           <div className="px-6 pb-6 pt-4 space-y-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="secondary" className="rounded-full">{isTip ? "Tips" : "Q&A"}</Badge>
-              {!isTip && post.question_topic && (
-                <Badge variant="outline" className="rounded-full text-[10px]">
-                  {questionTopicLabel(post.question_topic)}
-                </Badge>
-              )}
-            </div>
-            <h1 className="text-2xl font-semibold leading-snug">{post.title}</h1>
+            {hasCommunityQaBadge(post.tags) && <CommunityQaBadge />}
+            {showTitle && (
+              <h1 className="text-2xl font-semibold leading-snug">{post.title}</h1>
+            )}
             <p className="text-foreground/90 whitespace-pre-wrap leading-relaxed">{post.body}</p>
-            {post.tags.length > 0 && (
+            {(post.tools?.length ?? 0) > 0 && (
               <div className="flex flex-wrap gap-2">
-                {post.tags.map((t) => (
+                {post.tools!.map((t) => (
+                  <Link
+                    key={t}
+                    to={exploreProjectsUrl("tool", t)}
+                    className="inline-flex items-center gap-1 text-xs rounded-full bg-muted px-2.5 py-1 hover:bg-muted/80"
+                  >
+                    <ToolIcon name={t} size="xs" />
+                    {t}
+                  </Link>
+                ))}
+              </div>
+            )}
+            {communityDisplayTags(post.tags).length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {communityDisplayTags(post.tags).map((t) => (
                   <span key={t} className="text-xs text-primary">#{t}</span>
                 ))}
               </div>

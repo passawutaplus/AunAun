@@ -228,14 +228,14 @@ export function StorageUsageSection() {
                   Pro+ {STORAGE_QUOTA_LABEL.pro_plus} · In-House {STORAGE_QUOTA_LABEL.inhouse}
                 </p>
                 <p className="text-[11px] text-muted-foreground leading-relaxed rounded-lg border border-border/50 bg-muted/20 px-3 py-2">
-                  กระเป๋า Pixel100 (ผลงาน/แชท) แยกต่างหาก — จัดการที่{" "}
+                  กระเป๋า Aplus1 (ผลงาน/แชท) แยกต่างหาก — จัดการที่{" "}
                   <a
                     href={`${(import.meta.env.VITE_ANTHEM_APP_URL as string | undefined)?.replace(/\/$/, "") || "http://localhost:8081"}/settings`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary hover:underline"
                   >
-                    Pixel100 Settings → พื้นที่ Pixel100
+                    Aplus1 Settings → พื้นที่ Aplus1
                   </a>
                 </p>
 

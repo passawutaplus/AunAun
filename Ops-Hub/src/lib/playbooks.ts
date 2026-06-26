@@ -43,7 +43,7 @@ export const ECOSYSTEM_PLAYBOOKS: Playbook[] = [
     symptom: "Connections แสดง stuck >48h สูง",
     steps: [
       "เปิด /connections ดู flow ที่ conversion ต่ำ",
-      "ทดสอบ handoff Anthem→So1o quotation",
+      "ทดสอบ handoff Aplus1→So1o quotation",
       "ทดสอบ PostToAnthemBanner จาก Job Tracker",
     ],
     runbookHref: "/connections",

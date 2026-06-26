@@ -5,7 +5,7 @@ Production ใช้ **Vercel** เป็นหลัก (ไม่ใช้ Clo
 | แอป | Production URL | Host |
 |-----|----------------|------|
 | **So1o** | https://solofreelancer.com | Vercel |
-| **an1hem (1PX)** | https://an1hem.app | Vercel |
+| **Aplus1** | https://aplus1.app | Vercel |
 | **Ops Hub** | https://hq.solofreelancer.com | Vercel |
 | **Demo** | `*-demo*.vercel.app` | Vercel preview |
 
@@ -65,7 +65,7 @@ Dashboard → Project → **Security** → Firewall:
 - Challenge หรือ block bot traffic บน auth paths
 - Geo block (ถ้าต้องการจำกัด region)
 
-> ไม่ config ใน repo — ตั้งใน Vercel Dashboard ต่อ project (`solo-demo-liart`, `1px-demo`, Ops Hub project)
+> ไม่ config ใน repo — ตั้งใน Vercel Dashboard ต่อ project (`solo-demo-liart`, `aplus1-demo`, Ops Hub project)
 
 ### Application rate limits (So1o)
 

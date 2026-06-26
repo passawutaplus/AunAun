@@ -156,11 +156,11 @@ export function QuotationsTab() {
         email: anthemInit.clientEmail,
         phone: anthemInit.clientPhone,
         sourceNote: anthemInit.requestId
-          ? `จาก Pixel100 (request ${anthemInit.requestId})`
-          : "จาก Pixel100 handoff",
+          ? `จาก Aplus1 (request ${anthemInit.requestId})`
+          : "จาก Aplus1 handoff",
       });
       if (saved?.created) {
-        toast.success("เพิ่มลูกค้าใน CRM จากงาน Pixel100 แล้ว");
+        toast.success("เพิ่มลูกค้าใน CRM จากงาน Aplus1 แล้ว");
       }
     };
 
@@ -171,7 +171,7 @@ export function QuotationsTab() {
 
     const noteBlock = [
       anthemInit.notes,
-      anthemInit.conversationId ? `แชท Pixel100: ${anthemInit.conversationId}` : "",
+      anthemInit.conversationId ? `แชท Aplus1: ${anthemInit.conversationId}` : "",
       requestId ? `anthem_request:${requestId}` : "",
     ]
       .filter(Boolean)
@@ -189,7 +189,7 @@ export function QuotationsTab() {
       })
         .then(() => {
           setEditingId(existing.id);
-          toast.success(`เปิดใบเสนอราคา ${existing.number} จากงาน Pixel100`);
+          toast.success(`เปิดใบเสนอราคา ${existing.number} จากงาน Aplus1`);
         })
         .catch((e) => toast.error(e instanceof Error ? e.message : "อัปเดตไม่สำเร็จ"));
       return;
@@ -207,7 +207,7 @@ export function QuotationsTab() {
       .then((q) => {
         if (q?.id) {
           setEditingId(q.id);
-          toast.success("สร้างใบเสนอราคาจากงาน Pixel100 แล้ว — กรอกราคาให้ครบได้เลย");
+          toast.success("สร้างใบเสนอราคาจากงาน Aplus1 แล้ว — กรอกราคาให้ครบได้เลย");
         }
       })
       .catch((e) => toast.error(e instanceof Error ? e.message : "สร้างไม่สำเร็จ"));
@@ -686,7 +686,7 @@ export function QuotationsTab() {
           <AlertDialogHeader>
             <AlertDialogTitle>ใบเสนอราคารวม Studio</AlertDialogTitle>
             <AlertDialogDescription>
-              ฟีเจอร์นี้ใช้ได้เฉพาะแพ็ก In-House — อัปเกรดเพื่อรับ handoff จาก Pixel100
+              ฟีเจอร์นี้ใช้ได้เฉพาะแพ็ก In-House — อัปเกรดเพื่อรับ handoff จาก Aplus1
               และจัดการทีมใน So1o
             </AlertDialogDescription>
           </AlertDialogHeader>

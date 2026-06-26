@@ -26,7 +26,7 @@ export function loadProjectEnv() {
 }
 
 export const SOLO_BASE = (process.env.SOLO_BASE_URL ?? "https://solofreelancer.com").replace(/\/$/, "");
-export const ANTHEM_BASE = (process.env.ANTHEM_BASE_URL ?? "https://1px-demo.vercel.app").replace(/\/$/, "");
+export const ANTHEM_BASE = (process.env.ANTHEM_BASE_URL ?? "https://aplus1-demo.vercel.app").replace(/\/$/, "");
 
 export function supabaseConfig() {
   const url = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL;

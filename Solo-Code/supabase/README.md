@@ -119,7 +119,7 @@ supabase functions deploy embed-project similar-images generate-contract \
 | `GEMINI_API_KEY` | ใช่ (AI) | Gemini functions |
 | `GEMINI_MODEL`, `GEMINI_MODEL_FAST` | optional | model override |
 | `LOVABLE_API_KEY` | ใช่ (email) | server email send |
-| `ANTHEM_APP_URL` | แนะนำ | notify templates (`https://an1hem.app`) |
+| `ANTHEM_APP_URL` | แนะนำ | notify templates (`https://aplus1.app`) |
 | `ANTHEM_EMAIL_FROM` | แนะนำ | sender header |
 | `LINE_CHANNEL_SECRET` | LINE Login | `line-connect` |
 | `LINE_CHANNEL_ACCESS_TOKEN` | Messaging API | `line-queue-process` |

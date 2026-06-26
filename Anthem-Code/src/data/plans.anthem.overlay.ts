@@ -1,6 +1,6 @@
 import type { Plan as VendoredPlan } from "./plans.vendored";
 
-/** Pixel100-specific copy tweaks applied on top of Solo canonical plans. */
+/** Aplus1-specific copy tweaks applied on top of Solo canonical plans. */
 export function applyAnthemPlanOverlay(plans: VendoredPlan[]): VendoredPlan[] {
   return plans.map((plan) => {
     if (plan.id === "free") {
@@ -18,13 +18,13 @@ export function applyAnthemPlanOverlay(plans: VendoredPlan[]): VendoredPlan[] {
         highlights: [
           "ทุกอย่างใน Pro",
           "AI 2,000 เครดิต/รอบบิล",
-          "So1o 10 GB · Pixel100 8 GB",
+          "So1o 10 GB · Aplus1 8 GB",
           "Multi-user Workspace · Team Roles · Shared Asset Library (เร็วๆ นี้)",
           "Centralized Billing · Priority Support สำหรับทีม",
           "ขั้นต่ำ 2 ที่นั่ง · สูงสุด 50",
         ],
         details: [
-          "แบบร่าง Pixel100 100 ชิ้น (vs 50 ใน Pro/Pro+)",
+          "แบบร่าง Aplus1 100 ชิ้น (vs 50 ใน Pro/Pro+)",
           "ฟีเจอร์ workspace กำลังพัฒนา — สมัครได้แล้ว ฟีเจอร์ทีมจะเปิดใช้เร็วๆ นี้",
         ],
       };

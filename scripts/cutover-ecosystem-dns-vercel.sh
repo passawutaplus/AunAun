@@ -16,10 +16,10 @@ VERCEL_A="76.76.21.21"
 VERCEL_WWW_CNAME="cname.vercel-dns.com"
 PARENT_DOMAIN="solofreelancer.com"
 HQ_HOST="hq.solofreelancer.com"
-ANTHEM_APEX="an1hem.app"
-ANTHEM_WWW="www.an1hem.app"
+ANTHEM_APEX="aplus1.app"
+ANTHEM_WWW="www.aplus1.app"
 OPS_PROJECT="so1o-ops-hub"
-ANTHEM_PROJECT="1px-demo"
+ANTHEM_PROJECT="aplus1-prod"
 NAMECOM_API="https://api.name.com/v4/domains/${PARENT_DOMAIN}/records"
 
 resolve_a() {
@@ -54,7 +54,7 @@ Ecosystem DNS status ($(date -u +%Y-%m-%dT%H:%MZ))
   ${HQ_HOST}                → ${hq_a:-NXDOMAIN} (expected ${VERCEL_A})
   ${ANTHEM_APEX}            → ${an1hem_a:-NXDOMAIN} (expected ${VERCEL_A} after domain registration)
   ${ANTHEM_WWW}             → CNAME → ${VERCEL_WWW_CNAME}
-  pixel100.com              → not registered yet — use https://1px-demo.vercel.app
+  pixel100.com              → not registered yet — use https://aplus1-demo.vercel.app
 
 Required DNS records:
 

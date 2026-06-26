@@ -1,14 +1,17 @@
 /**
- * Shared CORS allowlist for Supabase Edge Functions invoked from So1o / Pixel100 browsers.
+ * Shared CORS allowlist for Supabase Edge Functions invoked from So1o / Aplus1 browsers.
  */
 
 const STATIC_ORIGINS = [
   "https://solofreelancer.com",
   "https://www.solofreelancer.com",
   "https://so1o-freelancer-managment.lovable.app",
-  "https://1px-demo.vercel.app",
+  "https://aplus1.app",
+  "https://www.aplus1.app",
+  "https://aplus1-demo.vercel.app",
   "https://pixel100.com",
   "https://an1hem.app",
+  "https://www.an1hem.app",
   "https://hq.solofreelancer.com",
   "https://so1o-ops-hub.vercel.app",
   "http://localhost:3090",
@@ -24,6 +27,9 @@ const LOVABLE_PREVIEW_ORIGIN_RE = /^https:\/\/([a-z0-9-]+\.)*lovable\.app$/i;
 /** Vercel production + preview deploys for so1o-ops-hub */
 const VERCEL_OPS_HUB_ORIGIN_RE = /^https:\/\/so1o-ops[-a-z0-9.]*\.vercel\.app$/i;
 
+/** Vercel preview deployments for Aplus1 (aplus1-demo / legacy 1px-demo / an1hem). */
+const VERCEL_ANTHEM_ORIGIN_RE = /^https:\/\/(aplus1-demo|1px-demo|an1hem|aplus1-prod)[a-z0-9-]*\.vercel\.app$/i;
+
 function extraOriginsFromEnv(): string[] {
   const raw = Deno.env.get("CORS_ALLOWED_ORIGINS_EXTRA")?.trim();
   if (!raw) return [];
@@ -37,6 +43,7 @@ export function isAllowedCorsOrigin(origin: string): boolean {
   if (STATIC_ORIGINS.includes(origin as (typeof STATIC_ORIGINS)[number])) return true;
   if (LOVABLE_PREVIEW_ORIGIN_RE.test(origin)) return true;
   if (VERCEL_OPS_HUB_ORIGIN_RE.test(origin)) return true;
+  if (VERCEL_ANTHEM_ORIGIN_RE.test(origin)) return true;
   return extraOriginsFromEnv().includes(origin);
 }
 

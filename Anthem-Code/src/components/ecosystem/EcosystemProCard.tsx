@@ -12,7 +12,7 @@ type Props = {
 };
 
 /**
- * Explains the So1o ↔ Pixel100 economy and surfaces Pro status from the shared account.
+ * Explains the So1o ↔ Aplus1 economy and surfaces Pro status from the shared account.
  */
 export function EcosystemProCard({ className, compact }: Props) {
   const { tier, isPro, isLoading } = useSubscription();

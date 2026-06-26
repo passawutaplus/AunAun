@@ -20,5 +20,5 @@ jobs:
         run: bash scripts/test-ecosystem-full.sh
         env:
           SOLO_BASE_URL: https://solofreelancer.com
-          ANTHEM_BASE_URL: https://1px-demo.vercel.app
+          ANTHEM_BASE_URL: https://aplus1-demo.vercel.app
           HUB_URL: skip

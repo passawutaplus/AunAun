@@ -15,9 +15,20 @@ interface Props {
   input: string;
   setInput: (v: string) => void;
   max?: number;
+  variant?: "default" | "compact";
+  presets?: readonly string[];
 }
 
-const TagPicker = ({ userId, tags, onChange, input, setInput, max = 15 }: Props) => {
+const TagPicker = ({
+  userId,
+  tags,
+  onChange,
+  input,
+  setInput,
+  max = 15,
+  variant = "default",
+  presets = [],
+}: Props) => {
   const suggestions = useTagSuggestions(userId);
   const selectedKeys = useMemo(() => new Set(tags.map(normalizeTag)), [tags]);
 
@@ -29,6 +40,11 @@ const TagPicker = ({ userId, tags, onChange, input, setInput, max = 15 }: Props)
     setInput("");
   };
 
+  const availablePresets = useMemo(
+    () => presets.filter((p) => !selectedKeys.has(normalizeTag(p))),
+    [presets, selectedKeys],
+  );
+
   const filteredSuggestions = useMemo(() => {
     const q = normalizeTag(input);
     const pool = suggestions.filter((s) => !selectedKeys.has(normalizeTag(s)));
@@ -38,11 +54,18 @@ const TagPicker = ({ userId, tags, onChange, input, setInput, max = 15 }: Props)
       .slice(0, 12);
   }, [suggestions, input, selectedKeys]);
 
-  const showQuick = !input.trim() && filteredSuggestions.length > 0;
+  const showQuick = !input.trim() && (availablePresets.length > 0 || filteredSuggestions.length > 0);
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-      <Label className="text-xs font-semibold text-muted-foreground uppercase">แท็ก</Label>
+    <div
+      className={cn(
+        "space-y-3",
+        variant === "default" && "rounded-2xl border border-border bg-card p-4",
+      )}
+    >
+      {variant === "default" && (
+        <Label className="text-xs font-semibold text-muted-foreground uppercase">แท็ก</Label>
+      )}
 
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
@@ -88,22 +111,48 @@ const TagPicker = ({ userId, tags, onChange, input, setInput, max = 15 }: Props)
 
       {showQuick && (
         <div className="space-y-2">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">แท็กที่ใช้บ่อย</p>
-          <div className="flex flex-wrap gap-1.5">
-            {filteredSuggestions.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => addTag(s)}
-                className={cn(
-                  "text-xs px-2.5 py-1 rounded-full border border-border/80 bg-muted/40",
-                  "text-foreground/80 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-colors",
-                )}
-              >
-                #{s}
-              </button>
-            ))}
-          </div>
+          {availablePresets.length > 0 && (
+            <>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">แนะนำ</p>
+              <div className="flex flex-wrap gap-1.5">
+                {availablePresets.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => addTag(s)}
+                    className={cn(
+                      "text-xs px-2.5 py-1 rounded-full border border-primary/30 bg-primary/5",
+                      "text-primary hover:bg-primary/10 transition-colors",
+                    )}
+                  >
+                    #{s}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          {filteredSuggestions.length > 0 && (
+            <>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                {availablePresets.length > 0 ? "แท็กที่ใช้บ่อย" : "แท็กที่ใช้บ่อย"}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {filteredSuggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => addTag(s)}
+                    className={cn(
+                      "text-xs px-2.5 py-1 rounded-full border border-border/80 bg-muted/40",
+                      "text-foreground/80 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-colors",
+                    )}
+                  >
+                    #{s}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 

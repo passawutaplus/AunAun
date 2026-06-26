@@ -20,7 +20,7 @@ export const EMAIL_FOOTER_NOT_SIGNED_UP =
 
 /** แจ้งเตือน transactional — ใช้ใน hire / chat / job match / collab */
 export const EMAIL_FOOTER_NOTIFICATION =
-  "ปิดการแจ้งเตือนได้ที่ Pixel100 → Settings → การแจ้งเตือน";
+  "ปิดการแจ้งเตือนได้ที่ Aplus1 → Settings → การแจ้งเตือน";
 
 export const DEMO_WARNING_BULLETS = [
   "บัญชี demo บันทึกถาวร — ใช้ร่วมกัน อย่าสมัครใหม่",

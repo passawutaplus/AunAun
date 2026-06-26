@@ -44,7 +44,30 @@ const communityQuestionTopicSchema = z.enum([
   "other",
 ]);
 
-export const communityPostSchema = z
+export const communityPostSchema = z.object({
+  title: z.string().trim().max(120).optional().default(""),
+  body: z.string().trim().min(10, "อย่างน้อย 10 ตัวอักษร").max(3000),
+  tags: z.array(z.string().trim().min(1).max(40)).max(8).optional().default([]),
+  tools: z.array(z.string().trim().min(1).max(40)).max(8).optional().default([]),
+  galleryUrls: z.array(z.string().url()).max(20).optional().default([]),
+  videoUrls: z.array(z.string().url()).max(3).optional().default([]),
+});
+
+export type CommunityPostInput = z.infer<typeof communityPostSchema>;
+
+export const communityPostDraftSchema = z.object({
+  title: z.string().trim().max(120).optional().default(""),
+  body: z.string().trim().max(3000).optional().default(""),
+  tags: z.array(z.string().trim().min(1).max(40)).max(8).optional().default([]),
+  tools: z.array(z.string().trim().min(1).max(40)).max(8).optional().default([]),
+  galleryUrls: z.array(z.string().url()).max(20).optional().default([]),
+  videoUrls: z.array(z.string().url()).max(3).optional().default([]),
+});
+
+export type CommunityPostDraftInput = z.infer<typeof communityPostDraftSchema>;
+
+/** @deprecated Legacy shape — kept for admin/import paths that still pass postKind. */
+export const communityPostLegacySchema = z
   .object({
     postKind: z.enum(["tip", "question"]),
     title: z.string().trim().min(3, "อย่างน้อย 3 ตัวอักษร").max(120),
@@ -64,8 +87,6 @@ export const communityPostSchema = z
       });
     }
   });
-
-export type CommunityPostInput = z.infer<typeof communityPostSchema>;
 
 export const profileSchema = z.object({
   displayName: z.string().trim().min(1, "กรุณากรอกชื่อ").max(60),

@@ -191,7 +191,7 @@ export default function MonitorPage() {
                 <div>
                   <h2 className="text-sm font-semibold text-ink">Vercel</h2>
                   <p className="mt-0.5 text-xs text-muted">
-                    Projects: 1px-demo (an1hem) · solo-demo-liart (So1o)
+                    Projects: aplus1-demo (an1hem) · solo-demo-liart (So1o)
                   </p>
                 </div>
                 <a

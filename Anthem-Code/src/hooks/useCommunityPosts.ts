@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { buildCommentTree, type CommentNode } from "@/lib/commentTree";
 import { notifyCommunityEvent } from "@/lib/communityNotify";
 import { moderateCommunityComment, moderateCommunityPost } from "@/lib/communityModeration";
+import { classifyCategory, deriveTitle, resolveComposerTitle } from "@/lib/classifyCommunityPost";
 import {
   useModerationState,
   useRecordProfanityStrike,
@@ -28,6 +29,7 @@ export interface CommunityPost {
   body: string;
   category: string;
   tags: string[];
+  tools: string[];
   gallery_urls: string[];
   video_urls: string[];
   question_topic: CommunityQuestionTopic | null;
@@ -54,7 +56,7 @@ export interface CommunityComment {
 export type CommunityCommentTree = CommentNode<CommunityComment>;
 
 const POST_SELECT =
-  "id, author_id, post_kind, title, body, category, tags, gallery_urls, video_urls, question_topic, status, reply_count, like_count, view_count, created_at, updated_at";
+  "id, author_id, post_kind, title, body, category, tags, tools, gallery_urls, video_urls, question_topic, status, reply_count, like_count, view_count, created_at, updated_at";
 const COMMUNITY_PAGE_SIZE = 24;
 const COMMUNITY_COMMENT_LIMIT = 300;
 
@@ -71,6 +73,7 @@ export async function enrichCommunityPosts(rows: CommunityPost[]): Promise<Commu
     gallery_urls: r.gallery_urls ?? [],
     video_urls: r.video_urls ?? [],
     tags: r.tags ?? [],
+    tools: r.tools ?? [],
     like_count: r.like_count ?? 0,
     view_count: r.view_count ?? 0,
     profile: map.get(r.author_id) ?? null,
@@ -169,6 +172,7 @@ export const useCommunityPost = (id: string | undefined) =>
         gallery_urls: row.gallery_urls ?? [],
         video_urls: row.video_urls ?? [],
         tags: row.tags ?? [],
+        tools: row.tools ?? [],
         like_count: row.like_count ?? 0,
         view_count: row.view_count ?? 0,
         profile: prof ?? null,
@@ -191,30 +195,135 @@ export const useDeleteCommunityPost = () => {
   });
 };
 
-export const useCreateCommunityPost = () => {
+export const useCommunityDraft = (authorId: string | undefined) =>
+  useQuery({
+    queryKey: ["community-draft", authorId],
+    enabled: !!authorId,
+    queryFn: async (): Promise<CommunityPost | null> => {
+      const { data, error } = await supabase
+        .from("community_posts")
+        .select(POST_SELECT)
+        .eq("author_id", authorId!)
+        .eq("status", "draft")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      const row = data as CommunityPost;
+      return {
+        ...row,
+        gallery_urls: row.gallery_urls ?? [],
+        video_urls: row.video_urls ?? [],
+        tags: row.tags ?? [],
+        tools: row.tools ?? [],
+      };
+    },
+  });
+
+export type CommunityComposerPayload = {
+  author_id: string;
+  title?: string;
+  body: string;
+  tags?: string[];
+  tools?: string[];
+  gallery_urls?: string[];
+  video_urls?: string[];
+  draft_id?: string | null;
+};
+
+export const useSaveCommunityDraft = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CommunityComposerPayload) => {
+      const title = resolveComposerTitle(input.title ?? "", input.body) || "แบบร่าง";
+      const row = {
+        author_id: input.author_id,
+        post_kind: "tip" as const,
+        title,
+        body: input.body.trim(),
+        category: "Graphic",
+        tags: input.tags ?? [],
+        tools: input.tools ?? [],
+        gallery_urls: input.gallery_urls ?? [],
+        video_urls: input.video_urls ?? [],
+        question_topic: null,
+        status: "draft" as const,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (input.draft_id) {
+        const { data, error } = await supabase
+          .from("community_posts")
+          .update(row)
+          .eq("id", input.draft_id)
+          .eq("author_id", input.author_id)
+          .select("id")
+          .single();
+        if (error) throw error;
+        return data as { id: string };
+      }
+
+      const { data: existing } = await supabase
+        .from("community_posts")
+        .select("id")
+        .eq("author_id", input.author_id)
+        .eq("status", "draft")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existing?.id) {
+        const { data, error } = await supabase
+          .from("community_posts")
+          .update(row)
+          .eq("id", existing.id)
+          .eq("author_id", input.author_id)
+          .select("id")
+          .single();
+        if (error) throw error;
+        return data as { id: string };
+      }
+
+      const { data, error } = await supabase
+        .from("community_posts")
+        .insert(row)
+        .select("id")
+        .single();
+      if (error) throw error;
+      return data as { id: string };
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["community-draft", v.author_id] });
+    },
+  });
+};
+
+export const usePublishCommunityPost = () => {
   const qc = useQueryClient();
   const { refetch: refetchMod } = useModerationState();
   const recordStrike = useRecordProfanityStrike();
 
   return useMutation({
-    mutationFn: async (input: {
-      author_id: string;
-      post_kind: CommunityPostKind;
-      title: string;
-      body: string;
-      category: string;
-      tags?: string[];
-      gallery_urls?: string[];
-      video_urls?: string[];
-      question_topic?: CommunityQuestionTopic | null;
-    }) => {
+    mutationFn: async (input: CommunityComposerPayload) => {
       const checkCanPost = async () => {
         const { data } = await refetchMod();
         return data ?? { allowed: true, reason: null, banned_until: null, strikes: 0 };
       };
 
+      const gallery = input.gallery_urls ?? [];
+      const videos = input.video_urls ?? [];
+      const category = classifyCategory({
+        body: input.body,
+        tags: input.tags ?? [],
+        tools: input.tools ?? [],
+        hasVideo: videos.length > 0,
+        hasImages: gallery.length > 0,
+      });
+      const title = resolveComposerTitle(input.title ?? "", input.body);
+
       const moderated = await moderateCommunityPost({
-        title: input.title,
+        title,
         body: input.body,
         tags: input.tags ?? [],
         checkCanPost,
@@ -222,27 +331,49 @@ export const useCreateCommunityPost = () => {
       });
       if (!moderated) throw new Error("ไม่สามารถโพสต์ได้");
 
+      const row = {
+        post_kind: "tip" as const,
+        title: moderated.title,
+        body: moderated.body,
+        category,
+        tags: moderated.tags,
+        tools: input.tools ?? [],
+        gallery_urls: gallery,
+        video_urls: videos,
+        question_topic: null,
+        status: "published" as const,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (input.draft_id) {
+        const { data, error } = await supabase
+          .from("community_posts")
+          .update(row)
+          .eq("id", input.draft_id)
+          .eq("author_id", input.author_id)
+          .select("id")
+          .single();
+        if (error) throw error;
+        return data as { id: string };
+      }
+
       const { data, error } = await supabase
         .from("community_posts")
-        .insert({
-          author_id: input.author_id,
-          post_kind: input.post_kind,
-          title: moderated.title,
-          body: moderated.body,
-          category: input.category,
-          tags: moderated.tags,
-          gallery_urls: input.gallery_urls ?? [],
-          video_urls: input.video_urls ?? [],
-          question_topic: input.post_kind === "question" ? input.question_topic ?? null : null,
-        })
+        .insert({ author_id: input.author_id, ...row })
         .select("id")
         .single();
       if (error) throw error;
       return data as { id: string };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["community-posts"] }),
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["community-posts"] });
+      qc.invalidateQueries({ queryKey: ["community-draft", v.author_id] });
+    },
   });
 };
+
+/** @deprecated Use usePublishCommunityPost */
+export const useCreateCommunityPost = usePublishCommunityPost;
 
 export const useCommunityComments = (postId: string | undefined) => {
   const qc = useQueryClient();

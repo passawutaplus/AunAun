@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy Pixel100 demo to Vercel (preview). Requires: vercel login, .env with Supabase keys.
+# Deploy Aplus1 demo to Vercel (preview). Requires: vercel login, .env with Supabase keys.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -16,10 +16,7 @@ fi
 echo "→ Checking Vercel login…"
 npx vercel whoami
 
-if [[ ! -f .vercel/project.json ]]; then
-  echo "→ Linking project (first time)…"
-  npx vercel link --yes --project=1px-demo
-fi
+VERCEL_PROJECT="${VERCEL_ANTHEM_DEMO_PROJECT:-aplus1-demo}"
 
 # shellcheck disable=SC1091
 set -a && source .env && set +a
@@ -38,7 +35,7 @@ elif [[ -n "${VITE_SUPABASE_URL:-}" && "${VITE_DEMO_SUPABASE_URL}" == "${VITE_SU
   echo "→ Phase A demo: shared Supabase project (rvnzjisk)"
 fi
 
-echo "→ Deploying demo to 1px-demo.vercel.app (production slot on demo project)…"
+echo "→ Deploying demo to aplus1-demo.vercel.app (production slot on demo project)…"
 if [[ "${1:-}" == "--prod" ]]; then
   echo "ERROR: Do not pass --prod to deploy-demo-vercel.sh (demo credentials would ship to production)." >&2
   echo "For production: set VITE_DEMO_MODE=false in Vercel and use: npx vercel deploy --prod" >&2
@@ -56,7 +53,7 @@ fi
 BUILD_ENVS+=(--build-env "VITE_OPS_HUB_URL=${VITE_OPS_HUB_URL:-https://so1o-ops-hub.vercel.app}")
 
 DEPLOY_OUTPUT="$(mktemp)"
-npx vercel deploy --prod --yes "${BUILD_ENVS[@]}" | tee "$DEPLOY_OUTPUT"
+npx vercel deploy --prod --yes --project="$VERCEL_PROJECT" "${BUILD_ENVS[@]}" | tee "$DEPLOY_OUTPUT"
 DEPLOY_URL="$(grep -Eo 'https://[a-zA-Z0-9._-]+\.vercel\.app' "$DEPLOY_OUTPUT" | tail -1)"
 rm -f "$DEPLOY_OUTPUT"
 [[ -n "$DEPLOY_URL" ]] || { echo "Deploy failed — no URL returned" >&2; exit 1; }

@@ -285,7 +285,7 @@ export function SettingsTab() {
               />
             </Field>
 
-            <Field label="ลิงก์โซเชียล / โชว์เคสภายนอก (เช่น Pixel100, Behance)">
+            <Field label="ลิงก์โซเชียล / โชว์เคสภายนอก (เช่น Aplus1, Behance)">
               <Input
                 value={form.social_link}
                 onChange={(e) => setField("social_link", e.target.value)}

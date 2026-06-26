@@ -64,9 +64,11 @@ const STATIC_ALLOWED_ORIGINS = [
   "https://solofreelancer.com",
   "https://www.solofreelancer.com",
   "https://so1o-freelancer-managment.lovable.app",
+  "https://aplus1.app",
+  "https://www.aplus1.app",
   "https://an1hem.app",
   "https://www.an1hem.app",
-  "https://1px-demo.vercel.app",
+  "https://aplus1-demo.vercel.app",
   "https://pixel100.com",
   "http://localhost:5173",
   "http://localhost:3000",
@@ -77,8 +79,8 @@ const STATIC_ALLOWED_ORIGINS = [
 ] as const;
 
 const LOVABLE_PREVIEW_ORIGIN_RE = /^https:\/\/([a-z0-9-]+\.)*lovable\.app$/i;
-/** Vercel preview deployments for an1hem / 1px-demo. */
-const VERCEL_ANTHEM_PREVIEW_ORIGIN_RE = /^https:\/\/(1px-demo|an1hem)[a-z0-9-]*\.vercel\.app$/i;
+/** Vercel preview deployments for an1hem / aplus1-demo. */
+const VERCEL_ANTHEM_PREVIEW_ORIGIN_RE = /^https:\/\/(aplus1-demo|1px-demo|an1hem)[a-z0-9-]*\.vercel\.app$/i;
 
 /** Origins permitted for Stripe checkout / portal / Connect redirect URLs. */
 export function getAllowedPaymentRedirectOrigins(): string[] {

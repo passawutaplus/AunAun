@@ -17,7 +17,7 @@ export const JobApplicationEmail = ({
   applicantName = 'ผู้สมัคร',
   jobTitle = 'งานใหม่',
   coverPreview = '',
-  actionUrl = 'https://1px-demo.vercel.app/jobs',
+  actionUrl = 'https://aplus1-demo.vercel.app/jobs',
 }: JobApplicationEmailProps) => (
   <EmailLayout
     preview={`${applicantName} สมัคร ${jobTitle}`}
@@ -50,14 +50,14 @@ export const JobApplicationEmail = ({
 export const jobApplicationTemplate = {
   component: JobApplicationEmail,
   subject: (data: Record<string, unknown>) =>
-    `[Pixel100] ผู้สมัครใหม่ — ${(data.jobTitle as string) ?? 'งาน'}`,
+    `[Aplus1] ผู้สมัครใหม่ — ${(data.jobTitle as string) ?? 'งาน'}`,
   displayName: 'Job application',
   previewData: {
     recipientName: 'พี่บอส',
     applicantName: 'น้องมิ้นท์',
     jobTitle: 'UI Designer — SaaS Dashboard',
     coverPreview: 'สนใจงานนี้มากครับ มี portfolio ด้าน dashboard หลายชิ้น',
-    actionUrl: 'https://1px-demo.vercel.app/jobs/example',
+    actionUrl: 'https://aplus1-demo.vercel.app/jobs/example',
   },
 }
 

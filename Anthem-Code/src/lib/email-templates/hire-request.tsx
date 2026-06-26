@@ -21,7 +21,7 @@ export const HireRequestEmail = ({
   message = '',
   budgetAmount = '',
   deadline = '',
-  actionUrl = 'https://1px-demo.vercel.app/chat',
+  actionUrl = 'https://aplus1-demo.vercel.app/chat',
 }: HireRequestEmailProps) => (
   <EmailLayout
     preview={`${clientName} ส่งคำขอจ้าง — ${projectTitle}`}
@@ -33,7 +33,7 @@ export const HireRequestEmail = ({
   >
     <EmailText>
       สวัสดี {recipientName} — <strong style={{ color: brand.ink }}>{clientName}</strong>{' '}
-      ส่งคำขอจ้างผ่าน Pixel100 สำหรับ{' '}
+      ส่งคำขอจ้างผ่าน Aplus1 สำหรับ{' '}
       <strong style={{ color: brand.ink }}>{projectTitle}</strong>
     </EmailText>
     <EmailCard>
@@ -67,7 +67,7 @@ export const HireRequestEmail = ({
 export const hireRequestTemplate = {
   component: HireRequestEmail,
   subject: (data: Record<string, unknown>) =>
-    `[Pixel100] คำขอจ้างใหม่ — ${(data.projectTitle as string) ?? 'งานจ้างใหม่'}`,
+    `[Aplus1] คำขอจ้างใหม่ — ${(data.projectTitle as string) ?? 'งานจ้างใหม่'}`,
   displayName: 'Hire request',
   previewData: {
     recipientName: 'พี่บอส',
@@ -76,7 +76,7 @@ export const hireRequestTemplate = {
     message: 'สนใจสไตล์ minimal โทนอุ่น ขอดู portfolio เพิ่มได้ไหมครับ',
     budgetAmount: '฿25,000',
     deadline: '30 มิ.ย. 2026',
-    actionUrl: 'https://1px-demo.vercel.app/chat/example',
+    actionUrl: 'https://aplus1-demo.vercel.app/chat/example',
   },
 }
 

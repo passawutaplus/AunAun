@@ -135,7 +135,7 @@ cd Anthem-Code && npm run test:gate
 
 ## Ecosystem (ข้ามแอป)
 
-58. ลิงก์ So1o → an1hem (`an1hem.app` / demo `1px-demo.vercel.app`) ทำงาน
+58. ลิงก์ So1o → Aplus1 (`aplus1.app` / demo `aplus1-demo.vercel.app`) ทำงาน
 59. Handoff quotation So1o ↔ Anthem (ecosystem_links)
 60. **Escrow funnel** — Hire (an1hem) → Quotation/Escrow (So1o) → `/pay/:token` → funded → released (Ops Hub funnel)
 61. **Boost vs Ads** — Boost = ดันโพสต์ตัวเอง · Ads = แบรนด์ `/advertise` + admin approve

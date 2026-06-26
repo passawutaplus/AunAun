@@ -21,7 +21,7 @@ export const GiftReceivedEmail = ({
   pricePx = 0,
   message = '',
   projectTitle = '',
-  actionUrl = 'https://1px-demo.vercel.app/earnings',
+  actionUrl = 'https://aplus1-demo.vercel.app/earnings',
 }: GiftReceivedEmailProps) => (
   <EmailLayout
     preview={`${senderName} ส่ง ${giftName} (${pricePx} px)`}
@@ -33,7 +33,7 @@ export const GiftReceivedEmail = ({
   >
     <EmailText>
       สวัสดี {recipientName} — <strong style={{ color: brand.ink }}>{senderName}</strong>{' '}
-      ส่ง <strong style={{ color: brand.orange }}>{giftName}</strong> สนับสนุนคุณบน Pixel100
+      ส่ง <strong style={{ color: brand.orange }}>{giftName}</strong> สนับสนุนคุณบน Aplus1
     </EmailText>
     <EmailCard>
       <EmailCardLabel>จาก</EmailCardLabel>
@@ -62,7 +62,7 @@ export const GiftReceivedEmail = ({
 export const giftReceivedTemplate = {
   component: GiftReceivedEmail,
   subject: (data: Record<string, unknown>) =>
-    `[Pixel100] ${(data.senderName as string) ?? 'มีคน'} ส่งของขวัญ ${(data.giftName as string) ?? ''}`,
+    `[Aplus1] ${(data.senderName as string) ?? 'มีคน'} ส่งของขวัญ ${(data.giftName as string) ?? ''}`,
   displayName: 'Gift received',
   previewData: {
     recipientName: 'พี่บอส',
@@ -71,7 +71,7 @@ export const giftReceivedTemplate = {
     pricePx: 50,
     message: 'ชอบผลงานมากครับ สู้ๆ!',
     projectTitle: 'Rebrand Sundae Cafe',
-    actionUrl: 'https://1px-demo.vercel.app/earnings',
+    actionUrl: 'https://aplus1-demo.vercel.app/earnings',
   },
 }
 

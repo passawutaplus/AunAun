@@ -38,7 +38,7 @@ export const CashoutStatusEmail = ({
   status = 'submitted',
   grossPx = 0,
   netPx = 0,
-  actionUrl = 'https://1px-demo.vercel.app/earnings',
+  actionUrl = 'https://aplus1-demo.vercel.app/earnings',
 }: CashoutStatusEmailProps) => {
   const copy = STATUS_COPY[status]
   return (
@@ -72,9 +72,9 @@ export const cashoutStatusTemplate = {
   component: CashoutStatusEmail,
   subject: (data: Record<string, unknown>) => {
     const s = (data.status as string) ?? 'submitted'
-    if (s === 'paid') return `[Pixel100] ถอนเงินสำเร็จ ฿${Number(data.netPx ?? 0).toLocaleString('th-TH')}`
-    if (s === 'rejected') return `[Pixel100] คำขอถอนถูกปฏิเสธ`
-    return `[Pixel100] รับคำขอถอน ${Number(data.grossPx ?? 0).toLocaleString('th-TH')} px แล้ว`
+    if (s === 'paid') return `[Aplus1] ถอนเงินสำเร็จ ฿${Number(data.netPx ?? 0).toLocaleString('th-TH')}`
+    if (s === 'rejected') return `[Aplus1] คำขอถอนถูกปฏิเสธ`
+    return `[Aplus1] รับคำขอถอน ${Number(data.grossPx ?? 0).toLocaleString('th-TH')} px แล้ว`
   },
   displayName: 'Cashout status',
   previewData: {
@@ -82,7 +82,7 @@ export const cashoutStatusTemplate = {
     status: 'paid',
     grossPx: 1500,
     netPx: 1350,
-    actionUrl: 'https://1px-demo.vercel.app/earnings',
+    actionUrl: 'https://aplus1-demo.vercel.app/earnings',
   },
 }
 

@@ -1,12 +1,11 @@
-# Pixel100 — Portfolio Hub
+# Aplus1 — Creative Social App
 
-ชุมชนฟรีแลนซ์ครีเอทีฟไทย — ทุกคนคือ 1 pixel รวมกันเป็นภาพใหญ่ (คู่กับ So1o Freelancer Management)
+โปรไฟล์เดียว เชื่อมต่อทุกโอกาสของครีเอทีฟ — creative social app คู่กับ So1o (back-office)
 
 | | |
 |---|---|
-| **Canonical** | https://pixel100.com (ยังไม่จดโดเมน) |
-| **Demo** | https://1px-demo.vercel.app |
-| **Legacy production** | https://an1hem.app (redirect ภายหลัง) |
+| **Production** | https://aplus1.app |
+| **Demo** | https://aplus1-demo.vercel.app |
 | **Supabase** | `zkflkpbmbozrchqncpzi` (canonical backend ใน Solo-Code) |
 
 ## Quick start
@@ -30,7 +29,7 @@ npm run dev
 ```text
 src/
 ├── core/        ← shared กับ So1o (auth, profile, wallet, notifications)
-├── features/    ← 1PX business domains (projects, jobs, chat, ...)
+├── features/    ← Aplus1 business domains (projects, jobs, chat, ...)
 ├── server/      ← pure supabase queries/mutations
 ├── lib/         ← utilities, email-templates/, notifyAnthem.ts
 ├── hooks/       ← generic UI hooks
@@ -43,20 +42,14 @@ src/
 
 อ่าน [`docs/README.md`](./docs/README.md) ก่อนเริ่มงาน
 
-Notifications: [ecosystem-notifications.md](../docs/ecosystem-notifications.md)
-
-## คำสั่งที่ใช้บ่อย
+## Deploy
 
 ```bash
-npm run dev              # dev server (:8080)
-npm run build            # production build
-npm run test             # vitest
-npm run email:preview    # preview notification emails
-npm run smoke:public     # curl smoke
+# Demo (VITE_DEMO_MODE=true)
+npm run deploy:demo
+
+# Production (aplus1.app)
+node scripts/redeploy-production.mjs
+# หรือจาก repo root:
+../scripts/deploy-vercel.sh production 1px
 ```
-
-## กฎสำคัญ
-
-- ห้าม import `@/integrations/supabase/client` ใน component/page — ใช้ hook จาก `@/features/*` หรือ `@/core/*`
-- ห้ามแก้ `src/integrations/supabase/{client,types}.ts` และ `.env` (auto-gen)
-- Migrations: เพิ่มใน `Solo-Code/supabase/migrations/` แล้ว push จาก Solo-Code

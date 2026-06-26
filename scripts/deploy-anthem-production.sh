@@ -20,5 +20,5 @@ docker compose \
 
 docker compose -f docker-compose.anthem.yml ps
 echo ""
-echo "✓ an1hem production: ${VITE_ANTHEM_APP_URL:-https://an1hem.app}"
+echo "✓ Aplus1 production: ${VITE_ANTHEM_APP_URL:-https://aplus1.app}"
 echo "  Verify: SO1O_URL=skip HUB_URL=skip ./scripts/health-check.sh"

@@ -2,9 +2,11 @@ import type { LineNotifyKind } from "@/lib/lineNotificationKinds";
 import { SITE_URL } from "@/lib/siteUrl";
 
 export const LINE_NOTIFICATION_HEADER = "[So1o Freelancer Notification]";
-export const ANTHEM_LINE_HEADER = "[Pixel100 Notification]";
+export const APLUS1_LINE_HEADER = "[Aplus1 Notification]";
+/** @deprecated use APLUS1_LINE_HEADER */
+export const ANTHEM_LINE_HEADER = APLUS1_LINE_HEADER;
 
-const ANTHEM_KINDS = new Set<string>([
+const APLUS1_KINDS = new Set<string>([
   "anthem_hire",
   "anthem_chat",
   "anthem_job_match",
@@ -17,17 +19,22 @@ const ANTHEM_KINDS = new Set<string>([
 ]);
 
 function lineHeader(kind: LineNotifyKind): string {
-  return ANTHEM_KINDS.has(kind) ? ANTHEM_LINE_HEADER : LINE_NOTIFICATION_HEADER;
+  return APLUS1_KINDS.has(kind) ? APLUS1_LINE_HEADER : LINE_NOTIFICATION_HEADER;
 }
 
-const ANTHEM_BASE =
-  (import.meta.env.VITE_ANTHEM_APP_URL as string | undefined)?.replace(/\/$/, "") ??
-  "https://pixel100.com";
+const APLUS1_BASE =
+  (
+    (import.meta.env.VITE_APLUS1_APP_URL as string | undefined) ??
+    (import.meta.env.VITE_ANTHEM_APP_URL as string | undefined)
+  )?.replace(/\/$/, "") ?? "https://aplus1.app";
+
+/** @deprecated internal — use APLUS1_BASE */
+const ANTHEM_BASE = APLUS1_BASE;
 
 type KindCopy = {
   hook: string;
   cta: string;
-  /** Path on So1o or Anthem (leading slash). */
+  /** Path on So1o or Aplus1 (leading slash). */
   path: string;
   app: "solo" | "anthem";
 };

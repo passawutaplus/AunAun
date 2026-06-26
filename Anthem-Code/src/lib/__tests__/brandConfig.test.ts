@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  ANTHEM_DEMO_URL,
+  APLUS1_DEMO_URL,
   BRAND_DOMAIN,
   BRAND_MARK,
   BRAND_NAME,
@@ -12,17 +12,17 @@ import { SITE_NAME } from "@/lib/seo";
 import { LEGAL_APP_NAME } from "@/lib/legalConfig";
 
 describe("brandConfig", () => {
-  it("exposes consistent Pixel100 identity across SEO and legal", () => {
-    expect(BRAND_NAME).toBe("Pixel100");
+  it("exposes consistent Aplus1 identity across SEO and legal", () => {
+    expect(BRAND_NAME).toBe("Aplus1");
     expect(SITE_NAME).toBe(BRAND_NAME);
     expect(LEGAL_APP_NAME).toBe(BRAND_NAME);
-    expect(BRAND_DOMAIN).toBe("pixel100.com");
-    expect(ANTHEM_DEMO_URL).toBe("https://1px-demo.vercel.app");
-    expect(defaultSiteUrl()).toBe(ANTHEM_DEMO_URL);
+    expect(BRAND_DOMAIN).toBe("aplus1.app");
+    expect(APLUS1_DEMO_URL).toBe("https://aplus1-demo.vercel.app");
+    expect(defaultSiteUrl()).toBe(APLUS1_DEMO_URL);
   });
 
   it("uses brand mark in the logo box", () => {
-    expect(BRAND_MARK).toBe("100");
+    expect(BRAND_MARK).toBe("1");
   });
 
   it("keeps legacy storage keys for backward compatibility", () => {

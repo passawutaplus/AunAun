@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, User, LogOut, Settings, LayoutGrid, Layers3, Coins, FolderKanban } from "lucide-react";
+import { ChevronDown, User, LogOut, Settings, LayoutGrid, Layers3, Coins, FolderKanban, Moon } from "lucide-react";
+import { useThemeFade } from "@/hooks/useThemeFade";
+import { cn } from "@/lib/utils";
 import WalletBadge from "@/components/gifting/WalletBadge";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import ChatNavButton from "@/components/chat/ChatNavButton";
@@ -21,7 +23,11 @@ import UserAvatar from "@/components/UserAvatar";
 const ProfileButton = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { isDark, toggleTheme } = useThemeFade();
+  const [themeMounted, setThemeMounted] = useState(false);
   const [profile, setProfile] = useState<{ avatar_url: string | null; display_name: string | null } | null>(null);
+
+  useEffect(() => setThemeMounted(true), []);
 
   useEffect(() => {
     if (!user) {
@@ -66,6 +72,33 @@ const ProfileButton = () => {
           <Coins className="w-4 h-4 mr-2 text-primary" /> รายได้ &amp; กระเป๋า Pixel
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="rounded-lg flex items-center justify-between gap-3"
+          onSelect={(e) => {
+            e.preventDefault();
+            toggleTheme();
+          }}
+        >
+          <span className="flex items-center">
+            <Moon className="w-4 h-4 mr-2" /> โหมดมืด
+          </span>
+          <span
+            role="switch"
+            aria-checked={themeMounted ? isDark : false}
+            aria-hidden
+            className={cn(
+              "relative w-9 h-5 rounded-full transition-colors shrink-0 pointer-events-none",
+              themeMounted && isDark ? "bg-primary" : "bg-muted",
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-background shadow-sm transition-transform",
+                themeMounted && isDark ? "translate-x-4" : "",
+              )}
+            />
+          </span>
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate("/settings")} className="rounded-lg">
           <Settings className="w-4 h-4 mr-2" /> ตั้งค่า
         </DropdownMenuItem>

@@ -2,10 +2,10 @@ import type { CommunityPostKind, CommunityQuestionTopic } from "@/hooks/useCommu
 
 export type CommunityKindFilter = "all" | CommunityPostKind;
 
+export const COMMUNITY_TAG_PRESETS = ["ถาม", "ขอfeedback", "workflow", "portfolio"] as const;
+
 export const COMMUNITY_KIND_CHIPS: { id: CommunityKindFilter; label: string }[] = [
   { id: "all", label: "ทั้งหมด" },
-  { id: "tip", label: "Tips" },
-  { id: "question", label: "Q&A" },
 ];
 
 export const QUESTION_TOPICS: {

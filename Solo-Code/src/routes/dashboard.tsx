@@ -203,7 +203,7 @@ function Dashboard() {
     trackFeature(`dashboard.${section}`);
   }, [section]);
 
-  // Anthem → So1o studio combined quote deep-link handoff
+  // Aplus1 → So1o studio combined quote deep-link handoff
   React.useEffect(() => {
     if (typeof window === "undefined" || !user?.id) return;
     if (studioUrlHandoffRef.current) return;
@@ -233,7 +233,7 @@ function Dashboard() {
     })();
   }, [updateSection, user?.id]);
 
-  // Anthem → So1o solo quotation deep-link handoff
+  // Aplus1 → So1o solo quotation deep-link handoff
   React.useEffect(() => {
     if (typeof window === "undefined" || !user?.id) return;
     if (new URLSearchParams(window.location.search).get("handoff") === "studio") return;
@@ -270,11 +270,11 @@ function Dashboard() {
       const notesParts: string[] = [];
       if (message) notesParts.push(message);
       if (deadline) notesParts.push(`กำหนดส่ง: ${deadline}`);
-      if (params.conversationId) notesParts.push(`แชท Pixel100: ${params.conversationId}`);
+      if (params.conversationId) notesParts.push(`แชท Aplus1: ${params.conversationId}`);
 
       storeAnthemQuotationHandoff({
-        projectName: projectTitle || "งานจาก Pixel100",
-        clientName: clientName || "ลูกค้า Pixel100",
+        projectName: projectTitle || "งานจาก Aplus1",
+        clientName: clientName || "ลูกค้า Aplus1",
         clientEmail,
         clientPhone,
         endDate: deadline,

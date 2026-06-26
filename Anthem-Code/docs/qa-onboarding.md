@@ -44,7 +44,7 @@ Email the security contact in `/SECURITY.md`. Demo accounts: [`demo-catalog.md`]
 ```markdown
 **Title**: <short summary>
 **Severity**: critical / high / medium / low / cosmetic
-**Environment**: demo (1px-demo.vercel.app) / production (an1hem.app) · browser · OS
+**Environment**: demo (aplus1-demo.vercel.app) / production (an1hem.app) · browser · OS
 **Account used**: <which test account>
 **Steps to reproduce**:
 1.

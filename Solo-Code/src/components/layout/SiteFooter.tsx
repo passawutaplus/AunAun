@@ -109,7 +109,7 @@ function FullFooter({ className }: { className?: string }) {
                   rel="noopener noreferrer"
                   className="hover:text-primary transition-colors"
                 >
-                  Pixel100 Showcase
+                  Aplus1 Showcase
                 </a>
               </li>
             </ul>

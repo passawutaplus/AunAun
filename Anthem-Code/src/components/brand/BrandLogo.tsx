@@ -7,7 +7,7 @@ type Props = {
   className?: string;
 };
 
-/** Header / auth mark — gradient square + optional Pixel100 wordmark */
+/** Header / auth mark — gradient square + optional Aplus1 wordmark */
 export function BrandLogo({ showWordmark = true, size = "md", className }: Props) {
   const box =
     size === "sm"
@@ -27,8 +27,8 @@ export function BrandLogo({ showWordmark = true, size = "md", className }: Props
       </div>
       {showWordmark && (
         <span className="font-medium text-lg leading-tight text-foreground">
-          <span className="text-gradient">Pixel</span>
-          <span>{BRAND_NAME.slice(5)}</span>
+          <span className="text-gradient">Aplus</span>
+          <span>1</span>
         </span>
       )}
     </div>

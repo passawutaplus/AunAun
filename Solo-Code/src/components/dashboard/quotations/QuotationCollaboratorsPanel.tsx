@@ -59,7 +59,7 @@ export function QuotationCollaboratorsPanel({
   if (!quotationKind || quotationKind === "solo") return null;
 
   const label =
-    quotationKind === "inhouse" ? "สมาชิกทีม (In-House)" : "สมาชิก Studio (Pixel100 nest)";
+    quotationKind === "inhouse" ? "สมาชิกทีม (In-House)" : "สมาชิก Studio (Aplus1 nest)";
 
   const updateRow = (index: number, patch: Partial<DraftCollaborator>) => {
     setDraft((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));

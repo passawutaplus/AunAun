@@ -101,7 +101,7 @@ const ProfileMenuCard = () => {
       <p className="px-3 pt-1 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">ระบบ So1o</p>
       {isPro ? (
         <p className="px-3 py-1.5 text-xs text-primary font-medium flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5" /> So1o Pro — ใช้ได้ทั้ง Pixel100 และ My Desk
+          <Sparkles className="w-3.5 h-3.5" /> So1o Pro — ใช้ได้ทั้ง Aplus1 และ My Desk
         </p>
       ) : (
         <button onClick={() => navigate("/upgrade")} className={item}>

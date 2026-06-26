@@ -48,7 +48,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: "Ecosystem",
     items: [
-      { to: "/connections", icon: Link2, label: NAV_LABELS.connections, hint: "Flywheel So1o ↔ Pixel100" },
+      { to: "/connections", icon: Link2, label: NAV_LABELS.connections, hint: "Flywheel So1o ↔ Aplus1" },
       { to: "/users", icon: Users, label: NAV_LABELS.users, hint: "ค้นหาบัญชีข้ามแอป" },
       { to: "/radar", icon: Radar, label: NAV_LABELS.radar, hint: "เทรนด์และ roadmap deferred" },
     ],

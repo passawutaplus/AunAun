@@ -18,7 +18,7 @@ jobs:
       - name: Run Lighthouse performance + SEO
         run: node scripts/performance/run-performance.mjs
         env:
-          PX_BASE_URL: https://1px-demo.vercel.app
+          PX_BASE_URL: https://aplus1-demo.vercel.app
           SO1O_BASE_URL: https://solofreelancer.com
           LH_SEO_MIN: "80"
 

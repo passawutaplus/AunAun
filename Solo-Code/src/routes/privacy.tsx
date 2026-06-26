@@ -9,7 +9,7 @@ export const Route = createFileRoute("/privacy")({
     buildPublicPageHead({
       title: "นโยบายความเป็นส่วนตัว (PDPA)",
       description:
-        "นโยบาย PDPA ของ So1o Freelancer — วิธีเก็บ ใช้ เปิดเผย และปกป้องข้อมูล รวม Stripe Connect LINE AI และ ecosystem Pixel100",
+        "นโยบาย PDPA ของ So1o Freelancer — วิธีเก็บ ใช้ เปิดเผย และปกป้องข้อมูล รวม Stripe Connect LINE AI และ ecosystem Aplus1",
       path: "/privacy",
     }),
   component: PrivacyPage,
@@ -79,7 +79,7 @@ function PrivacyPage() {
             ที่อัปโหลดเพื่อสแกน 50 ทวิ
           </li>
           <li>
-            <strong>ข้อมูล Pixel100 / an1hem:</strong> โปรไฟล์ ผลงานโชว์เคส การยืนยันตัวตน (KYC) สำหรับถอนเงิน PX
+            <strong>ข้อมูล Aplus1 / an1hem:</strong> โปรไฟล์ ผลงานโชว์เคส การยืนยันตัวตน (KYC) สำหรับถอนเงิน PX
             — รูปบัตรและบัญชีธนาคารเก็บใน Storage ส่วนตัว (เมื่อใช้ ecosystem บัญชีเดียว)
           </li>
         </ul>
@@ -120,7 +120,7 @@ function PrivacyPage() {
                 <td className="px-3 py-2">สัญญา / ความยินยอม</td>
               </tr>
               <tr>
-                <td className="px-3 py-2">Ecosystem Pixel100 (โชว์เคส)</td>
+                <td className="px-3 py-2">Ecosystem Aplus1 (โชว์เคส)</td>
                 <td className="px-3 py-2">สัญญา / บริการที่ร้องขอ</td>
               </tr>
               <tr>
@@ -166,13 +166,13 @@ function PrivacyPage() {
         </p>
       </LegalSectionBlock>
 
-      <LegalSectionBlock id="ecosystem" title="6. So1o + Pixel100 (บัญชีเดียว)">
+      <LegalSectionBlock id="ecosystem" title="6. So1o + Aplus1 (บัญชีเดียว)">
         <p>
-          บัญชี So1o และ Pixel100 ({LEGAL.ecosystemUrl}) ใช้ระบบยืนยันตัวตนร่วมกัน ข้อมูลโปรไฟล์
+          บัญชี So1o และ Aplus1 ({LEGAL.ecosystemUrl}) ใช้ระบบยืนยันตัวตนร่วมกัน ข้อมูลโปรไฟล์
           แพ็กเกจ และโควต้าบางส่วนแชร์ข้ามแอปเพื่อให้ ecosystem ทำงาน
         </p>
         <ul className="list-disc pl-5 space-y-1.5">
-          <li>การลบบัญชี So1o อาจส่งผลต่อการเข้า Pixel100 — ติดต่อเราก่อนลบหากมีข้อสงสัย</li>
+          <li>การลบบัญชี So1o อาจส่งผลต่อการเข้า Aplus1 — ติดต่อเราก่อนลบหากมีข้อสงสัย</li>
           <li>
             ลูกค้าที่เข้าหน้า Track/Brief ผ่าน token ไม่ได้สมัครบัญชี —
             ข้อมูลของพวกเขาอยู่ภายใต้ความรับผิดชอบของคุณในฐานะฟรีแลนซ์

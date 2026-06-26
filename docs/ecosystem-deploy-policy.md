@@ -9,7 +9,7 @@
 
 | มิติ | คำตอบสำหรับ So1o + Pixel100 |
 |------|------------------------------|
-| **Production รวมกันหรือไม่** | **รวมเสมอ** — โปรเจกต์เดียว `zkflkpbmbozrchqncpzi` (So1o + an1hem + Ops Hub อ่าน schema เดียวกัน) |
+| **Production รวมกันหรือไม่** | **รวมเสมอ** — โปรเจกต์เดียว `zkflkpbmbozrchqncpzi` (So1o + Aplus1 + Ops Hub อ่าน schema เดียวกัน) |
 | **Demo แยกจาก Production หรือไม่** | **ขึ้นกับช่วง** — ดู [§3 ช่วงชีวิต](#3-ช่วงชีวิตเมื่อไหร่รวมเมื่อไหร่แยก) |
 
 สรุปสั้น: **บัญชีจริงรวมที่เดียว** ไม่ใช่ “แยก So1o กับ Pixel100” — คำถามจริงคือ **เดโม่/staging ชี้ DB ไหน**
@@ -47,7 +47,7 @@
 | รายการ | นโยบาย |
 |--------|--------|
 | Production DB | `zkflkpbmbozrchqncpzi` |
-| Demo web (`1px-demo`, `solo-demo`) | **ชี้ `rvnzjisk` เดียวกัน** + `VITE_DEMO_MODE=true` |
+| Demo web (`aplus1-demo`, `solo-demo`) | **ชี้ `rvnzjisk` เดียวกัน** + `VITE_DEMO_MODE=true` |
 | บัญชี demo | `@demo.pixel100.com` / `@demo.an1hem.app` — seed ด้วย `db:qa-full` |
 | ข้อมูล user จริง | ยังไม่ copy ลง demo |
 
@@ -87,7 +87,7 @@
 flowchart LR
   dev[แก้โค้ด local] --> commit[git push]
   commit --> demoDeploy["deploy-vercel.sh demo"]
-  demoDeploy --> vercelDemo["Vercel 1px-demo / solo-demo"]
+  demoDeploy --> vercelDemo["Vercel aplus1-demo / solo-demo"]
   vercelDemo --> dbChoice{Phase?}
   dbChoice -->|A รวม| prodDB["rvnzjisk + VITE_DEMO_MODE=true"]
   dbChoice -->|B แยก| demoDB["โปรเจกต์ demo แยก"]
@@ -114,7 +114,7 @@ flowchart TD
   migCheck -->|ค้าง| pushMig["supabase-push-via-api.sh"]
   pushMig --> prodDeploy
   migCheck -->|ไม่ค้าง| prodDeploy["deploy-vercel.sh production"]
-  prodDeploy --> vercelProd["an1hem.app / solofreelancer.com"]
+  prodDeploy --> vercelProd["aplus1.app / solofreelancer.com"]
   vercelProd --> smoke["smoke-public.sh"]
 ```
 
@@ -137,7 +137,7 @@ flowchart TD
 
 ## 5. ตาราง Env ตามสภาพแวดล้อม
 
-### Production (`an1hem.app`, `solofreelancer.com`)
+### Production (`aplus1.app`, `solofreelancer.com`)
 
 ```env
 VITE_DEMO_MODE=false
@@ -202,7 +202,7 @@ VITE_DEMO_SUPABASE_PUBLISHABLE_KEY=<demo anon>
 
 | เอกสาร | เรื่อง |
 |--------|--------|
-| [ecosystem-unified-account.md](ecosystem-unified-account.md) | บัญชีรวม So1o + an1hem |
+| [ecosystem-unified-account.md](ecosystem-unified-account.md) | บัญชีรวม So1o + Aplus1 |
 | [demo-pack.md](demo-pack.md) | ลิงก์ + login ส่ง reviewer |
 | [Anthem-Code/docs/demo-isolation.md](../Anthem-Code/docs/demo-isolation.md) | Phase B รายละเอียด |
 | [Anthem-Code/docs/production-readiness.md](../Anthem-Code/docs/production-readiness.md) | Gate ก่อน launch |

@@ -49,7 +49,7 @@ e2e/
 
 ## หมายเหตุ
 
-- `playwright.config.ts` default ชี้ `https://1px-demo.vercel.app` — ตั้ง `E2E_BASE_URL` เพื่อ override (เช่น localhost)
+- `playwright.config.ts` default ชี้ `https://aplus1-demo.vercel.app` — ตั้ง `E2E_BASE_URL` เพื่อ override (เช่น localhost)
 - ห้ามรัน E2E บน production DB จริง — ใช้ preview environment เท่านั้น
 - เพิ่ม script ใน `package.json` ได้ตามต้องการ:
   ```json

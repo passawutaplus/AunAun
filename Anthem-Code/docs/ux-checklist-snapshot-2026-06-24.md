@@ -37,6 +37,6 @@ Local: `http://localhost:8080` · `VITE_DEMO_MODE=true` · build ✓
 ## ค้าง
 
 - ~~Migration push (referral backend)~~ ✓ ไม่มี migration ค้าง (มิ.ย. 2026)
-- ~~Deploy demo~~ ✓ https://1px-demo.vercel.app (25 มิ.ย. 2026)
+- ~~Deploy demo~~ ✓ https://aplus1-demo.vercel.app (25 มิ.ย. 2026)
 - ~~Referral E2E API~~ ✓ `scripts/qa/referral-e2e.mjs`
 - Manual T2–T4 บน demo (login: `phatsawut@demo.an1hem.app` / `pixel100-demo-seed`)

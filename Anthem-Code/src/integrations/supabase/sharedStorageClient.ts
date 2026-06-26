@@ -1,5 +1,5 @@
 /**
- * @deprecated Phase 0 of Anthem ↔ So1o consolidation.
+ * @deprecated Phase 0 of Aplus1 ↔ So1o consolidation.
  *
  * Both apps should use one Supabase project and `subscription_tier` on
  * `profiles` (see docs/ecosystem-unified-account.md). This module is a thin

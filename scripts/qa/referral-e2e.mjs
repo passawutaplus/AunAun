@@ -2,7 +2,7 @@
  * Referral E2E smoke — API + optional browser against demo deploy.
  * Usage:
  *   SUPABASE_ACCESS_TOKEN=sbp_... node scripts/qa/referral-e2e.mjs
- *   E2E_BASE_URL=https://1px-demo.vercel.app E2E_DEMO_PASSWORD=... node scripts/qa/referral-e2e.mjs
+ *   E2E_BASE_URL=https://aplus1-demo.vercel.app E2E_DEMO_PASSWORD=... node scripts/qa/referral-e2e.mjs
  */
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
@@ -10,7 +10,7 @@ import { join } from "node:path";
 
 const projectRef = process.env.SUPABASE_PROJECT_REF || "zkflkpbmbozrchqncpzi";
 const mgmtToken = process.env.SUPABASE_ACCESS_TOKEN;
-const baseUrl = (process.env.E2E_BASE_URL || process.env.ANTHEM_BASE_URL || "https://1px-demo.vercel.app").replace(/\/$/, "");
+const baseUrl = (process.env.E2E_BASE_URL || process.env.ANTHEM_BASE_URL || "https://aplus1-demo.vercel.app").replace(/\/$/, "");
 const supabaseUrl = `https://${projectRef}.supabase.co`;
 const demoEmail = process.env.E2E_DEMO_EMAIL || "phatsawut@demo.an1hem.app";
 const demoPassword = process.env.E2E_DEMO_PASSWORD || "pixel100-demo-seed";

@@ -16,7 +16,7 @@ import {
   formatDailyResetAt,
   poolRemainingFromSummary,
 } from "@/lib/aiCredits";
-import { anthemShowcaseUrl } from "@/lib/productLinks";
+import { aplus1ShowcaseUrl } from "@/lib/productLinks";
 import { createPortalSession } from "@/utils/payments.functions";
 import { currentOriginReturnUrl } from "@/lib/paymentRedirect";
 import { getStripeEnvironment } from "@/lib/stripe";
@@ -279,12 +279,12 @@ export function AiUsageSettingsSection() {
                   <p className="w-full text-[10px] text-muted-foreground">
                     Pro ปลดล็อก So1o My Desk +{" "}
                     <a
-                      href={anthemShowcaseUrl()}
+                      href={aplus1ShowcaseUrl()}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline"
                     >
-                      Pixel100
+                      Aplus1
                     </a>
                   </p>
                 )}

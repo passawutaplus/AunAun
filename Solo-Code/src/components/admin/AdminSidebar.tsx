@@ -298,7 +298,7 @@ export function AdminSidebar({
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Ops Hub — monitor รวม So1o + Pixel100">
+                <SidebarMenuButton asChild tooltip="Ops Hub — monitor รวม So1o + Aplus1">
                   <a href={OPS_HUB_URL} target="_blank" rel="noopener noreferrer" className="gap-2">
                     <ExternalLink className="h-4 w-4 shrink-0" />
                     {!collapsed && <span className="text-xs">Ops Hub</span>}

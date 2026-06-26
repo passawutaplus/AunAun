@@ -13,7 +13,7 @@ const outDir = join(root, "scripts/performance/results");
 mkdirSync(outDir, { recursive: true });
 
 const TARGETS = [
-  { name: "1PX", url: process.env.PX_BASE_URL || "https://1px-demo.vercel.app", paths: ["/", "/jobs", "/research"] },
+  { name: "1PX", url: process.env.PX_BASE_URL || "https://aplus1-demo.vercel.app", paths: ["/", "/jobs", "/research"] },
   { name: "So1o", url: process.env.SO1O_BASE_URL || "https://solo-demo-liart.vercel.app", paths: ["/", "/pricing", "/help"] },
 ];
 

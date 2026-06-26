@@ -6,7 +6,7 @@ const baseInfra = (overrides: Partial<InfraMonitorResponse> = {}): InfraMonitorR
   generated_at: "2026-06-17T00:00:00.000Z",
   health: [
     { name: "So1o", url: "https://www.solofreelancer.com", status: 200, latencyMs: 120, ok: true },
-    { name: "Pixel100 demo", url: "https://1px-demo.vercel.app", status: 200, latencyMs: 90, ok: true },
+    { name: "Pixel100 demo", url: "https://aplus1-demo.vercel.app", status: 200, latencyMs: 90, ok: true },
     { name: "Ops Hub", url: "https://so1o-ops-hub.vercel.app", status: 200, latencyMs: 100, ok: true },
   ],
   supabase: {} as InfraMonitorResponse["supabase"],

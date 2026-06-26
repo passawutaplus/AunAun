@@ -2,12 +2,12 @@
 # Automated test gate — Solo + Anthem unit tests + public curl smoke + ecosystem health.
 # Usage:
 #   ./scripts/test-ecosystem.sh
-#   SOLO_BASE_URL=https://solofreelancer.com ANTHEM_BASE_URL=https://1px-demo.vercel.app ./scripts/test-ecosystem.sh
+#   SOLO_BASE_URL=https://solofreelancer.com ANTHEM_BASE_URL=https://aplus1-demo.vercel.app ./scripts/test-ecosystem.sh
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SOLO_BASE="${SOLO_BASE_URL:-https://solofreelancer.com}"
-ANTHEM_BASE="${ANTHEM_BASE_URL:-https://1px-demo.vercel.app}"
+ANTHEM_BASE="${ANTHEM_BASE_URL:-https://aplus1-demo.vercel.app}"
 export SMOKE_SKIP_SITEMAP_CONTENT="${SMOKE_SKIP_SITEMAP_CONTENT:-1}"
 
 echo "========== Solo-Code =========="

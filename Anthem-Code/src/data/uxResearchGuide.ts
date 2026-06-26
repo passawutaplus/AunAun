@@ -45,7 +45,7 @@ export type PageMapGroup = {
 };
 
 export const RESEARCH_INTRO = {
-  demoUrl: "https://1px-demo.vercel.app",
+  demoUrl: "https://aplus1-demo.vercel.app",
   inAppPath: "/research",
   quickMinutes: "45–60",
   fullHours: "2–3",
@@ -123,7 +123,7 @@ export const DESIGN_CHECKLIST: ChecklistItem[] = [
   { id: "d-microcopy", text: "Microcopy — จ้าง vs คอลแลป vs สมัครงาน ไม่สับสน" },
   { id: "d-trust", text: "Trust & legal — cookie banner, footer legal, /legal/ip อ่านง่าย" },
   { id: "d-a11y", text: "Accessibility — focus ring, alt รูป demo, contrast ปุ่มสำคัญ" },
-  { id: "d-1px-vs-solo", text: "Pixel100 (หน้าร้านโชว์งาน) vs So1o (หลังบ้านจัดการงาน) — ผู้ใช้ใหม่เข้าใจความต่างไหม" },
+  { id: "d-1px-vs-solo", text: "Aplus1 (หน้าร้านโชว์งาน) vs So1o (หลังบ้านจัดการงาน) — ผู้ใช้ใหม่เข้าใจความต่างไหม" },
 ];
 
 export const FEATURE_SECTIONS: FeatureSection[] = [
@@ -788,7 +788,7 @@ export const FEEDBACK_TEMPLATE = {
     "ผู้ใช้ใหม่รู้ next step หลัง login ไหม",
     "Mobile vs Desktop — จุดที่ใช้ยากที่สุด",
     "Empty / loading / error — เข้าใจไหม",
-    "ความต่าง Pixel100 vs So1o — เข้าใจไหม",
+    "ความต่าง Aplus1 vs So1o — เข้าใจไหม",
   ],
 };
 

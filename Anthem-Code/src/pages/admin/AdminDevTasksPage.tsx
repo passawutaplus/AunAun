@@ -116,7 +116,7 @@ export default function AdminDevTasksPage() {
         </div>
         <div className="border border-admin-border bg-admin-surface p-3 rounded-sm col-span-2">
           <p className="text-[10px] text-admin-muted uppercase">โปรเจกต์</p>
-          <p className="text-sm font-medium">{data?.project?.name ?? "Pixel100"}</p>
+          <p className="text-sm font-medium">{data?.project?.name ?? "Aplus1"}</p>
         </div>
       </div>
 

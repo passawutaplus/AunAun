@@ -19,7 +19,7 @@ export const CollabRequestEmail = ({
   projectTitle = 'ผลงานในฟีด',
   collabTypes = '',
   message = '',
-  actionUrl = 'https://1px-demo.vercel.app/portfolio/manage?focus=collab',
+  actionUrl = 'https://aplus1-demo.vercel.app/portfolio/manage?focus=collab',
 }: CollabRequestEmailProps) => (
   <EmailLayout
     preview={`${senderName} อยากร่วมงาน — ${projectTitle}`}
@@ -31,7 +31,7 @@ export const CollabRequestEmail = ({
   >
     <EmailText>
       สวัสดี {recipientName} — <strong style={{ color: brand.ink }}>{senderName}</strong>{' '}
-      ส่งคำขอร่วมงานผ่าน Pixel100
+      ส่งคำขอร่วมงานผ่าน Aplus1
     </EmailText>
     <EmailCard>
       <EmailCardLabel>จาก</EmailCardLabel>
@@ -62,7 +62,7 @@ export const CollabRequestEmail = ({
 export const collabRequestTemplate = {
   component: CollabRequestEmail,
   subject: (data: Record<string, unknown>) =>
-    `[Pixel100] คำขอคอลแลปจาก ${(data.senderName as string) ?? 'ครีเอเตอร์'}`,
+    `[Aplus1] คำขอคอลแลปจาก ${(data.senderName as string) ?? 'ครีเอเตอร์'}`,
   displayName: 'Collab request',
   previewData: {
     recipientName: 'พี่บอส',
@@ -70,7 +70,7 @@ export const collabRequestTemplate = {
     projectTitle: 'Brand Identity — Cafe Series',
     collabTypes: 'ร่วมโปรเจกต์ใหม่ · แลกเปลี่ยนสกิล',
     message: 'อยากชวน co-create visual system ร่วมกันครับ มี mood board แชร์ได้',
-    actionUrl: 'https://1px-demo.vercel.app/portfolio/manage?focus=collab',
+    actionUrl: 'https://aplus1-demo.vercel.app/portfolio/manage?focus=collab',
   },
 }
 

@@ -19,7 +19,7 @@ export const JobMatchEmail = ({
   roleCategory = '',
   matchScore = 0,
   matchReasons = [],
-  actionUrl = 'https://1px-demo.vercel.app/jobs',
+  actionUrl = 'https://aplus1-demo.vercel.app/jobs',
 }: JobMatchEmailProps) => (
   <EmailLayout
     preview={`พบงานตรงสกิล — ${jobTitle}`}
@@ -30,7 +30,7 @@ export const JobMatchEmail = ({
     footerNote={EMAIL_FOOTER_NOTIFICATION}
   >
     <EmailText>
-      สวัสดี {recipientName} — พบงานที่ตรงกับโปรไฟล์ของคุณบน Pixel100
+      สวัสดี {recipientName} — พบงานที่ตรงกับโปรไฟล์ของคุณบน Aplus1
     </EmailText>
     <EmailCard>
       <EmailCardLabel>ตำแหน่ง</EmailCardLabel>
@@ -61,7 +61,7 @@ export const JobMatchEmail = ({
 export const jobMatchTemplate = {
   component: JobMatchEmail,
   subject: (data: Record<string, unknown>) =>
-    `[Pixel100] งานแนะนำ — ${(data.jobTitle as string) ?? 'งานใหม่'}`,
+    `[Aplus1] งานแนะนำ — ${(data.jobTitle as string) ?? 'งานใหม่'}`,
   displayName: 'Job match',
   previewData: {
     recipientName: 'พี่บอส',
@@ -69,7 +69,7 @@ export const jobMatchTemplate = {
     roleCategory: 'UI/UX Design',
     matchScore: 80,
     matchReasons: ['หมวด UI/UX Design', 'สกิลตรง 3 อย่าง', 'Remote'],
-    actionUrl: 'https://1px-demo.vercel.app/jobs/example',
+    actionUrl: 'https://aplus1-demo.vercel.app/jobs/example',
   },
 }
 

@@ -44,3 +44,4 @@ supabase/.temp/
 supabase/.deploy-payloads/
 supabase/.mcp-payload.json
 supabase/.tmp-*
+.env*

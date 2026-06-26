@@ -240,7 +240,7 @@ const StudioCreateInner = () => {
           <div className="space-y-1.5">
             <Label className="text-xs">Slug (สำหรับ URL)</Label>
             <div className="flex items-center gap-1.5 text-sm">
-              <span className="text-muted-foreground">pixel100.com/s/</span>
+              <span className="text-muted-foreground">aplus1.app/s/</span>
               <Input
                 value={finalSlug}
                 onChange={(e) => setSlug(slugify(e.target.value))}

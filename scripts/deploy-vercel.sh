@@ -19,7 +19,7 @@ usage() {
 
 normalize_app() {
   case "${1,,}" in
-    1px|anthem|an1hem|1px-demo) echo "1px" ;;
+    1px|anthem|an1hem|aplus1-demo) echo "1px" ;;
     solo|so1o|solofreelancer) echo "solo" ;;
     *) return 1 ;;
   esac
@@ -90,7 +90,7 @@ deploy_production() {
   fi
 
   DEPLOY_OUTPUT="$(mktemp)"
-  (cd "$dir" && npx vercel deploy --prod --yes "${BUILD_ENVS[@]}") | tee "$DEPLOY_OUTPUT"
+  (cd "$dir" && npx vercel deploy --prod --yes --project="$vercel_project" "${BUILD_ENVS[@]}") | tee "$DEPLOY_OUTPUT"
   DEPLOY_URL="$(grep -Eo 'https://[a-zA-Z0-9._-]+\.(vercel\.app|[a-z0-9.-]+)' "$DEPLOY_OUTPUT" | tail -1)"
   rm -f "$DEPLOY_OUTPUT"
 
@@ -110,14 +110,14 @@ case "$APP_KEY" in
     if [[ "$MODE" == "demo" ]]; then
       deploy_demo Anthem-Code
     else
-      deploy_production Anthem-Code "https://an1hem.app" "1px-demo"
+      deploy_production Anthem-Code "https://aplus1.app" "aplus1-prod"
     fi
     ;;
   solo)
     if [[ "$MODE" == "demo" ]]; then
       deploy_demo Solo-Code
     else
-      deploy_production Solo-Code "https://solofreelancer.com" "solo-demo-liart"
+      deploy_production Solo-Code "https://solofreelancer.com" "solo-demo"
     fi
     ;;
 esac

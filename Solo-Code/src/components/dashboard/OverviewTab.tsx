@@ -35,7 +35,7 @@ import { PipelineMiniWidget } from "./overview/PipelineMiniWidget";
 import { OverviewPerformanceCharts } from "./overview/OverviewPerformanceCharts";
 import { DashboardShortcuts } from "./overview/DashboardShortcuts";
 import { PipelineNewDealButton } from "./layout/PipelineNewDealButton";
-import { AnthemJobsPanel } from "./ecosystem/AnthemJobsPanel";
+import { Aplus1JobsPanel } from "./ecosystem/Aplus1JobsPanel";
 
 interface OverviewTabProps {
   onGo: (tab: string, sub?: string) => void;
@@ -221,7 +221,7 @@ export function OverviewTab({ onGo }: OverviewTabProps) {
         <DebtWidget onGo={onGo} />
       </div>
 
-      <AnthemJobsPanel onOpenQuotations={() => onGo("finance", "quotations")} />
+      <Aplus1JobsPanel onOpenQuotations={() => onGo("finance", "quotations")} />
 
       {/* Quick Note */}
       <QuickNoteWidget />

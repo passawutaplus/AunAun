@@ -74,7 +74,7 @@ export function anthemStorageLimitBytes(tier: Tier): number {
   return ANTHEM_STORAGE_QUOTA_BYTES[tier];
 }
 
-/** Block upload/publish when Anthem pool would exceed tier cap. */
+/** Block upload/publish when Aplus1 pool would exceed tier cap. */
 export async function assertAnthemStorageAvailable(
   userId: string,
   tier: Tier,

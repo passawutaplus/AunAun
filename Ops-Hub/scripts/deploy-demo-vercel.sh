@@ -11,10 +11,7 @@ fi
 echo "→ Checking Vercel login…"
 npx vercel whoami
 
-if [[ ! -f .vercel/project.json ]]; then
-  echo "→ Linking project (first time)…"
-  npx vercel link --yes --project=so1o-ops-hub
-fi
+VERCEL_PROJECT="${VERCEL_OPS_HUB_PROJECT:-so1o-ops-hub}"
 
 # shellcheck disable=SC1091
 set -a && source .env && set +a
@@ -27,12 +24,13 @@ BUILD_ENVS=(
   --build-env "VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}"
   --build-env "VITE_SUPABASE_PROJECT_ID=${VITE_SUPABASE_PROJECT_ID:-zkflkpbmbozrchqncpzi}"
   --build-env "VITE_SO1O_APP_URL=${VITE_SO1O_APP_URL:-https://www.solofreelancer.com}"
-  --build-env "VITE_ANTHEM_APP_URL=${VITE_ANTHEM_APP_URL:-https://an1hem.app}"
+  --build-env "VITE_APLUS1_APP_URL=${VITE_APLUS1_APP_URL:-${VITE_ANTHEM_APP_URL:-https://aplus1.app}}"
+  --build-env "VITE_ANTHEM_APP_URL=${VITE_ANTHEM_APP_URL:-${VITE_APLUS1_APP_URL:-https://aplus1.app}}"
 )
 
 echo "→ Deploying Ops Hub preview…"
 DEPLOY_OUTPUT="$(mktemp)"
-npx vercel deploy --yes "${BUILD_ENVS[@]}" | tee "$DEPLOY_OUTPUT"
+npx vercel deploy --prod --yes --project="$VERCEL_PROJECT" "${BUILD_ENVS[@]}" | tee "$DEPLOY_OUTPUT"
 DEPLOY_URL="$(grep -Eo 'https://[a-zA-Z0-9._-]+\.vercel\.app' "$DEPLOY_OUTPUT" | tail -1)"
 rm -f "$DEPLOY_OUTPUT"
 [[ -n "$DEPLOY_URL" ]] || { echo "Deploy failed — no URL returned" >&2; exit 1; }

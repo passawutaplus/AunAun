@@ -60,7 +60,7 @@ export const STORAGE_CATEGORIES: StorageCategoryMeta[] = [
  *
  * At 400 Pro users × 300 MB avg ≈ 120 GB → plan Supabase overage or tiered caps before scale.
  */
-/** So1o My Desk storage pool (separate from Anthem `project-media`). */
+/** So1o My Desk storage pool (separate from Aplus1 `project-media`). */
 export const SO1O_STORAGE_QUOTA_BYTES: Record<Tier, number> = {
   free: 50 * 1024 * 1024,
   pro: 2 * 1024 * 1024 * 1024,

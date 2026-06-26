@@ -1,5 +1,5 @@
 /**
- * Re-exports 1PX notification email templates from Anthem-Code (monorepo sibling).
+ * Re-exports 1PX notification email templates from Aplus1-Code (monorepo sibling).
  */
 import type { ComponentType } from "react";
 import {

@@ -6,3 +6,5 @@
 # Local database / storage dumps (never commit)
 backups/
 logs/
+.vercel
+.env*

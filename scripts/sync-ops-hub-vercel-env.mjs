@@ -22,7 +22,7 @@ const content = [
   `VITE_SUPABASE_PUBLISHABLE_KEY=${solo.VITE_SUPABASE_PUBLISHABLE_KEY}`,
   `VITE_SUPABASE_PROJECT_ID=${solo.VITE_SUPABASE_PROJECT_ID}`,
   "VITE_SO1O_APP_URL=https://www.solofreelancer.com",
-  "VITE_ANTHEM_APP_URL=https://an1hem.app",
+  "VITE_APLUS1_APP_URL=https://aplus1.app",
 ].join("\n");
 
 writeFileSync(opsEnv, content + "\n");

@@ -1,4 +1,4 @@
-/** Session keys for cross-app quotation handoff (Anthem → So1o). */
+/** Session keys for cross-app quotation handoff (Aplus1 → So1o). */
 
 export const ANTHEM_QUOTATION_HANDOFF_KEY = "so1o.openQuotationFromAnthem";
 export const STUDIO_QUOTATION_HANDOFF_KEY = "so1o.openQuotationFromStudio";
@@ -133,10 +133,11 @@ export type ParsedStudioDashboardParams =
       members?: StudioQuotationHandoff["members"];
     };
 
-/** Parse Anthem → So1o studio combined quote deep-link params. */
+/** Parse Aplus1 → So1o studio combined quote deep-link params. */
 export function parseStudioDashboardParams(search: string): ParsedStudioDashboardParams {
   const sp = new URLSearchParams(search);
-  if (sp.get("from") !== "anthem" || sp.get("handoff") !== "studio") {
+  const from = sp.get("from");
+  if ((from !== "anthem" && from !== "aplus1") || sp.get("handoff") !== "studio") {
     return { fromStudio: false };
   }
   return {
@@ -202,8 +203,10 @@ export const STUDIO_DASHBOARD_PARAM_KEYS = [
   "link_id",
 ] as const;
 
-/** Parse Anthem deep-link query params from dashboard URL. */
-export function parseAnthemDashboardParams(search: string): {
+/** Parse Aplus1 deep-link query params from dashboard URL (`from=anthem` legacy alias). */
+export function parseAplus1DashboardParams(search: string): {
+  fromAplus1: boolean;
+  /** @deprecated use fromAplus1 */
   fromAnthem: boolean;
   conversationId?: string;
   requestId?: string;
@@ -216,10 +219,13 @@ export function parseAnthemDashboardParams(search: string): {
   linkId?: string;
 } {
   const sp = new URLSearchParams(search);
-  if (sp.get("from") !== "anthem" || sp.get("handoff") === "studio") {
-    return { fromAnthem: false };
+  const from = sp.get("from");
+  const isHandoff = from === "aplus1" || from === "anthem";
+  if (!isHandoff || sp.get("handoff") === "studio") {
+    return { fromAplus1: false, fromAnthem: false };
   }
-  return {
+  const payload = {
+    fromAplus1: true,
     fromAnthem: true,
     conversationId: sp.get("conversation_id") ?? undefined,
     requestId: sp.get("request_id") ?? undefined,
@@ -231,4 +237,8 @@ export function parseAnthemDashboardParams(search: string): {
     deadline: sp.get("deadline") ?? undefined,
     linkId: sp.get("link_id") ?? undefined,
   };
+  return payload;
 }
+
+/** @deprecated use parseAplus1DashboardParams */
+export const parseAnthemDashboardParams = parseAplus1DashboardParams;

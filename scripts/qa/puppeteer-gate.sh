@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 SOLO_BASE="${SOLO_BASE_URL:-https://solofreelancer.com}"
-ANTHEM_BASE="${ANTHEM_BASE_URL:-https://1px-demo.vercel.app}"
+ANTHEM_BASE="${ANTHEM_BASE_URL:-https://aplus1-demo.vercel.app}"
 export NODE_PATH="${ROOT}/Solo-Code/node_modules:${ROOT}/Anthem-Code/node_modules"
 FAIL=0
 

@@ -252,7 +252,7 @@ export function LineLinkScreen() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight">เชื่อม LINE</h1>
           <p className="text-sm text-white/60 mt-2 leading-relaxed max-w-sm mx-auto">
-            รับ Push ทันทีเมื่อมีคำขอจ้างจาก Anthem ลูกค้าอัปสลิป หรือยืนยันบรีฟ — บัญชีเดียวกับ
+            รับ Push ทันทีเมื่อมีคำขอจ้างจาก Aplus1 ลูกค้าอัปสลิป หรือยืนยันบรีฟ — บัญชีเดียวกับ
             So1o Pro
           </p>
         </div>
@@ -295,7 +295,7 @@ export function LineLinkScreen() {
             <div className="text-center space-y-4 py-4">
               <Shield className="h-10 w-10 text-[#06C755] mx-auto opacity-80" />
               <p className="text-sm text-white/70">
-                เข้าสู่ระบบ So1o หรือ Anthem ก่อน แล้วกลับมาเชื่อม LINE
+                เข้าสู่ระบบ So1o หรือ Aplus1 ก่อน แล้วกลับมาเชื่อม LINE
               </p>
               <Button asChild className="w-full bg-[#06C755] hover:bg-[#05b34c] text-white h-11">
                 <Link to="/auth" search={{ redirect: "/line-link" }}>
@@ -394,7 +394,7 @@ export function LineLinkScreen() {
                     <p className="text-sm text-white/70 mt-1">{lineMeta.displayName}</p>
                   )}
                   <p className="text-xs text-white/50 mt-2">
-                    ใช้ได้ทั้ง So1o และ Anthem · เลือกประเภทแจ้งเตือนด้านล่าง
+                    ใช้ได้ทั้ง So1o และ Aplus1 · เลือกประเภทแจ้งเตือนด้านล่าง
                   </p>
                 </div>
               </div>

@@ -197,7 +197,7 @@ Dedupe: `email_send_log` RPC
 | Variable | ใช้ที่ | หมายเหตุ |
 |----------|--------|----------|
 | `LOVABLE_API_KEY` | So1o server | ส่ง email จริง |
-| `ANTHEM_APP_URL` | Edge | default `https://an1hem.app` (prod) |
+| `ANTHEM_APP_URL` | Edge | default `https://aplus1.app` (prod) |
 | `ANTHEM_EMAIL_FROM` | Edge | เช่น `1PX <noreply@1px.app>` |
 | `ANTHEM_EMAIL_SENDER_DOMAIN` | Edge | `notify.1px.app` |
 | `VITE_LINE_CHANNEL_ID` | Client | จากช่อง LINE Login |

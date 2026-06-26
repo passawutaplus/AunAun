@@ -4,7 +4,7 @@ export const MOBILE_BREAKPOINT = 768;
 /** Matches Tailwind `lg:` — bottom nav hidden at this width and above. */
 export const BOTTOM_NAV_MAX_WIDTH = 1023;
 
-export const NAV_HIDDEN_PREFIXES = ["/auth", "/admin"];
+export const NAV_HIDDEN_PREFIXES = ["/auth", "/admin", "/error", "/community/new"];
 
 export const isActiveChatThread = (pathname: string) => /^\/chat\/[^/]+/.test(pathname);
 

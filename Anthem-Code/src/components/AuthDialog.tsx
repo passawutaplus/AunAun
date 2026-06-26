@@ -76,6 +76,8 @@ const AuthDialog = () => {
             </TabsList>
 
             <TabsContent value="signup" className="space-y-3.5 mt-0">
+              <SocialButtons redirectTo={redirectPath} />
+              <AuthEmailSeparator />
               <SignupForm onSwitch={() => setMode("login")} />
             </TabsContent>
 

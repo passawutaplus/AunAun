@@ -25,6 +25,10 @@ for (const line of raw.split(/\r?\n/)) {
 
 env.VITE_DEMO_MODE = "false";
 env.VITE_SITE_URL = "https://solofreelancer.com";
+env.VITE_APLUS1_APP_URL = env.VITE_APLUS1_APP_URL || env.VITE_ANTHEM_APP_URL || "https://aplus1.app";
+env.VITE_ANTHEM_APP_URL = env.VITE_ANTHEM_APP_URL || env.VITE_APLUS1_APP_URL;
+env.APLUS1_APP_URL = env.APLUS1_APP_URL || env.ANTHEM_APP_URL || "https://aplus1.app";
+env.ANTHEM_APP_URL = env.ANTHEM_APP_URL || env.APLUS1_APP_URL;
 env.VITE_EARLY_ACCESS = env.VITE_EARLY_ACCESS || "false";
 env.STRIPE_USE_DIRECT = env.STRIPE_USE_DIRECT || "true";
 

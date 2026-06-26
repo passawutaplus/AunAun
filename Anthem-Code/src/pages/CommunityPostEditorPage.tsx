@@ -1,114 +1,156 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, HelpCircle, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  useCreateCommunityPost,
-  type CommunityQuestionTopic,
+  useCommunityDraft,
+  usePublishCommunityPost,
+  useSaveCommunityDraft,
 } from "@/hooks/useCommunityPosts";
-import { communityPostSchema } from "@/lib/validators";
-import { categories } from "@/data/projectTypes";
-import { COMMUNITY_KIND_INFO, parseCommunityKind } from "@/data/createActions";
-import { QUESTION_TOPICS } from "@/data/communityTopics";
+import { useCommunityAutosave } from "@/hooks/useCommunityAutosave";
+import { useCommunityImageUpload } from "@/hooks/useCommunityImageUpload";
+import { communityPostDraftSchema, communityPostSchema } from "@/lib/validators";
 import { toast } from "sonner";
 import ModerationBanBanner from "@/components/moderation/ModerationBanBanner";
-import Footer from "@/components/Footer";
-import UserAvatar from "@/components/UserAvatar";
-import TagPicker from "@/components/tags/TagPicker";
-import { GalleryMediaButtons } from "@/components/project/GalleryMediaButtons";
-import { SortableGalleryGrid } from "@/components/project/SortableGalleryGrid";
-import { uploadProjectImage } from "@/lib/uploadImage";
 import { uploadProjectVideo } from "@/lib/uploadVideo";
 import { useSubscription } from "@/core/subscription";
 import { getCommunityMediaLimits } from "@/lib/communityLimits";
 import {
   countMediaByKind,
   mediaItemFromUrl,
+  mediaItemsFromProject,
   type PortfolioMediaItem,
 } from "@/lib/portfolioMedia";
 import { splitCommunityMedia } from "@/lib/communityMedia";
+import {
+  composerHasContent,
+  loadComposerLocal,
+} from "@/lib/communityComposerStorage";
+import { titlesMatch } from "@/lib/classifyCommunityPost";
 import CommunityRulesCard from "@/components/community/CommunityRulesCard";
 import CommunityProfanityHint from "@/components/community/CommunityProfanityHint";
 import { detectProfanityInFields } from "@/lib/profanity";
-import { supabase } from "@/integrations/supabase/client";
+import { CommunityMediaStrip } from "@/components/community/CommunityMediaStrip";
+import { CommunityComposerToolbar } from "@/components/community/CommunityComposerToolbar";
+import { CommunityPostPreviewDialog } from "@/components/community/CommunityPostPreviewDialog";
+import { CommunityPostPreviewPanel } from "@/components/community/CommunityPostPreviewPanel";
+import { CommunityComposerFooter } from "@/components/community/CommunityComposerFooter";
+import { CommunityImageCropDialog } from "@/components/community/CommunityImageCropDialog";
 import { cn } from "@/lib/utils";
 
-const TOPIC_CATEGORIES = categories.filter((c) => c !== "Explore");
+function draftDisplayTitle(title: string, body: string) {
+  return titlesMatch(title, body) ? "" : title;
+}
 
 const CommunityPostEditorPage = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { tier } = useSubscription();
   const limits = getCommunityMediaLimits(tier);
   const folderRef = useRef(`community-${crypto.randomUUID()}`);
-  const create = useCreateCommunityPost();
-  const urlKind = parseCommunityKind(searchParams.get("kind"));
-  const [isQuestion, setIsQuestion] = useState(urlKind === "question");
+  const publish = usePublishCommunityPost();
+  const saveDraft = useSaveCommunityDraft();
+  const { data: existingDraft, isLoading: draftLoading } = useCommunityDraft(user?.id);
+
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [autosaveReady, setAutosaveReady] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [category, setCategory] = useState(TOPIC_CATEGORIES[0] ?? "Graphic");
   const [tags, setTags] = useState<string[]>([]);
+  const [tools, setTools] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [questionTopic, setQuestionTopic] = useState<CommunityQuestionTopic | null>(null);
+  const [toolInput, setToolInput] = useState("");
   const [mediaItems, setMediaItems] = useState<PortfolioMediaItem[]>([]);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (urlKind === "question") setIsQuestion(true);
-  }, [urlKind]);
+  const { gallery_urls, video_urls } = splitCommunityMedia(mediaItems);
+  const uploading = uploadingGallery || uploadingVideo;
+  const imageCount = countMediaByKind(mediaItems, "image");
+  const videoCount = countMediaByKind(mediaItems, "video");
+  const pickDisabled =
+    uploading || (imageCount >= limits.images && videoCount >= limits.videos);
 
-  const postKind = isQuestion ? "question" : "tip";
-  const kindInfo = COMMUNITY_KIND_INFO[postKind];
+  const { cropFile, enqueueImages, finishCrop, confirmCrop } = useCommunityImageUpload({
+    userId: user?.id,
+    folder: folderRef.current,
+    tier,
+    maxImages: limits.images,
+    setMediaItems,
+    mediaItems,
+    setUploadingGallery,
+  });
+
+  const autosave = useCommunityAutosave({
+    userId: user?.id,
+    draftId,
+    state: { title, body, tags, tools, gallery_urls, video_urls },
+    enabled: draftLoaded && autosaveReady && !publish.isPending,
+    saveDraft,
+    onDraftId: setDraftId,
+  });
+
   const draftScan = detectProfanityInFields({
     title,
     body,
-    tags: tags.join(" "),
+    tags: [...tags, ...tools].join(" "),
   });
 
   useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("profiles")
-      .select("avatar_url, display_name")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        setAvatarUrl(data?.avatar_url ?? null);
-        setDisplayName(data?.display_name ?? null);
-      });
-  }, [user]);
+    if (!user || draftLoaded || draftLoading) return;
 
-  const imageCount = countMediaByKind(mediaItems, "image");
-  const videoCount = countMediaByKind(mediaItems, "video");
+    const local = loadComposerLocal(user.id);
+    const dbTime = existingDraft?.updated_at
+      ? new Date(existingDraft.updated_at).getTime()
+      : 0;
+    const localTime = local?.savedAt ?? 0;
+    const useLocal = local && localTime > dbTime && composerHasContent(local);
 
-  const handleImages = async (files: FileList) => {
-    if (!user) return;
-    const max = limits.images;
-    if (imageCount >= max) {
-      toast.error(`อัปโหลดรูปได้สูงสุด ${max} รูป/โพสต์`);
-      return;
+    if (useLocal && local) {
+      setDraftId(local.draftId);
+      setTitle(local.title);
+      setBody(local.body);
+      setTags(local.tags);
+      setTools(local.tools);
+      setMediaItems(mediaItemsFromProject(local.gallery_urls, local.video_urls));
+      toast.message("กู้คืนแบบร่างจากเครื่อง");
+    } else if (existingDraft) {
+      setDraftId(existingDraft.id);
+      setTitle(draftDisplayTitle(existingDraft.title, existingDraft.body ?? ""));
+      setBody(existingDraft.body ?? "");
+      setTags(existingDraft.tags ?? []);
+      setTools(existingDraft.tools ?? []);
+      setMediaItems(
+        mediaItemsFromProject(existingDraft.gallery_urls ?? [], existingDraft.video_urls ?? []),
+      );
+      toast.message("โหลดแบบร่างล่าสุดแล้ว");
     }
-    setUploadingGallery(true);
-    try {
-      const next = [...mediaItems];
-      for (const file of Array.from(files)) {
-        if (countMediaByKind(next, "image") >= max) break;
-        const url = await uploadProjectImage(file, user.id, folderRef.current, tier);
-        next.push(mediaItemFromUrl(url));
-      }
-      setMediaItems(next);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "อัปโหลดรูปไม่สำเร็จ");
-    } finally {
-      setUploadingGallery(false);
-    }
-  };
+
+    setDraftLoaded(true);
+  }, [user, existingDraft, draftLoaded, draftLoading]);
+
+  useEffect(() => {
+    if (!draftLoaded) return;
+    autosave.markBaseline();
+    setAutosaveReady(true);
+  }, [draftLoaded]);
+
+  const composerPayload = useCallback(() => {
+    const media = splitCommunityMedia(mediaItems);
+    return {
+      author_id: user!.id,
+      title,
+      body,
+      tags,
+      tools,
+      gallery_urls: media.gallery_urls,
+      video_urls: media.video_urls,
+      draft_id: draftId,
+    };
+  }, [user, title, body, tags, tools, mediaItems, draftId]);
 
   const handleVideo = async (file: File) => {
     if (!user) return;
@@ -117,56 +159,109 @@ const CommunityPostEditorPage = () => {
       return;
     }
     setUploadingVideo(true);
+    const toastId = toast.loading("กำลังประมวลผลวิดีโอ...");
     try {
-      const url = await uploadProjectVideo(file, user.id, folderRef.current, tier);
+      const url = await uploadProjectVideo(
+        file,
+        user.id,
+        folderRef.current,
+        tier,
+        (pct) => toast.loading(`กำลังประมวลผลวิดีโอ... ${pct}%`, { id: toastId }),
+      );
       setMediaItems((items) => [...items, mediaItemFromUrl(url)]);
+      toast.success("อัปโหลดวิดีโอแล้ว", { id: toastId });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "อัปโหลดวิดีโอไม่สำเร็จ");
+      toast.error(err instanceof Error ? err.message : "อัปโหลดวิดีโอไม่สำเร็จ", { id: toastId });
     } finally {
       setUploadingVideo(false);
     }
   };
 
-  const removeMedia = (index: number) => {
-    setMediaItems((items) => items.filter((_, i) => i !== index));
+  const handlePickFile = (file: File) => {
+    if (file.type.startsWith("video/")) {
+      void handleVideo(file);
+      return;
+    }
+    if (file.type.startsWith("image/")) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      enqueueImages(dt.files);
+      return;
+    }
+    toast.error("รองรับเฉพาะรูปภาพหรือวิดีโอ");
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    const { gallery_urls, video_urls } = splitCommunityMedia(mediaItems);
-    const parsed = communityPostSchema.safeParse({
-      postKind,
+  const handleSaveDraft = async (silent = false) => {
+    if (!user) return false;
+    const media = splitCommunityMedia(mediaItems);
+    const parsed = communityPostDraftSchema.safeParse({
       title,
       body,
-      category,
       tags,
-      galleryUrls: gallery_urls,
-      videoUrls: video_urls,
-      questionTopic: postKind === "question" ? questionTopic : null,
+      tools,
+      galleryUrls: media.gallery_urls,
+      videoUrls: media.video_urls,
+    });
+    if (!parsed.success) {
+      if (!silent) toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
+      return false;
+    }
+    if (!composerHasContent({ title, body, tags, tools, gallery_urls: media.gallery_urls, video_urls: media.video_urls })) {
+      if (!silent) toast.message("ยังไม่มีเนื้อหาให้บันทึก");
+      return false;
+    }
+    try {
+      const { id } = await saveDraft.mutateAsync(composerPayload());
+      setDraftId(id);
+      autosave.markBaseline();
+      if (!silent) toast.success("บันทึกแบบร่างแล้ว");
+      return true;
+    } catch (err) {
+      if (!silent) toast.error(err instanceof Error ? err.message : "บันทึกแบบร่างไม่สำเร็จ");
+      return false;
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!user) return;
+    const media = splitCommunityMedia(mediaItems);
+    const parsed = communityPostSchema.safeParse({
+      title,
+      body,
+      tags,
+      tools,
+      galleryUrls: media.gallery_urls,
+      videoUrls: media.video_urls,
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
       return;
     }
     try {
-      const { id } = await create.mutateAsync({
-        author_id: user.id,
-        post_kind: parsed.data.postKind,
-        title: parsed.data.title,
-        body: parsed.data.body,
-        category: parsed.data.category,
-        tags: parsed.data.tags,
-        gallery_urls: parsed.data.galleryUrls,
-        video_urls: parsed.data.videoUrls,
-        question_topic: parsed.data.questionTopic ?? null,
-      });
+      const { id } = await publish.mutateAsync(composerPayload());
+      autosave.clearLocal();
       toast.success("โพสต์สำเร็จ");
       navigate(`/community/${id}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "โพสต์ไม่สำเร็จ");
     }
   };
+
+  const handleBack = async () => {
+    if (autosave.isDirty) await autosave.flushSave();
+    navigate(-1);
+  };
+
+  const autosaveHint =
+    autosave.status === "saving"
+      ? "กำลังบันทึก..."
+      : autosave.status === "saved"
+        ? "บันทึกอัตโนมัติแล้ว"
+        : autosave.status === "error"
+          ? "บันทึกอัตโนมัติไม่สำเร็จ"
+          : autosave.status === "pending"
+            ? "รอบันทึก..."
+            : null;
 
   if (!user) {
     return (
@@ -177,177 +272,127 @@ const CommunityPostEditorPage = () => {
   }
 
   return (
-    <main className="min-h-screen bg-app-ambient pb-24">
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-          <ArrowLeft className="w-4 h-4" /> กลับ
+    <main className="min-h-screen bg-background pb-28">
+      <header className="sticky top-0 z-20 flex items-center justify-between px-4 py-3 border-b border-border/60 bg-background/95 backdrop-blur-md">
+        <button
+          type="button"
+          onClick={() => void handleBack()}
+          className="p-2 -ml-2 text-muted-foreground hover:text-foreground"
+          aria-label="กลับ"
+        >
+          <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-2xl font-semibold">สร้างโพสต์</h1>
-        <CommunityRulesCard />
-        <ModerationBanBanner />
-        <form onSubmit={handleSubmit} className="rounded-2xl glass-panel p-6 space-y-4">
-          <div className="flex items-center gap-3 pb-2 border-b border-border/60">
-            <UserAvatar
-              src={avatarUrl}
-              name={displayName ?? user.email ?? "U"}
-              className="w-10 h-10"
-              fallbackClassName="text-sm"
-            />
-            <div>
-              <p className="text-sm font-medium">{displayName ?? "คุณ"}</p>
-              <p className="text-xs text-muted-foreground">โพสต์แบบสาธารณะใน Designer Area</p>
-            </div>
-          </div>
-
-          <label
+        {autosaveHint && (
+          <span
             className={cn(
-              "flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 transition-colors",
-              isQuestion ? "border-primary bg-primary/10" : "border-border/60 bg-muted/20 hover:bg-muted/40",
+              "text-[11px] text-muted-foreground",
+              autosave.status === "error" && "text-destructive",
             )}
           >
-            <input
-              type="checkbox"
-              checked={isQuestion}
-              onChange={(e) => {
-                const checked = e.target.checked;
-                setIsQuestion(checked);
-                if (!checked) setQuestionTopic(null);
-              }}
-              className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
-            />
-            <span className="min-w-0">
-              <span className="flex items-center gap-2 text-sm font-medium">
-                <HelpCircle className="w-4 h-4 text-primary shrink-0" />
-                โพสต์เป็นคำถาม Q&A
-              </span>
-              <span className="block text-xs text-muted-foreground mt-1">
-                ติ๊กถ้าต้องการถามชุมชน — ไม่ติ๊กจะโพสต์เป็น Tips
-              </span>
-            </span>
-          </label>
+            {autosaveHint}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => setPreviewOpen(true)}
+          className="p-2 -mr-2 text-primary hover:text-primary/80 lg:hidden"
+          aria-label="ตัวอย่างโพสต์"
+        >
+          <Eye className="w-5 h-5" />
+        </button>
+      </header>
 
-          {isQuestion && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">ประเภทคำถาม *</label>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {QUESTION_TOPICS.map(({ id, label, desc }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setQuestionTopic(id)}
-                    className={cn(
-                      "rounded-xl border px-3 py-2 text-left text-xs transition-colors",
-                      questionTopic === id
-                        ? "border-primary bg-primary/10"
-                        : "border-border/60 hover:bg-muted/30",
-                    )}
-                  >
-                    <span className="font-medium">{label}</span>
-                    <span className="block text-muted-foreground mt-0.5">{desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+      <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:max-w-6xl lg:mx-auto lg:px-6">
+        <div className="min-w-0">
+          <ModerationBanBanner />
 
-          <div>
-            <label className="text-sm font-medium">หมวดงาน</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="mt-1 w-full rounded-xl bg-secondary border border-border px-3 py-2 text-sm"
-            >
-              {TOPIC_CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-
-          <TagPicker
-            userId={user.id}
-            tags={tags}
-            onChange={setTags}
-            input={tagInput}
-            setInput={setTagInput}
-            max={8}
+          <CommunityMediaStrip
+            items={mediaItems}
+            uploading={uploading}
+            pickDisabled={pickDisabled}
+            onPickFile={handlePickFile}
+            onRemove={(index) => setMediaItems((items) => items.filter((_, i) => i !== index))}
           />
 
-          <div>
-            <label className="text-sm font-medium">หัวข้อ</label>
+          <div className="border-b border-border/60">
             <input
+              type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={120}
-              className="mt-1 w-full rounded-xl bg-secondary border border-border px-3 py-2 text-sm"
-              placeholder={kindInfo.titlePlaceholder}
+              placeholder="Caption Header"
+              className="w-full border-0 bg-transparent px-4 py-3 text-base font-medium focus:outline-none focus:ring-0 placeholder:text-muted-foreground"
             />
-            <CommunityProfanityHint text={title} className="mt-2" compact />
-          </div>
-          <div>
-            <label className="text-sm font-medium">เนื้อหา</label>
-            <Textarea
+            <div className="mx-4 border-t border-border/50" />
+            <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              rows={8}
+              rows={10}
               maxLength={3000}
-              placeholder={kindInfo.bodyPlaceholder}
-              className="mt-1 resize-none"
+              placeholder="เขียนแคปชั่นพร้อมรายละเอียดเพื่อเพิ่มยอดเข้าชม"
+              className="w-full resize-none border-0 bg-transparent px-4 py-3 text-sm leading-relaxed focus:outline-none focus:ring-0 placeholder:text-muted-foreground"
             />
-            <CommunityProfanityHint text={body} className="mt-2" compact />
+            <CommunityProfanityHint text={body} className="px-4 pb-2" compact />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <label className="text-sm font-medium">รูป / วิดีโอ</label>
-              <GalleryMediaButtons
-                imageDisabled={uploadingGallery || imageCount >= limits.images}
-                videoDisabled={uploadingVideo || videoCount >= limits.videos}
-                uploadingImage={uploadingGallery}
-                uploadingVideo={uploadingVideo}
-                onPickImages={handleImages}
-                onPickVideo={(f) => void handleVideo(f)}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              สูงสุด {limits.images} รูป{limits.videos > 0 ? `, ${limits.videos} วิดีโอ` : ""} — สไตล์ Lemon8
-            </p>
-            {mediaItems.length > 0 && (
-              <SortableGalleryGrid
-                items={mediaItems}
-                coverUrl={mediaItems[0]?.url ?? ""}
-                onReorder={setMediaItems}
-                onSetCover={(url) => {
-                  const idx = mediaItems.findIndex((m) => m.url === url);
-                  if (idx <= 0) return;
-                  setMediaItems((items) => {
-                    const copy = [...items];
-                    const [picked] = copy.splice(idx, 1);
-                    copy.unshift(picked);
-                    return copy;
-                  });
-                }}
-                onRemove={removeMedia}
-                layout="list"
-              />
-            )}
-            {(uploadingGallery || uploadingVideo) && (
-              <p className="text-xs text-muted-foreground inline-flex items-center gap-1">
-                <Loader2 className="w-3 h-3 animate-spin" /> กำลังอัปโหลด...
+          <CommunityComposerToolbar
+            userId={user.id}
+            tags={tags}
+            onTagsChange={setTags}
+            tagInput={tagInput}
+            setTagInput={setTagInput}
+            tools={tools}
+            onToolsChange={setTools}
+            toolInput={toolInput}
+            setToolInput={setToolInput}
+          />
+
+          <div className="px-4 pt-4 pb-6">
+            <CommunityRulesCard />
+            {draftScan.hasProfanity && (
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                หากยังมีคำละเมิด ระบบจะแทนด้วย *** และอาจนับ strike เมื่อเผยแพร่
               </p>
             )}
           </div>
+        </div>
 
-          <Button type="submit" disabled={create.isPending} className="rounded-full w-full">
-            {create.isPending ? "กำลังโพสต์..." : "เผยแพร่"}
-          </Button>
-          {draftScan.hasProfanity && (
-            <p className="text-center text-xs text-muted-foreground">
-              หากยังมีคำละเมิด ระบบจะแทนด้วย *** และอาจนับ strike เมื่อเผยแพร่
-            </p>
-          )}
-        </form>
+        <CommunityPostPreviewPanel
+          title={title}
+          body={body}
+          tags={tags}
+          tools={tools}
+          mediaItems={mediaItems}
+          className="px-4 lg:px-0"
+        />
       </div>
-      <Footer />
+
+      <CommunityComposerFooter
+        onSaveDraft={() => void handleSaveDraft()}
+        onPublish={() => void handlePublish()}
+        savingDraft={saveDraft.isPending || autosave.status === "saving"}
+        publishing={publish.isPending}
+      />
+
+      <CommunityPostPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        title={title}
+        body={body}
+        tags={tags}
+        tools={tools}
+        mediaItems={mediaItems}
+      />
+
+      <CommunityImageCropDialog
+        file={cropFile}
+        open={cropFile !== null}
+        onOpenChange={(open) => {
+          if (!open) finishCrop();
+        }}
+        onConfirm={(file) => void confirmCrop(file)}
+        onCancel={finishCrop}
+      />
     </main>
   );
 };

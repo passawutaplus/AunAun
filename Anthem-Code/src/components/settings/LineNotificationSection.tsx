@@ -22,7 +22,7 @@ export function LineNotificationSection() {
   const tierLabel =
     TIER_LABEL[tier]?.[locale as UserLocale] ?? (locale === "en" ? "Pro" : "โปร");
 
-  // In-House group visibility is managed on So1o desk; Anthem shows anthem + portal + system only.
+  // In-House group visibility is managed on So1o desk; Aplus1 shows anthem + portal + system only.
   const showInhouseGroup = tier === "inhouse";
 
   if (!isPro) {

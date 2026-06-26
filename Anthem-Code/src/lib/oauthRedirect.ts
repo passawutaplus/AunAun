@@ -36,7 +36,13 @@ export function consumeOAuthRedirect(fallback: string): string {
 }
 
 export function buildOAuthCallbackUrl(): string {
-  return `${getAppOrigin()}/auth/callback`;
+  // PKCE stores the verifier per origin — callback must match where sign-in started.
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}/auth/callback`;
+  }
+  const configured = import.meta.env.VITE_SITE_URL as string | undefined;
+  if (configured?.trim()) return `${configured.trim().replace(/\/$/, "")}/auth/callback`;
+  return "/auth/callback";
 }
 
 export function parseOAuthError(): string | null {

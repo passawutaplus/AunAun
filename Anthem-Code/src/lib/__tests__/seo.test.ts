@@ -14,8 +14,8 @@ describe("seo helpers", () => {
     });
 
     it("appends site name for page titles", () => {
-      expect(buildTitle("งานจ้างดีไซน์")).toBe("งานจ้างดีไซน์ | Pixel100");
-      expect(buildTitle("Jobs")).toBe("Jobs | Pixel100");
+      expect(buildTitle("งานจ้างดีไซน์")).toBe("งานจ้างดีไซน์ | Aplus1");
+      expect(buildTitle("Jobs")).toBe("Jobs | Aplus1");
     });
   });
 

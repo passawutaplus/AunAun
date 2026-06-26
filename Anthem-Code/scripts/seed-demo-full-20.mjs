@@ -116,7 +116,7 @@ async function report() {
   const stats = await publicDb.rpc("public_feed_stats");
   console.log("public_feed_stats:", stats.data ?? stats.error?.message);
   console.log(`\nLogin: phatsawut${DEMO_EMAIL_SUFFIX} / ${process.env.DEMO_SEED_PASSWORD}`);
-  console.log("Demo URL: https://1px-demo.vercel.app");
+  console.log("Demo URL: https://aplus1-demo.vercel.app");
 }
 
 async function main() {

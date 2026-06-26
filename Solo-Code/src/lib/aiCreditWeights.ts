@@ -60,11 +60,11 @@ export const AI_FEATURE_LABELS: Record<AiFeatureKey, string> = {
   ai_meeting_report_30: "Meeting — สรุปรายงาน ≤30 นาที",
   ai_meeting_report_45: "Meeting — สรุปรายงาน ≤45 นาที",
   ai_meeting_report_60: "Meeting — สรุปรายงาน ≤60 นาที",
-  anthem_portfolio_copy: "Anthem — เขียนผลงาน",
-  anthem_portfolio_from_images: "Anthem — AI ช่วยลงผลงาน",
-  anthem_chat_draft: "Anthem — ร่างตอบแชท",
-  anthem_brief_from_chat: "Anthem — สรุปบรีฟจากแชท",
-  anthem_assistant_mentor: "Anthem AI Mentor",
+  anthem_portfolio_copy: "Aplus1 — เขียนผลงาน",
+  anthem_portfolio_from_images: "Aplus1 — AI ช่วยลงผลงาน",
+  anthem_chat_draft: "Aplus1 — ร่างตอบแชท",
+  anthem_brief_from_chat: "Aplus1 — สรุปบรีฟจากแชท",
+  anthem_assistant_mentor: "Aplus1 AI Mentor",
   design_drill_reroll: "Design Drill — สุ่มโจทย์ใหม่",
 };
 

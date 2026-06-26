@@ -5,6 +5,9 @@ import { communityCoverUrl } from "@/lib/communityMedia";
 import { useCommunityPostLike } from "@/hooks/useCommunityPostInteractions";
 import UserAvatar from "@/components/UserAvatar";
 import { profilePublicPath } from "@/lib/profileRoutes";
+import { postHeadline } from "@/lib/classifyCommunityPost";
+import { hasCommunityQaBadge } from "@/lib/communityQaTag";
+import { CommunityQaBadge } from "@/components/community/CommunityQaBadge";
 import { cn } from "@/lib/utils";
 import BoostBadge from "@/components/boost/BoostBadge";
 import { logBoostEvent } from "@/hooks/useBoost";
@@ -88,11 +91,15 @@ const CommunityPostGridCard = ({ post, boosted, boostId }: Props) => {
             <span className="absolute top-2 left-2">
               <BoostBadge />
             </span>
+          ) : hasCommunityQaBadge(post.tags) ? (
+            <span className="absolute top-2 left-2">
+              <CommunityQaBadge className="bg-background/90 backdrop-blur-sm" />
+            </span>
           ) : null}
         </div>
 
         <h3 className="mt-2 text-[13px] font-medium leading-snug text-foreground line-clamp-2 thai-body">
-          {post.title}
+          {postHeadline(post.title, post.body)}
         </h3>
       </Link>
 

@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ErrorPage from "./pages/ErrorPage.tsx";
+import AuthCallbackPage from "./pages/AuthCallbackPage.tsx";
 import CookieConsent from "./components/CookieConsent.tsx";
 import FloatingNav from "./components/FloatingNav.tsx";
 import RequireAuth from "./components/RequireAuth.tsx";
@@ -24,7 +25,6 @@ import { ReferralAttribution } from "./components/referral/ReferralAttribution.t
 
 // Code-split routes — only the home feed stays in the main chunk.
 const AuthPage = lazy(() => import("./pages/AuthPage.tsx"));
-const AuthCallbackPage = lazy(() => import("./pages/AuthCallbackPage.tsx"));
 const PortfolioProfilePage = lazy(() => import("./pages/PortfolioProfilePage.tsx"));
 const PortfolioManagePage = lazy(() => import("./pages/PortfolioManagePage.tsx"));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage.tsx"));

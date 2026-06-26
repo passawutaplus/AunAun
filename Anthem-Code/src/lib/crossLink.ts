@@ -1,5 +1,5 @@
 /**
- * Cross-link helper for the Anthem ↔ So1o ecosystem.
+ * Cross-link helper for the Aplus1 ↔ So1o ecosystem.
  */
 import { supabase } from "@/integrations/supabase/client";
 import { SO1O_APP_URL } from "@/lib/productLinks";
@@ -9,7 +9,7 @@ export { SO1O_APP_URL };
 export type CrossLinkContext = {
   /** Where the CTA lives, e.g. "project_detail" | "chat_header". */
   source: string;
-  /** Anthem entity id this link references. */
+  /** Aplus1 entity id this link references. */
   refId?: string;
   /** Optional extra payload (kept small). */
   meta?: Record<string, string | number | undefined>;
@@ -30,7 +30,7 @@ export function so1oUrl(
   return url.toString();
 }
 
-/** Deep-link to So1o quotation form with Anthem hire context. */
+/** Deep-link to So1o quotation form with Aplus1 hire context. */
 export function so1oQuotationUrl(params: {
   conversationId?: string;
   requestId?: string;

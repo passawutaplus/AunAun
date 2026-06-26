@@ -139,7 +139,7 @@ function ResearchPage() {
             ))}
             <li>
               <strong>สมัครบัญชีของตัวเอง</strong> (Google หรืออีเมล) — ไม่ใช่บัญชี demo ร่วมแบบ
-              Pixel100
+              Aplus1
             </li>
             <li>อย่าใส่ข้อมูลลูกค้าจริง — ใช้ชื่องานและอีเมลทดสอบ</li>
             {demo && (

@@ -20,7 +20,7 @@ export default function UsersPage() {
     <div className="flex min-h-screen flex-col">
       <PageHeader
         title={NAV_LABELS.users}
-        subtitle="ค้นหาบัญชี — ดู So1o + Pixel100 + ecosystem จากที่เดียว"
+        subtitle="ค้นหาบัญชี — ดู So1o + Aplus1 + ecosystem จากที่เดียว"
       />
 
       <main className="space-y-6 p-6">

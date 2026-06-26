@@ -26,7 +26,7 @@ set -a && source .env && set +a
 
 echo "→ Domains:"
 echo "   So1o:    ${VITE_SO1O_APP_URL:-https://solofreelancer.com}"
-echo "   an1hem:  ${VITE_ANTHEM_APP_URL:-https://an1hem.app}"
+echo "   Aplus1:  ${VITE_ANTHEM_APP_URL:-https://aplus1.app}"
 echo "   Ops Hub: ${VITE_OPS_HUB_URL:-https://hq.solofreelancer.com}"
 echo "   Demo mode (an1hem): ${VITE_DEMO_MODE:-false}"
 

@@ -29,8 +29,8 @@ describe("getAllowedPaymentRedirectOrigins", () => {
   it("includes static production origins", () => {
     const origins = getAllowedPaymentRedirectOrigins();
     expect(origins).toContain("https://solofreelancer.com");
-    expect(origins).toContain("https://an1hem.app");
-    expect(origins).toContain("https://1px-demo.vercel.app");
+    expect(origins).toContain("https://aplus1.app");
+    expect(origins).toContain("https://aplus1-demo.vercel.app");
   });
 });
 
@@ -41,9 +41,9 @@ describe("assertAllowedPaymentRedirectUrl — an1hem", () => {
     );
   });
 
-  it("allows 1px-demo vercel preview", () => {
+  it("allows aplus1-demo vercel preview", () => {
     expect(
-      assertAllowedPaymentRedirectUrl("https://1px-demo-abc123.vercel.app/earnings?topup=success"),
+      assertAllowedPaymentRedirectUrl("https://aplus1-demo-abc123.vercel.app/earnings?topup=success"),
     ).toContain("vercel.app");
   });
 });

@@ -89,10 +89,10 @@ function PlansHelpPage() {
             <Layers className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-base font-semibold">So1o + Pixel100</h2>
+            <h2 className="text-base font-semibold">So1o + Aplus1</h2>
             <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
               <strong>So1o</strong> = หลังบ้านฟรีแลนซ์ (ใบเสนอราคา งาน การเงิน) ·{" "}
-              <strong>Pixel100</strong> = โชว์เคสผลงานหน้าบ้าน — บัญชีเดียว สมัครครั้งเดียว
+              <strong>Aplus1</strong> = โชว์เคสผลงานหน้าบ้าน — บัญชีเดียว สมัครครั้งเดียว
             </p>
             <p className="text-sm mt-2">
               <a
@@ -101,7 +101,7 @@ function PlansHelpPage() {
                 rel="noopener noreferrer"
                 className="text-primary hover:underline inline-flex items-center gap-1"
               >
-                <Sparkles className="h-3.5 w-3.5" /> ดู Pixel100 Showcase
+                <Sparkles className="h-3.5 w-3.5" /> ดู Aplus1 Showcase
               </a>
             </p>
           </div>

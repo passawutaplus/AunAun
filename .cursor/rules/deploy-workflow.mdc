@@ -15,7 +15,7 @@ alwaysApply: true
 | อัปขึ้นเดโม่, ขึ้นเดโม่, deploy demo, อัป demo | Vercel **preview** — แชร์ให้คนอื่นลอง |
 | อัปขึ้น production, ขึ้น prod, deploy production, อัปจริง | Vercel **production** — พนักงานใช้งานจริง |
 
-ระบุแอปได้: `pixel100`, `1px`, `anthem`, `an1hem`, `solo`, `so1o` — ถ้าไม่ระบุ ให้เดาจากไฟล์ที่กำลังแก้ (Anthem-Code → pixel100, Solo-Code → solo)
+ระบุแอปได้: `aplus1`, `1px`, `anthem`, `solo`, `so1o` — ถ้าไม่ระบุ ให้เดาจากไฟล์ที่กำลังแก้ (Anthem-Code → aplus1, Solo-Code → solo)
 
 ## เดโม่ (preview)
 
@@ -29,7 +29,7 @@ cd Solo-Code && npm run deploy:demo     # solo
 หลัง deploy สำเร็จ ส่งให้ผู้ใช้:
 - **Preview URL** จาก output
 - ลิงก์คู่มือ: `docs/demo-pack.md`
-- Login demo Pixel100: `phatsawut@demo.pixel100.com` / `pixel100-demo-seed`
+- Login demo Aplus1: `phatsawut@demo.pixel100.com` / `pixel100-demo-seed`
 
 ## Production
 
@@ -44,12 +44,12 @@ cd Solo-Code && npm run deploy:demo     # solo
    ```
 
 Production URLs:
-- 1px → https://an1hem.app
+- Aplus1 → https://aplus1.app
 - solo → https://solofreelancer.com
 
 หลัง production deploy แนะนำ smoke test:
 ```bash
-BASE_URL=https://an1hem.app Anthem-Code/scripts/smoke-public.sh
+BASE_URL=https://aplus1.app Anthem-Code/scripts/smoke-public.sh
 BASE_URL=https://solofreelancer.com Solo-Code/scripts/smoke-public.sh
 ```
 

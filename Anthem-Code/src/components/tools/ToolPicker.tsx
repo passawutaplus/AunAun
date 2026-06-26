@@ -15,6 +15,7 @@ interface Props {
   input: string;
   setInput: (v: string) => void;
   max?: number;
+  variant?: "default" | "compact";
 }
 
 const SuggestionChip = ({
@@ -41,7 +42,7 @@ const SuggestionChip = ({
   </button>
 );
 
-const ToolPicker = ({ userId, tools, onChange, input, setInput, max = 20 }: Props) => {
+const ToolPicker = ({ userId, tools, onChange, input, setInput, max = 20, variant = "default" }: Props) => {
   const suggestions = useToolSuggestions(userId);
   const selectedKeys = useMemo(() => new Set(tools.map(normalizeToolKey)), [tools]);
 
@@ -70,8 +71,15 @@ const ToolPicker = ({ userId, tools, onChange, input, setInput, max = 20 }: Prop
   const showQuick = !input.trim() && filteredSuggestions.length > 0;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-      <Label className="text-xs font-semibold text-muted-foreground uppercase">เครื่องมือที่ใช้</Label>
+    <div
+      className={cn(
+        "space-y-3",
+        variant === "default" && "rounded-2xl border border-border bg-card p-4",
+      )}
+    >
+      {variant === "default" && (
+        <Label className="text-xs font-semibold text-muted-foreground uppercase">เครื่องมือที่ใช้</Label>
+      )}
 
       {tools.length > 0 && (
         <div className="flex flex-wrap gap-1.5">

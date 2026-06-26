@@ -11,7 +11,7 @@ export interface FollowEmailProps {
 export const FollowEmail = ({
   recipientName = 'คุณ',
   followerName = 'ครีเอเตอร์',
-  actionUrl = 'https://1px-demo.vercel.app/portfolio/manage',
+  actionUrl = 'https://aplus1-demo.vercel.app/portfolio/manage',
 }: FollowEmailProps) => (
   <EmailLayout
     preview={`${followerName} เริ่มติดตามคุณ`}
@@ -23,7 +23,7 @@ export const FollowEmail = ({
   >
     <EmailText>
       สวัสดี {recipientName} — <strong style={{ color: brand.ink }}>{followerName}</strong>{' '}
-      เริ่มติดตามโปรไฟล์ของคุณบน Pixel100
+      เริ่มติดตามโปรไฟล์ของคุณบน Aplus1
     </EmailText>
     <EmailCard>
       <EmailCardLabel>ผู้ติดตาม</EmailCardLabel>
@@ -36,12 +36,12 @@ export const FollowEmail = ({
 export const followTemplate = {
   component: FollowEmail,
   subject: (data: Record<string, unknown>) =>
-    `[Pixel100] ${(data.followerName as string) ?? 'มีคน'} เริ่มติดตามคุณ`,
+    `[Aplus1] ${(data.followerName as string) ?? 'มีคน'} เริ่มติดตามคุณ`,
   displayName: 'New follower',
   previewData: {
     recipientName: 'พี่บอส',
     followerName: 'น้องมิ้นท์',
-    actionUrl: 'https://1px-demo.vercel.app/portfolio/manage',
+    actionUrl: 'https://aplus1-demo.vercel.app/portfolio/manage',
   },
 }
 

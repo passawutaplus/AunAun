@@ -7,7 +7,7 @@
 
 | แอป | URL |
 |-----|-----|
-| 1PX | https://1px-demo.vercel.app |
+| 1PX | https://aplus1-demo.vercel.app |
 | So1o | https://solo-demo-liart.vercel.app |
 
 ## สรุปผล
@@ -48,7 +48,7 @@
 ### Lighthouse
 
 ไม่รันได้ใน WSL (ไม่มี Chrome headless) — ใช้ [PageSpeed Insights](https://pagespeed.web.dev/) manual:
-- https://pagespeed.web.dev/analysis?url=https://1px-demo.vercel.app
+- https://pagespeed.web.dev/analysis?url=https://aplus1-demo.vercel.app
 - https://pagespeed.web.dev/analysis?url=https://solo-demo-liart.vercel.app
 
 ## สคริปต์ใน repo

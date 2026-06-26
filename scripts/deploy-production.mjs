@@ -31,7 +31,7 @@ const env = {
 const bash = "C:\\Program Files\\Git\\bin\\bash.exe";
 const script =
   app === "ops"
-    ? `cd "${join(REPO, "Ops-Hub")}" && npx vercel link --yes --project=so1o-ops-hub && npx vercel deploy --prod --yes`
+    ? `cd "${join(REPO, "Ops-Hub")}" && npx vercel deploy --prod --yes --project=so1o-ops-hub`
     : `cd "${REPO}" && ./scripts/deploy-vercel.sh production ${app === "1px" ? "1px" : "solo"}`;
 
 console.log("→", script);

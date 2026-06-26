@@ -24,7 +24,7 @@ export default function SavedPostsPage() {
 
   return (
     <div className={cn("min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
-      <SeoHead title="โพสต์ที่บันทึก" description="โพสต์ชุมชนที่คุณบันทึกไว้บน Pixel100" />
+      <SeoHead title="โพสต์ที่บันทึก" description="โพสต์ชุมชนที่คุณบันทึกไว้บน Aplus1" />
       <div className="sticky top-0 z-30 glass-panel border-x-0 border-t-0 rounded-none">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
           <Button variant="ghost" size="sm" asChild className="rounded-full">

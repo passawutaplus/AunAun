@@ -1,8 +1,8 @@
 # Pixel100 — คู่มือ UX/UI Research (เช็คลิสครบ)
 
-> **URL เดโม่:** https://1px-demo.vercel.app  
-> **คู่มือในแอป:** https://1px-demo.vercel.app/research  
-> **Canonical:** https://pixel100.com · **Demo:** https://1px-demo.vercel.app
+> **URL เดโม่:** https://aplus1-demo.vercel.app  
+> **คู่มือในแอป:** https://aplus1-demo.vercel.app/research  
+> **Canonical:** https://pixel100.com · **Demo:** https://aplus1-demo.vercel.app
 
 ---
 

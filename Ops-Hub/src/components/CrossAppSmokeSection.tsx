@@ -19,7 +19,7 @@ const SMOKE_CHECKS = [
     id: "so1o_dashboard",
     label: "So1o dashboard (handoff target)",
     url: `${SO1O_APP_URL}/dashboard?from=anthem&tab=finance&sub=quotations`,
-    handoff: "Anthem → Quotation",
+    handoff: "Aplus1 → Quotation",
   },
   {
     id: "an1hem_portfolio",

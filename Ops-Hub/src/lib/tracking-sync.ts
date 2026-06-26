@@ -42,7 +42,7 @@ export function computeTrackingSyncOverlay(
   const so1oOk = healthOk(data.health, "solofreelancer");
   const an1hemOk =
     healthOk(data.health, "an1hem") ||
-    healthOk(data.health, "1px-demo") ||
+    healthOk(data.health, "aplus1-demo") ||
     healthOk(data.health, "pixel100");
   const hubOk =
     healthOk(data.health, "so1o-ops-hub") ||

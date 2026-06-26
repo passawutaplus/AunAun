@@ -2,6 +2,29 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { FeedInterestId } from "@/data/feedInterestOptions";
 
+async function ensureProfileRow(userId: string): Promise<void> {
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existing?.user_id) return;
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const email = user?.email ?? "";
+  const base = email.split("@")[0] || "user";
+  const { error } = await supabase.from("profiles").insert({
+    id: userId,
+    user_id: userId,
+    email: email || null,
+    display_name: (user?.user_metadata?.display_name as string | undefined) || base,
+    username: `${base}_${userId.slice(0, 6)}`,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  } as Record<string, unknown>);
+  if (error && !/duplicate|unique/i.test(error.message)) throw error;
+}
+
 export function useFeedInterestSurvey(userId: string | undefined) {
   const qc = useQueryClient();
 
@@ -25,6 +48,7 @@ export function useFeedInterestSurvey(userId: string | undefined) {
   const markComplete = useMutation({
     mutationFn: async (interests: FeedInterestId[]) => {
       if (!userId) throw new Error("ยังไม่ได้เข้าสู่ระบบ");
+      await ensureProfileRow(userId);
       const completedAt = new Date().toISOString();
       const { data, error } = await supabase
         .from("profiles")

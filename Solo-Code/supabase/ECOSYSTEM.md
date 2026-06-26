@@ -66,7 +66,7 @@ supabase functions deploy embed-project similar-images generate-contract \
 supabase functions deploy ai-design-chat planner-ai-assist ai-price-suggest color-mentor \
   --project-ref zkflkpbmbozrchqncpzi
 
-supabase secrets set GEMINI_API_KEY=... ANTHEM_APP_URL=https://an1hem.app
+supabase secrets set GEMINI_API_KEY=... ANTHEM_APP_URL=https://aplus1.app
 ```
 
 > `line-link-account` deprecated — ใช้ `line-connect` แทน

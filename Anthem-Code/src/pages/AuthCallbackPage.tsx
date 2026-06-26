@@ -5,57 +5,58 @@ import { supabase } from "@/integrations/supabase/client";
 import { consumeOAuthRedirect, parseOAuthError } from "@/lib/oauthRedirect";
 import { HttpErrorPage } from "@/components/HttpErrorPage";
 
+async function establishSession(): Promise<string | null> {
+  const oauthErr = parseOAuthError();
+  if (oauthErr) return oauthErr;
+
+  const { data: { session: existing }, error: existingErr } = await supabase.auth.getSession();
+  if (existingErr) return existingErr.message;
+  if (existing) return null;
+
+  const code = new URLSearchParams(window.location.search).get("code");
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) return error.message;
+    return null;
+  }
+
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const accessToken = hash.get("access_token");
+  const refreshToken = hash.get("refresh_token");
+  if (accessToken && refreshToken) {
+    const { error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    if (error) return error.message;
+    return null;
+  }
+
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) return sessionError.message;
+  if (session) return null;
+
+  return "เข้าสู่ระบบไม่สำเร็จ — ลองใหม่อีกครั้ง";
+}
+
 const AuthCallbackPage = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const oauthErr = parseOAuthError();
-    if (oauthErr) {
-      setError(oauthErr);
-      return;
-    }
+    let cancelled = false;
 
-    let done = false;
-    const finish = () => {
-      if (done) return;
-      done = true;
-      navigate(consumeOAuthRedirect("/"), { replace: true });
-    };
-
-    const fail = (msg: string) => {
-      if (done) return;
-      done = true;
-      setError(msg);
-    };
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
-        subscription.unsubscribe();
-        finish();
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session }, error: sessionError }) => {
-      if (sessionError) {
-        subscription.unsubscribe();
-        fail(sessionError.message);
+    void establishSession().then((msg) => {
+      if (cancelled) return;
+      if (msg) {
+        setError(msg);
         return;
       }
-      if (session) {
-        subscription.unsubscribe();
-        finish();
-      }
+      navigate(consumeOAuthRedirect("/"), { replace: true });
     });
 
-    const timer = window.setTimeout(() => {
-      subscription.unsubscribe();
-      fail("เข้าสู่ระบบไม่สำเร็จ — ลองใหม่อีกครั้ง");
-    }, 15000);
-
     return () => {
-      window.clearTimeout(timer);
-      subscription.unsubscribe();
+      cancelled = true;
     };
   }, [navigate]);
 
