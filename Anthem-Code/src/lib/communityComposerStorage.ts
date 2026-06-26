@@ -5,6 +5,7 @@ export type ComposerSnapshot = {
   body: string;
   tags: string[];
   tools: string[];
+  mentioned_project_ids: string[];
   gallery_urls: string[];
   video_urls: string[];
   draftId: string | null;
@@ -49,6 +50,7 @@ export function composerHasContent(snap: {
   body?: string;
   tags?: string[];
   tools?: string[];
+  mentioned_project_ids?: string[];
   gallery_urls?: string[];
   video_urls?: string[];
 }): boolean {
@@ -57,6 +59,7 @@ export function composerHasContent(snap: {
       snap.body?.trim() ||
       (snap.tags?.length ?? 0) > 0 ||
       (snap.tools?.length ?? 0) > 0 ||
+      (snap.mentioned_project_ids?.length ?? 0) > 0 ||
       (snap.gallery_urls?.length ?? 0) > 0 ||
       (snap.video_urls?.length ?? 0) > 0,
   );

@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { buildCommentTree, type CommentNode } from "@/lib/commentTree";
 import { notifyCommunityEvent } from "@/lib/communityNotify";
 import { moderateCommunityComment, moderateCommunityPost } from "@/lib/communityModeration";
+import { fetchMentionedProjectSummaries } from "@/lib/communityMentionedProjects";
+import type { MentionedProjectSummary } from "@/lib/communityMentionedProjects";
 import { classifyCategory, deriveTitle, resolveComposerTitle } from "@/lib/classifyCommunityPost";
 import {
   useModerationState,
@@ -32,6 +34,7 @@ export interface CommunityPost {
   tools: string[];
   gallery_urls: string[];
   video_urls: string[];
+  mentioned_project_ids: string[];
   question_topic: CommunityQuestionTopic | null;
   status: string;
   reply_count: number;
@@ -40,6 +43,7 @@ export interface CommunityPost {
   created_at: string;
   updated_at: string;
   profile?: { display_name: string; avatar_url: string | null; username: string | null } | null;
+  mentioned_projects?: MentionedProjectSummary[];
 }
 
 export interface CommunityComment {
@@ -56,7 +60,7 @@ export interface CommunityComment {
 export type CommunityCommentTree = CommentNode<CommunityComment>;
 
 const POST_SELECT =
-  "id, author_id, post_kind, title, body, category, tags, tools, gallery_urls, video_urls, question_topic, status, reply_count, like_count, view_count, created_at, updated_at";
+  "id, author_id, post_kind, title, body, category, tags, tools, gallery_urls, video_urls, mentioned_project_ids, question_topic, status, reply_count, like_count, view_count, created_at, updated_at";
 const COMMUNITY_PAGE_SIZE = 24;
 const COMMUNITY_COMMENT_LIMIT = 300;
 
@@ -74,6 +78,7 @@ export async function enrichCommunityPosts(rows: CommunityPost[]): Promise<Commu
     video_urls: r.video_urls ?? [],
     tags: r.tags ?? [],
     tools: r.tools ?? [],
+    mentioned_project_ids: r.mentioned_project_ids ?? [],
     like_count: r.like_count ?? 0,
     view_count: r.view_count ?? 0,
     profile: map.get(r.author_id) ?? null,
@@ -167,15 +172,22 @@ export const useCommunityPost = (id: string | undefined) =>
         .select("user_id, display_name, avatar_url, username")
         .eq("user_id", row.author_id)
         .maybeSingle();
+      const mentionedIds = row.mentioned_project_ids ?? [];
+      const mentioned_projects =
+        mentionedIds.length > 0
+          ? await fetchMentionedProjectSummaries(mentionedIds, row.author_id)
+          : [];
       return {
         ...row,
         gallery_urls: row.gallery_urls ?? [],
         video_urls: row.video_urls ?? [],
         tags: row.tags ?? [],
         tools: row.tools ?? [],
+        mentioned_project_ids: mentionedIds,
         like_count: row.like_count ?? 0,
         view_count: row.view_count ?? 0,
         profile: prof ?? null,
+        mentioned_projects,
       };
     },
   });
@@ -217,6 +229,7 @@ export const useCommunityDraft = (authorId: string | undefined) =>
         video_urls: row.video_urls ?? [],
         tags: row.tags ?? [],
         tools: row.tools ?? [],
+        mentioned_project_ids: row.mentioned_project_ids ?? [],
       };
     },
   });
@@ -227,16 +240,88 @@ export type CommunityComposerPayload = {
   body: string;
   tags?: string[];
   tools?: string[];
+  mentioned_project_ids?: string[];
   gallery_urls?: string[];
   video_urls?: string[];
   draft_id?: string | null;
 };
+
+async function resolveMentionedProjectIds(
+  authorId: string,
+  ids: string[] | undefined,
+): Promise<string[]> {
+  const unique = Array.from(new Set(ids ?? []));
+  if (!unique.length) return [];
+  const valid = await fetchMentionedProjectSummaries(unique, authorId);
+  if (valid.length !== unique.length) {
+    throw new Error("ผลงานที่อ้างอิงไม่ถูกต้องหรือยังไม่เผยแพร่");
+  }
+  return valid.map((p) => p.id);
+}
+
+async function findLatestCommunityDraftId(authorId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("community_posts")
+    .select("id")
+    .eq("author_id", authorId)
+    .eq("status", "draft")
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.id ?? null;
+}
+
+async function updateCommunityPostRow(
+  id: string,
+  authorId: string,
+  row: Record<string, unknown>,
+): Promise<{ id: string } | null> {
+  const { data, error } = await supabase
+    .from("community_posts")
+    .update(row)
+    .eq("id", id)
+    .eq("author_id", authorId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+/** Update existing draft/published row when possible; otherwise insert. */
+async function upsertCommunityPostRow(
+  input: CommunityComposerPayload,
+  row: Record<string, unknown>,
+): Promise<{ id: string }> {
+  const candidateIds = [input.draft_id, await findLatestCommunityDraftId(input.author_id)].filter(
+    (id): id is string => Boolean(id),
+  );
+  const seen = new Set<string>();
+  for (const id of candidateIds) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const updated = await updateCommunityPostRow(id, input.author_id, row);
+    if (updated) return updated;
+  }
+
+  const { data, error } = await supabase
+    .from("community_posts")
+    .insert(row)
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data as { id: string };
+}
 
 export const useSaveCommunityDraft = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CommunityComposerPayload) => {
       const title = resolveComposerTitle(input.title ?? "", input.body) || "แบบร่าง";
+      const mentioned_project_ids = await resolveMentionedProjectIds(
+        input.author_id,
+        input.mentioned_project_ids,
+      );
       const row = {
         author_id: input.author_id,
         post_kind: "tip" as const,
@@ -247,51 +332,13 @@ export const useSaveCommunityDraft = () => {
         tools: input.tools ?? [],
         gallery_urls: input.gallery_urls ?? [],
         video_urls: input.video_urls ?? [],
+        mentioned_project_ids,
         question_topic: null,
         status: "draft" as const,
         updated_at: new Date().toISOString(),
       };
 
-      if (input.draft_id) {
-        const { data, error } = await supabase
-          .from("community_posts")
-          .update(row)
-          .eq("id", input.draft_id)
-          .eq("author_id", input.author_id)
-          .select("id")
-          .single();
-        if (error) throw error;
-        return data as { id: string };
-      }
-
-      const { data: existing } = await supabase
-        .from("community_posts")
-        .select("id")
-        .eq("author_id", input.author_id)
-        .eq("status", "draft")
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (existing?.id) {
-        const { data, error } = await supabase
-          .from("community_posts")
-          .update(row)
-          .eq("id", existing.id)
-          .eq("author_id", input.author_id)
-          .select("id")
-          .single();
-        if (error) throw error;
-        return data as { id: string };
-      }
-
-      const { data, error } = await supabase
-        .from("community_posts")
-        .insert(row)
-        .select("id")
-        .single();
-      if (error) throw error;
-      return data as { id: string };
+      return upsertCommunityPostRow(input, row);
     },
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["community-draft", v.author_id] });
@@ -307,8 +354,12 @@ export const usePublishCommunityPost = () => {
   return useMutation({
     mutationFn: async (input: CommunityComposerPayload) => {
       const checkCanPost = async () => {
-        const { data } = await refetchMod();
-        return data ?? { allowed: true, reason: null, banned_until: null, strikes: 0 };
+        try {
+          const { data } = await refetchMod();
+          return data ?? { allowed: true, reason: null, banned_until: null, strikes: 0 };
+        } catch {
+          return { allowed: true, reason: null, banned_until: null, strikes: 0 };
+        }
       };
 
       const gallery = input.gallery_urls ?? [];
@@ -331,7 +382,13 @@ export const usePublishCommunityPost = () => {
       });
       if (!moderated) throw new Error("ไม่สามารถโพสต์ได้");
 
+      const mentioned_project_ids = await resolveMentionedProjectIds(
+        input.author_id,
+        input.mentioned_project_ids,
+      );
+
       const row = {
+        author_id: input.author_id,
         post_kind: "tip" as const,
         title: moderated.title,
         body: moderated.body,
@@ -340,30 +397,13 @@ export const usePublishCommunityPost = () => {
         tools: input.tools ?? [],
         gallery_urls: gallery,
         video_urls: videos,
+        mentioned_project_ids,
         question_topic: null,
         status: "published" as const,
         updated_at: new Date().toISOString(),
       };
 
-      if (input.draft_id) {
-        const { data, error } = await supabase
-          .from("community_posts")
-          .update(row)
-          .eq("id", input.draft_id)
-          .eq("author_id", input.author_id)
-          .select("id")
-          .single();
-        if (error) throw error;
-        return data as { id: string };
-      }
-
-      const { data, error } = await supabase
-        .from("community_posts")
-        .insert({ author_id: input.author_id, ...row })
-        .select("id")
-        .single();
-      if (error) throw error;
-      return data as { id: string };
+      return upsertCommunityPostRow(input, row);
     },
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["community-posts"] });

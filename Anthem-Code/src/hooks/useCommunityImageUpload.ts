@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import { uploadProjectImage } from "@/lib/uploadImage";
-import { isSquareImageFile } from "@/lib/cropImage";
 import {
   countMediaByKind,
   mediaItemFromUrl,
@@ -50,15 +49,9 @@ export function useCommunityImageUpload({
 
     setUploadingGallery(true);
     try {
-      if (await isSquareImageFile(next)) {
-        await uploadOne(next);
-        setUploadingGallery(false);
-        void processQueue();
-      } else {
-        cropOpenRef.current = true;
-        setCropFile(next);
-        setUploadingGallery(false);
-      }
+      cropOpenRef.current = true;
+      setCropFile(next);
+      setUploadingGallery(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "อัปโหลดรูปไม่สำเร็จ");
       setUploadingGallery(false);

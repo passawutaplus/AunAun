@@ -20,6 +20,7 @@ import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import { communityDisplayTags, hasCommunityQaBadge } from "@/lib/communityQaTag";
 import { CommunityQaBadge } from "@/components/community/CommunityQaBadge";
+import { CommunityMentionedProjectsBar } from "@/components/community/CommunityMentionedProjectsBar";
 import { cn } from "@/lib/utils";
 
 const CommunityPostDetailPage = () => {
@@ -95,6 +96,11 @@ const CommunityPostDetailPage = () => {
             likeCount={post.like_count ?? 0}
             replyCount={post.reply_count}
             viewCount={post.view_count ?? 0}
+          />
+
+          <CommunityMentionedProjectsBar
+            projects={post.mentioned_projects ?? []}
+            linkable
           />
 
           <div className="px-6 pb-6 pt-4 space-y-4">

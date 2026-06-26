@@ -28,11 +28,17 @@ import {
   loadComposerLocal,
 } from "@/lib/communityComposerStorage";
 import { titlesMatch } from "@/lib/classifyCommunityPost";
+import {
+  fetchMentionedProjectSummaries,
+  mentionedProjectIds,
+  type MentionedProjectSummary,
+} from "@/lib/communityMentionedProjects";
 import CommunityRulesCard from "@/components/community/CommunityRulesCard";
 import CommunityProfanityHint from "@/components/community/CommunityProfanityHint";
 import { detectProfanityInFields } from "@/lib/profanity";
 import { CommunityMediaStrip } from "@/components/community/CommunityMediaStrip";
 import { CommunityComposerToolbar } from "@/components/community/CommunityComposerToolbar";
+import { CommunityProjectMentionPicker } from "@/components/community/CommunityProjectMentionPicker";
 import { CommunityPostPreviewDialog } from "@/components/community/CommunityPostPreviewDialog";
 import { CommunityPostPreviewPanel } from "@/components/community/CommunityPostPreviewPanel";
 import { CommunityComposerFooter } from "@/components/community/CommunityComposerFooter";
@@ -63,6 +69,7 @@ const CommunityPostEditorPage = () => {
   const [tools, setTools] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [toolInput, setToolInput] = useState("");
+  const [mentionedProjects, setMentionedProjects] = useState<MentionedProjectSummary[]>([]);
   const [mediaItems, setMediaItems] = useState<PortfolioMediaItem[]>([]);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
@@ -87,7 +94,15 @@ const CommunityPostEditorPage = () => {
   const autosave = useCommunityAutosave({
     userId: user?.id,
     draftId,
-    state: { title, body, tags, tools, gallery_urls, video_urls },
+    state: {
+      title,
+      body,
+      tags,
+      tools,
+      mentioned_project_ids: mentionedProjectIds(mentionedProjects),
+      gallery_urls,
+      video_urls,
+    },
     enabled: draftLoaded && autosaveReady && !publish.isPending,
     saveDraft,
     onDraftId: setDraftId,
@@ -109,12 +124,25 @@ const CommunityPostEditorPage = () => {
     const localTime = local?.savedAt ?? 0;
     const useLocal = local && localTime > dbTime && composerHasContent(local);
 
+    const loadMentioned = async (ids: string[]) => {
+      if (!user || !ids.length) {
+        setMentionedProjects([]);
+        return;
+      }
+      try {
+        setMentionedProjects(await fetchMentionedProjectSummaries(ids, user.id));
+      } catch {
+        setMentionedProjects([]);
+      }
+    };
+
     if (useLocal && local) {
       setDraftId(local.draftId);
       setTitle(local.title);
       setBody(local.body);
       setTags(local.tags);
       setTools(local.tools);
+      void loadMentioned(local.mentioned_project_ids ?? []);
       setMediaItems(mediaItemsFromProject(local.gallery_urls, local.video_urls));
       toast.message("กู้คืนแบบร่างจากเครื่อง");
     } else if (existingDraft) {
@@ -123,6 +151,7 @@ const CommunityPostEditorPage = () => {
       setBody(existingDraft.body ?? "");
       setTags(existingDraft.tags ?? []);
       setTools(existingDraft.tools ?? []);
+      void loadMentioned(existingDraft.mentioned_project_ids ?? []);
       setMediaItems(
         mediaItemsFromProject(existingDraft.gallery_urls ?? [], existingDraft.video_urls ?? []),
       );
@@ -146,11 +175,12 @@ const CommunityPostEditorPage = () => {
       body,
       tags,
       tools,
+      mentioned_project_ids: mentionedProjectIds(mentionedProjects),
       gallery_urls: media.gallery_urls,
       video_urls: media.video_urls,
       draft_id: draftId,
     };
-  }, [user, title, body, tags, tools, mediaItems, draftId]);
+  }, [user, title, body, tags, tools, mentionedProjects, mediaItems, draftId]);
 
   const handleVideo = async (file: File) => {
     if (!user) return;
@@ -199,6 +229,7 @@ const CommunityPostEditorPage = () => {
       body,
       tags,
       tools,
+      mentionedProjectIds: mentionedProjectIds(mentionedProjects),
       galleryUrls: media.gallery_urls,
       videoUrls: media.video_urls,
     });
@@ -206,7 +237,17 @@ const CommunityPostEditorPage = () => {
       if (!silent) toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
       return false;
     }
-    if (!composerHasContent({ title, body, tags, tools, gallery_urls: media.gallery_urls, video_urls: media.video_urls })) {
+    if (
+      !composerHasContent({
+        title,
+        body,
+        tags,
+        tools,
+        mentioned_project_ids: mentionedProjectIds(mentionedProjects),
+        gallery_urls: media.gallery_urls,
+        video_urls: media.video_urls,
+      })
+    ) {
       if (!silent) toast.message("ยังไม่มีเนื้อหาให้บันทึก");
       return false;
     }
@@ -230,6 +271,7 @@ const CommunityPostEditorPage = () => {
       body,
       tags,
       tools,
+      mentionedProjectIds: mentionedProjectIds(mentionedProjects),
       galleryUrls: media.gallery_urls,
       videoUrls: media.video_urls,
     });
@@ -273,33 +315,38 @@ const CommunityPostEditorPage = () => {
 
   return (
     <main className="min-h-screen bg-background pb-28">
-      <header className="sticky top-0 z-20 flex items-center justify-between px-4 py-3 border-b border-border/60 bg-background/95 backdrop-blur-md">
+      <header className="sticky top-0 z-20 flex items-center gap-3 px-4 py-3 border-b border-border/60 bg-background/95 backdrop-blur-md">
         <button
           type="button"
           onClick={() => void handleBack()}
-          className="p-2 -ml-2 text-muted-foreground hover:text-foreground"
+          className="p-2 -ml-2 text-muted-foreground hover:text-foreground shrink-0"
           aria-label="กลับ"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        {autosaveHint && (
-          <span
-            className={cn(
-              "text-[11px] text-muted-foreground",
-              autosave.status === "error" && "text-destructive",
-            )}
+        <div className="flex-1 min-w-0 flex justify-center">
+          {autosaveHint && (
+            <span
+              className={cn(
+                "text-[11px] text-muted-foreground",
+                autosave.status === "error" && "text-destructive",
+              )}
+            >
+              {autosaveHint}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <h1 className="text-base font-semibold text-foreground">Area Post</h1>
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(true)}
+            className="p-2 -mr-2 text-primary hover:text-primary/80 lg:hidden"
+            aria-label="ตัวอย่างโพสต์"
           >
-            {autosaveHint}
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={() => setPreviewOpen(true)}
-          className="p-2 -mr-2 text-primary hover:text-primary/80 lg:hidden"
-          aria-label="ตัวอย่างโพสต์"
-        >
-          <Eye className="w-5 h-5" />
-        </button>
+            <Eye className="w-5 h-5" />
+          </button>
+        </div>
       </header>
 
       <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:max-w-6xl lg:mx-auto lg:px-6">
@@ -312,6 +359,7 @@ const CommunityPostEditorPage = () => {
             pickDisabled={pickDisabled}
             onPickFile={handlePickFile}
             onRemove={(index) => setMediaItems((items) => items.filter((_, i) => i !== index))}
+            onReorder={setMediaItems}
           />
 
           <div className="border-b border-border/60">
@@ -347,6 +395,12 @@ const CommunityPostEditorPage = () => {
             setToolInput={setToolInput}
           />
 
+          <CommunityProjectMentionPicker
+            userId={user.id}
+            selected={mentionedProjects}
+            onChange={setMentionedProjects}
+          />
+
           <div className="px-4 pt-4 pb-6">
             <CommunityRulesCard />
             {draftScan.hasProfanity && (
@@ -362,6 +416,7 @@ const CommunityPostEditorPage = () => {
           body={body}
           tags={tags}
           tools={tools}
+          mentionedProjects={mentionedProjects}
           mediaItems={mediaItems}
           className="px-4 lg:px-0"
         />
@@ -381,6 +436,7 @@ const CommunityPostEditorPage = () => {
         body={body}
         tags={tags}
         tools={tools}
+        mentionedProjects={mentionedProjects}
         mediaItems={mediaItems}
       />
 

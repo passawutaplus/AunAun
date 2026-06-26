@@ -16,6 +16,7 @@ type ComposerState = {
   body: string;
   tags: string[];
   tools: string[];
+  mentioned_project_ids: string[];
   gallery_urls: string[];
   video_urls: string[];
 };
@@ -53,6 +54,7 @@ export function useCommunityAutosave({
       body: state.body,
       tags: state.tags,
       tools: state.tools,
+      mentioned_project_ids: state.mentioned_project_ids,
       gallery_urls: state.gallery_urls,
       video_urls: state.video_urls,
       draftId,
@@ -83,6 +85,7 @@ export function useCommunityAutosave({
       body: state.body,
       tags: state.tags,
       tools: state.tools,
+      mentionedProjectIds: state.mentioned_project_ids,
       galleryUrls: state.gallery_urls,
       videoUrls: state.video_urls,
     });
@@ -97,6 +100,7 @@ export function useCommunityAutosave({
         body: state.body,
         tags: state.tags,
         tools: state.tools,
+        mentioned_project_ids: state.mentioned_project_ids,
         gallery_urls: state.gallery_urls,
         video_urls: state.video_urls,
         draft_id: draftId,
