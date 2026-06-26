@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PROJECT_REF="${SUPABASE_PROJECT_REF:-rvnzjiskqliexysicfmh}"
+PROJECT_REF="${SUPABASE_PROJECT_REF:-zkflkpbmbozrchqncpzi}"
 BACKUP_DIR="${BACKUP_DIR:-../backups/db}"
 mkdir -p "$BACKUP_DIR"
 BACKUP_DIR="$(cd "$BACKUP_DIR" && pwd)"

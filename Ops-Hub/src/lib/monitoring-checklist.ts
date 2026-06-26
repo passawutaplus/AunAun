@@ -1,4 +1,5 @@
 import { ANTHEM_ADMIN, SO1O_ADMIN, anthemAdmin, so1oAdmin } from "@/lib/links";
+import { getSupabaseProjectInfo, supabaseDashboardPath } from "@/lib/supabaseProject";
 
 export type MonitorStatus = "live" | "partial" | "manual" | "missing";
 
@@ -34,7 +35,12 @@ export const STATUS_STYLE: Record<MonitorStatus, string> = {
   missing: "bg-red-100 text-red-800 border-red-200",
 };
 
-export const MONITOR_SITES: MonitorSite[] = [
+export function buildMonitorSites(): MonitorSite[] {
+  const { projectRef, url } = getSupabaseProjectInfo();
+  const billingHref = supabaseDashboardPath(projectRef, "/settings/billing/usage");
+  const functionsHref = supabaseDashboardPath(projectRef, "/functions");
+
+  return [
   {
     id: "so1o",
     name: "So1o",
@@ -179,7 +185,7 @@ export const MONITOR_SITES: MonitorSite[] = [
         label: "Edge Functions (20+)",
         description: "Deploy ผ่าน supabase functions deploy",
         status: "partial",
-        href: "https://supabase.com/dashboard/project/rvnzjiskqliexysicfmh/functions",
+        href: functionsHref,
       },
       {
         id: "an1hem-realtime",
@@ -263,16 +269,16 @@ export const MONITOR_SITES: MonitorSite[] = [
   {
     id: "ecosystem",
     name: "Ecosystem",
-    url: "https://rvnzjiskqliexysicfmh.supabase.co",
+    url: url || "https://supabase.com/dashboard",
     items: [
       {
         id: "eco-supabase",
         label: "Supabase (shared project)",
-        description: "rvnzjiskqliexysicfmh — plan, DB, storage, MAU, backups",
+        description: `${projectRef || "—"} — plan, DB, storage, MAU, backups`,
         status: "live",
         automated: true,
         healthKey: "Supabase REST",
-        href: "https://supabase.com/dashboard/project/rvnzjiskqliexysicfmh/settings/billing/usage",
+        href: billingHref,
       },
       {
         id: "eco-vercel",
@@ -308,7 +314,11 @@ export const MONITOR_SITES: MonitorSite[] = [
       },
     ],
   },
-];
+  ];
+}
+
+/** Checklist with Supabase links from VITE_SUPABASE_* env */
+export const MONITOR_SITES: MonitorSite[] = buildMonitorSites();
 
 /** Merge live health probe results into checklist items. */
 export function mergeHealthIntoChecklist(

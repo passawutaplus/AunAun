@@ -1,6 +1,6 @@
 # Schema Reorganize Plan — Anthem ↔ So1o
 
-> **In progress** on `rvnzjiskqliexysicfmh` — see `Solo-Code/supabase/ECOSYSTEM.md` for applied steps.
+> **In progress** on `zkflkpbmbozrchqncpzi` — see `Solo-Code/supabase/ECOSYSTEM.md` for applied steps.
 > See `.lovable/plan.md` for the full 5-phase roadmap. This document
 > defines **where each table lives** so every later migration is
 > deterministic.

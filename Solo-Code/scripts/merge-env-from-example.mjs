@@ -105,7 +105,7 @@ console.log(`Backed up .env → .env.backup`);
 console.log(`Added ${toAdd.size} key(s): ${[...toAdd.keys()].join(", ")}`);
 
 const oldRef = "jdqrrzaleapablabphmw";
-const newRef = "rvnzjiskqliexysicfmh";
+const newRef = "zkflkpbmbozrchqncpzi";
 const usesOld = [...merged.entries()].some(([, v]) => typeof v === "string" && v.includes(oldRef));
 if (usesOld) {
   console.log("");

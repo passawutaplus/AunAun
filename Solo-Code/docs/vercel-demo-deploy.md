@@ -2,7 +2,7 @@
 
 ## ตอบคำถาม: ล็อกอิน + เก็บข้อมูลจริงได้ไหม?
 
-**ได้** — เดโม่ชี้ไป Supabase project เดียวกับ production (`rvnzjiskqliexysicfmh`):
+**ได้** — เดโม่ชี้ไป Supabase project เดียวกับ production (`zkflkpbmbozrchqncpzi`):
 
 - Auth จริง (signup / login / Google OAuth)
 - ข้อมูลแยกตาม user (RLS)
@@ -38,9 +38,9 @@ vercel --yes
 
 | Variable | ค่า | หมายเหตุ |
 |----------|-----|----------|
-| `VITE_SUPABASE_URL` | `https://rvnzjiskqliexysicfmh.supabase.co` | client |
+| `VITE_SUPABASE_URL` | `https://zkflkpbmbozrchqncpzi.supabase.co` | client |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | anon key จาก Supabase | client |
-| `VITE_SUPABASE_PROJECT_ID` | `rvnzjiskqliexysicfmh` | client |
+| `VITE_SUPABASE_PROJECT_ID` | `zkflkpbmbozrchqncpzi` | client |
 | `SUPABASE_URL` | เหมือนด้านบน | server |
 | `SUPABASE_PUBLISHABLE_KEY` | anon key | server |
 | `SUPABASE_SERVICE_ROLE_KEY` | service role | **secret** — server only |
@@ -56,7 +56,7 @@ vercel --yes
 
 ## 3. Supabase Auth — เพิ่ม Redirect URL
 
-[Supabase Dashboard](https://supabase.com/dashboard/project/rvnzjiskqliexysicfmh/auth/url-configuration)
+[Supabase Dashboard](https://supabase.com/dashboard/project/zkflkpbmbozrchqncpzi/auth/url-configuration)
 
 **Site URL** (ชั่วคราวสำหรับ demo):
 

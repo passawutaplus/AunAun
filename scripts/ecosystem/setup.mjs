@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Syncs ecosystem env vars across Solo-Code + Anthem-Code (.env).
- * Unified project rvnzjiskqliexysicfmh: ANTHEM_SUPABASE_URL = SUPABASE_URL (sync optional).
+ * Unified project zkflkpbmbozrchqncpzi: ANTHEM_SUPABASE_URL = SUPABASE_URL (sync optional).
  * Run: node scripts/ecosystem/setup.mjs
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
@@ -59,7 +59,7 @@ const toSolo = {
 const toAnthem = {
   VITE_SUPABASE_URL: anthemUrl,
   VITE_SUPABASE_PUBLISHABLE_KEY: solo.VITE_SUPABASE_PUBLISHABLE_KEY || anthem.VITE_SUPABASE_PUBLISHABLE_KEY,
-  VITE_SUPABASE_PROJECT_ID: solo.VITE_SUPABASE_PROJECT_ID || anthem.VITE_SUPABASE_PROJECT_ID || "rvnzjiskqliexysicfmh",
+  VITE_SUPABASE_PROJECT_ID: solo.VITE_SUPABASE_PROJECT_ID || anthem.VITE_SUPABASE_PROJECT_ID || "zkflkpbmbozrchqncpzi",
   VITE_SO1O_APP_URL: anthem.VITE_SO1O_APP_URL || "http://localhost:3000",
 };
 
@@ -73,7 +73,7 @@ console.log("  ECOSYSTEM_SYNC_SECRET = (generated or kept existing)\n");
 
 console.log("Updated Anthem-Code/.env with unified Supabase URL (if keys present in Solo .env)\n");
 
-console.log("--- Supabase (rvnzjiskqliexysicfmh) ---\n");
+console.log("--- Supabase (zkflkpbmbozrchqncpzi) ---\n");
 console.log("1) Push migrations: Solo-Code/scripts/supabase-push-via-api.sh");
 console.log("2) SQL Editor: Solo-Code/supabase/manual/apply-anthem-ecosystem.sql");
 console.log("3) Deploy edge functions: embed-project, similar-images, generate-contract, job-match-dispatch");

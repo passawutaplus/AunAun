@@ -1,33 +1,27 @@
-import * as React from "react";
-import { EMAIL_FOOTER_NOTIFICATION } from "../copyConstants";
+import * as React from 'react'
+import { EMAIL_FOOTER_NOTIFICATION } from '../copyConstants'
 import {
-  EmailLayout,
-  EmailCard,
-  EmailCardLabel,
-  EmailCardRow,
-  EmailButton,
-  EmailText,
-  brand,
-} from "./layout";
+  EmailLayout, EmailCard, EmailCardLabel, EmailCardRow, EmailButton, EmailText, brand,
+} from './layout'
 
 export interface GiftReceivedEmailProps {
-  recipientName?: string;
-  senderName?: string;
-  giftName?: string;
-  pricePx?: number;
-  message?: string;
-  projectTitle?: string;
-  actionUrl?: string;
+  recipientName?: string
+  senderName?: string
+  giftName?: string
+  pricePx?: number
+  message?: string
+  projectTitle?: string
+  actionUrl?: string
 }
 
 export const GiftReceivedEmail = ({
-  recipientName = "คุณ",
-  senderName = "ผู้สนับสนุน",
-  giftName = "ของขวัญ",
+  recipientName = 'คุณ',
+  senderName = 'ผู้สนับสนุน',
+  giftName = 'ของขวัญ',
   pricePx = 0,
-  message = "",
-  projectTitle = "",
-  actionUrl = "https://1px-demo.vercel.app/earnings",
+  message = '',
+  projectTitle = '',
+  actionUrl = 'https://1px-demo.vercel.app/earnings',
 }: GiftReceivedEmailProps) => (
   <EmailLayout
     preview={`${senderName} ส่ง ${giftName} (${pricePx} px)`}
@@ -38,8 +32,8 @@ export const GiftReceivedEmail = ({
     footerNote={EMAIL_FOOTER_NOTIFICATION}
   >
     <EmailText>
-      สวัสดี {recipientName} — <strong style={{ color: brand.ink }}>{senderName}</strong> ส่ง{" "}
-      <strong style={{ color: brand.orange }}>{giftName}</strong> สนับสนุนคุณบน Pixel100
+      สวัสดี {recipientName} — <strong style={{ color: brand.ink }}>{senderName}</strong>{' '}
+      ส่ง <strong style={{ color: brand.orange }}>{giftName}</strong> สนับสนุนคุณบน Pixel100
     </EmailText>
     <EmailCard>
       <EmailCardLabel>จาก</EmailCardLabel>
@@ -47,7 +41,7 @@ export const GiftReceivedEmail = ({
       <EmailCardLabel>ของขวัญ</EmailCardLabel>
       <EmailCardRow>{giftName}</EmailCardRow>
       <EmailCardLabel>มูลค่า</EmailCardLabel>
-      <EmailCardRow highlight>{pricePx.toLocaleString("th-TH")} px</EmailCardRow>
+      <EmailCardRow highlight>{pricePx.toLocaleString('th-TH')} px</EmailCardRow>
       {projectTitle ? (
         <>
           <EmailCardLabel>ที่ผลงาน</EmailCardLabel>
@@ -63,22 +57,22 @@ export const GiftReceivedEmail = ({
     </EmailCard>
     <EmailButton href={actionUrl}>ดูรายได้และของขวัญ</EmailButton>
   </EmailLayout>
-);
+)
 
 export const giftReceivedTemplate = {
   component: GiftReceivedEmail,
   subject: (data: Record<string, unknown>) =>
-    `[Pixel100] ${(data.senderName as string) ?? "มีคน"} ส่งของขวัญ ${(data.giftName as string) ?? ""}`,
-  displayName: "Gift received",
+    `[Pixel100] ${(data.senderName as string) ?? 'มีคน'} ส่งของขวัญ ${(data.giftName as string) ?? ''}`,
+  displayName: 'Gift received',
   previewData: {
-    recipientName: "พี่บอส",
-    senderName: "น้องมิ้นท์",
-    giftName: "ดาวสนับสนุน",
+    recipientName: 'พี่บอส',
+    senderName: 'น้องมิ้นท์',
+    giftName: 'ดาวสนับสนุน',
     pricePx: 50,
-    message: "ชอบผลงานมากครับ สู้ๆ!",
-    projectTitle: "Rebrand Sundae Cafe",
-    actionUrl: "https://1px-demo.vercel.app/earnings",
+    message: 'ชอบผลงานมากครับ สู้ๆ!',
+    projectTitle: 'Rebrand Sundae Cafe',
+    actionUrl: 'https://1px-demo.vercel.app/earnings',
   },
-};
+}
 
-export default GiftReceivedEmail;
+export default GiftReceivedEmail

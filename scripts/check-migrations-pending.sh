@@ -5,7 +5,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MIG_DIR="$ROOT/Solo-Code/supabase/migrations"
-PROJECT_REF="${SUPABASE_PROJECT_REF:-rvnzjiskqliexysicfmh}"
+PROJECT_REF="${SUPABASE_PROJECT_REF:-zkflkpbmbozrchqncpzi}"
 API="https://api.supabase.com/v1/projects/${PROJECT_REF}"
 
 if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]] && [[ -f "${HOME}/.config/supabase/access-token" ]]; then
@@ -34,15 +34,15 @@ if [[ "$query_code" != "200" && "$query_code" != "201" ]]; then
   exit 2
 fi
 
-applied="$(python3 -c "
-import json, sys
-raw = json.load(open(sys.argv[1]))
-if isinstance(raw, dict):
-    msg = raw.get('message') or raw.get('error') or raw
-    raise SystemExit(f'API error: {msg}')
-if not isinstance(raw, list):
-    raise SystemExit(f'unexpected response type: {type(raw).__name__}')
-print('\n'.join(r['name'] for r in raw if isinstance(r, dict) and 'name' in r))
+applied="$(node -e "
+const fs = require('fs');
+const raw = JSON.parse(fs.readFileSync(process.argv[1], 'utf8'));
+if (!Array.isArray(raw)) {
+  const msg = raw.message || raw.error || JSON.stringify(raw);
+  console.error('API error:', msg);
+  process.exit(1);
+}
+console.log(raw.filter(r => r && r.name).map(r => r.name).join('\n'));
 " "$query_body")"
 rm -f "$query_body"
 

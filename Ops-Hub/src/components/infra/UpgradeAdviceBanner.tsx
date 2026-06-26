@@ -1,6 +1,7 @@
 import { AlertTriangle, CheckCircle2, ExternalLink } from "lucide-react";
 import type { UpgradeAdvice } from "@/lib/infra-monitor-types";
 import { VERDICT_LABEL, VERDICT_STYLE } from "@/lib/infra-monitor-types";
+import { getSupabaseProjectInfo, supabaseDashboardPath } from "@/lib/supabaseProject";
 
 export function UpgradeAdviceBanner({ items }: { items: UpgradeAdvice[] }) {
   const worst = items.reduce<(typeof items)[0] | null>((acc, cur) => {
@@ -44,6 +45,9 @@ export function UpgradeAdviceBanner({ items }: { items: UpgradeAdvice[] }) {
 }
 
 export function UpgradeAdviceCards({ items }: { items: UpgradeAdvice[] }) {
+  const { projectRef } = getSupabaseProjectInfo();
+  const supabaseBillingHref = supabaseDashboardPath(projectRef, "/settings/billing/usage");
+
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {items.map((item) => (
@@ -76,7 +80,7 @@ export function UpgradeAdviceCards({ items }: { items: UpgradeAdvice[] }) {
           ) : null}
           {item.service === "supabase" ? (
             <a
-              href="https://supabase.com/dashboard/project/rvnzjiskqliexysicfmh/settings/billing/usage"
+              href={supabaseBillingHref}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-2 inline-flex items-center gap-1 text-xs underline"

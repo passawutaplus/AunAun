@@ -1,5 +1,5 @@
 /**
- * Unified Supabase project (rvnzjiskqliexysicfmh).
+ * Unified Supabase project (zkflkpbmbozrchqncpzi).
  * Routes tables to the correct Postgres schema.
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";

@@ -1,6 +1,6 @@
 # Google Sign-In (unified project)
 
-โปรเจกต์เดียว `rvnzjiskqliexysicfmh` — เปิด Google provider ครั้งเดียว ใช้ได้ทั้ง So1o และ an1hem
+โปรเจกต์เดียว `zkflkpbmbozrchqncpzi` — เปิด Google provider ครั้งเดียว ใช้ได้ทั้ง So1o และ an1hem
 
 > Apple Sign-In ยังไม่เปิดใช้งาน (ปิดไว้ชั่วคราว)
 
@@ -9,7 +9,7 @@
 1. สร้าง OAuth Client ใน [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
 2. **Authorized redirect URI** (สำคัญ):
    ```
-   https://rvnzjiskqliexysicfmh.supabase.co/auth/v1/callback
+   https://zkflkpbmbozrchqncpzi.supabase.co/auth/v1/callback
    ```
 3. ใส่ **Client ID** + **Client Secret** ใน Supabase → Save
 

@@ -25,7 +25,7 @@ set -a && source .env && set +a
 BUILD_ENVS=(
   --build-env "VITE_SUPABASE_URL=${VITE_SUPABASE_URL}"
   --build-env "VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}"
-  --build-env "VITE_SUPABASE_PROJECT_ID=${VITE_SUPABASE_PROJECT_ID:-rvnzjiskqliexysicfmh}"
+  --build-env "VITE_SUPABASE_PROJECT_ID=${VITE_SUPABASE_PROJECT_ID:-zkflkpbmbozrchqncpzi}"
   --build-env "VITE_SO1O_APP_URL=${VITE_SO1O_APP_URL:-https://www.solofreelancer.com}"
   --build-env "VITE_ANTHEM_APP_URL=${VITE_ANTHEM_APP_URL:-https://an1hem.app}"
 )

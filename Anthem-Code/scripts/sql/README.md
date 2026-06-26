@@ -1,8 +1,8 @@
 # รัน migration บน remote ด้วยมือ (fallback)
 
-โปรเจกต์ unified: **`rvnzjiskqliexysicfmh`**
+โปรเจกต์ unified: **`zkflkpbmbozrchqncpzi`**
 
-เปิด [SQL Editor](https://supabase.com/dashboard/project/rvnzjiskqliexysicfmh/sql/new)
+เปิด [SQL Editor](https://supabase.com/dashboard/project/zkflkpbmbozrchqncpzi/sql/new)
 
 > **แนะนำ:** ใช้ `cd Solo-Code && ./scripts/supabase-push-via-api.sh` เป็นหลัก — ไฟล์นี้สำหรับกรณี CLI ใช้ไม่ได้
 
@@ -37,7 +37,7 @@ node scripts/run-seed.mjs
 
 ```bash
 cd Solo-Code
-npx supabase gen types typescript --project-id rvnzjiskqliexysicfmh > ../Anthem-Code/src/integrations/supabase/types.ts
+npx supabase gen types typescript --project-id zkflkpbmbozrchqncpzi > ../Anthem-Code/src/integrations/supabase/types.ts
 ```
 
 ## โปรเจกต์เก่า (ปิดแล้ว)

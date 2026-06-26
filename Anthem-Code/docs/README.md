@@ -60,7 +60,7 @@ npm run e2e:puppeteer:chat
 - React 18 + Vite 5 + TypeScript 5
 - Tailwind CSS v3 + shadcn/ui + Lucide
 - React Query + Zustand
-- Supabase `rvnzjiskqliexysicfmh` (unified with So1o)
+- Supabase `zkflkpbmbozrchqncpzi` (unified with So1o)
 - React Email templates (`src/lib/email-templates/`)
 
 Env vars (.env auto-generated — อย่าแก้):

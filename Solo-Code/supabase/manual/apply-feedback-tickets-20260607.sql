@@ -1,5 +1,5 @@
 -- So1o: Feedback → Tickets + Mission Control (delta 2026-06-07)
--- Project: rvnzjiskqliexysicfmh
+-- Project: zkflkpbmbozrchqncpzi
 -- ใช้เมื่อมี support_tickets แล้ว แต่ยังไม่มี rating / notify / activity feed
 -- รันใน Dashboard → SQL Editor
 

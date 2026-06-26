@@ -1,5 +1,5 @@
 -- Boost (self-serve post promotion) + Escrow marketplace
--- Apply after stripe-payments.sql on unified Supabase project rvnzjiskqliexysicfmh
+-- Apply after stripe-payments.sql on unified Supabase project zkflkpbmbozrchqncpzi
 
 -- ---------------------------------------------------------------------------
 -- Extend stripe_checkout_fulfillments kinds

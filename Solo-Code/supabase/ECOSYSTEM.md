@@ -1,6 +1,6 @@
 # Unified Supabase — So1o + an1hem
 
-โปรเจกต์เดียว: **`rvnzjiskqliexysicfmh`** (supabase-blue-park)
+โปรเจกต์เดียว: **`zkflkpbmbozrchqncpzi`** (supabase-blue-park)
 
 ## Schema layout
 
@@ -55,16 +55,16 @@ export SUPABASE_ACCESS_TOKEN=sbp_...
 supabase functions deploy \
   notify-anthem notify-anthem-chat notify-anthem-collab notify-hire-request \
   job-match-dispatch line-connect line-webhook line-queue-process \
-  --project-ref rvnzjiskqliexysicfmh
+  --project-ref zkflkpbmbozrchqncpzi
 
 # Anthem AI + ecosystem
 supabase functions deploy embed-project similar-images generate-contract \
   anthem-assistant anthem-portfolio-assist ecosystem-ai-usage \
-  --project-ref rvnzjiskqliexysicfmh
+  --project-ref zkflkpbmbozrchqncpzi
 
 # Gemini (หรือใช้ supabase-setup-project.sh)
 supabase functions deploy ai-design-chat planner-ai-assist ai-price-suggest color-mentor \
-  --project-ref rvnzjiskqliexysicfmh
+  --project-ref zkflkpbmbozrchqncpzi
 
 supabase secrets set GEMINI_API_KEY=... ANTHEM_APP_URL=https://an1hem.app
 ```

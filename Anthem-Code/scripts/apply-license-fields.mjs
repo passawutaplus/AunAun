@@ -27,7 +27,7 @@ if (!process.env.SUPABASE_ACCESS_TOKEN && existsSync(tokenPath)) {
   process.env.SUPABASE_ACCESS_TOKEN = readFileSync(tokenPath, "utf8").trim();
 }
 
-const PROJECT_REF = process.env.SUPABASE_PROJECT_REF || "rvnzjiskqliexysicfmh";
+const PROJECT_REF = process.env.SUPABASE_PROJECT_REF || "zkflkpbmbozrchqncpzi";
 const API = `https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query`;
 const SQL_PATH = join(root, "supabase/migrations/20260605000000_project_license_fields.sql");
 

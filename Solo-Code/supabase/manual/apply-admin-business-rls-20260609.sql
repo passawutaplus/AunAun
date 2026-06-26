@@ -1,5 +1,5 @@
 -- Manual bundle: Admin Mission Control business KPI RLS
--- Project: rvnzjiskqliexysicfmh
+-- Project: zkflkpbmbozrchqncpzi
 -- Run in Supabase Dashboard → SQL Editor → New query → Run
 -- Migration file: supabase/migrations/20260609120000_admin_business_rls.sql
 

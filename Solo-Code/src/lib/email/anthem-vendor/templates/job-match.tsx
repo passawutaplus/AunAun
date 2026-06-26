@@ -1,31 +1,25 @@
-import * as React from "react";
-import { EMAIL_FOOTER_NOTIFICATION } from "../copyConstants";
+import * as React from 'react'
+import { EMAIL_FOOTER_NOTIFICATION } from '../copyConstants'
 import {
-  EmailLayout,
-  EmailCard,
-  EmailCardLabel,
-  EmailCardRow,
-  EmailButton,
-  EmailText,
-  brand,
-} from "./layout";
+  EmailLayout, EmailCard, EmailCardLabel, EmailCardRow, EmailButton, EmailText, brand,
+} from './layout'
 
 export interface JobMatchEmailProps {
-  recipientName?: string;
-  jobTitle?: string;
-  roleCategory?: string;
-  matchScore?: number;
-  matchReasons?: string[];
-  actionUrl?: string;
+  recipientName?: string
+  jobTitle?: string
+  roleCategory?: string
+  matchScore?: number
+  matchReasons?: string[]
+  actionUrl?: string
 }
 
 export const JobMatchEmail = ({
-  recipientName = "คุณ",
-  jobTitle = "งานใหม่",
-  roleCategory = "",
+  recipientName = 'คุณ',
+  jobTitle = 'งานใหม่',
+  roleCategory = '',
   matchScore = 0,
   matchReasons = [],
-  actionUrl = "https://1px-demo.vercel.app/jobs",
+  actionUrl = 'https://1px-demo.vercel.app/jobs',
 }: JobMatchEmailProps) => (
   <EmailLayout
     preview={`พบงานตรงสกิล — ${jobTitle}`}
@@ -35,7 +29,9 @@ export const JobMatchEmail = ({
     title="มีงานตรงกับคุณ"
     footerNote={EMAIL_FOOTER_NOTIFICATION}
   >
-    <EmailText>สวัสดี {recipientName} — พบงานที่ตรงกับโปรไฟล์ของคุณบน Pixel100</EmailText>
+    <EmailText>
+      สวัสดี {recipientName} — พบงานที่ตรงกับโปรไฟล์ของคุณบน Pixel100
+    </EmailText>
     <EmailCard>
       <EmailCardLabel>ตำแหน่ง</EmailCardLabel>
       <EmailCardRow highlight>{jobTitle}</EmailCardRow>
@@ -54,27 +50,27 @@ export const JobMatchEmail = ({
       {matchReasons.length > 0 ? (
         <>
           <EmailCardLabel>เหตุผล</EmailCardLabel>
-          <EmailCardRow>{matchReasons.join(" · ")}</EmailCardRow>
+          <EmailCardRow>{matchReasons.join(' · ')}</EmailCardRow>
         </>
       ) : null}
     </EmailCard>
     <EmailButton href={actionUrl}>ดูรายละเอียดงาน</EmailButton>
   </EmailLayout>
-);
+)
 
 export const jobMatchTemplate = {
   component: JobMatchEmail,
   subject: (data: Record<string, unknown>) =>
-    `[Pixel100] งานแนะนำ — ${(data.jobTitle as string) ?? "งานใหม่"}`,
-  displayName: "Job match",
+    `[Pixel100] งานแนะนำ — ${(data.jobTitle as string) ?? 'งานใหม่'}`,
+  displayName: 'Job match',
   previewData: {
-    recipientName: "พี่บอส",
-    jobTitle: "UI Designer — SaaS Dashboard",
-    roleCategory: "UI/UX Design",
+    recipientName: 'พี่บอส',
+    jobTitle: 'UI Designer — SaaS Dashboard',
+    roleCategory: 'UI/UX Design',
     matchScore: 80,
-    matchReasons: ["หมวด UI/UX Design", "สกิลตรง 3 อย่าง", "Remote"],
-    actionUrl: "https://1px-demo.vercel.app/jobs/example",
+    matchReasons: ['หมวด UI/UX Design', 'สกิลตรง 3 อย่าง', 'Remote'],
+    actionUrl: 'https://1px-demo.vercel.app/jobs/example',
   },
-};
+}
 
-export default JobMatchEmail;
+export default JobMatchEmail

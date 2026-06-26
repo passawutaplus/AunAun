@@ -1,7 +1,7 @@
 # Backup & Restore — Ecosystem (So1o + an1hem + Ops Hub)
 
 อัปเดต: มิถุนายน 2569  
-โปรเจกต์: **`rvnzjiskqliexysicfmh`** (org **AunAun**) — Postgres + Auth + Storage ร่วมกันทั้ง ecosystem
+โปรเจกต์: **`zkflkpbmbozrchqncpzi`** (org **AunAun**) — Postgres + Auth + Storage ร่วมกันทั้ง ecosystem
 
 ---
 
@@ -33,7 +33,7 @@ cd Solo-Code
 | Organization plan | **free** |
 | Scheduled backups (API) | **0** รายการ |
 | PITR | ปิด |
-| Manual pg_dump ล่าสุด | `backups/db/rvnzjiskqliexysicfmh-*.dump` (รันแล้ว) |
+| Manual pg_dump ล่าสุด | `backups/db/zkflkpbmbozrchqncpzi-*.dump` (รันแล้ว) |
 
 ---
 
@@ -43,7 +43,7 @@ cd Solo-Code
 2. เลือก **Pro Plan** ($25/mo ต่อ organization — ทุก project ใน org ได้ benefit)
 3. ใส่ payment method + confirm
 4. รอ **daily backup แรก** (มักภายใน 24 ชม.)
-5. ตรวจที่ [Database → Backups](https://supabase.com/dashboard/project/rvnzjiskqliexysicfmh/database/backups/scheduled)
+5. ตรวจที่ [Database → Backups](https://supabase.com/dashboard/project/zkflkpbmbozrchqncpzi/database/backups/scheduled)
 
 > Pro รวม: 8 GB DB, 100 GB Storage, ไม่ pause project, daily backup 7 วัน — สอดคล้องกับ [`storageQuotas.ts`](../Solo-Code/src/lib/storageQuotas.ts)
 
@@ -61,7 +61,7 @@ export SUPABASE_DB_PASSWORD='...'   # หรือใส่ใน .env
 ./scripts/supabase-backup.sh
 ```
 
-ไฟล์ไปที่ `backups/db/rvnzjiskqliexysicfmh-YYYYMMDD-HHMMSS.dump` (custom format, gzip ใน pg_dump -Fc)
+ไฟล์ไปที่ `backups/db/zkflkpbmbozrchqncpzi-YYYYMMDD-HHMMSS.dump` (custom format, gzip ใน pg_dump -Fc)
 
 ### Cron ตัวอย่าง (รายวัน 03:00)
 
@@ -81,14 +81,14 @@ Log: `logs/supabase-backup.log` (repo root)
 ```bash
 # สร้าง staging project หรือ local Postgres ก่อน — อย่า restore ทับ production โดยไม่วางแผน downtime
 pg_restore -d "postgresql://postgres:PASSWORD@HOST:5432/postgres" \
-  --clean --if-exists backups/db/rvnzjiskqliexysicfmh-YYYYMMDD-HHMMSS.dump
+  --clean --if-exists backups/db/zkflkpbmbozrchqncpzi-YYYYMMDD-HHMMSS.dump
 ```
 
 หรือใช้ Docker:
 
 ```bash
 docker run --rm -i -e PGPASSWORD='...' postgres:17 \
-  pg_restore -d "postgresql://postgres.rvnzjiskqliexysicfmh:...@aws-1-us-east-1.pooler.supabase.com:5432/postgres" \
+  pg_restore -d "postgresql://postgres.zkflkpbmbozrchqncpzi:...@aws-1-us-east-1.pooler.supabase.com:5432/postgres" \
   --clean --if-exists < backups/db/....dump
 ```
 
@@ -96,7 +96,7 @@ docker run --rm -i -e PGPASSWORD='...' postgres:17 \
 
 ## ขั้นที่ 3 — Restore จาก Supabase Dashboard (หลัง Pro)
 
-1. [Database → Backups → Scheduled](https://supabase.com/dashboard/project/rvnzjiskqliexysicfmh/database/backups/scheduled)
+1. [Database → Backups → Scheduled](https://supabase.com/dashboard/project/zkflkpbmbozrchqncpzi/database/backups/scheduled)
 2. เลือก snapshot ที่ต้องการ → **Restore**
 3. **Project จะ offline** ระหว่าง restore — วาง downtime ล่วงหน้า
 4. หลัง restore: ตรวจ Auth URLs, Edge Function secrets, Realtime subscriptions
@@ -105,7 +105,7 @@ List backups ผ่าน API:
 
 ```bash
 curl -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-  "https://api.supabase.com/v1/projects/rvnzjiskqliexysicfmh/database/backups"
+  "https://api.supabase.com/v1/projects/zkflkpbmbozrchqncpzi/database/backups"
 ```
 
 ---

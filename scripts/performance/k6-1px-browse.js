@@ -6,7 +6,7 @@ import http from "k6/http";
 import { check, sleep } from "k6";
 
 const BASE = __ENV.PX_BASE_URL || "https://1px-demo.vercel.app";
-const SUPABASE = __ENV.SUPABASE_URL || "https://rvnzjiskqliexysicfmh.supabase.co";
+const SUPABASE = __ENV.SUPABASE_URL || "https://zkflkpbmbozrchqncpzi.supabase.co";
 const ANON = __ENV.SUPABASE_ANON_KEY;
 
 export const options = {

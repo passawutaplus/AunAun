@@ -21,7 +21,7 @@
 │  (only allowed import sites: server/ + core/) │
 └─────────────┬────────────────────────────────┘
               │
-        Supabase (rvnzjiskqliexysicfmh)
+        Supabase (zkflkpbmbozrchqncpzi)
         - Postgres + RLS (public, shared, anthem schemas)
         - Realtime
         - Storage (bucket: project-media)

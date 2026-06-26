@@ -1,9 +1,182 @@
--- So1o FULL schema bundle for rvnzjiskqliexysicfmh
--- Generated: 2026-06-07T13:30:47Z
--- Run in Supabase Dashboard → SQL Editor
--- Or: export SUPABASE_ACCESS_TOKEN=... && ./scripts/supabase-push-via-api.sh
+-- bundle
 
--- ── 20260427021942_976ba3e1-e73d-43d4-b692-d27a1f4b3a4e.sql ──
+-- 20250617000000_stripe_client_payments.sql
+-- Client job payments via Stripe Checkout (destination charge → freelancer Connect account).
+-- Run after stripe-payments.sql on unified project rvnzjiskqliexysicfmh.
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS stripe_client_payments_enabled boolean NOT NULL DEFAULT true;
+
+-- Extend fulfillment kinds
+ALTER TABLE public.stripe_checkout_fulfillments
+  DROP CONSTRAINT IF EXISTS stripe_checkout_fulfillments_kind_check;
+
+ALTER TABLE public.stripe_checkout_fulfillments
+  ADD CONSTRAINT stripe_checkout_fulfillments_kind_check
+  CHECK (kind IN ('credits', 'px', 'client_job'));
+
+CREATE TABLE IF NOT EXISTS public.job_stripe_payments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  job_id uuid NOT NULL REFERENCES public.job_trackers(id) ON DELETE CASCADE,
+  freelancer_user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  payment_type text NOT NULL CHECK (payment_type IN ('deposit', 'final')),
+  amount_thb numeric NOT NULL CHECK (amount_thb > 0),
+  stripe_session_id text NOT NULL UNIQUE,
+  environment text NOT NULL CHECK (environment IN ('sandbox', 'live')),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS job_stripe_payments_job_id_idx
+  ON public.job_stripe_payments (job_id);
+
+ALTER TABLE public.job_stripe_payments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS job_stripe_payments_owner_select ON public.job_stripe_payments;
+CREATE POLICY job_stripe_payments_owner_select ON public.job_stripe_payments
+  FOR SELECT TO authenticated
+  USING (freelancer_user_id = auth.uid() OR public.has_role(auth.uid(), 'admin'));
+
+REVOKE ALL ON TABLE public.job_stripe_payments FROM anon;
+GRANT SELECT ON TABLE public.job_stripe_payments TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.fulfill_client_job_payment_stripe(
+  _stripe_session_id text,
+  _job_id uuid,
+  _freelancer_user_id uuid,
+  _payment_type text,
+  _amount_thb numeric,
+  _environment text
+) RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  _job public.job_trackers%ROWTYPE;
+  _deposit_amt numeric;
+  _event_kind text;
+  _event_title text;
+BEGIN
+  IF _payment_type NOT IN ('deposit', 'final') THEN
+    RAISE EXCEPTION 'INVALID_PAYMENT_TYPE';
+  END IF;
+  IF _environment NOT IN ('sandbox', 'live') THEN
+    RAISE EXCEPTION 'INVALID_ENVIRONMENT';
+  END IF;
+  IF _amount_thb IS NULL OR _amount_thb <= 0 THEN
+    RAISE EXCEPTION 'INVALID_AMOUNT';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.stripe_checkout_fulfillments
+    WHERE stripe_session_id = _stripe_session_id
+  ) THEN
+    RETURN jsonb_build_object('ok', true, 'duplicate', true);
+  END IF;
+
+  SELECT * INTO _job
+  FROM public.job_trackers
+  WHERE id = _job_id AND user_id = _freelancer_user_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'JOB_NOT_FOUND';
+  END IF;
+
+  _deposit_amt := round(_job.total_amount * (_job.deposit_percent::numeric / 100), 2);
+
+  IF _payment_type = 'deposit' THEN
+    IF _job.deposit_paid THEN
+      RAISE EXCEPTION 'DEPOSIT_ALREADY_PAID';
+    END IF;
+    IF abs(_amount_thb - _deposit_amt) > 0.01 THEN
+      RAISE EXCEPTION 'DEPOSIT_AMOUNT_MISMATCH';
+    END IF;
+
+    UPDATE public.job_trackers
+    SET
+      deposit_paid = true,
+      status = CASE WHEN status = 'pending' THEN 'in-progress' ELSE status END,
+      current_step = CASE WHEN current_step = 0 THEN 1 ELSE current_step END,
+      progress_percent = CASE
+        WHEN current_step = 0 THEN round((1::numeric / 5) * 100)
+        ELSE progress_percent
+      END,
+      updated_at = now()
+    WHERE id = _job_id;
+
+    _event_kind := 'deposit_paid';
+    _event_title := 'รับมัดจำผ่าน Stripe';
+  ELSE
+    IF NOT _job.deposit_paid THEN
+      RAISE EXCEPTION 'DEPOSIT_REQUIRED_FIRST';
+    END IF;
+    IF _job.final_paid THEN
+      RAISE EXCEPTION 'FINAL_ALREADY_PAID';
+    END IF;
+    IF _job.amount_due IS NULL OR _job.amount_due <= 0 THEN
+      RAISE EXCEPTION 'NO_AMOUNT_DUE';
+    END IF;
+    IF abs(_amount_thb - _job.amount_due) > 0.01 THEN
+      RAISE EXCEPTION 'FINAL_AMOUNT_MISMATCH';
+    END IF;
+
+    UPDATE public.job_trackers
+    SET
+      final_paid = true,
+      amount_due = 0,
+      status = CASE WHEN status IN ('pending', 'review', 'in-progress') THEN 'in-progress' ELSE status END,
+      current_step = CASE WHEN current_step <= 3 THEN 4 ELSE current_step END,
+      progress_percent = CASE
+        WHEN current_step <= 3 THEN round((4::numeric / 5) * 100)
+        ELSE progress_percent
+      END,
+      updated_at = now()
+    WHERE id = _job_id;
+
+    _event_kind := 'final_paid';
+    _event_title := 'รับชำระยอดสุดท้ายผ่าน Stripe';
+  END IF;
+
+  INSERT INTO public.job_events (job_id, kind, title, note, amount)
+  VALUES (
+    _job_id,
+    _event_kind,
+    _event_title,
+    'Stripe Checkout ' || _stripe_session_id,
+    _amount_thb
+  );
+
+  INSERT INTO public.job_stripe_payments (
+    job_id, freelancer_user_id, payment_type, amount_thb, stripe_session_id, environment
+  ) VALUES (
+    _job_id, _freelancer_user_id, _payment_type, _amount_thb, _stripe_session_id, _environment
+  );
+
+  INSERT INTO public.stripe_checkout_fulfillments (
+    stripe_session_id, user_id, kind, price_id, quantity, environment
+  ) VALUES (
+    _stripe_session_id,
+    _freelancer_user_id,
+    'client_job',
+    'client_job_' || _payment_type,
+    1,
+    _environment
+  );
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'payment_type', _payment_type,
+    'job_id', _job_id
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.fulfill_client_job_payment_stripe(text, uuid, uuid, text, numeric, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.fulfill_client_job_payment_stripe(text, uuid, uuid, text, numeric, text) TO service_role;
+
+
+-- 20260427021942_976ba3e1-e73d-43d4-b692-d27a1f4b3a4e.sql
 -- 1) App role enum
 CREATE TYPE public.app_role AS ENUM ('admin', 'user');
 
@@ -160,7 +333,7 @@ CREATE POLICY "Users can delete own brand logo"
     AND auth.uid()::text = (storage.foldername(name))[1]
   );
 
--- ── 20260427022011_596c8eb4-505d-4e39-8d5f-2381219fd9aa.sql ──
+-- 20260427022011_596c8eb4-505d-4e39-8d5f-2381219fd9aa.sql
 -- Lock down SECURITY DEFINER functions
 REVOKE EXECUTE ON FUNCTION public.has_role(UUID, public.app_role) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
@@ -177,7 +350,7 @@ CREATE POLICY "Owners can list own brand logos"
     AND auth.uid()::text = (storage.foldername(name))[1]
   );
 
--- ── 20260427035429_dff35726-f103-4779-ad92-9afb5d856e43.sql ──
+-- 20260427035429_dff35726-f103-4779-ad92-9afb5d856e43.sql
 -- 1) Recreate the missing trigger on auth.users
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
@@ -222,11 +395,11 @@ CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
--- ── 20260427035451_e0d6d7e1-8de8-4536-88ca-37491a016b99.sql ──
+-- 20260427035451_e0d6d7e1-8de8-4536-88ca-37491a016b99.sql
 REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.update_updated_at_column() FROM PUBLIC, anon, authenticated;
 
--- ── 20260427041310_54c5ba29-1183-400d-9814-298f2889d939.sql ──
+-- 20260427041310_54c5ba29-1183-400d-9814-298f2889d939.sql
 -- Extend profiles with freelancer business settings
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS tagline TEXT,
@@ -299,7 +472,7 @@ BEGIN
   END IF;
 END$$;
 
--- ── 20260427060436_41f7f0fd-9782-49fd-8458-39e7d6d3ef85.sql ──
+-- 20260427060436_41f7f0fd-9782-49fd-8458-39e7d6d3ef85.sql
 -- =========================================================
 -- 1. SECURITY FIXES on existing objects
 -- =========================================================
@@ -702,10 +875,10 @@ CREATE POLICY "Users delete own portfolio images"
     AND (storage.foldername(name))[1] = auth.uid()::text
   );
 
--- ── 20260427063716_a9ed7ceb-3d35-40d0-8db7-916b2fd64e02.sql ──
+-- 20260427063716_a9ed7ceb-3d35-40d0-8db7-916b2fd64e02.sql
 ALTER TABLE public.finance_incomes DROP CONSTRAINT IF EXISTS finance_incomes_category_check;
 
--- ── 20260427072630_ae0b8914-a662-4ab8-bf66-67b0ecec52c5.sql ──
+-- 20260427072630_ae0b8914-a662-4ab8-bf66-67b0ecec52c5.sql
 
 -- Function: DB usage stats (admin only)
 CREATE OR REPLACE FUNCTION public.get_db_usage_stats()
@@ -795,7 +968,7 @@ REVOKE ALL ON FUNCTION public.get_storage_usage_stats() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_storage_usage_stats() TO authenticated;
 
 
--- ── 20260427114236_ef0b0133-570c-4506-bfb7-c302d329da9f.sql ──
+-- 20260427114236_ef0b0133-570c-4506-bfb7-c302d329da9f.sql
 
 -- Create a public view exposing only safe profile fields for viewing other creators.
 -- Excludes: email, phone, address, tax_id, bank_*, payment_qr_url (PII / financial)
@@ -826,7 +999,7 @@ TO anon, authenticated
 USING (true);
 
 
--- ── 20260427114311_d24a90bf-dac8-4652-8e56-71980181fb00.sql ──
+-- 20260427114311_d24a90bf-dac8-4652-8e56-71980181fb00.sql
 
 -- 1) Remove the over-permissive SELECT policy that accidentally exposed all profile columns
 DROP POLICY IF EXISTS "Public can view safe profile fields via view" ON public.profiles;
@@ -870,7 +1043,7 @@ REVOKE ALL ON FUNCTION public.get_public_profile(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_public_profile(uuid) TO anon, authenticated;
 
 
--- ── 20260427122135_54148929-5d3e-42b4-946f-d1a277b545ed.sql ──
+-- 20260427122135_54148929-5d3e-42b4-946f-d1a277b545ed.sql
 
 -- Hire requests inbox: when someone clicks "สนใจจ้างงาน" on a published portfolio
 CREATE TABLE public.hire_requests (
@@ -973,7 +1146,7 @@ FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
 
 
--- ── 20260427122608_0b67823f-a99f-4bc9-b12f-23900311cbb9.sql ──
+-- 20260427122608_0b67823f-a99f-4bc9-b12f-23900311cbb9.sql
 
 -- =========================================================
 -- portfolio_comments — text-only comments on portfolio cards
@@ -1227,7 +1400,7 @@ FOR EACH ROW
 EXECUTE FUNCTION public.bump_comment_report_count();
 
 
--- ── 20260428014119_a54a7c02-bf28-4475-8de2-6dfe58f8874f.sql ──
+-- 20260428014119_a54a7c02-bf28-4475-8de2-6dfe58f8874f.sql
 -- Onboarding fields on profiles
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE,
@@ -1380,7 +1553,7 @@ CREATE TRIGGER trg_notify_on_hire
   AFTER INSERT ON public.hire_requests
   FOR EACH ROW EXECUTE FUNCTION public.notify_on_hire();
 
--- ── 20260430005444_4ebfaad3-c24d-4011-98f2-d556bbb77885.sql ──
+-- 20260430005444_4ebfaad3-c24d-4011-98f2-d556bbb77885.sql
 
 -- ============ Suppliers ============
 CREATE TABLE public.suppliers (
@@ -1468,7 +1641,7 @@ CREATE POLICY "Owners delete own supplier file objects"
   USING (bucket_id = 'supplier-files' AND auth.uid()::text = (storage.foldername(name))[1]);
 
 
--- ── 20260501041936_cf600d5d-d99e-4226-bcbe-e57de20e94c8.sql ──
+-- 20260501041936_cf600d5d-d99e-4226-bcbe-e57de20e94c8.sql
 -- Add tester_approved flag to profiles
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS tester_approved boolean NOT NULL DEFAULT false,
@@ -1537,14 +1710,14 @@ CREATE TRIGGER on_tester_application_insert
   AFTER INSERT ON public.tester_applications
   FOR EACH ROW EXECUTE FUNCTION public.auto_approve_tester();
 
--- ── 20260501043209_b25f8d26-edd4-4a60-a383-d70da3ac74e6.sql ──
+-- 20260501043209_b25f8d26-edd4-4a60-a383-d70da3ac74e6.sql
 ALTER TABLE public.tester_applications
   ADD COLUMN IF NOT EXISTS contact_email text,
   ADD COLUMN IF NOT EXISTS contact_line text,
   ALTER COLUMN contact_channel DROP NOT NULL,
   ALTER COLUMN contact_value DROP NOT NULL;
 
--- ── 20260501052447_8300d76d-6796-44d2-b398-a7af339dda1a.sql ──
+-- 20260501052447_8300d76d-6796-44d2-b398-a7af339dda1a.sql
 -- 1) Replace permissive hire_requests INSERT policy with one that checks the target owns a published project
 DROP POLICY IF EXISTS "Anyone can submit hire requests" ON public.hire_requests;
 
@@ -1660,7 +1833,7 @@ GRANT EXECUTE ON FUNCTION public.get_db_usage_stats() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_storage_usage_stats() TO authenticated;
 
 
--- ── 20260501071420_8df6e4f0-8588-46c8-a96a-68a837b21040.sql ──
+-- 20260501071420_8df6e4f0-8588-46c8-a96a-68a837b21040.sql
 -- Supplier cover image
 ALTER TABLE public.suppliers
   ADD COLUMN IF NOT EXISTS cover_image_url text;
@@ -1703,7 +1876,7 @@ CREATE POLICY "Admins delete any beta feedback"
   ON public.beta_feedback FOR DELETE TO authenticated
   USING (public.has_role(auth.uid(), 'admin'));
 
--- ── 20260501071813_acea63c2-60fa-4968-a107-963c47f02ef5.sql ──
+-- 20260501071813_acea63c2-60fa-4968-a107-963c47f02ef5.sql
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('supplier-covers', 'supplier-covers', true)
 ON CONFLICT (id) DO NOTHING;
@@ -1735,7 +1908,7 @@ CREATE POLICY "Users delete own supplier covers"
     AND auth.uid()::text = (storage.foldername(name))[1]
   );
 
--- ── 20260501072107_5daa99b3-2c30-45a5-a535-d294375be4ab.sql ──
+-- 20260501072107_5daa99b3-2c30-45a5-a535-d294375be4ab.sql
 
 -- Track which features users open, for admin analytics.
 CREATE TABLE public.feature_usage_events (
@@ -1798,7 +1971,7 @@ END;
 $$;
 
 
--- ── 20260501074333_abbb43a2-b930-48c6-a578-f737e9c9f023.sql ──
+-- 20260501074333_abbb43a2-b930-48c6-a578-f737e9c9f023.sql
 CREATE OR REPLACE FUNCTION public.get_feature_data_stats()
 RETURNS TABLE(
   feature text,
@@ -1871,7 +2044,7 @@ BEGIN
 END;
 $$;
 
--- ── 20260501074820_a0cede17-34ba-4517-b049-dc477ee6fd31.sql ──
+-- 20260501074820_a0cede17-34ba-4517-b049-dc477ee6fd31.sql
 -- Fix ambiguous "feature" column reference by aliasing CTE columns
 CREATE OR REPLACE FUNCTION public.get_feature_data_stats()
 RETURNS TABLE(
@@ -1959,7 +2132,7 @@ BEGIN
 END;
 $$;
 
--- ── 20260501081411_5e4ab3c7-b698-46a6-bcea-c749ecd57d64.sql ──
+-- 20260501081411_5e4ab3c7-b698-46a6-bcea-c749ecd57d64.sql
 -- Top subscriptions report for admins (across all users)
 CREATE OR REPLACE FUNCTION public.get_top_subscriptions(_limit integer DEFAULT 50)
 RETURNS TABLE(
@@ -2000,13 +2173,13 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.get_top_subscriptions(integer) TO authenticated;
 
--- ── 20260501090929_b0b070a3-1ff3-49af-ba72-362ab75f486c.sql ──
+-- 20260501090929_b0b070a3-1ff3-49af-ba72-362ab75f486c.sql
 -- กันใบสมัคร Tester ซ้ำต่อ user_id (กัน race จาก double-tab/double-click)
 -- ใช้ UNIQUE INDEX แทน UNIQUE CONSTRAINT เพื่อ idempotent (ใช้ IF NOT EXISTS)
 CREATE UNIQUE INDEX IF NOT EXISTS tester_applications_user_id_uidx
   ON public.tester_applications (user_id);
 
--- ── 20260502005156_e097517f-9868-454c-9ba4-8f192e05c79e.sql ──
+-- 20260502005156_e097517f-9868-454c-9ba4-8f192e05c79e.sql
 -- 1) Announcements table
 CREATE TABLE IF NOT EXISTS public.announcements (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -2072,7 +2245,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.touch_last_active() TO authenticated;
 
--- ── 20260502011454_e6fe4bab-e82d-4ad9-bbb6-6ae1e63e2272.sql ──
+-- 20260502011454_e6fe4bab-e82d-4ad9-bbb6-6ae1e63e2272.sql
 -- 1) Announcements: scheduling
 ALTER TABLE public.announcements
   ADD COLUMN IF NOT EXISTS start_at timestamptz,
@@ -2173,7 +2346,7 @@ CREATE POLICY "Owners delete chat images"
 ON storage.objects FOR DELETE TO authenticated
 USING (bucket_id = 'chat-images' AND (auth.uid()::text = (storage.foldername(name))[1] OR public.has_role(auth.uid(), 'admin')));
 
--- ── 20260502012740_2d83cac9-750e-4f01-be47-c4093b393189.sql ──
+-- 20260502012740_2d83cac9-750e-4f01-be47-c4093b393189.sql
 -- Auto-reply on first user message in a conversation
 CREATE OR REPLACE FUNCTION public.chat_auto_reply()
 RETURNS trigger
@@ -2215,7 +2388,7 @@ AFTER INSERT ON public.chat_messages
 FOR EACH ROW
 EXECUTE FUNCTION public.chat_auto_reply();
 
--- ── 20260502014315_c6e80581-1d03-4b95-8075-f139c1ab0470.sql ──
+-- 20260502014315_c6e80581-1d03-4b95-8075-f139c1ab0470.sql
 -- Enable pg_cron and pg_net (no-op if already enabled)
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 CREATE EXTENSION IF NOT EXISTS pg_net;
@@ -2284,11 +2457,11 @@ SELECT cron.schedule(
   $$ SELECT public.purge_old_storage(); $$
 );
 
--- ── 20260502014335_2af3fd8f-96b2-47c1-b610-36f05adb1965.sql ──
+-- 20260502014335_2af3fd8f-96b2-47c1-b610-36f05adb1965.sql
 REVOKE ALL ON FUNCTION public.purge_old_storage() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.purge_old_storage() TO postgres, service_role;
 
--- ── 20260502020805_40d7620c-a354-4aec-8276-07cca2dda618.sql ──
+-- 20260502020805_40d7620c-a354-4aec-8276-07cca2dda618.sql
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true,
   ADD COLUMN IF NOT EXISTS deactivated_at timestamp with time zone,
@@ -2422,7 +2595,7 @@ SELECT cron.schedule(
   $$ SELECT public.purge_inactive_profile_data(50); $$
 );
 
--- ── 20260502021747_94db1dcc-ca15-4bf4-96f5-ab2edeb54397.sql ──
+-- 20260502021747_94db1dcc-ca15-4bf4-96f5-ab2edeb54397.sql
 
 -- Activity Logs table
 CREATE TABLE public.user_activity_logs (
@@ -2584,7 +2757,7 @@ SELECT cron.schedule(
 );
 
 
--- ── 20260502023231_612bffe2-7398-4b8f-9675-37b8128b87ec.sql ──
+-- 20260502023231_612bffe2-7398-4b8f-9675-37b8128b87ec.sql
 -- =====================================================================
 -- Lock down EXECUTE on SECURITY DEFINER functions (least privilege)
 -- =====================================================================
@@ -2626,10 +2799,10 @@ GRANT EXECUTE ON FUNCTION public.log_user_activity(text) TO authenticated;
 -- get_public_profile: viewing others' public profile (signed-in or anon both fine)
 GRANT EXECUTE ON FUNCTION public.get_public_profile(uuid) TO anon, authenticated;
 
--- ── 20260502023258_80bdb01a-68fe-4bca-bab7-500822bdbd87.sql ──
+-- 20260502023258_80bdb01a-68fe-4bca-bab7-500822bdbd87.sql
 REVOKE EXECUTE ON FUNCTION public.log_user_activity(text) FROM PUBLIC, anon;
 
--- ── 20260502024243_6fa28f69-d083-4ff1-b8c6-ecf0668eb9d7.sql ──
+-- 20260502024243_6fa28f69-d083-4ff1-b8c6-ecf0668eb9d7.sql
 -- Enforce Realtime channel-level authorization
 -- Topics in use:
 --   chat_<user_uuid>   → owner only
@@ -2662,7 +2835,7 @@ USING (
 );
 
 
--- ── 20260502025328_68d5ab97-78e4-4f90-a300-a3aab6a893c1.sql ──
+-- 20260502025328_68d5ab97-78e4-4f90-a300-a3aab6a893c1.sql
 DROP FUNCTION IF EXISTS public.purge_inactive_profile_data(integer);
 
 CREATE OR REPLACE FUNCTION public.purge_inactive_profile_data(_limit integer DEFAULT 25)
@@ -2833,7 +3006,7 @@ $function$;
 
 REVOKE EXECUTE ON FUNCTION public.force_purge_user(uuid) FROM PUBLIC, anon, authenticated;
 
--- ── 20260502030708_38aac6d4-c05f-4dbb-a5a6-9adcb3f79bdc.sql ──
+-- 20260502030708_38aac6d4-c05f-4dbb-a5a6-9adcb3f79bdc.sql
 CREATE OR REPLACE FUNCTION public.force_purge_user(
   _target_user_id uuid,
   _admin_user_id uuid DEFAULT NULL
@@ -3007,7 +3180,7 @@ BEGIN
 END;
 $function$;
 
--- ── 20260502090345_2c4ebb45-5ce0-4084-a933-05f17d283e6d.sql ──
+-- 20260502090345_2c4ebb45-5ce0-4084-a933-05f17d283e6d.sql
 -- Articles table for blog/content engine
 CREATE TABLE public.articles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -3093,7 +3266,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.increment_article_view(TEXT) TO anon, authenticated;
 
--- ── 20260502104413_904325de-a2bb-4664-b5fc-c65f4169ae20.sql ──
+-- 20260502104413_904325de-a2bb-4664-b5fc-c65f4169ae20.sql
 INSERT INTO storage.buckets (id, name, public) VALUES ('article-images', 'article-images', true) ON CONFLICT (id) DO NOTHING;
 
 CREATE POLICY "Public can view article images"
@@ -3112,11 +3285,11 @@ CREATE POLICY "Admins delete article images"
 ON storage.objects FOR DELETE TO authenticated
 USING (bucket_id = 'article-images' AND has_role(auth.uid(), 'admin'::app_role));
 
--- ── 20260502110722_b305ed04-430b-479d-82b7-0bb49776dd3a.sql ──
+-- 20260502110722_b305ed04-430b-479d-82b7-0bb49776dd3a.sql
 -- Grant UPDATE on articles to authenticator/anon roles temporarily for bulk content refresh
 GRANT UPDATE ON public.articles TO postgres, authenticator, anon, authenticated, service_role;
 
--- ── 20260502110751_c14b47d5-0a30-416e-bed6-a4e5b89601bb.sql ──
+-- 20260502110751_c14b47d5-0a30-416e-bed6-a4e5b89601bb.sql
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sandbox_exec') THEN
@@ -3124,7 +3297,7 @@ BEGIN
   END IF;
 END $$;
 
--- ── 20260502110822_3353aa1e-f0fb-4eed-9104-3081b8bedda8.sql ──
+-- 20260502110822_3353aa1e-f0fb-4eed-9104-3081b8bedda8.sql
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sandbox_exec') THEN
@@ -3133,7 +3306,7 @@ BEGIN
 END $$;
 REVOKE UPDATE ON public.articles FROM postgres, authenticator, anon, authenticated, service_role;
 
--- ── 20260503141127_6dc1c278-b657-4b45-8d0f-94e9e29a002a.sql ──
+-- 20260503141127_6dc1c278-b657-4b45-8d0f-94e9e29a002a.sql
 -- Persistent storage for Planner, Feedback, Projects, Assets, Review pins
 -- Additive only — no DROP / TRUNCATE / DELETE on existing tables
 
@@ -3288,7 +3461,7 @@ DROP TRIGGER IF EXISTS trg_review_pins_updated ON public.review_pins;
 CREATE TRIGGER trg_review_pins_updated BEFORE UPDATE ON public.review_pins
 FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
--- ── 20260503143225_496bf31b-1b33-45de-b485-8864d29f481f.sql ──
+-- 20260503143225_496bf31b-1b33-45de-b485-8864d29f481f.sql
 
 CREATE TABLE IF NOT EXISTS public.job_trackers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -3363,7 +3536,7 @@ CREATE INDEX IF NOT EXISTS idx_job_milestones_job ON public.job_milestones(job_i
 CREATE INDEX IF NOT EXISTS idx_job_slips_job ON public.job_slips(job_id);
 
 
--- ── 20260503144526_d861e0d6-ab17-41f4-ab39-054504387be6.sql ──
+-- 20260503144526_d861e0d6-ab17-41f4-ab39-054504387be6.sql
 -- 1) Extend job_trackers
 ALTER TABLE public.job_trackers
   ADD COLUMN IF NOT EXISTS tracking_code TEXT,
@@ -3416,7 +3589,7 @@ CREATE POLICY "Public can view job_events" ON public.job_events FOR SELECT TO an
 
 CREATE INDEX IF NOT EXISTS idx_job_events_job ON public.job_events(job_id, created_at DESC);
 
--- ── 20260503150524_13fd22b6-3829-49d5-bdc8-fb0df3f286c4.sql ──
+-- 20260503150524_13fd22b6-3829-49d5-bdc8-fb0df3f286c4.sql
 
 -- Add start_date and payment QR url to job_trackers
 ALTER TABLE public.job_trackers 
@@ -3498,12 +3671,12 @@ FOR EACH ROW EXECUTE FUNCTION public.notify_on_slip_upload();
 -- We don't add a permissive insert policy; trigger runs as definer.
 
 
--- ── 20260503154735_f5e90f71-ee98-452b-8b9f-898ad9d69b3f.sql ──
+-- 20260503154735_f5e90f71-ee98-452b-8b9f-898ad9d69b3f.sql
 ALTER TABLE public.job_slips
   ADD COLUMN IF NOT EXISTS rejected boolean NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS rejection_reason text NOT NULL DEFAULT '';
 
--- ── 20260503154834_d47afd04-7e73-406d-95bc-dac58a995788.sql ──
+-- 20260503154834_d47afd04-7e73-406d-95bc-dac58a995788.sql
 CREATE OR REPLACE FUNCTION public.log_slip_event()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -3537,7 +3710,7 @@ CREATE TRIGGER trg_log_slip_update
 AFTER UPDATE ON public.job_slips
 FOR EACH ROW EXECUTE FUNCTION public.log_slip_event();
 
--- ── 20260504014931_b2ee33d9-1d5d-4f7b-88f3-12420f1baf74.sql ──
+-- 20260504014931_b2ee33d9-1d5d-4f7b-88f3-12420f1baf74.sql
 
 DROP POLICY IF EXISTS "Public can view job_trackers" ON public.job_trackers;
 DROP POLICY IF EXISTS "Public can view job_events" ON public.job_events;
@@ -3546,7 +3719,7 @@ DROP POLICY IF EXISTS "Public can view job_slips" ON public.job_slips;
 DROP POLICY IF EXISTS "Public can insert job_slips" ON public.job_slips;
 
 
--- ── 20260504015803_2c512b8a-8a5a-4ad2-9b2f-bd4590da7124.sql ──
+-- 20260504015803_2c512b8a-8a5a-4ad2-9b2f-bd4590da7124.sql
 -- Phase 1.1: Remove overly permissive RLS policies on job tracking tables
 -- (public access is now token-gated via server functions using supabaseAdmin)
 DROP POLICY IF EXISTS "Public can view job_trackers" ON public.job_trackers;
@@ -3562,7 +3735,7 @@ ALTER FUNCTION public.gen_tracking_code() SET search_path = public;
 -- (which is null inside server functions). Keep only the (uuid, uuid) version.
 DROP FUNCTION IF EXISTS public.force_purge_user(uuid);
 
--- ── 20260504020554_1e44c653-ceda-431f-afac-49e86fcf17b9.sql ──
+-- 20260504020554_1e44c653-ceda-431f-afac-49e86fcf17b9.sql
 -- 1. Realtime publications
 DO $$
 BEGIN
@@ -3745,7 +3918,7 @@ CREATE TRIGGER trg_cleanup_announcement_storage
 AFTER DELETE ON public.announcements
 FOR EACH ROW EXECUTE FUNCTION public.cleanup_announcement_storage();
 
--- ── 20260504020624_a4f2919f-232c-4121-92f6-753a463efa27.sql ──
+-- 20260504020624_a4f2919f-232c-4121-92f6-753a463efa27.sql
 REVOKE EXECUTE ON FUNCTION public._storage_path_from_url(text, text) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public._delete_storage_object(text, text) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.cleanup_portfolio_project_storage() FROM PUBLIC, anon, authenticated;
@@ -3755,7 +3928,7 @@ REVOKE EXECUTE ON FUNCTION public.cleanup_article_storage() FROM PUBLIC, anon, a
 REVOKE EXECUTE ON FUNCTION public.cleanup_chat_message_storage() FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.cleanup_announcement_storage() FROM PUBLIC, anon, authenticated;
 
--- ── 20260504022509_87dda77e-fc88-4661-9c88-001766ccc8e9.sql ──
+-- 20260504022509_87dda77e-fc88-4661-9c88-001766ccc8e9.sql
 -- Calculator usage tracking
 CREATE TABLE IF NOT EXISTS public.calculator_usage_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -3797,7 +3970,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.get_calculator_usage_count() TO anon, authenticated;
 
--- ── 20260504025353_6e3115b4-23fd-4b3f-9e3a-6d00bdafd855.sql ──
+-- 20260504025353_6e3115b4-23fd-4b3f-9e3a-6d00bdafd855.sql
 
 -- 1. Device events table
 CREATE TABLE IF NOT EXISTS public.user_device_events (
@@ -3965,7 +4138,7 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_top_subscriptions(integer) TO authenticated;
 
 
--- ── 20260506013236_90cec1c1-0a47-481e-bfdd-31b0babd79d8.sql ──
+-- 20260506013236_90cec1c1-0a47-481e-bfdd-31b0babd79d8.sql
 
 -- Step comments for job tracker
 CREATE TABLE public.job_tracker_step_comments (
@@ -4036,7 +4209,7 @@ CREATE POLICY "Admins view all ai usage"
   USING (public.has_role(auth.uid(), 'admin'));
 
 
--- ── 20260508005154_5acdadca-19b7-473d-8dcb-8e9a3281c0e4.sql ──
+-- 20260508005154_5acdadca-19b7-473d-8dcb-8e9a3281c0e4.sql
 
 CREATE TABLE public.price_guide_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -4069,7 +4242,7 @@ CREATE INDEX idx_price_guide_events_job_type ON public.price_guide_events(job_ty
 CREATE INDEX idx_price_guide_events_user ON public.price_guide_events(user_id);
 
 
--- ── 20260509000320_1c97bdb4-46ab-4875-be1f-dda31c85b479.sql ──
+-- 20260509000320_1c97bdb4-46ab-4875-be1f-dda31c85b479.sql
 
 CREATE TABLE IF NOT EXISTS public.price_guide_overrides (
   job_type text PRIMARY KEY,
@@ -4115,7 +4288,7 @@ ALTER TABLE public.price_guide_events
   ADD COLUMN IF NOT EXISTS quantity integer NOT NULL DEFAULT 1;
 
 
--- ── 20260510014123_16876819-27ef-4dcb-ae8e-1251ead42739.sql ──
+-- 20260510014123_16876819-27ef-4dcb-ae8e-1251ead42739.sql
 -- Guest usage tracking for anonymous landing chat
 CREATE TABLE IF NOT EXISTS public.ai_chat_guest_usage (
   guest_id text NOT NULL,
@@ -4134,7 +4307,7 @@ CREATE POLICY "no_client_access_guest_usage"
   USING (false);
 
 
--- ── 20260511003617_58871470-efd1-431d-94e4-1f3d29a7a9cf.sql ──
+-- 20260511003617_58871470-efd1-431d-94e4-1f3d29a7a9cf.sql
 
 -- 1) Trim price_guide_events to last 5 per user
 CREATE OR REPLACE FUNCTION public.trim_price_guide_history()
@@ -4191,7 +4364,7 @@ CREATE POLICY "Admins can view all submissions"
   USING (public.has_role(auth.uid(), 'admin'));
 
 
--- ── 20260511101922_b66d1949-bf0f-40d9-bd1f-a65204619b1f.sql ──
+-- 20260511101922_b66d1949-bf0f-40d9-bd1f-a65204619b1f.sql
 
 -- 1. design_briefs table
 CREATE TABLE public.design_briefs (
@@ -4388,11 +4561,11 @@ CREATE POLICY "Brief refs owner delete"
   );
 
 
--- ── 20260511143457_65aff0c8-190f-4d60-a9bd-02a76f9684fd.sql ──
+-- 20260511143457_65aff0c8-190f-4d60-a9bd-02a76f9684fd.sql
 ALTER TABLE public.quotations ADD COLUMN IF NOT EXISTS brief_id uuid;
 CREATE INDEX IF NOT EXISTS idx_quotations_brief_id ON public.quotations(brief_id);
 
--- ── 20260511150129_dc7240a3-4389-417c-aab9-a2dcc0d1eaa3.sql ──
+-- 20260511150129_dc7240a3-4389-417c-aab9-a2dcc0d1eaa3.sql
 
 -- 1. Banner slides table
 CREATE TABLE public.auth_banner_slides (
@@ -4482,7 +4655,7 @@ END;
 $function$;
 
 
--- ── 20260511153738_8d288992-e2e9-4206-a744-6425c0f1b9a3.sql ──
+-- 20260511153738_8d288992-e2e9-4206-a744-6425c0f1b9a3.sql
 
 -- Vision Canvas main table
 CREATE TABLE public.vision_canvases (
@@ -4573,7 +4746,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.vision_canvases;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.vision_canvas_reactions;
 
 
--- ── 20260511160513_cf6964b8-fab9-45b4-aee7-dde50bdbf041.sql ──
+-- 20260511160513_cf6964b8-fab9-45b4-aee7-dde50bdbf041.sql
 
 CREATE TABLE public.archetype_results (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -4612,7 +4785,7 @@ ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS archetype_secondary text;
 
 
--- ── 20260512040613_a6af63f7-72fc-4303-8042-38c07b5ea085.sql ──
+-- 20260512040613_a6af63f7-72fc-4303-8042-38c07b5ea085.sql
 
 CREATE TABLE public.user_color_palettes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -4655,7 +4828,7 @@ CREATE POLICY "Owners update saved colors" ON public.user_saved_colors FOR UPDAT
 CREATE POLICY "Owners delete saved colors" ON public.user_saved_colors FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
 
--- ── 20260512045506_7acf26f5-2f5e-48dd-a962-59e04b5d477e.sql ──
+-- 20260512045506_7acf26f5-2f5e-48dd-a962-59e04b5d477e.sql
 
 -- 1. Lock down archetype_results: only owner (or service role) can read
 DROP POLICY IF EXISTS "public_can_select_via_share" ON public.archetype_results;
@@ -4683,7 +4856,7 @@ CREATE POLICY "Brief refs auth insert in own folder"
   );
 
 
--- ── 20260512064044_158d6559-66b1-4b04-afa2-9f0e408b7877.sql ──
+-- 20260512064044_158d6559-66b1-4b04-afa2-9f0e408b7877.sql
 CREATE TABLE public.typo_pairs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL,
@@ -4707,7 +4880,7 @@ CREATE INDEX idx_typo_pairs_user ON public.typo_pairs(user_id, created_at DESC);
 
 ALTER PUBLICATION supabase_realtime ADD TABLE public.typo_pairs;
 
--- ── 20260512071023_855ff03d-cb00-4de3-9ab8-c97c462829dd.sql ──
+-- 20260512071023_855ff03d-cb00-4de3-9ab8-c97c462829dd.sql
 CREATE TABLE public.spec_checklist_state (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
@@ -4740,7 +4913,7 @@ CREATE TRIGGER update_spec_checklist_state_updated_at
 
 ALTER PUBLICATION supabase_realtime ADD TABLE public.spec_checklist_state;
 
--- ── 20260512100638_385ea6e9-a2d1-445d-bbec-7c64a0ec62c6.sql ──
+-- 20260512100638_385ea6e9-a2d1-445d-bbec-7c64a0ec62c6.sql
 ALTER TABLE public.vision_canvas_reactions
   ADD COLUMN IF NOT EXISTS pin_x numeric,
   ADD COLUMN IF NOT EXISTS pin_y numeric,
@@ -4769,7 +4942,7 @@ ALTER TABLE public.vision_canvas_reactions
   ADD CONSTRAINT vision_canvas_reactions_kind_check
   CHECK (kind IN ('like','comment','pin_comment','vote'));
 
--- ── 20260512131454_dc54a7fe-5714-414a-9bd2-8bd8145e3d8e.sql ──
+-- 20260512131454_dc54a7fe-5714-414a-9bd2-8bd8145e3d8e.sql
 
 -- 1. New columns on planner_posts
 ALTER TABLE public.planner_posts
@@ -4885,7 +5058,7 @@ BEGIN
 END $$;
 
 
--- ── 20260512144148_b81d7bbc-fb69-4774-bc8f-e9b0d816c907.sql ──
+-- 20260512144148_b81d7bbc-fb69-4774-bc8f-e9b0d816c907.sql
 -- Status history table for client invoices
 CREATE TABLE public.finance_invoice_status_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -5003,7 +5176,7 @@ BEGIN
 END;
 $$;
 
--- ── 20260514015523_6c707efd-0c39-4b19-8439-9da51e59df55.sql ──
+-- 20260514015523_6c707efd-0c39-4b19-8439-9da51e59df55.sql
 
 CREATE TABLE public.dashboard_jobs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -5052,7 +5225,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.dashboard_jobs;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.dashboard_tasks;
 
 
--- ── 20260515001053_8d56f736-05b1-473b-8206-a79fdc16bbc8.sql ──
+-- 20260515001053_8d56f736-05b1-473b-8206-a79fdc16bbc8.sql
 -- Sub-tasks table for grouped job list
 CREATE TABLE IF NOT EXISTS public.dashboard_job_tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -5107,7 +5280,7 @@ CREATE TRIGGER update_dashboard_notes_updated_at
   BEFORE UPDATE ON public.dashboard_notes
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
--- ── 20260516134211_89e37b0d-6487-4e5f-b320-408e7666743a.sql ──
+-- 20260516134211_89e37b0d-6487-4e5f-b320-408e7666743a.sql
 CREATE TABLE IF NOT EXISTS public.dashboard_daily_trends (
   trend_date DATE PRIMARY KEY,
   items JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -5122,7 +5295,7 @@ CREATE POLICY "Anyone can read daily trends"
   USING (true);
 
 
--- ── 20260521043342_7924d4de-75a5-42f1-bfc0-92f6489aa1bc.sql ──
+-- 20260521043342_7924d4de-75a5-42f1-bfc0-92f6489aa1bc.sql
 DROP POLICY IF EXISTS "Public can view share links" ON public.planner_share_links;
 
 CREATE OR REPLACE FUNCTION public.get_planner_share_by_token(_token uuid)
@@ -5151,7 +5324,7 @@ GRANT EXECUTE ON FUNCTION public.get_planner_share_by_token(uuid) TO anon, authe
 
 ALTER PUBLICATION supabase_realtime DROP TABLE public.calculator_usage_events;
 
--- ── 20260521044228_0d3e587b-393c-4b05-bcf7-c0c474ede22f.sql ──
+-- 20260521044228_0d3e587b-393c-4b05-bcf7-c0c474ede22f.sql
 CREATE OR REPLACE FUNCTION public.get_planner_posts_by_token(_token uuid)
 RETURNS TABLE (
   id uuid,
@@ -5188,7 +5361,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.get_planner_posts_by_token(uuid) TO anon, authenticated;
 
--- ── 20260521045622_2db0fd48-b4e0-48de-a632-13ccb8162a72.sql ──
+-- 20260521045622_2db0fd48-b4e0-48de-a632-13ccb8162a72.sql
 
 DROP FUNCTION IF EXISTS public.notify_on_comment() CASCADE;
 DROP FUNCTION IF EXISTS public.notify_on_like() CASCADE;
@@ -5340,7 +5513,7 @@ END;
 $function$;
 
 
--- ── 20260521053103_37dce9b6-3c40-4f6a-99f7-338d059c2678.sql ──
+-- 20260521053103_37dce9b6-3c40-4f6a-99f7-338d059c2678.sql
 -- 1. Remove the bypass policy on planner_posts; clients must go via get_planner_posts_by_token RPC
 DROP POLICY IF EXISTS "Public can view posts via share link" ON public.planner_posts;
 
@@ -5372,7 +5545,7 @@ CREATE POLICY "Users update own ai usage"
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
--- ── 20260521053647_4e569216-4df7-4618-8d8d-5566c8f5948f.sql ──
+-- 20260521053647_4e569216-4df7-4618-8d8d-5566c8f5948f.sql
 -- Tighten public slip upload: require slips/<existing_job_id>/...
 DROP POLICY IF EXISTS "Public upload slips" ON storage.objects;
 
@@ -5390,7 +5563,7 @@ CREATE POLICY "Public upload slips into existing jobs"
     )
   );
 
--- ── 20260523023300_052376fe-4e41-41fb-a922-9b154702ef66.sql ──
+-- 20260523023300_052376fe-4e41-41fb-a922-9b154702ef66.sql
 
 create extension if not exists vector;
 
@@ -5520,7 +5693,7 @@ as $$
 $$;
 
 
--- ── 20260523042421_19c104fc-cabd-452d-a25f-d0f402bd60b1.sql ──
+-- 20260523042421_19c104fc-cabd-452d-a25f-d0f402bd60b1.sql
 
 -- 1) Make chat-images private and scope SELECT to owner or admin
 UPDATE storage.buckets SET public = false WHERE id = 'chat-images';
@@ -5576,7 +5749,7 @@ USING (
 );
 
 
--- ── 20260523043235_0daf7ad4-eeb0-4379-bd63-e67f187e897f.sql ──
+-- 20260523043235_0daf7ad4-eeb0-4379-bd63-e67f187e897f.sql
 
 -- ============================================
 -- So1o HQ — Internal AI Agency tables
@@ -5916,7 +6089,7 @@ INSERT INTO public.hq_agents (slug, name, title, department, emoji, accent_color
 กฎ: ภาษาไทย ≤800 คำ, ห้ามเสนอ patch ที่ขัดกับกฎความปลอดภัย/จริยธรรมของแต่ละ agent');
 
 
--- ── 20260523044300_1bed3ee5-0edd-42fb-8838-a24351930ee3.sql ──
+-- 20260523044300_1bed3ee5-0edd-42fb-8838-a24351930ee3.sql
 -- AI interactions feedback (Like/Dislike on Mentor chat answers)
 CREATE TABLE public.ai_interactions_feedback (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -5994,7 +6167,7 @@ AFTER INSERT ON public.ai_interactions_feedback
 FOR EACH ROW
 EXECUTE FUNCTION public.feedback_to_training_sample();
 
--- ── 20260523045457_1c9df851-0745-403d-b3a2-ea860f3d2283.sql ──
+-- 20260523045457_1c9df851-0745-403d-b3a2-ea860f3d2283.sql
 -- 1) Tighten job_tracker_step_comments INSERT: authenticated owners only
 DROP POLICY IF EXISTS "Owners insert comments on their jobs" ON public.job_tracker_step_comments;
 CREATE POLICY "Owners insert comments on their jobs"
@@ -6050,12 +6223,12 @@ USING (
   END
 );
 
--- ── 20260524014850_86914ddc-0343-4826-9dae-8ffc69732ddf.sql ──
+-- 20260524014850_86914ddc-0343-4826-9dae-8ffc69732ddf.sql
 ALTER TABLE public.job_trackers ADD COLUMN IF NOT EXISTS quotation_id uuid;
 ALTER TABLE public.job_trackers ADD COLUMN IF NOT EXISTS brief_id uuid;
 CREATE INDEX IF NOT EXISTS idx_job_trackers_quotation ON public.job_trackers(user_id, quotation_id) WHERE quotation_id IS NOT NULL;
 
--- ── 20260527034807_email_infra.sql ──
+-- 20260527034807_email_infra.sql
 -- Email infrastructure
 -- Creates the queue system, send log, send state, suppression, and unsubscribe
 -- tables used by both auth and transactional emails.
@@ -6360,7 +6533,7 @@ CREATE INDEX IF NOT EXISTS idx_unsubscribe_tokens_token ON public.email_unsubscr
 --    To revert: SELECT cron.unschedule('process-email-queue');
 
 
--- ── 20260527035214_email_infra.sql ──
+-- 20260527035214_email_infra.sql
 -- Email infrastructure
 -- Creates the queue system, send log, send state, suppression, and unsubscribe
 -- tables used by both auth and transactional emails.
@@ -6665,7 +6838,7 @@ CREATE INDEX IF NOT EXISTS idx_unsubscribe_tokens_token ON public.email_unsubscr
 --    To revert: SELECT cron.unschedule('process-email-queue');
 
 
--- ── 20260527041850_dc38a5c7-1f4e-4a95-aff6-bc9192b1d151.sql ──
+-- 20260527041850_dc38a5c7-1f4e-4a95-aff6-bc9192b1d151.sql
 -- 1. Drop unused tables from realtime publication (no client subscribes to these)
 ALTER PUBLICATION supabase_realtime DROP TABLE public.typo_pairs;
 ALTER PUBLICATION supabase_realtime DROP TABLE public.spec_checklist_state;
@@ -6700,7 +6873,7 @@ ALTER FUNCTION public.read_email_batch(text, integer, integer) SET search_path =
 ALTER FUNCTION public.move_to_dlq(text, text, bigint, jsonb) SET search_path = pgmq, public, pg_catalog;
 
 
--- ── 20260527051013_a8190e4e-dc78-4077-9158-52a92c7ca599.sql ──
+-- 20260527051013_a8190e4e-dc78-4077-9158-52a92c7ca599.sql
 
 -- Table for dashboard banner slides (admin-managed)
 CREATE TABLE public.dashboard_banner_slides (
@@ -6763,7 +6936,7 @@ CREATE POLICY "Admins can delete dashboard banner images"
   USING (bucket_id = 'dashboard-banners' AND has_role(auth.uid(), 'admin'::app_role));
 
 
--- ── 20260527063254_f828180e-b6f0-4249-9230-39f18decaa17.sql ──
+-- 20260527063254_f828180e-b6f0-4249-9230-39f18decaa17.sql
 
 ALTER TABLE public.suppliers
   ADD COLUMN IF NOT EXISTS share_token uuid UNIQUE,
@@ -6792,13 +6965,13 @@ CREATE POLICY "Public can view links of shared suppliers"
   ));
 
 
--- ── 20260527064731_b2c13032-2c34-4408-a3e5-0a55930c9e18.sql ──
+-- 20260527064731_b2c13032-2c34-4408-a3e5-0a55930c9e18.sql
 ALTER TABLE public.suppliers ADD COLUMN IF NOT EXISTS map_url TEXT;
 
--- ── 20260527070302_598cf540-9ca6-4d0e-9de8-3870b6d406cc.sql ──
+-- 20260527070302_598cf540-9ca6-4d0e-9de8-3870b6d406cc.sql
 ALTER TABLE public.suppliers ADD COLUMN IF NOT EXISTS share_hidden_fields TEXT[] NOT NULL DEFAULT '{}';
 
--- ── 20260527072750_7b7505dd-1c20-41f3-9300-73d98831da40.sql ──
+-- 20260527072750_7b7505dd-1c20-41f3-9300-73d98831da40.sql
 -- 1. SECURITY DEFINER function returns shared supplier with hidden fields redacted, plus visible links
 CREATE OR REPLACE FUNCTION public.get_shared_supplier_by_token(_token uuid)
 RETURNS jsonb
@@ -6868,7 +7041,7 @@ USING (
   AND SUBSTRING(realtime.topic() FROM 7) = (auth.uid())::text
 );
 
--- ── 20260527075110_c90cd942-2f01-42b7-b1f8-48035a9802fe.sql ──
+-- 20260527075110_c90cd942-2f01-42b7-b1f8-48035a9802fe.sql
 
 -- Storage bucket for 50 ทวิ certificate files (private)
 INSERT INTO storage.buckets (id, name, public)
@@ -6893,7 +7066,7 @@ ON storage.objects FOR DELETE TO authenticated
 USING (bucket_id = 'wht-certificates' AND auth.uid()::text = (storage.foldername(name))[1]);
 
 
--- ── 20260527080415_1463860f-bbc9-4867-8eca-96c6e7cd94d7.sql ──
+-- 20260527080415_1463860f-bbc9-4867-8eca-96c6e7cd94d7.sql
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('expense-receipts', 'expense-receipts', false)
 ON CONFLICT (id) DO NOTHING;
@@ -6914,7 +7087,7 @@ CREATE POLICY "expense-receipts owner delete"
 ON storage.objects FOR DELETE TO authenticated
 USING (bucket_id = 'expense-receipts' AND auth.uid()::text = (storage.foldername(name))[1]);
 
--- ── 20260527083614_6031e0d0-5699-462b-a0a1-82462a00b147.sql ──
+-- 20260527083614_6031e0d0-5699-462b-a0a1-82462a00b147.sql
 
 CREATE TABLE public.finance_tax_scenarios (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -6953,7 +7126,7 @@ BEFORE UPDATE ON public.finance_tax_scenarios
 FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 
--- ── 20260527085145_fb64a153-496d-4362-8a38-41b191a1893f.sql ──
+-- 20260527085145_fb64a153-496d-4362-8a38-41b191a1893f.sql
 -- Feature Suggestions
 CREATE TABLE public.feature_suggestions (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -7044,12 +7217,12 @@ INSERT INTO public.changelog_entries (version, title, body, tag, released_at) VA
   ('v1.3.0', 'Job Tracker + สลิปอัปโหลด', 'ลูกค้าอัปโหลดสลิปได้เอง พร้อมระบบยืนยันการรับเงิน', 'feature', now() - interval '7 days'),
   ('v1.2.1', 'ปรับปรุงความเร็วหน้าแดชบอร์ด', 'โหลดเร็วขึ้น ~40% บนมือถือ', 'improvement', now() - interval '14 days');
 
--- ── 20260527090100_ea1e6539-aceb-4eb6-9cb2-042c3b7359b5.sql ──
+-- 20260527090100_ea1e6539-aceb-4eb6-9cb2-042c3b7359b5.sql
 ALTER TABLE public.feedback_jobs
   ADD COLUMN IF NOT EXISTS revision_quota INTEGER,
   ADD COLUMN IF NOT EXISTS quotation_id UUID;
 
--- ── 20260527143832_a2b624c7-d34d-4448-84c1-665234fb98a3.sql ──
+-- 20260527143832_a2b624c7-d34d-4448-84c1-665234fb98a3.sql
 
 CREATE TABLE public.subscriptions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -7112,7 +7285,7 @@ AS $$
 $$;
 
 
--- ── 20260527145930_d92c881b-ce3c-42d4-b734-b637c9764b01.sql ──
+-- 20260527145930_d92c881b-ce3c-42d4-b734-b637c9764b01.sql
 -- 1) profiles.subscription_tier + seats
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS subscription_tier text NOT NULL DEFAULT 'free',
@@ -7242,7 +7415,7 @@ BEGIN
   END LOOP;
 END $$;
 
--- ── 20260527152449_e3af7eee-72cb-4924-bd12-c769475f7949.sql ──
+-- 20260527152449_e3af7eee-72cb-4924-bd12-c769475f7949.sql
 -- Tighten public slip-upload storage policy: require share_token in path
 DROP POLICY IF EXISTS "Public upload slips into existing jobs" ON storage.objects;
 
@@ -7282,7 +7455,7 @@ FOR SELECT
 TO authenticated
 USING (public.has_role(auth.uid(), 'admin'::public.app_role));
 
--- ── 20260528053730_ece7c34f-b407-439c-82a9-6c4e2db2b167.sql ──
+-- 20260528053730_ece7c34f-b407-439c-82a9-6c4e2db2b167.sql
 -- Remove admin's unrestricted SELECT on profiles (which exposed bank/tax/phone/address to any admin).
 -- Admins keep access to non-sensitive identity columns via a dedicated safe view.
 
@@ -7308,7 +7481,7 @@ GRANT SELECT ON public.admin_profiles_safe TO authenticated;
 COMMENT ON VIEW public.admin_profiles_safe IS
   'Admin-only view exposing non-sensitive profile columns. Sensitive fields (bank, tax_id, phone, address, payment QR) are intentionally omitted; admins must never bulk-read those across users. For per-user destructive ops, use server functions with supabaseAdmin.';
 
--- ── 20260528053804_ed258ae3-6ea2-4e63-8a9d-dbd816a90465.sql ──
+-- 20260528053804_ed258ae3-6ea2-4e63-8a9d-dbd816a90465.sql
 -- Replace the SECURITY DEFINER-style view (flagged by the linter) with a
 -- SECURITY DEFINER function that pins search_path and explicitly gates on admin role.
 
@@ -7366,7 +7539,7 @@ GRANT EXECUTE ON FUNCTION public.admin_list_profiles_safe() TO authenticated;
 COMMENT ON FUNCTION public.admin_list_profiles_safe() IS
   'Admin-only listing of profiles excluding sensitive fields (bank, tax_id, phone, address, payment QR, terms). Returns empty for non-admins.';
 
--- ── 20260528055121_db3c0db3-9f02-4f1b-9375-c4d115e12430.sql ──
+-- 20260528055121_db3c0db3-9f02-4f1b-9375-c4d115e12430.sql
 
 CREATE TABLE IF NOT EXISTS public.ai_usage_daily (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -7434,7 +7607,7 @@ $$;
 GRANT EXECUTE ON FUNCTION public.check_and_increment_ai_usage(uuid, text, integer) TO authenticated, service_role;
 
 
--- ── 20260528090419_765707f7-0b86-41ea-8c9a-2ff37210a974.sql ──
+-- 20260528090419_765707f7-0b86-41ea-8c9a-2ff37210a974.sql
 -- Replace overly-permissive ALL policy with role-scoped one.
 -- service_role bypasses RLS anyway, so this is mainly to silence the linter
 -- and document intent clearly. We scope the policy TO service_role.
@@ -7447,10 +7620,10 @@ TO service_role
 USING (true)
 WITH CHECK (true);
 
--- ── 20260528155240_61d3cca6-0414-4321-95d4-21232795ab8d.sql ──
+-- 20260528155240_61d3cca6-0414-4321-95d4-21232795ab8d.sql
 ALTER TABLE public.quotations ADD COLUMN IF NOT EXISTS timeline_enabled boolean NOT NULL DEFAULT true;
 
--- ── 20260604120001_fix_sync_user_tier_profile_key.sql ──
+-- 20260604120001_fix_sync_user_tier_profile_key.sql
 -- profiles use user_id (auth uid), not profiles.id, for tier sync
 CREATE OR REPLACE FUNCTION public.sync_user_tier(_user_id uuid)
 RETURNS void
@@ -7507,12 +7680,12 @@ END;
 $$;
 
 
--- ── 20260604130000_quotations_deposit_due_date.sql ──
+-- 20260604130000_quotations_deposit_due_date.sql
 ALTER TABLE public.quotations
   ADD COLUMN IF NOT EXISTS deposit_due_date DATE;
 
 
--- ── 20260604150000_support_tickets.sql ──
+-- 20260604150000_support_tickets.sql
 -- Support Tickets (Issue Tracking MVP)
 
 CREATE SEQUENCE IF NOT EXISTS public.support_ticket_number_seq START 1;
@@ -7809,14 +7982,14 @@ CREATE POLICY "ticket-attachments owner or admin delete"
   );
 
 
--- ── 20260605100000_quotations_contract.sql ──
+-- 20260605100000_quotations_contract.sql
 -- Contract fields on quotations (Phase 1.5)
 ALTER TABLE public.quotations
   ADD COLUMN IF NOT EXISTS contract_signed_at timestamptz,
   ADD COLUMN IF NOT EXISTS contract_accepted boolean NOT NULL DEFAULT false;
 
 
--- ── 20260605110000_shared_projects_phase2.sql ──
+-- 20260605110000_shared_projects_phase2.sql
 -- Phase 2: Shared Squad schema (feature-gated in app until enabled)
 CREATE TABLE IF NOT EXISTS public.shared_projects (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -7920,7 +8093,7 @@ CREATE POLICY "project_tasks_member_access" ON public.project_tasks
   );
 
 
--- ── 20260605120000_pipeline_supabase_organization.sql ──
+-- 20260605120000_pipeline_supabase_organization.sql
 -- Pipeline / Contract / Shared Squad — schema organization (idempotent)
 -- Domain: Business Pipeline (quotations ↔ job_trackers ↔ finance_incomes)
 
@@ -7982,7 +8155,7 @@ BEGIN
 END $$;
 
 
--- ── 20260606120000_ecosystem_schemas.sql ──
+-- 20260606120000_ecosystem_schemas.sql
 -- Unified So1o + an1hem: schema namespaces on rvnzjiskqliexysicfmh
 -- shared = identity/billing/wallet/chat | anthem = showcase/social | so1o = back-office
 
@@ -8011,7 +8184,7 @@ COMMENT ON SCHEMA anthem IS 'an1hem showcase: projects, studios, jobs, feed';
 COMMENT ON SCHEMA so1o   IS 'So1o My Desk: finance, quotations, dashboard (tables migrate here over time)';
 
 
--- ── 20260606120100_profiles_unified_anthem_columns.sql ──
+-- 20260606120100_profiles_unified_anthem_columns.sql
 -- Extend So1o public.profiles with an1hem showcase fields (single identity row per user).
 -- So1o keys profiles by user_id; an1hem app queries .eq('user_id', auth.uid()).
 
@@ -8076,7 +8249,7 @@ COMMENT ON COLUMN public.profiles.user_id IS 'Auth user id — canonical key for
 COMMENT ON COLUMN public.profiles.subscription_tier IS 'So1o Pro unlocks both My Desk and an1hem (ecosystem)';
 
 
--- ── 20260606120200_ecosystem_notifications.sql ──
+-- 20260606120200_ecosystem_notifications.sql
 -- Unified notification center (an1hem) alongside So1o legacy notifications.
 
 -- So1o portfolio notifications → so1o schema (keep API path via view)
@@ -8165,7 +8338,7 @@ REVOKE ALL ON FUNCTION shared.push_notification(uuid, text, text, text, text, te
 GRANT EXECUTE ON FUNCTION shared.push_notification(uuid, text, text, text, text, text, jsonb) TO service_role;
 
 
--- ── 20260606120300_anthem_bundle_readme.sql ──
+-- 20260606120300_anthem_bundle_readme.sql
 -- an1hem domain tables (projects, studios, jobs, wallet, …) are NOT inlined here.
 -- Apply the generated bundle once:
 --
@@ -8178,7 +8351,7 @@ GRANT EXECUTE ON FUNCTION shared.push_notification(uuid, text, text, text, text,
 SELECT 1;
 
 
--- ── 20260606140000_seed_anthem_catalog.sql ──
+-- 20260606140000_seed_anthem_catalog.sql
 -- Seed real community catalog in Postgres (replaces client-side mock arrays).
 -- Idempotent: fixed UUIDs + ON CONFLICT.
 
@@ -8437,7 +8610,7 @@ $seed$;
 COMMENT ON FUNCTION public._catalog_demo_uid(integer) IS 'Internal: demo catalog user ids (seed migration only).';
 
 
--- ── 20260606150000_security_advisor_hardening.sql ──
+-- 20260606150000_security_advisor_hardening.sql
 -- Security Advisor hardening (rvnzjiskqliexysicfmh)
 -- Fixes: function_search_path_mutable, anon EXECUTE on triggers/internal RPCs
 
@@ -8533,7 +8706,7 @@ REVOKE EXECUTE ON FUNCTION public.admin_list_profiles_safe() FROM PUBLIC, anon;
 -- Security Advisor may still WARN — token validates access inside each function.
 
 
--- ── 20260606160000_oauth_profile_metadata.sql ──
+-- 20260606160000_oauth_profile_metadata.sql
 -- Map Google/Apple user metadata into unified public.profiles on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
@@ -8588,7 +8761,7 @@ END;
 $$;
 
 
--- ── 20260607120000_feedback_ticket_fields.sql ──
+-- 20260607120000_feedback_ticket_fields.sql
 -- Link Give Feedback to support tickets + rating on ticket row
 
 ALTER TABLE public.support_tickets
@@ -8600,7 +8773,7 @@ CREATE INDEX IF NOT EXISTS idx_support_tickets_source ON public.support_tickets(
 CREATE INDEX IF NOT EXISTS idx_support_tickets_beta_fb ON public.support_tickets(beta_feedback_id) WHERE beta_feedback_id IS NOT NULL;
 
 
--- ── 20260607120100_ticket_feedback_notify.sql ──
+-- 20260607120100_ticket_feedback_notify.sql
 -- Feedback-aware ticket status notifications
 
 CREATE OR REPLACE FUNCTION public.notify_on_ticket_status_change()
@@ -8655,7 +8828,7 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.notify_on_ticket_status_change() FROM PUBLIC, anon, authenticated;
 
 
--- ── 20260607130000_admin_activity_feed.sql ──
+-- 20260607130000_admin_activity_feed.sql
 -- Unified admin activity feed RPC
 
 CREATE OR REPLACE FUNCTION public.get_admin_activity_feed(
@@ -8802,7 +8975,7 @@ GRANT EXECUTE ON FUNCTION public.get_admin_activity_feed(integer, text, integer)
 NOTIFY pgrst, 'reload schema';
 
 
--- ── 20260608120000_legal_desk.sql ──
+-- 20260608120000_legal_desk.sql
 -- So1o Legal Desk: usage rights, checklists, documents, license verify
 
 CREATE TABLE IF NOT EXISTS public.legal_usage_rights (
@@ -8932,4 +9105,8615 @@ CREATE POLICY "legal-certificates owner delete"
 
 NOTIFY pgrst, 'reload schema';
 
+
+-- 20260609120000_admin_business_rls.sql
+-- Admin Mission Control: allow admins to SELECT cross-user business tables for KPI dashboards.
+
+CREATE POLICY "Admins view all quotations"
+  ON public.quotations FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins view all finance incomes"
+  ON public.finance_incomes FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins view all finance expenses"
+  ON public.finance_expenses FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins view all finance subscriptions"
+  ON public.finance_subscriptions FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins view all saved clients"
+  ON public.saved_clients FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+
+NOTIFY pgrst, 'reload schema';
+
+
+-- 20260609120000_ai_credits_system.sql
+-- Unified AI credits: monthly included allowance per tier + purchased top-up balance.
+
+-- Global tier monthly allowances
+CREATE TABLE IF NOT EXISTS public.ai_tier_config (
+  tier text PRIMARY KEY CHECK (tier IN ('free', 'pro', 'inhouse')),
+  monthly_included integer NOT NULL CHECK (monthly_included > 0),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+INSERT INTO public.ai_tier_config (tier, monthly_included) VALUES
+  ('free', 80),
+  ('pro', 800),
+  ('inhouse', 2000)
+ON CONFLICT (tier) DO NOTHING;
+
+GRANT SELECT ON public.ai_tier_config TO authenticated, service_role;
+
+-- Per-feature credit cost
+CREATE TABLE IF NOT EXISTS public.ai_feature_costs (
+  feature text PRIMARY KEY,
+  cost integer NOT NULL CHECK (cost > 0),
+  label text,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+INSERT INTO public.ai_feature_costs (feature, cost, label) VALUES
+  ('ai_assistant_mentor', 1, 'So1o Assistant'),
+  ('ai_assistant_business', 3, 'So1o Assistant (ธุรกิจ)'),
+  ('planner_ai_assist', 2, 'Content Planner AI'),
+  ('color_mentor', 2, 'Color Mentor'),
+  ('ai_price_suggest', 2, 'AI แนะนำราคา'),
+  ('ai_design_chat', 1, 'AI Design Chat'),
+  ('generate_contract', 5, 'สร้างสัญญา AI')
+ON CONFLICT (feature) DO NOTHING;
+
+GRANT SELECT ON public.ai_feature_costs TO authenticated, service_role;
+
+-- Monthly included usage per user per billing/calendar period
+CREATE TABLE IF NOT EXISTS public.user_ai_period (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  period_key text NOT NULL,
+  included_limit integer NOT NULL CHECK (included_limit > 0),
+  included_used integer NOT NULL DEFAULT 0 CHECK (included_used >= 0),
+  period_end timestamptz,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, period_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_ai_period_user ON public.user_ai_period (user_id);
+
+GRANT SELECT ON public.user_ai_period TO authenticated;
+GRANT ALL ON public.user_ai_period TO service_role;
+
+ALTER TABLE public.user_ai_period ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users view own ai period" ON public.user_ai_period;
+CREATE POLICY "Users view own ai period"
+  ON public.user_ai_period FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+-- Audit ledger
+CREATE TABLE IF NOT EXISTS public.ai_credit_ledger (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  feature text NOT NULL,
+  cost integer NOT NULL CHECK (cost > 0),
+  source text NOT NULL CHECK (source IN ('included', 'purchased', 'mixed')),
+  idempotency_key text UNIQUE,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_credit_ledger_user_created
+  ON public.ai_credit_ledger (user_id, created_at DESC);
+
+GRANT SELECT ON public.ai_credit_ledger TO authenticated;
+GRANT ALL ON public.ai_credit_ledger TO service_role;
+
+ALTER TABLE public.ai_credit_ledger ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users view own ai ledger" ON public.ai_credit_ledger;
+CREATE POLICY "Users view own ai ledger"
+  ON public.ai_credit_ledger FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+-- Resolve user tier from profiles
+CREATE OR REPLACE FUNCTION public._ai_user_tier(_user_id uuid)
+RETURNS text
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT COALESCE(
+    (SELECT subscription_tier FROM public.profiles WHERE user_id = _user_id),
+    'free'
+  );
+$$;
+
+-- Period key: calendar month (Bangkok) for free; subscription period end for paid tiers
+CREATE OR REPLACE FUNCTION public._ai_resolve_period(_user_id uuid)
+RETURNS TABLE(period_key text, period_end timestamptz, included_limit integer)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_tier text;
+  v_limit integer;
+  v_sub record;
+  v_month text;
+BEGIN
+  v_tier := public._ai_user_tier(_user_id);
+  SELECT monthly_included INTO v_limit FROM public.ai_tier_config WHERE tier = v_tier;
+  IF v_limit IS NULL THEN v_limit := 80; END IF;
+
+  IF v_tier IN ('pro', 'inhouse') THEN
+    SELECT s.current_period_end, s.current_period_start
+      INTO v_sub
+      FROM public.subscriptions s
+     WHERE s.user_id = _user_id
+       AND s.status IN ('active', 'trialing', 'past_due')
+       AND (s.current_period_end IS NULL OR s.current_period_end > now())
+     ORDER BY s.created_at DESC
+     LIMIT 1;
+
+    IF FOUND AND v_sub.current_period_end IS NOT NULL THEN
+      period_key := 'sub:' || to_char(v_sub.current_period_end AT TIME ZONE 'UTC', 'YYYY-MM-DD');
+      period_end := v_sub.current_period_end;
+      included_limit := v_limit;
+      RETURN NEXT;
+      RETURN;
+    END IF;
+  END IF;
+
+  v_month := to_char((now() AT TIME ZONE 'Asia/Bangkok')::date, 'YYYY-MM');
+  period_key := 'cal:' || v_month;
+  period_end := (
+    (date_trunc('month', (now() AT TIME ZONE 'Asia/Bangkok')::timestamp) + interval '1 month')
+    AT TIME ZONE 'Asia/Bangkok'
+  );
+  included_limit := v_limit;
+  RETURN NEXT;
+END;
+$$;
+
+-- Read-only usage summary for UI
+CREATE OR REPLACE FUNCTION public.get_ai_usage_summary(
+  _user_id uuid,
+  _environment text DEFAULT 'sandbox'
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_period record;
+  v_included_used integer := 0;
+  v_included_limit integer;
+  v_purchased integer := 0;
+  v_tier text;
+BEGIN
+  IF _user_id IS NULL THEN
+    RETURN jsonb_build_object('error', 'unauthenticated');
+  END IF;
+
+  v_tier := public._ai_user_tier(_user_id);
+  SELECT * INTO v_period FROM public._ai_resolve_period(_user_id);
+
+  SELECT included_used, included_limit
+    INTO v_included_used, v_included_limit
+    FROM public.user_ai_period
+   WHERE user_id = _user_id AND period_key = v_period.period_key;
+
+  v_included_used := COALESCE(v_included_used, 0);
+  v_included_limit := COALESCE(v_included_limit, v_period.included_limit);
+
+  SELECT balance INTO v_purchased
+    FROM public.user_credits
+   WHERE user_id = _user_id AND environment = _environment;
+
+  v_purchased := COALESCE(v_purchased, 0);
+
+  RETURN jsonb_build_object(
+    'tier', v_tier,
+    'period_key', v_period.period_key,
+    'period_end', v_period.period_end,
+    'included_used', v_included_used,
+    'included_limit', v_included_limit,
+    'included_remaining', GREATEST(0, v_included_limit - v_included_used),
+    'purchased_balance', v_purchased,
+    'total_remaining', GREATEST(0, v_included_limit - v_included_used) + v_purchased
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_ai_usage_summary(uuid, text) TO authenticated, service_role;
+
+-- Atomic debit: included first, then purchased top-up
+CREATE OR REPLACE FUNCTION public.debit_ai_credits(
+  _user_id uuid,
+  _feature text,
+  _environment text DEFAULT 'sandbox',
+  _idempotency_key text DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_period record;
+  v_cost integer;
+  v_included_used integer := 0;
+  v_included_limit integer;
+  v_included_remaining integer;
+  v_purchased integer := 0;
+  v_from_included integer := 0;
+  v_from_purchased integer := 0;
+  v_prev jsonb;
+  v_source text;
+  v_has_credits_row boolean := false;
+BEGIN
+  IF _user_id IS NULL THEN
+    RETURN jsonb_build_object('allowed', false, 'reason', 'unauthenticated');
+  END IF;
+
+  IF _idempotency_key IS NOT NULL THEN
+    SELECT jsonb_build_object(
+      'allowed', true,
+      'duplicate', true,
+      'cost', cost,
+      'included_used', (metadata->>'included_used_after')::integer,
+      'included_limit', (metadata->>'included_limit')::integer,
+      'purchased_balance', (metadata->>'purchased_after')::integer,
+      'total_remaining', (metadata->>'total_remaining')::integer
+    ) INTO v_prev
+    FROM public.ai_credit_ledger
+   WHERE idempotency_key = _idempotency_key;
+
+    IF FOUND THEN RETURN v_prev; END IF;
+  END IF;
+
+  SELECT cost INTO v_cost FROM public.ai_feature_costs WHERE feature = _feature;
+  IF v_cost IS NULL THEN v_cost := 1; END IF;
+
+  SELECT * INTO v_period FROM public._ai_resolve_period(_user_id);
+  v_included_limit := v_period.included_limit;
+
+  INSERT INTO public.user_ai_period (user_id, period_key, included_limit, included_used, period_end)
+  VALUES (_user_id, v_period.period_key, v_included_limit, 0, v_period.period_end)
+  ON CONFLICT (user_id, period_key) DO NOTHING;
+
+  SELECT included_used INTO v_included_used
+    FROM public.user_ai_period
+   WHERE user_id = _user_id AND period_key = v_period.period_key
+   FOR UPDATE;
+
+  v_included_used := COALESCE(v_included_used, 0);
+
+  SELECT balance INTO v_purchased
+    FROM public.user_credits
+   WHERE user_id = _user_id AND environment = _environment
+   FOR UPDATE;
+
+  IF FOUND THEN
+    v_has_credits_row := true;
+    v_purchased := COALESCE(v_purchased, 0);
+  ELSE
+    v_purchased := 0;
+  END IF;
+
+  v_included_remaining := GREATEST(0, v_included_limit - v_included_used);
+
+  IF v_included_remaining + v_purchased < v_cost THEN
+    RETURN jsonb_build_object(
+      'allowed', false,
+      'reason', 'quota_exceeded',
+      'cost', v_cost,
+      'included_used', v_included_used,
+      'included_limit', v_included_limit,
+      'included_remaining', v_included_remaining,
+      'purchased_balance', v_purchased,
+      'total_remaining', v_included_remaining + v_purchased
+    );
+  END IF;
+
+  v_from_included := LEAST(v_cost, v_included_remaining);
+  v_from_purchased := v_cost - v_from_included;
+
+  IF v_from_included > 0 THEN
+    UPDATE public.user_ai_period
+       SET included_used = included_used + v_from_included, updated_at = now()
+     WHERE user_id = _user_id AND period_key = v_period.period_key;
+    v_included_used := v_included_used + v_from_included;
+  END IF;
+
+  IF v_from_purchased > 0 THEN
+    IF v_has_credits_row THEN
+      UPDATE public.user_credits
+         SET balance = balance - v_from_purchased, updated_at = now()
+       WHERE user_id = _user_id AND environment = _environment;
+    ELSE
+      RETURN jsonb_build_object('allowed', false, 'reason', 'quota_exceeded');
+    END IF;
+    v_purchased := v_purchased - v_from_purchased;
+  END IF;
+
+  IF v_from_included > 0 AND v_from_purchased > 0 THEN
+    v_source := 'mixed';
+  ELSIF v_from_purchased > 0 THEN
+    v_source := 'purchased';
+  ELSE
+    v_source := 'included';
+  END IF;
+
+  INSERT INTO public.ai_credit_ledger (user_id, feature, cost, source, idempotency_key, metadata)
+  VALUES (
+    _user_id,
+    _feature,
+    v_cost,
+    v_source,
+    _idempotency_key,
+    jsonb_build_object(
+      'included_used_after', v_included_used,
+      'included_limit', v_included_limit,
+      'purchased_after', v_purchased,
+      'total_remaining', GREATEST(0, v_included_limit - v_included_used) + v_purchased,
+      'environment', _environment
+    )
+  );
+
+  RETURN jsonb_build_object(
+    'allowed', true,
+    'cost', v_cost,
+    'source', v_source,
+    'included_used', v_included_used,
+    'included_limit', v_included_limit,
+    'included_remaining', GREATEST(0, v_included_limit - v_included_used),
+    'purchased_balance', v_purchased,
+    'total_remaining', GREATEST(0, v_included_limit - v_included_used) + v_purchased
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.debit_ai_credits(uuid, text, text, text) TO service_role;
+
+-- Reset included usage on subscription renewal (called from Stripe webhook)
+CREATE OR REPLACE FUNCTION public.reset_ai_period_on_renewal(_user_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_period record;
+BEGIN
+  IF _user_id IS NULL THEN RETURN; END IF;
+  SELECT * INTO v_period FROM public._ai_resolve_period(_user_id);
+  INSERT INTO public.user_ai_period (user_id, period_key, included_limit, included_used, period_end)
+  VALUES (_user_id, v_period.period_key, v_period.included_limit, 0, v_period.period_end)
+  ON CONFLICT (user_id, period_key) DO UPDATE
+    SET included_used = 0,
+        included_limit = EXCLUDED.included_limit,
+        period_end = EXCLUDED.period_end,
+        updated_at = now();
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.reset_ai_period_on_renewal(uuid) TO service_role;
+
+
+-- 20260609120100_ai_credits_null_fix.sql
+-- Fix: SELECT INTO with no user_credits row nulls purchased balance in usage/debit RPCs.
+
+CREATE OR REPLACE FUNCTION public.get_ai_usage_summary(
+  _user_id uuid,
+  _environment text DEFAULT 'sandbox'
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_period record;
+  v_included_used integer := 0;
+  v_included_limit integer;
+  v_purchased integer := 0;
+  v_tier text;
+BEGIN
+  IF _user_id IS NULL THEN
+    RETURN jsonb_build_object('error', 'unauthenticated');
+  END IF;
+
+  v_tier := public._ai_user_tier(_user_id);
+  SELECT * INTO v_period FROM public._ai_resolve_period(_user_id);
+
+  SELECT included_used, included_limit
+    INTO v_included_used, v_included_limit
+    FROM public.user_ai_period
+   WHERE user_id = _user_id AND period_key = v_period.period_key;
+
+  v_included_used := COALESCE(v_included_used, 0);
+  v_included_limit := COALESCE(v_included_limit, v_period.included_limit);
+
+  SELECT balance INTO v_purchased
+    FROM public.user_credits
+   WHERE user_id = _user_id AND environment = _environment;
+
+  v_purchased := COALESCE(v_purchased, 0);
+
+  RETURN jsonb_build_object(
+    'tier', v_tier,
+    'period_key', v_period.period_key,
+    'period_end', v_period.period_end,
+    'included_used', v_included_used,
+    'included_limit', v_included_limit,
+    'included_remaining', GREATEST(0, v_included_limit - v_included_used),
+    'purchased_balance', v_purchased,
+    'total_remaining', GREATEST(0, v_included_limit - v_included_used) + v_purchased
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.debit_ai_credits(
+  _user_id uuid,
+  _feature text,
+  _environment text DEFAULT 'sandbox',
+  _idempotency_key text DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_period record;
+  v_cost integer;
+  v_included_used integer := 0;
+  v_included_limit integer;
+  v_included_remaining integer;
+  v_purchased integer := 0;
+  v_from_included integer := 0;
+  v_from_purchased integer := 0;
+  v_prev jsonb;
+  v_source text;
+  v_has_credits_row boolean := false;
+BEGIN
+  IF _user_id IS NULL THEN
+    RETURN jsonb_build_object('allowed', false, 'reason', 'unauthenticated');
+  END IF;
+
+  IF _idempotency_key IS NOT NULL THEN
+    SELECT jsonb_build_object(
+      'allowed', true,
+      'duplicate', true,
+      'cost', cost,
+      'included_used', (metadata->>'included_used_after')::integer,
+      'included_limit', (metadata->>'included_limit')::integer,
+      'purchased_balance', (metadata->>'purchased_after')::integer,
+      'total_remaining', (metadata->>'total_remaining')::integer
+    ) INTO v_prev
+    FROM public.ai_credit_ledger
+   WHERE idempotency_key = _idempotency_key;
+
+    IF FOUND THEN RETURN v_prev; END IF;
+  END IF;
+
+  SELECT cost INTO v_cost FROM public.ai_feature_costs WHERE feature = _feature;
+  IF v_cost IS NULL THEN v_cost := 1; END IF;
+
+  SELECT * INTO v_period FROM public._ai_resolve_period(_user_id);
+  v_included_limit := v_period.included_limit;
+
+  INSERT INTO public.user_ai_period (user_id, period_key, included_limit, included_used, period_end)
+  VALUES (_user_id, v_period.period_key, v_included_limit, 0, v_period.period_end)
+  ON CONFLICT (user_id, period_key) DO NOTHING;
+
+  SELECT included_used INTO v_included_used
+    FROM public.user_ai_period
+   WHERE user_id = _user_id AND period_key = v_period.period_key
+   FOR UPDATE;
+
+  v_included_used := COALESCE(v_included_used, 0);
+
+  SELECT balance INTO v_purchased
+    FROM public.user_credits
+   WHERE user_id = _user_id AND environment = _environment
+   FOR UPDATE;
+
+  IF FOUND THEN
+    v_has_credits_row := true;
+    v_purchased := COALESCE(v_purchased, 0);
+  ELSE
+    v_purchased := 0;
+  END IF;
+
+  v_included_remaining := GREATEST(0, v_included_limit - v_included_used);
+
+  IF v_included_remaining + v_purchased < v_cost THEN
+    RETURN jsonb_build_object(
+      'allowed', false,
+      'reason', 'quota_exceeded',
+      'cost', v_cost,
+      'included_used', v_included_used,
+      'included_limit', v_included_limit,
+      'included_remaining', v_included_remaining,
+      'purchased_balance', v_purchased,
+      'total_remaining', v_included_remaining + v_purchased
+    );
+  END IF;
+
+  v_from_included := LEAST(v_cost, v_included_remaining);
+  v_from_purchased := v_cost - v_from_included;
+
+  IF v_from_included > 0 THEN
+    UPDATE public.user_ai_period
+       SET included_used = included_used + v_from_included, updated_at = now()
+     WHERE user_id = _user_id AND period_key = v_period.period_key;
+    v_included_used := v_included_used + v_from_included;
+  END IF;
+
+  IF v_from_purchased > 0 THEN
+    IF v_has_credits_row THEN
+      UPDATE public.user_credits
+         SET balance = balance - v_from_purchased, updated_at = now()
+       WHERE user_id = _user_id AND environment = _environment;
+    ELSE
+      RETURN jsonb_build_object('allowed', false, 'reason', 'quota_exceeded');
+    END IF;
+    v_purchased := v_purchased - v_from_purchased;
+  END IF;
+
+  IF v_from_included > 0 AND v_from_purchased > 0 THEN
+    v_source := 'mixed';
+  ELSIF v_from_purchased > 0 THEN
+    v_source := 'purchased';
+  ELSE
+    v_source := 'included';
+  END IF;
+
+  INSERT INTO public.ai_credit_ledger (user_id, feature, cost, source, idempotency_key, metadata)
+  VALUES (
+    _user_id,
+    _feature,
+    v_cost,
+    v_source,
+    _idempotency_key,
+    jsonb_build_object(
+      'included_used_after', v_included_used,
+      'included_limit', v_included_limit,
+      'purchased_after', v_purchased,
+      'total_remaining', GREATEST(0, v_included_limit - v_included_used) + v_purchased,
+      'environment', _environment
+    )
+  );
+
+  RETURN jsonb_build_object(
+    'allowed', true,
+    'cost', v_cost,
+    'source', v_source,
+    'included_used', v_included_used,
+    'included_limit', v_included_limit,
+    'included_remaining', GREATEST(0, v_included_limit - v_included_used),
+    'purchased_balance', v_purchased,
+    'total_remaining', GREATEST(0, v_included_limit - v_included_used) + v_purchased
+  );
+END;
+$$;
+
+
+-- 20260609140000_ai_chat_preset.sql
+-- Per-preset chat history for So1o Assistant sidebar
+ALTER TABLE public.ai_chat_messages
+  ADD COLUMN IF NOT EXISTS preset text NOT NULL DEFAULT 'mentor';
+
+CREATE INDEX IF NOT EXISTS idx_aicm_user_preset
+  ON public.ai_chat_messages(user_id, preset, created_at);
+
+INSERT INTO public.ai_feature_costs (feature, cost, label) VALUES
+  ('ai_assistant_copy', 1, 'So1o Assistant (Copy)'),
+  ('ai_assistant_legal', 2, 'So1o Assistant (Legal)')
+ON CONFLICT (feature) DO NOTHING;
+
+
+-- 20260609150000_free_daily_ai_trial.sql
+-- Free tier: 5 AI credits per day for the first 15 days after signup (Bangkok calendar).
+
+ALTER TABLE public.ai_tier_config DROP CONSTRAINT IF EXISTS ai_tier_config_monthly_included_check;
+ALTER TABLE public.ai_tier_config ADD CONSTRAINT ai_tier_config_monthly_included_check CHECK (monthly_included >= 0);
+
+ALTER TABLE public.user_ai_period DROP CONSTRAINT IF EXISTS user_ai_period_included_limit_check;
+ALTER TABLE public.user_ai_period ADD CONSTRAINT user_ai_period_included_limit_check CHECK (included_limit >= 0);
+
+UPDATE public.ai_tier_config SET monthly_included = 0, updated_at = now() WHERE tier = 'free';
+
+CREATE OR REPLACE FUNCTION public._ai_free_trial_days_left(_user_id uuid)
+RETURNS integer
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_signup timestamptz;
+  v_days integer;
+BEGIN
+  SELECT created_at INTO v_signup FROM public.profiles WHERE user_id = _user_id;
+  IF v_signup IS NULL THEN
+    SELECT created_at INTO v_signup FROM auth.users WHERE id = _user_id;
+  END IF;
+  IF v_signup IS NULL THEN RETURN 0; END IF;
+
+  v_days := ((now() AT TIME ZONE 'Asia/Bangkok')::date - (v_signup AT TIME ZONE 'Asia/Bangkok')::date);
+  RETURN GREATEST(0, 15 - v_days);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public._ai_resolve_period(_user_id uuid)
+RETURNS TABLE(period_key text, period_end timestamptz, included_limit integer)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_tier text;
+  v_limit integer;
+  v_sub record;
+  v_month text;
+  v_today date;
+  v_trial_days_left integer;
+BEGIN
+  v_tier := public._ai_user_tier(_user_id);
+  SELECT monthly_included INTO v_limit FROM public.ai_tier_config WHERE tier = v_tier;
+  IF v_limit IS NULL THEN v_limit := 0; END IF;
+
+  IF v_tier IN ('pro', 'inhouse') THEN
+    SELECT s.current_period_end, s.current_period_start
+      INTO v_sub
+      FROM public.subscriptions s
+     WHERE s.user_id = _user_id
+       AND s.status IN ('active', 'trialing', 'past_due')
+       AND (s.current_period_end IS NULL OR s.current_period_end > now())
+     ORDER BY s.created_at DESC
+     LIMIT 1;
+
+    IF FOUND AND v_sub.current_period_end IS NOT NULL THEN
+      period_key := 'sub:' || to_char(v_sub.current_period_end AT TIME ZONE 'UTC', 'YYYY-MM-DD');
+      period_end := v_sub.current_period_end;
+      included_limit := v_limit;
+      RETURN NEXT;
+      RETURN;
+    END IF;
+  END IF;
+
+  IF v_tier = 'free' THEN
+    v_trial_days_left := public._ai_free_trial_days_left(_user_id);
+    v_today := (now() AT TIME ZONE 'Asia/Bangkok')::date;
+
+    IF v_trial_days_left > 0 THEN
+      period_key := 'free-day:' || to_char(v_today, 'YYYY-MM-DD');
+      period_end := (v_today + 1)::timestamp AT TIME ZONE 'Asia/Bangkok';
+      included_limit := 5;
+      RETURN NEXT;
+      RETURN;
+    END IF;
+
+    period_key := 'free-expired:' || to_char(v_today, 'YYYY-MM');
+    period_end := (
+      (date_trunc('month', (now() AT TIME ZONE 'Asia/Bangkok')::timestamp) + interval '1 month')
+      AT TIME ZONE 'Asia/Bangkok'
+    );
+    included_limit := 0;
+    RETURN NEXT;
+    RETURN;
+  END IF;
+
+  v_month := to_char((now() AT TIME ZONE 'Asia/Bangkok')::date, 'YYYY-MM');
+  period_key := 'cal:' || v_month;
+  period_end := (
+    (date_trunc('month', (now() AT TIME ZONE 'Asia/Bangkok')::timestamp) + interval '1 month')
+    AT TIME ZONE 'Asia/Bangkok'
+  );
+  included_limit := v_limit;
+  RETURN NEXT;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_ai_usage_summary(
+  _user_id uuid,
+  _environment text DEFAULT 'sandbox'
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_period record;
+  v_included_used integer := 0;
+  v_included_limit integer;
+  v_purchased integer := 0;
+  v_tier text;
+  v_trial_days_left integer := 0;
+  v_period_type text := 'monthly';
+BEGIN
+  IF _user_id IS NULL THEN
+    RETURN jsonb_build_object('error', 'unauthenticated');
+  END IF;
+
+  v_tier := public._ai_user_tier(_user_id);
+  SELECT * INTO v_period FROM public._ai_resolve_period(_user_id);
+
+  IF v_tier = 'free' THEN
+    v_trial_days_left := public._ai_free_trial_days_left(_user_id);
+    IF v_trial_days_left > 0 THEN
+      v_period_type := 'free_daily_trial';
+    ELSIF v_period.period_key LIKE 'free-expired:%' THEN
+      v_period_type := 'free_trial_ended';
+    END IF;
+  ELSIF v_period.period_key LIKE 'sub:%' THEN
+    v_period_type := 'subscription';
+  END IF;
+
+  SELECT included_used, included_limit
+    INTO v_included_used, v_included_limit
+    FROM public.user_ai_period
+   WHERE user_id = _user_id AND period_key = v_period.period_key;
+
+  v_included_used := COALESCE(v_included_used, 0);
+  v_included_limit := COALESCE(v_included_limit, v_period.included_limit);
+
+  SELECT balance INTO v_purchased
+    FROM public.user_credits
+   WHERE user_id = _user_id AND environment = _environment;
+
+  v_purchased := COALESCE(v_purchased, 0);
+
+  RETURN jsonb_build_object(
+    'tier', v_tier,
+    'period_key', v_period.period_key,
+    'period_end', v_period.period_end,
+    'period_type', v_period_type,
+    'free_trial_days_left', v_trial_days_left,
+    'daily_limit', CASE WHEN v_period_type = 'free_daily_trial' THEN 5 ELSE NULL END,
+    'included_used', v_included_used,
+    'included_limit', v_included_limit,
+    'included_remaining', GREATEST(0, v_included_limit - v_included_used),
+    'purchased_balance', v_purchased,
+    'total_remaining', GREATEST(0, v_included_limit - v_included_used) + v_purchased
+  );
+END;
+$$;
+
+
+-- 20260609160000_ai_credit_weights_v2.sql
+-- Rebalance AI credit weights (v2) — heavier business/vision/contract paths.
+-- Gemini 2.0 retired 2026-06-01; app defaults now gemini-2.5-flash-lite / gemini-2.5-flash.
+
+UPDATE public.ai_feature_costs
+SET cost = 5, label = 'So1o Assistant (ธุรกิจ)', updated_at = now()
+WHERE feature = 'ai_assistant_business';
+
+UPDATE public.ai_feature_costs
+SET cost = 8, label = 'สร้างสัญญา AI', updated_at = now()
+WHERE feature = 'generate_contract';
+
+INSERT INTO public.ai_feature_costs (feature, cost, label) VALUES
+  ('ai_brief_extract', 10, 'Smart Brief — Quick Capture'),
+  ('ai_brief_from_images', 8, 'Smart Brief — วิเคราะห์รูป')
+ON CONFLICT (feature) DO UPDATE
+  SET cost = EXCLUDED.cost, label = EXCLUDED.label, updated_at = now();
+
+-- Production mix analysis (run in SQL editor):
+-- SELECT feature, COUNT(*) AS uses, SUM(cost) AS credits_spent
+-- FROM public.ai_credit_ledger
+-- WHERE created_at > now() - interval '90 days'
+-- GROUP BY feature ORDER BY credits_spent DESC;
+
+
+-- 20260609160000_fetch_daily_trends_cron.sql
+-- Daily trends cron: fetches RSS + AI summary at 05:00 ICT (22:00 UTC)
+--
+-- POST-MIGRATION STEPS (project-specific — apply after deploy):
+-- 1. Store service_role key in vault:
+--    SELECT vault.create_secret('<SERVICE_ROLE_KEY>', 'cron_service_role_key');
+-- 2. Store app URL in vault:
+--    SELECT vault.create_secret('https://your-app.example.com', 'cron_app_url');
+-- 3. Schedule the job (replace URL from vault):
+--
+-- DO $$
+-- BEGIN
+--   PERFORM cron.unschedule('fetch-daily-trends')
+--     WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'fetch-daily-trends');
+-- EXCEPTION WHEN OTHERS THEN NULL;
+-- END $$;
+--
+-- SELECT cron.schedule(
+--   'fetch-daily-trends',
+--   '0 22 * * *',
+--   $$
+--   SELECT net.http_post(
+--     url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'cron_app_url')
+--            || '/api/public/cron/fetch-daily-trends',
+--     headers := jsonb_build_object(
+--       'Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'cron_service_role_key'),
+--       'Content-Type', 'application/json'
+--     ),
+--     body := '{}'::jsonb
+--   );
+--   $$
+-- );
+--
+-- To revert: SELECT cron.unschedule('fetch-daily-trends');
+
+
+-- 20260609160000_line_notifications.sql
+-- LINE push notifications for Pro / Inhouse users (Messaging API queue + Hero portal events)
+
+-- ---------------------------------------------------------------------------
+-- 1) Profile columns
+-- ---------------------------------------------------------------------------
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS locale text NOT NULL DEFAULT 'th',
+  ADD COLUMN IF NOT EXISTS line_messaging_user_id text,
+  ADD COLUMN IF NOT EXISTS line_linked_at timestamptz,
+  ADD COLUMN IF NOT EXISTS line_notify_enabled boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS line_notify_prefs jsonb NOT NULL DEFAULT '{
+    "portal_slip": true,
+    "portal_tracker_comment": true,
+    "portal_brief": true,
+    "portal_planner": true,
+    "portal_quotation": true,
+    "support_ticket": false,
+    "billing": false
+  }'::jsonb;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'profiles_locale_chk') THEN
+    ALTER TABLE public.profiles
+      ADD CONSTRAINT profiles_locale_chk CHECK (locale IN ('th', 'en'));
+  END IF;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_line_messaging_user_id_uidx
+  ON public.profiles (line_messaging_user_id)
+  WHERE line_messaging_user_id IS NOT NULL;
+
+COMMENT ON COLUMN public.profiles.line_messaging_user_id IS 'LINE Messaging API userId (U…) after OA link; distinct from line_id display handle';
+COMMENT ON COLUMN public.profiles.line_notify_prefs IS 'Per-kind LINE notification toggles; keys portal_* = customer Hero portals';
+
+-- ---------------------------------------------------------------------------
+-- 2) Link tokens (LIFF / manual link — Phase 2)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.line_link_tokens (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  token text NOT NULL UNIQUE,
+  expires_at timestamptz NOT NULL,
+  used_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS line_link_tokens_user_idx ON public.line_link_tokens(user_id);
+CREATE INDEX IF NOT EXISTS line_link_tokens_expires_idx ON public.line_link_tokens(expires_at);
+
+ALTER TABLE public.line_link_tokens ENABLE ROW LEVEL SECURITY;
+
+GRANT SELECT ON public.line_link_tokens TO authenticated;
+GRANT ALL ON public.line_link_tokens TO service_role;
+
+-- ---------------------------------------------------------------------------
+-- 3) Send log + state + pgmq queue
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.line_send_log (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id text NOT NULL,
+  user_id uuid NOT NULL,
+  line_user_id text NOT NULL,
+  kind text NOT NULL,
+  status text NOT NULL CHECK (status IN ('pending', 'sent', 'failed', 'skipped', 'dlq')),
+  error_message text,
+  metadata jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS line_send_log_created_idx ON public.line_send_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS line_send_log_user_idx ON public.line_send_log(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS line_send_log_message_id_uidx
+  ON public.line_send_log(message_id);
+
+GRANT ALL ON public.line_send_log TO service_role;
+
+ALTER TABLE public.line_send_log ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  CREATE POLICY "Service role manages line send log"
+    ON public.line_send_log FOR ALL
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS public.line_send_state (
+  id int PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  retry_after_until timestamptz,
+  batch_size int NOT NULL DEFAULT 10,
+  send_delay_ms int NOT NULL DEFAULT 200,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+INSERT INTO public.line_send_state (id) VALUES (1) ON CONFLICT DO NOTHING;
+
+GRANT ALL ON public.line_send_state TO service_role;
+
+ALTER TABLE public.line_send_state ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  CREATE POLICY "Service role manages line send state"
+    ON public.line_send_state FOR ALL
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN PERFORM pgmq.create('line_messages'); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN PERFORM pgmq.create('line_messages_dlq'); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- ---------------------------------------------------------------------------
+-- 4) Tier + message rendering + enqueue
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.is_pro_tier(_user_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT COALESCE(
+    (SELECT subscription_tier IN ('pro', 'inhouse') FROM public.profiles WHERE user_id = _user_id),
+    false
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.is_pro_tier(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.is_pro_tier(uuid) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.render_line_message(
+  _kind text,
+  _locale text,
+  _params jsonb
+)
+RETURNS text
+LANGUAGE plpgsql
+IMMUTABLE
+AS $$
+DECLARE
+  loc text := CASE WHEN _locale = 'en' THEN 'en' ELSE 'th' END;
+  t text;
+BEGIN
+  CASE _kind
+    WHEN 'portal_slip' THEN
+      IF loc = 'en' THEN
+        t := 'Customer uploaded a payment slip for "' || COALESCE(_params->>'job_title', 'job') || '". Please review.';
+      ELSE
+        t := 'ลูกค้าอัปโหลดสลิปงาน "' || COALESCE(_params->>'job_title', '') || '" — กรุณาตรวจสอบ';
+      END IF;
+    WHEN 'portal_tracker_comment' THEN
+      IF loc = 'en' THEN
+        t := 'New comment on "' || COALESCE(_params->>'job_title', 'job') || '" (step ' || COALESCE(_params->>'step_index', '?') || ').';
+      ELSE
+        t := 'ลูกค้าคอมเมนต์ในงาน "' || COALESCE(_params->>'job_title', '') || '" (ขั้นตอน ' || COALESCE(_params->>'step_index', '?') || ')';
+      END IF;
+    WHEN 'portal_brief' THEN
+      IF loc = 'en' THEN
+        t := COALESCE(_params->>'client_name', 'Client') || ' confirmed brief "' || COALESCE(_params->>'brief_title', '') || '".';
+      ELSE
+        t := COALESCE(_params->>'client_name', 'ลูกค้า') || ' ยืนยันบรีฟ "' || COALESCE(_params->>'brief_title', '') || '" แล้ว ✓';
+      END IF;
+    WHEN 'portal_planner' THEN
+      IF COALESCE(_params->>'status', '') = 'approved' THEN
+        IF loc = 'en' THEN
+          t := 'Client approved content: "' || COALESCE(_params->>'post_title', '') || '".';
+        ELSE
+          t := 'ลูกค้าอนุมัติคอนเทนต์ "' || COALESCE(_params->>'post_title', '') || '" แล้ว ✓';
+        END IF;
+      ELSE
+        IF loc = 'en' THEN
+          t := 'Client requested changes on "' || COALESCE(_params->>'post_title', '') || '".';
+        ELSE
+          t := 'ลูกค้าขอแก้ไขคอนเทนต์ "' || COALESCE(_params->>'post_title', '') || '"';
+        END IF;
+      END IF;
+    WHEN 'portal_quotation' THEN
+      IF loc = 'en' THEN
+        t := 'Client updated quotation "' || COALESCE(_params->>'quotation_title', '') || '".';
+      ELSE
+        t := 'ลูกค้าอัปเดตใบเสนอราคา "' || COALESCE(_params->>'quotation_title', '') || '"';
+      END IF;
+    WHEN 'support_ticket' THEN
+      IF loc = 'en' THEN
+        t := COALESCE(_params->>'message', 'Support ticket updated.');
+      ELSE
+        t := COALESCE(_params->>'message', 'ตั๋วซัพพอร์ตมีอัปเดต');
+      END IF;
+    WHEN 'billing' THEN
+      IF loc = 'en' THEN
+        t := COALESCE(_params->>'message', 'Billing update on your So1o account.');
+      ELSE
+        t := COALESCE(_params->>'message', 'อัปเดตการชำระเงินบัญชี So1o ของคุณ');
+      END IF;
+    ELSE
+      IF loc = 'en' THEN
+        t := COALESCE(_params->>'message', 'New notification from So1o.');
+      ELSE
+        t := COALESCE(_params->>'message', 'แจ้งเตือนใหม่จาก So1o');
+      END IF;
+  END CASE;
+
+  RETURN left(t, 4800);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.render_line_message(text, text, jsonb) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.render_line_message(text, text, jsonb) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.enqueue_line_notification(
+  _user_id uuid,
+  _kind text,
+  _params jsonb DEFAULT '{}'::jsonb,
+  _link text DEFAULT '',
+  _idempotency_key text DEFAULT NULL
+)
+RETURNS bigint
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  prof record;
+  msg_id text;
+  body text;
+  full_text text;
+  payload jsonb;
+  q_id bigint;
+BEGIN
+  IF _user_id IS NULL THEN RETURN NULL; END IF;
+  IF NOT public.is_pro_tier(_user_id) THEN RETURN NULL; END IF;
+
+  SELECT
+    line_messaging_user_id,
+    line_notify_enabled,
+    line_notify_prefs,
+    locale
+  INTO prof
+  FROM public.profiles
+  WHERE user_id = _user_id;
+
+  IF prof.line_messaging_user_id IS NULL OR prof.line_notify_enabled IS NOT TRUE THEN
+    RETURN NULL;
+  END IF;
+
+  IF COALESCE((prof.line_notify_prefs->>_kind)::boolean, false) IS NOT TRUE THEN
+    RETURN NULL;
+  END IF;
+
+  msg_id := COALESCE(
+    NULLIF(btrim(_idempotency_key), ''),
+    'line-' || gen_random_uuid()::text
+  );
+
+  IF EXISTS (
+    SELECT 1 FROM public.line_send_log WHERE message_id = msg_id
+  ) THEN
+    RETURN NULL;
+  END IF;
+
+  body := public.render_line_message(_kind, COALESCE(prof.locale, 'th'), COALESCE(_params, '{}'::jsonb));
+  full_text := body;
+  IF _link IS NOT NULL AND btrim(_link) <> '' THEN
+    full_text := body || E'\n\n' || 'https://solofreelancer.com' || _link;
+  END IF;
+
+  payload := jsonb_build_object(
+    'message_id', msg_id,
+    'user_id', _user_id,
+    'line_user_id', prof.line_messaging_user_id,
+    'kind', _kind,
+    'text', full_text,
+    'idempotency_key', msg_id
+  );
+
+  INSERT INTO public.line_send_log (
+    message_id, user_id, line_user_id, kind, status, metadata
+  ) VALUES (
+    msg_id, _user_id, prof.line_messaging_user_id, _kind, 'pending',
+    jsonb_build_object('link', _link, 'params', COALESCE(_params, '{}'::jsonb))
+  )
+  ON CONFLICT (message_id) DO NOTHING;
+
+  SELECT public.enqueue_email('line_messages', payload) INTO q_id;
+  RETURN q_id;
+EXCEPTION WHEN undefined_table THEN
+  PERFORM pgmq.create('line_messages');
+  SELECT public.enqueue_email('line_messages', payload) INTO q_id;
+  RETURN q_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.enqueue_line_notification(uuid, text, jsonb, text, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.enqueue_line_notification(uuid, text, jsonb, text, text) TO service_role;
+
+-- Disable LINE master switch when subscription drops to free
+CREATE OR REPLACE FUNCTION public.sync_user_tier(_user_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  new_tier text := 'free';
+  new_seats integer := 1;
+  sub record;
+BEGIN
+  SELECT price_id, status, current_period_end, environment
+    INTO sub
+    FROM public.subscriptions
+   WHERE user_id = _user_id
+     AND environment = 'live'
+     AND (
+       (status IN ('active', 'trialing', 'past_due')
+         AND (current_period_end IS NULL OR current_period_end > now()))
+       OR (status = 'canceled' AND current_period_end > now())
+     )
+   ORDER BY created_at DESC
+   LIMIT 1;
+
+  IF NOT FOUND THEN
+    SELECT price_id, status, current_period_end, environment
+      INTO sub
+      FROM public.subscriptions
+     WHERE user_id = _user_id
+       AND environment = 'sandbox'
+       AND (
+         (status IN ('active', 'trialing', 'past_due')
+           AND (current_period_end IS NULL OR current_period_end > now()))
+         OR (status = 'canceled' AND current_period_end > now())
+       )
+     ORDER BY created_at DESC
+     LIMIT 1;
+  END IF;
+
+  IF FOUND THEN
+    IF sub.price_id IN ('inhouse_monthly', 'inhouse_yearly') THEN
+      new_tier := 'inhouse';
+    ELSE
+      new_tier := 'pro';
+    END IF;
+  END IF;
+
+  UPDATE public.profiles
+     SET subscription_tier = new_tier,
+         subscription_seats = new_seats,
+         line_notify_enabled = CASE
+           WHEN new_tier IN ('pro', 'inhouse') THEN line_notify_enabled
+           ELSE false
+         END
+   WHERE user_id = _user_id;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.sync_user_tier(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.sync_user_tier(uuid) TO service_role;
+
+-- ---------------------------------------------------------------------------
+-- 5) Hero portal event hooks
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.notify_on_slip_upload()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  owner_id uuid;
+  job_title text;
+BEGIN
+  SELECT user_id, title INTO owner_id, job_title
+  FROM public.job_trackers WHERE id = NEW.job_id;
+
+  IF owner_id IS NULL THEN RETURN NEW; END IF;
+
+  INSERT INTO public.notifications
+    (user_id, actor_user_id, actor_name, type, message, url)
+  VALUES
+    (owner_id, NULL, 'ลูกค้า', 'slip_uploaded',
+     'ลูกค้าอัปโหลดสลิปงาน "' || COALESCE(job_title, '') || '" — กรุณาตรวจสอบ',
+     '/dashboard?tab=finance&jobtracker=' || NEW.job_id::text);
+
+  PERFORM public.enqueue_line_notification(
+    owner_id,
+    'portal_slip',
+    jsonb_build_object('job_title', COALESCE(job_title, '')),
+    '/dashboard?tab=finance&jobtracker=' || NEW.job_id::text,
+    'line-slip-' || NEW.id::text
+  );
+
+  RETURN NEW;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.notify_on_slip_upload() FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.notify_on_client_step_comment()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  owner_id uuid;
+  job_title text;
+  job_id uuid;
+BEGIN
+  IF NEW.author_role IS DISTINCT FROM 'client' THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT j.user_id, j.title, j.id
+    INTO owner_id, job_title, job_id
+    FROM public.job_trackers j
+   WHERE j.id = NEW.job_id;
+
+  IF owner_id IS NULL THEN RETURN NEW; END IF;
+
+  INSERT INTO public.notifications
+    (user_id, actor_name, type, message, url)
+  VALUES
+    (owner_id, 'ลูกค้า', 'tracker_comment',
+     'ลูกค้าคอมเมนต์ในงาน "' || COALESCE(job_title, '') || '"',
+     '/dashboard?tab=finance&jobtracker=' || job_id::text);
+
+  PERFORM public.enqueue_line_notification(
+    owner_id,
+    'portal_tracker_comment',
+    jsonb_build_object(
+      'job_title', COALESCE(job_title, ''),
+      'step_index', (NEW.step_index + 1)::text
+    ),
+    '/dashboard?tab=finance&jobtracker=' || job_id::text,
+    'line-tracker-comment-' || NEW.id::text
+  );
+
+  RETURN NEW;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.notify_on_client_step_comment() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS trg_notify_on_client_step_comment ON public.job_tracker_step_comments;
+CREATE TRIGGER trg_notify_on_client_step_comment
+  AFTER INSERT ON public.job_tracker_step_comments
+  FOR EACH ROW EXECUTE FUNCTION public.notify_on_client_step_comment();
+
+CREATE OR REPLACE FUNCTION public.confirm_brief_by_token(
+  _token UUID,
+  _name TEXT,
+  _signature TEXT
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  brief_owner UUID;
+  brief_title TEXT;
+  brief_id UUID;
+BEGIN
+  IF _name IS NULL OR length(btrim(_name)) < 1 THEN RETURN FALSE; END IF;
+
+  UPDATE public.design_briefs
+  SET status = 'confirmed',
+      confirmed_at = now(),
+      confirmed_by_name = btrim(_name),
+      confirmed_signature = _signature,
+      updated_at = now()
+  WHERE share_token = _token AND status <> 'confirmed'
+  RETURNING user_id, title, id INTO brief_owner, brief_title, brief_id;
+
+  IF brief_owner IS NULL THEN RETURN FALSE; END IF;
+
+  INSERT INTO public.notifications
+    (user_id, actor_name, type, message, url)
+  VALUES
+    (brief_owner, btrim(_name), 'brief_confirmed',
+     btrim(_name) || ' ยืนยันบรีฟ "' || COALESCE(brief_title, '') || '" แล้ว ✓',
+     '/dashboard?tab=planner&brief=' || brief_id::text);
+
+  PERFORM public.enqueue_line_notification(
+    brief_owner,
+    'portal_brief',
+    jsonb_build_object(
+      'client_name', btrim(_name),
+      'brief_title', COALESCE(brief_title, '')
+    ),
+    '/dashboard?tab=planner&brief=' || brief_id::text,
+    'line-brief-' || brief_id::text
+  );
+
+  RETURN TRUE;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.submit_post_approval(
+  _share_token uuid,
+  _post_id uuid,
+  _status text,
+  _feedback text
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  link record;
+  post record;
+  msg text;
+BEGIN
+  IF _status NOT IN ('approved', 'changes_requested') THEN
+    RAISE EXCEPTION 'invalid status';
+  END IF;
+
+  SELECT * INTO link FROM public.planner_share_links WHERE share_token = _share_token;
+  IF link IS NULL THEN RAISE EXCEPTION 'invalid token'; END IF;
+  IF link.expires_at IS NOT NULL AND link.expires_at < now() THEN
+    RAISE EXCEPTION 'token expired';
+  END IF;
+
+  SELECT * INTO post FROM public.planner_posts WHERE id = _post_id;
+  IF post IS NULL THEN RAISE EXCEPTION 'post not found'; END IF;
+  IF post.user_id <> link.user_id THEN RAISE EXCEPTION 'unauthorized'; END IF;
+  IF link.client_id IS NOT NULL AND post.client_id <> link.client_id THEN
+    RAISE EXCEPTION 'unauthorized';
+  END IF;
+  IF to_char(post.post_date, 'YYYY-MM') <> link.month THEN
+    RAISE EXCEPTION 'out of scope';
+  END IF;
+
+  UPDATE public.planner_posts
+  SET approval_status = _status,
+      client_feedback = COALESCE(_feedback, ''),
+      status = CASE WHEN _status = 'approved' THEN 'approved' ELSE status END,
+      updated_at = now()
+  WHERE id = _post_id;
+
+  IF _status = 'approved' THEN
+    msg := 'ลูกค้าอนุมัติคอนเทนต์ "' || COALESCE(post.title, '') || '" แล้ว ✓';
+  ELSE
+    msg := 'ลูกค้าขอแก้ไขคอนเทนต์ "' || COALESCE(post.title, '') || '"';
+  END IF;
+
+  INSERT INTO public.notifications (user_id, type, message, url)
+  VALUES (
+    link.user_id,
+    'planner_approval',
+    msg,
+    '/dashboard?tab=planner'
+  );
+
+  PERFORM public.enqueue_line_notification(
+    link.user_id,
+    'portal_planner',
+    jsonb_build_object(
+      'post_title', COALESCE(post.title, ''),
+      'status', _status
+    ),
+    '/dashboard?tab=planner',
+    'line-planner-' || _post_id::text || '-' || _status
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.notify_on_ticket_status_change()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  _msg TEXT;
+  _url TEXT := '/dashboard';
+BEGIN
+  IF NEW.status IS NOT DISTINCT FROM OLD.status THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.source = 'feedback_button' THEN
+    IF NEW.status = 'in_progress' THEN
+      _msg := 'เราได้รับฟีดแบ็กของคุณแล้ว กำลังดำเนินการแก้ไข';
+    ELSIF NEW.status = 'resolved' THEN
+      _msg := 'เราได้แก้ไขตามฟีดแบ็กของคุณแล้ว ขอบคุณที่ช่วยพัฒนา So1o';
+      IF NEW.resolution_note IS NOT NULL AND btrim(NEW.resolution_note) <> '' THEN
+        _msg := _msg || ' — ' || NEW.resolution_note;
+      END IF;
+    ELSIF NEW.status = 'closed' THEN
+      _msg := 'ตั๋วฟีดแบ็กปิดงานแล้ว ขอบคุณที่ส่งความคิดเห็นมา';
+    ELSE
+      RETURN NEW;
+    END IF;
+  ELSE
+    IF NEW.status = 'in_progress' THEN
+      _msg := 'ตั๋ว ' || NEW.ticket_number || ' กำลังได้รับการแก้ไข';
+    ELSIF NEW.status = 'resolved' THEN
+      _msg := 'ตั๋ว ' || NEW.ticket_number || ' แก้ไขแล้ว — กำลังปล่อยอัปเดต';
+      IF NEW.resolution_note IS NOT NULL AND btrim(NEW.resolution_note) <> '' THEN
+        _msg := _msg || ' — ' || NEW.resolution_note;
+      END IF;
+    ELSIF NEW.status = 'closed' THEN
+      _msg := 'ตั๋ว ' || NEW.ticket_number || ' ปิดงานเรียบร้อยแล้ว';
+    ELSE
+      RETURN NEW;
+    END IF;
+  END IF;
+
+  INSERT INTO public.notifications (user_id, type, message, url)
+  VALUES (NEW.user_id, 'ticket', _msg, _url);
+
+  PERFORM public.enqueue_line_notification(
+    NEW.user_id,
+    'support_ticket',
+    jsonb_build_object('message', _msg),
+    _url,
+    'line-ticket-' || NEW.id::text || '-' || NEW.status
+  );
+
+  RETURN NEW;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.notify_on_ticket_status_change() FROM PUBLIC, anon, authenticated;
+
+-- ============================================================
+-- POST-MIGRATION: store LINE_CHANNEL_ACCESS_TOKEN in Supabase
+-- secrets; schedule pg_cron job 'process-line-queue' (every 60s)
+-- calling edge function line-queue-process with service_role key
+-- (mirror email queue setup).
+-- ============================================================
+
+
+-- 20260609161000_free_starter_credits.sql
+-- Free tier: one-time 25 AI credits on signup (no daily reset).
+
+UPDATE public.ai_tier_config SET monthly_included = 25, updated_at = now() WHERE tier = 'free';
+
+DROP FUNCTION IF EXISTS public._ai_free_trial_days_left(uuid);
+
+CREATE OR REPLACE FUNCTION public._ai_resolve_period(_user_id uuid)
+RETURNS TABLE(period_key text, period_end timestamptz, included_limit integer)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_tier text;
+  v_limit integer;
+  v_sub record;
+  v_month text;
+BEGIN
+  v_tier := public._ai_user_tier(_user_id);
+  SELECT monthly_included INTO v_limit FROM public.ai_tier_config WHERE tier = v_tier;
+  IF v_limit IS NULL THEN v_limit := 0; END IF;
+
+  IF v_tier IN ('pro', 'inhouse') THEN
+    SELECT s.current_period_end, s.current_period_start
+      INTO v_sub
+      FROM public.subscriptions s
+     WHERE s.user_id = _user_id
+       AND s.status IN ('active', 'trialing', 'past_due')
+       AND (s.current_period_end IS NULL OR s.current_period_end > now())
+     ORDER BY s.created_at DESC
+     LIMIT 1;
+
+    IF FOUND AND v_sub.current_period_end IS NOT NULL THEN
+      period_key := 'sub:' || to_char(v_sub.current_period_end AT TIME ZONE 'UTC', 'YYYY-MM-DD');
+      period_end := v_sub.current_period_end;
+      included_limit := v_limit;
+      RETURN NEXT;
+      RETURN;
+    END IF;
+  END IF;
+
+  IF v_tier = 'free' THEN
+    period_key := 'free-starter';
+    period_end := NULL;
+    included_limit := GREATEST(v_limit, 25);
+    RETURN NEXT;
+    RETURN;
+  END IF;
+
+  v_month := to_char((now() AT TIME ZONE 'Asia/Bangkok')::date, 'YYYY-MM');
+  period_key := 'cal:' || v_month;
+  period_end := (
+    (date_trunc('month', (now() AT TIME ZONE 'Asia/Bangkok')::timestamp) + interval '1 month')
+    AT TIME ZONE 'Asia/Bangkok'
+  );
+  included_limit := v_limit;
+  RETURN NEXT;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_ai_usage_summary(
+  _user_id uuid,
+  _environment text DEFAULT 'sandbox'
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_period record;
+  v_included_used integer := 0;
+  v_included_limit integer;
+  v_purchased integer := 0;
+  v_tier text;
+  v_period_type text := 'monthly';
+  v_total_remaining integer;
+BEGIN
+  IF _user_id IS NULL THEN
+    RETURN jsonb_build_object('error', 'unauthenticated');
+  END IF;
+
+  v_tier := public._ai_user_tier(_user_id);
+  SELECT * INTO v_period FROM public._ai_resolve_period(_user_id);
+
+  SELECT included_used, included_limit
+    INTO v_included_used, v_included_limit
+    FROM public.user_ai_period
+   WHERE user_id = _user_id AND period_key = v_period.period_key;
+
+  v_included_used := COALESCE(v_included_used, 0);
+  v_included_limit := COALESCE(v_included_limit, v_period.included_limit);
+
+  SELECT balance INTO v_purchased
+    FROM public.user_credits
+   WHERE user_id = _user_id AND environment = _environment;
+
+  v_purchased := COALESCE(v_purchased, 0);
+  v_total_remaining := GREATEST(0, v_included_limit - v_included_used) + v_purchased;
+
+  IF v_tier = 'free' THEN
+    IF v_total_remaining <= 0 THEN
+      v_period_type := 'free_starter_ended';
+    ELSE
+      v_period_type := 'free_starter';
+    END IF;
+  ELSIF v_period.period_key LIKE 'sub:%' THEN
+    v_period_type := 'subscription';
+  END IF;
+
+  RETURN jsonb_build_object(
+    'tier', v_tier,
+    'period_key', v_period.period_key,
+    'period_end', v_period.period_end,
+    'period_type', v_period_type,
+    'included_used', v_included_used,
+    'included_limit', v_included_limit,
+    'included_remaining', GREATEST(0, v_included_limit - v_included_used),
+    'purchased_balance', v_purchased,
+    'total_remaining', v_total_remaining
+  );
+END;
+$$;
+
+
+-- 20260609170000_user_storage_quota.sql
+-- Per-user storage quota (DB rows + file storage) with tier limits.
+
+CREATE TABLE IF NOT EXISTS public.storage_tier_config (
+  tier text PRIMARY KEY CHECK (tier IN ('free', 'pro', 'inhouse')),
+  limit_bytes bigint NOT NULL CHECK (limit_bytes > 0),
+  per_seat boolean NOT NULL DEFAULT false,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+INSERT INTO public.storage_tier_config (tier, limit_bytes, per_seat) VALUES
+  ('free', 100::bigint * 1024 * 1024, false),
+  ('pro', 5::bigint * 1024 * 1024 * 1024, false),
+  ('inhouse', 10::bigint * 1024 * 1024 * 1024, true)
+ON CONFLICT (tier) DO NOTHING;
+
+GRANT SELECT ON public.storage_tier_config TO authenticated, service_role;
+
+-- Row-size helper for a user-scoped table
+CREATE OR REPLACE FUNCTION public._user_rows_bytes(_user_id uuid, _sql text)
+RETURNS bigint
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $$
+DECLARE
+  v_bytes bigint;
+BEGIN
+  EXECUTE _sql INTO v_bytes USING _user_id;
+  RETURN COALESCE(v_bytes, 0);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public._user_rows_bytes(uuid, text) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public._storage_user_limit(_user_id uuid)
+RETURNS bigint
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $$
+DECLARE
+  v_tier text;
+  v_cfg record;
+  v_seats integer;
+BEGIN
+  SELECT COALESCE(p.subscription_tier, 'free'), COALESCE(p.subscription_seats, 1)
+    INTO v_tier, v_seats
+    FROM public.profiles p
+   WHERE p.user_id = _user_id;
+
+  IF v_tier IS NULL THEN
+    v_tier := 'free';
+    v_seats := 1;
+  END IF;
+
+  SELECT * INTO v_cfg FROM public.storage_tier_config WHERE tier = v_tier;
+  IF NOT FOUND THEN
+    RETURN 100::bigint * 1024 * 1024;
+  END IF;
+
+  IF v_cfg.per_seat THEN
+    RETURN v_cfg.limit_bytes * GREATEST(v_seats, 1);
+  END IF;
+
+  RETURN v_cfg.limit_bytes;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public._storage_user_limit(uuid) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.get_user_storage_summary(_user_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, storage, pg_catalog
+AS $$
+DECLARE
+  v_tier text;
+  v_limit bigint;
+  v_db_documents bigint := 0;
+  v_db_suppliers bigint := 0;
+  v_db_jobs bigint := 0;
+  v_db_finance bigint := 0;
+  v_db_brand bigint := 0;
+  v_db_planner bigint := 0;
+  v_db_other bigint := 0;
+  v_file_documents bigint := 0;
+  v_file_suppliers bigint := 0;
+  v_file_jobs bigint := 0;
+  v_file_finance bigint := 0;
+  v_file_brand bigint := 0;
+  v_file_planner bigint := 0;
+  v_file_other bigint := 0;
+  v_db_total bigint;
+  v_file_total bigint;
+  v_total bigint;
+  v_uid text;
+BEGIN
+  IF _user_id IS NULL THEN
+    RETURN jsonb_build_object('error', 'unauthenticated');
+  END IF;
+
+  IF auth.uid() IS NOT NULL
+     AND auth.uid() <> _user_id
+     AND NOT public.has_role(auth.uid(), 'admin') THEN
+    RAISE EXCEPTION 'Access denied';
+  END IF;
+
+  v_uid := _user_id::text;
+  v_tier := public._ai_user_tier(_user_id);
+  v_limit := public._storage_user_limit(_user_id);
+
+  -- ── Database footprint by category ──
+  v_db_documents := public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.quotations t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.legal_documents t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.legal_usage_rights t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.legal_checklist_progress t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.legal_license_tokens t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.finance_clients_invoices t WHERE t.user_id = $1');
+
+  v_db_suppliers := public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.suppliers t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.supplier_files t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.supplier_links t WHERE t.user_id = $1');
+
+  v_db_jobs := public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.job_trackers t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(m)), 0) FROM public.job_milestones m JOIN public.job_trackers j ON j.id = m.job_id WHERE j.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(s)), 0) FROM public.job_slips s JOIN public.job_trackers j ON j.id = s.job_id WHERE j.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.dashboard_jobs t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.dashboard_job_tasks t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.feedback_jobs t WHERE t.user_id = $1');
+
+  v_db_finance := public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.finance_expenses t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.finance_incomes t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.finance_subscriptions t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.finance_payment_methods t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.finance_deductions t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.finance_settings t WHERE t.user_id = $1');
+
+  v_db_brand := public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.asset_items t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.profiles t WHERE t.user_id = $1');
+
+  v_db_planner := public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.planner_posts t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.work_projects t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.review_pins t WHERE t.user_id = $1');
+
+  v_db_other := public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.saved_clients t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.dashboard_notes t WHERE t.user_id = $1')
+    + public._user_rows_bytes(_user_id,
+    'SELECT COALESCE(SUM(pg_column_size(t)), 0) FROM public.dashboard_tasks t WHERE t.user_id = $1');
+
+  -- ── File storage by bucket → category ──
+  SELECT
+    COALESCE(SUM(CASE WHEN o.bucket_id IN ('legal-certificates') THEN COALESCE((o.metadata->>'size')::bigint, 0) ELSE 0 END), 0),
+    COALESCE(SUM(CASE WHEN o.bucket_id IN ('supplier-files', 'supplier-covers') THEN COALESCE((o.metadata->>'size')::bigint, 0) ELSE 0 END), 0),
+    COALESCE(SUM(CASE WHEN o.bucket_id IN ('job-tracker', 'brief-references') THEN COALESCE((o.metadata->>'size')::bigint, 0) ELSE 0 END), 0),
+    COALESCE(SUM(CASE WHEN o.bucket_id IN ('expense-receipts', 'wht-certificates') THEN COALESCE((o.metadata->>'size')::bigint, 0) ELSE 0 END), 0),
+    COALESCE(SUM(CASE WHEN o.bucket_id IN ('brand-logos') THEN COALESCE((o.metadata->>'size')::bigint, 0) ELSE 0 END), 0),
+    COALESCE(SUM(CASE WHEN o.bucket_id IN ('chat-images', 'ticket-attachments') THEN COALESCE((o.metadata->>'size')::bigint, 0) ELSE 0 END), 0)
+  INTO v_file_documents, v_file_suppliers, v_file_jobs, v_file_finance, v_file_brand, v_file_other
+  FROM storage.objects o
+  WHERE split_part(o.name, '/', 1) = v_uid;
+
+  v_db_total := v_db_documents + v_db_suppliers + v_db_jobs + v_db_finance + v_db_brand + v_db_planner + v_db_other;
+  v_file_total := v_file_documents + v_file_suppliers + v_file_jobs + v_file_finance + v_file_brand + v_file_planner + v_file_other;
+  v_total := v_db_total + v_file_total;
+
+  RETURN jsonb_build_object(
+    'tier', v_tier,
+    'total_bytes', v_total,
+    'limit_bytes', v_limit,
+    'db_bytes', v_db_total,
+    'file_bytes', v_file_total,
+    'remaining_bytes', GREATEST(0, v_limit - v_total),
+    'categories', jsonb_build_array(
+      jsonb_build_object('key', 'documents', 'bytes', v_db_documents + v_file_documents),
+      jsonb_build_object('key', 'suppliers', 'bytes', v_db_suppliers + v_file_suppliers),
+      jsonb_build_object('key', 'jobs', 'bytes', v_db_jobs + v_file_jobs),
+      jsonb_build_object('key', 'finance', 'bytes', v_db_finance + v_file_finance),
+      jsonb_build_object('key', 'brand_assets', 'bytes', v_db_brand + v_file_brand),
+      jsonb_build_object('key', 'planner', 'bytes', v_db_planner + v_file_planner),
+      jsonb_build_object('key', 'other', 'bytes', v_db_other + v_file_other)
+    )
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_user_storage_summary(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_user_storage_summary(uuid) TO authenticated, service_role;
+
+
+-- 20260610120000_ops_hub_pm_schema.sql
+-- Ops Hub PM workspace: native issues, cycles, roadmap
+
+CREATE SCHEMA IF NOT EXISTS ops;
+
+GRANT USAGE ON SCHEMA ops TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA ops GRANT ALL ON TABLES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA ops GRANT ALL ON SEQUENCES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA ops GRANT ALL ON FUNCTIONS TO service_role;
+
+CREATE TABLE ops.projects (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  slug text UNIQUE NOT NULL,
+  app_scope text NOT NULL DEFAULT 'ecosystem'
+    CHECK (app_scope IN ('ecosystem', 'so1o', 'an1hem')),
+  color text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE ops.cycles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  start_date date NOT NULL,
+  end_date date NOT NULL,
+  status text NOT NULL DEFAULT 'planned'
+    CHECK (status IN ('planned', 'active', 'completed')),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE SEQUENCE IF NOT EXISTS ops.issue_number_seq START 1;
+
+CREATE OR REPLACE FUNCTION ops.format_issue_number(n bigint)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT 'OPS-' || lpad(n::text, 4, '0');
+$$;
+
+CREATE TABLE ops.issues (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  issue_number text NOT NULL UNIQUE,
+  project_id uuid REFERENCES ops.projects(id) ON DELETE SET NULL,
+  cycle_id uuid REFERENCES ops.cycles(id) ON DELETE SET NULL,
+  title text NOT NULL CHECK (char_length(title) BETWEEN 1 AND 200),
+  description text,
+  status text NOT NULL DEFAULT 'backlog'
+    CHECK (status IN ('backlog', 'todo', 'in_progress', 'in_review', 'done', 'cancelled')),
+  priority text NOT NULL DEFAULT 'medium'
+    CHECK (priority IN ('critical', 'high', 'medium', 'low')),
+  assignee_id uuid,
+  labels text[] NOT NULL DEFAULT '{}',
+  source_type text,
+  source_id uuid,
+  due_date date,
+  created_by uuid NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE ops.issue_comments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  issue_id uuid NOT NULL REFERENCES ops.issues(id) ON DELETE CASCADE,
+  author_id uuid NOT NULL,
+  body text NOT NULL CHECK (char_length(body) BETWEEN 1 AND 4000),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE ops.roadmap_items (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  description text,
+  project_id uuid REFERENCES ops.projects(id) ON DELETE SET NULL,
+  quarter text NOT NULL,
+  status text NOT NULL DEFAULT 'planned'
+    CHECK (status IN ('idea', 'planned', 'in_progress', 'shipped')),
+  issue_id uuid REFERENCES ops.issues(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_ops_issues_status ON ops.issues(status, updated_at DESC);
+CREATE INDEX idx_ops_issues_cycle ON ops.issues(cycle_id) WHERE cycle_id IS NOT NULL;
+CREATE INDEX idx_ops_issues_source ON ops.issues(source_type, source_id) WHERE source_id IS NOT NULL;
+CREATE INDEX idx_ops_roadmap_quarter ON ops.roadmap_items(quarter);
+
+CREATE OR REPLACE FUNCTION ops.assign_issue_number()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.issue_number IS NULL OR NEW.issue_number = '' THEN
+    NEW.issue_number := ops.format_issue_number(nextval('ops.issue_number_seq'));
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_ops_issues_number
+  BEFORE INSERT ON ops.issues
+  FOR EACH ROW EXECUTE FUNCTION ops.assign_issue_number();
+
+CREATE OR REPLACE FUNCTION ops.touch_issues_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_ops_issues_updated
+  BEFORE UPDATE ON ops.issues
+  FOR EACH ROW EXECUTE FUNCTION ops.touch_issues_updated_at();
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ops TO authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA ops TO service_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA ops TO authenticated;
+
+ALTER TABLE ops.projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ops.cycles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ops.issues ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ops.issue_comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ops.roadmap_items ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins manage ops projects"
+  ON ops.projects FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins manage ops cycles"
+  ON ops.cycles FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins manage ops issues"
+  ON ops.issues FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins manage ops issue comments"
+  ON ops.issue_comments FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins manage ops roadmap"
+  ON ops.roadmap_items FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+-- Seed
+INSERT INTO ops.projects (name, slug, app_scope, color) VALUES
+  ('Ecosystem', 'ecosystem', 'ecosystem', '#1a1a1a'),
+  ('So1o Platform', 'so1o', 'so1o', '#e8740c'),
+  ('an1hem', 'an1hem', 'an1hem', '#e85d24')
+ON CONFLICT (slug) DO NOTHING;
+
+INSERT INTO ops.cycles (name, start_date, end_date, status)
+SELECT 'Cycle 1 — Jun 2026', '2026-06-01'::date, '2026-06-30'::date, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM ops.cycles WHERE name = 'Cycle 1 — Jun 2026');
+
+INSERT INTO ops.roadmap_items (title, description, project_id, quarter, status)
+SELECT
+  'Ops Hub PM Workspace',
+  'Inbox, Board, Cycles, Roadmap สำหรับ PM',
+  p.id,
+  '2026-Q2',
+  'in_progress'
+FROM ops.projects p
+WHERE p.slug = 'ecosystem'
+  AND NOT EXISTS (
+    SELECT 1 FROM ops.roadmap_items r WHERE r.title = 'Ops Hub PM Workspace'
+  );
+
+-- Promote external work item → ops issue (callable from Hub client)
+CREATE OR REPLACE FUNCTION public.ops_promote_work_item(
+  p_source_type text,
+  p_source_id uuid,
+  p_title text,
+  p_description text DEFAULT NULL
+)
+RETURNS ops.issues
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, ops
+AS $$
+DECLARE
+  uid uuid := auth.uid();
+  proj_id uuid;
+  existing ops.issues;
+  created ops.issues;
+BEGIN
+  IF NOT public.has_role(uid, 'admin') THEN
+    RAISE EXCEPTION 'admin only';
+  END IF;
+
+  SELECT * INTO existing FROM ops.issues
+  WHERE source_type = p_source_type AND source_id = p_source_id
+  LIMIT 1;
+
+  IF existing.id IS NOT NULL THEN
+    RETURN existing;
+  END IF;
+
+  SELECT id INTO proj_id FROM ops.projects
+  WHERE slug = CASE
+    WHEN p_source_type IN ('app_feedback', 'user_report') THEN 'an1hem'
+    WHEN p_source_type IN ('support_ticket', 'feature_suggestion') THEN 'so1o'
+    ELSE 'ecosystem'
+  END
+  LIMIT 1;
+
+  INSERT INTO ops.issues (
+    title, description, project_id, status, priority,
+    source_type, source_id, created_by
+  ) VALUES (
+    p_title,
+    p_description,
+    proj_id,
+    'backlog',
+    'medium',
+    p_source_type,
+    p_source_id,
+    uid
+  )
+  RETURNING * INTO created;
+
+  RETURN created;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.ops_promote_work_item(text, uuid, text, text) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.ops_promote_work_item(text, uuid, text, text) FROM PUBLIC, anon;
+
+
+-- 20260611120000_refund_ai_credits.sql
+-- Refund AI credits when a debited request fails after charge (e.g. empty LLM response).
+
+CREATE OR REPLACE FUNCTION public.refund_ai_credits(
+  _user_id uuid,
+  _original_idempotency_key text,
+  _refund_idempotency_key text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_entry record;
+  v_period record;
+  v_env text;
+  v_refunded_included integer := 0;
+  v_refunded_purchased integer := 0;
+BEGIN
+  IF _user_id IS NULL OR _original_idempotency_key IS NULL OR _refund_idempotency_key IS NULL THEN
+    RETURN jsonb_build_object('refunded', false, 'reason', 'invalid_args');
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.ai_credit_ledger
+    WHERE idempotency_key = _refund_idempotency_key
+  ) THEN
+    RETURN jsonb_build_object('refunded', true, 'duplicate', true);
+  END IF;
+
+  SELECT * INTO v_entry
+    FROM public.ai_credit_ledger
+   WHERE user_id = _user_id
+     AND idempotency_key = _original_idempotency_key
+   LIMIT 1;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('refunded', false, 'reason', 'original_not_found');
+  END IF;
+
+  v_env := COALESCE(v_entry.metadata->>'environment', 'sandbox');
+
+  SELECT * INTO v_period FROM public._ai_resolve_period(_user_id);
+
+  IF v_entry.source = 'purchased' THEN
+    v_refunded_purchased := v_entry.cost;
+    UPDATE public.user_credits
+       SET balance = balance + v_refunded_purchased, updated_at = now()
+     WHERE user_id = _user_id AND environment = v_env;
+  ELSIF v_entry.source = 'mixed' THEN
+    v_refunded_included := COALESCE((v_entry.metadata->>'from_included')::integer, v_entry.cost);
+    v_refunded_purchased := GREATEST(0, v_entry.cost - v_refunded_included);
+    IF v_refunded_included > 0 THEN
+      UPDATE public.user_ai_period
+         SET included_used = GREATEST(0, included_used - v_refunded_included), updated_at = now()
+       WHERE user_id = _user_id AND period_key = v_period.period_key;
+    END IF;
+    IF v_refunded_purchased > 0 THEN
+      UPDATE public.user_credits
+         SET balance = balance + v_refunded_purchased, updated_at = now()
+       WHERE user_id = _user_id AND environment = v_env;
+    END IF;
+  ELSE
+    v_refunded_included := v_entry.cost;
+    UPDATE public.user_ai_period
+       SET included_used = GREATEST(0, included_used - v_refunded_included), updated_at = now()
+     WHERE user_id = _user_id AND period_key = v_period.period_key;
+  END IF;
+
+  INSERT INTO public.ai_credit_ledger (user_id, feature, cost, source, idempotency_key, metadata)
+  VALUES (
+    _user_id,
+    'refund:' || v_entry.feature,
+    -v_entry.cost,
+    'refund',
+    _refund_idempotency_key,
+    jsonb_build_object(
+      'refund_of', _original_idempotency_key,
+      'refunded_included', v_refunded_included,
+      'refunded_purchased', v_refunded_purchased,
+      'environment', v_env
+    )
+  );
+
+  RETURN jsonb_build_object(
+    'refunded', true,
+    'cost', v_entry.cost,
+    'refunded_included', v_refunded_included,
+    'refunded_purchased', v_refunded_purchased
+  );
+END;
+$$;
+
+-- Store debit split in metadata for accurate mixed refunds.
+CREATE OR REPLACE FUNCTION public.debit_ai_credits(
+  _user_id uuid,
+  _feature text,
+  _environment text DEFAULT 'sandbox',
+  _idempotency_key text DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_period record;
+  v_cost integer;
+  v_included_used integer := 0;
+  v_included_limit integer;
+  v_included_remaining integer;
+  v_purchased integer := 0;
+  v_from_included integer := 0;
+  v_from_purchased integer := 0;
+  v_prev jsonb;
+  v_source text;
+  v_has_credits_row boolean := false;
+BEGIN
+  IF _user_id IS NULL THEN
+    RETURN jsonb_build_object('allowed', false, 'reason', 'unauthenticated');
+  END IF;
+
+  IF _idempotency_key IS NOT NULL THEN
+    SELECT jsonb_build_object(
+      'allowed', true,
+      'duplicate', true,
+      'cost', cost,
+      'included_used', (metadata->>'included_used_after')::integer,
+      'included_limit', (metadata->>'included_limit')::integer,
+      'purchased_balance', (metadata->>'purchased_after')::integer,
+      'total_remaining', (metadata->>'total_remaining')::integer
+    ) INTO v_prev
+    FROM public.ai_credit_ledger
+   WHERE idempotency_key = _idempotency_key;
+
+    IF FOUND THEN RETURN v_prev; END IF;
+  END IF;
+
+  SELECT cost INTO v_cost FROM public.ai_feature_costs WHERE feature = _feature;
+  IF v_cost IS NULL THEN v_cost := 1; END IF;
+
+  SELECT * INTO v_period FROM public._ai_resolve_period(_user_id);
+  v_included_limit := v_period.included_limit;
+
+  INSERT INTO public.user_ai_period (user_id, period_key, included_limit, included_used, period_end)
+  VALUES (_user_id, v_period.period_key, v_included_limit, 0, v_period.period_end)
+  ON CONFLICT (user_id, period_key) DO NOTHING;
+
+  SELECT included_used INTO v_included_used
+    FROM public.user_ai_period
+   WHERE user_id = _user_id AND period_key = v_period.period_key
+   FOR UPDATE;
+
+  v_included_used := COALESCE(v_included_used, 0);
+
+  SELECT balance INTO v_purchased
+    FROM public.user_credits
+   WHERE user_id = _user_id AND environment = _environment
+   FOR UPDATE;
+
+  IF FOUND THEN
+    v_has_credits_row := true;
+    v_purchased := COALESCE(v_purchased, 0);
+  ELSE
+    v_purchased := 0;
+  END IF;
+
+  v_included_remaining := GREATEST(0, v_included_limit - v_included_used);
+
+  IF v_included_remaining + v_purchased < v_cost THEN
+    RETURN jsonb_build_object(
+      'allowed', false,
+      'reason', 'quota_exceeded',
+      'cost', v_cost,
+      'included_used', v_included_used,
+      'included_limit', v_included_limit,
+      'included_remaining', v_included_remaining,
+      'purchased_balance', v_purchased,
+      'total_remaining', v_included_remaining + v_purchased
+    );
+  END IF;
+
+  v_from_included := LEAST(v_cost, v_included_remaining);
+  v_from_purchased := v_cost - v_from_included;
+
+  IF v_from_included > 0 THEN
+    UPDATE public.user_ai_period
+       SET included_used = included_used + v_from_included, updated_at = now()
+     WHERE user_id = _user_id AND period_key = v_period.period_key;
+    v_included_used := v_included_used + v_from_included;
+  END IF;
+
+  IF v_from_purchased > 0 THEN
+    IF v_has_credits_row THEN
+      UPDATE public.user_credits
+         SET balance = balance - v_from_purchased, updated_at = now()
+       WHERE user_id = _user_id AND environment = _environment;
+    ELSE
+      RETURN jsonb_build_object('allowed', false, 'reason', 'quota_exceeded');
+    END IF;
+    v_purchased := v_purchased - v_from_purchased;
+  END IF;
+
+  IF v_from_included > 0 AND v_from_purchased > 0 THEN
+    v_source := 'mixed';
+  ELSIF v_from_purchased > 0 THEN
+    v_source := 'purchased';
+  ELSE
+    v_source := 'included';
+  END IF;
+
+  INSERT INTO public.ai_credit_ledger (user_id, feature, cost, source, idempotency_key, metadata)
+  VALUES (
+    _user_id,
+    _feature,
+    v_cost,
+    v_source,
+    _idempotency_key,
+    jsonb_build_object(
+      'from_included', v_from_included,
+      'from_purchased', v_from_purchased,
+      'included_used_after', v_included_used,
+      'included_limit', v_included_limit,
+      'purchased_after', v_purchased,
+      'total_remaining', GREATEST(0, v_included_limit - v_included_used) + v_purchased,
+      'environment', _environment
+    )
+  );
+
+  RETURN jsonb_build_object(
+    'allowed', true,
+    'cost', v_cost,
+    'source', v_source,
+    'included_used', v_included_used,
+    'included_limit', v_included_limit,
+    'included_remaining', GREATEST(0, v_included_limit - v_included_used),
+    'purchased_balance', v_purchased,
+    'total_remaining', GREATEST(0, v_included_limit - v_included_used) + v_purchased
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.refund_ai_credits(uuid, text, text) TO service_role;
+
+
+-- 20260612120000_inhouse_workspace.sql
+-- In-House Co-working Workspace (MVP)
+
+DO $$ BEGIN
+  CREATE TYPE public.inhouse_member_role AS ENUM ('owner', 'admin', 'member', 'viewer');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE public.inhouse_member_status AS ENUM ('invited', 'active', 'removed');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS public.inhouse_orgs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id uuid NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+  name text NOT NULL,
+  slug text NOT NULL,
+  avatar_url text,
+  seat_limit integer NOT NULL DEFAULT 3,
+  settings jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT inhouse_orgs_slug_unique UNIQUE (slug),
+  CONSTRAINT inhouse_orgs_owner_unique UNIQUE (owner_id)
+);
+
+CREATE INDEX IF NOT EXISTS inhouse_orgs_owner_idx ON public.inhouse_orgs (owner_id);
+
+CREATE TABLE IF NOT EXISTS public.inhouse_org_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id uuid NOT NULL REFERENCES public.inhouse_orgs(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+  role public.inhouse_member_role NOT NULL DEFAULT 'member',
+  status public.inhouse_member_status NOT NULL DEFAULT 'invited',
+  invited_by uuid REFERENCES public.profiles(user_id) ON DELETE SET NULL,
+  invited_at timestamptz,
+  joined_at timestamptz,
+  removed_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT inhouse_org_members_unique UNIQUE (org_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS inhouse_org_members_user_idx ON public.inhouse_org_members (user_id, status);
+CREATE INDEX IF NOT EXISTS inhouse_org_members_org_idx ON public.inhouse_org_members (org_id, status);
+
+CREATE TABLE IF NOT EXISTS public.inhouse_workspaces (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id uuid NOT NULL REFERENCES public.inhouse_orgs(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  slug text NOT NULL,
+  description text,
+  linked_quotation_id uuid REFERENCES public.quotations(id) ON DELETE SET NULL,
+  settings jsonb NOT NULL DEFAULT '{"columns":["backlog","todo","doing","review","done"]}'::jsonb,
+  archived_at timestamptz,
+  created_by uuid REFERENCES public.profiles(user_id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT inhouse_workspaces_slug_unique UNIQUE (org_id, slug)
+);
+
+CREATE INDEX IF NOT EXISTS inhouse_workspaces_org_idx ON public.inhouse_workspaces (org_id);
+
+CREATE TABLE IF NOT EXISTS public.inhouse_workspace_members (
+  workspace_id uuid NOT NULL REFERENCES public.inhouse_workspaces(id) ON DELETE CASCADE,
+  org_member_id uuid NOT NULL REFERENCES public.inhouse_org_members(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (workspace_id, org_member_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.inhouse_tasks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id uuid NOT NULL REFERENCES public.inhouse_workspaces(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  description text,
+  column_key text NOT NULL DEFAULT 'todo',
+  assignee_id uuid REFERENCES public.profiles(user_id) ON DELETE SET NULL,
+  priority text NOT NULL DEFAULT 'medium',
+  due_date date,
+  position integer NOT NULL DEFAULT 0,
+  created_by uuid REFERENCES public.profiles(user_id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS inhouse_tasks_workspace_idx ON public.inhouse_tasks (workspace_id, column_key, position);
+
+CREATE TABLE IF NOT EXISTS public.inhouse_channels (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id uuid NOT NULL REFERENCES public.inhouse_workspaces(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  is_default boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT inhouse_channels_name_unique UNIQUE (workspace_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS public.inhouse_messages (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  channel_id uuid NOT NULL REFERENCES public.inhouse_channels(id) ON DELETE CASCADE,
+  sender_id uuid NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+  body text NOT NULL,
+  attachments jsonb NOT NULL DEFAULT '[]'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS inhouse_messages_channel_idx ON public.inhouse_messages (channel_id, created_at);
+
+CREATE TABLE IF NOT EXISTS public.inhouse_activity_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id uuid NOT NULL REFERENCES public.inhouse_orgs(id) ON DELETE CASCADE,
+  workspace_id uuid REFERENCES public.inhouse_workspaces(id) ON DELETE SET NULL,
+  user_id uuid REFERENCES public.profiles(user_id) ON DELETE SET NULL,
+  event_type text NOT NULL,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS inhouse_activity_org_idx ON public.inhouse_activity_events (org_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS public.inhouse_invites (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id uuid NOT NULL REFERENCES public.inhouse_orgs(id) ON DELETE CASCADE,
+  token text NOT NULL UNIQUE,
+  email text,
+  role public.inhouse_member_role NOT NULL DEFAULT 'member',
+  workspace_ids uuid[] NOT NULL DEFAULT '{}',
+  invited_by uuid NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+  expires_at timestamptz NOT NULL DEFAULT (now() + interval '14 days'),
+  accepted_at timestamptz,
+  accepted_by uuid REFERENCES public.profiles(user_id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS inhouse_invites_org_idx ON public.inhouse_invites (org_id);
+
+CREATE TABLE IF NOT EXISTS public.inhouse_canvases (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id uuid NOT NULL REFERENCES public.inhouse_workspaces(id) ON DELETE CASCADE,
+  name text NOT NULL DEFAULT 'Untitled',
+  scene_data jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_by uuid REFERENCES public.profiles(user_id) ON DELETE SET NULL,
+  updated_by uuid REFERENCES public.profiles(user_id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS inhouse_canvases_workspace_idx ON public.inhouse_canvases (workspace_id);
+
+CREATE OR REPLACE FUNCTION public.inhouse_is_org_member(_org_id uuid, _user_id uuid DEFAULT auth.uid())
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.inhouse_org_members m
+    WHERE m.org_id = _org_id AND m.user_id = _user_id AND m.status = 'active'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.inhouse_is_org_admin(_org_id uuid, _user_id uuid DEFAULT auth.uid())
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.inhouse_org_members m
+    WHERE m.org_id = _org_id AND m.user_id = _user_id AND m.status = 'active' AND m.role IN ('owner', 'admin')
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.inhouse_can_access_workspace(_workspace_id uuid, _user_id uuid DEFAULT auth.uid())
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.inhouse_workspaces w
+    JOIN public.inhouse_org_members om ON om.org_id = w.org_id
+    LEFT JOIN public.inhouse_workspace_members wm ON wm.workspace_id = w.id AND wm.org_member_id = om.id
+    WHERE w.id = _workspace_id AND om.user_id = _user_id AND om.status = 'active' AND w.archived_at IS NULL
+      AND (NOT EXISTS (SELECT 1 FROM public.inhouse_workspace_members x WHERE x.workspace_id = w.id)
+           OR wm.org_member_id IS NOT NULL OR om.role IN ('owner', 'admin'))
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.inhouse_active_member_count(_org_id uuid)
+RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT COUNT(*)::integer FROM public.inhouse_org_members WHERE org_id = _org_id AND status = 'active';
+$$;
+
+CREATE OR REPLACE FUNCTION public.assert_org_seat_available(_org_id uuid)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE _limit integer; _active integer;
+BEGIN
+  SELECT seat_limit INTO _limit FROM public.inhouse_orgs WHERE id = _org_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'org_not_found'; END IF;
+  _active := public.inhouse_active_member_count(_org_id);
+  IF _active >= _limit THEN RAISE EXCEPTION 'seat_limit_reached'; END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.sync_inhouse_org_seat_limit(_owner_id uuid)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE _seats integer;
+BEGIN
+  SELECT COALESCE(subscription_seats, 3) INTO _seats FROM public.profiles WHERE user_id = _owner_id;
+  UPDATE public.inhouse_orgs SET seat_limit = GREATEST(1, _seats), updated_at = now() WHERE owner_id = _owner_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.sync_user_tier(_user_id uuid)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE new_tier text := 'free'; new_seats integer := 1; sub record;
+BEGIN
+  SELECT price_id, status, current_period_end, environment, seat_quantity INTO sub
+  FROM public.subscriptions WHERE user_id = _user_id AND environment = 'live'
+    AND ((status IN ('active','trialing','past_due') AND (current_period_end IS NULL OR current_period_end > now()))
+      OR (status = 'canceled' AND current_period_end > now()))
+  ORDER BY created_at DESC LIMIT 1;
+  IF NOT FOUND THEN
+    SELECT price_id, status, current_period_end, environment, seat_quantity INTO sub
+    FROM public.subscriptions WHERE user_id = _user_id AND environment = 'sandbox'
+      AND ((status IN ('active','trialing','past_due') AND (current_period_end IS NULL OR current_period_end > now()))
+        OR (status = 'canceled' AND current_period_end > now()))
+    ORDER BY created_at DESC LIMIT 1;
+  END IF;
+  IF FOUND THEN
+    new_seats := GREATEST(1, COALESCE(sub.seat_quantity, 1));
+    IF sub.price_id IN ('inhouse_monthly','inhouse_yearly') THEN new_tier := 'inhouse';
+    ELSIF sub.price_id IN ('pro_plus_monthly','pro_plus_yearly') THEN new_tier := 'pro_plus';
+    ELSE new_tier := 'pro'; END IF;
+  END IF;
+  UPDATE public.profiles SET subscription_tier = new_tier, subscription_seats = new_seats WHERE user_id = _user_id;
+  PERFORM public.sync_inhouse_org_seat_limit(_user_id);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.log_inhouse_activity(_org_id uuid, _workspace_id uuid, _event_type text, _metadata jsonb DEFAULT '{}'::jsonb)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE _id uuid;
+BEGIN
+  IF NOT public.inhouse_is_org_member(_org_id) THEN RAISE EXCEPTION 'forbidden'; END IF;
+  INSERT INTO public.inhouse_activity_events (org_id, workspace_id, user_id, event_type, metadata)
+  VALUES (_org_id, _workspace_id, auth.uid(), _event_type, _metadata) RETURNING id INTO _id;
+  RETURN _id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.accept_inhouse_invite(_token text)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE inv record; mem_id uuid; ws_id uuid;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  SELECT * INTO inv FROM public.inhouse_invites WHERE token = _token AND accepted_at IS NULL AND expires_at > now() FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'invite_invalid'; END IF;
+  PERFORM public.assert_org_seat_available(inv.org_id);
+  INSERT INTO public.inhouse_org_members (org_id, user_id, role, status, invited_by, invited_at, joined_at)
+  VALUES (inv.org_id, auth.uid(), inv.role, 'active', inv.invited_by, inv.created_at, now())
+  ON CONFLICT (org_id, user_id) DO UPDATE SET role = EXCLUDED.role, status = 'active', joined_at = now(), removed_at = NULL
+  RETURNING id INTO mem_id;
+  IF array_length(inv.workspace_ids, 1) IS NOT NULL THEN
+    FOREACH ws_id IN ARRAY inv.workspace_ids LOOP
+      INSERT INTO public.inhouse_workspace_members (workspace_id, org_member_id) VALUES (ws_id, mem_id) ON CONFLICT DO NOTHING;
+    END LOOP;
+  END IF;
+  UPDATE public.inhouse_invites SET accepted_at = now(), accepted_by = auth.uid() WHERE id = inv.id;
+  PERFORM public.log_inhouse_activity(inv.org_id, NULL, 'member_joined', jsonb_build_object('user_id', auth.uid()));
+  RETURN inv.org_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.create_inhouse_org(_name text, _workspace_name text DEFAULT 'General')
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE _org_id uuid; _ws_id uuid; _slug text; _ws_slug text; _seats integer; _member_id uuid;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  IF EXISTS (SELECT 1 FROM public.inhouse_orgs WHERE owner_id = auth.uid()) THEN RAISE EXCEPTION 'org_already_exists'; END IF;
+  SELECT COALESCE(subscription_seats, 3) INTO _seats FROM public.profiles WHERE user_id = auth.uid() AND subscription_tier = 'inhouse';
+  IF NOT FOUND THEN RAISE EXCEPTION 'inhouse_tier_required'; END IF;
+  _slug := lower(regexp_replace(trim(_name), '[^a-zA-Z0-9]+', '-', 'g'));
+  _slug := trim(both '-' from _slug); IF _slug = '' THEN _slug := 'team'; END IF;
+  _slug := _slug || '-' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 6);
+  INSERT INTO public.inhouse_orgs (owner_id, name, slug, seat_limit) VALUES (auth.uid(), trim(_name), _slug, GREATEST(1, _seats)) RETURNING id INTO _org_id;
+  INSERT INTO public.inhouse_org_members (org_id, user_id, role, status, joined_at) VALUES (_org_id, auth.uid(), 'owner', 'active', now()) RETURNING id INTO _member_id;
+  _ws_slug := lower(regexp_replace(trim(_workspace_name), '[^a-zA-Z0-9]+', '-', 'g'));
+  _ws_slug := trim(both '-' from _ws_slug); IF _ws_slug = '' THEN _ws_slug := 'general'; END IF;
+  INSERT INTO public.inhouse_workspaces (org_id, name, slug, created_by) VALUES (_org_id, trim(_workspace_name), _ws_slug, auth.uid()) RETURNING id INTO _ws_id;
+  INSERT INTO public.inhouse_channels (workspace_id, name, is_default) VALUES (_ws_id, 'general', true);
+  INSERT INTO public.inhouse_workspace_members (workspace_id, org_member_id) VALUES (_ws_id, _member_id);
+  PERFORM public.log_inhouse_activity(_org_id, _ws_id, 'org_created', jsonb_build_object('name', _name));
+  RETURN _org_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.inhouse_org_members_seat_guard()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NEW.status = 'active' AND (TG_OP = 'INSERT' OR OLD.status IS DISTINCT FROM 'active') THEN
+    PERFORM public.assert_org_seat_available(NEW.org_id);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS inhouse_org_members_seat_guard_trg ON public.inhouse_org_members;
+CREATE TRIGGER inhouse_org_members_seat_guard_trg BEFORE INSERT OR UPDATE ON public.inhouse_org_members
+  FOR EACH ROW EXECUTE FUNCTION public.inhouse_org_members_seat_guard();
+
+ALTER TABLE public.inhouse_orgs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inhouse_org_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inhouse_workspaces ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inhouse_workspace_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inhouse_tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inhouse_channels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inhouse_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inhouse_activity_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inhouse_invites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inhouse_canvases ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "inhouse_orgs_select" ON public.inhouse_orgs;
+CREATE POLICY "inhouse_orgs_select" ON public.inhouse_orgs FOR SELECT TO authenticated USING (owner_id = auth.uid() OR public.inhouse_is_org_member(id));
+DROP POLICY IF EXISTS "inhouse_orgs_insert" ON public.inhouse_orgs;
+CREATE POLICY "inhouse_orgs_insert" ON public.inhouse_orgs FOR INSERT TO authenticated WITH CHECK (owner_id = auth.uid());
+DROP POLICY IF EXISTS "inhouse_orgs_update" ON public.inhouse_orgs;
+CREATE POLICY "inhouse_orgs_update" ON public.inhouse_orgs FOR UPDATE TO authenticated USING (public.inhouse_is_org_admin(id));
+
+DROP POLICY IF EXISTS "inhouse_members_select" ON public.inhouse_org_members;
+CREATE POLICY "inhouse_members_select" ON public.inhouse_org_members FOR SELECT TO authenticated USING (public.inhouse_is_org_member(org_id));
+DROP POLICY IF EXISTS "inhouse_members_insert" ON public.inhouse_org_members;
+CREATE POLICY "inhouse_members_insert" ON public.inhouse_org_members FOR INSERT TO authenticated WITH CHECK (public.inhouse_is_org_admin(org_id) OR user_id = auth.uid());
+DROP POLICY IF EXISTS "inhouse_members_update" ON public.inhouse_org_members;
+CREATE POLICY "inhouse_members_update" ON public.inhouse_org_members FOR UPDATE TO authenticated USING (public.inhouse_is_org_admin(org_id));
+
+DROP POLICY IF EXISTS "inhouse_workspaces_select" ON public.inhouse_workspaces;
+CREATE POLICY "inhouse_workspaces_select" ON public.inhouse_workspaces FOR SELECT TO authenticated USING (public.inhouse_is_org_member(org_id));
+DROP POLICY IF EXISTS "inhouse_workspaces_insert" ON public.inhouse_workspaces;
+CREATE POLICY "inhouse_workspaces_insert" ON public.inhouse_workspaces FOR INSERT TO authenticated WITH CHECK (public.inhouse_is_org_admin(org_id));
+DROP POLICY IF EXISTS "inhouse_workspaces_update" ON public.inhouse_workspaces;
+CREATE POLICY "inhouse_workspaces_update" ON public.inhouse_workspaces FOR UPDATE TO authenticated USING (public.inhouse_is_org_admin(org_id));
+
+DROP POLICY IF EXISTS "inhouse_ws_members_select" ON public.inhouse_workspace_members;
+CREATE POLICY "inhouse_ws_members_select" ON public.inhouse_workspace_members FOR SELECT TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.inhouse_workspaces w WHERE w.id = workspace_id AND public.inhouse_is_org_member(w.org_id)));
+DROP POLICY IF EXISTS "inhouse_ws_members_mutate" ON public.inhouse_workspace_members;
+CREATE POLICY "inhouse_ws_members_mutate" ON public.inhouse_workspace_members FOR ALL TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.inhouse_workspaces w WHERE w.id = workspace_id AND public.inhouse_is_org_admin(w.org_id)))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.inhouse_workspaces w WHERE w.id = workspace_id AND public.inhouse_is_org_admin(w.org_id)));
+
+DROP POLICY IF EXISTS "inhouse_tasks_select" ON public.inhouse_tasks;
+CREATE POLICY "inhouse_tasks_select" ON public.inhouse_tasks FOR SELECT TO authenticated USING (public.inhouse_can_access_workspace(workspace_id));
+DROP POLICY IF EXISTS "inhouse_tasks_mutate" ON public.inhouse_tasks;
+CREATE POLICY "inhouse_tasks_mutate" ON public.inhouse_tasks FOR ALL TO authenticated
+  USING (public.inhouse_can_access_workspace(workspace_id)) WITH CHECK (public.inhouse_can_access_workspace(workspace_id));
+
+DROP POLICY IF EXISTS "inhouse_channels_select" ON public.inhouse_channels;
+CREATE POLICY "inhouse_channels_select" ON public.inhouse_channels FOR SELECT TO authenticated USING (public.inhouse_can_access_workspace(workspace_id));
+DROP POLICY IF EXISTS "inhouse_channels_insert" ON public.inhouse_channels;
+CREATE POLICY "inhouse_channels_insert" ON public.inhouse_channels FOR INSERT TO authenticated
+  WITH CHECK (EXISTS (SELECT 1 FROM public.inhouse_workspaces w WHERE w.id = workspace_id AND public.inhouse_is_org_admin(w.org_id)));
+
+DROP POLICY IF EXISTS "inhouse_messages_select" ON public.inhouse_messages;
+CREATE POLICY "inhouse_messages_select" ON public.inhouse_messages FOR SELECT TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.inhouse_channels c WHERE c.id = channel_id AND public.inhouse_can_access_workspace(c.workspace_id)));
+DROP POLICY IF EXISTS "inhouse_messages_insert" ON public.inhouse_messages;
+CREATE POLICY "inhouse_messages_insert" ON public.inhouse_messages FOR INSERT TO authenticated
+  WITH CHECK (sender_id = auth.uid() AND EXISTS (SELECT 1 FROM public.inhouse_channels c WHERE c.id = channel_id AND public.inhouse_can_access_workspace(c.workspace_id)));
+
+DROP POLICY IF EXISTS "inhouse_activity_select" ON public.inhouse_activity_events;
+CREATE POLICY "inhouse_activity_select" ON public.inhouse_activity_events FOR SELECT TO authenticated USING (public.inhouse_is_org_member(org_id));
+
+DROP POLICY IF EXISTS "inhouse_invites_select" ON public.inhouse_invites;
+CREATE POLICY "inhouse_invites_select" ON public.inhouse_invites FOR SELECT TO authenticated USING (public.inhouse_is_org_admin(org_id));
+DROP POLICY IF EXISTS "inhouse_invites_insert" ON public.inhouse_invites;
+CREATE POLICY "inhouse_invites_insert" ON public.inhouse_invites FOR INSERT TO authenticated WITH CHECK (public.inhouse_is_org_admin(org_id) AND invited_by = auth.uid());
+DROP POLICY IF EXISTS "inhouse_invites_update" ON public.inhouse_invites;
+CREATE POLICY "inhouse_invites_update" ON public.inhouse_invites FOR UPDATE TO authenticated USING (public.inhouse_is_org_admin(org_id));
+
+DROP POLICY IF EXISTS "inhouse_canvases_select" ON public.inhouse_canvases;
+CREATE POLICY "inhouse_canvases_select" ON public.inhouse_canvases FOR SELECT TO authenticated USING (public.inhouse_can_access_workspace(workspace_id));
+DROP POLICY IF EXISTS "inhouse_canvases_mutate" ON public.inhouse_canvases;
+CREATE POLICY "inhouse_canvases_mutate" ON public.inhouse_canvases FOR ALL TO authenticated
+  USING (public.inhouse_can_access_workspace(workspace_id)) WITH CHECK (public.inhouse_can_access_workspace(workspace_id));
+
+REVOKE ALL ON FUNCTION public.inhouse_is_org_member(uuid, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.inhouse_is_org_member(uuid, uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.inhouse_is_org_admin(uuid, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.inhouse_is_org_admin(uuid, uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.inhouse_can_access_workspace(uuid, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.inhouse_can_access_workspace(uuid, uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.log_inhouse_activity(uuid, uuid, text, jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.log_inhouse_activity(uuid, uuid, text, jsonb) TO authenticated;
+REVOKE ALL ON FUNCTION public.accept_inhouse_invite(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.accept_inhouse_invite(text) TO authenticated;
+REVOKE ALL ON FUNCTION public.create_inhouse_org(text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.create_inhouse_org(text, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.sync_inhouse_org_seat_limit(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.sync_inhouse_org_seat_limit(uuid) TO service_role;
+
+
+-- 20260613100000_inhouse_invite_pending.sql
+-- In-House follow-up: pending invites for home page + invitee read policy
+
+CREATE OR REPLACE FUNCTION public.get_my_pending_inhouse_invites()
+RETURNS TABLE (
+  id uuid,
+  org_id uuid,
+  token text,
+  email text,
+  role public.inhouse_member_role,
+  expires_at timestamptz,
+  org_name text,
+  org_slug text
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    i.id,
+    i.org_id,
+    i.token,
+    i.email,
+    i.role,
+    i.expires_at,
+    o.name AS org_name,
+    o.slug AS org_slug
+  FROM public.inhouse_invites i
+  JOIN public.inhouse_orgs o ON o.id = i.org_id
+  JOIN public.profiles p ON p.user_id = auth.uid()
+  WHERE i.accepted_at IS NULL
+    AND i.expires_at > now()
+    AND (
+      i.email IS NULL
+      OR lower(trim(i.email)) = lower(trim(COALESCE(p.email, '')))
+    );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_my_pending_inhouse_invites() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_my_pending_inhouse_invites() TO authenticated;
+
+DROP POLICY IF EXISTS "inhouse_invites_select_invitee" ON public.inhouse_invites;
+CREATE POLICY "inhouse_invites_select_invitee" ON public.inhouse_invites FOR SELECT TO authenticated
+  USING (
+    accepted_at IS NULL
+    AND expires_at > now()
+    AND email IS NOT NULL
+    AND lower(trim(email)) = lower(trim(COALESCE(
+      (SELECT pr.email FROM public.profiles pr WHERE pr.user_id = auth.uid()),
+      ''
+    )))
+  );
+
+
+-- 20260613120000_anthem_portfolio_from_images.sql
+-- Anthem portfolio AI assist from images (vision)
+INSERT INTO public.ai_feature_costs (feature, cost, label) VALUES
+  ('anthem_portfolio_from_images', 8, 'Anthem — AI ช่วยลงผลงาน')
+ON CONFLICT (feature) DO UPDATE SET cost = 8, label = EXCLUDED.label;
+
+
+-- 20260613120000_chat_phase2.sql
+-- Chat UX Phase 2: reply, unsend, project messages, pins, group chat
+-- Run on unified Supabase project (shared schema)
+
+-- ── conversations ──
+ALTER TABLE shared.conversations
+  ADD COLUMN IF NOT EXISTS conversation_type text NOT NULL DEFAULT 'direct'
+    CHECK (conversation_type IN ('direct', 'group')),
+  ADD COLUMN IF NOT EXISTS title text,
+  ADD COLUMN IF NOT EXISTS created_by uuid;
+
+ALTER TABLE shared.conversations
+  ALTER COLUMN request_id DROP NOT NULL;
+
+ALTER TABLE shared.conversations DROP CONSTRAINT IF EXISTS conversations_kind_check;
+ALTER TABLE shared.conversations
+  ADD CONSTRAINT conversations_kind_check
+  CHECK (kind IN ('hire', 'collab', 'group'));
+
+-- ── messages ──
+ALTER TABLE shared.messages
+  ADD COLUMN IF NOT EXISTS reply_to_id uuid REFERENCES shared.messages(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS deleted_at timestamptz,
+  ADD COLUMN IF NOT EXISTS message_type text NOT NULL DEFAULT 'text'
+    CHECK (message_type IN ('text', 'image', 'project')),
+  ADD COLUMN IF NOT EXISTS project_id uuid;
+
+CREATE INDEX IF NOT EXISTS idx_messages_reply_to ON shared.messages(reply_to_id);
+CREATE INDEX IF NOT EXISTS idx_messages_project ON shared.messages(project_id) WHERE project_id IS NOT NULL;
+
+-- ── conversation_members (group chat) ──
+CREATE TABLE IF NOT EXISTS shared.conversation_members (
+  conversation_id uuid NOT NULL REFERENCES shared.conversations(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL,
+  role text NOT NULL DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member')),
+  joined_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (conversation_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_conv_members_user ON shared.conversation_members(user_id);
+
+-- ── conversation_pins (per-user) ──
+CREATE TABLE IF NOT EXISTS shared.conversation_pins (
+  user_id uuid NOT NULL,
+  conversation_id uuid NOT NULL REFERENCES shared.conversations(id) ON DELETE CASCADE,
+  pinned_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, conversation_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_conv_pins_user ON shared.conversation_pins(user_id, pinned_at DESC);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON shared.conversation_members TO authenticated;
+GRANT ALL ON shared.conversation_members TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON shared.conversation_pins TO authenticated;
+GRANT ALL ON shared.conversation_pins TO service_role;
+
+ALTER TABLE shared.conversation_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shared.conversation_pins ENABLE ROW LEVEL SECURITY;
+
+-- Helper: is user a participant (direct or group member)
+CREATE OR REPLACE FUNCTION shared.user_in_conversation(conv_id uuid, uid uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = shared, public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM shared.conversations c
+    WHERE c.id = conv_id
+      AND (
+        (COALESCE(c.conversation_type, 'direct') = 'direct'
+          AND (c.client_id = uid OR c.freelancer_id = uid))
+        OR EXISTS (
+          SELECT 1 FROM shared.conversation_members m
+          WHERE m.conversation_id = conv_id AND m.user_id = uid
+        )
+      )
+  );
+$$;
+
+REVOKE ALL ON FUNCTION shared.user_in_conversation(uuid, uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION shared.user_in_conversation(uuid, uuid) TO authenticated, service_role;
+
+-- Update message policies to use helper (drop old participant checks)
+DROP POLICY IF EXISTS "Participants can view messages" ON shared.messages;
+CREATE POLICY "Participants can view messages"
+  ON shared.messages FOR SELECT TO authenticated
+  USING (shared.user_in_conversation(conversation_id, auth.uid()));
+
+DROP POLICY IF EXISTS "Participants can send messages" ON shared.messages;
+CREATE POLICY "Participants can send messages"
+  ON shared.messages FOR INSERT TO authenticated
+  WITH CHECK (
+    auth.uid() = sender_id
+    AND shared.user_in_conversation(conversation_id, auth.uid())
+  );
+
+DROP POLICY IF EXISTS "Recipient can mark as read" ON shared.messages;
+CREATE POLICY "Participants can update messages"
+  ON shared.messages FOR UPDATE TO authenticated
+  USING (shared.user_in_conversation(conversation_id, auth.uid()))
+  WITH CHECK (shared.user_in_conversation(conversation_id, auth.uid()));
+
+DROP POLICY IF EXISTS "Sender can unsend own messages" ON shared.messages;
+CREATE POLICY "Sender can unsend own messages"
+  ON shared.messages FOR UPDATE TO authenticated
+  USING (
+    auth.uid() = sender_id
+    AND created_at > now() - interval '24 hours'
+  )
+  WITH CHECK (auth.uid() = sender_id);
+
+-- Conversation policies for groups
+DROP POLICY IF EXISTS "Participants can view conversations" ON shared.conversations;
+CREATE POLICY "Participants can view conversations"
+  ON shared.conversations FOR SELECT TO authenticated
+  USING (shared.user_in_conversation(id, auth.uid()));
+
+DROP POLICY IF EXISTS "Participants can create conversations" ON shared.conversations;
+CREATE POLICY "Participants can create conversations"
+  ON shared.conversations FOR INSERT TO authenticated
+  WITH CHECK (
+    auth.uid() = created_by
+    OR auth.uid() = client_id
+    OR auth.uid() = freelancer_id
+  );
+
+DROP POLICY IF EXISTS "Participants can update conversations" ON shared.conversations;
+CREATE POLICY "Participants can update conversations"
+  ON shared.conversations FOR UPDATE TO authenticated
+  USING (shared.user_in_conversation(id, auth.uid()));
+
+-- conversation_members RLS
+DROP POLICY IF EXISTS "Members can view conversation members" ON shared.conversation_members;
+CREATE POLICY "Members can view conversation members"
+  ON shared.conversation_members FOR SELECT TO authenticated
+  USING (shared.user_in_conversation(conversation_id, auth.uid()));
+
+DROP POLICY IF EXISTS "Owner can add members" ON shared.conversation_members;
+CREATE POLICY "Owner can add members"
+  ON shared.conversation_members FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM shared.conversations c
+      WHERE c.id = conversation_id
+        AND c.created_by = auth.uid()
+    )
+    OR EXISTS (
+      SELECT 1 FROM shared.conversation_members m
+      WHERE m.conversation_id = conversation_members.conversation_id
+        AND m.user_id = auth.uid()
+        AND m.role IN ('owner', 'admin')
+    )
+  );
+
+-- conversation_pins RLS
+DROP POLICY IF EXISTS "Users manage own pins" ON shared.conversation_pins;
+CREATE POLICY "Users manage own pins"
+  ON shared.conversation_pins FOR ALL TO authenticated
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+-- Realtime for new tables
+DO $pub$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE shared.conversation_pins; EXCEPTION WHEN duplicate_object THEN NULL; END $pub$;
+ALTER TABLE shared.conversation_pins REPLICA IDENTITY FULL;
+
+
+-- 20260613130000_project_media_anthem_storage_rls.sql
+-- Fix project-media storage RLS for Anthem namespace paths (anthem/{userId}/...)
+
+CREATE OR REPLACE FUNCTION public.project_media_user_owns_path(object_name text)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, storage, shared
+AS $$
+DECLARE
+  folders text[];
+  uid uuid := auth.uid();
+BEGIN
+  IF uid IS NULL THEN
+    RETURN false;
+  END IF;
+
+  folders := storage.foldername(object_name);
+
+  -- Legacy So1o: {userId}/...
+  IF folders[1] = uid::text THEN
+    RETURN true;
+  END IF;
+
+  -- Anthem portfolio / cv: anthem/{userId}/...
+  IF folders[1] = 'anthem' AND folders[2] = uid::text THEN
+    RETURN true;
+  END IF;
+
+  -- Anthem studios: anthem/studios/{userId}/...
+  IF folders[1] = 'anthem' AND folders[2] = 'studios' AND folders[3] = uid::text THEN
+    RETURN true;
+  END IF;
+
+  -- Anthem chat: anthem/chat/{conversationId}/...
+  IF folders[1] = 'anthem' AND folders[2] = 'chat' AND folders[3] IS NOT NULL THEN
+    RETURN EXISTS (
+      SELECT 1
+      FROM shared.conversations c
+      WHERE c.id = folders[3]::uuid
+        AND (c.client_id = uid OR c.freelancer_id = uid)
+    );
+  END IF;
+
+  RETURN false;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.project_media_user_owns_path(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.project_media_user_owns_path(text) TO authenticated, service_role;
+
+DROP POLICY IF EXISTS "Users upload to own folder" ON storage.objects;
+CREATE POLICY "Users upload to own folder"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'project-media'
+    AND public.project_media_user_owns_path(name)
+  );
+
+DROP POLICY IF EXISTS "Users update own files" ON storage.objects;
+CREATE POLICY "Users update own files"
+  ON storage.objects FOR UPDATE TO authenticated
+  USING (
+    bucket_id = 'project-media'
+    AND public.project_media_user_owns_path(name)
+  );
+
+DROP POLICY IF EXISTS "Users delete own files" ON storage.objects;
+CREATE POLICY "Users delete own files"
+  ON storage.objects FOR DELETE TO authenticated
+  USING (
+    bucket_id = 'project-media'
+    AND public.project_media_user_owns_path(name)
+  );
+
+-- Ensure public read (bucket is public)
+DROP POLICY IF EXISTS "Project media public read" ON storage.objects;
+CREATE POLICY "Project media public read"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'project-media');
+
+
+-- 20260614100000_ecosystem_links_base.sql
+-- Ecosystem Phase 1 base: cross-app link tracking (prerequisite for Ops Hub control plane)
+-- Source: scripts/ecosystem/ecosystem-phase1.sql
+
+ALTER TABLE public.subscriptions
+  ADD COLUMN IF NOT EXISTS seat_quantity integer NOT NULL DEFAULT 1;
+
+CREATE TABLE IF NOT EXISTS public.ecosystem_links (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  event_type text NOT NULL,
+  source_app text NOT NULL DEFAULT 'anthem',
+  source_page text,
+  ref_id text,
+  meta jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS ecosystem_links_user_created_idx
+  ON public.ecosystem_links (user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS ecosystem_links_created_idx
+  ON public.ecosystem_links (created_at DESC);
+
+ALTER TABLE public.ecosystem_links ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users insert own ecosystem links" ON public.ecosystem_links;
+CREATE POLICY "Users insert own ecosystem links"
+  ON public.ecosystem_links FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users read own ecosystem links" ON public.ecosystem_links;
+CREATE POLICY "Users read own ecosystem links"
+  ON public.ecosystem_links FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Service role manages ecosystem links" ON public.ecosystem_links;
+CREATE POLICY "Service role manages ecosystem links"
+  ON public.ecosystem_links FOR ALL
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
+
+
+-- 20260614120000_community_moderation.sql
+-- Placeholder migration (file was empty; split from future community moderation work)
+SELECT 1;
+
+
+-- 20260614120000_ops_hub_ecosystem_control_plane.sql
+-- Ops Hub Ecosystem Control Plane — connections, user 360, events, radar, settings
+
+CREATE TABLE IF NOT EXISTS public.platform_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_type text NOT NULL,
+  actor_id uuid,
+  target_type text,
+  target_id text,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS platform_events_created_idx
+  ON public.platform_events (created_at DESC);
+
+CREATE INDEX IF NOT EXISTS platform_events_type_idx
+  ON public.platform_events (event_type, created_at DESC);
+
+ALTER TABLE public.platform_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins read platform events" ON public.platform_events;
+CREATE POLICY "Admins read platform events"
+  ON public.platform_events FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+
+DROP POLICY IF EXISTS "Service role manages platform events" ON public.platform_events;
+CREATE POLICY "Service role manages platform events"
+  ON public.platform_events FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+
+CREATE OR REPLACE FUNCTION public.log_platform_event(
+  p_event_type text,
+  p_actor_id uuid DEFAULT NULL,
+  p_target_type text DEFAULT NULL,
+  p_target_id text DEFAULT NULL,
+  p_metadata jsonb DEFAULT '{}'::jsonb
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  new_id uuid;
+BEGIN
+  INSERT INTO public.platform_events (event_type, actor_id, target_type, target_id, metadata)
+  VALUES (p_event_type, p_actor_id, p_target_type, p_target_id, COALESCE(p_metadata, '{}'::jsonb))
+  RETURNING id INTO new_id;
+  RETURN new_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.log_platform_event(text, uuid, text, text, jsonb) TO authenticated, service_role;
+
+DROP POLICY IF EXISTS "Admins read all ecosystem links" ON public.ecosystem_links;
+CREATE POLICY "Admins read all ecosystem links"
+  ON public.ecosystem_links FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE TABLE IF NOT EXISTS ops.radar_items (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  summary text,
+  source text NOT NULL DEFAULT 'manual',
+  category text NOT NULL DEFAULT 'product'
+    CHECK (category IN ('product', 'tech', 'infra', 'market', 'compliance')),
+  impact text NOT NULL DEFAULT 'medium'
+    CHECK (impact IN ('low', 'medium', 'high')),
+  effort text NOT NULL DEFAULT 'medium'
+    CHECK (effort IN ('low', 'medium', 'high')),
+  status text NOT NULL DEFAULT 'new'
+    CHECK (status IN ('new', 'reviewing', 'accepted', 'rejected', 'shipped')),
+  url text,
+  issue_id uuid REFERENCES ops.issues(id) ON DELETE SET NULL,
+  created_by uuid,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS ops.settings (
+  key text PRIMARY KEY,
+  value jsonb NOT NULL DEFAULT '{}'::jsonb,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  updated_by uuid
+);
+
+CREATE TABLE IF NOT EXISTS ops.playbook_runs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  playbook_id text NOT NULL,
+  status text NOT NULL DEFAULT 'open'
+    CHECK (status IN ('open', 'done', 'skipped')),
+  notes text,
+  assignee_id uuid,
+  completed_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ops_radar_status ON ops.radar_items(status, updated_at DESC);
+
+ALTER TABLE ops.radar_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ops.settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ops.playbook_runs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins manage ops radar" ON ops.radar_items;
+CREATE POLICY "Admins manage ops radar"
+  ON ops.radar_items FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+DROP POLICY IF EXISTS "Admins manage ops settings" ON ops.settings;
+CREATE POLICY "Admins manage ops settings"
+  ON ops.settings FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+DROP POLICY IF EXISTS "Admins manage ops playbook runs" ON ops.playbook_runs;
+CREATE POLICY "Admins manage ops playbook runs"
+  ON ops.playbook_runs FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON ops.radar_items TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ops.settings TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ops.playbook_runs TO authenticated;
+
+INSERT INTO ops.settings (key, value) VALUES
+  ('ecosystem_flags', '{"flywheel_cta_enabled": true, "sso_monitoring": true}'::jsonb),
+  ('sso_baseline', '{"note": "Separate cookies per domain until SSO ships"}'::jsonb)
+ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO ops.radar_items (title, summary, source, category, impact, effort, status)
+SELECT v.title, v.summary, v.source, v.category, v.impact, v.effort, 'new'
+FROM (VALUES
+  ('SSO ข้ามโดเมน So1o ↔ an1hem', 'ลด drop-off เมื่อสลับแอป — ดู metrics ที่ Connections', 'ECOSYSTEM_ROADMAP', 'tech', 'high', 'high'),
+  ('ปิดลูป Job → Portfolio', 'PostToAnthemBanner มีแล้ว — วัด conversion ใน Flywheel', 'tracking', 'product', 'high', 'medium'),
+  ('Escrow marketplace', 'ชำระเงินลูกค้าผ่านแพลตฟอร์ม', 'ECOSYSTEM_ROADMAP', 'product', 'high', 'high'),
+  ('Boost/โฆษณาผลงาน', 'tier-gated promotion บน an1hem', 'ECOSYSTEM_ROADMAP', 'market', 'medium', 'medium'),
+  ('Supabase Pro monitoring', 'อัปเกรดเมื่อ usage ใกล้ limit — ดู /monitor', 'ops-infra-monitor', 'infra', 'medium', 'low')
+) AS v(title, summary, source, category, impact, effort)
+WHERE NOT EXISTS (SELECT 1 FROM ops.radar_items r WHERE r.title = v.title);
+
+CREATE OR REPLACE FUNCTION public.trg_ecosystem_link_event()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  PERFORM public.log_platform_event(
+    'ecosystem.cross_link',
+    NEW.user_id,
+    'ecosystem_link',
+    NEW.id::text,
+    jsonb_build_object(
+      'source_app', NEW.source_app,
+      'source_page', NEW.source_page,
+      'event_type', NEW.event_type
+    )
+  );
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_ecosystem_links_event ON public.ecosystem_links;
+CREATE TRIGGER trg_ecosystem_links_event
+  AFTER INSERT ON public.ecosystem_links
+  FOR EACH ROW EXECUTE FUNCTION public.trg_ecosystem_link_event();
+
+CREATE OR REPLACE FUNCTION public.trg_ecosystem_link_converted()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.meta ? 'converted_at' AND (OLD.meta IS NULL OR NOT (OLD.meta ? 'converted_at')) THEN
+    PERFORM public.log_platform_event(
+      'ecosystem.handoff_completed',
+      NEW.user_id,
+      'ecosystem_link',
+      NEW.id::text,
+      COALESCE(NEW.meta, '{}'::jsonb)
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_ecosystem_links_converted ON public.ecosystem_links;
+CREATE TRIGGER trg_ecosystem_links_converted
+  AFTER UPDATE OF meta ON public.ecosystem_links
+  FOR EACH ROW EXECUTE FUNCTION public.trg_ecosystem_link_converted();
+
+CREATE OR REPLACE FUNCTION public.trg_support_ticket_event()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    PERFORM public.log_platform_event(
+      'ticket.created',
+      NEW.user_id,
+      'support_ticket',
+      NEW.id::text,
+      jsonb_build_object('title', NEW.title, 'ticket_number', NEW.ticket_number)
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_support_tickets_platform_event ON public.support_tickets;
+CREATE TRIGGER trg_support_tickets_platform_event
+  AFTER INSERT ON public.support_tickets
+  FOR EACH ROW EXECUTE FUNCTION public.trg_support_ticket_event();
+
+CREATE OR REPLACE FUNCTION public.admin_ecosystem_funnel(_days integer DEFAULT 7)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  since_ts timestamptz := now() - make_interval(days => GREATEST(1, LEAST(_days, 90)));
+  result jsonb;
+BEGIN
+  IF NOT public.has_role(auth.uid(), 'admin') THEN
+    RAISE EXCEPTION 'admin only';
+  END IF;
+
+  SELECT jsonb_build_object(
+    'days', _days,
+    'since', since_ts,
+    'flows', COALESCE((
+      SELECT jsonb_agg(row ORDER BY row->>'id')
+      FROM (
+        SELECT jsonb_build_object(
+          'id', f.flow_id,
+          'label', f.flow_label,
+          'direction', f.direction,
+          'clicks', COUNT(*) FILTER (WHERE el.created_at >= since_ts),
+          'converted', COUNT(*) FILTER (
+            WHERE el.created_at >= since_ts AND el.meta ? 'converted_at'
+          ),
+          'stuck', COUNT(*) FILTER (
+            WHERE el.created_at >= since_ts
+              AND NOT (el.meta ? 'converted_at')
+              AND el.created_at < now() - interval '48 hours'
+          )
+        ) AS row
+        FROM public.ecosystem_links el
+        CROSS JOIN LATERAL (
+          SELECT
+            CASE
+              WHEN el.source_app = 'anthem' AND el.source_page ILIKE '%hire%' THEN 'anthem_hire_quotation'
+              WHEN el.source_app = 'anthem' THEN 'anthem_to_so1o'
+              WHEN el.source_app = 'so1o' AND el.source_page ILIKE '%post_anthem%' THEN 'so1o_job_portfolio'
+              WHEN el.source_app = 'so1o' THEN 'so1o_to_anthem'
+              ELSE 'other'
+            END AS flow_id,
+            CASE
+              WHEN el.source_app = 'anthem' AND el.source_page ILIKE '%hire%' THEN 'an1hem จ้าง → So1o ใบเสนอราคา'
+              WHEN el.source_app = 'anthem' THEN 'an1hem → So1o'
+              WHEN el.source_app = 'so1o' AND el.source_page ILIKE '%post_anthem%' THEN 'So1o งานเสร็จ → an1hem โพสต์'
+              WHEN el.source_app = 'so1o' THEN 'So1o → an1hem'
+              ELSE 'อื่นๆ'
+            END AS flow_label,
+            CASE
+              WHEN el.source_app = 'anthem' THEN 'anthem_to_so1o'
+              WHEN el.source_app = 'so1o' THEN 'so1o_to_anthem'
+              ELSE 'other'
+            END AS direction
+        ) f
+        WHERE el.event_type = 'cross_link_click'
+        GROUP BY f.flow_id, f.flow_label, f.direction
+      ) sub
+    ), '[]'::jsonb),
+    'totals', jsonb_build_object(
+      'clicks_24h', (SELECT COUNT(*) FROM public.ecosystem_links WHERE created_at >= now() - interval '24 hours'),
+      'clicks_7d', (SELECT COUNT(*) FROM public.ecosystem_links WHERE created_at >= now() - interval '7 days'),
+      'converted_7d', (
+        SELECT COUNT(*) FROM public.ecosystem_links
+        WHERE created_at >= now() - interval '7 days' AND meta ? 'converted_at'
+      ),
+      'stuck_48h', (
+        SELECT COUNT(*) FROM public.ecosystem_links
+        WHERE created_at < now() - interval '48 hours'
+          AND created_at >= now() - interval '30 days'
+          AND NOT (meta ? 'converted_at')
+      )
+    )
+  ) INTO result;
+
+  RETURN result;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_sso_metrics()
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, anthem
+AS $$
+DECLARE
+  dual_users bigint;
+  pro_dual bigint;
+  anthem_only bigint;
+  so1o_only bigint;
+BEGIN
+  IF NOT public.has_role(auth.uid(), 'admin') THEN
+    RAISE EXCEPTION 'admin only';
+  END IF;
+
+  SELECT COUNT(DISTINCT p.user_id) INTO dual_users
+  FROM public.profiles p
+  WHERE EXISTS (SELECT 1 FROM public.quotations q WHERE q.user_id = p.user_id)
+    AND EXISTS (SELECT 1 FROM anthem.projects pr WHERE pr.user_id = p.user_id);
+
+  SELECT COUNT(DISTINCT p.user_id) INTO pro_dual
+  FROM public.profiles p
+  WHERE p.subscription_tier IN ('pro', 'pro_plus')
+    AND EXISTS (SELECT 1 FROM public.quotations q WHERE q.user_id = p.user_id)
+    AND EXISTS (SELECT 1 FROM anthem.projects pr WHERE pr.user_id = p.user_id);
+
+  SELECT COUNT(*) INTO anthem_only
+  FROM public.profiles p
+  WHERE EXISTS (SELECT 1 FROM anthem.projects pr WHERE pr.user_id = p.user_id)
+    AND NOT EXISTS (SELECT 1 FROM public.quotations q WHERE q.user_id = p.user_id);
+
+  SELECT COUNT(*) INTO so1o_only
+  FROM public.profiles p
+  WHERE EXISTS (SELECT 1 FROM public.quotations q WHERE q.user_id = p.user_id)
+    AND NOT EXISTS (SELECT 1 FROM anthem.projects pr WHERE pr.user_id = p.user_id);
+
+  RETURN jsonb_build_object(
+    'dual_app_users', dual_users,
+    'pro_dual_app_users', pro_dual,
+    'anthem_only_users', anthem_only,
+    'so1o_only_users', so1o_only,
+    'sso_status', 'deferred',
+    'note', 'คนละโดเมน = คนละ cookie จนกว่า SSO จะ ship'
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_user_360(_user_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, anthem, shared
+AS $$
+DECLARE
+  prof record;
+  result jsonb;
+BEGIN
+  IF NOT public.has_role(auth.uid(), 'admin') THEN
+    RAISE EXCEPTION 'admin only';
+  END IF;
+
+  SELECT user_id, display_name, username, subscription_tier, created_at
+    INTO prof
+    FROM public.profiles
+   WHERE user_id = _user_id;
+
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT jsonb_build_object(
+    'profile', jsonb_build_object(
+      'user_id', prof.user_id,
+      'display_name', prof.display_name,
+      'username', prof.username,
+      'subscription_tier', prof.subscription_tier,
+      'created_at', prof.created_at
+    ),
+    'so1o', jsonb_build_object(
+      'quotations', (SELECT COUNT(*) FROM public.quotations WHERE user_id = _user_id),
+      'open_tickets', (
+        SELECT COUNT(*) FROM public.support_tickets
+        WHERE user_id = _user_id AND status IN ('new', 'in_progress', 'qa')
+      )
+    ),
+    'an1hem', jsonb_build_object(
+      'projects', (SELECT COUNT(*) FROM anthem.projects WHERE user_id = _user_id),
+      'published', (
+        SELECT COUNT(*) FROM anthem.projects WHERE user_id = _user_id AND status = 'Published'
+      ),
+      'feedback', (SELECT COUNT(*) FROM anthem.app_feedback WHERE user_id = _user_id)
+    ),
+    'ecosystem', jsonb_build_object(
+      'cross_links', (SELECT COUNT(*) FROM public.ecosystem_links WHERE user_id = _user_id),
+      'converted_links', (
+        SELECT COUNT(*) FROM public.ecosystem_links
+        WHERE user_id = _user_id AND meta ? 'converted_at'
+      )
+    ),
+    'recent_links', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'id', el.id,
+        'source_app', el.source_app,
+        'source_page', el.source_page,
+        'created_at', el.created_at,
+        'converted', el.meta ? 'converted_at'
+      ) ORDER BY el.created_at DESC)
+      FROM (
+        SELECT * FROM public.ecosystem_links
+        WHERE user_id = _user_id
+        ORDER BY created_at DESC
+        LIMIT 10
+      ) el
+    ), '[]'::jsonb),
+    'recent_events', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'event_type', pe.event_type,
+        'created_at', pe.created_at,
+        'target_type', pe.target_type
+      ) ORDER BY pe.created_at DESC)
+      FROM (
+        SELECT * FROM public.platform_events
+        WHERE actor_id = _user_id
+        ORDER BY created_at DESC
+        LIMIT 15
+      ) pe
+    ), '[]'::jsonb)
+  ) INTO result;
+
+  RETURN result;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_search_users(_query text, _limit integer DEFAULT 20)
+RETURNS TABLE (
+  user_id uuid,
+  display_name text,
+  username text,
+  subscription_tier text,
+  created_at timestamptz
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  lim integer := GREATEST(5, LEAST(COALESCE(_limit, 20), 50));
+  q text := trim(COALESCE(_query, ''));
+BEGIN
+  IF NOT public.has_role(auth.uid(), 'admin') THEN
+    RAISE EXCEPTION 'admin only';
+  END IF;
+
+  RETURN QUERY
+  SELECT p.user_id, p.display_name, p.username, p.subscription_tier, p.created_at
+  FROM public.profiles p
+  WHERE q = ''
+     OR p.display_name ILIKE '%' || q || '%'
+     OR p.username ILIKE '%' || q || '%'
+     OR p.user_id::text ILIKE q || '%'
+  ORDER BY p.created_at DESC
+  LIMIT lim;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_list_platform_events(_limit integer DEFAULT 50)
+RETURNS SETOF public.platform_events
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT public.has_role(auth.uid(), 'admin') THEN
+    RAISE EXCEPTION 'admin only';
+  END IF;
+  RETURN QUERY
+  SELECT * FROM public.platform_events
+  ORDER BY created_at DESC
+  LIMIT GREATEST(10, LEAST(COALESCE(_limit, 50), 200));
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_ecosystem_funnel(integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_sso_metrics() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_user_360(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_search_users(text, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_list_platform_events(integer) TO authenticated;
+
+
+-- 20260615120000_platform_events_triggers.sql
+-- Platform events triggers for Ops Hub Activity feed
+-- Apply via: cd Solo-Code && npx supabase db push
+
+CREATE OR REPLACE FUNCTION public.trg_log_profile_signup()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  PERFORM public.log_platform_event(
+    'user.signup',
+    NEW.user_id,
+    'profile',
+    NEW.user_id::text,
+    jsonb_build_object('username', NEW.username)
+  );
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS platform_event_profile_signup ON public.profiles;
+CREATE TRIGGER platform_event_profile_signup
+  AFTER INSERT ON public.profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trg_log_profile_signup();
+
+CREATE OR REPLACE FUNCTION public.trg_log_support_ticket()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  PERFORM public.log_platform_event(
+    'ticket.created',
+    NEW.user_id,
+    'support_ticket',
+    NEW.id::text,
+    jsonb_build_object('subject', NEW.subject)
+  );
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS platform_event_support_ticket ON public.support_tickets;
+CREATE TRIGGER platform_event_support_ticket
+  AFTER INSERT ON public.support_tickets
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trg_log_support_ticket();
+
+CREATE OR REPLACE FUNCTION public.trg_log_ecosystem_convert()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  meta jsonb;
+BEGIN
+  meta := COALESCE(NEW.meta, '{}'::jsonb);
+  IF (OLD.meta IS DISTINCT FROM NEW.meta)
+     AND meta ? 'converted_at'
+     AND NOT (COALESCE(OLD.meta, '{}'::jsonb) ? 'converted_at') THEN
+    PERFORM public.log_platform_event(
+      'ecosystem.handoff_completed',
+      NULL,
+      'ecosystem_link',
+      NEW.id::text,
+      jsonb_build_object('source_app', NEW.source_app, 'source_page', NEW.source_page)
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS platform_event_ecosystem_convert ON public.ecosystem_links;
+CREATE TRIGGER platform_event_ecosystem_convert
+  AFTER UPDATE ON public.ecosystem_links
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trg_log_ecosystem_convert();
+
+CREATE OR REPLACE FUNCTION public.trg_log_cashout_request()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  PERFORM public.log_platform_event(
+    'cashout.request',
+    NEW.user_id,
+    'cashout_request',
+    NEW.id::text,
+    jsonb_build_object('amount', NEW.amount)
+  );
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS platform_event_cashout ON shared.cashout_requests;
+CREATE TRIGGER platform_event_cashout
+  AFTER INSERT ON shared.cashout_requests
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trg_log_cashout_request();
+
+
+-- 20260616120000_profiles_document_theme.sql
+-- Custom document branding (Pro+): colors + portal options stored on profile
+alter table public.profiles
+  add column if not exists document_theme jsonb not null default '{}'::jsonb;
+
+comment on column public.profiles.document_theme is
+  'User document theme: primary, invoiceColor, receiptColor, briefAccent, unifiedColors, portalShowLogo, portalWelcomeMessage';
+
+
+-- 20260616130000_quotation_collab_inhouse_branding.sql
+-- Team/studio quotations + org document branding (Programs B & C)
+
+ALTER TABLE public.quotations
+  ADD COLUMN IF NOT EXISTS quotation_kind text NOT NULL DEFAULT 'solo'
+    CHECK (quotation_kind IN ('solo', 'inhouse', 'studio')),
+  ADD COLUMN IF NOT EXISTS org_id uuid REFERENCES public.inhouse_orgs(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS org_snapshot jsonb,
+  ADD COLUMN IF NOT EXISTS studio_id uuid,
+  ADD COLUMN IF NOT EXISTS studio_snapshot jsonb,
+  ADD COLUMN IF NOT EXISTS inhouse_workspace_id uuid REFERENCES public.inhouse_workspaces(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS quotations_org_id_idx ON public.quotations (org_id) WHERE org_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS quotations_kind_idx ON public.quotations (quotation_kind);
+
+ALTER TABLE public.inhouse_orgs
+  ADD COLUMN IF NOT EXISTS document_theme jsonb,
+  ADD COLUMN IF NOT EXISTS brand_name text,
+  ADD COLUMN IF NOT EXISTS brand_tagline text,
+  ADD COLUMN IF NOT EXISTS legal_name text,
+  ADD COLUMN IF NOT EXISTS tax_id text,
+  ADD COLUMN IF NOT EXISTS address text,
+  ADD COLUMN IF NOT EXISTS phone text,
+  ADD COLUMN IF NOT EXISTS email text;
+
+CREATE TABLE IF NOT EXISTS public.quotation_collaborators (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  quotation_id uuid NOT NULL REFERENCES public.quotations(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  display_name text,
+  role text NOT NULL DEFAULT 'member' CHECK (role IN ('lead', 'member')),
+  revenue_percent numeric(5, 2),
+  sort_order int NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (quotation_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS quotation_collaborators_quote_idx
+  ON public.quotation_collaborators (quotation_id);
+
+ALTER TABLE public.quotation_collaborators ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "quotation_collaborators_select" ON public.quotation_collaborators;
+CREATE POLICY "quotation_collaborators_select" ON public.quotation_collaborators
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.quotations q
+      WHERE q.id = quotation_id
+        AND (q.user_id = auth.uid() OR public.inhouse_is_org_member(q.org_id))
+    )
+  );
+
+DROP POLICY IF EXISTS "quotation_collaborators_insert" ON public.quotation_collaborators;
+CREATE POLICY "quotation_collaborators_insert" ON public.quotation_collaborators
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.quotations q
+      WHERE q.id = quotation_id
+        AND (q.user_id = auth.uid() OR public.inhouse_is_org_admin(q.org_id))
+    )
+  );
+
+DROP POLICY IF EXISTS "quotation_collaborators_update" ON public.quotation_collaborators;
+CREATE POLICY "quotation_collaborators_update" ON public.quotation_collaborators
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.quotations q
+      WHERE q.id = quotation_id
+        AND (q.user_id = auth.uid() OR public.inhouse_is_org_admin(q.org_id))
+    )
+  );
+
+DROP POLICY IF EXISTS "quotation_collaborators_delete" ON public.quotation_collaborators;
+CREATE POLICY "quotation_collaborators_delete" ON public.quotation_collaborators
+  FOR DELETE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.quotations q
+      WHERE q.id = quotation_id
+        AND (q.user_id = auth.uid() OR public.inhouse_is_org_admin(q.org_id))
+    )
+  );
+
+-- Org members can read team quotations
+DROP POLICY IF EXISTS "Org members view org quotations" ON public.quotations;
+CREATE POLICY "Org members view org quotations" ON public.quotations
+  FOR SELECT TO authenticated
+  USING (
+    org_id IS NOT NULL AND public.inhouse_is_org_member(org_id)
+  );
+
+DROP POLICY IF EXISTS "Org admins update org quotations" ON public.quotations;
+CREATE POLICY "Org admins update org quotations" ON public.quotations
+  FOR UPDATE TO authenticated
+  USING (
+    org_id IS NOT NULL AND public.inhouse_is_org_admin(org_id)
+  )
+  WITH CHECK (
+    org_id IS NOT NULL AND public.inhouse_is_org_admin(org_id)
+  );
+
+
+-- 20260616140000_conversations_studio_id.sql
+-- Link studio team chats to anthem.studios for So1o handoff resolution
+
+ALTER TABLE shared.conversations
+  ADD COLUMN IF NOT EXISTS studio_id uuid;
+
+CREATE INDEX IF NOT EXISTS conversations_studio_id_idx
+  ON shared.conversations (studio_id)
+  WHERE studio_id IS NOT NULL;
+
+ALTER TABLE shared.conversations DROP CONSTRAINT IF EXISTS conversations_kind_check;
+ALTER TABLE shared.conversations
+  ADD CONSTRAINT conversations_kind_check
+  CHECK (kind IN ('hire', 'collab', 'group', 'studio'));
+
+COMMENT ON COLUMN shared.conversations.studio_id IS
+  'Anthem studio nest id when kind=studio (find_or_create_studio_chat)';
+
+-- RPC: open studio team chat (Anthem useStudioConversation)
+CREATE OR REPLACE FUNCTION public.find_or_create_studio_chat(p_studio_id uuid)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared, public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_conv_id uuid;
+  v_title text;
+  v_member record;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not authenticated';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.studio_members sm
+    WHERE sm.studio_id = p_studio_id AND sm.user_id = v_uid
+  ) THEN
+    RAISE EXCEPTION 'not a studio member';
+  END IF;
+
+  SELECT c.id INTO v_conv_id
+  FROM shared.conversations c
+  WHERE c.kind = 'studio' AND c.studio_id = p_studio_id
+  LIMIT 1;
+
+  IF v_conv_id IS NULL THEN
+    SELECT s.name INTO v_title FROM public.studios s WHERE s.id = p_studio_id;
+    IF v_title IS NULL THEN
+      RAISE EXCEPTION 'studio not found';
+    END IF;
+
+    INSERT INTO shared.conversations (
+      kind,
+      conversation_type,
+      studio_id,
+      title,
+      created_by,
+      client_id,
+      freelancer_id,
+      request_id,
+      project_title
+    ) VALUES (
+      'studio',
+      'group',
+      p_studio_id,
+      v_title,
+      v_uid,
+      v_uid,
+      v_uid,
+      NULL,
+      v_title
+    )
+    RETURNING id INTO v_conv_id;
+  END IF;
+
+  FOR v_member IN
+    SELECT sm.user_id, sm.role
+    FROM public.studio_members sm
+    WHERE sm.studio_id = p_studio_id
+  LOOP
+    INSERT INTO shared.conversation_members (conversation_id, user_id, role)
+    VALUES (
+      v_conv_id,
+      v_member.user_id,
+      CASE
+        WHEN v_member.role = 'owner' THEN 'owner'
+        WHEN v_member.role = 'admin' THEN 'admin'
+        ELSE 'member'
+      END
+    )
+    ON CONFLICT (conversation_id, user_id) DO NOTHING;
+  END LOOP;
+
+  RETURN v_conv_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.find_or_create_studio_chat(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.find_or_create_studio_chat(uuid) TO authenticated, service_role;
+
+
+-- 20260617120000_quotation_coedit_rls.sql
+-- Co-edit RLS: collaborators can view/edit team & studio quotations
+
+CREATE OR REPLACE FUNCTION public.is_quotation_collaborator(p_quotation_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.quotation_collaborators c
+    WHERE c.quotation_id = p_quotation_id
+      AND c.user_id = auth.uid()
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_quotation_lead_collaborator(p_quotation_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.quotation_collaborators c
+    WHERE c.quotation_id = p_quotation_id
+      AND c.user_id = auth.uid()
+      AND c.role = 'lead'
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.is_quotation_collaborator(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.is_quotation_lead_collaborator(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_quotation_collaborator(uuid) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.is_quotation_lead_collaborator(uuid) TO authenticated, service_role;
+
+DROP POLICY IF EXISTS "Collaborators view quotations" ON public.quotations;
+CREATE POLICY "Collaborators view quotations"
+  ON public.quotations FOR SELECT
+  TO authenticated
+  USING (public.is_quotation_collaborator(id));
+
+DROP POLICY IF EXISTS "Lead collaborators update quotations" ON public.quotations;
+CREATE POLICY "Lead collaborators update quotations"
+  ON public.quotations FOR UPDATE
+  TO authenticated
+  USING (public.is_quotation_lead_collaborator(id))
+  WITH CHECK (public.is_quotation_lead_collaborator(id));
+
+DROP POLICY IF EXISTS "Lead collaborators manage collaborators" ON public.quotation_collaborators;
+CREATE POLICY "Lead collaborators manage collaborators"
+  ON public.quotation_collaborators FOR ALL
+  TO authenticated
+  USING (public.is_quotation_lead_collaborator(quotation_id))
+  WITH CHECK (public.is_quotation_lead_collaborator(quotation_id));
+
+
+-- 20260617130000_studio_hire_requests.sql
+-- Studio hire: client -> studio (anthem.hiring_requests) + admin inbox
+
+ALTER TABLE anthem.hiring_requests
+  ADD COLUMN IF NOT EXISTS studio_id uuid REFERENCES anthem.studios(id) ON DELETE CASCADE,
+  ADD COLUMN IF NOT EXISTS target_type text NOT NULL DEFAULT 'freelancer'
+    CHECK (target_type IN ('freelancer', 'studio'));
+
+ALTER TABLE anthem.hiring_requests
+  ALTER COLUMN freelancer_id DROP NOT NULL;
+
+ALTER TABLE anthem.hiring_requests DROP CONSTRAINT IF EXISTS hiring_requests_target_chk;
+ALTER TABLE anthem.hiring_requests ADD CONSTRAINT hiring_requests_target_chk
+  CHECK (
+    (target_type = 'freelancer' AND freelancer_id IS NOT NULL AND studio_id IS NULL)
+    OR (target_type = 'studio' AND studio_id IS NOT NULL)
+  );
+
+CREATE INDEX IF NOT EXISTS hiring_requests_studio_id_idx
+  ON anthem.hiring_requests (studio_id)
+  WHERE studio_id IS NOT NULL;
+
+CREATE OR REPLACE FUNCTION public.is_studio_admin(p_studio_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = anthem, public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM anthem.studio_members sm
+    WHERE sm.studio_id = p_studio_id
+      AND sm.user_id = auth.uid()
+      AND sm.role IN ('owner', 'admin')
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.is_studio_admin(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_studio_admin(uuid) TO authenticated, service_role;
+
+DROP POLICY IF EXISTS "Anyone can view requests" ON anthem.hiring_requests;
+CREATE POLICY "Anyone can view requests"
+  ON anthem.hiring_requests FOR SELECT
+  TO authenticated
+  USING (
+    auth.uid() = freelancer_id
+    OR auth.uid() = client_id
+    OR (studio_id IS NOT NULL AND public.is_studio_admin(studio_id))
+    OR public.has_role(auth.uid(), 'admin')
+  );
+
+DROP POLICY IF EXISTS "Freelancer can update their requests" ON anthem.hiring_requests;
+CREATE POLICY "Freelancer can update their requests"
+  ON anthem.hiring_requests FOR UPDATE
+  TO authenticated
+  USING (
+    auth.uid() = freelancer_id
+    OR (studio_id IS NOT NULL AND public.is_studio_admin(studio_id))
+  );
+
+DROP POLICY IF EXISTS "Authenticated users can create requests" ON anthem.hiring_requests;
+CREATE POLICY "Authenticated users can create requests"
+  ON anthem.hiring_requests FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    auth.uid() = client_id
+    AND (
+      (target_type = 'freelancer' AND freelancer_id IS NOT NULL)
+      OR (target_type = 'studio' AND studio_id IS NOT NULL)
+    )
+  );
+
+CREATE OR REPLACE FUNCTION public.accept_studio_hire_request(p_request_id uuid)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared, anthem, public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_hire anthem.hiring_requests%ROWTYPE;
+  v_conv_id uuid;
+  v_owner_id uuid;
+  v_member record;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not authenticated';
+  END IF;
+
+  SELECT * INTO v_hire
+  FROM anthem.hiring_requests
+  WHERE id = p_request_id
+    AND target_type = 'studio'
+    AND studio_id IS NOT NULL;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'studio hire not found';
+  END IF;
+
+  IF NOT public.is_studio_admin(v_hire.studio_id) THEN
+    RAISE EXCEPTION 'not studio admin';
+  END IF;
+
+  UPDATE anthem.hiring_requests
+  SET status = 'ตอบรับ', updated_at = now()
+  WHERE id = p_request_id;
+
+  SELECT id INTO v_conv_id
+  FROM shared.conversations
+  WHERE kind = 'hire' AND request_id = p_request_id
+  LIMIT 1;
+
+  IF v_conv_id IS NOT NULL THEN
+    RETURN v_conv_id;
+  END IF;
+
+  SELECT sm.user_id INTO v_owner_id
+  FROM anthem.studio_members sm
+  WHERE sm.studio_id = v_hire.studio_id AND sm.role = 'owner'
+  LIMIT 1;
+
+  IF v_owner_id IS NULL THEN
+    SELECT sm.user_id INTO v_owner_id
+    FROM anthem.studio_members sm
+    WHERE sm.studio_id = v_hire.studio_id AND sm.role = 'admin'
+    ORDER BY sm.joined_at ASC
+    LIMIT 1;
+  END IF;
+
+  IF v_owner_id IS NULL THEN
+    RAISE EXCEPTION 'studio has no owner';
+  END IF;
+
+  INSERT INTO shared.conversations (
+    kind,
+    conversation_type,
+    request_id,
+    client_id,
+    freelancer_id,
+    studio_id,
+    project_id,
+    project_title,
+    created_by
+  ) VALUES (
+    'hire',
+    'direct',
+    p_request_id,
+    v_hire.client_id,
+    v_owner_id,
+    v_hire.studio_id,
+    v_hire.project_id,
+    COALESCE(v_hire.project_title, 'งานจ้าง Studio'),
+    v_uid
+  )
+  RETURNING id INTO v_conv_id;
+
+  FOR v_member IN
+    SELECT sm.user_id, sm.role
+    FROM anthem.studio_members sm
+    WHERE sm.studio_id = v_hire.studio_id
+      AND sm.role IN ('owner', 'admin')
+  LOOP
+    INSERT INTO shared.conversation_members (conversation_id, user_id, role)
+    VALUES (
+      v_conv_id,
+      v_member.user_id,
+      CASE WHEN v_member.role = 'owner' THEN 'owner' ELSE 'admin' END
+    )
+    ON CONFLICT (conversation_id, user_id) DO NOTHING;
+  END LOOP;
+
+  RETURN v_conv_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.accept_studio_hire_request(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.accept_studio_hire_request(uuid) TO authenticated, service_role;
+
+
+-- 20260617140000_quotation_header_banner.sql
+-- Optional header banner image on quotations (preview / PDF presentation)
+ALTER TABLE public.quotations
+  ADD COLUMN IF NOT EXISTS header_image_url TEXT;
+
+COMMENT ON COLUMN public.quotations.header_image_url IS 'Optional full-width banner image shown at top of quotation preview';
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('quotation-banners', 'quotation-banners', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Public can view quotation banners"
+  ON storage.objects FOR SELECT TO public
+  USING (bucket_id = 'quotation-banners');
+
+CREATE POLICY "Users upload own quotation banners"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'quotation-banners'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Users update own quotation banners"
+  ON storage.objects FOR UPDATE TO authenticated
+  USING (
+    bucket_id = 'quotation-banners'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Users delete own quotation banners"
+  ON storage.objects FOR DELETE TO authenticated
+  USING (
+    bucket_id = 'quotation-banners'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+
+-- 20260618120000_design_drill_reroll.sql
+-- Design Drill: daily free reroll quota + paid reroll feature cost
+
+CREATE TABLE IF NOT EXISTS public.design_drill_reroll_usage (
+  user_id    uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  day_key    text NOT NULL,
+  used_count integer NOT NULL DEFAULT 0,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, day_key)
+);
+
+ALTER TABLE public.design_drill_reroll_usage ENABLE ROW LEVEL SECURITY;
+
+GRANT SELECT ON public.design_drill_reroll_usage TO authenticated;
+GRANT ALL ON public.design_drill_reroll_usage TO service_role;
+
+CREATE OR REPLACE FUNCTION public._design_drill_day_key()
+RETURNS text
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYY-MM-DD');
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_design_drill_reroll_status(_user_id uuid, _daily_limit integer DEFAULT 3)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  _day text := public._design_drill_day_key();
+  _count integer := 0;
+BEGIN
+  SELECT used_count INTO _count
+  FROM public.design_drill_reroll_usage
+  WHERE user_id = _user_id AND day_key = _day;
+  _count := COALESCE(_count, 0);
+  RETURN jsonb_build_object(
+    'used', _count,
+    'limit', _daily_limit,
+    'remaining', GREATEST(_daily_limit - _count, 0),
+    'day_key', _day
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.claim_design_drill_reroll(_user_id uuid, _daily_limit integer DEFAULT 3)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  _day text := public._design_drill_day_key();
+  _count integer;
+BEGIN
+  INSERT INTO public.design_drill_reroll_usage (user_id, day_key, used_count)
+  VALUES (_user_id, _day, 0)
+  ON CONFLICT (user_id, day_key) DO NOTHING;
+
+  SELECT used_count INTO _count
+  FROM public.design_drill_reroll_usage
+  WHERE user_id = _user_id AND day_key = _day
+  FOR UPDATE;
+
+  IF _count >= _daily_limit THEN
+    RETURN jsonb_build_object(
+      'allowed', false,
+      'reason', 'daily_limit_reached',
+      'used', _count,
+      'limit', _daily_limit,
+      'day_key', _day
+    );
+  END IF;
+
+  UPDATE public.design_drill_reroll_usage
+  SET used_count = used_count + 1, updated_at = now()
+  WHERE user_id = _user_id AND day_key = _day;
+
+  RETURN jsonb_build_object(
+    'allowed', true,
+    'used', _count + 1,
+    'limit', _daily_limit,
+    'remaining', GREATEST(_daily_limit - (_count + 1), 0),
+    'day_key', _day
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_design_drill_reroll_status(uuid, integer) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.claim_design_drill_reroll(uuid, integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_design_drill_reroll_status(uuid, integer) TO service_role;
+GRANT EXECUTE ON FUNCTION public.claim_design_drill_reroll(uuid, integer) TO service_role;
+
+INSERT INTO public.ai_feature_costs (feature, cost, label) VALUES
+  ('design_drill_reroll', 1, 'Design Drill — สุ่มโจทย์ใหม่')
+ON CONFLICT (feature) DO UPDATE SET cost = EXCLUDED.cost, label = EXCLUDED.label;
+
+DROP POLICY IF EXISTS design_drill_reroll_admin_select ON public.design_drill_reroll_usage;
+CREATE POLICY design_drill_reroll_admin_select ON public.design_drill_reroll_usage
+  FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+
+
+-- 20260618120000_document_signatures.sql
+﻿-- Document signatures: freelancer PNG + client online/wet sign via /sign/:token
+-- Storage: reuse bucket brand-logos — {userId}/signature-*, {quotationId}/client-sign-*
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS signature_url text,
+  ADD COLUMN IF NOT EXISTS esign_acknowledged_at timestamptz;
+
+ALTER TABLE public.quotations
+  ADD COLUMN IF NOT EXISTS signature_mode text NOT NULL DEFAULT 'none',
+  ADD COLUMN IF NOT EXISTS include_freelancer_signature boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS sign_share_token uuid,
+  ADD COLUMN IF NOT EXISTS client_signer_name text,
+  ADD COLUMN IF NOT EXISTS client_signature_url text,
+  ADD COLUMN IF NOT EXISTS client_signed_at timestamptz,
+  ADD COLUMN IF NOT EXISTS client_sign_method text,
+  ADD COLUMN IF NOT EXISTS client_signer_ip text,
+  ADD COLUMN IF NOT EXISTS client_signer_user_agent text,
+  ADD COLUMN IF NOT EXISTS signed_document_url text,
+  ADD COLUMN IF NOT EXISTS signature_consent_version text;
+
+ALTER TABLE public.quotations DROP CONSTRAINT IF EXISTS quotations_signature_mode_check;
+ALTER TABLE public.quotations
+  ADD CONSTRAINT quotations_signature_mode_check
+  CHECK (signature_mode = ANY (ARRAY['none'::text, 'embedded'::text, 'online'::text, 'wet'::text]));
+
+ALTER TABLE public.quotations DROP CONSTRAINT IF EXISTS quotations_client_sign_method_check;
+ALTER TABLE public.quotations
+  ADD CONSTRAINT quotations_client_sign_method_check
+  CHECK (client_sign_method IS NULL OR client_sign_method = ANY (ARRAY['draw'::text, 'full_document'::text]));
+
+CREATE UNIQUE INDEX IF NOT EXISTS quotations_sign_share_token_key ON public.quotations (sign_share_token)
+  WHERE sign_share_token IS NOT NULL;
+
+CREATE OR REPLACE FUNCTION public.resolve_quotation_id_by_sign_token(_token uuid)
+ RETURNS uuid
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT COALESCE(
+    (SELECT id FROM public.quotations WHERE sign_share_token = _token LIMIT 1),
+    (SELECT quotation_id FROM public.job_trackers WHERE share_token = _token AND quotation_id IS NOT NULL LIMIT 1)
+  );
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_quotation_sign_payload_by_token(_token uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  qid uuid;
+  q public.quotations%ROWTYPE;
+  prof public.profiles%ROWTYPE;
+BEGIN
+  qid := public.resolve_quotation_id_by_sign_token(_token);
+  IF qid IS NULL THEN RETURN NULL; END IF;
+  SELECT * INTO q FROM public.quotations WHERE id = qid;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  SELECT * INTO prof FROM public.profiles WHERE user_id = q.user_id;
+  RETURN jsonb_build_object(
+    'quotation_id', q.id,
+    'number', q.number,
+    'project_name', q.project_name,
+    'client_name', q.client_name,
+    'status', q.status,
+    'signature_mode', q.signature_mode,
+    'include_freelancer_signature', q.include_freelancer_signature,
+    'client_signed_at', q.client_signed_at,
+    'client_signer_name', q.client_signer_name,
+    'client_signature_url', q.client_signature_url,
+    'signed_document_url', q.signed_document_url,
+    'client_sign_method', q.client_sign_method,
+    'items', q.items,
+    'addons', q.addons,
+    'difficulties', q.difficulties,
+    'milestones', q.milestones,
+    'hidden_cost', q.hidden_cost,
+    'discount_value', q.discount_value,
+    'discount_kind', q.discount_kind,
+    'vat_enabled', q.vat_enabled,
+    'vat_rate', q.vat_rate,
+    'wht_enabled', q.wht_enabled,
+    'wht_rate', q.wht_rate,
+    'deposit_preset', q.deposit_preset,
+    'payment_terms', q.payment_terms,
+    'notes', q.notes,
+    'revisions_count', q.revisions_count,
+    'brand_name', COALESCE(prof.brand_name, prof.display_name, 'So1o Freelancer'),
+    'logo_url', prof.logo_url,
+    'freelancer_signature_url', CASE WHEN q.include_freelancer_signature THEN prof.signature_url ELSE NULL END
+  );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.sign_quotation_by_token(
+  _token uuid, _name text, _method text,
+  _signature_url text DEFAULT NULL, _signed_document_url text DEFAULT NULL,
+  _consent_version text DEFAULT NULL, _signer_ip text DEFAULT NULL, _signer_ua text DEFAULT NULL
+)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE qid uuid; q public.quotations%ROWTYPE;
+BEGIN
+  IF _name IS NULL OR length(trim(_name)) = 0 THEN RAISE EXCEPTION 'name required'; END IF;
+  IF _method NOT IN ('draw', 'full_document') THEN RAISE EXCEPTION 'invalid sign method'; END IF;
+  IF _method = 'draw' AND (_signature_url IS NULL OR length(trim(_signature_url)) = 0) THEN RAISE EXCEPTION 'signature image required'; END IF;
+  IF _method = 'full_document' AND (_signed_document_url IS NULL OR length(trim(_signed_document_url)) = 0) THEN RAISE EXCEPTION 'signed document required'; END IF;
+  qid := public.resolve_quotation_id_by_sign_token(_token);
+  IF qid IS NULL THEN RETURN false; END IF;
+  SELECT * INTO q FROM public.quotations WHERE id = qid FOR UPDATE;
+  IF NOT FOUND THEN RETURN false; END IF;
+  IF q.client_signed_at IS NOT NULL THEN RETURN false; END IF;
+  IF q.signature_mode NOT IN ('online', 'wet') THEN RAISE EXCEPTION 'document does not accept online signing'; END IF;
+  UPDATE public.quotations SET
+    client_signer_name = left(trim(_name), 120),
+    client_signature_url = CASE WHEN _method = 'draw' THEN left(trim(_signature_url), 2048) ELSE client_signature_url END,
+    signed_document_url = CASE WHEN _method = 'full_document' THEN left(trim(_signed_document_url), 2048) ELSE signed_document_url END,
+    client_signed_at = now(), client_sign_method = _method,
+    client_signer_ip = left(coalesce(_signer_ip, ''), 64),
+    client_signer_user_agent = left(coalesce(_signer_ua, ''), 512),
+    signature_consent_version = left(coalesce(_consent_version, ''), 32),
+    updated_at = now()
+  WHERE id = qid;
+  RETURN true;
+END;
+$function$;
+
+GRANT EXECUTE ON FUNCTION public.get_quotation_sign_payload_by_token(uuid) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.sign_quotation_by_token(uuid, text, text, text, text, text, text, text) TO anon, authenticated;
+
+
+-- 20260618120000_meeting_captures.sql
+-- Meeting Capture MVP: table, storage bucket, free monthly quota, AI feature costs
+
+CREATE TABLE IF NOT EXISTS public.meeting_captures (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  client_id       uuid REFERENCES public.saved_clients(id) ON DELETE SET NULL,
+  title           text,
+  source_type     text NOT NULL CHECK (source_type IN (
+    'audio_upload', 'audio_record', 'video_upload', 'video_record'
+  )),
+  media_path      text,
+  media_mime      text,
+  duration_sec    integer,
+  file_size_bytes bigint,
+  status          text NOT NULL DEFAULT 'pending' CHECK (status IN (
+    'pending', 'uploading', 'transcribing', 'transcribed',
+    'extracting', 'ready', 'failed'
+  )),
+  transcript      text,
+  summary_bullets text[],
+  extract_result  jsonb,
+  quality_score   numeric(3,2),
+  brief_id        uuid REFERENCES public.design_briefs(id) ON DELETE SET NULL,
+  error_message   text,
+  credits_transcribe integer NOT NULL DEFAULT 0,
+  credits_extract    integer NOT NULL DEFAULT 0,
+  used_free_slot     boolean NOT NULL DEFAULT false,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  updated_at      timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS meeting_captures_user_created_idx
+  ON public.meeting_captures (user_id, created_at DESC);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.meeting_captures TO authenticated;
+GRANT ALL ON public.meeting_captures TO service_role;
+
+ALTER TABLE public.meeting_captures ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS meeting_captures_user_select ON public.meeting_captures;
+CREATE POLICY meeting_captures_user_select ON public.meeting_captures
+  FOR SELECT TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS meeting_captures_user_insert ON public.meeting_captures;
+CREATE POLICY meeting_captures_user_insert ON public.meeting_captures
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS meeting_captures_user_update ON public.meeting_captures;
+CREATE POLICY meeting_captures_user_update ON public.meeting_captures
+  FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS meeting_captures_user_delete ON public.meeting_captures;
+CREATE POLICY meeting_captures_user_delete ON public.meeting_captures
+  FOR DELETE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS meeting_captures_service_role ON public.meeting_captures;
+CREATE POLICY meeting_captures_service_role ON public.meeting_captures
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+DROP TRIGGER IF EXISTS trg_meeting_captures_updated_at ON public.meeting_captures;
+CREATE TRIGGER trg_meeting_captures_updated_at
+  BEFORE UPDATE ON public.meeting_captures
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TABLE IF NOT EXISTS public.meeting_free_usage (
+  user_id    uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  year_month text NOT NULL,
+  used_count integer NOT NULL DEFAULT 0 CHECK (used_count >= 0),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, year_month)
+);
+
+GRANT SELECT ON public.meeting_free_usage TO authenticated;
+GRANT ALL ON public.meeting_free_usage TO service_role;
+ALTER TABLE public.meeting_free_usage ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS meeting_free_usage_user_select ON public.meeting_free_usage;
+CREATE POLICY meeting_free_usage_user_select ON public.meeting_free_usage
+  FOR SELECT TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS meeting_free_usage_service_role ON public.meeting_free_usage;
+CREATE POLICY meeting_free_usage_service_role ON public.meeting_free_usage
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+CREATE OR REPLACE FUNCTION public.claim_meeting_free_slot(_user_id uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  _tier text;
+  _ym text := to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYY-MM');
+  _count integer;
+BEGIN
+  SELECT COALESCE(subscription_tier, 'free') INTO _tier FROM public.profiles WHERE user_id = _user_id;
+  IF _tier IS DISTINCT FROM 'free' THEN
+    RETURN jsonb_build_object('allowed', false, 'reason', 'not_free_tier');
+  END IF;
+  INSERT INTO public.meeting_free_usage (user_id, year_month, used_count) VALUES (_user_id, _ym, 0)
+  ON CONFLICT (user_id, year_month) DO NOTHING;
+  SELECT used_count INTO _count FROM public.meeting_free_usage
+   WHERE user_id = _user_id AND year_month = _ym FOR UPDATE;
+  IF _count >= 1 THEN
+    RETURN jsonb_build_object('allowed', false, 'reason', 'monthly_limit_reached');
+  END IF;
+  UPDATE public.meeting_free_usage SET used_count = used_count + 1, updated_at = now()
+   WHERE user_id = _user_id AND year_month = _ym;
+  RETURN jsonb_build_object('allowed', true, 'year_month', _ym);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.claim_meeting_free_slot(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.claim_meeting_free_slot(uuid) TO service_role;
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('meeting-captures', 'meeting-captures', false, 524288000,
+  ARRAY['audio/mpeg','audio/mp4','audio/m4a','audio/x-m4a','audio/wav','audio/webm','audio/ogg','video/mp4','video/webm','video/quicktime'])
+ON CONFLICT (id) DO UPDATE SET file_size_limit = EXCLUDED.file_size_limit, allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+DROP POLICY IF EXISTS meeting_captures_storage_select ON storage.objects;
+CREATE POLICY meeting_captures_storage_select ON storage.objects FOR SELECT TO authenticated
+  USING (bucket_id = 'meeting-captures' AND (storage.foldername(name))[1] = auth.uid()::text);
+DROP POLICY IF EXISTS meeting_captures_storage_insert ON storage.objects;
+CREATE POLICY meeting_captures_storage_insert ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'meeting-captures' AND (storage.foldername(name))[1] = auth.uid()::text);
+DROP POLICY IF EXISTS meeting_captures_storage_update ON storage.objects;
+CREATE POLICY meeting_captures_storage_update ON storage.objects FOR UPDATE TO authenticated
+  USING (bucket_id = 'meeting-captures' AND (storage.foldername(name))[1] = auth.uid()::text);
+DROP POLICY IF EXISTS meeting_captures_storage_delete ON storage.objects;
+CREATE POLICY meeting_captures_storage_delete ON storage.objects FOR DELETE TO authenticated
+  USING (bucket_id = 'meeting-captures' AND (storage.foldername(name))[1] = auth.uid()::text);
+DROP POLICY IF EXISTS meeting_captures_storage_service ON storage.objects;
+CREATE POLICY meeting_captures_storage_service ON storage.objects FOR ALL TO service_role
+  USING (bucket_id = 'meeting-captures') WITH CHECK (bucket_id = 'meeting-captures');
+
+INSERT INTO public.ai_feature_costs (feature, cost, label) VALUES
+  ('ai_meeting_transcribe_15', 3, 'จดประชุม AI — ถอดเสียง ≤15 นาที'),
+  ('ai_meeting_transcribe_30', 4, 'จดประชุม AI — ถอดเสียง ≤30 นาที'),
+  ('ai_meeting_transcribe_45', 5, 'จดประชุม AI — ถอดเสียง ≤45 นาที'),
+  ('ai_meeting_transcribe_60', 6, 'จดประชุม AI — ถอดเสียง ≤60 นาที'),
+  ('ai_meeting_brief_extract_15', 9, 'จดประชุม AI — สรุปบรีฟ ≤15 นาที'),
+  ('ai_meeting_brief_extract_30', 14, 'จดประชุม AI — สรุปบรีฟ ≤30 นาที'),
+  ('ai_meeting_brief_extract_45', 19, 'จดประชุม AI — สรุปบรีฟ ≤45 นาที'),
+  ('ai_meeting_brief_extract_60', 24, 'Meeting — สรุปบรีฟ ≤60 นาที')
+ON CONFLICT (feature) DO UPDATE SET cost = EXCLUDED.cost, label = EXCLUDED.label;
+
+
+-- 20260618120000_member_code_search.sql
+﻿-- Member code search
+CREATE OR REPLACE FUNCTION public.admin_search_users(_query text, _limit int DEFAULT 25)
+RETURNS TABLE (
+  user_id uuid,
+  display_name text,
+  username text,
+  subscription_tier text,
+  created_at timestamptz
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  q text := trim(coalesce(_query, ''));
+  member_suffix text;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = auth.uid() AND role = 'admin'
+  ) THEN
+    RAISE EXCEPTION 'forbidden';
+  END IF;
+
+  IF q ~ '^S?[0-9A-Fa-f]{7}$' THEN
+    member_suffix := upper(regexp_replace(q, '^S', ''));
+  ELSE
+    member_suffix := NULL;
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    p.user_id,
+    p.display_name,
+    p.username,
+    p.subscription_tier,
+    p.created_at
+  FROM public.profiles p
+  WHERE
+    member_suffix IS NOT NULL
+    AND upper(right(replace(p.user_id::text, '-', ''), 7)) = member_suffix
+  OR (
+    member_suffix IS NULL
+    AND (
+      q = ''
+      OR p.display_name ILIKE '%' || q || '%'
+      OR p.email ILIKE '%' || q || '%'
+      OR p.username ILIKE '%' || q || '%'
+      OR p.user_id::text ILIKE q || '%'
+    )
+  )
+  ORDER BY p.created_at DESC
+  LIMIT greatest(1, least(coalesce(_limit, 25), 100));
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_search_users(text, int) TO authenticated;
+
+
+-- 20260618130000_color_palettes.sql
+-- Creative Labs: saved color palettes per user
+
+CREATE TABLE IF NOT EXISTS public.color_palettes (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name       text NOT NULL,
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.color_palette_colors (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  palette_id uuid NOT NULL REFERENCES public.color_palettes(id) ON DELETE CASCADE,
+  hex        text NOT NULL,
+  label      text,
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS color_palettes_user_idx ON public.color_palettes(user_id);
+CREATE INDEX IF NOT EXISTS color_palette_colors_palette_idx ON public.color_palette_colors(palette_id);
+
+ALTER TABLE public.color_palettes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.color_palette_colors ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY color_palettes_select ON public.color_palettes
+  FOR SELECT TO authenticated USING (user_id = auth.uid());
+
+CREATE POLICY color_palettes_insert ON public.color_palettes
+  FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY color_palettes_update ON public.color_palettes
+  FOR UPDATE TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY color_palettes_delete ON public.color_palettes
+  FOR DELETE TO authenticated USING (user_id = auth.uid());
+
+CREATE POLICY color_palette_colors_select ON public.color_palette_colors
+  FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.color_palettes p
+    WHERE p.id = palette_id AND p.user_id = auth.uid()
+  ));
+
+CREATE POLICY color_palette_colors_insert ON public.color_palette_colors
+  FOR INSERT TO authenticated
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM public.color_palettes p
+    WHERE p.id = palette_id AND p.user_id = auth.uid()
+  ));
+
+CREATE POLICY color_palette_colors_update ON public.color_palette_colors
+  FOR UPDATE TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.color_palettes p
+    WHERE p.id = palette_id AND p.user_id = auth.uid()
+  ))
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM public.color_palettes p
+    WHERE p.id = palette_id AND p.user_id = auth.uid()
+  ));
+
+CREATE POLICY color_palette_colors_delete ON public.color_palette_colors
+  FOR DELETE TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.color_palettes p
+    WHERE p.id = palette_id AND p.user_id = auth.uid()
+  ));
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.color_palettes TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.color_palette_colors TO authenticated;
+GRANT ALL ON public.color_palettes TO service_role;
+GRANT ALL ON public.color_palette_colors TO service_role;
+
+
+-- 20260618130200_admin_user_360_and_ecosystem_ops.sql
+-- Admin User 360 + Ecosystem Ops dashboard stats (Ops Hub + So1o Mission Control)
+
+CREATE OR REPLACE FUNCTION public.admin_user_360(_user_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, anthem
+AS $$
+DECLARE
+  _profile jsonb;
+  _quotations integer := 0;
+  _open_tickets integer := 0;
+  _meeting_captures integer := 0;
+  _meeting_recent jsonb := '[]'::jsonb;
+  _drill_rerolls_today integer := 0;
+  _projects integer := 0;
+  _published integer := 0;
+  _feedback integer := 0;
+  _drill_posts integer := 0;
+  _cross_links integer := 0;
+  _converted_links integer := 0;
+  _drill_links integer := 0;
+  _recent_links jsonb := '[]'::jsonb;
+  _recent_events jsonb := '[]'::jsonb;
+  _day text := public._design_drill_day_key();
+BEGIN
+  IF NOT public.has_role(auth.uid(), 'admin') THEN
+    RAISE EXCEPTION 'admin only';
+  END IF;
+
+  SELECT jsonb_build_object(
+    'user_id', p.user_id,
+    'display_name', p.display_name,
+    'username', p.username,
+    'subscription_tier', p.subscription_tier,
+    'created_at', p.created_at
+  )
+  INTO _profile
+  FROM public.profiles p
+  WHERE p.user_id = _user_id
+  LIMIT 1;
+
+  IF _profile IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT count(*)::integer INTO _quotations
+  FROM public.quotations q WHERE q.user_id = _user_id;
+
+  SELECT count(*)::integer INTO _open_tickets
+  FROM public.support_tickets t
+  WHERE t.user_id = _user_id
+    AND t.status NOT IN ('closed', 'wont_fix');
+
+  SELECT count(*)::integer INTO _meeting_captures
+  FROM public.meeting_captures mc WHERE mc.user_id = _user_id;
+
+  SELECT coalesce(jsonb_agg(row_to_json(x)::jsonb ORDER BY x.created_at DESC), '[]'::jsonb)
+  INTO _meeting_recent
+  FROM (
+    SELECT mc.id, mc.title, mc.status, mc.duration_sec, mc.created_at
+    FROM public.meeting_captures mc
+    WHERE mc.user_id = _user_id
+    ORDER BY mc.created_at DESC
+    LIMIT 3
+  ) x;
+
+  SELECT coalesce(u.used_count, 0)::integer INTO _drill_rerolls_today
+  FROM public.design_drill_reroll_usage u
+  WHERE u.user_id = _user_id AND u.day_key = _day;
+
+  SELECT count(*)::integer INTO _projects
+  FROM anthem.projects pr WHERE pr.owner_id = _user_id;
+
+  SELECT count(*)::integer INTO _published
+  FROM anthem.projects pr
+  WHERE pr.owner_id = _user_id AND pr.status = 'Published';
+
+  SELECT count(*)::integer INTO _drill_posts
+  FROM anthem.projects pr
+  WHERE pr.owner_id = _user_id
+    AND pr.tags @> ARRAY['So1oDrill']::text[];
+
+  BEGIN
+    SELECT count(*)::integer INTO _feedback
+    FROM anthem.app_feedback af WHERE af.user_id = _user_id;
+  EXCEPTION WHEN undefined_table THEN
+    _feedback := 0;
+  END;
+
+  SELECT count(*)::integer INTO _cross_links
+  FROM public.ecosystem_links el WHERE el.user_id = _user_id;
+
+  SELECT count(*)::integer INTO _converted_links
+  FROM public.ecosystem_links el
+  WHERE el.user_id = _user_id
+    AND el.meta ? 'converted_at'
+    AND el.meta->>'converted_at' IS NOT NULL
+    AND el.meta->>'converted_at' <> '';
+
+  SELECT count(*)::integer INTO _drill_links
+  FROM public.ecosystem_links el
+  WHERE el.user_id = _user_id AND el.source_page = 'design_drill';
+
+  SELECT coalesce(jsonb_agg(row_to_json(x)::jsonb ORDER BY x.created_at DESC), '[]'::jsonb)
+  INTO _recent_links
+  FROM (
+    SELECT el.id, el.source_app, el.source_page, el.created_at,
+      (el.meta ? 'converted_at' AND el.meta->>'converted_at' IS NOT NULL AND el.meta->>'converted_at' <> '') AS converted
+    FROM public.ecosystem_links el
+    WHERE el.user_id = _user_id
+    ORDER BY el.created_at DESC
+    LIMIT 8
+  ) x;
+
+  SELECT coalesce(jsonb_agg(row_to_json(x)::jsonb ORDER BY x.created_at DESC), '[]'::jsonb)
+  INTO _recent_events
+  FROM (
+    SELECT pe.event_type, pe.created_at, pe.target_type
+    FROM public.platform_events pe
+    WHERE pe.actor_id = _user_id
+    ORDER BY pe.created_at DESC
+    LIMIT 10
+  ) x;
+
+  RETURN jsonb_build_object(
+    'profile', _profile,
+    'so1o', jsonb_build_object(
+      'quotations', _quotations,
+      'open_tickets', _open_tickets,
+      'meeting_captures', _meeting_captures,
+      'meeting_captures_recent', _meeting_recent,
+      'drill_rerolls_today', _drill_rerolls_today
+    ),
+    'an1hem', jsonb_build_object(
+      'projects', _projects,
+      'published', _published,
+      'feedback', _feedback,
+      'drill_posts', _drill_posts
+    ),
+    'ecosystem', jsonb_build_object(
+      'cross_links', _cross_links,
+      'converted_links', _converted_links,
+      'drill_links', _drill_links
+    ),
+    'recent_links', _recent_links,
+    'recent_events', _recent_events
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_user_360(uuid) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.admin_ecosystem_ops_stats()
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, anthem
+AS $$
+DECLARE
+  _day text := public._design_drill_day_key();
+  _since_7d timestamptz := now() - interval '7 days';
+  _rerolls_today integer := 0;
+  _rerolls_7d integer := 0;
+  _drill_links_7d integer := 0;
+  _drill_converted_7d integer := 0;
+  _drill_posts_total integer := 0;
+  _top_users jsonb := '[]'::jsonb;
+  _captures_total integer := 0;
+  _by_status jsonb := '{}'::jsonb;
+  _meeting_credits_7d integer := 0;
+  _meeting_recent jsonb := '[]'::jsonb;
+BEGIN
+  IF NOT public.has_role(auth.uid(), 'admin') THEN
+    RAISE EXCEPTION 'admin only';
+  END IF;
+
+  SELECT coalesce(sum(used_count), 0)::integer INTO _rerolls_today
+  FROM public.design_drill_reroll_usage
+  WHERE day_key = _day;
+
+  SELECT coalesce(sum(used_count), 0)::integer INTO _rerolls_7d
+  FROM public.design_drill_reroll_usage
+  WHERE updated_at >= _since_7d;
+
+  SELECT count(*)::integer INTO _drill_links_7d
+  FROM public.ecosystem_links el
+  WHERE el.source_page = 'design_drill'
+    AND el.created_at >= _since_7d;
+
+  SELECT count(*)::integer INTO _drill_converted_7d
+  FROM public.ecosystem_links el
+  WHERE el.source_page = 'design_drill'
+    AND el.created_at >= _since_7d
+    AND el.meta ? 'converted_at'
+    AND el.meta->>'converted_at' IS NOT NULL
+    AND el.meta->>'converted_at' <> '';
+
+  SELECT count(*)::integer INTO _drill_posts_total
+  FROM anthem.projects pr
+  WHERE pr.tags @> ARRAY['So1oDrill']::text[];
+
+  SELECT coalesce(jsonb_agg(row_to_json(x)::jsonb ORDER BY x.score DESC), '[]'::jsonb)
+  INTO _top_users
+  FROM (
+    SELECT
+      coalesce(r.user_id, l.user_id) AS user_id,
+      coalesce(r.used_count, 0) AS rerolls_today,
+      coalesce(l.link_count, 0) AS drill_links_7d,
+      (coalesce(r.used_count, 0) + coalesce(l.link_count, 0)) AS score
+    FROM (
+      SELECT user_id, used_count
+      FROM public.design_drill_reroll_usage
+      WHERE day_key = _day AND used_count > 0
+    ) r
+    FULL OUTER JOIN (
+      SELECT user_id, count(*)::integer AS link_count
+      FROM public.ecosystem_links
+      WHERE source_page = 'design_drill' AND created_at >= _since_7d
+      GROUP BY user_id
+    ) l ON l.user_id = r.user_id
+    ORDER BY (coalesce(r.used_count, 0) + coalesce(l.link_count, 0)) DESC
+    LIMIT 15
+  ) x;
+
+  SELECT count(*)::integer INTO _captures_total
+  FROM public.meeting_captures;
+
+  SELECT coalesce(jsonb_object_agg(status, cnt), '{}'::jsonb)
+  INTO _by_status
+  FROM (
+    SELECT status, count(*)::integer AS cnt
+    FROM public.meeting_captures
+    GROUP BY status
+  ) s;
+
+  SELECT coalesce(sum(cost), 0)::integer INTO _meeting_credits_7d
+  FROM public.ai_credit_ledger
+  WHERE created_at >= _since_7d
+    AND feature LIKE 'ai_meeting_%';
+
+  SELECT coalesce(jsonb_agg(row_to_json(x)::jsonb ORDER BY x.created_at DESC), '[]'::jsonb)
+  INTO _meeting_recent
+  FROM (
+    SELECT mc.id, mc.user_id, mc.title, mc.status, mc.duration_sec, mc.created_at
+    FROM public.meeting_captures mc
+    ORDER BY mc.created_at DESC
+    LIMIT 20
+  ) x;
+
+  RETURN jsonb_build_object(
+    'generated_at', now(),
+    'day_key', _day,
+    'drill', jsonb_build_object(
+      'rerolls_today', _rerolls_today,
+      'rerolls_7d', _rerolls_7d,
+      'cross_links_7d', _drill_links_7d,
+      'cross_links_converted_7d', _drill_converted_7d,
+      'conversion_pct', CASE
+        WHEN _drill_links_7d > 0 THEN round((_drill_converted_7d::numeric / _drill_links_7d) * 100)
+        ELSE 0
+      END,
+      'drill_posts_total', _drill_posts_total,
+      'top_users', _top_users
+    ),
+    'meeting', jsonb_build_object(
+      'captures_total', _captures_total,
+      'by_status', _by_status,
+      'credits_7d', _meeting_credits_7d,
+      'recent', _meeting_recent
+    )
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_ecosystem_ops_stats() TO authenticated;
+
+
+-- 20260619120000_feed_interests.sql
+-- Feed interest survey: cold-start personalization for Explore feed
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS feed_interests text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS feed_interests_at timestamptz;
+
+COMMENT ON COLUMN public.profiles.feed_interests IS 'Canonical project categories selected in onboarding survey (Graphic, Web/UI, …)';
+COMMENT ON COLUMN public.profiles.feed_interests_at IS 'When user completed or skipped the feed interest survey';
+
+
+-- 20260619120000_meeting_report.sql
+-- Meeting report: report_markdown, credits_report, reporting status, ai_meeting_report credits
+
+ALTER TABLE public.meeting_captures
+  ADD COLUMN IF NOT EXISTS report_markdown text,
+  ADD COLUMN IF NOT EXISTS credits_report integer NOT NULL DEFAULT 0;
+
+ALTER TABLE public.meeting_captures DROP CONSTRAINT IF EXISTS meeting_captures_status_check;
+ALTER TABLE public.meeting_captures ADD CONSTRAINT meeting_captures_status_check
+  CHECK (status IN (
+    'pending', 'uploading', 'transcribing', 'transcribed',
+    'reporting', 'extracting', 'ready', 'failed'
+  ));
+
+INSERT INTO public.ai_feature_costs (feature, cost, label) VALUES
+  ('ai_meeting_report_15', 5, 'Meeting — สรุปรายงาน ≤15 นาที'),
+  ('ai_meeting_report_30', 7, 'Meeting — สรุปรายงาน ≤30 นาที'),
+  ('ai_meeting_report_45', 9, 'Meeting — สรุปรายงาน ≤45 นาที'),
+  ('ai_meeting_report_60', 10, 'Meeting — สรุปรายงาน ≤60 นาที')
+ON CONFLICT (feature) DO UPDATE SET cost = EXCLUDED.cost, label = EXCLUDED.label;
+
+
+-- 20260619180000_community_feed_enhancements.sql
+-- Community feed: tables, media, Q&A topics, report target types
+-- Schema: anthem (Pixel100 / an1hem)
+
+CREATE TABLE IF NOT EXISTS anthem.community_posts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  post_kind text NOT NULL CHECK (post_kind IN ('tip', 'question')),
+  title text NOT NULL,
+  body text NOT NULL,
+  category text NOT NULL DEFAULT 'Graphic',
+  tags text[] NOT NULL DEFAULT '{}',
+  gallery_urls text[] NOT NULL DEFAULT '{}',
+  video_urls text[] NOT NULL DEFAULT '{}',
+  question_topic text,
+  status text NOT NULL DEFAULT 'published' CHECK (status IN ('published', 'hidden', 'draft')),
+  reply_count integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE anthem.community_posts
+  ADD COLUMN IF NOT EXISTS gallery_urls text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS video_urls text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS question_topic text,
+  ADD COLUMN IF NOT EXISTS tags text[] NOT NULL DEFAULT '{}';
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'community_posts_question_topic_chk'
+  ) THEN
+    ALTER TABLE anthem.community_posts
+      ADD CONSTRAINT community_posts_question_topic_chk
+      CHECK (
+        question_topic IS NULL
+        OR question_topic IN (
+          'feedback', 'technique', 'tools', 'career', 'client', 'inspiration', 'other'
+        )
+      );
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_community_posts_created
+  ON anthem.community_posts (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_community_posts_kind
+  ON anthem.community_posts (post_kind, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_community_posts_status
+  ON anthem.community_posts (status, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS anthem.community_post_comments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id uuid NOT NULL REFERENCES anthem.community_posts(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  content text NOT NULL,
+  parent_id uuid REFERENCES anthem.community_post_comments(id) ON DELETE CASCADE,
+  depth integer NOT NULL DEFAULT 0 CHECK (depth >= 0 AND depth <= 2),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_community_post_comments_post
+  ON anthem.community_post_comments (post_id, created_at ASC);
+
+CREATE OR REPLACE FUNCTION anthem.community_post_reply_count_sync()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = anthem
+AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE anthem.community_posts
+       SET reply_count = reply_count + 1,
+           updated_at = now()
+     WHERE id = NEW.post_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE anthem.community_posts
+       SET reply_count = GREATEST(0, reply_count - 1),
+           updated_at = now()
+     WHERE id = OLD.post_id;
+  END IF;
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_community_post_reply_count_ins ON anthem.community_post_comments;
+CREATE TRIGGER trg_community_post_reply_count_ins
+  AFTER INSERT ON anthem.community_post_comments
+  FOR EACH ROW EXECUTE FUNCTION anthem.community_post_reply_count_sync();
+
+DROP TRIGGER IF EXISTS trg_community_post_reply_count_del ON anthem.community_post_comments;
+CREATE TRIGGER trg_community_post_reply_count_del
+  AFTER DELETE ON anthem.community_post_comments
+  FOR EACH ROW EXECUTE FUNCTION anthem.community_post_reply_count_sync();
+
+ALTER TABLE anthem.community_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE anthem.community_post_comments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "community_posts_public_read" ON anthem.community_posts;
+CREATE POLICY "community_posts_public_read"
+  ON anthem.community_posts FOR SELECT
+  USING (status = 'published' OR author_id = auth.uid());
+
+DROP POLICY IF EXISTS "community_posts_author_write" ON anthem.community_posts;
+CREATE POLICY "community_posts_author_write"
+  ON anthem.community_posts FOR INSERT
+  TO authenticated
+  WITH CHECK (author_id = auth.uid());
+
+DROP POLICY IF EXISTS "community_posts_author_update" ON anthem.community_posts;
+CREATE POLICY "community_posts_author_update"
+  ON anthem.community_posts FOR UPDATE
+  TO authenticated
+  USING (author_id = auth.uid())
+  WITH CHECK (author_id = auth.uid());
+
+DROP POLICY IF EXISTS "community_comments_public_read" ON anthem.community_post_comments;
+CREATE POLICY "community_comments_public_read"
+  ON anthem.community_post_comments FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "community_comments_author_write" ON anthem.community_post_comments;
+CREATE POLICY "community_comments_author_write"
+  ON anthem.community_post_comments FOR INSERT
+  TO authenticated
+  WITH CHECK (user_id = auth.uid());
+
+GRANT SELECT ON anthem.community_posts TO anon, authenticated;
+GRANT INSERT, UPDATE ON anthem.community_posts TO authenticated;
+GRANT SELECT, INSERT ON anthem.community_post_comments TO authenticated;
+GRANT ALL ON anthem.community_posts TO service_role;
+GRANT ALL ON anthem.community_post_comments TO service_role;
+
+-- Extend report target types (create_report RPC)
+CREATE OR REPLACE FUNCTION public.create_report(
+  _target_type text,
+  _target_id uuid,
+  _target_owner_id uuid,
+  _reason text,
+  _details text DEFAULT '',
+  _evidence_urls text[] DEFAULT '{}',
+  _evidence_files jsonb DEFAULT '[]'::jsonb
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, anthem, shared
+AS $$
+DECLARE
+  _reporter_id uuid := auth.uid();
+  _report_id uuid;
+  _allowed_types text[] := ARRAY[
+    'user', 'project', 'comment', 'studio', 'message', 'job',
+    'community_post', 'community_comment'
+  ];
+  _allowed_reasons text[] := ARRAY[
+    'spam', 'harassment', 'nsfw', 'copyright', 'scam', 'impersonation', 'other'
+  ];
+  _recent int;
+BEGIN
+  IF _reporter_id IS NULL THEN
+    RAISE EXCEPTION 'AUTH: ต้องเข้าสู่ระบบก่อน';
+  END IF;
+
+  IF NOT (_target_type = ANY(_allowed_types)) THEN
+    RAISE EXCEPTION 'INVALID: target_type ไม่ถูกต้อง';
+  END IF;
+
+  IF NOT (_reason = ANY(_allowed_reasons)) THEN
+    RAISE EXCEPTION 'INVALID: reason ไม่ถูกต้อง';
+  END IF;
+
+  IF _target_owner_id IS NOT NULL AND _target_owner_id = _reporter_id THEN
+    RAISE EXCEPTION 'INVALID: ไม่สามารถรายงานเนื้อหาของตัวเอง';
+  END IF;
+
+  SELECT count(*) INTO _recent
+  FROM anthem.user_reports
+  WHERE reporter_id = _reporter_id
+    AND created_at > now() - interval '1 hour';
+
+  IF _recent >= 10 THEN
+    RAISE EXCEPTION 'RATE_LIMIT: รายงานได้ไม่เกิน 10 ครั้งต่อชั่วโมง';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM anthem.user_reports
+    WHERE reporter_id = _reporter_id
+      AND target_type = _target_type
+      AND target_id = _target_id
+      AND status IN ('open', 'reviewing')
+  ) THEN
+    RAISE EXCEPTION 'DUPLICATE: คุณรายงานเนื้อหานี้ไปแล้ว';
+  END IF;
+
+  INSERT INTO anthem.user_reports (
+    reporter_id, target_type, target_id, target_owner_id,
+    reason, details, evidence_urls, evidence_files, status
+  ) VALUES (
+    _reporter_id, _target_type, _target_id, _target_owner_id,
+    _reason, coalesce(_details, ''), coalesce(_evidence_urls, '{}'),
+    coalesce(_evidence_files, '[]'::jsonb), 'open'
+  )
+  RETURNING id INTO _report_id;
+
+  INSERT INTO public.platform_events (event_type, actor_id, target_type, target_id, metadata)
+  VALUES (
+    'report.created', _reporter_id, _target_type, _target_id::text,
+    jsonb_build_object('reason', _reason, 'report_id', _report_id)
+  );
+
+  RETURN _report_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.create_report(text, uuid, uuid, text, text, text[], jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.create_report(text, uuid, uuid, text, text, text[], jsonb) TO authenticated;
+
+
+-- 20260619190000_community_social_platform.sql
+-- Community social platform: likes, saves, views, blocks, notifications helpers
+
+ALTER TABLE anthem.community_posts
+  ADD COLUMN IF NOT EXISTS like_count integer NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS view_count integer NOT NULL DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS anthem.community_post_likes (
+  post_id uuid NOT NULL REFERENCES anthem.community_posts(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (post_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_community_post_likes_user
+  ON anthem.community_post_likes (user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS anthem.community_post_bookmarks (
+  post_id uuid NOT NULL REFERENCES anthem.community_posts(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (post_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_community_post_bookmarks_user
+  ON anthem.community_post_bookmarks (user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS anthem.community_post_views (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id uuid NOT NULL REFERENCES anthem.community_posts(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_community_post_views_post
+  ON anthem.community_post_views (post_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS anthem.user_blocks (
+  blocker_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  blocked_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (blocker_id, blocked_id),
+  CHECK (blocker_id <> blocked_id)
+);
+
+CREATE OR REPLACE FUNCTION anthem.community_post_like_count_sync()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = anthem
+AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE anthem.community_posts SET like_count = like_count + 1, updated_at = now() WHERE id = NEW.post_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE anthem.community_posts SET like_count = GREATEST(0, like_count - 1), updated_at = now() WHERE id = OLD.post_id;
+  END IF;
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_community_post_like_ins ON anthem.community_post_likes;
+CREATE TRIGGER trg_community_post_like_ins
+  AFTER INSERT ON anthem.community_post_likes
+  FOR EACH ROW EXECUTE FUNCTION anthem.community_post_like_count_sync();
+
+DROP TRIGGER IF EXISTS trg_community_post_like_del ON anthem.community_post_likes;
+CREATE TRIGGER trg_community_post_like_del
+  AFTER DELETE ON anthem.community_post_likes
+  FOR EACH ROW EXECUTE FUNCTION anthem.community_post_like_count_sync();
+
+CREATE OR REPLACE FUNCTION public.increment_community_post_view(_post_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = anthem, public
+AS $$
+BEGIN
+  UPDATE anthem.community_posts
+     SET view_count = view_count + 1,
+         updated_at = now()
+   WHERE id = _post_id
+     AND status = 'published';
+
+  INSERT INTO anthem.community_post_views (post_id, user_id)
+  VALUES (_post_id, auth.uid());
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.increment_community_post_view(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.increment_community_post_view(uuid) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.notify_community_event(
+  _recipient_id uuid,
+  _kind text,
+  _title text,
+  _body text,
+  _link text,
+  _metadata jsonb DEFAULT '{}'::jsonb
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, shared, anthem
+AS $$
+BEGIN
+  IF _recipient_id IS NULL OR _recipient_id = auth.uid() THEN
+    RETURN;
+  END IF;
+  INSERT INTO shared.notifications (user_id, app, kind, title, body, link, metadata, is_read, is_dismissed)
+  VALUES (_recipient_id, 'anthem', _kind, _title, _body, _link, _metadata, false, false);
+EXCEPTION
+  WHEN undefined_table THEN NULL;
+  WHEN undefined_column THEN NULL;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.notify_community_event(uuid, text, text, text, text, jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.notify_community_event(uuid, text, text, text, text, jsonb) TO authenticated;
+
+ALTER TABLE anthem.community_post_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE anthem.community_post_bookmarks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE anthem.community_post_views ENABLE ROW LEVEL SECURITY;
+ALTER TABLE anthem.user_blocks ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "community_likes_public_read" ON anthem.community_post_likes;
+CREATE POLICY "community_likes_public_read"
+  ON anthem.community_post_likes FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "community_likes_own_write" ON anthem.community_post_likes;
+CREATE POLICY "community_likes_own_write"
+  ON anthem.community_post_likes FOR ALL
+  TO authenticated
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "community_bookmarks_own" ON anthem.community_post_bookmarks;
+CREATE POLICY "community_bookmarks_own"
+  ON anthem.community_post_bookmarks FOR ALL
+  TO authenticated
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "community_views_insert" ON anthem.community_post_views;
+CREATE POLICY "community_views_insert"
+  ON anthem.community_post_views FOR INSERT
+  TO authenticated, anon
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "community_views_read" ON anthem.community_post_views;
+CREATE POLICY "community_views_read"
+  ON anthem.community_post_views FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "user_blocks_own" ON anthem.user_blocks;
+CREATE POLICY "user_blocks_own"
+  ON anthem.user_blocks FOR ALL
+  TO authenticated
+  USING (blocker_id = auth.uid())
+  WITH CHECK (blocker_id = auth.uid());
+
+GRANT SELECT ON anthem.community_post_likes TO anon, authenticated;
+GRANT INSERT, DELETE ON anthem.community_post_likes TO authenticated;
+GRANT SELECT, INSERT, DELETE ON anthem.community_post_bookmarks TO authenticated;
+GRANT SELECT, INSERT ON anthem.community_post_views TO anon, authenticated;
+GRANT SELECT, INSERT, DELETE ON anthem.user_blocks TO authenticated;
+
+-- Authors may soft-delete (hide) own posts
+DROP POLICY IF EXISTS "community_posts_author_delete" ON anthem.community_posts;
+CREATE POLICY "community_posts_author_delete"
+  ON anthem.community_posts FOR DELETE
+  TO authenticated
+  USING (author_id = auth.uid());
+
+GRANT DELETE ON anthem.community_posts TO authenticated;
+
+
+-- 20260619210000_boost_escrow_payments.sql
+-- Boost (self-serve post promotion) + Escrow marketplace
+-- Apply after stripe-payments.sql on unified Supabase project rvnzjiskqliexysicfmh
+
+-- ---------------------------------------------------------------------------
+-- Extend stripe_checkout_fulfillments kinds
+-- ---------------------------------------------------------------------------
+
+ALTER TABLE public.stripe_checkout_fulfillments
+  DROP CONSTRAINT IF EXISTS stripe_checkout_fulfillments_kind_check;
+
+ALTER TABLE public.stripe_checkout_fulfillments
+  ADD CONSTRAINT stripe_checkout_fulfillments_kind_check
+  CHECK (kind IN ('credits', 'px', 'boost', 'ad', 'escrow'));
+
+-- ---------------------------------------------------------------------------
+-- anthem.post_boosts — creator self-serve promotion
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS anthem.post_boosts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  target_type text NOT NULL CHECK (target_type IN ('project', 'community_post')),
+  target_id uuid NOT NULL,
+  package text NOT NULL CHECK (package IN ('micro_3', 'micro_7', 'micro_14')),
+  amount_thb integer NOT NULL CHECK (amount_thb > 0),
+  duration_days integer NOT NULL CHECK (duration_days > 0),
+  status text NOT NULL DEFAULT 'pending_payment'
+    CHECK (status IN ('pending_payment', 'active', 'expired', 'cancelled')),
+  stripe_session_id text,
+  start_at timestamptz,
+  end_at timestamptz,
+  impressions integer NOT NULL DEFAULT 0,
+  clicks integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_post_boosts_active
+  ON anthem.post_boosts (status, end_at DESC)
+  WHERE status = 'active';
+
+CREATE INDEX IF NOT EXISTS idx_post_boosts_target
+  ON anthem.post_boosts (target_type, target_id);
+
+CREATE INDEX IF NOT EXISTS idx_post_boosts_user
+  ON anthem.post_boosts (user_id, created_at DESC);
+
+ALTER TABLE anthem.post_boosts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS post_boosts_owner_select ON anthem.post_boosts;
+CREATE POLICY post_boosts_owner_select ON anthem.post_boosts
+  FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS post_boosts_public_active ON anthem.post_boosts;
+CREATE POLICY post_boosts_public_active ON anthem.post_boosts
+  FOR SELECT TO anon, authenticated
+  USING (status = 'active' AND (end_at IS NULL OR end_at > now()));
+
+GRANT SELECT ON anthem.post_boosts TO anon, authenticated;
+GRANT ALL ON anthem.post_boosts TO service_role;
+
+-- ---------------------------------------------------------------------------
+-- shared.marketplace_escrows — client payment held until approve
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS shared.marketplace_escrows (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  freelancer_user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  hiring_request_id uuid,
+  quotation_id uuid,
+  client_name text NOT NULL DEFAULT '',
+  client_email text NOT NULL DEFAULT '',
+  title text NOT NULL DEFAULT '',
+  amount_thb integer NOT NULL CHECK (amount_thb > 0),
+  platform_fee_pct numeric(5,4) NOT NULL CHECK (platform_fee_pct >= 0 AND platform_fee_pct <= 1),
+  platform_fee_thb integer NOT NULL DEFAULT 0 CHECK (platform_fee_thb >= 0),
+  net_payout_thb integer NOT NULL CHECK (net_payout_thb >= 0),
+  stripe_checkout_session_id text,
+  stripe_payment_intent_id text,
+  stripe_transfer_id text,
+  portal_token uuid NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+  status text NOT NULL DEFAULT 'draft'
+    CHECK (status IN (
+      'draft', 'pending_payment', 'funded', 'in_progress',
+      'pending_release', 'released', 'disputed', 'refunded', 'cancelled'
+    )),
+  funded_at timestamptz,
+  approved_at timestamptz,
+  released_at timestamptz,
+  disputed_at timestamptz,
+  dispute_reason text,
+  admin_note text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_marketplace_escrows_freelancer
+  ON shared.marketplace_escrows (freelancer_user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_marketplace_escrows_portal
+  ON shared.marketplace_escrows (portal_token);
+
+CREATE INDEX IF NOT EXISTS idx_marketplace_escrows_status
+  ON shared.marketplace_escrows (status);
+
+ALTER TABLE shared.marketplace_escrows ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS marketplace_escrows_freelancer_select ON shared.marketplace_escrows;
+CREATE POLICY marketplace_escrows_freelancer_select ON shared.marketplace_escrows
+  FOR SELECT TO authenticated
+  USING (auth.uid() = freelancer_user_id);
+
+GRANT SELECT ON shared.marketplace_escrows TO authenticated;
+GRANT ALL ON shared.marketplace_escrows TO service_role;
+
+-- ---------------------------------------------------------------------------
+-- Helpers
+-- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.escrow_platform_fee_pct(_user_id uuid)
+RETURNS numeric
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT CASE
+    WHEN COALESCE(
+      (SELECT subscription_tier FROM public.profiles WHERE user_id = _user_id),
+      'free'
+    ) IN ('pro', 'pro_plus', 'inhouse') THEN 0.05
+    ELSE 0.10
+  END;
+$$;
+
+REVOKE ALL ON FUNCTION public.escrow_platform_fee_pct(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.escrow_platform_fee_pct(uuid) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.assert_connect_payouts_ready(_user_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE user_id = _user_id
+      AND connect_payouts_enabled = true
+      AND connect_onboarding_complete = true
+  ) THEN
+    RAISE EXCEPTION 'CONNECT_REQUIRED';
+  END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.assert_connect_payouts_ready(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.assert_connect_payouts_ready(uuid) TO authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- Boost RPCs
+-- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.create_post_boost(
+  _target_type text,
+  _target_id uuid,
+  _package text
+)
+RETURNS anthem.post_boosts
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, anthem
+AS $$
+DECLARE
+  _uid uuid := auth.uid();
+  _row anthem.post_boosts%ROWTYPE;
+  _amount integer;
+  _days integer;
+BEGIN
+  IF _uid IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+  IF _target_type NOT IN ('project', 'community_post') THEN RAISE EXCEPTION 'INVALID_TARGET_TYPE'; END IF;
+  IF _package NOT IN ('micro_3', 'micro_7', 'micro_14') THEN RAISE EXCEPTION 'INVALID_PACKAGE'; END IF;
+
+  _amount := CASE _package WHEN 'micro_3' THEN 99 WHEN 'micro_7' THEN 249 WHEN 'micro_14' THEN 499 END;
+  _days := CASE _package WHEN 'micro_3' THEN 3 WHEN 'micro_7' THEN 7 WHEN 'micro_14' THEN 14 END;
+
+  IF _target_type = 'project' THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM public.projects
+      WHERE id = _target_id AND owner_id = _uid AND status = 'Published'
+    ) THEN
+      RAISE EXCEPTION 'NOT_OWNER_OR_NOT_PUBLISHED';
+    END IF;
+  ELSE
+    IF NOT EXISTS (
+      SELECT 1 FROM anthem.community_posts
+      WHERE id = _target_id AND author_id = _uid AND status = 'published'
+    ) THEN
+      RAISE EXCEPTION 'NOT_OWNER_OR_NOT_PUBLISHED';
+    END IF;
+  END IF;
+
+  INSERT INTO anthem.post_boosts (
+    user_id, target_type, target_id, package, amount_thb, duration_days, status
+  ) VALUES (
+    _uid, _target_type, _target_id, _package, _amount, _days, 'pending_payment'
+  )
+  RETURNING * INTO _row;
+
+  RETURN _row;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.create_post_boost(text, uuid, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_post_boost(text, uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_post_boost(text, uuid, text) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.activate_post_boost_stripe(
+  _stripe_session_id text,
+  _boost_id uuid,
+  _price_id text DEFAULT 'unknown',
+  _environment text DEFAULT 'sandbox'
+)
+RETURNS anthem.post_boosts
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, anthem
+AS $$
+DECLARE
+  _row anthem.post_boosts%ROWTYPE;
+  _days integer;
+BEGIN
+  IF _environment NOT IN ('sandbox', 'live') THEN RAISE EXCEPTION 'INVALID_ENVIRONMENT'; END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.stripe_checkout_fulfillments WHERE stripe_session_id = _stripe_session_id
+  ) THEN
+    SELECT * INTO _row FROM anthem.post_boosts WHERE id = _boost_id;
+    RETURN _row;
+  END IF;
+
+  SELECT * INTO _row FROM anthem.post_boosts WHERE id = _boost_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'NOT_FOUND'; END IF;
+  IF _row.status NOT IN ('pending_payment', 'active') THEN RAISE EXCEPTION 'INVALID_STATUS'; END IF;
+
+  _days := _row.duration_days;
+
+  INSERT INTO public.stripe_checkout_fulfillments (
+    stripe_session_id, user_id, kind, price_id, quantity, environment
+  ) VALUES (
+    _stripe_session_id, _row.user_id, 'boost', _price_id, 1, _environment
+  );
+
+  UPDATE anthem.post_boosts SET
+    status = 'active',
+    stripe_session_id = _stripe_session_id,
+    start_at = now(),
+    end_at = now() + (_days || ' days')::interval,
+    updated_at = now()
+  WHERE id = _boost_id
+  RETURNING * INTO _row;
+
+  RETURN _row;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.activate_post_boost_stripe(text, uuid, text, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.activate_post_boost_stripe(text, uuid, text, text) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.fulfill_ad_payment_stripe(
+  _stripe_session_id text,
+  _application_id uuid,
+  _price_id text DEFAULT 'unknown',
+  _environment text DEFAULT 'sandbox'
+)
+RETURNS anthem.ad_applications
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, anthem
+AS $$
+DECLARE
+  _row anthem.ad_applications%ROWTYPE;
+BEGIN
+  IF _environment NOT IN ('sandbox', 'live') THEN RAISE EXCEPTION 'INVALID_ENVIRONMENT'; END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.stripe_checkout_fulfillments WHERE stripe_session_id = _stripe_session_id
+  ) THEN
+    SELECT * INTO _row FROM anthem.ad_applications WHERE id = _application_id;
+    RETURN _row;
+  END IF;
+
+  SELECT * INTO _row FROM anthem.ad_applications WHERE id = _application_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'NOT_FOUND'; END IF;
+  IF _row.status IS DISTINCT FROM 'pending_payment' THEN RAISE EXCEPTION 'INVALID_STATUS'; END IF;
+
+  INSERT INTO public.stripe_checkout_fulfillments (
+    stripe_session_id, user_id, kind, price_id, quantity, environment
+  ) VALUES (
+    _stripe_session_id, _row.user_id, 'ad', _price_id, 1, _environment
+  );
+
+  UPDATE anthem.ad_applications SET
+    status = 'paid',
+    paid_at = now(),
+    updated_at = now()
+  WHERE id = _application_id
+  RETURNING * INTO _row;
+
+  RETURN _row;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.fulfill_ad_payment_stripe(text, uuid, text, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.fulfill_ad_payment_stripe(text, uuid, text, text) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.get_active_boosts(_limit integer DEFAULT 50)
+RETURNS TABLE (
+  boost_id uuid,
+  target_type text,
+  target_id uuid,
+  end_at timestamptz
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = anthem
+AS $$
+  SELECT id, target_type, target_id, end_at
+  FROM anthem.post_boosts
+  WHERE status = 'active'
+    AND end_at > now()
+  ORDER BY end_at DESC
+  LIMIT GREATEST(1, LEAST(_limit, 200));
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_active_boosts(integer) TO anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.log_boost_event(
+  _boost_id uuid,
+  _event_type text
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = anthem
+AS $$
+BEGIN
+  IF _event_type NOT IN ('impression', 'click') THEN RAISE EXCEPTION 'INVALID_EVENT'; END IF;
+  IF _event_type = 'impression' THEN
+    UPDATE anthem.post_boosts SET impressions = impressions + 1, updated_at = now()
+    WHERE id = _boost_id AND status = 'active';
+  ELSE
+    UPDATE anthem.post_boosts SET clicks = clicks + 1, updated_at = now()
+    WHERE id = _boost_id AND status = 'active';
+  END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.log_boost_event(uuid, text) TO anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.expire_post_boosts()
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = anthem
+AS $$
+DECLARE
+  _n integer;
+BEGIN
+  UPDATE anthem.post_boosts SET status = 'expired', updated_at = now()
+  WHERE status = 'active' AND end_at <= now();
+  GET DIAGNOSTICS _n = ROW_COUNT;
+  RETURN _n;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.expire_post_boosts() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.expire_post_boosts() TO service_role;
+
+-- ---------------------------------------------------------------------------
+-- Escrow RPCs
+-- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.create_escrow_from_quotation(
+  _quotation_id uuid,
+  _amount_thb integer DEFAULT NULL
+)
+RETURNS shared.marketplace_escrows
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, shared
+AS $$
+DECLARE
+  _uid uuid := auth.uid();
+  _q record;
+  _fee_pct numeric;
+  _fee integer;
+  _net integer;
+  _amt integer;
+  _row shared.marketplace_escrows%ROWTYPE;
+BEGIN
+  IF _uid IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+  PERFORM public.assert_connect_payouts_ready(_uid);
+
+  SELECT id, user_id, project_name, client_name, client_email
+    INTO _q
+    FROM public.quotations
+   WHERE id = _quotation_id AND user_id = _uid;
+
+  IF NOT FOUND THEN RAISE EXCEPTION 'QUOTATION_NOT_FOUND'; END IF;
+
+  _amt := COALESCE(_amount_thb, 0);
+  IF _amt <= 0 THEN RAISE EXCEPTION 'INVALID_AMOUNT'; END IF;
+
+  _fee_pct := public.escrow_platform_fee_pct(_uid);
+  _fee := ROUND(_amt * _fee_pct);
+  _net := _amt - _fee;
+
+  INSERT INTO shared.marketplace_escrows (
+    freelancer_user_id, quotation_id, client_name, client_email, title,
+    amount_thb, platform_fee_pct, platform_fee_thb, net_payout_thb, status
+  ) VALUES (
+    _uid, _quotation_id,
+    COALESCE(_q.client_name, ''),
+    COALESCE(_q.client_email, ''),
+    COALESCE(_q.project_name, 'งานฟรีแลนซ์'),
+    _amt, _fee_pct, _fee, _net,
+    'pending_payment'
+  )
+  RETURNING * INTO _row;
+
+  RETURN _row;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.create_escrow_from_quotation(uuid, integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_escrow_from_quotation(uuid, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_escrow_from_quotation(uuid, integer) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.create_escrow_from_hire(_hiring_request_id uuid)
+RETURNS shared.marketplace_escrows
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, anthem, shared
+AS $$
+DECLARE
+  _uid uuid := auth.uid();
+  _h record;
+  _fee_pct numeric;
+  _fee integer;
+  _amt integer;
+  _net integer;
+  _row shared.marketplace_escrows%ROWTYPE;
+BEGIN
+  IF _uid IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+  PERFORM public.assert_connect_payouts_ready(_uid);
+
+  SELECT id, freelancer_id, client_name, email, project_title, budget_amount
+    INTO _h
+    FROM anthem.hiring_requests
+   WHERE id = _hiring_request_id AND freelancer_id = _uid;
+
+  IF NOT FOUND THEN RAISE EXCEPTION 'HIRE_NOT_FOUND'; END IF;
+  _amt := COALESCE(ROUND(_h.budget_amount)::integer, 0);
+  IF _amt <= 0 THEN RAISE EXCEPTION 'INVALID_AMOUNT'; END IF;
+
+  _fee_pct := public.escrow_platform_fee_pct(_uid);
+  _fee := ROUND(_amt * _fee_pct);
+  _net := _amt - _fee;
+
+  INSERT INTO shared.marketplace_escrows (
+    freelancer_user_id, hiring_request_id, client_name, client_email, title,
+    amount_thb, platform_fee_pct, platform_fee_thb, net_payout_thb, status
+  ) VALUES (
+    _uid, _hiring_request_id,
+    COALESCE(_h.client_name, ''),
+    COALESCE(_h.email, ''),
+    COALESCE(_h.project_title, 'งานจ้าง'),
+    _amt, _fee_pct, _fee, _net,
+    'pending_payment'
+  )
+  RETURNING * INTO _row;
+
+  RETURN _row;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.create_escrow_from_hire(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_escrow_from_hire(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_escrow_from_hire(uuid) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.get_escrow_by_portal_token(_portal_token uuid)
+RETURNS shared.marketplace_escrows
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = shared
+AS $$
+  SELECT * FROM shared.marketplace_escrows WHERE portal_token = _portal_token LIMIT 1;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_escrow_by_portal_token(uuid) TO anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.fulfill_escrow_payment_stripe(
+  _stripe_session_id text,
+  _escrow_id uuid,
+  _payment_intent_id text DEFAULT NULL,
+  _environment text DEFAULT 'sandbox'
+)
+RETURNS shared.marketplace_escrows
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, shared
+AS $$
+DECLARE
+  _row shared.marketplace_escrows%ROWTYPE;
+BEGIN
+  IF _environment NOT IN ('sandbox', 'live') THEN RAISE EXCEPTION 'INVALID_ENVIRONMENT'; END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.stripe_checkout_fulfillments WHERE stripe_session_id = _stripe_session_id
+  ) THEN
+    SELECT * INTO _row FROM shared.marketplace_escrows WHERE id = _escrow_id;
+    RETURN _row;
+  END IF;
+
+  SELECT * INTO _row FROM shared.marketplace_escrows WHERE id = _escrow_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'NOT_FOUND'; END IF;
+  IF _row.status NOT IN ('pending_payment', 'draft') THEN RAISE EXCEPTION 'INVALID_STATUS'; END IF;
+
+  INSERT INTO public.stripe_checkout_fulfillments (
+    stripe_session_id, user_id, kind, price_id, quantity, environment
+  ) VALUES (
+    _stripe_session_id, _row.freelancer_user_id, 'escrow', 'escrow_deposit', 1, _environment
+  );
+
+  UPDATE shared.marketplace_escrows SET
+    status = 'funded',
+    stripe_checkout_session_id = _stripe_session_id,
+    stripe_payment_intent_id = COALESCE(_payment_intent_id, stripe_payment_intent_id),
+    funded_at = now(),
+    updated_at = now()
+  WHERE id = _escrow_id
+  RETURNING * INTO _row;
+
+  RETURN _row;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.fulfill_escrow_payment_stripe(text, uuid, text, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.fulfill_escrow_payment_stripe(text, uuid, text, text) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.client_approve_escrow(_portal_token uuid)
+RETURNS shared.marketplace_escrows
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared
+AS $$
+DECLARE
+  _row shared.marketplace_escrows%ROWTYPE;
+BEGIN
+  SELECT * INTO _row FROM shared.marketplace_escrows
+  WHERE portal_token = _portal_token FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'NOT_FOUND'; END IF;
+  IF _row.status NOT IN ('funded', 'in_progress') THEN RAISE EXCEPTION 'INVALID_STATUS'; END IF;
+
+  UPDATE shared.marketplace_escrows SET
+    status = 'pending_release',
+    approved_at = now(),
+    updated_at = now()
+  WHERE id = _row.id
+  RETURNING * INTO _row;
+
+  RETURN _row;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.client_approve_escrow(uuid) TO anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.client_dispute_escrow(_portal_token uuid, _reason text DEFAULT '')
+RETURNS shared.marketplace_escrows
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared
+AS $$
+DECLARE
+  _row shared.marketplace_escrows%ROWTYPE;
+BEGIN
+  SELECT * INTO _row FROM shared.marketplace_escrows
+  WHERE portal_token = _portal_token FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'NOT_FOUND'; END IF;
+  IF _row.status NOT IN ('funded', 'in_progress', 'pending_release') THEN
+    RAISE EXCEPTION 'INVALID_STATUS';
+  END IF;
+
+  UPDATE shared.marketplace_escrows SET
+    status = 'disputed',
+    disputed_at = now(),
+    dispute_reason = LEFT(COALESCE(_reason, ''), 2000),
+    updated_at = now()
+  WHERE id = _row.id
+  RETURNING * INTO _row;
+
+  RETURN _row;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.client_dispute_escrow(uuid, text) TO anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.admin_dispute_escrow(
+  _escrow_id uuid,
+  _action text,
+  _note text DEFAULT ''
+)
+RETURNS shared.marketplace_escrows
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, shared
+AS $$
+DECLARE
+  _row shared.marketplace_escrows%ROWTYPE;
+BEGIN
+  IF NOT public.has_role(auth.uid(), 'admin') THEN RAISE EXCEPTION 'FORBIDDEN'; END IF;
+  IF _action NOT IN ('release', 'refund', 'reopen') THEN RAISE EXCEPTION 'INVALID_ACTION'; END IF;
+
+  SELECT * INTO _row FROM shared.marketplace_escrows WHERE id = _escrow_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'NOT_FOUND'; END IF;
+
+  IF _action = 'release' THEN
+    UPDATE shared.marketplace_escrows SET
+      status = 'pending_release',
+      admin_note = LEFT(COALESCE(_note, ''), 2000),
+      updated_at = now()
+    WHERE id = _escrow_id RETURNING * INTO _row;
+  ELSIF _action = 'refund' THEN
+    UPDATE shared.marketplace_escrows SET
+      status = 'refunded',
+      admin_note = LEFT(COALESCE(_note, ''), 2000),
+      updated_at = now()
+    WHERE id = _escrow_id RETURNING * INTO _row;
+  ELSE
+    UPDATE shared.marketplace_escrows SET
+      status = 'in_progress',
+      admin_note = LEFT(COALESCE(_note, ''), 2000),
+      disputed_at = NULL,
+      dispute_reason = NULL,
+      updated_at = now()
+    WHERE id = _escrow_id RETURNING * INTO _row;
+  END IF;
+
+  RETURN _row;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.admin_dispute_escrow(uuid, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_dispute_escrow(uuid, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_dispute_escrow(uuid, text, text) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.mark_escrow_released_stripe(
+  _escrow_id uuid,
+  _transfer_id text
+)
+RETURNS shared.marketplace_escrows
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared
+AS $$
+DECLARE
+  _row shared.marketplace_escrows%ROWTYPE;
+BEGIN
+  UPDATE shared.marketplace_escrows SET
+    status = 'released',
+    stripe_transfer_id = _transfer_id,
+    released_at = now(),
+    updated_at = now()
+  WHERE id = _escrow_id AND status = 'pending_release'
+  RETURNING * INTO _row;
+
+  IF NOT FOUND THEN RAISE EXCEPTION 'NOT_FOUND_OR_INVALID_STATUS'; END IF;
+  RETURN _row;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.mark_escrow_released_stripe(uuid, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.mark_escrow_released_stripe(uuid, text) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.list_my_escrows()
+RETURNS SETOF shared.marketplace_escrows
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = shared
+AS $$
+  SELECT * FROM shared.marketplace_escrows
+  WHERE freelancer_user_id = auth.uid()
+  ORDER BY created_at DESC
+  LIMIT 100;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.list_my_escrows() TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.admin_list_escrows(_limit integer DEFAULT 50)
+RETURNS SETOF shared.marketplace_escrows
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, shared
+AS $$
+BEGIN
+  IF NOT public.has_role(auth.uid(), 'admin') THEN
+    RAISE EXCEPTION 'FORBIDDEN';
+  END IF;
+  RETURN QUERY
+  SELECT * FROM shared.marketplace_escrows
+  ORDER BY created_at DESC
+  LIMIT GREATEST(1, LEAST(_limit, 200));
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_list_escrows(integer) TO authenticated;
+
+
+-- 20260620100000_payment_policy_2026.sql
+-- Payment policy 2026: PX instant use, tiered cashout/escrow fees, welcome cap 100, ads project landing
+-- Apply after stripe-payments.sql + boost-escrow-payments.sql
+
+-- ---------------------------------------------------------------------------
+-- Central config (ops can UPDATE without redeploy)
+-- ---------------------------------------------------------------------------
+
+ALTER TABLE shared.gift_limits_config
+  ADD COLUMN IF NOT EXISTS welcome_px_cap integer NOT NULL DEFAULT 100,
+  ADD COLUMN IF NOT EXISTS cashout_fee_free numeric(5,4) NOT NULL DEFAULT 0.15,
+  ADD COLUMN IF NOT EXISTS cashout_fee_pro numeric(5,4) NOT NULL DEFAULT 0.10,
+  ADD COLUMN IF NOT EXISTS escrow_fee_free numeric(5,4) NOT NULL DEFAULT 0.05,
+  ADD COLUMN IF NOT EXISTS escrow_fee_pro numeric(5,4) NOT NULL DEFAULT 0.025;
+
+UPDATE shared.gift_limits_config SET
+  hold_hours = 0,
+  welcome_px_cap = 100,
+  cashout_fee_free = 0.15,
+  cashout_fee_pro = 0.10,
+  escrow_fee_free = 0.05,
+  escrow_fee_pro = 0.025,
+  updated_at = now()
+WHERE id = 1;
+
+-- ---------------------------------------------------------------------------
+-- Fee helpers (tier from profiles.subscription_tier)
+-- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.is_pro_tier(_tier text)
+RETURNS boolean
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT COALESCE(_tier, 'free') IN ('pro', 'pro_plus', 'inhouse');
+$$;
+
+CREATE OR REPLACE FUNCTION public.cashout_platform_fee_pct(_user_id uuid)
+RETURNS numeric
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, shared
+AS $$
+  SELECT CASE
+    WHEN public.is_pro_tier(
+      (SELECT subscription_tier FROM public.profiles WHERE user_id = _user_id)
+    ) THEN COALESCE(
+      (SELECT cashout_fee_pro FROM shared.gift_limits_config WHERE id = 1),
+      0.10
+    )
+    ELSE COALESCE(
+      (SELECT cashout_fee_free FROM shared.gift_limits_config WHERE id = 1),
+      0.15
+    )
+  END;
+$$;
+
+REVOKE ALL ON FUNCTION public.cashout_platform_fee_pct(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.cashout_platform_fee_pct(uuid) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.escrow_platform_fee_pct(_user_id uuid)
+RETURNS numeric
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, shared
+AS $$
+  SELECT CASE
+    WHEN public.is_pro_tier(
+      (SELECT subscription_tier FROM public.profiles WHERE user_id = _user_id)
+    ) THEN COALESCE(
+      (SELECT escrow_fee_pro FROM shared.gift_limits_config WHERE id = 1),
+      0.025
+    )
+    ELSE COALESCE(
+      (SELECT escrow_fee_free FROM shared.gift_limits_config WHERE id = 1),
+      0.05
+    )
+  END;
+$$;
+
+REVOKE ALL ON FUNCTION public.escrow_platform_fee_pct(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.escrow_platform_fee_pct(uuid) TO authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- PX top-up: instant use (hold_hours default 0)
+-- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.topup_wallet_stripe(
+  _user_id uuid,
+  _amount_px integer,
+  _stripe_session_id text,
+  _amount_cents integer DEFAULT NULL,
+  _price_id text DEFAULT 'unknown',
+  _environment text DEFAULT 'sandbox'
+) RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, shared
+AS $$
+DECLARE
+  _topup_id uuid;
+  _hold_hours integer;
+BEGIN
+  IF _amount_px <= 0 OR _amount_px > 100000 THEN
+    RAISE EXCEPTION 'INVALID_AMOUNT';
+  END IF;
+  IF _environment NOT IN ('sandbox', 'live') THEN
+    RAISE EXCEPTION 'INVALID_ENVIRONMENT';
+  END IF;
+
+  IF NOT (SELECT stripe_px_enabled FROM public.payment_settings WHERE id = 1) THEN
+    RAISE EXCEPTION 'STRIPE_PX_DISABLED';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.stripe_checkout_fulfillments
+    WHERE stripe_session_id = _stripe_session_id
+  ) THEN
+    SELECT id INTO _topup_id
+    FROM shared.wallet_topups
+    WHERE stripe_session_id = _stripe_session_id;
+    RETURN _topup_id;
+  END IF;
+
+  SELECT hold_hours INTO _hold_hours FROM shared.gift_limits_config WHERE id = 1;
+  _hold_hours := COALESCE(_hold_hours, 0);
+
+  INSERT INTO public.stripe_checkout_fulfillments (
+    stripe_session_id, user_id, kind, price_id, quantity, environment
+  ) VALUES (
+    _stripe_session_id, _user_id, 'px', _price_id, _amount_px, _environment
+  );
+
+  INSERT INTO shared.wallet_topups (
+    user_id, amount_px, method, status, payment_provider,
+    stripe_session_id, amount_cents, available_at
+  ) VALUES (
+    _user_id, _amount_px, 'stripe', 'completed', 'stripe',
+    _stripe_session_id, _amount_cents,
+    now() + (_hold_hours || ' hours')::interval
+  )
+  RETURNING id INTO _topup_id;
+
+  INSERT INTO shared.wallets (user_id, purchased_px)
+  VALUES (_user_id, _amount_px)
+  ON CONFLICT (user_id) DO UPDATE SET
+    purchased_px = shared.wallets.purchased_px + EXCLUDED.purchased_px,
+    updated_at = now();
+
+  RETURN _topup_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.topup_wallet_mock(_amount_px integer)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, shared
+AS $$
+DECLARE
+  _uid uuid := auth.uid();
+  _topup_id uuid;
+  _hold_hours integer;
+BEGIN
+  IF _uid IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+
+  IF NOT COALESCE((SELECT mock_topup_enabled FROM public.payment_settings WHERE id = 1), false) THEN
+    RAISE EXCEPTION 'MOCK_TOPUP_DISABLED';
+  END IF;
+
+  IF _amount_px <= 0 OR _amount_px > 100000 THEN
+    RAISE EXCEPTION 'INVALID_AMOUNT';
+  END IF;
+
+  SELECT hold_hours INTO _hold_hours FROM shared.gift_limits_config WHERE id = 1;
+  _hold_hours := COALESCE(_hold_hours, 0);
+
+  INSERT INTO shared.wallet_topups (
+    user_id, amount_px, method, status, available_at
+  ) VALUES (
+    _uid, _amount_px, 'mock', 'completed',
+    now() + (_hold_hours || ' hours')::interval
+  )
+  RETURNING id INTO _topup_id;
+
+  INSERT INTO shared.wallets (user_id, purchased_px)
+  VALUES (_uid, _amount_px)
+  ON CONFLICT (user_id) DO UPDATE SET
+    purchased_px = shared.wallets.purchased_px + EXCLUDED.purchased_px,
+    updated_at = now();
+
+  RETURN _topup_id;
+END;
+$$;
+
+-- Purchased px available immediately (no hold filter)
+CREATE OR REPLACE FUNCTION public.available_purchased_px(_uid uuid)
+RETURNS integer
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, shared
+AS $$
+  SELECT COALESCE((SELECT purchased_px FROM shared.wallets WHERE user_id = _uid), 0);
+$$;
+
+GRANT EXECUTE ON FUNCTION public.available_purchased_px(uuid) TO authenticated, anon, service_role;
+
+-- ---------------------------------------------------------------------------
+-- Welcome missions — cap 100 px total
+-- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.welcome_mission_reward_px(_mission_id text)
+RETURNS integer
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT CASE _mission_id
+    WHEN 'explore_feed' THEN 8
+    WHEN 'like' THEN 8
+    WHEN 'follow' THEN 10
+    WHEN 'jobs' THEN 10
+    WHEN 'skills' THEN 12
+    WHEN 'share_profile' THEN 14
+    WHEN 'profile' THEN 16
+    WHEN 'publish_project' THEN 22
+    ELSE 0
+  END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.claim_welcome_mission(_mission_id text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, shared
+AS $$
+DECLARE
+  _uid uuid := auth.uid();
+  _reward integer;
+  _cap integer;
+  _wallet shared.wallets%ROWTYPE;
+BEGIN
+  IF _uid IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+
+  _reward := public.welcome_mission_reward_px(_mission_id);
+  IF _reward <= 0 THEN RAISE EXCEPTION 'INVALID_MISSION'; END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM shared.welcome_mission_claims
+    WHERE user_id = _uid AND mission_id = _mission_id
+  ) THEN
+    RAISE EXCEPTION 'ALREADY_CLAIMED';
+  END IF;
+
+  SELECT COALESCE(welcome_px_cap, 100) INTO _cap
+  FROM shared.gift_limits_config WHERE id = 1;
+
+  INSERT INTO shared.wallets (user_id) VALUES (_uid)
+  ON CONFLICT (user_id) DO NOTHING;
+
+  SELECT * INTO _wallet FROM shared.wallets WHERE user_id = _uid FOR UPDATE;
+
+  IF COALESCE(_wallet.lifetime_welcome_px, 0) >= _cap THEN
+    RAISE EXCEPTION 'WELCOME_CAP_REACHED';
+  END IF;
+
+  IF COALESCE(_wallet.lifetime_welcome_px, 0) + _reward > _cap THEN
+    _reward := _cap - COALESCE(_wallet.lifetime_welcome_px, 0);
+  END IF;
+
+  IF _reward <= 0 THEN RAISE EXCEPTION 'WELCOME_CAP_REACHED'; END IF;
+
+  UPDATE shared.wallets SET
+    welcome_px = welcome_px + _reward,
+    lifetime_welcome_px = lifetime_welcome_px + _reward,
+    updated_at = now()
+  WHERE user_id = _uid;
+
+  INSERT INTO shared.welcome_mission_claims (user_id, mission_id, reward_px)
+  VALUES (_uid, _mission_id, _reward);
+
+  SELECT * INTO _wallet FROM shared.wallets WHERE user_id = _uid;
+
+  RETURN jsonb_build_object(
+    'mission_id', _mission_id,
+    'reward_px', _reward,
+    'welcome_px', _wallet.welcome_px,
+    'lifetime_welcome_px', _wallet.lifetime_welcome_px,
+    'cap', _cap
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.claim_welcome_mission(text) TO authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Cashout — tiered platform fee
+-- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.request_cashout(
+  _amount_px integer,
+  _bank_info jsonb DEFAULT '{}'::jsonb
+)
+RETURNS shared.cashout_requests
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, shared
+AS $$
+DECLARE
+  _uid uuid := auth.uid();
+  _wallet shared.wallets%ROWTYPE;
+  _fee_rate numeric;
+  _fee_px integer;
+  _net_px integer;
+  _row shared.cashout_requests%ROWTYPE;
+  _min_px integer := 1000;
+BEGIN
+  IF _uid IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+  IF _amount_px IS NULL OR _amount_px < _min_px THEN
+    RAISE EXCEPTION 'MIN_CASHOUT';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE user_id = _uid AND is_verified = true
+  ) THEN
+    RAISE EXCEPTION 'KYC_REQUIRED';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE user_id = _uid
+      AND connect_payouts_enabled = true
+      AND connect_onboarding_complete = true
+  ) THEN
+    RAISE EXCEPTION 'CONNECT_REQUIRED';
+  END IF;
+
+  SELECT * INTO _wallet FROM shared.wallets WHERE user_id = _uid FOR UPDATE;
+  IF NOT FOUND OR COALESCE(_wallet.earned_px, 0) < _amount_px THEN
+    RAISE EXCEPTION 'INSUFFICIENT_EARNED';
+  END IF;
+
+  _fee_rate := public.cashout_platform_fee_pct(_uid);
+  _fee_px := FLOOR(_amount_px * _fee_rate);
+  _net_px := _amount_px - _fee_px;
+
+  UPDATE shared.wallets SET
+    earned_px = earned_px - _amount_px,
+    updated_at = now()
+  WHERE user_id = _uid;
+
+  INSERT INTO shared.cashout_requests (
+    user_id, gross_px, fee_px, net_px, bank_info, status
+  ) VALUES (
+    _uid, _amount_px, _fee_px, _net_px, COALESCE(_bank_info, '{}'::jsonb), 'pending'
+  )
+  RETURNING * INTO _row;
+
+  RETURN _row;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.request_cashout(integer, jsonb) TO authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Ads — optional in-app project landing
+-- ---------------------------------------------------------------------------
+
+ALTER TABLE anthem.ad_applications
+  ADD COLUMN IF NOT EXISTS linked_project_id uuid;
+
+ALTER TABLE anthem.ad_campaigns
+  ADD COLUMN IF NOT EXISTS linked_project_id uuid;
+
+-- Patch admin approve to copy linked_project_id (replace if exists)
+CREATE OR REPLACE FUNCTION public.admin_approve_ad_application(
+  _id uuid,
+  _duration_days integer DEFAULT NULL
+)
+RETURNS anthem.ad_campaigns
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  _app anthem.ad_applications%ROWTYPE;
+  _days integer;
+  _camp anthem.ad_campaigns%ROWTYPE;
+BEGIN
+  IF NOT public.has_role(auth.uid(), 'admin') THEN
+    RAISE EXCEPTION 'FORBIDDEN';
+  END IF;
+
+  SELECT * INTO _app FROM anthem.ad_applications WHERE id = _id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'NOT_FOUND'; END IF;
+  IF _app.status NOT IN ('paid', 'pending') THEN RAISE EXCEPTION 'INVALID_STATUS'; END IF;
+
+  _days := COALESCE(_duration_days, _app.duration_days, 7);
+
+  INSERT INTO anthem.ad_campaigns (
+    advertiser_user_id, title, tagline, image_url, target_url, cta_label,
+    package, price_px, status, start_at, end_at, application_id,
+    promotion_text, linked_project_id
+  ) VALUES (
+    _app.user_id, _app.ad_title, _app.ad_tagline, _app.image_url, _app.target_url,
+    COALESCE(_app.cta_label, 'เรียนรู้เพิ่มเติม'),
+    _app.package, _app.budget_px, 'active', now(), now() + (_days || ' days')::interval,
+    _app.id, COALESCE(_app.ad_description, ''), _app.linked_project_id
+  )
+  RETURNING * INTO _camp;
+
+  UPDATE anthem.ad_applications SET
+    status = 'approved',
+    reviewed_at = now(),
+    reviewed_by = auth.uid(),
+    updated_at = now()
+  WHERE id = _id;
+
+  RETURN _camp;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.admin_approve_ad_application(uuid, integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_approve_ad_application(uuid, integer) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.get_active_ads(_limit integer DEFAULT 12)
+RETURNS SETOF anthem.ad_campaigns
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT *
+  FROM anthem.ad_campaigns
+  WHERE status = 'active'
+    AND (end_at IS NULL OR end_at > now())
+  ORDER BY created_at DESC
+  LIMIT GREATEST(1, LEAST(_limit, 50));
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_active_ads(integer) TO anon, authenticated, service_role;
+
+
+-- 20260620120000_client_files.sql
+﻿-- ============ Saved clients: juristic person + contact fields ============
+ALTER TABLE public.saved_clients
+  ADD COLUMN IF NOT EXISTS contact_name TEXT,
+  ADD COLUMN IF NOT EXISTS contact_position TEXT,
+  ADD COLUMN IF NOT EXISTS branch_code TEXT,
+  ADD COLUMN IF NOT EXISTS website TEXT;
+
+-- ============ Client files ============
+CREATE TABLE IF NOT EXISTS public.client_files (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id UUID NOT NULL REFERENCES public.saved_clients(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL,
+  file_name TEXT NOT NULL,
+  storage_path TEXT NOT NULL,
+  mime_type TEXT,
+  size_bytes BIGINT,
+  doc_category TEXT NOT NULL DEFAULT 'other',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.client_files ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Owners view own client files"
+  ON public.client_files FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Owners insert own client files"
+  ON public.client_files FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Owners delete own client files"
+  ON public.client_files FOR DELETE TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS idx_client_files_client ON public.client_files(client_id);
+CREATE INDEX IF NOT EXISTS idx_client_files_user ON public.client_files(user_id);
+
+-- ============ Storage bucket ============
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('client-files', 'client-files', false)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Owners view own client file objects"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (bucket_id = 'client-files' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Owners upload own client file objects"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'client-files' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Owners delete own client file objects"
+  ON storage.objects FOR DELETE TO authenticated
+  USING (bucket_id = 'client-files' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+
+-- 20260620130000_supplier_type.sql
+﻿ALTER TABLE public.suppliers
+  ADD COLUMN IF NOT EXISTS type text,
+  ADD COLUMN IF NOT EXISTS contact_position text;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'suppliers_type_check'
+  ) THEN
+    ALTER TABLE public.suppliers
+      ADD CONSTRAINT suppliers_type_check
+      CHECK (type IS NULL OR type IN ('individual', 'company'));
+  END IF;
+END $$;
+
+
+-- 20260621120000_portfolio_pages.sql
+-- Portfolio pages: shareable freelancer pitch under Data -> Portfolio
+
+CREATE TABLE IF NOT EXISTS public.portfolio_pages (
+  user_id         uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  slug            text NOT NULL,
+  status          text NOT NULL DEFAULT 'draft'
+                  CHECK (status IN ('draft', 'published')),
+  hero            jsonb NOT NULL DEFAULT '{}'::jsonb,
+  about           jsonb NOT NULL DEFAULT '{}'::jsonb,
+  skills          jsonb NOT NULL DEFAULT '[]'::jsonb,
+  experience      jsonb NOT NULL DEFAULT '[]'::jsonb,
+  featured_work   jsonb NOT NULL DEFAULT '[]'::jsonb,
+  external_links  jsonb NOT NULL DEFAULT '[]'::jsonb,
+  resume          jsonb NOT NULL DEFAULT '{}'::jsonb,
+  visibility      jsonb NOT NULL DEFAULT '{}'::jsonb,
+  published_at    timestamptz,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  updated_at      timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS portfolio_pages_slug_idx
+  ON public.portfolio_pages (lower(slug));
+
+CREATE INDEX IF NOT EXISTS portfolio_pages_status_idx
+  ON public.portfolio_pages (status) WHERE status = 'published';
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.portfolio_pages TO authenticated;
+GRANT ALL ON public.portfolio_pages TO service_role;
+
+ALTER TABLE public.portfolio_pages ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS portfolio_pages_user_select ON public.portfolio_pages;
+CREATE POLICY portfolio_pages_user_select ON public.portfolio_pages
+  FOR SELECT TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS portfolio_pages_user_insert ON public.portfolio_pages;
+CREATE POLICY portfolio_pages_user_insert ON public.portfolio_pages
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS portfolio_pages_user_update ON public.portfolio_pages;
+CREATE POLICY portfolio_pages_user_update ON public.portfolio_pages
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS portfolio_pages_user_delete ON public.portfolio_pages;
+CREATE POLICY portfolio_pages_user_delete ON public.portfolio_pages
+  FOR DELETE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS portfolio_pages_service_role ON public.portfolio_pages;
+CREATE POLICY portfolio_pages_service_role ON public.portfolio_pages
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+DROP TRIGGER IF EXISTS trg_portfolio_pages_updated_at ON public.portfolio_pages;
+CREATE TRIGGER trg_portfolio_pages_updated_at
+  BEFORE UPDATE ON public.portfolio_pages
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE OR REPLACE FUNCTION public.get_portfolio_by_slug(_slug text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  _row public.portfolio_pages%ROWTYPE;
+BEGIN
+  SELECT * INTO _row
+    FROM public.portfolio_pages
+   WHERE lower(slug) = lower(trim(_slug))
+     AND status = 'published'
+   LIMIT 1;
+
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'slug', _row.slug,
+    'hero', _row.hero,
+    'about', _row.about,
+    'skills', _row.skills,
+    'experience', _row.experience,
+    'featured_work', _row.featured_work,
+    'external_links', _row.external_links,
+    'resume', _row.resume,
+    'visibility', _row.visibility,
+    'published_at', _row.published_at
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_portfolio_by_slug(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_portfolio_by_slug(text) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.check_portfolio_slug_available(_slug text, _user_id uuid DEFAULT NULL)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  _normalized text := lower(trim(_slug));
+BEGIN
+  IF _normalized IS NULL OR length(_normalized) < 3 THEN
+    RETURN false;
+  END IF;
+
+  RETURN NOT EXISTS (
+    SELECT 1 FROM public.portfolio_pages
+     WHERE lower(slug) = _normalized
+       AND (_user_id IS NULL OR user_id IS DISTINCT FROM _user_id)
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.check_portfolio_slug_available(text, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.check_portfolio_slug_available(text, uuid) TO authenticated;
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'portfolio-media',
+  'portfolio-media',
+  true,
+  10485760,
+  ARRAY[
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml',
+    'application/pdf'
+  ]
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = EXCLUDED.public,
+  file_size_limit = EXCLUDED.file_size_limit,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+DROP POLICY IF EXISTS portfolio_media_storage_select ON storage.objects;
+CREATE POLICY portfolio_media_storage_select ON storage.objects
+  FOR SELECT TO public
+  USING (bucket_id = 'portfolio-media');
+
+DROP POLICY IF EXISTS portfolio_media_storage_insert ON storage.objects;
+CREATE POLICY portfolio_media_storage_insert ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'portfolio-media'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+DROP POLICY IF EXISTS portfolio_media_storage_update ON storage.objects;
+CREATE POLICY portfolio_media_storage_update ON storage.objects
+  FOR UPDATE TO authenticated
+  USING (
+    bucket_id = 'portfolio-media'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+DROP POLICY IF EXISTS portfolio_media_storage_delete ON storage.objects;
+CREATE POLICY portfolio_media_storage_delete ON storage.objects
+  FOR DELETE TO authenticated
+  USING (
+    bucket_id = 'portfolio-media'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+DROP POLICY IF EXISTS portfolio_media_storage_service ON storage.objects;
+CREATE POLICY portfolio_media_storage_service ON storage.objects
+  FOR ALL TO service_role
+  USING (bucket_id = 'portfolio-media')
+  WITH CHECK (bucket_id = 'portfolio-media');
+
+
+-- 20260621140000_ai_daily_credits_layer.sql
+-- Credit AI daily layer: 5 credits/day (non-stacking) on top of pack/purchased pool.
+-- Free: 5/day for first 14 days after signup. Pro+: 5/day always.
+-- Grandfather: existing free-starter rows (25 one-time) remain as pack pool.
+
+ALTER TABLE public.ai_credit_ledger DROP CONSTRAINT IF EXISTS ai_credit_ledger_source_check;
+ALTER TABLE public.ai_credit_ledger ADD CONSTRAINT ai_credit_ledger_source_check
+  CHECK (source IN ('daily', 'included', 'purchased', 'mixed', 'refund'));
+
+CREATE OR REPLACE FUNCTION public._ai_signup_at(_user_id uuid)
+RETURNS timestamptz
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE v_signup timestamptz;
+BEGIN
+  SELECT created_at INTO v_signup FROM public.profiles WHERE user_id = _user_id;
+  IF v_signup IS NULL THEN SELECT created_at INTO v_signup FROM auth.users WHERE id = _user_id; END IF;
+  RETURN v_signup;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public._ai_free_daily_trial_days_left(_user_id uuid)
+RETURNS integer
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE v_signup timestamptz; v_days integer;
+BEGIN
+  v_signup := public._ai_signup_at(_user_id);
+  IF v_signup IS NULL THEN RETURN 0; END IF;
+  v_days := ((now() AT TIME ZONE 'Asia/Bangkok')::date - (v_signup AT TIME ZONE 'Asia/Bangkok')::date);
+  RETURN GREATEST(0, 14 - v_days);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public._ai_free_trial_ends_at(_user_id uuid)
+RETURNS timestamptz
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE v_signup timestamptz;
+BEGIN
+  v_signup := public._ai_signup_at(_user_id);
+  IF v_signup IS NULL THEN RETURN NULL; END IF;
+  RETURN ((v_signup AT TIME ZONE 'Asia/Bangkok')::date + 14)::timestamp AT TIME ZONE 'Asia/Bangkok';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public._ai_daily_limit(_user_id uuid)
+RETURNS integer
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE v_tier text;
+BEGIN
+  v_tier := public._ai_user_tier(_user_id);
+  IF v_tier IN ('pro', 'pro_plus', 'inhouse') THEN RETURN 5; END IF;
+  IF v_tier = 'free' AND public._ai_free_daily_trial_days_left(_user_id) > 0 THEN RETURN 5; END IF;
+  RETURN 0;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public._ai_daily_period_key()
+RETURNS text LANGUAGE sql STABLE AS $$
+  SELECT 'daily:' || to_char((now() AT TIME ZONE 'Asia/Bangkok')::date, 'YYYY-MM-DD');
+$$;
+
+CREATE OR REPLACE FUNCTION public._ai_daily_period_end()
+RETURNS timestamptz LANGUAGE sql STABLE AS $$
+  SELECT ((now() AT TIME ZONE 'Asia/Bangkok')::date + 1)::timestamp AT TIME ZONE 'Asia/Bangkok';
+$$;
+
+CREATE OR REPLACE FUNCTION public._ai_sync_daily_period(_user_id uuid)
+RETURNS TABLE(daily_limit integer, daily_used integer, daily_remaining integer, daily_period_key text)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE v_key text; v_limit integer; v_used integer;
+BEGIN
+  v_limit := public._ai_daily_limit(_user_id);
+  v_key := public._ai_daily_period_key();
+  IF v_limit <= 0 THEN
+    daily_limit := 0; daily_used := 0; daily_remaining := 0; daily_period_key := v_key;
+    RETURN NEXT; RETURN;
+  END IF;
+  INSERT INTO public.user_ai_period (user_id, period_key, included_limit, included_used, period_end)
+  VALUES (_user_id, v_key, v_limit, 0, public._ai_daily_period_end())
+  ON CONFLICT (user_id, period_key) DO NOTHING;
+  SELECT included_limit, included_used INTO v_limit, v_used
+    FROM public.user_ai_period WHERE user_id = _user_id AND period_key = v_key;
+  daily_limit := COALESCE(v_limit, 0);
+  daily_used := COALESCE(v_used, 0);
+  daily_remaining := GREATEST(0, daily_limit - daily_used);
+  daily_period_key := v_key;
+  RETURN NEXT;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public._ai_resolve_period(_user_id uuid)
+RETURNS TABLE(period_key text, period_end timestamptz, included_limit integer)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE v_tier text; v_limit integer; v_sub record; v_month text;
+BEGIN
+  v_tier := public._ai_user_tier(_user_id);
+  SELECT monthly_included INTO v_limit FROM public.ai_tier_config WHERE tier = v_tier;
+  IF v_limit IS NULL THEN v_limit := 0; END IF;
+
+  IF v_tier IN ('pro', 'pro_plus', 'inhouse') THEN
+    SELECT s.current_period_end, s.current_period_start INTO v_sub
+      FROM public.subscriptions s
+     WHERE s.user_id = _user_id
+       AND s.status IN ('active', 'trialing', 'past_due')
+       AND (s.current_period_end IS NULL OR s.current_period_end > now())
+     ORDER BY s.created_at DESC LIMIT 1;
+    IF FOUND AND v_sub.current_period_end IS NOT NULL THEN
+      period_key := 'sub:' || to_char(v_sub.current_period_end AT TIME ZONE 'UTC', 'YYYY-MM-DD');
+      period_end := v_sub.current_period_end;
+      included_limit := v_limit;
+      RETURN NEXT; RETURN;
+    END IF;
+  END IF;
+
+  IF v_tier = 'free' THEN
+    IF EXISTS (SELECT 1 FROM public.user_ai_period WHERE user_id = _user_id AND period_key = 'free-starter') THEN
+      period_key := 'free-starter'; period_end := NULL; included_limit := GREATEST(v_limit, 25);
+      RETURN NEXT; RETURN;
+    END IF;
+    IF public._ai_free_daily_trial_days_left(_user_id) > 0 THEN
+      period_key := 'free-trial'; period_end := public._ai_free_trial_ends_at(_user_id); included_limit := 0;
+      RETURN NEXT; RETURN;
+    END IF;
+    period_key := 'free-ended'; period_end := NULL; included_limit := 0;
+    RETURN NEXT; RETURN;
+  END IF;
+
+  v_month := to_char((now() AT TIME ZONE 'Asia/Bangkok')::date, 'YYYY-MM');
+  period_key := 'cal:' || v_month;
+  period_end := ((date_trunc('month', (now() AT TIME ZONE 'Asia/Bangkok')::timestamp) + interval '1 month') AT TIME ZONE 'Asia/Bangkok');
+  included_limit := v_limit;
+  RETURN NEXT;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_ai_usage_summary(_user_id uuid, _environment text DEFAULT 'sandbox')
+RETURNS jsonb
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_period record; v_daily record;
+  v_included_used integer := 0; v_included_limit integer; v_purchased integer := 0;
+  v_tier text; v_period_type text := 'monthly';
+  v_pool_remaining integer; v_total_remaining integer;
+  v_trial_days_left integer := 0; v_free_trial_ends timestamptz;
+BEGIN
+  IF _user_id IS NULL THEN RETURN jsonb_build_object('error', 'unauthenticated'); END IF;
+  v_tier := public._ai_user_tier(_user_id);
+  SELECT * INTO v_period FROM public._ai_resolve_period(_user_id);
+  SELECT * INTO v_daily FROM public._ai_sync_daily_period(_user_id);
+  SELECT included_used, included_limit INTO v_included_used, v_included_limit
+    FROM public.user_ai_period WHERE user_id = _user_id AND period_key = v_period.period_key;
+  v_included_used := COALESCE(v_included_used, 0);
+  v_included_limit := COALESCE(v_included_limit, v_period.included_limit);
+  SELECT balance INTO v_purchased FROM public.user_credits WHERE user_id = _user_id AND environment = _environment;
+  v_purchased := COALESCE(v_purchased, 0);
+  v_pool_remaining := GREATEST(0, v_included_limit - v_included_used);
+  v_total_remaining := v_daily.daily_remaining + v_pool_remaining + v_purchased;
+
+  IF v_tier = 'free' THEN
+    v_trial_days_left := public._ai_free_daily_trial_days_left(_user_id);
+    v_free_trial_ends := public._ai_free_trial_ends_at(_user_id);
+    IF EXISTS (SELECT 1 FROM public.user_ai_period WHERE user_id = _user_id AND period_key = 'free-starter') THEN
+      IF v_total_remaining <= 0 AND v_daily.daily_limit <= 0 THEN v_period_type := 'free_starter_ended';
+      ELSE v_period_type := 'free_starter'; END IF;
+    ELSIF v_trial_days_left > 0 THEN v_period_type := 'free_daily_trial';
+    ELSE v_period_type := 'free_daily_ended'; END IF;
+  ELSIF v_period.period_key LIKE 'sub:%' THEN v_period_type := 'subscription'; END IF;
+
+  RETURN jsonb_build_object(
+    'tier', v_tier, 'period_key', v_period.period_key, 'period_end', v_period.period_end,
+    'period_type', v_period_type, 'included_used', v_included_used, 'included_limit', v_included_limit,
+    'included_remaining', v_pool_remaining, 'purchased_balance', v_purchased,
+    'daily_remaining', v_daily.daily_remaining, 'daily_limit', v_daily.daily_limit,
+    'daily_eligible', v_daily.daily_limit > 0, 'daily_period_key', v_daily.daily_period_key,
+    'daily_resets_at', public._ai_daily_period_end(),
+    'free_trial_days_left', v_trial_days_left, 'free_trial_ends_at', v_free_trial_ends,
+    'total_remaining', v_total_remaining
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.debit_ai_credits(
+  _user_id uuid, _feature text, _environment text DEFAULT 'sandbox', _idempotency_key text DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_period record; v_daily_key text; v_daily_limit integer := 0; v_daily_used integer := 0; v_daily_remaining integer := 0;
+  v_cost integer; v_included_used integer := 0; v_included_limit integer; v_included_remaining integer;
+  v_purchased integer := 0; v_from_daily integer := 0; v_from_included integer := 0; v_from_purchased integer := 0;
+  v_prev jsonb; v_source text; v_has_credits_row boolean := false; v_total_remaining integer;
+BEGIN
+  IF _user_id IS NULL THEN RETURN jsonb_build_object('allowed', false, 'reason', 'unauthenticated'); END IF;
+
+  IF _idempotency_key IS NOT NULL THEN
+    SELECT jsonb_build_object(
+      'allowed', true, 'duplicate', true, 'cost', cost,
+      'daily_remaining', (metadata->>'daily_remaining')::integer,
+      'daily_limit', (metadata->>'daily_limit')::integer,
+      'included_used', (metadata->>'included_used_after')::integer,
+      'included_limit', (metadata->>'included_limit')::integer,
+      'included_remaining', (metadata->>'included_remaining')::integer,
+      'purchased_balance', (metadata->>'purchased_after')::integer,
+      'total_remaining', (metadata->>'total_remaining')::integer
+    ) INTO v_prev FROM public.ai_credit_ledger WHERE idempotency_key = _idempotency_key;
+    IF FOUND THEN RETURN v_prev; END IF;
+  END IF;
+
+  SELECT cost INTO v_cost FROM public.ai_feature_costs WHERE feature = _feature;
+  IF v_cost IS NULL THEN v_cost := 1; END IF;
+  SELECT * INTO v_period FROM public._ai_resolve_period(_user_id);
+  v_included_limit := v_period.included_limit;
+  v_daily_key := public._ai_daily_period_key();
+  v_daily_limit := public._ai_daily_limit(_user_id);
+
+  INSERT INTO public.user_ai_period (user_id, period_key, included_limit, included_used, period_end)
+  VALUES (_user_id, v_period.period_key, v_included_limit, 0, v_period.period_end)
+  ON CONFLICT (user_id, period_key) DO NOTHING;
+
+  IF v_daily_limit > 0 THEN
+    INSERT INTO public.user_ai_period (user_id, period_key, included_limit, included_used, period_end)
+    VALUES (_user_id, v_daily_key, v_daily_limit, 0, public._ai_daily_period_end())
+    ON CONFLICT (user_id, period_key) DO NOTHING;
+  END IF;
+
+  SELECT included_used INTO v_included_used FROM public.user_ai_period
+   WHERE user_id = _user_id AND period_key = v_period.period_key FOR UPDATE;
+  IF v_daily_limit > 0 THEN
+    SELECT included_used, included_limit INTO v_daily_used, v_daily_limit
+      FROM public.user_ai_period WHERE user_id = _user_id AND period_key = v_daily_key FOR UPDATE;
+  END IF;
+
+  v_included_used := COALESCE(v_included_used, 0);
+  v_daily_used := COALESCE(v_daily_used, 0);
+  v_daily_limit := COALESCE(v_daily_limit, 0);
+  v_daily_remaining := GREATEST(0, v_daily_limit - v_daily_used);
+
+  SELECT balance INTO v_purchased FROM public.user_credits
+   WHERE user_id = _user_id AND environment = _environment FOR UPDATE;
+  IF FOUND THEN v_has_credits_row := true; v_purchased := COALESCE(v_purchased, 0); ELSE v_purchased := 0; END IF;
+
+  v_included_remaining := GREATEST(0, v_included_limit - v_included_used);
+  IF v_daily_remaining + v_included_remaining + v_purchased < v_cost THEN
+    RETURN jsonb_build_object('allowed', false, 'reason', 'quota_exceeded', 'cost', v_cost,
+      'daily_remaining', v_daily_remaining, 'daily_limit', v_daily_limit,
+      'included_used', v_included_used, 'included_limit', v_included_limit,
+      'included_remaining', v_included_remaining, 'purchased_balance', v_purchased,
+      'total_remaining', v_daily_remaining + v_included_remaining + v_purchased);
+  END IF;
+
+  v_from_daily := LEAST(v_cost, v_daily_remaining);
+  v_from_included := LEAST(v_cost - v_from_daily, v_included_remaining);
+  v_from_purchased := v_cost - v_from_daily - v_from_included;
+
+  IF v_from_daily > 0 THEN
+    UPDATE public.user_ai_period SET included_used = included_used + v_from_daily, updated_at = now()
+     WHERE user_id = _user_id AND period_key = v_daily_key;
+    v_daily_used := v_daily_used + v_from_daily;
+    v_daily_remaining := v_daily_remaining - v_from_daily;
+  END IF;
+  IF v_from_included > 0 THEN
+    UPDATE public.user_ai_period SET included_used = included_used + v_from_included, updated_at = now()
+     WHERE user_id = _user_id AND period_key = v_period.period_key;
+    v_included_used := v_included_used + v_from_included;
+    v_included_remaining := v_included_remaining - v_from_included;
+  END IF;
+  IF v_from_purchased > 0 THEN
+    IF v_has_credits_row THEN
+      UPDATE public.user_credits SET balance = balance - v_from_purchased, updated_at = now()
+       WHERE user_id = _user_id AND environment = _environment;
+    ELSE RETURN jsonb_build_object('allowed', false, 'reason', 'quota_exceeded'); END IF;
+    v_purchased := v_purchased - v_from_purchased;
+  END IF;
+
+  IF (v_from_daily > 0)::int + (v_from_included > 0)::int + (v_from_purchased > 0)::int > 1 THEN v_source := 'mixed';
+  ELSIF v_from_purchased > 0 THEN v_source := 'purchased';
+  ELSIF v_from_included > 0 THEN v_source := 'included';
+  ELSE v_source := 'daily'; END IF;
+
+  v_total_remaining := v_daily_remaining + v_included_remaining + v_purchased;
+  INSERT INTO public.ai_credit_ledger (user_id, feature, cost, source, idempotency_key, metadata)
+  VALUES (_user_id, _feature, v_cost, v_source, _idempotency_key, jsonb_build_object(
+    'from_daily', v_from_daily, 'from_included', v_from_included, 'from_purchased', v_from_purchased,
+    'daily_remaining', v_daily_remaining, 'daily_limit', v_daily_limit, 'daily_period_key', v_daily_key,
+    'included_used_after', v_included_used, 'included_limit', v_included_limit,
+    'included_remaining', v_included_remaining, 'purchased_after', v_purchased,
+    'total_remaining', v_total_remaining, 'environment', _environment));
+
+  RETURN jsonb_build_object('allowed', true, 'cost', v_cost, 'source', v_source,
+    'daily_remaining', v_daily_remaining, 'daily_limit', v_daily_limit,
+    'included_used', v_included_used, 'included_limit', v_included_limit,
+    'included_remaining', v_included_remaining, 'purchased_balance', v_purchased,
+    'total_remaining', v_total_remaining);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.refund_ai_credits(
+  _user_id uuid, _original_idempotency_key text, _refund_idempotency_key text
+)
+RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_entry record; v_period record; v_env text;
+  v_refunded_daily integer := 0; v_refunded_included integer := 0; v_refunded_purchased integer := 0;
+  v_daily_key text;
+BEGIN
+  IF _user_id IS NULL OR _original_idempotency_key IS NULL OR _refund_idempotency_key IS NULL THEN
+    RETURN jsonb_build_object('refunded', false, 'reason', 'invalid_args');
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.ai_credit_ledger WHERE idempotency_key = _refund_idempotency_key) THEN
+    RETURN jsonb_build_object('refunded', true, 'duplicate', true);
+  END IF;
+  SELECT * INTO v_entry FROM public.ai_credit_ledger
+   WHERE user_id = _user_id AND idempotency_key = _original_idempotency_key LIMIT 1;
+  IF NOT FOUND THEN RETURN jsonb_build_object('refunded', false, 'reason', 'original_not_found'); END IF;
+
+  v_env := COALESCE(v_entry.metadata->>'environment', 'sandbox');
+  SELECT * INTO v_period FROM public._ai_resolve_period(_user_id);
+  v_daily_key := COALESCE(v_entry.metadata->>'daily_period_key', public._ai_daily_period_key());
+
+  v_refunded_daily := COALESCE((v_entry.metadata->>'from_daily')::integer, 0);
+  v_refunded_included := COALESCE((v_entry.metadata->>'from_included')::integer, 0);
+  v_refunded_purchased := COALESCE((v_entry.metadata->>'from_purchased')::integer, 0);
+
+  IF v_refunded_daily = 0 AND v_refunded_included = 0 AND v_refunded_purchased = 0 THEN
+    IF v_entry.source = 'purchased' THEN v_refunded_purchased := v_entry.cost;
+    ELSIF v_entry.source = 'daily' THEN v_refunded_daily := v_entry.cost;
+    ELSIF v_entry.source = 'mixed' THEN
+      v_refunded_included := COALESCE((v_entry.metadata->>'from_included')::integer, v_entry.cost);
+      v_refunded_purchased := GREATEST(0, v_entry.cost - v_refunded_included);
+    ELSE v_refunded_included := v_entry.cost; END IF;
+  END IF;
+
+  IF v_refunded_daily > 0 THEN
+    UPDATE public.user_ai_period SET included_used = GREATEST(0, included_used - v_refunded_daily), updated_at = now()
+     WHERE user_id = _user_id AND period_key = v_daily_key;
+  END IF;
+  IF v_refunded_included > 0 THEN
+    UPDATE public.user_ai_period SET included_used = GREATEST(0, included_used - v_refunded_included), updated_at = now()
+     WHERE user_id = _user_id AND period_key = v_period.period_key;
+  END IF;
+  IF v_refunded_purchased > 0 THEN
+    UPDATE public.user_credits SET balance = balance + v_refunded_purchased, updated_at = now()
+     WHERE user_id = _user_id AND environment = v_env;
+  END IF;
+
+  INSERT INTO public.ai_credit_ledger (user_id, feature, cost, source, idempotency_key, metadata)
+  VALUES (_user_id, 'refund:' || v_entry.feature, -v_entry.cost, 'refund', _refund_idempotency_key,
+    jsonb_build_object('refund_of', _original_idempotency_key,
+      'refunded_daily', v_refunded_daily, 'refunded_included', v_refunded_included,
+      'refunded_purchased', v_refunded_purchased, 'environment', v_env));
+
+  RETURN jsonb_build_object('refunded', true, 'cost', v_entry.cost,
+    'refunded_daily', v_refunded_daily, 'refunded_included', v_refunded_included,
+    'refunded_purchased', v_refunded_purchased);
+END;
+$$;
+
+ALTER TABLE public.ai_tier_config DROP CONSTRAINT IF EXISTS ai_tier_config_tier_check;
+ALTER TABLE public.ai_tier_config ADD CONSTRAINT ai_tier_config_tier_check
+  CHECK (tier IN ('free', 'pro', 'pro_plus', 'inhouse'));
+
+INSERT INTO public.ai_tier_config (tier, monthly_included)
+VALUES ('pro_plus', 1400)
+ON CONFLICT (tier) DO UPDATE SET monthly_included = EXCLUDED.monthly_included, updated_at = now();
+
+
+-- 20260621150000_avatar_pool.sql
+-- AI avatar pool: pre-generated illustrations assigned on signup when no OAuth photo.
+
+CREATE TABLE IF NOT EXISTS public.avatar_pool (
+  id serial PRIMARY KEY,
+  url text NOT NULL UNIQUE,
+  active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS avatar_pool_active_idx ON public.avatar_pool (active) WHERE active = true;
+
+ALTER TABLE public.avatar_pool ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can read active avatar pool" ON public.avatar_pool;
+CREATE POLICY "Anyone can read active avatar pool"
+  ON public.avatar_pool FOR SELECT
+  USING (active = true);
+
+DROP POLICY IF EXISTS "Service role manages avatar pool" ON public.avatar_pool;
+CREATE POLICY "Service role manages avatar pool"
+  ON public.avatar_pool FOR ALL
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
+
+CREATE OR REPLACE FUNCTION public.pick_random_avatar_url()
+RETURNS text
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT url
+    FROM public.avatar_pool
+   WHERE active = true
+   ORDER BY random()
+   LIMIT 1;
+$$;
+
+REVOKE ALL ON FUNCTION public.pick_random_avatar_url() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.pick_random_avatar_url() TO service_role;
+
+CREATE OR REPLACE FUNCTION public.assign_my_default_avatar()
+RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  picked text;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT avatar_url INTO picked
+    FROM public.profiles
+   WHERE user_id = auth.uid();
+
+  IF picked IS NOT NULL AND picked <> '' THEN
+    RETURN picked;
+  END IF;
+
+  picked := public.pick_random_avatar_url();
+  IF picked IS NULL OR picked = '' THEN
+    RETURN NULL;
+  END IF;
+
+  UPDATE public.profiles
+     SET avatar_url = picked
+   WHERE user_id = auth.uid()
+     AND (avatar_url IS NULL OR avatar_url = '');
+
+  RETURN picked;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.assign_my_default_avatar() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.assign_my_default_avatar() TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  _display_name text;
+  _avatar_url text;
+  _username text;
+BEGIN
+  _display_name := COALESCE(
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'display_name'), ''),
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'full_name'), ''),
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'name'), ''),
+    split_part(NEW.email, '@', 1)
+  );
+
+  _avatar_url := COALESCE(
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'avatar_url'), ''),
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'picture'), '')
+  );
+
+  IF _avatar_url IS NULL OR _avatar_url = '' THEN
+    _avatar_url := COALESCE(public.pick_random_avatar_url(), '');
+  END IF;
+
+  _username := NULLIF(TRIM(NEW.raw_user_meta_data->>'username'), '');
+  IF _username IS NULL AND NEW.email IS NOT NULL THEN
+    _username := split_part(NEW.email, '@', 1) || '_' || substr(NEW.id::text, 1, 6);
+  END IF;
+
+  INSERT INTO public.profiles (user_id, email, display_name, avatar_url, username)
+  VALUES (NEW.id, NEW.email, _display_name, COALESCE(_avatar_url, ''), _username)
+  ON CONFLICT (user_id) DO UPDATE SET
+    email = COALESCE(EXCLUDED.email, public.profiles.email),
+    display_name = COALESCE(NULLIF(EXCLUDED.display_name, ''), public.profiles.display_name),
+    avatar_url = CASE
+      WHEN public.profiles.avatar_url IS NULL OR public.profiles.avatar_url = ''
+        THEN EXCLUDED.avatar_url
+      ELSE public.profiles.avatar_url
+    END,
+    username = COALESCE(public.profiles.username, EXCLUDED.username);
+
+  IF NEW.email = 'passawut.a.plus@gmail.com' THEN
+    INSERT INTO public.user_roles (user_id, role) VALUES (NEW.id, 'admin')
+    ON CONFLICT (user_id, role) DO NOTHING;
+  ELSE
+    INSERT INTO public.user_roles (user_id, role) VALUES (NEW.id, 'user')
+    ON CONFLICT (user_id, role) DO NOTHING;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.pick_avatar_pool_url_by_seed(_seed text)
+RETURNS text
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  _n int;
+  _off int;
+  _url text;
+BEGIN
+  SELECT GREATEST(count(*)::int, 1) INTO _n FROM public.avatar_pool WHERE active = true;
+  _off := abs(hashtext(COALESCE(_seed, ''))) % _n;
+  SELECT url INTO _url
+    FROM public.avatar_pool
+   WHERE active = true
+   ORDER BY id
+   OFFSET _off
+   LIMIT 1;
+  RETURN _url;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.pick_avatar_pool_url_by_seed(text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.pick_avatar_pool_url_by_seed(text) TO service_role;
+
+-- Backfill empty or DiceBear avatars when pool is populated
+UPDATE public.profiles
+   SET avatar_url = public.pick_avatar_pool_url_by_seed(COALESCE(username, user_id::text))
+ WHERE (avatar_url IS NULL OR avatar_url = '' OR avatar_url LIKE '%dicebear.com%')
+   AND EXISTS (SELECT 1 FROM public.avatar_pool WHERE active = true LIMIT 1);
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'studios'
+  ) THEN
+    UPDATE public.studios
+       SET avatar_url = public.pick_avatar_pool_url_by_seed('studio-' || slug)
+     WHERE (avatar_url IS NULL OR avatar_url = '' OR avatar_url LIKE '%dicebear.com%')
+       AND EXISTS (SELECT 1 FROM public.avatar_pool WHERE active = true LIMIT 1);
+  END IF;
+END $$;
+
+
+-- 20260622090000_disable_client_mock_topups.sql
+-- Prevent browser clients from minting purchased credits through the mock RPC.
+-- Demo environments may grant authenticated access in a separate, explicit setup step.
+REVOKE ALL ON FUNCTION public.topup_wallet_mock(integer)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.topup_wallet_mock(integer)
+  TO service_role;
+
+
+-- 20260622120000_anthem_community_production_hardening.sql
+-- Anthem community production hardening.
+-- Canonical backend migration lives in Solo-Code because both apps share one Supabase project.
+
+CREATE TABLE IF NOT EXISTS shared.user_moderation_state (
+  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  strikes integer NOT NULL DEFAULT 0 CHECK (strikes >= 0),
+  muted_until timestamptz,
+  banned_until timestamptz,
+  reason text,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS shared.moderation_actions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  actor_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  action_type text NOT NULL CHECK (action_type IN ('strike', 'mute', 'ban', 'unban', 'report_upheld')),
+  source text NOT NULL DEFAULT 'community',
+  reason text NOT NULL DEFAULT '',
+  expires_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_moderation_actions_user_created
+  ON shared.moderation_actions (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_moderation_actions_active
+  ON shared.moderation_actions (expires_at)
+  WHERE expires_at IS NOT NULL;
+
+ALTER TABLE shared.user_moderation_state ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shared.moderation_actions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS moderation_state_own_read ON shared.user_moderation_state;
+CREATE POLICY moderation_state_own_read
+  ON shared.user_moderation_state FOR SELECT TO authenticated
+  USING (user_id = auth.uid() OR public.has_role(auth.uid(), 'admin'::public.app_role));
+
+DROP POLICY IF EXISTS moderation_actions_admin_read ON shared.moderation_actions;
+CREATE POLICY moderation_actions_admin_read
+  ON shared.moderation_actions FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+GRANT SELECT ON shared.user_moderation_state TO authenticated;
+GRANT SELECT ON shared.moderation_actions TO authenticated;
+GRANT ALL ON shared.user_moderation_state, shared.moderation_actions TO service_role;
+
+CREATE OR REPLACE FUNCTION public.check_user_can_post()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared, public
+AS $$
+DECLARE
+  uid uuid := auth.uid();
+  state shared.user_moderation_state%ROWTYPE;
+  reason_code text;
+  blocked_until timestamptz;
+BEGIN
+  IF uid IS NULL THEN
+    RETURN jsonb_build_object(
+      'allowed', false, 'reason', 'UNAUTHENTICATED',
+      'banned_until', null, 'strikes', 0
+    );
+  END IF;
+
+  INSERT INTO shared.user_moderation_state (user_id)
+  VALUES (uid)
+  ON CONFLICT (user_id) DO NOTHING;
+
+  SELECT * INTO state
+  FROM shared.user_moderation_state
+  WHERE user_id = uid;
+
+  IF state.banned_until IS NOT NULL AND state.banned_until > now() THEN
+    reason_code := 'BANNED';
+    blocked_until := state.banned_until;
+  ELSIF state.muted_until IS NOT NULL AND state.muted_until > now() THEN
+    reason_code := 'MUTED';
+    blocked_until := state.muted_until;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'allowed', reason_code IS NULL,
+    'reason', reason_code,
+    'banned_until', blocked_until,
+    'strikes', state.strikes
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.record_profanity_strike(p_context text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared, public
+AS $$
+DECLARE
+  uid uuid := auth.uid();
+  state shared.user_moderation_state%ROWTYPE;
+  action_name text := 'strike';
+  expiry timestamptz;
+  ban_days integer := 0;
+BEGIN
+  IF uid IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+  IF char_length(coalesce(p_context, '')) > 80 THEN RAISE EXCEPTION 'INVALID_CONTEXT'; END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtextextended(uid::text, 0));
+  INSERT INTO shared.user_moderation_state (user_id)
+  VALUES (uid)
+  ON CONFLICT (user_id) DO NOTHING;
+
+  UPDATE shared.user_moderation_state
+  SET strikes = strikes + 1, updated_at = now()
+  WHERE user_id = uid
+  RETURNING * INTO state;
+
+  IF state.strikes >= 5 THEN
+    action_name := 'ban';
+    ban_days := 7;
+    expiry := now() + interval '7 days';
+    UPDATE shared.user_moderation_state
+    SET banned_until = GREATEST(coalesce(banned_until, now()), expiry),
+        reason = 'repeated_profanity',
+        updated_at = now()
+    WHERE user_id = uid;
+  ELSIF state.strikes >= 3 THEN
+    action_name := 'mute';
+    ban_days := 1;
+    expiry := now() + interval '1 day';
+    UPDATE shared.user_moderation_state
+    SET muted_until = GREATEST(coalesce(muted_until, now()), expiry),
+        reason = 'repeated_profanity',
+        updated_at = now()
+    WHERE user_id = uid;
+  END IF;
+
+  INSERT INTO shared.moderation_actions (
+    user_id, actor_id, action_type, source, reason, expires_at
+  ) VALUES (
+    uid, uid, action_name, left(coalesce(p_context, 'community'), 80),
+    'profanity', expiry
+  );
+
+  RETURN jsonb_build_object(
+    'strikes', state.strikes,
+    'action', action_name,
+    'banned_until', expiry,
+    'days', ban_days
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_apply_moderation(
+  p_user_id uuid,
+  p_action text,
+  p_days integer DEFAULT 0,
+  p_note text DEFAULT ''
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared, public
+AS $$
+DECLARE
+  admin_uid uuid := auth.uid();
+  expiry timestamptz;
+BEGIN
+  IF admin_uid IS NULL OR NOT public.has_role(admin_uid, 'admin'::public.app_role) THEN
+    RAISE EXCEPTION 'FORBIDDEN';
+  END IF;
+  IF p_action NOT IN ('strike', 'mute', 'ban', 'unban', 'report_upheld') THEN
+    RAISE EXCEPTION 'INVALID_ACTION';
+  END IF;
+  IF p_days < 0 OR p_days > 365 THEN RAISE EXCEPTION 'INVALID_DAYS'; END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_user_id::text, 0));
+  INSERT INTO shared.user_moderation_state (user_id)
+  VALUES (p_user_id)
+  ON CONFLICT (user_id) DO NOTHING;
+
+  IF p_action = 'unban' THEN
+    UPDATE shared.user_moderation_state
+    SET muted_until = null, banned_until = null, reason = null, updated_at = now()
+    WHERE user_id = p_user_id;
+  ELSIF p_action = 'strike' OR p_action = 'report_upheld' THEN
+    UPDATE shared.user_moderation_state
+    SET strikes = strikes + 1, reason = left(coalesce(p_note, p_action), 500), updated_at = now()
+    WHERE user_id = p_user_id;
+  ELSIF p_action = 'mute' THEN
+    expiry := now() + make_interval(days => GREATEST(p_days, 1));
+    UPDATE shared.user_moderation_state
+    SET muted_until = expiry, reason = left(coalesce(p_note, 'admin_mute'), 500), updated_at = now()
+    WHERE user_id = p_user_id;
+  ELSE
+    expiry := now() + make_interval(days => GREATEST(p_days, 1));
+    UPDATE shared.user_moderation_state
+    SET banned_until = expiry, reason = left(coalesce(p_note, 'admin_ban'), 500), updated_at = now()
+    WHERE user_id = p_user_id;
+  END IF;
+
+  INSERT INTO shared.moderation_actions (
+    user_id, actor_id, action_type, source, reason, expires_at
+  ) VALUES (
+    p_user_id, admin_uid, p_action, 'admin',
+    left(coalesce(p_note, ''), 500), expiry
+  );
+
+  RETURN jsonb_build_object('ok', true, 'action', p_action, 'expires_at', expiry);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.check_user_can_post() FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.record_profanity_strike(text) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.admin_apply_moderation(uuid, text, integer, text)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.check_user_can_post() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.record_profanity_strike(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_apply_moderation(uuid, text, integer, text)
+  TO authenticated;
+
+CREATE OR REPLACE FUNCTION anthem.enforce_community_write()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = anthem, shared, public
+AS $$
+DECLARE
+  uid uuid := auth.uid();
+  state shared.user_moderation_state%ROWTYPE;
+  recent_count integer;
+  parent_row anthem.community_post_comments%ROWTYPE;
+BEGIN
+  IF auth.role() = 'service_role' THEN RETURN NEW; END IF;
+  IF uid IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+
+  SELECT * INTO state
+  FROM shared.user_moderation_state
+  WHERE user_id = uid;
+
+  IF state.banned_until IS NOT NULL AND state.banned_until > now() THEN
+    RAISE EXCEPTION 'BANNED_UNTIL:%', state.banned_until;
+  END IF;
+  IF state.muted_until IS NOT NULL AND state.muted_until > now() THEN
+    RAISE EXCEPTION 'MUTED_UNTIL:%', state.muted_until;
+  END IF;
+
+  IF TG_TABLE_NAME = 'community_posts' THEN
+    NEW.title := btrim(NEW.title);
+    NEW.body := btrim(NEW.body);
+    IF char_length(NEW.title) < 3 OR char_length(NEW.title) > 120 THEN
+      RAISE EXCEPTION 'INVALID_TITLE_LENGTH';
+    END IF;
+    IF char_length(NEW.body) < 10 OR char_length(NEW.body) > 3000 THEN
+      RAISE EXCEPTION 'INVALID_BODY_LENGTH';
+    END IF;
+    IF coalesce(cardinality(NEW.tags), 0) > 8
+      OR coalesce(cardinality(NEW.gallery_urls), 0) > 20
+      OR coalesce(cardinality(NEW.video_urls), 0) > 3 THEN
+      RAISE EXCEPTION 'COMMUNITY_MEDIA_LIMIT';
+    END IF;
+    IF TG_OP = 'INSERT' THEN
+      PERFORM pg_advisory_xact_lock(hashtextextended(uid::text, 1));
+      SELECT count(*) INTO recent_count
+      FROM anthem.community_posts
+      WHERE author_id = uid AND created_at > now() - interval '10 minutes';
+      IF recent_count >= 5 THEN RAISE EXCEPTION 'RATE_LIMIT_POSTS'; END IF;
+    END IF;
+  ELSE
+    NEW.content := btrim(NEW.content);
+    IF char_length(NEW.content) < 1 OR char_length(NEW.content) > 800 THEN
+      RAISE EXCEPTION 'INVALID_COMMENT_LENGTH';
+    END IF;
+    IF NEW.parent_id IS NOT NULL THEN
+      SELECT * INTO parent_row
+      FROM anthem.community_post_comments
+      WHERE id = NEW.parent_id;
+      IF NOT FOUND OR parent_row.post_id <> NEW.post_id THEN
+        RAISE EXCEPTION 'INVALID_PARENT_COMMENT';
+      END IF;
+      NEW.depth := parent_row.depth + 1;
+      IF NEW.depth > 2 THEN RAISE EXCEPTION 'MAX_REPLY_DEPTH'; END IF;
+    ELSE
+      NEW.depth := 0;
+    END IF;
+    PERFORM pg_advisory_xact_lock(hashtextextended(uid::text, 2));
+    SELECT count(*) INTO recent_count
+    FROM anthem.community_post_comments
+    WHERE user_id = uid AND created_at > now() - interval '10 minutes';
+    IF recent_count >= 30 THEN RAISE EXCEPTION 'RATE_LIMIT_COMMENTS'; END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_community_posts_enforce_write ON anthem.community_posts;
+CREATE TRIGGER trg_community_posts_enforce_write
+  BEFORE INSERT OR UPDATE ON anthem.community_posts
+  FOR EACH ROW EXECUTE FUNCTION anthem.enforce_community_write();
+
+DROP TRIGGER IF EXISTS trg_community_comments_enforce_write ON anthem.community_post_comments;
+CREATE TRIGGER trg_community_comments_enforce_write
+  BEFORE INSERT OR UPDATE ON anthem.community_post_comments
+  FOR EACH ROW EXECUTE FUNCTION anthem.enforce_community_write();
+
+DROP POLICY IF EXISTS "community_comments_public_read" ON anthem.community_post_comments;
+CREATE POLICY "community_comments_public_read"
+  ON anthem.community_post_comments FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM anthem.community_posts p
+      WHERE p.id = post_id
+        AND (p.status = 'published' OR p.author_id = auth.uid())
+    )
+  );
+
+DROP POLICY IF EXISTS community_comments_author_delete ON anthem.community_post_comments;
+CREATE POLICY community_comments_author_delete
+  ON anthem.community_post_comments FOR DELETE TO authenticated
+  USING (user_id = auth.uid() OR public.has_role(auth.uid(), 'admin'::public.app_role));
+
+GRANT DELETE ON anthem.community_post_comments TO authenticated;
+REVOKE UPDATE ON anthem.community_posts FROM authenticated;
+GRANT UPDATE (
+  post_kind, title, body, category, tags, gallery_urls, video_urls,
+  question_topic, status, updated_at
+) ON anthem.community_posts TO authenticated;
+
+CREATE INDEX IF NOT EXISTS idx_community_posts_feed
+  ON anthem.community_posts (status, created_at DESC, id);
+CREATE INDEX IF NOT EXISTS idx_community_posts_author_feed
+  ON anthem.community_posts (author_id, status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_community_comments_user_created
+  ON anthem.community_post_comments (user_id, created_at DESC);
+
+ALTER TABLE anthem.community_posts REPLICA IDENTITY FULL;
+ALTER TABLE anthem.community_post_comments REPLICA IDENTITY FULL;
+ALTER TABLE anthem.community_post_likes REPLICA IDENTITY FULL;
+DO $publication$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'anthem'
+      AND tablename = 'community_posts'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE anthem.community_posts;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'anthem'
+      AND tablename = 'community_post_comments'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE anthem.community_post_comments;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'anthem'
+      AND tablename = 'community_post_likes'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE anthem.community_post_likes;
+  END IF;
+END
+$publication$;
+
+ALTER TABLE anthem.community_post_views
+  ADD COLUMN IF NOT EXISTS view_day date NOT NULL DEFAULT current_date;
+
+WITH ranked_views AS (
+  SELECT
+    id,
+    row_number() OVER (
+      PARTITION BY post_id, user_id, view_day
+      ORDER BY created_at ASC, id ASC
+    ) AS duplicate_rank
+  FROM anthem.community_post_views
+  WHERE user_id IS NOT NULL
+)
+DELETE FROM anthem.community_post_views views
+USING ranked_views ranked
+WHERE views.id = ranked.id
+  AND ranked.duplicate_rank > 1;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_community_post_user_daily_view
+  ON anthem.community_post_views (post_id, user_id, view_day)
+  WHERE user_id IS NOT NULL;
+
+REVOKE SELECT, INSERT ON anthem.community_post_views FROM anon, authenticated;
+DROP POLICY IF EXISTS "community_views_insert" ON anthem.community_post_views;
+DROP POLICY IF EXISTS "community_views_read" ON anthem.community_post_views;
+
+CREATE OR REPLACE FUNCTION public.increment_community_post_view(_post_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = anthem, public
+AS $$
+DECLARE
+  uid uuid := auth.uid();
+  inserted_count integer := 0;
+BEGIN
+  IF uid IS NULL THEN RETURN; END IF;
+
+  INSERT INTO anthem.community_post_views (post_id, user_id, view_day)
+  SELECT _post_id, uid, current_date
+  WHERE EXISTS (
+    SELECT 1 FROM anthem.community_posts
+    WHERE id = _post_id AND status = 'published'
+  )
+  ON CONFLICT (post_id, user_id, view_day) WHERE user_id IS NOT NULL DO NOTHING;
+
+  GET DIAGNOSTICS inserted_count = ROW_COUNT;
+  IF inserted_count = 1 THEN
+    UPDATE anthem.community_posts
+    SET view_count = view_count + 1
+    WHERE id = _post_id AND status = 'published';
+  END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.increment_community_post_view(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.increment_community_post_view(uuid) TO authenticated;
+
+CREATE TABLE IF NOT EXISTS anthem.community_notification_receipts (
+  kind text NOT NULL,
+  source_id uuid NOT NULL,
+  recipient_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  actor_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (kind, source_id, recipient_id)
+);
+ALTER TABLE anthem.community_notification_receipts ENABLE ROW LEVEL SECURITY;
+GRANT ALL ON anthem.community_notification_receipts TO service_role;
+
+CREATE OR REPLACE FUNCTION public.notify_community_event(
+  _recipient_id uuid,
+  _kind text,
+  _title text,
+  _body text,
+  _link text,
+  _metadata jsonb DEFAULT '{}'::jsonb
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, shared, anthem
+AS $$
+DECLARE
+  uid uuid := auth.uid();
+  target_post_id uuid;
+  source_id uuid;
+  expected_recipient uuid;
+  post_author_id uuid;
+  parent_author_id uuid;
+  actor_name text;
+  post_title text;
+BEGIN
+  IF uid IS NULL OR _recipient_id IS NULL OR _recipient_id = uid THEN RETURN; END IF;
+  IF _kind NOT IN ('community_like', 'community_comment', 'community_reply') THEN
+    RAISE EXCEPTION 'INVALID_NOTIFICATION_KIND';
+  END IF;
+
+  target_post_id := nullif(_metadata->>'post_id', '')::uuid;
+  IF target_post_id IS NULL THEN RAISE EXCEPTION 'MISSING_POST_ID'; END IF;
+
+  SELECT author_id, title INTO post_author_id, post_title
+  FROM anthem.community_posts
+  WHERE id = target_post_id AND status = 'published';
+  IF NOT FOUND THEN RAISE EXCEPTION 'POST_NOT_FOUND'; END IF;
+
+  IF _kind = 'community_like' THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM anthem.community_post_likes l
+      WHERE l.post_id = target_post_id AND l.user_id = uid
+    ) THEN RAISE EXCEPTION 'LIKE_NOT_FOUND'; END IF;
+    source_id := target_post_id;
+    IF _recipient_id <> post_author_id THEN RAISE EXCEPTION 'INVALID_RECIPIENT'; END IF;
+  ELSE
+    SELECT c.id, parent.user_id
+    INTO source_id, parent_author_id
+    FROM anthem.community_post_comments c
+    LEFT JOIN anthem.community_post_comments parent ON parent.id = c.parent_id
+    WHERE c.post_id = target_post_id
+      AND c.user_id = uid
+      AND c.created_at > now() - interval '5 minutes'
+    ORDER BY c.created_at DESC
+    LIMIT 1;
+    IF source_id IS NULL OR (
+      _kind = 'community_reply'
+      AND _recipient_id NOT IN (post_author_id, parent_author_id)
+    ) OR (
+      _kind = 'community_comment'
+      AND _recipient_id <> post_author_id
+    ) THEN
+      RAISE EXCEPTION 'INVALID_RECIPIENT';
+    END IF;
+  END IF;
+
+  INSERT INTO anthem.community_notification_receipts (
+    kind, source_id, recipient_id, actor_id
+  ) VALUES (_kind, source_id, _recipient_id, uid)
+  ON CONFLICT DO NOTHING;
+  IF NOT FOUND THEN RETURN; END IF;
+
+  SELECT coalesce(display_name, username, 'สมาชิก Pixel100')
+  INTO actor_name
+  FROM public.profiles
+  WHERE user_id = uid OR id = uid
+  LIMIT 1;
+
+  INSERT INTO shared.notifications (
+    user_id, app, kind, title, body, link, metadata, is_read, is_dismissed
+  ) VALUES (
+    _recipient_id,
+    'anthem',
+    _kind,
+    CASE
+      WHEN _kind = 'community_like' THEN 'มีคนถูกใจโพสต์ของคุณ'
+      WHEN _kind = 'community_reply' THEN 'มีการตอบกลับความคิดเห็นของคุณ'
+      ELSE 'มีความคิดเห็นใหม่'
+    END,
+    format('%s มีปฏิสัมพันธ์กับ "%s"', coalesce(actor_name, 'สมาชิก Pixel100'), left(post_title, 100)),
+    format('/community/%s', target_post_id),
+    jsonb_build_object('post_id', target_post_id, 'source_id', source_id),
+    false,
+    false
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.notify_community_event(uuid, text, text, text, text, jsonb)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.notify_community_event(uuid, text, text, text, text, jsonb)
+  TO authenticated;
+
+ALTER TABLE shared.messages
+  DROP CONSTRAINT IF EXISTS messages_content_length_check;
+ALTER TABLE shared.messages
+  ADD CONSTRAINT messages_content_length_check
+  CHECK (char_length(coalesce(content, '')) <= 4000);
+
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_created
+  ON shared.messages (conversation_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_conversations_kind_request
+  ON shared.conversations (kind, request_id)
+  WHERE request_id IS NOT NULL;
+
+CREATE OR REPLACE FUNCTION shared.enforce_message_write()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared, public
+AS $$
+DECLARE
+  uid uuid := auth.uid();
+  recent_count integer;
+BEGIN
+  IF auth.role() = 'service_role' THEN RETURN NEW; END IF;
+  IF uid IS NULL OR NEW.sender_id <> uid THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+  IF char_length(btrim(coalesce(NEW.content, ''))) = 0 AND NEW.attachment_url IS NULL THEN
+    RAISE EXCEPTION 'EMPTY_MESSAGE';
+  END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtextextended(uid::text, 3));
+  SELECT count(*) INTO recent_count
+  FROM shared.messages
+  WHERE sender_id = uid AND created_at > now() - interval '1 minute';
+  IF recent_count >= 60 THEN RAISE EXCEPTION 'RATE_LIMIT_MESSAGES'; END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION shared.sync_conversation_last_message()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared
+AS $$
+BEGIN
+  UPDATE shared.conversations
+  SET last_message_at = GREATEST(coalesce(last_message_at, NEW.created_at), NEW.created_at)
+  WHERE id = NEW.conversation_id;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_messages_enforce_write ON shared.messages;
+CREATE TRIGGER trg_messages_enforce_write
+  BEFORE INSERT ON shared.messages
+  FOR EACH ROW EXECUTE FUNCTION shared.enforce_message_write();
+
+DROP TRIGGER IF EXISTS trg_messages_sync_conversation ON shared.messages;
+CREATE TRIGGER trg_messages_sync_conversation
+  AFTER INSERT ON shared.messages
+  FOR EACH ROW EXECUTE FUNCTION shared.sync_conversation_last_message();
+
+DROP POLICY IF EXISTS "Participants can update messages" ON shared.messages;
+DROP POLICY IF EXISTS "Sender can unsend own messages" ON shared.messages;
+REVOKE UPDATE ON shared.messages FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.mark_conversation_read(p_conversation_id uuid)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared, public
+AS $$
+DECLARE
+  uid uuid := auth.uid();
+  updated_count integer;
+BEGIN
+  IF uid IS NULL
+    OR NOT shared.user_in_conversation(p_conversation_id, uid) THEN
+    RAISE EXCEPTION 'FORBIDDEN';
+  END IF;
+
+  UPDATE shared.messages
+  SET read_at = now()
+  WHERE conversation_id = p_conversation_id
+    AND sender_id <> uid
+    AND read_at IS NULL
+    AND deleted_at IS NULL;
+
+  GET DIAGNOSTICS updated_count = ROW_COUNT;
+  RETURN updated_count;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.unsend_message(p_message_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared, public
+AS $$
+DECLARE
+  uid uuid := auth.uid();
+BEGIN
+  IF uid IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+
+  UPDATE shared.messages
+  SET deleted_at = now()
+  WHERE id = p_message_id
+    AND sender_id = uid
+    AND deleted_at IS NULL
+    AND created_at > now() - interval '24 hours';
+
+  IF NOT FOUND THEN RAISE EXCEPTION 'MESSAGE_NOT_UNSENDABLE'; END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.mark_conversation_read(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.unsend_message(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.mark_conversation_read(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.unsend_message(uuid) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.create_group_conversation(
+  p_title text,
+  p_member_ids uuid[]
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared, public
+AS $$
+DECLARE
+  uid uuid := auth.uid();
+  conv_id uuid;
+  clean_members uuid[];
+BEGIN
+  IF uid IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+  p_title := btrim(coalesce(p_title, ''));
+  IF char_length(p_title) < 1 OR char_length(p_title) > 100 THEN
+    RAISE EXCEPTION 'INVALID_TITLE';
+  END IF;
+
+  SELECT array_agg(DISTINCT member_id)
+  INTO clean_members
+  FROM unnest(array_append(coalesce(p_member_ids, '{}'), uid)) member_id
+  WHERE member_id IS NOT NULL;
+
+  IF cardinality(clean_members) > 50 THEN RAISE EXCEPTION 'TOO_MANY_MEMBERS'; END IF;
+
+  INSERT INTO shared.conversations (
+    kind, conversation_type, title, created_by,
+    client_id, freelancer_id, request_id, project_title
+  ) VALUES (
+    'group', 'group', p_title, uid,
+    uid, uid, null, p_title
+  )
+  RETURNING id INTO conv_id;
+
+  INSERT INTO shared.conversation_members (conversation_id, user_id, role)
+  SELECT conv_id, member_id, CASE WHEN member_id = uid THEN 'owner' ELSE 'member' END
+  FROM unnest(clean_members) member_id;
+
+  RETURN conv_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.create_group_conversation(text, uuid[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_group_conversation(text, uuid[]) TO authenticated;
+
+
+-- 20260622160000_anthem_referral_affiliate.sql
+-- Anthem referral and affiliate rewards.
+-- Referrer: 50 earned PX after the referred user publishes first content.
+-- Referred user: 20 welcome PX after registration and 100 welcome PX after activation.
+
+ALTER TABLE shared.wallets
+  ADD COLUMN IF NOT EXISTS welcome_px integer NOT NULL DEFAULT 0 CHECK (welcome_px >= 0),
+  ADD COLUMN IF NOT EXISTS lifetime_welcome_px integer NOT NULL DEFAULT 0 CHECK (lifetime_welcome_px >= 0),
+  ADD COLUMN IF NOT EXISTS lifetime_earned_px integer NOT NULL DEFAULT 0 CHECK (lifetime_earned_px >= 0);
+
+UPDATE shared.gift_limits_config
+SET welcome_px_cap = GREATEST(COALESCE(welcome_px_cap, 100), 220),
+    updated_at = now()
+WHERE id = 1;
+
+CREATE TABLE IF NOT EXISTS shared.referral_program_config (
+  id integer PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  signup_reward_px integer NOT NULL DEFAULT 20 CHECK (signup_reward_px >= 0),
+  activation_reward_px integer NOT NULL DEFAULT 100 CHECK (activation_reward_px >= 0),
+  referrer_reward_px integer NOT NULL DEFAULT 50 CHECK (referrer_reward_px >= 0),
+  registration_window_days integer NOT NULL DEFAULT 7 CHECK (registration_window_days BETWEEN 1 AND 30),
+  enabled boolean NOT NULL DEFAULT true,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+INSERT INTO shared.referral_program_config (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS shared.referral_codes (
+  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  code text NOT NULL UNIQUE CHECK (code ~ '^[A-Z0-9]{8,16}$'),
+  active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS shared.referrals (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  referrer_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  referred_user_id uuid NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  referral_code text NOT NULL,
+  status text NOT NULL DEFAULT 'registered'
+    CHECK (status IN ('registered', 'qualified', 'rejected')),
+  signup_reward_px integer NOT NULL DEFAULT 0,
+  activation_reward_px integer NOT NULL DEFAULT 0,
+  referrer_reward_px integer NOT NULL DEFAULT 0,
+  registered_at timestamptz NOT NULL DEFAULT now(),
+  qualified_at timestamptz,
+  qualification_kind text CHECK (qualification_kind IN ('project', 'community_post')),
+  qualification_id uuid,
+  rejected_reason text,
+  CHECK (referrer_id <> referred_user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer_created
+  ON shared.referrals (referrer_id, registered_at DESC);
+CREATE INDEX IF NOT EXISTS idx_referrals_status_created
+  ON shared.referrals (status, registered_at DESC);
+
+CREATE TABLE IF NOT EXISTS shared.referral_reward_ledger (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  referral_id uuid NOT NULL REFERENCES shared.referrals(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  reward_kind text NOT NULL
+    CHECK (reward_kind IN ('referred_signup', 'referred_activation', 'referrer_activation')),
+  wallet_bucket text NOT NULL CHECK (wallet_bucket IN ('welcome', 'earned')),
+  amount_px integer NOT NULL CHECK (amount_px > 0),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (referral_id, reward_kind)
+);
+
+ALTER TABLE shared.referral_program_config ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shared.referral_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shared.referrals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shared.referral_reward_ledger ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS referral_config_public_read ON shared.referral_program_config;
+CREATE POLICY referral_config_public_read
+  ON shared.referral_program_config FOR SELECT
+  USING (true);
+DROP POLICY IF EXISTS referral_config_admin_update ON shared.referral_program_config;
+CREATE POLICY referral_config_admin_update
+  ON shared.referral_program_config FOR UPDATE TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'::public.app_role))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+DROP POLICY IF EXISTS referral_codes_owner_read ON shared.referral_codes;
+CREATE POLICY referral_codes_owner_read
+  ON shared.referral_codes FOR SELECT TO authenticated
+  USING (user_id = auth.uid());
+
+DROP POLICY IF EXISTS referrals_participant_read ON shared.referrals;
+CREATE POLICY referrals_participant_read
+  ON shared.referrals FOR SELECT TO authenticated
+  USING (
+    referrer_id = auth.uid()
+    OR referred_user_id = auth.uid()
+    OR public.has_role(auth.uid(), 'admin'::public.app_role)
+  );
+
+DROP POLICY IF EXISTS referral_ledger_owner_read ON shared.referral_reward_ledger;
+CREATE POLICY referral_ledger_owner_read
+  ON shared.referral_reward_ledger FOR SELECT TO authenticated
+  USING (
+    user_id = auth.uid()
+    OR public.has_role(auth.uid(), 'admin'::public.app_role)
+  );
+
+GRANT SELECT ON shared.referral_program_config TO anon, authenticated;
+GRANT UPDATE ON shared.referral_program_config TO authenticated;
+GRANT SELECT ON shared.referral_codes, shared.referrals, shared.referral_reward_ledger TO authenticated;
+GRANT ALL ON shared.referral_program_config, shared.referral_codes, shared.referrals,
+  shared.referral_reward_ledger TO service_role;
+
+CREATE OR REPLACE FUNCTION public.get_or_create_referral_code()
+RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared, public
+AS $$
+DECLARE
+  uid uuid := auth.uid();
+  result_code text;
+BEGIN
+  IF uid IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+
+  SELECT code INTO result_code
+  FROM shared.referral_codes
+  WHERE user_id = uid AND active = true;
+  IF result_code IS NOT NULL THEN RETURN result_code; END IF;
+
+  LOOP
+    result_code := upper(encode(gen_random_bytes(6), 'hex'));
+    BEGIN
+      INSERT INTO shared.referral_codes (user_id, code)
+      VALUES (uid, result_code);
+      RETURN result_code;
+    EXCEPTION WHEN unique_violation THEN
+      SELECT code INTO result_code
+      FROM shared.referral_codes
+      WHERE user_id = uid AND active = true;
+      IF result_code IS NOT NULL THEN RETURN result_code; END IF;
+    END;
+  END LOOP;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.register_referral(p_code text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared, public
+AS $$
+DECLARE
+  uid uuid := auth.uid();
+  normalized_code text := upper(btrim(coalesce(p_code, '')));
+  referrer uuid;
+  account_created_at timestamptz;
+  email_confirmed_at timestamptz;
+  cfg shared.referral_program_config%ROWTYPE;
+  referral_row shared.referrals%ROWTYPE;
+  existing_content_id uuid;
+  existing_content_kind text;
+  qualification_result boolean;
+  registered_referral_id uuid;
+BEGIN
+  IF uid IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+  IF normalized_code !~ '^[A-Z0-9]{8,16}$' THEN RAISE EXCEPTION 'INVALID_REFERRAL_CODE'; END IF;
+
+  SELECT * INTO cfg FROM shared.referral_program_config WHERE id = 1;
+  IF NOT COALESCE(cfg.enabled, false) THEN RAISE EXCEPTION 'REFERRAL_DISABLED'; END IF;
+
+  SELECT u.created_at, u.email_confirmed_at
+  INTO account_created_at, email_confirmed_at
+  FROM auth.users u WHERE u.id = uid;
+  IF email_confirmed_at IS NULL THEN RAISE EXCEPTION 'EMAIL_NOT_CONFIRMED'; END IF;
+  IF account_created_at < now() - make_interval(days => cfg.registration_window_days) THEN
+    RAISE EXCEPTION 'REFERRAL_WINDOW_EXPIRED';
+  END IF;
+
+  SELECT user_id INTO referrer
+  FROM shared.referral_codes
+  WHERE code = normalized_code AND active = true;
+  IF referrer IS NULL THEN RAISE EXCEPTION 'REFERRAL_CODE_NOT_FOUND'; END IF;
+  IF referrer = uid THEN RAISE EXCEPTION 'SELF_REFERRAL'; END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtextextended(uid::text, 11));
+  SELECT * INTO referral_row
+  FROM shared.referrals
+  WHERE referred_user_id = uid;
+  IF FOUND THEN
+    RETURN jsonb_build_object(
+      'status', referral_row.status,
+      'signup_reward_px', referral_row.signup_reward_px,
+      'already_registered', true
+    );
+  END IF;
+
+  INSERT INTO shared.referrals (
+    referrer_id, referred_user_id, referral_code, signup_reward_px
+  ) VALUES (
+    referrer, uid, normalized_code, cfg.signup_reward_px
+  )
+  RETURNING * INTO referral_row;
+  registered_referral_id := referral_row.id;
+
+  INSERT INTO shared.wallets (user_id, welcome_px, lifetime_welcome_px)
+  VALUES (uid, cfg.signup_reward_px, cfg.signup_reward_px)
+  ON CONFLICT (user_id) DO UPDATE SET
+    welcome_px = shared.wallets.welcome_px + EXCLUDED.welcome_px,
+    lifetime_welcome_px = shared.wallets.lifetime_welcome_px + EXCLUDED.lifetime_welcome_px,
+    updated_at = now();
+
+  IF cfg.signup_reward_px > 0 THEN
+    INSERT INTO shared.referral_reward_ledger (
+      referral_id, user_id, reward_kind, wallet_bucket, amount_px
+    ) VALUES (
+      referral_row.id, uid, 'referred_signup', 'welcome', cfg.signup_reward_px
+    );
+  END IF;
+
+  SELECT content_id, content_kind
+  INTO existing_content_id, existing_content_kind
+  FROM (
+    SELECT p.id AS content_id, 'project'::text AS content_kind, p.created_at
+    FROM anthem.projects p
+    WHERE p.owner_id = uid AND lower(p.status) = 'published'
+    UNION ALL
+    SELECT c.id, 'community_post'::text, c.created_at
+    FROM anthem.community_posts c
+    WHERE c.author_id = uid AND lower(c.status) = 'published'
+  ) content
+  ORDER BY created_at ASC
+  LIMIT 1;
+
+  IF existing_content_id IS NOT NULL THEN
+    EXECUTE 'SELECT shared.qualify_referral_for_content($1, $2, $3)'
+      INTO qualification_result
+      USING uid, existing_content_kind, existing_content_id;
+    SELECT * INTO referral_row
+    FROM shared.referrals r
+    WHERE r.id = registered_referral_id;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'status', referral_row.status,
+    'signup_reward_px', cfg.signup_reward_px,
+    'already_registered', false
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION shared.qualify_referral_for_content(
+  p_user_id uuid,
+  p_kind text,
+  p_content_id uuid
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared, public
+AS $$
+DECLARE
+  referral_row shared.referrals%ROWTYPE;
+  cfg shared.referral_program_config%ROWTYPE;
+  email_confirmed_at timestamptz;
+BEGIN
+  IF p_kind NOT IN ('project', 'community_post') THEN RETURN false; END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_user_id::text, 12));
+  SELECT * INTO referral_row
+  FROM shared.referrals
+  WHERE referred_user_id = p_user_id AND status = 'registered'
+  FOR UPDATE;
+  IF NOT FOUND THEN RETURN false; END IF;
+
+  SELECT * INTO cfg FROM shared.referral_program_config WHERE id = 1;
+  IF NOT COALESCE(cfg.enabled, false) THEN RETURN false; END IF;
+  SELECT u.email_confirmed_at
+  INTO email_confirmed_at
+  FROM auth.users u WHERE u.id = p_user_id;
+
+  IF email_confirmed_at IS NULL THEN
+    RETURN false;
+  END IF;
+
+  INSERT INTO shared.wallets (user_id, welcome_px, lifetime_welcome_px)
+  VALUES (p_user_id, cfg.activation_reward_px, cfg.activation_reward_px)
+  ON CONFLICT (user_id) DO UPDATE SET
+    welcome_px = shared.wallets.welcome_px + EXCLUDED.welcome_px,
+    lifetime_welcome_px = shared.wallets.lifetime_welcome_px + EXCLUDED.lifetime_welcome_px,
+    updated_at = now();
+
+  INSERT INTO shared.wallets (user_id, earned_px, lifetime_earned_px)
+  VALUES (referral_row.referrer_id, cfg.referrer_reward_px, cfg.referrer_reward_px)
+  ON CONFLICT (user_id) DO UPDATE SET
+    earned_px = shared.wallets.earned_px + EXCLUDED.earned_px,
+    lifetime_earned_px = shared.wallets.lifetime_earned_px + EXCLUDED.lifetime_earned_px,
+    updated_at = now();
+
+  UPDATE shared.referrals
+  SET status = 'qualified',
+      activation_reward_px = cfg.activation_reward_px,
+      referrer_reward_px = cfg.referrer_reward_px,
+      qualified_at = now(),
+      qualification_kind = p_kind,
+      qualification_id = p_content_id
+  WHERE id = referral_row.id;
+
+  IF cfg.activation_reward_px > 0 THEN
+    INSERT INTO shared.referral_reward_ledger (
+      referral_id, user_id, reward_kind, wallet_bucket, amount_px
+    ) VALUES (
+      referral_row.id, p_user_id, 'referred_activation', 'welcome', cfg.activation_reward_px
+    );
+  END IF;
+  IF cfg.referrer_reward_px > 0 THEN
+    INSERT INTO shared.referral_reward_ledger (
+      referral_id, user_id, reward_kind, wallet_bucket, amount_px
+    ) VALUES (
+      referral_row.id, referral_row.referrer_id, 'referrer_activation', 'earned',
+      cfg.referrer_reward_px
+    );
+  END IF;
+
+  INSERT INTO shared.notifications (
+    user_id, app, kind, title, body, link, metadata
+  ) VALUES
+    (
+      p_user_id, 'anthem', 'referral_qualified',
+      'รับรางวัลภารกิจแรกแล้ว',
+      format('คุณได้รับ %s px จากการเผยแพร่ครั้งแรก', cfg.activation_reward_px),
+      '/referrals',
+      jsonb_build_object('referral_id', referral_row.id, 'amount_px', cfg.activation_reward_px)
+    ),
+    (
+      referral_row.referrer_id, 'anthem', 'referral_reward',
+      'เพื่อนทำภารกิจแรกสำเร็จ',
+      format('คุณได้รับ %s px จากการชวนเพื่อน', cfg.referrer_reward_px),
+      '/referrals',
+      jsonb_build_object('referral_id', referral_row.id, 'amount_px', cfg.referrer_reward_px)
+    );
+
+  RETURN true;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION shared.trigger_referral_content_qualification()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared, public
+AS $$
+DECLARE
+  row_data jsonb := to_jsonb(NEW);
+  content_owner uuid;
+  content_status text;
+  content_kind text;
+BEGIN
+  content_status := coalesce(row_data->>'status', '');
+  IF TG_TABLE_NAME = 'projects' THEN
+    content_owner := nullif(row_data->>'owner_id', '')::uuid;
+    content_kind := 'project';
+    IF lower(content_status) <> 'published' THEN RETURN NEW; END IF;
+  ELSE
+    content_owner := nullif(row_data->>'author_id', '')::uuid;
+    content_kind := 'community_post';
+    IF lower(content_status) <> 'published' THEN RETURN NEW; END IF;
+  END IF;
+
+  IF content_owner IS NOT NULL THEN
+    PERFORM shared.qualify_referral_for_content(content_owner, content_kind, NEW.id);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_referral_project_qualification ON anthem.projects;
+CREATE TRIGGER trg_referral_project_qualification
+  AFTER INSERT OR UPDATE OF status ON anthem.projects
+  FOR EACH ROW EXECUTE FUNCTION shared.trigger_referral_content_qualification();
+
+DROP TRIGGER IF EXISTS trg_referral_community_qualification ON anthem.community_posts;
+CREATE TRIGGER trg_referral_community_qualification
+  AFTER INSERT OR UPDATE OF status ON anthem.community_posts
+  FOR EACH ROW EXECUTE FUNCTION shared.trigger_referral_content_qualification();
+
+CREATE OR REPLACE FUNCTION public.get_referral_dashboard()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = shared, public
+AS $$
+DECLARE
+  uid uuid := auth.uid();
+  code_value text;
+  cfg shared.referral_program_config%ROWTYPE;
+  referred_record shared.referrals%ROWTYPE;
+BEGIN
+  IF uid IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+  code_value := public.get_or_create_referral_code();
+  SELECT * INTO cfg FROM shared.referral_program_config WHERE id = 1;
+  SELECT * INTO referred_record FROM shared.referrals WHERE referred_user_id = uid;
+
+  RETURN jsonb_build_object(
+    'code', code_value,
+    'signup_reward_px', cfg.signup_reward_px,
+    'activation_reward_px', cfg.activation_reward_px,
+    'referrer_reward_px', cfg.referrer_reward_px,
+    'invited_count', (
+      SELECT count(*) FROM shared.referrals WHERE referrer_id = uid
+    ),
+    'qualified_count', (
+      SELECT count(*) FROM shared.referrals WHERE referrer_id = uid AND status = 'qualified'
+    ),
+    'earned_px', (
+      SELECT coalesce(sum(amount_px), 0)
+      FROM shared.referral_reward_ledger
+      WHERE user_id = uid AND reward_kind = 'referrer_activation'
+    ),
+    'my_referral_status', CASE WHEN referred_record.id IS NULL THEN null ELSE referred_record.status END,
+    'my_signup_reward_px', coalesce(referred_record.signup_reward_px, 0),
+    'my_activation_reward_px', coalesce(referred_record.activation_reward_px, 0),
+    'recent', coalesce((
+      SELECT jsonb_agg(jsonb_build_object(
+        'id', r.id,
+        'status', r.status,
+        'registered_at', r.registered_at,
+        'qualified_at', r.qualified_at,
+        'display_name', coalesce(p.display_name, 'สมาชิกใหม่')
+      ) ORDER BY r.registered_at DESC)
+      FROM (
+        SELECT * FROM shared.referrals
+        WHERE referrer_id = uid
+        ORDER BY registered_at DESC
+        LIMIT 20
+      ) r
+      LEFT JOIN public.profiles p ON p.user_id = r.referred_user_id
+    ), '[]'::jsonb)
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_or_create_referral_code() FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.register_referral(text) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.get_referral_dashboard() FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION shared.qualify_referral_for_content(uuid, text, uuid)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_or_create_referral_code() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.register_referral(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_referral_dashboard() TO authenticated;
+GRANT EXECUTE ON FUNCTION shared.qualify_referral_for_content(uuid, text, uuid) TO service_role;
+
+
+-- 20260623110000_security_advisor_critical_fixes.sql
+-- Resolve current Supabase Security Advisor errors without exposing write access.
+
+DO $$
+BEGIN
+  IF to_regclass('public.payment_settings') IS NOT NULL THEN
+    ALTER TABLE public.payment_settings ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS payment_settings_authenticated_read ON public.payment_settings;
+    CREATE POLICY payment_settings_authenticated_read
+      ON public.payment_settings
+      FOR SELECT
+      TO authenticated
+      USING (true);
+    REVOKE ALL ON TABLE public.payment_settings FROM anon;
+    GRANT SELECT ON TABLE public.payment_settings TO authenticated;
+  END IF;
+
+  IF to_regclass('public.storage_tier_config') IS NOT NULL THEN
+    ALTER TABLE public.storage_tier_config ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS storage_tier_config_authenticated_read ON public.storage_tier_config;
+    CREATE POLICY storage_tier_config_authenticated_read
+      ON public.storage_tier_config
+      FOR SELECT
+      TO authenticated
+      USING (true);
+    REVOKE ALL ON TABLE public.storage_tier_config FROM anon;
+    GRANT SELECT ON TABLE public.storage_tier_config TO authenticated;
+  END IF;
+END;
+$$;
+
+-- Pin SECURITY DEFINER functions that still inherit a mutable caller search_path.
+-- Keep all application schemas available because this is a unified database.
+DO $$
+DECLARE
+  fn record;
+BEGIN
+  FOR fn IN
+    SELECT
+      p.oid::regprocedure AS identity,
+      n.nspname AS schema_name
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE p.prosecdef
+      AND n.nspname IN ('public', 'shared', 'anthem', 'ops', 'so1o')
+      AND NOT EXISTS (
+        SELECT 1
+        FROM unnest(COALESCE(p.proconfig, ARRAY[]::text[])) AS cfg
+        WHERE cfg LIKE 'search_path=%'
+      )
+  LOOP
+    EXECUTE format(
+      'ALTER FUNCTION %s SET search_path = %I, public, shared, anthem, ops, so1o, pg_catalog',
+      fn.identity,
+      fn.schema_name
+    );
+  END LOOP;
+END;
+$$;
 

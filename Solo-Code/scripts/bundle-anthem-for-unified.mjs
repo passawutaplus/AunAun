@@ -217,7 +217,7 @@ const files = readdirSync(anthemMigrations)
   .sort();
 
 const parts = [
-  "-- Anthem → unified project rvnzjiskqliexysicfmh",
+  "-- Anthem → unified project zkflkpbmbozrchqncpzi",
   `-- Generated: ${new Date().toISOString()}`,
   "-- Run AFTER 20260606120000 + 20260606120100 + 20260606120200",
   "-- Dashboard SQL Editor or: ./scripts/supabase-push-via-api.sh",

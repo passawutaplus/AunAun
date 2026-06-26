@@ -55,7 +55,7 @@ npm run e2e:seo
 - **Framework:** TanStack Start v1 (React 19, Vite 7, SSR)
 - **State:** React Query · Zustand · Zod
 - **Styling:** Tailwind v4 + shadcn/ui
-- **Backend:** Supabase `rvnzjiskqliexysicfmh` (unified with an1hem)
+- **Backend:** Supabase `zkflkpbmbozrchqncpzi` (unified with an1hem)
 - **AI:** Google Gemini — Edge Functions + server functions
 - **Payments:** Stripe direct (`STRIPE_USE_DIRECT=true`)
 - **Auth:** Supabase Auth (email + Google OAuth)

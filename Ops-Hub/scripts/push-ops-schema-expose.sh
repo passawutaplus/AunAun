@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../../Solo-Code"
 
-PROJECT_REF="${SUPABASE_PROJECT_REF:-rvnzjiskqliexysicfmh}"
+PROJECT_REF="${SUPABASE_PROJECT_REF:-zkflkpbmbozrchqncpzi}"
 
 if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]] && [[ -f .env ]]; then
   SUPABASE_ACCESS_TOKEN="$(grep -E '^SUPABASE_ACCESS_TOKEN=' .env | head -1 | cut -d= -f2- | tr -d '"')"

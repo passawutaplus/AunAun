@@ -35,7 +35,7 @@ if (!process.env.SUPABASE_ACCESS_TOKEN && existsSync(tokenPath)) {
 const PROJECT_REF =
   process.env.SUPABASE_PROJECT_REF ||
   process.env.VITE_SUPABASE_PROJECT_ID ||
-  "rvnzjiskqliexysicfmh";
+  "zkflkpbmbozrchqncpzi";
 const token = process.env.SUPABASE_ACCESS_TOKEN;
 const API = `https://api.supabase.com/v1/projects/${PROJECT_REF}`;
 

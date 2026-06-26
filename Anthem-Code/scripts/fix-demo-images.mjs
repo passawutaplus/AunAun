@@ -43,7 +43,7 @@ const sqlArray = UNSPLASH_ART.map((id) => `'${id}'`).join(",");
 async function patchViaSql() {
   const token = process.env.SUPABASE_ACCESS_TOKEN;
   if (!token) return false;
-  const API = `https://api.supabase.com/v1/projects/rvnzjiskqliexysicfmh/database/query`;
+  const API = `https://api.supabase.com/v1/projects/zkflkpbmbozrchqncpzi/database/query`;
   const sql = `
 CREATE OR REPLACE FUNCTION public._unsplash_art(i integer, w int DEFAULT 1200, h int DEFAULT 900)
 RETURNS text LANGUAGE sql IMMUTABLE AS $$

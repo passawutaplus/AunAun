@@ -4,7 +4,7 @@
 --   ./scripts/supabase-push-pipeline.sh
 --
 -- So1o: รวม migrations ที่ยังไม่ได้ push (2026-06) เท่านั้น
--- Project: rvnzjiskqliexysicfmh
+-- Project: zkflkpbmbozrchqncpzi
 -- ลำดับ: contract → support_tickets → shared_projects → organization
 
 

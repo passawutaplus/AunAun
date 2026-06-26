@@ -1,11 +1,9 @@
-import * as React from "react";
-import { Text } from "@react-email/components";
-import { EmailLayout, EmailText } from "./layout";
-import { code } from "./_brand";
+import * as React from 'react'
+import { Text } from '@react-email/components'
+import { EmailLayout, EmailText } from './layout'
+import { code } from './_brand'
 
-interface ReauthenticationEmailProps {
-  token: string;
-}
+interface ReauthenticationEmailProps { token: string }
 
 export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
   <EmailLayout
@@ -18,6 +16,6 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
     <EmailText>กรอกรหัสด้านล่างเพื่อยืนยันว่าเป็นคุณ:</EmailText>
     <Text style={code}>{token}</Text>
   </EmailLayout>
-);
+)
 
-export default ReauthenticationEmail;
+export default ReauthenticationEmail

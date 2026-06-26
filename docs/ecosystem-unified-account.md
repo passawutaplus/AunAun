@@ -2,7 +2,7 @@
 
 ## โปรเจกต์ Supabase เดียว
 
-**`rvnzjiskqliexysicfmh`** — ทั้ง So1o และ an1hem ใช้ URL + anon key ชุดเดียวกัน
+**`zkflkpbmbozrchqncpzi`** — ทั้ง So1o และ an1hem ใช้ URL + anon key ชุดเดียวกัน
 
 > Deploy / demo / staging policy: [docs/ecosystem-deploy-policy.md](../docs/ecosystem-deploy-policy.md)
 
@@ -31,9 +31,9 @@
 ## Env ทั้งสองแอป
 
 ```env
-VITE_SUPABASE_URL=https://rvnzjiskqliexysicfmh.supabase.co
+VITE_SUPABASE_URL=https://zkflkpbmbozrchqncpzi.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=<anon key>
-VITE_SUPABASE_PROJECT_ID=rvnzjiskqliexysicfmh
+VITE_SUPABASE_PROJECT_ID=zkflkpbmbozrchqncpzi
 ```
 
 So1o เพิ่ม: `VITE_ANTHEM_APP_URL`, `VITE_OPS_HUB_URL`  

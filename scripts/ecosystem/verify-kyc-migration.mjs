@@ -21,7 +21,7 @@ function loadEnv(path) {
 loadEnv(soloEnv);
 
 const token = process.env.SUPABASE_ACCESS_TOKEN;
-const ref = process.env.SUPABASE_PROJECT_REF || "rvnzjiskqliexysicfmh";
+const ref = process.env.SUPABASE_PROJECT_REF || "zkflkpbmbozrchqncpzi";
 if (!token) {
   console.error("Missing SUPABASE_ACCESS_TOKEN");
   process.exit(1);

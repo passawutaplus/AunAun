@@ -1,5 +1,5 @@
 -- LINE notification columns on unified profiles (idempotent)
--- Run on rvnzjiskqliexysicfmh if line-connect fails with "column does not exist"
+-- Run on zkflkpbmbozrchqncpzi if line-connect fails with "column does not exist"
 
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS line_messaging_user_id text,

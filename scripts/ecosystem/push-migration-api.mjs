@@ -24,7 +24,7 @@ function loadEnv(path) {
 loadEnv(envPath);
 
 const token = process.env.SUPABASE_ACCESS_TOKEN;
-const projectRef = process.env.SUPABASE_PROJECT_REF ?? "rvnzjiskqliexysicfmh";
+const projectRef = process.env.SUPABASE_PROJECT_REF ?? "zkflkpbmbozrchqncpzi";
 if (!token) {
   console.error("Missing SUPABASE_ACCESS_TOKEN in Solo-Code/.env");
   process.exit(1);

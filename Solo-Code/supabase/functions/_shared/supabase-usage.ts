@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 
-export const PROJECT_REF = Deno.env.get("SUPABASE_PROJECT_REF") ?? "rvnzjiskqliexysicfmh";
+export const PROJECT_REF = Deno.env.get("SUPABASE_PROJECT_REF") ?? "zkflkpbmbozrchqncpzi";
 const MGMT = "https://api.supabase.com/v1";
 
 export const PLAN_LIMITS: Record<

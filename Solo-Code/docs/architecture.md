@@ -26,7 +26,7 @@
 └─────────────┼─────────────────────────────┼───────────────────┘
               ▼                             ▼
         ┌────────────────────────────────────────────┐
-        │           Supabase (rvnzjiskqliexysicfmh)          │
+        │           Supabase (zkflkpbmbozrchqncpzi)          │
         │  Postgres + RLS + Auth + Storage + Edge Functions  │
         └────────────────────────────────────────────┘
 ```

@@ -24,9 +24,9 @@ ANTHEM_URL="$(get VITE_ANTHEM_APP_URL)"
 
 cat > "$OUT" <<EOF
 # Auto-synced from Solo-Code/.env — $(date -Iseconds)
-VITE_SUPABASE_URL=${SUPABASE_URL:-https://rvnzjiskqliexysicfmh.supabase.co}
+VITE_SUPABASE_URL=${SUPABASE_URL:-https://zkflkpbmbozrchqncpzi.supabase.co}
 VITE_SUPABASE_PUBLISHABLE_KEY=${SUPABASE_KEY}
-VITE_SUPABASE_PROJECT_ID=${PROJECT_ID:-rvnzjiskqliexysicfmh}
+VITE_SUPABASE_PROJECT_ID=${PROJECT_ID:-zkflkpbmbozrchqncpzi}
 VITE_SITE_URL=https://hq.solofreelancer.com
 VITE_SO1O_APP_URL=${SO1O_URL}
 VITE_ANTHEM_APP_URL=${ANTHEM_URL}

@@ -53,7 +53,7 @@ if (!url || !key) {
 if (!geminiKey) {
   console.error("Missing GEMINI_API_KEY — ใส่ใน Solo-Code/.env แล้วรัน:");
   console.error(
-    "  npx supabase secrets set GEMINI_API_KEY='...' --project-ref rvnzjiskqliexysicfmh",
+    "  npx supabase secrets set GEMINI_API_KEY='...' --project-ref zkflkpbmbozrchqncpzi",
   );
   process.exit(1);
 }

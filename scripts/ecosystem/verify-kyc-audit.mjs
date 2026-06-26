@@ -21,7 +21,7 @@ function loadEnv(path) {
 loadEnv(soloEnv);
 
 const token = process.env.SUPABASE_ACCESS_TOKEN;
-const ref = process.env.SUPABASE_PROJECT_REF || "rvnzjiskqliexysicfmh";
+const ref = process.env.SUPABASE_PROJECT_REF || "zkflkpbmbozrchqncpzi";
 
 const res = await fetch(`https://api.supabase.com/v1/projects/${ref}/database/query`, {
   method: "POST",

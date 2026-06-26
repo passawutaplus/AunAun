@@ -7,7 +7,7 @@
 | **Canonical** | https://pixel100.com (ยังไม่จดโดเมน) |
 | **Demo** | https://1px-demo.vercel.app |
 | **Legacy production** | https://an1hem.app (redirect ภายหลัง) |
-| **Supabase** | `rvnzjiskqliexysicfmh` (canonical backend ใน Solo-Code) |
+| **Supabase** | `zkflkpbmbozrchqncpzi` (canonical backend ใน Solo-Code) |
 
 ## Quick start
 

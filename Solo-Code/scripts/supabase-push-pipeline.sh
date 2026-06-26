@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PROJECT_REF="rvnzjiskqliexysicfmh"
+PROJECT_REF="zkflkpbmbozrchqncpzi"
 CLI="bin/supabase"
 
 if [[ ! -x "$CLI" ]]; then

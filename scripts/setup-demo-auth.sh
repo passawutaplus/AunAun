@@ -19,7 +19,7 @@ fi
 
 cd "$ROOT/Solo-Code"
 
-PROJECT_REF="${SUPABASE_PROJECT_REF:-rvnzjiskqliexysicfmh}"
+PROJECT_REF="${SUPABASE_PROJECT_REF:-zkflkpbmbozrchqncpzi}"
 API="https://api.supabase.com/v1/projects/${PROJECT_REF}"
 payload="$(python3 -c "
 import json, os

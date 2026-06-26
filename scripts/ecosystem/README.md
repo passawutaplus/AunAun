@@ -8,7 +8,7 @@ node scripts/ecosystem/setup.mjs
 
 Then apply SQL on Supabase (see below) and deploy apps per `docs/deploy-vps.md`.
 
-## How Pro works (unified project `rvnzjiskqliexysicfmh`)
+## How Pro works (unified project `zkflkpbmbozrchqncpzi`)
 
 1. User pays on **So1o** → webhook updates `public.profiles.subscription_tier`
 2. an1hem reads the same row via `user_id` — no cross-project sync

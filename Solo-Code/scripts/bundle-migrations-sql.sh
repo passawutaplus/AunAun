@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 OUT="supabase/manual/apply-all-migrations.sql"
-PROJECT_REF="rvnzjiskqliexysicfmh"
+PROJECT_REF="zkflkpbmbozrchqncpzi"
 count=0
 
 {

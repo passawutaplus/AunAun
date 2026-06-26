@@ -1,10 +1,10 @@
-# ย้ายโปรเจกต์ Supabase → rvnzjiskqliexysicfmh
+# ย้ายโปรเจกต์ Supabase → zkflkpbmbozrchqncpzi
 
-โปรเจกต์ใหม่: **supabase-blue-park** (`rvnzjiskqliexysicfmh`)
+โปรเจกต์ใหม่: **supabase-blue-park** (`zkflkpbmbozrchqncpzi`)
 
 ## สิ่งที่ทำแล้ว
 
-- [x] `supabase/config.toml` → `rvnzjiskqliexysicfmh`
+- [x] `supabase/config.toml` → `zkflkpbmbozrchqncpzi`
 - [x] `.env` → URL + anon key + service_role key ใหม่
 - [x] CLI link โปรเจกต์ใหม่แล้ว
 - [x] **Schema ทั้งหมด** — push ครบ 136 migrations แล้ว (ผ่าน `scripts/supabase-push-via-api.sh`)
@@ -18,7 +18,7 @@ export SUPABASE_ACCESS_TOKEN=<token จาก Account → Access Tokens>
 
 ทางเลือก (ต้องมี Database password): `./scripts/supabase-push-pipeline.sh`
 
-หรือวาง `supabase/manual/apply-all-migrations.sql` ใน [SQL Editor](https://supabase.com/dashboard/project/rvnzjiskqliexysicfmh/sql/new)
+หรือวาง `supabase/manual/apply-all-migrations.sql` ใน [SQL Editor](https://supabase.com/dashboard/project/zkflkpbmbozrchqncpzi/sql/new)
 
 ## หลัง schema ขึ้นแล้ว
 

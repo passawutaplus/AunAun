@@ -63,7 +63,7 @@ Deploy functions:
 ```bash
 supabase functions deploy ai-design-chat ai-price-suggest color-mentor planner-ai-assist \
   anthem-assistant ecosystem-ai-usage \
-  --project-ref rvnzjiskqliexysicfmh
+  --project-ref zkflkpbmbozrchqncpzi
 ```
 
 ## ฟีเจอร์ที่เรียก Gemini

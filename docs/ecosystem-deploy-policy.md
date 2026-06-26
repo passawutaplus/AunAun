@@ -9,7 +9,7 @@
 
 | มิติ | คำตอบสำหรับ So1o + Pixel100 |
 |------|------------------------------|
-| **Production รวมกันหรือไม่** | **รวมเสมอ** — โปรเจกต์เดียว `rvnzjiskqliexysicfmh` (So1o + an1hem + Ops Hub อ่าน schema เดียวกัน) |
+| **Production รวมกันหรือไม่** | **รวมเสมอ** — โปรเจกต์เดียว `zkflkpbmbozrchqncpzi` (So1o + an1hem + Ops Hub อ่าน schema เดียวกัน) |
 | **Demo แยกจาก Production หรือไม่** | **ขึ้นกับช่วง** — ดู [§3 ช่วงชีวิต](#3-ช่วงชีวิตเมื่อไหร่รวมเมื่อไหร่แยก) |
 
 สรุปสั้น: **บัญชีจริงรวมที่เดียว** ไม่ใช่ “แยก So1o กับ Pixel100” — คำถามจริงคือ **เดโม่/staging ชี้ DB ไหน**
@@ -46,7 +46,7 @@
 
 | รายการ | นโยบาย |
 |--------|--------|
-| Production DB | `rvnzjiskqliexysicfmh` |
+| Production DB | `zkflkpbmbozrchqncpzi` |
 | Demo web (`1px-demo`, `solo-demo`) | **ชี้ `rvnzjisk` เดียวกัน** + `VITE_DEMO_MODE=true` |
 | บัญชี demo | `@demo.pixel100.com` / `@demo.an1hem.app` — seed ด้วย `db:qa-full` |
 | ข้อมูล user จริง | ยังไม่ copy ลง demo |
@@ -60,7 +60,7 @@
 
 | รายการ | นโยบาย |
 |--------|--------|
-| Production DB | `rvnzjiskqliexysicfmh` (ไม่เปลี่ยน) |
+| Production DB | `zkflkpbmbozrchqncpzi` (ไม่เปลี่ยน) |
 | Demo web | **โปรเจกต์ Supabase แยก** (`VITE_DEMO_SUPABASE_*`) |
 | ข้อมูล | synthetic เท่านั้น · ห้าม copy prod |
 | Load test | โปรเจกต์แยก (ดู `Anthem-Code/docs/production-readiness.md`) |
@@ -141,7 +141,7 @@ flowchart TD
 
 ```env
 VITE_DEMO_MODE=false
-VITE_SUPABASE_URL=https://rvnzjiskqliexysicfmh.supabase.co
+VITE_SUPABASE_URL=https://zkflkpbmbozrchqncpzi.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=<prod anon>
 # ไม่ตั้ง VITE_DEMO_SUPABASE_*
 ```
@@ -150,7 +150,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=<prod anon>
 
 ```env
 VITE_DEMO_MODE=true
-VITE_SUPABASE_URL=https://rvnzjiskqliexysicfmh.supabase.co
+VITE_SUPABASE_URL=https://zkflkpbmbozrchqncpzi.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=<prod anon>
 # ไม่ต้องมี VITE_DEMO_SUPABASE_* แยก
 # deploy script ต้องอนุญาตโหมดนี้ (ดู Anthem-Code/docs/demo-isolation.md)
@@ -160,7 +160,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=<prod anon>
 
 ```env
 VITE_DEMO_MODE=true
-VITE_SUPABASE_URL=https://rvnzjiskqliexysicfmh.supabase.co   # สำหรับ local dev ชี้ prod
+VITE_SUPABASE_URL=https://zkflkpbmbozrchqncpzi.supabase.co   # สำหรับ local dev ชี้ prod
 VITE_DEMO_SUPABASE_URL=https://<demo-ref>.supabase.co       # build demo เท่านั้น
 VITE_DEMO_SUPABASE_PUBLISHABLE_KEY=<demo anon>
 # URL สองชุดต้องไม่เหมือนกัน — build guard ปฏิเสธถ้าซ้ำ
@@ -214,7 +214,7 @@ VITE_DEMO_SUPABASE_PUBLISHABLE_KEY=<demo anon>
 
 | รายการ | ค่า |
 |--------|-----|
-| Production Supabase | `rvnzjiskqliexysicfmh` |
+| Production Supabase | `zkflkpbmbozrchqncpzi` |
 | ช่วงที่แนะนำ | **Phase A** (รวม demo กับ prod DB + seed) |
 | โค้ด deploy demo | ยังบังคับ `VITE_DEMO_SUPABASE_*` แยก (เขียนสำหรับ Phase B) |
 | งานถัดไป (ถ้าใช้ Phase A) | ผ่อน `deploy-demo-vercel.sh` ให้รองรับโหมดรวม — ดู issue / Agent |

@@ -1,5 +1,5 @@
 # So1o production — supabase-blue-park
-project_id = "rvnzjiskqliexysicfmh"
+project_id = "zkflkpbmbozrchqncpzi"
 
 [api]
 schemas = ["public", "graphql_public", "shared", "anthem", "so1o", "ops"]

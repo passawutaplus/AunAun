@@ -6,7 +6,7 @@ PM Workspace + ศูนย์บัญชาการ Ecosystem — monitor **S
 |---|---|
 | **Production** | `https://so1o-ops-hub.vercel.app` |
 | **Dev** | `http://localhost:3090` |
-| **Supabase** | `rvnzjiskqliexysicfmh` |
+| **Supabase** | `zkflkpbmbozrchqncpzi` |
 
 ## Quick start
 

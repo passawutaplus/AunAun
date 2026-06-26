@@ -98,7 +98,7 @@ http://localhost:3000/line-link
 
 | ช่อง | ค่า |
 |------|-----|
-| Webhook URL | `https://rvnzjiskqliexysicfmh.supabase.co/functions/v1/line-webhook` |
+| Webhook URL | `https://zkflkpbmbozrchqncpzi.supabase.co/functions/v1/line-webhook` |
 | Use webhook | **Enabled** |
 
 คัดลอก **Channel secret** จากแท็บ **Basic settings** ของช่อง Messaging API (ไม่ใช่ช่อง Login) → ใส่ `LINE_MESSAGING_CHANNEL_SECRET` ใน Supabase secrets
@@ -112,7 +112,7 @@ http://localhost:3000/line-link
 GEMINI_API_KEY=your_google_ai_studio_key
 
 cd Solo-Code && source .env
-npx supabase secrets set GEMINI_API_KEY="$GEMINI_API_KEY" --project-ref rvnzjiskqliexysicfmh
+npx supabase secrets set GEMINI_API_KEY="$GEMINI_API_KEY" --project-ref zkflkpbmbozrchqncpzi
 ```
 
 ทดสอบ push ตรงไป LINE (ไม่ผ่าน webhook):
@@ -174,10 +174,10 @@ supabase secrets set \
   LINE_CHANNEL_SECRET='...' \
   LINE_CHANNEL_ACCESS_TOKEN='...' \
   LINE_MESSAGING_CHANNEL_SECRET='...' \
-  --project-ref rvnzjiskqliexysicfmh
+  --project-ref zkflkpbmbozrchqncpzi
 
 supabase functions deploy line-connect line-webhook line-queue-process notify-hire-request \
-  --project-ref rvnzjiskqliexysicfmh
+  --project-ref zkflkpbmbozrchqncpzi
 ```
 
 ### Client env (production build / Docker)

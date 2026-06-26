@@ -11,7 +11,7 @@
 | **anthem** | nginx + static Vite SPA | 80 |
 | **ops-hub** | nginx + static Ops Hub SPA | 80 |
 
-Supabase โปรเจกต์เดียว **`rvnzjiskqliexysicfmh`** — ดู `Solo-Code/supabase/ECOSYSTEM.md`
+Supabase โปรเจกต์เดียว **`zkflkpbmbozrchqncpzi`** — ดู `Solo-Code/supabase/ECOSYSTEM.md`
 
 ## ความต้องการ
 
@@ -104,7 +104,7 @@ Checklist เต็ม: [`Solo-Code/docs/seo-deploy.md`](../Solo-Code/docs/seo-d
 
 ## Edge Functions (unified project)
 
-ฟังก์ชัน AI + notify + LINE อยู่ที่ `Solo-Code/supabase/functions/` บนโปรเจกต์ **`rvnzjiskqliexysicfmh`**
+ฟังก์ชัน AI + notify + LINE อยู่ที่ `Solo-Code/supabase/functions/` บนโปรเจกต์ **`zkflkpbmbozrchqncpzi`**
 
 ```bash
 cd Solo-Code
@@ -113,7 +113,7 @@ supabase secrets set GEMINI_API_KEY=... ANTHEM_APP_URL=https://an1hem.app
 supabase functions deploy embed-project similar-images generate-contract \
   notify-anthem notify-anthem-chat notify-anthem-collab notify-hire-request \
   line-connect line-webhook line-queue-process \
-  --project-ref rvnzjiskqliexysicfmh
+  --project-ref zkflkpbmbozrchqncpzi
 ```
 
 > `sync-so1o-tier` เป็น legacy — ไม่ต้อง deploy เมื่อใช้ unified project

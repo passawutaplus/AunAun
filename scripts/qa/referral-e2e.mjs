@@ -8,7 +8,7 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-const projectRef = process.env.SUPABASE_PROJECT_REF || "rvnzjiskqliexysicfmh";
+const projectRef = process.env.SUPABASE_PROJECT_REF || "zkflkpbmbozrchqncpzi";
 const mgmtToken = process.env.SUPABASE_ACCESS_TOKEN;
 const baseUrl = (process.env.E2E_BASE_URL || process.env.ANTHEM_BASE_URL || "https://1px-demo.vercel.app").replace(/\/$/, "");
 const supabaseUrl = `https://${projectRef}.supabase.co`;

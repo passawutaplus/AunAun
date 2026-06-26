@@ -13,7 +13,7 @@
 | แยกโปรเจกต์ใหม่ไหม? | **ไม่** — พัฒนาใน `Anthem-Code/` ต่อ แล้วห่อด้วย Capacitor |
 | React Native / Expo? | **ไม่** — rewrite เปลืองเวลา Supabase + UI ใช้ซ้ำไม่ได้ |
 | ลิงก์ข้าม platform? | **Web URL เดิม** (`an1hem.app/...`) + deep link ในแอปชี้ route เดียวกัน |
-| Backend | **Supabase เดิม** (`rvnzjiskqliexysicfmh`) — ไม่แยก DB |
+| Backend | **Supabase เดิม** (`zkflkpbmbozrchqncpzi`) — ไม่แยก DB |
 | So1o / Ops-Hub | ลิงก์ภายนอกผ่าน `VITE_SO1O_APP_URL` (ดู `docs/ecosystem-unified-account.md`) |
 
 ### ทำไมไม่แยก repo แอป

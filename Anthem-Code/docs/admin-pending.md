@@ -9,7 +9,7 @@
 | Admin CRUD (users, projects, comments, collections, jobs) | `/admin/*` |
 | มอนิเตอร์กิจกรรมทั้งเว็บ | `/admin/activity` |
 | Dashboard KPI + แถบ "ต้องดูแล" | `/admin` |
-| **platform_events** + DB triggers | migrations บน `rvnzjiskqliexysicfmh` |
+| **platform_events** + DB triggers | migrations บน `zkflkpbmbozrchqncpzi` |
 | **สัญญา** | `/admin/contracts` |
 | **กระเป๋า & Ledger** | `/admin/wallet` |
 | **ใบสมัครงาน** | `/admin/applications` |
@@ -24,7 +24,7 @@
 
 ## ต้อง push migration บน remote
 
-โปรเจกต์ unified: **`rvnzjiskqliexysicfmh`**
+โปรเจกต์ unified: **`zkflkpbmbozrchqncpzi`**
 
 ```bash
 export SUPABASE_ACCESS_TOKEN=sbp_...
@@ -36,7 +36,7 @@ npm run db:push
 หลัง push:
 
 ```bash
-npx supabase gen types typescript --project-id rvnzjiskqliexysicfmh > src/integrations/supabase/types.ts
+npx supabase gen types typescript --project-id zkflkpbmbozrchqncpzi > src/integrations/supabase/types.ts
 ```
 
 ---

@@ -14,7 +14,7 @@ import { DEMO_EMAIL_SUFFIX } from "./demo-catalog-ids.mjs";
 
 loadSeedEnv();
 
-const PROJECT_REF = process.env.SUPABASE_PROJECT_REF || "rvnzjiskqliexysicfmh";
+const PROJECT_REF = process.env.SUPABASE_PROJECT_REF || "zkflkpbmbozrchqncpzi";
 const API = `https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query`;
 
 const MIGRATIONS = [

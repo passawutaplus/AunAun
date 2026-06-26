@@ -1,4 +1,4 @@
--- Paste into Supabase SQL Editor → project rvnzjiskqliexysicfmh → Run
+-- Paste into Supabase SQL Editor → project zkflkpbmbozrchqncpzi → Run
 
 CREATE OR REPLACE FUNCTION public.sync_user_tier(_user_id uuid)
 RETURNS void

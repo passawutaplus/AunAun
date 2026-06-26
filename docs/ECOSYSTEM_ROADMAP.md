@@ -36,11 +36,11 @@ export SUPABASE_ACCESS_TOKEN=sbp_...
 supabase functions deploy \
   notify-anthem notify-anthem-chat notify-anthem-collab notify-hire-request \
   job-match-dispatch line-connect line-webhook line-queue-process \
-  --project-ref rvnzjiskqliexysicfmh
+  --project-ref zkflkpbmbozrchqncpzi
 
 # AI + ecosystem
 supabase functions deploy anthem-assistant ecosystem-ai-usage generate-contract \
-  --project-ref rvnzjiskqliexysicfmh
+  --project-ref zkflkpbmbozrchqncpzi
 
 # SQL (manual if needed)
 # scripts/ecosystem/ecosystem-phase1.sql

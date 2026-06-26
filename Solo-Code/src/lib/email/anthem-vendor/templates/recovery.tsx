@@ -1,11 +1,8 @@
-import * as React from "react";
-import { EMAIL_FOOTER_NOT_REQUESTED } from "../copyConstants";
-import { EmailLayout, EmailButton, EmailText } from "./layout";
+import * as React from 'react'
+import { EMAIL_FOOTER_NOT_REQUESTED } from '../copyConstants'
+import { EmailLayout, EmailButton, EmailText } from './layout'
 
-interface RecoveryEmailProps {
-  siteName: string;
-  confirmationUrl: string;
-}
+interface RecoveryEmailProps { siteName: string; confirmationUrl: string }
 
 export const RecoveryEmail = ({ siteName, confirmationUrl }: RecoveryEmailProps) => (
   <EmailLayout
@@ -19,6 +16,6 @@ export const RecoveryEmail = ({ siteName, confirmationUrl }: RecoveryEmailProps)
     </EmailText>
     <EmailButton href={confirmationUrl}>ตั้งรหัสผ่านใหม่</EmailButton>
   </EmailLayout>
-);
+)
 
-export default RecoveryEmail;
+export default RecoveryEmail

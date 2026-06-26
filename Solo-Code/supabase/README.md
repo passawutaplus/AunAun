@@ -1,6 +1,6 @@
 # Supabase — So1o (unified ecosystem)
 
-โปรเจกต์ที่ใช้งาน: **`rvnzjiskqliexysicfmh`** (supabase-blue-park) — ใช้ร่วมกับ an1hem + Ops Hub
+โปรเจกต์ที่ใช้งาน: **`zkflkpbmbozrchqncpzi`** (supabase-blue-park) — ใช้ร่วมกับ an1hem + Ops Hub
 
 | ไฟล์ / โฟลเดอร์ | หน้าที่ |
 |-----------------|--------|
@@ -92,7 +92,7 @@ supabase functions deploy \
   notify-anthem notify-anthem-chat notify-anthem-collab notify-hire-request \
   job-match-dispatch \
   line-connect line-webhook line-queue-process \
-  --project-ref rvnzjiskqliexysicfmh
+  --project-ref zkflkpbmbozrchqncpzi
 ```
 
 Deploy Anthem AI/ecosystem:
@@ -100,7 +100,7 @@ Deploy Anthem AI/ecosystem:
 ```bash
 supabase functions deploy embed-project similar-images generate-contract \
   anthem-assistant anthem-portfolio-assist ecosystem-ai-usage admin-ai-monitor admin-supabase-usage ops-infra-monitor \
-  --project-ref rvnzjiskqliexysicfmh
+  --project-ref zkflkpbmbozrchqncpzi
 ```
 
 ## Portfolio AI assist (manual test)

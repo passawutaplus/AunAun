@@ -12,7 +12,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SOLO="$ROOT/Solo-Code"
 ENV_FILE="${LINE_ENV_FILE:-$SOLO/.env.line}"
-PROJECT_REF="${SUPABASE_PROJECT_REF:-rvnzjiskqliexysicfmh}"
+PROJECT_REF="${SUPABASE_PROJECT_REF:-zkflkpbmbozrchqncpzi}"
 
 echo "=== So1o LINE setup ==="
 echo ""

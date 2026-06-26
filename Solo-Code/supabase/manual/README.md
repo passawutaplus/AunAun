@@ -14,4 +14,4 @@
 ./scripts/bundle-migrations-sql.sh
 ```
 
-วิธีรัน: [SQL Editor](https://supabase.com/dashboard/project/rvnzjiskqliexysicfmh/sql/new) → วางทั้งไฟล์ → Run
+วิธีรัน: [SQL Editor](https://supabase.com/dashboard/project/zkflkpbmbozrchqncpzi/sql/new) → วางทั้งไฟล์ → Run

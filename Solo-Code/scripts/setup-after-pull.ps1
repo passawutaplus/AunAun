@@ -15,6 +15,6 @@ node scripts/merge-env-from-example.mjs
 
 Write-Host ""
 Write-Host "Done. If Supabase still uses the old project ref, copy .env from your other PC" -ForegroundColor Yellow
-Write-Host "or update keys from: https://supabase.com/dashboard/project/rvnzjiskqliexysicfmh/settings/api" -ForegroundColor Yellow
+Write-Host "or update keys from: https://supabase.com/dashboard/project/zkflkpbmbozrchqncpzi/settings/api" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Start dev server: npm run dev" -ForegroundColor Green

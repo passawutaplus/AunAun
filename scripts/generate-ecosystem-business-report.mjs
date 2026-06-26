@@ -84,7 +84,7 @@ function cover(doc) {
     `อัปเดต ${REPORT_DATE}`,
     "solofreelancer.com",
     "an1hem.app",
-    "rvnzjiskqliexysicfmh",
+    "zkflkpbmbozrchqncpzi",
   ];
   let px = MARGIN + 16;
   const py = y0 + h - 34;
@@ -277,7 +277,7 @@ function ecosystemDiagram(doc) {
   doc.moveTo(mid, y0 + 36).lineTo(MARGIN + CONTENT_W - 120, y0 + 48).stroke();
 
   doc.roundedRect(mid - 90, y0 + 112, 180, 40, 8).fill("#f0f0f0");
-  doc.font("semi").fontSize(8.5).fillColor(BRAND.ink).text("Supabase rvnzjiskqliexysicfmh", mid - 90, y0 + 120, { width: 180, align: "center" });
+  doc.font("semi").fontSize(8.5).fillColor(BRAND.ink).text("Supabase zkflkpbmbozrchqncpzi", mid - 90, y0 + 120, { width: 180, align: "center" });
   doc.font("regular").fontSize(7.5).fillColor(BRAND.muted).text("public · shared · anthem · so1o", mid - 90, y0 + 134, { width: 180, align: "center" });
 
   doc.y = y0 + boxH + 10;
@@ -383,7 +383,7 @@ async function main() {
   sectionTitle(doc, 5, "Ecosystem รวม — บัญชีเดียว");
   ecosystemDiagram(doc);
   bullets(doc, [
-    "Supabase project เดียว: rvnzjiskqliexysicfmh (schemas: public, shared, anthem, so1o)",
+    "Supabase project เดียว: zkflkpbmbozrchqncpzi (schemas: public, shared, anthem, so1o)",
     "profiles.user_id = auth.uid() — แถวเดียวสำหรับ subscription_tier ทั้งสองแอป",
     "สมัคร So1o Pro ครั้งเดียว → ใช้สิทธิ์ Pro บน an1hem ทันที",
     "Loop ธุรกิจ: ลงผลงาน an1hem → ลูกค้าจ้าง → ทำใบเสนอราคา So1o → ส่งงาน → โพสต์ผลงานกลับ an1hem",

@@ -1,5 +1,5 @@
 -- Ecosystem Phase 1: tier seats, ecosystem_links, hire notifications
--- Run on unified Supabase project (rvnzjiskqliexysicfmh)
+-- Run on unified Supabase project (zkflkpbmbozrchqncpzi)
 
 -- Seat quantity on active subscription (In-House checkout quantity)
 ALTER TABLE public.subscriptions

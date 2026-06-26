@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PROJECT_REF="${SUPABASE_PROJECT_REF:-rvnzjiskqliexysicfmh}"
+PROJECT_REF="${SUPABASE_PROJECT_REF:-zkflkpbmbozrchqncpzi}"
 API="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
 BUNDLE="supabase/manual/apply-anthem-ecosystem.sql"
 

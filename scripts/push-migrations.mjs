@@ -6,7 +6,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join, basename } from "node:path";
 
-const projectRef = process.env.SUPABASE_PROJECT_REF || "rvnzjiskqliexysicfmh";
+const projectRef = process.env.SUPABASE_PROJECT_REF || "zkflkpbmbozrchqncpzi";
 const token = process.env.SUPABASE_ACCESS_TOKEN;
 import { fileURLToPath } from "node:url";
 const repoRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..");
@@ -38,12 +38,18 @@ async function apiPost(path, body) {
 }
 
 console.log("Fetching applied migrations...");
-const appliedRows = await apiPost("/database/query", {
-  query: "SELECT name FROM supabase_migrations.schema_migrations ORDER BY name;",
-});
-const applied = new Set(
-  (Array.isArray(appliedRows) ? appliedRows : []).map((r) => r.name).filter(Boolean),
-);
+let applied = new Set();
+try {
+  const appliedRows = await apiPost("/database/query", {
+    query: "SELECT name FROM supabase_migrations.schema_migrations ORDER BY name;",
+  });
+  applied = new Set(
+    (Array.isArray(appliedRows) ? appliedRows : []).map((r) => r.name).filter(Boolean),
+  );
+} catch (e) {
+  if (!String(e.message).includes("schema_migrations")) throw e;
+  console.log("No migration history yet — applying all files");
+}
 
 const files = readdirSync(migDir)
   .filter((f) => f.endsWith(".sql"))

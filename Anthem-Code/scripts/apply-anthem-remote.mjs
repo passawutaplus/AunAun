@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Apply anthem ecosystem SQL + optional seed on rvnzjiskqliexysicfmh.
+ * Apply anthem ecosystem SQL + optional seed on zkflkpbmbozrchqncpzi.
  *
  * Requires ONE of:
  *   SUPABASE_ACCESS_TOKEN  — Management API (recommended)
@@ -46,7 +46,7 @@ if (!process.env.SUPABASE_ACCESS_TOKEN && existsSync(tokenPath)) {
   process.env.SUPABASE_ACCESS_TOKEN = readFileSync(tokenPath, "utf8").trim();
 }
 
-const PROJECT_REF = process.env.SUPABASE_PROJECT_REF || "rvnzjiskqliexysicfmh";
+const PROJECT_REF = process.env.SUPABASE_PROJECT_REF || "zkflkpbmbozrchqncpzi";
 const API = `https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query`;
 const BUNDLE = join(monoRoot, "Solo-Code", "supabase", "manual", "apply-anthem-ecosystem.sql");
 const SCHEMAS_SQL = join(monoRoot, "Solo-Code", "supabase", "migrations", "20260606120000_ecosystem_schemas.sql");

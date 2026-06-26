@@ -1,7 +1,7 @@
 # Scale Readiness Checklist — So1o + an1hem
 
 อัปเดต: มิถุนายน 2569  
-ขอบเขต: **So1o Freelancer (My Desk)** + **an1hem Showcase** — แชร์ Supabase โปรเจกต์เดียว (`rvnzjiskqliexysicfmh`)  
+ขอบเขต: **So1o Freelancer (My Desk)** + **an1hem Showcase** — แชร์ Supabase โปรเจกต์เดียว (`zkflkpbmbozrchqncpzi`)  
 เป้าหมาย: พร้อมรับ **100 concurrent users** แล้วมีแผนชัดสำหรับ **1,000 concurrent users**
 
 เอกสารที่เกี่ยวข้อง:

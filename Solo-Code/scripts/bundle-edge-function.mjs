@@ -46,7 +46,7 @@ if (fs.existsSync(configPath)) {
 }
 
 const out = {
-  project_id: "rvnzjiskqliexysicfmh",
+  project_id: "zkflkpbmbozrchqncpzi",
   name: fnName,
   entrypoint_path: "index.ts",
   verify_jwt: verifyJwt,
