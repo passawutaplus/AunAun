@@ -8,10 +8,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { CommunityMediaAspectPicker } from "@/components/community/CommunityMediaAspectPicker";
 import { getCroppedImageFile } from "@/lib/cropImage";
+import {
+  type CommunityMediaAspect,
+  communityMediaAspectMeta,
+  normalizeCommunityMediaAspect,
+} from "@/lib/communityMediaAspect";
+import { cn } from "@/lib/utils";
 
 type Props = {
   file: File | null;
+  aspect?: CommunityMediaAspect;
+  /** First image of the post — user picks aspect here; later images use the locked ratio. */
+  allowAspectChoice?: boolean;
+  onAspectChange?: (aspect: CommunityMediaAspect) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (file: File) => void;
@@ -20,11 +31,16 @@ type Props = {
 
 export function CommunityImageCropDialog({
   file,
+  aspect: aspectProp,
+  allowAspectChoice = false,
+  onAspectChange,
   open,
   onOpenChange,
   onConfirm,
   onCancel,
 }: Props) {
+  const aspectKey = normalizeCommunityMediaAspect(aspectProp);
+  const meta = communityMediaAspectMeta(aspectKey);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -42,18 +58,25 @@ export function CommunityImageCropDialog({
     setZoom(1);
     setCroppedAreaPixels(null);
     return () => URL.revokeObjectURL(url);
-  }, [file]);
+  }, [file, aspectKey]);
 
   const onCropComplete = useCallback((_: Area, pixels: Area) => {
     setCroppedAreaPixels(pixels);
   }, []);
 
+  const handleAspectPick = (next: CommunityMediaAspect) => {
+    onAspectChange?.(next);
+  };
+
   const handleConfirm = async () => {
     if (!file || !imageSrc || !croppedAreaPixels) return;
     setSaving(true);
     try {
-      const mime = file.type.startsWith("image/png") ? "image/png" : "image/jpeg";
-      const cropped = await getCroppedImageFile(imageSrc, croppedAreaPixels, file.name, mime);
+      const mime = file.type === "image/png" ? "image/png" : "image/webp";
+      const cropped = await getCroppedImageFile(imageSrc, croppedAreaPixels, file.name, mime, {
+        width: meta.exportW,
+        height: meta.exportH,
+      });
       onConfirm(cropped);
       onOpenChange(false);
     } finally {
@@ -71,19 +94,33 @@ export function CommunityImageCropDialog({
     >
       <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-4 pt-4 pb-2">
-          <DialogTitle className="text-base">ครอปรูป 1:1</DialogTitle>
+          <DialogTitle className="text-base">
+            {allowAspectChoice ? "อัปรูปแรก — เลือกสัดส่วนโพสต์" : `ครอปรูป ${meta.ratioLabel}`}
+          </DialogTitle>
           <p className="text-xs text-muted-foreground font-normal">
-            โพสต์ชุมชนใช้รูปสี่เหลี่ยมจัตุรัส — ลากและซูมเพื่อจัดกรอบ
+            {allowAspectChoice
+              ? "เลือกสัดส่วนแล้วครอป — รูปและวิดีโอถัดไปใช้สัดส่วนเดียวกันทั้งโพสต์"
+              : `โพสต์นี้ใช้สัดส่วน ${meta.label} (${meta.ratioLabel}) — ลากและซูมเพื่อจัดกรอบ`}
           </p>
         </DialogHeader>
 
-        <div className="relative w-full aspect-square bg-muted">
+        {allowAspectChoice && (
+          <div className="px-4 pb-3">
+            <CommunityMediaAspectPicker
+              value={aspectKey}
+              onChange={handleAspectPick}
+              className="gap-1.5"
+            />
+          </div>
+        )}
+
+        <div className={cn("relative w-full bg-muted mx-auto max-w-md", meta.cropFrameClass)}>
           {imageSrc && (
             <Cropper
               image={imageSrc}
               crop={crop}
               zoom={zoom}
-              aspect={1}
+              aspect={meta.ratio}
               cropShape="rect"
               showGrid
               onCropChange={setCrop}

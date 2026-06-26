@@ -32,14 +32,17 @@ export async function getCroppedImageFile(
   pixelCrop: Area,
   fileName: string,
   mimeType = "image/jpeg",
+  outputSize?: { width: number; height: number },
 ): Promise<File> {
   const image = await loadImage(imageSrc);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("ไม่สามารถครอปรูปได้");
 
-  canvas.width = Math.round(pixelCrop.width);
-  canvas.height = Math.round(pixelCrop.height);
+  const outW = outputSize?.width ?? Math.round(pixelCrop.width);
+  const outH = outputSize?.height ?? Math.round(pixelCrop.height);
+  canvas.width = outW;
+  canvas.height = outH;
 
   ctx.drawImage(
     image,
@@ -49,8 +52,8 @@ export async function getCroppedImageFile(
     pixelCrop.height,
     0,
     0,
-    pixelCrop.width,
-    pixelCrop.height,
+    outW,
+    outH,
   );
 
   const blob = await new Promise<Blob>((resolve, reject) => {
@@ -61,7 +64,8 @@ export async function getCroppedImageFile(
     );
   });
 
-  const ext = mimeType === "image/png" ? "png" : "jpg";
+  const ext =
+    mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
   const safeName = fileName.replace(/\.\w+$/, "") || "image";
   return new File([blob], `${safeName}.${ext}`, { type: mimeType });
 }

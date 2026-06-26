@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import SectionHeader from "@/components/admin/SectionHeader";
 import DataTable, { Column } from "@/components/admin/DataTable";
 import StatusPill from "@/components/admin/StatusPill";
@@ -7,6 +7,11 @@ import { SearchBar, useSearch } from "@/components/admin/SearchBar";
 import AdminExportButton from "@/components/admin/AdminExportButton";
 import { supabase } from "@/integrations/supabase/client";
 import { formatThaiDate } from "@/lib/format";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { applicationStatusLabel } from "@/components/jobs/jobCardUtils";
+import type { ApplicationStatus } from "@/hooks/useJobs";
 
 interface Row {
   id: string;
@@ -19,7 +24,10 @@ interface Row {
   created_at: string;
 }
 
+const STATUS_OPTIONS: ApplicationStatus[] = ["pending", "shortlisted", "contacted", "hired", "rejected"];
+
 export default function AdminApplicationsPage() {
+  const qc = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["admin-applications"],
     queryFn: async () => {
@@ -28,6 +36,12 @@ export default function AdminApplicationsPage() {
       return (data ?? []) as Row[];
     },
   });
+
+  const updateStatus = async (id: string, status: ApplicationStatus) => {
+    const { error } = await supabase.from("job_applications").update({ status } as never).eq("id", id);
+    if (error) throw error;
+    qc.invalidateQueries({ queryKey: ["admin-applications"] });
+  };
 
   const { q, setQ, filtered } = useSearch(data, ["job_title", "applicant_name", "status", "cover_letter"]);
   const pending = (data ?? []).filter((r) => r.status === "pending").length;
@@ -51,7 +65,22 @@ export default function AdminApplicationsPage() {
         </Link>
       ),
     },
-    { key: "status", header: "สถานะ", render: (r) => <StatusPill status={r.status} tone={r.status === "pending" ? "accent" : "muted"} /> },
+    {
+      key: "status",
+      header: "สถานะ",
+      render: (r) => (
+        <Select value={r.status} onValueChange={(v) => updateStatus(r.id, v as ApplicationStatus)}>
+          <SelectTrigger className="h-8 w-[130px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map((s) => (
+              <SelectItem key={s} value={s}>{applicationStatusLabel[s] ?? s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ),
+    },
     { key: "letter", header: "จดหมาย", render: (r) => <span className="text-xs text-admin-muted line-clamp-2 max-w-xs">{r.cover_letter || "—"}</span> },
     { key: "at", header: "สมัครเมื่อ", render: (r) => <span className="font-mono text-xs">{formatThaiDate(r.created_at)}</span> },
   ];

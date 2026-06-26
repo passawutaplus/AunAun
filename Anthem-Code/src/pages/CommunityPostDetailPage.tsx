@@ -21,6 +21,7 @@ import { profilePublicPath } from "@/lib/profileRoutes";
 import { communityDisplayTags, hasCommunityQaBadge } from "@/lib/communityQaTag";
 import { CommunityQaBadge } from "@/components/community/CommunityQaBadge";
 import { CommunityMentionedProjectsBar } from "@/components/community/CommunityMentionedProjectsBar";
+import { CommunityTaggedUsersBar } from "@/components/community/CommunityTaggedUsersBar";
 import { cn } from "@/lib/utils";
 
 const CommunityPostDetailPage = () => {
@@ -86,6 +87,7 @@ const CommunityPostDetailPage = () => {
               videoUrls={post.video_urls}
               title={post.title}
               variant="detail"
+              mediaAspect={post.media_aspect}
             />
           )}
 
@@ -103,12 +105,24 @@ const CommunityPostDetailPage = () => {
             linkable
           />
 
+          <CommunityTaggedUsersBar
+            users={post.tagged_users ?? []}
+            linkable
+          />
+
           <div className="px-6 pb-6 pt-4 space-y-4">
             {hasCommunityQaBadge(post.tags) && <CommunityQaBadge />}
             {showTitle && (
               <h1 className="text-2xl font-semibold leading-snug">{post.title}</h1>
             )}
             <p className="text-foreground/90 whitespace-pre-wrap leading-relaxed">{post.body}</p>
+            {communityDisplayTags(post.tags).length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {communityDisplayTags(post.tags).map((t) => (
+                  <span key={t} className="text-xs text-primary">#{t}</span>
+                ))}
+              </div>
+            )}
             {(post.tools?.length ?? 0) > 0 && (
               <div className="flex flex-wrap gap-2">
                 {post.tools!.map((t) => (
@@ -120,13 +134,6 @@ const CommunityPostDetailPage = () => {
                     <ToolIcon name={t} size="xs" />
                     {t}
                   </Link>
-                ))}
-              </div>
-            )}
-            {communityDisplayTags(post.tags).length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {communityDisplayTags(post.tags).map((t) => (
-                  <span key={t} className="text-xs text-primary">#{t}</span>
                 ))}
               </div>
             )}

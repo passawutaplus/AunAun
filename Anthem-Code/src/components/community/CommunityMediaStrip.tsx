@@ -19,10 +19,13 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Loader2, Plus, Play, X } from "lucide-react";
 import type { PortfolioMediaItem } from "@/lib/portfolioMedia";
+import type { CommunityMediaAspect } from "@/lib/communityMediaAspect";
+import { communityMediaStripThumbClass } from "@/lib/communityMediaAspect";
 import { cn } from "@/lib/utils";
 
 type Props = {
   items: PortfolioMediaItem[];
+  mediaAspect?: CommunityMediaAspect;
   uploading: boolean;
   pickDisabled?: boolean;
   onPickFile: (file: File) => void;
@@ -33,10 +36,12 @@ type Props = {
 function SortableMediaThumb({
   item,
   index,
+  thumbClass,
   onRemove,
 }: {
   item: PortfolioMediaItem;
   index: number;
+  thumbClass: string;
   onRemove: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -53,7 +58,8 @@ function SortableMediaThumb({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "relative shrink-0 w-20 h-20 rounded-xl overflow-hidden bg-muted touch-none",
+        "relative shrink-0 rounded-xl overflow-hidden bg-muted touch-none",
+        thumbClass,
         "cursor-grab active:cursor-grabbing",
         isDragging && "z-10 opacity-80 shadow-lg ring-2 ring-primary/40",
       )}
@@ -90,6 +96,7 @@ function SortableMediaThumb({
 
 export function CommunityMediaStrip({
   items,
+  mediaAspect,
   uploading,
   pickDisabled,
   onPickFile,
@@ -98,6 +105,10 @@ export function CommunityMediaStrip({
 }: Props) {
   const mediaRef = useRef<HTMLInputElement>(null);
   const sortable = items.length > 1;
+  const thumbClass = communityMediaStripThumbClass(mediaAspect);
+  /** Empty composer: square add slot (default 1:1) until first media locks aspect. */
+  const addThumbClass =
+    items.length === 0 ? communityMediaStripThumbClass("square") : thumbClass;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -116,9 +127,15 @@ export function CommunityMediaStrip({
 
   const thumbs = items.map((item, index) =>
     sortable ? (
-      <SortableMediaThumb key={item.id} item={item} index={index} onRemove={() => onRemove(index)} />
+      <SortableMediaThumb
+        key={item.id}
+        item={item}
+        index={index}
+        thumbClass={thumbClass}
+        onRemove={() => onRemove(index)}
+      />
     ) : (
-      <div key={item.id} className="relative shrink-0 w-20 h-20 rounded-xl overflow-hidden bg-muted">
+      <div key={item.id} className={cn("relative shrink-0 rounded-xl overflow-hidden bg-muted", thumbClass)}>
         {item.kind === "video" ? (
           <div className="w-full h-full grid place-items-center bg-muted">
             <Play className="w-6 h-6 text-muted-foreground" />
@@ -139,10 +156,7 @@ export function CommunityMediaStrip({
   );
 
   return (
-    <div className="px-4 py-3">
-      {sortable && (
-        <p className="mb-2 text-[11px] text-muted-foreground">กดค้างแล้วลากเพื่อสลับลำดับ</p>
-      )}
+    <div className="px-4 pb-3 pt-0">
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
         {sortable ? (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -159,8 +173,9 @@ export function CommunityMediaStrip({
           onClick={() => mediaRef.current?.click()}
           disabled={uploading || pickDisabled}
           className={cn(
-            "shrink-0 w-20 h-20 rounded-xl border-2 border-dashed border-primary/70",
-            "flex flex-col items-center justify-center gap-1 text-primary",
+            "shrink-0 rounded-xl border-2 border-dashed border-primary/70",
+            addThumbClass,
+            "flex flex-col items-center justify-center gap-0.5 text-primary",
             "hover:border-primary hover:bg-primary/5 transition-colors disabled:opacity-50",
           )}
         >

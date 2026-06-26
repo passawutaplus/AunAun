@@ -236,6 +236,11 @@ const PublicProfilePage = () => {
                   {highlight(profile.role, q)}
                 </Badge>
               )}
+              {(profile as { open_for_work?: boolean; open_for_work_badge?: string }).open_for_work && (
+                <Badge className="mt-2 ml-1 rounded-full bg-primary/15 text-primary border-0 text-xs font-normal">
+                  {(profile as { open_for_work_badge?: string }).open_for_work_badge || "Open for Work"}
+                </Badge>
+              )}
               {profile.bio && (
                 <p className="text-sm text-foreground/85 mt-2 sm:mt-3 max-w-xl leading-relaxed">
                   {highlight(profile.bio, q)}
@@ -295,7 +300,7 @@ const PublicProfilePage = () => {
                       className="w-full rounded-full bg-gradient-brand text-white hover:opacity-90 h-10 text-sm font-medium gap-1.5"
                     >
                       <BriefcaseIcon className="w-4 h-4 shrink-0" />
-                      จ้างงาน
+                      ชวนมาทำงาน
                     </Button>
                     <Button
                       type="button"

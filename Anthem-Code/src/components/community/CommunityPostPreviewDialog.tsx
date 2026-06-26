@@ -1,13 +1,12 @@
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  CommunityPostPreviewContent,
-  type CommunityPostPreviewProps,
-} from "@/components/community/CommunityPostPreviewContent";
+  CommunityPostPreviewView,
+} from "@/components/community/CommunityPostPreviewView";
+import type { CommunityPostPreviewProps } from "@/components/community/CommunityPostPreviewContent";
 
 type Props = CommunityPostPreviewProps & {
   open: boolean;
@@ -22,21 +21,24 @@ export function CommunityPostPreviewDialog({
   tags,
   tools,
   mentionedProjects,
+  taggedUsers,
   mediaItems,
+  mediaAspect,
 }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto p-4 sm:p-5">
-        <DialogHeader className="mb-2">
-          <DialogTitle>ตัวอย่างโพสต์</DialogTitle>
-        </DialogHeader>
-        <CommunityPostPreviewContent
+        <DialogTitle className="sr-only">Preview</DialogTitle>
+        <CommunityPostPreviewView
           title={title}
           body={body}
           tags={tags}
           tools={tools}
           mentionedProjects={mentionedProjects}
+          taggedUsers={taggedUsers}
           mediaItems={mediaItems}
+          mediaAspect={mediaAspect}
+          defaultMode="mobile"
         />
       </DialogContent>
     </Dialog>

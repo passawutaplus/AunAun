@@ -1,0 +1,249 @@
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import JobCoverUploadField from "@/components/jobs/JobCoverUploadField";
+import JobCardPreview from "@/components/jobs/JobCardPreview";
+import SkillTagInput from "@/components/jobs/shared/SkillTagInput";
+import RateFields, { type BudgetType } from "@/components/jobs/shared/RateFields";
+import PostAsEntitySelect, { type PostAsSelection } from "@/components/jobs/shared/PostAsEntitySelect";
+import { toast } from "sonner";
+
+const ROLE_OPTIONS = [
+  "UI/UX", "Graphic", "Branding", "Illustration", "Motion", "Photography",
+  "Video", "Audio", "Web/UI", "Content", "3D", "Copywriting", "Editorial", "Other",
+];
+
+const APP_METHODS = [
+  { id: "portfolio", label: "ส่ง Portfolio" },
+  { id: "cv", label: "ส่ง CV" },
+  { id: "quote", label: "แนบราคาเสนอ" },
+];
+
+interface Props {
+  onSuccess: () => void;
+}
+
+const posterRoleFromEntity = (entity: PostAsSelection): "studio" | "company" | "freelancer" => {
+  if (entity.entityType === "studio") return "studio";
+  if (entity.entityType === "brand") return "company";
+  return "freelancer";
+};
+
+const PostOpportunityForm = ({ onSuccess }: Props) => {
+  const { user } = useAuth();
+  const { data: profile } = useProfile(user?.id);
+  const qc = useQueryClient();
+  const [postAs, setPostAs] = useState<PostAsSelection>({ entityType: "personal", studioId: null });
+  const [employment, setEmployment] = useState<"project" | "fulltime" | "parttime" | "internship" | "freelance">("project");
+  const [title, setTitle] = useState("");
+  const [role, setRole] = useState("UI/UX");
+  const [desc, setDesc] = useState("");
+  const [skills, setSkills] = useState<string[]>([]);
+  const [deliverables, setDeliverables] = useState("");
+  const [budgetType, setBudgetType] = useState<BudgetType>("fixed");
+  const [budgetMin, setBudgetMin] = useState("");
+  const [budgetMax, setBudgetMax] = useState("");
+  const [location, setLocation] = useState("");
+  const [locType, setLocType] = useState<"remote" | "onsite" | "hybrid">("remote");
+  const [deadline, setDeadline] = useState("");
+  const [headcount, setHeadcount] = useState("1");
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [appMethods, setAppMethods] = useState<string[]>(["portfolio"]);
+  const [loading, setLoading] = useState(false);
+
+  const toggleMethod = (id: string) => {
+    setAppMethods((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const submit = async () => {
+    if (!user) { toast.error("กรุณาเข้าสู่ระบบ"); return; }
+    if (!title.trim()) { toast.error("กรุณาระบุชื่อประกาศ"); return; }
+    setLoading(true);
+    try {
+      const { error } = await supabase.from("job_posts").insert({
+        posted_by: user.id,
+        studio_id: postAs.studioId,
+        posted_as_studio_id: postAs.studioId,
+        title: title.trim(),
+        role_category: role,
+        description: desc.trim(),
+        skills,
+        deliverables: deliverables.split("\n").map((s) => s.trim()).filter(Boolean),
+        budget_min: budgetMin ? parseInt(budgetMin) : null,
+        budget_max: budgetMax ? parseInt(budgetMax) : null,
+        budget_type: budgetType,
+        location_type: locType,
+        location: location.trim(),
+        deadline: deadline || null,
+        headcount: headcount ? parseInt(headcount) : 1,
+        status: "open",
+        post_type: "hiring",
+        poster_role: posterRoleFromEntity(postAs),
+        poster_entity_type: postAs.entityType,
+        employment_type: employment,
+        cover_image_url: coverImageUrl,
+        application_methods: appMethods.length ? appMethods : ["portfolio"],
+      } as never);
+      if (error) throw error;
+      toast.success("ลงประกาศโอกาสงานเรียบร้อย");
+      qc.invalidateQueries({ queryKey: ["jobs-open"] });
+      qc.invalidateQueries({ queryKey: ["my-job-posts"] });
+      onSuccess();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {user && (
+        <JobCoverUploadField userId={user.id} value={coverImageUrl} onChange={setCoverImageUrl} />
+      )}
+
+      <div>
+        <Label className="text-xs">ชื่อประกาศ</Label>
+        <Input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="เช่น หา UI Designer ทำแอป Wellness"
+          className="rounded-xl"
+        />
+      </div>
+
+      <PostAsEntitySelect value={postAs} onChange={setPostAs} mode="hiring" />
+
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-xs">หมวดหมู่</Label>
+          <Select value={role} onValueChange={setRole}>
+            <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+            <SelectContent>{ROLE_OPTIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">ประเภทงาน</Label>
+          <Select value={employment} onValueChange={(v) => setEmployment(v as typeof employment)}>
+            <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="project">Project</SelectItem>
+              <SelectItem value="freelance">Freelance</SelectItem>
+              <SelectItem value="fulltime">Full-time</SelectItem>
+              <SelectItem value="parttime">Part-time</SelectItem>
+              <SelectItem value="internship">Internship</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div>
+        <Label className="text-xs">รายละเอียดงาน</Label>
+        <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={4} className="rounded-xl" />
+      </div>
+
+      <div>
+        <Label className="text-xs">สิ่งที่ต้องส่งมอบ (บรรทัดละ 1 รายการ)</Label>
+        <Textarea
+          value={deliverables}
+          onChange={(e) => setDeliverables(e.target.value)}
+          placeholder={"5 หน้า UI\nLogo 3 แบบ"}
+          rows={3}
+          className="rounded-xl"
+        />
+      </div>
+
+      <div>
+        <Label className="text-xs">Skill ที่ต้องการ</Label>
+        <SkillTagInput value={skills} onChange={setSkills} />
+      </div>
+
+      <RateFields
+        budgetType={budgetType}
+        onBudgetTypeChange={setBudgetType}
+        budgetMin={budgetMin}
+        budgetMax={budgetMax}
+        onBudgetMinChange={setBudgetMin}
+        onBudgetMaxChange={setBudgetMax}
+        minLabel="งบต่ำสุด (฿)"
+        maxLabel="งบสูงสุด (฿)"
+      />
+
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-xs">Deadline</Label>
+          <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="rounded-xl" />
+        </div>
+        <div>
+          <Label className="text-xs">จำนวนคนที่ต้องการ</Label>
+          <Input type="number" min={1} value={headcount} onChange={(e) => setHeadcount(e.target.value)} className="rounded-xl" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-xs">รูปแบบสถานที่</Label>
+          <Select value={locType} onValueChange={(v) => setLocType(v as typeof locType)}>
+            <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="remote">Remote</SelectItem>
+              <SelectItem value="onsite">Onsite</SelectItem>
+              <SelectItem value="hybrid">Hybrid</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">{locType === "remote" ? "ประเทศ / Timezone (optional)" : "สถานที่"}</Label>
+          <Input value={location} onChange={(e) => setLocation(e.target.value)} className="rounded-xl" />
+        </div>
+      </div>
+
+      <div>
+        <Label className="text-xs">วิธีสมัคร</Label>
+        <div className="flex flex-wrap gap-3 mt-1.5">
+          {APP_METHODS.map((m) => (
+            <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={appMethods.includes(m.id)} onCheckedChange={() => toggleMethod(m.id)} />
+              {m.label}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <JobCardPreview
+        data={{
+          title,
+          description: desc,
+          role_category: role,
+          skills,
+          budget_min: budgetMin ? parseInt(budgetMin) : null,
+          budget_max: budgetMax ? parseInt(budgetMax) : null,
+          budget_type: budgetType,
+          location_type: locType,
+          location,
+          employment_type: employment,
+          post_type: "hiring",
+          cover_image_url: coverImageUrl,
+          posterName: profile?.display_name ?? "ผู้ใช้",
+          posterAvatar: profile?.avatar_url,
+        }}
+      />
+
+      <Button disabled={loading} onClick={submit} className="w-full rounded-xl bg-gradient-brand text-white">
+        {loading ? "กำลังบันทึก..." : "ลงประกาศโอกาสงาน"}
+      </Button>
+    </div>
+  );
+};
+
+export default PostOpportunityForm;

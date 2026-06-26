@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -28,11 +29,16 @@ export function CommunityComposerFooter({
         <Button
           type="button"
           variant="outline"
-          className="flex-1 rounded-full"
+          className="shrink-0 w-[28%] min-w-[7.5rem] rounded-full px-3 text-sm"
           disabled={savingDraft || publishing}
           onClick={onSaveDraft}
+          aria-busy={savingDraft}
         >
-          {savingDraft ? "กำลังบันทึก..." : "บันทึกแบบร่าง"}
+          {savingDraft ? (
+            <Loader2 className="w-4 h-4 animate-spin" aria-label="กำลังบันทึก" />
+          ) : (
+            "บันทึกแบบร่าง"
+          )}
         </Button>
         <Button
           type="button"

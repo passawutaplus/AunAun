@@ -4,9 +4,37 @@ import {
   SHARED_MEDIA_BUCKET,
 } from "@/integrations/supabase/sharedStorageClient";
 import type { Tier } from "@/core/subscription/useSubscription";
-import { assertAnthemStorageAvailable } from "@/lib/anthemStorageUsage";
+import {
+  assertAnthemStorageAvailable,
+  bumpAnthemStorageCache,
+} from "@/lib/anthemStorageUsage";
 
 const MAX_INPUT_MB = 30;
+/** Cropped community exports are already ≤1920px — skip second pass under this size. */
+const SKIP_RECOMPRESS_MAX_BYTES = 1.5 * 1024 * 1024;
+
+export type UploadProjectImageOptions = {
+  /** File already cropped/resized — skip browser-image-compression when small enough. */
+  skipCompression?: boolean;
+  /** Do not block on a cold storage scan (quota refresh runs in background). */
+  fastQuotaCheck?: boolean;
+};
+
+function canSkipCompression(file: File): boolean {
+  return file.size <= SKIP_RECOMPRESS_MAX_BYTES && file.type.startsWith("image/");
+}
+
+async function compressForUpload(file: File, skipCompression?: boolean): Promise<File> {
+  if (skipCompression && canSkipCompression(file)) return file;
+
+  return imageCompression(file, {
+    maxSizeMB: 1.0,
+    maxWidthOrHeight: 1920,
+    useWebWorker: false,
+    fileType: "image/webp",
+    initialQuality: 0.85,
+  });
+}
 
 /**
  * Upload an image to the SHARED storage backend (So1o Freelancer Management
@@ -17,33 +45,33 @@ export async function uploadProjectImage(
   userId: string,
   folder: string,
   tier: Tier = "free",
+  options?: UploadProjectImageOptions,
 ): Promise<string> {
   if (!file.type.startsWith("image/")) throw new Error("ไฟล์ไม่ใช่รูปภาพ");
   if (file.size > MAX_INPUT_MB * 1024 * 1024) {
     throw new Error(`ไฟล์ใหญ่เกิน ${MAX_INPUT_MB}MB`);
   }
 
-  const compressed = await imageCompression(file, {
-    maxSizeMB: 1.0,
-    maxWidthOrHeight: 1920,
-    useWebWorker: true,
-    fileType: "image/webp",
-    initialQuality: 0.85,
+  const compressed = await compressForUpload(file, options?.skipCompression);
+
+  await assertAnthemStorageAvailable(userId, tier, compressed.size, {
+    nonBlocking: options?.fastQuotaCheck,
   });
 
-  await assertAnthemStorageAvailable(userId, tier, compressed.size);
-
-  const ext = "webp";
+  const ext = compressed.type === "image/png" ? "png" : "webp";
+  const contentType = compressed.type === "image/png" ? "image/png" : "image/webp";
   const name = `${crypto.randomUUID()}.${ext}`;
   const path = `anthem/${userId}/${folder}/${name}`;
 
   const { error } = await sharedStorage.storage
     .from(SHARED_MEDIA_BUCKET)
     .upload(path, compressed, {
-      contentType: "image/webp",
+      contentType,
       upsert: false,
     });
   if (error) throw error;
+
+  bumpAnthemStorageCache(userId, compressed.size);
 
   const { data } = sharedStorage.storage
     .from(SHARED_MEDIA_BUCKET)

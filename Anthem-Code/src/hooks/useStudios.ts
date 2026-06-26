@@ -17,12 +17,14 @@ export interface Studio {
   created_by: string;
   member_count: number;
   created_at: string;
+  available_for_work?: boolean;
+  expertise?: string[];
 }
 
 export interface StudioMember {
   studio_id: string;
   user_id: string;
-  role: "owner" | "admin" | "member";
+  role: "owner" | "admin" | "member" | "hiring_manager";
   credit_title: string;
   joined_at: string;
   profile?: { display_name: string; avatar_url: string | null; username: string | null };
@@ -49,6 +51,23 @@ export const useMyStudios = () => {
         .order("created_at", { ascending: false });
       if (e2) throw e2;
       return (studios ?? []) as Studio[];
+    },
+  });
+};
+
+/** Map studio_id -> role for permission checks (jobs pipeline, etc.). */
+export const useMyStudioRoles = () => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["my-studio-roles", user?.id],
+    enabled: !!user,
+    queryFn: async (): Promise<Map<string, string>> => {
+      const { data, error } = await supabase
+        .from("studio_members")
+        .select("studio_id, role")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return new Map((data ?? []).map((m: { studio_id: string; role: string }) => [m.studio_id, m.role]));
     },
   });
 };

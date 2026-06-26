@@ -21,6 +21,7 @@ import { SettingsPreferencesSection } from "@/components/settings/SettingsPrefer
 import { ThemeSettingsSection } from "@/components/settings/ThemeSettingsSection";
 import { LineNotificationSection } from "@/components/settings/LineNotificationSection";
 import { AccountPrivacySection } from "@/components/settings/AccountPrivacySection";
+import OpenForWorkSection from "@/components/settings/OpenForWorkSection";
 import { useSubscription } from "@/core/subscription";
 
 const empty: ProfileInput = {
@@ -163,6 +164,7 @@ const SettingsPage = () => {
           <AiUsageSettingsSection />
         </div>
         <ThemeSettingsSection />
+        <OpenForWorkSection />
         <LineNotificationSection />
 
         <section className="rounded-2xl glass-panel p-6">

@@ -91,7 +91,7 @@ const CommunityPostCard = ({ post }: Props) => {
 
               title={post.title}
 
-              aspectClass="aspect-[4/5] max-h-[420px]"
+              mediaAspect={post.media_aspect}
 
             />
 

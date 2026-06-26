@@ -1,35 +1,61 @@
 import BriefcaseIcon from "../components/icons/BriefcaseIcon";
-import { useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { useJobById, useApplyToJob, useUpdateJobStatus, useJobApplications } from "@/hooks/useJobs";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
+import {
+  useJobById,
+  useUpdateJobStatus,
+  useJobApplications,
+  useUpdateApplicationStatus,
+  useMarkApplicationViewed,
+  canManageJob,
+  type ApplicationStatus,
+} from "@/hooks/useJobs";
+import { useMyStudioRoles } from "@/hooks/useStudios";
 import { useAuth } from "@/hooks/useAuth";
 import { requireAuth } from "@/lib/requireAuth";
-import { useMyStudios } from "@/hooks/useStudios";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { MapPin, Calendar, Users, ArrowLeft, Loader2, CheckCircle2, UserSearch } from "lucide-react";
-import { getPosterInfo, roleCategoryGradient } from "@/components/jobs/jobCardUtils";
+import { MapPin, Calendar, Users, ArrowLeft, CheckCircle2, UserSearch, FileText, ExternalLink } from "lucide-react";
+import {
+  applicationStatusLabel,
+  empLabel,
+  fmtLocationChip,
+  getPosterInfo,
+  jobStatusLabel,
+  roleCategoryGradient,
+  availabilityLabel,
+} from "@/components/jobs/jobCardUtils";
 import { cn } from "@/lib/utils";
 import ReportTrigger from "@/components/report/ReportTrigger";
+import JobApplyDialog from "@/components/jobs/JobApplyDialog";
 
 const fmt = (n: number | null) => (n ? `฿${n.toLocaleString()}` : "");
 
 const JobDetailPage = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: job, isLoading } = useJobById(id);
-  const { data: myStudios = [] } = useMyStudios();
-  const apply = useApplyToJob();
-  const updateStatus = useUpdateJobStatus();
+  const { data: studioRoles = new Map<string, string>() } = useMyStudioRoles();
+  const updateStatus = useUpdateApplicationStatus();
+  const markViewed = useMarkApplicationViewed();
+  const updateJobStatus = useUpdateJobStatus();
   const [applyOpen, setApplyOpen] = useState(false);
-  const [coverLetter, setCoverLetter] = useState("");
+  const [expandedAppId, setExpandedAppId] = useState<string | null>(null);
 
-  const isAdmin = !!job && myStudios.some((s) => s.id === job.studio_id);
+  const isAdmin = canManageJob(job ?? undefined, user?.id, studioRoles);
   const { data: applications = [] } = useJobApplications(isAdmin ? id : undefined);
+
+  useEffect(() => {
+    if (searchParams.get("apply") === "1" && job?.status === "open") {
+      requireAuth(user, () => setApplyOpen(true));
+      const next = new URLSearchParams(searchParams);
+      next.delete("apply");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams, user, job?.status]);
 
   if (isLoading) return <div className="min-h-screen grid place-items-center text-muted-foreground">กำลังโหลด...</div>;
   if (!job) return <div className="min-h-screen grid place-items-center text-muted-foreground">ไม่พบประกาศนี้</div>;
@@ -39,36 +65,26 @@ const JobDetailPage = () => {
   const isSeeking = job.post_type === "seeking";
   const profileLink = job.studio?.slug ? `/s/${job.studio.slug}` : job.poster?.username ? `/u/${job.poster.username}` : null;
 
-  const submitApply = () => {
-    apply.mutate(
-      { job_id: job.id, cover_letter: coverLetter.trim(), portfolio_project_ids: [] },
-      {
-        onSuccess: () => {
-          setApplyOpen(false);
-          setCoverLetter("");
-        },
-      }
-    );
+  const expandApplicant = (appId: string) => {
+    setExpandedAppId(appId);
+    markViewed.mutate(appId);
+  };
+
+  const setAppStatus = (appId: string, status: ApplicationStatus, markContacted?: boolean) => {
+    updateStatus.mutate({ id: appId, status, markContacted });
   };
 
   return (
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-12">
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4" /> กลับ
         </button>
 
         <div className="relative h-48 rounded-2xl overflow-hidden border border-border/40">
           {hasCover ? (
             <>
-              <img
-                src={job.cover_image_url!}
-                alt=""
-                className="w-full h-full object-cover dark:brightness-75 dark:saturate-90"
-              />
+              <img src={job.cover_image_url!} alt="" className="w-full h-full object-cover dark:brightness-75 dark:saturate-90" />
               <div className="absolute inset-0 bg-black/25 dark:bg-black/45" />
             </>
           ) : (
@@ -77,7 +93,7 @@ const JobDetailPage = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/25 to-black/10 dark:from-black/80 dark:via-black/50" />
           <div className="absolute bottom-4 left-4 right-4">
             <h1 className="text-2xl font-semibold tracking-tight thai-display text-white drop-shadow">{job.title}</h1>
-            {job.role_category && <p className="text-sm text-white/85 mt-1">{job.role_category}</p>}
+            {job.role_category && <p className="text-sm text-white/85 mt-1">{job.role_category} · {empLabel[job.employment_type]}</p>}
           </div>
         </div>
 
@@ -113,12 +129,10 @@ const JobDetailPage = () => {
                 </p>
               )}
               {isSeeking && (
-                <Badge className="mt-1 bg-primary/15 text-primary border-0 text-[10px] h-5 px-1.5">หางาน</Badge>
+                <Badge className="mt-1 bg-primary/15 text-primary border-0 text-[10px] h-5 px-1.5">เปิดรับงาน</Badge>
               )}
             </div>
-            {job.status !== "open" && (
-              <Badge variant="secondary" className="text-xs">{job.status === "closed" ? "ปิดรับ" : "รับสมัครแล้ว"}</Badge>
-            )}
+            <Badge variant="secondary" className="text-xs">{jobStatusLabel[job.status]}</Badge>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
@@ -127,10 +141,16 @@ const JobDetailPage = () => {
                 ? `${fmt(job.budget_min)}${job.budget_min && job.budget_max ? "-" : ""}${fmt(job.budget_max)}`
                 : "ตามตกลง"
             } />
-            <Stat icon={<MapPin className="w-4 h-4" />} label="รูปแบบ" value={job.location_type === "remote" ? "Remote" : job.location_type === "onsite" ? "Onsite" : "Hybrid"} />
+            <Stat icon={<MapPin className="w-4 h-4" />} label="รูปแบบ" value={fmtLocationChip(job.location_type, job.location)} />
             {job.deadline && <Stat icon={<Calendar className="w-4 h-4" />} label="ปิดรับ" value={new Date(job.deadline).toLocaleDateString("th-TH")} />}
-            <Stat icon={<Users className="w-4 h-4" />} label="ผู้สมัคร" value={`${job.applicants_count}`} />
+            {!isSeeking && <Stat icon={<Users className="w-4 h-4" />} label="ผู้สมัคร" value={`${job.applicants_count}`} />}
           </div>
+
+          {job.ready_to_start && isSeeking && (
+            <p className="text-sm text-muted-foreground">
+              พร้อมเริ่ม: {availabilityLabel[job.ready_to_start] ?? job.ready_to_start}
+            </p>
+          )}
 
           {job.skills.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
@@ -138,44 +158,56 @@ const JobDetailPage = () => {
             </div>
           )}
 
+          {job.deliverables && job.deliverables.length > 0 && (
+            <div>
+              <p className="text-xs font-medium mb-1.5">สิ่งที่ต้องส่งมอบ</p>
+              <ul className="text-sm text-muted-foreground list-disc list-inside space-y-0.5">
+                {job.deliverables.map((d) => <li key={d}>{d}</li>)}
+              </ul>
+            </div>
+          )}
+
           <div className="prose prose-sm max-w-none dark:prose-invert">
             <p className="whitespace-pre-wrap leading-relaxed thai-body">{job.description || "ไม่มีรายละเอียดเพิ่มเติม"}</p>
           </div>
 
+          {isSeeking && job.attached_cv_url && (
+            <a
+              href={job.attached_cv_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+            >
+              <FileText className="w-4 h-4" /> ดาวน์โหลด CV
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
+
           <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/40">
             {isAdmin ? (
               <>
-                <Button
-                  variant="outline"
-                  onClick={() => updateStatus.mutate({ id: job.id, status: job.status === "open" ? "closed" : "open" })}
-                  className="rounded-xl"
-                >
+                <Button variant="outline" onClick={() => updateJobStatus.mutate({ id: job.id, status: job.status === "open" ? "closed" : "open" })} className="rounded-xl">
                   {job.status === "open" ? "ปิดประกาศ" : "เปิดประกาศใหม่"}
                 </Button>
-                <Button
-                  onClick={() => updateStatus.mutate({ id: job.id, status: "filled" })}
-                  className="rounded-xl bg-gradient-brand text-white border-0"
-                  disabled={job.status === "filled"}
-                >
-                  ทำเครื่องหมาย "รับสมัครแล้ว"
+                <Button onClick={() => updateJobStatus.mutate({ id: job.id, status: "filled" })} className="rounded-xl bg-gradient-brand text-white border-0" disabled={job.status === "filled"}>
+                  ทำเครื่องหมาย "รับแล้ว"
                 </Button>
               </>
-            ) : (
+            ) : !isSeeking ? (
               <Button
                 onClick={() => requireAuth(user, () => setApplyOpen(true))}
                 disabled={job.status !== "open"}
                 className="flex-1 rounded-xl bg-gradient-brand text-white border-0"
               >
-                สมัครงานนี้
+                สมัครด้วย Portfolio
               </Button>
-            )}
+            ) : profileLink ? (
+              <Button asChild className="flex-1 rounded-xl bg-gradient-brand text-white border-0">
+                <Link to={profileLink}>ดูโปรไฟล์ / ติดต่อ</Link>
+              </Button>
+            ) : null}
             {!isAdmin && (
-              <ReportTrigger
-                targetType="job"
-                targetId={job.id}
-                targetOwnerId={job.posted_by}
-                variant="text"
-              />
+              <ReportTrigger targetType="job" targetId={job.id} targetOwnerId={job.posted_by} variant="text" />
             )}
           </div>
         </div>
@@ -185,18 +217,45 @@ const JobDetailPage = () => {
             <h2 className="font-medium thai-display mb-3">ผู้สมัคร ({applications.length})</h2>
             <div className="space-y-3">
               {applications.map((a) => (
-                <div key={a.id} className="flex items-start gap-3 p-3 rounded-xl bg-background/40">
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage src={a.applicant?.avatar_url ?? undefined} />
-                    <AvatarFallback>{a.applicant?.display_name?.[0] ?? "?"}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <Link to={`/u/${a.applicant_id}`} className="text-sm font-medium hover:text-primary">
-                      {a.applicant?.display_name}
-                    </Link>
-                    {a.cover_letter && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{a.cover_letter}</p>}
+                <div key={a.id} className="p-3 rounded-xl bg-background/40 space-y-2">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={a.applicant?.avatar_url ?? undefined} />
+                      <AvatarFallback>{a.applicant?.display_name?.[0] ?? "?"}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <button type="button" onClick={() => expandApplicant(a.id)} className="text-sm font-medium hover:text-primary text-left">
+                        {a.applicant?.display_name}
+                      </button>
+                      {a.viewed_at && <p className="text-[10px] text-muted-foreground">เปิดดูแล้ว</p>}
+                      {expandedAppId === a.id && (
+                        <div className="mt-2 space-y-2 text-xs text-muted-foreground">
+                          {a.cover_letter && <p className="whitespace-pre-wrap">{a.cover_letter}</p>}
+                          {a.portfolio_project_ids.length > 0 && (
+                            <p>Portfolio: {a.portfolio_project_ids.length} ชิ้น</p>
+                          )}
+                          {(a.proposed_rate_min || a.proposed_rate_max) && (
+                            <p>เรทเสนอ: {fmt(a.proposed_rate_min ?? null)}{a.proposed_rate_max ? ` - ${fmt(a.proposed_rate_max)}` : ""}</p>
+                          )}
+                          {a.ready_date && <p>พร้อมเริ่ม: {new Date(a.ready_date).toLocaleDateString("th-TH")}</p>}
+                        </div>
+                      )}
+                    </div>
+                    <Badge variant="secondary" className="text-[10px] shrink-0">
+                      {applicationStatusLabel[a.status] ?? a.status}
+                    </Badge>
                   </div>
-                  <Badge variant="secondary" className="text-[10px]">{a.status}</Badge>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={() => setAppStatus(a.id, "shortlisted")}>Shortlist</Button>
+                    <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={() => setAppStatus(a.id, "contacted", true)}>Contacted</Button>
+                    <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={() => setAppStatus(a.id, "hired")}>Hired</Button>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs rounded-lg text-destructive" onClick={() => setAppStatus(a.id, "rejected")}>Reject</Button>
+                    {a.applicant?.username && (
+                      <Button size="sm" variant="ghost" className="h-7 text-xs rounded-lg" asChild>
+                        <Link to={`/u/${a.applicant.username}`}>โปรไฟล์</Link>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -204,25 +263,9 @@ const JobDetailPage = () => {
         )}
       </div>
 
-      <Dialog open={applyOpen} onOpenChange={setApplyOpen}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogTitle className="thai-display">สมัครงาน: {job.title}</DialogTitle>
-          <DialogDescription className="thai-body">เขียนแนะนำตัวสั้นๆ บอกเหตุผลที่เหมาะกับงานนี้</DialogDescription>
-          <Textarea
-            value={coverLetter}
-            onChange={(e) => setCoverLetter(e.target.value)}
-            placeholder="สวัสดีครับ/ค่ะ ผม/ดิฉันสนใจงานนี้เพราะ..."
-            rows={6}
-            className="rounded-xl"
-          />
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => setApplyOpen(false)} className="rounded-xl">ยกเลิก</Button>
-            <Button onClick={submitApply} disabled={apply.isPending || !coverLetter.trim()} className="rounded-xl bg-gradient-brand text-white border-0">
-              {apply.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />} ส่งใบสมัคร
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {!isSeeking && (
+        <JobApplyDialog job={job} open={applyOpen} onOpenChange={setApplyOpen} />
+      )}
     </div>
   );
 };

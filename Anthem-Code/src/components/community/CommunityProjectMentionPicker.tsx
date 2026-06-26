@@ -61,18 +61,13 @@ export function CommunityProjectMentionPicker({ userId, selected, onChange }: Pr
 
   return (
     <section className="px-4 py-3 border-t border-border/60">
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <p className="text-sm font-medium">อ้างอิงผลงาน</p>
-        <span className="text-[11px] text-muted-foreground">
-          {selected.length}/{MAX_COMMUNITY_PROJECT_MENTIONS}
-        </span>
-      </div>
-      <p className="text-xs text-muted-foreground mb-3">
-        เลือกผลงานที่โพสต์นี้พูดถึง — จะแสดงในโพสต์และตัวอย่าง
+      <p className="flex items-center gap-1.5 text-sm font-medium mb-2.5">
+        <FolderOpen className="w-4 h-4 text-primary shrink-0" />
+        อ้างอิงผลงาน
       </p>
 
       {selected.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex flex-wrap gap-2 mb-2.5">
           {selected.map((p) => (
             <span
               key={p.id}

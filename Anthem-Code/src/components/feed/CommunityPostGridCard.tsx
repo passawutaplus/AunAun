@@ -8,6 +8,8 @@ import { profilePublicPath } from "@/lib/profileRoutes";
 import { postHeadline } from "@/lib/classifyCommunityPost";
 import { hasCommunityQaBadge } from "@/lib/communityQaTag";
 import { CommunityQaBadge } from "@/components/community/CommunityQaBadge";
+import { communityMediaAspectTailwind } from "@/lib/communityMediaAspect";
+import { normalizeCommunityMediaAspect } from "@/lib/communityMediaAspect";
 import { cn } from "@/lib/utils";
 import BoostBadge from "@/components/boost/BoostBadge";
 import { logBoostEvent } from "@/hooks/useBoost";
@@ -55,9 +57,7 @@ const CommunityPostGridCard = ({ post, boosted, boostId }: Props) => {
     return () => obs.disconnect();
   }, [boostId]);
 
-  const aspectSeed = post.id.charCodeAt(0) % 3;
-  const aspectClass =
-    aspectSeed === 0 ? "aspect-[3/4]" : aspectSeed === 1 ? "aspect-[4/5]" : "aspect-square";
+  const aspectClass = communityMediaAspectTailwind(normalizeCommunityMediaAspect(post.media_aspect));
 
   return (
     <article ref={cardRef} className="group">

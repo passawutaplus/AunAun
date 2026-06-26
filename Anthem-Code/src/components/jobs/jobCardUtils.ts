@@ -1,3 +1,5 @@
+import { formatDistanceToNowStrict, differenceInDays } from "date-fns";
+import { th } from "date-fns/locale";
 import type { JobPost } from "@/hooks/useJobs";
 
 export const fmtBudget = (j: Pick<JobPost, "budget_min" | "budget_max" | "budget_type">) => {
@@ -19,6 +21,67 @@ export const empLabel: Record<JobPost["employment_type"], string> = {
   fulltime: "Full-time",
   parttime: "Part-time",
   internship: "Internship",
+  freelance: "Freelance",
+};
+
+export type PosterEntityType = "personal" | "studio" | "brand" | "project";
+
+export const posterEntityLabel: Record<PosterEntityType, string> = {
+  personal: "Personal",
+  studio: "Studio / Team",
+  brand: "Brand / Company",
+  project: "Project",
+};
+
+/** Map legacy poster_role + new poster_entity_type to display entity. */
+export const resolvePosterEntity = (job: Pick<JobPost, "poster_role" | "poster_entity_type">): PosterEntityType => {
+  if (job.poster_entity_type) return job.poster_entity_type;
+  if (job.poster_role === "company") return "brand";
+  if (job.poster_role === "studio") return "studio";
+  return "personal";
+};
+
+/** Avoid "Remote · Remote" when location duplicates loc type. */
+export const fmtLocationChip = (locationType: JobPost["location_type"], location: string | null | undefined) => {
+  const typeLabel = locTypeLabel[locationType];
+  const loc = (location ?? "").trim();
+  if (!loc) return typeLabel;
+  const normLoc = loc.toLowerCase();
+  if (normLoc === "remote" && locationType === "remote") return typeLabel;
+  if (normLoc === typeLabel.toLowerCase()) return typeLabel;
+  return `${typeLabel} · ${loc}`;
+};
+
+export const fmtDeadlineChip = (deadline: string | null | undefined) => {
+  if (!deadline) return null;
+  const d = new Date(deadline);
+  if (Number.isNaN(d.getTime())) return null;
+  const days = differenceInDays(d, new Date());
+  if (days < 0) return "ปิดรับแล้ว";
+  if (days === 0) return "ปิดรับวันนี้";
+  if (days <= 7) return `ปิดรับใน ${days} วัน`;
+  return `ปิดรับ ${formatDistanceToNowStrict(d, { locale: th, addSuffix: true })}`;
+};
+
+export const jobStatusLabel: Record<JobPost["status"], string> = {
+  open: "เปิดรับ",
+  closed: "ปิดรับ",
+  filled: "รับแล้ว",
+};
+
+export const applicationStatusLabel: Record<string, string> = {
+  pending: "ส่งแล้ว",
+  shortlisted: "Shortlist",
+  rejected: "ไม่ผ่าน",
+  accepted: "รับแล้ว",
+  hired: "รับแล้ว",
+  contacted: "ติดต่อแล้ว",
+};
+
+export const availabilityLabel: Record<string, string> = {
+  immediate: "พร้อมเริ่มทันที",
+  "1_week": "ภายใน 1 สัปดาห์",
+  "1_month": "ภายใน 1 เดือน",
 };
 
 const CATEGORY_GRADIENTS: Record<string, string> = {

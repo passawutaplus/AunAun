@@ -347,7 +347,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           onDrillSelect={openDrill}
         />
 
-        <div>
+        <div className="min-w-0">
           {needsLogin ? (
             <div className="text-center py-16 glass-panel rounded-2xl">
               <p className="text-foreground font-medium mb-2 thai-display">เข้าสู่ระบบเพื่อใช้หมวด "{feedMode}"</p>

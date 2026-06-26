@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Eye } from "lucide-react";
+import { ArrowLeft, Eye, Orbit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -33,17 +33,28 @@ import {
   mentionedProjectIds,
   type MentionedProjectSummary,
 } from "@/lib/communityMentionedProjects";
+import {
+  fetchTaggedUserSummaries,
+  taggedUserIds,
+  type TaggedUserSummary,
+} from "@/lib/communityTaggedUsers";
 import CommunityRulesCard from "@/components/community/CommunityRulesCard";
 import CommunityProfanityHint from "@/components/community/CommunityProfanityHint";
+import { CommunityCaptionMetaInline } from "@/components/community/CommunityCaptionMetaInline";
 import { detectProfanityInFields } from "@/lib/profanity";
 import { CommunityMediaStrip } from "@/components/community/CommunityMediaStrip";
 import { CommunityComposerToolbar } from "@/components/community/CommunityComposerToolbar";
 import { CommunityProjectMentionPicker } from "@/components/community/CommunityProjectMentionPicker";
+import { CommunityUserTagPicker } from "@/components/community/CommunityUserTagPicker";
 import { CommunityPostPreviewDialog } from "@/components/community/CommunityPostPreviewDialog";
 import { CommunityPostPreviewPanel } from "@/components/community/CommunityPostPreviewPanel";
 import { CommunityComposerFooter } from "@/components/community/CommunityComposerFooter";
 import { CommunityImageCropDialog } from "@/components/community/CommunityImageCropDialog";
-import { cn } from "@/lib/utils";
+import {
+  DEFAULT_COMMUNITY_MEDIA_ASPECT,
+  type CommunityMediaAspect,
+  normalizeCommunityMediaAspect,
+} from "@/lib/communityMediaAspect";
 
 function draftDisplayTitle(title: string, body: string) {
   return titlesMatch(title, body) ? "" : title;
@@ -70,26 +81,35 @@ const CommunityPostEditorPage = () => {
   const [tagInput, setTagInput] = useState("");
   const [toolInput, setToolInput] = useState("");
   const [mentionedProjects, setMentionedProjects] = useState<MentionedProjectSummary[]>([]);
+  const [taggedUsers, setTaggedUsers] = useState<TaggedUserSummary[]>([]);
   const [mediaItems, setMediaItems] = useState<PortfolioMediaItem[]>([]);
+  const [mediaAspect, setMediaAspect] = useState<CommunityMediaAspect>(DEFAULT_COMMUNITY_MEDIA_ASPECT);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
 
   const { gallery_urls, video_urls } = splitCommunityMedia(mediaItems);
+
+  const { cropFile, enqueueImages, finishCrop, confirmCrop, recropping } =
+    useCommunityImageUpload({
+      userId: user?.id,
+      folder: folderRef.current,
+      tier,
+      maxImages: limits.images,
+      aspect: mediaAspect,
+      setMediaItems,
+      mediaItems,
+      setUploadingGallery,
+    });
+
   const uploading = uploadingGallery || uploadingVideo;
   const imageCount = countMediaByKind(mediaItems, "image");
   const videoCount = countMediaByKind(mediaItems, "video");
   const pickDisabled =
-    uploading || (imageCount >= limits.images && videoCount >= limits.videos);
-
-  const { cropFile, enqueueImages, finishCrop, confirmCrop } = useCommunityImageUpload({
-    userId: user?.id,
-    folder: folderRef.current,
-    tier,
-    maxImages: limits.images,
-    setMediaItems,
-    mediaItems,
-    setUploadingGallery,
-  });
+    uploading ||
+    recropping ||
+    cropFile !== null ||
+    (imageCount >= limits.images && videoCount >= limits.videos);
+  const aspectLocked = imageCount > 0;
 
   const autosave = useCommunityAutosave({
     userId: user?.id,
@@ -100,6 +120,8 @@ const CommunityPostEditorPage = () => {
       tags,
       tools,
       mentioned_project_ids: mentionedProjectIds(mentionedProjects),
+      tagged_user_ids: taggedUserIds(taggedUsers),
+      media_aspect: mediaAspect,
       gallery_urls,
       video_urls,
     },
@@ -136,6 +158,18 @@ const CommunityPostEditorPage = () => {
       }
     };
 
+    const loadTagged = async (ids: string[]) => {
+      if (!ids.length) {
+        setTaggedUsers([]);
+        return;
+      }
+      try {
+        setTaggedUsers(await fetchTaggedUserSummaries(ids));
+      } catch {
+        setTaggedUsers([]);
+      }
+    };
+
     if (useLocal && local) {
       setDraftId(local.draftId);
       setTitle(local.title);
@@ -143,6 +177,8 @@ const CommunityPostEditorPage = () => {
       setTags(local.tags);
       setTools(local.tools);
       void loadMentioned(local.mentioned_project_ids ?? []);
+      void loadTagged(local.tagged_user_ids ?? []);
+      setMediaAspect(normalizeCommunityMediaAspect(local.media_aspect));
       setMediaItems(mediaItemsFromProject(local.gallery_urls, local.video_urls));
       toast.message("กู้คืนแบบร่างจากเครื่อง");
     } else if (existingDraft) {
@@ -152,6 +188,8 @@ const CommunityPostEditorPage = () => {
       setTags(existingDraft.tags ?? []);
       setTools(existingDraft.tools ?? []);
       void loadMentioned(existingDraft.mentioned_project_ids ?? []);
+      void loadTagged(existingDraft.tagged_user_ids ?? []);
+      setMediaAspect(normalizeCommunityMediaAspect(existingDraft.media_aspect));
       setMediaItems(
         mediaItemsFromProject(existingDraft.gallery_urls ?? [], existingDraft.video_urls ?? []),
       );
@@ -176,11 +214,13 @@ const CommunityPostEditorPage = () => {
       tags,
       tools,
       mentioned_project_ids: mentionedProjectIds(mentionedProjects),
+      tagged_user_ids: taggedUserIds(taggedUsers),
+      media_aspect: mediaAspect,
       gallery_urls: media.gallery_urls,
       video_urls: media.video_urls,
       draft_id: draftId,
     };
-  }, [user, title, body, tags, tools, mentionedProjects, mediaItems, draftId]);
+  }, [user, title, body, tags, tools, mentionedProjects, taggedUsers, mediaAspect, mediaItems, draftId]);
 
   const handleVideo = async (file: File) => {
     if (!user) return;
@@ -230,6 +270,8 @@ const CommunityPostEditorPage = () => {
       tags,
       tools,
       mentionedProjectIds: mentionedProjectIds(mentionedProjects),
+      taggedUserIds: taggedUserIds(taggedUsers),
+      mediaAspect,
       galleryUrls: media.gallery_urls,
       videoUrls: media.video_urls,
     });
@@ -244,6 +286,7 @@ const CommunityPostEditorPage = () => {
         tags,
         tools,
         mentioned_project_ids: mentionedProjectIds(mentionedProjects),
+        tagged_user_ids: taggedUserIds(taggedUsers),
         gallery_urls: media.gallery_urls,
         video_urls: media.video_urls,
       })
@@ -272,6 +315,8 @@ const CommunityPostEditorPage = () => {
       tags,
       tools,
       mentionedProjectIds: mentionedProjectIds(mentionedProjects),
+      taggedUserIds: taggedUserIds(taggedUsers),
+      mediaAspect,
       galleryUrls: media.gallery_urls,
       videoUrls: media.video_urls,
     });
@@ -294,16 +339,8 @@ const CommunityPostEditorPage = () => {
     navigate(-1);
   };
 
-  const autosaveHint =
-    autosave.status === "saving"
-      ? "กำลังบันทึก..."
-      : autosave.status === "saved"
-        ? "บันทึกอัตโนมัติแล้ว"
-        : autosave.status === "error"
-          ? "บันทึกอัตโนมัติไม่สำเร็จ"
-          : autosave.status === "pending"
-            ? "รอบันทึก..."
-            : null;
+  const isSavingDraft =
+    saveDraft.isPending || autosave.status === "pending" || autosave.status === "saving";
 
   if (!user) {
     return (
@@ -315,7 +352,7 @@ const CommunityPostEditorPage = () => {
 
   return (
     <main className="min-h-screen bg-background pb-28">
-      <header className="sticky top-0 z-20 flex items-center gap-3 px-4 py-3 border-b border-border/60 bg-background/95 backdrop-blur-md">
+      <header className="sticky top-0 z-20 flex items-center gap-3 px-4 py-2 border-b border-border/60 bg-background/95 backdrop-blur-md">
         <button
           type="button"
           onClick={() => void handleBack()}
@@ -324,20 +361,8 @@ const CommunityPostEditorPage = () => {
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="flex-1 min-w-0 flex justify-center">
-          {autosaveHint && (
-            <span
-              className={cn(
-                "text-[11px] text-muted-foreground",
-                autosave.status === "error" && "text-destructive",
-              )}
-            >
-              {autosaveHint}
-            </span>
-          )}
-        </div>
+        <div className="flex-1" />
         <div className="flex items-center gap-1 shrink-0">
-          <h1 className="text-base font-semibold text-foreground">Area Post</h1>
           <button
             type="button"
             onClick={() => setPreviewOpen(true)}
@@ -349,12 +374,22 @@ const CommunityPostEditorPage = () => {
         </div>
       </header>
 
-      <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:max-w-6xl lg:mx-auto lg:px-6">
-        <div className="min-w-0">
+      <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-stretch lg:max-w-6xl lg:mx-auto lg:px-6">
+        <div className="lg:col-span-2">
           <ModerationBanBanner />
+        </div>
+
+        <div className="min-w-0">
+          <div className="px-4 pt-1.5">
+            <h1 className="mb-1.5 flex items-center gap-2 text-base font-semibold text-foreground">
+              <Orbit className="w-4 h-4 text-primary shrink-0" aria-hidden />
+              Area Post
+            </h1>
+          </div>
 
           <CommunityMediaStrip
             items={mediaItems}
+            mediaAspect={mediaAspect}
             uploading={uploading}
             pickDisabled={pickDisabled}
             onPickFile={handlePickFile}
@@ -368,7 +403,7 @@ const CommunityPostEditorPage = () => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={120}
-              placeholder="Caption Header"
+              placeholder="Topic Header"
               className="w-full border-0 bg-transparent px-4 py-3 text-base font-medium focus:outline-none focus:ring-0 placeholder:text-muted-foreground"
             />
             <div className="mx-4 border-t border-border/50" />
@@ -377,9 +412,10 @@ const CommunityPostEditorPage = () => {
               onChange={(e) => setBody(e.target.value)}
               rows={10}
               maxLength={3000}
-              placeholder="เขียนแคปชั่นพร้อมรายละเอียดเพื่อเพิ่มยอดเข้าชม"
+              placeholder="เขียนแคปชั่นพร้อมรายละเอียด"
               className="w-full resize-none border-0 bg-transparent px-4 py-3 text-sm leading-relaxed focus:outline-none focus:ring-0 placeholder:text-muted-foreground"
             />
+            <CommunityCaptionMetaInline tags={tags} tools={tools} className="px-4 pb-2" />
             <CommunityProfanityHint text={body} className="px-4 pb-2" compact />
           </div>
 
@@ -401,6 +437,12 @@ const CommunityPostEditorPage = () => {
             onChange={setMentionedProjects}
           />
 
+          <CommunityUserTagPicker
+            userId={user.id}
+            selected={taggedUsers}
+            onChange={setTaggedUsers}
+          />
+
           <div className="px-4 pt-4 pb-6">
             <CommunityRulesCard />
             {draftScan.hasProfanity && (
@@ -417,7 +459,9 @@ const CommunityPostEditorPage = () => {
           tags={tags}
           tools={tools}
           mentionedProjects={mentionedProjects}
+          taggedUsers={taggedUsers}
           mediaItems={mediaItems}
+          mediaAspect={mediaAspect}
           className="px-4 lg:px-0"
         />
       </div>
@@ -425,7 +469,7 @@ const CommunityPostEditorPage = () => {
       <CommunityComposerFooter
         onSaveDraft={() => void handleSaveDraft()}
         onPublish={() => void handlePublish()}
-        savingDraft={saveDraft.isPending || autosave.status === "saving"}
+        savingDraft={isSavingDraft}
         publishing={publish.isPending}
       />
 
@@ -437,11 +481,16 @@ const CommunityPostEditorPage = () => {
         tags={tags}
         tools={tools}
         mentionedProjects={mentionedProjects}
+        taggedUsers={taggedUsers}
         mediaItems={mediaItems}
+        mediaAspect={mediaAspect}
       />
 
       <CommunityImageCropDialog
         file={cropFile}
+        aspect={mediaAspect}
+        allowAspectChoice={!aspectLocked}
+        onAspectChange={setMediaAspect}
         open={cropFile !== null}
         onOpenChange={(open) => {
           if (!open) finishCrop();

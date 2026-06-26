@@ -63,7 +63,7 @@ const JobCardPreview = ({ data }: Props) => {
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground">ตัวอย่างการ์ดบนบอร์ด</p>
       <div className="pointer-events-none max-w-sm mx-auto">
-        <JobCard job={previewJob} />
+        <JobCard job={previewJob} showActions={false} compact />
       </div>
     </div>
   );

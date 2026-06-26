@@ -3,6 +3,11 @@ import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { communityMediaFromPost } from "@/lib/communityMedia";
 import { isVideoUrl } from "@/lib/portfolioMedia";
+import type { CommunityMediaAspect } from "@/lib/communityMediaAspect";
+import {
+  communityMediaAspectTailwind,
+  normalizeCommunityMediaAspect,
+} from "@/lib/communityMediaAspect";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -12,7 +17,8 @@ type Props = {
   className?: string;
   /** Tailwind aspect / height classes. Use variant="detail" for full-width hero. */
   aspectClass?: string;
-  variant?: "feed" | "detail";
+  variant?: "feed" | "detail" | "editor";
+  mediaAspect?: CommunityMediaAspect;
 };
 
 function MediaSlide({
@@ -52,11 +58,13 @@ const CommunityPostMedia = ({
   videoUrls = [],
   title,
   className,
-  aspectClass = "aspect-[4/5] sm:aspect-[16/10]",
+  aspectClass,
   variant = "feed",
+  mediaAspect,
 }: Props) => {
   const items = communityMediaFromPost(galleryUrls, videoUrls);
   const hasMany = items.length > 1;
+  const aspectTw = communityMediaAspectTailwind(normalizeCommunityMediaAspect(mediaAspect));
 
   const [emblaRef, emblaApi] = useEmblaCarousel(
     {
@@ -91,7 +99,9 @@ const CommunityPostMedia = ({
 
   const frameClass = cn(
     "relative overflow-hidden bg-muted/40",
-    variant === "detail" ? "w-full aspect-square" : aspectClass,
+    variant === "editor" && !mediaAspect
+      ? "h-full w-full min-h-[7rem]"
+      : cn("w-full", variant === "feed" && aspectClass ? aspectClass : aspectTw),
     className,
   );
 

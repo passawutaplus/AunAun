@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { LICENSE_TYPES } from "@/lib/licenses";
 
+export const communityMediaAspectSchema = z.enum(["square", "portrait", "landscape"]);
+export type CommunityMediaAspectInput = z.infer<typeof communityMediaAspectSchema>;
+
 export const thaiPhoneRegex = /^(0[6-9]\d{8}|\+66[6-9]\d{8})$/;
 
 export const hireRequestSchema = z.object({
@@ -50,6 +53,8 @@ export const communityPostSchema = z.object({
   tags: z.array(z.string().trim().min(1).max(40)).max(8).optional().default([]),
   tools: z.array(z.string().trim().min(1).max(40)).max(8).optional().default([]),
   mentionedProjectIds: z.array(z.string().uuid()).max(3).optional().default([]),
+  taggedUserIds: z.array(z.string().uuid()).max(5).optional().default([]),
+  mediaAspect: communityMediaAspectSchema.optional().default("square"),
   galleryUrls: z.array(z.string().url()).max(20).optional().default([]),
   videoUrls: z.array(z.string().url()).max(3).optional().default([]),
 });
@@ -62,6 +67,8 @@ export const communityPostDraftSchema = z.object({
   tags: z.array(z.string().trim().min(1).max(40)).max(8).optional().default([]),
   tools: z.array(z.string().trim().min(1).max(40)).max(8).optional().default([]),
   mentionedProjectIds: z.array(z.string().uuid()).max(3).optional().default([]),
+  taggedUserIds: z.array(z.string().uuid()).max(5).optional().default([]),
+  mediaAspect: communityMediaAspectSchema.optional().default("square"),
   galleryUrls: z.array(z.string().url()).max(20).optional().default([]),
   videoUrls: z.array(z.string().url()).max(3).optional().default([]),
 });

@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import { uploadProjectImage } from "@/lib/uploadImage";
+import { prefetchAnthemStorageUsage } from "@/lib/anthemStorageUsage";
+import type { CommunityMediaAspect } from "@/lib/communityMediaAspect";
 import {
   countMediaByKind,
   mediaItemFromUrl,
@@ -8,36 +10,65 @@ import {
 } from "@/lib/portfolioMedia";
 import type { Tier } from "@/core/subscription/useSubscription";
 
+type QueueItem = {
+  file?: File;
+  sourceUrl?: string;
+  replaceUrl?: string;
+};
+
 type Options = {
   userId: string | undefined;
   folder: string;
   tier: Tier;
   maxImages: number;
+  aspect: CommunityMediaAspect;
   setMediaItems: Dispatch<SetStateAction<PortfolioMediaItem[]>>;
   mediaItems: PortfolioMediaItem[];
   setUploadingGallery: (v: boolean) => void;
 };
+
+async function urlToImageFile(url: string): Promise<File> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("โหลดรูปเดิมไม่สำเร็จ");
+  const blob = await res.blob();
+  const ext = blob.type === "image/png" ? "png" : "jpg";
+  const name = url.split("/").pop()?.split("?")[0]?.replace(/\.\w+$/, "") || "recrop";
+  return new File([blob], `${name}.${ext}`, { type: blob.type || "image/jpeg" });
+}
 
 export function useCommunityImageUpload({
   userId,
   folder,
   tier,
   maxImages,
+  aspect,
   setMediaItems,
   mediaItems,
   setUploadingGallery,
 }: Options) {
   const [cropFile, setCropFile] = useState<File | null>(null);
-  const queueRef = useRef<File[]>([]);
+  const [recropping, setRecropping] = useState(false);
+  const queueRef = useRef<QueueItem[]>([]);
   const cropOpenRef = useRef(false);
+  const replaceUrlRef = useRef<string | null>(null);
+  const recroppingRef = useRef(false);
 
   const imageCount = countMediaByKind(mediaItems, "image");
 
   const uploadOne = useCallback(
-    async (file: File) => {
+    async (file: File, replaceUrl: string | null) => {
       if (!userId) return;
-      const url = await uploadProjectImage(file, userId, folder, tier);
-      setMediaItems((items) => [...items, mediaItemFromUrl(url)]);
+      const url = await uploadProjectImage(file, userId, folder, tier, {
+        skipCompression: true,
+        fastQuotaCheck: true,
+      });
+      if (replaceUrl) {
+        setMediaItems((items) =>
+          items.map((m) => (m.url === replaceUrl ? mediaItemFromUrl(url) : m)),
+        );
+      } else {
+        setMediaItems((items) => [...items, mediaItemFromUrl(url)]);
+      }
     },
     [userId, folder, tier, setMediaItems],
   );
@@ -45,19 +76,41 @@ export function useCommunityImageUpload({
   const processQueue = useCallback(async () => {
     if (!userId || cropOpenRef.current) return;
     const next = queueRef.current.shift();
-    if (!next) return;
+    if (!next) {
+      if (recroppingRef.current) {
+        recroppingRef.current = false;
+        setRecropping(false);
+        setUploadingGallery(false);
+        toast.success("ครอปรูปใหม่ตามสัดส่วนแล้ว");
+      }
+      return;
+    }
 
-    setUploadingGallery(true);
     try {
       cropOpenRef.current = true;
-      setCropFile(next);
-      setUploadingGallery(false);
+      replaceUrlRef.current = next.replaceUrl ?? null;
+      if (next.file) {
+        prefetchAnthemStorageUsage(userId);
+        setCropFile(next.file);
+        setUploadingGallery(false);
+        return;
+      }
+      if (next.sourceUrl) {
+        prefetchAnthemStorageUsage(userId);
+        const file = await urlToImageFile(next.sourceUrl);
+        setCropFile(file);
+        setUploadingGallery(false);
+        return;
+      }
+      cropOpenRef.current = false;
+      void processQueue();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "อัปโหลดรูปไม่สำเร็จ");
-      setUploadingGallery(false);
+      cropOpenRef.current = false;
+      replaceUrlRef.current = null;
+      toast.error(err instanceof Error ? err.message : "เตรียมครอปรูปไม่สำเร็จ");
       void processQueue();
     }
-  }, [userId, uploadOne, setUploadingGallery]);
+  }, [userId, setUploadingGallery]);
 
   const enqueueImages = useCallback(
     (files: FileList) => {
@@ -71,23 +124,41 @@ export function useCommunityImageUpload({
       if (incoming.length < files.length) {
         toast.message(`เพิ่มได้อีก ${room} รูปในโพสต์นี้`);
       }
-      queueRef.current.push(...incoming);
+      queueRef.current.push(...incoming.map((file) => ({ file })));
       void processQueue();
     },
-    [userId, imageCount, maxImages, processQueue],
+    [userId, imageCount, maxImages, processQueue, setUploadingGallery],
+  );
+
+  const recropImages = useCallback(
+    (urls: string[]) => {
+      if (!userId || !urls.length) return;
+      if (cropOpenRef.current || queueRef.current.length) {
+        toast.message("รอครอปรูปปัจจุบันให้เสร็จก่อน");
+        return;
+      }
+      recroppingRef.current = true;
+      setRecropping(true);
+      setUploadingGallery(true);
+      queueRef.current = urls.map((sourceUrl) => ({ sourceUrl, replaceUrl: sourceUrl }));
+      void processQueue();
+    },
+    [userId, processQueue, setUploadingGallery],
   );
 
   const finishCrop = useCallback(() => {
     cropOpenRef.current = false;
     setCropFile(null);
+    replaceUrlRef.current = null;
     void processQueue();
   }, [processQueue]);
 
   const confirmCrop = useCallback(
     async (file: File) => {
+      const replaceUrl = replaceUrlRef.current;
       try {
         setUploadingGallery(true);
-        await uploadOne(file);
+        await uploadOne(file, replaceUrl);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "อัปโหลดรูปไม่สำเร็จ");
       } finally {
@@ -100,8 +171,11 @@ export function useCommunityImageUpload({
 
   return {
     cropFile,
+    aspect,
     enqueueImages,
+    recropImages,
     finishCrop,
     confirmCrop,
+    recropping,
   };
 }

@@ -17,6 +17,8 @@ type ComposerState = {
   tags: string[];
   tools: string[];
   mentioned_project_ids: string[];
+  tagged_user_ids: string[];
+  media_aspect: string;
   gallery_urls: string[];
   video_urls: string[];
 };
@@ -55,6 +57,8 @@ export function useCommunityAutosave({
       tags: state.tags,
       tools: state.tools,
       mentioned_project_ids: state.mentioned_project_ids,
+      tagged_user_ids: state.tagged_user_ids,
+      media_aspect: state.media_aspect,
       gallery_urls: state.gallery_urls,
       video_urls: state.video_urls,
       draftId,
@@ -86,6 +90,8 @@ export function useCommunityAutosave({
       tags: state.tags,
       tools: state.tools,
       mentionedProjectIds: state.mentioned_project_ids,
+      taggedUserIds: state.tagged_user_ids,
+      mediaAspect: state.media_aspect,
       galleryUrls: state.gallery_urls,
       videoUrls: state.video_urls,
     });
@@ -101,6 +107,8 @@ export function useCommunityAutosave({
         tags: state.tags,
         tools: state.tools,
         mentioned_project_ids: state.mentioned_project_ids,
+        tagged_user_ids: state.tagged_user_ids,
+        media_aspect: state.media_aspect,
         gallery_urls: state.gallery_urls,
         video_urls: state.video_urls,
         draft_id: draftId,

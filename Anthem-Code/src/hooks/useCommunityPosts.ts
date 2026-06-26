@@ -4,9 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { buildCommentTree, type CommentNode } from "@/lib/commentTree";
 import { notifyCommunityEvent } from "@/lib/communityNotify";
 import { moderateCommunityComment, moderateCommunityPost } from "@/lib/communityModeration";
+import { normalizeCommunityMediaAspect } from "@/lib/communityMediaAspect";
 import { fetchMentionedProjectSummaries } from "@/lib/communityMentionedProjects";
 import type { MentionedProjectSummary } from "@/lib/communityMentionedProjects";
-import { classifyCategory, deriveTitle, resolveComposerTitle } from "@/lib/classifyCommunityPost";
+import { fetchTaggedUserSummaries, resolveTaggedUserIds } from "@/lib/communityTaggedUsers";
+import type { TaggedUserSummary } from "@/lib/communityTaggedUsers";
+import type { CommunityMediaAspect } from "@/lib/communityMediaAspect";
+import { classifyCategory, resolveComposerTitle } from "@/lib/classifyCommunityPost";
 import {
   useModerationState,
   useRecordProfanityStrike,
@@ -35,6 +39,8 @@ export interface CommunityPost {
   gallery_urls: string[];
   video_urls: string[];
   mentioned_project_ids: string[];
+  tagged_user_ids: string[];
+  media_aspect: CommunityMediaAspect;
   question_topic: CommunityQuestionTopic | null;
   status: string;
   reply_count: number;
@@ -44,6 +50,7 @@ export interface CommunityPost {
   updated_at: string;
   profile?: { display_name: string; avatar_url: string | null; username: string | null } | null;
   mentioned_projects?: MentionedProjectSummary[];
+  tagged_users?: TaggedUserSummary[];
 }
 
 export interface CommunityComment {
@@ -60,7 +67,7 @@ export interface CommunityComment {
 export type CommunityCommentTree = CommentNode<CommunityComment>;
 
 const POST_SELECT =
-  "id, author_id, post_kind, title, body, category, tags, tools, gallery_urls, video_urls, mentioned_project_ids, question_topic, status, reply_count, like_count, view_count, created_at, updated_at";
+  "id, author_id, post_kind, title, body, category, tags, tools, gallery_urls, video_urls, mentioned_project_ids, tagged_user_ids, media_aspect, question_topic, status, reply_count, like_count, view_count, created_at, updated_at";
 const COMMUNITY_PAGE_SIZE = 24;
 const COMMUNITY_COMMENT_LIMIT = 300;
 
@@ -79,6 +86,8 @@ export async function enrichCommunityPosts(rows: CommunityPost[]): Promise<Commu
     tags: r.tags ?? [],
     tools: r.tools ?? [],
     mentioned_project_ids: r.mentioned_project_ids ?? [],
+    tagged_user_ids: r.tagged_user_ids ?? [],
+    media_aspect: normalizeCommunityMediaAspect(r.media_aspect),
     like_count: r.like_count ?? 0,
     view_count: r.view_count ?? 0,
     profile: map.get(r.author_id) ?? null,
@@ -173,10 +182,13 @@ export const useCommunityPost = (id: string | undefined) =>
         .eq("user_id", row.author_id)
         .maybeSingle();
       const mentionedIds = row.mentioned_project_ids ?? [];
-      const mentioned_projects =
+      const taggedIds = row.tagged_user_ids ?? [];
+      const [mentioned_projects, tagged_users] = await Promise.all([
         mentionedIds.length > 0
-          ? await fetchMentionedProjectSummaries(mentionedIds, row.author_id)
-          : [];
+          ? fetchMentionedProjectSummaries(mentionedIds, row.author_id)
+          : Promise.resolve([]),
+        taggedIds.length > 0 ? fetchTaggedUserSummaries(taggedIds) : Promise.resolve([]),
+      ]);
       return {
         ...row,
         gallery_urls: row.gallery_urls ?? [],
@@ -184,10 +196,13 @@ export const useCommunityPost = (id: string | undefined) =>
         tags: row.tags ?? [],
         tools: row.tools ?? [],
         mentioned_project_ids: mentionedIds,
+        tagged_user_ids: taggedIds,
+        media_aspect: normalizeCommunityMediaAspect(row.media_aspect),
         like_count: row.like_count ?? 0,
         view_count: row.view_count ?? 0,
         profile: prof ?? null,
         mentioned_projects,
+        tagged_users,
       };
     },
   });
@@ -230,6 +245,8 @@ export const useCommunityDraft = (authorId: string | undefined) =>
         tags: row.tags ?? [],
         tools: row.tools ?? [],
         mentioned_project_ids: row.mentioned_project_ids ?? [],
+        tagged_user_ids: row.tagged_user_ids ?? [],
+        media_aspect: normalizeCommunityMediaAspect(row.media_aspect),
       };
     },
   });
@@ -241,6 +258,8 @@ export type CommunityComposerPayload = {
   tags?: string[];
   tools?: string[];
   mentioned_project_ids?: string[];
+  tagged_user_ids?: string[];
+  media_aspect?: CommunityMediaAspect;
   gallery_urls?: string[];
   video_urls?: string[];
   draft_id?: string | null;
@@ -322,6 +341,7 @@ export const useSaveCommunityDraft = () => {
         input.author_id,
         input.mentioned_project_ids,
       );
+      const tagged_user_ids = await resolveTaggedUserIds(input.author_id, input.tagged_user_ids);
       const row = {
         author_id: input.author_id,
         post_kind: "tip" as const,
@@ -333,6 +353,8 @@ export const useSaveCommunityDraft = () => {
         gallery_urls: input.gallery_urls ?? [],
         video_urls: input.video_urls ?? [],
         mentioned_project_ids,
+        tagged_user_ids,
+        media_aspect: normalizeCommunityMediaAspect(input.media_aspect),
         question_topic: null,
         status: "draft" as const,
         updated_at: new Date().toISOString(),
@@ -386,6 +408,7 @@ export const usePublishCommunityPost = () => {
         input.author_id,
         input.mentioned_project_ids,
       );
+      const tagged_user_ids = await resolveTaggedUserIds(input.author_id, input.tagged_user_ids);
 
       const row = {
         author_id: input.author_id,
@@ -398,6 +421,8 @@ export const usePublishCommunityPost = () => {
         gallery_urls: gallery,
         video_urls: videos,
         mentioned_project_ids,
+        tagged_user_ids,
+        media_aspect: normalizeCommunityMediaAspect(input.media_aspect),
         question_topic: null,
         status: "published" as const,
         updated_at: new Date().toISOString(),
