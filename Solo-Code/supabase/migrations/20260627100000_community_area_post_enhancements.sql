@@ -1,11 +1,10 @@
 -- Area Post enhancements: comment likes, images, rate limits, repost, collections, PX scaffold
 -- Apply: cd Solo-Code && cp ../../scripts/ecosystem/community-area-post-enhancements.sql supabase/migrations/20260627100000_community_area_post_enhancements.sql && ./scripts/supabase-push-via-api.sh
 
-
 -- ---------------------------------------------------------------------------
 -- Ensure comment PK exists (required for comment_likes FK on legacy DBs)
 -- ---------------------------------------------------------------------------
-DO $
+DO $$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.tables
@@ -17,7 +16,8 @@ BEGIN
   ) THEN
     ALTER TABLE anthem.community_post_comments ADD PRIMARY KEY (id);
   END IF;
-END $;
+END $$;
+
 -- ---------------------------------------------------------------------------
 -- Comment likes
 -- ---------------------------------------------------------------------------
