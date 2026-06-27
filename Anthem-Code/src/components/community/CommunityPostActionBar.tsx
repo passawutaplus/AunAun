@@ -28,7 +28,7 @@ const CommunityPostActionBar = ({
   className,
   compact,
 }: Props) => {
-  const { isLiked, toggle: toggleLike, isPending: liking } = useCommunityPostLike(postId, likeCount, {
+  const { isLiked, toggle: toggleLike, isPending: liking, likes } = useCommunityPostLike(postId, likeCount, {
     authorId,
     title,
   });
@@ -54,7 +54,7 @@ const CommunityPostActionBar = ({
           )}
         >
           <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
-          {likeCount > 0 && <span>{likeCount}</span>}
+          {likes > 0 && <span>{likes}</span>}
         </button>
         <Link
           to={`/community/${postId}#comments`}

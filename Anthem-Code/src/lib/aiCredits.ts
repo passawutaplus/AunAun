@@ -80,8 +80,9 @@ export function describeAiCreditsPlan(
       : null;
 
   if (summary.period_type === "free_starter") {
+    const limit = summary.included_limit ?? FREE_STARTER_CREDITS;
     return daily
-      ? `${daily} + แพ็กเริ่มต้น ${summary.included_limit.toLocaleString("th-TH")} เครดิต`
+      ? `${daily} + แพ็กเริ่มต้น ${limit.toLocaleString("th-TH")} เครดิต`
       : "แพ็กเริ่มต้นฟรี";
   }
   if (summary.period_type === "free_starter_ended" && summary.tier === "free") {
@@ -95,10 +96,12 @@ export function describeAiCreditsPlan(
     return "ทดลอง Credit AI หมดแล้ว — อัพเกรด Pro เพื่อใช้ต่อ";
   }
   if (summary.period_type === "subscription") {
-    const pack = `${summary.included_limit.toLocaleString("th-TH")} เครดิต/รอบบิล`;
+    const limit = summary.included_limit ?? 0;
+    const pack = `${limit.toLocaleString("th-TH")} เครดิต/รอบบิล`;
     return daily ? `${daily} + ${pack}` : pack;
   }
-  const monthly = `${summary.included_limit.toLocaleString("th-TH")} เครดิต/เดือน`;
+  const limit = summary.included_limit ?? 0;
+  const monthly = `${limit.toLocaleString("th-TH")} เครดิต/เดือน`;
   return daily ? `${daily} + ${monthly}` : monthly;
 }
 

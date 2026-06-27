@@ -16,7 +16,8 @@ import { requireAuth } from "@/lib/requireAuth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Users, ArrowLeft, CheckCircle2, UserSearch, FileText, ExternalLink } from "lucide-react";
+import { MapPin, Calendar, Users, CheckCircle2, UserSearch, FileText, ExternalLink } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import {
   applicationStatusLabel,
   empLabel,
@@ -77,9 +78,7 @@ const JobDetailPage = () => {
   return (
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-12">
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-4 h-4" /> กลับ
-        </button>
+        <BackButton />
 
         <div className="relative h-48 rounded-2xl overflow-hidden border border-border/40">
           {hasCover ? (
@@ -168,7 +167,7 @@ const JobDetailPage = () => {
           )}
 
           <div className="prose prose-sm max-w-none dark:prose-invert">
-            <p className="whitespace-pre-wrap leading-relaxed thai-body">{job.description || "ไม่มีรายละเอียดเพิ่มเติม"}</p>
+            <p className="text-base text-foreground whitespace-pre-wrap leading-relaxed thai-body">{job.description || "ไม่มีรายละเอียดเพิ่มเติม"}</p>
           </div>
 
           {isSeeking && job.attached_cv_url && (
@@ -230,7 +229,7 @@ const JobDetailPage = () => {
                       {a.viewed_at && <p className="text-[10px] text-muted-foreground">เปิดดูแล้ว</p>}
                       {expandedAppId === a.id && (
                         <div className="mt-2 space-y-2 text-xs text-muted-foreground">
-                          {a.cover_letter && <p className="whitespace-pre-wrap">{a.cover_letter}</p>}
+                          {a.cover_letter && <p className="text-base text-foreground whitespace-pre-wrap">{a.cover_letter}</p>}
                           {a.portfolio_project_ids.length > 0 && (
                             <p>Portfolio: {a.portfolio_project_ids.length} ชิ้น</p>
                           )}

@@ -22,7 +22,7 @@ const ExperienceTimeline = ({ items }: { items: ExperienceItem[] }) => {
                 {it.period && <span>· {it.period}</span>}
               </div>
               {it.description && (
-                <p className="text-sm text-foreground/80 mt-2 leading-6 whitespace-pre-wrap">{it.description}</p>
+                <p className="text-base text-foreground mt-2 leading-6 whitespace-pre-wrap">{it.description}</p>
               )}
             </div>
           </div>

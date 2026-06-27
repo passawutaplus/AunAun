@@ -3,13 +3,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft,
   Building2,
   FileText,
   Handshake,
   Info,
   Users,
 } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { so1oQuotationUrl, trackCrossLink } from "@/lib/crossLink";
 import { useStudioForConversation, useStudioMembers } from "@/hooks/useStudios";
 import { useSubscription } from "@/core/subscription/useSubscription";
@@ -240,15 +240,11 @@ const ChatThreadView = ({
     <div className="flex flex-col h-full min-w-0 bg-background">
       <header className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-background/90 backdrop-blur-md shrink-0">
         {showBack && (
-          <Button
-            variant="ghost"
-            size="icon"
+          <BackButton
             onClick={onBack ?? (() => navigate("/chat"))}
-            className="shrink-0 rounded-full md:hidden"
-            aria-label="ย้อนกลับ"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+            label="ย้อนกลับ"
+            className="md:hidden"
+          />
         )}
         <button
           type="button"

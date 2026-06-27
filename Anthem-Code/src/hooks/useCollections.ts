@@ -175,26 +175,58 @@ export const useDeleteCollection = () => {
 export const useToggleCollectionItem = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { collectionId: string; projectId: string; remove?: boolean }) => {
+    mutationFn: async (input: {
+      collectionId: string;
+      projectId?: string;
+      communityPostId?: string;
+      remove?: boolean;
+    }) => {
+      if (!input.projectId && !input.communityPostId) {
+        throw new Error("ต้องระบุ project หรือ community post");
+      }
       if (input.remove) {
-        const { error } = await supabase
-          .from("collection_items")
-          .delete()
-          .eq("collection_id", input.collectionId)
-          .eq("project_id", input.projectId);
+        let q = supabase.from("collection_items").delete().eq("collection_id", input.collectionId);
+        if (input.projectId) q = q.eq("project_id", input.projectId);
+        if (input.communityPostId) q = q.eq("community_post_id", input.communityPostId);
+        const { error } = await q;
         if (error) throw error;
         return "removed" as const;
       }
-      const { error } = await supabase
-        .from("collection_items")
-        .insert({ collection_id: input.collectionId, project_id: input.projectId });
+      const { error } = await supabase.from("collection_items").insert({
+        collection_id: input.collectionId,
+        project_id: input.projectId ?? null,
+        community_post_id: input.communityPostId ?? null,
+      });
       if (error && !`${error.message}`.includes("duplicate")) throw error;
       return "added" as const;
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["collections"] });
       qc.invalidateQueries({ queryKey: ["collection-items", vars.collectionId] });
-      qc.invalidateQueries({ queryKey: ["project-in-collections", vars.projectId] });
+      if (vars.projectId) {
+        qc.invalidateQueries({ queryKey: ["project-in-collections", vars.projectId] });
+      }
+      if (vars.communityPostId) {
+        qc.invalidateQueries({ queryKey: ["community-post-in-collections", vars.communityPostId] });
+      }
     },
   });
 };
+
+export const useCommunityPostCollectionIds = (
+  postId: string | undefined,
+  ownerId: string | undefined,
+) =>
+  useQuery({
+    queryKey: ["community-post-in-collections", postId, ownerId],
+    enabled: !!postId && !!ownerId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("collection_items")
+        .select("collection_id, collections:collection_id!inner(owner_id)")
+        .eq("community_post_id", postId!)
+        .eq("collections.owner_id", ownerId!);
+      if (error) throw error;
+      return new Set((data ?? []).map((r: { collection_id: string }) => r.collection_id));
+    },
+  });

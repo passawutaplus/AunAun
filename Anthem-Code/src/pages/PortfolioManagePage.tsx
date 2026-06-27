@@ -1,7 +1,8 @@
 import BriefcaseIcon from "../components/icons/BriefcaseIcon";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, LayoutGrid, Globe, Eye, Heart, Mail, ArrowLeft, Settings, Phone, ExternalLink, Check, X, MessageCircle, FileText } from "lucide-react";
+import { Plus, LayoutGrid, Globe, Eye, Heart, Mail, Settings, Phone, ExternalLink, Check, X, MessageCircle, FileText } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import StatsCard from "@/components/StatsCard";
@@ -147,9 +148,7 @@ const PortfolioManagePage = () => {
       <SeoHead title="จัดการผลงาน" path="/portfolio/manage" noindex />
       <div className="bg-gradient-to-b from-primary/10 to-background">
         <div className="max-w-5xl mx-auto px-4 pt-6 pb-4">
-          <button onClick={() => navigate("/portfolio")} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
-            <ArrowLeft className="w-4 h-4" /> กลับโปรไฟล์
-          </button>
+          <BackButton to="/portfolio" label="กลับโปรไฟล์" className="mb-4" />
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <BriefcaseIcon className="w-6 h-6 text-primary" />
@@ -282,7 +281,7 @@ const PortfolioManagePage = () => {
                       <p className="text-xs text-muted-foreground mt-1">
                         อ้างอิง: <span className="text-foreground font-medium">{req.project_title}</span>
                       </p>
-                      <p className="text-sm text-foreground/80 mt-2 line-clamp-2">{req.message}</p>
+                      <p className="text-base text-foreground mt-2 line-clamp-2">{req.message}</p>
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
                         <span>⏱ {timeAgoTH(req.created_at)}</span>
                         <a href={`mailto:${req.email}`} className="flex items-center gap-1 hover:text-[hsl(var(--chat-hire))]"><Mail className="w-3 h-3" />{req.email}</a>

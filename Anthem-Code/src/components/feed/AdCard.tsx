@@ -108,7 +108,7 @@ const AdCard = ({ ad, placement = "feed" }: Props) => {
       </div>
 
       <div className="pt-2 px-0.5 flex items-center justify-between gap-2">
-        <p className="text-sm text-foreground/90 line-clamp-1 thai-leading-tight">
+        <p className="text-base text-foreground line-clamp-1 thai-leading-tight">
           {ad.title}
         </p>
         <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">

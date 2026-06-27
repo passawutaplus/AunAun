@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Layers3 } from "lucide-react";
+import { Plus, Layers3 } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useCollections } from "@/hooks/useCollections";
@@ -21,9 +22,7 @@ const CollectionsPage = () => {
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-12">
       <div className="sticky top-0 z-20 glass-panel border-x-0 border-t-0 rounded-none">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-4 h-4" /> กลับ
-          </button>
+          <BackButton />
           <Button
             size="sm"
             onClick={() => setFormOpen(true)}

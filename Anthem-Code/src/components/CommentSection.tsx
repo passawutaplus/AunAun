@@ -78,7 +78,7 @@ const CommentRow = ({
               )
             )}
           </div>
-          <p className="text-sm text-foreground/90 mt-1 whitespace-pre-wrap break-words">{c.content}</p>
+          <p className="text-base text-foreground mt-1 whitespace-pre-wrap break-words">{c.content}</p>
         </div>
       </div>
       {node.replies.map((child) => (

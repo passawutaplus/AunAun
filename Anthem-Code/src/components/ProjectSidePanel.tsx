@@ -151,7 +151,7 @@ const ProjectSidePanel = (p: Props) => {
       {p.description && (
         <div className="rounded-2xl glass-panel p-5 space-y-2">
           <h3 className="text-sm font-medium text-foreground">เกี่ยวกับโปรเจกต์</h3>
-          <p className="text-sm text-foreground/80 leading-6 whitespace-pre-wrap">{p.description}</p>
+          <p className="text-base text-foreground leading-6 whitespace-pre-wrap">{p.description}</p>
         </div>
       )}
 

@@ -12,6 +12,7 @@ import {
   anthemStorageLimitBytes,
   storageUsagePercent,
 } from "@/lib/anthemStorageUsage";
+import { normalizePlanId } from "@/lib/tierMembership";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { SO1O_APP_URL } from "@/lib/productLinks";
 import { cn } from "@/lib/utils";
@@ -25,7 +26,8 @@ const TIER_LABEL = {
 
 export function StorageUsageSection() {
   const { user } = useAuth();
-  const { tier, isPro } = useSubscription();
+  const { tier: rawTier, isPro } = useSubscription();
+  const tier = normalizePlanId(rawTier);
 
   const { data: usedBytes = 0, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["anthem-storage-usage", user?.id],
@@ -63,7 +65,7 @@ export function StorageUsageSection() {
             )}
           >
             {isPro ? <Crown className="h-3 w-3" /> : null}
-            {TIER_LABEL[tier]}
+            {TIER_LABEL[tier] ?? "Free"}
           </span>
           <button
             type="button"
@@ -96,7 +98,7 @@ export function StorageUsageSection() {
       </div>
 
       <p className="text-[11px] text-muted-foreground tabular-nums">
-        {pct}% ของโควต้า {ANTHEM_STORAGE_LABEL[tier]} — รูป/วิดีโอผลงาน แนบแชท สตูดิโอ
+        {pct}% ของโควต้า {ANTHEM_STORAGE_LABEL[tier] ?? ANTHEM_STORAGE_LABEL.free} — รูป/วิดีโอผลงาน แนบแชท สตูดิโอ
       </p>
 
       {(nearLimit || overLimit) && !isLoading && (

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import FollowConnectionsPanel from "@/components/follow/FollowConnectionsPanel";
 import SeoHead from "@/components/SeoHead";
@@ -30,13 +30,7 @@ const FollowConnectionsPage = () => {
       <SeoHead title="ผู้ติดตาม" path={isOwn ? "/portfolio/followers" : `/u/${subjectId}/followers`} noindex />
       <header className="sticky top-0 z-20 bg-background/60 backdrop-blur-xl border-b border-border/40">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="w-4 h-4" /> กลับ
-          </button>
+          <BackButton />
           <h1 className="font-medium text-lg thai-display">
             <span className="text-gradient">{isOwn ? "ผู้ติดตามของฉัน" : "ผู้ติดตาม"}</span>
           </h1>

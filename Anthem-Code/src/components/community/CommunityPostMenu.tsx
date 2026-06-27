@@ -1,4 +1,5 @@
-import { MoreHorizontal, Trash2, UserX } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, UserX } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import ReportTrigger from "@/components/report/ReportTrigger";
 
@@ -131,6 +132,16 @@ const CommunityPostMenu = ({ postId, authorId, title, className, onDeleted }: Pr
         {isOwner && (
 
           <>
+
+            <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+
+              <Link to={`/community/${postId}/edit`} onClick={(e) => e.stopPropagation()}>
+
+                <Pencil className="w-4 h-4" /> แก้ไขโพสต์
+
+              </Link>
+
+            </DropdownMenuItem>
 
             <DropdownMenuItem
 

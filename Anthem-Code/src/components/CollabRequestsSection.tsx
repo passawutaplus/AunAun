@@ -166,7 +166,7 @@ const CollabRequestsSection = () => {
                     })}
                   </div>
 
-                  <p className="text-sm text-foreground/85 mt-2 leading-6 whitespace-pre-wrap">{req.message}</p>
+                  <p className="text-base text-foreground mt-2 leading-6 whitespace-pre-wrap">{req.message}</p>
 
                   {((req as any).external_drive_url || (req as any).website_url) && (
                     <div className="flex flex-wrap gap-1.5 mt-2">

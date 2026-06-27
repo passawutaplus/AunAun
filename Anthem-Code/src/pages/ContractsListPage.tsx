@@ -6,8 +6,9 @@ import RequireAuth from "@/components/RequireAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  ArrowLeft, FileSignature, Plus, Trash2, Crown, Loader2, FileText,
+  FileSignature, Plus, Trash2, Crown, Loader2, FileText,
 } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { toast } from "sonner";
 
 interface ContractRow {
@@ -54,9 +55,7 @@ const ContractsListInner = () => {
       <div className="border-b border-border/40 backdrop-blur-md bg-background/60 sticky top-0 z-20">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <BackButton />
             <div className="flex items-center gap-2 min-w-0">
               <FileSignature className="h-5 w-5 text-primary" />
               <h1 className="font-semibold tracking-tight">ร่างสัญญาของฉัน</h1>

@@ -79,7 +79,7 @@ export function AnthemAssistantFab() {
             </span>
           </div>
           {reply && (
-            <div className="text-sm text-foreground/90 bg-muted/40 rounded-xl p-3 max-h-40 overflow-y-auto whitespace-pre-wrap">
+            <div className="text-base text-foreground bg-muted/40 rounded-xl p-3 max-h-40 overflow-y-auto whitespace-pre-wrap">
               {reply}
             </div>
           )}

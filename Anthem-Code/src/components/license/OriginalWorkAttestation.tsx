@@ -39,8 +39,8 @@ const OriginalWorkAttestation = ({ checked, onCheckedChange, required = true }: 
             {required && <span className="text-destructive"> *</span>}
           </Label>
         </div>
-        <p className="text-xs text-muted-foreground leading-relaxed">{ATTESTATION_SHORT}</p>
-        <ul className="text-xs text-foreground/85 list-disc pl-4 space-y-0.5">
+        <p className="text-base text-muted-foreground leading-relaxed">{ATTESTATION_SHORT}</p>
+        <ul className="text-base text-foreground list-disc pl-4 space-y-0.5">
           {ATTESTATION_BULLETS.map((b) => (
             <li key={b}>{b}</li>
           ))}

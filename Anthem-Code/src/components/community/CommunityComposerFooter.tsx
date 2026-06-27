@@ -7,6 +7,8 @@ type Props = {
   onPublish: () => void;
   savingDraft?: boolean;
   publishing?: boolean;
+  publishLabel?: string;
+  hideDraft?: boolean;
   className?: string;
 };
 
@@ -15,6 +17,8 @@ export function CommunityComposerFooter({
   onPublish,
   savingDraft,
   publishing,
+  publishLabel = "โพสต์",
+  hideDraft,
   className,
 }: Props) {
   return (
@@ -26,27 +30,29 @@ export function CommunityComposerFooter({
       )}
     >
       <div className="max-w-2xl mx-auto flex gap-3">
+        {!hideDraft && (
+          <Button
+            type="button"
+            variant="outline"
+            className="shrink-0 w-[28%] min-w-[7.5rem] rounded-full px-3 text-sm"
+            disabled={savingDraft || publishing}
+            onClick={onSaveDraft}
+            aria-busy={savingDraft}
+          >
+            {savingDraft ? (
+              <Loader2 className="w-4 h-4 animate-spin" aria-label="กำลังบันทึก" />
+            ) : (
+              "บันทึกแบบร่าง"
+            )}
+          </Button>
+        )}
         <Button
           type="button"
-          variant="outline"
-          className="shrink-0 w-[28%] min-w-[7.5rem] rounded-full px-3 text-sm"
-          disabled={savingDraft || publishing}
-          onClick={onSaveDraft}
-          aria-busy={savingDraft}
-        >
-          {savingDraft ? (
-            <Loader2 className="w-4 h-4 animate-spin" aria-label="กำลังบันทึก" />
-          ) : (
-            "บันทึกแบบร่าง"
-          )}
-        </Button>
-        <Button
-          type="button"
-          className="flex-1 rounded-full"
+          className={cn("rounded-full", hideDraft ? "flex-1 w-full" : "flex-1")}
           disabled={savingDraft || publishing}
           onClick={onPublish}
         >
-          {publishing ? "กำลังโพสต์..." : "โพสต์"}
+          {publishing ? "กำลังโพสต์..." : publishLabel}
         </Button>
       </div>
     </div>

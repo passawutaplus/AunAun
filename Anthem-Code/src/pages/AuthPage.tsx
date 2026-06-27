@@ -12,9 +12,10 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
-  ArrowLeft, Mail, User as UserIcon, Eye, EyeOff, Loader2,
+  Mail, User as UserIcon, Eye, EyeOff, Loader2,
   Sparkles, Info, Heart, Bookmark, Share2,
 } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { DemoLoginHint, DemoSignupBlocked } from "@/components/DemoAuthHints";
 import { ReferralSignupHint } from "@/components/referral/ReferralSignupHint";
@@ -101,12 +102,7 @@ const AuthPage = () => {
         <div className="absolute bottom-0 left-1/3 w-[320px] h-[320px] rounded-full blur-3xl opacity-20 bg-gradient-brand" />
       </div>
 
-      <Link
-        to="/"
-        className="absolute top-4 left-4 z-30 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors bg-background/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-border/40"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" /> กลับหน้าแรก
-      </Link>
+      <BackButton to="/" label="กลับหน้าแรก" className="absolute top-4 left-4 z-30" />
 
       <div className="relative min-h-screen grid lg:grid-cols-2">
         {/* LEFT: Brand banner */}

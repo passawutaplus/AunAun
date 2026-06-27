@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@100;200;300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -108,7 +108,7 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'IBM Plex Sans Thai', sans-serif;
-    font-weight: 200;
+    font-weight: 300;
     letter-spacing: 0.012em;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
@@ -155,7 +155,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'IBM Plex Sans Thai', sans-serif;
-    font-weight: 300;
+    font-weight: 400;
     letter-spacing: 0;
     line-height: 1.3;
   }
@@ -185,12 +185,18 @@
   60% { transform: translateX(-4px); }
   80% { transform: translateX(4px); }
 }
+@keyframes community-heart-burst {
+  0% { opacity: 0; transform: scale(0.2); }
+  20% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 0; transform: scale(1); }
+}
 
 @layer utilities {
   .animate-fade-up { animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
   .animate-fade-in { animation: fade-in 0.3s ease-out both; }
   .animate-scale-in { animation: scale-in 0.25s ease-out both; }
   .animate-input-shake { animation: input-shake 0.4s ease-in-out; }
+  .animate-community-heart-burst { animation: community-heart-burst 0.75s ease-out forwards; }
 
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

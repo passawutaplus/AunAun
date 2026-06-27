@@ -68,7 +68,7 @@ const LicenseDetailBlock = ({
         <CollapsibleContent>
           <div className="px-5 pb-5 space-y-4 border-t border-border/50 pt-4">
             <h3 className="text-sm font-medium text-foreground">สิทธิ์การใช้งาน</h3>
-            <p className="text-sm text-foreground/80 leading-relaxed">
+            <p className="text-base text-foreground leading-relaxed">
               {licenseType === "custom" && licenseNote?.trim() ? licenseNote.trim() : meta.detailParagraph}
             </p>
 

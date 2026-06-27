@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, SearchX, Hash } from "lucide-react";
+import { SearchX, Hash } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import ToolIcon from "@/components/ToolIcon";
 import ExploreToolFilterBar from "@/components/explore/ExploreToolFilterBar";
 import ProjectCard from "@/components/ProjectCard";
@@ -160,12 +161,7 @@ const ExploreProjectsPage = () => {
     <div className="min-h-screen bg-app-ambient pb-24">
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground shrink-0"
-          >
-            <ArrowLeft className="w-4 h-4" /> กลับ
-          </button>
+          <BackButton className="shrink-0" />
           <div className="flex flex-col gap-1.5 min-w-0 flex-1">
             <div className="flex items-center gap-2 min-w-0">
               {exploreKind === "tool" && extraTools.length === 0 ? (

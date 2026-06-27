@@ -150,6 +150,7 @@ const App = () => (
               <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
               <Route path="/chat/:id?" element={<RequireAuth><ChatInboxPage /></RequireAuth>} />
               <Route path="/community/new" element={<RequireAuth><CommunityPostEditorPage /></RequireAuth>} />
+              <Route path="/community/:id/edit" element={<RequireAuth><CommunityPostEditorPage /></RequireAuth>} />
               <Route path="/community" element={<CommunityFeedPage />} />
               <Route path="/community/:id" element={<CommunityPostDetailPage />} />
               <Route path="/collections" element={<RequireAuth><CollectionsPage /></RequireAuth>} />

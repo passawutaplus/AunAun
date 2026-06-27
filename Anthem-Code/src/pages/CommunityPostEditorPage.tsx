@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Eye, Orbit } from "lucide-react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Eye, Orbit } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useCommunityDraft,
+  useCommunityPost,
   usePublishCommunityPost,
   useSaveCommunityDraft,
+  useUpdateCommunityPost,
+  isCommunityDraftStillOpen,
 } from "@/hooks/useCommunityPosts";
+import { useProject } from "@/hooks/useProjects";
 import { useCommunityAutosave } from "@/hooks/useCommunityAutosave";
 import { useCommunityImageUpload } from "@/hooks/useCommunityImageUpload";
 import { communityPostDraftSchema, communityPostSchema } from "@/lib/validators";
@@ -15,6 +20,10 @@ import { toast } from "sonner";
 import ModerationBanBanner from "@/components/moderation/ModerationBanBanner";
 import { uploadProjectVideo } from "@/lib/uploadVideo";
 import { useSubscription } from "@/core/subscription";
+import { CommunityComposerTemplates } from "@/components/community/CommunityComposerTemplates";
+import { CommunityLinkPreviewBar } from "@/components/community/CommunityLinkPreviewBar";
+import { formatCommunityActionError } from "@/lib/communityRateLimit";
+import { extractCommunityLinkUrls } from "@/lib/communityLinkUrls";
 import {
   canAddCommunityImage,
   canAddCommunityVideo,
@@ -30,8 +39,10 @@ import {
 import { splitCommunityMedia } from "@/lib/communityMedia";
 import {
   composerHasContent,
+  clearComposerLocal,
   loadComposerLocal,
 } from "@/lib/communityComposerStorage";
+import { loadCommunityFilter, saveCommunityFilter } from "@/data/communityTopics";
 import { titlesMatch } from "@/lib/classifyCommunityPost";
 import {
   fetchMentionedProjectSummaries,
@@ -67,13 +78,26 @@ function draftDisplayTitle(title: string, body: string) {
 
 const CommunityPostEditorPage = () => {
   const navigate = useNavigate();
+  const { id: editRouteId } = useParams();
+  const [searchParams] = useSearchParams();
+  const fromProjectId = searchParams.get("fromProject");
+  const isEditMode = Boolean(editRouteId);
+  const editPostId = isEditMode ? editRouteId! : null;
+
   const { user } = useAuth();
   const { tier } = useSubscription();
   const limits = getCommunityMediaLimits();
   const folderRef = useRef(`community-${crypto.randomUUID()}`);
   const publish = usePublishCommunityPost();
+  const updatePost = useUpdateCommunityPost();
   const saveDraft = useSaveCommunityDraft();
-  const { data: existingDraft, isLoading: draftLoading } = useCommunityDraft(user?.id);
+  const { data: existingDraft, isLoading: draftLoading } = useCommunityDraft(
+    isEditMode ? undefined : user?.id,
+  );
+  const { data: editingPost, isLoading: editingLoading } = useCommunityPost(editPostId ?? undefined);
+  const { data: sourceProject, isLoading: projectLoading } = useProject(
+    !isEditMode && fromProjectId ? fromProjectId : undefined,
+  );
 
   const [draftId, setDraftId] = useState<string | null>(null);
   const [draftLoaded, setDraftLoaded] = useState(false);
@@ -132,7 +156,7 @@ const CommunityPostEditorPage = () => {
       gallery_urls,
       video_urls,
     },
-    enabled: draftLoaded && autosaveReady && !publish.isPending,
+    enabled: draftLoaded && autosaveReady && !publish.isPending && !isEditMode,
     saveDraft,
     onDraftId: setDraftId,
   });
@@ -144,14 +168,52 @@ const CommunityPostEditorPage = () => {
   });
 
   useEffect(() => {
-    if (!user || draftLoaded || draftLoading) return;
+    if (!user || draftLoaded) return;
+    if (isEditMode) {
+      if (editingLoading) return;
+      if (!editingPost) {
+        toast.error("ไม่พบโพสต์");
+        navigate("/community");
+        return;
+      }
+    } else if (draftLoading || projectLoading) return;
 
-    const local = loadComposerLocal(user.id);
-    const dbTime = existingDraft?.updated_at
-      ? new Date(existingDraft.updated_at).getTime()
-      : 0;
-    const localTime = local?.savedAt ?? 0;
-    const useLocal = local && localTime > dbTime && composerHasContent(local);
+    if (isEditMode && editingPost) {
+      if (editingPost.author_id !== user.id || editingPost.status !== "published") {
+        toast.error("แก้ไขได้เฉพาะโพสต์ของคุณที่เผยแพร่แล้ว");
+        navigate("/community");
+        return;
+      }
+      setTitle(draftDisplayTitle(editingPost.title, editingPost.body ?? ""));
+      setBody(editingPost.body ?? "");
+      setTags(editingPost.tags ?? []);
+      setTools(editingPost.tools ?? []);
+      void fetchMentionedProjectSummaries(editingPost.mentioned_project_ids ?? [], user.id).then(setMentionedProjects).catch(() => setMentionedProjects([]));
+      void fetchTaggedUserSummaries(editingPost.tagged_user_ids ?? []).then(setTaggedUsers).catch(() => setTaggedUsers([]));
+      setMediaAspect(normalizeCommunityMediaAspect(editingPost.media_aspect));
+      setMediaItems(mediaItemsFromProject(editingPost.gallery_urls ?? [], editingPost.video_urls ?? []));
+      setDraftLoaded(true);
+      return;
+    }
+
+    if (fromProjectId && sourceProject) {
+      const desc = sourceProject.description?.trim() || sourceProject.subtitle?.trim() || "";
+      setTitle(sourceProject.title ?? "");
+      setBody(desc ? `เพิ่งอัปเดตผลงาน "${sourceProject.title}"\n\n${desc}` : `เพิ่งอัปเดตผลงาน "${sourceProject.title}"`);
+      setTools(sourceProject.tools ?? []);
+      setTags(sourceProject.tags ?? []);
+      setMentionedProjects([{ id: sourceProject.id, title: sourceProject.title, cover_url: sourceProject.cover_url ?? null }]);
+      setMediaAspect(normalizeCommunityMediaAspect("square"));
+      const gallery = (sourceProject.gallery_urls ?? []).slice(0, limits.images);
+      const videos = (sourceProject.video_urls ?? []).slice(0, limits.videos);
+      const combined = [...gallery, ...videos].slice(0, limits.total);
+      const g = combined.filter((u) => !videos.includes(u));
+      const v = combined.filter((u) => videos.includes(u));
+      setMediaItems(mediaItemsFromProject(g, v));
+      setDraftLoaded(true);
+      toast.message("ดึงข้อมูลจากพอร์ตโฟลิโอแล้ว — แก้แคปชั่นแล้วโพสต์ได้เลย");
+      return;
+    }
 
     const loadMentioned = async (ids: string[]) => {
       if (!user || !ids.length) {
@@ -177,34 +239,59 @@ const CommunityPostEditorPage = () => {
       }
     };
 
-    if (useLocal && local) {
-      setDraftId(local.draftId);
-      setTitle(local.title);
-      setBody(local.body);
-      setTags(local.tags);
-      setTools(local.tools);
-      void loadMentioned(local.mentioned_project_ids ?? []);
-      void loadTagged(local.tagged_user_ids ?? []);
-      setMediaAspect(normalizeCommunityMediaAspect(local.media_aspect));
-      setMediaItems(mediaItemsFromProject(local.gallery_urls, local.video_urls));
-      toast.message("กู้คืนแบบร่างจากเครื่อง");
-    } else if (existingDraft) {
-      setDraftId(existingDraft.id);
-      setTitle(draftDisplayTitle(existingDraft.title, existingDraft.body ?? ""));
-      setBody(existingDraft.body ?? "");
-      setTags(existingDraft.tags ?? []);
-      setTools(existingDraft.tools ?? []);
-      void loadMentioned(existingDraft.mentioned_project_ids ?? []);
-      void loadTagged(existingDraft.tagged_user_ids ?? []);
-      setMediaAspect(normalizeCommunityMediaAspect(existingDraft.media_aspect));
-      setMediaItems(
-        mediaItemsFromProject(existingDraft.gallery_urls ?? [], existingDraft.video_urls ?? []),
-      );
-      toast.message("โหลดแบบร่างล่าสุดแล้ว");
-    }
+    void (async () => {
+      const local = loadComposerLocal(user.id);
+      const dbTime = existingDraft?.updated_at
+        ? new Date(existingDraft.updated_at).getTime()
+        : 0;
+      let localTime = local?.savedAt ?? 0;
+      let activeLocal = local;
 
-    setDraftLoaded(true);
-  }, [user, existingDraft, draftLoaded, draftLoading]);
+      if (activeLocal?.draftId) {
+        try {
+          const stillOpen = await isCommunityDraftStillOpen(activeLocal.draftId, user.id);
+          if (!stillOpen) {
+            clearComposerLocal(user.id);
+            activeLocal = null;
+            localTime = 0;
+          }
+        } catch {
+          /* keep local on transient errors */
+        }
+      }
+
+      const useLocal =
+        activeLocal && localTime > dbTime && composerHasContent(activeLocal);
+
+      if (useLocal && activeLocal) {
+        setDraftId(activeLocal.draftId);
+        setTitle(activeLocal.title);
+        setBody(activeLocal.body);
+        setTags(activeLocal.tags);
+        setTools(activeLocal.tools);
+        void loadMentioned(activeLocal.mentioned_project_ids ?? []);
+        void loadTagged(activeLocal.tagged_user_ids ?? []);
+        setMediaAspect(normalizeCommunityMediaAspect(activeLocal.media_aspect));
+        setMediaItems(mediaItemsFromProject(activeLocal.gallery_urls, activeLocal.video_urls));
+        toast.message("กู้คืนแบบร่างจากเครื่อง");
+      } else if (existingDraft) {
+        setDraftId(existingDraft.id);
+        setTitle(draftDisplayTitle(existingDraft.title, existingDraft.body ?? ""));
+        setBody(existingDraft.body ?? "");
+        setTags(existingDraft.tags ?? []);
+        setTools(existingDraft.tools ?? []);
+        void loadMentioned(existingDraft.mentioned_project_ids ?? []);
+        void loadTagged(existingDraft.tagged_user_ids ?? []);
+        setMediaAspect(normalizeCommunityMediaAspect(existingDraft.media_aspect));
+        setMediaItems(
+          mediaItemsFromProject(existingDraft.gallery_urls ?? [], existingDraft.video_urls ?? []),
+        );
+        toast.message("โหลดแบบร่างล่าสุดแล้ว");
+      }
+
+      setDraftLoaded(true);
+    })();
+  }, [user, existingDraft, draftLoaded, draftLoading, isEditMode, editingPost, editingLoading, fromProjectId, sourceProject, projectLoading, limits, navigate]);
 
   useEffect(() => {
     if (!draftLoaded) return;
@@ -226,8 +313,9 @@ const CommunityPostEditorPage = () => {
       gallery_urls: media.gallery_urls,
       video_urls: media.video_urls,
       draft_id: draftId,
+      edit_post_id: editPostId,
     };
-  }, [user, title, body, tags, tools, mentionedProjects, taggedUsers, mediaAspect, mediaItems, draftId]);
+  }, [user, title, body, tags, tools, mentionedProjects, taggedUsers, mediaAspect, mediaItems, draftId, editPostId]);
 
   const handleVideo = async (file: File) => {
     if (!user) return;
@@ -332,12 +420,20 @@ const CommunityPostEditorPage = () => {
       return;
     }
     try {
-      const { id } = await publish.mutateAsync(composerPayload());
+      if (isEditMode && editPostId) {
+        await updatePost.mutateAsync({ ...composerPayload(), edit_post_id: editPostId });
+        toast.success("บันทึกการแก้ไขแล้ว");
+        navigate(`/community/${editPostId}`);
+        return;
+      }
+      await publish.mutateAsync(composerPayload());
       autosave.clearLocal();
+      setDraftId(null);
+      saveCommunityFilter({ ...loadCommunityFilter(), category: "All", feedSource: "all" });
       toast.success("โพสต์สำเร็จ");
-      navigate(`/community/${id}`);
+      navigate(`/?mode=community`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "โพสต์ไม่สำเร็จ");
+      toast.error(formatCommunityActionError(err));
     }
   };
 
@@ -360,14 +456,7 @@ const CommunityPostEditorPage = () => {
   return (
     <main className="min-h-screen bg-background pb-28">
       <header className="sticky top-0 z-20 flex items-center gap-3 px-4 py-2 border-b border-border/60 bg-background/95 backdrop-blur-md">
-        <button
-          type="button"
-          onClick={() => void handleBack()}
-          className="p-2 -ml-2 text-muted-foreground hover:text-foreground shrink-0"
-          aria-label="กลับ"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+        <BackButton onClick={() => void handleBack()} />
         <div className="flex-1" />
         <div className="flex items-center gap-1 shrink-0">
           <button
@@ -390,9 +479,19 @@ const CommunityPostEditorPage = () => {
           <div className="px-4 pt-1.5">
             <h1 className="mb-1.5 flex items-center gap-2 text-base font-semibold text-foreground">
               <Orbit className="w-4 h-4 text-primary shrink-0" aria-hidden />
-              Area Post
+              {isEditMode ? "แก้ไข Area Post" : "Area Post"}
             </h1>
           </div>
+
+          {!isEditMode && (
+            <CommunityComposerTemplates
+              onApply={(patch) => {
+                if (patch.title !== undefined) setTitle(patch.title);
+                if (patch.body !== undefined) setBody(patch.body);
+                if (patch.tags !== undefined) setTags(patch.tags);
+              }}
+            />
+          )}
 
           <CommunityMediaStrip
             items={mediaItems}
@@ -424,6 +523,7 @@ const CommunityPostEditorPage = () => {
             />
             <CommunityCaptionMetaInline tags={tags} tools={tools} className="px-4 pb-2" />
             <CommunityProfanityHint text={body} className="px-4 pb-2" compact />
+            <CommunityLinkPreviewBar urls={extractCommunityLinkUrls(body)} className="px-4 pb-2" />
           </div>
 
           <CommunityComposerToolbar
@@ -477,7 +577,9 @@ const CommunityPostEditorPage = () => {
         onSaveDraft={() => void handleSaveDraft()}
         onPublish={() => void handlePublish()}
         savingDraft={isSavingDraft}
-        publishing={publish.isPending}
+        publishing={publish.isPending || updatePost.isPending}
+        publishLabel={isEditMode ? "บันทึกการแก้ไข" : "โพสต์"}
+        hideDraft={isEditMode}
       />
 
       <CommunityPostPreviewDialog

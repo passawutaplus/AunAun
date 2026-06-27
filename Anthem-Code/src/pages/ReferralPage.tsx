@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Copy, Gift, Share2, Sparkles, UserPlus, Wallet } from "lucide-react";
+import { CheckCircle2, Copy, Gift, Share2, Sparkles, UserPlus, Wallet } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -43,10 +44,7 @@ export default function ReferralPage() {
       <SeoHead title="ชวนเพื่อนรับ Pixel" path="/referrals" noindex />
       <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
-          <button type="button" onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" /> กลับ
-          </button>
+          <BackButton />
           <h1 className="text-sm font-semibold">ชวนเพื่อนรับ Pixel</h1>
           <span className="w-12" />
         </div>

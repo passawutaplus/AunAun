@@ -105,7 +105,7 @@ const CommunityPostCard = ({ post }: Props) => {
 
           <h3 className="font-semibold text-foreground line-clamp-2 leading-snug">{post.title}</h3>
 
-          <p className="text-sm text-muted-foreground line-clamp-3 whitespace-pre-wrap">{post.body}</p>
+          <p className="text-base text-foreground line-clamp-3 whitespace-pre-wrap">{post.body}</p>
 
           {post.tags.length > 0 && (
 

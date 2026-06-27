@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
   Check,
   ChevronDown,
   ExternalLink,
@@ -11,6 +10,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/core/subscription";
 import { PLANS, type BillingCycle } from "@/data/plans";
@@ -43,14 +43,10 @@ const UpgradePage = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-40">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between">
-          <button
-            type="button"
+          <BackButton
             onClick={() => navigate(user ? "/settings" : "/")}
-            className="flex items-center gap-2 text-sm font-semibold hover:text-primary transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {user ? "กลับตั้งค่า" : "กลับหน้าหลัก"}
-          </button>
+            label={user ? "กลับตั้งค่า" : "กลับหน้าหลัก"}
+          />
           {user && (
             <span className="text-xs text-muted-foreground">
               {tier === "inhouse"

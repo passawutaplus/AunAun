@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Share2 } from "lucide-react";
+import { Orbit, Share2 } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPopover";
 import SharePopover from "@/components/SharePopover";
 import { Layers3 } from "lucide-react";
@@ -182,9 +183,7 @@ const ProjectDetailPage = () => {
       />
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-4 h-4" /> กลับ
-          </button>
+          <BackButton />
           <div className="flex items-center gap-1">
             {dbProject ? (
               <BoostButton
@@ -200,6 +199,13 @@ const ProjectDetailPage = () => {
                 <Layers3 className="w-5 h-5" />
               </Button>
             </SaveToCollectionPopover>
+            {dbProject?.status === "Published" && user?.id === dbProject.owner_id ? (
+              <Button variant="ghost" size="icon" asChild title="แชร์ไป Area Post">
+                <Link to={`/community/new?fromProject=${dbProject.id}`}>
+                  <Orbit className="w-5 h-5" />
+                </Link>
+              </Button>
+            ) : null}
             <SharePopover url={shareUrl} title={project.title} label="แชร์ผลงาน">
               <Button variant="ghost" size="icon">
                 <Share2 className="w-5 h-5" />

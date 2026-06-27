@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import VerificationWizard from "@/components/verification/VerificationWizard";
 
 const VerificationPage = () => {
@@ -9,12 +9,7 @@ const VerificationPage = () => {
     <div className="min-h-screen bg-app-ambient">
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-2">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="w-4 h-4" /> กลับ
-          </button>
+          <BackButton />
           <span className="ml-auto text-sm font-medium">ยืนยันตัวตน</span>
           <span className="w-12" />
         </div>

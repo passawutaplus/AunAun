@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Sparkles, Banknote, Gift as GiftIcon, Coins, Pencil, Coffee, Highlighter, PenTool, Palette, Laptop, ShieldCheck, Lock, UserPlus } from "lucide-react";
+import { Sparkles, Banknote, Gift as GiftIcon, Coins, Pencil, Coffee, Highlighter, PenTool, Palette, Laptop, ShieldCheck, Lock, UserPlus } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -83,9 +84,7 @@ const EarningsPage = () => {
       <SeoHead title="รายได้ของฉัน" path="/earnings" noindex />
       <div className="sticky top-0 z-20 glass-panel border-x-0 border-t-0 rounded-none">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-4 h-4" /> กลับ
-          </button>
+          <BackButton />
           <h1 className="text-sm font-semibold">รายได้ของฉัน</h1>
           <div className="w-12" />
         </div>
@@ -108,7 +107,7 @@ const EarningsPage = () => {
           </Button>
         </div>
 
-        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-foreground/90 leading-relaxed flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-base text-foreground leading-relaxed flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <p className="font-medium text-foreground">เติม Pixel ด้วย Stripe</p>
             <p className="text-muted-foreground mt-1 text-xs">
@@ -150,7 +149,7 @@ const EarningsPage = () => {
         {/* AML disclaimer */}
         <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 flex items-start gap-3">
           <ShieldCheck className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-          <div className="text-xs text-foreground/80 leading-relaxed">
+          <div className="text-base text-foreground leading-relaxed">
             <p className="font-medium text-foreground mb-0.5">ระบบ Closed-Loop เพื่อป้องกันการฟอกเงิน</p>
             <p>
               ถอนได้เฉพาะ Pixel ที่ได้จาก<span className="font-medium text-foreground">ของขวัญที่ผู้สนับสนุนส่งให้</span> เท่านั้น

@@ -17,13 +17,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import Footer from "@/components/Footer";
+import { BackButton } from "@/components/ui/BackButton";
 import {
   CheckCircle2,
   Megaphone,
   Upload,
   Sparkles,
-  ArrowLeft,
   CreditCard,
   Loader2,
   Clock,
@@ -156,12 +155,7 @@ const AdvertisePage = () => {
   return (
     <div className="min-h-screen bg-app-ambient">
       <div className="max-w-5xl mx-auto px-4 py-6 lg:py-10 space-y-8">
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="w-4 h-4" /> กลับ
-        </button>
+        <BackButton />
 
         {/* Hero */}
         <header className="text-center space-y-3">

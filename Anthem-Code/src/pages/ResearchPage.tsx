@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
+import { BackButton } from "@/components/ui/BackButton";
 import {
-  ArrowLeft,
   ClipboardList,
   LayoutGrid,
   LogIn,
@@ -42,12 +42,7 @@ export default function ResearchPage() {
 
       <header className="border-b border-border/60 bg-card/80 backdrop-blur sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="w-4 h-4" /> กลับหน้าแรก
-          </Link>
+          <BackButton to="/" label="กลับหน้าแรก" />
           <span className="text-xs font-medium text-primary uppercase tracking-wider">UX Research</span>
         </div>
       </header>
@@ -70,7 +65,7 @@ export default function ResearchPage() {
             <ClipboardList className="w-4 h-4 text-amber-600" />
             ข้อมูลบันทึกจริง — อ่านก่อนเริ่ม
           </h2>
-          <ul className="text-sm text-foreground/85 space-y-1.5 list-disc pl-5">
+          <ul className="text-base text-foreground space-y-1.5 list-disc pl-5">
             {DEMO_WARNING_BULLETS.map((bullet) => (
               <li key={bullet}>{bullet}</li>
             ))}

@@ -29,8 +29,7 @@ export const BRAND_DESCRIPTION =
   "Aplus1 คือ creative social app สำหรับคนสร้างสรรค์ — รวมโปรไฟล์ ผลงาน คอมมูนิตี้ การคอลแลป และโอกาสในการจ้างงานไว้ในที่เดียว";
 
 /** ใช้บริบทที่ต้องการมุมมองเพิ่ม — อย่าแสดงคู่กับ BRAND_TAGLINE ในหน้าเดียว */
-export const BRAND_CONCEPT =
-  "ครีเอทีฟไม่ควรกระจายตัวตนไว้หลายที่จนโอกาสหลุดหาย — ทุกโพสต์และทุกผลงานมีโอกาสต่อยอดเป็นคอนเนกชัน งานจ้าง หรือโปรเจกต์ใหม่";
+export const BRAND_CONCEPT = "พื้นที่ของโอกาสใหม่ๆ";
 
 export const BRAND_HERO_SUBTITLE = "creative social app";
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Layers3, Lock, Globe2, X } from "lucide-react";
+import { Pencil, Trash2, Layers3, Lock, Globe2, X } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -44,9 +45,7 @@ const CollectionDetailPage = () => {
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-12">
       <div className="sticky top-0 z-20 glass-panel border-x-0 border-t-0 rounded-none">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-4 h-4" /> กลับ
-          </button>
+          <BackButton />
           {isOwner && (
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" onClick={() => setEditOpen(true)} className="rounded-full">
@@ -101,7 +100,7 @@ const CollectionDetailPage = () => {
             </Badge>
           )}
           {collection.description && (
-            <p className="text-sm md:text-base text-foreground/80 max-w-2xl leading-7 whitespace-pre-wrap">
+            <p className="text-base text-foreground max-w-2xl leading-7 whitespace-pre-wrap">
               {collection.description}
             </p>
           )}

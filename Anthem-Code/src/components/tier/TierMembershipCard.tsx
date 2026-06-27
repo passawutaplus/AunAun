@@ -9,6 +9,7 @@ import {
   getTierMetrics,
   getTierTagline,
   getUpgradeTargets,
+  normalizePlanId,
   TIER_CARD_STYLES,
   tierLabel,
   tierProgress,
@@ -24,7 +25,8 @@ export function TierMembershipCard({
   className,
   infoHref = "/upgrade#tier-details",
 }: Props) {
-  const { tier, isPro, isActive, isLoading, subscription } = useSubscription();
+  const { tier: rawTier, isPro, isActive, isLoading, subscription } = useSubscription();
+  const tier = normalizePlanId(rawTier);
   const style = TIER_CARD_STYLES[tier];
   const Icon = style.icon;
   const metrics = getTierMetrics(tier);

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Sparkles, ImageIcon } from "lucide-react";
+import { ExternalLink, Sparkles, ImageIcon } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { useProject } from "@/hooks/useProjects";
 import { useSimilarImages, type SimilarMode } from "@/hooks/useSimilarImages";
@@ -27,9 +28,7 @@ const SimilarImagesPage = () => {
     <div className="min-h-screen bg-app-ambient">
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground shrink-0">
-            <ArrowLeft className="w-4 h-4" /> กลับ
-          </button>
+          <BackButton className="shrink-0" />
           <h1 className="text-sm font-semibold truncate">ภาพคล้ายกัน</h1>
           <div className="flex items-center gap-1 shrink-0">
             {modes.map(({ key, label, Icon }) => {

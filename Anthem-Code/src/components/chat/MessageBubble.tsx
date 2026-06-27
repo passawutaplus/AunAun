@@ -117,7 +117,7 @@ const MessageBubble = ({ message, mine, kind, onReply, onUnsend }: Props) => {
             {message.content && (
               <div
                 className={cn(
-                  "px-3.5 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words shadow-sm",
+                  "px-3.5 py-2 rounded-2xl text-base leading-relaxed whitespace-pre-wrap break-words shadow-sm",
                   mine ? `${mineBg} rounded-br-md` : `${theirBg} rounded-bl-md`,
                 )}
               >

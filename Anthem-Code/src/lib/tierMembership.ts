@@ -28,6 +28,14 @@ export const TIER_RANK: Record<PlanId, number> = {
 
 const TIER_ORDER: PlanId[] = ["free", "pro", "pro_plus", "inhouse"];
 
+const PLAN_IDS = new Set<string>(TIER_ORDER);
+
+/** Coerce unknown DB/API tier strings to a known plan id (prevents settings UI crashes). */
+export function normalizePlanId(tier: string | null | undefined): PlanId {
+  if (tier && PLAN_IDS.has(tier)) return tier as PlanId;
+  return "free";
+}
+
 export function tierLabel(tier: PlanId): string {
   return PLAN_COMPARISON_TIER_LABELS[tier];
 }
@@ -54,10 +62,11 @@ export interface TierMetric {
 }
 
 export function getTierMetrics(tier: PlanId): TierMetric[] {
+  const aiMonthly = AI_TIER_MONTHLY[tier as Exclude<PlanId, "free">];
   const ai =
     tier === "free"
       ? `${FREE_STARTER_CREDITS} เริ่มต้น`
-      : AI_TIER_MONTHLY[tier].toLocaleString("th-TH");
+      : `${(aiMonthly ?? FREE_STARTER_CREDITS).toLocaleString("th-TH")}`;
   const jobs = tier === "free" ? `${FREE_MONTHLY_JOB_LIMIT}/เดือน` : "ไม่จำกัด";
   return [
     { label: "AI", value: ai },

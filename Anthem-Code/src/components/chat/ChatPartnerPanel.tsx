@@ -126,7 +126,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose }: Props)
                 </span>
               </div>
               {profile?.bio && (
-                <p className="text-sm text-foreground/85 mt-3 line-clamp-4 text-left leading-relaxed">
+                <p className="text-base text-foreground mt-3 line-clamp-4 text-left leading-relaxed">
                   {profile.bio}
                 </p>
               )}

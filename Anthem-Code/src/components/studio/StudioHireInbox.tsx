@@ -77,7 +77,7 @@ export function StudioHireInbox({ studioId }: Props) {
               </Badge>
             </div>
             {req.message ? (
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{req.message}</p>
+              <p className="text-base text-foreground whitespace-pre-wrap">{req.message}</p>
             ) : null}
             {pending ? (
               <div className="flex flex-wrap gap-2">

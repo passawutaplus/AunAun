@@ -47,8 +47,8 @@ const IntellectualPropertyPage = () => (
     </p>
     <div className="not-prose rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-2 my-4">
       <p className="font-semibold text-foreground">{ATTESTATION_TITLE}</p>
-      <p className="text-sm text-foreground/90">ข้าพเจ้ายืนยันว่า ผลงานและเนื้อหาทั้งหมดในชิ้นงานนี้:</p>
-      <ul className="text-sm text-foreground/90 list-disc pl-5 space-y-1">
+      <p className="text-base text-foreground">ข้าพเจ้ายืนยันว่า ผลงานและเนื้อหาทั้งหมดในชิ้นงานนี้:</p>
+      <ul className="text-base text-foreground list-disc pl-5 space-y-1">
         {ATTESTATION_BULLETS.map((b) => (
           <li key={b}>{b}</li>
         ))}

@@ -8,7 +8,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Building2, CheckCircle2, FileText, MapPin, Globe, Users, ArrowLeft } from "lucide-react";
+import { Building2, CheckCircle2, FileText, MapPin, Globe, Users } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import StudioFollowButton from "@/components/StudioFollowButton";
 import { useStudioFollowState } from "@/hooks/useStudioFollow";
 import { safeHttpUrl } from "@/lib/safeUrl";
@@ -89,13 +90,7 @@ const StudioProfilePage = () => {
       />
       <div className="relative h-48 lg:h-64 bg-gradient-to-br from-primary/20 to-primary/5">
         {studio.cover_url && <img src={studio.cover_url} alt="" className="w-full h-full object-cover" />}
-        <button
-          onClick={() => navigate(-1)}
-          className="absolute top-4 left-4 w-9 h-9 rounded-full bg-background/70 backdrop-blur grid place-items-center"
-          aria-label="กลับ"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
+        <BackButton className="absolute top-4 left-4 bg-background/70 backdrop-blur" />
       </div>
 
       <div className="max-w-5xl mx-auto px-4 -mt-12 relative">
@@ -239,7 +234,7 @@ const StudioProfilePage = () => {
 
           <TabsContent value="about" className="mt-5">
             <div className="glass-panel rounded-2xl p-5">
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{studio.bio || "ยังไม่มีรายละเอียด"}</p>
+              <p className="text-base whitespace-pre-wrap leading-relaxed">{studio.bio || "ยังไม่มีรายละเอียด"}</p>
             </div>
           </TabsContent>
         </Tabs>

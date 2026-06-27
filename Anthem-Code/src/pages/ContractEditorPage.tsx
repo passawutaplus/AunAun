@@ -18,8 +18,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  FileSignature, Sparkles, ArrowLeft, Save, Loader2, Wand2, Crown, Copy, Download, Scale,
+  FileSignature, Sparkles, Save, Loader2, Wand2, Crown, Copy, Download, Scale,
 } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { PROJECT_DETAIL_SELECT } from "@/lib/dbSelects";
 import {
   isLicenseType,
@@ -225,9 +226,7 @@ const ContractEditorInner = () => {
       <div className="border-b border-border/40 backdrop-blur-md bg-background/60 sticky top-0 z-20">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <BackButton />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <FileSignature className="h-5 w-5 text-primary shrink-0" />

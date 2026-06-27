@@ -1,13 +1,15 @@
 import BriefcaseIcon from "../components/icons/BriefcaseIcon";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Mail, Link2, Camera, Save, Bell, MessageCircle, Sparkles, MapPin, LogOut, Shield } from "lucide-react";
+import { User, Mail, Link2, Camera, Save, Bell, MessageCircle, Sparkles, MapPin, LogOut, Shield } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, useUpdateProfile, useUpdateProfileMedia } from "@/hooks/useProfile";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { profileSchema, type ExperienceItem, type ProfileFaqItem, type ProfileInput } from "@/lib/validators";
+import { HttpErrorPage } from "@/components/HttpErrorPage";
 import { supabase } from "@/integrations/supabase/client";
 import SkillsEditor from "@/components/profile/SkillsEditor";
 import ExperienceEditor from "@/components/profile/ExperienceEditor";
@@ -46,10 +48,19 @@ const empty: ProfileInput = {
   profileFaq: [],
 };
 
+const asExperience = (raw: unknown): ExperienceItem[] =>
+  Array.isArray(raw) ? (raw as ExperienceItem[]) : [];
+
+const asStringArray = (raw: unknown): string[] =>
+  Array.isArray(raw) ? raw.filter((s): s is string => typeof s === "string") : [];
+
+const asProfileFaq = (raw: unknown): ProfileFaqItem[] =>
+  Array.isArray(raw) ? (raw as ProfileFaqItem[]) : [];
+
 const SettingsPage = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { data: profile, isLoading } = useProfile(user?.id);
+  const { data: profile, isLoading, isError } = useProfile(user?.id);
   const updateMut = useUpdateProfile(user?.id);
   const updateMedia = useUpdateProfileMedia(user?.id);
   const avatarInput = useRef<HTMLInputElement>(null);
@@ -88,9 +99,9 @@ const SettingsPage = () => {
         notifyJobMatch: (profile as any).notify_job_match ?? true,
         preferredCategories: (profile as any).preferred_categories ?? [],
         preferredEmploymentTypes: (profile as any).preferred_employment_types ?? [],
-        skills: profile.skills ?? [],
-        experience: ((profile.experience as unknown as ExperienceItem[]) ?? []),
-        profileFaq: ((profile as { profile_faq?: ProfileFaqItem[] }).profile_faq ?? []),
+        skills: asStringArray(profile.skills),
+        experience: asExperience(profile.experience),
+        profileFaq: asProfileFaq((profile as { profile_faq?: ProfileFaqItem[] }).profile_faq),
       });
     }
   }, [profile, user]);
@@ -136,13 +147,15 @@ const SettingsPage = () => {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">กำลังโหลด...</div>;
   }
 
+  if (isError || !profile) {
+    return <HttpErrorPage kind="500" homeTo="/portfolio" />;
+  }
+
   return (
     <div className="min-h-screen bg-app-ambient">
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-4 h-4" /> กลับ
-          </button>
+          <BackButton />
           <span className="text-sm font-medium text-foreground">ตั้งค่าบัญชี</span>
           <span className="w-12" />
         </div>

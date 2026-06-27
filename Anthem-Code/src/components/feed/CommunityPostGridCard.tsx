@@ -1,15 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Heart, MessageCircle, Play } from "lucide-react";
 import type { CommunityPost } from "@/hooks/useCommunityPosts";
-import { communityCoverUrl } from "@/lib/communityMedia";
 import { useCommunityPostLike } from "@/hooks/useCommunityPostInteractions";
 import UserAvatar from "@/components/UserAvatar";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import { postHeadline } from "@/lib/classifyCommunityPost";
 import { hasCommunityQaBadge } from "@/lib/communityQaTag";
 import { CommunityQaBadge } from "@/components/community/CommunityQaBadge";
-import { communityMediaAspectTailwind } from "@/lib/communityMediaAspect";
-import { normalizeCommunityMediaAspect } from "@/lib/communityMediaAspect";
+import { communityMediaAspectTailwind, normalizeCommunityMediaAspect } from "@/lib/communityMediaAspect";
+import { CommunityPostGridCarousel } from "@/components/community/CommunityPostGridCarousel";
+import { CommunityDoubleTapLike } from "@/components/community/CommunityDoubleTapLike";
+import { useDelayedTapNavigate } from "@/hooks/useDoubleTapLike";
 import { cn } from "@/lib/utils";
 import BoostBadge from "@/components/boost/BoostBadge";
 import { logBoostEvent } from "@/hooks/useBoost";
@@ -23,7 +24,7 @@ interface Props {
 
 /** Lemon8-style compact card for 2-column masonry feed. */
 const CommunityPostGridCard = ({ post, boosted, boostId }: Props) => {
-  const cover = communityCoverUrl(post.gallery_urls, post.video_urls);
+  const navigate = useNavigate();
   const hasVideo = (post.video_urls?.length ?? 0) > 0;
   const cardRef = useRef<HTMLElement>(null);
   const boostImpLogged = useRef(false);
@@ -31,7 +32,7 @@ const CommunityPostGridCard = ({ post, boosted, boostId }: Props) => {
     user_id: post.author_id,
     username: post.profile?.username,
   });
-  const { isLiked, toggle: toggleLike, isPending } = useCommunityPostLike(
+  const { isLiked, toggle: toggleLike, isPending, likes, like } = useCommunityPostLike(
     post.id,
     post.like_count,
     { authorId: post.author_id, title: post.title },
@@ -58,32 +59,33 @@ const CommunityPostGridCard = ({ post, boosted, boostId }: Props) => {
   }, [boostId]);
 
   const aspectClass = communityMediaAspectTailwind(normalizeCommunityMediaAspect(post.media_aspect));
+  const openPost = useDelayedTapNavigate(() => {
+    if (boostId) void logBoostEvent(boostId, "click");
+    navigate(`/community/${post.id}`);
+  });
 
   return (
     <article ref={cardRef} className="group">
-      <Link
-        to={`/community/${post.id}`}
-        className="block"
-        onClick={() => {
-          if (boostId) void logBoostEvent(boostId, "click");
-        }}
-      >
-        <div className="relative overflow-hidden rounded-xl bg-muted/50">
-          {cover ? (
-            <img
-              src={cover}
-              alt=""
-              className={cn("w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]", aspectClass)}
-              loading="lazy"
+      <div className="relative overflow-hidden rounded-xl bg-muted/50">
+        <CommunityDoubleTapLike
+          onLike={like}
+          isLiked={isLiked}
+          isPending={isPending}
+          className="block cursor-pointer"
+        >
+          <div role="button" tabIndex={0} onClick={openPost} onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") openPost(e as unknown as React.MouseEvent);
+          }}>
+            <CommunityPostGridCarousel
+              galleryUrls={post.gallery_urls ?? []}
+              videoUrls={post.video_urls ?? []}
+              aspectClass={aspectClass}
             />
-          ) : (
-            <div
-              className={cn("w-full bg-gradient-brand-soft", aspectClass)}
-            />
-          )}
+          </div>
+        </CommunityDoubleTapLike>
 
-          {hasVideo && (
-            <span className="absolute top-2 right-2 inline-flex rounded-full bg-black/50 p-1.5 text-white">
+          {hasVideo && (post.gallery_urls?.length ?? 0) === 0 && (post.video_urls?.length ?? 0) === 1 && (
+            <span className="absolute top-2 right-2 inline-flex rounded-full bg-black/50 p-1.5 text-white pointer-events-none">
               <Play className="w-3.5 h-3.5 fill-current" />
             </span>
           )}
@@ -96,9 +98,10 @@ const CommunityPostGridCard = ({ post, boosted, boostId }: Props) => {
               <CommunityQaBadge className="bg-background/90 backdrop-blur-sm" />
             </span>
           ) : null}
-        </div>
+      </div>
 
-        <h3 className="mt-2 text-[13px] font-medium leading-snug text-foreground line-clamp-2 thai-body">
+      <Link to={`/community/${post.id}`} className="block mt-2">
+        <h3 className="text-[13px] font-medium leading-snug text-foreground line-clamp-2 thai-body">
           {postHeadline(post.title, post.body)}
         </h3>
       </Link>
@@ -138,7 +141,7 @@ const CommunityPostGridCard = ({ post, boosted, boostId }: Props) => {
           className="inline-flex items-center gap-0.5 shrink-0 text-[11px] text-muted-foreground hover:text-destructive"
         >
           <Heart className={cn("w-3.5 h-3.5", isLiked && "fill-destructive text-destructive")} />
-          {post.like_count > 0 && <span>{post.like_count}</span>}
+          {likes > 0 && <span>{likes}</span>}
         </button>
       </div>
     </article>

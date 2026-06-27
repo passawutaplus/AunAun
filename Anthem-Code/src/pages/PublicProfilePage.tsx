@@ -1,7 +1,8 @@
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Globe, Instagram, Facebook, MessageSquare, UserX, MessageCircle, Users } from "lucide-react";
+import { Globe, Instagram, Facebook, MessageSquare, UserX, MessageCircle, Users } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import PageLoader from "@/components/ui/PageLoader";
 import EmptyState from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -187,9 +188,7 @@ const PublicProfilePage = () => {
       />
       <div className="sticky top-0 z-20 glass-panel border-x-0 border-t-0 rounded-none">
         <div className="max-w-5xl mx-auto px-4 py-3">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-4 h-4" /> กลับ
-          </button>
+          <BackButton />
         </div>
       </div>
 
@@ -242,7 +241,7 @@ const PublicProfilePage = () => {
                 </Badge>
               )}
               {profile.bio && (
-                <p className="text-sm text-foreground/85 mt-2 sm:mt-3 max-w-xl leading-relaxed">
+                <p className="text-base text-foreground mt-2 sm:mt-3 max-w-xl leading-relaxed">
                   {highlight(profile.bio, q)}
                 </p>
               )}
@@ -436,7 +435,7 @@ const PublicProfilePage = () => {
           <TabsContent value="about" className="mt-6 space-y-6">
             <div className="rounded-2xl glass-panel p-6 space-y-3">
               <h3 className="font-medium text-foreground">เกี่ยวกับ {profile.display_name}</h3>
-              <p className="text-sm text-foreground/80 leading-7 whitespace-pre-wrap">
+              <p className="text-base text-foreground leading-7 whitespace-pre-wrap">
                 {profile.bio || "ยังไม่มีข้อมูลแนะนำตัว"}
               </p>
             </div>
@@ -449,7 +448,7 @@ const PublicProfilePage = () => {
                 profileFaq.map((item, i) => (
                   <div key={i} className="rounded-2xl glass-panel p-5 space-y-2">
                     <p className="font-medium text-foreground">{item.question}</p>
-                    <p className="text-sm text-foreground/80 whitespace-pre-wrap">{item.answer}</p>
+                    <p className="text-base text-foreground whitespace-pre-wrap">{item.answer}</p>
                   </div>
                 ))
               )}

@@ -16,9 +16,10 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import {
-  Building2, Plus, X, Search, Loader2, Users, ArrowLeft,
+  Building2, Plus, X, Search, Loader2, Users,
   ChevronDown, ChevronUp, ImagePlus, Upload, Mail, Phone, Globe, Instagram,
 } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import RequireAuth from "@/components/RequireAuth";
 
 const slugify = (s: string) =>
@@ -175,14 +176,7 @@ const StudioCreateInner = () => {
       {/* Top bar with back */}
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border/40">
         <div className="max-w-2xl mx-auto px-4 h-12 flex items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-            className="rounded-full -ml-2 gap-1 thai-body"
-          >
-            <ArrowLeft className="w-4 h-4" /> กลับ
-          </Button>
+          <BackButton />
         </div>
       </div>
 

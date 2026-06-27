@@ -1,15 +1,53 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import { notifyCommunityEvent } from "@/lib/communityNotify";
-import { enrichCommunityPosts, type CommunityPost } from "@/hooks/useCommunityPosts";
+import { type CommunityPost } from "@/hooks/useCommunityPosts";
 
 const promptAuth = () => {
   toast.info("กรุณาเข้าสู่ระบบก่อน");
   useAuthDialog.getState().openSignup();
 };
+
+type CommunityPostsPage = { items: CommunityPost[]; rawCount: number };
+
+function adjustCommunityPostLikeCount(
+  qc: ReturnType<typeof useQueryClient>,
+  postId: string,
+  delta: number,
+) {
+  qc.setQueriesData<InfiniteData<CommunityPostsPage>>(
+    { queryKey: ["community-posts"] },
+    (old) => {
+      if (!old?.pages) return old;
+      return {
+        ...old,
+        pages: old.pages.map((page) => ({
+          ...page,
+          items: page.items.map((p) =>
+            p.id === postId
+              ? { ...p, like_count: Math.max(0, (p.like_count ?? 0) + delta) }
+              : p,
+          ),
+        })),
+      };
+    },
+  );
+
+  qc.setQueryData<CommunityPost>(["community-post", postId], (old) =>
+    old ? { ...old, like_count: Math.max(0, (old.like_count ?? 0) + delta) } : old,
+  );
+
+  qc.setQueriesData<CommunityPost[]>(
+    { queryKey: ["community-posts-by-author"] },
+    (old) =>
+      old?.map((p) =>
+        p.id === postId ? { ...p, like_count: Math.max(0, (p.like_count ?? 0) + delta) } : p,
+      ) ?? old,
+  );
+}
 
 export const useCommunityPostLike = (
   postId: string | undefined,
@@ -39,7 +77,8 @@ export const useCommunityPostLike = (
         promptAuth();
         throw new Error("unauth");
       }
-      if (isLikedQ.data) {
+      const liked = !!qc.getQueryData<boolean>(["community-post-liked", postId, user.id]);
+      if (liked) {
         const { error } = await supabase
           .from("community_post_likes")
           .delete()
@@ -68,10 +107,105 @@ export const useCommunityPostLike = (
         }
       }
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      if (!postId || !user?.id) return;
+      const wasLiked = !!isLikedQ.data;
+      const delta = wasLiked ? -1 : 1;
+      await qc.cancelQueries({ queryKey: ["community-post-liked", postId, user.id] });
+      qc.setQueryData(["community-post-liked", postId, user.id], !wasLiked);
+      adjustCommunityPostLikeCount(qc, postId, delta);
+      const cached = qc.getQueryData<CommunityPost>(["community-post", postId]);
+      const nextLikeCount =
+        cached?.like_count ?? Math.max(0, likeCount + delta);
+      return { wasLiked, nextLikeCount };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (!postId || !user?.id || !ctx) return;
+      const delta = ctx.wasLiked ? 1 : -1;
+      qc.setQueryData(["community-post-liked", postId, user.id], ctx.wasLiked);
+      adjustCommunityPostLikeCount(qc, postId, delta);
+    },
+    onSuccess: (_data, _vars, ctx) => {
+      if (postId && meta?.authorId && user?.id === meta.authorId && ctx && !ctx.wasLiked) {
+        for (const milestone of [10, 25, 50]) {
+          if (ctx.nextLikeCount === milestone) {
+            void (supabase.rpc as (name: string, args: object) => ReturnType<typeof supabase.rpc>)(
+              "record_community_engagement_milestone",
+              {
+                _post_id: postId,
+                _kind: `likes_${milestone}`,
+                _metadata: { count: ctx.nextLikeCount },
+              },
+            );
+          }
+        }
+      }
       qc.invalidateQueries({ queryKey: ["community-post-liked", postId, user?.id] });
       qc.invalidateQueries({ queryKey: ["community-posts"] });
       qc.invalidateQueries({ queryKey: ["community-post", postId] });
+      qc.invalidateQueries({ queryKey: ["community-posts-by-author"] });
+    },
+  });
+
+  const isLiked = !!isLikedQ.data;
+  const likes = Math.max(0, likeCount);
+
+  return {
+    likes,
+    isLiked,
+    toggle: toggle.mutate,
+    like: () => {
+      if (!user || !postId) {
+        promptAuth();
+        return;
+      }
+      if (!isLikedQ.data && !toggle.isPending) toggle.mutate();
+    },
+    isPending: toggle.isPending,
+  };
+};
+
+export const useCommunityCommentLike = (commentId: string | undefined, likeCount = 0) => {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+
+  const isLikedQ = useQuery({
+    queryKey: ["community-comment-liked", commentId, user?.id],
+    enabled: !!commentId && !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("community_comment_likes")
+        .select("comment_id")
+        .eq("comment_id", commentId!)
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return !!data;
+    },
+  });
+
+  const toggle = useMutation({
+    mutationFn: async () => {
+      if (!user || !commentId) {
+        promptAuth();
+        throw new Error("unauth");
+      }
+      if (isLikedQ.data) {
+        const { error } = await supabase
+          .from("community_comment_likes")
+          .delete()
+          .eq("comment_id", commentId)
+          .eq("user_id", user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("community_comment_likes")
+          .insert({ comment_id: commentId, user_id: user.id });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["community-comment-liked", commentId, user?.id] });
+      qc.invalidateQueries({ queryKey: ["community-comments"] });
     },
   });
 

@@ -26,6 +26,18 @@ const EMPTY: AiUsageSummary = {
   total_remaining: 25,
 };
 
+function normalizeAiUsage(raw: Partial<AiUsageSummary> | null | undefined): AiUsageSummary {
+  return {
+    ...EMPTY,
+    ...raw,
+    included_used: Number(raw?.included_used ?? EMPTY.included_used),
+    included_limit: Number(raw?.included_limit ?? EMPTY.included_limit),
+    included_remaining: Number(raw?.included_remaining ?? EMPTY.included_remaining),
+    purchased_balance: Number(raw?.purchased_balance ?? EMPTY.purchased_balance),
+    total_remaining: Number(raw?.total_remaining ?? EMPTY.total_remaining),
+  };
+}
+
 export function useAiUsage() {
   const { user } = useAuth();
 
@@ -35,16 +47,17 @@ export function useAiUsage() {
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("ecosystem-ai-usage");
       if (error) throw error;
-      return (data ?? EMPTY) as AiUsageSummary;
+      return normalizeAiUsage(data as Partial<AiUsageSummary> | null);
     },
     staleTime: 30_000,
     retry: 1,
   });
 
-  const data = query.data ?? EMPTY;
+  const data = normalizeAiUsage(query.data);
   return {
     ...data,
     isLoading: query.isLoading,
+    isFetching: query.isFetching,
     refetch: query.refetch,
     limitReached: data.total_remaining <= 0,
   };

@@ -76,7 +76,7 @@ const ChatMetaPanel = ({
             <Row icon={<Calendar className="w-4 h-4" />} label="กำหนดส่ง" value={meta.hire.deadline ?? "ยังไม่ระบุ"} />
             <div>
               <p className="text-xs text-muted-foreground mb-1">รายละเอียดงาน</p>
-              <p className="text-sm leading-6 text-foreground/85 whitespace-pre-wrap">{meta.hire.message ?? "—"}</p>
+              <p className="text-base leading-6 text-foreground whitespace-pre-wrap">{meta.hire.message ?? "—"}</p>
             </div>
             <div className="pt-2 border-t border-border">
               <p className="text-xs text-muted-foreground mb-1.5">ติดต่อลูกค้า</p>
@@ -106,7 +106,7 @@ const ChatMetaPanel = ({
             )}
             <div>
               <p className="text-xs text-muted-foreground mb-1">ไอเดียที่เสนอ</p>
-              <p className="text-sm leading-6 text-foreground/85 whitespace-pre-wrap">{meta.collab.message}</p>
+              <p className="text-base leading-6 text-foreground whitespace-pre-wrap">{meta.collab.message}</p>
             </div>
             {(meta.collab.attached_project_ids ?? []).length > 0 && (
               <div className="pt-2 border-t border-border">

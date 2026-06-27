@@ -10,6 +10,7 @@ export const isActiveChatThread = (pathname: string) => /^\/chat\/[^/]+/.test(pa
 
 export function shouldHideBottomNav(pathname: string, narrowViewport: boolean): boolean {
   if (NAV_HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return true;
+  if (/^\/community\/[^/]+\/edit/.test(pathname)) return true;
   if (narrowViewport && isActiveChatThread(pathname)) return true;
   return false;
 }

@@ -223,4 +223,5 @@ export function validateProjectPublish(input: ProjectInput): string | null {
 
 export const commentSchema = z.object({
   content: z.string().trim().min(1, "พิมพ์ข้อความก่อนส่ง").max(800, "ไม่เกิน 800 ตัวอักษร"),
+  imageUrls: z.array(z.string().url()).max(2).optional().default([]),
 });

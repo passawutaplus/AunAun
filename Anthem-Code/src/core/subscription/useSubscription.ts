@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { normalizePlanId } from "@/lib/tierMembership";
 
 export interface SubscriptionRow {
   id: string;
@@ -111,7 +112,8 @@ export function useSubscription() {
       (!periodEndMs || periodEndMs > now)) ||
       (sub.status === "canceled" && periodEndMs && periodEndMs > now));
 
-  const tier: Tier = profileTier !== "free" ? profileTier : isActive ? "pro" : "free";
+  const rawTier: Tier = profileTier !== "free" ? profileTier : isActive ? "pro" : "free";
+  const tier: Tier = normalizePlanId(rawTier);
   const isPro = tier === "pro" || tier === "pro_plus" || tier === "inhouse";
 
   return {

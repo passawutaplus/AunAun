@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, UserCircle2, Trash2 } from "lucide-react";
+import { ExternalLink, UserCircle2, Trash2 } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { useInspireBoard, useInspireBoardItems, useRemoveFromInspireBoard } from "@/hooks/useInspire";
 import { useQuery } from "@tanstack/react-query";
@@ -55,9 +56,7 @@ const InspireBoardDetailPage = () => {
     <div className="min-h-screen bg-app-ambient">
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-4 h-4" /> กลับ
-          </button>
+          <BackButton />
           <h1 className="text-sm font-semibold truncate">{board?.name ?? "..."}</h1>
           <div className="w-12" />
         </div>

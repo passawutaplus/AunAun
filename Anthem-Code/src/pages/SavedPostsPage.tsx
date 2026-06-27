@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Bookmark } from "lucide-react";
+import { Bookmark } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedCommunityPosts } from "@/hooks/useCommunityPostInteractions";
@@ -27,11 +28,7 @@ export default function SavedPostsPage() {
       <SeoHead title="โพสต์ที่บันทึก" description="โพสต์ชุมชนที่คุณบันทึกไว้บน Aplus1" />
       <div className="sticky top-0 z-30 glass-panel border-x-0 border-t-0 rounded-none">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="sm" asChild className="rounded-full">
-            <Link to="/portfolio">
-              <ArrowLeft className="h-4 w-4 mr-1" /> โปรไฟล์
-            </Link>
-          </Button>
+          <BackButton to="/portfolio" label="กลับโปรไฟล์" />
           <div className="flex items-center gap-2">
             <Bookmark className="h-4 w-4 text-primary" aria-hidden />
             <h1 className="text-sm font-bold">โพสต์ที่บันทึก ({savedPosts.length})</h1>

@@ -278,7 +278,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                   ))}
                 </div>
               )}
-              <p className="text-sm text-foreground whitespace-pre-wrap line-clamp-4">{c.message}</p>
+              <p className="text-base text-foreground whitespace-pre-wrap line-clamp-4">{c.message}</p>
               {c.timeline && <p className="text-xs text-muted-foreground mt-1">ช่วงเวลา: {c.timeline}</p>}
               {c.status === "pending" && (
                 <div className="flex gap-2 mt-3">

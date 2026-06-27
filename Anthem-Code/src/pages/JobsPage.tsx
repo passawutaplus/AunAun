@@ -13,7 +13,8 @@ import MyWorkPanel from "@/components/jobs/MyWorkPanel";
 import JobPostDialog from "@/components/jobs/JobPostDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, ArrowLeft, UserSearch, SlidersHorizontal, X, Briefcase } from "lucide-react";
+import { Search, Plus, UserSearch, SlidersHorizontal, X, Briefcase } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import Footer from "@/components/Footer";
 import { cn } from "@/lib/utils";
@@ -264,9 +265,7 @@ const JobsPage = () => {
       />
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
         <div className="flex items-center gap-2 sm:gap-3">
-          <button onClick={() => navigate("/")} className="w-9 h-9 rounded-full glass-chip grid place-items-center shrink-0" aria-label="กลับหน้าแรก">
-            <ArrowLeft className="w-4 h-4" />
-          </button>
+          <BackButton to="/" label="กลับหน้าแรก" />
           <BriefcaseIcon className="w-6 h-6 sm:w-7 sm:h-7 text-primary shrink-0 hidden sm:block" />
           <div className="flex-1 min-w-0">
             <h1 className="text-lg sm:text-2xl font-medium tracking-tight truncate">Jobs Board</h1>

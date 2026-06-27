@@ -210,7 +210,7 @@ export const HireWizardSummary = ({ form, studio }: StepProps) => (
     {form.deadline && <p><span className="text-muted-foreground">กำหนดส่ง:</span> {form.deadline}</p>}
     <p><span className="text-muted-foreground">ติดต่อ:</span> {form.clientName} · {form.email}</p>
     {form.referenceUrl && <p className="break-all"><span className="text-muted-foreground">อ้างอิง:</span> {form.referenceUrl}</p>}
-    {form.message && <p className="text-muted-foreground whitespace-pre-wrap">{form.message}</p>}
+    {form.message && <p className="text-base text-foreground whitespace-pre-wrap">{form.message}</p>}
   </div>
 );
 

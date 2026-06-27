@@ -1,12 +1,13 @@
 import BriefcaseIcon from "../components/icons/BriefcaseIcon";
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Settings, ExternalLink, LayoutGrid, Sparkles, Phone, UserPlus, FileCheck, Plus, Layers3, ArrowDownUp, Eye, Heart, Clock, ChevronDown, ChevronUp, Gift as GiftIcon, Target, Bookmark } from "lucide-react";
+import { Settings, ExternalLink, LayoutGrid, Sparkles, Phone, UserPlus, FileCheck, Plus, Layers3, ArrowDownUp, Eye, Heart, Clock, ChevronDown, ChevronUp, Gift as GiftIcon, Target, Bookmark } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
 import { useMyProjects } from "@/hooks/useProjects";
 import { useFollowState } from "@/hooks/useFollow";
 import { useCollections } from "@/hooks/useCollections";
@@ -14,9 +15,14 @@ import { useInspireBoards } from "@/hooks/useInspire";
 import CollectionCard from "@/components/collections/CollectionCard";
 import { toast } from "sonner";
 import type { ExperienceItem } from "@/lib/validators";
+import { experienceItemSchema } from "@/lib/validators";
 import ExperienceTimeline from "@/components/profile/ExperienceTimeline";
+import ExperienceEditor from "@/components/profile/ExperienceEditor";
+import SkillsEditor from "@/components/profile/SkillsEditor";
 import SkillsList from "@/components/profile/SkillsList";
 import ContactCards from "@/components/profile/ContactCards";
+import ContactEditor, { type ContactFormValues } from "@/components/profile/ContactEditor";
+import { ProfileEditableSection } from "@/components/profile/ProfileEditableSection";
 import PortfolioGrid from "@/components/profile/PortfolioGrid";
 import ProfileMenuCard from "@/components/profile/ProfileMenuCard";
 import ProfileCoverHeader from "@/components/profile/ProfileCoverHeader";
@@ -39,10 +45,19 @@ import { Pin } from "lucide-react";
 
 const SOLO_URL = "https://solofreelancer.com";
 
+type ProfileEditKey = "bio" | "experience" | "skills" | "contact";
+
+const parseExperience = (raw: unknown): ExperienceItem[] =>
+  Array.isArray(raw) ? (raw as ExperienceItem[]) : [];
+
+const parseSkills = (raw: unknown): string[] =>
+  Array.isArray(raw) ? raw.filter((s): s is string => typeof s === "string") : [];
+
 const PortfolioProfilePage = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { data: profile, isLoading } = useProfile(user?.id);
+  const updateProfile = useUpdateProfile(user?.id);
   const { data: myProjects = [] } = useMyProjects(user?.id);
   const { followers, following } = useFollowState(user?.id);
   const { data: collections = [] } = useCollections(user?.id);
@@ -52,6 +67,18 @@ const PortfolioProfilePage = () => {
 
   const [portfolioSort, setPortfolioSort] = useState<PortfolioSortMode>("portfolio");
   const [showAllPortfolio, setShowAllPortfolio] = useState(false);
+  const [editKey, setEditKey] = useState<ProfileEditKey | null>(null);
+  const [draftBio, setDraftBio] = useState("");
+  const [draftExperience, setDraftExperience] = useState<ExperienceItem[]>([]);
+  const [draftSkills, setDraftSkills] = useState<string[]>([]);
+  const [draftContact, setDraftContact] = useState<ContactFormValues>({
+    email: "",
+    phone: "",
+    website: "",
+    lineId: "",
+    facebook: "",
+    instagram: "",
+  });
 
 
   useEffect(() => {
@@ -87,8 +114,85 @@ const PortfolioProfilePage = () => {
     [published, portfolioSort],
   );
   const visiblePortfolio = showAllPortfolio ? sortedPublished : sortedPublished.slice(0, 6);
-  const experience = (profile?.experience as unknown as ExperienceItem[]) ?? [];
-  const skills = profile?.skills ?? [];
+  const experience = parseExperience(profile?.experience);
+  const skills = parseSkills(profile?.skills);
+
+  const cancelEdit = useCallback(() => setEditKey(null), []);
+
+  const startEdit = useCallback(
+    (key: ProfileEditKey) => {
+      if (!profile) return;
+      if (key === "bio") setDraftBio(profile.bio ?? "");
+      if (key === "experience") {
+        setDraftExperience(experience.length ? experience.map((it) => ({ ...it })) : [{ title: "", company: "", period: "", description: "" }]);
+      }
+      if (key === "skills") setDraftSkills([...skills]);
+      if (key === "contact") {
+        setDraftContact({
+          email: profile.email ?? user?.email ?? "",
+          phone: profile.phone ?? "",
+          website: profile.website ?? "",
+          lineId: profile.line_id ?? "",
+          facebook: profile.facebook ?? "",
+          instagram: profile.instagram ?? "",
+        });
+      }
+      setEditKey(key);
+    },
+    [profile, user?.email, experience, skills],
+  );
+
+  const saveSection = async () => {
+    if (!editKey) return;
+    try {
+      if (editKey === "bio") {
+        if (draftBio.trim().length > 500) {
+          toast.error("แนะนำตัวยาวเกิน 500 ตัวอักษร");
+          return;
+        }
+        await updateProfile.mutateAsync({ bio: draftBio.trim() });
+      }
+      if (editKey === "experience") {
+        const cleaned = draftExperience
+          .map((it) => ({
+            title: it.title.trim(),
+            company: (it.company ?? "").trim(),
+            period: (it.period ?? "").trim(),
+            description: (it.description ?? "").trim(),
+          }))
+          .filter((it) => it.title);
+        for (const item of cleaned) {
+          const parsed = experienceItemSchema.safeParse(item);
+          if (!parsed.success) {
+            toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลประสบการณ์ไม่ถูกต้อง");
+            return;
+          }
+        }
+        await updateProfile.mutateAsync({ experience: cleaned });
+      }
+      if (editKey === "skills") {
+        await updateProfile.mutateAsync({ skills: draftSkills });
+      }
+      if (editKey === "contact") {
+        if (!draftContact.email.trim()) {
+          toast.error("กรุณากรอกอีเมล");
+          return;
+        }
+        await updateProfile.mutateAsync({
+          email: draftContact.email.trim(),
+          phone: draftContact.phone.trim(),
+          website: draftContact.website.trim(),
+          lineId: draftContact.lineId.trim(),
+          facebook: draftContact.facebook.trim(),
+          instagram: draftContact.instagram.trim(),
+        });
+      }
+      toast.success("บันทึกแล้ว");
+      setEditKey(null);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "บันทึกไม่สำเร็จ");
+    }
+  };
 
   const sharePublic = async () => {
     if (!profile || !user) return;
@@ -111,9 +215,7 @@ const PortfolioProfilePage = () => {
       {/* Top bar */}
       <div className="sticky top-0 z-30 glass-panel border-x-0 border-t-0 rounded-none">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={() => navigate("/")} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-4 h-4" /> ฟีด
-          </button>
+          <BackButton to="/" label="กลับฟีด" />
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -224,13 +326,34 @@ const PortfolioProfilePage = () => {
           </Section>
 
           {/* About */}
-          <Section icon={Sparkles} title="เกี่ยวกับฉัน" action={<EditLink to="/settings" />}>
+          <ProfileEditableSection
+            icon={Sparkles}
+            title="เกี่ยวกับฉัน"
+            isEditing={editKey === "bio"}
+            saving={updateProfile.isPending}
+            onEdit={() => startEdit("bio")}
+            onCancel={cancelEdit}
+            onSave={saveSection}
+            editContent={
+              <div>
+                <textarea
+                  value={draftBio}
+                  onChange={(e) => setDraftBio(e.target.value)}
+                  rows={5}
+                  maxLength={500}
+                  placeholder="แนะนำตัวสั้น ๆ ให้ลูกค้ารู้จักคุณ"
+                  className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">{draftBio.length}/500 ตัวอักษร</p>
+              </div>
+            }
+          >
             {profile.bio ? (
-              <p className="text-sm md:text-base text-foreground/85 leading-7 whitespace-pre-wrap">{profile.bio}</p>
+              <p className="text-base text-foreground leading-7 whitespace-pre-wrap">{profile.bio}</p>
             ) : (
-              <EmptyHint text="ยังไม่ได้แนะนำตัว" cta="เพิ่มประวัติย่อ" onClick={() => navigate("/settings")} />
+              <EmptyHint text="ยังไม่ได้แนะนำตัว" cta="เพิ่มประวัติย่อ" onClick={() => startEdit("bio")} />
             )}
-          </Section>
+          </ProfileEditableSection>
 
           {/* Portfolio */}
           <Section
@@ -376,21 +499,54 @@ const PortfolioProfilePage = () => {
 
 
 
-          <Section icon={BriefcaseIcon} title="ประสบการณ์ทำงาน" action={<EditLink to="/settings" />}>
+          <ProfileEditableSection
+            icon={BriefcaseIcon}
+            title="ประสบการณ์ทำงาน"
+            isEditing={editKey === "experience"}
+            saving={updateProfile.isPending}
+            onEdit={() => startEdit("experience")}
+            onCancel={cancelEdit}
+            onSave={saveSection}
+            editContent={<ExperienceEditor value={draftExperience} onChange={setDraftExperience} />}
+          >
             {experience.length ? (
               <ExperienceTimeline items={experience} />
             ) : (
-              <EmptyHint text="ยังไม่ได้เพิ่มประวัติการทำงาน" cta="เพิ่มประสบการณ์" onClick={() => navigate("/settings")} />
+              <EmptyHint text="ยังไม่ได้เพิ่มประวัติการทำงาน" cta="เพิ่มประสบการณ์" onClick={() => startEdit("experience")} />
             )}
-          </Section>
+          </ProfileEditableSection>
 
           {/* Skills */}
-          <Section icon={Sparkles} title="ความชำนาญ" count={skills.length} action={<EditLink to="/settings" />}>
+          <ProfileEditableSection
+            icon={Sparkles}
+            title="ความชำนาญ"
+            count={skills.length}
+            isEditing={editKey === "skills"}
+            saving={updateProfile.isPending}
+            onEdit={() => startEdit("skills")}
+            onCancel={cancelEdit}
+            onSave={saveSection}
+            editContent={<SkillsEditor value={draftSkills} onChange={setDraftSkills} />}
+          >
             <SkillsList skills={skills} />
-          </Section>
+          </ProfileEditableSection>
 
           {/* Contacts */}
-          <Section icon={Phone} title="ข้อมูลติดต่อ" action={<EditLink to="/settings" />}>
+          <ProfileEditableSection
+            icon={Phone}
+            title="ข้อมูลติดต่อ"
+            isEditing={editKey === "contact"}
+            saving={updateProfile.isPending}
+            onEdit={() => startEdit("contact")}
+            onCancel={cancelEdit}
+            onSave={saveSection}
+            editContent={
+              <ContactEditor
+                value={draftContact}
+                onChange={(patch) => setDraftContact((c) => ({ ...c, ...patch }))}
+              />
+            }
+          >
             <ContactCards
               email={profile.email}
               phone={profile.phone}
@@ -399,7 +555,7 @@ const PortfolioProfilePage = () => {
               facebook={profile.facebook}
               instagram={profile.instagram}
             />
-          </Section>
+          </ProfileEditableSection>
         </main>
       </div>
     </div>
@@ -445,15 +601,6 @@ const Section = ({
     {children}
   </section>
 );
-
-const EditLink = ({ to }: { to: string }) => {
-  const navigate = useNavigate();
-  return (
-    <Button size="sm" variant="ghost" onClick={() => navigate(to)} className="rounded-full h-8 text-xs text-muted-foreground hover:text-primary">
-      แก้ไข
-    </Button>
-  );
-};
 
 const EmptyHint = ({ text, cta, onClick }: { text: string; cta: string; onClick: () => void }) => (
   <div className="text-center py-8">

@@ -12,6 +12,7 @@ import { useActiveBoosts, buildBoostedIdSet, buildBoostTargetMaps } from "@/hook
 import { sortByBoostedIds } from "@/lib/boostFeedSort";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthDialog } from "@/stores/authDialogStore";
+import { formatCommunityActionError } from "@/lib/communityRateLimit";
 import { cn } from "@/lib/utils";
 import type { CommunityFeedFilter } from "@/data/communityTopics";
 
@@ -40,6 +41,8 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick }: Props) => {
   const {
     data: posts = [],
     isLoading,
+    isError,
+    error,
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
@@ -79,7 +82,7 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick }: Props) => {
     filter.feedSource === "following" && !user
       ? "เข้าสู่ระบบเพื่อดูโพสต์จากคนที่คุณติดตาม"
       : filter.feedSource === "following"
-        ? "ติดตามดีไซเนอร์เพื่อดูโพสต์ของพวกเขาที่นี่"
+        ? "โพสต์ของคุณและคนที่ติดตามจะแสดงที่นี่ — หรือกด สำหรับคุณ เพื่อดูทั้งหมด"
         : search.trim()
           ? `ไม่พบโพสต์สำหรับ "${search.trim()}"`
           : filter.category !== "All"
@@ -101,6 +104,13 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick }: Props) => {
     <div>
       {isLoading ? (
         <CommunityGridSkeleton />
+      ) : isError ? (
+        <EmptyState
+          icon={SearchX}
+          title="โหลดฟีดไม่สำเร็จ"
+          description={formatCommunityActionError(error)}
+          action={postButton}
+        />
       ) : visiblePosts.length === 0 ? (
         <EmptyState
           icon={SearchX}

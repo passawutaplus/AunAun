@@ -152,8 +152,8 @@ export function CommunityPostPreviewContent({
         )}
         <p
           className={cn(
-            "text-foreground/90 leading-relaxed",
-            fitted ? "text-xs line-clamp-3 whitespace-pre-wrap" : "whitespace-pre-wrap",
+            "text-foreground leading-relaxed",
+            fitted ? "text-sm line-clamp-3 whitespace-pre-wrap" : "text-base whitespace-pre-wrap",
           )}
         >
           {body.trim() || <span className="text-muted-foreground">ยังไม่มีแคปชั่น</span>}

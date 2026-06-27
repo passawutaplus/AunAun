@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import NotificationsPanel from "@/components/notifications/NotificationsPanel";
 import SeoHead from "@/components/SeoHead";
@@ -22,9 +22,7 @@ const NotificationsPage = () => {
       <SeoHead title="การแจ้งเตือน" path="/notifications" noindex />
       <header className="sticky top-0 z-20 bg-background/60 backdrop-blur-xl border-b border-border/40">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-4 h-4" /> กลับ
-          </button>
+          <BackButton />
           <h1 className="font-medium text-lg"><span className="text-gradient">การแจ้งเตือน</span></h1>
           <span className="w-12" />
         </div>

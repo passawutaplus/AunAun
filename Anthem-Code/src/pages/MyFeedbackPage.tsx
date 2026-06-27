@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { useMyFeedback } from "@/hooks/useFeedback";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Star, ArrowLeft } from "lucide-react";
+import { MessageSquare, Star } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 
 const STATUS_TONE: Record<string, string> = {
@@ -24,9 +25,7 @@ const MyFeedbackPage = () => {
 
   return (
     <div className="container max-w-3xl mx-auto px-4 py-6 pb-24">
-      <Link to="/settings" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4">
-        <ArrowLeft className="w-4 h-4 mr-1" /> กลับ
-      </Link>
+      <BackButton to="/settings" className="mb-4" />
       <div className="flex items-center gap-2 mb-1">
         <MessageSquare className="w-5 h-5 text-primary" />
         <h1 className="text-2xl font-semibold">ฟีดแบ็กของฉัน</h1>

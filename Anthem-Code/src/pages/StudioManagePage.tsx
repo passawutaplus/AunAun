@@ -13,7 +13,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Building2, Loader2, Plus, Users, ArrowLeft, MessageCircle, Briefcase } from "lucide-react";
+import { Building2, Loader2, Plus, Users, MessageCircle, Briefcase } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { useStudioConversation } from "@/hooks/useChat";
 import JobCard from "@/components/jobs/JobCard";
 import { StudioHireInbox } from "@/components/studio/StudioHireInbox";
@@ -65,13 +66,7 @@ const StudioManageInner = () => {
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-12">
       <div className="max-w-5xl mx-auto px-4 py-6 space-y-5">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate("/")}
-            className="w-9 h-9 rounded-full glass-chip grid place-items-center"
-            aria-label="กลับ"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
+          <BackButton to="/" label="กลับหน้าแรก" />
           <Avatar className="w-12 h-12 rounded-2xl">
             <AvatarImage src={studio.avatar_url} />
             <AvatarFallback className="bg-gradient-brand text-white rounded-2xl">

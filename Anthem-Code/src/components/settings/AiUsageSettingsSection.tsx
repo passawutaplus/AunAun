@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Crown, Loader2, RefreshCw, Sparkles, Zap } from "lucide-react";
 import { useSubscription } from "@/core/subscription";
 import { useAiUsage } from "@/hooks/useAiUsage";
+import { normalizePlanId } from "@/lib/tierMembership";
 import {
   aiRemainingBarColor,
   aiRemainingPercent,
@@ -19,7 +20,8 @@ const TIER_LABEL = {
 } as const;
 
 export function AiUsageSettingsSection() {
-  const { tier, isPro } = useSubscription();
+  const { tier: rawTier, isPro } = useSubscription();
+  const tier = normalizePlanId(rawTier);
   const {
     included_used,
     included_limit,
@@ -32,14 +34,18 @@ export function AiUsageSettingsSection() {
     refetch,
   } = useAiUsage();
 
-  const capacity = Math.max(included_limit, total_remaining, 1);
-  const remainingPercent = aiRemainingPercent(total_remaining, capacity);
-  const barColor = aiRemainingBarColor(total_remaining);
+  const safeTotal = total_remaining ?? 0;
+  const safeUsed = included_used ?? 0;
+  const safeLimit = included_limit ?? 0;
+  const safePurchased = purchased_balance ?? 0;
+  const capacity = Math.max(safeLimit, safeTotal, 1);
+  const remainingPercent = aiRemainingPercent(safeTotal, capacity);
+  const barColor = aiRemainingBarColor(safeTotal);
   const resetsAt = formatAiPeriodEnd(period_end);
-  const planHint = describeAiCreditsPlan({ tier, period_type, included_limit });
+  const planHint = describeAiCreditsPlan({ tier, period_type, included_limit: safeLimit });
   const isFree = tier === "free";
   const creditsEnded = period_type === "free_starter_ended" && isFree;
-  const lowCredits = total_remaining < 20;
+  const lowCredits = safeTotal < 20;
 
   return (
     <section className="h-full rounded-2xl glass-panel p-6 space-y-4 flex flex-col">
@@ -52,7 +58,7 @@ export function AiUsageSettingsSection() {
           <p className="text-xs text-muted-foreground mt-1">
             {isLoading
               ? "กำลังโหลด…"
-              : `เหลือ ${total_remaining.toLocaleString("th-TH")} จาก ${capacity.toLocaleString("th-TH")} เครดิต`}
+              : `เหลือ ${safeTotal.toLocaleString("th-TH")} จาก ${capacity.toLocaleString("th-TH")} เครดิต`}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -65,7 +71,7 @@ export function AiUsageSettingsSection() {
             )}
           >
             {isPro ? <Crown className="h-3 w-3" /> : null}
-            {TIER_LABEL[tier]}
+            {TIER_LABEL[tier] ?? "Free"}
           </span>
           <button
             type="button"
@@ -110,17 +116,17 @@ export function AiUsageSettingsSection() {
               {isFree ? "เครดิตเริ่มต้น" : "โควต้าแพ็ก"}
             </span>
             <span className="tabular-nums">
-              {included_used.toLocaleString("th-TH")} / {included_limit.toLocaleString("th-TH")}
+              {safeUsed.toLocaleString("th-TH")} / {safeLimit.toLocaleString("th-TH")}
             </span>
           </div>
-          {purchased_balance > 0 && (
+          {safePurchased > 0 && (
             <div className="flex items-center justify-between gap-3">
               <span className="flex items-center gap-1.5 text-muted-foreground">
                 <Sparkles className="h-3 w-3 text-amber-500" />
                 เติมเพิ่ม
               </span>
               <span className="tabular-nums font-medium text-amber-600 dark:text-amber-400">
-                {purchased_balance.toLocaleString("th-TH")}
+                {safePurchased.toLocaleString("th-TH")}
               </span>
             </div>
           )}

@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import Footer from "@/components/Footer";
+import { BackButton } from "@/components/ui/BackButton";
 import {
-  ArrowLeft,
   ExternalLink,
   Megaphone,
   Calendar,
@@ -57,9 +57,7 @@ const AdDetailPage = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">ไม่พบแคมเปญโฆษณานี้</p>
-        <Button variant="outline" onClick={() => navigate("/")}>
-          <ArrowLeft className="w-4 h-4 mr-1" /> กลับหน้าฟีด
-        </Button>
+        <BackButton onClick={() => navigate("/")} label="กลับหน้าฟีด" />
       </div>
     );
   }
@@ -81,12 +79,7 @@ const AdDetailPage = () => {
   return (
     <div className="min-h-screen bg-app-ambient">
       <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="w-4 h-4" /> กลับ
-        </button>
+        <BackButton />
 
         {/* Hero */}
         <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-muted">

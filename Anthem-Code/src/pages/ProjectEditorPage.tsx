@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Eye, ImagePlus, Loader2, Save, Upload, X } from "lucide-react";
+import { Eye, ImagePlus, Loader2, Save, Upload, X } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -484,9 +485,7 @@ const ProjectEditorPage = () => {
       {/* Sticky header */}
       <div className="sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-4 h-4" /> กลับ
-          </button>
+          <BackButton />
           <h1 className="text-base font-semibold text-foreground ml-2">{editing ? "แก้ไขผลงาน" : "เพิ่มผลงานใหม่"}</h1>
           <div className="ml-auto hidden sm:flex items-center gap-2">
             <Button

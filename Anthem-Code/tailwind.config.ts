@@ -16,6 +16,7 @@ export default {
       fontFamily: {
         sans: ["IBM Plex Sans Thai", "ui-sans-serif", "system-ui", "sans-serif"],
         display: ["IBM Plex Sans Thai", "sans-serif"],
+        legal: ["Prompt", "IBM Plex Sans Thai", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
