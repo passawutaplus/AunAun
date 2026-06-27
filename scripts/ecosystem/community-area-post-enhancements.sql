@@ -2,6 +2,23 @@
 -- Apply: cd Solo-Code && cp ../../scripts/ecosystem/community-area-post-enhancements.sql supabase/migrations/20260627100000_community_area_post_enhancements.sql && ./scripts/supabase-push-via-api.sh
 
 -- ---------------------------------------------------------------------------
+-- Ensure comment PK exists (required for comment_likes FK on legacy DBs)
+-- ---------------------------------------------------------------------------
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'anthem' AND table_name = 'community_post_comments'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'anthem.community_post_comments'::regclass
+      AND contype = 'p'
+  ) THEN
+    ALTER TABLE anthem.community_post_comments ADD PRIMARY KEY (id);
+  END IF;
+END $$;
+
+-- ---------------------------------------------------------------------------
 -- Comment likes
 -- ---------------------------------------------------------------------------
 ALTER TABLE anthem.community_post_comments
