@@ -58,11 +58,16 @@ DEPLOY_URL="$(grep -Eo 'https://[a-zA-Z0-9._-]+\.vercel\.app' "$DEPLOY_OUTPUT" |
 rm -f "$DEPLOY_OUTPUT"
 [[ -n "$DEPLOY_URL" ]] || { echo "Deploy failed — no URL returned" >&2; exit 1; }
 
+DEMO_CANONICAL="https://aplus1-demo.vercel.app"
+echo "→ Aliasing ${DEMO_CANONICAL} …"
+npx vercel alias set "$DEPLOY_URL" "aplus1-demo.vercel.app"
+
 echo ""
-echo "✓ Demo deployed: ${DEPLOY_URL}"
+echo "✓ Demo deployed: ${DEMO_CANONICAL}"
+echo "  (deployment: ${DEPLOY_URL})"
 echo ""
 echo "Next steps:"
 echo "  1. Supabase Dashboard → Authentication → URL Configuration"
-echo "     Add redirect: ${DEPLOY_URL%/}/auth/callback"
+echo "     Add redirect: ${DEMO_CANONICAL}/auth/callback"
 echo "  2. Share the isolated demo account password through a private channel"
 echo "  3. Production: VITE_DEMO_MODE=false + npx vercel deploy --prod (never use this script with --prod)"

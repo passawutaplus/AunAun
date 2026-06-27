@@ -27,8 +27,8 @@ const LOVABLE_PREVIEW_ORIGIN_RE = /^https:\/\/([a-z0-9-]+\.)*lovable\.app$/i;
 /** Vercel production + preview deploys for so1o-ops-hub */
 const VERCEL_OPS_HUB_ORIGIN_RE = /^https:\/\/so1o-ops[-a-z0-9.]*\.vercel\.app$/i;
 
-/** Vercel preview deployments for Aplus1 (aplus1-demo / legacy 1px-demo / an1hem). */
-const VERCEL_ANTHEM_ORIGIN_RE = /^https:\/\/(aplus1-demo|1px-demo|an1hem|aplus1-prod)[a-z0-9-]*\.vercel\.app$/i;
+/** Vercel preview deployments for Aplus1 (aplus1-demo / an1hem / aplus1-prod). */
+const VERCEL_ANTHEM_ORIGIN_RE = /^https:\/\/(aplus1-demo|an1hem|aplus1-prod)[a-z0-9-]*\.vercel\.app$/i;
 
 function extraOriginsFromEnv(): string[] {
   const raw = Deno.env.get("CORS_ALLOWED_ORIGINS_EXTRA")?.trim();

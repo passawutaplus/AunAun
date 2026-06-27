@@ -80,7 +80,7 @@ const STATIC_ALLOWED_ORIGINS = [
 
 const LOVABLE_PREVIEW_ORIGIN_RE = /^https:\/\/([a-z0-9-]+\.)*lovable\.app$/i;
 /** Vercel preview deployments for an1hem / aplus1-demo. */
-const VERCEL_ANTHEM_PREVIEW_ORIGIN_RE = /^https:\/\/(aplus1-demo|1px-demo|an1hem)[a-z0-9-]*\.vercel\.app$/i;
+const VERCEL_ANTHEM_PREVIEW_ORIGIN_RE = /^https:\/\/(aplus1-demo|an1hem)[a-z0-9-]*\.vercel\.app$/i;
 
 /** Origins permitted for Stripe checkout / portal / Connect redirect URLs. */
 export function getAllowedPaymentRedirectOrigins(): string[] {
