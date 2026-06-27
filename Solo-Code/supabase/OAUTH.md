@@ -83,6 +83,14 @@ Legacy callback paths (`/auth/callback`) ยังรองรับผ่าน
 3. PKCE + `detectSessionInUrl` สร้าง session
 4. กลับหน้าเดิมที่เก็บใน `sessionStorage`
 
+### Troubleshooting: ครั้งแรกเข้าได้ แต่กดย้อนกลับแล้วไป Solo
+
+URL บน Google อาจยังมี `redirect_to=https://aplus1.app/auth/callback` ถูกต้อง — แต่ถ้า **กดย้อนกลับ** ไปหน้า Google แล้วเลือกบัญชีซ้ำ Supabase จะเห็น **OAuth state/PKCE เก่าหมดอายุ** แล้ว fallback ไป **Site URL** (`solofreelancer.com`)
+
+**วิธีใช้ที่ถูก:** อย่ากดย้อนกลับจาก Google — กลับไป `/auth` แล้วกดปุ่ม Google ใหม่
+
+**ในโค้ด (Anthem + Solo):** ก่อนเริ่ม OAuth จะล้าง PKCE verifier เก่า และใช้ `location.replace()` แทน `assign()` เพื่อไม่ให้ Google ค้างใน history
+
 ## 4. Production env
 
 ```bash
@@ -96,3 +104,38 @@ VITE_SITE_URL=https://aplus1.app
 ## 5. LINE OAuth (แยกจาก Google)
 
 LINE Login ใช้ช่องแยก + callback ที่ `/line-link` — ดู [setup-line.md](../../docs/setup-line.md)
+
+## 6. Google consent screen — ชื่อแอป / “ไปยัง …supabase.co”
+
+หน้า Google แสดง **“ไปยัง zkflkpbmbozrchqncpzi.supabase.co”** เพราะ OAuth callback อยู่ที่ Supabase — **ไม่ใช่ bug**
+
+### ทำได้ทันที (ฟรี): ชื่อ + โลโก้
+
+```bash
+cd Solo-Code
+node scripts/setup-google-oauth-branding.mjs --open
+```
+
+ค่าที่ตั้งใน [Google Cloud → Branding](https://console.cloud.google.com/auth/branding?project=727912671200):
+
+| ช่อง | ค่า |
+|------|-----|
+| App name | **So1o & Aplus1** |
+| Home page | https://aplus1.app |
+| Privacy | https://aplus1.app/legal/privacy |
+| Terms | https://aplus1.app/legal/terms |
+| Logo | https://aplus1.app/icons/icon-512.png |
+| Authorized domains | `aplus1.app`, `solofreelancer.com` |
+
+Submit for verification แล้ว Google จะแสดงชื่อ/โลโก้ — แต่โดเมน “ไปยัง …” ยังเป็น supabase.co จนกว่าจะมี custom domain
+
+Config กลาง: `Solo-Code/scripts/ecosystem-oauth-brand.mjs`
+
+### เปลี่ยน “ไปยัง …” เป็น aplus1 (ต้อง Supabase Pro)
+
+Org ปัจจุบัน: **Free** → ต้องอัปเกรด [Pro](https://supabase.com/dashboard/org/_/billing) + [Custom Domain add-on](https://supabase.com/docs/guides/platform/custom-domains)
+
+1. ตั้ง `auth.aplus1.app` → CNAME → `zkflkpbmbozrchqncpzi.supabase.co`
+2. `supabase domains create --project-ref zkflkpbmbozrchqncpzi --custom-hostname auth.aplus1.app`
+3. Google Console เพิ่ม redirect URI: `https://auth.aplus1.app/auth/v1/callback`
+4. Activate domain แล้ว OAuth จะโฆษณา `auth.aplus1.app` แทน supabase.co

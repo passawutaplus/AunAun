@@ -8,7 +8,7 @@ API="https://api.supabase.com/v1/projects/${PROJECT_REF}"
 CLI="bin/supabase"
 
 SITE_URL="${SO1O_SITE_URL:-https://solofreelancer.com}"
-ANTHEM_SITE_URL="${ANTHEM_SITE_URL:-https://an1hem.app}"
+ANTHEM_SITE_URL="${ANTHEM_SITE_URL:-https://aplus1.app}"
 
 if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
   echo "⚠  ตั้ง SUPABASE_ACCESS_TOKEN ก่อน"
@@ -30,9 +30,12 @@ urls = [
   'http://127.0.0.1:8081/**',
   'https://solofreelancer.com/**',
   'https://www.solofreelancer.com/**',
+  'https://aplus1.app/**',
+  'https://www.aplus1.app/**',
   'https://so1o-freelancer-managment.lovable.app/**',
-  os.environ.get('ANTHEM_SITE_URL', 'https://an1hem.app') + '/**',
+  os.environ.get('ANTHEM_SITE_URL', 'https://aplus1.app') + '/**',
   'https://www.an1hem.app/**',
+  'https://aplus1-demo.vercel.app/**',
   'https://hq.solofreelancer.com/**',
   'http://localhost:3090/**',
   'http://127.0.0.1:3090/**',

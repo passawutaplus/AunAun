@@ -2,12 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { consumeOAuthRedirect, parseOAuthError } from "@/lib/oauthRedirect";
+import {
+  consumeOAuthRedirect,
+  formatOAuthCallbackError,
+  parseOAuthError,
+} from "@/lib/oauthRedirect";
 import { HttpErrorPage } from "@/components/HttpErrorPage";
 
 async function establishSession(): Promise<string | null> {
   const oauthErr = parseOAuthError();
-  if (oauthErr) return oauthErr;
+  if (oauthErr) return formatOAuthCallbackError(oauthErr);
 
   const { data: { session: existing }, error: existingErr } = await supabase.auth.getSession();
   if (existingErr) return existingErr.message;
@@ -16,7 +20,7 @@ async function establishSession(): Promise<string | null> {
   const code = new URLSearchParams(window.location.search).get("code");
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) return error.message;
+    if (error) return formatOAuthCallbackError(error.message);
     return null;
   }
 
@@ -28,7 +32,7 @@ async function establishSession(): Promise<string | null> {
       access_token: accessToken,
       refresh_token: refreshToken,
     });
-    if (error) return error.message;
+    if (error) return formatOAuthCallbackError(error.message);
     return null;
   }
 

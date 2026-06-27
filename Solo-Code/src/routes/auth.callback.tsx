@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { consumeOAuthRedirect, parseOAuthError } from "@/lib/oauthRedirect";
+import { consumeOAuthRedirect, formatOAuthCallbackError, parseOAuthError } from "@/lib/oauthRedirect";
 import { RouteError } from "@/components/RouteError";
 
 export const Route = createFileRoute("/auth/callback")({
@@ -20,7 +20,7 @@ function AuthCallbackPage() {
   useEffect(() => {
     const oauthErr = parseOAuthError();
     if (oauthErr) {
-      setError(oauthErr);
+      setError(formatOAuthCallbackError(oauthErr));
       return;
     }
 
@@ -34,7 +34,7 @@ function AuthCallbackPage() {
     const fail = (msg: string) => {
       if (done) return;
       done = true;
-      setError(msg);
+      setError(formatOAuthCallbackError(msg));
     };
 
     const {

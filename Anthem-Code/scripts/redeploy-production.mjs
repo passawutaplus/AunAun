@@ -31,6 +31,19 @@ const buildEnvs = [
   "VITE_SITE_URL=https://aplus1.app",
 ];
 
+const PROD_HOSTS = ["aplus1.app", "www.aplus1.app"];
+
+/** Register custom domains on the project (alias alone triggers Vercel SSO on OAuth callback). */
+for (const host of PROD_HOSTS) {
+  console.log(`→ Ensuring project domain ${host} …`);
+  spawnSync("npx", ["vercel", "domains", "add", host, "--project=aplus1-prod"], {
+    cwd: root,
+    stdio: "pipe",
+    shell: true,
+    encoding: "utf8",
+  });
+}
+
 console.log("→ Deploying aplus1-prod (production — aplus1.app)");
 const r = spawnSync(
   "npx",
@@ -41,7 +54,7 @@ const out = (r.stdout || "") + (r.stderr || "");
 if (r.status === 0) {
   const m = out.match(/https:\/\/aplus1-prod-[a-z0-9]+-passawutaplus-9338s-projects\.vercel\.app/);
   if (m) {
-    for (const host of ["aplus1.app", "www.aplus1.app"]) {
+    for (const host of PROD_HOSTS) {
       console.log(`→ Aliasing ${host} …`);
       spawnSync("npx", ["vercel", "alias", "set", m[0], host], {
         cwd: root,

@@ -61,3 +61,27 @@ export function currentAppPath(): string {
   if (typeof window === "undefined") return "/";
   return `${window.location.pathname}${window.location.search}`;
 }
+
+/** Drop PKCE verifier from a prior attempt (back-button retries reuse stale Supabase state). */
+export function clearStaleOAuthPkceState(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+    const ref = url?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1];
+    const prefix = ref ? `sb-${ref}-auth-token` : "sb-";
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith(prefix) && key.includes("code-verifier")) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    /* Safari private mode */
+  }
+}
+
+export function formatOAuthCallbackError(message: string): string {
+  if (/code verifier|pkce|invalid flow state|flow state|oauth state|bad_oauth_state/i.test(message)) {
+    return "เซสชันเข้าสู่ระบบหมดอายุแล้ว (มักเกิดเมื่อกดย้อนกลับ) — กลับไปหน้าเข้าสู่ระบบแล้วกด Google ใหม่";
+  }
+  return message;
+}

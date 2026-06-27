@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import {
   buildOAuthCallbackUrl,
+  clearStaleOAuthPkceState,
   currentAppPath,
   safeRelativePath,
   storeOAuthRedirect,
@@ -17,17 +18,21 @@ export async function signInWithOAuth(
   );
   storeOAuthRedirect(afterAuth);
 
+  const callbackUrl = buildOAuthCallbackUrl();
+  clearStaleOAuthPkceState();
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: buildOAuthCallbackUrl(),
-      skipBrowserRedirect: false,
+      redirectTo: callbackUrl,
+      skipBrowserRedirect: true,
     },
   });
 
   if (error) return { error };
   if (data?.url && typeof window !== "undefined") {
-    window.location.assign(data.url);
+    // replace() keeps Google out of history — back after login won't replay a stale OAuth flow
+    window.location.replace(data.url);
     return { redirected: true };
   }
   return {};

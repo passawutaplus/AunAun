@@ -29,7 +29,8 @@
     "stripe:sync": "node scripts/stripe/provision-sandbox.mjs",
     "stripe:verify": "node scripts/stripe/verify-catalog.mjs",
     "deploy:demo": "bash scripts/deploy-demo-vercel.sh",
-    "gemini:sync": "node scripts/sync-gemini-models.mjs"
+    "gemini:sync": "node scripts/sync-gemini-models.mjs",
+    "setup:google-oauth-branding": "node scripts/setup-google-oauth-branding.mjs --open"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

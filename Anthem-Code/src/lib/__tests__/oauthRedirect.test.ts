@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { safeRelativePath, shouldStripRedirectParam } from "../oauthRedirect";
+import { safeRelativePath, shouldStripRedirectParam, formatOAuthCallbackError } from "../oauthRedirect";
 
 describe("safeRelativePath", () => {
   it("allows same-origin paths", () => {
@@ -13,6 +13,13 @@ describe("safeRelativePath", () => {
     expect(safeRelativePath("/\\evil.com")).toBe("/");
     expect(safeRelativePath("/%2fevil.com")).toBe("/");
     expect(safeRelativePath("/javascript:alert(1)")).toBe("/");
+  });
+});
+
+describe("formatOAuthCallbackError", () => {
+  it("explains stale PKCE / back-button failures", () => {
+    expect(formatOAuthCallbackError("PKCE code verifier not found")).toContain("กดย้อนกลับ");
+    expect(formatOAuthCallbackError("network error")).toBe("network error");
   });
 });
 
