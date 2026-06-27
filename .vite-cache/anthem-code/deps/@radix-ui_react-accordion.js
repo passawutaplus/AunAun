@@ -1,23 +1,23 @@
 "use client";
 import {
-  Content,
-  Root,
-  Trigger,
-  createCollapsibleScope
-} from "./chunk-AQICF7TH.js";
-import {
   createCollection
 } from "./chunk-LTE435FO.js";
 import {
   useDirection
 } from "./chunk-3QLR5RBB.js";
 import {
+  Content,
+  Root,
+  Trigger,
+  createCollapsibleScope
+} from "./chunk-MB3KFP2S.js";
+import {
   useId
 } from "./chunk-2HJKY4LD.js";
-import "./chunk-XA4WP66Q.js";
 import {
   useControllableState
 } from "./chunk-UEYNYS4K.js";
+import "./chunk-XA4WP66Q.js";
 import {
   composeEventHandlers
 } from "./chunk-SKOE5QRF.js";
@@ -27,14 +27,14 @@ import {
 } from "./chunk-YIN4H4Y4.js";
 import {
   Primitive
-} from "./chunk-66OC3W7I.js";
+} from "./chunk-HBVVUHWE.js";
 import {
   useComposedRefs
 } from "./chunk-XUN7SSQX.js";
-import "./chunk-3XMV4M4P.js";
 import {
   require_jsx_runtime
 } from "./chunk-LCZAKBGQ.js";
+import "./chunk-3XMV4M4P.js";
 import {
   require_react
 } from "./chunk-VBJMDZXG.js";
