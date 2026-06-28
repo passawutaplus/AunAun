@@ -107,7 +107,7 @@
     "recharts": "^2.15.4",
     "signature_pad": "^5.1.3",
     "sonner": "^2.0.7",
-    "stripe": "22.0.2",
+    "stripe": "22.3.0",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.1",
     "tw-animate-css": "^1.3.4",
