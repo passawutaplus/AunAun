@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 export type ReferralRecentItem = {
@@ -24,16 +23,20 @@ export type ReferralDashboard = {
   recent: ReferralRecentItem[];
 };
 
-export function useReferralDashboard() {
+type UseReferralDashboardOptions = {
+  enabled?: boolean;
+};
+
+export function useReferralDashboard(options?: UseReferralDashboardOptions) {
   const { user } = useAuth();
+  const enabled = (options?.enabled ?? true) && !!user?.id;
   return useQuery({
     queryKey: ["referral-dashboard", user?.id],
-    enabled: !!user?.id,
+    enabled,
     staleTime: 30_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_referral_dashboard" as never);
-      if (error) throw error;
-      return data as unknown as ReferralDashboard;
+      const { fetchReferralDashboard } = await import("@/lib/referralDashboard");
+      return fetchReferralDashboard();
     },
   });
 }

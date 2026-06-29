@@ -34,7 +34,7 @@ import { cn } from "@/lib/utils";
 import { markOnboardingVisit } from "@/lib/onboardingStorage";
 import { PORTFOLIO_DRILL_HASH } from "@/lib/drillProject";
 import { profilePublicPath, profilePublicUrl } from "@/lib/profileRoutes";
-import { COMMUNITY_NEW_PATH } from "@/data/createActions";
+import CreateContentDrawer from "@/components/CreateContentDrawer";
 import { useSavedCommunityPosts } from "@/hooks/useCommunityPostInteractions";
 import { useCreatorEligibility } from "@/hooks/useCreatorEligibility";
 import CreatorEligibilityProgress from "@/components/verification/CreatorEligibilityProgress";
@@ -79,6 +79,7 @@ const PortfolioProfilePage = () => {
     facebook: "",
     instagram: "",
   });
+  const [createOpen, setCreateOpen] = useState(false);
 
 
   useEffect(() => {
@@ -238,7 +239,7 @@ const PortfolioProfilePage = () => {
           userId={user!.id}
           profile={profile}
           stats={{ works: published.length, followers, following }}
-          onPost={() => navigate(COMMUNITY_NEW_PATH)}
+          onPost={() => setCreateOpen(true)}
           onPreview={() =>
             navigate(profilePublicPath({ user_id: user!.id, username: profile.username }))
           }
@@ -558,6 +559,7 @@ const PortfolioProfilePage = () => {
           </ProfileEditableSection>
         </main>
       </div>
+      <CreateContentDrawer open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 };

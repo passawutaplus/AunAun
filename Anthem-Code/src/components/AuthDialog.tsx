@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, User as UserIcon, Eye, EyeOff, Loader2, Info } from "lucide-react";
+import { User as UserIcon, Eye, EyeOff, Loader2, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { SocialButtons, AuthEmailSeparator } from "@/components/auth/SocialButtons";
@@ -138,12 +138,9 @@ const LoginForm = ({ onSwitch }: { onSwitch: () => void }) => {
       />
       <div className="space-y-1.5">
         <Label htmlFor="ad-li-email" className="text-xs">อีเมล</Label>
-        <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input id="ad-li-email" type="email" autoComplete="email" placeholder="you@example.com"
-            value={email} onChange={(e) => setEmail(e.target.value)} required
-            className="pl-9 h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40" />
-        </div>
+        <Input id="ad-li-email" type="email" autoComplete="email" placeholder="you@example.com"
+          value={email} onChange={(e) => setEmail(e.target.value)} required
+          className="h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40" />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="ad-li-pass" className="text-xs">รหัสผ่าน</Label>
@@ -219,15 +216,12 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="ad-su-email" className="text-xs">อีเมล</Label>
-        <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input id="ad-su-email" type="email" autoComplete="email" placeholder="you@example.com"
-            value={email} onChange={(e) => setEmail(e.target.value)} onBlur={() => setTouched(true)} required
-            className={cn(
-              "pl-9 h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40",
-              touched && email && !emailValid && "border-destructive"
-            )} />
-        </div>
+        <Input id="ad-su-email" type="email" autoComplete="email" placeholder="you@example.com"
+          value={email} onChange={(e) => setEmail(e.target.value)} onBlur={() => setTouched(true)} required
+          className={cn(
+            "h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40",
+            touched && email && !emailValid && "border-destructive"
+          )} />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="ad-su-pass" className="text-xs">รหัสผ่าน (อย่างน้อย 8 ตัว)</Label>

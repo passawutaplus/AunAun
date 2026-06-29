@@ -6,10 +6,14 @@ export const BOTTOM_NAV_MAX_WIDTH = 1023;
 
 export const NAV_HIDDEN_PREFIXES = ["/auth", "/admin", "/error", "/community/new"];
 
+export const isPortfolioEditorRoute = (pathname: string) =>
+  pathname === "/portfolio/new" || /^\/portfolio\/[^/]+\/edit/.test(pathname);
+
 export const isActiveChatThread = (pathname: string) => /^\/chat\/[^/]+/.test(pathname);
 
 export function shouldHideBottomNav(pathname: string, narrowViewport: boolean): boolean {
   if (NAV_HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return true;
+  if (isPortfolioEditorRoute(pathname)) return true;
   if (/^\/community\/[^/]+\/edit/.test(pathname)) return true;
   if (narrowViewport && isActiveChatThread(pathname)) return true;
   return false;

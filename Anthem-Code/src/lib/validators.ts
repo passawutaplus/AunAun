@@ -208,6 +208,8 @@ export const projectSchema = z.object({
   allow_collab: z.boolean().default(true),
   studio_id: z.string().uuid().nullable().optional(),
   credited_user_ids: z.array(z.string().uuid()).max(20).default([]),
+  linked_community_post_ids: z.array(z.string().uuid()).max(5).default([]),
+  collab_user_ids: z.array(z.string().uuid()).max(5).default([]),
   license_type: z.enum(LICENSE_TYPES).default("all_rights"),
   license_note: z.string().trim().max(500).optional().default(""),
   has_third_party_assets: z.boolean().default(false),
@@ -218,6 +220,13 @@ export const projectSchema = z.object({
 });
 
 export type ProjectInput = z.infer<typeof projectSchema>;
+
+/** Relaxed validation for autosave / draft saves (title may be empty). */
+export const projectDraftSchema = projectSchema.extend({
+  title: z.string().trim().max(120).optional().default(""),
+});
+
+export type ProjectDraftInput = z.infer<typeof projectDraftSchema>;
 
 /** Extra publish-time checks beyond base projectSchema */
 export function validateProjectPublish(input: ProjectInput): string | null {

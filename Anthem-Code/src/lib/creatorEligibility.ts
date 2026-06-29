@@ -3,10 +3,13 @@ import { ONBOARDING_TASKS, WELCOME_PX_CAP } from "@/lib/onboardingTasks";
 export { WELCOME_PX_CAP };
 
 /** ผู้ติดตามขั้นต่ำก่อนถอนเงินสด */
-export const MIN_FOLLOWERS_FOR_CASHOUT = 15;
+export const MIN_FOLLOWERS_FOR_CASHOUT = 20;
 
 /** ผลงานเผยแพร่ขั้นต่ำก่อนเปิดรับของขวัญ */
-export const MIN_PUBLISHED_FOR_RECEIVE = 1;
+export const MIN_PUBLISHED_FOR_RECEIVE = 10;
+
+/** เพื่อนที่ชวนสำเร็จ (qualified) ขั้นต่ำก่อนถอนเงินสด */
+export const MIN_SUCCESSFUL_REFERRALS = 1;
 
 export type CreatorEligibilityTier = "locked" | "receive" | "cashout";
 
@@ -16,6 +19,8 @@ export type CreatorEligibilitySnapshot = {
   welcomeTargetPx: number;
   publishedCount: number;
   followerCount: number;
+  qualifiedReferralCount: number;
+  referralComplete: boolean;
   isVerified: boolean;
   canReceiveGifts: boolean;
   canStartKyc: boolean;
@@ -27,15 +32,17 @@ export function computeCreatorEligibility(input: {
   welcomeClaimedPx: number;
   publishedCount: number;
   followerCount: number;
+  qualifiedReferralCount: number;
   isVerified: boolean;
 }): CreatorEligibilitySnapshot {
   const welcomeComplete = input.welcomeClaimedPx >= WELCOME_PX_CAP;
   const hasPublished = input.publishedCount >= MIN_PUBLISHED_FOR_RECEIVE;
   const hasFollowers = input.followerCount >= MIN_FOLLOWERS_FOR_CASHOUT;
+  const referralComplete = input.qualifiedReferralCount >= MIN_SUCCESSFUL_REFERRALS;
 
   const canReceiveGifts = welcomeComplete && hasPublished;
   const canStartKyc = canReceiveGifts;
-  const canCashout = canReceiveGifts && hasFollowers && input.isVerified;
+  const canCashout = canReceiveGifts && hasFollowers && referralComplete && input.isVerified;
 
   let tier: CreatorEligibilityTier = "locked";
   if (canCashout) tier = "cashout";
@@ -47,6 +54,8 @@ export function computeCreatorEligibility(input: {
     welcomeTargetPx: WELCOME_PX_CAP,
     publishedCount: input.publishedCount,
     followerCount: input.followerCount,
+    qualifiedReferralCount: input.qualifiedReferralCount,
+    referralComplete,
     isVerified: input.isVerified,
     canReceiveGifts,
     canStartKyc,

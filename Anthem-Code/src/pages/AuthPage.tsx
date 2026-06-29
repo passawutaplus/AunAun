@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
-  Mail, User as UserIcon, Eye, EyeOff, Loader2,
+  User as UserIcon, Eye, EyeOff, Loader2,
   Sparkles, Info, Heart, Bookmark, Share2,
 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
@@ -229,19 +229,16 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
       />
       <div className="space-y-1.5">
         <Label htmlFor="login-email" className="text-xs">อีเมล</Label>
-        <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="login-email"
-            type="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="pl-9 h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40"
-            required
-          />
-        </div>
+        <Input
+          id="login-email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40"
+          required
+        />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="login-pass" className="text-xs">รหัสผ่าน</Label>
@@ -343,23 +340,20 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
 
       <div className="space-y-1.5">
         <Label htmlFor="su-email" className="text-xs">อีเมล</Label>
-        <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="su-email"
-            type="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onBlur={() => setTouched(true)}
-            className={cn(
-              "pl-9 h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40",
-              touched && email && !emailValid && "border-destructive"
-            )}
-            required
-          />
-        </div>
+        <Input
+          id="su-email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onBlur={() => setTouched(true)}
+          className={cn(
+            "h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40",
+            touched && email && !emailValid && "border-destructive"
+          )}
+          required
+        />
       </div>
 
       <div className="space-y-1.5">

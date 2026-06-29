@@ -7,17 +7,19 @@ describe("computeCreatorEligibility", () => {
       welcomeClaimedPx: 100,
       publishedCount: 0,
       followerCount: 0,
+      qualifiedReferralCount: 0,
       isVerified: false,
     });
     expect(r.canReceiveGifts).toBe(false);
     expect(r.tier).toBe("locked");
   });
 
-  it("allows receive after welcome cap and published project", () => {
+  it("allows receive after welcome cap and 10 published projects", () => {
     const r = computeCreatorEligibility({
       welcomeClaimedPx: WELCOME_PX_CAP,
-      publishedCount: 1,
+      publishedCount: 10,
       followerCount: 0,
+      qualifiedReferralCount: 0,
       isVerified: false,
     });
     expect(r.canReceiveGifts).toBe(true);
@@ -25,11 +27,12 @@ describe("computeCreatorEligibility", () => {
     expect(r.tier).toBe("receive");
   });
 
-  it("allows cashout when followers and kyc complete", () => {
+  it("allows cashout when followers, referral, and kyc complete", () => {
     const r = computeCreatorEligibility({
       welcomeClaimedPx: WELCOME_PX_CAP,
-      publishedCount: 2,
-      followerCount: 15,
+      publishedCount: 10,
+      followerCount: 20,
+      qualifiedReferralCount: 1,
       isVerified: true,
     });
     expect(r.canCashout).toBe(true);

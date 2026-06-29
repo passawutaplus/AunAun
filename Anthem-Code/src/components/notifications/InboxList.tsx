@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import { Bell, Gift, UserPlus, Briefcase, Handshake, MessageCircle, Banknote, Megaphone } from "lucide-react";
+import { Bell, Gift, UserPlus, Briefcase, Handshake, MessageCircle, Banknote, Megaphone, Users } from "lucide-react";
 import type { Notification } from "@/core/notifications";
 import { resolveNotificationLink } from "@/lib/notificationLinks";
 import UserAvatar from "@/components/UserAvatar";
 import FollowButton from "@/components/FollowButton";
+import { Button } from "@/components/ui/button";
+import { useRespondProjectCollabInvite } from "@/hooks/useProjectCollabInvites";
 import { useProfilesByIds } from "@/core/profiles";
 import { useMemo } from "react";
 import { profilePublicPath } from "@/lib/profileRoutes";
@@ -16,6 +18,7 @@ const kindIcon = (kind: string) => {
   if (kind.includes("message")) return MessageCircle;
   if (kind.includes("cashout")) return Banknote;
   if (kind.includes("ad")) return Megaphone;
+  if (kind.includes("project_collab")) return Users;
   return Bell;
 };
 
@@ -41,6 +44,18 @@ function extractFollowerId(n: Notification): string | null {
   return null;
 }
 
+function extractCollabInviteId(n: Notification): string | null {
+  const md = n.metadata ?? {};
+  if (typeof md.invite_id === "string") return md.invite_id;
+  return null;
+}
+
+function isPendingCollabInvite(n: Notification): boolean {
+  if (n.kind !== "project_collab_invite") return false;
+  const md = n.metadata ?? {};
+  return md.status === "pending" && typeof md.invite_id === "string";
+}
+
 interface Props {
   items: Notification[];
   loading: boolean;
@@ -51,6 +66,7 @@ interface Props {
 
 const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Props) => {
   const navigate = useNavigate();
+  const respondCollab = useRespondProjectCollabInvite();
 
   const followIds = useMemo(
     () =>
@@ -80,6 +96,8 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
       {items.map((n) => {
         const Icon = kindIcon(n.kind);
         const isFollow = n.kind.includes("follow");
+        const collabInvite = isPendingCollabInvite(n);
+        const inviteId = collabInvite ? extractCollabInviteId(n) : null;
         const followerId = isFollow ? extractFollowerId(n) : null;
         const followerProfile = followerId ? profileMap[followerId] : undefined;
         const followerName = followerProfile?.display_name || followerProfile?.username || n.title;
@@ -90,56 +108,87 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
         return (
           <div
             key={n.id}
-            className={`flex items-start gap-3 p-3 rounded-2xl border transition-colors ${
+            className={`flex flex-col gap-2 p-3 rounded-2xl border transition-colors ${
               n.is_read ? "border-transparent hover:bg-secondary/40" : "border-primary/20 bg-primary/5"
             }`}
           >
-            <button
-              type="button"
-              onClick={() => {
-                onOpen(n);
-                onBeforeNavigate?.();
-                navigate(isFollow && followerId ? followerPath : resolveNotificationLink(n.link));
-              }}
-              className="flex-1 flex items-start gap-3 text-left min-w-0"
-            >
-              {isFollow && followerId ? (
-                <UserAvatar
-                  src={followerProfile?.avatar_url}
-                  name={followerName}
-                  className="w-10 h-10 shrink-0"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                  <Icon className="w-5 h-5 text-primary" />
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  onOpen(n);
+                  onBeforeNavigate?.();
+                  navigate(isFollow && followerId ? followerPath : resolveNotificationLink(n.link));
+                }}
+                className="flex-1 flex items-start gap-3 text-left min-w-0"
+              >
+                {isFollow && followerId ? (
+                  <UserAvatar
+                    src={followerProfile?.avatar_url}
+                    name={followerName}
+                    className="w-10 h-10 shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                    <Icon className="w-5 h-5 text-primary" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    {isFollow && followerId ? (
+                      <>
+                        <span>{followerName}</span>{" "}
+                        <span className="font-normal text-muted-foreground">เริ่มติดตามคุณ</span>
+                      </>
+                    ) : (
+                      n.title
+                    )}
+                  </p>
+                  {!isFollow && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{n.body}</p>}
+                  <p className="text-[11px] text-muted-foreground mt-1">{timeAgo(n.created_at)}</p>
                 </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground">
-                  {isFollow && followerId ? (
-                    <>
-                      <span>{followerName}</span>{" "}
-                      <span className="font-normal text-muted-foreground">เริ่มติดตามคุณ</span>
-                    </>
-                  ) : (
-                    n.title
-                  )}
-                </p>
-                {!isFollow && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{n.body}</p>}
-                <p className="text-[11px] text-muted-foreground mt-1">{timeAgo(n.created_at)}</p>
+              </button>
+              {isFollow && followerId ? (
+                <FollowButton freelancerId={followerId} size="sm" variant="compact" />
+              ) : null}
+              <button
+                type="button"
+                onClick={() => onDismiss(n.id)}
+                className="text-[10px] text-muted-foreground hover:text-foreground px-2 py-1 shrink-0"
+                title="ซ่อน"
+              >
+                ซ่อน
+              </button>
+            </div>
+            {collabInvite && inviteId && (
+              <div className="flex gap-2 pl-[52px]">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-7 rounded-full text-xs"
+                  disabled={respondCollab.isPending}
+                  onClick={() => {
+                    respondCollab.mutate({ inviteId, accept: true });
+                    onDismiss(n.id);
+                  }}
+                >
+                  ยอมรับ
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 rounded-full text-xs"
+                  disabled={respondCollab.isPending}
+                  onClick={() => {
+                    respondCollab.mutate({ inviteId, accept: false });
+                    onDismiss(n.id);
+                  }}
+                >
+                  ปฏิเสธ
+                </Button>
               </div>
-            </button>
-            {isFollow && followerId ? (
-              <FollowButton freelancerId={followerId} size="sm" variant="compact" />
-            ) : null}
-            <button
-              type="button"
-              onClick={() => onDismiss(n.id)}
-              className="text-[10px] text-muted-foreground hover:text-foreground px-2 py-1 shrink-0"
-              title="ซ่อน"
-            >
-              ซ่อน
-            </button>
+            )}
           </div>
         );
       })}

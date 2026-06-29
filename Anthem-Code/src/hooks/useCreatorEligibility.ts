@@ -12,7 +12,16 @@ export function useCreatorEligibility(userId: string | undefined) {
     staleTime: 30_000,
     queryFn: async (): Promise<CreatorEligibilitySnapshot> => {
       const uid = userId!;
-      const [claimsRes, publishedRes, followersRes, profileRes] = await Promise.all([
+      const { data: authData } = await supabase.auth.getUser();
+      const isSelf = authData.user?.id === uid;
+
+      const referralPromise = isSelf
+        ? import("@/lib/referralDashboard").then(({ fetchReferralDashboard }) =>
+            fetchReferralDashboard().then((d) => d.qualified_count).catch(() => 0),
+          )
+        : Promise.resolve(0);
+
+      const [claimsRes, publishedRes, followersRes, profileRes, qualifiedReferralCount] = await Promise.all([
         supabase.from("welcome_mission_claims").select("reward_px").eq("user_id", uid),
         supabase
           .from("projects")
@@ -24,6 +33,7 @@ export function useCreatorEligibility(userId: string | undefined) {
           .select("follower_id", { count: "exact", head: true })
           .eq("following_id", uid),
         supabase.from("profiles").select("is_verified").eq("user_id", uid).maybeSingle(),
+        referralPromise,
       ]);
 
       if (claimsRes.error) throw claimsRes.error;
@@ -37,6 +47,7 @@ export function useCreatorEligibility(userId: string | undefined) {
         welcomeClaimedPx,
         publishedCount: publishedRes.count ?? 0,
         followerCount: followersRes.count ?? 0,
+        qualifiedReferralCount,
         isVerified: !!(profileRes.data as { is_verified?: boolean } | null)?.is_verified,
       });
     },

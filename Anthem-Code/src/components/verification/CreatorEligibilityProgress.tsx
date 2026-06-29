@@ -2,7 +2,11 @@ import { Link } from "react-router-dom";
 import { Check, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CreatorEligibilitySnapshot } from "@/lib/creatorEligibility";
-import { MIN_FOLLOWERS_FOR_CASHOUT, MIN_PUBLISHED_FOR_RECEIVE } from "@/lib/creatorEligibility";
+import {
+  MIN_FOLLOWERS_FOR_CASHOUT,
+  MIN_PUBLISHED_FOR_RECEIVE,
+  MIN_SUCCESSFUL_REFERRALS,
+} from "@/lib/creatorEligibility";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -32,6 +36,7 @@ const CreatorEligibilityProgress = ({ data, compact, className }: Props) => {
   const welcomeDetail = `${data.welcomeClaimedPx.toLocaleString()} / ${data.welcomeTargetPx.toLocaleString()} PX`;
   const publishedDetail = `${data.publishedCount} / ${MIN_PUBLISHED_FOR_RECEIVE} ชิ้น`;
   const followerDetail = `${data.followerCount} / ${MIN_FOLLOWERS_FOR_CASHOUT} คน`;
+  const referralDetail = `${data.qualifiedReferralCount} / ${MIN_SUCCESSFUL_REFERRALS} คน`;
 
   return (
     <div className={cn("rounded-2xl glass-panel p-5 space-y-4", className)}>
@@ -45,7 +50,7 @@ const CreatorEligibilityProgress = ({ data, compact, className }: Props) => {
         </h2>
         {!compact && (
           <p className="text-xs text-muted-foreground mt-1">
-            ทำภารกิม Welcome Bonus และลงผลงานก่อน — ถอนเงินต้องยืนยันตัวตนและมีผู้ติดตามขั้นต่ำ
+            ทำภารกิม Welcome Bonus และลงผลงานก่อน — ถอนเงินต้องยืนยันตัวตน มีผู้ติดตามขั้นต่ำ และชวนเพื่อนสำเร็จ
           </p>
         )}
       </div>
@@ -62,6 +67,11 @@ const CreatorEligibilityProgress = ({ data, compact, className }: Props) => {
           label="ผู้ติดตาม (สำหรับถอนเงิน)"
           detail={followerDetail}
         />
+        <Step
+          done={data.referralComplete}
+          label="ชวนเพื่อน 1 คน (สำเร็จ)"
+          detail={referralDetail}
+        />
         <Step done={data.isVerified} label="ยืนยันตัวตน (KYC)" />
       </ul>
 
@@ -73,6 +83,11 @@ const CreatorEligibilityProgress = ({ data, compact, className }: Props) => {
       {!data.welcomeComplete && (
         <Button asChild variant="outline" className="w-full rounded-full">
           <Link to="/portfolio">ทำ Welcome Bonus</Link>
+        </Button>
+      )}
+      {data.canReceiveGifts && !data.referralComplete && (
+        <Button asChild variant="outline" className="w-full rounded-full">
+          <Link to="/referrals">ชวนเพื่อน</Link>
         </Button>
       )}
     </div>

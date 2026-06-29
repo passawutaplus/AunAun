@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutGrid,
@@ -21,9 +22,11 @@ import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import KycStatusBadge from "@/components/verification/KycStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyStudios, useSetActiveStudio } from "@/hooks/useStudios";
+import ReferralShareSheet from "@/components/referral/ReferralShareSheet";
 
 const ProfileMenuCard = () => {
   const navigate = useNavigate();
+  const [referralOpen, setReferralOpen] = useState(false);
   const { data: myStudios = [] } = useMyStudios();
   const setActive = useSetActiveStudio();
   const { isPro } = useSubscription();
@@ -32,6 +35,7 @@ const ProfileMenuCard = () => {
     "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-foreground hover:bg-accent hover:text-foreground transition-colors text-left";
 
   return (
+    <>
     <nav
       aria-label="เมนูโปรไฟล์"
       className="rounded-3xl glass-panel p-3 space-y-0.5"
@@ -54,7 +58,7 @@ const ProfileMenuCard = () => {
       <button onClick={() => navigate("/earnings")} className={item}>
         <Coins className="w-4 h-4 text-primary" /> รายได้ &amp; กระเป๋า Pixel
       </button>
-      <button onClick={() => navigate("/referrals")} className={item}>
+      <button type="button" onClick={() => setReferralOpen(true)} className={item}>
         <UserPlus className="w-4 h-4 text-primary" /> ชวนเพื่อนรับ Pixel
       </button>
       <button onClick={() => navigate("/chat")} className={item}>
@@ -124,6 +128,8 @@ const ProfileMenuCard = () => {
         <LogOut className="w-4 h-4" /> ออกจากระบบ
       </button>
     </nav>
+      <ReferralShareSheet open={referralOpen} onOpenChange={setReferralOpen} />
+    </>
   );
 };
 

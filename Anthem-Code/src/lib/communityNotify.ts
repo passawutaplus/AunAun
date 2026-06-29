@@ -5,7 +5,8 @@ type CommunityNotifyKind =
   | "community_comment"
   | "community_reply"
   | "community_tag"
-  | "community_mention";
+  | "community_mention"
+  | "project_collab_invite";
 
 export async function notifyCommunityEvent(input: {
   recipientId: string;

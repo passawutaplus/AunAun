@@ -178,7 +178,7 @@ const EarningsPage = () => {
               canCashout
                 ? "ถอนเข้าบัญชี"
                 : eligibility && !eligibility.canCashout
-                  ? "ครบ Welcome Bonus, ผู้ติดตาม และยืนยันตัวตนก่อนถอน"
+                  ? "ครบ Welcome Bonus, ผลงาน, ผู้ติดตาม, ชวนเพื่อน และยืนยันตัวตนก่อนถอน"
                   : `ต้องมี earned ≥ ${MIN_CASHOUT_PX.toLocaleString()} px`
             }
           >

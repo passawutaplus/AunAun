@@ -35,6 +35,12 @@ import LicenseDetailBlock from "@/components/license/LicenseDetailBlock";
 import { FadeUp } from "@/components/motion/FadeUp";
 import { staggerReveal, viewportOnce } from "@/lib/motion";
 import { isVideoUrl, mediaItemsFromProject } from "@/lib/portfolioMedia";
+import { ProjectLinkedPostsBlock } from "@/components/project/ProjectLinkedPostsBlock";
+import {
+  fetchLinkedPostSummaries,
+  fetchPostsMentioningProject,
+  type LinkedPostSummary,
+} from "@/lib/portfolioLinkedPosts";
 
 const ProjectDetailPage = () => {
   const { id } = useParams();
@@ -139,6 +145,21 @@ const ProjectDetailPage = () => {
 
   const projectIdForLike = dbProject?.id;
   const { likes: likeCount, isLiked: liked, toggle: toggleLike, canInteract } = useProjectLike(projectIdForLike);
+
+  const { data: linkedPosts = [] } = useQuery({
+    queryKey: ["project-linked-posts", id, (dbProject as { linked_community_post_ids?: string[] } | undefined)?.linked_community_post_ids],
+    enabled: !!id && !!dbProject,
+    queryFn: async (): Promise<LinkedPostSummary[]> => {
+      const stored = (dbProject as { linked_community_post_ids?: string[] }).linked_community_post_ids ?? [];
+      const [fromStored, fromMentions] = await Promise.all([
+        stored.length ? fetchLinkedPostSummaries(stored) : Promise.resolve([]),
+        fetchPostsMentioningProject(id!),
+      ]);
+      const byId = new Map<string, LinkedPostSummary>();
+      for (const p of [...fromStored, ...fromMentions]) byId.set(p.id, p);
+      return Array.from(byId.values());
+    },
+  });
 
   useEffect(() => {
     if (!user || searchParams.get("hire") !== "1") return;
@@ -280,6 +301,7 @@ const ProjectDetailPage = () => {
                 ownerId={dbProject.owner_id}
               />
             )}
+            {linkedPosts.length > 0 && <ProjectLinkedPostsBlock posts={linkedPosts} />}
             {project.gallery.length > 0 ? (
               <GalleryWithLightbox items={mediaItems} project={project} />
             ) : (
