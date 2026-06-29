@@ -4,6 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useModerationState, useRecordProfanityStrike } from "@/hooks/useModeration";
 import { useAuth } from "./useAuth";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  formatHireBriefChatText,
+  parseAttachmentUrlsFromMessage,
+  stripAttachmentBlock,
+} from "@/lib/hireBrief";
 
 export type ChatKind = "hire" | "collab" | "group" | "studio";
 export type MessageType = "text" | "image" | "project";
@@ -359,6 +364,63 @@ export const useCreateGroupConversation = () => {
 
 /* ───────────────── Accept / Reject ───────────────── */
 
+async function seedHireChatBrief(conversationId: string, requestId: string) {
+  const { count } = await supabase
+    .from("messages")
+    .select("id", { count: "exact", head: true })
+    .eq("conversation_id", conversationId);
+  if ((count ?? 0) > 0) return;
+
+  const { data: hire } = await supabase
+    .from("hiring_requests")
+    .select(
+      "client_id, project_title, client_name, email, phone, message, deadline, budget_amount, attachment_urls",
+    )
+    .eq("id", requestId)
+    .maybeSingle();
+
+  if (!hire?.client_id) return;
+
+  const row = hire as {
+    client_id: string;
+    project_title?: string | null;
+    client_name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    message?: string | null;
+    deadline?: string | null;
+    budget_amount?: number | null;
+    attachment_urls?: string[] | null;
+  };
+
+  const attachmentUrls =
+    row.attachment_urls?.length ? row.attachment_urls : parseAttachmentUrlsFromMessage(row.message);
+
+  const text = formatHireBriefChatText({
+    ...row,
+    message: stripAttachmentBlock(row.message),
+  });
+
+  const { error: textErr } = await supabase.from("messages").insert({
+    conversation_id: conversationId,
+    sender_id: row.client_id,
+    content: text,
+    message_type: "text",
+  } as never);
+  if (textErr) throw textErr;
+
+  for (const url of attachmentUrls) {
+    const { error: imgErr } = await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: row.client_id,
+      content: "",
+      attachment_url: url,
+      message_type: "image",
+    } as never);
+    if (imgErr) throw imgErr;
+  }
+}
+
 type AcceptArgs = {
   kind: ChatKind;
   requestId: string;
@@ -387,41 +449,55 @@ export const useAcceptRequest = () => {
         .eq("request_id", requestId)
         .maybeSingle();
 
-      if (existing?.id) return existing.id as string;
-
-      const { data, error } = await supabase
-        .from("conversations")
-        .insert({
-          kind,
-          conversation_type: "direct",
-          request_id: requestId,
-          client_id: clientId,
-          freelancer_id: freelancerId,
-          project_id: projectId ?? null,
-          project_title: projectTitle ?? "",
-          created_by: freelancerId,
-        } as never)
-        .select("id")
-        .single();
-      if (error) {
-        if (error.code === "23505") {
-          const { data: raced, error: racedError } = await supabase
-            .from("conversations")
-            .select("id")
-            .eq("kind", kind)
-            .eq("request_id", requestId)
-            .single();
-          if (racedError) throw racedError;
-          return raced.id as string;
+      let convId: string;
+      if (existing?.id) {
+        convId = existing.id as string;
+      } else {
+        const { data, error } = await supabase
+          .from("conversations")
+          .insert({
+            kind,
+            conversation_type: "direct",
+            request_id: requestId,
+            client_id: clientId,
+            freelancer_id: freelancerId,
+            project_id: projectId ?? null,
+            project_title: projectTitle ?? "",
+            created_by: freelancerId,
+          } as never)
+          .select("id")
+          .single();
+        if (error) {
+          if (error.code === "23505") {
+            const { data: raced, error: racedError } = await supabase
+              .from("conversations")
+              .select("id")
+              .eq("kind", kind)
+              .eq("request_id", requestId)
+              .single();
+            if (racedError) throw racedError;
+            convId = raced.id as string;
+          } else {
+            throw error;
+          }
+        } else {
+          convId = data.id as string;
         }
-        throw error;
       }
-      return data.id as string;
+
+      if (kind === "hire") {
+        await seedHireChatBrief(convId, requestId);
+      }
+
+      return convId;
     },
-    onSuccess: () => {
+    onSuccess: (_convId, vars) => {
       qc.invalidateQueries({ queryKey: ["conversations"] });
       qc.invalidateQueries({ queryKey: ["hiring_requests"] });
       qc.invalidateQueries({ queryKey: ["collab-requests"] });
+      if (vars.kind === "hire") {
+        qc.invalidateQueries({ queryKey: ["messages"] });
+      }
     },
   });
 };

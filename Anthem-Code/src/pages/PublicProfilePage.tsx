@@ -1,6 +1,6 @@
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Globe, Instagram, Facebook, MessageSquare, UserX, MessageCircle, Users } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import PageLoader from "@/components/ui/PageLoader";
@@ -33,6 +33,7 @@ import CommunityPostGridCard from "@/components/feed/CommunityPostGridCard";
 import { useCommunityPostsByAuthor } from "@/hooks/useCommunityPosts";
 import { Navigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { navigateToAuth, stripSearchParams } from "@/lib/authRedirect";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 
 
@@ -41,7 +42,7 @@ const PublicProfilePage = () => {
   const vanityRedirect = userId?.startsWith("@") && !vanityHandle ? `/${userId}` : null;
   const slug = userId ?? (vanityHandle?.startsWith("@") ? vanityHandle.slice(1) : "");
   const navigate = useNavigate();
-  const [params] = useSearchParams();
+  const [params, setSearchParams] = useSearchParams();
   const q = params.get("q") ?? "";
   const { user } = useAuth();
   const [hireOpen, setHireOpen] = useState(false);
@@ -155,6 +156,22 @@ const PublicProfilePage = () => {
 
   const displayName = profile.display_name || profile.username || "ครีเอเตอร์";
   const isSelf = !!user?.id && user.id === resolvedUserId;
+
+  useEffect(() => {
+    if (!user || params.get("hire") !== "1" || !resolvedUserId || isSelf) return;
+    setHireOpen(true);
+    const next = stripSearchParams(params, ["hire"]);
+    const q = next.toString();
+    setSearchParams(q ? next : {}, { replace: true });
+  }, [user, params, setSearchParams, resolvedUserId, isSelf]);
+
+  const openHire = () => {
+    if (!user) {
+      navigateToAuth(navigate, { hire: "1" });
+      return;
+    }
+    setHireOpen(true);
+  };
   const profileFaq =
     ((profile as { profile_faq?: { question: string; answer: string }[] }).profile_faq) ?? [];
   const seoDesc = truncateDescription(
@@ -295,7 +312,7 @@ const PublicProfilePage = () => {
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       type="button"
-                      onClick={() => setHireOpen(true)}
+                      onClick={openHire}
                       className="w-full rounded-full bg-gradient-brand text-white hover:opacity-90 h-10 text-sm font-medium gap-1.5"
                     >
                       <BriefcaseIcon className="w-4 h-4 shrink-0" />

@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthDialog } from "@/stores/authDialogStore";
@@ -31,7 +32,12 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
   const [formOpen, setFormOpen] = useState(false);
 
   const enabled = open && !!user?.id && !!projectId;
-  const { data: collections = [] } = useCollections(enabled ? user?.id : undefined);
+  const {
+    data: collections = [],
+    isLoading: collectionsLoading,
+    isError: collectionsError,
+    refetch: refetchCollections,
+  } = useCollections(enabled ? user?.id : undefined);
   const { data: activeIds = new Set<string>() } = useProjectCollectionIds(
     enabled ? projectId : undefined,
     enabled ? user?.id : undefined,
@@ -58,8 +64,8 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
     try {
       await toggle.mutateAsync({ collectionId: cid, projectId, remove: isIn });
       toast.success(isIn ? "เอาออกจากคอลเลกชันแล้ว" : "เพิ่มเข้าคอลเลกชันแล้ว");
-    } catch (e: any) {
-      toast.error(e?.message ?? "ผิดพลาด");
+    } catch (e: unknown) {
+      toast.error(mapWriteFlowError(e, "ผิดพลาด"));
     }
   };
 
@@ -95,7 +101,16 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
           </div>
 
           <ScrollArea className="max-h-64">
-            {collections.length === 0 ? (
+            {collectionsLoading ? (
+              <p className="text-xs text-muted-foreground text-center py-6 px-3">กำลังโหลด...</p>
+            ) : collectionsError ? (
+              <div className="text-center py-6 px-3 space-y-2">
+                <p className="text-xs text-muted-foreground">โหลดรายการไม่สำเร็จ</p>
+                <Button size="sm" variant="outline" className="rounded-full h-7 text-xs" onClick={() => refetchCollections()}>
+                  ลองใหม่
+                </Button>
+              </div>
+            ) : collections.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-6 px-3">
                 ยังไม่มีคอลเลกชัน — สร้างอันแรกของคุณ
               </p>

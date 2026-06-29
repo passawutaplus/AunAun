@@ -142,8 +142,9 @@ export const HireWizardStepOne = ({ form, setForm, studio }: StepProps) => (
 
     <div className="grid grid-cols-2 gap-3">
       <div>
-        <Label>งบประมาณ (บาท)</Label>
+        <Label htmlFor="hire-budget">งบประมาณ (บาท)</Label>
         <Input
+          id="hire-budget"
           inputMode="numeric"
           value={form.budgetAmount}
           onChange={(e) => setForm((f) => ({ ...f, budgetAmount: e.target.value }))}
@@ -151,8 +152,9 @@ export const HireWizardStepOne = ({ form, setForm, studio }: StepProps) => (
         />
       </div>
       <div>
-        <Label>กำหนดส่งงาน</Label>
+        <Label htmlFor="hire-deadline">กำหนดส่งงาน</Label>
         <Input
+          id="hire-deadline"
           value={form.deadline}
           onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
           placeholder="เช่น 2 สัปดาห์"

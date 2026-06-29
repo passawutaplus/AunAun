@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -8,9 +7,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useCreateJob } from "@/hooks/useJobs";
+import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import JobCoverUploadField from "@/components/jobs/JobCoverUploadField";
 import JobCardPreview from "@/components/jobs/JobCardPreview";
 import SkillTagInput from "@/components/jobs/shared/SkillTagInput";
@@ -42,7 +42,7 @@ const posterRoleFromEntity = (entity: PostAsSelection): "studio" | "company" | "
 const PostOpportunityForm = ({ onSuccess }: Props) => {
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
-  const qc = useQueryClient();
+  const createJob = useCreateJob();
   const [postAs, setPostAs] = useState<PostAsSelection>({ entityType: "personal", studioId: null });
   const [employment, setEmployment] = useState<"project" | "fulltime" | "parttime" | "internship" | "freelance">("project");
   const [title, setTitle] = useState("");
@@ -59,7 +59,6 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
   const [headcount, setHeadcount] = useState("1");
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const [appMethods, setAppMethods] = useState<string[]>(["portfolio"]);
-  const [loading, setLoading] = useState(false);
 
   const toggleMethod = (id: string) => {
     setAppMethods((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -68,9 +67,8 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
   const submit = async () => {
     if (!user) { toast.error("กรุณาเข้าสู่ระบบ"); return; }
     if (!title.trim()) { toast.error("กรุณาระบุชื่อประกาศ"); return; }
-    setLoading(true);
     try {
-      const { error } = await supabase.from("job_posts").insert({
+      await createJob.mutateAsync({
         posted_by: user.id,
         studio_id: postAs.studioId,
         posted_as_studio_id: postAs.studioId,
@@ -79,13 +77,13 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
         description: desc.trim(),
         skills,
         deliverables: deliverables.split("\n").map((s) => s.trim()).filter(Boolean),
-        budget_min: budgetMin ? parseInt(budgetMin) : null,
-        budget_max: budgetMax ? parseInt(budgetMax) : null,
+        budget_min: budgetMin ? parseInt(budgetMin, 10) : null,
+        budget_max: budgetMax ? parseInt(budgetMax, 10) : null,
         budget_type: budgetType,
         location_type: locType,
         location: location.trim(),
         deadline: deadline || null,
-        headcount: headcount ? parseInt(headcount) : 1,
+        headcount: headcount ? parseInt(headcount, 10) : 1,
         status: "open",
         post_type: "hiring",
         poster_role: posterRoleFromEntity(postAs),
@@ -94,15 +92,9 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
         cover_image_url: coverImageUrl,
         application_methods: appMethods.length ? appMethods : ["portfolio"],
       } as never);
-      if (error) throw error;
-      toast.success("ลงประกาศโอกาสงานเรียบร้อย");
-      qc.invalidateQueries({ queryKey: ["jobs-open"] });
-      qc.invalidateQueries({ queryKey: ["my-job-posts"] });
       onSuccess();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
-    } finally {
-      setLoading(false);
+      toast.error(mapWriteFlowError(e, "บันทึกไม่สำเร็จ"));
     }
   };
 
@@ -239,8 +231,8 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
         }}
       />
 
-      <Button disabled={loading} onClick={submit} className="w-full rounded-xl bg-gradient-brand text-white">
-        {loading ? "กำลังบันทึก..." : "ลงประกาศโอกาสงาน"}
+      <Button disabled={createJob.isPending} onClick={() => void submit()} className="w-full rounded-xl bg-gradient-brand text-white">
+        {createJob.isPending ? "กำลังบันทึก..." : "ลงประกาศโอกาสงาน"}
       </Button>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { SearchX, Hash } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
@@ -14,6 +14,8 @@ import { useProfilesByIds } from "@/core/profiles";
 import { useProjectsByTag, useProjectsByTool, filterProjectsByTools } from "@/hooks/useExploreProjects";
 import { decodeExploreParam, normalizeToolName, parseExtraTools, type ExploreKind } from "@/lib/exploreRoutes";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { navigateToAuth, stashPendingHire, consumePendingHire } from "@/lib/authRedirect";
 import type { Category, Project, ProjectStatus } from "@/data/projectTypes";
 import type { DBProject } from "@/hooks/useProjects";
 
@@ -52,6 +54,7 @@ const TOOL_SORT_OPTIONS: { key: Exclude<ToolExploreSort, "newest">; label: strin
 
 const ExploreProjectsPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const { kind, value: rawValue } = useParams<{ kind: string; value: string }>();
   const exploreKind = (kind === "tool" || kind === "tag" ? kind : null) as ExploreKind | null;
@@ -136,6 +139,27 @@ const ExploreProjectsPage = () => {
     projectId?: string;
     projectTitle?: string;
   }>({ recipientName: "" });
+
+  useEffect(() => {
+    if (!user) return;
+    const pending = consumePendingHire();
+    if (!pending) return;
+    setHireFreelancerId(pending.freelancerId);
+    setHireProject(pending.projectTitle);
+    setHireOpen(true);
+  }, [user]);
+
+  const openHireForFreelancer = (freelancerId: string | undefined, projectTitle: string) => {
+    if (!freelancerId) return;
+    if (!user) {
+      stashPendingHire(freelancerId, projectTitle);
+      navigateToAuth(navigate);
+      return;
+    }
+    setHireFreelancerId(freelancerId);
+    setHireProject(projectTitle);
+    setHireOpen(true);
+  };
 
   if (!exploreKind || !value) {
     return (
@@ -240,11 +264,7 @@ const ExploreProjectsPage = () => {
               <ProjectCard
                 key={p.id}
                 project={p}
-                onHireClick={(title) => {
-                  setHireFreelancerId(p.ownerId);
-                  setHireProject(title);
-                  setHireOpen(true);
-                }}
+                onHireClick={() => openHireForFreelancer(p.ownerId, p.title)}
                 onCollabClick={(title) => {
                   setCollabTarget({
                     recipientId: p.ownerId,

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { toast } from "sonner";
 import { notifyAnthem } from "@/lib/notifyAnthem";
 import type { PosterEntityType } from "@/components/jobs/jobCardUtils";
@@ -204,7 +205,7 @@ export const useCreateJob = () => {
       qc.invalidateQueries({ queryKey: ["my-job-posts"] });
       toast.success("ลงประกาศเรียบร้อย");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(mapWriteFlowError(e, "ลงประกาศไม่สำเร็จ")),
   });
 };
 

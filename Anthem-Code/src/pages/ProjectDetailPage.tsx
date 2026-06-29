@@ -19,7 +19,11 @@ import SafeDemoImage from "@/components/SafeDemoImage";
 import { useQuery } from "@tanstack/react-query";
 
 import { useProject } from "@/hooks/useProjects";
+import { useProjectLike } from "@/hooks/useProjectInteractions";
 import { useAuth } from "@/hooks/useAuth";
+import { navigateToAuth, stripSearchParams } from "@/lib/authRedirect";
+import { mapWriteFlowError } from "@/lib/writeFlowErrors";
+import { toast } from "sonner";
 import { isCategoryAllowed } from "@/lib/cookieConsent";
 import SeoHead from "@/components/SeoHead";
 import { BRAND_NAME } from "@/lib/brandConfig";
@@ -34,7 +38,7 @@ import { isVideoUrl, mediaItemsFromProject } from "@/lib/portfolioMedia";
 
 const ProjectDetailPage = () => {
   const { id } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const sponsorAdId = searchParams.get("sponsor");
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -130,10 +134,37 @@ const ProjectDetailPage = () => {
       }
     : null;
 
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(project?.likes ?? 0);
   const [hireOpen, setHireOpen] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
+
+  const projectIdForLike = dbProject?.id;
+  const { likes: likeCount, isLiked: liked, toggle: toggleLike, canInteract } = useProjectLike(projectIdForLike);
+
+  useEffect(() => {
+    if (!user || searchParams.get("hire") !== "1") return;
+    setHireOpen(true);
+    const next = stripSearchParams(searchParams, ["hire"]);
+    const q = next.toString();
+    setSearchParams(q ? next : {}, { replace: true });
+  }, [user, searchParams, setSearchParams]);
+
+  const openHire = () => {
+    if (!user) {
+      navigateToAuth(navigate, { hire: "1" });
+      return;
+    }
+    setHireOpen(true);
+  };
+
+  const handleLike = () => {
+    if (!canInteract) {
+      navigateToAuth(navigate);
+      return;
+    }
+    toggleLike(undefined, {
+      onError: (e) => toast.error(mapWriteFlowError(e, "ถูกใจไม่สำเร็จ")),
+    });
+  };
 
   if (isLoading) {
     return <div className="min-h-screen bg-app-ambient flex items-center justify-center text-muted-foreground">กำลังโหลด...</div>;
@@ -148,11 +179,6 @@ const ProjectDetailPage = () => {
       </div>
     );
   }
-
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikeCount((p) => (liked ? p - 1 : p + 1));
-  };
 
   const shareUrl = typeof window !== "undefined" ? window.location.href : `/project/${id}`;
 
@@ -282,7 +308,7 @@ const ProjectDetailPage = () => {
               commentsCount={commentsCount}
               liked={liked}
               onLike={handleLike}
-              onHire={() => setHireOpen(true)}
+              onHire={openHire}
               onCollab={() => setCollabOpen(true)}
               allowHire={project.allowHire}
               allowCollab={project.allowCollab}
@@ -296,7 +322,7 @@ const ProjectDetailPage = () => {
                 hasThirdPartyAssets={project.hasThirdPartyAssets}
                 thirdPartyNote={project.thirdPartyNote}
                 allowHire={project.allowHire}
-                onHire={() => setHireOpen(true)}
+                onHire={openHire}
               />
             </div>
           </FadeUp>

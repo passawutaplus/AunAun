@@ -11,7 +11,7 @@ import CollectionFormDialog from "@/components/collections/CollectionFormDialog"
 const CollectionsPage = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const { data: collections = [], isLoading } = useCollections(user?.id);
+  const { data: collections = [], isLoading, isError, refetch } = useCollections(user?.id);
   const [formOpen, setFormOpen] = useState(false);
 
   useEffect(() => {
@@ -46,6 +46,14 @@ const CollectionsPage = () => {
 
         {isLoading ? (
           <p className="text-center text-muted-foreground py-12">กำลังโหลด...</p>
+        ) : isError ? (
+          <div className="text-center py-16 glass-panel rounded-2xl space-y-3">
+            <p className="text-foreground font-medium">โหลดคอลเลกชันไม่สำเร็จ</p>
+            <p className="text-sm text-muted-foreground">ลองใหม่อีกครั้ง หรือตรวจการเชื่อมต่อ</p>
+            <Button variant="outline" className="rounded-full" onClick={() => refetch()}>
+              ลองใหม่
+            </Button>
+          </div>
         ) : collections.length === 0 ? (
           <div className="text-center py-16 glass-panel rounded-2xl">
             <Layers3 className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />

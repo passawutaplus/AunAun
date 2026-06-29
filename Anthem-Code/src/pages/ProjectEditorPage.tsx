@@ -49,7 +49,7 @@ import {
   usePortfolioAiAssist,
   type PortfolioAiAssistResult,
 } from "@/hooks/usePortfolioAiAssist";
-import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
+import { MOBILE_PAGE_BOTTOM_CLASS, mobileFabBottom } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
 
 type Status = "Published" | "Draft" | "Private";
@@ -787,7 +787,7 @@ const ProjectEditorPage = () => {
       {/* Mobile sticky CTA */}
       <div
         className="lg:hidden fixed inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur-md px-4 py-3"
-        style={{ bottom: "env(safe-area-inset-bottom, 0px)" }}
+        style={{ bottom: mobileFabBottom() }}
       >
         <div className="max-w-6xl mx-auto flex items-center gap-2">
           {editorStep > 1 && (

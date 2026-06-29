@@ -88,6 +88,10 @@ deploy_production() {
   elif [[ -n "$site_url" ]]; then
     BUILD_ENVS+=(--build-env "VITE_SITE_URL=${site_url}")
   fi
+  if [[ "$dir" == *Anthem-Code* ]]; then
+    BUILD_ENVS+=(--build-env "VITE_SO1O_APP_URL=${VITE_SO1O_APP_URL:-https://solofreelancer.com}")
+    BUILD_ENVS+=(--build-env "VITE_OPS_HUB_URL=${VITE_OPS_HUB_URL:-https://so1o-ops-hub.vercel.app}")
+  fi
 
   DEPLOY_OUTPUT="$(mktemp)"
   (cd "$dir" && npx vercel deploy --prod --yes --project="$vercel_project" "${BUILD_ENVS[@]}") | tee "$DEPLOY_OUTPUT"

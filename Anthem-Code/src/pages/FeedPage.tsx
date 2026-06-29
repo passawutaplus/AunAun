@@ -38,6 +38,7 @@ import {
   type DBProject,
 } from "@/hooks/useProjects";
 import { useAuth } from "@/hooks/useAuth";
+import { navigateToAuth, stashPendingHire, consumePendingHire } from "@/lib/authRedirect";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import CommunityFeedPanel from "@/components/community/CommunityFeedPanel";
 import CreateContentDrawer from "@/components/CreateContentDrawer";
@@ -149,6 +150,15 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       setCategory("All");
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!user) return;
+    const pending = consumePendingHire();
+    if (!pending) return;
+    setHireFreelancerId(pending.freelancerId);
+    setHireProject(pending.projectTitle);
+    setHireOpen(true);
+  }, [user]);
 
   useEffect(() => {
     const resetAt = (location.state as { feedHomeReset?: number } | null)?.feedHomeReset;
@@ -289,8 +299,17 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   );
 
   const handleHireDesigner = (recipientId: string, recipientName: string) => {
-    setHireFreelancerId(recipientId);
-    setHireProject(recipientName);
+    openHireForFreelancer(recipientId, recipientName);
+  };
+
+  const openHireForFreelancer = (freelancerId: string, projectTitle: string) => {
+    if (!user) {
+      stashPendingHire(freelancerId, projectTitle);
+      navigateToAuth(navigate);
+      return;
+    }
+    setHireFreelancerId(freelancerId);
+    setHireProject(projectTitle);
     setHireOpen(true);
   };
 
@@ -392,10 +411,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                       project={item.data}
                       boosted={boostedSets.projects.has(item.data.id)}
                       boostId={boostMaps.projects.get(item.data.id)}
-                      onHireClick={(title) => {
-                        setHireFreelancerId(item.data.ownerId);
-                        setHireProject(title);
-                        setHireOpen(true);
+                      onHireClick={() => {
+                        openHireForFreelancer(item.data.ownerId, item.data.title);
                       }}
                       onCollabClick={(title) => {
                         setCollabTarget({

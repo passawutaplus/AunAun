@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { BackButton } from "@/components/ui/BackButton";
+import Footer from "@/components/Footer";
 import {
   CheckCircle2,
   Megaphone,

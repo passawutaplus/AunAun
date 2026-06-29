@@ -12,20 +12,24 @@ export interface CollectionWithCovers extends Collection {
 
 const fetchCovers = async (collectionIds: string[]): Promise<Record<string, string[]>> => {
   if (!collectionIds.length) return {};
-  const { data, error } = await supabase
-    .from("collection_items")
-    .select("collection_id, added_at, projects:project_id(cover_url, gallery_urls)")
-    .in("collection_id", collectionIds)
-    .order("added_at", { ascending: false });
-  if (error) throw error;
-  const map: Record<string, string[]> = {};
-  (data ?? []).forEach((row: any) => {
-    const arr = map[row.collection_id] ?? (map[row.collection_id] = []);
-    if (arr.length >= 4) return;
-    const url = row.projects?.cover_url || row.projects?.gallery_urls?.[0];
-    if (url) arr.push(url);
-  });
-  return map;
+  try {
+    const { data, error } = await supabase
+      .from("collection_items")
+      .select("collection_id, added_at, projects:project_id(cover_url, gallery_urls)")
+      .in("collection_id", collectionIds)
+      .order("added_at", { ascending: false });
+    if (error) return {};
+    const map: Record<string, string[]> = {};
+    (data ?? []).forEach((row: { collection_id: string; projects?: { cover_url?: string; gallery_urls?: string[] } | null }) => {
+      const arr = map[row.collection_id] ?? (map[row.collection_id] = []);
+      if (arr.length >= 4) return;
+      const url = row.projects?.cover_url || row.projects?.gallery_urls?.[0];
+      if (url) arr.push(url);
+    });
+    return map;
+  } catch {
+    return {};
+  }
 };
 
 export const useCollections = (ownerId: string | undefined) =>

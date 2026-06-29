@@ -11,6 +11,7 @@ import {
   type CommentWithProfile,
 } from "@/hooks/useProjectComments";
 import { commentSchema } from "@/lib/validators";
+import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { toast } from "sonner";
 import { formatThaiDate } from "@/lib/format";
 import { useAuthDialog } from "@/stores/authDialogStore";
@@ -127,7 +128,7 @@ const CommentSection = ({ projectId }: Props) => {
       setText("");
       setReplyTo(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "คอมเมนต์ไม่สำเร็จ");
+      toast.error(mapWriteFlowError(err, "คอมเมนต์ไม่สำเร็จ"));
     }
   };
 

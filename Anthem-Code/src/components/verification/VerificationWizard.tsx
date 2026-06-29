@@ -111,7 +111,13 @@ const VerificationWizard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
-  const { data: eligibility, isLoading: eligLoading } = useCreatorEligibility(user?.id);
+  const {
+    data: eligibility,
+    isLoading: eligLoading,
+    isError: eligError,
+    error: eligErr,
+    refetch: refetchElig,
+  } = useCreatorEligibility(user?.id);
   const { data: requests = [] } = useMyKycRequests();
   const submit = useSubmitKycVerification();
 
@@ -221,6 +227,21 @@ const VerificationWizard = () => {
 
   if (eligLoading) {
     return <div className="py-16 text-center text-muted-foreground">กำลังโหลด...</div>;
+  }
+
+  if (eligError) {
+    return (
+      <div className="py-16 text-center space-y-4 px-4">
+        <XCircle className="w-10 h-10 text-destructive mx-auto" />
+        <p className="text-muted-foreground">โหลดข้อมูลไม่สำเร็จ</p>
+        <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+          {eligErr instanceof Error ? eligErr.message : "ลองใหม่อีกครั้ง"}
+        </p>
+        <Button type="button" variant="outline" className="rounded-full" onClick={() => refetchElig()}>
+          <RefreshCw className="w-4 h-4 mr-1" /> ลองอีกครั้ง
+        </Button>
+      </div>
+    );
   }
 
   if (isVerified) {
