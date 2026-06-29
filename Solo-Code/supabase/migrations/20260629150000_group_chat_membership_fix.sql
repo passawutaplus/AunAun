@@ -1,6 +1,19 @@
-﻿-- Fix group chat visibility: creator membership, backfill orphans, hardened RPC.
+-- Fix group chat visibility: creator membership, backfill orphans, hardened RPC.
 -- Addresses: create group -> redirect OK but inbox/thread not found.
 
+
+-- 0) Ensure PK exists (older prod may lack it; required for ON CONFLICT).
+DO $pk$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'shared.conversation_members'::regclass
+      AND contype = 'p'
+  ) THEN
+    ALTER TABLE shared.conversation_members
+      ADD CONSTRAINT conversation_members_pkey PRIMARY KEY (conversation_id, user_id);
+  END IF;
+END $pk$;
 -- 1) Recognize group creators even if membership row is missing (safety net for RLS).
 CREATE OR REPLACE FUNCTION shared.user_in_conversation(conv_id uuid, uid uuid)
 RETURNS boolean
