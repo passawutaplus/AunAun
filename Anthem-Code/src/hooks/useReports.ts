@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
+import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 
 export type ReportTargetType =
   | "user"
@@ -75,7 +76,7 @@ export function useCreateReport() {
       const msg = friendlyError(raw);
       if (raw.startsWith("DUPLICATE:")) toast.info(msg);
       else if (raw.startsWith("RATE_LIMIT:")) toast.warning(msg);
-      else toast.error(msg);
+      else toast.error(mapWriteFlowError(err, msg));
     },
   });
 }

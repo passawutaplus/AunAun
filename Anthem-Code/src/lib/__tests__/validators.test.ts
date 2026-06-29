@@ -19,7 +19,11 @@ describe("hireRequestSchema", () => {
     expect(r.success).toBe(false);
   });
   it("passes minimal valid", () => {
-    const r = hireRequestSchema.safeParse({ clientName: "John", email: "a@b.co" });
+    const r = hireRequestSchema.safeParse({
+      clientName: "John",
+      email: "a@b.co",
+      message: "รายละเอียดงานทดสอบยาวพอสมควร",
+    });
     expect(r.success).toBe(true);
   });
   it("caps message length", () => {

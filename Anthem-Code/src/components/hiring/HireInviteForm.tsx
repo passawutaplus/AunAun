@@ -26,7 +26,7 @@ export type HireInviteFormState = {
 };
 
 export const emptyHireInviteForm = (): HireInviteFormState => ({
-  jobType: "branding",
+  jobType: "",
   details: "",
   deliverablesText: "",
   budgetAmount: "",
@@ -39,6 +39,7 @@ export const emptyHireInviteForm = (): HireInviteFormState => ({
 });
 
 export function buildHireInviteMessage(form: HireInviteFormState): string | null {
+  if (!form.jobType.trim()) return null;
   const parts = [
     `ประเภทงาน: ${jobTypeLabel(form.jobType)}`,
     form.details.trim() ? `รายละเอียด:\n${form.details.trim()}` : null,
@@ -125,7 +126,7 @@ const HireInviteForm = ({
       </div>
 
       <div>
-        <Label>ประเภทงาน</Label>
+        <Label>ประเภทงาน <span className="text-destructive">*</span></Label>
         <div className="flex flex-wrap gap-1.5 mt-2">
           {JOB_TYPES.map((j) => (
             <button
@@ -146,7 +147,7 @@ const HireInviteForm = ({
       </div>
 
       <div>
-        <Label htmlFor="hire-details">รายละเอียดงาน</Label>
+        <Label htmlFor="hire-details">รายละเอียดงาน <span className="text-destructive">*</span></Label>
         <Textarea
           id="hire-details"
           rows={3}

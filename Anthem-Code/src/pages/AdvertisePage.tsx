@@ -11,6 +11,7 @@ import {
   type AdApplication,
 } from "@/hooks/useAds";
 import { uploadProjectImage } from "@/lib/uploadImage";
+import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,6 +69,7 @@ const AdvertisePage = () => {
   const [notes, setNotes] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const selected = AD_PACKAGES.find((p) => p.id === pkg)!;
 
@@ -94,11 +96,21 @@ const AdvertisePage = () => {
       useAuthDialog.getState().openLogin();
       return;
     }
-    if (!imageUrl) return toast.error("กรุณาอัปโหลดภาพโฆษณา");
-    if (!adTitle.trim()) return toast.error("กรุณากรอกชื่อโฆษณา");
-    if (!targetUrl.trim()) return toast.error("กรุณากรอกลิงก์ปลายทาง");
-    if (!contactName.trim() || !email.trim()) return toast.error("กรุณากรอกข้อมูลติดต่อ");
+    const errors: string[] = [];
+    if (!imageUrl) errors.push("กรุณาอัปโหลดภาพโฆษณา");
+    if (!adTitle.trim()) errors.push("กรุณากรอกชื่อโฆษณา");
+    if (!targetUrl.trim()) errors.push("กรุณากรอกลิงก์ปลายทาง");
+    else if (!/^https?:\/\/.+\..+/.test(targetUrl.trim())) errors.push("ลิงก์ปลายทางไม่ถูกต้อง (ต้องขึ้นต้น http/https)");
+    if (!contactName.trim()) errors.push("กรุณากรอกชื่อผู้ติดต่อ");
+    if (!email.trim()) errors.push("กรุณากรอกอีเมล");
+    if (errors.length > 0) {
+      const msg = errors.join(" · ");
+      setSubmitError(msg);
+      toast.error(errors[0]);
+      return;
+    }
 
+    setSubmitError(null);
     submit.mutate(
       {
         contact_name: contactName,
@@ -131,8 +143,13 @@ const AdvertisePage = () => {
           setTargetUrl("");
           setNotes("");
           setImageUrl("");
+          setSubmitError(null);
         },
-        onError: (e: Error) => toast.error(e.message),
+        onError: (e: Error) => {
+          const msg = mapWriteFlowError(e, "ส่งคำขอไม่สำเร็จ");
+          setSubmitError(msg);
+          toast.error(msg);
+        },
       }
     );
   };
@@ -349,6 +366,12 @@ const AdvertisePage = () => {
               <Label>หมายเหตุถึงทีมงาน</Label>
               <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
             </div>
+
+            {submitError && (
+              <p className="md:col-span-2 text-sm text-destructive rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2" role="alert">
+                {submitError}
+              </p>
+            )}
 
             <div className="md:col-span-2 flex items-center justify-between gap-3 pt-3 border-t">
               <div className="text-sm">

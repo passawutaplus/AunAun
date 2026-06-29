@@ -314,9 +314,18 @@ const ChatSidebar = ({
         {!isLoading && !isError && filtered.length === 0 && (
           <div className="text-center py-12 text-muted-foreground px-4">
             <MessageCircle className="w-10 h-10 mx-auto mb-2 opacity-40" />
-            <p className="font-medium text-foreground">ยังไม่มีบทสนทนา</p>
-            <p className="text-sm mt-1">เมื่อคุณตอบรับคำขอจ้างหรือคอลแลป ห้องแชทจะอยู่ที่นี่</p>
-            {isDemoMode() && (
+            {search.trim() ? (
+              <>
+                <p className="font-medium text-foreground">ไม่พบบทสนทนาจากการค้นหา</p>
+                <p className="text-sm mt-1">ลองคำอื่น หรือล้างช่องค้นหาเพื่อดูรายการทั้งหมด</p>
+              </>
+            ) : (
+              <>
+                <p className="font-medium text-foreground">ยังไม่มีบทสนทนา</p>
+                <p className="text-sm mt-1">เมื่อคุณตอบรับคำขอจ้างหรือคอลแลป ห้องแชทจะอยู่ที่นี่</p>
+              </>
+            )}
+            {isDemoMode() && !search.trim() && (
               <p className="text-xs mt-3 text-primary/90 leading-relaxed">
                 ข้อมูล demo 5 แชทอยู่ที่บัญชี{" "}
                 <span className="font-medium">{DEMO_RESEARCH_ACCOUNTS[0].email}</span>

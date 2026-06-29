@@ -55,7 +55,7 @@ export function GalleryMediaButtons({
       <input
         ref={imageRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         multiple
         hidden
         onChange={(e) => {

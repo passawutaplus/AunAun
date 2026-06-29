@@ -71,6 +71,10 @@ AS $$
       AND (
         (COALESCE(c.conversation_type, 'direct') = 'direct'
           AND (c.client_id = uid OR c.freelancer_id = uid))
+        OR (
+          COALESCE(c.conversation_type, 'direct') = 'group'
+          AND c.created_by = uid
+        )
         OR EXISTS (
           SELECT 1 FROM shared.conversation_members m
           WHERE m.conversation_id = conv_id AND m.user_id = uid

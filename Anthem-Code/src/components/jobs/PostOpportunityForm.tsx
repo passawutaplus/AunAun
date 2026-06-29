@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useCreateJob } from "@/hooks/useJobs";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
+import { parseMoneyInput } from "@/lib/parseMoney";
 import JobCoverUploadField from "@/components/jobs/JobCoverUploadField";
 import JobCardPreview from "@/components/jobs/JobCardPreview";
 import SkillTagInput from "@/components/jobs/shared/SkillTagInput";
@@ -59,6 +60,10 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
   const [headcount, setHeadcount] = useState("1");
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const [appMethods, setAppMethods] = useState<string[]>(["portfolio"]);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const parsedBudgetMin = parseMoneyInput(budgetMin);
+  const parsedBudgetMax = parseMoneyInput(budgetMax);
 
   const toggleMethod = (id: string) => {
     setAppMethods((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -66,7 +71,25 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
 
   const submit = async () => {
     if (!user) { toast.error("กรุณาเข้าสู่ระบบ"); return; }
-    if (!title.trim()) { toast.error("กรุณาระบุชื่อประกาศ"); return; }
+    if (!title.trim()) {
+      const msg = "กรุณาระบุชื่อประกาศ";
+      setSubmitError(msg);
+      toast.error(msg);
+      return;
+    }
+    if (!desc.trim()) {
+      const msg = "กรุณากรอกรายละเอียดงาน";
+      setSubmitError(msg);
+      toast.error(msg);
+      return;
+    }
+    if (parsedBudgetMin != null && parsedBudgetMax != null && parsedBudgetMin > parsedBudgetMax) {
+      const msg = "งบต่ำสุดต้องไม่มากกว่างบสูงสุด";
+      setSubmitError(msg);
+      toast.error(msg);
+      return;
+    }
+    setSubmitError(null);
     try {
       await createJob.mutateAsync({
         posted_by: user.id,
@@ -77,8 +100,8 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
         description: desc.trim(),
         skills,
         deliverables: deliverables.split("\n").map((s) => s.trim()).filter(Boolean),
-        budget_min: budgetMin ? parseInt(budgetMin, 10) : null,
-        budget_max: budgetMax ? parseInt(budgetMax, 10) : null,
+        budget_min: parsedBudgetMin,
+        budget_max: parsedBudgetMax,
         budget_type: budgetType,
         location_type: locType,
         location: location.trim(),
@@ -94,7 +117,9 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
       } as never);
       onSuccess();
     } catch (e: unknown) {
-      toast.error(mapWriteFlowError(e, "บันทึกไม่สำเร็จ"));
+      const msg = mapWriteFlowError(e, "บันทึกไม่สำเร็จ");
+      setSubmitError(msg);
+      toast.error(msg);
     }
   };
 
@@ -105,8 +130,10 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
       )}
 
       <div>
-        <Label className="text-xs">ชื่อประกาศ</Label>
+        <Label htmlFor="job-post-title" className="text-xs">ชื่อประกาศ</Label>
         <Input
+          id="job-post-title"
+          name="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="เช่น หา UI Designer ทำแอป Wellness"
@@ -140,8 +167,15 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
       </div>
 
       <div>
-        <Label className="text-xs">รายละเอียดงาน</Label>
-        <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={4} className="rounded-xl" />
+        <Label htmlFor="job-post-desc" className="text-xs">รายละเอียดงาน</Label>
+        <Textarea
+          id="job-post-desc"
+          name="description"
+          value={desc}
+          onChange={(e) => setDesc(e.target.value)}
+          rows={4}
+          className="rounded-xl"
+        />
       </div>
 
       <div>
@@ -173,8 +207,15 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
 
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <Label className="text-xs">Deadline</Label>
-          <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="rounded-xl" />
+          <Label htmlFor="job-deadline" className="text-xs">กำหนดส่งงาน</Label>
+          <Input
+            id="job-deadline"
+            name="deadline"
+            type="date"
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
+            className="rounded-xl"
+          />
         </div>
         <div>
           <Label className="text-xs">จำนวนคนที่ต้องการ</Label>
@@ -218,8 +259,8 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
           description: desc,
           role_category: role,
           skills,
-          budget_min: budgetMin ? parseInt(budgetMin) : null,
-          budget_max: budgetMax ? parseInt(budgetMax) : null,
+          budget_min: parsedBudgetMin,
+          budget_max: parsedBudgetMax,
           budget_type: budgetType,
           location_type: locType,
           location,
@@ -230,6 +271,12 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
           posterAvatar: profile?.avatar_url,
         }}
       />
+
+      {submitError && (
+        <p className="text-sm text-destructive rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2" role="alert">
+          {submitError}
+        </p>
+      )}
 
       <Button disabled={createJob.isPending} onClick={() => void submit()} className="w-full rounded-xl bg-gradient-brand text-white">
         {createJob.isPending ? "กำลังบันทึก..." : "ลงประกาศโอกาสงาน"}

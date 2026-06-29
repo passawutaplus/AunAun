@@ -50,8 +50,21 @@ export const hireRequestSchema = z.object({
     .union([z.number().int().nonnegative().max(10_000_000), z.nan()])
     .optional(),
   deadline: z.string().trim().max(50).optional(),
-  message: z.string().trim().max(1000).optional(),
+  message: z.string().trim().min(20, "รายละเอียดงานสั้นเกินไป").max(1000),
 });
+
+/** Brief fields on the hire invite form (beyond contact info). */
+export const hireInviteBriefSchema = z
+  .object({
+    jobType: z.string().trim().min(1, "เลือกประเภทงาน"),
+    details: z.string().trim().min(20, "กรุณาอธิบายรายละเอียดงานอย่างน้อย 20 ตัวอักษร"),
+    budgetAmount: z.number().int().positive().max(10_000_000).optional(),
+    deadline: z.string().trim().max(50).optional(),
+  })
+  .refine((d) => (d.budgetAmount != null && d.budgetAmount > 0) || !!d.deadline?.trim(), {
+    message: "กรุณาระบุงบประมาณหรือกำหนดส่งงาน",
+    path: ["budgetAmount"],
+  });
 
 export type HireRequestInput = z.infer<typeof hireRequestSchema>;
 

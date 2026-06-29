@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import OpenForWorkForm from "@/components/jobs/OpenForWorkForm";
 import PostOpportunityForm from "@/components/jobs/PostOpportunityForm";
@@ -24,6 +24,7 @@ const JobPostDialog = ({ open, onOpenChange, defaultMode = "hiring" }: Props) =>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>ลงประกาศ</DialogTitle>
+          <DialogDescription>กรอกรายละเอียดแล้วกดลงประกาศ — ระบบจะแจ้งผลทันที</DialogDescription>
         </DialogHeader>
 
         <p className="text-xs text-muted-foreground thai-body -mt-1 mb-2">เลือกประเภทประกาศที่ต้องการลง</p>

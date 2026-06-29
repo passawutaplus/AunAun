@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Check, Handshake, Sparkles, UserCircle2, FolderOpen, Globe, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
+import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -67,6 +68,7 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
   const [driveUrl, setDriveUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [showAllWorks, setShowAllWorks] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const published = useMemo(() => myProjects.filter((p) => p.status === "Published"), [myProjects]);
   const initialWorks = published.slice(0, 6);
@@ -74,7 +76,7 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
 
   const reset = () => {
     setSelectedTypes([]); setOtherNote(""); setMessage(""); setAttached([]);
-    setDriveUrl(""); setWebsiteUrl(""); setShowAllWorks(false);
+    setDriveUrl(""); setWebsiteUrl(""); setShowAllWorks(false); setSubmitError(null);
   };
 
   const toggleType = (key: string) =>
@@ -113,6 +115,7 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
       return;
     }
 
+    setSubmitError(null);
     try {
       const created = await createReq.mutateAsync({
         sender_id: user.id,
@@ -128,11 +131,16 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
       void supabase.functions.invoke("notify-anthem-collab", {
         body: { request_id: created.id },
       });
-      toast.success(`ส่งคำขอร่วมงานไปหา ${recipientName} แล้ว`);
+      toast.success(`ส่งคำขอร่วมงานไปหา ${recipientName} แล้ว`, {
+        description:
+          "รอให้อีกฝั่งตอบรับ — เมื่อตอบรับแล้วห้องแชทจะเปิดที่ /chat",
+      });
       reset();
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "ส่งคำขอไม่สำเร็จ");
+      const msg = mapWriteFlowError(err, "ส่งคำขอไม่สำเร็จ");
+      setSubmitError(msg);
+      toast.error(msg);
     }
   };
 
@@ -365,7 +373,6 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
               rows={4}
               maxLength={1000}
               className="mt-1.5 rounded-xl"
-              required
             />
             <p className="text-[10px] text-muted-foreground text-right mt-1">{message.length}/1000</p>
           </div>
@@ -374,6 +381,12 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
             <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 text-xs text-foreground/80">
               ต้องเข้าสู่ระบบก่อนเพื่อส่งคำขอร่วมงาน
             </div>
+          )}
+
+          {submitError && (
+            <p className="text-sm text-destructive rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2" role="alert">
+              {submitError}
+            </p>
           )}
 
           <DialogFooter className="gap-2 sm:gap-2">

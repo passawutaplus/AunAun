@@ -10,6 +10,24 @@ export interface CollectionWithCovers extends Collection {
   covers: string[];
 }
 
+const fetchItemCounts = async (collectionIds: string[]): Promise<Record<string, number>> => {
+  if (!collectionIds.length) return {};
+  try {
+    const { data, error } = await supabase
+      .from("collection_items")
+      .select("collection_id")
+      .in("collection_id", collectionIds);
+    if (error) return {};
+    const map: Record<string, number> = {};
+    (data ?? []).forEach((row: { collection_id: string }) => {
+      map[row.collection_id] = (map[row.collection_id] ?? 0) + 1;
+    });
+    return map;
+  } catch {
+    return {};
+  }
+};
+
 const fetchCovers = async (collectionIds: string[]): Promise<Record<string, string[]>> => {
   if (!collectionIds.length) return {};
   try {
@@ -43,8 +61,13 @@ export const useCollections = (ownerId: string | undefined) =>
         .eq("owner_id", ownerId!)
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      const coverMap = await fetchCovers((data ?? []).map((c) => c.id));
-      return (data ?? []).map((c) => ({ ...c, covers: coverMap[c.id] ?? [] }));
+      const ids = (data ?? []).map((c) => c.id);
+      const [coverMap, countMap] = await Promise.all([fetchCovers(ids), fetchItemCounts(ids)]);
+      return (data ?? []).map((c) => ({
+        ...c,
+        item_count: countMap[c.id] ?? c.item_count ?? 0,
+        covers: coverMap[c.id] ?? [],
+      }));
     },
   });
 
@@ -60,8 +83,13 @@ export const usePublicCollections = (ownerId: string | undefined) =>
         .eq("is_public", true)
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      const coverMap = await fetchCovers((data ?? []).map((c) => c.id));
-      return (data ?? []).map((c) => ({ ...c, covers: coverMap[c.id] ?? [] }));
+      const ids = (data ?? []).map((c) => c.id);
+      const [coverMap, countMap] = await Promise.all([fetchCovers(ids), fetchItemCounts(ids)]);
+      return (data ?? []).map((c) => ({
+        ...c,
+        item_count: countMap[c.id] ?? c.item_count ?? 0,
+        covers: coverMap[c.id] ?? [],
+      }));
     },
   });
 

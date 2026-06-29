@@ -129,7 +129,7 @@ const ProjectSidePanel = (p: Props) => {
         )}
 
         <div className="grid grid-cols-2 gap-2">
-          <Button onClick={p.onLike} variant="outline" className="rounded-full" size="sm">
+          <Button onClick={p.onLike} variant="outline" className="rounded-full" size="sm" aria-label={p.liked ? "เลิกถูกใจ" : "ถูกใจผลงาน"}>
             <Heart className={`w-4 h-4 mr-1 ${p.liked ? "fill-destructive text-destructive" : ""}`} />
             ถูกใจ · {formatCompact(p.likes)}
           </Button>

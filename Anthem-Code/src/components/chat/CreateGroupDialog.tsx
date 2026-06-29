@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Search, Users, X } from "lucide-react";
 import {
@@ -7,6 +7,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,8 @@ interface Props {
   onCreated: (conversationId: string) => void;
 }
 
+const GROUP_TITLE_MAX = 80;
+
 const CreateGroupDialog = ({ open, onOpenChange, onCreated }: Props) => {
   const { user } = useAuth();
   const create = useCreateGroupConversation();
@@ -32,11 +35,18 @@ const CreateGroupDialog = ({ open, onOpenChange, onCreated }: Props) => {
     { id: string; display_name: string; avatar_url: string | null }[]
   >([]);
 
+  const memberIdsKey = useMemo(
+    () => members.map((m) => m.id).sort().join(","),
+    [members],
+  );
+  const searchTerm = search.trim();
+  const searchReady = searchTerm.length >= 2;
+
   const { data: searchResults = [], isFetching } = useQuery({
-    queryKey: ["group-member-search", search],
-    enabled: open && search.trim().length >= 2,
+    queryKey: ["group-member-search", searchTerm, memberIdsKey],
+    enabled: open && searchReady,
     queryFn: async () => {
-      const term = `%${search.trim()}%`;
+      const term = `%${searchTerm}%`;
       const { data } = await supabase
         .from("profiles")
         .select("user_id, display_name, avatar_url, username")
@@ -53,6 +63,8 @@ const CreateGroupDialog = ({ open, onOpenChange, onCreated }: Props) => {
     },
   });
 
+  const showMemberSearchEmpty = searchReady && !isFetching && searchResults.length === 0;
+
   const reset = () => {
     setTitle("");
     setSearch("");
@@ -65,6 +77,7 @@ const CreateGroupDialog = ({ open, onOpenChange, onCreated }: Props) => {
   };
 
   const addMember = (m: { id: string; display_name: string; avatar_url: string | null }) => {
+    if (members.some((x) => x.id === m.id)) return;
     if (members.length >= 19) {
       toast.error("เลือกได้สูงสุด 19 คน (รวมคุณ 20 คน)");
       return;
@@ -103,6 +116,9 @@ const CreateGroupDialog = ({ open, onOpenChange, onCreated }: Props) => {
             <Users className="w-5 h-5" />
             สร้างกลุ่มแชท
           </DialogTitle>
+          <DialogDescription>
+            ตั้งชื่อกลุ่มและเชิญสมาชิกอย่างน้อย 1 คน (รวมคุณสูงสุด 20 คน)
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -113,8 +129,11 @@ const CreateGroupDialog = ({ open, onOpenChange, onCreated }: Props) => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="เช่น ทีมออกแบบ UI"
-              maxLength={80}
+              maxLength={GROUP_TITLE_MAX}
             />
+            <p className="text-xs text-muted-foreground text-right">
+              {title.length}/{GROUP_TITLE_MAX}
+            </p>
           </div>
 
           {members.length > 0 && (
@@ -133,6 +152,7 @@ const CreateGroupDialog = ({ open, onOpenChange, onCreated }: Props) => {
                     type="button"
                     onClick={() => setMembers((prev) => prev.filter((x) => x.id !== m.id))}
                     className="ml-0.5 text-muted-foreground hover:text-foreground"
+                    aria-label={`ลบ ${m.display_name} ออกจากกลุ่ม`}
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -156,6 +176,9 @@ const CreateGroupDialog = ({ open, onOpenChange, onCreated }: Props) => {
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Loader2 className="w-3 h-3 animate-spin" /> กำลังค้นหา…
               </p>
+            )}
+            {showMemberSearchEmpty && (
+              <p className="text-xs text-muted-foreground px-1">ไม่พบผู้ใช้ — ลองค้นด้วยชื่อหรือ @username อื่น</p>
             )}
             {searchResults.length > 0 && (
               <ul className="border border-border rounded-lg divide-y divide-border max-h-40 overflow-y-auto">

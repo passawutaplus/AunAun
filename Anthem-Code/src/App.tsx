@@ -157,6 +157,8 @@ const App = () => (
               <Route path="/collections/:id" element={<RequireAuth><CollectionDetailPage /></RequireAuth>} />
               <Route path="/me/reports" element={<RequireAuth><MyReportsPage /></RequireAuth>} />
               <Route path="/me/feedback" element={<RequireAuth><MyFeedbackPage /></RequireAuth>} />
+              <Route path="/reports" element={<RedirectTo to="/me/reports" />} />
+              <Route path="/feedback" element={<RedirectTo to="/me/feedback" />} />
               <Route path="/verify" element={<RequireAuth><VerificationPage /></RequireAuth>} />
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<OverviewPage />} />

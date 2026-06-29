@@ -41,12 +41,30 @@ const RateFields = ({
     </div>
     <div className="grid grid-cols-2 gap-2">
       <div>
-        <Label className="text-xs">{minLabel}</Label>
-        <Input type="number" value={budgetMin} onChange={(e) => onBudgetMinChange(e.target.value)} className="rounded-xl" />
+        <Label htmlFor="job-budget-min" className="text-xs">{minLabel}</Label>
+        <Input
+          id="job-budget-min"
+          name="budgetMin"
+          type="number"
+          inputMode="numeric"
+          aria-label={minLabel}
+          value={budgetMin}
+          onChange={(e) => onBudgetMinChange(e.target.value)}
+          className="rounded-xl"
+        />
       </div>
       <div>
-        <Label className="text-xs">{maxLabel}</Label>
-        <Input type="number" value={budgetMax} onChange={(e) => onBudgetMaxChange(e.target.value)} className="rounded-xl" />
+        <Label htmlFor="job-budget-max" className="text-xs">{maxLabel}</Label>
+        <Input
+          id="job-budget-max"
+          name="budgetMax"
+          type="number"
+          inputMode="numeric"
+          aria-label={maxLabel}
+          value={budgetMax}
+          onChange={(e) => onBudgetMaxChange(e.target.value)}
+          className="rounded-xl"
+        />
       </div>
     </div>
   </div>

@@ -1,23 +1,34 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, RefreshCw } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useConversation, useMessages, useStudioConversation, type ChatKind } from "@/hooks/useChat";
+import { useAuth } from "@/hooks/useAuth";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatThreadView from "@/components/chat/ChatThreadView";
 import ChatPartnerPanel from "@/components/chat/ChatPartnerPanel";
 import { ChatErrorBoundary } from "@/components/chat/ChatErrorBoundary";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const ChatInboxPage = () => {
   const { id } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { user } = useAuth();
   const studioChat = useStudioConversation();
   const [tab, setTab] = useState<"all" | ChatKind>("all");
   const [search, setSearch] = useState("");
   const [showPartnerMobile, setShowPartnerMobile] = useState(false);
 
-  const { data: conv, isLoading: convLoading, isError: convError } = useConversation(id);
+  const {
+    data: conv,
+    isLoading: convLoading,
+    isError: convError,
+    isFetching: convFetching,
+    refetch: refetchConv,
+  } = useConversation(id);
   const { data: messages = [] } = useMessages(id, { subscribe: true });
 
   useEffect(() => {
@@ -47,35 +58,47 @@ const ChatInboxPage = () => {
     navigate("/chat", { replace: false });
   };
 
+  const retryThread = () => {
+    void refetchConv();
+    if (user?.id) {
+      void qc.invalidateQueries({ queryKey: ["conversations", user.id] });
+    }
+  };
+
   const threadContent = (
     <>
-      {id && convLoading && (
+      {id && (convLoading || convFetching) && !conv && (
         <div className="flex-1 flex items-center justify-center text-muted-foreground">
           กำลังโหลด…
         </div>
       )}
-      {id && !convLoading && convError && (
-        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground px-4">
+      {id && !convLoading && !convFetching && convError && (
+        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground px-4 gap-3">
           <p className="font-medium text-foreground">โหลดบทสนทนาไม่สำเร็จ</p>
-          <button
-            type="button"
-            onClick={clearConversation}
-            className="mt-3 text-sm text-primary hover:underline"
-          >
-            กลับรายการแชท
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={retryThread}>
+              <RefreshCw className="w-4 h-4 mr-1.5" />
+              ลองใหม่
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={clearConversation}>
+              กลับรายการแชท
+            </Button>
+          </div>
         </div>
       )}
-      {id && !convLoading && !convError && !conv && (
-        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground px-4">
+      {id && !convLoading && !convFetching && !convError && !conv && (
+        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground px-4 gap-3">
           <p className="font-medium text-foreground">ไม่พบบทสนทนานี้</p>
-          <button
-            type="button"
-            onClick={clearConversation}
-            className="mt-3 text-sm text-primary hover:underline"
-          >
-            กลับรายการแชท
-          </button>
+          <p className="text-sm text-center">อาจยังไม่มีสิทธิ์เข้าถึง หรือบทสนทนาถูกลบแล้ว</p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={retryThread}>
+              <RefreshCw className="w-4 h-4 mr-1.5" />
+              ลองโหลดอีกครั้ง
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={clearConversation}>
+              กลับรายการแชท
+            </Button>
+          </div>
         </div>
       )}
       {conv && (

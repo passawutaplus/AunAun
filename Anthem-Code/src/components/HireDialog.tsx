@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { hireRequestSchema } from "@/lib/validators";
+import { hireRequestSchema, hireInviteBriefSchema } from "@/lib/validators";
+import { parseMoneyInput } from "@/lib/parseMoney";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useCreateHireRequest } from "@/hooks/useHiringRequests";
@@ -55,14 +56,29 @@ const HireDialog = ({ open, onOpenChange, projectTitle, projectId, freelancerId 
 
   const handleSubmit = async () => {
     if (!user) return;
-    const budgetNum = form.budgetAmount ? Number(form.budgetAmount.replace(/[^\d]/g, "")) : undefined;
+    const inviteMessage = buildHireInviteMessage(form);
+    if (!inviteMessage) {
+      toast.error("กรุณากรอกรายละเอียดงาน");
+      return;
+    }
+    const budgetNum = parseMoneyInput(form.budgetAmount) ?? undefined;
+    const briefCheck = hireInviteBriefSchema.safeParse({
+      jobType: form.jobType,
+      details: form.details,
+      budgetAmount: budgetNum,
+      deadline: form.deadline,
+    });
+    if (!briefCheck.success) {
+      toast.error(briefCheck.error.issues[0]?.message ?? "กรอกข้อมูลไม่ครบ");
+      return;
+    }
     const parsed = hireRequestSchema.safeParse({
       clientName: form.clientName,
       email: form.email,
       phone: form.phone,
       budgetAmount: budgetNum,
       deadline: form.deadline,
-      message: buildHireInviteMessage(form) ?? "",
+      message: inviteMessage,
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "กรอกข้อมูลไม่ครบ");
@@ -84,7 +100,7 @@ const HireDialog = ({ open, onOpenChange, projectTitle, projectId, freelancerId 
         phone: parsed.data.phone || null,
         budget_amount: budgetNum ?? null,
         deadline: parsed.data.deadline || null,
-        message: buildHireInviteMessage(form),
+        message: inviteMessage,
         job_post_id: jobPostId || null,
         invited_as: "personal",
         attachment_urls: form.attachmentUrls.length ? form.attachmentUrls : null,
@@ -108,6 +124,12 @@ const HireDialog = ({ open, onOpenChange, projectTitle, projectId, freelancerId 
               <DialogTitle>ส่งคำชวนแล้ว</DialogTitle>
               <DialogDescription className="text-left space-y-2 pt-2">
                 <p>ครีเอเตอร์จะได้รับแจ้งเตือนและติดต่อกลับทางอีเมลที่คุณให้ไว้</p>
+                <p className="text-sm text-muted-foreground">
+                  รอให้อีกฝั่งตอบรับคำขอ — เมื่อตอบรับแล้วห้องแชทจะเปิดที่{" "}
+                  <Link to="/chat" className="text-primary hover:underline">
+                    ข้อความ
+                  </Link>
+                </p>
                 {jobPostId && (
                   <p className="text-sm">
                     <Link to={`/jobs/${jobPostId}`} className="text-primary hover:underline">

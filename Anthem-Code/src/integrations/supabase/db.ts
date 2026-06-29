@@ -85,6 +85,7 @@ const PUBLIC_TABLES = new Set([
   "ecosystem_notifications",
   "so1o_notifications",
   "platform_events",
+  "welcome_mission_claims",
 ]);
 
 /** Cross-app wallet / chat / compliance. */
@@ -113,7 +114,6 @@ const SHARED_TABLES = new Set([
   "referral_codes",
   "referrals",
   "referral_reward_ledger",
-  "welcome_mission_claims",
 ]);
 
 export function schemaForTable(table: string): "public" | "anthem" | "shared" {

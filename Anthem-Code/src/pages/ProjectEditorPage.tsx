@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useCreateProject, useProject, useUpdateProject } from "@/hooks/useProjects";
+import { isUuid } from "@/lib/uuid";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { uploadProjectVideo } from "@/lib/uploadVideo";
 import { useSubscription } from "@/core/subscription";
@@ -18,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { projectSchema, validateProjectPublish } from "@/lib/validators";
 import { categories } from "@/data/projectTypes";
 import { toast } from "sonner";
+import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import StudioCreditPicker from "@/components/profile/StudioCreditPicker";
 import LicensePicker from "@/components/license/LicensePicker";
 import TagPicker from "@/components/tags/TagPicker";
@@ -69,12 +72,18 @@ const ProjectEditorPage = () => {
   const isDrillPost = params.get("from") === "so1o" && params.get("drill_type");
   const isDailyDrillPost = isDrillPost && params.get("drill_type") === "daily";
   const { user, loading: authLoading } = useAuth();
+  const { data: isAdmin } = useIsAdmin();
   const { tier } = useSubscription();
   const limits = getProjectLimits(tier);
   const folderRef = useRef<string>(id ?? crypto.randomUUID());
   const drillMetaRef = useRef<{ drill_type?: string; drill_date?: string }>({});
 
-  const { data: existing } = useProject(id);
+  const {
+    data: existing,
+    isLoading: projectLoading,
+    isError: projectError,
+    refetch: refetchProject,
+  } = useProject(editing ? id : undefined);
   const create = useCreateProject();
   const update = useUpdateProject();
 
@@ -152,8 +161,15 @@ const ProjectEditorPage = () => {
   }, [editing, existing, params]);
 
   useEffect(() => {
-    if (existing) {
-      setTitle(existing.title);
+    if (!authLoading && editing && !user) {
+      navigate(`/auth?redirect=${encodeURIComponent(`/portfolio/${id}/edit`)}`);
+    }
+  }, [authLoading, editing, user, id, navigate]);
+
+  useEffect(() => {
+    if (!existing) return;
+    if (editing && user && existing.owner_id !== user.id && !isAdmin) return;
+    setTitle(existing.title);
       setSubtitle(existing.subtitle ?? "");
       setDescription(existing.description ?? "");
       setCategory(existing.category);
@@ -179,8 +195,7 @@ const ProjectEditorPage = () => {
       setHasThirdPartyAssets((existing as { has_third_party_assets?: boolean }).has_third_party_assets ?? false);
       setThirdPartyNote((existing as { third_party_note?: string }).third_party_note ?? "");
       setRightsAttested(!!(existing as { rights_attested_at?: string | null }).rights_attested_at);
-    }
-  }, [existing]);
+  }, [existing, editing, user, isAdmin]);
 
   const handleCover = async (file: File) => {
     if (!user) return;
@@ -418,6 +433,10 @@ const ProjectEditorPage = () => {
 
     try {
       if (editing && id) {
+        if (existing && user && existing.owner_id !== user.id && !isAdmin) {
+          toast.error("คุณไม่มีสิทธิ์แก้ไขผลงานนี้");
+          return;
+        }
         await update.mutateAsync({ id, patch: payload });
         toast.success("บันทึกการเปลี่ยนแปลงแล้ว");
         navigate(`/project/${id}`);
@@ -434,7 +453,7 @@ const ProjectEditorPage = () => {
         }
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
+      toast.error(mapWriteFlowError(e, "บันทึกไม่สำเร็จ"));
     }
   };
 
@@ -446,6 +465,14 @@ const ProjectEditorPage = () => {
     : !rightsAttested
       ? "กรุณายืนยันสิทธิ์ในผลงานก่อนเผยแพร่"
       : undefined;
+
+  const goToNextStep = () => {
+    if (editorStep === 1 && !cover) {
+      toast.error("กรุณาอัปโหลดภาพปกก่อนไปขั้นถัดไป");
+      return;
+    }
+    setEditorStep((s) => Math.min(4, s + 1));
+  };
 
   const handleEditorModeChange = (mode: PortfolioEditorMode) => {
     if (mode === "ai" && cover) {
@@ -480,6 +507,67 @@ const ProjectEditorPage = () => {
     thirdPartyNote,
   };
 
+  if (editing && id && !isUuid(id)) {
+    return (
+      <div className="min-h-screen bg-app-ambient flex flex-col items-center justify-center px-4 text-center gap-3">
+        <p className="font-medium text-foreground">ไม่พบผลงานนี้</p>
+        <p className="text-sm text-muted-foreground">รหัสผลงานไม่ถูกต้อง</p>
+        <Button variant="outline" onClick={() => navigate("/portfolio/manage")}>
+          กลับจัดการผลงาน
+        </Button>
+      </div>
+    );
+  }
+
+  if (editing && (authLoading || projectLoading)) {
+    return (
+      <div className="min-h-screen bg-app-ambient flex items-center justify-center text-muted-foreground">
+        <Loader2 className="w-6 h-6 animate-spin mr-2" />
+        กำลังโหลด…
+      </div>
+    );
+  }
+
+  if (editing && projectError) {
+    return (
+      <div className="min-h-screen bg-app-ambient flex flex-col items-center justify-center px-4 text-center gap-3">
+        <p className="font-medium text-foreground">โหลดผลงานไม่สำเร็จ</p>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => void refetchProject()}>
+            ลองใหม่
+          </Button>
+          <Button variant="ghost" onClick={() => navigate("/portfolio/manage")}>
+            กลับจัดการผลงาน
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (editing && !projectLoading && !existing) {
+    return (
+      <div className="min-h-screen bg-app-ambient flex flex-col items-center justify-center px-4 text-center gap-3">
+        <p className="font-medium text-foreground">ไม่พบผลงานนี้</p>
+        <p className="text-sm text-muted-foreground">ผลงานอาจถูกลบแล้ว หรือคุณไม่มีสิทธิ์เข้าถึง</p>
+        <Button variant="outline" onClick={() => navigate("/portfolio/manage")}>
+          กลับจัดการผลงาน
+        </Button>
+      </div>
+    );
+  }
+
+  if (editing && existing && user && existing.owner_id !== user.id && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-app-ambient flex flex-col items-center justify-center px-4 text-center gap-3">
+        <p className="font-medium text-foreground">ไม่มีสิทธิ์แก้ไขผลงานนี้</p>
+        <p className="text-sm text-muted-foreground">เฉพาะเจ้าของผลงานเท่านั้นที่แก้ไขได้</p>
+        <Button variant="outline" onClick={() => navigate("/portfolio/manage")}>
+          กลับจัดการผลงาน
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
       {/* Sticky header */}
@@ -512,6 +600,9 @@ const ProjectEditorPage = () => {
               เผยแพร่
             </Button>
           </div>
+          {!canPublish && publishBlockedReason && (
+            <p className="text-xs text-destructive mt-2 text-right max-w-xs ml-auto">{publishBlockedReason}</p>
+          )}
         </div>
       </div>
 
@@ -796,7 +887,7 @@ const ProjectEditorPage = () => {
             </Button>
           )}
           {editorStep < 4 ? (
-            <Button type="button" className="flex-1 rounded-xl" onClick={() => setEditorStep((s) => s + 1)}>
+            <Button type="button" className="flex-1 rounded-xl" onClick={goToNextStep}>
               ถัดไป — {EDITOR_STEPS[editorStep]?.label ?? ""}
             </Button>
           ) : (
@@ -822,6 +913,9 @@ const ProjectEditorPage = () => {
             </>
           )}
         </div>
+        {editorStep === 4 && !canPublish && publishBlockedReason && (
+          <p className="text-xs text-destructive mt-2 text-center">{publishBlockedReason}</p>
+        )}
       </div>
 
       <ProjectPreviewDialog
@@ -866,7 +960,7 @@ const CoverDrop = ({ url, loading, onPick, onClear }: { url: string; loading: bo
       {loading ? <Loader2 className="w-6 h-6 animate-spin text-primary" /> : <ImagePlus className="w-8 h-8 text-muted-foreground" />}
       <p className="text-sm font-medium text-foreground">ลากภาพมาวาง หรือคลิกเพื่อเลือก</p>
       <p className="text-xs text-muted-foreground">JPG / PNG / WebP — สูงสุด 5MB</p>
-      <input ref={ref} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && onPick(e.target.files[0])} />
+      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => e.target.files?.[0] && onPick(e.target.files[0])} />
     </div>
   );
 };
@@ -887,7 +981,7 @@ const GalleryDrop = ({ loading, onPick }: { loading: boolean; onPick: (f: FileLi
       {loading ? <Loader2 className="w-6 h-6 animate-spin text-primary" /> : <Upload className="w-8 h-8 text-muted-foreground" />}
       <p className="text-sm font-medium text-foreground">ลากภาพหลายไฟล์มาวาง หรือคลิกเพื่อเลือก</p>
       <p className="text-xs text-muted-foreground">เพิ่มได้สูงสุด 20 ภาพ — เรียงลำดับได้ภายหลัง</p>
-      <input ref={ref} type="file" accept="image/*" multiple hidden onChange={(e) => e.target.files && onPick(e.target.files)} />
+      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(e) => e.target.files && onPick(e.target.files)} />
     </div>
   );
 };

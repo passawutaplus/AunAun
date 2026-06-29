@@ -108,7 +108,7 @@ export function PortfolioAiAssistPanel({
           <input
             ref={fileRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             multiple
             hidden
             onChange={(e) => e.target.files && onPickFiles(e.target.files)}

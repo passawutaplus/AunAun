@@ -97,8 +97,19 @@ export const useConversations = (kind?: ChatKind) => {
         groups = (groupRows ?? []) as Conversation[];
       }
 
+      const { data: ownedGroups, error: ownedErr } = await supabase
+        .from("conversations")
+        .select("*")
+        .eq("created_by", user!.id)
+        .eq("conversation_type", "group")
+        .order("last_message_at", { ascending: false })
+        .limit(CONVERSATION_LIST_LIMIT);
+      if (ownedErr) throw ownedErr;
+
       const merged = new Map<string, Conversation>();
-      [...(direct ?? []), ...groups].forEach((c) => merged.set(c.id, c as Conversation));
+      [...(direct ?? []), ...groups, ...(ownedGroups ?? [])].forEach((c) =>
+        merged.set(c.id, c as Conversation),
+      );
       let list = Array.from(merged.values()).sort(
         (a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime(),
       );
@@ -342,6 +353,32 @@ export const useConversationPins = () => {
 
 /* ───────────────── Group chat ───────────────── */
 
+function mapGroupChatRpcError(error: { message?: string }): string {
+  const msg = error.message ?? "";
+  if (msg.includes("UNAUTHORIZED")) return "ต้องเข้าสู่ระบบ";
+  if (msg.includes("INVALID_TITLE")) return "ชื่อกลุ่มต้องมี 1–100 ตัวอักษร";
+  if (msg.includes("NEED_OTHER_MEMBERS")) return "เลือกสมาชิกอย่างน้อย 1 คน";
+  if (msg.includes("TOO_MANY_MEMBERS")) return "สมาชิกเกินจำกัด (สูงสุด 50 คน)";
+  if (
+    msg.includes("MEMBERSHIP_INSERT_FAILED") ||
+    msg.includes("CREATOR_NOT_MEMBER") ||
+    msg.includes("CONVERSATION_NOT_ACCESSIBLE")
+  ) {
+    return "สร้างกลุ่มไม่สมบูรณ์ — ยังเปิดห้องแชทไม่ได้ ลองใหม่อีกครั้ง";
+  }
+  return "สร้างกลุ่มไม่สำเร็จ";
+}
+
+async function verifyConversationReadable(conversationId: string): Promise<void> {
+  const { data, error } = await supabase
+    .from("conversations")
+    .select("id")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("CONVERSATION_NOT_ACCESSIBLE");
+}
+
 export const useCreateGroupConversation = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -353,11 +390,25 @@ export const useCreateGroupConversation = () => {
         p_title: title.trim(),
         p_member_ids: uniqueMembers,
       } as never);
-      if (error) throw error;
-      return data as string;
+      if (error) throw new Error(mapGroupChatRpcError(error));
+      const convId = data as string;
+      await verifyConversationReadable(convId);
+      return convId;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["conversations"] });
+    onSuccess: async (convId) => {
+      await qc.invalidateQueries({ queryKey: ["conversations", user?.id] });
+      await qc.prefetchQuery({
+        queryKey: ["conversation", user?.id, convId],
+        queryFn: async () => {
+          const { data, error } = await supabase
+            .from("conversations")
+            .select("*")
+            .eq("id", convId)
+            .maybeSingle();
+          if (error) throw error;
+          return data as Conversation | null;
+        },
+      });
     },
   });
 };
