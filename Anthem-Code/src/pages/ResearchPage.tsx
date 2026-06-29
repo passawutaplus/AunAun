@@ -16,6 +16,7 @@ import { DEMO_WARNING_BULLETS } from "@/lib/copyConstants";
 import { isDemoMode } from "@/lib/demoMode";
 import SeoHead from "@/components/SeoHead";
 import ResearchChecklistSection from "@/components/research/ResearchChecklistSection";
+import UxChecklistPdfDownload from "@/components/research/UxChecklistPdfDownload";
 import {
   ADMIN_APPENDIX,
   DESIGN_CHECKLIST,
@@ -43,7 +44,10 @@ export default function ResearchPage() {
       <header className="border-b border-border/60 bg-card/80 backdrop-blur sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <BackButton to="/" label="กลับหน้าแรก" />
-          <span className="text-xs font-medium text-primary uppercase tracking-wider">UX Research</span>
+          <div className="flex items-center gap-2">
+            <UxChecklistPdfDownload variant="button" className="hidden sm:inline-flex" />
+            <span className="text-xs font-medium text-primary uppercase tracking-wider">UX Research</span>
+          </div>
         </div>
       </header>
 
@@ -58,6 +62,7 @@ export default function ResearchPage() {
             Quick {RESEARCH_INTRO.quickMinutes} นาที · Full {RESEARCH_INTRO.fullHours} ชม. · Viewports:{" "}
             {RESEARCH_INTRO.viewports.join(", ")}
           </p>
+          <UxChecklistPdfDownload variant="banner" />
         </section>
 
         <section className="rounded-2xl border border-amber-500/30 bg-amber-500/8 p-4 space-y-2">

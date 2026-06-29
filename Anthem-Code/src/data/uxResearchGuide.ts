@@ -47,6 +47,8 @@ export type PageMapGroup = {
 export const RESEARCH_INTRO = {
   demoUrl: "https://aplus1-demo.vercel.app",
   inAppPath: "/research",
+  checklistPdfPath: "/aplus1-ux-usability-checklist.pdf",
+  checklistPdfName: "aplus1-ux-usability-checklist.pdf",
   quickMinutes: "45–60",
   fullHours: "2–3",
   viewports: ["375×812 (mobile)", "768×1024 (tablet)", "1280+ (desktop)"],

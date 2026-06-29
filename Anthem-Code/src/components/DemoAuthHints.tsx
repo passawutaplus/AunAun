@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Info, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import UxChecklistPdfDownload from "@/components/research/UxChecklistPdfDownload";
 import { DEMO_LOGIN_HINT, DEMO_SIGNUP_BLOCKED } from "@/lib/copyConstants";
 import {
   DEMO_RESEARCH_ACCOUNTS,
@@ -20,6 +21,8 @@ export function DemoLoginHint({
         {DEMO_LOGIN_HINT}
         {" · "}
         <Link to="/research" className="text-primary hover:underline">คู่มือทดสอบ</Link>
+        {" · "}
+        <UxChecklistPdfDownload variant="link" className="text-primary hover:underline" />
       </p>
       <div className="flex flex-wrap gap-2">
         {DEMO_RESEARCH_ACCOUNTS.map((acc) => (

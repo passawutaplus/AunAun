@@ -487,6 +487,7 @@
 
 ## เอกสารที่เกี่ยวข้อง
 
+- [`aplus1-ux-usability-checklist.pdf`](./aplus1-ux-usability-checklist.pdf) — เช็คลิส PDF (sync กับ `/research`) · [โหลดจาก demo](https://aplus1-demo.vercel.app/aplus1-ux-usability-checklist.pdf) · สร้างใหม่: `npm run docs:ux-checklist-pdf`
 - [`ux-demo-guide.md`](./ux-demo-guide.md) — seed demo data
 - [`demo-catalog.md`](./demo-catalog.md) — 50 บัญชี demo
 - [`qa-checklist.md`](./qa-checklist.md) — QA engineering (คนละ audience)

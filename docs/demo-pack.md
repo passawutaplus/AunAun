@@ -8,7 +8,7 @@
 
 | App | URL | คู่มือละเอียด |
 |-----|-----|---------------|
-| **Aplus1** | https://aplus1-demo.vercel.app | **[ux-research-review.md](../Anthem-Code/docs/ux-research-review.md)** — เช็คลิสครบ A–T · [/research](https://aplus1-demo.vercel.app/research) |
+| **Aplus1** | https://aplus1-demo.vercel.app | **[ux-research-review.md](../Anthem-Code/docs/ux-research-review.md)** — เช็คลิสครบ A–T · [/research](https://aplus1-demo.vercel.app/research) · [PDF checklist](https://aplus1-demo.vercel.app/aplus1-ux-usability-checklist.pdf) |
 
 > แบรนด์ **Aplus1** · production `https://aplus1.app` · demo บน Vercel
 

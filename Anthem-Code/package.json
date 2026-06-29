@@ -43,6 +43,7 @@
     "db:apply-welcome-missions": "node scripts/apply-welcome-missions.mjs",
     "db:push": "bash scripts/supabase-db-push.sh",
     "docs:feature-pdf": "node scripts/generate-feature-pdf.mjs",
+    "docs:ux-checklist-pdf": "npx tsx scripts/generate-ux-checklist-pdf.ts",
     "deploy:demo": "bash scripts/deploy-demo-vercel.sh",
     "email:icons": "node scripts/generate-email-icons.mjs",
     "email:preview": "npx tsx scripts/preview-emails.ts"

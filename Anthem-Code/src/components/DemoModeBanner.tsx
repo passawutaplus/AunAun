@@ -1,5 +1,6 @@
 import { Info } from "lucide-react";
 import { Link } from "react-router-dom";
+import UxChecklistPdfDownload from "@/components/research/UxChecklistPdfDownload";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { DEMO_BANNER_SHORT } from "@/lib/copyConstants";
 import { isDemoMode } from "@/lib/demoMode";
@@ -21,6 +22,7 @@ export default function DemoModeBanner() {
       <Link to="/research" className="text-primary font-medium hover:underline whitespace-nowrap">
         คู่มือทดสอบ
       </Link>
+      <UxChecklistPdfDownload variant="link" />
       <Link to="/auth" className="text-primary font-medium hover:underline whitespace-nowrap">
         เข้าสู่ระบบ
       </Link>

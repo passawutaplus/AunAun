@@ -27,6 +27,7 @@
 4. `UX_UI_RULES.md` - design/UX rules สำหรับงานหน้าเว็บ
 5. `RELEASE_CHECKLIST.md` - checklist ก่อน push/merge/deploy
 6. `SCALING_READINESS_SKILL.md` - playbook รองรับผู้ใช้/ข้อมูล/traffic เพิ่มขึ้น
+7. `CURSOR_LOOP_PLAYBOOK.md` - สูตร `/loop` เฝ้า CI, deploy, migration, smoke
 
 ## Anthem Skills
 
