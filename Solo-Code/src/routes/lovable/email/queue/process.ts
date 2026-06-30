@@ -1,6 +1,12 @@
 import { sendLovableEmail } from "@lovable.dev/email-js";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";
+import { isAplus1SenderDomain } from "@/lib/email/aplus1EmailConfig";
+import {
+  isResendForbidden,
+  isResendRateLimited,
+  sendResendEmail,
+} from "@/lib/email/resendSend";
 
 const MAX_RETRIES = 5;
 const DEFAULT_BATCH_SIZE = 10;
@@ -64,11 +70,12 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = process.env.LOVABLE_API_KEY;
+        const lovableApiKey = process.env.LOVABLE_API_KEY;
+        const resendApiKey = process.env.RESEND_API_KEY;
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-        if (!apiKey || !supabaseUrl || !supabaseServiceKey) {
+        if ((!lovableApiKey && !resendApiKey) || !supabaseUrl || !supabaseServiceKey) {
           console.error("Missing required environment variables");
           return Response.json({ error: "Server configuration error" }, { status: 500 });
         }
@@ -235,23 +242,58 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
             }
 
             try {
-              await sendLovableEmail(
-                {
-                  run_id: payload.run_id,
-                  to: payload.to,
-                  from: payload.from,
-                  sender_domain: payload.sender_domain,
-                  subject: payload.subject,
-                  html: payload.html,
-                  text: payload.text,
-                  purpose: payload.purpose,
-                  label: payload.label,
-                  idempotency_key: payload.idempotency_key,
-                  unsubscribe_token: payload.unsubscribe_token,
-                  message_id: payload.message_id,
-                },
-                { apiKey, sendUrl: process.env.LOVABLE_SEND_URL },
-              );
+              const useResend =
+                !!resendApiKey && isAplus1SenderDomain(payload.sender_domain as string | undefined);
+
+              if (useResend) {
+                const result = await sendResendEmail(
+                  {
+                    to: payload.to as string,
+                    from: payload.from as string,
+                    subject: payload.subject as string,
+                    html: payload.html as string,
+                    text: payload.text as string | undefined,
+                    idempotencyKey:
+                      (payload.idempotency_key as string | undefined) ||
+                      (payload.message_id as string | undefined),
+                  },
+                  resendApiKey,
+                );
+
+                if (!result.ok) {
+                  if (isResendRateLimited(result)) {
+                    throw Object.assign(new Error(result.message), { status: 429 });
+                  }
+                  if (isResendForbidden(result)) {
+                    throw Object.assign(new Error(result.message), { status: 403 });
+                  }
+                  throw new Error(result.message);
+                }
+              } else {
+                if (!lovableApiKey) {
+                  throw Object.assign(new Error("LOVABLE_API_KEY not configured for So1o email"), {
+                    status: 403,
+                  });
+                }
+
+                await sendLovableEmail(
+                  {
+                    run_id: payload.run_id,
+                    to: payload.to,
+                    from: payload.from,
+                    sender_domain: payload.sender_domain,
+                    subject: payload.subject,
+                    html: payload.html,
+                    text: payload.text,
+                    purpose: payload.purpose,
+                    label: payload.label,
+                    idempotency_key: payload.idempotency_key,
+                    unsubscribe_token: payload.unsubscribe_token,
+                    message_id: payload.message_id,
+                  },
+                  { apiKey: lovableApiKey, sendUrl: process.env.LOVABLE_SEND_URL },
+                );
+              }
 
               // Log success
               await supabase.from("email_send_log").insert({

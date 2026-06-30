@@ -21,6 +21,9 @@ const SECRET_KEYS = [
   "PAYMENTS_LIVE_WEBHOOK_SECRET",
   "PAYMENTS_SANDBOX_WEBHOOK_SECRET",
   "CRON_SECRET",
+  "RESEND_API_KEY",
+  "APLUS1_EMAIL_FROM",
+  "APLUS1_EMAIL_SENDER_DOMAIN",
 ];
 
 function loadEnv() {
@@ -45,9 +48,11 @@ if (!pairs.length) {
 }
 
 console.log(`→ Setting ${pairs.length} secrets on ${REF}`);
-const r = spawnSync(
-  "npx",
-  ["supabase", "secrets", "set", ...pairs, "--project-ref", REF],
-  { cwd: SOLO, stdio: "inherit", shell: true, env: { ...process.env, SUPABASE_ACCESS_TOKEN: env.SUPABASE_ACCESS_TOKEN } },
-);
+const cmd = `npx supabase secrets set ${pairs.map((p) => `"${p.replace(/"/g, '\\"')}"`).join(" ")} --project-ref ${REF}`;
+const r = spawnSync(cmd, {
+  cwd: SOLO,
+  stdio: "inherit",
+  shell: true,
+  env: { ...process.env, SUPABASE_ACCESS_TOKEN: env.SUPABASE_ACCESS_TOKEN },
+});
 process.exit(r.status ?? 1);

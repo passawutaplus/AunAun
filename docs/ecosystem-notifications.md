@@ -101,7 +101,19 @@ npm run email:icons    # generate icons
 npm run email:preview  # → email-previews/
 ```
 
-Brand/email domain: `1px.app` / `notify.1px.app` (ไม่ใช่ app URL หลัก)
+Brand/email domain: `aplus1.app` / `notify.aplus1.app`
+
+### Aplus1 email (Resend)
+
+Aplus1 ใช้ **Resend** แยกจาก So1o/Lovable:
+
+| ประเภท | ทางส่ง |
+|--------|--------|
+| Auth (signup, recovery) | Auth hook → Resend โดยตรง (หรือ queue fallback) |
+| Notification (hire, chat, gift) | Edge `notify-anthem*` → Resend โดยตรง (หรือ queue fallback) |
+| Queue retry | `queue/process` ใช้ Resend เมื่อ `sender_domain` = `notify.aplus1.app` |
+
+So1o ยังใช้ Lovable (`notify.solofreelancer.com`) ตามเดิม
 
 ---
 
@@ -196,10 +208,13 @@ Dedupe: `email_send_log` RPC
 
 | Variable | ใช้ที่ | หมายเหตุ |
 |----------|--------|----------|
-| `LOVABLE_API_KEY` | So1o server | ส่ง email จริง |
+| `LOVABLE_API_KEY` | So1o server | ส่ง email So1o + verify auth webhook |
+| `RESEND_API_KEY` | So1o server + Edge | ส่ง email Aplus1 (`notify.aplus1.app`) |
+| `APLUS1_EMAIL_FROM` | So1o + Edge | เช่น `Aplus1 <noreply@aplus1.app>` |
+| `APLUS1_EMAIL_SENDER_DOMAIN` | Edge | `notify.aplus1.app` |
 | `ANTHEM_APP_URL` | Edge | default `https://aplus1.app` (prod) |
-| `ANTHEM_EMAIL_FROM` | Edge | เช่น `1PX <noreply@1px.app>` |
-| `ANTHEM_EMAIL_SENDER_DOMAIN` | Edge | `notify.1px.app` |
+| `ANTHEM_EMAIL_FROM` | Edge | fallback ถ้าไม่ตั้ง APLUS1_* |
+| `ANTHEM_EMAIL_SENDER_DOMAIN` | Edge | fallback `notify.aplus1.app` |
 | `VITE_LINE_CHANNEL_ID` | Client | จากช่อง LINE Login |
 | `LINE_CHANNEL_SECRET` | Edge `line-connect` | จากช่อง LINE Login |
 | `LINE_CHANNEL_ACCESS_TOKEN` | Edge | จาก Messaging API |

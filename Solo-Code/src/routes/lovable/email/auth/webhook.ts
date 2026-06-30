@@ -13,11 +13,16 @@ import { ReauthenticationEmail } from "@/lib/email-templates/reauthentication";
 import { SITE_NAME, SITE_URL } from "@/lib/siteUrl";
 import { resolveAuthEmailBrand } from "@/lib/email/authBrand";
 import {
+  APLUS1_EMAIL_FROM,
+  APLUS1_SENDER_DOMAIN,
+} from "@/lib/email/aplus1EmailConfig";
+import {
   ANTHEM_AUTH_SUBJECTS,
   ANTHEM_EMAIL_TEMPLATES,
   ANTHEM_SITE_NAME,
   ANTHEM_SITE_URL,
 } from "@/lib/email/anthemAuthTemplates";
+import { sendResendEmail } from "@/lib/email/resendSend";
 
 const SOLO_EMAIL_SUBJECTS: Record<string, string> = {
   signup: "ยืนยันอีเมลของคุณ — So1o",
@@ -117,6 +122,12 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
         const siteName = brand === "anthem" ? ANTHEM_SITE_NAME : SITE_NAME;
         const siteUrl = brand === "anthem" ? ANTHEM_SITE_URL : SITE_URL;
         const fromName = brand === "anthem" ? ANTHEM_SITE_NAME : SITE_NAME;
+        const fromAddress =
+          brand === "anthem"
+            ? APLUS1_EMAIL_FROM
+            : `${fromName} <noreply@${FROM_DOMAIN}>`;
+        const senderDomain = brand === "anthem" ? APLUS1_SENDER_DOMAIN : SENDER_DOMAIN;
+        const subject = subjects[emailType] || "Notification";
 
         const EmailTemplate = templates[emailType];
         if (!EmailTemplate) {
@@ -153,6 +164,38 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
         const messageId = crypto.randomUUID();
 
+        if (brand === "anthem" && process.env.RESEND_API_KEY) {
+          const resend = await sendResendEmail({
+            to: payload.data.email,
+            from: fromAddress,
+            subject,
+            html,
+            text,
+            idempotencyKey: run_id || messageId,
+          });
+
+          if (resend.ok) {
+            await supabase.from("email_send_log").insert({
+              message_id: messageId,
+              template_name: emailType,
+              recipient_email: payload.data.email,
+              status: "sent",
+            });
+            console.log("Aplus1 auth email sent via Resend", {
+              emailType,
+              email_redacted: redactEmail(payload.data.email),
+              run_id,
+            });
+            return Response.json({ success: true, sent: true, provider: "resend" });
+          }
+
+          console.warn("Resend auth send failed, falling back to queue", {
+            emailType,
+            run_id,
+            error: resend.message,
+          });
+        }
+
         // Log pending BEFORE enqueue so we have a record even if enqueue crashes
         await supabase.from("email_send_log").insert({
           message_id: messageId,
@@ -167,9 +210,9 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
             run_id,
             message_id: messageId,
             to: payload.data.email,
-            from: `${fromName} <noreply@${FROM_DOMAIN}>`,
-            sender_domain: SENDER_DOMAIN,
-            subject: subjects[emailType] || "Notification",
+            from: fromAddress,
+            sender_domain: senderDomain,
+            subject,
             html,
             text,
             purpose: "transactional",
@@ -194,6 +237,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           emailType,
           email_redacted: redactEmail(payload.data.email),
           run_id,
+          brand,
         });
 
         return Response.json({ success: true, queued: true });

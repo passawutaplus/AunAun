@@ -4,6 +4,7 @@ import {
   renderAnthemEmail,
   type AnthemEmailTemplate,
 } from "./anthem-email-html.ts";
+import { sendResendEmail } from "./resend-send.ts";
 
 export async function enqueueAnthemNotificationEmail(
   admin: SupabaseClient,
@@ -27,6 +28,27 @@ export async function enqueueAnthemNotificationEmail(
   const { html, text, subject } = renderAnthemEmail(opts.template, opts.templateData);
   const messageId = crypto.randomUUID();
   const { from, senderDomain } = anthemEmailFrom();
+
+  if (Deno.env.get("RESEND_API_KEY")) {
+    const resend = await sendResendEmail({
+      to: normalized,
+      from,
+      subject,
+      html,
+      text,
+      idempotencyKey: opts.idempotencyKey,
+    });
+    if (resend.ok) {
+      await admin.from("email_send_log").insert({
+        message_id: messageId,
+        template_name: opts.templateName,
+        recipient_email: normalized,
+        status: "sent",
+      });
+      return { ok: true };
+    }
+    console.warn(`[${opts.label}] Resend direct send failed, falling back to queue`, resend.message);
+  }
 
   await admin.from("email_send_log").insert({
     message_id: messageId,

@@ -118,9 +118,11 @@ supabase functions deploy embed-project similar-images generate-contract \
 |--------|--------|--------|
 | `GEMINI_API_KEY` | ใช่ (AI) | Gemini functions |
 | `GEMINI_MODEL`, `GEMINI_MODEL_FAST` | optional | model override |
-| `LOVABLE_API_KEY` | ใช่ (email) | server email send |
+| `LOVABLE_API_KEY` | ใช่ (So1o email) | server email send |
+| `RESEND_API_KEY` | ใช่ (Aplus1 email) | Resend — So1o server + edge notify-* |
+| `APLUS1_EMAIL_FROM` | แนะนำ | `Aplus1 <noreply@aplus1.app>` |
+| `APLUS1_EMAIL_SENDER_DOMAIN` | แนะนำ | `notify.aplus1.app` |
 | `ANTHEM_APP_URL` | แนะนำ | notify templates (`https://aplus1.app`) |
-| `ANTHEM_EMAIL_FROM` | แนะนำ | sender header |
 | `LINE_CHANNEL_SECRET` | LINE Login | `line-connect` |
 | `LINE_CHANNEL_ACCESS_TOKEN` | Messaging API | `line-queue-process` |
 | `LINE_MESSAGING_CHANNEL_SECRET` | Messaging API | `line-webhook` |

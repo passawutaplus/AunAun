@@ -1,6 +1,7 @@
 export type AuthEmailBrand = "solo" | "anthem";
 
 const ANTHEM_HOST_PATTERNS = [
+  "aplus1.app",
   "pixel100.com",
   "1px.app",
   "1px.net",
