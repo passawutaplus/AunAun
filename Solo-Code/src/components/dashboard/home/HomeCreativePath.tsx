@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 const STEPS = [
   { key: "readDaily" as const, label: "อ่าน So1o Daily", href: null as string | null },
   { key: "drillDone" as const, label: "ทำ Design Drill", href: null },
-  { key: "labsVisited" as const, label: "ใช้ Creative Labs", href: "/labs" },
-  { key: "postedAplus1" as const, label: "แชร์ที่ Aplus1", href: null },
+  { key: "labsVisited" as const, label: "ใช้ Creative Labs", href: "/labs/creative" },
+  { key: "postedPixel100" as const, label: "แชร์ที่ Aplus1", href: null },
 ];
 
 export function HomeCreativePath() {

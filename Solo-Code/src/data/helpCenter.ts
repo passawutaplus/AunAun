@@ -21,6 +21,7 @@ export type HelpRoute =
   | "/help/quotations"
   | "/help/payments"
   | "/help/tax"
+  | "/help/labs"
   | "/help/branding"
   | "/help/plans"
   | "/help/line"
@@ -331,6 +332,14 @@ export const HELP_GUIDES: HelpGuideCard[] = [
     description: "QR PromptPay / โอน vs Stripe บนหน้า Track",
     tag: "การเงิน",
     minutes: 7,
+  },
+  {
+    to: "/help/labs",
+    icon: Sparkles,
+    title: "So1o Labs",
+    description: "ครีเอทีฟ · เอกสาร · แยกจากภาษี",
+    tag: "เครื่องมือ",
+    minutes: 6,
   },
   {
     to: "/help/tax",

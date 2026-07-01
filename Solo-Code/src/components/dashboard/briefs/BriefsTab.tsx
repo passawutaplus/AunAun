@@ -45,12 +45,14 @@ import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "sonner";
 import {
   type DesignBrief,
+  type BriefDesignDirection,
   briefShareUrl,
   briefCompleteness,
   STATUS_LABEL,
   STATUS_TONE,
   PROJECT_TYPES,
   MOOD_OPTIONS,
+  sanitizeBriefDesignDirection,
 } from "@/lib/briefSchema";
 import { ReferenceUploader } from "./ReferenceUploader";
 import { AiAnalysisSheet } from "./AiAnalysisSheet";
@@ -63,9 +65,16 @@ import { ConfirmBriefDialog } from "./ConfirmBriefDialog";
 import { AiImageToBriefButton } from "./AiImageToBriefButton";
 import { QuickCapturePanel } from "./QuickCapturePanel";
 import { ClientBrandAssetsField } from "./ClientBrandAssetsField";
+import { DesignLinksField } from "./DesignLinksField";
 import { mergeFieldClass } from "@/lib/formFieldStyles";
 import { consumeOpenBriefMode } from "@/lib/pipelineNewDeal";
 import { consumeLabsPaletteHandoff } from "@/lib/labsPaletteHandoff";
+import {
+  consumeCreativeLabHandoff,
+  consumeOpenBriefId,
+  CREATIVE_LAB_HANDOFF_EVENT,
+} from "@/lib/creativeLabHandoff";
+import { mergeCreativeHandoffIntoDirection } from "@/lib/mergeCreativeHandoff";
 import { normalizeHexArray } from "@/lib/colorUtils";
 import { PageFooterActions } from "@/components/dashboard/PageFooterActions";
 
@@ -80,11 +89,12 @@ function rowToBrief(r: any): DesignBrief {
     client_info: r.client_info ?? {},
     project_overview: r.project_overview ?? {},
     audience: r.audience ?? {},
-    design_direction: r.design_direction ?? { moods: [] },
+    design_direction: sanitizeBriefDesignDirection(r.design_direction ?? { moods: [] }),
     tech_specs: r.tech_specs ?? { formats: [] },
     timeline_budget: r.timeline_budget ?? {},
     notes: r.notes ?? "",
     references: r.references ?? [],
+    design_links: r.design_links ?? (r.design_direction as { design_links?: DesignBrief["design_links"] })?.design_links ?? [],
     ai_analysis: r.ai_analysis,
     confirmed_at: r.confirmed_at,
     confirmed_by_name: r.confirmed_by_name,
@@ -158,6 +168,79 @@ export function BriefsTab() {
       toast.success(`สร้างบรีฟพร้อม ${hexes.length} สีจาก Labs แล้ว`);
     })();
   }, [user]);
+
+  const applyCreativeHandoff = React.useCallback(async () => {
+    const handoff = consumeCreativeLabHandoff();
+    if (!handoff || !user) return;
+
+    const hexes = handoff.hexes ? normalizeHexArray(handoff.hexes) : [];
+    const hasColors = hexes.length > 0;
+    const hasFonts = !!handoff.likedFonts?.trim();
+    if (!hasColors && !hasFonts) return;
+
+    const mergePatch = (dd: BriefDesignDirection) =>
+      mergeCreativeHandoffIntoDirection(dd, { ...handoff, hexes });
+
+    if (handoff.briefId) {
+      const existing = items.find((x) => x.id === handoff.briefId);
+      const dd = existing?.design_direction ?? { moods: [] };
+      const directionPatch = mergePatch(dd);
+      const { data, error } = await supabase
+        .from("design_briefs")
+        .update({ design_direction: { ...dd, ...directionPatch } } as never)
+        .eq("id", handoff.briefId)
+        .select("*")
+        .single();
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      const b = rowToBrief(data);
+      setItems((arr) => arr.map((x) => (x.id === b.id ? b : x)));
+      setEditingId(b.id);
+      toast.success("อัปเดตบรีฟจาก Creative Labs แล้ว");
+      return;
+    }
+
+    const title =
+      handoff.paletteName?.trim() ||
+      (hasColors ? "บรีฟจาก Color Lab" : "บรีฟจาก Typography Lab");
+    const design_direction = mergePatch({ moods: [] });
+    const { data, error } = await supabase
+      .from("design_briefs")
+      .insert({
+        user_id: user.id,
+        title,
+        status: "draft",
+        design_direction,
+      } as never)
+      .select("*")
+      .single();
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const b = rowToBrief(data);
+    setItems((arr) => [b, ...arr]);
+    setEditingId(b.id);
+    toast.success("สร้างบรีฟจาก Creative Labs แล้ว");
+  }, [user, items]);
+
+  React.useEffect(() => {
+    void applyCreativeHandoff();
+  }, [applyCreativeHandoff]);
+
+  React.useEffect(() => {
+    const onHandoff = () => void applyCreativeHandoff();
+    window.addEventListener(CREATIVE_LAB_HANDOFF_EVENT, onHandoff);
+    return () => window.removeEventListener(CREATIVE_LAB_HANDOFF_EVENT, onHandoff);
+  }, [applyCreativeHandoff]);
+
+  React.useEffect(() => {
+    const openId = consumeOpenBriefId();
+    if (!openId) return;
+    if (items.some((x) => x.id === openId)) setEditingId(openId);
+  }, [items]);
 
   const create = () => {
     if (!user) {
@@ -512,7 +595,10 @@ function BriefEditor({
           client_info: b.client_info as any,
           project_overview: b.project_overview as any,
           audience: b.audience as any,
-          design_direction: b.design_direction as any,
+          design_direction: {
+            ...b.design_direction,
+            design_links: b.design_links ?? [],
+          } as any,
           tech_specs: b.tech_specs as any,
           timeline_budget: b.timeline_budget as any,
           notes: b.notes,
@@ -1087,6 +1173,14 @@ function BriefEditor({
                 }}
               />
             </div>
+          </Section>
+
+          <Section title="ลิงก์ไฟล์งาน (Figma / Canva / Adobe)">
+            <DesignLinksField
+              value={b.design_links ?? []}
+              onChange={(next) => patch({ design_links: next })}
+              disabled={locked}
+            />
           </Section>
 
           {/* Timeline & Budget */}

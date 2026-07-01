@@ -32,6 +32,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LabsIndexRouteImport } from './routes/labs.index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as VisionTokenRouteImport } from './routes/vision.$token'
 import { Route as TrackTokenRouteImport } from './routes/track.$token'
@@ -41,12 +42,15 @@ import { Route as PlannerTokenRouteImport } from './routes/planner.$token'
 import { Route as PayTokenRouteImport } from './routes/pay.$token'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as LicenseTokenRouteImport } from './routes/license.$token'
+import { Route as LabsDocRouteImport } from './routes/labs.doc'
+import { Route as LabsCreativeRouteImport } from './routes/labs.creative'
 import { Route as InhouseOrgSlugRouteImport } from './routes/inhouse.$orgSlug'
 import { Route as HelpTaxRouteImport } from './routes/help.tax'
 import { Route as HelpQuotationsRouteImport } from './routes/help.quotations'
 import { Route as HelpPlansRouteImport } from './routes/help.plans'
 import { Route as HelpPaymentsRouteImport } from './routes/help.payments'
 import { Route as HelpLineRouteImport } from './routes/help.line'
+import { Route as HelpLabsRouteImport } from './routes/help.labs'
 import { Route as HelpGettingStartedRouteImport } from './routes/help.getting-started'
 import { Route as HelpBriefRouteImport } from './routes/help.brief'
 import { Route as HelpBrandingRouteImport } from './routes/help.branding'
@@ -199,6 +203,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LabsIndexRoute = LabsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LabsRoute,
+} as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
@@ -244,6 +253,16 @@ const LicenseTokenRoute = LicenseTokenRouteImport.update({
   path: '/license/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LabsDocRoute = LabsDocRouteImport.update({
+  id: '/doc',
+  path: '/doc',
+  getParentRoute: () => LabsRoute,
+} as any)
+const LabsCreativeRoute = LabsCreativeRouteImport.update({
+  id: '/creative',
+  path: '/creative',
+  getParentRoute: () => LabsRoute,
+} as any)
 const InhouseOrgSlugRoute = InhouseOrgSlugRouteImport.update({
   id: '/$orgSlug',
   path: '/$orgSlug',
@@ -272,6 +291,11 @@ const HelpPaymentsRoute = HelpPaymentsRouteImport.update({
 const HelpLineRoute = HelpLineRouteImport.update({
   id: '/line',
   path: '/line',
+  getParentRoute: () => HelpRoute,
+} as any)
+const HelpLabsRoute = HelpLabsRouteImport.update({
+  id: '/labs',
+  path: '/labs',
   getParentRoute: () => HelpRoute,
 } as any)
 const HelpGettingStartedRoute = HelpGettingStartedRouteImport.update({
@@ -483,7 +507,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/help': typeof HelpRouteWithChildren
   '/inhouse': typeof InhouseRouteWithChildren
-  '/labs': typeof LabsRoute
+  '/labs': typeof LabsRouteWithChildren
   '/line-link': typeof LineLinkRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/maintenance': typeof MaintenanceRoute
@@ -506,12 +530,15 @@ export interface FileRoutesByFullPath {
   '/help/branding': typeof HelpBrandingRoute
   '/help/brief': typeof HelpBriefRoute
   '/help/getting-started': typeof HelpGettingStartedRoute
+  '/help/labs': typeof HelpLabsRoute
   '/help/line': typeof HelpLineRoute
   '/help/payments': typeof HelpPaymentsRoute
   '/help/plans': typeof HelpPlansRoute
   '/help/quotations': typeof HelpQuotationsRoute
   '/help/tax': typeof HelpTaxRoute
   '/inhouse/$orgSlug': typeof InhouseOrgSlugRouteWithChildren
+  '/labs/creative': typeof LabsCreativeRoute
+  '/labs/doc': typeof LabsDocRoute
   '/license/$token': typeof LicenseTokenRoute
   '/p/$slug': typeof PSlugRoute
   '/pay/$token': typeof PayTokenRoute
@@ -521,6 +548,7 @@ export interface FileRoutesByFullPath {
   '/track/$token': typeof TrackTokenRouteWithChildren
   '/vision/$token': typeof VisionTokenRoute
   '/blog/': typeof BlogIndexRoute
+  '/labs/': typeof LabsIndexRoute
   '/api/assistant/stream': typeof ApiAssistantStreamRoute
   '/api/payments/checkout': typeof ApiPaymentsCheckoutRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -559,7 +587,6 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/help': typeof HelpRouteWithChildren
   '/inhouse': typeof InhouseRouteWithChildren
-  '/labs': typeof LabsRoute
   '/line-link': typeof LineLinkRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/maintenance': typeof MaintenanceRoute
@@ -582,12 +609,15 @@ export interface FileRoutesByTo {
   '/help/branding': typeof HelpBrandingRoute
   '/help/brief': typeof HelpBriefRoute
   '/help/getting-started': typeof HelpGettingStartedRoute
+  '/help/labs': typeof HelpLabsRoute
   '/help/line': typeof HelpLineRoute
   '/help/payments': typeof HelpPaymentsRoute
   '/help/plans': typeof HelpPlansRoute
   '/help/quotations': typeof HelpQuotationsRoute
   '/help/tax': typeof HelpTaxRoute
   '/inhouse/$orgSlug': typeof InhouseOrgSlugRouteWithChildren
+  '/labs/creative': typeof LabsCreativeRoute
+  '/labs/doc': typeof LabsDocRoute
   '/license/$token': typeof LicenseTokenRoute
   '/p/$slug': typeof PSlugRoute
   '/pay/$token': typeof PayTokenRoute
@@ -597,6 +627,7 @@ export interface FileRoutesByTo {
   '/track/$token': typeof TrackTokenRouteWithChildren
   '/vision/$token': typeof VisionTokenRoute
   '/blog': typeof BlogIndexRoute
+  '/labs': typeof LabsIndexRoute
   '/api/assistant/stream': typeof ApiAssistantStreamRoute
   '/api/payments/checkout': typeof ApiPaymentsCheckoutRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -636,7 +667,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/help': typeof HelpRouteWithChildren
   '/inhouse': typeof InhouseRouteWithChildren
-  '/labs': typeof LabsRoute
+  '/labs': typeof LabsRouteWithChildren
   '/line-link': typeof LineLinkRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/maintenance': typeof MaintenanceRoute
@@ -659,12 +690,15 @@ export interface FileRoutesById {
   '/help/branding': typeof HelpBrandingRoute
   '/help/brief': typeof HelpBriefRoute
   '/help/getting-started': typeof HelpGettingStartedRoute
+  '/help/labs': typeof HelpLabsRoute
   '/help/line': typeof HelpLineRoute
   '/help/payments': typeof HelpPaymentsRoute
   '/help/plans': typeof HelpPlansRoute
   '/help/quotations': typeof HelpQuotationsRoute
   '/help/tax': typeof HelpTaxRoute
   '/inhouse/$orgSlug': typeof InhouseOrgSlugRouteWithChildren
+  '/labs/creative': typeof LabsCreativeRoute
+  '/labs/doc': typeof LabsDocRoute
   '/license/$token': typeof LicenseTokenRoute
   '/p/$slug': typeof PSlugRoute
   '/pay/$token': typeof PayTokenRoute
@@ -674,6 +708,7 @@ export interface FileRoutesById {
   '/track/$token': typeof TrackTokenRouteWithChildren
   '/vision/$token': typeof VisionTokenRoute
   '/blog/': typeof BlogIndexRoute
+  '/labs/': typeof LabsIndexRoute
   '/api/assistant/stream': typeof ApiAssistantStreamRoute
   '/api/payments/checkout': typeof ApiPaymentsCheckoutRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -737,12 +772,15 @@ export interface FileRouteTypes {
     | '/help/branding'
     | '/help/brief'
     | '/help/getting-started'
+    | '/help/labs'
     | '/help/line'
     | '/help/payments'
     | '/help/plans'
     | '/help/quotations'
     | '/help/tax'
     | '/inhouse/$orgSlug'
+    | '/labs/creative'
+    | '/labs/doc'
     | '/license/$token'
     | '/p/$slug'
     | '/pay/$token'
@@ -752,6 +790,7 @@ export interface FileRouteTypes {
     | '/track/$token'
     | '/vision/$token'
     | '/blog/'
+    | '/labs/'
     | '/api/assistant/stream'
     | '/api/payments/checkout'
     | '/api/public/csp-report'
@@ -790,7 +829,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/help'
     | '/inhouse'
-    | '/labs'
     | '/line-link'
     | '/llms.txt'
     | '/maintenance'
@@ -813,12 +851,15 @@ export interface FileRouteTypes {
     | '/help/branding'
     | '/help/brief'
     | '/help/getting-started'
+    | '/help/labs'
     | '/help/line'
     | '/help/payments'
     | '/help/plans'
     | '/help/quotations'
     | '/help/tax'
     | '/inhouse/$orgSlug'
+    | '/labs/creative'
+    | '/labs/doc'
     | '/license/$token'
     | '/p/$slug'
     | '/pay/$token'
@@ -828,6 +869,7 @@ export interface FileRouteTypes {
     | '/track/$token'
     | '/vision/$token'
     | '/blog'
+    | '/labs'
     | '/api/assistant/stream'
     | '/api/payments/checkout'
     | '/api/public/csp-report'
@@ -889,12 +931,15 @@ export interface FileRouteTypes {
     | '/help/branding'
     | '/help/brief'
     | '/help/getting-started'
+    | '/help/labs'
     | '/help/line'
     | '/help/payments'
     | '/help/plans'
     | '/help/quotations'
     | '/help/tax'
     | '/inhouse/$orgSlug'
+    | '/labs/creative'
+    | '/labs/doc'
     | '/license/$token'
     | '/p/$slug'
     | '/pay/$token'
@@ -904,6 +949,7 @@ export interface FileRouteTypes {
     | '/track/$token'
     | '/vision/$token'
     | '/blog/'
+    | '/labs/'
     | '/api/assistant/stream'
     | '/api/payments/checkout'
     | '/api/public/csp-report'
@@ -943,7 +989,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   HelpRoute: typeof HelpRouteWithChildren
   InhouseRoute: typeof InhouseRouteWithChildren
-  LabsRoute: typeof LabsRoute
+  LabsRoute: typeof LabsRouteWithChildren
   LineLinkRoute: typeof LineLinkRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   MaintenanceRoute: typeof MaintenanceRoute
@@ -1153,6 +1199,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/labs/': {
+      id: '/labs/'
+      path: '/'
+      fullPath: '/labs/'
+      preLoaderRoute: typeof LabsIndexRouteImport
+      parentRoute: typeof LabsRoute
+    }
     '/blog/': {
       id: '/blog/'
       path: '/blog'
@@ -1216,6 +1269,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LicenseTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/labs/doc': {
+      id: '/labs/doc'
+      path: '/doc'
+      fullPath: '/labs/doc'
+      preLoaderRoute: typeof LabsDocRouteImport
+      parentRoute: typeof LabsRoute
+    }
+    '/labs/creative': {
+      id: '/labs/creative'
+      path: '/creative'
+      fullPath: '/labs/creative'
+      preLoaderRoute: typeof LabsCreativeRouteImport
+      parentRoute: typeof LabsRoute
+    }
     '/inhouse/$orgSlug': {
       id: '/inhouse/$orgSlug'
       path: '/$orgSlug'
@@ -1256,6 +1323,13 @@ declare module '@tanstack/react-router' {
       path: '/line'
       fullPath: '/help/line'
       preLoaderRoute: typeof HelpLineRouteImport
+      parentRoute: typeof HelpRoute
+    }
+    '/help/labs': {
+      id: '/help/labs'
+      path: '/labs'
+      fullPath: '/help/labs'
+      preLoaderRoute: typeof HelpLabsRouteImport
       parentRoute: typeof HelpRoute
     }
     '/help/getting-started': {
@@ -1529,6 +1603,7 @@ interface HelpRouteChildren {
   HelpBrandingRoute: typeof HelpBrandingRoute
   HelpBriefRoute: typeof HelpBriefRoute
   HelpGettingStartedRoute: typeof HelpGettingStartedRoute
+  HelpLabsRoute: typeof HelpLabsRoute
   HelpLineRoute: typeof HelpLineRoute
   HelpPaymentsRoute: typeof HelpPaymentsRoute
   HelpPlansRoute: typeof HelpPlansRoute
@@ -1540,6 +1615,7 @@ const HelpRouteChildren: HelpRouteChildren = {
   HelpBrandingRoute: HelpBrandingRoute,
   HelpBriefRoute: HelpBriefRoute,
   HelpGettingStartedRoute: HelpGettingStartedRoute,
+  HelpLabsRoute: HelpLabsRoute,
   HelpLineRoute: HelpLineRoute,
   HelpPaymentsRoute: HelpPaymentsRoute,
   HelpPlansRoute: HelpPlansRoute,
@@ -1603,6 +1679,20 @@ const InhouseRouteChildren: InhouseRouteChildren = {
 const InhouseRouteWithChildren =
   InhouseRoute._addFileChildren(InhouseRouteChildren)
 
+interface LabsRouteChildren {
+  LabsCreativeRoute: typeof LabsCreativeRoute
+  LabsDocRoute: typeof LabsDocRoute
+  LabsIndexRoute: typeof LabsIndexRoute
+}
+
+const LabsRouteChildren: LabsRouteChildren = {
+  LabsCreativeRoute: LabsCreativeRoute,
+  LabsDocRoute: LabsDocRoute,
+  LabsIndexRoute: LabsIndexRoute,
+}
+
+const LabsRouteWithChildren = LabsRoute._addFileChildren(LabsRouteChildren)
+
 interface TrackTokenRouteChildren {
   TrackTokenCheckoutRoute: typeof TrackTokenCheckoutRoute
 }
@@ -1625,7 +1715,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   HelpRoute: HelpRouteWithChildren,
   InhouseRoute: InhouseRouteWithChildren,
-  LabsRoute: LabsRoute,
+  LabsRoute: LabsRouteWithChildren,
   LineLinkRoute: LineLinkRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
   MaintenanceRoute: MaintenanceRoute,

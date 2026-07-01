@@ -53,6 +53,8 @@ const FORM_TYPE_OPTIONS: Array<{ value: WhtFormType; label: string }> = [
 
 export type WhtDraft = {
   fileUrl: string;
+  /** Storage path in wht-certificates bucket */
+  storagePath?: string;
   /** Local blob URL — displays reliably in modal preview */
   previewUrl?: string;
   fileName: string;
@@ -80,11 +82,13 @@ export function whtDraftFromScan(
   mimeType: string,
   scan: WhtScanResult,
   previewUrl?: string,
+  storagePath?: string,
 ): WhtDraft {
   const issueDate = parseThaiDate(scan.issueDate) || new Date().toISOString().slice(0, 10);
   const inferredRate = scan.whtRate || inferWhtRate(scan.grossAmount, scan.whtAmount) || 3;
   return {
     fileUrl,
+    storagePath,
     previewUrl,
     fileName,
     mimeType,

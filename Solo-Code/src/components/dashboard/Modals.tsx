@@ -396,6 +396,7 @@ export function AddIncomeModal({
   const [whtRate, setWhtRate] = React.useState<string>("3");
   const [certificateNo, setCertificateNo] = React.useState("");
   const [certificateReceived, setCertificateReceived] = React.useState(false);
+  const [certificateStoragePath, setCertificateStoragePath] = React.useState<string | undefined>();
   const [note, setNote] = React.useState("");
 
   // Auto-suggest WHT rate when type changes (only if user hasn't customised)
@@ -412,6 +413,7 @@ export function AddIncomeModal({
     setGross("");
     setCertificateNo("");
     setCertificateReceived(false);
+    setCertificateStoragePath(undefined);
     setNote("");
     setIncomeType("freelance");
     setWhtRate("3");
@@ -425,6 +427,7 @@ export function AddIncomeModal({
     if (result.whtRate) setWhtRate(result.whtRate);
     if (result.note) setNote(result.note);
     if (result.certificateReceived) setCertificateReceived(true);
+    if (result.certificateStoragePath) setCertificateStoragePath(result.certificateStoragePath);
     if (result.incomeType) setIncomeType(result.incomeType);
   }
 
@@ -450,6 +453,7 @@ export function AddIncomeModal({
       whtRate: parsed.whtRate,
       certificateNo: parsed.certificateNo || undefined,
       certificateReceived: parsed.certificateReceived,
+      certificateStoragePath,
       note: parsed.note || undefined,
     });
     toast.success("บันทึกรายได้เรียบร้อย");

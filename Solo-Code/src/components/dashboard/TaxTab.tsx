@@ -30,8 +30,7 @@ import { TaxBracketGauge, AiTaxInsight } from "./tax/TaxBracketGauge";
 import { TaxDisclaimer, TaxFilingReminder } from "./tax/TaxDisclaimer";
 import { TaxSimulator } from "./tax/TaxSimulator";
 import { TaxWorkflowGuide } from "./tax/TaxWorkflowGuide";
-import { exportAccountantPackage } from "./tax/exportAccountantPackage";
-import { useAuth } from "@/auth/AuthProvider";
+import { AccountantPackDialog } from "./tax/AccountantPackDialog";
 
 const WHTCertificates = React.lazy(() =>
   import("./tax/WHTCertificates").then((m) => ({ default: m.WHTCertificates })),
@@ -63,8 +62,8 @@ export function TaxTab({ onNavigate, onSubChange }: Props) {
     activeDeductions,
   } = useTaxEstimate();
   const [simOpen, setSimOpen] = React.useState(false);
+  const [packOpen, setPackOpen] = React.useState(false);
   const { list: quotations } = useQuotations();
-  const { profile } = useAuth();
   const closedDeals = quotations.filter((q) => q.status === "completed").length;
   const taxYear = new Date().getFullYear();
 
@@ -76,15 +75,7 @@ export function TaxTab({ onNavigate, onSubChange }: Props) {
     export: false,
   };
 
-  const handleAccountantExport = () => {
-    exportAccountantPackage({
-      year: taxYear,
-      incomes,
-      est,
-      expenseMethod,
-      brandName: profile?.brand_name ?? profile?.display_name ?? undefined,
-    });
-  };
+  const handleAccountantExport = () => setPackOpen(true);
 
   const gaugeAngle = (vatPct / 100) * 180;
 
@@ -174,6 +165,25 @@ export function TaxTab({ onNavigate, onSubChange }: Props) {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="animate-fade-up lg:col-span-2 border-primary/20">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between gap-3 flex-wrap">
+            <div>
+              <CardTitle className="text-base">เอกสารภาษี</CardTitle>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                เก็บใบ 50ทวิ · รวมชุดส่งนักบัญชี ZIP คลิกเดียว
+              </p>
+            </div>
+            <Button size="sm" className="gap-1.5 shrink-0" onClick={handleAccountantExport}>
+              <Download className="h-3.5 w-3.5" /> ส่งนักบัญชี
+            </Button>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <React.Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-muted/40" />}>
+              <WHTCertificates />
+            </React.Suspense>
+          </CardContent>
+        </Card>
+
         <Card className="animate-fade-up">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">เกณฑ์ VAT (1.8M บาท/ปี)</CardTitle>
@@ -216,10 +226,6 @@ export function TaxTab({ onNavigate, onSubChange }: Props) {
             )}
           </CardContent>
         </Card>
-
-        <React.Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-muted/40" />}>
-          <WHTCertificates />
-        </React.Suspense>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -391,7 +397,7 @@ export function TaxTab({ onNavigate, onSubChange }: Props) {
                 <Download className="h-3.5 w-3.5" /> Export CSV (รายได้)
               </Button>
               <Button onClick={handleAccountantExport} className="w-full gap-1.5" size="sm">
-                <Download className="h-3.5 w-3.5" /> ส่งนักบัญชี (สรุป + CSV)
+                <Download className="h-3.5 w-3.5" /> ส่งนักบัญชี (ZIP)
               </Button>
             </div>
           </CardContent>
@@ -401,6 +407,7 @@ export function TaxTab({ onNavigate, onSubChange }: Props) {
       <DeductionsPanel totalIncome={est.totalGross} />
       <PageFooterActions feature="tax" label="ภาษี" />
       <TaxSimulator open={simOpen} onOpenChange={setSimOpen} currentIncome={est.totalGross} />
+      <AccountantPackDialog open={packOpen} onOpenChange={setPackOpen} />
     </div>
   );
 }

@@ -98,6 +98,13 @@
 - [ ] Image lazy load below the fold
 - [ ] Click → response < 200ms (INP)
 
+## So1o Labs & Back-office
+
+- [ ] **Creative Labs** — ส่งสี/ฟอนต์เข้าบรีฟ · Export ASE/tokens · ลิงก์ไฟล์งานใน Brief
+- [ ] **Doc Lab** — wizard 3 ขั้น · watermark · ส่งชุดส่งลูกค้า (หลายไฟล์ได้)
+- [ ] **Client Pack** — pre-flight checklist · ZIP มี quotation.pdf
+- [ ] **ภาษี** — 50ทวิ thumbnail · ชุดนักบัญชี ZIP size estimate · แยกจาก Doc Lab
+
 ## Data integrity
 
 - [ ] สร้าง record ใหม่ → refresh page → ยังอยู่

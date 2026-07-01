@@ -59,6 +59,14 @@ export interface BriefDesignDirection {
   inspiration?: string;
 }
 
+export type DesignLinkTool = "figma" | "canva" | "adobe" | "drive" | "other";
+
+export interface BriefDesignLink {
+  tool: DesignLinkTool;
+  label: string;
+  url: string;
+}
+
 export interface BriefTechSpecs {
   formats?: string[]; // .AI .PNG .PDF .SVG
   size?: string;
@@ -111,6 +119,7 @@ export interface DesignBrief {
   timeline_budget: BriefTimelineBudget;
   notes: string;
   references: BriefReference[];
+  design_links?: BriefDesignLink[];
   ai_analysis?: BriefAiAnalysis | null;
   confirmed_at?: string | null;
   confirmed_by_name?: string | null;

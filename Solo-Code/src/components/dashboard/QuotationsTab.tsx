@@ -45,6 +45,7 @@ import {
   consumeAnthemQuotationHandoff,
   consumeStudioQuotationHandoff,
 } from "@/lib/ecosystemHandoff";
+import { DOC_LAB_HANDOFF_KEY, OPEN_CLIENT_PACK_KEY } from "@/lib/docLabHandoff";
 import type { IssuerSnapshot } from "@/lib/quotationKinds";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/auth/AuthProvider";
@@ -76,6 +77,19 @@ export function QuotationsTab() {
   const [studioUpgradeOpen, setStudioUpgradeOpen] = React.useState(false);
   const openIdConsumedRef = React.useRef(false);
   const listLoaded = React.useRef(false);
+
+  React.useEffect(() => {
+    if (editingId) return;
+    try {
+      const hasHandoff = sessionStorage.getItem(DOC_LAB_HANDOFF_KEY);
+      const wantsPack = sessionStorage.getItem(OPEN_CLIENT_PACK_KEY) === "1";
+      if (hasHandoff && wantsPack) {
+        toast.info("เลือกใบเสนอราคา — ไฟล์จาก Doc Lab จะแนบเมื่อเปิดชุดส่งลูกค้า");
+      }
+    } catch {
+      /* noop */
+    }
+  }, [editingId]);
 
   React.useEffect(() => {
     if (!editingId) return;

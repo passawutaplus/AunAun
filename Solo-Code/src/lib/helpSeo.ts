@@ -31,6 +31,11 @@ export const HELP_GUIDE_SEO = {
     description:
       "คู่มือภาษีสำหรับฟรีแลนซ์ไทย — บันทึกรายได้ ใบ 50ทวิ หักค่าใช้จ่าย ประมาณการ และส่งนักบัญชี",
   },
+  "/help/labs": {
+    title: "คู่มือ So1o Labs",
+    description:
+      "ครีเอทีฟ เอกสาร และการแยกจากภาษี — ส่งเข้าบรีฟ ชุดส่งลูกค้า และชุดนักบัญชี",
+  },
   "/help/branding": {
     title: "ธีมเอกสาร & Portal — White-label Pro",
     description: "ปรับสี PDF ใบเสนอราคา badge So1o และหน้า Track/Brief ลูกค้า — Settings ธีมเอกสาร",

@@ -69,6 +69,7 @@ export function rowToIncome(r: IncomeRow): IncomeRecord {
   const meta = (r.meta ?? {}) as {
     whtRate?: number;
     certificateNo?: string;
+    certificateStoragePath?: string;
     note?: string;
     incomeType?: IncomeType;
   };
@@ -82,6 +83,7 @@ export function rowToIncome(r: IncomeRow): IncomeRecord {
     whtRate: meta.whtRate,
     certificateNo: meta.certificateNo,
     certificateReceived: r.has_certificate,
+    certificateStoragePath: meta.certificateStoragePath,
     note: meta.note,
     sourceQuotationId: r.source_quotation_id ?? undefined,
   };
@@ -91,6 +93,7 @@ export function incomeToRow(rec: IncomeRecord, userId: string) {
   const meta: Record<string, Json> = {};
   if (rec.whtRate !== undefined) meta.whtRate = rec.whtRate;
   if (rec.certificateNo) meta.certificateNo = rec.certificateNo;
+  if (rec.certificateStoragePath) meta.certificateStoragePath = rec.certificateStoragePath;
   if (rec.note) meta.note = rec.note;
   if (rec.incomeType) meta.incomeType = rec.incomeType;
   return {

@@ -152,19 +152,19 @@ export function ColorLabInline({
         <Tabs defaultValue="picker" className="w-full">
           <TabsList className="grid grid-cols-2 sm:grid-cols-5 w-full h-auto gap-1">
             <TabsTrigger value="picker" className="gap-1.5 text-xs">
-              <Palette className="h-3.5 w-3.5" /> Picker
+              <Palette className="h-3.5 w-3.5" /> เลือกสี
             </TabsTrigger>
             <TabsTrigger value="harmony" className="gap-1.5 text-xs">
-              <Wand2 className="h-3.5 w-3.5" /> Harmony
+              <Wand2 className="h-3.5 w-3.5" /> ชุดสี
             </TabsTrigger>
             <TabsTrigger value="gradient" className="gap-1.5 text-xs">
-              <Sparkles className="h-3.5 w-3.5" /> Gradient
+              <Sparkles className="h-3.5 w-3.5" /> ไล่สี
             </TabsTrigger>
             <TabsTrigger value="blindness" className="gap-1.5 text-xs">
-              <Eye className="h-3.5 w-3.5" /> Color Blindness
+              <Eye className="h-3.5 w-3.5" /> ตาบอดสี
             </TabsTrigger>
             <TabsTrigger value="from-image" className="gap-1.5 text-xs">
-              <ImageIcon className="h-3.5 w-3.5" /> From Image
+              <ImageIcon className="h-3.5 w-3.5" /> จากรูป
             </TabsTrigger>
           </TabsList>
 

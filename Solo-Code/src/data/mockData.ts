@@ -131,6 +131,8 @@ export type IncomeRecord = {
   certificateNo?: string;
   /** ได้รับใบ 50 ทวิ จากลูกค้าแล้วหรือยัง */
   certificateReceived?: boolean;
+  /** Storage path ใน bucket wht-certificates */
+  certificateStoragePath?: string;
   /** หมายเหตุ */
   note?: string;
   /** id ของใบเสนอราคาที่สร้างรายได้นี้ (กรณีมา auto-sync) */

@@ -10,12 +10,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { scanWhtCertificate } from "@/lib/whtScan.functions";
 import { formatTHB, INCOME_TYPE_META, type IncomeType } from "@/data/mockData";
-import { FileText, CheckCircle2, AlertTriangle, Search, Download } from "lucide-react";
+import { FileText, CheckCircle2, AlertTriangle, Search, Download, Scissors } from "lucide-react";
 import { escapeCSV } from "@/lib/security";
 import { toast } from "sonner";
 import { WhtDropzone } from "./WhtDropzone";
 import { WhtScanVerifyDialog, whtDraftFromScan, type WhtDraft } from "./WhtScanVerifyDialog";
+import { WhtPageToolsDialog } from "./WhtPageToolsDialog";
 import { compressImageFile, dataUrlToBlob } from "@/lib/imageCompress";
+import type { IncomeRecord } from "@/data/mockData";
 
 const SIGNED_URL_TTL_SEC = 60 * 60;
 
@@ -37,6 +39,8 @@ export function WHTCertificates() {
   const [verifyOpen, setVerifyOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [progress, setProgress] = React.useState<{ current: number; total: number } | null>(null);
+  const [pageToolsIncome, setPageToolsIncome] = React.useState<IncomeRecord | null>(null);
+  const [pageToolsOpen, setPageToolsOpen] = React.useState(false);
 
   function handleDraftChange(index: number, draft: WhtDraft) {
     setDrafts((prev) => {
@@ -84,13 +88,16 @@ export function WHTCertificates() {
 
           try {
             const scan = await scanFn({ data: { storagePath: path, mimeType: contentType } });
-            newDrafts.push(whtDraftFromScan(signed.signedUrl, f.name, contentType, scan, previewUrl));
+            newDrafts.push(
+              whtDraftFromScan(signed.signedUrl, f.name, contentType, scan, previewUrl, path),
+            );
             okCount++;
           } catch (e) {
             failCount++;
             const msg = e instanceof Error ? e.message : "AI อ่านไม่สำเร็จ";
             newDrafts.push({
               fileUrl: signed.signedUrl,
+              storagePath: path,
               previewUrl,
               fileName: f.name,
               mimeType: contentType,
@@ -146,6 +153,7 @@ export function WHTCertificates() {
       whtRate: d.whtRate,
       certificateNo: d.certificateNo,
       certificateReceived: true,
+      certificateStoragePath: d.storagePath,
       note: noteParts.join(" · "),
     });
     toast.success(`บันทึก ${d.payerName} แล้ว`);
@@ -269,6 +277,11 @@ export function WHTCertificates() {
           onConfirm={handleConfirm}
           onSkip={handleSkip}
         />
+        <WhtPageToolsDialog
+          income={pageToolsIncome}
+          open={pageToolsOpen}
+          onOpenChange={setPageToolsOpen}
+        />
 
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative flex-1 min-w-[180px]">
@@ -337,6 +350,21 @@ export function WHTCertificates() {
                     checked={!!i.certificateReceived}
                     onCheckedChange={(v) => updateIncome(i.id, { certificateReceived: v })}
                   />
+                  {i.certificateStoragePath?.toLowerCase().endsWith(".pdf") && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 shrink-0"
+                      title="แยก/หมุนหน้า PDF"
+                      onClick={() => {
+                        setPageToolsIncome(i);
+                        setPageToolsOpen(true);
+                      }}
+                    >
+                      <Scissors className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </div>
               );
             })

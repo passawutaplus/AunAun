@@ -30,6 +30,7 @@ import {
   Coins,
   PenLine,
   Users,
+  Send,
 } from "lucide-react";
 import { StickyToolbar, type ToolbarAction } from "../shared/StickyToolbar";
 import { SettingsPanel } from "./SettingsPanel";
@@ -48,6 +49,9 @@ import {
 } from "./QuotationExportOptionsDialog";
 import { ShareTrackerDialog } from "./ShareTrackerDialog";
 import { ShareSignLinkDialog } from "./ShareSignLinkDialog";
+import { ClientPackDialog } from "./ClientPackDialog";
+import { consumeOpenClientPackRequest } from "@/lib/docLabHandoff";
+import { exportElementToPdfBlob } from "@/lib/printPdf";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "sonner";
@@ -84,12 +88,33 @@ export function QuotationEditor({ id, onBack }: Props) {
 
   const [shareOpen, setShareOpen] = React.useState(false);
   const [signShareOpen, setSignShareOpen] = React.useState(false);
+  const [clientPackOpen, setClientPackOpen] = React.useState(false);
   const [shareInfo, setShareInfo] = React.useState<{
     share_token: string;
     tracking_code: string;
     isNew: boolean;
   } | null>(null);
   const [creatingTracker, setCreatingTracker] = React.useState(false);
+  const pdfCaptureRef = React.useRef<HTMLDivElement>(null);
+
+  const captureQuotationPdf = React.useCallback(async (): Promise<Blob | null> => {
+    const el = pdfCaptureRef.current;
+    if (!el || !q) return null;
+    await new Promise((r) => setTimeout(r, 350));
+    try {
+      return await exportElementToPdfBlob(el);
+    } catch {
+      toast.error("สร้าง PDF ไม่สำเร็จ");
+      return null;
+    }
+  }, [q]);
+
+  React.useEffect(() => {
+    if (!q) return;
+    if (consumeOpenClientPackRequest()) {
+      setClientPackOpen(true);
+    }
+  }, [q?.id]);
 
   // Document kind shown in preview/print → derived from current status
   const docKind: DocKind = React.useMemo(() => {
@@ -377,6 +402,13 @@ export function QuotationEditor({ id, onBack }: Props) {
     });
   }
   primaryActions.push({
+    label: "ส่งลูกค้า",
+    onClick: () => setClientPackOpen(true),
+    icon: <Send className="h-4 w-4" />,
+    variant: "secondary",
+    title: "รวมไฟล์ชุดส่งลูกค้า ZIP + คัดลอกข้อความ Line",
+  });
+  primaryActions.push({
     label: "บันทึก PDF",
     onClick: handlePrint,
     icon: <Download className="h-4 w-4" />,
@@ -651,6 +683,25 @@ export function QuotationEditor({ id, onBack }: Props) {
           clientEmail={q.clientEmail}
         />
       )}
+
+      <ClientPackDialog
+        q={q}
+        open={clientPackOpen}
+        onOpenChange={setClientPackOpen}
+        onExportPdf={handlePrint}
+        onCaptureQuotationPdf={captureQuotationPdf}
+        trackUrl={
+          shareInfo
+            ? `${typeof window !== "undefined" ? window.location.origin : ""}/track/${shareInfo.share_token}`
+            : undefined
+        }
+      />
+
+      <div className="fixed -left-[10000px] top-0 w-[800px] pointer-events-none" aria-hidden>
+        <div ref={pdfCaptureRef} data-pdf-export-root className="bg-white">
+          <PreviewPanel q={q} docKind={docKind} showTimelineSection={false} />
+        </div>
+      </div>
     </div>
   );
 }

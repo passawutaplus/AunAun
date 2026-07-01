@@ -16,6 +16,7 @@ export type IncomeWhtAiResult = {
   whtRate: string;
   note: string;
   certificateReceived: boolean;
+  certificateStoragePath?: string;
   incomeType?: IncomeType;
   summary: string;
 };
@@ -101,6 +102,7 @@ export function IncomeWhtAiZone({ onApply, className }: Props) {
         whtRate,
         note: noteParts.join(" · ").slice(0, 200),
         certificateReceived: !!scan.certificateNo,
+        certificateStoragePath: path,
         incomeType: mapSectionToType(scan.incomeSection),
         summary: summary || "อ่านใบ 50 ทวิแล้ว — ตรวจสอบข้อมูลก่อนบันทึก",
       };

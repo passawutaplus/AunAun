@@ -261,6 +261,12 @@ export const BriefPdfTemplate = React.forwardRef<HTMLDivElement, Props>(function
           }
         />
         <Row label="ฟอนต์ที่ชอบ" value={dd.liked_fonts} />
+        {(brief.design_links?.length ?? 0) > 0 && (
+          <Row
+            label="ลิงก์ไฟล์งาน"
+            value={brief.design_links!.map((l) => `${l.label}: ${l.url}`).join("\n")}
+          />
+        )}
         <Row label="แรงบันดาลใจ" value={dd.inspiration} />
       </Section>
 

@@ -50,7 +50,7 @@ const STEPS = [
     id: "export",
     icon: Send,
     title: "5. ส่งนักบัญชี",
-    desc: "Export ชุดข้อมูล CSV + สรุปให้ส่งต่อยื่น ภงด.90/91",
+    desc: "ดาวน์โหลด ZIP รวมสรุป CSV ใบ 50ทวิ และใบเสร็จ — คัดลอกข้อความส่ง Line ได้",
     action: null,
     tip: "Export ต้นเดือน 3–4 ก่อนกำหนดยื่นภาษี",
   },

@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Copy, Type } from "lucide-react";
+import { Copy, Type, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 type FontPair = {
@@ -96,7 +96,7 @@ function loadGoogleFonts(query: string) {
   if (link.href !== href) link.href = href;
 }
 
-export function TypographyLab() {
+export function TypographyLab({ onSendToBrief }: { onSendToBrief?: (fontsLine: string) => void }) {
   const [pairId, setPairId] = React.useState(FONT_PAIRS[0].id);
   const [basePx, setBasePx] = React.useState(16);
   const [ratioId, setRatioId] = React.useState("1.25");
@@ -154,6 +154,20 @@ export function TypographyLab() {
         <Button type="button" variant="outline" size="sm" className="gap-1.5 rounded-xl" onClick={copyCss}>
           <Copy className="h-3.5 w-3.5" /> คัดลอก CSS
         </Button>
+        {onSendToBrief && (
+          <Button
+            type="button"
+            size="sm"
+            className="gap-1.5 rounded-xl"
+            onClick={() => {
+              const link = `https://fonts.googleapis.com/css2?family=${pair.googleQuery}&display=swap`;
+              const line = `${pair.label}\n${link}\nScale: ${ratioId} · body ${basePx}px`;
+              onSendToBrief(line);
+            }}
+          >
+            <FileText className="h-3.5 w-3.5" /> ส่งฟอนต์เข้าบรีฟ
+          </Button>
+        )}
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">

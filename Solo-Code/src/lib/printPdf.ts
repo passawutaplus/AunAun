@@ -222,3 +222,58 @@ export async function exportElementToPdfA4(element: HTMLElement, filename: strin
     restoreImages();
   }
 }
+
+/** Same as exportElementToPdfA4 but returns a Blob for ZIP bundling. */
+export async function exportElementToPdfBlob(element: HTMLElement): Promise<Blob> {
+  const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+    import("html2canvas"),
+    import("jspdf"),
+  ]);
+
+  const restoreImages = preparePrintImages(element);
+
+  try {
+    const canvas = await html2canvas(element, {
+      scale: Math.min(2, window.devicePixelRatio > 1 ? 2 : 1.5),
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      logging: false,
+      allowTaint: false,
+      onclone: (doc, clone) => {
+        const root = clone.querySelector("[data-pdf-export-root]") ?? doc.body;
+        if (root instanceof HTMLElement) {
+          root.style.transform = "none";
+          root.style.maxHeight = "none";
+          root.style.overflow = "visible";
+        }
+      },
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 8;
+    const contentW = pageW - margin * 2;
+    const contentH = pageH - margin * 2;
+
+    const imgWidth = contentW;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight;
+    let position = margin;
+
+    pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+    heightLeft -= contentH;
+
+    while (heightLeft > 0) {
+      position = margin - (imgHeight - heightLeft);
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+      heightLeft -= contentH;
+    }
+
+    return pdf.output("blob");
+  } finally {
+    restoreImages();
+  }
+}
