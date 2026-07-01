@@ -59,6 +59,7 @@ import { useTrackActivity } from "@/hooks/useTrackActivity";
 import { useLogActivity } from "@/hooks/useLogActivity";
 import { useDailyTrendsPrefetch } from "@/hooks/useDailyTrendsPrefetch";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
+import { useProductTourOptional, ProductTourHeaderButton } from "@/components/dashboard/ProductTourProvider";
 import logoUrl from "@/assets/solo-freelancer-logo.webp";
 
 const untypedSupabase = supabase as unknown as {
@@ -156,6 +157,7 @@ const DEFAULT_SUBS: Record<DashSection, string | undefined> = {
 
 function Dashboard() {
   const { profile, user } = useAuth();
+  const productTour = useProductTourOptional();
   const [section, setSection] = React.useState<DashSection>(() => {
     if (typeof window === "undefined") return "overview";
     return parseDashSection(new URLSearchParams(window.location.search).get("tab"));
@@ -324,6 +326,14 @@ function Dashboard() {
     })();
   }, [updateSection, user?.id]);
 
+  React.useEffect(() => {
+    if (!productTour) return;
+    productTour.registerDashboardNavigator((tab, sub) =>
+      updateSection(tab as DashSection, sub),
+    );
+    return () => productTour.registerDashboardNavigator(null);
+  }, [productTour, updateSection]);
+
   return (
     <FinanceProvider>
       <OnboardingFlow />
@@ -353,6 +363,7 @@ function Dashboard() {
                     variant="header-icon"
                     onNavigate={(tab, sub) => updateSection(tab as DashSection, sub)}
                   />
+                  <ProductTourHeaderButton />
                   <Link
                     to="/labs"
                     className="inline-flex items-center gap-1.5 rounded-full bg-gradient-primary text-primary-foreground px-3 py-1.5 text-xs font-semibold border border-primary/30 shadow-soft hover:shadow-elevated hover:-translate-y-0.5 transition-all"

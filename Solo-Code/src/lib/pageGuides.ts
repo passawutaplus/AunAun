@@ -9,11 +9,22 @@ export type PageGuide = {
 };
 
 export const PAGE_GUIDES: Record<string, PageGuide> = {
+  home: {
+    title: "Home",
+    summary: "แรงบันดาลใจ ข่าวเทรนด์ และทางลัดไปงานสร้างสรรค์",
+    tourOrder: 0,
+    nextPage: "ภาพรวม Dashboard",
+    steps: [
+      "ดู Inspire board และไอเดียงานใหม่",
+      "อ่านข่าว/เทรนด์ดีไซน์ประจำวัน",
+      "กระโดดไป Pipeline หรือ Brief เมื่อมีไอเดีย",
+    ],
+  },
   overview: {
     title: "ภาพรวม Dashboard",
     summary: "ศูนย์กลางดูสถานะงาน การเงิน และทางลัดไปฟีเจอร์หลัก",
-    tourOrder: 0,
-    nextPage: "Pipeline",
+    tourOrder: 1,
+    nextPage: "Home",
     steps: [
       "ดูสรุปรายได้และงานค้างจาก widget ด้านบน",
       "ทำ checklist «เริ่มต้นใช้ So1o» ให้ครบ 5 ขั้น",
@@ -23,8 +34,8 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
   },
   pipeline: {
     title: "Pipeline",
-    summary: "จัดการดีลตั้งแต่ติดต่อลูกค้า จนปิดงาน — เป็นจุดเริ่ม workflow หลัก",
-    tourOrder: 1,
+    summary: "จัดการดีลตั้งแต่ติดต่อลูกค้า จนปิดงาน",
+    tourOrder: 2,
     nextPage: "Smart Brief",
     steps: [
       "กด «ดีลใหม่» เพื่อเพิ่มโอกาสงานหรือลูกค้าเป้าหมาย",
@@ -36,8 +47,8 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
   },
   "smart-brief": {
     title: "Smart Brief",
-    summary: "สร้างใบบรีฟมืออาชีพ ส่งลิงก์ให้ลูกค้ากรอก หรือใช้ AI ช่วยสกัดจากแชท/รูป",
-    tourOrder: 2,
+    summary: "สร้างใบบรีฟ ส่งลิงก์ให้ลูกค้า หรือใช้ AI ช่วย",
+    tourOrder: 4,
     nextPage: "Quotation",
     steps: [
       "เลือก «สร้างบรีฟใหม่» (AI Quick Capture) หรือ «บรีฟเปล่า» ตามสถานการณ์",
@@ -47,10 +58,21 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
     ],
     tips: ["บรีฟที่ confirm แล้วช่วยลด revision รอบหลัง"],
   },
+  meeting: {
+    title: "Meeting",
+    summary: "บันทึกนัดคุยลูกค้า สรุปประเด็น และ action items",
+    tourOrder: 3,
+    nextPage: "Smart Brief",
+    steps: [
+      "สร้างนัดใหม่พร้อมวันเวลาและลูกค้า",
+      "จดโน้ตระหว่าง/หลังประชุม",
+      "ส่งต่อประเด็นไป Brief หรือ Quotation",
+    ],
+  },
   ใบเสนอราคา: {
     title: "Quotation / Invoice",
-    summary: "ออกใบเสนอราคาและใบแจ้งหนี้ พร้อมแชร์ลิงก์ติดตามให้ลูกค้า",
-    tourOrder: 3,
+    summary: "ออกใบเสนอราคา ใบแจ้งหนี้ และแชร์ลิงก์ติดตาม",
+    tourOrder: 5,
     nextPage: "Job Tracker",
     steps: [
       "กดสร้างใบเสนอราคาใหม่ แล้วเลือกลูกค้าจาก CRM",
@@ -179,6 +201,16 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
       "บันทึกประเภทบริการและโน้ตสำหรับอ้างอิง",
       "ใช้เมื่อต้นทุนงานมีส่วนจาก vendor ภายนอก",
     ],
+  },
+  portfolio: {
+    title: "Portfolio",
+    summary: "โปรไฟล์ผลงานสาธารณะ — แชร์ให้ลูกค้าดูผลงานเก่า",
+    steps: [
+      "เพิ่มผลงานพร้อมรูปและคำอธิบาย",
+      "จัดเรียงลำดับที่อยากโชว์",
+      "แชร์ลิงก์ portfolio ตอนเสนองาน",
+    ],
+    tips: ["เชื่อมกับ Aplus1 ได้ถ้ามีบัญชี ecosystem"],
   },
   assets: {
     title: "Assets",

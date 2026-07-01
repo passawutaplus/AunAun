@@ -98,6 +98,14 @@
 - [ ] Image lazy load below the fold
 - [ ] Click → response < 200ms (INP)
 
+## Onboarding & ทัวร์แนะนำ
+
+- [ ] ผู้ใช้ใหม่หลังสำร็จ onboarding — ขึ้น welcome «เริ่มทัวร์»
+- [ ] ทัวร์พาไปครบ ~20 หน้า (Dashboard, Finance, Planner, Data, Labs, Settings)
+- [ ] ปุ่ม «สอนใช้งาน» ใน header Dashboard + Labs
+- [ ] ปุ่ม «วิธีใช้» แต่ละหน้า + «สอนใช้งานทั้งระบบ (เริ่มจากหน้านี้)»
+- [ ] ตั้งค่า → «สอนใช้งานทุกหน้าอีกครั้ง»
+
 ## So1o Labs & Back-office
 
 - [ ] **Creative Labs** — ส่งสี/ฟอนต์เข้าบรีฟ · Export ASE/tokens · ลิงก์ไฟล์งานใน Brief

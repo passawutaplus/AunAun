@@ -1,12 +1,13 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { Check, Circle, ArrowRight, BookOpen, ChevronDown } from "lucide-react";
+import { Check, Circle, ArrowRight, BookOpen, ChevronDown, Compass } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { ProductTourReplayButton } from "@/components/dashboard/ProductTourProvider";
 
 const STEPS = [
   { id: "brand", label: "ตั้งค่าโปรไฟล์ร้าน (โลโก้/ธนาคาร)", tab: "settings" as const },
@@ -155,15 +156,21 @@ export function OnboardingChecklist({
             </button>
           );
         })}
-        <div className="flex gap-2 mt-2">
+        <div className="flex flex-wrap gap-2 mt-2">
           <Button
             size="sm"
             variant="outline"
-            className="flex-1 text-xs"
+            className="flex-1 text-xs min-w-[7rem]"
             onClick={() => onGo("finance", "pipeline")}
           >
             เปิด Pipeline
           </Button>
+          <ProductTourReplayButton
+            variant="secondary"
+            size="sm"
+            className="flex-1 min-w-[7rem]"
+            label="ทัวร์ทุกหน้า"
+          />
           <Button size="sm" variant="ghost" className="text-xs gap-1" asChild>
             <Link to="/help/getting-started">
               <BookOpen className="h-3.5 w-3.5" />

@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/auth/AuthProvider";
 import { cn } from "@/lib/utils";
+import { ProductTourHeaderButton } from "@/components/dashboard/ProductTourProvider";
 
 const TABS = [
   { to: "/labs/creative" as const, label: "ครีเอทีฟ" },
@@ -49,6 +50,7 @@ export function LabsShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <ProductTourHeaderButton />
             <NotificationBell />
             <div className="hidden sm:flex items-center gap-2 rounded-full bg-white/70 backdrop-blur px-3 py-1.5 text-xs text-primary font-medium border border-primary/20">
               <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />

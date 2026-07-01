@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CircleHelp, Lightbulb, ArrowRight } from "lucide-react";
+import { CircleHelp, Lightbulb, ArrowRight, Compass } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,8 @@ import {
 import { getPageGuide, getTourProgress } from "@/lib/pageGuides";
 import { trackFeature } from "@/lib/featureUsage";
 import { cn } from "@/lib/utils";
+import { useProductTourOptional } from "@/components/dashboard/ProductTourProvider";
+import { Button } from "@/components/ui/button";
 
 export function PageHelpButton({
   feature,
@@ -24,6 +26,7 @@ export function PageHelpButton({
   const [open, setOpen] = React.useState(false);
   const guide = getPageGuide(feature);
   const tour = getTourProgress(feature);
+  const productTour = useProductTourOptional();
 
   return (
     <Dialog
@@ -97,12 +100,44 @@ export function PageHelpButton({
         </div>
 
         {guide.nextPage && (
-          <div className="border-t border-border/60 px-5 py-3 bg-muted/30">
+          <div className="border-t border-border/60 px-5 py-3 bg-muted/30 space-y-2">
             <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
               <ArrowRight className="h-3 w-3 text-primary shrink-0" />
               ถัดไปใน workflow:{" "}
               <span className="font-medium text-foreground">{guide.nextPage}</span>
             </p>
+            {productTour && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full h-8 text-xs gap-1.5"
+                onClick={() => {
+                  setOpen(false);
+                  productTour.startFromFeature(feature);
+                }}
+              >
+                <Compass className="h-3.5 w-3.5" />
+                สอนใช้งานทั้งระบบ (เริ่มจากหน้านี้)
+              </Button>
+            )}
+          </div>
+        )}
+        {!guide.nextPage && productTour && (
+          <div className="border-t border-border/60 px-5 py-3 bg-muted/30">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full h-8 text-xs gap-1.5"
+              onClick={() => {
+                setOpen(false);
+                productTour.startFromFeature(feature);
+              }}
+            >
+              <Compass className="h-3.5 w-3.5" />
+              สอนใช้งานทั้งระบบ (เริ่มจากหน้านี้)
+            </Button>
           </div>
         )}
       </DialogContent>

@@ -8,6 +8,7 @@ import { DraggableFabDock } from "@/components/DraggableFabDock";
 import { AssistantProvider } from "@/context/AssistantContext";
 import { AssistantSidebar } from "@/components/assistant/AssistantSidebar";
 import { AssistantPushLayout } from "@/components/assistant/AssistantPushLayout";
+import { ProductTourProvider } from "@/components/dashboard/ProductTourProvider";
 import type { RouterAppContext } from "@/router";
 // Side-effect import: patches window.fetch to attach Supabase bearer token
 // to TanStack server-function requests so `requireSupabaseAuth` middleware works.
@@ -141,15 +142,17 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AssistantProvider>
-          <AssistantPushLayout>
-            <DemoModeBanner />
-            <Outlet />
-            <CookieConsent />
-          </AssistantPushLayout>
-          <DraggableFabDock />
-          <AssistantSidebar />
-        </AssistantProvider>
+        <ProductTourProvider>
+          <AssistantProvider>
+            <AssistantPushLayout>
+              <DemoModeBanner />
+              <Outlet />
+              <CookieConsent />
+            </AssistantPushLayout>
+            <DraggableFabDock />
+            <AssistantSidebar />
+          </AssistantProvider>
+        </ProductTourProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
