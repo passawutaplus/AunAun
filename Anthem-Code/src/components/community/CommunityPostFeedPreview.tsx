@@ -1,4 +1,5 @@
-import { Heart, Play } from "lucide-react";
+import { Play } from "lucide-react";
+import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import UserAvatar from "@/components/UserAvatar";
 import { CommunityQaBadge } from "@/components/community/CommunityQaBadge";
 import { CommunityFeedPreviewToolbar } from "@/components/community/CommunityFeedPreviewToolbar";
@@ -78,7 +79,7 @@ export function CommunityPostFeedPreview({
           />
           <span className="flex-1 min-w-0 text-[11px] text-muted-foreground truncate">{displayName}</span>
           <span className="inline-flex items-center text-[11px] text-muted-foreground">
-            <Heart className="w-3.5 h-3.5" />
+            <PlusOneMark className="text-[11px] text-muted-foreground" />
           </span>
         </div>
       </article>

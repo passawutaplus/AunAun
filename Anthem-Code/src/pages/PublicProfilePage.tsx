@@ -119,6 +119,16 @@ const PublicProfilePage = () => {
     [orderedProjects],
   );
 
+  const isSelf = !!user?.id && !!resolvedUserId && user.id === resolvedUserId;
+
+  useEffect(() => {
+    if (!user || params.get("hire") !== "1" || !resolvedUserId || isSelf) return;
+    setHireOpen(true);
+    const next = stripSearchParams(params, ["hire"]);
+    const q = next.toString();
+    setSearchParams(q ? next : {}, { replace: true });
+  }, [user, params, setSearchParams, resolvedUserId, isSelf]);
+
   if (vanityRedirect) {
     return <Navigate to={vanityRedirect} replace />;
   }
@@ -155,15 +165,6 @@ const PublicProfilePage = () => {
   }
 
   const displayName = profile.display_name || profile.username || "ครีเอเตอร์";
-  const isSelf = !!user?.id && user.id === resolvedUserId;
-
-  useEffect(() => {
-    if (!user || params.get("hire") !== "1" || !resolvedUserId || isSelf) return;
-    setHireOpen(true);
-    const next = stripSearchParams(params, ["hire"]);
-    const q = next.toString();
-    setSearchParams(q ? next : {}, { replace: true });
-  }, [user, params, setSearchParams, resolvedUserId, isSelf]);
 
   const openHire = () => {
     if (!user) {
@@ -380,7 +381,7 @@ const PublicProfilePage = () => {
       {/* Tabs */}
       <div className="max-w-5xl mx-auto px-3 sm:px-4 pb-16">
         <Tabs defaultValue="works" className="mt-4 sm:mt-6">
-          <div className="px-3 sm:px-4">
+          <div className="px-3 sm:px-4 flex justify-center">
             <TabsList className="glass-chip rounded-2xl sm:rounded-full p-1.5 h-auto gap-1 flex flex-col w-full sm:inline-flex sm:flex-row sm:flex-nowrap sm:w-max">
               <div className="grid grid-cols-2 gap-1 w-full sm:contents">
                 <TabsTrigger value="works" className="rounded-full text-sm px-2.5 sm:px-4 py-2 font-normal data-[state=active]:bg-gradient-brand data-[state=active]:text-white data-[state=active]:font-medium">

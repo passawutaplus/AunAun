@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Building2, CheckCircle2, Heart, MapPin, Users } from "lucide-react";
+import { Building2, CheckCircle2, MapPin, Users } from "lucide-react";
+import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import StudioFollowButton from "@/components/StudioFollowButton";
 import { useStudioFollowState } from "@/hooks/useStudioFollow";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
@@ -118,12 +119,10 @@ const StudioCard = ({ data }: Props) => {
             whileTap={{ scale: 0.92 }}
             onClick={() => featuredProjectId && like.toggle()}
             disabled={!featuredProjectId}
-            aria-label="ถูกใจผลงานเด่น"
+            aria-label="ให้ +1 ผลงานเด่น"
             className="w-9 h-9 flex items-center justify-center rounded-full glass-panel hover:bg-accent/40 transition disabled:opacity-40"
           >
-            <Heart
-              className={`w-4 h-4 ${like.isLiked ? "fill-primary text-primary" : "text-muted-foreground"}`}
-            />
+            <PlusOneMark className={like.isLiked ? "text-primary" : "text-muted-foreground"} />
           </motion.button>
         </div>
       </div>

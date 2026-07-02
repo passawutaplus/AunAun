@@ -10,9 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { getCroppedImageFile } from "@/lib/cropImage";
 
-const COVER_RATIO = 16 / 9;
-const EXPORT_W = 1920;
-const EXPORT_H = 1080;
+const MAX_EXPORT_DIM = 1920;
 
 type Props = {
   file: File | null;
@@ -57,9 +55,17 @@ export function PortfolioCoverCropDialog({
     setSaving(true);
     try {
       const mime = file.type === "image/png" ? "image/png" : "image/webp";
+      let outW = Math.round(croppedAreaPixels.width);
+      let outH = Math.round(croppedAreaPixels.height);
+      const longSide = Math.max(outW, outH);
+      if (longSide > MAX_EXPORT_DIM) {
+        const scale = MAX_EXPORT_DIM / longSide;
+        outW = Math.round(outW * scale);
+        outH = Math.round(outH * scale);
+      }
       const cropped = await getCroppedImageFile(imageSrc, croppedAreaPixels, file.name, mime, {
-        width: EXPORT_W,
-        height: EXPORT_H,
+        width: outW,
+        height: outH,
       });
       onConfirm(cropped);
       onOpenChange(false);
@@ -78,19 +84,18 @@ export function PortfolioCoverCropDialog({
     >
       <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-4 pt-4 pb-2">
-          <DialogTitle className="text-base">ครอปภาพปก 16:9</DialogTitle>
+          <DialogTitle className="text-base">ครอปภาพปก</DialogTitle>
           <p className="text-xs text-muted-foreground font-normal">
-            ลากและซูมเพื่อจัดกรอบ — ใช้เป็นภาพหลักในฟีดและการค้นหา
+            ลากและซูมเพื่อจัดกรอบ — อัตราส่วนตามที่คุณเลือก ใช้เป็นภาพหลักในฟีดและการค้นหา
           </p>
         </DialogHeader>
 
-        <div className="relative w-full max-w-md mx-auto aspect-video bg-muted">
+        <div className="relative w-full max-w-md mx-auto h-[min(70vh,480px)] bg-muted">
           {imageSrc && (
             <Cropper
               image={imageSrc}
               crop={crop}
               zoom={zoom}
-              aspect={COVER_RATIO}
               cropShape="rect"
               showGrid
               onCropChange={setCrop}

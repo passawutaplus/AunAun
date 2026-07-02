@@ -210,7 +210,7 @@ const EVENT_TYPE_MAP: Record<string, ActivityEventType> = {
 const EVENT_TITLE: Record<string, string> = {
   "user.signup": "สมาชิกใหม่",
   "project.created": "ผลงานใหม่",
-  "project.like": "กดถูกใจ",
+  "project.like": "ให้ +1",
   "project.comment": "คอมเมนต์ใหม่",
   "user.follow": "ติดตามใหม่",
   "hire.request": "คำขอจ้างงาน",
@@ -324,7 +324,7 @@ async function fetchPlatformActivityPolling(limit: number): Promise<ActivityEven
           subtitle: r.name, at: r.created_at, link: "/admin/studios",
         })),
         ...pick(likes.data, (r) => ({
-          id: `lk-${r.user_id}-${r.project_id}`, type: "like" as const, title: "กดถูกใจผลงาน",
+          id: `lk-${r.user_id}-${r.project_id}`, type: "like" as const, title: "ให้ +1 ผลงาน",
           subtitle: r.project_id.slice(0, 8) + "…", at: r.created_at,
           actorId: r.user_id, targetId: r.project_id, link: `/project/${r.project_id}`,
         })),

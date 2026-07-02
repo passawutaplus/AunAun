@@ -2,7 +2,8 @@ import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Heart, Users } from "lucide-react";
+import { Users } from "lucide-react";
+import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import type { DesignerCardData } from "@/hooks/useDesigners";
 import FollowButton from "@/components/FollowButton";
 import { useFollowState } from "@/hooks/useFollow";
@@ -68,9 +69,13 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
           <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
             <span>{followers.toLocaleString("th-TH")} ผู้ติดตาม</span>
             <span aria-hidden>·</span>
-            <span className="flex items-center gap-0.5">
-              <Heart className="w-3 h-3" /> {totalLikes.toLocaleString("th-TH")} ถูกใจ
-            </span>
+            <PlusOneControl
+              active={false}
+              count={totalLikes}
+              showCount
+              className="text-[11px]"
+              ariaLabel="+1 รวม"
+            />
           </div>
         </div>
       </div>
@@ -122,14 +127,15 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
           <Users className="w-3.5 h-3.5" /> คอลแลป
         </button>
         <FollowButton freelancerId={profileUserId} iconOnly tone="muted" />
-        <motion.button
-          whileTap={{ scale: 0.92 }}
-          onClick={() => featured && like.toggle()}
-          aria-label="Like featured"
-          className="w-9 h-9 flex items-center justify-center rounded-full glass-panel hover:bg-accent/40 transition"
-        >
-          <Heart className={`w-4 h-4 ${like.isLiked ? "fill-primary text-primary" : "text-muted-foreground"}`} />
-        </motion.button>
+        <motion.div whileTap={{ scale: 0.92 }}>
+          <PlusOneControl
+            active={like.isLiked}
+            showCount={false}
+            ariaLabel={like.isLiked ? "เลิก +1" : "ให้ +1"}
+            onClick={() => featured && like.toggle()}
+            className="w-9 h-9 flex items-center justify-center rounded-full glass-panel hover:bg-accent/40 transition"
+          />
+        </motion.div>
       </div>
     </article>
   );

@@ -86,8 +86,8 @@ function layout(opts: {
 <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;width:100%;border:1px solid ${brand.border};border-radius:12px;overflow:hidden;background:${brand.white}">
 <tr><td style="background:linear-gradient(180deg,${brand.orangeFade} 0%,${brand.white} 100%);padding:28px 32px 24px;border-bottom:2px solid ${brand.orange}">
 <table role="presentation" cellspacing="0" cellpadding="0"><tr>
-<td style="vertical-align:middle;padding-right:10px"><img src="${logoUrl}" alt="Pixel100" width="32" height="32" style="border-radius:8px;display:block"/></td>
-<td style="vertical-align:middle"><p style="margin:0;font-size:17px;font-weight:600;letter-spacing:-0.02em;color:${brand.ink};line-height:1.2"><span style="color:${brand.orange}">1</span>PX</p>
+<td style="vertical-align:middle;padding-right:10px"><img src="${logoUrl}" alt="Aplus1" width="32" height="32" style="border-radius:8px;display:block"/></td>
+<td style="vertical-align:middle"><p style="margin:0;font-size:17px;font-weight:600;letter-spacing:-0.02em;color:${brand.ink};line-height:1.2"><span style="color:${brand.orange}">Aplus</span>1</p>
 <p style="margin:2px 0 0;font-size:12px;color:${brand.mute}">ชุมชนครีเอทีฟ — ทุกคนคือ 1 PX</p></td>
 </tr></table></td></tr>
 <tr><td style="padding:28px 32px 32px">

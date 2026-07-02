@@ -7,6 +7,7 @@ type Props = {
   onPublish: () => void;
   savingDraft?: boolean;
   publishing?: boolean;
+  uploading?: boolean;
   publishLabel?: string;
   hideDraft?: boolean;
   className?: string;
@@ -17,10 +18,12 @@ export function CommunityComposerFooter({
   onPublish,
   savingDraft,
   publishing,
+  uploading,
   publishLabel = "โพสต์",
   hideDraft,
   className,
 }: Props) {
+  const busy = savingDraft || publishing;
   return (
     <div
       className={cn(
@@ -35,7 +38,7 @@ export function CommunityComposerFooter({
             type="button"
             variant="outline"
             className="shrink-0 w-[28%] min-w-[7.5rem] rounded-full px-3 text-sm"
-            disabled={savingDraft || publishing}
+            disabled={busy || uploading}
             onClick={onSaveDraft}
             aria-busy={savingDraft}
           >
@@ -49,7 +52,7 @@ export function CommunityComposerFooter({
         <Button
           type="button"
           className={cn("rounded-full", hideDraft ? "flex-1 w-full" : "flex-1")}
-          disabled={savingDraft || publishing}
+          disabled={publishing || uploading}
           onClick={onPublish}
         >
           {publishing ? "กำลังโพสต์..." : publishLabel}

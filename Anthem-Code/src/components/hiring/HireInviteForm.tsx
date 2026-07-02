@@ -15,12 +15,8 @@ import { JOB_TYPES } from "@/components/hiring/HireWizardFields";
 export type HireInviteFormState = {
   jobType: string;
   details: string;
-  deliverablesText: string;
   budgetAmount: string;
   deadline: string;
-  clientName: string;
-  email: string;
-  phone: string;
   referenceUrl: string;
   attachmentUrls: string[];
 };
@@ -28,12 +24,8 @@ export type HireInviteFormState = {
 export const emptyHireInviteForm = (): HireInviteFormState => ({
   jobType: "",
   details: "",
-  deliverablesText: "",
   budgetAmount: "",
   deadline: "",
-  clientName: "",
-  email: "",
-  phone: "",
   referenceUrl: "",
   attachmentUrls: [],
 });
@@ -42,7 +34,6 @@ export function buildHireInviteMessage(form: HireInviteFormState): string | null
   const parts = [
     form.jobType.trim() ? `ประเภทงาน: ${jobTypeLabel(form.jobType)}` : null,
     form.details.trim() ? `รายละเอียด:\n${form.details.trim()}` : null,
-    form.deliverablesText.trim() ? `สิ่งที่ส่งมอบ:\n${form.deliverablesText.trim()}` : null,
     form.referenceUrl.trim() ? `ลิงก์อ้างอิง: ${form.referenceUrl.trim()}` : null,
   ].filter(Boolean);
 
@@ -167,13 +158,12 @@ const HireInviteForm = ({
       </div>
 
       <div>
-        <Label htmlFor="hire-deliverables">สิ่งที่ต้องการส่งมอบ</Label>
-        <Textarea
-          id="hire-deliverables"
-          rows={2}
-          value={form.deliverablesText}
-          onChange={(e) => setForm((f) => ({ ...f, deliverablesText: e.target.value }))}
-          placeholder="เช่น โลโก้ 3 แบบ, ชุดโซเชียล 5 ภาพ"
+        <Label htmlFor="hire-ref-url">ลิงก์อ้างอิง (ไฟล์ / brief) <span className="text-muted-foreground font-normal">(ไม่บังคับ)</span></Label>
+        <Input
+          id="hire-ref-url"
+          value={form.referenceUrl}
+          onChange={(e) => setForm((f) => ({ ...f, referenceUrl: e.target.value }))}
+          placeholder="https://drive.google.com/..."
           className="rounded-xl mt-1.5"
         />
       </div>
@@ -235,51 +225,6 @@ const HireInviteForm = ({
             value={form.deadline}
             onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
             placeholder="เช่น 2 สัปดาห์"
-            className="rounded-xl mt-1.5"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-3 pt-1 border-t border-border/60">
-        <p className="text-xs font-medium text-muted-foreground">ข้อมูลติดต่อ</p>
-        <div>
-          <Label htmlFor="hire-client-name">ชื่อผู้ติดต่อ *</Label>
-          <Input
-            id="hire-client-name"
-            value={form.clientName}
-            onChange={(e) => setForm((f) => ({ ...f, clientName: e.target.value }))}
-            className="rounded-xl mt-1.5"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="hire-email">อีเมล *</Label>
-          <Input
-            id="hire-email"
-            type="email"
-            value={form.email}
-            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            className="rounded-xl mt-1.5"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="hire-phone">เบอร์มือถือ</Label>
-          <Input
-            id="hire-phone"
-            value={form.phone}
-            onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-            placeholder="0812345678"
-            className="rounded-xl mt-1.5"
-          />
-        </div>
-        <div>
-          <Label htmlFor="hire-ref-url">ลิงก์อ้างอิง (ไฟล์ / brief)</Label>
-          <Input
-            id="hire-ref-url"
-            value={form.referenceUrl}
-            onChange={(e) => setForm((f) => ({ ...f, referenceUrl: e.target.value }))}
-            placeholder="https://drive.google.com/..."
             className="rounded-xl mt-1.5"
           />
         </div>

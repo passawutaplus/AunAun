@@ -1,4 +1,5 @@
-import { Bookmark, Heart, MessageCircle, Share2 } from "lucide-react";
+import { Bookmark, MessageCircle, Share2 } from "lucide-react";
+import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -43,19 +44,18 @@ const CommunityPostActionBar = ({
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center gap-1">
-        <button
-          type="button"
-          aria-label={isLiked ? "เลิกถูกใจ" : "ถูกใจ"}
+        <PlusOneControl
+          active={isLiked}
+          count={likes}
           disabled={liking}
-          onClick={() => toggleLike()}
+          size="md"
+          ariaLabel={isLiked ? "เลิก +1" : "ให้ +1"}
           className={cn(
-            "inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs transition-colors",
-            isLiked ? "text-destructive bg-destructive/10" : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+            "rounded-full px-2.5 py-1.5 transition-colors",
+            isLiked ? "text-primary bg-primary/10" : "hover:bg-muted/50",
           )}
-        >
-          <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
-          {likes > 0 && <span>{likes}</span>}
-        </button>
+          onClick={() => toggleLike()}
+        />
         <Link
           to={`/community/${postId}#comments`}
           className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50"

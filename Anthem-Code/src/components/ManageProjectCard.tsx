@@ -2,13 +2,13 @@ import {
   ArrowDown,
   ArrowUp,
   Eye,
-  Heart,
   Mail,
   Pencil,
   Pin,
   PinOff,
   Trash2,
 } from "lucide-react";
+import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import type { Project } from "@/data/projectTypes";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
@@ -144,10 +144,7 @@ const ManageProjectCard = ({
               <Eye className="w-3.5 h-3.5" />
               {project.views.toLocaleString()}
             </span>
-            <span className="flex items-center gap-1">
-              <Heart className="w-3.5 h-3.5" />
-              {project.likes.toLocaleString()}
-            </span>
+            <PlusOneControl active={false} count={project.likes} showCount ariaLabel="+1" />
             {hireCount > 0 && (
               <span className="flex items-center gap-1 text-[hsl(var(--chat-hire))]">
                 <Mail className="w-3.5 h-3.5" />

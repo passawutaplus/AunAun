@@ -195,8 +195,13 @@ export const useCreateProject = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: TablesInsert<"projects">) => {
-      const { data, error } = await supabase.from("projects").insert(payload).select().single();
+      const row = {
+        ...payload,
+        id: payload.id ?? crypto.randomUUID(),
+      };
+      const { data, error } = await supabase.from("projects").insert(row).select(PROJECT_DETAIL_SELECT).single();
       if (error) throw error;
+      if (!data?.id) throw new Error("PROJECT_ID_MISSING");
       return data;
     },
     onSuccess: () => {
@@ -213,8 +218,9 @@ export const useUpdateProject = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: TablesUpdate<"projects"> }) => {
-      const { data, error } = await supabase.from("projects").update(patch).eq("id", id).select().single();
+      const { data, error } = await supabase.from("projects").update(patch).eq("id", id).select(PROJECT_DETAIL_SELECT).single();
       if (error) throw error;
+      if (!data?.id) throw new Error("PROJECT_ID_MISSING");
       return data;
     },
     onSuccess: (_d, vars) => {

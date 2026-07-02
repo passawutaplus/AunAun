@@ -7,7 +7,7 @@ export const PROJECT_FEED_SELECT =
   `id, title, cover_url, gallery_urls, category, owner_id, likes, views, status, created_at, tools, tags, allow_hire, allow_collab, license_type, sort_order, is_pinned`;
 
 export const PROJECT_DETAIL_SELECT =
-  `${PROJECT_FEED_SELECT}, description, price_thb, subtitle, studio_id, credited_user_ids, linked_community_post_ids, collab_user_ids, updated_at, license_note, has_third_party_assets, third_party_note, copyright_holder, rights_attested_at, rights_attestation_version`;
+  `${PROJECT_FEED_SELECT}, description, price_thb, subtitle, studio_id, credited_user_ids, linked_community_post_ids, collab_user_ids, video_urls, updated_at, license_note, has_third_party_assets, third_party_note, copyright_holder, rights_attested_at, rights_attestation_version`;
 
 export const PROJECT_MANAGE_SELECT = PROJECT_DETAIL_SELECT;
 

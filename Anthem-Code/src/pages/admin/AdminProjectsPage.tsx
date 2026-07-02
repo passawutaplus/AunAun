@@ -70,7 +70,7 @@ export default function AdminProjectsPage() {
       render: (r) => <StatusPill status={r.status} tone={r.status === "Published" ? "accent" : "muted"} />,
     },
     { key: "views", header: "Views", render: (r) => <span className="font-mono">{r.views}</span> },
-    { key: "likes", header: "Likes", render: (r) => <span className="font-mono">{r.likes}</span> },
+    { key: "likes", header: "+1", render: (r) => <span className="font-mono">{r.likes}</span> },
     { key: "created", header: "สร้างเมื่อ", render: (r) => <span className="font-mono text-xs">{formatThaiDate(r.created_at)}</span> },
     {
       key: "actions",

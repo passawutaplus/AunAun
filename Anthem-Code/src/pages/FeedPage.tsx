@@ -400,7 +400,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             <>
               <StaggerGrid
                 dense
-                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3 lg:gap-4"
+                masonry
+                className="columns-2 sm:columns-3 md:columns-4 lg:columns-4 2xl:columns-5 gap-2 sm:gap-3 lg:gap-4"
               >
                 {feedItems.map((item) =>
                   item.kind === "ad" ? (

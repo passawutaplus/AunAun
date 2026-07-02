@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { ImagePlus, MessageCircle, Send, Reply, Heart, X } from "lucide-react";
+import { ImagePlus, MessageCircle, Send, Reply, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,6 +26,7 @@ import { formatCommunityActionError } from "@/lib/communityRateLimit";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { useSubscription } from "@/core/subscription";
 import { cn } from "@/lib/utils";
+import { PlusOneMark } from "@/components/brand/PlusOneMark";
 
 interface Props {
   postId: string;
@@ -43,7 +44,7 @@ const CommentLikeButton = ({ commentId, likeCount }: { commentId: string; likeCo
         isLiked ? "text-destructive" : "text-muted-foreground hover:text-destructive",
       )}
     >
-      <Heart className={cn("w-3 h-3", isLiked && "fill-current")} />
+      <PlusOneMark className={cn("text-[10px]", isLiked && "text-primary")} />
       {likes > 0 && <span>{likes}</span>}
     </button>
   );

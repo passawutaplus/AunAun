@@ -1,4 +1,5 @@
-import { Bookmark, Heart, MessageCircle, Share2 } from "lucide-react";
+import { Bookmark, MessageCircle, Share2 } from "lucide-react";
+import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import UserAvatar from "@/components/UserAvatar";
 import CommunityPostMedia from "@/components/community/CommunityPostMedia";
 import { CommunityQaBadge } from "@/components/community/CommunityQaBadge";
@@ -101,9 +102,7 @@ export function CommunityPostPreviewContent({
         aria-hidden
       >
         <div className="flex items-center gap-1">
-          <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted-foreground">
-            <Heart className={cn(fitted ? "w-3.5 h-3.5" : "w-4 h-4")} />
-          </span>
+          <PlusOneControl active={false} showCount={false} ariaLabel="+1" className="rounded-full px-2 py-1 text-muted-foreground" />
           <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted-foreground">
             <MessageCircle className={cn(fitted ? "w-3.5 h-3.5" : "w-4 h-4")} />
             {!fitted && <span className="hidden sm:inline">ตอบ</span>}

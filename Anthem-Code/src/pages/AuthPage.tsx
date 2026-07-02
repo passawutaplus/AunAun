@@ -13,8 +13,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
   User as UserIcon, Eye, EyeOff, Loader2,
-  Sparkles, Info, Heart, Bookmark, Share2,
+  Sparkles, Info, Bookmark, Share2,
 } from "lucide-react";
+import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import { BackButton } from "@/components/ui/BackButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { DemoLoginHint, DemoSignupBlocked } from "@/components/DemoAuthHints";
@@ -113,22 +114,26 @@ const AuthPage = () => {
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur text-xs font-medium">
                 <Sparkles className="w-3.5 h-3.5" /> {BRAND_NAME} · {BRAND_HERO_SUBTITLE}
               </div>
-              <h2 className="mt-8 text-4xl xl:text-5xl font-semibold thai-display">
-                โปรไฟล์เดียว<br />เชื่อมต่อทุกโอกาส<br />ของครีเอทีฟ
+              <h2 className="mt-8 text-4xl xl:text-5xl font-semibold thai-display whitespace-pre-line">
+                {BRAND_TAGLINE.replace(/ /, "\n")}
               </h2>
               <p className="mt-4 text-white/85 text-sm xl:text-base thai-body max-w-md">
-                {BRAND_TAGLINE} — สร้างโปรไฟล์ ลงผลงาน ไถฟีดหาแรงบันดาลใจ คอลแลป และรับงาน ในที่เดียว
+                สร้างโปรไฟล์ ลงผลงาน ไถฟีดหาแรงบันดาลใจ คอลแลป และรับงาน ในที่เดียว
               </p>
             </div>
 
             <div className="relative grid grid-cols-3 gap-3 mt-10">
               {[
-                { icon: Heart, label: "ไลก์ผลงาน" },
+                { label: "+1 ผลงาน", plusOne: true },
                 { icon: Bookmark, label: "บันทึกไอเดีย" },
                 { icon: Share2, label: "แชร์โปรเจกต์" },
-              ].map(({ icon: Icon, label }) => (
+              ].map(({ icon: Icon, label, plusOne }) => (
                 <div key={label} className="rounded-2xl bg-white/12 backdrop-blur border border-white/15 p-3.5">
-                  <Icon className="w-4 h-4 mb-2" />
+                  {plusOne ? (
+                    <PlusOneMark className="text-sm mb-2" />
+                  ) : Icon ? (
+                    <Icon className="w-4 h-4 mb-2" />
+                  ) : null}
                   <p className="text-xs font-medium">{label}</p>
                 </div>
               ))}

@@ -1,8 +1,9 @@
-# Pixel100 — คู่มือ UX/UI Research (เช็คลิสครบ)
+# Aplus1 — คู่มือ UX/UI Research (เช็คลิสครบ)
 
 > **URL เดโม่:** https://aplus1-demo.vercel.app  
 > **คู่มือในแอป:** https://aplus1-demo.vercel.app/research  
-> **Canonical:** https://pixel100.com · **Demo:** https://aplus1-demo.vercel.app
+> **ส่งผลทดสอบ:** https://aplus1-demo.vercel.app/research/feedback  
+> **Canonical:** https://aplus1.app · **Demo:** https://aplus1-demo.vercel.app
 
 ---
 
@@ -10,7 +11,7 @@
 
 | หัวข้อ | รายละเอียด |
 |--------|------------|
-| แบรนด์ | **Pixel100** — ชุมชนฟรีแลนซ์ครีเอทีฟ ทุกคนคือ 1 pixel |
+| แบรนด์ | **Aplus1** — 1 โปรไฟล์ สู่ 100+ โอกาส |
 | ประเภท | พอร์ตโฟลิโอ + ชุมชน + จับคู่งานเบา ๆ |
 | ภาษา | ไทยเป็นหลัก |
 | ระยะเวลา | Quick **45–60 นาที** (T1–T4) · Full **2–3 ชม.** (เช็คลิส A–T) |
@@ -61,7 +62,7 @@
 | # | ขั้น | ที่ไหน | เกณฑ์ UX |
 |---|------|--------|----------|
 | 1 | Guest เปิดหน้าแรก | `/` | เข้าใจ value prop “ทุกคนคือ 1 PX” ภายใน 10 วิ |
-| 2 | Guest กด action ที่ต้อง login | Bottom nav, ไลก์, จ้างงาน | Auth dialog ชัด ไม่หลง |
+| 2 | Guest กด action ที่ต้อง login | Bottom nav, +1, จ้างงาน | Auth dialog ชัด ไม่หลง |
 | 3 | Login demo | `/auth` | ไม่สับสนกับ production signup |
 | 4 | หลัง login ครั้งแรก | `/portfolio` | Welcome checklist 8 ภารกิจ — next step ชัด |
 | 5 | รับ Welcome PX | Checklist | เข้าใจ PX คืออะไร — progress 0/500 |
@@ -91,7 +92,7 @@
 - [ ] **Microcopy** — จ้าง vs คอลแลป vs สมัครงาน ไม่สับสน
 - [ ] **Trust & legal** — cookie banner, footer legal, `/legal/ip` อ่านง่าย
 - [ ] **Accessibility** — focus ring, alt รูป, contrast ปุ่มสำคัญ
-- [ ] **Pixel100 vs So1o** — ผู้ใช้ใหม่เข้าใจความต่างหน้าร้าน vs หลังบ้าน
+- [ ] **Aplus1 vs So1o** — ผู้ใช้ใหม่เข้าใจความต่างหน้าร้าน vs หลังบ้าน
 
 ---
 
@@ -213,7 +214,7 @@
 - [ ] โปรไฟล์ — avatar, bio, skills, grid
 - [ ] ติดตาม / แชร์ / รายงาน
 - [ ] Project detail — gallery, tools, stats, side panel
-- [ ] ไลก์ + คอมเมนต์ (guest → auth prompt)
+- [ ] +1 + คอมเมนต์ (guest → auth prompt)
 - [ ] Similar images
 
 ---
@@ -458,7 +459,7 @@
 - ผู้ใช้ใหม่รู้ next step หลัง login ไหม
 - Mobile vs Desktop — จุดที่ใช้ยากที่สุด
 - Empty / loading / error — เข้าใจไหม
-- ความต่าง Pixel100 vs So1o — เข้าใจไหม
+- ความต่าง Aplus1 vs So1o — เข้าใจไหม
 
 ส่งกลับทีมผ่านช่องทางที่กำหนด (Figma / Notion / Google Form)
 

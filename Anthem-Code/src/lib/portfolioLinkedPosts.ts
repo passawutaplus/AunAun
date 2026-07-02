@@ -118,7 +118,7 @@ export async function fetchPostsMentioningProject(projectId: string): Promise<Li
 
 export function isMissingProjectLinkColumnError(err: unknown): boolean {
   const raw = err instanceof Error ? err.message : String(err ?? "");
-  return /linked_community_post_ids|collab_user_ids|project_collab_invites|does not exist|PGRST204/i.test(
+  return /linked_community_post_ids|collab_user_ids|video_urls|project_collab_invites|does not exist|PGRST204/i.test(
     raw,
   );
 }

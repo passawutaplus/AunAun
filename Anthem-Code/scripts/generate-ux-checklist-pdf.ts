@@ -53,7 +53,7 @@ function createDoc() {
     margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
     info: {
       Title: "Aplus1 — UX/UI Usability Test Checklist",
-      Author: "Pixel100",
+      Author: "Aplus1",
       Subject: "Usability Test",
     },
   });
@@ -120,8 +120,8 @@ function cover(doc: InstanceType<typeof PDFDocument>) {
   const y0 = doc.y;
   doc.roundedRect(MARGIN, y0, CONTENT_W, h, 12).fill(COLORS.coverDark);
   doc.roundedRect(MARGIN + 14, y0 + 18, 38, 38, 8).fill(COLORS.primary);
-  doc.font("bold").fontSize(10).fillColor("#fff").text("1PX", MARGIN + 14, y0 + 30, { width: 38, align: "center" });
-  doc.font("bold").fontSize(20).fillColor("#fff").text("Aplus1 (Pixel100)", MARGIN + 62, y0 + 18);
+  
+  doc.font("bold").fontSize(20).fillColor("#fff").text("Aplus1", MARGIN + 62, y0 + 18);
   doc.font("regular").fontSize(10.5).fillColor("#d4c4b8").text("UX/UI Usability Test Checklist", MARGIN + 62, y0 + 44);
   doc.font("regular").fontSize(9).fillColor("rgba(255,255,255,0.92)").text(
     "เช็คลิสทดสอบการใช้งานครบ — Journey · Design · Tasks T1–T8 · Features A–T",

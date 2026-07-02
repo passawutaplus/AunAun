@@ -94,12 +94,12 @@ const notifyLinks = items.filter((i) => i.group === 'Notification').map((i) =>
 ).join('')
 
 const index = `<!DOCTYPE html>
-<html lang="th"><head><meta charset="utf-8"/><title>Pixel100 Email Previews</title>
+<html lang="th"><head><meta charset="utf-8"/><title>Aplus1 Email Previews</title>
 <style>body{font-family:system-ui,sans-serif;max-width:720px;margin:2rem auto;padding:0 1rem;line-height:1.6}
 h1{font-size:1.35rem;margin-bottom:0.25rem}h2{font-size:1rem;margin-top:1.5rem;color:#FF4F18}
 ul{line-height:2;padding-left:1.25rem}span{font-size:0.85em}</style></head>
-<body><h1>Pixel100 Email Previews</h1>
-<p style="color:#666">Auth + แจ้งเตือน — flat icons, CI Pixel100</p>
+<body><h1>Aplus1 Email Previews</h1>
+<p style="color:#666">Auth + แจ้งเตือน — flat icons, CI Aplus1</p>
 <h2>Auth</h2><ul>${authLinks}</ul>
 <h2>Notification</h2><ul>${notifyLinks}</ul></body></html>`
 writeFileSync(join(OUT, 'index.html'), index)

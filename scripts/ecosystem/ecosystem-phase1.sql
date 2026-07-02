@@ -102,6 +102,6 @@ $$;
 REVOKE ALL ON FUNCTION public.sync_user_tier(uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.sync_user_tier(uuid) TO service_role;
 
--- Optional portfolio video URLs (Anthem)
-ALTER TABLE public.projects
+-- Optional portfolio video URLs (Anthem portfolio — use anthem schema)
+ALTER TABLE anthem.projects
   ADD COLUMN IF NOT EXISTS video_urls text[] NOT NULL DEFAULT '{}';

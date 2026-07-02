@@ -6,6 +6,7 @@ import {
   Bookmark, Bell, HardDrive, ScrollText, Activity, Gift, Megaphone, Sparkles,
   Flag, MessageSquareHeart, Shield, ShieldCheck, FileText, Wallet, BarChart3, ClipboardList, Bot, Map,
 } from "lucide-react";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { useAdminRealtime } from "@/hooks/admin/useAdminRealtime";
 import { useAdminAlertCounts } from "@/hooks/admin/useAdminAlerts";
 import { OPS_HUB_URL } from "@/lib/productLinks";
@@ -116,15 +117,8 @@ export default function AdminSidebar() {
   return (
     <aside className="hidden md:flex flex-col w-60 shrink-0 border-r border-admin-border bg-admin-surface min-h-screen sticky top-0">
       <div className="px-5 py-6 border-b border-admin-border">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-sm bg-admin-fg flex items-center justify-center">
-            <div className="w-3 h-3 rounded-full bg-admin-accent" />
-          </div>
-          <div>
-            <p className="font-mono text-xs uppercase tracking-widest text-admin-muted">Admin</p>
-            <p className="font-medium text-sm text-admin-fg">Control Center</p>
-          </div>
-        </div>
+        <BrandLogo size="sm" showWordmark={false} className="mb-2" />
+        <p className="font-medium text-sm text-admin-fg">Aplus1 Admin</p>
       </div>
       <nav className="flex-1 px-2 py-3 overflow-y-auto">
         {sections.map((sec, i) => (

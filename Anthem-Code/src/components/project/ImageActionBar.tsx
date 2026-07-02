@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Sparkles, Share2, ImageIcon } from "lucide-react";
+import { Sparkles, Share2, ImageIcon } from "lucide-react";
+import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsImageLiked, useToggleImageLike } from "@/hooks/useImageLikes";
 import { useImageStats } from "@/hooks/useImageStats";
@@ -48,7 +49,7 @@ const ImageActionBar = ({ projectId, projectTitle, imageUrl, imageIndex }: Props
     toggleLike.mutate(
       { projectId, imageUrl, liked },
       {
-        onSuccess: () => toast.success(liked ? "ยกเลิกแล้ว" : "บันทึกความชอบแล้ว"),
+        onSuccess: () => toast.success(liked ? "ยกเลิกแล้ว" : "ให้ +1 แล้ว"),
         onError: (e: Error) => toast.error(e.message),
       }
     );
@@ -63,17 +64,13 @@ const ImageActionBar = ({ projectId, projectTitle, imageUrl, imageIndex }: Props
       style={{ pointerEvents: "auto" }}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Like with inline count */}
-      <button
-        type="button"
+      <PlusOneControl
+        active={liked}
+        count={likes}
         onClick={handleLike}
-        className={`${btn} ${liked ? "!bg-primary/90 hover:!bg-primary" : ""}`}
-        title="ชอบภาพนี้"
-      >
-        <Heart className={`w-3.5 h-3.5 ${liked ? "fill-current" : ""}`} />
-        <span className="hidden sm:inline">{liked ? "ชอบแล้ว" : "ชอบ"}</span>
-        <span className="tabular-nums opacity-90">{formatCount(likes)}</span>
-      </button>
+        ariaLabel={liked ? "ยกเลิก +1" : "ให้ +1"}
+        className={`${btn} text-white hover:text-white ${liked ? "!bg-primary/90 hover:!bg-primary [&_span]:text-white" : "[&_span]:text-white/90"}`}
+      />
 
       <InspirePopover
         open={inspireOpen}

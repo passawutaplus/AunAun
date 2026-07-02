@@ -1,7 +1,8 @@
 import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Bookmark, MessageCircle, Handshake, Bell, Sparkles, Megaphone, CheckCircle2, XCircle, CreditCard, Inbox, UserPlus } from "lucide-react";
+import { Bookmark, MessageCircle, Handshake, Bell, Sparkles, Megaphone, CheckCircle2, XCircle, CreditCard, Inbox, UserPlus } from "lucide-react";
+import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useActivityNotifications, useHireNotifications, useCollabNotifications, type HireNotif, type CollabNotif } from "@/hooks/useNotifications";
 import { useFollowNotifications } from "@/hooks/useFollowLists";
@@ -209,12 +210,11 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
         {la ? (
           <div className="text-center py-10 text-muted-foreground text-sm">กำลังโหลด...</div>
         ) : activity.length === 0 ? (
-          <Empty icon={Heart} text="ยังไม่มีกิจกรรมบนผลงานของคุณ" />
+          <Empty icon={Bookmark} text="ยังไม่มีกิจกรรมบนผลงานของคุณ" />
         ) : (
           activity.map((n) => {
-            const Icon = n.kind === "like" ? Heart : n.kind === "bookmark" ? Bookmark : MessageCircle;
-            const verb = n.kind === "like" ? "ถูกใจผลงาน" : n.kind === "bookmark" ? "บันทึกผลงาน" : "คอมเมนต์ผลงาน";
-            const color = n.kind === "like" ? "text-destructive" : n.kind === "bookmark" ? "text-primary" : "text-foreground";
+            const verb = n.kind === "like" ? "+1 ผลงาน" : n.kind === "bookmark" ? "บันทึกผลงาน" : "คอมเมนต์ผลงาน";
+            const color = n.kind === "like" ? "text-primary" : n.kind === "bookmark" ? "text-primary" : "text-foreground";
             return (
               <button
                 key={n.id}
@@ -224,7 +224,13 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                 <div className="relative shrink-0">
                   <ActorAvatar name={n.actorName} avatar={n.actorAvatar} />
                   <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-background border-2 border-background flex items-center justify-center ${color}`}>
-                    <Icon className={`w-3 h-3 ${n.kind === "like" ? "fill-destructive" : ""}`} />
+                    {n.kind === "like" ? (
+                      <PlusOneMark className="text-[8px]" />
+                    ) : n.kind === "bookmark" ? (
+                      <Bookmark className="w-3 h-3" />
+                    ) : (
+                      <MessageCircle className="w-3 h-3" />
+                    )}
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">

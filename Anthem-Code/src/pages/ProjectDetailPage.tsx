@@ -81,8 +81,8 @@ const ProjectDetailPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, username")
-        .eq("id", dbProject!.owner_id)
+        .select("user_id, display_name, avatar_url, username")
+        .eq("user_id", dbProject!.owner_id)
         .maybeSingle();
       return data;
     },
@@ -183,7 +183,7 @@ const ProjectDetailPage = () => {
       return;
     }
     toggleLike(undefined, {
-      onError: (e) => toast.error(mapWriteFlowError(e, "ถูกใจไม่สำเร็จ")),
+      onError: (e) => toast.error(mapWriteFlowError(e, "ให้ +1 ไม่สำเร็จ")),
     });
   };
 

@@ -2,13 +2,14 @@ import type { LucideIcon } from "lucide-react";
 import {
   Briefcase,
   Compass,
-  Heart,
   LayoutGrid,
   Share2,
   Sparkles,
   User,
   Wrench,
 } from "lucide-react";
+import { createElement } from "react";
+import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import type { OnboardingVisitId } from "@/lib/onboardingStorage";
 
 export type OnboardingTaskId =
@@ -36,6 +37,10 @@ export type OnboardingTaskDef = {
 
 export const WELCOME_PX_CAP = 100;
 
+const PlusOneTaskIcon = (({ className }: { className?: string }) =>
+  createElement(PlusOneMark, { className })
+) as LucideIcon;
+
 export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
   {
     id: "explore_feed",
@@ -49,10 +54,10 @@ export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
   },
   {
     id: "like",
-    title: "กดถูกใจผลงาน",
-    description: "กดหัวใจผลงานที่ชอบในฟีด",
+    title: "ให้ +1 ผลงาน",
+    description: "กด +1 ผลงานที่ชอบในฟีด",
     href: "/",
-    icon: Heart,
+    icon: PlusOneTaskIcon,
     rewardPx: 8,
     difficulty: "easy",
   },

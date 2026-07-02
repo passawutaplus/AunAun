@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDoubleTapLike } from "@/hooks/useDoubleTapLike";
+import { PlusOneBurst } from "@/components/brand/PlusOneBurst";
 
 type Props = {
   onLike: () => void;
@@ -56,16 +56,7 @@ export function CommunityDoubleTapLike({
       onDoubleClickCapture={onDoubleClickCapture}
     >
       {children}
-      {burst && (
-        <span
-          key={burst.id}
-          className="pointer-events-none absolute z-30 animate-community-heart-burst"
-          style={{ left: burst.x, top: burst.y }}
-          aria-hidden
-        >
-          <Heart className="h-16 w-16 -translate-x-1/2 -translate-y-1/2 fill-destructive text-destructive drop-shadow-md" />
-        </span>
-      )}
+      {burst && <PlusOneBurst key={burst.id} x={burst.x} y={burst.y} />}
     </div>
   );
 }

@@ -27,9 +27,12 @@ Then apply SQL on Supabase (see below) and deploy apps per `docs/deploy-vps.md`.
 | `chat-phase2.sql` | chat pins, group members, message policies |
 | `chat-instant-flow.sql` | system/profile message types + profile_user_id for instant chat |
 | `hire-collab-instant-validation.sql` | relax freelancer hire insert validation (studio hire stays strict) |
+| `projects-video-urls.sql` | `projects.video_urls` for portfolio video uploads |
+| `anthem-projects-id-defaults.sql` | Fix `anthem.projects` id PK + defaults (publish → detail page) |
 | `frontend-production-gap.sql` | avatar_pool, analytics RPCs, collab_requests, group RPC, portfolio RLS |
 | `chat-cv-private-storage.sql` | private chat/CV storage (after anthem-media-storage-rls) |
 | `ux-retest-schema-gap.sql` | project_comments threading, collection_items, job_match_notifications, RPC stubs |
+| `ux-research-feedback.sql` | UX research session form (`/research/feedback`) — `ux_research_submissions` + `submit_ux_research` RPC |
 
 หลังรัน `seed-catalog.sql` ฟีด/ดีไซเนอร์/สตูดิโอ/งานจะดึงจาก Supabase เท่านั้น (ไม่มี mock ฝั่ง client แล้ว)
 

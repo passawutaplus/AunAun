@@ -89,6 +89,7 @@ const AdminModerationPage = lazy(() => import("./pages/admin/AdminModerationPage
 const ExploreProjectsPage = lazy(() => import("./pages/ExploreProjectsPage.tsx"));
 const EarningsPage = lazy(() => import("./pages/EarningsPage.tsx"));
 const ResearchPage = lazy(() => import("./pages/ResearchPage.tsx"));
+const UxResearchFeedbackPage = lazy(() => import("./pages/UxResearchFeedbackPage.tsx"));
 const AdvertisePage = lazy(() => import("./pages/AdvertisePage.tsx"));
 const UpgradePage = lazy(() => import("./pages/UpgradePage.tsx"));
 const AdDetailPage = lazy(() => import("./pages/AdDetailPage.tsx"));
@@ -126,6 +127,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/research" element={<ResearchPage />} />
+              <Route path="/research/feedback" element={<UxResearchFeedbackPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/portfolio" element={<RequireAuth><PortfolioProfilePage /></RequireAuth>} />

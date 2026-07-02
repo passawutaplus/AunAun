@@ -1,6 +1,6 @@
 /**
  * Aplus1 brand — creative social app สำหรับคนสร้างสรรค์
- * One profile. One space. Endless creative opportunities.
+ * 1 Profile. 100+ Opportunities.
  */
 
 /** ชื่อทางการ / SEO / กฎหมาย */
@@ -21,20 +21,25 @@ export const ANTHEM_PRODUCTION_URL = APLUS1_PRODUCTION_URL;
 /** @deprecated use APLUS1_DEMO_URL */
 export const ANTHEM_DEMO_URL = APLUS1_DEMO_URL;
 
-export const BRAND_TAGLINE = "โปรไฟล์เดียว เชื่อมต่อทุกโอกาสของครีเอทีฟ";
+export const BRAND_TAGLINE = "1 โปรไฟล์ สู่ 100+ โอกาส";
 
-export const BRAND_TAGLINE_EN = "One profile. One space. Endless creative opportunities.";
+export const BRAND_TAGLINE_EN = "1 Profile. 100+ Opportunities.";
+
+export const BRAND_SUBLINE_EN = "You create. We connect.";
 
 export const BRAND_DESCRIPTION =
-  "Aplus1 คือ creative social app สำหรับคนสร้างสรรค์ — รวมโปรไฟล์ ผลงาน คอมมูนิตี้ การคอลแลป และโอกาสในการจ้างงานไว้ในที่เดียว";
+  "Aplus1 คือ creative social app สำหรับคนสร้างสรรค์ — พื้นที่เดียวสำหรับผลงาน โปรไฟล์ คอลแลบ และโอกาสใหม่ของครีเอทีฟ";
 
 /** ใช้บริบทที่ต้องการมุมมองเพิ่ม — อย่าแสดงคู่กับ BRAND_TAGLINE ในหน้าเดียว */
 export const BRAND_CONCEPT = "พื้นที่ของโอกาสใหม่ๆ";
 
 export const BRAND_HERO_SUBTITLE = "creative social app";
 
-/** โลโก้ mark ในกล่อง (visual คงเดิม — เปลี่ยนเมื่อมีโลโก้ใหม่) */
+/** โลโก้ mark ในกล่อง */
 export const BRAND_MARK = "1";
+
+/** Path โลโก้ wordmark (public) */
+export const BRAND_LOGO_PATH = "/brand/aplus1-wordmark.png";
 
 export const BRAND_COMPANY = "Aplus1 Platform";
 

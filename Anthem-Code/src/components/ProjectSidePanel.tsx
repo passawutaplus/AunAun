@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { exploreProjectsUrl } from "@/lib/exploreRoutes";
-import { Heart, Layers3, Eye, MessageCircle, Sparkles, Calendar, Users } from "lucide-react";
+import { Layers3, Eye, MessageCircle, Sparkles, Calendar, Users } from "lucide-react";
+import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ToolsGrid from "@/components/ToolsGrid";
@@ -129,10 +130,14 @@ const ProjectSidePanel = (p: Props) => {
         )}
 
         <div className="grid grid-cols-2 gap-2">
-          <Button onClick={p.onLike} variant="outline" className="rounded-full" size="sm" aria-label={p.liked ? "เลิกถูกใจ" : "ถูกใจผลงาน"}>
-            <Heart className={`w-4 h-4 mr-1 ${p.liked ? "fill-destructive text-destructive" : ""}`} />
-            ถูกใจ · {formatCompact(p.likes)}
-          </Button>
+          <PlusOneControl
+            active={p.liked}
+            count={p.likes}
+            size="md"
+            ariaLabel={p.liked ? "เลิก +1" : "ให้ +1"}
+            onClick={p.onLike}
+            className="inline-flex items-center justify-center rounded-full border border-input bg-background h-9 px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground w-full"
+          />
           <SaveToCollectionPopover projectId={p.projectId}>
             <Button variant="outline" className="rounded-full w-full" size="sm">
               <Layers3 className="w-4 h-4 mr-1" />
@@ -143,7 +148,7 @@ const ProjectSidePanel = (p: Props) => {
 
         <div className="flex items-center justify-around text-xs text-muted-foreground pt-3 border-t border-border/50">
           <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {formatCompact(p.views)} วิว</span>
-          <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" /> {formatCompact(p.likes)}</span>
+          <PlusOneControl active={false} count={p.likes} showCount ariaLabel="+1" />
           <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> {formatCompact(p.commentsCount)}</span>
         </div>
       </div>

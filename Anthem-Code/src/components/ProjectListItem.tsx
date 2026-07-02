@@ -1,12 +1,11 @@
 import BriefcaseIcon from "./icons/BriefcaseIcon";
-import { Heart, Eye, Users } from "lucide-react";
+import { Eye, Users } from "lucide-react";
+import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import { useNavigate } from "react-router-dom";
 import type { Project } from "@/data/projectTypes";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-
 interface ProjectListItemProps {
   project: Project;
   onHireClick?: (projectId: string) => void;
@@ -52,10 +51,13 @@ const ProjectListItem = ({ project, onHireClick, onCollabClick }: ProjectListIte
         </button>
 
         <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-          <button onClick={stop(toggleLike)} className={cn("flex items-center gap-1 hover:text-foreground transition", isLiked && "text-primary")}>
-            <Heart className={cn("w-3.5 h-3.5", isLiked && "fill-primary")} />
-            <span>{likes}</span>
-          </button>
+          <PlusOneControl
+            active={isLiked}
+            count={likes}
+            ariaLabel={isLiked ? "เลิก +1" : "ให้ +1"}
+            className="hover:text-foreground transition"
+            onClick={stop(toggleLike)}
+          />
           <span className="flex items-center gap-1">
             <Eye className="w-3.5 h-3.5" />
             {project.views}

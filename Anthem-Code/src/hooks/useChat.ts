@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useModerationState, useRecordProfanityStrike } from "@/hooks/useModeration";
 import { useAuth } from "./useAuth";
 import type { Database } from "@/integrations/supabase/types";
+import { isUuid } from "@/lib/uuid";
 import {
   formatHireBriefChatText,
   parseAttachmentUrlsFromMessage,
@@ -468,6 +469,8 @@ async function ensureConversation(args: OpenHireCollabChatArgs): Promise<string>
   const existing = await findConversationByRequest(kind, requestId);
   if (existing) return existing;
 
+  const safeProjectId = projectId && isUuid(projectId) ? projectId : null;
+
   const { data, error } = await supabase
     .from("conversations")
     .insert({
@@ -476,7 +479,7 @@ async function ensureConversation(args: OpenHireCollabChatArgs): Promise<string>
       request_id: requestId,
       client_id: clientId,
       freelancer_id: freelancerId,
-      project_id: projectId ?? null,
+      project_id: safeProjectId,
       project_title: projectTitle ?? "",
       created_by: clientId,
     } as never)

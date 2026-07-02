@@ -86,7 +86,7 @@ export const NEW_USER_JOURNEY: JourneyStep[] = [
   {
     step: 2,
     title: "Guest กด action ที่ต้อง login",
-    where: "Bottom nav, ไลก์, จ้างงาน",
+    where: "Bottom nav, +1, จ้างงาน",
     criteria: "Auth dialog ชัด ไม่หลง — รู้ว่าต้อง login ก่อนทำอะไร",
   },
   {
@@ -162,7 +162,7 @@ export const FEATURE_SECTIONS: FeatureSection[] = [
     steps: [
       "เปิดโปรไฟล์ public จากฟีด",
       "เปิดรายละเอียดผลงาน /project/:id",
-      "ดู ToolsGrid, ไลก์, คอมเมนต์",
+      "ดู ToolsGrid, +1, คอมเมนต์",
       "ลอง similar images ถ้ามีลิงก์",
     ],
     uxCriteria: [
@@ -174,7 +174,7 @@ export const FEATURE_SECTIONS: FeatureSection[] = [
       { id: "b1", text: "โปรไฟล์ — avatar, bio, skills, ผลงาน grid" },
       { id: "b2", text: "ปุ่มติดตาม / แชร์ / รายงาน อยู่ตำแหน่งเหมาะสม" },
       { id: "b3", text: "Project detail — gallery, tools, stats, side panel" },
-      { id: "b4", text: "ไลก์ + คอมเมนต์ (guest → auth prompt)" },
+      { id: "b4", text: "+1 + คอมเมนต์ (guest → auth prompt)" },
       { id: "b5", text: "Similar images — ค้นหาผลงานใกล้เคียงได้" },
     ],
   },
@@ -209,7 +209,7 @@ export const FEATURE_SECTIONS: FeatureSection[] = [
     account: "phatsawut@",
     steps: [
       "Login ครั้งแรก → ดู checklist 8 ภารกิจ",
-      "ทำภารกิมง่าย (ไลก์, สำรวจฟีด, ดู jobs)",
+      "ทำภารกิจง่าย (+1, สำรวจฟีด, ดู jobs)",
       "กดรับ PX ตามภารกิจ",
       "สังเกต progress 0/500 และ celebration",
     ],
@@ -357,7 +357,7 @@ export const FEATURE_SECTIONS: FeatureSection[] = [
       "Badge บน bottom nav",
     ],
     uxCriteria: [
-      "ประเภทแจ้งเตือนแยกอ่านได้ (จ้าง, ไลก์, แชท)",
+      "ประเภทแจ้งเตือนแยกอ่านได้ (จ้าง, +1, แชท)",
       "ลิงก์พาไป context ถูก",
     ],
     success: "รู้ว่ามีอะไรใหม่และไปต่อได้ทันที",

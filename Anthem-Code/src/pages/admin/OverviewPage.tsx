@@ -1,16 +1,22 @@
 import BriefcaseIcon from "../../components/icons/BriefcaseIcon";
 import {
   Users, Building2, FolderKanban, HandshakeIcon, MessageSquare, Bookmark, UserPlus,
-  Heart, MessageCircle, Eye, Gift, Flag, Wallet, ShieldCheck, Shield, HeartHandshake,
+  MessageCircle, Eye, Gift, Flag, Wallet, ShieldCheck, Shield, HeartHandshake,
   Activity,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import KpiCard from "@/components/admin/KpiCard";
 import SectionHeader from "@/components/admin/SectionHeader";
+import { PlusOneMark } from "@/components/brand/PlusOneMark";
+import { cn } from "@/lib/utils";
 import { useAdminStats, useAdminTimeline, useLiveActivity } from "@/hooks/admin/useAdminData";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
+
+function PlusOneIcon({ className }: { className?: string }) {
+  return <PlusOneMark className={cn("text-admin-muted text-xs", className)} />;
+}
 
 const typeIcon = {
   user: UserPlus, project: FolderKanban, job: BriefcaseIcon, hire: HandshakeIcon, collab: HandshakeIcon, studio: Building2,
@@ -39,7 +45,7 @@ export default function OverviewPage() {
         <KpiCard label="Pending Collabs" value={stats?.pendingCollabs ?? "—"} accent icon={HeartHandshake} />
         <KpiCard label="Messages 24h" value={stats?.messages24h ?? "—"} icon={MessageSquare} />
         <KpiCard label="Collections" value={stats?.totalCollections ?? "—"} icon={Bookmark} />
-        <KpiCard label="Likes 24h" value={stats?.likes24h ?? "—"} icon={Heart} />
+        <KpiCard label="+1 24h" value={stats?.likes24h ?? "—"} icon={PlusOneIcon} />
         <KpiCard label="Comments 24h" value={stats?.comments24h ?? "—"} icon={MessageCircle} />
         <KpiCard label="Views 24h" value={stats?.views24h ?? "—"} icon={Eye} />
         <KpiCard label="Follows 24h" value={stats?.follows24h ?? "—"} icon={UserPlus} />
@@ -58,7 +64,7 @@ export default function OverviewPage() {
             {(stats?.pendingHiring ?? 0) > 0 && <Link to="/admin/hiring" className="text-admin-fg hover:text-admin-accent">คำขอจ้าง {stats?.pendingHiring}</Link>}
             {(stats?.pendingCollabs ?? 0) > 0 && <Link to="/admin/collabs" className="text-admin-fg hover:text-admin-accent">คอลแลป {stats?.pendingCollabs}</Link>}
             {(stats?.openReports ?? 0) > 0 && <Link to="/admin/reports" className="text-admin-fg hover:text-admin-accent">รายงาน {stats?.openReports}</Link>}
-            {(stats?.pendingCashouts ?? 0) > 0 && <Link to="/admin/gifts" className="text-admin-fg hover:text-admin-accent">ถอนเงิน {stats?.pendingCashouts}</Link>}
+            {(stats?.pendingCashouts ?? 0) > 0 && <Link to="/admin/wallet" className="text-admin-fg hover:text-admin-accent">ถอนเงิน {stats?.pendingCashouts}</Link>}
             {(stats?.pendingKyc ?? 0) > 0 && <Link to="/admin/kyc" className="text-admin-fg hover:text-admin-accent">KYC {stats?.pendingKyc}</Link>}
             {(stats?.openAmlFlags ?? 0) > 0 && <Link to="/admin/aml" className="text-admin-fg hover:text-admin-accent">AML {stats?.openAmlFlags}</Link>}
             <Link to="/admin/activity" className="text-admin-accent font-medium hover:underline inline-flex items-center gap-1">

@@ -12,6 +12,7 @@ PATHS=(
   "/jobs"
   "/advertise"
   "/research"
+  "/research/feedback"
   "/upgrade"
   "/legal/terms"
   "/legal/privacy"

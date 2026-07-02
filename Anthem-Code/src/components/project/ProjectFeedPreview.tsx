@@ -1,4 +1,5 @@
-import { Eye, Heart } from "lucide-react";
+import { Eye } from "lucide-react";
+import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import UserAvatar from "@/components/UserAvatar";
 import { ProjectFeedPreviewToolbar } from "@/components/project/ProjectFeedPreviewToolbar";
 import { cn } from "@/lib/utils";
@@ -46,9 +47,7 @@ export function ProjectFeedPreview({ title, cover, ownerName, ownerAvatar, fit =
           <span className="flex items-center gap-1">
             <Eye className="w-3.5 h-3.5" />0
           </span>
-          <span className="flex items-center gap-1">
-            <Heart className="w-3.5 h-3.5" />0
-          </span>
+          <PlusOneControl active={false} count={0} showCount={false} ariaLabel="+1" />
         </div>
       </div>
       <p className="sr-only">{displayTitle}</p>

@@ -99,8 +99,8 @@ export const useCommunityPostLike = (
           await notifyCommunityEvent({
             recipientId: meta.authorId,
             kind: "community_like",
-            title: "มีคนถูกใจโพสต์ของคุณ",
-            body: `${prof?.display_name ?? "มีคนถูกใจ"} ถูกใจ "${meta.title ?? "โพสต์"}"`,
+            title: "มีคนให้ +1 โพสต์ของคุณ",
+            body: `${prof?.display_name ?? "มีคน"} ให้ +1 "${meta.title ?? "โพสต์"}"`,
             link: `/community/${postId}`,
             metadata: { post_id: postId },
           });

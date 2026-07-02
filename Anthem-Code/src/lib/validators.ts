@@ -202,6 +202,7 @@ export const projectSchema = z.object({
   category: z.string().trim().min(1, "เลือกหมวดงาน"),
   cover_url: z.string().trim().url("ต้องอัปโหลดภาพปก").or(z.literal("")),
   gallery_urls: z.array(z.string().url()).max(20, "ไม่เกิน 20 ภาพ").default([]),
+  video_urls: z.array(z.string().url()).max(5, "ไม่เกิน 5 วิดีโอ").default([]),
   tools: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
   tags: z.array(z.string().trim().min(1).max(30)).max(15).default([]),
   price_thb: z.number().int().min(0).max(10_000_000).nullable().optional(),

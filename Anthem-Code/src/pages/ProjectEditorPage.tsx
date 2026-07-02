@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Eye, Handshake, ImagePlus, Loader2, Save, Upload, X, Crop } from "lucide-react";
+import { Eye, Handshake, ImagePlus, Loader2, Save, Upload, X } from "lucide-react";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,6 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useCreateProject, useProject, useUpdateProject } from "@/hooks/useProjects";
-import { usePortfolioAutosave } from "@/hooks/usePortfolioAutosave";
 import { isUuid } from "@/lib/uuid";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { uploadProjectVideo } from "@/lib/uploadVideo";
@@ -20,6 +19,7 @@ import { useSubscription } from "@/core/subscription";
 import { getProjectLimits } from "@/lib/projectLimits";
 import { supabase } from "@/integrations/supabase/client";
 import { projectSchema, validateProjectPublish } from "@/lib/validators";
+import { portfolioEditorHasContent } from "@/lib/portfolioEditorStorage";
 import { categories } from "@/data/projectTypes";
 import { toast } from "sonner";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
@@ -34,7 +34,6 @@ import OriginalWorkAttestation from "@/components/license/OriginalWorkAttestatio
 import { LEGAL_ATTESTATION_VERSION } from "@/lib/legalConfig";
 import { type LicenseType, isLicenseType } from "@/lib/licenses";
 import { GalleryMediaButtons } from "@/components/project/GalleryMediaButtons";
-import { PortfolioCoverCropDialog } from "@/components/project/PortfolioCoverCropDialog";
 import { PortfolioLinkedPostPicker } from "@/components/project/PortfolioLinkedPostPicker";
 import { PortfolioCollabUserPicker } from "@/components/project/PortfolioCollabUserPicker";
 import { SortableGalleryGrid } from "@/components/project/SortableGalleryGrid";
@@ -115,15 +114,13 @@ const ProjectEditorPage = () => {
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<ProjectPreviewMode>("pc");
-  const [coverCropFile, setCoverCropFile] = useState<File | null>(null);
   const [linkedOwnPosts, setLinkedOwnPosts] = useState<LinkedPostSummary[]>([]);
   const [linkedCollabPosts, setLinkedCollabPosts] = useState<LinkedPostSummary[]>([]);
   const [collabSelected, setCollabSelected] = useState<TaggedUserSummary[]>([]);
   const [collabAccepted, setCollabAccepted] = useState<TaggedUserSummary[]>([]);
   const [collabPending, setCollabPending] = useState<TaggedUserSummary[]>([]);
-  const [autosaveReady, setAutosaveReady] = useState(!editing);
   const [publishing, setPublishing] = useState(false);
-  const baselinedRef = useRef(false);
+  const [savingDraft, setSavingDraft] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?redirect=/portfolio/new");
@@ -226,38 +223,11 @@ const ProjectEditorPage = () => {
           /* migration may be pending */
         }
       })();
-      setAutosaveReady(true);
-  }, [existing, editing, user, isAdmin]);
-
-  useEffect(() => {
-    if (!editing) setAutosaveReady(true);
-  }, [editing]);
-
-  useEffect(() => {
-    baselinedRef.current = false;
-  }, [id]);
-
-  const autosaveMedia = useMemo(() => splitMediaItems(mediaItems), [mediaItems]);
+  }, [existing, editing, user, isAdmin, id]);
 
   const allLinkedPostIds = useMemo(
     () => linkedPostIds([...linkedOwnPosts, ...linkedCollabPosts]),
     [linkedOwnPosts, linkedCollabPosts],
-  );
-
-  const autosaveState = useMemo(
-    () => ({
-      title,
-      subtitle: "",
-      description,
-      category,
-      cover_url: cover,
-      gallery_urls: autosaveMedia.gallery_urls,
-      video_urls: autosaveMedia.video_urls,
-      tools,
-      tags,
-      linked_community_post_ids: allLinkedPostIds,
-    }),
-    [title, description, category, cover, autosaveMedia, tools, tags, allLinkedPostIds],
   );
 
   const buildProjectPayload = useCallback(
@@ -367,18 +337,33 @@ const ProjectEditorPage = () => {
     [user, linkedOwnPosts, collabSelected, collabPending, collabAccepted, title],
   );
 
-  const autosaveStatusForSave = useCallback((): Status => {
+  const draftStatusForSave = useCallback((): Status => {
     if (editing && existing?.status === "Published") return "Published";
     if (editing && existing?.status === "Private") return "Private";
     return "Draft";
   }, [editing, existing?.status]);
 
-  const saveProjectDraft = useCallback(
-    async (draft: typeof autosaveState & { projectId: string | null }) => {
+  const persistDraft = useCallback(
+    async (projectId?: string | null): Promise<{ id: string } | null> => {
       if (!user) throw new Error("UNAUTHORIZED");
-      const pid = draft.projectId;
+      const media = splitMediaItems(mediaItems);
+      if (
+        !portfolioEditorHasContent({
+          title,
+          description,
+          cover_url: cover,
+          gallery_urls: media.gallery_urls,
+          video_urls: media.video_urls,
+          tools,
+          tags,
+        })
+      ) {
+        return null;
+      }
+
+      const pid = projectId ?? (editing && id && isUuid(id) ? id : null);
       const payload = {
-        ...buildProjectPayload(autosaveStatusForSave()),
+        ...buildProjectPayload(draftStatusForSave()),
         rights_attested_at: rightsAttested
           ? new Date().toISOString()
           : (existing as { rights_attested_at?: string | null } | undefined)?.rights_attested_at ?? null,
@@ -390,7 +375,6 @@ const ProjectEditorPage = () => {
           throw new Error("FORBIDDEN");
         }
         await update.mutateAsync({ id: pid, patch: payload });
-        await runProjectLinkSideEffects(pid);
         return { id: pid };
       }
 
@@ -405,54 +389,35 @@ const ProjectEditorPage = () => {
 
       const created = await create.mutateAsync({ ...payload, owner_id: user.id });
       navigate(`/portfolio/${created.id}/edit`, { replace: true });
-      await runProjectLinkSideEffects(created.id);
       return { id: created.id };
     },
     [
       user,
+      mediaItems,
+      title,
+      description,
+      cover,
+      tools,
+      tags,
       buildProjectPayload,
-      autosaveStatusForSave,
+      draftStatusForSave,
       rightsAttested,
       existing,
       isAdmin,
+      editing,
+      id,
       update,
       limits.draft,
       create,
       navigate,
-      runProjectLinkSideEffects,
     ],
   );
-
-  const autosave = usePortfolioAutosave({
-    userId: user?.id,
-    projectId: editing && id && isUuid(id) ? id : null,
-    state: autosaveState,
-    enabled: autosaveReady && !!user && !publishing,
-    saveDraft: { mutateAsync: saveProjectDraft, isPending: create.isPending || update.isPending },
-    onProjectId: () => {},
-  });
-
-  useEffect(() => {
-    if (!autosaveReady || baselinedRef.current) return;
-    autosave.markBaseline();
-    baselinedRef.current = true;
-  }, [autosaveReady, autosave]);
-
-  const queueCoverFile = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("รองรับเฉพาะ JPG, PNG, WebP");
-      return;
-    }
-    setCoverCropFile(file);
-  };
 
   const handleCover = async (file: File) => {
     if (!user) return;
     setUploadingCover(true);
     try {
-      const url = await uploadProjectImage(file, user.id, folderRef.current, tier, {
-        skipCompression: true,
-      });
+      const url = await uploadProjectImage(file, user.id, folderRef.current, tier);
       setCover(url);
       toast.success("อัปโหลดภาพปกสำเร็จ");
     } catch (e) {
@@ -460,6 +425,14 @@ const ProjectEditorPage = () => {
     } finally {
       setUploadingCover(false);
     }
+  };
+
+  const handleCoverPick = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("รองรับเฉพาะ JPG, PNG, WebP");
+      return;
+    }
+    void handleCover(file);
   };
 
   const handleGallery = async (files: FileList | File[]) => {
@@ -519,9 +492,11 @@ const ProjectEditorPage = () => {
     }
   };
 
-  const handleSubmit = async (publish?: boolean) => {
+  const handleSubmit = async (publish?: boolean, projectIdOverride?: string) => {
     if (!user) return;
     const targetStatus: Status = publish === undefined ? status : publish ? "Published" : "Draft";
+    const resolvedId =
+      projectIdOverride ?? (editing && id && isUuid(id) ? id : undefined);
 
     if (targetStatus === "Published" && existing?.status !== "Published") {
       const maxPublished = limits.published;
@@ -577,23 +552,26 @@ const ProjectEditorPage = () => {
     }
 
     try {
-      if (editing && id) {
+      if (resolvedId) {
         if (existing && user && existing.owner_id !== user.id && !isAdmin) {
           toast.error("คุณไม่มีสิทธิ์แก้ไขผลงานนี้");
           return;
         }
-        await update.mutateAsync({ id, patch: payload });
-        await runProjectLinkSideEffects(id);
-        toast.success("บันทึกการเปลี่ยนแปลงแล้ว");
-        autosave.markBaseline();
-        if (targetStatus === "Published") autosave.clearLocal();
-        navigate(`/project/${id}`);
+        await update.mutateAsync({ id: resolvedId, patch: payload });
+        await runProjectLinkSideEffects(resolvedId);
+        toast.success(targetStatus === "Published" ? "เผยแพร่ผลงานแล้ว" : "บันทึกการเปลี่ยนแปลงแล้ว");
+        if (
+          targetStatus === "Published" &&
+          drillMetaRef.current.drill_type === "daily"
+        ) {
+          navigate("/?drill=1");
+        } else {
+          navigate(`/project/${resolvedId}`);
+        }
       } else {
         const created = await create.mutateAsync({ ...payload, owner_id: user.id });
         await runProjectLinkSideEffects(created.id);
         toast.success(targetStatus === "Published" ? "เผยแพร่ผลงานแล้ว" : "บันทึกฉบับร่างแล้ว");
-        autosave.markBaseline();
-        if (targetStatus === "Published") autosave.clearLocal();
         if (
           targetStatus === "Published" &&
           drillMetaRef.current.drill_type === "daily"
@@ -609,9 +587,8 @@ const ProjectEditorPage = () => {
   };
 
   const cats = categories.filter((c) => c !== "Explore");
-  const saving = create.isPending || update.isPending;
-  const isAutosaving =
-    autosave.status === "pending" || autosave.status === "saving" || saving;
+  const isUploadingMedia = uploadingCover || uploadingGallery || uploadingVideo;
+  const isBusy = publishing || savingDraft || isUploadingMedia;
   const canPublish = !!cover && rightsAttested;
   const publishBlockedReason = !cover
     ? "ต้องมีภาพปกก่อนเผยแพร่"
@@ -620,18 +597,26 @@ const ProjectEditorPage = () => {
       : undefined;
 
   const handleSaveDraft = async (silent = false) => {
-    const ok = await autosave.flushSave();
-    if (!silent) {
-      if (ok) toast.success("บันทึกฉบับร่างแล้ว");
-      else toast.message("ยังไม่มีเนื้อหาให้บันทึก");
+    setSavingDraft(true);
+    try {
+      const result = await persistDraft();
+      if (result) {
+        await runProjectLinkSideEffects(result.id);
+        if (!silent) toast.success("บันทึกฉบับร่างแล้ว");
+      } else if (!silent) {
+        toast.message("ยังไม่มีเนื้อหาให้บันทึก");
+      }
+    } catch (e) {
+      if (!silent) toast.error(mapWriteFlowError(e, "บันทึกไม่สำเร็จ"));
+    } finally {
+      setSavingDraft(false);
     }
   };
 
   const handlePublishClick = async () => {
     setPublishing(true);
     try {
-      if (autosave.isDirty) await autosave.flushSave();
-      await handleSubmit(true);
+      await handleSubmit(true, editing && id && isUuid(id) ? id : undefined);
     } finally {
       setPublishing(false);
     }
@@ -728,11 +713,8 @@ const ProjectEditorPage = () => {
           <BackButton />
           <div className="min-w-0 flex-1">
             <h1 className="text-base font-semibold text-foreground truncate">{editing ? "แก้ไขผลงาน" : "เพิ่มผลงานใหม่"}</h1>
-            {isAutosaving && (
-              <p className="text-[11px] text-muted-foreground lg:hidden">กำลังบันทึก…</p>
-            )}
-            {!isAutosaving && autosave.status === "saved" && (
-              <p className="text-[11px] text-muted-foreground lg:hidden">บันทึกอัตโนมัติแล้ว</p>
+            {isUploadingMedia && (
+              <p className="text-[11px] text-muted-foreground lg:hidden">กำลังอัปโหลดไฟล์…</p>
             )}
           </div>
           <Button
@@ -766,19 +748,24 @@ const ProjectEditorPage = () => {
               variant="outline"
               size="sm"
               onClick={() => void handleSaveDraft(true)}
-              disabled={isAutosaving}
+              disabled={isBusy}
               className="rounded-full"
             >
-              {isAutosaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+              {savingDraft ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-1" />
+              ) : (
+                <Save className="w-4 h-4 mr-1" />
+              )}
               บันทึกฉบับร่าง
             </Button>
             <Button
               size="sm"
               onClick={() => void handlePublishClick()}
-              disabled={isAutosaving || !canPublish}
+              disabled={isBusy || !canPublish}
               title={publishBlockedReason}
               className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
+              {publishing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
               เผยแพร่
             </Button>
           </div>
@@ -804,8 +791,7 @@ const ProjectEditorPage = () => {
             <CoverDrop
               url={cover}
               loading={uploadingCover}
-              onPick={queueCoverFile}
-              onRecrop={queueCoverFile}
+              onPick={handleCoverPick}
               onClear={() => setCover("")}
             />
             <p className="text-xs text-muted-foreground">ใช้เป็นภาพหลักในฟีดและการค้นหา (จะถูกบีบเป็น WebP คุณภาพ HD)</p>
@@ -1035,10 +1021,10 @@ const ProjectEditorPage = () => {
             variant="outline"
             className="shrink-0 w-[28%] min-w-[6.5rem] rounded-xl px-2 text-sm"
             onClick={() => void handleSaveDraft()}
-            disabled={isAutosaving}
-            aria-busy={isAutosaving}
+            disabled={isBusy}
+            aria-busy={savingDraft}
           >
-            {isAutosaving ? (
+            {savingDraft ? (
               <Loader2 className="w-4 h-4 animate-spin" aria-label="กำลังบันทึก" />
             ) : (
               "บันทึกฉบับร่าง"
@@ -1048,10 +1034,17 @@ const ProjectEditorPage = () => {
             type="button"
             className="flex-1 rounded-xl bg-primary text-primary-foreground"
             onClick={() => void handlePublishClick()}
-            disabled={isAutosaving || !canPublish}
+            disabled={isBusy || !canPublish}
             title={publishBlockedReason}
           >
-            เผยแพร่
+            {publishing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-1 inline" />
+                กำลังเผยแพร่…
+              </>
+            ) : (
+              "เผยแพร่"
+            )}
           </Button>
         </div>
         {!canPublish && publishBlockedReason && (
@@ -1067,15 +1060,6 @@ const ProjectEditorPage = () => {
         defaultMode={previewMode}
       />
 
-      <PortfolioCoverCropDialog
-        file={coverCropFile}
-        open={coverCropFile !== null}
-        onOpenChange={(open) => {
-          if (!open) setCoverCropFile(null);
-        }}
-        onConfirm={(file) => void handleCover(file)}
-        onCancel={() => setCoverCropFile(null)}
-      />
     </div>
   );
 };
@@ -1086,58 +1070,41 @@ const CoverDrop = ({
   url,
   loading,
   onPick,
-  onRecrop,
   onClear,
 }: {
   url: string;
   loading: boolean;
   onPick: (f: File) => void;
-  onRecrop: (f: File) => void;
   onClear: () => void;
 }) => {
   const ref = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
-  const [recropping, setRecropping] = useState(false);
 
   const pickFile = (file: File | undefined) => {
     if (file) onPick(file);
   };
 
-  const handleRecrop = async () => {
-    if (!url || recropping) return;
-    setRecropping(true);
-    try {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const ext = blob.type === "image/png" ? "png" : "webp";
-      onRecrop(new File([blob], `cover.${ext}`, { type: blob.type || "image/webp" }));
-    } catch {
-      toast.error("โหลดภาพเพื่อครอปไม่สำเร็จ");
-    } finally {
-      setRecropping(false);
-    }
-  };
-
   if (url) {
     return (
       <div className="relative rounded-2xl overflow-hidden border border-border group">
-        <img src={url} alt="cover" className="w-full aspect-[16/9] object-cover" />
+        <img src={url} alt="cover" className="w-full h-auto block" />
         <div className="absolute top-3 right-3 flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
           <Button
             type="button"
             size="sm"
             variant="secondary"
             className="rounded-full"
-            disabled={recropping}
-            onClick={() => void handleRecrop()}
+            disabled={loading}
+            onClick={() => ref.current?.click()}
           >
-            {recropping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crop className="w-4 h-4 mr-1" />}
-            ครอปใหม่
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4 mr-1" />}
+            เปลี่ยนรูป
           </Button>
           <Button type="button" size="sm" variant="destructive" className="rounded-full" onClick={onClear}>
             <X className="w-4 h-4 mr-1" /> ลบภาพปก
           </Button>
         </div>
+        <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => pickFile(e.target.files?.[0])} />
       </div>
     );
   }
@@ -1150,13 +1117,13 @@ const CoverDrop = ({
         pickFile(e.dataTransfer.files?.[0]);
       }}
       onClick={() => ref.current?.click()}
-      className={`rounded-2xl border-2 border-dashed cursor-pointer transition aspect-[16/9] min-h-[200px] flex flex-col items-center justify-center gap-3 glass-panel ${
+      className={`rounded-2xl border-2 border-dashed cursor-pointer transition min-h-[200px] flex flex-col items-center justify-center gap-3 glass-panel ${
         drag ? "border-primary bg-primary/10 shadow-lg shadow-primary/10" : "border-border/80 hover:border-primary/40 hover:bg-muted/20"
       }`}
     >
       {loading ? <Loader2 className="w-6 h-6 animate-spin text-primary" /> : <ImagePlus className="w-8 h-8 text-muted-foreground" />}
       <p className="text-sm font-medium text-foreground">ลากภาพมาวาง หรือคลิกเพื่อเลือก</p>
-      <p className="text-xs text-muted-foreground">JPG / PNG / WebP — สูงสุด 5MB · ครอป 16:9</p>
+      <p className="text-xs text-muted-foreground">JPG / PNG / WebP — สูงสุด 5MB · ใช้ตามอัตราส่วนต้นฉบับ</p>
       <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => pickFile(e.target.files?.[0])} />
     </div>
   );

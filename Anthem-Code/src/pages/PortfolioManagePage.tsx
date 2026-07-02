@@ -1,7 +1,9 @@
 import BriefcaseIcon from "../components/icons/BriefcaseIcon";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, LayoutGrid, Globe, Eye, Heart, Mail, Settings, Phone, ExternalLink, X, MessageCircle, FileText } from "lucide-react";
+import { Plus, LayoutGrid, Globe, Eye, Mail, Settings, Phone, ExternalLink, X, MessageCircle, FileText } from "lucide-react";
+import { PlusOneMark } from "@/components/brand/PlusOneMark";
+import type { LucideIcon } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +33,10 @@ type ProjectTab = "ทั้งหมด" | "Published" | "Draft" | "Private";
 type HiringTab = HiringStatusDB | "ทั้งหมด";
 
 const STATUSES: HiringStatusDB[] = ["ใหม่", "ที่ต้องตอบ", "ตอบรับ", "ปฏิเสธ", "ติดต่อแล้ว", "ปิดแล้ว"];
+
+const PlusOneStatsIcon = (({ className }: { className?: string }) => (
+  <PlusOneMark className={className} />
+)) as LucideIcon;
 
 const PortfolioManagePage = () => {
   const navigate = useNavigate();
@@ -187,7 +193,7 @@ const PortfolioManagePage = () => {
           <StatsCard label="ทั้งหมด" value={myProjects.length} icon={LayoutGrid} />
           <StatsCard label="เผยแพร่" value={publishedCount} icon={Globe} accent />
           <StatsCard label="ยอดเข้าชม" value={totalViews} icon={Eye} />
-          <StatsCard label="ถูกใจ" value={totalLikes} icon={Heart} accent />
+          <StatsCard label="+1" value={totalLikes} icon={PlusOneStatsIcon} accent />
         </div>
 
         <BoostInsightsPanel />

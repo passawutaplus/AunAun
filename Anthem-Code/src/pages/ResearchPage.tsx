@@ -241,6 +241,9 @@ export default function ResearchPage() {
               <li key={prompt}>{prompt}</li>
             ))}
           </ul>
+          <Button asChild className="rounded-full">
+            <Link to="/research/feedback">ส่งผลการทดสอบ</Link>
+          </Button>
         </section>
 
         <section className="rounded-xl border border-border/60 p-4 space-y-2 text-sm">

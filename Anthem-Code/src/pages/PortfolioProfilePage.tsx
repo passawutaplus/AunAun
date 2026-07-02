@@ -2,7 +2,8 @@ import BriefcaseIcon from "../components/icons/BriefcaseIcon";
 import { useMemo, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Settings, ExternalLink, LayoutGrid, Sparkles, Phone, UserPlus, FileCheck, Plus, Layers3, ArrowDownUp, Eye, Heart, Clock, ChevronDown, ChevronUp, Gift as GiftIcon, Target, Bookmark } from "lucide-react";
+import { Settings, ExternalLink, LayoutGrid, Sparkles, Phone, UserPlus, FileCheck, Plus, Layers3, ArrowDownUp, Eye, Clock, ChevronDown, ChevronUp, Gift as GiftIcon, Target, Bookmark } from "lucide-react";
+import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -377,8 +378,10 @@ const PortfolioProfilePage = () => {
                     { key: "portfolio", label: "ลำดับของฉัน", Icon: Pin },
                     { key: "newest", label: "ล่าสุด", Icon: Clock },
                     { key: "views", label: "วิวมากสุด", Icon: Eye },
-                    { key: "likes", label: "หัวใจมากสุด", Icon: Heart },
-                  ] as const).map(({ key, label, Icon }) => {
+                    { key: "likes", label: "+1 มากสุด" },
+                  ] as const).map((item) => {
+                    const { key, label } = item;
+                    const Icon = "Icon" in item ? item.Icon : undefined;
                     const active = portfolioSort === key;
                     return (
                       <button
@@ -390,7 +393,12 @@ const PortfolioProfilePage = () => {
                             : "border-border text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        <Icon className="w-3 h-3" /> {label}
+                        {key === "likes" ? (
+                          <PlusOneMark className="text-[10px]" />
+                        ) : Icon ? (
+                          <Icon className="w-3 h-3" />
+                        ) : null}{" "}
+                        {label}
                       </button>
                     );
                   })}

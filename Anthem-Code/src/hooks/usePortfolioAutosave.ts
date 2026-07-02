@@ -41,7 +41,7 @@ export function usePortfolioAutosave({
   projectId,
   state,
   enabled = true,
-  debounceMs = 3000,
+  debounceMs = 800,
   saveDraft,
   onProjectId,
 }: Options) {
@@ -49,6 +49,7 @@ export function usePortfolioAutosave({
   const baselineRef = useRef<string>("");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
+  const inflightSaveRef = useRef<Promise<{ ok: boolean; projectId?: string }> | null>(null);
 
   const snapshot = useCallback((): PortfolioEditorSnapshot => {
     return {
@@ -71,30 +72,94 @@ export function usePortfolioAutosave({
     savePortfolioEditorLocal(userId, snapshot());
   }, [userId, state, snapshot]);
 
-  const flushSave = useCallback(async (): Promise<boolean> => {
-    if (!userId || !enabled) return true;
-    if (!portfolioEditorHasContent(state)) return true;
-    if (savingRef.current) return false;
+  const runSave = useCallback(
+    async (opts?: { force?: boolean }): Promise<{ ok: boolean; projectId?: string }> => {
+      if (!userId) return { ok: true };
+      if (!opts?.force && !enabled) return { ok: true };
+      if (!portfolioEditorHasContent(state)) return { ok: true };
 
-    const parsed = projectDraftSchema.safeParse(state);
-    if (!parsed.success) return false;
+      const parsed = projectDraftSchema.safeParse(state);
+      if (!parsed.success) return { ok: false };
 
-    savingRef.current = true;
-    setStatus("saving");
-    try {
-      const { id } = await saveDraft.mutateAsync({ ...parsed.data, projectId });
-      onProjectId(id);
-      baselineRef.current = serialize(state);
-      savePortfolioEditorLocal(userId, { ...snapshot(), projectId: id, savedAt: Date.now() });
-      setStatus("saved");
-      return true;
-    } catch {
-      setStatus("error");
-      return false;
-    } finally {
-      savingRef.current = false;
-    }
-  }, [userId, enabled, state, projectId, saveDraft, onProjectId, serialize, snapshot]);
+      savingRef.current = true;
+      setStatus("saving");
+      try {
+        const { id } = await saveDraft.mutateAsync({ ...parsed.data, projectId });
+        onProjectId(id);
+        baselineRef.current = serialize(state);
+        savePortfolioEditorLocal(userId, { ...snapshot(), projectId: id, savedAt: Date.now() });
+        setStatus("saved");
+        return { ok: true, projectId: id };
+      } catch {
+        setStatus("error");
+        return { ok: false };
+      } finally {
+        savingRef.current = false;
+      }
+    },
+    [userId, enabled, state, projectId, saveDraft, onProjectId, serialize, snapshot],
+  );
+
+  const flushSave = useCallback(
+    async (opts?: { force?: boolean }): Promise<boolean> => {
+      if (inflightSaveRef.current) {
+        const prior = await inflightSaveRef.current;
+        if (!portfolioEditorHasContent(state)) return prior.ok;
+        if (serialize(state) === baselineRef.current) return true;
+      }
+
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+
+      const task = runSave(opts);
+      inflightSaveRef.current = task;
+      try {
+        const result = await task;
+        return result.ok;
+      } finally {
+        if (inflightSaveRef.current === task) {
+          inflightSaveRef.current = null;
+        }
+      }
+    },
+    [runSave, serialize, state],
+  );
+
+  /** Wait for debounce/autosave, then persist latest draft (for publish / manual save). */
+  const ensureSaved = useCallback(
+    async (opts?: { force?: boolean }): Promise<{ ok: boolean; projectId?: string }> => {
+      if (inflightSaveRef.current) {
+        const prior = await inflightSaveRef.current;
+        if (!portfolioEditorHasContent(state)) return prior;
+        if (serialize(state) === baselineRef.current) return { ok: true, projectId: prior.projectId };
+      }
+
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+
+      if (!userId) return { ok: true };
+      if (!opts?.force && !enabled) return { ok: true };
+      if (!portfolioEditorHasContent(state)) return { ok: true };
+      if (serialize(state) === baselineRef.current) {
+        return { ok: true, projectId: projectId ?? undefined };
+      }
+
+      const task = runSave(opts);
+      inflightSaveRef.current = task;
+      try {
+        return await task;
+      } finally {
+        if (inflightSaveRef.current === task) {
+          inflightSaveRef.current = null;
+        }
+      }
+    },
+    [enabled, projectId, runSave, serialize, state, userId],
+  );
 
   const markBaseline = useCallback(() => {
     baselineRef.current = serialize(state);
@@ -136,6 +201,7 @@ export function usePortfolioAutosave({
     status,
     isDirty,
     flushSave,
+    ensureSaved,
     markBaseline,
     loadLocal: () => (userId ? loadPortfolioEditorLocal(userId) : null),
     clearLocal: () => {

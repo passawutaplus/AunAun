@@ -15,7 +15,7 @@ export const FEED_MODE_LABELS: Record<FeedModeOption, string> = {
   Explore: "สำรวจ",
   Following: "กำลังติดตาม",
   Newest: "ล่าสุด",
-  "Top 1": "ยอดนิยม",
+  "Top 1": "Most +1",
   Collections: "คอลเลกชัน",
 };
 

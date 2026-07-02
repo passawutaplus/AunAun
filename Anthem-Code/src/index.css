@@ -190,6 +190,11 @@
   20% { opacity: 1; transform: scale(1.15); }
   100% { opacity: 0; transform: scale(1); }
 }
+@keyframes plus-one-burst {
+  0% { opacity: 0; transform: scale(0.2); }
+  20% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 0; transform: scale(1); }
+}
 
 @layer utilities {
   .animate-fade-up { animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
@@ -197,6 +202,7 @@
   .animate-scale-in { animation: scale-in 0.25s ease-out both; }
   .animate-input-shake { animation: input-shake 0.4s ease-in-out; }
   .animate-community-heart-burst { animation: community-heart-burst 0.75s ease-out forwards; }
+  .animate-plus-one-burst { animation: plus-one-burst 0.75s ease-out forwards; }
 
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

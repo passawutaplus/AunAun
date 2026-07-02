@@ -1,7 +1,7 @@
 import BriefcaseIcon from "./icons/BriefcaseIcon";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, Eye, MoreHorizontal, Layers3, Share2, Handshake } from "lucide-react";
+import { Eye, MoreHorizontal, Layers3, Share2, Handshake } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Project } from "@/data/projectTypes";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
@@ -14,6 +14,7 @@ import BoostBadge from "@/components/boost/BoostBadge";
 import { DrillProjectBadge } from "@/components/drill/DrillProjectBadge";
 import { projectHasDrillTag } from "@/lib/drillProject";
 import { logBoostEvent } from "@/hooks/useBoost";
+import { PlusOneControl } from "@/components/brand/PlusOneControl";
 
 interface ProjectCardProps {
   project: Project;
@@ -98,12 +99,12 @@ const ProjectCard = ({ project, onHireClick, onCollabClick, boosted, boostId }: 
       whileTap={{ scale: 0.985 }}
       transition={{ duration: 0.22, ease: smoothEase }}
     >
-      <div ref={wrapRef} className="relative w-full aspect-[4/3] overflow-hidden rounded-sm bg-muted">
+      <div ref={wrapRef} className="relative w-full overflow-hidden rounded-sm bg-muted">
         <SafeDemoImage
           src={project.image}
           index={project.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0)}
           alt={project.title}
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          className="w-full h-auto block transition-transform duration-500 group-hover:scale-[1.04]"
           loading="lazy"
         />
 
@@ -134,7 +135,7 @@ const ProjectCard = ({ project, onHireClick, onCollabClick, boosted, boostId }: 
         {/* Project title — bottom-left, visible on hover or when menu open */}
         <div
           className={cn(
-            "absolute bottom-2 left-3 right-12 pointer-events-none transition-opacity duration-300",
+            "absolute bottom-2 left-3 right-12 md:right-3 pointer-events-none transition-opacity duration-300",
             menuOpen ? "opacity-100" : "opacity-0 md:group-hover:opacity-100"
           )}
         >
@@ -200,10 +201,10 @@ const ProjectCard = ({ project, onHireClick, onCollabClick, boosted, boostId }: 
           aria-label="ตัวเลือก"
           aria-expanded={menuOpen}
           className={cn(
-            "absolute bottom-2 right-2 p-1.5 rounded-full transition-all hover:scale-110 text-white",
+            "absolute bottom-2 right-2 p-1.5 rounded-full transition-all hover:scale-110 text-white md:hidden",
             menuOpen
               ? "bg-white/20 border border-white/25 backdrop-blur-md opacity-100"
-              : "bg-background/15 border border-white/10 backdrop-blur-md md:bg-transparent md:border-transparent md:backdrop-blur-0 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
+              : "bg-background/15 border border-white/10 backdrop-blur-md"
           )}
         >
           <MoreHorizontal className="w-4 h-4" />
@@ -232,14 +233,12 @@ const ProjectCard = ({ project, onHireClick, onCollabClick, boosted, boostId }: 
             <Eye className="w-3.5 h-3.5" />
             {formatCompact(project.views ?? 0)}
           </span>
-          <button
+          <PlusOneControl
+            active={isLiked}
+            count={isDbProject ? likes : project.likes}
             onClick={stop(() => toggleLike())}
-            className="flex items-center gap-1"
-            aria-label="ถูกใจ"
-          >
-            <Heart className={cn("w-3.5 h-3.5", isLiked && "fill-destructive text-destructive")} />
-            {formatCompact(isDbProject ? likes : project.likes)}
-          </button>
+            ariaLabel={isLiked ? "ยกเลิก +1" : "Give +1"}
+          />
         </div>
       </div>
     </motion.div>

@@ -7,9 +7,9 @@ import { test, expect } from "@playwright/test";
 test.describe("SEO @public", () => {
   test("home has description and OG meta after hydration", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/pixel100/i);
+    await expect(page).toHaveTitle(/aplus1/i);
     await expect(page.locator('meta[name="description"]').first()).toHaveAttribute("content", /.+/);
-    await expect(page.locator('meta[property="og:title"]').first()).toHaveAttribute("content", /Pixel100/i);
+    await expect(page.locator('meta[property="og:title"]').first()).toHaveAttribute("content", /Aplus1/i);
     await expect(page.locator('meta[name="twitter:card"]').first()).toHaveAttribute(
       "content",
       "summary_large_image",
@@ -22,7 +22,7 @@ test.describe("SEO @public", () => {
     await expect(jsonLd).toHaveCount(1);
     const text = await jsonLd.textContent();
     expect(text).toContain('"@type":"WebSite"');
-    expect(text).toContain("Pixel100");
+    expect(text).toContain("Aplus1");
   });
 
   test("home has absolute canonical in static HTML", async ({ page }) => {
@@ -32,7 +32,7 @@ test.describe("SEO @public", () => {
 
   test("jobs page updates title and robots after navigation", async ({ page }) => {
     await page.goto("/jobs");
-    await expect(page).toHaveTitle(/งาน|Pixel100/i);
+    await expect(page).toHaveTitle(/งาน|Aplus1/i);
     await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute("content", "index, follow");
     await expect(page.locator('meta[property="og:url"]').first()).toHaveAttribute("content", /\/jobs$/);
   });

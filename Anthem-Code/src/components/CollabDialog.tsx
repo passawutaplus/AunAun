@@ -16,6 +16,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useMyProjects } from "@/hooks/useProjects";
 import { useCreateCollabRequest } from "@/hooks/useCollabRequests";
 import { useOpenHireCollabChat } from "@/hooks/useChat";
+import { isUuid } from "@/lib/uuid";
 import { supabase } from "@/integrations/supabase/client";
 import {
   buildCollabContextMessage,
@@ -117,7 +118,10 @@ const CollabDialog = ({
       useAuthDialog.getState().openSignup();
       return;
     }
-    if (!recipientId) { toast.error("ไม่พบเจ้าของผลงาน"); return; }
+    if (!recipientId || !isUuid(recipientId)) {
+      toast.error("ผลงานนี้ยังไม่มีเจ้าของในระบบ — ไม่สามารถส่งคำขอได้");
+      return;
+    }
     if (recipientId === user.id) { toast.info("ส่งคำขอให้ตัวเองไม่ได้"); return; }
 
     const parsed = collabDetailsSchema.safeParse({
@@ -147,7 +151,7 @@ const CollabDialog = ({
       const created = await createReq.mutateAsync({
         sender_id: user.id,
         recipient_id: recipientId,
-        project_id: projectId ?? null,
+        project_id: projectId && isUuid(projectId) ? projectId : null,
         collab_types: payload.collabTypes,
         message: payload.message,
         attached_project_ids: payload.attached,
@@ -165,7 +169,7 @@ const CollabDialog = ({
         requestId: created.id,
         clientId: user.id,
         freelancerId: recipientId,
-        projectId: projectId ?? null,
+        projectId: projectId && isUuid(projectId) ? projectId : null,
         projectTitle: title,
         contextMessage: buildCollabContextMessage({
           source,
@@ -193,8 +197,8 @@ const CollabDialog = ({
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border-primary/20">
-        <DialogHeader>
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-1">
+        <DialogHeader className="space-y-2 text-left">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
             <Handshake className="w-6 h-6 text-primary" />
           </div>
           <DialogTitle className="text-xl">ชวน {recipientName} ร่วมงาน</DialogTitle>
@@ -442,8 +446,7 @@ const CollabDialog = ({
             </p>
           )}
 
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="rounded-full">ยกเลิก</Button>
+          <DialogFooter className="gap-2 sm:justify-end pt-2">
             <Button
               type="submit"
               disabled={busy}

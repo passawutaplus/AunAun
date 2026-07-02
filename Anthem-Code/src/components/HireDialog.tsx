@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { hireRequestQuickSchema } from "@/lib/validators";
 import { parseMoneyInput } from "@/lib/parseMoney";
+import { isUuid } from "@/lib/uuid";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useCreateHireRequest } from "@/hooks/useHiringRequests";
@@ -52,15 +52,6 @@ const HireDialog = ({
   const [form, setForm] = useState(emptyHireInviteForm());
   const busy = createReq.isPending || openChat.isPending;
 
-  useEffect(() => {
-    if (!open || !user) return;
-    setForm((f) => ({
-      ...f,
-      clientName: f.clientName || profile?.display_name || "",
-      email: f.email || user.email || "",
-    }));
-  }, [open, user, profile?.display_name]);
-
   const reset = () => {
     setForm(emptyHireInviteForm());
     setJobPostId("");
@@ -76,9 +67,20 @@ const HireDialog = ({
     return selectedJob?.title ?? projectTitle ?? (source === "profile" ? "โปรไฟล์" : "ผลงานในฟีด");
   };
 
+  const resolveClientContact = () => {
+    const clientName =
+      profile?.display_name?.trim() ||
+      profile?.username?.trim() ||
+      user?.user_metadata?.full_name?.trim() ||
+      user?.email?.split("@")[0] ||
+      "ผู้ใช้";
+    const email = user?.email?.trim() || profile?.email?.trim() || "";
+    return { clientName, email };
+  };
+
   const submitHire = async () => {
     if (!user) return;
-    if (!freelancerId) {
+    if (!freelancerId || !isUuid(freelancerId)) {
       toast.error("ผลงานนี้ยังไม่มีเจ้าของในระบบ — ไม่สามารถส่งคำขอได้");
       return;
     }
@@ -87,33 +89,31 @@ const HireDialog = ({
       return;
     }
 
-    const quickCheck = hireRequestQuickSchema.safeParse({
-      clientName: form.clientName,
-      email: form.email,
-    });
-    if (!quickCheck.success) {
-      toast.error(quickCheck.error.issues[0]?.message ?? "กรอกข้อมูลไม่ครบ");
+    const { clientName, email } = resolveClientContact();
+    if (!email) {
+      toast.error("บัญชีนี้ยังไม่มีอีเมล — ตั้งค่าอีเมลในบัญชีก่อนส่งคำขอจ้าง");
       return;
     }
 
     const budgetNum = parseMoneyInput(form.budgetAmount) ?? undefined;
     const inviteMessage = buildHireInviteMessage(form) ?? DEFAULT_HIRE_MESSAGE;
+    const safeProjectId = projectId && isUuid(projectId) ? projectId : null;
 
     try {
       const title = resolvedTitle();
       const requestId = await createReq.mutateAsync({
         freelancer_id: freelancerId,
         client_id: user.id,
-        project_id: projectId ?? null,
+        target_type: "freelancer",
+        project_id: safeProjectId,
         project_title: title,
-        client_name: quickCheck.data.clientName,
-        email: quickCheck.data.email,
-        phone: form.phone || null,
+        client_name: clientName,
+        email,
+        phone: profile?.phone?.trim() || null,
         budget_amount: budgetNum ?? null,
         deadline: form.deadline || null,
         message: inviteMessage,
-        job_post_id: jobPostId || null,
-        invited_as: "personal",
+        job_post_id: jobPostId && isUuid(jobPostId) ? jobPostId : null,
         attachment_urls: form.attachmentUrls.length ? form.attachmentUrls : null,
       } as never);
 
@@ -126,7 +126,7 @@ const HireDialog = ({
         requestId,
         clientId: user.id,
         freelancerId,
-        projectId: projectId ?? null,
+        projectId: safeProjectId,
         projectTitle: title,
         contextMessage: buildHireContextMessage({
           source,
@@ -146,7 +146,7 @@ const HireDialog = ({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="space-y-1 text-left">
           <DialogTitle>ชวนมาทำงาน</DialogTitle>
           <DialogDescription>
             {source === "profile" ? (
@@ -168,18 +168,15 @@ const HireDialog = ({
           optional
         />
 
-        <DialogFooter className="gap-2 sm:gap-2 pt-2">
-          <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)} className="rounded-xl">
-            ยกเลิก
-          </Button>
+        <DialogFooter className="gap-2 sm:justify-end pt-2">
           <Button
             type="button"
             disabled={busy}
-            className="rounded-xl gap-2 flex-1 sm:flex-none"
+            className="rounded-full gap-1.5"
             onClick={() => void submitHire()}
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-            {busy ? "กำลังเปิดแชท..." : "แชทเลย"}
+            {busy ? "กำลังเปิด..." : "แชทเลย"}
           </Button>
         </DialogFooter>
       </DialogContent>

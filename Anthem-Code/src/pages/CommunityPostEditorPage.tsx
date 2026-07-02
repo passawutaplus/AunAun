@@ -13,7 +13,6 @@ import {
   isCommunityDraftStillOpen,
 } from "@/hooks/useCommunityPosts";
 import { useProject } from "@/hooks/useProjects";
-import { useCommunityAutosave } from "@/hooks/useCommunityAutosave";
 import { useCommunityImageUpload } from "@/hooks/useCommunityImageUpload";
 import { communityPostDraftSchema, communityPostSchema } from "@/lib/validators";
 import { toast } from "sonner";
@@ -101,7 +100,6 @@ const CommunityPostEditorPage = () => {
 
   const [draftId, setDraftId] = useState<string | null>(null);
   const [draftLoaded, setDraftLoaded] = useState(false);
-  const [autosaveReady, setAutosaveReady] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -115,8 +113,6 @@ const CommunityPostEditorPage = () => {
   const [mediaAspect, setMediaAspect] = useState<CommunityMediaAspect>(DEFAULT_COMMUNITY_MEDIA_ASPECT);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
-
-  const { gallery_urls, video_urls } = splitCommunityMedia(mediaItems);
 
   const { cropFile, enqueueImages, finishCrop, confirmCrop, recropping } =
     useCommunityImageUpload({
@@ -141,25 +137,6 @@ const CommunityPostEditorPage = () => {
     cropFile !== null ||
     mediaCount >= limits.total;
   const aspectLocked = imageCount > 0;
-
-  const autosave = useCommunityAutosave({
-    userId: user?.id,
-    draftId,
-    state: {
-      title,
-      body,
-      tags,
-      tools,
-      mentioned_project_ids: mentionedProjectIds(mentionedProjects),
-      tagged_user_ids: taggedUserIds(taggedUsers),
-      media_aspect: mediaAspect,
-      gallery_urls,
-      video_urls,
-    },
-    enabled: draftLoaded && autosaveReady && !publish.isPending && !isEditMode,
-    saveDraft,
-    onDraftId: setDraftId,
-  });
 
   const draftScan = detectProfanityInFields({
     title,
@@ -293,12 +270,6 @@ const CommunityPostEditorPage = () => {
     })();
   }, [user, existingDraft, draftLoaded, draftLoading, isEditMode, editingPost, editingLoading, fromProjectId, sourceProject, projectLoading, limits, navigate]);
 
-  useEffect(() => {
-    if (!draftLoaded) return;
-    autosave.markBaseline();
-    setAutosaveReady(true);
-  }, [draftLoaded]);
-
   const composerPayload = useCallback(() => {
     const media = splitCommunityMedia(mediaItems);
     return {
@@ -392,7 +363,6 @@ const CommunityPostEditorPage = () => {
     try {
       const { id } = await saveDraft.mutateAsync(composerPayload());
       setDraftId(id);
-      autosave.markBaseline();
       if (!silent) toast.success("บันทึกแบบร่างแล้ว");
       return true;
     } catch (err) {
@@ -427,7 +397,7 @@ const CommunityPostEditorPage = () => {
         return;
       }
       await publish.mutateAsync(composerPayload());
-      autosave.clearLocal();
+      if (user?.id) clearComposerLocal(user.id);
       setDraftId(null);
       saveCommunityFilter({ ...loadCommunityFilter(), category: "All", feedSource: "all" });
       toast.success("โพสต์สำเร็จ");
@@ -437,13 +407,11 @@ const CommunityPostEditorPage = () => {
     }
   };
 
-  const handleBack = async () => {
-    if (autosave.isDirty) await autosave.flushSave();
+  const handleBack = () => {
     navigate(-1);
   };
 
-  const isSavingDraft =
-    saveDraft.isPending || autosave.status === "pending" || autosave.status === "saving";
+  const isSavingDraft = saveDraft.isPending;
 
   if (!user) {
     return (
@@ -456,7 +424,7 @@ const CommunityPostEditorPage = () => {
   return (
     <main className="min-h-screen bg-background pb-28">
       <header className="sticky top-0 z-20 flex items-center gap-3 px-4 py-2 border-b border-border/60 bg-background/95 backdrop-blur-md">
-        <BackButton onClick={() => void handleBack()} />
+        <BackButton onClick={handleBack} />
         <div className="flex-1" />
         <div className="flex items-center gap-1 shrink-0">
           <button
@@ -578,6 +546,7 @@ const CommunityPostEditorPage = () => {
         onPublish={() => void handlePublish()}
         savingDraft={isSavingDraft}
         publishing={publish.isPending || updatePost.isPending}
+        uploading={uploading}
         publishLabel={isEditMode ? "บันทึกการแก้ไข" : "โพสต์"}
         hideDraft={isEditMode}
       />

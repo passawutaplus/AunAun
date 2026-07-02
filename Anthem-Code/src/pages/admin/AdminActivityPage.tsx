@@ -2,19 +2,25 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   UserPlus, FolderKanban, HandshakeIcon, HeartHandshake, Building2,
-  Heart, MessageCircle, UserCheck, Gift, Flag, MessageSquareHeart, Bookmark,
+  MessageCircle, UserCheck, Gift, Flag, MessageSquareHeart, Bookmark,
   Sparkles, MessageSquare, Wallet, ShieldCheck, Shield, ScrollText, Eye,
 } from "lucide-react";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import SectionHeader from "@/components/admin/SectionHeader";
 import DataTable, { Column } from "@/components/admin/DataTable";
 import StatusPill from "@/components/admin/StatusPill";
+import { PlusOneMark } from "@/components/brand/PlusOneMark";
+import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SearchBar, useSearch } from "@/components/admin/SearchBar";
 import AdminExportButton from "@/components/admin/AdminExportButton";
 import { usePlatformActivity, type ActivityEvent, type ActivityEventType } from "@/hooks/admin/useAdminData";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
+
+const PlusOneIcon = ({ className }: { className?: string }) => (
+  <PlusOneMark className={cn("text-admin-muted text-xs", className)} />
+);
 
 const typeMeta: Record<ActivityEventType, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
   user: { label: "สมาชิก", icon: UserPlus },
@@ -23,7 +29,7 @@ const typeMeta: Record<ActivityEventType, { label: string; icon: React.Component
   hire: { label: "จ้าง", icon: HandshakeIcon },
   collab: { label: "คอลแลป", icon: HeartHandshake },
   studio: { label: "สตูดิโอ", icon: Building2 },
-  like: { label: "ถูกใจ", icon: Heart },
+  like: { label: "+1", icon: PlusOneIcon },
   comment: { label: "คอมเมนต์", icon: MessageCircle },
   follow: { label: "ติดตาม", icon: UserCheck },
   gift: { label: "ของขวัญ", icon: Gift },

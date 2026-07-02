@@ -8,10 +8,12 @@ type Props = {
   children: ReactNode;
   /** Tighter stagger for dense masonry / feed grids */
   dense?: boolean;
+  /** Wrap each child for CSS column masonry (break-inside-avoid). */
+  masonry?: boolean;
 };
 
 /** Scroll-reveal grid wrapper — caps stagger so long lists stay smooth. */
-export function StaggerGrid({ className, children, dense }: Props) {
+export function StaggerGrid({ className, children, dense, masonry }: Props) {
   const reduced = useReducedMotion();
   const items = Children.toArray(children);
 
@@ -26,6 +28,7 @@ export function StaggerGrid({ className, children, dense }: Props) {
         return (
           <motion.div
             key={child.key ?? `stagger-${i}`}
+            className={masonry ? "break-inside-avoid mb-2 sm:mb-3" : undefined}
             initial={{ opacity: 0, y: dense ? 10 : 14 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={viewportOnce}

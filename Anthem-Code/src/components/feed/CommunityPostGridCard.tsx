@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Play } from "lucide-react";
+import { MessageCircle, Play } from "lucide-react";
+import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import type { CommunityPost } from "@/hooks/useCommunityPosts";
 import { useCommunityPostLike } from "@/hooks/useCommunityPostInteractions";
 import UserAvatar from "@/components/UserAvatar";
@@ -11,7 +12,6 @@ import { communityMediaAspectTailwind, normalizeCommunityMediaAspect } from "@/l
 import { CommunityPostGridCarousel } from "@/components/community/CommunityPostGridCarousel";
 import { CommunityDoubleTapLike } from "@/components/community/CommunityDoubleTapLike";
 import { useDelayedTapNavigate } from "@/hooks/useDoubleTapLike";
-import { cn } from "@/lib/utils";
 import BoostBadge from "@/components/boost/BoostBadge";
 import { logBoostEvent } from "@/hooks/useBoost";
 import { useEffect, useRef } from "react";
@@ -129,20 +129,18 @@ const CommunityPostGridCard = ({ post, boosted, boostId }: Props) => {
           <MessageCircle className="w-3.5 h-3.5" />
           {post.reply_count > 0 && <span>{post.reply_count}</span>}
         </Link>
-        <button
-          type="button"
-          aria-label={isLiked ? "เลิกถูกใจ" : "ถูกใจ"}
+        <PlusOneControl
+          active={isLiked}
+          count={likes}
           disabled={isPending}
+          ariaLabel={isLiked ? "เลิก +1" : "ให้ +1"}
+          className="shrink-0 text-[11px]"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             toggleLike();
           }}
-          className="inline-flex items-center gap-0.5 shrink-0 text-[11px] text-muted-foreground hover:text-destructive"
-        >
-          <Heart className={cn("w-3.5 h-3.5", isLiked && "fill-destructive text-destructive")} />
-          {likes > 0 && <span>{likes}</span>}
-        </button>
+        />
       </div>
     </article>
   );

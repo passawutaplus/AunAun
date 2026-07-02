@@ -1,10 +1,12 @@
 import { LucideIcon } from "lucide-react";
 
+type IconComponent = LucideIcon | React.ComponentType<{ className?: string }>;
+
 interface Props {
   label: string;
   value: string | number;
   delta?: string;
-  icon?: LucideIcon;
+  icon?: IconComponent;
   accent?: boolean;
 }
 

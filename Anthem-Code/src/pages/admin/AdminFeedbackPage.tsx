@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import SectionHeader from "@/components/admin/SectionHeader";
 import DataTable, { Column } from "@/components/admin/DataTable";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Star, Download } from "lucide-react";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -27,6 +27,19 @@ type FeedbackRow = {
   created_at: string;
 };
 
+type UxResearchRow = {
+  id: string;
+  reviewer_name: string;
+  persona: string;
+  devices: string[];
+  tasks_done: string[];
+  sections_done: string[];
+  scores: Record<string, number>;
+  answers: Record<string, string>;
+  viewport: string | null;
+  created_at: string;
+};
+
 const RANGES = [
   { key: "7d", label: "7 วัน", days: 7 },
   { key: "30d", label: "30 วัน", days: 30 },
@@ -37,11 +50,49 @@ const STATUSES = ["all", "new", "reviewing", "resolved", "dismissed"] as const;
 
 export default function AdminFeedbackPage() {
   const qc = useQueryClient();
+  const [mainTab, setMainTab] = useState("in-app");
   const [rangeKey, setRangeKey] = useState("30d");
   const [status, setStatus] = useState<(typeof STATUSES)[number]>("all");
   const [feature, setFeature] = useState<string>("all");
 
   const days = RANGES.find((r) => r.key === rangeKey)?.days ?? 30;
+
+  const { data: uxRows = [], isLoading: uxLoading } = useQuery({
+    queryKey: ["admin", "ux-research", rangeKey],
+    enabled: mainTab === "ux-research",
+    queryFn: async () => {
+      const since = new Date(Date.now() - days * 86400000).toISOString();
+      const { data, error } = await supabase
+        .from("ux_research_submissions" as never)
+        .select("id, reviewer_name, persona, devices, tasks_done, sections_done, scores, answers, viewport, created_at")
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []) as unknown as UxResearchRow[];
+    },
+  });
+
+  const uxCols: Column<UxResearchRow>[] = [
+    { key: "created_at", header: "วันที่", render: (r) => r.created_at.slice(0, 16).replace("T", " ") },
+    { key: "reviewer_name", header: "ชื่อ" },
+    { key: "persona", header: "Persona" },
+    {
+      key: "overall",
+      header: "Overall",
+      render: (r) => (r.scores?.overall != null ? String(r.scores.overall) : "—"),
+    },
+    {
+      key: "tasks",
+      header: "Tasks",
+      render: (r) => r.tasks_done?.join(", ") || "—",
+    },
+    {
+      key: "devices",
+      header: "Devices",
+      render: (r) => r.devices?.join(", ") || "—",
+    },
+  ];
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["admin", "feedback", rangeKey],
@@ -205,6 +256,13 @@ export default function AdminFeedbackPage() {
         description="คะแนนและความคิดเห็นจากผู้ใช้ พร้อมแนวโน้มรายวันและส่งออก CSV"
       />
 
+      <Tabs value={mainTab} onValueChange={setMainTab}>
+        <TabsList className="bg-admin-surface border border-admin-border mb-4">
+          <TabsTrigger value="in-app">ฟีดแบ็กในแอป</TabsTrigger>
+          <TabsTrigger value="ux-research">UX Research</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="in-app" className="space-y-0">
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <Tabs value={rangeKey} onValueChange={setRangeKey}>
           <TabsList>
@@ -296,6 +354,45 @@ export default function AdminFeedbackPage() {
       )}
 
       <DataTable columns={cols} rows={filtered} loading={isLoading} rowKey={(r) => r.id} empty="ยังไม่มีฟีดแบ็กในช่วงนี้" />
+        </TabsContent>
+
+        <TabsContent value="ux-research">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs text-admin-muted">
+              ผลจากฟอร์มสาธารณะ <code className="text-[10px]">/research/feedback</code> — {uxRows.length} รายการ ({days}d)
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!uxRows.length}
+              onClick={() => {
+                const csv = toCsv(
+                  uxRows.map((r) => ({
+                    created_at: r.created_at,
+                    reviewer_name: r.reviewer_name,
+                    persona: r.persona,
+                    devices: r.devices?.join("; "),
+                    tasks_done: r.tasks_done?.join("; "),
+                    sections_done: r.sections_done?.join("; "),
+                    overall: r.scores?.overall ?? "",
+                    answers: JSON.stringify(r.answers),
+                  })),
+                );
+                downloadCsv(csv, `ux-research-${rangeKey}.csv`);
+              }}
+            >
+              <Download className="w-3.5 h-3.5 mr-1" /> Export CSV
+            </Button>
+          </div>
+          <DataTable
+            columns={uxCols}
+            rows={uxRows}
+            loading={uxLoading}
+            rowKey={(r) => r.id}
+            empty="ยังไม่มี UX research submissions — แชร์ลิงก์ /research/feedback ให้ reviewer"
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
