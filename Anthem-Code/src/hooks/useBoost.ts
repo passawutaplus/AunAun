@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { startBoostCheckout } from "@/lib/stripePaymentsApi";
 
-export type BoostPackage = "micro_3" | "micro_7" | "micro_14";
+export type BoostPackage = "micro_3" | "micro_7" | "micro_14" | "micro_custom";
 export type BoostTargetType = "project" | "community_post";
 
 export interface PostBoost {
@@ -56,11 +56,19 @@ export const BOOST_PACKAGES = [
   },
 ] as const;
 
-const packageToPriceId: Record<BoostPackage, string> = {
+const packageToPriceId: Record<Exclude<BoostPackage, "micro_custom">, string> = {
   micro_3: "boost_99_3d",
   micro_7: "boost_249_7d",
   micro_14: "boost_499_14d",
 };
+
+export function boostPackageLabel(pkg: BoostPackage, durationDays?: number, amountThb?: number): string {
+  if (pkg === "micro_custom") {
+    return `กำหนดเอง · ${durationDays ?? "?"} วัน · ฿${(amountThb ?? 0).toLocaleString("th-TH")}`;
+  }
+  const preset = BOOST_PACKAGES.find((p) => p.id === pkg);
+  return preset?.name ?? pkg.replace("micro_", "") + " วัน";
+}
 
 export const useActiveBoosts = (limit = 80) =>
   useQuery({
@@ -94,26 +102,50 @@ export const useMyBoosts = () => {
 export const useCreateAndPayBoost = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (vars: {
-      targetType: BoostTargetType;
-      targetId: string;
-      package: BoostPackage;
-      successPath: string;
-      cancelPath?: string;
-    }) => {
-      const { data, error } = await supabase.rpc("create_post_boost", {
-        _target_type: vars.targetType,
-        _target_id: vars.targetId,
-        _package: vars.package,
-      });
-      if (error) throw error;
-      const row = data as PostBoost;
-      await startBoostCheckout({
-        boostId: row.id,
-        priceId: packageToPriceId[vars.package],
-        successPath: vars.successPath,
-        cancelPath: vars.cancelPath,
-      });
+    mutationFn: async (
+      vars: {
+        targetType: BoostTargetType;
+        targetId: string;
+        successPath: string;
+        cancelPath?: string;
+      } & (
+        | { package: Exclude<BoostPackage, "micro_custom">; custom?: never }
+        | { package?: never; custom: { amountThb: number; durationDays: number } }
+      ),
+    ) => {
+      let row: PostBoost;
+
+      if (vars.custom) {
+        const { data, error } = await supabase.rpc("create_post_boost_custom", {
+          _target_type: vars.targetType,
+          _target_id: vars.targetId,
+          _amount_thb: vars.custom.amountThb,
+          _duration_days: vars.custom.durationDays,
+        });
+        if (error) throw error;
+        row = data as PostBoost;
+        await startBoostCheckout({
+          boostId: row.id,
+          priceId: "boost_custom",
+          successPath: vars.successPath,
+          cancelPath: vars.cancelPath,
+        });
+      } else {
+        const { data, error } = await supabase.rpc("create_post_boost", {
+          _target_type: vars.targetType,
+          _target_id: vars.targetId,
+          _package: vars.package,
+        });
+        if (error) throw error;
+        row = data as PostBoost;
+        await startBoostCheckout({
+          boostId: row.id,
+          priceId: packageToPriceId[vars.package],
+          successPath: vars.successPath,
+          cancelPath: vars.cancelPath,
+        });
+      }
+
       return row;
     },
     onSuccess: () => {

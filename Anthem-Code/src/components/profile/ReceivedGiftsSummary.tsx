@@ -1,30 +1,114 @@
 import { Link } from "react-router-dom";
-import { Gift as GiftIcon, Coins, FolderKanban, ArrowRight } from "lucide-react";
+import { Gift as GiftIcon, Coins, FolderKanban, ArrowRight, Check, Circle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { useReceivedGiftsByProject } from "@/hooks/useReceivedGiftsByProject";
+import { useCreatorEligibility } from "@/hooks/useCreatorEligibility";
+import {
+  MIN_PUBLISHED_FOR_RECEIVE,
+  type CreatorEligibilitySnapshot,
+} from "@/lib/creatorEligibility";
+import { cn } from "@/lib/utils";
 
 interface Props {
   userId: string;
 }
 
+const GiftReceiveUnlockProgress = ({ data }: { data: CreatorEligibilitySnapshot }) => {
+  const welcomePct = Math.min(100, (data.welcomeClaimedPx / data.welcomeTargetPx) * 100);
+  const publishedPct = Math.min(100, (data.publishedCount / MIN_PUBLISHED_FOR_RECEIVE) * 100);
+  const overallPct = Math.round((welcomePct + publishedPct) / 2);
+
+  const steps = [
+    {
+      done: data.welcomeComplete,
+      label: "Welcome Bonus",
+      detail: `${data.welcomeClaimedPx.toLocaleString()} / ${data.welcomeTargetPx.toLocaleString()} PX`,
+      href: "/portfolio",
+    },
+    {
+      done: data.publishedCount >= MIN_PUBLISHED_FOR_RECEIVE,
+      label: "เผยแพร่ผลงาน",
+      detail: `${data.publishedCount} / ${MIN_PUBLISHED_FOR_RECEIVE} ชิ้น`,
+      href: "/portfolio/new",
+    },
+  ];
+
+  return (
+    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-medium text-foreground">ปลดล็อกรับของขวัญ</p>
+          <span className="text-xs text-muted-foreground tabular-nums">{overallPct}%</span>
+        </div>
+        <Progress value={overallPct} className="h-2" />
+        <p className="text-xs text-muted-foreground">
+          ทำครบทั้ง 2 ขั้นตอนเพื่อให้คนอื่นส่งของขวัญสนับสนุนคุณได้
+        </p>
+      </div>
+
+      <ul className="space-y-2">
+        {steps.map((step) => (
+          <li key={step.label} className="flex items-center gap-2.5 text-sm">
+            <span
+              className={cn(
+                "flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
+                step.done ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+              )}
+            >
+              {step.done ? <Check className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className={cn("font-medium", step.done ? "text-foreground" : "text-muted-foreground")}>
+                {step.label}
+              </p>
+              <p className="text-xs text-muted-foreground tabular-nums">{step.detail}</p>
+            </div>
+            {!step.done && (
+              <Link
+                to={step.href}
+                className="text-xs text-primary hover:underline shrink-0"
+              >
+                ไปทำ
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 const ReceivedGiftsSummary = ({ userId }: Props) => {
   const { data, isLoading } = useReceivedGiftsByProject(userId);
+  const { data: eligibility, isLoading: eligibilityLoading } = useCreatorEligibility(userId);
 
-  if (isLoading) {
+  if (isLoading || eligibilityLoading) {
     return <p className="text-sm text-muted-foreground">กำลังโหลด...</p>;
   }
 
-  if (!data || data.totalGifts === 0) {
+  const showUnlock = eligibility && !eligibility.canReceiveGifts;
+  const hasGifts = !!data && data.totalGifts > 0;
+
+  if (!hasGifts) {
     return (
-      <div className="text-center py-6">
-        <GiftIcon className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
-        <p className="text-sm text-muted-foreground">ยังไม่มีของขวัญที่ได้รับ</p>
-        <p className="text-xs text-muted-foreground/70 mt-1">เมื่อมีคนสนับสนุนผลงานของคุณ จะปรากฏที่นี่</p>
+      <div className="space-y-4">
+        {showUnlock && eligibility && <GiftReceiveUnlockProgress data={eligibility} />}
+        <div className="text-center py-6">
+          <GiftIcon className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+          <p className="text-sm text-muted-foreground">ยังไม่มีของขวัญที่ได้รับ</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">
+            {showUnlock
+              ? "ทำให้ครบ 2 ขั้นตอนด้านบนก่อน แล้วคนอื่นจะส่งของขวัญให้คุณได้"
+              : "เมื่อมีคนสนับสนุนผลงานของคุณ จะปรากฏที่นี่"}
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      {showUnlock && eligibility && <GiftReceiveUnlockProgress data={eligibility} />}
       <div className="grid grid-cols-3 gap-2">
         <KpiBox icon={GiftIcon} label="ของขวัญทั้งหมด" value={data.totalGifts.toLocaleString()} />
         <KpiBox icon={Coins} label="รวม px" value={data.totalPx.toLocaleString()} accent />

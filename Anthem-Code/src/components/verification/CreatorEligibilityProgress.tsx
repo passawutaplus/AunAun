@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, ChevronDown, ChevronRight, Circle } from "lucide-react";
+import { Check, ChevronDown, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -16,6 +16,7 @@ type Props = {
   data: CreatorEligibilitySnapshot;
   compact?: boolean;
   className?: string;
+  defaultOpen?: boolean;
 };
 
 type StepDef = {
@@ -23,6 +24,7 @@ type StepDef = {
   label: string;
   detail?: string;
   href?: string;
+  progressPct?: number;
 };
 
 const Step = ({
@@ -30,37 +32,57 @@ const Step = ({
   label,
   detail,
   href,
-}: {
-  done: boolean;
-  label: string;
-  detail?: string;
-  href?: string;
-}) => (
-  <li className="flex items-start gap-2.5 text-sm">
-    <span
-      className={cn(
-        "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
-        done ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
-      )}
-    >
-      {done ? <Check className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
-    </span>
-    <div className="min-w-0 flex-1">
-      <p className={cn("font-medium", done ? "text-foreground" : "text-muted-foreground")}>{label}</p>
-      {detail && <p className="text-xs text-muted-foreground mt-0.5">{detail}</p>}
+  progressPct,
+}: StepDef) => (
+  <li className="rounded-xl border border-border/60 bg-muted/15 p-3">
+    <div className="flex items-start gap-2.5">
+      <span
+        className={cn(
+          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
+          done ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+        )}
+      >
+        {done ? <Check className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
+      </span>
+
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className={cn("text-sm font-medium", done ? "text-foreground" : "text-muted-foreground")}>
+              {label}
+            </p>
+            {detail && (
+              <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">{detail}</p>
+            )}
+          </div>
+          {href && !done && (
+            <Link to={href} className="text-xs text-primary hover:underline shrink-0 pt-0.5">
+              ไปทำ
+            </Link>
+          )}
+        </div>
+
+        {!done && progressPct !== undefined && (
+          <Progress value={progressPct} className="h-1.5" />
+        )}
+      </div>
     </div>
-    {href && !done && (
-      <Button asChild variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full">
-        <Link to={href} aria-label={`ไปทำ: ${label}`}>
-          <ChevronRight className="h-4 w-4" />
-        </Link>
-      </Button>
-    )}
   </li>
 );
 
-const CreatorEligibilityProgress = ({ data, compact, className }: Props) => {
-  const [open, setOpen] = useState(false);
+function computeOverallProgress(data: CreatorEligibilitySnapshot): number {
+  const pcts = [
+    Math.min(100, (data.welcomeClaimedPx / data.welcomeTargetPx) * 100),
+    Math.min(100, (data.publishedCount / MIN_PUBLISHED_FOR_RECEIVE) * 100),
+    Math.min(100, (data.followerCount / MIN_FOLLOWERS_FOR_CASHOUT) * 100),
+    Math.min(100, (data.qualifiedReferralCount / MIN_SUCCESSFUL_REFERRALS) * 100),
+    data.isVerified ? 100 : 0,
+  ];
+  return Math.round(pcts.reduce((sum, pct) => sum + pct, 0) / pcts.length);
+}
+
+const CreatorEligibilityProgress = ({ data, compact, className, defaultOpen = false }: Props) => {
+  const [open, setOpen] = useState(defaultOpen);
 
   const welcomeDetail = `${data.welcomeClaimedPx.toLocaleString()} / ${data.welcomeTargetPx.toLocaleString()} PX`;
   const publishedDetail = `${data.publishedCount} / ${MIN_PUBLISHED_FOR_RECEIVE} ชิ้น`;
@@ -74,37 +96,41 @@ const CreatorEligibilityProgress = ({ data, compact, className }: Props) => {
         label: "Welcome Bonus ครบ",
         detail: welcomeDetail,
         href: "/portfolio",
+        progressPct: Math.min(100, (data.welcomeClaimedPx / data.welcomeTargetPx) * 100),
       },
       {
         done: data.publishedCount >= MIN_PUBLISHED_FOR_RECEIVE,
         label: "เผยแพร่ผลงาน",
         detail: publishedDetail,
         href: "/portfolio/new",
+        progressPct: Math.min(100, (data.publishedCount / MIN_PUBLISHED_FOR_RECEIVE) * 100),
       },
       {
         done: data.followerCount >= MIN_FOLLOWERS_FOR_CASHOUT,
         label: "ผู้ติดตาม (สำหรับถอนเงิน)",
         detail: followerDetail,
         href: "/portfolio/followers",
+        progressPct: Math.min(100, (data.followerCount / MIN_FOLLOWERS_FOR_CASHOUT) * 100),
       },
       {
         done: data.referralComplete,
         label: "ชวนเพื่อน 1 คน (สำเร็จ)",
         detail: referralDetail,
         href: "/referrals",
+        progressPct: Math.min(100, (data.qualifiedReferralCount / MIN_SUCCESSFUL_REFERRALS) * 100),
       },
       {
         done: data.isVerified,
         label: "ยืนยันตัวตน (KYC)",
-        href: "/verify",
+        href: data.canStartKyc ? "/verify" : undefined,
+        progressPct: data.isVerified ? 100 : 0,
       },
     ],
     [data, welcomeDetail, publishedDetail, followerDetail, referralDetail],
   );
 
   const doneCount = steps.filter((s) => s.done).length;
-  const progressPct = Math.round((doneCount / steps.length) * 100);
-  const remainingPct = 100 - progressPct;
+  const progressPct = computeOverallProgress(data);
 
   const title =
     data.tier === "cashout"
@@ -120,7 +146,7 @@ const CreatorEligibilityProgress = ({ data, compact, className }: Props) => {
           <p className="text-sm font-medium text-foreground">{title}</p>
           <span className="text-xs text-muted-foreground">{progressPct}%</span>
         </div>
-        <Progress value={progressPct} className="h-1.5" />
+        <Progress value={progressPct} className="h-2" />
       </div>
     );
   }
@@ -135,11 +161,11 @@ const CreatorEligibilityProgress = ({ data, compact, className }: Props) => {
           <div className="flex-1 min-w-0 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-medium text-foreground">{title}</h2>
-              <span className="text-xs text-muted-foreground shrink-0">
-                {remainingPct > 0 ? `เหลือ ${remainingPct}%` : "ครบแล้ว"}
+              <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
+                {progressPct >= 100 ? "ครบแล้ว" : `${progressPct}%`}
               </span>
             </div>
-            <Progress value={progressPct} className="h-1.5" />
+            <Progress value={progressPct} className="h-2" />
             {!open && (
               <p className="text-xs text-muted-foreground">
                 {doneCount}/{steps.length} ภารกิจ — แตะเพื่อดูรายการและไปทำต่อ
@@ -152,12 +178,12 @@ const CreatorEligibilityProgress = ({ data, compact, className }: Props) => {
         </button>
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="px-5 pb-5 space-y-4">
+      <CollapsibleContent className="px-5 pb-5 space-y-4 overflow-hidden">
         <p className="text-xs text-muted-foreground">
           ทำภารกิจ Welcome Bonus และลงผลงานก่อน — ถอนเงินต้องยืนยันตัวตน มีผู้ติดตามขั้นต่ำ และชวนเพื่อนสำเร็จ
         </p>
 
-        <ul className="space-y-3">
+        <ul className="space-y-2">
           {steps.map((step) => (
             <Step key={step.label} {...step} />
           ))}

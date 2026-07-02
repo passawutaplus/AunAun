@@ -6,8 +6,8 @@ export function resolveNotificationLink(link: string): string {
   const trimmed = link.trim();
   const [pathname, search = ""] = trimmed.split("?");
   const legacy: Record<string, string> = {
-    "/hire-requests": "/portfolio/manage?focus=hiring",
-    "/collab-requests": "/portfolio/manage?focus=collab",
+    "/hire-requests": "/portfolio?focus=hiring",
+    "/collab-requests": "/portfolio?focus=collab",
     "/followers": "/portfolio/followers",
   };
   const base = legacy[pathname] ?? trimmed;

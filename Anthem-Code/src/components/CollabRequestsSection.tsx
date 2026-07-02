@@ -113,7 +113,7 @@ const CollabRequestsSection = () => {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 scroll-mt-24 rounded-3xl glass-panel p-5 md:p-6" id="collab-section">
       <div className="flex items-center gap-3">
         <div className="p-2 rounded-lg bg-[hsl(var(--chat-collab-soft))]"><Handshake className="w-5 h-5 text-[hsl(var(--chat-collab))]" /></div>
         <div className="flex-1">

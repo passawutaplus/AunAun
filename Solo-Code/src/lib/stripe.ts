@@ -31,6 +31,7 @@ export const PRICE_IDS = {
   boost_99_3d: "boost_99_3d",
   boost_249_7d: "boost_249_7d",
   boost_499_14d: "boost_499_14d",
+  boost_custom: "boost_custom",
   ad_basic: "ad_basic",
   ad_standard: "ad_standard",
   ad_premium: "ad_premium",
@@ -94,6 +95,7 @@ export const BOOST_PACKAGES = {
   boost_99_3d: { package: "micro_3", amountThb: 99, days: 3 },
   boost_249_7d: { package: "micro_7", amountThb: 249, days: 7 },
   boost_499_14d: { package: "micro_14", amountThb: 499, days: 14 },
+  boost_custom: { package: "micro_custom", amountThb: 0, days: 0 },
 } as const;
 
 /** Ad brand campaign prices (THB). */

@@ -136,8 +136,8 @@ const App = () => (
               <Route path="/portfolio/saved" element={<RequireAuth><SavedPostsPage /></RequireAuth>} />
               <Route path="/portfolio/manage" element={<RequireAuth><PortfolioManagePage /></RequireAuth>} />
               <Route path="/portfolio/followers" element={<RequireAuth><FollowConnectionsPage /></RequireAuth>} />
-              <Route path="/hire-requests" element={<RequireAuth><RedirectTo to="/portfolio/manage?focus=hiring" /></RequireAuth>} />
-              <Route path="/collab-requests" element={<RequireAuth><RedirectTo to="/portfolio/manage?focus=collab" /></RequireAuth>} />
+              <Route path="/hire-requests" element={<RequireAuth><RedirectTo to="/portfolio?focus=hiring" /></RequireAuth>} />
+              <Route path="/collab-requests" element={<RequireAuth><RedirectTo to="/portfolio?focus=collab" /></RequireAuth>} />
               <Route path="/portfolio/new" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
               <Route path="/portfolio/:id/edit" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
               <Route path="/project/:id" element={<ProjectDetailPage />} />

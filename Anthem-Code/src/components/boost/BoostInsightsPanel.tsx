@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useMyBoosts, type PostBoost } from "@/hooks/useBoost";
+import { useMyBoosts, boostPackageLabel, type PostBoost } from "@/hooks/useBoost";
 import BoostBadge from "@/components/boost/BoostBadge";
 
 const statusLabel: Record<PostBoost["status"], string> = {
@@ -82,7 +82,7 @@ export default function BoostInsightsPanel() {
           <CardContent className="p-4 text-center space-y-2">
             <Sparkles className="w-8 h-8 mx-auto text-muted-foreground/60" />
             <p className="text-sm text-muted-foreground">ยังไม่มีประวัติ Boost</p>
-            <p className="text-xs text-muted-foreground">กด Boost บนผลงานหรือโพสต์ชุมชน — 99/249/499฿</p>
+            <p className="text-xs text-muted-foreground">กด Boost บนผลงานหรือโพสต์ชุมชน — preset หรือกำหนดเองตั้งแต่ ฿50</p>
             <Button size="sm" variant="outline" className="rounded-full" onClick={() => navigate("/")}>
               ไปฟีด
             </Button>
@@ -95,7 +95,8 @@ export default function BoostInsightsPanel() {
               <CardHeader className="py-2 px-3 pb-0">
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle className="text-sm font-medium truncate">
-                    {b.target_type === "project" ? "ผลงาน" : "โพสต์ชุมชน"} · {b.package.replace("micro_", "")} วัน
+                    {b.target_type === "project" ? "ผลงาน" : "โพสต์ชุมชน"} ·{" "}
+                    {boostPackageLabel(b.package, b.duration_days, b.amount_thb)}
                   </CardTitle>
                   <Badge variant={b.status === "active" ? "default" : "secondary"} className="text-[10px] shrink-0">
                     {statusLabel[b.status]}

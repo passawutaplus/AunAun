@@ -84,12 +84,6 @@ export const experienceItemSchema = z.object({
 });
 export type ExperienceItem = z.infer<typeof experienceItemSchema>;
 
-export const profileFaqItemSchema = z.object({
-  question: z.string().trim().min(1, "กรอกคำถาม").max(120),
-  answer: z.string().trim().min(1, "กรอกคำตอบ").max(500),
-});
-export type ProfileFaqItem = z.infer<typeof profileFaqItemSchema>;
-
 const communityQuestionTopicSchema = z.enum([
   "feedback",
   "technique",
@@ -196,7 +190,6 @@ export const profileSchema = z.object({
   preferredEmploymentTypes: z.array(z.string().trim().min(1).max(20)).max(10).default([]),
   skills: z.array(z.string().trim().min(1).max(40)).max(30).default([]),
   experience: z.array(experienceItemSchema).max(20).default([]),
-  profileFaq: z.array(profileFaqItemSchema).max(10).default([]),
 });
 
 export type ProfileInput = z.infer<typeof profileSchema>;

@@ -14,6 +14,7 @@ interface Props {
   tone?: "primary" | "muted";
   showFollowerCount?: boolean;
   className?: string;
+  visitorPreview?: boolean;
 }
 
 const FollowButton = ({
@@ -24,14 +25,19 @@ const FollowButton = ({
   tone = "primary",
   showFollowerCount = true,
   className,
+  visitorPreview = false,
 }: Props) => {
   const { user } = useAuth();
   const openAuth = useAuthDialog((s) => s.openSignup);
   const { isFollowing, isSelf, toggle, isPending, followers } = useFollowState(freelancerId);
 
-  if (!freelancerId || isSelf) return null;
+  if (!freelancerId || (isSelf && !visitorPreview)) return null;
 
   const handle = () => {
+    if (visitorPreview) {
+      toast.message("นี่คือมุมมองผู้เยี่ยมชม — ปุ่มนี้ใช้งานได้จริงเมื่อคนอื่นเปิดโปรไฟล์ของคุณ");
+      return;
+    }
     if (!user) {
       toast.info("กรุณาเข้าสู่ระบบก่อนติดตาม");
       openAuth();

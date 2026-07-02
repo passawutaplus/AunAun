@@ -1,61 +1,53 @@
 import BriefcaseIcon from "../components/icons/BriefcaseIcon";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Mail, Link2, Camera, Save, Bell, MessageCircle, Sparkles, MapPin, LogOut, Shield } from "lucide-react";
+import { User, Camera, Save, Bell, MapPin, LogOut, Shield } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, useUpdateProfile, useUpdateProfileMedia } from "@/hooks/useProfile";
 import { uploadProjectImage } from "@/lib/uploadImage";
-import { profileSchema, type ExperienceItem, type ProfileFaqItem, type ProfileInput } from "@/lib/validators";
+import { profileSchema } from "@/lib/validators";
+import { z } from "zod";
 import { HttpErrorPage } from "@/components/HttpErrorPage";
 import { supabase } from "@/integrations/supabase/client";
-import SkillsEditor from "@/components/profile/SkillsEditor";
-import ExperienceEditor from "@/components/profile/ExperienceEditor";
-import ProfileFaqEditor from "@/components/profile/ProfileFaqEditor";
-import { detectProfanity } from "@/lib/profanity";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { TierMembershipCard } from "@/components/tier/TierMembershipCard";
 import { StorageUsageSection } from "@/components/settings/StorageUsageSection";
 import { AiUsageSettingsSection } from "@/components/settings/AiUsageSettingsSection";
 import { SettingsPreferencesSection } from "@/components/settings/SettingsPreferencesSection";
-import { ThemeSettingsSection } from "@/components/settings/ThemeSettingsSection";
 import { LineNotificationSection } from "@/components/settings/LineNotificationSection";
 import { AccountPrivacySection } from "@/components/settings/AccountPrivacySection";
-import OpenForWorkSection from "@/components/settings/OpenForWorkSection";
 import { useSubscription } from "@/core/subscription";
 
-const empty: ProfileInput = {
+const settingsFormSchema = profileSchema.pick({
+  displayName: true,
+  username: true,
+  bio: true,
+  role: true,
+  location: true,
+  notifyEmail: true,
+  notifyHire: true,
+  notifyJobMatch: true,
+  preferredCategories: true,
+  preferredEmploymentTypes: true,
+});
+
+type SettingsFormInput = z.infer<typeof settingsFormSchema>;
+
+const empty: SettingsFormInput = {
   displayName: "",
   username: "",
   bio: "",
   role: "",
   location: "",
-  email: "",
-  phone: "",
-  website: "",
-  lineId: "",
-  facebook: "",
-  instagram: "",
   notifyEmail: true,
   notifyHire: true,
   notifyJobMatch: true,
   preferredCategories: [],
   preferredEmploymentTypes: [],
-  skills: [],
-  experience: [],
-  profileFaq: [],
 };
-
-const asExperience = (raw: unknown): ExperienceItem[] =>
-  Array.isArray(raw) ? (raw as ExperienceItem[]) : [];
-
-const asStringArray = (raw: unknown): string[] =>
-  Array.isArray(raw) ? raw.filter((s): s is string => typeof s === "string") : [];
-
-const asProfileFaq = (raw: unknown): ProfileFaqItem[] =>
-  Array.isArray(raw) ? (raw as ProfileFaqItem[]) : [];
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -74,7 +66,7 @@ const SettingsPage = () => {
     navigate("/");
   };
 
-  const [form, setForm] = useState<ProfileInput>(empty);
+  const [form, setForm] = useState<SettingsFormInput>(empty);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?redirect=/settings");
@@ -88,25 +80,16 @@ const SettingsPage = () => {
         bio: profile.bio ?? "",
         role: profile.role ?? "",
         location: profile.location ?? "",
-        email: profile.email ?? user?.email ?? "",
-        phone: profile.phone ?? "",
-        website: profile.website ?? "",
-        lineId: profile.line_id ?? "",
-        facebook: profile.facebook ?? "",
-        instagram: profile.instagram ?? "",
         notifyEmail: profile.notify_email ?? true,
         notifyHire: profile.notify_hire ?? true,
         notifyJobMatch: (profile as any).notify_job_match ?? true,
         preferredCategories: (profile as any).preferred_categories ?? [],
         preferredEmploymentTypes: (profile as any).preferred_employment_types ?? [],
-        skills: asStringArray(profile.skills),
-        experience: asExperience(profile.experience),
-        profileFaq: asProfileFaq((profile as { profile_faq?: ProfileFaqItem[] }).profile_faq),
       });
     }
   }, [profile, user]);
 
-  const update = <K extends keyof ProfileInput>(k: K, v: ProfileInput[K]) =>
+  const update = <K extends keyof SettingsFormInput>(k: K, v: SettingsFormInput[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
   const handleAvatarPick = async (file?: File) => {
@@ -125,14 +108,9 @@ const SettingsPage = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = profileSchema.safeParse(form);
+    const parsed = settingsFormSchema.safeParse(form);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
-      return;
-    }
-    const faqText = form.profileFaq.map((f) => `${f.question} ${f.answer}`).join(" ");
-    if (detectProfanity(faqText).hasProfanity) {
-      toast.error("FAQ มีคำที่ไม่เหมาะสม — กรุณาแก้ไขก่อนบันทึก");
       return;
     }
     try {
@@ -176,8 +154,6 @@ const SettingsPage = () => {
           <StorageUsageSection />
           <AiUsageSettingsSection />
         </div>
-        <ThemeSettingsSection />
-        <OpenForWorkSection />
         <LineNotificationSection />
 
         <section className="rounded-2xl glass-panel p-6">
@@ -242,33 +218,6 @@ const SettingsPage = () => {
               className="mt-1 w-full px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
             />
             <p className="mt-1 text-xs text-muted-foreground">{(form.bio ?? "").length}/500 ตัวอักษร</p>
-          </div>
-        </section>
-
-        <section className="rounded-2xl glass-panel p-6 space-y-4">
-          <SectionTitle icon={Sparkles} title="ความชำนาญ" />
-          <SkillsEditor value={form.skills} onChange={(v) => update("skills", v)} />
-        </section>
-
-        <section className="rounded-2xl glass-panel p-6 space-y-4">
-          <SectionTitle icon={BriefcaseIcon} title="ประสบการณ์ทำงาน" />
-          <ExperienceEditor value={form.experience} onChange={(v) => update("experience", v)} />
-        </section>
-
-        <section className="rounded-2xl glass-panel p-6 space-y-4">
-          <SectionTitle icon={MessageCircle} title="ถาม-ตอบบนโปรไฟล์" />
-          <ProfileFaqEditor value={form.profileFaq} onChange={(v) => update("profileFaq", v)} />
-        </section>
-
-        <section className="rounded-2xl glass-panel p-6 space-y-5">
-          <SectionTitle icon={Mail} title="ช่องทางติดต่อ" />
-          <Field label="อีเมล" value={form.email} onChange={(v) => update("email", v)} type="email" icon={Mail} />
-          <Field label="เบอร์มือถือ" value={form.phone ?? ""} onChange={(v) => update("phone", v)} placeholder="0812345678" />
-          <Field label="เว็บไซต์ / Portfolio" value={form.website ?? ""} onChange={(v) => update("website", v)} icon={Link2} placeholder="https://..." />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Field label="LINE ID" value={form.lineId ?? ""} onChange={(v) => update("lineId", v)} icon={MessageCircle} />
-            <Field label="Facebook" value={form.facebook ?? ""} onChange={(v) => update("facebook", v)} />
-            <Field label="Instagram" value={form.instagram ?? ""} onChange={(v) => update("instagram", v)} prefix="@" />
           </div>
         </section>
 

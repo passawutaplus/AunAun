@@ -2,8 +2,7 @@ import BriefcaseIcon from "../components/icons/BriefcaseIcon";
 import { useMemo, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings, ExternalLink, LayoutGrid, Sparkles, Phone, UserPlus, FileCheck, Plus, Layers3, ArrowDownUp, Eye, Clock, ChevronDown, ChevronUp, Gift as GiftIcon, Target, Bookmark, MessageSquare } from "lucide-react";
-import { PlusOneMark } from "@/components/brand/PlusOneMark";
+import { Settings, ExternalLink, LayoutGrid, Sparkles, Phone, UserPlus, FileCheck, Plus, Layers3, ChevronDown, Gift as GiftIcon, Target, Bookmark, MessageSquare } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,13 +33,19 @@ import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
 import { markOnboardingVisit } from "@/lib/onboardingStorage";
 import { PORTFOLIO_DRILL_HASH } from "@/lib/drillProject";
-import { profilePublicPath, profilePublicUrl } from "@/lib/profileRoutes";
+import { profilePublicUrl, profileVisitorPreviewPath } from "@/lib/profileRoutes";
 import CreateContentDrawer from "@/components/CreateContentDrawer";
 import { useSavedCommunityPosts } from "@/hooks/useCommunityPostInteractions";
 import { useCommunityPostsByAuthor } from "@/hooks/useCommunityPosts";
 import CommunityPostGridCard from "@/components/feed/CommunityPostGridCard";
-import { sortPortfolioProjects, type PortfolioSortMode } from "@/lib/portfolioSort";
-import { Pin } from "lucide-react";
+import { ContentSortChips } from "@/components/profile/ContentSortChips";
+import {
+  sortCommunityPostsForProfile,
+  sortProjectsForProfile,
+  type ProfileContentSort,
+} from "@/lib/contentSort";
+import { ProfileHiringRequestsSection } from "@/components/profile/ProfileHiringRequestsSection";
+import CollabRequestsSection from "@/components/CollabRequestsSection";
 
 
 const SOLO_URL = "https://solofreelancer.com";
@@ -66,8 +71,8 @@ const PortfolioProfilePage = () => {
   const { data: savedPosts = [] } = useSavedCommunityPosts(user?.id);
   const { data: myPosts = [] } = useCommunityPostsByAuthor(user?.id);
 
-  const [portfolioSort, setPortfolioSort] = useState<PortfolioSortMode>("portfolio");
-  const [showAllPortfolio, setShowAllPortfolio] = useState(false);
+  const [projectSort, setProjectSort] = useState<ProfileContentSort>("newest");
+  const [postSort, setPostSort] = useState<ProfileContentSort>("newest");
   const [editKey, setEditKey] = useState<ProfileEditKey | null>(null);
   const [draftBio, setDraftBio] = useState("");
   const [draftExperience, setDraftExperience] = useState<ExperienceItem[]>([]);
@@ -102,6 +107,22 @@ const PortfolioProfilePage = () => {
     return () => window.clearTimeout(timer);
   }, [profile]);
 
+  useEffect(() => {
+    if (!profile) return;
+    const focus = new URLSearchParams(window.location.search).get("focus");
+    const el =
+      focus === "collab"
+        ? document.getElementById("collab-section")
+        : focus === "hiring"
+          ? document.getElementById("hiring-section")
+          : null;
+    if (!el) return;
+    const timer = window.setTimeout(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [profile]);
+
   const { data: hireCount = 0 } = useQuery({
     queryKey: ["hire-count", user?.id],
     enabled: !!user?.id,
@@ -117,10 +138,15 @@ const PortfolioProfilePage = () => {
   const published = useMemo(() => myProjects.filter((p) => p.status === "Published"), [myProjects]);
   const totalViews = useMemo(() => published.reduce((s, p) => s + (p.views ?? 0), 0), [published]);
   const sortedPublished = useMemo(
-    () => sortPortfolioProjects(published, portfolioSort),
-    [published, portfolioSort],
+    () => sortProjectsForProfile(published, projectSort),
+    [published, projectSort],
   );
-  const visiblePortfolio = showAllPortfolio ? sortedPublished : sortedPublished.slice(0, 6);
+  const visiblePortfolio = sortedPublished.slice(0, 6);
+  const sortedPosts = useMemo(
+    () => sortCommunityPostsForProfile(myPosts, postSort),
+    [myPosts, postSort],
+  );
+  const visiblePosts = sortedPosts.slice(0, 6);
   const experience = parseExperience(profile?.experience);
   const skills = parseSkills(profile?.skills);
 
@@ -235,7 +261,7 @@ const PortfolioProfilePage = () => {
           stats={{ works: published.length, followers, following }}
           onPost={() => setCreateOpen(true)}
           onPreview={() =>
-            navigate(profilePublicPath({ user_id: user!.id, username: profile.username }))
+            navigate(profileVisitorPreviewPath({ user_id: user!.id, username: profile.username }))
           }
           onManage={() => navigate("/portfolio/manage")}
           shareUrl={profilePublicUrl({ user_id: user!.id, username: profile.username })}
@@ -295,6 +321,10 @@ const PortfolioProfilePage = () => {
             )}
           </ProfileEditableSection>
 
+          <ProfileHiringRequestsSection />
+
+          <CollabRequestsSection />
+
           <Section
             id="my-posts"
             icon={MessageSquare}
@@ -305,10 +335,10 @@ const PortfolioProfilePage = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => navigate("/?mode=community")}
+                  onClick={() => navigate("/portfolio/manage?tab=posts")}
                   className="rounded-full h-8"
                 >
-                  ไปฟีด
+                  จัดการโพสต์
                 </Button>
               ) : (
                 <Button
@@ -324,8 +354,9 @@ const PortfolioProfilePage = () => {
           >
             {myPosts.length ? (
               <div className="space-y-4">
+                <ContentSortChips value={postSort} onChange={setPostSort} />
                 <div className="columns-2 md:columns-3 gap-2 sm:gap-3">
-                  {myPosts.slice(0, 6).map((post) => (
+                  {visiblePosts.map((post) => (
                     <div key={post.id} className="break-inside-avoid mb-2 sm:mb-3">
                       <CommunityPostGridCard post={post} />
                     </div>
@@ -334,10 +365,10 @@ const PortfolioProfilePage = () => {
                 {myPosts.length > 6 && (
                   <Button
                     variant="outline"
-                    onClick={() => navigate(`/@${profile.username ?? user!.id}`)}
+                    onClick={() => navigate("/portfolio/manage?tab=posts")}
                     className="w-full rounded-full"
                   >
-                    <ChevronDown className="w-4 h-4 mr-1" /> ดูโพสต์ทั้งหมด ({myPosts.length})
+                    ดูโพสต์ทั้งหมด ({myPosts.length})
                   </Button>
                 )}
               </div>
@@ -418,51 +449,15 @@ const PortfolioProfilePage = () => {
           >
             {published.length ? (
               <div className="space-y-4">
-                <div className="flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
-                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground shrink-0 mr-1">
-                    <ArrowDownUp className="w-3 h-3" /> เรียง
-                  </span>
-                  {([
-                    { key: "portfolio", label: "ลำดับของฉัน", Icon: Pin },
-                    { key: "newest", label: "ล่าสุด", Icon: Clock },
-                    { key: "views", label: "วิวมากสุด", Icon: Eye },
-                    { key: "likes", label: "+1 มากสุด" },
-                  ] as const).map((item) => {
-                    const { key, label } = item;
-                    const Icon = "Icon" in item ? item.Icon : undefined;
-                    const active = portfolioSort === key;
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => setPortfolioSort(key)}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border whitespace-nowrap shrink-0 transition-colors ${
-                          active
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        {key === "likes" ? (
-                          <PlusOneMark className="text-[10px]" />
-                        ) : Icon ? (
-                          <Icon className="w-3 h-3" />
-                        ) : null}{" "}
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
+                <ContentSortChips value={projectSort} onChange={setProjectSort} />
                 <PortfolioGrid projects={visiblePortfolio} />
                 {sortedPublished.length > 6 && (
                   <Button
                     variant="outline"
-                    onClick={() => setShowAllPortfolio((v) => !v)}
+                    onClick={() => navigate("/portfolio/manage?tab=projects")}
                     className="w-full rounded-full"
                   >
-                    {showAllPortfolio ? (
-                      <><ChevronUp className="w-4 h-4 mr-1" /> ย่อรายการ</>
-                    ) : (
-                      <><ChevronDown className="w-4 h-4 mr-1" /> ดูผลงานทั้งหมด ({sortedPublished.length})</>
-                    )}
+                    ดูผลงานทั้งหมด ({sortedPublished.length})
                   </Button>
                 )}
               </div>

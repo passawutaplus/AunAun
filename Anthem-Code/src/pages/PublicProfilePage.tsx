@@ -1,7 +1,7 @@
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState, useEffect } from "react";
-import { Globe, Instagram, Facebook, MessageSquare, UserX, MessageCircle, Users } from "lucide-react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { Globe, Instagram, Facebook, MessageSquare, UserX, MessageCircle, Users, Eye, X } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import PageLoader from "@/components/ui/PageLoader";
 import EmptyState from "@/components/ui/EmptyState";
@@ -35,6 +35,9 @@ import { Navigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { navigateToAuth, stripSearchParams } from "@/lib/authRedirect";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
+import { toast } from "sonner";
+
+const PREVIEW_TOAST = "นี่คือมุมมองผู้เยี่ยมชม — ปุ่มนี้ใช้งานได้จริงเมื่อคนอื่นเปิดโปรไฟล์ของคุณ";
 
 
 const PublicProfilePage = () => {
@@ -120,6 +123,19 @@ const PublicProfilePage = () => {
   );
 
   const isSelf = !!user?.id && !!resolvedUserId && user.id === resolvedUserId;
+  const visitorPreview = isSelf && params.get("preview") === "1";
+  const showAsVisitor = !isSelf || visitorPreview;
+
+  const previewToast = useCallback(() => {
+    toast.message(PREVIEW_TOAST);
+  }, []);
+
+  const exitPreview = useCallback(() => {
+    const next = stripSearchParams(params, ["preview"]);
+    const q = next.toString();
+    setSearchParams(q ? next : {}, { replace: true });
+    navigate("/portfolio");
+  }, [navigate, params, setSearchParams]);
 
   useEffect(() => {
     if (!user || params.get("hire") !== "1" || !resolvedUserId || isSelf) return;
@@ -144,7 +160,8 @@ const PublicProfilePage = () => {
     !vanityHandle &&
     profile.user_id === userId
   ) {
-    return <Navigate to={`/@${profile.username}`} replace />;
+    const q = params.toString();
+    return <Navigate to={`/@${profile.username}${q ? `?${q}` : ""}`} replace />;
   }
 
   if (!profile) {
@@ -167,14 +184,23 @@ const PublicProfilePage = () => {
   const displayName = profile.display_name || profile.username || "ครีเอเตอร์";
 
   const openHire = () => {
+    if (visitorPreview) {
+      previewToast();
+      return;
+    }
     if (!user) {
       navigateToAuth(navigate, { hire: "1" });
       return;
     }
     setHireOpen(true);
   };
-  const profileFaq =
-    ((profile as { profile_faq?: { question: string; answer: string }[] }).profile_faq) ?? [];
+  const openCollab = () => {
+    if (visitorPreview) {
+      previewToast();
+      return;
+    }
+    setCollabOpen(true);
+  };
   const seoDesc = truncateDescription(
     profile.bio || `ดูพอร์ตโฟลิโอและผลงานของ ${displayName} บน ${BRAND_NAME}`,
   );
@@ -205,8 +231,23 @@ const PublicProfilePage = () => {
         }}
       />
       <div className="sticky top-0 z-20 glass-panel border-x-0 border-t-0 rounded-none">
-        <div className="max-w-5xl mx-auto px-4 py-3">
-          <BackButton />
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-2">
+          <BackButton to={visitorPreview ? "/portfolio" : undefined} />
+          {visitorPreview && (
+            <div className="flex-1 min-w-0 flex items-center justify-between gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5">
+              <span className="inline-flex items-center gap-1.5 text-xs text-foreground min-w-0">
+                <Eye className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span className="truncate">มุมมองผู้เยี่ยมชม (พรีวิว)</span>
+              </span>
+              <button
+                type="button"
+                onClick={exitPreview}
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline shrink-0"
+              >
+                <X className="w-3 h-3" /> ปิด
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -217,13 +258,18 @@ const PublicProfilePage = () => {
           <div className="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-gradient-brand-soft blur-3xl pointer-events-none" />
 
           <div className="absolute top-3 right-3 sm:top-4 sm:right-4 md:top-6 md:right-6 z-10 hidden md:flex flex-col items-end gap-2">
-            <FollowButton freelancerId={resolvedUserId} />
-            <SupportButton
-              recipientId={resolvedUserId}
-              recipientName={profile.display_name ?? "ครีเอเตอร์"}
-              recipientAvatar={profile.avatar_url ?? undefined}
-              variant="compact"
-            />
+            {showAsVisitor && (
+              <>
+                <FollowButton freelancerId={resolvedUserId} visitorPreview={visitorPreview} />
+                <SupportButton
+                  recipientId={resolvedUserId}
+                  recipientName={profile.display_name ?? "ครีเอเตอร์"}
+                  recipientAvatar={profile.avatar_url ?? undefined}
+                  variant="compact"
+                  visitorPreview={visitorPreview}
+                />
+              </>
+            )}
           </div>
 
           <div className="relative flex flex-row items-start gap-3.5 sm:gap-6 pr-0 md:pr-36">
@@ -308,7 +354,7 @@ const PublicProfilePage = () => {
                 })}
               </div>
 
-              {!isSelf && (
+              {showAsVisitor && (
                 <div className="flex flex-col gap-2 mt-3 sm:mt-4">
                   <div className="grid grid-cols-2 gap-2">
                     <Button
@@ -322,7 +368,7 @@ const PublicProfilePage = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setCollabOpen(true)}
+                      onClick={openCollab}
                       className="w-full rounded-full glass-panel h-10 text-sm font-medium gap-1.5"
                     >
                       <Users className="w-4 h-4 shrink-0" />
@@ -334,6 +380,7 @@ const PublicProfilePage = () => {
                       freelancerId={resolvedUserId}
                       showFollowerCount={false}
                       className="w-full h-10 text-sm font-medium"
+                      visitorPreview={visitorPreview}
                     />
                     <SupportButton
                       recipientId={resolvedUserId}
@@ -342,8 +389,26 @@ const PublicProfilePage = () => {
                       variant="compact"
                       hideSubtext
                       className="w-full items-center"
+                      visitorPreview={visitorPreview}
                     />
                   </div>
+                </div>
+              )}
+
+              {isSelf && !visitorPreview && (
+                <div className="mt-3 sm:mt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => {
+                      const next = new URLSearchParams(params);
+                      next.set("preview", "1");
+                      setSearchParams(next, { replace: true });
+                    }}
+                  >
+                    <Eye className="w-4 h-4 mr-1.5" /> ดูมุมมองผู้เยี่ยมชม
+                  </Button>
                 </div>
               )}
 
@@ -364,14 +429,16 @@ const PublicProfilePage = () => {
                 </div>
               )}
 
-              <div className="mt-3">
-                <ReportTrigger
-                  targetType="user"
-                  targetId={resolvedUserId!}
-                  targetOwnerId={resolvedUserId!}
-                  variant="text"
-                />
-              </div>
+              {!isSelf && (
+                <div className="mt-3">
+                  <ReportTrigger
+                    targetType="user"
+                    targetId={resolvedUserId!}
+                    targetOwnerId={resolvedUserId!}
+                    variant="text"
+                  />
+                </div>
+              )}
 
             </div>
           </div>
@@ -456,20 +523,6 @@ const PublicProfilePage = () => {
               <p className="text-base text-foreground leading-7 whitespace-pre-wrap">
                 {profile.bio || "ยังไม่มีข้อมูลแนะนำตัว"}
               </p>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="font-medium text-foreground px-1">ถาม-ตอบ</h3>
-              {profileFaq.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground glass-panel rounded-2xl">ยังไม่มีคำถาม-ตอบ</div>
-              ) : (
-                profileFaq.map((item, i) => (
-                  <div key={i} className="rounded-2xl glass-panel p-5 space-y-2">
-                    <p className="font-medium text-foreground">{item.question}</p>
-                    <p className="text-base text-foreground whitespace-pre-wrap">{item.answer}</p>
-                  </div>
-                ))
-              )}
             </div>
           </TabsContent>
         </Tabs>

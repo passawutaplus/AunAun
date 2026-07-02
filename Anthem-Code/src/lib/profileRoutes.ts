@@ -26,3 +26,8 @@ export function profilePublicUrl(
 ): string {
   return `${origin}${profilePublicPath(profile)}`;
 }
+
+/** Owner preview — public profile as visitors see it (not gift-simulation). */
+export function profileVisitorPreviewPath(profile: ProfileLinkInput): string {
+  return `${profilePublicPath(profile)}?preview=1`;
+}

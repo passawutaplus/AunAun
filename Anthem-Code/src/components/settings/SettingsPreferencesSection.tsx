@@ -7,6 +7,7 @@ import {
   Shield,
 } from "lucide-react";
 import { requestOpenCookiePreferences } from "@/lib/cookieConsent";
+import { ThemeSettingsSection } from "@/components/settings/ThemeSettingsSection";
 
 export function SettingsPreferencesSection() {
   const navigate = useNavigate();
@@ -17,6 +18,10 @@ export function SettingsPreferencesSection() {
         <Settings2 className="w-5 h-5 text-primary" />
         <h2 className="font-semibold text-foreground">การตั้งค่าเพิ่มเติม</h2>
       </div>
+
+      <ThemeSettingsSection embedded />
+
+      <div className="border-t border-border/40" />
 
       {/* การติดตาม */}
       <div className="space-y-2">

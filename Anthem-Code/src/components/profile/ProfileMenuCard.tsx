@@ -44,7 +44,7 @@ const ProfileMenuCard = () => {
         <LayoutGrid className="w-4 h-4 text-primary" /> โปรไฟล์ของฉัน
       </button>
       <button onClick={() => navigate("/portfolio/manage")} className={item}>
-        <FolderKanban className="w-4 h-4 text-primary" /> ตัวจัดการผลงาน
+        <FolderKanban className="w-4 h-4 text-primary" /> แดชบอร์ด &amp; จัดการ
       </button>
       <button onClick={() => navigate("/collections")} className={item}>
         <Layers3 className="w-4 h-4 text-primary" /> คอลเลกชันของฉัน

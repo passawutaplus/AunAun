@@ -389,11 +389,15 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
     const boostId = session.metadata?.boostId;
     if (!boostId) throw new Error("boost checkout missing boostId");
 
+    const paidAmountThb =
+      session.amount_total != null ? Math.round(session.amount_total / 100) : null;
+
     const { error } = await sb.rpc("activate_post_boost_stripe", {
       _stripe_session_id: session.id,
       _boost_id: boostId,
       _price_id: priceId,
       _environment: env,
+      _paid_amount_thb: paidAmountThb,
     });
     if (error) {
       console.error("[stripe-webhook] activate_post_boost_stripe failed:", error);

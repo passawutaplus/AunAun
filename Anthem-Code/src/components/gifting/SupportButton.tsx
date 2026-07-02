@@ -9,6 +9,9 @@ import { SUPPORT_SLOT_MAX } from "@/lib/supportSlots";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import DonationModal from "./DonationModal";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const VISITOR_PREVIEW_TOAST = "นี่คือมุมมองผู้เยี่ยมชม — ปุ่มนี้ใช้งานได้จริงเมื่อคนอื่นเปิดโปรไฟล์ของคุณ";
 
 interface Props {
   recipientId: string;
@@ -18,21 +21,27 @@ interface Props {
   variant?: "default" | "outline" | "compact";
   hideSubtext?: boolean;
   className?: string;
+  visitorPreview?: boolean;
 }
 
 const SupportButton = ({
   recipientId, recipientName, recipientAvatar, projectId, variant = "outline", hideSubtext = false, className,
+  visitorPreview = false,
 }: Props) => {
   const { user } = useAuth();
   const openAuth = useAuthDialog((s) => s.openLogin);
   const [open, setOpen] = useState(false);
-  const isOwn = !!user && user.id === recipientId;
+  const isOwn = !!user && user.id === recipientId && !visitorPreview;
   const { data: eligibility } = useCreatorEligibility(isOwn ? undefined : recipientId);
   const { data: slots } = useSupportSlots(isOwn ? undefined : recipientId);
   const canReceive = isOwn || eligibility?.canReceiveGifts === true;
   const slotsFull = !isOwn && slots?.isFull === true;
 
   const handleOpen = () => {
+    if (visitorPreview) {
+      toast.message(VISITOR_PREVIEW_TOAST);
+      return;
+    }
     if (!user) { openAuth(); return; }
     if (!canReceive || slotsFull) return;
     setOpen(true);

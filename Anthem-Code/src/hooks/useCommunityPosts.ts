@@ -203,6 +203,30 @@ export const useCommunityPostsByAuthor = (authorId: string | undefined) =>
     },
   });
 
+/** Owner manage list — published + drafts (excludes reposts). */
+export const useMyCommunityPostsManage = (authorId: string | undefined) =>
+  useQuery({
+    queryKey: ["community-posts-manage", authorId],
+    enabled: !!authorId,
+    queryFn: async (): Promise<CommunityPost[]> => {
+      const data = await fetchCommunityPostRows((select, excludeRepostsByColumn) => {
+        let q = supabase
+          .from("community_posts")
+          .select(select)
+          .eq("author_id", authorId!)
+          .in("status", ["published", "draft"])
+          .order("updated_at", { ascending: false })
+          .limit(80);
+        if (excludeRepostsByColumn) q = q.is("quoted_post_id", null);
+        return q;
+      });
+      const rows = (data as CommunityPost[]).filter(
+        (r) => !isRepostRow(r as { quoted_post_id?: string | null; title?: string }),
+      );
+      return enrichCommunityPosts(rows);
+    },
+  });
+
 export const useCommunityPost = (id: string | undefined) =>
   useQuery({
     queryKey: ["community-post", id],
@@ -260,6 +284,7 @@ export const useDeleteCommunityPost = () => {
       qc.invalidateQueries({ queryKey: ["community-posts"] });
       qc.invalidateQueries({ queryKey: ["community-post", postId] });
       qc.invalidateQueries({ queryKey: ["community-posts-by-author"] });
+      qc.invalidateQueries({ queryKey: ["community-posts-manage"] });
     },
   });
 };
@@ -544,6 +569,7 @@ export const usePublishCommunityPost = () => {
       qc.invalidateQueries({ queryKey: ["community-posts"] });
       qc.invalidateQueries({ queryKey: ["community-draft", v.author_id] });
       qc.invalidateQueries({ queryKey: ["community-posts-by-author", v.author_id] });
+      qc.invalidateQueries({ queryKey: ["community-posts-manage", v.author_id] });
     },
   });
 };
@@ -639,6 +665,7 @@ export const useUpdateCommunityPost = () => {
       qc.invalidateQueries({ queryKey: ["community-posts"] });
       qc.invalidateQueries({ queryKey: ["community-post", v.edit_post_id] });
       qc.invalidateQueries({ queryKey: ["community-posts-by-author", v.author_id] });
+      qc.invalidateQueries({ queryKey: ["community-posts-manage", v.author_id] });
     },
   });
 };

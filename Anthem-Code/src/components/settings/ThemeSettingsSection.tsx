@@ -3,17 +3,19 @@ import { Moon, Palette, Sun } from "lucide-react";
 import { useThemeFade } from "@/hooks/useThemeFade";
 import { cn } from "@/lib/utils";
 
-export function ThemeSettingsSection() {
+export function ThemeSettingsSection({ embedded = false }: { embedded?: boolean }) {
   const { isDark, toggleTheme } = useThemeFade();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
-  return (
-    <section className="rounded-2xl glass-panel p-6 space-y-4">
+  const content = (
+    <>
       <div className="flex items-center gap-2">
         <Palette className="w-5 h-5 text-primary" />
-        <h2 className="font-semibold text-foreground">การแสดงผล</h2>
+        <h3 className={embedded ? "text-sm font-medium text-foreground" : "font-semibold text-foreground"}>
+          การแสดงผล
+        </h3>
       </div>
 
       <div className="flex items-center justify-between gap-4 py-1">
@@ -60,6 +62,16 @@ export function ThemeSettingsSection() {
           />
         </button>
       </div>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="space-y-4">{content}</div>;
+  }
+
+  return (
+    <section className="rounded-2xl glass-panel p-6 space-y-4">
+      {content}
     </section>
   );
 }

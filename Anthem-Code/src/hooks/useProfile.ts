@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
-import type { ExperienceItem, ProfileFaqItem, ProfileInput } from "@/lib/validators";
+import type { ProfileInput } from "@/lib/validators";
 
 export const useProfile = (userId: string | undefined) =>
   useQuery({
@@ -40,7 +40,6 @@ export const useUpdateProfile = (userId: string | undefined) => {
       }
       if (p.skills !== undefined) payload.skills = p.skills;
       if (p.experience !== undefined) payload.experience = p.experience as unknown as Json;
-      if (p.profileFaq !== undefined) payload.profile_faq = p.profileFaq as unknown as Json;
       if (Object.keys(payload).length === 0) return;
       const { error } = await supabase.from("profiles").update(payload).eq("user_id", userId);
       if (error) throw error;

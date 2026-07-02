@@ -243,7 +243,7 @@ export default function ProfileCoverHeader({
                 onClick={onManage}
                 className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                <LayoutGrid className="w-4 h-4 mr-1.5" /> จัดการผลงาน
+                <LayoutGrid className="w-4 h-4 mr-1.5" /> แดชบอร์ด
               </Button>
             </div>
           </div>

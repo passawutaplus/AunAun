@@ -303,7 +303,7 @@ const VerificationWizard = () => {
           <h1 className="mt-3 text-xl font-semibold">ยังไม่พร้อมยืนยันตัวตน</h1>
           <p className="text-sm text-muted-foreground mt-1">ทำ Welcome Bonus และเผยแพร่ผลงานก่อน</p>
         </div>
-        <CreatorEligibilityProgress data={eligibility} />
+        <CreatorEligibilityProgress data={eligibility} defaultOpen />
       </div>
     );
   }

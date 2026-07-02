@@ -113,6 +113,86 @@ async function getConnectAccountIdForEnv(
   return null;
 }
 
+function getAnthemSupabase() {
+  return createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    db: { schema: "anthem" },
+  });
+}
+
+async function createBoostCustomCheckoutSession(opts: {
+  userId: string;
+  email?: string;
+  boostId: string;
+  environment: StripeEnv;
+  successUrl: string;
+  cancelUrl: string;
+}): Promise<{ url: string } | { error: string }> {
+  try {
+    const setupErr = getStripeSetupError(opts.environment);
+    if (setupErr) return { error: setupErr };
+
+    const anthemSb = getAnthemSupabase();
+    const { data: boost, error: boostErr } = await anthemSb
+      .from("post_boosts")
+      .select("id, user_id, package, amount_thb, duration_days, status")
+      .eq("id", opts.boostId)
+      .maybeSingle();
+
+    if (boostErr || !boost) return { error: "ไม่พบรายการ Boost" };
+    if (boost.user_id !== opts.userId) return { error: "ไม่มีสิทธิ์ชำระรายการนี้" };
+    if (boost.status !== "pending_payment") return { error: "รายการนี้ชำระแล้วหรือไม่พร้อมรับชำระ" };
+    if (boost.package !== "micro_custom") return { error: "รายการนี้ไม่ใช่ Boost แบบกำหนดเอง" };
+    if (!boost.amount_thb || boost.amount_thb < 50) return { error: "ยอด Boost ไม่ถูกต้อง" };
+
+    const stripe = createStripeClient(opts.environment);
+    const customerId = await resolveOrCreateCustomer(stripe, opts.userId, opts.email);
+    const successUrl = assertAllowedPaymentRedirectUrl(opts.successUrl);
+    const cancelUrl = assertAllowedPaymentRedirectUrl(opts.cancelUrl);
+    const amountCents = thbToStripeCents(boost.amount_thb);
+    const priceId = "boost_custom";
+    const metadata: Record<string, string> = {
+      userId: opts.userId,
+      priceId,
+      quantity: "1",
+      kind: "boost",
+      boostId: opts.boostId,
+      amountThb: String(boost.amount_thb),
+      durationDays: String(boost.duration_days ?? 1),
+    };
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      customer: customerId,
+      line_items: [
+        {
+          price_data: {
+            currency: "thb",
+            product_data: {
+              name: `Boost โพสต์ · ${boost.duration_days} วัน`,
+              description: `ดันโพสต์ในฟีด — ฿${boost.amount_thb.toLocaleString("th-TH")}`,
+            },
+            unit_amount: amountCents,
+          },
+          quantity: 1,
+        },
+      ],
+      allow_promotion_codes: false,
+      ...(opts.environment === "live" ? { automatic_tax: { enabled: true } } : {}),
+      customer_update: { address: "auto", name: "auto" },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      client_reference_id: opts.userId,
+      metadata,
+      payment_intent_data: { metadata: { ...metadata } },
+    });
+
+    if (!session.url) return { error: "Checkout session has no URL" };
+    return { url: session.url };
+  } catch (error) {
+    return { error: getStripeErrorMessage(error) };
+  }
+}
+
 export async function createCheckoutSessionForUser(opts: {
   userId: string;
   email?: string;
@@ -125,6 +205,18 @@ export async function createCheckoutSessionForUser(opts: {
   applicationId?: string;
 }): Promise<{ url: string } | { error: string }> {
   try {
+    if (opts.priceId === "boost_custom") {
+      if (!opts.boostId) return { error: "boostId required for custom boost checkout" };
+      return createBoostCustomCheckoutSession({
+        userId: opts.userId,
+        email: opts.email,
+        boostId: opts.boostId,
+        environment: opts.environment,
+        successUrl: opts.successUrl,
+        cancelUrl: opts.cancelUrl,
+      });
+    }
+
     const setupErr = getStripeSetupError(opts.environment);
     if (setupErr) return { error: setupErr };
 
