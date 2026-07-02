@@ -1,8 +1,8 @@
 import BriefcaseIcon from "../components/icons/BriefcaseIcon";
 import { useMemo, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { Settings, ExternalLink, LayoutGrid, Sparkles, Phone, UserPlus, FileCheck, Plus, Layers3, ArrowDownUp, Eye, Clock, ChevronDown, ChevronUp, Gift as GiftIcon, Target, Bookmark } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Settings, ExternalLink, LayoutGrid, Sparkles, Phone, UserPlus, FileCheck, Plus, Layers3, ArrowDownUp, Eye, Clock, ChevronDown, ChevronUp, Gift as GiftIcon, Target, Bookmark, MessageSquare } from "lucide-react";
 import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
@@ -37,8 +37,7 @@ import { PORTFOLIO_DRILL_HASH } from "@/lib/drillProject";
 import { profilePublicPath, profilePublicUrl } from "@/lib/profileRoutes";
 import CreateContentDrawer from "@/components/CreateContentDrawer";
 import { useSavedCommunityPosts } from "@/hooks/useCommunityPostInteractions";
-import { useCreatorEligibility } from "@/hooks/useCreatorEligibility";
-import CreatorEligibilityProgress from "@/components/verification/CreatorEligibilityProgress";
+import { useCommunityPostsByAuthor } from "@/hooks/useCommunityPosts";
 import CommunityPostGridCard from "@/components/feed/CommunityPostGridCard";
 import { sortPortfolioProjects, type PortfolioSortMode } from "@/lib/portfolioSort";
 import { Pin } from "lucide-react";
@@ -56,6 +55,7 @@ const parseSkills = (raw: unknown): string[] =>
 
 const PortfolioProfilePage = () => {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const { data: profile, isLoading } = useProfile(user?.id);
   const updateProfile = useUpdateProfile(user?.id);
@@ -64,7 +64,7 @@ const PortfolioProfilePage = () => {
   const { data: collections = [] } = useCollections(user?.id);
   const { data: inspireBoards = [] } = useInspireBoards(user?.id);
   const { data: savedPosts = [] } = useSavedCommunityPosts(user?.id);
-  const { data: eligibility } = useCreatorEligibility(user?.id);
+  const { data: myPosts = [] } = useCommunityPostsByAuthor(user?.id);
 
   const [portfolioSort, setPortfolioSort] = useState<PortfolioSortMode>("portfolio");
   const [showAllPortfolio, setShowAllPortfolio] = useState(false);
@@ -86,6 +86,11 @@ const PortfolioProfilePage = () => {
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?redirect=/portfolio");
   }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    void qc.invalidateQueries({ queryKey: ["community-posts-by-author", user.id] });
+  }, [user?.id, qc]);
 
   useEffect(() => {
     if (!profile) return;
@@ -196,18 +201,6 @@ const PortfolioProfilePage = () => {
     }
   };
 
-  const sharePublic = async () => {
-    if (!profile || !user) return;
-    const url = profilePublicUrl({ user_id: user.id, username: profile.username });
-    try {
-      await navigator.clipboard.writeText(url);
-      markOnboardingVisit(user.id, "share_profile");
-      toast.success("คัดลอกลิงก์โปรไฟล์แล้ว", { description: url });
-    } catch {
-      toast.error("คัดลอกไม่สำเร็จ");
-    }
-  };
-
   if (authLoading || isLoading || !profile) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">กำลังโหลด...</div>;
   }
@@ -245,7 +238,9 @@ const PortfolioProfilePage = () => {
             navigate(profilePublicPath({ user_id: user!.id, username: profile.username }))
           }
           onManage={() => navigate("/portfolio/manage")}
-          onShare={sharePublic}
+          shareUrl={profilePublicUrl({ user_id: user!.id, username: profile.username })}
+          shareTitle={profile.display_name || profile.username || "โปรไฟล์"}
+          onShareInteract={() => markOnboardingVisit(user!.id, "share_profile")}
           onFollowersClick={() => navigate("/portfolio/followers")}
           onFollowingClick={() => navigate("/portfolio/followers?tab=following")}
         />
@@ -266,10 +261,93 @@ const PortfolioProfilePage = () => {
         <main className="space-y-6 min-w-0">
           <OnboardingChecklist variant="full" />
 
-          {eligibility && <CreatorEligibilityProgress data={eligibility} />}
-
           <Section id={PORTFOLIO_DRILL_HASH} icon={Target} title="Design Drill">
             <DesignDrillSection />
+          </Section>
+
+          {/* About — right after Design Drill */}
+          <ProfileEditableSection
+            icon={Sparkles}
+            title="เกี่ยวกับฉัน"
+            isEditing={editKey === "bio"}
+            saving={updateProfile.isPending}
+            onEdit={() => startEdit("bio")}
+            onCancel={cancelEdit}
+            onSave={saveSection}
+            editContent={
+              <div>
+                <textarea
+                  value={draftBio}
+                  onChange={(e) => setDraftBio(e.target.value)}
+                  rows={5}
+                  maxLength={500}
+                  placeholder="แนะนำตัวสั้น ๆ ให้ลูกค้ารู้จักคุณ"
+                  className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">{draftBio.length}/500 ตัวอักษร</p>
+              </div>
+            }
+          >
+            {profile.bio ? (
+              <p className="text-base text-foreground leading-7 whitespace-pre-wrap">{profile.bio}</p>
+            ) : (
+              <EmptyHint text="ยังไม่ได้แนะนำตัว" cta="เพิ่มประวัติย่อ" onClick={() => startEdit("bio")} />
+            )}
+          </ProfileEditableSection>
+
+          <Section
+            id="my-posts"
+            icon={MessageSquare}
+            title="โพสต์ของฉัน"
+            count={myPosts.length}
+            action={
+              myPosts.length > 0 ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate("/?mode=community")}
+                  className="rounded-full h-8"
+                >
+                  ไปฟีด
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate("/community/new")}
+                  className="rounded-full h-8"
+                >
+                  สร้างโพสต์
+                </Button>
+              )
+            }
+          >
+            {myPosts.length ? (
+              <div className="space-y-4">
+                <div className="columns-2 md:columns-3 gap-2 sm:gap-3">
+                  {myPosts.slice(0, 6).map((post) => (
+                    <div key={post.id} className="break-inside-avoid mb-2 sm:mb-3">
+                      <CommunityPostGridCard post={post} />
+                    </div>
+                  ))}
+                </div>
+                {myPosts.length > 6 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(`/@${profile.username ?? user!.id}`)}
+                    className="w-full rounded-full"
+                  >
+                    <ChevronDown className="w-4 h-4 mr-1" /> ดูโพสต์ทั้งหมด ({myPosts.length})
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <EmptyHint
+                text="ยังไม่มีโพสต์ชุมชน — แชร์งาน ถามคำถาม หรือโพสต์ไปยัง Area"
+                cta="สร้างโพสต์แรก"
+                onClick={() => navigate("/community/new")}
+              />
+            )}
           </Section>
 
           <Section
@@ -326,36 +404,6 @@ const PortfolioProfilePage = () => {
               />
             )}
           </Section>
-
-          {/* About */}
-          <ProfileEditableSection
-            icon={Sparkles}
-            title="เกี่ยวกับฉัน"
-            isEditing={editKey === "bio"}
-            saving={updateProfile.isPending}
-            onEdit={() => startEdit("bio")}
-            onCancel={cancelEdit}
-            onSave={saveSection}
-            editContent={
-              <div>
-                <textarea
-                  value={draftBio}
-                  onChange={(e) => setDraftBio(e.target.value)}
-                  rows={5}
-                  maxLength={500}
-                  placeholder="แนะนำตัวสั้น ๆ ให้ลูกค้ารู้จักคุณ"
-                  className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
-                />
-                <p className="mt-1 text-xs text-muted-foreground">{draftBio.length}/500 ตัวอักษร</p>
-              </div>
-            }
-          >
-            {profile.bio ? (
-              <p className="text-base text-foreground leading-7 whitespace-pre-wrap">{profile.bio}</p>
-            ) : (
-              <EmptyHint text="ยังไม่ได้แนะนำตัว" cta="เพิ่มประวัติย่อ" onClick={() => startEdit("bio")} />
-            )}
-          </ProfileEditableSection>
 
           {/* Portfolio */}
           <Section

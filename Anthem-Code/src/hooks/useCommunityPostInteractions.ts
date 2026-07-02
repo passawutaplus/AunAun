@@ -49,6 +49,14 @@ function adjustCommunityPostLikeCount(
   );
 }
 
+function readCommunityPostLiked(
+  qc: ReturnType<typeof useQueryClient>,
+  postId: string,
+  userId: string,
+): boolean {
+  return !!qc.getQueryData<boolean>(["community-post-liked", postId, userId]);
+}
+
 export const useCommunityPostLike = (
   postId: string | undefined,
   likeCount = 0,
@@ -71,13 +79,18 @@ export const useCommunityPostLike = (
     },
   });
 
+  const { data: cachedPost } = useQuery<CommunityPost | undefined>({
+    queryKey: ["community-post", postId],
+    enabled: false,
+  });
+
   const toggle = useMutation({
     mutationFn: async () => {
       if (!user || !postId) {
         promptAuth();
         throw new Error("unauth");
       }
-      const liked = !!qc.getQueryData<boolean>(["community-post-liked", postId, user.id]);
+      const liked = readCommunityPostLiked(qc, postId, user.id);
       if (liked) {
         const { error } = await supabase
           .from("community_post_likes")
@@ -89,6 +102,7 @@ export const useCommunityPostLike = (
         const { error } = await supabase
           .from("community_post_likes")
           .insert({ post_id: postId, user_id: user.id });
+        if (error?.code === "23505") return;
         if (error) throw error;
         if (meta?.authorId && meta.authorId !== user.id) {
           const { data: prof } = await supabase
@@ -109,7 +123,7 @@ export const useCommunityPostLike = (
     },
     onMutate: async () => {
       if (!postId || !user?.id) return;
-      const wasLiked = !!isLikedQ.data;
+      const wasLiked = readCommunityPostLiked(qc, postId, user.id);
       const delta = wasLiked ? -1 : 1;
       await qc.cancelQueries({ queryKey: ["community-post-liked", postId, user.id] });
       qc.setQueryData(["community-post-liked", postId, user.id], !wasLiked);
@@ -142,26 +156,36 @@ export const useCommunityPostLike = (
       }
       qc.invalidateQueries({ queryKey: ["community-post-liked", postId, user?.id] });
       qc.invalidateQueries({ queryKey: ["community-posts"] });
-      qc.invalidateQueries({ queryKey: ["community-post", postId] });
       qc.invalidateQueries({ queryKey: ["community-posts-by-author"] });
     },
   });
 
   const isLiked = !!isLikedQ.data;
-  const likes = Math.max(0, likeCount);
+  const likes = Math.max(0, cachedPost?.like_count ?? likeCount);
+  const liking = toggle.isPending || (!!user && !!postId && isLikedQ.isLoading);
+
+  const runToggle = () => {
+    if (!user || !postId) {
+      promptAuth();
+      return;
+    }
+    if (liking) return;
+    toggle.mutate();
+  };
 
   return {
     likes,
     isLiked,
-    toggle: toggle.mutate,
+    toggle: runToggle,
     like: () => {
       if (!user || !postId) {
         promptAuth();
         return;
       }
-      if (!isLikedQ.data && !toggle.isPending) toggle.mutate();
+      if (liking) return;
+      if (!readCommunityPostLiked(qc, postId, user.id)) toggle.mutate();
     },
-    isPending: toggle.isPending,
+    isPending: liking,
   };
 };
 

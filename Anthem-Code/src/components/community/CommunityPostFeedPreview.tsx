@@ -3,6 +3,7 @@ import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import UserAvatar from "@/components/UserAvatar";
 import { CommunityQaBadge } from "@/components/community/CommunityQaBadge";
 import { CommunityFeedPreviewToolbar } from "@/components/community/CommunityFeedPreviewToolbar";
+import { CommunityTextCover } from "@/components/community/CommunityTextCover";
 import { postHeadline } from "@/lib/classifyCommunityPost";
 import { communityCoverUrl, splitCommunityMedia } from "@/lib/communityMedia";
 import { hasCommunityQaBadge } from "@/lib/communityQaTag";
@@ -34,8 +35,9 @@ export function CommunityPostFeedPreview({
   tags,
   mediaItems,
   mediaAspect = DEFAULT_COMMUNITY_MEDIA_ASPECT,
+  textCoverTheme,
   fit = false,
-}: Pick<CommunityPostPreviewProps, "title" | "body" | "tags" | "mediaItems" | "mediaAspect"> & {
+}: Pick<CommunityPostPreviewProps, "title" | "body" | "tags" | "mediaItems" | "mediaAspect" | "textCoverTheme"> & {
   fit?: boolean;
 }) {
   const aspectTw = communityMediaAspectTailwind(mediaAspect);
@@ -55,7 +57,15 @@ export function CommunityPostFeedPreview({
           {cover ? (
             <img src={cover} alt="" className={cn("w-full object-cover", aspectTw)} />
           ) : (
-            <div className={cn("w-full bg-gradient-brand-soft", aspectTw)} />
+            <CommunityTextCover
+              seed={`preview:${headline}`}
+              themeId={textCoverTheme}
+              title={title}
+              body={body}
+              tags={tags}
+              aspectClass={aspectTw}
+              compact
+            />
           )}
           {hasVideo && (
             <span className="absolute top-2 right-2 inline-flex rounded-full bg-black/50 p-1.5 text-white">

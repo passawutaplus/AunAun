@@ -4,9 +4,14 @@ import type { CommunityPost } from "@/hooks/useCommunityPosts";
 
 import { formatThaiDate } from "@/lib/format";
 
+import { exploreProjectsUrl } from "@/lib/exploreRoutes";
 import { communityCoverUrl } from "@/lib/communityMedia";
+import { communityMediaAspectTailwind, normalizeCommunityMediaAspect } from "@/lib/communityMediaAspect";
+import { communityDisplayTags } from "@/lib/communityQaTag";
+import { CommunityTagLink } from "@/components/community/CommunityTagLink";
 
 import CommunityPostMedia from "@/components/community/CommunityPostMedia";
+import { CommunityTextCover } from "@/components/community/CommunityTextCover";
 
 import CommunityPostMenu from "@/components/community/CommunityPostMenu";
 
@@ -28,6 +33,7 @@ interface Props {
 const CommunityPostCard = ({ post }: Props) => {
 
   const cover = communityCoverUrl(post.gallery_urls, post.video_urls);
+  const aspectClass = communityMediaAspectTailwind(normalizeCommunityMediaAspect(post.media_aspect));
 
   const authorPath = profilePublicPath({
 
@@ -80,24 +86,24 @@ const CommunityPostCard = ({ post }: Props) => {
       <Link to={`/community/${post.id}`} className="block">
 
         {cover ? (
-
           <div className="relative">
-
             <CommunityPostMedia
-
               galleryUrls={post.gallery_urls}
-
               videoUrls={post.video_urls}
-
               title={post.title}
-
               mediaAspect={post.media_aspect}
-
             />
-
           </div>
-
-        ) : null}
+        ) : (
+          <CommunityTextCover
+            seed={post.id}
+            title={post.title}
+            body={post.body}
+            tags={post.tags}
+            themeId={post.text_cover_theme}
+            aspectClass={aspectClass}
+          />
+        )}
 
 
 
@@ -107,18 +113,12 @@ const CommunityPostCard = ({ post }: Props) => {
 
           <p className="text-base text-foreground line-clamp-3 whitespace-pre-wrap">{post.body}</p>
 
-          {post.tags.length > 0 && (
-
-            <div className="flex flex-wrap gap-1">
-
-              {post.tags.slice(0, 4).map((t) => (
-
-                <span key={t} className="text-[10px] text-primary/80">#{t}</span>
-
+          {communityDisplayTags(post.tags).length > 0 && (
+            <div className="flex flex-wrap gap-1.5" onClick={(e) => e.preventDefault()}>
+              {communityDisplayTags(post.tags).slice(0, 4).map((t) => (
+                <CommunityTagLink key={t} tag={t} compact className="text-[10px] text-primary/80" />
               ))}
-
             </div>
-
           )}
 
         </div>

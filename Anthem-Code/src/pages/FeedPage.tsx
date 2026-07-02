@@ -85,7 +85,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const [designerTools, setDesignerTools] = useState<string[]>([]);
   const [studioFeedSource, setStudioFeedSource] = useState<StudioFeedSource>("all");
   const [createOpen, setCreateOpen] = useState(false);
-  const { filter: communityFilter, setFilter: setCommunityFilter } = useCommunityFeedFilter();
+  const { filter: communityFilter, setFilter: setCommunityFilter, clearTag } = useCommunityFeedFilter();
 
   const openCreatePicker = () => {
     if (!user) {
@@ -138,7 +138,11 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   useEffect(() => {
     const view = searchParams.get("mode");
     const feed = searchParams.get("feed");
-    if (view === "designers" || view === "studios" || view === "projects" || view === "community") {
+    const tag = searchParams.get("tag");
+    if (tag) {
+      setMode("community");
+      if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "community");
+    } else if (view === "designers" || view === "studios" || view === "projects" || view === "community") {
       setMode(view);
       if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", view);
     } else if (feed === "drill" || searchParams.get("drill") === "1") {
@@ -390,6 +394,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             <CommunityFeedPanel
               search={search}
               filter={communityFilter}
+              onClearTag={clearTag}
               onPostClick={openCreatePicker}
             />
           ) : isDrillView ? (

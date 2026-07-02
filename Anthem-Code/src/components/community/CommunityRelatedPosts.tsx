@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import type { CommunityPost } from "@/hooks/useCommunityPosts";
 import { postHeadline } from "@/lib/classifyCommunityPost";
 import { communityCoverUrl } from "@/lib/communityMedia";
+import { CommunityTextCover } from "@/components/community/CommunityTextCover";
 
 type Props = {
   posts: CommunityPost[];
@@ -25,7 +26,15 @@ export function CommunityRelatedPosts({ posts }: Props) {
               {cover ? (
                 <img src={cover} alt="" className="w-full aspect-square object-cover" loading="lazy" />
               ) : (
-                <div className="w-full aspect-square bg-gradient-brand-soft" />
+                <CommunityTextCover
+                  seed={post.id}
+                  title={post.title}
+                  body={post.body}
+                  tags={post.tags}
+                  themeId={post.text_cover_theme}
+                  aspectClass="aspect-square"
+                  compact
+                />
               )}
               <p className="p-2 text-xs font-medium line-clamp-2">{postHeadline(post.title, post.body)}</p>
             </Link>

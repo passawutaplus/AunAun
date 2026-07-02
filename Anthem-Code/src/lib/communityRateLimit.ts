@@ -49,7 +49,7 @@ export function toCommunityActionError(err: unknown): Error {
 }
 
 /** Columns added in community-area-post-enhancements — omit when DB not migrated yet. */
-export const OPTIONAL_COMMUNITY_POST_COLUMNS = ["link_urls"] as const;
+export const OPTIONAL_COMMUNITY_POST_COLUMNS = ["link_urls", "text_cover_theme"] as const;
 
 export function isMissingOptionalCommunityColumnError(err: unknown): boolean {
   const raw = extractErrorMessage(err);

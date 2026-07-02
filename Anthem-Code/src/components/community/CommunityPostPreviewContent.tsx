@@ -2,6 +2,7 @@ import { Bookmark, MessageCircle, Share2 } from "lucide-react";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import UserAvatar from "@/components/UserAvatar";
 import CommunityPostMedia from "@/components/community/CommunityPostMedia";
+import { CommunityTextCover } from "@/components/community/CommunityTextCover";
 import { CommunityQaBadge } from "@/components/community/CommunityQaBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -11,7 +12,7 @@ import { splitCommunityMedia } from "@/lib/communityMedia";
 import type { MentionedProjectSummary } from "@/lib/communityMentionedProjects";
 import type { TaggedUserSummary } from "@/lib/communityTaggedUsers";
 import type { CommunityMediaAspect } from "@/lib/communityMediaAspect";
-import { DEFAULT_COMMUNITY_MEDIA_ASPECT } from "@/lib/communityMediaAspect";
+import { DEFAULT_COMMUNITY_MEDIA_ASPECT, communityMediaAspectTailwind } from "@/lib/communityMediaAspect";
 import type { PortfolioMediaItem } from "@/lib/portfolioMedia";
 import { cn } from "@/lib/utils";
 import { CommunityCaptionMetaInline } from "@/components/community/CommunityCaptionMetaInline";
@@ -27,6 +28,7 @@ export type CommunityPostPreviewProps = {
   taggedUsers?: TaggedUserSummary[];
   mediaItems: PortfolioMediaItem[];
   mediaAspect?: CommunityMediaAspect;
+  textCoverTheme?: string | null;
   className?: string;
   layout?: "default" | "fitted";
   /** @deprecated use mediaAspect — kept for mobile tab override */
@@ -42,6 +44,7 @@ export function CommunityPostPreviewContent({
   taggedUsers = [],
   mediaItems,
   mediaAspect = DEFAULT_COMMUNITY_MEDIA_ASPECT,
+  textCoverTheme,
   className,
   layout = "default",
 }: CommunityPostPreviewProps) {
@@ -91,7 +94,16 @@ export function CommunityPostPreviewContent({
           />
         </div>
       ) : (
-        fitted && <div className="flex-1 min-h-0" />
+        <div className="w-full shrink-0">
+          <CommunityTextCover
+            seed={`editor-preview:${previewTitle}`}
+            themeId={textCoverTheme}
+            title={title}
+            body={body}
+            tags={tags}
+            aspectClass={communityMediaAspectTailwind(mediaAspect)}
+          />
+        </div>
       )}
 
       <div
@@ -102,10 +114,9 @@ export function CommunityPostPreviewContent({
         aria-hidden
       >
         <div className="flex items-center gap-1">
-          <PlusOneControl active={false} showCount={false} ariaLabel="+1" className="rounded-full px-2 py-1 text-muted-foreground" />
-          <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted-foreground">
-            <MessageCircle className={cn(fitted ? "w-3.5 h-3.5" : "w-4 h-4")} />
-            {!fitted && <span className="hidden sm:inline">ตอบ</span>}
+          <PlusOneControl active={false} showCount={false} ariaLabel="ถูกใจ" className="rounded-full px-2 py-1 text-muted-foreground" />
+          <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm text-muted-foreground">
+            <MessageCircle className="w-5 h-5" aria-hidden />
           </span>
         </div>
         <div className="flex items-center gap-1">

@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Play } from "lucide-react";
+import { CommunityTextCover } from "@/components/community/CommunityTextCover";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -7,6 +8,12 @@ type Props = {
   videoUrls: string[];
   aspectClass: string;
   className?: string;
+  /** Text-only post cover */
+  postId?: string;
+  title?: string;
+  body?: string;
+  tags?: string[];
+  textCoverTheme?: string | null;
 };
 
 export function CommunityPostGridCarousel({
@@ -14,6 +21,11 @@ export function CommunityPostGridCarousel({
   videoUrls,
   aspectClass,
   className,
+  postId,
+  title = "",
+  body = "",
+  tags = [],
+  textCoverTheme,
 }: Props) {
   const slides = [
     ...galleryUrls.map((url) => ({ kind: "image" as const, url })),
@@ -40,7 +52,18 @@ export function CommunityPostGridCarousel({
   );
 
   if (!slides.length) {
-    return <div className={cn("w-full bg-gradient-brand-soft", aspectClass, className)} />;
+    return (
+      <CommunityTextCover
+        seed={postId ?? `${title}:${body.slice(0, 40)}`}
+        themeId={textCoverTheme}
+        title={title}
+        body={body}
+        tags={tags}
+        aspectClass={aspectClass}
+        className={className}
+        compact
+      />
+    );
   }
 
   const slide = slides[index] ?? slides[0];

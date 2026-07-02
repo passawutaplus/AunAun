@@ -33,6 +33,7 @@ interface Props {
   onCollab: () => void;
   allowHire?: boolean;
   allowCollab?: boolean;
+  isOwner?: boolean;
 }
 
 const ProjectSidePanel = (p: Props) => {
@@ -88,7 +89,7 @@ const ProjectSidePanel = (p: Props) => {
           <FollowButton freelancerId={p.ownerId} size="sm" variant="compact" />
         </div>
 
-        {(p.allowHire ?? true) && (
+        {(p.allowHire ?? true) && !p.isOwner && (
           <Button
             onClick={p.onHire}
             size="lg"
@@ -99,7 +100,7 @@ const ProjectSidePanel = (p: Props) => {
           </Button>
         )}
 
-        {(p.allowCollab ?? true) && (
+        {(p.allowCollab ?? true) && !p.isOwner && (
           <Button
             onClick={p.onCollab}
             size="lg"
@@ -111,7 +112,7 @@ const ProjectSidePanel = (p: Props) => {
           </Button>
         )}
 
-        {p.ownerId && (
+        {p.ownerId && !p.isOwner && (
           <SupportButton
             recipientId={p.ownerId}
             recipientName={p.ownerName}
@@ -134,7 +135,7 @@ const ProjectSidePanel = (p: Props) => {
             active={p.liked}
             count={p.likes}
             size="md"
-            ariaLabel={p.liked ? "เลิก +1" : "ให้ +1"}
+            ariaLabel={p.liked ? "เลิกถูกใจ" : "ถูกใจ"}
             onClick={p.onLike}
             className="inline-flex items-center justify-center rounded-full border border-input bg-background h-9 px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground w-full"
           />
@@ -148,7 +149,7 @@ const ProjectSidePanel = (p: Props) => {
 
         <div className="flex items-center justify-around text-xs text-muted-foreground pt-3 border-t border-border/50">
           <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {formatCompact(p.views)} วิว</span>
-          <PlusOneControl active={false} count={p.likes} showCount ariaLabel="+1" />
+          <PlusOneControl active={false} count={p.likes} showCount ariaLabel="ถูกใจ" />
           <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> {formatCompact(p.commentsCount)}</span>
         </div>
       </div>

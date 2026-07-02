@@ -65,11 +65,14 @@ import { CommunityPostPreviewDialog } from "@/components/community/CommunityPost
 import { CommunityPostPreviewPanel } from "@/components/community/CommunityPostPreviewPanel";
 import { CommunityComposerFooter } from "@/components/community/CommunityComposerFooter";
 import { CommunityImageCropDialog } from "@/components/community/CommunityImageCropDialog";
+import { CommunityImageOrderDialog } from "@/components/community/CommunityImageOrderDialog";
 import {
   DEFAULT_COMMUNITY_MEDIA_ASPECT,
   type CommunityMediaAspect,
   normalizeCommunityMediaAspect,
 } from "@/lib/communityMediaAspect";
+import { CommunityTextCoverThemePicker } from "@/components/community/CommunityTextCoverThemePicker";
+import { DEFAULT_COMMUNITY_TEXT_COVER_THEME } from "@/lib/communityTextCover";
 
 function draftDisplayTitle(title: string, body: string) {
   return titlesMatch(title, body) ? "" : title;
@@ -111,8 +114,10 @@ const CommunityPostEditorPage = () => {
   const [taggedUsers, setTaggedUsers] = useState<TaggedUserSummary[]>([]);
   const [mediaItems, setMediaItems] = useState<PortfolioMediaItem[]>([]);
   const [mediaAspect, setMediaAspect] = useState<CommunityMediaAspect>(DEFAULT_COMMUNITY_MEDIA_ASPECT);
+  const [textCoverTheme, setTextCoverTheme] = useState(DEFAULT_COMMUNITY_TEXT_COVER_THEME);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [pendingOrderFiles, setPendingOrderFiles] = useState<File[]>([]);
 
   const { cropFile, enqueueImages, finishCrop, confirmCrop, recropping } =
     useCommunityImageUpload({
@@ -135,6 +140,7 @@ const CommunityPostEditorPage = () => {
     uploading ||
     recropping ||
     cropFile !== null ||
+    pendingOrderFiles.length > 0 ||
     mediaCount >= limits.total;
   const aspectLocked = imageCount > 0;
 
@@ -168,6 +174,7 @@ const CommunityPostEditorPage = () => {
       void fetchMentionedProjectSummaries(editingPost.mentioned_project_ids ?? [], user.id).then(setMentionedProjects).catch(() => setMentionedProjects([]));
       void fetchTaggedUserSummaries(editingPost.tagged_user_ids ?? []).then(setTaggedUsers).catch(() => setTaggedUsers([]));
       setMediaAspect(normalizeCommunityMediaAspect(editingPost.media_aspect));
+      setTextCoverTheme(editingPost.text_cover_theme ?? DEFAULT_COMMUNITY_TEXT_COVER_THEME);
       setMediaItems(mediaItemsFromProject(editingPost.gallery_urls ?? [], editingPost.video_urls ?? []));
       setDraftLoaded(true);
       return;
@@ -249,6 +256,7 @@ const CommunityPostEditorPage = () => {
         void loadMentioned(activeLocal.mentioned_project_ids ?? []);
         void loadTagged(activeLocal.tagged_user_ids ?? []);
         setMediaAspect(normalizeCommunityMediaAspect(activeLocal.media_aspect));
+        setTextCoverTheme(activeLocal.text_cover_theme ?? DEFAULT_COMMUNITY_TEXT_COVER_THEME);
         setMediaItems(mediaItemsFromProject(activeLocal.gallery_urls, activeLocal.video_urls));
         toast.message("กู้คืนแบบร่างจากเครื่อง");
       } else if (existingDraft) {
@@ -260,6 +268,7 @@ const CommunityPostEditorPage = () => {
         void loadMentioned(existingDraft.mentioned_project_ids ?? []);
         void loadTagged(existingDraft.tagged_user_ids ?? []);
         setMediaAspect(normalizeCommunityMediaAspect(existingDraft.media_aspect));
+        setTextCoverTheme(existingDraft.text_cover_theme ?? DEFAULT_COMMUNITY_TEXT_COVER_THEME);
         setMediaItems(
           mediaItemsFromProject(existingDraft.gallery_urls ?? [], existingDraft.video_urls ?? []),
         );
@@ -272,6 +281,7 @@ const CommunityPostEditorPage = () => {
 
   const composerPayload = useCallback(() => {
     const media = splitCommunityMedia(mediaItems);
+    const hasMedia = media.gallery_urls.length > 0 || media.video_urls.length > 0;
     return {
       author_id: user!.id,
       title,
@@ -281,12 +291,13 @@ const CommunityPostEditorPage = () => {
       mentioned_project_ids: mentionedProjectIds(mentionedProjects),
       tagged_user_ids: taggedUserIds(taggedUsers),
       media_aspect: mediaAspect,
+      text_cover_theme: hasMedia ? null : textCoverTheme,
       gallery_urls: media.gallery_urls,
       video_urls: media.video_urls,
       draft_id: draftId,
       edit_post_id: editPostId,
     };
-  }, [user, title, body, tags, tools, mentionedProjects, taggedUsers, mediaAspect, mediaItems, draftId, editPostId]);
+  }, [user, title, body, tags, tools, mentionedProjects, taggedUsers, mediaAspect, textCoverTheme, mediaItems, draftId, editPostId]);
 
   const handleVideo = async (file: File) => {
     if (!user) return;
@@ -313,18 +324,38 @@ const CommunityPostEditorPage = () => {
     }
   };
 
-  const handlePickFile = (file: File) => {
-    if (file.type.startsWith("video/")) {
-      void handleVideo(file);
+  const enqueueImageFiles = (images: File[]) => {
+    if (!images.length) return;
+    const dt = new DataTransfer();
+    images.forEach((file) => dt.items.add(file));
+    enqueueImages(dt.files);
+  };
+
+  const handlePickFiles = (files: File[]) => {
+    if (!files.length) return;
+    const videos = files.filter((f) => f.type.startsWith("video/"));
+    const images = files.filter((f) => f.type.startsWith("image/"));
+    const other = files.filter((f) => !f.type.startsWith("image/") && !f.type.startsWith("video/"));
+
+    if (other.length) {
+      toast.error("รองรับเฉพาะรูปภาพหรือวิดีโอ");
       return;
     }
-    if (file.type.startsWith("image/")) {
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      enqueueImages(dt.files);
+    if (videos.length && images.length) {
+      toast.message("เลือกรูปหรือวิดีโออย่างใดอย่างหนึ่งต่อครั้ง");
       return;
     }
-    toast.error("รองรับเฉพาะรูปภาพหรือวิดีโอ");
+    if (videos.length) {
+      void handleVideo(videos[0]);
+      if (videos.length > 1) toast.message("อัปโหลดวิดีโอได้ทีละ 1 ไฟล์");
+      return;
+    }
+    if (!images.length) return;
+    if (images.length === 1) {
+      enqueueImageFiles(images);
+      return;
+    }
+    setPendingOrderFiles(images);
   };
 
   const handleSaveDraft = async (silent = false) => {
@@ -466,10 +497,14 @@ const CommunityPostEditorPage = () => {
             mediaAspect={mediaAspect}
             uploading={uploading}
             pickDisabled={pickDisabled}
-            onPickFile={handlePickFile}
+            onPickFiles={handlePickFiles}
             onRemove={(index) => setMediaItems((items) => items.filter((_, i) => i !== index))}
             onReorder={setMediaItems}
           />
+
+          {mediaCount === 0 && (
+            <CommunityTextCoverThemePicker value={textCoverTheme} onChange={setTextCoverTheme} />
+          )}
 
           <div className="border-b border-border/60">
             <input
@@ -537,6 +572,7 @@ const CommunityPostEditorPage = () => {
           taggedUsers={taggedUsers}
           mediaItems={mediaItems}
           mediaAspect={mediaAspect}
+          textCoverTheme={textCoverTheme}
           className="px-4 lg:px-0"
         />
       </div>
@@ -562,6 +598,21 @@ const CommunityPostEditorPage = () => {
         taggedUsers={taggedUsers}
         mediaItems={mediaItems}
         mediaAspect={mediaAspect}
+        textCoverTheme={textCoverTheme}
+      />
+
+      <CommunityImageOrderDialog
+        files={pendingOrderFiles}
+        open={pendingOrderFiles.length > 0}
+        aspectLocked={aspectLocked}
+        onOpenChange={(open) => {
+          if (!open) setPendingOrderFiles([]);
+        }}
+        onConfirm={(ordered) => {
+          setPendingOrderFiles([]);
+          enqueueImageFiles(ordered);
+        }}
+        onCancel={() => setPendingOrderFiles([])}
       />
 
       <CommunityImageCropDialog

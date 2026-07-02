@@ -154,25 +154,6 @@ const ProjectCard = ({ project, onHireClick, onCollabClick, boosted, boostId }: 
           )}
           onClick={(e) => e.stopPropagation()}
         >
-          <SaveToCollectionPopover projectId={isDbProject ? project.id : undefined}>
-            <button
-              aria-label="เก็บเข้าคอลเลกชัน"
-              title="เก็บเข้าคอลเลกชัน"
-              className="p-1.5 rounded-full text-white hover:bg-white/15 transition-colors"
-            >
-              <Layers3 className="w-4 h-4" />
-            </button>
-          </SaveToCollectionPopover>
-          <SharePopover url={shareUrl} title={project.title} label="แชร์ผลงาน">
-            <button
-              onClick={stop(() => {})}
-              aria-label="แชร์"
-              title="แชร์"
-              className="p-1.5 rounded-full text-white hover:bg-white/15 transition-colors"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
-          </SharePopover>
           {(project.allowHire ?? true) && (
             <button
               onClick={stop(() => onHireClick?.(project.id))}
@@ -193,6 +174,26 @@ const ProjectCard = ({ project, onHireClick, onCollabClick, boosted, boostId }: 
               <Handshake className="w-4 h-4" />
             </button>
           )}
+          <SaveToCollectionPopover projectId={isDbProject ? project.id : undefined}>
+            <button
+              aria-label="เก็บเข้าคอลเลกชัน"
+              title="เก็บเข้าคอลเลกชัน"
+              className="p-1.5 rounded-full text-white hover:bg-white/15 transition-colors"
+            >
+              <Layers3 className="w-4 h-4" />
+            </button>
+          </SaveToCollectionPopover>
+          <SharePopover url={shareUrl} title={project.title} label="แชร์ผลงาน" align="start">
+            <button
+              type="button"
+              onClick={(e) => e.stopPropagation()}
+              aria-label="แชร์"
+              title="แชร์"
+              className="p-1.5 rounded-full text-white hover:bg-white/15 transition-colors"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+          </SharePopover>
         </div>
 
         {/* 3-dot trigger — bottom-right, hover-reveal on desktop, always-on mobile */}
@@ -237,7 +238,7 @@ const ProjectCard = ({ project, onHireClick, onCollabClick, boosted, boostId }: 
             active={isLiked}
             count={isDbProject ? likes : project.likes}
             onClick={stop(() => toggleLike())}
-            ariaLabel={isLiked ? "ยกเลิก +1" : "Give +1"}
+            ariaLabel={isLiked ? "ยกเลิกถูกใจ" : "ถูกใจ"}
           />
         </div>
       </div>

@@ -28,7 +28,7 @@ type Props = {
   mediaAspect?: CommunityMediaAspect;
   uploading: boolean;
   pickDisabled?: boolean;
-  onPickFile: (file: File) => void;
+  onPickFiles: (files: File[]) => void;
   onRemove: (index: number) => void;
   onReorder: (items: PortfolioMediaItem[]) => void;
 };
@@ -99,7 +99,7 @@ export function CommunityMediaStrip({
   mediaAspect,
   uploading,
   pickDisabled,
-  onPickFile,
+  onPickFiles,
   onRemove,
   onReorder,
 }: Props) {
@@ -194,10 +194,11 @@ export function CommunityMediaStrip({
         ref={mediaRef}
         type="file"
         accept="image/*,video/*"
+        multiple
         hidden
         onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) onPickFile(file);
+          const picked = Array.from(e.target.files ?? []);
+          if (picked.length) onPickFiles(picked);
           e.target.value = "";
         }}
       />

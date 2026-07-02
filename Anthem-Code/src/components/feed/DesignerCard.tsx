@@ -131,7 +131,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
           <PlusOneControl
             active={like.isLiked}
             showCount={false}
-            ariaLabel={like.isLiked ? "เลิก +1" : "ให้ +1"}
+            ariaLabel={like.isLiked ? "เลิกถูกใจ" : "ถูกใจ"}
             onClick={() => featured && like.toggle()}
             className="w-9 h-9 flex items-center justify-center rounded-full glass-panel hover:bg-accent/40 transition"
           />

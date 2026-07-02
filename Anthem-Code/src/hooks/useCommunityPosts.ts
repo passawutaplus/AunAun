@@ -9,6 +9,11 @@ import {
   stripOptionalCommunityPostFields,
   toCommunityActionError,
 } from "@/lib/communityRateLimit";
+import {
+  COMMUNITY_POST_SELECT_FULL,
+  fetchCommunityPostMaybeSingle,
+  fetchCommunityPostRows,
+} from "@/lib/communityPostQuery";
 import { moderateCommunityComment, moderateCommunityPost } from "@/lib/communityModeration";
 import { normalizeCommunityMediaAspect } from "@/lib/communityMediaAspect";
 import { fetchMentionedProjectSummaries } from "@/lib/communityMentionedProjects";
@@ -17,6 +22,7 @@ import { fetchTaggedUserSummaries, resolveTaggedUserIds } from "@/lib/communityT
 import type { TaggedUserSummary } from "@/lib/communityTaggedUsers";
 import type { CommunityMediaAspect } from "@/lib/communityMediaAspect";
 import { classifyCategory, resolveComposerTitle } from "@/lib/classifyCommunityPost";
+import { tagsMatchFilter } from "@/lib/communityRoutes";
 import {
   useModerationState,
   useRecordProfanityStrike,
@@ -47,6 +53,7 @@ export interface CommunityPost {
   mentioned_project_ids: string[];
   tagged_user_ids: string[];
   media_aspect: CommunityMediaAspect;
+  text_cover_theme?: string | null;
   question_topic: CommunityQuestionTopic | null;
   status: string;
   reply_count: number;
@@ -75,8 +82,7 @@ export interface CommunityComment {
 
 export type CommunityCommentTree = CommentNode<CommunityComment>;
 
-const POST_SELECT =
-  "id, author_id, post_kind, title, body, category, tags, tools, gallery_urls, video_urls, mentioned_project_ids, tagged_user_ids, media_aspect, question_topic, status, reply_count, like_count, view_count, link_urls, created_at, updated_at";
+const POST_SELECT = COMMUNITY_POST_SELECT_FULL;
 const COMMUNITY_PAGE_SIZE = 24;
 const COMMUNITY_COMMENT_LIMIT = 300;
 
@@ -104,6 +110,7 @@ export async function enrichCommunityPosts(rows: CommunityPost[]): Promise<Commu
     mentioned_project_ids: r.mentioned_project_ids ?? [],
     tagged_user_ids: r.tagged_user_ids ?? [],
     media_aspect: normalizeCommunityMediaAspect(r.media_aspect),
+    text_cover_theme: r.text_cover_theme ?? null,
     like_count: r.like_count ?? 0,
     view_count: r.view_count ?? 0,
     profile: profileMap.get(r.author_id) ?? null,
@@ -117,6 +124,7 @@ export type CommunityPostsFilter = {
   feedSource?: "all" | "following";
   viewerId?: string;
   blockedIds?: string[];
+  tag?: string;
 };
 
 export const useCommunityPosts = (filter?: CommunityPostsFilter) => {
@@ -136,21 +144,28 @@ export const useCommunityPosts = (filter?: CommunityPostsFilter) => {
         );
       }
 
-      let q = supabase
-        .from("community_posts")
-        .select(POST_SELECT)
-        .eq("status", "published")
-        .is("quoted_post_id", null)
-        .order("created_at", { ascending: false })
-        .range(pageParam * COMMUNITY_PAGE_SIZE, (pageParam + 1) * COMMUNITY_PAGE_SIZE - 1);
-      if (filter?.postKind) q = q.eq("post_kind", filter.postKind);
-      if (filter?.category && filter.category !== "All") q = q.eq("category", filter.category);
-      if (filter?.questionTopic) q = q.eq("question_topic", filter.questionTopic);
-      if (authorIds) q = q.in("author_id", authorIds);
-      const { data, error } = await q;
-      if (error) throw error;
-      let rows = (data ?? []) as CommunityPost[];
+      const build = (select: string, excludeRepostsByColumn: boolean) => {
+        let q = supabase
+          .from("community_posts")
+          .select(select)
+          .eq("status", "published")
+          .order("created_at", { ascending: false })
+          .range(pageParam * COMMUNITY_PAGE_SIZE, (pageParam + 1) * COMMUNITY_PAGE_SIZE - 1);
+        if (excludeRepostsByColumn) q = q.is("quoted_post_id", null);
+        if (filter?.postKind) q = q.eq("post_kind", filter.postKind);
+        if (filter?.category && filter.category !== "All") q = q.eq("category", filter.category);
+        if (filter?.questionTopic) q = q.eq("question_topic", filter.questionTopic);
+        if (filter?.tag?.trim()) q = q.contains("tags", [filter.tag.trim()]);
+        if (authorIds) q = q.in("author_id", authorIds);
+        return q;
+      };
+
+      const data = await fetchCommunityPostRows(build);
+      let rows = data as CommunityPost[];
       rows = rows.filter((r) => !isRepostRow(r as { quoted_post_id?: string | null; title?: string }));
+      if (filter?.tag?.trim()) {
+        rows = rows.filter((r) => tagsMatchFilter(r.tags, filter.tag!));
+      }
       const rawCount = rows.length;
       const blocked = new Set(filter?.blockedIds ?? []);
       if (blocked.size) rows = rows.filter((r) => !blocked.has(r.author_id));
@@ -170,16 +185,18 @@ export const useCommunityPostsByAuthor = (authorId: string | undefined) =>
     queryKey: ["community-posts-by-author", authorId],
     enabled: !!authorId,
     queryFn: async (): Promise<CommunityPost[]> => {
-      const { data, error } = await supabase
-        .from("community_posts")
-        .select(POST_SELECT)
-        .eq("author_id", authorId!)
-        .eq("status", "published")
-        .is("quoted_post_id", null)
-        .order("created_at", { ascending: false })
-        .limit(40);
-      if (error) throw error;
-      const rows = ((data ?? []) as CommunityPost[]).filter(
+      const data = await fetchCommunityPostRows((select, excludeRepostsByColumn) => {
+        let q = supabase
+          .from("community_posts")
+          .select(select)
+          .eq("author_id", authorId!)
+          .eq("status", "published")
+          .order("created_at", { ascending: false })
+          .limit(40);
+        if (excludeRepostsByColumn) q = q.is("quoted_post_id", null);
+        return q;
+      });
+      const rows = (data as CommunityPost[]).filter(
         (r) => !isRepostRow(r as { quoted_post_id?: string | null; title?: string }),
       );
       return enrichCommunityPosts(rows);
@@ -222,6 +239,7 @@ export const useCommunityPost = (id: string | undefined) =>
         mentioned_project_ids: mentionedIds,
         tagged_user_ids: taggedIds,
         media_aspect: normalizeCommunityMediaAspect(row.media_aspect),
+        text_cover_theme: row.text_cover_theme ?? null,
         like_count: row.like_count ?? 0,
         view_count: row.view_count ?? 0,
         profile: prof ?? null,
@@ -251,15 +269,16 @@ export const useCommunityDraft = (authorId: string | undefined) =>
     queryKey: ["community-draft", authorId],
     enabled: !!authorId,
     queryFn: async (): Promise<CommunityPost | null> => {
-      const { data, error } = await supabase
-        .from("community_posts")
-        .select(POST_SELECT)
-        .eq("author_id", authorId!)
-        .eq("status", "draft")
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
+      const data = await fetchCommunityPostMaybeSingle((select) =>
+        supabase
+          .from("community_posts")
+          .select(select)
+          .eq("author_id", authorId!)
+          .eq("status", "draft")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      );
       if (!data) return null;
       const row = data as CommunityPost;
       return {
@@ -271,6 +290,7 @@ export const useCommunityDraft = (authorId: string | undefined) =>
         mentioned_project_ids: row.mentioned_project_ids ?? [],
         tagged_user_ids: row.tagged_user_ids ?? [],
         media_aspect: normalizeCommunityMediaAspect(row.media_aspect),
+        text_cover_theme: row.text_cover_theme ?? null,
       };
     },
   });
@@ -284,6 +304,7 @@ export type CommunityComposerPayload = {
   mentioned_project_ids?: string[];
   tagged_user_ids?: string[];
   media_aspect?: CommunityMediaAspect;
+  text_cover_theme?: string | null;
   gallery_urls?: string[];
   video_urls?: string[];
   draft_id?: string | null;
@@ -420,6 +441,7 @@ export const useSaveCommunityDraft = () => {
         mentioned_project_ids,
         tagged_user_ids,
         media_aspect: normalizeCommunityMediaAspect(input.media_aspect),
+        text_cover_theme: input.text_cover_theme ?? null,
         question_topic: null,
         status: "draft" as const,
         updated_at: new Date().toISOString(),
@@ -489,6 +511,7 @@ export const usePublishCommunityPost = () => {
         mentioned_project_ids,
         tagged_user_ids,
         media_aspect: normalizeCommunityMediaAspect(input.media_aspect),
+        text_cover_theme: input.text_cover_theme ?? null,
         link_urls,
         question_topic: null,
         status: "published" as const,
@@ -520,6 +543,7 @@ export const usePublishCommunityPost = () => {
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["community-posts"] });
       qc.invalidateQueries({ queryKey: ["community-draft", v.author_id] });
+      qc.invalidateQueries({ queryKey: ["community-posts-by-author", v.author_id] });
     },
   });
 };
@@ -585,6 +609,7 @@ export const useUpdateCommunityPost = () => {
         mentioned_project_ids,
         tagged_user_ids,
         media_aspect: normalizeCommunityMediaAspect(input.media_aspect),
+        text_cover_theme: input.text_cover_theme ?? null,
         link_urls,
         updated_at: new Date().toISOString(),
       };
@@ -613,6 +638,7 @@ export const useUpdateCommunityPost = () => {
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["community-posts"] });
       qc.invalidateQueries({ queryKey: ["community-post", v.edit_post_id] });
+      qc.invalidateQueries({ queryKey: ["community-posts-by-author", v.author_id] });
     },
   });
 };
@@ -623,22 +649,19 @@ export const useRelatedCommunityPosts = (post: CommunityPost | null | undefined,
     enabled: !!post?.id,
     queryFn: async () => {
       const tagSlice = (post!.tags ?? []).slice(0, 3);
-      let q = supabase
-        .from("community_posts")
-        .select(POST_SELECT)
-        .eq("status", "published")
-        .is("quoted_post_id", null)
-        .neq("id", post!.id)
-        .order("created_at", { ascending: false })
-        .limit(limit * 3);
-
-      if (post!.category) {
-        q = q.eq("category", post!.category);
-      }
-
-      const { data, error } = await q;
-      if (error) throw error;
-      const rows = ((data ?? []) as CommunityPost[]).filter(
+      const data = await fetchCommunityPostRows((select, excludeRepostsByColumn) => {
+        let q = supabase
+          .from("community_posts")
+          .select(select)
+          .eq("status", "published")
+          .neq("id", post!.id)
+          .order("created_at", { ascending: false })
+          .limit(limit * 3);
+        if (excludeRepostsByColumn) q = q.is("quoted_post_id", null);
+        if (post!.category) q = q.eq("category", post!.category);
+        return q;
+      });
+      const rows = (data as CommunityPost[]).filter(
         (r) => !isRepostRow(r as { quoted_post_id?: string | null; title?: string }),
       );
       const scored = rows

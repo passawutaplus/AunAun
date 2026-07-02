@@ -74,6 +74,8 @@ export function CommunityPostPreviewView({
 
           mediaAspect={preview.mediaAspect}
 
+          textCoverTheme={preview.textCoverTheme}
+
           fit={fitContainer}
 
         />

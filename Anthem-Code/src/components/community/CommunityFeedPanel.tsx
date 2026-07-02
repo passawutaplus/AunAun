@@ -15,14 +15,20 @@ import { useAuthDialog } from "@/stores/authDialogStore";
 import { formatCommunityActionError } from "@/lib/communityRateLimit";
 import { cn } from "@/lib/utils";
 import type { CommunityFeedFilter } from "@/data/communityTopics";
+import { CommunityTagFeedBanner } from "@/components/community/CommunityTagFeedBanner";
+
+type CommunityFeedPanelFilter = CommunityFeedFilter & {
+  tag?: string;
+};
 
 type Props = {
   search?: string;
-  filter: CommunityFeedFilter;
+  filter: CommunityFeedPanelFilter;
   onPostClick?: () => void;
+  onClearTag?: () => void;
 };
 
-const CommunityFeedPanel = ({ search = "", filter, onPostClick }: Props) => {
+const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Props) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: blockedSet } = useUserBlocks(user?.id);
@@ -32,10 +38,11 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick }: Props) => {
     () => ({
       category: filter.category,
       feedSource: filter.feedSource,
+      tag: filter.tag,
       viewerId: filter.feedSource === "following" ? user?.id : undefined,
       blockedIds,
     }),
-    [filter.category, filter.feedSource, user?.id, blockedIds],
+    [filter.category, filter.feedSource, filter.tag, user?.id, blockedIds],
   );
 
   const {
@@ -79,7 +86,9 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick }: Props) => {
   };
 
   const emptyDescription =
-    filter.feedSource === "following" && !user
+    filter.tag
+      ? `ยังไม่มีโพสต์ที่มีแท็ก #${filter.tag}`
+      : filter.feedSource === "following" && !user
       ? "เข้าสู่ระบบเพื่อดูโพสต์จากคนที่คุณติดตาม"
       : filter.feedSource === "following"
         ? "โพสต์ของคุณและคนที่ติดตามจะแสดงที่นี่ — หรือกด สำหรับคุณ เพื่อดูทั้งหมด"
@@ -102,6 +111,9 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick }: Props) => {
 
   return (
     <div>
+      {filter.tag && onClearTag ? (
+        <CommunityTagFeedBanner tag={filter.tag} onClear={onClearTag} />
+      ) : null}
       {isLoading ? (
         <CommunityGridSkeleton />
       ) : isError ? (

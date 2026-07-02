@@ -44,7 +44,7 @@ const CommentLikeButton = ({ commentId, likeCount }: { commentId: string; likeCo
         isLiked ? "text-destructive" : "text-muted-foreground hover:text-destructive",
       )}
     >
-      <PlusOneMark className={cn("text-[10px]", isLiked && "text-primary")} />
+      <PlusOneMark filled={isLiked} className={cn("text-[10px]", isLiked && "text-primary")} />
       {likes > 0 && <span>{likes}</span>}
     </button>
   );
@@ -220,6 +220,7 @@ const CommunityCommentSection = ({ postId }: Props) => {
               </div>
             )}
             <Textarea
+              id="community-comment-input"
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={3}

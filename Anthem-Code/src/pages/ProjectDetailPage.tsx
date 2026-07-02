@@ -36,6 +36,7 @@ import { FadeUp } from "@/components/motion/FadeUp";
 import { staggerReveal, viewportOnce } from "@/lib/motion";
 import { isVideoUrl, mediaItemsFromProject } from "@/lib/portfolioMedia";
 import { ProjectLinkedPostsBlock } from "@/components/project/ProjectLinkedPostsBlock";
+import { ProjectOwnerMenu } from "@/components/project/ProjectOwnerMenu";
 import {
   fetchLinkedPostSummaries,
   fetchPostsMentioningProject,
@@ -47,6 +48,10 @@ const ProjectDetailPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const sponsorAdId = searchParams.get("sponsor");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [id]);
   const { user } = useAuth();
   const { data: dbProject, isLoading, isError, refetch, isFetching } = useProject(id);
   const { data: sponsorAd } = useAdCampaign(sponsorAdId ?? undefined);
@@ -183,7 +188,7 @@ const ProjectDetailPage = () => {
       return;
     }
     toggleLike(undefined, {
-      onError: (e) => toast.error(mapWriteFlowError(e, "ให้ +1 ไม่สำเร็จ")),
+      onError: (e) => toast.error(mapWriteFlowError(e, "ถูกใจไม่สำเร็จ")),
     });
   };
 
@@ -219,6 +224,7 @@ const ProjectDetailPage = () => {
   }
 
   const shareUrl = typeof window !== "undefined" ? window.location.href : `/project/${id}`;
+  const isOwner = !!user?.id && user.id === dbProject?.owner_id;
 
   const coverImage =
     dbProject?.cover_url ??
@@ -249,6 +255,9 @@ const ProjectDetailPage = () => {
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <BackButton />
           <div className="flex items-center gap-1">
+            {isOwner && dbProject ? (
+              <ProjectOwnerMenu projectId={dbProject.id} projectTitle={project.title} />
+            ) : null}
             {dbProject ? (
               <BoostButton
                 targetType="project"
@@ -318,7 +327,6 @@ const ProjectDetailPage = () => {
                 ownerId={dbProject.owner_id}
               />
             )}
-            {linkedPosts.length > 0 && <ProjectLinkedPostsBlock posts={linkedPosts} />}
             {project.gallery.length > 0 ? (
               <GalleryWithLightbox items={mediaItems} project={project} />
             ) : (
@@ -351,6 +359,7 @@ const ProjectDetailPage = () => {
               onCollab={() => setCollabOpen(true)}
               allowHire={project.allowHire}
               allowCollab={project.allowCollab}
+              isOwner={isOwner}
             />
             <div className="mt-4">
               <LicenseDetailBlock
@@ -367,8 +376,8 @@ const ProjectDetailPage = () => {
           </FadeUp>
         </div>
 
-        {/* Comments full width below */}
-        <div className="mt-10 lg:mt-14 max-w-3xl">
+        <div className="mt-10 lg:mt-14 max-w-3xl space-y-6">
+          {linkedPosts.length > 0 && <ProjectLinkedPostsBlock posts={linkedPosts} />}
           <CommentSection projectId={project.id} />
         </div>
       </div>

@@ -6,7 +6,13 @@ import {
   COMMUNITY_MEDIA_MAX_VIDEOS,
 } from "@/lib/communityLimits";
 
-export const communityMediaAspectSchema = z.enum(["square", "portrait", "landscape"]);
+export const communityMediaAspectSchema = z.enum([
+  "square",
+  "portrait",
+  "portrait916",
+  "landscape",
+  "landscape54",
+]);
 export type CommunityMediaAspectInput = z.infer<typeof communityMediaAspectSchema>;
 
 function refineCommunityMedia(

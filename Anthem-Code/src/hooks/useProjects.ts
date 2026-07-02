@@ -11,6 +11,38 @@ export type DBProject = Tables<"projects">;
 const PUBLISHED_LIST_LIMIT = 120;
 const TOP_LIST_LIMIT = 200;
 const FOR_YOU_LIMIT = 80;
+const EXPLORE_RECENT_FILL = 40;
+
+async function fetchRecentPublished(limit: number): Promise<DBProject[]> {
+  const { data, error } = await supabase
+    .from("projects")
+    .select(PROJECT_FEED_SELECT)
+    .eq("status", "Published")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as DBProject[];
+}
+
+/** Keep personalized order but ensure fresh + own published work always surfaces. */
+function mergeExploreFeed(
+  personalized: DBProject[],
+  recent: DBProject[],
+  ownPublished: DBProject[],
+): DBProject[] {
+  const byId = new Map<string, DBProject>();
+  for (const p of [...ownPublished, ...personalized, ...recent]) {
+    if (!byId.has(p.id)) byId.set(p.id, p);
+  }
+  const ordered: DBProject[] = [];
+  const seen = new Set<string>();
+  for (const p of [...ownPublished, ...personalized, ...recent]) {
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    ordered.push(byId.get(p.id)!);
+  }
+  return ordered;
+}
 
 export const useMyProjects = (userId: string | undefined) =>
   useQuery({
@@ -147,6 +179,7 @@ export const useForYouProjects = (userId: string | undefined) =>
       });
 
       if (!seenIds.size && aiRecs.length === 0) {
+        let personalized: DBProject[] = [];
         if (topCats.length > 0) {
           const { data, error } = await supabase
             .from("projects")
@@ -156,15 +189,33 @@ export const useForYouProjects = (userId: string | undefined) =>
             .order("likes", { ascending: false })
             .limit(FOR_YOU_LIMIT);
           if (error) throw error;
-          return data ?? [];
+          personalized = (data ?? []) as DBProject[];
+        } else {
+          const { data, error } = await supabase
+            .from("projects")
+            .select(PROJECT_FEED_SELECT)
+            .eq("status", "Published")
+            .order("created_at", { ascending: false })
+            .limit(60);
+          if (error) throw error;
+          personalized = (data ?? []) as DBProject[];
         }
-        const { data } = await supabase
-          .from("projects")
-          .select(PROJECT_FEED_SELECT)
-          .eq("status", "Published")
-          .order("created_at", { ascending: false })
-          .limit(60);
-        return data ?? [];
+        const [recentPublished, ownPublishedRes] = await Promise.all([
+          fetchRecentPublished(EXPLORE_RECENT_FILL),
+          supabase
+            .from("projects")
+            .select(PROJECT_FEED_SELECT)
+            .eq("status", "Published")
+            .eq("owner_id", userId!)
+            .order("created_at", { ascending: false })
+            .limit(20),
+        ]);
+        if (ownPublishedRes.error) throw ownPublishedRes.error;
+        return mergeExploreFeed(
+          personalized,
+          recentPublished,
+          (ownPublishedRes.data ?? []) as DBProject[],
+        );
       }
 
       const query = supabase.from("projects").select(PROJECT_FEED_SELECT).eq("status", "Published");
@@ -173,7 +224,25 @@ export const useForYouProjects = (userId: string | undefined) =>
         : await query.order("created_at", { ascending: false }).limit(60);
       if (error) throw error;
 
-      return blendPersonalizedProjects(aiRecs, (catBased ?? []) as DBProject[], seenIds);
+      const blended = blendPersonalizedProjects(aiRecs, (catBased ?? []) as DBProject[], seenIds);
+
+      const [recentPublished, ownPublishedRes] = await Promise.all([
+        fetchRecentPublished(EXPLORE_RECENT_FILL),
+        supabase
+          .from("projects")
+          .select(PROJECT_FEED_SELECT)
+          .eq("status", "Published")
+          .eq("owner_id", userId!)
+          .order("created_at", { ascending: false })
+          .limit(20),
+      ]);
+      if (ownPublishedRes.error) throw ownPublishedRes.error;
+
+      return mergeExploreFeed(
+        blended,
+        recentPublished,
+        (ownPublishedRes.data ?? []) as DBProject[],
+      );
     },
   });
 
@@ -226,6 +295,8 @@ export const useUpdateProject = () => {
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["my-projects"] });
       qc.invalidateQueries({ queryKey: ["published-projects"] });
+      qc.invalidateQueries({ queryKey: ["for-you-projects"] });
+      qc.invalidateQueries({ queryKey: ["top-projects"] });
       qc.invalidateQueries({ queryKey: ["project", vars.id] });
     },
   });

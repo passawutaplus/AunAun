@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { BackButton } from "@/components/ui/BackButton";
 
@@ -13,6 +13,7 @@ import { useCommunityPostView } from "@/hooks/useCommunityPostView";
 import CommunityCommentSection from "@/components/community/CommunityCommentSection";
 
 import CommunityPostMedia from "@/components/community/CommunityPostMedia";
+import { CommunityTextCover } from "@/components/community/CommunityTextCover";
 
 import CommunityPostMenu from "@/components/community/CommunityPostMenu";
 
@@ -21,7 +22,9 @@ import CommunityPostActionBar from "@/components/community/CommunityPostActionBa
 import { formatThaiDate } from "@/lib/format";
 
 import { titlesMatch } from "@/lib/classifyCommunityPost";
+import { communityMediaAspectTailwind, normalizeCommunityMediaAspect } from "@/lib/communityMediaAspect";
 
+import { CommunityTagLink } from "@/components/community/CommunityTagLink";
 import { exploreProjectsUrl } from "@/lib/exploreRoutes";
 
 import ToolIcon from "@/components/ToolIcon";
@@ -55,6 +58,8 @@ import { CommunityDoubleTapLike } from "@/components/community/CommunityDoubleTa
 import { useCommunityPostLike } from "@/hooks/useCommunityPostInteractions";
 
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
+import { scrollToPostComments } from "@/lib/communityCommentsNav";
 
 
 
@@ -63,6 +68,7 @@ const CommunityPostDetailPage = () => {
   const { id } = useParams();
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { data: post, isLoading } = useCommunityPost(id);
 
@@ -70,7 +76,18 @@ const CommunityPostDetailPage = () => {
 
   useCommunityPostView(id);
 
-  const { isLiked, like, isPending: likePending } = useCommunityPostLike(
+  useEffect(() => {
+    if (location.hash === "#comments") return;
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [id, location.hash]);
+
+  useEffect(() => {
+    if (!post || location.hash !== "#comments") return;
+    const t = window.setTimeout(() => scrollToPostComments(), 120);
+    return () => window.clearTimeout(t);
+  }, [post?.id, location.hash]);
+
+  const likeControl = useCommunityPostLike(
     post?.id,
     post?.like_count ?? 0,
     post ? { authorId: post.author_id, title: post.title } : undefined,
@@ -182,52 +199,47 @@ const CommunityPostDetailPage = () => {
 
 
 
-          {hasMedia && (
-
+          {hasMedia ? (
             <CommunityDoubleTapLike
-
-              onLike={like}
-
-              isLiked={isLiked}
-
-              isPending={likePending}
-
+              onLike={likeControl.like}
+              isLiked={likeControl.isLiked}
+              isPending={likeControl.isPending}
             >
-
               <CommunityPostMedia
-
                 galleryUrls={post.gallery_urls}
-
                 videoUrls={post.video_urls}
-
                 title={post.title}
-
                 variant="detail"
-
                 mediaAspect={post.media_aspect}
-
               />
-
             </CommunityDoubleTapLike>
-
+          ) : (
+            <CommunityDoubleTapLike
+              onLike={likeControl.like}
+              isLiked={likeControl.isLiked}
+              isPending={likeControl.isPending}
+            >
+              <CommunityTextCover
+                seed={post.id}
+                title={post.title}
+                body={post.body}
+                tags={post.tags}
+                themeId={post.text_cover_theme}
+                aspectClass={communityMediaAspectTailwind(normalizeCommunityMediaAspect(post.media_aspect))}
+              />
+            </CommunityDoubleTapLike>
           )}
 
 
 
           <CommunityPostActionBar
-
             postId={post.id}
-
             authorId={post.author_id}
-
             title={post.title}
-
             likeCount={post.like_count ?? 0}
-
             replyCount={post.reply_count}
-
             viewCount={post.view_count ?? 0}
-
+            likeControl={likeControl}
           />
 
 
@@ -255,13 +267,7 @@ const CommunityPostDetailPage = () => {
               <div className="flex flex-wrap gap-2">
 
                 {communityDisplayTags(post.tags).map((t) => (
-
-                  <span key={t} className="text-xs text-primary">
-
-                    #{t}
-
-                  </span>
-
+                  <CommunityTagLink key={t} tag={t} compact />
                 ))}
 
               </div>

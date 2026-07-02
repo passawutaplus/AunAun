@@ -80,6 +80,11 @@ const CommunityPostGridCard = ({ post, boosted, boostId }: Props) => {
               galleryUrls={post.gallery_urls ?? []}
               videoUrls={post.video_urls ?? []}
               aspectClass={aspectClass}
+              postId={post.id}
+              title={post.title}
+              body={post.body}
+              tags={post.tags}
+              textCoverTheme={post.text_cover_theme}
             />
           </div>
         </CommunityDoubleTapLike>
@@ -133,7 +138,7 @@ const CommunityPostGridCard = ({ post, boosted, boostId }: Props) => {
           active={isLiked}
           count={likes}
           disabled={isPending}
-          ariaLabel={isLiked ? "เลิก +1" : "ให้ +1"}
+          ariaLabel={isLiked ? "เลิกถูกใจ" : "ถูกใจ"}
           className="shrink-0 text-[11px]"
           onClick={(e) => {
             e.preventDefault();

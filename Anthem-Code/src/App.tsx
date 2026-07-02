@@ -22,6 +22,7 @@ import DemoModeBanner from "./components/DemoModeBanner.tsx";
 import AvatarPoolBootstrap from "./components/AvatarPoolBootstrap.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import { ReferralAttribution } from "./components/referral/ReferralAttribution.tsx";
+import { ScrollToTop } from "./components/ScrollToTop.tsx";
 
 // Code-split routes — only the home feed stays in the main chunk.
 const AuthPage = lazy(() => import("./pages/AuthPage.tsx"));
@@ -119,6 +120,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <ErrorBoundary>
           <DemoModeBanner />
           <AvatarPoolBootstrap />

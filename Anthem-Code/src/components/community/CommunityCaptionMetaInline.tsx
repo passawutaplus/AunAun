@@ -1,4 +1,5 @@
 import ToolIcon from "@/components/ToolIcon";
+import { CommunityTagLink } from "@/components/community/CommunityTagLink";
 import { communityDisplayTags } from "@/lib/communityQaTag";
 import { cn } from "@/lib/utils";
 
@@ -19,9 +20,7 @@ export function CommunityCaptionMetaInline({ tags, tools, className, compact }: 
       {displayTags.length > 0 && (
         <div className="flex flex-wrap gap-x-2 gap-y-1">
           {displayTags.map((t) => (
-            <span key={t} className={cn("text-primary", compact ? "text-xs" : "text-sm")}>
-              #{t}
-            </span>
+            <CommunityTagLink key={t} tag={t} compact={compact} />
           ))}
         </div>
       )}

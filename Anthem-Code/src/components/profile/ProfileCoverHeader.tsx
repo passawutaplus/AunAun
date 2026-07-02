@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Camera, Eye, LayoutGrid, Loader2, MapPin, Plus, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import SharePopover from "@/components/SharePopover";
 import { useUpdateProfileMedia } from "@/hooks/useProfile";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { useSubscription } from "@/core/subscription";
@@ -21,7 +22,9 @@ type Props = {
   profile: ProfileLike;
   stats: { works: number; followers: number; following: number };
   onManage: () => void;
-  onShare: () => void;
+  shareUrl: string;
+  shareTitle: string;
+  onShareInteract?: () => void;
   onPreview?: () => void;
   onPost?: () => void;
   onFollowersClick?: () => void;
@@ -33,7 +36,9 @@ export default function ProfileCoverHeader({
   profile,
   stats,
   onManage,
-  onShare,
+  shareUrl,
+  shareTitle,
+  onShareInteract,
   onPreview,
   onPost,
   onFollowersClick,
@@ -194,10 +199,12 @@ export default function ProfileCoverHeader({
               {onPost && (
                 <Button
                   onClick={onPost}
+                  size="icon"
                   className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
                   title="โพสต์ชุมชน"
+                  aria-label="โพสต์ชุมชน"
                 >
-                  <Plus className="w-4 h-4 mr-1" /> โพส
+                  <Plus className="w-4 h-4" />
                 </Button>
               )}
               {onPreview && (
@@ -212,14 +219,31 @@ export default function ProfileCoverHeader({
                   <Eye className="w-4 h-4" />
                 </Button>
               )}
+              <SharePopover
+                url={shareUrl}
+                title={shareTitle}
+                label="แชร์โปรไฟล์"
+                align="end"
+                onOpenChange={(open) => {
+                  if (open) onShareInteract?.();
+                }}
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full shrink-0"
+                  title="แชร์โปรไฟล์"
+                  aria-label="แชร์โปรไฟล์"
+                >
+                  <Share2 className="w-4 h-4" />
+                </Button>
+              </SharePopover>
               <Button
                 onClick={onManage}
                 className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <LayoutGrid className="w-4 h-4 mr-1.5" /> จัดการผลงาน
-              </Button>
-              <Button onClick={onShare} variant="outline" className="rounded-full">
-                <Share2 className="w-4 h-4 mr-1.5" /> แชร์โปรไฟล์
               </Button>
             </div>
           </div>

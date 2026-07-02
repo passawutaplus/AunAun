@@ -93,15 +93,6 @@ const ProfileMenuCard = () => {
       )}
 
       <div className="my-2 border-t border-border" />
-      <p className="px-3 pt-1 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">การติดตามของฉัน</p>
-      <button onClick={() => navigate("/me/reports")} className={item}>
-        <Flag className="w-4 h-4 text-primary" /> รายงานของฉัน
-      </button>
-      <button onClick={() => navigate("/me/feedback")} className={item}>
-        <MessageSquare className="w-4 h-4 text-primary" /> ฟีดแบ็กของฉัน
-      </button>
-
-      <div className="my-2 border-t border-border" />
       <p className="px-3 pt-1 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">ระบบ So1o</p>
       {isPro ? (
         <p className="px-3 py-1.5 text-xs text-primary font-medium flex items-center gap-1.5">
@@ -116,11 +107,29 @@ const ProfileMenuCard = () => {
       <div className="my-2 border-t border-border" />
       <KycStatusBadge className="mx-1 mb-1" />
       <button onClick={() => navigate("/verify")} className={item}>
-        <ShieldCheck className="w-4 h-4 text-primary" /> ยืนยันตัวตน
+        <ShieldCheck className="w-4 h-4 text-primary" /> เปิดรับรายได้
       </button>
       <button onClick={() => navigate("/settings")} className={item}>
         <Settings className="w-4 h-4 text-primary" /> ตั้งค่า
       </button>
+      <div className="grid grid-cols-2 gap-1 px-0.5">
+        <button
+          onClick={() => navigate("/me/reports")}
+          className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs text-foreground hover:bg-accent hover:text-foreground transition-colors text-left"
+          title="รายงานของฉัน"
+        >
+          <Flag className="w-3.5 h-3.5 text-primary shrink-0" />
+          <span className="truncate">รายงาน</span>
+        </button>
+        <button
+          onClick={() => navigate("/me/feedback")}
+          className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs text-foreground hover:bg-accent hover:text-foreground transition-colors text-left"
+          title="ฟีดแบ็กของฉัน"
+        >
+          <MessageSquare className="w-3.5 h-3.5 text-primary shrink-0" />
+          <span className="truncate">ฟีดแบ็ก</span>
+        </button>
+      </div>
       <button
         onClick={async () => { await supabase.auth.signOut(); navigate("/"); }}
         className={`${item} text-destructive hover:text-destructive`}

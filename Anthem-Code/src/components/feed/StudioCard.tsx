@@ -119,10 +119,10 @@ const StudioCard = ({ data }: Props) => {
             whileTap={{ scale: 0.92 }}
             onClick={() => featuredProjectId && like.toggle()}
             disabled={!featuredProjectId}
-            aria-label="ให้ +1 ผลงานเด่น"
+            aria-label="ถูกใจผลงานเด่น"
             className="w-9 h-9 flex items-center justify-center rounded-full glass-panel hover:bg-accent/40 transition disabled:opacity-40"
           >
-            <PlusOneMark className={like.isLiked ? "text-primary" : "text-muted-foreground"} />
+            <PlusOneMark filled={like.isLiked} className={like.isLiked ? "text-primary" : "text-muted-foreground"} />
           </motion.button>
         </div>
       </div>

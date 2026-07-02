@@ -14,7 +14,7 @@ type Props = {
 
 export function CommunityMediaAspectPicker({ value, onChange, disabled, className }: Props) {
   return (
-    <div className={cn("flex gap-2", className)}>
+    <div className={cn("grid grid-cols-3 sm:grid-cols-5 gap-1.5", className)}>
       {COMMUNITY_MEDIA_ASPECT_ORDER.map((key) => {
         const meta = COMMUNITY_MEDIA_ASPECTS[key];
         const active = value === key;

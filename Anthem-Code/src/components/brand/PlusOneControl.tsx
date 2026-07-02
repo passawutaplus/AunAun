@@ -13,7 +13,7 @@ type Props = {
 };
 
 /**
- * Appreciation control — heart icon (+1 in aria/copy); backend still uses likes/project_likes.
+ * Appreciation control — heart icon; backend still uses likes/project_likes.
  */
 export function PlusOneControl({
   active = false,
@@ -23,7 +23,7 @@ export function PlusOneControl({
   disabled,
   className,
   onClick,
-  ariaLabel = "Give +1",
+  ariaLabel = "ถูกใจ",
 }: Props) {
   const textSize = size === "sm" ? "text-xs" : "text-sm";
   const heartSize = size === "sm" ? "w-4 h-4" : "w-5 h-5";

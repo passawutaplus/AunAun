@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import Cropper, { type Area, type Point } from "react-easy-crop";
+import Cropper, { type Area, type MediaSize, type Point } from "react-easy-crop";
 import {
   Dialog,
   DialogContent,
@@ -12,10 +12,10 @@ import { CommunityMediaAspectPicker } from "@/components/community/CommunityMedi
 import { getCroppedImageFile } from "@/lib/cropImage";
 import {
   type CommunityMediaAspect,
+  communityCropMinZoom,
   communityMediaAspectMeta,
   normalizeCommunityMediaAspect,
 } from "@/lib/communityMediaAspect";
-import { cn } from "@/lib/utils";
 
 type Props = {
   file: File | null;
@@ -28,6 +28,8 @@ type Props = {
   onConfirm: (file: File) => void;
   onCancel: () => void;
 };
+
+const MAX_ZOOM = 3;
 
 export function CommunityImageCropDialog({
   file,
@@ -44,6 +46,7 @@ export function CommunityImageCropDialog({
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [minZoom, setMinZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -56,9 +59,19 @@ export function CommunityImageCropDialog({
     setImageSrc(url);
     setCrop({ x: 0, y: 0 });
     setZoom(1);
+    setMinZoom(1);
     setCroppedAreaPixels(null);
     return () => URL.revokeObjectURL(url);
   }, [file, aspectKey]);
+
+  const onMediaLoaded = useCallback(
+    (media: MediaSize) => {
+      const nextMin = communityCropMinZoom(media.naturalWidth, media.naturalHeight, meta.ratio);
+      setMinZoom(nextMin);
+      setZoom((z) => Math.max(nextMin, Math.min(MAX_ZOOM, z)));
+    },
+    [meta.ratio],
+  );
 
   const onCropComplete = useCallback((_: Area, pixels: Area) => {
     setCroppedAreaPixels(pixels);
@@ -109,20 +122,23 @@ export function CommunityImageCropDialog({
             <CommunityMediaAspectPicker
               value={aspectKey}
               onChange={handleAspectPick}
-              className="gap-1.5"
             />
           </div>
         )}
 
-        <div className={cn("relative w-full bg-muted mx-auto max-w-md", meta.cropFrameClass)}>
+        <div className="relative w-full max-w-md mx-auto h-[min(70vh,520px)] bg-muted">
           {imageSrc && (
             <Cropper
               image={imageSrc}
               crop={crop}
               zoom={zoom}
+              minZoom={minZoom}
+              maxZoom={MAX_ZOOM}
               aspect={meta.ratio}
               cropShape="rect"
               showGrid
+              restrictPosition={zoom >= minZoom + 0.01}
+              onMediaLoaded={onMediaLoaded}
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}
@@ -134,9 +150,9 @@ export function CommunityImageCropDialog({
           <label className="text-xs text-muted-foreground mb-1 block">ซูม</label>
           <input
             type="range"
-            min={1}
-            max={3}
-            step={0.05}
+            min={minZoom}
+            max={MAX_ZOOM}
+            step={0.01}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
             className="w-full accent-primary"

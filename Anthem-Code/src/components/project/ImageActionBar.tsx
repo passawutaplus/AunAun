@@ -49,7 +49,7 @@ const ImageActionBar = ({ projectId, projectTitle, imageUrl, imageIndex }: Props
     toggleLike.mutate(
       { projectId, imageUrl, liked },
       {
-        onSuccess: () => toast.success(liked ? "ยกเลิกแล้ว" : "ให้ +1 แล้ว"),
+        onSuccess: () => toast.success(liked ? "ยกเลิกแล้ว" : "ถูกใจแล้ว"),
         onError: (e: Error) => toast.error(e.message),
       }
     );
@@ -68,7 +68,7 @@ const ImageActionBar = ({ projectId, projectTitle, imageUrl, imageIndex }: Props
         active={liked}
         count={likes}
         onClick={handleLike}
-        ariaLabel={liked ? "ยกเลิก +1" : "ให้ +1"}
+        ariaLabel={liked ? "ยกเลิกถูกใจ" : "ถูกใจ"}
         className={`${btn} text-white hover:text-white ${liked ? "!bg-primary/90 hover:!bg-primary [&_span]:text-white" : "[&_span]:text-white/90"}`}
       />
 

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FolderOpen } from "lucide-react";
+import { FolderOpen, Layers3 } from "lucide-react";
 import type { MentionedProjectSummary } from "@/lib/communityMentionedProjects";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +25,10 @@ export function CommunityMentionedProjectsBar({ projects, linkable = false, clas
 
   return (
     <div className={cn("px-4 py-2.5 border-t border-border/50 bg-muted/20", className)}>
-      <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">อ้างอิงผลงาน</p>
+      <div className="flex items-center gap-1.5 mb-2">
+        <Layers3 className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
+        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">อ้างอิงผลงาน</p>
+      </div>
       <div className="flex gap-2 overflow-x-auto no-scrollbar">
         {projects.map((p) => {
           const inner = (

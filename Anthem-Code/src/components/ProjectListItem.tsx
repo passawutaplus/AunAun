@@ -54,7 +54,7 @@ const ProjectListItem = ({ project, onHireClick, onCollabClick }: ProjectListIte
           <PlusOneControl
             active={isLiked}
             count={likes}
-            ariaLabel={isLiked ? "เลิก +1" : "ให้ +1"}
+            ariaLabel={isLiked ? "เลิกถูกใจ" : "ถูกใจ"}
             className="hover:text-foreground transition"
             onClick={stop(toggleLike)}
           />
