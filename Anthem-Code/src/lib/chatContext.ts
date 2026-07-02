@@ -47,6 +47,9 @@ export function buildCollabContextMessage(input: CollabContextInput): string {
 /** Default collab message when user skips the form (DB requires non-empty message). */
 export const DEFAULT_COLLAB_MESSAGE = "สนใจร่วมงาน — อยากคุยรายละเอียดเพิ่ม";
 
+/** Default hire message for instant chat when the brief form is empty. */
+export const DEFAULT_HIRE_MESSAGE = "สนใจจ้าง — อยากคุยรายละเอียดในแชท";
+
 /** Prefix stored in text messages when system type is unavailable (pre-migration fallback). */
 export const SYSTEM_MESSAGE_PREFIX = "[context]";
 

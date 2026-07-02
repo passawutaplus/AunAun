@@ -39,9 +39,8 @@ export const emptyHireInviteForm = (): HireInviteFormState => ({
 });
 
 export function buildHireInviteMessage(form: HireInviteFormState): string | null {
-  if (!form.jobType.trim()) return null;
   const parts = [
-    `ประเภทงาน: ${jobTypeLabel(form.jobType)}`,
+    form.jobType.trim() ? `ประเภทงาน: ${jobTypeLabel(form.jobType)}` : null,
     form.details.trim() ? `รายละเอียด:\n${form.details.trim()}` : null,
     form.deliverablesText.trim() ? `สิ่งที่ส่งมอบ:\n${form.deliverablesText.trim()}` : null,
     form.referenceUrl.trim() ? `ลิงก์อ้างอิง: ${form.referenceUrl.trim()}` : null,

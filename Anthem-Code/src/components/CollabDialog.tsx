@@ -51,10 +51,6 @@ const collabDetailsSchema = z
   .refine(
     (d) => !d.collabTypes.includes("other") || (d.otherTypeNote && d.otherTypeNote.length > 0),
     { message: "กรุณาระบุประเภท 'อื่นๆ'", path: ["otherTypeNote"] },
-  )
-  .refine(
-    (d) => !d.message || d.message.length >= 10,
-    { message: "เขียนข้อความอย่างน้อย 10 ตัวอักษร", path: ["message"] },
   );
 
 interface CollabDialogProps {
@@ -91,7 +87,6 @@ const CollabDialog = ({
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [showAllWorks, setShowAllWorks] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [showDetails, setShowDetails] = useState(false);
   const busy = createReq.isPending || openChat.isPending;
 
   const published = useMemo(() => myProjects.filter((p) => p.status === "Published"), [myProjects]);
@@ -101,7 +96,6 @@ const CollabDialog = ({
   const reset = () => {
     setSelectedTypes([]); setOtherNote(""); setMessage(""); setAttached([]);
     setDriveUrl(""); setWebsiteUrl(""); setShowAllWorks(false); setSubmitError(null);
-    setShowDetails(false);
   };
 
   const toggleType = (key: string) =>
@@ -117,7 +111,7 @@ const CollabDialog = ({
       return [...s, id];
     });
 
-  const submitCollab = async (withDetails: boolean) => {
+  const submitCollab = async () => {
     if (!user) {
       onOpenChange(false);
       useAuthDialog.getState().openSignup();
@@ -126,37 +120,27 @@ const CollabDialog = ({
     if (!recipientId) { toast.error("ไม่พบเจ้าของผลงาน"); return; }
     if (recipientId === user.id) { toast.info("ส่งคำขอให้ตัวเองไม่ได้"); return; }
 
-    let payload = {
-      collabTypes: [] as string[],
-      message: DEFAULT_COLLAB_MESSAGE,
-      attached: [] as string[],
-      externalDriveUrl: "" as string | undefined,
-      websiteUrl: "" as string | undefined,
-      otherTypeNote: undefined as string | undefined,
-    };
-
-    if (withDetails) {
-      const parsed = collabDetailsSchema.safeParse({
-        collabTypes: selectedTypes,
-        message,
-        attached,
-        externalDriveUrl: driveUrl,
-        websiteUrl,
-        otherTypeNote: otherNote,
-      });
-      if (!parsed.success) {
-        toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
-        return;
-      }
-      payload = {
-        collabTypes: parsed.data.collabTypes,
-        message: parsed.data.message.trim() || DEFAULT_COLLAB_MESSAGE,
-        attached: parsed.data.attached,
-        externalDriveUrl: parsed.data.externalDriveUrl,
-        websiteUrl: parsed.data.websiteUrl,
-        otherTypeNote: otherSelected ? (parsed.data.otherTypeNote || undefined) : undefined,
-      };
+    const parsed = collabDetailsSchema.safeParse({
+      collabTypes: selectedTypes,
+      message,
+      attached,
+      externalDriveUrl: driveUrl,
+      websiteUrl,
+      otherTypeNote: otherNote,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
+      return;
     }
+
+    const payload = {
+      collabTypes: parsed.data.collabTypes,
+      message: parsed.data.message.trim() || DEFAULT_COLLAB_MESSAGE,
+      attached: parsed.data.attached,
+      externalDriveUrl: parsed.data.externalDriveUrl,
+      websiteUrl: parsed.data.websiteUrl,
+      otherTypeNote: otherSelected ? (parsed.data.otherTypeNote || undefined) : undefined,
+    };
 
     setSubmitError(null);
     try {
@@ -203,7 +187,7 @@ const CollabDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await submitCollab(true);
+    await submitCollab();
   };
 
   return (
@@ -215,35 +199,13 @@ const CollabDialog = ({
           </div>
           <DialogTitle className="text-xl">ชวน {recipientName} ร่วมงาน</DialogTitle>
           <DialogDescription className="text-sm leading-6">
-            ไม่ใช่การจ้างงาน — ทักคุยได้เลย หรือเติมรายละเอียดก่อนส่ง
+            ไม่ใช่การจ้างงาน — เติมรายละเอียดได้ถ้าต้องการ ไม่กรอกก็แชทได้เลย
             {projectTitle && source === "project" && <> เริ่มจากผลงาน <span className="text-foreground font-medium">"{projectTitle}"</span></>}
             {source === "profile" && <> จากโปรไฟล์ <span className="text-foreground font-medium">{recipientName}</span></>}
           </DialogDescription>
         </DialogHeader>
 
-        <Button
-          type="button"
-          disabled={busy}
-          className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90 mb-2"
-          onClick={() => void submitCollab(false)}
-        >
-          {busy ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <MessageCircle className="w-4 h-4 mr-1.5" />}
-          {user ? (busy ? "กำลังเปิดแชท..." : "แชทเลย") : "เข้าสู่ระบบเพื่อแชท"}
-        </Button>
-
-        {!showDetails ? (
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full rounded-full mb-4"
-            onClick={() => setShowDetails(true)}
-          >
-            เติมรายละเอียด (ไม่บังคับ)
-          </Button>
-        ) : null}
-
-        {showDetails ? (
-        <form onSubmit={handleSubmit} className="space-y-5 mt-2">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Your profile preview */}
           {user && profile && (
             <div className="rounded-2xl border border-border bg-muted/30 p-4">
@@ -485,14 +447,13 @@ const CollabDialog = ({
             <Button
               type="submit"
               disabled={busy}
-              className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+              className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
             >
-              <Handshake className="w-4 h-4 mr-1.5" />
-              {user ? (busy ? "กำลังส่ง..." : "ส่งพร้อมรายละเอียด & เปิดแชท") : "เข้าสู่ระบบเพื่อส่งคำขอ"}
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
+              {user ? (busy ? "กำลังเปิดแชท..." : "แชทเลย") : "เข้าสู่ระบบเพื่อแชท"}
             </Button>
           </DialogFooter>
         </form>
-        ) : null}
       </DialogContent>
     </Dialog>
   );

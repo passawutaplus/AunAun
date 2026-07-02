@@ -1,14 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  hireRequestQuickSchema,
-  hireRequestSchema,
-  hireInviteBriefSchema,
-} from "@/lib/validators";
+import { hireRequestQuickSchema } from "@/lib/validators";
 import { parseMoneyInput } from "@/lib/parseMoney";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -17,7 +13,11 @@ import { useMyOpenJobPosts } from "@/hooks/useJobs";
 import { useOpenHireCollabChat } from "@/hooks/useChat";
 import { supabase } from "@/integrations/supabase/client";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
-import { buildHireContextMessage, type ChatEntrySource } from "@/lib/chatContext";
+import {
+  buildHireContextMessage,
+  DEFAULT_HIRE_MESSAGE,
+  type ChatEntrySource,
+} from "@/lib/chatContext";
 import HireInviteForm, {
   buildHireInviteMessage,
   emptyHireInviteForm,
@@ -50,7 +50,6 @@ const HireDialog = ({
   const { data: myJobs = [] } = useMyOpenJobPosts();
   const [jobPostId, setJobPostId] = useState("");
   const [form, setForm] = useState(emptyHireInviteForm());
-  const [showDetails, setShowDetails] = useState(false);
   const busy = createReq.isPending || openChat.isPending;
 
   useEffect(() => {
@@ -65,7 +64,6 @@ const HireDialog = ({
   const reset = () => {
     setForm(emptyHireInviteForm());
     setJobPostId("");
-    setShowDetails(false);
   };
 
   const handleOpenChange = (next: boolean) => {
@@ -78,7 +76,7 @@ const HireDialog = ({
     return selectedJob?.title ?? projectTitle ?? (source === "profile" ? "โปรไฟล์" : "ผลงานในฟีด");
   };
 
-  const submitHire = async (withDetails: boolean) => {
+  const submitHire = async () => {
     if (!user) return;
     if (!freelancerId) {
       toast.error("ผลงานนี้ยังไม่มีเจ้าของในระบบ — ไม่สามารถส่งคำขอได้");
@@ -99,32 +97,7 @@ const HireDialog = ({
     }
 
     const budgetNum = parseMoneyInput(form.budgetAmount) ?? undefined;
-    const inviteMessage = withDetails ? buildHireInviteMessage(form) : null;
-
-    if (withDetails && inviteMessage) {
-      const briefCheck = hireInviteBriefSchema.safeParse({
-        jobType: form.jobType,
-        details: form.details,
-        budgetAmount: budgetNum,
-        deadline: form.deadline,
-      });
-      if (!briefCheck.success) {
-        toast.error(briefCheck.error.issues[0]?.message ?? "กรอกข้อมูลไม่ครบ");
-        return;
-      }
-      const parsed = hireRequestSchema.safeParse({
-        clientName: form.clientName,
-        email: form.email,
-        phone: form.phone,
-        budgetAmount: budgetNum,
-        deadline: form.deadline,
-        message: inviteMessage,
-      });
-      if (!parsed.success) {
-        toast.error(parsed.error.issues[0]?.message ?? "กรอกข้อมูลไม่ครบ");
-        return;
-      }
-    }
+    const inviteMessage = buildHireInviteMessage(form) ?? DEFAULT_HIRE_MESSAGE;
 
     try {
       const title = resolvedTitle();
@@ -141,7 +114,7 @@ const HireDialog = ({
         message: inviteMessage,
         job_post_id: jobPostId || null,
         invited_as: "personal",
-        attachment_urls: withDetails && form.attachmentUrls.length ? form.attachmentUrls : null,
+        attachment_urls: form.attachmentUrls.length ? form.attachmentUrls : null,
       } as never);
 
       void supabase.functions.invoke("notify-hire-request", {
@@ -181,59 +154,34 @@ const HireDialog = ({
             ) : (
               <>อ้างอิง: <span className="font-medium text-primary">{projectTitle}</span></>
             )}
+            <span className="block mt-1 text-xs">เติมรายละเอียดได้ถ้าต้องการ — ไม่กรอกก็แชทได้เลย</span>
           </DialogDescription>
         </DialogHeader>
 
-        <Button
-          type="button"
-          disabled={busy}
-          className="w-full rounded-xl h-11 gap-2"
-          onClick={() => void submitHire(false)}
-        >
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-          {busy ? "กำลังเปิดแชท..." : "แชทเลย"}
-        </Button>
+        <HireInviteForm
+          form={form}
+          setForm={setForm}
+          myJobs={myJobs}
+          jobPostId={jobPostId}
+          onJobPostIdChange={setJobPostId}
+          userId={user?.id}
+          optional
+        />
 
-        <div className="relative py-1">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-background px-2 text-muted-foreground">หรือ</span>
-          </div>
-        </div>
-
-        {!showDetails ? (
+        <DialogFooter className="gap-2 sm:gap-2 pt-2">
+          <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)} className="rounded-xl">
+            ยกเลิก
+          </Button>
           <Button
             type="button"
-            variant="outline"
-            className="w-full rounded-xl"
-            onClick={() => setShowDetails(true)}
+            disabled={busy}
+            className="rounded-xl gap-2 flex-1 sm:flex-none"
+            onClick={() => void submitHire()}
           >
-            เติมรายละเอียดงาน (ไม่บังคับ)
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
+            {busy ? "กำลังเปิดแชท..." : "แชทเลย"}
           </Button>
-        ) : (
-          <>
-            <HireInviteForm
-              form={form}
-              setForm={setForm}
-              myJobs={myJobs}
-              jobPostId={jobPostId}
-              onJobPostIdChange={setJobPostId}
-              userId={user?.id}
-              optional
-            />
-            <Button
-              type="button"
-              disabled={busy}
-              variant="secondary"
-              className="w-full rounded-xl mt-4"
-              onClick={() => void submitHire(true)}
-            >
-              {busy ? "กำลังส่ง..." : "ส่งพร้อมรายละเอียด & เปิดแชท"}
-            </Button>
-          </>
-        )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

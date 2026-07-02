@@ -26,6 +26,7 @@ Then apply SQL on Supabase (see below) and deploy apps per `docs/deploy-vps.md`.
 | `anthem-migration.sql` | เก่า — ใช้ `Solo-Code/supabase/manual/apply-anthem-ecosystem.sql` แทน |
 | `chat-phase2.sql` | chat pins, group members, message policies |
 | `chat-instant-flow.sql` | system/profile message types + profile_user_id for instant chat |
+| `hire-collab-instant-validation.sql` | relax freelancer hire insert validation (studio hire stays strict) |
 | `frontend-production-gap.sql` | avatar_pool, analytics RPCs, collab_requests, group RPC, portfolio RLS |
 | `chat-cv-private-storage.sql` | private chat/CV storage (after anthem-media-storage-rls) |
 | `ux-retest-schema-gap.sql` | project_comments threading, collection_items, job_match_notifications, RPC stubs |
