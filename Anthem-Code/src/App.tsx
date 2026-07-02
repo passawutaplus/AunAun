@@ -76,6 +76,20 @@ const AdminKycPage = lazy(() => import("./pages/admin/AdminKycPage"));
 const AdminInspirePage = lazy(() => import("./pages/admin/AdminInspirePage"));
 const AdminAiMonitorPage = lazy(() => import("./pages/admin/AdminAiMonitorPage"));
 const AdminDevTasksPage = lazy(() => import("./pages/admin/AdminDevTasksPage"));
+const AdminKuyRadarPage = lazy(() => import("./pages/admin/AdminKuyRadarPage"));
+const KuyOverviewPage = lazy(() => import("./components/admin/kuy-radar/KuyOverviewPage"));
+const KuyBusinessSetup = lazy(() => import("./components/admin/kuy-radar/KuyBusinessSetup"));
+const KuyLeadTable = lazy(() => import("./components/admin/kuy-radar/KuyLeadTable"));
+const KuyCompetitorTable = lazy(() => import("./components/admin/kuy-radar/KuyCompetitorTable"));
+const KuyContentTable = lazy(() => import("./components/admin/kuy-radar/KuyContentTable"));
+const KuyInsightPanel = lazy(() => import("./components/admin/kuy-radar/KuyInsightPanel"));
+const KuyAdsPlanner = lazy(() => import("./components/admin/kuy-radar/KuyAdsPlanner"));
+const KuyOfferBuilder = lazy(() => import("./components/admin/kuy-radar/KuyOfferBuilder"));
+const KuyContentPlanner = lazy(() => import("./components/admin/kuy-radar/KuyContentPlanner"));
+const KuyOutreachPanel = lazy(() => import("./components/admin/kuy-radar/KuyOutreachPanel"));
+const KuyReportsPanel = lazy(() => import("./components/admin/kuy-radar/KuyReportsPanel"));
+const KuySettingsPanel = lazy(() => import("./components/admin/kuy-radar/KuySettingsPanel"));
+const KuyManualPage = lazy(() => import("./components/admin/kuy-radar/KuyManualPage"));
 const PrivacyPage = lazy(() => import("./pages/legal/PrivacyPage.tsx"));
 const TermsPage = lazy(() => import("./pages/legal/TermsPage.tsx"));
 const CookiesPage = lazy(() => import("./pages/legal/CookiesPage.tsx"));
@@ -167,6 +181,21 @@ const App = () => (
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<OverviewPage />} />
                 <Route path="dev-tasks" element={<AdminDevTasksPage />} />
+                <Route path="kuy-radar" element={<AdminKuyRadarPage />}>
+                  <Route index element={<KuyOverviewPage />} />
+                  <Route path="setup" element={<KuyBusinessSetup />} />
+                  <Route path="leads" element={<KuyLeadTable />} />
+                  <Route path="competitors" element={<KuyCompetitorTable />} />
+                  <Route path="content" element={<KuyContentTable />} />
+                  <Route path="insights" element={<KuyInsightPanel />} />
+                  <Route path="ads" element={<KuyAdsPlanner />} />
+                  <Route path="offers" element={<KuyOfferBuilder />} />
+                  <Route path="planner" element={<KuyContentPlanner />} />
+                  <Route path="outreach" element={<KuyOutreachPanel />} />
+                  <Route path="reports" element={<KuyReportsPanel />} />
+                  <Route path="settings" element={<KuySettingsPanel />} />
+                  <Route path="manual" element={<KuyManualPage />} />
+                </Route>
                 <Route path="activity" element={<AdminActivityPage />} />
                 <Route path="analytics" element={<AdminAnalyticsPage />} />
                 <Route path="contracts" element={<AdminContractsPage />} />

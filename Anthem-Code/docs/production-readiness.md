@@ -8,10 +8,11 @@ This document is the release gate for the community platform. A successful front
 2. Apply all `Solo-Code/supabase/migrations` in timestamp order. The shared Supabase backend is owned by Solo-Code.
 3. Confirm `20260622120000_anthem_community_production_hardening.sql` completed successfully.
 4. Confirm `20260622160000_anthem_referral_affiliate.sql` completed successfully before enabling referral links.
-5. Disable every mock payment RPC and use Stripe live-mode secrets only in server environments.
-6. Set production `VITE_DEMO_MODE=false`.
-7. Configure Sentry, uptime monitoring, database backups, and a tested restore procedure.
-8. Replace or confirm all public support, privacy, and security email addresses.
+5. Confirm `20260702120000_kuy_radar_core.sql` completed successfully before enabling Kuy Radar persistence (RLS uses `has_role(auth.uid(), 'admin')`).
+6. Disable every mock payment RPC and use Stripe live-mode secrets only in server environments.
+7. Set production `VITE_DEMO_MODE=false`.
+8. Configure Sentry, uptime monitoring, database backups, and a tested restore procedure.
+9. Replace or confirm all public support, privacy, and security email addresses.
 
 ## Community And Chat Scale
 

@@ -114,6 +114,17 @@ const SHARED_TABLES = new Set([
   "referral_codes",
   "referrals",
   "referral_reward_ledger",
+  "kuy_businesses",
+  "kuy_keywords",
+  "kuy_leads",
+  "kuy_competitors",
+  "kuy_content_items",
+  "kuy_insights",
+  "kuy_campaigns",
+  "kuy_outreach_messages",
+  "kuy_reports",
+  "kuy_settings",
+  "kuy_export_audit_log",
 ]);
 
 export function schemaForTable(table: string): "public" | "anthem" | "shared" {

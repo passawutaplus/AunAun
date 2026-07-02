@@ -1,0 +1,115 @@
+import { useState } from "react";
+import { ExternalLink } from "lucide-react";
+import { toast } from "sonner";
+import { useKuyRadarBusinesses } from "@/hooks/admin/useKuyRadarBusinesses";
+import { useKuyRadarCompetitors } from "@/hooks/admin/useKuyRadarCompetitors";
+import { KUY_PLATFORMS } from "@/lib/kuy-radar/types";
+import { KuyRadarCard } from "./KuyRadarShell";
+
+export default function KuyCompetitorTable() {
+  const { activeBusinessId } = useKuyRadarBusinesses();
+  const { competitors, createCompetitor } = useKuyRadarCompetitors(activeBusinessId);
+  const [form, setForm] = useState({
+    competitor_name: "",
+    platform: KUY_PLATFORMS[0],
+    profile_url: "",
+    main_offer: "",
+    threat_level: "medium",
+  });
+
+  const add = async () => {
+    try {
+      await createCompetitor({
+        competitor_name: form.competitor_name,
+        platform: form.platform,
+        profile_url: form.profile_url,
+        category: null,
+        followers: null,
+        engagement: null,
+        posting_frequency: null,
+        top_content_angle: null,
+        main_offer: form.main_offer || null,
+        price_signal: null,
+        strength: null,
+        weakness: null,
+        opportunity_gap: null,
+        threat_level: form.threat_level,
+        recommended_action: null,
+      });
+      toast.success("Competitor added");
+      setForm({ competitor_name: "", platform: KUY_PLATFORMS[0], profile_url: "", main_offer: "", threat_level: "medium" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <KuyRadarCard className="p-5">
+        <h2 className="text-lg font-semibold text-admin-fg">Add competitor (URL required)</h2>
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <input
+            className="rounded-lg border border-admin-border px-3 py-2 text-sm"
+            placeholder="Name"
+            value={form.competitor_name}
+            onChange={(e) => setForm((f) => ({ ...f, competitor_name: e.target.value }))}
+          />
+          <select
+            className="rounded-lg border border-admin-border px-3 py-2 text-sm"
+            value={form.platform}
+            onChange={(e) => setForm((f) => ({ ...f, platform: e.target.value }))}
+          >
+            {KUY_PLATFORMS.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+          <input
+            className="md:col-span-2 rounded-lg border border-admin-border px-3 py-2 text-sm"
+            placeholder="Profile URL (https://...)"
+            value={form.profile_url}
+            onChange={(e) => setForm((f) => ({ ...f, profile_url: e.target.value }))}
+          />
+          <input
+            className="md:col-span-2 rounded-lg border border-admin-border px-3 py-2 text-sm"
+            placeholder="Main offer"
+            value={form.main_offer}
+            onChange={(e) => setForm((f) => ({ ...f, main_offer: e.target.value }))}
+          />
+        </div>
+        <button type="button" onClick={() => void add()} className="kuy-btn-primary mt-3 rounded-lg px-4 py-2 text-sm">
+          Save
+        </button>
+      </KuyRadarCard>
+      <KuyRadarCard className="overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="border-b bg-admin-hover/50 text-xs uppercase text-admin-muted">
+            <tr>
+              <th className="px-4 py-3 text-left">Name</th>
+              <th className="px-4 py-3 text-left">Platform</th>
+              <th className="px-4 py-3 text-left">Offer</th>
+              <th className="px-4 py-3 text-left">Threat</th>
+              <th className="px-4 py-3 text-left">URL</th>
+            </tr>
+          </thead>
+          <tbody>
+            {competitors.map((c) => (
+              <tr key={c.id} className="border-b border-admin-border">
+                <td className="px-4 py-3 font-medium">{c.competitor_name}</td>
+                <td className="px-4 py-3">{c.platform}</td>
+                <td className="px-4 py-3">{c.main_offer}</td>
+                <td className="px-4 py-3">{c.threat_level}</td>
+                <td className="px-4 py-3">
+                  <a href={c.profile_url} target="_blank" rel="noopener noreferrer" className="kuy-link inline-flex gap-1">
+                    Open <ExternalLink className="h-3 w-3" />
+                  </a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </KuyRadarCard>
+    </div>
+  );
+}

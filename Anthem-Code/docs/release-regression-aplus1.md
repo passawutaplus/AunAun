@@ -23,8 +23,9 @@ npm run e2e:seo
 
 ## Admin
 
-- [ ] Sidebar: Aplus1 Admin + BrandLogo
-- [ ] Overview: KPI "+1 24h", cashout → `/admin/wallet`
+- [ ] Sidebar: Aplus1 Admin + BrandLogo + 8 หมวดจาก `adminNavigation.ts`
+- [ ] Overview: KPI "+1 24h", cashout → `/admin/wallet`, ลิงก์จัดกลุ่มตาม sidebar
+- [ ] Kuy Radar: `/admin/kuy-radar` โหลดได้ + export compliance
 - [ ] System: แท็บ Supabase Usage โหลดได้
 - [ ] Feedback: แท็บ UX Research (หลัง apply SQL)
 
@@ -51,6 +52,6 @@ npm run e2e:seo
 
 ```bash
 ./scripts/check-migrations-pending.sh
-# apply บน Supabase ถ้ายังไม่รัน:
-# scripts/ecosystem/ux-research-feedback.sql
+# ต้องไม่มีค้าง — รวม 20260702120000_kuy_radar_core (applied 2026-07-02)
+# scripts/ecosystem/ux-research-feedback.sql ถ้ายังไม่รัน
 ```

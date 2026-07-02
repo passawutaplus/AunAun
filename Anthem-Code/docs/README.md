@@ -17,6 +17,7 @@ Entry point สำหรับ dev ใหม่:
 | [`../../docs/ecosystem-notifications.md`](../../docs/ecosystem-notifications.md) | Email + LINE + in-app |
 | [`aml-compliance.md`](./aml-compliance.md) | PX wallet, KYC, cashout |
 | [`admin-pending.md`](./admin-pending.md) | Admin feature status |
+| [`kuy-radar-migration.md`](./kuy-radar-migration.md) | Kuy Radar admin module + DB |
 | [`demo-catalog.md`](./demo-catalog.md) | Demo accounts |
 | [`brand-icons-thesvg.md`](./brand-icons-thesvg.md) | โลโกแบรนด์เครื่องมือ (theSVG.org) |
 | [`../supabase/README.md`](../supabase/README.md) | Canonical backend (Solo-Code) |
@@ -39,7 +40,7 @@ Entry point สำหรับ dev ใหม่:
 ```bash
 npm install
 npm run dev              # → http://localhost:8080
-npm run test             # vitest (61 tests)
+npm run test             # vitest (129 tests)
 npm run test:gate
 npm run smoke:public
 npm run email:preview    # notification email previews
@@ -51,7 +52,7 @@ npm run e2e:puppeteer:chat
 
 | บริบท | URL |
 |--------|-----|
-| Production | https://an1hem.app |
+| Production | https://aplus1.app |
 | Demo | https://aplus1-demo.vercel.app |
 | So1o | https://solofreelancer.com |
 
@@ -67,7 +68,7 @@ Env vars (.env auto-generated — อย่าแก้):
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
 - `VITE_SUPABASE_PROJECT_ID`
-- `VITE_SITE_URL` → `https://an1hem.app` (production)
+- `VITE_SITE_URL` → `https://aplus1.app` (production)
 
 ## หา code ไม่เจอ?
 

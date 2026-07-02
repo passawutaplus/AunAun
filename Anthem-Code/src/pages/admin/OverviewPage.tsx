@@ -1,87 +1,162 @@
-import BriefcaseIcon from "../../components/icons/BriefcaseIcon";
-import {
-  Users, Building2, FolderKanban, HandshakeIcon, MessageSquare, Bookmark, UserPlus,
-  MessageCircle, Eye, Gift, Flag, Wallet, ShieldCheck, Shield, HeartHandshake,
-  Activity,
-} from "lucide-react";
 import { Link } from "react-router-dom";
+import { Activity, Building2, FolderKanban, HandshakeIcon, UserPlus } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import KpiCard from "@/components/admin/KpiCard";
-import SectionHeader from "@/components/admin/SectionHeader";
-import { PlusOneMark } from "@/components/brand/PlusOneMark";
-import { cn } from "@/lib/utils";
-import { useAdminStats, useAdminTimeline, useLiveActivity } from "@/hooks/admin/useAdminData";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
-
-function PlusOneIcon({ className }: { className?: string }) {
-  return <PlusOneMark className={cn("text-admin-muted text-xs", className)} />;
-}
+import BriefcaseIcon from "../../components/icons/BriefcaseIcon";
+import SectionHeader from "@/components/admin/SectionHeader";
+import KpiCard from "@/components/admin/KpiCard";
+import { BRAND_NAME, BRAND_TAGLINE } from "@/lib/brandConfig";
+import {
+  ADMIN_NAV_SECTIONS,
+  adminPendingQueue,
+  adminStatValue,
+  type AdminNavItem,
+  type AdminNavSection,
+} from "@/lib/admin/adminNavigation";
+import { useAdminStats, useAdminTimeline, useLiveActivity } from "@/hooks/admin/useAdminData";
+import { useAdminAlertCounts } from "@/hooks/admin/useAdminAlerts";
 
 const typeIcon = {
-  user: UserPlus, project: FolderKanban, job: BriefcaseIcon, hire: HandshakeIcon, collab: HandshakeIcon, studio: Building2,
+  user: UserPlus,
+  project: FolderKanban,
+  job: BriefcaseIcon,
+  hire: HandshakeIcon,
+  collab: HandshakeIcon,
+  studio: Building2,
 };
+
+function OverviewNavCard({
+  item,
+  stat,
+}: {
+  item: AdminNavItem;
+  stat?: number;
+}) {
+  const Icon = item.icon;
+  return (
+    <Link
+      to={item.to}
+      className="group flex flex-col gap-2 rounded-sm border border-admin-border bg-admin-surface p-3 transition hover:border-admin-accent/50 hover:bg-admin-hover/40"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <Icon className="h-4 w-4 shrink-0 text-admin-muted group-hover:text-admin-accent" />
+          <span className="truncate text-sm font-medium text-admin-fg">{item.label}</span>
+        </div>
+        {stat !== undefined ? (
+          <span
+            className={`shrink-0 font-mono text-lg tabular-nums ${item.accent && stat > 0 ? "text-admin-accent" : "text-admin-fg"}`}
+          >
+            {stat}
+          </span>
+        ) : null}
+      </div>
+      <p className="text-[11px] leading-snug text-admin-muted line-clamp-2">{item.hint}</p>
+    </Link>
+  );
+}
+
+function OverviewSection({
+  section,
+  stats,
+}: {
+  section: AdminNavSection;
+  stats: ReturnType<typeof useAdminStats>["data"];
+}) {
+  return (
+    <section className="mt-8">
+      <div className="mb-3 border-b border-admin-border pb-3">
+        <h2 className="text-base font-medium text-admin-fg">{section.title}</h2>
+        <p className="mt-0.5 text-xs text-admin-muted">{section.description}</p>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {section.items.map((item) => (
+          <OverviewNavCard
+            key={`${section.id}-${item.label}-${item.to}`}
+            item={item}
+            stat={adminStatValue(stats, item.statKey)}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default function OverviewPage() {
   const { data: stats } = useAdminStats();
   const { data: timeline } = useAdminTimeline(14);
   const events = useLiveActivity();
+  const { data: alerts } = useAdminAlertCounts();
+  const queue = adminPendingQueue(stats);
+
+  const headline = [
+    { label: "ผู้ใช้ทั้งหมด", value: stats?.totalUsers ?? "—", icon: UserPlus },
+    { label: "ผลงานเผยแพร่", value: stats?.publishedProjects ?? "—", icon: FolderKanban },
+    { label: "งานเปิดรับ", value: stats?.openJobs ?? "—", icon: BriefcaseIcon },
+    { label: "สมัครใหม่ 24 ชม.", value: stats?.newUsers24h ?? "—", accent: true },
+  ];
 
   return (
     <div>
       <SectionHeader
-        eyebrow="overview / live"
-        title="ภาพรวมทั้งระบบ"
-        description="มอนิเตอร์ทุกความเคลื่อนไหวบนแพลตฟอร์มแบบเรียลไทม์"
+        eyebrow={`${BRAND_NAME} admin / live`}
+        title="ภาพรวมแพลตฟอร์ม"
+        description={`${BRAND_TAGLINE} — จัดกลุ่มตามเมนูด้านซ้าย อัปเดตทุก ~30 วินาที`}
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiCard label="Total Users" value={stats?.totalUsers ?? "—"} icon={Users} />
-        <KpiCard label="New 24h" value={stats?.newUsers24h ?? "—"} delta="+live" accent icon={UserPlus} />
-        <KpiCard label="Studios" value={stats?.totalStudios ?? "—"} icon={Building2} />
-        <KpiCard label="Published" value={stats?.publishedProjects ?? "—"} icon={FolderKanban} />
-        <KpiCard label="Open Jobs" value={stats?.openJobs ?? "—"} icon={BriefcaseIcon} />
-        <KpiCard label="Pending Hires" value={stats?.pendingHiring ?? "—"} accent icon={HandshakeIcon} />
-        <KpiCard label="Pending Collabs" value={stats?.pendingCollabs ?? "—"} accent icon={HeartHandshake} />
-        <KpiCard label="Messages 24h" value={stats?.messages24h ?? "—"} icon={MessageSquare} />
-        <KpiCard label="Collections" value={stats?.totalCollections ?? "—"} icon={Bookmark} />
-        <KpiCard label="+1 24h" value={stats?.likes24h ?? "—"} icon={PlusOneIcon} />
-        <KpiCard label="Comments 24h" value={stats?.comments24h ?? "—"} icon={MessageCircle} />
-        <KpiCard label="Views 24h" value={stats?.views24h ?? "—"} icon={Eye} />
-        <KpiCard label="Follows 24h" value={stats?.follows24h ?? "—"} icon={UserPlus} />
-        <KpiCard label="Gifts 24h" value={stats?.gifts24h ?? "—"} icon={Gift} />
-        <KpiCard label="Open Reports" value={stats?.openReports ?? "—"} accent icon={Flag} />
-        <KpiCard label="Pending Cashouts" value={stats?.pendingCashouts ?? "—"} accent icon={Wallet} />
-        <KpiCard label="Open Feedback" value={stats?.openFeedback ?? "—"} icon={MessageSquare} />
-        <KpiCard label="Pending KYC" value={stats?.pendingKyc ?? "—"} accent icon={ShieldCheck} />
-        <KpiCard label="Open AML" value={stats?.openAmlFlags ?? "—"} accent icon={Shield} />
+        {headline.map((kpi) => (
+          <KpiCard key={kpi.label} label={kpi.label} value={kpi.value} icon={kpi.icon} accent={kpi.accent} delta="live" />
+        ))}
       </div>
 
-      {(stats?.openReports || stats?.pendingCashouts || stats?.pendingHiring || stats?.pendingKyc) ? (
-        <div className="mt-4 border border-admin-accent/30 bg-admin-accent/5 rounded-sm p-4">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-admin-accent mb-2">ต้องดูแล</p>
+      {queue.length > 0 ? (
+        <div className="mt-4 rounded-sm border border-admin-accent/30 bg-admin-accent/5 p-4">
+          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-admin-accent">คิวที่ต้องดูแล</p>
           <div className="flex flex-wrap gap-3 text-sm">
-            {(stats?.pendingHiring ?? 0) > 0 && <Link to="/admin/hiring" className="text-admin-fg hover:text-admin-accent">คำขอจ้าง {stats?.pendingHiring}</Link>}
-            {(stats?.pendingCollabs ?? 0) > 0 && <Link to="/admin/collabs" className="text-admin-fg hover:text-admin-accent">คอลแลป {stats?.pendingCollabs}</Link>}
-            {(stats?.openReports ?? 0) > 0 && <Link to="/admin/reports" className="text-admin-fg hover:text-admin-accent">รายงาน {stats?.openReports}</Link>}
-            {(stats?.pendingCashouts ?? 0) > 0 && <Link to="/admin/wallet" className="text-admin-fg hover:text-admin-accent">ถอนเงิน {stats?.pendingCashouts}</Link>}
-            {(stats?.pendingKyc ?? 0) > 0 && <Link to="/admin/kyc" className="text-admin-fg hover:text-admin-accent">KYC {stats?.pendingKyc}</Link>}
-            {(stats?.openAmlFlags ?? 0) > 0 && <Link to="/admin/aml" className="text-admin-fg hover:text-admin-accent">AML {stats?.openAmlFlags}</Link>}
-            <Link to="/admin/activity" className="text-admin-accent font-medium hover:underline inline-flex items-center gap-1">
-              <Activity className="w-3.5 h-3.5" /> ดูกิจกรรมทั้งหมด →
+            {queue.map((q) => (
+              <Link key={q.to} to={q.to} className="text-admin-fg hover:text-admin-accent">
+                {q.label} <span className="font-mono text-admin-accent">{q.count}</span>
+              </Link>
+            ))}
+            <Link to="/admin/activity" className="inline-flex items-center gap-1 font-medium text-admin-accent hover:underline">
+              <Activity className="h-3.5 w-3.5" />
+              ดูกิจกรรมทั้งหมด →
             </Link>
           </div>
         </div>
       ) : null}
 
-      <div className="grid md:grid-cols-3 gap-3 mt-6">
-        <div className="md:col-span-2 border border-admin-border bg-admin-surface rounded-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-admin-muted">14-day activity</p>
+      {alerts && (alerts.urgentReports > 0 || alerts.highRiskKyc > 0) ? (
+        <p className="mt-3 text-xs text-admin-muted">
+          AI triage:{" "}
+          {alerts.urgentReports > 0 ? `รายงานด่วน ${alerts.urgentReports} ` : ""}
+          {alerts.highRiskKyc > 0 ? `KYC ความเสี่ยงสูง ${alerts.highRiskKyc}` : ""}
+        </p>
+      ) : null}
+
+      {ADMIN_NAV_SECTIONS.map((section) => (
+        <OverviewSection key={section.id} section={section} stats={stats} />
+      ))}
+
+      <section className="mt-10 grid gap-3 md:grid-cols-3">
+        <div className="md:col-span-2 rounded-sm border border-admin-border bg-admin-surface p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-admin-muted">กิจกรรม 14 วัน</p>
             <div className="flex gap-3 font-mono text-[10px] uppercase text-admin-muted">
-              <span className="flex items-center gap-1"><i className="inline-block w-2 h-2 bg-admin-fg" />users</span>
-              <span className="flex items-center gap-1"><i className="inline-block w-2 h-2 bg-admin-accent" />projects</span>
-              <span className="flex items-center gap-1"><i className="inline-block w-2 h-2 bg-admin-muted" />jobs</span>
+              <span className="flex items-center gap-1">
+                <i className="inline-block h-2 w-2 bg-admin-fg" />
+                ผู้ใช้
+              </span>
+              <span className="flex items-center gap-1">
+                <i className="inline-block h-2 w-2 bg-admin-accent" />
+                ผลงาน
+              </span>
+              <span className="flex items-center gap-1">
+                <i className="inline-block h-2 w-2 bg-admin-muted" />
+                งาน
+              </span>
             </div>
           </div>
           <div className="h-56">
@@ -90,7 +165,14 @@ export default function OverviewPage() {
                 <CartesianGrid stroke="hsl(var(--admin-border))" strokeDasharray="2 4" vertical={false} />
                 <XAxis dataKey="date" stroke="hsl(var(--admin-muted))" fontSize={10} tickLine={false} axisLine={false} />
                 <YAxis stroke="hsl(var(--admin-muted))" fontSize={10} tickLine={false} axisLine={false} width={24} />
-                <Tooltip contentStyle={{ background: "hsl(var(--admin-surface))", border: "1px solid hsl(var(--admin-border))", fontSize: 12 }} />
+                <Tooltip
+                  contentStyle={{
+                    background: "hsl(var(--admin-surface))",
+                    border: "1px solid hsl(var(--admin-border))",
+                    fontSize: 12,
+                    color: "hsl(var(--admin-fg))",
+                  }}
+                />
                 <Line type="monotone" dataKey="users" stroke="hsl(var(--admin-fg))" strokeWidth={1.5} dot={false} />
                 <Line type="monotone" dataKey="projects" stroke="hsl(var(--admin-accent))" strokeWidth={1.5} dot={false} />
                 <Line type="monotone" dataKey="jobs" stroke="hsl(var(--admin-muted))" strokeWidth={1.5} dot={false} />
@@ -99,22 +181,25 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        <div className="border border-admin-border bg-admin-surface rounded-sm p-4 max-h-[400px] flex flex-col">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-admin-muted mb-3">live feed</p>
-          <div className="flex-1 overflow-y-auto -mx-1 px-1 space-y-2">
+        <div className="flex max-h-[400px] flex-col rounded-sm border border-admin-border bg-admin-surface p-4">
+          <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-admin-muted">ฟีดสด</p>
+          <div className="flex-1 space-y-2 overflow-y-auto px-1">
             {events.length === 0 ? (
-              <p className="text-xs text-admin-muted text-center py-8">ยังไม่มีเหตุการณ์</p>
+              <p className="py-8 text-center text-xs text-admin-muted">ยังไม่มีเหตุการณ์</p>
             ) : (
               events.map((e) => {
                 const Icon = typeIcon[e.type];
                 return (
-                  <div key={e.id} className="flex items-start gap-2.5 text-xs border-b border-admin-border last:border-0 pb-2 last:pb-0">
-                    <Icon className="w-3.5 h-3.5 mt-0.5 text-admin-muted shrink-0" />
+                  <div
+                    key={e.id}
+                    className="flex items-start gap-2.5 border-b border-admin-border pb-2 text-xs last:border-0 last:pb-0"
+                  >
+                    <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-admin-muted" />
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-admin-fg truncate">{e.title}</p>
-                      <p className="text-admin-muted truncate">{e.subtitle}</p>
+                      <p className="truncate font-medium text-admin-fg">{e.title}</p>
+                      <p className="truncate text-admin-muted">{e.subtitle}</p>
                     </div>
-                    <span className="font-mono text-[10px] text-admin-muted shrink-0">
+                    <span className="shrink-0 font-mono text-[10px] text-admin-muted">
                       {formatDistanceToNow(new Date(e.at), { locale: th, addSuffix: false })}
                     </span>
                   </div>
@@ -123,7 +208,7 @@ export default function OverviewPage() {
             )}
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
