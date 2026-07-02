@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useFinance } from "@/store/finance";
 import { formatTHB } from "@/data/mockData";
-import { TrendingUp, Wallet, Users, Receipt } from "lucide-react";
+import { TrendingUp, Wallet, Users, Receipt, BarChart3 } from "lucide-react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -246,11 +246,13 @@ export function OverviewPerformanceCharts() {
   const latestChange = pctChange(latestMonthIncome, prevMonthIncome);
 
   const realHasData = hasRealChartData(lineData, clientBars, monthlyBars);
+  const isDemoMode = import.meta.env.VITE_DEMO_MODE === "true";
+  const showSampleCharts = !realHasData && isDemoMode;
   const mock = React.useMemo(
     () => buildMockChartData(monthLabels, monthCount),
     [monthLabels, monthCount],
   );
-  const isDemo = !realHasData;
+  const isDemo = showSampleCharts;
 
   const display = isDemo
     ? mock
@@ -269,6 +271,26 @@ export function OverviewPerformanceCharts() {
         latestMonthIncome,
         latestChange,
       };
+
+  if (!realHasData && !isDemoMode) {
+    return (
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold">Performance Analytics</h2>
+          <p className="text-xs text-muted-foreground">กราฟรายได้ รายจ่าย และลูกค้าชั้นนำ</p>
+        </div>
+        <Card className="border-border/60 border-dashed shadow-none">
+          <CardContent className="py-10 text-center space-y-2">
+            <BarChart3 className="h-8 w-8 mx-auto text-muted-foreground/50" />
+            <p className="text-sm font-medium">ยังไม่มีข้อมูลรายได้สำหรับแสดงกราฟ</p>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+              บันทึกรายได้หรือปิดงานใบเสนอราคาแล้ว ข้อมูลจะปรากฏที่นี่อัตโนมัติ
+            </p>
+          </CardContent>
+        </Card>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-4">

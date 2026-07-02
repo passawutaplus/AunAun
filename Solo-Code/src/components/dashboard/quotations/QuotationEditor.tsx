@@ -189,8 +189,11 @@ export function QuotationEditor({ id, onBack }: Props) {
 
   function handleSave() {
     if (!q) return;
-    update(q.id, { updatedAt: new Date().toISOString() });
-    toast.success("บันทึกฉบับร่างแล้ว");
+    void update(q.id, { ...q, updatedAt: new Date().toISOString() })
+      .then(() => toast.success("บันทึกฉบับร่างแล้ว"))
+      .catch((e) =>
+        toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ — ลองใหม่อีกครั้ง"),
+      );
   }
 
   function handlePrint() {

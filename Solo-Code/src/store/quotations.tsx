@@ -400,6 +400,9 @@ export function quotationsKey(userId: string | null) {
   return ["quotations", userId] as const;
 }
 
+/** Serialize quotation patches per row to avoid stale-merge races. */
+const quotationUpdateChains = new Map<string, Promise<unknown>>();
+
 function nextNumberFromList(
   list: Quotation[],
   prefix: string,
@@ -471,8 +474,10 @@ export function useQuotations() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<Quotation> }) => {
-      const current = list.find((q) => q.id === id);
-      if (!current || !userId) return;
+      if (!userId) return;
+      const cached = qc.getQueryData<Quotation[]>(quotationsKey(userId));
+      const current = cached?.find((q) => q.id === id);
+      if (!current) return;
       const merged: Quotation = { ...current, ...patch };
       const { error } = await supabase
         .from("quotations")
@@ -481,7 +486,22 @@ export function useQuotations() {
       if (error) throw error;
       return merged;
     },
+    onMutate: async ({ id, patch }) => {
+      if (!userId) return;
+      const key = quotationsKey(userId);
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData<Quotation[]>(key);
+      qc.setQueryData<Quotation[]>(key, (old) =>
+        (old ?? []).map((q) => (q.id === id ? { ...q, ...patch } : q)),
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (!userId || !ctx?.prev) return;
+      qc.setQueryData(quotationsKey(userId), ctx.prev);
+    },
     onSuccess: (merged, { id, patch }) => {
+      if (!userId) return;
       qc.setQueryData<Quotation[]>(quotationsKey(userId), (old) => {
         const prev = old ?? [];
         return prev.map((q) =>
@@ -492,6 +512,25 @@ export function useQuotations() {
       });
     },
   });
+
+  const runQueuedUpdate = React.useCallback(
+    (id: string, patch: Partial<Quotation>) => {
+      if (!userId) return Promise.resolve(undefined);
+      const chainKey = `${userId}:${id}`;
+      const prev = quotationUpdateChains.get(chainKey) ?? Promise.resolve();
+      const next = prev
+        .catch(() => undefined)
+        .then(() => updateMutation.mutateAsync({ id, patch }));
+      quotationUpdateChains.set(chainKey, next);
+      void next.finally(() => {
+        if (quotationUpdateChains.get(chainKey) === next) {
+          quotationUpdateChains.delete(chainKey);
+        }
+      });
+      return next;
+    },
+    [userId, updateMutation],
+  );
 
   const removeMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -586,7 +625,7 @@ export function useQuotations() {
       get,
       nextNumber,
       create: (init?: Partial<Quotation>) => createMutation.mutateAsync(init),
-      update: (id: string, patch: Partial<Quotation>) => updateMutation.mutateAsync({ id, patch }),
+      update: (id: string, patch: Partial<Quotation>) => runQueuedUpdate(id, patch),
       remove: (id: string) => removeMutation.mutateAsync(id),
       duplicate: (id: string) => duplicateMutation.mutateAsync(id),
       markPdfExported: (id: string) => markPdfExportedMutation.mutate(id),
@@ -601,7 +640,7 @@ export function useQuotations() {
       get,
       nextNumber,
       createMutation,
-      updateMutation,
+      runQueuedUpdate,
       removeMutation,
       duplicateMutation,
       markPdfExportedMutation,

@@ -94,12 +94,22 @@ function ApplyPage() {
   const [submitting, setSubmitting] = React.useState(false);
   const submittedRef = React.useRef(false);
 
-  // If already approved, redirect away
+  const redirecting = !!profile?.tester_approved;
+
+  // If already approved, redirect away (replace URL so /apply does not linger)
   React.useEffect(() => {
-    if (profile?.tester_approved) {
-      navigate({ to: "/dashboard" });
+    if (redirecting) {
+      navigate({ to: "/dashboard", replace: true });
     }
-  }, [profile?.tester_approved, navigate]);
+  }, [redirecting, navigate]);
+
+  if (redirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   const [form, setForm] = React.useState({
     full_name: "",

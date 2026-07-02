@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
@@ -974,6 +975,9 @@ function AdvanceDialog({
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>ยืนยัน: {completing.eventTitle}</DialogTitle>
+          <DialogDescription className="sr-only">
+            ยืนยันการเลื่อนสถานะงานไปขั้นถัดไป
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-sm">
           {isPayment && (
@@ -1189,6 +1193,11 @@ function JobFormDialog({
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{existing ? "แก้ไขงาน" : "สร้างงานใหม่"}</DialogTitle>
+            <DialogDescription className="sr-only">
+              {existing
+                ? "แก้ไขรายละเอียดงานและลิงก์ติดตามสำหรับลูกค้า"
+                : "สร้างงานใหม่และออกลิงก์ติดตามให้ลูกค้า"}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>

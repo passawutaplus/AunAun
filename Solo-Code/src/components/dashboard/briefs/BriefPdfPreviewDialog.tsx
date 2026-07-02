@@ -6,6 +6,7 @@ import {
   DialogCloseButton,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, Download } from "lucide-react";
@@ -78,9 +79,14 @@ export function BriefPdfPreviewDialog({ brief, open, onOpenChange, autoPrint, ow
           className="max-w-[min(96vw,920px)] h-[92vh] p-0 overflow-hidden rounded-2xl flex flex-col"
         >
           <DialogHeader className="no-print px-4 py-3 border-b flex flex-row items-center justify-between gap-3 space-y-0">
-            <DialogTitle className="text-sm font-semibold truncate min-w-0 flex-1">
-              พรีวิว PDF · {brief.title}
-            </DialogTitle>
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="text-sm font-semibold truncate">
+                พรีวิว PDF · {brief.title}
+              </DialogTitle>
+              <DialogDescription className="sr-only">
+                ตัวอย่างเอกสาร Smart Brief ก่อนบันทึกหรือส่งให้ลูกค้า
+              </DialogDescription>
+            </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <Button
                 size="sm"
