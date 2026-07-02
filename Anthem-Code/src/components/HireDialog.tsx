@@ -1,17 +1,23 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2 } from "lucide-react";
+import { MessageCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { hireRequestSchema, hireInviteBriefSchema } from "@/lib/validators";
+import {
+  hireRequestQuickSchema,
+  hireRequestSchema,
+  hireInviteBriefSchema,
+} from "@/lib/validators";
 import { parseMoneyInput } from "@/lib/parseMoney";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useCreateHireRequest } from "@/hooks/useHiringRequests";
 import { useMyOpenJobPosts } from "@/hooks/useJobs";
+import { useOpenHireCollabChat } from "@/hooks/useChat";
 import { supabase } from "@/integrations/supabase/client";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
+import { buildHireContextMessage, type ChatEntrySource } from "@/lib/chatContext";
 import HireInviteForm, {
   buildHireInviteMessage,
   emptyHireInviteForm,
@@ -23,16 +29,29 @@ interface HireDialogProps {
   projectTitle?: string;
   projectId?: string;
   freelancerId?: string;
+  source?: ChatEntrySource;
+  profileName?: string;
 }
 
-const HireDialog = ({ open, onOpenChange, projectTitle, projectId, freelancerId }: HireDialogProps) => {
+const HireDialog = ({
+  open,
+  onOpenChange,
+  projectTitle,
+  projectId,
+  freelancerId,
+  source = "project",
+  profileName,
+}: HireDialogProps) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
   const createReq = useCreateHireRequest();
+  const openChat = useOpenHireCollabChat();
   const { data: myJobs = [] } = useMyOpenJobPosts();
-  const [success, setSuccess] = useState(false);
   const [jobPostId, setJobPostId] = useState("");
   const [form, setForm] = useState(emptyHireInviteForm());
+  const [showDetails, setShowDetails] = useState(false);
+  const busy = createReq.isPending || openChat.isPending;
 
   useEffect(() => {
     if (!open || !user) return;
@@ -45,8 +64,8 @@ const HireDialog = ({ open, onOpenChange, projectTitle, projectId, freelancerId 
 
   const reset = () => {
     setForm(emptyHireInviteForm());
-    setSuccess(false);
     setJobPostId("");
+    setShowDetails(false);
   };
 
   const handleOpenChange = (next: boolean) => {
@@ -54,61 +73,98 @@ const HireDialog = ({ open, onOpenChange, projectTitle, projectId, freelancerId 
     onOpenChange(next);
   };
 
-  const handleSubmit = async () => {
+  const resolvedTitle = () => {
+    const selectedJob = myJobs.find((j) => j.id === jobPostId);
+    return selectedJob?.title ?? projectTitle ?? (source === "profile" ? "โปรไฟล์" : "ผลงานในฟีด");
+  };
+
+  const submitHire = async (withDetails: boolean) => {
     if (!user) return;
-    const inviteMessage = buildHireInviteMessage(form);
-    if (!inviteMessage) {
-      toast.error("กรุณากรอกรายละเอียดงาน");
-      return;
-    }
-    const budgetNum = parseMoneyInput(form.budgetAmount) ?? undefined;
-    const briefCheck = hireInviteBriefSchema.safeParse({
-      jobType: form.jobType,
-      details: form.details,
-      budgetAmount: budgetNum,
-      deadline: form.deadline,
-    });
-    if (!briefCheck.success) {
-      toast.error(briefCheck.error.issues[0]?.message ?? "กรอกข้อมูลไม่ครบ");
-      return;
-    }
-    const parsed = hireRequestSchema.safeParse({
-      clientName: form.clientName,
-      email: form.email,
-      phone: form.phone,
-      budgetAmount: budgetNum,
-      deadline: form.deadline,
-      message: inviteMessage,
-    });
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "กรอกข้อมูลไม่ครบ");
-      return;
-    }
     if (!freelancerId) {
       toast.error("ผลงานนี้ยังไม่มีเจ้าของในระบบ — ไม่สามารถส่งคำขอได้");
       return;
     }
+    if (freelancerId === user.id) {
+      toast.info("ไม่สามารถจ้างตัวเองได้");
+      return;
+    }
+
+    const quickCheck = hireRequestQuickSchema.safeParse({
+      clientName: form.clientName,
+      email: form.email,
+    });
+    if (!quickCheck.success) {
+      toast.error(quickCheck.error.issues[0]?.message ?? "กรอกข้อมูลไม่ครบ");
+      return;
+    }
+
+    const budgetNum = parseMoneyInput(form.budgetAmount) ?? undefined;
+    const inviteMessage = withDetails ? buildHireInviteMessage(form) : null;
+
+    if (withDetails && inviteMessage) {
+      const briefCheck = hireInviteBriefSchema.safeParse({
+        jobType: form.jobType,
+        details: form.details,
+        budgetAmount: budgetNum,
+        deadline: form.deadline,
+      });
+      if (!briefCheck.success) {
+        toast.error(briefCheck.error.issues[0]?.message ?? "กรอกข้อมูลไม่ครบ");
+        return;
+      }
+      const parsed = hireRequestSchema.safeParse({
+        clientName: form.clientName,
+        email: form.email,
+        phone: form.phone,
+        budgetAmount: budgetNum,
+        deadline: form.deadline,
+        message: inviteMessage,
+      });
+      if (!parsed.success) {
+        toast.error(parsed.error.issues[0]?.message ?? "กรอกข้อมูลไม่ครบ");
+        return;
+      }
+    }
+
     try {
-      const selectedJob = myJobs.find((j) => j.id === jobPostId);
+      const title = resolvedTitle();
       const requestId = await createReq.mutateAsync({
         freelancer_id: freelancerId,
         client_id: user.id,
         project_id: projectId ?? null,
-        project_title: selectedJob?.title ?? projectTitle ?? "ผลงานในฟีด",
-        client_name: parsed.data.clientName,
-        email: parsed.data.email,
-        phone: parsed.data.phone || null,
+        project_title: title,
+        client_name: quickCheck.data.clientName,
+        email: quickCheck.data.email,
+        phone: form.phone || null,
         budget_amount: budgetNum ?? null,
-        deadline: parsed.data.deadline || null,
+        deadline: form.deadline || null,
         message: inviteMessage,
         job_post_id: jobPostId || null,
         invited_as: "personal",
-        attachment_urls: form.attachmentUrls.length ? form.attachmentUrls : null,
+        attachment_urls: withDetails && form.attachmentUrls.length ? form.attachmentUrls : null,
       } as never);
+
       void supabase.functions.invoke("notify-hire-request", {
         body: { request_id: requestId },
       });
-      setSuccess(true);
+
+      const convId = await openChat.mutateAsync({
+        kind: "hire",
+        requestId,
+        clientId: user.id,
+        freelancerId,
+        projectId: projectId ?? null,
+        projectTitle: title,
+        contextMessage: buildHireContextMessage({
+          source,
+          projectTitle: title,
+          profileName: profileName ?? profile?.display_name,
+        }),
+      });
+
+      toast.success("เปิดแชทแล้ว — คุยรายละเอียดได้เลย");
+      handleOpenChange(false);
+      navigate(`/chat/${convId}`);
     } catch (err: unknown) {
       toast.error(mapWriteFlowError(err, "ส่งไม่สำเร็จ"));
     }
@@ -117,41 +173,47 @@ const HireDialog = ({ open, onOpenChange, projectTitle, projectId, freelancerId 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        {success ? (
-          <div className="py-4 space-y-4 text-center">
-            <CheckCircle2 className="w-12 h-12 mx-auto text-primary" />
-            <DialogHeader className="text-center">
-              <DialogTitle>ส่งคำชวนแล้ว</DialogTitle>
-              <DialogDescription className="text-left space-y-2 pt-2">
-                <p>ครีเอเตอร์จะได้รับแจ้งเตือนและติดต่อกลับทางอีเมลที่คุณให้ไว้</p>
-                <p className="text-sm text-muted-foreground">
-                  รอให้อีกฝั่งตอบรับคำขอ — เมื่อตอบรับแล้วห้องแชทจะเปิดที่{" "}
-                  <Link to="/chat" className="text-primary hover:underline">
-                    ข้อความ
-                  </Link>
-                </p>
-                {jobPostId && (
-                  <p className="text-sm">
-                    <Link to={`/jobs/${jobPostId}`} className="text-primary hover:underline">
-                      ดูประกาศงานที่เชื่อม
-                    </Link>
-                  </p>
-                )}
-              </DialogDescription>
-            </DialogHeader>
-            <Button className="w-full rounded-xl" onClick={() => handleOpenChange(false)}>
-              ปิด
-            </Button>
+        <DialogHeader>
+          <DialogTitle>ชวนมาทำงาน</DialogTitle>
+          <DialogDescription>
+            {source === "profile" ? (
+              <>จากโปรไฟล์: <span className="font-medium text-primary">{profileName ?? projectTitle}</span></>
+            ) : (
+              <>อ้างอิง: <span className="font-medium text-primary">{projectTitle}</span></>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+
+        <Button
+          type="button"
+          disabled={busy}
+          className="w-full rounded-xl h-11 gap-2"
+          onClick={() => void submitHire(false)}
+        >
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
+          {busy ? "กำลังเปิดแชท..." : "แชทเลย"}
+        </Button>
+
+        <div className="relative py-1">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-border" />
           </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="bg-background px-2 text-muted-foreground">หรือ</span>
+          </div>
+        </div>
+
+        {!showDetails ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full rounded-xl"
+            onClick={() => setShowDetails(true)}
+          >
+            เติมรายละเอียดงาน (ไม่บังคับ)
+          </Button>
         ) : (
           <>
-            <DialogHeader>
-              <DialogTitle>ชวนมาทำงาน</DialogTitle>
-              <DialogDescription>
-                อ้างอิง: <span className="font-medium text-primary">{projectTitle}</span>
-              </DialogDescription>
-            </DialogHeader>
-
             <HireInviteForm
               form={form}
               setForm={setForm}
@@ -159,15 +221,16 @@ const HireDialog = ({ open, onOpenChange, projectTitle, projectId, freelancerId 
               jobPostId={jobPostId}
               onJobPostIdChange={setJobPostId}
               userId={user?.id}
+              optional
             />
-
             <Button
               type="button"
-              disabled={createReq.isPending}
+              disabled={busy}
+              variant="secondary"
               className="w-full rounded-xl mt-4"
-              onClick={() => void handleSubmit()}
+              onClick={() => void submitHire(true)}
             >
-              {createReq.isPending ? "กำลังส่ง..." : "ส่งคำชวน"}
+              {busy ? "กำลังส่ง..." : "ส่งพร้อมรายละเอียด & เปิดแชท"}
             </Button>
           </>
         )}

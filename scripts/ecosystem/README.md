@@ -24,7 +24,11 @@ Then apply SQL on Supabase (see below) and deploy apps per `docs/deploy-vps.md`.
 | `stripe-payments.sql` | PX wallet + Stripe RPCs |
 | `seed-catalog.sql` | demo community seed |
 | `anthem-migration.sql` | เก่า — ใช้ `Solo-Code/supabase/manual/apply-anthem-ecosystem.sql` แทน |
-| `solo-migration.sql` | เก่า — รวมใน migrations So1o แล้ว |
+| `chat-phase2.sql` | chat pins, group members, message policies |
+| `chat-instant-flow.sql` | system/profile message types + profile_user_id for instant chat |
+| `frontend-production-gap.sql` | avatar_pool, analytics RPCs, collab_requests, group RPC, portfolio RLS |
+| `chat-cv-private-storage.sql` | private chat/CV storage (after anthem-media-storage-rls) |
+| `ux-retest-schema-gap.sql` | project_comments threading, collection_items, job_match_notifications, RPC stubs |
 
 หลังรัน `seed-catalog.sql` ฟีด/ดีไซเนอร์/สตูดิโอ/งานจะดึงจาก Supabase เท่านั้น (ไม่มี mock ฝั่ง client แล้ว)
 

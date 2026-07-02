@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { thaiPhoneRegex, hireRequestSchema, profileSchema, commentSchema, projectSchema } from "../validators";
+import { thaiPhoneRegex, hireRequestSchema, hireRequestQuickSchema, profileSchema, commentSchema, projectSchema } from "../validators";
 
 describe("thaiPhoneRegex", () => {
   it("accepts valid TH mobile", () => {
@@ -13,16 +13,30 @@ describe("thaiPhoneRegex", () => {
   });
 });
 
+describe("hireRequestQuickSchema", () => {
+  it("requires name + valid email only", () => {
+    expect(hireRequestQuickSchema.safeParse({ clientName: "", email: "bad" }).success).toBe(false);
+    expect(hireRequestQuickSchema.safeParse({ clientName: "John", email: "a@b.co" }).success).toBe(true);
+  });
+});
+
 describe("hireRequestSchema", () => {
   it("requires name + valid email", () => {
     const r = hireRequestSchema.safeParse({ clientName: "A", email: "bad" });
     expect(r.success).toBe(false);
   });
-  it("passes minimal valid", () => {
+  it("passes minimal valid without message", () => {
     const r = hireRequestSchema.safeParse({
       clientName: "John",
       email: "a@b.co",
-      message: "รายละเอียดงานทดสอบยาวพอสมควร",
+    });
+    expect(r.success).toBe(true);
+  });
+  it("passes with optional message", () => {
+    const r = hireRequestSchema.safeParse({
+      clientName: "John",
+      email: "a@b.co",
+      message: "รายละเอียดงานทดสอบ",
     });
     expect(r.success).toBe(true);
   });

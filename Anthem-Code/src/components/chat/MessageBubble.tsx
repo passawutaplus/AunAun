@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { th } from "date-fns/locale";
@@ -11,8 +12,17 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { supabase } from "@/integrations/supabase/client";
-import { PROJECT_FEED_SELECT } from "@/lib/dbSelects";
+import { PROJECT_FEED_SELECT, PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
+import { profilePublicPath } from "@/lib/profileRoutes";
+import { isSystemFallbackContent, stripSystemFallbackPrefix } from "@/lib/chatContext";
 import { UNSEND_WINDOW_MS, type Message } from "@/hooks/useChat";
+import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
+
+function ChatAttachmentImage({ refUrl }: { refUrl: string }) {
+  const src = useSignedStorageUrl(refUrl);
+  if (!src) return <div className="rounded-2xl mb-1 h-32 bg-muted animate-pulse" />;
+  return <img src={src} alt="" className="rounded-2xl mb-1 max-h-72 object-cover" />;
+}
 
 interface Props {
   message: Message;
@@ -29,6 +39,15 @@ const MessageBubble = ({ message, mine, kind, onReply, onUnsend }: Props) => {
     mine &&
     !deleted &&
     Date.now() - new Date(message.created_at).getTime() < UNSEND_WINDOW_MS;
+
+  const isSystem =
+    message.message_type === "system" ||
+    (!!message.content && isSystemFallbackContent(message.content));
+
+  const profileUserId =
+    message.message_type === "profile"
+      ? (message as Message & { profile_user_id?: string }).profile_user_id ?? message.sender_id
+      : null;
 
   const { data: replyTo } = useQuery({
     queryKey: ["msg-reply", message.reply_to_id],
@@ -56,6 +75,19 @@ const MessageBubble = ({ message, mine, kind, onReply, onUnsend }: Props) => {
     },
   });
 
+  const { data: profileCard } = useQuery({
+    queryKey: ["msg-profile", profileUserId],
+    enabled: message.message_type === "profile" && !!profileUserId && !deleted,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select(PUBLIC_PROFILE_SELECT)
+        .eq("user_id", profileUserId!)
+        .maybeSingle();
+      return data;
+    },
+  });
+
   const mineBg =
     kind === "hire"
       ? "bg-[hsl(var(--chat-hire))] text-white"
@@ -68,6 +100,22 @@ const MessageBubble = ({ message, mine, kind, onReply, onUnsend }: Props) => {
       : kind === "collab"
         ? "bg-card text-foreground border border-border"
         : "bg-muted text-foreground border border-border";
+
+  const displayContent = message.content
+    ? isSystemFallbackContent(message.content)
+      ? stripSystemFallbackPrefix(message.content)
+      : message.content
+    : "";
+
+  if (isSystem && !deleted) {
+    return (
+      <div className="flex justify-center my-2 px-4">
+        <p className="text-xs text-center text-muted-foreground bg-muted/80 px-3 py-1.5 rounded-full max-w-[90%] leading-relaxed">
+          {displayContent}
+        </p>
+      </div>
+    );
+  }
 
   const bubble = (
     <div className={cn("flex group/msg", mine ? "justify-end" : "justify-start")}>
@@ -90,8 +138,8 @@ const MessageBubble = ({ message, mine, kind, onReply, onUnsend }: Props) => {
                 </span>
               </div>
             )}
-            {message.attachment_url && message.message_type !== "project" && (
-              <img src={message.attachment_url} alt="" className="rounded-2xl mb-1 max-h-72 object-cover" />
+            {message.attachment_url && message.message_type !== "project" && message.message_type !== "profile" && (
+              <ChatAttachmentImage refUrl={message.attachment_url} />
             )}
             {message.message_type === "project" && project && (
               <Link
@@ -114,14 +162,45 @@ const MessageBubble = ({ message, mine, kind, onReply, onUnsend }: Props) => {
                 </div>
               </Link>
             )}
-            {message.content && (
+            {message.message_type === "profile" && profileCard && (
+              <Link
+                to={profilePublicPath(profileCard)}
+                className={cn(
+                  "block rounded-2xl overflow-hidden mb-1 border shadow-sm hover:opacity-95 transition-opacity",
+                  mine ? "border-white/20" : "border-border",
+                )}
+              >
+                <div className={cn("p-3 flex items-center gap-3", mine ? "bg-black/10" : "bg-card")}>
+                  {profileCard.avatar_url ? (
+                    <img src={profileCard.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-sm font-medium shrink-0">
+                      {(profileCard.display_name ?? "?")[0]}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold truncate">{profileCard.display_name ?? "ครีเอเตอร์"}</p>
+                    {profileCard.role && (
+                      <p className="text-xs text-muted-foreground truncate">{profileCard.role}</p>
+                    )}
+                    {profileCard.skills && profileCard.skills.length > 0 && (
+                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                        {profileCard.skills.slice(0, 3).join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                  <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                </div>
+              </Link>
+            )}
+            {displayContent && message.message_type !== "project" && message.message_type !== "profile" && (
               <div
                 className={cn(
                   "px-3.5 py-2 rounded-2xl text-base leading-relaxed whitespace-pre-wrap break-words shadow-sm",
                   mine ? `${mineBg} rounded-br-md` : `${theirBg} rounded-bl-md`,
                 )}
               >
-                {message.content}
+                {displayContent}
               </div>
             )}
           </>

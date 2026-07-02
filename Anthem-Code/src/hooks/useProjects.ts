@@ -4,6 +4,7 @@ import type { TablesInsert, TablesUpdate, Tables } from "@/integrations/supabase
 import { PROJECT_DETAIL_SELECT, PROJECT_FEED_SELECT, PROJECT_MANAGE_SELECT } from "@/lib/dbSelects";
 import { blendPersonalizedProjects, resolveTopCategories } from "@/lib/forYouBlend";
 import { getFeedSearchCategoryWeights } from "@/lib/feedSearchSignals";
+import { isOptionalQueryError } from "@/lib/supabaseErrors";
 
 export type DBProject = Tables<"projects">;
 
@@ -112,12 +113,19 @@ export const useForYouProjects = (userId: string | undefined) =>
 
       let aiRecs: DBProject[] = [];
       if (likedIds.size > 0) {
-        const { data: recIds } = await supabase.rpc("recommend_from_likes", { _user_id: userId!, _limit: 40 });
-        const ids = (recIds ?? []).map((r) => r.id);
-        if (ids.length) {
-          const { data: full } = await supabase.from("projects").select(PROJECT_FEED_SELECT).in("id", ids);
-          const orderMap = new Map(ids.map((id, i) => [id, i]));
-          aiRecs = (full ?? []).sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
+        const { data: recIds, error: recErr } = await supabase.rpc("recommend_from_likes", {
+          _user_id: userId!,
+          _limit: 40,
+        });
+        if (!recErr) {
+          const ids = (recIds ?? []).map((r: { id: string }) => r.id);
+          if (ids.length) {
+            const { data: full } = await supabase.from("projects").select(PROJECT_FEED_SELECT).in("id", ids);
+            const orderMap = new Map(ids.map((id, i) => [id, i]));
+            aiRecs = (full ?? []).sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
+          }
+        } else if (!isOptionalQueryError(recErr)) {
+          throw recErr;
         }
       }
 

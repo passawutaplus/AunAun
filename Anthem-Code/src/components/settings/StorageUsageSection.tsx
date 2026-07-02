@@ -71,7 +71,7 @@ export function StorageUsageSection() {
             type="button"
             onClick={() => void refetch()}
             disabled={isFetching}
-            className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"
+            className="p-2.5 min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg hover:bg-accent text-muted-foreground"
             aria-label="รีเฟรช"
           >
             {isFetching ? (
@@ -132,7 +132,7 @@ export function StorageUsageSection() {
           href={`${SO1O_APP_URL.replace(/\/$/, "")}/dashboard?tab=settings`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary hover:underline"
+          className="inline-flex items-center min-h-11 py-2 text-primary hover:underline"
         >
           So1o Settings → พื้นที่จัดเก็บ
         </a>

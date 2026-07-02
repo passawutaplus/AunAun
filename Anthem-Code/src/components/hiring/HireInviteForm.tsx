@@ -65,6 +65,8 @@ type Props = {
   onJobPostIdChange: (id: string) => void;
   userId?: string;
   maxImages?: number;
+  /** When true, all brief fields are optional (instant chat flow). */
+  optional?: boolean;
 };
 
 const HireInviteForm = ({
@@ -75,6 +77,7 @@ const HireInviteForm = ({
   onJobPostIdChange,
   userId,
   maxImages = 3,
+  optional = false,
 }: Props) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -126,7 +129,10 @@ const HireInviteForm = ({
       </div>
 
       <div>
-        <Label>ประเภทงาน <span className="text-destructive">*</span></Label>
+        <Label>
+          ประเภทงาน {!optional && <span className="text-destructive">*</span>}
+          {optional && <span className="text-muted-foreground font-normal"> (ไม่บังคับ)</span>}
+        </Label>
         <div className="flex flex-wrap gap-1.5 mt-2">
           {JOB_TYPES.map((j) => (
             <button
@@ -147,7 +153,10 @@ const HireInviteForm = ({
       </div>
 
       <div>
-        <Label htmlFor="hire-details">รายละเอียดงาน <span className="text-destructive">*</span></Label>
+        <Label htmlFor="hire-details">
+          รายละเอียดงาน {!optional && <span className="text-destructive">*</span>}
+          {optional && <span className="text-muted-foreground font-normal"> (ไม่บังคับ)</span>}
+        </Label>
         <Textarea
           id="hire-details"
           rows={3}

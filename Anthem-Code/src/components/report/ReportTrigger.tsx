@@ -27,12 +27,12 @@ const ReportTrigger = ({
       aria-label={label}
       className={cn(
         "inline-flex items-center gap-1 shrink-0 text-muted-foreground/50 hover:text-destructive/80 transition-colors",
-        variant === "icon" && "p-0.5 rounded-md hover:bg-muted/30",
-        variant === "text" && "text-[10px]",
+        variant === "icon" && "p-2 min-h-11 min-w-11 rounded-md hover:bg-muted/30",
+        variant === "text" && "text-xs min-h-11 px-2",
         className,
       )}
     >
-      <Flag className={variant === "icon" ? "w-3 h-3" : "w-2.5 h-2.5"} />
+      <Flag className={variant === "icon" ? "w-4 h-4" : "w-3.5 h-3.5"} />
       {variant === "text" && <span>{label}</span>}
     </button>
   </ReportDialog>

@@ -479,12 +479,15 @@ const PublicProfilePage = () => {
         onOpenChange={setHireOpen}
         projectTitle={displayName}
         freelancerId={resolvedUserId}
+        source="profile"
+        profileName={displayName}
       />
       <CollabDialog
         open={collabOpen}
         onOpenChange={setCollabOpen}
         recipientId={resolvedUserId!}
         recipientName={displayName}
+        source="profile"
       />
     </div>
   );

@@ -77,7 +77,7 @@ export function AiUsageSettingsSection() {
             type="button"
             onClick={() => void refetch()}
             disabled={isFetching}
-            className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"
+            className="p-2.5 min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg hover:bg-accent text-muted-foreground"
             aria-label="รีเฟรช"
           >
             {isFetching ? (
@@ -138,7 +138,7 @@ export function AiUsageSettingsSection() {
           href={SO1O_PRICING_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 px-3 py-1.5 text-xs font-medium hover:bg-amber-500/10 transition-colors"
+          className="inline-flex items-center min-h-11 gap-1.5 rounded-full border border-amber-500/30 px-4 py-2.5 text-xs font-medium hover:bg-amber-500/10 transition-colors"
         >
           <Zap className="h-3.5 w-3.5 text-amber-500" />
           เติมเครดิต
@@ -146,7 +146,7 @@ export function AiUsageSettingsSection() {
         {!isPro && (
           <Link
             to="/upgrade"
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center min-h-11 gap-1.5 rounded-full bg-primary text-primary-foreground px-4 py-2.5 text-xs font-medium hover:bg-primary/90 transition-colors"
           >
             <Sparkles className="h-3.5 w-3.5" />
             อัพเกรด Pro

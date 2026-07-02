@@ -1,4 +1,3 @@
-import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,19 +34,22 @@ import type { PlanId } from "@/data/plans";
 import { isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import BriefcaseIcon from "../icons/BriefcaseIcon";
 
-const HIRE_QUICK = [
+const HIRE_QUICK_BASE = [
   "ขอรายละเอียดเพิ่มเติม",
   "ขอ timeline ของงาน",
   "ขอส่งใบเสนอราคาให้พิจารณา",
   "ขอบคุณสำหรับการติดต่อครับ",
 ];
-const COLLAB_QUICK = [
+const COLLAB_QUICK_BASE = [
   "เริ่มจาก mood board ไหม?",
-  "นัดคุยใน DM กันต่อ",
   "ส่งร่างไอเดียให้ดูได้ไหม",
   "พร้อมเริ่มเลย!",
+  "ส่งพอร์ตเพิ่มให้ดูได้ไหม",
 ];
+
+const CHAT_PANEL_HINT_KEY = "aplus1-chat-panel-hint-dismissed";
 
 interface Props {
   conv: Conversation;
@@ -98,6 +100,7 @@ const ChatThreadView = ({
     !!studioForQuote &&
     canShowStudioQuoteUpsell(tier, myStudioRole);
   const [upsellOpen, setUpsellOpen] = useState(false);
+  const [showPanelHint, setShowPanelHint] = useState(false);
   const otherId = otherParticipantId(conv, user?.id ?? "");
   const kind = (isStudio ? "studio" : isGroup ? "group" : conv.kind) as "hire" | "collab" | "group" | "studio";
 
@@ -152,6 +155,22 @@ const ChatThreadView = ({
   useEffect(() => {
     setReplyTo(null);
   }, [conv.id]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || isGroup) return;
+    setShowPanelHint(localStorage.getItem(CHAT_PANEL_HINT_KEY) !== "1");
+  }, [conv.id, isGroup]);
+
+  const quickReplies = useMemo(() => {
+    if (isGroup) return [] as string[];
+    const title = conv.project_title?.trim();
+    if (isHire) {
+      const extra = title ? [`ชอบผลงาน "${title}" มาก`] : [];
+      return [...extra, ...HIRE_QUICK_BASE];
+    }
+    const extra = title ? [`ชอบผลงาน "${title}" — อยากคุยต่อ`] : [];
+    return [...extra, ...COLLAB_QUICK_BASE];
+  }, [isGroup, isHire, conv.project_title]);
 
   const grouped = useMemo(() => {
     const items: Array<{ type: "date"; date: string } | { type: "msg"; m: Message }> = [];
@@ -373,6 +392,24 @@ const ChatThreadView = ({
         </div>
       </header>
 
+      {showPanelHint && showPartnerToggle && (
+        <div className="md:hidden px-3 py-2 bg-primary/5 border-b border-border flex items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            แตะ <Info className="w-3.5 h-3.5 inline -mt-0.5" /> เพื่อดูโปรไฟล์และส่งผลงาน
+          </p>
+          <button
+            type="button"
+            className="text-xs text-primary shrink-0"
+            onClick={() => {
+              localStorage.setItem(CHAT_PANEL_HINT_KEY, "1");
+              setShowPanelHint(false);
+            }}
+          >
+            ปิด
+          </button>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-2 min-h-0">
         {grouped.length === 0 && (
           <div className="text-center text-sm text-muted-foreground py-12">
@@ -399,7 +436,8 @@ const ChatThreadView = ({
       <ChatComposer
         conversationId={conv.id}
         kind={kind}
-        quickReplies={isGroup ? [] : isHire ? HIRE_QUICK : COLLAB_QUICK}
+        userId={user?.id}
+        quickReplies={quickReplies}
         replyTo={replyTo}
         onClearReply={() => setReplyTo(null)}
       />

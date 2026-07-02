@@ -124,7 +124,11 @@ const ChatSidebar = ({
         const preview =
           m.message_type === "project"
             ? "📁 ผลงาน"
-            : m.content || (m.attachment_url ? "📷 รูปภาพ" : "");
+            : m.message_type === "profile"
+              ? "👤 โปรไฟล์"
+              : m.message_type === "system" || m.content?.startsWith("[context]")
+                ? "💬 เริ่มสนทนา"
+                : m.content || (m.attachment_url ? "📷 รูปภาพ" : "");
         map[m.conversation_id] = {
           preview,
           mine: m.sender_id === user?.id,
@@ -293,7 +297,7 @@ const ChatSidebar = ({
                 type="button"
                 onClick={() => onTabChange(key)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors shrink-0",
+                  "inline-flex items-center gap-1.5 px-3 py-2.5 min-h-11 text-xs font-medium rounded-full border transition-colors shrink-0",
                   accent,
                 )}
               >
@@ -322,7 +326,7 @@ const ChatSidebar = ({
             ) : (
               <>
                 <p className="font-medium text-foreground">ยังไม่มีบทสนทนา</p>
-                <p className="text-sm mt-1">เมื่อคุณตอบรับคำขอจ้างหรือคอลแลป ห้องแชทจะอยู่ที่นี่</p>
+                <p className="text-sm mt-1">คำขอจ้างและคอลแลปจะอยู่ที่นี่ — เปิดแชทตอบได้เลย</p>
               </>
             )}
             {isDemoMode() && !search.trim() && (

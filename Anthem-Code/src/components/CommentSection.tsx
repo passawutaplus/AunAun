@@ -161,6 +161,8 @@ const CommentSection = ({ projectId }: Props) => {
               </div>
             )}
             <Textarea
+              id="project-comment-input"
+              aria-label={replyTo ? "เขียนคำตอบความคิดเห็น" : "เขียนความคิดเห็นเกี่ยวกับผลงาน"}
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder={replyTo ? "เขียนคำตอบ..." : "แชร์ความคิดเห็นเกี่ยวกับผลงานนี้..."}
@@ -168,11 +170,18 @@ const CommentSection = ({ projectId }: Props) => {
               maxLength={800}
               className="resize-none"
             />
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">{text.length}/800</span>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="text-xs text-muted-foreground space-y-0.5">
+                <span>{text.length}/800</span>
+                {!text.trim() && !createMut.isPending && (
+                  <p className="text-amber-600 dark:text-amber-400">พิมพ์ข้อความก่อนกดส่ง</p>
+                )}
+              </div>
               <Button
                 type="submit"
                 disabled={createMut.isPending || !text.trim()}
+                aria-disabled={createMut.isPending || !text.trim()}
+                title={!text.trim() ? "พิมพ์ข้อความก่อนส่ง" : undefined}
                 className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
                 size="sm"
               >

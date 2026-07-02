@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { isOptionalQueryError } from "@/lib/supabaseErrors";
 
 export interface JobMatchNotif {
   id: string;
@@ -34,7 +35,7 @@ export const useJobMatchNotifications = () => {
       .channel("jmn-" + user.id)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "job_match_notifications", filter: `user_id=eq.${user.id}` },
+        { event: "*", schema: "anthem", table: "job_match_notifications", filter: `user_id=eq.${user.id}` },
         () => qc.invalidateQueries({ queryKey: ["job-match-notif", user.id] })
       )
       .subscribe();
@@ -54,7 +55,10 @@ export const useJobMatchNotifications = () => {
         .order("match_score", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(100);
-      if (error) throw error;
+      if (error) {
+        if (isOptionalQueryError(error)) return [];
+        throw error;
+      }
       const rows = (data ?? []) as JobMatchNotif[];
       const ids = Array.from(new Set(rows.map((r) => r.job_id)));
       if (ids.length === 0) return rows;
@@ -74,11 +78,13 @@ export const useUnreadJobMatchCount = () => {
     queryKey: ["job-match-unread", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { count } = await supabase
+      const { count, error } = await supabase
         .from("job_match_notifications")
         .select("id", { count: "exact", head: true })
         .eq("is_read", false)
         .eq("is_dismissed", false);
+      if (error && isOptionalQueryError(error)) return 0;
+      if (error) throw error;
       return count ?? 0;
     },
   });

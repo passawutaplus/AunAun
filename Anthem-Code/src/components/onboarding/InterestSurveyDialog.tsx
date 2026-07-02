@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { hasConsentBannerPending, COOKIE_CONSENT_CHANGED_EVENT } from "@/lib/cookieConsent";
+import { shouldDeferInterestSurvey } from "@/lib/onboardingRoutes";
 import {
   Dialog,
   DialogContent,
@@ -15,16 +18,26 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 export function InterestSurveyGate() {
+  const { pathname } = useLocation();
   const { user } = useAuth();
   const { shouldShow, save, skip, isSaving } = useFeedInterestSurvey(user?.id);
   const [selected, setSelected] = useState<Set<FeedInterestId>>(new Set());
   const [dismissed, setDismissed] = useState(false);
+  const [cookiePending, setCookiePending] = useState(() => hasConsentBannerPending());
 
   useEffect(() => {
     setDismissed(false);
   }, [user?.id]);
 
+  useEffect(() => {
+    const sync = () => setCookiePending(hasConsentBannerPending());
+    sync();
+    window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, sync);
+    return () => window.removeEventListener(COOKIE_CONSENT_CHANGED_EVENT, sync);
+  }, []);
+
   if (!shouldShow || dismissed) return null;
+  if (cookiePending || shouldDeferInterestSurvey(pathname)) return null;
 
   const toggle = (id: FeedInterestId) => {
     setSelected((prev) => {

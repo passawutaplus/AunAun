@@ -1,0 +1,61 @@
+export type ChatEntrySource = "project" | "profile";
+
+export type HireContextInput = {
+  source: ChatEntrySource;
+  projectTitle?: string | null;
+  profileName?: string | null;
+};
+
+export type CollabContextInput = {
+  source: ChatEntrySource;
+  projectTitle?: string | null;
+  profileName?: string | null;
+};
+
+export function buildHireContextMessage(input: HireContextInput): string {
+  const title = input.projectTitle?.trim();
+  if (input.source === "project" && title) {
+    return `สนใจจ้างจากผลงาน «${title}» — อยากคุยรายละเอียด`;
+  }
+  if (input.source === "profile") {
+    const name = input.profileName?.trim();
+    return name
+      ? `ดูโปรไฟล์ ${name} แล้วสนใจจ้าง — อยากคุยงาน`
+      : "ดูโปรไฟล์แล้วสนใจจ้าง — อยากคุยงาน";
+  }
+  return title
+    ? `สนใจจ้างจากผลงาน «${title}» — อยากคุยรายละเอียด`
+    : "สนใจจ้าง — อยากคุยรายละเอียด";
+}
+
+export function buildCollabContextMessage(input: CollabContextInput): string {
+  const title = input.projectTitle?.trim();
+  if (input.source === "project" && title) {
+    return `สนใจคอลแลปจากผลงาน «${title}» — อยากคุยกัน`;
+  }
+  if (input.source === "profile") {
+    const name = input.profileName?.trim();
+    return name
+      ? `ดูโปรไฟล์ ${name} แล้วสนใจร่วมงาน — อยากคุยกัน`
+      : "ดูโปรไฟล์แล้วสนใจร่วมงาน — อยากคุยกัน";
+  }
+  return title
+    ? `สนใจคอลแลปจากผลงาน «${title}» — อยากคุยกัน`
+    : "สนใจคอลแลป — อยากคุยกัน";
+}
+
+/** Default collab message when user skips the form (DB requires non-empty message). */
+export const DEFAULT_COLLAB_MESSAGE = "สนใจร่วมงาน — อยากคุยรายละเอียดเพิ่ม";
+
+/** Prefix stored in text messages when system type is unavailable (pre-migration fallback). */
+export const SYSTEM_MESSAGE_PREFIX = "[context]";
+
+export function isSystemFallbackContent(content: string | null | undefined): boolean {
+  return !!content?.startsWith(SYSTEM_MESSAGE_PREFIX);
+}
+
+export function stripSystemFallbackPrefix(content: string): string {
+  return content.startsWith(SYSTEM_MESSAGE_PREFIX)
+    ? content.slice(SYSTEM_MESSAGE_PREFIX.length).trimStart()
+    : content;
+}

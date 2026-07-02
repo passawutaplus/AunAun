@@ -73,7 +73,7 @@ const OpenForWorkForm = ({ onSuccess }: Props) => {
         const path = `anthem/${user.id}/cv/${crypto.randomUUID()}-${cvFile.name}`;
         const { error: upErr } = await sharedStorage.storage.from(SHARED_MEDIA_BUCKET).upload(path, cvFile);
         if (upErr) throw upErr;
-        cvUrl = sharedStorage.storage.from(SHARED_MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;
+        cvUrl = path;
       }
 
       if (showBadge) {

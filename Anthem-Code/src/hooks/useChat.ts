@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { isOptionalQueryError } from "@/lib/supabaseErrors";
 import { supabase } from "@/integrations/supabase/client";
 import { useModerationState, useRecordProfanityStrike } from "@/hooks/useModeration";
 import { useAuth } from "./useAuth";
@@ -9,9 +10,13 @@ import {
   parseAttachmentUrlsFromMessage,
   stripAttachmentBlock,
 } from "@/lib/hireBrief";
+import {
+  DEFAULT_COLLAB_MESSAGE,
+  SYSTEM_MESSAGE_PREFIX,
+} from "@/lib/chatContext";
 
 export type ChatKind = "hire" | "collab" | "group" | "studio";
-export type MessageType = "text" | "image" | "project";
+export type MessageType = "text" | "image" | "project" | "system" | "profile";
 export type ConversationType = "direct" | "group";
 
 type ConversationRow = Database["public"]["Tables"]["conversations"]["Row"];
@@ -28,6 +33,7 @@ export type Message = MessageRow & {
   deleted_at?: string | null;
   message_type?: MessageType | string | null;
   project_id?: string | null;
+  profile_user_id?: string | null;
 };
 
 export type ConversationPin = {
@@ -225,6 +231,7 @@ export type SendMessageArgs = {
   replyToId?: string;
   messageType?: MessageType;
   projectId?: string;
+  profileUserId?: string;
   hadProfanity?: boolean;
 };
 
@@ -242,6 +249,7 @@ export const useSendMessage = () => {
       replyToId,
       messageType = "text",
       projectId,
+      profileUserId,
       hadProfanity,
     }: SendMessageArgs) => {
       if (!user?.id) throw new Error("ต้องเข้าสู่ระบบ");
@@ -267,9 +275,26 @@ export const useSendMessage = () => {
       };
       if (replyToId) row.reply_to_id = replyToId;
       if (projectId) row.project_id = projectId;
+      if (profileUserId) row.profile_user_id = profileUserId;
       if (messageType === "image" && attachmentUrl) row.message_type = "image";
 
-      const { error } = await supabase.from("messages").insert(row as never);
+      let { error } = await supabase.from("messages").insert(row as never);
+      if (
+        error &&
+        (messageType === "system" || messageType === "profile") &&
+        String(error.message).includes("message_type")
+      ) {
+        const fallback: Record<string, unknown> = {
+          ...row,
+          message_type: "text",
+          content:
+            messageType === "system"
+              ? `${SYSTEM_MESSAGE_PREFIX}${content}`
+              : content || "โปรไฟล์",
+        };
+        delete fallback.profile_user_id;
+        ({ error } = await supabase.from("messages").insert(fallback as never));
+      }
       if (error) throw error;
 
       void supabase.functions.invoke("notify-anthem-chat", {
@@ -321,7 +346,7 @@ export const useConversationPins = () => {
         .eq("user_id", user!.id)
         .order("pinned_at", { ascending: false });
       if (error) {
-        if (String(error.message).includes("does not exist")) return [] as ConversationPin[];
+        if (isOptionalQueryError(error)) return [] as ConversationPin[];
         throw error;
       }
       return (data ?? []) as ConversationPin[];
@@ -413,15 +438,85 @@ export const useCreateGroupConversation = () => {
   });
 };
 
-/* ───────────────── Accept / Reject ───────────────── */
+/* ───────────────── Open hire/collab chat (instant, no accept gate) ───────────────── */
 
-async function seedHireChatBrief(conversationId: string, requestId: string) {
-  const { count } = await supabase
-    .from("messages")
-    .select("id", { count: "exact", head: true })
-    .eq("conversation_id", conversationId);
-  if ((count ?? 0) > 0) return;
+export type OpenHireCollabChatArgs = {
+  kind: "hire" | "collab";
+  requestId: string;
+  clientId: string;
+  freelancerId: string;
+  projectId?: string | null;
+  projectTitle?: string;
+  contextMessage: string;
+  /** Legacy inbox: mark hire as ตอบรับ instead of ติดต่อแล้ว */
+  legacyAccept?: boolean;
+};
 
+async function findConversationByRequest(kind: ChatKind, requestId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("conversations")
+    .select("id")
+    .eq("kind", kind)
+    .eq("request_id", requestId)
+    .maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
+
+async function ensureConversation(args: OpenHireCollabChatArgs): Promise<string> {
+  const { kind, requestId, clientId, freelancerId, projectId, projectTitle } = args;
+
+  const existing = await findConversationByRequest(kind, requestId);
+  if (existing) return existing;
+
+  const { data, error } = await supabase
+    .from("conversations")
+    .insert({
+      kind,
+      conversation_type: "direct",
+      request_id: requestId,
+      client_id: clientId,
+      freelancer_id: freelancerId,
+      project_id: projectId ?? null,
+      project_title: projectTitle ?? "",
+      created_by: clientId,
+    } as never)
+    .select("id")
+    .single();
+
+  if (error) {
+    if (error.code === "23505") {
+      const raced = await findConversationByRequest(kind, requestId);
+      if (raced) return raced;
+    }
+    throw error;
+  }
+  return data.id as string;
+}
+
+async function insertContextMessage(
+  conversationId: string,
+  senderId: string,
+  content: string,
+): Promise<void> {
+  const row = {
+    conversation_id: conversationId,
+    sender_id: senderId,
+    content,
+    message_type: "system",
+  };
+  let { error } = await supabase.from("messages").insert(row as never);
+  if (error && String(error.message).includes("message_type")) {
+    ({ error } = await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: senderId,
+      content: `${SYSTEM_MESSAGE_PREFIX}${content}`,
+      message_type: "text",
+    } as never));
+  }
+  if (error) throw error;
+}
+
+async function seedHireBriefIfPresent(conversationId: string, requestId: string): Promise<void> {
   const { data: hire } = await supabase
     .from("hiring_requests")
     .select(
@@ -430,18 +525,18 @@ async function seedHireChatBrief(conversationId: string, requestId: string) {
     .eq("id", requestId)
     .maybeSingle();
 
-  if (!hire?.client_id) return;
+  if (!hire?.client_id || !hire.message?.trim()) return;
 
   const row = hire as {
     client_id: string;
+    message?: string | null;
+    attachment_urls?: string[] | null;
     project_title?: string | null;
     client_name?: string | null;
     email?: string | null;
     phone?: string | null;
-    message?: string | null;
     deadline?: string | null;
     budget_amount?: number | null;
-    attachment_urls?: string[] | null;
   };
 
   const attachmentUrls =
@@ -451,6 +546,8 @@ async function seedHireChatBrief(conversationId: string, requestId: string) {
     ...row,
     message: stripAttachmentBlock(row.message),
   });
+
+  if (!text.trim()) return;
 
   const { error: textErr } = await supabase.from("messages").insert({
     conversation_id: conversationId,
@@ -472,6 +569,122 @@ async function seedHireChatBrief(conversationId: string, requestId: string) {
   }
 }
 
+async function seedCollabMessages(conversationId: string, requestId: string): Promise<void> {
+  const { data: collab } = await supabase
+    .from("collab_requests")
+    .select("sender_id, message, attached_project_ids")
+    .eq("id", requestId)
+    .maybeSingle();
+
+  if (!collab?.sender_id) return;
+
+  const senderId = collab.sender_id as string;
+  const msg = (collab.message as string)?.trim();
+  const hasCustomMessage = msg && msg !== DEFAULT_COLLAB_MESSAGE;
+
+  if (hasCustomMessage) {
+    const { error } = await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: senderId,
+      content: msg,
+      message_type: "text",
+    } as never);
+    if (error) throw error;
+  }
+
+  const projectIds = (collab.attached_project_ids as string[] | null) ?? [];
+  if (projectIds.length === 0) return;
+
+  const { data: projects } = await supabase
+    .from("projects")
+    .select("id, title")
+    .in("id", projectIds);
+
+  for (const p of projects ?? []) {
+    const { error } = await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: senderId,
+      content: p.title,
+      message_type: "project",
+      project_id: p.id,
+    } as never);
+    if (error) throw error;
+  }
+}
+
+async function seedInstantChatMessages(
+  conversationId: string,
+  args: OpenHireCollabChatArgs,
+): Promise<void> {
+  const { count } = await supabase
+    .from("messages")
+    .select("id", { count: "exact", head: true })
+    .eq("conversation_id", conversationId);
+  if ((count ?? 0) > 0) return;
+
+  await insertContextMessage(conversationId, args.clientId, args.contextMessage);
+
+  if (args.kind === "hire") {
+    await seedHireBriefIfPresent(conversationId, args.requestId);
+  } else {
+    await seedCollabMessages(conversationId, args.requestId);
+  }
+}
+
+export async function openHireCollabChat(args: OpenHireCollabChatArgs): Promise<string> {
+  const { kind, requestId, legacyAccept } = args;
+
+  if (kind === "hire") {
+    const status = legacyAccept ? "ตอบรับ" : "ติดต่อแล้ว";
+    const { error } = await supabase
+      .from("hiring_requests")
+      .update({ status: status as never })
+      .eq("id", requestId);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase
+      .from("collab_requests")
+      .update({ status: "accepted" as never })
+      .eq("id", requestId);
+    if (error) throw error;
+  }
+
+  const convId = await ensureConversation(args);
+  await seedInstantChatMessages(convId, args);
+  return convId;
+}
+
+export const useOpenHireCollabChat = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: openHireCollabChat,
+    onSuccess: (_convId, vars) => {
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+      qc.invalidateQueries({ queryKey: ["hiring_requests"] });
+      qc.invalidateQueries({ queryKey: ["collab-requests"] });
+      qc.invalidateQueries({ queryKey: ["messages"] });
+      qc.invalidateQueries({ queryKey: ["chat-inbox-badge"] });
+      qc.invalidateQueries({ queryKey: ["notif-hire"] });
+      qc.invalidateQueries({ queryKey: ["notif-collab"] });
+      if (vars.kind === "hire") {
+        qc.invalidateQueries({ queryKey: ["chat-hire-meta", vars.requestId] });
+      }
+    },
+  });
+};
+
+/* ───────────────── Accept / Reject (legacy + studio) ───────────────── */
+
+/** @deprecated Use openHireCollabChat — kept for legacy pending requests without a conversation */
+async function seedHireChatBrief(conversationId: string, requestId: string) {
+  const { count } = await supabase
+    .from("messages")
+    .select("id", { count: "exact", head: true })
+    .eq("conversation_id", conversationId);
+  if ((count ?? 0) > 0) return;
+  await seedHireBriefIfPresent(conversationId, requestId);
+}
+
 type AcceptArgs = {
   kind: ChatKind;
   requestId: string;
@@ -485,62 +698,43 @@ export const useAcceptRequest = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ kind, requestId, clientId, freelancerId, projectId, projectTitle }: AcceptArgs) => {
-      if (kind === "hire") {
-        const { error } = await supabase.from("hiring_requests").update({ status: "ตอบรับ" as never }).eq("id", requestId);
-        if (error) throw error;
-      } else if (kind === "collab") {
-        const { error } = await supabase.from("collab_requests").update({ status: "accepted" as never }).eq("id", requestId);
-        if (error) throw error;
+      if (kind !== "hire" && kind !== "collab") {
+        throw new Error("Unsupported kind");
       }
 
-      const { data: existing } = await supabase
-        .from("conversations")
-        .select("id")
-        .eq("kind", kind)
-        .eq("request_id", requestId)
-        .maybeSingle();
-
-      let convId: string;
-      if (existing?.id) {
-        convId = existing.id as string;
-      } else {
-        const { data, error } = await supabase
-          .from("conversations")
-          .insert({
-            kind,
-            conversation_type: "direct",
-            request_id: requestId,
-            client_id: clientId,
-            freelancer_id: freelancerId,
-            project_id: projectId ?? null,
-            project_title: projectTitle ?? "",
-            created_by: freelancerId,
-          } as never)
-          .select("id")
-          .single();
-        if (error) {
-          if (error.code === "23505") {
-            const { data: raced, error: racedError } = await supabase
-              .from("conversations")
-              .select("id")
-              .eq("kind", kind)
-              .eq("request_id", requestId)
-              .single();
-            if (racedError) throw racedError;
-            convId = raced.id as string;
-          } else {
-            throw error;
-          }
+      const existing = await findConversationByRequest(kind, requestId);
+      if (existing) {
+        if (kind === "hire") {
+          await supabase
+            .from("hiring_requests")
+            .update({ status: "ตอบรับ" as never })
+            .eq("id", requestId);
         } else {
-          convId = data.id as string;
+          await supabase
+            .from("collab_requests")
+            .update({ status: "accepted" as never })
+            .eq("id", requestId);
         }
+        return existing;
       }
 
-      if (kind === "hire") {
-        await seedHireChatBrief(convId, requestId);
-      }
+      const title =
+        projectTitle ??
+        (kind === "collab" ? "คอลแลปไอเดียใหม่" : "งานจ้าง");
 
-      return convId;
+      return openHireCollabChat({
+        kind,
+        requestId,
+        clientId,
+        freelancerId,
+        projectId,
+        projectTitle: title,
+        contextMessage:
+          kind === "hire"
+            ? "เริ่มสนทนางานจ้าง — คุยรายละเอียดได้เลย"
+            : "เริ่มสนทนาคอลแลป — คุยไอเดียได้เลย",
+        legacyAccept: true,
+      });
     },
     onSuccess: (_convId, vars) => {
       qc.invalidateQueries({ queryKey: ["conversations"] });
@@ -682,20 +876,7 @@ export const useChatInboxBadgeCount = () => {
         }
       }
 
-      const [{ count: pendingHires }, { count: pendingCollabs }] = await Promise.all([
-        supabase
-          .from("hiring_requests")
-          .select("*", { count: "exact", head: true })
-          .eq("freelancer_id", uid)
-          .in("status", ["pending", "รอตอบ"]),
-        supabase
-          .from("collab_requests")
-          .select("*", { count: "exact", head: true })
-          .eq("recipient_id", uid)
-          .eq("status", "pending"),
-      ]);
-
-      return unreadMessages + (pendingHires ?? 0) + (pendingCollabs ?? 0);
+      return unreadMessages;
     },
   });
 
@@ -703,15 +884,7 @@ export const useChatInboxBadgeCount = () => {
 };
 
 export const useFindConversationByRequest = () => {
-  return async (kind: ChatKind, requestId: string) => {
-    const { data } = await supabase
-      .from("conversations")
-      .select("id")
-      .eq("kind", kind)
-      .eq("request_id", requestId)
-      .maybeSingle();
-    return (data?.id as string | undefined) ?? null;
-  };
+  return async (kind: ChatKind, requestId: string) => findConversationByRequest(kind, requestId);
 };
 
 export const useStudioConversation = () => {

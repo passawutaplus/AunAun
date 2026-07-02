@@ -38,6 +38,12 @@ function refineCommunityMedia(
 
 export const thaiPhoneRegex = /^(0[6-9]\d{8}|\+66[6-9]\d{8})$/;
 
+/** Minimal contact info for instant hire chat (prefilled from profile). */
+export const hireRequestQuickSchema = z.object({
+  clientName: z.string().trim().min(1, "กรุณากรอกชื่อ").max(100),
+  email: z.string().trim().email("อีเมลไม่ถูกต้อง").max(255),
+});
+
 export const hireRequestSchema = z.object({
   clientName: z.string().trim().min(1, "กรุณากรอกชื่อ").max(100),
   email: z.string().trim().email("อีเมลไม่ถูกต้อง").max(255),
@@ -50,23 +56,19 @@ export const hireRequestSchema = z.object({
     .union([z.number().int().nonnegative().max(10_000_000), z.nan()])
     .optional(),
   deadline: z.string().trim().max(50).optional(),
-  message: z.string().trim().min(20, "รายละเอียดงานสั้นเกินไป").max(1000),
+  message: z.string().trim().max(1000).optional(),
 });
 
-/** Brief fields on the hire invite form (beyond contact info). */
-export const hireInviteBriefSchema = z
-  .object({
-    jobType: z.string().trim().min(1, "เลือกประเภทงาน"),
-    details: z.string().trim().min(20, "กรุณาอธิบายรายละเอียดงานอย่างน้อย 20 ตัวอักษร"),
-    budgetAmount: z.number().int().positive().max(10_000_000).optional(),
-    deadline: z.string().trim().max(50).optional(),
-  })
-  .refine((d) => (d.budgetAmount != null && d.budgetAmount > 0) || !!d.deadline?.trim(), {
-    message: "กรุณาระบุงบประมาณหรือกำหนดส่งงาน",
-    path: ["budgetAmount"],
-  });
+/** Optional brief fields on the hire invite form. */
+export const hireInviteBriefSchema = z.object({
+  jobType: z.string().trim().max(50).optional(),
+  details: z.string().trim().max(1000).optional(),
+  budgetAmount: z.number().int().positive().max(10_000_000).optional(),
+  deadline: z.string().trim().max(50).optional(),
+});
 
 export type HireRequestInput = z.infer<typeof hireRequestSchema>;
+export type HireRequestQuickInput = z.infer<typeof hireRequestQuickSchema>;
 
 export const experienceItemSchema = z.object({
   title: z.string().trim().min(1, "กรอกตำแหน่ง").max(80),

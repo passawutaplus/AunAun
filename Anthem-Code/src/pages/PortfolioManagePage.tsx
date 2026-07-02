@@ -1,7 +1,7 @@
 import BriefcaseIcon from "../components/icons/BriefcaseIcon";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, LayoutGrid, Globe, Eye, Heart, Mail, Settings, Phone, ExternalLink, Check, X, MessageCircle, FileText } from "lucide-react";
+import { Plus, LayoutGrid, Globe, Eye, Heart, Mail, Settings, Phone, ExternalLink, X, MessageCircle, FileText } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -214,38 +214,39 @@ const PortfolioManagePage = () => {
 
           <div className="space-y-3">
             {filteredHiring.map((req) => {
-              const isPending = req.status === "ใหม่" || req.status === "ที่ต้องตอบ";
-              const isAccepted = req.status === "ตอบรับ" || req.status === "ติดต่อแล้ว";
+              const isDeclined = req.status === "ปฏิเสธ";
+              const canQuote =
+                req.status === "ตอบรับ" ||
+                req.status === "ติดต่อแล้ว" ||
+                req.status === "ใหม่" ||
+                req.status === "ที่ต้องตอบ";
 
-              const handleAccept = async () => {
-                if (!user) return;
-                try {
-                  const convId = await accept.mutateAsync({
-                    kind: "hire",
-                    requestId: req.id,
-                    clientId: req.client_id ?? user.id,
-                    freelancerId: req.freelancer_id,
-                    projectId: null,
-                    projectTitle: req.project_title,
-                  });
-                  toast.success("รับงานนี้แล้ว เริ่มประสานงานกับลูกค้าได้เลย");
-                  navigate(`/chat/${convId}`);
-                } catch (e: any) {
-                  toast.error(e?.message ?? "ดำเนินการไม่สำเร็จ");
-                }
-              };
               const handleReject = async () => {
                 try {
                   await reject.mutateAsync({ kind: "hire", requestId: req.id });
                   toast.success("ปฏิเสธคำขอแล้ว");
-                } catch (e: any) {
-                  toast.error(e?.message ?? "ดำเนินการไม่สำเร็จ");
+                } catch (e: unknown) {
+                  toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
                 }
               };
               const openChat = async () => {
-                const id = await findConv("hire", req.id);
-                if (id) navigate(`/chat/${id}`);
-                else toast.error("ไม่พบห้องสนทนา");
+                try {
+                  let id = await findConv("hire", req.id);
+                  if (!id && req.client_id && req.freelancer_id) {
+                    id = await accept.mutateAsync({
+                      kind: "hire",
+                      requestId: req.id,
+                      clientId: req.client_id,
+                      freelancerId: req.freelancer_id!,
+                      projectId: req.project_id ?? null,
+                      projectTitle: req.project_title,
+                    });
+                  }
+                  if (id) navigate(`/chat/${id}`);
+                  else toast.error("ไม่พบห้องสนทนา");
+                } catch (e: unknown) {
+                  toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
+                }
               };
               const openQuote = async () => {
                 const linkId = await trackCrossLink({
@@ -289,23 +290,18 @@ const PortfolioManagePage = () => {
                         {req.deadline && <span>⏰ {req.deadline}</span>}
                       </div>
                       <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-border/50 flex-wrap">
-                        {isPending && (
+                        {!isDeclined && (
                           <>
+                            {canQuote && (
+                              <Button size="sm" variant="outline" onClick={openQuote} className="rounded-full h-8 text-xs gap-1">
+                                <FileText className="w-3.5 h-3.5" /> ใบเสนอราคา
+                              </Button>
+                            )}
                             <Button size="sm" variant="ghost" onClick={handleReject} disabled={reject.isPending} className="rounded-full h-8 text-xs text-muted-foreground hover:text-destructive">
                               <X className="w-3.5 h-3.5 mr-1" /> ปฏิเสธ
                             </Button>
-                            <Button size="sm" onClick={handleAccept} disabled={accept.isPending} className="rounded-full h-8 text-xs bg-[hsl(var(--chat-hire))] text-white hover:bg-[hsl(var(--chat-hire))/0.9]">
-                              <Check className="w-3.5 h-3.5 mr-1" /> รับงานนี้ & เปิดแชท
-                            </Button>
-                          </>
-                        )}
-                        {!isPending && isAccepted && (
-                          <>
-                            <Button size="sm" variant="outline" onClick={openQuote} className="rounded-full h-8 text-xs gap-1">
-                              <FileText className="w-3.5 h-3.5" /> ใบเสนอราคา
-                            </Button>
-                            <Button size="sm" onClick={openChat} className="rounded-full h-8 text-xs bg-[hsl(var(--chat-hire))] text-white hover:opacity-90">
-                              <MessageCircle className="w-3.5 h-3.5 mr-1" /> เปิดห้องสนทนา
+                            <Button size="sm" onClick={openChat} disabled={accept.isPending} className="rounded-full h-8 text-xs bg-[hsl(var(--chat-hire))] text-white hover:opacity-90">
+                              <MessageCircle className="w-3.5 h-3.5 mr-1" /> เปิดแชท
                             </Button>
                           </>
                         )}

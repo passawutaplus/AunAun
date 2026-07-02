@@ -48,7 +48,7 @@ const ProjectDetailPage = () => {
   const sponsorAdId = searchParams.get("sponsor");
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: dbProject, isLoading } = useProject(id);
+  const { data: dbProject, isLoading, isError, refetch, isFetching } = useProject(id);
   const { data: sponsorAd } = useAdCampaign(sponsorAdId ?? undefined);
 
   // Track view: per-user history (for personalized Explore feed) + global counter (for stats)
@@ -187,14 +187,31 @@ const ProjectDetailPage = () => {
     });
   };
 
-  if (isLoading) {
-    return <div className="min-h-screen bg-app-ambient flex items-center justify-center text-muted-foreground">กำลังโหลด...</div>;
+  if (isLoading || (isFetching && !dbProject)) {
+    return (
+      <div className="min-h-screen bg-app-ambient flex items-center justify-center text-muted-foreground px-4 text-center">
+        กำลังโหลดผลงาน… รอสักครู่
+      </div>
+    );
+  }
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-app-ambient flex items-center justify-center px-4">
+        <div className="text-center space-y-4 max-w-md">
+          <p className="text-muted-foreground">โหลดผลงานไม่สำเร็จ — อาจเป็นชั่วคราวหรือคุณไม่มีสิทธิ์ดูผลงานนี้</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button variant="outline" onClick={() => void refetch()}>ลองใหม่</Button>
+            <Button onClick={() => navigate("/")}>กลับหน้าหลัก</Button>
+          </div>
+        </div>
+      </div>
+    );
   }
   if (!project) {
     return (
       <div className="min-h-screen bg-app-ambient flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground mb-4">ไม่พบผลงานนี้</p>
+          <p className="text-muted-foreground mb-4">ไม่พบผลงานนี้ หรือยังไม่ได้เผยแพร่</p>
           <Button onClick={() => navigate("/")}>กลับหน้าหลัก</Button>
         </div>
       </div>

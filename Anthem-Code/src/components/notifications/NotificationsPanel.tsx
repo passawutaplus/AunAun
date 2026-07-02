@@ -3,13 +3,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Bookmark, MessageCircle, Handshake, Bell, Sparkles, Megaphone, CheckCircle2, XCircle, CreditCard, Inbox, UserPlus } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useActivityNotifications, useHireNotifications, useCollabNotifications } from "@/hooks/useNotifications";
+import { useActivityNotifications, useHireNotifications, useCollabNotifications, type HireNotif, type CollabNotif } from "@/hooks/useNotifications";
 import { useFollowNotifications } from "@/hooks/useFollowLists";
 import { useUnreadJobMatchCount } from "@/hooks/useJobMatchNotifications";
 import { JobMatchList } from "@/components/notifications/JobMatchList";
 import { useAdApplicationNotifications } from "@/hooks/useAds";
 import { useAuth } from "@/hooks/useAuth";
 import { useUpdateCollabStatus } from "@/hooks/useCollabRequests";
+import { useAcceptRequest, useFindConversationByRequest } from "@/hooks/useChat";
 import { useNotifications as useInbox } from "@/core/notifications";
 import InboxList from "@/components/notifications/InboxList";
 import FollowNotificationsList from "@/components/notifications/FollowNotificationsList";
@@ -19,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
+import { toast } from "sonner";
 
 const timeAgo = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
@@ -99,10 +101,51 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
   const updateCollab = useUpdateCollabStatus();
   const { data: adNotifs = [], isLoading: lad } = useAdApplicationNotifications();
   const createHireEscrow = useCreateEscrowFromHire();
+  const accept = useAcceptRequest();
+  const findConv = useFindConversationByRequest();
 
   const go = (path: string) => {
     onBeforeNavigate?.();
     navigate(path);
+  };
+
+  const openHireChat = async (h: HireNotif) => {
+    try {
+      let convId = h.conversationId ?? (await findConv("hire", h.id));
+      if (!convId && h.clientId && h.freelancerId) {
+        convId = await accept.mutateAsync({
+          kind: "hire",
+          requestId: h.id,
+          clientId: h.clientId,
+          freelancerId: h.freelancerId,
+          projectId: h.projectId,
+          projectTitle: h.projectTitle,
+        });
+      }
+      if (convId) go(`/chat/${convId}`);
+      else toast.error("ไม่พบห้องสนทนา");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "เปิดแชทไม่สำเร็จ");
+    }
+  };
+
+  const openCollabChat = async (c: CollabNotif) => {
+    try {
+      let convId = c.conversationId ?? (await findConv("collab", c.id));
+      if (!convId) {
+        convId = await accept.mutateAsync({
+          kind: "collab",
+          requestId: c.id,
+          clientId: c.senderId,
+          freelancerId: c.recipientId,
+          projectId: c.projectId,
+          projectTitle: "คอลแลปไอเดียใหม่",
+        });
+      }
+      go(`/chat/${convId}`);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "เปิดแชทไม่สำเร็จ");
+    }
   };
 
   const tabs: TabDef[] = [
@@ -229,7 +272,17 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                 {h.budgetAmount && <span className="text-primary font-medium">฿{h.budgetAmount.toLocaleString("th-TH")}</span>}
               </div>
               {h.budgetAmount ? (
-                <div className="mt-3 space-y-1">
+                <div className="mt-3 space-y-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="w-full bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+                    disabled={accept.isPending}
+                    onClick={() => void openHireChat(h)}
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 mr-1" />
+                    เปิดแชท
+                  </Button>
                   <Button
                     type="button"
                     size="sm"
@@ -245,7 +298,18 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                     หรือโอนตรง/Job Tracker — ไม่ผ่านแพลตฟอร์ม
                   </p>
                 </div>
-              ) : null}
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="w-full mt-3 bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+                  disabled={accept.isPending}
+                  onClick={() => void openHireChat(h)}
+                >
+                  <MessageCircle className="w-3.5 h-3.5 mr-1" />
+                  เปิดแชท
+                </Button>
+              )}
             </div>
           ))
         )}
@@ -280,13 +344,15 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
               )}
               <p className="text-base text-foreground whitespace-pre-wrap line-clamp-4">{c.message}</p>
               {c.timeline && <p className="text-xs text-muted-foreground mt-1">ช่วงเวลา: {c.timeline}</p>}
-              {c.status === "pending" && (
+              {c.status !== "passed" && c.status !== "declined" && (
                 <div className="flex gap-2 mt-3">
                   <button
-                    onClick={() => updateCollab.mutate({ id: c.id, status: "interested" })}
-                    className="flex-1 py-2 rounded-full bg-gradient-brand text-white text-xs font-medium hover:opacity-90"
+                    onClick={() => void openCollabChat(c)}
+                    disabled={accept.isPending}
+                    className="flex-1 py-2 rounded-full bg-gradient-brand text-white text-xs font-medium hover:opacity-90 disabled:opacity-50"
                   >
-                    สนใจร่วมงาน
+                    <MessageCircle className="w-3.5 h-3.5 inline mr-1" />
+                    เปิดแชท
                   </button>
                   <button
                     onClick={() => updateCollab.mutate({ id: c.id, status: "passed" })}

@@ -21,7 +21,8 @@ const JobPostDialog = ({ open, onOpenChange, defaultMode = "hiring" }: Props) =>
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <div className="overflow-y-auto flex-1 px-6 pt-6 pb-4">
         <DialogHeader>
           <DialogTitle>ลงประกาศ</DialogTitle>
           <DialogDescription>กรอกรายละเอียดแล้วกดลงประกาศ — ระบบจะแจ้งผลทันที</DialogDescription>
@@ -55,6 +56,7 @@ const JobPostDialog = ({ open, onOpenChange, defaultMode = "hiring" }: Props) =>
         ) : (
           <PostOpportunityForm onSuccess={handleSuccess} />
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );

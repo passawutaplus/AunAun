@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isOptionalQueryError } from "@/lib/supabaseErrors";
 
 export interface RecommendedProject {
   id: string;
@@ -22,7 +23,10 @@ export const useRecommendedProjects = (userId: string | undefined, limit = 24) =
         _user_id: userId!,
         _limit: limit,
       });
-      if (error) throw error;
+      if (error) {
+        if (isOptionalQueryError(error)) return [];
+        throw error;
+      }
       return (data ?? []) as RecommendedProject[];
     },
   });

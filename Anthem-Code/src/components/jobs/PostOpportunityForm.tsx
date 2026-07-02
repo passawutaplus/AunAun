@@ -89,6 +89,15 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
       toast.error(msg);
       return;
     }
+    if (deadline) {
+      const d = new Date(deadline);
+      if (Number.isNaN(d.getTime()) || d < new Date(new Date().toDateString())) {
+        const msg = "กำหนดส่งงานต้องเป็นวันในอนาคต";
+        setSubmitError(msg);
+        toast.error(msg);
+        return;
+      }
+    }
     setSubmitError(null);
     try {
       await createJob.mutateAsync({

@@ -16,6 +16,12 @@ export interface CookieConsentPreferences {
 }
 
 export const COOKIE_PREFERENCES_OPEN_EVENT = "anthem:open-cookie-preferences";
+export const COOKIE_CONSENT_CHANGED_EVENT = "anthem:cookie-consent-changed";
+
+function notifyConsentChanged() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(COOKIE_CONSENT_CHANGED_EVENT));
+}
 
 export function requestOpenCookiePreferences() {
   if (typeof window === "undefined") return;
@@ -58,6 +64,7 @@ export function writeCookieConsent(prefs: Omit<CookieConsentPreferences, "versio
     analytics: prefs.analytics,
   };
   localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, JSON.stringify(state));
+  notifyConsentChanged();
   return state;
 }
 

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { isForbiddenError, isOptionalQueryError } from "@/lib/supabaseErrors";
 
 export interface Wallet {
   user_id: string;
@@ -14,24 +15,43 @@ export interface Wallet {
   updated_at: string;
 }
 
+function emptyWallet(userId: string): Wallet {
+  const now = new Date().toISOString();
+  return {
+    user_id: userId,
+    balance_px: 0,
+    purchased_px: 0,
+    earned_px: 0,
+    welcome_px: 0,
+    lifetime_welcome_px: 0,
+    lifetime_earned_px: 0,
+    lifetime_spent_px: 0,
+    updated_at: now,
+  };
+}
+
 export const useWallet = () => {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["wallet", user?.id],
     enabled: !!user?.id,
     queryFn: async (): Promise<Wallet> => {
-      const { data: existing } = await supabase
+      const { data: existing, error: readErr } = await supabase
         .from("wallets")
         .select("*")
         .eq("user_id", user!.id)
         .maybeSingle();
+      if (readErr && isForbiddenError(readErr)) return emptyWallet(user!.id);
       if (existing) return existing as Wallet;
       const { data: inserted, error } = await supabase
         .from("wallets")
         .insert({ user_id: user!.id })
         .select()
         .single();
-      if (error) throw error;
+      if (error) {
+        if (isOptionalQueryError(error)) return emptyWallet(user!.id);
+        throw error;
+      }
       return inserted as Wallet;
     },
   });

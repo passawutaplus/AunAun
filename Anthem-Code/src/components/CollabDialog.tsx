@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Handshake, Sparkles, UserCircle2, FolderOpen, Globe, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, Handshake, Sparkles, UserCircle2, FolderOpen, Globe, ChevronDown, ChevronUp, MessageCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { cn } from "@/lib/utils";
@@ -14,7 +15,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useMyProjects } from "@/hooks/useProjects";
 import { useCreateCollabRequest } from "@/hooks/useCollabRequests";
+import { useOpenHireCollabChat } from "@/hooks/useChat";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  buildCollabContextMessage,
+  DEFAULT_COLLAB_MESSAGE,
+  type ChatEntrySource,
+} from "@/lib/chatContext";
 
 const COLLAB_TYPES = [
   { key: "joint-project", label: "ร่วมโปรเจกต์ใหม่" },
@@ -32,10 +39,10 @@ const optionalUrl = z
   .refine((v) => v === "" || /^https?:\/\/.+\..+/.test(v), "ลิงก์ไม่ถูกต้อง (ต้องขึ้นต้น http/https)")
   .optional();
 
-const collabSchema = z
+const collabDetailsSchema = z
   .object({
-    collabTypes: z.array(z.string()).min(1, "เลือกอย่างน้อย 1 ประเภท"),
-    message: z.string().trim().min(10, "เขียนข้อความอย่างน้อย 10 ตัวอักษร").max(1000),
+    collabTypes: z.array(z.string()),
+    message: z.string().trim().max(1000),
     attached: z.array(z.string()).max(3, "แนบได้สูงสุด 3 ชิ้น"),
     externalDriveUrl: optionalUrl,
     websiteUrl: optionalUrl,
@@ -44,6 +51,10 @@ const collabSchema = z
   .refine(
     (d) => !d.collabTypes.includes("other") || (d.otherTypeNote && d.otherTypeNote.length > 0),
     { message: "กรุณาระบุประเภท 'อื่นๆ'", path: ["otherTypeNote"] },
+  )
+  .refine(
+    (d) => !d.message || d.message.length >= 10,
+    { message: "เขียนข้อความอย่างน้อย 10 ตัวอักษร", path: ["message"] },
   );
 
 interface CollabDialogProps {
@@ -53,13 +64,24 @@ interface CollabDialogProps {
   recipientName: string;
   projectId?: string;
   projectTitle?: string;
+  source?: ChatEntrySource;
 }
 
-const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectId, projectTitle }: CollabDialogProps) => {
+const CollabDialog = ({
+  open,
+  onOpenChange,
+  recipientId,
+  recipientName,
+  projectId,
+  projectTitle,
+  source = "project",
+}: CollabDialogProps) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
   const { data: myProjects = [] } = useMyProjects(user?.id);
   const createReq = useCreateCollabRequest();
+  const openChat = useOpenHireCollabChat();
 
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [otherNote, setOtherNote] = useState("");
@@ -69,6 +91,8 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [showAllWorks, setShowAllWorks] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const busy = createReq.isPending || openChat.isPending;
 
   const published = useMemo(() => myProjects.filter((p) => p.status === "Published"), [myProjects]);
   const initialWorks = published.slice(0, 6);
@@ -77,6 +101,7 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
   const reset = () => {
     setSelectedTypes([]); setOtherNote(""); setMessage(""); setAttached([]);
     setDriveUrl(""); setWebsiteUrl(""); setShowAllWorks(false); setSubmitError(null);
+    setShowDetails(false);
   };
 
   const toggleType = (key: string) =>
@@ -92,8 +117,7 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
       return [...s, id];
     });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitCollab = async (withDetails: boolean) => {
     if (!user) {
       onOpenChange(false);
       useAuthDialog.getState().openSignup();
@@ -102,17 +126,36 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
     if (!recipientId) { toast.error("ไม่พบเจ้าของผลงาน"); return; }
     if (recipientId === user.id) { toast.info("ส่งคำขอให้ตัวเองไม่ได้"); return; }
 
-    const parsed = collabSchema.safeParse({
-      collabTypes: selectedTypes,
-      message,
-      attached,
-      externalDriveUrl: driveUrl,
-      websiteUrl,
-      otherTypeNote: otherNote,
-    });
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
-      return;
+    let payload = {
+      collabTypes: [] as string[],
+      message: DEFAULT_COLLAB_MESSAGE,
+      attached: [] as string[],
+      externalDriveUrl: "" as string | undefined,
+      websiteUrl: "" as string | undefined,
+      otherTypeNote: undefined as string | undefined,
+    };
+
+    if (withDetails) {
+      const parsed = collabDetailsSchema.safeParse({
+        collabTypes: selectedTypes,
+        message,
+        attached,
+        externalDriveUrl: driveUrl,
+        websiteUrl,
+        otherTypeNote: otherNote,
+      });
+      if (!parsed.success) {
+        toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
+        return;
+      }
+      payload = {
+        collabTypes: parsed.data.collabTypes,
+        message: parsed.data.message.trim() || DEFAULT_COLLAB_MESSAGE,
+        attached: parsed.data.attached,
+        externalDriveUrl: parsed.data.externalDriveUrl,
+        websiteUrl: parsed.data.websiteUrl,
+        otherTypeNote: otherSelected ? (parsed.data.otherTypeNote || undefined) : undefined,
+      };
     }
 
     setSubmitError(null);
@@ -121,27 +164,46 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
         sender_id: user.id,
         recipient_id: recipientId,
         project_id: projectId ?? null,
-        collab_types: parsed.data.collabTypes,
-        message: parsed.data.message,
-        attached_project_ids: parsed.data.attached,
-        external_drive_url: parsed.data.externalDriveUrl || null,
-        website_url: parsed.data.websiteUrl || null,
-        other_type_note: otherSelected ? (parsed.data.otherTypeNote || null) : null,
+        collab_types: payload.collabTypes,
+        message: payload.message,
+        attached_project_ids: payload.attached,
+        external_drive_url: payload.externalDriveUrl || null,
+        website_url: payload.websiteUrl || null,
+        other_type_note: payload.otherTypeNote ?? null,
       });
       void supabase.functions.invoke("notify-anthem-collab", {
         body: { request_id: created.id },
       });
-      toast.success(`ส่งคำขอร่วมงานไปหา ${recipientName} แล้ว`, {
-        description:
-          "รอให้อีกฝั่งตอบรับ — เมื่อตอบรับแล้วห้องแชทจะเปิดที่ /chat",
+
+      const title = projectTitle ?? (source === "profile" ? recipientName : "คอลแลป");
+      const convId = await openChat.mutateAsync({
+        kind: "collab",
+        requestId: created.id,
+        clientId: user.id,
+        freelancerId: recipientId,
+        projectId: projectId ?? null,
+        projectTitle: title,
+        contextMessage: buildCollabContextMessage({
+          source,
+          projectTitle: title,
+          profileName: source === "profile" ? recipientName : undefined,
+        }),
       });
+
+      toast.success(`เปิดแชทกับ ${recipientName} แล้ว`);
       reset();
       onOpenChange(false);
+      navigate(`/chat/${convId}`);
     } catch (err) {
       const msg = mapWriteFlowError(err, "ส่งคำขอไม่สำเร็จ");
       setSubmitError(msg);
       toast.error(msg);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitCollab(true);
   };
 
   return (
@@ -153,11 +215,34 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
           </div>
           <DialogTitle className="text-xl">ชวน {recipientName} ร่วมงาน</DialogTitle>
           <DialogDescription className="text-sm leading-6">
-            ไม่ใช่การจ้างงาน — ส่งโปรไฟล์และผลงานของคุณให้ดู และบอกว่าอยากร่วมงานแบบไหน
-            {projectTitle && <> เริ่มจากผลงาน <span className="text-foreground font-medium">"{projectTitle}"</span></>}
+            ไม่ใช่การจ้างงาน — ทักคุยได้เลย หรือเติมรายละเอียดก่อนส่ง
+            {projectTitle && source === "project" && <> เริ่มจากผลงาน <span className="text-foreground font-medium">"{projectTitle}"</span></>}
+            {source === "profile" && <> จากโปรไฟล์ <span className="text-foreground font-medium">{recipientName}</span></>}
           </DialogDescription>
         </DialogHeader>
 
+        <Button
+          type="button"
+          disabled={busy}
+          className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90 mb-2"
+          onClick={() => void submitCollab(false)}
+        >
+          {busy ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <MessageCircle className="w-4 h-4 mr-1.5" />}
+          {user ? (busy ? "กำลังเปิดแชท..." : "แชทเลย") : "เข้าสู่ระบบเพื่อแชท"}
+        </Button>
+
+        {!showDetails ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full rounded-full mb-4"
+            onClick={() => setShowDetails(true)}
+          >
+            เติมรายละเอียด (ไม่บังคับ)
+          </Button>
+        ) : null}
+
+        {showDetails ? (
         <form onSubmit={handleSubmit} className="space-y-5 mt-2">
           {/* Your profile preview */}
           {user && profile && (
@@ -193,7 +278,10 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
 
           {/* Collab types */}
           <div>
-            <Label className="text-sm font-semibold">อยากร่วมงานแบบไหน <span className="text-destructive">*</span></Label>
+            <Label className="text-sm font-semibold">
+              อยากร่วมงานแบบไหน
+              <span className="text-muted-foreground font-normal"> (ไม่บังคับ)</span>
+            </Label>
             <p className="text-xs text-muted-foreground mb-2.5">เลือกได้หลายแบบ</p>
             <div className="flex flex-wrap gap-2">
               {COLLAB_TYPES.map((t) => {
@@ -364,7 +452,10 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
 
           {/* Message */}
           <div>
-            <Label htmlFor="collab-msg" className="text-sm font-semibold">ข้อความถึง {recipientName} <span className="text-destructive">*</span></Label>
+            <Label htmlFor="collab-msg" className="text-sm font-semibold">
+              ข้อความถึง {recipientName}
+              <span className="text-muted-foreground font-normal"> (ไม่บังคับ)</span>
+            </Label>
             <Textarea
               id="collab-msg"
               value={message}
@@ -393,14 +484,15 @@ const CollabDialog = ({ open, onOpenChange, recipientId, recipientName, projectI
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="rounded-full">ยกเลิก</Button>
             <Button
               type="submit"
-              disabled={createReq.isPending}
+              disabled={busy}
               className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Handshake className="w-4 h-4 mr-1.5" />
-              {user ? (createReq.isPending ? "กำลังส่ง..." : "ส่งคำขอร่วมงาน") : "เข้าสู่ระบบเพื่อส่งคำขอ"}
+              {user ? (busy ? "กำลังส่ง..." : "ส่งพร้อมรายละเอียด & เปิดแชท") : "เข้าสู่ระบบเพื่อส่งคำขอ"}
             </Button>
           </DialogFooter>
         </form>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

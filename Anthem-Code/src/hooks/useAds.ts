@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { isOptionalQueryError } from "@/lib/supabaseErrors";
 
 export type AdApplicationStatus =
   | "pending"
@@ -82,7 +83,10 @@ export const useActiveAds = (limit = 12) =>
     staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_active_ads", { _limit: limit });
-      if (error) throw error;
+      if (error) {
+        if (isOptionalQueryError(error)) return [];
+        throw error;
+      }
       return (data ?? []) as unknown as AdCampaign[];
     },
   });
@@ -93,7 +97,10 @@ export const useAdCampaign = (id: string | undefined) =>
     enabled: !!id,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_ad_campaign", { _id: id! });
-      if (error) throw error;
+      if (error) {
+        if (isOptionalQueryError(error)) return null;
+        throw error;
+      }
       return (data ?? null) as AdCampaign | null;
     },
   });

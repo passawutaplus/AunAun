@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, Loader2, Plus, Search, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,51 +9,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
-import { PROJECT_FEED_SELECT } from "@/lib/dbSelects";
 import { sortPortfolioProjects } from "@/lib/portfolioSort";
 import { useSendMessage } from "@/hooks/useChat";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-type PortfolioProject = {
-  id: string;
-  title: string;
-  cover_url: string | null;
-  category: string | null;
-  tags?: string[] | null;
-};
+import { useChatPortfolio, type ChatPortfolioProject } from "@/components/chat/useChatPortfolio";
 
 const PREVIEW_COUNT = 4;
-const FETCH_LIMIT = 60;
 
-function useChatPortfolio(userId: string | undefined) {
-  return useQuery({
-    queryKey: ["chat-portfolio-all", userId],
-    enabled: !!userId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("projects")
-        .select(PROJECT_FEED_SELECT)
-        .eq("owner_id", userId!)
-        .eq("status", "Published")
-        .order("is_pinned", { ascending: false })
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: false })
-        .limit(FETCH_LIMIT);
-      if (error) throw error;
-      return (data ?? []) as PortfolioProject[];
-    },
-  });
-}
+export type { ChatPortfolioProject };
 
 function PortfolioRow({
   project,
   onSend,
   sending,
 }: {
-  project: PortfolioProject;
-  onSend: (p: PortfolioProject) => void;
+  project: ChatPortfolioProject;
+  onSend: (p: ChatPortfolioProject) => void;
   sending: boolean;
 }) {
   return (
@@ -88,8 +59,8 @@ function PortfolioGridCard({
   onSend,
   sending,
 }: {
-  project: PortfolioProject;
-  onSend: (p: PortfolioProject) => void;
+  project: ChatPortfolioProject;
+  onSend: (p: ChatPortfolioProject) => void;
   sending: boolean;
 }) {
   return (
@@ -142,7 +113,7 @@ function PortfolioGridCard({
   );
 }
 
-function ChatPortfolioDialog({
+export function ChatPortfolioDialog({
   open,
   onOpenChange,
   title,
@@ -153,8 +124,8 @@ function ChatPortfolioDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  projects: PortfolioProject[];
-  onSend: (p: PortfolioProject) => void;
+  projects: ChatPortfolioProject[];
+  onSend: (p: ChatPortfolioProject) => void;
   sending: boolean;
 }) {
   const [search, setSearch] = useState("");
@@ -283,7 +254,7 @@ const ChatPortfolioSection = ({
   const preview = ordered.slice(0, PREVIEW_COUNT);
   const hasMore = ordered.length > PREVIEW_COUNT;
 
-  const sendProject = async (project: PortfolioProject) => {
+  const sendProject = async (project: ChatPortfolioProject) => {
     try {
       await send.mutateAsync({
         conversationId,

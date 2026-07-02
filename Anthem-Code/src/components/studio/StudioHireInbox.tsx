@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useStudioHiringRequests, type HiringRow } from "@/hooks/useHiringRequests";
 import { useAcceptStudioHireRequest, useRejectRequest } from "@/hooks/useChat";
 import { timeAgoTH } from "@/lib/format";
-import { toast } from "sonner";
+import { isPendingHireStatus } from "@/lib/hiringStatus";
 
 type Props = {
   studioId: string;
@@ -61,7 +61,7 @@ export function StudioHireInbox({ studioId }: Props) {
   return (
     <div className="space-y-3">
       {requests.map((req) => {
-        const pending = req.status === "pending" || req.status === "รอตอบ";
+        const pending = isPendingHireStatus(req.status);
         return (
           <div key={req.id} className="rounded-2xl border border-border bg-card p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">

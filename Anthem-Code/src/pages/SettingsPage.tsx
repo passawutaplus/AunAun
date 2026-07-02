@@ -194,6 +194,7 @@ const SettingsPage = () => {
                 type="button"
                 disabled={avatarBusy}
                 className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full glass-panel flex items-center justify-center hover:bg-secondary disabled:opacity-60"
+                aria-label="เปลี่ยนรูปโปรไฟล์"
                 onClick={() => avatarInput.current?.click()}
               >
                 <Camera className="w-4 h-4" />
@@ -203,6 +204,7 @@ const SettingsPage = () => {
                 type="file"
                 accept="image/*"
                 className="hidden"
+                aria-label="อัปโหลดรูปโปรไฟล์"
                 onChange={(e) => {
                   handleAvatarPick(e.target.files?.[0]);
                   e.target.value = "";
@@ -230,8 +232,9 @@ const SettingsPage = () => {
           <Field label="ตำแหน่ง / สาขา" value={form.role ?? ""} onChange={(v) => update("role", v)} icon={BriefcaseIcon} />
           <Field label="เมือง / ที่อยู่" value={form.location ?? ""} onChange={(v) => update("location", v)} icon={MapPin} placeholder="กรุงเทพฯ, ประเทศไทย" />
           <div>
-            <label className="text-sm font-medium text-foreground">แนะนำตัว</label>
+            <label htmlFor="settings-bio" className="text-sm font-medium text-foreground">แนะนำตัว</label>
             <textarea
+              id="settings-bio"
               value={form.bio ?? ""}
               onChange={(e) => update("bio", e.target.value)}
               rows={4}
@@ -282,8 +285,11 @@ const SettingsPage = () => {
           {form.notifyJobMatch && (
             <div className="space-y-3 pt-1">
               <div>
-                <p className="text-xs text-muted-foreground mb-1.5">หมวดหมู่งานที่สนใจ (คั่นด้วย ,)</p>
+                <label htmlFor="settings-job-categories" className="text-xs text-muted-foreground mb-1.5 block">
+                  หมวดหมู่งานที่สนใจ (คั่นด้วย ,)
+                </label>
                 <input
+                  id="settings-job-categories"
                   type="text"
                   value={form.preferredCategories.join(", ")}
                   onChange={(e) =>
@@ -297,8 +303,10 @@ const SettingsPage = () => {
                 />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-1.5">ประเภทการจ้างที่ต้องการ</p>
-                <div className="flex flex-wrap gap-2">
+                <p id="settings-employment-types-label" className="text-xs text-muted-foreground mb-1.5">
+                  ประเภทการจ้างที่ต้องการ
+                </p>
+                <div className="flex flex-wrap gap-2" role="group" aria-labelledby="settings-employment-types-label">
                   {(["project", "fulltime", "parttime", "internship"] as const).map((t) => {
                     const active = form.preferredEmploymentTypes.includes(t);
                     return (
@@ -313,7 +321,7 @@ const SettingsPage = () => {
                               : [...form.preferredEmploymentTypes, t]
                           )
                         }
-                        className={`px-3 py-1.5 rounded-full text-xs transition-colors ${
+                        className={`px-3 py-2 min-h-11 rounded-full text-xs transition-colors ${
                           active
                             ? "bg-primary text-primary-foreground"
                             : "bg-secondary text-foreground hover:bg-accent"
@@ -377,19 +385,22 @@ const SectionTitle = ({ icon: Icon, title }: { icon: React.ComponentType<{ class
 interface FieldProps {
   label: string; value: string; onChange: (v: string) => void;
   type?: string; prefix?: string; placeholder?: string;
-  icon?: React.ComponentType<{ className?: string }>;
+  icon?: React.ComponentType<{ className?: string }>; id?: string;
 }
-const Field = ({ label, value, onChange, type = "text", prefix, icon: Icon, placeholder }: FieldProps) => (
+const Field = ({ label, value, onChange, type = "text", prefix, icon: Icon, placeholder, id }: FieldProps) => {
+  const fieldId = id ?? `settings-${label.replace(/\s+/g, "-").toLowerCase()}`;
+  return (
   <div>
-    <label className="text-sm font-medium text-foreground">{label}</label>
+    <label htmlFor={fieldId} className="text-sm font-medium text-foreground">{label}</label>
     <div className="mt-1 flex items-center rounded-xl bg-secondary border border-border focus-within:ring-2 focus-within:ring-primary/40">
       {Icon && <Icon className="w-4 h-4 text-muted-foreground ml-3" />}
       {prefix && <span className="pl-3 text-muted-foreground text-sm">{prefix}</span>}
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+      <input id={fieldId} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none" />
     </div>
   </div>
-);
+  );
+};
 
 const Toggle = ({ label, description, checked, onChange }: { label: string; description: string; checked: boolean; onChange: (v: boolean) => void }) => (
   <div className="flex items-center justify-between gap-4 py-2">
@@ -397,7 +408,7 @@ const Toggle = ({ label, description, checked, onChange }: { label: string; desc
       <p className="text-sm font-medium text-foreground">{label}</p>
       <p className="text-xs text-muted-foreground">{description}</p>
     </div>
-    <button type="button" onClick={() => onChange(!checked)}
+    <button type="button" onClick={() => onChange(!checked)} aria-label={label}
       className={`relative w-11 h-6 rounded-full transition-colors ${checked ? "bg-primary" : "bg-muted dark:bg-input"}`}>
       <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-background shadow-sm ring-1 ring-border/60 transition-transform ${checked ? "translate-x-5" : ""}`} />
     </button>

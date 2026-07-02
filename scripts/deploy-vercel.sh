@@ -19,7 +19,7 @@ usage() {
 
 normalize_app() {
   case "${1,,}" in
-    1px|anthem|an1hem|aplus1-demo) echo "1px" ;;
+    1px|anthem|an1hem|aplus1-demo|aplus1) echo "1px" ;;
     solo|so1o|solofreelancer) echo "solo" ;;
     *) return 1 ;;
   esac

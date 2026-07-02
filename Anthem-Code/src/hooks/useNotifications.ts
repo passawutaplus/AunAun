@@ -17,6 +17,19 @@ export interface ActivityNotif {
   content?: string;
 }
 
+async function fetchConversationIds(requestIds: string[]): Promise<Record<string, string>> {
+  if (requestIds.length === 0) return {};
+  const { data } = await supabase
+    .from("conversations")
+    .select("id, request_id")
+    .in("request_id", requestIds);
+  const map: Record<string, string> = {};
+  (data ?? []).forEach((c) => {
+    if (c.request_id) map[c.request_id as string] = c.id as string;
+  });
+  return map;
+}
+
 const fetchProfiles = async (ids: string[]) => {
   if (ids.length === 0) return {} as Record<string, { name: string; avatar: string }>;
   const { data } = await supabase
@@ -138,6 +151,10 @@ export interface HireNotif {
   message: string | null;
   status: string;
   budgetAmount: number | null;
+  clientId: string | null;
+  freelancerId: string;
+  projectId: string | null;
+  conversationId: string | null;
 }
 
 export const useHireNotifications = () => {
@@ -148,11 +165,13 @@ export const useHireNotifications = () => {
     queryFn: async (): Promise<HireNotif[]> => {
       const { data } = await supabase
         .from("hiring_requests")
-        .select("id, created_at, client_name, email, project_title, message, status, budget_amount")
+        .select("id, created_at, client_name, email, project_title, message, status, budget_amount, client_id, freelancer_id, project_id")
         .eq("freelancer_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(50);
-      const rows = (data ?? []).map((r) => ({
+      const rows = data ?? [];
+      const convMap = await fetchConversationIds(rows.map((r) => r.id));
+      return rows.map((r) => ({
         id: r.id,
         createdAt: r.created_at,
         clientName: r.client_name,
@@ -161,8 +180,11 @@ export const useHireNotifications = () => {
         message: r.message,
         status: r.status,
         budgetAmount: r.budget_amount,
+        clientId: r.client_id,
+        freelancerId: r.freelancer_id,
+        projectId: r.project_id,
+        conversationId: convMap[r.id] ?? null,
       }));
-      return rows;
     },
   });
 };
@@ -177,6 +199,9 @@ export interface CollabNotif {
   message: string;
   timeline: string | null;
   status: string;
+  recipientId: string;
+  projectId: string | null;
+  conversationId: string | null;
 }
 
 export const useCollabNotifications = () => {
@@ -187,13 +212,16 @@ export const useCollabNotifications = () => {
     queryFn: async (): Promise<CollabNotif[]> => {
       const { data } = await supabase
         .from("collab_requests")
-        .select("id, created_at, sender_id, collab_types, message, timeline, status")
+        .select("id, created_at, sender_id, recipient_id, project_id, collab_types, message, timeline, status")
         .eq("recipient_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(50);
       const rows = data ?? [];
       if (rows.length === 0) return [];
-      const profMap = await fetchProfiles(Array.from(new Set(rows.map((r) => r.sender_id))));
+      const [profMap, convMap] = await Promise.all([
+        fetchProfiles(Array.from(new Set(rows.map((r) => r.sender_id)))),
+        fetchConversationIds(rows.map((r) => r.id)),
+      ]);
       return rows.map((r) => ({
         id: r.id,
         createdAt: r.created_at,
@@ -204,6 +232,9 @@ export const useCollabNotifications = () => {
         message: r.message,
         timeline: r.timeline,
         status: r.status,
+        recipientId: r.recipient_id,
+        projectId: r.project_id,
+        conversationId: convMap[r.id] ?? null,
       }));
     },
   });

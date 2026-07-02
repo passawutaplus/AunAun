@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Send, Image as ImageIcon, Loader2, X } from "lucide-react";
+import { Send, Image as ImageIcon, Loader2, X, FolderOpen, UserCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -11,10 +11,16 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import ModerationBanBanner from "@/components/moderation/ModerationBanBanner";
 import { maskProfanity, detectProfanity, PROFANITY_WARNING, COMMUNITY_GUIDELINES_PATH } from "@/lib/profanity";
+import { ChatPortfolioDialog } from "@/components/chat/ChatPortfolioSection";
+import { useChatPortfolio } from "@/components/chat/useChatPortfolio";
+
+const CHAT_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+const CHAT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
 
 interface Props {
   conversationId: string;
   kind: "hire" | "collab" | "group" | "studio";
+  userId?: string;
   quickReplies?: string[];
   replyTo?: Message | null;
   onClearReply?: () => void;
@@ -23,14 +29,17 @@ interface Props {
 const ChatComposer = ({
   conversationId,
   kind,
+  userId,
   quickReplies = [],
   replyTo,
   onClearReply,
 }: Props) => {
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [portfolioOpen, setPortfolioOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const send = useSendMessage();
+  const { data: myProjects = [] } = useChatPortfolio(userId);
 
   const placeholder =
     kind === "hire"
@@ -80,19 +89,26 @@ const ChatComposer = ({
   };
 
   const onAttach = async (file: File) => {
+    if (!CHAT_IMAGE_ACCEPT.split(",").includes(file.type)) {
+      toast.error("รองรับเฉพาะ JPG, PNG หรือ WebP");
+      return;
+    }
+    if (file.size > CHAT_IMAGE_MAX_BYTES) {
+      toast.error("รูปใหญ่เกินไป — สูงสุด 8 MB");
+      return;
+    }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() ?? "png";
+      const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
       const path = `anthem/chat/${conversationId}/${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await sharedStorage.storage
         .from(SHARED_MEDIA_BUCKET)
-        .upload(path, file, { upsert: false });
+        .upload(path, file, { upsert: false, contentType: file.type });
       if (upErr) throw upErr;
-      const { data } = sharedStorage.storage.from(SHARED_MEDIA_BUCKET).getPublicUrl(path);
       await send.mutateAsync({
         conversationId,
         content: "",
-        attachmentUrl: data.publicUrl,
+        attachmentUrl: path,
         messageType: "image",
         replyToId: replyTo?.id,
       });
@@ -101,6 +117,36 @@ const ChatComposer = ({
       toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const sendProject = async (project: { id: string; title: string }) => {
+    try {
+      await send.mutateAsync({
+        conversationId,
+        content: project.title,
+        messageType: "project",
+        projectId: project.id,
+      });
+      toast.success("ส่งผลงานในแชทแล้ว");
+      setPortfolioOpen(false);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
+    }
+  };
+
+  const sendProfile = async () => {
+    if (!userId) return;
+    try {
+      await send.mutateAsync({
+        conversationId,
+        content: "โปรไฟล์ของฉัน",
+        messageType: "profile",
+        profileUserId: userId,
+      });
+      toast.success("ส่งโปรไฟล์ในแชทแล้ว");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
     }
   };
 
@@ -137,7 +183,7 @@ const ChatComposer = ({
         <input
           ref={fileRef}
           type="file"
-          accept="image/*"
+          accept={CHAT_IMAGE_ACCEPT}
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
@@ -145,6 +191,32 @@ const ChatComposer = ({
             e.target.value = "";
           }}
         />
+        {userId && myProjects.length > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="rounded-full shrink-0"
+            onClick={() => setPortfolioOpen(true)}
+            disabled={send.isPending}
+            aria-label="ส่งผลงาน"
+          >
+            <FolderOpen className="w-5 h-5" />
+          </Button>
+        )}
+        {userId && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="rounded-full shrink-0"
+            onClick={() => void sendProfile()}
+            disabled={send.isPending}
+            aria-label="ส่งโปรไฟล์"
+          >
+            <UserCircle2 className="w-5 h-5" />
+          </Button>
+        )}
         <Button
           type="button"
           variant="ghost"
@@ -183,6 +255,17 @@ const ChatComposer = ({
           <Send className="w-4 h-4" />
         </Button>
       </div>
+
+      {userId && (
+        <ChatPortfolioDialog
+          open={portfolioOpen}
+          onOpenChange={setPortfolioOpen}
+          title="ส่งผลงานในแชท"
+          projects={myProjects}
+          onSend={sendProject}
+          sending={send.isPending}
+        />
+      )}
     </div>
   );
 };

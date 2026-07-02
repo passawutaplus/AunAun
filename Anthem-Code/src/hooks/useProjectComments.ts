@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { buildCommentTree, type CommentNode } from "@/lib/commentTree";
+import { isBenignQueryError, isSchemaMismatchError } from "@/lib/supabaseErrors";
 import {
   useModerationState,
   useRecordProfanityStrike,
@@ -28,12 +29,30 @@ export const useProjectComments = (projectId: string | undefined) => {
     queryKey: ["project-comments", projectId],
     enabled: !!projectId,
     queryFn: async (): Promise<CommentTree[]> => {
-      const { data, error } = await supabase
+      const fullSelect =
+        "id, project_id, user_id, content, created_at, parent_id, depth";
+      const basicSelect = "id, project_id, user_id, content, created_at";
+
+      let { data, error } = await supabase
         .from("project_comments")
-        .select("id, project_id, user_id, content, created_at, parent_id, depth")
+        .select(fullSelect)
         .eq("project_id", projectId!)
         .order("created_at", { ascending: true });
-      if (error) throw error;
+
+      if (error && isSchemaMismatchError(error)) {
+        const retry = await supabase
+          .from("project_comments")
+          .select(basicSelect)
+          .eq("project_id", projectId!)
+          .order("created_at", { ascending: true });
+        data = retry.data;
+        error = retry.error;
+      }
+
+      if (error) {
+        if (isBenignQueryError(error)) return [];
+        throw error;
+      }
       const rows = (data ?? []) as CommentWithProfile[];
       const ids = Array.from(new Set(rows.map((r) => r.user_id)));
       const { data: profs } = await supabase

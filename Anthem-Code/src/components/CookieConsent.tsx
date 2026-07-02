@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { isAuthRoute } from "@/lib/onboardingRoutes";
 import { Cookie, Settings2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CookiePreferencesDialog from "@/components/CookiePreferencesDialog";
@@ -11,6 +12,8 @@ import {
 } from "@/lib/cookieConsent";
 
 const CookieConsent = () => {
+  const { pathname } = useLocation();
+  const compactAuth = isAuthRoute(pathname);
   const [bannerOpen, setBannerOpen] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
 
@@ -46,63 +49,77 @@ const CookieConsent = () => {
     <>
       {bannerOpen && (
         <div
-          className="fixed inset-x-0 bottom-0 z-50 p-3 sm:p-4 pointer-events-none"
+          className={
+            compactAuth
+              ? "fixed bottom-3 right-3 z-40 max-w-[min(100vw-1.5rem,22rem)] pointer-events-none sm:bottom-4 sm:right-4"
+              : "fixed inset-x-0 bottom-0 z-40 p-3 sm:p-4 pointer-events-none"
+          }
           role="dialog"
           aria-label="แบนเนอร์ความยินยอมคุกกี้"
         >
-          <div className="max-w-3xl mx-auto pointer-events-auto rounded-2xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl p-4 sm:p-5">
-            <div className="flex items-start gap-3">
+          <div
+            className={
+              compactAuth
+                ? "pointer-events-auto rounded-xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-lg p-3"
+                : "max-w-3xl mx-auto pointer-events-auto rounded-2xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl p-4 sm:p-5"
+            }
+          >
+            <div className="flex items-start gap-2 sm:gap-3">
               <div className="shrink-0 flex items-center justify-center text-primary">
-                <Cookie className="w-5 h-5" strokeWidth={2.25} aria-hidden />
+                <Cookie className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.25} aria-hidden />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">
-                  เราใช้คุกกี้และการเก็บข้อมูลในอุปกรณ์ตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)
+                <p className={compactAuth ? "text-xs font-medium text-foreground" : "text-sm font-medium text-foreground"}>
+                  เราใช้คุกกี้ตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)
                 </p>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  คุกกี้ที่จำเป็นช่วยให้เข้าสู่ระบบได้ ส่วนคุกกี้อื่นช่วยจดจำการตั้งค่าและวิเคราะห์การใช้งาน — อ่าน{" "}
-                  <Link to="/legal/cookies" className="text-primary hover:underline">
-                    นโยบายคุกกี้
-                  </Link>
-                  {", "}
-                  <Link to="/legal/privacy" className="text-primary hover:underline">
-                    นโยบายความเป็นส่วนตัว
-                  </Link>
-                  {" "}และ{" "}
-                  <Link to="/legal/terms" className="text-primary hover:underline">
-                    ข้อกำหนด
-                  </Link>
-                </p>
-                <div className="flex flex-wrap gap-2 mt-3">
+                {!compactAuth && (
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    คุกกี้ที่จำเป็นช่วยให้เข้าสู่ระบบได้ ส่วนคุกกี้อื่นช่วยจดจำการตั้งค่าและวิเคราะห์การใช้งาน — อ่าน{" "}
+                    <Link to="/legal/cookies" className="inline-flex items-center min-h-11 py-1 text-primary hover:underline">
+                      นโยบายคุกกี้
+                    </Link>
+                    {", "}
+                    <Link to="/legal/privacy" className="inline-flex items-center min-h-11 py-1 text-primary hover:underline">
+                      นโยบายความเป็นส่วนตัว
+                    </Link>
+                    {" "}และ{" "}
+                    <Link to="/legal/terms" className="inline-flex items-center min-h-11 py-1 text-primary hover:underline">
+                      ข้อกำหนด
+                    </Link>
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3">
                   <Button
                     size="sm"
                     onClick={acceptAll}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 min-h-11"
                   >
                     ยอมรับทั้งหมด
                   </Button>
-                  <Button size="sm" variant="outline" onClick={essentialOnly}>
+                  <Button size="sm" variant="outline" onClick={essentialOnly} className="min-h-11">
                     จำเป็นเท่านั้น
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="gap-1"
-                    onClick={() => {
-                      setBannerOpen(false);
-                      setPrefsOpen(true);
-                    }}
-                  >
-                    <Settings2 className="w-3.5 h-3.5" />
-                    ปรับแต่ง
-                  </Button>
+                  {!compactAuth && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="gap-1 min-h-11"
+                      onClick={() => {
+                        setBannerOpen(false);
+                        setPrefsOpen(true);
+                      }}
+                    >
+                      <Settings2 className="w-3.5 h-3.5" />
+                      ปรับแต่ง
+                    </Button>
+                  )}
                 </div>
               </div>
               <button
                 type="button"
                 aria-label="ปิดและใช้คุกกี้จำเป็นเท่านั้น"
                 onClick={essentialOnly}
-                className="p-1.5 rounded-full hover:bg-accent text-muted-foreground"
+                className="p-2 min-h-11 min-w-11 inline-flex items-center justify-center rounded-full hover:bg-accent text-muted-foreground shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>

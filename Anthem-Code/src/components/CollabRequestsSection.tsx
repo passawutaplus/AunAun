@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Handshake, MessageCircle, Paperclip, Check, X, UserCircle2, FolderOpen, Globe } from "lucide-react";
+import { Handshake, MessageCircle, Paperclip, X, UserCircle2, FolderOpen, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,10 +21,16 @@ const COLLAB_TYPE_LABELS: Record<string, string> = {
 
 const statusBadge = (status: string) => {
   switch (status) {
-    case "accepted": return { label: "ตอบรับแล้ว", tone: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" };
-    case "declined": return { label: "ปฏิเสธแล้ว", tone: "bg-muted text-muted-foreground border-border" };
-    case "pending": return { label: "รอตอบ", tone: "bg-primary/10 text-primary border-primary/20" };
-    default: return { label: status, tone: "bg-muted text-muted-foreground border-border" };
+    case "accepted":
+    case "interested":
+      return { label: "กำลังคุย", tone: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" };
+    case "declined":
+    case "passed":
+      return { label: "ปฏิเสธแล้ว", tone: "bg-muted text-muted-foreground border-border" };
+    case "pending":
+      return { label: "ข้อความใหม่", tone: "bg-primary/10 text-primary border-primary/20" };
+    default:
+      return { label: status, tone: "bg-muted text-muted-foreground border-border" };
   }
 };
 
@@ -45,11 +51,15 @@ const CollabRequestsSection = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, role")
-        .in("id", senderIds);
+        .select("user_id, display_name, avatar_url, role")
+        .in("user_id", senderIds);
       const map: Record<string, { name: string; avatar: string; role: string }> = {};
       (data ?? []).forEach((p) => {
-        map[p.user_id ?? p.id] = { name: p.display_name || "ฟรีแลนซ์", avatar: p.avatar_url || "", role: p.role || "" };
+        map[p.user_id] = {
+          name: p.display_name || "ฟรีแลนซ์",
+          avatar: p.avatar_url || "",
+          role: p.role || "",
+        };
       });
       return map;
     },
@@ -65,7 +75,7 @@ const CollabRequestsSection = () => {
         .in("id", attachedIds);
       const map: Record<string, { title: string; cover: string }> = {};
       (data ?? []).forEach((p) => {
-        map[p.user_id ?? p.id] = { title: p.title, cover: p.cover_url || "" };
+        map[p.id] = { title: p.title, cover: p.cover_url || "" };
       });
       return map;
     },
@@ -73,37 +83,33 @@ const CollabRequestsSection = () => {
 
   const pendingCount = requests.filter((r) => r.status === "pending").length;
 
-  const handleAccept = async (req: typeof requests[number]) => {
-    if (!user) return;
-    try {
-      const convId = await accept.mutateAsync({
-        kind: "collab",
-        requestId: req.id,
-        clientId: req.sender_id,
-        freelancerId: req.recipient_id,
-        projectId: req.project_id ?? null,
-        projectTitle: "คอลแลปไอเดียใหม่",
-      });
-      toast.success("ตอบรับแล้ว เริ่มคุยกันได้เลย 🎨");
-      navigate(`/chat/${convId}`);
-    } catch (e: any) {
-      toast.error(e?.message ?? "ดำเนินการไม่สำเร็จ");
-    }
-  };
-
   const handleReject = async (id: string) => {
     try {
       await reject.mutateAsync({ kind: "collab", requestId: id });
       toast.success("ปฏิเสธคำขอแล้ว");
-    } catch (e: any) {
-      toast.error(e?.message ?? "ดำเนินการไม่สำเร็จ");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
     }
   };
 
-  const openChat = async (req: typeof requests[number]) => {
-    const id = await findConv("collab", req.id);
-    if (id) navigate(`/chat/${id}`);
-    else toast.error("ไม่พบห้องสนทนา");
+  const openChat = async (req: (typeof requests)[number]) => {
+    if (!user) return;
+    try {
+      let convId = await findConv("collab", req.id);
+      if (!convId) {
+        convId = await accept.mutateAsync({
+          kind: "collab",
+          requestId: req.id,
+          clientId: req.sender_id,
+          freelancerId: req.recipient_id,
+          projectId: req.project_id ?? null,
+          projectTitle: "คอลแลปไอเดียใหม่",
+        });
+      }
+      navigate(`/chat/${convId}`);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
+    }
   };
 
   return (
@@ -117,7 +123,7 @@ const CollabRequestsSection = () => {
               <Badge className="bg-primary text-primary-foreground border-0 hover:bg-primary text-[10px] px-1.5">{pendingCount} ใหม่</Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">ครีเอเตอร์ที่อยากร่วมงานกับคุณ ไม่ใช่การจ้าง</p>
+          <p className="text-xs text-muted-foreground">ครีเอเตอร์ที่อยากร่วมงานกับคุณ — เปิดแชทตอบได้เลย</p>
         </div>
       </div>
 
@@ -127,10 +133,9 @@ const CollabRequestsSection = () => {
         )}
 
         {requests.map((req) => {
-          const sender = (sendersMap as Record<string, { name: string; avatar: string; role: string }>)[req.sender_id];
+          const sender = sendersMap[req.sender_id];
           const sb = statusBadge(req.status as string);
-          const isPending = req.status === "pending";
-          const isAccepted = req.status === "accepted" || req.status === "interested";
+          const isDeclined = req.status === "declined" || req.status === "passed";
           return (
             <div key={req.id} className="rounded-2xl glass-panel p-4 hover:border-primary/30 transition-colors">
               <div className="flex items-start gap-3">
@@ -157,7 +162,7 @@ const CollabRequestsSection = () => {
                     {(req.collab_types ?? []).map((t) => {
                       const label = COLLAB_TYPE_LABELS[t] ?? t;
                       const isOther = t === "other";
-                      const note = (req as any).other_type_note as string | null | undefined;
+                      const note = (req as { other_type_note?: string | null }).other_type_note;
                       return (
                         <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-[hsl(var(--chat-collab-soft))] text-[hsl(var(--chat-collab))]">
                           {isOther && note ? `${label}: ${note}` : label}
@@ -168,11 +173,11 @@ const CollabRequestsSection = () => {
 
                   <p className="text-base text-foreground mt-2 leading-6 whitespace-pre-wrap">{req.message}</p>
 
-                  {((req as any).external_drive_url || (req as any).website_url) && (
+                  {((req as { external_drive_url?: string }).external_drive_url || (req as { website_url?: string }).website_url) && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
-                      {(req as any).external_drive_url && (
+                      {(req as { external_drive_url?: string }).external_drive_url && (
                         <a
-                          href={(req as any).external_drive_url}
+                          href={(req as { external_drive_url: string }).external_drive_url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border border-border bg-card hover:border-primary/40 text-foreground"
@@ -180,9 +185,9 @@ const CollabRequestsSection = () => {
                           <FolderOpen className="w-3 h-3 text-primary" /> ไดรฟ์/ไฟล์ผลงาน
                         </a>
                       )}
-                      {(req as any).website_url && (
+                      {(req as { website_url?: string }).website_url && (
                         <a
-                          href={(req as any).website_url}
+                          href={(req as { website_url: string }).website_url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border border-border bg-card hover:border-primary/40 text-foreground"
@@ -204,7 +209,7 @@ const CollabRequestsSection = () => {
                       </p>
                       <div className="flex gap-2 flex-wrap">
                         {req.attached_project_ids.map((pid) => {
-                          const proj = (attachedMap as Record<string, { title: string; cover: string }>)[pid];
+                          const proj = attachedMap[pid];
                           if (!proj) return null;
                           return (
                             <button
@@ -236,20 +241,15 @@ const CollabRequestsSection = () => {
                       >
                         <UserCircle2 className="w-3.5 h-3.5 mr-1" /> ดูโปรไฟล์
                       </Button>
-                      {isPending && (
+                      {!isDeclined && (
                         <>
                           <Button size="sm" variant="ghost" onClick={() => handleReject(req.id)} disabled={reject.isPending} className="rounded-full h-8 text-xs text-muted-foreground hover:text-destructive">
                             <X className="w-3.5 h-3.5 mr-1" /> ปฏิเสธ
                           </Button>
-                          <Button size="sm" onClick={() => handleAccept(req)} disabled={accept.isPending} className="rounded-full h-8 text-xs bg-gradient-to-br from-[hsl(var(--chat-collab))] to-[hsl(var(--chat-collab)/0.85)] text-white hover:opacity-90">
-                            <Check className="w-3.5 h-3.5 mr-1" /> ตอบรับ & เริ่มแชท
+                          <Button size="sm" onClick={() => openChat(req)} disabled={accept.isPending} className="rounded-full h-8 text-xs bg-gradient-to-br from-[hsl(var(--chat-collab))] to-[hsl(var(--chat-collab)/0.85)] text-white hover:opacity-90">
+                            <MessageCircle className="w-3.5 h-3.5 mr-1" /> เปิดแชท
                           </Button>
                         </>
-                      )}
-                      {!isPending && isAccepted && (
-                        <Button size="sm" onClick={() => openChat(req)} className="rounded-full h-8 text-xs bg-[hsl(var(--chat-collab))] text-white hover:opacity-90">
-                          <MessageCircle className="w-3.5 h-3.5 mr-1" /> เปิดห้องแชท
-                        </Button>
                       )}
                     </div>
                   </div>

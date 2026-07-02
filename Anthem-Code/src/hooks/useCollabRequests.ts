@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { isOptionalQueryError } from "@/lib/supabaseErrors";
 import type { TablesInsert, Database } from "@/integrations/supabase/types";
 
 export type CollabStatus = Database["public"]["Enums"]["collab_status"];
@@ -30,7 +31,10 @@ export const useReceivedCollabRequests = () => {
         .select("*")
         .eq("recipient_id", user!.id)
         .order("created_at", { ascending: false });
-      if (error) throw error;
+      if (error) {
+        if (isOptionalQueryError(error)) return [];
+        throw error;
+      }
       return data ?? [];
     },
   });

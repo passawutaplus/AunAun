@@ -4,6 +4,7 @@
  */
 import { useEffect, useState, useCallback } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { isOptionalQueryError } from "@/lib/supabaseErrors";
 import { supabase } from "@/integrations/supabase/client";
 
 export type AppKey = "anthem" | "so1o" | "shared";
@@ -81,6 +82,20 @@ async function fetchStoreItems(userId: string, store: NotificationStore) {
     store.items = (data as NotificationRow[])
       .map(toNotification)
       .filter((n): n is Notification => n !== null);
+  } else if (!error || !isOptionalQueryError(error)) {
+    // Fallback to shared notifications view when ecosystem table is not deployed.
+    const fallback = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("is_dismissed", false)
+      .order("created_at", { ascending: false })
+      .limit(80);
+    if (!fallback.error && fallback.data) {
+      store.items = (fallback.data as NotificationRow[])
+        .map(toNotification)
+        .filter((n): n is Notification => n !== null);
+    }
   }
   store.loading = false;
   emit(store);

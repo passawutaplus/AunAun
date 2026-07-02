@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isOptionalQueryError } from "@/lib/supabaseErrors";
 
 export interface ReceivedGiftsSummary {
   totalGifts: number;
@@ -24,7 +25,12 @@ export const useReceivedGiftsByProject = (userId: string | undefined) =>
         .select("price_px, project_id")
         .eq("recipient_id", userId!)
         .order("created_at", { ascending: false });
-      if (error) throw error;
+      if (error) {
+        if (isOptionalQueryError(error)) {
+          return { totalGifts: 0, totalPx: 0, projectsCount: 0, byProject: [] };
+        }
+        throw error;
+      }
       const rows = txs ?? [];
 
       const projectIds = Array.from(

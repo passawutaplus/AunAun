@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { notifyAnthem } from "@/lib/notifyAnthem";
+import { isOptionalQueryError } from "@/lib/supabaseErrors";
 
 export interface Gift {
   id: string;
@@ -81,7 +82,10 @@ export const useReceivedGifts = (userId: string | undefined, limit = 100) =>
         .eq("recipient_id", userId!)
         .order("created_at", { ascending: false })
         .limit(limit);
-      if (error) throw error;
+      if (error) {
+        if (isOptionalQueryError(error)) return [];
+        throw error;
+      }
       return (data ?? []) as GiftTransaction[];
     },
   });
