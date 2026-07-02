@@ -83,6 +83,7 @@ export function LoginForm({
           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             id={emailId}
+            data-testid="login-email"
             type="email"
             autoComplete="email"
             placeholder="you@example.com"
@@ -99,6 +100,7 @@ export function LoginForm({
         </Label>
         <PasswordInput
           id={passId}
+          data-testid="login-password"
           autoComplete="current-password"
           placeholder="••••••••"
           value={password}
@@ -135,6 +137,7 @@ export function LoginForm({
 
       <Button
         type="submit"
+        data-testid="login-submit"
         disabled={busy || lockout.isLocked}
         className={cn(
           "w-full bg-primary hover:bg-primary/90 rounded-lg font-medium",

@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { hasAnalyticsConsent } from "@/lib/cookieConsent";
 
@@ -44,6 +45,64 @@ function getOrCreateSessionId(): string {
   }
 }
 
+type DevicePayload = {
+  user_id: string | null;
+  session_id: string;
+  device_type: "mobile" | "tablet" | "desktop";
+  os: string;
+  browser: string;
+  viewport_width: number;
+  viewport_height: number;
+  pixel_ratio: number;
+  user_agent: string;
+};
+
+function buildPayload(uid: string | null): DevicePayload {
+  const ua = navigator.userAgent || "";
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+  return {
+    user_id: uid,
+    session_id: getOrCreateSessionId(),
+    device_type: detectDeviceType(width, ua),
+    os: detectOS(ua),
+    browser: detectBrowser(ua),
+    viewport_width: width,
+    viewport_height: height,
+    pixel_ratio: dpr,
+    user_agent: ua.slice(0, 500),
+  };
+}
+
+function createAnonClient() {
+  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+  if (!url || !key) return null;
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+}
+
+async function insertDeviceEvent(payload: DevicePayload): Promise<boolean> {
+  const { error } = await supabase.from("user_device_events").insert(payload);
+  if (!error) return true;
+
+  const isAuthError =
+    error.code === "PGRST301" ||
+    /jwt|401|unauthorized/i.test(error.message ?? "") ||
+    (error as { status?: number }).status === 401;
+
+  if (!isAuthError) return false;
+
+  const anon = createAnonClient();
+  if (!anon) return false;
+  const { error: anonError } = await anon
+    .from("user_device_events")
+    .insert({ ...payload, user_id: null });
+  return !anonError;
+}
+
 export async function trackDeviceOnce() {
   if (typeof window === "undefined") return;
   if (!hasAnalyticsConsent()) return;
@@ -51,28 +110,10 @@ export async function trackDeviceOnce() {
     if (sessionStorage.getItem(STORAGE_KEY)) return;
     sessionStorage.setItem(STORAGE_KEY, "1");
 
-    const ua = navigator.userAgent || "";
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const dpr = window.devicePixelRatio || 1;
-    const deviceType = detectDeviceType(width, ua);
-    const os = detectOS(ua);
-    const browser = detectBrowser(ua);
-
-    const { data: auth } = await supabase.auth.getUser();
-    const uid = auth?.user?.id ?? null;
-
-    await supabase.from("user_device_events").insert({
-      user_id: uid,
-      session_id: getOrCreateSessionId(),
-      device_type: deviceType,
-      os,
-      browser,
-      viewport_width: width,
-      viewport_height: height,
-      pixel_ratio: dpr,
-      user_agent: ua.slice(0, 500),
-    });
+    const { data: auth, error: authError } = await supabase.auth.getUser();
+    const uid = authError ? null : (auth?.user?.id ?? null);
+    const payload = buildPayload(uid);
+    await insertDeviceEvent(payload);
   } catch {
     /* silent */
   }

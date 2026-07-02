@@ -79,21 +79,51 @@ async function signInAnthem(page, email, password) {
   await new Promise((r) => setTimeout(r, 3000));
 }
 
+async function dismissCookieBanner(page) {
+  await page.evaluate(() => {
+    const buttons = [...document.querySelectorAll("button")];
+    const accept = buttons.find((b) =>
+      /ยอมรับทั้งหมด|accept all|allow all/i.test(b.textContent ?? ""),
+    );
+    if (accept) accept.click();
+  });
+}
+
 async function signInSolo(page, email, password) {
-  await page.goto(`${SOLO_BASE}/auth`, { waitUntil: "networkidle2", timeout: 30_000 });
-  await page.waitForSelector("#login-email, input[type='email']");
-  const emailSel = (await page.$("#login-email")) ? "#login-email" : "input[type='email']";
-  const passSel = (await page.$("#login-pass")) ? "#login-pass" : "input[type='password']";
-  await page.click(emailSel, { clickCount: 3 });
-  await page.type(emailSel, email, { delay: 5 });
-  await page.click(passSel, { clickCount: 3 });
-  await page.type(passSel, password, { delay: 5 });
-  const buttons = await page.$$("button");
-  for (const btn of buttons) {
-    const t = await page.evaluate((el) => el.textContent ?? "", btn);
-    if (/เข้าสู่ระบบ|sign in/i.test(t)) {
-      await btn.click();
-      break;
+  await page.goto(`${SOLO_BASE}/auth?tab=login`, { waitUntil: "networkidle2", timeout: 30_000 });
+  await dismissCookieBanner(page);
+
+  const emailSel = '[data-testid="login-email"], #login-email, input[type="email"]';
+  const passSel = '[data-testid="login-password"], #login-pass, input[type="password"]';
+  const submitSel = '[data-testid="login-submit"]';
+
+  await page.waitForSelector(emailSel, { visible: true, timeout: 15_000 });
+
+  const loginTab = await page.$('[data-testid="auth-tab-login"]');
+  if (loginTab) await loginTab.click();
+
+  const emailHandle = await page.$(emailSel);
+  const passHandle = await page.$(passSel);
+  if (!emailHandle || !passHandle) {
+    throw new Error("Login inputs not found");
+  }
+
+  await emailHandle.click({ clickCount: 3 });
+  await emailHandle.type(email, { delay: 5 });
+  await passHandle.click({ clickCount: 3 });
+  await passHandle.type(password, { delay: 5 });
+
+  const submit = await page.$(submitSel);
+  if (submit) {
+    await submit.click();
+  } else {
+    const buttons = await page.$$("button");
+    for (const btn of buttons) {
+      const t = await page.evaluate((el) => el.textContent ?? "", btn);
+      if (/^เข้าสู่ระบบ$|sign in/i.test(t.trim())) {
+        await btn.click();
+        break;
+      }
     }
   }
   await new Promise((r) => setTimeout(r, 3000));

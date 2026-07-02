@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { trackDeviceOnce } from "@/lib/deviceTracking";
 import { CONSENT_CHANGE_EVENT, hasAnalyticsConsent } from "@/lib/cookieConsent";
 import { isEarlyAccessMode } from "@/lib/publicAccess";
+import { emailRedirectUrlFromSearch } from "@/lib/resolvePostAuthPath";
 import { ensurePublicAccessApproved } from "@/server/account.functions";
 
 export type AppRole = "admin" | "user";
@@ -133,12 +134,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(existing);
       setUser(existing?.user ?? null);
       if (existing?.user) {
-        loadProfileAndRole(existing.user.id).finally(() => setLoading(false));
+        loadProfileAndRole(existing.user.id).finally(() => {
+          setLoading(false);
+          if (hasAnalyticsConsent()) void trackDeviceOnce();
+        });
       } else {
         setLoading(false);
+        if (hasAnalyticsConsent()) void trackDeviceOnce();
       }
-      // Track device once per session when analytics consent is granted
-      if (hasAnalyticsConsent()) void trackDeviceOnce();
     });
 
     const onConsent = () => {
@@ -159,8 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = React.useCallback(
     async (email: string, password: string, displayName?: string, freelanceField?: string) => {
-      const redirectUrl =
-        typeof window !== "undefined" ? `${window.location.origin}/dashboard` : undefined;
+      const redirectUrl = emailRedirectUrlFromSearch();
       const meta: Record<string, string> = {};
       if (displayName) meta.display_name = displayName;
       if (freelanceField) meta.freelance_field = freelanceField;

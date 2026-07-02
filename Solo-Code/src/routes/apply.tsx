@@ -2,8 +2,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
 import * as React from "react";
 import { z } from "zod";
-import { RequireAuth } from "@/auth/RequireAuth";
 import { useAuth } from "@/auth/AuthProvider";
+import { EmailVerificationGate } from "@/components/auth/EmailVerificationGate";
+import { isEmailVerified } from "@/lib/emailVerification";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,12 +37,71 @@ export const Route = createFileRoute("/apply")({
     links: [{ rel: "canonical", href: "https://solofreelancer.com/apply" }],
   }),
   errorComponent: ({ error }) => <RouteError error={error} />,
-  component: () => (
-    <RequireAuth>
-      <ApplyPage />
-    </RequireAuth>
-  ),
+  component: ApplyPage,
 });
+
+const APPLY_DRAFT_KEY = "so1o.applyDraft";
+
+type ApplyFormState = {
+  full_name: string;
+  alias_name: string;
+  main_field: string;
+  main_field_other: string;
+  years_experience: string;
+  contact_email: string;
+  contact_line: string;
+  quotation_method: string[];
+  quotation_method_other: string;
+  pain_points: string[];
+  pain_points_other: string;
+  feature_request: string;
+};
+
+type ApplyDraft = {
+  form: ApplyFormState;
+  pendingSubmit?: boolean;
+};
+
+const EMPTY_FORM: ApplyFormState = {
+  full_name: "",
+  alias_name: "",
+  main_field: "",
+  main_field_other: "",
+  years_experience: "",
+  contact_email: "",
+  contact_line: "",
+  quotation_method: [],
+  quotation_method_other: "",
+  pain_points: [],
+  pain_points_other: "",
+  feature_request: "",
+};
+
+function saveApplyDraft(form: ApplyFormState, pendingSubmit = false) {
+  try {
+    sessionStorage.setItem(APPLY_DRAFT_KEY, JSON.stringify({ form, pendingSubmit }));
+  } catch {
+    /* Safari private mode */
+  }
+}
+
+function loadApplyDraft(): ApplyDraft | null {
+  try {
+    const raw = sessionStorage.getItem(APPLY_DRAFT_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as ApplyDraft;
+  } catch {
+    return null;
+  }
+}
+
+function clearApplyDraft() {
+  try {
+    sessionStorage.removeItem(APPLY_DRAFT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 const FIELDS = ["Graphic", "Web Dev", "Content", "Admin Support", "อื่นๆ"] as const;
 const YEARS = ["น้อยกว่า 1 ปี", "1-2 ปี", "3-5 ปี", "มากกว่า 5 ปี"] as const;
@@ -89,12 +149,14 @@ const schema = z
   });
 
 function ApplyPage() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, signOut, loading } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = React.useState(false);
   const submittedRef = React.useRef(false);
+  const pendingAutoSubmitRef = React.useRef(false);
 
-  const redirecting = !!profile?.tester_approved;
+  const redirecting = !!user && !!profile?.tester_approved;
+  const needsEmailVerification = !!user && !isEmailVerified(user);
 
   // If already approved, redirect away (replace URL so /apply does not linger)
   React.useEffect(() => {
@@ -103,28 +165,15 @@ function ApplyPage() {
     }
   }, [redirecting, navigate]);
 
-  if (redirecting) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const [form, setForm] = React.useState<ApplyFormState>(() => ({ ...EMPTY_FORM }));
 
-  const [form, setForm] = React.useState({
-    full_name: "",
-    alias_name: "",
-    main_field: "",
-    main_field_other: "",
-    years_experience: "",
-    contact_email: "",
-    contact_line: "",
-    quotation_method: [] as string[],
-    quotation_method_other: "",
-    pain_points: [] as string[],
-    pain_points_other: "",
-    feature_request: "",
-  });
+  React.useEffect(() => {
+    const draft = loadApplyDraft();
+    if (!draft) return;
+    setForm(draft.form);
+    if (draft.pendingSubmit) pendingAutoSubmitRef.current = true;
+    clearApplyDraft();
+  }, []);
 
   const toggleArr = (key: "quotation_method" | "pain_points", val: string) => {
     setForm((f) => ({
@@ -133,10 +182,9 @@ function ApplyPage() {
     }));
   };
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitApplication = React.useCallback(async () => {
     if (!user) return;
-    if (submittedRef.current || submitting) return; // กันกดซ้ำ
+    if (submittedRef.current || submitting) return;
     const parsed = schema.safeParse(form);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message || "ข้อมูลไม่ครบ");
@@ -208,7 +256,42 @@ function ApplyPage() {
     await refreshProfile();
     setSubmitting(false);
     navigate({ to: "/dashboard" });
+  }, [user, form, submitting, refreshProfile, navigate]);
+
+  React.useEffect(() => {
+    if (loading || !user || !pendingAutoSubmitRef.current) return;
+    pendingAutoSubmitRef.current = false;
+    void submitApplication();
+  }, [loading, user, submitApplication]);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submittedRef.current || submitting) return;
+    const parsed = schema.safeParse(form);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message || "ข้อมูลไม่ครบ");
+      return;
+    }
+    if (!user) {
+      saveApplyDraft(form, true);
+      toast.info("กรุณาเข้าสู่ระบบก่อนส่งแบบฟอร์ม — ข้อมูลที่กรอกจะถูกเก็บไว้ให้");
+      navigate({ to: "/auth", search: { redirect: "/apply" } });
+      return;
+    }
+    await submitApplication();
   };
+
+  if (redirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (needsEmailVerification && user?.email) {
+    return <EmailVerificationGate email={user.email} onSignOut={signOut} />;
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">

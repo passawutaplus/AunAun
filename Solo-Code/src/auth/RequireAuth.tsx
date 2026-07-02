@@ -26,6 +26,7 @@ export function RequireAuth({ children, requireAdmin = false }: Props) {
   React.useEffect(() => {
     if (loading) return;
     if (!user) {
+      if (pathname.startsWith("/auth")) return;
       const redirect = safeRelativePath(pathname, "/dashboard");
       navigate({ to: "/auth", search: { redirect } });
     } else if (profile?.is_active === false) {

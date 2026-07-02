@@ -52,25 +52,68 @@ export async function waitForUrl(page, pattern, timeoutMs = 15_000) {
   throw new Error(`URL did not match ${re} — got ${page.url()}`);
 }
 
+async function dismissCookieBanner(page) {
+  await page.evaluate(() => {
+    const buttons = [...document.querySelectorAll("button")];
+    const accept = buttons.find((b) =>
+      /ยอมรับทั้งหมด|accept all|allow all/i.test(b.textContent ?? ""),
+    );
+    if (accept) accept.click();
+  });
+}
+
+async function waitForAttachedInput(page, selector, timeoutMs = 10_000) {
+  await page.waitForFunction(
+    (sel) => {
+      const el = document.querySelector(sel);
+      return el && el.isConnected && el.offsetParent !== null;
+    },
+    { timeout: timeoutMs },
+    selector,
+  );
+}
+
 export async function signIn(page, role) {
   const { getAccount } = await import("./config.mjs");
   const { email, password } = getAccount(role);
-  await goto(page, "/auth");
-  await page.waitForSelector("#login-email, input[type='email']", { timeout: 10_000 });
-  const emailSel = (await page.$("#login-email")) ? "#login-email" : "input[type='email']";
-  const passSel = (await page.$("#login-pass")) ? "#login-pass" : "input[type='password']";
-  await page.click(emailSel, { clickCount: 3 });
-  await page.type(emailSel, email, { delay: 10 });
-  await page.click(passSel, { clickCount: 3 });
-  await page.type(passSel, password, { delay: 10 });
-  const buttons = await page.$$("button");
-  for (const btn of buttons) {
-    const text = await page.evaluate((el) => el.textContent ?? "", btn);
-    if (/เข้าสู่ระบบ|sign in|log in/i.test(text)) {
-      await btn.click();
-      break;
+  await goto(page, "/auth?tab=login");
+  await dismissCookieBanner(page);
+
+  const emailSel = '[data-testid="login-email"], #login-email, input[type="email"]';
+  const passSel = '[data-testid="login-password"], #login-pass, input[type="password"]';
+  const submitSel = '[data-testid="login-submit"]';
+
+  await page.waitForSelector(emailSel, { visible: true, timeout: 15_000 });
+  await waitForAttachedInput(page, emailSel.split(",")[0].trim());
+
+  const loginTab = await page.$('[data-testid="auth-tab-login"]');
+  if (loginTab) await loginTab.click();
+
+  const emailHandle = await page.$(emailSel);
+  const passHandle = await page.$(passSel);
+  if (!emailHandle || !passHandle) {
+    throw new Error("Login inputs not found");
+  }
+
+  await emailHandle.click({ clickCount: 3 });
+  await emailHandle.type(email, { delay: 10 });
+  await passHandle.click({ clickCount: 3 });
+  await passHandle.type(password, { delay: 10 });
+
+  const submit = await page.$(submitSel);
+  if (submit) {
+    await submit.click();
+  } else {
+    const buttons = await page.$$("button");
+    for (const btn of buttons) {
+      const text = await page.evaluate((el) => el.textContent ?? "", btn);
+      if (/^เข้าสู่ระบบ$|sign in|log in/i.test(text.trim())) {
+        await btn.click();
+        break;
+      }
     }
   }
+
   await waitForUrl(page, /\/(dashboard|apply|admin)/, 20_000);
 }
 

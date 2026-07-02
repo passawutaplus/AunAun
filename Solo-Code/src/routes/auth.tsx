@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { safeRelativePath } from "@/lib/oauthRedirect";
 import { RouteError } from "@/components/RouteError";
 import * as React from "react";
 import { useAuth } from "@/auth/AuthProvider";
@@ -21,6 +20,7 @@ import { SocialButtons, AuthEmailSeparator } from "@/components/auth/SocialButto
 import { cn } from "@/lib/utils";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { isEarlyAccessMode } from "@/lib/publicAccess";
+import { resolvePostAuthPath } from "@/lib/resolvePostAuthPath";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -45,9 +45,19 @@ function AuthPage() {
   const { signIn, signUp, user, isAdmin, profile, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const { redirect: rawRedirect } = Route.useSearch();
-  const postAuthPath = safeRelativePath(rawRedirect, "/dashboard");
+  const postAuthPath = resolvePostAuthPath({
+    rawRedirect,
+    isAdmin,
+    testerApproved: profile?.tester_approved,
+  });
   const [tab, setTab] = React.useState<"login" | "signup">("login");
   const [fadeOut, setFadeOut] = React.useState(false);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get("tab");
+    if (t === "login" || t === "signup") setTab(t);
+  }, []);
 
   React.useEffect(() => {
     if (!loading && user && profile?.is_active === false) {
@@ -57,10 +67,14 @@ function AuthPage() {
     }
     if (!loading && user) {
       setFadeOut(true);
-      const dest = rawRedirect ? postAuthPath : isAdmin ? "/admin" : postAuthPath;
+      const dest = resolvePostAuthPath({
+        rawRedirect,
+        isAdmin,
+        testerApproved: profile?.tester_approved,
+      });
       setTimeout(() => navigate({ to: dest }), 300);
     }
-  }, [user, isAdmin, profile?.is_active, loading, navigate, signOut, postAuthPath, rawRedirect]);
+  }, [user, isAdmin, profile?.tester_approved, profile?.is_active, loading, navigate, signOut, rawRedirect]);
 
   return (
     <div
@@ -119,8 +133,12 @@ function AuthPage() {
 
             <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-5">
-                <TabsTrigger value="login">เข้าสู่ระบบ</TabsTrigger>
-                <TabsTrigger value="signup">สมัครสมาชิก</TabsTrigger>
+                <TabsTrigger value="login" data-testid="auth-tab-login">
+                  เข้าสู่ระบบ
+                </TabsTrigger>
+                <TabsTrigger value="signup" data-testid="auth-tab-signup">
+                  สมัครสมาชิก
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="login" className="space-y-4">
