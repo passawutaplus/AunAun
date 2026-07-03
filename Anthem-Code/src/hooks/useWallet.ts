@@ -87,8 +87,17 @@ export const useAvailablePurchasedPx = () => {
     refetchInterval: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("available_purchased_px", { _uid: user!.id });
-      if (error) throw error;
-      return (data ?? 0) as number;
+      if (!error) return (data ?? 0) as number;
+      if (isOptionalQueryError(error)) {
+        const { data: row, error: readErr } = await supabase
+          .from("wallets")
+          .select("purchased_px")
+          .eq("user_id", user!.id)
+          .maybeSingle();
+        if (readErr && !isOptionalQueryError(readErr)) throw readErr;
+        return Number(row?.purchased_px ?? 0);
+      }
+      throw error;
     },
   });
 };

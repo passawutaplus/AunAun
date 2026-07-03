@@ -421,7 +421,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               <CommunityFeedSidebar
                 filter={communityFilter}
                 onFilterChange={setCommunityFilter}
-                onComposeClick={openCreatePicker}
               />
               <div className="min-w-0">
                 <CommunityFeedPanel

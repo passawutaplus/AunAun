@@ -197,7 +197,10 @@ const FeedToolbar = ({
         : "ค้นหาผลงาน";
 
   return (
-    <div className="sticky top-0 z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 bg-background/75 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 border-b border-border/50">
+    <div
+      data-feed-toolbar
+      className="sticky top-0 z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 bg-background/75 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 border-b border-border/50"
+    >
       {/* Mobile / tablet: single row */}
       <div className="flex items-center gap-2 lg:hidden">
         <div className="flex-1 min-w-0">

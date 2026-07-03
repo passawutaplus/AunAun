@@ -32,8 +32,41 @@ function parseDailyPxStatus(row: Record<string, unknown>): DailyPxStatus {
   };
 }
 
+function syncWalletFromDailyStatus(
+  qc: ReturnType<typeof useQueryClient>,
+  userId: string,
+  status: DailyPxStatus,
+) {
+  if (status.welcome_px == null && status.purchased_px == null && status.balance_px == null) {
+    return;
+  }
+  qc.setQueryData<Wallet | undefined>(["wallet", userId], (old) => {
+    const base: Wallet =
+      old ??
+      ({
+        user_id: userId,
+        balance_px: 0,
+        purchased_px: 0,
+        earned_px: 0,
+        welcome_px: 0,
+        lifetime_welcome_px: 0,
+        lifetime_earned_px: 0,
+        lifetime_spent_px: 0,
+        updated_at: new Date().toISOString(),
+      } satisfies Wallet);
+    return {
+      ...base,
+      welcome_px: status.welcome_px ?? base.welcome_px,
+      purchased_px: status.purchased_px ?? base.purchased_px,
+      balance_px: status.balance_px ?? base.balance_px,
+      updated_at: new Date().toISOString(),
+    };
+  });
+}
+
 export function useDailyPxStatus(options?: { enabled?: boolean }) {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const enabled = (options?.enabled ?? true) && !!user?.id;
 
   return useQuery({
@@ -43,7 +76,9 @@ export function useDailyPxStatus(options?: { enabled?: boolean }) {
     queryFn: async (): Promise<DailyPxStatus> => {
       const { data, error } = await supabase.rpc("daily_px_claim_status");
       if (error) throw error;
-      return parseDailyPxStatus(data as Record<string, unknown>);
+      const status = parseDailyPxStatus(data as Record<string, unknown>);
+      syncWalletFromDailyStatus(qc, user!.id, status);
+      return status;
     },
   });
 }

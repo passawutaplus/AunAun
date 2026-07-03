@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BackButton } from "@/components/ui/BackButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,9 +28,11 @@ import { EarningsGiftFeed } from "@/components/earnings/EarningsGiftFeed";
 import EarningsGiftCatalog from "@/components/earnings/EarningsGiftCatalog";
 import { EarningsCashoutHistory } from "@/components/earnings/EarningsCashoutHistory";
 import { EarningsClosedLoopNote } from "@/components/earnings/EarningsClosedLoopNote";
+import { computeGiftablePx } from "@/lib/walletDisplay";
 
 const EarningsPage = () => {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { user } = useAuth();
   const { data: wallet } = useWallet();
   const { data: availablePurchased = 0 } = useAvailablePurchasedPx();
@@ -46,11 +48,23 @@ const EarningsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
+    if (!user?.id) return;
+    void qc.invalidateQueries({ queryKey: ["wallet", user.id] });
+    void qc.invalidateQueries({ queryKey: ["wallet-available-purchased", user.id] });
+    void qc.invalidateQueries({ queryKey: ["wallet-available-gift", user.id] });
+  }, [user?.id, qc]);
+
+  useEffect(() => {
     const topup = searchParams.get("topup");
     const connect = searchParams.get("connect");
     if (topup === "success") {
       toast.success("เติม Pixel สำเร็จ — ใช้ส่งของขวัญได้ทันที");
       notifyAnthem({ event: "topup" });
+      if (user?.id) {
+        void qc.invalidateQueries({ queryKey: ["wallet", user.id] });
+        void qc.invalidateQueries({ queryKey: ["wallet-available-purchased", user.id] });
+        void qc.invalidateQueries({ queryKey: ["wallet-available-gift", user.id] });
+      }
       searchParams.delete("topup");
       setSearchParams(searchParams, { replace: true });
     } else if (connect === "success") {
@@ -58,7 +72,9 @@ const EarningsPage = () => {
       searchParams.delete("connect");
       setSearchParams(searchParams, { replace: true });
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, user?.id, qc]);
+
+  const giftablePx = computeGiftablePx(wallet, availablePurchased);
 
   const giftById = useMemo(() => new Map(gifts.map((g) => [g.id, g])), [gifts]);
   const senderIds = useMemo(
@@ -106,7 +122,7 @@ const EarningsPage = () => {
         <EarningsHeroCard
           netThb={netThb}
           earnedPx={earnedPx}
-          giftablePx={availablePurchased}
+          giftablePx={giftablePx}
           lifetimeEarned={lifetimeEarned}
           feeLabel={feeLabel}
         />

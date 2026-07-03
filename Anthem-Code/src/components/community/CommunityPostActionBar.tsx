@@ -76,10 +76,7 @@ const CommunityPostActionBar = ({
           disabled={liking}
           size="md"
           ariaLabel={isLiked ? "เลิกถูกใจ" : "ถูกใจ"}
-          className={cn(
-            "rounded-full px-2.5 py-1.5 transition-colors",
-            isLiked ? "text-primary bg-primary/10" : "hover:bg-muted/50",
-          )}
+          className="px-1 py-1"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -90,9 +87,7 @@ const CommunityPostActionBar = ({
           type="button"
           aria-label={replyCount > 0 ? `${replyCount} ความคิดเห็น` : "ไปที่ความคิดเห็น"}
           onClick={openComments}
-          className={cn(
-            "inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50",
-          )}
+          className="inline-flex items-center gap-1 px-1 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <MessageCircle className="w-5 h-5 shrink-0" />
           {replyCount > 0 && <span className="tabular-nums">{replyCount}</span>}
@@ -108,8 +103,8 @@ const CommunityPostActionBar = ({
           disabled={saving}
           onClick={() => toggleBookmark()}
           className={cn(
-            "inline-flex items-center justify-center rounded-full p-2 transition-colors",
-            isBookmarked ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+            "inline-flex items-center justify-center p-1 transition-colors",
+            isBookmarked ? "text-primary" : "text-muted-foreground hover:text-foreground",
           )}
         >
           <Bookmark className={cn("w-4 h-4", isBookmarked && "fill-current")} />
@@ -118,7 +113,7 @@ const CommunityPostActionBar = ({
           <button
             type="button"
             aria-label="แชร์โพสต์"
-            className="inline-flex items-center justify-center rounded-full p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            className="inline-flex items-center justify-center p-1 text-muted-foreground transition-colors hover:text-foreground"
           >
             <Share2 className="w-4 h-4" />
           </button>
