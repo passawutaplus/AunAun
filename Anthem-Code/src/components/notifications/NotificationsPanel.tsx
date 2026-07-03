@@ -17,6 +17,7 @@ import InboxList from "@/components/notifications/InboxList";
 import FollowNotificationsList from "@/components/notifications/FollowNotificationsList";
 import UserAvatar from "@/components/UserAvatar";
 import { useCreateEscrowFromHire } from "@/hooks/useEscrow";
+import { isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -289,17 +290,19 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                     <MessageCircle className="w-3.5 h-3.5 mr-1" />
                     เปิดแชท
                   </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="w-full"
-                    disabled={createHireEscrow.isPending}
-                    onClick={() => createHireEscrow.mutate(h.id)}
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5 mr-1" />
-                    สร้าง Escrow (ทางเลือก)
-                  </Button>
+                  {isSoloEcosystemEnabled() && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      disabled={createHireEscrow.isPending}
+                      onClick={() => createHireEscrow.mutate(h.id)}
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+                      สร้าง Escrow (ทางเลือก)
+                    </Button>
+                  )}
                   <p className="text-[10px] text-muted-foreground text-center">
                     หรือโอนตรง/Job Tracker — ไม่ผ่านแพลตฟอร์ม
                   </p>

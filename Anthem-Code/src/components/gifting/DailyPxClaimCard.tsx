@@ -3,8 +3,12 @@ import { Button } from "@/components/ui/button";
 import { useClaimDailyPx, useDailyPxStatus } from "@/hooks/useDailyPxClaim";
 import { toast } from "sonner";
 
-const DailyPxClaimCard = () => {
-  const { data: status, isLoading: statusLoading } = useDailyPxStatus();
+type Props = {
+  enabled?: boolean;
+};
+
+const DailyPxClaimCard = ({ enabled = true }: Props) => {
+  const { data: status, isLoading: statusLoading } = useDailyPxStatus({ enabled });
   const claim = useClaimDailyPx();
 
   const claimedToday = status?.claimed_today === true;

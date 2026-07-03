@@ -26,6 +26,8 @@ import {
 import {
   assertAllowedPaymentRedirectUrl,
   paymentApiCorsHeaders,
+  PX_CUSTOM_MAX,
+  PX_CUSTOM_MIN,
 } from "@/lib/paymentsApiValidation";
 import { estimateClientPaymentCheckout, thbToStripeCents } from "@/lib/stripeClientPaymentFees";
 import type Stripe from "stripe";
@@ -119,6 +121,77 @@ function getAnthemSupabase() {
   });
 }
 
+function parseCustomPxAmount(raw?: number): number | null {
+  if (raw == null || !Number.isFinite(raw)) return null;
+  const n = Math.floor(raw);
+  if (n < PX_CUSTOM_MIN || n > PX_CUSTOM_MAX) return null;
+  return n;
+}
+
+async function createPxCustomCheckoutSession(opts: {
+  userId: string;
+  email?: string;
+  amountPx: number;
+  environment: StripeEnv;
+  successUrl: string;
+  cancelUrl: string;
+}): Promise<{ url: string } | { error: string }> {
+  try {
+    const amountPx = parseCustomPxAmount(opts.amountPx);
+    if (!amountPx) {
+      return { error: `จำนวน px ต้องอยู่ระหว่าง ${PX_CUSTOM_MIN.toLocaleString()}–${PX_CUSTOM_MAX.toLocaleString()}` };
+    }
+
+    const setupErr = getStripeSetupError(opts.environment);
+    if (setupErr) return { error: setupErr };
+
+    const stripe = createStripeClient(opts.environment);
+    const customerId = await resolveOrCreateCustomer(stripe, opts.userId, opts.email);
+    const successUrl = assertAllowedPaymentRedirectUrl(opts.successUrl);
+    const cancelUrl = assertAllowedPaymentRedirectUrl(opts.cancelUrl);
+    const amountCents = thbToStripeCents(amountPx);
+    const priceId = "px_custom";
+    const metadata: Record<string, string> = {
+      userId: opts.userId,
+      priceId,
+      quantity: "1",
+      kind: "px",
+      amountPx: String(amountPx),
+    };
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      customer: customerId,
+      line_items: [
+        {
+          price_data: {
+            currency: "thb",
+            product_data: {
+              name: `เติม Pixel · ${amountPx.toLocaleString("th-TH")} px`,
+              description: "ใช้ส่งของขวัญได้ทันทีหลังชำระสำเร็จ (ถอนเป็นเงินไม่ได้)",
+            },
+            unit_amount: amountCents,
+          },
+          quantity: 1,
+        },
+      ],
+      allow_promotion_codes: false,
+      ...(opts.environment === "live" ? { automatic_tax: { enabled: true } } : {}),
+      customer_update: { address: "auto", name: "auto" },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      client_reference_id: opts.userId,
+      metadata,
+      payment_intent_data: { metadata: { ...metadata } },
+    });
+
+    if (!session.url) return { error: "Checkout session has no URL" };
+    return { url: session.url };
+  } catch (error) {
+    return { error: getStripeErrorMessage(error) };
+  }
+}
+
 async function createBoostCustomCheckoutSession(opts: {
   userId: string;
   email?: string;
@@ -201,10 +274,23 @@ export async function createCheckoutSessionForUser(opts: {
   successUrl: string;
   cancelUrl: string;
   quantity?: number;
+  amountPx?: number;
   boostId?: string;
   applicationId?: string;
 }): Promise<{ url: string } | { error: string }> {
   try {
+    if (opts.priceId === "px_custom") {
+      if (opts.amountPx == null) return { error: "amountPx required for custom px checkout" };
+      return createPxCustomCheckoutSession({
+        userId: opts.userId,
+        email: opts.email,
+        amountPx: opts.amountPx,
+        environment: opts.environment,
+        successUrl: opts.successUrl,
+        cancelUrl: opts.cancelUrl,
+      });
+    }
+
     if (opts.priceId === "boost_custom") {
       if (!opts.boostId) return { error: "boostId required for custom boost checkout" };
       return createBoostCustomCheckoutSession({

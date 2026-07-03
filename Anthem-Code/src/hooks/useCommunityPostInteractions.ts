@@ -157,6 +157,9 @@ export const useCommunityPostLike = (
       qc.invalidateQueries({ queryKey: ["community-post-liked", postId, user?.id] });
       qc.invalidateQueries({ queryKey: ["community-posts"] });
       qc.invalidateQueries({ queryKey: ["community-posts-by-author"] });
+      if (user?.id) {
+        qc.invalidateQueries({ queryKey: ["onboarding-checklist", user.id] });
+      }
     },
   });
 

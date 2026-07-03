@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, User, LogOut, Settings, LayoutGrid, Layers3, Coins, FolderKanban, Moon } from "lucide-react";
+import { ChevronDown, User, LogOut, Settings, Layers3, Coins, FolderKanban, Moon } from "lucide-react";
 import { useThemeFade } from "@/hooks/useThemeFade";
 import { cn } from "@/lib/utils";
 import WalletBadge from "@/components/gifting/WalletBadge";
@@ -60,10 +60,10 @@ const ProfileButton = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60 rounded-xl glass-panel-strong">
         <DropdownMenuItem onClick={() => navigate("/portfolio")} className="rounded-lg">
-          <LayoutGrid className="w-4 h-4 mr-2" /> โปรไฟล์ของฉัน
+          <User className="w-4 h-4 mr-2" /> โปรไฟล์ของฉัน
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate("/portfolio/manage")} className="rounded-lg">
-          <FolderKanban className="w-4 h-4 mr-2" /> ตัวจัดการผลงาน
+          <FolderKanban className="w-4 h-4 mr-2" /> แดชบอร์ด &amp; จัดการ
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate("/collections")} className="rounded-lg">
           <Layers3 className="w-4 h-4 mr-2" /> คอลเลกชันของฉัน

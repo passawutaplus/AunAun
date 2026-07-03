@@ -15,7 +15,8 @@ import {
 import { normalizePlanId } from "@/lib/tierMembership";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { SO1O_APP_URL } from "@/lib/productLinks";
-import { UPGRADE_PATH } from "@/lib/aplus1Launch";
+import { isSoloEcosystemEnabled, UPGRADE_PATH } from "@/lib/aplus1Launch";
+import { SoloExternalLink } from "@/components/ecosystem/SoloExternalLink";
 import { cn } from "@/lib/utils";
 
 const TIER_LABEL = {
@@ -128,15 +129,19 @@ export function StorageUsageSection() {
       )}
 
       <p className="text-[11px] text-muted-foreground leading-relaxed border-t border-border/40 pt-3">
-        กระเป๋า So1o (ใบเสนอราคา, Job Tracker, Brief) แยกต่างหาก — ดูที่{" "}
-        <a
-          href={`${SO1O_APP_URL.replace(/\/$/, "")}/dashboard?tab=settings`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center min-h-11 py-2 text-primary hover:underline"
-        >
-          So1o Settings → พื้นที่จัดเก็บ
-        </a>
+        {isSoloEcosystemEnabled() ? (
+          <>
+            กระเป๋า So1o (ใบเสนอราคา, Job Tracker, Brief) แยกต่างหาก — ดูที่{" "}
+            <SoloExternalLink
+              href={`${SO1O_APP_URL.replace(/\/$/, "")}/dashboard?tab=settings`}
+              className="inline-flex items-center min-h-11 py-2 text-primary hover:underline"
+            >
+              So1o Settings → พื้นที่จัดเก็บ
+            </SoloExternalLink>
+          </>
+        ) : (
+          <>กระเป๋า So1o (ใบเสนอราคา, Job Tracker) จะเชื่อมกับ {BRAND_NAME} เร็ว ๆ นี้</>
+        )}
       </p>
     </section>
   );

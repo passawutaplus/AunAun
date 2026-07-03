@@ -24,11 +24,7 @@ import PortfolioPicker from "@/components/jobs/shared/PortfolioPicker";
 import PostAsEntitySelect, { type PostAsSelection } from "@/components/jobs/shared/PostAsEntitySelect";
 import { toast } from "sonner";
 import { availabilityLabel } from "@/components/jobs/jobCardUtils";
-
-const ROLE_OPTIONS = [
-  "UI/UX", "Graphic", "Branding", "Illustration", "Motion", "Photography",
-  "Video", "Audio", "Web/UI", "Content", "3D", "Copywriting", "Editorial", "Other",
-];
+import { JOB_ROLE_CATEGORIES } from "@/lib/jobConstants";
 
 interface Props {
   onSuccess: () => void;
@@ -143,7 +139,7 @@ const OpenForWorkForm = ({ onSuccess }: Props) => {
           <Label className="text-xs">หมวดหมู่</Label>
           <Select value={role} onValueChange={setRole}>
             <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-            <SelectContent>{ROLE_OPTIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+            <SelectContent>{JOB_ROLE_CATEGORIES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div>

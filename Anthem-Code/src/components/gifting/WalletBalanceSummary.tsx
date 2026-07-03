@@ -1,18 +1,24 @@
 import { Link } from "react-router-dom";
 import { Coins } from "lucide-react";
-import { useWallet, useAvailablePx } from "@/hooks/useWallet";
+import { useWallet, useAvailablePurchasedPx } from "@/hooks/useWallet";
+import { useDailyPxStatus } from "@/hooks/useDailyPxClaim";
+import { computeGiftablePx, computeWalletTotalPx } from "@/lib/walletDisplay";
 import { PIXEL_POLICY_PATH } from "@/lib/pixelPolicy";
 
 const fmt = (n: number) => n.toLocaleString();
 
-const WalletBalanceSummary = () => {
-  const { data: wallet } = useWallet();
-  const { data: giftable = 0 } = useAvailablePx();
+type Props = {
+  refreshWhenOpen?: boolean;
+};
 
-  const welcomePx = wallet?.welcome_px ?? 0;
-  const balancePx = wallet?.balance_px ?? 0;
+const WalletBalanceSummary = ({ refreshWhenOpen = true }: Props) => {
+  const { data: wallet } = useWallet();
+  const { data: purchasedAvailable } = useAvailablePurchasedPx();
+  useDailyPxStatus({ enabled: refreshWhenOpen });
+
   const earnedPx = wallet?.earned_px ?? 0;
-  const totalPx = welcomePx + balancePx;
+  const totalPx = computeWalletTotalPx(wallet);
+  const giftable = computeGiftablePx(wallet, purchasedAvailable);
 
   return (
     <section className="rounded-xl border border-border bg-card/60 p-3">

@@ -570,6 +570,7 @@ export const usePublishCommunityPost = () => {
       qc.invalidateQueries({ queryKey: ["community-draft", v.author_id] });
       qc.invalidateQueries({ queryKey: ["community-posts-by-author", v.author_id] });
       qc.invalidateQueries({ queryKey: ["community-posts-manage", v.author_id] });
+      qc.invalidateQueries({ queryKey: ["onboarding-checklist", v.author_id] });
     },
   });
 };

@@ -46,10 +46,9 @@ BUILD_ENVS=(
   --build-env "VITE_DEMO_SUPABASE_URL=${VITE_DEMO_SUPABASE_URL}"
   --build-env "VITE_DEMO_SUPABASE_PUBLISHABLE_KEY=${VITE_DEMO_SUPABASE_PUBLISHABLE_KEY}"
   --build-env "VITE_DEMO_MODE=true"
+  --build-env "VITE_APLUS1_PAYMENTS_ENABLED=true"
+  --build-env "VITE_SO1O_APP_URL=${VITE_SO1O_APP_URL:-https://solofreelancer.com}"
 )
-if [[ -n "${VITE_SO1O_APP_URL:-}" ]]; then
-  BUILD_ENVS+=(--build-env "VITE_SO1O_APP_URL=${VITE_SO1O_APP_URL}")
-fi
 BUILD_ENVS+=(--build-env "VITE_OPS_HUB_URL=${VITE_OPS_HUB_URL:-https://so1o-ops-hub.vercel.app}")
 
 DEPLOY_OUTPUT="$(mktemp)"

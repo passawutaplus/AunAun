@@ -30,11 +30,14 @@ const buildEnvs = [
   "--build-env",
   "VITE_DEMO_MODE=true",
   "--build-env",
+  "VITE_APLUS1_PAYMENTS_ENABLED=true",
+  "--build-env",
+  "VITE_STRIPE_MODE=sandbox",
+  "--build-env",
+  `VITE_SO1O_APP_URL=${env.VITE_SO1O_APP_URL || "https://solofreelancer.com"}`,
+  "--build-env",
   `VITE_OPS_HUB_URL=${env.VITE_OPS_HUB_URL || "https://so1o-ops-hub.vercel.app"}`,
 ];
-if (env.VITE_SO1O_APP_URL) {
-  buildEnvs.push("--build-env", `VITE_SO1O_APP_URL=${env.VITE_SO1O_APP_URL}`);
-}
 const aplus1Url = env.VITE_APLUS1_APP_URL || env.VITE_ANTHEM_APP_URL;
 if (aplus1Url) {
   buildEnvs.push("--build-env", `VITE_APLUS1_APP_URL=${aplus1Url}`);

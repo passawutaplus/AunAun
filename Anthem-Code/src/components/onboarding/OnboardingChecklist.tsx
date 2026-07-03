@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboardingChecklist } from "@/hooks/useOnboardingChecklist";
 import { useWelcomeMissions } from "@/hooks/useWelcomeMissions";
-import { ONBOARDING_TASKS, WELCOME_PX_CAP } from "@/lib/onboardingTasks";
+import { useWelcomeMissionCatalog } from "@/hooks/useWelcomeMissionCatalog";
+import { ONBOARDING_TASKS, likeMissionHint } from "@/lib/onboardingTasks";
 import { friendlyAmlError } from "@/lib/amlErrors";
 import { springProgress } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -29,27 +30,35 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
     celebrated,
     dismiss,
     celebrate,
+    welcomeCap,
+    allMissionsClaimed,
+    signals,
   } = useOnboardingChecklist(user?.id);
+
+  const { data: rewardById } = useWelcomeMissionCatalog();
 
   const {
     claimedIds,
-    claimedPx,
+    lifetimeWelcomePx,
     welcomePx,
     claim,
+    isLoading: missionsLoading,
   } = useWelcomeMissions(user?.id);
 
   const [collapsed, setCollapsed] = useState(variant === "compact");
   const [celebrating, setCelebrating] = useState(false);
 
   const taskById = Object.fromEntries(ONBOARDING_TASKS.map((t) => [t.id, t]));
-  const allClaimed = claimedPx >= WELCOME_PX_CAP;
-  const pxPercent = Math.round((claimedPx / WELCOME_PX_CAP) * 100);
+  const pxEarned = Math.min(lifetimeWelcomePx, welcomeCap);
+  const pxRemaining = Math.max(0, welcomeCap - lifetimeWelcomePx);
+  const welcomeCapReached = !missionsLoading && pxRemaining <= 0;
+  const pxPercent = welcomeCap > 0 ? Math.round((pxEarned / welcomeCap) * 100) : 0;
   const pendingTasks = tasks.filter((t) => !claimedIds.has(t.id));
   const displayTasks = collapsed ? pendingTasks.slice(0, 1) : tasks;
 
   useEffect(() => {
-    if (allClaimed && !celebrated) setCelebrating(true);
-  }, [allClaimed, celebrated]);
+    if (allMissionsClaimed && !celebrated) setCelebrating(true);
+  }, [allMissionsClaimed, celebrated]);
 
   useEffect(() => {
     if (!celebrating || celebrated) return;
@@ -59,16 +68,31 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
 
   if (!visible) return null;
 
-  if (allClaimed && celebrated && !celebrating) return null;
+  if (allMissionsClaimed && celebrated && !celebrating) return null;
 
   const handleClaim = (missionId: string) => {
+    if (welcomeCapReached) {
+      toast.info("รับครบโควต้า Welcome Bonus แล้ว", {
+        description: `รับได้สูงสุด ${welcomeCap.toLocaleString()} px — ภารกิจที่เหลือไม่ได้ px เพิ่ม`,
+      });
+      return;
+    }
     claim.mutate(missionId as Parameters<typeof claim.mutate>[0], {
       onSuccess: (data) => {
         toast.success(`รับ Welcome Bonus +${data.reward_px} PX`, {
           description: `ยอดต้อนรับ: ${data.welcome_px.toLocaleString()} PX — ใช้ส่งของขวัญได้`,
         });
       },
-      onError: (e) => toast.error(friendlyAmlError(e)),
+      onError: (e) => {
+        const msg = friendlyAmlError(e);
+        if (msg.includes("ครบโควต้า")) {
+          toast.info(msg, {
+            description: `รับได้สูงสุด ${welcomeCap.toLocaleString()} px`,
+          });
+          return;
+        }
+        toast.error(msg);
+      },
     });
   };
 
@@ -87,10 +111,10 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
           <PartyPopper className="h-6 w-6 text-primary shrink-0" />
           <div className="flex-1 min-w-0">
             <h2 className="text-base font-semibold text-foreground">
-              ยินดีด้วย — รับ Welcome Bonus ครบ {WELCOME_PX_CAP} PX แล้ว!
+              ยินดีด้วย — ทำภารกิจ Welcome Bonus ครบแล้ว!
             </h2>
             <p className="text-sm text-muted-foreground mt-0.5">
-              ใช้ส่งของขวัญให้ครีเอเตอร์ได้ที่ผลงานในฟีด — ไม่สามารถถอนเป็นเงินสด
+              รับโบนัสรวม {pxEarned.toLocaleString()} px — ใช้ส่งของขวัญให้ครีเอเตอร์ได้ที่ผลงานในฟีด
             </p>
           </div>
         </div>
@@ -129,8 +153,14 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
               <h2 className="text-base font-semibold text-foreground">Welcome Bonus</h2>
               <p className="mt-0.5 text-sm text-muted-foreground">
                 <span className="font-medium text-foreground tabular-nums">
-                  {claimedPx}/{WELCOME_PX_CAP} PX
+                  {pxEarned}/{welcomeCap} px
                 </span>
+                {pxRemaining > 0 && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · รับได้อีก {pxRemaining.toLocaleString()} px
+                  </span>
+                )}
                 {" · "}
                 {doneCount}/{total} ภารกิจ · {percent}%
               </p>
@@ -175,6 +205,13 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
             </div>
           </div>
 
+          {welcomeCapReached && !allMissionsClaimed && (
+            <p className="mt-3 text-xs text-amber-600 dark:text-amber-400 leading-relaxed rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+              รับครบโควต้า {welcomeCap.toLocaleString()} px แล้ว — ภารกิจที่ยังไม่รับจะไม่ได้ px เพิ่ม
+              แต่ทำต่อเพื่อเรียนรู้แพลตฟอร์มได้
+            </p>
+          )}
+
           {displayTasks.length > 0 && (
             <AnimatePresence initial={false} mode="popLayout">
               <motion.ul
@@ -188,9 +225,10 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
                 {displayTasks.map((task) => {
                   const def = taskById[task.id];
                   const Icon = def?.icon;
-                  const rewardPx = def?.rewardPx ?? 0;
+                  const rewardPx = rewardById?.get(task.id) ?? def?.rewardPx ?? 0;
                   const claimed = claimedIds.has(task.id);
-                  const claimable = task.done && !claimed;
+                  const claimable =
+                    task.done && !claimed && !welcomeCapReached && !missionsLoading;
 
                   return (
                     <li
@@ -231,6 +269,11 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
                         {variant === "full" && (
                           <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
                         )}
+                        {task.id === "like" && signals && !claimed && (
+                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                            {likeMissionHint(signals) ?? (task.done ? "พร้อมรับรางวัล" : "")}
+                          </p>
+                        )}
                         {claimed && (
                           <p className="text-[10px] text-primary mt-1">รับแล้ว</p>
                         )}
@@ -253,6 +296,10 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
                         >
                           ไปทำ
                         </Button>
+                      ) : welcomeCapReached ? (
+                        <span className="shrink-0 text-[10px] text-muted-foreground px-2">
+                          โควต้าเต็ม
+                        </span>
                       ) : null}
                     </li>
                   );

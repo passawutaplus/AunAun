@@ -352,12 +352,28 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
   }
 
   if (kind === "px") {
-    const unitPx = PX_PER_PRICE[priceId];
-    if (!unitPx) {
-      console.error("[stripe-webhook] Unknown PX price:", priceId);
-      throw new Error(`Unknown PX price: ${priceId}`);
+    let pxAmount: number;
+    if (priceId === "px_custom") {
+      const raw = session.metadata?.amountPx;
+      pxAmount = raw != null ? Math.floor(Number(raw)) : 0;
+      if (!pxAmount || pxAmount < 100 || pxAmount > 10_000) {
+        const fromTotal =
+          session.amount_total != null ? Math.round(session.amount_total / 100) : 0;
+        if (fromTotal >= 100 && fromTotal <= 10_000) {
+          pxAmount = fromTotal;
+        } else {
+          console.error("[stripe-webhook] Invalid custom PX amount:", raw, session.id);
+          throw new Error(`Invalid custom PX amount: ${raw}`);
+        }
+      }
+    } else {
+      const unitPx = PX_PER_PRICE[priceId];
+      if (!unitPx) {
+        console.error("[stripe-webhook] Unknown PX price:", priceId);
+        throw new Error(`Unknown PX price: ${priceId}`);
+      }
+      pxAmount = unitPx * quantity;
     }
-    const pxAmount = unitPx * quantity;
 
     const { error } = await sb.rpc("topup_wallet_stripe", {
       _user_id: userId,

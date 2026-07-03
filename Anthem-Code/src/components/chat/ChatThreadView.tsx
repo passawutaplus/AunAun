@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { so1oQuotationUrl, trackCrossLink } from "@/lib/crossLink";
+import { openSoloExternal } from "@/lib/soloEcosystemGate";
 import { useStudioForConversation, useStudioMembers } from "@/hooks/useStudios";
 import { useSubscription } from "@/core/subscription/useSubscription";
 import { canOpenStudioCombinedQuote, canShowStudioQuoteUpsell, openStudioQuotation } from "@/lib/studioQuotationHandoff";
@@ -213,7 +214,7 @@ const ChatThreadView = ({
       deadline: hireMeta?.deadline ?? undefined,
       linkId,
     });
-    window.open(url, "_blank", "noopener,noreferrer");
+    openSoloExternal(url);
   };
 
   const openStudioQuote = async () => {

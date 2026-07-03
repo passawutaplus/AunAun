@@ -1,6 +1,8 @@
 import type { Tier } from "@/core/subscription/useSubscription";
 import type { Studio, StudioMember } from "@/hooks/useStudios";
+import { isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
 import { so1oStudioQuotationUrl, trackCrossLink } from "@/lib/crossLink";
+import { notifySoloComingSoon, openSoloExternal } from "@/lib/soloEcosystemGate";
 
 const QUOTE_ROLES = new Set<StudioMember["role"]>(["owner", "admin"]);
 
@@ -35,6 +37,11 @@ export type OpenStudioQuotationParams = {
 };
 
 export async function openStudioQuotation(params: OpenStudioQuotationParams): Promise<void> {
+  if (!isSoloEcosystemEnabled()) {
+    notifySoloComingSoon();
+    return;
+  }
+
   if (params.tier !== "inhouse") {
     params.onRequireInHouse();
     return;
@@ -67,5 +74,5 @@ export async function openStudioQuotation(params: OpenStudioQuotationParams): Pr
     members,
   });
 
-  window.open(url, "_blank", "noopener,noreferrer");
+  openSoloExternal(url);
 }

@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  LayoutGrid,
   Layers3,
-  Coins,
   MessageCircle,
   Settings,
   LogOut,
@@ -45,14 +43,11 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
       aria-label="เมนูโปรไฟล์"
       className="rounded-3xl glass-panel p-3 space-y-0.5"
     >
-      <button onClick={() => navigate("/portfolio")} className={item}>
-        <LayoutGrid className="w-4 h-4 text-primary" /> โปรไฟล์ของฉัน
+      <button onClick={() => navigate("/portfolio/manage")} className={item}>
+        <FolderKanban className="w-4 h-4 text-primary" /> แดชบอร์ด &amp; จัดการ
       </button>
       <button type="button" onClick={() => setOpportunityDialogOpen(true)} className={item}>
         <Handshake className="w-4 h-4 text-primary" /> เปิดรับอะไรอยู่?
-      </button>
-      <button onClick={() => navigate("/portfolio/manage")} className={item}>
-        <FolderKanban className="w-4 h-4 text-primary" /> แดชบอร์ด &amp; จัดการ
       </button>
       <button onClick={() => navigate("/collections")} className={item}>
         <Layers3 className="w-4 h-4 text-primary" /> คอลเลกชันของฉัน
@@ -62,9 +57,6 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
         className={item}
       >
         <Bookmark className="w-4 h-4 text-primary" /> โพสต์ที่บันทึก
-      </button>
-      <button onClick={() => navigate("/earnings")} className={item}>
-        <Coins className="w-4 h-4 text-primary" /> รายได้ &amp; กระเป๋า Pixel
       </button>
       <button type="button" onClick={() => setReferralOpen(true)} className={item}>
         <UserPlus className="w-4 h-4 text-primary" /> ชวนเพื่อนรับ Pixel

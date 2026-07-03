@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { assertAplus1PaymentsEnabled } from "@/lib/aplus1Launch";
 import { SO1O_APP_URL } from "@/lib/productLinks";
 import { assertExternalDigitalPurchaseAllowed } from "@/lib/nativePlatform";
 
@@ -24,7 +25,9 @@ export async function startStripeCheckout(opts: {
   priceId: string;
   successPath: string;
   cancelPath?: string;
+  amountPx?: number;
 }): Promise<void> {
+  assertAplus1PaymentsEnabled();
   assertExternalDigitalPurchaseAllowed();
   const origin = window.location.origin;
   const successUrl = opts.successPath.startsWith("http")
@@ -44,6 +47,7 @@ export async function startStripeCheckout(opts: {
       environment: getStripePaymentsEnv(),
       successUrl,
       cancelUrl,
+      ...(opts.amountPx != null ? { amountPx: opts.amountPx } : {}),
     }),
   });
 
@@ -67,6 +71,7 @@ export async function startConnectOnboarding(opts: {
   returnPath: string;
   refreshPath?: string;
 }): Promise<void> {
+  assertAplus1PaymentsEnabled();
   const origin = window.location.origin;
   const returnUrl = opts.returnPath.startsWith("http")
     ? opts.returnPath
@@ -94,7 +99,11 @@ export async function startConnectOnboarding(opts: {
   window.location.href = json.url;
 }
 
-export async function processCashoutViaStripe(cashoutId: string): Promise<string> {
+export async function processCashoutViaStripe(
+  cashoutId: string,
+  opts?: { admin?: boolean },
+): Promise<string> {
+  if (!opts?.admin) assertAplus1PaymentsEnabled();
   const res = await fetch(`${SO1O_APP_URL.replace(/\/$/, "")}/api/payments/cashout/process`, {
     method: "POST",
     headers: await authHeaders(),
@@ -118,12 +127,17 @@ export const PX_PRICE_BY_AMOUNT: Record<number, string> = {
   10000: "px_10000",
 };
 
+export const PX_CUSTOM_PRICE_ID = "px_custom";
+export const PX_CUSTOM_MIN = 100;
+export const PX_CUSTOM_MAX = 10_000;
+
 export async function startBoostCheckout(opts: {
   boostId: string;
   priceId: string;
   successPath: string;
   cancelPath?: string;
 }): Promise<void> {
+  assertAplus1PaymentsEnabled();
   assertExternalDigitalPurchaseAllowed();
   const origin = window.location.origin;
   const successUrl = opts.successPath.startsWith("http")
@@ -170,6 +184,7 @@ export async function startAdCheckout(opts: {
   successPath: string;
   cancelPath?: string;
 }): Promise<void> {
+  assertAplus1PaymentsEnabled();
   const origin = window.location.origin;
   const successUrl = opts.successPath.startsWith("http")
     ? opts.successPath

@@ -1,7 +1,7 @@
 import BriefcaseIcon from "../components/icons/BriefcaseIcon";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Camera, Save, Bell, MapPin, LogOut, Shield } from "lucide-react";
+import { User, Camera, Save, MapPin, LogOut, Shield } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -18,7 +18,7 @@ import { StorageUsageSection } from "@/components/settings/StorageUsageSection";
 import { AiUsageSettingsSection } from "@/components/settings/AiUsageSettingsSection";
 import { SettingsPreferencesSection } from "@/components/settings/SettingsPreferencesSection";
 import { LineNotificationSection } from "@/components/settings/LineNotificationSection";
-import { AccountPrivacySection } from "@/components/settings/AccountPrivacySection";
+import { EmailNotificationSection } from "@/components/settings/EmailNotificationSection";
 import { useSubscription } from "@/core/subscription";
 
 const settingsFormSchema = profileSchema.pick({
@@ -154,7 +154,19 @@ const SettingsPage = () => {
           <StorageUsageSection />
           <AiUsageSettingsSection />
         </div>
-        <LineNotificationSection />
+        <div className="space-y-4">
+          <LineNotificationSection />
+          <EmailNotificationSection
+            value={{
+              notifyEmail: form.notifyEmail,
+              notifyHire: form.notifyHire,
+              notifyJobMatch: form.notifyJobMatch,
+              preferredCategories: form.preferredCategories,
+              preferredEmploymentTypes: form.preferredEmploymentTypes,
+            }}
+            onChange={update}
+          />
+        </div>
 
         <section className="rounded-2xl glass-panel p-6">
           <div className="flex items-center gap-4">
@@ -221,74 +233,7 @@ const SettingsPage = () => {
           </div>
         </section>
 
-        <section className="rounded-2xl glass-panel p-6 space-y-3">
-          <SectionTitle icon={Bell} title="การแจ้งเตือน" />
-          <Toggle label="แจ้งเตือนทางอีเมล" description="รับสรุปกิจกรรมในบัญชี" checked={form.notifyEmail} onChange={(v) => update("notifyEmail", v)} />
-          <Toggle label="แจ้งเตือนเมื่อมีคำขอจ้างงาน" description="ส่งอีเมลทันทีที่มีคนสนใจจ้างงาน" checked={form.notifyHire} onChange={(v) => update("notifyHire", v)} />
-          <Toggle
-            label="แจ้งเตือนงานที่ตรงกับฉัน"
-            description="ระบบจะคัดประกาศจากบอร์ดงานที่ตรงกับสกิล/หมวดของคุณมาแจ้งให้อัตโนมัติ"
-            checked={form.notifyJobMatch}
-            onChange={(v) => update("notifyJobMatch", v)}
-          />
-          {form.notifyJobMatch && (
-            <div className="space-y-3 pt-1">
-              <div>
-                <label htmlFor="settings-job-categories" className="text-xs text-muted-foreground mb-1.5 block">
-                  หมวดหมู่งานที่สนใจ (คั่นด้วย ,)
-                </label>
-                <input
-                  id="settings-job-categories"
-                  type="text"
-                  value={form.preferredCategories.join(", ")}
-                  onChange={(e) =>
-                    update(
-                      "preferredCategories",
-                      e.target.value.split(",").map((s) => s.trim()).filter(Boolean)
-                    )
-                  }
-                  placeholder="UI/UX, Branding, 3D"
-                  className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </div>
-              <div>
-                <p id="settings-employment-types-label" className="text-xs text-muted-foreground mb-1.5">
-                  ประเภทการจ้างที่ต้องการ
-                </p>
-                <div className="flex flex-wrap gap-2" role="group" aria-labelledby="settings-employment-types-label">
-                  {(["project", "fulltime", "parttime", "internship"] as const).map((t) => {
-                    const active = form.preferredEmploymentTypes.includes(t);
-                    return (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() =>
-                          update(
-                            "preferredEmploymentTypes",
-                            active
-                              ? form.preferredEmploymentTypes.filter((x) => x !== t)
-                              : [...form.preferredEmploymentTypes, t]
-                          )
-                        }
-                        className={`px-3 py-2 min-h-11 rounded-full text-xs transition-colors ${
-                          active
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-secondary text-foreground hover:bg-accent"
-                        }`}
-                      >
-                        {t === "project" ? "โปรเจกต์" : t === "fulltime" ? "Full-time" : t === "parttime" ? "Part-time" : "ฝึกงาน"}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
-
         <SettingsPreferencesSection />
-
-        <AccountPrivacySection />
 
         {isAdmin && (
           <section className="rounded-2xl glass-panel p-6 space-y-3">
@@ -350,18 +295,5 @@ const Field = ({ label, value, onChange, type = "text", prefix, icon: Icon, plac
   </div>
   );
 };
-
-const Toggle = ({ label, description, checked, onChange }: { label: string; description: string; checked: boolean; onChange: (v: boolean) => void }) => (
-  <div className="flex items-center justify-between gap-4 py-2">
-    <div>
-      <p className="text-sm font-medium text-foreground">{label}</p>
-      <p className="text-xs text-muted-foreground">{description}</p>
-    </div>
-    <button type="button" onClick={() => onChange(!checked)} aria-label={label}
-      className={`relative w-11 h-6 rounded-full transition-colors ${checked ? "bg-primary" : "bg-muted dark:bg-input"}`}>
-      <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-background shadow-sm ring-1 ring-border/60 transition-transform ${checked ? "translate-x-5" : ""}`} />
-    </button>
-  </div>
-);
 
 export default SettingsPage;

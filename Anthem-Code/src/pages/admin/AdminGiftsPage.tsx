@@ -143,7 +143,7 @@ export default function AdminGiftsPage() {
   });
 
   const stripePayout = useMutation({
-    mutationFn: (id: string) => processCashoutViaStripe(id),
+    mutationFn: (id: string) => processCashoutViaStripe(id, { admin: true }),
     onSuccess: (transferId, id) => {
       notifyAnthem({ event: "cashout", request_id: id, status: "paid" });
       toast.success(`โอน Stripe สำเร็จ (${transferId})`);

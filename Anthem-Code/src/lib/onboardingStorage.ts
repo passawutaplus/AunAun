@@ -2,15 +2,28 @@ import { BRAND_STORAGE_ONBOARDING } from "./brandConfig";
 
 const PREFIX = BRAND_STORAGE_ONBOARDING;
 
-export type OnboardingVisitId = "explore_feed" | "jobs" | "share_profile";
+export type OnboardingVisitId =
+  | "explore_feed"
+  | "explore_community"
+  | "explore_designers"
+  | "explore_studios"
+  | "jobs"
+  | "share_profile";
 
-const VISIT_IDS: OnboardingVisitId[] = ["explore_feed", "jobs", "share_profile"];
+export const ONBOARDING_VISIT_IDS: OnboardingVisitId[] = [
+  "explore_feed",
+  "explore_community",
+  "explore_designers",
+  "explore_studios",
+  "jobs",
+  "share_profile",
+];
 
 /** Safely parse profiles.onboarding_visits jsonb (may be null or malformed). */
 export function parseOnboardingVisits(raw: unknown): Partial<Record<OnboardingVisitId, boolean>> {
   if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return {};
   const out: Partial<Record<OnboardingVisitId, boolean>> = {};
-  for (const id of VISIT_IDS) {
+  for (const id of ONBOARDING_VISIT_IDS) {
     if ((raw as Record<string, unknown>)[id] === true) out[id] = true;
   }
   return out;

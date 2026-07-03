@@ -18,11 +18,7 @@ import SkillTagInput from "@/components/jobs/shared/SkillTagInput";
 import RateFields, { type BudgetType } from "@/components/jobs/shared/RateFields";
 import PostAsEntitySelect, { type PostAsSelection } from "@/components/jobs/shared/PostAsEntitySelect";
 import { toast } from "sonner";
-
-const ROLE_OPTIONS = [
-  "UI/UX", "Graphic", "Branding", "Illustration", "Motion", "Photography",
-  "Video", "Audio", "Web/UI", "Content", "3D", "Copywriting", "Editorial", "Other",
-];
+import { JOB_ROLE_CATEGORIES } from "@/lib/jobConstants";
 
 const APP_METHODS = [
   { id: "portfolio", label: "ส่ง Portfolio" },
@@ -157,7 +153,7 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
           <Label className="text-xs">หมวดหมู่</Label>
           <Select value={role} onValueChange={setRole}>
             <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-            <SelectContent>{ROLE_OPTIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+            <SelectContent>{JOB_ROLE_CATEGORIES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div>

@@ -7,6 +7,8 @@ import { useSubscription } from "@/core/subscription/useSubscription";
 import { useStudioForConversation, useStudioMembers } from "@/hooks/useStudios";
 import { supabase } from "@/integrations/supabase/client";
 import { so1oQuotationUrl, trackCrossLink } from "@/lib/crossLink";
+import { openSoloExternal } from "@/lib/soloEcosystemGate";
+import { isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
 import {
   canOpenStudioCombinedQuote,
   canShowStudioQuoteUpsell,
@@ -62,7 +64,7 @@ export function ChatQuoteActions({ conversation }: Props) {
       deadline: hireMeta?.deadline ?? undefined,
       linkId,
     });
-    window.open(url, "_blank", "noopener,noreferrer");
+    openSoloExternal(url);
   };
 
   const openStudioQuote = async () => {
@@ -130,7 +132,7 @@ export function ChatQuoteActions({ conversation }: Props) {
   return (
     <Button type="button" variant="outline" size="sm" className="w-full rounded-xl" onClick={() => void openQuote()}>
       <FileText className="w-3.5 h-3.5 mr-1.5" />
-      สร้างใบเสนอราคาใน So1o
+      สร้างใบเสนอราคา{isSoloEcosystemEnabled() ? "ใน So1o" : " — เร็ว ๆ นี้"}
     </Button>
   );
 }

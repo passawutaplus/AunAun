@@ -5,7 +5,8 @@ import { BRAND_NAME } from "@/lib/brandConfig";
 import { SO1O_APP_URL, SO1O_PRICING_URL } from "@/lib/productLinks";
 import { so1oUrl } from "@/lib/crossLink";
 import { cn } from "@/lib/utils";
-import { isAplus1UpgradeEnabled, UPGRADE_PATH } from "@/lib/aplus1Launch";
+import { isSoloEcosystemEnabled, UPGRADE_PATH } from "@/lib/aplus1Launch";
+import { SoloExternalLink } from "@/components/ecosystem/SoloExternalLink";
 
 type Props = {
   className?: string;
@@ -17,6 +18,7 @@ type Props = {
  */
 export function EcosystemProCard({ className, compact }: Props) {
   const { tier, isPro, isLoading } = useSubscription();
+  const soloEnabled = isSoloEcosystemEnabled();
 
   const tierLabel =
     tier === "inhouse"
@@ -43,21 +45,32 @@ export function EcosystemProCard({ className, compact }: Props) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-            ระบบเดียวกัน · บัญชีเดียว
+            {soloEnabled ? "ระบบเดียวกัน · บัญชีเดียว" : BRAND_NAME}
           </p>
           <h2 id="ecosystem-pro-heading" className="mt-0.5 text-base font-semibold text-foreground">
-            So1o Pro ปลดล็อกทั้งหลังบ้านและหน้าร้าน
+            {soloEnabled
+              ? "So1o Pro ปลดล็อกทั้งหลังบ้านและหน้าร้าน"
+              : `โอกาสจากผลงานบน ${BRAND_NAME}`}
           </h2>
           {!compact && (
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              <strong className="text-foreground font-medium">So1o Freelancer</strong> คือหลังบ้าน —
-              ใบเสนอราคา ลูกค้า การเงิน บันทึกงาน · <strong className="text-foreground font-medium">{BRAND_NAME}</strong>{" "}
-              คือหน้าร้านโชว์ผลงานและรับงาน เมื่อมีคนจ้างจากผลงานที่ลงใน {BRAND_NAME} ไปทำใบเสนอราคาที่ So1o
-              ได้เลย งานลูกค้าเสร็จที่หลังบ้านก็นำผลงานมาโพสต์ใน {BRAND_NAME} ต่อ
+              {soloEnabled ? (
+                <>
+                  <strong className="text-foreground font-medium">So1o Freelancer</strong> คือหลังบ้าน —
+                  ใบเสนอราคา ลูกค้า การเงิน บันทึกงาน ·{" "}
+                  <strong className="text-foreground font-medium">{BRAND_NAME}</strong> คือหน้าร้านโชว์ผลงานและรับงาน
+                  เมื่อมีคนจ้างจากผลงานที่ลงใน {BRAND_NAME} ไปทำใบเสนอราคาที่ So1o ได้เลย
+                </>
+              ) : (
+                <>
+                  โพสต์ผลงาน รับคำขอจ้าง และคุยกับลูกค้าใน {BRAND_NAME} — การเชื่อมหลังบ้าน So1o Freelancer
+                  (ใบเสนอราคา การเงิน) จะเปิดเร็ว ๆ นี้
+                </>
+              )}
             </p>
           )}
           <p className="mt-2 text-xs text-muted-foreground">
-            {isAplus1UpgradeEnabled()
+            {soloEnabled
               ? `สมัคร Pro ที่ So1o ครั้งเดียว → ใช้สิทธิ์ Pro บน ${BRAND_NAME} ด้วยบัญชีเดียวกัน`
               : `แพ็ก Pro บน ${BRAND_NAME} เร็ว ๆ นี้ — สมาชิก Pro จาก So1o ใช้สิทธิ์ได้ตามปกติ`}
           </p>
@@ -76,45 +89,39 @@ export function EcosystemProCard({ className, compact }: Props) {
               to={UPGRADE_PATH}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-primary text-primary-foreground px-4 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
             >
-              {isAplus1UpgradeEnabled() ? "ดูแพ็กเกจทั้งหมด" : "แพ็ก Pro — เร็ว ๆ นี้"}
+              {soloEnabled ? "ดูแพ็กเกจทั้งหมด" : "แพ็ก Pro — เร็ว ๆ นี้"}
             </Link>
-            {isAplus1UpgradeEnabled() && (
-              <a
+            {soloEnabled && (
+              <SoloExternalLink
                 href={SO1O_PRICING_URL}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/30 text-primary px-4 py-2.5 text-sm font-semibold hover:bg-primary/5 transition-colors"
               >
                 ชำระเงินที่ So1o
                 <ExternalLink className="h-4 w-4" />
-              </a>
+              </SoloExternalLink>
             )}
           </>
         ) : (
-          <a
+          <SoloExternalLink
             href={so1oUrl("/dashboard")}
-            target="_blank"
-            rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 rounded-full bg-foreground text-background px-4 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
           >
-            เปิด So1o My Desk
+            {soloEnabled ? "เปิด So1o My Desk" : "So1o My Desk — เร็ว ๆ นี้"}
             <ExternalLink className="h-4 w-4" />
-          </a>
+          </SoloExternalLink>
         )}
-        <a
+        <SoloExternalLink
           href={SO1O_APP_URL}
-          target="_blank"
-          rel="noopener noreferrer"
           className="inline-flex items-center justify-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors"
         >
-          หลังบ้าน So1o
+          {soloEnabled ? "หลังบ้าน So1o" : "หลังบ้าน So1o — เร็ว ๆ นี้"}
           <ExternalLink className="h-3.5 w-3.5" />
-        </a>
+        </SoloExternalLink>
         <Link
           to={UPGRADE_PATH}
           className="inline-flex items-center justify-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors"
         >
-          {isAplus1UpgradeEnabled() ? "เปรียบเทียบแพ็กเกจ" : "แพ็กเกจ (เร็ว ๆ นี้)"}
+          {soloEnabled ? "เปรียบเทียบแพ็กเกจ" : "แพ็กเกจ (เร็ว ๆ นี้)"}
         </Link>
         <Link
           to="/portfolio"

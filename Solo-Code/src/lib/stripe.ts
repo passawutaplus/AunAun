@@ -28,6 +28,7 @@ export const PRICE_IDS = {
   px_500: "px_500",
   px_2000: "px_2000",
   px_10000: "px_10000",
+  px_custom: "px_custom",
   boost_99_3d: "boost_99_3d",
   boost_249_7d: "boost_249_7d",
   boost_499_14d: "boost_499_14d",

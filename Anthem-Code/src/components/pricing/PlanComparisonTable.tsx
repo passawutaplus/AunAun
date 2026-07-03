@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Check, ExternalLink, Minus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,8 @@ import {
 import type { PlanId } from "@/data/plans";
 import { TIER_RANK } from "@/lib/tierMembership";
 import { SO1O_PRICING_URL } from "@/lib/productLinks";
+import { isSoloEcosystemEnabled, UPGRADE_PATH } from "@/lib/aplus1Launch";
+import { SoloExternalLink } from "@/components/ecosystem/SoloExternalLink";
 import { cn } from "@/lib/utils";
 
 function ComparisonCellValue({ value }: { value: ComparisonCell }) {
@@ -43,11 +46,16 @@ function UpgradeCell({
     if (tier === "free") {
       return <span className="text-xs text-muted-foreground">—</span>;
     }
-    return (
+    return isSoloEcosystemEnabled() ? (
+      <SoloExternalLink
+        href={SO1O_PRICING_URL}
+        className="inline-flex items-center justify-center h-8 rounded-full text-xs px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+      >
+        เลือกแพ็ก
+      </SoloExternalLink>
+    ) : (
       <Button asChild size="sm" variant="outline" className="h-8 rounded-full text-xs px-3">
-        <a href={SO1O_PRICING_URL} target="_blank" rel="noopener noreferrer">
-          เลือกแพ็ก
-        </a>
+        <Link to={UPGRADE_PATH}>เร็ว ๆ นี้</Link>
       </Button>
     );
   }
@@ -78,12 +86,17 @@ function UpgradeCell({
     );
   }
 
-  return (
+  return isSoloEcosystemEnabled() ? (
+    <SoloExternalLink
+      href={SO1O_PRICING_URL}
+      className="inline-flex items-center justify-center gap-1 h-8 rounded-full text-xs px-3 bg-primary text-primary-foreground hover:bg-primary/90"
+    >
+      อัพเกรด
+      <ExternalLink className="h-3 w-3" />
+    </SoloExternalLink>
+  ) : (
     <Button asChild size="sm" className="h-8 gap-1 rounded-full text-xs px-3">
-      <a href={SO1O_PRICING_URL} target="_blank" rel="noopener noreferrer">
-        อัพเกรด
-        <ExternalLink className="h-3 w-3" />
-      </a>
+      <Link to={UPGRADE_PATH}>เร็ว ๆ นี้</Link>
     </Button>
   );
 }

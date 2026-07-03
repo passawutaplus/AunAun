@@ -1,38 +1,50 @@
-import { Link, useNavigate } from "react-router-dom";
-import { Check, ChevronRight, Gift, Loader2, UserPlus } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Gift, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboardingChecklist } from "@/hooks/useOnboardingChecklist";
 import { useWelcomeMissions } from "@/hooks/useWelcomeMissions";
-import { useReferralDashboard } from "@/hooks/useReferral";
+import { useWelcomeMissionCatalog, useWelcomePxCap } from "@/hooks/useWelcomeMissionCatalog";
 import {
   ONBOARDING_TASKS,
-  WELCOME_PX_CAP,
   type OnboardingTaskId,
 } from "@/lib/onboardingTasks";
 import { friendlyAmlError } from "@/lib/amlErrors";
-import { cn } from "@/lib/utils";
+import { ReferralInviteCard } from "@/components/referral/ReferralInviteCard";
 import { toast } from "sonner";
 
 type Props = {
   onClose?: () => void;
+  /** Hide referral card when shown elsewhere (e.g. TopUpDialog). */
+  hideReferral?: boolean;
 };
 
 const MAX_MISSIONS_SHOWN = 4;
 
-const WalletEarnMoreSection = ({ onClose }: Props) => {
+const WalletEarnMoreSection = ({ onClose, hideReferral = false }: Props) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { tasks, claimedPx, isLoading: checklistLoading } = useOnboardingChecklist(user?.id);
-  const { claimedIds, claim, isLoading: missionsLoading } = useWelcomeMissions(user?.id);
-  const { data: referral, isLoading: referralLoading } = useReferralDashboard();
+  const { tasks, isLoading: checklistLoading } = useOnboardingChecklist(user?.id);
+  const { claimedIds, lifetimeWelcomePx, claim, isLoading: missionsLoading } = useWelcomeMissions(user?.id);
+  const { data: rewardById } = useWelcomeMissionCatalog();
+  const { data: welcomeCap = 100 } = useWelcomePxCap();
+  const [claimingId, setClaimingId] = useState<OnboardingTaskId | null>(null);
+
+  const rewardPx = (id: OnboardingTaskId, fallback: number) => rewardById?.get(id) ?? fallback;
+
+  const pxEarned = Math.min(lifetimeWelcomePx, welcomeCap);
+  const pxRemaining = Math.max(0, welcomeCap - lifetimeWelcomePx);
+  const welcomeCapReached = !missionsLoading && pxRemaining <= 0;
 
   const pendingMissions = ONBOARDING_TASKS.filter((def) => !claimedIds.has(def.id)).map((def) => {
     const progress = tasks.find((t) => t.id === def.id);
+    const done = progress?.done ?? false;
     return {
       ...def,
-      done: progress?.done ?? false,
-      claimable: (progress?.done ?? false) && !claimedIds.has(def.id),
+      rewardPx: rewardPx(def.id, def.rewardPx),
+      done,
+      claimable: done && !claimedIds.has(def.id) && !welcomeCapReached,
     };
   });
 
@@ -42,16 +54,31 @@ const WalletEarnMoreSection = ({ onClose }: Props) => {
     return b.rewardPx - a.rewardPx;
   });
 
-  const remainingPx = pendingMissions.reduce((s, t) => s + t.rewardPx, 0);
-  const allMissionsClaimed = claimedPx >= WELCOME_PX_CAP || pendingMissions.length === 0;
-  const showMissions = !allMissionsClaimed && !checklistLoading && !missionsLoading;
+  const hasClaimable = pendingMissions.some((t) => t.claimable);
+  const showMissions = hasClaimable && !checklistLoading && !missionsLoading;
 
   const handleClaim = (missionId: OnboardingTaskId) => {
+    if (welcomeCapReached) {
+      toast.info("รับครบโควต้า Welcome Bonus แล้ว", {
+        description: `รับได้สูงสุด ${welcomeCap.toLocaleString()} px`,
+      });
+      return;
+    }
+    setClaimingId(missionId);
     claim.mutate(missionId, {
       onSuccess: (data) => {
-        toast.success(`รับ +${data.reward_px} px แล้ว`);
+        toast.success(`รับ +${data.reward_px} px แล้ว — ใช้ส่งของขวัญได้ทันที`);
+        setClaimingId(null);
       },
-      onError: (e) => toast.error(friendlyAmlError(e)),
+      onError: (e) => {
+        const msg = friendlyAmlError(e);
+        if (msg.includes("ครบโควต้า")) {
+          toast.info(msg);
+        } else {
+          toast.error(msg);
+        }
+        setClaimingId(null);
+      },
     });
   };
 
@@ -69,10 +96,12 @@ const WalletEarnMoreSection = ({ onClose }: Props) => {
               <p className="text-sm font-medium">ภารกิจรับ px ฟรี</p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 รับได้อีกสูงสุด{" "}
-                <span className="font-medium text-foreground tabular-nums">{remainingPx} px</span>
+                <span className="font-medium text-foreground tabular-nums">
+                  {pxRemaining.toLocaleString()} px
+                </span>
                 {" · "}
                 <span className="tabular-nums">
-                  {claimedPx}/{WELCOME_PX_CAP} px
+                  {pxEarned}/{welcomeCap} px
                 </span>
               </p>
             </div>
@@ -90,6 +119,7 @@ const WalletEarnMoreSection = ({ onClose }: Props) => {
           <ul className="space-y-1.5">
             {sortedMissions.slice(0, MAX_MISSIONS_SHOWN).map((task) => {
               const Icon = task.icon;
+              const isClaiming = claimingId === task.id;
               return (
                 <li
                   key={task.id}
@@ -106,9 +136,13 @@ const WalletEarnMoreSection = ({ onClose }: Props) => {
                       size="sm"
                       className="h-7 rounded-full text-[11px] px-2.5 shrink-0"
                       disabled={claim.isPending}
-                      onClick={() => handleClaim(task.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleClaim(task.id);
+                      }}
                     >
-                      {claim.isPending ? (
+                      {isClaiming ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
                       ) : (
                         <>
@@ -117,18 +151,17 @@ const WalletEarnMoreSection = ({ onClose }: Props) => {
                         </>
                       )}
                     </Button>
-                  ) : task.done ? (
-                    <span className="inline-flex items-center text-[10px] text-muted-foreground shrink-0">
-                      <Check className="w-3 h-3 mr-0.5" />
-                      รับแล้ว
-                    </span>
                   ) : (
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       className="h-7 rounded-full text-[11px] px-2.5 shrink-0"
-                      onClick={() => go(task.href)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        go(task.href);
+                      }}
                     >
                       ไปทำ
                     </Button>
@@ -140,46 +173,7 @@ const WalletEarnMoreSection = ({ onClose }: Props) => {
         </section>
       )}
 
-      <section className="rounded-xl border border-border bg-card/60 p-3">
-        <div className="flex items-start gap-2.5">
-          <div className="shrink-0 w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
-            <UserPlus className="w-4 h-4 text-primary" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium">ชวนเพื่อนรับ Pixel</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-              {referralLoading ? (
-                "กำลังโหลด…"
-              ) : (
-                <>
-                  คุณได้{" "}
-                  <span className="font-medium text-foreground tabular-nums">
-                    {referral?.referrer_reward_px ?? 50} px
-                  </span>{" "}
-                  เมื่อเพื่อนโพสต์/เผยแพร่ครั้งแรกสำเร็จ
-                  {referral && referral.earned_px > 0 && (
-                    <>
-                      {" · "}
-                      รับไปแล้ว {referral.earned_px.toLocaleString()} px
-                    </>
-                  )}
-                </>
-              )}
-            </p>
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className={cn("mt-2 h-8 rounded-full text-xs")}
-            >
-              <Link to="/referrals" onClick={() => onClose?.()}>
-                ดูลิงก์ชวนเพื่อน
-                <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      {!hideReferral && <ReferralInviteCard onClose={onClose} />}
     </div>
   );
 };

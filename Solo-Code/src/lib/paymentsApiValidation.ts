@@ -2,19 +2,33 @@ import { z } from "zod";
 
 export const paymentsEnvSchema = z.enum(["sandbox", "live"]);
 
-export const checkoutApiInput = z.object({
-  priceId: z
-    .string()
-    .min(1)
-    .max(64)
-    .regex(/^[a-z0-9_]+$/),
-  environment: paymentsEnvSchema.optional(),
-  successUrl: z.string().url().max(500),
-  cancelUrl: z.string().url().max(500),
-  quantity: z.number().int().min(1).max(50).optional(),
-  boostId: z.string().uuid().optional(),
-  applicationId: z.string().uuid().optional(),
-});
+export const PX_CUSTOM_MIN = 100;
+export const PX_CUSTOM_MAX = 10_000;
+
+export const checkoutApiInput = z
+  .object({
+    priceId: z
+      .string()
+      .min(1)
+      .max(64)
+      .regex(/^[a-z0-9_]+$/),
+    environment: paymentsEnvSchema.optional(),
+    successUrl: z.string().url().max(500),
+    cancelUrl: z.string().url().max(500),
+    quantity: z.number().int().min(1).max(50).optional(),
+    amountPx: z.number().int().min(PX_CUSTOM_MIN).max(PX_CUSTOM_MAX).optional(),
+    boostId: z.string().uuid().optional(),
+    applicationId: z.string().uuid().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.priceId === "px_custom" && data.amountPx == null) {
+      ctx.addIssue({
+        code: "custom",
+        message: "amountPx required for custom px checkout",
+        path: ["amountPx"],
+      });
+    }
+  });
 
 export const connectOnboardApiInput = z.object({
   environment: paymentsEnvSchema.optional(),
@@ -69,6 +83,7 @@ const STATIC_ALLOWED_ORIGINS = [
   "https://an1hem.app",
   "https://www.an1hem.app",
   "https://aplus1-demo.vercel.app",
+  "https://1px-demo.vercel.app",
   "https://pixel100.com",
   "http://localhost:5173",
   "http://localhost:3000",
@@ -80,7 +95,7 @@ const STATIC_ALLOWED_ORIGINS = [
 
 const LOVABLE_PREVIEW_ORIGIN_RE = /^https:\/\/([a-z0-9-]+\.)*lovable\.app$/i;
 /** Vercel preview deployments for an1hem / aplus1-demo. */
-const VERCEL_ANTHEM_PREVIEW_ORIGIN_RE = /^https:\/\/(aplus1-demo|an1hem)[a-z0-9-]*\.vercel\.app$/i;
+const VERCEL_ANTHEM_PREVIEW_ORIGIN_RE = /^https:\/\/(aplus1-demo|an1hem|1px-demo)[a-z0-9-]*\.vercel\.app$/i;
 
 /** Origins permitted for Stripe checkout / portal / Connect redirect URLs. */
 export function getAllowedPaymentRedirectOrigins(): string[] {

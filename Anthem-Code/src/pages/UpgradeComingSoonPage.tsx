@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/core/subscription";
 import Footer from "@/components/Footer";
 import { BRAND_NAME } from "@/lib/brandConfig";
-import { UPGRADE_COMING_SOON_TH } from "@/lib/aplus1Launch";
+import { UPGRADE_COMING_SOON_TH, isAplus1PaymentsEnabled, isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
 import { tierLabel, normalizePlanId } from "@/lib/tierMembership";
 
 export function UpgradeComingSoonPage() {
@@ -52,7 +52,15 @@ export function UpgradeComingSoonPage() {
             <li>โพสต์ผลงานและเปิดรับโอกาส</li>
             <li>รับ 1 px ฟรีทุกวันที่หน้าเติม Pixel</li>
             <li>ส่งและรับของขวัญด้วย Pixel</li>
-            <li>เติม Pixel และถอนรายได้ตามเงื่อนไข</li>
+            {isAplus1PaymentsEnabled() && (
+              <li>เติม Pixel, ถอนรายได้, Boost และลงโฆษณา — ชำระผ่าน Stripe ได้แล้ว</li>
+            )}
+            {!isAplus1PaymentsEnabled() && (
+              <li>การเติม Pixel / ถอนรายได้ / ชำระเงิน — เร็ว ๆ นี้</li>
+            )}
+            {!isSoloEcosystemEnabled() && (
+              <li>แพ็ก Pro และการเชื่อม So1o Freelancer — เร็ว ๆ นี้</li>
+            )}
           </ul>
         </div>
 

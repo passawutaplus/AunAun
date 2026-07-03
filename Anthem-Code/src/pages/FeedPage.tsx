@@ -49,12 +49,20 @@ import { recordFeedSearch } from "@/lib/feedSearchSignals";
 
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { DESIGN_DRILL_CHIP, type ProjectChipFilter } from "@/lib/drillProject";
+import { markOnboardingVisit, type OnboardingVisitId } from "@/lib/onboardingStorage";
 
 type FeedMode2 = "Explore" | SpecialFilter;
 const requiresAuth = (m: FeedMode2) => m === "Following";
 
 const CATEGORY_CHIPS: Category[] = allCategories.filter((c) => c !== "Explore");
 const PROJECT_CHIP_FILTERS: ProjectChipFilter[] = [DESIGN_DRILL_CHIP, "All", ...CATEGORY_CHIPS];
+
+const FEED_MODE_VISIT: Partial<Record<FeedMode, OnboardingVisitId>> = {
+  projects: "explore_feed",
+  community: "explore_community",
+  designers: "explore_designers",
+  studios: "explore_studios",
+};
 
 const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const navigate = useNavigate();
@@ -116,8 +124,15 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
 
   const toggle = (list: string[], v: string) =>
     list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
+
+  const trackFeedModeVisit = (m: FeedMode) => {
+    const visitId = FEED_MODE_VISIT[m];
+    if (user?.id && visitId) void markOnboardingVisit(user.id, visitId);
+  };
+
   const changeMode = (m: FeedMode) => {
     setMode(m);
+    trackFeedModeVisit(m);
     if (m === "projects") setCategory("All");
     if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", m);
     const params = new URLSearchParams(searchParams);
@@ -154,6 +169,11 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       setCategory("All");
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    trackFeedModeVisit(mode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- track when URL restores feed tab
+  }, [mode, user?.id]);
 
   useEffect(() => {
     if (!user) return;

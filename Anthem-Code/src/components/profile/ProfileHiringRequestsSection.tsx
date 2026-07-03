@@ -8,6 +8,7 @@ import { useHiringRequests, type HiringStatusDB } from "@/hooks/useHiringRequest
 import { useAcceptRequest, useRejectRequest, useFindConversationByRequest } from "@/hooks/useChat";
 import { timeAgoTH } from "@/lib/format";
 import { so1oQuotationUrl, trackCrossLink } from "@/lib/crossLink";
+import { openSoloExternal } from "@/lib/soloEcosystemGate";
 import { toast } from "sonner";
 
 type HiringTab = HiringStatusDB | "ทั้งหมด";
@@ -127,7 +128,7 @@ export function ProfileHiringRequestsSection() {
               deadline: req.deadline ?? undefined,
               linkId,
             });
-            window.open(url, "_blank", "noopener,noreferrer");
+            openSoloExternal(url);
           };
 
           return (

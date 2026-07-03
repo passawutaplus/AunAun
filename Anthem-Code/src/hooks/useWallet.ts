@@ -30,12 +30,32 @@ function emptyWallet(userId: string): Wallet {
   };
 }
 
+function parseWalletRow(row: Record<string, unknown>, userId: string): Wallet {
+  return {
+    user_id: String(row.user_id ?? userId),
+    balance_px: Number(row.balance_px ?? 0),
+    purchased_px: Number(row.purchased_px ?? 0),
+    earned_px: Number(row.earned_px ?? 0),
+    welcome_px: Number(row.welcome_px ?? 0),
+    lifetime_welcome_px: Number(row.lifetime_welcome_px ?? 0),
+    lifetime_earned_px: Number(row.lifetime_earned_px ?? 0),
+    lifetime_spent_px: Number(row.lifetime_spent_px ?? 0),
+    updated_at: String(row.updated_at ?? new Date().toISOString()),
+  };
+}
+
 export const useWallet = () => {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["wallet", user?.id],
     enabled: !!user?.id,
+    staleTime: 15_000,
     queryFn: async (): Promise<Wallet> => {
+      const { data: rpcData, error: rpcErr } = await supabase.rpc("get_my_wallet");
+      if (!rpcErr && rpcData && typeof rpcData === "object") {
+        return parseWalletRow(rpcData as Record<string, unknown>, user!.id);
+      }
+
       const { data: existing, error: readErr } = await supabase
         .from("wallets")
         .select("*")

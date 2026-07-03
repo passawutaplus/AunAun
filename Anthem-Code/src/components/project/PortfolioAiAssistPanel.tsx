@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Loader2, Sparkles, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,8 @@ import { GalleryMediaButtons } from "@/components/project/GalleryMediaButtons";
 import { SortableGalleryGrid } from "@/components/project/SortableGalleryGrid";
 import { ANTHEM_PORTFOLIO_FROM_IMAGES_CREDITS } from "@/lib/aiFeatureCredits";
 import { SO1O_PRICING_URL } from "@/lib/productLinks";
+import { SoloExternalLink } from "@/components/ecosystem/SoloExternalLink";
+import { isSoloEcosystemEnabled, UPGRADE_PATH } from "@/lib/aplus1Launch";
 import { countMediaByKind, type PortfolioMediaItem } from "@/lib/portfolioMedia";
 import type { PortfolioAiAssistResult } from "@/hooks/usePortfolioAiAssist";
 import { cn } from "@/lib/utils";
@@ -187,9 +190,15 @@ export function PortfolioAiAssistPanel({
         {limitReached && (
           <p className="text-xs text-destructive">
             เครดิตหมดแล้ว —{" "}
-            <a href={SO1O_PRICING_URL} target="_blank" rel="noopener noreferrer" className="underline">
-              อัปเกรดที่ So1o
-            </a>
+            {isSoloEcosystemEnabled() ? (
+              <SoloExternalLink href={SO1O_PRICING_URL} className="underline">
+                อัปเกรดที่ So1o
+              </SoloExternalLink>
+            ) : (
+              <Link to={UPGRADE_PATH} className="underline">
+                แพ็ก Pro — เร็ว ๆ นี้
+              </Link>
+            )}
           </p>
         )}
       </div>

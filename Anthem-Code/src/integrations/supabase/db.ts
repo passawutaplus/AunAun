@@ -86,6 +86,7 @@ const PUBLIC_TABLES = new Set([
   "so1o_notifications",
   "platform_events",
   "welcome_mission_claims",
+  "welcome_mission_catalog",
 ]);
 
 /** Cross-app wallet / chat / compliance. */

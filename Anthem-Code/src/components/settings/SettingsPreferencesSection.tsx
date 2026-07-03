@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { requestOpenCookiePreferences } from "@/lib/cookieConsent";
 import { ThemeSettingsSection } from "@/components/settings/ThemeSettingsSection";
+import { AccountPrivacySection } from "@/components/settings/AccountPrivacySection";
 
 export function SettingsPreferencesSection() {
   const navigate = useNavigate();
@@ -99,6 +100,10 @@ export function SettingsPreferencesSection() {
           </Link>
         </div>
       </div>
+
+      <div className="border-t border-border/40" />
+
+      <AccountPrivacySection embedded />
     </section>
   );
 }

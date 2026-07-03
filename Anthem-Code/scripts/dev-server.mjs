@@ -24,6 +24,14 @@ function pickDevRoot() {
 const devRoot = pickDevRoot();
 process.chdir(devRoot);
 
+// Local dev: payments on + Stripe sandbox unless overridden in .env
+if (!process.env.VITE_APLUS1_PAYMENTS_ENABLED && process.env.VITE_DEMO_MODE !== "true") {
+  process.env.VITE_APLUS1_PAYMENTS_ENABLED = "true";
+}
+if (!process.env.VITE_STRIPE_MODE && process.env.VITE_DEMO_MODE !== "true") {
+  process.env.VITE_STRIPE_MODE = "sandbox";
+}
+
 const server = await createServer({
   configFile: path.join(devRoot, "vite.config.ts"),
 });

@@ -23,6 +23,9 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { LEGAL_DPO_EMAIL } from "@/lib/legalConfig";
+import { LEGAL_SOLO_URL } from "@/lib/legalConfig";
+import { SoloExternalLink } from "@/components/ecosystem/SoloExternalLink";
+import { isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
 import { useEnsureSensitiveAction } from "@/components/legal/SensitiveActionReauthProvider";
 import { useMyPrivacyRequests, useSubmitPrivacyRequest } from "@/hooks/useLegalCompliance";
 
@@ -34,7 +37,7 @@ const REQUEST_STATUS: Record<string, string> = {
   completed: "เสร็จแล้ว",
 };
 
-export function AccountPrivacySection() {
+export function AccountPrivacySection({ embedded = false }: { embedded?: boolean }) {
   const { user } = useAuth();
   const [exporting, setExporting] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -109,19 +112,31 @@ export function AccountPrivacySection() {
     (r) => r.request_type === "delete" && !["completed", "rejected"].includes(r.status),
   );
 
-  return (
-    <section className="rounded-2xl glass-panel p-6 space-y-4">
-      <div className="flex items-start gap-3">
-        <div className="rounded-xl bg-primary/10 p-2.5">
-          <Shield className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <h2 className="font-semibold text-foreground">ข้อมูลส่วนตัวของคุณ</h2>
-          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+  const content = (
+    <>
+      {embedded ? (
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-foreground flex items-center gap-2">
+            <Shield className="w-4 h-4 text-primary" />
+            ข้อมูลส่วนตัวของคุณ
+          </p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
             ดาวน์โหลด ขอลบ หรือดูสิทธิตาม PDPA — เราจะตอบทางอีเมลภายใน 7 วันทำการ
           </p>
         </div>
-      </div>
+      ) : (
+        <div className="flex items-start gap-3">
+          <div className="rounded-xl bg-primary/10 p-2.5">
+            <Shield className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-foreground">ข้อมูลส่วนตัวของคุณ</h2>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+              ดาวน์โหลด ขอลบ หรือดูสิทธิตาม PDPA — เราจะตอบทางอีเมลภายใน 7 วันทำการ
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-2 sm:grid-cols-2">
         <button
@@ -179,22 +194,44 @@ export function AccountPrivacySection() {
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-2 pt-1">
-        <Button asChild size="sm" variant="ghost" className="text-muted-foreground h-8">
-          <Link to="/legal/rights">ดูสิทธิทั้งหมด</Link>
-        </Button>
-        <Button asChild size="sm" variant="ghost" className="text-muted-foreground h-8">
-          <Link to="/legal/privacy">นโยบาย PDPA</Link>
-        </Button>
-      </div>
+      {!embedded && (
+        <div className="flex flex-wrap gap-2 pt-1">
+          <Button asChild size="sm" variant="ghost" className="text-muted-foreground h-8">
+            <Link to="/legal/rights">ดูสิทธิทั้งหมด</Link>
+          </Button>
+          <Button asChild size="sm" variant="ghost" className="text-muted-foreground h-8">
+            <Link to="/legal/privacy">นโยบาย PDPA</Link>
+          </Button>
+        </div>
+      )}
 
-      <p className="text-[11px] text-muted-foreground leading-relaxed border-t border-border/40 pt-3">
+      <p className={`text-[11px] text-muted-foreground leading-relaxed ${embedded ? "pt-1" : "border-t border-border/40 pt-3"}`}>
         บัญชี Aplus1 ใช้ร่วมกับ So1o Freelancer — ลบถาวรอาจทำที่{" "}
-        <a href="https://solofreelancer.com/settings" target="_blank" rel="noopener noreferrer" className="text-primary underline">
-          So1o
-        </a>
+        {isSoloEcosystemEnabled() ? (
+          <SoloExternalLink
+            href={`${LEGAL_SOLO_URL.replace(/\/$/, "")}/settings`}
+            className="text-primary underline"
+          >
+            So1o
+          </SoloExternalLink>
+        ) : (
+          <span className="text-muted-foreground">So1o (เร็ว ๆ นี้)</span>
+        )}
         {" "}หรืออีเมล{" "}
-        <a href={`mailto:${LEGAL_DPO_EMAIL}`} className="text-primary underline">{LEGAL_DPO_EMAIL}</a>
+        <button
+          type="button"
+          className="text-primary underline"
+          onClick={async () => {
+            try {
+              await ensureVerified("ติดต่อ DPO เรื่องข้อมูลส่วนบุคคล");
+            } catch {
+              return;
+            }
+            window.location.href = `mailto:${LEGAL_DPO_EMAIL}`;
+          }}
+        >
+          {LEGAL_DPO_EMAIL}
+        </button>
       </p>
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
@@ -229,6 +266,16 @@ export function AccountPrivacySection() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="space-y-4">{content}</div>;
+  }
+
+  return (
+    <section className="rounded-2xl glass-panel p-6 space-y-4">
+      {content}
     </section>
   );
 }

@@ -11,6 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { SO1O_APP_URL } from "@/lib/productLinks";
+import { isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
+import { notifySoloComingSoon } from "@/lib/soloEcosystemGate";
 import { toast } from "sonner";
 import {
   LINE_NOTIFY_GROUPS,
@@ -174,20 +176,34 @@ export function LineNotificationPrefsPanel({
                   {linked ? t("เชื่อมบัญชีแล้ว", "Account linked") : t("ยังไม่ได้เชื่อมบัญชี", "Not linked yet")}
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                  <a
-                    href={lineLinkUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
-                      linked
-                        ? "border border-[#06C755]/40 text-[#06C755] hover:bg-[#06C755]/10"
-                        : "bg-[#06C755] text-white hover:bg-[#05b34c] shadow-sm",
-                    )}
-                  >
-                    <LineGlyph className="h-3.5 w-3.5" />
-                    {linked ? t("จัดการการเชื่อม", "Manage link") : t("เชื่อมบัญชี", "Link account")}
-                  </a>
+                  {isSoloEcosystemEnabled() ? (
+                    <a
+                      href={lineLinkUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                        linked
+                          ? "border border-[#06C755]/40 text-[#06C755] hover:bg-[#06C755]/10"
+                          : "bg-[#06C755] text-white hover:bg-[#05b34c] shadow-sm",
+                      )}
+                    >
+                      <LineGlyph className="h-3.5 w-3.5" />
+                      {linked ? t("จัดการการเชื่อม", "Manage link") : t("เชื่อมบัญชี", "Link account")}
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={notifySoloComingSoon}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                        "border border-dashed border-[#06C755]/40 text-[#06C755] hover:bg-[#06C755]/10",
+                      )}
+                    >
+                      <LineGlyph className="h-3.5 w-3.5" />
+                      {t("เชื่อมบัญชี — เร็ว ๆ นี้", "Link account — coming soon")}
+                    </button>
+                  )}
                   {!linked && (
                     <a
                       href={LINE_URL}

@@ -1,7 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { SoloEcosystemDisabledError, isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
 import { SO1O_APP_URL } from "@/lib/productLinks";
+import { notifySoloComingSoon } from "@/lib/soloEcosystemGate";
 
 export type MarketplaceEscrow = {
   id: string;
@@ -20,6 +22,9 @@ export const useCreateEscrowFromHire = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (hiringRequestId: string) => {
+      if (!isSoloEcosystemEnabled()) {
+        throw new SoloEcosystemDisabledError();
+      }
       const { data, error } = await supabase.rpc("create_escrow_from_hire", {
         _hiring_request_id: hiringRequestId,
       });
@@ -35,6 +40,10 @@ export const useCreateEscrowFromHire = () => {
       });
     },
     onError: (e: Error) => {
+      if (e instanceof SoloEcosystemDisabledError) {
+        notifySoloComingSoon();
+        return;
+      }
       if (e.message.includes("CONNECT_REQUIRED")) {
         toast.error("เชื่อม Stripe Connect ที่หน้า Earnings ก่อนรับเงิน");
       } else if (e.message.includes("INVALID_AMOUNT")) {

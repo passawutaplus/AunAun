@@ -64,6 +64,9 @@ export const useProjectLike = (projectId: string | undefined) => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["project-like-count", projectId] });
       qc.invalidateQueries({ queryKey: ["project-liked", projectId, user?.id] });
+      if (user?.id) {
+        qc.invalidateQueries({ queryKey: ["onboarding-checklist", user.id] });
+      }
     },
   });
 

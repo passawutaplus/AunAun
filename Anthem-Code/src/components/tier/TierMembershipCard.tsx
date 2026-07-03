@@ -15,7 +15,8 @@ import {
   tierProgress,
 } from "@/lib/tierMembership";
 import { cn } from "@/lib/utils";
-import { isAplus1UpgradeEnabled, UPGRADE_PATH } from "@/lib/aplus1Launch";
+import { isSoloEcosystemEnabled, UPGRADE_PATH } from "@/lib/aplus1Launch";
+import { SoloExternalLink } from "@/components/ecosystem/SoloExternalLink";
 
 type Props = {
   className?: string;
@@ -124,7 +125,7 @@ export function TierMembershipCard({
         )}
 
         <div className="mt-4 flex flex-wrap gap-2">
-          {nextUpgrade && !isAplus1UpgradeEnabled() && (
+          {nextUpgrade && !isSoloEcosystemEnabled() && (
             <Button asChild size="sm" variant="outline" className="gap-1.5 rounded-full">
               <Link to={UPGRADE_PATH}>
                 อัพเกรด {tierLabel(nextUpgrade)} — เร็ว ๆ นี้
@@ -132,13 +133,14 @@ export function TierMembershipCard({
               </Link>
             </Button>
           )}
-          {nextUpgrade && isAplus1UpgradeEnabled() && (
-            <Button asChild size="sm" className="gap-1.5 rounded-full">
-              <a href={SO1O_PRICING_URL} target="_blank" rel="noopener noreferrer">
-                อัพเกรด {tierLabel(nextUpgrade)}
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            </Button>
+          {nextUpgrade && isSoloEcosystemEnabled() && (
+            <SoloExternalLink
+              href={SO1O_PRICING_URL}
+              className="inline-flex items-center justify-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 h-8 text-sm font-medium hover:bg-primary/90"
+            >
+              อัพเกรด {tierLabel(nextUpgrade)}
+              <ExternalLink className="h-3.5 w-3.5" />
+            </SoloExternalLink>
           )}
           <Button
             asChild
@@ -152,17 +154,13 @@ export function TierMembershipCard({
             </Link>
           </Button>
           {isPro && (
-            <Button
-              asChild
-              size="sm"
-              variant="ghost"
-              className="gap-1.5 rounded-full text-muted-foreground"
+            <SoloExternalLink
+              href={SO1O_PRICING_URL}
+              className="inline-flex items-center justify-center gap-1.5 rounded-full px-3 h-8 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
-              <a href={SO1O_PRICING_URL} target="_blank" rel="noopener noreferrer">
-                จัดการที่ So1o
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </a>
-            </Button>
+              {isSoloEcosystemEnabled() ? "จัดการที่ So1o" : "จัดการที่ So1o — เร็ว ๆ นี้"}
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </SoloExternalLink>
           )}
         </div>
       </div>

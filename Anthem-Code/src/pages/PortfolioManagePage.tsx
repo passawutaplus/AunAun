@@ -23,6 +23,9 @@ import { supabase } from "@/integrations/supabase/client";
 import SeoHead from "@/components/SeoHead";
 import { sortPortfolioProjects } from "@/lib/portfolioSort";
 import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
+import { SO1O_APP_URL } from "@/lib/productLinks";
+import { isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
+import { openSoloExternal } from "@/lib/soloEcosystemGate";
 import BoostInsightsPanel from "@/components/boost/BoostInsightsPanel";
 
 type ProjectTab = "ทั้งหมด" | "Published" | "Draft" | "Private";
@@ -177,15 +180,17 @@ const PortfolioManagePage = () => {
               <h1 className="text-2xl font-medium text-foreground">แดชบอร์ด & จัดการ</h1>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.open("https://solofreelancer.com", "_blank", "noopener,noreferrer")}
-                className="rounded-full border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
-              >
-                <ExternalLink className="w-4 h-4 sm:mr-1" />
-                <span className="hidden sm:inline">Solo Freelancer</span>
-              </Button>
+              {isSoloEcosystemEnabled() && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openSoloExternal(SO1O_APP_URL)}
+                  className="rounded-full border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+                >
+                  <ExternalLink className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Solo Freelancer</span>
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="rounded-full">
                 <Settings className="w-4 h-4 sm:mr-1" />
                 <span className="hidden sm:inline">ตั้งค่า</span>

@@ -25,6 +25,7 @@ import ContactEditor, { type ContactFormValues } from "@/components/profile/Cont
 import { ProfileEditableSection } from "@/components/profile/ProfileEditableSection";
 import PortfolioGrid from "@/components/profile/PortfolioGrid";
 import ProfileMenuCard from "@/components/profile/ProfileMenuCard";
+import ProfileWalletCard from "@/components/profile/ProfileWalletCard";
 import ProfileCoverHeader from "@/components/profile/ProfileCoverHeader";
 import ReceivedGiftsSummary from "@/components/profile/ReceivedGiftsSummary";
 import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
@@ -271,6 +272,8 @@ const PortfolioProfilePage = () => {
             <MiniStat icon={FileCheck} label="เผยแพร่" value={published.length} />
             <MiniStat icon={Sparkles} label="ยอดดูรวม" value={totalViews} />
           </div>
+
+          <ProfileWalletCard />
 
           <ProfileMenuCard opportunityOpen={opportunityOpen} onOpportunityOpenChange={setOpportunityOpen} />
         </aside>
