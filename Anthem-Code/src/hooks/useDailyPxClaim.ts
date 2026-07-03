@@ -86,9 +86,14 @@ export function useClaimDailyPx() {
         };
       });
       void qc.invalidateQueries({ queryKey: ["daily-px-status", user?.id] });
-      void qc.invalidateQueries({ queryKey: ["wallet", user?.id] });
-      void qc.invalidateQueries({ queryKey: ["wallet-available-gift", user?.id] });
-      void qc.invalidateQueries({ queryKey: ["wallet-available-purchased", user?.id] });
+      void qc.invalidateQueries({
+        queryKey: ["wallet-available-gift", user?.id],
+        refetchType: "active",
+      });
+      void qc.invalidateQueries({
+        queryKey: ["wallet-available-purchased", user?.id],
+        refetchType: "active",
+      });
     },
   });
 }

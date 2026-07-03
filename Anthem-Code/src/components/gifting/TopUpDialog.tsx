@@ -42,10 +42,10 @@ const TopUpDialog = ({ open, onOpenChange }: Props) => {
 
   useEffect(() => {
     if (!open || !user?.id) return;
-    void qc.invalidateQueries({ queryKey: ["wallet", user.id] });
-    void qc.invalidateQueries({ queryKey: ["daily-px-status", user.id] });
-    void qc.invalidateQueries({ queryKey: ["wallet-available-gift", user.id] });
-    void qc.invalidateQueries({ queryKey: ["wallet-available-purchased", user.id] });
+    void qc.invalidateQueries({
+      queryKey: ["daily-px-status", user.id],
+      refetchType: "active",
+    });
   }, [open, user?.id, qc]);
 
   const customPx = parseCustomPxInput(customPxInput);

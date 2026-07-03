@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { isForbiddenError, isOptionalQueryError } from "@/lib/supabaseErrors";
@@ -50,6 +50,7 @@ export const useWallet = () => {
     queryKey: ["wallet", user?.id],
     enabled: !!user?.id,
     staleTime: 15_000,
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<Wallet> => {
       const { data: rpcData, error: rpcErr } = await supabase.rpc("get_my_wallet");
       if (!rpcErr && rpcData && typeof rpcData === "object") {

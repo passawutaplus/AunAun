@@ -14,7 +14,7 @@ import {
   Handshake,
 } from "lucide-react";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
-import KycStatusBadge from "@/components/verification/KycStatusBadge";
+import KycStatusBadge, { useKycStatus } from "@/components/verification/KycStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyStudios, useSetActiveStudio } from "@/hooks/useStudios";
 import ReferralShareSheet from "@/components/referral/ReferralShareSheet";
@@ -33,6 +33,7 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
   const setOpportunityDialogOpen = onOpportunityOpenChange ?? setOpportunityOpenLocal;
   const { data: myStudios = [] } = useMyStudios();
   const setActive = useSetActiveStudio();
+  const { isVerified } = useKycStatus();
 
   const item =
     "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-foreground hover:bg-accent hover:text-foreground transition-colors text-left";
@@ -94,9 +95,11 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
 
       <div className="my-2 border-t border-border" />
       <KycStatusBadge className="mx-1 mb-1" />
-      <button onClick={() => navigate("/verify")} className={item}>
-        <ShieldCheck className="w-4 h-4 text-primary" /> เปิดรับรายได้
-      </button>
+      {isVerified && (
+        <button onClick={() => navigate("/verify")} className={item}>
+          <ShieldCheck className="w-4 h-4 text-primary" /> เปิดรับรายได้
+        </button>
+      )}
       <button onClick={() => navigate("/settings")} className={item}>
         <Settings className="w-4 h-4 text-primary" /> ตั้งค่า
       </button>

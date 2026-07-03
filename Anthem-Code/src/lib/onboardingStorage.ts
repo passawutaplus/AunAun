@@ -80,6 +80,23 @@ export async function markOnboardingVisit(userId: string, visitId: OnboardingVis
   }
 }
 
+/** Push local visit flags to DB before claim RPC (server only reads profiles.onboarding_visits). */
+export async function syncPendingOnboardingVisits(userId: string) {
+  const { supabase } = await import("@/integrations/supabase/client");
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("onboarding_visits")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const dbVisits = parseOnboardingVisits(profile?.onboarding_visits);
+  const localVisits = getOnboardingVisits(userId);
+  const pending = ONBOARDING_VISIT_IDS.filter((id) => localVisits[id] && !dbVisits[id]);
+  if (pending.length === 0) return;
+  await Promise.all(
+    pending.map((id) => supabase.rpc("mark_onboarding_visit", { _visit_id: id })),
+  );
+}
+
 export function subscribeOnboardingUpdates(cb: () => void) {
   if (typeof window === "undefined") return () => {};
   const handler = () => cb();
