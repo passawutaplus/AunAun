@@ -1,6 +1,6 @@
 # AML & Gifting Compliance (Anthem)
 
-เอกสารอ้างอิงสำหรับทีม ops / admin — สอดคล้องกับ migration `20260530121450`, `scripts/ecosystem/stripe-payments.sql` และ `.lovable/plan.md`
+เอกสารอ้างอิงสำหรับทีม ops / admin — สอดคล้องกับ migration `20260530121450`, `scripts/ecosystem/stripe-payments.sql`
 
 ## โครงสร้าง PX (closed-loop)
 

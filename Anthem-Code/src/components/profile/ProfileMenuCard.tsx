@@ -9,27 +9,32 @@ import {
   LogOut,
   Plus,
   Building2,
-  Flag,
-  MessageSquare,
   ShieldCheck,
-  Sparkles,
   Bookmark,
   UserPlus,
   FolderKanban,
+  Handshake,
 } from "lucide-react";
-import { useSubscription } from "@/core/subscription";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import KycStatusBadge from "@/components/verification/KycStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyStudios, useSetActiveStudio } from "@/hooks/useStudios";
 import ReferralShareSheet from "@/components/referral/ReferralShareSheet";
+import OpportunityStatusDialog from "@/components/opportunity/OpportunityStatusDialog";
 
-const ProfileMenuCard = () => {
+type ProfileMenuCardProps = {
+  opportunityOpen?: boolean;
+  onOpportunityOpenChange?: (open: boolean) => void;
+};
+
+const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMenuCardProps = {}) => {
   const navigate = useNavigate();
   const [referralOpen, setReferralOpen] = useState(false);
+  const [opportunityOpenLocal, setOpportunityOpenLocal] = useState(false);
+  const opportunityDialogOpen = opportunityOpen ?? opportunityOpenLocal;
+  const setOpportunityDialogOpen = onOpportunityOpenChange ?? setOpportunityOpenLocal;
   const { data: myStudios = [] } = useMyStudios();
   const setActive = useSetActiveStudio();
-  const { isPro } = useSubscription();
 
   const item =
     "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-foreground hover:bg-accent hover:text-foreground transition-colors text-left";
@@ -42,6 +47,9 @@ const ProfileMenuCard = () => {
     >
       <button onClick={() => navigate("/portfolio")} className={item}>
         <LayoutGrid className="w-4 h-4 text-primary" /> โปรไฟล์ของฉัน
+      </button>
+      <button type="button" onClick={() => setOpportunityDialogOpen(true)} className={item}>
+        <Handshake className="w-4 h-4 text-primary" /> เปิดรับอะไรอยู่?
       </button>
       <button onClick={() => navigate("/portfolio/manage")} className={item}>
         <FolderKanban className="w-4 h-4 text-primary" /> แดชบอร์ด &amp; จัดการ
@@ -93,18 +101,6 @@ const ProfileMenuCard = () => {
       )}
 
       <div className="my-2 border-t border-border" />
-      <p className="px-3 pt-1 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">ระบบ So1o</p>
-      {isPro ? (
-        <p className="px-3 py-1.5 text-xs text-primary font-medium flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5" /> So1o Pro — ใช้ได้ทั้ง Aplus1 และ My Desk
-        </p>
-      ) : (
-        <button onClick={() => navigate("/upgrade")} className={item}>
-          <Sparkles className="w-4 h-4 text-primary" /> แพ็กเกจ & อัพเกรด (So1o)
-        </button>
-      )}
-
-      <div className="my-2 border-t border-border" />
       <KycStatusBadge className="mx-1 mb-1" />
       <button onClick={() => navigate("/verify")} className={item}>
         <ShieldCheck className="w-4 h-4 text-primary" /> เปิดรับรายได้
@@ -112,24 +108,6 @@ const ProfileMenuCard = () => {
       <button onClick={() => navigate("/settings")} className={item}>
         <Settings className="w-4 h-4 text-primary" /> ตั้งค่า
       </button>
-      <div className="grid grid-cols-2 gap-1 px-0.5">
-        <button
-          onClick={() => navigate("/me/reports")}
-          className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs text-foreground hover:bg-accent hover:text-foreground transition-colors text-left"
-          title="รายงานของฉัน"
-        >
-          <Flag className="w-3.5 h-3.5 text-primary shrink-0" />
-          <span className="truncate">รายงาน</span>
-        </button>
-        <button
-          onClick={() => navigate("/me/feedback")}
-          className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs text-foreground hover:bg-accent hover:text-foreground transition-colors text-left"
-          title="ฟีดแบ็กของฉัน"
-        >
-          <MessageSquare className="w-3.5 h-3.5 text-primary shrink-0" />
-          <span className="truncate">ฟีดแบ็ก</span>
-        </button>
-      </div>
       <button
         onClick={async () => { await supabase.auth.signOut(); navigate("/"); }}
         className={`${item} text-destructive hover:text-destructive`}
@@ -138,6 +116,7 @@ const ProfileMenuCard = () => {
       </button>
     </nav>
       <ReferralShareSheet open={referralOpen} onOpenChange={setReferralOpen} />
+      <OpportunityStatusDialog open={opportunityDialogOpen} onOpenChange={setOpportunityDialogOpen} />
     </>
   );
 };

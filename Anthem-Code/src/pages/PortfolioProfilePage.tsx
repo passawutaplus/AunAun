@@ -2,7 +2,7 @@ import BriefcaseIcon from "../components/icons/BriefcaseIcon";
 import { useMemo, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings, ExternalLink, LayoutGrid, Sparkles, Phone, UserPlus, FileCheck, Plus, Layers3, ChevronDown, Gift as GiftIcon, Target, Bookmark, MessageSquare } from "lucide-react";
+import { Settings, LayoutGrid, Sparkles, Phone, UserPlus, FileCheck, Plus, Layers3, ChevronDown, Gift as GiftIcon, Target, Bookmark, MessageSquare } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,9 +47,6 @@ import {
 import { ProfileHiringRequestsSection } from "@/components/profile/ProfileHiringRequestsSection";
 import CollabRequestsSection from "@/components/CollabRequestsSection";
 
-
-const SOLO_URL = "https://solofreelancer.com";
-
 type ProfileEditKey = "bio" | "experience" | "skills" | "contact";
 
 const parseExperience = (raw: unknown): ExperienceItem[] =>
@@ -86,6 +83,7 @@ const PortfolioProfilePage = () => {
     instagram: "",
   });
   const [createOpen, setCreateOpen] = useState(false);
+  const [opportunityOpen, setOpportunityOpen] = useState(false);
 
 
   useEffect(() => {
@@ -238,15 +236,6 @@ const PortfolioProfilePage = () => {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <BackButton to="/" label="กลับฟีด" />
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(SOLO_URL, "_blank", "noopener,noreferrer")}
-              className="rounded-full glass-chip border-0 text-primary hover:text-primary"
-            >
-              <ExternalLink className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">Solo Freelancer</span>
-            </Button>
             <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="rounded-full glass-chip border-0">
               <Settings className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">ตั้งค่า</span>
             </Button>
@@ -259,6 +248,9 @@ const PortfolioProfilePage = () => {
           userId={user!.id}
           profile={profile}
           stats={{ works: published.length, followers, following }}
+          opportunityStatus={(profile as { opportunity_status?: string }).opportunity_status}
+          opportunityTypes={(profile as { opportunity_types?: string[] }).opportunity_types}
+          onOpportunityEdit={() => setOpportunityOpen(true)}
           onPost={() => setCreateOpen(true)}
           onPreview={() =>
             navigate(profileVisitorPreviewPath({ user_id: user!.id, username: profile.username }))
@@ -280,7 +272,7 @@ const PortfolioProfilePage = () => {
             <MiniStat icon={Sparkles} label="ยอดดูรวม" value={totalViews} />
           </div>
 
-          <ProfileMenuCard />
+          <ProfileMenuCard opportunityOpen={opportunityOpen} onOpportunityOpenChange={setOpportunityOpen} />
         </aside>
 
         {/* RIGHT: Sections */}

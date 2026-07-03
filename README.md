@@ -2,9 +2,11 @@
 
 Monorepo for three related applications:
 
-- `Solo-Code` - freelancer operations, billing, client portals, and back-office tools
-- `Anthem-Code` - creative community and portfolio application
-- `Ops-Hub` - administration and ecosystem monitoring
+- `Solo-Code` — freelancer operations, billing, client portals, and back-office tools
+- `Anthem-Code` — **Aplus1** creative community and portfolio (`https://aplus1.app`)
+- `Ops-Hub` — administration and ecosystem monitoring
+
+Documentation index: [docs/README.md](docs/README.md)
 
 ## Local setup
 
@@ -28,6 +30,6 @@ service-role keys, Stripe secret keys, or access tokens.
 - Mock payment RPCs are disabled for normal users by the latest migrations.
 - Demo environments can explicitly enable mock payment RPCs with the SQL files in
   each application's `supabase/manual` directory.
-- Review `CODEX_REVIEW.md` before the next production deployment.
-- For Anthem, also review `Anthem-Code/docs/production-readiness.md`,
-  `Anthem-Code/docs/demo-isolation.md`, and `Anthem-Code/docs/store-readiness.md`.
+- For Aplus1 release: [Anthem-Code/docs/release-gate-aplus1.md](Anthem-Code/docs/release-gate-aplus1.md),
+  [Anthem-Code/docs/demo-isolation.md](Anthem-Code/docs/demo-isolation.md),
+  [Anthem-Code/docs/store-readiness.md](Anthem-Code/docs/store-readiness.md).

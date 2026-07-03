@@ -1,0 +1,56 @@
+---
+description: Aplus1 product north star — อ่านก่อนแก้ feature/UX/copy ของ Anthem (aplus1.app). Thesis ผลงานจริง -> โอกาส
+globs:
+  - Anthem-Code/**
+alwaysApply: false
+---
+
+# Aplus1 Product Foundation
+
+ก่อนแก้ product UX, copy, discovery, portfolio, jobs, chat, หรือ onboarding ใน `Anthem-Code/` — **อ่านไฟล์นี้ก่อน**:
+
+[Anthem-Code/docs/MASTER_CURSOR_BRIEF.md](../../Anthem-Code/docs/MASTER_CURSOR_BRIEF.md)
+
+## Thesis (ห้ามขัด)
+
+> **ผลงานจริง → โอกาส**
+
+- Positioning: **ผลงานจริง พาไปเจอโอกาสใหม่**
+- ใช้คำ **「โอกาส」** เป็นแกน; **「งาน」** เฉพาะบริบทจ้างงาน/ประกาศจ้าง
+- North Star: **project-qualified opportunity conversations / week**
+- MVP loop: publish project (มีบริบท) → discovery → save/contact → conversation จากผลงานนั้น
+
+## อ่านตามลำดับ
+
+1. `Anthem-Code/docs/product/aplus1-prd.md`
+2. `Anthem-Code/docs/product/aplus1-ux-flow.md`
+3. `Anthem-Code/docs/product/aplus1-feature-spec-cursor.md`
+4. `Anthem-Code/docs/research/aplus1-opportunity-research.md` (source-backed baseline)
+
+Gemini ใน `Anthem-Code/docs/research/gemini-research/` — ใช้เสริม strategy; ตัวเลข/claim ต้อง verify กับ `docs/research` ก่อนเอาไปใช้จริง
+
+## P0 Implementation (ทำก่อน marketplace/payment/ranking)
+
+1. Opportunity status (profile + project)
+2. Project context template (role, process, outcome ฯลฯ)
+3. Project-specific inquiry — CTA **「คุยต่อจากผลงานนี้」**
+4. Save/collection consistency
+5. Chat context + privacy
+6. Jobs/opportunity submit feedback
+7. Infinite-loading fallbacks
+
+## ห้ามทำก่อน loop ทำงาน
+
+- Package/price-first discovery (แบบ Fastwork)
+- Full escrow/payment
+- Generic job board เป็นหลัก
+- Public popularity ranking / contest หนัก
+- AI ranking black box
+
+## กติกาลงมือ
+
+- Thai-first copy ใน core actions
+- ทุก CTA ต้องมี feedback (loading/empty/error/success)
+- ตรวจ schema/RLS ก่อน migration
+- ไม่ใส่ service role ใน frontend
+- อ่าน `docs/ai-skills/SECURITY_CHECKLIST.md` + `RELEASE_CHECKLIST.md` ก่อน deploy

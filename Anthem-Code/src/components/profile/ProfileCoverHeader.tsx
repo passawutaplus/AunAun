@@ -7,6 +7,7 @@ import { uploadProjectImage } from "@/lib/uploadImage";
 import { useSubscription } from "@/core/subscription";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import OpportunityTypeChips from "@/components/opportunity/OpportunityTypeChips";
 
 type ProfileLike = {
   display_name: string | null;
@@ -29,6 +30,9 @@ type Props = {
   onPost?: () => void;
   onFollowersClick?: () => void;
   onFollowingClick?: () => void;
+  opportunityStatus?: string | null;
+  opportunityTypes?: string[] | null;
+  onOpportunityEdit?: () => void;
 };
 
 export default function ProfileCoverHeader({
@@ -43,6 +47,9 @@ export default function ProfileCoverHeader({
   onPost,
   onFollowersClick,
   onFollowingClick,
+  opportunityStatus,
+  opportunityTypes,
+  onOpportunityEdit,
 }: Props) {
   const { tier } = useSubscription();
   const updateMedia = useUpdateProfileMedia(userId);
@@ -168,6 +175,27 @@ export default function ProfileCoverHeader({
                 <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
                   <MapPin className="w-3 h-3" /> {profile.location}
                 </p>
+              )}
+              {onOpportunityEdit ? (
+                <button
+                  type="button"
+                  onClick={onOpportunityEdit}
+                  className="mt-2.5 text-left rounded-xl -mx-1 px-1 py-1 hover:bg-accent/60 transition-colors"
+                  title="แตะเพื่อปรับว่าตอนนี้เปิดรับอะไรอยู่"
+                >
+                  <OpportunityTypeChips
+                    status={opportunityStatus}
+                    types={opportunityTypes}
+                    size="md"
+                  />
+                </button>
+              ) : (
+                <OpportunityTypeChips
+                  className="mt-2.5"
+                  status={opportunityStatus}
+                  types={opportunityTypes}
+                  size="md"
+                />
               )}
               <div className="mt-3 flex items-center gap-4 text-sm">
                 <span>

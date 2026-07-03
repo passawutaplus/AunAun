@@ -15,6 +15,7 @@ import {
 import { normalizePlanId } from "@/lib/tierMembership";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { SO1O_APP_URL } from "@/lib/productLinks";
+import { UPGRADE_PATH } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
 const TIER_LABEL = {
@@ -117,8 +118,8 @@ export function StorageUsageSection() {
               : (
                 <>
                   ใกล้เต็มแล้ว — ลบไฟล์เก่าหรือ{" "}
-                  <Link to="/upgrade" className="font-medium underline underline-offset-2">
-                    อัปเกรดแพ็กเกจ
+                  <Link to={UPGRADE_PATH} className="font-medium underline underline-offset-2">
+                    แพ็ก Pro (เร็ว ๆ นี้)
                   </Link>
                 </>
               )}

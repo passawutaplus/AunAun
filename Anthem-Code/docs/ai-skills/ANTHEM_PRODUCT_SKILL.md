@@ -1,8 +1,10 @@
 # Anthem Product Skill
 
+> **Canonical product pack (2026-07):** อ่าน [`../MASTER_CURSOR_BRIEF.md`](../MASTER_CURSOR_BRIEF.md) และ [`../product/aplus1-prd.md`](../product/aplus1-prd.md) ก่อน skill นี้ — thesis **ผลงานจริง → โอกาส**, North Star = project-qualified conversations
+
 ## Product Definition
 
-Anthem / Pixel100 คือ creator community platform สำหรับครีเอเตอร์ไทย โดยเฉพาะสาย design, art, media, creative freelance
+Aplus1 (Anthem) คือแพลตฟอร์มโอกาสสำหรับครีเอเตอร์ไทย — ไม่ใช่ marketplace แบบ package-first หรือ job board ทั่วไป
 
 Anthem ไม่ใช่แค่ portfolio builder แต่เป็น community ที่รวม:
 

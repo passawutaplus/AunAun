@@ -35,7 +35,7 @@ form-action  'self';
 
 `'unsafe-inline'` + `'unsafe-eval'` ยังจำเป็นช่วง report-only เพราะ Vite/React dev tool inject runtime — เป้าหมาย Phase 2 คือถอดออกหลัง enforce
 
-> Policy ด้านบนเป็น report-only ใน `index.html` — production บน `an1hem.app` ใช้ CSP จาก `vercel.json` / nginx (ไม่มี `*.lovable.app`)
+> Policy ด้านบนเป็น report-only ใน `index.html` — production บน `aplus1.app` ใช้ CSP จาก `vercel.json` / nginx (ไม่มี `*.lovable.app`)
 
 ## วิธีเก็บ report
 
@@ -76,5 +76,5 @@ serve(async (req) => {
 
 ```bash
 # Validate syntax ด้วย Mozilla Observatory หรือ
-curl -sI https://an1hem.app | grep -i content-security
+curl -sI https://aplus1.app | grep -i content-security
 ```

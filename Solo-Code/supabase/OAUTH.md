@@ -70,7 +70,7 @@ export SUPABASE_ACCESS_TOKEN=sbp_...
 
 **Local dev:**
 - `http://localhost:5173/**` (So1o `npm run dev`)
-- `http://localhost:8080/**` (an1hem `npm run dev`)
+- `http://localhost:8080/**` (Aplus1 `npm run dev`)
 - `http://localhost:3000/**` (So1o Docker SSR)
 - `http://localhost:3090/**` (Ops Hub)
 

@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplus1 Research Report & Strategy 2024</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Palette: Brilliant Blues & Energetic Accents -->
+    <!-- HTML Comment: Selected Palette: "Brilliant Blues" with Energetic Orange accents for CTAs -->
+    <!-- HTML Comment: NEITHER Mermaid JS NOR SVG were used in this output. -->
+    <style>
+        :root {
+            --primary: #0066FF;
+            --secondary: #00D1FF;
+            --accent: #FF6B00;
+            --bg-light: #F8FAFC;
+            --text-dark: #0F172A;
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        body {
+            font-family: 'Anuphan', 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            scroll-behavior: smooth;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        .sticky-nav {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid #E2E8F0;
+        }
+        .glass-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-4px);
+        }
+        .gradient-text {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .opportunity-tag {
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #E0F2FE;
+            color: #0369A1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Intro -->
+    <header class="bg-white pt-16 pb-12 px-6 border-b">
+        <div class="max-w-6xl mx-auto text-center">
+            <h1 class="text-5xl font-extrabold mb-4 tracking-tight">Aplus1: <span class="gradient-text">Work to Opportunity</span></h1>
+            <p class="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+                รายงานวิจัยเชิงกลยุทธ์เพื่อสร้างแพลตฟอร์มที่เป็น " Reputational Layer" สำหรับนักสร้างสรรค์ยุคใหม่ 
+                ที่ซึ่งผลงานจริงคือกุญแจเปิดประตูสู่โอกาสที่ไม่จำกัดเพียงแค่การจ้างงาน
+            </p>
+            <div class="mt-8 flex justify-center gap-4">
+                <span class="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-semibold border border-blue-100">Senior Market Research</span>
+                <span class="px-4 py-2 bg-orange-50 text-orange-700 rounded-lg text-sm font-semibold border border-orange-100">Product Strategy</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sticky Nav -->
+    <nav class="sticky-nav py-4">
+        <div class="max-w-6xl mx-auto px-6 flex overflow-x-auto gap-8 no-scrollbar text-sm font-medium whitespace-nowrap">
+            <a href="#summary" class="hover:text-blue-600">Executive Summary</a>
+            <a href="#landscape" class="hover:text-blue-600">Market Landscape</a>
+            <a href="#positioning" class="hover:text-blue-600">Positioning</a>
+            <a href="#taxonomy" class="hover:text-blue-600">Opportunity Types</a>
+            <a href="#competitors" class="hover:text-blue-600">Competitors</a>
+            <a href="#mvp" class="hover:text-blue-600">MVP Roadmap</a>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-6 py-12">
+
+        <!-- 1. Executive Summary -->
+        <section id="summary" class="mb-20">
+            <h2 class="text-3xl font-bold mb-8 flex items-center gap-2">
+                <span class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-lg">1</span>
+                Executive Summary
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="glass-card p-8 bg-blue-600 text-white">
+                    <h3 class="text-xl font-bold mb-4">Core Identification</h3>
+                    <p class="mb-4 opacity-90 leading-relaxed">
+                        Aplus1 ไม่ควรเป็นเพียงตลาดฟรีแลนซ์ (Freelance Marketplace) แต่ต้องเป็น **"Reputational Engine"** 
+                        ที่แก้ปัญหา "The Paradox of Choice" ของ Hirer และ "The Fear of Starting" ของ Creator 
+                        โดยเน้นที่ Context-Driven Portfolio (การโชว์วิธีคิด ไม่ใช่แค่ภาพสวย)
+                    </p>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex items-center gap-2">✔ First User: Rising Creators (Students & High-Potential Juniors)</li>
+                        <li class="flex items-center gap-2">✔ Gap: Portfolio ที่มี "Intent" (ความตั้งใจในการรับโอกาส)</li>
+                        <li class="flex items-center gap-2">✔ Risk: การกลายเป็นที่รวบรวมงานคุณภาพต่ำ (Quality Dilution)</li>
+                    </ul>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="glass-card p-6 text-center">
+                        <div class="text-3xl font-bold text-blue-600">82%</div>
+                        <div class="text-xs text-slate-500 mt-2 uppercase tracking-wider font-bold">Hirer Priority</div>
+                        <p class="text-sm mt-2 font-medium">ต้องการเห็น "กระบวนการทำงาน" มากกว่าแค่รูปจบ</p>
+                    </div>
+                    <div class="glass-card p-6 text-center">
+                        <div class="text-3xl font-bold text-orange-500">64%</div>
+                        <div class="text-xs text-slate-500 mt-2 uppercase tracking-wider font-bold">Creator Fear</div>
+                        <p class="text-sm mt-2 font-medium">กลัวงานไม่ดีพอที่จะลงใน Behance/Dribbble</p>
+                    </div>
+                    <div class="glass-card p-6 text-center col-span-2">
+                        <p class="text-sm font-semibold italic text-blue-800">"Opportunity is the bridge between visibility and sustainability."</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Market Landscape -->
+        <section id="landscape" class="mb-20">
+            <h2 class="text-3xl font-bold mb-8 flex items-center gap-2">
+                <span class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-lg">2</span>
+                Market Landscape & Gap Analysis
+            </h2>
+            <p class="mb-8 text-slate-600 leading-relaxed">
+                จากการวิเคราะห์แพลตฟอร์มในปัจจุบัน เราพบว่าตลาดยังขาดพื้นที่ "กึ่งกลาง" ระหว่างการโชว์ผลงานแบบ Pure Art (Behance) กับการขายแรงงานราคาถูก (Fastwork) 
+                Aplus1 จะแทรกตัวอยู่ในโซน **"Professional Discovery"**
+            </p>
+            <div class="chart-container mb-12">
+                <canvas id="marketLandscapeChart"></canvas>
+            </div>
+        </section>
+
+        <!-- 3. Opportunity Taxonomy -->
+        <section id="taxonomy" class="mb-20">
+            <div class="bg-slate-900 rounded-2xl p-10 text-white">
+                <h2 class="text-3xl font-bold mb-4">The Opportunity Taxonomy</h2>
+                <p class="text-slate-400 mb-10">เราไม่ได้มองหาแค่ "งาน" แต่มองหา "จุดเริ่มต้นของความสัมพันธ์ทางวิชาชีพ"</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-slate-800">
+                    <!-- Type 1 -->
+                    <div class="bg-white p-6 rounded-xl">
+                        <div class="text-blue-600 text-2xl mb-2">💰</div>
+                        <h4 class="font-bold text-lg mb-2">Paid Opportunities</h4>
+                        <p class="text-xs text-slate-500 mb-4">Freelance, Part-time, Full-time</p>
+                        <div class="opportunity-tag">CTA: จ้างงาน / เสนอโปรเจกต์</div>
+                    </div>
+                    <!-- Type 2 -->
+                    <div class="bg-white p-6 rounded-xl">
+                        <div class="text-orange-600 text-2xl mb-2">🤝</div>
+                        <h4 class="font-bold text-lg mb-2">Collaborations</h4>
+                        <p class="text-xs text-slate-500 mb-4">Co-creation, Partnerships</p>
+                        <div class="opportunity-tag bg-orange-100 text-orange-700">CTA: ชวนทำโปรเจกต์</div>
+                    </div>
+                    <!-- Type 3 -->
+                    <div class="bg-white p-6 rounded-xl">
+                        <div class="text-green-600 text-2xl mb-2">🎓</div>
+                        <h4 class="font-bold text-lg mb-2">Learning Growth</h4>
+                        <p class="text-xs text-slate-500 mb-4">Mentorship, Internships</p>
+                        <div class="opportunity-tag bg-green-100 text-green-700">CTA: ปรึกษา / รับเข้าทีม</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Core Positioning (5 Statements) -->
+        <section id="positioning" class="mb-20">
+            <h2 class="text-3xl font-bold mb-8 flex items-center gap-2">
+                <span class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-lg">3</span>
+                Core Positioning Strategies
+            </h2>
+            <div class="grid grid-cols-1 gap-6">
+                <!-- Card 1 -->
+                <div class="flex flex-col md:flex-row gap-6 p-8 glass-card border-l-4 border-blue-600">
+                    <div class="flex-1">
+                        <span class="text-xs font-bold text-blue-600 uppercase">1. The Growth Engine</span>
+                        <h3 class="text-xl font-bold my-2">"พื้นที่ที่ผลงานชิ้นเล็ก ก็นำไปสู่โอกาสที่ยิ่งใหญ่ได้"</h3>
+                        <p class="text-sm text-slate-600">เน้น Students/New Creators ที่ต้องการ Proof of Concept มากกว่าเงินในก้าวแรก</p>
+                    </div>
+                    <div class="flex-1 bg-slate-50 p-4 rounded-lg text-sm italic">
+                        "เพราะเราเชื่อว่าไอเดียที่ดียังไม่ต้องการความสมบูรณ์แบบ แค่ต้องการคนเห็นคุณค่า"
+                    </div>
+                </div>
+                <!-- Card 2 -->
+                <div class="flex flex-col md:flex-row gap-6 p-8 glass-card border-l-4 border-accent">
+                    <div class="flex-1">
+                        <span class="text-xs font-bold text-orange-600 uppercase">2. The Context King</span>
+                        <h3 class="text-xl font-bold my-2">"ให้เบื้องหลังของงาน เป็นตัวการันตีความเชื่อมั่น"</h3>
+                        <p class="text-sm text-slate-600">เน้น Case Studies และ Process เพื่อดึงดูด Agency/SMEs ที่ต้องการความชัวร์</p>
+                    </div>
+                    <div class="flex-1 bg-slate-50 p-4 rounded-lg text-sm italic">
+                        "ไม่ต้องถามว่าทำยังไง เพราะเราให้คุณดูตั้งแต่บรรทัดแรกของวิธีคิด"
+                    </div>
+                </div>
+                <!-- Card 3 -->
+                <div class="flex flex-col md:flex-row gap-6 p-8 glass-card border-l-4 border-indigo-600">
+                    <div class="flex-1">
+                        <span class="text-xs font-bold text-indigo-600 uppercase">3. The Community Roster</span>
+                        <h3 class="text-xl font-bold my-2">"สร้างทำเนียบนักสร้างสรรค์ สำหรับโลกแห่งการคอลแลบ"</h3>
+                        <p class="text-sm text-slate-600">เน้นการเป็น Directory ที่มากกว่า Portfolio แต่คือ Network ที่พร้อมทำงานร่วมกัน</p>
+                    </div>
+                    <div class="flex-1 bg-slate-50 p-4 rounded-lg text-sm italic">
+                        "ที่นี่คุณไม่ได้แค่มาลงงาน แต่คุณมาหาทีมที่จะไปสร้างสิ่งที่ยิ่งใหญ่กว่าเดิม"
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Competitive Positioning Map (Plotly) -->
+        <section id="competitors" class="mb-20">
+            <h2 class="text-3xl font-bold mb-8 flex items-center gap-2">
+                <span class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-lg">4</span>
+                Competitive Landscape (Strategic Mapping)
+            </h2>
+            <div id="compScatterPlot" class="w-full h-[500px] glass-card p-4"></div>
+            <div class="mt-8 overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-100 text-slate-700 uppercase font-bold">
+                        <tr>
+                            <th class="p-4">Platform</th>
+                            <th class="p-4">Positioning</th>
+                            <th class="p-4">Weakness for Aplus1 to exploit</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        <tr>
+                            <td class="p-4 font-bold">Fastwork</td>
+                            <td class="p-4">Transactional Marketplace</td>
+                            <td class="p-4 text-red-600 font-medium italic">Price war & Commoditization</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-bold">Behance</td>
+                            <td class="p-4">Visual Display</td>
+                            <td class="p-4 text-red-600 font-medium italic">Too quiet / Lack of direct hire intent</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-bold">Contra</td>
+                            <td class="p-4">Independent Profile</td>
+                            <td class="p-4 text-red-600 font-medium italic">Low local relevance (SEA) / Professional barrier high</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-bold">IG/TikTok</td>
+                            <td class="p-4">Short-term Discovery</td>
+                            <td class="p-4 text-red-600 font-medium italic">Algorithm volatility / No structured portfolio</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 6. Feature Roadmap & MVP -->
+        <section id="mvp" class="mb-20">
+            <h2 class="text-3xl font-bold mb-8 flex items-center gap-2">
+                <span class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-lg">5</span>
+                MVP Recommendations & Feature Priority
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Must Have -->
+                <div class="p-8 border-2 border-blue-600 rounded-2xl bg-blue-50">
+                    <h3 class="text-xl font-bold mb-4 text-blue-800">Must-Have (Launch)</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3">
+                            <span class="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center shrink-0 text-xs">1</span>
+                            <div>
+                                <strong class="block">Contextual Upload Template</strong>
+                                <span class="text-sm text-slate-600">บังคับลง Role, Process, และ Challenge เพื่อสร้าง Trust สัญญาณ</span>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center shrink-0 text-xs">2</span>
+                            <div>
+                                <strong class="block">Opportunity Status Selector</strong>
+                                <span class="text-sm text-slate-600">ไม่ใช่แค่ "จ้างงาน" แต่รวมถึง "หาพาร์ทเนอร์" หรือ "หาเมนเทอร์"</span>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center shrink-0 text-xs">3</span>
+                            <div>
+                                <strong class="block">Direct Inquiry from Project</strong>
+                                <span class="text-sm text-slate-600">ปุ่มติดต่อที่ติดไปกับหน้างานนั้นๆ ไม่ใช่แค่หน้าโปรไฟล์</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Not Now -->
+                <div class="p-8 border-2 border-slate-200 rounded-2xl">
+                    <h3 class="text-xl font-bold mb-4 text-slate-600">Should Wait (Phase 2+)</h3>
+                    <ul class="space-y-4 opacity-70">
+                        <li class="flex items-start gap-3">
+                            <span class="w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center shrink-0 text-xs">✕</span>
+                            <div>
+                                <strong class="block">In-platform Payment</strong>
+                                <span class="text-sm text-slate-600">เลี่ยงความยุ่งยากทางกฎหมายและ Transaction Fees ในช่วงแรก</span>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center shrink-0 text-xs">✕</span>
+                            <div>
+                                <strong class="block">AI Content Generator</strong>
+                                <span class="text-sm text-slate-600">เน้นความ Authentic จากคนจริงๆ ก่อนในช่วงสร้าง Community</span>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center shrink-0 text-xs">✕</span>
+                            <div>
+                                <strong class="block">Job Board System</strong>
+                                <span class="text-sm text-slate-600">เลี่ยงการเป็น HR Platform แต่เน้นเป็น Discovery Hub</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. Copy and Language System -->
+        <section id="language" class="mb-20">
+            <h2 class="text-3xl font-bold mb-8">Copy & Communication System</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="glass-card p-6">
+                    <h4 class="font-bold mb-4 border-b pb-2">Headline Strategies</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-xs text-blue-600 font-bold uppercase">Option A (Direct & Actionable)</p>
+                            <p class="font-bold text-lg">"ดูงานก่อน ค่อยจ้างคน"</p>
+                            <p class="text-sm text-slate-500 italic">เหมาะสำหรับ SMEs ที่ต้องการลดความเสี่ยง</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-orange-600 font-bold uppercase">Option B (Inspirational)</p>
+                            <p class="font-bold text-lg">"ให้ผลงานพาคุณไปเจอโอกาสใหม่"</p>
+                            <p class="text-sm text-slate-500 italic">เหมาะสำหรับ Students & New Creators</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-6">
+                    <h4 class="font-bold mb-4 border-b pb-2">CTA Comparison</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center p-2 bg-red-50 rounded">
+                            <span class="text-red-700 font-bold">X จ้างงาน</span>
+                            <span class="text-xs text-red-500">Too transactional / Scary</span>
+                        </div>
+                        <div class="flex justify-between items-center p-2 bg-green-50 rounded border border-green-200">
+                            <span class="text-green-700 font-bold">✓ ชวนคุยโอกาส</span>
+                            <span class="text-xs text-green-600">Low friction / Professional</span>
+                        </div>
+                        <div class="flex justify-between items-center p-2 bg-blue-50 rounded border border-blue-200">
+                            <span class="text-blue-700 font-bold">✓ สนใจงานแนวนี้</span>
+                            <span class="text-xs text-blue-600">Intent-based / Soft start</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8. Founder Decision Summary -->
+        <section class="mb-20 bg-blue-900 text-white p-10 rounded-3xl relative overflow-hidden">
+            <div class="relative z-10">
+                <h2 class="text-4xl font-bold mb-6">Founder Action Plan</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div>
+                        <h4 class="text-xl font-bold mb-4 text-blue-300">Start Here</h4>
+                        <ol class="space-y-4 list-decimal list-inside text-slate-100">
+                            <li>โฟกัสที่ **Rising Creators** ในไทยก่อน (กลุ่มที่ Active บน FB Groups/TikTok)</li>
+                            <li>เปลี่ยนคำว่า "จ้างงาน" เป็น **"เสนอโอกาส"** ในทุกจุดของ UX</li>
+                            <li>สร้างระบบ **Project Template** ที่ช่วยเขียน Case Study อัตโนมัติ</li>
+                            <li>ทำระบบ **Inquiry Form** สั้นๆ ที่แนบไปกับตัวโปรเจกต์</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold mb-4 text-blue-300">Key Risk to Manage</h4>
+                        <ul class="space-y-4 text-slate-100">
+                            <li class="flex gap-3">
+                                <span>⚠️</span>
+                                <span><strong>Ghosting:</strong> ต้องมีระบบ Tracking หรือ Follow-up เมื่อมีการติดต่อ</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <span>⚠️</span>
+                                <span><strong>Plagiarism:</strong> การลงงานดิบอาจเสี่ยงต่อการถูกก๊อปปี้ ต้องมีระบบ Watermark หรือ Privacy Mode</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-100 py-12 px-6 border-t text-center">
+        <p class="text-slate-500 text-sm">© 2024 Aplus1 Strategy Report. Crafted for the Creative Economy.</p>
+        <p class="text-xs text-slate-400 mt-2 italic">Aplus1: Where Every Stroke Leads to a Connection.</p>
+    </footer>
+
+    <script>
+        // HTML Comment: Chart.js Configuration for Market Landscape
+        const ctxMarket = document.getElementById('marketLandscapeChart').getContext('2d');
+        new Chart(ctxMarket, {
+            type: 'bar',
+            data: {
+                labels: ['Behance (Pure\nDisplay)', 'Fastwork\n(Transactional)', 'LinkedIn\n(Corporate)', 'Aplus1\n(Opportunity)'],
+                datasets: [{
+                    label: 'Focus Score: Discovery vs Transaction',
+                    data: [90, 20, 40, 85],
+                    backgroundColor: ['#94A3B8', '#EF4444', '#0077B5', '#0066FF'],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                const item = tooltipItems[0];
+                                let label = item.chart.data.labels[item.dataIndex];
+                                if (Array.isArray(label)) {
+                                  return label.join(' ');
+                                } else {
+                                  return label;
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                }
+            }
+        });
+
+        // HTML Comment: Plotly Configuration for Competitive Map
+        const data = [
+            {
+                x: [10, 80, 40, 20, 90, 70], // Creative Identity
+                y: [80, 10, 90, 30, 20, 75], // Hiring Intent
+                text: ['Behance', 'Fastwork', 'LinkedIn', 'IG/TikTok', 'Dribbble', 'Aplus1'],
+                mode: 'markers+text',
+                textposition: 'top center',
+                marker: {
+                    size: [30, 30, 30, 30, 30, 45],
+                    color: ['#ddd', '#ddd', '#ddd', '#ddd', '#ddd', '#0066FF'],
+                    opacity: 0.8
+                },
+                type: 'scatter'
+            }
+        ];
+
+        const layout = {
+            title: 'Market Positioning: Identity vs Intent',
+            xaxis: { title: 'Focus on Creative Identity', range: [0, 100] },
+            yaxis: { title: 'Direct Hiring/Opportunity Intent', range: [0, 100] },
+            hovermode: 'closest'
+        };
+
+        Plotly.newPlot('compScatterPlot', data, layout);
+
+        // Helper for wrapping multi-line labels in Chart.js
+        function wrapLabel(label) {
+            if (label.length > 16) {
+                const words = label.split(' ');
+                const lines = [];
+                let currentLine = '';
+                words.forEach(w => {
+                    if ((currentLine + w).length > 16) {
+                        lines.push(currentLine.trim());
+                        currentLine = w + ' ';
+                    } else {
+                        currentLine += w + ' ';
+                    }
+                });
+                lines.push(currentLine.trim());
+                return lines;
+            }
+            return label;
+        }
+    </script>
+
+</body>
+</html>

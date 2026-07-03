@@ -15,6 +15,7 @@ import {
   tierProgress,
 } from "@/lib/tierMembership";
 import { cn } from "@/lib/utils";
+import { isAplus1UpgradeEnabled, UPGRADE_PATH } from "@/lib/aplus1Launch";
 
 type Props = {
   className?: string;
@@ -123,7 +124,15 @@ export function TierMembershipCard({
         )}
 
         <div className="mt-4 flex flex-wrap gap-2">
-          {nextUpgrade && (
+          {nextUpgrade && !isAplus1UpgradeEnabled() && (
+            <Button asChild size="sm" variant="outline" className="gap-1.5 rounded-full">
+              <Link to={UPGRADE_PATH}>
+                อัพเกรด {tierLabel(nextUpgrade)} — เร็ว ๆ นี้
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          )}
+          {nextUpgrade && isAplus1UpgradeEnabled() && (
             <Button asChild size="sm" className="gap-1.5 rounded-full">
               <a href={SO1O_PRICING_URL} target="_blank" rel="noopener noreferrer">
                 อัพเกรด {tierLabel(nextUpgrade)}

@@ -4,6 +4,7 @@
 
 ## อ่านตามประเภทงาน
 
+- **Product direction / feature ใหม่ (อ่านก่อน skill นี้):** [`../MASTER_CURSOR_BRIEF.md`](../MASTER_CURSOR_BRIEF.md) → `../product/*` → `../research/*`
 - Product/feature ใหม่: `ANTHEM_PRODUCT_SKILL.md`
 - UX/UI/demo/usability: `ANTHEM_UX_RESEARCH_SKILL.md`
 - Referral/PX/reward/cashout copy: `ANTHEM_REFERRAL_REWARD_SKILL.md`

@@ -30,8 +30,10 @@ import { BRAND_NAME } from "@/lib/brandConfig";
 import { SO1O_APP_URL, SO1O_PRICING_URL } from "@/lib/productLinks";
 import { cn } from "@/lib/utils";
 import { isNativeShell } from "@/lib/nativePlatform";
+import { isAplus1UpgradeEnabled } from "@/lib/aplus1Launch";
+import UpgradeComingSoonPage from "@/pages/UpgradeComingSoonPage";
 
-const UpgradePage = () => {
+const UpgradePageLive = () => {
   const [cycle, setCycle] = useState<BillingCycle>("yearly");
   const [seats, setSeats] = useState(3);
   const { user } = useAuth();
@@ -314,6 +316,13 @@ const UpgradePage = () => {
       <Footer />
     </div>
   );
+};
+
+const UpgradePage = () => {
+  if (!isAplus1UpgradeEnabled()) {
+    return <UpgradeComingSoonPage />;
+  }
+  return <UpgradePageLive />;
 };
 
 export default UpgradePage;

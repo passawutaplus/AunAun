@@ -5,6 +5,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
 import { LineNotificationPrefsPanel } from "@/components/settings/LineNotificationPrefsPanel";
 import { pickLocale, type UserLocale } from "@/lib/lineNotificationKinds";
+import { UPGRADE_PATH } from "@/lib/aplus1Launch";
 
 const TIER_LABEL: Record<string, Record<UserLocale, string>> = {
   pro: { th: "โปร", en: "Pro" },
@@ -43,11 +44,11 @@ export function LineNotificationSection() {
           )}
         </p>
         <Link
-          to="/upgrade"
+          to={UPGRADE_PATH}
           className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90"
         >
           <Crown className="h-3.5 w-3.5" />
-          {t("อัปเกรดแพ็กเกจ", "Upgrade plan")}
+          {t("แพ็ก Pro — เร็ว ๆ นี้", "Pro plan — coming soon")}
         </Link>
       </section>
     );

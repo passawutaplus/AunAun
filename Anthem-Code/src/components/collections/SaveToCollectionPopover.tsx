@@ -174,6 +174,7 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
         open={formOpen}
         onOpenChange={setFormOpen}
         onCreated={async (id) => {
+          await refetchCollections();
           if (projectId) {
             await toggle.mutateAsync({ collectionId: id, projectId });
             toast.success("เพิ่มเข้าคอลเลกชันใหม่แล้ว");

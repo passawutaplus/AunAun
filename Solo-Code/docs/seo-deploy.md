@@ -63,7 +63,7 @@ VITE_SITE_URL=https://solofreelancer.com
 
 ```bash
 BASE_URL=https://solofreelancer.com ./Solo-Code/scripts/smoke-public.sh
-BASE_URL=https://1px.app ./Anthem-Code/scripts/smoke-public.sh
+BASE_URL=https://aplus1.app ./Anthem-Code/scripts/smoke-public.sh
 ```
 
 Manual เฉพาะที่ยังไม่ automate:

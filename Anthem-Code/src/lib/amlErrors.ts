@@ -5,7 +5,7 @@ export const friendlyAmlError = (e: unknown): string => {
   if (msg.startsWith("ACCOUNT_FROZEN:")) return "บัญชีของคุณถูกระงับ — กรุณาติดต่อแอดมิน";
   if (msg.startsWith("RECIPIENT_FROZEN:")) return "ผู้รับถูกระงับบัญชี ส่งของขวัญไม่ได้";
   if (msg.startsWith("NEW_ACCOUNT:")) return "บัญชีใหม่ — กรุณารออย่างน้อย 1 ชั่วโมงก่อนส่งของขวัญ";
-  if (msg.startsWith("HOLDING_PERIOD:")) return "ยอด Pixel ที่เพิ่งเติมต้องรอ 24 ชม. ก่อนใช้ส่งของขวัญ";
+  if (msg.startsWith("HOLDING_PERIOD:")) return "ยอด Pixel ที่เพิ่งเติมยังไม่พร้อมใช้ส่งของขวัญ — ลองใหม่ภายหลัง";
   if (msg.startsWith("LIMIT_EXCEEDED:")) return msg.replace("LIMIT_EXCEEDED: ", "");
   if (msg.startsWith("VELOCITY:")) return "ส่งของขวัญถี่เกินไป — กรุณารอสักครู่";
   if (msg.startsWith("KYC_REQUIRED:")) return "ต้องยืนยันตัวตนก่อนถอนเงิน — ไปที่หน้า /verify";

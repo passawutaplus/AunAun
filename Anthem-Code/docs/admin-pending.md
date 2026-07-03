@@ -10,7 +10,7 @@
 | มอนิเตอร์กิจกรรมทั้งเว็บ | `/admin/activity` |
 | Dashboard KPI + แถบ "ต้องดูแล" + ลิงก์จัดกลุ่ม 8 หมวด | `/admin` |
 | **Admin navigation รวมศูนย์** | `src/lib/admin/adminNavigation.ts` + `AdminSidebar` |
-| **Kuy Radar** (growth intel สำหรับ Aplus1) | `/admin/kuy-radar/*` — ดู [kuy-radar-migration.md](./kuy-radar-migration.md) |
+| **Marketing** (growth intel สำหรับ Aplus1) | `/admin/marketing/*` — ดู [marketing-migration.md](./marketing-migration.md) |
 | **platform_events** + DB triggers | migrations บน `zkflkpbmbozrchqncpzi` |
 | **สัญญา** | `/admin/contracts` |
 | **กระเป๋า & Ledger** | `/admin/wallet` |
@@ -24,7 +24,7 @@
 
 ### หมวด sidebar (8 กลุ่ม)
 
-1. ศูนย์บัญชาการ — ภาพรวม, Kuy Radar, Analytics, Dev tasks
+1. ศูนย์บัญชาการ — ภาพรวม, Marketing, Analytics, Dev tasks
 2. ผู้ใช้ & สตูดิโอ
 3. ผลงาน & ชุมชน
 4. งาน & ความร่วมมือ
@@ -63,6 +63,6 @@ cd Solo-Code && ./scripts/supabase-push-via-api.sh
 
 ## สรุป
 
-**Admin monitor + Kuy Radar พร้อมใช้งาน production หลัง migration push (เสร็จแล้ว)**
+**Admin monitor + Marketing พร้อมใช้งาน production หลัง migration push (เสร็จแล้ว)**
 
 Email/LINE notifications: [ecosystem-notifications.md](../../docs/ecosystem-notifications.md)

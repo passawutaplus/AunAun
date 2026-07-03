@@ -1,7 +1,7 @@
-# Scale Readiness Checklist — So1o + an1hem
+# Scale Readiness Checklist — So1o + Aplus1
 
-อัปเดต: มิถุนายน 2569  
-ขอบเขต: **So1o Freelancer (My Desk)** + **an1hem Showcase** — แชร์ Supabase โปรเจกต์เดียว (`zkflkpbmbozrchqncpzi`)  
+อัปเดต: กรกฎาคม 2569  
+ขอบเขต: **So1o Freelancer (My Desk)** + **Aplus1** — แชร์ Supabase โปรเจกต์เดียว (`zkflkpbmbozrchqncpzi`)  
 เป้าหมาย: พร้อมรับ **100 concurrent users** แล้วมีแผนชัดสำหรับ **1,000 concurrent users**
 
 เอกสารที่เกี่ยวข้อง:
@@ -171,7 +171,7 @@ Shared ecosystem credits: `ecosystem-ai-usage`, Edge Function `anthem-assistant`
 - [ ] **Sentry** (หรือเทียบเท่า) ทั้ง So1o SSR + client — อยู่ใน ROADMAP Q3 2026
 - [ ] Uptime monitor แยก 3 URL ([`ecosystem-hosting.md`](./ecosystem-hosting.md)):
   - `https://www.solofreelancer.com`
-  - `https://an1hem.app`
+  - `https://aplus1.app`
   - `https://hq.solofreelancer.com` (Ops Hub — optional แต่แนะนำ)
 - [ ] `./scripts/health-check.sh` ใน cron ทุก 5 นาที
 - [ ] Supabase Dashboard alerts: CPU, connections, disk, Realtime connections

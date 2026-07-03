@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
+import { useEnsureSensitiveAction } from "@/components/legal/SensitiveActionReauthProvider";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useCreateProject, useProject, useUpdateProject } from "@/hooks/useProjects";
 import { isUuid } from "@/lib/uuid";
@@ -28,6 +29,10 @@ import LicensePicker from "@/components/license/LicensePicker";
 import TagPicker from "@/components/tags/TagPicker";
 import ToolPicker from "@/components/tools/ToolPicker";
 import ProjectPreviewDialog, { type ProjectPreviewData } from "@/components/project/ProjectPreviewDialog";
+import ProjectContextEditorFields, {
+  type ProjectContextForm,
+} from "@/components/project/ProjectContextEditorFields";
+import type { OpportunityTypeKey } from "@/lib/opportunity";
 import type { ProjectPreviewMode } from "@/components/project/ProjectPreviewModeTabs";
 import ThirdPartyAssetsToggle from "@/components/license/ThirdPartyAssetsToggle";
 import OriginalWorkAttestation from "@/components/license/OriginalWorkAttestation";
@@ -72,6 +77,7 @@ const ProjectEditorPage = () => {
   const isDrillPost = params.get("from") === "so1o" && params.get("drill_type");
   const isDailyDrillPost = isDrillPost && params.get("drill_type") === "daily";
   const { user, loading: authLoading } = useAuth();
+  const ensureVerified = useEnsureSensitiveAction();
   const { data: isAdmin } = useIsAdmin();
   const { tier } = useSubscription();
   const limits = getProjectLimits(tier);
@@ -119,6 +125,19 @@ const ProjectEditorPage = () => {
   const [collabSelected, setCollabSelected] = useState<TaggedUserSummary[]>([]);
   const [collabAccepted, setCollabAccepted] = useState<TaggedUserSummary[]>([]);
   const [collabPending, setCollabPending] = useState<TaggedUserSummary[]>([]);
+  const [projectContext, setProjectContext] = useState<ProjectContextForm>({
+    brief: "",
+    creatorRole: "",
+    processNote: "",
+    deliverables: "",
+    durationLabel: "",
+    outcomeNote: "",
+    opportunityNote: "",
+    opportunityTypes: [],
+  });
+  const patchProjectContext = useCallback((patch: Partial<ProjectContextForm>) => {
+    setProjectContext((c) => ({ ...c, ...patch }));
+  }, []);
   const [publishing, setPublishing] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
 
@@ -192,6 +211,26 @@ const ProjectEditorPage = () => {
       setHasThirdPartyAssets((existing as { has_third_party_assets?: boolean }).has_third_party_assets ?? false);
       setThirdPartyNote((existing as { third_party_note?: string }).third_party_note ?? "");
       setRightsAttested(!!(existing as { rights_attested_at?: string | null }).rights_attested_at);
+      const extCtx = existing as {
+        brief?: string | null;
+        creator_role?: string | null;
+        process_note?: string | null;
+        deliverables?: string | null;
+        duration_label?: string | null;
+        outcome_note?: string | null;
+        opportunity_types?: string[] | null;
+        opportunity_note?: string | null;
+      };
+      setProjectContext({
+        brief: extCtx.brief ?? "",
+        creatorRole: extCtx.creator_role ?? "",
+        processNote: extCtx.process_note ?? "",
+        deliverables: extCtx.deliverables ?? "",
+        durationLabel: extCtx.duration_label ?? "",
+        outcomeNote: extCtx.outcome_note ?? "",
+        opportunityNote: extCtx.opportunity_note ?? "",
+        opportunityTypes: (extCtx.opportunity_types ?? []) as OpportunityTypeKey[],
+      });
       void (async () => {
         const ext = existing as {
           linked_community_post_ids?: string[];
@@ -265,6 +304,14 @@ const ProjectEditorPage = () => {
         copyright_holder: copyrightHolder.trim(),
         rights_attested_at: rightsAttestedAt,
         rights_attestation_version: rightsAttested ? LEGAL_ATTESTATION_VERSION : null,
+        brief: projectContext.brief.trim(),
+        creator_role: projectContext.creatorRole.trim(),
+        process_note: projectContext.processNote.trim(),
+        deliverables: projectContext.deliverables.trim(),
+        duration_label: projectContext.durationLabel.trim(),
+        outcome_note: projectContext.outcomeNote.trim(),
+        opportunity_types: projectContext.opportunityTypes,
+        opportunity_note: projectContext.opportunityNote.trim(),
       };
     },
     [
@@ -288,6 +335,7 @@ const ProjectEditorPage = () => {
       rightsAttested,
       allLinkedPostIds,
       collabAccepted,
+      projectContext,
     ],
   );
 
@@ -549,6 +597,14 @@ const ProjectEditorPage = () => {
     if (publishErr) {
       toast.error(publishErr);
       return;
+    }
+
+    if (targetStatus === "Published" && rightsAttested) {
+      try {
+        await ensureVerified("ยืนยันสิทธิ์และเผยแพร่ผลงาน");
+      } catch {
+        return;
+      }
     }
 
     try {
@@ -862,6 +918,12 @@ const ProjectEditorPage = () => {
             />
             <p className="text-xs text-muted-foreground text-right">{description.length}/5000</p>
           </section>
+
+          <ProjectContextEditorFields
+            value={projectContext}
+            onChange={patchProjectContext}
+            publishMode={status === "Published"}
+          />
 
           <section className="space-y-4 rounded-2xl border border-border bg-card/40 p-4">
             <PortfolioLinkedPostPicker

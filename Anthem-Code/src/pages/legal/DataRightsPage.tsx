@@ -9,12 +9,14 @@ import {
   LEGAL_SUPPORT_EMAIL,
 } from "@/lib/legalConfig";
 import { useAuth } from "@/hooks/useAuth";
+import { useEnsureSensitiveAction } from "@/components/legal/SensitiveActionReauthProvider";
 
 const mailto = (subject: string, body: string) =>
   `mailto:${LEGAL_DPO_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
 const DataRightsPage = () => {
   const { user } = useAuth();
+  const ensureVerified = useEnsureSensitiveAction();
   const uid = user?.id ?? "";
   const email = user?.email ?? "";
 
@@ -61,6 +63,27 @@ const DataRightsPage = () => {
     { title: "ร้องเรียน สคส.", desc: "หากไม่พอใจการดำเนินการของเรา", action: "pdpc.or.th" },
   ];
 
+  const openMailto = async (href: string, reason: string) => {
+    if (user) {
+      try {
+        await ensureVerified(reason);
+      } catch {
+        return;
+      }
+    }
+    window.location.href = href;
+  };
+
+  const mailtoButtons: { label: string; href: string; reason: string }[] = [
+    { label: "ขอเข้าถึง / สำเนาข้อมูล", href: templates.access, reason: "ส่งคำขอเข้าถึงข้อมูลส่วนบุคคลถึง DPO" },
+    { label: "ขอแก้ไขข้อมูล", href: templates.correct, reason: "ส่งคำขอแก้ไขข้อมูลส่วนบุคคลถึง DPO" },
+    { label: "ขอลบบัญชี", href: templates.delete, reason: "ส่งคำขอลบบัญชีถึง DPO" },
+    { label: "ขอโอนข้อมูล", href: templates.portability, reason: "ส่งคำขอโอนข้อมูลส่วนบุคคลถึง DPO" },
+    { label: "คัดค้านการประมวลผล", href: templates.object, reason: "ส่งคำค้านการประมวลผลข้อมูลถึง DPO" },
+    { label: "ถอนความยินยอม", href: templates.withdraw, reason: "ส่งคำขอถอนความยินยอมถึง DPO" },
+    { label: "ถอนยินยอม KYC", href: templates.kyc, reason: "ส่งคำขอถอนความยินยอม KYC ถึง DPO" },
+  ];
+
   return (
     <LegalLayout title="สิทธิของเจ้าของข้อมูล (PDPA)">
       <p>
@@ -70,6 +93,25 @@ const DataRightsPage = () => {
     <p className="text-sm text-muted-foreground">
       บัญชี {LEGAL_APP_NAME} ทำงานคู่กับ {LEGAL_SOLO_NAME} — การลบข้อมูลอาจกระทบทั้ง ecosystem ติดต่อ DPO ก่อนดำเนินการ
     </p>
+
+    <div className="not-prose my-6 rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+      <p className="text-sm font-medium text-foreground">ทำได้เองในแอป (เร็วกว่าอีเมล)</p>
+      <div className="flex flex-wrap gap-2">
+        {user ? (
+          <Button asChild size="sm">
+            <Link to="/settings">ไปที่ ตั้งค่า → ความเป็นส่วนตัว</Link>
+          </Button>
+        ) : (
+          <Button asChild size="sm" variant="secondary">
+            <Link to="/auth">เข้าสู่ระบบก่อน</Link>
+          </Button>
+        )}
+        <Button asChild size="sm" variant="outline">
+          <Link to="/legal/copyright-report">แจ้งละเมิดลิขสิทธิ์</Link>
+        </Button>
+      </div>
+      <p className="text-[11px] text-muted-foreground">ดาวน์โหลดข้อมูลหรือขอลบบัญชีได้จากตั้งค่า — ไม่ต้องพิมพ์อีเมลเอง</p>
+    </div>
 
     <h2>1. สิทธิที่คุณมี (PDPA ม.39)</h2>
       <div className="not-prose space-y-3 my-4">
@@ -95,7 +137,16 @@ const DataRightsPage = () => {
         </li>
       </ul>
       <div className="not-prose my-3">
-        <Button type="button" size="sm" variant="outline" onClick={() => requestOpenCookiePreferences()}>
+        <Button type="button" size="sm" variant="outline" onClick={async () => {
+          if (user) {
+            try {
+              await ensureVerified("เปลี่ยนการตั้งค่าความยินยอมคุกกี้");
+            } catch {
+              return;
+            }
+          }
+          requestOpenCookiePreferences();
+        }}>
           จัดการความยินยอมคุกกี้
         </Button>
       </div>
@@ -108,27 +159,17 @@ const DataRightsPage = () => {
       </p>
 
       <div className="not-prose flex flex-col sm:flex-row flex-wrap gap-2 my-4">
-        <Button type="button" variant="secondary" size="sm" asChild>
-          <a href={templates.access}>ขอเข้าถึง / สำเนาข้อมูล</a>
-        </Button>
-        <Button type="button" variant="secondary" size="sm" asChild>
-          <a href={templates.correct}>ขอแก้ไขข้อมูล</a>
-        </Button>
-        <Button type="button" variant="secondary" size="sm" asChild>
-          <a href={templates.delete}>ขอลบบัญชี</a>
-        </Button>
-        <Button type="button" variant="secondary" size="sm" asChild>
-          <a href={templates.portability}>ขอโอนข้อมูล</a>
-        </Button>
-        <Button type="button" variant="secondary" size="sm" asChild>
-          <a href={templates.object}>คัดค้านการประมวลผล</a>
-        </Button>
-        <Button type="button" variant="secondary" size="sm" asChild>
-          <a href={templates.withdraw}>ถอนความยินยอม</a>
-        </Button>
-        <Button type="button" variant="secondary" size="sm" asChild>
-          <a href={templates.kyc}>ถอนยินยอม KYC</a>
-        </Button>
+        {mailtoButtons.map((b) => (
+          <Button
+            key={b.label}
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => void openMailto(b.href, b.reason)}
+          >
+            {b.label}
+          </Button>
+        ))}
       </div>
 
       <h2>4. ขั้นตอนหลังส่งคำขอ</h2>

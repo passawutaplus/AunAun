@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { flushPendingSignupConsent } from "@/lib/legalCompliance";
 
 type AuthState = {
   session: Session | null;
@@ -20,11 +21,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       setLoading(false);
+      if (s?.user) void flushPendingSignupConsent();
     });
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
       setLoading(false);
+      if (data.session?.user) void flushPendingSignupConsent();
     });
     return () => sub.subscription.unsubscribe();
   }, []);

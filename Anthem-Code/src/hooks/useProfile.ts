@@ -38,6 +38,12 @@ export const useUpdateProfile = (userId: string | undefined) => {
       if (p.preferredEmploymentTypes !== undefined) {
         payload.preferred_employment_types = p.preferredEmploymentTypes;
       }
+      if (p.opportunityStatus !== undefined) {
+        (payload as { opportunity_status?: string }).opportunity_status = p.opportunityStatus;
+      }
+      if (p.opportunityTypes !== undefined) {
+        (payload as { opportunity_types?: string[] }).opportunity_types = p.opportunityTypes;
+      }
       if (p.skills !== undefined) payload.skills = p.skills;
       if (p.experience !== undefined) payload.experience = p.experience as unknown as Json;
       if (Object.keys(payload).length === 0) return;

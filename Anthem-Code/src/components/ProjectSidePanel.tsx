@@ -10,6 +10,8 @@ import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPo
 import SupportButton from "@/components/gifting/SupportButton";
 import ReportTrigger from "@/components/report/ReportTrigger";
 import { formatThaiDate, formatCompact } from "@/lib/format";
+import OpportunityTypeChips from "@/components/opportunity/OpportunityTypeChips";
+import { isHireCtaAvailable } from "@/lib/opportunity";
 
 
 interface Props {
@@ -34,10 +36,17 @@ interface Props {
   allowHire?: boolean;
   allowCollab?: boolean;
   isOwner?: boolean;
+  ownerOpportunityStatus?: string | null;
+  ownerOpportunityTypes?: string[] | null;
+  projectOpportunityTypes?: string[] | null;
 }
 
 const ProjectSidePanel = (p: Props) => {
   const navigate = useNavigate();
+  const hireAvailable =
+    (p.allowHire ?? true) &&
+    !p.isOwner &&
+    isHireCtaAvailable(p.ownerOpportunityStatus);
 
   return (
     <aside className="space-y-4">
@@ -89,14 +98,23 @@ const ProjectSidePanel = (p: Props) => {
           <FollowButton freelancerId={p.ownerId} size="sm" variant="compact" />
         </div>
 
-        {(p.allowHire ?? true) && !p.isOwner && (
+        {(p.ownerOpportunityStatus || (p.ownerOpportunityTypes?.length ?? 0) > 0 || (p.projectOpportunityTypes?.length ?? 0) > 0) && (
+          <OpportunityTypeChips
+            status={p.ownerOpportunityStatus}
+            types={[...(p.ownerOpportunityTypes ?? []), ...(p.projectOpportunityTypes ?? [])].filter(
+              (t, i, arr) => arr.indexOf(t) === i,
+            )}
+          />
+        )}
+
+        {hireAvailable && (
           <Button
             onClick={p.onHire}
             size="lg"
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-sm"
           >
             <Sparkles className="w-4 h-4 mr-1.5" />
-            สนใจจ้างงาน
+            คุยต่อจากผลงานนี้
           </Button>
         )}
 

@@ -10,9 +10,13 @@ import {
   COOKIE_PREFERENCES_OPEN_EVENT,
   hasConsentBannerPending,
 } from "@/lib/cookieConsent";
+import { useAuth } from "@/hooks/useAuth";
+import { useEnsureSensitiveAction } from "@/components/legal/SensitiveActionReauthProvider";
 
 const CookieConsent = () => {
   const { pathname } = useLocation();
+  const { user } = useAuth();
+  const ensureVerified = useEnsureSensitiveAction();
   const compactAuth = isAuthRoute(pathname);
   const [bannerOpen, setBannerOpen] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
@@ -35,15 +39,21 @@ const CookieConsent = () => {
     setPrefsOpen(false);
   };
 
-  const acceptAll = () => {
-    acceptAllCookies();
-    onSaved();
+  const withLoggedInReauth = async (action: () => void) => {
+    try {
+      if (user) {
+        await ensureVerified("เปลี่ยนการตั้งค่าความยินยอมคุกกี้");
+      }
+      action();
+      onSaved();
+    } catch {
+      /* ยกเลิก */
+    }
   };
 
-  const essentialOnly = () => {
-    acceptEssentialOnly();
-    onSaved();
-  };
+  const acceptAll = () => void withLoggedInReauth(acceptAllCookies);
+
+  const essentialOnly = () => void withLoggedInReauth(acceptEssentialOnly);
 
   return (
     <>
@@ -97,7 +107,7 @@ const CookieConsent = () => {
                     ยอมรับทั้งหมด
                   </Button>
                   <Button size="sm" variant="outline" onClick={essentialOnly} className="min-h-11">
-                    จำเป็นเท่านั้น
+                    ปฏิเสธที่ไม่จำเป็น
                   </Button>
                   {!compactAuth && (
                     <Button

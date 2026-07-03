@@ -114,6 +114,7 @@ const SHARED_TABLES = new Set([
   "referral_codes",
   "referrals",
   "referral_reward_ledger",
+  "daily_px_claims",
   "kuy_businesses",
   "kuy_keywords",
   "kuy_leads",

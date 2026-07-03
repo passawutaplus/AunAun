@@ -19,6 +19,8 @@
 สรุปสิ่งที่เข้าใจก่อนลงมือแก้ และห้ามขัดกับ security/release checklist
 ```
 
+Documentation index: [docs/README.md](../README.md)
+
 ## Shared Skills
 
 1. `PRODUCT_CONTEXT.md` - ภาพรวม ecosystem และบทบาทของแต่ละเว็บ

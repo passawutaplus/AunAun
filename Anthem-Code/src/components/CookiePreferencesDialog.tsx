@@ -18,6 +18,8 @@ import {
   type CookieConsentPreferences,
 } from "@/lib/cookieConsent";
 import { useCookieConsent } from "@/hooks/useCookieConsent";
+import { useAuth } from "@/hooks/useAuth";
+import { useEnsureSensitiveAction } from "@/components/legal/SensitiveActionReauthProvider";
 
 interface CookiePreferencesDialogProps {
   open: boolean;
@@ -27,6 +29,8 @@ interface CookiePreferencesDialogProps {
 
 const CookiePreferencesDialog = ({ open, onOpenChange, onSaved }: CookiePreferencesDialogProps) => {
   const { consent, save } = useCookieConsent();
+  const { user } = useAuth();
+  const ensureVerified = useEnsureSensitiveAction();
   const [functional, setFunctional] = useState(true);
   const [analytics, setAnalytics] = useState(false);
 
@@ -36,7 +40,14 @@ const CookiePreferencesDialog = ({ open, onOpenChange, onSaved }: CookiePreferen
     setAnalytics(consent?.analytics ?? false);
   }, [open, consent]);
 
-  const persist = (fn: () => CookieConsentPreferences) => {
+  const persist = async (fn: () => CookieConsentPreferences) => {
+    try {
+      if (user) {
+        await ensureVerified("เปลี่ยนการตั้งค่าความยินยอมคุกกี้");
+      }
+    } catch {
+      return;
+    }
     const next = fn();
     if (!next.functional || !next.analytics) clearNonEssentialStorage();
     onSaved?.(next);
@@ -110,17 +121,17 @@ const CookiePreferencesDialog = ({ open, onOpenChange, onSaved }: CookiePreferen
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => persist(acceptEssentialOnly)}>
+          <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => void persist(acceptEssentialOnly)}>
             จำเป็นเท่านั้น
           </Button>
           <Button
             type="button"
             className="w-full sm:w-auto"
-            onClick={() => persist(() => save(functional, analytics))}
+            onClick={() => void persist(() => save(functional, analytics))}
           >
             บันทึกการตั้งค่า
           </Button>
-          <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => persist(acceptAllCookies)}>
+          <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => void persist(acceptAllCookies)}>
             ยอมรับทั้งหมด
           </Button>
         </DialogFooter>

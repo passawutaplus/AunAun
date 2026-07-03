@@ -13,11 +13,23 @@
 
 ## Positioning
 
-Anthem คือ creator community ไม่ใช่เว็บประกาศงานทั่วไป
+Aplus1 **ไม่ใช่** freelance marketplace หรือ job board ทั่วไป — อ่าน [MASTER_CURSOR_BRIEF.md](../MASTER_CURSOR_BRIEF.md)
+
+Product thesis:
+
+> **ผลงานจริง → โอกาส**
 
 Core message:
 
-> ลงผลงานแรก สร้างตัวตน หาโอกาส และชวนเพื่อนเข้าชุมชนครีเอเตอร์ไทย
+> ผลงานจริง พาไปเจอโอกาสใหม่
+
+Copy rules:
+
+- ใช้คำ **「โอกาส」** เป็นแกน
+- ใช้ **「งาน」** เฉพาะบริบทจ้างงาน/ประกาศจ้าง
+- North star: project-qualified opportunity conversations / week
+
+Admin growth intel: `/admin/marketing/*` — ดู [marketing-migration.md](../marketing-migration.md)
 
 ## Launch Phases
 

@@ -6,6 +6,8 @@ const LINKS = [
   { to: "/legal/cookies", label: "คุกกี้" },
   { to: "/legal/terms", label: "ข้อกำหนด" },
   { to: "/legal/ip", label: "ลิขสิทธิ์" },
+  { to: "/legal/community", label: "กฎชุมชน" },
+  { to: "/legal/copyright-report", label: "แจ้งลิขสิทธิ์" },
   { to: "/legal/rights", label: "สิทธิเจ้าของข้อมูล" },
 ] as const;
 

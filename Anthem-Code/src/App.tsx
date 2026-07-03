@@ -1,7 +1,8 @@
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/useAuth";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { SensitiveActionReauthProvider } from "@/components/legal/SensitiveActionReauthProvider";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +12,7 @@ import NotFound from "./pages/NotFound.tsx";
 import ErrorPage from "./pages/ErrorPage.tsx";
 import AuthCallbackPage from "./pages/AuthCallbackPage.tsx";
 import CookieConsent from "./components/CookieConsent.tsx";
+import PolicyReconsentGate from "./components/legal/PolicyReconsentGate.tsx";
 import FloatingNav from "./components/FloatingNav.tsx";
 import RequireAuth from "./components/RequireAuth.tsx";
 import AuthDialog from "./components/AuthDialog.tsx";
@@ -76,31 +78,37 @@ const AdminKycPage = lazy(() => import("./pages/admin/AdminKycPage"));
 const AdminInspirePage = lazy(() => import("./pages/admin/AdminInspirePage"));
 const AdminAiMonitorPage = lazy(() => import("./pages/admin/AdminAiMonitorPage"));
 const AdminDevTasksPage = lazy(() => import("./pages/admin/AdminDevTasksPage"));
-const AdminKuyRadarPage = lazy(() => import("./pages/admin/AdminKuyRadarPage"));
-const KuyOverviewPage = lazy(() => import("./components/admin/kuy-radar/KuyOverviewPage"));
-const KuyBusinessSetup = lazy(() => import("./components/admin/kuy-radar/KuyBusinessSetup"));
-const KuyLeadTable = lazy(() => import("./components/admin/kuy-radar/KuyLeadTable"));
-const KuyCompetitorTable = lazy(() => import("./components/admin/kuy-radar/KuyCompetitorTable"));
-const KuyContentTable = lazy(() => import("./components/admin/kuy-radar/KuyContentTable"));
-const KuyInsightPanel = lazy(() => import("./components/admin/kuy-radar/KuyInsightPanel"));
-const KuyAdsPlanner = lazy(() => import("./components/admin/kuy-radar/KuyAdsPlanner"));
-const KuyOfferBuilder = lazy(() => import("./components/admin/kuy-radar/KuyOfferBuilder"));
-const KuyContentPlanner = lazy(() => import("./components/admin/kuy-radar/KuyContentPlanner"));
-const KuyOutreachPanel = lazy(() => import("./components/admin/kuy-radar/KuyOutreachPanel"));
-const KuyReportsPanel = lazy(() => import("./components/admin/kuy-radar/KuyReportsPanel"));
-const KuySettingsPanel = lazy(() => import("./components/admin/kuy-radar/KuySettingsPanel"));
-const KuyManualPage = lazy(() => import("./components/admin/kuy-radar/KuyManualPage"));
+const AdminMarketingPage = lazy(() => import("./pages/admin/AdminMarketingPage"));
+const MarketingOverviewPage = lazy(() => import("./components/admin/marketing/MarketingOverviewPage"));
+const MarketingBusinessSetup = lazy(() => import("./components/admin/marketing/MarketingBusinessSetup"));
+const MarketingLeadTable = lazy(() => import("./components/admin/marketing/MarketingLeadTable"));
+const MarketingCompetitorTable = lazy(() => import("./components/admin/marketing/MarketingCompetitorTable"));
+const MarketingContentTable = lazy(() => import("./components/admin/marketing/MarketingContentTable"));
+const MarketingInsightPanel = lazy(() => import("./components/admin/marketing/MarketingInsightPanel"));
+const MarketingAdsPlanner = lazy(() => import("./components/admin/marketing/MarketingAdsPlanner"));
+const MarketingOfferBuilder = lazy(() => import("./components/admin/marketing/MarketingOfferBuilder"));
+const MarketingContentPlanner = lazy(() => import("./components/admin/marketing/MarketingContentPlanner"));
+const MarketingOutreachPanel = lazy(() => import("./components/admin/marketing/MarketingOutreachPanel"));
+const MarketingReportsPanel = lazy(() => import("./components/admin/marketing/MarketingReportsPanel"));
+const MarketingSettingsPanel = lazy(() => import("./components/admin/marketing/MarketingSettingsPanel"));
+const MarketingManualPage = lazy(() => import("./components/admin/marketing/MarketingManualPage"));
+const MarketingSignalsPage = lazy(() => import("./components/admin/marketing/MarketingSignalsPage"));
+const LegacyMarketingRedirect = lazy(() => import("./components/admin/marketing/LegacyMarketingRedirect"));
 const PrivacyPage = lazy(() => import("./pages/legal/PrivacyPage.tsx"));
 const TermsPage = lazy(() => import("./pages/legal/TermsPage.tsx"));
 const CookiesPage = lazy(() => import("./pages/legal/CookiesPage.tsx"));
 const DataRightsPage = lazy(() => import("./pages/legal/DataRightsPage.tsx"));
 const IntellectualPropertyPage = lazy(() => import("./pages/legal/IntellectualPropertyPage.tsx"));
 const CommunityGuidelinesPage = lazy(() => import("./pages/legal/CommunityGuidelinesPage.tsx"));
+const CopyrightReportPage = lazy(() => import("./pages/legal/CopyrightReportPage.tsx"));
 const CommunityPostDetailPage = lazy(() => import("./pages/CommunityPostDetailPage.tsx"));
 const CommunityPostEditorPage = lazy(() => import("./pages/CommunityPostEditorPage.tsx"));
 const CommunityFeedPage = lazy(() => import("./pages/CommunityFeedPage.tsx"));
 const AdminCommunityPage = lazy(() => import("./pages/admin/AdminCommunityPage"));
 const AdminModerationPage = lazy(() => import("./pages/admin/AdminModerationPage"));
+const AdminCompliancePage = lazy(() => import("./pages/admin/AdminCompliancePage"));
+const AdminCopyrightReportsPage = lazy(() => import("./pages/admin/AdminCopyrightReportsPage"));
+const AdminPrivacyRequestsPage = lazy(() => import("./pages/admin/AdminPrivacyRequestsPage"));
 const ExploreProjectsPage = lazy(() => import("./pages/ExploreProjectsPage.tsx"));
 const EarningsPage = lazy(() => import("./pages/EarningsPage.tsx"));
 const ResearchPage = lazy(() => import("./pages/ResearchPage.tsx"));
@@ -129,6 +137,7 @@ const queryClient = new QueryClient({
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+    <SensitiveActionReauthProvider>
     <ThemeProvider>
       <TooltipProvider>
         <Toaster />
@@ -181,21 +190,24 @@ const App = () => (
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<OverviewPage />} />
                 <Route path="dev-tasks" element={<AdminDevTasksPage />} />
-                <Route path="kuy-radar" element={<AdminKuyRadarPage />}>
-                  <Route index element={<KuyOverviewPage />} />
-                  <Route path="setup" element={<KuyBusinessSetup />} />
-                  <Route path="leads" element={<KuyLeadTable />} />
-                  <Route path="competitors" element={<KuyCompetitorTable />} />
-                  <Route path="content" element={<KuyContentTable />} />
-                  <Route path="insights" element={<KuyInsightPanel />} />
-                  <Route path="ads" element={<KuyAdsPlanner />} />
-                  <Route path="offers" element={<KuyOfferBuilder />} />
-                  <Route path="planner" element={<KuyContentPlanner />} />
-                  <Route path="outreach" element={<KuyOutreachPanel />} />
-                  <Route path="reports" element={<KuyReportsPanel />} />
-                  <Route path="settings" element={<KuySettingsPanel />} />
-                  <Route path="manual" element={<KuyManualPage />} />
+                <Route path="marketing" element={<AdminMarketingPage />}>
+                  <Route index element={<MarketingOverviewPage />} />
+                  <Route path="setup" element={<MarketingBusinessSetup />} />
+                  <Route path="signals" element={<MarketingSignalsPage />} />
+                  <Route path="leads" element={<MarketingLeadTable />} />
+                  <Route path="competitors" element={<MarketingCompetitorTable />} />
+                  <Route path="content" element={<MarketingContentTable />} />
+                  <Route path="insights" element={<MarketingInsightPanel />} />
+                  <Route path="ads" element={<MarketingAdsPlanner />} />
+                  <Route path="offers" element={<MarketingOfferBuilder />} />
+                  <Route path="planner" element={<MarketingContentPlanner />} />
+                  <Route path="outreach" element={<MarketingOutreachPanel />} />
+                  <Route path="reports" element={<MarketingReportsPanel />} />
+                  <Route path="settings" element={<MarketingSettingsPanel />} />
+                  <Route path="manual" element={<MarketingManualPage />} />
                 </Route>
+                <Route path="marketing-module/*" element={<Navigate to="/admin/marketing" replace />} />
+                <Route path="kuy-radar/*" element={<LegacyMarketingRedirect />} />
                 <Route path="activity" element={<AdminActivityPage />} />
                 <Route path="analytics" element={<AdminAnalyticsPage />} />
                 <Route path="contracts" element={<AdminContractsPage />} />
@@ -221,6 +233,9 @@ const App = () => (
                 <Route path="reports" element={<AdminReportsPage />} />
                 <Route path="community" element={<AdminCommunityPage />} />
                 <Route path="moderation" element={<AdminModerationPage />} />
+                <Route path="compliance" element={<AdminCompliancePage />} />
+                <Route path="compliance/copyright" element={<AdminCopyrightReportsPage />} />
+                <Route path="compliance/privacy" element={<AdminPrivacyRequestsPage />} />
                 <Route path="feedback" element={<AdminFeedbackPage />} />
                 <Route path="system" element={<AdminSystemPage />} />
                 <Route path="ai" element={<AdminAiMonitorPage />} />
@@ -242,6 +257,7 @@ const App = () => (
               <Route path="/legal/rights" element={<DataRightsPage />} />
               <Route path="/legal/ip" element={<IntellectualPropertyPage />} />
               <Route path="/legal/community" element={<CommunityGuidelinesPage />} />
+              <Route path="/legal/copyright-report" element={<CopyrightReportPage />} />
               <Route path="/error" element={<ErrorPage />} />
               <Route path="/error/404" element={<ErrorPage defaultKind="404" />} />
               <Route path="/error/405" element={<ErrorPage defaultKind="405" />} />
@@ -256,6 +272,7 @@ const App = () => (
             </Routes>
           </Suspense>
           <CookieConsent />
+          <PolicyReconsentGate />
           <FloatingNav />
           <AuthDialog />
           <InterestSurveyGate />
@@ -263,6 +280,7 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
+    </SensitiveActionReauthProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

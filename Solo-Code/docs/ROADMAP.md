@@ -7,7 +7,7 @@
 | Product | URL | บทบาท |
 |---------|-----|--------|
 | **So1o Freelancer (My Desk)** | solofreelancer.com | หลังบ้าน: ลูกค้า, ใบเสนอราคา, งาน, การเงิน, ภาษี, Brief, Labs |
-| **an1hem Showcase** | [an1hem.app](https://an1hem.app) (demo: [aplus1-demo.vercel.app](https://aplus1-demo.vercel.app)) | หน้าร้าน: ฟีดผลงานชุมชนสไตล์ Pinterest |
+| **Aplus1** | [aplus1.app](https://aplus1.app) (demo: [aplus1-demo.vercel.app](https://aplus1-demo.vercel.app)) | พอร์ตโฟลิโอ + ชุมชน + โอกาสจากผลงาน |
 | **Free Quotation (legacy)** | freelance-invoice-taupe.vercel.app | เครื่องมือใบเสนอราคาออนไลน์แยก (จะรวมเข้า My Desk ในอนาคต) |
 
 ---
@@ -64,7 +64,7 @@
 |--------|--------|
 | Onboarding 3 ขั้น (แบรนด์ → ลูกค้าแรก → ใบเสนอราคาแรก) | Product |
 | Help Center / คู่มือภาษีไทย + วิธีใช้ Brief | Content |
-| ลิงก์ an1hem ชัดจาก Landing/Footer (ทำแล้ว) | Marketing |
+| ลิงก์ Aplus1 ชัดจาก Landing/Footer (ทำแล้ว) | Marketing |
 | ปุ่มติดตามหนี้ → Quotation; แยกรายได้/ภาษี (ทำแล้ว) | UX |
 | อีเมลแจ้งลูกค้าเมื่อส่งใบเสนอราคา / ใกล้ครบกำหนดชำระ | Product |
 | E2E ทดสอบ flow: quotation → income → tax | Engineering |
@@ -86,13 +86,13 @@
 
 ### Q1 2027 — ทีม & ecosystem
 
-**เป้า:** In-House ที่ขายได้จริง + เชื่อม an1hem
+**เป้า:** In-House ที่ขายได้จริง + เชื่อม Aplus1
 
 | รายการ | ประเภท |
 |--------|--------|
 | Workspace: เชิญสมาชิก, role viewer/editor/admin | Product |
 | Shared asset library ข้าม user | Product |
-| SSO ลิงก์โปรไฟล์ My Desk ↔ an1hem | Ecosystem |
+| SSO ลิงก์โปรไฟล์ My Desk ↔ Aplus1 | Ecosystem |
 | Figma plugin หรือ import palette → Assets | Creative |
 | Webhook / Zapier (งานใหม่ → Line) | Platform |
 
@@ -115,7 +115,7 @@
 3. Quality (E2E, monitoring)  
 4. เปิด Pro billing  
 5. In-House workspace  
-6. an1hem deep link (โปรไฟล์เดียว)
+6. Aplus1 deep link (โปรไฟล์เดียว)
 
 ---
 

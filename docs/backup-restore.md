@@ -1,4 +1,4 @@
-# Backup & Restore — Ecosystem (So1o + an1hem + Ops Hub)
+# Backup & Restore — Ecosystem (So1o + Aplus1 + Ops Hub)
 
 อัปเดต: มิถุนายน 2569  
 โปรเจกต์: **`zkflkpbmbozrchqncpzi`** (org **AunAun**) — Postgres + Auth + Storage ร่วมกันทั้ง ecosystem
@@ -131,7 +131,7 @@ Checklist จาก [`scale-readiness-checklist.md`](./scale-readiness-checklist
 
 - [ ] สร้าง **staging project** (optional แต่แนะนำ)
 - [ ] Restore backup ลง staging
-- [ ] Login So1o + an1hem ด้วย test account
+- [ ] Login So1o + Aplus1 ด้วย test account
 - [ ] ตรวจ wallet, feed, chat, notifications
 - [ ] บันทึกเวลา restore + ขนาด DB
 

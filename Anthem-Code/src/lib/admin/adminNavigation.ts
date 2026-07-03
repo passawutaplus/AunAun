@@ -23,11 +23,11 @@ import {
   MessageCircle,
   MessageSquare,
   MessageSquareHeart,
-  Radar,
   ScrollText,
   Shield,
   ShieldCheck,
   Sparkles,
+  FileCheck,
   UserPlus,
   Users,
   Wallet,
@@ -76,10 +76,10 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         end: true,
       },
       {
-        to: "/admin/kuy-radar",
-        label: "Kuy Radar",
+        to: "/admin/marketing",
+        label: "Marketing",
         hint: "Growth intelligence เฉพาะ Aplus1",
-        icon: Radar,
+        icon: Megaphone,
       },
       {
         to: "/admin/analytics",
@@ -303,6 +303,13 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     description: "รายงาน moderation KYC/AML และเสียงจากผู้ใช้",
     items: [
       {
+        to: "/admin/compliance",
+        label: "Compliance",
+        hint: "PDPA consent คิวลิขสิทธิ์",
+        icon: FileCheck,
+        accent: true,
+      },
+      {
         to: "/admin/reports",
         label: "รายงานเนื้อหา",
         hint: "รายงานที่เปิดอยู่",
@@ -401,7 +408,7 @@ export function adminPendingQueue(stats: AdminStats | undefined): Array<{ to: st
 
 const SIDEBAR_PATHS_ORDERED: { sectionId: string; to: string }[] = [
   { sectionId: "command", to: "/admin" },
-  { sectionId: "command", to: "/admin/kuy-radar" },
+  { sectionId: "command", to: "/admin/marketing" },
   { sectionId: "command", to: "/admin/analytics" },
   { sectionId: "command", to: "/admin/activity" },
   { sectionId: "command", to: "/admin/dev-tasks" },

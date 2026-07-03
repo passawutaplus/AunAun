@@ -1,6 +1,6 @@
 # SEO — ก่อน Deploy Production
 
-Checklist สำหรับ `1px.app` (1PX / an1hem community)
+Checklist สำหรับ **aplus1.app** (Aplus1 community)
 
 ## สถานะในโค้ด
 
@@ -34,20 +34,20 @@ Checklist สำหรับ `1px.app` (1PX / an1hem community)
 
 ```bash
 # Anthem-Code/.env (production)
-VITE_SITE_URL=https://1px.app
+VITE_SITE_URL=https://aplus1.app
 ```
 
 ### 2. Regenerate sitemap ก่อน deploy
 
 ```bash
 cd Anthem-Code
-VITE_SITE_URL=https://1px.app npm run sitemap:gen
+VITE_SITE_URL=https://aplus1.app npm run sitemap:gen
 ```
 
 ### 3. หลัง Deploy — automated smoke
 
 ```bash
-BASE_URL=https://1px.app ./Anthem-Code/scripts/smoke-public.sh
+BASE_URL=https://aplus1.app ./Anthem-Code/scripts/smoke-public.sh
 ```
 
 - [ ] HTTP 200 ทุก URL (ครอบคลุมโดย `smoke:public`)
@@ -56,8 +56,8 @@ BASE_URL=https://1px.app ./Anthem-Code/scripts/smoke-public.sh
 
 ### 4. Google Search Console
 
-- [ ] Property: `https://1px.app`
-- [ ] Submit sitemap: `https://1px.app/sitemap.xml`
+- [ ] Property: `https://aplus1.app`
+- [ ] Submit sitemap: `https://aplus1.app/sitemap.xml`
 
 ### 5. Social preview
 
@@ -101,5 +101,5 @@ node scripts/performance/run-performance.mjs
 ## ปรับปรุงในอนาคต (optional)
 
 - Dynamic sitemap จาก Supabase (projects/profiles จริง แทน demo catalog)
-- Host รูป OG บน `1px.app`
+- Host รูป OG บน `aplus1.app`
 - `hreflang` ถ้ามีหน้าภาษาอังกฤษ

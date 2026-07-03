@@ -188,6 +188,8 @@ export const profileSchema = z.object({
   notifyJobMatch: z.boolean().default(true),
   preferredCategories: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
   preferredEmploymentTypes: z.array(z.string().trim().min(1).max(20)).max(10).default([]),
+  opportunityStatus: z.enum(["open_to_opportunities", "soft_open", "not_available"]).default("open_to_opportunities"),
+  opportunityTypes: z.array(z.string().trim().min(1).max(40)).max(10).default([]),
   skills: z.array(z.string().trim().min(1).max(40)).max(30).default([]),
   experience: z.array(experienceItemSchema).max(20).default([]),
 });
@@ -219,6 +221,14 @@ export const projectSchema = z.object({
   copyright_holder: z.string().trim().max(120).optional().default(""),
   rights_attested_at: z.string().datetime().nullable().optional(),
   rights_attestation_version: z.string().trim().max(32).nullable().optional(),
+  brief: z.string().trim().max(1500).optional().default(""),
+  creator_role: z.string().trim().max(80).optional().default(""),
+  process_note: z.string().trim().max(2000).optional().default(""),
+  deliverables: z.string().trim().max(200).optional().default(""),
+  duration_label: z.string().trim().max(60).optional().default(""),
+  outcome_note: z.string().trim().max(1500).optional().default(""),
+  opportunity_types: z.array(z.string().trim().min(1).max(40)).max(10).default([]),
+  opportunity_note: z.string().trim().max(500).optional().default(""),
 });
 
 export type ProjectInput = z.infer<typeof projectSchema>;
@@ -241,6 +251,19 @@ export function validateProjectPublish(input: ProjectInput): string | null {
   }
   if (input.license_type === "custom" && !input.license_note?.trim()) {
     return "กรุณากรอกเงื่อนไขการใช้งานเมื่อเลือก 'กำหนดเอง'";
+  }
+  if (!input.creator_role?.trim()) {
+    return "กรุณาระบุบทบาทของคุณในผลงานนี้ก่อนเผยแพร่";
+  }
+  const contextCount = [
+    input.brief,
+    input.process_note,
+    input.deliverables,
+    input.outcome_note,
+    input.opportunity_note,
+  ].filter((v) => !!v?.trim()).length;
+  if (contextCount < 1) {
+    return "กรุณาเติมบริบทผลงานอย่างน้อย 1 ช่อง (โจทย์ process สิ่งที่ส่งมอบ ผลลัพธ์ หรือโอกาส)";
   }
   return null;
 }

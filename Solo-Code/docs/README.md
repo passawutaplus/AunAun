@@ -26,13 +26,14 @@
 | [`docker.md`](./docker.md) | Dev / Ops | Docker SSR |
 | [`ai-gemini.md`](./ai-gemini.md) | Dev / Ops | Gemini + Edge Functions |
 | [`full-test-plan.md`](./full-test-plan.md) | QA | แผนเทสจัดเต็ม |
+| [`../../docs/README.md`](../../docs/README.md) | All | Ecosystem docs index |
 | [`../../docs/MANUAL-TESTING.md`](../../docs/MANUAL-TESTING.md) | QA | Manual QA (65 ข้อ) |
 | [`../../docs/ecosystem-notifications.md`](../../docs/ecosystem-notifications.md) | Dev / QA | Email + LINE + in-app |
 | [`qa-checklist.md`](./qa-checklist.md) | QA | Checklist ก่อน release |
 | [`qa-onboarding.md`](./qa-onboarding.md) | QA นอก | Clone → run → bug report |
 | [`test-accounts.md`](./test-accounts.md) | QA | Role matrix |
-| [`e2e-playwright.md`](./e2e-playwright.md) | QA | Playwright |
-| [`e2e-puppeteer.md`](./e2e-puppeteer.md) | QA / WSL | Puppeteer fallback |
+| [`e2e-guide.md`](../../docs/e2e-guide.md) | QA | Playwright + Puppeteer |
+| [`meeting-capture.md`](./meeting-capture.md) | Dev | Smart Brief / Meeting Capture (launched) |
 | [`../supabase/README.md`](../supabase/README.md) | Dev / Ops | 136 migrations, 19 edge functions |
 
 ## Quick start (dev)
@@ -55,7 +56,7 @@ npm run e2e:seo
 - **Framework:** TanStack Start v1 (React 19, Vite 7, SSR)
 - **State:** React Query · Zustand · Zod
 - **Styling:** Tailwind v4 + shadcn/ui
-- **Backend:** Supabase `zkflkpbmbozrchqncpzi` (unified with an1hem)
+- **Backend:** Supabase `zkflkpbmbozrchqncpzi` (unified with Aplus1)
 - **AI:** Google Gemini — Edge Functions + server functions
 - **Payments:** Stripe direct (`STRIPE_USE_DIRECT=true`)
 - **Auth:** Supabase Auth (email + Google OAuth)
@@ -66,7 +67,7 @@ npm run e2e:seo
 |--------|-----|
 | Production | https://solofreelancer.com |
 | Demo | https://solo-demo-liart.vercel.app |
-| an1hem | https://an1hem.app |
+| Aplus1 | https://aplus1.app |
 | Ops Hub | https://hq.solofreelancer.com |
 
 ## Sensitive boundaries

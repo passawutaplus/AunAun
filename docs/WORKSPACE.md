@@ -1,26 +1,42 @@
-# Workspace layout (มิ.ย. 2026)
+# Workspace layout
 
-โครงสร้าง submodule เลิกใช้แล้ว — AunAun เป็น **inline monorepo**
+Updated: 2026-07-03
 
-| งาน | โฟลเดอร์หลัก |
-|-----|-------------|
-| Ecosystem, deploy scripts, docs รวม | `F:\So1o\AunAun-fresh` ← **workspace หลัก** |
-| UX/UI Anthem (Pixel100) | `F:\So1o\AnthemCode` |
-| Solo backend / migrations | `F:\So1o\Solo Code` |
-| เก่า (archive ~1 สัปดาห์) | `F:\So1o\AunAun` → rename เป็น `AunAun-archive` หลังปิด Cursor workspace เก่า |
+AunAun เป็น **inline monorepo** — submodule เลิกใช้แล้ว
 
-**กฎ:** อย่าใช้ `Anthem-Code/.git` หรือ `Solo-Code/.git` ในโฟลเดอร์เก่า — clone แยกหรือใช้ monorepo fresh
+| งาน | โฟลเดอร์ |
+|-----|----------|
+| Ecosystem, deploy scripts, docs รวม | `AunAun-fresh/` ← **workspace หลัก** |
+| Aplus1 (Anthem) frontend | `AunAun-fresh/Anthem-Code/` |
+| So1o + Supabase migrations (canonical backend) | `AunAun-fresh/Solo-Code/` |
+| Ops Hub admin | `AunAun-fresh/Ops-Hub/` |
 
-## Archive โฟลเดอร์เก่า
+**กฎ:**
 
-1. ปิด Cursor workspace ที่ `F:\So1o\AunAun`
-2. รัน `F:\So1o\rename-aunaun-archive.ps1` (หรือ `Rename-Item` เอง)
-3. เปิด workspace ใหม่ที่ `F:\So1o\AunAun-fresh`
-4. เก็บ archive 1 สัปดาห์ — สัปดาห์หน้าตรวจ stash/env/local files ก่อนลบ
+- ใช้ `AunAun-fresh` เป็น source of truth — อย่าใช้โฟลเดอร์เก่าที่มี `.git` แยก
+- Migrations ทั้งหมดอยู่ที่ `Solo-Code/supabase/migrations/`
+- Deploy: ดู [.cursor/rules/deploy-workflow.mdc](../.cursor/rules/deploy-workflow.mdc)
 
-## Migrations (Referral E2E)
+## Quick start
 
-```powershell
-$env:SUPABASE_ACCESS_TOKEN = "sbp_..."
-F:\So1o\AunAun-fresh\scripts\push-migrations.ps1
+```bash
+cd Solo-Code && npm install && npm run dev    # → http://localhost:5173
+cd Anthem-Code && npm install && npm run dev  # → http://localhost:8080
 ```
+
+## Migrations
+
+```bash
+./scripts/check-migrations-pending.sh
+cd Solo-Code && ./scripts/supabase-push-via-api.sh
+```
+
+## Production URLs
+
+| App | Production | Demo |
+|-----|------------|------|
+| Aplus1 | https://aplus1.app | https://aplus1-demo.vercel.app |
+| So1o | https://solofreelancer.com | https://solo-demo-liart.vercel.app |
+| Ops Hub | https://hq.solofreelancer.com | — |
+
+Legacy domain `an1hem.app` redirect ไป `aplus1.app` — ใช้ `aplus1.app` ใน docs/code ใหม่ทั้งหมด

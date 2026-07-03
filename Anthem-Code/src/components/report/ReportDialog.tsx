@@ -16,6 +16,7 @@ import { useCreateReport, type ReportReason, type ReportTargetType, type Evidenc
 import { useAuth } from "@/hooks/useAuth";
 import EvidenceUploader from "./EvidenceUploader";
 import { useAuthDialog } from "@/stores/authDialogStore";
+import { useEnsureSensitiveAction } from "@/components/legal/SensitiveActionReauthProvider";
 import { safeHttpUrl } from "@/lib/safeUrl";
 
 const REASONS: { value: ReportReason; label: string }[] = [
@@ -39,6 +40,7 @@ const ReportDialog = ({ targetType, targetId, targetOwnerId, children }: Props) 
   const { user } = useAuth();
   const openLogin = useAuthDialog((s) => s.openLogin);
   const create = useCreateReport();
+  const ensureVerified = useEnsureSensitiveAction();
 
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<ReportReason | null>(null);
@@ -68,6 +70,11 @@ const ReportDialog = ({ targetType, targetId, targetOwnerId, children }: Props) 
 
   const submit = async () => {
     if (!reason) return;
+    try {
+      await ensureVerified("ส่งรายงานเนื้อหา / การละเมิด");
+    } catch {
+      return;
+    }
     const urls = evidence
       .split(/[\s,]+/)
       .map((u) => safeHttpUrl(u.trim()))

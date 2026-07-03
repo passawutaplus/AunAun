@@ -1,10 +1,14 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Sparkles, Zap, Loader2 } from "lucide-react";
 import { useWallet } from "@/hooks/useWallet";
 import { toast } from "sonner";
 import { PX_PRICE_BY_AMOUNT, startStripeCheckout } from "@/lib/stripePaymentsApi";
+import { PIXEL_POLICY_PATH } from "@/lib/pixelPolicy";
+import DailyPxClaimCard from "./DailyPxClaimCard";
+import WalletBalanceSummary from "./WalletBalanceSummary";
+import WalletEarnMoreSection from "./WalletEarnMoreSection";
 
 interface Props {
   open: boolean;
@@ -42,17 +46,23 @@ const TopUpDialog = ({ open, onOpenChange }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-sm max-h-[min(90vh,640px)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" /> เติม Pixel
           </DialogTitle>
           <DialogDescription>
-            ยอดปัจจุบัน <span className="text-primary font-semibold">{wallet?.balance_px ?? 0} px</span> · 1 px = 1 บาท
+            ยอดปัจจุบัน{" "}
+            <span className="text-primary font-semibold tabular-nums">
+              {(wallet?.balance_px ?? 0).toLocaleString()} px
+            </span>{" "}
+            · 1 px = 1 บาท
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 gap-2 mt-2">
+        <DailyPxClaimCard />
+
+        <div className="grid grid-cols-1 gap-2">
           {PRESETS.map(({ px, label }) => {
             const active = loadingPx === px;
             return (
@@ -80,11 +90,24 @@ const TopUpDialog = ({ open, onOpenChange }: Props) => {
           })}
         </div>
 
-        <div className="text-[11px] text-muted-foreground bg-muted/50 rounded-lg p-2 leading-relaxed space-y-1">
+        <WalletBalanceSummary />
+
+        <WalletEarnMoreSection onClose={() => onOpenChange(false)} />
+
+        <div className="text-[11px] text-muted-foreground bg-muted/50 rounded-lg p-2.5 leading-relaxed space-y-1.5">
           <p>
-            ⏳ <span className="font-medium text-foreground">ช่วงพัก 24 ชั่วโมง:</span> ยอดที่เติมต้องรอ 24 ชม. จึงจะนำไปส่งของขวัญได้
+            ยอดที่เติมใช้<span className="font-medium text-foreground">ส่งของขวัญได้ทันที</span>
+            หลังชำระสำเร็จ (ถอนเป็นเงินไม่ได้)
           </p>
-          <p>ชำระผ่าน Stripe Checkout (sandbox/production ตามการตั้งค่า)</p>
+          <p>ชำระผ่าน Stripe Checkout · ดูรายละเอียดที่{" "}
+            <Link
+              to={PIXEL_POLICY_PATH}
+              className="text-primary font-medium underline underline-offset-2"
+              onClick={() => onOpenChange(false)}
+            >
+              นโยบาย Pixel
+            </Link>
+          </p>
         </div>
       </DialogContent>
     </Dialog>

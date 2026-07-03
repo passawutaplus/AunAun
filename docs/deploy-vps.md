@@ -1,4 +1,4 @@
-# Deploy So1o + an1hem on a VPS (Docker Compose)
+# Deploy So1o + Aplus1 on a VPS (Docker Compose)
 
 โฮสต์เองบน VPS — **ไม่ใช้ Lovable** สำหรับ frontend/backend ของแอป
 
@@ -16,7 +16,7 @@ Supabase โปรเจกต์เดียว **`zkflkpbmbozrchqncpzi`** — 
 ## ความต้องการ
 
 - VPS (Ubuntu 22.04+ แนะนำ), Docker Engine + Compose v2
-- โดเมน (แนะนำ): `solofreelancer.com`, `an1hem.app`, `hq.solofreelancer.com`
+- โดเมน (แนะนำ): `solofreelancer.com`, `aplus1.app`, `hq.solofreelancer.com`
 - โปรเจกต์ Supabase + Stripe + Gemini API keys
 
 ## ตั้งค่าครั้งแรก
@@ -61,7 +61,7 @@ DNS ที่ต้องชี้มา VPS:
 
 ```
 solofreelancer.com, www.solofreelancer.com
-an1hem.app, www.an1hem.app
+aplus1.app, www.aplus1.app
 hq.solofreelancer.com
 ```
 
@@ -109,7 +109,7 @@ Checklist เต็ม: [`Solo-Code/docs/seo-deploy.md`](../Solo-Code/docs/seo-d
 ```bash
 cd Solo-Code
 export SUPABASE_ACCESS_TOKEN=sbp_...
-supabase secrets set GEMINI_API_KEY=... ANTHEM_APP_URL=https://an1hem.app
+supabase secrets set GEMINI_API_KEY=... ANTHEM_APP_URL=https://aplus1.app
 supabase functions deploy embed-project similar-images generate-contract \
   notify-anthem notify-anthem-chat notify-anthem-collab notify-hire-request \
   line-connect line-webhook line-queue-process \
@@ -120,7 +120,7 @@ supabase functions deploy embed-project similar-images generate-contract \
 
 ## Seed ข้อมูลชุมชน
 
-รัน SQL บนโปรเจกต์ an1hem (Supabase SQL Editor หรือ `psql`):
+รัน SQL บน unified Supabase project (Supabase SQL Editor หรือ `psql`):
 
 `scripts/ecosystem/seed-catalog.sql`
 
@@ -142,7 +142,7 @@ docker compose up -d --no-deps solo
 docker compose up -d --no-deps ops-hub
 ```
 
-Deploy แยก host (an1hem / Ops Hub ไม่พึ่ง So1o container):
+Deploy แยก host (Aplus1 / Ops Hub ไม่พึ่ง So1o container):
 
 ```bash
 cp anthem.env.example .env && ./scripts/deploy-anthem-production.sh

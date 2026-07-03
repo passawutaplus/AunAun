@@ -51,3 +51,9 @@ verify_jwt = true
 
 [functions.admin-supabase-usage]
 verify_jwt = true
+
+[functions.marketing-ai]
+verify_jwt = true
+
+[functions.marketing-outreach]
+verify_jwt = true

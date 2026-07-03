@@ -24,10 +24,12 @@ Deploy จริง: ใช้ร่วมกับ [deploy-workflow.mdc](./depl
 
 ## Anthem (`Anthem-Code/`)
 
-Index: `Anthem-Code/docs/ai-skills/README.md`
+Index: `Anthem-Code/docs/ai-skills/README.md`  
+**Product north star:** `Anthem-Code/docs/MASTER_CURSOR_BRIEF.md` → `docs/product/*` (อ่านก่อน feature/UX ใหม่)
 
 | Skill | งาน |
 |-------|-----|
+| `MASTER_CURSOR_BRIEF.md` + `docs/product/*` | product direction, opportunity loop, P0 spec |
 | `ANTHEM_PRODUCT_SKILL.md` | feature ใหม่, feed, portfolio |
 | `ANTHEM_UX_RESEARCH_SKILL.md` | UX/demo/usability |
 | `ANTHEM_REFERRAL_REWARD_SKILL.md` | referral, PX, reward |

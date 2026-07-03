@@ -1,7 +1,8 @@
-# Anthem (1PX) — Developer Docs
+# Aplus1 — Developer Docs
 
 Entry point สำหรับ dev ใหม่:
 
+0. **[`MASTER_CURSOR_BRIEF.md`](./MASTER_CURSOR_BRIEF.md)** — product north star (ผลงานจริง → โอกาส) + ลำดับอ่าน spec
 1. [`architecture.md`](./architecture.md) — data flow + notify pipeline
 2. [`folder-structure.md`](./folder-structure.md) — folder layout
 3. [`conventions.md`](./conventions.md) — code style
@@ -10,6 +11,17 @@ Entry point สำหรับ dev ใหม่:
 6. [`performance.md`](./performance.md) — performance rules
 7. [`schema-reorganize.md`](./schema-reorganize.md) — schema migration plan
 
+## Product foundation (2026-07)
+
+| Doc | สรุป |
+|-----|------|
+| [`MASTER_CURSOR_BRIEF.md`](./MASTER_CURSOR_BRIEF.md) | อ่านก่อน — thesis, P0, กติกา Cursor |
+| [`product/aplus1-prd.md`](./product/aplus1-prd.md) | PRD, persona, metrics, launch criteria |
+| [`product/aplus1-ux-flow.md`](./product/aplus1-ux-flow.md) | UX flows creator/hirer |
+| [`product/aplus1-feature-spec-cursor.md`](./product/aplus1-feature-spec-cursor.md) | Engineering spec + acceptance criteria |
+| [`research/aplus1-opportunity-research.md`](./research/aplus1-opportunity-research.md) | วิจัยตลาด + positioning |
+| [`research/aplus1-copy-system.md`](./research/aplus1-copy-system.md) | ภาษาไทย, CTA, 「โอกาส」vs「งาน」 |
+
 ## Ecosystem / platform
 
 | Doc | สรุป |
@@ -17,7 +29,8 @@ Entry point สำหรับ dev ใหม่:
 | [`../../docs/ecosystem-notifications.md`](../../docs/ecosystem-notifications.md) | Email + LINE + in-app |
 | [`aml-compliance.md`](./aml-compliance.md) | PX wallet, KYC, cashout |
 | [`admin-pending.md`](./admin-pending.md) | Admin feature status |
-| [`kuy-radar-migration.md`](./kuy-radar-migration.md) | Kuy Radar admin module + DB |
+| [`marketing-migration.md`](./marketing-migration.md) | Marketing admin module + DB |
+| [`brand-rollout-handoff.md`](./brand-rollout-handoff.md) | โลโก้ + อีเมล (เมื่อได้ asset จริง) |
 | [`demo-catalog.md`](./demo-catalog.md) | Demo accounts |
 | [`brand-icons-thesvg.md`](./brand-icons-thesvg.md) | โลโกแบรนด์เครื่องมือ (theSVG.org) |
 | [`../supabase/README.md`](../supabase/README.md) | Canonical backend (Solo-Code) |
@@ -26,16 +39,17 @@ Entry point สำหรับ dev ใหม่:
 
 | Doc | ใช้เมื่อ |
 |-----|---------|
+| [`../../docs/README.md`](../../docs/README.md) | Ecosystem docs index |
 | [`full-test-plan.md`](./full-test-plan.md) | แผนเทสจัดเต็ม |
 | [`../../docs/MANUAL-TESTING.md`](../../docs/MANUAL-TESTING.md) | Manual QA |
 | [`qa-checklist.md`](./qa-checklist.md) | Checklist ก่อน release |
 | [`qa-onboarding.md`](./qa-onboarding.md) | Onboarding QA |
 | [`test-accounts.md`](./test-accounts.md) | Role matrix |
-| [`e2e-playwright.md`](./e2e-playwright.md) | Playwright |
-| [`e2e-puppeteer.md`](./e2e-puppeteer.md) | Puppeteer (WSL) |
-| [`ux-demo-guide.md`](./ux-demo-guide.md) | UX research walkthrough + seed |
+| [`e2e-guide.md`](../../docs/e2e-guide.md) | Playwright + Puppeteer |
+| [`release-gate-aplus1.md`](./release-gate-aplus1.md) | **Release gate** ก่อน production |
+| [`brand-rollout-handoff.md`](./brand-rollout-handoff.md) | โลโก้ + อีเมล rollout |
 | [`ux-research-review.md`](./ux-research-review.md) | **เช็คลิส UX/UI ครบทุกระบบ (A–T)** |
-| [`seo-deploy.md`](./seo-deploy.md) | SEO checklist an1hem.app |
+| [`seo-deploy.md`](./seo-deploy.md) | SEO checklist aplus1.app |
 
 ```bash
 npm install

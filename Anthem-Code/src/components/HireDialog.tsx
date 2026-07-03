@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { INQUIRY_PLATFORM_DISCLAIMER } from "@/lib/legalSignupCopy";
 import { parseMoneyInput } from "@/lib/parseMoney";
 import { isUuid } from "@/lib/uuid";
 import { useAuth } from "@/hooks/useAuth";
@@ -147,14 +147,14 @@ const HireDialog = ({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-1 text-left">
-          <DialogTitle>ชวนมาทำงาน</DialogTitle>
+          <DialogTitle>{source === "project" ? "คุยต่อจากผลงานนี้" : "ชวนมาทำงาน"}</DialogTitle>
           <DialogDescription>
             {source === "profile" ? (
               <>จากโปรไฟล์: <span className="font-medium text-primary">{profileName ?? projectTitle}</span></>
             ) : (
-              <>อ้างอิง: <span className="font-medium text-primary">{projectTitle}</span></>
+              <>อ้างอิงผลงาน: <span className="font-medium text-primary">{projectTitle}</span></>
             )}
-            <span className="block mt-1 text-xs">เติมรายละเอียดได้ถ้าต้องการ — ไม่กรอกก็แชทได้เลย</span>
+            <span className="block mt-1 text-xs">เติมรายละเอียดได้ถ้าต้องการ — ไม่กรอกก็คุยต่อได้เลย</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -168,6 +168,10 @@ const HireDialog = ({
           optional
         />
 
+        <p className="text-[11px] leading-relaxed text-muted-foreground border-t border-border/40 pt-3">
+          {INQUIRY_PLATFORM_DISCLAIMER}
+        </p>
+
         <DialogFooter className="gap-2 sm:justify-end pt-2">
           <Button
             type="button"
@@ -176,7 +180,7 @@ const HireDialog = ({
             onClick={() => void submitHire()}
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-            {busy ? "กำลังเปิด..." : "แชทเลย"}
+            {busy ? "กำลังเปิด..." : source === "project" ? "คุยต่อเลย" : "แชทเลย"}
           </Button>
         </DialogFooter>
       </DialogContent>

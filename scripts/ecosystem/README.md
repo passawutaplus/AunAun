@@ -1,4 +1,4 @@
-# Ecosystem setup (So1o + an1hem)
+# Ecosystem setup (So1o + Aplus1)
 
 ## Quick start
 
@@ -11,8 +11,8 @@ Then apply SQL on Supabase (see below) and deploy apps per `docs/deploy-vps.md`.
 ## How Pro works (unified project `zkflkpbmbozrchqncpzi`)
 
 1. User pays on **So1o** → webhook updates `public.profiles.subscription_tier`
-2. an1hem reads the same row via `user_id` — no cross-project sync
-3. Legacy `sync-so1o-tier` only if an1hem still used a separate project
+2. Aplus1 reads the same row via `user_id` — no cross-project sync
+3. Legacy `sync-so1o-tier` only if Aplus1 still used a separate project
 
 ## SQL files
 
@@ -36,7 +36,7 @@ Then apply SQL on Supabase (see below) and deploy apps per `docs/deploy-vps.md`.
 
 หลังรัน `seed-catalog.sql` ฟีด/ดีไซเนอร์/สตูดิโอ/งานจะดึงจาก Supabase เท่านั้น (ไม่มี mock ฝั่ง client แล้ว)
 
-### รัน seed บน an1hem
+### รัน seed บน Aplus1
 
 1. Supabase Dashboard → **SQL Editor** → วาง `seed-catalog.sql` → Run (idempotent)
 2. ตรวจ: `SELECT count(*) FROM projects WHERE status = 'Published';` ควรได้ ~20

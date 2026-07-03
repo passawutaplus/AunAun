@@ -15,17 +15,17 @@ export type CollabContextInput = {
 export function buildHireContextMessage(input: HireContextInput): string {
   const title = input.projectTitle?.trim();
   if (input.source === "project" && title) {
-    return `สนใจจ้างจากผลงาน «${title}» — อยากคุยรายละเอียด`;
+    return `คุยต่อจากผลงาน «${title}» — สนใจโอกาสที่เกี่ยวข้องกับงานนี้`;
   }
   if (input.source === "profile") {
     const name = input.profileName?.trim();
     return name
-      ? `ดูโปรไฟล์ ${name} แล้วสนใจจ้าง — อยากคุยงาน`
-      : "ดูโปรไฟล์แล้วสนใจจ้าง — อยากคุยงาน";
+      ? `ดูโปรไฟล์ ${name} แล้วสนใจคุยโอกาส — อยากคุยรายละเอียด`
+      : "ดูโปรไฟล์แล้วสนใจคุยโอกาส — อยากคุยรายละเอียด";
   }
   return title
-    ? `สนใจจ้างจากผลงาน «${title}» — อยากคุยรายละเอียด`
-    : "สนใจจ้าง — อยากคุยรายละเอียด";
+    ? `คุยต่อจากผลงาน «${title}» — สนใจโอกาสที่เกี่ยวข้อง`
+    : "สนใจคุยโอกาส — อยากคุยรายละเอียด";
 }
 
 export function buildCollabContextMessage(input: CollabContextInput): string {

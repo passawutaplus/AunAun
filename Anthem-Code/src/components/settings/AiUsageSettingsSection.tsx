@@ -10,6 +10,7 @@ import {
   formatAiPeriodEnd,
 } from "@/lib/aiCredits";
 import { SO1O_PRICING_URL } from "@/lib/productLinks";
+import { isAplus1UpgradeEnabled, UPGRADE_PATH } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
 const TIER_LABEL = {
@@ -145,11 +146,11 @@ export function AiUsageSettingsSection() {
         </a>
         {!isPro && (
           <Link
-            to="/upgrade"
+            to={UPGRADE_PATH}
             className="inline-flex items-center min-h-11 gap-1.5 rounded-full bg-primary text-primary-foreground px-4 py-2.5 text-xs font-medium hover:bg-primary/90 transition-colors"
           >
             <Sparkles className="h-3.5 w-3.5" />
-            อัพเกรด Pro
+            {isAplus1UpgradeEnabled() ? "อัพเกรด Pro" : "Pro — เร็ว ๆ นี้"}
           </Link>
         )}
         {lowCredits && !creditsEnded && (

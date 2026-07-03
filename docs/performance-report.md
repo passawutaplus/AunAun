@@ -7,12 +7,12 @@
 
 | แอป | URL |
 |-----|-----|
-| 1PX | https://aplus1-demo.vercel.app |
+| Aplus1 | https://aplus1-demo.vercel.app |
 | So1o | https://solo-demo-liart.vercel.app |
 
 ## สรุปผล
 
-### Bundle (1PX) — หลังแก้ code-split
+### Bundle (Aplus1) — หลังแก้ code-split
 
 | Metric | ก่อน | หลัง | Gate |
 |--------|------|------|------|

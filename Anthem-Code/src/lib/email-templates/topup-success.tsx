@@ -28,7 +28,7 @@ export const TopupSuccessEmail = ({
       <EmailCardLabel>จำนวนที่เติม</EmailCardLabel>
       <EmailCardRow highlight>{amountPx.toLocaleString('th-TH')} px</EmailCardRow>
       <EmailCardLabel>หมายเหตุ</EmailCardLabel>
-      <EmailCardRow>ยอดที่เติมอาจมีช่วงพัก 24 ชม. ก่อนใช้ส่งของขวัญ (AML)</EmailCardRow>
+      <EmailCardRow>ยอดที่เติมใช้ส่งของขวัญได้ทันทีหลังชำระสำเร็จ (ถอนเป็นเงินไม่ได้)</EmailCardRow>
     </EmailCard>
     <EmailButton href={actionUrl}>เปิดกระเป๋า Pixel</EmailButton>
   </EmailLayout>

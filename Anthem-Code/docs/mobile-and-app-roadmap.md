@@ -1,8 +1,8 @@
-# Pixel100 (Anthem-Code) — แผน Mobile & Native App
+# Aplus1 — แผน Mobile & Native App
 
-> **อัปเดต:** 2026-06-18  
+> **อัปเดต:** 2026-07-03  
 > **เป้าหมาย:** มือถือใช้งานได้ดี → PWA ติดตั้งได้ → ขึ้น App Store + Google Play  
-> **Production:** https://an1hem.app · **Demo:** https://aplus1-demo.vercel.app
+> **Production:** https://aplus1.app · **Demo:** https://aplus1-demo.vercel.app
 
 ---
 
@@ -12,7 +12,7 @@
 |--------|--------|
 | แยกโปรเจกต์ใหม่ไหม? | **ไม่** — พัฒนาใน `Anthem-Code/` ต่อ แล้วห่อด้วย Capacitor |
 | React Native / Expo? | **ไม่** — rewrite เปลืองเวลา Supabase + UI ใช้ซ้ำไม่ได้ |
-| ลิงก์ข้าม platform? | **Web URL เดิม** (`an1hem.app/...`) + deep link ในแอปชี้ route เดียวกัน |
+| ลิงก์ข้าม platform? | **Web URL เดิม** (`aplus1.app/...`) + deep link ในแอปชี้ route เดียวกัน |
 | Backend | **Supabase เดิม** (`zkflkpbmbozrchqncpzi`) — ไม่แยก DB |
 | So1o / Ops-Hub | ลิงก์ภายนอกผ่าน `VITE_SO1O_APP_URL` (ดู `docs/ecosystem-unified-account.md`) |
 
@@ -118,7 +118,7 @@ Phase 5  App-only features   ░░░░░░░░░░
 | 3.1 | `npm i @capacitor/core @capacitor/cli` + `cap init` | `webDir: dist` |
 | 3.2 | iOS + Android project | `cap add ios` / `cap add android` |
 | 3.3 | Deep links | `@capacitor/app` — `com.pixel100.app://` |
-| 3.4 | Universal Links | `an1hem.app/.well-known/apple-app-site-association` |
+| 3.4 | Universal Links | `aplus1.app/.well-known/apple-app-site-association` |
 | 3.5 | OAuth Supabase | redirect: `com.pixel100.app://auth/callback` |
 | 3.6 | Push notifications | `@capacitor/push-notifications` + FCM/APNs |
 | 3.7 | Status bar + safe area | `@capacitor/status-bar` |
@@ -210,9 +210,9 @@ npx cap open android   → Android Studio → Play Internal
 
 | ประเภท | Web | App |
 |--------|-----|-----|
-| โปรไฟล์ | `https://an1hem.app/@username` | deep link → route เดียวกัน |
+| โปรไฟล์ | `https://aplus1.app/@username` | deep link → route เดียวกัน |
 | ผลงาน | `/project/:id` | เหมือนกัน |
-| OAuth callback | `https://an1hem.app/auth/callback` | `com.pixel100.app://auth/callback` |
+| OAuth callback | `https://aplus1.app/auth/callback` | `com.pixel100.app://auth/callback` |
 
 ### Ecosystem (ลิงก์ภายนอก ไม่ embed)
 
@@ -230,14 +230,14 @@ Session **ไม่แชร์** ข้ามโดเมน (cookie แยก)
 ```
 1. User กด Login
 2. supabase.auth.signInWithOAuth({ provider, options: { redirectTo } })
-   redirectTo = Capacitor ? app scheme : https://an1hem.app/auth/callback
+   redirectTo = Capacitor ? app scheme : https://aplus1.app/auth/callback
 3. App / Browser กลับมาพร้อม code
 4. AuthCallbackPage → session → navigate ต่อ
 ```
 
 เพิ่มใน Supabase Dashboard → Authentication → URL Configuration:
 - `com.pixel100.app://auth/callback`
-- `https://an1hem.app/auth/callback` (มีแล้ว)
+- `https://aplus1.app/auth/callback` (มีแล้ว)
 
 ---
 

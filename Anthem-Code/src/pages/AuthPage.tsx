@@ -20,6 +20,8 @@ import { BackButton } from "@/components/ui/BackButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { DemoLoginHint, DemoSignupBlocked } from "@/components/DemoAuthHints";
 import { ReferralSignupHint } from "@/components/referral/ReferralSignupHint";
+import LegalSignupConsents from "@/components/legal/LegalSignupConsents";
+import { recordSignupConsents, markPendingSignupConsent } from "@/lib/legalCompliance";
 import {
   BRAND_HERO_SUBTITLE,
   BRAND_NAME,
@@ -294,19 +296,25 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [accept, setAccept] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [consents, setConsents] = useState({ terms: false, privacy: false, age: false });
   const [busy, setBusy] = useState(false);
   const [touched, setTouched] = useState(false);
 
   const emailValid = !email || /^\S+@\S+\.\S+$/.test(email.trim());
   const passValid = password.length >= 8;
+  const confirmValid = password === confirmPassword && confirmPassword.length > 0;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
     if (!emailValid) { toast.error("กรุณากรอกอีเมลให้ถูกต้อง"); return; }
     if (!passValid) { toast.error("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"); return; }
-    if (!accept) { toast.error("กรุณายอมรับข้อกำหนดก่อนสมัคร"); return; }
+    if (!confirmValid) { toast.error("รหัสผ่านยืนยันไม่ตรงกัน"); return; }
+    if (!consents.terms || !consents.privacy || !consents.age) {
+      toast.error("กรุณายืนยันข้อกำหนด ความเป็นส่วนตัว และอายุ/ผู้ปกครองก่อนสมัคร");
+      return;
+    }
 
     setBusy(true);
     try {
@@ -319,7 +327,11 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
         },
       });
       if (error) toast.error(error.message);
-      else toast.success("สมัครสำเร็จ! กรุณาตรวจอีเมลเพื่อยืนยันบัญชีก่อนเข้าใช้งาน");
+      else {
+        markPendingSignupConsent();
+        await recordSignupConsents();
+        toast.success("สมัครสำเร็จ! กรุณาตรวจอีเมลเพื่อยืนยันบัญชีก่อนเข้าใช้งาน");
+      }
     } finally {
       setBusy(false);
     }
@@ -375,33 +387,24 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
         />
       </div>
 
-      <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 space-y-2">
-        <div className="flex gap-2">
-          <Info className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            <span className="font-medium text-foreground">โปรดทราบ:</span> เราจะส่งอีเมลยืนยันให้คุณก่อนเข้าใช้งาน
-          </p>
-        </div>
-        <label className="flex gap-2 items-start cursor-pointer select-none">
-          <Checkbox
-            checked={accept}
-            onCheckedChange={(v) => setAccept(v === true)}
-            className="mt-0.5"
-          />
-          <span className="text-[11px] leading-relaxed text-foreground">
-            ฉันยอมรับ{" "}
-            <Link to="/legal/terms" target="_blank" className="text-primary hover:underline font-medium">ข้อกำหนดการใช้งาน</Link>
-            {" "}และ{" "}
-            <Link to="/legal/privacy" target="_blank" className="text-primary hover:underline font-medium">นโยบายความเป็นส่วนตัว (PDPA)</Link>
-            {" "}และรับทราบ{" "}
-            <Link to="/legal/cookies" target="_blank" className="text-primary hover:underline font-medium">นโยบายคุกกี้</Link>
-          </span>
-        </label>
+      <div className="space-y-1.5">
+        <Label htmlFor="su-pass-confirm" className="text-xs">ยืนยันรหัสผ่าน</Label>
+        <PasswordInput
+          id="su-pass-confirm"
+          autoComplete="new-password"
+          placeholder="••••••••"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          invalid={touched && !!confirmPassword && !confirmValid}
+          required
+        />
       </div>
+
+      <LegalSignupConsents value={consents} onChange={setConsents} compact />
 
       <Button
         type="submit"
-        disabled={busy || !accept}
+        disabled={busy || !consents.terms || !consents.privacy || !consents.age}
         className="w-full h-11 rounded-xl text-base font-semibold bg-gradient-brand text-white hover:opacity-95 border-0 shadow-md shadow-primary/20"
       >
         {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}

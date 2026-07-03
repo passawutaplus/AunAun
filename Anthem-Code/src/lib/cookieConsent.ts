@@ -1,5 +1,7 @@
 /** Cookie / local storage consent (PDPA + กฎหมายคุกกี้ไทย) */
 
+import { logCookieConsentServer } from "@/lib/legalCompliance";
+
 export const COOKIE_CONSENT_STORAGE_KEY = "anthem-cookie-consent";
 
 /** เพิ่มเมื่อเปลี่ยนนโยบายคุกกี้อย่างมีนัย — จะแสดงแบนเนอร์ใหม่ */
@@ -17,7 +19,6 @@ export interface CookieConsentPreferences {
 
 export const COOKIE_PREFERENCES_OPEN_EVENT = "anthem:open-cookie-preferences";
 export const COOKIE_CONSENT_CHANGED_EVENT = "anthem:cookie-consent-changed";
-
 function notifyConsentChanged() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(COOKIE_CONSENT_CHANGED_EVENT));
@@ -65,8 +66,8 @@ export function writeCookieConsent(prefs: Omit<CookieConsentPreferences, "versio
   };
   localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, JSON.stringify(state));
   notifyConsentChanged();
-  return state;
-}
+  void logCookieConsentServer(state.analytics, state.functional);
+  return state;}
 
 export function acceptAllCookies() {
   return writeCookieConsent({ functional: true, analytics: true });

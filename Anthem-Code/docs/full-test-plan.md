@@ -1,11 +1,11 @@
-# Anthem (1px) — Full Test Plan
+# Aplus1 — Full Test Plan
 
-แผนเทสครบวงจรสำหรับ **an1hem / 1px** marketplace
+แผนเทสครบวงจรสำหรับ **Aplus1** (aplus1.app)
 
 **Manual (ต้องลงมือ):** [`../../docs/MANUAL-TESTING.md`](../../docs/MANUAL-TESTING.md)  
 **Automated gate:** `npm run test:gate` หรือ `../../scripts/test-ecosystem.sh`
 
-**เอกสาร:** [`qa-checklist.md`](./qa-checklist.md) · [`test-accounts.md`](./test-accounts.md) · [`e2e-playwright.md`](./e2e-playwright.md) · [`e2e-puppeteer.md`](./e2e-puppeteer.md)
+**เอกสาร:** [`qa-checklist.md`](./qa-checklist.md) · [`test-accounts.md`](./test-accounts.md) · [`../../docs/e2e-guide.md`](../../docs/e2e-guide.md)
 
 ---
 
@@ -27,7 +27,7 @@
 |-------------|-----|
 | Local | `http://localhost:8080` |
 | Demo | `https://aplus1-demo.vercel.app` |
-| Production | `https://an1hem.app` |
+| Production | `https://aplus1.app` |
 
 ```bash
 cd Anthem-Code

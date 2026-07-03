@@ -13,6 +13,7 @@ import FollowButton from "@/components/FollowButton";
 import SupportButton from "@/components/gifting/SupportButton";
 import ReportTrigger from "@/components/report/ReportTrigger";
 import HireDialog from "@/components/HireDialog";
+import OpportunityTypeChips from "@/components/opportunity/OpportunityTypeChips";
 import CollabDialog from "@/components/CollabDialog";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 
@@ -299,6 +300,11 @@ const PublicProfilePage = () => {
                   {highlight(profile.role, q)}
                 </Badge>
               )}
+              <OpportunityTypeChips
+                className="mt-2"
+                status={(profile as { opportunity_status?: string }).opportunity_status}
+                types={(profile as { opportunity_types?: string[] }).opportunity_types}
+              />
               {(profile as { open_for_work?: boolean; open_for_work_badge?: string }).open_for_work && (
                 <Badge className="mt-2 ml-1 rounded-full bg-primary/15 text-primary border-0 text-xs font-normal">
                   {(profile as { open_for_work_badge?: string }).open_for_work_badge || "Open for Work"}

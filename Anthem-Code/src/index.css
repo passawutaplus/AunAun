@@ -1,8 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  .font-legal {
+    font-family: "Prompt", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
+  }
+}
 
 @layer base {
   :root {
@@ -380,13 +387,13 @@
     background-size: 16px 16px;
   }
 
-  /* Kuy Radar — Aplus1-scoped surfaces (light + dark via admin-theme) */
-  .kuy-radar {
+  /* Marketing — Aplus1-scoped surfaces (light + dark via admin-theme) */
+  .marketing-module {
     --kuy-glow: hsl(var(--admin-accent) / 0.14);
     --kuy-glow-strong: hsl(var(--admin-accent) / 0.22);
   }
 
-  .kuy-radar .kuy-hero {
+  .marketing-module .marketing-hero {
     border: 1px solid hsl(var(--admin-accent) / 0.22);
     background:
       radial-gradient(ellipse 80% 60% at 100% 0%, var(--kuy-glow-strong), transparent 55%),
@@ -394,7 +401,7 @@
     box-shadow: 0 1px 0 hsl(var(--admin-accent) / 0.08);
   }
 
-  .dark .kuy-radar .kuy-hero {
+  .dark .marketing-module .marketing-hero {
     background:
       radial-gradient(ellipse 70% 55% at 100% 0%, var(--kuy-glow-strong), transparent 50%),
       linear-gradient(145deg, hsl(0 0% 9%) 0%, hsl(var(--admin-surface)) 42%, hsl(0 0% 5%) 100%);
@@ -403,169 +410,169 @@
       0 12px 40px hsl(0 0% 0% / 0.45);
   }
 
-  .kuy-radar .kuy-card {
+  .marketing-module .marketing-card {
     border: 1px solid hsl(var(--admin-border));
     background: hsl(var(--admin-surface));
     box-shadow: 0 1px 0 hsl(var(--admin-accent) / 0.04);
   }
 
-  .dark .kuy-radar .kuy-card {
+  .dark .marketing-module .marketing-card {
     box-shadow: 0 0 0 1px hsl(var(--admin-border)), 0 8px 24px hsl(0 0% 0% / 0.25);
   }
 
-  .kuy-radar .kuy-chip {
+  .marketing-module .marketing-chip {
     border: 1px solid hsl(var(--admin-border));
     background: hsl(var(--admin-bg) / 0.65);
     color: hsl(var(--admin-muted));
   }
 
-  .kuy-radar .kuy-chip-accent {
+  .marketing-module .marketing-chip-accent {
     border-color: hsl(var(--admin-accent) / 0.35);
     background: hsl(var(--admin-accent) / 0.1);
     color: hsl(var(--admin-accent));
   }
 
-  .kuy-radar .kuy-chip-brand {
+  .marketing-module .marketing-chip-brand {
     border-color: hsl(var(--admin-accent) / 0.45);
     background: hsl(var(--admin-accent) / 0.14);
     color: hsl(var(--admin-fg));
     font-weight: 600;
   }
 
-  .kuy-radar .kuy-control {
+  .marketing-module .marketing-control {
     border: 1px solid hsl(var(--admin-border));
     background: hsl(var(--admin-bg));
     color: hsl(var(--admin-fg));
   }
 
-  .kuy-radar .kuy-nav {
+  .marketing-module .marketing-nav {
     border: 1px solid hsl(var(--admin-border));
     background: hsl(var(--admin-hover) / 0.55);
   }
 
-  .kuy-radar .kuy-nav-link {
+  .marketing-module .marketing-nav-link {
     color: hsl(var(--admin-muted));
   }
 
-  .kuy-radar .kuy-nav-link:hover {
+  .marketing-module .marketing-nav-link:hover {
     color: hsl(var(--admin-fg));
     background: hsl(var(--admin-hover));
   }
 
-  .kuy-radar .kuy-nav-link-active {
+  .marketing-module .marketing-nav-link-active {
     color: hsl(var(--admin-accent));
     background: hsl(var(--admin-bg));
     box-shadow: 0 1px 3px hsl(0 0% 0% / 0.12);
   }
 
-  .dark .kuy-radar .kuy-nav-link-active {
+  .dark .marketing-module .marketing-nav-link-active {
     box-shadow: 0 0 0 1px hsl(var(--admin-accent) / 0.2), 0 4px 12px hsl(0 0% 0% / 0.35);
   }
 
-  .kuy-radar .kuy-btn-primary {
+  .marketing-module .marketing-btn-primary {
     background: hsl(var(--admin-accent));
     color: hsl(0 0% 100%);
   }
 
-  .kuy-radar .kuy-btn-primary:hover {
+  .marketing-module .marketing-btn-primary:hover {
     filter: brightness(1.06);
   }
 
-  .kuy-radar .kuy-link {
+  .marketing-module .marketing-link {
     color: hsl(var(--admin-accent));
   }
 
-  .kuy-radar .kuy-link:hover {
+  .marketing-module .marketing-link:hover {
     text-decoration: underline;
   }
 
-  .kuy-radar .kuy-input {
+  .marketing-module .marketing-input {
     border: 1px solid hsl(var(--admin-border));
     background: hsl(var(--admin-bg));
     color: hsl(var(--admin-fg));
   }
 
-  .kuy-radar .kuy-input:focus {
+  .marketing-module .marketing-input:focus {
     border-color: hsl(var(--admin-accent) / 0.55);
     outline: none;
     box-shadow: 0 0 0 2px hsl(var(--admin-accent) / 0.18);
   }
 
-  .kuy-radar .kuy-row-hover:hover {
+  .marketing-module .marketing-row-hover:hover {
     background: hsl(var(--admin-accent) / 0.06);
   }
 
-  .kuy-radar .kuy-callout {
+  .marketing-module .marketing-callout {
     border: 1px solid hsl(var(--admin-accent) / 0.28);
     background: hsl(var(--admin-accent) / 0.08);
     color: hsl(var(--admin-fg));
   }
 
-  .kuy-radar .kuy-callout-warn {
+  .marketing-module .marketing-callout-warn {
     border: 1px solid hsl(38 92% 50% / 0.35);
     background: hsl(38 92% 50% / 0.1);
     color: hsl(var(--admin-fg));
   }
 
-  .dark .kuy-radar .kuy-callout-warn {
+  .dark .marketing-module .marketing-callout-warn {
     border-color: hsl(38 80% 55% / 0.4);
     background: hsl(38 70% 45% / 0.12);
   }
 
-  .kuy-radar .kuy-tone-accent {
+  .marketing-module .marketing-tone-accent {
     border: 1px solid hsl(var(--admin-accent) / 0.3);
     background: hsl(var(--admin-accent) / 0.12);
     color: hsl(var(--admin-accent));
   }
 
-  .kuy-radar .kuy-tone-ok {
+  .marketing-module .marketing-tone-ok {
     border: 1px solid hsl(152 60% 40% / 0.3);
     background: hsl(152 55% 40% / 0.12);
     color: hsl(152 50% 42%);
   }
 
-  .dark .kuy-radar .kuy-tone-ok {
+  .dark .marketing-module .marketing-tone-ok {
     color: hsl(152 55% 58%);
   }
 
-  .kuy-radar .kuy-tone-warn {
+  .marketing-module .marketing-tone-warn {
     border: 1px solid hsl(38 90% 45% / 0.35);
     background: hsl(38 90% 45% / 0.12);
     color: hsl(38 85% 40%);
   }
 
-  .dark .kuy-radar .kuy-tone-warn {
+  .dark .marketing-module .marketing-tone-warn {
     color: hsl(38 90% 62%);
   }
 
-  .kuy-radar .kuy-module-tile {
+  .marketing-module .marketing-module-tile {
     border: 1px solid hsl(var(--admin-border));
     background: hsl(var(--admin-bg));
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
-  .kuy-radar .kuy-module-tile:hover {
+  .marketing-module .marketing-module-tile:hover {
     border-color: hsl(var(--admin-accent) / 0.45);
     box-shadow: 0 0 0 1px hsl(var(--admin-accent) / 0.12);
   }
 
-  .kuy-radar .kuy-pill-on {
+  .marketing-module .marketing-pill-on {
     border-color: hsl(var(--admin-accent));
     background: hsl(var(--admin-accent));
     color: hsl(0 0% 100%);
   }
 
-  .kuy-radar .kuy-pill-off {
+  .marketing-module .marketing-pill-off {
     border: 1px solid hsl(var(--admin-border));
     background: hsl(var(--admin-bg));
     color: hsl(var(--admin-muted));
   }
 
-  .kuy-radar .kuy-section-label {
+  .marketing-module .marketing-section-label {
     color: hsl(var(--admin-accent));
   }
 
-  .kuy-radar .kuy-danger-zone {
+  .marketing-module .marketing-danger-zone {
     border-color: hsl(0 70% 50% / 0.35);
     background: hsl(0 70% 50% / 0.06);
   }

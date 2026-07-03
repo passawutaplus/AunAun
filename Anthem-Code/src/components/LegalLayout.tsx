@@ -1,8 +1,8 @@
 import { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { BackButton } from "@/components/ui/BackButton";
-import { Link } from "react-router-dom";import LegalNav from "@/components/legal/LegalNav";
+import LegalNav from "@/components/legal/LegalNav";
 import { LEGAL_APP_NAME, LEGAL_UPDATED_AT } from "@/lib/legalConfig";
-import "@/styles/legal.css";
 
 interface LegalLayoutProps {
   title: string;

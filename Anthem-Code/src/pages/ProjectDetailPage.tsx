@@ -11,6 +11,7 @@ import HireDialog from "@/components/HireDialog";
 import CollabDialog from "@/components/CollabDialog";
 import CommentSection from "@/components/CommentSection";
 import ProjectSidePanel from "@/components/ProjectSidePanel";
+import ProjectContextCard from "@/components/project/ProjectContextCard";
 import ProjectCreditsBlock from "@/components/ProjectCreditsBlock";
 import { supabase } from "@/integrations/supabase/client";
 import ImageActionBar from "@/components/project/ImageActionBar";
@@ -86,7 +87,7 @@ const ProjectDetailPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("user_id, display_name, avatar_url, username")
+        .select("user_id, display_name, avatar_url, username, opportunity_status, opportunity_types")
         .eq("user_id", dbProject!.owner_id)
         .maybeSingle();
       return data;
@@ -142,6 +143,16 @@ const ProjectDetailPage = () => {
         copyrightHolder: dbProject.copyright_holder ?? "",
         hasThirdPartyAssets: dbProject.has_third_party_assets ?? false,
         thirdPartyNote: dbProject.third_party_note ?? "",
+        context: {
+          brief: (dbProject as { brief?: string }).brief,
+          creator_role: (dbProject as { creator_role?: string }).creator_role,
+          process_note: (dbProject as { process_note?: string }).process_note,
+          deliverables: (dbProject as { deliverables?: string }).deliverables,
+          duration_label: (dbProject as { duration_label?: string }).duration_label,
+          outcome_note: (dbProject as { outcome_note?: string }).outcome_note,
+          opportunity_types: (dbProject as { opportunity_types?: string[] }).opportunity_types,
+          opportunity_note: (dbProject as { opportunity_note?: string }).opportunity_note,
+        },
       }
     : null;
 
@@ -360,6 +371,9 @@ const ProjectDetailPage = () => {
               allowHire={project.allowHire}
               allowCollab={project.allowCollab}
               isOwner={isOwner}
+              ownerOpportunityStatus={(ownerProfile as { opportunity_status?: string } | null)?.opportunity_status}
+              ownerOpportunityTypes={(ownerProfile as { opportunity_types?: string[] } | null)?.opportunity_types}
+              projectOpportunityTypes={project.context.opportunity_types}
             />
             <div className="mt-4">
               <LicenseDetailBlock
@@ -377,6 +391,7 @@ const ProjectDetailPage = () => {
         </div>
 
         <div className="mt-10 lg:mt-14 max-w-3xl space-y-6">
+          <ProjectContextCard context={project.context} />
           {linkedPosts.length > 0 && <ProjectLinkedPostsBlock posts={linkedPosts} />}
           <CommentSection projectId={project.id} />
         </div>

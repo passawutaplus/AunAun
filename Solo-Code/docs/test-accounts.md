@@ -54,7 +54,7 @@
 ## How to use these accounts
 
 1. **Manual QA:** login each → walk through `qa-checklist.md` for the routes they should access + verify they CANNOT access what they shouldn't
-2. **E2E:** Playwright reads credentials from env vars (`E2E_*_EMAIL/PASSWORD`). See `e2e-playwright.md`
+2. **E2E:** Playwright reads credentials from env vars (`E2E_*_EMAIL/PASSWORD`). See [docs/e2e-guide.md](../../docs/e2e-guide.md)
 3. **Pentest:** pentester gets all 7 — uses User A/B to test IDOR, admin to map admin surface, guest to map public surface
 
 ## Rotating credentials
