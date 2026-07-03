@@ -5,7 +5,7 @@ type Props = {
   className?: string;
 };
 
-const PREVIEW_CATEGORIES = ["ทั้งหมด", "Graphic", "Illustration", "Photo"] as const;
+const PREVIEW_CATEGORIES = ["ทั้งหมด", "Graphic / Branding", "Illustration / Art", "Photo"] as const;
 
 /** Static chrome matching the community feed toolbar — sized for the preview panel. */
 export function CommunityFeedPreviewToolbar({ className }: Props) {

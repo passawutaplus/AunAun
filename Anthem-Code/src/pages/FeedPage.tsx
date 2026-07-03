@@ -21,6 +21,7 @@ import { interleaveAds } from "@/lib/interleaveAds";
 import HireDialog from "@/components/HireDialog";
 import CollabDialog from "@/components/CollabDialog";
 import { StaggerGrid } from "@/components/motion/StaggerGrid";
+import { FEED_PROJECT_GRID, FEED_PROJECT_GRID_GAP } from "@/lib/feedMasonry";
 import { type FeedMode } from "@/components/feed/FeedModeToggle";
 import DesignerGrid from "@/components/feed/DesignerGrid";
 import { type DesignerSort } from "@/components/feed/DesignerToolbar";
@@ -28,7 +29,7 @@ import StudioGrid from "@/components/feed/StudioGrid";
 import type { StudioFeedSource } from "@/components/studio/StudioFilterPanel";
 import { useDesigners } from "@/hooks/useDesigners";
 
-import { categories as allCategories, type Category, type Project, type ProjectStatus } from "@/data/projectTypes";
+import { categories as allCategories, categoryMatchesFilter, DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory, type Category, type Project, type ProjectCategory, type ProjectStatus } from "@/data/projectTypes";
 import { isCategoryAllowed } from "@/lib/cookieConsent";
 import {
   usePublishedProjects,
@@ -41,6 +42,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth, stashPendingHire, consumePendingHire } from "@/lib/authRedirect";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import CommunityFeedPanel from "@/components/community/CommunityFeedPanel";
+import CommunityFeedSidebar from "@/components/community/CommunityFeedSidebar";
 import CreateContentDrawer from "@/components/CreateContentDrawer";
 import { useCommunityFeedFilter } from "@/hooks/useCommunityFeedFilter";
 import { cn } from "@/lib/utils";
@@ -270,7 +272,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
         title: p.title,
         image: p.cover_url || (p.gallery_urls?.[0] ?? ""),
         gallery: p.gallery_urls ?? [],
-        category: (p.category as Category) ?? "Graphic",
+        category: (normalizeProjectCategory(p.category) ?? DEFAULT_PROJECT_CATEGORY) as Category,
         owner: o?.name ?? "ฟรีแลนซ์",
         ownerId: p.owner_id,
         ownerAvatar: o?.avatar ?? "",
@@ -299,7 +301,9 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
 
   const filtered = projects.filter((p) => {
     if (isDrillView) return false;
-    const matchCat = category === "All" || p.category === category;
+    const matchCat =
+      category === "All" ||
+      (category !== DESIGN_DRILL_CHIP && categoryMatchesFilter(p.category, category as ProjectCategory));
     const matchSearch =
       !search ||
       p.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -383,6 +387,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           onCommunityCategoryChange={(category) =>
             setCommunityFilter({ ...communityFilter, category })
           }
+          communityTag={communityFilter.tag}
+          communityPostKind={communityFilter.postKind}
           onCommunityPostClick={mode === "community" ? openCreatePicker : undefined}
           studioFeedSource={studioFeedSource}
           onStudioFeedSourceChange={setStudioFeedSource}
@@ -411,12 +417,21 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           ) : mode === "studios" ? (
             <StudioGrid search={search} feedSource={studioFeedSource} />
           ) : mode === "community" ? (
-            <CommunityFeedPanel
-              search={search}
-              filter={communityFilter}
-              onClearTag={clearTag}
-              onPostClick={openCreatePicker}
-            />
+            <div className="xl:grid xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-5 xl:items-start">
+              <CommunityFeedSidebar
+                filter={communityFilter}
+                onFilterChange={setCommunityFilter}
+                onComposeClick={openCreatePicker}
+              />
+              <div className="min-w-0">
+                <CommunityFeedPanel
+                  search={search}
+                  filter={communityFilter}
+                  onClearTag={clearTag}
+                  onPostClick={openCreatePicker}
+                />
+              </div>
+            </div>
           ) : isDrillView ? (
             <DrillFeedPanel />
           ) : projectsLoading ? (
@@ -425,8 +440,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             <>
               <StaggerGrid
                 dense
-                masonry
-                className="columns-2 sm:columns-3 md:columns-4 lg:columns-4 2xl:columns-5 gap-2 sm:gap-3 lg:gap-4"
+                className={cn(FEED_PROJECT_GRID, FEED_PROJECT_GRID_GAP)}
               >
                 {feedItems.map((item) =>
                   item.kind === "ad" ? (

@@ -12,6 +12,7 @@ import CollabDialog from "@/components/CollabDialog";
 import CommentSection from "@/components/CommentSection";
 import ProjectSidePanel from "@/components/ProjectSidePanel";
 import ProjectContextCard from "@/components/project/ProjectContextCard";
+import { hasPendingProjectAssets, parseProjectAssets } from "@/lib/projectAssets";
 import ProjectCreditsBlock from "@/components/ProjectCreditsBlock";
 import { supabase } from "@/integrations/supabase/client";
 import ImageActionBar from "@/components/project/ImageActionBar";
@@ -32,7 +33,6 @@ import BoostButton from "@/components/boost/BoostButton";
 import { useAdCampaign, logAdEvent } from "@/hooks/useAds";
 import { Megaphone, ExternalLink } from "lucide-react";
 import { truncateDescription } from "@/lib/seo";
-import LicenseDetailBlock from "@/components/license/LicenseDetailBlock";
 import { FadeUp } from "@/components/motion/FadeUp";
 import { staggerReveal, viewportOnce } from "@/lib/motion";
 import { isVideoUrl, mediaItemsFromProject } from "@/lib/portfolioMedia";
@@ -79,6 +79,31 @@ const ProjectDetailPage = () => {
     }
   }, [user?.id, dbProject?.id]);
 
+  // Owner: refresh while attachments are still scanning (background job).
+  useEffect(() => {
+    if (!dbProject?.id || !user?.id || user.id !== dbProject.owner_id) return;
+    const assets = parseProjectAssets(
+      (dbProject as { project_assets?: unknown }).project_assets,
+      (dbProject as { external_links?: unknown }).external_links,
+    );
+    if (!hasPendingProjectAssets(assets)) return;
+
+    const interval = window.setInterval(() => {
+      void refetch();
+    }, 5000);
+    const timeout = window.setTimeout(() => window.clearInterval(interval), 120_000);
+    return () => {
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+    };
+  }, [
+    dbProject?.id,
+    dbProject?.owner_id,
+    (dbProject as { project_assets?: unknown } | undefined)?.project_assets,
+    user?.id,
+    refetch,
+  ]);
+
 
   // Fetch owner profile for DB projects
   const { data: ownerProfile } = useQuery({
@@ -87,7 +112,7 @@ const ProjectDetailPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("user_id, display_name, avatar_url, username, opportunity_status, opportunity_types")
+        .select("user_id, display_name, avatar_url, username")
         .eq("user_id", dbProject!.owner_id)
         .maybeSingle();
       return data;
@@ -371,28 +396,22 @@ const ProjectDetailPage = () => {
               allowHire={project.allowHire}
               allowCollab={project.allowCollab}
               isOwner={isOwner}
-              ownerOpportunityStatus={(ownerProfile as { opportunity_status?: string } | null)?.opportunity_status}
-              ownerOpportunityTypes={(ownerProfile as { opportunity_types?: string[] } | null)?.opportunity_types}
-              projectOpportunityTypes={project.context.opportunity_types}
+              projectAssets={parseProjectAssets(
+                (dbProject as { project_assets?: unknown } | undefined)?.project_assets,
+                (dbProject as { external_links?: unknown } | undefined)?.external_links,
+              )}
+              licenseType={project.licenseType}
+              licenseNote={project.licenseNote}
+              copyrightHolder={project.copyrightHolder}
+              hasThirdPartyAssets={project.hasThirdPartyAssets}
+              thirdPartyNote={project.thirdPartyNote}
             />
-            <div className="mt-4">
-              <LicenseDetailBlock
-                licenseType={project.licenseType}
-                licenseNote={project.licenseNote}
-                copyrightHolder={project.copyrightHolder}
-                ownerName={project.owner}
-                hasThirdPartyAssets={project.hasThirdPartyAssets}
-                thirdPartyNote={project.thirdPartyNote}
-                allowHire={project.allowHire}
-                onHire={openHire}
-              />
-            </div>
           </FadeUp>
         </div>
 
         <div className="mt-10 lg:mt-14 max-w-3xl space-y-6">
-          <ProjectContextCard context={project.context} />
           {linkedPosts.length > 0 && <ProjectLinkedPostsBlock posts={linkedPosts} />}
+          <ProjectContextCard context={project.context} />
           <CommentSection projectId={project.id} />
         </div>
       </div>

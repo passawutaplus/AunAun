@@ -5,6 +5,7 @@ import {
   COMMUNITY_MEDIA_MAX_ITEMS,
   COMMUNITY_MEDIA_MAX_VIDEOS,
 } from "@/lib/communityLimits";
+import { PROJECT_ASSET_FILE_MAX_BYTES } from "@/lib/projectAssets";
 
 export const communityMediaAspectSchema = z.enum([
   "square",
@@ -229,6 +230,33 @@ export const projectSchema = z.object({
   outcome_note: z.string().trim().max(1500).optional().default(""),
   opportunity_types: z.array(z.string().trim().min(1).max(40)).max(10).default([]),
   opportunity_note: z.string().trim().max(500).optional().default(""),
+  external_links: z
+    .array(
+      z.object({
+        label: z.string().trim().max(80).optional().default(""),
+        url: z.string().trim().url("URL ไม่ถูกต้อง"),
+      }),
+    )
+    .max(10)
+    .default([]),
+  project_assets: z
+    .array(
+      z.object({
+        id: z.string().uuid().optional(),
+        kind: z.enum(["link", "file"]),
+        label: z.string().trim().max(80),
+        url: z.string().trim().url().optional(),
+        storage_path: z.string().trim().max(500).optional(),
+        file_name: z.string().trim().max(200).optional(),
+        mime_type: z.string().trim().max(120).optional(),
+        size_bytes: z.number().int().min(0).max(PROJECT_ASSET_FILE_MAX_BYTES).optional(),
+        scan_status: z.enum(["pending", "clean", "blocked"]).default("pending"),
+        scan_reason: z.string().trim().max(200).nullable().optional(),
+        scanned_at: z.string().datetime().nullable().optional(),
+      }),
+    )
+    .max(10)
+    .default([]),
 });
 
 export type ProjectInput = z.infer<typeof projectSchema>;
@@ -251,19 +279,6 @@ export function validateProjectPublish(input: ProjectInput): string | null {
   }
   if (input.license_type === "custom" && !input.license_note?.trim()) {
     return "กรุณากรอกเงื่อนไขการใช้งานเมื่อเลือก 'กำหนดเอง'";
-  }
-  if (!input.creator_role?.trim()) {
-    return "กรุณาระบุบทบาทของคุณในผลงานนี้ก่อนเผยแพร่";
-  }
-  const contextCount = [
-    input.brief,
-    input.process_note,
-    input.deliverables,
-    input.outcome_note,
-    input.opportunity_note,
-  ].filter((v) => !!v?.trim()).length;
-  if (contextCount < 1) {
-    return "กรุณาเติมบริบทผลงานอย่างน้อย 1 ช่อง (โจทย์ process สิ่งที่ส่งมอบ ผลลัพธ์ หรือโอกาส)";
   }
   return null;
 }

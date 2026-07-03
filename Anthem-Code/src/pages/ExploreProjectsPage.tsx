@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth, stashPendingHire, consumePendingHire } from "@/lib/authRedirect";
 import type { Category, Project, ProjectStatus } from "@/data/projectTypes";
+import { DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory } from "@/data/projectTypes";
 import type { DBProject } from "@/hooks/useProjects";
 
 function mapToCard(projects: DBProject[], owners: Record<string, { name: string; avatar: string }>): Project[] {
@@ -27,7 +28,7 @@ function mapToCard(projects: DBProject[], owners: Record<string, { name: string;
       title: p.title,
       image: p.cover_url || (p.gallery_urls?.[0] ?? ""),
       gallery: p.gallery_urls ?? [],
-      category: (p.category as Category) ?? "Graphic",
+      category: (normalizeProjectCategory(p.category) ?? DEFAULT_PROJECT_CATEGORY) as Category,
       owner: o?.name ?? "ฟรีแลนซ์",
       ownerId: p.owner_id,
       ownerAvatar: o?.avatar ?? "",
@@ -258,8 +259,7 @@ const ExploreProjectsPage = () => {
         ) : (
           <StaggerGrid
             dense
-            masonry
-            className="columns-2 sm:columns-3 md:columns-4 lg:columns-4 gap-2 sm:gap-3 lg:gap-4"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-x-2 sm:gap-x-3 lg:gap-x-4 gap-y-4 sm:gap-y-5 lg:gap-y-6"
           >
             {projects.map((p) => (
               <ProjectCard

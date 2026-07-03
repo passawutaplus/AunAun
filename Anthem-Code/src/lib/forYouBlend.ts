@@ -90,14 +90,31 @@ export function mapSearchQueryToCategories(query: string): string[] {
   }
 
   const aliasMap: Record<string, string[]> = {
-    Graphic: ["graphic", "logo", "branding", "brand", "poster", "typography", "print"],
-    Illustration: ["illustration", "illustrator", "drawing", "character", "art"],
-    Photography: ["photo", "photography", "photographer", "product shot"],
-    Video: ["video", "motion", "animation", "after effects", "ae", "premiere"],
-    Craft: ["craft", "3d", "blender", "cinema", "render", "modeling"],
-    "Web/UI": ["ui", "ux", "web", "figma", "interface", "app", "website"],
-    Content: ["content", "social", "copy", "marketing", "creative"],
-    "Music/Audio": ["music", "audio", "sound", "podcast", "mix"],
+    "Graphic / Branding": ["graphic", "logo", "branding", "brand", "poster", "typography", "print", "identity"],
+    "Illustration / Art": ["illustration", "illustrator", "drawing", "character", "art", "vector"],
+    Photography: ["photo", "photography", "photographer", "product shot", "portrait"],
+    "Video / Film": ["video", "film", "cinematic", "documentary", "premiere", "davinci", "reel"],
+    "Motion / Animation": ["motion", "animation", "after effects", "ae", "mograph", "animate"],
+    "UI/UX": ["ui", "ux", "figma", "interface", "wireframe", "prototype", "design system"],
+    "Web / App": ["web", "app", "website", "frontend", "nextjs", "react", "webflow"],
+    "3D / CG / Game": ["3d", "cg", "game", "blender", "unity", "unreal", "modeling", "render"],
+    "Architecture / Interior": ["architecture", "interior", "spatial", "building", "floor plan"],
+    "Product / Industrial": ["product design", "industrial", "packaging", "cad"],
+    "Fashion / Textile": ["fashion", "textile", "garment", "pattern", "lookbook"],
+    "Craft / Handmade": ["craft", "handmade", "artisan", "ceramic", "woodwork"],
+    "Advertising / Campaign": ["advertising", "campaign", "ads", "commercial", "key visual"],
+    "Content / Social": ["content", "social", "marketing", "creative", "instagram", "tiktok"],
+    "Writing / Storytelling": ["writing", "story", "copy", "script", "narrative", "blog"],
+    "Music / Audio": ["music", "audio", "sound", "podcast", "mix", "master"],
+    "AI / Experimental": ["ai", "generative", "midjourney", "stable diffusion", "experimental"],
+    // legacy keys still map searches to new categories
+    Graphic: ["graphic"],
+    Illustration: ["illustration"],
+    Video: ["video"],
+    Craft: ["craft"],
+    "Web/UI": ["web/ui"],
+    Content: ["content"],
+    "Music/Audio": ["music/audio"],
   };
 
   for (const [cat, tokens] of Object.entries(aliasMap)) {

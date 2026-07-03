@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { exploreProjectsUrl } from "@/lib/exploreRoutes";
-import { Layers3, Eye, MessageCircle, Sparkles, Calendar, Users } from "lucide-react";
+import { Layers3, Eye, MessageCircle, Sparkles, Calendar, Handshake } from "lucide-react";
+import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,8 +11,9 @@ import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPo
 import SupportButton from "@/components/gifting/SupportButton";
 import ReportTrigger from "@/components/report/ReportTrigger";
 import { formatThaiDate, formatCompact } from "@/lib/format";
-import OpportunityTypeChips from "@/components/opportunity/OpportunityTypeChips";
-import { isHireCtaAvailable } from "@/lib/opportunity";
+import type { ProjectAsset } from "@/lib/projectAssets";
+import ProjectAssetsSection from "@/components/project/ProjectAssetsSection";
+import LicenseDetailBlock from "@/components/license/LicenseDetailBlock";
 
 
 interface Props {
@@ -36,17 +38,19 @@ interface Props {
   allowHire?: boolean;
   allowCollab?: boolean;
   isOwner?: boolean;
-  ownerOpportunityStatus?: string | null;
-  ownerOpportunityTypes?: string[] | null;
-  projectOpportunityTypes?: string[] | null;
+  projectAssets?: ProjectAsset[];
+  licenseType?: string | null;
+  licenseNote?: string | null;
+  copyrightHolder?: string | null;
+  hasThirdPartyAssets?: boolean;
+  thirdPartyNote?: string | null;
 }
 
 const ProjectSidePanel = (p: Props) => {
   const navigate = useNavigate();
-  const hireAvailable =
-    (p.allowHire ?? true) &&
-    !p.isOwner &&
-    isHireCtaAvailable(p.ownerOpportunityStatus);
+  const showHire = p.allowHire ?? true;
+  const showCollab = p.allowCollab ?? true;
+  const ownerView = !!p.isOwner;
 
   return (
     <aside className="space-y-4">
@@ -98,34 +102,29 @@ const ProjectSidePanel = (p: Props) => {
           <FollowButton freelancerId={p.ownerId} size="sm" variant="compact" />
         </div>
 
-        {(p.ownerOpportunityStatus || (p.ownerOpportunityTypes?.length ?? 0) > 0 || (p.projectOpportunityTypes?.length ?? 0) > 0) && (
-          <OpportunityTypeChips
-            status={p.ownerOpportunityStatus}
-            types={[...(p.ownerOpportunityTypes ?? []), ...(p.projectOpportunityTypes ?? [])].filter(
-              (t, i, arr) => arr.indexOf(t) === i,
-            )}
-          />
-        )}
-
-        {hireAvailable && (
+        {showHire && (
           <Button
             onClick={p.onHire}
+            disabled={ownerView}
             size="lg"
+            title={ownerView ? "ปุ่มนี้สำหรับผู้ชม — ไม่สามารถกดในผลงานของตัวเองได้" : undefined}
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-sm"
           >
-            <Sparkles className="w-4 h-4 mr-1.5" />
-            คุยต่อจากผลงานนี้
+            <BriefcaseIcon className="w-4 h-4 mr-1.5" />
+            จ้างงาน
           </Button>
         )}
 
-        {(p.allowCollab ?? true) && !p.isOwner && (
+        {showCollab && (
           <Button
             onClick={p.onCollab}
+            disabled={ownerView}
             size="lg"
             variant="outline"
+            title={ownerView ? "ปุ่มนี้สำหรับผู้ชม — ไม่สามารถกดในผลงานของตัวเองได้" : undefined}
             className="w-full rounded-full border-primary/30 text-foreground hover:bg-primary/5 hover:text-primary hover:border-primary/50"
           >
-            <Users className="w-4 h-4 mr-1.5 text-primary" />
+            <Handshake className="w-4 h-4 mr-1.5 text-primary" />
             สนใจคอลแลป
           </Button>
         )}
@@ -170,6 +169,18 @@ const ProjectSidePanel = (p: Props) => {
           <PlusOneControl active={false} count={p.likes} showCount ariaLabel="ถูกใจ" />
           <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> {formatCompact(p.commentsCount)}</span>
         </div>
+
+        <LicenseDetailBlock
+          embedded
+          licenseType={p.licenseType}
+          licenseNote={p.licenseNote}
+          copyrightHolder={p.copyrightHolder}
+          ownerName={p.ownerName}
+          hasThirdPartyAssets={p.hasThirdPartyAssets}
+          thirdPartyNote={p.thirdPartyNote}
+          allowHire={p.allowHire}
+          onHire={p.onHire}
+        />
       </div>
 
       {p.description && (
@@ -177,6 +188,14 @@ const ProjectSidePanel = (p: Props) => {
           <h3 className="text-sm font-medium text-foreground">เกี่ยวกับโปรเจกต์</h3>
           <p className="text-base text-foreground leading-6 whitespace-pre-wrap">{p.description}</p>
         </div>
+      )}
+
+      {p.projectId && (
+        <ProjectAssetsSection
+          projectId={p.projectId}
+          assets={p.projectAssets ?? []}
+          isOwner={p.isOwner}
+        />
       )}
 
       {p.tools.length > 0 && (

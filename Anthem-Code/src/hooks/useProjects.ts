@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, TablesUpdate, Tables } from "@/integrations/supabase/types";
-import { PROJECT_DETAIL_SELECT, PROJECT_FEED_SELECT, PROJECT_MANAGE_SELECT } from "@/lib/dbSelects";
+import { PROJECT_FEED_SELECT } from "@/lib/dbSelects";
+import { fetchProjectRow, fetchProjectRows } from "@/lib/fetchProjectRow";
 import { blendPersonalizedProjects, resolveTopCategories } from "@/lib/forYouBlend";
 import { getFeedSearchCategoryWeights } from "@/lib/feedSearchSignals";
 import { isOptionalQueryError } from "@/lib/supabaseErrors";
@@ -49,15 +50,15 @@ export const useMyProjects = (userId: string | undefined) =>
     queryKey: ["my-projects", userId],
     queryFn: async () => {
       if (!userId) return [];
-      const { data, error } = await supabase
-        .from("projects")
-        .select(PROJECT_MANAGE_SELECT)
-        .eq("owner_id", userId)
-        .order("is_pinned", { ascending: false })
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
+      return fetchProjectRows((select) =>
+        supabase
+          .from("projects")
+          .select(select)
+          .eq("owner_id", userId)
+          .order("is_pinned", { ascending: false })
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: false }),
+      );
     },
     enabled: !!userId,
   });
@@ -253,9 +254,7 @@ export const useProject = (id: string | undefined) =>
     queryKey: ["project", id],
     queryFn: async () => {
       if (!id) return null;
-      const { data, error } = await supabase.from("projects").select(PROJECT_DETAIL_SELECT).eq("id", id).maybeSingle();
-      if (error) throw error;
-      return data;
+      return fetchProjectRow(id);
     },
     enabled: !!id,
   });
@@ -268,8 +267,9 @@ export const useCreateProject = () => {
         ...payload,
         id: payload.id ?? crypto.randomUUID(),
       };
-      const { data, error } = await supabase.from("projects").insert(row).select(PROJECT_DETAIL_SELECT).single();
+      const { error } = await supabase.from("projects").insert(row);
       if (error) throw error;
+      const data = await fetchProjectRow(row.id);
       if (!data?.id) throw new Error("PROJECT_ID_MISSING");
       return data;
     },
@@ -287,8 +287,9 @@ export const useUpdateProject = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: TablesUpdate<"projects"> }) => {
-      const { data, error } = await supabase.from("projects").update(patch).eq("id", id).select(PROJECT_DETAIL_SELECT).single();
+      const { error } = await supabase.from("projects").update(patch).eq("id", id);
       if (error) throw error;
+      const data = await fetchProjectRow(id);
       if (!data?.id) throw new Error("PROJECT_ID_MISSING");
       return data;
     },

@@ -29,4 +29,11 @@ export function storageObjectPath(bucket: string, fullPath: string): string {
   return fullPath;
 }
 
+/** Public URL for objects in the shared media bucket (portfolio gallery, assets). */
+export function storageMediaPublicUrl(path: string): string {
+  const normalized = path.replace(/^project-media\//, "");
+  const { data } = sharedStorage.storage.from(SHARED_MEDIA_BUCKET).getPublicUrl(normalized);
+  return data.publicUrl;
+}
+
 export { SHARED_MEDIA_BUCKET };

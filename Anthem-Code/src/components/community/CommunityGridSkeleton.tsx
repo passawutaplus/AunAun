@@ -1,5 +1,7 @@
+import { FEED_AREA_MASONRY_SIDEBAR_COLUMNS, FEED_MASONRY_GAP } from "@/lib/feedMasonry";
+
 const CommunityGridSkeleton = () => (
-  <div className="columns-2 gap-2 sm:gap-3">
+  <div className={`${FEED_AREA_MASONRY_SIDEBAR_COLUMNS} ${FEED_MASONRY_GAP}`}>
     {Array.from({ length: 8 }).map((_, i) => (
       <div key={i} className="break-inside-avoid mb-2 sm:mb-3 animate-pulse">
         <div

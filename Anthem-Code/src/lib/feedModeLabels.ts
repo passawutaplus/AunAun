@@ -10,13 +10,13 @@ export const FEED_MODE_ORDER: FeedModeOption[] = [
   "Collections",
 ];
 
-/** Display labels (Thai) — internal values stay English for DB/query compat. */
+/** Display labels — internal values stay English for DB/query compat. */
 export const FEED_MODE_LABELS: Record<FeedModeOption, string> = {
-  Explore: "สำรวจ",
-  Following: "กำลังติดตาม",
-  Newest: "ล่าสุด",
-  "Top 1": "Most +1",
-  Collections: "คอลเลกชัน",
+  Explore: "Explore",
+  Following: "Following",
+  Newest: "Latest",
+  "Top 1": "Top 1",
+  Collections: "Collections",
 };
 
 export const feedModeLabel = (mode: FeedFilter): string =>

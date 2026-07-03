@@ -57,6 +57,33 @@ function readCommunityPostLiked(
   return !!qc.getQueryData<boolean>(["community-post-liked", postId, userId]);
 }
 
+function readCommunityPostLikeCount(
+  qc: ReturnType<typeof useQueryClient>,
+  postId: string,
+  fallback: number,
+): number {
+  const detail = qc.getQueryData<CommunityPost>(["community-post", postId]);
+  if (detail && typeof detail.like_count === "number") return detail.like_count;
+
+  for (const [, data] of qc.getQueriesData<InfiniteData<CommunityPostsPage>>({
+    queryKey: ["community-posts"],
+  })) {
+    for (const page of data?.pages ?? []) {
+      const hit = page.items.find((p) => p.id === postId);
+      if (hit && typeof hit.like_count === "number") return hit.like_count;
+    }
+  }
+
+  for (const [, list] of qc.getQueriesData<CommunityPost[]>({
+    queryKey: ["community-posts-by-author"],
+  })) {
+    const hit = list?.find((p) => p.id === postId);
+    if (hit && typeof hit.like_count === "number") return hit.like_count;
+  }
+
+  return fallback;
+}
+
 export const useCommunityPostLike = (
   postId: string | undefined,
   likeCount = 0,
@@ -79,10 +106,7 @@ export const useCommunityPostLike = (
     },
   });
 
-  const { data: cachedPost } = useQuery<CommunityPost | undefined>({
-    queryKey: ["community-post", postId],
-    enabled: false,
-  });
+  const { data: isLikedFromServer, isLoading: isLikedLoading } = isLikedQ;
 
   const toggle = useMutation({
     mutationFn: async () => {
@@ -154,18 +178,20 @@ export const useCommunityPostLike = (
           }
         }
       }
-      qc.invalidateQueries({ queryKey: ["community-post-liked", postId, user?.id] });
-      qc.invalidateQueries({ queryKey: ["community-posts"] });
-      qc.invalidateQueries({ queryKey: ["community-posts-by-author"] });
+      // Keep optimistic cache — refetching the feed here caused like state/count to flicker.
       if (user?.id) {
         qc.invalidateQueries({ queryKey: ["onboarding-checklist", user.id] });
       }
     },
   });
 
-  const isLiked = !!isLikedQ.data;
-  const likes = Math.max(0, cachedPost?.like_count ?? likeCount);
-  const liking = toggle.isPending || (!!user && !!postId && isLikedQ.isLoading);
+  const likedCache =
+    postId && user?.id
+      ? qc.getQueryData<boolean>(["community-post-liked", postId, user.id])
+      : undefined;
+  const isLiked = likedCache ?? !!isLikedFromServer;
+  const likes = Math.max(0, readCommunityPostLikeCount(qc, postId ?? "", likeCount));
+  const liking = toggle.isPending || (!!user && !!postId && isLikedLoading);
 
   const runToggle = () => {
     if (!user || !postId) {

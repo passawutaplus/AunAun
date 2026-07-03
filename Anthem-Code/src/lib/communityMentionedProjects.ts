@@ -6,6 +6,7 @@ export type MentionedProjectSummary = {
   id: string;
   title: string;
   cover_url: string | null;
+  category?: string | null;
 };
 
 export function mentionedProjectIds(projects: MentionedProjectSummary[]): string[] {
@@ -19,7 +20,7 @@ export async function fetchMentionedProjectSummaries(
   if (!ids.length) return [];
   const { data, error } = await supabase
     .from("projects")
-    .select("id, title, cover_url")
+    .select("id, title, cover_url, category")
     .in("id", ids)
     .eq("owner_id", ownerId)
     .eq("status", "Published");

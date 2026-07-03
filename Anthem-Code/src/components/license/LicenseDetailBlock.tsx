@@ -16,6 +16,8 @@ interface Props {
   thirdPartyNote?: string | null;
   allowHire?: boolean;
   onHire?: () => void;
+  /** Render inside project header card (no extra glass panel). */
+  embedded?: boolean;
 }
 
 const BoolRow = ({ label, value }: { label: string; value: boolean | "partial" }) => (
@@ -40,6 +42,7 @@ const LicenseDetailBlock = ({
   thirdPartyNote,
   allowHire,
   onHire,
+  embedded = false,
 }: Props) => {
   const [open, setOpen] = useState(false);
   const meta = getLicenseMeta(licenseType);
@@ -48,11 +51,18 @@ const LicenseDetailBlock = ({
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <div className="rounded-2xl glass-panel overflow-hidden">
+      <div
+        className={cn(
+          embedded ? "border-t border-border/50 pt-1" : "rounded-2xl glass-panel overflow-hidden",
+        )}
+      >
         <CollapsibleTrigger asChild>
           <button
             type="button"
-            className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-muted/30 transition-colors"
+            className={cn(
+              "w-full flex items-center justify-between gap-2 text-left hover:bg-muted/30 transition-colors",
+              embedded ? "py-3" : "px-4 py-3",
+            )}
             aria-label={open ? "ย่อรายละเอียดสิทธิ์การใช้งาน" : "ดูรายละเอียดสิทธิ์การใช้งาน"}
           >
             <LicenseBadgeInline licenseType={licenseType} />

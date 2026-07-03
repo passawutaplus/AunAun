@@ -21,7 +21,13 @@ import type { MentionedProjectSummary } from "@/lib/communityMentionedProjects";
 import { fetchTaggedUserSummaries, resolveTaggedUserIds } from "@/lib/communityTaggedUsers";
 import type { TaggedUserSummary } from "@/lib/communityTaggedUsers";
 import type { CommunityMediaAspect } from "@/lib/communityMediaAspect";
-import { classifyCategory, resolveComposerTitle } from "@/lib/classifyCommunityPost";
+import { resolveComposerTitle, resolvePostCategory, resolveCommunityCategory } from "@/lib/classifyCommunityPost";
+import {
+  categoryDbFilterValues,
+  categoryMatchesFilter,
+  DEFAULT_PROJECT_CATEGORY,
+  type ProjectCategory,
+} from "@/data/projectTypes";
 import { tagsMatchFilter } from "@/lib/communityRoutes";
 import {
   useModerationState,
@@ -153,7 +159,10 @@ export const useCommunityPosts = (filter?: CommunityPostsFilter) => {
           .range(pageParam * COMMUNITY_PAGE_SIZE, (pageParam + 1) * COMMUNITY_PAGE_SIZE - 1);
         if (excludeRepostsByColumn) q = q.is("quoted_post_id", null);
         if (filter?.postKind) q = q.eq("post_kind", filter.postKind);
-        if (filter?.category && filter.category !== "All") q = q.eq("category", filter.category);
+        if (filter?.category && filter.category !== "All") {
+          const cats = categoryDbFilterValues(filter.category as ProjectCategory);
+          q = cats.length === 1 ? q.eq("category", cats[0]!) : q.in("category", cats);
+        }
         if (filter?.questionTopic) q = q.eq("question_topic", filter.questionTopic);
         if (filter?.tag?.trim()) q = q.contains("tags", [filter.tag.trim()]);
         if (authorIds) q = q.in("author_id", authorIds);
@@ -165,6 +174,11 @@ export const useCommunityPosts = (filter?: CommunityPostsFilter) => {
       rows = rows.filter((r) => !isRepostRow(r as { quoted_post_id?: string | null; title?: string }));
       if (filter?.tag?.trim()) {
         rows = rows.filter((r) => tagsMatchFilter(r.tags, filter.tag!));
+      }
+      if (filter?.category && filter.category !== "All") {
+        rows = rows.filter((r) =>
+          categoryMatchesFilter(r.category, filter.category as ProjectCategory),
+        );
       }
       const rawCount = rows.length;
       const blocked = new Set(filter?.blockedIds ?? []);
@@ -330,11 +344,26 @@ export type CommunityComposerPayload = {
   tagged_user_ids?: string[];
   media_aspect?: CommunityMediaAspect;
   text_cover_theme?: string | null;
+  /** Explicit category; omit/null = auto-classify on publish */
+  category?: ProjectCategory | null;
   gallery_urls?: string[];
   video_urls?: string[];
   draft_id?: string | null;
   edit_post_id?: string | null;
 };
+
+function resolveComposerCategory(input: CommunityComposerPayload): ProjectCategory {
+  const gallery = input.gallery_urls ?? [];
+  const videos = input.video_urls ?? [];
+  return resolvePostCategory({
+    body: input.body,
+    tags: input.tags ?? [],
+    tools: input.tools ?? [],
+    hasVideo: videos.length > 0,
+    hasImages: gallery.length > 0,
+    categoryOverride: input.category ?? null,
+  });
+}
 
 async function resolveMentionedProjectIds(
   authorId: string,
@@ -458,7 +487,7 @@ export const useSaveCommunityDraft = () => {
         post_kind: "tip" as const,
         title,
         body: input.body.trim(),
-        category: "Graphic",
+        category: resolveComposerCategory(input),
         tags: input.tags ?? [],
         tools: input.tools ?? [],
         gallery_urls: input.gallery_urls ?? [],
@@ -498,13 +527,7 @@ export const usePublishCommunityPost = () => {
 
       const gallery = input.gallery_urls ?? [];
       const videos = input.video_urls ?? [];
-      const category = classifyCategory({
-        body: input.body,
-        tags: input.tags ?? [],
-        tools: input.tools ?? [],
-        hasVideo: videos.length > 0,
-        hasImages: gallery.length > 0,
-      });
+      const category = resolveComposerCategory(input);
       const title = resolveComposerTitle(input.title ?? "", input.body);
 
       const moderated = await moderateCommunityPost({
@@ -593,13 +616,7 @@ export const useUpdateCommunityPost = () => {
 
       const gallery = input.gallery_urls ?? [];
       const videos = input.video_urls ?? [];
-      const category = classifyCategory({
-        body: input.body,
-        tags: input.tags ?? [],
-        tools: input.tools ?? [],
-        hasVideo: videos.length > 0,
-        hasImages: gallery.length > 0,
-      });
+      const category = resolveComposerCategory(input);
       const title = resolveComposerTitle(input.title ?? "", input.body);
 
       const moderated = await moderateCommunityPost({
@@ -686,7 +703,11 @@ export const useRelatedCommunityPosts = (post: CommunityPost | null | undefined,
           .order("created_at", { ascending: false })
           .limit(limit * 3);
         if (excludeRepostsByColumn) q = q.is("quoted_post_id", null);
-        if (post!.category) q = q.eq("category", post!.category);
+        if (post!.category) {
+          const cats = categoryDbFilterValues(resolveCommunityCategory(post!.category));
+          if (cats.length === 1) q = q.eq("category", cats[0]!);
+          else if (cats.length > 1) q = q.in("category", cats);
+        }
         return q;
       });
       const rows = (data as CommunityPost[]).filter(

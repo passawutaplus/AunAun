@@ -8,6 +8,7 @@ export type ComposerSnapshot = {
   mentioned_project_ids: string[];
   tagged_user_ids: string[];
   media_aspect: string;
+  category?: string | null;
   text_cover_theme?: string | null;
   gallery_urls: string[];
   video_urls: string[];

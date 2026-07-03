@@ -171,12 +171,7 @@ const CommentSection = ({ projectId }: Props) => {
               className="resize-none"
             />
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div className="text-xs text-muted-foreground space-y-0.5">
-                <span>{text.length}/800</span>
-                {!text.trim() && !createMut.isPending && (
-                  <p className="text-amber-600 dark:text-amber-400">พิมพ์ข้อความก่อนกดส่ง</p>
-                )}
-              </div>
+              <span className="text-xs text-muted-foreground">{text.length}/800</span>
               <Button
                 type="submit"
                 disabled={createMut.isPending || !text.trim()}

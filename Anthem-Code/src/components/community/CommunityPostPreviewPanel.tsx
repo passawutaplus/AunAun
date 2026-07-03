@@ -21,6 +21,8 @@ export function CommunityPostPreviewPanel({
 
   tools,
 
+  category,
+
   mentionedProjects,
 
   taggedUsers,
@@ -65,6 +67,8 @@ export function CommunityPostPreviewPanel({
         tags={tags}
 
         tools={tools}
+
+        category={category}
 
         mentionedProjects={mentionedProjects}
 

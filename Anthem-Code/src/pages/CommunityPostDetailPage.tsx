@@ -13,7 +13,6 @@ import { useCommunityPostView } from "@/hooks/useCommunityPostView";
 import CommunityCommentSection from "@/components/community/CommunityCommentSection";
 
 import CommunityPostMedia from "@/components/community/CommunityPostMedia";
-import { CommunityTextCover } from "@/components/community/CommunityTextCover";
 
 import CommunityPostMenu from "@/components/community/CommunityPostMenu";
 
@@ -22,7 +21,6 @@ import CommunityPostActionBar from "@/components/community/CommunityPostActionBa
 import { formatThaiDate } from "@/lib/format";
 
 import { titlesMatch } from "@/lib/classifyCommunityPost";
-import { communityMediaAspectTailwind, normalizeCommunityMediaAspect } from "@/lib/communityMediaAspect";
 
 import { CommunityTagLink } from "@/components/community/CommunityTagLink";
 import { exploreProjectsUrl } from "@/lib/exploreRoutes";
@@ -213,24 +211,7 @@ const CommunityPostDetailPage = () => {
                 mediaAspect={post.media_aspect}
               />
             </CommunityDoubleTapLike>
-          ) : (
-            <CommunityDoubleTapLike
-              onLike={likeControl.like}
-              isLiked={likeControl.isLiked}
-              isPending={likeControl.isPending}
-            >
-              <CommunityTextCover
-                seed={post.id}
-                title={post.title}
-                body={post.body}
-                tags={post.tags}
-                themeId={post.text_cover_theme}
-                aspectClass={communityMediaAspectTailwind(normalizeCommunityMediaAspect(post.media_aspect))}
-              />
-            </CommunityDoubleTapLike>
-          )}
-
-
+          ) : null}
 
           <CommunityPostActionBar
             postId={post.id}

@@ -102,7 +102,6 @@ export function countProjectContextFields(input: {
   deliverables?: string | null;
   duration_label?: string | null;
   outcome_note?: string | null;
-  opportunity_note?: string | null;
 }): number {
   return [
     input.brief,
@@ -111,6 +110,11 @@ export function countProjectContextFields(input: {
     input.deliverables,
     input.duration_label,
     input.outcome_note,
-    input.opportunity_note,
   ].filter((v) => !!v?.trim()).length;
+}
+
+export function hasProjectContextContent(
+  input: Parameters<typeof countProjectContextFields>[0],
+): boolean {
+  return countProjectContextFields(input) > 0;
 }

@@ -6,12 +6,10 @@ import { formatThaiDate } from "@/lib/format";
 
 import { exploreProjectsUrl } from "@/lib/exploreRoutes";
 import { communityCoverUrl } from "@/lib/communityMedia";
-import { communityMediaAspectTailwind, normalizeCommunityMediaAspect } from "@/lib/communityMediaAspect";
 import { communityDisplayTags } from "@/lib/communityQaTag";
 import { CommunityTagLink } from "@/components/community/CommunityTagLink";
 
 import CommunityPostMedia from "@/components/community/CommunityPostMedia";
-import { CommunityTextCover } from "@/components/community/CommunityTextCover";
 
 import CommunityPostMenu from "@/components/community/CommunityPostMenu";
 
@@ -33,7 +31,6 @@ interface Props {
 const CommunityPostCard = ({ post }: Props) => {
 
   const cover = communityCoverUrl(post.gallery_urls, post.video_urls);
-  const aspectClass = communityMediaAspectTailwind(normalizeCommunityMediaAspect(post.media_aspect));
 
   const authorPath = profilePublicPath({
 
@@ -94,16 +91,7 @@ const CommunityPostCard = ({ post }: Props) => {
               mediaAspect={post.media_aspect}
             />
           </div>
-        ) : (
-          <CommunityTextCover
-            seed={post.id}
-            title={post.title}
-            body={post.body}
-            tags={post.tags}
-            themeId={post.text_cover_theme}
-            aspectClass={aspectClass}
-          />
-        )}
+        ) : null}
 
 
 

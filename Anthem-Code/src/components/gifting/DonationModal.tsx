@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Sparkles, Pencil, Coffee, Highlighter, PenTool, Palette, Laptop, Heart, Plus, Gift as GiftIcon, FolderKanban, Eye,
+  Tablet, Monitor, Crown,
 } from "lucide-react";
 import { useGifts, useSendGift, type Gift } from "@/hooks/useGifting";
 import { useWallet, useAvailablePx, useDailyGiftTotal } from "@/hooks/useWallet";
@@ -18,7 +19,7 @@ import TopUpDialog from "./TopUpDialog";
 import { toast } from "sonner";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  Pencil, Coffee, Highlighter, PenTool, Palette, Laptop,
+  Pencil, Coffee, Highlighter, PenTool, Palette, Laptop, Tablet, Monitor, Crown,
 };
 
 interface Props {
@@ -184,8 +185,9 @@ const DonationModal = ({ open, onOpenChange, recipientId, recipientName, recipie
             </span>
           </div>
           {!isVerified && (
-            <p className="text-[10px] text-muted-foreground -mt-1.5 px-1">
-              <button type="button" onClick={() => navigate("/verify")} className="text-primary hover:underline">ยืนยันตัวตน</button> เพื่อเพิ่มเพดานเป็น 5,000 px/วัน
+            <p className="text-[10px] text-muted-foreground -mt-1.5 px-1 leading-relaxed">
+              <button type="button" onClick={() => navigate("/verify")} className="text-primary hover:underline">ยืนยันตัวตน</button>
+              {" "}เพื่อเพิ่มเพดานเป็น 5,000 px/วัน — ของขวัญ 1,000 px ขึ้นไปต้องยืนยันตัวตนก่อน
             </p>
           )}
 
@@ -193,7 +195,8 @@ const DonationModal = ({ open, onOpenChange, recipientId, recipientName, recipie
             {gifts.map((g) => {
               const Icon = ICON_MAP[g.icon] ?? GiftIcon;
               const active = selectedId === g.id;
-              const unaffordable = g.price_px > balance;
+              const unaffordable = g.price_px > available;
+              const overUserDaily = g.price_px > dailyRemaining;
               return (
                 <button
                   key={g.id}
@@ -201,7 +204,9 @@ const DonationModal = ({ open, onOpenChange, recipientId, recipientName, recipie
                   className={`group relative rounded-2xl border p-3 text-center transition ${
                     active
                       ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border hover:border-primary/40 hover:bg-muted/50"
+                      : unaffordable || overUserDaily
+                        ? "border-border/60 opacity-70"
+                        : "border-border hover:border-primary/40 hover:bg-muted/50"
                   }`}
                 >
                   <div className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center transition ${
@@ -210,8 +215,8 @@ const DonationModal = ({ open, onOpenChange, recipientId, recipientName, recipie
                     <Icon className="w-5 h-5" />
                   </div>
                   <p className="text-xs font-medium mt-2 text-foreground line-clamp-1">{g.name_th}</p>
-                  <p className={`text-[11px] mt-0.5 tabular-nums ${unaffordable ? "text-muted-foreground/70" : "text-primary"}`}>
-                    {g.price_px} px
+                  <p className={`text-[11px] mt-0.5 tabular-nums ${unaffordable || overUserDaily ? "text-muted-foreground/70" : "text-primary"}`}>
+                    {g.price_px.toLocaleString("th-TH")} px
                   </p>
                 </button>
               );
@@ -262,11 +267,11 @@ const DonationModal = ({ open, onOpenChange, recipientId, recipientName, recipie
               {sentEffect ? (
                 <><Heart className="w-4 h-4 mr-1.5 fill-current animate-pulse" /> ส่งสำเร็จ!</>
               ) : previewOnly ? (
-                <><Eye className="w-4 h-4 mr-1.5" /> พรีวิวการส่ง {selected ? `(${selected.price_px} px)` : ""}</>
+                <><Eye className="w-4 h-4 mr-1.5" /> พรีวิวการส่ง {selected ? `(${selected.price_px.toLocaleString("th-TH")} px)` : ""}</>
               ) : (
                 <>
                   <GiftIcon className="w-4 h-4 mr-1.5" />
-                  ส่งของขวัญ {selected ? `(${selected.price_px} px)` : ""}
+                  ส่งของขวัญ {selected ? `(${selected.price_px.toLocaleString("th-TH")} px)` : ""}
                 </>
               )}
             </Button>

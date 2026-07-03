@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Eye, Orbit } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
@@ -42,7 +42,9 @@ import {
   loadComposerLocal,
 } from "@/lib/communityComposerStorage";
 import { loadCommunityFilter, saveCommunityFilter } from "@/data/communityTopics";
-import { titlesMatch } from "@/lib/classifyCommunityPost";
+import { titlesMatch, classifyCategory, resolveCommunityCategory } from "@/lib/classifyCommunityPost";
+import type { ProjectCategory } from "@/data/projectTypes";
+import { CommunityComposerCategoryField } from "@/components/community/CommunityComposerCategoryField";
 import {
   fetchMentionedProjectSummaries,
   mentionedProjectIds,
@@ -71,8 +73,6 @@ import {
   type CommunityMediaAspect,
   normalizeCommunityMediaAspect,
 } from "@/lib/communityMediaAspect";
-import { CommunityTextCoverThemePicker } from "@/components/community/CommunityTextCoverThemePicker";
-import { DEFAULT_COMMUNITY_TEXT_COVER_THEME } from "@/lib/communityTextCover";
 
 function draftDisplayTitle(title: string, body: string) {
   return titlesMatch(title, body) ? "" : title;
@@ -114,7 +114,7 @@ const CommunityPostEditorPage = () => {
   const [taggedUsers, setTaggedUsers] = useState<TaggedUserSummary[]>([]);
   const [mediaItems, setMediaItems] = useState<PortfolioMediaItem[]>([]);
   const [mediaAspect, setMediaAspect] = useState<CommunityMediaAspect>(DEFAULT_COMMUNITY_MEDIA_ASPECT);
-  const [textCoverTheme, setTextCoverTheme] = useState(DEFAULT_COMMUNITY_TEXT_COVER_THEME);
+  const [categoryOverride, setCategoryOverride] = useState<ProjectCategory | null>(null);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [pendingOrderFiles, setPendingOrderFiles] = useState<File[]>([]);
@@ -143,6 +143,29 @@ const CommunityPostEditorPage = () => {
     pendingOrderFiles.length > 0 ||
     mediaCount >= limits.total;
   const aspectLocked = imageCount > 0;
+
+  const mentionedProjectCategories = useMemo(
+    () =>
+      mentionedProjects
+        .map((p) => p.category)
+        .filter((c): c is string => Boolean(c?.trim())),
+    [mentionedProjects],
+  );
+
+  const suggestedCategory = useMemo(
+    () =>
+      classifyCategory({
+        body,
+        tags,
+        tools,
+        hasVideo: videoCount > 0,
+        hasImages: imageCount > 0,
+        mentionedProjectCategories,
+      }),
+    [body, tags, tools, videoCount, imageCount, mentionedProjectCategories],
+  );
+
+  const postCategory = categoryOverride ?? suggestedCategory;
 
   const draftScan = detectProfanityInFields({
     title,
@@ -174,7 +197,7 @@ const CommunityPostEditorPage = () => {
       void fetchMentionedProjectSummaries(editingPost.mentioned_project_ids ?? [], user.id).then(setMentionedProjects).catch(() => setMentionedProjects([]));
       void fetchTaggedUserSummaries(editingPost.tagged_user_ids ?? []).then(setTaggedUsers).catch(() => setTaggedUsers([]));
       setMediaAspect(normalizeCommunityMediaAspect(editingPost.media_aspect));
-      setTextCoverTheme(editingPost.text_cover_theme ?? DEFAULT_COMMUNITY_TEXT_COVER_THEME);
+      setCategoryOverride(resolveCommunityCategory(editingPost.category));
       setMediaItems(mediaItemsFromProject(editingPost.gallery_urls ?? [], editingPost.video_urls ?? []));
       setDraftLoaded(true);
       return;
@@ -186,7 +209,14 @@ const CommunityPostEditorPage = () => {
       setBody(desc ? `เพิ่งอัปเดตผลงาน "${sourceProject.title}"\n\n${desc}` : `เพิ่งอัปเดตผลงาน "${sourceProject.title}"`);
       setTools(sourceProject.tools ?? []);
       setTags(sourceProject.tags ?? []);
-      setMentionedProjects([{ id: sourceProject.id, title: sourceProject.title, cover_url: sourceProject.cover_url ?? null }]);
+      setMentionedProjects([
+        {
+          id: sourceProject.id,
+          title: sourceProject.title,
+          cover_url: sourceProject.cover_url ?? null,
+          category: sourceProject.category ?? null,
+        },
+      ]);
       setMediaAspect(normalizeCommunityMediaAspect("square"));
       const gallery = (sourceProject.gallery_urls ?? []).slice(0, limits.images);
       const videos = (sourceProject.video_urls ?? []).slice(0, limits.videos);
@@ -256,7 +286,9 @@ const CommunityPostEditorPage = () => {
         void loadMentioned(activeLocal.mentioned_project_ids ?? []);
         void loadTagged(activeLocal.tagged_user_ids ?? []);
         setMediaAspect(normalizeCommunityMediaAspect(activeLocal.media_aspect));
-        setTextCoverTheme(activeLocal.text_cover_theme ?? DEFAULT_COMMUNITY_TEXT_COVER_THEME);
+        if (activeLocal.category) {
+          setCategoryOverride(resolveCommunityCategory(activeLocal.category));
+        }
         setMediaItems(mediaItemsFromProject(activeLocal.gallery_urls, activeLocal.video_urls));
         toast.message("กู้คืนแบบร่างจากเครื่อง");
       } else if (existingDraft) {
@@ -268,7 +300,7 @@ const CommunityPostEditorPage = () => {
         void loadMentioned(existingDraft.mentioned_project_ids ?? []);
         void loadTagged(existingDraft.tagged_user_ids ?? []);
         setMediaAspect(normalizeCommunityMediaAspect(existingDraft.media_aspect));
-        setTextCoverTheme(existingDraft.text_cover_theme ?? DEFAULT_COMMUNITY_TEXT_COVER_THEME);
+        setCategoryOverride(resolveCommunityCategory(existingDraft.category));
         setMediaItems(
           mediaItemsFromProject(existingDraft.gallery_urls ?? [], existingDraft.video_urls ?? []),
         );
@@ -281,7 +313,6 @@ const CommunityPostEditorPage = () => {
 
   const composerPayload = useCallback(() => {
     const media = splitCommunityMedia(mediaItems);
-    const hasMedia = media.gallery_urls.length > 0 || media.video_urls.length > 0;
     return {
       author_id: user!.id,
       title,
@@ -291,13 +322,14 @@ const CommunityPostEditorPage = () => {
       mentioned_project_ids: mentionedProjectIds(mentionedProjects),
       tagged_user_ids: taggedUserIds(taggedUsers),
       media_aspect: mediaAspect,
-      text_cover_theme: hasMedia ? null : textCoverTheme,
+      category: postCategory,
+      text_cover_theme: null,
       gallery_urls: media.gallery_urls,
       video_urls: media.video_urls,
       draft_id: draftId,
       edit_post_id: editPostId,
     };
-  }, [user, title, body, tags, tools, mentionedProjects, taggedUsers, mediaAspect, textCoverTheme, mediaItems, draftId, editPostId]);
+  }, [user, title, body, tags, tools, mentionedProjects, taggedUsers, mediaAspect, postCategory, mediaItems, draftId, editPostId]);
 
   const handleVideo = async (file: File) => {
     if (!user) return;
@@ -502,10 +534,6 @@ const CommunityPostEditorPage = () => {
             onReorder={setMediaItems}
           />
 
-          {mediaCount === 0 && (
-            <CommunityTextCoverThemePicker value={textCoverTheme} onChange={setTextCoverTheme} />
-          )}
-
           <div className="border-b border-border/60">
             <input
               type="text"
@@ -528,6 +556,12 @@ const CommunityPostEditorPage = () => {
             <CommunityProfanityHint text={body} className="px-4 pb-2" compact />
             <CommunityLinkPreviewBar urls={extractCommunityLinkUrls(body)} className="px-4 pb-2" />
           </div>
+
+          <CommunityComposerCategoryField
+            suggested={suggestedCategory}
+            value={categoryOverride}
+            onChange={setCategoryOverride}
+          />
 
           <CommunityComposerToolbar
             userId={user.id}
@@ -568,11 +602,11 @@ const CommunityPostEditorPage = () => {
           body={body}
           tags={tags}
           tools={tools}
+          category={postCategory}
           mentionedProjects={mentionedProjects}
           taggedUsers={taggedUsers}
           mediaItems={mediaItems}
           mediaAspect={mediaAspect}
-          textCoverTheme={textCoverTheme}
           className="px-4 lg:px-0"
         />
       </div>
@@ -594,11 +628,11 @@ const CommunityPostEditorPage = () => {
         body={body}
         tags={tags}
         tools={tools}
+        category={postCategory}
         mentionedProjects={mentionedProjects}
         taggedUsers={taggedUsers}
         mediaItems={mediaItems}
         mediaAspect={mediaAspect}
-        textCoverTheme={textCoverTheme}
       />
 
       <CommunityImageOrderDialog

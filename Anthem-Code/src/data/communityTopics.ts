@@ -30,11 +30,13 @@ export const COMMUNITY_FILTER_STORAGE_KEY = "anthem-community-feed-filter";
 export type CommunityFeedFilter = {
   category: string;
   feedSource: "all" | "following" | "drill";
+  postKind?: CommunityPostKind;
 };
 
 export const DEFAULT_COMMUNITY_FILTER: CommunityFeedFilter = {
   category: "All",
   feedSource: "all",
+  postKind: undefined,
 };
 
 export function loadCommunityFilter(): CommunityFeedFilter {

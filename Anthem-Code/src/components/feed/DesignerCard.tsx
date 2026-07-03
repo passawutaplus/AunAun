@@ -2,7 +2,7 @@ import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Users } from "lucide-react";
+import { Handshake } from "lucide-react";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import type { DesignerCardData } from "@/hooks/useDesigners";
 import FollowButton from "@/components/FollowButton";
@@ -124,7 +124,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
           onClick={() => onCollab(profileUserId, name)}
           className="flex-1 flex items-center justify-center gap-1.5 rounded-full glass-panel text-foreground text-xs font-medium py-2 hover:bg-accent/40 transition"
         >
-          <Users className="w-3.5 h-3.5" /> คอลแลป
+          <Handshake className="w-3.5 h-3.5" /> คอลแลป
         </button>
         <FollowButton freelancerId={profileUserId} iconOnly tone="muted" />
         <motion.div whileTap={{ scale: 0.92 }}>

@@ -9,6 +9,7 @@ import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPo
 import SharePopover from "@/components/SharePopover";
 import { cn } from "@/lib/utils";
 import SafeDemoImage from "@/components/SafeDemoImage";
+import { naturalFeedCoverUrl } from "@/lib/feedProjectCover";
 import { smoothEase } from "@/lib/motion";
 import BoostBadge from "@/components/boost/BoostBadge";
 import { DrillProjectBadge } from "@/components/drill/DrillProjectBadge";
@@ -22,6 +23,8 @@ interface ProjectCardProps {
   onCollabClick?: (projectId: string) => void;
   boosted?: boolean;
   boostId?: string;
+  /** Feed masonry — preserve original cover aspect (no CDN crop). */
+  naturalCover?: boolean;
 }
 
 const formatCompact = (n: number) => {
@@ -30,7 +33,14 @@ const formatCompact = (n: number) => {
   return String(n);
 };
 
-const ProjectCard = ({ project, onHireClick, onCollabClick, boosted, boostId }: ProjectCardProps) => {
+const ProjectCard = ({
+  project,
+  onHireClick,
+  onCollabClick,
+  boosted,
+  boostId,
+  naturalCover = false,
+}: ProjectCardProps) => {
   const navigate = useNavigate();
   const isDbProject = /^[0-9a-f]{8}-/.test(project.id);
   const { likes, isLiked, toggle: toggleLike } = useProjectLike(isDbProject ? project.id : undefined);
@@ -83,6 +93,8 @@ const ProjectCard = ({ project, onHireClick, onCollabClick, boosted, boostId }: 
   };
 
   const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/project/${project.id}`;
+  const imageIndex = project.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const coverSrc = naturalCover ? naturalFeedCoverUrl(project.image) : project.image;
 
   const goToOwner = () => {
     if (project.ownerId) navigate(`/profile/${project.ownerId}`);
@@ -99,12 +111,24 @@ const ProjectCard = ({ project, onHireClick, onCollabClick, boosted, boostId }: 
       whileTap={{ scale: 0.985 }}
       transition={{ duration: 0.22, ease: smoothEase }}
     >
-      <div ref={wrapRef} className="relative w-full overflow-hidden rounded-sm bg-muted">
+      <div
+        ref={wrapRef}
+        className={cn(
+          "relative w-full overflow-hidden rounded-sm bg-muted",
+          !naturalCover && "aspect-[4/3]",
+        )}
+      >
         <SafeDemoImage
-          src={project.image}
-          index={project.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0)}
+          src={coverSrc}
+          index={imageIndex}
+          naturalFallback={naturalCover}
           alt={project.title}
-          className="w-full h-auto block transition-transform duration-500 group-hover:scale-[1.04]"
+          className={cn(
+            "transition-transform duration-500 group-hover:scale-[1.04]",
+            naturalCover
+              ? "w-full h-auto block"
+              : "absolute inset-0 w-full h-full object-cover",
+          )}
           loading="lazy"
         />
 

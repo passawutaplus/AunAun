@@ -27,6 +27,12 @@ export function demoImageUrl(index = 0, w = 1200, h = 900): string {
   return `https://images.unsplash.com/photo-${id}?w=${w}&h=${h}&fit=crop&q=80&auto=format`;
 }
 
+/** Unsplash fallback without forced crop — for feed masonry covers. */
+export function demoImageUrlNatural(index = 0, w = 1200): string {
+  const id = UNSPLASH_ART[Math.abs(index) % UNSPLASH_ART.length];
+  return `https://images.unsplash.com/photo-${id}?w=${w}&q=80&auto=format`;
+}
+
 export function resolveProjectImage(url: string | null | undefined, index = 0): string {
   if (url?.startsWith("https://images.unsplash.com/") || url?.startsWith("https://picsum.photos/")) {
     return url;

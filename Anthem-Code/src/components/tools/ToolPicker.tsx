@@ -62,7 +62,7 @@ const ToolPicker = ({ userId, tools, onChange, input, setInput, max = 20, varian
       if (!q && isAudioTool(s)) return false;
       return true;
     });
-    if (!q) return pool.slice(0, 12);
+    if (!q) return pool.slice(0, 4);
     return pool
       .filter((s) => normalizeToolKey(s).includes(q) || q.includes(normalizeToolKey(s)))
       .slice(0, 12);

@@ -25,6 +25,7 @@ import { EarningsHeroCard } from "@/components/earnings/EarningsHeroCard";
 import { EarningsQuickActions } from "@/components/earnings/EarningsQuickActions";
 import { EarningsCashoutReadiness } from "@/components/earnings/EarningsCashoutReadiness";
 import { EarningsGiftFeed } from "@/components/earnings/EarningsGiftFeed";
+import EarningsGiftCatalog from "@/components/earnings/EarningsGiftCatalog";
 import { EarningsCashoutHistory } from "@/components/earnings/EarningsCashoutHistory";
 import { EarningsClosedLoopNote } from "@/components/earnings/EarningsClosedLoopNote";
 
@@ -123,6 +124,8 @@ const EarningsPage = () => {
         {eligibility && (
           <EarningsCashoutReadiness eligibility={eligibility} earnedPx={earnedPx} />
         )}
+
+        <EarningsGiftCatalog gifts={gifts} />
 
         <EarningsGiftFeed
           items={received}

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { demoImageUrl } from "@/lib/demoImages";
+import { demoImageUrl, demoImageUrlNatural } from "@/lib/demoImages";
 import { imageRevealTransition } from "@/lib/motion";
 
 type SafeDemoImageProps = React.ImgHTMLAttributes<HTMLImageElement> & {
   index?: number;
   /** Smooth fade-in when image loads (default on). */
   reveal?: boolean;
+  /** Use uncropped Unsplash fallback (feed project covers). */
+  naturalFallback?: boolean;
 };
 
 const SafeDemoImage = ({
@@ -14,11 +16,12 @@ const SafeDemoImage = ({
   index = 0,
   alt = "",
   reveal = true,
+  naturalFallback = false,
   className,
   ...props
 }: SafeDemoImageProps) => {
   const reduced = useReducedMotion();
-  const fallback = demoImageUrl(index);
+  const fallback = naturalFallback ? demoImageUrlNatural(index) : demoImageUrl(index);
   const [current, setCurrent] = useState(src || fallback);
   const [loaded, setLoaded] = useState(false);
 

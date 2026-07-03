@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { Gift as GiftIcon, Pencil, Coffee, Highlighter, PenTool, Palette, Laptop } from "lucide-react";
+import { Gift as GiftIcon, Pencil, Coffee, Highlighter, PenTool, Palette, Laptop, Tablet, Monitor, Crown } from "lucide-react";
 
 export const GIFT_ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
   Pencil,
@@ -8,6 +8,9 @@ export const GIFT_ICON_MAP: Record<string, ComponentType<{ className?: string }>
   PenTool,
   Palette,
   Laptop,
+  Tablet,
+  Monitor,
+  Crown,
 };
 
 export const giftIcon = (iconKey?: string) =>

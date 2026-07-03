@@ -7,15 +7,23 @@ import CommunityGridSkeleton from "@/components/community/CommunityGridSkeleton"
 import CommunityPostGridCard from "@/components/feed/CommunityPostGridCard";
 import { COMMUNITY_NEW_PATH } from "@/data/createActions";
 import { useCommunityPosts } from "@/hooks/useCommunityPosts";
+import { useCommunityCatalogShowcase } from "@/hooks/useCommunityCatalogShowcase";
 import { useUserBlocks } from "@/hooks/useCommunityPostInteractions";
 import { useActiveBoosts, buildBoostedIdSet, buildBoostTargetMaps } from "@/hooks/useBoost";
 import { sortByBoostedIds } from "@/lib/boostFeedSort";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import { formatCommunityActionError } from "@/lib/communityRateLimit";
+import {
+  canUseStaticCommunityShowcase,
+  getStaticCommunityShowcasePosts,
+  mergeCommunityFeedShowcase,
+  shouldSupplementCommunityFeed,
+} from "@/lib/communityFeedShowcase";
 import { cn } from "@/lib/utils";
 import type { CommunityFeedFilter } from "@/data/communityTopics";
 import { CommunityTagFeedBanner } from "@/components/community/CommunityTagFeedBanner";
+import { FEED_AREA_MASONRY_SIDEBAR_COLUMNS, FEED_MASONRY_GAP } from "@/lib/feedMasonry";
 
 type CommunityFeedPanelFilter = CommunityFeedFilter & {
   tag?: string;
@@ -39,10 +47,11 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Pr
       category: filter.category,
       feedSource: filter.feedSource,
       tag: filter.tag,
+      postKind: filter.postKind,
       viewerId: filter.feedSource === "following" ? user?.id : undefined,
       blockedIds,
     }),
-    [filter.category, filter.feedSource, filter.tag, user?.id, blockedIds],
+    [filter.category, filter.feedSource, filter.tag, filter.postKind, user?.id, blockedIds],
   );
 
   const {
@@ -58,6 +67,21 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Pr
   const boostedPosts = useMemo(() => buildBoostedIdSet(activeBoosts).posts, [activeBoosts]);
   const boostPostMap = useMemo(() => buildBoostTargetMaps(activeBoosts).posts, [activeBoosts]);
 
+  const supplementFeed = shouldSupplementCommunityFeed({
+    feedSource: filter.feedSource,
+    tag: filter.tag,
+    category: filter.category,
+    search,
+    postKind: filter.postKind,
+  });
+  const { data: catalogShowcase = [] } = useCommunityCatalogShowcase(supplementFeed);
+
+  const showcasePosts = useMemo(() => {
+    if (!supplementFeed) return [];
+    if (catalogShowcase.length > 0) return catalogShowcase;
+    return canUseStaticCommunityShowcase() ? getStaticCommunityShowcasePosts() : [];
+  }, [catalogShowcase, supplementFeed]);
+
   const visiblePosts = useMemo(() => {
     const q = search.trim().toLowerCase();
     const base = !q
@@ -70,8 +94,9 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Pr
             (p.tools ?? []).some((t) => t.toLowerCase().includes(q)) ||
             (p.profile?.display_name ?? "").toLowerCase().includes(q),
         );
-    return sortByBoostedIds(base, boostedPosts);
-  }, [posts, search, boostedPosts]);
+    const sorted = sortByBoostedIds(base, boostedPosts);
+    return mergeCommunityFeedShowcase(sorted, showcasePosts);
+  }, [posts, search, boostedPosts, showcasePosts]);
 
   const openCreate = () => {
     if (onPostClick) {
@@ -131,7 +156,7 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Pr
           action={postButton}
         />
       ) : (
-        <div className={cn("columns-2 sm:columns-2 md:columns-3 lg:columns-4 gap-2 sm:gap-3")}>
+        <div className={cn(FEED_AREA_MASONRY_SIDEBAR_COLUMNS, FEED_MASONRY_GAP)}>
           {visiblePosts.map((post) => (
             <div key={post.id} className="break-inside-avoid mb-2 sm:mb-3">
               <CommunityPostGridCard

@@ -206,6 +206,8 @@ export function buildCommunitySeedPosts(catalogUid, avatarSeedPrefix = "an1hem-c
         tags: def.tags,
         gallery_urls: pi === 0 ? [img] : pi === 1 ? [img, `https://picsum.photos/seed/${avatarSeedPrefix}-${ci}-${pi}-b/800/600`] : [],
         video_urls: [],
+        media_aspect: pi === 0 ? "portrait" : pi === 1 ? "landscape" : "square",
+        text_cover_theme: null,
         question_topic: def.kind === "question" ? def.questionTopic ?? "other" : null,
         status: "published",
         reply_count: (ci + pi) % 5,

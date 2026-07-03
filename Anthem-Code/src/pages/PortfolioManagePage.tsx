@@ -11,6 +11,7 @@ import ManageProjectCard from "@/components/ManageProjectCard";
 import { ManageCommunityPostCard } from "@/components/portfolio/ManageCommunityPostCard";
 import SearchBar from "@/components/SearchBar";
 import type { Project, ProjectStatus, Category } from "@/data/projectTypes";
+import { DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory } from "@/data/projectTypes";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useDeleteProject, useMyProjects, type DBProject } from "@/hooks/useProjects";
@@ -27,6 +28,13 @@ import { SO1O_APP_URL } from "@/lib/productLinks";
 import { isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
 import { openSoloExternal } from "@/lib/soloEcosystemGate";
 import BoostInsightsPanel from "@/components/boost/BoostInsightsPanel";
+import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
+import { postHeadline } from "@/lib/classifyCommunityPost";
+
+type PendingDelete =
+  | { kind: "project"; id: string; title: string }
+  | { kind: "post"; id: string; title: string }
+  | null;
 
 type ProjectTab = "ทั้งหมด" | "Published" | "Draft" | "Private";
 type ManageTab = "projects" | "posts";
@@ -74,6 +82,7 @@ const PortfolioManagePage = () => {
 
   const [projectSearch, setProjectSearch] = useState("");
   const [projectTab, setProjectTab] = useState<ProjectTab>("ทั้งหมด");
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete>(null);
   const [postSearch, setPostSearch] = useState("");
   const [postTab, setPostTab] = useState<PostTab>("ทั้งหมด");
 
@@ -87,7 +96,7 @@ const PortfolioManagePage = () => {
       title: p.title,
       image: p.cover_url || (p.gallery_urls?.[0] ?? ""),
       gallery: p.gallery_urls ?? [],
-      category: (p.category as Category) ?? "Graphic",
+      category: (normalizeProjectCategory(p.category) ?? DEFAULT_PROJECT_CATEGORY) as Category,
       owner: "You",
       ownerAvatar: "",
       likes: p.likes,
@@ -161,9 +170,31 @@ const PortfolioManagePage = () => {
   }, [myPosts, postTab, postSearch]);
 
   const handleDeletePost = (id: string) => {
-    if (!window.confirm("ลบโพสต์นี้ถาวร?")) return;
-    deletePost.mutate(id, {
-      onSuccess: () => toast.success("ลบโพสต์แล้ว"),
+    const post = myPosts.find((p) => p.id === id);
+    setPendingDelete({
+      kind: "post",
+      id,
+      title: post ? postHeadline(post.title, post.body) : "โพสต์นี้",
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!pendingDelete) return;
+    if (pendingDelete.kind === "project") {
+      deleteProject.mutate(pendingDelete.id, {
+        onSuccess: () => {
+          toast.success("ลบผลงานแล้ว");
+          setPendingDelete(null);
+        },
+        onError: (e) => toast.error(e instanceof Error ? e.message : "ลบไม่สำเร็จ"),
+      });
+      return;
+    }
+    deletePost.mutate(pendingDelete.id, {
+      onSuccess: () => {
+        toast.success("ลบโพสต์แล้ว");
+        setPendingDelete(null);
+      },
       onError: (e) => toast.error(e instanceof Error ? e.message : "ลบไม่สำเร็จ"),
     });
   };
@@ -315,10 +346,7 @@ const PortfolioManagePage = () => {
                       toast.info("ลบได้เฉพาะผลงานที่บันทึกในระบบ");
                       return;
                     }
-                    deleteProject.mutate(id, {
-                      onSuccess: () => toast.success("ลบผลงานแล้ว"),
-                      onError: (e) => toast.error(e instanceof Error ? e.message : "ลบไม่สำเร็จ"),
-                    });
+                    setPendingDelete({ kind: "project", id, title: p.title });
                   }}
                 />
               );
@@ -377,6 +405,25 @@ const PortfolioManagePage = () => {
           </>
         )}
       </div>
+
+      <DeleteConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+        title={pendingDelete?.kind === "project" ? "ลบผลงานนี้?" : "ลบโพสต์นี้?"}
+        description={
+          pendingDelete ? (
+            <>
+              「{pendingDelete.title}」จะถูกลบถาวรและไม่สามารถกู้คืนได้ ต้องการลบจริงหรือไม่?
+            </>
+          ) : (
+            ""
+          )
+        }
+        onConfirm={handleConfirmDelete}
+        loading={deleteProject.isPending || deletePost.isPending}
+      />
     </div>
   );
 };

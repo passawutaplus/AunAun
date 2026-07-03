@@ -9,6 +9,8 @@ import TopProjectShowcase from "./TopProjectShowcase";
 import HeroSpotlightShowcase from "./HeroSpotlightShowcase";
 import CommunityHeroShowcase from "./CommunityHeroShowcase";
 
+import { cn } from "@/lib/utils";
+
 const formatNum = (n: number) => n.toLocaleString("th-TH");
 
 const STATS = [
@@ -63,9 +65,10 @@ const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
 
 type Props = {
   mode?: FeedMode;
+  className?: string;
 };
 
-const FeedHero = ({ mode = "projects" }: Props) => {
+const FeedHero = ({ mode = "projects", className }: Props) => {
   const { data, isLoading } = useFeedStats();
   const { slides: designerSlides } = useDesignerHeroSlides();
   const { data: studioSlides = [] } = useStudioHeroSlides();
@@ -84,7 +87,7 @@ const FeedHero = ({ mode = "projects" }: Props) => {
     );
 
   return (
-    <section className="relative overflow-hidden rounded-[1.75rem] ring-1 ring-border/35 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12)] min-h-[26rem] sm:min-h-[28rem] md:min-h-[19rem] lg:min-h-[21rem] -mx-1 sm:mx-0">
+    <section className={cn("relative overflow-hidden rounded-[1.75rem] ring-1 ring-border/35 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12)] min-h-[26rem] sm:min-h-[28rem] md:min-h-[19rem] lg:min-h-[21rem] -mx-1 sm:mx-0", className)}>
       {showcase}
 
       <div

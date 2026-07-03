@@ -36,12 +36,12 @@ describe("feedSearchSignals", () => {
   it("maps recorded queries to category weights", () => {
     recordFeedSearch("user-2", "ux app");
     const weights = getFeedSearchCategoryWeights("user-2");
-    expect(weights["Web/UI"]).toBeGreaterThan(0);
+    expect(weights["UI/UX"]).toBeGreaterThan(0);
   });
 });
 
 describe("mapSearchQueryToCategories export", () => {
   it("re-exports from forYouBlend", () => {
-    expect(mapSearchQueryToCategories("motion graphics")).toContain("Video");
+    expect(mapSearchQueryToCategories("motion graphics")).toContain("Motion / Animation");
   });
 });

@@ -1,12 +1,12 @@
 import { Eye, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
-import { CommunityTextCover } from "@/components/community/CommunityTextCover";
 import type { CommunityPost } from "@/hooks/useCommunityPosts";
 import { communityCoverUrl } from "@/lib/communityMedia";
 import { postHeadline } from "@/lib/classifyCommunityPost";
 import { timeAgoTH } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 type Props = {
   post: CommunityPost;
@@ -22,19 +22,11 @@ export function ManageCommunityPostCard({ post, onDelete, deleting }: Props) {
 
   return (
     <div className="rounded-xl overflow-hidden glass-panel h-full flex flex-col">
-      <div className="relative h-40 bg-muted">
+      <div className={cn("relative bg-muted/40", cover ? "h-40" : "min-h-[5rem] px-4 py-3")}>
         {cover ? (
           <img src={cover} alt="" className="w-full h-full object-cover" loading="lazy" />
         ) : (
-          <CommunityTextCover
-            seed={post.id}
-            title={post.title}
-            body={post.body}
-            tags={post.tags}
-            themeId={post.text_cover_theme}
-            aspectClass="h-40"
-            compact
-          />
+          <p className="text-sm text-foreground line-clamp-4 whitespace-pre-wrap thai-body">{headline}</p>
         )}
         <div className="absolute top-3 left-3 flex gap-2 flex-wrap">
           <Badge

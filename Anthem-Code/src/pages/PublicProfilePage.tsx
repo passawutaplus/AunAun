@@ -1,7 +1,7 @@
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect, useCallback } from "react";
-import { Globe, Instagram, Facebook, MessageSquare, UserX, MessageCircle, Users, Eye, X } from "lucide-react";
+import { Globe, Instagram, Facebook, MessageSquare, UserX, MessageCircle, Handshake, Eye, X } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import PageLoader from "@/components/ui/PageLoader";
 import EmptyState from "@/components/ui/EmptyState";
@@ -377,7 +377,7 @@ const PublicProfilePage = () => {
                       onClick={openCollab}
                       className="w-full rounded-full glass-panel h-10 text-sm font-medium gap-1.5"
                     >
-                      <Users className="w-4 h-4 shrink-0" />
+                      <Handshake className="w-4 h-4 shrink-0" />
                       คอลแลป
                     </Button>
                   </div>

@@ -20,6 +20,7 @@ export function CommunityPostPreviewDialog({
   body,
   tags,
   tools,
+  category,
   mentionedProjects,
   taggedUsers,
   mediaItems,
@@ -34,6 +35,7 @@ export function CommunityPostPreviewDialog({
           body={body}
           tags={tags}
           tools={tools}
+          category={category}
           mentionedProjects={mentionedProjects}
           taggedUsers={taggedUsers}
           mediaItems={mediaItems}

@@ -48,6 +48,8 @@ type Props = {
   onCommunityFeedSourceChange?: (source: CommunityFeedFilter["feedSource"]) => void;
   communityCategory?: string;
   onCommunityCategoryChange?: (category: string) => void;
+  communityTag?: string;
+  communityPostKind?: CommunityFeedFilter["postKind"];
   onCommunityPostClick?: () => void;
   studioFeedSource?: StudioFeedSource;
   onStudioFeedSourceChange?: (source: StudioFeedSource) => void;
@@ -80,6 +82,8 @@ const FeedToolbar = ({
   onCommunityFeedSourceChange,
   communityCategory = "All",
   onCommunityCategoryChange,
+  communityTag,
+  communityPostKind,
   onCommunityPostClick,
   studioFeedSource = "all",
   onStudioFeedSourceChange,
@@ -99,6 +103,8 @@ const FeedToolbar = ({
     (isProjects && feedMode !== "Explore" ? 1 : 0) +
     (isCommunity && communityCategory !== "All" ? 1 : 0) +
     (isCommunity && communityFeedSource !== "all" ? 1 : 0) +
+    (isCommunity && communityPostKind ? 1 : 0) +
+    (isCommunity && communityTag ? 1 : 0) +
     (isStudios && studioFeedSource !== "all" ? 1 : 0);
 
   const filterContent = isCommunity ? (
@@ -228,7 +234,7 @@ const FeedToolbar = ({
               <CommunityFeedTabs
                 feedSource={communityFeedSource}
                 onChange={onCommunityFeedSourceChange ?? (() => {})}
-                className="shrink-0 justify-start gap-6"
+                className="shrink-0 justify-start gap-6 xl:hidden"
               />
               <div className="flex-1 min-w-0 overflow-hidden">
                 <CommunityCategoryChips

@@ -1,7 +1,8 @@
-import type { Category } from "@/data/projectTypes";
+import type { ProjectCategory } from "@/data/projectTypes";
+import { PROJECT_CATEGORIES } from "@/data/projectTypes";
 import { demoImageUrl } from "@/lib/demoImages";
 
-export type FeedInterestId = Exclude<Category, "Explore">;
+export type FeedInterestId = ProjectCategory;
 
 export type FeedInterestOption = {
   id: FeedInterestId;
@@ -10,55 +11,31 @@ export type FeedInterestOption = {
   imageUrl: string;
 };
 
-export const FEED_INTEREST_OPTIONS: FeedInterestOption[] = [
-  {
-    id: "Graphic",
-    label: "Graphic / Branding",
-    subtitle: "โลโก้ โปสเตอร์ ไอเดนทити",
-    imageUrl: demoImageUrl(0),
-  },
-  {
-    id: "Illustration",
-    label: "Illustration",
-    subtitle: "ภาพประกอบ คาแรกเตอร์ สไตล์งาน",
-    imageUrl: demoImageUrl(2),
-  },
-  {
-    id: "Photography",
-    label: "Photography",
-    subtitle: "ภาพถ่าย โปรดักต์ ไลฟ์สไตล์",
-    imageUrl: demoImageUrl(4),
-  },
-  {
-    id: "Video",
-    label: "Video / Motion",
-    subtitle: "วิดีโอ โมชั่น แอนิเมชัน",
-    imageUrl: demoImageUrl(6),
-  },
-  {
-    id: "Craft",
-    label: "Craft / 3D",
-    subtitle: "งานมือ 3D โมเดล เรンダer",
-    imageUrl: demoImageUrl(8),
-  },
-  {
-    id: "Web/UI",
-    label: "UI / UX",
-    subtitle: "เว็บ แอป ออกแบบประสบการณ์",
-    imageUrl: demoImageUrl(12),
-  },
-  {
-    id: "Content",
-    label: "Content / Social",
-    subtitle: "คอนเทนต์ โซเชียล ครีเอทีฟ",
-    imageUrl: demoImageUrl(14),
-  },
-  {
-    id: "Music/Audio",
-    label: "Music / Audio",
-    subtitle: "เสียง ดนตรี พอดแคสต์",
-    imageUrl: demoImageUrl(16),
-  },
-];
+const SUBTITLES: Record<ProjectCategory, string> = {
+  "Graphic / Branding": "โลโก้ ไอเดนทิตี้ สิ่งพิมพ์",
+  "Illustration / Art": "ภาพประกอบ ศิลปะ คาแรกเตอร์",
+  Photography: "ภาพถ่าย โปรดักต์ ไลฟ์สไตล์",
+  "Video / Film": "วิดีโอ ภาพยนตร์ สารคดี",
+  "Motion / Animation": "โมชั่น แอนิเมชัน ตัวอักษรเคลื่อนไหว",
+  "UI/UX": "ออกแบบประสบการณ์ หน้าจอ แอป",
+  "Web / App": "เว็บไซต์ แอปพลิเคชัน ดิจิทัลโปรดักต์",
+  "3D / CG / Game": "โมเดล 3D เกม เรンダer",
+  "Architecture / Interior": "สถาปัตยกรรม ตกแต่งภายใน",
+  "Product / Industrial": "ออกแบบผลิตภัณฑ์ อุตสาหกรรม",
+  "Fashion / Textile": "แฟชั่น สิ่งทอ พิมพ์ลาย",
+  "Craft / Handmade": "งานมือ หัตถกรรม ของทำเอง",
+  "Advertising / Campaign": "โฆษณา แคมเปญ ครีเอทีฟ",
+  "Content / Social": "คอนเทนต์ โซเชียล มีเดีย",
+  "Writing / Storytelling": "งานเขียน สตอรี่ บทความ",
+  "Music / Audio": "ดนตรี เสียง พอดแคสต์",
+  "AI / Experimental": "งาน AI ทดลอง เทคโนโลยีใหม่",
+};
+
+export const FEED_INTEREST_OPTIONS: FeedInterestOption[] = PROJECT_CATEGORIES.map((id, i) => ({
+  id,
+  label: id,
+  subtitle: SUBTITLES[id],
+  imageUrl: demoImageUrl(i * 2),
+}));
 
 export const FEED_INTEREST_IDS = FEED_INTEREST_OPTIONS.map((o) => o.id);

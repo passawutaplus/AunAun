@@ -1,86 +1,99 @@
-import type { Category } from "@/data/projectTypes";
-import { categories } from "@/data/projectTypes";
+import type { Category, ProjectCategory } from "@/data/projectTypes";
+import {
+  categories,
+  DEFAULT_PROJECT_CATEGORY,
+  normalizeProjectCategory,
+} from "@/data/projectTypes";
 import { resolveToolIconSlug } from "@/lib/toolIcons";
 
-export const COMMUNITY_CATEGORIES = categories.filter((c) => c !== "Explore") as Exclude<
-  Category,
-  "Explore"
->[];
+export const COMMUNITY_CATEGORIES = categories.filter((c) => c !== "Explore") as ProjectCategory[];
 
 export const DEFAULT_COMMUNITY_TITLE = "โพสต์จาก Designer Area";
 
-const TOOL_SLUG_CATEGORY: Record<string, Exclude<Category, "Explore">> = {
-  figma: "Web/UI",
-  sketch: "Web/UI",
-  framer: "Web/UI",
-  penpot: "Web/UI",
-  invision: "Web/UI",
-  zeplin: "Web/UI",
-  xd: "Web/UI",
-  webflow: "Web/UI",
-  react: "Web/UI",
-  nextdotjs: "Web/UI",
-  vue: "Web/UI",
-  angular: "Web/UI",
-  svelte: "Web/UI",
-  tailwindcss: "Web/UI",
-  html5: "Web/UI",
-  css3: "Web/UI",
+const TOOL_SLUG_CATEGORY: Record<string, ProjectCategory> = {
+  figma: "UI/UX",
+  sketch: "UI/UX",
+  framer: "UI/UX",
+  penpot: "UI/UX",
+  invision: "UI/UX",
+  zeplin: "UI/UX",
+  xd: "UI/UX",
 
-  premierepro: "Video",
-  "after-effects": "Video",
-  "davinci-resolve": "Video",
-  "final-cut-pro": "Video",
-  capcut: "Video",
-  runway: "Video",
-  animate: "Video",
+  webflow: "Web / App",
+  react: "Web / App",
+  nextdotjs: "Web / App",
+  vue: "Web / App",
+  angular: "Web / App",
+  svelte: "Web / App",
+  tailwindcss: "Web / App",
+  html5: "Web / App",
+  css3: "Web / App",
+
+  premierepro: "Video / Film",
+  "davinci-resolve": "Video / Film",
+  "final-cut-pro": "Video / Film",
+  capcut: "Video / Film",
+  runway: "Video / Film",
+
+  "after-effects": "Motion / Animation",
+  animate: "Motion / Animation",
 
   lightroom: "Photography",
   "affinity-photo": "Photography",
 
-  procreate: "Illustration",
-  illustrator: "Illustration",
-  "affinity-designer": "Illustration",
-  coreldraw: "Illustration",
+  procreate: "Illustration / Art",
+  illustrator: "Illustration / Art",
+  "affinity-designer": "Illustration / Art",
+  coreldraw: "Illustration / Art",
 
-  blender: "Craft",
-  "cinema-4d": "Craft",
-  zbrush: "Craft",
-  "autodesk-maya": "Craft",
-  autodesk: "Craft",
-  rhinoceros: "Craft",
-  houdini: "Craft",
-  spline: "Craft",
-  unity: "Craft",
-  "unreal-engine": "Craft",
-  "substance-3d-painter": "Craft",
+  blender: "3D / CG / Game",
+  "cinema-4d": "3D / CG / Game",
+  zbrush: "3D / CG / Game",
+  "autodesk-maya": "3D / CG / Game",
+  autodesk: "3D / CG / Game",
+  rhinoceros: "3D / CG / Game",
+  houdini: "3D / CG / Game",
+  spline: "3D / CG / Game",
+  unity: "3D / CG / Game",
+  "unreal-engine": "3D / CG / Game",
+  "substance-3d-painter": "3D / CG / Game",
 
-  audition: "Music/Audio",
-  "logic-pro": "Music/Audio",
-  "ableton-live": "Music/Audio",
-  "fl-studio": "Music/Audio",
-  "pro-tools": "Music/Audio",
-  garageband: "Music/Audio",
+  audition: "Music / Audio",
+  "logic-pro": "Music / Audio",
+  "ableton-live": "Music / Audio",
+  "fl-studio": "Music / Audio",
+  "pro-tools": "Music / Audio",
+  garageband: "Music / Audio",
 
-  photoshop: "Graphic",
-  indesign: "Graphic",
-  canva: "Graphic",
-  midjourney: "Graphic",
-  "stability-ai": "Graphic",
-  openai: "Graphic",
-  anthropic: "Graphic",
-  "firefly-adobe": "Graphic",
+  photoshop: "Graphic / Branding",
+  indesign: "Graphic / Branding",
+  canva: "Graphic / Branding",
+
+  midjourney: "AI / Experimental",
+  "stability-ai": "AI / Experimental",
+  openai: "AI / Experimental",
+  anthropic: "AI / Experimental",
+  "firefly-adobe": "AI / Experimental",
 };
 
-const KEYWORD_SCORES: { pattern: RegExp; category: Exclude<Category, "Explore">; weight: number }[] = [
-  { pattern: /(ui|ux|figma|wireframe|prototype|เว็บ|หน้าเว็บ|แอป)/i, category: "Web/UI", weight: 2 },
-  { pattern: /(ตัดต่อ|วิดีโอ|motion|animation|reel|tiktok|capcut|premiere)/i, category: "Video", weight: 2 },
+const KEYWORD_SCORES: { pattern: RegExp; category: ProjectCategory; weight: number }[] = [
+  { pattern: /(ui|ux|figma|wireframe|prototype|design system)/i, category: "UI/UX", weight: 2 },
+  { pattern: /(เว็บ|หน้าเว็บ|แอป|website|frontend|webflow)/i, category: "Web / App", weight: 2 },
+  { pattern: /(ตัดต่อ|วิดีโอ|film|cinematic|premiere|reel)/i, category: "Video / Film", weight: 2 },
+  { pattern: /(motion|animation|mograph|after effects|animate)/i, category: "Motion / Animation", weight: 2 },
   { pattern: /(ภาพถ่าย|photo|lightroom|retouch|สตูดิโอ)/i, category: "Photography", weight: 2 },
-  { pattern: /(illustration|วาด|procreate|vector|ไอคอน|มาสคอต)/i, category: "Illustration", weight: 2 },
-  { pattern: /(3d|blender|model|sculpt|render|zbrush)/i, category: "Craft", weight: 2 },
-  { pattern: /(เพลง|music|beat|audio|mix|master)/i, category: "Music/Audio", weight: 2 },
-  { pattern: /(copy|content|caption|บทความ|เขียน|blog)/i, category: "Content", weight: 2 },
-  { pattern: /(โลโก้|logo|poster|banner|branding|layout|print|สิ่งพิมพ์)/i, category: "Graphic", weight: 2 },
+  { pattern: /(illustration|วาด|procreate|vector|ไอคอน|มาสคอต|ศิลปะ)/i, category: "Illustration / Art", weight: 2 },
+  { pattern: /(3d|blender|game|unity|unreal|model|sculpt|render)/i, category: "3D / CG / Game", weight: 2 },
+  { pattern: /(สถาปัตย|interior|ตกแต่งภายใน|floor plan)/i, category: "Architecture / Interior", weight: 2 },
+  { pattern: /(product design|packaging|industrial|ผลิตภัณฑ์)/i, category: "Product / Industrial", weight: 2 },
+  { pattern: /(fashion|textile|แฟชั่น|ลายผ้า)/i, category: "Fashion / Textile", weight: 2 },
+  { pattern: /(craft|handmade|งานมือ|หัตถกรรม)/i, category: "Craft / Handmade", weight: 2 },
+  { pattern: /(โฆษณา|campaign|advertising|key visual)/i, category: "Advertising / Campaign", weight: 2 },
+  { pattern: /(content|social|caption|marketing|instagram|tiktok)/i, category: "Content / Social", weight: 2 },
+  { pattern: /(เขียน|writing|story|script|บทความ|blog|copy)/i, category: "Writing / Storytelling", weight: 2 },
+  { pattern: /(เพลง|music|beat|audio|mix|master|podcast)/i, category: "Music / Audio", weight: 2 },
+  { pattern: /(ai|generative|midjourney|stable diffusion|experimental)/i, category: "AI / Experimental", weight: 2 },
+  { pattern: /(โลโก้|logo|poster|banner|branding|layout|print|สิ่งพิมพ์)/i, category: "Graphic / Branding", weight: 2 },
 ];
 
 export type ClassifyInput = {
@@ -89,6 +102,8 @@ export type ClassifyInput = {
   tools?: string[];
   hasVideo?: boolean;
   hasImages?: boolean;
+  /** Published project categories from @mentions — strong signal. */
+  mentionedProjectCategories?: string[];
 };
 
 /** First line or first 120 chars of caption for DB title / feed headline. */
@@ -121,9 +136,9 @@ export function postHeadline(title: string, body: string): string {
   return firstLine.length > 120 ? `${firstLine.slice(0, 120).trim()}…` : firstLine;
 }
 
-export function classifyCategory(input: ClassifyInput): Exclude<Category, "Explore"> {
-  const scores = new Map<Exclude<Category, "Explore">, number>();
-  const bump = (cat: Exclude<Category, "Explore">, n = 1) => {
+export function classifyCategory(input: ClassifyInput): ProjectCategory {
+  const scores = new Map<ProjectCategory, number>();
+  const bump = (cat: ProjectCategory, n = 1) => {
     scores.set(cat, (scores.get(cat) ?? 0) + n);
   };
 
@@ -132,15 +147,20 @@ export function classifyCategory(input: ClassifyInput): Exclude<Category, "Explo
     if (slug && TOOL_SLUG_CATEGORY[slug]) bump(TOOL_SLUG_CATEGORY[slug], 3);
   }
 
+  for (const raw of input.mentionedProjectCategories ?? []) {
+    const cat = normalizeProjectCategory(raw);
+    if (cat) bump(cat, 4);
+  }
+
   const text = [input.body, ...(input.tags ?? [])].join(" ");
   for (const { pattern, category, weight } of KEYWORD_SCORES) {
     if (pattern.test(text)) bump(category, weight);
   }
 
-  if (input.hasVideo) bump("Video", 2);
+  if (input.hasVideo) bump("Video / Film", 2);
   if (input.hasImages && !input.hasVideo) bump("Photography", 1);
 
-  let best: Exclude<Category, "Explore"> = "Graphic";
+  let best: ProjectCategory = DEFAULT_PROJECT_CATEGORY;
   let bestScore = -1;
   for (const cat of COMMUNITY_CATEGORIES) {
     const s = scores.get(cat) ?? 0;
@@ -150,4 +170,17 @@ export function classifyCategory(input: ClassifyInput): Exclude<Category, "Explo
     }
   }
   return best;
+}
+
+/** Composer / publish — explicit override wins, else auto-classify. */
+export function resolvePostCategory(
+  input: ClassifyInput & { categoryOverride?: ProjectCategory | null },
+): ProjectCategory {
+  if (input.categoryOverride) return input.categoryOverride;
+  return classifyCategory(input);
+}
+
+/** Resolve stored category (legacy or current) for display/filter. */
+export function resolveCommunityCategory(value: string | null | undefined): ProjectCategory {
+  return normalizeProjectCategory(value) ?? DEFAULT_PROJECT_CATEGORY;
 }

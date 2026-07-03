@@ -7,6 +7,7 @@ import {
   type CommunityFeedFilter,
 } from "@/data/communityTopics";
 import { decodeCommunityTagParam } from "@/lib/communityRoutes";
+import { parseCommunityKind } from "@/data/createActions";
 
 export type CommunityFeedQueryFilter = CommunityFeedFilter & {
   tag?: string;
@@ -31,10 +32,12 @@ export function useCommunityFeedFilter() {
                 ? stored.feedSource
                 : DEFAULT_COMMUNITY_FILTER.feedSource;
     const tag = decodeCommunityTagParam(searchParams.get("tag"));
+    const postKind = parseCommunityKind(searchParams.get("kind")) ?? undefined;
     return {
       category: category || stored.category,
       feedSource,
       tag: tag || undefined,
+      postKind,
     };
   });
 
@@ -54,7 +57,8 @@ export function useCommunityFeedFilter() {
     }
     if (next.tag?.trim()) params.set("tag", next.tag.trim());
     else params.delete("tag");
-    params.delete("kind");
+    if (next.postKind) params.set("kind", next.postKind);
+    else params.delete("kind");
     params.delete("topic");
     setSearchParams(params, { replace: true });
   };
@@ -65,6 +69,7 @@ export function useCommunityFeedFilter() {
 
   useEffect(() => {
     const tag = decodeCommunityTagParam(searchParams.get("tag"));
+    const postKind = parseCommunityKind(searchParams.get("kind")) ?? undefined;
     setFilterState((prev) => {
       const category = searchParams.get("category") ?? prev.category;
       const feedParam = searchParams.get("feed");
@@ -80,6 +85,7 @@ export function useCommunityFeedFilter() {
         category: category || prev.category,
         feedSource,
         tag: tag || undefined,
+        postKind,
       };
     });
   }, [searchParams]);
@@ -93,6 +99,7 @@ export function useCommunityFeedFilter() {
       category: filter.category,
       feedSource: filter.feedSource,
       tag: filter.tag,
+      postKind: filter.postKind,
     }),
     [filter],
   );

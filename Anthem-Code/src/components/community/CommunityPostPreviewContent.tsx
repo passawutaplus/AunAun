@@ -1,8 +1,7 @@
-import { Bookmark, MessageCircle, Share2 } from "lucide-react";
+import { Bookmark, MessageCircle, MoreHorizontal, Share2 } from "lucide-react";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import UserAvatar from "@/components/UserAvatar";
 import CommunityPostMedia from "@/components/community/CommunityPostMedia";
-import { CommunityTextCover } from "@/components/community/CommunityTextCover";
 import { CommunityQaBadge } from "@/components/community/CommunityQaBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -12,7 +11,7 @@ import { splitCommunityMedia } from "@/lib/communityMedia";
 import type { MentionedProjectSummary } from "@/lib/communityMentionedProjects";
 import type { TaggedUserSummary } from "@/lib/communityTaggedUsers";
 import type { CommunityMediaAspect } from "@/lib/communityMediaAspect";
-import { DEFAULT_COMMUNITY_MEDIA_ASPECT, communityMediaAspectTailwind } from "@/lib/communityMediaAspect";
+import { DEFAULT_COMMUNITY_MEDIA_ASPECT } from "@/lib/communityMediaAspect";
 import type { PortfolioMediaItem } from "@/lib/portfolioMedia";
 import { cn } from "@/lib/utils";
 import { CommunityCaptionMetaInline } from "@/components/community/CommunityCaptionMetaInline";
@@ -24,11 +23,11 @@ export type CommunityPostPreviewProps = {
   body: string;
   tags: string[];
   tools: string[];
+  category?: string | null;
   mentionedProjects?: MentionedProjectSummary[];
   taggedUsers?: TaggedUserSummary[];
   mediaItems: PortfolioMediaItem[];
   mediaAspect?: CommunityMediaAspect;
-  textCoverTheme?: string | null;
   className?: string;
   layout?: "default" | "fitted";
   /** @deprecated use mediaAspect — kept for mobile tab override */
@@ -40,11 +39,11 @@ export function CommunityPostPreviewContent({
   body,
   tags,
   tools,
+  category,
   mentionedProjects = [],
   taggedUsers = [],
   mediaItems,
   mediaAspect = DEFAULT_COMMUNITY_MEDIA_ASPECT,
-  textCoverTheme,
   className,
   layout = "default",
 }: CommunityPostPreviewProps) {
@@ -57,6 +56,7 @@ export function CommunityPostPreviewContent({
   const displayName = profile?.display_name ?? "ผู้ใช้";
   const previewTitle = title.trim() || "โพสต์ชุมชน";
   const fitted = layout === "fitted";
+  const metaParts = ["เมื่อเผยแพร่", category?.trim()].filter(Boolean);
 
   return (
     <article
@@ -79,8 +79,13 @@ export function CommunityPostPreviewContent({
         />
         <div className="flex-1 min-w-0">
           <p className={cn("font-medium truncate", fitted ? "text-xs" : "text-sm")}>{displayName}</p>
-          <p className="text-[11px] text-muted-foreground">เมื่อเผยแพร่</p>
+          <p className="text-[11px] text-muted-foreground truncate">
+            {metaParts.join(" · ")}
+          </p>
         </div>
+        <span className="p-1 text-muted-foreground shrink-0" aria-hidden>
+          <MoreHorizontal className={cn(fitted ? "w-4 h-4" : "w-5 h-5")} />
+        </span>
       </div>
 
       {hasMedia ? (
@@ -93,18 +98,7 @@ export function CommunityPostPreviewContent({
             mediaAspect={mediaAspect}
           />
         </div>
-      ) : (
-        <div className="w-full shrink-0">
-          <CommunityTextCover
-            seed={`editor-preview:${previewTitle}`}
-            themeId={textCoverTheme}
-            title={title}
-            body={body}
-            tags={tags}
-            aspectClass={communityMediaAspectTailwind(mediaAspect)}
-          />
-        </div>
-      )}
+      ) : null}
 
       <div
         className={cn(

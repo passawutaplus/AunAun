@@ -10,21 +10,21 @@ import {
 describe("buildCategoryWeights", () => {
   it("weights behavior lower than survey interests", () => {
     const weights = buildCategoryWeights({
-      behaviorCategories: ["Graphic"],
-      feedInterests: ["Web/UI"],
+      behaviorCategories: ["Graphic / Branding"],
+      feedInterests: ["UI/UX"],
       searchCategoryWeights: {},
     });
-    expect(weights["Graphic"]).toBe(1);
-    expect(weights["Web/UI"]).toBe(3);
+    expect(weights["Graphic / Branding"]).toBe(1);
+    expect(weights["UI/UX"]).toBe(3);
   });
 
   it("adds search signal weight", () => {
     const weights = buildCategoryWeights({
       behaviorCategories: [],
       feedInterests: [],
-      searchCategoryWeights: { Illustration: 2 },
+      searchCategoryWeights: { "Illustration / Art": 2 },
     });
-    expect(weights["Illustration"]).toBe(4);
+    expect(weights["Illustration / Art"]).toBe(4);
   });
 });
 
@@ -33,41 +33,41 @@ describe("resolveTopCategories", () => {
     expect(
       resolveTopCategories({
         behaviorCategories: [],
-        feedInterests: ["Web/UI", "Graphic"],
+        feedInterests: ["UI/UX", "Graphic / Branding"],
         searchCategoryWeights: {},
       }),
-    ).toEqual(["Web/UI", "Graphic"]);
+    ).toEqual(["UI/UX", "Graphic / Branding"]);
   });
 
   it("prefers higher-weight behavior over interests", () => {
     const top = resolveTopCategories({
-      behaviorCategories: ["Graphic", "Graphic", "Graphic", "Graphic"],
-      feedInterests: ["Web/UI"],
+      behaviorCategories: ["Graphic / Branding", "Graphic / Branding", "Graphic / Branding", "Graphic / Branding"],
+      feedInterests: ["UI/UX"],
       searchCategoryWeights: {},
     });
-    expect(top[0]).toBe("Graphic");
+    expect(top[0]).toBe("Graphic / Branding");
   });
 
   it("boosts categories from search", () => {
     const top = pickTopCategories(
       buildCategoryWeights({
-        behaviorCategories: ["Graphic"],
+        behaviorCategories: ["Graphic / Branding"],
         feedInterests: [],
-        searchCategoryWeights: { "Web/UI": 3 },
+        searchCategoryWeights: { "UI/UX": 3 },
       }),
       [],
     );
-    expect(top).toContain("Web/UI");
+    expect(top).toContain("UI/UX");
   });
 });
 
 describe("mapSearchQueryToCategories", () => {
-  it("maps ux alias to Web/UI", () => {
-    expect(mapSearchQueryToCategories("ux portfolio")).toContain("Web/UI");
+  it("maps ux alias to UI/UX", () => {
+    expect(mapSearchQueryToCategories("ux portfolio")).toContain("UI/UX");
   });
 
-  it("maps logo to Graphic", () => {
-    expect(mapSearchQueryToCategories("logo design")).toContain("Graphic");
+  it("maps logo to Graphic / Branding", () => {
+    expect(mapSearchQueryToCategories("logo design")).toContain("Graphic / Branding");
   });
 });
 

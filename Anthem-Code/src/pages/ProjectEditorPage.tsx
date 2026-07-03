@@ -21,7 +21,7 @@ import { getProjectLimits } from "@/lib/projectLimits";
 import { supabase } from "@/integrations/supabase/client";
 import { projectSchema, validateProjectPublish } from "@/lib/validators";
 import { portfolioEditorHasContent } from "@/lib/portfolioEditorStorage";
-import { categories } from "@/data/projectTypes";
+import { categories, DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory } from "@/data/projectTypes";
 import { toast } from "sonner";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import StudioCreditPicker from "@/components/profile/StudioCreditPicker";
@@ -29,10 +29,21 @@ import LicensePicker from "@/components/license/LicensePicker";
 import TagPicker from "@/components/tags/TagPicker";
 import ToolPicker from "@/components/tools/ToolPicker";
 import ProjectPreviewDialog, { type ProjectPreviewData } from "@/components/project/ProjectPreviewDialog";
+import { PortfolioCoverCropDialog } from "@/components/project/PortfolioCoverCropDialog";
+import { PROJECT_COVER_RATIO_LABEL } from "@/lib/projectCoverAspect";
 import ProjectContextEditorFields, {
   type ProjectContextForm,
 } from "@/components/project/ProjectContextEditorFields";
-import type { OpportunityTypeKey } from "@/lib/opportunity";
+import ProjectAssetsEditor from "@/components/project/ProjectAssetsEditor";
+import {
+  parseProjectAssets,
+  toStoredProjectAssets,
+  projectAssetsToExternalLinks,
+  hasPendingProjectAssets,
+  type ProjectAsset,
+} from "@/lib/projectAssets";
+import { enqueueProjectAssetScan } from "@/lib/triggerProjectAssetScan";
+import { hasProjectContextContent } from "@/lib/opportunity";
 import type { ProjectPreviewMode } from "@/components/project/ProjectPreviewModeTabs";
 import ThirdPartyAssetsToggle from "@/components/license/ThirdPartyAssetsToggle";
 import OriginalWorkAttestation from "@/components/license/OriginalWorkAttestation";
@@ -95,7 +106,7 @@ const ProjectEditorPage = () => {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<string>("Graphic");
+  const [category, setCategory] = useState<string>("");
   const [cover, setCover] = useState<string>("");
   const [mediaItems, setMediaItems] = useState<PortfolioMediaItem[]>([]);
   const [tools, setTools] = useState<string[]>([]);
@@ -116,6 +127,8 @@ const ProjectEditorPage = () => {
   const [toolInput, setToolInput] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverCropFile, setCoverCropFile] = useState<File | null>(null);
+  const [coverCropOpen, setCoverCropOpen] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -132,12 +145,23 @@ const ProjectEditorPage = () => {
     deliverables: "",
     durationLabel: "",
     outcomeNote: "",
-    opportunityNote: "",
-    opportunityTypes: [],
   });
+  const [projectAssets, setProjectAssets] = useState<ProjectAsset[]>([]);
+  const [contextExpanded, setContextExpanded] = useState(false);
   const patchProjectContext = useCallback((patch: Partial<ProjectContextForm>) => {
     setProjectContext((c) => ({ ...c, ...patch }));
   }, []);
+  const scheduleBackgroundAssetScan = useCallback((projectId: string) => {
+    if (!hasPendingProjectAssets(projectAssets)) return;
+    toast.message("กำลังตรวจสอบไฟล์แนบ/ลิงก์ในพื้นหลัง — จะแจ้งเมื่อเสร็จ");
+    enqueueProjectAssetScan(projectId, ({ blockedCount }) => {
+      if (blockedCount > 0) {
+        toast.warning(
+          `มี ${blockedCount} รายการไม่ผ่านการตรวจสอบ — ดูรายละเอียดในหน้าแก้ไข`,
+        );
+      }
+    });
+  }, [projectAssets]);
   const [publishing, setPublishing] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
 
@@ -157,7 +181,10 @@ const ProjectEditorPage = () => {
     const drillDate = params.get("drill_date")?.trim();
     if (prefillTitle) setTitle(prefillTitle);
     if (prefillDesc) setDescription(prefillDesc);
-    if (prefillCat && categories.some((c) => c === prefillCat)) setCategory(prefillCat);
+    if (prefillCat) {
+      const resolved = normalizeProjectCategory(prefillCat) ?? (categories.includes(prefillCat as Category) ? prefillCat : null);
+      if (resolved) setCategory(resolved);
+    }
     if (prefillTags) {
       setTags(
         prefillTags
@@ -218,8 +245,6 @@ const ProjectEditorPage = () => {
         deliverables?: string | null;
         duration_label?: string | null;
         outcome_note?: string | null;
-        opportunity_types?: string[] | null;
-        opportunity_note?: string | null;
       };
       setProjectContext({
         brief: extCtx.brief ?? "",
@@ -228,9 +253,14 @@ const ProjectEditorPage = () => {
         deliverables: extCtx.deliverables ?? "",
         durationLabel: extCtx.duration_label ?? "",
         outcomeNote: extCtx.outcome_note ?? "",
-        opportunityNote: extCtx.opportunity_note ?? "",
-        opportunityTypes: (extCtx.opportunity_types ?? []) as OpportunityTypeKey[],
       });
+      setProjectAssets(
+        parseProjectAssets(
+          (existing as { project_assets?: unknown }).project_assets,
+          (existing as { external_links?: unknown }).external_links,
+        ),
+      );
+      setContextExpanded(hasProjectContextContent(extCtx));
       void (async () => {
         const ext = existing as {
           linked_community_post_ids?: string[];
@@ -310,8 +340,10 @@ const ProjectEditorPage = () => {
         deliverables: projectContext.deliverables.trim(),
         duration_label: projectContext.durationLabel.trim(),
         outcome_note: projectContext.outcomeNote.trim(),
-        opportunity_types: projectContext.opportunityTypes,
-        opportunity_note: projectContext.opportunityNote.trim(),
+        opportunity_types: [],
+        opportunity_note: "",
+        external_links: projectAssetsToExternalLinks(projectAssets),
+        project_assets: toStoredProjectAssets(projectAssets),
       };
     },
     [
@@ -336,6 +368,7 @@ const ProjectEditorPage = () => {
       allLinkedPostIds,
       collabAccepted,
       projectContext,
+      projectAssets,
     ],
   );
 
@@ -461,12 +494,20 @@ const ProjectEditorPage = () => {
     ],
   );
 
+  const openCoverCrop = (file: File) => {
+    setCoverCropFile(file);
+    setCoverCropOpen(true);
+  };
+
   const handleCover = async (file: File) => {
     if (!user) return;
     setUploadingCover(true);
     try {
-      const url = await uploadProjectImage(file, user.id, folderRef.current, tier);
+      const url = await uploadProjectImage(file, user.id, folderRef.current, tier, {
+        skipCompression: true,
+      });
       setCover(url);
+      setCoverCropFile(null);
       toast.success("อัปโหลดภาพปกสำเร็จ");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
@@ -480,7 +521,20 @@ const ProjectEditorPage = () => {
       toast.error("รองรับเฉพาะ JPG, PNG, WebP");
       return;
     }
-    void handleCover(file);
+    openCoverCrop(file);
+  };
+
+  const handleSetCoverFromGallery = async (url: string) => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("fetch failed");
+      const blob = await res.blob();
+      if (!blob.type.startsWith("image/")) throw new Error("not image");
+      const file = new File([blob], "gallery-cover.webp", { type: blob.type || "image/webp" });
+      openCoverCrop(file);
+    } catch {
+      toast.error("โหลดรูปไม่สำเร็จ — ลองอัปโหลดภาพปกใหม่");
+    }
   };
 
   const handleGallery = async (files: FileList | File[]) => {
@@ -613,21 +667,24 @@ const ProjectEditorPage = () => {
           toast.error("คุณไม่มีสิทธิ์แก้ไขผลงานนี้");
           return;
         }
-        await update.mutateAsync({ id: resolvedId, patch: payload });
-        await runProjectLinkSideEffects(resolvedId);
+        const savedId = resolvedId;
+        await update.mutateAsync({ id: savedId, patch: payload });
+        await runProjectLinkSideEffects(savedId);
         toast.success(targetStatus === "Published" ? "เผยแพร่ผลงานแล้ว" : "บันทึกการเปลี่ยนแปลงแล้ว");
+        scheduleBackgroundAssetScan(savedId);
         if (
           targetStatus === "Published" &&
           drillMetaRef.current.drill_type === "daily"
         ) {
           navigate("/?drill=1");
         } else {
-          navigate(`/project/${resolvedId}`);
+          navigate(`/project/${savedId}`);
         }
       } else {
         const created = await create.mutateAsync({ ...payload, owner_id: user.id });
         await runProjectLinkSideEffects(created.id);
         toast.success(targetStatus === "Published" ? "เผยแพร่ผลงานแล้ว" : "บันทึกฉบับร่างแล้ว");
+        scheduleBackgroundAssetScan(created.id);
         if (
           targetStatus === "Published" &&
           drillMetaRef.current.drill_type === "daily"
@@ -658,6 +715,7 @@ const ProjectEditorPage = () => {
       const result = await persistDraft();
       if (result) {
         await runProjectLinkSideEffects(result.id);
+        scheduleBackgroundAssetScan(result.id);
         if (!silent) toast.success("บันทึกฉบับร่างแล้ว");
       } else if (!silent) {
         toast.message("ยังไม่มีเนื้อหาให้บันทึก");
@@ -841,7 +899,7 @@ const ProjectEditorPage = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <Label className="text-sm font-semibold">ภาพปก *</Label>
               {!cover && (
-                <span className="text-xs text-destructive">ต้องมีภาพปกก่อนเผยแพร่</span>
+                <span className="text-xs text-primary">ต้องมีภาพปกก่อนเผยแพร่</span>
               )}
             </div>
             <CoverDrop
@@ -850,7 +908,9 @@ const ProjectEditorPage = () => {
               onPick={handleCoverPick}
               onClear={() => setCover("")}
             />
-            <p className="text-xs text-muted-foreground">ใช้เป็นภาพหลักในฟีดและการค้นหา (จะถูกบีบเป็น WebP คุณภาพ HD)</p>
+            <p className="text-xs text-muted-foreground">
+              อัตราส่วน {PROJECT_COVER_RATIO_LABEL} แนวนอนเท่านั้น — ใช้เป็นภาพหลักในฟีดและการค้นหา
+            </p>
           </section>
 
           <section className="space-y-2">
@@ -880,7 +940,7 @@ const ProjectEditorPage = () => {
                   items={mediaItems}
                   coverUrl={cover}
                   onReorder={setMediaItems}
-                  onSetCover={setCover}
+                  onSetCover={(url) => void handleSetCoverFromGallery(url)}
                   onRemove={removeMediaItem}
                   layout="list"
                 />
@@ -922,7 +982,8 @@ const ProjectEditorPage = () => {
           <ProjectContextEditorFields
             value={projectContext}
             onChange={patchProjectContext}
-            publishMode={status === "Published"}
+            expanded={contextExpanded}
+            onExpandedChange={setContextExpanded}
           />
 
           <section className="space-y-4 rounded-2xl border border-border bg-card/40 p-4">
@@ -950,8 +1011,8 @@ const ProjectEditorPage = () => {
           <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
             <div className="space-y-2">
               <Label className="text-xs font-semibold text-muted-foreground uppercase">หมวดงาน *</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={category || undefined} onValueChange={setCategory}>
+                <SelectTrigger><SelectValue placeholder="เลือกหมวดหมู่" /></SelectTrigger>
                 <SelectContent>
                   {cats.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
@@ -1058,6 +1119,17 @@ const ProjectEditorPage = () => {
 
 
 
+          {user && (
+            <ProjectAssetsEditor
+              assets={projectAssets}
+              onChange={setProjectAssets}
+              userId={user.id}
+              folder={folderRef.current}
+              projectId={editing && id && isUuid(id) ? id : undefined}
+              tier={tier}
+            />
+          )}
+
           <ToolPicker
             userId={user?.id}
             tools={tools}
@@ -1122,6 +1194,17 @@ const ProjectEditorPage = () => {
         defaultMode={previewMode}
       />
 
+      <PortfolioCoverCropDialog
+        file={coverCropFile}
+        open={coverCropOpen}
+        onOpenChange={setCoverCropOpen}
+        onConfirm={(file) => void handleCover(file)}
+        onCancel={() => {
+          setCoverCropFile(null);
+          setCoverCropOpen(false);
+        }}
+      />
+
     </div>
   );
 };
@@ -1148,8 +1231,8 @@ const CoverDrop = ({
 
   if (url) {
     return (
-      <div className="relative rounded-2xl overflow-hidden border border-border group">
-        <img src={url} alt="cover" className="w-full h-auto block" />
+      <div className="relative rounded-2xl overflow-hidden border border-border group aspect-[4/3] bg-muted">
+        <img src={url} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute top-3 right-3 flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
           <Button
             type="button"
@@ -1185,7 +1268,7 @@ const CoverDrop = ({
     >
       {loading ? <Loader2 className="w-6 h-6 animate-spin text-primary" /> : <ImagePlus className="w-8 h-8 text-muted-foreground" />}
       <p className="text-sm font-medium text-foreground">ลากภาพมาวาง หรือคลิกเพื่อเลือก</p>
-      <p className="text-xs text-muted-foreground">JPG / PNG / WebP — สูงสุด 5MB · ใช้ตามอัตราส่วนต้นฉบับ</p>
+      <p className="text-xs text-muted-foreground">JPG / PNG / WebP — สูงสุด 30MB · ครอปเป็น 4:3 แนวนอน</p>
       <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => pickFile(e.target.files?.[0])} />
     </div>
   );
