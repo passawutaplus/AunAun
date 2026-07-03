@@ -34,21 +34,21 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   {
     to: "/",
-    label: "หน้าแรก",
+    label: "Home",
     icon: Home,
     match: (p, mode) => p === "/" && mode !== "community",
   },
   {
     to: "/?mode=community",
-    label: "คอมมูนิตี้",
+    label: "Area",
     icon: Orbit,
     match: (p, mode) => p === "/" && mode === "community",
   },
-  { to: "/jobs", label: "งาน", icon: BriefcaseIcon, match: (p) => p.startsWith("/jobs") },
-  { to: "/chat", label: "แชท", icon: MessageCircle, match: (p) => p.startsWith("/chat"), requiresAuth: true },
+  { to: "/jobs", label: "Jobs", icon: BriefcaseIcon, match: (p) => p.startsWith("/jobs") },
+  { to: "/chat", label: "Chat", icon: MessageCircle, match: (p) => p.startsWith("/chat"), requiresAuth: true },
   {
     to: "/portfolio",
-    label: "โปรไฟล์",
+    label: "Profile",
     icon: User,
     match: (p) =>
       p.startsWith("/portfolio") ||

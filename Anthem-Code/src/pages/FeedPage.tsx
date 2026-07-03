@@ -29,7 +29,7 @@ import StudioGrid from "@/components/feed/StudioGrid";
 import type { StudioFeedSource } from "@/components/studio/StudioFilterPanel";
 import { useDesigners } from "@/hooks/useDesigners";
 
-import { categories as allCategories, categoryMatchesFilter, DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory, type Category, type Project, type ProjectCategory, type ProjectStatus } from "@/data/projectTypes";
+import { categories as allCategories, categoryMatchesFilter, DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory, type Category, type Project, type ProjectCategory, type ProjectStatus, type SpecialFilter } from "@/data/projectTypes";
 import { isCategoryAllowed } from "@/lib/cookieConsent";
 import {
   usePublishedProjects,
@@ -42,7 +42,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth, stashPendingHire, consumePendingHire } from "@/lib/authRedirect";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import CommunityFeedPanel from "@/components/community/CommunityFeedPanel";
-import CommunityFeedSidebar from "@/components/community/CommunityFeedSidebar";
+import CommunityFeedSidebar, {
+  CommunityFeedMobileDiscovery,
+} from "@/components/community/CommunityFeedSidebar";
 import CreateContentDrawer from "@/components/CreateContentDrawer";
 import { useCommunityFeedFilter } from "@/hooks/useCommunityFeedFilter";
 import { cn } from "@/lib/utils";
@@ -143,6 +145,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     else params.set("mode", m);
     const q = params.toString();
     navigate(q ? `/?${q}` : "/", { replace: true });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const openDrill = () => {
@@ -150,6 +153,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     setCategory(DESIGN_DRILL_CHIP);
     if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "projects");
     navigate("/?drill=1", { replace: true });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -256,7 +260,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const ownersMap = useMemo(() => {
     const map: Record<string, { name: string; avatar: string }> = {};
     (ownersData?.list ?? []).forEach((p) => {
-      map[p.user_id ?? p.id] = {
+      const profileUserId = (p as { user_id?: string }).user_id ?? p.id;
+      map[profileUserId] = {
         name: p.display_name || p.username || "ฟรีแลนซ์",
         avatar: p.avatar_url || "",
       };
@@ -423,6 +428,10 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                 onFilterChange={setCommunityFilter}
               />
               <div className="min-w-0">
+                <CommunityFeedMobileDiscovery
+                  filter={communityFilter}
+                  onFilterChange={setCommunityFilter}
+                />
                 <CommunityFeedPanel
                   search={search}
                   filter={communityFilter}

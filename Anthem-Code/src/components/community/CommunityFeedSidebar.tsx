@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Link, useNavigate } from "react-router-dom";import {
+import { Link, useNavigate } from "react-router-dom";
+import {
   Bookmark,
   Briefcase,
   ChevronRight,
@@ -11,6 +12,8 @@ import FollowButton from "@/components/FollowButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import {
+  getDesignerProfileUserId,
+  useCommunityProfileStats,
   useCommunityTrendingTags,
   useFeedSidebarJobs,
   useSuggestedFeedDesigners,
@@ -24,15 +27,33 @@ import type { CommunityFeedQueryFilter } from "@/hooks/useCommunityFeedFilter";
 import { cn } from "@/lib/utils";
 import { requireAuth } from "@/lib/requireAuth";
 import { useStickyViewportCenter } from "@/hooks/useStickyViewportCenter";
+import { formatCompact } from "@/lib/format";
+
 type Props = {
   filter: CommunityFeedQueryFilter;
   onFilterChange: (next: CommunityFeedQueryFilter) => void;
   className?: string;
 };
 
-function SidebarCard({ children, className }: { children: ReactNode; className?: string }) {
+function SidebarSection({
+  children,
+  className,
+  first,
+}: {
+  children: ReactNode;
+  className?: string;
+  first?: boolean;
+}) {
   return (
-    <div className={cn("rounded-2xl glass-panel p-4", className)}>{children}</div>
+    <section
+      className={cn(
+        "py-4",
+        !first && "border-t border-border/50",
+        className,
+      )}
+    >
+      {children}
+    </section>
   );
 }
 
@@ -63,11 +84,130 @@ function ViewAllLink({ to, label }: { to: string; label: string }) {
   );
 }
 
+function ProfileStatLink({ to, value, label }: { to: string; value: number; label: string }) {
+  return (
+    <Link
+      to={to}
+      className="min-w-0 rounded-lg py-1 text-left transition-colors hover:text-primary"
+    >
+      <span className="block text-sm font-semibold leading-none text-foreground tabular-nums">
+        {formatCompact(value)}
+      </span>
+      <span className="mt-1 block text-[11px] leading-none text-muted-foreground thai-body">
+        {label}
+      </span>
+    </Link>
+  );
+}
+
+export const CommunityFeedMobileDiscovery = ({ filter, onFilterChange, className }: Props) => {
+  const navigate = useNavigate();
+  const { data: trending = [] } = useCommunityTrendingTags(5);
+  const { designers = [] } = useSuggestedFeedDesigners(3);
+
+  const handleTrendingClick = (tag: string) => {
+    onFilterChange({
+      ...filter,
+      category: "All",
+      feedSource: "all",
+      postKind: undefined,
+      tag,
+    });
+    navigate(communityTagFeedUrl(tag));
+  };
+
+  return (
+    <section className={cn("xl:hidden mb-4 border-y border-border/60 py-3", className)}>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="min-w-0 border-r border-border/50 pr-3">
+          <div className="mb-2 flex items-center gap-1.5">
+            <Flame className="h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={1.75} />
+            <h2 className="truncate text-xs font-semibold text-foreground thai-display">Trends</h2>
+          </div>
+          {trending.length > 0 ? (
+            <ol className="space-y-1.5">
+              {trending.map(({ tag }, index) => (
+                <li key={tag}>
+                  <button
+                    type="button"
+                    onClick={() => handleTrendingClick(tag)}
+                    className={cn(
+                      "flex w-full min-w-0 items-center gap-1.5 rounded-md py-0.5 text-left transition-colors hover:text-primary",
+                      filter.tag === tag ? "text-primary" : "text-foreground",
+                    )}
+                  >
+                    <span className="w-3 shrink-0 text-[10px] font-semibold tabular-nums text-muted-foreground">
+                      {index + 1}
+                    </span>
+                    <span className="min-w-0 truncate text-[12px] font-medium">#{tag}</span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="text-[11px] text-muted-foreground thai-body">ยังไม่มีเทรนด์</p>
+          )}
+        </div>
+
+        <div className="min-w-0">
+          <div className="mb-2 flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={1.75} />
+            <h2 className="truncate text-xs font-semibold text-foreground thai-display">
+              Suggested
+            </h2>
+          </div>
+          {designers.length > 0 ? (
+            <ul className="space-y-2.5">
+              {designers.map(({ profile: designer }) => {
+                const userId = getDesignerProfileUserId(designer);
+                return (
+                  <li key={userId} className="flex items-center gap-2">
+                    <Link
+                      to={profilePublicPath({ user_id: userId, username: designer.username })}
+                      className="flex min-w-0 flex-1 items-center gap-2 rounded-lg transition-colors hover:text-primary"
+                    >
+                      <UserAvatar
+                        src={designer.avatar_url}
+                        name={designer.display_name ?? "?"}
+                        className="h-7 w-7 shrink-0"
+                        fallbackClassName="text-[10px]"
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate text-[12px] font-medium text-foreground thai-body">
+                          {designer.display_name ?? "Creator"}
+                        </span>
+                        <span className="block truncate text-[10px] text-muted-foreground">
+                          {designer.username ? `@${designer.username}` : designer.role ?? "Creator"}
+                        </span>
+                      </span>
+                    </Link>
+                    <FollowButton
+                      freelancerId={userId}
+                      size="sm"
+                      tone="muted"
+                      iconOnly
+                      showFollowerCount={false}
+                      className="h-8 w-8 shrink-0"
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-[11px] text-muted-foreground thai-body">กำลังหาให้...</p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const CommunityFeedSidebar = ({ filter, onFilterChange, className }: Props) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const openAuth = useAuthDialog((s) => s.openSignup);
   const { data: profile } = useProfile(user?.id);
+  const { data: profileStats } = useCommunityProfileStats(user?.id);
   const { data: trending = [] } = useCommunityTrendingTags(5);
   const { jobs = [] } = useFeedSidebarJobs(3);
   const { designers = [] } = useSuggestedFeedDesigners(3);
@@ -95,31 +235,50 @@ const CommunityFeedSidebar = ({ filter, onFilterChange, className }: Props) => {
     >
       <div
         ref={stickyRef}
-        className="flex flex-col gap-3 max-h-[calc(100dvh-8.5rem)] overflow-y-auto scrollbar-hide pb-2"
+        className="flex flex-col max-h-[calc(100dvh-8.5rem)] overflow-y-auto scrollbar-hide pb-2"
       >
-        <SidebarCard>
+        <SidebarSection first>
           {user && profile ? (
-            <Link
-              to="/portfolio"
-              className="flex items-center gap-3 rounded-xl hover:bg-accent/25 transition-colors p-1 -m-1"
-            >
-              <UserAvatar
-                src={profile.avatar_url}
-                name={profile.display_name ?? user.email ?? "?"}
-                className="w-11 h-11 shrink-0"
-                fallbackClassName="text-sm"
-              />
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate thai-display">
-                  {profile.display_name ?? "โปรไฟล์ของฉัน"}
-                </p>
-                {profile.username ? (
-                  <p className="text-xs text-muted-foreground truncate">@{profile.username}</p>
-                ) : (
-                  <p className="text-xs text-muted-foreground truncate thai-body">ดูโปรไฟล์</p>
-                )}
+            <div>
+              <Link
+                to="/portfolio"
+                className="flex items-center gap-3 rounded-xl hover:bg-accent/25 transition-colors p-1 -m-1"
+              >
+                <UserAvatar
+                  src={profile.avatar_url}
+                  name={profile.display_name ?? user.email ?? "?"}
+                  className="w-11 h-11 shrink-0"
+                  fallbackClassName="text-sm"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate thai-display">
+                    {profile.display_name ?? "โปรไฟล์ของฉัน"}
+                  </p>
+                  {profile.username ? (
+                    <p className="text-xs text-muted-foreground truncate">@{profile.username}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground truncate thai-body">ดูโปรไฟล์</p>
+                  )}
+                </div>
+              </Link>
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                <ProfileStatLink
+                  to="/portfolio"
+                  value={profileStats?.posts ?? 0}
+                  label="โพสต์"
+                />
+                <ProfileStatLink
+                  to={`/u/${user.id}/followers`}
+                  value={profileStats?.followers ?? 0}
+                  label="ผู้ติดตาม"
+                />
+                <ProfileStatLink
+                  to={`/u/${user.id}/followers?tab=following`}
+                  value={profileStats?.following ?? 0}
+                  label="ติดตาม"
+                />
               </div>
-            </Link>
+            </div>
           ) : (
             <button
               type="button"
@@ -132,9 +291,9 @@ const CommunityFeedSidebar = ({ filter, onFilterChange, className }: Props) => {
               </p>
             </button>
           )}
-        </SidebarCard>
+        </SidebarSection>
 
-        <SidebarCard>
+        <SidebarSection>
           <SectionHeader icon={Flame} title="Trending Topics" />
           {trending.length > 0 ? (
             <ol className="space-y-2">
@@ -159,9 +318,9 @@ const CommunityFeedSidebar = ({ filter, onFilterChange, className }: Props) => {
           ) : (
             <p className="text-xs text-muted-foreground thai-body">ยังไม่มีแฮชแท็กยอดนิยม</p>
           )}
-        </SidebarCard>
+        </SidebarSection>
 
-        <SidebarCard>
+        <SidebarSection>
           <SectionHeader icon={Briefcase} title="งานที่น่าสนใจ" />
           {jobs.length > 0 ? (
             <ul className="space-y-2.5">
@@ -202,14 +361,14 @@ const CommunityFeedSidebar = ({ filter, onFilterChange, className }: Props) => {
             <p className="text-xs text-muted-foreground thai-body">ยังไม่มีงานเปิดรับตอนนี้</p>
           )}
           <ViewAllLink to="/jobs" label="ดูงานทั้งหมด" />
-        </SidebarCard>
+        </SidebarSection>
 
-        <SidebarCard>
+        <SidebarSection>
           <SectionHeader icon={Users} title="Suggested Creators" />
           {designers.length > 0 ? (
             <ul className="space-y-3">
               {designers.map(({ profile: designer }) => {
-                const userId = designer.user_id ?? designer.id;
+                const userId = getDesignerProfileUserId(designer);
                 return (
                   <li key={userId} className="flex items-center gap-2.5">
                     <Link to={profilePublicPath({ user_id: userId, username: designer.username })}>
@@ -246,7 +405,7 @@ const CommunityFeedSidebar = ({ filter, onFilterChange, className }: Props) => {
             <p className="text-xs text-muted-foreground thai-body">กำลังหาดีไซเนอร์ให้…</p>
           )}
           <ViewAllLink to="/?mode=designers" label="ดูดีไซเนอร์เพิ่ม" />
-        </SidebarCard>
+        </SidebarSection>
       </div>
     </aside>
   );

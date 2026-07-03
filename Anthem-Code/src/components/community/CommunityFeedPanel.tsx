@@ -1,12 +1,12 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, SearchX } from "lucide-react";
+import { Loader2, Plus, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/EmptyState";
 import CommunityGridSkeleton from "@/components/community/CommunityGridSkeleton";
 import CommunityPostGridCard from "@/components/feed/CommunityPostGridCard";
 import { COMMUNITY_NEW_PATH } from "@/data/createActions";
-import { useCommunityPosts } from "@/hooks/useCommunityPosts";
+import { useCommunityPosts, type CommunityPostsFilter } from "@/hooks/useCommunityPosts";
 import { useCommunityCatalogShowcase } from "@/hooks/useCommunityCatalogShowcase";
 import { useUserBlocks } from "@/hooks/useCommunityPostInteractions";
 import { useActiveBoosts, buildBoostedIdSet, buildBoostTargetMaps } from "@/hooks/useBoost";
@@ -39,19 +39,22 @@ type Props = {
 const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Props) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const { data: blockedSet } = useUserBlocks(user?.id);
   const blockedIds = useMemo(() => Array.from(blockedSet ?? []), [blockedSet]);
+  const postsFeedSource: CommunityPostsFilter["feedSource"] =
+    filter.feedSource === "following" ? "following" : "all";
 
-  const postsFilter = useMemo(
+  const postsFilter = useMemo<CommunityPostsFilter>(
     () => ({
       category: filter.category,
-      feedSource: filter.feedSource,
+      feedSource: postsFeedSource,
       tag: filter.tag,
       postKind: filter.postKind,
-      viewerId: filter.feedSource === "following" ? user?.id : undefined,
+      viewerId: postsFeedSource === "following" ? user?.id : undefined,
       blockedIds,
     }),
-    [filter.category, filter.feedSource, filter.tag, filter.postKind, user?.id, blockedIds],
+    [filter.category, postsFeedSource, filter.tag, filter.postKind, user?.id, blockedIds],
   );
 
   const {
@@ -68,7 +71,7 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Pr
   const boostPostMap = useMemo(() => buildBoostTargetMaps(activeBoosts).posts, [activeBoosts]);
 
   const supplementFeed = shouldSupplementCommunityFeed({
-    feedSource: filter.feedSource,
+    feedSource: postsFeedSource,
     tag: filter.tag,
     category: filter.category,
     search,
@@ -97,6 +100,26 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Pr
     const sorted = sortByBoostedIds(base, boostedPosts);
     return mergeCommunityFeedShowcase(sorted, showcasePosts);
   }, [posts, search, boostedPosts, showcasePosts]);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node || !hasNextPage) return undefined;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      {
+        rootMargin: "700px 0px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, visiblePosts.length]);
 
   const openCreate = () => {
     if (onPostClick) {
@@ -169,16 +192,13 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Pr
         </div>
       )}
       {hasNextPage && (
-        <div className="flex justify-center pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-full"
-            disabled={isFetchingNextPage}
-            onClick={() => void fetchNextPage()}
-          >
-            {isFetchingNextPage ? "กำลังโหลด..." : "โหลดโพสต์เพิ่มเติม"}
-          </Button>
+        <div ref={loadMoreRef} className="flex min-h-14 items-center justify-center pt-2">
+          {isFetchingNextPage ? (
+            <span className="inline-flex items-center gap-2 text-xs text-muted-foreground thai-body">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              กำลังโหลดโพสต์เพิ่ม...
+            </span>
+          ) : null}
         </div>
       )}
     </div>
