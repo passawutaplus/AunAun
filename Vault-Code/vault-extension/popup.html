@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Vault by Aplus</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="popup">
+      <header class="popup-header">
+        <div class="popup-brand">
+          <img class="mark mark-icon" src="icons/icon-48.png" alt="" aria-hidden="true">
+          <div>
+            <h1>Vault</h1>
+            <p>by Aplus</p>
+          </div>
+        </div>
+        <button id="openVaultBtn" class="header-vault-button" type="button">Open Vault</button>
+      </header>
+
+      <section class="status" id="status" data-type="default" hidden></section>
+
+      <section class="capture-card" id="captureCard" hidden>
+        <div class="capture-preview" id="capturePreview"></div>
+        <div class="capture-meta">
+          <span id="captureType">Object</span>
+          <strong id="captureSource">Ready to keep</strong>
+        </div>
+        <div class="duplicate-hint" id="duplicateHint" hidden></div>
+
+        <label for="titleInput">Title</label>
+        <input id="titleInput" type="text" placeholder="Object title">
+
+        <label for="collectionInput">Collection</label>
+        <select id="collectionInput">
+          <option value="all">Vault Library</option>
+          <option value="brand">Aplus1 Branding</option>
+          <option value="web">WP Catalog</option>
+          <option value="campaign">Blacksmith Ads</option>
+        </select>
+
+        <label for="noteInput">Note</label>
+        <textarea id="noteInput" placeholder="Add context..."></textarea>
+
+        <div class="capture-actions">
+          <button id="keepPendingBtn" class="primary keep-button">
+            <img class="button-icon" src="icons/icon-16.png" alt="" aria-hidden="true">
+            <span>Keep in Vault</span>
+          </button>
+          <button id="clearPendingBtn" class="secondary dismiss-button" aria-label="Dismiss">&times;</button>
+        </div>
+      </section>
+
+      <section class="quick-actions" aria-label="Quick actions">
+        <button id="snapshotBtn" class="secondary">
+          <span class="mini-icon">[]</span>
+          <span>Snapshot current view</span>
+        </button>
+      </section>
+
+      <label class="toggle-row" for="stayOnPageInput">
+        <input id="stayOnPageInput" type="checkbox">
+        <span>Stay on this page after saving</span>
+      </label>
+
+      <section class="recent-section">
+        <div class="section-head">
+          <h2>Recently kept</h2>
+          <button id="clearRecentBtn" class="ghost" type="button">Clear</button>
+        </div>
+        <div id="recentList" class="recent-list">
+          <p class="empty-state">No recent captures yet.</p>
+        </div>
+      </section>
+
+      <section class="settings">
+        <details>
+          <summary>Alpha token setting</summary>
+          <label for="tokenInput">Alpha API Token</label>
+          <input id="tokenInput" type="password" placeholder="Copy from Vault Profile → Extension sync">
+          <p class="settings-hint">Paste the sync token from your Vault Profile after logging in.</p>
+
+          <label for="apiBaseInput">API Base</label>
+          <input id="apiBaseInput" type="url" placeholder="https://aplus-vault.vercel.app">
+
+          <button id="saveSettingsBtn" class="secondary">Save settings</button>
+        </details>
+      </section>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

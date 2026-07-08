@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /legal
+Disallow: /vault
+Disallow: /demo
+Disallow: /api/
+
+Sitemap: https://aplus-vault.vercel.app/sitemap.xml

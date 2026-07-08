@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Deploy demo (preview) or production on Vercel.
 # Usage:
-#   ./scripts/deploy-vercel.sh demo [1px|solo]
-#   ./scripts/deploy-vercel.sh production [1px|solo]
+#   ./scripts/deploy-vercel.sh demo [1px|solo|vault]
+#   ./scripts/deploy-vercel.sh production [1px|solo|vault]
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -10,7 +10,7 @@ MODE="${1:-}"
 APP="${2:-}"
 
 usage() {
-  echo "Usage: $0 demo|production [1px|solo|anthem|so1o]" >&2
+  echo "Usage: $0 demo|production [1px|solo|anthem|so1o|vault]" >&2
   echo "" >&2
   echo "  demo        → Vercel preview (แชร์ให้คนอื่นลอง)" >&2
   echo "  production  → vercel deploy --prod (พนักงานใช้จริง)" >&2
@@ -21,6 +21,7 @@ normalize_app() {
   case "${1,,}" in
     1px|anthem|an1hem|aplus1-demo|aplus1) echo "1px" ;;
     solo|so1o|solofreelancer) echo "solo" ;;
+    vault|aplus-vault|aplusvault) echo "vault" ;;
     *) return 1 ;;
   esac
 }
@@ -129,5 +130,9 @@ case "$APP_KEY" in
     else
       deploy_production Solo-Code "https://solofreelancer.com" "solo-demo"
     fi
+    ;;
+  vault)
+    # Vault alpha uses the aplus-vault Vercel project (no separate custom domain yet).
+    deploy_demo Vault-Code
     ;;
 esac

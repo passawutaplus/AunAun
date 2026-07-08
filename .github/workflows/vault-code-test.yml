@@ -1,0 +1,30 @@
+name: Vault-Code tests
+
+on:
+  push:
+    paths:
+      - "Vault-Code/**"
+      - ".github/workflows/vault-code-test.yml"
+  pull_request:
+    paths:
+      - "Vault-Code/**"
+
+defaults:
+  run:
+    working-directory: Vault-Code
+
+jobs:
+  gate-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Local test gate
+        run: npm run test:gate
+
+      - name: Public smoke (curl)
+        run: BASE_URL=https://aplus-vault.vercel.app npm run smoke:public

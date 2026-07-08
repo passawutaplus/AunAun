@@ -1,0 +1,188 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://aplus-vault.vercel.app/legal" />
+  <title>A+ Vault Legal Center</title>
+  <meta name="description" content="Alpha legal, privacy, copyright, AI, and security notices for A+ Vault." />
+  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    body{background:#f8f6f2;color:#17191b}
+    .legal-page{min-height:100vh;padding:28px clamp(18px,4vw,56px) 64px}
+    .legal-top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 auto 34px;max-width:1120px}
+    .legal-brand{display:flex;align-items:center;gap:12px;color:inherit;text-decoration:none}
+    .legal-mark{width:44px;height:44px;display:grid;place-items:center;border-radius:10px;background:#151719;color:#fff;font-weight:700;box-shadow:inset -8px 0 0 #ff4f43}
+    .legal-back{min-height:40px;padding:0 16px;border:1px solid #ded8cf;border-radius:10px;background:#fff;color:#17191b;text-decoration:none;font-weight:600}
+    .legal-hero{max-width:1120px;margin:0 auto 24px;padding:28px;border:1px solid #ded8cf;border-radius:18px;background:#fff}
+    .legal-hero h1{margin:0 0 8px;font-size:clamp(34px,5vw,64px);line-height:.95}
+    .legal-hero p{max-width:760px;margin:0;color:#6f7378;line-height:1.6}
+    .legal-grid{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:260px minmax(0,1fr);gap:18px}
+    .legal-nav{position:sticky;top:18px;align-self:start;display:grid;gap:8px;padding:14px;border:1px solid #ded8cf;border-radius:16px;background:#fff}
+    .legal-nav a{padding:10px 11px;border-radius:10px;color:#535961;text-decoration:none;font-weight:600}
+    .legal-nav a:hover{background:#fff0ee;color:#ff4f43}
+    .legal-docs{display:grid;gap:16px}
+    .legal-card{padding:22px;border:1px solid #ded8cf;border-radius:16px;background:#fff}
+    .legal-card h2{margin:0 0 8px;font-size:24px}
+    .legal-card h3{margin:18px 0 8px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#747a80}
+    .legal-card p,.legal-card li{color:#535961;line-height:1.65}
+    .legal-card ul{padding-left:20px}
+    .legal-pill{display:inline-flex;margin:0 0 12px;padding:7px 10px;border-radius:999px;background:#fff0ee;color:#ff4f43;font-size:12px;font-weight:700}
+    .legal-note{border-left:3px solid #ff4f43;padding:10px 12px;background:#fff8f7;color:#4b4f55}
+    .legal-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+    .legal-table th,.legal-table td{padding:10px;border-bottom:1px solid #eee7df;text-align:left;vertical-align:top}
+    .legal-table th{color:#17191b}
+    @media(max-width:820px){.legal-grid{grid-template-columns:1fr}.legal-nav{position:static}.legal-top{align-items:flex-start}.legal-back{display:grid;place-items:center}}
+  </style>
+</head>
+<body>
+  <main class="legal-page">
+    <header class="legal-top">
+      <a class="legal-brand" href="./">
+        <span class="legal-mark">A+</span>
+        <span><strong>A+ Vault</strong><br><small>Legal Center</small></span>
+      </a>
+      <a class="legal-back" href="./">Back to Vault</a>
+    </header>
+
+    <section class="legal-hero">
+      <span class="legal-pill">Alpha draft - not final legal advice</span>
+      <h1>Trust is a product feature.</h1>
+      <p>This page explains the current alpha rules for privacy, source credit, copyright, AI processing, extension capture, security, export, and deletion. It is a product-facing draft for private alpha testers and should be reviewed by counsel before public launch, paid plans, public collections, or team workspaces.</p>
+    </section>
+
+    <div class="legal-grid">
+      <nav class="legal-nav" aria-label="Legal sections">
+        <a href="#privacy">Privacy Notice</a>
+        <a href="#terms">Alpha Terms</a>
+        <a href="#copyright">Copyright & Takedown</a>
+        <a href="#acceptable-use">Acceptable Use</a>
+        <a href="#ai">AI Processing</a>
+        <a href="#security">Security Overview</a>
+        <a href="#data-rights">Export & Deletion</a>
+        <a href="#extension-privacy">Extension Privacy</a>
+        <a href="#subprocessors">Subprocessors</a>
+      </nav>
+
+      <section class="legal-docs">
+        <article class="legal-card" id="privacy">
+          <h2>Privacy Notice</h2>
+          <p>A+ Vault is private by default. We collect only what is needed for the user-selected action: account details, saved Vault objects, source/context metadata, notes, collections, projects, moodboards, basic security logs, and settings.</p>
+          <h3>Data we process</h3>
+          <ul>
+            <li>Account data: email, login method, profile settings, storage usage.</li>
+            <li>User content: images, screenshots, links, notes, videos, titles, keywords, and moodboard objects.</li>
+            <li>Source context: source URL, domain, page title, capture method, saved date, preview URL where available.</li>
+            <li>Extension data: only the item the user chooses to save, plus local recent captures and settings.</li>
+          </ul>
+          <h3>Purpose and user control</h3>
+          <p>We use data to store private references, search, organize, preview, sync, secure the account, and provide user-requested sharing. Users can delete objects, clear local data, export alpha data where available, and request access or deletion at privacy@aplus1.app.</p>
+          <p class="legal-note">We do not claim ownership of user content. Saving a reference does not grant copyright, trademark, publicity, or usage rights.</p>
+        </article>
+
+        <article class="legal-card" id="terms">
+          <h2>Alpha Terms</h2>
+          <p>A+ Vault is an alpha product for creative reference management. Features may change, fail, or lose prototype-only local data. The service may not capture every website, file, or preview perfectly.</p>
+          <h3>User content license</h3>
+          <p>Users retain ownership of their user content. A+ Vault receives a limited, non-exclusive license only to operate the service: store, back up, resize, create thumbnails, process for search, display to the user, and display to people the user explicitly shares with.</p>
+          <h3>User responsibility</h3>
+          <p>Users are responsible for having the rights needed to upload, save, share, publish, or reuse references. Private reference storage is not a license to copy, publish, sell, or commercially exploit third-party work.</p>
+        </article>
+
+        <article class="legal-card" id="copyright">
+          <h2>Copyright & Takedown Policy</h2>
+          <p>A+ Vault preserves source and context to support responsible reference use. Public sharing is explicit and should include source attribution where available. Source credit alone does not make copying or public display lawful.</p>
+          <h3>Report copyright infringement</h3>
+          <p>Send reports to copyright@aplus1.app with: your name/contact, the original work, the A+ Vault URL/object, a description of the issue, a good-faith statement, an accuracy statement, and your electronic signature.</p>
+          <h3>Process</h3>
+          <ul>
+            <li>Review complaint completeness and log timestamps.</li>
+            <li>Disable public access where appropriate.</li>
+            <li>Notify the account owner when required.</li>
+            <li>Allow counter-notice where applicable.</li>
+            <li>Apply repeat-infringer restrictions to sharing or accounts.</li>
+          </ul>
+        </article>
+
+        <article class="legal-card" id="acceptable-use">
+          <h2>Acceptable Use Policy</h2>
+          <p>Do not use A+ Vault to infringe copyright, bypass paywalls or DRM, collect private data without rights, publish confidential client materials, upload malware, harass, stalk, impersonate, scrape at scale, or interfere with systems.</p>
+          <p>The browser extension must be used only through explicit user action. It must not track browsing history, read unrelated form fields, or collect unrelated page content in the background.</p>
+        </article>
+
+        <article class="legal-card" id="ai">
+          <h2>AI Processing Notice</h2>
+          <p>AI Lite in the alpha may generate keywords, colors, OCR placeholders, and summaries to make references searchable. Production AI processing must disclose provider, data sent, retention, training policy, and user controls before third-party AI processing is enabled.</p>
+          <ul>
+            <li>Default: private objects stay private.</li>
+            <li>User control needed: disable AI per item/project before external AI is used.</li>
+            <li>No training promise should be made until vendor contracts confirm it.</li>
+          </ul>
+        </article>
+
+        <article class="legal-card" id="security">
+          <h2>Security & Data Protection Overview</h2>
+          <p>The alpha design uses private-by-default storage, Supabase RLS for authenticated data, no service-role key in the extension, source preservation, file type/size checks, and minimal extension permissions.</p>
+          <table class="legal-table">
+            <tr><th>Area</th><th>Current alpha control</th><th>Before public launch</th></tr>
+            <tr><td>Storage</td><td>Private user scope, local demo storage, RLS schema draft</td><td>Private buckets, signed URLs, backup/restore test</td></tr>
+            <tr><td>Uploads</td><td>Image/video type and size checks</td><td>Malware scanning and quarantine for public content</td></tr>
+            <tr><td>Admin access</td><td>No admin review workflow in alpha</td><td>Role-based access, reason logging, emergency process</td></tr>
+          </table>
+        </article>
+
+        <article class="legal-card" id="data-rights">
+          <h2>Export, Deletion & Privacy Requests</h2>
+          <p>Users should be able to access, correct, export, and delete their data. In the alpha, deletion removes local objects from the workspace. Production deletion must also remove database rows, storage files, thumbnails, share links, and queued AI processing.</p>
+          <h3>Target retention schedule</h3>
+          <ul>
+            <li>Vault objects: until user deletes or closes account.</li>
+            <li>Trash: 30 days when trash is implemented.</li>
+            <li>Backups: disclose actual backup deletion window before production.</li>
+            <li>Security logs: short, purpose-limited retention.</li>
+          </ul>
+          <p>Privacy requests: privacy@aplus1.app</p>
+        </article>
+
+        
+        <article class="legal-card" id="extension-privacy">
+          <h2>Chrome Extension Privacy</h2>
+          <p>The A+ Vault Capture extension saves creative references only when you explicitly choose an action: right-click <strong>+ Keep in Vault</strong>, <strong>+ Snapshot to Vault</strong>, or the popup capture buttons.</p>
+          <h3>Data sent per capture</h3>
+          <ul>
+            <li>Page URL and title</li>
+            <li>Selected image, video, or link URL</li>
+            <li>Optional title, note, and collection choice</li>
+            <li>Cropped snapshot image for snapshot capture</li>
+          </ul>
+          <h3>Where data goes</h3>
+          <ul>
+            <li>Production demo: <code>https://aplus-vault.vercel.app/api/vault/*</code></li>
+            <li>Local development: <code>http://127.0.0.1:5177/api/vault/*</code></li>
+          </ul>
+          <p>Your extension sync token and recent capture previews stay in Chrome local storage on your device. The extension never stores database secrets or service-role keys.</p>
+          <h3>What we do not do</h3>
+          <ul>
+            <li>No background browsing history collection</li>
+            <li>No hidden page scraping</li>
+            <li>No automatic publishing of saved references</li>
+          </ul>
+          <p>Contact: <a href="mailto:privacy@aplusvault.app">privacy@aplusvault.app</a></p>
+        </article>
+<article class="legal-card" id="subprocessors">
+          <h2>Subprocessor List</h2>
+          <p>This alpha may use these service categories depending on configuration. Confirm the actual vendors, region, DPA, retention, and AI training terms before public launch.</p>
+          <table class="legal-table">
+            <tr><th>Provider</th><th>Purpose</th><th>Status</th></tr>
+            <tr><td>Vercel</td><td>Web hosting and deployment</td><td>Demo hosting</td></tr>
+            <tr><td>Supabase</td><td>Auth, database, storage when live sync is enabled</td><td>Alpha integration</td></tr>
+            <tr><td>Google Chrome Web Store</td><td>Extension distribution in future</td><td>Not public yet</td></tr>
+            <tr><td>AI provider</td><td>Tags, OCR, visual search in future</td><td>Not selected for production</td></tr>
+          </table>
+        </article>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

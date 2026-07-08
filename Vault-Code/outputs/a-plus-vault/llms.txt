@@ -1,0 +1,17 @@
+# A+ Vault
+
+> Private creative reference vault for the Aplus ecosystem — save, organize, and revisit creative references.
+
+## Public pages
+
+- [Legal Center](https://aplus-vault.vercel.app/legal): Privacy, copyright, acceptable use, extension privacy, and data rights (alpha draft)
+
+## Private alpha (not indexed)
+
+- [Vault workspace](https://aplus-vault.vercel.app/vault): Login required — private reference library
+- [Demo guide](https://aplus-vault.vercel.app/demo): Private alpha tester instructions
+
+## Related products
+
+- [Aplus1](https://aplus1.app): Creative community showcase
+- [So1o Freelancer](https://solofreelancer.com): Freelancer back office

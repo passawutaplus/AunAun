@@ -1,0 +1,17 @@
+{
+  "framework": null,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "echo no install needed",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/vault",
+      "destination": "/vault.html"
+    },
+    {
+      "source": "/vault/:path*",
+      "destination": "/index.html"
+    }
+  ]
+}

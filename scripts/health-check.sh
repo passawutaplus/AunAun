@@ -5,6 +5,7 @@ set -euo pipefail
 SO1O_URL="${SO1O_URL:-https://www.solofreelancer.com}"
 ANTHEM_URL="${ANTHEM_URL:-https://an1hem.app}"
 HUB_URL="${HUB_URL:-https://so1o-ops-hub.vercel.app}"
+VAULT_URL="${VAULT_URL:-https://aplus-vault.vercel.app}"
 SUPABASE_URL="${SUPABASE_URL:-https://zkflkpbmbozrchqncpzi.supabase.co}"
 TIMEOUT="${TIMEOUT:-10}"
 
@@ -44,6 +45,8 @@ echo "=== Ecosystem health $(date -Iseconds) ==="
 check_http "So1o" "$SO1O_URL"
 check_http "an1hem" "$ANTHEM_URL"
 check_http "Ops Hub" "$HUB_URL"
+check_http "A+ Vault" "$VAULT_URL"
+check_http "A+ Vault API health" "${VAULT_URL%/}/api/vault/health"
 check_supabase
 echo "=========================================="
 

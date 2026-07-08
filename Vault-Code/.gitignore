@@ -1,0 +1,6 @@
+dist/
+outputs/a-plus-vault/data/
+.vercel/
+*.log
+.vercel
+.env*

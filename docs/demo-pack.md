@@ -12,6 +12,7 @@ Updated: 2026-07-03
 |-----|-----|---------------|
 | **Aplus1** | https://aplus1-demo.vercel.app | **[ux-research-review.md](../Anthem-Code/docs/ux-research-review.md)** — เช็คลิสครบ A–T · [/research](https://aplus1-demo.vercel.app/research) · [PDF checklist](https://aplus1-demo.vercel.app/aplus1-ux-usability-checklist.pdf) |
 | **So1o** | https://solo-demo-liart.vercel.app | **[ux-research-review.md](../Solo-Code/docs/ux-research-review.md)** — เช็คลิสครบ A–T · [/research](https://solo-demo-liart.vercel.app/research) |
+| **A+ Vault** | https://aplus-vault.vercel.app | **[DEMO_PACK.md](../Vault-Code/docs/DEMO_PACK.md)** · [/demo](https://aplus-vault.vercel.app/demo) · extension load-unpacked |
 
 > แบรนด์ **Aplus1** · production `https://aplus1.app` · demo บน Vercel  
 > **Ops Hub** — admin only ไม่แนะนำให้ reviewer ทั่วไป
@@ -24,6 +25,7 @@ Updated: 2026-07-03
 |-----|------|
 | Aplus1 | `phatsawut@demo.pixel100.com` / `pixel100-demo-seed` — [รายชื่อเพิ่ม](../Anthem-Code/docs/demo-catalog.md) |
 | So1o | Google หรือสมัครอีเมล — บันทึกถาวร ชำระเงิน sandbox |
+| A+ Vault | `creative@aplus.local` / `aplusvault` (local demo) หรือสมัครอีเมล / Google OAuth |
 
 ---
 

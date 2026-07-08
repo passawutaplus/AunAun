@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A+ Vault</title>
+  <meta name="description" content="A private creative reference vault for Aplus." />
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="app">
+    <div class="boot-skeleton" aria-label="Loading A+ Vault">
+      <div class="boot-topbar">
+        <span class="skeleton-box mark"></span>
+        <span class="skeleton-line title"></span>
+        <span class="skeleton-line search"></span>
+        <span class="skeleton-dot"></span>
+      </div>
+      <div class="boot-grid">
+        <aside>
+          <span class="skeleton-pill"></span>
+          <span class="skeleton-pill"></span>
+          <span class="skeleton-pill short"></span>
+        </aside>
+        <main>
+          <span class="skeleton-line wide"></span>
+          <div class="boot-cards">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+  <script src="./supabase-config.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

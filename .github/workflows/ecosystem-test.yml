@@ -21,4 +21,5 @@ jobs:
         env:
           SOLO_BASE_URL: https://solofreelancer.com
           ANTHEM_BASE_URL: https://aplus1-demo.vercel.app
+          VAULT_BASE_URL: https://aplus-vault.vercel.app
           HUB_URL: skip

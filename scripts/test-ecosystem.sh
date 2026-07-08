@@ -26,6 +26,12 @@ npm run test
 BASE_URL="$ANTHEM_BASE" npm run smoke:public
 
 echo ""
+echo "========== Vault-Code =========="
+cd "$ROOT/Vault-Code"
+npm run test:gate
+BASE_URL="${VAULT_BASE_URL:-https://aplus-vault.vercel.app}" npm run smoke:public
+
+echo ""
 echo "========== Ecosystem health =========="
 cd "$ROOT"
 SO1O_URL="$SOLO_BASE" ANTHEM_URL="$ANTHEM_BASE" HUB_URL="${HUB_URL:-skip}" bash scripts/health-check.sh
