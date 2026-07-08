@@ -2,7 +2,7 @@
   "framework": null,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "echo no install needed",
+  "installCommand": "npm ci",
   "cleanUrls": true,
   "redirects": [
     {
