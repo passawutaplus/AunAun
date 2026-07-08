@@ -18,6 +18,14 @@ export interface DrillPromptTemplate {
   constraints?: string[];
   timeHint?: string;
   freeHint?: string;
+  /** Short headline for daily brief card */
+  friendlyTitle?: string;
+  /** One-line context for daily brief card */
+  friendlyDescription?: string;
+  /** Checklist items shown as "สิ่งที่ควรมี" */
+  deliverables?: string[];
+  /** Mood / context image for daily brief card */
+  previewImage?: string;
 }
 
 export const DRILL_CATEGORY_META: Record<DrillCategory, { label: string; anthemCategory: string }> =
@@ -354,6 +362,16 @@ export const DRILL_PROMPTS: DrillPromptTemplate[] = [
     difficulty: "medium",
     brief:
       "สร้าง mini brand guide: logo usage, colors, typography, do/don't สำหรับ skincare startup",
+    friendlyTitle: "สร้าง mini brand guide สำหรับ skincare startup",
+    friendlyDescription:
+      "ออกแบบคู่มือแบรนด์ย่อ ๆ ครอบคลุมการใช้โลโก้ สี ฟอนต์ และ Do / Don't ให้ทีมใช้งานได้จริง",
+    deliverables: [
+      "ตัวอย่างการใช้โลโก้ สี และฟอนต์",
+      "Do's / Don'ts ที่เข้าใจง่าย",
+      "ออกแบบให้ใช้ได้ทั้งพื้นเข้มและพื้นอ่อน",
+      "จัด layout ด้วย grid 8px",
+    ],
+    previewImage: "/drill-previews/branding.svg",
     constraints: ["ต้องทำงานได้ทั้งพื้นเข้มและพื้นอ่อน", "ใช้ grid 8px ทั้งชิ้น"],
     timeHint: "2 ชม.",
   },

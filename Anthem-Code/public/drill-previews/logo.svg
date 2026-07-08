@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" fill="none">
+  <rect width="400" height="500" fill="#1A1A1E"/>
+  <circle cx="200" cy="180" r="90" fill="#2A2218" stroke="#E8872B" stroke-width="2"/>
+  <path d="M160 200c0-22 18-40 40-40s40 18 40 40-18 40-40 40" stroke="#E8872B" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="200" cy="180" r="12" fill="#E8872B"/>
+  <text x="200" y="320" text-anchor="middle" font-family="Georgia, serif" font-size="34" fill="#F5F0E8">Bean &amp; Bloom</text>
+  <text x="200" y="360" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" letter-spacing="4" fill="#9A9088">LOGO CONCEPT</text>
+</svg>

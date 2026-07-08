@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" fill="none">
+  <rect width="400" height="500" fill="#F4F0EB"/>
+  <rect x="24" y="24" width="352" height="452" rx="20" fill="#FFFFFF" stroke="#E6DDD3"/>
+  <circle cx="200" cy="130" r="52" fill="#E8F0EC" stroke="#5E7D6D" stroke-width="2"/>
+  <path d="M200 98c-8 0-14 6-14 14 0 10 14 24 14 24s14-14 14-24c0-8-6-14-14-14z" fill="#1E3A34"/>
+  <text x="200" y="220" text-anchor="middle" font-family="Georgia, serif" font-size="28" fill="#1E3A34">purea</text>
+  <text x="200" y="246" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" letter-spacing="3" fill="#5E7D6D">SKINCARE</text>
+  <circle cx="110" cy="310" r="18" fill="#1E3A34"/>
+  <circle cx="150" cy="310" r="18" fill="#5E7D6D"/>
+  <circle cx="190" cy="310" r="18" fill="#8FA898"/>
+  <circle cx="230" cy="310" r="18" fill="#C8D5CE"/>
+  <circle cx="270" cy="310" r="18" fill="#F4F0EB" stroke="#D8CEC4"/>
+  <rect x="56" y="360" width="130" height="88" rx="10" fill="#F8FAF9" stroke="#DDE7E2"/>
+  <text x="72" y="392" font-family="Arial, sans-serif" font-size="22" fill="#1E3A34">Aa</text>
+  <text x="72" y="420" font-family="Arial, sans-serif" font-size="10" fill="#5E7D6D">Noto Serif Thai</text>
+  <rect x="214" y="360" width="130" height="88" rx="10" fill="#F8FAF9" stroke="#DDE7E2"/>
+  <text x="230" y="392" font-family="Arial, sans-serif" font-size="11" fill="#2F6B4F"> Do</text>
+  <text x="230" y="414" font-family="Arial, sans-serif" font-size="11" fill="#B44A4A"> Don't</text>
+  <text x="230" y="436" font-family="Arial, sans-serif" font-size="10" fill="#7A8A84">brand usage</text>
+</svg>

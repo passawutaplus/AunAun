@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" fill="none">
+  <rect width="400" height="500" fill="#FAFAF9"/>
+  <text x="56" y="140" font-family="Georgia, serif" font-size="88" fill="#1C1917">Aa</text>
+  <text x="56" y="210" font-family="Georgia, serif" font-size="34" fill="#44403C">Typography</text>
+  <text x="56" y="250" font-family="Arial, sans-serif" font-size="16" fill="#78716C">Heading � Body � Caption</text>
+  <rect x="56" y="290" width="288" height="2" fill="#D6D3D1"/>
+  <text x="56" y="340" font-family="Arial, sans-serif" font-size="22" fill="#292524"> abc 123</text>
+  <text x="56" y="380" font-family="Arial, sans-serif" font-size="14" fill="#A8A29E">#01'-1)#5H-H2H2"</text>
+</svg>

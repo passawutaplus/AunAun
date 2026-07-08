@@ -28,15 +28,18 @@ export default function DrillFeedPanel() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl glass-panel p-5 sm:p-6 space-y-4">
-        <div className="flex items-center gap-2">
-          <Target className="h-5 w-5 text-primary shrink-0" aria-hidden />
-          <div>
+      <section className="rounded-2xl glass-panel p-5 sm:p-6 space-y-5">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Target className="h-5 w-5 text-primary shrink-0" aria-hidden />
             <p className="text-[11px] uppercase tracking-wider text-primary font-semibold">
-              โจทย์ประจำวัน · {date}
+              โจทย์ร่วมประจำวัน · {date}
             </p>
-            <h2 className="text-base sm:text-lg font-bold">โจทย์เดียวกับ So1o ทุกคน</h2>
           </div>
+          <h2 className="text-lg sm:text-xl font-bold">Aplus1 — Daily Brief</h2>
+          <p className="text-sm text-muted-foreground max-w-2xl">
+            ทุกคนเริ่มจากโจทย์เดียวกัน แล้วตีความออกมาในสไตล์ของตัวเอง
+          </p>
         </div>
         <DrillDailyInlineCard />
       </section>

@@ -19,7 +19,7 @@ export function DrillTodayPublicCard() {
         <Target className="h-4 w-4 text-primary" aria-hidden />
         <h3 className="text-sm font-bold">Design Drill วันนี้</h3>
         <Badge variant="outline" className="text-[10px] ml-auto">
-          โจทย์เดียวกับ So1o
+          Aplus1 Daily Brief
         </Badge>
       </div>
       <div className="flex flex-wrap items-center gap-2">

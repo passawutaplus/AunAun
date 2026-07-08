@@ -182,7 +182,7 @@ export function DesignDrillSection() {
             <Target className="h-4 w-4" aria-hidden />
           </span>
           <div>
-            <p className="text-xs text-muted-foreground">โจทย์เดียวกับ So1o ทุกวัน</p>
+            <p className="text-xs text-muted-foreground">Aplus1 — Daily Brief</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
