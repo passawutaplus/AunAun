@@ -39,17 +39,20 @@ DEPLOY_URL="$(grep -Eo 'https://[a-zA-Z0-9._-]+\.vercel\.app' "$DEPLOY_OUTPUT" |
 rm -f "$DEPLOY_OUTPUT"
 [[ -n "$DEPLOY_URL" ]] || { echo "Deploy failed — no URL returned" >&2; exit 1; }
 
+# Smoke against the public alias (deployment *.vercel.app URLs may be SSO-gated).
+SMOKE_URL="${VAULT_SITE_URL}"
+
 echo ""
 echo "→ Post-deploy public smoke…"
-BASE_URL="$DEPLOY_URL" npm run smoke:public
+BASE_URL="$SMOKE_URL" npm run smoke:public
 
 echo ""
 echo "→ Post-deploy API smoke…"
-VAULT_BASE_URL="$DEPLOY_URL" npm run smoke:api
+VAULT_BASE_URL="$SMOKE_URL" npm run smoke:api
 
 echo ""
 echo "✓ Vault DEMO deployed: ${DEPLOY_URL}"
-echo "  Expected alias: ${VAULT_SITE_URL}"
+echo "  Alias: ${VAULT_SITE_URL}"
 echo ""
 echo "Share with testers:"
 echo "  Demo guide: ${DEPLOY_URL}/demo"
