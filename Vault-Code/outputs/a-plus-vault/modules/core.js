@@ -1,4 +1,4 @@
-export const S={user:"aplus-vault-user",items:"aplus-vault-items",cols:"aplus-vault-collections",projects:"aplus-vault-projects",rightWidth:"aplus-vault-right-width",theme:"aplus-vault-theme",captures:"aplus-vault-imported-captures",apiToken:"aplus-vault-api-token"};
+export const S={user:"aplus-vault-user",items:"aplus-vault-items",cols:"aplus-vault-collections",projects:"aplus-vault-projects",moodboards:"aplus-vault-moodboards",rightWidth:"aplus-vault-right-width",moodboardSourceWidth:"aplus-vault-mb-source-w",moodboardInspectorWidth:"aplus-vault-mb-inspector-w",theme:"aplus-vault-theme",libraryView:"aplus-vault-library-view",captures:"aplus-vault-imported-captures",apiToken:"aplus-vault-api-token"};
 export const L={image:"Image",video:"Video",link:"Link",note:"Note"};
 export const DEFAULT_COLS=[{id:"all",name:"Vault Library",system:true},{id:"brand",name:"Aplus1 Branding",system:false},{id:"web",name:"WP Catalog",system:false},{id:"campaign",name:"Blacksmith Ads",system:false}];
 export function id(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}

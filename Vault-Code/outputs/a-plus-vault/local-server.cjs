@@ -440,7 +440,16 @@ const server = http.createServer(async (req, res) => {
     res.end();
     return;
   }
-  if (file === '/' || file.startsWith('/vault') || file.startsWith('/objects')) file = '/index.html';
+  // SPA routes: Vault app + Moodboard Phase 1 deep links
+  if (
+    file === '/' ||
+    file.startsWith('/vault') ||
+    file.startsWith('/objects') ||
+    file === '/moodboards' ||
+    file.startsWith('/moodboards/')
+  ) {
+    file = '/index.html';
+  }
 
   const target = path.normalize(path.join(root, file));
   if (!target.startsWith(root)) {

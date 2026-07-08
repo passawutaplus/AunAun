@@ -1,0 +1,52 @@
+-- Moodboard Phase 1: standalone boards (project_id optional) + layout metadata
+-- Apply on Vault Supabase project after reviewing RLS.
+
+alter table public.vault_boards
+  alter column project_id drop not null;
+
+alter table public.vault_boards
+  add column if not exists layout_mode text not null default 'smart_grid',
+  add column if not exists grid_preset text not null default 'balanced',
+  add column if not exists gap numeric not null default 16,
+  add column if not exists padding numeric not null default 24,
+  add column if not exists visibility text not null default 'private',
+  add column if not exists version integer not null default 1;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'vault_boards_layout_mode_check'
+  ) then
+    alter table public.vault_boards
+      add constraint vault_boards_layout_mode_check
+      check (layout_mode in ('smart_grid', 'freeform'));
+  end if;
+  if not exists (
+    select 1 from pg_constraint where conname = 'vault_boards_visibility_check'
+  ) then
+    alter table public.vault_boards
+      add constraint vault_boards_visibility_check
+      check (visibility in ('private', 'link'));
+  end if;
+end $$;
+
+alter table public.vault_board_objects
+  add column if not exists sort_order integer not null default 0;
+
+-- Widen object kinds for freeform tools (post-it notes + connectors).
+do $$
+begin
+  alter table public.vault_board_objects drop constraint if exists vault_board_objects_kind_check;
+  alter table public.vault_board_objects
+    add constraint vault_board_objects_kind_check
+    check (kind in ('item', 'text', 'palette', 'note', 'connector', 'frame', 'todo'));
+exception
+  when others then
+    null;
+end $$;
+
+create index if not exists vault_boards_user_updated_idx
+  on public.vault_boards (user_id, updated_at desc);
+
+create index if not exists vault_boards_project_id_nullable_idx
+  on public.vault_boards (project_id);

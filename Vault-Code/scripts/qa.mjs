@@ -14,6 +14,12 @@ const requiredFiles = [
   "outputs/a-plus-vault/modules/project-workspace.js",
   "outputs/a-plus-vault/modules/sidebar-dnd.js",
   "outputs/a-plus-vault/modules/user-dashboard.js",
+  "outputs/a-plus-vault/modules/moodboard-model.js",
+  "outputs/a-plus-vault/modules/moodboard-ui.js",
+  "outputs/a-plus-vault/modules/moodboard-autosave.js",
+  "outputs/a-plus-vault/modules/moodboard-history.js",
+  "outputs/a-plus-vault/modules/smart-grid.js",
+  "outputs/a-plus-vault/supabase-moodboard-phase1.sql",
   "outputs/a-plus-vault/demo.html",
   "outputs/a-plus-vault/supabase-config.js",
   "outputs/a-plus-vault/local-server.cjs",
@@ -40,6 +46,11 @@ const syntaxFiles = [
   "outputs/a-plus-vault/modules/project-workspace.js",
   "outputs/a-plus-vault/modules/sidebar-dnd.js",
   "outputs/a-plus-vault/modules/user-dashboard.js",
+  "outputs/a-plus-vault/modules/moodboard-model.js",
+  "outputs/a-plus-vault/modules/moodboard-ui.js",
+  "outputs/a-plus-vault/modules/moodboard-autosave.js",
+  "outputs/a-plus-vault/modules/moodboard-history.js",
+  "outputs/a-plus-vault/modules/smart-grid.js",
   "outputs/a-plus-vault/local-server.cjs",
   "vault-extension/background.js",
   "vault-extension/popup.js",
@@ -189,6 +200,22 @@ async function runStaticProductGuards() {
   assert(/assets\/fonts\/Agrandir-Wide-Light\.woff2/.test(appCss), "Web app must use the bundled Agrandir Wide Light font.");
   assert(/for all to authenticated/.test(supabaseSchemaSql), "Supabase RLS policies must target authenticated users.");
   assert(/video\/mp4/.test(supabaseHardeningSql) && /video\/webm/.test(supabaseHardeningSql), "Supabase hardening must allow alpha video mime types.");
+
+  // Moodboard Phase 1
+  assert(/aplus-vault-moodboards/.test(await readFile("outputs/a-plus-vault/modules/core.js", "utf8")), "Core storage keys must include standalone moodboards.");
+  assert(/extractMoodboardsFromProjects/.test(appJs) && /state\.moodboards/.test(appJs), "App must hydrate standalone moodboards from nested project boards.");
+  assert(/data-create-moodboard-form/.test(appJs) && /createMoodboardFromSelection/.test(appJs), "Create-from-selection moodboard flow must exist.");
+  assert(/data-toggle-select/.test(appJs) && /data-open-create-moodboard/.test(appJs) && /vault-selection-actions|vault-selection-bar/.test(appJs), "Vault multi-select for moodboard create must exist.");
+  assert(/data-smart-grid-canvas/.test(await readFile("outputs/a-plus-vault/modules/moodboard-ui.js", "utf8")), "Smart Grid editor markup must exist.");
+  assert(/createMoodboardAutosave/.test(appJs) && /createMoodboardHistory/.test(appJs), "Moodboard autosave and undo history must be wired.");
+  assert(/boardsUsingItem/.test(appJs) && /Delete object used on moodboards/.test(appJs), "Deleting Vault objects used on boards must warn.");
+  assert(/linkMoodboardToProject/.test(appJs) && /data-link-moodboard-form/.test(appJs), "Add-to-Project moodboard linking must exist.");
+  assert(/saveMoodboards/.test(supabaseAdapterJs) && /writeBoardObjects/.test(supabaseAdapterJs), "Adapter must sync standalone moodboards and board objects.");
+  assert(/alter column project_id drop not null/.test(await readFile("outputs/a-plus-vault/supabase-moodboard-phase1.sql", "utf8")), "Phase 1 migration must make project_id nullable.");
+  assert(/layout_mode/.test(supabaseSchemaSql) && /sort_order/.test(supabaseSchemaSql), "Schema must include Smart Grid layout columns.");
+  assert(/"source": "\/moodboards"/.test(vercelJson), "Vercel must rewrite /moodboards to the Vault SPA.");
+  assert(/moodboardAppUrl|#moodboard=/.test(appJs), "Moodboard editor deep link must work without a hard /moodboards navigation.");
+  assert(/file\.startsWith\('\/moodboards\/'\)|file\.startsWith\("\/moodboards\/"\)|\/moodboards\//.test(await readFile("outputs/a-plus-vault/local-server.cjs", "utf8")), "Local server must SPA-fallback /moodboards routes.");
 }
 
 async function runLocalServerSmoke() {

@@ -110,11 +110,12 @@ export function createVaultRemote(config = {}) {
   }
 
   async function loadVault() {
-    const [items, collections, collectionLinks, projects] = await Promise.all([
+    const [items, collections, collectionLinks, projects, boards] = await Promise.all([
       fetchTable("/rest/v1/vault_items?select=*,vault_item_analysis(*)&order=pinned_at.desc.nullslast,created_at.desc"),
       fetchTable("/rest/v1/vault_collections?select=*&order=created_at.asc"),
       fetchTable("/rest/v1/vault_collection_items?select=item_id,collection_id&order=created_at.asc"),
       fetchTable("/rest/v1/vault_projects?select=*,vault_boards(*,vault_board_objects(*))&order=created_at.asc"),
+      fetchTable("/rest/v1/vault_boards?select=*,vault_board_objects(*)&order=updated_at.desc").catch(() => []),
     ]);
     collectionKeyToRemoteId.clear();
     collections.forEach(row => {
@@ -134,10 +135,13 @@ export function createVaultRemote(config = {}) {
       if (row.thumbnail_path && !row.thumbnail_url) row.signed_thumbnail_url = await signedUrl(row.thumbnail_path);
       return remoteItemToLocal(row, linkMap.get(row.id));
     }));
+    const projectIdByRemote = new Map(projects.map(row => [row.id, row.client_key || row.id]));
+    const moodboardsFromTable = (boards || []).map(row => remoteMoodboardToLocal(row, projectIdByRemote));
     return {
       items: localItems,
       collections: collections.map(remoteCollectionToLocal),
       projects: projects.map(remoteProjectToLocal),
+      moodboards: moodboardsFromTable,
     };
   }
 
@@ -226,7 +230,7 @@ export function createVaultRemote(config = {}) {
         name: collection.name,
         system: false,
         client_key: collection.id,
-        metadata: { localId: collection.id, parentId: collection.parentId || null, sortOrder: Number(collection.sortOrder) || 0 },
+        metadata: { localId: collection.id, parentId: collection.parentId || null, sortOrder: Number(collection.sortOrder) || 0, pinnedAt: Number(collection.pinnedAt) || 0 },
       }),
     });
     const saved = rows[0] || null;
@@ -254,6 +258,7 @@ export function createVaultRemote(config = {}) {
           localId: collection.id,
           parentId: collection.parentId || null,
           sortOrder: Number(collection.sortOrder) || 0,
+          pinnedAt: Number(collection.pinnedAt) || 0,
         },
       }),
     });
@@ -380,6 +385,7 @@ export function createVaultRemote(config = {}) {
         metadata: {
           localId: project.id,
           collectionIds: Array.isArray(project.collectionIds) ? project.collectionIds.filter(Boolean) : [],
+          pinnedAt: Number(project.pinnedAt) || 0,
         },
         updated_at: new Date().toISOString(),
       };
@@ -436,6 +442,113 @@ export function createVaultRemote(config = {}) {
     return synced;
   }
 
+  async function saveMoodboards(moodboards, projects) {
+    const current = await getSession();
+    const userId = current?.user?.id;
+    if (!userId) return moodboards;
+    const projectRemoteByLocal = new Map();
+    (projects || []).forEach((p) => {
+      if (p.remoteId && isUuid(p.remoteId)) projectRemoteByLocal.set(p.id, p.remoteId);
+    });
+    const synced = [];
+    for (const board of moodboards || []) {
+      const projectRemoteId = board.projectId ? projectRemoteByLocal.get(board.projectId) || null : null;
+      const boardPayload = {
+        user_id: userId,
+        project_id: projectRemoteId,
+        name: board.name || "Moodboard",
+        client_key: board.id,
+        layout_mode: board.layoutMode || "smart_grid",
+        grid_preset: board.gridPreset || "balanced",
+        gap: board.gap || 16,
+        padding: board.padding || 24,
+        visibility: board.visibility || "private",
+        version: board.version || 1,
+        background: board.background || "#ffffff",
+        width: board.width || 1200,
+        height: board.height || 900,
+        objects_snapshot: board.objects || [],
+        updated_at: new Date().toISOString(),
+      };
+      let boardRemoteId = board.remoteId && isUuid(board.remoteId) ? board.remoteId : "";
+      try {
+        if (boardRemoteId) {
+          await request(`/rest/v1/vault_boards?id=eq.${boardRemoteId}`, {
+            method: "PATCH",
+            headers: headers({ "content-type": "application/json", prefer: "return=representation" }),
+            body: JSON.stringify(boardPayload),
+          });
+        } else {
+          const rows = await request("/rest/v1/vault_boards", {
+            method: "POST",
+            headers: headers({ "content-type": "application/json", prefer: "return=representation" }),
+            body: JSON.stringify(boardPayload),
+          });
+          boardRemoteId = rows[0]?.id || "";
+        }
+      } catch (err) {
+        console.warn("A+ Vault moodboard sync failed", err);
+      }
+      if (boardRemoteId) {
+        try {
+          await writeBoardObjects(boardRemoteId, userId, board.objects || []);
+        } catch (err) {
+          console.warn("A+ Vault board objects sync failed", err);
+        }
+      }
+      synced.push(Object.assign({}, board, { remoteId: boardRemoteId || board.remoteId }));
+    }
+    return synced;
+  }
+
+  async function writeBoardObjects(boardRemoteId, userId, objects) {
+    await request(`/rest/v1/vault_board_objects?board_id=eq.${boardRemoteId}`, { method: "DELETE", headers: headers() });
+    const rows = (objects || []).map((o, index) => {
+      const style = Object.assign({}, o.style && typeof o.style === "object" ? o.style : {});
+      if (o.kind === "connector") {
+        style.fromId = o.fromId || "";
+        style.toId = o.toId || "";
+        style.color = o.color || "#ff4f43";
+      } else if (o.kind === "todo") {
+        style.tasks = Array.isArray(o.style?.tasks) ? o.style.tasks : [];
+      } else if (o.kind === "palette") {
+        style.mode = o.style?.mode === "swatch" ? "swatch" : "palette";
+        if (o.text) style.label = o.text;
+      } else if (o.kind === "frame") {
+        style.color = o.color || "#ff4f43";
+        if (o.text) style.label = o.text;
+      } else if (o.kind === "note" || o.kind === "text") {
+        if (o.color) style.color = o.color;
+        if (o.style && o.style.background) style.background = o.style.background;
+        else if (o.kind === "note" && o.color) style.background = o.color;
+      } else if (o.color) {
+        style.color = o.color;
+      }
+      return {
+        board_id: boardRemoteId,
+        user_id: userId,
+        kind: o.kind || "item",
+        item_id: o.kind === "item" && o.itemId && isUuid(o.itemId) ? o.itemId : null,
+        text_content: o.text || null,
+        colors: Array.isArray(o.colors) ? o.colors : [],
+        x: Number(o.x) || 0,
+        y: Number(o.y) || 0,
+        w: Number(o.w) || 180,
+        h: Number(o.h) || 140,
+        rotation: Number(o.rotation) || 0,
+        z_index: Number(o.zIndex) || index,
+        sort_order: Number(o.sortOrder) || index,
+        style,
+      };
+    });
+    if (!rows.length) return;
+    await request("/rest/v1/vault_board_objects", {
+      method: "POST",
+      headers: headers({ "content-type": "application/json", prefer: "return=minimal" }),
+      body: JSON.stringify(rows),
+    });
+  }
+
   return {
     enabled,
     hasSession: () => !!session()?.access_token,
@@ -453,6 +566,7 @@ export function createVaultRemote(config = {}) {
     renameCollection,
     deleteCollection,
     saveProjects,
+    saveMoodboards,
   };
 }
 
@@ -496,6 +610,7 @@ function remoteCollectionToLocal(row) {
     system: !!row.system,
     parentId: metadata.parentId ? String(metadata.parentId) : "",
     sortOrder: Number(metadata.sortOrder) || 0,
+    pinnedAt: Number(metadata.pinnedAt) || 0,
   };
 }
 
@@ -515,6 +630,7 @@ function remoteProjectToLocal(row) {
     name: row.name,
     description: row.description || "",
     collectionIds: Array.isArray(metadata.collectionIds) ? metadata.collectionIds.filter(Boolean).map(String) : [],
+    pinnedAt: Number(metadata.pinnedAt) || 0,
     boards: (row.vault_boards || []).map(board => ({
       id: board.client_key || board.id,
       remoteId: board.id,
@@ -524,18 +640,46 @@ function remoteProjectToLocal(row) {
   };
 }
 
+function remoteMoodboardToLocal(row, projectIdByRemote) {
+  const projectLocal = row.project_id ? projectIdByRemote?.get(row.project_id) || "" : "";
+  return {
+    id: row.client_key || row.id,
+    remoteId: row.id,
+    name: row.name,
+    projectId: projectLocal,
+    layoutMode: row.layout_mode || "smart_grid",
+    gridPreset: row.grid_preset || "balanced",
+    gap: Number(row.gap) || 16,
+    padding: Number(row.padding) || 24,
+    visibility: row.visibility || "private",
+    version: Number(row.version) || 1,
+    width: Number(row.width) || 1200,
+    height: Number(row.height) || 900,
+    background: row.background || "#ffffff",
+    objects: row.objects_snapshot || (row.vault_board_objects || []).map(remoteBoardObjectToLocal),
+    createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+    updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : Date.now(),
+  };
+}
+
 function remoteBoardObjectToLocal(row) {
+  const style = row.style && typeof row.style === "object" ? row.style : {};
   return {
     id: row.id,
     kind: row.kind,
     itemId: row.item_id || "",
-    text: row.text_content || "",
+    fromId: style.fromId || "",
+    toId: style.toId || "",
+    text: row.text_content || style.label || "",
+    color: style.color || "",
     colors: row.colors || [],
     x: Number(row.x) || 40,
     y: Number(row.y) || 40,
     w: Number(row.w) || 180,
     h: Number(row.h) || 140,
     zIndex: Number(row.z_index) || 0,
+    sortOrder: Number(row.sort_order) || 0,
+    style,
   };
 }
 

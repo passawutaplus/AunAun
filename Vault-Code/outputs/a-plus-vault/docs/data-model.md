@@ -98,35 +98,46 @@ Rules:
 
 ### vault_boards
 
-Moodboard metadata.
+Standalone moodboard metadata (Phase 1). Boards are not owned exclusively by projects.
 
 Key fields:
 
 - `id`
 - `user_id`
-- `project_id`
+- `project_id` (nullable — link via “Add to Project”)
 - `name`
-- `created_at`
-- `updated_at`
+- `layout_mode`: `smart_grid` | `freeform`
+- `grid_preset`: `balanced` | `masonry` | `editorial` | `hero_support` | `contact`
+- `gap`, `padding`
+- `visibility` (Phase 1: `private` only in UI)
+- `version` (conflict / autosave marker)
+- `objects_snapshot` (Phase 1 client source of truth)
+- `created_at`, `updated_at`
+
+Migration: `supabase-moodboard-phase1.sql` drops `project_id NOT NULL` and adds layout columns.
+
+Client store: `state.moodboards` / `aplus-vault-moodboards` (separate from `project.boards` nesting).
 
 ### vault_board_objects
 
-Canvas objects inside a moodboard.
+Canvas objects inside a moodboard (relational write-through for integrity / delete warnings).
 
 Key fields:
 
 - `id`
 - `board_id`
-- `item_id`
+- `item_id` (nullable; SET NULL when Vault object deleted → “Reference unavailable”)
 - `kind`: `item`, `text`, or `palette`
 - `x`, `y`, `w`, `h`
-- `data`
+- `sort_order` (Smart Grid order)
+- `text_content`, `colors`, `style`
 
 Rules:
 
-- `kind=item` references a Vault object.
+- `kind=item` references a Vault object by id only (no embedded asset bytes/URLs).
 - `kind=text` and `kind=palette` are board-only objects.
-- Canvas objects can move without changing the original Vault item.
+- Removing an object from a board does not delete the Vault library item.
+- Canvas layout can move without mutating the original Vault item.
 
 ## Access Rules
 

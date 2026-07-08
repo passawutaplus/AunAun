@@ -82,7 +82,15 @@ export function availableCollectionsForProject(state, projectId) {
 }
 
 export function availableBoardsForProject(state, projectId) {
-  return allBoards(state.projects).filter((pair) => pair.project.id !== projectId);
+  const nested = allBoards(state.projects).filter((pair) => pair.project.id !== projectId);
+  const standalone = (state.moodboards || [])
+    .filter((b) => b.projectId !== projectId)
+    .map((board) => ({
+      project: { id: "moodboard", name: board.projectId ? "Linked board" : "Standalone" },
+      board,
+      standalone: true
+    }));
+  return nested.concat(standalone);
 }
 
 export function projectCollectionPickerDialog(dialog, helpers) {
@@ -103,12 +111,15 @@ export function projectMoodboardPickerDialog(dialog, helpers) {
   const project = state.projects.find((p) => p.id === dialog.projectId);
   const available = Array.isArray(dialog.available) ? dialog.available : availableBoardsForProject(state, dialog.projectId);
   const options = available
-    .map(
-      (pair) =>
-        `<option value="${escA(pair.project.id)}:${escA(pair.board.id)}">${esc(pair.board.name)} · ${esc(pair.project.name)} (${(pair.board.objects || []).length} objects)</option>`
-    )
+    .map((pair) => {
+      const value = pair.standalone ? `moodboard:${pair.board.id}` : `${pair.project.id}:${pair.board.id}`;
+      const label = pair.standalone
+        ? `${pair.board.name} · Standalone (${(pair.board.objects || []).length} objects)`
+        : `${pair.board.name} · ${pair.project.name} (${(pair.board.objects || []).length} objects)`;
+      return `<option value="${escA(value)}">${esc(label)}</option>`;
+    })
     .join("");
-  return `<div class='app-dialog-backdrop'><section class='app-dialog project-picker-dialog' role='dialog' aria-modal='true'><form data-project-moodboard-form><div class='app-dialog-head'><div><span class='section-label'>Project</span><h2>Add moodboard to project</h2></div><button class='icon-button' type='button' data-dialog-cancel>${icon("close")}</button></div><p class='app-dialog-message'>Copy an existing moodboard into ${esc(project?.name || "this project")} or create a new one.</p><label class='app-dialog-field'><span>Existing moodboard</span><select name='existingRef'><option value=''>— Select moodboard —</option>${options}</select></label><label class='app-dialog-field'><span>Or create new</span><input name='newName' placeholder='Moodboard name' autocomplete='off'></label><div class='app-dialog-actions'><button class='ghost-button' type='button' data-dialog-cancel>Cancel</button><button class='primary-button' type='submit'>Add to project</button></div></form></section></div>`;
+  return `<div class='app-dialog-backdrop'><section class='app-dialog project-picker-dialog' role='dialog' aria-modal='true'><form data-project-moodboard-form><div class='app-dialog-head'><div><span class='section-label'>Project</span><h2>Add moodboard to project</h2></div><button class='icon-button' type='button' data-dialog-cancel>${icon("close")}</button></div><p class='app-dialog-message'>Link a standalone moodboard or copy an existing project board into ${esc(project?.name || "this project")}.</p><label class='app-dialog-field'><span>Existing moodboard</span><select name='existingRef'><option value=''>— Select moodboard —</option>${options}</select></label><label class='app-dialog-field'><span>Or create new Smart Grid</span><input name='newName' placeholder='Moodboard name' autocomplete='off'></label><div class='app-dialog-actions'><button class='ghost-button' type='button' data-dialog-cancel>Cancel</button><button class='primary-button' type='submit'>Add to project</button></div></form></section></div>`;
 }
 
 export function projectSettingsDialog(dialog, helpers) {
