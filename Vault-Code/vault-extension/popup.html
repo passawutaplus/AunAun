@@ -1,11 +1,11 @@
 <!doctype html>
-<html>
+<html style="background:transparent!important;background-color:rgba(0,0,0,0)!important">
   <head>
     <meta charset="UTF-8">
     <title>Vault by Aplus</title>
     <link rel="stylesheet" href="popup.css">
   </head>
-  <body>
+  <body style="background:transparent!important;background-color:rgba(0,0,0,0)!important">
     <main class="popup">
       <header class="popup-header">
         <div class="popup-brand">
@@ -32,29 +32,40 @@
         <input id="titleInput" type="text" placeholder="Object title">
 
         <label for="collectionInput">Collection</label>
-        <select id="collectionInput">
-          <option value="all">Vault Library</option>
-          <option value="brand">Aplus1 Branding</option>
-          <option value="web">WP Catalog</option>
-          <option value="campaign">Blacksmith Ads</option>
-        </select>
+        <div class="collection-field">
+          <select id="collectionInput" aria-label="Collection">
+            <option value="all">Vault Library</option>
+          </select>
+          <input id="newCollectionInput" type="text" placeholder="Type collection name…" hidden aria-label="New collection name">
+        </div>
 
         <label for="noteInput">Note</label>
         <textarea id="noteInput" placeholder="Add context..."></textarea>
 
         <div class="capture-actions">
           <button id="keepPendingBtn" class="primary keep-button">
-            <img class="button-icon" src="icons/icon-16.png" alt="" aria-hidden="true">
+            <img class="button-icon" src="icons/icon-keep-white-32.png?v=2" alt="" aria-hidden="true" width="16" height="16">
             <span>Keep in Vault</span>
           </button>
-          <button id="clearPendingBtn" class="secondary dismiss-button" aria-label="Dismiss">&times;</button>
         </div>
       </section>
 
       <section class="quick-actions" aria-label="Quick actions">
-        <button id="snapshotBtn" class="secondary">
-          <span class="mini-icon">[]</span>
-          <span>Snapshot current view</span>
+        <button id="uploadZone" class="upload-zone secondary" type="button" aria-label="Upload or drop files">
+          <input id="uploadInput" type="file" hidden multiple accept="image/*,video/*,audio/*,.pdf,.zip,.ai,.psd,.fig,.sketch,.csv,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+          <span class="mini-icon" aria-hidden="true">↑</span>
+          <span class="upload-zone-copy">
+            <strong>Upload file</strong>
+            <small>or drop files here</small>
+          </span>
+        </button>
+
+        <button id="snapshotBtn" class="snapshot-zone secondary" type="button">
+          <span class="mini-icon" aria-hidden="true">[  ]</span>
+          <span class="upload-zone-copy">
+            <strong>Snapshot</strong>
+            <small>current view</small>
+          </span>
         </button>
       </section>
 
@@ -77,7 +88,7 @@
         <details>
           <summary>Alpha token setting</summary>
           <label for="tokenInput">Alpha API Token</label>
-          <input id="tokenInput" type="password" placeholder="Copy from Vault Profile → Extension sync">
+          <input id="tokenInput" type="password" placeholder="Copy from Vault Settings → Extension sync">
           <p class="settings-hint">Paste the sync token from your Vault Profile after logging in.</p>
 
           <label for="apiBaseInput">API Base</label>

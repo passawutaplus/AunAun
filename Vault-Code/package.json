@@ -14,5 +14,8 @@
     "test:gate": "npm run check && npm run test && npm run alpha:smoke && npm run build",
     "deploy:demo": "bash scripts/deploy-demo-vercel.sh",
     "deploy:production": "bash scripts/deploy-production-vercel.sh"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
   }
 }

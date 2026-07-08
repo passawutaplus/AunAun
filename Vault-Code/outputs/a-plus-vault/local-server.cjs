@@ -1,6 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const root = __dirname;
 const serverHost = process.env.VAULT_HOST || '127.0.0.1';
@@ -9,6 +10,7 @@ const dataDir = process.env.VAULT_DATA_DIR
   ? path.resolve(process.env.VAULT_DATA_DIR)
   : path.join(root, 'data');
 const capturesFile = path.join(dataDir, 'vault-captures.json');
+const collectionsFile = path.join(dataDir, 'vault-extension-collections.json');
 
 const mime = {
   '.html': 'text/html; charset=utf-8',
@@ -42,6 +44,55 @@ function readCaptures() {
 function writeCaptures(rows) {
   ensureDataFile();
   fs.writeFileSync(capturesFile, JSON.stringify(rows, null, 2), 'utf8');
+}
+
+function bearerFromRequest(req) {
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Bearer ')) return '';
+  return header.slice(7).trim();
+}
+
+function hashBearer(token) {
+  return crypto.createHash('sha256').update(String(token || '')).digest('hex');
+}
+
+function scopeFromToken(token) {
+  const userMatch = /^vault-user-([0-9a-f-]{36})$/i.exec(token || '');
+  if (userMatch) return hashBearer(userMatch[1]);
+  return hashBearer(token);
+}
+
+function readAllCollections() {
+  ensureDataFile();
+  try {
+    const rows = JSON.parse(fs.readFileSync(collectionsFile, 'utf8'));
+    return rows && typeof rows === 'object' ? rows : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeAllCollections(rows) {
+  ensureDataFile();
+  fs.writeFileSync(collectionsFile, JSON.stringify(rows, null, 2), 'utf8');
+}
+
+function readCollectionsForToken(token) {
+  const scope = scopeFromToken(token);
+  const all = readAllCollections();
+  return Array.isArray(all[scope]) ? all[scope] : [];
+}
+
+function upsertCollectionForToken(token, collection) {
+  const scope = scopeFromToken(token);
+  const all = readAllCollections();
+  const list = Array.isArray(all[scope]) ? all[scope].slice() : [];
+  const idx = list.findIndex(row => row.id === collection.id);
+  if (idx >= 0) list[idx] = collection;
+  else list.push(collection);
+  all[scope] = list;
+  writeAllCollections(all);
+  return collection;
 }
 
 function sendJson(res, status, data) {
@@ -422,6 +473,40 @@ async function handleApi(req, res, url) {
       sendJson(res, 400, {
         success: false,
         message: error.message || 'Could not save this snapshot.'
+      });
+    }
+    return true;
+  }
+
+  if (url.pathname === '/api/vault/collections' && req.method === 'GET') {
+    const token = bearerFromRequest(req);
+    if (!token) {
+      sendJson(res, 401, { success: false, message: 'Missing Vault token.' });
+      return true;
+    }
+    sendJson(res, 200, { success: true, collections: readCollectionsForToken(token) });
+    return true;
+  }
+
+  if (url.pathname === '/api/vault/collections' && req.method === 'POST') {
+    const token = bearerFromRequest(req);
+    if (!token) {
+      sendJson(res, 401, { success: false, message: 'Missing Vault token.' });
+      return true;
+    }
+
+    try {
+      const payload = JSON.parse(await readBody(req) || '{}');
+      const id = text(payload.id);
+      const name = text(payload.name);
+      if (!name) throw new Error('Collection name is required.');
+      if (!id || id === 'all') throw new Error('Collection id is required.');
+      const collection = upsertCollectionForToken(token, { id, name, system: false });
+      sendJson(res, 200, { success: true, collection });
+    } catch (error) {
+      sendJson(res, 400, {
+        success: false,
+        message: error.message || 'Could not save collection.'
       });
     }
     return true;

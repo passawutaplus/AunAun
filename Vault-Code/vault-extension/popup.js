@@ -1,4 +1,11 @@
 const DEFAULT_API_BASE = "https://aplus-vault.vercel.app";
+const NEW_COLLECTION_VALUE = "__new__";
+const DEFAULT_COLLECTIONS = [
+  { id: "all", name: "Vault Library", system: true },
+  { id: "brand", name: "Aplus1 Branding", system: false },
+  { id: "web", name: "WP Catalog", system: false },
+  { id: "campaign", name: "Blacksmith Ads", system: false }
+];
 
 const statusEl = document.getElementById("status");
 const captureCard = document.getElementById("captureCard");
@@ -8,6 +15,7 @@ const captureSource = document.getElementById("captureSource");
 const duplicateHint = document.getElementById("duplicateHint");
 const titleInput = document.getElementById("titleInput");
 const collectionInput = document.getElementById("collectionInput");
+const newCollectionInput = document.getElementById("newCollectionInput");
 const noteInput = document.getElementById("noteInput");
 const keepPendingBtn = document.getElementById("keepPendingBtn");
 const clearPendingBtn = document.getElementById("clearPendingBtn");
@@ -21,6 +29,7 @@ const apiBaseInput = document.getElementById("apiBaseInput");
 const saveSettingsBtn = document.getElementById("saveSettingsBtn");
 let pendingCapture = null;
 let recentCapturesCache = [];
+let collectionsCache = [];
 
 init();
 
@@ -44,6 +53,7 @@ async function init() {
   }
 
   renderRecent(data.recentCaptures || []);
+  await loadCollections();
   if (data.pendingCapture) renderPendingCapture(data.pendingCapture);
   if (!data.pendingCapture) {
     await checkServerHealth(apiBaseInput.value, statusFromStorage);
@@ -56,14 +66,23 @@ keepPendingBtn.addEventListener("click", async () => {
     return;
   }
 
+  if (collectionInput.value === NEW_COLLECTION_VALUE) {
+    setStatus("Type a collection name first.", "error");
+    showNewCollectionInput();
+    return;
+  }
+
+  const collectionId = collectionInput.value || "all";
+  const collectionMeta = collectionMetaForSave(collectionId);
   const payload = {
     ...pendingCapture,
     title: titleInput.value.trim() || pendingCapture.title || fallbackTitle(pendingCapture),
     note: noteInput.value.trim() || pendingCapture.note || null,
-    collectionId: collectionInput.value || "all",
+    collectionId,
     captureContext: {
       ...(pendingCapture.captureContext || {}),
-      usageNote: "Private reference only"
+      usageNote: "Private reference only",
+      ...collectionMeta
     }
   };
 
@@ -129,6 +148,33 @@ openVaultBtn.addEventListener("click", async () => {
   chrome.tabs.create({ url: `${apiBase}/vault` });
 });
 
+collectionInput.addEventListener("change", () => {
+  if (collectionInput.value === NEW_COLLECTION_VALUE) {
+    showNewCollectionInput();
+    return;
+  }
+  hideNewCollectionInput();
+});
+
+newCollectionInput.addEventListener("keydown", async event => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    await commitNewCollection();
+    return;
+  }
+  if (event.key === "Escape") {
+    hideNewCollectionInput("all");
+  }
+});
+
+newCollectionInput.addEventListener("blur", () => {
+  window.setTimeout(async () => {
+    if (newCollectionInput.hidden) return;
+    if (newCollectionInput.value.trim()) await commitNewCollection();
+    else hideNewCollectionInput("all");
+  }, 0);
+});
+
 recentList.addEventListener("click", async event => {
   const button = event.target.closest("[data-open-recent]");
   if (!button) return;
@@ -141,6 +187,11 @@ recentList.addEventListener("click", async event => {
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   if (changes.recentCaptures) renderRecent(changes.recentCaptures.newValue || []);
+  if (changes.vaultCollections) {
+    const stored = Array.isArray(changes.vaultCollections.newValue) ? changes.vaultCollections.newValue : [];
+    collectionsCache = mergeCollections(DEFAULT_COLLECTIONS, stored);
+    renderCollectionOptions(collectionInput.value || "all");
+  }
   if (changes.pendingCapture?.newValue) renderPendingCapture(changes.pendingCapture.newValue);
   if (changes.pendingCapture && !changes.pendingCapture.newValue) {
     pendingCapture = null;
@@ -170,7 +221,8 @@ function renderPendingCapture(capture) {
   statusEl.hidden = true;
   titleInput.value = capture.title || fallbackTitle(capture);
   noteInput.value = capture.note || capture.captureContext?.selectionText || "";
-  collectionInput.value = capture.collectionId || "all";
+  renderCollectionOptions(capture.collectionId || "all");
+  hideNewCollectionInput();
   const isSnapshot = capture.captureContext?.method === "extension_snapshot";
   captureType.textContent = isSnapshot ? "Snapshot object" : labelForType(capture.type) + " object";
   captureSource.textContent = host(capture.sourceUrl || capture.captureContext?.linkUrl || capture.captureContext?.pageUrl || "") || "Browser capture";
@@ -354,4 +406,135 @@ function escapeHtml(value) {
 
 function escapeAttr(value) {
   return escapeHtml(value).replace(/`/g, "&#096;");
+}
+
+async function loadCollections() {
+  const data = await chrome.storage.local.get(["vaultCollections"]);
+  const stored = Array.isArray(data.vaultCollections) ? data.vaultCollections : [];
+  collectionsCache = mergeCollections(DEFAULT_COLLECTIONS, stored);
+  await syncCollectionsFromServer();
+  renderCollectionOptions(collectionInput.value || "all");
+}
+
+async function syncCollectionsFromServer() {
+  const { vaultToken, apiBase } = await chrome.storage.local.get(["vaultToken", "apiBase"]);
+  const token = (vaultToken || tokenInput.value || "").trim();
+  const base = normalizeApiBase(apiBase || apiBaseInput.value || DEFAULT_API_BASE);
+  if (!token) return;
+
+  try {
+    const response = await fetch(`${base}/api/vault/collections`, {
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) return;
+    const data = await response.json();
+    const remote = Array.isArray(data.collections) ? data.collections : [];
+    const localCustom = collectionsCache.filter(col => !col.system);
+    collectionsCache = mergeCollections(DEFAULT_COLLECTIONS, remote.concat(localCustom));
+    await persistCollections();
+  } catch (_) {}
+}
+
+async function pushCollectionToServer(col) {
+  const { vaultToken, apiBase } = await chrome.storage.local.get(["vaultToken", "apiBase"]);
+  const token = (vaultToken || tokenInput.value || "").trim();
+  const base = normalizeApiBase(apiBase || apiBaseInput.value || DEFAULT_API_BASE);
+  if (!token || !col) return null;
+
+  try {
+    const response = await fetch(`${base}/api/vault/collections`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ id: col.id, name: col.name })
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.collection || col;
+  } catch (_) {
+    return null;
+  }
+}
+
+function mergeCollections(defaults, stored) {
+  const map = new Map();
+  defaults.forEach(col => map.set(col.id, col));
+  stored.forEach(col => {
+    if (!col || !col.id || !col.name || col.system) return;
+    map.set(col.id, { id: String(col.id), name: String(col.name), system: false });
+  });
+  return Array.from(map.values());
+}
+
+function makeCollectionId() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+function renderCollectionOptions(selectedId) {
+  const custom = collectionsCache.filter(col => !col.system);
+  collectionInput.innerHTML = [
+    `<option value="all">Vault Library</option>`,
+    ...custom.map(col => `<option value="${escapeAttr(col.id)}">${escapeHtml(col.name)}</option>`),
+    `<option value="${NEW_COLLECTION_VALUE}">+ New collection</option>`
+  ].join("");
+
+  const valid = selectedId && selectedId !== NEW_COLLECTION_VALUE
+    && collectionsCache.some(col => col.id === selectedId);
+  collectionInput.value = valid ? selectedId : "all";
+}
+
+async function persistCollections() {
+  const custom = collectionsCache.filter(col => !col.system);
+  await chrome.storage.local.set({ vaultCollections: custom });
+}
+
+async function createCollection(name) {
+  const trimmed = String(name || "").trim();
+  if (!trimmed) return null;
+
+  const existing = collectionsCache.find(
+    col => !col.system && col.name.toLowerCase() === trimmed.toLowerCase()
+  );
+  if (existing) return existing;
+
+  const col = { id: makeCollectionId(), name: trimmed, system: false };
+  collectionsCache.push(col);
+  await persistCollections();
+  await pushCollectionToServer(col);
+  renderCollectionOptions(col.id);
+  return col;
+}
+
+function showNewCollectionInput() {
+  collectionInput.hidden = true;
+  newCollectionInput.hidden = false;
+  newCollectionInput.value = "";
+  newCollectionInput.focus();
+}
+
+function hideNewCollectionInput(revertValue) {
+  newCollectionInput.hidden = true;
+  collectionInput.hidden = false;
+  if (revertValue) collectionInput.value = revertValue;
+}
+
+async function commitNewCollection() {
+  const name = newCollectionInput.value.trim();
+  if (!name) {
+    hideNewCollectionInput("all");
+    return;
+  }
+
+  const col = await createCollection(name);
+  hideNewCollectionInput();
+  collectionInput.value = col?.id || "all";
+}
+
+function collectionMetaForSave(collectionId) {
+  const col = collectionsCache.find(entry => entry.id === collectionId);
+  if (!col || col.system) return {};
+  return { collectionName: col.name };
 }

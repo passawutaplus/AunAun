@@ -5,7 +5,7 @@ This folder is a local Manifest V3 Chrome Extension for the A+ Vault alpha.
 ## Core Flow
 
 - Right-click image, video, link, selected URL/text, or page -> `+ Keep in Vault`.
-- Right-click page -> `+ Snapshot to Vault` to drag-select part of the visible viewport.
+- Right-click page -> `[  ] Snapshot to Vault` to drag-select part of the visible viewport.
 - Click the extension icon to open the Mini Vault Panel.
 - Right-click and snapshot captures open a preview panel first, so title, collection, and note can be edited before keeping.
 - Every successful capture is saved to the central Vault Library and appears in the recent list.
@@ -17,8 +17,9 @@ This folder is a local Manifest V3 Chrome Extension for the A+ Vault alpha.
 The popup includes:
 
 - `Snapshot current view`
+- `Upload file` with drag-and-drop onto the popup
 - `Stay on this page after saving`
-- `Recently kept` image strip, trimmed to the latest 3 captures
+- `Recently kept` image strip, trimmed to the latest 5 captures
 - `Open Vault` in the header
 - Alpha token/API base settings
 
@@ -26,7 +27,7 @@ The popup includes:
 
 The popup checks the local Vault API health endpoint on open. If `http://127.0.0.1:5177` is not running, it shows a clear offline message before the user tries to save.
 
-Manual upload is intentionally handled inside the web app, not in the extension popup. Extension captures keep title, collection, note, source, and preview data; Vault AI Lite fills searchable keywords/category after save.
+Manual upload is available in the Mini Vault Panel via Upload file / drag-and-drop, in addition to the web app. Extension captures keep title, collection, note, source, and preview data; Vault AI Lite fills searchable keywords/category after save.
 
 ## Font Setup
 

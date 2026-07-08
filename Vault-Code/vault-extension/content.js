@@ -1,6 +1,21 @@
 let snapshotState = null;
 let latestVaultContext = null;
 
+const VAULT_SYNC_HOSTS = /^(localhost|127\.0\.0\.1|aplus-vault\.vercel\.app|aplus-vault-demo\.vercel\.app)$/i;
+
+window.addEventListener("message", event => {
+  if (event.source !== window) return;
+  const data = event.data;
+  if (!data || data.type !== "VAULT_EXTENSION_COLLECTIONS") return;
+  if (!VAULT_SYNC_HOSTS.test(location.hostname)) return;
+  try {
+    chrome.runtime.sendMessage({
+      type: "VAULT_SYNC_COLLECTIONS",
+      collections: Array.isArray(data.collections) ? data.collections : []
+    });
+  } catch (_) {}
+}, false);
+
 window.addEventListener("contextmenu", event => {
   latestVaultContext = buildVaultContextFromPoint(event.clientX, event.clientY);
   try {

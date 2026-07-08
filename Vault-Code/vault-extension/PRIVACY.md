@@ -11,7 +11,7 @@ A+ Vault Capture helps you save creative references from websites into your priv
 The extension only acts after you explicitly choose:
 
 - right-click **+ Keep in Vault**
-- right-click **+ Snapshot to Vault**
+- right-click **[  ] Snapshot to Vault**
 - popup **Snapshot current view**
 - popup **Keep in Vault**
 

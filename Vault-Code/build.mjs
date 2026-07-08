@@ -14,3 +14,4 @@ await writeFile('dist/vault/index.html', indexHtml
   .replaceAll('src="./app.js"', 'src="../app.js"'));
 await writeErrorPages('dist', { cssHref: '/styles.css', homeHref: '/vault' });
 await writeErrorPages('outputs/a-plus-vault', { cssHref: './styles.css', homeHref: './index.html' });
+await import('./scripts/bundle-dist.mjs');

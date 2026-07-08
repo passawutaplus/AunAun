@@ -136,7 +136,8 @@ export function buildVaultItem(payload) {
       rawType: rawType || type,
       quickTags,
       visualCategory: visualCategory || null,
-      usageNote: text(context.usageNote) || "Private reference only"
+      usageNote: text(context.usageNote) || "Private reference only",
+      collectionName: text(context.collectionName) || text(payload.collectionName) || null
     }
   };
   item.analysis = analyzeLite(item, rawType);

@@ -16,6 +16,7 @@ const requiredFiles = [
   "outputs/a-plus-vault/modules/user-dashboard.js",
   "outputs/a-plus-vault/modules/moodboard-model.js",
   "outputs/a-plus-vault/modules/moodboard-ui.js",
+  "outputs/a-plus-vault/modules/moodboard-editor-ui.js",
   "outputs/a-plus-vault/modules/moodboard-autosave.js",
   "outputs/a-plus-vault/modules/moodboard-history.js",
   "outputs/a-plus-vault/modules/smart-grid.js",
@@ -48,6 +49,7 @@ const syntaxFiles = [
   "outputs/a-plus-vault/modules/user-dashboard.js",
   "outputs/a-plus-vault/modules/moodboard-model.js",
   "outputs/a-plus-vault/modules/moodboard-ui.js",
+  "outputs/a-plus-vault/modules/moodboard-editor-ui.js",
   "outputs/a-plus-vault/modules/moodboard-autosave.js",
   "outputs/a-plus-vault/modules/moodboard-history.js",
   "outputs/a-plus-vault/modules/smart-grid.js",
@@ -126,7 +128,14 @@ async function runStaticProductGuards() {
   assert(/class="capture-actions"/.test(popupHtml), "Popup keep/dismiss actions must share a single aligned action row.");
   assert(/class="header-vault-button"/.test(popupHtml), "Popup must expose Open Vault in the header.");
   assert(/id="duplicateHint"/.test(popupHtml), "Popup must show duplicate hints for repeated captures.");
-  assert(/collectionInput\.value = capture\.collectionId \|\| "all"/.test(popupJs), "Pending captures must default to Vault Library.");
+  assert(/id="newCollectionInput"/.test(popupHtml), "Popup must support inline new collection naming.");
+  assert(/\+ New collection/.test(popupJs), "Popup collection picker must expose + New collection.");
+  assert(/syncCollectionsFromServer/.test(popupJs), "Popup must pull collections from Vault API.");
+  assert(/pushCollectionToServer/.test(popupJs), "Popup must push new collections to Vault API.");
+  assert(/renderCollectionOptions\(capture\.collectionId \|\| "all"\)/.test(popupJs), "Pending captures must default to Vault Library.");
+  assert(/VAULT_SYNC_COLLECTIONS/.test(backgroundJs), "Extension background must accept collection sync messages.");
+  assert(/VAULT_EXTENSION_COLLECTIONS/.test(contentJs), "Extension content script must bridge Vault collection updates.");
+  assert(/syncExtensionCollections/.test(appJs) && /broadcastExtensionCollections/.test(appJs), "Vault app must sync collections with the extension.");
   assert(/items\.slice\(0, 3\)/.test(popupJs), "Popup recent list must show the latest three captures.");
   assert(/class="recent-item" data-open-recent/.test(popupJs), "Popup recent captures must render as image-only thumb buttons.");
   assert(!/quickTagsFrom\(quickKeywordsInput\.value\)/.test(popupJs), "Popup must let Vault AI Lite infer keywords after saving.");
@@ -169,7 +178,7 @@ async function runStaticProductGuards() {
   assert(/data-export-vault/.test(appJs) && /exportVaultData/.test(appJs), "Profile must expose export my data.");
   assert(/data-clear-vault/.test(appJs) && /clearLocalVaultData/.test(appJs), "Profile must expose clear local Vault data.");
   assert(/data-delete-account/.test(appJs) && /openDeleteAccountDialog/.test(appJs), "Profile must expose delete account / request deletion.");
-  assert(/settings-page/.test(appJs) && /upload-plus-button/.test(appJs), "Settings page and upload plus button must exist.");
+  assert(/settings-page/.test(appJs) && /sidebar-upload-button/.test(appJs), "Settings page and sidebar upload button must exist.");
   assert(/header-profile-button/.test(appJs) && /data-avatar-upload/.test(appJs) && /avatarUrl/.test(appJs), "Header profile button and avatar upload must exist.");
   assert(!/sidebarStorageInline/.test(appJs) && !/sidebarFooter\(\)/.test(appJs), "Sidebar must not keep inline storage/profile footer.");
   assert(/sidebar-upload-button/.test(appJs) && /data-vault-page-drop/.test(appJs) && /uploadImageFiles/.test(appJs), "Sidebar upload button and Vault page drag-drop upload must exist.");
@@ -206,11 +215,15 @@ async function runStaticProductGuards() {
   assert(/extractMoodboardsFromProjects/.test(appJs) && /state\.moodboards/.test(appJs), "App must hydrate standalone moodboards from nested project boards.");
   assert(/data-create-moodboard-form/.test(appJs) && /createMoodboardFromSelection/.test(appJs), "Create-from-selection moodboard flow must exist.");
   assert(/data-toggle-select/.test(appJs) && /data-open-create-moodboard/.test(appJs) && /vault-selection-actions|vault-selection-bar/.test(appJs), "Vault multi-select for moodboard create must exist.");
-  assert(/data-smart-grid-canvas/.test(await readFile("outputs/a-plus-vault/modules/moodboard-ui.js", "utf8")), "Smart Grid editor markup must exist.");
+  assert(/data-smart-grid-canvas/.test(await readFile("outputs/a-plus-vault/modules/moodboard-editor-ui.js", "utf8")), "Smart Grid editor markup must exist.");
+  assert(/preloadMoodboardEditor/.test(appJs) && /moodboard-editor-ui\.js/.test(appJs), "Moodboard editor must lazy-load from a separate module.");
+  assert(/startExtensionPolling/.test(appJs) && /gridRenderLimit/.test(appJs), "Vault performance guards must include visibility-aware polling and grid paging.");
+  assert(/detailObjectCard/.test(appJs) && /object-glance-chip/.test(appJs), "Object detail must include glance chips and expanded This OBJECT sections.");
   assert(/createMoodboardAutosave/.test(appJs) && /createMoodboardHistory/.test(appJs), "Moodboard autosave and undo history must be wired.");
   assert(/boardsUsingItem/.test(appJs) && /Delete object used on moodboards/.test(appJs), "Deleting Vault objects used on boards must warn.");
   assert(/linkMoodboardToProject/.test(appJs) && /data-link-moodboard-form/.test(appJs), "Add-to-Project moodboard linking must exist.");
   assert(/saveMoodboards/.test(supabaseAdapterJs) && /writeBoardObjects/.test(supabaseAdapterJs), "Adapter must sync standalone moodboards and board objects.");
+  assert(/resolveItemRemoteId/.test(supabaseAdapterJs), "Moodboard sync must map local item ids to remote vault_items.");
   assert(/alter column project_id drop not null/.test(await readFile("outputs/a-plus-vault/supabase-moodboard-phase1.sql", "utf8")), "Phase 1 migration must make project_id nullable.");
   assert(/layout_mode/.test(supabaseSchemaSql) && /sort_order/.test(supabaseSchemaSql), "Schema must include Smart Grid layout columns.");
   assert(/"source": "\/moodboards"/.test(vercelJson), "Vercel must rewrite /moodboards to the Vault SPA.");

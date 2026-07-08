@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "A+ Vault Capture",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Keep creative references in your private A+ Vault library.",
   "homepage_url": "https://aplus-vault-demo.vercel.app/demo",
   "permissions": [

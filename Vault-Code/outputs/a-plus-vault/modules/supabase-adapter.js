@@ -442,7 +442,7 @@ export function createVaultRemote(config = {}) {
     return synced;
   }
 
-  async function saveMoodboards(moodboards, projects) {
+  async function saveMoodboards(moodboards, projects, items) {
     const current = await getSession();
     const userId = current?.user?.id;
     if (!userId) return moodboards;
@@ -450,6 +450,7 @@ export function createVaultRemote(config = {}) {
     (projects || []).forEach((p) => {
       if (p.remoteId && isUuid(p.remoteId)) projectRemoteByLocal.set(p.id, p.remoteId);
     });
+    const itemLookup = Array.isArray(items) ? items : [];
     const synced = [];
     for (const board of moodboards || []) {
       const projectRemoteId = board.projectId ? projectRemoteByLocal.get(board.projectId) || null : null;
@@ -491,7 +492,7 @@ export function createVaultRemote(config = {}) {
       }
       if (boardRemoteId) {
         try {
-          await writeBoardObjects(boardRemoteId, userId, board.objects || []);
+          await writeBoardObjects(boardRemoteId, userId, board.objects || [], itemLookup);
         } catch (err) {
           console.warn("A+ Vault board objects sync failed", err);
         }
@@ -501,7 +502,7 @@ export function createVaultRemote(config = {}) {
     return synced;
   }
 
-  async function writeBoardObjects(boardRemoteId, userId, objects) {
+  async function writeBoardObjects(boardRemoteId, userId, objects, items) {
     await request(`/rest/v1/vault_board_objects?board_id=eq.${boardRemoteId}`, { method: "DELETE", headers: headers() });
     const rows = (objects || []).map((o, index) => {
       const style = Object.assign({}, o.style && typeof o.style === "object" ? o.style : {});
@@ -528,7 +529,7 @@ export function createVaultRemote(config = {}) {
         board_id: boardRemoteId,
         user_id: userId,
         kind: o.kind || "item",
-        item_id: o.kind === "item" && o.itemId && isUuid(o.itemId) ? o.itemId : null,
+        item_id: o.kind === "item" ? resolveItemRemoteId(o.itemId, items) : null,
         text_content: o.text || null,
         colors: Array.isArray(o.colors) ? o.colors : [],
         x: Number(o.x) || 0,
@@ -717,4 +718,13 @@ function slug(value) {
 
 function isUuid(value) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ""));
+}
+
+function resolveItemRemoteId(itemId, items) {
+  if (!itemId) return null;
+  if (isUuid(itemId)) return itemId;
+  const match = (items || []).find(item => item && (item.id === itemId || item.remoteId === itemId));
+  if (!match) return null;
+  const remote = match.remoteId || match.id;
+  return isUuid(remote) ? remote : null;
 }

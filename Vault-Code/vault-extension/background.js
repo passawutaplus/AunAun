@@ -12,7 +12,7 @@ chrome.runtime.onInstalled.addListener(async () => {
     ["keep-link", "link", "+ Keep in Vault"],
     ["keep-selection", "selection", "+ Keep in Vault"],
     ["keep-page", "page", "+ Keep in Vault"],
-    ["snapshot-to-vault", "page", "+ Snapshot to Vault"]
+    ["snapshot-to-vault", "page", "[  ] Snapshot to Vault"]
   ].forEach(([id, context, title]) => {
     chrome.contextMenus.create({ id, title, contexts: [context] });
   });
@@ -98,6 +98,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message?.type === "VAULT_DISMISS_PENDING_CAPTURE") {
       await chrome.storage.local.remove(["pendingCapture"]);
       await setBadge("", "#747a80");
+      sendResponse({ ok: true });
+      return;
+    }
+
+    if (message?.type === "VAULT_SYNC_COLLECTIONS") {
+      await mergeVaultCollections(message.collections || []);
       sendResponse({ ok: true });
       return;
     }
@@ -474,11 +480,38 @@ async function getSettings() {
   };
 }
 
+async function mergeVaultCollections(collections) {
+  const incoming = (collections || []).filter(col => col?.id && col?.name && col.id !== "all");
+  const { vaultCollections = [] } = await chrome.storage.local.get(["vaultCollections"]);
+  const map = new Map();
+  [...vaultCollections, ...incoming].forEach(col => {
+    map.set(String(col.id), { id: String(col.id), name: String(col.name), system: false });
+  });
+  await chrome.storage.local.set({ vaultCollections: Array.from(map.values()) });
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, Object.assign({}, options, { signal: controller.signal }));
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      const timeoutError = new Error(`Request timed out after ${timeoutMs}ms`);
+      timeoutError.status = 408;
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function saveCapture(payload, options = {}) {
   const { vaultToken, apiBase, stayOnPageAfterSave } = await getSettings();
 
   if (!vaultToken) {
-    await setStatus("error", "Missing Vault token. Open the extension popup and add your token.");
+    await setStatus("error", "Missing Vault token. Open Vault → Profile → Settings → Copy extension token, then paste it here.");
     await setBadge("ERR", "#cc3931");
     await toastTab(options.tabId, "Missing Vault token.", "error");
     return null;
@@ -488,7 +521,7 @@ async function saveCapture(payload, options = {}) {
   await setBadge("...", "#747a80");
 
   try {
-    const response = await fetch(`${apiBase}/api/vault/capture`, {
+    const response = await fetchWithTimeout(`${apiBase}/api/vault/capture`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -589,13 +622,13 @@ async function saveFileDataUrl(dataUrl, payload, fileName, forcedRecentType, opt
   formData.append("payload", JSON.stringify(payload));
 
   try {
-    const response = await fetch(`${apiBase}/api/vault/capture-file`, {
+    const response = await fetchWithTimeout(`${apiBase}/api/vault/capture-file`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${vaultToken}`
       },
       body: formData
-    });
+    }, 30000);
 
     if (!response.ok) throw httpError(response);
     const data = await response.json();
@@ -716,9 +749,28 @@ async function saveViaWebHandoff(payload, apiBase, stayOnPageAfterSave, options 
   await addRecentCapture(result);
   await setStatus("success", "Sent to Vault Library", result.objectId);
   await setBadge("OK", "#2c8f68");
-  await chrome.tabs.create({ url: objectUrl, active: !stayOnPageAfterSave });
-  await toastTab(options.tabId, "Sent to Vault Library", "success");
+  await openVaultHandoffTab(objectUrl, apiBase);
+  await toastTab(options.tabId, "Sent to Vault Library — check the Vault tab", "success");
   return result;
+}
+
+async function openVaultHandoffTab(objectUrl, apiBase) {
+  try {
+    const origin = new URL(apiBase).origin;
+    const existing = await chrome.tabs.query({ url: [`${origin}/*`] });
+    const vaultTab = (existing || []).find(tab => {
+      const href = String(tab.url || "");
+      return /\/vault(?:\/|\?|#|$)/i.test(href) || href === origin || href === `${origin}/`;
+    });
+    if (vaultTab?.id) {
+      await chrome.tabs.update(vaultTab.id, { url: objectUrl, active: true });
+      if (vaultTab.windowId) await chrome.windows.update(vaultTab.windowId, { focused: true });
+      return;
+    }
+  } catch (_) {}
+
+  // Always focus the handoff tab so the import runs and is visible.
+  await chrome.tabs.create({ url: objectUrl, active: true });
 }
 
 function canUseWebHandoff(apiBase, payload, error) {
@@ -804,11 +856,14 @@ async function dataUrlToBlob(dataUrl) {
 
 function friendlySaveError(error, apiBase) {
   const message = String(error?.message || "");
+  if (message.includes("timed out") || Number(error?.status) === 408) {
+    return "Save timed out. Check your Vault token / API Base, then try again.";
+  }
   if (message.includes("Failed to fetch") || message.includes("NetworkError") || message.includes("Load failed")) {
     return `Vault server offline. Start ${apiBase} and try again.`;
   }
   if (message.includes("401")) {
-    return "Missing or invalid Vault token. Open the extension popup and add your token.";
+    return "Missing or invalid Vault token. Open Vault → Profile → Settings → Copy extension token.";
   }
   if (message.includes("413") || message.toLowerCase().includes("too large")) {
     return "This file is too large for the current Vault alpha.";
