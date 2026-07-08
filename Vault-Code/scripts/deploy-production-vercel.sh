@@ -19,7 +19,9 @@ fi
 
 VERCEL_PROJECT="${VERCEL_VAULT_PROD_PROJECT:-aplus-vault}"
 VERCEL_SCOPE="${VERCEL_SCOPE:-passawutaplus-9338s-projects}"
-VAULT_SITE_URL="${VAULT_SITE_URL:-https://aplus-vault.vercel.app}"
+# Force production canonical URL (ignore polluted shell / prior demo exports).
+VAULT_SITE_URL="https://aplus-vault.vercel.app"
+unset SITE_URL VITE_SITE_URL || true
 
 export DEPLOY_TARGET=production
 export VAULT_DEMO_MODE=false

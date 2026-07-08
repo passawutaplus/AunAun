@@ -10,7 +10,9 @@ fi
 
 VERCEL_PROJECT="${VERCEL_VAULT_DEMO_PROJECT:-aplus-vault-demo}"
 VERCEL_SCOPE="${VERCEL_SCOPE:-passawutaplus-9338s-projects}"
-VAULT_SITE_URL="${VAULT_SITE_URL:-https://aplus-vault-demo.vercel.app}"
+# Force demo canonical URL (ignore polluted shell SITE_URL / prior prod exports).
+VAULT_SITE_URL="https://aplus-vault-demo.vercel.app"
+unset SITE_URL VITE_SITE_URL || true
 
 export DEPLOY_TARGET=demo
 export VAULT_DEMO_MODE=true

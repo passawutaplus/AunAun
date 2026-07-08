@@ -55,13 +55,21 @@ check_noindex() {
 
 check_demo_redirect() {
   local code
-  code=$(curl -sS -o /dev/null -w "%{http_code}" -L --max-time 30 "${BASE_URL}/demo" || echo "000")
+  local loc
+  # Vercel permanent redirects return 308 with a short "Redirecting..." body —
+  # follow redirects (-L) before asserting destination content.
+  code=$(curl -sS -o "$body_file" -w "%{http_code}" -L --max-time 30 "${BASE_URL}/demo" || echo "000")
   if [[ "$code" != "200" ]]; then
     echo "FAIL /demo redirect status=${code}"
     fail=1
     return
   fi
-  code=$(curl -sS -o "$body_file" -w "%{http_code}" --max-time 30 "${BASE_URL}/demo" || echo "000")
+  loc=$(curl -sS -o /dev/null -w "%{redirect_url}" --max-time 30 "${BASE_URL}/demo" || true)
+  if [[ -n "$loc" ]] && [[ "$loc" != *"/vault"* ]]; then
+    echo "FAIL /demo Location should point to /vault (got ${loc})"
+    fail=1
+    return
+  fi
   if ! grep -qi 'A+ Vault' "$body_file" || grep -q 'Private Alpha Demo Guide' "$body_file"; then
     echo "FAIL /demo should redirect to vault workspace"
     fail=1
