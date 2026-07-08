@@ -8,3 +8,21 @@ backups/
 logs/
 .vercel
 .env*
+
+# Local tooling / build caches
+.vite-cache/
+**/.vite-cache/
+
+# One-off MCP / repair payloads (never commit)
+scripts/_mcp-*.json
+scripts/_part*-payload.json
+scripts/_part*-query-only.sql
+scripts/_tmp-*.json
+
+# Local media scratch (not wired into apps)
+/assets/feed-area-*
+
+# Vault local extension pack dumps (source is vault-extension/)
+Vault-Code/outputs/*-extension-unpacked/
+Vault-Code/outputs/*-extension-*.zip
+Vault-Code/outputs/*-unpacked.zip
