@@ -17,7 +17,7 @@
 
     <section>
       <h2>1. Open the web app</h2>
-      <p>Go to <a href="https://aplus-vault.vercel.app/vault">https://aplus-vault.vercel.app/vault</a></p>
+      <p>Go to <a href="/vault">/vault</a> on this site</p>
       <ul>
         <li><strong>Quick local demo:</strong> <code>creative@aplus.local</code> / <code>aplusvault</code></li>
         <li><strong>Real account:</strong> Create account with your email, or Continue with Google</li>
@@ -41,7 +41,7 @@
         <li>Open <strong>Profile</strong></li>
         <li>Copy <strong>Extension sync token</strong></li>
         <li>Open the extension popup</li>
-        <li>Set <strong>API Base</strong> to <code>https://aplus-vault.vercel.app</code></li>
+        <li>Set <strong>API Base</strong> to <code id="vault-api-base">same origin as this demo</code></li>
         <li>Paste token into <strong>Alpha API Token</strong></li>
         <li>Save settings</li>
       </ol>
@@ -63,5 +63,11 @@
       <p>Extension privacy summary: <a href="./legal#extension-privacy">Chrome Extension Privacy</a></p>
     </section>
   </main>
+  <script src="./vault-runtime.js"></script>
+  <script>
+    const base = (window.APLUS_VAULT_RUNTIME && window.APLUS_VAULT_RUNTIME.siteUrl) || window.location.origin;
+    const apiEl = document.getElementById("vault-api-base");
+    if (apiEl) apiEl.textContent = base.replace(/\/$/, "");
+  </script>
 </body>
 </html>

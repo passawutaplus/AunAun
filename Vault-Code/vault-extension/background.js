@@ -636,6 +636,22 @@ async function handleSuccessfulSave(data, payload, apiBase, stayOnPageAfterSave,
   return result;
 }
 
+function normalizeVaultObjectUrl(url, apiBase, objectId) {
+  const fallback = objectId ? `${apiBase}/vault#object=${encodeURIComponent(objectId)}` : `${apiBase}/vault`;
+  if (!url) return fallback;
+  try {
+    const parsed = new URL(url, apiBase);
+    const fromQuery = parsed.searchParams.get("object");
+    const id = fromQuery || objectId;
+    if (fromQuery) parsed.searchParams.delete("object");
+    parsed.pathname = "/vault";
+    if (id) parsed.hash = `object=${encodeURIComponent(id)}`;
+    return parsed.toString();
+  } catch {
+    return fallback;
+  }
+}
+
 function normalizeSaveResult(data, payload, apiBase, forcedRecentType) {
   const item = data?.item || {};
   const objectId = data?.objectId || item.id || null;
@@ -643,7 +659,8 @@ function normalizeSaveResult(data, payload, apiBase, forcedRecentType) {
   const type = forcedRecentType || (method === "extension_snapshot" ? "snapshot" : (item.type || payload.type || "page"));
   const responseObjectUrl = data?.objectUrl && data.objectUrl.startsWith("/") ? `${apiBase}${data.objectUrl}` : data?.objectUrl;
   const workspaceObjectUrl = objectId ? `${apiBase}/vault#object=${encodeURIComponent(objectId)}` : `${apiBase}/vault`;
-  const objectUrl = responseObjectUrl ? responseObjectUrl.replace(`${apiBase}/#object=`, `${apiBase}/vault#object=`) : workspaceObjectUrl;
+  let objectUrl = responseObjectUrl ? responseObjectUrl.replace(`${apiBase}/#object=`, `${apiBase}/vault#object=`) : workspaceObjectUrl;
+  objectUrl = normalizeVaultObjectUrl(objectUrl, apiBase, objectId);
   const sourceUrl = data?.sourceUrl || item.sourceUrl || payload.sourceUrl || payload.captureContext?.pageUrl || null;
   const title = data?.title || item.title || payload.title || fallbackTitle(payload);
   const previewUrl = data?.previewUrl || (isTinyPreviewUrl(item.assetUrl || payload.assetUrl) ? (item.assetUrl || payload.assetUrl) : null);

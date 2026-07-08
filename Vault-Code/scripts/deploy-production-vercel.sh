@@ -1,22 +1,31 @@
 #!/usr/bin/env bash
-# Deploy A+ Vault demo to Vercel (aplus-vault-demo project).
+# Deploy A+ Vault production to Vercel (aplus-vault project).
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$ROOT/scripts/check-migrations-pending.sh" ]]; then
+  echo "→ Checking pending Supabase migrations…"
+  if ! bash "$ROOT/scripts/check-migrations-pending.sh"; then
+    echo "Abort production deploy until migrations are pushed." >&2
+    exit 1
+  fi
+fi
 
 if ! command -v npx >/dev/null 2>&1; then
   echo "npx not found" >&2
   exit 1
 fi
 
-VERCEL_PROJECT="${VERCEL_VAULT_DEMO_PROJECT:-aplus-vault-demo}"
+VERCEL_PROJECT="${VERCEL_VAULT_PROD_PROJECT:-aplus-vault}"
 VERCEL_SCOPE="${VERCEL_SCOPE:-passawutaplus-9338s-projects}"
-VAULT_SITE_URL="${VAULT_SITE_URL:-https://aplus-vault-demo.vercel.app}"
+VAULT_SITE_URL="${VAULT_SITE_URL:-https://aplus-vault.vercel.app}"
 
-export DEPLOY_TARGET=demo
-export VAULT_DEMO_MODE=true
+export DEPLOY_TARGET=production
+export VAULT_DEMO_MODE=false
 export VAULT_SITE_URL
 
-echo "→ Running test gate before demo deploy…"
+echo "→ Running test gate before production deploy…"
 npm run test:gate
 
 echo "→ Checking Vercel login…"
@@ -31,8 +40,8 @@ fi
 DEPLOY_OUTPUT="$(mktemp)"
 npx vercel deploy --prod --yes --project="$VERCEL_PROJECT" --scope "$VERCEL_SCOPE" \
   --build-env "VAULT_SITE_URL=${VAULT_SITE_URL}" \
-  --build-env "VAULT_DEMO_MODE=true" \
-  --build-env "DEPLOY_TARGET=demo" | tee "$DEPLOY_OUTPUT"
+  --build-env "VAULT_DEMO_MODE=false" \
+  --build-env "DEPLOY_TARGET=production" | tee "$DEPLOY_OUTPUT"
 DEPLOY_URL="$(grep -Eo 'https://[a-zA-Z0-9._-]+\.vercel\.app' "$DEPLOY_OUTPUT" | tail -1)"
 rm -f "$DEPLOY_OUTPUT"
 [[ -n "$DEPLOY_URL" ]] || { echo "Deploy failed — no URL returned" >&2; exit 1; }
@@ -46,12 +55,7 @@ echo "→ Post-deploy API smoke…"
 VAULT_BASE_URL="$DEPLOY_URL" npm run smoke:api
 
 echo ""
-echo "✓ Vault DEMO deployed: ${DEPLOY_URL}"
-echo "  Expected alias: ${VAULT_SITE_URL}"
+echo "✓ Vault PRODUCTION deployed: ${DEPLOY_URL}"
+echo "  Alias: https://aplus-vault.vercel.app"
 echo ""
-echo "Share with testers:"
-echo "  Demo guide: ${DEPLOY_URL}/demo"
-echo "  Vault app:  ${DEPLOY_URL}/vault"
-echo "  Pack:       docs/DEMO_PACK.md"
-echo ""
-echo "Production (staff): https://aplus-vault.vercel.app — npm run deploy:production"
+echo "Demo (testers): https://aplus-vault-demo.vercel.app — npm run deploy:demo"

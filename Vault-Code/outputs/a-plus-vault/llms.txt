@@ -9,7 +9,6 @@
 ## Private alpha (not indexed)
 
 - [Vault workspace](https://aplus-vault.vercel.app/vault): Login required — private reference library
-- [Demo guide](https://aplus-vault.vercel.app/demo): Private alpha tester instructions
 
 ## Related products
 

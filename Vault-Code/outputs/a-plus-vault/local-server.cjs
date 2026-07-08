@@ -435,6 +435,11 @@ const server = http.createServer(async (req, res) => {
   if (await handleApi(req, res, url)) return;
 
   let file = decodeURIComponent(url.pathname || '/');
+  if (file === '/demo' || file === '/demo.html') {
+    res.writeHead(301, { Location: '/' });
+    res.end();
+    return;
+  }
   if (file === '/' || file.startsWith('/vault') || file.startsWith('/objects')) file = '/index.html';
 
   const target = path.normalize(path.join(root, file));

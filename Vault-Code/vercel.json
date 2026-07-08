@@ -4,14 +4,39 @@
   "outputDirectory": "dist",
   "installCommand": "echo no install needed",
   "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/vault",
+      "permanent": false
+    },
+    {
+      "source": "/demo",
+      "destination": "/vault",
+      "permanent": true
+    },
+    {
+      "source": "/demo.html",
+      "destination": "/vault",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/vault",
       "destination": "/vault.html"
     },
     {
-      "source": "/vault/:path*",
-      "destination": "/index.html"
+      "source": "/vault/",
+      "destination": "/vault.html"
+    },
+    {
+      "source": "/400",
+      "destination": "/400.html"
+    },
+    {
+      "source": "/500",
+      "destination": "/500.html"
     }
   ]
 }

@@ -85,11 +85,15 @@ Key fields:
 - `id`
 - `user_id`
 - `name`
+- `description`
+- `metadata.collectionIds` — explicit links to custom collections used in this project
 - `created_at`
 
 Rules:
 
-- A project gathers selected collections and moodboards.
+- A project gathers **explicitly linked** collections and moodboards.
+- Linking a collection to a project does not move or duplicate Vault objects.
+- `metadata.collectionIds` is separate from `vault_collection_items` (which tracks which objects belong to which collection).
 - A project does not replace Vault Library.
 
 ### vault_boards

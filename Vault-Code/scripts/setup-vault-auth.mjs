@@ -24,8 +24,14 @@ if (!token) {
   process.exit(1);
 }
 
+import {
+  VAULT_DEMO_SITE_URL,
+  VAULT_PROD_SITE_URL,
+} from "./vault-site-urls.mjs";
+
 const vaultUrls = [
-  "https://aplus-vault.vercel.app/**",
+  `${VAULT_PROD_SITE_URL}/**`,
+  `${VAULT_DEMO_SITE_URL}/**`,
   "http://127.0.0.1:5177/**",
   "http://localhost:5177/**",
 ];

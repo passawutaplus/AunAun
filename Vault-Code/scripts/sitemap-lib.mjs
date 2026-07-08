@@ -58,7 +58,6 @@ export function buildLlmsTxt(base) {
 ## Private alpha (not indexed)
 
 - [Vault workspace](${normalizedBase}/vault): Login required — private reference library
-- [Demo guide](${normalizedBase}/demo): Private alpha tester instructions
 
 ## Related products
 

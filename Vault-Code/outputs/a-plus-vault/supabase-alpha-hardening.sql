@@ -13,3 +13,6 @@ alter policy "Users can manage their own vault board shares" on public.vault_boa
 update storage.buckets
 set allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm']
 where id = 'vault-assets';
+
+-- Project ↔ collection links live in vault_projects.metadata.collectionIds (jsonb).
+-- No separate junction table in alpha; description uses vault_projects.description.

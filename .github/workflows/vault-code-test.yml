@@ -26,5 +26,5 @@ jobs:
       - name: Local test gate
         run: npm run test:gate
 
-      - name: Public smoke (curl)
-        run: BASE_URL=https://aplus-vault.vercel.app npm run smoke:public
+      - name: Public smoke (curl) — demo deploy
+        run: BASE_URL=https://aplus-vault-demo.vercel.app npm run smoke:public

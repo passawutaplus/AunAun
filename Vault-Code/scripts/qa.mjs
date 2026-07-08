@@ -11,6 +11,9 @@ const requiredFiles = [
   "outputs/a-plus-vault/modules/core.js",
   "outputs/a-plus-vault/modules/supabase-adapter.js",
   "outputs/a-plus-vault/modules/utils.js",
+  "outputs/a-plus-vault/modules/project-workspace.js",
+  "outputs/a-plus-vault/modules/sidebar-dnd.js",
+  "outputs/a-plus-vault/modules/user-dashboard.js",
   "outputs/a-plus-vault/demo.html",
   "outputs/a-plus-vault/supabase-config.js",
   "outputs/a-plus-vault/local-server.cjs",
@@ -34,6 +37,9 @@ const syntaxFiles = [
   "outputs/a-plus-vault/modules/core.js",
   "outputs/a-plus-vault/modules/supabase-adapter.js",
   "outputs/a-plus-vault/modules/utils.js",
+  "outputs/a-plus-vault/modules/project-workspace.js",
+  "outputs/a-plus-vault/modules/sidebar-dnd.js",
+  "outputs/a-plus-vault/modules/user-dashboard.js",
   "outputs/a-plus-vault/local-server.cjs",
   "vault-extension/background.js",
   "vault-extension/popup.js",
@@ -79,6 +85,7 @@ async function runStaticProductGuards() {
   assert(packageJson.scripts?.["test:gate"], "package.json must expose test:gate.");
   assert(packageJson.scripts?.["smoke:public"], "package.json must expose smoke:public.");
   assert(packageJson.scripts?.["deploy:demo"], "package.json must expose deploy:demo.");
+  assert(packageJson.scripts?.["deploy:production"], "package.json must expose deploy:production.");
   assert(packageJson.scripts?.["sitemap:gen"], "package.json must expose sitemap:gen.");
 
   const popupHtml = await readFile("vault-extension/popup.html", "utf8");
@@ -122,8 +129,10 @@ async function runStaticProductGuards() {
   assert(/\["keep-page", "page", "\+ Keep in Vault"\]/.test(backgroundJs), "Right-click page saving must use + Keep in Vault.");
   assert(/saveViaWebHandoff/.test(backgroundJs) && /#vault-capture=/.test(backgroundJs), "Extension must fall back to web handoff when a static demo has no capture API.");
   assert(/TextEncoder/.test(backgroundJs), "Extension handoff must encode Unicode capture payloads safely.");
-  assert(/https:\/\/aplus-vault\.vercel\.app\/\*/.test(manifestJson), "Manifest must allow the Vercel demo Vault URL.");
+  assert(/https:\/\/aplus-vault\.vercel\.app\/\*/.test(manifestJson), "Manifest must allow production Vault URL.");
+  assert(/https:\/\/aplus-vault-demo\.vercel\.app\/\*/.test(manifestJson), "Manifest must allow demo Vault URL.");
   assert(/replace\(\/-\/g,"\+"\)\.replace\(\/_\/g,"\/"\)/.test(appJs), "Web app must decode URL-safe Vault handoff payloads.");
+  assert(/vault-runtime\.js/.test(indexHtml), "App shell must load vault-runtime.js for deploy target config.");
   assert(/noindex,nofollow/.test(indexHtml), "Alpha app shell must stay noindex by default.");
   assert(/index,follow/.test(legalHtml), "Legal center should be indexable for trust pages.");
   assert(/rel="canonical"/.test(legalHtml), "Legal page must expose canonical URL.");
@@ -136,8 +145,12 @@ async function runStaticProductGuards() {
   assert(/Sitemap:/.test(robotsTxt), "robots.txt must link sitemap.");
   assert(/<loc>[^<]*\/legal<\/loc>/.test(sitemapXml), "sitemap must include /legal.");
   assert(!/<loc>[^<]*\/vault<\/loc>/.test(sitemapXml), "sitemap must not include /vault.");
-  assert(/dist\/vault\.html/.test(buildMjs) && /dist\/404\.html/.test(buildMjs) && /dist\/vault\/index\.html/.test(buildMjs), "Build must emit static SPA fallbacks for /vault and missing routes.");
+  assert(!/<loc>[^<]*\/demo<\/loc>/.test(sitemapXml), "sitemap must not include /demo.");
+  assert(/dist\/vault\.html/.test(buildMjs) && /writeErrorPages/.test(buildMjs) && /dist\/vault\/index\.html/.test(buildMjs), "Build must emit Vault fallbacks and art error pages.");
+  assert(/404 Not Found/.test(await readFile("dist/404.html", "utf8")) && /500 Server Error/.test(await readFile("dist/500.html", "utf8")) && /400 Bad Request/.test(await readFile("dist/400.html", "utf8")), "Dist must include art error pages for 400/404/500.");
+  assert(/theme-veil/.test(appCss) && /to-dark/.test(appCss) && /applyTheme\(/.test(appJs), "Theme switch must fade smoothly with a dimming veil.");
   assert(/"source": "\/vault"/.test(vercelJson) && /"destination": "\/vault\.html"/.test(vercelJson), "Vercel must route /vault to the static Vault fallback.");
+  assert(/"source": "\/400"/.test(vercelJson) && /"source": "\/500"/.test(vercelJson), "Vercel must route explicit 400/500 pages.");
   assert(/Legal Center/.test(legalHtml) && /Privacy Notice/.test(legalHtml) && /Copyright & Takedown Policy/.test(legalHtml), "Legal center must include alpha privacy and copyright notices.");
   assert(/Acceptable Use Policy/.test(legalHtml) && /AI Processing Notice/.test(legalHtml) && /Subprocessor List/.test(legalHtml), "Legal center must include AUP, AI, and subprocessors.");
   assert(/legalFooter/.test(appJs) && /legal\.html#privacy/.test(appJs), "Public app must link to legal/privacy pages.");
@@ -145,6 +158,16 @@ async function runStaticProductGuards() {
   assert(/data-export-vault/.test(appJs) && /exportVaultData/.test(appJs), "Profile must expose export my data.");
   assert(/data-clear-vault/.test(appJs) && /clearLocalVaultData/.test(appJs), "Profile must expose clear local Vault data.");
   assert(/data-delete-account/.test(appJs) && /openDeleteAccountDialog/.test(appJs), "Profile must expose delete account / request deletion.");
+  assert(/settings-page/.test(appJs) && /upload-plus-button/.test(appJs), "Settings page and upload plus button must exist.");
+  assert(/header-profile-button/.test(appJs) && /data-avatar-upload/.test(appJs) && /avatarUrl/.test(appJs), "Header profile button and avatar upload must exist.");
+  assert(!/sidebarStorageInline/.test(appJs) && !/sidebarFooter\(\)/.test(appJs), "Sidebar must not keep inline storage/profile footer.");
+  assert(/sidebar-upload-button/.test(appJs) && /data-vault-page-drop/.test(appJs) && /uploadImageFiles/.test(appJs), "Sidebar upload button and Vault page drag-drop upload must exist.");
+  assert(/settingsOverviewMarkup/.test(appJs) && /settings-overview-card/.test(await readFile("outputs/a-plus-vault/modules/user-dashboard.js", "utf8")), "Settings must include user overview dashboard.");
+  assert(/data-unlink-proj-col/.test(appJs) && /unlinkCollectionFromProject/.test(appJs), "Project page must unlink collections without deleting them.");
+  assert(/data-unlink-proj-board/.test(appJs) && /unlinkBoardFromProject/.test(appJs), "Project page must remove moodboards from project scope.");
+  assert(/project-collection-picker/.test(appJs) && /project-moodboard-picker/.test(appJs), "Project add dialogs must support picker forms.");
+  assert(/data-dropproject/.test(appJs) && /modules\/sidebar-dnd\.js/.test(appJs), "Sidebar must support dragging collections onto projects.");
+  assert(/metadata\.collectionIds/.test(supabaseAdapterJs), "Supabase adapter must sync project collection links in metadata.");
   await access("api/vault/health.js");
   await access("api/vault/capture.js");
   await access("api/vault/capture-file.js");

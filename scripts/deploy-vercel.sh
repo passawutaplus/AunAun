@@ -132,7 +132,10 @@ case "$APP_KEY" in
     fi
     ;;
   vault)
-    # Vault alpha uses the aplus-vault Vercel project (no separate custom domain yet).
-    deploy_demo Vault-Code
+    if [[ "$MODE" == "demo" ]]; then
+      deploy_demo Vault-Code
+    else
+      (cd Vault-Code && npm run deploy:production)
+    fi
     ;;
 esac

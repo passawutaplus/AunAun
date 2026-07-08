@@ -24,7 +24,8 @@ alwaysApply: true
 # หรือ
 cd Anthem-Code && npm run deploy:demo   # 1px
 cd Solo-Code && npm run deploy:demo     # solo
-cd Vault-Code && npm run deploy:demo    # vault (alpha demo)
+cd Vault-Code && npm run deploy:demo    # vault demo (aplus-vault-demo)
+cd Vault-Code && npm run deploy:production  # vault production (aplus-vault)
 ```
 
 หลัง deploy สำเร็จ ส่งให้ผู้ใช้:
@@ -47,12 +48,14 @@ cd Vault-Code && npm run deploy:demo    # vault (alpha demo)
 Production URLs:
 - Aplus1 → https://aplus1.app
 - solo → https://solofreelancer.com
-- vault (alpha) → https://aplus-vault.vercel.app
+- vault demo → https://aplus-vault-demo.vercel.app
+- vault production → https://aplus-vault.vercel.app
 
 หลัง production deploy แนะนำ smoke test:
 ```bash
 BASE_URL=https://aplus1.app Anthem-Code/scripts/smoke-public.sh
 BASE_URL=https://solofreelancer.com Solo-Code/scripts/smoke-public.sh
+BASE_URL=https://aplus-vault-demo.vercel.app Vault-Code/scripts/smoke-public.sh
 BASE_URL=https://aplus-vault.vercel.app Vault-Code/scripts/smoke-public.sh
 ```
 

@@ -10,7 +10,6 @@ BASE_URL="${BASE_URL:-https://aplus-vault.vercel.app}"
 CORE_PATHS=(
   "/"
   "/vault"
-  "/demo"
   "/legal"
 )
 
@@ -54,21 +53,21 @@ check_noindex() {
   echo "OK   ${path} noindex meta"
 }
 
-check_demo_content() {
-  local url="${BASE_URL}/demo"
+check_demo_redirect() {
   local code
-  code=$(curl -sS -o "$body_file" -w "%{http_code}" -L --max-time 30 "$url" || echo "000")
-  if [[ "$code" == "000" ]] || [[ "$code" -ge 400 ]]; then
-    echo "FAIL /demo content check status=${code}"
+  code=$(curl -sS -o /dev/null -w "%{http_code}" -L --max-time 30 "${BASE_URL}/demo" || echo "000")
+  if [[ "$code" != "200" ]]; then
+    echo "FAIL /demo redirect status=${code}"
     fail=1
     return
   fi
-  if ! grep -q 'Private Alpha Demo Guide' "$body_file"; then
-    echo "FAIL /demo missing Private Alpha Demo Guide"
+  code=$(curl -sS -o "$body_file" -w "%{http_code}" --max-time 30 "${BASE_URL}/demo" || echo "000")
+  if ! grep -qi 'A+ Vault' "$body_file" || grep -q 'Private Alpha Demo Guide' "$body_file"; then
+    echo "FAIL /demo should redirect to vault workspace"
     fail=1
     return
   fi
-  echo "OK   /demo content"
+  echo "OK   /demo redirects to vault"
 }
 
 check_legal_extension_privacy() {
@@ -202,7 +201,7 @@ for path in "${CORE_PATHS[@]}"; do
   check_path "$path"
 done
 
-check_demo_content
+check_demo_redirect
 check_legal_extension_privacy
 check_health
 
@@ -212,7 +211,7 @@ check_sitemap_xml
 check_llms_txt
 
 echo "==> noindex checks (private alpha app)"
-for path in "/" "/demo"; do
+for path in "/" ; do
   check_noindex "$path"
 done
 

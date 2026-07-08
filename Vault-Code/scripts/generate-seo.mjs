@@ -12,15 +12,11 @@ import {
   buildSitemapUrls,
   buildSitemapXml,
 } from "./sitemap-lib.mjs";
+import { resolveVaultSiteUrl } from "./vault-site-urls.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = join(root, "outputs", "a-plus-vault");
-const base = (
-  process.env.VAULT_SITE_URL ||
-  process.env.SITE_URL ||
-  process.env.VITE_SITE_URL ||
-  "https://aplus-vault.vercel.app"
-).replace(/\/$/, "");
+const base = resolveVaultSiteUrl();
 
 writeFileSync(join(outDir, "robots.txt"), buildRobotsTxt(base), "utf8");
 writeFileSync(join(outDir, "sitemap.xml"), buildSitemapXml(base), "utf8");

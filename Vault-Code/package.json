@@ -4,14 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npm run sitemap:gen && node build.mjs",
-    "check": "npm run sitemap:gen && node scripts/qa.mjs",
+    "build": "node scripts/inject-build-config.mjs && npm run sitemap:gen && node build.mjs",
+    "check": "node scripts/inject-build-config.mjs && npm run sitemap:gen && node scripts/qa.mjs",
     "alpha:smoke": "node scripts/alpha-smoke.mjs",
     "smoke:public": "bash scripts/smoke-public.sh",
     "smoke:api": "node scripts/prod-api-smoke.mjs",
     "sitemap:gen": "node scripts/generate-seo.mjs",
     "test": "node --test scripts/__tests__/*.test.mjs",
     "test:gate": "npm run check && npm run test && npm run alpha:smoke && npm run build",
-    "deploy:demo": "bash scripts/deploy-demo-vercel.sh"
+    "deploy:demo": "bash scripts/deploy-demo-vercel.sh",
+    "deploy:production": "bash scripts/deploy-production-vercel.sh"
   }
 }

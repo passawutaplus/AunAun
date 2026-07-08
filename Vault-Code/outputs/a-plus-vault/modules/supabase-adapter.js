@@ -226,7 +226,7 @@ export function createVaultRemote(config = {}) {
         name: collection.name,
         system: false,
         client_key: collection.id,
-        metadata: { localId: collection.id },
+        metadata: { localId: collection.id, parentId: collection.parentId || null, sortOrder: Number(collection.sortOrder) || 0 },
       }),
     });
     const saved = rows[0] || null;
@@ -248,7 +248,14 @@ export function createVaultRemote(config = {}) {
         "content-type": "application/json",
         prefer: "return=representation",
       }),
-      body: JSON.stringify({ name: collection.name }),
+      body: JSON.stringify({
+        name: collection.name,
+        metadata: {
+          localId: collection.id,
+          parentId: collection.parentId || null,
+          sortOrder: Number(collection.sortOrder) || 0,
+        },
+      }),
     });
     const saved = rows[0] || null;
     if (saved) {
@@ -368,8 +375,12 @@ export function createVaultRemote(config = {}) {
       const projectPayload = {
         user_id: userId,
         name: project.name || "Untitled project",
+        description: project.description || "",
         client_key: project.id,
-        metadata: {},
+        metadata: {
+          localId: project.id,
+          collectionIds: Array.isArray(project.collectionIds) ? project.collectionIds.filter(Boolean) : [],
+        },
         updated_at: new Date().toISOString(),
       };
       let projectRemoteId = project.remoteId && isUuid(project.remoteId) ? project.remoteId : "";
@@ -377,7 +388,7 @@ export function createVaultRemote(config = {}) {
         await request(`/rest/v1/vault_projects?id=eq.${projectRemoteId}`, {
           method: "PATCH",
           headers: headers({ "content-type": "application/json", prefer: "return=representation" }),
-          body: JSON.stringify({ name: projectPayload.name, updated_at: projectPayload.updated_at }),
+          body: JSON.stringify({ name: projectPayload.name, description: projectPayload.description, metadata: projectPayload.metadata, updated_at: projectPayload.updated_at }),
         });
       } else {
         const rows = await request("/rest/v1/vault_projects", {
@@ -477,11 +488,14 @@ function remoteItemToLocal(row, linkedCollectionIds) {
 }
 
 function remoteCollectionToLocal(row) {
+  const metadata = row.metadata && typeof row.metadata === "object" ? row.metadata : {};
   return {
     id: row.client_key || row.id,
     remoteId: row.id,
     name: row.name,
     system: !!row.system,
+    parentId: metadata.parentId ? String(metadata.parentId) : "",
+    sortOrder: Number(metadata.sortOrder) || 0,
   };
 }
 
@@ -494,10 +508,13 @@ function collectionRemoteId(id, item) {
 }
 
 function remoteProjectToLocal(row) {
+  const metadata = row.metadata && typeof row.metadata === "object" ? row.metadata : {};
   return {
     id: row.client_key || row.id,
     remoteId: row.id,
     name: row.name,
+    description: row.description || "",
+    collectionIds: Array.isArray(metadata.collectionIds) ? metadata.collectionIds.filter(Boolean).map(String) : [],
     boards: (row.vault_boards || []).map(board => ({
       id: board.client_key || board.id,
       remoteId: board.id,
