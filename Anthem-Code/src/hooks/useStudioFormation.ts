@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { assertStudioIdentityAvailable } from "@/hooks/useStudioIdentityAvailability";
 import { toast } from "sonner";
 
 export interface FormationRequest {
@@ -105,6 +106,7 @@ export const useCreateFormation = () => {
       availableForWork?: boolean;
     }) => {
       if (!user) throw new Error("not authed");
+      await assertStudioIdentityAvailable(input.name, input.slug);
       const adv = {
         proposed_logo_url: input.logoUrl ?? "",
         proposed_cover_url: input.coverUrl ?? "",
@@ -169,7 +171,14 @@ export const useCreateFormation = () => {
       qc.invalidateQueries({ queryKey: ["my-studios"] });
       toast.success("ส่งคำเชิญร่วม Studio เรียบร้อย");
     },
-    onError: (e: any) => toast.error(e.message ?? "สร้าง Studio ไม่สำเร็จ"),
+    onError: (e: any) => {
+      const msg = `${e?.message ?? ""}`;
+      if (msg.includes("23505") || /duplicate/i.test(msg)) {
+        toast.error(/slug/i.test(msg) ? "Slug นี้ถูกใช้แล้ว — ลอง slug อื่น" : "ชื่อหรือ Slug นี้ถูกใช้แล้ว");
+        return;
+      }
+      toast.error(msg || "สร้าง Studio ไม่สำเร็จ");
+    },
   });
 };
 

@@ -55,6 +55,8 @@ const CHAT_PANEL_HINT_KEY = "aplus1-chat-panel-hint-dismissed";
 interface Props {
   conv: Conversation;
   messages: Message[];
+  messagesLoading?: boolean;
+  messagesError?: boolean;
   showBack?: boolean;
   onBack?: () => void;
   onOpenPartnerPanel?: () => void;
@@ -66,6 +68,8 @@ const TIER_BADGE_TIERS = new Set<PlanId>(["pro", "pro_plus", "inhouse"]);
 const ChatThreadView = ({
   conv,
   messages,
+  messagesLoading = false,
+  messagesError = false,
   showBack,
   onBack,
   onOpenPartnerPanel,
@@ -75,7 +79,9 @@ const ChatThreadView = ({
   const { user } = useAuth();
   const qc = useQueryClient();
   const endRef = useRef<HTMLDivElement>(null);
+  const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const unsend = useUnsendMessage();
   const { tier } = useSubscription();
 
@@ -132,6 +138,40 @@ const ChatThreadView = ({
   });
 
   const visibleMessages = messages;
+
+  const senderIds = useMemo(
+    () => [...new Set(visibleMessages.map((m) => m.sender_id).filter(Boolean))],
+    [visibleMessages],
+  );
+
+  const { data: senderProfiles = [] } = useQuery({
+    queryKey: ["chat-senders", conv.id, senderIds.join(",")],
+    enabled: senderIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, username")
+        .in("user_id", senderIds);
+      return data ?? [];
+    },
+  });
+
+  const getSenderLabel = useMemo(() => {
+    const map = new Map<string, string>();
+    senderProfiles.forEach((p) => {
+      map.set(p.user_id, p.display_name || p.username || "ผู้ใช้");
+    });
+    if (user?.id) map.set(user.id, "คุณ");
+    return (senderId: string) => map.get(senderId) ?? (senderId === user?.id ? "คุณ" : "ผู้ใช้");
+  }, [senderProfiles, user?.id]);
+
+  const scrollToMessage = (messageId: string) => {
+    const el = messageRefs.current.get(messageId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightId(messageId);
+    window.setTimeout(() => setHighlightId((id) => (id === messageId ? null : id)), 1500);
+  };
 
   useEffect(() => {
     if (!user || !conv.id || messages.length === 0) return;
@@ -412,7 +452,15 @@ const ChatThreadView = ({
       )}
 
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-2 min-h-0">
-        {grouped.length === 0 && (
+        {messagesLoading && (
+          <div className="text-center text-sm text-muted-foreground py-12">กำลังโหลดข้อความ…</div>
+        )}
+        {messagesError && !messagesLoading && (
+          <div className="text-center text-sm text-muted-foreground py-12">
+            โหลดข้อความไม่สำเร็จ — ลองรีเฟรชหน้า
+          </div>
+        )}
+        {!messagesLoading && !messagesError && grouped.length === 0 && (
           <div className="text-center text-sm text-muted-foreground py-12">
             {isGroup ? "เริ่มแชทกลุ่มได้เลย 👥" : isHire ? "เริ่มบทสนทนากับลูกค้าได้เลย ✨" : "ทักทายเพื่อนคอลแลปได้เลย 👋"}
           </div>
@@ -421,14 +469,24 @@ const ChatThreadView = ({
           it.type === "date" ? (
             <DateSeparator key={`d-${idx}`} date={it.date} />
           ) : (
-            <MessageBubble
+            <div
               key={it.m.id}
-              message={it.m}
-              mine={it.m.sender_id === user?.id}
-              kind={kind}
-              onReply={setReplyTo}
-              onUnsend={handleUnsend}
-            />
+              ref={(el) => {
+                if (el) messageRefs.current.set(it.m.id, el);
+                else messageRefs.current.delete(it.m.id);
+              }}
+            >
+              <MessageBubble
+                message={it.m}
+                mine={it.m.sender_id === user?.id}
+                kind={kind}
+                onReply={setReplyTo}
+                onUnsend={handleUnsend}
+                getSenderLabel={getSenderLabel}
+                onScrollToMessage={scrollToMessage}
+                highlight={highlightId === it.m.id}
+              />
+            </div>
           ),
         )}
         <div ref={endRef} />
@@ -440,6 +498,7 @@ const ChatThreadView = ({
         userId={user?.id}
         quickReplies={quickReplies}
         replyTo={replyTo}
+        replyToSenderName={replyTo ? getSenderLabel(replyTo.sender_id) : undefined}
         onClearReply={() => setReplyTo(null)}
       />
 

@@ -1,14 +1,16 @@
 import BriefcaseIcon from "../components/icons/BriefcaseIcon";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Camera, Save, MapPin, LogOut, Shield } from "lucide-react";
+import { User, Camera, Save, MapPin, LogOut, Shield, CheckCircle2, Loader2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, useUpdateProfile, useUpdateProfileMedia } from "@/hooks/useProfile";
+import { useUsernameAvailability, normalizeUsername } from "@/hooks/useUsernameAvailability";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { profileSchema } from "@/lib/validators";
+import { isReservedPublicHandle } from "@/lib/reservedHandles";
 import { z } from "zod";
 import { HttpErrorPage } from "@/components/HttpErrorPage";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,9 +19,11 @@ import { TierMembershipCard } from "@/components/tier/TierMembershipCard";
 import { StorageUsageSection } from "@/components/settings/StorageUsageSection";
 import { AiUsageSettingsSection } from "@/components/settings/AiUsageSettingsSection";
 import { SettingsPreferencesSection } from "@/components/settings/SettingsPreferencesSection";
+import { ChangePasswordSection } from "@/components/settings/ChangePasswordSection";
 import { LineNotificationSection } from "@/components/settings/LineNotificationSection";
 import { EmailNotificationSection } from "@/components/settings/EmailNotificationSection";
 import { useSubscription } from "@/core/subscription";
+import { cn } from "@/lib/utils";
 
 const settingsFormSchema = profileSchema.pick({
   displayName: true,
@@ -67,6 +71,46 @@ const SettingsPage = () => {
   };
 
   const [form, setForm] = useState<SettingsFormInput>(empty);
+  const [debouncedUsername, setDebouncedUsername] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedUsername(normalizeUsername(form.username)), 400);
+    return () => window.clearTimeout(timer);
+  }, [form.username]);
+
+  const normalizedUsername = normalizeUsername(form.username);
+  const usernameUnchanged = normalizedUsername === normalizeUsername(profile?.username ?? "");
+  const {
+    data: usernameAvailability,
+    isFetching: usernameChecking,
+  } = useUsernameAvailability(debouncedUsername, user?.id);
+  const usernameReserved = normalizedUsername.length >= 2 && isReservedPublicHandle(normalizedUsername);
+  const usernameTaken =
+    !usernameUnchanged &&
+    !!usernameAvailability?.taken &&
+    !usernameAvailability?.reserved;
+  const usernamePending =
+    normalizedUsername.length >= 2 &&
+    !usernameUnchanged &&
+    debouncedUsername !== normalizedUsername;
+  const usernameInvalid = normalizedUsername.length > 0 && !/^[a-z0-9_.]+$/.test(normalizedUsername);
+  const canSave = useMemo(() => {
+    if (usernameUnchanged) return true;
+    return !(
+      usernameInvalid ||
+      usernameReserved ||
+      usernameTaken ||
+      usernamePending ||
+      usernameChecking
+    );
+  }, [
+    usernameUnchanged,
+    usernameInvalid,
+    usernameReserved,
+    usernameTaken,
+    usernamePending,
+    usernameChecking,
+  ]);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?redirect=/settings");
@@ -113,6 +157,7 @@ const SettingsPage = () => {
       toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
       return;
     }
+    if (!canSave) return;
     try {
       await updateMut.mutateAsync(parsed.data);
       toast.success("บันทึกสำเร็จ", { description: "ข้อมูลโปรไฟล์ของคุณถูกอัปเดตแล้ว" });
@@ -210,11 +255,65 @@ const SettingsPage = () => {
         <section className="rounded-2xl glass-panel p-6 space-y-5">
           <SectionTitle icon={User} title="ข้อมูลส่วนตัว" />
           <Field label="ชื่อที่แสดง" value={form.displayName} onChange={(v) => update("displayName", v)} />
-          <Field label="ชื่อผู้ใช้ (username)" value={form.username} onChange={(v) => update("username", v)} prefix="@" />
+          <div>
+            <label htmlFor="settings-username" className="text-sm font-medium text-foreground">
+              ชื่อผู้ใช้ (username)
+            </label>
+            <div
+              className={cn(
+                "mt-1 flex items-center rounded-xl bg-secondary border border-border focus-within:ring-2 focus-within:ring-primary/40",
+                (usernameTaken || usernameReserved || usernameInvalid) && "border-destructive focus-within:ring-destructive/40",
+              )}
+            >
+              <span className="pl-3 text-muted-foreground text-sm">@</span>
+              <input
+                id="settings-username"
+                type="text"
+                value={form.username}
+                onChange={(e) => update("username", e.target.value.toLowerCase())}
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              />
+            </div>
+            {normalizedUsername.length >= 2 && !usernameUnchanged && (
+              <p
+                className={cn(
+                  "mt-1 text-xs flex items-center gap-1",
+                  usernamePending || (usernameChecking && debouncedUsername === normalizedUsername)
+                    ? "text-muted-foreground"
+                    : usernameInvalid
+                      ? "text-destructive"
+                      : usernameReserved
+                        ? "text-destructive"
+                        : usernameTaken
+                          ? "text-destructive"
+                          : "text-emerald-600 dark:text-emerald-400",
+                )}
+              >
+                {usernamePending || (usernameChecking && debouncedUsername === normalizedUsername) ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" /> กำลังตรวจสอบชื่อผู้ใช้…
+                  </>
+                ) : usernameInvalid ? (
+                  "ใช้ได้เฉพาะ a-z, 0-9, _ และ ."
+                ) : usernameReserved ? (
+                  "ชื่อผู้ใช้นี้สงวนไว้ — ลองชื่ออื่น"
+                ) : usernameTaken ? (
+                  "ชื่อผู้ใช้นี้ถูกใช้แล้ว — ลองชื่ออื่น"
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3 h-3" /> ชื่อผู้ใช้นี้ใช้ได้
+                  </>
+                )}
+              </p>
+            )}
+          </div>
           {form.username.trim() && (
             <p className="text-xs text-muted-foreground -mt-2">
               ลิงก์โปรไฟล์สาธารณะ:{" "}
-              <span className="text-primary font-medium">/@{form.username.trim().toLowerCase()}</span>
+              <span className="text-primary font-medium">/@{normalizedUsername || form.username.trim().toLowerCase()}</span>
             </p>
           )}
           <Field label="ตำแหน่ง / สาขา" value={form.role ?? ""} onChange={(v) => update("role", v)} icon={BriefcaseIcon} />
@@ -234,6 +333,8 @@ const SettingsPage = () => {
         </section>
 
         <SettingsPreferencesSection />
+
+        {user && <ChangePasswordSection user={user} />}
 
         {isAdmin && (
           <section className="rounded-2xl glass-panel p-6 space-y-3">
@@ -262,7 +363,7 @@ const SettingsPage = () => {
 
 
         <div className="sticky bottom-4 flex justify-end">
-          <Button type="submit" size="lg" disabled={updateMut.isPending}
+          <Button type="submit" size="lg" disabled={updateMut.isPending || !canSave}
             className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-lg px-8">
             <Save className="w-4 h-4 mr-1" /> {updateMut.isPending ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
           </Button>

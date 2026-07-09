@@ -2,14 +2,10 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { BadgeCheck, ChevronDown, ExternalLink, ImageIcon } from "lucide-react";
+import { useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -54,6 +50,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose }: Props)
 
   const { followers, following } = useFollowState(otherId);
   const [metaOpen, setMetaOpen] = useState(false);
+  const reducedMotion = useReducedMotion();
 
   const attachments = useMemo(
     () =>
@@ -81,12 +78,12 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose }: Props)
   return (
     <aside
       className={cn(
-        "flex flex-col h-full border-l border-border bg-background overflow-hidden",
+        "relative flex flex-col h-full border-l border-border bg-background overflow-hidden",
         className,
       )}
     >
-      <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
-        <div className="p-6 text-center border-b border-border shrink-0">
+      <div className="shrink-0 overflow-y-auto max-h-[42%] border-b border-border bg-background">
+        <div className="p-6 text-center">
           {isLoading ? (
             <div className="py-8 text-sm text-muted-foreground">กำลังโหลด…</div>
           ) : (
@@ -155,26 +152,28 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose }: Props)
             </>
           )}
         </div>
+      </div>
 
-        <div className="flex-1 min-h-0 flex flex-col border-t border-border">
-          <Tabs defaultValue="mine" className="flex flex-col flex-1 min-h-0">
-            <TabsList className="w-full rounded-none border-b border-border bg-transparent h-auto p-0 shrink-0">
+      <div className="relative flex-1 min-h-0 flex flex-col">
+        <div className={cn("flex-1 min-h-0 overflow-y-auto bg-background", metaOpen && "overflow-hidden")}>
+          <Tabs defaultValue="mine" className="bg-background">
+            <TabsList className="sticky top-0 z-10 w-full rounded-none border-b border-border bg-background h-auto p-0 shadow-[0_1px_0_0_hsl(var(--border))]">
               <TabsTrigger
                 value="mine"
-                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-2.5 text-xs"
+                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:shadow-none py-2.5 text-xs"
               >
                 ผลงานของฉัน
               </TabsTrigger>
               {otherId && (
                 <TabsTrigger
                   value="partner"
-                  className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-2.5 text-xs"
+                  className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:shadow-none py-2.5 text-xs"
                 >
                   ผลงานคู่แชท
                 </TabsTrigger>
               )}
             </TabsList>
-            <TabsContent value="mine" className="flex-1 overflow-y-auto mt-0 p-3">
+            <TabsContent value="mine" className="mt-0 p-3">
               {user?.id && (
                 <ChatPortfolioSection
                   userId={user.id}
@@ -185,7 +184,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose }: Props)
               )}
             </TabsContent>
             {otherId && (
-              <TabsContent value="partner" className="flex-1 overflow-y-auto mt-0 p-3">
+              <TabsContent value="partner" className="mt-0 p-3">
                 <ChatPortfolioSection
                   userId={otherId}
                   label={partnerLabel}
@@ -197,14 +196,31 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose }: Props)
           </Tabs>
         </div>
 
-        <Collapsible open={metaOpen} onOpenChange={setMetaOpen} className="border-t border-border shrink-0">
-          <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-2.5 text-xs font-medium text-muted-foreground hover:bg-muted/50">
+        <div
+          className={cn(
+            "absolute inset-0 z-20 flex flex-col bg-background shadow-[0_-10px_30px_rgba(0,0,0,0.08)]",
+            !reducedMotion && "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+            metaOpen ? "translate-y-0" : "translate-y-full pointer-events-none",
+          )}
+        >
+          <button
+            type="button"
+            aria-expanded={metaOpen}
+            onClick={() => setMetaOpen(false)}
+            className="flex shrink-0 items-center justify-between w-full px-4 py-2.5 text-xs font-medium text-foreground bg-background border-b border-border hover:bg-muted/40 transition-colors"
+          >
             ข้อมูลงาน / มีเดีย
-            <ChevronDown className={cn("w-4 h-4 transition-transform", metaOpen && "rotate-180")} />
-          </CollapsibleTrigger>
-          <CollapsibleContent>
+            <ChevronDown
+              className={cn(
+                "w-4 h-4 text-muted-foreground rotate-180",
+                !reducedMotion && "transition-transform duration-300",
+              )}
+            />
+          </button>
+
+          <div className="flex-1 min-h-0 overflow-y-auto bg-background">
             <ChatMetaPanel conversation={conversation} embedded />
-            <div className="p-4 border-t border-border">
+            <div className="p-4 border-t border-border bg-background">
               {attachments.length === 0 ? (
                 <div className="text-center py-6 text-muted-foreground">
                   <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-40" />
@@ -226,9 +242,21 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose }: Props)
                 </div>
               )}
             </div>
-          </CollapsibleContent>
-        </Collapsible>
+          </div>
+        </div>
       </div>
+
+      {!metaOpen && (
+        <button
+          type="button"
+          aria-expanded={false}
+          onClick={() => setMetaOpen(true)}
+          className="flex shrink-0 items-center justify-between w-full px-4 py-2.5 text-xs font-medium text-foreground bg-background border-t border-border hover:bg-muted/40 transition-colors"
+        >
+          ข้อมูลงาน / มีเดีย
+          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+        </button>
+      )}
     </aside>
   );
 };

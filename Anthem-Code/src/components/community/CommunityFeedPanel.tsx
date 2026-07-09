@@ -20,10 +20,9 @@ import {
   mergeCommunityFeedShowcase,
   shouldSupplementCommunityFeed,
 } from "@/lib/communityFeedShowcase";
-import { cn } from "@/lib/utils";
 import type { CommunityFeedFilter } from "@/data/communityTopics";
 import { CommunityTagFeedBanner } from "@/components/community/CommunityTagFeedBanner";
-import { FEED_AREA_MASONRY_SIDEBAR_COLUMNS, FEED_MASONRY_GAP } from "@/lib/feedMasonry";
+import { CommunityAreaGrid } from "@/components/community/CommunityAreaGrid";
 
 type CommunityFeedPanelFilter = CommunityFeedFilter & {
   tag?: string;
@@ -179,17 +178,16 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Pr
           action={postButton}
         />
       ) : (
-        <div className={cn(FEED_AREA_MASONRY_SIDEBAR_COLUMNS, FEED_MASONRY_GAP)}>
+        <CommunityAreaGrid>
           {visiblePosts.map((post) => (
-            <div key={post.id} className="break-inside-avoid mb-2 sm:mb-3">
-              <CommunityPostGridCard
-                post={post}
-                boosted={boostedPosts.has(post.id)}
-                boostId={boostPostMap.get(post.id)}
-              />
-            </div>
+            <CommunityPostGridCard
+              key={post.id}
+              post={post}
+              boosted={boostedPosts.has(post.id)}
+              boostId={boostPostMap.get(post.id)}
+            />
           ))}
-        </div>
+        </CommunityAreaGrid>
       )}
       {hasNextPage && (
         <div ref={loadMoreRef} className="flex min-h-14 items-center justify-center pt-2">

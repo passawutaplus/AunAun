@@ -43,3 +43,13 @@ export function isSchemaMismatchError(error: { message?: string; code?: string }
 export function isBenignQueryError(error: { message?: string; code?: string } | null | undefined): boolean {
   return isOptionalQueryError(error) || isSchemaMismatchError(error);
 }
+
+/** PostgREST errors are plain objects — not instanceof Error. */
+export function getSupabaseErrorMessage(e: unknown, fallback = "เกิดข้อผิดพลาด — ลองใหม่อีกครั้ง"): string {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === "object" && "message" in e) {
+    const msg = (e as { message: unknown }).message;
+    if (typeof msg === "string" && msg.trim()) return msg;
+  }
+  return typeof e === "string" && e.trim() ? e : fallback;
+}

@@ -291,17 +291,22 @@ const ChatSidebar = ({
                     : active
                       ? "bg-foreground text-background border-transparent"
                       : "border-border text-foreground";
+            const iconOnly = key !== "all";
             return (
               <button
                 key={key}
                 type="button"
                 onClick={() => onTabChange(key)}
+                aria-label={label}
+                title={label}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-2.5 min-h-11 text-xs font-medium rounded-full border transition-colors shrink-0",
+                  "inline-flex items-center justify-center gap-1.5 py-2.5 min-h-11 text-xs font-medium rounded-full border transition-colors shrink-0",
+                  iconOnly ? "px-2.5" : "px-3",
                   accent,
                 )}
               >
-                <Icon className="w-3.5 h-3.5" /> {label}
+                <Icon className="w-3.5 h-3.5" />
+                {!iconOnly && label}
               </button>
             );
           })}

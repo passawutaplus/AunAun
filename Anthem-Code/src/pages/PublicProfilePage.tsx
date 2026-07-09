@@ -7,7 +7,7 @@ import PageLoader from "@/components/ui/PageLoader";
 import EmptyState from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProfileSectionTabs } from "@/components/profile/ProfileSectionTabs";
 import { supabase } from "@/integrations/supabase/client";
 import FollowButton from "@/components/FollowButton";
 import SupportButton from "@/components/gifting/SupportButton";
@@ -51,6 +51,7 @@ const PublicProfilePage = () => {
   const { user } = useAuth();
   const [hireOpen, setHireOpen] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("works");
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["public-profile", slug],
@@ -453,43 +454,43 @@ const PublicProfilePage = () => {
 
       {/* Tabs */}
       <div className="max-w-5xl mx-auto px-3 sm:px-4 pb-16">
-        <Tabs defaultValue="works" className="mt-4 sm:mt-6">
-          <div className="px-3 sm:px-4 flex justify-center">
-            <TabsList className="glass-chip rounded-2xl sm:rounded-full p-1.5 h-auto gap-1 flex flex-col w-full sm:inline-flex sm:flex-row sm:flex-nowrap sm:w-max">
-              <div className="grid grid-cols-2 gap-1 w-full sm:contents">
-                <TabsTrigger value="works" className="rounded-full text-sm px-2.5 sm:px-4 py-2 font-normal data-[state=active]:bg-gradient-brand data-[state=active]:text-white data-[state=active]:font-medium">
-                  ผลงาน ({portfolioProjects.length})
-                </TabsTrigger>
-                <TabsTrigger value="posts" className="rounded-full text-sm px-2.5 sm:px-4 py-2 font-normal data-[state=active]:bg-gradient-brand data-[state=active]:text-white data-[state=active]:font-medium">
-                  Area ({communityPosts.length})
-                </TabsTrigger>
-              </div>
-              <div className="grid grid-cols-3 gap-1 w-full sm:contents">
-                <TabsTrigger value="drill" className="rounded-full text-sm px-2 sm:px-4 py-2 font-normal data-[state=active]:bg-gradient-brand data-[state=active]:text-white data-[state=active]:font-medium">
+        <ProfileSectionTabs
+          className="mt-4 sm:mt-6"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          tabs={[
+            { value: "works", label: `ผลงาน (${portfolioProjects.length})` },
+            { value: "posts", label: `Area (${communityPosts.length})` },
+            {
+              value: "drill",
+              label: (
+                <>
                   <span className="sm:hidden">Drill ({drillProjects.length})</span>
                   <span className="hidden sm:inline">Design Drill ({drillProjects.length})</span>
-                </TabsTrigger>
-                <TabsTrigger value="collections" className="rounded-full text-sm px-2 sm:px-4 py-2 font-normal data-[state=active]:bg-gradient-brand data-[state=active]:text-white data-[state=active]:font-medium">
+                </>
+              ),
+            },
+            {
+              value: "collections",
+              label: (
+                <>
                   <span className="sm:hidden">คอลฯ ({collections.length})</span>
                   <span className="hidden sm:inline">คอลเลกชัน ({collections.length})</span>
-                </TabsTrigger>
-                <TabsTrigger value="about" className="rounded-full text-sm px-2.5 sm:px-4 py-2 font-normal data-[state=active]:bg-gradient-brand data-[state=active]:text-white data-[state=active]:font-medium">
-                  เกี่ยวกับ
-                </TabsTrigger>
-              </div>
-            </TabsList>
-          </div>
-
-          <TabsContent value="works" className="mt-6">
-            {portfolioProjects.length === 0 ? (
+                </>
+              ),
+            },
+            { value: "about", label: "เกี่ยวกับ" },
+          ]}
+        >
+          {activeTab === "works" &&
+            (portfolioProjects.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground glass-panel rounded-2xl">ยังไม่มีผลงานที่เผยแพร่</div>
             ) : (
               <PortfolioGrid projects={portfolioProjects as any} />
-            )}
-          </TabsContent>
+            ))}
 
-          <TabsContent value="posts" className="mt-6">
-            {communityPosts.length === 0 ? (
+          {activeTab === "posts" &&
+            (communityPosts.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground glass-panel rounded-2xl flex flex-col items-center gap-2">
                 <MessageCircle className="w-8 h-8 opacity-50" />
                 ยังไม่มีโพสต์ใน Area
@@ -500,19 +501,17 @@ const PublicProfilePage = () => {
                   <CommunityPostGridCard key={post.id} post={post} />
                 ))}
               </div>
-            )}
-          </TabsContent>
+            ))}
 
-          <TabsContent value="drill" className="mt-6">
-            {drillProjects.length === 0 ? (
+          {activeTab === "drill" &&
+            (drillProjects.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground glass-panel rounded-2xl">ยังไม่มีผลงาน Design Drill</div>
             ) : (
               <PortfolioGrid projects={drillProjects as Parameters<typeof PortfolioGrid>[0]["projects"]} />
-            )}
-          </TabsContent>
+            ))}
 
-          <TabsContent value="collections" className="mt-6">
-            {collections.length === 0 ? (
+          {activeTab === "collections" &&
+            (collections.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground glass-panel rounded-2xl">ยังไม่มีคอลเลกชันสาธารณะ</div>
             ) : (
               <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
@@ -520,18 +519,19 @@ const PublicProfilePage = () => {
                   <CollectionCard key={c.id} collection={c} compact />
                 ))}
               </div>
-            )}
-          </TabsContent>
+            ))}
 
-          <TabsContent value="about" className="mt-6 space-y-6">
-            <div className="rounded-2xl glass-panel p-6 space-y-3">
-              <h3 className="font-medium text-foreground">เกี่ยวกับ {profile.display_name}</h3>
-              <p className="text-base text-foreground leading-7 whitespace-pre-wrap">
-                {profile.bio || "ยังไม่มีข้อมูลแนะนำตัว"}
-              </p>
+          {activeTab === "about" && (
+            <div className="space-y-6">
+              <div className="rounded-2xl glass-panel p-6 space-y-3">
+                <h3 className="font-medium text-foreground">เกี่ยวกับ {profile.display_name}</h3>
+                <p className="text-base text-foreground leading-7 whitespace-pre-wrap">
+                  {profile.bio || "ยังไม่มีข้อมูลแนะนำตัว"}
+                </p>
+              </div>
             </div>
-          </TabsContent>
-        </Tabs>
+          )}
+        </ProfileSectionTabs>
       </div>
 
       <HireDialog

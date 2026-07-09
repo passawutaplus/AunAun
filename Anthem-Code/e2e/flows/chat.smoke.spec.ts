@@ -34,7 +34,7 @@ test.describe("chat smoke @demo", () => {
     await signInDemo(page);
     await page.goto(`/chat/${DEMO_CONV_ID}`);
     await expect(page.getByPlaceholder(/พิมพ์ข้อความ/i)).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole("button", { name: "ส่งโปรไฟล์" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("button", { name: "แนบรูป" })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/UI App จองคิวสปา|ฉัตรชัย/i).first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("ผลงานของฉัน")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("โหลดแชทไม่สำเร็จ")).toHaveCount(0);

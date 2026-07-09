@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -105,6 +105,8 @@ const AuthDialog = () => {
 };
 
 const LoginForm = ({ onSwitch }: { onSwitch: () => void }) => {
+  const navigate = useNavigate();
+  const { close } = useAuthDialog();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -150,10 +152,19 @@ const LoginForm = ({ onSwitch }: { onSwitch: () => void }) => {
           value={password} onChange={(e) => setPassword(e.target.value)} invalid={!!err} required />
       </div>
       {err && <p className="text-xs text-destructive">{err}</p>}
-      <label className="flex items-center gap-2 cursor-pointer text-xs text-muted-foreground">
-        <Checkbox checked={remember} onCheckedChange={(v) => setRemember(v === true)} />
-        จดจำฉันไว้
-      </label>
+      <div className="flex items-center justify-between">
+        <label className="flex items-center gap-2 cursor-pointer text-xs text-muted-foreground">
+          <Checkbox checked={remember} onCheckedChange={(v) => setRemember(v === true)} />
+          จดจำฉันไว้
+        </label>
+        <button
+          type="button"
+          onClick={() => { close(); navigate("/auth/forgot"); }}
+          className="text-xs text-primary hover:underline"
+        >
+          ลืมรหัสผ่าน?
+        </button>
+      </div>
       <Button type="submit" disabled={busy}
         className="w-full h-11 rounded-xl text-base font-medium bg-gradient-brand text-white hover:opacity-95 border-0 shadow-md shadow-primary/20">
         {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />} เข้าสู่ระบบ
@@ -177,7 +188,7 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [consents, setConsents] = useState({ terms: false, privacy: false, age: false });
+  const [consents, setConsents] = useState({ terms: false, privacy: false });
   const [busy, setBusy] = useState(false);
   const [touched, setTouched] = useState(false);
 
@@ -191,8 +202,8 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
     if (!emailValid) { toast.error("กรุณากรอกอีเมลให้ถูกต้อง"); return; }
     if (!passValid) { toast.error("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"); return; }
     if (!confirmValid) { toast.error("รหัสผ่านยืนยันไม่ตรงกัน"); return; }
-    if (!consents.terms || !consents.privacy || !consents.age) {
-      toast.error("กรุณายืนยันข้อกำหนด ความเป็นส่วนตัว และอายุ/ผู้ปกครองก่อนสมัคร");
+    if (!consents.terms || !consents.privacy) {
+      toast.error("กรุณายืนยันข้อกำหนดและความเป็นส่วนตัวก่อนสมัคร");
       return;
     }
 
@@ -250,7 +261,7 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
 
       <LegalSignupConsents value={consents} onChange={setConsents} compact />
 
-      <Button type="submit" disabled={busy || !consents.terms || !consents.privacy || !consents.age}
+      <Button type="submit" disabled={busy || !consents.terms || !consents.privacy}
         className="w-full h-11 rounded-xl text-base font-medium bg-gradient-brand text-white hover:opacity-95 border-0 shadow-md shadow-primary/20">
         {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />} สมัครสมาชิก
       </Button>

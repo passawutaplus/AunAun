@@ -38,7 +38,7 @@ export default function UxChecklistPdfDownload({ variant = "button", className }
           <div className="space-y-0.5">
             <p className="font-semibold text-sm">เช็คลิส UX/UI (PDF)</p>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              พิมพ์หรือ tick ขณะทดสอบ — Journey, Tasks T1–T8, Features A–T
+              พิมพ์หรือ tick ขณะทดสอบ — Journey, Tasks T1–T11, Features A–W
             </p>
           </div>
         </div>

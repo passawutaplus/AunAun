@@ -5,6 +5,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import type { FeatureSection } from "@/data/uxResearchGuide";
+import ResearchScreenshotGallery from "@/components/research/ResearchScreenshotGallery";
 
 type Props = {
   sections: FeatureSection[];
@@ -32,6 +33,9 @@ const ResearchChecklistSection = ({ sections }: Props) => (
           <p className="text-xs text-muted-foreground">
             <span className="font-medium text-foreground">บัญชี:</span> {section.account}
           </p>
+          {section.screenshots?.length ? (
+            <ResearchScreenshotGallery screenshots={section.screenshots} />
+          ) : null}
           <ul className="space-y-1.5">
             {section.items.map((item) => (
               <li key={item.id} className="flex items-start gap-2">

@@ -33,7 +33,7 @@ const SCALE_QUESTIONS: { key: keyof UxResearchScores; label: string }[] = [
   { key: "px_system", label: "เข้าใจระบบ PX / Welcome PX" },
   { key: "hire_collab", label: "แยกจ้างงาน vs ขอคอลแลปได้ชัด" },
   { key: "mobile_ux", label: "Mobile UX ใช้งานสะดวก" },
-  { key: "overall", label: "โดยรวมประสบการณ์ทดสอบ demo" },
+  { key: "overall", label: "โดยรวมประสบการณ์ทดสอบ" },
 ];
 
 const DEVICE_OPTIONS = [
@@ -74,7 +74,7 @@ export default function UxResearchFeedbackForm({ onSuccess }: Props) {
   const personaOptions = useMemo(
     () => [
       { id: "guest", label: "Guest (ไม่ login)" },
-      ...RESEARCH_PERSONAS.map((p) => ({ id: p.id, label: `${p.label} (${p.email})` })),
+      ...RESEARCH_PERSONAS.map((p) => ({ id: p.id, label: `${p.label} — ${p.account}` })),
     ],
     [],
   );
@@ -167,7 +167,7 @@ export default function UxResearchFeedbackForm({ onSuccess }: Props) {
         <h2 className="font-semibold text-sm">สิ่งที่ทำแล้ว (ติ๊กเท่าที่ทำ)</h2>
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-            Moderated tasks T1–T8
+            Moderated tasks T1–T11
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {MODERATED_TASKS.map((task) => (
@@ -185,7 +185,7 @@ export default function UxResearchFeedbackForm({ onSuccess }: Props) {
         </div>
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-            Feature sections A–T
+            Feature sections A–W
           </p>
           <div className="grid gap-2 grid-cols-4 sm:grid-cols-6 md:grid-cols-8">
             {FEATURE_SECTIONS.map((section) => (

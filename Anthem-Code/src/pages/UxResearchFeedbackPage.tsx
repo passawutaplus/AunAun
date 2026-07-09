@@ -65,7 +65,7 @@ export default function UxResearchFeedbackPage() {
               </p>
               <ul className="text-muted-foreground list-disc pl-5 space-y-1">
                 <li>ใส่ชื่อที่ทีมรู้จัก — ไม่เก็บอีเมลหรือข้อมูลส่วนตัว</li>
-                <li>ติ๊ก T1–T8 และ section A–T ที่ไล่แล้ว</li>
+                <li>ติ๊ก T1–T11 และ section A–W ที่ไล่แล้ว</li>
                 <li>ให้คะแนน 1–5 ครบ 8 ข้อ</li>
               </ul>
             </section>

@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BRAND_NAME, BRAND_TAGLINE } from "@/lib/brandConfig";
-import { DEMO_WARNING_BULLETS } from "@/lib/copyConstants";
 import { isDemoMode } from "@/lib/demoMode";
 import SeoHead from "@/components/SeoHead";
 import ResearchChecklistSection from "@/components/research/ResearchChecklistSection";
@@ -28,16 +27,19 @@ import {
   PAGE_MAP,
   RESEARCH_INTRO,
   RESEARCH_PERSONAS,
+  RESEARCH_WARNINGS,
 } from "@/data/uxResearchGuide";
 
 export default function ResearchPage() {
   const demo = isDemoMode();
+  const warnings = demo ? RESEARCH_WARNINGS.demo : RESEARCH_WARNINGS.production;
+  const siteUrl = demo ? RESEARCH_INTRO.demoUrl : RESEARCH_INTRO.productionUrl;
 
   return (
     <div className="min-h-screen bg-background">
       <SeoHead
         title="คู่มือ UX Research"
-        description={`คู่มือทดสอบ ${BRAND_NAME} สำหรับ UX/UI researcher — เช็คลิสครบทุกระบบ, บัญชี demo, และ journey ผู้ใช้ใหม่`}
+        description={`คู่มือทดสอบ ${BRAND_NAME} สำหรับ UX/UI researcher — เช็คลิสครบทุกระบบ, journey ผู้ใช้ใหม่, Tasks T1–T11, Features A–W`}
         path="/research"
       />
 
@@ -62,21 +64,25 @@ export default function ResearchPage() {
             Quick {RESEARCH_INTRO.quickMinutes} นาที · Full {RESEARCH_INTRO.fullHours} ชม. · Viewports:{" "}
             {RESEARCH_INTRO.viewports.join(", ")}
           </p>
+          <p className="text-sm text-foreground/80">
+            ทดสอบที่{" "}
+            <a href={siteUrl} className="text-primary hover:underline font-medium">
+              {siteUrl}
+            </a>
+            {demo ? " (โหมด demo)" : " (production — สมัครบัญชีจริง)"}
+          </p>
           <UxChecklistPdfDownload variant="banner" />
         </section>
 
         <section className="rounded-2xl border border-amber-500/30 bg-amber-500/8 p-4 space-y-2">
           <h2 className="font-semibold text-foreground flex items-center gap-2">
             <ClipboardList className="w-4 h-4 text-amber-600" />
-            ข้อมูลบันทึกจริง — อ่านก่อนเริ่ม
+            อ่านก่อนเริ่ม{demo ? " (โหมด demo)" : " (บัญชีจริง)"}
           </h2>
           <ul className="text-base text-foreground space-y-1.5 list-disc pl-5">
-            {DEMO_WARNING_BULLETS.map((bullet) => (
+            {warnings.map((bullet) => (
               <li key={bullet}>{bullet}</li>
             ))}
-            <li>
-              ใช้บัญชี <code className="text-xs bg-muted px-1 rounded">*@demo.pixel100.com</code> เท่านั้น
-            </li>
             {demo && (
               <li className="text-primary font-medium">โหมดทดสอบเปิดอยู่ — แถบด้านบนจะแสดงตลอด</li>
             )}
@@ -86,23 +92,24 @@ export default function ResearchPage() {
         <section className="space-y-4">
           <h2 className="font-semibold flex items-center gap-2">
             <LogIn className="w-4 h-4 text-primary" />
-            Persona & บัญชีทดสอบ
+            Persona & บทบาททดสอบ
           </h2>
           <p className="text-sm text-muted-foreground">
-            รหัสผ่านทุกบัญชี:{" "}
-            <span>Demo passwords are shared privately and are not embedded in this site.</span>
+            {demo
+              ? "โหมด demo — ใช้บัญชี *@demo.pixel100.com ตาม persona (รหัสผ่านส่งแยก)"
+              : "สมัครบัญชีใหม่ของตัวเอง แล้วเลือกบทบาทที่จะเล่น — งาน 2 คนให้จับคู่กับ reviewer อีกคน"}
           </p>
           <div className="grid gap-3">
             {RESEARCH_PERSONAS.map((acc) => (
-              <div key={acc.email} className="rounded-xl border border-border p-4 space-y-1">
+              <div key={acc.id} className="rounded-xl border border-border p-4 space-y-1">
                 <p className="font-medium text-sm">{acc.label}</p>
-                <code className="text-xs text-primary break-all">{acc.email}</code>
+                <p className="text-xs text-primary">{acc.account}</p>
                 <p className="text-xs text-muted-foreground">{acc.note}</p>
               </div>
             ))}
           </div>
           <Button asChild className="rounded-full">
-            <Link to="/auth">ไปหน้าเข้าสู่ระบบ</Link>
+            <Link to="/auth">{demo ? "ไปหน้าเข้าสู่ระบบ" : "ไปสมัคร / เข้าสู่ระบบ"}</Link>
           </Button>
         </section>
 
@@ -129,7 +136,7 @@ export default function ResearchPage() {
         <section className="space-y-4">
           <h2 className="font-semibold flex items-center gap-2">
             <Users className="w-4 h-4 text-primary" />
-            Moderated tasks (T1–T8)
+            Moderated tasks (T1–T11)
           </h2>
           <div className="space-y-4">
             {MODERATED_TASKS.map((task) => (
@@ -184,7 +191,7 @@ export default function ResearchPage() {
         <section className="space-y-4">
           <h2 className="font-semibold flex items-center gap-2">
             <LayoutGrid className="w-4 h-4 text-primary" />
-            Feature checklist (A–T)
+            Feature checklist (A–W)
           </h2>
           <p className="text-sm text-muted-foreground">
             Tick เองขณะทดสอบ — ไม่บันทึกในระบบ
@@ -242,7 +249,7 @@ export default function ResearchPage() {
             ))}
           </ul>
           <Button asChild className="rounded-full">
-            <Link to="/research/feedback">ส่งผลการทดสอบ</Link>
+            <Link to={RESEARCH_INTRO.feedbackPath}>ส่งผลการทดสอบ</Link>
           </Button>
         </section>
 

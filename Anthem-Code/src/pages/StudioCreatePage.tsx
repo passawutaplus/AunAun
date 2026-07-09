@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import {
 } from "@/integrations/supabase/sharedStorageClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useCreateFormation } from "@/hooks/useStudioFormation";
+import { useStudioIdentityAvailability } from "@/hooks/useStudioIdentityAvailability";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,9 +19,12 @@ import { toast } from "sonner";
 import {
   Building2, Plus, X, Search, Loader2, Users,
   ChevronDown, ChevronUp, ImagePlus, Upload, Mail, Phone, Globe, Instagram,
+  CheckCircle2,
 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import RequireAuth from "@/components/RequireAuth";
+import { cn } from "@/lib/utils";
+import { isReservedPublicHandle } from "@/lib/reservedHandles";
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9-\s]/g, "").replace(/\s+/g, "-").slice(0, 40);
@@ -72,7 +76,46 @@ const StudioCreateInner = () => {
   const [dribbble, setDribbble] = useState("");
   const [availableForWork, setAvailableForWork] = useState(true);
 
-  const finalSlug = slug || slugify(name);
+  const finalSlug = (slug || slugify(name)).trim().toLowerCase();
+
+  const [debouncedName, setDebouncedName] = useState("");
+  const [debouncedSlug, setDebouncedSlug] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedName(name.trim()), 400);
+    return () => window.clearTimeout(timer);
+  }, [name]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSlug(finalSlug), 400);
+    return () => window.clearTimeout(timer);
+  }, [finalSlug]);
+
+  const {
+    data: identityAvailability,
+    isFetching: identityChecking,
+  } = useStudioIdentityAvailability(debouncedName, debouncedSlug);
+
+  const nameTaken = !!identityAvailability?.nameTaken;
+  const slugTaken = !!identityAvailability?.slugTaken;
+  const slugReserved = finalSlug.length >= 2 && isReservedPublicHandle(finalSlug);
+  const slugMissing = name.trim().length > 0 && finalSlug.length === 0;
+  const slugTooShort = finalSlug.length > 0 && finalSlug.length < 2;
+  const identityPending =
+    (name.trim().length >= 2 && debouncedName !== name.trim()) ||
+    (finalSlug.length >= 2 && debouncedSlug !== finalSlug);
+  const canSubmit = useMemo(
+    () =>
+      name.trim().length > 0 &&
+      finalSlug.length >= 2 &&
+      !slugMissing &&
+      !identityPending &&
+      !identityChecking &&
+      !nameTaken &&
+      !slugTaken &&
+      !slugReserved,
+    [name, finalSlug, slugMissing, identityPending, identityChecking, nameTaken, slugTaken, slugReserved],
+  );
 
   useEffect(() => {
     const inviteId = searchParams.get("invite");
@@ -139,6 +182,15 @@ const StudioCreateInner = () => {
 
   const submit = () => {
     if (!name.trim()) return;
+    if (slugMissing) {
+      toast.error("กรุณาตั้ง Slug เป็นภาษาอังกฤษหรือตัวเลขสำหรับ URL");
+      return;
+    }
+    if (slugTooShort) {
+      toast.error("Slug ต้องมีอย่างน้อย 2 ตัวอักษร");
+      return;
+    }
+    if (nameTaken || slugTaken || slugReserved) return;
     create.mutate(
       {
         name: name.trim(),
@@ -227,8 +279,32 @@ const StudioCreateInner = () => {
                 if (!slug) setSlug(slugify(e.target.value));
               }}
               placeholder="เช่น Pixel Garden Studio"
-              className="h-11 rounded-xl"
+              className={cn("h-11 rounded-xl", nameTaken && "border-destructive focus-visible:ring-destructive")}
             />
+            {name.trim().length >= 2 && (
+              <p
+                className={cn(
+                  "text-xs flex items-center gap-1",
+                  identityChecking && debouncedName !== name.trim()
+                    ? "text-muted-foreground"
+                    : nameTaken
+                      ? "text-destructive"
+                      : "text-emerald-600 dark:text-emerald-400",
+                )}
+              >
+                {identityChecking && debouncedName !== name.trim() ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" /> กำลังตรวจสอบชื่อ…
+                  </>
+                ) : nameTaken ? (
+                  "ชื่อ Studio นี้มีคนใช้แล้ว — ลองชื่ออื่น"
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3 h-3" /> ชื่อนี้ใช้ได้
+                  </>
+                )}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -238,9 +314,42 @@ const StudioCreateInner = () => {
               <Input
                 value={finalSlug}
                 onChange={(e) => setSlug(slugify(e.target.value))}
-                className="h-9 rounded-lg"
+                className={cn(
+                  "h-9 rounded-lg",
+                  (slugTaken || slugMissing || slugTooShort) && "border-destructive focus-visible:ring-destructive",
+                )}
               />
             </div>
+            {slugMissing ? (
+              <p className="text-xs text-destructive">
+                ชื่อนี้สร้าง Slug อัตโนมัติไม่ได้ — กรอก slug เป็นภาษาอังกฤษหรือตัวเลข
+              </p>
+            ) : slugTooShort ? (
+              <p className="text-xs text-destructive">Slug ต้องมีอย่างน้อย 2 ตัวอักษร</p>
+            ) : finalSlug.length >= 2 ? (
+              <p
+                className={cn(
+                  "text-xs flex items-center gap-1",
+                  identityChecking && debouncedSlug !== finalSlug
+                    ? "text-muted-foreground"
+                    : slugTaken
+                      ? "text-destructive"
+                      : "text-emerald-600 dark:text-emerald-400",
+                )}
+              >
+                {identityChecking && debouncedSlug !== finalSlug ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" /> กำลังตรวจสอบ slug…
+                  </>
+                ) : slugTaken ? (
+                  slugReserved ? "Slug นี้สงวนไว้ — ลอง slug อื่น" : "Slug นี้ถูกใช้แล้ว — ลอง slug อื่น"
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3 h-3" /> Slug นี้ใช้ได้
+                  </>
+                )}
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-1.5">
@@ -434,7 +543,7 @@ const StudioCreateInner = () => {
           <Button variant="outline" onClick={() => navigate(-1)} className="rounded-xl">ยกเลิก</Button>
           <Button
             onClick={submit}
-            disabled={!name.trim() || create.isPending}
+            disabled={!canSubmit || create.isPending}
             className="flex-1 h-12 rounded-xl bg-gradient-brand text-white border-0 shadow-md shadow-primary/20"
           >
             {create.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}

@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFeedStats } from "@/hooks/useFeedStats";
 import { useDesignerHeroSlides, useStudioHeroSlides } from "@/hooks/useHeroSlides";
 import { BRAND_CONCEPT } from "@/lib/brandConfig";
+import { carouselSlideTransition, carouselSlideVariants, smoothEase } from "@/lib/motion";
 import { FadeUp } from "@/components/motion/FadeUp";
 import type { FeedMode } from "@/components/feed/FeedModeToggle";
 import TopProjectShowcase from "./TopProjectShowcase";
@@ -69,6 +71,7 @@ type Props = {
 };
 
 const FeedHero = ({ mode = "projects", className }: Props) => {
+  const reduced = useReducedMotion();
   const { data, isLoading } = useFeedStats();
   const { slides: designerSlides } = useDesignerHeroSlides();
   const { data: studioSlides = [] } = useStudioHeroSlides();
@@ -88,7 +91,22 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
 
   return (
     <section className={cn("relative overflow-hidden rounded-[1.75rem] ring-1 ring-border/35 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12)] min-h-[26rem] sm:min-h-[28rem] md:min-h-[19rem] lg:min-h-[21rem] -mx-1 sm:mx-0", className)}>
-      {showcase}
+      {reduced ? (
+        showcase
+      ) : (
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={mode}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: smoothEase }}
+            className="absolute inset-0"
+          >
+            {showcase}
+          </motion.div>
+        </AnimatePresence>
+      )}
 
       <div
         className="absolute inset-0 z-[1] pointer-events-none md:hidden bg-gradient-to-b from-transparent from-[18%] via-background/55 via-[48%] to-background to-[72%]"
@@ -104,14 +122,35 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
       />
 
       <FadeUp className="relative z-10 flex h-full min-h-[inherit] flex-col px-5 pb-8 pt-6 sm:px-7 sm:pt-7 md:justify-center md:gap-6 md:max-w-[min(100%,30rem)] md:px-8 md:py-10 lg:max-w-[28rem] lg:px-10 lg:py-12">
-        <div className="space-y-3 md:space-y-4">
-          <p className="inline-flex w-fit items-center rounded-full border border-primary/20 bg-primary/[0.08] px-3 py-1 text-[11px] font-medium tracking-wide text-primary thai-body">
-            {copy.badge}
-          </p>
-          <h1 className="text-[1.75rem] sm:text-3xl md:text-4xl lg:text-[2.65rem] font-semibold tracking-tight text-foreground leading-[1.12] thai-display">
-            {copy.title}
-          </h1>
-        </div>
+        {reduced ? (
+          <div className="space-y-3 md:space-y-4">
+            <p className="inline-flex w-fit items-center rounded-full border border-primary/20 bg-primary/[0.08] px-3 py-1 text-[11px] font-medium tracking-wide text-primary thai-body">
+              {copy.badge}
+            </p>
+            <h1 className="text-[1.75rem] sm:text-3xl md:text-4xl lg:text-[2.65rem] font-semibold tracking-tight text-foreground leading-[1.12] thai-display">
+              {copy.title}
+            </h1>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={mode}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              variants={carouselSlideVariants}
+              transition={carouselSlideTransition}
+              className="space-y-3 md:space-y-4"
+            >
+              <p className="inline-flex w-fit items-center rounded-full border border-primary/20 bg-primary/[0.08] px-3 py-1 text-[11px] font-medium tracking-wide text-primary thai-body">
+                {copy.badge}
+              </p>
+              <h1 className="text-[1.75rem] sm:text-3xl md:text-4xl lg:text-[2.65rem] font-semibold tracking-tight text-foreground leading-[1.12] thai-display">
+                {copy.title}
+              </h1>
+            </motion.div>
+          </AnimatePresence>
+        )}
 
         {/* ช่องว่างเดิมของคำอธิบาย — มือถือ/แท็บเลตเท่านั้น */}
         <div className="min-h-[2.75rem] sm:min-h-[3rem] md:hidden" aria-hidden />

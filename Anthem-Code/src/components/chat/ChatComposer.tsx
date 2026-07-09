@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { Send, Image as ImageIcon, Loader2, X, FolderOpen, UserCircle2 } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
+import { Send, Image as ImageIcon, Loader2, X, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -7,6 +7,8 @@ import {
   SHARED_MEDIA_BUCKET,
 } from "@/integrations/supabase/sharedStorageClient";
 import { useSendMessage, type Message } from "@/hooks/useChat";
+import { getSupabaseErrorMessage } from "@/lib/supabaseErrors";
+import { replyPreviewText } from "@/lib/chatReply";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import ModerationBanBanner from "@/components/moderation/ModerationBanBanner";
@@ -23,6 +25,7 @@ interface Props {
   userId?: string;
   quickReplies?: string[];
   replyTo?: Message | null;
+  replyToSenderName?: string;
   onClearReply?: () => void;
 }
 
@@ -32,14 +35,20 @@ const ChatComposer = ({
   userId,
   quickReplies = [],
   replyTo,
+  replyToSenderName,
   onClearReply,
 }: Props) => {
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
   const [portfolioOpen, setPortfolioOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const send = useSendMessage();
   const { data: myProjects = [] } = useChatPortfolio(userId);
+
+  useEffect(() => {
+    if (replyTo) textareaRef.current?.focus();
+  }, [replyTo]);
 
   const placeholder =
     kind === "hire"
@@ -84,7 +93,7 @@ const ChatComposer = ({
       if (!overrideText) setText("");
       onClearReply?.();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
+      toast.error(getSupabaseErrorMessage(e, "ส่งไม่สำเร็จ"));
     }
   };
 
@@ -114,7 +123,7 @@ const ChatComposer = ({
       });
       onClearReply?.();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+      toast.error(getSupabaseErrorMessage(e, "อัปโหลดไม่สำเร็จ"));
     } finally {
       setUploading(false);
     }
@@ -127,41 +136,31 @@ const ChatComposer = ({
         content: project.title,
         messageType: "project",
         projectId: project.id,
+        replyToId: replyTo?.id,
       });
       toast.success("ส่งผลงานในแชทแล้ว");
       setPortfolioOpen(false);
+      onClearReply?.();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
-    }
-  };
-
-  const sendProfile = async () => {
-    if (!userId) return;
-    try {
-      await send.mutateAsync({
-        conversationId,
-        content: "โปรไฟล์ของฉัน",
-        messageType: "profile",
-        profileUserId: userId,
-      });
-      toast.success("ส่งโปรไฟล์ในแชทแล้ว");
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
+      toast.error(getSupabaseErrorMessage(e, "ส่งไม่สำเร็จ"));
     }
   };
 
   return (
-    <div className="border-t border-border bg-background/80 backdrop-blur-md px-3 py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
+    <div className="border-t border-border bg-background/80 backdrop-blur-md px-3 py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] shrink-0">
       <ModerationBanBanner className="mb-2" />
       {replyTo && (
-        <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-xl bg-muted/80 border border-border">
-          <div className="flex-1 min-w-0 text-xs">
-            <span className="font-medium text-foreground">ตอบกลับ</span>
-            <p className="truncate text-muted-foreground mt-0.5">
-              {replyTo.content || (replyTo.attachment_url ? "📷 รูปภาพ" : "ข้อความ")}
+        <div className="flex items-stretch gap-2 mb-2 rounded-xl bg-muted/80 border border-border overflow-hidden">
+          <div className="w-1 shrink-0 bg-primary" />
+          <div className="flex-1 min-w-0 py-2 pr-1">
+            <span className="text-[11px] font-semibold text-primary block truncate">
+              {replyToSenderName ?? "ตอบกลับ"}
+            </span>
+            <p className="text-xs text-muted-foreground truncate mt-0.5">
+              {replyPreviewText(replyTo)}
             </p>
           </div>
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={onClearReply}>
+          <Button type="button" variant="ghost" size="icon" className="h-auto w-8 shrink-0 self-center mr-1" onClick={onClearReply}>
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -204,19 +203,6 @@ const ChatComposer = ({
             <FolderOpen className="w-5 h-5" />
           </Button>
         )}
-        {userId && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="rounded-full shrink-0"
-            onClick={() => void sendProfile()}
-            disabled={send.isPending}
-            aria-label="ส่งโปรไฟล์"
-          >
-            <UserCircle2 className="w-5 h-5" />
-          </Button>
-        )}
         <Button
           type="button"
           variant="ghost"
@@ -229,6 +215,7 @@ const ChatComposer = ({
           {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
         </Button>
         <Textarea
+          ref={textareaRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {

@@ -16,6 +16,7 @@ import { useAuthDialog } from "@/stores/authDialogStore";
 import { useAppLayout } from "@/hooks/useAppLayout";
 
 import CreateContentDrawer from "@/components/CreateContentDrawer";
+import { ProfileMenuDropdown } from "@/components/ProfileMenuDropdown";
 
 import UserAvatar from "@/components/UserAvatar";
 
@@ -28,7 +29,6 @@ type NavItem = {
   icon: typeof Home;
   match: (pathname: string, mode: string | null) => boolean;
   requiresAuth?: boolean;
-  profile?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
@@ -46,18 +46,10 @@ const NAV_ITEMS: NavItem[] = [
   },
   { to: "/jobs", label: "Jobs", icon: BriefcaseIcon, match: (p) => p.startsWith("/jobs") },
   { to: "/chat", label: "Chat", icon: MessageCircle, match: (p) => p.startsWith("/chat"), requiresAuth: true },
-  {
-    to: "/portfolio",
-    label: "Profile",
-    icon: User,
-    match: (p) =>
-      p.startsWith("/portfolio") ||
-      p.startsWith("/settings") ||
-      p.startsWith("/collections"),
-    requiresAuth: true,
-    profile: true,
-  },
 ];
+
+const PROFILE_MATCH = (p: string) =>
+  p.startsWith("/portfolio") || p.startsWith("/settings") || p.startsWith("/collections");
 
 const FloatingNav = () => {
   const { pathname, search } = useLocation();
@@ -172,36 +164,48 @@ const FloatingNav = () => {
 
           <NotificationBell variant="nav" active={notificationsActive} />
 
-          {NAV_ITEMS.slice(4).map(({ to, label, icon: Icon, match, requiresAuth, profile: isProfileNav }) => {
-            const active = match(pathname, feedMode);
-            return (
-              <NavLink
-                key={to}
-                to={to}
-                onClick={(e) => guardAuth(e, requiresAuth, to)}
-                aria-label={label}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex items-center justify-center rounded-full transition-colors min-h-11",
-                  active
-                    ? "gap-1.5 bg-foreground text-background px-2.5 py-2 text-[11px] font-medium"
-                    : "p-2 text-muted-foreground hover:text-foreground hover:bg-accent w-10 min-h-10",
-                )}
-              >
-                {isProfileNav && user ? (
+          {user ? (
+            <ProfileMenuDropdown
+              side="top"
+              align="end"
+              sideOffset={12}
+              trigger={
+                <button
+                  type="button"
+                  aria-label="Profile"
+                  aria-haspopup="menu"
+                  className={cn(
+                    "flex items-center justify-center rounded-full transition-colors min-h-11",
+                    PROFILE_MATCH(pathname)
+                      ? "gap-1.5 bg-foreground text-background px-2.5 py-2 text-[11px] font-medium"
+                      : "p-2 text-muted-foreground hover:text-foreground hover:bg-accent w-10 min-h-10",
+                  )}
+                >
                   <UserAvatar
                     src={myProfile?.avatar_url}
                     name={myProfile?.display_name ?? user.email ?? "U"}
-                    className={cn("shrink-0 ring-2 ring-background", active ? "w-6 h-6" : "w-7 h-7")}
-                    fallbackClassName={active ? "text-[10px]" : "text-xs"}
+                    className={cn(
+                      "shrink-0 ring-2 ring-background",
+                      PROFILE_MATCH(pathname) ? "w-6 h-6" : "w-7 h-7",
+                    )}
+                    fallbackClassName={PROFILE_MATCH(pathname) ? "text-[10px]" : "text-xs"}
                   />
-                ) : (
-                  <Icon className={cn("shrink-0", active ? "w-4 h-4" : "w-5 h-5")} strokeWidth={active ? 2.2 : 2} />
-                )}
-                {active && <span className="whitespace-nowrap max-w-[4.5rem] truncate">{label}</span>}
-              </NavLink>
-            );
-          })}
+                  {PROFILE_MATCH(pathname) && (
+                    <span className="whitespace-nowrap max-w-[4.5rem] truncate">Profile</span>
+                  )}
+                </button>
+              }
+            />
+          ) : (
+            <button
+              type="button"
+              aria-label="Profile"
+              onClick={() => openAuth("/portfolio")}
+              className="flex items-center justify-center rounded-full transition-colors min-h-11 p-2 text-muted-foreground hover:text-foreground hover:bg-accent w-10 min-h-10"
+            >
+              <User className="w-5 h-5 shrink-0" strokeWidth={2} />
+            </button>
+          )}
         </div>
 
         <button

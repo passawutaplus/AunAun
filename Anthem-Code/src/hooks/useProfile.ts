@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 import type { ProfileInput } from "@/lib/validators";
+import { assertUsernameAvailable, normalizeUsername } from "@/hooks/useUsernameAvailability";
 
 export const useProfile = (userId: string | undefined) =>
   useQuery({
@@ -21,7 +22,11 @@ export const useUpdateProfile = (userId: string | undefined) => {
       if (!userId) throw new Error("ยังไม่ได้เข้าสู่ระบบ");
       const payload: TablesUpdate<"profiles"> = {};
       if (p.displayName !== undefined) payload.display_name = p.displayName;
-      if (p.username !== undefined) payload.username = p.username;
+      if (p.username !== undefined) {
+        const normalized = normalizeUsername(p.username);
+        await assertUsernameAvailable(normalized, userId);
+        payload.username = normalized;
+      }
       if (p.bio !== undefined) payload.bio = p.bio;
       if (p.role !== undefined) payload.role = p.role;
       if (p.location !== undefined) payload.location = p.location;
@@ -48,7 +53,12 @@ export const useUpdateProfile = (userId: string | undefined) => {
       if (p.experience !== undefined) payload.experience = p.experience as unknown as Json;
       if (Object.keys(payload).length === 0) return;
       const { error } = await supabase.from("profiles").update(payload).eq("user_id", userId);
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505" && payload.username) {
+          throw new Error("ชื่อผู้ใช้นี้ถูกใช้แล้ว — ลองชื่ออื่น");
+        }
+        throw error;
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["profile", userId] }),
   });

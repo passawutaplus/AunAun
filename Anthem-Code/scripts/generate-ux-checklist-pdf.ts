@@ -15,6 +15,7 @@ import {
   PAGE_MAP,
   RESEARCH_INTRO,
   RESEARCH_PERSONAS,
+  RESEARCH_WARNINGS,
 } from "../src/data/uxResearchGuide.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -45,7 +46,7 @@ const PAGE_W = 595.28;
 const CONTENT_W = PAGE_W - MARGIN * 2;
 const BOX = 10;
 const GAP = 6;
-const GENERATED = "29 มิ.ย. 2026";
+const GENERATED = "9 ก.ค. 2026";
 
 function createDoc() {
   const doc = new PDFDocument({
@@ -120,15 +121,15 @@ function cover(doc: InstanceType<typeof PDFDocument>) {
   const y0 = doc.y;
   doc.roundedRect(MARGIN, y0, CONTENT_W, h, 12).fill(COLORS.coverDark);
   doc.roundedRect(MARGIN + 14, y0 + 18, 38, 38, 8).fill(COLORS.primary);
-  
+
   doc.font("bold").fontSize(20).fillColor("#fff").text("Aplus1", MARGIN + 62, y0 + 18);
   doc.font("regular").fontSize(10.5).fillColor("#d4c4b8").text("UX/UI Usability Test Checklist", MARGIN + 62, y0 + 44);
   doc.font("regular").fontSize(9).fillColor("rgba(255,255,255,0.92)").text(
-    "เช็คลิสทดสอบการใช้งานครบ — Journey · Design · Tasks T1–T8 · Features A–T",
+    "เช็คลิสทดสอบการใช้งานครบ — Journey · Design · Tasks T1–T11 · Features A–W",
     MARGIN + 14, y0 + 72, { width: CONTENT_W - 28 },
   );
   doc.font("regular").fontSize(8).fillColor("#bbb").text(
-    `Demo ${RESEARCH_INTRO.demoUrl} · ในแอป ${RESEARCH_INTRO.inAppPath} · อัปเดต ${GENERATED}`,
+    `${RESEARCH_INTRO.productionUrl} · ในแอป ${RESEARCH_INTRO.inAppPath} · อัปเดต ${GENERATED}`,
     MARGIN + 14, y0 + h - 22, { width: CONTENT_W - 28 },
   );
   doc.y = y0 + h + 16;
@@ -139,36 +140,32 @@ function writePdf(doc: InstanceType<typeof PDFDocument>) {
   cover(doc);
 
   sectionTitle(doc, "01", "ข้อมูลการทดสอบ");
-  labelLine(doc, "URL Demo", RESEARCH_INTRO.demoUrl);
-  labelLine(doc, "Production", "https://aplus1.app");
-  labelLine(doc, "ระยะเวลา", `Quick ${RESEARCH_INTRO.quickMinutes} นาที (T1–T4) · Full ${RESEARCH_INTRO.fullHours} ชม. (A–T)`);
+  labelLine(doc, "URL Production", RESEARCH_INTRO.productionUrl);
+  labelLine(doc, "Demo (optional)", RESEARCH_INTRO.demoUrl);
+  labelLine(doc, "ส่งผลทดสอบ", `${RESEARCH_INTRO.productionUrl}${RESEARCH_INTRO.feedbackPath}`);
+  labelLine(doc, "ระยะเวลา", `Quick ${RESEARCH_INTRO.quickMinutes} นาที (T1–T4) · Full ${RESEARCH_INTRO.fullHours} ชม. (A–W)`);
   labelLine(doc, "อุปกรณ์", RESEARCH_INTRO.devices.join(" · "));
   labelLine(doc, "Viewport", RESEARCH_INTRO.viewports.join(" · "));
   note(doc, "Reviewer: _______________________   วันที่: ____________   Facilitator: _______________________");
 
   sectionTitle(doc, "02", "วิธีใช้เช็คลิส");
   [
-    "อ่านข้อควรระวัง demo (หน้า 2)",
-    "เลือก Persona ตามบทบาท",
-    "ทำ Moderated tasks T1–T8 (ถ้ามี facilitator)",
-    "ไล่ Feature checklist A–T — tick ☐ เมื่อทดสอบแล้ว",
+    "อ่านข้อควรระวัง production (หน้า 2)",
+    "เลือก Persona ตามบทบาท — สมัครบัญชีใหม่ที่ /auth",
+    "ทำ Moderated tasks T1–T11 (ถ้ามี facilitator)",
+    "ไล่ Feature checklist A–W — tick ☐ เมื่อทดสอบแล้ว",
     "ประเมิน Design foundation ข้ามฟีเจอร์",
     "บันทึก feedback ตาม template ท้ายเอกสาร",
   ].forEach((s) => checkbox(doc, s, { fontSize: 8.5 }));
 
-  sectionTitle(doc, "03", "ข้อควรระวัง (โหมด demo)");
-  [
-    "บัญชี *@demo.pixel100.com บันทึกถาวร — ใช้ร่วมกัน อย่าสมัครใหม่",
-    "อย่าใส่ข้อมูลส่วนตัวจริง · ไม่มีการชำระเงินจริง",
-    "รหัสผ่าน demo: pixel100-demo-seed — หมุนใหม่หลังจบรอบรีวิว",
-    "บัญชีเพิ่มเติม 50 ครีเอเตอร์ — ดู demo-catalog.md",
-  ].forEach((s) => checkbox(doc, s, { fontSize: 8.5 }));
+  sectionTitle(doc, "03", "ข้อควรระวัง (production)");
+  RESEARCH_WARNINGS.production.forEach((s) => checkbox(doc, s, { fontSize: 8.5 }));
 
   sectionTitle(doc, "04", "Persona & บัญชีทดสอบ");
   for (const p of RESEARCH_PERSONAS) {
     ensureSpace(doc, 28);
     doc.font("semi").fontSize(9).fillColor(COLORS.text).text(p.label, MARGIN);
-    doc.font("regular").fontSize(8.5).fillColor(COLORS.muted).text(`${p.email} — ${p.note}`, MARGIN, doc.y, { width: CONTENT_W });
+    doc.font("regular").fontSize(8.5).fillColor(COLORS.muted).text(`${p.account} — ${p.note}`, MARGIN, doc.y, { width: CONTENT_W });
     doc.moveDown(0.2);
   }
 
@@ -183,7 +180,7 @@ function writePdf(doc: InstanceType<typeof PDFDocument>) {
   for (const item of DESIGN_CHECKLIST) checkbox(doc, item.text, { fontSize: 8.5 });
 
   doc.addPage();
-  sectionTitle(doc, "07", "Moderated tasks (T1–T8)");
+  sectionTitle(doc, "07", "Moderated tasks (T1–T11)");
   for (const t of MODERATED_TASKS) {
     ensureSpace(doc, 70);
     doc.font("semi").fontSize(9.5).fillColor(COLORS.primary).text(`${t.id} — ${t.title} · ${t.persona}`, MARGIN);
@@ -200,7 +197,7 @@ function writePdf(doc: InstanceType<typeof PDFDocument>) {
   }
 
   doc.addPage();
-  sectionTitle(doc, "08", "Feature checklist (A–T)");
+  sectionTitle(doc, "08", "Feature checklist (A–W)");
   note(doc, "Tick ☐ เมื่อทดสอบแล้ว — บันทึกปัญหาที่หน้า Feedback");
 
   for (const f of FEATURE_SECTIONS) {
@@ -271,7 +268,7 @@ function writePdf(doc: InstanceType<typeof PDFDocument>) {
     `Aplus1 UX/UI Checklist · sync กับ src/data/uxResearchGuide.ts · อัปเดต ${GENERATED}`,
     { align: "center", width: CONTENT_W },
   );
-  doc.text(`โหลด: ${RESEARCH_INTRO.demoUrl}/${PDF_NAME}`, { align: "center", width: CONTENT_W });
+  doc.text(`โหลด: ${RESEARCH_INTRO.productionUrl}/${PDF_NAME}`, { align: "center", width: CONTENT_W });
   doc.text("Regenerate: cd Anthem-Code && npm run docs:ux-checklist-pdf", { align: "center", width: CONTENT_W });
 }
 

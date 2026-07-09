@@ -6,7 +6,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => (
   <NextThemesProvider
     attribute="class"
     defaultTheme="light"
-    enableSystem={false}
+    enableSystem
     disableTransitionOnChange={false}
     storageKey={BRAND_STORAGE_THEME}
   >

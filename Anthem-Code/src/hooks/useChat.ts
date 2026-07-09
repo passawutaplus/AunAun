@@ -16,6 +16,9 @@ import {
   SYSTEM_MESSAGE_PREFIX,
 } from "@/lib/chatContext";
 
+const MESSAGE_SELECT =
+  "id, conversation_id, sender_id, content, attachment_url, read_at, created_at, reply_to_id, deleted_at, message_type, project_id, profile_user_id";
+
 export type ChatKind = "hire" | "collab" | "group" | "studio";
 export type MessageType = "text" | "image" | "project" | "system" | "profile";
 export type ConversationType = "direct" | "group";
@@ -184,16 +187,19 @@ export type UseMessagesOptions = {
 };
 
 export const useMessages = (conversationId: string | undefined, opts?: UseMessagesOptions) => {
+  const { user } = useAuth();
   const subscribe = opts?.subscribe !== false;
   const qc = useQueryClient();
 
   const query = useQuery({
-    queryKey: ["messages", conversationId],
-    enabled: !!conversationId,
+    queryKey: ["messages", user?.id, conversationId],
+    enabled: !!conversationId && !!user?.id,
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("messages")
-        .select("*")
+        .select(MESSAGE_SELECT)
         .eq("conversation_id", conversationId!)
         .order("created_at", { ascending: false })
         .limit(MESSAGE_WINDOW_LIMIT);
@@ -203,7 +209,7 @@ export const useMessages = (conversationId: string | undefined, opts?: UseMessag
   });
 
   useEffect(() => {
-    if (!conversationId || !subscribe) return;
+    if (!conversationId || !user?.id || !subscribe) return;
     const ch = supabase
       .channel(`msg-rt-${conversationId}`)
       .on(
@@ -214,13 +220,13 @@ export const useMessages = (conversationId: string | undefined, opts?: UseMessag
           table: "messages",
           filter: `conversation_id=eq.${conversationId}`,
         },
-        () => qc.invalidateQueries({ queryKey: ["messages", conversationId] }),
+        () => qc.invalidateQueries({ queryKey: ["messages", user.id, conversationId] }),
       )
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [conversationId, subscribe, qc]);
+  }, [conversationId, user?.id, subscribe, qc]);
 
   return query;
 };
@@ -239,7 +245,7 @@ export type SendMessageArgs = {
 export const useSendMessage = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const { refetch: refetchMod } = useModerationState();
+  const { data: moderation, refetch: refetchMod } = useModerationState();
   const recordStrike = useRecordProfanityStrike();
 
   return useMutation({
@@ -255,7 +261,15 @@ export const useSendMessage = () => {
     }: SendMessageArgs) => {
       if (!user?.id) throw new Error("ต้องเข้าสู่ระบบ");
 
-      const { data: gate } = await refetchMod();
+      let gate = moderation;
+      if (!gate) {
+        try {
+          const res = await refetchMod();
+          gate = res.data;
+        } catch {
+          // moderation RPC unavailable — don't block chat send
+        }
+      }
       if (gate && !gate.allowed) {
         const until = gate.banned_until
           ? new Date(gate.banned_until).toLocaleString("th-TH")
@@ -303,7 +317,7 @@ export const useSendMessage = () => {
       });
     },
     onSuccess: (_d, vars) => {
-      qc.invalidateQueries({ queryKey: ["messages", vars.conversationId] });
+      qc.invalidateQueries({ queryKey: ["messages", user?.id, vars.conversationId] });
       qc.invalidateQueries({ queryKey: ["conversations"] });
       qc.invalidateQueries({ queryKey: ["chat-last-msgs"] });
     },
@@ -325,7 +339,7 @@ export const useUnsendMessage = () => {
       return conversationId;
     },
     onSuccess: (conversationId) => {
-      qc.invalidateQueries({ queryKey: ["messages", conversationId] });
+      qc.invalidateQueries({ queryKey: ["messages", user?.id, conversationId] });
       qc.invalidateQueries({ queryKey: ["chat-last-msgs"] });
     },
   });

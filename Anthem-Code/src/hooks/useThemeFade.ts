@@ -1,7 +1,7 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 
-type Theme = "light" | "dark";
+export type ThemePreference = "light" | "dark" | "system";
 
 function runWithViewTransition(apply: () => void) {
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -26,20 +26,32 @@ function runWithViewTransition(apply: () => void) {
 
 export function useThemeFade() {
   const { theme, resolvedTheme, setTheme } = useTheme();
-  const current = (resolvedTheme ?? theme) as Theme | undefined;
-  const isDark = current === "dark";
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  const preference = (theme ?? "light") as ThemePreference;
+  const resolved = (resolvedTheme ?? theme ?? "light") as "light" | "dark";
+  const isDark = resolved === "dark";
 
   const setThemeWithFade = useCallback(
-    (next: Theme) => {
-      if (next === current) return;
+    (next: ThemePreference) => {
+      if (next === theme) return;
       runWithViewTransition(() => setTheme(next));
     },
-    [current, setTheme],
+    [theme, setTheme],
   );
 
   const toggleTheme = useCallback(() => {
     setThemeWithFade(isDark ? "light" : "dark");
   }, [isDark, setThemeWithFade]);
 
-  return { theme: current, isDark, toggleTheme, setThemeWithFade };
+  return {
+    theme: preference,
+    resolvedTheme: resolved,
+    isDark,
+    mounted,
+    toggleTheme,
+    setThemeWithFade,
+  };
 }

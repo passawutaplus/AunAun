@@ -12,6 +12,7 @@ import {
 import { sortPortfolioProjects } from "@/lib/portfolioSort";
 import { useSendMessage } from "@/hooks/useChat";
 import { cn } from "@/lib/utils";
+import { getSupabaseErrorMessage } from "@/lib/supabaseErrors";
 import { toast } from "sonner";
 import { useChatPortfolio, type ChatPortfolioProject } from "@/components/chat/useChatPortfolio";
 
@@ -264,7 +265,7 @@ const ChatPortfolioSection = ({
       });
       toast.success("ส่งผลงานในแชทแล้ว");
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
+      toast.error(getSupabaseErrorMessage(e, "ส่งไม่สำเร็จ"));
     }
   };
 

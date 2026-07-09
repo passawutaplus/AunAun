@@ -20,8 +20,8 @@ import { sortByBoostedIds } from "@/lib/boostFeedSort";
 import { interleaveAds } from "@/lib/interleaveAds";
 import HireDialog from "@/components/HireDialog";
 import CollabDialog from "@/components/CollabDialog";
-import { StaggerGrid } from "@/components/motion/StaggerGrid";
-import { FEED_PROJECT_GRID, FEED_PROJECT_GRID_GAP } from "@/lib/feedMasonry";
+import { FeedProjectGrid } from "@/components/feed/FeedProjectGrid";
+import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import { type FeedMode } from "@/components/feed/FeedModeToggle";
 import DesignerGrid from "@/components/feed/DesignerGrid";
 import { type DesignerSort } from "@/components/feed/DesignerToolbar";
@@ -325,6 +325,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   );
 
   const needsLogin = requiresAuth(feedMode) && !user;
+  const feedPanelKey = needsLogin ? "login" : isDrillView ? "drill" : mode;
   const { data: ads = [] } = useActiveAds(12);
   const feedItems = useMemo(
     () => interleaveAds(sortedFiltered, ads, { minGap: 8, maxGap: 14 }),
@@ -401,7 +402,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           onDrillSelect={openDrill}
         />
 
-        <div className="min-w-0">
+        <FeedModeTransition modeKey={feedPanelKey}>
           {needsLogin ? (
             <div className="text-center py-16 glass-panel rounded-2xl">
               <p className="text-foreground font-medium mb-2 thai-display">เข้าสู่ระบบเพื่อใช้หมวด "{feedMode}"</p>
@@ -446,10 +447,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             <ProjectGridSkeleton />
           ) : (
             <>
-              <StaggerGrid
-                dense
-                className={cn(FEED_PROJECT_GRID, FEED_PROJECT_GRID_GAP)}
-              >
+              <FeedProjectGrid>
                 {feedItems.map((item) =>
                   item.kind === "ad" ? (
                     <AdCard key={item.key} ad={item.data} />
@@ -474,7 +472,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                     />
                   )
                 )}
-              </StaggerGrid>
+              </FeedProjectGrid>
 
               {!projectsLoading && filtered.length === 0 && (
                 <EmptyState
@@ -505,7 +503,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               )}
             </>
           )}
-        </div>
+        </FeedModeTransition>
       </div>
 
       <Footer />

@@ -1,20 +1,21 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { FEED_PROJECT_GRID, FEED_PROJECT_GRID_GAP } from "@/lib/feedMasonry";
+import { useFeedGridDensity } from "@/hooks/useFeedGridDensity";
+import { FEED_PROJECT_GRID_GAP } from "@/lib/feedMasonry";
 
 interface Props {
   count?: number;
-  columns?: string;
   gap?: string;
 }
 
 /** Skeleton grid matching FeedPage 4:3 project layout */
 export default function ProjectGridSkeleton({
   count = 10,
-  columns = FEED_PROJECT_GRID,
   gap = FEED_PROJECT_GRID_GAP,
 }: Props) {
+  const { gridClass } = useFeedGridDensity();
+
   return (
-    <div className={`${columns} ${gap}`} aria-hidden>
+    <div className={`${gridClass} ${gap}`} aria-hidden>
       {Array.from({ length: count }).map((_, i) => (
         <div key={i}>
           <Skeleton className="w-full rounded-sm aspect-[4/3]" />

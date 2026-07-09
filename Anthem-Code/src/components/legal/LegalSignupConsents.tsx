@@ -1,14 +1,12 @@
 import { Link } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCircle2, FileText, Shield, UserCheck } from "lucide-react";
+import { CheckCircle2, FileText, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LEGAL_APP_NAME } from "@/lib/legalConfig";
-import { SIGNUP_AGE_LABEL } from "@/lib/legalSignupCopy";
 
 export interface LegalSignupConsentState {
   terms: boolean;
   privacy: boolean;
-  age: boolean;
 }
 
 interface Props {
@@ -18,7 +16,7 @@ interface Props {
 }
 
 export function isLegalSignupComplete(value: LegalSignupConsentState): boolean {
-  return value.terms && value.privacy && value.age;
+  return value.terms && value.privacy;
 }
 
 const STEPS = [
@@ -55,33 +53,11 @@ const STEPS = [
       </>
     ),
   },
-  {
-    key: "age" as const,
-    icon: UserCheck,
-    title: "อายุ / ผู้ปกครอง",
-    body: SIGNUP_AGE_LABEL,
-  },
 ];
 
 const LegalSignupConsents = ({ value, onChange, compact }: Props) => {
-  const done = [value.terms, value.privacy, value.age].filter(Boolean).length;
-
   return (
     <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-3 space-y-2.5">
-      <div className="flex items-center justify-between gap-2">
-        <p className={cn("font-medium text-foreground", compact ? "text-[11px]" : "text-xs")}>
-          ก่อนสมัคร ติ๊กยืนยัน 3 ข้อ
-        </p>
-        <span
-          className={cn(
-            "tabular-nums rounded-full px-2 py-0.5 text-[10px] font-medium",
-            done === 3 ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
-          )}
-        >
-          {done}/3
-        </span>
-      </div>
-
       {STEPS.map(({ key, icon: Icon, title, body }) => {
         const checked = value[key];
         return (

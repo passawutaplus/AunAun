@@ -1,33 +1,20 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, User, LogOut, Settings, Layers3, Coins, FolderKanban, Moon } from "lucide-react";
-import { useThemeFade } from "@/hooks/useThemeFade";
-import { cn } from "@/lib/utils";
+import { ChevronDown, User } from "lucide-react";
 import WalletBadge from "@/components/gifting/WalletBadge";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import ChatNavButton from "@/components/chat/ChatNavButton";
 import JobsNavButton from "@/components/jobs/JobsNavButton";
-
+import { ProfileMenuDropdown } from "@/components/ProfileMenuDropdown";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import UserAvatar from "@/components/UserAvatar";
 
 const ProfileButton = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { isDark, toggleTheme } = useThemeFade();
-  const [themeMounted, setThemeMounted] = useState(false);
   const [profile, setProfile] = useState<{ avatar_url: string | null; display_name: string | null } | null>(null);
-
-  useEffect(() => setThemeMounted(true), []);
 
   useEffect(() => {
     if (!user) {
@@ -41,80 +28,6 @@ const ProfileButton = () => {
       .maybeSingle()
       .then(({ data }) => setProfile(data ?? null));
   }, [user]);
-
-  const dropdown = (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          aria-label="โปรไฟล์"
-          className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full glass-chip hover:shadow-md hover:shadow-primary/20 transition-all"
-        >
-          <UserAvatar
-            src={profile?.avatar_url}
-            name={profile?.display_name ?? "P"}
-            className="w-8 h-8"
-            fallbackClassName="text-sm"
-          />
-          <ChevronDown className="w-4 h-4 text-muted-foreground hidden sm:block" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60 rounded-xl glass-panel-strong">
-        <DropdownMenuItem onClick={() => navigate("/portfolio")} className="rounded-lg">
-          <User className="w-4 h-4 mr-2" /> โปรไฟล์ของฉัน
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate("/portfolio/manage")} className="rounded-lg">
-          <FolderKanban className="w-4 h-4 mr-2" /> แดชบอร์ด &amp; จัดการ
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate("/collections")} className="rounded-lg">
-          <Layers3 className="w-4 h-4 mr-2" /> คอลเลกชันของฉัน
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate("/earnings")} className="rounded-lg">
-          <Coins className="w-4 h-4 mr-2 text-primary" /> รายได้ &amp; กระเป๋า Pixel
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="rounded-lg flex items-center justify-between gap-3"
-          onSelect={(e) => {
-            e.preventDefault();
-            toggleTheme();
-          }}
-        >
-          <span className="flex items-center">
-            <Moon className="w-4 h-4 mr-2" /> โหมดมืด
-          </span>
-          <span
-            role="switch"
-            aria-checked={themeMounted ? isDark : false}
-            aria-hidden
-            className={cn(
-              "relative w-9 h-5 rounded-full transition-colors shrink-0 pointer-events-none",
-              themeMounted && isDark ? "bg-primary" : "bg-muted",
-            )}
-          >
-            <span
-              className={cn(
-                "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-background shadow-sm transition-transform",
-                themeMounted && isDark ? "translate-x-4" : "",
-              )}
-            />
-          </span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate("/settings")} className="rounded-lg">
-          <Settings className="w-4 h-4 mr-2" /> ตั้งค่า
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={async () => {
-            await supabase.auth.signOut();
-            navigate("/");
-          }}
-          className="rounded-lg text-destructive focus:text-destructive"
-        >
-          <LogOut className="w-4 h-4 mr-2" /> ออกจากระบบ
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
 
   if (!user) {
     return (
@@ -143,7 +56,22 @@ const ProfileButton = () => {
         <NotificationBell />
         <WalletBadge />
       </div>
-      {dropdown}
+      <ProfileMenuDropdown
+        trigger={
+          <button
+            aria-label="โปรไฟล์"
+            className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full glass-chip hover:shadow-md hover:shadow-primary/20 transition-all"
+          >
+            <UserAvatar
+              src={profile?.avatar_url}
+              name={profile?.display_name ?? "P"}
+              className="w-8 h-8"
+              fallbackClassName="text-sm"
+            />
+            <ChevronDown className="w-4 h-4 text-muted-foreground hidden sm:block" />
+          </button>
+        }
+      />
     </div>
   );
 };

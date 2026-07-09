@@ -11,6 +11,8 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ErrorPage from "./pages/ErrorPage.tsx";
 import AuthCallbackPage from "./pages/AuthCallbackPage.tsx";
+import AuthForgotPage from "./pages/AuthForgotPage.tsx";
+import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
 import CookieConsent from "./components/CookieConsent.tsx";
 import PolicyReconsentGate from "./components/legal/PolicyReconsentGate.tsx";
 import FloatingNav from "./components/FloatingNav.tsx";
@@ -154,7 +156,9 @@ const App = () => (
               <Route path="/research" element={<ResearchPage />} />
               <Route path="/research/feedback" element={<UxResearchFeedbackPage />} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/auth/forgot" element={<AuthForgotPage />} />
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/portfolio" element={<RequireAuth><PortfolioProfilePage /></RequireAuth>} />
               <Route path="/portfolio/saved" element={<RequireAuth><SavedPostsPage /></RequireAuth>} />
               <Route path="/portfolio/manage" element={<RequireAuth><PortfolioManagePage /></RequireAuth>} />

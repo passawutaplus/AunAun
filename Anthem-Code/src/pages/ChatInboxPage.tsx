@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { MessageCircle, RefreshCw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useConversation, useMessages, useStudioConversation, type ChatKind } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
 import ChatSidebar from "@/components/chat/ChatSidebar";
@@ -10,6 +11,7 @@ import ChatPartnerPanel from "@/components/chat/ChatPartnerPanel";
 import { ChatErrorBoundary } from "@/components/chat/ChatErrorBoundary";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { smoothEase } from "@/lib/motion";
 
 const ChatInboxPage = () => {
   const { id } = useParams<{ id?: string }>();
@@ -21,6 +23,7 @@ const ChatInboxPage = () => {
   const [tab, setTab] = useState<"all" | ChatKind>("all");
   const [search, setSearch] = useState("");
   const [showPartnerMobile, setShowPartnerMobile] = useState(false);
+  const reducedMotion = useReducedMotion();
 
   const {
     data: conv,
@@ -29,7 +32,12 @@ const ChatInboxPage = () => {
     isFetching: convFetching,
     refetch: refetchConv,
   } = useConversation(id);
-  const { data: messages = [] } = useMessages(id, { subscribe: true });
+  const {
+    data: messages = [],
+    isLoading: messagesLoading,
+    isFetching: messagesFetching,
+    isError: messagesError,
+  } = useMessages(id, { subscribe: true });
 
   useEffect(() => {
     setShowPartnerMobile(false);
@@ -105,6 +113,8 @@ const ChatInboxPage = () => {
         <ChatThreadView
           conv={conv}
           messages={messages}
+          messagesLoading={messagesLoading || messagesFetching}
+          messagesError={messagesError}
           showBack
           onBack={clearConversation}
           showPartnerToggle
@@ -164,25 +174,39 @@ const ChatInboxPage = () => {
         </div>
       </div>
 
-      {showPartnerMobile && conv && (
-        <div
-          className="md:hidden fixed inset-0 z-40 bg-background/60 backdrop-blur-sm"
-          onClick={() => setShowPartnerMobile(false)}
-        >
-          <div
-            className="absolute right-0 top-0 bottom-0 w-[92%] max-w-sm bg-background shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <ChatErrorBoundary onBack={() => setShowPartnerMobile(false)}>
-              <ChatPartnerPanel
-                conversation={conv}
-                messages={messages}
-                onClose={() => setShowPartnerMobile(false)}
-              />
-            </ChatErrorBoundary>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showPartnerMobile && conv && (
+          <>
+            <motion.button
+              key="chat-partner-backdrop"
+              type="button"
+              aria-label="ปิดข้อมูลคู่แชท"
+              className="md:hidden fixed inset-0 z-40 bg-background/75 backdrop-blur-sm"
+              initial={reducedMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: smoothEase }}
+              onClick={() => setShowPartnerMobile(false)}
+            />
+            <motion.div
+              key="chat-partner-panel"
+              className="md:hidden fixed right-0 top-0 bottom-0 z-50 w-[92%] max-w-sm bg-background shadow-xl"
+              initial={reducedMotion ? false : { x: "100%" }}
+              animate={{ x: 0 }}
+              exit={reducedMotion ? { opacity: 0 } : { x: "100%" }}
+              transition={{ duration: 0.28, ease: smoothEase }}
+            >
+              <ChatErrorBoundary onBack={() => setShowPartnerMobile(false)}>
+                <ChatPartnerPanel
+                  conversation={conv}
+                  messages={messages}
+                  onClose={() => setShowPartnerMobile(false)}
+                />
+              </ChatErrorBoundary>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

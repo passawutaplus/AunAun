@@ -19,7 +19,6 @@ import { toast } from "sonner";
 import ModerationBanBanner from "@/components/moderation/ModerationBanBanner";
 import { uploadProjectVideo } from "@/lib/uploadVideo";
 import { useSubscription } from "@/core/subscription";
-import { CommunityComposerTemplates } from "@/components/community/CommunityComposerTemplates";
 import { CommunityLinkPreviewBar } from "@/components/community/CommunityLinkPreviewBar";
 import { formatCommunityActionError } from "@/lib/communityRateLimit";
 import { extractCommunityLinkUrls } from "@/lib/communityLinkUrls";
@@ -513,16 +512,6 @@ const CommunityPostEditorPage = () => {
               {isEditMode ? "แก้ไข Area Post" : "Area Post"}
             </h1>
           </div>
-
-          {!isEditMode && (
-            <CommunityComposerTemplates
-              onApply={(patch) => {
-                if (patch.title !== undefined) setTitle(patch.title);
-                if (patch.body !== undefined) setBody(patch.body);
-                if (patch.tags !== undefined) setTags(patch.tags);
-              }}
-            />
-          )}
 
           <CommunityMediaStrip
             items={mediaItems}

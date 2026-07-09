@@ -48,6 +48,10 @@ export const BRAND_PRIVACY_EMAIL = "privacy@aplus1.app";
 
 /** คีย์ภายใน (คงเดิมเพื่อไม่รีเซ็ต localStorage / session ของผู้ใช้เดิม) */
 export const BRAND_STORAGE_THEME = "an1hem-theme";
+export const BRAND_STORAGE_FEED_GRID = "an1hem-feed-grid-density";
+export const BRAND_STORAGE_FEED_AREA = "an1hem-feed-area-layout";
+export const BRAND_STORAGE_FEED_GRID_MOBILE = "an1hem-feed-grid-mobile";
+export const BRAND_STORAGE_FEED_AREA_MOBILE = "an1hem-feed-area-mobile";
 export const BRAND_STORAGE_ONBOARDING = "an1hem_onboarding";
 export const BRAND_STORAGE_NO_PERSIST = "an1hem_no_persist";
 
