@@ -23,6 +23,7 @@ import {
   DEFAULT_COLLAB_MESSAGE,
   type ChatEntrySource,
 } from "@/lib/chatContext";
+import ProjectReferencePreview from "@/components/opportunity/ProjectReferencePreview";
 
 const COLLAB_TYPES = [
   { key: "joint-project", label: "ร่วมโปรเจกต์ใหม่" },
@@ -61,6 +62,7 @@ interface CollabDialogProps {
   recipientName: string;
   projectId?: string;
   projectTitle?: string;
+  projectCoverUrl?: string | null;
   source?: ChatEntrySource;
 }
 
@@ -71,6 +73,7 @@ const CollabDialog = ({
   recipientName,
   projectId,
   projectTitle,
+  projectCoverUrl,
   source = "project",
 }: CollabDialogProps) => {
   const navigate = useNavigate();
@@ -204,10 +207,17 @@ const CollabDialog = ({
           <DialogTitle className="text-xl">ชวน {recipientName} ร่วมงาน</DialogTitle>
           <DialogDescription className="text-sm leading-6">
             ไม่ใช่การจ้างงาน — เติมรายละเอียดได้ถ้าต้องการ ไม่กรอกก็แชทได้เลย
-            {projectTitle && source === "project" && <> เริ่มจากผลงาน <span className="text-foreground font-medium">"{projectTitle}"</span></>}
             {source === "profile" && <> จากโปรไฟล์ <span className="text-foreground font-medium">{recipientName}</span></>}
           </DialogDescription>
         </DialogHeader>
+
+        {source === "project" && projectTitle && (
+          <ProjectReferencePreview
+            title={projectTitle}
+            coverUrl={projectCoverUrl}
+            label="เริ่มจากผลงาน"
+          />
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Your profile preview */}

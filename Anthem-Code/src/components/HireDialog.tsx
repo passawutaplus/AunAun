@@ -23,12 +23,14 @@ import HireInviteForm, {
   buildHireInviteMessage,
   emptyHireInviteForm,
 } from "@/components/hiring/HireInviteForm";
+import ProjectReferencePreview from "@/components/opportunity/ProjectReferencePreview";
 
 interface HireDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectTitle?: string;
   projectId?: string;
+  projectCoverUrl?: string | null;
   freelancerId?: string;
   source?: ChatEntrySource;
   profileName?: string;
@@ -39,6 +41,7 @@ const HireDialog = ({
   onOpenChange,
   projectTitle,
   projectId,
+  projectCoverUrl,
   freelancerId,
   source = "project",
   profileName,
@@ -153,11 +156,15 @@ const HireDialog = ({
             {source === "profile" ? (
               <>จากโปรไฟล์: <span className="font-medium text-primary">{profileName ?? projectTitle}</span></>
             ) : (
-              <>อ้างอิงผลงาน: <span className="font-medium text-primary">{projectTitle}</span></>
+              <>คุยโอกาสจากผลงานที่คุณเลือก</>
             )}
             <span className="block mt-1 text-xs">เติมรายละเอียดได้ถ้าต้องการ — ไม่กรอกก็คุยต่อได้เลย</span>
           </DialogDescription>
         </DialogHeader>
+
+        {source === "project" && projectTitle && (
+          <ProjectReferencePreview title={projectTitle} coverUrl={projectCoverUrl} />
+        )}
 
         <HireInviteForm
           form={form}

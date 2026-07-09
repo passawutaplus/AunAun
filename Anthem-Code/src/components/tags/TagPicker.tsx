@@ -3,7 +3,6 @@ import { Plus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useTagSuggestions } from "@/hooks/useTagSuggestions";
 import { normalizeTag } from "@/lib/exploreRoutes";
 import { cn } from "@/lib/utils";
@@ -63,10 +62,6 @@ const TagPicker = ({
         variant === "default" && "rounded-2xl border border-border bg-card p-4",
       )}
     >
-      {variant === "default" && (
-        <Label className="text-xs font-semibold text-muted-foreground uppercase">แท็ก</Label>
-      )}
-
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {tags.map((t, i) => (
@@ -112,71 +107,56 @@ const TagPicker = ({
       {showQuick && (
         <div className="space-y-2">
           {availablePresets.length > 0 && (
-            <>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">แนะนำ</p>
-              <div className="flex flex-wrap gap-1.5">
-                {availablePresets.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => addTag(s)}
-                    className={cn(
-                      "text-xs px-2.5 py-1 rounded-full border border-primary/30 bg-primary/5",
-                      "text-primary hover:bg-primary/10 transition-colors",
-                    )}
-                  >
-                    #{s}
-                  </button>
-                ))}
-              </div>
-            </>
+            <div className="flex flex-wrap gap-1.5">
+              {availablePresets.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => addTag(s)}
+                  className={cn(
+                    "text-xs px-2.5 py-1 rounded-full border border-primary/30 bg-primary/5",
+                    "text-primary hover:bg-primary/10 transition-colors",
+                  )}
+                >
+                  #{s}
+                </button>
+              ))}
+            </div>
           )}
           {filteredSuggestions.length > 0 && (
-            <>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                {availablePresets.length > 0 ? "แท็กที่ใช้บ่อย" : "แท็กที่ใช้บ่อย"}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {filteredSuggestions.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => addTag(s)}
-                    className={cn(
-                      "text-xs px-2.5 py-1 rounded-full border border-border/80 bg-muted/40",
-                      "text-foreground/80 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-colors",
-                    )}
-                  >
-                    #{s}
-                  </button>
-                ))}
-              </div>
-            </>
+            <div className="flex flex-wrap gap-1.5">
+              {filteredSuggestions.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => addTag(s)}
+                  className={cn(
+                    "text-xs px-2.5 py-1 rounded-full border border-border/80 bg-muted/40",
+                    "text-foreground/80 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-colors",
+                  )}
+                >
+                  #{s}
+                </button>
+              ))}
+            </div>
           )}
         </div>
       )}
 
       {input.trim() && filteredSuggestions.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-[10px] text-muted-foreground">แนะนำ</p>
-          <div className="flex flex-wrap gap-1.5">
-            {filteredSuggestions.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => addTag(s)}
-                className="text-xs px-2.5 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
-              >
-                #{s}
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-1.5">
+          {filteredSuggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => addTag(s)}
+              className="text-xs px-2.5 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
+            >
+              #{s}
+            </button>
+          ))}
         </div>
       )}
-
-      <p className="text-[10px] text-muted-foreground">
-        {tags.length}/{max} แท็ก — กด Enter เพื่อเพิ่มแท็กใหม่
-      </p>
     </div>
   );
 };

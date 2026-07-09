@@ -2,7 +2,6 @@ import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import {
   CONTENT_BLOCK_META,
   PROJECT_BLOCK_BODY_MAX,
@@ -82,31 +81,17 @@ export function ProjectContentBlocksEditor({
 
   return (
     <section className="space-y-3">
-      <div>
-        <Label className="text-sm font-semibold">เนื้อหาผลงาน</Label>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          เพิ่มบล็อกหัวข้อ/เนื้อหา — จัดเรียงตามลำดับที่ต้องการ
-        </p>
-      </div>
-
       {blocks.length > 0 && (
         <div className="space-y-3">
           {blocks.map((block, index) => {
-            const meta = CONTENT_BLOCK_META[block.type];
             return (
               <div
                 key={block.id}
-                className="rounded-2xl border border-border bg-card/50 p-4 space-y-3"
+                className="space-y-2"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden />
-                    <span className="text-xs font-medium text-muted-foreground truncate">
-                      {meta.label}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
+                <div className="flex items-center justify-end gap-1">
+                  <GripVertical className="mr-auto w-4 h-4 text-muted-foreground shrink-0" aria-hidden />
+                  <Button
                       type="button"
                       variant="ghost"
                       size="icon"
@@ -139,35 +124,28 @@ export function ProjectContentBlocksEditor({
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
-                  </div>
                 </div>
 
                 {block.type !== "body" && (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">หัวข้อ</Label>
-                    <Input
-                      value={block.heading ?? ""}
-                      onChange={(e) => patchBlock(block.id, { heading: e.target.value })}
-                      placeholder="พิมพ์หัวข้อ..."
-                      maxLength={PROJECT_BLOCK_HEADING_MAX}
-                      disabled={disabled}
-                      className={cn(block.type === "heading" && "text-center font-semibold")}
-                    />
-                  </div>
+                  <Input
+                    value={block.heading ?? ""}
+                    onChange={(e) => patchBlock(block.id, { heading: e.target.value })}
+                    placeholder="พิมพ์หัวข้อ..."
+                    maxLength={PROJECT_BLOCK_HEADING_MAX}
+                    disabled={disabled}
+                    className={cn(block.type === "heading" && "text-center font-semibold")}
+                  />
                 )}
 
                 {block.type !== "heading" && (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">เนื้อหา</Label>
-                    <Textarea
-                      value={block.body ?? ""}
-                      onChange={(e) => patchBlock(block.id, { body: e.target.value })}
-                      placeholder="เล่าที่มา แนวคิด กระบวนการ หรือผลลัพธ์..."
-                      rows={block.type === "body" ? 5 : 4}
-                      maxLength={PROJECT_BLOCK_BODY_MAX}
-                      disabled={disabled}
-                    />
-                  </div>
+                  <Textarea
+                    value={block.body ?? ""}
+                    onChange={(e) => patchBlock(block.id, { body: e.target.value })}
+                    placeholder="เล่าที่มา แนวคิด กระบวนการ หรือผลลัพธ์..."
+                    rows={block.type === "body" ? 5 : 4}
+                    maxLength={PROJECT_BLOCK_BODY_MAX}
+                    disabled={disabled}
+                  />
                 )}
               </div>
             );
@@ -195,16 +173,11 @@ export function ProjectContentBlocksEditor({
                 {meta.label}
               </div>
               <BlockTypePreview type={type} />
-              <p className="text-[10px] text-muted-foreground mt-2 leading-snug">{meta.description}</p>
             </button>
           );
         })}
       </div>
       )}
-
-      <p className="text-xs text-muted-foreground text-right">
-        {blocks.length}/{PROJECT_CONTENT_BLOCKS_MAX} บล็อก
-      </p>
     </section>
   );
 }

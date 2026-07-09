@@ -90,9 +90,17 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   });
   const [hireOpen, setHireOpen] = useState(false);
   const [hireProject, setHireProject] = useState("");
+  const [hireProjectId, setHireProjectId] = useState<string | undefined>();
+  const [hireProjectCover, setHireProjectCover] = useState<string | undefined>();
   const [hireFreelancerId, setHireFreelancerId] = useState<string | undefined>();
   const [collabOpen, setCollabOpen] = useState(false);
-  const [collabTarget, setCollabTarget] = useState<{ recipientId?: string; recipientName: string; projectId?: string; projectTitle?: string }>({ recipientName: "" });
+  const [collabTarget, setCollabTarget] = useState<{
+    recipientId?: string;
+    recipientName: string;
+    projectId?: string;
+    projectTitle?: string;
+    projectCoverUrl?: string;
+  }>({ recipientName: "" });
   const [designerSort, setDesignerSort] = useState<DesignerSort>("newest");
   const [designerCategory, setDesignerCategory] = useState<Category | "All">("All");
   const [designerTools, setDesignerTools] = useState<string[]>([]);
@@ -355,7 +363,12 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     openHireForFreelancer(recipientId, recipientName);
   };
 
-  const openHireForFreelancer = (freelancerId: string, projectTitle: string) => {
+  const openHireForFreelancer = (
+    freelancerId: string,
+    projectTitle: string,
+    projectId?: string,
+    projectCoverUrl?: string,
+  ) => {
     if (!user) {
       stashPendingHire(freelancerId, projectTitle);
       navigateToAuth(navigate);
@@ -363,6 +376,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     }
     setHireFreelancerId(freelancerId);
     setHireProject(projectTitle);
+    setHireProjectId(projectId);
+    setHireProjectCover(projectCoverUrl);
     setHireOpen(true);
   };
 
@@ -477,14 +492,20 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                       boosted={boostedSets.projects.has(item.data.id)}
                       boostId={boostMaps.projects.get(item.data.id)}
                       onHireClick={() => {
-                        openHireForFreelancer(item.data.ownerId, item.data.title);
+                        openHireForFreelancer(
+                          item.data.ownerId ?? "",
+                          item.data.title,
+                          item.data.id,
+                          item.data.image,
+                        );
                       }}
-                      onCollabClick={(title) => {
+                      onCollabClick={() => {
                         setCollabTarget({
                           recipientId: item.data.ownerId,
                           recipientName: item.data.owner,
                           projectId: item.data.id,
-                          projectTitle: title,
+                          projectTitle: item.data.title,
+                          projectCoverUrl: item.data.image,
                         });
                         setCollabOpen(true);
                       }}
@@ -527,7 +548,14 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
 
       <Footer />
 
-      <HireDialog open={hireOpen} onOpenChange={setHireOpen} projectTitle={hireProject} freelancerId={hireFreelancerId} />
+      <HireDialog
+        open={hireOpen}
+        onOpenChange={setHireOpen}
+        projectTitle={hireProject}
+        projectId={hireProjectId}
+        projectCoverUrl={hireProjectCover}
+        freelancerId={hireFreelancerId}
+      />
       <CollabDialog
         open={collabOpen}
         onOpenChange={setCollabOpen}
@@ -535,6 +563,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
         recipientName={collabTarget.recipientName}
         projectId={collabTarget.projectId}
         projectTitle={collabTarget.projectTitle}
+        projectCoverUrl={collabTarget.projectCoverUrl}
       />
     </main>
   );

@@ -30,7 +30,6 @@ import TagPicker from "@/components/tags/TagPicker";
 import ToolPicker from "@/components/tools/ToolPicker";
 import ProjectPreviewDialog, { type ProjectPreviewData } from "@/components/project/ProjectPreviewDialog";
 import { PortfolioCoverCropDialog } from "@/components/project/PortfolioCoverCropDialog";
-import { PROJECT_COVER_RATIO_LABEL } from "@/lib/projectCoverAspect";
 import ProjectContextEditorFields, {
   type ProjectContextForm,
 } from "@/components/project/ProjectContextEditorFields";
@@ -51,6 +50,7 @@ import { LEGAL_ATTESTATION_VERSION } from "@/lib/legalConfig";
 import { type LicenseType, isLicenseType } from "@/lib/licenses";
 import { ProjectEditorToolsSidebar } from "@/components/project/ProjectEditorToolsSidebar";
 import { ProjectEditorGallerySection } from "@/components/project/ProjectEditorGallerySection";
+import { ProjectEditorContinueAdd } from "@/components/project/ProjectEditorContinueAdd";
 import { PortfolioLinkedPostPicker } from "@/components/project/PortfolioLinkedPostPicker";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { PortfolioCollabUserPicker } from "@/components/project/PortfolioCollabUserPicker";
@@ -62,7 +62,6 @@ import {
   parseContentBlocks,
   parseGalleryDisplayMode,
   PROJECT_CONTENT_BLOCKS_MAX,
-  gallerySectionTitle,
   toStoredContentBlocks,
   type GalleryDisplayMode,
   type ProjectContentBlock,
@@ -150,6 +149,7 @@ const ProjectEditorPage = () => {
   const [coverCropOpen, setCoverCropOpen] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingGridSlot, setUploadingGridSlot] = useState<number | null>(null);
+  const [toolsExpanded, setToolsExpanded] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<ProjectPreviewMode>("pc");
@@ -226,6 +226,14 @@ const ProjectEditorPage = () => {
   }, [authLoading, editing, user, id, navigate]);
 
   useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setToolsExpanded(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
     if (!existing) return;
     if (editing && user && existing.owner_id !== user.id && !isAdmin) return;
     setTitle(existing.title);
@@ -290,7 +298,9 @@ const ProjectEditorPage = () => {
           (existing as { external_links?: unknown }).external_links,
         ),
       );
-      setContextExpanded(hasProjectContextContent(extCtx));
+      setContextExpanded(
+        hasProjectContextContent(extCtx) || !!(existing.description ?? "").trim(),
+      );
       void (async () => {
         const ext = existing as {
           linked_community_post_ids?: string[];
@@ -580,12 +590,6 @@ const ProjectEditorPage = () => {
   const handleGallery = async (files: FileList | File[]) => {
     if (!user) return;
     const arr = Array.from(files);
-    const maxGallery = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
-    const imageCount = countMediaByKind(mediaItems, "image");
-    if (imageCount + arr.length > maxGallery) {
-      toast.error(`รวมแล้วต้องไม่เกิน ${maxGallery} ภาพ`);
-      return;
-    }
     setUploadingGallery(true);
     try {
       const urls: string[] = [];
@@ -609,17 +613,12 @@ const ProjectEditorPage = () => {
       toast.error("รองรับเฉพาะ JPG, PNG, WebP");
       return;
     }
-    const maxGalleryNum = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
     const images = mediaItems.filter((m) => m.kind === "image");
     const slots = photoGridSlotCount(gridLayout);
     if (slotIndex >= slots) return;
 
     if (slotIndex > images.length) {
       toast.error("กรุณาเติมช่องก่อนหน้าก่อน");
-      return;
-    }
-    if (slotIndex === images.length && images.length >= maxGalleryNum) {
-      toast.error(`รวมแล้วต้องไม่เกิน ${maxGalleryNum} ภาพ`);
       return;
     }
 
@@ -862,6 +861,13 @@ const ProjectEditorPage = () => {
     [contentBlocks.length],
   );
 
+  const focusToolsSidebar = useCallback(() => {
+    setToolsExpanded(true);
+  }, []);
+
+  const hasPresentationContent =
+    galleryDisplayMode === "grid" || mediaItems.length > 0 || contentBlocks.length > 0;
+
   const imageCount = countMediaByKind(mediaItems, "image");
   const videoCount = countMediaByKind(mediaItems, "video");
   const maxGallery =
@@ -1032,34 +1038,24 @@ const ProjectEditorPage = () => {
           gridLayout={gridLayout}
           onDisplayModeChange={handleGalleryDisplayModeChange}
           onGridLayoutSelect={handleGridLayoutSelect}
-          imageCount={imageCount}
-          maxImages={maxGallery}
-          videoCount={videoCount}
-          maxVideos={limits.videosPerProject}
-          contentBlocks={contentBlocks}
-          imageDisabled={uploadingGallery || uploadingGridSlot !== null || imageCount >= maxGallery}
-          videoDisabled={uploadingVideo || videoCount >= limits.videosPerProject}
-          textDisabled={isBusy || contentBlocks.length >= PROJECT_CONTENT_BLOCKS_MAX}
+          imageDisabled={uploadingGallery || uploadingGridSlot !== null}
+          videoDisabled={uploadingVideo}
+          textDisabled={isBusy}
           uploadingImage={uploadingGallery || uploadingGridSlot !== null}
           uploadingVideo={uploadingVideo}
           onPickImages={handleGallery}
           onPickVideo={(f) => void handleVideo(f)}
           onAddTextBlock={handleAddTextBlock}
-          className="fixed left-0 top-16 z-30 lg:sticky lg:top-16 lg:z-auto lg:self-start"
+          expanded={toolsExpanded}
+          onExpandedChange={setToolsExpanded}
         />
 
-        <div className="min-w-0 flex-1 pl-12 lg:pl-0">
+        <div className="min-w-0 flex-1">
 
       <div className="max-w-6xl mx-auto px-4 py-6 pb-28 lg:pb-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         {/* Left: content */}
-        <div className="space-y-6 order-2 lg:order-none">
+        <div className="order-2 mx-auto w-full max-w-2xl space-y-6 lg:order-none">
           <section className="space-y-2">
-            {!(galleryDisplayMode === "single" && mediaItems.length === 0) ? (
-              <Label className="text-sm font-semibold">
-                {gallerySectionTitle(galleryDisplayMode)}
-              </Label>
-            ) : null}
-
             {galleryDisplayMode === "grid" || mediaItems.length > 0 ? (
               <div className="space-y-3">
                 <ProjectEditorGallerySection
@@ -1084,7 +1080,7 @@ const ProjectEditorPage = () => {
                   />
                 ) : null}
                 {(uploadingGallery || uploadingVideo) && (
-                  <div className="rounded-2xl border border-dashed border-border bg-card p-8 flex items-center justify-center text-sm text-muted-foreground">
+                  <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
                     <Loader2 className="w-4 h-4 animate-spin mr-2" /> กำลังอัปโหลด...
                   </div>
                 )}
@@ -1107,12 +1103,73 @@ const ProjectEditorPage = () => {
             hideAddButtons
           />
 
+          {hasPresentationContent ? (
+            <ProjectEditorContinueAdd onClick={focusToolsSidebar} disabled={isBusy} />
+          ) : null}
+
           <ProjectContextEditorFields
             value={projectContext}
             onChange={patchProjectContext}
+            shortDescription={shortDescription}
+            onShortDescriptionChange={setShortDescription}
             expanded={contextExpanded}
             onExpandedChange={setContextExpanded}
+            disabled={isBusy}
           />
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <ToolPicker
+              userId={user?.id}
+              tools={tools}
+              onChange={setTools}
+              input={toolInput}
+              setInput={setToolInput}
+              variant="compact"
+            />
+            <TagPicker
+              userId={user?.id}
+              tags={tags}
+              onChange={setTags}
+              input={tagInput}
+              setInput={setTagInput}
+              variant="compact"
+            />
+          </div>
+
+          {user ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
+                <LicensePicker
+                  value={licenseType}
+                  onChange={setLicenseType}
+                  licenseNote={licenseNote}
+                  onLicenseNoteChange={setLicenseNote}
+                  copyrightHolder={copyrightHolder}
+                  onCopyrightHolderChange={setCopyrightHolder}
+                />
+                <ThirdPartyAssetsToggle
+                  enabled={hasThirdPartyAssets}
+                  onEnabledChange={setHasThirdPartyAssets}
+                  note={thirdPartyNote}
+                  onNoteChange={setThirdPartyNote}
+                />
+                {status === "Published" && (
+                  <OriginalWorkAttestation
+                    checked={rightsAttested}
+                    onCheckedChange={setRightsAttested}
+                  />
+                )}
+              </div>
+              <ProjectAssetsEditor
+                assets={projectAssets}
+                onChange={setProjectAssets}
+                userId={user.id}
+                folder={folderRef.current}
+                projectId={editing && id && isUuid(id) ? id : undefined}
+                tier={tier}
+              />
+            </div>
+          ) : null}
 
           {!isAplus1LaunchMinimal() ? (
             <section className="space-y-4 rounded-2xl border border-border bg-card/40 p-4">
@@ -1129,38 +1186,23 @@ const ProjectEditorPage = () => {
 
         {/* Right: sidebar */}
         <aside className="order-first space-y-5 lg:order-none lg:sticky lg:top-20 lg:self-start">
-          <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase">ชื่อผลงาน *</Label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="เช่น โลโก้ร้านกาแฟเชียงใหม่ Doi Brew"
-                className="text-base font-medium h-11 px-3"
-                maxLength={120}
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase">ภาพปก *</Label>
-                {!cover ? (
-                  <span className="text-[11px] text-primary">ต้องมีภาพปกก่อนเผยแพร่</span>
-                ) : null}
-              </div>
-              <CoverDrop
-                url={cover}
-                loading={uploadingCover}
-                onPick={handleCoverPick}
-                onClear={() => setCover("")}
-                compact
-              />
-              <p className="text-[11px] text-muted-foreground leading-snug">
-                อัตราส่วน {PROJECT_COVER_RATIO_LABEL} แนวนอน — ใช้ในฟีดและการค้นหา
-              </p>
-            </div>
-          </div>
-
           <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="เช่น โลโก้ร้านกาแฟเชียงใหม่ Doi Brew"
+              aria-label="ชื่อผลงาน"
+              className="text-base font-medium h-11 px-3"
+              maxLength={120}
+            />
+            <CoverDrop
+              url={cover}
+              loading={uploadingCover}
+              onPick={handleCoverPick}
+              onClear={() => setCover("")}
+              compact
+            />
+
             <div className="space-y-2">
               <Label className="text-xs font-semibold text-muted-foreground uppercase">หมวดงาน *</Label>
               <Select value={category || undefined} onValueChange={setCategory}>
@@ -1246,29 +1288,6 @@ const ProjectEditorPage = () => {
             )}
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
-            <LicensePicker
-              value={licenseType}
-              onChange={setLicenseType}
-              licenseNote={licenseNote}
-              onLicenseNoteChange={setLicenseNote}
-              copyrightHolder={copyrightHolder}
-              onCopyrightHolderChange={setCopyrightHolder}
-            />
-            <ThirdPartyAssetsToggle
-              enabled={hasThirdPartyAssets}
-              onEnabledChange={setHasThirdPartyAssets}
-              note={thirdPartyNote}
-              onNoteChange={setThirdPartyNote}
-            />
-            {status === "Published" && (
-              <OriginalWorkAttestation
-                checked={rightsAttested}
-                onCheckedChange={setRightsAttested}
-              />
-            )}
-          </div>
-
           {user && (
             <StudioCreditPicker
               studioId={studioId}
@@ -1281,51 +1300,6 @@ const ProjectEditorPage = () => {
 
 
 
-          {user && (
-            <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase">
-                รายละเอียดแบบย่อ
-              </Label>
-              <Textarea
-                value={shortDescription}
-                onChange={(e) => setShortDescription(e.target.value)}
-                placeholder="สรุปสั้น ๆ ว่างานนี้คืออะไร ทำอะไร หรือจุดเด่นที่อยากให้จำ..."
-                rows={4}
-                maxLength={2000}
-                disabled={isBusy}
-                className="resize-y min-h-[96px] text-sm"
-              />
-              <p className="text-[11px] text-muted-foreground text-right">
-                {shortDescription.length}/2000
-              </p>
-            </div>
-          )}
-
-          {user && (
-            <ProjectAssetsEditor
-              assets={projectAssets}
-              onChange={setProjectAssets}
-              userId={user.id}
-              folder={folderRef.current}
-              projectId={editing && id && isUuid(id) ? id : undefined}
-              tier={tier}
-            />
-          )}
-
-          <ToolPicker
-            userId={user?.id}
-            tools={tools}
-            onChange={setTools}
-            input={toolInput}
-            setInput={setToolInput}
-          />
-          <TagPicker
-            userId={user?.id}
-            tags={tags}
-            onChange={setTags}
-            input={tagInput}
-            setInput={setTagInput}
-          />
         </aside>
       </div>
         </div>
@@ -1464,6 +1438,7 @@ const CoverDrop = ({
         pickFile(e.dataTransfer.files?.[0]);
       }}
       onClick={() => ref.current?.click()}
+      aria-label="ภาพปก"
       className={cn(
         "flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition glass-panel",
         compact ? "aspect-[4/3] px-3 py-4" : "min-h-[200px] gap-3 rounded-2xl",
@@ -1506,9 +1481,10 @@ const GalleryDrop = ({
       onDragLeave={() => setDrag(false)}
       onDrop={(e) => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files?.length) onPick(e.dataTransfer.files); }}
       onClick={() => ref.current?.click()}
-      className={`rounded-2xl border-2 border-dashed cursor-pointer p-12 min-h-[180px] flex flex-col items-center justify-center gap-3 transition glass-panel ${
-        drag ? "border-primary bg-primary/10 shadow-lg shadow-primary/10" : "border-border/80 hover:border-primary/40 hover:bg-muted/20"
-      }`}
+      className={cn(
+        "cursor-pointer min-h-[180px] flex flex-col items-center justify-center gap-3 transition-colors p-12",
+        drag ? "text-primary" : "text-muted-foreground hover:text-foreground",
+      )}
     >
       {loading ? <Loader2 className="w-6 h-6 animate-spin text-primary" /> : <Upload className="w-8 h-8 text-muted-foreground" />}
       <p className="text-sm font-medium text-foreground">

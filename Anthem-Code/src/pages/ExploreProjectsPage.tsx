@@ -132,6 +132,8 @@ const ExploreProjectsPage = () => {
 
   const [hireOpen, setHireOpen] = useState(false);
   const [hireProject, setHireProject] = useState("");
+  const [hireProjectId, setHireProjectId] = useState<string | undefined>();
+  const [hireProjectCover, setHireProjectCover] = useState<string | undefined>();
   const [hireFreelancerId, setHireFreelancerId] = useState<string | undefined>();
   const [collabOpen, setCollabOpen] = useState(false);
   const [collabTarget, setCollabTarget] = useState<{
@@ -139,6 +141,7 @@ const ExploreProjectsPage = () => {
     recipientName: string;
     projectId?: string;
     projectTitle?: string;
+    projectCoverUrl?: string;
   }>({ recipientName: "" });
 
   useEffect(() => {
@@ -150,7 +153,12 @@ const ExploreProjectsPage = () => {
     setHireOpen(true);
   }, [user]);
 
-  const openHireForFreelancer = (freelancerId: string | undefined, projectTitle: string) => {
+  const openHireForFreelancer = (
+    freelancerId: string | undefined,
+    projectTitle: string,
+    projectId?: string,
+    projectCoverUrl?: string,
+  ) => {
     if (!freelancerId) return;
     if (!user) {
       stashPendingHire(freelancerId, projectTitle);
@@ -159,6 +167,8 @@ const ExploreProjectsPage = () => {
     }
     setHireFreelancerId(freelancerId);
     setHireProject(projectTitle);
+    setHireProjectId(projectId);
+    setHireProjectCover(projectCoverUrl);
     setHireOpen(true);
   };
 
@@ -265,13 +275,14 @@ const ExploreProjectsPage = () => {
               <ProjectCard
                 key={p.id}
                 project={p}
-                onHireClick={() => openHireForFreelancer(p.ownerId, p.title)}
-                onCollabClick={(title) => {
+                onHireClick={() => openHireForFreelancer(p.ownerId, p.title, p.id, p.image)}
+                onCollabClick={() => {
                   setCollabTarget({
                     recipientId: p.ownerId,
                     recipientName: p.owner,
                     projectId: p.id,
-                    projectTitle: title,
+                    projectTitle: p.title,
+                    projectCoverUrl: p.image,
                   });
                   setCollabOpen(true);
                 }}
@@ -281,7 +292,14 @@ const ExploreProjectsPage = () => {
         )}
       </div>
 
-      <HireDialog open={hireOpen} onOpenChange={setHireOpen} projectTitle={hireProject} freelancerId={hireFreelancerId} />
+      <HireDialog
+        open={hireOpen}
+        onOpenChange={setHireOpen}
+        projectTitle={hireProject}
+        projectId={hireProjectId}
+        projectCoverUrl={hireProjectCover}
+        freelancerId={hireFreelancerId}
+      />
       <CollabDialog
         open={collabOpen}
         onOpenChange={setCollabOpen}
@@ -289,6 +307,7 @@ const ExploreProjectsPage = () => {
         recipientName={collabTarget.recipientName}
         projectId={collabTarget.projectId}
         projectTitle={collabTarget.projectTitle}
+        projectCoverUrl={collabTarget.projectCoverUrl}
       />
     </div>
   );

@@ -449,6 +449,7 @@ const ProjectDetailPage = () => {
         onOpenChange={setHireOpen}
         projectTitle={project.title}
         projectId={project.id}
+        projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.[0]}
         freelancerId={project.ownerId}
       />
 
@@ -459,6 +460,7 @@ const ProjectDetailPage = () => {
         recipientName={project.owner}
         projectId={project.id}
         projectTitle={project.title}
+        projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.[0]}
       />
     </div>
   );

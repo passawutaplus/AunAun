@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -22,8 +21,6 @@ import { Button } from "@/components/ui/button";
 import type { PortfolioMediaItem } from "@/lib/portfolioMedia";
 import { cn } from "@/lib/utils";
 
-const REORDER_HINT_KEY = "anthem-gallery-reorder-hint-seen";
-
 export type GalleryLayout = "grid" | "list" | "photogrid";
 
 interface SortableGalleryGridProps {
@@ -33,6 +30,7 @@ interface SortableGalleryGridProps {
   onSetCover: (url: string) => void;
   onRemove: (index: number) => void;
   layout?: GalleryLayout;
+  bare?: boolean;
 }
 
 export function SortableGalleryGrid({
@@ -42,27 +40,8 @@ export function SortableGalleryGrid({
   onSetCover,
   onRemove,
   layout = "grid",
+  bare = false,
 }: SortableGalleryGridProps) {
-  const [showHint, setShowHint] = useState(false);
-
-  useEffect(() => {
-    if (items.length < 2) return;
-    try {
-      if (!localStorage.getItem(REORDER_HINT_KEY)) setShowHint(true);
-    } catch {
-      /* ignore */
-    }
-  }, [items.length]);
-
-  const dismissHint = () => {
-    setShowHint(false);
-    try {
-      localStorage.setItem(REORDER_HINT_KEY, "1");
-    } catch {
-      /* ignore */
-    }
-  };
-
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 300, tolerance: 8 } }),
@@ -76,7 +55,6 @@ export function SortableGalleryGrid({
     const newIndex = items.findIndex((m) => m.id === over.id);
     if (oldIndex < 0 || newIndex < 0) return;
     onReorder(arrayMove(items, oldIndex, newIndex));
-    dismissHint();
   };
 
   const move = (i: number, dir: -1 | 1) => {
@@ -89,11 +67,6 @@ export function SortableGalleryGrid({
 
   return (
     <div className="space-y-2">
-      {showHint && (
-        <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
-          จิ้มค้างแล้วลากเพื่อสลับลำดับ · กดดาวเพื่อตั้งภาพปก (เฉพาะรูป)
-        </p>
-      )}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={items.map((m) => m.id)} strategy={rectSortingStrategy}>
           <div
@@ -113,6 +86,7 @@ export function SortableGalleryGrid({
                 isCover={item.kind === "image" && coverUrl === item.url}
                 layout={layout}
                 total={items.length}
+                bare={bare}
                 onSetCover={() => onSetCover(item.url)}
                 onRemove={() => onRemove(i)}
                 onMoveUp={() => move(i, -1)}
@@ -132,6 +106,7 @@ function SortableThumb({
   isCover,
   layout,
   total,
+  bare,
   onSetCover,
   onRemove,
   onMoveUp,
@@ -142,6 +117,7 @@ function SortableThumb({
   isCover: boolean;
   layout: GalleryLayout;
   total: number;
+  bare?: boolean;
   onSetCover: () => void;
   onRemove: () => void;
   onMoveUp: () => void;
@@ -164,7 +140,8 @@ function SortableThumb({
         ref={setNodeRef}
         style={style}
         className={cn(
-          "group relative rounded-2xl overflow-hidden border border-border bg-card",
+          "group relative overflow-hidden",
+          !bare && "rounded-2xl border border-border bg-card",
           isDragging && "opacity-60 shadow-lg z-10",
         )}
       >
@@ -206,8 +183,10 @@ function SortableThumb({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group relative aspect-square rounded-xl overflow-hidden border bg-muted/30",
-        isCover ? "border-primary ring-2 ring-primary/30" : "border-border",
+        "group relative aspect-square overflow-hidden",
+        !bare && "rounded-xl border bg-muted/30",
+        !bare && (isCover ? "border-primary ring-2 ring-primary/30" : "border-border"),
+        bare && isCover && "ring-2 ring-primary/40",
         isDragging && "opacity-60 shadow-lg z-10",
       )}
     >

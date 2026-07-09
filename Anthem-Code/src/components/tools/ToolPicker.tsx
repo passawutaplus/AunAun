@@ -3,7 +3,6 @@ import { Plus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import ToolIcon from "@/components/ToolIcon";
 import { useToolSuggestions, normalizeToolKey, isAudioTool } from "@/hooks/useToolSuggestions";
 import { cn } from "@/lib/utils";
@@ -77,10 +76,6 @@ const ToolPicker = ({ userId, tools, onChange, input, setInput, max = 20, varian
         variant === "default" && "rounded-2xl border border-border bg-card p-4",
       )}
     >
-      {variant === "default" && (
-        <Label className="text-xs font-semibold text-muted-foreground uppercase">เครื่องมือที่ใช้</Label>
-      )}
-
       {tools.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {tools.map((t, i) => (
@@ -125,30 +120,20 @@ const ToolPicker = ({ userId, tools, onChange, input, setInput, max = 20, varian
       </div>
 
       {showQuick && (
-        <div className="space-y-2">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">เครื่องมือที่ใช้บ่อย</p>
-          <div className="flex flex-wrap gap-1.5">
-            {filteredSuggestions.map((s) => (
-              <SuggestionChip key={s} label={s} onClick={() => addTool(s)} />
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-1.5">
+          {filteredSuggestions.map((s) => (
+            <SuggestionChip key={s} label={s} onClick={() => addTool(s)} />
+          ))}
         </div>
       )}
 
       {input.trim() && filteredSuggestions.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-[10px] text-muted-foreground">แนะนำ</p>
-          <div className="flex flex-wrap gap-1.5">
-            {filteredSuggestions.map((s) => (
-              <SuggestionChip key={s} label={s} onClick={() => addTool(s)} variant="primary" />
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-1.5">
+          {filteredSuggestions.map((s) => (
+            <SuggestionChip key={s} label={s} onClick={() => addTool(s)} variant="primary" />
+          ))}
         </div>
       )}
-
-      <p className="text-[10px] text-muted-foreground">
-        {tools.length}/{max} เครื่องมือ — กด Enter เพื่อเพิ่มเอง
-      </p>
     </div>
   );
 };

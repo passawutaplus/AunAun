@@ -48,8 +48,8 @@ function GridCell({
   return (
     <div
       className={cn(
-        "relative overflow-hidden bg-muted/30",
-        editor && !image && "border border-dashed border-border/80",
+        "relative overflow-hidden",
+        editor && !image && "border border-dashed border-border/50",
         className,
       )}
     >
@@ -96,7 +96,7 @@ function GridCell({
         <button
           type="button"
           onClick={() => onSlotPick(index)}
-          className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+          className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
           aria-label={`อัปโหลดภาพช่อง ${index + 1}`}
         >
           <Plus className="w-8 h-8" strokeWidth={1.5} />
@@ -161,7 +161,7 @@ export function PhotoGridPreview({
     grid = (
       <div
         className={cn(
-          "grid max-w-lg w-full grid-cols-1 gap-1.5 sm:gap-2 rounded-2xl overflow-hidden",
+          "grid mx-auto max-w-lg w-full grid-cols-1 gap-1.5 sm:gap-2 rounded-2xl overflow-hidden",
           className,
         )}
       >
@@ -172,7 +172,7 @@ export function PhotoGridPreview({
     grid = (
       <div
         className={cn(
-          "grid max-w-lg w-full grid-cols-2 gap-1.5 sm:gap-2 rounded-2xl overflow-hidden",
+          "grid mx-auto max-w-lg w-full grid-cols-2 gap-1.5 sm:gap-2 rounded-2xl overflow-hidden",
           className,
         )}
       >
@@ -183,7 +183,7 @@ export function PhotoGridPreview({
     grid = (
       <div
         className={cn(
-          "grid max-w-lg w-full aspect-square grid-cols-2 grid-rows-2 gap-1.5 sm:gap-2 rounded-2xl overflow-hidden",
+          "grid mx-auto max-w-lg w-full aspect-square grid-cols-2 grid-rows-2 gap-1.5 sm:gap-2 rounded-2xl overflow-hidden",
           className,
         )}
       >
@@ -196,7 +196,7 @@ export function PhotoGridPreview({
     grid = (
       <div
         className={cn(
-          "grid max-w-lg w-full grid-cols-2 gap-1.5 sm:gap-2 rounded-2xl overflow-hidden",
+          "grid mx-auto max-w-lg w-full grid-cols-2 gap-1.5 sm:gap-2 rounded-2xl overflow-hidden",
           className,
         )}
       >

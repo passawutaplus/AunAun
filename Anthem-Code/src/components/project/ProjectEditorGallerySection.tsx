@@ -3,7 +3,6 @@ import CommunityPostMedia from "@/components/community/CommunityPostMedia";
 import { PhotoGridPreview } from "@/components/project/PhotoGridPreview";
 import { SortableGalleryGrid } from "@/components/project/SortableGalleryGrid";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import type { GalleryDisplayMode } from "@/lib/projectContentBlocks";
 import { photoGridSlotCount, type PhotoGridLayout } from "@/lib/photoGridLayouts";
 import type { PortfolioMediaItem } from "@/lib/portfolioMedia";
@@ -84,7 +83,7 @@ export function ProjectEditorGallerySection({
       <div className="space-y-3">
         {images.length > 0 ? (
           <>
-            <div className="rounded-2xl border border-border/60 overflow-hidden aspect-[4/3] sm:aspect-video bg-muted/20">
+            <div className="overflow-hidden aspect-[4/3] sm:aspect-video">
               <CommunityPostMedia
                 galleryUrls={images.map((m) => m.url)}
                 title={title.trim() || "ตัวอย่างผลงาน"}
@@ -92,9 +91,6 @@ export function ProjectEditorGallerySection({
               />
             </div>
             <div className="space-y-2">
-              {images.length > 1 ? (
-                <Label className="text-xs text-muted-foreground">ลากเพื่อเรียงลำดับสไลด์</Label>
-              ) : null}
               <SortableGalleryGrid
                 items={images}
                 coverUrl={coverUrl}
@@ -102,6 +98,7 @@ export function ProjectEditorGallerySection({
                 onSetCover={onSetCover}
                 onRemove={handleRemoveImage}
                 layout="grid"
+                bare
               />
             </div>
           </>
@@ -109,7 +106,6 @@ export function ProjectEditorGallerySection({
 
         {videos.length > 0 ? (
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">วิดีโอในผลงาน</Label>
             <SortableGalleryGrid
               items={videos}
               coverUrl={coverUrl}
@@ -117,6 +113,7 @@ export function ProjectEditorGallerySection({
               onSetCover={onSetCover}
               onRemove={handleRemoveVideo}
               layout="list"
+              bare
             />
           </div>
         ) : null}
@@ -140,7 +137,6 @@ export function ProjectEditorGallerySection({
           uploadingSlot={uploadingGridSlot}
           onSlotUpload={onGridSlotUpload}
           onSlotRemove={onGridSlotRemove}
-          className="border border-border/60 rounded-2xl p-2 bg-card/30"
         />
 
         {overflowImages.length > 0 ? (
@@ -151,7 +147,6 @@ export function ProjectEditorGallerySection({
 
         {videos.length > 0 ? (
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">วิดีโอในผลงาน</Label>
             <SortableGalleryGrid
               items={videos}
               coverUrl={coverUrl}
@@ -159,6 +154,7 @@ export function ProjectEditorGallerySection({
               onSetCover={onSetCover}
               onRemove={handleRemoveVideo}
               layout="list"
+              bare
             />
           </div>
         ) : null}
@@ -172,7 +168,7 @@ export function ProjectEditorGallerySection({
   return (
     <div className="space-y-3">
       {hero ? (
-        <div className="relative rounded-2xl overflow-hidden border border-border bg-card group">
+        <div className="relative overflow-hidden group">
           <img
             src={hero.url}
             alt={title.trim() || "ภาพผลงาน"}
@@ -203,7 +199,6 @@ export function ProjectEditorGallerySection({
 
       {videos.length > 0 ? (
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">วิดีโอในผลงาน</Label>
           <SortableGalleryGrid
             items={videos}
             coverUrl={coverUrl}

@@ -19,9 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import {
   CONTENT_BLOCK_META,
-  PROJECT_CONTENT_BLOCKS_MAX,
   type GalleryDisplayMode,
-  type ProjectContentBlock,
   type ProjectContentBlockType,
 } from "@/lib/projectContentBlocks";
 import { PHOTO_GRID_LAYOUTS, type PhotoGridLayout } from "@/lib/photoGridLayouts";
@@ -32,11 +30,6 @@ type Props = {
   gridLayout: PhotoGridLayout;
   onDisplayModeChange: (mode: GalleryDisplayMode) => void;
   onGridLayoutSelect: (layout: PhotoGridLayout) => void;
-  imageCount: number;
-  maxImages: number;
-  videoCount: number;
-  maxVideos: number;
-  contentBlocks: ProjectContentBlock[];
   imageDisabled?: boolean;
   videoDisabled?: boolean;
   textDisabled?: boolean;
@@ -45,6 +38,8 @@ type Props = {
   onPickImages: (files: FileList) => void;
   onPickVideo: (file: File) => void;
   onAddTextBlock: (type: ProjectContentBlockType) => void;
+  expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
   className?: string;
 };
 
@@ -127,8 +122,6 @@ function ToolRowButton({
   active,
   disabled,
   loading,
-  count,
-  max,
   onClick,
 }: {
   label: string;
@@ -137,8 +130,6 @@ function ToolRowButton({
   active?: boolean;
   disabled?: boolean;
   loading?: boolean;
-  count: number;
-  max: number;
   onClick: () => void;
 }) {
   return (
@@ -169,7 +160,7 @@ function ToolRowButton({
           <Tooltip>
             <TooltipTrigger asChild>
               <span
-                className="shrink-0 text-muted-foreground/60"
+                className="shrink-0 text-muted-foreground/50"
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => e.stopPropagation()}
                 role="presentation"
@@ -182,9 +173,6 @@ function ToolRowButton({
             </TooltipContent>
           </Tooltip>
         </div>
-        <span className="text-[10px] tabular-nums text-muted-foreground">
-          {count}/{max}
-        </span>
       </div>
     </button>
   );
@@ -194,15 +182,11 @@ function TextToolButton({
   label,
   preview,
   disabled,
-  count,
-  max,
   onClick,
 }: {
   label: string;
   preview: ProjectContentBlockType;
   disabled?: boolean;
-  count: number;
-  max: number;
   onClick: () => void;
 }) {
   return (
@@ -217,7 +201,6 @@ function TextToolButton({
     >
       <ToolPreview kind={preview} compact />
       <span className="text-[10px] font-medium leading-tight text-foreground line-clamp-2">{label}</span>
-      <span className="text-[9px] tabular-nums text-muted-foreground">{count}/{max}</span>
     </button>
   );
 }
@@ -269,11 +252,6 @@ export function ProjectEditorToolsSidebar({
   gridLayout,
   onDisplayModeChange,
   onGridLayoutSelect,
-  imageCount,
-  maxImages,
-  videoCount,
-  maxVideos,
-  contentBlocks,
   imageDisabled,
   videoDisabled,
   textDisabled,
@@ -282,25 +260,31 @@ export function ProjectEditorToolsSidebar({
   onPickImages,
   onPickVideo,
   onAddTextBlock,
+  expanded: expandedProp,
+  onExpandedChange,
   className,
 }: Props) {
-  const [expanded, setExpanded] = useState(false);
+  const [internalExpanded, setInternalExpanded] = useState(false);
+  const isControlled = expandedProp !== undefined;
+  const expanded = isControlled ? expandedProp : internalExpanded;
+
+  const setExpanded = (next: boolean) => {
+    if (!isControlled) setInternalExpanded(next);
+    onExpandedChange?.(next);
+  };
 
   useEffect(() => {
+    if (isControlled) return;
     const mq = window.matchMedia("(min-width: 1024px)");
-    const sync = () => setExpanded(mq.matches);
+    const sync = () => setInternalExpanded(mq.matches);
     sync();
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
-  }, []);
+  }, [isControlled]);
 
   const singleImageRef = useRef<HTMLInputElement>(null);
   const galleryImageRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
-
-  const singleMax = 1;
-  const blockCount = (type: ProjectContentBlockType) =>
-    contentBlocks.filter((b) => b.type === type).length;
 
   const pickSingle = () => {
     if (imageDisabled || uploadingImage) return;
@@ -327,57 +311,42 @@ export function ProjectEditorToolsSidebar({
     <TooltipProvider delayDuration={300}>
       <aside
         className={cn(
-          "shrink-0 border-r border-border/80 bg-card/95 backdrop-blur-md transition-[width] duration-200 ease-out",
-          expanded ? "w-[248px]" : "w-12",
+          "shrink-0 transition-[width] duration-200 ease-out",
+          expanded
+            ? "w-[248px] border-r border-border/80 bg-card/95 backdrop-blur-md lg:sticky lg:top-16 lg:z-auto lg:self-start"
+            : "w-0 border-0 bg-transparent",
           className,
         )}
         aria-label="เครื่องมือเพิ่มเนื้อหา"
       >
-        <div className="sticky top-16 flex h-[calc(100dvh-4rem)] flex-col">
-          <div
-            className={cn(
-              "flex items-center border-b border-border/60 p-2",
-              expanded ? "justify-between" : "justify-center",
-            )}
-          >
-            {expanded ? (
-              <span className="px-1 text-xs font-semibold text-muted-foreground">เครื่องมือ</span>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label={expanded ? "ย่อแถบเครื่องมือ" : "ขยายแถบเครื่องมือ"}
-            >
-              {expanded ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </button>
-          </div>
+        {expanded ? (
+          <div className="flex h-[calc(100dvh-4rem)] flex-col">
+            <div className="flex items-center justify-end p-2">
+              <button
+                type="button"
+                onClick={() => setExpanded(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground"
+                aria-label="ย่อแถบเครื่องมือ"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            </div>
 
-          {expanded ? (
             <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
-              {/* ข้อความ */}
-              <div className="space-y-2">
-                <p className="px-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  ข้อความ
-                </p>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {(["heading", "heading_body", "body"] as const).map((type) => (
-                    <TextToolButton
-                      key={type}
-                      label={CONTENT_BLOCK_META[type].label}
-                      preview={type}
-                      disabled={textDisabled}
-                      count={blockCount(type)}
-                      max={PROJECT_CONTENT_BLOCKS_MAX}
-                      onClick={() => onAddTextBlock(type)}
-                    />
-                  ))}
-                </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {(["heading", "heading_body", "body"] as const).map((type) => (
+                  <TextToolButton
+                    key={type}
+                    label={CONTENT_BLOCK_META[type].label}
+                    preview={type}
+                    disabled={textDisabled}
+                    onClick={() => onAddTextBlock(type)}
+                  />
+                ))}
               </div>
 
               <SectionDivider />
 
-              {/* ภาพเดี่ยว */}
               <ToolRowButton
                 label="ภาพเดี่ยว"
                 hint="โชว์ภาพหลักเต็มจอ"
@@ -385,14 +354,9 @@ export function ProjectEditorToolsSidebar({
                 active={singleMode}
                 disabled={imageDisabled}
                 loading={uploadingImage && singleMode}
-                count={singleMode ? imageCount : 0}
-                max={singleMax}
                 onClick={pickSingle}
               />
 
-              <SectionDivider />
-
-              {/* สไลด์ */}
               <ToolRowButton
                 label="แกลเลอรีสไลด์"
                 hint="หลายภาพเลื่อนดูได้"
@@ -400,67 +364,51 @@ export function ProjectEditorToolsSidebar({
                 active={galleryMode}
                 disabled={imageDisabled}
                 loading={uploadingImage && galleryMode}
-                count={galleryMode ? imageCount : 0}
-                max={maxImages}
                 onClick={pickGallery}
               />
 
-              <SectionDivider />
-
-              {/* Photo grid 4 แบบ */}
-              <div className="space-y-2">
-                <p className="px-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Photo grid
-                </p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {PHOTO_GRID_LAYOUTS.map((layout) => {
-                    const active = gridMode && gridLayout === layout.id;
-                    return (
-                      <button
-                        key={layout.id}
-                        type="button"
-                        disabled={imageDisabled || uploadingImage}
-                        aria-pressed={active}
-                        onClick={() => selectGridLayout(layout.id)}
-                        className={cn(
-                          "flex flex-col items-center gap-1.5 rounded-lg border p-2 transition-colors",
-                          active
-                            ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
-                            : "border-border/60 bg-card/50 hover:border-primary/30 hover:bg-muted/30",
-                          (imageDisabled || uploadingImage) && "pointer-events-none opacity-45",
-                        )}
-                      >
-                        <PhotoGridLayoutWireframe layout={layout.id} active={active} />
-                        <span className="text-[10px] font-medium leading-tight text-center text-foreground">
-                          {layout.label}
-                        </span>
-                        {active ? (
-                          <span className="text-[9px] tabular-nums text-muted-foreground">
-                            {imageCount}/{maxImages}
-                          </span>
-                        ) : null}
-                      </button>
-                    );
-                  })}
-                </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {PHOTO_GRID_LAYOUTS.map((layout) => {
+                  const active = gridMode && gridLayout === layout.id;
+                  return (
+                    <button
+                      key={layout.id}
+                      type="button"
+                      disabled={imageDisabled || uploadingImage}
+                      aria-pressed={active}
+                      onClick={() => selectGridLayout(layout.id)}
+                      className={cn(
+                        "flex flex-col items-center gap-1.5 rounded-lg border p-2 transition-colors",
+                        active
+                          ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
+                          : "border-border/60 bg-card/50 hover:border-primary/30 hover:bg-muted/30",
+                        (imageDisabled || uploadingImage) && "pointer-events-none opacity-45",
+                      )}
+                    >
+                      <PhotoGridLayoutWireframe layout={layout.id} active={active} />
+                      <span className="text-[10px] font-medium leading-tight text-center text-foreground">
+                        {layout.label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
 
               <SectionDivider />
 
-              {/* วิดีโอ */}
               <ToolRowButton
                 label="วิดีโอ"
                 hint="เพิ่มคลิปวิดีโอในผลงาน"
                 preview="video"
                 disabled={videoDisabled}
                 loading={uploadingVideo}
-                count={videoCount}
-                max={maxVideos}
                 onClick={() => videoRef.current?.click()}
               />
             </div>
-          ) : (
-            <div className="flex flex-1 flex-col items-center gap-1 overflow-y-auto p-1.5">
+          </div>
+        ) : (
+          <div className="pointer-events-none fixed left-2 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-1 sm:left-3">
+            <div className="pointer-events-auto flex flex-col items-center gap-1">
               <CollapsedRailButton
                 label="ภาพเดี่ยว"
                 active={singleMode}
@@ -502,9 +450,17 @@ export function ProjectEditorToolsSidebar({
               >
                 <Type className="h-4 w-4" />
               </CollapsedRailButton>
+              <button
+                type="button"
+                onClick={() => setExpanded(true)}
+                className="mt-1 flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                aria-label="ขยายแถบเครื่องมือ"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <input
           ref={singleImageRef}
