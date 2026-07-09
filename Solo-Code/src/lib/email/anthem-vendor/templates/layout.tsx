@@ -2,6 +2,7 @@ import * as React from 'react'
 import {
   Body, Button, Container, Head, Hr, Html, Img, Link, Preview, Row, Column, Text,
 } from '@react-email/components'
+import { BRAND_SUBLINE_EN, BRAND_TAGLINE_EN } from '../brandConfig'
 import { CONTACT_EMAIL, LINE_ID, LINE_URL, SITE_DOMAIN, SITE_NAME, SITE_URL } from './brandMeta'
 import {
   brand, main, container, text, footer, divider, brandBar, brandBarTones, button, link,
@@ -162,10 +163,10 @@ export function EmailLayout({
                 </Column>
                 <Column style={{ verticalAlign: 'middle', paddingLeft: '10px' }}>
                   <Text style={wordmark}>
-                    <span style={wordmarkAccent}>1</span>
-                    <span>PX</span>
+                    <span style={wordmarkAccent}>Aplus</span>
+                    <span>1</span>
                   </Text>
-                  <Text style={tagline}>ชุมชนครีเอทีฟ — ทุกคนคือ 1 PX</Text>
+                  <Text style={tagline}>{BRAND_TAGLINE_EN} · {BRAND_SUBLINE_EN}</Text>
                 </Column>
               </Row>
             </div>

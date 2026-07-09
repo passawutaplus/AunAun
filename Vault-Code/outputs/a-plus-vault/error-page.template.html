@@ -11,93 +11,104 @@
   <link rel="stylesheet" href="{{CSS_HREF}}" />
   <style>
     .vault-error-page{
-      min-height:100vh;margin:0;display:grid;place-items:center;padding:32px 20px;
-      font-family:"Agrandir Wide",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      color:#201410;background:
-        radial-gradient(ellipse 90% 70% at 18% 12%, rgba(255,214,130,.55), transparent 55%),
-        radial-gradient(ellipse 80% 60% at 88% 18%, rgba(255,120,70,.45), transparent 50%),
-        radial-gradient(ellipse 70% 55% at 70% 88%, rgba(255,79,67,.38), transparent 55%),
-        linear-gradient(145deg, #fff4e8 0%, #ffd7b8 28%, #ff9a6b 58%, #ff5a3c 82%, #e83a2a 100%);
-      overflow:hidden;position:relative;
+      --error-bg:#f6f7f9;
+      --error-ink:#151719;
+      --error-muted:#747a80;
+      --error-line:#e5e8eb;
+      --error-surface:#fff;
+      min-height:100vh;margin:0;display:grid;grid-template-rows:auto 1fr auto;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--error-ink);background:var(--error-bg);position:relative;overflow:hidden;
     }
-    .vault-error-page::before{
-      content:"";position:absolute;inset:-20%;
+    .vault-error-blobs{
+      position:absolute;inset:0;pointer-events:none;z-index:0;
       background:
-        radial-gradient(circle at 30% 40%, rgba(255,255,255,.24), transparent 28%),
-        radial-gradient(circle at 72% 62%, rgba(255,230,170,.2), transparent 32%);
-      animation:vaultErrorGlow 10s ease-in-out infinite alternate;
-      pointer-events:none;
+        radial-gradient(ellipse 55% 42% at 12% 8%, rgba(186,210,255,.42), transparent 68%),
+        radial-gradient(ellipse 48% 40% at 88% 14%, rgba(214,196,255,.34), transparent 66%),
+        radial-gradient(ellipse 50% 38% at 72% 92%, rgba(255,79,67,.12), transparent 70%),
+        linear-gradient(180deg, #fff 0%, var(--error-bg) 42%, #f3f4f7 100%);
     }
-    @keyframes vaultErrorGlow{from{transform:translate3d(-2%,-1%,0) scale(1)}to{transform:translate3d(2%,1.5%,0) scale(1.05)}}
-    .vault-error-art{
-      position:relative;z-index:1;width:min(720px,100%);text-align:center;
-      display:grid;gap:18px;justify-items:center;
+    .vault-error-topbar{
+      position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:16px;
+      width:min(1120px,calc(100% - 32px));margin:18px auto 0;padding:12px 18px;
+      border:1px solid rgba(229,232,235,.9);border-radius:16px;background:rgba(255,255,255,.82);
+      box-shadow:0 10px 30px rgba(18,22,26,.06);backdrop-filter:blur(16px);
     }
-    .vault-error-orb{
-      width:min(280px,70vw);aspect-ratio:1;border-radius:50%;
-      background:
-        radial-gradient(circle at 35% 30%, rgba(255,255,255,.9), transparent 28%),
-        radial-gradient(circle at 60% 70%, rgba(255,79,67,.65), transparent 45%),
-        radial-gradient(circle at 50% 50%, #ffb070, #ff5a3c 58%, #c92218);
-      box-shadow:
-        0 0 0 14px rgba(255,255,255,.14),
-        0 30px 80px rgba(180,40,20,.35),
-        inset 0 -24px 40px rgba(120,20,10,.28);
-      position:relative;isolation:isolate;
+    .vault-error-brand{
+      display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:inherit;
+      font-family:"Agrandir Wide",Inter,ui-sans-serif,system-ui,sans-serif;font-size:18px;font-weight:300;
+      letter-spacing:.01em;
     }
-    .vault-error-orb::after{
-      content:"";position:absolute;inset:18%;border-radius:inherit;
-      border:1px solid rgba(255,255,255,.35);
-      box-shadow:inset 0 0 40px rgba(255,255,255,.18);
+    .vault-error-brand img{width:36px;height:36px;object-fit:contain}
+    .vault-error-topbar-cta{
+      display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 16px;
+      border-radius:8px;background:#151719;color:#fff;text-decoration:none;font-size:14px;font-weight:500;
+    }
+    .vault-error-topbar-cta:hover{background:#2a2927}
+    .vault-error-main{
+      position:relative;z-index:1;display:grid;place-content:center;justify-items:center;text-align:center;
+      gap:14px;padding:48px 20px 64px;width:min(720px,100%);margin:0 auto;
     }
     .vault-error-code{
-      margin:0;font-size:clamp(72px,16vw,140px);font-weight:300;line-height:.85;
-      letter-spacing:.02em;color:#1a1210;
-      text-shadow:0 10px 40px rgba(255,255,255,.35);
+      margin:0;font-family:"Agrandir Wide",Inter,ui-sans-serif,system-ui,sans-serif;
+      font-size:clamp(88px,18vw,152px);font-weight:300;line-height:.9;letter-spacing:-.02em;color:var(--error-ink);
     }
     .vault-error-title{
-      margin:0;font-size:clamp(24px,4vw,36px);font-weight:300;letter-spacing:.01em;
+      margin:0;font-size:clamp(24px,4vw,34px);font-weight:600;letter-spacing:-.01em;
     }
     .vault-error-copy{
-      margin:0;max-width:42ch;font-family:"IBM Plex Sans Thai","IBM Plex Sans",sans-serif;
-      font-size:15px;font-weight:400;line-height:1.55;color:rgba(32,20,16,.78);
+      margin:0;max-width:46ch;font-size:16px;line-height:1.6;color:var(--error-muted);
     }
-    .vault-error-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:6px}
+    .vault-error-actions{
+      display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px;
+    }
     .vault-error-actions a{
-      display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 18px;
-      border-radius:999px;text-decoration:none;font-family:"IBM Plex Sans",sans-serif;font-size:14px;font-weight:500;
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 20px;
+      border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;
     }
-    .vault-error-actions .primary{
-      background:#1a1210;color:#fff8f2;
-      box-shadow:0 12px 30px rgba(40,18,12,.28);
-    }
+    .vault-error-actions .primary{background:#ff4f43;color:#fff;box-shadow:none}
+    .vault-error-actions .primary:hover{background:#e33f34}
     .vault-error-actions .ghost{
-      background:rgba(255,255,255,.42);color:#1a1210;border:1px solid rgba(255,255,255,.55);
-      backdrop-filter:blur(8px);
+      background:var(--error-surface);color:var(--error-ink);border:1px solid var(--error-line);
     }
-    .vault-error-mark{
-      position:absolute;top:22px;left:22px;z-index:2;
-      width:40px;height:40px;display:block;object-fit:contain;
-      text-decoration:none;background:transparent;border-radius:0;
+    .vault-error-actions .ghost:hover{border-color:#d6dbe0;background:#f7f8fa}
+    .vault-error-footer{
+      position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;
+      flex-wrap:wrap;padding:18px clamp(16px,4vw,42px) 24px;border-top:1px solid var(--error-line);
+      color:var(--error-muted);font-size:13px;background:rgba(255,255,255,.72);
     }
-    @media (prefers-reduced-motion:reduce){
-      .vault-error-page::before{animation:none}
+    .vault-error-footer a{color:var(--error-ink);text-decoration:none;font-weight:500}
+    .vault-error-footer a:hover{color:#ff4f43}
+    @media(max-width:560px){
+      .vault-error-topbar{width:calc(100% - 24px);margin-top:12px;padding:10px 12px}
+      .vault-error-brand{font-size:16px}
+      .vault-error-actions{display:grid;width:min(280px,100%)}
+      .vault-error-actions a{width:100%}
+      .vault-error-footer{justify-content:center;text-align:center}
     }
   </style>
 </head>
 <body class="vault-error-page" data-error="{{CODE}}">
-  <a class="vault-error-mark" href="{{HOME_HREF}}" aria-label="A+ Vault">
-    <img src="/assets/vault-logo-on-dark.png" width="40" height="40" alt="" />
-  </a>
-  <main class="vault-error-art">
-    <div class="vault-error-orb" aria-hidden="true"></div>
+  <div class="vault-error-blobs" aria-hidden="true"></div>
+  <header class="vault-error-topbar">
+    <a class="vault-error-brand" href="{{HOME_HREF}}" aria-label="A+ Vault">
+      <img src="/assets/vault-logo.png" width="36" height="36" alt="" />
+      <span>A+ Vault</span>
+    </a>
+    <a class="vault-error-topbar-cta" href="{{HOME_HREF}}">Open Vault</a>
+  </header>
+  <main class="vault-error-main">
     <p class="vault-error-code">{{CODE}}</p>
     <h1 class="vault-error-title">{{HEADLINE}}</h1>
     <p class="vault-error-copy">{{MESSAGE}}</p>
     <div class="vault-error-actions">
       <a class="primary" href="{{HOME_HREF}}">Back to Vault</a>
-      <a class="ghost" href="{{HOME_HREF}}">Open library</a>
+      <a class="ghost" href="{{HOME_HREF}}">Go back home</a>
     </div>
   </main>
+  <footer class="vault-error-footer">
+    <span>© A+ Vault</span>
+    <a href="{{LEGAL_HREF}}">Legal</a>
+  </footer>
 </body>
 </html>

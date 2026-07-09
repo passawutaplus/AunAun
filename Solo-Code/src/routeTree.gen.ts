@@ -62,6 +62,10 @@ import { Route as AuthForgotRouteImport } from './routes/auth.forgot'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as TrackTokenCheckoutRouteImport } from './routes/track.$token.checkout'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as LabsVisualMockupRouteImport } from './routes/labs.visual.mockup'
+import { Route as LabsFilesImageToolboxRouteImport } from './routes/labs.files.image-toolbox'
+import { Route as LabsDeveloperFormatterRouteImport } from './routes/labs.developer.formatter'
+import { Route as LabsDeliveryPackRouteImport } from './routes/labs.delivery.pack'
 import { Route as InhouseInviteTokenRouteImport } from './routes/inhouse.invite.$token'
 import { Route as InhouseOrgSlugSettingsRouteImport } from './routes/inhouse.$orgSlug.settings'
 import { Route as InhouseOrgSlugWorkspaceSlugRouteImport } from './routes/inhouse.$orgSlug.$workspaceSlug'
@@ -353,6 +357,26 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LabsVisualMockupRoute = LabsVisualMockupRouteImport.update({
+  id: '/visual/mockup',
+  path: '/visual/mockup',
+  getParentRoute: () => LabsRoute,
+} as any)
+const LabsFilesImageToolboxRoute = LabsFilesImageToolboxRouteImport.update({
+  id: '/files/image-toolbox',
+  path: '/files/image-toolbox',
+  getParentRoute: () => LabsRoute,
+} as any)
+const LabsDeveloperFormatterRoute = LabsDeveloperFormatterRouteImport.update({
+  id: '/developer/formatter',
+  path: '/developer/formatter',
+  getParentRoute: () => LabsRoute,
+} as any)
+const LabsDeliveryPackRoute = LabsDeliveryPackRouteImport.update({
+  id: '/delivery/pack',
+  path: '/delivery/pack',
+  getParentRoute: () => LabsRoute,
+} as any)
 const InhouseInviteTokenRoute = InhouseInviteTokenRouteImport.update({
   id: '/invite/$token',
   path: '/invite/$token',
@@ -555,6 +579,10 @@ export interface FileRoutesByFullPath {
   '/inhouse/$orgSlug/$workspaceSlug': typeof InhouseOrgSlugWorkspaceSlugRouteWithChildren
   '/inhouse/$orgSlug/settings': typeof InhouseOrgSlugSettingsRoute
   '/inhouse/invite/$token': typeof InhouseInviteTokenRoute
+  '/labs/delivery/pack': typeof LabsDeliveryPackRoute
+  '/labs/developer/formatter': typeof LabsDeveloperFormatterRoute
+  '/labs/files/image-toolbox': typeof LabsFilesImageToolboxRoute
+  '/labs/visual/mockup': typeof LabsVisualMockupRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/track/$token/checkout': typeof TrackTokenCheckoutRoute
   '/api/payments/cashout/process': typeof ApiPaymentsCashoutProcessRoute
@@ -634,6 +662,10 @@ export interface FileRoutesByTo {
   '/inhouse/$orgSlug/$workspaceSlug': typeof InhouseOrgSlugWorkspaceSlugRouteWithChildren
   '/inhouse/$orgSlug/settings': typeof InhouseOrgSlugSettingsRoute
   '/inhouse/invite/$token': typeof InhouseInviteTokenRoute
+  '/labs/delivery/pack': typeof LabsDeliveryPackRoute
+  '/labs/developer/formatter': typeof LabsDeveloperFormatterRoute
+  '/labs/files/image-toolbox': typeof LabsFilesImageToolboxRoute
+  '/labs/visual/mockup': typeof LabsVisualMockupRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/track/$token/checkout': typeof TrackTokenCheckoutRoute
   '/api/payments/cashout/process': typeof ApiPaymentsCashoutProcessRoute
@@ -715,6 +747,10 @@ export interface FileRoutesById {
   '/inhouse/$orgSlug/$workspaceSlug': typeof InhouseOrgSlugWorkspaceSlugRouteWithChildren
   '/inhouse/$orgSlug/settings': typeof InhouseOrgSlugSettingsRoute
   '/inhouse/invite/$token': typeof InhouseInviteTokenRoute
+  '/labs/delivery/pack': typeof LabsDeliveryPackRoute
+  '/labs/developer/formatter': typeof LabsDeveloperFormatterRoute
+  '/labs/files/image-toolbox': typeof LabsFilesImageToolboxRoute
+  '/labs/visual/mockup': typeof LabsVisualMockupRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/track/$token/checkout': typeof TrackTokenCheckoutRoute
   '/api/payments/cashout/process': typeof ApiPaymentsCashoutProcessRoute
@@ -797,6 +833,10 @@ export interface FileRouteTypes {
     | '/inhouse/$orgSlug/$workspaceSlug'
     | '/inhouse/$orgSlug/settings'
     | '/inhouse/invite/$token'
+    | '/labs/delivery/pack'
+    | '/labs/developer/formatter'
+    | '/labs/files/image-toolbox'
+    | '/labs/visual/mockup'
     | '/lovable/email/suppression'
     | '/track/$token/checkout'
     | '/api/payments/cashout/process'
@@ -876,6 +916,10 @@ export interface FileRouteTypes {
     | '/inhouse/$orgSlug/$workspaceSlug'
     | '/inhouse/$orgSlug/settings'
     | '/inhouse/invite/$token'
+    | '/labs/delivery/pack'
+    | '/labs/developer/formatter'
+    | '/labs/files/image-toolbox'
+    | '/labs/visual/mockup'
     | '/lovable/email/suppression'
     | '/track/$token/checkout'
     | '/api/payments/cashout/process'
@@ -956,6 +1000,10 @@ export interface FileRouteTypes {
     | '/inhouse/$orgSlug/$workspaceSlug'
     | '/inhouse/$orgSlug/settings'
     | '/inhouse/invite/$token'
+    | '/labs/delivery/pack'
+    | '/labs/developer/formatter'
+    | '/labs/files/image-toolbox'
+    | '/labs/visual/mockup'
     | '/lovable/email/suppression'
     | '/track/$token/checkout'
     | '/api/payments/cashout/process'
@@ -1409,6 +1457,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/labs/visual/mockup': {
+      id: '/labs/visual/mockup'
+      path: '/visual/mockup'
+      fullPath: '/labs/visual/mockup'
+      preLoaderRoute: typeof LabsVisualMockupRouteImport
+      parentRoute: typeof LabsRoute
+    }
+    '/labs/files/image-toolbox': {
+      id: '/labs/files/image-toolbox'
+      path: '/files/image-toolbox'
+      fullPath: '/labs/files/image-toolbox'
+      preLoaderRoute: typeof LabsFilesImageToolboxRouteImport
+      parentRoute: typeof LabsRoute
+    }
+    '/labs/developer/formatter': {
+      id: '/labs/developer/formatter'
+      path: '/developer/formatter'
+      fullPath: '/labs/developer/formatter'
+      preLoaderRoute: typeof LabsDeveloperFormatterRouteImport
+      parentRoute: typeof LabsRoute
+    }
+    '/labs/delivery/pack': {
+      id: '/labs/delivery/pack'
+      path: '/delivery/pack'
+      fullPath: '/labs/delivery/pack'
+      preLoaderRoute: typeof LabsDeliveryPackRouteImport
+      parentRoute: typeof LabsRoute
+    }
     '/inhouse/invite/$token': {
       id: '/inhouse/invite/$token'
       path: '/invite/$token'
@@ -1683,12 +1759,20 @@ interface LabsRouteChildren {
   LabsCreativeRoute: typeof LabsCreativeRoute
   LabsDocRoute: typeof LabsDocRoute
   LabsIndexRoute: typeof LabsIndexRoute
+  LabsDeliveryPackRoute: typeof LabsDeliveryPackRoute
+  LabsDeveloperFormatterRoute: typeof LabsDeveloperFormatterRoute
+  LabsFilesImageToolboxRoute: typeof LabsFilesImageToolboxRoute
+  LabsVisualMockupRoute: typeof LabsVisualMockupRoute
 }
 
 const LabsRouteChildren: LabsRouteChildren = {
   LabsCreativeRoute: LabsCreativeRoute,
   LabsDocRoute: LabsDocRoute,
   LabsIndexRoute: LabsIndexRoute,
+  LabsDeliveryPackRoute: LabsDeliveryPackRoute,
+  LabsDeveloperFormatterRoute: LabsDeveloperFormatterRoute,
+  LabsFilesImageToolboxRoute: LabsFilesImageToolboxRoute,
+  LabsVisualMockupRoute: LabsVisualMockupRoute,
 }
 
 const LabsRouteWithChildren = LabsRoute._addFileChildren(LabsRouteChildren)

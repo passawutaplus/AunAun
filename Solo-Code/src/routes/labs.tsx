@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
 import { RequireAuth } from "@/auth/RequireAuth";
-import { LabsShell } from "@/components/dashboard/labs/LabsShell";
+import { LabsWorkbenchLayout } from "@/components/dashboard/labs/workbench/LabsWorkbenchLayout";
 
 export const Route = createFileRoute("/labs")({
   errorComponent: ({ error }) => <RouteError error={error} />,
@@ -11,9 +11,9 @@ export const Route = createFileRoute("/labs")({
 function LabsLayout() {
   return (
     <RequireAuth>
-      <LabsShell>
+      <LabsWorkbenchLayout>
         <Outlet />
-      </LabsShell>
+      </LabsWorkbenchLayout>
     </RequireAuth>
   );
 }

@@ -8,7 +8,7 @@ export const Route = createFileRoute("/labs/")({
       { title: "So1o Labs | So1o Freelancer" },
       {
         name: "description",
-        content: "Creative Labs และ Doc Lab — เครื่องมือเสริมสำหรับฟรีแลนซ์",
+        content: "Solo Labs — Mockup, Image Toolbox, Delivery Pack, JSON/CSV และเครื่องมือครีเอทีฟ",
       },
       { name: "robots", content: "noindex,nofollow" },
       { property: "og:title", content: "So1o Labs" },

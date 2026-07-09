@@ -19,7 +19,7 @@ export const CollabRequestEmail = ({
   projectTitle = 'ผลงานในฟีด',
   collabTypes = '',
   message = '',
-  actionUrl = 'https://aplus1-demo.vercel.app/portfolio/manage?focus=collab',
+  actionUrl = 'https://aplus1.app/portfolio?focus=collab',
 }: CollabRequestEmailProps) => (
   <EmailLayout
     preview={`${senderName} อยากร่วมงาน — ${projectTitle}`}

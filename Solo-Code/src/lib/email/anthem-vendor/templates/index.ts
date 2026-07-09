@@ -20,11 +20,13 @@ export {
 } from './registry'
 export { SITE_NAME, SITE_URL, CONTACT_EMAIL } from './brandMeta'
 
+import { BRAND_NAME } from '../brandConfig'
+
 export const ANTHEM_AUTH_SUBJECTS: Record<string, string> = {
-  signup: 'ยืนยันอีเมลของคุณ — Aplus1',
-  invite: 'คุณได้รับคำเชิญเข้าร่วม Aplus1',
-  magiclink: 'ลิงก์เข้าสู่ระบบ Aplus1',
-  recovery: 'รีเซ็ตรหัสผ่าน Aplus1',
-  email_change: 'ยืนยันการเปลี่ยนอีเมล — Aplus1',
-  reauthentication: 'รหัสยืนยันตัวตนของคุณ — Aplus1',
+  signup: `ยืนยันอีเมลของคุณ — ${BRAND_NAME}`,
+  invite: `คุณได้รับคำเชิญเข้าร่วม ${BRAND_NAME}`,
+  magiclink: `ลิงก์เข้าสู่ระบบ ${BRAND_NAME}`,
+  recovery: `รีเซ็ตรหัสผ่าน ${BRAND_NAME}`,
+  email_change: `ยืนยันการเปลี่ยนอีเมล — ${BRAND_NAME}`,
+  reauthentication: `รหัสยืนยันตัวตนของคุณ — ${BRAND_NAME}`,
 }

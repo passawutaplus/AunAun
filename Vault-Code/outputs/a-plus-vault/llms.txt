@@ -4,11 +4,11 @@
 
 ## Public pages
 
-- [Legal Center](https://aplus-vault.vercel.app/legal): Privacy, copyright, acceptable use, extension privacy, and data rights (alpha draft)
+- [Legal Center](https://aplus-vault-demo.vercel.app/legal): Privacy, copyright, acceptable use, extension privacy, and data rights (alpha draft)
 
 ## Private alpha (not indexed)
 
-- [Vault workspace](https://aplus-vault.vercel.app/vault): Login required — private reference library
+- [Vault workspace](https://aplus-vault-demo.vercel.app/vault): Login required — private reference library
 
 ## Related products
 
