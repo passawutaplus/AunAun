@@ -13,11 +13,13 @@ export const PROJECT_EXTERNAL_LINKS_SELECT = "external_links";
 
 export const PROJECT_ASSETS_SELECT = "project_assets";
 
+export const PROJECT_CONTENT_SELECT = "content_blocks, gallery_display_mode, grid_layout";
+
 export const PROJECT_FEED_SELECT =
   `id, title, cover_url, gallery_urls, category, owner_id, likes, views, status, created_at, tools, tags, allow_hire, allow_collab, license_type, sort_order, is_pinned`;
 
 export const PROJECT_DETAIL_SELECT =
-  `${PROJECT_FEED_SELECT}, description, price_thb, subtitle, studio_id, credited_user_ids, linked_community_post_ids, collab_user_ids, video_urls, updated_at, ${PROJECT_LICENSE_EXTRA_SELECT}, ${PROJECT_CONTEXT_SELECT}, ${PROJECT_EXTERNAL_LINKS_SELECT}, ${PROJECT_ASSETS_SELECT}`;
+  `${PROJECT_FEED_SELECT}, description, price_thb, subtitle, studio_id, credited_user_ids, linked_community_post_ids, collab_user_ids, video_urls, updated_at, ${PROJECT_LICENSE_EXTRA_SELECT}, ${PROJECT_CONTEXT_SELECT}, ${PROJECT_EXTERNAL_LINKS_SELECT}, ${PROJECT_ASSETS_SELECT}, ${PROJECT_CONTENT_SELECT}`;
 
 export const PROJECT_MANAGE_SELECT = PROJECT_DETAIL_SELECT;
 

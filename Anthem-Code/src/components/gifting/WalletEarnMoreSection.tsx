@@ -7,7 +7,7 @@ import { useOnboardingChecklist } from "@/hooks/useOnboardingChecklist";
 import { useWelcomeMissions } from "@/hooks/useWelcomeMissions";
 import { useWelcomeMissionCatalog, useWelcomePxCap } from "@/hooks/useWelcomeMissionCatalog";
 import {
-  ONBOARDING_TASKS,
+  getVisibleOnboardingTasks,
   type OnboardingTaskId,
 } from "@/lib/onboardingTasks";
 import { friendlyAmlError } from "@/lib/amlErrors";
@@ -37,7 +37,7 @@ const WalletEarnMoreSection = ({ onClose, hideReferral = false }: Props) => {
   const pxRemaining = Math.max(0, welcomeCap - lifetimeWelcomePx);
   const welcomeCapReached = !missionsLoading && pxRemaining <= 0;
 
-  const pendingMissions = ONBOARDING_TASKS.filter((def) => !claimedIds.has(def.id)).map((def) => {
+  const pendingMissions = getVisibleOnboardingTasks().filter((def) => !claimedIds.has(def.id)).map((def) => {
     const progress = tasks.find((t) => t.id === def.id);
     const done = progress?.done ?? false;
     return {

@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 
 const REORDER_HINT_KEY = "anthem-gallery-reorder-hint-seen";
 
-export type GalleryLayout = "grid" | "list";
+export type GalleryLayout = "grid" | "list" | "photogrid";
 
 interface SortableGalleryGridProps {
   items: PortfolioMediaItem[];
@@ -98,9 +98,11 @@ export function SortableGalleryGrid({
         <SortableContext items={items.map((m) => m.id)} strategy={rectSortingStrategy}>
           <div
             className={cn(
-              layout === "grid"
-                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"
-                : "space-y-3",
+              layout === "photogrid"
+                ? "grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3"
+                : layout === "grid"
+                  ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"
+                  : "space-y-3",
             )}
           >
             {items.map((item, i) => (

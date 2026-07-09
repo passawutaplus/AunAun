@@ -51,16 +51,25 @@ export function portfolioEditorHasContent(snap: {
   title?: string;
   subtitle?: string;
   description?: string;
+  content_blocks?: unknown[];
   cover_url?: string;
   gallery_urls?: string[];
   video_urls?: string[];
   tools?: string[];
   tags?: string[];
 }): boolean {
+  const hasBlocks =
+    Array.isArray(snap.content_blocks) &&
+    snap.content_blocks.some((b) => {
+      if (!b || typeof b !== "object") return false;
+      const row = b as { heading?: string; body?: string };
+      return !!(row.heading?.trim() || row.body?.trim());
+    });
   return !!(
     snap.title?.trim() ||
     snap.subtitle?.trim() ||
     snap.description?.trim() ||
+    hasBlocks ||
     snap.cover_url?.trim() ||
     (snap.gallery_urls?.length ?? 0) > 0 ||
     (snap.video_urls?.length ?? 0) > 0 ||

@@ -24,7 +24,10 @@ function pickDevRoot() {
 const devRoot = pickDevRoot();
 process.chdir(devRoot);
 
-// Local dev: payments on + Stripe sandbox unless overridden in .env
+// Local dev: match production launch slice unless overridden in .env
+if (!process.env.VITE_APLUS1_LAUNCH_MINIMAL && process.env.VITE_DEMO_MODE !== "true") {
+  process.env.VITE_APLUS1_LAUNCH_MINIMAL = "true";
+}
 if (!process.env.VITE_APLUS1_PAYMENTS_ENABLED && process.env.VITE_DEMO_MODE !== "true") {
   process.env.VITE_APLUS1_PAYMENTS_ENABLED = "true";
 }

@@ -49,10 +49,26 @@ import ThirdPartyAssetsToggle from "@/components/license/ThirdPartyAssetsToggle"
 import OriginalWorkAttestation from "@/components/license/OriginalWorkAttestation";
 import { LEGAL_ATTESTATION_VERSION } from "@/lib/legalConfig";
 import { type LicenseType, isLicenseType } from "@/lib/licenses";
-import { GalleryMediaButtons } from "@/components/project/GalleryMediaButtons";
+import { ProjectEditorToolsSidebar } from "@/components/project/ProjectEditorToolsSidebar";
+import { ProjectEditorGallerySection } from "@/components/project/ProjectEditorGallerySection";
 import { PortfolioLinkedPostPicker } from "@/components/project/PortfolioLinkedPostPicker";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { PortfolioCollabUserPicker } from "@/components/project/PortfolioCollabUserPicker";
 import { SortableGalleryGrid } from "@/components/project/SortableGalleryGrid";
+import { ProjectContentBlocksEditor } from "@/components/project/ProjectContentBlocksEditor";
+import {
+  blocksFromLegacyDescription,
+  createContentBlock,
+  parseContentBlocks,
+  parseGalleryDisplayMode,
+  PROJECT_CONTENT_BLOCKS_MAX,
+  gallerySectionTitle,
+  toStoredContentBlocks,
+  type GalleryDisplayMode,
+  type ProjectContentBlock,
+  type ProjectContentBlockType,
+} from "@/lib/projectContentBlocks";
+import { parsePhotoGridLayout, photoGridSlotCount, type PhotoGridLayout } from "@/lib/photoGridLayouts";
 import {
   countMediaByKind,
   mediaItemFromUrl,
@@ -105,7 +121,10 @@ const ProjectEditorPage = () => {
   const update = useUpdateProject();
 
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
+  const [contentBlocks, setContentBlocks] = useState<ProjectContentBlock[]>([]);
+  const [galleryDisplayMode, setGalleryDisplayMode] = useState<GalleryDisplayMode>("gallery");
+  const [gridLayout, setGridLayout] = useState<PhotoGridLayout>("four_quad");
   const [category, setCategory] = useState<string>("");
   const [cover, setCover] = useState<string>("");
   const [mediaItems, setMediaItems] = useState<PortfolioMediaItem[]>([]);
@@ -130,6 +149,7 @@ const ProjectEditorPage = () => {
   const [coverCropFile, setCoverCropFile] = useState<File | null>(null);
   const [coverCropOpen, setCoverCropOpen] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [uploadingGridSlot, setUploadingGridSlot] = useState<number | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<ProjectPreviewMode>("pc");
@@ -180,7 +200,7 @@ const ProjectEditorPage = () => {
     const drillType = params.get("drill_type")?.trim();
     const drillDate = params.get("drill_date")?.trim();
     if (prefillTitle) setTitle(prefillTitle);
-    if (prefillDesc) setDescription(prefillDesc);
+    if (prefillDesc) setShortDescription(prefillDesc);
     if (prefillCat) {
       const resolved = normalizeProjectCategory(prefillCat) ?? (categories.includes(prefillCat as Category) ? prefillCat : null);
       if (resolved) setCategory(resolved);
@@ -195,11 +215,7 @@ const ProjectEditorPage = () => {
     }
     drillMetaRef.current = { drill_type: drillType, drill_date: drillDate };
     if (prefillClient && !prefillDesc) {
-      setDescription((d) =>
-        d.trim()
-          ? d
-          : `โปรเจกต์สำหรับลูกค้า ${prefillClient} — เสร็จจาก So1o Job Tracker`,
-      );
+      setShortDescription(`โปรเจกต์สำหรับลูกค้า ${prefillClient} — เสร็จจาก So1o Job Tracker`);
     }
   }, [editing, existing, params]);
 
@@ -213,7 +229,21 @@ const ProjectEditorPage = () => {
     if (!existing) return;
     if (editing && user && existing.owner_id !== user.id && !isAdmin) return;
     setTitle(existing.title);
-      setDescription(existing.description ?? "");
+      const extContent = existing as {
+        content_blocks?: unknown;
+        gallery_display_mode?: string;
+        grid_layout?: string;
+      };
+      const parsedBlocks = parseContentBlocks(extContent.content_blocks);
+      if (parsedBlocks.length) {
+        setContentBlocks(parsedBlocks);
+        setShortDescription(existing.description ?? "");
+      } else {
+        setContentBlocks(blocksFromLegacyDescription(existing.description));
+        setShortDescription("");
+      }
+      setGalleryDisplayMode(parseGalleryDisplayMode(extContent.gallery_display_mode));
+      setGridLayout(parsePhotoGridLayout(extContent.grid_layout));
       setCategory(existing.category);
       setCover(existing.cover_url ?? "");
       setMediaItems(
@@ -309,10 +339,12 @@ const ProjectEditorPage = () => {
       );
       const rightsAttestedAt = rightsAttested ? new Date().toISOString() : null;
 
+      const storedBlocks = toStoredContentBlocks(contentBlocks);
+
       return {
         title: title.trim(),
         subtitle: "",
-        description: description.trim(),
+        description: shortDescription.trim(),
         category,
         cover_url: cover,
         gallery_urls,
@@ -344,13 +376,19 @@ const ProjectEditorPage = () => {
         opportunity_note: "",
         external_links: projectAssetsToExternalLinks(projectAssets),
         project_assets: toStoredProjectAssets(projectAssets),
+        content_blocks: storedBlocks,
+        gallery_display_mode: galleryDisplayMode,
+        grid_layout: gridLayout,
       };
     },
     [
       mediaItems,
       tags,
       title,
-      description,
+      shortDescription,
+      contentBlocks,
+      galleryDisplayMode,
+      gridLayout,
       category,
       cover,
       showPrice,
@@ -431,7 +469,8 @@ const ProjectEditorPage = () => {
       if (
         !portfolioEditorHasContent({
           title,
-          description,
+          description: shortDescription,
+          content_blocks: contentBlocks,
           cover_url: cover,
           gallery_urls: media.gallery_urls,
           video_urls: media.video_urls,
@@ -476,7 +515,8 @@ const ProjectEditorPage = () => {
       user,
       mediaItems,
       title,
-      description,
+      shortDescription,
+      contentBlocks,
       cover,
       tools,
       tags,
@@ -561,6 +601,64 @@ const ProjectEditorPage = () => {
     } finally {
       setUploadingGallery(false);
     }
+  };
+
+  const handleGridSlotUpload = async (slotIndex: number, file: File) => {
+    if (!user) return;
+    if (!file.type.match(/^image\/(jpeg|png|webp)$/i)) {
+      toast.error("รองรับเฉพาะ JPG, PNG, WebP");
+      return;
+    }
+    const maxGalleryNum = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
+    const images = mediaItems.filter((m) => m.kind === "image");
+    const slots = photoGridSlotCount(gridLayout);
+    if (slotIndex >= slots) return;
+
+    if (slotIndex > images.length) {
+      toast.error("กรุณาเติมช่องก่อนหน้าก่อน");
+      return;
+    }
+    if (slotIndex === images.length && images.length >= maxGalleryNum) {
+      toast.error(`รวมแล้วต้องไม่เกิน ${maxGalleryNum} ภาพ`);
+      return;
+    }
+
+    setUploadingGridSlot(slotIndex);
+    try {
+      const url = await uploadProjectImage(file, user.id, folderRef.current, tier);
+      const newItem = mediaItemFromUrl(url);
+      setMediaItems((prev) => {
+        const imgs = prev.filter((m) => m.kind === "image");
+        const vids = prev.filter((m) => m.kind === "video");
+        const nextImgs = [...imgs];
+        if (slotIndex < nextImgs.length) {
+          nextImgs[slotIndex] = newItem;
+        } else {
+          nextImgs.push(newItem);
+        }
+        return [...nextImgs, ...vids];
+      });
+      toast.success("อัปโหลดภาพสำเร็จ");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+    } finally {
+      setUploadingGridSlot(null);
+    }
+  };
+
+  const handleGridSlotRemove = (slotIndex: number) => {
+    setMediaItems((prev) => {
+      const images = prev.filter((m) => m.kind === "image");
+      const videos = prev.filter((m) => m.kind === "video");
+      if (slotIndex >= images.length) return prev;
+      const removed = images[slotIndex];
+      const nextImages = images.filter((_, i) => i !== slotIndex);
+      if (removed?.url === cover) {
+        const nextCover = nextImages[0]?.url ?? "";
+        setCover(nextCover);
+      }
+      return [...nextImages, ...videos];
+    });
   };
 
   const removeMediaItem = (index: number) => {
@@ -700,7 +798,7 @@ const ProjectEditorPage = () => {
   };
 
   const cats = categories.filter((c) => c !== "Explore");
-  const isUploadingMedia = uploadingCover || uploadingGallery || uploadingVideo;
+  const isUploadingMedia = uploadingCover || uploadingGallery || uploadingVideo || uploadingGridSlot !== null;
   const isBusy = publishing || savingDraft || isUploadingMedia;
   const canPublish = !!cover && rightsAttested;
   const publishBlockedReason = !cover
@@ -736,13 +834,49 @@ const ProjectEditorPage = () => {
     }
   };
 
+  const handleGalleryDisplayModeChange = (mode: GalleryDisplayMode) => {
+    if (mode === "single") {
+      const images = mediaItems.filter((m) => m.kind === "image");
+      if (images.length > 1) {
+        const keepId = images[0]!.id;
+        setMediaItems((prev) => prev.filter((m) => m.kind !== "image" || m.id === keepId));
+        toast.message("โหมดภาพเดียว — คงภาพแรกไว้");
+      }
+    }
+    setGalleryDisplayMode(mode);
+  };
+
+  const handleGridLayoutSelect = (layout: PhotoGridLayout) => {
+    setGridLayout(layout);
+    handleGalleryDisplayModeChange("grid");
+  };
+
+  const handleAddTextBlock = useCallback(
+    (type: ProjectContentBlockType) => {
+      if (contentBlocks.length >= PROJECT_CONTENT_BLOCKS_MAX) {
+        toast.message(`เพิ่มบล็อกได้สูงสุด ${PROJECT_CONTENT_BLOCKS_MAX} บล็อก`);
+        return;
+      }
+      setContentBlocks((prev) => [...prev, createContentBlock(type)]);
+    },
+    [contentBlocks.length],
+  );
+
   const imageCount = countMediaByKind(mediaItems, "image");
   const videoCount = countMediaByKind(mediaItems, "video");
-  const maxGallery = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
+  const maxGallery =
+    galleryDisplayMode === "single"
+      ? 1
+      : Number.isFinite(limits.galleryImages)
+        ? limits.galleryImages
+        : 20;
 
   const previewData: ProjectPreviewData = {
     title,
-    description,
+    description: shortDescription,
+    contentBlocks: toStoredContentBlocks(contentBlocks),
+    galleryDisplayMode,
+    gridLayout,
     category,
     cover,
     gallery: mediaItems.map((m) => m.url),
@@ -892,92 +1026,86 @@ const ProjectEditorPage = () => {
         </div>
       ) : null}
 
+      <div className="flex w-full">
+        <ProjectEditorToolsSidebar
+          galleryDisplayMode={galleryDisplayMode}
+          gridLayout={gridLayout}
+          onDisplayModeChange={handleGalleryDisplayModeChange}
+          onGridLayoutSelect={handleGridLayoutSelect}
+          imageCount={imageCount}
+          maxImages={maxGallery}
+          videoCount={videoCount}
+          maxVideos={limits.videosPerProject}
+          contentBlocks={contentBlocks}
+          imageDisabled={uploadingGallery || uploadingGridSlot !== null || imageCount >= maxGallery}
+          videoDisabled={uploadingVideo || videoCount >= limits.videosPerProject}
+          textDisabled={isBusy || contentBlocks.length >= PROJECT_CONTENT_BLOCKS_MAX}
+          uploadingImage={uploadingGallery || uploadingGridSlot !== null}
+          uploadingVideo={uploadingVideo}
+          onPickImages={handleGallery}
+          onPickVideo={(f) => void handleVideo(f)}
+          onAddTextBlock={handleAddTextBlock}
+          className="fixed left-0 top-16 z-30 lg:sticky lg:top-16 lg:z-auto lg:self-start"
+        />
+
+        <div className="min-w-0 flex-1 pl-12 lg:pl-0">
+
       <div className="max-w-6xl mx-auto px-4 py-6 pb-28 lg:pb-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         {/* Left: content */}
-        <div className="space-y-6">
+        <div className="space-y-6 order-2 lg:order-none">
           <section className="space-y-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Label className="text-sm font-semibold">ภาพปก *</Label>
-              {!cover && (
-                <span className="text-xs text-primary">ต้องมีภาพปกก่อนเผยแพร่</span>
-              )}
-            </div>
-            <CoverDrop
-              url={cover}
-              loading={uploadingCover}
-              onPick={handleCoverPick}
-              onClear={() => setCover("")}
-            />
-            <p className="text-xs text-muted-foreground">
-              อัตราส่วน {PROJECT_COVER_RATIO_LABEL} แนวนอนเท่านั้น — ใช้เป็นภาพหลักในฟีดและการค้นหา
-            </p>
-          </section>
+            {!(galleryDisplayMode === "single" && mediaItems.length === 0) ? (
+              <Label className="text-sm font-semibold">
+                {gallerySectionTitle(galleryDisplayMode)}
+              </Label>
+            ) : null}
 
-          <section className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <Label className="text-sm font-semibold">
-                  แกลเลอรีผลงาน ({imageCount}/{maxGallery} ภาพ
-                  {limits.videosPerProject > 0 ? `, ${videoCount}/${limits.videosPerProject} วิดีโอ` : ""})
-                </Label>
-                <p className="text-xs text-muted-foreground mt-0.5">ลากเพื่อเรียงลำดับ · วิดีโอสูงสุด ~15MB/คลิป</p>
-              </div>
-              <GalleryMediaButtons
-                imageDisabled={uploadingGallery || imageCount >= maxGallery}
-                videoDisabled={uploadingVideo || videoCount >= limits.videosPerProject}
-                uploadingImage={uploadingGallery}
-                uploadingVideo={uploadingVideo}
-                onPickImages={handleGallery}
-                onPickVideo={(f) => void handleVideo(f)}
-              />
-            </div>
-
-            {mediaItems.length === 0 ? (
-              <GalleryDrop loading={uploadingGallery} onPick={handleGallery} />
-            ) : (
+            {galleryDisplayMode === "grid" || mediaItems.length > 0 ? (
               <div className="space-y-3">
-                <SortableGalleryGrid
+                <ProjectEditorGallerySection
                   items={mediaItems}
+                  displayMode={galleryDisplayMode}
+                  gridLayout={gridLayout}
+                  title={title}
                   coverUrl={cover}
+                  disabled={isBusy}
+                  uploadingGridSlot={uploadingGridSlot}
                   onReorder={setMediaItems}
                   onSetCover={(url) => void handleSetCoverFromGallery(url)}
                   onRemove={removeMediaItem}
-                  layout="list"
+                  onGridSlotUpload={(slot, file) => void handleGridSlotUpload(slot, file)}
+                  onGridSlotRemove={handleGridSlotRemove}
                 />
+                {mediaItems.length === 0 && galleryDisplayMode !== "grid" ? (
+                  <GalleryDrop
+                    loading={uploadingGallery}
+                    onPick={handleGallery}
+                    displayMode={galleryDisplayMode}
+                  />
+                ) : null}
                 {(uploadingGallery || uploadingVideo) && (
                   <div className="rounded-2xl border border-dashed border-border bg-card p-8 flex items-center justify-center text-sm text-muted-foreground">
                     <Loader2 className="w-4 h-4 animate-spin mr-2" /> กำลังอัปโหลด...
                   </div>
                 )}
               </div>
+            ) : (
+              <GalleryDrop
+                loading={uploadingGallery}
+                onPick={handleGallery}
+                displayMode={galleryDisplayMode}
+              />
             )}
           </section>
 
           <div className="space-y-6">
-          {/* Title */}
-          <section className="space-y-2">
-            <Label className="text-sm font-semibold">ชื่อผลงาน *</Label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="เช่น โลโก้ร้านกาแฟเชียงใหม่ Doi Brew"
-              className="text-2xl font-medium h-14 px-4"
-              maxLength={120}
-            />
-          </section>
-
-          {/* Description */}
-          <section className="space-y-2">
-            <Label className="text-sm font-semibold">รายละเอียด</Label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={`เล่าที่มา แนวคิด กระบวนการ และผลลัพธ์ของงานนี้...\n\nรองรับการเว้นบรรทัดเพื่อให้อ่านง่าย`}
-              rows={8}
-              maxLength={5000}
-            />
-            <p className="text-xs text-muted-foreground text-right">{description.length}/5000</p>
-          </section>
+          {/* Content blocks */}
+          <ProjectContentBlocksEditor
+            blocks={contentBlocks}
+            onChange={setContentBlocks}
+            disabled={isBusy}
+            hideAddButtons
+          />
 
           <ProjectContextEditorFields
             value={projectContext}
@@ -986,28 +1114,52 @@ const ProjectEditorPage = () => {
             onExpandedChange={setContextExpanded}
           />
 
-          <section className="space-y-4 rounded-2xl border border-border bg-card/40 p-4">
-            <PortfolioLinkedPostPicker
-              userId={user?.id ?? ""}
-              selected={linkedOwnPosts}
-              onChange={setLinkedOwnPosts}
-              readOnlyPosts={linkedCollabPosts}
-            />
-            <div className="border-t border-border/60 pt-4">
-              <PortfolioCollabUserPicker
+          {!isAplus1LaunchMinimal() ? (
+            <section className="space-y-4 rounded-2xl border border-border bg-card/40 p-4">
+              <PortfolioLinkedPostPicker
                 userId={user?.id ?? ""}
-                selected={collabSelected}
-                onChange={setCollabSelected}
-                acceptedUsers={collabAccepted}
-                pendingUsers={collabPending}
+                selected={linkedOwnPosts}
+                onChange={setLinkedOwnPosts}
+                readOnlyPosts={linkedCollabPosts}
               />
-            </div>
-          </section>
+            </section>
+          ) : null}
           </div>
         </div>
 
         {/* Right: sidebar */}
-        <aside className="space-y-5 lg:sticky lg:top-20 lg:self-start">
+        <aside className="order-first space-y-5 lg:order-none lg:sticky lg:top-20 lg:self-start">
+          <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase">ชื่อผลงาน *</Label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="เช่น โลโก้ร้านกาแฟเชียงใหม่ Doi Brew"
+                className="text-base font-medium h-11 px-3"
+                maxLength={120}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase">ภาพปก *</Label>
+                {!cover ? (
+                  <span className="text-[11px] text-primary">ต้องมีภาพปกก่อนเผยแพร่</span>
+                ) : null}
+              </div>
+              <CoverDrop
+                url={cover}
+                loading={uploadingCover}
+                onPick={handleCoverPick}
+                onClear={() => setCover("")}
+                compact
+              />
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                อัตราส่วน {PROJECT_COVER_RATIO_LABEL} แนวนอน — ใช้ในฟีดและการค้นหา
+              </p>
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
             <div className="space-y-2">
               <Label className="text-xs font-semibold text-muted-foreground uppercase">หมวดงาน *</Label>
@@ -1054,29 +1206,6 @@ const ProjectEditorPage = () => {
               )}
             </div>
 
-            <div className="space-y-2 pt-2 border-t border-border/60">
-              <LicensePicker
-                value={licenseType}
-                onChange={setLicenseType}
-                licenseNote={licenseNote}
-                onLicenseNoteChange={setLicenseNote}
-                copyrightHolder={copyrightHolder}
-                onCopyrightHolderChange={setCopyrightHolder}
-              />
-              <ThirdPartyAssetsToggle
-                enabled={hasThirdPartyAssets}
-                onEnabledChange={setHasThirdPartyAssets}
-                note={thirdPartyNote}
-                onNoteChange={setThirdPartyNote}
-              />
-              {status === "Published" && (
-                <OriginalWorkAttestation
-                  checked={rightsAttested}
-                  onCheckedChange={setRightsAttested}
-                />
-              )}
-            </div>
-
             <div className="space-y-3 pt-2 border-t border-border/60">
               <Label className="text-xs font-semibold text-muted-foreground uppercase">ปุ่มติดต่อในผลงานนี้</Label>
               <div className="flex items-center justify-between gap-3">
@@ -1105,6 +1234,39 @@ const ProjectEditorPage = () => {
                 </p>
               )}
             </div>
+
+            {user && (
+              <PortfolioCollabUserPicker
+                userId={user.id}
+                selected={collabSelected}
+                onChange={setCollabSelected}
+                acceptedUsers={collabAccepted}
+                pendingUsers={collabPending}
+              />
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
+            <LicensePicker
+              value={licenseType}
+              onChange={setLicenseType}
+              licenseNote={licenseNote}
+              onLicenseNoteChange={setLicenseNote}
+              copyrightHolder={copyrightHolder}
+              onCopyrightHolderChange={setCopyrightHolder}
+            />
+            <ThirdPartyAssetsToggle
+              enabled={hasThirdPartyAssets}
+              onEnabledChange={setHasThirdPartyAssets}
+              note={thirdPartyNote}
+              onNoteChange={setThirdPartyNote}
+            />
+            {status === "Published" && (
+              <OriginalWorkAttestation
+                checked={rightsAttested}
+                onCheckedChange={setRightsAttested}
+              />
+            )}
           </div>
 
           {user && (
@@ -1118,6 +1280,26 @@ const ProjectEditorPage = () => {
           )}
 
 
+
+          {user && (
+            <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase">
+                รายละเอียดแบบย่อ
+              </Label>
+              <Textarea
+                value={shortDescription}
+                onChange={(e) => setShortDescription(e.target.value)}
+                placeholder="สรุปสั้น ๆ ว่างานนี้คืออะไร ทำอะไร หรือจุดเด่นที่อยากให้จำ..."
+                rows={4}
+                maxLength={2000}
+                disabled={isBusy}
+                className="resize-y min-h-[96px] text-sm"
+              />
+              <p className="text-[11px] text-muted-foreground text-right">
+                {shortDescription.length}/2000
+              </p>
+            </div>
+          )}
 
           {user && (
             <ProjectAssetsEditor
@@ -1145,6 +1327,8 @@ const ProjectEditorPage = () => {
             setInput={setTagInput}
           />
         </aside>
+      </div>
+        </div>
       </div>
 
       {/* Mobile sticky actions */}
@@ -1216,11 +1400,13 @@ const CoverDrop = ({
   loading,
   onPick,
   onClear,
+  compact = false,
 }: {
   url: string;
   loading: boolean;
   onPick: (f: File) => void;
   onClear: () => void;
+  compact?: boolean;
 }) => {
   const ref = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
@@ -1231,22 +1417,38 @@ const CoverDrop = ({
 
   if (url) {
     return (
-      <div className="relative rounded-2xl overflow-hidden border border-border group aspect-[4/3] bg-muted">
-        <img src={url} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute top-3 right-3 flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
+      <div
+        className={cn(
+          "group relative w-full overflow-hidden rounded-xl border border-border bg-muted",
+          compact ? "aspect-[4/3]" : "aspect-[4/3] rounded-2xl",
+        )}
+      >
+        <img src={url} alt="cover" className="absolute inset-0 h-full w-full object-cover" />
+        <div
+          className={cn(
+            "absolute right-2 top-2 flex gap-1.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100",
+            compact && "flex-col sm:flex-row",
+          )}
+        >
           <Button
             type="button"
             size="sm"
             variant="secondary"
-            className="rounded-full"
+            className={cn("rounded-full", compact && "h-8 px-2 text-xs")}
             disabled={loading}
             onClick={() => ref.current?.click()}
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4 mr-1" />}
-            เปลี่ยนรูป
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5 mr-1" />}
+            เปลี่ยน
           </Button>
-          <Button type="button" size="sm" variant="destructive" className="rounded-full" onClick={onClear}>
-            <X className="w-4 h-4 mr-1" /> ลบภาพปก
+          <Button
+            type="button"
+            size="sm"
+            variant="destructive"
+            className={cn("rounded-full", compact && "h-8 px-2 text-xs")}
+            onClick={onClear}
+          >
+            <X className="w-3.5 h-3.5 mr-1" /> ลบ
           </Button>
         </div>
         <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => pickFile(e.target.files?.[0])} />
@@ -1262,21 +1464,42 @@ const CoverDrop = ({
         pickFile(e.dataTransfer.files?.[0]);
       }}
       onClick={() => ref.current?.click()}
-      className={`rounded-2xl border-2 border-dashed cursor-pointer transition min-h-[200px] flex flex-col items-center justify-center gap-3 glass-panel ${
-        drag ? "border-primary bg-primary/10 shadow-lg shadow-primary/10" : "border-border/80 hover:border-primary/40 hover:bg-muted/20"
-      }`}
+      className={cn(
+        "flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition glass-panel",
+        compact ? "aspect-[4/3] px-3 py-4" : "min-h-[200px] gap-3 rounded-2xl",
+        drag
+          ? "border-primary bg-primary/10 shadow-lg shadow-primary/10"
+          : "border-border/80 hover:border-primary/40 hover:bg-muted/20",
+      )}
     >
-      {loading ? <Loader2 className="w-6 h-6 animate-spin text-primary" /> : <ImagePlus className="w-8 h-8 text-muted-foreground" />}
-      <p className="text-sm font-medium text-foreground">ลากภาพมาวาง หรือคลิกเพื่อเลือก</p>
-      <p className="text-xs text-muted-foreground">JPG / PNG / WebP — สูงสุด 30MB · ครอปเป็น 4:3 แนวนอน</p>
+      {loading ? (
+        <Loader2 className={cn("animate-spin text-primary", compact ? "h-5 w-5" : "h-6 w-6")} />
+      ) : (
+        <ImagePlus className={cn("text-muted-foreground", compact ? "h-6 w-6" : "h-8 w-8")} />
+      )}
+      <p className={cn("text-center font-medium text-foreground", compact ? "text-xs leading-snug" : "text-sm")}>
+        ลากภาพมาวาง หรือคลิกเพื่อเลือก
+      </p>
+      {!compact ? (
+        <p className="text-xs text-muted-foreground">JPG / PNG / WebP — สูงสุด 30MB · ครอปเป็น 4:3 แนวนอน</p>
+      ) : null}
       <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => pickFile(e.target.files?.[0])} />
     </div>
   );
 };
 
-const GalleryDrop = ({ loading, onPick }: { loading: boolean; onPick: (f: FileList) => void }) => {
+const GalleryDrop = ({
+  loading,
+  onPick,
+  displayMode = "gallery",
+}: {
+  loading: boolean;
+  onPick: (f: FileList) => void;
+  displayMode?: GalleryDisplayMode;
+}) => {
   const ref = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
+  const single = displayMode === "single";
   return (
     <div
       onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
@@ -1288,9 +1511,17 @@ const GalleryDrop = ({ loading, onPick }: { loading: boolean; onPick: (f: FileLi
       }`}
     >
       {loading ? <Loader2 className="w-6 h-6 animate-spin text-primary" /> : <Upload className="w-8 h-8 text-muted-foreground" />}
-      <p className="text-sm font-medium text-foreground">ลากภาพหลายไฟล์มาวาง หรือคลิกเพื่อเลือก</p>
-      <p className="text-xs text-muted-foreground">เพิ่มได้สูงสุด 20 ภาพ — เรียงลำดับได้ภายหลัง</p>
-      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(e) => e.target.files && onPick(e.target.files)} />
+      <p className="text-sm font-medium text-foreground">
+        {single ? "ลากภาพมาวาง หรือคลิกเพื่อเลือก" : "ลากภาพหลายไฟล์มาวาง หรือคลิกเพื่อเลือก"}
+      </p>
+      <input
+        ref={ref}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple={!single}
+        hidden
+        onChange={(e) => e.target.files && onPick(e.target.files)}
+      />
     </div>
   );
 };

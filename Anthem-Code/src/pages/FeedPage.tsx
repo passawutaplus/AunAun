@@ -45,7 +45,7 @@ import CommunityFeedPanel from "@/components/community/CommunityFeedPanel";
 import CommunityFeedSidebar, {
   CommunityFeedMobileDiscovery,
 } from "@/components/community/CommunityFeedSidebar";
-import CreateContentDrawer from "@/components/CreateContentDrawer";
+import { COMMUNITY_NEW_PATH } from "@/data/createActions";
 import { useCommunityFeedFilter } from "@/hooks/useCommunityFeedFilter";
 import { cn } from "@/lib/utils";
 import { sortToolsVisualFirst } from "@/lib/toolIcons";
@@ -54,6 +54,7 @@ import { recordFeedSearch } from "@/lib/feedSearchSignals";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { DESIGN_DRILL_CHIP, type ProjectChipFilter } from "@/lib/drillProject";
 import { markOnboardingVisit, type OnboardingVisitId } from "@/lib/onboardingStorage";
+import { coerceLaunchFeedMode, isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 
 type FeedMode2 = "Explore" | SpecialFilter;
 const requiresAuth = (m: FeedMode2) => m === "Following";
@@ -82,10 +83,10 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     if (!isCategoryAllowed("functional")) return "projects";
     const urlMode = new URLSearchParams(window.location.search).get("mode");
     if (urlMode === "designers" || urlMode === "studios" || urlMode === "projects" || urlMode === "community") {
-      return urlMode;
+      return coerceLaunchFeedMode(urlMode);
     }
     const stored = localStorage.getItem("feed-mode") as FeedMode | null;
-    return stored || "projects";
+    return stored ? coerceLaunchFeedMode(stored) : "projects";
   });
   const [hireOpen, setHireOpen] = useState(false);
   const [hireProject, setHireProject] = useState("");
@@ -96,15 +97,22 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const [designerCategory, setDesignerCategory] = useState<Category | "All">("All");
   const [designerTools, setDesignerTools] = useState<string[]>([]);
   const [studioFeedSource, setStudioFeedSource] = useState<StudioFeedSource>("all");
-  const [createOpen, setCreateOpen] = useState(false);
   const { filter: communityFilter, setFilter: setCommunityFilter, clearTag } = useCommunityFeedFilter();
 
-  const openCreatePicker = () => {
+  const openNewPortfolio = () => {
     if (!user) {
       useAuthDialog.getState().openSignup("/portfolio/new");
       return;
     }
-    setCreateOpen(true);
+    navigate("/portfolio/new");
+  };
+
+  const openNewCommunityPost = () => {
+    if (!user) {
+      useAuthDialog.getState().openSignup(COMMUNITY_NEW_PATH);
+      return;
+    }
+    navigate(COMMUNITY_NEW_PATH);
   };
 
   const { data: designersAll = [] } = useDesigners();
@@ -135,20 +143,22 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   };
 
   const changeMode = (m: FeedMode) => {
-    setMode(m);
-    trackFeedModeVisit(m);
-    if (m === "projects") setCategory("All");
-    if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", m);
+    const next = coerceLaunchFeedMode(m);
+    setMode(next);
+    trackFeedModeVisit(next);
+    if (next === "projects") setCategory("All");
+    if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", next);
     const params = new URLSearchParams(searchParams);
     params.delete("drill");
-    if (m === "projects") params.delete("mode");
-    else params.set("mode", m);
+    if (next === "projects") params.delete("mode");
+    else params.set("mode", next);
     const q = params.toString();
     navigate(q ? `/?${q}` : "/", { replace: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const openDrill = () => {
+    if (isAplus1LaunchMinimal()) return;
     setMode("projects");
     setCategory(DESIGN_DRILL_CHIP);
     if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "projects");
@@ -160,13 +170,21 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     const view = searchParams.get("mode");
     const feed = searchParams.get("feed");
     const tag = searchParams.get("tag");
-    if (tag) {
+    if (tag && !isAplus1LaunchMinimal()) {
       setMode("community");
       if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "community");
     } else if (view === "designers" || view === "studios" || view === "projects" || view === "community") {
-      setMode(view);
-      if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", view);
-    } else if (feed === "drill" || searchParams.get("drill") === "1") {
+      const coerced = coerceLaunchFeedMode(view);
+      setMode(coerced);
+      if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", coerced);
+      if (isAplus1LaunchMinimal() && view !== coerced) {
+        const params = new URLSearchParams(searchParams);
+        if (coerced === "projects") params.delete("mode");
+        else params.set("mode", coerced);
+        const q = params.toString();
+        navigate(q ? `/?${q}` : "/", { replace: true });
+      }
+    } else if (!isAplus1LaunchMinimal() && (feed === "drill" || searchParams.get("drill") === "1")) {
       setMode("projects");
       setCategory(DESIGN_DRILL_CHIP);
       if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "projects");
@@ -208,6 +226,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
 
   const setFeedMode = (m: FeedMode2) => {
     if (m === "Collections") {
+      if (isAplus1LaunchMinimal()) return;
       if (user) navigate("/collections");
       else useAuthDialog.getState().openSignup();
       return;
@@ -383,7 +402,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             setCategory("All");
             setFeedModeRaw("Explore");
           }}
-          onCreateClick={openCreatePicker}
+          onCreateClick={openNewPortfolio}
           showCreate={mode !== "community"}
           communityFeedSource={communityFilter.feedSource}
           onCommunityFeedSourceChange={(feedSource) =>
@@ -395,7 +414,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           }
           communityTag={communityFilter.tag}
           communityPostKind={communityFilter.postKind}
-          onCommunityPostClick={mode === "community" ? openCreatePicker : undefined}
+          onCommunityPostClick={mode === "community" ? openNewCommunityPost : undefined}
           studioFeedSource={studioFeedSource}
           onStudioFeedSourceChange={setStudioFeedSource}
           drillActive={isDrillView}
@@ -437,7 +456,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                   search={search}
                   filter={communityFilter}
                   onClearTag={clearTag}
-                  onPostClick={openCreatePicker}
+                  onPostClick={openNewCommunityPost}
                 />
               </div>
             </div>
@@ -517,7 +536,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
         projectId={collabTarget.projectId}
         projectTitle={collabTarget.projectTitle}
       />
-      <CreateContentDrawer open={createOpen} onOpenChange={setCreateOpen} />
     </main>
   );
 };

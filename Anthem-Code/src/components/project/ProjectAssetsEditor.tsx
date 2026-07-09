@@ -121,15 +121,10 @@ const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
-      <div>
-        <Label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
-          <Paperclip className="w-3.5 h-3.5" />
-          ไฟล์แนบ / ลิงก์
-        </Label>
-        <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
-          คนอื่นจะเห็นเมื่อตรวจสอบผ่านแล้วเท่านั้น
-        </p>
-      </div>
+      <Label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
+        <Paperclip className="w-3.5 h-3.5" />
+        ไฟล์แนบ / ลิงก์
+      </Label>
 
       {assets.length > 0 && (
         <ul className="space-y-2">

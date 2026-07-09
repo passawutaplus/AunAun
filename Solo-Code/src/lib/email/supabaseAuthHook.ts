@@ -66,6 +66,46 @@ export function buildSupabaseConfirmationUrl(
   return `${base}/auth/v1/verify?${params.toString()}`;
 }
 
+function resolveAppOrigin(brandUrl?: string | null): string {
+  const fallbacks = [
+    process.env.VITE_APLUS1_APP_URL,
+    process.env.VITE_ANTHEM_APP_URL,
+    import.meta.env.VITE_APLUS1_APP_URL as string | undefined,
+    import.meta.env.VITE_ANTHEM_APP_URL as string | undefined,
+    "https://aplus1.app",
+  ];
+  if (brandUrl) {
+    try {
+      return new URL(brandUrl).origin;
+    } catch {
+      if (/aplus1\.app/i.test(brandUrl)) return "https://aplus1.app";
+    }
+  }
+  for (const candidate of fallbacks) {
+    if (!candidate) continue;
+    try {
+      return new URL(candidate).origin;
+    } catch {
+      continue;
+    }
+  }
+  return "https://aplus1.app";
+}
+
+/** Direct app link — avoids PKCE ?code= exchange that breaks from email clients. */
+export function buildAppAuthConfirmationUrl(
+  appOrigin: string,
+  emailData: SupabaseAuthHookPayload["email_data"],
+): string {
+  const params = new URLSearchParams({
+    token_hash: emailData.token_hash,
+    type: emailData.email_action_type,
+  });
+  const path =
+    emailData.email_action_type === "recovery" ? "/reset-password" : "/auth/callback";
+  return `${appOrigin.replace(/\/$/, "")}${path}?${params.toString()}`;
+}
+
 export async function verifySupabaseAuthHook(
   request: Request,
   secret: string,
@@ -89,15 +129,18 @@ export async function verifySupabaseAuthHook(
   }
 
   const webhookId = request.headers.get("webhook-id") || crypto.randomUUID();
+  const brandUrl = payload.email_data.redirect_to || payload.email_data.site_url;
+  const appOrigin = resolveAppOrigin(brandUrl);
+  const confirmationUrl = buildAppAuthConfirmationUrl(appOrigin, payload.email_data);
 
   return {
     run_id: webhookId,
     emailType,
     email: payload.user.email,
-    confirmationUrl: buildSupabaseConfirmationUrl(supabaseUrl, payload.email_data),
+    confirmationUrl,
     token: payload.email_data.token,
     oldEmail: payload.email_data.old_email,
     newEmail: payload.user.new_email || payload.email_data.token_new,
-    brandUrl: payload.email_data.redirect_to || payload.email_data.site_url,
+    brandUrl,
   };
 }

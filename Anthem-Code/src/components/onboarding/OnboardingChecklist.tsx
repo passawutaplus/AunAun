@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useOnboardingChecklist } from "@/hooks/useOnboardingChecklist";
 import { useWelcomeMissions } from "@/hooks/useWelcomeMissions";
 import { useWelcomeMissionCatalog } from "@/hooks/useWelcomeMissionCatalog";
-import { ONBOARDING_TASKS, likeMissionHint } from "@/lib/onboardingTasks";
+import { getVisibleOnboardingTasks, likeMissionHint } from "@/lib/onboardingTasks";
 import { friendlyAmlError } from "@/lib/amlErrors";
 import { springProgress } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
   const [collapsed, setCollapsed] = useState(variant === "compact");
   const [celebrating, setCelebrating] = useState(false);
 
-  const taskById = Object.fromEntries(ONBOARDING_TASKS.map((t) => [t.id, t]));
+  const taskById = Object.fromEntries(tasks.map((t) => [t.id, t]));
   const pxEarned = Math.min(lifetimeWelcomePx, welcomeCap);
   const pxRemaining = Math.max(0, welcomeCap - lifetimeWelcomePx);
   const welcomeCapReached = !missionsLoading && pxRemaining <= 0;

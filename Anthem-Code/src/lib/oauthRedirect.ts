@@ -45,6 +45,15 @@ export function buildOAuthCallbackUrl(): string {
   return "/auth/callback";
 }
 
+export function buildResetPasswordUrl(): string {
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}/reset-password`;
+  }
+  const configured = import.meta.env.VITE_SITE_URL as string | undefined;
+  if (configured?.trim()) return `${configured.trim().replace(/\/$/, "")}/reset-password`;
+  return "/reset-password";
+}
+
 export function parseOAuthError(): string | null {
   if (typeof window === "undefined") return null;
   const search = new URLSearchParams(window.location.search);

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { MessageSquare, Orbit } from "lucide-react";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import type { LinkedPostSummary } from "@/lib/portfolioLinkedPosts";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +22,7 @@ function PostThumb({ post }: { post: LinkedPostSummary }) {
 }
 
 export function ProjectLinkedPostsBlock({ posts, className }: Props) {
-  if (!posts.length) return null;
+  if (!posts.length || isAplus1LaunchMinimal()) return null;
 
   return (
     <div className={cn("rounded-2xl border border-border/70 bg-card/60 p-4 space-y-2", className)}>

@@ -10,7 +10,7 @@ import { useFollowState } from "@/hooks/useFollow";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
 import { highlight } from "@/lib/highlight";
 import { imageCrossfadeVariants, imageRevealTransition } from "@/lib/motion";
-import UserAvatar from "@/components/UserAvatar";
+import { isLaunchCollabEnabled } from "@/lib/aplus1Launch";
 
 interface Props {
   data: DesignerCardData;
@@ -118,14 +118,16 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
           onClick={() => onHire(profileUserId, name)}
           className="flex-1 flex items-center justify-center gap-1.5 rounded-full bg-gradient-brand text-white text-xs font-medium py-2 hover:opacity-90 transition"
         >
-          <BriefcaseIcon className="w-3.5 h-3.5" /> จ้างงาน
+          <BriefcaseIcon className="w-3.5 h-3.5" /> คุยโอกาส
         </button>
+        {isLaunchCollabEnabled() ? (
         <button
           onClick={() => onCollab(profileUserId, name)}
           className="flex-1 flex items-center justify-center gap-1.5 rounded-full glass-panel text-foreground text-xs font-medium py-2 hover:bg-accent/40 transition"
         >
           <Handshake className="w-3.5 h-3.5" /> คอลแลป
         </button>
+        ) : null}
         <FollowButton freelancerId={profileUserId} iconOnly tone="muted" />
         <motion.div whileTap={{ scale: 0.92 }}>
           <PlusOneControl

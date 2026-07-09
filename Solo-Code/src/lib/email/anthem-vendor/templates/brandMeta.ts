@@ -3,11 +3,15 @@ import {
   BRAND_NAME,
   BRAND_PRIVACY_EMAIL,
   BRAND_SUPPORT_EMAIL,
-  defaultSiteUrl,
+  APLUS1_PRODUCTION_URL,
 } from '../brandConfig'
 
+const configuredOrigin =
+  (import.meta.env?.VITE_APLUS1_APP_URL as string | undefined) ||
+  (import.meta.env?.VITE_ANTHEM_APP_URL as string | undefined)
+
 export const SITE_NAME = BRAND_NAME
-export const SITE_URL = defaultSiteUrl()
+export const SITE_URL = configuredOrigin?.trim().replace(/\/$/, "") || APLUS1_PRODUCTION_URL
 export const CONTACT_EMAIL = BRAND_SUPPORT_EMAIL
 export const PRIVACY_EMAIL = BRAND_PRIVACY_EMAIL
 export const SITE_DOMAIN = BRAND_DOMAIN

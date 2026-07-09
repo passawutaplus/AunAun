@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { INQUIRY_PLATFORM_DISCLAIMER } from "@/lib/legalSignupCopy";
 import { parseMoneyInput } from "@/lib/parseMoney";
 import { isUuid } from "@/lib/uuid";
@@ -147,7 +148,7 @@ const HireDialog = ({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-1 text-left">
-          <DialogTitle>{source === "project" ? "คุยต่อจากผลงานนี้" : "ชวนมาทำงาน"}</DialogTitle>
+          <DialogTitle>{source === "project" ? "คุยโอกาสจากผลงานนี้" : "ชวนมาทำงาน"}</DialogTitle>
           <DialogDescription>
             {source === "profile" ? (
               <>จากโปรไฟล์: <span className="font-medium text-primary">{profileName ?? projectTitle}</span></>
@@ -180,7 +181,7 @@ const HireDialog = ({
             onClick={() => void submitHire()}
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-            {busy ? "กำลังเปิด..." : source === "project" ? "คุยต่อเลย" : "แชทเลย"}
+            {busy ? "กำลังเปิด..." : source === "project" ? "คุยโอกาส" : "แชทเลย"}
           </Button>
         </DialogFooter>
       </DialogContent>

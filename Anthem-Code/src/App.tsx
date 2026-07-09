@@ -27,6 +27,7 @@ import AvatarPoolBootstrap from "./components/AvatarPoolBootstrap.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import { ReferralAttribution } from "./components/referral/ReferralAttribution.tsx";
 import { ScrollToTop } from "./components/ScrollToTop.tsx";
+import LaunchMinimalGate from "./components/LaunchMinimalGate.tsx";
 
 // Code-split routes — only the home feed stays in the main chunk.
 const AuthPage = lazy(() => import("./pages/AuthPage.tsx"));
@@ -152,6 +153,7 @@ const App = () => (
           <ReferralAttribution />
           <Suspense fallback={<RouteFallback />}>
             <Routes>
+              <Route element={<LaunchMinimalGate />}>
               <Route path="/" element={<Index />} />
               <Route path="/research" element={<ResearchPage />} />
               <Route path="/research/feedback" element={<UxResearchFeedbackPage />} />
@@ -273,6 +275,7 @@ const App = () => (
               */}
               <Route path="/:vanityHandle" element={<VanityProfileRoute />} />
               <Route path="*" element={<NotFound />} />
+              </Route>
             </Routes>
           </Suspense>
           <CookieConsent />

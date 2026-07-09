@@ -49,7 +49,18 @@ export const ECOSYSTEM_PLAYBOOKS: Playbook[] = [
     runbookHref: "/connections",
   },
   {
-    id: "migration-gate",
+    id: "auth-recovery-email",
+    title: "ลิงก์รีเซ็ตรหัสผ่านใช้ไม่ได้",
+    symptom: "กดปุ่มในอีเมลแล้วขึ้น 404 / ลิงก์หมดอายุ ที่ /auth/callback?code=",
+    steps: [
+      "ขออีเมลใหม่จาก /auth/forgot (ลิงก์เก่าเป็น PKCE code ใช้ไม่ได้)",
+      "ตรวจลิงก์ใหม่ต้องเป็น /reset-password?token_hash=...&type=recovery",
+      "ตรวจ Supabase Auth → Redirect URLs มี https://aplus1.app/reset-password",
+      "ตรวจ Send Email hook ชี้ solofreelancer.com/lovable/email/auth/webhook",
+    ],
+    runbookHref: "/monitor",
+  },
+  {
     title: "Migration ค้างก่อน deploy",
     symptom: "Production deploy blocked",
     steps: [

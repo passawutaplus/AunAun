@@ -1,4 +1,5 @@
 import { LayoutGrid, Orbit, Plus, Search, SlidersHorizontal, Sparkles, Users } from "lucide-react";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
 const PREVIEW_CATEGORIES = ["ทั้งหมด", "Graphic / Branding", "Illustration / Art", "Photo"] as const;
@@ -27,10 +28,12 @@ export function ProjectFeedPreviewToolbar({ className }: { className?: string })
             <LayoutGrid className="w-2.5 h-2.5" />
             <span className="hidden min-[380px]:inline">Projects</span>
           </span>
+          {!isAplus1LaunchMinimal() ? (
           <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium text-muted-foreground">
             <Orbit className="w-2.5 h-2.5" />
             <span className="hidden min-[380px]:inline">Area</span>
           </span>
+          ) : null}
           <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium text-muted-foreground">
             <Users className="w-2.5 h-2.5" />
           </span>

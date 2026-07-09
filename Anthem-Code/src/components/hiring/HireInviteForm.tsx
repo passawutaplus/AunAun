@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { jobTypeLabel } from "@/lib/hireBrief";
@@ -92,31 +93,33 @@ const HireInviteForm = ({
 
   return (
     <div className="space-y-4">
-      <div>
-        <Label className="text-xs">ผูกประกาศงานของคุณ (ไม่บังคับ)</Label>
-        {myJobs.length === 0 ? (
-          <p className="text-xs text-muted-foreground mt-1.5">
-            ยังไม่มีประกาศ —{" "}
-            <Link to="/jobs?post=1" className="text-primary hover:underline">
-              สร้างประกาศใหม่
-            </Link>
-          </p>
-        ) : (
-          <Select value={jobPostId || "__none__"} onValueChange={(v) => onJobPostIdChange(v === "__none__" ? "" : v)}>
-            <SelectTrigger className="rounded-xl mt-1.5">
-              <SelectValue placeholder="ไม่ผูกประกาศ" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">ไม่ผูกประกาศ — ส่งคำชวนทั่วไป</SelectItem>
-              {myJobs.map((j) => (
-                <SelectItem key={j.id} value={j.id}>
-                  {j.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
+      {!isAplus1LaunchMinimal() ? (
+        <div>
+          <Label className="text-xs">ผูกประกาศงานของคุณ (ไม่บังคับ)</Label>
+          {myJobs.length === 0 ? (
+            <p className="text-xs text-muted-foreground mt-1.5">
+              ยังไม่มีประกาศ —{" "}
+              <Link to="/jobs?post=1" className="text-primary hover:underline">
+                สร้างประกาศใหม่
+              </Link>
+            </p>
+          ) : (
+            <Select value={jobPostId || "__none__"} onValueChange={(v) => onJobPostIdChange(v === "__none__" ? "" : v)}>
+              <SelectTrigger className="rounded-xl mt-1.5">
+                <SelectValue placeholder="ไม่ผูกประกาศ" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">ไม่ผูกประกาศ — ส่งคำชวนทั่วไป</SelectItem>
+                {myJobs.map((j) => (
+                  <SelectItem key={j.id} value={j.id}>
+                    {j.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      ) : null}
 
       <div>
         <Label>

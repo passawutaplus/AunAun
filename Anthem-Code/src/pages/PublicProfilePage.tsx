@@ -36,6 +36,7 @@ import { Navigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { navigateToAuth, stripSearchParams } from "@/lib/authRedirect";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
+import { isAplus1LaunchMinimal, isLaunchCollabEnabled } from "@/lib/aplus1Launch";
 import { toast } from "sonner";
 
 const PREVIEW_TOAST = "นี่คือมุมมองผู้เยี่ยมชม — ปุ่มนี้ใช้งานได้จริงเมื่อคนอื่นเปิดโปรไฟล์ของคุณ";
@@ -146,6 +147,15 @@ const PublicProfilePage = () => {
     const q = next.toString();
     setSearchParams(q ? next : {}, { replace: true });
   }, [user, params, setSearchParams, resolvedUserId, isSelf]);
+
+  useEffect(() => {
+    if (
+      isAplus1LaunchMinimal() &&
+      (activeTab === "posts" || activeTab === "drill" || activeTab === "collections")
+    ) {
+      setActiveTab("works");
+    }
+  }, [activeTab]);
 
   if (vanityRedirect) {
     return <Navigate to={vanityRedirect} replace />;
@@ -363,7 +373,7 @@ const PublicProfilePage = () => {
 
               {showAsVisitor && (
                 <div className="flex flex-col gap-2 mt-3 sm:mt-4">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className={cn("grid gap-2", isLaunchCollabEnabled() ? "grid-cols-2" : "grid-cols-1")}>
                     <Button
                       type="button"
                       onClick={openHire}
@@ -372,6 +382,7 @@ const PublicProfilePage = () => {
                       <BriefcaseIcon className="w-4 h-4 shrink-0" />
                       ชวนมาทำงาน
                     </Button>
+                    {isLaunchCollabEnabled() ? (
                     <Button
                       type="button"
                       variant="outline"
@@ -381,6 +392,7 @@ const PublicProfilePage = () => {
                       <Handshake className="w-4 h-4 shrink-0" />
                       คอลแลป
                     </Button>
+                    ) : null}
                   </div>
                   <div className="grid grid-cols-2 gap-2 md:hidden">
                     <FollowButton
@@ -460,25 +472,29 @@ const PublicProfilePage = () => {
           onValueChange={setActiveTab}
           tabs={[
             { value: "works", label: `ผลงาน (${portfolioProjects.length})` },
-            { value: "posts", label: `Area (${communityPosts.length})` },
-            {
-              value: "drill",
-              label: (
-                <>
-                  <span className="sm:hidden">Drill ({drillProjects.length})</span>
-                  <span className="hidden sm:inline">Design Drill ({drillProjects.length})</span>
-                </>
-              ),
-            },
-            {
-              value: "collections",
-              label: (
-                <>
-                  <span className="sm:hidden">คอลฯ ({collections.length})</span>
-                  <span className="hidden sm:inline">คอลเลกชัน ({collections.length})</span>
-                </>
-              ),
-            },
+            ...(!isAplus1LaunchMinimal()
+              ? [
+                  { value: "posts", label: `Area (${communityPosts.length})` },
+                  {
+                    value: "drill",
+                    label: (
+                      <>
+                        <span className="sm:hidden">Drill ({drillProjects.length})</span>
+                        <span className="hidden sm:inline">Design Drill ({drillProjects.length})</span>
+                      </>
+                    ),
+                  },
+                  {
+                    value: "collections",
+                    label: (
+                      <>
+                        <span className="sm:hidden">คอลฯ ({collections.length})</span>
+                        <span className="hidden sm:inline">คอลเลกชัน ({collections.length})</span>
+                      </>
+                    ),
+                  },
+                ]
+              : []),
             { value: "about", label: "เกี่ยวกับ" },
           ]}
         >

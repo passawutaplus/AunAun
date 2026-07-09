@@ -4,20 +4,17 @@ import { Home, MessageCircle, Orbit, Plus, User } from "lucide-react";
 
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
-import { useState } from "react";
-
 import { cn } from "@/lib/utils";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 
 import { useAuthDialog } from "@/stores/authDialogStore";
 
 import { useAppLayout } from "@/hooks/useAppLayout";
 
-import CreateContentDrawer from "@/components/CreateContentDrawer";
 import { ProfileMenuDropdown } from "@/components/ProfileMenuDropdown";
-
 import UserAvatar from "@/components/UserAvatar";
 
 import NotificationBell from "@/components/notifications/NotificationBell";
@@ -48,6 +45,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/chat", label: "Chat", icon: MessageCircle, match: (p) => p.startsWith("/chat"), requiresAuth: true },
 ];
 
+const launchNavItems = NAV_ITEMS.filter((item) => item.to === "/" || item.to === "/chat");
+
 const PROFILE_MATCH = (p: string) =>
   p.startsWith("/portfolio") || p.startsWith("/settings") || p.startsWith("/collections");
 
@@ -59,7 +58,6 @@ const FloatingNav = () => {
   const { data: myProfile } = useProfile(user?.id);
   const openAuth = useAuthDialog((s) => s.openSignup);
   const { showBottomNav } = useAppLayout();
-  const [createOpen, setCreateOpen] = useState(false);
   const { data: chatBadgeCount = 0 } = useChatInboxBadgeCount();
 
   if (!showBottomNav) return null;
@@ -76,7 +74,7 @@ const FloatingNav = () => {
       openAuth("/portfolio/new");
       return;
     }
-    setCreateOpen(true);
+    navigate("/portfolio/new");
   };
 
   /** Mobile/tablet: always land on default projects feed (even when re-tapping Home). */
@@ -88,6 +86,7 @@ const FloatingNav = () => {
   };
 
   const notificationsActive = pathname.startsWith("/notifications");
+  const navItems = isAplus1LaunchMinimal() ? launchNavItems : NAV_ITEMS;
 
   return (
     <>
@@ -105,7 +104,7 @@ const FloatingNav = () => {
           )}
           style={{ WebkitBackdropFilter: "blur(20px)" }}
         >
-          {NAV_ITEMS.slice(0, 4).map(({ to, label, icon: Icon, match, requiresAuth }) => {
+          {navItems.map(({ to, label, icon: Icon, match, requiresAuth }) => {
             const active = match(pathname, feedMode);
             const showChatBadge = to === "/chat" && user && chatBadgeCount > 0;
             const isHome = to === "/";
@@ -221,8 +220,6 @@ const FloatingNav = () => {
           <Plus className="h-6 w-6" strokeWidth={2.5} />
         </button>
       </nav>
-
-      <CreateContentDrawer open={createOpen} onOpenChange={setCreateOpen} />
     </>
   );
 };

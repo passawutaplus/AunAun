@@ -6,8 +6,43 @@ import { fetchProjectRow, fetchProjectRows } from "@/lib/fetchProjectRow";
 import { blendPersonalizedProjects, resolveTopCategories } from "@/lib/forYouBlend";
 import { getFeedSearchCategoryWeights } from "@/lib/feedSearchSignals";
 import { isOptionalQueryError } from "@/lib/supabaseErrors";
+import {
+  isSchemaContentPresentationError,
+  stripOptionalProjectContentFields,
+} from "@/lib/projectContentBlocks";
 
 export type DBProject = Tables<"projects">;
+
+async function writeProjectRow(
+  mode: "insert" | "update",
+  args: { row?: TablesInsert<"projects">; id?: string; patch?: TablesUpdate<"projects"> },
+): Promise<DBProject> {
+  const attempt = async (payload: TablesInsert<"projects"> | TablesUpdate<"projects">) => {
+    if (mode === "insert") {
+      const row = { ...(payload as TablesInsert<"projects">), id: (payload as TablesInsert<"projects">).id ?? crypto.randomUUID() };
+      const { error } = await supabase.from("projects").insert(row);
+      if (error) throw error;
+      const data = await fetchProjectRow(row.id);
+      if (!data?.id) throw new Error("PROJECT_ID_MISSING");
+      return data;
+    }
+    const { error } = await supabase.from("projects").update(payload).eq("id", args.id!);
+    if (error) throw error;
+    const data = await fetchProjectRow(args.id!);
+    if (!data?.id) throw new Error("PROJECT_ID_MISSING");
+    return data;
+  };
+
+  const payload = mode === "insert" ? args.row! : args.patch!;
+  try {
+    return await attempt(payload);
+  } catch (e) {
+    if (isSchemaContentPresentationError(e)) {
+      return await attempt(stripOptionalProjectContentFields(payload as Record<string, unknown>));
+    }
+    throw e;
+  }
+}
 
 const PUBLISHED_LIST_LIMIT = 120;
 const TOP_LIST_LIMIT = 200;
@@ -262,17 +297,7 @@ export const useProject = (id: string | undefined) =>
 export const useCreateProject = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: TablesInsert<"projects">) => {
-      const row = {
-        ...payload,
-        id: payload.id ?? crypto.randomUUID(),
-      };
-      const { error } = await supabase.from("projects").insert(row);
-      if (error) throw error;
-      const data = await fetchProjectRow(row.id);
-      if (!data?.id) throw new Error("PROJECT_ID_MISSING");
-      return data;
-    },
+    mutationFn: async (payload: TablesInsert<"projects">) => writeProjectRow("insert", { row: payload }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-projects"] });
       qc.invalidateQueries({ queryKey: ["published-projects"] });
@@ -286,13 +311,8 @@ export const useCreateProject = () => {
 export const useUpdateProject = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: TablesUpdate<"projects"> }) => {
-      const { error } = await supabase.from("projects").update(patch).eq("id", id);
-      if (error) throw error;
-      const data = await fetchProjectRow(id);
-      if (!data?.id) throw new Error("PROJECT_ID_MISSING");
-      return data;
-    },
+    mutationFn: async ({ id, patch }: { id: string; patch: TablesUpdate<"projects"> }) =>
+      writeProjectRow("update", { id, patch }),
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["my-projects"] });
       qc.invalidateQueries({ queryKey: ["published-projects"] });

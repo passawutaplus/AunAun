@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { BackButton } from "@/components/ui/BackButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { supabase } from "@/integrations/supabase/client";
-import { buildOAuthCallbackUrl, storeOAuthRedirect } from "@/lib/oauthRedirect";
+import { buildResetPasswordUrl } from "@/lib/oauthRedirect";
 import { toast } from "sonner";
 
 const AuthForgotPage = () => {
@@ -23,9 +23,8 @@ const AuthForgotPage = () => {
     }
     setBusy(true);
     try {
-      storeOAuthRedirect("/reset-password");
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: buildOAuthCallbackUrl(),
+        redirectTo: buildResetPasswordUrl(),
       });
       if (error) toast.error(error.message);
       else {

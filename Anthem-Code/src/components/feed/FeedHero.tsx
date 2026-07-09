@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useFeedStats } from "@/hooks/useFeedStats";
 import { useDesignerHeroSlides, useStudioHeroSlides } from "@/hooks/useHeroSlides";
 import { BRAND_CONCEPT } from "@/lib/brandConfig";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { carouselSlideTransition, carouselSlideVariants, smoothEase } from "@/lib/motion";
 import { FadeUp } from "@/components/motion/FadeUp";
 import type { FeedMode } from "@/components/feed/FeedModeToggle";
@@ -27,19 +28,23 @@ const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
     badge: BRAND_CONCEPT,
     title: (
       <>
-        ค้นพบผลงาน
+        {isAplus1LaunchMinimal() ? "ดูผลงานจริง" : "ค้นพบผลงาน"}
         <br />
-        <span className="bg-gradient-brand bg-clip-text text-transparent">ที่ถูกใจคุณ</span>
+        <span className="bg-gradient-brand bg-clip-text text-transparent">
+          {isAplus1LaunchMinimal() ? "ก่อนคุยโอกาส" : "ที่ถูกใจคุณ"}
+        </span>
       </>
     ),
   },
   designers: {
-    badge: "ทีมครีเอทีฟอิสระ",
+    badge: isAplus1LaunchMinimal() ? "ค้นหาจากสไตล์" : "ทีมครีเอทีฟอิสระ",
     title: (
       <>
         ค้นพบดีไซเนอร์
         <br />
-        <span className="bg-gradient-brand bg-clip-text text-transparent">ที่ใช่สำหรับคุณ</span>
+        <span className="bg-gradient-brand bg-clip-text text-transparent">
+          {isAplus1LaunchMinimal() ? "ไม่ใช่จากแพ็กเกจ" : "ที่ใช่สำหรับคุณ"}
+        </span>
       </>
     ),
   },
@@ -156,7 +161,7 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
         <div className="min-h-[2.75rem] sm:min-h-[3rem] md:hidden" aria-hidden />
 
         <div className="mt-auto grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2.5 w-full sm:w-auto md:mt-0">
-          {STATS.map(({ key, label }) => (
+          {(isAplus1LaunchMinimal() ? STATS.filter(({ key }) => key !== "collabs") : STATS).map(({ key, label }) => (
             <div
               key={key}
               className="rounded-xl border border-border bg-card/95 px-3 py-2.5 shadow-sm dark:bg-card dark:shadow-[inset_0_1px_0_0_hsl(0_0%_100%_/_0.04)]"

@@ -28,10 +28,10 @@ export const BRAND_TAGLINE_EN = "1 Profile. 100+ Opportunities.";
 export const BRAND_SUBLINE_EN = "You create. We connect.";
 
 export const BRAND_DESCRIPTION =
-  "Aplus1 คือ creative social app สำหรับคนสร้างสรรค์ — พื้นที่เดียวสำหรับผลงาน โปรไฟล์ คอลแลบ และโอกาสใหม่ของครีเอทีฟ";
+  "Aplus1 ช่วยค้นหาครีเอเตอร์จากผลงานจริง — ดูสไตล์และบริบทงานก่อนคุยโอกาส ไม่ใช่แพ็กเกจราคา";
 
 /** ใช้บริบทที่ต้องการมุมมองเพิ่ม — อย่าแสดงคู่กับ BRAND_TAGLINE ในหน้าเดียว */
-export const BRAND_CONCEPT = "พื้นที่ของโอกาสใหม่ๆ";
+export const BRAND_CONCEPT = "ผลงานจริง พาไปเจอโอกาสใหม่";
 
 export const BRAND_HERO_SUBTITLE = "creative social app";
 

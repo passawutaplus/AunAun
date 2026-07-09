@@ -32,10 +32,10 @@ import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
 import { DesignDrillSection } from "@/components/drill/DesignDrillSection";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { markOnboardingVisit } from "@/lib/onboardingStorage";
 import { PORTFOLIO_DRILL_HASH } from "@/lib/drillProject";
 import { profilePublicUrl, profileVisitorPreviewPath } from "@/lib/profileRoutes";
-import CreateContentDrawer from "@/components/CreateContentDrawer";
 import { useSavedCommunityPosts } from "@/hooks/useCommunityPostInteractions";
 import { useCommunityPostsByAuthor } from "@/hooks/useCommunityPosts";
 import CommunityPostGridCard from "@/components/feed/CommunityPostGridCard";
@@ -83,7 +83,6 @@ const PortfolioProfilePage = () => {
     facebook: "",
     instagram: "",
   });
-  const [createOpen, setCreateOpen] = useState(false);
   const [opportunityOpen, setOpportunityOpen] = useState(false);
 
 
@@ -252,7 +251,7 @@ const PortfolioProfilePage = () => {
           opportunityStatus={(profile as { opportunity_status?: string }).opportunity_status}
           opportunityTypes={(profile as { opportunity_types?: string[] }).opportunity_types}
           onOpportunityEdit={() => setOpportunityOpen(true)}
-          onPost={() => setCreateOpen(true)}
+          onPost={() => navigate("/portfolio/new")}
           onPreview={() =>
             navigate(profileVisitorPreviewPath({ user_id: user!.id, username: profile.username }))
           }
@@ -320,6 +319,7 @@ const PortfolioProfilePage = () => {
 
           <CollabRequestsSection />
 
+          {!isAplus1LaunchMinimal() ? (
           <Section
             id="my-posts"
             icon={MessageSquare}
@@ -375,7 +375,9 @@ const PortfolioProfilePage = () => {
               />
             )}
           </Section>
+          ) : null}
 
+          {!isAplus1LaunchMinimal() ? (
           <Section
             id="saved-posts"
             icon={Bookmark}
@@ -430,6 +432,7 @@ const PortfolioProfilePage = () => {
               />
             )}
           </Section>
+          ) : null}
 
           {/* Portfolio */}
           <Section
@@ -605,7 +608,6 @@ const PortfolioProfilePage = () => {
           </ProfileEditableSection>
         </main>
       </div>
-      <CreateContentDrawer open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 };

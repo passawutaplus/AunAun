@@ -5,6 +5,7 @@ export type ResendSendParams = {
   html: string;
   text?: string;
   idempotencyKey?: string;
+  headers?: Record<string, string>;
 };
 
 export type ResendSendResult =
@@ -38,6 +39,7 @@ export async function sendResendEmail(
       subject: params.subject,
       html: params.html,
       ...(params.text ? { text: params.text } : {}),
+      ...(params.headers ? { headers: params.headers } : {}),
     }),
   });
 

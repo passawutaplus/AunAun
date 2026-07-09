@@ -12,7 +12,16 @@ import { ProjectFeedPreview } from "@/components/project/ProjectFeedPreview";
 import { ProjectMobilePreviewContent } from "@/components/project/ProjectMobilePreviewContent";
 import { supabase } from "@/integrations/supabase/client";
 import type { LicenseType } from "@/lib/licenses";
-import { isVideoUrl } from "@/lib/portfolioMedia";
+import { ProjectContentBlocksView } from "@/components/project/ProjectContentBlocksView";
+import { ProjectPresentationGallery } from "@/components/project/ProjectPresentationGallery";
+import {
+  mergeContentBlocks,
+  parseGalleryDisplayMode,
+  type GalleryDisplayMode,
+  type ProjectContentBlock,
+} from "@/lib/projectContentBlocks";
+import { parsePhotoGridLayout, type PhotoGridLayout } from "@/lib/photoGridLayouts";
+import { isVideoUrl, mediaItemFromUrl } from "@/lib/portfolioMedia";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -20,6 +29,9 @@ export interface ProjectPreviewData {
   title: string;
   subtitle?: string;
   description?: string;
+  contentBlocks?: ProjectContentBlock[];
+  galleryDisplayMode?: GalleryDisplayMode;
+  gridLayout?: PhotoGridLayout;
   category: string;
   cover: string;
   gallery: string[];
@@ -52,6 +64,7 @@ function ProjectPcPreview({
   ownerId,
   displayTitle,
   images,
+  mediaItems,
 }: {
   data: ProjectPreviewData;
   ownerName: string;
@@ -59,7 +72,12 @@ function ProjectPcPreview({
   ownerId?: string;
   displayTitle: string;
   images: string[];
+  mediaItems: { id: string; kind: "image" | "video"; url: string }[];
 }) {
+  const contentBlocks = mergeContentBlocks(data.contentBlocks ?? [], data.description);
+  const galleryMode = parseGalleryDisplayMode(data.galleryDisplayMode);
+  const gridLayout = parsePhotoGridLayout(data.gridLayout);
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 lg:py-8">
       <div className="grid lg:grid-cols-[1fr_360px] gap-6 lg:gap-10">
@@ -67,7 +85,15 @@ function ProjectPcPreview({
           {data.subtitle?.trim() && (
             <p className="text-sm text-muted-foreground">{data.subtitle.trim()}</p>
           )}
-          {images.length > 0 ? (
+          {mediaItems.length > 0 ? (
+            <ProjectPresentationGallery
+              items={mediaItems}
+              title={displayTitle}
+              projectId="preview"
+              displayMode={galleryMode}
+              gridLayout={gridLayout}
+            />
+          ) : images.length > 0 ? (
             images.map((src, i) =>
               isVideoUrl(src) ? (
                 <video
@@ -93,6 +119,10 @@ function ProjectPcPreview({
               ยังไม่มีรูปภาพ — อัปโหลดภาพปกหรือแกลเลอรีเพื่อดูพรีวิว
             </div>
           )}
+
+          {contentBlocks.length > 0 ? (
+            <ProjectContentBlocksView blocks={contentBlocks} className="max-w-2xl" />
+          ) : null}
 
           {data.tools.length > 0 && (
             <div className="rounded-2xl glass-panel p-5 space-y-3 lg:hidden">
@@ -183,6 +213,10 @@ const ProjectPreviewDialog = ({
 
   const images =
     data.gallery.length > 0 ? data.gallery : data.cover ? [data.cover] : [];
+  const previewMediaItems =
+    data.gallery.length > 0
+      ? data.gallery.map((url) => mediaItemFromUrl(url))
+      : [];
   const displayTitle = data.title.trim() || "ชื่อผลงาน (ยังไม่ได้กรอก)";
   const coverImage = data.cover || images.find((u) => !isVideoUrl(u)) || "";
 
@@ -251,6 +285,7 @@ const ProjectPreviewDialog = ({
               ownerId={ownerId}
               displayTitle={displayTitle}
               images={images}
+              mediaItems={previewMediaItems}
             />
           )}
         </div>

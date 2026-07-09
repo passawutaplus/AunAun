@@ -8,14 +8,23 @@ export async function establishSession(): Promise<string | null> {
   const oauthErr = parseOAuthError();
   if (oauthErr) return formatOAuthCallbackError(oauthErr);
 
+  const search = new URLSearchParams(window.location.search);
+
   // Let detectSessionInUrl finish first (avoids double exchange on ?code= links).
-  await new Promise((r) => setTimeout(r, 80));
+  if (search.get("code")) {
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => setTimeout(r, 100));
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) return null;
+    }
+  } else {
+    await new Promise((r) => setTimeout(r, 80));
+  }
 
   const { data: { session: existing }, error: existingErr } = await supabase.auth.getSession();
   if (existingErr) return existingErr.message;
   if (existing) return null;
 
-  const search = new URLSearchParams(window.location.search);
   const tokenHash = search.get("token_hash");
   const type = search.get("type");
   if (tokenHash && type) {

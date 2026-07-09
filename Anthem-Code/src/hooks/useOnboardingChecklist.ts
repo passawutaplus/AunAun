@@ -14,7 +14,7 @@ import {
 } from "@/lib/onboardingStorage";
 import {
   isTaskDone,
-  ONBOARDING_TASKS,
+  getVisibleOnboardingTasks,
   type OnboardingSignals,
   type OnboardingTaskId,
 } from "@/lib/onboardingTasks";
@@ -156,7 +156,7 @@ export function useOnboardingChecklist(userId: string | undefined) {
       communityLikeCount: 0,
       visits: {},
     };
-    return ONBOARDING_TASKS.map((t) => ({
+    return getVisibleOnboardingTasks().map((t) => ({
       id: t.id,
       title: t.title,
       description: t.description,
@@ -171,7 +171,7 @@ export function useOnboardingChecklist(userId: string | undefined) {
   const allDone = doneCount === total && total > 0;
   const claimedMissionIds = new Set(data?.claimedMissionIds ?? []);
   const allMissionsClaimed =
-    total > 0 && ONBOARDING_TASKS.every((t) => claimedMissionIds.has(t.id));
+    total > 0 && getVisibleOnboardingTasks().every((t) => claimedMissionIds.has(t.id));
   const signals = data;
 
   const dismiss = () => {

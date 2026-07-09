@@ -12,6 +12,7 @@ import {
 import { ThemeModePicker } from "@/components/settings/ThemeModePicker";
 import { FeedGridDensityPicker } from "@/components/feed/FeedGridDensityPicker";
 import { AreaFeedLayoutPicker } from "@/components/community/AreaFeedLayoutPicker";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
 function preventClose(e: PointerEvent) {
@@ -44,17 +45,21 @@ export function ProfileMenuContent({ onNavigate }: ProfileMenuContentProps) {
       <DropdownMenuItem onClick={() => go("/portfolio/manage")} className="rounded-lg">
         <FolderKanban className="w-4 h-4 mr-2" /> แดชบอร์ด &amp; จัดการ
       </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => go("/collections")} className="rounded-lg">
-        <Layers3 className="w-4 h-4 mr-2" /> คอลเลกชันของฉัน
-      </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => go("/earnings")} className="rounded-lg">
-        <Coins className="w-4 h-4 mr-2 text-primary" /> รายได้ &amp; กระเป๋า Pixel
-      </DropdownMenuItem>
+      {!isAplus1LaunchMinimal() ? (
+        <>
+          <DropdownMenuItem onClick={() => go("/collections")} className="rounded-lg">
+            <Layers3 className="w-4 h-4 mr-2" /> คอลเลกชันของฉัน
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => go("/earnings")} className="rounded-lg">
+            <Coins className="w-4 h-4 mr-2 text-primary" /> รายได้ &amp; กระเป๋า Pixel
+          </DropdownMenuItem>
+        </>
+      ) : null}
       <DropdownMenuSeparator />
       <div className="px-2 py-1.5 space-y-1" onPointerDown={preventClose}>
         <ThemeModePicker label="Theme" />
         <FeedGridDensityPicker label="ฟีดผลงาน" />
-        <AreaFeedLayoutPicker />
+        {!isAplus1LaunchMinimal() ? <AreaFeedLayoutPicker /> : null}
       </div>
       <DropdownMenuSeparator />
       <DropdownMenuItem onClick={() => go("/settings")} className="rounded-lg">

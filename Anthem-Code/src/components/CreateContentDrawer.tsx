@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ImagePlus, MessageCircle } from "lucide-react";
 import {
@@ -13,6 +14,7 @@ import { COMMUNITY_NEW_PATH } from "@/data/createActions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthDialog } from "@/stores/authDialogStore";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
 type CreateActionId = "portfolio" | "community";
@@ -34,9 +36,10 @@ type Props = {
 
 type PickerBodyProps = {
   onPick: (id: CreateActionId) => void;
+  options: typeof CREATE_OPTIONS;
 };
 
-const CreatePickerBody = ({ onPick }: PickerBodyProps) => (
+const CreatePickerBody = ({ onPick, options }: PickerBodyProps) => (
   <div className="space-y-8 px-1 pb-2">
     <div>
       <p className="text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase thai-body">
@@ -46,7 +49,7 @@ const CreatePickerBody = ({ onPick }: PickerBodyProps) => (
     </div>
 
     <div className="flex justify-center gap-4 sm:gap-5">
-      {CREATE_OPTIONS.map(({ id, label, icon: Icon }) => (
+      {options.map(({ id, label, icon: Icon }) => (
         <button
           key={id}
           type="button"
@@ -74,9 +77,23 @@ const CreateContentDrawer = ({ open, onOpenChange }: Props) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  const visibleOptions = isAplus1LaunchMinimal()
+    ? CREATE_OPTIONS.filter((o) => o.id === "portfolio")
+    : CREATE_OPTIONS;
+
+  useEffect(() => {
+    if (!open || !isAplus1LaunchMinimal()) return;
+    if (!user) {
+      useAuthDialog.getState().openSignup("/portfolio/new");
+      onOpenChange(false);
+      return;
+    }
+    onOpenChange(false);
+    navigate("/portfolio/new");
+  }, [open, user, navigate, onOpenChange]);
 
   const pick = (id: CreateActionId) => {
-    const action = CREATE_OPTIONS.find((o) => o.id === id);
+    const action = visibleOptions.find((o) => o.id === id);
     if (!action) return;
     if (!user) {
       useAuthDialog.getState().openSignup(action.to);
@@ -87,7 +104,7 @@ const CreateContentDrawer = ({ open, onOpenChange }: Props) => {
     navigate(action.to);
   };
 
-  const body = <CreatePickerBody onPick={pick} />;
+  const body = <CreatePickerBody onPick={pick} options={visibleOptions} />;
 
   if (isMobile) {
     return (

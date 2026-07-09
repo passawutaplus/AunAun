@@ -14,6 +14,7 @@ import {
   Wrench,
 } from "lucide-react";
 import type { OnboardingVisitId } from "@/lib/onboardingStorage";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 
 export type OnboardingTaskId =
   | "profile"
@@ -162,6 +163,18 @@ export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
   },
 ];
 
+const LAUNCH_HIDDEN_TASK_IDS: OnboardingTaskId[] = [
+  "explore_community",
+  "explore_studios",
+  "post_community",
+  "jobs",
+];
+
+export function getVisibleOnboardingTasks(): OnboardingTaskDef[] {
+  if (!isAplus1LaunchMinimal()) return ONBOARDING_TASKS;
+  return ONBOARDING_TASKS.filter((task) => !LAUNCH_HIDDEN_TASK_IDS.includes(task.id));
+}
+
 export type OnboardingSignals = {
   hasAvatar: boolean;
   hasUsername: boolean;
@@ -196,6 +209,7 @@ export function isTaskDone(id: OnboardingTaskId, s: OnboardingSignals): boolean 
     case "follow":
       return s.followCount >= 1;
     case "like":
+      if (isAplus1LaunchMinimal()) return s.likeCount >= 1;
       return s.likeCount >= 1 && s.communityLikeCount >= 1;
     case "jobs":
       return !!s.visits.jobs;
@@ -210,6 +224,9 @@ export function isTaskDone(id: OnboardingTaskId, s: OnboardingSignals): boolean 
 export function likeMissionHint(s: OnboardingSignals): string | null {
   const projectDone = s.likeCount >= 1;
   const postDone = s.communityLikeCount >= 1;
+  if (isAplus1LaunchMinimal()) {
+    return projectDone ? null : "ยังไม่กดหัวใจผลงาน";
+  }
   if (projectDone && postDone) return null;
   const parts: string[] = [];
   if (!projectDone) parts.push("ยังไม่กดหัวใจผลงาน");

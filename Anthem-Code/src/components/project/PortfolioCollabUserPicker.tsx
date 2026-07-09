@@ -82,9 +82,6 @@ export function PortfolioCollabUserPicker({
         <AtSign className="w-4 h-4 text-primary shrink-0" />
         แท็กเพื่อนร่วมงาน
       </p>
-      <p className="text-xs text-muted-foreground">
-        เฉพาะคนที่ติดตามกันและกัน — เพื่อนจะได้รับแจ้งเตือนเพื่อยอมรับหรือปฏิเสธ
-      </p>
 
       {(acceptedUsers.length > 0 || pendingUsers.length > 0 || selected.length > 0) && (
         <div className="flex flex-wrap gap-2">

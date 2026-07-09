@@ -116,12 +116,12 @@ export function buildMonitorSites(): MonitorSite[] {
   {
     id: "an1hem",
     name: "Aplus1",
-    url: "https://pixel100.com",
+    url: "https://aplus1.app",
     items: [
       {
         id: "an1hem-uptime",
         label: "Uptime (production)",
-        description: "pixel100.com (canonical) / aplus1-demo.vercel.app (demo)",
+        description: "aplus1.app (production) / aplus1-demo.vercel.app (demo)",
         status: "live",
         automated: true,
         healthKey: "an1hem",
@@ -130,9 +130,24 @@ export function buildMonitorSites(): MonitorSite[] {
       {
         id: "an1hem-smoke",
         label: "Public smoke routes",
-        description: "/, /auth, /jobs, /robots.txt, /sitemap.xml — smoke-public.sh",
-        status: "partial",
+        description: "/, /auth, /auth/forgot, /reset-password, /jobs, /robots.txt, /sitemap.xml — smoke-public.sh",
+        status: "live",
         automated: false,
+      },
+      {
+        id: "an1hem-auth-email",
+        label: "Auth email (Send Email hook)",
+        description:
+          "recovery/signup ผ่าน solofreelancer.com/lovable/email/auth/webhook → Resend noreply@aplus1.app",
+        status: "live",
+        href: supabaseDashboardPath(projectRef, "/auth/hooks"),
+      },
+      {
+        id: "an1hem-password-reset",
+        label: "Password reset flow",
+        description: "/auth/forgot → อีเมล → /reset-password?token_hash= · เปลี่ยนรหัสใน Settings ได้",
+        status: "live",
+        href: anthemAdmin("/system"),
       },
       {
         id: "an1hem-moderation",

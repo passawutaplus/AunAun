@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { motion } from "framer-motion";
 import { Orbit, Share2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPopover";
@@ -15,9 +14,14 @@ import ProjectContextCard from "@/components/project/ProjectContextCard";
 import { hasPendingProjectAssets, parseProjectAssets } from "@/lib/projectAssets";
 import ProjectCreditsBlock from "@/components/ProjectCreditsBlock";
 import { supabase } from "@/integrations/supabase/client";
-import ImageActionBar from "@/components/project/ImageActionBar";
-import ImageLightbox from "@/components/project/ImageLightbox";
-import SafeDemoImage from "@/components/SafeDemoImage";
+import { ProjectPresentationGallery } from "@/components/project/ProjectPresentationGallery";
+import { ProjectContentBlocksView } from "@/components/project/ProjectContentBlocksView";
+import {
+  mergeContentBlocks,
+  parseContentBlocks,
+  parseGalleryDisplayMode,
+} from "@/lib/projectContentBlocks";
+import { parsePhotoGridLayout } from "@/lib/photoGridLayouts";
 import { useQuery } from "@tanstack/react-query";
 
 import { useProject } from "@/hooks/useProjects";
@@ -34,9 +38,9 @@ import { useAdCampaign, logAdEvent } from "@/hooks/useAds";
 import { Megaphone, ExternalLink } from "lucide-react";
 import { truncateDescription } from "@/lib/seo";
 import { FadeUp } from "@/components/motion/FadeUp";
-import { staggerReveal, viewportOnce } from "@/lib/motion";
-import { isVideoUrl, mediaItemsFromProject } from "@/lib/portfolioMedia";
+import { mediaItemsFromProject } from "@/lib/portfolioMedia";
 import { ProjectLinkedPostsBlock } from "@/components/project/ProjectLinkedPostsBlock";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { ProjectOwnerMenu } from "@/components/project/ProjectOwnerMenu";
 import {
   fetchLinkedPostSummaries,
@@ -138,6 +142,20 @@ const ProjectDetailPage = () => {
         ((dbProject as { video_urls?: string[] }).video_urls) ?? [],
       )
     : [];
+
+  const contentBlocks = dbProject
+    ? mergeContentBlocks(
+        parseContentBlocks((dbProject as { content_blocks?: unknown }).content_blocks),
+        dbProject.description,
+      )
+    : [];
+  const galleryDisplayMode = dbProject
+    ? parseGalleryDisplayMode((dbProject as { gallery_display_mode?: string }).gallery_display_mode)
+    : "gallery";
+  const gridLayout = dbProject
+    ? parsePhotoGridLayout((dbProject as { grid_layout?: string }).grid_layout)
+    : "four_quad";
+  const hasStructuredContent = contentBlocks.length > 0;
 
   const project = dbProject
     ? {
@@ -308,7 +326,7 @@ const ProjectDetailPage = () => {
                 <Layers3 className="w-5 h-5" />
               </Button>
             </SaveToCollectionPopover>
-            {dbProject?.status === "Published" && user?.id === dbProject.owner_id ? (
+            {dbProject?.status === "Published" && user?.id === dbProject.owner_id && !isAplus1LaunchMinimal() ? (
               <Button variant="ghost" size="icon" asChild title="แชร์ไป Area Post">
                 <Link to={`/community/new?fromProject=${dbProject.id}`}>
                   <Orbit className="w-5 h-5" />
@@ -364,12 +382,21 @@ const ProjectDetailPage = () => {
               />
             )}
             {project.gallery.length > 0 ? (
-              <GalleryWithLightbox items={mediaItems} project={project} />
+              <ProjectPresentationGallery
+                items={mediaItems}
+                title={project.title}
+                projectId={project.id}
+                displayMode={galleryDisplayMode}
+                gridLayout={gridLayout}
+              />
             ) : (
               <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
                 ยังไม่มีรูปภาพ
               </div>
             )}
+            {hasStructuredContent ? (
+              <ProjectContentBlocksView blocks={contentBlocks} className="max-w-2xl" />
+            ) : null}
           </div>
 
           {/* Right: Side panel (sticky on desktop) */}
@@ -437,64 +464,5 @@ const ProjectDetailPage = () => {
   );
 };
 
-
-type GalleryProject = { id: string; title: string };
-const GalleryWithLightbox = ({
-  items,
-  project,
-}: {
-  items: ReturnType<typeof mediaItemsFromProject>;
-  project: GalleryProject;
-}) => {
-  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
-  const imgIndex = (i: number) =>
-    project.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0) + i;
-  return (
-    <>
-      {items.map((item, i) => (
-        <motion.div
-          key={item.id}
-          className="relative group"
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewportOnce}
-          transition={staggerReveal(i)}
-        >
-          {item.kind === "video" ? (
-            <video
-              src={item.url}
-              controls
-              playsInline
-              className="w-full rounded-2xl border border-border/60 bg-black max-h-[480px]"
-            />
-          ) : (
-            <>
-              <SafeDemoImage
-                src={item.url}
-                index={imgIndex(i)}
-                alt={`${project.title} ${i + 1}`}
-                onClick={() => setLightboxSrc(item.url)}
-                className="w-full rounded-2xl border border-border/60 bg-card object-contain cursor-zoom-in"
-                loading="lazy"
-              />
-              <ImageActionBar
-                projectId={project.id}
-                projectTitle={project.title}
-                imageUrl={item.url}
-                imageIndex={i}
-              />
-            </>
-          )}
-        </motion.div>
-      ))}
-      <ImageLightbox
-        src={lightboxSrc ?? ""}
-        alt={project.title}
-        open={!!lightboxSrc}
-        onClose={() => setLightboxSrc(null)}
-      />
-    </>
-  );
-};
 
 export default ProjectDetailPage;

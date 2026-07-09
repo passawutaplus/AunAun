@@ -6,6 +6,11 @@ import {
   COMMUNITY_MEDIA_MAX_VIDEOS,
 } from "@/lib/communityLimits";
 import { PROJECT_ASSET_FILE_MAX_BYTES } from "@/lib/projectAssets";
+import {
+  PROJECT_BLOCK_BODY_MAX,
+  PROJECT_BLOCK_HEADING_MAX,
+  PROJECT_CONTENT_BLOCKS_MAX,
+} from "@/lib/projectContentBlocks";
 
 export const communityMediaAspectSchema = z.enum([
   "square",
@@ -257,6 +262,21 @@ export const projectSchema = z.object({
     )
     .max(10)
     .default([]),
+  content_blocks: z
+    .array(
+      z.object({
+        id: z.string(),
+        type: z.enum(["heading", "heading_body", "body"]),
+        heading: z.string().max(PROJECT_BLOCK_HEADING_MAX).optional(),
+        body: z.string().max(PROJECT_BLOCK_BODY_MAX).optional(),
+      }),
+    )
+    .max(PROJECT_CONTENT_BLOCKS_MAX)
+    .default([]),
+  gallery_display_mode: z.enum(["single", "gallery", "grid"]).default("gallery"),
+  grid_layout: z
+    .enum(["two_stack", "two_side", "three_split", "four_quad"])
+    .default("four_quad"),
 });
 
 export type ProjectInput = z.infer<typeof projectSchema>;

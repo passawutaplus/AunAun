@@ -8,6 +8,7 @@ import { ProfileMenuDropdown } from "@/components/ProfileMenuDropdown";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
 
@@ -33,7 +34,7 @@ const ProfileButton = () => {
     return (
       <div className="flex items-center gap-1.5">
         <div className="hidden lg:flex items-center gap-1.5">
-          <JobsNavButton />
+          {!isAplus1LaunchMinimal() && <JobsNavButton />}
           <ChatNavButton />
           <NotificationBell />
         </div>
@@ -51,10 +52,10 @@ const ProfileButton = () => {
   return (
     <div className="flex items-center gap-1.5">
       <div className="hidden lg:flex items-center gap-1.5">
-        <JobsNavButton />
+        {!isAplus1LaunchMinimal() && <JobsNavButton />}
         <ChatNavButton />
         <NotificationBell />
-        <WalletBadge />
+        {!isAplus1LaunchMinimal() && <WalletBadge />}
       </div>
       <ProfileMenuDropdown
         trigger={
