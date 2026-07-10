@@ -73,6 +73,11 @@ deploy_production() {
   export VITE_DEMO_MODE=false
 
   if [[ "$dir" == *Anthem-Code* ]]; then
+    # Launch scope: override local .env so check matches --build-env below
+    export VITE_APLUS1_FULL_PRODUCT=false
+    export VITE_APLUS1_PAYMENTS_ENABLED=false
+    export VITE_SOLO_ECOSYSTEM_ENABLED=false
+    export VITE_APLUS1_LAUNCH_MINIMAL=true
     echo "→ Regenerating sitemap for $site_url…"
     (cd "$dir" && VITE_SITE_URL="$site_url" npm run sitemap:gen)
     echo "→ Checking build env…"
