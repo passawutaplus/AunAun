@@ -70,8 +70,8 @@ check_sitemap_xml() {
     echo "FAIL /sitemap.xml missing urlset root"
     seo_fail=1
   fi
-  if ! grep -q '/jobs' "$body_file"; then
-    echo "FAIL /sitemap.xml missing /jobs"
+  if ! grep -q '/legal/community' "$body_file"; then
+    echo "FAIL /sitemap.xml missing /legal/community"
     seo_fail=1
   fi
   if grep -qE '<loc>[^<]*/admin</loc>|<loc>[^<]*/auth</loc>' "$body_file"; then
