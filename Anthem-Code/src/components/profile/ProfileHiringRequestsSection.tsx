@@ -9,6 +9,7 @@ import { useAcceptRequest, useRejectRequest, useFindConversationByRequest } from
 import { timeAgoTH } from "@/lib/format";
 import { so1oQuotationUrl, trackCrossLink } from "@/lib/crossLink";
 import { openSoloExternal } from "@/lib/soloEcosystemGate";
+import { isAplus1ChatOffersEnabled } from "@/lib/aplus1Launch";
 import { toast } from "sonner";
 
 type HiringTab = HiringStatusDB | "ทั้งหมด";
@@ -78,10 +79,11 @@ export function ProfileHiringRequestsSection() {
         {filteredHiring.map((req) => {
           const isDeclined = req.status === "ปฏิเสธ";
           const canQuote =
-            req.status === "ตอบรับ" ||
-            req.status === "ติดต่อแล้ว" ||
-            req.status === "ใหม่" ||
-            req.status === "ที่ต้องตอบ";
+            isAplus1ChatOffersEnabled() &&
+            (req.status === "ตอบรับ" ||
+              req.status === "ติดต่อแล้ว" ||
+              req.status === "ใหม่" ||
+              req.status === "ที่ต้องตอบ");
 
           const handleReject = async () => {
             try {

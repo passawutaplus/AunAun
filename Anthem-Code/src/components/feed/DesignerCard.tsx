@@ -10,6 +10,7 @@ import FollowButton from "@/components/FollowButton";
 import { useFollowState } from "@/hooks/useFollow";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
 import { highlight } from "@/lib/highlight";
+import { thumbFeedCoverUrl } from "@/lib/feedProjectCover";
 import { imageCrossfadeVariants, imageRevealTransition } from "@/lib/motion";
 
 interface Props {
@@ -52,7 +53,12 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
   return (
     <article className="relative rounded-2xl glass-panel p-4 flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <button onClick={gotoProfile} className="shrink-0">
+        <button
+          type="button"
+          onClick={gotoProfile}
+          className="shrink-0"
+          aria-label={`โปรไฟล์ ${name}`}
+        >
           <UserAvatar
             src={profile.avatar_url}
             name={name}
@@ -60,13 +66,17 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
           />
         </button>
         <div className="flex-1 min-w-0">
-          <button onClick={gotoProfile} className="block text-left text-sm font-semibold text-foreground truncate hover:underline">
+          <button
+            type="button"
+            onClick={gotoProfile}
+            className="block text-left text-sm font-semibold text-foreground truncate hover:underline"
+          >
             {highlight(name, search)}
           </button>
-          <p className="text-xs text-muted-foreground truncate">
+          <p className="text-xs text-foreground/70 truncate">
             {highlight(profile.role || profile.bio || "Designer", search)}
           </p>
-          <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-2 mt-1 text-[11px] text-foreground/70">
             <span>{followers.toLocaleString("th-TH")} ผู้ติดตาม</span>
             <span aria-hidden>·</span>
             <PlusOneControl
@@ -85,12 +95,15 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
           const extra = extras[i];
           const showExtra = extra && tick % 2 === 1;
           const shown = showExtra ? extra : proj;
-          const src = shown.cover_url || shown.gallery_urls?.[0] || "";
+          const raw = shown.cover_url || shown.gallery_urls?.[0] || "";
+          const src = thumbFeedCoverUrl(raw);
           return (
             <button
               key={i}
+              type="button"
               onClick={() => goto(shown.id)}
               className="relative aspect-[4/3] rounded-xl overflow-hidden bg-muted group"
+              aria-label={`ดูผลงาน: ${shown.title}`}
               title={shown.title}
             >
               <AnimatePresence mode="wait">
@@ -99,6 +112,11 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
                     key={shown.id}
                     src={src}
                     alt={shown.title}
+                    width={360}
+                    height={270}
+                    loading="lazy"
+                    decoding="async"
+                    sizes="120px"
                     variants={imageCrossfadeVariants}
                     initial="initial"
                     animate="animate"

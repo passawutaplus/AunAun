@@ -1,0 +1,21 @@
+# Aplus1
+
+> Creative social app for freelancers and designers in Thailand — show work, get discovered, hire and collaborate.
+
+## Site
+
+- Home / feed: https://aplus1.app/
+- Sign in: https://aplus1.app/auth
+- Privacy: https://aplus1.app/legal/privacy
+- Terms: https://aplus1.app/legal/terms
+- Community guidelines: https://aplus1.app/legal/community
+- Copyright report: https://aplus1.app/legal/copyright-report
+
+## Product
+
+Aplus1 (1px / Anthem) lets creatives publish a portfolio, browse projects and designers, and start hire or collab conversations. Soft-launch focuses on profiles and project discovery; some marketplace routes may be gated.
+
+## Contact
+
+- Product site: https://aplus1.app
+- Prefer public pages and documented APIs; do not scrape authenticated or private user data.

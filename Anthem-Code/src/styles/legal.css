@@ -1,5 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap");
-
+/* Fonts load via loadBrandFonts() — no render-blocking @import. */
 .font-legal {
-  font-family: "Prompt", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
+  font-family: "IBM Plex Sans Thai Looped", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
 }

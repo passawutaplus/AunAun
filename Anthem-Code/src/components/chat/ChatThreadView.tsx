@@ -10,13 +10,12 @@ import {
 } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { BackButton } from "@/components/ui/BackButton";
-import { so1oQuotationUrl, trackCrossLink } from "@/lib/crossLink";
-import { openSoloExternal } from "@/lib/soloEcosystemGate";
-import { isAplus1LaunchMinimal, isAplus1SubscriptionsEnabled } from "@/lib/aplus1Launch";
+import { isAplus1ChatOffersEnabled, isAplus1LaunchMinimal, isAplus1SubscriptionsEnabled } from "@/lib/aplus1Launch";
 import { useStudioForConversation, useStudioMembers } from "@/hooks/useStudios";
 import { useSubscription } from "@/core/subscription/useSubscription";
 import { canOpenStudioCombinedQuote, canShowStudioQuoteUpsell, openStudioQuotation } from "@/lib/studioQuotationHandoff";
 import { StudioQuoteUpsellDialog } from "@/components/studio/StudioQuoteUpsellDialog";
+import { ChatOfferDialog } from "@/components/chat/ChatOfferDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublicFrom } from "@/lib/profileAccess";
 import { Button } from "@/components/ui/button";
@@ -43,9 +42,9 @@ import BriefcaseIcon from "../icons/BriefcaseIcon";
 const HIRE_QUICK_BASE = [
   "ขอรายละเอียดเพิ่มเติม",
   "ขอ timeline ของงาน",
-  "ขอส่งใบเสนอราคาให้พิจารณา",
   "ขอบคุณสำหรับการติดต่อครับ",
 ];
+const HIRE_QUICK_OFFER = "ขอส่งใบเสนอราคาให้พิจารณา";
 const COLLAB_QUICK_BASE = [
   "เริ่มจาก mood board ไหม?",
   "ส่งร่างไอเดียให้ดูได้ไหม",
@@ -101,17 +100,22 @@ const ChatThreadView = ({
 
   const { data: studioMembers = [] } = useStudioMembers(studioForQuote?.id);
   const myStudioRole = studioMembers.find((m) => m.user_id === user?.id)?.role;
+  const chatOffersOn = isAplus1ChatOffersEnabled();
   const canStudioCombinedQuote =
+    chatOffersOn &&
     hasStudioQuoteContext &&
     !!studioForQuote &&
     canOpenStudioCombinedQuote(tier, myStudioRole);
   const showStudioQuoteUpsell =
+    chatOffersOn &&
     hasStudioQuoteContext &&
     !!studioForQuote &&
     canShowStudioQuoteUpsell(tier, myStudioRole);
   const [upsellOpen, setUpsellOpen] = useState(false);
+  const [offerOpen, setOfferOpen] = useState(false);
   const [showPanelHint, setShowPanelHint] = useState(false);
   const otherId = otherParticipantId(conv, user?.id ?? "");
+  const isFreelancer = !!user?.id && user.id === conv.freelancer_id;
   const kind = (isStudio ? "studio" : isGroup ? "group" : conv.kind) as "hire" | "collab" | "group" | "studio";
 
   const { data: other } = useQuery({
@@ -208,7 +212,8 @@ const ChatThreadView = ({
     const title = conv.project_title?.trim();
     if (isHire) {
       const extra = title ? [`ชอบผลงาน "${title}" มาก`] : [];
-      return [...extra, ...HIRE_QUICK_BASE];
+      const offerLine = isAplus1ChatOffersEnabled() ? [HIRE_QUICK_OFFER] : [];
+      return [...extra, ...HIRE_QUICK_BASE.slice(0, 2), ...offerLine, ...HIRE_QUICK_BASE.slice(2)];
     }
     const extra = title ? [`ชอบผลงาน "${title}" — อยากคุยต่อ`] : [];
     return [...extra, ...COLLAB_QUICK_BASE];
@@ -235,29 +240,6 @@ const ChatThreadView = ({
   const partnerTier = (other?.subscription_tier as PlanId | undefined) ?? "free";
   const showTierBadge =
     isAplus1SubscriptionsEnabled() && !isGroup && TIER_BADGE_TIERS.has(partnerTier);
-
-  const openQuote = async () => {
-    const linkId = await trackCrossLink({
-      source: "chat_header",
-      refId: conv.id,
-      meta: {
-        client_id: otherId ?? undefined,
-        request_id: conv.request_id ?? undefined,
-      },
-    });
-    const url = so1oQuotationUrl({
-      conversationId: conv.id,
-      requestId: conv.request_id ?? undefined,
-      clientName: hireMeta?.client_name ?? other?.display_name ?? undefined,
-      projectTitle: hireMeta?.project_title ?? conv.project_title ?? undefined,
-      clientEmail: hireMeta?.email ?? undefined,
-      clientPhone: hireMeta?.phone ?? undefined,
-      message: hireMeta?.message ?? undefined,
-      deadline: hireMeta?.deadline ?? undefined,
-      linkId,
-    });
-    openSoloExternal(url);
-  };
 
   const openStudioQuote = async () => {
     if (!studioForQuote) {
@@ -393,19 +375,21 @@ const ChatThreadView = ({
               <span className="hidden sm:inline">ใบเสนอราคารวม Studio</span>
             </Button>
           ) : (
+            chatOffersOn &&
             !isGroup &&
             otherId &&
-            isHire && (
+            isHire &&
+            isFreelancer && (
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={openQuote}
+                onClick={() => setOfferOpen(true)}
                 className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full"
-                aria-label="สร้างใบเสนอราคาใน So1o"
+                aria-label="เสนอราคาในแชท"
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">ใบเสนอราคา</span>
+                <span className="hidden sm:inline">เสนอราคา</span>
               </Button>
             )
           )}
@@ -508,6 +492,15 @@ const ChatThreadView = ({
         open={upsellOpen}
         onOpenChange={setUpsellOpen}
         onUpgrade={() => navigate("/upgrade#tier-details")}
+      />
+      <ChatOfferDialog
+        open={chatOffersOn && offerOpen}
+        onOpenChange={setOfferOpen}
+        conversationId={conv.id}
+        defaultTitle={hireMeta?.project_title ?? conv.project_title ?? ""}
+        defaultClientName={hireMeta?.client_name ?? ""}
+        defaultClientEmail={hireMeta?.email ?? ""}
+        defaultClientPhone={hireMeta?.phone ?? ""}
       />
     </div>
   );

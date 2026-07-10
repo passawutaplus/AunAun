@@ -1,6 +1,7 @@
 import BriefcaseIcon from "../components/icons/BriefcaseIcon";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Plus, LayoutGrid, Globe, Eye, Settings, ExternalLink, MessageSquare, Library } from "lucide-react";
 import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import type { LucideIcon } from "lucide-react";
@@ -33,7 +34,14 @@ import {
   type ProjectManageSortMode,
 } from "@/lib/portfolioManageSort";
 import ProjectManageSortSelect from "@/components/portfolio/ProjectManageSortSelect";
+import ProjectManageGridSelect, {
+  PROJECT_MANAGE_GRID_CLASS,
+  useProjectManageGridMode,
+} from "@/components/portfolio/ProjectManageGridSelect";
 import PortfolioOverviewChart from "@/components/portfolio/PortfolioOverviewChart";
+import { DashboardSeriesSection } from "@/components/series/DashboardSeriesSection";
+import { smoothEase, staggerReveal } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
 type PendingDelete =
   | { kind: "project"; id: string; title: string }
@@ -51,6 +59,7 @@ const PlusOneStatsIcon = (({ className }: { className?: string }) => (
 const PortfolioManagePage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const reducedMotion = useReducedMotion();
   const { user, loading: authLoading } = useAuth();
   const communityManageEnabled = !isAplus1LaunchMinimal();
   const { data: dbProjects = [] } = useMyProjects(user?.id);
@@ -78,6 +87,7 @@ const PortfolioManagePage = () => {
   const [postTab, setPostTab] = useState<PostTab>("ทั้งหมด");
   const [statsProjectId, setStatsProjectId] = useState<string | null>(null);
   const [projectSort, setProjectSort] = useState<ProjectManageSortMode>(DEFAULT_PROJECT_MANAGE_SORT);
+  const [projectGrid, setProjectGrid] = useProjectManageGridMode();
 
   const projectIds = useMemo(() => dbProjects.map((p) => p.id), [dbProjects]);
   const { data: projectStatsMap = {} } = usePortfolioProjectStats(user?.id, projectIds);
@@ -309,7 +319,12 @@ const PortfolioManagePage = () => {
           <StatsCard label="ถูกใจ" value={totalLikes} icon={PlusOneStatsIcon} accent />
         </div>
 
+        <DashboardSeriesSection series={seriesList} />
+
         <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-base font-semibold text-foreground">ผลงานทั้งหมด</h2>
+          </div>
           <SearchBar placeholder="ค้นหาผลงาน..." value={projectSearch} onChange={setProjectSearch} />
           <div className="flex items-center justify-between gap-3">
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide min-w-0 flex-1">
@@ -322,65 +337,92 @@ const PortfolioManagePage = () => {
                 </button>
               ))}
             </div>
-            <ProjectManageSortSelect value={projectSort} onChange={setProjectSort} />
+            <div className="flex items-center gap-2 shrink-0">
+              <ProjectManageSortSelect value={projectSort} onChange={setProjectSort} />
+              <ProjectManageGridSelect value={projectGrid} onChange={setProjectGrid} />
+            </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredProjects.map((p) => {
-              const isDb = dbProjects.some((d) => d.id === p.id);
-              const db = dbById.get(p.id) as DBProject | undefined;
-              const listIdx = orderedDbProjects.findIndex((d) => d.id === p.id);
-              return (
-                <ManageProjectCard
-                  key={p.id}
-                  project={p}
-                  editable={isDb}
-                  isPinned={!!db?.is_pinned}
-                  stats={projectStatsMap[p.id] ?? EMPTY_PROJECT_STATS}
-                  onShowStats={
-                    p.status === "Published" ? () => setStatsProjectId(p.id) : undefined
-                  }
-                  canMoveUp={listIdx > 0}
-                  canMoveDown={listIdx >= 0 && listIdx < orderedDbProjects.length - 1}
-                  orderBusy={orderBusy}
-                  onPin={
-                    isDb
-                      ? () =>
-                          pin.mutate(
-                            { id: p.id, projects: dbProjects },
-                            {
-                              onSuccess: () => toast.success("ปักหมุดผลงานแล้ว"),
-                              onError: (e) =>
-                                toast.error(e instanceof Error ? e.message : "ปักหมุดไม่สำเร็จ"),
-                            },
-                          )
-                      : undefined
-                  }
-                  onUnpin={
-                    isDb
-                      ? () =>
-                          unpin.mutate(p.id, {
-                            onSuccess: () => toast.success("ยกเลิกปักหมุดแล้ว"),
-                            onError: (e) =>
-                              toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ"),
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={projectGrid}
+              className={cn(PROJECT_MANAGE_GRID_CLASS[projectGrid])}
+              initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reducedMotion ? undefined : { opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: smoothEase }}
+            >
+              {filteredProjects.map((p, index) => {
+                const isDb = dbProjects.some((d) => d.id === p.id);
+                const db = dbById.get(p.id) as DBProject | undefined;
+                const listIdx = orderedDbProjects.findIndex((d) => d.id === p.id);
+                return (
+                  <motion.div
+                    key={p.id}
+                    layout={!reducedMotion}
+                    initial={reducedMotion ? false : { opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={
+                      reducedMotion
+                        ? { duration: 0 }
+                        : staggerReveal(index, {
+                            dense: projectGrid === "cols2" || projectGrid === "cols5" || projectGrid === "list",
                           })
-                      : undefined
-                  }
-                  onMoveUp={isDb ? () => moveProject(p.id, -1) : undefined}
-                  onMoveDown={isDb ? () => moveProject(p.id, 1) : undefined}
-                  onDelete={(id) => {
-                    if (!isDb) {
-                      toast.info("ลบได้เฉพาะผลงานที่บันทึกในระบบ");
-                      return;
                     }
-                    setPendingDelete({ kind: "project", id, title: p.title });
-                  }}
-                />
-              );
-            })}
-            {filteredProjects.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6 col-span-full">ไม่พบผลงาน</p>
-            )}
-          </div>
+                  >
+                    <ManageProjectCard
+                      project={p}
+                      compact={projectGrid === "cols2" || projectGrid === "cols5"}
+                      layout={projectGrid === "list" ? "list" : "card"}
+                      editable={isDb}
+                      isPinned={!!db?.is_pinned}
+                      stats={projectStatsMap[p.id] ?? EMPTY_PROJECT_STATS}
+                      onShowStats={
+                        p.status === "Published" ? () => setStatsProjectId(p.id) : undefined
+                      }
+                      canMoveUp={listIdx > 0}
+                      canMoveDown={listIdx >= 0 && listIdx < orderedDbProjects.length - 1}
+                      orderBusy={orderBusy}
+                      onPin={
+                        isDb
+                          ? () =>
+                              pin.mutate(
+                                { id: p.id, projects: dbProjects },
+                                {
+                                  onSuccess: () => toast.success("ปักหมุดผลงานแล้ว"),
+                                  onError: (e) =>
+                                    toast.error(e instanceof Error ? e.message : "ปักหมุดไม่สำเร็จ"),
+                                },
+                              )
+                          : undefined
+                      }
+                      onUnpin={
+                        isDb
+                          ? () =>
+                              unpin.mutate(p.id, {
+                                onSuccess: () => toast.success("ยกเลิกปักหมุดแล้ว"),
+                                onError: (e) =>
+                                  toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ"),
+                              })
+                          : undefined
+                      }
+                      onMoveUp={isDb ? () => moveProject(p.id, -1) : undefined}
+                      onMoveDown={isDb ? () => moveProject(p.id, 1) : undefined}
+                      onDelete={(id) => {
+                        if (!isDb) {
+                          toast.info("ลบได้เฉพาะผลงานที่บันทึกในระบบ");
+                          return;
+                        }
+                        setPendingDelete({ kind: "project", id, title: p.title });
+                      }}
+                    />
+                  </motion.div>
+                );
+              })}
+              {filteredProjects.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-6 col-span-full">ไม่พบผลงาน</p>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
           </>
         ) : (

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutGrid, MessageCircle, Handshake, Orbit, Pin, PinOff, Plus, Search, Users } from "lucide-react";
+import { LayoutGrid, MessageCircle, Handshake, Pin, PinOff, Plus, Search, Users } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ import {
 import CreateGroupDialog from "@/components/chat/CreateGroupDialog";
 import { isAplus1SubscriptionsEnabled } from "@/lib/aplus1Launch";
 import { timeAgoTH } from "@/lib/format";
+import { replyPreviewText } from "@/lib/chatReply";
 import { cn } from "@/lib/utils";
 import { DEMO_RESEARCH_ACCOUNTS, isDemoMode } from "@/lib/demoMode";
 import { toast } from "sonner";
@@ -123,14 +124,12 @@ const ChatSidebar = ({
           };
           return;
         }
-        const preview =
-          m.message_type === "project"
-            ? "📁 ผลงาน"
-            : m.message_type === "profile"
-              ? "👤 โปรไฟล์"
-              : m.message_type === "system" || m.content?.startsWith("[context]")
-                ? "💬 เริ่มสนทนา"
-                : m.content || (m.attachment_url ? "📷 รูปภาพ" : "");
+        const preview = replyPreviewText({
+          content: m.content,
+          attachment_url: m.attachment_url,
+          message_type: m.message_type,
+          deleted_at: m.deleted_at,
+        });
         map[m.conversation_id] = {
           preview,
           mine: m.sender_id === user?.id,
@@ -202,11 +201,6 @@ const ChatSidebar = ({
     navigate("/", { state: { feedHomeReset: Date.now() } });
   };
 
-  const goArea = () => {
-    localStorage.setItem("feed-mode", "community");
-    navigate("/?mode=community");
-  };
-
   return (
     <aside className={cn("flex flex-col h-full border-r border-border bg-background", className)}>
       <div className="shrink-0 p-3 border-b border-border space-y-3">
@@ -233,30 +227,17 @@ const ChatSidebar = ({
             )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <div className="flex items-center gap-0.5 rounded-full border border-border/60 bg-muted/40 p-0.5">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                aria-label="หน้าแรก Projects"
-                title="หน้าแรก Projects"
-                onClick={goProjectsHome}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                aria-label="Area"
-                title="Area"
-                onClick={goArea}
-              >
-                <Orbit className="w-4 h-4" />
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full border border-border/60 bg-muted/40"
+              aria-label="กลับหน้าแรก"
+              title="กลับหน้าแรก"
+              onClick={goProjectsHome}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </Button>
             {isAplus1SubscriptionsEnabled() ? (
               <Button
                 type="button"

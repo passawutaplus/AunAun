@@ -9,7 +9,7 @@ import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPo
 import SharePopover from "@/components/SharePopover";
 import { cn } from "@/lib/utils";
 import SafeDemoImage from "@/components/SafeDemoImage";
-import { naturalFeedCoverUrl } from "@/lib/feedProjectCover";
+import { naturalFeedCoverUrl, optimizedFeedImageUrl } from "@/lib/feedProjectCover";
 import { smoothEase } from "@/lib/motion";
 import BoostBadge from "@/components/boost/BoostBadge";
 import { DrillProjectBadge } from "@/components/drill/DrillProjectBadge";
@@ -94,7 +94,9 @@ const ProjectCard = ({
 
   const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/project/${project.id}`;
   const imageIndex = project.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const coverSrc = naturalCover ? naturalFeedCoverUrl(project.image) : project.image;
+  const coverSrc = naturalCover
+    ? naturalFeedCoverUrl(project.image)
+    : optimizedFeedImageUrl(project.image, { width: 480, quality: 70, natural: false });
 
   const goToOwner = () => {
     if (project.ownerId) navigate(`/profile/${project.ownerId}`);
@@ -123,6 +125,9 @@ const ProjectCard = ({
           index={imageIndex}
           naturalFallback={naturalCover}
           alt={project.title}
+          width={naturalCover ? 640 : 480}
+          {...(naturalCover ? {} : { height: 360 })}
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
           className={cn(
             "transition-transform duration-500 group-hover:scale-[1.04]",
             naturalCover
@@ -150,8 +155,8 @@ const ProjectCard = ({
             "absolute inset-0 pointer-events-none transition-opacity duration-300",
             "bg-gradient-to-t from-black/55 via-black/20 to-transparent",
             "supports-[backdrop-filter]:backdrop-blur-md [-webkit-backdrop-filter:blur(12px)]",
-            "[mask-image:linear-gradient(to_top,black_28%,transparent_100%)]",
-            "[-webkit-mask-image:linear-gradient(to_top,black_28%,transparent_100%)]",
+            "[mask-image:linear-gradient(to_top,black_18%,transparent_48%)]",
+            "[-webkit-mask-image:linear-gradient(to_top,black_18%,transparent_48%)]",
             menuOpen ? "opacity-100" : "opacity-0 md:group-hover:opacity-100"
           )}
         />

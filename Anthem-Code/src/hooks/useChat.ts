@@ -11,8 +11,8 @@ import {
   parseAttachmentUrlsFromMessage,
   stripAttachmentBlock,
 } from "@/lib/hireBrief";
+import { formatCollabBriefChatText } from "@/lib/collabBrief";
 import {
-  DEFAULT_COLLAB_MESSAGE,
   SYSTEM_MESSAGE_PREFIX,
 } from "@/lib/chatContext";
 
@@ -589,27 +589,42 @@ async function seedHireBriefIfPresent(conversationId: string, requestId: string)
 async function seedCollabMessages(conversationId: string, requestId: string): Promise<void> {
   const { data: collab } = await supabase
     .from("collab_requests")
-    .select("sender_id, message, attached_project_ids")
+    .select("sender_id, message, timeline, collab_types, attached_project_ids")
     .eq("id", requestId)
     .maybeSingle();
 
   if (!collab?.sender_id) return;
 
   const senderId = collab.sender_id as string;
-  const msg = (collab.message as string)?.trim();
-  const hasCustomMessage = msg && msg !== DEFAULT_COLLAB_MESSAGE;
+  const projectIds = (collab.attached_project_ids as string[] | null) ?? [];
 
-  if (hasCustomMessage) {
+  let projectTitle: string | null = null;
+  if (projectIds.length > 0) {
+    const { data: first } = await supabase
+      .from("projects")
+      .select("title")
+      .eq("id", projectIds[0])
+      .maybeSingle();
+    projectTitle = first?.title ?? null;
+  }
+
+  const brief = formatCollabBriefChatText({
+    project_title: projectTitle,
+    message: collab.message as string | null,
+    timeline: collab.timeline as string | null,
+    collab_types: collab.collab_types as string[] | null,
+  });
+
+  if (brief.trim()) {
     const { error } = await supabase.from("messages").insert({
       conversation_id: conversationId,
       sender_id: senderId,
-      content: msg,
+      content: brief,
       message_type: "text",
     } as never);
     if (error) throw error;
   }
 
-  const projectIds = (collab.attached_project_ids as string[] | null) ?? [];
   if (projectIds.length === 0) return;
 
   const { data: projects } = await supabase

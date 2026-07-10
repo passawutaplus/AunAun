@@ -20,16 +20,22 @@ type Props = {
 };
 
 export default function ProjectManageSortSelect({ value, onChange, className }: Props) {
+  const label = projectManageSortLabel(value);
+
   return (
     <Select value={value} onValueChange={(next) => onChange(next as ProjectManageSortMode)}>
       <SelectTrigger
+        aria-label={`เรียงตาม: ${label}`}
         className={cn(
-          "h-9 w-auto min-w-[8.5rem] max-w-[11rem] rounded-full border-border bg-card text-xs gap-1.5 px-3",
+          "h-9 w-9 px-0 justify-center gap-0 rounded-full text-xs",
+          "border-0 bg-transparent shadow-none hover:bg-secondary/60",
+          "focus:ring-0 focus:ring-offset-0",
+          "[&>span]:sr-only [&>svg:last-child]:hidden",
           className,
         )}
       >
-        <ArrowUpDown className="w-3.5 h-3.5 shrink-0 opacity-70" />
-        <SelectValue placeholder="เรียงตาม">{projectManageSortLabel(value)}</SelectValue>
+        <ArrowUpDown className="w-3.5 h-3.5 shrink-0" aria-hidden />
+        <SelectValue className="sr-only">{label}</SelectValue>
       </SelectTrigger>
       <SelectContent align="end" className="max-h-72">
         {PROJECT_MANAGE_SORT_OPTIONS.map((option) => (

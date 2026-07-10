@@ -77,7 +77,7 @@ const AdCard = ({ ad, placement = "feed" }: Props) => {
         <button
           type="button"
           onClick={handleDetails}
-          className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-medium bg-background/80 text-muted-foreground hover:text-foreground"
+          className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-background/90 text-foreground/80 hover:text-foreground"
         >
           รายละเอียด
         </button>

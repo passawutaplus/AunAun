@@ -166,7 +166,7 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
               key={key}
               className="rounded-xl border border-border bg-card/95 px-3 py-2.5 shadow-sm dark:bg-card dark:shadow-[inset_0_1px_0_0_hsl(0_0%_100%_/_0.04)]"
             >
-              <span className="block text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-medium thai-body">
+              <span className="block text-[11px] uppercase tracking-[0.12em] text-foreground/70 font-medium thai-body">
                 {label}
               </span>
               {isLoading ? (

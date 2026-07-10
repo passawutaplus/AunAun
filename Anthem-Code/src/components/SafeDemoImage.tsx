@@ -34,6 +34,8 @@ const SafeDemoImage = ({
 
   return (
     <motion.img
+      decoding="async"
+      loading="lazy"
       {...props}
       src={current}
       alt={alt}

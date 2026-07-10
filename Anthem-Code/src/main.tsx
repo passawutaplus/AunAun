@@ -3,10 +3,12 @@ import App from "./App.tsx";
 import "./index.css";
 import { installCspReporter } from "./lib/cspReporter";
 import { initErrorMonitoring } from "./lib/errorMonitoring";
+import { loadBrandFonts } from "./lib/loadBrandFonts";
 import { registerPwa } from "./lib/pwa";
 
 installCspReporter();
 void initErrorMonitoring();
+loadBrandFonts();
 registerPwa();
 
 const initialUrl = `${window.location.origin}${window.location.pathname}`;

@@ -17,6 +17,7 @@ import { EMPTY_PROJECT_STATS } from "@/hooks/usePortfolioProjectStats";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { timeAgoTH } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 interface ManageProjectCardProps {
   project: Project;
@@ -32,6 +33,10 @@ interface ManageProjectCardProps {
   orderBusy?: boolean;
   stats?: ProjectManageStats;
   onShowStats?: () => void;
+  /** Tighter card for dense grid. */
+  compact?: boolean;
+  /** Horizontal row layout for list grid mode. */
+  layout?: "card" | "list";
 }
 
 const ManageProjectCard = ({
@@ -48,16 +53,188 @@ const ManageProjectCard = ({
   orderBusy,
   stats = EMPTY_PROJECT_STATS,
   onShowStats,
+  compact = false,
+  layout = "card",
 }: ManageProjectCardProps) => {
   const navigate = useNavigate();
   const dateLabel =
     project.publishedDate && !Number.isNaN(Date.parse(project.publishedDate))
       ? timeAgoTH(project.publishedDate)
       : project.publishedDate;
+  const isList = layout === "list";
+
+  const statusBadges = (
+    <>
+      {isPinned && (
+        <Badge className="bg-amber-500 text-white text-[10px] border-0 px-1.5 py-0">
+          <Pin className="w-2.5 h-2.5 mr-0.5" /> ปักหมุด
+        </Badge>
+      )}
+      {project.status === "Published" && (
+        <Badge className="bg-success text-success-foreground text-[10px] border-0 px-1.5 py-0">
+          เผยแพร่
+        </Badge>
+      )}
+      {project.status === "Draft" && (
+        <Badge variant="outline" className="bg-card/90 text-muted-foreground text-[10px] px-1.5 py-0">
+          แบบร่าง
+        </Badge>
+      )}
+      {project.status === "Private" && (
+        <Badge variant="outline" className="bg-card/90 text-muted-foreground text-[10px] px-1.5 py-0">
+          ส่วนตัว
+        </Badge>
+      )}
+      <Badge className="bg-primary/90 text-primary-foreground text-[10px] border-0 px-1.5 py-0">
+        {project.category}
+      </Badge>
+    </>
+  );
+
+  const orderActions = (
+    <div className="flex items-center gap-0.5">
+      {editable && onMoveUp && (
+        <button
+          type="button"
+          onClick={onMoveUp}
+          disabled={!canMoveUp || orderBusy}
+          className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+          aria-label="เลื่อนขึ้น"
+        >
+          <ArrowUp className="w-3.5 h-3.5" />
+        </button>
+      )}
+      {editable && onMoveDown && (
+        <button
+          type="button"
+          onClick={onMoveDown}
+          disabled={!canMoveDown || orderBusy}
+          className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+          aria-label="เลื่อนลง"
+        >
+          <ArrowDown className="w-3.5 h-3.5" />
+        </button>
+      )}
+      {editable && (onPin || onUnpin) && (
+        <button
+          type="button"
+          onClick={isPinned ? onUnpin : onPin}
+          disabled={orderBusy}
+          className="p-1.5 rounded-lg hover:bg-amber-500/10 text-muted-foreground hover:text-amber-600 transition-colors"
+          aria-label={isPinned ? "ยกเลิกปักหมุด" : "ปักหมุด"}
+        >
+          {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+        </button>
+      )}
+    </div>
+  );
+
+  const primaryActions = (
+    <div className="flex items-center gap-1">
+      {project.status === "Published" && (
+        <button
+          type="button"
+          onClick={() => navigate(`/project/${project.id}`)}
+          className="px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+        >
+          ดู
+        </button>
+      )}
+      {editable && (
+        <button
+          type="button"
+          onClick={() => navigate(`/portfolio/${project.id}/edit`)}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-primary hover:bg-primary/10 transition-colors"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+          แก้ไข
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={() => onDelete?.(project.id)}
+        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-destructive hover:bg-destructive/10 transition-colors"
+        aria-label="ลบ"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+
+  if (isList) {
+    return (
+      <div className="rounded-xl overflow-hidden glass-panel flex flex-col sm:flex-row sm:items-stretch gap-0">
+        <div className="relative w-full sm:w-36 md:w-40 h-28 sm:h-auto sm:min-h-[5.5rem] bg-muted shrink-0">
+          {project.image ? (
+            <img
+              src={project.image}
+              alt={project.title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+              ไม่มีรูปปก
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0 p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <div className="flex flex-wrap gap-1.5">{statusBadges}</div>
+            <h3 className="font-semibold text-foreground text-sm line-clamp-1 leading-snug">
+              {project.title}
+            </h3>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span>{dateLabel}</span>
+              <span className="inline-flex items-center gap-1">
+                <Eye className="w-3.5 h-3.5" />
+                {project.views.toLocaleString()}
+              </span>
+              <PlusOneControl
+                active={false}
+                count={project.likes}
+                showCount
+                size="sm"
+                className="pointer-events-none text-muted-foreground"
+              />
+              {stats.hireCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-[hsl(var(--chat-hire))]">
+                  <Mail className="w-3.5 h-3.5" />
+                  จ้าง {stats.hireCount}
+                </span>
+              )}
+              {stats.collabCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-primary">
+                  <Handshake className="w-3.5 h-3.5" />
+                  คอลแลป {stats.collabCount}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-2 sm:flex-col sm:items-end sm:justify-center shrink-0">
+            {onShowStats && project.status === "Published" && (
+              <button
+                type="button"
+                onClick={onShowStats}
+                className="inline-flex items-center gap-1 rounded-lg border border-dashed border-border/80 px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                สถิติ
+              </button>
+            )}
+            <div className="flex items-center gap-1">
+              {orderActions}
+              {primaryActions}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-xl overflow-hidden glass-panel h-full flex flex-col">
-      <div className="relative h-40 bg-muted shrink-0">
+      <div className={cn("relative bg-muted shrink-0", compact ? "h-28" : "h-40")}>
         {project.image ? (
           <img
             src={project.image}
@@ -71,36 +248,19 @@ const ManageProjectCard = ({
           </div>
         )}
         <div className="absolute top-2 left-2 flex gap-1.5 flex-wrap max-w-[calc(100%-1rem)]">
-          {isPinned && (
-            <Badge className="bg-amber-500 text-white text-[10px] border-0 px-1.5 py-0">
-              <Pin className="w-2.5 h-2.5 mr-0.5" /> ปักหมุด
-            </Badge>
-          )}
-          {project.status === "Published" && (
-            <Badge className="bg-success text-success-foreground text-[10px] border-0 px-1.5 py-0">
-              เผยแพร่
-            </Badge>
-          )}
-          {project.status === "Draft" && (
-            <Badge variant="outline" className="bg-card/90 text-muted-foreground text-[10px] px-1.5 py-0">
-              แบบร่าง
-            </Badge>
-          )}
-          {project.status === "Private" && (
-            <Badge variant="outline" className="bg-card/90 text-muted-foreground text-[10px] px-1.5 py-0">
-              ส่วนตัว
-            </Badge>
-          )}
-          <Badge className="bg-primary/90 text-primary-foreground text-[10px] border-0 px-1.5 py-0">
-            {project.category}
-          </Badge>
+          {statusBadges}
         </div>
       </div>
 
-      <div className="p-3 flex flex-col flex-1 gap-2">
+      <div className={cn("flex flex-col flex-1 gap-2", compact ? "p-2.5" : "p-3")}>
         <div className="flex-1 min-h-0">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold text-foreground text-sm line-clamp-2 leading-snug min-w-0">
+            <h3
+              className={cn(
+                "font-semibold text-foreground line-clamp-2 leading-snug min-w-0",
+                compact ? "text-xs" : "text-sm",
+              )}
+            >
               {project.title}
             </h3>
             <div className="flex items-center gap-2 shrink-0 text-xs text-muted-foreground pt-0.5">
@@ -157,70 +317,8 @@ const ManageProjectCard = ({
         )}
 
         <div className="flex items-center justify-between gap-1 pt-2 border-t border-border/50">
-          <div className="flex items-center gap-0.5">
-            {editable && onMoveUp && (
-              <button
-                type="button"
-                onClick={onMoveUp}
-                disabled={!canMoveUp || orderBusy}
-                className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
-                aria-label="เลื่อนขึ้น"
-              >
-                <ArrowUp className="w-3.5 h-3.5" />
-              </button>
-            )}
-            {editable && onMoveDown && (
-              <button
-                type="button"
-                onClick={onMoveDown}
-                disabled={!canMoveDown || orderBusy}
-                className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
-                aria-label="เลื่อนลง"
-              >
-                <ArrowDown className="w-3.5 h-3.5" />
-              </button>
-            )}
-            {editable && (onPin || onUnpin) && (
-              <button
-                type="button"
-                onClick={isPinned ? onUnpin : onPin}
-                disabled={orderBusy}
-                className="p-1.5 rounded-lg hover:bg-amber-500/10 text-muted-foreground hover:text-amber-600 transition-colors"
-                aria-label={isPinned ? "ยกเลิกปักหมุด" : "ปักหมุด"}
-              >
-                {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            {project.status === "Published" && (
-              <button
-                type="button"
-                onClick={() => navigate(`/project/${project.id}`)}
-                className="px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              >
-                ดู
-              </button>
-            )}
-            {editable && (
-              <button
-                type="button"
-                onClick={() => navigate(`/portfolio/${project.id}/edit`)}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-primary hover:bg-primary/10 transition-colors"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                แก้ไข
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => onDelete?.(project.id)}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-destructive hover:bg-destructive/10 transition-colors"
-              aria-label="ลบ"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          {orderActions}
+          {primaryActions}
         </div>
       </div>
     </div>

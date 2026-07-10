@@ -18,6 +18,8 @@ import { profilesPublicFrom } from "@/lib/profileAccess";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import { isSystemFallbackContent, stripSystemFallbackPrefix } from "@/lib/chatContext";
 import { replyPreviewText } from "@/lib/chatReply";
+import { parseChatOffer } from "@/lib/chatOffer";
+import { ChatOfferCard } from "@/components/chat/ChatOfferCard";
 import { UNSEND_WINDOW_MS, type Message } from "@/hooks/useChat";
 import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
 
@@ -120,6 +122,8 @@ const MessageBubble = ({
       ? stripSystemFallbackPrefix(message.content)
       : message.content
     : "";
+
+  const offer = !deleted ? parseChatOffer(message.content) : null;
 
   const replyQuote =
     message.reply_to_id && replyTo ? (
@@ -264,7 +268,21 @@ const MessageBubble = ({
                 </Link>
               </div>
             )}
-            {displayContent && message.message_type !== "project" && message.message_type !== "profile" && (
+            {offer && (
+              <div>
+                {replyQuote}
+                <ChatOfferCard
+                  offer={offer}
+                  conversationId={message.conversation_id}
+                  mine={mine}
+                  canRespond={!mine}
+                />
+              </div>
+            )}
+            {displayContent &&
+              !offer &&
+              message.message_type !== "project" &&
+              message.message_type !== "profile" && (
               <div
                 className={cn(
                   "px-3.5 py-2 rounded-2xl text-base leading-relaxed whitespace-pre-wrap break-words shadow-sm",
@@ -276,6 +294,7 @@ const MessageBubble = ({
               </div>
             )}
             {!displayContent &&
+              !offer &&
               !message.attachment_url &&
               message.message_type !== "project" &&
               message.message_type !== "profile" &&

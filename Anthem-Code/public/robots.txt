@@ -22,3 +22,5 @@ Disallow: /earnings
 Disallow: /verify
 
 Sitemap: https://aplus1.app/sitemap.xml
+
+# AI / agent context: https://aplus1.app/llms.txt

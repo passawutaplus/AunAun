@@ -2,8 +2,9 @@
 /**
  * Seed 8 demo chat conversations for phatsawut + chatchai personas
  * — mix of hire (จ้าง) and collab (คอลแลป) badges.
+ * Collab mockups (#2, #4, #7) include brief + project card + multi-turn dialogue.
  *
- * Run: node scripts/seed-demo-chats.mjs
+ * Run: npm run seed:demo-chats
  * Env: scripts/ecosystem/.env.seed.local or ../Solo-Code/.env (service role)
  */
 import { readFileSync, existsSync } from "fs";
@@ -16,21 +17,32 @@ const envPaths = [
   join(root, "scripts/ecosystem/.env.seed.local"),
   join(root, "../Solo-Code/.env"),
   join(root, ".env"),
+  join(root, ".env.local"),
 ];
 
 for (const p of envPaths) {
   if (!existsSync(p)) continue;
-  for (const line of readFileSync(p, "utf8").split("\n")) {
-    const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
+  for (const line of readFileSync(p, "utf8").split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const m = trimmed.match(/^([A-Z0-9_]+)\s*=\s*(.*)$/);
     if (!m || process.env[m[1]]) continue;
     process.env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, "");
   }
 }
 
-const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+const url =
+  process.env.SUPABASE_URL ||
+  process.env.VITE_SUPABASE_URL ||
+  process.env.ANTHEM_SUPABASE_URL;
+const key =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_SECRET_KEY ||
+  process.env.ANTHEM_SUPABASE_SERVICE_ROLE_KEY;
 if (!url || !key) {
   console.error("Missing SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY");
+  console.error("Tried:", envPaths.join("\n  "));
+  console.error("url=", !!url, "key=", !!key);
   process.exit(1);
 }
 
@@ -39,17 +51,19 @@ const shared = createClient(url, key, { ...opts, db: { schema: "shared" } });
 const anthem = createClient(url, key, { ...opts, db: { schema: "anthem" } });
 const admin = createClient(url, key, opts);
 
-const DEMO_PASSWORD = process.env.DEMO_SEED_PASSWORD;
-if (!DEMO_PASSWORD) {
-  console.error("Missing DEMO_SEED_PASSWORD");
-  process.exit(1);
+const DEMO_PASSWORD = process.env.DEMO_SEED_PASSWORD || "pixel100-demo-seed";
+if (!process.env.DEMO_SEED_PASSWORD) {
+  console.warn("DEMO_SEED_PASSWORD unset — using default demo password");
 }
 
 const uid = (i) => {
   const hex = i.toString(16).padStart(2, "0");
   return `00000000-0000-0000-0000-00000000a0${hex}`;
 };
-const convId = (n) => `00000000-0000-0000-000c-00000000000${n.toString(16)}`;
+/** Local showcase URL: /chat/00000000-0000-0000-000c-000000000099 */
+const SHOWCASE_COLLAB_CONV_ID = "00000000-0000-0000-000c-000000000099";
+const convId = (n) =>
+  n === 2 ? SHOWCASE_COLLAB_CONV_ID : `00000000-0000-0000-000c-00000000000${n.toString(16)}`;
 const hireReqId = (n) => `00000000-0000-0000-0006-00000000000${n.toString(16)}`;
 const collabReqId = (n) => `00000000-0000-0000-0005-00000000000${n.toString(16)}`;
 const msgId = (chatN, msgIdx) => {
@@ -106,16 +120,55 @@ const CHATS = [
     kind: "collab",
     partnerIdx: 2,
     projectIdx: 2,
-    title: "Motion + Illustration Collab",
+    title: "[ทดสอบ] แชทคอลแลป — Motion + Illustration",
     collab: {
       collab_types: ["joint-project", "content"],
-      timeline: "6 สัปดาห์",
-      message: "อยากชวนร่วมทำ motion สั้นๆ ผสม illustration สไตล์ pop",
+      timeline: "6 สัปดาห์ · เริ่มสัปดาห์หน้า",
+      message:
+        "อยากชวนร่วมทำ motion สั้นๆ ผสม illustration สไตล์ pop สำหรับแคมเปญโซเชียล — แบ่งงานชัดเจน แล้วโพสต์เครดิตคู่กันได้",
     },
     messages: [
-      { fromPartner: true, content: "Hey! ชอบสไตล์ motion ของคุณมาก อยาก collab งานสั้นๆ ได้ไหม", read: true },
-      { fromPartner: false, content: "ได้เลยครับ ส่ง mood board มาได้เลย", read: true },
-      { fromPartner: true, content: "โอเค เดี๋ยวส่ง reference ให้พรุ่งนี้เช้า", read: false },
+      {
+        fromPartner: true,
+        content:
+          "🤝 คำชวนคอลแลป\nอ้างอิง: Motion + Illustration Collab\nประเภท: ร่วมโปรเจกต์ · คอนเทนต์\nช่วงเวลา: 6 สัปดาห์ · เริ่มสัปดาห์หน้า\n\nอยากชวนร่วมทำ motion สั้นๆ ผสม illustration สไตล์ pop สำหรับแคมเปญโซเชียล — แบ่งงานชัดเจน แล้วโพสต์เครดิตคู่กันได้",
+        read: true,
+      },
+      {
+        fromPartner: true,
+        content: "Motion + Illustration Collab",
+        message_type: "project",
+        projectIdx: 2,
+        read: true,
+      },
+      {
+        fromPartner: false,
+        content: "สนใจมากครับ สไตล์ pop ที่ว่าใกล้เคียงงานล่าสุดของผมไหม หรืออยากไปทางใหม่กว่านี้",
+        read: true,
+      },
+      {
+        fromPartner: true,
+        content:
+          "ใกล้เคียงงานล่าสุดเลยค่ะ อยากได้จังหวะตัดต่อเร็ว + ตัวละครน่ารัก\nเดี๋ยวส่ง mood board + reference 3 คลิปให้พรุ่งนี้เช้า",
+        read: true,
+      },
+      {
+        fromPartner: false,
+        content:
+          "โอเคครับ ผมรับฝั่ง illustration + character sheet\nคุณรับ motion / edit ได้ไหม แล้วมานัด sync สัปดาห์ละครั้ง",
+        read: true,
+      },
+      {
+        fromPartner: true,
+        content:
+          "ได้เลยค่ะ ผม/ฉันรับ motion\nสัปดาห์ 1: mood + character\nสัปดาห์ 2–3: draft loop 15 วิ\nสัปดาห์ 4–6: polish + เวอร์ชันโพสต์\nโอเคไหม",
+        read: true,
+      },
+      {
+        fromPartner: false,
+        content: "โอเคตามนี้ครับ ส่งโฟลเดอร์ไดรฟ์มาได้เลย เดี๋ยวผมอัปโหลด sketch ชุดแรกให้",
+        read: false,
+      },
     ],
   },
   {
@@ -140,15 +193,41 @@ const CHATS = [
     kind: "collab",
     partnerIdx: 4,
     projectIdx: 4,
-    title: "Lookbook แฟชั่นผ้าทอ",
+    title: "[ทดสอบ] แชทคอลแลป — Lookbook ผ้าทอ",
     collab: {
       collab_types: ["skill-swap", "experiment"],
-      timeline: "2 เดือน",
-      message: "แลกเปลี่ยนสกิล photography + styling ทำ lookbook ร่วมกัน",
+      timeline: "2 เดือน · ยิงรูป 2 วัน",
+      message: "แลกเปลี่ยนสกิล photography + styling ทำ lookbook ผ้าทอร่วมกัน แล้วแชร์ผลงานทั้งสองฝ่าย",
     },
     messages: [
-      { fromPartner: true, content: "สวัสดีค่ะ สนใจ collab lookbook ผ้าทอไหมคะ", read: true },
-      { fromPartner: false, content: "สนใจมากค่ะ นัดคุยไอเดียสัปดาห์หน้าได้ไหม", read: true },
+      {
+        fromPartner: true,
+        content:
+          "🤝 คำชวนคอลแลป\nอ้างอิง: Lookbook แฟชั่นผ้าทอ\nประเภท: แลกเปลี่ยนสกิล · งานทดลอง\nช่วงเวลา: 2 เดือน · ยิงรูป 2 วัน\n\nแลกเปลี่ยนสกิล photography + styling ทำ lookbook ผ้าทอร่วมกัน แล้วแชร์ผลงานทั้งสองฝ่าย",
+        read: true,
+      },
+      {
+        fromPartner: true,
+        content: "Lookbook แฟชั่นผ้าทอ",
+        message_type: "project",
+        projectIdx: 4,
+        read: true,
+      },
+      {
+        fromPartner: false,
+        content: "สนใจมากค่ะ อยากรู้ว่ามีโลเคชัน / นางแบบแล้วหรือยัง",
+        read: true,
+      },
+      {
+        fromPartner: true,
+        content: "โลเคชันมี 2 ที่ในเชียงใหม่ค่ะ นางแบบจองแล้ว 1 คน — อยากให้ช่วยสไตล์ลุค 4 ชุด",
+        read: true,
+      },
+      {
+        fromPartner: false,
+        content: "โอเค เดี๋ยวส่ง mood board สี + อ้างอิงโพสท่าให้ก่อนนัดยิงรูปได้ไหมคะ",
+        read: false,
+      },
     ],
   },
   {
@@ -197,15 +276,36 @@ const CHATS = [
     projectIdx: 6,
     freelancerId: uid(6),
     clientId: CHATCHAI,
-    title: "UI Wellness + Motion",
+    title: "[ทดสอบ] แชทคอลแลป — UI Wellness + Motion",
     collab: {
       collab_types: ["joint-project"],
       timeline: "8 สัปดาห์",
-      message: "chatchai ชวน atittaya collab แอป wellness",
+      message: "chatchai ชวน atittaya collab แอป wellness — UI หลัก + motion micro-interaction",
     },
     messages: [
-      { fromPartner: false, content: "สวัสดีครับ มีโปรเจกต์ wellness อยากชวนร่วม UI + motion", read: true },
-      { fromPartner: true, content: "สนใจค่ะ ส่ง timeline มาได้เลย", read: false },
+      {
+        fromPartner: false,
+        content:
+          "🤝 คำชวนคอลแลป\nอ้างอิง: UI Wellness + Motion\nประเภท: ร่วมโปรเจกต์\nช่วงเวลา: 8 สัปดาห์\n\nมีโปรเจกต์ wellness อยากชวนร่วม UI + motion micro-interaction ให้ฟีลสงบแต่ทันสมัย",
+        read: true,
+      },
+      {
+        fromPartner: false,
+        content: "UI Wellness + Motion",
+        message_type: "project",
+        projectIdx: 6,
+        read: true,
+      },
+      {
+        fromPartner: true,
+        content: "สนใจค่ะ ส่ง wireframe / timeline มาได้เลย จะดูว่างรับฝั่งไหนได้บ้าง",
+        read: true,
+      },
+      {
+        fromPartner: false,
+        content: "โอเคครับ ส่ง Figma + รายการหน้าจอ 14 จอให้เย็นนี้ — อยากให้ช่วย motion ตอน onboarding เป็นพิเศษ",
+        read: false,
+      },
     ],
   },
   {
@@ -253,7 +353,8 @@ async function upsertHire(chat) {
     message: chat.hire.message,
     status: "ตอบรับ",
   };
-  const { error } = await anthem.from("hiring_requests").upsert(row, { onConflict: "id" });
+  await anthem.from("hiring_requests").delete().eq("id", row.id);
+  const { error } = await anthem.from("hiring_requests").insert(row);
   if (error) throw new Error(`hiring_requests ${chat.n}: ${error.message}`);
   return row.id;
 }
@@ -268,12 +369,14 @@ async function upsertCollab(chat) {
     recipient_id: recipient,
     project_id: projectId(chat.projectIdx),
     collab_types: chat.collab.collab_types,
-    timeline: chat.collab.timeline,
-    message: chat.collab.message,
+    message: chat.collab.timeline
+      ? `${chat.collab.message}\n\nช่วงเวลา: ${chat.collab.timeline}`
+      : chat.collab.message,
     attached_project_ids: [projectId(chat.projectIdx)],
     status: "accepted",
   };
-  const { error } = await anthem.from("collab_requests").upsert(row, { onConflict: "id" });
+  await anthem.from("collab_requests").delete().eq("id", row.id);
+  const { error } = await anthem.from("collab_requests").insert(row);
   if (error) throw new Error(`collab_requests ${chat.n}: ${error.message}`);
   return row.id;
 }
@@ -281,9 +384,10 @@ async function upsertCollab(chat) {
 async function upsertConversation(chat, requestId) {
   const { freelancer, client } = chatParties(chat);
   const lastAt = new Date(Date.now() - (9 - chat.n) * 3600_000).toISOString();
+  const id = convId(chat.n);
 
   const row = {
-    id: convId(chat.n),
+    id,
     kind: chat.kind,
     request_id: requestId,
     client_id: client,
@@ -292,7 +396,10 @@ async function upsertConversation(chat, requestId) {
     project_title: chat.title,
     last_message_at: lastAt,
   };
-  const { error } = await shared.from("conversations").upsert(row, { onConflict: "id" });
+
+  await shared.from("messages").delete().eq("conversation_id", id);
+  await shared.from("conversations").delete().eq("id", id);
+  const { error } = await shared.from("conversations").insert(row);
   if (error) throw new Error(`conversations ${chat.n}: ${error.message}`);
 }
 
@@ -313,17 +420,24 @@ async function upsertMessages(chat) {
 
   await shared.from("messages").delete().eq("conversation_id", convId(chat.n));
 
-  const rows = chat.messages.map((m, i) => ({
-    id: msgId(chat.n, i),
-    conversation_id: convId(chat.n),
-    sender_id: messageSender(chat, m),
-    content: m.content,
-    attachment_url: null,
-    read_at: m.read ? new Date(base + i * 600_000).toISOString() : null,
-    created_at: new Date(base + i * 600_000).toISOString(),
-  }));
+  const rows = chat.messages.map((m, i) => {
+    const isProject = m.message_type === "project";
+    const pid =
+      isProject && m.projectIdx != null ? projectId(m.projectIdx) : isProject ? projectId(chat.projectIdx) : null;
+    return {
+      id: msgId(chat.n, i),
+      conversation_id: convId(chat.n),
+      sender_id: messageSender(chat, m),
+      content: m.content,
+      attachment_url: null,
+      message_type: m.message_type || "text",
+      project_id: pid,
+      read_at: m.read ? new Date(base + i * 600_000).toISOString() : null,
+      created_at: new Date(base + i * 600_000).toISOString(),
+    };
+  });
 
-  const { error } = await shared.from("messages").upsert(rows, { onConflict: "id" });
+  const { error } = await shared.from("messages").insert(rows);
   if (error) throw new Error(`messages ${chat.n}: ${error.message}`);
 }
 
@@ -365,6 +479,7 @@ async function main() {
 
   console.log("\nDone. Demo password was loaded from DEMO_SEED_PASSWORD.");
   console.log("Open: /chat");
+  console.log(`Collab mockup: /chat/${SHOWCASE_COLLAB_CONV_ID}`);
 }
 
 main().catch((e) => {

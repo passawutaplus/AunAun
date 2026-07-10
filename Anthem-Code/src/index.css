@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap');
+/* Fonts load async from main.tsx — avoid render-blocking @import (mobile FCP). */
 
 @tailwind base;
 @tailwind components;
@@ -7,7 +6,7 @@
 
 @layer utilities {
   .font-legal {
-    font-family: "Prompt", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
+    font-family: "IBM Plex Sans Thai Looped", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
   }
 }
 

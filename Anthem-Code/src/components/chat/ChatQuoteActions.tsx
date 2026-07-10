@@ -1,22 +1,22 @@
 import * as React from "react";
-import { FileText } from "lucide-react";
+import { Banknote, FileText } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import type { Conversation } from "@/hooks/useChat";
+import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/core/subscription/useSubscription";
 import { useStudioForConversation, useStudioMembers } from "@/hooks/useStudios";
 import { supabase } from "@/integrations/supabase/client";
-import { so1oQuotationUrl, trackCrossLink } from "@/lib/crossLink";
-import { openSoloExternal } from "@/lib/soloEcosystemGate";
-import { isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
 import {
   canOpenStudioCombinedQuote,
   canShowStudioQuoteUpsell,
   openStudioQuotation,
 } from "@/lib/studioQuotationHandoff";
 import { StudioQuoteUpsellDialog } from "@/components/studio/StudioQuoteUpsellDialog";
+import { ChatOfferDialog } from "@/components/chat/ChatOfferDialog";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { isAplus1ChatOffersEnabled } from "@/lib/aplus1Launch";
 
 type Props = {
   conversation: Conversation;
@@ -24,10 +24,15 @@ type Props = {
 
 export function ChatQuoteActions({ conversation }: Props) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { tier } = useSubscription();
   const [upsellOpen, setUpsellOpen] = React.useState(false);
+  const [offerOpen, setOfferOpen] = React.useState(false);
+
+  if (!isAplus1ChatOffersEnabled()) return null;
 
   const isStudio = !!conversation.studio_id;
+  const isFreelancer = !!user?.id && user.id === conversation.freelancer_id;
   const { data: studio } = useStudioForConversation(
     isStudio ? conversation.id : undefined,
     conversation.title || conversation.project_title,
@@ -47,25 +52,6 @@ export function ChatQuoteActions({ conversation }: Props) {
       return data;
     },
   });
-
-  const openQuote = async () => {
-    const linkId = await trackCrossLink({
-      source: "chat_meta_panel",
-      refId: conversation.id,
-    });
-    const url = so1oQuotationUrl({
-      conversationId: conversation.id,
-      requestId: conversation.request_id ?? undefined,
-      clientName: hireMeta?.client_name ?? undefined,
-      projectTitle: hireMeta?.project_title ?? conversation.project_title ?? undefined,
-      clientEmail: hireMeta?.email ?? undefined,
-      clientPhone: hireMeta?.phone ?? undefined,
-      message: hireMeta?.message ?? undefined,
-      deadline: hireMeta?.deadline ?? undefined,
-      linkId,
-    });
-    openSoloExternal(url);
-  };
 
   const openStudioQuote = async () => {
     if (!studio) {
@@ -128,11 +114,28 @@ export function ChatQuoteActions({ conversation }: Props) {
   }
 
   if (conversation.kind !== "hire") return null;
+  if (!isFreelancer) return null;
 
   return (
-    <Button type="button" variant="outline" size="sm" className="w-full rounded-xl" onClick={() => void openQuote()}>
-      <FileText className="w-3.5 h-3.5 mr-1.5" />
-      สร้างใบเสนอราคา{isSoloEcosystemEnabled() ? "ใน So1o" : " — เร็ว ๆ นี้"}
-    </Button>
+    <>
+      <Button
+        type="button"
+        size="sm"
+        className="w-full rounded-xl"
+        onClick={() => setOfferOpen(true)}
+      >
+        <Banknote className="w-3.5 h-3.5 mr-1.5" />
+        เสนอราคา
+      </Button>
+      <ChatOfferDialog
+        open={offerOpen}
+        onOpenChange={setOfferOpen}
+        conversationId={conversation.id}
+        defaultTitle={hireMeta?.project_title ?? conversation.project_title ?? ""}
+        defaultClientName={hireMeta?.client_name ?? ""}
+        defaultClientEmail={hireMeta?.email ?? ""}
+        defaultClientPhone={hireMeta?.phone ?? ""}
+      />
+    </>
   );
 }

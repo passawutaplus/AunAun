@@ -99,6 +99,17 @@ export const fadeUpTransition = (delay = 0): Transition => ({
   ease: smoothEase,
 });
 
+/** Route enter — short fade/slide; skip exit to keep navigations snappy on mobile. */
+export const pageEnterVariants: Variants = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+};
+
+export const pageEnterTransition: Transition = {
+  duration: 0.22,
+  ease: smoothEase,
+};
+
 /** Stagger delay capped so large grids stay snappy. */
 export function staggerDelay(index: number, opts?: { dense?: boolean }) {
   const max = opts?.dense ? 8 : 12;

@@ -28,6 +28,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import { ReferralAttribution } from "./components/referral/ReferralAttribution.tsx";
 import { ScrollToTop } from "./components/ScrollToTop.tsx";
 import LaunchMinimalGate from "./components/LaunchMinimalGate.tsx";
+import PageTransition from "./components/motion/PageTransition.tsx";
 
 // Code-split routes — only the home feed stays in the main chunk.
 const AuthPage = lazy(() => import("./pages/AuthPage.tsx"));
@@ -41,7 +42,9 @@ const NotificationsPage = lazy(() => import("./pages/NotificationsPage.tsx"));
 const ChatInboxPage = lazy(() => import("./pages/ChatInboxPage.tsx"));
 const CollectionsPage = lazy(() => import("./pages/CollectionsPage.tsx"));
 const CollectionDetailPage = lazy(() => import("./pages/CollectionDetailPage.tsx"));
-const SeriesListPage = lazy(() => import("./pages/SeriesListPage.tsx"));
+const SeriesListPage = lazy(() =>
+  import("./pages/SeriesListPage").then((m) => ({ default: m.default })),
+);
 const SeriesDetailPage = lazy(() => import("./pages/SeriesDetailPage.tsx"));
 const JobsPage = lazy(() => import("./pages/JobsPage.tsx"));
 const JobDetailPage = lazy(() => import("./pages/JobDetailPage.tsx"));
@@ -156,6 +159,7 @@ const App = () => (
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route element={<LaunchMinimalGate />}>
+              <Route element={<PageTransition />}>
               <Route path="/" element={<Index />} />
               <Route path="/research" element={<ResearchPage />} />
               <Route path="/research/feedback" element={<UxResearchFeedbackPage />} />
@@ -279,6 +283,7 @@ const App = () => (
               */}
               <Route path="/:vanityHandle" element={<VanityProfileRoute />} />
               <Route path="*" element={<NotFound />} />
+              </Route>
               </Route>
             </Routes>
           </Suspense>

@@ -8,22 +8,50 @@ interface Props {
   to?: string;
   className?: string;
   compact?: boolean;
+  /** Horizontal row for density=list. */
+  list?: boolean;
+  /** When set, card selects in-page instead of navigating. */
+  onSelect?: (series: ProjectSeries) => void;
 }
 
-export function SeriesCard({ series, to, className, compact = false }: Props) {
+export function SeriesCard({
+  series,
+  to,
+  className,
+  compact = false,
+  list = false,
+  onSelect,
+}: Props) {
   const href = to ?? `/series/${series.id}`;
   const covers = series.covers ?? [];
   const placeholders = Array.from({ length: 4 - covers.length });
   const count = series.published_count ?? series.item_count ?? 0;
+  const thumb = covers[0];
 
-  return (
-    <Link
-      to={href}
-      className={cn(
-        "group block rounded-xl overflow-hidden glass-panel hover:shadow-lg transition-all",
-        className,
-      )}
-    >
+  const body = list ? (
+    <>
+      <div className="h-14 w-20 shrink-0 overflow-hidden rounded-lg bg-muted relative">
+        {thumb ? (
+          <img src={thumb} alt="" className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-primary">
+            <FolderKanban className="w-5 h-5" strokeWidth={2.25} />
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1 py-0.5">
+        <h3 className="truncate text-sm font-medium text-foreground">{series.title}</h3>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          {count} ชิ้น
+          {series.client_label ? ` · ${series.client_label}` : ""}
+        </p>
+      </div>
+      {!series.is_public ? (
+        <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-label="ส่วนตัว" />
+      ) : null}
+    </>
+  ) : (
+    <>
       <div className="relative aspect-[4/3] bg-muted overflow-hidden">
         {covers.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center text-primary">
@@ -70,6 +98,26 @@ export function SeriesCard({ series, to, className, compact = false }: Props) {
           {series.client_label ? <span className="truncate">{series.client_label}</span> : null}
         </div>
       </div>
+    </>
+  );
+
+  const shellClass = cn(
+    "group block rounded-xl overflow-hidden glass-panel hover:shadow-lg transition-all text-left w-full",
+    list && "flex items-center gap-3 p-2",
+    className,
+  );
+
+  if (onSelect) {
+    return (
+      <button type="button" onClick={() => onSelect(series)} className={shellClass}>
+        {body}
+      </button>
+    );
+  }
+
+  return (
+    <Link to={href} className={shellClass}>
+      {body}
     </Link>
   );
 }

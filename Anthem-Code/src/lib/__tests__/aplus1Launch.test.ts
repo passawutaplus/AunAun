@@ -4,6 +4,7 @@ import {
   isAplus1FullProduct,
   isAplus1LaunchMinimal,
   isAplus1PaymentsEnabled,
+  isAplus1ChatOffersEnabled,
   isAplus1SubscriptionsEnabled,
   isLaunchCreatorSupportEnabled,
   isLaunchDesignDrillEnabled,
@@ -27,6 +28,7 @@ describe("aplus1Launch flags (fail-closed)", () => {
     expect(isAplus1FullProduct()).toBe(false);
     expect(isAplus1LaunchMinimal()).toBe(true);
     expect(isAplus1PaymentsEnabled()).toBe(false);
+    expect(isAplus1ChatOffersEnabled()).toBe(false);
     expect(isAplus1SubscriptionsEnabled()).toBe(false);
     expect(isLaunchCreatorSupportEnabled()).toBe(false);
     expect(isLaunchDesignDrillEnabled()).toBe(false);
@@ -50,6 +52,18 @@ describe("aplus1Launch flags (fail-closed)", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
     vi.stubEnv("VITE_APLUS1_PAYMENTS_ENABLED", "true");
     expect(isAplus1PaymentsEnabled()).toBe(true);
+  });
+
+  it("chat offers stay off until explicit flag even with full product", () => {
+    vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
+    vi.stubEnv("VITE_APLUS1_CHAT_OFFERS_ENABLED", "");
+    expect(isAplus1ChatOffersEnabled()).toBe(false);
+  });
+
+  it("enables chat offers only when full product and VITE_APLUS1_CHAT_OFFERS_ENABLED=true", () => {
+    vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
+    vi.stubEnv("VITE_APLUS1_CHAT_OFFERS_ENABLED", "true");
+    expect(isAplus1ChatOffersEnabled()).toBe(true);
   });
 
   it("enables subscriptions only when full product and VITE_APLUS1_SUBSCRIPTIONS_ENABLED=true", () => {

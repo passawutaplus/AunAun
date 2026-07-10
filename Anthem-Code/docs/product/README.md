@@ -18,6 +18,9 @@ Use this folder as the build-ready product layer that converts the research pack
 4. `aplus1-legal-compliance-mvp-spec.md`  
    Legal/compliance MVP — consent, moderation, PDPA workflows, Supabase schema, lawyer checklist.
 
+5. `fastwork-quotation-ux-reference.md` *(deferred — post launch-flow + money)*  
+   Fastwork-inspired in-chat quotation UX; gate `isAplus1ChatOffersEnabled()`.
+
 ## Source Research
 
 These product docs are derived from:

@@ -125,6 +125,18 @@ export function isAplus1PaymentsEnabled(): boolean {
   return import.meta.env.VITE_APLUS1_PAYMENTS_ENABLED === "true";
 }
 
+/**
+ * In-chat quotation / offer docs — after first product-flow round + money follow-up.
+ * Fail-closed: off in launch minimal; full product still needs explicit env.
+ */
+export function isAplus1ChatOffersEnabled(): boolean {
+  if (isAplus1LaunchMinimal()) return false;
+  return import.meta.env.VITE_APLUS1_CHAT_OFFERS_ENABLED === "true";
+}
+
+export const APLUS1_CHAT_OFFERS_COMING_SOON_TH =
+  "ใบเสนอราคาในแชทจะเปิดหลังรอบใช้งานแรก — ตอนนี้คุยรายละเอียดงานในแชทได้ตามปกติ";
+
 export function isLaunchCollabEnabled(): boolean {
   return true;
 }

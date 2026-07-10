@@ -48,6 +48,7 @@ export default defineConfig({
           if (id.includes("@supabase")) return "supabase";
           if (id.includes("@tanstack")) return "tanstack";
           if (id.includes("lucide-react")) return "lucide";
+          if (id.includes("framer-motion")) return "framer-motion";
         },
       },
     },

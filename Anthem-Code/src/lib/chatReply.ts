@@ -10,5 +10,6 @@ export function replyPreviewText(msg: ReplyPreviewSource): string {
   if (msg.message_type === "project") return msg.content?.trim() || "ผลงาน";
   if (msg.message_type === "profile") return "โปรไฟล์";
   if (msg.attachment_url || msg.message_type === "image") return "รูปภาพ";
+  if (msg.content?.startsWith("__APLUS1_OFFER__:")) return "ข้อเสนอราคา";
   return msg.content?.trim() || "ข้อความ";
 }

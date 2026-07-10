@@ -34,7 +34,7 @@ const NotificationBell = ({ variant = "header", active = false }: Props) => {
           type="button"
           onClick={handleClick}
           aria-label={label}
-          aria-current={active ? "page" : undefined}
+          aria-expanded={open}
           className={cn(
             "relative flex items-center justify-center rounded-full transition-colors min-h-11",
             active

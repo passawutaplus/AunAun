@@ -49,7 +49,8 @@ export SUPABASE_ACCESS_TOKEN=sbp_...   # Dashboard → Account → Access Tokens
 npm run seed:demo-full
 ```
 
-หรือขั้นตอนแยก: `npm run seed:demo` แล้ว `npm run seed:demo-chats`
+หรือขั้นตอนแยก: `npm run seed:demo` แล้ว `npm run seed:demo-chats`  
+(แชทคอลแลปม็อก: `[ทดสอบ] แชทคอลแลป — Motion + Illustration` / Lookbook / Wellness)
 
 ดูรายชื่อครบใน [demo-catalog.md](../Anthem-Code/docs/demo-catalog.md)
 
