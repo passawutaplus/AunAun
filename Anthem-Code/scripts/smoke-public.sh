@@ -45,6 +45,10 @@ check_robots_txt() {
       seo_fail=1
     fi
   done
+  if grep -qi 'Sitemap:.*pixel100\.com' "$body_file"; then
+    echo "FAIL /robots.txt Sitemap still points at pixel100.com"
+    seo_fail=1
+  fi
   if [[ "$seo_fail" -eq 0 ]]; then
     echo "OK   /robots.txt SEO content"
   else
