@@ -17,9 +17,14 @@ Checklist สำหรับ **aplus1.app** (Aplus1 community)
 
 ### หน้าที่อยู่ใน sitemap (index ได้)
 
-- `/`, `/jobs`, `/advertise`
-- `/legal/privacy`, `/legal/terms`, `/legal/cookies`, `/legal/rights`
-- Demo catalog: `/project/*`, `/u/*`, `/s/*`
+- `/`
+- `/legal/privacy`, `/legal/terms`, `/legal/cookies`, `/legal/rights`, `/legal/ip`
+- `/legal/community`, `/legal/copyright-report`
+- ผลงานเผยแพร่: `/project/*` (ดึงจาก DB ตอน `sitemap:gen` ถ้ามี credentials)
+- โปรไฟล์สาธารณะ: `/u/*` และ `/@username`
+- ชุดงานสาธารณะ: `/series/:id`
+
+Launch-minimal **ไม่** ใส่ `/jobs`, `/advertise`, `/community`, `/s/*` (ถูก gate)
 
 ### หน้าที่ **ไม่** index (robots + noindex)
 
