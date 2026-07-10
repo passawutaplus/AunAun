@@ -96,6 +96,14 @@ const SettingsPage = () => {
   const [debouncedUsername, setDebouncedUsername] = useState("");
   const [usernameConfirmOpen, setUsernameConfirmOpen] = useState(false);
   const [pendingSave, setPendingSave] = useState<SettingsFormInput | null>(null);
+  const usernameChangedAt = (profile as { username_changed_at?: string | null } | null)
+    ?.username_changed_at;
+  const usernameCooldownUntil = useMemo(() => {
+    if (!usernameChangedAt) return null;
+    const until = new Date(usernameChangedAt).getTime() + 14 * 24 * 60 * 60 * 1000;
+    return until > Date.now() ? new Date(until) : null;
+  }, [usernameChangedAt]);
+  const usernameOnCooldown = !!usernameCooldownUntil;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedUsername(normalizeUsername(form.username)), 400);
@@ -125,6 +133,7 @@ const SettingsPage = () => {
   const usernameInvalid = normalizedUsername.length > 0 && !/^[a-z0-9_.]+$/.test(normalizedUsername);
   const canSave = useMemo(() => {
     if (usernameUnchanged) return true;
+    if (usernameOnCooldown) return false;
     return !(
       usernameInvalid ||
       usernameReserved ||
@@ -134,6 +143,7 @@ const SettingsPage = () => {
     );
   }, [
     usernameUnchanged,
+    usernameOnCooldown,
     usernameInvalid,
     usernameReserved,
     usernameTaken,
@@ -270,10 +280,21 @@ const SettingsPage = () => {
             <p className="mt-0.5 text-xs text-muted-foreground">
               ใช้ในลิงก์โปรไฟล์และ @mention — ต้องไม่ซ้ำกับคนอื่น (a-z, 0-9, _ และ .)
             </p>
+            {usernameOnCooldown && usernameCooldownUntil ? (
+              <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                เปลี่ยนชื่อผู้ใช้ได้ทุก 14 วัน — ครั้งถัดไปได้หลัง{" "}
+                {usernameCooldownUntil.toLocaleDateString("th-TH", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </p>
+            ) : null}
             <div
               className={cn(
                 "mt-1 flex items-center rounded-xl bg-secondary border border-border focus-within:ring-2 focus-within:ring-primary/40",
                 (usernameTaken || usernameReserved || usernameInvalid) && "border-destructive focus-within:ring-destructive/40",
+                usernameOnCooldown && "opacity-80",
               )}
             >
               <span className="pl-3 text-muted-foreground text-sm">@</span>
@@ -282,10 +303,11 @@ const SettingsPage = () => {
                 type="text"
                 value={form.username}
                 onChange={(e) => update("username", e.target.value.toLowerCase())}
+                disabled={usernameOnCooldown}
                 autoCapitalize="off"
                 autoCorrect="off"
                 spellCheck={false}
-                className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed"
               />
             </div>
             {normalizedUsername.length >= 2 && !usernameUnchanged && (

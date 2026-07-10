@@ -7,30 +7,36 @@ import type { DesignerCardData } from "@/data/designerTypes";
 
 export type { DesignerCardData };
 
+const DESIGNERS_PAGE = 60;
+const PROJECTS_PER_DESIGNER = 6;
+
 export const useDesigners = () =>
   useQuery({
-    queryKey: ["designers-feed", "v4"],
+    queryKey: ["designers-feed", "v5"],
     queryFn: async (): Promise<DesignerCardData[]> => {
       const { data: profiles, error } = await profilesPublicFrom()
         .select(PROFILE_DESIGNER_SELECT)
         .order("updated_at", { ascending: false })
-        .limit(60);
+        .limit(DESIGNERS_PAGE);
       if (error) throw error;
       const list = profiles ?? [];
       const ids = list.map((p) => (p as { user_id?: string; id?: string }).user_id ?? p.id);
       if (!ids.length) return [];
 
+      // Hard cap so one prolific owner cannot pull unbounded rows for this feed.
+      const projectCap = Math.min(ids.length * PROJECTS_PER_DESIGNER, DESIGNERS_PAGE * PROJECTS_PER_DESIGNER);
       const { data: projects } = await supabase
         .from("projects")
         .select(PROJECT_FEED_SELECT)
         .in("owner_id", ids)
         .eq("status", "Published")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(projectCap);
 
       const grouped = new Map<string, Tables<"projects">[]>();
       (projects ?? []).forEach((p) => {
         const arr = grouped.get(p.owner_id) ?? [];
-        if (arr.length < 6) arr.push(p as Tables<"projects">);
+        if (arr.length < PROJECTS_PER_DESIGNER) arr.push(p as Tables<"projects">);
         grouped.set(p.owner_id, arr);
       });
 

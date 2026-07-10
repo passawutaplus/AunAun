@@ -70,7 +70,11 @@ export const useUpdateProfile = (userId: string | undefined) => {
         if (error.code === "23505" && payload.username) {
           throw new Error("ชื่อผู้ใช้นี้ถูกใช้แล้ว — ลองชื่ออื่น");
         }
-        throw new Error(error.message || "บันทึกไม่สำเร็จ");
+        const msg = error.message || "";
+        if (msg.includes("USERNAME_COOLDOWN")) {
+          throw new Error("เปลี่ยนชื่อผู้ใช้ได้ทุก 14 วัน — ลองใหม่เมื่อครบกำหนด");
+        }
+        throw new Error(msg || "บันทึกไม่สำเร็จ");
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["profile", userId] }),

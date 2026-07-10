@@ -52,6 +52,14 @@ jobs:
           VITE_SUPABASE_URL: https://example.supabase.co
           VITE_SUPABASE_PUBLISHABLE_KEY: ci_publishable_key
 
+      - name: service_role bundle guard
+        run: |
+          if grep -r 'service_role' dist/; then
+            echo "FAIL: service_role found in client bundle"
+            exit 1
+          fi
+          echo "OK: no service_role in dist/"
+
       - name: npm audit (high+)
         run: npm audit --audit-level=high
         continue-on-error: true
