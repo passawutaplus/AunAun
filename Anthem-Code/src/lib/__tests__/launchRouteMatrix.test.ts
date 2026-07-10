@@ -22,6 +22,8 @@ const APP_ROUTE_SAMPLES: { path: string; launchEnabled: boolean }[] = [
   { path: "/notifications", launchEnabled: true },
   { path: "/collections", launchEnabled: true },
   { path: "/collections/:id", launchEnabled: true },
+  { path: "/series", launchEnabled: true },
+  { path: "/series/:id", launchEnabled: true },
   { path: "/me/reports", launchEnabled: true },
   { path: "/me/feedback", launchEnabled: true },
   { path: "/legal/privacy", launchEnabled: true },

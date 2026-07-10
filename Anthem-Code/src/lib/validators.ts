@@ -196,6 +196,7 @@ export const profileSchema = z.object({
   preferredEmploymentTypes: z.array(z.string().trim().min(1).max(20)).max(10).default([]),
   opportunityStatus: z.enum(["open_to_opportunities", "soft_open", "not_available"]).default("open_to_opportunities"),
   opportunityTypes: z.array(z.string().trim().min(1).max(40)).max(10).default([]),
+  opportunityNote: z.string().trim().max(120).optional().default(""),
   skills: z.array(z.string().trim().min(1).max(40)).max(30).default([]),
   experience: z.array(experienceItemSchema).max(20).default([]),
 });

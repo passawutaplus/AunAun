@@ -113,6 +113,17 @@ export function dismissOnboarding(userId: string) {
   write(userId, { ...state, dismissedAt: new Date().toISOString() });
 }
 
+/** Clear early dismiss so the tour/checklist shows again. */
+export function restoreOnboarding(userId: string) {
+  const state = read(userId);
+  if (!state.dismissedAt) return;
+  const { dismissedAt: _removed, ...rest } = state;
+  write(userId, rest);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(UPDATE_EVENT, { detail: { userId } }));
+  }
+}
+
 export function isOnboardingCelebrated(userId: string): boolean {
   return !!read(userId).completedCelebrated;
 }

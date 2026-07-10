@@ -1,20 +1,22 @@
 /** Opportunity availability + type labels for Aplus1 product loop. */
 
+export const OPPORTUNITY_NOTE_MAX = 120;
+
 export const OPPORTUNITY_AVAILABILITY = {
   open_to_opportunities: {
-    title: "เปิดรับโอกาสใหม่",
-    description: "พร้อมให้คนทักเรื่องงาน โปรเจกต์ หรือโอกาสที่น่าสนใจ",
-    chipLabel: "เปิดรับโอกาสใหม่",
+    title: "เปิดรับการทัก",
+    description: "คนอื่นทักเรื่องโอกาสที่คุณเลือกได้",
+    chipLabel: "เปิดรับโอกาส",
     recommended: true,
   },
   soft_open: {
-    title: "ยังไม่รับงานจ้าง แต่คุยโอกาสได้",
-    description: "ยังไม่พร้อมรับงานจริงจัง แต่เปิดรับไอเดีย ความร่วมมือ หรือ connection ดี ๆ",
+    title: "คุยเบา ๆ ได้",
+    description: "ยังไม่พร้อมรับงานจริงจัง แต่เปิดรับไอเดียหรือ connection",
     chipLabel: "คุยโอกาสได้",
     recommended: false,
   },
   not_available: {
-    title: "พักการติดต่อชั่วคราว",
+    title: "พักการติดต่อ",
     description: "ซ่อนปุ่มติดต่อจากโปรไฟล์ชั่วคราว",
     chipLabel: "พักการติดต่อ",
     recommended: false,
@@ -32,15 +34,15 @@ export const OPPORTUNITY_STATUS = Object.fromEntries(
   OPPORTUNITY_STATUS_KEYS.map((k) => [k, OPPORTUNITY_AVAILABILITY[k].chipLabel]),
 ) as Record<OpportunityStatusKey, string>;
 
+/** Status chips — framed as “what I’m looking for right now”. */
 export const OPPORTUNITY_TYPES = {
-  paid_work: "รับงานจ้าง",
-  collaboration: "ร่วมโปรเจกต์",
-  internship: "ฝึกงาน / Internship",
-  join_team: "เข้าทีม / Full-time",
-  feedback_mentor: "Feedback / Mentor",
-  network_collab: "Collaboration",
-  brand_exposure: "Brand / Exposure",
-  connection: "Connection",
+  paid_work: "หางานจ้าง",
+  join_team: "มองหางาน Full-time",
+  internship: "มองหาฝึกงาน",
+  collaboration: "หาคอลแลป",
+  network_collab: "ร่วมโปรเจกต์",
+  connection: "หาคอนเนกชัน",
+  feedback_mentor: "อยากได้ Feedback",
 } as const;
 
 export type OpportunityTypeKey = keyof typeof OPPORTUNITY_TYPES;
@@ -49,6 +51,7 @@ export const OPPORTUNITY_TYPE_KEYS = Object.keys(OPPORTUNITY_TYPES) as Opportuni
 
 const LEGACY_TYPE_ALIASES: Record<string, OpportunityTypeKey | null> = {
   soft_open: null,
+  brand_exposure: null,
 };
 
 export function normalizeOpportunityProfile(
@@ -93,6 +96,10 @@ export function needsOpportunityTypeHint(
   types: OpportunityTypeKey[],
 ): boolean {
   return status === "open_to_opportunities" && types.length === 0;
+}
+
+export function normalizeOpportunityNote(raw: string | null | undefined): string {
+  return (raw ?? "").trim().slice(0, OPPORTUNITY_NOTE_MAX);
 }
 
 export function countProjectContextFields(input: {

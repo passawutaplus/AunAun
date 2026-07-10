@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Layers3,
+  Library,
   MessageCircle,
   Settings,
   LogOut,
@@ -46,8 +47,11 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
         <button onClick={() => navigate("/portfolio/manage")} className={item}>
           <FolderKanban className="w-4 h-4 text-primary" /> แดชบอร์ด &amp; จัดการ
         </button>
+        <button onClick={() => navigate("/series")} className={item}>
+          <Library className="w-4 h-4 text-primary" /> ชุดผลงานของฉัน
+        </button>
         <button type="button" onClick={() => setOpportunityDialogOpen(true)} className={item}>
-          <Handshake className="w-4 h-4 text-primary" /> เปิดรับอะไรอยู่?
+          <Handshake className="w-4 h-4 text-primary" /> กำลังมองหาอะไร?
         </button>
         <button onClick={() => navigate("/collections")} className={item}>
           <Layers3 className="w-4 h-4 text-primary" /> คอลเลกชันของฉัน

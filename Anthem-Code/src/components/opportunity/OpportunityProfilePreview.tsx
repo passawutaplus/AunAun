@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import {
   OPPORTUNITY_AVAILABILITY,
   labelOpportunityType,
+  normalizeOpportunityNote,
   type OpportunityStatusKey,
   type OpportunityTypeKey,
 } from "@/lib/opportunity";
@@ -10,12 +11,14 @@ import {
 type Props = {
   status: OpportunityStatusKey;
   types: OpportunityTypeKey[];
+  note?: string;
   className?: string;
 };
 
-const OpportunityProfilePreview = ({ status, types, className }: Props) => {
+const OpportunityProfilePreview = ({ status, types, note, className }: Props) => {
   const availability = OPPORTUNITY_AVAILABILITY[status];
   const showAvailability = status !== "open_to_opportunities" || types.length === 0;
+  const trimmedNote = normalizeOpportunityNote(note);
 
   return (
     <div
@@ -49,10 +52,13 @@ const OpportunityProfilePreview = ({ status, types, className }: Props) => {
           </Badge>
         ))}
       </div>
+      {trimmedNote && status !== "not_available" && (
+        <p className="text-sm text-foreground leading-snug">“{trimmedNote}”</p>
+      )}
       <p className="text-[11px] text-muted-foreground leading-relaxed">
         {status === "not_available"
           ? "ปุ่มติดต่อจากผลงานจะถูกซ่อนชั่วคราว"
-          : "ชิปเหล่านี้จะแสดงใต้ชื่อบนโปรไฟล์สาธารณะของคุณ"}
+          : "สเตตัสนี้จะแสดงใต้ชื่อบนโปรไฟล์สาธารณะของคุณ"}
       </p>
     </div>
   );

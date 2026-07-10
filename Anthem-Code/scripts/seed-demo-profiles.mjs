@@ -107,8 +107,8 @@ function opportunityFor(i) {
   }
   const cat = projCats[i];
   let types = ["paid_work", "collaboration"];
-  if (cat === "Content") types = ["brand_exposure", "connection"];
-  if (cat === "Photography") types = ["paid_work", "brand_exposure"];
+  if (cat === "Content") types = ["connection", "feedback_mentor"];
+  if (cat === "Photography") types = ["paid_work", "connection"];
   if (cat === "Music/Audio" || cat === "Video") types = ["paid_work", "collaboration"];
   if (i === 5) types = ["paid_work", "join_team", "feedback_mentor"];
   return {

@@ -34,6 +34,7 @@ type Props = {
   onFollowingClick?: () => void;
   opportunityStatus?: string | null;
   opportunityTypes?: string[] | null;
+  opportunityNote?: string | null;
   onOpportunityEdit?: () => void;
 };
 
@@ -53,6 +54,7 @@ export default function ProfileCoverHeader({
   onFollowingClick,
   opportunityStatus,
   opportunityTypes,
+  opportunityNote,
   onOpportunityEdit,
 }: Props) {
   const { tier } = useSubscription();
@@ -185,11 +187,12 @@ export default function ProfileCoverHeader({
                   type="button"
                   onClick={onOpportunityEdit}
                   className="mt-2.5 text-left rounded-xl -mx-1 px-1 py-1 hover:bg-accent/60 transition-colors"
-                  title="แตะเพื่อปรับว่าตอนนี้เปิดรับอะไรอยู่"
+                  title="แตะเพื่อปรับว่าช่วงนี้กำลังมองหาอะไร"
                 >
                   <OpportunityTypeChips
                     status={opportunityStatus}
                     types={opportunityTypes}
+                    note={opportunityNote}
                     size="md"
                   />
                 </button>
@@ -198,6 +201,7 @@ export default function ProfileCoverHeader({
                   className="mt-2.5"
                   status={opportunityStatus}
                   types={opportunityTypes}
+                  note={opportunityNote}
                   size="md"
                 />
               )}

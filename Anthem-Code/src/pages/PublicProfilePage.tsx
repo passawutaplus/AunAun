@@ -20,8 +20,10 @@ import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { useFollowState } from "@/hooks/useFollow";
 import { useAuth } from "@/hooks/useAuth";
 import { usePublicCollections } from "@/hooks/useCollections";
+import { useMyProjectSeries, usePublicProjectSeries } from "@/hooks/useProjectSeries";
 import PortfolioGrid from "@/components/profile/PortfolioGrid";
 import CollectionCard from "@/components/collections/CollectionCard";
+import { SeriesCard } from "@/components/series/SeriesCard";
 import { ProfileAboutReadOnly } from "@/components/profile/ProfileAboutReadOnly";
 import type { ExperienceItem } from "@/lib/validators";
 import { safeHttpUrl } from "@/lib/safeUrl";
@@ -81,8 +83,17 @@ const PublicProfilePage = () => {
   });
 
   const resolvedUserId = profile?.user_id;
+  const isSelf = !!user?.id && !!resolvedUserId && user.id === resolvedUserId;
+  const visitorPreview = isSelf && params.get("preview") === "1";
+  const showAsVisitor = !isSelf || visitorPreview;
+
   const { followers, following } = useFollowState(resolvedUserId);
   const { data: collections = [] } = usePublicCollections(resolvedUserId);
+  const { data: publicSeries = [] } = usePublicProjectSeries(resolvedUserId);
+  const { data: ownerSeries = [] } = useMyProjectSeries(
+    isSelf && !visitorPreview ? resolvedUserId : undefined,
+  );
+  const seriesList = isSelf && !visitorPreview ? ownerSeries : publicSeries;
 
   const { data: projects = [] } = useQuery({
     queryKey: ["public-projects", resolvedUserId],
@@ -126,10 +137,6 @@ const PublicProfilePage = () => {
       ),
     [orderedProjects],
   );
-
-  const isSelf = !!user?.id && !!resolvedUserId && user.id === resolvedUserId;
-  const visitorPreview = isSelf && params.get("preview") === "1";
-  const showAsVisitor = !isSelf || visitorPreview;
 
   const previewToast = useCallback(() => {
     toast.message(PREVIEW_TOAST);
@@ -347,6 +354,7 @@ const PublicProfilePage = () => {
                 className="mt-2"
                 status={(profile as { opportunity_status?: string }).opportunity_status}
                 types={(profile as { opportunity_types?: string[] }).opportunity_types}
+                note={(profile as { opportunity_note?: string | null }).opportunity_note}
               />
               {(profile as { open_for_work?: boolean; open_for_work_badge?: string }).open_for_work && (
                 <Badge className="mt-2 ml-1 rounded-full bg-primary/15 text-primary border-0 text-xs font-normal">
@@ -510,6 +518,15 @@ const PublicProfilePage = () => {
           tabs={[
             { value: "works", label: `ผลงาน (${portfolioProjects.length})` },
             {
+              value: "series",
+              label: (
+                <>
+                  <span className="sm:hidden">ชุด ({seriesList.length})</span>
+                  <span className="hidden sm:inline">ชุดงาน ({seriesList.length})</span>
+                </>
+              ),
+            },
+            {
               value: "collections",
               label: (
                 <>
@@ -526,6 +543,28 @@ const PublicProfilePage = () => {
               <div className="text-center py-16 text-muted-foreground glass-panel rounded-2xl">ยังไม่มีผลงานที่เผยแพร่</div>
             ) : (
               <PortfolioGrid projects={portfolioProjects as any} />
+            ))}
+
+          {activeTab === "series" &&
+            (seriesList.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground glass-panel rounded-2xl space-y-3">
+                <p>ยังไม่มีชุดผลงานสาธารณะ</p>
+                {isSelf && !visitorPreview && (
+                  <Button
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => navigate("/series")}
+                  >
+                    สร้างชุดผลงาน
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
+                {seriesList.map((s) => (
+                  <SeriesCard key={s.id} series={s} compact />
+                ))}
+              </div>
             ))}
 
           {activeTab === "collections" &&

@@ -130,7 +130,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
           <Handshake className="w-3.5 h-3.5 shrink-0" />
           <span className="truncate">สนใจคอลแลป</span>
         </button>
-        <div className="flex items-center justify-center gap-1.5 min-w-0">
+        <div className="flex items-center justify-end gap-1.5 min-w-0">
           <FollowButton freelancerId={profileUserId} iconOnly tone="muted" />
           <motion.div whileTap={{ scale: 0.92 }}>
             <PlusOneControl

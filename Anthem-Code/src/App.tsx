@@ -41,6 +41,8 @@ const NotificationsPage = lazy(() => import("./pages/NotificationsPage.tsx"));
 const ChatInboxPage = lazy(() => import("./pages/ChatInboxPage.tsx"));
 const CollectionsPage = lazy(() => import("./pages/CollectionsPage.tsx"));
 const CollectionDetailPage = lazy(() => import("./pages/CollectionDetailPage.tsx"));
+const SeriesListPage = lazy(() => import("./pages/SeriesListPage.tsx"));
+const SeriesDetailPage = lazy(() => import("./pages/SeriesDetailPage.tsx"));
 const JobsPage = lazy(() => import("./pages/JobsPage.tsx"));
 const JobDetailPage = lazy(() => import("./pages/JobDetailPage.tsx"));
 const StudioProfilePage = lazy(() => import("./pages/StudioProfilePage.tsx"));
@@ -188,6 +190,8 @@ const App = () => (
               <Route path="/community/:id" element={<CommunityPostDetailPage />} />
               <Route path="/collections" element={<RequireAuth><CollectionsPage /></RequireAuth>} />
               <Route path="/collections/:id" element={<RequireAuth><CollectionDetailPage /></RequireAuth>} />
+              <Route path="/series" element={<RequireAuth><SeriesListPage /></RequireAuth>} />
+              <Route path="/series/:id" element={<SeriesDetailPage />} />
               <Route path="/me/reports" element={<RequireAuth><MyReportsPage /></RequireAuth>} />
               <Route path="/me/feedback" element={<RequireAuth><MyFeedbackPage /></RequireAuth>} />
               <Route path="/reports" element={<RedirectTo to="/me/reports" />} />

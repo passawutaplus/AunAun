@@ -1,5 +1,5 @@
 import type { PointerEvent, ReactNode } from "react";
-import { User, LogOut, Settings, Layers3, Coins, FolderKanban } from "lucide-react";
+import { User, LogOut, Settings, Layers3, Coins, FolderKanban, Library } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeModePicker } from "@/components/settings/ThemeModePicker";
 import { FeedGridDensityPicker } from "@/components/feed/FeedGridDensityPicker";
-import { AreaFeedLayoutPicker } from "@/components/community/AreaFeedLayoutPicker";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +44,9 @@ export function ProfileMenuContent({ onNavigate }: ProfileMenuContentProps) {
       <DropdownMenuItem onClick={() => go("/portfolio/manage")} className="rounded-lg">
         <FolderKanban className="w-4 h-4 mr-2" /> แดชบอร์ด &amp; จัดการ
       </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => go("/series")} className="rounded-lg">
+        <Library className="w-4 h-4 mr-2" /> ชุดผลงานของฉัน
+      </DropdownMenuItem>
       {!isAplus1LaunchMinimal() ? (
         <>
           <DropdownMenuItem onClick={() => go("/collections")} className="rounded-lg">
@@ -59,7 +61,6 @@ export function ProfileMenuContent({ onNavigate }: ProfileMenuContentProps) {
       <div className="px-2 py-1.5 space-y-1" onPointerDown={preventClose}>
         <ThemeModePicker label="Theme" />
         <FeedGridDensityPicker label="ฟีดผลงาน" />
-        {!isAplus1LaunchMinimal() ? <AreaFeedLayoutPicker /> : null}
       </div>
       <DropdownMenuSeparator />
       <DropdownMenuItem onClick={() => go("/settings")} className="rounded-lg">

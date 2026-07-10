@@ -149,6 +149,8 @@ describe("launch route allowlist", () => {
     "/notifications",
     "/collections",
     "/collections/col-id",
+    "/series",
+    "/series/ser-id",
     "/legal/privacy",
     "/admin",
     "/admin/users",

@@ -10,6 +10,7 @@ import {
   markOnboardingCelebrated,
   ONBOARDING_VISIT_IDS,
   parseOnboardingVisits,
+  restoreOnboarding,
   subscribeOnboardingUpdates,
 } from "@/lib/onboardingStorage";
 import {
@@ -18,6 +19,7 @@ import {
   type OnboardingSignals,
   type OnboardingTaskId,
 } from "@/lib/onboardingTasks";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 
 export type OnboardingTaskItem = {
   id: OnboardingTaskId;
@@ -36,7 +38,13 @@ export function useOnboardingChecklist(userId: string | undefined) {
 
   useEffect(() => {
     if (!userId) return;
-    setDismissed(isOnboardingDismissed(userId));
+    if (isAplus1LaunchMinimal()) {
+      // Tour cannot stay dismissed early — restore so it shows until complete.
+      if (isOnboardingDismissed(userId)) restoreOnboarding(userId);
+      setDismissed(false);
+    } else {
+      setDismissed(isOnboardingDismissed(userId));
+    }
     setCelebrated(isOnboardingCelebrated(userId));
   }, [userId]);
 
@@ -173,9 +181,13 @@ export function useOnboardingChecklist(userId: string | undefined) {
   const allMissionsClaimed =
     total > 0 && getVisibleOnboardingTasks().every((t) => claimedMissionIds.has(t.id));
   const signals = data;
+  const tourMode = isAplus1LaunchMinimal();
+  const checklistComplete = tourMode ? allDone : allMissionsClaimed;
 
   const dismiss = () => {
     if (!userId) return;
+    // Checklist can only be dismissed after completion.
+    if (!checklistComplete) return;
     dismissOnboarding(userId);
     setDismissed(true);
   };

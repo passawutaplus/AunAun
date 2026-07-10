@@ -7,6 +7,7 @@ export const RESERVED_PUBLIC_HANDLES = new Set([
   "auth",
   "chat",
   "collections",
+  "series",
   "community",
   "contracts",
   "cookies",

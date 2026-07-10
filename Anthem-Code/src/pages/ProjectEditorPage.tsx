@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Eye, Handshake, ImagePlus, Loader2, Save, Upload, X } from "lucide-react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Eye, Handshake, ImagePlus, Library, Loader2, Save, Upload, X } from "lucide-react";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEnsureSensitiveAction } from "@/components/legal/SensitiveActionReauthProvider";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useCreateProject, useProject, useUpdateProject } from "@/hooks/useProjects";
+import {
+  assignProjectToSeries,
+  useMyProjectSeries,
+  useSeriesForProject,
+} from "@/hooks/useProjectSeries";
+import { useQueryClient } from "@tanstack/react-query";
 import { isUuid } from "@/lib/uuid";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { uploadProjectVideo } from "@/lib/uploadVideo";
@@ -119,6 +125,12 @@ const ProjectEditorPage = () => {
   } = useProject(editing ? id : undefined);
   const create = useCreateProject();
   const update = useUpdateProject();
+  const { data: mySeries = [] } = useMyProjectSeries(user?.id);
+  const { data: projectSeriesLink, isFetched: seriesLinkFetched } = useSeriesForProject(
+    editing && id && isUuid(id) ? id : undefined,
+  );
+  const seriesHydratedRef = useRef(false);
+  const queryClient = useQueryClient();
 
   const [title, setTitle] = useState("");
   const [shortDescription, setShortDescription] = useState("");
@@ -133,6 +145,7 @@ const ProjectEditorPage = () => {
   const [price, setPrice] = useState<string>("");
   const [showPrice, setShowPrice] = useState(false);
   const [status, setStatus] = useState<Status>("Draft");
+  const [seriesId, setSeriesId] = useState<string>("");
   const [allowHire, setAllowHire] = useState(true);
   const [allowCollab, setAllowCollab] = useState(true);
   const [studioId, setStudioId] = useState<string | null>(null);
@@ -189,6 +202,18 @@ const ProjectEditorPage = () => {
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?redirect=/portfolio/new");
   }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (editing) return;
+    const prefillSeries = params.get("series")?.trim();
+    if (prefillSeries && isUuid(prefillSeries)) setSeriesId(prefillSeries);
+  }, [editing, params]);
+
+  useEffect(() => {
+    if (!editing || !seriesLinkFetched || seriesHydratedRef.current) return;
+    seriesHydratedRef.current = true;
+    setSeriesId(projectSeriesLink?.series?.id ?? "");
+  }, [editing, seriesLinkFetched, projectSeriesLink?.series?.id]);
 
   useEffect(() => {
     if (editing || existing) return;
@@ -458,13 +483,22 @@ const ProjectEditorPage = () => {
           setCollabPending(await fetchTaggedUserSummaries(pendingIds));
           setCollabSelected([]);
         }
+
+        await assignProjectToSeries({
+          projectId,
+          seriesId: seriesId.trim() || null,
+        });
+        void queryClient.invalidateQueries({ queryKey: ["project-series"] });
+        void queryClient.invalidateQueries({ queryKey: ["project-series-public"] });
+        void queryClient.invalidateQueries({ queryKey: ["project-series-items"] });
+        void queryClient.invalidateQueries({ queryKey: ["project-series-for-project", projectId] });
       } catch (e) {
         if (!isMissingProjectLinkColumnError(e)) {
           toast.error(e instanceof Error ? e.message : "ลิงก์โพสต์/เชิญร่วมงานไม่สำเร็จ");
         }
       }
     },
-    [user, linkedOwnPosts, collabSelected, collabPending, collabAccepted, title],
+    [user, linkedOwnPosts, collabSelected, collabPending, collabAccepted, title, seriesId, queryClient],
   );
 
   const draftStatusForSave = useCallback((): Status => {
@@ -1213,6 +1247,49 @@ const ProjectEditorPage = () => {
                   {cats.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase">ชุดงาน</Label>
+                <Link
+                  to="/series"
+                  className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                >
+                  <Library className="h-3 w-3" />
+                  จัดการชุด
+                </Link>
+              </div>
+              <Select
+                value={seriesId || "__none__"}
+                onValueChange={(v) => setSeriesId(v === "__none__" ? "" : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="ไม่ใส่ในชุด" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">ไม่ใส่ในชุด</SelectItem>
+                  {mySeries.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.title}
+                      {s.is_public ? "" : " (ส่วนตัว)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {mySeries.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  ยังไม่มีชุดงาน —{" "}
+                  <Link to="/series" className="text-primary hover:underline">
+                    สร้างชุดว่างได้ก่อน
+                  </Link>{" "}
+                  แล้วค่อยเลือกที่นี่
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  ผลงานหนึ่งชิ้นอยู่ในชุดได้ทีละชุด
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

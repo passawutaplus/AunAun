@@ -1,7 +1,7 @@
 import BriefcaseIcon from "../components/icons/BriefcaseIcon";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Plus, LayoutGrid, Globe, Eye, Settings, ExternalLink, MessageSquare } from "lucide-react";
+import { Plus, LayoutGrid, Globe, Eye, Settings, ExternalLink, MessageSquare, Library } from "lucide-react";
 import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import type { LucideIcon } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
@@ -15,6 +15,7 @@ import { DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory } from "@/data/proje
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useDeleteProject, useMyProjects, type DBProject } from "@/hooks/useProjects";
+import { useMyProjectSeries } from "@/hooks/useProjectSeries";
 import { usePortfolioOrder } from "@/hooks/usePortfolioOrder";
 import { useDeleteCommunityPost, useMyCommunityPostsManage } from "@/hooks/useCommunityPosts";
 import SeoHead from "@/components/SeoHead";
@@ -53,6 +54,7 @@ const PortfolioManagePage = () => {
   const { user, loading: authLoading } = useAuth();
   const communityManageEnabled = !isAplus1LaunchMinimal();
   const { data: dbProjects = [] } = useMyProjects(user?.id);
+  const { data: seriesList = [] } = useMyProjectSeries(user?.id);
   const { data: myPosts = [] } = useMyCommunityPostsManage(
     communityManageEnabled ? user?.id : undefined,
   );
@@ -236,7 +238,7 @@ const PortfolioManagePage = () => {
           <p className="text-sm text-muted-foreground mt-1">
             {manageTab === "posts"
               ? "จัดการโพสต์ชุมชน — แก้ไข แบบร่าง และลบโพสต์ของคุณ"
-              : "ดูการเติบโต จัดลำดับผลงาน และแก้ไขเนื้อหา — คำขอจ้างงานและ Collab อยู่ที่หน้าโปรไฟล์"}
+              : "ดูการเติบโต จัดลำดับผลงาน จัดชุดผลงาน และแก้ไขเนื้อหา — คำขอจ้างงานและ Collab อยู่ที่หน้าโปรไฟล์"}
           </p>
           {communityManageEnabled && (
             <div className="flex gap-2 mt-4 overflow-x-auto pb-1 scrollbar-hide">
@@ -265,12 +267,23 @@ const PortfolioManagePage = () => {
             </div>
           )}
           {manageTab === "projects" ? (
-            <Button
-              className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-11 px-6"
-              onClick={() => navigate("/portfolio/new")}
-            >
-              <Plus className="w-4 h-4 mr-2" /> เพิ่มผลงาน
-            </Button>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-11 px-6"
+                onClick={() => navigate("/portfolio/new")}
+              >
+                <Plus className="w-4 h-4 mr-2" /> เพิ่มผลงาน
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-xl h-11 px-5 border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+                onClick={() => navigate("/series")}
+              >
+                <Library className="w-4 h-4 mr-2" />
+                ชุดผลงาน
+                {seriesList.length > 0 ? ` (${seriesList.length})` : ""}
+              </Button>
+            </div>
           ) : (
             <Button
               className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-11 px-6"
@@ -288,11 +301,12 @@ const PortfolioManagePage = () => {
           <>
         {user ? <PortfolioOverviewChart ownerId={user.id} projectIds={projectIds} /> : null}
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <StatsCard label="ทั้งหมด" value={myProjects.length} icon={LayoutGrid} />
           <StatsCard label="เผยแพร่" value={publishedCount} icon={Globe} accent />
+          <StatsCard label="ชุดผลงาน" value={seriesList.length} icon={Library} />
           <StatsCard label="ยอดเข้าชม" value={totalViews} icon={Eye} />
-          <StatsCard label="+1" value={totalLikes} icon={PlusOneStatsIcon} accent />
+          <StatsCard label="ถูกใจ" value={totalLikes} icon={PlusOneStatsIcon} accent />
         </div>
 
         <div className="space-y-3">
@@ -375,7 +389,7 @@ const PortfolioManagePage = () => {
               <StatsCard label="ทั้งหมด" value={myPosts.length} icon={MessageSquare} />
               <StatsCard label="เผยแพร่" value={publishedPostCount} icon={Globe} accent />
               <StatsCard label="ยอดเข้าชม" value={totalPostViews} icon={Eye} />
-              <StatsCard label="+1" value={totalPostLikes} icon={PlusOneStatsIcon} accent />
+              <StatsCard label="ถูกใจ" value={totalPostLikes} icon={PlusOneStatsIcon} accent />
             </div>
 
             <div className="space-y-3">

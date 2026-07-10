@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Settings, Sparkles, UserPlus, FileCheck, Plus, Layers3, Target, UserRound, Pencil } from "lucide-react";
+import { Settings, Sparkles, UserPlus, FileCheck, Plus, Layers3, Target, UserRound, Pencil, Library } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,8 +10,10 @@ import { useProfile } from "@/hooks/useProfile";
 import { useMyProjects } from "@/hooks/useProjects";
 import { useFollowState } from "@/hooks/useFollow";
 import { useCollections } from "@/hooks/useCollections";
+import { useMyProjectSeries } from "@/hooks/useProjectSeries";
 import { useInspireBoards } from "@/hooks/useInspire";
 import CollectionCard from "@/components/collections/CollectionCard";
+import { SeriesCard } from "@/components/series/SeriesCard";
 import type { ExperienceItem } from "@/lib/validators";
 import { ProfileAboutReadOnly } from "@/components/profile/ProfileAboutReadOnly";
 import PageLoader from "@/components/ui/PageLoader";
@@ -50,6 +52,7 @@ const PortfolioProfilePage = () => {
   const { data: myProjects = [] } = useMyProjects(user?.id);
   const { followers, following } = useFollowState(user?.id);
   const { data: collections = [] } = useCollections(user?.id);
+  const { data: seriesList = [] } = useMyProjectSeries(user?.id);
   const { data: inspireBoards = [] } = useInspireBoards(user?.id);
 
   const [opportunityOpen, setOpportunityOpen] = useState(false);
@@ -126,6 +129,7 @@ const PortfolioProfilePage = () => {
           stats={{ works: published.length, followers, following }}
           opportunityStatus={(profile as { opportunity_status?: string }).opportunity_status}
           opportunityTypes={(profile as { opportunity_types?: string[] }).opportunity_types}
+          opportunityNote={(profile as { opportunity_note?: string | null }).opportunity_note}
           onOpportunityEdit={() => setOpportunityOpen(true)}
           onPost={() => navigate("/portfolio/new")}
           onPreview={() =>
@@ -197,6 +201,36 @@ const PortfolioProfilePage = () => {
           <ProfileHiringRequestsSection />
 
           <CollabRequestsSection />
+
+          {/* ชุดผลงาน */}
+          <Section
+            icon={Library}
+            title="ชุดผลงานของฉัน"
+            count={seriesList.length}
+            action={
+              <Button
+                size="sm"
+                onClick={() => navigate("/series")}
+                className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-8"
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" /> จัดการ
+              </Button>
+            }
+          >
+            {seriesList.length ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                {seriesList.slice(0, 6).map((s) => (
+                  <SeriesCard key={s.id} series={s} />
+                ))}
+              </div>
+            ) : (
+              <EmptyHint
+                text="รวมหลายชิ้นของลูกค้า/โปรเจกต์เดียวกัน — สร้างโฟลเดอร์ว่างก่อนก็ได้"
+                cta="สร้างชุดผลงาน"
+                onClick={() => navigate("/series")}
+              />
+            )}
+          </Section>
 
           {/* My Collections */}
           <Section

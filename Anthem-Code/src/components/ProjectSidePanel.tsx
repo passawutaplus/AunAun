@@ -14,6 +14,7 @@ import { formatThaiDate, formatCompact } from "@/lib/format";
 import type { ProjectAsset } from "@/lib/projectAssets";
 import ProjectAssetsSection from "@/components/project/ProjectAssetsSection";
 import LicenseDetailBlock from "@/components/license/LicenseDetailBlock";
+import { ProjectSeriesBlock } from "@/components/series/ProjectSeriesBlock";
 
 
 interface Props {
@@ -227,6 +228,8 @@ const ProjectSidePanel = (p: Props) => {
           </div>
         </div>
       )}
+
+      <ProjectSeriesBlock projectId={p.projectId} compact />
     </aside>
   );
 };

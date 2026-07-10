@@ -126,11 +126,12 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
             type="button"
             onClick={() => {
               setCelebrating(false);
+              celebrate();
               dismiss();
             }}
             className="mt-3 text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
           >
-            ปิดไว้ภายหลัง
+            ปิด
           </button>
         </motion.section>
       </AnimatePresence>
@@ -230,131 +231,123 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
               แต่ทำต่อเพื่อเรียนรู้แพลตฟอร์มได้
             </p>
           )}
-
-          {displayTasks.length > 0 && (
-            <AnimatePresence initial={false} mode="popLayout">
-              <motion.ul
-                key={collapsed ? "collapsed" : "expanded"}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-                className={cn("space-y-2 overflow-hidden", variant === "full" ? "mt-4" : "mt-3")}
-              >
-                {displayTasks.map((task) => {
-                  const def = taskById[task.id];
-                  const Icon = def?.icon;
-                  const rewardPx = rewardById?.get(task.id) ?? def?.rewardPx ?? 0;
-                  const claimed = !tourMode && claimedIds.has(task.id);
-                  const claimable =
-                    !tourMode && task.done && !claimed && !welcomeCapReached && !missionsLoading;
-
-                  return (
-                    <li
-                      key={task.id}
-                      className={cn(
-                        "flex items-start gap-2.5 rounded-xl border p-3 transition-colors",
-                        task.done || claimed
-                          ? "border-primary/20 bg-primary/5"
-                          : claimable
-                            ? "border-primary/30 bg-primary/8"
-                            : "border-border bg-background/60",
-                      )}
-                    >
-                      <span className="mt-0.5 shrink-0">
-                        {task.done || claimed ? (
-                          <Check className="h-4 w-4 text-primary" aria-hidden />
-                        ) : (
-                          <Circle className="h-4 w-4 text-muted-foreground" aria-hidden />
-                        )}
-                      </span>
-                      {Icon && (
-                        <Icon className="h-4 w-4 text-primary mt-0.5 shrink-0 hidden sm:block" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p
-                            className={cn(
-                              "text-sm font-medium",
-                              task.done || claimed ? "text-muted-foreground" : "text-foreground",
-                            )}
-                          >
-                            {task.title}
-                          </p>
-                          {!tourMode && (
-                            <span className="text-[10px] font-medium rounded-full bg-primary/15 text-primary px-2 py-0.5 tabular-nums">
-                              +{rewardPx} PX
-                            </span>
-                          )}
-                        </div>
-                        {variant === "full" && (
-                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-snug">
-                            {task.description}
-                          </p>
-                        )}
-                        {task.id === "like" && signals && !task.done && !claimed && (
-                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
-                            {likeMissionHint(signals) ?? ""}
-                          </p>
-                        )}
-                        {(task.done || claimed) && (
-                          <p className="text-[10px] text-primary mt-1">{claimed ? "รับแล้ว" : "เสร็จแล้ว"}</p>
-                        )}
-                      </div>
-                      {claimable ? (
-                        <Button
-                          size="sm"
-                          className="shrink-0 rounded-full h-7 text-xs"
-                          disabled={claim.isPending}
-                          onClick={() => handleClaim(task.id)}
-                        >
-                          รับ PX
-                        </Button>
-                      ) : !task.done ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="shrink-0 rounded-full h-7 text-xs"
-                          onClick={() => navigate(task.href)}
-                        >
-                          ไปทำ
-                        </Button>
-                      ) : tourMode ? null : welcomeCapReached ? (
-                        <span className="shrink-0 text-[10px] text-muted-foreground px-2">
-                          โควต้าเต็ม
-                        </span>
-                      ) : null}
-                    </li>
-                  );
-                })}
-              </motion.ul>
-            </AnimatePresence>
-          )}
-
-          {!collapsed && (
-            <>
-              {!tourMode && (
-                <p className="mt-3 text-[10px] text-muted-foreground leading-relaxed">
-                  Welcome Bonus ใช้ส่งของขวัญได้เท่านั้น ไม่ถอนเป็นเงินสด — ถอนได้เฉพาะ PX ที่คนอื่นส่งให้คุณ ขั้นต่ำ 1,000 PX
-                </p>
-              )}
-              {tourMode && (
-                <p className="mt-3 text-[10px] text-muted-foreground leading-snug line-clamp-2">
-                  ทำทีละขั้น — ฟีด ดีไซเนอร์ ลงผลงาน แชร์โปรไฟล์
-                </p>
-              )}
-
-              <button
-                type="button"
-                onClick={dismiss}
-                className="mt-2 text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
-              >
-                ปิดไว้ภายหลัง
-              </button>
-            </>
-          )}
         </div>
       </div>
+
+      {displayTasks.length > 0 && (
+        <AnimatePresence initial={false} mode="popLayout">
+          <motion.ul
+            key={collapsed ? "collapsed" : "expanded"}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className={cn("w-full space-y-2 overflow-hidden", variant === "full" ? "mt-4" : "mt-3")}
+          >
+            {displayTasks.map((task) => {
+              const def = taskById[task.id];
+              const Icon = def?.icon;
+              const rewardPx = rewardById?.get(task.id) ?? def?.rewardPx ?? 0;
+              const claimed = !tourMode && claimedIds.has(task.id);
+              const claimable =
+                !tourMode && task.done && !claimed && !welcomeCapReached && !missionsLoading;
+
+              return (
+                <li
+                  key={task.id}
+                  className={cn(
+                    "flex w-full items-start gap-2.5 rounded-xl border p-3 transition-colors",
+                    task.done || claimed
+                      ? "border-primary/20 bg-primary/5"
+                      : claimable
+                        ? "border-primary/30 bg-primary/8"
+                        : "border-border bg-background/60",
+                  )}
+                >
+                  <span className="mt-0.5 shrink-0">
+                    {task.done || claimed ? (
+                      <Check className="h-4 w-4 text-primary" aria-hidden />
+                    ) : (
+                      <Circle className="h-4 w-4 text-muted-foreground" aria-hidden />
+                    )}
+                  </span>
+                  {Icon && (
+                    <Icon className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p
+                        className={cn(
+                          "text-sm font-medium",
+                          task.done || claimed ? "text-muted-foreground" : "text-foreground",
+                        )}
+                      >
+                        {task.title}
+                      </p>
+                      {!tourMode && (
+                        <span className="text-[10px] font-medium rounded-full bg-primary/15 text-primary px-2 py-0.5 tabular-nums">
+                          +{rewardPx} PX
+                        </span>
+                      )}
+                    </div>
+                    {variant === "full" && (
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-snug">
+                        {task.description}
+                      </p>
+                    )}
+                    {task.id === "like" && signals && !task.done && !claimed && (
+                      <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                        {likeMissionHint(signals) ?? ""}
+                      </p>
+                    )}
+                    {(task.done || claimed) && (
+                      <p className="text-[10px] text-primary mt-1">{claimed ? "รับแล้ว" : "เสร็จแล้ว"}</p>
+                    )}
+                  </div>
+                  {claimable ? (
+                    <Button
+                      size="sm"
+                      className="shrink-0 rounded-full h-7 text-xs"
+                      disabled={claim.isPending}
+                      onClick={() => handleClaim(task.id)}
+                    >
+                      รับ PX
+                    </Button>
+                  ) : !task.done ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0 rounded-full h-7 text-xs"
+                      onClick={() => navigate(task.href)}
+                    >
+                      ไปทำ
+                    </Button>
+                  ) : tourMode ? null : welcomeCapReached ? (
+                    <span className="shrink-0 text-[10px] text-muted-foreground px-2">
+                      โควต้าเต็ม
+                    </span>
+                  ) : null}
+                </li>
+              );
+            })}
+          </motion.ul>
+        </AnimatePresence>
+      )}
+
+      {!collapsed && (
+        <>
+          {!tourMode && (
+            <p className="mt-3 text-[10px] text-muted-foreground leading-relaxed">
+              Welcome Bonus ใช้ส่งของขวัญได้เท่านั้น ไม่ถอนเป็นเงินสด — ถอนได้เฉพาะ PX ที่คนอื่นส่งให้คุณ ขั้นต่ำ 1,000 PX
+            </p>
+          )}
+          {tourMode && (
+            <p className="mt-3 text-[10px] text-muted-foreground leading-snug line-clamp-2">
+              ทำทีละขั้น — ฟีด ดีไซเนอร์ ลงผลงาน แชร์โปรไฟล์ · ทำครบแล้วค่อยปิดได้
+            </p>
+          )}
+        </>
+      )}
     </motion.section>
   );
 }

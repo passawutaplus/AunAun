@@ -58,6 +58,10 @@ export const useUpdateProfile = (userId: string | undefined) => {
       if (p.opportunityTypes !== undefined) {
         (payload as { opportunity_types?: string[] }).opportunity_types = p.opportunityTypes;
       }
+      if (p.opportunityNote !== undefined) {
+        (payload as { opportunity_note?: string | null }).opportunity_note =
+          p.opportunityNote.trim() || null;
+      }
       if (p.skills !== undefined) payload.skills = p.skills;
       if (p.experience !== undefined) payload.experience = p.experience as unknown as Json;
       if (Object.keys(payload).length === 0) return;
@@ -66,7 +70,7 @@ export const useUpdateProfile = (userId: string | undefined) => {
         if (error.code === "23505" && payload.username) {
           throw new Error("ชื่อผู้ใช้นี้ถูกใช้แล้ว — ลองชื่ออื่น");
         }
-        throw error;
+        throw new Error(error.message || "บันทึกไม่สำเร็จ");
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["profile", userId] }),
