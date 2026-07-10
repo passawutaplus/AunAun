@@ -52,15 +52,28 @@ if (demoEnabled || isDemoTarget) {
   const demoUrl = env.VITE_DEMO_SUPABASE_URL?.trim();
   const demoKey = env.VITE_DEMO_SUPABASE_PUBLISHABLE_KEY?.trim();
   const prodUrl = env.VITE_SUPABASE_URL?.trim();
+  const prodKey = env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+  // Phase A (pre-launch): shared production DB + VITE_DEMO_MODE — see docs/ecosystem-deploy-policy.md
+  const phaseA = (env.VITE_DEMO_PHASE_A || "").toLowerCase() === "true";
 
-  if (!demoUrl || !demoKey) {
-    fail(
-      "Demo build requires VITE_DEMO_SUPABASE_URL and VITE_DEMO_SUPABASE_PUBLISHABLE_KEY. " +
-        "Do not fall back to production Supabase credentials.",
-    );
-  }
-  if (prodUrl && demoUrl === prodUrl) {
-    fail("Demo and production Supabase URLs must be different.");
+  if (phaseA) {
+    if (!prodUrl || !prodKey) {
+      fail(
+        "Phase A demo requires VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY " +
+          "(shared DB). Set VITE_DEMO_PHASE_A=true only for pre-launch shared demos.",
+      );
+    }
+  } else {
+    if (!demoUrl || !demoKey) {
+      fail(
+        "Demo build requires VITE_DEMO_SUPABASE_URL and VITE_DEMO_SUPABASE_PUBLISHABLE_KEY. " +
+          "Do not fall back to production Supabase credentials. " +
+          "Or set VITE_DEMO_PHASE_A=true for pre-launch shared-DB demos.",
+      );
+    }
+    if (prodUrl && demoUrl === prodUrl) {
+      fail("Demo and production Supabase URLs must be different (unless VITE_DEMO_PHASE_A=true).");
+    }
   }
 }
 
