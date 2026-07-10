@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useAdDailyStats, type AdCampaign } from "@/hooks/useAds";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -78,7 +79,7 @@ export default function AdStatsPanel({ campaigns }: Props) {
 
       <div className="h-[260px]">
         {isLoading ? (
-          <div className="h-full flex items-center justify-center text-admin-muted text-sm">กำลังโหลด...</div>
+          <InlineLoader labelClassName="text-admin-muted" className="h-full py-0" />
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartRows} margin={{ top: 10, right: 12, left: -10, bottom: 0 }}>

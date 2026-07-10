@@ -12,6 +12,7 @@ import {
 } from "@/hooks/useJobs";
 import { useMyStudioRoles } from "@/hooks/useStudios";
 import { useAuth } from "@/hooks/useAuth";
+import PageLoader from "@/components/ui/PageLoader";
 import { requireAuth } from "@/lib/requireAuth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -58,7 +59,7 @@ const JobDetailPage = () => {
     }
   }, [searchParams, setSearchParams, user, job?.status]);
 
-  if (isLoading) return <div className="min-h-screen grid place-items-center text-muted-foreground">กำลังโหลด...</div>;
+  if (isLoading) return <PageLoader />;
   if (!job) return <div className="min-h-screen grid place-items-center text-muted-foreground">ไม่พบประกาศนี้</div>;
 
   const { name, avatar, verified } = getPosterInfo(job);

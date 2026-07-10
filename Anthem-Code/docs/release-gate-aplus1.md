@@ -109,9 +109,10 @@ npm run e2e:seo
 
 ### Admin
 
-- [ ] Sidebar: Aplus1 Admin + BrandLogo + 8 หมวดจาก `adminNavigation.ts`
-- [ ] Overview: KPI "+1 24h", cashout → `/admin/wallet`
-- [ ] Marketing: `/admin/marketing` โหลดได้ + export compliance
+- [ ] Sidebar: Aplus1 Admin + BrandLogo — **launch minimal** แสดงเฉพาะเมนูที่เปิดใช้ (~5 หมวด); demo/full build ยังเห็นครบ 8 หมวด
+- [ ] Overview: KPI launch = ข้อความ 24h แทนงานเปิดรับ; คิวไม่มี KYC/ถอนเงิน/จ้าง/คอลแลป
+- [ ] `/admin/jobs`, `/admin/marketing` → redirect `/admin` เมื่อ launch minimal
+- [ ] Marketing: `/admin/marketing` โหลดได้ + export compliance (เฉพาะ non-launch build)
 - [ ] System: แท็บ Supabase Usage โหลดได้
 - [ ] Feedback: แท็บ UX Research
 

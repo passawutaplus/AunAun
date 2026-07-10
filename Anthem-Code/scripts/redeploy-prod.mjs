@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Redeploy Aplus1 production (aplus1.app). */
+/** Redeploy Aplus1 production (aplus1.app) — launch-minimal, payments off. */
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -34,15 +34,25 @@ const buildEnvs = [
   "--build-env",
   `VITE_OPS_HUB_URL=${env.VITE_OPS_HUB_URL || "https://so1o-ops-hub.vercel.app"}`,
   "--build-env",
-  "VITE_APLUS1_PAYMENTS_ENABLED=true",
+  "VITE_APLUS1_LAUNCH_MINIMAL=true",
   "--build-env",
-  "VITE_STRIPE_MODE=live",
+  "VITE_APLUS1_PAYMENTS_ENABLED=false",
+  "--build-env",
+  "VITE_SOLO_ECOSYSTEM_ENABLED=false",
+  "--build-env",
+  "VITE_STRIPE_MODE=sandbox",
 ];
-if (env.VITE_STRIPE_MODE && env.VITE_STRIPE_MODE !== "live") {
-  console.warn("⚠ VITE_STRIPE_MODE in .env is not live — production build still uses live Stripe");
-}
 
-console.log("→ Deploying aplus1-prod (production — aplus1.app)");
+console.log("→ Checking build env…");
+const check = spawnSync("node", ["scripts/check-build-env.mjs"], {
+  cwd: root,
+  stdio: "inherit",
+  shell: true,
+  env: { ...process.env, DEPLOY_TARGET: "production", VITE_DEMO_MODE: "false", VITE_APLUS1_PAYMENTS_ENABLED: "false", VITE_SOLO_ECOSYSTEM_ENABLED: "false" },
+});
+if (check.status !== 0) process.exit(check.status ?? 1);
+
+console.log("→ Deploying aplus1-prod (production — aplus1.app, launch-minimal)");
 const r = spawnSync(
   "npx",
   ["vercel", "deploy", "--prod", "--yes", "--project=aplus1-prod", ...buildEnvs],

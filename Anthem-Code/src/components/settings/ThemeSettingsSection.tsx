@@ -1,7 +1,6 @@
 import { Palette } from "lucide-react";
 import { ThemeModePicker } from "@/components/settings/ThemeModePicker";
 import { FeedGridDensityPicker } from "@/components/feed/FeedGridDensityPicker";
-import { AreaFeedLayoutPicker } from "@/components/community/AreaFeedLayoutPicker";
 import { useThemeFade } from "@/hooks/useThemeFade";
 import { useNarrowViewport } from "@/hooks/useNarrowViewport";
 
@@ -32,10 +31,6 @@ export function ThemeSettingsSection({ embedded = false }: { embedded?: boolean 
         <FeedGridDensityPicker label="ขนาดฟีดผลงาน" />
         <p className="text-xs text-muted-foreground -mt-1">
           {narrow ? "1 คอลัมน์ · 2 คอลัมน์" : "ใหญ่ 3 คอลัมน์ · กลาง 5 · เล็ก 7"}
-        </p>
-        <AreaFeedLayoutPicker label="ขนาดฟีด Area" />
-        <p className="text-xs text-muted-foreground -mt-1">
-          {narrow ? "1 คอลัมน์ · 2 คอลัมน์" : "ฟีด 1 คอลัมน์ · กริด 3 คอลัมน์"}
         </p>
       </div>
     </>

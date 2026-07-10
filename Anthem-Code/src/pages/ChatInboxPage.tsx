@@ -9,6 +9,7 @@ import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatThreadView from "@/components/chat/ChatThreadView";
 import ChatPartnerPanel from "@/components/chat/ChatPartnerPanel";
 import { ChatErrorBoundary } from "@/components/chat/ChatErrorBoundary";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { smoothEase } from "@/lib/motion";
@@ -76,9 +77,7 @@ const ChatInboxPage = () => {
   const threadContent = (
     <>
       {id && (convLoading || convFetching) && !conv && (
-        <div className="flex-1 flex items-center justify-center text-muted-foreground">
-          กำลังโหลด…
-        </div>
+        <InlineLoader className="flex-1 py-0" />
       )}
       {id && !convLoading && !convFetching && convError && (
         <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground px-4 gap-3">

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Activity, Building2, FolderKanban, HandshakeIcon, UserPlus } from "lucide-react";
+import { Activity, Building2, FolderKanban, HandshakeIcon, MessageSquare, UserPlus } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
@@ -7,8 +7,9 @@ import BriefcaseIcon from "../../components/icons/BriefcaseIcon";
 import SectionHeader from "@/components/admin/SectionHeader";
 import KpiCard from "@/components/admin/KpiCard";
 import { BRAND_NAME, BRAND_TAGLINE } from "@/lib/brandConfig";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import {
-  ADMIN_NAV_SECTIONS,
+  adminNavSectionsForBuild,
   adminPendingQueue,
   adminStatValue,
   type AdminNavItem,
@@ -89,13 +90,22 @@ export default function OverviewPage() {
   const events = useLiveActivity();
   const { data: alerts } = useAdminAlertCounts();
   const queue = adminPendingQueue(stats);
+  const launchMinimal = isAplus1LaunchMinimal();
+  const navSections = adminNavSectionsForBuild();
 
-  const headline = [
-    { label: "ผู้ใช้ทั้งหมด", value: stats?.totalUsers ?? "—", icon: UserPlus },
-    { label: "ผลงานเผยแพร่", value: stats?.publishedProjects ?? "—", icon: FolderKanban },
-    { label: "งานเปิดรับ", value: stats?.openJobs ?? "—", icon: BriefcaseIcon },
-    { label: "สมัครใหม่ 24 ชม.", value: stats?.newUsers24h ?? "—", accent: true },
-  ];
+  const headline = launchMinimal
+    ? [
+        { label: "ผู้ใช้ทั้งหมด", value: stats?.totalUsers ?? "—", icon: UserPlus },
+        { label: "ผลงานเผยแพร่", value: stats?.publishedProjects ?? "—", icon: FolderKanban },
+        { label: "ข้อความ 24 ชม.", value: stats?.messages24h ?? "—", icon: MessageSquare },
+        { label: "สมัครใหม่ 24 ชม.", value: stats?.newUsers24h ?? "—", accent: true },
+      ]
+    : [
+        { label: "ผู้ใช้ทั้งหมด", value: stats?.totalUsers ?? "—", icon: UserPlus },
+        { label: "ผลงานเผยแพร่", value: stats?.publishedProjects ?? "—", icon: FolderKanban },
+        { label: "งานเปิดรับ", value: stats?.openJobs ?? "—", icon: BriefcaseIcon },
+        { label: "สมัครใหม่ 24 ชม.", value: stats?.newUsers24h ?? "—", accent: true },
+      ];
 
   return (
     <div>
@@ -128,15 +138,15 @@ export default function OverviewPage() {
         </div>
       ) : null}
 
-      {alerts && (alerts.urgentReports > 0 || alerts.highRiskKyc > 0) ? (
+      {alerts && (alerts.urgentReports > 0 || (!launchMinimal && alerts.highRiskKyc > 0)) ? (
         <p className="mt-3 text-xs text-admin-muted">
           AI triage:{" "}
           {alerts.urgentReports > 0 ? `รายงานด่วน ${alerts.urgentReports} ` : ""}
-          {alerts.highRiskKyc > 0 ? `KYC ความเสี่ยงสูง ${alerts.highRiskKyc}` : ""}
+          {!launchMinimal && alerts.highRiskKyc > 0 ? `KYC ความเสี่ยงสูง ${alerts.highRiskKyc}` : ""}
         </p>
       ) : null}
 
-      {ADMIN_NAV_SECTIONS.map((section) => (
+      {navSections.map((section) => (
         <OverviewSection key={section.id} section={section} stats={stats} />
       ))}
 
@@ -153,10 +163,12 @@ export default function OverviewPage() {
                 <i className="inline-block h-2 w-2 bg-admin-accent" />
                 ผลงาน
               </span>
-              <span className="flex items-center gap-1">
-                <i className="inline-block h-2 w-2 bg-admin-muted" />
-                งาน
-              </span>
+              {!launchMinimal ? (
+                <span className="flex items-center gap-1">
+                  <i className="inline-block h-2 w-2 bg-admin-muted" />
+                  งาน
+                </span>
+              ) : null}
             </div>
           </div>
           <div className="h-56">
@@ -175,7 +187,9 @@ export default function OverviewPage() {
                 />
                 <Line type="monotone" dataKey="users" stroke="hsl(var(--admin-fg))" strokeWidth={1.5} dot={false} />
                 <Line type="monotone" dataKey="projects" stroke="hsl(var(--admin-accent))" strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="jobs" stroke="hsl(var(--admin-muted))" strokeWidth={1.5} dot={false} />
+                {!launchMinimal ? (
+                  <Line type="monotone" dataKey="jobs" stroke="hsl(var(--admin-muted))" strokeWidth={1.5} dot={false} />
+                ) : null}
               </LineChart>
             </ResponsiveContainer>
           </div>

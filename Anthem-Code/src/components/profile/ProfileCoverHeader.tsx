@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Camera, Eye, LayoutGrid, Loader2, MapPin, Plus, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import SharePopover from "@/components/SharePopover";
+import ProfileSharePopover from "@/components/profile/ProfileSharePopover";
 import { useUpdateProfileMedia } from "@/hooks/useProfile";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { useSubscription } from "@/core/subscription";
@@ -25,6 +25,8 @@ type Props = {
   onManage: () => void;
   shareUrl: string;
   shareTitle: string;
+  shareMessage: string;
+  sharePathLabel: string;
   onShareInteract?: () => void;
   onPreview?: () => void;
   onPost?: () => void;
@@ -42,6 +44,8 @@ export default function ProfileCoverHeader({
   onManage,
   shareUrl,
   shareTitle,
+  shareMessage,
+  sharePathLabel,
   onShareInteract,
   onPreview,
   onPost,
@@ -241,32 +245,31 @@ export default function ProfileCoverHeader({
                   variant="outline"
                   size="icon"
                   className="rounded-full shrink-0"
-                  title="มุมมองคนอื่น"
-                  aria-label="มุมมองคนอื่น"
+                  title="ดูตัวอย่างก่อนแชร์ — ยังไม่ใช่ลิงก์ที่ส่งให้ลูกค้า"
+                  aria-label="พรีวิว"
                 >
                   <Eye className="w-4 h-4" />
                 </Button>
               )}
-              <SharePopover
+              <ProfileSharePopover
                 url={shareUrl}
                 title={shareTitle}
-                label="แชร์โปรไฟล์"
+                message={shareMessage}
+                pathLabel={sharePathLabel}
                 align="end"
-                onOpenChange={(open) => {
-                  if (open) onShareInteract?.();
-                }}
+                onShared={onShareInteract}
               >
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
                   className="rounded-full shrink-0"
-                  title="แชร์โปรไฟล์"
-                  aria-label="แชร์โปรไฟล์"
+                  title="แชร์ลิงก์พอร์ตโฟล์สาธารณะให้ลูกค้า"
+                  aria-label="แชร์พอร์ตโฟล์"
                 >
                   <Share2 className="w-4 h-4" />
                 </Button>
-              </SharePopover>
+              </ProfileSharePopover>
               <Button
                 onClick={onManage}
                 className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"

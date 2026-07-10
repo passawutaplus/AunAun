@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AtSign, Check, ChevronDown, Search, UserRound, X } from "lucide-react";
+import { CompactLoader } from "@/components/ui/BanterLoader";
 import UserAvatar from "@/components/UserAvatar";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -122,7 +123,7 @@ export function CommunityUserTagPicker({ userId, selected, onChange }: Props) {
           </div>
           <div className="max-h-56 overflow-y-auto p-1">
             {isLoading && (
-              <p className="text-xs text-muted-foreground text-center py-6">กำลังโหลดรายชื่อ…</p>
+              <CompactLoader label="กำลังโหลดรายชื่อ…" className="py-6" />
             )}
             {!isLoading && candidates.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-6 px-3">

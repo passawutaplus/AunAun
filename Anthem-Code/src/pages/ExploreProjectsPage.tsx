@@ -6,7 +6,7 @@ import ToolIcon from "@/components/ToolIcon";
 import ExploreToolFilterBar from "@/components/explore/ExploreToolFilterBar";
 import ProjectCard from "@/components/ProjectCard";
 import { StaggerGrid } from "@/components/motion/StaggerGrid";
-import ProjectGridSkeleton from "@/components/ui/ProjectGridSkeleton";
+import PageLoader from "@/components/ui/PageLoader";
 import EmptyState from "@/components/ui/EmptyState";
 import HireDialog from "@/components/HireDialog";
 import CollabDialog from "@/components/CollabDialog";
@@ -247,7 +247,7 @@ const ExploreProjectsPage = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {isLoading ? (
-          <ProjectGridSkeleton />
+          <PageLoader fullPage={false} label="กำลังโหลดผลงาน..." />
         ) : projects.length === 0 ? (
           <EmptyState
             icon={SearchX}

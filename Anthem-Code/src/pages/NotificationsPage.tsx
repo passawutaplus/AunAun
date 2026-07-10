@@ -4,6 +4,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import NotificationsPanel from "@/components/notifications/NotificationsPanel";
 import SeoHead from "@/components/SeoHead";
+import PageLoader from "@/components/ui/PageLoader";
 import { cn } from "@/lib/utils";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 
@@ -15,7 +16,7 @@ const NotificationsPage = () => {
     if (!loading && !user) navigate("/auth?redirect=/notifications");
   }, [loading, user, navigate]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">กำลังโหลด...</div>;
+  if (loading) return <PageLoader />;
 
   return (
     <div className={cn("min-h-screen bg-app-ambient lg:pb-8", MOBILE_PAGE_BOTTOM_CLASS)}>

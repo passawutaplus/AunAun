@@ -118,6 +118,9 @@ const LoginForm = ({ onSwitch }: { onSwitch: () => void }) => {
     e.preventDefault();
     setBusy(true); setErr(null);
     try {
+      if (!remember) sessionStorage.setItem(BRAND_STORAGE_NO_PERSIST, "1");
+      else sessionStorage.removeItem(BRAND_STORAGE_NO_PERSIST);
+
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) {
         setErr(error.message.toLowerCase().includes("invalid")
@@ -127,6 +130,7 @@ const LoginForm = ({ onSwitch }: { onSwitch: () => void }) => {
         setTimeout(() => setShake(false), 450);
       } else {
         if (!remember) sessionStorage.setItem(BRAND_STORAGE_NO_PERSIST, "1");
+        else sessionStorage.removeItem(BRAND_STORAGE_NO_PERSIST);
         toast.success("เข้าสู่ระบบสำเร็จ");
       }
     } finally { setBusy(false); }

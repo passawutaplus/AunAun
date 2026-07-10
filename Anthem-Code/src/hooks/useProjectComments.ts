@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublicFrom } from "@/lib/profileAccess";
 import { buildCommentTree, type CommentNode } from "@/lib/commentTree";
 import { isBenignQueryError, isSchemaMismatchError } from "@/lib/supabaseErrors";
 import {
@@ -55,8 +56,7 @@ export const useProjectComments = (projectId: string | undefined) => {
       }
       const rows = (data ?? []) as CommentWithProfile[];
       const ids = Array.from(new Set(rows.map((r) => r.user_id)));
-      const { data: profs } = await supabase
-        .from("profiles")
+      const { data: profs } = await profilesPublicFrom()
         .select("user_id, display_name, avatar_url, username")
         .in("user_id", ids);
       const map = new Map((profs ?? []).map((p) => [p.user_id, p]));

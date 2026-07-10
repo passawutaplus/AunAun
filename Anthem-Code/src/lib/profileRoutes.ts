@@ -27,6 +27,38 @@ export function profilePublicUrl(
   return `${origin}${profilePublicPath(profile)}`;
 }
 
+export type ProfileShareInput = ProfileLinkInput & {
+  display_name?: string | null;
+  bio?: string | null;
+  role?: string | null;
+};
+
+/** Social share title — public portfolio, not owner preview. */
+export function profileShareTitle(profile: ProfileShareInput): string {
+  const name = profile.display_name?.trim() || profile.username?.trim() || "ครีเอเตอร์";
+  return `${name} — พอร์ตโฟล์บน Aplus1`;
+}
+
+/** Companion text for LINE / device share (no preview URL). */
+export function profileShareMessage(profile: ProfileShareInput): string {
+  const name = profile.display_name?.trim() || profile.username?.trim() || "ครีเอเตอร์";
+  const role = profile.role?.trim();
+  const lead = role
+    ? `ดูผลงานของ ${name} (${role}) บน Aplus1`
+    : `ดูผลงานของ ${name} บน Aplus1`;
+  const bio = profile.bio?.trim();
+  if (bio && bio.length >= 12) {
+    const snippet = bio.length > 96 ? `${bio.slice(0, 96)}…` : bio;
+    return `${lead}\n${snippet}`;
+  }
+  return `${lead}\nสนใจจ้างงานหรือคอลแลปได้ในแพลตฟอร์ม`;
+}
+
+/** Short path shown in share UI, e.g. /@username */
+export function profilePublicPathLabel(profile: ProfileLinkInput): string {
+  return profilePublicPath(profile);
+}
+
 /** Owner preview — public profile as visitors see it (not gift-simulation). */
 export function profileVisitorPreviewPath(profile: ProfileLinkInput): string {
   return `${profilePublicPath(profile)}?preview=1`;

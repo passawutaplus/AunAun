@@ -10,7 +10,7 @@ import {
   SIMILAR_ASPECTS,
   type SimilarAspect,
 } from "@/hooks/useSimilarImages";
-import { Skeleton } from "@/components/ui/skeleton";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { cn } from "@/lib/utils";
 
 const ASPECT_ICONS: Record<SimilarAspect, typeof Palette> = {
@@ -92,7 +92,7 @@ const SimilarImagesPage = () => {
                 <img src={sourceImage} alt={project?.title ?? ""} className="w-full object-cover" />
               </div>
             ) : (
-              <Skeleton className="w-full aspect-square rounded-2xl" />
+              <InlineLoader className="py-16 aspect-square rounded-2xl border border-border bg-card" />
             )}
             {project && (
               <div className="space-y-2">
@@ -117,15 +117,7 @@ const SimilarImagesPage = () => {
                 : `พบ ${similar.length} ภาพที่ใกล้เคียง${activeAspectLabels.length ? ` (${activeAspectLabels.join(" · ")})` : ""}`}
             </p>
             {isLoading ? (
-              <div className="columns-2 md:columns-3 gap-3">
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <Skeleton
-                    key={i}
-                    className="w-full mb-3 rounded-xl"
-                    style={{ height: `${160 + (i % 4) * 60}px` }}
-                  />
-                ))}
-              </div>
+              <InlineLoader label="กำลังวิเคราะห์ภาพและค้นหา..." />
             ) : similar.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground text-sm space-y-2">
                 <p>ยังไม่พบภาพที่ใกล้เคียงพอ</p>

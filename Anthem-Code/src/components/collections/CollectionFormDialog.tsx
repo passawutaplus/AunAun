@@ -25,14 +25,14 @@ const CollectionFormDialog = ({ open, onOpenChange, initial, onCreated }: Props)
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
-  const [isPublic, setIsPublic] = useState(true);
+  const [isPublic, setIsPublic] = useState(false);
 
   useEffect(() => {
     if (open) {
       setName(initial?.name ?? "");
       setCategory(initial?.category ?? "");
       setDescription(initial?.description ?? "");
-      setIsPublic(initial?.is_public ?? true);
+      setIsPublic(initial?.is_public ?? false);
     }
   }, [open, initial]);
 

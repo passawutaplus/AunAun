@@ -11,6 +11,7 @@ import { ProjectPreviewModeTabs, type ProjectPreviewMode } from "@/components/pr
 import { ProjectFeedPreview } from "@/components/project/ProjectFeedPreview";
 import { ProjectMobilePreviewContent } from "@/components/project/ProjectMobilePreviewContent";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublicFrom } from "@/lib/profileAccess";
 import type { LicenseType } from "@/lib/licenses";
 import { ProjectContentBlocksView } from "@/components/project/ProjectContentBlocksView";
 import { ProjectPresentationGallery } from "@/components/project/ProjectPresentationGallery";
@@ -200,8 +201,7 @@ const ProjectPreviewDialog = ({
 
   useEffect(() => {
     if (!open || !ownerId) return;
-    supabase
-      .from("profiles")
+    profilesPublicFrom()
       .select("display_name, avatar_url")
       .eq("user_id", ownerId)
       .maybeSingle()

@@ -1,6 +1,7 @@
 import { UserPlus, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EmptyState from "@/components/ui/EmptyState";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import FollowUserRow from "@/components/follow/FollowUserRow";
 import { useFollowersList, useFollowingList } from "@/hooks/useFollowLists";
 
@@ -34,7 +35,7 @@ const FollowConnectionsPanel = ({ userId, defaultTab = "followers" }: Props) => 
 
       <TabsContent value="followers" className="mt-4 space-y-2">
         {loadingFollowers ? (
-          <div className="text-center py-12 text-sm text-muted-foreground">กำลังโหลด...</div>
+          <InlineLoader />
         ) : followers.length === 0 ? (
           <EmptyState
             icon={UserPlus}
@@ -48,7 +49,7 @@ const FollowConnectionsPanel = ({ userId, defaultTab = "followers" }: Props) => 
 
       <TabsContent value="following" className="mt-4 space-y-2">
         {loadingFollowing ? (
-          <div className="text-center py-12 text-sm text-muted-foreground">กำลังโหลด...</div>
+          <InlineLoader />
         ) : following.length === 0 ? (
           <EmptyState
             icon={Users}

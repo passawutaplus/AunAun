@@ -8,14 +8,17 @@ import {
   Info,
   Users,
 } from "lucide-react";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { BackButton } from "@/components/ui/BackButton";
 import { so1oQuotationUrl, trackCrossLink } from "@/lib/crossLink";
 import { openSoloExternal } from "@/lib/soloEcosystemGate";
+import { isAplus1LaunchMinimal, isAplus1SubscriptionsEnabled } from "@/lib/aplus1Launch";
 import { useStudioForConversation, useStudioMembers } from "@/hooks/useStudios";
 import { useSubscription } from "@/core/subscription/useSubscription";
 import { canOpenStudioCombinedQuote, canShowStudioQuoteUpsell, openStudioQuotation } from "@/lib/studioQuotationHandoff";
 import { StudioQuoteUpsellDialog } from "@/components/studio/StudioQuoteUpsellDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublicFrom } from "@/lib/profileAccess";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
@@ -115,9 +118,8 @@ const ChatThreadView = ({
     queryKey: ["chat-other", otherId],
     enabled: !!otherId && !isGroup,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, avatar_url, role, username, subscription_tier")
+      const { data } = await profilesPublicFrom()
+        .select("user_id, display_name, avatar_url, role, username")
         .eq("user_id", otherId!)
         .maybeSingle();
       return data;
@@ -148,8 +150,7 @@ const ChatThreadView = ({
     queryKey: ["chat-senders", conv.id, senderIds.join(",")],
     enabled: senderIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
+      const { data } = await profilesPublicFrom()
         .select("user_id, display_name, username")
         .in("user_id", senderIds);
       return data ?? [];
@@ -232,7 +233,8 @@ const ChatThreadView = ({
 
   const displayName = isGroup ? conv.title || conv.project_title || "กลุ่มแชท" : other?.display_name ?? "ผู้ใช้";
   const partnerTier = (other?.subscription_tier as PlanId | undefined) ?? "free";
-  const showTierBadge = !isGroup && TIER_BADGE_TIERS.has(partnerTier);
+  const showTierBadge =
+    isAplus1SubscriptionsEnabled() && !isGroup && TIER_BADGE_TIERS.has(partnerTier);
 
   const openQuote = async () => {
     const linkId = await trackCrossLink({
@@ -407,7 +409,7 @@ const ChatThreadView = ({
               </Button>
             )
           )}
-          {!isGroup && otherId && (
+          {!isAplus1LaunchMinimal() && !isGroup && otherId && (
             <Button
               type="button"
               variant="ghost"
@@ -453,7 +455,7 @@ const ChatThreadView = ({
 
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-2 min-h-0">
         {messagesLoading && (
-          <div className="text-center text-sm text-muted-foreground py-12">กำลังโหลดข้อความ…</div>
+          <InlineLoader label="กำลังโหลดข้อความ…" />
         )}
         {messagesError && !messagesLoading && (
           <div className="text-center text-sm text-muted-foreground py-12">

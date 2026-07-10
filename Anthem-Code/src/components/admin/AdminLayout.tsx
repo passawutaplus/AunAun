@@ -2,6 +2,7 @@ import { Outlet, useLocation, NavLink } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { useState } from "react";
 import AdminGuard from "./AdminGuard";
+import AdminLaunchGate from "./AdminLaunchGate";
 import AdminSidebar from "./AdminSidebar";
 import AdminAlertBanner from "./AdminAlertBanner";
 import AdminQueueHints from "./AdminQueueHints";
@@ -44,7 +45,9 @@ export default function AdminLayout() {
             <main className="px-4 md:px-8 py-6 md:py-8 max-w-[1400px]">
               <AdminAlertBanner />
               <AdminQueueHints />
-              <Outlet />
+              <AdminLaunchGate>
+                <Outlet />
+              </AdminLaunchGate>
             </main>
           </div>
         </div>

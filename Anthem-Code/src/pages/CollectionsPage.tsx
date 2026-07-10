@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useCollections } from "@/hooks/useCollections";
 import CollectionCard from "@/components/collections/CollectionCard";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import CollectionFormDialog from "@/components/collections/CollectionFormDialog";
 
 const CollectionsPage = () => {
@@ -45,7 +46,7 @@ const CollectionsPage = () => {
         </header>
 
         {isLoading ? (
-          <p className="text-center text-muted-foreground py-12">กำลังโหลด...</p>
+          <InlineLoader />
         ) : isError ? (
           <div className="text-center py-16 glass-panel rounded-2xl space-y-3">
             <p className="text-foreground font-medium">โหลดคอลเลกชันไม่สำเร็จ</p>

@@ -1,4 +1,5 @@
 import { TrendingUp, MousePointerClick, Eye, Sparkles } from "lucide-react";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -76,7 +77,7 @@ export default function BoostInsightsPanel() {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">กำลังโหลด...</p>
+        <InlineLoader className="py-8" />
       ) : boosts.length === 0 ? (
         <Card className="border-dashed bg-muted/20">
           <CardContent className="p-4 text-center space-y-2">

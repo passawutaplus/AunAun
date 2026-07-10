@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Redeploy Aplus1 demo (aplus1-demo.vercel.app). */
+/** Redeploy Aplus1 demo (aplus1-demo.vercel.app) — isolated DB, payments off. */
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -17,8 +17,18 @@ function loadEnv() {
 }
 
 const env = loadEnv();
-const demoUrl = env.VITE_DEMO_SUPABASE_URL || env.VITE_SUPABASE_URL;
-const demoKey = env.VITE_DEMO_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const demoUrl = env.VITE_DEMO_SUPABASE_URL;
+const demoKey = env.VITE_DEMO_SUPABASE_PUBLISHABLE_KEY;
+const prodUrl = env.VITE_SUPABASE_URL;
+
+if (!demoUrl || !demoKey) {
+  console.error("[security] Set VITE_DEMO_SUPABASE_URL and VITE_DEMO_SUPABASE_PUBLISHABLE_KEY in .env");
+  process.exit(1);
+}
+if (prodUrl && demoUrl === prodUrl) {
+  console.error("[security] Demo Supabase URL must differ from production VITE_SUPABASE_URL");
+  process.exit(1);
+}
 
 const buildEnvs = [
   "--build-env",
@@ -30,7 +40,11 @@ const buildEnvs = [
   "--build-env",
   "VITE_DEMO_MODE=true",
   "--build-env",
-  "VITE_APLUS1_PAYMENTS_ENABLED=true",
+  "VITE_APLUS1_LAUNCH_MINIMAL=true",
+  "--build-env",
+  "VITE_APLUS1_PAYMENTS_ENABLED=false",
+  "--build-env",
+  "VITE_SOLO_ECOSYSTEM_ENABLED=false",
   "--build-env",
   "VITE_STRIPE_MODE=sandbox",
   "--build-env",
@@ -43,6 +57,24 @@ if (aplus1Url) {
   buildEnvs.push("--build-env", `VITE_APLUS1_APP_URL=${aplus1Url}`);
   buildEnvs.push("--build-env", `VITE_ANTHEM_APP_URL=${aplus1Url}`);
 }
+
+console.log("→ Checking build env…");
+const check = spawnSync("node", ["scripts/check-build-env.mjs"], {
+  cwd: root,
+  stdio: "inherit",
+  shell: true,
+  env: {
+    ...process.env,
+    DEPLOY_TARGET: "demo",
+    VITE_DEMO_MODE: "true",
+    VITE_DEMO_SUPABASE_URL: demoUrl,
+    VITE_DEMO_SUPABASE_PUBLISHABLE_KEY: demoKey,
+    VITE_SUPABASE_URL: prodUrl || "",
+    VITE_APLUS1_PAYMENTS_ENABLED: "false",
+    VITE_SOLO_ECOSYSTEM_ENABLED: "false",
+  },
+});
+if (check.status !== 0) process.exit(check.status ?? 1);
 
 console.log("→ Deploying aplus1-demo (demo — aplus1-demo.vercel.app)");
 const r = spawnSync(

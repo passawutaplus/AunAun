@@ -111,7 +111,7 @@ const ProjectSidePanel = (p: Props) => {
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-sm"
           >
             <BriefcaseIcon className="w-4 h-4 mr-1.5" />
-            จ้างงาน
+            สนใจจ้างงาน
           </Button>
         )}
 

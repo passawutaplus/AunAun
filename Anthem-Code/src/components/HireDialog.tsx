@@ -19,6 +19,7 @@ import {
   DEFAULT_HIRE_MESSAGE,
   type ChatEntrySource,
 } from "@/lib/chatContext";
+import { validateProjectInquiry } from "@/domain/inquiry";
 import HireInviteForm, {
   buildHireInviteMessage,
   emptyHireInviteForm,
@@ -90,6 +91,12 @@ const HireDialog = ({
     }
     if (freelancerId === user.id) {
       toast.info("ไม่สามารถจ้างตัวเองได้");
+      return;
+    }
+
+    const inquiryErr = validateProjectInquiry({ source, projectId });
+    if (inquiryErr) {
+      toast.error(inquiryErr);
       return;
     }
 
@@ -188,7 +195,7 @@ const HireDialog = ({
             onClick={() => void submitHire()}
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-            {busy ? "กำลังเปิด..." : source === "project" ? "คุยโอกาส" : "แชทเลย"}
+            {busy ? "กำลังเปิด..." : "สนใจจ้างงาน"}
           </Button>
         </DialogFooter>
       </DialogContent>

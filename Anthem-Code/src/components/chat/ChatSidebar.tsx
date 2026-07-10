@@ -2,10 +2,12 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { LayoutGrid, MessageCircle, Handshake, Orbit, Pin, PinOff, Plus, Search, Users } from "lucide-react";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublicFrom } from "@/lib/profileAccess";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import UserAvatar from "@/components/UserAvatar";
@@ -20,6 +22,7 @@ import {
   type Conversation,
 } from "@/hooks/useChat";
 import CreateGroupDialog from "@/components/chat/CreateGroupDialog";
+import { isAplus1SubscriptionsEnabled } from "@/lib/aplus1Launch";
 import { timeAgoTH } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { DEMO_RESEARCH_ACCOUNTS, isDemoMode } from "@/lib/demoMode";
@@ -79,8 +82,7 @@ const ChatSidebar = ({
     queryKey: ["chat-list-profiles", otherIds],
     enabled: otherIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
+      const { data } = await profilesPublicFrom()
         .select("user_id, display_name, avatar_url")
         .in("user_id", otherIds);
       const map: Record<string, { name: string; avatar: string }> = {};
@@ -176,6 +178,10 @@ const ChatSidebar = ({
   };
 
   const handleCreateGroup = () => {
+    if (!isAplus1SubscriptionsEnabled()) {
+      toast.message("สร้างกลุ่มแชทจะเปิดให้ใช้เร็ว ๆ นี้");
+      return;
+    }
     const canCreate = tier === "pro" || tier === "pro_plus" || tier === "inhouse";
     if (!canCreate) {
       toast.error("สร้างกลุ่มแชทได้เฉพาะสมาชิก Pro ขึ้นไป", {
@@ -251,16 +257,18 @@ const ChatSidebar = ({
                 <Orbit className="w-4 h-4" />
               </Button>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-              aria-label="สร้างกลุ่มแชท"
-              onClick={handleCreateGroup}
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
+            {isAplus1SubscriptionsEnabled() ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                aria-label="สร้างกลุ่มแชท"
+                onClick={handleCreateGroup}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            ) : null}
           </div>
         </div>
         <div className="relative">
@@ -314,7 +322,7 @@ const ChatSidebar = ({
       </div>
 
       <div className="flex-1 overflow-y-auto p-2">
-        {isLoading && <p className="text-sm text-muted-foreground text-center py-8">กำลังโหลด…</p>}
+        {isLoading && <InlineLoader />}
         {isError && (
           <div className="text-center py-12 text-destructive px-4 text-sm">
             โหลดรายการแชทไม่สำเร็จ — {(error as Error)?.message ?? "ลองรีเฟรชหน้า"}

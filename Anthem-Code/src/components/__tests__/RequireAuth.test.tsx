@@ -49,7 +49,8 @@ describe("RequireAuth", () => {
   it("shows loader while auth is initialising", () => {
     mockUseAuth.mockReturnValue({ user: null, loading: true });
     const { container } = renderAt();
-    expect(container.querySelector(".animate-spin")).toBeTruthy();
+    expect(container.querySelector(".banter-loader")).toBeTruthy();
+    expect(screen.getByRole("status")).toBeInTheDocument();
   });
 
   it("redirects guests to /auth", () => {

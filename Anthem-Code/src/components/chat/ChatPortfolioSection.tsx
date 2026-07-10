@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ExternalLink, Loader2, Plus, Search, Send } from "lucide-react";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -270,7 +271,7 @@ const ChatPortfolioSection = ({
   };
 
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground py-6 text-center">กำลังโหลดผลงาน…</p>;
+    return <InlineLoader label="กำลังโหลดผลงาน…" className="py-6" />;
   }
   if (ordered.length === 0) {
     return <p className="text-sm text-muted-foreground py-6 text-center">ยังไม่มีผลงานที่เผยแพร่</p>;

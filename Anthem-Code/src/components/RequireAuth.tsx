@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { Loader2, MailCheck } from "lucide-react";
+import PageLoader from "@/components/ui/PageLoader";
 import { Button } from "@/components/ui/button";
+import { MailCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -17,11 +18,7 @@ const RequireAuth = ({ children, allowUnverified = false }: Props) => {
   const location = useLocation();
 
   if (loading) {
-    return (
-      <div className="min-h-screen grid place-items-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!user) {

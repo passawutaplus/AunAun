@@ -1,6 +1,6 @@
 import { LayoutGrid, Users, Building2, Orbit, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
+import { isAplus1LaunchMinimal, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 
 export type FeedMode = "projects" | "designers" | "studios" | "community";
 
@@ -32,7 +32,9 @@ const launchItems = items.filter(
 );
 
 const FeedModeToggle = ({ value, drillActive = false, onChange, onDrillSelect }: Props) => {
-  const visible = isAplus1LaunchMinimal() ? launchItems : items;
+  const visible = (isAplus1LaunchMinimal() ? launchItems : items).filter(
+    (item) => item.id !== "drill" || isLaunchDesignDrillEnabled(),
+  );
 
   return (
     <div className="shrink-0 flex items-center rounded-full glass-panel p-0.5">

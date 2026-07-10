@@ -52,12 +52,14 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
         <button onClick={() => navigate("/collections")} className={item}>
           <Layers3 className="w-4 h-4 text-primary" /> คอลเลกชันของฉัน
         </button>
-        <button
-          onClick={() => document.getElementById("saved-posts")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-          className={item}
-        >
-          <Bookmark className="w-4 h-4 text-primary" /> โพสต์ที่บันทึก
-        </button>
+        {!launchMinimal ? (
+          <button
+            onClick={() => document.getElementById("saved-posts")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className={item}
+          >
+            <Bookmark className="w-4 h-4 text-primary" /> โพสต์ที่บันทึก
+          </button>
+        ) : null}
         {!launchMinimal ? (
           <button type="button" onClick={() => setReferralOpen(true)} className={item}>
             <UserPlus className="w-4 h-4 text-primary" /> ชวนเพื่อนรับ Pixel

@@ -24,16 +24,9 @@ function pickDevRoot() {
 const devRoot = pickDevRoot();
 process.chdir(devRoot);
 
-// Local dev: match production launch slice unless overridden in .env
-if (!process.env.VITE_APLUS1_LAUNCH_MINIMAL && process.env.VITE_DEMO_MODE !== "true") {
-  process.env.VITE_APLUS1_LAUNCH_MINIMAL = "true";
-}
-if (!process.env.VITE_APLUS1_PAYMENTS_ENABLED && process.env.VITE_DEMO_MODE !== "true") {
-  process.env.VITE_APLUS1_PAYMENTS_ENABLED = "true";
-}
-if (!process.env.VITE_STRIPE_MODE && process.env.VITE_DEMO_MODE !== "true") {
-  process.env.VITE_STRIPE_MODE = "sandbox";
-}
+// Local dev matches launch-minimal (fail-closed in aplus1Launch.ts).
+// Opt into full product locally: VITE_APLUS1_FULL_PRODUCT=true in .env
+// Opt into payments locally: VITE_APLUS1_PAYMENTS_ENABLED=true (requires full product)
 
 const server = await createServer({
   configFile: path.join(devRoot, "vite.config.ts"),

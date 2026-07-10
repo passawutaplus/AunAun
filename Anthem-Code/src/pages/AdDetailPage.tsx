@@ -20,6 +20,9 @@ import {
   Heart,
 } from "lucide-react";
 import { toast } from "sonner";
+import { openSafeExternalUrl } from "@/lib/safeUrl";
+import PageLoader from "@/components/ui/PageLoader";
+import { profilesPublicFrom } from "@/lib/profileAccess";
 
 const AdDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,10 +34,9 @@ const AdDetailPage = () => {
     queryKey: ["ad-advertiser", ad?.advertiser_user_id],
     enabled: !!ad?.advertiser_user_id,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, display_name, username, avatar_url, website, bio")
-        .eq("id", ad!.advertiser_user_id)
+      const { data } = await profilesPublicFrom()
+        .select("user_id, id, display_name, username, avatar_url, website, bio")
+        .eq("user_id", ad!.advertiser_user_id)
         .maybeSingle();
       return data;
     },
@@ -45,13 +47,7 @@ const AdDetailPage = () => {
     if (id) logAdEvent(id, "impression", "detail");
   }, [id]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-        กำลังโหลด...
-      </div>
-    );
-  }
+  if (isLoading) return <PageLoader />;
 
   if (!ad) {
     return (
@@ -68,7 +64,7 @@ const AdDetailPage = () => {
 
   const handleCta = () => {
     logAdEvent(ad.id, "click", "detail");
-    window.open(ad.target_url, "_blank", "noopener,noreferrer");
+    openSafeExternalUrl(ad.target_url);
   };
 
   const handleInterest = () => {

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { normalizePlanId } from "@/lib/tierMembership";
+import { isAplus1SubscriptionsEnabled } from "@/lib/aplus1Launch";
 
 export interface SubscriptionRow {
   id: string;
@@ -35,10 +36,11 @@ export function useSubscription() {
   const env = getStripeEnvironment();
   const userId = user?.id;
   const queryClient = useQueryClient();
+  const subscriptionsEnabled = isAplus1SubscriptionsEnabled();
 
   const query = useQuery({
     queryKey: ["subscription", userId, env],
-    enabled: !!userId,
+    enabled: !!userId && subscriptionsEnabled,
     queryFn: async () => {
       const [{ data: sub }, { data: profile }, { data: credits }] = await Promise.all([
         supabase
@@ -72,7 +74,7 @@ export function useSubscription() {
   });
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !subscriptionsEnabled) return;
     const invalidate = () =>
       queryClient.invalidateQueries({ queryKey: ["subscription", userId, env] });
     const topic = `subs-${userId}-${Math.random().toString(36).slice(2, 10)}`;
@@ -97,7 +99,20 @@ export function useSubscription() {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [userId, env, queryClient]);
+  }, [userId, env, queryClient, subscriptionsEnabled]);
+
+  if (!subscriptionsEnabled) {
+    return {
+      subscription: null,
+      tier: "free" as Tier,
+      isPro: false,
+      isActive: false,
+      credits: 0,
+      seats: 1,
+      isLoading: false,
+      refetch: query.refetch,
+    };
+  }
 
   const sub = query.data?.subscription ?? null;
   const profileTier = query.data?.profileTier ?? "free";

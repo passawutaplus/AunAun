@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { ImagePlus, MessageCircle, Send, Reply, X } from "lucide-react";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
@@ -277,7 +278,7 @@ const CommunityCommentSection = ({ postId }: Props) => {
         </>
       )}
       <div className="space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">กำลังโหลด...</p>}
+        {isLoading && <InlineLoader className="py-6" />}
         {sortedTree.map((node) => (
           <Row
             key={node.comment.id}

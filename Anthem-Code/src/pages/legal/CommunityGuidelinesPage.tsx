@@ -1,34 +1,42 @@
 import LegalLayout from "@/components/LegalLayout";
-import { LEGAL_APP_NAME, LEGAL_SUPPORT_EMAIL, LEGAL_UPDATED_AT } from "@/lib/legalConfig";
+import { LEGAL_APP_NAME, LEGAL_SUPPORT_EMAIL } from "@/lib/legalConfig";
 import {
   COMMUNITY_CONTENT_RULES,
-  COMMUNITY_MODERATION_CONTEXTS,
+  COMMUNITY_FIELD_RULES,
+  COMMUNITY_GUIDELINES_UPDATED_AT,
+  COMMUNITY_REPORT_REASONS,
+  COMMUNITY_REPORT_TARGETS,
   COMMUNITY_STRIKE_LADDER,
   COMMUNITY_STRIKE_RESET_DAYS,
 } from "@/data/communityModerationPolicy";
 
 const CommunityGuidelinesPage = () => (
   <LegalLayout title="กฎชุมชนและการดูแลความปลอดภัย">
-    <p className="text-muted-foreground text-sm">อัปเดตล่าสุด: {LEGAL_UPDATED_AT}</p>
+    <p className="text-muted-foreground text-sm">อัปเดตล่าสุด: {COMMUNITY_GUIDELINES_UPDATED_AT}</p>
 
     <p>
-      {LEGAL_APP_NAME} เป็นชุมชนครีเอทีฟ — เราอยากให้ทุกคนพูดคุย แชร์ไอเดีย และช่วยเหลือกันได้อย่างสุภาพ
-      เอกสารนี้อธิบายพฤติกรรมที่ไม่เหมาะสม ระบบกรองคำหยาบ และโทษแบนชั่วคราว
+      {LEGAL_APP_NAME} เป็นชุมชนครีเอทีฟ — เราอยากให้ทุกคนแชร์ไอเดีย คุยงาน และช่วยเหลือกันได้อย่างสุภาพ
+      เอกสารนี้อธิบายพฤติกรรมที่ไม่เหมาะสม ระบบกรองคำหยาบ และโทษจำกัดการโพสต์
     </p>
 
-    <h2>1. Designer Area (Tips & Q&A)</h2>
+    <h2>1. โพสต์ชุมชน (Area)</h2>
     <p>
-      โพสต์ใน <strong>Designer Area</strong> ใช้กฎเดียวกับชุมชน ไม่ว่าจะเป็น Tips หรือคำถาม Q&A
+      โพสต์ในชุมชน (แท็บ Area บนหน้าแรก) ใช้กฎเดียวกัน ไม่ว่าจะเป็น Tips คำถาม หรือแชร์ประสบการณ์
       ระบบตรวจทุกส่วนที่ผู้ใช้พิมพ์:
     </p>
     <ul>
-      <li><strong>หัวข้อโพสต์</strong> — mask คำหยาบเป็น <code>***</code> และนับ strike</li>
-      <li><strong>เนื้อหาโพสต์</strong> — mask และนับ strike</li>
-      <li><strong>แท็ก</strong> — <strong>ห้าม</strong>มีคำหยาบ (ต้องแก้ก่อนโพสต์)</li>
-      <li><strong>ความคิดเห็น / ตอบกลับ</strong> — mask และนับ strike</li>
+      {Object.entries(COMMUNITY_FIELD_RULES).map(([key, rule]) => (
+        <li key={key}>
+          <strong>{rule.label}</strong>
+          {rule.blockOnProfanity
+            ? " — ห้ามมีคำหยาบ (ต้องแก้ก่อนโพสต์)"
+            : " — แทนคำหยาบด้วย *** และอาจนับ strike"}
+        </li>
+      ))}
     </ul>
     <p>
-      การสะกดเลี่ยง เช่น เว้นวรรคระหว่างพยางค์ ตัวเลขแทนตัวอักษร หรือตัวอักษรซ้ำยาวๆ ยังถูกตรวจจับ
+      การสะกดเลี่ยง เช่น เว้นวรรคระหว่างพยางค์ ตัวเลขแทนตัวอักษร ตัวอักษรซ้ำยาวๆ หรือใช้สัญลักษณ์แทนตัวอักษร
+      ยังถูกตรวจจับ
     </p>
 
     <h2>2. พฤติกรรมที่ไม่เหมาะสม</h2>
@@ -39,19 +47,27 @@ const CommunityGuidelinesPage = () => (
         </li>
       ))}
     </ul>
-    <p>
-      หากพบเนื้อหาที่ละเมิด ให้ใช้ปุ่ม <strong>รายงาน</strong> บนโพสต์ คอมเมนต์ ผลงาน โปรไฟล์ แชท หรืองาน
-      แล้วติดตามสถานะได้ที่ <a href="/me/reports">รายงานของฉัน</a>
-    </p>
 
-    <h2>3. ระบบกรองคำหยาบอัตโนมัติ</h2>
+    <h2>3. ระบบกรองอัตโนมัติ</h2>
     <ul>
-      <li>เมื่อระบบตรวจพบคำหยาบ จะแสดงเตือนก่อนโพสต์</li>
-      <li>ใน <strong>แชท</strong> คำหยาบจะถูกแทนด้วย <code>***</code> ก่อนส่ง</li>
-      <li>ใน <strong>Designer Area</strong> หัวข้อ/เนื้อหา/คอมเมนต์จะ mask แล้วบันทึก และนับ strike ต่อครั้งที่ตรวจพบ</li>
-      <li><strong>แท็ก</strong> ที่มีคำหยาบจะไม่ผ่าน — ต้องลบหรือแก้ก่อนเผยแพร่</li>
-      <li>รูปแบบ <strong>spam</strong> (ลิงก์โปรโมทมากเกินไป ข้อความหาเงินง่าย ฯลฯ) จะถูกบล็อก</li>
-      <li>ใน <strong>FAQ โปรไฟล์</strong> ระบบจะไม่อนุญาตให้บันทึกถ้ามีคำหยาบ</li>
+      <li>เมื่อระบบตรวจพบคำหยาบ จะแสดงเตือนก่อนโพสต์หรือส่งข้อความ</li>
+      <li>
+        ใน <strong>แชท</strong> (จ้างงาน / คอลแลป / กลุ่ม) คำหยาบจะถูกแทนด้วย <code>***</code> ก่อนส่ง
+        และอาจนับ strike
+      </li>
+      <li>
+        ใน <strong>โพสต์ชุมชน</strong> หัวข้อ/เนื้อหา/ความคิดเห็นจะ mask แล้วบันทึก และนับ strike ต่อครั้งที่ตรวจพบ
+      </li>
+      <li>
+        <strong>แท็ก</strong> ที่มีคำหยาบจะไม่ผ่าน — ต้องลบหรือแก้ก่อนเผยแพร่
+      </li>
+      <li>
+        <strong>ความคิดเห็นบนผลงาน</strong> ใช้กฎเดียวกัน — mask และนับ strike
+      </li>
+      <li>
+        รูปแบบ <strong>spam</strong> (ลิงก์โปรโมทมากเกินไป ข้อความหาเงินง่าย ลิงก์ Telegram/LINE น่าสงสัย ฯลฯ)
+        จะถูกบล็อก
+      </li>
     </ul>
 
     <h3>หมวดคำที่ระบบตรวจ (ตัวอย่าง)</h3>
@@ -85,21 +101,32 @@ const CommunityGuidelinesPage = () => (
     </table>
     <p>
       Strike จะรีเซ็ตหลังไม่มีเหตุการณ์ใหม่ครบ {COMMUNITY_STRIKE_RESET_DAYS} วัน
-      ระหว่างถูกจำกัด คุณยังเข้าชมและอ่านเนื้อหาได้ แต่ไม่สามารถคอมเมนต์ แชท หรือโพสต์ใน Designer Area ได้
+      ระหว่างถูกจำกัด คุณยังเข้าชมและอ่านเนื้อหาได้ แต่ไม่สามารถคอมเมนต์ แชท หรือโพสต์ในชุมชนได้
     </p>
 
-    <h2>5. บันทึกเหตุการณ์ (สำหรับทีมดูแล)</h2>
-    <p>ระบบบันทึก context ของ strike แยกตามประเภทเนื้อหา เช่น:</p>
-    <ul className="text-sm font-mono">
-      {Object.values(COMMUNITY_MODERATION_CONTEXTS).map((ctx) => (
-        <li key={ctx}>{ctx}</li>
+    <h2>5. วิธีรายงานเนื้อหา</h2>
+    <p>
+      หากพบเนื้อหาที่ละเมิด ให้ใช้ปุ่ม <strong>รายงาน</strong> บนเนื้อหานั้น แล้วติดตามสถานะได้ที่{" "}
+      <a href="/me/reports">รายงานของฉัน</a>
+    </p>
+    <p className="text-sm text-muted-foreground">รายงานได้จาก:</p>
+    <ul className="text-sm">
+      {COMMUNITY_REPORT_TARGETS.map((t) => (
+        <li key={t.id}>{t.label}</li>
       ))}
     </ul>
-
-    <h2>6. การแบนจากรายงาน (Report)</h2>
-    <p>
-      ทีมดูแลจะตรวจรายงานจากผู้ใช้ หากพบว่ามีการละเมิดจริง อาจ:
+    <p className="text-sm text-muted-foreground mt-3">เหตุผลที่เลือกได้:</p>
+    <ul className="text-sm">
+      {COMMUNITY_REPORT_REASONS.map((r) => (
+        <li key={r.id}>{r.label}</li>
+      ))}
+    </ul>
+    <p className="text-sm">
+      สามารถแนบรายละเอียดและหลักฐานเพิ่มเติมได้ — ทีมดูแลจะไม่เปิดเผยตัวตนผู้รายงาน
     </p>
+
+    <h2>6. การดูแลจากทีม</h2>
+    <p>ทีมดูแลจะตรวจรายงานจากผู้ใช้ หากพบว่ามีการละเมิดจริง อาจ:</p>
     <ul>
       <li>เพิ่ม strike</li>
       <li>จำกัดการโพสต์ชั่วคราว (mute / ban)</li>
@@ -109,12 +136,13 @@ const CommunityGuidelinesPage = () => (
 
     <h2>7. อุทธรณ์และติดต่อ</h2>
     <p>
-      หากคิดว่าถูกแบนโดยไม่เป็นธรรม ติดต่อ{" "}
+      หากคิดว่าถูกจำกัดโดยไม่เป็นธรรม ติดต่อ{" "}
       <a href={`mailto:${LEGAL_SUPPORT_EMAIL}`}>{LEGAL_SUPPORT_EMAIL}</a> พร้อม username และรายละเอียด
     </p>
     <p>
       อ่านเพิ่ม: <a href="/legal/terms">ข้อกำหนดการใช้งาน</a> ·{" "}
-      <a href="/legal/privacy">นโยบายความเป็นส่วนตัว</a>
+      <a href="/legal/privacy">นโยบายความเป็นส่วนตัว</a> ·{" "}
+      <a href="/legal/ip">ทรัพย์สินทางปัญญา</a>
     </p>
   </LegalLayout>
 );

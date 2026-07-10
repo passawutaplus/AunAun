@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Gift as GiftIcon, Coins, FolderKanban, ArrowRight, Check, Circle } from "lucide-react";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Progress } from "@/components/ui/progress";
 import { useReceivedGiftsByProject } from "@/hooks/useReceivedGiftsByProject";
 import { useCreatorEligibility } from "@/hooks/useCreatorEligibility";
@@ -83,7 +84,7 @@ const ReceivedGiftsSummary = ({ userId }: Props) => {
   const { data: eligibility, isLoading: eligibilityLoading } = useCreatorEligibility(userId);
 
   if (isLoading || eligibilityLoading) {
-    return <p className="text-sm text-muted-foreground">กำลังโหลด...</p>;
+    return <InlineLoader className="py-6" />;
   }
 
   const showUnlock = eligibility && !eligibility.canReceiveGifts;

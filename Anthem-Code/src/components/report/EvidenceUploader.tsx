@@ -1,10 +1,15 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Loader2, FileImage, FileVideo } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { EvidenceFile } from "@/hooks/useReports";
+import {
+  encodeReportEvidenceRef,
+  signedReportEvidenceUrl,
+  deleteReportEvidenceRef,
+} from "@/lib/reportEvidenceStorage";
 
 const MAX_FILES = 5;
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
@@ -12,6 +17,37 @@ const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 interface Props {
   value: EvidenceFile[];
   onChange: (files: EvidenceFile[]) => void;
+}
+
+function EvidencePreview({ file }: { file: EvidenceFile }) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    file.url.startsWith("http") ? file.url : null,
+  );
+
+  useEffect(() => {
+    if (file.url.startsWith("http")) {
+      setPreviewUrl(file.url);
+      return;
+    }
+    let cancelled = false;
+    void signedReportEvidenceUrl(file.url).then((url) => {
+      if (!cancelled) setPreviewUrl(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [file.url]);
+
+  if (file.type.startsWith("image/") && previewUrl) {
+    return <img src={previewUrl} alt={file.name} className="w-full h-full object-cover" />;
+  }
+
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground p-1">
+      {file.type.startsWith("video/") ? <FileVideo className="w-6 h-6" /> : <FileImage className="w-6 h-6" />}
+      <span className="text-[9px] line-clamp-1 mt-1">{file.name}</span>
+    </div>
+  );
 }
 
 const EvidenceUploader = ({ value, onChange }: Props) => {
@@ -45,14 +81,24 @@ const EvidenceUploader = ({ value, onChange }: Props) => {
         toast.error(`อัปโหลด ${file.name} ไม่สำเร็จ`);
         continue;
       }
-      const { data } = supabase.storage.from("report-evidence").getPublicUrl(path);
-      uploaded.push({ url: data.publicUrl, type: file.type, name: file.name, size: file.size });
+      uploaded.push({
+        url: encodeReportEvidenceRef(path),
+        type: file.type,
+        name: file.name,
+        size: file.size,
+      });
     }
     onChange([...value, ...uploaded]);
     setUploading(false);
   };
 
-  const removeAt = (i: number) => onChange(value.filter((_, idx) => idx !== i));
+  const removeAt = async (i: number) => {
+    const removed = value[i];
+    if (removed && !removed.url.startsWith("http")) {
+      await deleteReportEvidenceRef(removed.url);
+    }
+    onChange(value.filter((_, idx) => idx !== i));
+  };
 
   return (
     <div className="space-y-2">
@@ -82,18 +128,11 @@ const EvidenceUploader = ({ value, onChange }: Props) => {
       {value.length > 0 && (
         <div className="grid grid-cols-3 gap-1.5">
           {value.map((f, i) => (
-            <div key={f.url} className="relative group rounded-md overflow-hidden border border-border bg-muted aspect-square">
-              {f.type.startsWith("image/") ? (
-                <img src={f.url} alt={f.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground p-1">
-                  {f.type.startsWith("video/") ? <FileVideo className="w-6 h-6" /> : <FileImage className="w-6 h-6" />}
-                  <span className="text-[9px] line-clamp-1 mt-1">{f.name}</span>
-                </div>
-              )}
+            <div key={`${f.url}-${i}`} className="relative group rounded-md overflow-hidden border border-border bg-muted aspect-square">
+              <EvidencePreview file={f} />
               <button
                 type="button"
-                onClick={() => removeAt(i)}
+                onClick={() => void removeAt(i)}
                 className="absolute top-1 right-1 bg-background/80 backdrop-blur-sm rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                 aria-label="ลบไฟล์"
               >

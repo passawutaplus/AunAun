@@ -19,6 +19,7 @@ import { useStudioConversation } from "@/hooks/useChat";
 import JobCard from "@/components/jobs/JobCard";
 import { StudioHireInbox } from "@/components/studio/StudioHireInbox";
 import JobCoverUploadField from "@/components/jobs/JobCoverUploadField";
+import PageLoader from "@/components/ui/PageLoader";
 import JobCardPreview from "@/components/jobs/JobCardPreview";
 
 const StudioManageInner = () => {
@@ -43,7 +44,7 @@ const StudioManageInner = () => {
   const studioChat = useStudioConversation();
   const [jobDialogOpen, setJobDialogOpen] = useState(params.get("new") === "1");
 
-  if (isLoading) return <div className="min-h-screen grid place-items-center text-muted-foreground">กำลังโหลด...</div>;
+  if (isLoading) return <PageLoader />;
 
   if (myStudios.length === 0) {
     return (

@@ -92,17 +92,10 @@ deploy_production() {
   if [[ "$dir" == *Anthem-Code* ]]; then
     BUILD_ENVS+=(--build-env "VITE_SO1O_APP_URL=${VITE_SO1O_APP_URL:-https://solofreelancer.com}")
     BUILD_ENVS+=(--build-env "VITE_OPS_HUB_URL=${VITE_OPS_HUB_URL:-https://so1o-ops-hub.vercel.app}")
-    if [[ "$MODE" == "production" || "$MODE" == "prod" ]]; then
-      BUILD_ENVS+=(--build-env "VITE_APLUS1_LAUNCH_MINIMAL=true")
-      BUILD_ENVS+=(--build-env "VITE_APLUS1_PAYMENTS_ENABLED=false")
-    else
-      BUILD_ENVS+=(--build-env "VITE_APLUS1_PAYMENTS_ENABLED=true")
-    fi
-    if [[ "$MODE" == "demo" ]]; then
-      BUILD_ENVS+=(--build-env "VITE_STRIPE_MODE=sandbox")
-    else
-      BUILD_ENVS+=(--build-env "VITE_STRIPE_MODE=live")
-    fi
+    BUILD_ENVS+=(--build-env "VITE_APLUS1_LAUNCH_MINIMAL=true")
+    BUILD_ENVS+=(--build-env "VITE_APLUS1_PAYMENTS_ENABLED=false")
+    BUILD_ENVS+=(--build-env "VITE_SOLO_ECOSYSTEM_ENABLED=false")
+    BUILD_ENVS+=(--build-env "VITE_STRIPE_MODE=sandbox")
   fi
 
   DEPLOY_OUTPUT="$(mktemp)"

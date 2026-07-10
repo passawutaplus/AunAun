@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Building2, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublicFrom } from "@/lib/profileAccess";
 
 interface Props {
   studioId?: string | null;
@@ -29,8 +30,7 @@ const ProjectCreditsBlock = ({ studioId, creditedUserIds = [], ownerId }: Props)
     queryKey: ["project-credit-people", ids.sort().join(",")],
     enabled: ids.length > 0,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
+      const { data } = await profilesPublicFrom()
         .select("id, display_name, avatar_url, username, role")
         .in("id", ids);
       return data ?? [];

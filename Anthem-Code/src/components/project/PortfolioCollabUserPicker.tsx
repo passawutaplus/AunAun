@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AtSign, Check, ChevronDown, Clock, Search, UserRound, X } from "lucide-react";
+import { CompactLoader } from "@/components/ui/BanterLoader";
 import UserAvatar from "@/components/UserAvatar";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -164,7 +165,7 @@ export function PortfolioCollabUserPicker({
           </div>
           <div className="max-h-56 overflow-y-auto p-1">
             {isLoading && (
-              <p className="text-xs text-muted-foreground text-center py-6">กำลังโหลดรายชื่อ…</p>
+              <CompactLoader label="กำลังโหลดรายชื่อ…" className="py-6" />
             )}
             {!isLoading && candidates.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-6 px-3">

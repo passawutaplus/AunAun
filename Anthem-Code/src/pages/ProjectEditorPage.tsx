@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { projectSchema, validateProjectPublish } from "@/lib/validators";
 import { portfolioEditorHasContent } from "@/lib/portfolioEditorStorage";
 import { categories, DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory } from "@/data/projectTypes";
+import PageLoader from "@/components/ui/PageLoader";
 import { toast } from "sonner";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import StudioCreditPicker from "@/components/profile/StudioCreditPicker";
@@ -52,7 +53,7 @@ import { ProjectEditorToolsSidebar } from "@/components/project/ProjectEditorToo
 import { ProjectEditorGallerySection } from "@/components/project/ProjectEditorGallerySection";
 import { ProjectEditorContinueAdd } from "@/components/project/ProjectEditorContinueAdd";
 import { PortfolioLinkedPostPicker } from "@/components/project/PortfolioLinkedPostPicker";
-import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
+import { isAplus1LaunchMinimal, isAplus1SubscriptionsEnabled, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 import { PortfolioCollabUserPicker } from "@/components/project/PortfolioCollabUserPicker";
 import { SortableGalleryGrid } from "@/components/project/SortableGalleryGrid";
 import { ProjectContentBlocksEditor } from "@/components/project/ProjectContentBlocksEditor";
@@ -706,7 +707,11 @@ const ProjectEditorPage = () => {
           .eq("owner_id", user.id)
           .eq("status", "Published");
         if ((count ?? 0) >= maxPublished) {
-          toast.error(`แพ็ก Free เผยแพร่ได้สูงสุด ${maxPublished} ผลงาน — อัปเกรด Pro เพื่อไม่จำกัด`);
+          toast.error(
+            isAplus1SubscriptionsEnabled()
+              ? `แพ็ก Free เผยแพร่ได้สูงสุด ${maxPublished} ผลงาน — อัปเกรด Pro เพื่อไม่จำกัด`
+              : `เผยแพร่ได้สูงสุด ${maxPublished} ผลงาน — ลบหรือแก้ไขผลงานเก่าก่อน`,
+          );
           return;
         }
       }
@@ -771,7 +776,8 @@ const ProjectEditorPage = () => {
         scheduleBackgroundAssetScan(savedId);
         if (
           targetStatus === "Published" &&
-          drillMetaRef.current.drill_type === "daily"
+          drillMetaRef.current.drill_type === "daily" &&
+          isLaunchDesignDrillEnabled()
         ) {
           navigate("/?drill=1");
         } else {
@@ -784,7 +790,8 @@ const ProjectEditorPage = () => {
         scheduleBackgroundAssetScan(created.id);
         if (
           targetStatus === "Published" &&
-          drillMetaRef.current.drill_type === "daily"
+          drillMetaRef.current.drill_type === "daily" &&
+          isLaunchDesignDrillEnabled()
         ) {
           navigate("/?drill=1");
         } else {
@@ -911,12 +918,7 @@ const ProjectEditorPage = () => {
   }
 
   if (editing && (authLoading || projectLoading)) {
-    return (
-      <div className="min-h-screen bg-app-ambient flex items-center justify-center text-muted-foreground">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" />
-        กำลังโหลด…
-      </div>
-    );
+    return <PageLoader className="bg-app-ambient" />;
   }
 
   if (editing && projectError) {

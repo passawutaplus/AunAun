@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Eye, EyeOff, KeyRound, Loader2 } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, KeyRound, Loader2, MailCheck, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { userHasEmailPassword, verifyUserPassword } from "@/lib/sensitiveActionAuth";
+import { buildResetPasswordUrl } from "@/lib/oauthRedirect";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 function PasswordField({
   id,
@@ -48,34 +49,66 @@ function PasswordField({
   );
 }
 
+function authMethodLabel(user: User, hasPassword: boolean): string {
+  const usesGoogle = user.identities?.some((i) => i.provider === "google") ?? false;
+  if (usesGoogle && !hasPassword) return "เข้าสู่ระบบด้วย Google";
+  if (usesGoogle && hasPassword) return "Google และรหัสผ่าน";
+  return "อีเมลและรหัสผ่าน";
+}
+
 export function ChangePasswordSection({ user }: { user: User }) {
+  const email = user.email?.trim() ?? "";
+  const verified = !!user.email_confirmed_at;
   const hasPassword = userHasEmailPassword(user);
 
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [saveBusy, setSaveBusy] = useState(false);
 
-  if (!hasPassword) {
-    return (
-      <section className="rounded-2xl glass-panel p-6 space-y-3">
-        <div className="flex items-center gap-2">
-          <KeyRound className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">รหัสผ่าน</h2>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          บัญชีนี้เข้าสู่ระบบด้วย Google — ไม่มีรหัสผ่านในระบบ
-        </p>
-        <Button asChild variant="outline" size="sm" className="rounded-full">
-          <Link to="/auth/forgot">ตั้งรหัสผ่านผ่านอีเมล</Link>
-        </Button>
-      </section>
-    );
-  }
+  const sendVerificationEmail = async () => {
+    if (!email) {
+      toast.error("บัญชีนี้ไม่มีอีเมล");
+      return;
+    }
+    setVerifyBusy(true);
+    try {
+      const { error } = await supabase.auth.resend({ type: "signup", email });
+      if (error) toast.error(error.message);
+      else toast.success("ส่งอีเมลยืนยันตัวตนแล้ว — ตรวจกล่องจดหมายของคุณ");
+    } finally {
+      setVerifyBusy(false);
+    }
+  };
 
-  const submit = async (e: React.FormEvent) => {
+  const sendPasswordResetEmail = async () => {
+    if (!email) {
+      toast.error("บัญชีนี้ไม่มีอีเมล");
+      return;
+    }
+    setResetBusy(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: buildResetPasswordUrl(),
+      });
+      if (error) toast.error(error.message);
+      else {
+        toast.success(
+          hasPassword ? "ส่งลิงก์เปลี่ยนรหัสผ่านแล้ว" : "ส่งลิงก์ตั้งรหัสผ่านแล้ว",
+          { description: email },
+        );
+      }
+    } finally {
+      setResetBusy(false);
+    }
+  };
+
+  const submitPasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user.email) return;
+    if (!email) return;
     if (next.length < 8) {
       toast.error("รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร");
       return;
@@ -84,9 +117,9 @@ export function ChangePasswordSection({ user }: { user: User }) {
       toast.error("รหัสผ่านยืนยันไม่ตรงกัน");
       return;
     }
-    setBusy(true);
+    setSaveBusy(true);
     try {
-      await verifyUserPassword(user.email, current);
+      await verifyUserPassword(email, current);
       const { error } = await supabase.auth.updateUser({ password: next });
       if (error) toast.error(error.message);
       else {
@@ -94,11 +127,12 @@ export function ChangePasswordSection({ user }: { user: User }) {
         setCurrent("");
         setNext("");
         setConfirm("");
+        setShowPasswordForm(false);
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "รหัสผ่านปัจจุบันไม่ถูกต้อง");
     } finally {
-      setBusy(false);
+      setSaveBusy(false);
     }
   };
 
@@ -106,40 +140,141 @@ export function ChangePasswordSection({ user }: { user: User }) {
     <section className="rounded-2xl glass-panel p-6 space-y-4">
       <div className="flex items-center gap-2">
         <KeyRound className="w-5 h-5 text-primary" />
-        <h2 className="font-semibold text-foreground">เปลี่ยนรหัสผ่าน</h2>
+        <h2 className="font-semibold text-foreground">รหัสผ่านและความปลอดภัย</h2>
       </div>
-      <form onSubmit={submit} className="space-y-3 max-w-md">
-        <PasswordField
-          id="settings-current-pass"
-          label="รหัสผ่านปัจจุบัน"
-          value={current}
-          onChange={setCurrent}
-          autoComplete="current-password"
-        />
-        <PasswordField
-          id="settings-new-pass"
-          label="รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)"
-          value={next}
-          onChange={setNext}
-          autoComplete="new-password"
-        />
-        <PasswordField
-          id="settings-confirm-pass"
-          label="ยืนยันรหัสผ่านใหม่"
-          value={confirm}
-          onChange={setConfirm}
-          autoComplete="new-password"
-        />
-        <div className="flex flex-wrap items-center gap-3 pt-1">
-          <Button type="submit" disabled={busy} size="sm" className="rounded-full">
-            {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            บันทึกรหัสผ่านใหม่
-          </Button>
-          <Link to="/auth/forgot" className="text-xs text-primary hover:underline">
-            ลืมรหัสผ่าน?
-          </Link>
+
+      <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 space-y-2">
+        <p className="text-sm text-foreground">
+          อีเมลบัญชี: <span className="font-medium">{email || "—"}</span>
+        </p>
+        <p className="text-xs text-muted-foreground">{authMethodLabel(user, hasPassword)}</p>
+        <div className="flex items-center gap-2 text-xs">
+          {verified ? (
+            <>
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-emerald-700 dark:text-emerald-300">ยืนยันตัวตนทางอีเมลแล้ว</span>
+            </>
+          ) : (
+            <>
+              <MailCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span className="text-amber-700 dark:text-amber-300">ยังไม่ได้ยืนยันอีเมล</span>
+            </>
+          )}
         </div>
-      </form>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="rounded-full"
+          disabled={!email || verified || verifyBusy}
+          onClick={() => void sendVerificationEmail()}
+        >
+          {verifyBusy ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <ShieldCheck className="h-4 w-4 mr-2" />
+          )}
+          {verified ? "ยืนยันตัวตนแล้ว" : "ส่งอีเมลยืนยันตัวตน"}
+        </Button>
+
+        <Button
+          type="button"
+          variant={showPasswordForm ? "secondary" : "default"}
+          size="sm"
+          className="rounded-full"
+          disabled={!email || (!hasPassword && resetBusy)}
+          onClick={() => {
+            if (hasPassword) {
+              setShowPasswordForm((open) => !open);
+              return;
+            }
+            void sendPasswordResetEmail();
+          }}
+        >
+          {!hasPassword && resetBusy ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <KeyRound className="h-4 w-4 mr-2" />
+          )}
+          {hasPassword && showPasswordForm ? "ปิดฟอร์มเปลี่ยนรหัส" : "เปลี่ยนรหัสผ่าน"}
+        </Button>
+
+        {!hasPassword && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            disabled={!email || resetBusy}
+            onClick={() => void sendPasswordResetEmail()}
+          >
+            {resetBusy ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <MailCheck className="h-4 w-4 mr-2" />
+            )}
+            ตั้งรหัสผ่านผ่านอีเมล
+          </Button>
+        )}
+      </div>
+
+      {!verified && (
+        <p className="text-xs text-muted-foreground">
+          กด <strong>ส่งอีเมลยืนยันตัวตน</strong> แล้วเปิดลิงก์ในอีเมลเพื่อยืนยันบัญชี
+        </p>
+      )}
+
+      {showPasswordForm && hasPassword && (
+        <form onSubmit={submitPasswordChange} className="space-y-3 max-w-md border-t border-border/40 pt-4">
+          <PasswordField
+            id="settings-current-pass"
+            label="รหัสผ่านปัจจุบัน"
+            value={current}
+            onChange={setCurrent}
+            autoComplete="current-password"
+          />
+          <PasswordField
+            id="settings-new-pass"
+            label="รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)"
+            value={next}
+            onChange={setNext}
+            autoComplete="new-password"
+          />
+          <PasswordField
+            id="settings-confirm-pass"
+            label="ยืนยันรหัสผ่านใหม่"
+            value={confirm}
+            onChange={setConfirm}
+            autoComplete="new-password"
+          />
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <Button type="submit" disabled={saveBusy} size="sm" className="rounded-full">
+              {saveBusy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              บันทึกรหัสผ่านใหม่
+            </Button>
+            <button
+              type="button"
+              onClick={() => void sendPasswordResetEmail()}
+              disabled={resetBusy || !email}
+              className={cn(
+                "text-xs text-primary hover:underline disabled:opacity-50 disabled:no-underline",
+              )}
+            >
+              {resetBusy ? "กำลังส่งอีเมล…" : "หรือส่งลิงก์เปลี่ยนรหัสผ่านทางอีเมล"}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {!hasPassword && (
+        <p className="text-xs text-muted-foreground">
+          ยังไม่มีรหัสผ่านในระบบ — กด <strong>เปลี่ยนรหัสผ่าน</strong> หรือ{" "}
+          <strong>ตั้งรหัสผ่านผ่านอีเมล</strong> แล้วเปิดลิงก์ในอีเมลเพื่อตั้งรหัสใหม่
+        </p>
+      )}
     </section>
   );
 }

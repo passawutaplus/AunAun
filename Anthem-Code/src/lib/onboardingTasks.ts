@@ -119,7 +119,7 @@ export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
     id: "skills",
     title: "ใส่ทักษะ",
     description: "บอกว่าคุณถนัดอะไร — ช่วยให้ลูกค้าจับคู่ได้ตรง",
-    href: "/settings",
+    href: "/settings#profile-about",
     icon: Wrench,
     rewardPx: 8,
     difficulty: "medium",
@@ -138,7 +138,7 @@ export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
     id: "profile",
     title: "ตั้งโปรไฟล์ให้พร้อม",
     description: "ใส่รูปโปรไฟล์ username และแนะนำตัวอย่างน้อย 20 ตัวอักษร",
-    href: "/settings",
+    href: "/portfolio",
     icon: User,
     rewardPx: 12,
     difficulty: "medium",
@@ -170,9 +170,47 @@ const LAUNCH_HIDDEN_TASK_IDS: OnboardingTaskId[] = [
   "jobs",
 ];
 
+const LAUNCH_TASK_COPY: Partial<Record<OnboardingTaskId, Pick<OnboardingTaskDef, "title" | "description">>> = {
+  like: {
+    title: "กดหัวใจผลงาน",
+    description: "กดหัวใจผลงานในฟีด 1 ครั้ง",
+  },
+  explore_feed: {
+    title: "สำรวจฟีดผลงาน",
+    description: "เปิดหน้าแรก ดูผลงานใน Projects",
+  },
+  explore_designers: {
+    title: "สำรวจดีไซเนอร์",
+    description: "เปิดแท็บ Designers ดูครีเอเตอร์",
+  },
+  follow: {
+    title: "ติดตามครีเอเตอร์",
+    description: "ติดตามคนที่ชอบจาก Designers",
+  },
+  skills: {
+    title: "ใส่ทักษะ",
+    description: "บอกทักษะที่ถนัดในหน้าตั้งค่า",
+  },
+  publish_project: {
+    title: "เผยแพร่ผลงานชิ้นแรก",
+    description: "ลงผลงานแล้วตั้ง Published",
+  },
+  share_profile: {
+    title: "แชร์พอร์ตโฟล์สาธารณะ",
+    description: "คัดลอกลิงก์โปรไฟล์ส่งลูกค้า",
+  },
+  profile: {
+    title: "ตั้งโปรไฟล์ให้พร้อม",
+    description: "ใส่รูปที่โปรไฟล์ แล้วตั้ง username กับแนะนำตัวที่หน้าตั้งค่า",
+  },
+};
+
 export function getVisibleOnboardingTasks(): OnboardingTaskDef[] {
   if (!isAplus1LaunchMinimal()) return ONBOARDING_TASKS;
-  return ONBOARDING_TASKS.filter((task) => !LAUNCH_HIDDEN_TASK_IDS.includes(task.id));
+  return ONBOARDING_TASKS.filter((task) => !LAUNCH_HIDDEN_TASK_IDS.includes(task.id)).map((task) => {
+    const copy = LAUNCH_TASK_COPY[task.id];
+    return copy ? { ...task, ...copy } : task;
+  });
 }
 
 export type OnboardingSignals = {

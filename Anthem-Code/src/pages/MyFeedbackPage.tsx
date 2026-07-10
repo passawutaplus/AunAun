@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Star } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Button } from "@/components/ui/button";
 
 const STATUS_TONE: Record<string, string> = {
@@ -33,7 +34,7 @@ const MyFeedbackPage = () => {
       <p className="text-sm text-muted-foreground mb-6">ความคิดเห็นที่คุณส่งและสถานะการพิจารณา</p>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">กำลังโหลด...</p>
+        <InlineLoader />
       ) : rows.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-sm text-muted-foreground">ยังไม่เคยส่งฟีดแบ็ก</p>

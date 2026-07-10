@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Check, ChevronDown, MessageSquare, Search, X } from "lucide-react";
+import { CompactLoader } from "@/components/ui/BanterLoader";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCommunityPostsByAuthor } from "@/hooks/useCommunityPosts";
@@ -155,7 +156,7 @@ export function PortfolioLinkedPostPicker({
           </div>
           <div className="max-h-56 overflow-y-auto p-1">
             {isLoading && (
-              <p className="text-xs text-muted-foreground text-center py-6">กำลังโหลดโพสต์…</p>
+              <CompactLoader label="กำลังโหลดโพสต์…" className="py-6" />
             )}
             {!isLoading && myPosts.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-6 px-3">

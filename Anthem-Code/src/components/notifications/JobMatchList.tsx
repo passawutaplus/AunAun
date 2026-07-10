@@ -6,6 +6,7 @@ import {
   useDismissJobMatch,
   useMarkJobMatchRead,
 } from "@/hooks/useJobMatchNotifications";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 
 const timeAgo = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
@@ -25,7 +26,7 @@ export const JobMatchList = ({ onBeforeNavigate }: { onBeforeNavigate?: () => vo
   const dismiss = useDismissJobMatch();
   const markRead = useMarkJobMatchRead();
 
-  if (isLoading) return <div className="text-center py-10 text-muted-foreground text-sm">กำลังโหลด...</div>;
+  if (isLoading) return <InlineLoader />;
   if (data.length === 0)
     return (
       <div className="text-center py-16 text-muted-foreground">

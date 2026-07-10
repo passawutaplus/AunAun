@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronDown, ChevronUp, Circle, Gift, PartyPopper, Sparkles } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Circle, Compass, PartyPopper } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboardingChecklist } from "@/hooks/useOnboardingChecklist";
@@ -9,6 +9,7 @@ import { useWelcomeMissions } from "@/hooks/useWelcomeMissions";
 import { useWelcomeMissionCatalog } from "@/hooks/useWelcomeMissionCatalog";
 import { getVisibleOnboardingTasks, likeMissionHint } from "@/lib/onboardingTasks";
 import { friendlyAmlError } from "@/lib/amlErrors";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { springProgress } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export default function OnboardingChecklist({ variant = "full" }: Props) {
+  const tourMode = isAplus1LaunchMinimal();
   const { user } = useAuth();
   const navigate = useNavigate();
   const {
@@ -36,29 +38,29 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
   } = useOnboardingChecklist(user?.id);
 
   const { data: rewardById } = useWelcomeMissionCatalog();
-
   const {
     claimedIds,
     lifetimeWelcomePx,
     welcomePx,
     claim,
     isLoading: missionsLoading,
-  } = useWelcomeMissions(user?.id);
+  } = useWelcomeMissions(tourMode ? undefined : user?.id);
 
   const [collapsed, setCollapsed] = useState(variant === "compact");
   const [celebrating, setCelebrating] = useState(false);
 
-  const taskById = Object.fromEntries(tasks.map((t) => [t.id, t]));
+  const taskById = Object.fromEntries(getVisibleOnboardingTasks().map((t) => [t.id, t]));
   const pxEarned = Math.min(lifetimeWelcomePx, welcomeCap);
   const pxRemaining = Math.max(0, welcomeCap - lifetimeWelcomePx);
-  const welcomeCapReached = !missionsLoading && pxRemaining <= 0;
+  const welcomeCapReached = !tourMode && !missionsLoading && pxRemaining <= 0;
   const pxPercent = welcomeCap > 0 ? Math.round((pxEarned / welcomeCap) * 100) : 0;
-  const pendingTasks = tasks.filter((t) => !claimedIds.has(t.id));
+  const pendingTasks = tasks.filter((t) => (tourMode ? !t.done : !claimedIds.has(t.id)));
   const displayTasks = collapsed ? pendingTasks.slice(0, 1) : tasks;
+  const checklistComplete = tourMode ? allDone : allMissionsClaimed;
 
   useEffect(() => {
-    if (allMissionsClaimed && !celebrated) setCelebrating(true);
-  }, [allMissionsClaimed, celebrated]);
+    if (checklistComplete && !celebrated) setCelebrating(true);
+  }, [checklistComplete, celebrated]);
 
   useEffect(() => {
     if (!celebrating || celebrated) return;
@@ -68,7 +70,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
 
   if (!visible) return null;
 
-  if (allMissionsClaimed && celebrated && !celebrating) return null;
+  if (checklistComplete && celebrated && !celebrating) return null;
 
   const handleClaim = (missionId: string) => {
     if (welcomeCapReached) {
@@ -107,27 +109,29 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
           transition={{ duration: 0.28, ease: "easeOut" }}
           className="rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-6"
         >
-        <div className="flex items-center gap-3">
-          <PartyPopper className="h-6 w-6 text-primary shrink-0" />
-          <div className="flex-1 min-w-0">
-            <h2 className="text-base font-semibold text-foreground">
-              ยินดีด้วย — ทำภารกิจ Welcome Bonus ครบแล้ว!
-            </h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              รับโบนัสรวม {pxEarned.toLocaleString()} px — ใช้ส่งของขวัญให้ครีเอเตอร์ได้ที่ผลงานในฟีด
-            </p>
+          <div className="flex items-center gap-3">
+            <PartyPopper className="h-6 w-6 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base font-semibold text-foreground">
+                {tourMode ? "ทัวร์ครบแล้ว — พร้อมใช้งานต่อ!" : "ยินดีด้วย — ทำภารกิจ Welcome Bonus ครบแล้ว!"}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {tourMode
+                  ? "คุณคุ้นกับฟีด ดีไซเนอร์ และการลงผลงานแล้ว — ลงผลงานต่อหรือส่งลิงก์โปรไฟล์ให้ลูกค้าได้เลย"
+                  : `รับโบนัสรวม ${pxEarned.toLocaleString()} px — ใช้ส่งของขวัญให้ครีเอเตอร์ได้ที่ผลงานในฟีด`}
+              </p>
+            </div>
           </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            setCelebrating(false);
-            dismiss();
-          }}
-          className="mt-3 text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
-        >
-          ปิดไว้ภายหลัง
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              setCelebrating(false);
+              dismiss();
+            }}
+            className="mt-3 text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+          >
+            ปิดไว้ภายหลัง
+          </button>
         </motion.section>
       </AnimatePresence>
     );
@@ -145,30 +149,41 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
     >
       <div className="flex items-start gap-3">
         <div className="shrink-0 rounded-2xl bg-primary/15 p-2.5 text-primary">
-          <Sparkles className="h-5 w-5" />
+          <Compass className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h2 className="text-base font-semibold text-foreground">Welcome Bonus</h2>
+              <h2 className="text-base font-semibold text-foreground">
+                {tourMode ? "ทัวร์รู้จัก Aplus1" : "Welcome Bonus"}
+              </h2>
               <p className="mt-0.5 text-sm text-muted-foreground">
-                <span className="font-medium text-foreground tabular-nums">
-                  {pxEarned}/{welcomeCap} px
-                </span>
-                {pxRemaining > 0 && (
-                  <span className="text-muted-foreground">
-                    {" "}
-                    · รับได้อีก {pxRemaining.toLocaleString()} px
-                  </span>
+                {tourMode ? (
+                  <>
+                    ภารกิจสั้น ๆ ช่วยคุ้นกับแพลตฟอร์ม ·{" "}
+                    <span className="font-medium text-foreground tabular-nums">
+                      {doneCount}/{total}
+                    </span>{" "}
+                    · {percent}%
+                  </>
+                ) : (
+                  <>
+                    <span className="font-medium text-foreground tabular-nums">
+                      {pxEarned}/{welcomeCap} px
+                    </span>
+                    {pxRemaining > 0 && (
+                      <span className="text-muted-foreground">
+                        {" "}
+                        · รับได้อีก {pxRemaining.toLocaleString()} px
+                      </span>
+                    )}
+                    {" · "}
+                    {doneCount}/{total} ภารกิจ · {percent}%
+                  </>
                 )}
-                {" · "}
-                {doneCount}/{total} ภารกิจ · {percent}%
               </p>
-              {welcomePx > 0 && (
-                <p className="mt-0.5 text-xs text-primary flex items-center gap-1">
-                  <Gift className="h-3 w-3" />
-                  พร้อมส่งของขวัญ: {welcomePx.toLocaleString()} PX
-                </p>
+              {!tourMode && welcomePx > 0 && (
+                <p className="mt-0.5 text-xs text-primary">พร้อมส่งของขวัญ: {welcomePx.toLocaleString()} PX</p>
               )}
             </div>
             <button
@@ -183,21 +198,25 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
           </div>
 
           <div className="mt-3 space-y-1.5">
-            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-              <span>ความคืบหน้า PX</span>
-              <span className="tabular-nums">{pxPercent}%</span>
-            </div>
-            <div className="h-2 rounded-full bg-muted overflow-hidden">
+            {!tourMode && (
+              <>
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>ความคืบหน้า PX</span>
+                  <span className="tabular-nums">{pxPercent}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full bg-primary"
+                    initial={false}
+                    animate={{ width: `${pxPercent}%` }}
+                    transition={springProgress}
+                  />
+                </div>
+              </>
+            )}
+            <div className={cn("h-2 rounded-full bg-muted overflow-hidden", !tourMode && "h-1.5 bg-muted/60")}>
               <motion.div
-                className="h-full rounded-full bg-primary"
-                initial={false}
-                animate={{ width: `${pxPercent}%` }}
-                transition={springProgress}
-              />
-            </div>
-            <div className="h-1.5 rounded-full bg-muted/60 overflow-hidden">
-              <motion.div
-                className="h-full rounded-full bg-primary/50"
+                className={cn("h-full rounded-full bg-primary", !tourMode && "bg-primary/50")}
                 initial={false}
                 animate={{ width: `${percent}%` }}
                 transition={springProgress}
@@ -205,7 +224,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
             </div>
           </div>
 
-          {welcomeCapReached && !allMissionsClaimed && (
+          {!tourMode && welcomeCapReached && !allMissionsClaimed && (
             <p className="mt-3 text-xs text-amber-600 dark:text-amber-400 leading-relaxed rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
               รับครบโควต้า {welcomeCap.toLocaleString()} px แล้ว — ภารกิจที่ยังไม่รับจะไม่ได้ px เพิ่ม
               แต่ทำต่อเพื่อเรียนรู้แพลตฟอร์มได้
@@ -226,16 +245,16 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
                   const def = taskById[task.id];
                   const Icon = def?.icon;
                   const rewardPx = rewardById?.get(task.id) ?? def?.rewardPx ?? 0;
-                  const claimed = claimedIds.has(task.id);
+                  const claimed = !tourMode && claimedIds.has(task.id);
                   const claimable =
-                    task.done && !claimed && !welcomeCapReached && !missionsLoading;
+                    !tourMode && task.done && !claimed && !welcomeCapReached && !missionsLoading;
 
                   return (
                     <li
                       key={task.id}
                       className={cn(
                         "flex items-start gap-2.5 rounded-xl border p-3 transition-colors",
-                        claimed
+                        task.done || claimed
                           ? "border-primary/20 bg-primary/5"
                           : claimable
                             ? "border-primary/30 bg-primary/8"
@@ -243,7 +262,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
                       )}
                     >
                       <span className="mt-0.5 shrink-0">
-                        {claimed ? (
+                        {task.done || claimed ? (
                           <Check className="h-4 w-4 text-primary" aria-hidden />
                         ) : (
                           <Circle className="h-4 w-4 text-muted-foreground" aria-hidden />
@@ -257,25 +276,29 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
                           <p
                             className={cn(
                               "text-sm font-medium",
-                              claimed ? "text-muted-foreground" : "text-foreground",
+                              task.done || claimed ? "text-muted-foreground" : "text-foreground",
                             )}
                           >
                             {task.title}
                           </p>
-                          <span className="text-[10px] font-medium rounded-full bg-primary/15 text-primary px-2 py-0.5 tabular-nums">
-                            +{rewardPx} PX
-                          </span>
+                          {!tourMode && (
+                            <span className="text-[10px] font-medium rounded-full bg-primary/15 text-primary px-2 py-0.5 tabular-nums">
+                              +{rewardPx} PX
+                            </span>
+                          )}
                         </div>
                         {variant === "full" && (
-                          <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
-                        )}
-                        {task.id === "like" && signals && !claimed && (
-                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
-                            {likeMissionHint(signals) ?? (task.done ? "พร้อมรับรางวัล" : "")}
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-snug">
+                            {task.description}
                           </p>
                         )}
-                        {claimed && (
-                          <p className="text-[10px] text-primary mt-1">รับแล้ว</p>
+                        {task.id === "like" && signals && !task.done && !claimed && (
+                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                            {likeMissionHint(signals) ?? ""}
+                          </p>
+                        )}
+                        {(task.done || claimed) && (
+                          <p className="text-[10px] text-primary mt-1">{claimed ? "รับแล้ว" : "เสร็จแล้ว"}</p>
                         )}
                       </div>
                       {claimable ? (
@@ -296,7 +319,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
                         >
                           ไปทำ
                         </Button>
-                      ) : welcomeCapReached ? (
+                      ) : tourMode ? null : welcomeCapReached ? (
                         <span className="shrink-0 text-[10px] text-muted-foreground px-2">
                           โควต้าเต็ม
                         </span>
@@ -310,9 +333,16 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
 
           {!collapsed && (
             <>
-              <p className="mt-3 text-[10px] text-muted-foreground leading-relaxed">
-                Welcome Bonus ใช้ส่งของขวัญได้เท่านั้น ไม่ถอนเป็นเงินสด — ถอนได้เฉพาะ PX ที่คนอื่นส่งให้คุณ ขั้นต่ำ 1,000 PX
-              </p>
+              {!tourMode && (
+                <p className="mt-3 text-[10px] text-muted-foreground leading-relaxed">
+                  Welcome Bonus ใช้ส่งของขวัญได้เท่านั้น ไม่ถอนเป็นเงินสด — ถอนได้เฉพาะ PX ที่คนอื่นส่งให้คุณ ขั้นต่ำ 1,000 PX
+                </p>
+              )}
+              {tourMode && (
+                <p className="mt-3 text-[10px] text-muted-foreground leading-snug line-clamp-2">
+                  ทำทีละขั้น — ฟีด ดีไซเนอร์ ลงผลงาน แชร์โปรไฟล์
+                </p>
+              )}
 
               <button
                 type="button"

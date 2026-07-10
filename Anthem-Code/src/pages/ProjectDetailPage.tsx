@@ -6,6 +6,7 @@ import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPo
 import SharePopover from "@/components/SharePopover";
 import { Layers3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import PageLoader from "@/components/ui/PageLoader";
 import HireDialog from "@/components/HireDialog";
 import CollabDialog from "@/components/CollabDialog";
 import CommentSection from "@/components/CommentSection";
@@ -37,6 +38,7 @@ import BoostButton from "@/components/boost/BoostButton";
 import { useAdCampaign, logAdEvent } from "@/hooks/useAds";
 import { Megaphone, ExternalLink } from "lucide-react";
 import { truncateDescription } from "@/lib/seo";
+import { openSafeExternalUrl } from "@/lib/safeUrl";
 import { FadeUp } from "@/components/motion/FadeUp";
 import { mediaItemsFromProject } from "@/lib/portfolioMedia";
 import { ProjectLinkedPostsBlock } from "@/components/project/ProjectLinkedPostsBlock";
@@ -47,6 +49,7 @@ import {
   fetchPostsMentioningProject,
   type LinkedPostSummary,
 } from "@/lib/portfolioLinkedPosts";
+import { profilesPublicFrom, PUBLIC_PROFILE_READ_SELECT } from "@/lib/profileAccess";
 
 const ProjectDetailPage = () => {
   const { id } = useParams();
@@ -114,9 +117,8 @@ const ProjectDetailPage = () => {
     queryKey: ["profile", dbProject?.owner_id],
     enabled: !!dbProject?.owner_id,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, avatar_url, username")
+      const { data } = await profilesPublicFrom()
+        .select(PUBLIC_PROFILE_READ_SELECT)
         .eq("user_id", dbProject!.owner_id)
         .maybeSingle();
       return data;
@@ -247,11 +249,7 @@ const ProjectDetailPage = () => {
   };
 
   if (isLoading || (isFetching && !dbProject)) {
-    return (
-      <div className="min-h-screen bg-app-ambient flex items-center justify-center text-muted-foreground px-4 text-center">
-        กำลังโหลดผลงาน… รอสักครู่
-      </div>
-    );
+    return <PageLoader label="กำลังโหลดผลงาน… รอสักครู่" className="bg-app-ambient" />;
   }
   if (isError) {
     return (
@@ -361,7 +359,7 @@ const ProjectDetailPage = () => {
                 className="rounded-full shrink-0"
                 onClick={() => {
                   void logAdEvent(sponsorAdId, "click", "detail");
-                  window.open(sponsorAd.target_url, "_blank", "noopener,noreferrer");
+                  openSafeExternalUrl(sponsorAd.target_url);
                 }}
               >
                 {sponsorAd.cta_label || "เรียนรู้เพิ่มเติม"}

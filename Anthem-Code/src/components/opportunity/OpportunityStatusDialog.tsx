@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Check, Loader2, Sparkles } from "lucide-react";
+import { CompactLoader, InlineLoader } from "@/components/ui/BanterLoader";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -81,9 +82,7 @@ const OpportunityStatusDialog = ({ open, onOpenChange }: Props) => {
         </DialogHeader>
 
         {isLoading ? (
-          <p className="text-sm text-muted-foreground text-center py-12 flex items-center justify-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลด...
-          </p>
+          <InlineLoader />
         ) : (
           <div className="px-5 py-4 space-y-6">
             <section className="space-y-3">

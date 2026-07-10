@@ -191,7 +191,7 @@ export const profileSchema = z.object({
 
   notifyEmail: z.boolean().default(true),
   notifyHire: z.boolean().default(true),
-  notifyJobMatch: z.boolean().default(true),
+  notifyCollab: z.boolean().default(true),
   preferredCategories: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
   preferredEmploymentTypes: z.array(z.string().trim().min(1).max(20)).max(10).default([]),
   opportunityStatus: z.enum(["open_to_opportunities", "soft_open", "not_available"]).default("open_to_opportunities"),

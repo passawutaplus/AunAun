@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from "recharts";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import SectionHeader from "@/components/admin/SectionHeader";
 import KpiCard from "@/components/admin/KpiCard";
 import { useAdminAnalytics } from "@/hooks/admin/useAdminAnalytics";
@@ -68,7 +69,7 @@ export default function AdminAnalyticsPage() {
       />
 
       {isLoading ? (
-        <p className="text-sm text-admin-muted py-12 text-center">กำลังโหลด…</p>
+        <InlineLoader labelClassName="text-admin-muted" />
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">

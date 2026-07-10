@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Plus, SearchX } from "lucide-react";
+import { Plus, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/EmptyState";
-import CommunityGridSkeleton from "@/components/community/CommunityGridSkeleton";
+import { CompactLoader, InlineLoader } from "@/components/ui/BanterLoader";
 import CommunityPostGridCard from "@/components/feed/CommunityPostGridCard";
 import { COMMUNITY_NEW_PATH } from "@/data/createActions";
 import { useCommunityPosts, type CommunityPostsFilter } from "@/hooks/useCommunityPosts";
@@ -162,7 +162,7 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Pr
         <CommunityTagFeedBanner tag={filter.tag} onClear={onClearTag} />
       ) : null}
       {isLoading ? (
-        <CommunityGridSkeleton />
+        <InlineLoader label="กำลังโหลดโพสต์..." />
       ) : isError ? (
         <EmptyState
           icon={SearchX}
@@ -192,10 +192,7 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Pr
       {hasNextPage && (
         <div ref={loadMoreRef} className="flex min-h-14 items-center justify-center pt-2">
           {isFetchingNextPage ? (
-            <span className="inline-flex items-center gap-2 text-xs text-muted-foreground thai-body">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              กำลังโหลดโพสต์เพิ่ม...
-            </span>
+            <CompactLoader label="กำลังโหลดโพสต์เพิ่ม..." className="py-2" />
           ) : null}
         </div>
       )}

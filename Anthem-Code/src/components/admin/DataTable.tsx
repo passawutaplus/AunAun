@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 
 export interface Column<T> {
   key: string;
@@ -32,7 +33,7 @@ export default function DataTable<T>({ columns, rows, empty = "ไม่มี�
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={columns.length} className="px-4 py-10 text-center text-admin-muted text-sm">กำลังโหลด...</td></tr>
+              <tr><td colSpan={columns.length} className="px-4 py-4"><InlineLoader labelClassName="text-admin-muted" /></td></tr>
             ) : rows.length === 0 ? (
               <tr><td colSpan={columns.length} className="px-4 py-10 text-center text-admin-muted text-sm">{empty}</td></tr>
             ) : (

@@ -34,6 +34,54 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { AdminStats } from "@/hooks/admin/useAdminData";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
+
+/** Admin routes hidden while VITE_APLUS1_LAUNCH_MINIMAL=true (prefix match). */
+export const ADMIN_LAUNCH_HIDDEN_ADMIN_PATHS = [
+  "/admin/marketing",
+  "/admin/analytics",
+  "/admin/dev-tasks",
+  "/admin/studios",
+  "/admin/collections",
+  "/admin/inspire",
+  "/admin/community",
+  "/admin/jobs",
+  "/admin/applications",
+  "/admin/hiring",
+  "/admin/collabs",
+  "/admin/contracts",
+  "/admin/wallet",
+  "/admin/gifts",
+  "/admin/ads",
+  "/admin/kyc",
+  "/admin/aml",
+  "/admin/ai",
+  "/admin/storage",
+  "/admin/audit",
+] as const;
+
+export function isAdminLaunchHiddenPath(pathname: string): boolean {
+  if (!isAplus1LaunchMinimal()) return false;
+  if (pathname === "/admin" || pathname === "/admin/") return false;
+  return ADMIN_LAUNCH_HIDDEN_ADMIN_PATHS.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+function filterNavSectionsForLaunch(sections: AdminNavSection[]): AdminNavSection[] {
+  if (!isAplus1LaunchMinimal()) return sections;
+  return sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !isAdminLaunchHiddenPath(item.to)),
+    }))
+    .filter((s) => s.items.length > 0);
+}
+
+/** Sidebar + overview — respects launch minimal trim. */
+export function adminNavSectionsForBuild(): AdminNavSection[] {
+  return filterNavSectionsForLaunch(ADMIN_NAV_SECTIONS);
+}
 
 export type AdminBadgeKey = "reports" | "cashouts" | "kyc" | "aml";
 
@@ -395,13 +443,20 @@ export function adminStatValue(stats: AdminStats | undefined, key?: AdminStatKey
 
 export function adminPendingQueue(stats: AdminStats | undefined): Array<{ to: string; label: string; count: number }> {
   if (!stats) return [];
+  const launch = isAplus1LaunchMinimal();
   const rows: Array<{ to: string; label: string; count: number }> = [];
-  if (stats.pendingHiring > 0) rows.push({ to: "/admin/hiring", label: "คำขอจ้าง", count: stats.pendingHiring });
-  if (stats.pendingCollabs > 0) rows.push({ to: "/admin/collabs", label: "คอลแลป", count: stats.pendingCollabs });
+  if (!launch && stats.pendingHiring > 0) {
+    rows.push({ to: "/admin/hiring", label: "คำขอจ้าง", count: stats.pendingHiring });
+  }
+  if (!launch && stats.pendingCollabs > 0) {
+    rows.push({ to: "/admin/collabs", label: "คอลแลป", count: stats.pendingCollabs });
+  }
   if (stats.openReports > 0) rows.push({ to: "/admin/reports", label: "รายงานเนื้อหา", count: stats.openReports });
-  if (stats.pendingCashouts > 0) rows.push({ to: "/admin/wallet", label: "ถอนเงิน", count: stats.pendingCashouts });
-  if (stats.pendingKyc > 0) rows.push({ to: "/admin/kyc", label: "KYC", count: stats.pendingKyc });
-  if (stats.openAmlFlags > 0) rows.push({ to: "/admin/aml", label: "AML", count: stats.openAmlFlags });
+  if (!launch && stats.pendingCashouts > 0) {
+    rows.push({ to: "/admin/wallet", label: "ถอนเงิน", count: stats.pendingCashouts });
+  }
+  if (!launch && stats.pendingKyc > 0) rows.push({ to: "/admin/kyc", label: "KYC", count: stats.pendingKyc });
+  if (!launch && stats.openAmlFlags > 0) rows.push({ to: "/admin/aml", label: "AML", count: stats.openAmlFlags });
   if (stats.openFeedback > 0) rows.push({ to: "/admin/feedback", label: "ฟีดแบ็ก", count: stats.openFeedback });
   return rows;
 }
@@ -429,6 +484,7 @@ const SIDEBAR_PATHS_ORDERED: { sectionId: string; to: string }[] = [
   { sectionId: "money", to: "/admin/ads" },
   { sectionId: "comms", to: "/admin/chats" },
   { sectionId: "comms", to: "/admin/notifications" },
+  { sectionId: "trust", to: "/admin/compliance" },
   { sectionId: "trust", to: "/admin/reports" },
   { sectionId: "trust", to: "/admin/moderation" },
   { sectionId: "trust", to: "/admin/kyc" },
@@ -441,11 +497,14 @@ const SIDEBAR_PATHS_ORDERED: { sectionId: string; to: string }[] = [
 ];
 
 export function adminSidebarSections(): AdminNavSection[] {
-  return ADMIN_NAV_SECTIONS.map((section) => {
-    const paths = SIDEBAR_PATHS_ORDERED.filter((p) => p.sectionId === section.id).map((p) => p.to);
-    const items = paths
-      .map((to) => section.items.find((item) => item.to === to))
-      .filter((item): item is AdminNavItem => !!item);
-    return { ...section, items };
-  }).filter((s) => s.items.length > 0);
+  const sections = adminNavSectionsForBuild();
+  return sections
+    .map((section) => {
+      const paths = SIDEBAR_PATHS_ORDERED.filter((p) => p.sectionId === section.id).map((p) => p.to);
+      const items = paths
+        .map((to) => section.items.find((item) => item.to === to))
+        .filter((item): item is AdminNavItem => !!item);
+      return { ...section, items };
+    })
+    .filter((s) => s.items.length > 0);
 }

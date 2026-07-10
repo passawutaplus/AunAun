@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MessageCircle, Trash2, Send, Reply } from "lucide-react";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
@@ -189,7 +190,7 @@ const CommentSection = ({ projectId }: Props) => {
       )}
 
       <div className="space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">กำลังโหลด...</p>}
+        {isLoading && <InlineLoader className="py-6" />}
         {!isLoading && tree.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-6">ยังไม่มีคอมเมนต์ — มาเป็นคนแรกกันเถอะ</p>
         )}

@@ -20,6 +20,14 @@ export const safeHttpUrl = (raw?: string | null): string | undefined => {
   return undefined;
 };
 
+/** Open external URL in a new tab only when http(s). */
+export function openSafeExternalUrl(raw?: string | null): boolean {
+  const url = safeHttpUrl(raw);
+  if (!url) return false;
+  window.open(url, "_blank", "noopener,noreferrer");
+  return true;
+}
+
 /** Validate a post-login redirect path (shared Solo ↔ an1hem). */
 export function safeRelativePath(raw?: string | null, fallback = "/"): string {
   if (!raw || typeof raw !== "string") return fallback;

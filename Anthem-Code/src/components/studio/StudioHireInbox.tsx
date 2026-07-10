@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Check, MessageCircle, X } from "lucide-react";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useStudioHiringRequests, type HiringRow } from "@/hooks/useHiringRequests";
@@ -47,7 +48,7 @@ export function StudioHireInbox({ studioId }: Props) {
   };
 
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">กำลังโหลดคำขอจ้าง...</p>;
+    return <InlineLoader label="กำลังโหลดคำขอจ้าง..." className="py-6" />;
   }
 
   if (requests.length === 0) {

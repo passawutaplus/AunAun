@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Bell, Gift, UserPlus, Briefcase, Handshake, MessageCircle, Banknote, Megaphone, Users } from "lucide-react";
 import type { Notification } from "@/core/notifications";
 import { resolveNotificationLink } from "@/lib/notificationLinks";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import UserAvatar from "@/components/UserAvatar";
 import FollowButton from "@/components/FollowButton";
 import { Button } from "@/components/ui/button";
@@ -80,7 +81,7 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
   const profileMap = followProfiles?.map ?? {};
 
   if (loading) {
-    return <div className="text-center py-10 text-muted-foreground text-sm">กำลังโหลด...</div>;
+    return <InlineLoader />;
   }
   if (items.length === 0) {
     return (

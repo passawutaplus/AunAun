@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSavedCommunityPosts } from "@/hooks/useCommunityPostInteractions";
 import CommunityPostGridCard from "@/components/feed/CommunityPostGridCard";
 import SeoHead from "@/components/SeoHead";
+import PageLoader from "@/components/ui/PageLoader";
 import { cn } from "@/lib/utils";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 
@@ -20,7 +21,7 @@ export default function SavedPostsPage() {
   }, [authLoading, user, navigate]);
 
   if (authLoading || isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">กำลังโหลด...</div>;
+    return <PageLoader />;
   }
 
   return (

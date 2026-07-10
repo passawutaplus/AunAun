@@ -1,7 +1,7 @@
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect, useCallback } from "react";
-import { Globe, Instagram, Facebook, MessageSquare, UserX, MessageCircle, Handshake, Eye, X } from "lucide-react";
+import { Globe, Instagram, Facebook, MessageSquare, UserX, Handshake, Eye, X, Share2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import PageLoader from "@/components/ui/PageLoader";
 import EmptyState from "@/components/ui/EmptyState";
@@ -22,24 +22,33 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePublicCollections } from "@/hooks/useCollections";
 import PortfolioGrid from "@/components/profile/PortfolioGrid";
 import CollectionCard from "@/components/collections/CollectionCard";
+import { ProfileAboutReadOnly } from "@/components/profile/ProfileAboutReadOnly";
+import type { ExperienceItem } from "@/lib/validators";
 import { safeHttpUrl } from "@/lib/safeUrl";
 import { highlight } from "@/lib/highlight";
 import { PROJECT_FEED_SELECT, PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
+import { profileReadFrom } from "@/lib/profileAccess";
 import SeoHead from "@/components/SeoHead";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { truncateDescription } from "@/lib/seo";
-import { isUuid, profilePublicPath } from "@/lib/profileRoutes";
+import { isUuid, profilePublicPath, profilePublicPathLabel, profilePublicUrl, profileShareMessage, profileShareTitle } from "@/lib/profileRoutes";
+import ProfileSharePopover from "@/components/profile/ProfileSharePopover";
+import ProfileVisitorExploreSection from "@/components/profile/ProfileVisitorExploreSection";
 import { sortPortfolioProjects } from "@/lib/portfolioSort";
-import CommunityPostGridCard from "@/components/feed/CommunityPostGridCard";
-import { useCommunityPostsByAuthor } from "@/hooks/useCommunityPosts";
 import { Navigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { navigateToAuth, stripSearchParams } from "@/lib/authRedirect";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
-import { isAplus1LaunchMinimal, isLaunchCollabEnabled } from "@/lib/aplus1Launch";
 import { toast } from "sonner";
+import { isLaunchCreatorSupportEnabled } from "@/lib/aplus1Launch";
 
 const PREVIEW_TOAST = "นี่คือมุมมองผู้เยี่ยมชม — ปุ่มนี้ใช้งานได้จริงเมื่อคนอื่นเปิดโปรไฟล์ของคุณ";
+
+const parseExperience = (raw: unknown): ExperienceItem[] =>
+  Array.isArray(raw) ? (raw as ExperienceItem[]) : [];
+
+const parseSkills = (raw: unknown): string[] =>
+  Array.isArray(raw) ? raw.filter((s): s is string => typeof s === "string") : [];
 
 
 const PublicProfilePage = () => {
@@ -58,7 +67,8 @@ const PublicProfilePage = () => {
     queryKey: ["public-profile", slug],
     enabled: !!slug && !vanityRedirect,
     queryFn: async () => {
-      let query = supabase.from("profiles").select(PUBLIC_PROFILE_SELECT);
+      const table = profileReadFrom(user?.id, isUuid(slug) ? slug : "");
+      let query = table.select(PUBLIC_PROFILE_SELECT);
       if (isUuid(slug)) {
         query = query.eq("user_id", slug);
       } else {
@@ -73,7 +83,6 @@ const PublicProfilePage = () => {
   const resolvedUserId = profile?.user_id;
   const { followers, following } = useFollowState(resolvedUserId);
   const { data: collections = [] } = usePublicCollections(resolvedUserId);
-  const { data: communityPosts = [] } = useCommunityPostsByAuthor(resolvedUserId);
 
   const { data: projects = [] } = useQuery({
     queryKey: ["public-projects", resolvedUserId],
@@ -110,13 +119,6 @@ const PublicProfilePage = () => {
     });
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([c]) => c);
   }, [orderedProjects]);
-  const drillProjects = useMemo(
-    () =>
-      orderedProjects.filter(
-        (p) => Array.isArray(p.tags) && p.tags.includes("So1oDrill"),
-      ),
-    [orderedProjects],
-  );
   const portfolioProjects = useMemo(
     () =>
       orderedProjects.filter(
@@ -147,15 +149,6 @@ const PublicProfilePage = () => {
     const q = next.toString();
     setSearchParams(q ? next : {}, { replace: true });
   }, [user, params, setSearchParams, resolvedUserId, isSelf]);
-
-  useEffect(() => {
-    if (
-      isAplus1LaunchMinimal() &&
-      (activeTab === "posts" || activeTab === "drill" || activeTab === "collections")
-    ) {
-      setActiveTab("works");
-    }
-  }, [activeTab]);
 
   if (vanityRedirect) {
     return <Navigate to={vanityRedirect} replace />;
@@ -194,6 +187,17 @@ const PublicProfilePage = () => {
   }
 
   const displayName = profile.display_name || profile.username || "ครีเอเตอร์";
+  const publicShareProfile = {
+    user_id: resolvedUserId!,
+    username: profile.username,
+    display_name: profile.display_name,
+    bio: profile.bio,
+    role: profile.role,
+  };
+  const publicShareUrl = profilePublicUrl(publicShareProfile);
+  const publicShareTitle = profileShareTitle(publicShareProfile);
+  const publicShareMessage = profileShareMessage(publicShareProfile);
+  const publicSharePath = profilePublicPathLabel(publicShareProfile);
 
   const openHire = () => {
     if (visitorPreview) {
@@ -244,12 +248,15 @@ const PublicProfilePage = () => {
       />
       <div className="sticky top-0 z-20 glass-panel border-x-0 border-t-0 rounded-none">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-2">
-          <BackButton to={visitorPreview ? "/portfolio" : undefined} />
+          <BackButton
+            to={visitorPreview ? "/portfolio" : "/"}
+            label={visitorPreview ? "กลับแดชบอร์ด" : "กลับฟีด"}
+          />
           {visitorPreview && (
             <div className="flex-1 min-w-0 flex items-center justify-between gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5">
               <span className="inline-flex items-center gap-1.5 text-xs text-foreground min-w-0">
                 <Eye className="w-3.5 h-3.5 text-primary shrink-0" />
-                <span className="truncate">มุมมองผู้เยี่ยมชม (พรีวิว)</span>
+                <span className="truncate">พรีวิว — ลิงก์ที่แชร์จะเปิดหน้านี้โดยไม่มีแถบนี้</span>
               </span>
               <button
                 type="button"
@@ -259,6 +266,26 @@ const PublicProfilePage = () => {
                 <X className="w-3 h-3" /> ปิด
               </button>
             </div>
+          )}
+          {showAsVisitor && !visitorPreview && (
+            <ProfileSharePopover
+              url={publicShareUrl}
+              title={publicShareTitle}
+              message={publicShareMessage}
+              pathLabel={publicSharePath}
+              align="end"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="rounded-full ml-auto shrink-0"
+                title="แชร์พอร์ตโฟล์นี้"
+                aria-label="แชร์พอร์ตโฟล์นี้"
+              >
+                <Share2 className="w-4 h-4" />
+              </Button>
+            </ProfileSharePopover>
           )}
         </div>
       </div>
@@ -284,7 +311,12 @@ const PublicProfilePage = () => {
             )}
           </div>
 
-          <div className="relative flex flex-row items-start gap-3.5 sm:gap-6 pr-0 md:pr-36">
+          <div
+            className={cn(
+              "relative flex flex-row items-start gap-3.5 sm:gap-6 pr-0",
+              showAsVisitor && isLaunchCreatorSupportEnabled() ? "md:pr-36" : "md:pr-28",
+            )}
+          >
             <div className="shrink-0">
               {profile.avatar_url ? (
                 <img
@@ -373,16 +405,15 @@ const PublicProfilePage = () => {
 
               {showAsVisitor && (
                 <div className="flex flex-col gap-2 mt-3 sm:mt-4">
-                  <div className={cn("grid gap-2", isLaunchCollabEnabled() ? "grid-cols-2" : "grid-cols-1")}>
+                  <div className="grid grid-cols-2 gap-2">
                     <Button
                       type="button"
                       onClick={openHire}
                       className="w-full rounded-full bg-gradient-brand text-white hover:opacity-90 h-10 text-sm font-medium gap-1.5"
                     >
                       <BriefcaseIcon className="w-4 h-4 shrink-0" />
-                      ชวนมาทำงาน
+                      สนใจจ้างงาน
                     </Button>
-                    {isLaunchCollabEnabled() ? (
                     <Button
                       type="button"
                       variant="outline"
@@ -390,26 +421,32 @@ const PublicProfilePage = () => {
                       className="w-full rounded-full glass-panel h-10 text-sm font-medium gap-1.5"
                     >
                       <Handshake className="w-4 h-4 shrink-0" />
-                      คอลแลป
+                      สนใจคอลแลป
                     </Button>
-                    ) : null}
                   </div>
-                  <div className="grid grid-cols-2 gap-2 md:hidden">
+                  <div
+                    className={cn(
+                      "md:hidden",
+                      isLaunchCreatorSupportEnabled() ? "grid grid-cols-2 gap-2" : "flex",
+                    )}
+                  >
                     <FollowButton
                       freelancerId={resolvedUserId}
                       showFollowerCount={false}
                       className="w-full h-10 text-sm font-medium"
                       visitorPreview={visitorPreview}
                     />
-                    <SupportButton
-                      recipientId={resolvedUserId}
-                      recipientName={profile.display_name ?? "ครีเอเตอร์"}
-                      recipientAvatar={profile.avatar_url ?? undefined}
-                      variant="compact"
-                      hideSubtext
-                      className="w-full items-center"
-                      visitorPreview={visitorPreview}
-                    />
+                    {isLaunchCreatorSupportEnabled() && (
+                      <SupportButton
+                        recipientId={resolvedUserId}
+                        recipientName={profile.display_name ?? "ครีเอเตอร์"}
+                        recipientAvatar={profile.avatar_url ?? undefined}
+                        variant="compact"
+                        hideSubtext
+                        className="w-full items-center"
+                        visitorPreview={visitorPreview}
+                      />
+                    )}
                   </div>
                 </div>
               )}
@@ -426,7 +463,7 @@ const PublicProfilePage = () => {
                       setSearchParams(next, { replace: true });
                     }}
                   >
-                    <Eye className="w-4 h-4 mr-1.5" /> ดูมุมมองผู้เยี่ยมชม
+                    <Eye className="w-4 h-4 mr-1.5" /> พรีวิวก่อนแชร์
                   </Button>
                 </div>
               )}
@@ -472,29 +509,15 @@ const PublicProfilePage = () => {
           onValueChange={setActiveTab}
           tabs={[
             { value: "works", label: `ผลงาน (${portfolioProjects.length})` },
-            ...(!isAplus1LaunchMinimal()
-              ? [
-                  { value: "posts", label: `Area (${communityPosts.length})` },
-                  {
-                    value: "drill",
-                    label: (
-                      <>
-                        <span className="sm:hidden">Drill ({drillProjects.length})</span>
-                        <span className="hidden sm:inline">Design Drill ({drillProjects.length})</span>
-                      </>
-                    ),
-                  },
-                  {
-                    value: "collections",
-                    label: (
-                      <>
-                        <span className="sm:hidden">คอลฯ ({collections.length})</span>
-                        <span className="hidden sm:inline">คอลเลกชัน ({collections.length})</span>
-                      </>
-                    ),
-                  },
-                ]
-              : []),
+            {
+              value: "collections",
+              label: (
+                <>
+                  <span className="sm:hidden">คอลฯ ({collections.length})</span>
+                  <span className="hidden sm:inline">คอลเลกชัน ({collections.length})</span>
+                </>
+              ),
+            },
             { value: "about", label: "เกี่ยวกับ" },
           ]}
         >
@@ -503,27 +526,6 @@ const PublicProfilePage = () => {
               <div className="text-center py-16 text-muted-foreground glass-panel rounded-2xl">ยังไม่มีผลงานที่เผยแพร่</div>
             ) : (
               <PortfolioGrid projects={portfolioProjects as any} />
-            ))}
-
-          {activeTab === "posts" &&
-            (communityPosts.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground glass-panel rounded-2xl flex flex-col items-center gap-2">
-                <MessageCircle className="w-8 h-8 opacity-50" />
-                ยังไม่มีโพสต์ใน Area
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3">
-                {communityPosts.map((post) => (
-                  <CommunityPostGridCard key={post.id} post={post} />
-                ))}
-              </div>
-            ))}
-
-          {activeTab === "drill" &&
-            (drillProjects.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground glass-panel rounded-2xl">ยังไม่มีผลงาน Design Drill</div>
-            ) : (
-              <PortfolioGrid projects={drillProjects as Parameters<typeof PortfolioGrid>[0]["projects"]} />
             ))}
 
           {activeTab === "collections" &&
@@ -538,16 +540,29 @@ const PublicProfilePage = () => {
             ))}
 
           {activeTab === "about" && (
-            <div className="space-y-6">
-              <div className="rounded-2xl glass-panel p-6 space-y-3">
-                <h3 className="font-medium text-foreground">เกี่ยวกับ {profile.display_name}</h3>
-                <p className="text-base text-foreground leading-7 whitespace-pre-wrap">
-                  {profile.bio || "ยังไม่มีข้อมูลแนะนำตัว"}
-                </p>
-              </div>
+            <div className="rounded-2xl glass-panel p-5 md:p-6">
+              <ProfileAboutReadOnly
+                profile={{
+                  role: profile.role ?? null,
+                  location: profile.location ?? null,
+                  bio: profile.bio ?? null,
+                  email: null,
+                  phone: null,
+                  website: profile.website ?? null,
+                  line_id: profile.line_id ?? null,
+                  facebook: profile.facebook ?? null,
+                  instagram: profile.instagram ?? null,
+                }}
+                experience={parseExperience((profile as { experience?: unknown }).experience)}
+                skills={parseSkills(profile.skills)}
+              />
             </div>
           )}
         </ProfileSectionTabs>
+
+        {showAsVisitor && !visitorPreview && (
+          <ProfileVisitorExploreSection creatorName={displayName} isLoggedIn={!!user} />
+        )}
       </div>
 
       <HireDialog

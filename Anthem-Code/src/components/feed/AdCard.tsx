@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
 import { logAdEvent, type AdCampaign } from "@/hooks/useAds";
+import { openSafeExternalUrl } from "@/lib/safeUrl";
 
 interface Props {
   ad: AdCampaign;
@@ -44,7 +45,7 @@ const AdCard = ({ ad, placement = "feed" }: Props) => {
       return;
     }
     if (ad.target_url) {
-      window.open(ad.target_url, "_blank", "noopener,noreferrer");
+      openSafeExternalUrl(ad.target_url);
       return;
     }
     navigate(`/ads/${ad.id}`);

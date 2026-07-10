@@ -4,9 +4,36 @@
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { BRAND_STORAGE_NO_PERSIST } from "@/lib/brandConfig";
+
+function authPersistenceStorage(): Pick<Storage, "getItem" | "setItem" | "removeItem"> {
+  const useSession = () =>
+    typeof sessionStorage !== "undefined" &&
+    sessionStorage.getItem(BRAND_STORAGE_NO_PERSIST) === "1";
+
+  return {
+    getItem(key: string) {
+      const store = useSession() ? sessionStorage : localStorage;
+      return store.getItem(key);
+    },
+    setItem(key: string, value: string) {
+      if (useSession()) {
+        localStorage.removeItem(key);
+        sessionStorage.setItem(key, value);
+      } else {
+        sessionStorage.removeItem(key);
+        localStorage.setItem(key, value);
+      }
+    },
+    removeItem(key: string) {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    },
+  };
+}
 
 const authOpts = {
-  storage: localStorage,
+  storage: authPersistenceStorage(),
   persistSession: true,
   autoRefreshToken: true,
   detectSessionInUrl: true,
@@ -79,6 +106,7 @@ function lazyClient(get: () => SupabaseClient<Database>): SupabaseClient<Databas
 }
 const PUBLIC_TABLES = new Set([
   "profiles",
+  "profiles_public",
   "user_roles",
   "subscriptions",
   "user_credits",

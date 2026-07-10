@@ -1,11 +1,12 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { isLaunchHiddenPath } from "@/lib/aplus1Launch";
+import LaunchUnavailablePage from "@/pages/LaunchUnavailablePage";
 
-/** Redirects hidden routes when VITE_APLUS1_LAUNCH_MINIMAL=true. */
+/** Blocks routes outside launch allowlist when minimal mode is active. */
 export default function LaunchMinimalGate() {
   const { pathname } = useLocation();
   if (isLaunchHiddenPath(pathname)) {
-    return <Navigate to="/" replace />;
+    return <LaunchUnavailablePage />;
   }
   return <Outlet />;
 }

@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { UserPlus } from "lucide-react";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import EmptyState from "@/components/ui/EmptyState";
 import FollowUserRow from "@/components/follow/FollowUserRow";
 import { useFollowNotifications } from "@/hooks/useFollowLists";
@@ -14,7 +15,7 @@ const FollowNotificationsList = ({ onBeforeNavigate }: Props) => {
   const { data: followers = [], isLoading } = useFollowNotifications();
 
   if (isLoading) {
-    return <div className="text-center py-10 text-muted-foreground text-sm">กำลังโหลด...</div>;
+    return <InlineLoader />;
   }
 
   if (followers.length === 0) {

@@ -100,14 +100,14 @@ export async function shouldSendAnthemEmail(
 ): Promise<{ send: boolean; email?: string; displayName?: string }> {
   let profileQuery = await admin
     .from("profiles")
-    .select("display_name, notify_email, notify_hire, notify_job_match")
+    .select("display_name, notify_email, notify_hire, notify_job_match, notify_collab")
     .eq("user_id", userId)
     .maybeSingle();
 
   if (!profileQuery.data) {
     profileQuery = await admin
       .from("profiles")
-      .select("display_name, notify_email, notify_hire, notify_job_match")
+      .select("display_name, notify_email, notify_hire, notify_job_match, notify_collab")
       .eq("id", userId)
       .maybeSingle();
   }
@@ -117,6 +117,7 @@ export async function shouldSendAnthemEmail(
   if (profile?.notify_email === false) return { send: false };
   if (opts.kind === "hire" && profile?.notify_hire === false) return { send: false };
   if (opts.kind === "job_match" && profile?.notify_job_match === false) return { send: false };
+  if (opts.kind === "collab" && profile?.notify_collab === false) return { send: false };
 
   const { data: authUser } = await admin.auth.admin.getUserById(userId);
   const email = authUser?.user?.email;

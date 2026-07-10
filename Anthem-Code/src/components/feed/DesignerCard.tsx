@@ -4,13 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Handshake } from "lucide-react";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
+import UserAvatar from "@/components/UserAvatar";
 import type { DesignerCardData } from "@/hooks/useDesigners";
 import FollowButton from "@/components/FollowButton";
 import { useFollowState } from "@/hooks/useFollow";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
 import { highlight } from "@/lib/highlight";
 import { imageCrossfadeVariants, imageRevealTransition } from "@/lib/motion";
-import { isLaunchCollabEnabled } from "@/lib/aplus1Launch";
 
 interface Props {
   data: DesignerCardData;
@@ -113,31 +113,35 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
         })}
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="grid grid-cols-3 gap-2">
         <button
+          type="button"
           onClick={() => onHire(profileUserId, name)}
-          className="flex-1 flex items-center justify-center gap-1.5 rounded-full bg-gradient-brand text-white text-xs font-medium py-2 hover:opacity-90 transition"
+          className="flex items-center justify-center gap-1 rounded-full bg-gradient-brand text-white text-xs font-medium py-2 px-1.5 hover:opacity-90 transition min-w-0"
         >
-          <BriefcaseIcon className="w-3.5 h-3.5" /> คุยโอกาส
+          <BriefcaseIcon className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">สนใจจ้างงาน</span>
         </button>
-        {isLaunchCollabEnabled() ? (
         <button
+          type="button"
           onClick={() => onCollab(profileUserId, name)}
-          className="flex-1 flex items-center justify-center gap-1.5 rounded-full glass-panel text-foreground text-xs font-medium py-2 hover:bg-accent/40 transition"
+          className="flex items-center justify-center gap-1 rounded-full glass-panel border border-border/60 text-foreground text-xs font-medium py-2 px-1.5 hover:bg-accent/40 transition min-w-0"
         >
-          <Handshake className="w-3.5 h-3.5" /> คอลแลป
+          <Handshake className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">สนใจคอลแลป</span>
         </button>
-        ) : null}
-        <FollowButton freelancerId={profileUserId} iconOnly tone="muted" />
-        <motion.div whileTap={{ scale: 0.92 }}>
-          <PlusOneControl
-            active={like.isLiked}
-            showCount={false}
-            ariaLabel={like.isLiked ? "เลิกถูกใจ" : "ถูกใจ"}
-            onClick={() => featured && like.toggle()}
-            className="w-9 h-9 flex items-center justify-center rounded-full glass-panel hover:bg-accent/40 transition"
-          />
-        </motion.div>
+        <div className="flex items-center justify-center gap-1.5 min-w-0">
+          <FollowButton freelancerId={profileUserId} iconOnly tone="muted" />
+          <motion.div whileTap={{ scale: 0.92 }}>
+            <PlusOneControl
+              active={like.isLiked}
+              showCount={false}
+              ariaLabel={like.isLiked ? "เลิกถูกใจ" : "ถูกใจ"}
+              onClick={() => featured && like.toggle()}
+              className="w-9 h-9 flex items-center justify-center rounded-full glass-panel hover:bg-accent/40 transition"
+            />
+          </motion.div>
+        </div>
       </div>
     </article>
   );

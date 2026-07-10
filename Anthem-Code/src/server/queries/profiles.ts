@@ -3,6 +3,7 @@
  * Component / hooks call these via React Query.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublicFrom } from "@/lib/profileAccess";
 
 export type ProfileLite = {
   id: string;
@@ -11,15 +12,19 @@ export type ProfileLite = {
   username: string | null;
 };
 
-/** Batch fetch profiles by id. Used by feed, chat, requests — single source of truth. */
+/** Batch fetch public profiles by user_id. */
 export async function getProfilesByIds(ids: string[]): Promise<ProfileLite[]> {
   if (!ids.length) return [];
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, display_name, avatar_url, username")
-    .in("id", ids);
+  const { data, error } = await profilesPublicFrom()
+    .select("user_id, id, display_name, avatar_url, username")
+    .in("user_id", ids);
   if (error) throw error;
-  return (data ?? []) as ProfileLite[];
+  return (data ?? []).map((p) => ({
+    id: (p as { user_id?: string; id: string }).user_id ?? p.id,
+    display_name: p.display_name,
+    avatar_url: p.avatar_url,
+    username: p.username,
+  }));
 }
 
 /** Map array → record for O(1) lookup. */

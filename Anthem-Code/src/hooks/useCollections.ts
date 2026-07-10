@@ -157,7 +157,7 @@ export const useCreateCollection = () => {
           name: input.name,
           description: input.description ?? "",
           category: input.category ?? "",
-          is_public: input.isPublic ?? true,
+          is_public: input.isPublic ?? false,
         })
         .select()
         .single();

@@ -1,29 +1,37 @@
-import BriefcaseIcon from "../components/icons/BriefcaseIcon";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Camera, Save, MapPin, LogOut, Shield, CheckCircle2, Loader2 } from "lucide-react";
+import { User, Save, LogOut, Shield, CheckCircle2, Loader2, Briefcase, MapPin, AlertTriangle } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { useProfile, useUpdateProfile, useUpdateProfileMedia } from "@/hooks/useProfile";
-import { useUsernameAvailability, normalizeUsername } from "@/hooks/useUsernameAvailability";
-import { uploadProjectImage } from "@/lib/uploadImage";
-import { profileSchema } from "@/lib/validators";
+import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
+import { profileSchema, experienceItemSchema } from "@/lib/validators";
+import type { ExperienceItem } from "@/lib/validators";
+import ExperienceEditor from "@/components/profile/ExperienceEditor";
+import SkillsEditor from "@/components/profile/SkillsEditor";
+import ContactEditor from "@/components/profile/ContactEditor";
 import { isReservedPublicHandle } from "@/lib/reservedHandles";
 import { z } from "zod";
+import PageLoader from "@/components/ui/PageLoader";
 import { HttpErrorPage } from "@/components/HttpErrorPage";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { TierMembershipCard } from "@/components/tier/TierMembershipCard";
-import { StorageUsageSection } from "@/components/settings/StorageUsageSection";
-import { AiUsageSettingsSection } from "@/components/settings/AiUsageSettingsSection";
 import { SettingsPreferencesSection } from "@/components/settings/SettingsPreferencesSection";
 import { ChangePasswordSection } from "@/components/settings/ChangePasswordSection";
-import { LineNotificationSection } from "@/components/settings/LineNotificationSection";
 import { EmailNotificationSection } from "@/components/settings/EmailNotificationSection";
-import { useSubscription } from "@/core/subscription";
 import { cn } from "@/lib/utils";
+import { useUsernameAvailability, normalizeUsername } from "@/hooks/useUsernameAvailability";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const settingsFormSchema = profileSchema.pick({
   displayName: true,
@@ -31,14 +39,26 @@ const settingsFormSchema = profileSchema.pick({
   bio: true,
   role: true,
   location: true,
+  email: true,
+  phone: true,
+  website: true,
+  lineId: true,
+  facebook: true,
+  instagram: true,
+  skills: true,
+  experience: true,
   notifyEmail: true,
   notifyHire: true,
-  notifyJobMatch: true,
-  preferredCategories: true,
-  preferredEmploymentTypes: true,
+  notifyCollab: true,
 });
 
 type SettingsFormInput = z.infer<typeof settingsFormSchema>;
+
+const parseExperience = (raw: unknown): ExperienceItem[] =>
+  Array.isArray(raw) ? (raw as ExperienceItem[]) : [];
+
+const parseSkills = (raw: unknown): string[] =>
+  Array.isArray(raw) ? raw.filter((s): s is string => typeof s === "string") : [];
 
 const empty: SettingsFormInput = {
   displayName: "",
@@ -46,11 +66,17 @@ const empty: SettingsFormInput = {
   bio: "",
   role: "",
   location: "",
+  email: "",
+  phone: "",
+  website: "",
+  lineId: "",
+  facebook: "",
+  instagram: "",
+  skills: [],
+  experience: [],
   notifyEmail: true,
   notifyHire: true,
-  notifyJobMatch: true,
-  preferredCategories: [],
-  preferredEmploymentTypes: [],
+  notifyCollab: true,
 };
 
 const SettingsPage = () => {
@@ -58,11 +84,7 @@ const SettingsPage = () => {
   const { user, loading: authLoading } = useAuth();
   const { data: profile, isLoading, isError } = useProfile(user?.id);
   const updateMut = useUpdateProfile(user?.id);
-  const updateMedia = useUpdateProfileMedia(user?.id);
-  const avatarInput = useRef<HTMLInputElement>(null);
-  const [avatarBusy, setAvatarBusy] = useState(false);
   const { data: isAdmin } = useIsAdmin();
-  const { tier } = useSubscription();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -72,6 +94,8 @@ const SettingsPage = () => {
 
   const [form, setForm] = useState<SettingsFormInput>(empty);
   const [debouncedUsername, setDebouncedUsername] = useState("");
+  const [usernameConfirmOpen, setUsernameConfirmOpen] = useState(false);
+  const [pendingSave, setPendingSave] = useState<SettingsFormInput | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedUsername(normalizeUsername(form.username)), 400);
@@ -79,7 +103,12 @@ const SettingsPage = () => {
   }, [form.username]);
 
   const normalizedUsername = normalizeUsername(form.username);
-  const usernameUnchanged = normalizedUsername === normalizeUsername(profile?.username ?? "");
+  const savedUsername = normalizeUsername(profile?.username ?? "");
+  const usernameUnchanged = normalizedUsername === savedUsername;
+  const isAutoGeneratedUsername =
+    !!profile?.user_id &&
+    savedUsername.length > 7 &&
+    savedUsername.endsWith(`_${profile.user_id.replace(/-/g, "").slice(0, 6)}`);
   const {
     data: usernameAvailability,
     isFetching: usernameChecking,
@@ -117,6 +146,14 @@ const SettingsPage = () => {
   }, [authLoading, user, navigate]);
 
   useEffect(() => {
+    if (window.location.hash !== "#profile-about") return;
+    const timer = window.setTimeout(() => {
+      document.getElementById("profile-about")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [profile]);
+
+  useEffect(() => {
     if (profile) {
       setForm({
         displayName: profile.display_name ?? "",
@@ -124,11 +161,17 @@ const SettingsPage = () => {
         bio: profile.bio ?? "",
         role: profile.role ?? "",
         location: profile.location ?? "",
+        email: profile.email ?? user?.email ?? "",
+        phone: profile.phone ?? "",
+        website: profile.website ?? "",
+        lineId: profile.line_id ?? "",
+        facebook: profile.facebook ?? "",
+        instagram: profile.instagram ?? "",
+        skills: parseSkills(profile.skills),
+        experience: parseExperience(profile.experience),
         notifyEmail: profile.notify_email ?? true,
         notifyHire: profile.notify_hire ?? true,
-        notifyJobMatch: (profile as any).notify_job_match ?? true,
-        preferredCategories: (profile as any).preferred_categories ?? [],
-        preferredEmploymentTypes: (profile as any).preferred_employment_types ?? [],
+        notifyCollab: (profile as { notify_collab?: boolean }).notify_collab ?? true,
       });
     }
   }, [profile, user]);
@@ -136,38 +179,55 @@ const SettingsPage = () => {
   const update = <K extends keyof SettingsFormInput>(k: K, v: SettingsFormInput[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  const handleAvatarPick = async (file?: File) => {
-    if (!file || !user) return;
-    setAvatarBusy(true);
+  const persistProfile = async (payload: SettingsFormInput, usernameChanged: boolean) => {
     try {
-      const url = await uploadProjectImage(file, user.id, "avatar", tier);
-      await updateMedia.mutateAsync({ avatar_url: url });
-      toast.success("อัปเดตรูปโปรไฟล์แล้ว");
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "อัปโหลดไม่สำเร็จ");
-    } finally {
-      setAvatarBusy(false);
-    }
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const parsed = settingsFormSchema.safeParse(form);
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
-      return;
-    }
-    if (!canSave) return;
-    try {
-      await updateMut.mutateAsync(parsed.data);
-      toast.success("บันทึกสำเร็จ", { description: "ข้อมูลโปรไฟล์ของคุณถูกอัปเดตแล้ว" });
+      await updateMut.mutateAsync(payload);
+      setUsernameConfirmOpen(false);
+      setPendingSave(null);
+      toast.success("บันทึกสำเร็จ", {
+        description: usernameChanged
+          ? `ลิงก์โปรไฟล์ใหม่: /@${normalizeUsername(payload.username)}`
+          : "ข้อมูลโปรไฟล์ของคุณถูกอัปเดตแล้ว",
+      });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "บันทึกไม่สำเร็จ");
     }
   };
 
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanedExperience = form.experience
+      .map((it) => ({
+        title: it.title.trim(),
+        company: (it.company ?? "").trim(),
+        period: (it.period ?? "").trim(),
+        description: (it.description ?? "").trim(),
+      }))
+      .filter((it) => it.title);
+    for (const item of cleanedExperience) {
+      const parsedItem = experienceItemSchema.safeParse(item);
+      if (!parsedItem.success) {
+        toast.error(parsedItem.error.issues[0]?.message ?? "ข้อมูลประสบการณ์ไม่ถูกต้อง");
+        return;
+      }
+    }
+    const payload = { ...form, experience: cleanedExperience };
+    const parsed = settingsFormSchema.safeParse(payload);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
+      return;
+    }
+    if (!canSave) return;
+    if (!usernameUnchanged) {
+      setPendingSave(parsed.data);
+      setUsernameConfirmOpen(true);
+      return;
+    }
+    await persistProfile(parsed.data, false);
+  };
+
   if (authLoading || isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">กำลังโหลด...</div>;
+    return <PageLoader />;
   }
 
   if (isError || !profile) {
@@ -194,71 +254,22 @@ const SettingsPage = () => {
       </div>
 
       <form onSubmit={handleSave} className="max-w-3xl mx-auto px-4 pb-24 space-y-6">
-        <TierMembershipCard />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
-          <StorageUsageSection />
-          <AiUsageSettingsSection />
-        </div>
-        <div className="space-y-4">
-          <LineNotificationSection />
-          <EmailNotificationSection
-            value={{
-              notifyEmail: form.notifyEmail,
-              notifyHire: form.notifyHire,
-              notifyJobMatch: form.notifyJobMatch,
-              preferredCategories: form.preferredCategories,
-              preferredEmploymentTypes: form.preferredEmploymentTypes,
-            }}
-            onChange={update}
-          />
-        </div>
-
-        <section className="rounded-2xl glass-panel p-6">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="w-20 h-20 rounded-full object-cover ring-2 ring-primary/20" />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-3xl font-medium text-primary-foreground">
-                  {(form.displayName || "?")[0]}
-                </div>
-              )}
-              <button
-                type="button"
-                disabled={avatarBusy}
-                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full glass-panel flex items-center justify-center hover:bg-secondary disabled:opacity-60"
-                aria-label="เปลี่ยนรูปโปรไฟล์"
-                onClick={() => avatarInput.current?.click()}
-              >
-                <Camera className="w-4 h-4" />
-              </button>
-              <input
-                ref={avatarInput}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                aria-label="อัปโหลดรูปโปรไฟล์"
-                onChange={(e) => {
-                  handleAvatarPick(e.target.files?.[0]);
-                  e.target.value = "";
-                }}
-              />
-            </div>
-            <div className="flex-1">
-              <p className="font-semibold text-foreground">{form.displayName || "ยังไม่ได้ตั้งชื่อ"}</p>
-              <p className="text-sm text-muted-foreground">@{form.username || "username"}</p>
-              <p className="text-xs text-primary mt-1">{form.role}</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-2xl glass-panel p-6 space-y-5">
+        <section id="profile-about" className="rounded-2xl glass-panel p-6 space-y-5 scroll-mt-24">
           <SectionTitle icon={User} title="ข้อมูลส่วนตัว" />
-          <Field label="ชื่อที่แสดง" value={form.displayName} onChange={(v) => update("displayName", v)} />
+          <Field
+            label="ชื่อที่แสดง"
+            value={form.displayName}
+            onChange={(v) => update("displayName", v)}
+            hint="ชื่อที่คนอื่นเห็นในฟีด คอมเมนต์ และโปรไฟล์ — ไม่จำเป็นต้องไม่ซ้ำกับคนอื่น"
+            id="settings-display-name"
+          />
           <div>
             <label htmlFor="settings-username" className="text-sm font-medium text-foreground">
               ชื่อผู้ใช้ (username)
             </label>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              ใช้ในลิงก์โปรไฟล์และ @mention — ต้องไม่ซ้ำกับคนอื่น (a-z, 0-9, _ และ .)
+            </p>
             <div
               className={cn(
                 "mt-1 flex items-center rounded-xl bg-secondary border border-border focus-within:ring-2 focus-within:ring-primary/40",
@@ -309,15 +320,46 @@ const SettingsPage = () => {
                 )}
               </p>
             )}
+            {isAutoGeneratedUsername && usernameUnchanged && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                ตอนนี้ใช้ชื่อที่ระบบสร้างให้ — เปลี่ยนเป็น @username ที่จำง่ายได้ เช่น ชื่อเล่นหรือชื่อสตูดิโอ
+              </p>
+            )}
           </div>
-          {form.username.trim() && (
+          {normalizedUsername.length >= 2 && (
             <p className="text-xs text-muted-foreground -mt-2">
               ลิงก์โปรไฟล์สาธารณะ:{" "}
-              <span className="text-primary font-medium">/@{normalizedUsername || form.username.trim().toLowerCase()}</span>
+              <span className="text-primary font-medium">/@{normalizedUsername}</span>
             </p>
           )}
-          <Field label="ตำแหน่ง / สาขา" value={form.role ?? ""} onChange={(v) => update("role", v)} icon={BriefcaseIcon} />
-          <Field label="เมือง / ที่อยู่" value={form.location ?? ""} onChange={(v) => update("location", v)} icon={MapPin} placeholder="กรุงเทพฯ, ประเทศไทย" />
+          {!usernameUnchanged && normalizedUsername.length >= 2 && canSave && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 -mt-2">
+              <p className="text-xs text-foreground flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                <span>
+                  เปลี่ยนชื่อผู้ใช้แล้วลิงก์โปรไฟล์จะเปลี่ยนจาก{" "}
+                  <span className="font-medium">/@{savedUsername}</span> เป็น{" "}
+                  <span className="font-medium">/@{normalizedUsername}</span> — ลิงก์เก่าที่แชร์ไว้จะเปิดไม่ได้
+                </span>
+              </p>
+            </div>
+          )}
+          <Field
+            label="ตำแหน่ง / สาขา"
+            value={form.role}
+            onChange={(v) => update("role", v)}
+            icon={Briefcase}
+            placeholder="เช่น Graphic Designer, UX/UI"
+            id="settings-role"
+          />
+          <Field
+            label="เมือง / ที่อยู่"
+            value={form.location}
+            onChange={(v) => update("location", v)}
+            icon={MapPin}
+            placeholder="กรุงเทพฯ, ประเทศไทย"
+            id="settings-location"
+          />
           <div>
             <label htmlFor="settings-bio" className="text-sm font-medium text-foreground">แนะนำตัว</label>
             <textarea
@@ -330,7 +372,44 @@ const SettingsPage = () => {
             />
             <p className="mt-1 text-xs text-muted-foreground">{(form.bio ?? "").length}/500 ตัวอักษร</p>
           </div>
+
+          <div className="border-t border-border/60 pt-5 space-y-4">
+            <h3 className="text-sm font-medium text-foreground">ประสบการณ์ทำงาน</h3>
+            <ExperienceEditor
+              value={form.experience}
+              onChange={(experience) => update("experience", experience)}
+            />
+          </div>
+
+          <div className="border-t border-border/60 pt-5 space-y-3">
+            <h3 className="text-sm font-medium text-foreground">ความชำนาญ</h3>
+            <SkillsEditor value={form.skills} onChange={(skills) => update("skills", skills)} />
+          </div>
+
+          <div className="border-t border-border/60 pt-5 space-y-3">
+            <h3 className="text-sm font-medium text-foreground">ข้อมูลติดต่อ</h3>
+            <ContactEditor
+              value={{
+                email: form.email,
+                phone: form.phone,
+                website: form.website,
+                lineId: form.lineId,
+                facebook: form.facebook,
+                instagram: form.instagram,
+              }}
+              onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+            />
+          </div>
         </section>
+
+        <EmailNotificationSection
+          value={{
+            notifyEmail: form.notifyEmail,
+            notifyHire: form.notifyHire,
+            notifyCollab: form.notifyCollab,
+          }}
+          onChange={update}
+        />
 
         <SettingsPreferencesSection />
 
@@ -369,6 +448,37 @@ const SettingsPage = () => {
           </Button>
         </div>
       </form>
+
+      <AlertDialog open={usernameConfirmOpen} onOpenChange={setUsernameConfirmOpen}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>ยืนยันเปลี่ยนชื่อผู้ใช้?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="text-sm text-muted-foreground leading-relaxed space-y-2">
+                <p>
+                  ลิงก์โปรไฟล์จะเปลี่ยนจาก{" "}
+                  <span className="font-medium text-foreground">/@{savedUsername}</span> เป็น{" "}
+                  <span className="font-medium text-foreground">/@{normalizedUsername}</span>
+                </p>
+                <p>ลิงก์เก่าที่แชร์ไว้จะเปิดไม่ได้ — ชื่อที่แสดงในฟีดจะไม่เปลี่ยนตาม</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={updateMut.isPending}>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={updateMut.isPending || !pendingSave}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={(e) => {
+                e.preventDefault();
+                if (pendingSave) void persistProfile(pendingSave, true);
+              }}
+            >
+              {updateMut.isPending ? "กำลังบันทึก..." : "ยืนยันเปลี่ยน"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
@@ -379,14 +489,15 @@ const SectionTitle = ({ icon: Icon, title }: { icon: React.ComponentType<{ class
 
 interface FieldProps {
   label: string; value: string; onChange: (v: string) => void;
-  type?: string; prefix?: string; placeholder?: string;
+  type?: string; prefix?: string; placeholder?: string; hint?: string;
   icon?: React.ComponentType<{ className?: string }>; id?: string;
 }
-const Field = ({ label, value, onChange, type = "text", prefix, icon: Icon, placeholder, id }: FieldProps) => {
+const Field = ({ label, value, onChange, type = "text", prefix, icon: Icon, placeholder, hint, id }: FieldProps) => {
   const fieldId = id ?? `settings-${label.replace(/\s+/g, "-").toLowerCase()}`;
   return (
   <div>
     <label htmlFor={fieldId} className="text-sm font-medium text-foreground">{label}</label>
+    {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
     <div className="mt-1 flex items-center rounded-xl bg-secondary border border-border focus-within:ring-2 focus-within:ring-primary/40">
       {Icon && <Icon className="w-4 h-4 text-muted-foreground ml-3" />}
       {prefix && <span className="pl-3 text-muted-foreground text-sm">{prefix}</span>}

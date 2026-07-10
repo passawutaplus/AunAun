@@ -38,7 +38,12 @@ export function SettingsPreferencesSection() {
           >
             <span className="inline-flex items-center gap-2">
               <Shield className="w-4 h-4 text-primary" />
-              กฎชุมชน
+              <span>
+                กฎชุมชน
+                <span className="block text-[11px] font-normal text-muted-foreground">
+                  พฤติกรรม การรายงาน และ strike
+                </span>
+              </span>
             </span>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </Link>

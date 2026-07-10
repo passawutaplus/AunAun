@@ -13,6 +13,7 @@ import {
   useCollection, useCollectionItems, useDeleteCollection, useToggleCollectionItem,
 } from "@/hooks/useCollections";
 import CollectionFormDialog from "@/components/collections/CollectionFormDialog";
+import PageLoader from "@/components/ui/PageLoader";
 import { toast } from "sonner";
 
 const CollectionDetailPage = () => {
@@ -28,7 +29,7 @@ const CollectionDetailPage = () => {
   const isOwner = !!user?.id && !!collection && user.id === collection.owner_id;
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">กำลังโหลด...</div>;
+    return <PageLoader />;
   }
   if (!collection) {
     return (

@@ -2,6 +2,7 @@ import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bookmark, MessageCircle, Handshake, Bell, Sparkles, Megaphone, CheckCircle2, XCircle, CreditCard, Inbox, UserPlus } from "lucide-react";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useActivityNotifications, useHireNotifications, useCollabNotifications, type HireNotif, type CollabNotif } from "@/hooks/useNotifications";
@@ -209,7 +210,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
 
       <TabsContent value="activity" className={cn(contentMt, "space-y-2")}>
         {la ? (
-          <div className="text-center py-10 text-muted-foreground text-sm">กำลังโหลด...</div>
+          <InlineLoader />
         ) : activity.length === 0 ? (
           <Empty icon={Bookmark} text="ยังไม่มีกิจกรรมบนผลงานของคุณ" />
         ) : (
@@ -254,7 +255,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
 
       <TabsContent value="hire" className={cn(contentMt, "space-y-2")}>
         {lh ? (
-          <div className="text-center py-10 text-muted-foreground text-sm">กำลังโหลด...</div>
+          <InlineLoader />
         ) : hires.length === 0 ? (
           <Empty icon={BriefcaseIcon} text="ยังไม่มีคำขอจ้างงาน" />
         ) : (
@@ -326,7 +327,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
 
       <TabsContent value="collab" className={cn(contentMt, "space-y-2")}>
         {lc ? (
-          <div className="text-center py-10 text-muted-foreground text-sm">กำลังโหลด...</div>
+          <InlineLoader />
         ) : collabs.length === 0 ? (
           <Empty icon={Handshake} text="ยังไม่มีคำขอร่วมงาน" />
         ) : (
@@ -378,7 +379,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
 
       <TabsContent value="ads" className={cn(contentMt, "space-y-2")}>
         {lad ? (
-          <div className="text-center py-10 text-muted-foreground text-sm">กำลังโหลด...</div>
+          <InlineLoader />
         ) : adNotifs.length === 0 ? (
           <Empty icon={Megaphone} text="ยังไม่มีอัปเดตเกี่ยวกับโฆษณาของคุณ" />
         ) : (

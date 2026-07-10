@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { LogIn, SearchX } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
-import ProjectGridSkeleton from "@/components/ui/ProjectGridSkeleton";
+import PageLoader from "@/components/ui/PageLoader";
 import { useProfilesByIds } from "@/core/profiles";
 
 
@@ -54,7 +54,7 @@ import { recordFeedSearch } from "@/lib/feedSearchSignals";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { DESIGN_DRILL_CHIP, type ProjectChipFilter } from "@/lib/drillProject";
 import { markOnboardingVisit, type OnboardingVisitId } from "@/lib/onboardingStorage";
-import { coerceLaunchFeedMode, isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
+import { coerceLaunchFeedMode, isAplus1LaunchMinimal, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 
 type FeedMode2 = "Explore" | SpecialFilter;
 const requiresAuth = (m: FeedMode2) => m === "Following";
@@ -166,7 +166,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   };
 
   const openDrill = () => {
-    if (isAplus1LaunchMinimal()) return;
+    if (!isLaunchDesignDrillEnabled()) return;
     setMode("projects");
     setCategory(DESIGN_DRILL_CHIP);
     if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "projects");
@@ -192,10 +192,18 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
         const q = params.toString();
         navigate(q ? `/?${q}` : "/", { replace: true });
       }
-    } else if (!isAplus1LaunchMinimal() && (feed === "drill" || searchParams.get("drill") === "1")) {
+    } else if (isLaunchDesignDrillEnabled() && (feed === "drill" || searchParams.get("drill") === "1")) {
       setMode("projects");
       setCategory(DESIGN_DRILL_CHIP);
       if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "projects");
+    } else if (feed === "drill" || searchParams.get("drill") === "1") {
+      setMode("projects");
+      setCategory("All");
+      const params = new URLSearchParams(searchParams);
+      params.delete("drill");
+      if (feed === "drill") params.delete("feed");
+      const q = params.toString();
+      navigate(q ? `/?${q}` : "/", { replace: true });
     } else if (!searchParams.toString()) {
       setMode("projects");
       setCategory("All");
@@ -329,7 +337,15 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     return mapped;
   }, [sourceData, ownersMap, feedMode]);
 
-  const isDrillView = mode === "projects" && category === DESIGN_DRILL_CHIP;
+  const isDrillView = isLaunchDesignDrillEnabled() && mode === "projects" && category === DESIGN_DRILL_CHIP;
+
+  const projectChipFilters = useMemo(
+    (): ProjectChipFilter[] =>
+      isLaunchDesignDrillEnabled()
+        ? PROJECT_CHIP_FILTERS
+        : (["All", ...CATEGORY_CHIPS] as ProjectChipFilter[]),
+    [],
+  );
 
   const filtered = projects.filter((p) => {
     if (isDrillView) return false;
@@ -400,7 +416,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           onSearchChange={setSearch}
           category={category}
           onCategoryChange={setCategory}
-          categoryChips={PROJECT_CHIP_FILTERS}
+          categoryChips={projectChipFilters}
           designerSort={designerSort}
           onDesignerSort={setDesignerSort}
           designerCategory={designerCategory}
@@ -478,7 +494,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           ) : isDrillView ? (
             <DrillFeedPanel />
           ) : projectsLoading ? (
-            <ProjectGridSkeleton />
+            <PageLoader fullPage={false} label="กำลังโหลดผลงาน..." />
           ) : (
             <>
               <FeedProjectGrid>

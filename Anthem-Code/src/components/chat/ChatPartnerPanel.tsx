@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { BadgeCheck, ChevronDown, ExternalLink, ImageIcon } from "lucide-react";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -85,7 +86,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose }: Props)
       <div className="shrink-0 overflow-y-auto max-h-[42%] border-b border-border bg-background">
         <div className="p-6 text-center">
           {isLoading ? (
-            <div className="py-8 text-sm text-muted-foreground">กำลังโหลด…</div>
+            <InlineLoader />
           ) : (
             <>
               {profile?.avatar_url ? (

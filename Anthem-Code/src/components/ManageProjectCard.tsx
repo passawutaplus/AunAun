@@ -1,7 +1,9 @@
 import {
   ArrowDown,
   ArrowUp,
+  BarChart3,
   Eye,
+  Handshake,
   Mail,
   Pencil,
   Pin,
@@ -10,6 +12,8 @@ import {
 } from "lucide-react";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import type { Project } from "@/data/projectTypes";
+import type { ProjectManageStats } from "@/hooks/usePortfolioProjectStats";
+import { EMPTY_PROJECT_STATS } from "@/hooks/usePortfolioProjectStats";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { timeAgoTH } from "@/lib/format";
@@ -19,7 +23,6 @@ interface ManageProjectCardProps {
   onDelete?: (id: string) => void;
   editable?: boolean;
   isPinned?: boolean;
-  hireCount?: number;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
   onPin?: () => void;
@@ -27,6 +30,8 @@ interface ManageProjectCardProps {
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   orderBusy?: boolean;
+  stats?: ProjectManageStats;
+  onShowStats?: () => void;
 }
 
 const ManageProjectCard = ({
@@ -34,7 +39,6 @@ const ManageProjectCard = ({
   onDelete,
   editable,
   isPinned,
-  hireCount = 0,
   canMoveUp,
   canMoveDown,
   onPin,
@@ -42,6 +46,8 @@ const ManageProjectCard = ({
   onMoveUp,
   onMoveDown,
   orderBusy,
+  stats = EMPTY_PROJECT_STATS,
+  onShowStats,
 }: ManageProjectCardProps) => {
   const navigate = useNavigate();
   const dateLabel =
@@ -93,29 +99,62 @@ const ManageProjectCard = ({
 
       <div className="p-3 flex flex-col flex-1 gap-2">
         <div className="flex-1 min-h-0">
-          <h3 className="font-semibold text-foreground text-sm line-clamp-2 leading-snug">{project.title}</h3>
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-semibold text-foreground text-sm line-clamp-2 leading-snug min-w-0">
+              {project.title}
+            </h3>
+            <div className="flex items-center gap-2 shrink-0 text-xs text-muted-foreground pt-0.5">
+              <span className="inline-flex items-center gap-1">
+                <Eye className="w-3.5 h-3.5" />
+                {project.views.toLocaleString()}
+              </span>
+              <PlusOneControl
+                active={false}
+                count={project.likes}
+                showCount
+                size="sm"
+                className="pointer-events-none text-muted-foreground"
+              />
+            </div>
+          </div>
           <p className="text-xs text-muted-foreground mt-1">{dateLabel}</p>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-          <span className="inline-flex items-center gap-1">
-            <Eye className="w-3.5 h-3.5" />
-            {project.views.toLocaleString()}
-          </span>
-          <PlusOneControl
-            active={false}
-            count={project.likes}
-            showCount
-            size="sm"
-            className="pointer-events-none text-muted-foreground"
-          />
-          {hireCount > 0 && (
-            <span className="inline-flex items-center gap-1 text-[hsl(var(--chat-hire))]">
-              <Mail className="w-3.5 h-3.5" />
-              {hireCount}
-            </span>
-          )}
-        </div>
+        {(stats.hireCount > 0 || stats.collabCount > 0) && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+            {stats.hireCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-[hsl(var(--chat-hire))]">
+                <Mail className="w-3.5 h-3.5" />
+                จ้าง {stats.hireCount}
+              </span>
+            )}
+            {stats.collabCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-primary">
+                <Handshake className="w-3.5 h-3.5" />
+                คอลแลป {stats.collabCount}
+              </span>
+            )}
+          </div>
+        )}
+
+        {onShowStats && project.status === "Published" && (
+          <button
+            type="button"
+            onClick={onShowStats}
+            className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border/80 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            ดูสถิติผลงาน
+            {(stats.views7d > 0 || stats.hireCount > 0 || stats.collabCount > 0) && (
+              <span className="text-[10px] text-primary">
+                · 7 วัน {stats.views7d}
+                {stats.hireCount + stats.collabCount > 0
+                  ? ` · โอกาส ${stats.hireCount + stats.collabCount}`
+                  : ""}
+              </span>
+            )}
+          </button>
+        )}
 
         <div className="flex items-center justify-between gap-1 pt-2 border-t border-border/50">
           <div className="flex items-center gap-0.5">

@@ -1,4 +1,15 @@
-# Admin & Platform — สถานะ (อัปเดต 2026-07-02)
+# Admin & Platform — สถานะ (อัปเดต 2026-07-10)
+
+---
+
+## Launch minimal (production)
+
+เมื่อ `VITE_APLUS1_LAUNCH_MINIMAL=true` (production `aplus1.app`):
+
+- Admin **sidebar + overview** แสดงเฉพาะเมนูที่สอดคล้องกับ launch slice (ผลงาน → โอกาส → แชต)
+- Path ที่ซ่อน redirect กลับ `/admin` ผ่าน `AdminLaunchGate`
+- Config: `src/lib/admin/adminNavigation.ts` → `ADMIN_LAUNCH_HIDDEN_ADMIN_PATHS`
+- Demo (`aplus1-demo`) ยังเห็น admin เต็มเมื่อ `LAUNCH_MINIMAL=false`
 
 ---
 

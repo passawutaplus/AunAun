@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { PROFILE_DESIGNER_SELECT, PROJECT_FEED_SELECT } from "@/lib/dbSelects";
+import { profilesPublicFrom } from "@/lib/profileAccess";
 import type { DesignerCardData } from "@/data/designerTypes";
 
 export type { DesignerCardData };
@@ -10,8 +11,7 @@ export const useDesigners = () =>
   useQuery({
     queryKey: ["designers-feed", "v4"],
     queryFn: async (): Promise<DesignerCardData[]> => {
-      const { data: profiles, error } = await supabase
-        .from("profiles")
+      const { data: profiles, error } = await profilesPublicFrom()
         .select(PROFILE_DESIGNER_SELECT)
         .order("updated_at", { ascending: false })
         .limit(60);

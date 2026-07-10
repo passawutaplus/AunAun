@@ -32,6 +32,7 @@ import {
   type StudioClientContext,
 } from "@/components/studio/StudioClientPickerDialog";
 import { StudioQuoteUpsellDialog } from "@/components/studio/StudioQuoteUpsellDialog";
+import PageLoader from "@/components/ui/PageLoader";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -75,7 +76,7 @@ const StudioProfilePage = () => {
     }
   };
 
-  if (isLoading) return <div className="min-h-screen grid place-items-center text-muted-foreground">กำลังโหลด...</div>;
+  if (isLoading) return <PageLoader />;
   if (!studio) return <div className="min-h-screen grid place-items-center text-muted-foreground">ไม่พบสตูดิโอ</div>;
 
   const websiteUrl = safeHttpUrl(studio.website);

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   id?: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon?: React.ComponentType<{ className?: string }>;
   title: string;
   count?: number;
   isEditing: boolean;
@@ -14,6 +14,8 @@ type Props = {
   onSave: () => void;
   children: React.ReactNode;
   editContent: React.ReactNode;
+  /** nested = subsection inside a parent Section card */
+  variant?: "panel" | "nested";
 };
 
 export function ProfileEditableSection({
@@ -28,20 +30,40 @@ export function ProfileEditableSection({
   onSave,
   children,
   editContent,
+  variant = "panel",
 }: Props) {
+  const nested = variant === "nested";
   return (
-    <section id={id} className={cn("rounded-3xl glass-panel p-5 md:p-6", id && "scroll-mt-24")}>
-      <div className="flex items-center justify-between gap-3 mb-4">
+    <section
+      id={id}
+      className={cn(
+        nested
+          ? "border-t border-border/60 pt-5 first:border-0 first:pt-0"
+          : cn("rounded-3xl glass-panel p-5 md:p-6", id && "scroll-mt-24"),
+      )}
+    >
+      <div className={cn("flex items-center justify-between gap-3", nested ? "mb-3" : "mb-4")}>
         <div className="flex items-center gap-2 min-w-0">
-          <div className="text-primary flex items-center justify-center shrink-0">
-            <Icon className="w-5 h-5" />
-          </div>
-          <h2 className="font-medium text-foreground truncate">
-            {title}
-            {typeof count === "number" && (
-              <span className="text-muted-foreground font-normal ml-1.5 text-sm">({count})</span>
-            )}
-          </h2>
+          {!nested && Icon ? (
+            <div className="text-primary flex items-center justify-center shrink-0">
+              <Icon className="w-5 h-5" />
+            </div>
+          ) : null}
+          {nested ? (
+            <h3 className="text-sm font-medium text-foreground truncate">
+              {title}
+              {typeof count === "number" && (
+                <span className="text-muted-foreground font-normal ml-1.5 text-xs">({count})</span>
+              )}
+            </h3>
+          ) : (
+            <h2 className="font-medium text-foreground truncate">
+              {title}
+              {typeof count === "number" && (
+                <span className="text-muted-foreground font-normal ml-1.5 text-sm">({count})</span>
+              )}
+            </h2>
+          )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {isEditing ? (

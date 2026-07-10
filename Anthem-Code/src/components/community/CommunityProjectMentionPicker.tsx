@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Check, ChevronDown, FolderOpen, Search, X } from "lucide-react";
+import { CompactLoader } from "@/components/ui/BanterLoader";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useMyProjects } from "@/hooks/useProjects";
@@ -131,7 +132,7 @@ export function CommunityProjectMentionPicker({ userId, selected, onChange }: Pr
           </div>
           <div className="max-h-56 overflow-y-auto p-1">
             {isLoading && (
-              <p className="text-xs text-muted-foreground text-center py-6">กำลังโหลดผลงาน…</p>
+              <CompactLoader label="กำลังโหลดผลงาน…" className="py-6" />
             )}
             {!isLoading && published.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-6 px-3">

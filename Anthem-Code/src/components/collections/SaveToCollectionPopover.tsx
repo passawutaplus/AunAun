@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Layers3, Plus, Check, Lock } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CompactLoader } from "@/components/ui/BanterLoader";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -102,7 +103,7 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
 
           <ScrollArea className="max-h-64">
             {collectionsLoading ? (
-              <p className="text-xs text-muted-foreground text-center py-6 px-3">กำลังโหลด...</p>
+              <CompactLoader className="py-6 px-3" />
             ) : collectionsError ? (
               <div className="text-center py-6 px-3 space-y-2">
                 <p className="text-xs text-muted-foreground">โหลดรายการไม่สำเร็จ</p>

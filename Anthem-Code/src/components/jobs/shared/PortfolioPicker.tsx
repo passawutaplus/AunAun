@@ -1,5 +1,6 @@
 import { useMyProjects } from "@/hooks/useProjects";
 import { useAuth } from "@/hooks/useAuth";
+import { CompactLoader } from "@/components/ui/BanterLoader";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 
@@ -25,7 +26,7 @@ const PortfolioPicker = ({ value, onChange, min = 0, max = 6 }: Props) => {
     onChange([...value, id]);
   };
 
-  if (isLoading) return <p className="text-xs text-muted-foreground">กำลังโหลดผลงาน...</p>;
+  if (isLoading) return <CompactLoader label="กำลังโหลดผลงาน..." className="py-2 justify-start" />;
   if (published.length === 0) {
     return <p className="text-xs text-muted-foreground">ยังไม่มีผลงานที่เผยแพร่ — โพสต์งานในโปรไฟล์ก่อน</p>;
   }

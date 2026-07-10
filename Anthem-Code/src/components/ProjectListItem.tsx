@@ -71,7 +71,7 @@ const ProjectListItem = ({ project, onHireClick, onCollabClick }: ProjectListIte
           onClick={stop(() => onHireClick?.(project.id))}
           className="rounded-full bg-gradient-brand text-white hover:opacity-90 h-8 text-xs"
         >
-          <BriefcaseIcon className="w-3.5 h-3.5 mr-1" /> จ้าง
+          <BriefcaseIcon className="w-3.5 h-3.5 mr-1" /> สนใจจ้างงาน
         </Button>
         <Button
           size="sm"
@@ -79,7 +79,7 @@ const ProjectListItem = ({ project, onHireClick, onCollabClick }: ProjectListIte
           onClick={stop(() => onCollabClick?.(project.id))}
           className="rounded-full h-8 text-xs"
         >
-          <Users className="w-3.5 h-3.5 mr-1" /> Collab
+          <Users className="w-3.5 h-3.5 mr-1" /> สนใจคอลแลป
         </Button>
       </div>
     </div>

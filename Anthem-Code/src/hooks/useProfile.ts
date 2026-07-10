@@ -3,17 +3,24 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 import type { ProfileInput } from "@/lib/validators";
 import { assertUsernameAvailable, normalizeUsername } from "@/hooks/useUsernameAvailability";
+import { useAuth } from "@/hooks/useAuth";
+import { profileReadFrom } from "@/lib/profileAccess";
 
-export const useProfile = (userId: string | undefined) =>
-  useQuery({
-    queryKey: ["profile", userId],
+export const useProfile = (userId: string | undefined) => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["profile", userId, user?.id],
     enabled: !!userId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("*").eq("user_id", userId!).maybeSingle();
+      const { data, error } = await profileReadFrom(user?.id, userId!)
+        .select("*")
+        .eq("user_id", userId!)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
   });
+};
 
 export const useUpdateProfile = (userId: string | undefined) => {
   const qc = useQueryClient();
@@ -38,7 +45,9 @@ export const useUpdateProfile = (userId: string | undefined) => {
       if (p.instagram !== undefined) payload.instagram = p.instagram;
       if (p.notifyEmail !== undefined) payload.notify_email = p.notifyEmail;
       if (p.notifyHire !== undefined) payload.notify_hire = p.notifyHire;
-      if (p.notifyJobMatch !== undefined) payload.notify_job_match = p.notifyJobMatch;
+      if (p.notifyCollab !== undefined) {
+        (payload as { notify_collab?: boolean }).notify_collab = p.notifyCollab;
+      }
       if (p.preferredCategories !== undefined) payload.preferred_categories = p.preferredCategories;
       if (p.preferredEmploymentTypes !== undefined) {
         payload.preferred_employment_types = p.preferredEmploymentTypes;

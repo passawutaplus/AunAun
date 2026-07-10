@@ -4,7 +4,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Flag } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Button } from "@/components/ui/button";
+import { ReportEvidenceLink } from "@/components/report/ReportEvidenceLink";
 
 const STATUS_TONE: Record<string, string> = {
   open: "bg-orange-500/15 text-orange-500 border-orange-500/30",
@@ -48,7 +50,7 @@ const MyReportsPage = () => {
       <p className="text-sm text-muted-foreground mb-6">ติดตามสถานะคำร้องเรียนที่คุณส่งให้ทีมงาน</p>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">กำลังโหลด...</p>
+        <InlineLoader />
       ) : rows.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-sm text-muted-foreground">ยังไม่เคยส่งรายงาน</p>
@@ -88,9 +90,12 @@ const MyReportsPage = () => {
               {r.evidence_files?.length > 0 && (
                 <div className="flex gap-1 flex-wrap">
                   {r.evidence_files.map((f, i) => (
-                    <a key={i} href={f.url} target="_blank" rel="noreferrer" className="text-[10px] underline text-muted-foreground">
-                      {f.name}
-                    </a>
+                    <ReportEvidenceLink
+                      key={i}
+                      storedUrl={f.url}
+                      name={f.name}
+                      className="text-[10px] underline text-muted-foreground"
+                    />
                   ))}
                 </div>
               )}

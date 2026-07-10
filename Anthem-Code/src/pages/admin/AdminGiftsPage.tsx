@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { CompactLoader } from "@/components/ui/BanterLoader";
 import SectionHeader from "@/components/admin/SectionHeader";
 import DataTable, { Column } from "@/components/admin/DataTable";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -592,7 +593,7 @@ export default function AdminGiftsPage() {
               <Settings2 className="w-4 h-4" />
               <p className="font-mono text-[10px] uppercase tracking-wider">gift_limits_config</p>
             </div>
-            {limits.isLoading && <p className="text-sm text-admin-muted">กำลังโหลด…</p>}
+            {limits.isLoading && <CompactLoader labelClassName="text-admin-muted" className="py-2 justify-start" />}
             {limitsReady && (
               <div className="grid gap-3 sm:grid-cols-2">
                 {(

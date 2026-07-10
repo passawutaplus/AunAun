@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy Aplus1 demo to Vercel (preview). Requires: vercel login, .env with Supabase keys.
+# Deploy Aplus1 demo to Vercel (preview). Requires: vercel login, dedicated demo Supabase.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -9,7 +9,7 @@ if ! command -v npx >/dev/null 2>&1; then
 fi
 
 if [[ ! -f .env ]]; then
-  echo "Missing .env — copy from .env.example and fill VITE_SUPABASE_*" >&2
+  echo "Missing .env — copy from .env.example and fill VITE_DEMO_SUPABASE_*" >&2
   exit 1
 fi
 
@@ -21,24 +21,28 @@ VERCEL_PROJECT="${VERCEL_ANTHEM_DEMO_PROJECT:-aplus1-demo}"
 # shellcheck disable=SC1091
 set -a && source .env && set +a
 export VITE_DEMO_MODE=true
-# ไม่บังคับ VITE_SITE_URL — ให้ OAuth ใช้ *.vercel.app อัตโนมัติบน preview
 
-# Phase A (pre-launch): same rvnzjisk project — set VITE_SUPABASE_* only.
-# Phase B: separate demo project — set VITE_DEMO_SUPABASE_* (must differ from prod URL).
-VITE_DEMO_SUPABASE_URL="${VITE_DEMO_SUPABASE_URL:-${VITE_SUPABASE_URL:-}}"
-VITE_DEMO_SUPABASE_PUBLISHABLE_KEY="${VITE_DEMO_SUPABASE_PUBLISHABLE_KEY:-${VITE_SUPABASE_PUBLISHABLE_KEY:-}}"
-: "${VITE_DEMO_SUPABASE_URL:?Set VITE_DEMO_SUPABASE_URL or VITE_SUPABASE_URL in .env}"
-: "${VITE_DEMO_SUPABASE_PUBLISHABLE_KEY:?Set VITE_DEMO_SUPABASE_PUBLISHABLE_KEY or VITE_SUPABASE_PUBLISHABLE_KEY in .env}"
-if [[ -n "${VITE_SUPABASE_URL:-}" && -n "${VITE_DEMO_SUPABASE_URL:-}" && "${VITE_DEMO_SUPABASE_URL}" != "${VITE_SUPABASE_URL}" ]]; then
-  echo "→ Phase B demo: separate Supabase project"
-elif [[ -n "${VITE_SUPABASE_URL:-}" && "${VITE_DEMO_SUPABASE_URL}" == "${VITE_SUPABASE_URL}" ]]; then
-  echo "→ Phase A demo: shared Supabase project (rvnzjisk)"
+: "${VITE_DEMO_SUPABASE_URL:?Set VITE_DEMO_SUPABASE_URL in .env (must be a dedicated demo project)}"
+: "${VITE_DEMO_SUPABASE_PUBLISHABLE_KEY:?Set VITE_DEMO_SUPABASE_PUBLISHABLE_KEY in .env}"
+
+if [[ -n "${VITE_SUPABASE_URL:-}" && "${VITE_DEMO_SUPABASE_URL}" == "${VITE_SUPABASE_URL}" ]]; then
+  echo "ERROR: Demo Supabase URL must differ from production VITE_SUPABASE_URL" >&2
+  exit 1
 fi
+
+echo "→ Checking build env…"
+DEPLOY_TARGET=demo VITE_DEMO_MODE=true \
+  VITE_DEMO_SUPABASE_URL="${VITE_DEMO_SUPABASE_URL}" \
+  VITE_DEMO_SUPABASE_PUBLISHABLE_KEY="${VITE_DEMO_SUPABASE_PUBLISHABLE_KEY}" \
+  VITE_SUPABASE_URL="${VITE_SUPABASE_URL:-}" \
+  VITE_APLUS1_PAYMENTS_ENABLED=false \
+  VITE_SOLO_ECOSYSTEM_ENABLED=false \
+  node scripts/check-build-env.mjs
 
 echo "→ Deploying demo to aplus1-demo.vercel.app (production slot on demo project)…"
 if [[ "${1:-}" == "--prod" ]]; then
   echo "ERROR: Do not pass --prod to deploy-demo-vercel.sh (demo credentials would ship to production)." >&2
-  echo "For production: set VITE_DEMO_MODE=false in Vercel and use: npx vercel deploy --prod" >&2
+  echo "For production: ./scripts/deploy-vercel.sh production 1px" >&2
   exit 1
 fi
 BUILD_ENVS=(
@@ -46,7 +50,10 @@ BUILD_ENVS=(
   --build-env "VITE_DEMO_SUPABASE_URL=${VITE_DEMO_SUPABASE_URL}"
   --build-env "VITE_DEMO_SUPABASE_PUBLISHABLE_KEY=${VITE_DEMO_SUPABASE_PUBLISHABLE_KEY}"
   --build-env "VITE_DEMO_MODE=true"
-  --build-env "VITE_APLUS1_PAYMENTS_ENABLED=true"
+  --build-env "VITE_APLUS1_LAUNCH_MINIMAL=true"
+  --build-env "VITE_APLUS1_PAYMENTS_ENABLED=false"
+  --build-env "VITE_SOLO_ECOSYSTEM_ENABLED=false"
+  --build-env "VITE_STRIPE_MODE=sandbox"
   --build-env "VITE_SO1O_APP_URL=${VITE_SO1O_APP_URL:-https://solofreelancer.com}"
 )
 BUILD_ENVS+=(--build-env "VITE_OPS_HUB_URL=${VITE_OPS_HUB_URL:-https://so1o-ops-hub.vercel.app}")
@@ -69,4 +76,4 @@ echo "Next steps:"
 echo "  1. Supabase Dashboard → Authentication → URL Configuration"
 echo "     Add redirect: ${DEMO_CANONICAL}/auth/callback"
 echo "  2. Share the isolated demo account password through a private channel"
-echo "  3. Production: VITE_DEMO_MODE=false + npx vercel deploy --prod (never use this script with --prod)"
+echo "  3. Production: ./scripts/deploy-vercel.sh production 1px"

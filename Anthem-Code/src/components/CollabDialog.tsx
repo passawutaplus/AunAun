@@ -23,6 +23,7 @@ import {
   DEFAULT_COLLAB_MESSAGE,
   type ChatEntrySource,
 } from "@/lib/chatContext";
+import { validateProjectInquiry } from "@/domain/inquiry";
 import ProjectReferencePreview from "@/components/opportunity/ProjectReferencePreview";
 
 const COLLAB_TYPES = [
@@ -126,6 +127,12 @@ const CollabDialog = ({
       return;
     }
     if (recipientId === user.id) { toast.info("ส่งคำขอให้ตัวเองไม่ได้"); return; }
+
+    const inquiryErr = validateProjectInquiry({ source, projectId });
+    if (inquiryErr) {
+      toast.error(inquiryErr);
+      return;
+    }
 
     const parsed = collabDetailsSchema.safeParse({
       collabTypes: selectedTypes,

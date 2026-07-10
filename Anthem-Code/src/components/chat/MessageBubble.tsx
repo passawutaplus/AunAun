@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/context-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { PROJECT_FEED_SELECT, PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
+import { profilesPublicFrom } from "@/lib/profileAccess";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import { isSystemFallbackContent, stripSystemFallbackPrefix } from "@/lib/chatContext";
 import { replyPreviewText } from "@/lib/chatReply";
@@ -93,8 +94,7 @@ const MessageBubble = ({
     queryKey: ["msg-profile", profileUserId],
     enabled: message.message_type === "profile" && !!profileUserId && !deleted,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
+      const { data } = await profilesPublicFrom()
         .select(PUBLIC_PROFILE_SELECT)
         .eq("user_id", profileUserId!)
         .maybeSingle();

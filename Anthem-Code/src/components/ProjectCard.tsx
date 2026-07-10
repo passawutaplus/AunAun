@@ -181,8 +181,8 @@ const ProjectCard = ({
           {(project.allowHire ?? true) && (
             <button
               onClick={stop(() => onHireClick?.(project.id))}
-              aria-label="จ้างงาน"
-              title="จ้างงาน"
+              aria-label="สนใจจ้างงาน"
+              title="สนใจจ้างงาน"
               className="p-1.5 rounded-full text-white hover:bg-white/15 transition-colors"
             >
               <BriefcaseIcon className="w-4 h-4" />
@@ -191,8 +191,8 @@ const ProjectCard = ({
           {(project.allowCollab ?? true) && (
             <button
               onClick={stop(() => onCollabClick?.(project.id))}
-              aria-label="Collab"
-              title="Collab"
+              aria-label="สนใจคอลแลป"
+              title="สนใจคอลแลป"
               className="p-1.5 rounded-full text-white hover:bg-white/15 transition-colors"
             >
               <Handshake className="w-4 h-4" />

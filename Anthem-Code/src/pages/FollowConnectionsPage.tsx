@@ -4,6 +4,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import FollowConnectionsPanel from "@/components/follow/FollowConnectionsPanel";
 import SeoHead from "@/components/SeoHead";
+import PageLoader from "@/components/ui/PageLoader";
 import { cn } from "@/lib/utils";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 
@@ -22,7 +23,7 @@ const FollowConnectionsPage = () => {
   }, [loading, isOwn, user, navigate]);
 
   if (loading || !subjectId) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">กำลังโหลด...</div>;
+    return <PageLoader />;
   }
 
   return (

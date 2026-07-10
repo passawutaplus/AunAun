@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import DonationModal from "./DonationModal";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { isLaunchCreatorSupportEnabled } from "@/lib/aplus1Launch";
 
 const VISITOR_PREVIEW_TOAST = "นี่คือมุมมองผู้เยี่ยมชม — ปุ่มนี้ใช้งานได้จริงเมื่อคนอื่นเปิดโปรไฟล์ของคุณ";
 
@@ -28,6 +29,8 @@ const SupportButton = ({
   recipientId, recipientName, recipientAvatar, projectId, variant = "outline", hideSubtext = false, className,
   visitorPreview = false,
 }: Props) => {
+  if (!isLaunchCreatorSupportEnabled()) return null;
+
   const { user } = useAuth();
   const openAuth = useAuthDialog((s) => s.openLogin);
   const [open, setOpen] = useState(false);

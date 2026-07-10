@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 
 export interface AdminStats {
   totalUsers: number;
@@ -26,34 +27,37 @@ export interface AdminStats {
 
 const since = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
 
+const zeroCount = { count: 0, error: null, data: null };
+
 export function useAdminStats() {
   return useQuery<AdminStats>({
-    queryKey: ["admin-stats"],
+    queryKey: ["admin-stats", isAplus1LaunchMinimal()],
     refetchInterval: 30_000,
     queryFn: async () => {
+      const launch = isAplus1LaunchMinimal();
       const [
         users, newUsers, studios, projects, jobs, hiring, collabs, msgs, cols,
         likes, comments, follows, gifts, views, reports, cashouts, feedback, kyc, aml,
       ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
-        supabase.from("studios").select("*", { count: "exact", head: true }),
+        launch ? Promise.resolve(zeroCount) : supabase.from("studios").select("*", { count: "exact", head: true }),
         supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "Published"),
-        supabase.from("job_posts").select("*", { count: "exact", head: true }).eq("status", "open"),
-        supabase.from("hiring_requests").select("*", { count: "exact", head: true }).eq("status", "ใหม่"),
-        supabase.from("collab_requests").select("*", { count: "exact", head: true }).eq("status", "ใหม่"),
+        launch ? Promise.resolve(zeroCount) : supabase.from("job_posts").select("*", { count: "exact", head: true }).eq("status", "open"),
+        launch ? Promise.resolve(zeroCount) : supabase.from("hiring_requests").select("*", { count: "exact", head: true }).eq("status", "ใหม่"),
+        launch ? Promise.resolve(zeroCount) : supabase.from("collab_requests").select("*", { count: "exact", head: true }).eq("status", "ใหม่"),
         supabase.from("messages").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
-        supabase.from("collections").select("*", { count: "exact", head: true }),
+        launch ? Promise.resolve(zeroCount) : supabase.from("collections").select("*", { count: "exact", head: true }),
         supabase.from("project_likes").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
         supabase.from("project_comments").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
         supabase.from("follows").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
-        supabase.from("gift_transactions").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
+        launch ? Promise.resolve(zeroCount) : supabase.from("gift_transactions").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
         supabase.from("project_views").select("*", { count: "exact", head: true }).gte("viewed_at", since(24)),
         supabase.from("user_reports" as never).select("*", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
-        supabase.from("cashout_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        launch ? Promise.resolve(zeroCount) : supabase.from("cashout_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("app_feedback" as never).select("*", { count: "exact", head: true }).eq("status", "new"),
-        supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("aml_flags").select("*", { count: "exact", head: true }).eq("status", "open"),
+        launch ? Promise.resolve(zeroCount) : supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        launch ? Promise.resolve(zeroCount) : supabase.from("aml_flags").select("*", { count: "exact", head: true }).eq("status", "open"),
       ]);
       return {
         totalUsers: users.count ?? 0,

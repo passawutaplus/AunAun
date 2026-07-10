@@ -1,6 +1,6 @@
 import BriefcaseIcon from "../components/icons/BriefcaseIcon";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, LayoutGrid, Globe, Eye, Settings, ExternalLink, MessageSquare } from "lucide-react";
 import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import type { LucideIcon } from "lucide-react";
@@ -17,19 +17,22 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDeleteProject, useMyProjects, type DBProject } from "@/hooks/useProjects";
 import { usePortfolioOrder } from "@/hooks/usePortfolioOrder";
 import { useDeleteCommunityPost, useMyCommunityPostsManage } from "@/hooks/useCommunityPosts";
-import { useEffect, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import SeoHead from "@/components/SeoHead";
 import { sortPortfolioProjects } from "@/lib/portfolioSort";
-import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
 import { SO1O_APP_URL } from "@/lib/productLinks";
-import { isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
+import { isAplus1LaunchMinimal, isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
 import { openSoloExternal } from "@/lib/soloEcosystemGate";
-import BoostInsightsPanel from "@/components/boost/BoostInsightsPanel";
+import ProjectManageStatsDialog from "@/components/portfolio/ProjectManageStatsDialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { postHeadline } from "@/lib/classifyCommunityPost";
+import { usePortfolioProjectStats, EMPTY_PROJECT_STATS } from "@/hooks/usePortfolioProjectStats";
+import {
+  DEFAULT_PROJECT_MANAGE_SORT,
+  sortManageProjects,
+  type ProjectManageSortMode,
+} from "@/lib/portfolioManageSort";
+import ProjectManageSortSelect from "@/components/portfolio/ProjectManageSortSelect";
+import PortfolioOverviewChart from "@/components/portfolio/PortfolioOverviewChart";
 
 type PendingDelete =
   | { kind: "project"; id: string; title: string }
@@ -48,13 +51,17 @@ const PortfolioManagePage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
+  const communityManageEnabled = !isAplus1LaunchMinimal();
   const { data: dbProjects = [] } = useMyProjects(user?.id);
-  const { data: myPosts = [] } = useMyCommunityPostsManage(user?.id);
+  const { data: myPosts = [] } = useMyCommunityPostsManage(
+    communityManageEnabled ? user?.id : undefined,
+  );
   const deleteProject = useDeleteProject();
   const deletePost = useDeleteCommunityPost();
   const { pin, unpin, reorder } = usePortfolioOrder(user?.id);
 
-  const manageTab: ManageTab = searchParams.get("tab") === "posts" ? "posts" : "projects";
+  const manageTab: ManageTab =
+    communityManageEnabled && searchParams.get("tab") === "posts" ? "posts" : "projects";
   const setManageTab = (tab: ManageTab) => {
     const next = new URLSearchParams(searchParams);
     if (tab === "projects") next.delete("tab");
@@ -62,33 +69,28 @@ const PortfolioManagePage = () => {
     setSearchParams(next, { replace: true });
   };
 
-  const { data: hireByProject = {} } = useQuery({
-    queryKey: ["hire-by-project", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("hiring_requests")
-        .select("project_id")
-        .eq("freelancer_id", user!.id)
-        .not("project_id", "is", null);
-      if (error) throw error;
-      const map: Record<string, number> = {};
-      (data ?? []).forEach((r) => {
-        if (r.project_id) map[r.project_id] = (map[r.project_id] ?? 0) + 1;
-      });
-      return map;
-    },
-  });
-
   const [projectSearch, setProjectSearch] = useState("");
   const [projectTab, setProjectTab] = useState<ProjectTab>("ทั้งหมด");
   const [pendingDelete, setPendingDelete] = useState<PendingDelete>(null);
   const [postSearch, setPostSearch] = useState("");
   const [postTab, setPostTab] = useState<PostTab>("ทั้งหมด");
+  const [statsProjectId, setStatsProjectId] = useState<string | null>(null);
+  const [projectSort, setProjectSort] = useState<ProjectManageSortMode>(DEFAULT_PROJECT_MANAGE_SORT);
+
+  const projectIds = useMemo(() => dbProjects.map((p) => p.id), [dbProjects]);
+  const { data: projectStatsMap = {} } = usePortfolioProjectStats(user?.id, projectIds);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?redirect=/portfolio");
   }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (!communityManageEnabled && searchParams.get("tab") === "posts") {
+      const next = new URLSearchParams(searchParams);
+      next.delete("tab");
+      setSearchParams(next, { replace: true });
+    }
+  }, [communityManageEnabled, searchParams, setSearchParams]);
 
   const myProjects: Project[] = useMemo(() => {
     const mapped: Project[] = dbProjects.map((p) => ({
@@ -125,16 +127,14 @@ const PortfolioManagePage = () => {
   );
 
   const filteredProjects = useMemo(() => {
-    const orderMap = new Map(orderedDbProjects.map((p, i) => [p.id, i]));
-    return myProjects
-      .filter((p) => {
-        const matchTab = projectTab === "ทั้งหมด" || p.status === projectTab;
-        const matchSearch =
-          !projectSearch || p.title.toLowerCase().includes(projectSearch.toLowerCase());
-        return matchTab && matchSearch;
-      })
-      .sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
-  }, [myProjects, orderedDbProjects, projectTab, projectSearch]);
+    const filtered = myProjects.filter((p) => {
+      const matchTab = projectTab === "ทั้งหมด" || p.status === projectTab;
+      const matchSearch =
+        !projectSearch || p.title.toLowerCase().includes(projectSearch.toLowerCase());
+      return matchTab && matchSearch;
+    });
+    return sortManageProjects(filtered, projectSort, projectStatsMap);
+  }, [myProjects, projectTab, projectSearch, projectSort, projectStatsMap]);
 
   const orderBusy = pin.isPending || unpin.isPending || reorder.isPending;
 
@@ -151,6 +151,11 @@ const PortfolioManagePage = () => {
   };
 
   const dbById = useMemo(() => new Map(dbProjects.map((p) => [p.id, p])), [dbProjects]);
+  const statsProject = useMemo(
+    () => (statsProjectId ? myProjects.find((p) => p.id === statsProjectId) ?? null : null),
+    [statsProjectId, myProjects],
+  );
+  const statsProjectDb = statsProjectId ? dbById.get(statsProjectId) : undefined;
 
   const projectTabs: ProjectTab[] = ["ทั้งหมด", "Published", "Draft", "Private"];
   const postTabs: PostTab[] = ["ทั้งหมด", "published", "draft"];
@@ -229,34 +234,36 @@ const PortfolioManagePage = () => {
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            {manageTab === "projects"
-              ? "ดูการเติบโต จัดลำดับผลงาน Boost และแก้ไขเนื้อหา — คำขอจ้างงานและ Collab อยู่ที่หน้าโปรไฟล์"
-              : "จัดการโพสต์ชุมชน — แก้ไข แบบร่าง และลบโพสต์ของคุณ"}
+            {manageTab === "posts"
+              ? "จัดการโพสต์ชุมชน — แก้ไข แบบร่าง และลบโพสต์ของคุณ"
+              : "ดูการเติบโต จัดลำดับผลงาน และแก้ไขเนื้อหา — คำขอจ้างงานและ Collab อยู่ที่หน้าโปรไฟล์"}
           </p>
-          <div className="flex gap-2 mt-4 overflow-x-auto pb-1 scrollbar-hide">
-            <button
-              type="button"
-              onClick={() => setManageTab("projects")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                manageTab === "projects"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card text-secondary-foreground border border-border hover:bg-secondary"
-              }`}
-            >
-              ผลงาน ({myProjects.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setManageTab("posts")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                manageTab === "posts"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card text-secondary-foreground border border-border hover:bg-secondary"
-              }`}
-            >
-              โพสต์ ({myPosts.length})
-            </button>
-          </div>
+          {communityManageEnabled && (
+            <div className="flex gap-2 mt-4 overflow-x-auto pb-1 scrollbar-hide">
+              <button
+                type="button"
+                onClick={() => setManageTab("projects")}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  manageTab === "projects"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-secondary-foreground border border-border hover:bg-secondary"
+                }`}
+              >
+                ผลงาน ({myProjects.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setManageTab("posts")}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  manageTab === "posts"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-secondary-foreground border border-border hover:bg-secondary"
+                }`}
+              >
+                โพสต์ Area ({myPosts.length})
+              </button>
+            </div>
+          )}
           {manageTab === "projects" ? (
             <Button
               className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-11 px-6"
@@ -269,17 +276,18 @@ const PortfolioManagePage = () => {
               className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-11 px-6"
               onClick={() => navigate("/community/new")}
             >
-              <Plus className="w-4 h-4 mr-2" /> สร้างโพสต์
+              <Plus className="w-4 h-4 mr-2" /> สร้างโพสต์ Area
             </Button>
           )}
         </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 space-y-6 pb-8">
-        <OnboardingChecklist variant="compact" />
 
-        {manageTab === "projects" ? (
+        {manageTab === "projects" || !communityManageEnabled ? (
           <>
+        {user ? <PortfolioOverviewChart ownerId={user.id} projectIds={projectIds} /> : null}
+
         <div className="grid grid-cols-2 gap-3">
           <StatsCard label="ทั้งหมด" value={myProjects.length} icon={LayoutGrid} />
           <StatsCard label="เผยแพร่" value={publishedCount} icon={Globe} accent />
@@ -287,19 +295,20 @@ const PortfolioManagePage = () => {
           <StatsCard label="+1" value={totalLikes} icon={PlusOneStatsIcon} accent />
         </div>
 
-        <BoostInsightsPanel />
-
         <div className="space-y-3">
           <SearchBar placeholder="ค้นหาผลงาน..." value={projectSearch} onChange={setProjectSearch} />
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {projectTabs.map((tab) => (
-              <button key={tab} onClick={() => setProjectTab(tab)}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  projectTab === tab ? "bg-primary text-primary-foreground" : "bg-card text-secondary-foreground border border-border hover:bg-secondary"
-                }`}>
-                {tab}
-              </button>
-            ))}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide min-w-0 flex-1">
+              {projectTabs.map((tab) => (
+                <button key={tab} onClick={() => setProjectTab(tab)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                    projectTab === tab ? "bg-primary text-primary-foreground" : "bg-card text-secondary-foreground border border-border hover:bg-secondary"
+                  }`}>
+                  {tab}
+                </button>
+              ))}
+            </div>
+            <ProjectManageSortSelect value={projectSort} onChange={setProjectSort} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredProjects.map((p) => {
@@ -312,7 +321,10 @@ const PortfolioManagePage = () => {
                   project={p}
                   editable={isDb}
                   isPinned={!!db?.is_pinned}
-                  hireCount={hireByProject[p.id] ?? 0}
+                  stats={projectStatsMap[p.id] ?? EMPTY_PROJECT_STATS}
+                  onShowStats={
+                    p.status === "Published" ? () => setStatsProjectId(p.id) : undefined
+                  }
                   canMoveUp={listIdx > 0}
                   canMoveDown={listIdx >= 0 && listIdx < orderedDbProjects.length - 1}
                   orderBusy={orderBusy}
@@ -423,6 +435,32 @@ const PortfolioManagePage = () => {
         }
         onConfirm={handleConfirmDelete}
         loading={deleteProject.isPending || deletePost.isPending}
+      />
+
+      <ProjectManageStatsDialog
+        open={!!statsProjectId}
+        onOpenChange={(open) => {
+          if (!open) setStatsProjectId(null);
+        }}
+        project={statsProject}
+        ownerId={user?.id}
+        isPinned={!!statsProjectDb?.is_pinned}
+        onView={
+          statsProjectId
+            ? () => {
+                setStatsProjectId(null);
+                navigate(`/project/${statsProjectId}`);
+              }
+            : undefined
+        }
+        onEdit={
+          statsProjectId
+            ? () => {
+                setStatsProjectId(null);
+                navigate(`/portfolio/${statsProjectId}/edit`);
+              }
+            : undefined
+        }
       />
     </div>
   );

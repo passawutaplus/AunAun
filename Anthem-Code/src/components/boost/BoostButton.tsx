@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import BoostDialog from "@/components/boost/BoostDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthDialog } from "@/stores/authDialogStore";
+import { isLaunchBoostEnabled } from "@/lib/aplus1Launch";
 import type { BoostTargetType } from "@/hooks/useBoost";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,7 @@ const BoostButton = ({
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
 
+  if (!isLaunchBoostEnabled()) return null;
   if (!user || user.id !== ownerId) return null;
 
   return (

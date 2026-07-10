@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ShieldCheck, ExternalLink, Bot, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { CompactLoader } from "@/components/ui/BanterLoader";
 import SectionHeader from "@/components/admin/SectionHeader";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +96,7 @@ function KycDocumentGrid({ requestId }: { requestId: string }) {
     };
   }, [docs.data, requestId]);
 
-  if (docs.isLoading) return <p className="text-xs text-admin-muted">กำลังโหลดเอกสาร...</p>;
+  if (docs.isLoading) return <CompactLoader label="กำลังโหลดเอกสาร..." labelClassName="text-admin-muted" />;
   if (!docs.data?.length) return <p className="text-xs text-admin-muted">ไม่มีไฟล์แนบ</p>;
 
   return (

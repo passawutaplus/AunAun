@@ -13,6 +13,7 @@ import {
   User,
   XCircle,
 } from "lucide-react";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -226,7 +227,7 @@ const VerificationWizard = () => {
   };
 
   if (eligLoading) {
-    return <div className="py-16 text-center text-muted-foreground">กำลังโหลด...</div>;
+    return <InlineLoader />;
   }
 
   if (eligError) {

@@ -95,6 +95,29 @@ export const PROFANITY_CATEGORY_LABELS: Record<ProfanityCategory, string> = {
 
 export const COMMUNITY_GUIDELINES_PATH = "/legal/community";
 
+export const COMMUNITY_GUIDELINES_UPDATED_AT = "10 กรกฎาคม 2569";
+
+export const COMMUNITY_REPORT_TARGETS = [
+  { id: "community_post", label: "โพสต์ชุมชน" },
+  { id: "community_comment", label: "ความคิดเห็นในชุมชน" },
+  { id: "project", label: "ผลงาน / พอร์ตโฟลิโอ" },
+  { id: "comment", label: "ความคิดเห็นบนผลงาน" },
+  { id: "user", label: "โปรไฟล์ผู้ใช้" },
+  { id: "message", label: "ข้อความแชท" },
+  { id: "job", label: "ประกาศจ้างงาน" },
+  { id: "studio", label: "สตูดิโอ" },
+] as const;
+
+export const COMMUNITY_REPORT_REASONS = [
+  { id: "spam", label: "สแปม / โฆษณา" },
+  { id: "harassment", label: "คุกคาม / Hate speech" },
+  { id: "nsfw", label: "เนื้อหา 18+ / ไม่เหมาะสม" },
+  { id: "copyright", label: "ละเมิดลิขสิทธิ์" },
+  { id: "scam", label: "หลอกลวง / Scam" },
+  { id: "impersonation", label: "ปลอมเป็นผู้อื่น" },
+  { id: "other", label: "อื่นๆ" },
+] as const;
+
 export const COMMUNITY_PROFANITY_WARNING =
   "พบคำที่อาจละเมิดกฎชุมชน — ระบบจะแทนด้วย *** และอาจนับ strike";
 
