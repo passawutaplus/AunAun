@@ -1,4 +1,4 @@
-﻿import { downloadBlob, downloadCsv, toCsv } from "@/lib/csv";
+import { downloadBlob, downloadCsv, toCsv } from "@/lib/csv";
 import { assertExportAllowed } from "./compliance";
 
 export type ExportFormat = "csv" | "xlsx" | "pdf";
@@ -43,7 +43,7 @@ export async function exportRowsToXlsx(
     )
     .join("");
 
-  const xml = `<?xml version="1.0"?>
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -55,7 +55,7 @@ export async function exportRowsToXlsx(
 </Workbook>`;
 
   const base = filename.replace(/\.(xlsx|xls)$/i, "");
-  const blob = new Blob([xml], { type: "application/vnd.ms-excel;charset=utf-8" });
+  const blob = new Blob(["\ufeff", xml], { type: "application/vnd.ms-excel;charset=utf-8" });
   downloadBlob(`${base}.xls`, blob);
 }
 

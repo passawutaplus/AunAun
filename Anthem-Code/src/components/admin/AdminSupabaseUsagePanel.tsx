@@ -1,7 +1,15 @@
+import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import KpiCard from "@/components/admin/KpiCard";
 import DataTable, { Column } from "@/components/admin/DataTable";
 import { useAdminSupabaseUsage } from "@/hooks/admin/useAdminSupabaseUsage";
 import { getSupabaseProjectInfo, isProjectConfigConsistent } from "@/lib/supabaseProject";
+import {
+  estimateSupabaseMonthlyCost,
+  formatBytes,
+  formatThb,
+  formatUsd,
+} from "@/lib/supabaseCostEstimate";
 import {
   Database,
   ExternalLink,
@@ -12,15 +20,9 @@ import {
   CheckCircle2,
   Zap,
   Users,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-function fmtBytes(n: number) {
-  if (n >= 1024 ** 3) return `${(n / 1024 ** 3).toFixed(2)} GB`;
-  if (n >= 1024 ** 2) return `${(n / 1024 ** 2).toFixed(1)} MB`;
-  if (n >= 1024) return `${(n / 1024).toFixed(1)} KB`;
-  return `${n} B`;
-}
 
 function fmtNum(n: number) {
   return n.toLocaleString("th-TH");
@@ -62,6 +64,17 @@ export default function AdminSupabaseUsagePanel() {
   const configOk = isProjectConfigConsistent(clientInfo);
   const { data, isLoading, isError, error, refetch, isFetching } = useAdminSupabaseUsage();
 
+  const cost = useMemo(() => {
+    if (!data) return null;
+    return estimateSupabaseMonthlyCost({
+      planLabel: data.platform.organization?.planLabel ?? data.upgrade_advice?.currentPlan,
+      storageBytes: data.storage.total_bytes,
+      dbBytes: data.platform.database?.bytes ?? 0,
+      storageLimitGb: data.platform.limits?.storageGb,
+      dbLimitGb: data.platform.limits?.databaseGb,
+    });
+  }, [data]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -88,20 +101,41 @@ export default function AdminSupabaseUsagePanel() {
   const mgmtOk = platform.managementConfigured;
   const dbBytes = platform.database?.bytes ?? 0;
   const storageLimitGb = platform.limits?.storageGb ?? 1;
-  const storagePercent = storage.total_bytes > 0
-    ? (storage.total_bytes / (storageLimitGb * 1024 ** 3)) * 100
-    : null;
+  const storagePercent =
+    storage.total_bytes > 0 ? (storage.total_bytes / (storageLimitGb * 1024 ** 3)) * 100 : null;
 
   const bucketCols: Column<BucketRow>[] = [
     { key: "name", header: "Bucket", render: (r) => <span className="font-mono text-xs">{r.name}</span> },
-    { key: "objects", header: "Objects", render: (r) => <span className="font-mono text-xs">{fmtNum(r.objects)}{r.truncated ? "+" : ""}</span> },
-    { key: "size", header: "ขนาด", render: (r) => <span className="font-mono text-xs">{fmtBytes(r.bytes)}{r.truncated ? " ~" : ""}</span> },
+    {
+      key: "objects",
+      header: "Objects",
+      render: (r) => (
+        <span className="font-mono text-xs">
+          {fmtNum(r.objects)}
+          {r.truncated ? "+" : ""}
+        </span>
+      ),
+    },
+    {
+      key: "size",
+      header: "ขนาด",
+      render: (r) => (
+        <span className="font-mono text-xs">
+          {formatBytes(r.bytes)}
+          {r.truncated ? " ~" : ""}
+        </span>
+      ),
+    },
   ];
 
   const tableCols: Column<TableRow>[] = [
     { key: "schema", header: "Schema", render: (r) => <span className="font-mono text-xs">{r.schema}</span> },
     { key: "table", header: "Table", render: (r) => <span className="font-mono text-xs">{r.table}</span> },
-    { key: "rows", header: "Rows (est.)", render: (r) => <span className="font-mono text-xs">{fmtNum(r.rows)}</span> },
+    {
+      key: "rows",
+      header: "Rows (est.)",
+      render: (r) => <span className="font-mono text-xs">{fmtNum(r.rows)}</span>,
+    },
   ];
 
   return (
@@ -110,17 +144,35 @@ export default function AdminSupabaseUsagePanel() {
         <p className="font-mono text-[10px] text-admin-muted">
           โปรเจกต์ {data.project_ref} · {fmtWhen(data.generated_at)}
         </p>
-        <Button
-          size="sm"
-          variant="outline"
-          className="gap-1.5 border-admin-border"
-          onClick={() => void refetch()}
-          disabled={isFetching}
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
-          รีเฟรช
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm" variant="outline" className="border-admin-border">
+            <Link to="/admin/storage">Storage & ค่าใช้จ่าย</Link>
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 border-admin-border"
+            onClick={() => void refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+            รีเฟรช
+          </Button>
+        </div>
       </div>
+
+      {cost ? (
+        <div className="border border-admin-border bg-admin-surface rounded-sm p-4 grid sm:grid-cols-3 gap-3">
+          <KpiCard
+            label="สถานะโควต้า"
+            value={cost.statusLabelTh}
+            icon={cost.status === "ok" ? CheckCircle2 : AlertTriangle}
+            accent
+          />
+          <KpiCard label="ประมาณการ / เดือน" value={formatThb(cost.estimatedMonthlyThb)} icon={Wallet} />
+          <KpiCard label="USD" value={formatUsd(cost.estimatedMonthlyUsd)} icon={Wallet} />
+        </div>
+      ) : null}
 
       <div
         className={`border rounded-sm p-4 space-y-3 ${
@@ -163,17 +215,20 @@ export default function AdminSupabaseUsagePanel() {
           >
             Billing Usage <ExternalLink className="h-3 w-3" />
           </a>
+          <a
+            href={console_links.storage}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-admin-accent hover:underline"
+          >
+            Storage <ExternalLink className="h-3 w-3" />
+          </a>
         </div>
       </div>
 
       {platform.project && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KpiCard
-            label="Plan"
-            value={platform.organization?.planLabel ?? "—"}
-            icon={Database}
-            accent
-          />
+          <KpiCard label="Plan" value={platform.organization?.planLabel ?? "—"} icon={Database} accent />
           <KpiCard label="Status" value={String(platform.project.status).toUpperCase()} icon={Zap} />
           <KpiCard label="Region" value={platform.project.region} icon={Database} />
           <KpiCard
@@ -187,8 +242,11 @@ export default function AdminSupabaseUsagePanel() {
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="border border-admin-border bg-admin-surface rounded-sm p-4 space-y-4">
           <p className="font-mono text-[10px] uppercase tracking-widest text-admin-muted">Database</p>
-          <KpiCard label="ขนาด DB" value={dbBytes ? fmtBytes(dbBytes) : "—"} icon={Database} />
-          <UsageBar percent={platform.database?.percentOfLimit} label={`เทียบ limit ${platform.limits?.databaseGb ?? "?"} GB`} />
+          <KpiCard label="ขนาด DB" value={dbBytes ? formatBytes(dbBytes) : "—"} icon={Database} />
+          <UsageBar
+            percent={platform.database?.percentOfLimit}
+            label={`เทียบ limit ${platform.limits?.databaseGb ?? "?"} GB`}
+          />
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
               <p className="text-[10px] text-admin-muted uppercase">Profiles</p>
@@ -211,7 +269,7 @@ export default function AdminSupabaseUsagePanel() {
 
         <div className="border border-admin-border bg-admin-surface rounded-sm p-4 space-y-4">
           <p className="font-mono text-[10px] uppercase tracking-widest text-admin-muted">Storage</p>
-          <KpiCard label="รวม (สแกน)" value={fmtBytes(storage.total_bytes)} icon={HardDrive} accent />
+          <KpiCard label="รวม (สแกน)" value={formatBytes(storage.total_bytes)} icon={HardDrive} accent />
           <UsageBar percent={storagePercent} label={`เทียบ limit ${storageLimitGb} GB`} />
           <p className="text-[11px] text-admin-muted">
             นับจาก list API — bucket ใหญ่อาจถูก truncate ที่ 5,000 objects
@@ -231,37 +289,7 @@ export default function AdminSupabaseUsagePanel() {
             <KpiCard label="Realtime" value={fmtNum(platform.apiUsage7d.realtime)} icon={Zap} />
             <KpiCard label="รวม" value={fmtNum(platform.apiUsage7d.total)} icon={Zap} accent />
           </div>
-          {platform.apiUsage7d.daily.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="text-admin-muted border-t border-admin-border">
-                    <th className="text-left p-2 font-mono">วัน</th>
-                    <th className="text-right p-2 font-mono">REST</th>
-                    <th className="text-right p-2 font-mono">Auth</th>
-                    <th className="text-right p-2 font-mono">Storage</th>
-                    <th className="text-right p-2 font-mono">Realtime</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {platform.apiUsage7d.daily.map((row) => (
-                    <tr key={row.date} className="border-t border-admin-border/50">
-                      <td className="p-2 font-mono">{row.date}</td>
-                      <td className="p-2 text-right font-mono">{fmtNum(row.rest)}</td>
-                      <td className="p-2 text-right font-mono">{fmtNum(row.auth)}</td>
-                      <td className="p-2 text-right font-mono">{fmtNum(row.storage)}</td>
-                      <td className="p-2 text-right font-mono">{fmtNum(row.realtime)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
-      )}
-
-      {platform.apiUsageError && mgmtOk && (
-        <p className="text-xs text-admin-muted font-mono">{platform.apiUsageError}</p>
       )}
 
       <div className="grid lg:grid-cols-2 gap-4">
@@ -288,17 +316,29 @@ export default function AdminSupabaseUsagePanel() {
       </div>
 
       <div className="flex flex-wrap gap-3 text-xs">
-        <a href={console_links.storage} target="_blank" rel="noopener noreferrer" className="text-admin-accent hover:underline inline-flex items-center gap-1">
+        <a
+          href={console_links.storage}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-admin-accent hover:underline inline-flex items-center gap-1"
+        >
           Storage <ExternalLink className="h-3 w-3" />
         </a>
-        <a href={console_links.backups} target="_blank" rel="noopener noreferrer" className="text-admin-accent hover:underline inline-flex items-center gap-1">
-          Backups <ExternalLink className="h-3 w-3" />
+        <a
+          href={console_links.usage}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-admin-accent hover:underline inline-flex items-center gap-1"
+        >
+          Billing Usage <ExternalLink className="h-3 w-3" />
         </a>
-        <a href={console_links.functions} target="_blank" rel="noopener noreferrer" className="text-admin-accent hover:underline inline-flex items-center gap-1">
-          Edge Functions <ExternalLink className="h-3 w-3" />
-        </a>
-        <a href={console_links.logs} target="_blank" rel="noopener noreferrer" className="text-admin-accent hover:underline inline-flex items-center gap-1">
-          Logs <ExternalLink className="h-3 w-3" />
+        <a
+          href={console_links.dashboard}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-admin-accent hover:underline inline-flex items-center gap-1"
+        >
+          Dashboard <ExternalLink className="h-3 w-3" />
         </a>
       </div>
     </div>

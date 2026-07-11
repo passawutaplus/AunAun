@@ -7,6 +7,7 @@ import {
   enqueueAnthemNotificationEmail,
   shouldSendAnthemEmail,
 } from "../_shared/enqueue-anthem-email.ts";
+import { sharedDb } from "../_shared/ecosystem-db.ts";
 
 const BodySchema = z.object({
   conversation_id: z.string().uuid(),
@@ -49,34 +50,49 @@ Deno.serve(async (req) => {
 
   const { data: conv } = await admin
     .from("conversations")
-    .select("id, client_id, freelancer_id, project_title")
+    .select("id, client_id, freelancer_id, project_title, conversation_type, kind")
     .eq("id", body.conversation_id)
     .maybeSingle();
   if (!conv) return json(req, { error: "not_found" }, 404);
 
-  const recipientId = callerId === conv.client_id ? conv.freelancer_id : conv.client_id;
-  if (!recipientId || recipientId === callerId)
+  const isGroup =
+    conv.conversation_type === "group" || conv.kind === "group" || conv.kind === "studio";
+
+  let recipientIds: string[] = [];
+  if (isGroup) {
+    const { data: members } = await admin
+      .from("conversation_members")
+      .select("user_id")
+      .eq("conversation_id", body.conversation_id);
+    recipientIds = (members ?? [])
+      .map((m) => m.user_id as string)
+      .filter((id) => id && id !== callerId);
+  } else {
+    const other = callerId === conv.client_id ? conv.freelancer_id : conv.client_id;
+    if (other && other !== callerId) recipientIds = [other];
+  }
+
+  if (recipientIds.length === 0) {
     return json(req, { skipped: true, reason: "no_recipient" });
+  }
 
   const { data: msgRow } = body.message_id
     ? await admin
         .from("messages")
-        .select("id, content, sender_id")
+        .select("id, content, sender_id, message_type")
         .eq("id", body.message_id)
         .maybeSingle()
     : await admin
         .from("messages")
-        .select("id, content, sender_id")
+        .select("id, content, sender_id, message_type")
         .eq("conversation_id", body.conversation_id)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
   if (!msgRow || msgRow.sender_id !== callerId) return json(req, { error: "forbidden" }, 403);
-
-  const notify = await shouldSendAnthemEmail(admin, recipientId, { kind: "chat" });
-  if (!notify.send || !notify.email) {
-    return json(req, { skipped: true, reason: "notifications_disabled" });
+  if (msgRow.message_type === "system") {
+    return json(req, { skipped: true, reason: "system_message" });
   }
 
   const { data: senderProfile } = await admin
@@ -88,30 +104,84 @@ Deno.serve(async (req) => {
   const senderName = senderProfile?.display_name ?? "มีข้อความใหม่";
   const raw = msgRow.content ?? "";
   const preview = raw.length > 120 ? `${raw.slice(0, 120)}…` : raw || "(ไฟล์แนบ)";
-
   const siteUrl = anthemSiteUrl();
-  const emailResult = await enqueueAnthemNotificationEmail(admin, {
-    template: "chat-message",
-    templateName: "anthem-chat-message",
-    recipientEmail: notify.email,
-    idempotencyKey: `chat-${msgRow.id}`,
-    label: "anthem-chat-message",
-    templateData: {
-      recipientName: notify.displayName ?? "คุณ",
-      senderName,
-      conversationTitle: conv.project_title ?? "แชท Pixel100",
-      preview,
-      actionUrl: `${siteUrl}/chat/${conv.id}`,
-    },
-  });
+  const chatPath = `/chat/${conv.id}`;
+  const actionUrl = `${siteUrl}${chatPath}`;
 
-  const lineResult = await enqueueLineNotification({
-    userId: recipientId,
-    kind: "anthem_chat",
-    body: `${senderName}: ${preview.slice(0, 200)}`,
-    idempotencyKey: `line-chat-${msgRow.id}`,
-    link: `/chat/${conv.id}`,
-  });
+  // In-app bell backup (DB trigger usually inserts first; keep idempotent)
+  const notifications = sharedDb(admin).from("notifications");
+  const inAppResults: Array<{ userId: string; ok: boolean }> = [];
+  for (const recipientId of recipientIds) {
+    const idempotencyKey = `chat-${msgRow.id}-${recipientId}`;
+    const { data: existing } = await notifications
+      .select("id")
+      .eq("user_id", recipientId)
+      .contains("metadata", { message_id: msgRow.id })
+      .maybeSingle();
+    if (existing?.id) {
+      inAppResults.push({ userId: recipientId, ok: true });
+      continue;
+    }
+    const { error: nErr } = await notifications.insert({
+      user_id: recipientId,
+      app: "anthem",
+      kind: "chat.message",
+      title: `${senderName} ส่งข้อความ`,
+      body: preview,
+      link: chatPath,
+      metadata: {
+        conversation_id: conv.id,
+        message_id: msgRow.id,
+        sender_id: callerId,
+        idempotency_key: idempotencyKey,
+      },
+      is_read: false,
+      is_dismissed: false,
+    });
+    inAppResults.push({ userId: recipientId, ok: !nErr });
+  }
 
-  return json(req, { ok: true, email: emailResult, line: lineResult });
+  // Email + LINE are independent — do not gate LINE on email prefs
+  const emailResults = [];
+  const lineResults = [];
+  for (const recipientId of recipientIds) {
+    const notify = await shouldSendAnthemEmail(admin, recipientId, { kind: "chat" });
+    if (notify.send && notify.email) {
+      emailResults.push(
+        await enqueueAnthemNotificationEmail(admin, {
+          template: "chat-message",
+          templateName: "anthem-chat-message",
+          recipientEmail: notify.email,
+          idempotencyKey: `chat-${msgRow.id}-${recipientId}`,
+          label: "anthem-chat-message",
+          templateData: {
+            recipientName: notify.displayName ?? "คุณ",
+            senderName,
+            conversationTitle: conv.project_title ?? "แชท Pixel100",
+            preview,
+            actionUrl,
+          },
+        }),
+      );
+    } else {
+      emailResults.push({ ok: true, skipped: true, reason: "notifications_disabled" });
+    }
+
+    lineResults.push(
+      await enqueueLineNotification({
+        userId: recipientId,
+        kind: "anthem_chat",
+        body: `${senderName}: ${preview.slice(0, 200)}`,
+        idempotencyKey: `line-chat-${msgRow.id}-${recipientId}`,
+        link: chatPath,
+      }),
+    );
+  }
+
+  return json(req, {
+    ok: true,
+    in_app: inAppResults,
+    email: emailResults,
+    line: lineResults,
+  });
 });

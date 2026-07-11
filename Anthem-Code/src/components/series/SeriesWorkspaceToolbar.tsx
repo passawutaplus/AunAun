@@ -1,43 +1,12 @@
-import { LayoutGrid, LayoutList, Rows3 } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import ProjectManageSortSelect from "@/components/portfolio/ProjectManageSortSelect";
-import { IconSegmentPill, type SegmentOption } from "@/components/ui/IconSegmentPill";
+import { SeriesDensitySelect } from "@/components/series/SeriesDensitySelect";
 import { cn } from "@/lib/utils";
 import type { ProjectManageSortMode } from "@/lib/portfolioManageSort";
 import type { SeriesWorksDensity } from "@/lib/seriesGridDensity";
 
 export type SeriesStatusFilter = "all" | "Published" | "Draft" | "Private";
 export type SeriesVisibilityFilter = "all" | "public" | "private";
-
-const SERIES_DENSITY_OPTIONS: SegmentOption<SeriesWorksDensity>[] = [
-  {
-    value: "large",
-    label: "ใหญ่",
-    icon: (
-      <span className="inline-grid grid-cols-2 gap-px" aria-hidden>
-        <span className="h-2 w-2 rounded-[1px] bg-current" />
-        <span className="h-2 w-2 rounded-[1px] bg-current" />
-        <span className="h-2 w-2 rounded-[1px] bg-current" />
-        <span className="h-2 w-2 rounded-[1px] bg-current" />
-      </span>
-    ),
-  },
-  {
-    value: "medium",
-    label: "กลาง",
-    icon: <LayoutGrid className="h-3.5 w-3.5" />,
-  },
-  {
-    value: "small",
-    label: "เล็ก",
-    icon: <Rows3 className="h-3.5 w-3.5" />,
-  },
-  {
-    value: "list",
-    label: "รายการ",
-    icon: <LayoutList className="h-3.5 w-3.5" />,
-  },
-];
 
 const PROJECT_STATUS_TABS: { value: SeriesStatusFilter; label: string }[] = [
   { value: "all", label: "ทั้งหมด" },
@@ -100,20 +69,9 @@ export function SeriesWorkspaceToolbar(props: SeriesWorkspaceToolbarProps) {
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           <p className="text-sm text-muted-foreground">{subtitle}</p>
         </div>
-        <div className="flex w-full flex-col items-stretch gap-2 sm:w-[9.5rem] sm:shrink-0">
-          <IconSegmentPill
-            value={density}
-            options={SERIES_DENSITY_OPTIONS}
-            onChange={onDensityChange}
-            layoutGroupId="series-workspace-density"
-            variant="ghost"
-            className="w-full justify-between"
-          />
-          <ProjectManageSortSelect
-            value={sortMode}
-            onChange={onSortChange}
-            className="w-full min-w-0 max-w-none"
-          />
+        <div className="flex shrink-0 items-center justify-end gap-0.5 self-start">
+          <SeriesDensitySelect value={density} onChange={onDensityChange} />
+          <ProjectManageSortSelect value={sortMode} onChange={onSortChange} />
         </div>
       </div>
 

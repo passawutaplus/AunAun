@@ -113,6 +113,7 @@ const PUBLIC_TABLES = new Set([
   "ecosystem_notifications",
   "so1o_notifications",
   "platform_events",
+  "product_events",
   "welcome_mission_claims",
   "welcome_mission_catalog",
 ]);

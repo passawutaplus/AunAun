@@ -15,3 +15,7 @@ create index if not exists vault_extension_captures_created_at_idx
 alter table public.vault_extension_captures enable row level security;
 
 -- No client policies: only the server-side service role should read/write this queue.
+
+-- Applied 2026-07-10 via vault_moodboard_and_capture_hardening:
+-- revoke all on table public.vault_extension_captures from anon, authenticated;
+-- indexes on bearer_hash / user_id

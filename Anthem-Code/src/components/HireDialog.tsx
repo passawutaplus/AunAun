@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import HireInviteForm, {
   emptyHireInviteForm,
 } from "@/components/hiring/HireInviteForm";
 import ProjectReferencePreview from "@/components/opportunity/ProjectReferencePreview";
+import { trackProductEvent } from "@/lib/productEvents";
 
 interface HireDialogProps {
   open: boolean;
@@ -56,6 +57,15 @@ const HireDialog = ({
   const [jobPostId, setJobPostId] = useState("");
   const [form, setForm] = useState(emptyHireInviteForm());
   const busy = createReq.isPending || openChat.isPending;
+
+  useEffect(() => {
+    if (!open) return;
+    void trackProductEvent(
+      "hire_open",
+      { project_id: projectId ?? null, freelancer_id: freelancerId ?? null, source },
+      { debounceMs: 1_000 },
+    );
+  }, [open, projectId, freelancerId, source]);
 
   const reset = () => {
     setForm(emptyHireInviteForm());
@@ -147,6 +157,11 @@ const HireDialog = ({
       });
 
       toast.success("เปิดแชทแล้ว — คุยรายละเอียดได้เลย");
+      void trackProductEvent(
+        "hire_submit",
+        { project_id: projectId ?? null, freelancer_id: freelancerId ?? null, source },
+        { debounceMs: 0 },
+      );
       handleOpenChange(false);
       navigate(`/chat/${convId}`);
     } catch (err: unknown) {

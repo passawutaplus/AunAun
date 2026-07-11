@@ -144,7 +144,9 @@ const SeriesDetailPage = () => {
       <div className="sticky top-0 z-20 glass-panel border-x-0 border-t-0 rounded-none">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <BackButton
-            onClick={() => navigate(isOwner ? "/series" : "/", { replace: isOwner })}
+            to={isOwner ? `/series?s=${encodeURIComponent(series.id)}` : undefined}
+            onClick={isOwner ? undefined : () => navigate(-1)}
+            label={isOwner ? "กลับชุดผลงานของฉัน" : "กลับ"}
           />
           <div className="flex items-center gap-2 flex-wrap justify-end">
             {(isOwner || series.is_public) && (

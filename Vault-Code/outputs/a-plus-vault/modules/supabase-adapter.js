@@ -550,6 +550,53 @@ export function createVaultRemote(config = {}) {
     });
   }
 
+  async function rpc(name, args = {}) {
+    return request(`/rest/v1/rpc/${name}`, {
+      method: "POST",
+      headers: headers({ "content-type": "application/json", accept: "application/json" }),
+      body: JSON.stringify(args),
+    });
+  }
+
+  async function submitFeedback({ rating, message, feature = "vault" } = {}) {
+    const current = await getSession();
+    const userId = current?.user?.id;
+    if (!userId) throw new Error("Sign in with a real account before sending feedback.");
+    const score = Number(rating);
+    if (!Number.isInteger(score) || score < 1 || score > 5) {
+      throw new Error("Choose a rating from 1 to 5.");
+    }
+    const rows = await request("/rest/v1/vault_feedback", {
+      method: "POST",
+      headers: headers({ "content-type": "application/json", prefer: "return=representation" }),
+      body: JSON.stringify({
+        user_id: userId,
+        user_email: current.user.email || null,
+        user_name: current.user.user_metadata?.full_name || current.user.user_metadata?.name || null,
+        feature: feature || "vault",
+        message: String(message || "").trim() || `(rating only — ${score}/5)`,
+        rating: score,
+      }),
+    });
+    return Array.isArray(rows) ? rows[0] : rows;
+  }
+
+  async function adminOverview() {
+    return rpc("vault_admin_overview");
+  }
+
+  async function adminListFeedback(limit = 50) {
+    return rpc("vault_admin_list_feedback", { p_limit: limit });
+  }
+
+  async function adminListCaptures(limit = 40) {
+    return rpc("vault_admin_list_captures", { p_limit: limit });
+  }
+
+  async function adminPurgeCaptures(olderThanDays = 30) {
+    return rpc("vault_admin_purge_captures", { p_older_than_days: olderThanDays });
+  }
+
   return {
     enabled,
     hasSession: () => !!session()?.access_token,
@@ -568,6 +615,11 @@ export function createVaultRemote(config = {}) {
     deleteCollection,
     saveProjects,
     saveMoodboards,
+    submitFeedback,
+    adminOverview,
+    adminListFeedback,
+    adminListCaptures,
+    adminPurgeCaptures,
   };
 }
 

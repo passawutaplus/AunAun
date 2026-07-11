@@ -133,23 +133,28 @@ export const useConversations = (kind?: ChatKind) => {
 
   useEffect(() => {
     if (!user?.id) return;
+    const invalidateInbox = () => {
+      qc.invalidateQueries({ queryKey: ["conversations", user.id] });
+      qc.invalidateQueries({ queryKey: ["chat-inbox-badge", user.id] });
+      qc.invalidateQueries({ queryKey: ["chat-last-msgs"] });
+      qc.invalidateQueries({ queryKey: ["chat-unread-counts"] });
+    };
     const ch = supabase
       .channel(`conv-rt-${user.id}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "shared", table: "conversations" },
-        () => {
-          qc.invalidateQueries({ queryKey: ["conversations", user.id] });
-          qc.invalidateQueries({ queryKey: ["chat-inbox-badge", user.id] });
-        },
+        invalidateInbox,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "shared", table: "conversation_members", filter: `user_id=eq.${user.id}` },
-        () => {
-          qc.invalidateQueries({ queryKey: ["conversations", user.id] });
-          qc.invalidateQueries({ queryKey: ["chat-inbox-badge", user.id] });
-        },
+        invalidateInbox,
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "shared", table: "messages" },
+        invalidateInbox,
       )
       .subscribe();
     return () => {
@@ -294,7 +299,13 @@ export const useSendMessage = () => {
       if (messageType === "image" && attachmentUrl) row.message_type = "image";
       if (messageType === "file" && attachmentUrl) row.message_type = "file";
 
-      let { error } = await supabase.from("messages").insert(row as never);
+      let inserted: { id: string } | null = null;
+      let { data, error } = await supabase
+        .from("messages")
+        .insert(row as never)
+        .select("id")
+        .maybeSingle();
+      inserted = data as { id: string } | null;
       if (
         error &&
         (messageType === "system" || messageType === "profile" || messageType === "file") &&
@@ -309,18 +320,38 @@ export const useSendMessage = () => {
               : content || (messageType === "file" ? "ไฟล์แนบ" : "โปรไฟล์"),
         };
         delete fallback.profile_user_id;
-        ({ error } = await supabase.from("messages").insert(fallback as never));
+        ({ data, error } = await supabase
+          .from("messages")
+          .insert(fallback as never)
+          .select("id")
+          .maybeSingle());
+        inserted = data as { id: string } | null;
       }
       if (error) throw error;
 
-      void supabase.functions.invoke("notify-anthem-chat", {
-        body: { conversation_id: conversationId },
-      });
+      // Backup bump if DB trigger is unavailable; trigger is source of truth.
+      void supabase
+        .from("conversations")
+        .update({ last_message_at: new Date().toISOString() })
+        .eq("id", conversationId);
+
+      if (messageType !== "system") {
+        void supabase.functions.invoke("notify-anthem-chat", {
+          body: {
+            conversation_id: conversationId,
+            ...(inserted?.id ? { message_id: inserted.id } : {}),
+          },
+        });
+      }
+
+      return inserted;
     },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["messages", user?.id, vars.conversationId] });
       qc.invalidateQueries({ queryKey: ["conversations"] });
       qc.invalidateQueries({ queryKey: ["chat-last-msgs"] });
+      qc.invalidateQueries({ queryKey: ["chat-inbox-badge"] });
+      qc.invalidateQueries({ queryKey: ["chat-unread-counts"] });
     },
   });
 };
@@ -864,11 +895,36 @@ export const useConversationUnreadCounts = (conversationIds: string[]) => {
 /** Unread messages + pending hire/collab requests for header chat badge */
 export const useChatInboxBadgeCount = () => {
   const { user } = useAuth();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const ch = supabase
+      .channel(`chat-badge-rt-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "shared", table: "messages" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["chat-inbox-badge", user.id] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "shared", table: "conversations" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["chat-inbox-badge", user.id] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [user?.id, qc]);
 
   const query = useQuery({
     queryKey: ["chat-inbox-badge", user?.id],
     enabled: !!user?.id,
-    refetchInterval: 60_000,
+    refetchInterval: 15_000,
     refetchOnWindowFocus: true,
     queryFn: async (): Promise<number> => {
       const uid = user!.id;

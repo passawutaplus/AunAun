@@ -8,6 +8,7 @@ import {
   Bot,
   Building2,
   ClipboardList,
+  Database,
   Eye,
   FileText,
   Flag,
@@ -18,6 +19,7 @@ import {
   Heart,
   HeartHandshake,
   LayoutDashboard,
+  Lightbulb,
   Map,
   Megaphone,
   MessageCircle,
@@ -57,7 +59,6 @@ export const ADMIN_LAUNCH_HIDDEN_ADMIN_PATHS = [
   "/admin/kyc",
   "/admin/aml",
   "/admin/ai",
-  "/admin/storage",
   "/admin/audit",
 ] as const;
 
@@ -135,6 +136,18 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         label: "Analytics",
         hint: "แนวโน้มและ conversion",
         icon: BarChart3,
+      },
+      {
+        to: "/admin/data",
+        label: "Data Hub",
+        hint: "ข้อมูลดิบ + Export CSV/ZIP",
+        icon: Database,
+      },
+      {
+        to: "/admin/insights",
+        label: "Insights ผลงาน",
+        hint: "คนดูเยอะ/น้อย ตามหมวด",
+        icon: Lightbulb,
       },
       {
         to: "/admin/seo",
@@ -423,8 +436,8 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       },
       {
         to: "/admin/storage",
-        label: "พื้นที่เก็บไฟล์",
-        hint: "Storage และ asset",
+        label: "Storage & ค่าใช้จ่าย",
+        hint: "พื้นที่ไฟล์ / DB เกินลิมิตไหม",
         icon: HardDrive,
       },
       {
@@ -472,6 +485,8 @@ const SIDEBAR_PATHS_ORDERED: { sectionId: string; to: string }[] = [
   { sectionId: "command", to: "/admin" },
   { sectionId: "command", to: "/admin/marketing" },
   { sectionId: "command", to: "/admin/analytics" },
+  { sectionId: "command", to: "/admin/data" },
+  { sectionId: "command", to: "/admin/insights" },
   { sectionId: "command", to: "/admin/activity" },
   { sectionId: "command", to: "/admin/dev-tasks" },
   { sectionId: "people", to: "/admin/users" },

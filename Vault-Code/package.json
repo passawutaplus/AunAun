@@ -17,5 +17,14 @@
   },
   "devDependencies": {
     "esbuild": "^0.25.0"
-  }
+  },
+  "description": "Part of the [AunAun-fresh](../) monorepo (`Vault-Code/`).",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import { z } from "zod";
@@ -25,6 +25,7 @@ import {
 } from "@/lib/chatContext";
 import { validateProjectInquiry } from "@/domain/inquiry";
 import ProjectReferencePreview from "@/components/opportunity/ProjectReferencePreview";
+import { trackProductEvent } from "@/lib/productEvents";
 
 const COLLAB_TYPES = [
   { key: "chat", label: "พูดคุย" },
@@ -93,6 +94,15 @@ const CollabDialog = ({
   const [showAllWorks, setShowAllWorks] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const busy = createReq.isPending || openChat.isPending;
+
+  useEffect(() => {
+    if (!open) return;
+    void trackProductEvent(
+      "collab_open",
+      { project_id: projectId ?? null, recipient_id: recipientId, source },
+      { debounceMs: 1_000 },
+    );
+  }, [open, projectId, recipientId, source]);
 
   const published = useMemo(() => myProjects.filter((p) => p.status === "Published"), [myProjects]);
   const initialWorks = published.slice(0, 6);
@@ -189,6 +199,11 @@ const CollabDialog = ({
       });
 
       toast.success(`เปิดแชทกับ ${recipientName} แล้ว`);
+      void trackProductEvent(
+        "collab_submit",
+        { project_id: projectId ?? null, recipient_id: recipientId, source },
+        { debounceMs: 0 },
+      );
       reset();
       onOpenChange(false);
       navigate(`/chat/${convId}`);

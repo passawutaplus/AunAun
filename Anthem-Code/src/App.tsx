@@ -28,6 +28,7 @@ import AvatarPoolBootstrap from "./components/AvatarPoolBootstrap.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import { ReferralAttribution } from "./components/referral/ReferralAttribution.tsx";
 import { ScrollToTop } from "./components/ScrollToTop.tsx";
+import { ProductEventTracker } from "./components/ProductEventTracker.tsx";
 import LaunchMinimalGate from "./components/LaunchMinimalGate.tsx";
 import PageTransition from "./components/motion/PageTransition.tsx";
 
@@ -79,6 +80,8 @@ const AdminContractsPage = lazy(() => import("./pages/admin/AdminContractsPage")
 const AdminWalletPage = lazy(() => import("./pages/admin/AdminWalletPage"));
 const AdminApplicationsPage = lazy(() => import("./pages/admin/AdminApplicationsPage"));
 const AdminAnalyticsPage = lazy(() => import("./pages/admin/AdminAnalyticsPage"));
+const AdminDataHubPage = lazy(() => import("./pages/admin/AdminDataHubPage"));
+const AdminContentInsightsPage = lazy(() => import("./pages/admin/AdminContentInsightsPage"));
 const AdminSeoPage = lazy(() => import("./pages/admin/AdminSeoPage"));
 const AdminSystemPage = lazy(() => import("./pages/admin/AdminSystemPage"));
 const AdminAdsPage = lazy(() => import("./pages/admin/AdminAdsPage"));
@@ -155,6 +158,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ScrollToTop />
+          <ProductEventTracker />
           <ErrorBoundary>
           <DemoModeBanner />
           <AvatarPoolBootstrap />
@@ -228,6 +232,8 @@ const App = () => (
                 <Route path="kuy-radar/*" element={<LegacyMarketingRedirect />} />
                 <Route path="activity" element={<AdminActivityPage />} />
                 <Route path="analytics" element={<AdminAnalyticsPage />} />
+                <Route path="data" element={<AdminDataHubPage />} />
+                <Route path="insights" element={<AdminContentInsightsPage />} />
                 <Route path="seo" element={<AdminSeoPage />} />
                 <Route path="contracts" element={<AdminContractsPage />} />
                 <Route path="wallet" element={<AdminWalletPage />} />

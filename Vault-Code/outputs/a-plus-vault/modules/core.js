@@ -11,4 +11,64 @@ export const SEED=[
 {id:id(),type:"image",title:"Corkboard campaign feel",note:"Layered campaign board with handmade energy and polished art direction.",sourceUrl:"upload://corkboard-campaign.png",assetUrl:svg(720,780,"<rect width='720' height='780' fill='#7a4c2c'/><rect x='52' y='60' width='616' height='650' rx='20' fill='#c58a52'/><rect x='96' y='106' width='220' height='170' rx='8' fill='#e9dfd3'/><rect x='360' y='106' width='210' height='240' rx='8' fill='#263238'/><rect x='118' y='330' width='186' height='260' rx='10' fill='#2e8b73'/><rect x='354' y='398' width='242' height='170' rx='10' fill='#f4eee9'/><circle cx='190' cy='104' r='16' fill='#ff4f43'/><circle cx='482' cy='106' r='16' fill='#ff4f43'/><text x='108' y='664' fill='#3b2416' font-size='52' font-family='Arial' font-weight='800'>CORKBOARD</text>"),collectionIds:["campaign"],status:"ready",analysis:{tags:["campaign","board","handmade"],colors:["#c58a52","#2e8b73","#263238","#ff4f43"],ocrText:"CORKBOARD",summary:"A layered board style for campaign ideation."}},
 {id:id(),type:"note",title:"Opportunity board thought",note:"Turn strong references into reusable creative assets: mood, layout, source, and client fit.",sourceUrl:"",assetUrl:"",collectionIds:["campaign"],status:"ready",analysis:{tags:["strategy","creative asset","opportunity"],colors:["#2f3133","#ff4f43","#ffffff"],ocrText:"Text note",summary:"A strategic note connecting inspiration to future work."}}
 ];
-export function defaultProjects(items){return[{id:"kitchen",name:"Kitchen Redesign",boards:[{id:"warm",name:"Warm Minimalism",objects:[{id:id(),kind:"text",text:"Warm\nMinimalism",x:46,y:52,w:210,h:118,color:"#17191b",size:34},{id:id(),kind:"item",itemId:items[1].id,x:324,y:70,w:280,h:230},{id:id(),kind:"item",itemId:items[4].id,x:640,y:96,w:190,h:206},{id:id(),kind:"palette",colors:["#f8f6f2","#d6c7b7","#c56b4e","#2f3133"],x:310,y:388,w:280,h:74}]}]},{id:"identity",name:"Brand Identity",boards:[{id:"system",name:"Signal System",objects:[]}]},{id:"studio",name:"Studio Website",boards:[{id:"site",name:"Landing Direction",objects:[]}]}]}
+function demoItem(items,idx,x,y,w,h){
+  let item=Array.isArray(items)&&items[idx];
+  if(!item||!item.id)return null;
+  return {id:id(),kind:"item",itemId:String(item.id),x,y,w,h};
+}
+/** Demo projects + moodboards built from current vault objects (by index). */
+export function defaultProjects(items){
+  items=Array.isArray(items)?items:[];
+  if(!items.length)return [];
+  let objs=(...list)=>list.filter(Boolean);
+  return [
+    {
+      id:"kitchen",
+      name:"Kitchen Redesign",
+      description:"Warm material direction for residential interiors.",
+      collectionIds:["brand"],
+      boards:[{
+        id:"warm",
+        name:"Warm Minimalism",
+        objects:objs(
+          {id:id(),kind:"text",text:"Warm\nMinimalism",x:46,y:52,w:210,h:118,color:"#17191b",size:34},
+          demoItem(items,1,324,70,280,230),
+          demoItem(items,4,640,96,190,206),
+          {id:id(),kind:"palette",colors:["#f8f6f2","#d6c7b7","#c56b4e","#2f3133"],x:310,y:388,w:280,h:74}
+        )
+      }]
+    },
+    {
+      id:"identity",
+      name:"Brand Identity",
+      description:"Signal system and pattern studies for Aplus branding.",
+      collectionIds:["brand"],
+      boards:[{
+        id:"system",
+        name:"Signal System",
+        objects:objs(
+          {id:id(),kind:"text",text:"Signal\nSystem",x:40,y:40,w:200,h:100,color:"#17191b",size:30},
+          demoItem(items,0,280,48,260,340),
+          demoItem(items,2,580,80,220,290),
+          {id:id(),kind:"palette",colors:["#ff4f43","#2f3133","#ffffff","#f6f7f9"],x:280,y:420,w:300,h:70}
+        )
+      }]
+    },
+    {
+      id:"studio",
+      name:"Studio Website",
+      description:"Landing and campaign references for web builds.",
+      collectionIds:["web","campaign"],
+      boards:[{
+        id:"site",
+        name:"Landing Direction",
+        objects:objs(
+          demoItem(items,3,60,60,280,180),
+          demoItem(items,4,380,80,240,260),
+          demoItem(items,5,660,100,200,160),
+          {id:id(),kind:"text",text:"Launch\nfeel",x:60,y:280,w:180,h:90,color:"#17191b",size:28}
+        )
+      }]
+    }
+  ];
+}

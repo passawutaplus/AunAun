@@ -153,6 +153,9 @@ async function runStaticProductGuards() {
   assert(/https:\/\/aplus-vault-demo\.vercel\.app\/\*/.test(manifestJson), "Manifest must allow demo Vault URL.");
   assert(/replace\(\/-\/g,"\+"\)\.replace\(\/_\/g,"\/"\)/.test(appJs), "Web app must decode URL-safe Vault handoff payloads.");
   assert(/vault-runtime\.js/.test(indexHtml), "App shell must load vault-runtime.js for deploy target config.");
+  const localServer = await readFile("outputs/a-plus-vault/local-server.cjs", "utf8");
+  assert(!/file\.startsWith\(['"]\/vault['"]\)/.test(localServer), "Local server must not SPA-fallback /vault-runtime.js via startsWith('/vault').");
+  assert(/file === ['"]\/vault['"]/.test(localServer), "Local server must match /vault as an exact SPA route.");
   assert(/noindex,nofollow/.test(indexHtml), "Alpha app shell must stay noindex by default.");
   assert(/index,follow/.test(legalHtml), "Legal center should be indexable for trust pages.");
   assert(/rel="canonical"/.test(legalHtml), "Legal page must expose canonical URL.");
@@ -193,6 +196,10 @@ async function runStaticProductGuards() {
   await access("api/vault/capture-file.js");
   await access("api/vault/captures.js");
   assert(/data-copy-extension-token/.test(appJs) && /getVaultApiToken/.test(appJs), "Profile must expose extension sync token controls.");
+  assert(/data-feedback-form/.test(appJs) && /submitFeedback/.test(supabaseAdapterJs), "Settings must expose Give Feedback form.");
+  assert(/isVaultSuperAdmin/.test(appJs) && /vault_admin_overview/.test(supabaseAdapterJs), "Settings must gate Vault Admin to super admin.");
+  assert(/passawut\.a\.plus@gmail\.com/.test(await readFile("outputs/a-plus-vault/modules/settings-ops.js", "utf8")), "Super admin email must be passawut.a.plus@gmail.com.");
+  await access("outputs/a-plus-vault/modules/settings-ops.js");
   assert(/Private Alpha Demo Guide/.test(await readFile("outputs/a-plus-vault/demo.html", "utf8")), "Demo guide page must exist.");
   assert(/mode: 'supabase-live'/.test(await readFile("outputs/a-plus-vault/supabase-config.js", "utf8")), "Production demo should enable supabase-live mode.");
   assert(!/aplus1\.app/.test(manifestJson), "Extension manifest should not request unrelated host permissions.");

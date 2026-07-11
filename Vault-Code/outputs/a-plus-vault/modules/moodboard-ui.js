@@ -83,10 +83,12 @@ function moodboardIndexCard(board, projects, esc, escA, icon) {
     </span>
   </button>
   <div class="moodboard-card-actions">
-    <button type="button" data-open-moodboard="${escA(board.id)}">Open</button>
-    <button type="button" data-rename-moodboard="${escA(board.id)}">Rename</button>
-    <button type="button" data-link-moodboard-project="${escA(board.id)}">Add to Project</button>
-    <button type="button" class="danger-link" data-delete-moodboard="${escA(board.id)}">Delete</button>
+    <button type="button" class="moodboard-card-open-btn" data-open-moodboard="${escA(board.id)}">Open</button>
+    <div class="moodboard-card-secondary">
+      <button type="button" data-rename-moodboard="${escA(board.id)}">Rename</button>
+      <button type="button" data-link-moodboard-project="${escA(board.id)}" title="Add to Project">Link</button>
+      <button type="button" class="danger-link" data-delete-moodboard="${escA(board.id)}">Delete</button>
+    </div>
   </div>
 </article>`;
 }

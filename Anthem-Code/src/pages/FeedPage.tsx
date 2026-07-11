@@ -53,6 +53,7 @@ import { useCommunityFeedFilter } from "@/hooks/useCommunityFeedFilter";
 import { cn } from "@/lib/utils";
 import { sortToolsVisualFirst } from "@/lib/toolIcons";
 import { recordFeedSearch } from "@/lib/feedSearchSignals";
+import { trackProductEvent } from "@/lib/productEvents";
 
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { DESIGN_DRILL_CHIP, type ProjectChipFilter } from "@/lib/drillProject";
@@ -263,6 +264,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     if (!user?.id || !search.trim() || feedMode !== "Explore") return;
     const t = window.setTimeout(() => {
       recordFeedSearch(user.id, search);
+      void trackProductEvent("feed_search", { q: search.trim().slice(0, 120) }, { debounceMs: 1_500 });
       void queryClient.invalidateQueries({ queryKey: ["for-you-projects", user.id] });
     }, 800);
     return () => window.clearTimeout(t);

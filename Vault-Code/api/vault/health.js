@@ -22,6 +22,7 @@ export default function handler(req, res) {
     success: true,
     service: "a-plus-vault",
     storage: configured ? "supabase" : "unconfigured",
-    captures: 0
+    // Capture counts live in Supabase; health stays cheap/no-DB for uptime probes.
+    captures: null
   }));
 }

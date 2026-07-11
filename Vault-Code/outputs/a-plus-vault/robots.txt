@@ -4,4 +4,4 @@ Disallow: /vault
 Disallow: /demo
 Disallow: /api/
 
-Sitemap: https://aplus-vault-demo.vercel.app/sitemap.xml
+Sitemap: https://aplus-vault.vercel.app/sitemap.xml

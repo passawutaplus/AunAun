@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
@@ -12,8 +13,6 @@ const promptAuth = () => {
 export const useProjectLike = (projectId: string | undefined) => {
   const { user } = useAuth();
   const qc = useQueryClient();
-
-
 
   const countQ = useQuery({
     queryKey: ["project-like-count", projectId],
@@ -40,6 +39,31 @@ export const useProjectLike = (projectId: string | undefined) => {
       return !!data;
     },
   });
+
+  useEffect(() => {
+    if (!projectId) return;
+    const ch = supabase
+      .channel(`project-like-rt-${projectId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "anthem",
+          table: "project_likes",
+          filter: `project_id=eq.${projectId}`,
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: ["project-like-count", projectId] });
+          if (user?.id) {
+            qc.invalidateQueries({ queryKey: ["project-liked", projectId, user.id] });
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [projectId, user?.id, qc]);
 
   const toggle = useMutation({
     mutationFn: async () => {

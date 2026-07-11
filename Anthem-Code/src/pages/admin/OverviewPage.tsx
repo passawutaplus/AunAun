@@ -91,7 +91,10 @@ export default function OverviewPage() {
   const { data: alerts } = useAdminAlertCounts();
   const queue = adminPendingQueue(stats);
   const launchMinimal = isAplus1LaunchMinimal();
-  const navSections = adminNavSectionsForBuild();
+  // Overview hub: skip command/ops shortcut grids (still in sidebar)
+  const navSections = adminNavSectionsForBuild().filter(
+    (s) => s.id !== "command" && s.id !== "ops",
+  );
 
   const headline = launchMinimal
     ? [
@@ -115,42 +118,7 @@ export default function OverviewPage() {
         description={`${BRAND_TAGLINE} — จัดกลุ่มตามเมนูด้านซ้าย อัปเดตทุก ~30 วินาที`}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {headline.map((kpi) => (
-          <KpiCard key={kpi.label} label={kpi.label} value={kpi.value} icon={kpi.icon} accent={kpi.accent} delta="live" />
-        ))}
-      </div>
-
-      {queue.length > 0 ? (
-        <div className="mt-4 rounded-sm border border-admin-accent/30 bg-admin-accent/5 p-4">
-          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-admin-accent">คิวที่ต้องดูแล</p>
-          <div className="flex flex-wrap gap-3 text-sm">
-            {queue.map((q) => (
-              <Link key={q.to} to={q.to} className="text-admin-fg hover:text-admin-accent">
-                {q.label} <span className="font-mono text-admin-accent">{q.count}</span>
-              </Link>
-            ))}
-            <Link to="/admin/activity" className="inline-flex items-center gap-1 font-medium text-admin-accent hover:underline">
-              <Activity className="h-3.5 w-3.5" />
-              ดูกิจกรรมทั้งหมด →
-            </Link>
-          </div>
-        </div>
-      ) : null}
-
-      {alerts && (alerts.urgentReports > 0 || (!launchMinimal && alerts.highRiskKyc > 0)) ? (
-        <p className="mt-3 text-xs text-admin-muted">
-          AI triage:{" "}
-          {alerts.urgentReports > 0 ? `รายงานด่วน ${alerts.urgentReports} ` : ""}
-          {!launchMinimal && alerts.highRiskKyc > 0 ? `KYC ความเสี่ยงสูง ${alerts.highRiskKyc}` : ""}
-        </p>
-      ) : null}
-
-      {navSections.map((section) => (
-        <OverviewSection key={section.id} section={section} stats={stats} />
-      ))}
-
-      <section className="mt-10 grid gap-3 md:grid-cols-3">
+      <section className="grid gap-3 md:grid-cols-3">
         <div className="md:col-span-2 rounded-sm border border-admin-border bg-admin-surface p-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-admin-muted">กิจกรรม 14 วัน</p>
@@ -223,6 +191,41 @@ export default function OverviewPage() {
           </div>
         </div>
       </section>
+
+      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+        {headline.map((kpi) => (
+          <KpiCard key={kpi.label} label={kpi.label} value={kpi.value} icon={kpi.icon} accent={kpi.accent} delta="live" />
+        ))}
+      </div>
+
+      {queue.length > 0 ? (
+        <div className="mt-4 rounded-sm border border-admin-accent/30 bg-admin-accent/5 p-4">
+          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-admin-accent">คิวที่ต้องดูแล</p>
+          <div className="flex flex-wrap gap-3 text-sm">
+            {queue.map((q) => (
+              <Link key={q.to} to={q.to} className="text-admin-fg hover:text-admin-accent">
+                {q.label} <span className="font-mono text-admin-accent">{q.count}</span>
+              </Link>
+            ))}
+            <Link to="/admin/activity" className="inline-flex items-center gap-1 font-medium text-admin-accent hover:underline">
+              <Activity className="h-3.5 w-3.5" />
+              ดูกิจกรรมทั้งหมด →
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
+      {alerts && (alerts.urgentReports > 0 || (!launchMinimal && alerts.highRiskKyc > 0)) ? (
+        <p className="mt-3 text-xs text-admin-muted">
+          AI triage:{" "}
+          {alerts.urgentReports > 0 ? `รายงานด่วน ${alerts.urgentReports} ` : ""}
+          {!launchMinimal && alerts.highRiskKyc > 0 ? `KYC ความเสี่ยงสูง ${alerts.highRiskKyc}` : ""}
+        </p>
+      ) : null}
+
+      {navSections.map((section) => (
+        <OverviewSection key={section.id} section={section} stats={stats} />
+      ))}
     </div>
   );
 }

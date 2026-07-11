@@ -526,10 +526,14 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   // SPA routes: Vault app + Moodboard Phase 1 deep links
+  // Do NOT use startsWith('/vault') — that incorrectly maps /vault-runtime.js → index.html
   if (
     file === '/' ||
-    file.startsWith('/vault') ||
-    file.startsWith('/objects') ||
+    file === '/vault' ||
+    file === '/vault/' ||
+    file.startsWith('/vault/') ||
+    file === '/objects' ||
+    file.startsWith('/objects/') ||
     file === '/moodboards' ||
     file.startsWith('/moodboards/')
   ) {

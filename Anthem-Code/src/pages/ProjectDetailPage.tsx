@@ -29,6 +29,7 @@ import { navigateToAuth, stripSearchParams } from "@/lib/authRedirect";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { toast } from "sonner";
 import { isCategoryAllowed } from "@/lib/cookieConsent";
+import { trackProductEvent } from "@/lib/productEvents";
 import SeoHead from "@/components/SeoHead";
 import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
 import { BRAND_NAME } from "@/lib/brandConfig";
@@ -70,7 +71,12 @@ const ProjectDetailPage = () => {
     const key = `viewed:${dbProject.id}`;
     if (analyticsOk && !sessionStorage.getItem(key)) {
       sessionStorage.setItem(key, "1");
-      supabase.rpc("increment_project_view", { _project_id: dbProject.id }).then(() => {}, () => {});
+      void supabase
+        .rpc("increment_project_view", { _project_id: dbProject.id })
+        .then(() => {
+          void refetch();
+        }, () => {});
+      void trackProductEvent("project_view", { project_id: dbProject.id }, { debounceMs: 5_000 });
     }
     // Per-user history (only when signed-in)
     if (user?.id && analyticsOk) {
@@ -82,7 +88,7 @@ const ProjectDetailPage = () => {
         )
         .then(() => {}, () => {});
     }
-  }, [user?.id, dbProject?.id]);
+  }, [user?.id, dbProject?.id, refetch]);
 
   // Owner: refresh while attachments are still scanning (background job).
   useEffect(() => {

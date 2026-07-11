@@ -15,8 +15,8 @@ const kindIcon = (kind: string) => {
   if (kind.includes("gift")) return Gift;
   if (kind.includes("follow")) return UserPlus;
   if (kind.includes("hire")) return Briefcase;
-  if (kind.includes("collab")) return Handshake;
-  if (kind.includes("message")) return MessageCircle;
+  if (kind.includes("collab") || kind.includes("project_collab")) return Handshake;
+  if (kind.includes("message") || kind.includes("chat")) return MessageCircle;
   if (kind.includes("cashout")) return Banknote;
   if (kind.includes("ad")) return Megaphone;
   if (kind.includes("project_collab")) return Users;

@@ -111,8 +111,8 @@ export default function AdminSystemPage() {
             >
               <HardDrive className="w-5 h-5 text-admin-muted shrink-0" />
               <div>
-                <p className="font-medium text-sm text-admin-fg">พื้นที่เก็บไฟล์</p>
-                <p className="text-xs text-admin-muted">จัดการ storage buckets และ usage ในแอป</p>
+                <p className="font-medium text-sm text-admin-fg">Storage & ค่าใช้จ่าย</p>
+                <p className="text-xs text-admin-muted">พื้นที่ไฟล์ / DB · ประมาณเงิน · ลิงก์ Supabase</p>
               </div>
             </Link>
             <Link

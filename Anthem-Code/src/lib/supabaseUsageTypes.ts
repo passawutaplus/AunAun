@@ -75,4 +75,16 @@ export type SupabaseUsageResponse = {
     functions: string;
     logs: string;
   };
+  upgrade_advice?: {
+    service: string;
+    currentPlan: string;
+    verdict: "ok" | "watch" | "upgrade_recommended" | "upgrade_required";
+    reasons: string[];
+    thresholds: Array<{
+      metric: string;
+      used: number;
+      limit: number;
+      percent: number;
+    }>;
+  };
 };

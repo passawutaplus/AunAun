@@ -20,6 +20,7 @@ describe("adminNavigation launch minimal", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "");
     expect(isAdminLaunchHiddenPath("/admin/jobs")).toBe(true);
     expect(isAdminLaunchHiddenPath("/admin/marketing")).toBe(true);
+    expect(isAdminLaunchHiddenPath("/admin/data")).toBe(false);
     expect(isAdminLaunchHiddenPath("/admin/wallet")).toBe(true);
     expect(isAdminLaunchHiddenPath("/admin/projects")).toBe(false);
     expect(isAdminLaunchHiddenPath("/admin/chats")).toBe(false);
@@ -31,9 +32,12 @@ describe("adminNavigation launch minimal", () => {
     const paths = adminSidebarSections().flatMap((s) => s.items.map((i) => i.to));
     expect(paths).not.toContain("/admin/marketing");
     expect(paths).not.toContain("/admin/jobs");
+    expect(paths).toContain("/admin/data");
+    expect(paths).toContain("/admin/insights");
     expect(paths).toContain("/admin/projects");
     expect(paths).toContain("/admin/chats");
     expect(paths).toContain("/admin/compliance");
+    expect(paths).toContain("/admin/storage");
   });
 
   it("overview sections exclude hidden items when launch minimal", () => {

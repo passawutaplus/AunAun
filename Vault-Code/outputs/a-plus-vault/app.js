@@ -1,4 +1,4 @@
-import { DEFAULT_COLS, L, S, SEED, defaultProjects, id, svg } from "./modules/core.js";
+import { DEFAULT_COLS, L, S, SEED, id, svg, defaultProjects } from "./modules/core.js";
 import { boardsUsingItem, createBlankMoodboard, createMoodboardFromSelection, extractMoodboardsFromProjects, linkMoodboardToProject, MOODBOARD_SELECT_MAX, MOODBOARD_SELECT_MIN, MOODBOARD_SOFT_LIMIT, normalizeMoodboard, normalizeMoodboardObject, normalizeMoodboards, removeItemFromAllBoards, trackMoodboardEvent, clampMoodboardSize, normalizeHex, objectGroupId } from "./modules/moodboard-model.js";
 import { packSmartGrid, reflowBoardObjects } from "./modules/smart-grid.js";
 import { createMoodboardHistory, snapshotBoard } from "./modules/moodboard-history.js";
@@ -9,20 +9,35 @@ import { clamp, esc, escA, host, load, save } from "./modules/utils.js";
 import { allBoards as allProjectBoards, availableBoardsForProject, availableCollectionsForProject, boardRef, cloneBoardToProject, explicitProjectCollectionIds, projectCollectionPickerDialog, projectLinkedCollectionsMarkup, projectMetaIconsMarkup, projectMoodboardPickerDialog, projectSettingsDialog, removeBoardFromProject, removeCollectionFromProject, updateProjectDetails } from "./modules/project-workspace.js";
 import { bindCollectionDrag as bindSidebarCollectionDrag } from "./modules/sidebar-dnd.js";
 import { computeDashboardStats, computeKeepActivity, keepActivityMarkup, profileCollectionsCardMarkup, profileProjectsCardMarkup, profileRecentMarkup, settingsOverviewMarkup } from "./modules/user-dashboard.js";
+import { adminSettingsMarkup, feedbackSettingsMarkup, isVaultSuperAdmin } from "./modules/settings-ops.js";
 const VAULT_GRID_INITIAL=96,VAULT_GRID_STEP=72;
-let state={user:load(S.user,null),items:normalizeItems(load(S.items,SEED)),cols:ensureCoreCols(normalizeCols(load(S.cols,DEFAULT_COLS))),projects:null,moodboards:normalizeMoodboards(load(S.moodboards,[])),view:"vault",type:"all",col:"all",q:"",searchOpen:false,profileMenu:false,theme:load(S.theme,"system"),selected:null,selectedIds:[],modal:false,mode:"image",activeProject:"kitchen",activeBoard:"warm",activeMoodboard:null,selectedObject:null,selectedObjectIds:[],leftCollapsed:true,rightCollapsed:false,rightWidth:clampRightWidth(load(S.rightWidth,380)),openMenu:null,toast:"",collectionPicker:null,dialog:null,sortBy:"saved_new",sortMenu:false,libraryView:normalizeLibraryView(load(S.libraryView,"medium")),viewMenu:false,filterColor:"all",filterStyle:"all",filterCategory:"all",filterKeyword:"",filterHex:"",loading:null,animateVault:false,pageEnter:false,publicObject:null,drawerAnimating:false,mediaLightbox:null,moodboardSaveStatus:"idle",moodboardSourceCollapsed:false,moodboardInspectorCollapsed:false,moodboardSourceWidth:clamp(Number(load(S.moodboardSourceWidth,240))||240,180,420),moodboardInspectorWidth:clamp(Number(load(S.moodboardInspectorWidth,260))||260,200,420),moodboardTool:"select",moodboardConnectFrom:null,gridRenderLimit:VAULT_GRID_INITIAL,moodboardEditorLoading:false};
+let state={user:load(S.user,null),items:normalizeItems(load(S.items,SEED)),cols:ensureCoreCols(normalizeCols(load(S.cols,DEFAULT_COLS))),projects:null,moodboards:normalizeMoodboards(load(S.moodboards,[])),view:"vault",type:"all",col:"all",q:"",searchOpen:false,profileMenu:false,theme:load(S.theme,"system"),selected:null,selectedIds:[],modal:false,mode:"image",activeProject:"",activeBoard:"",activeMoodboard:null,selectedObject:null,selectedObjectIds:[],leftCollapsed:true,projectExplorerTab:"folders",projectExplorerQ:"",projectExplorerScope:"all",expandedProjectIds:{},projectBrowserQ:"",projectBrowserFilter:"all",rightCollapsed:false,rightWidth:clampRightWidth(load(S.rightWidth,380)),openMenu:null,toast:"",collectionPicker:null,dialog:null,sortBy:"saved_new",sortMenu:false,libraryView:normalizeLibraryView(load(S.libraryView,"medium")),viewMenu:false,filterColor:"all",filterStyle:"all",filterCategory:"all",filterKeyword:"",filterHex:"",loading:null,animateVault:false,pageEnter:false,publicObject:null,drawerAnimating:false,mediaLightbox:null,moodboardSaveStatus:"idle",moodboardSourceCollapsed:false,moodboardInspectorCollapsed:false,moodboardSourceWidth:clamp(Number(load(S.moodboardSourceWidth,240))||240,180,420),moodboardInspectorWidth:clamp(Number(load(S.moodboardInspectorWidth,260))||260,200,420),moodboardTool:"select",moodboardConnectFrom:null,gridRenderLimit:VAULT_GRID_INITIAL,moodboardEditorLoading:false,feedbackRating:null,feedbackMessage:"",feedbackSubmitted:false,adminOverview:null,adminFeedback:[],adminCaptures:[],adminLoading:false,adminError:"",adminLoaded:false};
 let moodboardHistory=createMoodboardHistory(50);
 let moodboardAutosave=null;
 let vaultLoadingTimer=null,vaultEnterTimer=null;
 let moodboardEditorUi=null,moodboardEditorLoad=null,extensionPollTimer=null;
 const vaultRemote=createVaultRemote(window.APLUS_VAULT_CONFIG||{});
-state.projects=normalizeProjects(load(S.projects,null),state.items);
-(function hydrateBoot(){let fixed=false;state.items=normalizeItems(state.items).map(i=>{if(i.assetUrl&&i.assetUrl.includes("'")){fixed=true;return Object.assign({},i,{assetUrl:i.assetUrl.replace(/'/g,"%27")})}return i});if(fixed)save(S.items,state.items);state.moodboards=extractMoodboardsFromProjects(state.projects,state.moodboards);save(S.moodboards,state.moodboards)})();
+state.projects=normalizeProjects(load(S.projects,[]),state.items);
+(function hydrateBoot(){
+  let fixed=false;
+  state.items=normalizeItems(state.items).map(i=>{if(i.assetUrl&&i.assetUrl.includes("'")){fixed=true;return Object.assign({},i,{assetUrl:i.assetUrl.replace(/'/g,"%27")})}return i});
+  if(fixed)save(S.items,state.items);
+  if(ensureDemoProjects()){
+    save(S.projects,state.projects);
+  }
+  let nextMoodboards=extractMoodboardsFromProjects(state.projects,state.moodboards);
+  if(JSON.stringify(nextMoodboards)!==JSON.stringify(state.moodboards)){state.moodboards=nextMoodboards;save(S.moodboards,state.moodboards)}
+  else state.moodboards=nextMoodboards;
+  if(!state.projects.find(p=>p.id===state.activeProject)){
+    state.activeProject=state.projects[0]&&state.projects[0].id||"";
+    state.activeBoard=(state.projects[0]&&state.projects[0].boards&&state.projects[0].boards[0]&&state.projects[0].boards[0].id)||"";
+  }
+})();
 parseMoodboardRoute();
 const app=document.querySelector("#app");
 if(/^\/demo(?:\.html)?\/?$/i.test(location.pathname))history.replaceState(null,"",location.origin+"/vault");
 normalizeVaultEntry();vaultRemote.consumeAuthCallback?.();importDeepLinkCapture();syncResponsiveViewport();bindResponsiveViewport();applyTheme({instant:true});render();initRemoteSession();startDevAutoRefresh();syncExtensionCaptures(true);syncExtensionCollections(true);broadcastExtensionCollections();startExtensionPolling();startVaultStorageSync();
-function startExtensionPolling(){clearInterval(extensionPollTimer);if(document.visibilityState!=="visible")return;extensionPollTimer=setInterval(()=>{if(document.visibilityState==="visible"){syncExtensionCaptures(true);syncExtensionCollections(true)}},4500)}
+function startExtensionPolling(){clearInterval(extensionPollTimer);if(document.visibilityState!=="visible")return;extensionPollTimer=setInterval(()=>{if(document.visibilityState==="visible"){syncExtensionCaptures(true);syncExtensionCollections(true)}},15000)}
 function onVaultTabVisible(){importDeepLinkCapture();syncExtensionCaptures(true);syncExtensionCollections(true);broadcastExtensionCollections();startExtensionPolling()}
 function startVaultStorageSync(){window.addEventListener("storage",e=>{if(!e||!e.key)return;if(e.key===S.items||e.key===S.captures){try{let next=load(S.items,state.items);if(Array.isArray(next)&&next.length){let known=new Set(state.items.map(i=>i.id));let merged=next.filter(i=>i&&i.id&&!known.has(i.id));if(merged.length){state.items=normalizeItems(merged.concat(state.items));state.sortBy="saved_new";toast(merged.length===1?"Saved image imported.":merged.length+" saved images imported.");render();return}}}catch(_){}render()}if(e.key===S.apiToken)syncExtensionCaptures(true)});document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")onVaultTabVisible();else{clearInterval(extensionPollTimer);extensionPollTimer=null}});window.addEventListener("focus",onVaultTabVisible);window.addEventListener("hashchange",()=>{importDeepLinkCapture();if(state.view==="vault")render()})}
 function resetVaultGridLimit(){state.gridRenderLimit=VAULT_GRID_INITIAL}
@@ -44,7 +59,7 @@ document.addEventListener("submit",e=>{let form=e.target&&e.target.closest?e.tar
 document.addEventListener("submit",e=>{let form=e.target&&e.target.closest?e.target.closest("[data-auth]"):null;if(!form)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();let fd=new FormData(form),submitter=e.submitter&&e.submitter.dataset?e.submitter:null;beginVaultLogin({email:fd.get("email"),password:fd.get("password"),provider:"password",action:submitter&&submitter.dataset.authAction||"login"})},true);
 document.addEventListener("click",e=>{let btn=e.target&&e.target.closest?e.target.closest("[data-auth] button"):null;if(!btn)return;let form=btn.closest("[data-auth]");if(!form)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();let fd=new FormData(form);beginVaultLogin({email:fd.get("email"),password:fd.get("password"),provider:"password",action:btn.dataset.authAction||"login"})},true);
 document.addEventListener("click",e=>{let b=e.target&&e.target.closest?e.target.closest("[data-google-login]"):null;if(!b)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();beginGoogleLogin()},true);
-document.addEventListener("click",e=>{let projectBtn=e.target&&e.target.closest?e.target.closest("[data-project]"):null;if(projectBtn){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();state.openMenu=null;state.activeProject=projectBtn.dataset.project;let p=project();state.activeBoard=(p.boards&&p.boards[0]&&p.boards[0].id)||"";state.selectedObject=null;state.view="project";render();return}let openBtn=e.target&&e.target.closest?e.target.closest("[data-openboard]"):null;if(openBtn){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();let r=boardRef(openBtn.dataset.openboard);state.activeProject=r.projectId;state.activeBoard=r.boardId;state.selectedObject=null;state.rightCollapsed=false;state.openMenu=null;state.view="board";render();return}},true);
+document.addEventListener("click",e=>{let projectBtn=e.target&&e.target.closest?e.target.closest("[data-project]"):null;if(projectBtn){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();state.openMenu=null;state.activeProject=projectBtn.dataset.project;state.expandedProjectIds=Object.assign({},state.expandedProjectIds||{});state.expandedProjectIds[projectBtn.dataset.project]=true;let p=project();state.activeBoard=(p.boards&&p.boards[0]&&p.boards[0].id)||"";state.selectedObject=null;state.view="project";state.projectExplorerScope="all";render();return}let openBtn=e.target&&e.target.closest?e.target.closest("[data-openboard]"):null;if(openBtn){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();let r=boardRef(openBtn.dataset.openboard);state.activeProject=r.projectId;state.activeBoard=r.boardId;state.selectedObject=null;state.rightCollapsed=false;state.openMenu=null;state.view="board";render();return}},true);
 document.addEventListener("click",e=>{let toggle=e.target&&e.target.closest?e.target.closest("[data-keep-detail]"):null;if(toggle){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();state.collectionPicker=state.collectionPicker===toggle.dataset.keepDetail?null:toggle.dataset.keepDetail;if(!refreshOpenDrawer())render();return}let pick=e.target&&e.target.closest?e.target.closest("[data-keepcol]"):null;if(pick){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();let parts=String(pick.dataset.keepcol||"").split(":"),item=state.items.find(i=>i.id===parts[0]),col=state.cols.find(c=>c.id===parts[1]&&!c.system);if(!item||!col)return;let ids=new Set(cleanCollectionIds(item.collectionIds));ids.add("all");let existed=ids.has(col.id);ids.add(col.id);patch(item.id,{collectionIds:Array.from(ids)});state.collectionPicker=null;toast(existed?"Already in "+col.name+".":"Copied to "+col.name+".");if(!refreshOpenDrawer())render()}},true);
 if(window.matchMedia){let themeQuery=window.matchMedia("(prefers-color-scheme: dark)");if(themeQuery.addEventListener)themeQuery.addEventListener("change",()=>{if(state.theme==="system")applyTheme()})}
 function isMobileViewport(){return typeof matchMedia==="function"&&matchMedia("(max-width: 860px)").matches}
@@ -53,15 +68,15 @@ function syncResponsiveViewport(){let root=document.documentElement;root.dataset
 function bindResponsiveViewport(){if(!window.matchMedia||window.__vaultViewportBound)return;window.__vaultViewportBound=true;let apply=()=>{let wasMobile=document.documentElement.dataset.viewport==="mobile";syncResponsiveViewport();if(isMobileViewport()&&!wasMobile){state.profileMenu=false;state.sortMenu=false;state.viewMenu=false;render()}else document.documentElement.dataset.viewport=isTabletViewport()?"tablet":isMobileViewport()?"mobile":"desktop"};apply();["(max-width: 860px)","(min-width: 861px) and (max-width: 1024px)"].forEach(q=>{let mq=matchMedia(q);if(mq.addEventListener)mq.addEventListener("change",apply);else if(mq.addListener)mq.addListener(apply)})}
 document.addEventListener("click",e=>{if(!isMobileViewport()||state.leftCollapsed)return;let rail=e.target&&e.target.closest?e.target.closest(".rail,.project-rail"):null,toggle=e.target&&e.target.closest?e.target.closest("[data-toggle-left]"):null;if(toggle||rail)return;let ws=e.target&&e.target.closest?e.target.closest(".workspace,.board-workspace"):null;if(ws){state.leftCollapsed=true;state.sortMenu=false;state.viewMenu=false;render()}},true);
 document.addEventListener("click",e=>{let nav=e.target&&e.target.closest?e.target.closest("[data-view],[data-col]"):null;if(!nav||!isMobileViewport()||state.leftCollapsed)return;state.leftCollapsed=true},true);
-function render(opts){try{if(!(opts&&opts.skipTheme))applyTheme({instant:true});let prevView=render._view,viewChanged=prevView!=null&&prevView!==state.view;state.pageEnter=!!(viewChanged||(opts&&opts.pageEnter));render._view=state.view;app.innerHTML=state.loading==="vault"?vaultLoadingView():workspaceView();bind();if(state.pageEnter){clearTimeout(render._pageEnterTimer);render._pageEnterTimer=setTimeout(()=>{state.pageEnter=false},420)}}catch(err){console.error("A+ Vault render failed",err);repairState();app.innerHTML=repairView(err);bindRepair()}}
+function render(opts){try{if(!(opts&&opts.skipTheme))applyTheme({instant:true});let prevView=render._view,viewChanged=prevView!=null&&prevView!==state.view;state.pageEnter=!!(viewChanged||(opts&&opts.pageEnter));render._view=state.view;app.innerHTML=state.loading==="vault"?vaultLoadingView():workspaceView();bind();if(state.pageEnter){clearTimeout(render._pageEnterTimer);requestAnimationFrame(()=>{let roots=document.querySelectorAll('.page-enter');roots.forEach(el=>{el.querySelectorAll('.main,.board-main,.library-rail,.inspector,.moodboard-editor,.capture-page').forEach(node=>{void node.offsetWidth})});});render._pageEnterTimer=setTimeout(()=>{state.pageEnter=false},520)}}catch(err){console.error("A+ Vault render failed",err);repairState();app.innerHTML=repairView(err);bindRepair()}}
 function pageEnterCls(){return state.pageEnter?" page-enter":""}
-function workspaceView(){if(state.view==="moodboard-edit")return moodboardEditView();if(state.view==="board")return boardView();if(state.view==="project")return projectView();if(state.view==="projects")return projectsView();if(state.view==="moodboards")return moodboardsView();if(state.view==="capture")return captureView();if(state.view==="collections")return collectionsView();if(state.view==="profile")return profileView();if(state.view==="settings")return settingsView();return vaultView()}
+function workspaceView(){if(state.view==="project"&&!project())state.view="projects";if(state.view==="board"&&!project())state.view="projects";if(state.view==="moodboard-edit")return moodboardEditView();if(state.view==="board")return boardView();if(state.view==="project")return projectView();if(state.view==="projects")return projectsView();if(state.view==="moodboards")return moodboardsView();if(state.view==="capture")return captureView();if(state.view==="collections")return collectionsView();if(state.view==="profile")return profileView();if(state.view==="settings")return settingsView();return vaultView()}
 async function beginVaultLogin(user){let remoteUser=null,remoteError="",keepSelected=state.selected;state.view="vault";state.loading="vault";state.animateVault=true;state.leftCollapsed=true;state.selectedObject=null;state.openMenu=null;state.profileMenu=false;state.sortMenu=false;state.viewMenu=false;clearTimeout(vaultLoadingTimer);clearTimeout(vaultEnterTimer);render();if(shouldUseRemoteLogin(user)){try{let session=user.action==="signup"&&vaultRemote.signUpWithPassword?await vaultRemote.signUpWithPassword(user.email,user.password):await vaultRemote.signInWithPassword(user.email,user.password);if(session&&session.access_token){remoteUser={id:session.user&&session.user.id,email:session.user&&session.user.email||user.email,provider:"supabase"};await importRemoteVault()}else{remoteError="Account created. Check your email if confirmation is enabled, then log in again."}}catch(err){remoteError=err.message||"Supabase login failed."}}state.user=remoteUser||{email:user.email,provider:user.provider||"password",displayName:(state.user&&state.user.displayName)||"",avatarUrl:(state.user&&state.user.avatarUrl)||""};ensureVaultApiToken();save(S.user,state.user);if(keepSelected)state.selected=keepSelected;render();vaultLoadingTimer=setTimeout(()=>{state.loading=null;render();vaultEnterTimer=setTimeout(()=>{state.animateVault=false;render();if(keepSelected&&state.items.some(i=>i.id===keepSelected))openSelectedDetail(keepSelected);if(remoteError)toast((remoteUser?"":"Using local alpha. ")+remoteError)},1300)},560)}
 function shouldUseRemoteLogin(user){return vaultRemote.enabled&&user&&user.provider==="password"&&user.password&&user.password!=="aplusvault"&&!String(user.email||"").endsWith(".local")}
 function beginGoogleLogin(){let live=(window.APLUS_VAULT_CONFIG||{}).mode==="supabase-live";if(vaultRemote.enabled&&live){try{vaultRemote.signInWithGoogle(location.href);return}catch(err){toast(err.message||"Google login is not ready.")}}beginVaultLogin({email:"creative.google@aplus.local",provider:"google"})}
 async function initRemoteSession(){if(!vaultRemote.enabled)return;try{let session=await vaultRemote.getSession();if(!session||!session.user)return;state.user={id:session.user.id,email:session.user.email,provider:"supabase"};ensureVaultApiToken();save(S.user,state.user);await importRemoteVault();if(state.selected&&state.items.some(i=>i.id===state.selected))state.rightCollapsed=false;render();if(state.selected&&state.items.some(i=>i.id===state.selected))openSelectedDetail(state.selected)}catch(err){}}
 function getVaultApiToken(){ensureVaultApiToken();let saved=load(S.apiToken,"");if(saved)return saved;try{let session=JSON.parse(localStorage.getItem("aplus-vault-supabase-session")||"null");if(session&&session.access_token)return session.access_token}catch(e){}return ""}
-function ensureVaultApiToken(){let userId=state.user&&state.user.id;if(userId){let token="vault-user-"+userId;save(S.apiToken,token);return token}let saved=load(S.apiToken,"");if(saved)return saved;let token="vault-"+id();save(S.apiToken,token);return token}
+function ensureVaultApiToken(){let userId=state.user&&state.user.id;if(userId){let token="vault-user-"+userId,saved=load(S.apiToken,"");if(saved!==token)save(S.apiToken,token);return token}let saved=load(S.apiToken,"");if(saved)return saved;let token="vault-"+id();save(S.apiToken,token);return token}
 function regenerateVaultApiToken(){if(state.user&&state.user.id){toast("Account-bound sync token is already active.");return ensureVaultApiToken()}let token="vault-"+id();save(S.apiToken,token);toast("Extension sync token refreshed.");render();return token}
 function demoBanner(){return "<section class='demo-banner'><div><strong>Private alpha demo</strong><span>Log in, copy your extension sync token from Settings, then right-click any image and choose + Keep in Vault.</span></div><button type='button' class='ghost-button' data-view='login'>Start demo</button></section>"}
 async function importRemoteVault(){if(!vaultRemote.enabled||!vaultRemote.hasSession())return;try{let remote=await vaultRemote.loadVault();if(remote.items&&remote.items.length){state.items=normalizeItems(remote.items);save(S.items,state.items)}if(remote.collections&&remote.collections.length){state.cols=ensureCoreCols(normalizeCols(DEFAULT_COLS.concat(remote.collections.filter(c=>!c.system))));save(S.cols,state.cols)}if(remote.projects&&remote.projects.length){state.projects=normalizeProjects(remote.projects,state.items);save(S.projects,state.projects)}if(remote.moodboards&&remote.moodboards.length){state.moodboards=normalizeMoodboards(remote.moodboards)}else{state.moodboards=extractMoodboardsFromProjects(state.projects,state.moodboards)}save(S.moodboards,state.moodboards);broadcastExtensionCollections()}catch(err){console.warn("A+ Vault remote import failed",err)}}
@@ -114,7 +129,7 @@ function createProject(name){let p={id:id(),name:name.trim(),description:"",coll
 function togglePinProject(projectId){let p=state.projects.find(x=>x.id===projectId);if(!p)return;p.pinnedAt=p.pinnedAt?0:Date.now();persistProjects();state.openMenu=null;toast(p.pinnedAt?"Project pinned to top.":"Project unpinned.");render()}
 function sortedProjects(){let order=new Map(state.projects.map((p,i)=>[p.id,i]));return state.projects.slice().sort((a,b)=>{let aPin=Number(a.pinnedAt)||0,bPin=Number(b.pinnedAt)||0;if(aPin!==bPin)return bPin-aPin;return(order.get(a.id)||0)-(order.get(b.id)||0)})}
 function renameProject(projectId,name){let p=state.projects.find(x=>x.id===projectId);if(!p)return;p.name=name.trim()||p.name;persistProjects();toast("Project renamed.");render()}
-function deleteProject(projectId){if(state.projects.length<=1){toast("Keep at least one project in this alpha.");return}state.projects=state.projects.filter(x=>x.id!==projectId);if(state.activeProject===projectId){let next=state.projects[0];state.activeProject=next.id;state.activeBoard=next.boards[0]&&next.boards[0].id||"";if(state.view==="project")state.view="projects"}persistProjects();toast("Project deleted.");render()}
+function deleteProject(projectId){state.projects=state.projects.filter(x=>x.id!==projectId);state.moodboards=(state.moodboards||[]).filter(b=>b.projectId!==projectId);if(state.activeProject===projectId){let next=state.projects[0];state.activeProject=next&&next.id||"";state.activeBoard=next&&next.boards&&next.boards[0]&&next.boards[0].id||"";if(state.view==="project"||state.view==="board")state.view="projects"}persistProjects();persistMoodboards();toast("Project deleted.");render()}
 function createBoard(projectId,name){let p=state.projects.find(x=>x.id===projectId)||project(),bd={id:id(),name:name.trim(),objects:[]};p.boards=(p.boards||[]).concat(bd);state.activeProject=p.id;state.activeBoard=bd.id;state.view="moodboards";persistProjects();toast("Moodboard created.")}
 function renameBoardRef(raw,name){let r=boardRef(raw),p=state.projects.find(x=>x.id===r.projectId),bd=p&&p.boards&&p.boards.find(x=>x.id===r.boardId);if(!bd)return;bd.name=name.trim();persistProjects();toast("Moodboard renamed.")}
 function deleteBoardRef(raw){let r=boardRef(raw),p=state.projects.find(x=>x.id===r.projectId),bd=p&&p.boards&&p.boards.find(x=>x.id===r.boardId);if(!bd)return;p.boards=p.boards.filter(x=>x.id!==bd.id);if(state.activeBoard===bd.id){state.activeBoard=(p.boards[0]&&p.boards[0].id)||"";state.selectedObject=null;if(state.view==="board")state.view="moodboards"}persistProjects();toast("Moodboard deleted.")}
@@ -162,7 +177,7 @@ function closeProfileMenu(opts){opts=opts||{};clearTimeout(closeProfileMenu._tim
 function bindProfileMenuMotion(){let menu=document.querySelector("[data-profile-menu]");if(!menu||!state.profileMenu||menu.classList.contains("is-closing"))return;if(prefersReducedMotion()||state.profileMenuSettled){menu.classList.add("is-open","is-settled");state.profileMenuSettled=true;return}if(menu.classList.contains("is-open"))return;requestAnimationFrame(()=>requestAnimationFrame(()=>{if(!state.profileMenu||!menu.isConnected)return;menu.classList.add("is-open");clearTimeout(bindProfileMenuMotion._timer);bindProfileMenuMotion._timer=setTimeout(()=>{if(state.profileMenu){state.profileMenuSettled=true;menu.classList.add("is-settled")}},320)}))}
 function shell(inner){return "<div class='app-shell"+(!state.user?" needs-auth":"")+"'><header class='topbar'><div class='topbar-logo'><button type='button' class='topbar-brand-link' data-view='vault' title='Vault Library' aria-label='Open Vault Library'>"+brandMark()+"</button></div><div class='topbar-spacer' aria-hidden='true'></div><div class='header-actions'>"+headerSearchMarkup()+headerProfileButton()+"</div></header>"+inner+(state.modal?modal():"")+(state.dialog?appDialog():"")+(state.mediaLightbox?mediaLightboxMarkup():"")+(!state.user?authGateMarkup():"")+(state.toast?"<div class='toast'>"+esc(state.toast)+"</div>":"")+selectionActionsMarkup()+"<button type='button' class='back-to-top' data-back-top hidden title='Back to top' aria-label='Back to top'><svg class='back-to-top-icon' viewBox='0 0 24 24' aria-hidden='true' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 19V5'/><path d='m5 12 7-7 7 7'/></svg></button></div>"}
 function authGateMarkup(){return "<div class='auth-gate-backdrop' role='dialog' aria-modal='true' aria-label='Log in to A+ Vault'><section class='auth-gate-dialog auth-box'><h2>Log in to A+ Vault</h2><p><strong>Quick demo:</strong> creative@aplus.local / aplusvault stays local in your browser.<br><strong>Real account:</strong> use your email + password, or Continue with Google.</p><form class='auth-form' data-auth><label>Email<input name='email' type='email' value='"+escA(state.user&&state.user.email||"creative@aplus.local")+"' required></label><label>Password<input name='password' type='password' value='aplusvault' required></label><div class='auth-action-row'><button class='primary-button' data-auth-action='login'>Log in</button><button class='ghost-button' data-auth-action='signup'>Create account</button></div></form><button class='google-button' data-google-login>"+icon("google")+"<span>Continue with Google</span></button><p class='auth-demo-note'>After login, open Profile and copy your extension sync token for the Chrome extension.</p></section></div>"}
-function sidebarUploadZone(){return "<div class='side-section sidebar-upload'><button type='button' class='sidebar-upload-button' data-open title='Upload to Vault' aria-label='Upload to Vault'><span class='side-icon'>"+icon("plus")+"</span><span class='side-label'>Upload</span></button></div>"}
+function sidebarUploadZone(){if(state.view==="settings"||state.view==="profile")return "";return "<div class='side-section sidebar-upload'><button type='button' class='sidebar-upload-button' data-open title='Upload to Vault' aria-label='Upload to Vault'><span class='side-icon'>"+icon("plus")+"</span><span class='side-label'>Upload</span></button></div>"}
 function railCollapseButton(){return "<button class='collapse-button rail-collapse-button' data-toggle-left title='"+(state.leftCollapsed?"Expand sidebar":"Collapse sidebar")+"' aria-label='"+(state.leftCollapsed?"Expand sidebar":"Collapse sidebar")+"'>"+icon(state.leftCollapsed?"expand":"collapse")+"</button>"}
 function sideNav(statsHtml){let views=[["vault","vault","Vault Library"],["moodboards","board","Moodboard"],["projects","project","Projects"],["collections","collections","Collections"]],collapse=railCollapseButton(),header=state.leftCollapsed?"<div class='side-shell-header is-collapsed-header' aria-hidden='true'></div>":"<div class='side-shell-header is-expanded-header'>"+collapse+"</div>";return header+(statsHtml||"")+"<div class='side-section sidebar-workspace'><p class='side-kicker'>Workspace</p><nav class='side-nav vault-bottom-nav' aria-label='Workspace'>"+views.map(v=>{let active=v[0]==="moodboards"?(state.view==="moodboards"||state.view==="moodboard-edit"||state.view==="board"):v[0]==="projects"?(state.view==="projects"||state.view==="project"):v[0]==="collections"?state.view==="collections":state.view===v[0];return "<button class='side-nav-button "+(active?"active":"")+"' data-view='"+v[0]+"' title='"+v[2]+"' aria-label='"+v[2]+"'><span class='side-icon'>"+icon(v[1])+"</span><span class='side-label'>"+v[2]+"</span></button>"}).join("")+"</nav></div>"+sidebarUploadZone()+(state.leftCollapsed?"<div class='sidebar-rail-footer'>"+collapse+"</div>":"")}
 function vaultStatsBlock(stats,collections){return "<section class='sidebar-stats' aria-label='Vault stats'><div class='sidebar-stat'><strong>"+stats.total+"</strong><span>Items</span></div><div class='sidebar-stat'><strong>"+stats.images+"</strong><span>Images</span></div><div class='sidebar-stat'><strong>"+collections.length+"</strong><span>Collections</span></div></section>"}
@@ -174,8 +189,8 @@ function collectionRowsMarkup(c){return colRow(c,{depth:0})+childCols(c.id).map(
 function iconForType(t){return t==="all"?"all":t==="image"?"image":t==="video"?"video":t==="link"?"link":t==="note"?"note":"collections"}
 function themeControl(){let modes=[["light","sun","Light"],["dark","moon","Dark"],["system","system","System"]];return "<div class='theme-switch' role='group' aria-label='Theme'>"+modes.map(m=>"<button class='theme-option "+(state.theme===m[0]?"active":"")+"' data-theme-choice='"+m[0]+"' title='"+m[2]+"' aria-label='"+m[2]+" theme'>"+icon(m[1])+"<span>"+m[2]+"</span></button>").join("")+"</div>"}
 function resolvedTheme(){if(state.theme==="system")return window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";return state.theme}
-function applyTheme(options){let next=resolvedTheme(),root=document.documentElement,prev=root.dataset.theme||"",reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches,animate=!(options&&options.instant)&&!!prev&&prev!==next&&!reduce;const commit=()=>{root.dataset.theme=next;root.dataset.themeMode=state.theme};if(!animate){commit();return}clearTimeout(applyTheme._veilTimer);document.querySelectorAll(".theme-veil").forEach(el=>el.remove());let veil=document.createElement("div");veil.className="theme-veil "+(next==="dark"?"to-dark":"to-light");veil.setAttribute("aria-hidden","true");document.body.appendChild(veil);requestAnimationFrame(()=>{veil.classList.add("is-on");applyTheme._veilTimer=setTimeout(()=>{commit();veil.classList.add("is-off");setTimeout(()=>veil.remove(),520)},220)})}
-function icon(n){let p={home:"<path d='M4 11 12 4l8 7'/><path d='M6 10v10h12V10'/><path d='M10 20v-6h4v6'/>",vault:"<path d='M5 8h14v11H5z'/><path d='M8 8V5h8v3'/><path d='M10 13h4'/>",board:"<path d='M4 5h16v14H4z'/><path d='M8 9h8M8 13h5M16 17h1'/>",all:"<path d='M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z'/>",list:"<path d='M8 7h12M8 12h12M8 17h12'/><path d='M4 7h.01M4 12h.01M4 17h.01'/>",image:"<path d='M4 6h16v12H4z'/><path d='m7 15 3-3 2 2 3-4 2 5'/><circle cx='9' cy='9' r='1.2'/>",video:"<path d='M4 7h11v10H4z'/><path d='m15 10 5-3v10l-5-3z'/><path d='M8 10v4l4-2z'/>",link:"<path d='M10 7H8a5 5 0 0 0 0 10h2'/><path d='M14 7h2a5 5 0 0 1 0 10h-2'/><path d='M8 12h8'/>",note:"<path d='M6 4h9l3 3v13H6z'/><path d='M15 4v4h4M9 12h6M9 16h4'/>",collections:"<path d='M5 7h14M7 4h10'/><path d='M6 10h12v10H6z'/>",collection:"<path d='M5 7h14M7 4h10'/><path d='M6 10h12v10H6z'/>",plus:"<path d='M12 5v14M5 12h14'/>",close:"<path d='M6 6l12 12M18 6 6 18'/>",collapse:"<path d='M15 6l-6 6 6 6'/><path d='M19 4v16'/>",expand:"<path d='M9 6l6 6-6 6'/><path d='M5 4v16'/>",sun:"<circle cx='12' cy='12' r='4'/><path d='M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4'/>",moon:"<path d='M20 15.2A7.8 7.8 0 0 1 8.8 4a6.5 6.5 0 1 0 11.2 11.2z'/>",system:"<rect x='4' y='5' width='16' height='11' rx='1.5'/><path d='M9 20h6M12 16v4'/>",save:"<path d='M5 4h12l2 2v14H5z'/><path d='M8 4v6h8V4M8 18h8'/>",spark:"<path d='M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'/>",compass:"<circle cx='12' cy='12' r='9'/><path d='m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8z'/>",layers:"<path d='m12 3 9 5-9 5-9-5z'/><path d='m3 12 9 5 9-5'/><path d='m3 16 9 5 9-5'/>",tag:"<path d='M20 12 12 20 4 12V4h8z'/><path d='M7.5 7.5h.01'/>",search:"<circle cx='11' cy='11' r='7'/><path d='m16 16 4 4'/>",lock:"<rect x='5' y='10' width='14' height='10' rx='2'/><path d='M8 10V7a4 4 0 0 1 8 0v3'/>",project:"<path d='M4 6h6l2 2h8v10H4z'/>",archive:"<path d='M4 6h16v4H4z'/><path d='M6 10h12v10H6z'/><path d='M10 14h4'/>",settings:"<circle cx='12' cy='12' r='3'/><path d='M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1'/>",import:"<path d='M12 3v12'/><path d='m8 11 4 4 4-4'/><path d='M4 19h16'/>",filter:"<path d='M4 6h16M7 12h10M10 18h4'/>",bell:"<path d='M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9'/><path d='M10 21h4'/>",check:"<path d='m5 12 4 4L19 6'/>",edit:"<path d='M12 20h9'/><path d='M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z'/>",trash:"<path d='M4 7h16'/><path d='M10 11v6M14 11v6'/><path d='M6 7l1 14h10l1-14'/><path d='M9 7V4h6v3'/>",users:"<path d='M16 19v-1.2A3.3 3.3 0 0 0 12.7 14.5H7.3A3.3 3.3 0 0 0 4 17.8V19'/><circle cx='10' cy='8.5' r='3'/><path d='M20 19v-1a2.8 2.8 0 0 0-2-2.7'/><path d='M15.5 5.6a3 3 0 0 1 0 5.8'/>",logout:"<path d='M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4'/><path d='M15 8l4 4-4 4'/><path d='M9 12h10'/>",half:"<circle cx='12' cy='12' r='8'/><path d='M12 4a8 8 0 0 1 0 16z' fill='currentColor' stroke='none'/>",google:"<path d='M20 12.2c0-.7-.1-1.3-.2-1.9H12v3.6h4.5a3.8 3.8 0 0 1-1.7 2.5v2.1h2.8c1.6-1.5 2.4-3.6 2.4-6.3z'/><path d='M12 20c2.3 0 4.2-.8 5.6-2.1l-2.8-2.1c-.8.5-1.7.8-2.8.8-2.1 0-3.9-1.4-4.6-3.3H4.5v2.1A8 8 0 0 0 12 20z'/><path d='M7.4 13.3a4.8 4.8 0 0 1 0-2.6V8.6H4.5a8 8 0 0 0 0 6.8z'/><path d='M12 7.4c1.2 0 2.3.4 3.2 1.2l2.4-2.4A8 8 0 0 0 4.5 8.6l2.9 2.1C8.1 8.8 9.9 7.4 12 7.4z'/>"}[n]||"<circle cx='12' cy='12' r='8'/>";return "<svg class='flat-icon' viewBox='0 0 24 24' aria-hidden='true' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'>"+p+"</svg>"}
+function applyTheme(options){let next=resolvedTheme(),root=document.documentElement,prev=root.dataset.theme||"",reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches,animate=!(options&&options.instant)&&!!prev&&prev!==next&&!reduce;const commit=()=>{if(root.dataset.theme!==next)root.dataset.theme=next;if(root.dataset.themeMode!==state.theme)root.dataset.themeMode=state.theme};if(!animate){commit();return}clearTimeout(applyTheme._veilTimer);document.querySelectorAll(".theme-veil").forEach(el=>el.remove());let veil=document.createElement("div");veil.className="theme-veil "+(next==="dark"?"to-dark":"to-light");veil.setAttribute("aria-hidden","true");document.body.appendChild(veil);requestAnimationFrame(()=>{veil.classList.add("is-on");applyTheme._veilTimer=setTimeout(()=>{commit();veil.classList.add("is-off");setTimeout(()=>veil.remove(),520)},220)})}
+function icon(n){let p={home:"<path d='M4 11 12 4l8 7'/><path d='M6 10v10h12V10'/><path d='M10 20v-6h4v6'/>",vault:"<path d='M5 8h14v11H5z'/><path d='M8 8V5h8v3'/><path d='M10 13h4'/>",board:"<path d='M4 5h16v14H4z'/><path d='M8 9h8M8 13h5M16 17h1'/>",all:"<path d='M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z'/>",list:"<path d='M8 7h12M8 12h12M8 17h12'/><path d='M4 7h.01M4 12h.01M4 17h.01'/>",image:"<path d='M4 6h16v12H4z'/><path d='m7 15 3-3 2 2 3-4 2 5'/><circle cx='9' cy='9' r='1.2'/>",video:"<path d='M4 7h11v10H4z'/><path d='m15 10 5-3v10l-5-3z'/><path d='M8 10v4l4-2z'/>",link:"<path d='M10 7H8a5 5 0 0 0 0 10h2'/><path d='M14 7h2a5 5 0 0 1 0 10h-2'/><path d='M8 12h8'/>",note:"<path d='M6 4h9l3 3v13H6z'/><path d='M15 4v4h4M9 12h6M9 16h4'/>",collections:"<path d='M5 7h14M7 4h10'/><path d='M6 10h12v10H6z'/>",collection:"<path d='M5 7h14M7 4h10'/><path d='M6 10h12v10H6z'/>",plus:"<path d='M12 5v14M5 12h14'/>",close:"<path d='M6 6l12 12M18 6 6 18'/>",copy:"<rect x='8' y='8' width='11' height='11' rx='1.5'/><path d='M6 15V5.5A1.5 1.5 0 0 1 7.5 4H16'/>",collapse:"<path d='M15 6l-6 6 6 6'/><path d='M19 4v16'/>",expand:"<path d='M9 6l6 6-6 6'/><path d='M5 4v16'/>",sun:"<circle cx='12' cy='12' r='4'/><path d='M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4'/>",moon:"<path d='M20 15.2A7.8 7.8 0 0 1 8.8 4a6.5 6.5 0 1 0 11.2 11.2z'/>",system:"<rect x='4' y='5' width='16' height='11' rx='1.5'/><path d='M9 20h6M12 16v4'/>",save:"<path d='M5 4h12l2 2v14H5z'/><path d='M8 4v6h8V4M8 18h8'/>",spark:"<path d='M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'/>",compass:"<circle cx='12' cy='12' r='9'/><path d='m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8z'/>",layers:"<path d='m12 3 9 5-9 5-9-5z'/><path d='m3 12 9 5 9-5'/><path d='m3 16 9 5 9-5'/>",tag:"<path d='M20 12 12 20 4 12V4h8z'/><path d='M7.5 7.5h.01'/>",search:"<circle cx='11' cy='11' r='7'/><path d='m16 16 4 4'/>",lock:"<rect x='5' y='10' width='14' height='10' rx='2'/><path d='M8 10V7a4 4 0 0 1 8 0v3'/>",project:"<path d='M4 6h6l2 2h8v10H4z'/>",archive:"<path d='M4 6h16v4H4z'/><path d='M6 10h12v10H6z'/><path d='M10 14h4'/>",settings:"<circle cx='12' cy='12' r='3'/><path d='M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1'/>",import:"<path d='M12 3v12'/><path d='m8 11 4 4 4-4'/><path d='M4 19h16'/>",filter:"<path d='M4 6h16M7 12h10M10 18h4'/>",bell:"<path d='M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9'/><path d='M10 21h4'/>",check:"<path d='m5 12 4 4L19 6'/>",edit:"<path d='M12 20h9'/><path d='M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z'/>",trash:"<path d='M4 7h16'/><path d='M10 11v6M14 11v6'/><path d='M6 7l1 14h10l1-14'/><path d='M9 7V4h6v3'/>",users:"<path d='M16 19v-1.2A3.3 3.3 0 0 0 12.7 14.5H7.3A3.3 3.3 0 0 0 4 17.8V19'/><circle cx='10' cy='8.5' r='3'/><path d='M20 19v-1a2.8 2.8 0 0 0-2-2.7'/><path d='M15.5 5.6a3 3 0 0 1 0 5.8'/>",logout:"<path d='M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4'/><path d='M15 8l4 4-4 4'/><path d='M9 12h10'/>",half:"<circle cx='12' cy='12' r='8'/><path d='M12 4a8 8 0 0 1 0 16z' fill='currentColor' stroke='none'/>",google:"<path d='M20 12.2c0-.7-.1-1.3-.2-1.9H12v3.6h4.5a3.8 3.8 0 0 1-1.7 2.5v2.1h2.8c1.6-1.5 2.4-3.6 2.4-6.3z'/><path d='M12 20c2.3 0 4.2-.8 5.6-2.1l-2.8-2.1c-.8.5-1.7.8-2.8.8-2.1 0-3.9-1.4-4.6-3.3H4.5v2.1A8 8 0 0 0 12 20z'/><path d='M7.4 13.3a4.8 4.8 0 0 1 0-2.6V8.6H4.5a8 8 0 0 0 0 6.8z'/><path d='M12 7.4c1.2 0 2.3.4 3.2 1.2l2.4-2.4A8 8 0 0 0 4.5 8.6l2.9 2.1C8.1 8.8 9.9 7.4 12 7.4z'/>"}[n]||"<circle cx='12' cy='12' r='8'/>";return "<svg class='flat-icon' viewBox='0 0 24 24' aria-hidden='true' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'>"+p+"</svg>"}
 function rightCollapsedPanel(label){return "<div class='right-mini-panel'><button class='collapse-button right-reopen' data-toggle-right title='Open "+escA(label)+"'>"+icon("expand")+"<span class='vertical-label'>"+esc(label)+"</span></button></div>"}
 function resizeHandle(){return "<button class='resize-handle' data-resize-right title='Drag to resize details' aria-label='Resize detail sidebar'><span></span></button>"}
 function captureMarkup(showEntry){let stats=count(),items=state.items.slice(0,6),projectList=state.projects.slice(0,3),entry=showEntry?"<div class='capture-entry-actions'><button class='primary-button capture-entry-button' data-view='vault'>"+icon("vault")+"<span>Open Workspace</span></button><button class='ghost-button capture-entry-button' data-view='moodboards'>"+icon("board")+"<span>Build Moodboard</span></button></div>":"";return "<main class='capture-page landing-animate"+pageEnterCls()+"'><section class='capture-hero'><div class='capture-title-block'><h1>A+ Vault</h1><p>PREMIUM CREATIVE REFERENCE VAULT</p>"+entry+"</div><div class='capture-steps capture-steps-vertical'><div class='capture-step capture-step-reveal' style='--step-delay:0ms'><span>1</span><div><strong>Find inspiration anywhere</strong><small>Right-click any image on the web.</small></div></div><div class='capture-step capture-step-reveal' style='--step-delay:120ms'><span>2</span><div><strong>Save with context</strong><small>Organize instantly with projects, collections, and notes.</small></div></div><div class='capture-step capture-step-reveal' style='--step-delay:240ms'><span>3</span><div><strong>Find it in your Vault</strong><small>Your item is saved to the Vault Library and added to your project.</small></div></div></div><div class='capture-flow-stage capture-static-demo' aria-hidden='true'>"+browserCaptureMock()+"<div class='flow-arrow'>&rarr;</div>"+capturePopupMock()+"<div class='flow-arrow'>&rarr;</div>"+vaultLibraryMock(items,projectList,stats)+"</div><div class='capture-under-note capture-step-reveal' style='--step-delay:360ms'><div class='capture-note-icon'>"+icon("compass")+"</div><div><strong>Works across any website.</strong><span>One click to save what inspires you.</span></div></div><div class='capture-benefits capture-step-reveal' style='--step-delay:480ms'><div>"+icon("layers")+"<span>Save anything that inspires you</span></div><div>"+icon("tag")+"<span>Organize with projects, collections, and tags</span></div><div>"+icon("search")+"<span>Find what you need, when you need it</span></div><div>"+icon("lock")+"<span>Private. Secure. Always yours.</span></div></div></section></main>"}
@@ -186,7 +201,7 @@ function vaultLibraryMock(items,projects,stats){return "<article class='vault-mo
 function browserThumb(){return "<div class='mini-interior'><span></span><span></span><span></span></div>"}
 function mockVaultCard(i){let a=i.analysis||{},colors=(a.colors||[]).slice(0,2);return "<div class='mock-vault-card'>"+media(i)+"<strong>"+esc(i.title)+"</strong><small>"+esc(i.type==="link"?host(i.sourceUrl):(i.sourceUrl||"Private note"))+"</small><div>"+colors.map(c=>"<i style='background:"+c+"'></i>").join("")+"<span>"+esc(projectLabel(i)||"Aplus1 Branding")+"</span></div></div>"}
 function vaultSearchBanner(count){let q=state.q.trim(),keyword=(state.filterKeyword||"").trim(),hex=(state.filterHex||"").trim(),parts=[];if(q)parts.push("<em>"+esc(q)+"</em>");if(keyword)parts.push("Keyword: <em>"+esc(keyword)+"</em>");if(hex)parts.push("Color: <i class='banner-swatch' style='background:"+escA(safeHex(hex))+"'></i> <em>"+esc(safeHex(hex))+"</em>");if(!parts.length)return"";let n=typeof count==="number"?count:filtered().length;return "<div class='vault-search-banner'><span>Showing <strong>"+n+"</strong> for "+parts.join(" · ")+"</span><button type='button' data-clear-tag-filter>Clear</button></div>"}
-function vaultView(){let items=filtered(),sel=state.selected?state.items.find(i=>i.id===state.selected):null,stats=count(),realCols=state.cols.filter(c=>!c.system),cls="workspace"+(state.leftCollapsed?" left-collapsed":"")+(sel?"":" detail-closed")+(state.drawerAnimating?" drawer-animating":"")+(state.animateVault?" vault-enter":"")+pageEnterCls(),pageTitle=state.col&&state.col!=="all"?((state.cols.find(c=>c.id===state.col)||{}).name||"Vault Library"):"Vault Library",showHighlights=!state.col||state.col==="all";return shell("<div class='"+cls+"' style='--right-width:"+state.rightWidth+"px'><aside class='rail'>"+sideNav(vaultStatsBlock(stats,realCols))+sidebarMain()+"</aside><main class='main vault-page-drop' data-vault-page-drop><div class='vault-page-drop-overlay' aria-hidden='true'><strong>Drop to upload</strong><span>JPG, PNG, or WebP</span></div><header class='vault-page-title'><h1>"+esc(pageTitle)+"</h1></header>"+(showHighlights?collectionHighlightRail():"")+"<section class='vault-command-row'><div class='filter-chips'>"+["all","image","video","link","note"].map(chip).join("")+"</div>"+vaultViewControl()+vaultSortControl()+"</section>"+vaultSearchBanner()+(items.length?vaultItemsMarkup(items):empty())+"</main><aside class='drawer"+(sel&&!state.drawerAnimating?" open":"")+"'>"+(sel?resizeHandle()+detail(sel):"<div class='drawer-inner drawer-placeholder' aria-hidden='true'></div>")+"</aside></div>")}
+function vaultView(){let items=filtered(),sel=state.selected?state.items.find(i=>i.id===state.selected):null,stats=count(),realCols=state.cols.filter(c=>!c.system),cls="workspace"+(state.leftCollapsed?" left-collapsed":"")+(sel?"":" detail-closed")+(state.drawerAnimating?" drawer-animating":"")+(state.animateVault?" vault-enter":"")+pageEnterCls(),isCollection=!!(state.col&&state.col!=="all"),pageTitle=isCollection?((state.cols.find(c=>c.id===state.col)||{}).name||"Collection"):"Vault Library",pageTitleHtml="<h1>"+esc(pageTitle)+(isCollection?" <span class='vault-page-title-suffix'>collection</span>":"")+"</h1>",showHighlights=!state.col||state.col==="all";return shell("<div class='"+cls+"' style='--right-width:"+state.rightWidth+"px'><aside class='rail'>"+sideNav(vaultStatsBlock(stats,realCols))+sidebarMain()+"</aside><main class='main vault-page-drop' data-vault-page-drop><div class='vault-page-drop-overlay' aria-hidden='true'><strong>Drop to upload</strong><span>JPG, PNG, or WebP</span></div><header class='vault-page-title'>"+pageTitleHtml+"</header>"+(showHighlights?collectionHighlightRail():"")+"<section class='vault-command-row'><div class='filter-chips'>"+["all","image","video","link","note"].map(chip).join("")+"</div>"+vaultViewControl()+vaultSortControl()+"</section>"+vaultSearchBanner()+(items.length?vaultItemsMarkup(items):empty())+"</main><aside class='drawer"+(sel&&!state.drawerAnimating?" open":"")+"'>"+(sel?resizeHandle()+detail(sel):"<div class='drawer-inner drawer-placeholder' aria-hidden='true'></div>")+"</aside></div>")}
 function normalizeLibraryView(raw){let v=String(raw||"medium");if(v==="grid")return"medium";if(v==="small"||v==="medium"||v==="large"||v==="details")return v;return"medium"}
 function libraryViewLabel(mode){return mode==="small"?"Small":mode==="large"?"Extra large":mode==="details"?"Details":"Medium"}
 function libraryViewIcon(mode){return mode==="details"?"list":"all"}
@@ -202,8 +217,384 @@ function selectionActionsMarkup(){let n=(state.selectedIds||[]).length;if(!n)ret
 
 function timeGroups(items){let now=Date.now(),week=7*24*60*60*1000,monthStart=new Date();monthStart.setDate(1);monthStart.setHours(0,0,0,0);let groups=[{label:"Recent 7 Days",items:[]},{label:"This Month",items:[]},{label:"Older",items:[]}];items.forEach(i=>{let t=Number(i.createdAt)||0;if(t>=now-week)groups[0].items.push(i);else if(t>=monthStart.getTime())groups[1].items.push(i);else groups[2].items.push(i)});return groups.filter(g=>g.items.length)}
 function projectLinkedMoodboards(p){let byId=new Map();(p.boards||[]).forEach(b=>byId.set(b.id,Object.assign({},b,{_source:"nested"})));(state.moodboards||[]).filter(b=>b.projectId===p.id).forEach(b=>{if(!byId.has(b.id))byId.set(b.id,Object.assign({},b,{_source:"standalone"}))});return Array.from(byId.values())}
-function projectView(){let p=project(),stats=count(),realCols=state.cols.filter(c=>!c.system),cols=projectCollectionIds(p).map(id=>state.cols.find(c=>c.id===id)).filter(Boolean),boards=projectLinkedMoodboards(p),items=projectItems(p),cls="workspace overview-workspace detail-closed"+(state.leftCollapsed?" left-collapsed":"")+pageEnterCls();return shell("<div class='"+cls+"'><aside class='rail'>"+sideNav(vaultStatsBlock(stats,realCols))+sidebarMain()+"</aside><main class='main overview-main'><section class='page-head'><div><span class='section-label'>Project workspace</span><h1>"+esc(p.name)+"</h1><p>Project คือพื้นที่รวม objects, collections และ moodboards ของงานนี้ ก่อนเลือกบอร์ดไปจัด canvas.</p></div><button class='icon-button project-settings-button' type='button' data-project-settings='"+p.id+"' title='Project settings' aria-label='Project settings'>"+icon("settings")+"</button></section><section class='project-overview-summary'><article><strong>"+items.length+"</strong><span>Project objects</span></article><article><strong>"+cols.length+"</strong><span>Collections</span></article><article><strong>"+boards.length+"</strong><span>Moodboards</span></article></section><section class='overview-split'><article class='overview-panel'><div class='overview-panel-head'><h2>Collections in this project</h2><button class='mini-button' data-addprojectcol='"+p.id+"' title='Add collection to project' aria-label='Add collection to project'>+</button></div><div class='overview-list'>"+(cols.length?cols.map(c=>projectCollectionRow(p,c)).join(""):"<div class='empty-list-card'>No custom collections in this project yet.</div>")+"</div></article><article class='overview-panel'><div class='overview-panel-head'><h2>Moodboards in this project</h2><button class='mini-button' data-addprojectboard='"+p.id+"' title='Add moodboard to project' aria-label='Add moodboard to project'>+</button></div><div class='overview-list'>"+(boards.length?boards.map(b=>projectMoodboardRow(p,b)).join(""):"<div class='empty-list-card'>No moodboards yet. Create the first one.</div>")+"</div></article></section></main></div>")}
-function projectsView(){let stats=count(),realCols=state.cols.filter(c=>!c.system),cls="workspace overview-workspace detail-closed"+(state.leftCollapsed?" left-collapsed":"")+pageEnterCls();return shell("<div class='"+cls+"'><aside class='rail'>"+sideNav(vaultStatsBlock(stats,realCols))+sidebarMain()+"</aside><main class='main overview-main'><section class='page-head'><div><h1>Projects</h1><p>Project คือพื้นที่รวม collections และ moodboards ของงานแต่ละชิ้น เลือกโปรเจกต์เพื่อดูรายการทั้งหมดก่อนเข้า board.</p></div><button class='primary-button' data-newproject>"+icon("plus")+"<span>New Project</span></button></section>"+(state.projects.length?"<section class='project-index-grid'>"+sortedProjects().map(projectCard).join("")+"</section>":"<section class='empty-state'><div><h2>No projects yet.</h2><p>Create a project to gather collections and moodboards around one job.</p><button class='primary-button' data-newproject>Create Project</button></div></section>")+"</main></div>")}
+
+function folderGraphicMarkup(opts){
+  opts=opts||{};
+  let count=Math.max(0,Number(opts.count)||0),
+    sheets=Math.min(3,Math.max(1,count?Math.min(3,count):2)),
+    sheetHtml="";
+  for(let i=0;i<sheets;i++)sheetHtml+="<span class='folder-sheet s"+i+"' aria-hidden='true'></span>";
+  return "<div class='folder-graphic' aria-hidden='true'><div class='folder-body'>"+sheetHtml+"<span class='folder-tab'></span></div></div>";
+}
+function projectFolderMosaic(p){
+  let items=projectItems(p).filter(i=>i&&(i.type==="image"||i.previewUrl||i.assetUrl||i.thumbnailUrl)).slice(0,4);
+  if(!items.length){
+    return "<div class='project-set-mosaic is-empty'>"+folderGraphicMarkup({count:0})+"</div>";
+  }
+  return "<div class='project-set-mosaic count-"+Math.min(items.length,4)+"'>"+items.map(function(i){
+    let src=escA(i.thumbnailUrl||i.previewUrl||i.assetUrl||"");
+    return src?"<span class='project-set-tile'><img src='"+src+"' alt='' loading='lazy'></span>":"<span class='project-set-tile is-blank'></span>";
+  }).join("")+"</div>";
+}
+function projectFolderCard(p){
+  let boards=projectLinkedMoodboards(p),
+    cols=projectCollectionIds(p).map(id=>state.cols.find(c=>c.id===id)).filter(Boolean),
+    items=projectItems(p),
+    folderCount=cols.length+boards.length,
+    fileCount=items.length,
+    sub=fileCount?fileCount+" file"+(fileCount===1?"":"s"):(folderCount?folderCount+" linked":"Empty");
+  return "<article class='folder-card project-set-card "+(state.activeProject===p.id?"active":"")+"'>"+
+    "<button type='button' class='folder-card-open project-set-open' data-project='"+p.id+"' title='Open "+escA(p.name)+"'>"+
+      projectFolderMosaic(p)+
+      "<span class='folder-card-copy'><strong>"+esc(p.name)+"</strong><small>"+esc(sub)+"</small></span>"+
+    "</button>"+
+    "<div class='folder-card-actions'>"+
+      "<button type='button' data-project='"+p.id+"'>Open</button>"+
+      "<button type='button' data-newboard='"+p.id+"' title='New board'>Board</button>"+
+      "<button type='button' data-rename-project='"+p.id+"'>Rename</button>"+
+      "<button type='button' class='danger-link' data-delproject='"+p.id+"'>Delete</button>"+
+    "</div>"+
+  "</article>";
+}
+function projectChildFolderCard(opts){
+  let kind=opts.kind||"folder",
+    name=opts.name||"Folder",
+    count=opts.count||0,
+    openAttr=opts.openAttr||"",
+    actions=opts.actions||"";
+  return "<article class='folder-card folder-card-child'>"+
+    "<button type='button' class='folder-card-open' "+openAttr+" title='Open "+escA(name)+"'>"+
+      folderGraphicMarkup({count:count})+
+      "<span class='folder-card-copy'><strong>"+esc(name)+"</strong><small>"+count+" "+(kind==="board"?"object":"file")+(count===1?"":"s")+"</small></span>"+
+    "</button>"+
+    (actions?"<div class='folder-card-actions'>"+actions+"</div>":"")+
+  "</article>";
+}
+function projectFileRow(item){
+  let who=(state.user&&(state.user.displayName||state.user.email))||"You",
+    initial=profileInitials(who),
+    typeLabel=L[item.type]||item.type||"file",
+    title=item.title||"Untitled";
+  return "<div class='project-file-row'>"+
+    "<button type='button' class='project-file-main' data-open-object='"+item.id+"'>"+
+      "<span class='project-file-icon' aria-hidden='true'>"+icon(item.type==="image"?"image":item.type==="video"?"video":item.type==="link"?"link":"note")+"</span>"+
+      "<span class='project-file-name'><strong>"+esc(title)+"</strong><small>"+esc(typeLabel)+"</small></span>"+
+    "</button>"+
+    "<div class='project-file-added'>"+
+      "<span class='project-file-avatar' aria-hidden='true'>"+esc(initial)+"</span>"+
+      "<span>"+esc(who)+"</span>"+
+    "</div>"+
+  "</div>";
+}
+
+
+function collectionThumbItems(col){
+  return state.items.filter(i=>(i.collectionIds||[]).includes(col.id)&& (i.type==="image"||i.previewUrl||i.assetUrl||i.thumbnailUrl)).slice(0,4);
+}
+function mosaicFromItems(items,emptyIcon){
+  items=items||[];
+  if(!items.length){
+    return "<div class='project-detail-mosaic is-empty'><span class='project-detail-empty-icon' aria-hidden='true'>"+icon(emptyIcon||"collection")+"</span></div>";
+  }
+  return "<div class='project-detail-mosaic count-"+Math.min(items.length,4)+"'>"+items.map(function(i){
+    let src=escA(i.thumbnailUrl||i.previewUrl||i.assetUrl||"");
+    return src?"<span class='project-detail-tile'><img src='"+src+"' alt='' loading='lazy'></span>":"<span class='project-detail-tile is-blank'></span>";
+  }).join("")+"</div>";
+}
+function projectCollectionCard(p,c){
+  let items=collectionThumbItems(c),n=state.items.filter(i=>(i.collectionIds||[]).includes(c.id)).length;
+  return "<article class='project-detail-card'>"+
+    "<button type='button' class='project-detail-card-open' data-col='"+c.id+"' title='Open "+escA(c.name)+"'>"+
+      mosaicFromItems(items,"collection")+
+      "<span class='project-detail-card-copy'><strong>"+esc(c.name)+"</strong><small>"+n+" object"+(n===1?"":"s")+"</small></span>"+
+    "</button>"+
+    "<div class='project-detail-card-actions'>"+
+      "<button type='button' data-col='"+c.id+"'>Open</button>"+
+      "<button type='button' class='danger-link' data-unlink-proj-col='"+p.id+":"+c.id+"'>Remove</button>"+
+    "</div>"+
+  "</article>";
+}
+function projectMoodboardCard(p,b){
+  let n=(b.objects||[]).length,
+    open=b._source==="standalone"||b.layoutMode==="smart_grid"?"data-open-moodboard='"+b.id+"'":"data-openboard='"+p.id+":"+b.id+"'",
+    itemIds=(b.objects||[]).map(o=>o.itemId).filter(Boolean),
+    thumbs=state.items.filter(i=>itemIds.includes(i.id)).slice(0,4);
+  return "<article class='project-detail-card'>"+
+    "<button type='button' class='project-detail-card-open' "+open+" title='Open "+escA(b.name)+"'>"+
+      mosaicFromItems(thumbs,"board")+
+      "<span class='project-detail-card-copy'><strong>"+esc(b.name)+"</strong><small>"+n+" object"+(n===1?"":"s")+"</small></span>"+
+    "</button>"+
+    "<div class='project-detail-card-actions'>"+
+      "<button type='button' "+open+">Open</button>"+
+      "<button type='button' class='danger-link' data-unlink-proj-board='"+p.id+":"+b.id+"'>Remove</button>"+
+    "</div>"+
+  "</article>";
+}
+function projectObjectCard(item){
+  let typeLabel=L[item.type]||item.type||"file",
+    src=escA(item.thumbnailUrl||item.previewUrl||(item.type==="image"?item.assetUrl:"")||"");
+  return "<article class='project-object-card'>"+
+    "<button type='button' class='project-object-open' data-open-object='"+item.id+"' title='"+escA(item.title||"Untitled")+"'>"+
+      "<span class='project-object-thumb'>"+(src?"<img src='"+src+"' alt='' loading='lazy'>":"<span class='project-object-fallback'>"+icon(item.type==="image"?"image":item.type==="video"?"video":item.type==="link"?"link":"note")+"</span>")+"</span>"+
+      "<span class='project-object-copy'><strong>"+esc(item.title||"Untitled")+"</strong><small>"+esc(typeLabel)+"</small></span>"+
+    "</button>"+
+  "</article>";
+}
+function projectSectionEmpty(message,actionHtml){
+  return "<div class='project-section-empty'><p>"+esc(message)+"</p>"+(actionHtml||"")+"</div>";
+}
+
+function projectView(){
+  let p=project(),
+    stats=count(),
+    realCols=state.cols.filter(c=>!c.system),
+    cols=projectCollectionIds(p).map(id=>state.cols.find(c=>c.id===id)).filter(Boolean),
+    boards=projectLinkedMoodboards(p),
+    items=projectItems(p),
+    cls="workspace overview-workspace project-browser detail-closed"+(state.leftCollapsed?" left-collapsed":"")+pageEnterCls(),
+    colCards=cols.map(c=>projectCollectionCard(p,c)).join(""),
+    boardCards=boards.map(b=>projectMoodboardCard(p,b)).join(""),
+    objectCards=items.map(projectObjectCard).join("");
+  return shell("<div class='"+cls+"'><aside class='rail'>"+sideNav(vaultStatsBlock(stats,realCols))+sidebarMain()+"</aside>"+
+    "<main class='main overview-main project-folder-page project-detail-page'>"+
+      "<section class='page-head project-folder-head'>"+
+        "<div class='project-folder-title'>"+
+          "<span class='project-folder-title-icon' aria-hidden='true'>"+icon("project")+"</span>"+
+          "<div>"+
+            "<nav class='folder-breadcrumb' aria-label='Breadcrumb'>"+
+              "<button type='button' class='folder-crumb' data-view='projects'>Projects</button>"+
+              "<span aria-hidden='true'>/</span>"+
+              "<span class='folder-crumb-current'>"+esc(p.name)+"</span>"+
+            "</nav>"+
+            "<h1>"+esc(p.name)+"</h1>"+
+            "<p>"+(p.description?esc(p.description):"Collections, moodboards และ objects ที่ใช้ในโปรเจกต์นี้")+"</p>"+
+          "</div>"+
+        "</div>"+
+        "<div class='project-folder-head-actions'>"+
+          "<button type='button' class='ghost-button' data-addprojectcol='"+p.id+"'>"+icon("plus")+"<span>Collection</span></button>"+
+          "<button type='button' class='ghost-button' data-addprojectboard='"+p.id+"'>"+icon("plus")+"<span>Moodboard</span></button>"+
+          "<button class='icon-button project-settings-button' type='button' data-project-settings='"+p.id+"' title='Project settings' aria-label='Project settings'>"+icon("settings")+"</button>"+
+        "</div>"+
+      "</section>"+
+      "<div class='project-browser-body'>"+
+        projectExplorerMarkup()+
+        "<div class='project-browser-pane project-detail-pane'>"+
+          "<section class='project-detail-section'>"+
+            "<div class='project-detail-section-head'>"+
+              "<div><h2>Collections</h2><p>ชุดอ้างอิงที่ลิงก์กับโปรเจกต์นี้</p></div>"+
+              "<div class='project-detail-section-meta'>"+
+                "<span>"+cols.length+"</span>"+
+                "<button type='button' class='ghost-button mini-add' data-addprojectcol='"+p.id+"'>"+icon("plus")+"<span>Add</span></button>"+
+              "</div>"+
+            "</div>"+
+            (colCards
+              ?"<div class='project-detail-grid'>"+colCards+"</div>"
+              :projectSectionEmpty("ยังไม่มี collection — เพิ่มจาก Vault หรือสร้างใหม่","<button type='button' class='primary-button' data-addprojectcol='"+p.id+"'>Add collection</button>"))+
+          "</section>"+
+          "<section class='project-detail-section'>"+
+            "<div class='project-detail-section-head'>"+
+              "<div><h2>Moodboards</h2><p>บอร์ดทิศทางภาพของโปรเจกต์</p></div>"+
+              "<div class='project-detail-section-meta'>"+
+                "<span>"+boards.length+"</span>"+
+                "<button type='button' class='ghost-button mini-add' data-addprojectboard='"+p.id+"'>"+icon("plus")+"<span>Add</span></button>"+
+              "</div>"+
+            "</div>"+
+            (boardCards
+              ?"<div class='project-detail-grid'>"+boardCards+"</div>"
+              :projectSectionEmpty("ยังไม่มี moodboard — สร้างบอร์ดแรกได้เลย","<button type='button' class='primary-button' data-addprojectboard='"+p.id+"'>Add moodboard</button>"))+
+          "</section>"+
+          "<section class='project-detail-section'>"+
+            "<div class='project-detail-section-head'>"+
+              "<div><h2>Objects</h2><p>ไฟล์ทั้งหมดที่ใช้ในโปรเจกต์นี้</p></div>"+
+              "<div class='project-detail-section-meta'><span>"+items.length+"</span></div>"+
+            "</div>"+
+            (objectCards
+              ?"<div class='project-object-grid'>"+objectCards+"</div>"
+              :projectSectionEmpty("ยังไม่มี object — บันทึกจาก Vault Library เข้าโปรเจกต์นี้","<button type='button' class='ghost-button' data-view='vault'>Open Vault</button>"))+
+          "</section>"+
+        "</div>"+
+      "</div>"+
+    "</main></div>");
+}
+
+function projectExplorerQuery(){return String(state.projectExplorerQ||"").trim().toLowerCase()}
+function projectExplorerMatches(name,q){if(!q)return true;return String(name||"").toLowerCase().includes(q)}
+function projectTreeCount(p){let cols=projectCollectionIds(p).length,boards=projectLinkedMoodboards(p).length,items=projectItems(p).length;return cols+boards+items}
+function projectExplorerTags(){
+  let map=new Map(),q=projectExplorerQuery();
+  (state.projects||[]).forEach(p=>{
+    projectItems(p).forEach(item=>{
+      let tags=[].concat(item.analysis&&item.analysis.keywords||[],item.analysis&&item.analysis.styles||[],item.tags||[]);
+      tags.forEach(t=>{
+        let label=String(t||"").trim();if(!label)return;
+        if(q&&!label.toLowerCase().includes(q))return;
+        let key=label.toLowerCase();
+        let row=map.get(key)||{label,count:0};
+        row.count+=1;map.set(key,row);
+      });
+    });
+  });
+  return Array.from(map.values()).sort((a,b)=>b.count-a.count||a.label.localeCompare(b.label));
+}
+function projectExplorerTreeRows(){
+  let q=projectExplorerQuery(),rows=[],expanded=state.expandedProjectIds||{};
+  sortedProjects().forEach(p=>{
+    let cols=projectCollectionIds(p).map(id=>state.cols.find(c=>c.id===id)).filter(Boolean),
+      boards=projectLinkedMoodboards(p),
+      active=state.activeProject===p.id&&state.view==="project",
+      selfMatch=projectExplorerMatches(p.name,q),
+      childCols=cols.filter(c=>projectExplorerMatches(c.name,q)),
+      childBoards=boards.filter(b=>projectExplorerMatches(b.name,q)),
+      show=selfMatch||childCols.length||childBoards.length;
+    if(!show)return;
+    let count=projectTreeCount(p),
+      isOpen=!!expanded[p.id]||!!q||active,
+      kids=(q?childCols:cols).length+(q?childBoards:boards).length;
+    rows.push("<div class='project-tree-folder "+(active?"is-active":"")+(isOpen?" is-open":"")+"'>"+
+      "<div class='project-tree-folder-row'>"+
+        "<button type='button' class='project-tree-chevron' data-toggle-project-expand='"+p.id+"' aria-label='"+(isOpen?"Collapse":"Expand")+"' aria-expanded='"+(isOpen?"true":"false")+"'>"+icon("expand")+"</button>"+
+        "<button type='button' class='project-tree-row "+(active?"active":"")+"' data-project='"+p.id+"'>"+
+          "<span class='project-tree-icon' aria-hidden='true'>"+icon("project")+"</span>"+
+          "<span class='project-tree-label'>"+esc(p.name)+"</span>"+
+          "<span class='project-tree-count'>"+count+"</span>"+
+        "</button>"+
+      "</div>");
+    if(isOpen){
+      rows.push("<div class='project-tree-children'>");
+      if(!kids&&!q){
+        rows.push("<p class='project-tree-empty-child'>Empty — link a collection or moodboard</p>");
+      }
+      (q?childCols:cols).forEach(c=>{
+        let n=state.items.filter(i=>(i.collectionIds||[]).includes(c.id)).length;
+        rows.push("<button type='button' class='project-tree-row is-child' data-col='"+c.id+"'>"+
+          "<span class='project-tree-thumb' aria-hidden='true'>"+icon("collection")+"</span>"+
+          "<span class='project-tree-label'>"+esc(c.name)+"</span>"+
+          "<span class='project-tree-count'>"+n+"</span>"+
+        "</button>");
+      });
+      (q?childBoards:boards).forEach(b=>{
+        let n=(b.objects||[]).length,
+          open=b._source==="standalone"||b.layoutMode==="smart_grid"?"data-open-moodboard='"+b.id+"'":"data-openboard='"+p.id+":"+b.id+"'";
+        rows.push("<button type='button' class='project-tree-row is-child' "+open+">"+
+          "<span class='project-tree-thumb' aria-hidden='true'>"+icon("board")+"</span>"+
+          "<span class='project-tree-label'>"+esc(b.name)+"</span>"+
+          "<span class='project-tree-count'>"+n+"</span>"+
+        "</button>");
+      });
+      rows.push("</div>");
+    }
+    rows.push("</div>");
+  });
+  return rows.join("")||"<div class='project-explorer-empty'>No folders match.</div>";
+}
+function bindProjectExplorerChrome(){
+  document.querySelectorAll("[data-toggle-project-expand]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();let id=b.dataset.toggleProjectExpand;state.expandedProjectIds=Object.assign({},state.expandedProjectIds||{});state.expandedProjectIds[id]=!state.expandedProjectIds[id];softRefreshProjectExplorer()});
+  document.querySelectorAll("[data-project-scope]").forEach(b=>b.onclick=()=>{state.projectExplorerScope="all";state.view="projects";render()});
+}
+function softRefreshProjectExplorer(){
+  let tree=document.querySelector(".project-explorer-tree");
+  if(!tree){render();return}
+  let tab=state.projectExplorerTab==="tags"?"tags":"folders";
+  if(tab==="tags"){
+    let tags=projectExplorerTags();
+    tree.innerHTML=tags.length?tags.map(t=>"<div class='project-tree-row is-tag'><span class='project-tree-icon' aria-hidden='true'>"+icon("tag")+"</span><span class='project-tree-label'>"+esc(t.label)+"</span><span class='project-tree-count'>"+t.count+"</span></div>").join(""):"<div class='project-explorer-empty'>No tags in projects yet.</div>";
+  }else{
+    tree.innerHTML=projectExplorerTreeRows();
+    bindProjectExplorerTreeClicks(tree);
+  }
+}
+function bindProjectExplorerTreeClicks(root){
+  if(!root)return;
+  root.querySelectorAll("[data-project]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();state.openMenu=null;state.activeProject=b.dataset.project;let p=project();state.activeBoard=(p.boards&&p.boards[0]&&p.boards[0].id)||"";state.selectedObject=null;state.view="project";render()});
+  root.querySelectorAll("[data-col]").forEach(b=>b.onclick=()=>{state.col=b.dataset.col;state.type="all";state.view="vault";render()});
+  root.querySelectorAll("[data-open-moodboard]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();state.activeMoodboard=b.dataset.openMoodboard;state.view="moodboard-edit";render()});
+  root.querySelectorAll("[data-openboard]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();let r=boardRef(b.dataset.openboard);state.activeProject=r.projectId;state.activeBoard=r.boardId;state.selectedObject=null;state.rightCollapsed=false;state.openMenu=null;state.view="board";render()});
+}
+
+function projectExplorerMarkup(){
+  let q=escA(state.projectExplorerQ||""),
+    searching=!!projectExplorerQuery(),
+    list=sortedProjects(),
+    fileCount=state.items.length,
+    body=projectExplorerTreeRows();
+  return "<aside class='project-explorer' aria-label='Projects explorer'>"+
+    "<div class='project-explorer-head'>"+
+      "<div class='project-explorer-head-copy'>"+
+        "<strong>Projects</strong>"+
+        "<small>"+list.length+" project"+(list.length===1?"":"s")+" · "+fileCount+" file"+(fileCount===1?"":"s")+"</small>"+
+      "</div>"+
+    "</div>"+
+    "<label class='project-explorer-search'>"+icon("search")+
+      "<input type='search' data-project-explorer-q placeholder='Search projects…' value='"+q+"' autocomplete='off'>"+
+    "</label>"+
+    "<nav class='project-explorer-nav' aria-label='Project folders'>"+
+      (searching?"":(
+        "<button type='button' class='project-nav-row "+(state.view==="projects"?"active":"")+"' data-project-scope='all'>"+
+          "<span class='project-tree-icon' aria-hidden='true'>"+icon("project")+"</span>"+
+          "<span class='project-tree-label'>All projects</span>"+
+          "<span class='project-tree-count'>"+list.length+"</span>"+
+        "</button>"+
+        "<div class='project-explorer-divider' aria-hidden='true'></div>"
+      ))+
+      "<div class='project-explorer-tree'>"+body+"</div>"+
+    "</nav>"+
+  "</aside>";
+}
+function projectsView(){
+  let stats=count(),
+    realCols=state.cols.filter(c=>!c.system),
+    cls="workspace overview-workspace project-browser detail-closed"+(state.leftCollapsed?" left-collapsed":"")+pageEnterCls(),
+    list=sortedProjects(),
+    q=String(state.projectBrowserQ||"").trim().toLowerCase(),
+    filter=state.projectBrowserFilter||"all",
+    filtered=list.filter(p=>{
+      if(q&&!String(p.name||"").toLowerCase().includes(q))return false;
+      let boards=projectLinkedMoodboards(p),cols=projectCollectionIds(p);
+      if(filter==="boards")return boards.length>0;
+      if(filter==="collections")return cols.length>0;
+      return true;
+    }),
+    title=filter==="boards"?"Projects with boards":filter==="collections"?"Projects with collections":"All projects";
+  return shell("<div class='"+cls+"'><aside class='rail'>"+sideNav(vaultStatsBlock(stats,realCols))+sidebarMain()+"</aside>"+
+    "<main class='main overview-main project-folder-page'>"+
+      "<section class='page-head project-folder-head'>"+
+        "<div class='project-folder-title'>"+
+          "<span class='project-folder-title-icon' aria-hidden='true'>"+icon("project")+"</span>"+
+          "<div>"+
+            "<h1>Projects</h1>"+
+            "<p>เปิดโฟลเดอร์โปรเจกต์เพื่อดู collections, moodboards และไฟล์ที่ลิงก์ไว้</p>"+
+          "</div>"+
+        "</div>"+
+        "<div class='project-folder-head-actions'>"+
+          "<button class='primary-button' data-newproject>"+icon("plus")+"<span>New Project</span></button>"+
+        "</div>"+
+      "</section>"+
+      "<div class='project-browser-body'>"+
+        projectExplorerMarkup()+
+        "<div class='project-browser-pane'>"+
+          "<section class='project-browser-toolbar'>"+
+            "<div class='project-browser-toolbar-copy'><h2>"+esc(title)+"</h2><p>เลือกโฟลเดอร์จากซ้าย หรือเปิดการ์ดด้านล่าง</p></div>"+
+          "</section>"+
+          "<label class='project-browser-search'>"+icon("search")+
+            "<input type='search' data-project-browser-q placeholder='Search project name…' value='"+escA(state.projectBrowserQ||"")+"' autocomplete='off'>"+
+          "</label>"+
+          "<div class='project-browser-filters' role='tablist'>"+
+            [["all","All"],["boards","Boards"],["collections","Collections"]].map(function(pair){
+              let id=pair[0],label=pair[1],n=list.filter(p=>{
+                if(id==="boards")return projectLinkedMoodboards(p).length>0;
+                if(id==="collections")return projectCollectionIds(p).length>0;
+                return true;
+              }).length;
+              return "<button type='button' role='tab' class='project-browser-filter "+(filter===id?"active":"")+"' data-project-browser-filter='"+id+"' aria-selected='"+(filter===id?"true":"false")+"'>"+label+" <span>"+n+"</span></button>";
+            }).join("")+
+          "</div>"+
+          (filtered.length
+            ?"<section class='folder-section'><div class='folder-card-grid project-set-grid'>"+filtered.map(projectFolderCard).join("")+"</div></section>"
+            :"<section class='empty-state'><div><h2>"+(list.length?"No matching projects.":"No projects yet.")+"</h2><p>"+(list.length?"Try another filter or search.":"Create a project folder to gather collections and moodboards.")+"</p>"+(list.length?"":"<button class='primary-button' data-newproject>Create Project</button>")+"</div></section>")+
+        "</div>"+
+      "</div>"+
+    "</main></div>");
+}
 function moodboardsView(){let stats=count(),realCols=state.cols.filter(c=>!c.system),cls="workspace overview-workspace detail-closed"+(state.leftCollapsed?" left-collapsed":"")+pageEnterCls();return shell("<div class='"+cls+"'><aside class='rail'>"+sideNav(vaultStatsBlock(stats,realCols))+sidebarMain()+"</aside><main class='main overview-main'>"+moodboardListMarkup({moodboards:state.moodboards,projects:state.projects,esc,escA,icon,emptyPrimary:"Open Vault Library"})+"</main></div>")}
 function moodboardEditView(){let board=activeMoodboard();if(!board){state.view="moodboards";return moodboardsView()}if(!moodboardEditorUi){if(!state.moodboardEditorLoading){state.moodboardEditorLoading=true;ensureMoodboardEditorUi().then(()=>{state.moodboardEditorLoading=false;render()}).catch(()=>{state.moodboardEditorLoading=false;toast("Could not load moodboard editor.");state.view="moodboards";render()})}return shell("<div class='moodboard-editor-loading boot-skeleton' aria-busy='true' aria-label='Loading moodboard editor'><div class='boot-topbar'><span class='skeleton-box mark'></span><span class='skeleton-line title'></span></div><div class='boot-grid'><aside><span class='skeleton-pill'></span><span class='skeleton-pill'></span></aside><main><span class='skeleton-line wide'></span><div class='boot-cards'><span></span><span></span><span></span></div></main></div></div>")}ensureMoodboardAutosave();let html=moodboardEditorUi.smartGridEditorMarkup({board,items:state.items,esc,escA,icon,uiIcon,media,host,saveStatus:state.moodboardSaveStatus,canUndo:moodboardHistory.canUndo(),canRedo:moodboardHistory.canRedo(),selectedObjectId:state.selectedObject,selectedObjectIds:state.selectedObjectIds||[],tool:state.moodboardTool||"select",sourceCollapsed:!!state.moodboardSourceCollapsed,inspectorCollapsed:!!state.moodboardInspectorCollapsed,sourceWidth:state.moodboardSourceWidth,inspectorWidth:state.moodboardInspectorWidth});if(state.pageEnter)html=html.replace('class="moodboard-editor','class="moodboard-editor page-enter');return shell(html)}
 
@@ -218,7 +609,7 @@ function collectionTypeChipsMarkup(items){let t=typeCounts(items),parts=[];[["im
 function collectionCardBadgesMarkup(c,opts){let parts=[];if(opts.highlighted)parts.push("<span class='collection-card-badge is-highlight'>Highlighted</span>");if(opts.pinned)parts.push("<span class='collection-card-badge is-pinned'>Pinned</span>");if(opts.isSub&&opts.parent)parts.push("<span class='collection-card-badge is-sub'>In "+esc(opts.parent.name)+"</span>");return parts.length?"<div class='collection-card-badges'>"+parts.join("")+"</div>":""}
 function collectionUpdatedLabel(items){if(!items.length)return"Waiting for first save";let ts=Math.max(...items.map(i=>Number(i.createdAt)||0));return ts?"Updated "+new Date(ts).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):""}
 function collectionCard(c){let items=itemsForCollection(c.id),custom=!c.system,isSub=!!c.parentId,parent=c.parentId?state.cols.find(x=>x.id===c.parentId):null,highlighted=Number(c.highlightedAt)>0,pinned=!!c.pinnedAt,updated=collectionUpdatedLabel(items);return "<article class='collection-card collection-detail-card "+(state.col===c.id?"active":"")+(isSub?" sub-collection-card":"")+(highlighted?" is-highlighted":"")+"'><button type='button' class='collection-card-open' data-col='"+c.id+"' title='"+escA(c.name)+"'><div class='collection-card-visual'>"+collectionMosaicMarkup(c.id)+(highlighted?"<span class='collection-card-highlight-badge' title='Highlighted' aria-hidden='true'>★</span>":"")+"</div><div class='collection-card-body'><div class='collection-card-head'><strong>"+esc(c.name)+"</strong><span class='collection-card-count'>"+items.length+" object"+(items.length===1?"":"s")+"</span></div><p class='collection-card-updated'>"+esc(updated)+"</p>"+collectionCardBadgesMarkup(c,{highlighted:highlighted,pinned:pinned,isSub:isSub,parent:parent})+collectionTypeChipsMarkup(items)+"</div></button>"+(custom?"<div class='collection-card-footer'><button type='button' class='collection-card-action' data-sharecol='"+c.id+"'>"+uiIcon("share")+"<span>Share</span></button><button type='button' class='collection-card-action' data-editcol='"+c.id+"'>"+icon("edit")+"<span>Edit</span></button><button type='button' class='collection-card-action danger-link' data-delcol='"+c.id+"'>"+icon("trash")+"<span>Delete</span></button></div>":"")+"</article>"}
-function projectCard(p){let boards=p.boards||[],cols=projectCollectionIds(p).map(id=>state.cols.find(c=>c.id===id)).filter(Boolean),items=projectItems(p),first=boards[0];return "<article class='project-index-card "+(state.activeProject===p.id?"active":"")+"'><button class='project-card-open' data-project='"+p.id+"'>"+moodboardPreview(first||{objects:[]})+"<span><strong>"+esc(p.name)+"</strong><small>"+items.length+" objects · "+boards.length+" board"+(boards.length===1?"":"s")+" · "+cols.length+" collection"+(cols.length===1?"":"s")+"</small></span></button><div class='project-card-groups'><div><b>Collections</b><p>"+(cols.length?cols.slice(0,3).map(c=>esc(c.name)).join(", "):"No custom collections yet")+"</p></div><div><b>Moodboards</b><p>"+(boards.length?boards.slice(0,3).map(b=>esc(b.name)).join(", "):"No moodboards yet")+"</p></div></div><div class='moodboard-card-actions'><button data-project='"+p.id+"'>Open</button><button data-newboard='"+p.id+"'>New board</button><button data-editproject='"+p.id+"'>Rename</button><button data-delproject='"+p.id+"'>Delete</button></div></article>"}
+function projectCard(p){return projectFolderCard(p)}
 function profileView(){
   let stats=count(),
     realCols=state.cols.filter(c=>!c.system),
@@ -235,7 +626,7 @@ function profileView(){
     collectionsCard=profileCollectionsCardMarkup(state.cols,state.items,{esc,media,itemsForCollection}),
     projectsCard=profileProjectsCardMarkup(state.projects,state.items,{esc,media,projectItems});
   return shell(
-    "<div class='workspace profile-workspace"+(state.leftCollapsed?" left-collapsed":"")+" detail-closed"+pageEnterCls()+">"+
+    "<div class='workspace profile-workspace"+(state.leftCollapsed?" left-collapsed":"")+" detail-closed"+pageEnterCls()+"'>"+
       "<aside class='rail'>"+sideNav(vaultStatsBlock(stats,realCols))+sidebarMain()+"</aside>"+
       "<main class='main profile-main'>"+
         "<section class='settings-page profile-studio'>"+
@@ -308,7 +699,7 @@ function settingsView(){
     dashboard=computeDashboardStats(state,{storageBreakdown,formatBytes,getVaultApiToken}),
     overview=settingsOverviewMarkup(dashboard,{esc,icon,formatBytes});
   return shell(
-    "<div class='workspace profile-workspace settings-workspace"+(state.leftCollapsed?" left-collapsed":"")+" detail-closed"+pageEnterCls()+">"+
+    "<div class='workspace profile-workspace settings-workspace"+(state.leftCollapsed?" left-collapsed":"")+" detail-closed"+pageEnterCls()+"'>"+
       "<aside class='rail'>"+sideNav(vaultStatsBlock(stats,realCols))+sidebarMain()+"</aside>"+
       "<main class='main profile-main'>"+
         "<section class='settings-page profile-studio account-settings'>"+
@@ -318,7 +709,7 @@ function settingsView(){
               "<h1>Settings</h1>"+
               "<p>Identity, appearance, extension sync, privacy, and storage.</p>"+
             "</div>"+
-            "<button type='button' class='ghost-button profile-settings-button' data-view='profile' title='Back to profile' aria-label='Back to profile'>"+icon("close")+"<span>Profile</span></button>"+
+            "<button type='button' class='ghost-button profile-settings-button' data-view='profile' title='Back to profile' aria-label='Back to profile'>"+icon("collapse")+"<span>Back to Profile</span></button>"+
           "</header>"+
           "<div class='account-settings-layout'>"+
             overview+
@@ -400,6 +791,105 @@ function settingsView(){
   );
 }
 function brandMark(){return "<span class='brand-mark header-logo' aria-hidden='true'><img class='brand-mark-img brand-mark-light' src='/assets/vault-logo.png' alt=''><img class='brand-mark-img brand-mark-dark' src='/assets/vault-logo-on-dark.png' alt=''></span>"}
+function ensureVaultAdminPanel(){
+  if(state.view!=="settings"||!isVaultSuperAdmin(state.user))return;
+  if(state.adminLoaded&&!state.adminError)return;
+  if(window.__vaultAdminFetch)return;
+  if(!vaultRemote.enabled||!vaultRemote.hasSession()){
+    state.adminError="Sign in with your Google/email account to open Vault Admin.";
+    state.adminLoaded=true;
+    state.adminLoading=false;
+    return;
+  }
+  window.__vaultAdminFetch=true;
+  state.adminLoading=true;
+  state.adminError="";
+  Promise.all([
+    vaultRemote.adminOverview(),
+    vaultRemote.adminListFeedback(40),
+    vaultRemote.adminListCaptures(40)
+  ]).then(([overview,feedback,captures])=>{
+    state.adminOverview=overview||{};
+    state.adminFeedback=Array.isArray(feedback)?feedback:[];
+    state.adminCaptures=Array.isArray(captures)?captures:[];
+    state.adminLoading=false;
+    state.adminLoaded=true;
+    window.__vaultAdminFetch=false;
+    if(state.view==="settings")render();
+  }).catch(err=>{
+    state.adminLoading=false;
+    state.adminLoaded=true;
+    window.__vaultAdminFetch=false;
+    state.adminError=err&&err.message||"Could not load admin data.";
+    if(state.view==="settings")render();
+  });
+}
+function bindSettingsOps(){
+  ensureVaultAdminPanel();
+  document.querySelectorAll("[data-feedback-rating]").forEach(b=>b.onclick=e=>{
+    e.preventDefault();
+    state.feedbackRating=Number(b.dataset.feedbackRating)||null;
+    state.feedbackSubmitted=false;
+    render();
+  });
+  document.querySelectorAll("[data-feedback-again]").forEach(b=>b.onclick=()=>{
+    state.feedbackSubmitted=false;
+    state.feedbackRating=null;
+    state.feedbackMessage="";
+    render();
+  });
+  let feedbackForm=document.querySelector("[data-feedback-form]");
+  if(feedbackForm){
+    let message=feedbackForm.querySelector("textarea[name='message']");
+    if(message)message.oninput=()=>{state.feedbackMessage=message.value};
+    feedbackForm.onsubmit=async e=>{
+      e.preventDefault();
+      if(!state.feedbackRating){toast("Choose a rating from 1 to 5.");return}
+      if(!vaultRemote.enabled||!vaultRemote.hasSession()){toast("Sign in with a real account to send feedback.");return}
+      let btn=feedbackForm.querySelector("[data-feedback-submit]");
+      if(btn)btn.disabled=true;
+      try{
+        await vaultRemote.submitFeedback({rating:state.feedbackRating,message:state.feedbackMessage,feature:"vault"});
+        state.feedbackSubmitted=true;
+        state.feedbackMessage="";
+        state.adminLoaded=false;
+        toast("Thanks for your feedback.");
+        render();
+      }catch(err){
+        toast(err&&err.message||"Could not send feedback.");
+        if(btn)btn.disabled=false;
+      }
+    };
+  }
+  document.querySelectorAll("[data-admin-refresh]").forEach(b=>b.onclick=()=>{
+    state.adminLoaded=false;
+    state.adminError="";
+    window.__vaultAdminFetch=false;
+    ensureVaultAdminPanel();
+    render();
+  });
+  document.querySelectorAll("[data-admin-purge-captures]").forEach(b=>b.onclick=()=>{
+    openConfirmDialog({
+      title:"Purge old captures",
+      message:"Delete extension capture queue rows older than 30 days? This cannot be undone.",
+      confirmText:"Purge",
+      danger:true,
+      onConfirm:async()=>{
+        try{
+          let result=await vaultRemote.adminPurgeCaptures(30);
+          toast("Purged "+(result&&result.deleted||0)+" captures.");
+          state.adminLoaded=false;
+          window.__vaultAdminFetch=false;
+          ensureVaultAdminPanel();
+          render();
+        }catch(err){
+          toast(err&&err.message||"Purge failed.");
+        }
+      }
+    });
+  });
+}
+
 function brand(options){let sidebar=options&&options.sidebar;return "<div class='brand"+(sidebar?" sidebar-brand":"")+"'>"+brandMark()+(sidebar?"<div><p class='brand-title'>A+ Vault</p><p class='brand-subtitle'>You Create, We Connect</p></div>":"")+"</div>"}
 function saveActionIcon(){return "<img class='save-action-icon' src='/assets/vault-save-icon-white-128.png' alt='' aria-hidden='true'>"}
 function chip(t){let name=t==="all"?"All":L[t]+"s";return "<button class='chip "+(state.type===t?"active":"")+"' data-type='"+t+"'><span class='chip-icon'>"+icon(iconForType(t))+"</span><span>"+name+"</span></button>"}
@@ -450,7 +940,7 @@ function syncObjectDeepLink(objectId){if(!objectId)return;state.selected=objectI
 function syncCollectionDeepLink(colId){if(!colId)return;let c=state.cols.find(x=>x.id===colId&&!x.system);if(!c)return;state.selected=null;state.publicObject=null;state.view="vault";state.type="all";state.col=colId;state.rightCollapsed=false;history.replaceState(null,"",location.origin+"/vault#collection="+encodeURIComponent(colId))}
 function importDeepLinkCapture(){normalizeVaultEntry();let objectId=readDeepLinkObjectId();if(objectId){syncObjectDeepLink(objectId);return}let colId=readDeepLinkCollectionId();if(colId){syncCollectionDeepLink(colId);return}let hash=location.hash||"",prefix="#vault-capture=";if(!hash.startsWith(prefix))return;try{let payload=decodeVaultPayload(hash.slice(prefix.length)),key="hash:"+hash.slice(prefix.length,161),seen=load(S.captures,[]);if(!seen.includes(key)){let item=itemFromCapturePayload(payload);ensureCollectionFromCapture(item);state.items=[item].concat(state.items);state.selected=item.id;state.sortBy="saved_new";save(S.items,state.items);save(S.captures,seen.concat(key).slice(-500));syncRemoteItem(item,"create")}state.view="vault";history.replaceState(null,"",location.origin+"/vault#object="+encodeURIComponent(state.selected||""))}catch(e){console.warn("Could not import Vault capture.",e)}}
 function decodeVaultPayload(encoded){let normalized=String(encoded||"").replace(/-/g,"+").replace(/_/g,"/");while(normalized.length%4)normalized+="=";let binary=atob(normalized),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return JSON.parse(new TextDecoder().decode(bytes))}
-function startDevAutoRefresh(){let host=(location.hostname||"").toLowerCase();if(location.protocol==="file:"||!(host==="localhost"||host==="127.0.0.1"||host.endsWith(".local")))return;let baseline=null,check=async()=>{try{let files=await Promise.all(["./app.js","./styles.css"].map(file=>fetch(file+"?dev="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")));return files.map(text=>[text.length,text.slice(0,80),text.slice(-80)].join(":")).join("|")}catch(_){return null}};check().then(sig=>baseline=sig);setInterval(async()=>{let sig=await check();if(baseline&&sig&&sig!==baseline)location.reload()},3500)}
+function startDevAutoRefresh(){let host=(location.hostname||"").toLowerCase();if(location.protocol==="file:"||!(host==="localhost"||host==="127.0.0.1"||host.endsWith(".local")))return;if(!/[?&]devwatch=1(?:&|$)/.test(location.search||""))return;let baseline=null,check=async()=>{try{let files=await Promise.all(["./app.js","./styles.css"].map(file=>fetch(file+"?dev="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")));return files.map(text=>[text.length,text.slice(0,80),text.slice(-80)].join(":")).join("|")}catch(_){return null}};check().then(sig=>baseline=sig);setInterval(async()=>{let sig=await check();if(baseline&&sig&&sig!==baseline)location.reload()},3500)}
 function itemFromCapturePayload(payload){payload=payload&&typeof payload==="object"?payload:{};let ctx=payload.captureContext&&typeof payload==="object"?payload.captureContext||{}:{},raw=String(payload.type||"").toLowerCase(),type=raw==="image"?"image":raw==="video"?"video":raw==="link"||raw==="page"?"link":"note",sourceUrl=payload.sourceUrl||ctx.pageUrl||ctx.linkUrl||ctx.videoUrl||"",assetUrl=type==="image"?(payload.assetUrl||ctx.imageUrl||payload.previewUrl||""):type==="video"?(payload.assetUrl||ctx.videoUrl||sourceUrl):"",previewUrl=payload.previewUrl||payload.thumbnailUrl||ctx.previewUrl||ctx.ogImage||ctx.twitterImage||"",note=type==="note"?(payload.note||ctx.selectionText||""):(payload.note||""),title=payload.title||"";if(!title&&raw==="text")title=(note||"Saved text").slice(0,54);if(!title&&raw==="page")title=ctx.pageTitle||host(sourceUrl)||"Saved page";if(!title&&type==="link")title=host(sourceUrl)||"Saved link";if(!title&&type==="image")title=ctx.pageTitle||"Saved image";if(!title&&type==="video")title=ctx.pageTitle||host(sourceUrl)||"Saved video";ctx.quickTags=Array.isArray(ctx.quickTags)?ctx.quickTags:quickTagsFrom(payload.quickKeywords||ctx.quickKeywords);ctx.visualCategory=payload.visualCategory||ctx.visualCategory||"";ctx.usageNote=ctx.usageNote||"Private reference only";let item={id:id(),type,title,note,sourceUrl,assetUrl,previewUrl,thumbnailUrl:payload.thumbnailUrl||previewUrl,collectionIds:[payload.collectionId||"all"],projectIds:payload.projectId?[payload.projectId]:[],status:"ready",createdAt:Date.now(),captureContext:Object.assign({destination:"Vault Library",rawType:raw||type},ctx)};item.analysis=analyze(item);return item}
 async function syncExtensionCaptures(silent){if(syncExtensionCaptures.busy)return;syncExtensionCaptures.busy=true;try{let token=getVaultApiToken();if(!token)return;let response=await fetch("/api/vault/captures",{cache:"no-store",headers:{Authorization:"Bearer "+token}});if(!response.ok)return;let data=await response.json(),rows=Array.isArray(data.items)?data.items:[],seen=load(S.captures,[]),seenSet=new Set(seen),existing=new Set(state.items.map(i=>i.id)),fresh=[];rows.forEach(row=>{let objectId=row&&row.objectId||row&&row.item&&row.item.id;if(!objectId||seenSet.has(objectId))return;let item=normalizeCapturedItem(row.item||row);if(item&&item.id&&!existing.has(item.id)){ensureCollectionFromCapture(item);fresh.push(item);existing.add(item.id);seen.push(objectId)}});if(fresh.length){state.items=fresh.concat(state.items);state.sortBy="saved_new";save(S.items,state.items);save(S.captures,seen.slice(-500));for(let item of fresh)await syncRemoteItem(item,"create");if(!silent)toast(fresh.length===1?"Extension capture imported.":fresh.length+" extension captures imported.");render();if(state.selected&&state.items.some(i=>i.id===state.selected))openSelectedDetail(state.selected)}}catch(e){}finally{syncExtensionCaptures.busy=false}}
 function broadcastExtensionCollections(){try{window.postMessage({type:"VAULT_EXTENSION_COLLECTIONS",collections:customCols().map(c=>({id:c.id,name:c.name}))},"*")}catch(_){}}
@@ -486,7 +976,10 @@ function softRefreshVaultResults(){if(state.view!=="vault"){render();return fals
 function queueSearchRender(value){let prev=state.q;state.q=value;if(value.trim()!==prev.trim())resetVaultGridLimit();clearTimeout(searchInputTimer);searchInputTimer=setTimeout(()=>{if(state.view==="vault")softRefreshVaultResults();else render()},140)}
 function clearSearchSoft(){clearTimeout(searchInputTimer);state.q="";state.filterKeyword="";state.filterHex="";state.searchOpen=true;resetVaultGridLimit();if(state.view==="vault")softRefreshVaultResults();else render();setTimeout(()=>{let input=document.querySelector("[data-search]");if(input)input.focus()},0)}
 function bindBackToTop(){let btn=document.querySelector("[data-back-top]");if(!btn)return;const scrollables=()=>[...document.querySelectorAll(".main,.sidebar-body,.board-main,.drawer-inner")];const update=()=>{let show=(window.scrollY||document.documentElement.scrollTop||0)>240;scrollables().forEach(el=>{if(el.scrollTop>240)show=true});btn.hidden=!show;btn.classList.toggle("is-visible",show)};btn.onclick=e=>{e.preventDefault();scrollables().forEach(el=>el.scrollTo({top:0,behavior:"smooth"}));window.scrollTo({top:0,behavior:"smooth"})};if(!window.__vaultBackTopBound){window.__vaultBackTopBound=true;window.addEventListener("scroll",()=>{let b=document.querySelector("[data-back-top]");if(!b)return;let show=(window.scrollY||document.documentElement.scrollTop||0)>240;document.querySelectorAll(".main,.sidebar-body,.board-main,.drawer-inner").forEach(el=>{if(el.scrollTop>240)show=true});b.hidden=!show;b.classList.toggle("is-visible",show)},{passive:true})}scrollables().forEach(el=>{if(el.dataset.backTopBound)return;el.dataset.backTopBound="1";el.addEventListener("scroll",update,{passive:true})});update()}
-function bind(){document.onclick=e=>{let c=e.target&&e.target.closest?e.target.closest("[data-copy-color]"):null;if(c){e.preventDefault();e.stopPropagation();copyText(c.dataset.copyColor||c.textContent.trim());return}if(e.target&&e.target.closest&&!e.target.closest(".card-menu,.card-menu-trigger,.row-menu,.row-menu-trigger")){if(state.openMenu){state.openMenu=null;softCloseOpenMenus()}}};let pf=document.querySelector("[data-profile]");if(pf)pf.onsubmit=e=>{e.preventDefault();let fd=new FormData(pf);state.user=Object.assign({},state.user||{},{email:fd.get("email"),displayName:(fd.get("displayName")||"").toString().trim(),favoriteStyles:quickTagsFrom(fd.get("favoriteStyles")),avatarUrl:state.user&&state.user.avatarUrl||"",provider:state.user&&state.user.provider||"password"});save(S.user,state.user);toast("Profile saved.");render()};document.querySelectorAll("[data-google-login]").forEach(b=>b.onclick=()=>beginGoogleLogin());document.querySelectorAll("[data-logout]").forEach(b=>b.onclick=async()=>{await closeProfileMenu({instant:true});await vaultRemote.signOut().catch(()=>{});localStorage.removeItem(S.user);state.user=null;state.view="vault";toast("Logged out.");render()});document.querySelectorAll("[data-export-vault]").forEach(b=>b.onclick=()=>exportVaultData());document.querySelectorAll("[data-clear-vault]").forEach(b=>b.onclick=()=>openConfirmDialog({title:"Clear local Vault data",message:"Remove all items, collections, projects, and moodboards from this browser? Export first if you want a backup.",confirmText:"Clear everything",danger:true,onConfirm:clearLocalVaultData}));document.querySelectorAll("[data-delete-account]").forEach(b=>b.onclick=()=>openDeleteAccountDialog());document.querySelectorAll("[data-copy-extension-token]").forEach(b=>b.onclick=()=>{let token=getVaultApiToken();if(token)copyText(token);else toast("Log in first to generate a sync token.")});document.querySelectorAll("[data-regenerate-extension-token]").forEach(b=>b.onclick=()=>openConfirmDialog({title:"Refresh extension token",message:"Generate a new extension sync token? Update the Chrome extension popup after refreshing.",confirmText:"Refresh token",onConfirm:regenerateVaultApiToken}));document.querySelectorAll("[data-open-profile-item]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();let itemId=b.dataset.openProfileItem;if(!itemId)return;state.view="vault";state.selected=null;state.rightCollapsed=false;render();openSelectedDetail(itemId)});document.querySelectorAll("[data-toggle-left]").forEach(b=>b.onclick=()=>{state.leftCollapsed=!state.leftCollapsed;if(isMobileViewport()){state.profileMenu=false;state.sortMenu=false;state.viewMenu=false}render()});document.querySelectorAll("[data-cardmenu]").forEach(b=>b.onclick=e=>{e.stopPropagation();state.openMenu=state.openMenu===b.dataset.cardmenu?null:b.dataset.cardmenu;render()});document.querySelectorAll("[data-rowmenu]").forEach(b=>b.onclick=e=>{e.stopPropagation();state.openMenu=state.openMenu===b.dataset.rowmenu?null:b.dataset.rowmenu;render()});document.querySelectorAll("[data-menusee]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSelectedDetail(b.dataset.menusee)});document.querySelectorAll("[data-copy-color]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();copyText(b.dataset.copyColor||b.textContent.trim())});document.querySelectorAll("[data-toggle-right]").forEach(b=>b.onclick=()=>{state.rightCollapsed=!state.rightCollapsed;render()});document.querySelectorAll("[data-close-detail]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();closeSelectedDetail()});bindMediaLightboxControls();document.querySelectorAll("[data-resize-right]").forEach(h=>h.onpointerdown=startRightResize);document.querySelectorAll("[data-theme-choice]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();state.theme=b.dataset.themeChoice;save(S.theme,state.theme);applyTheme();render({skipTheme:true})});document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{state.view=b.dataset.view;state.profileMenu=false;state.searchOpen=false;clearTimeout(closeProfileMenu._timer);if(b.dataset.view==="moodboards"){history.replaceState(null,"",moodboardAppUrl());preloadMoodboardEditor()}else if(b.dataset.view==="vault"&&/moodboard/.test(location.hash||""))history.replaceState(null,"",location.origin+"/vault");render()});document.querySelectorAll("[data-type]").forEach(b=>b.onclick=()=>{state.view="vault";state.type=b.dataset.type;if(state.type==="collections"&&state.col==="all")state.col="brand";render()});document.querySelectorAll("[data-col]").forEach(b=>b.onclick=()=>{if(suppressColClick)return;state.col=b.dataset.col;state.type="all";state.view="vault";render()});document.querySelectorAll("[data-profile-menu-toggle]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();if(state.profileMenu)closeProfileMenu();else openProfileMenu()});document.querySelectorAll("[data-search-toggle]").forEach(b=>b.onclick=e=>{e.stopPropagation();state.searchOpen=!state.searchOpen;if(state.profileMenu){closeProfileMenu({instant:true,skipRender:true})}render();if(state.searchOpen)setTimeout(()=>{let input=document.querySelector("[data-search]");if(input)input.focus()},0)});document.querySelectorAll("[data-search-clear]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();clearSearchSoft()});document.querySelectorAll("[data-search-hint]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();let hint=b.dataset.searchHint||"";state.q=state.q.trim()?state.q.trim()+" "+hint:hint;state.searchOpen=true;state.view="vault";render();setTimeout(()=>{let input=document.querySelector("[data-search]");if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length)}},0)});if(!window.__vaultSearchOutsideBound){window.__vaultSearchOutsideBound=true;document.addEventListener("click",e=>{if(state.searchOpen&&e.target&&e.target.closest&&!e.target.closest(".header-search-group")){state.searchOpen=false;render();return}if(state.profileMenu&&e.target&&e.target.closest&&!e.target.closest(".header-profile-group")){closeProfileMenu()}},true);document.addEventListener("keydown",e=>{if(e.key==="Escape"&&state.mediaLightbox){e.preventDefault();closeMediaLightbox();return}if(e.key==="Escape"&&state.profileMenu){e.preventDefault();closeProfileMenu();return}if(e.key==="Escape"&&state.searchOpen){state.searchOpen=false;render()}})}let q=document.querySelector("[data-search]");if(q){q.oninput=e=>queueSearchRender(e.target.value);if(state.searchOpen)q.focus()}document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{if(!state.user){toast("Log in to upload to Vault.");render();return}state.modal=true;render()});document.querySelectorAll("[data-adddetail]").forEach(b=>b.onclick=()=>{let i=selected();if(!i)return;addItemToBoard(i.id,160,140);state.view="board";toast("Object added to moodboard.");render()});document.querySelectorAll("[data-closemodal]").forEach(x=>x.onclick=e=>{let backdrop=x.classList&&x.classList.contains("modal-backdrop");if(backdrop&&e.target!==x)return;e.preventDefault();e.stopPropagation();state.modal=false;render()});document.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;render()});let sf=document.querySelector("[data-form]");if(sf)sf.onsubmit=saveItem;document.querySelectorAll("[data-sel]").forEach(x=>{x.onclick=e=>{if(suppressCardClick||x.classList.contains("drag-ready")||x.classList.contains("dragging")){e.stopPropagation();return}e.stopPropagation();openSelectedDetail(x.dataset.sel)};x.onkeydown=e=>{if(e.key==="Enter")openSelectedDetail(x.dataset.sel)}});bindCardReorder();bindCollectionDrag();document.querySelectorAll("[data-use]").forEach(x=>x.onclick=e=>{e.stopPropagation();addItemToBoard(x.dataset.use,140,120);state.view="board";toast("Object added to moodboard.");render()});let close=document.querySelector("[data-close]");if(close)close.onclick=()=>closeSelectedDetail();bindDrawerControls();bindMediaLightboxControls();bindBackToTop();bindQuickUploads();bindProfileAvatarControls();bindBoard();bindMoodboardUi();bindProfileMenuMotion()}
+function bind(){document.onclick=e=>{let c=e.target&&e.target.closest?e.target.closest("[data-copy-color]"):null;if(c){e.preventDefault();e.stopPropagation();copyText(c.dataset.copyColor||c.textContent.trim());return}if(e.target&&e.target.closest&&!e.target.closest(".card-menu,.card-menu-trigger,.row-menu,.row-menu-trigger")){if(state.openMenu){state.openMenu=null;softCloseOpenMenus()}}};let pf=document.querySelector("[data-profile]");if(pf)pf.onsubmit=e=>{e.preventDefault();let fd=new FormData(pf);state.user=Object.assign({},state.user||{},{email:fd.get("email"),displayName:(fd.get("displayName")||"").toString().trim(),favoriteStyles:quickTagsFrom(fd.get("favoriteStyles")),avatarUrl:state.user&&state.user.avatarUrl||"",provider:state.user&&state.user.provider||"password"});save(S.user,state.user);toast("Profile saved.");render()};document.querySelectorAll("[data-google-login]").forEach(b=>b.onclick=()=>beginGoogleLogin());document.querySelectorAll("[data-logout]").forEach(b=>b.onclick=async()=>{await closeProfileMenu({instant:true});await vaultRemote.signOut().catch(()=>{});localStorage.removeItem(S.user);state.user=null;state.view="vault";toast("Logged out.");render()});document.querySelectorAll("[data-export-vault]").forEach(b=>b.onclick=()=>exportVaultData());document.querySelectorAll("[data-clear-vault]").forEach(b=>b.onclick=()=>openConfirmDialog({title:"Clear local Vault data",message:"Remove all items, collections, projects, and moodboards from this browser? Export first if you want a backup.",confirmText:"Clear everything",danger:true,onConfirm:clearLocalVaultData}));document.querySelectorAll("[data-delete-account]").forEach(b=>b.onclick=()=>openDeleteAccountDialog());document.querySelectorAll("[data-copy-extension-token]").forEach(b=>b.onclick=()=>{let token=getVaultApiToken();if(token)copyText(token);else toast("Log in first to generate a sync token.")});document.querySelectorAll("[data-regenerate-extension-token]").forEach(b=>b.onclick=()=>openConfirmDialog({title:"Refresh extension token",message:"Generate a new extension sync token? Update the Chrome extension popup after refreshing.",confirmText:"Refresh token",onConfirm:regenerateVaultApiToken}));document.querySelectorAll("[data-open-profile-item]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();let itemId=b.dataset.openProfileItem;if(!itemId)return;state.view="vault";state.selected=null;state.rightCollapsed=false;render();openSelectedDetail(itemId)});document.querySelectorAll("[data-toggle-left]").forEach(b=>b.onclick=()=>{state.leftCollapsed=!state.leftCollapsed;if(isMobileViewport()){state.profileMenu=false;state.sortMenu=false;state.viewMenu=false}render()});document.querySelectorAll("[data-cardmenu]").forEach(b=>b.onclick=e=>{e.stopPropagation();state.openMenu=state.openMenu===b.dataset.cardmenu?null:b.dataset.cardmenu;render()});document.querySelectorAll("[data-rowmenu]").forEach(b=>b.onclick=e=>{e.stopPropagation();state.openMenu=state.openMenu===b.dataset.rowmenu?null:b.dataset.rowmenu;render()});document.querySelectorAll("[data-menusee]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSelectedDetail(b.dataset.menusee)});document.querySelectorAll("[data-copy-color]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();copyText(b.dataset.copyColor||b.textContent.trim())});document.querySelectorAll("[data-toggle-right]").forEach(b=>b.onclick=()=>{state.rightCollapsed=!state.rightCollapsed;render()});document.querySelectorAll("[data-close-detail]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();closeSelectedDetail()});bindMediaLightboxControls();document.querySelectorAll("[data-resize-right]").forEach(h=>h.onpointerdown=startRightResize);document.querySelectorAll("[data-theme-choice]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();state.theme=b.dataset.themeChoice;save(S.theme,state.theme);applyTheme();render({skipTheme:true})});document.querySelectorAll("[data-project-explorer-tab]").forEach(b=>b.onclick=e=>{e.preventDefault();state.projectExplorerTab=b.dataset.projectExplorerTab==="tags"?"tags":"folders";render()});
+let projectExplorerQ=document.querySelector("[data-project-explorer-q]");
+if(projectExplorerQ){projectExplorerQ.oninput=()=>{state.projectExplorerQ=projectExplorerQ.value||"";softRefreshProjectExplorer()}};
+document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{state.view=b.dataset.view;state.profileMenu=false;state.searchOpen=false;clearTimeout(closeProfileMenu._timer);if(b.dataset.view==="settings"){state.adminLoaded=false;state.adminError="";if(isVaultSuperAdmin(state.user)){if(!vaultRemote.enabled||!vaultRemote.hasSession()){state.adminError="Sign in with your Google/email account to open Vault Admin.";state.adminLoaded=true;state.adminLoading=false}else{state.adminLoading=true}}}if(b.dataset.view==="moodboards"){history.replaceState(null,"",moodboardAppUrl());preloadMoodboardEditor()}else if(b.dataset.view==="vault"&&/moodboard/.test(location.hash||""))history.replaceState(null,"",location.origin+"/vault");render()});document.querySelectorAll("[data-type]").forEach(b=>b.onclick=()=>{state.view="vault";state.type=b.dataset.type;if(state.type==="collections"&&state.col==="all")state.col="brand";render()});document.querySelectorAll("[data-col]").forEach(b=>b.onclick=()=>{if(suppressColClick)return;state.col=b.dataset.col;state.type="all";state.view="vault";render()});document.querySelectorAll("[data-profile-menu-toggle]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();if(state.profileMenu)closeProfileMenu();else openProfileMenu()});document.querySelectorAll("[data-search-toggle]").forEach(b=>b.onclick=e=>{e.stopPropagation();state.searchOpen=!state.searchOpen;if(state.profileMenu){closeProfileMenu({instant:true,skipRender:true})}render();if(state.searchOpen)setTimeout(()=>{let input=document.querySelector("[data-search]");if(input)input.focus()},0)});document.querySelectorAll("[data-search-clear]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();clearSearchSoft()});document.querySelectorAll("[data-search-hint]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();let hint=b.dataset.searchHint||"";state.q=state.q.trim()?state.q.trim()+" "+hint:hint;state.searchOpen=true;state.view="vault";render();setTimeout(()=>{let input=document.querySelector("[data-search]");if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length)}},0)});if(!window.__vaultSearchOutsideBound){window.__vaultSearchOutsideBound=true;document.addEventListener("click",e=>{if(state.searchOpen&&e.target&&e.target.closest&&!e.target.closest(".header-search-group")){state.searchOpen=false;render();return}if(state.profileMenu&&e.target&&e.target.closest&&!e.target.closest(".header-profile-group")){closeProfileMenu()}},true);document.addEventListener("keydown",e=>{if(e.key==="Escape"&&state.mediaLightbox){e.preventDefault();closeMediaLightbox();return}if(e.key==="Escape"&&state.profileMenu){e.preventDefault();closeProfileMenu();return}if(e.key==="Escape"&&state.searchOpen){state.searchOpen=false;render()}})}let q=document.querySelector("[data-search]");if(q){q.oninput=e=>queueSearchRender(e.target.value);if(state.searchOpen)q.focus()}document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{if(!state.user){toast("Log in to upload to Vault.");render();return}state.modal=true;render()});document.querySelectorAll("[data-adddetail]").forEach(b=>b.onclick=()=>{let i=selected();if(!i)return;addItemToBoard(i.id,160,140);state.view="board";toast("Object added to moodboard.");render()});document.querySelectorAll("[data-closemodal]").forEach(x=>x.onclick=e=>{let backdrop=x.classList&&x.classList.contains("modal-backdrop");if(backdrop&&e.target!==x)return;e.preventDefault();e.stopPropagation();state.modal=false;render()});document.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;render()});let sf=document.querySelector("[data-form]");if(sf)sf.onsubmit=saveItem;document.querySelectorAll("[data-sel]").forEach(x=>{x.onclick=e=>{if(suppressCardClick||x.classList.contains("drag-ready")||x.classList.contains("dragging")){e.stopPropagation();return}e.stopPropagation();openSelectedDetail(x.dataset.sel)};x.onkeydown=e=>{if(e.key==="Enter")openSelectedDetail(x.dataset.sel)}});bindCardReorder();bindCollectionDrag();document.querySelectorAll("[data-use]").forEach(x=>x.onclick=e=>{e.stopPropagation();addItemToBoard(x.dataset.use,140,120);state.view="board";toast("Object added to moodboard.");render()});let close=document.querySelector("[data-close]");if(close)close.onclick=()=>closeSelectedDetail();bindDrawerControls();bindMediaLightboxControls();bindBackToTop();bindQuickUploads();bindProfileAvatarControls();bindBoard();bindMoodboardUi();bindProfileMenuMotion()}
 function bindMoodboardUi(){document.querySelectorAll("[data-toggle-select]").forEach(inp=>{inp.onclick=e=>e.stopPropagation();inp.onchange=e=>{e.stopPropagation();toggleVaultSelect(inp.dataset.toggleSelect,{shift:!!e.shiftKey})}});document.querySelectorAll("[data-open-create-moodboard]").forEach(b=>b.onclick=()=>openCreateMoodboardDialog());document.querySelectorAll("[data-create-blank-moodboard]").forEach(b=>b.onclick=()=>{state.dialog={type:"create-moodboard",itemIds:[]};render()});document.querySelectorAll("[data-bulk-new-collection]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();openBulkNewCollectionDialog()});document.querySelectorAll("[data-bulk-to-project]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();openBulkProjectDialog()});document.querySelectorAll("[data-bulk-delete]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();openBulkDeleteDialog()});document.querySelectorAll("[data-bulk-project-form]").forEach(form=>form.onsubmit=e=>{e.preventDefault();e.stopPropagation();let fd=new FormData(form),projectId=(fd.get("projectId")||"").toString();if(!projectId){toast("Choose a project.");return}addSelectedToProject(projectId)});document.querySelectorAll("[data-clear-selection]").forEach(b=>b.onclick=()=>{state.selectedIds=[];if(!softRefreshVaultResults())render()});document.querySelectorAll("[data-open-moodboard]").forEach(b=>b.onclick=()=>openMoodboard(b.dataset.openMoodboard));document.querySelectorAll("[data-rename-moodboard]").forEach(b=>b.onclick=()=>{let board=(state.moodboards||[]).find(x=>x.id===b.dataset.renameMoodboard);if(!board)return;state.dialog={type:"create-moodboard",itemIds:[],renameId:board.id,renameName:board.name};render()});document.querySelectorAll("[data-delete-moodboard]").forEach(b=>b.onclick=()=>{let board=(state.moodboards||[]).find(x=>x.id===b.dataset.deleteMoodboard);if(!board)return;openConfirmDialog({title:"Delete moodboard",message:"Delete "+board.name+"? Vault objects stay in the library.",confirmText:"Delete",danger:true,onConfirm:()=>{state.moodboards=(state.moodboards||[]).filter(x=>x.id!==board.id);if(state.activeMoodboard===board.id){state.activeMoodboard=null;state.view="moodboards";history.replaceState(null,"",moodboardAppUrl())}persistMoodboards();toast("Moodboard deleted.");render()}})});document.querySelectorAll("[data-link-moodboard-project]").forEach(b=>b.onclick=()=>{state.dialog={type:"link-moodboard-project",boardId:b.dataset.linkMoodboardProject};render()});if(state.view==="moodboard-edit")bindSmartGridEditor()}
 function bindSmartGridEditor(){
   let board=activeMoodboard();
@@ -1419,7 +1912,16 @@ function promoteAndReorderCollection(fromId,toId,mode){let from=state.cols.find(
 function handleCollectionDrop(fromId,toId,mode){let from=state.cols.find(c=>c.id===fromId);if(!from||from.system)return;if(mode==="promote"){if(!from.parentId){toast("Already a main collection.");return}openConfirmDialog({title:"Move to main collections",message:"Move \""+from.name+"\" back to the main collection list?",confirmText:"Move to main",onConfirm:()=>promoteCollection(fromId)});return}let target=toId?state.cols.find(c=>c.id===toId):null;if(mode==="nest"){if(!target||from.id===target.id)return;if(from.parentId===target.id){toast("Already inside this collection.");return}if(!canNestCollection(from.id,target.id)){toast("This collection cannot be nested here.");return}openConfirmDialog({title:"Add sub-collection",message:"Move \""+from.name+"\" inside \""+target.name+"\" as a sub-collection?",confirmText:"Move inside",onConfirm:()=>nestCollection(from.id,target.id)});return}if(!target)return;if(from.parentId&&!target.parentId){openConfirmDialog({title:"Move to main collections",message:"Move \""+from.name+"\" back to the main collection list?",confirmText:"Move to main",onConfirm:()=>promoteAndReorderCollection(from.id,target.id,mode)});return}if((from.parentId||"")===(target.parentId||""))reorderCollection(from.id,target.id,mode)}
 let suppressColClick=false;
 function bindCollectionDrag(){bindSidebarCollectionDrag({state,getSuppressColClick:()=>suppressColClick,setSuppressColClick:v=>{suppressColClick=v},handleCollectionDrop,addCollectionToProject,openConfirmDialog,explicitProjectCollectionIds})}
-function normalizeProjects(projects,items){let list=Array.isArray(projects)&&projects.length?projects:defaultProjects(items);return list.filter(p=>p&&typeof p==="object").map(p=>{let boards=Array.isArray(p.boards)?p.boards:[];boards=boards.filter(b=>b&&typeof b==="object").map(b=>({id:String(b.id||id()),name:String(b.name||"Moodboard"),objects:Array.isArray(b.objects)?b.objects.filter(Boolean).map(normalizeBoardObject):[]}));if(!boards.length)boards=[{id:id(),name:"Moodboard",objects:[]}];return Object.assign({},p,{id:String(p.id||id()),name:String(p.name||"Project"),description:String(p.description||""),boards,collectionIds:Array.isArray(p.collectionIds)?p.collectionIds.filter(Boolean).map(String):[],pinnedAt:Number(p.pinnedAt)||0})})}
+function normalizeProjects(projects,items){let list=Array.isArray(projects)?projects:[];return list.filter(p=>p&&typeof p==="object").map(p=>{let boards=Array.isArray(p.boards)?p.boards:[];boards=boards.filter(b=>b&&typeof b==="object").map(b=>({id:String(b.id||id()),name:String(b.name||"Moodboard"),objects:Array.isArray(b.objects)?b.objects.filter(Boolean).map(normalizeBoardObject):[]}));if(!boards.length)boards=[{id:id(),name:"Moodboard",objects:[]}];return Object.assign({},p,{id:String(p.id||id()),name:String(p.name||"Project"),description:String(p.description||""),boards,collectionIds:Array.isArray(p.collectionIds)?p.collectionIds.filter(Boolean).map(String):[],pinnedAt:Number(p.pinnedAt)||0})})}
+function ensureDemoProjects(){
+  let demos=defaultProjects(state.items);
+  if(!demos.length)return false;
+  let have=new Set((state.projects||[]).map(p=>String(p.id)));
+  let missing=demos.filter(d=>!have.has(String(d.id)));
+  if(!missing.length)return false;
+  state.projects=normalizeProjects((state.projects||[]).concat(missing),state.items);
+  return true;
+}
 function normalizeBoardObject(o){let kind=["item","text","palette"].includes(o.kind)?o.kind:"item";return Object.assign({},o,{id:String(o.id||id()),kind,x:Number(o.x)||40,y:Number(o.y)||40,w:Number(o.w)||180,h:Number(o.h)||140,colors:Array.isArray(o.colors)?o.colors:[],text:String(o.text||"Text")})}
 function repairState(){state.items=normalizeItems(state.items);state.cols=ensureCoreCols(normalizeCols(state.cols));state.projects=normalizeProjects(state.projects,state.items);state.moodboards=normalizeMoodboards(state.moodboards);state.selected=null;state.selectedObject=null;state.openMenu=null;state.collectionPicker=null;if(state.view!=="moodboard-edit"&&state.view!=="moodboards")state.view="vault";save(S.items,state.items);save(S.cols,state.cols);save(S.projects,state.projects);save(S.moodboards,state.moodboards)}
 function repairView(err){return "<div class='app-shell'><header class='topbar'>"+brand()+"<div></div><div class='actions'><button class='save-button' data-repair-vault>Open Vault</button></div></header><main class='main'><section class='empty-state'><div><h2>A+ Vault repaired the workspace.</h2><p>Some saved browser data was out of shape, so the app cleaned it up instead of showing a blank page.</p><button class='primary-button' data-repair-vault>Back to Vault Library</button></div></section></main></div>"}
@@ -1446,15 +1948,23 @@ function addKeywordToItem(itemId,raw){let i=state.items.find(x=>x.id===itemId);i
 function removeKeywordFromItem(tag,itemId){let id=itemId||(selected()&&selected().id),i=state.items.find(x=>x.id===id);if(!i)return;let needle=String(tag||"").trim().toLowerCase(),analysis=Object.assign({},i.analysis||{}),tags=(Array.isArray(analysis.tags)?analysis.tags:[]).filter(t=>String(t||"").trim().toLowerCase()!==needle);analysis.tags=tags;patch(id,{analysis});if(state.filterKeyword&&state.filterKeyword.toLowerCase()===needle)state.filterKeyword="";toast("Keyword removed.");if(!refreshOpenDrawer())render()}
 function colorFamily(c){let x=hexRgb(c),max=Math.max(x.r,x.g,x.b),min=Math.min(x.r,x.g,x.b),light=(x.r+x.g+x.b)/3;if(safeHex(c).toLowerCase()==="#ff4f43"||x.r>220&&x.g<120&&x.b<110)return"coral";if(light<70)return"dark";if(light>218)return"light";if(max-min<38)return"neutral";if(x.r>=x.b&&x.r>=x.g*.85)return"warm";return"cool"}
 function selected(){return state.items.find(i=>i.id===state.selected)||filtered()[0]||null}
-function project(){return state.projects.find(p=>p.id===state.activeProject)||state.projects[0]}
-function board(){let p=project();p.boards=p.boards||[];let b=p.boards.find(b=>b.id===state.activeBoard)||p.boards[0];if(!b){b={id:id(),name:"Moodboard",objects:[]};p.boards.push(b);state.activeBoard=b.id;persistProjects()}return b}
+function project(){return state.projects.find(p=>p.id===state.activeProject)||state.projects[0]||null}
+function board(){let p=project();if(!p){return {id:"",name:"Moodboard",objects:[]}}p.boards=p.boards||[];let b=p.boards.find(b=>b.id===state.activeBoard)||p.boards[0];if(!b){b={id:id(),name:"Moodboard",objects:[]};p.boards.push(b);state.activeBoard=b.id;persistProjects()}return b}
 function selectedObj(){let b=board();return (b.objects||[]).find(o=>o.id===state.selectedObject)||null}
 function patchSel(p){let i=selected();if(i)patch(i.id,p)}function patch(itemId,p){let updated=null;state.items=state.items.map(i=>i.id===itemId?(updated=Object.assign({},i,p)):i);save(S.items,state.items);if(updated)syncRemoteItem(updated,"update")}
 function count(){return{total:state.items.length,images:state.items.filter(i=>i.type==="image").length}}
 function ensureCoreCols(cols){let list=(Array.isArray(cols)?cols.slice():[]).filter(c=>c.id!=="inbox");let byId=id=>list.find(c=>c.id===id);if(!byId("all"))list.unshift({id:"all",name:"Vault Library",system:true});else Object.assign(byId("all"),{name:"Vault Library",system:true});return list}
 function collectionValue(i){let ids=i.collectionIds||[];return ids.find(id=>state.cols.some(c=>!c.system&&c.id===id))||"all"}
 function itemsForCollection(id){if(id==="all")return state.items;return state.items.filter(i=>itemMatchesCollection(i,id))}
-function projectContextPanel(p){let cols=projectCollectionIds(p).map(id=>state.cols.find(c=>c.id===id)).filter(Boolean),boards=p.boards||[];return "<section class='project-context-panel'><div><span class='section-label'>Project workspace</span><h2>"+esc(p.name)+"</h2><p>Projects gather selected collections and moodboards for one job.</p></div><div class='project-context-groups'><div><strong>Collections</strong><div class='context-chip-row'>"+(cols.length?cols.map(c=>"<button data-col='"+c.id+"'>"+icon("collection")+"<span>"+esc(c.name)+"</span></button>").join(""):"<span class='muted-chip'>No custom collections yet</span>")+"</div></div><div><strong>Moodboards</strong><div class='context-chip-row'>"+boards.map(b=>"<span class='context-chip "+(state.activeBoard===b.id?"active":"")+"'>"+icon("board")+" "+esc(b.name)+"</span>").join("")+"</div></div></div></section>"}
+function projectContextPanel(p){
+  return "<section class='project-context-bar'>"+
+    "<button type='button' class='ghost-button project-context-back' data-view='project'>"+icon("expand")+"<span>Back to project</span></button>"+
+    "<div class='project-context-copy'>"+
+      "<span class='section-label'>Editing moodboard</span>"+
+      "<strong>"+esc(p.name)+"</strong>"+
+    "</div>"+
+  "</section>";
+}
 function projectItems(p){let ids=new Set();state.items.forEach(i=>{if((i.projectIds||[]).includes(p.id))ids.add(i.id)});(p.boards||[]).forEach(b=>(b.objects||[]).forEach(o=>{if(o.itemId)ids.add(o.itemId)}));return state.items.filter(i=>ids.has(i.id))}
 function allBoards(){return allProjectBoards(state.projects)}
 function previewColor(o){if(o.kind==="palette"&&(o.colors||[])[0])return safeHex(o.colors[0]);if(o.kind==="text")return "#ffffff";let item=state.items.find(i=>i.id===o.itemId),colors=item&&item.analysis&&item.analysis.colors;return safeHex(colors&&colors[0]||"#ff4f43")}
