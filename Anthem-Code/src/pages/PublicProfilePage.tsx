@@ -35,7 +35,6 @@ import { BRAND_NAME } from "@/lib/brandConfig";
 import { truncateDescription } from "@/lib/seo";
 import { isUuid, profilePublicPath, profilePublicPathLabel, profilePublicUrl, profileShareMessage, profileShareTitle } from "@/lib/profileRoutes";
 import ProfileSharePopover from "@/components/profile/ProfileSharePopover";
-import ProfileVisitorExploreSection from "@/components/profile/ProfileVisitorExploreSection";
 import { sortPortfolioProjects } from "@/lib/portfolioSort";
 import { Navigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -598,10 +597,6 @@ const PublicProfilePage = () => {
             </div>
           )}
         </ProfileSectionTabs>
-
-        {showAsVisitor && !visitorPreview && (
-          <ProfileVisitorExploreSection creatorName={displayName} isLoggedIn={!!user} />
-        )}
       </div>
 
       <HireDialog

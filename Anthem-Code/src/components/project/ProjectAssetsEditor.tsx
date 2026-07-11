@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ExternalLink,
   Plus,
   X,
   Paperclip,
   Loader2,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,12 +19,18 @@ import {
   projectAssetDownloadUrl,
   type ProjectAsset,
 } from "@/lib/projectAssets";
-import { applyScanResult, evaluateProjectAssetOnAdd } from "@/lib/projectAssetScan";
+import {
+  applyScanResult,
+  assertProjectAssetSafeToOpen,
+  evaluateExternalLinkUrl,
+  evaluateProjectAssetOnAdd,
+  looksLikeCompleteExternalUrl,
+} from "@/lib/projectAssetScan";
 import { uploadProjectAssetFile } from "@/lib/uploadProjectAsset";
-import { safeHttpUrl } from "@/lib/safeUrl";
+import { openSafeExternalUrl, safeHttpUrl } from "@/lib/safeUrl";
 import type { Tier } from "@/core/subscription/useSubscription";
 import { toast } from "sonner";
-import { fetchProjectAssetDownloadUrl } from "@/lib/downloadProjectAsset";
+import { resolveProjectAssetForOpen } from "@/lib/downloadProjectAsset";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -48,6 +55,17 @@ const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier
 
   const atLimit = assets.length >= PROJECT_ASSETS_MAX;
 
+  const linkUrlFeedback = useMemo(() => {
+    const trimmed = url.trim();
+    if (!trimmed || !looksLikeCompleteExternalUrl(trimmed)) return null;
+    const normalized = trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
+    const result = evaluateExternalLinkUrl(normalized);
+    if (result.scan_status === "blocked") {
+      return { tone: "error" as const, message: result.scan_reason ?? "ลิงก์ไม่ปลอดภัย" };
+    }
+    return { tone: "ok" as const, message: "ลิงก์ผ่านการตรวจสอบเบื้องต้น" };
+  }, [url]);
+
   const addLink = () => {
     const trimmedUrl = url.trim();
     const trimmedLabel = label.trim();
@@ -65,6 +83,12 @@ const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier
       return;
     }
 
+    const safety = evaluateExternalLinkUrl(safe);
+    if (safety.scan_status === "blocked") {
+      toast.error(safety.scan_reason ?? "ลิงก์ไม่ผ่านการตรวจสอบความปลอดภัย");
+      return;
+    }
+
     let hostname = safe;
     try {
       hostname = new URL(safe).hostname;
@@ -74,15 +98,15 @@ const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier
 
     const draft = createProjectLinkAsset(trimmedLabel || hostname, safe);
     const scanned = applyScanResult(draft, evaluateProjectAssetOnAdd(draft));
+    if (scanned.scan_status === "blocked") {
+      toast.error(scanned.scan_reason ?? "ลิงก์ไม่ผ่านการตรวจสอบความปลอดภัย");
+      return;
+    }
+
     onChange([...assets, scanned]);
     setLabel("");
     setUrl("");
-
-    if (scanned.scan_status === "blocked") {
-      toast.error(scanned.scan_reason ?? "ลิงก์ไม่ผ่านการตรวจสอบ");
-    } else if (scanned.scan_status === "pending") {
-      toast.message("เพิ่มลิงก์แล้ว — กำลังตรวจสอบความปลอดภัย");
-    }
+    toast.success("เพิ่มลิงก์แล้ว — ผ่านการตรวจสอบความปลอดภัย");
   };
 
   const onPickFile = async (files: FileList | null) => {
@@ -130,7 +154,7 @@ const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier
         <ul className="space-y-2">
           {assets.map((asset) => {
             const href = projectAssetDownloadUrl(asset);
-            const canOpen = asset.scan_status === "clean" && href;
+            const canOpen = asset.scan_status === "clean";
             return (
               <li
                 key={asset.id}
@@ -161,23 +185,54 @@ const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier
                       {asset.scan_reason}
                     </p>
                   )}
-                  {canOpen && asset.kind === "link" && href && (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  {canOpen && asset.kind === "link" && (href || projectId) && (
+                    <button
+                      type="button"
                       className="text-[10px] text-primary hover:underline"
+                      onClick={() => {
+                        const gate = assertProjectAssetSafeToOpen(asset);
+                        if (!gate.ok) {
+                          toast.error(gate.reason);
+                          return;
+                        }
+                        if (projectId) {
+                          void resolveProjectAssetForOpen(projectId, asset).then((resolved) => {
+                            if (!resolved.ok) {
+                              toast.error(resolved.reason);
+                              return;
+                            }
+                            if (!openSafeExternalUrl(resolved.url)) {
+                              toast.error("ไม่สามารถเปิดลิงก์นี้ได้");
+                            }
+                          });
+                          return;
+                        }
+                        if (!gate.url || !openSafeExternalUrl(gate.url)) {
+                          toast.error("ไม่สามารถเปิดลิงก์นี้ได้");
+                        }
+                      }}
                     >
                       เปิดดู
-                    </a>
+                    </button>
                   )}
                   {canOpen && asset.kind === "file" && projectId && (
                     <button
                       type="button"
                       className="text-[10px] text-primary hover:underline"
                       onClick={() => {
-                        void fetchProjectAssetDownloadUrl(projectId, asset).then((u) => {
-                          if (u) window.open(u, "_blank", "noopener,noreferrer");
+                        const gate = assertProjectAssetSafeToOpen(asset);
+                        if (!gate.ok) {
+                          toast.error(gate.reason);
+                          return;
+                        }
+                        void resolveProjectAssetForOpen(projectId, asset).then((resolved) => {
+                          if (!resolved.ok) {
+                            toast.error(resolved.reason);
+                            return;
+                          }
+                          if (!openSafeExternalUrl(resolved.url)) {
+                            toast.error("ไม่สามารถดาวน์โหลดไฟล์ได้");
+                          }
                         });
                       }}
                     >
@@ -220,19 +275,40 @@ const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier
             }}
             placeholder="https://..."
             disabled={atLimit}
-            className="min-w-0"
+            className={cn(
+              "min-w-0",
+              linkUrlFeedback?.tone === "error" && "border-destructive focus-visible:ring-destructive/40",
+              linkUrlFeedback?.tone === "ok" && "border-emerald-500/50 focus-visible:ring-emerald-500/30",
+            )}
+            aria-invalid={linkUrlFeedback?.tone === "error"}
+            aria-describedby={linkUrlFeedback ? "project-link-url-hint" : undefined}
           />
           <Button
             type="button"
             size="icon"
             variant="outline"
-            disabled={!url.trim() || atLimit}
+            disabled={!url.trim() || atLimit || linkUrlFeedback?.tone === "error"}
             onClick={addLink}
             aria-label="เพิ่มลิงก์"
           >
             <Plus className="w-4 h-4" />
           </Button>
         </div>
+        {linkUrlFeedback && (
+          <p
+            id="project-link-url-hint"
+            className={cn(
+              "text-[10px] leading-relaxed flex items-start gap-1",
+              linkUrlFeedback.tone === "error" ? "text-destructive" : "text-emerald-600 dark:text-emerald-400",
+            )}
+            role={linkUrlFeedback.tone === "error" ? "alert" : "status"}
+          >
+            {linkUrlFeedback.tone === "ok" && (
+              <ShieldCheck className="w-3 h-3 shrink-0 mt-0.5" aria-hidden />
+            )}
+            {linkUrlFeedback.message}
+          </p>
+        )}
       </div>
 
       <div className="space-y-2">

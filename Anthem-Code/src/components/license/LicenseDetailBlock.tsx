@@ -14,6 +14,9 @@ interface Props {
   ownerName?: string;
   hasThirdPartyAssets?: boolean;
   thirdPartyNote?: string | null;
+  aiAssisted?: boolean;
+  aiDisclosureNote?: string | null;
+  clientPermissionConfirmed?: boolean;
   allowHire?: boolean;
   onHire?: () => void;
   /** Render inside project header card (no extra glass panel). */
@@ -40,6 +43,9 @@ const LicenseDetailBlock = ({
   ownerName,
   hasThirdPartyAssets,
   thirdPartyNote,
+  aiAssisted,
+  aiDisclosureNote,
+  clientPermissionConfirmed,
   allowHire,
   onHire,
   embedded = false,
@@ -94,6 +100,19 @@ const LicenseDetailBlock = ({
                 มี asset จากที่อื่น: {thirdPartyNote.trim()}
               </p>
             )}
+
+            {clientPermissionConfirmed ? (
+              <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg p-2">
+                งานลูกค้า — ได้รับอนุญาตเผยแพร่แล้ว
+              </p>
+            ) : null}
+
+            {aiAssisted ? (
+              <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg p-2">
+                ใช้ AI ช่วยทำผลงานนี้
+                {aiDisclosureNote?.trim() ? ` — ${aiDisclosureNote.trim()}` : ""}
+              </p>
+            ) : null}
 
             <div className="flex flex-wrap items-center gap-2">
               {(meta.allowsCommercial || meta.id === "commercial_license") && (allowHire ?? true) && onHire && (

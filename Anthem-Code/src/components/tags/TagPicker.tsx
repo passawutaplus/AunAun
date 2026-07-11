@@ -107,16 +107,13 @@ const TagPicker = ({
       {showQuick && (
         <div className="space-y-2">
           {availablePresets.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
               {availablePresets.map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => addTag(s)}
-                  className={cn(
-                    "text-xs px-2.5 py-1 rounded-full border border-primary/30 bg-primary/5",
-                    "text-primary hover:bg-primary/10 transition-colors",
-                  )}
+                  className="text-xs text-muted-foreground transition-colors hover:text-primary"
                 >
                   #{s}
                 </button>
@@ -124,16 +121,13 @@ const TagPicker = ({
             </div>
           )}
           {filteredSuggestions.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
               {filteredSuggestions.map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => addTag(s)}
-                  className={cn(
-                    "text-xs px-2.5 py-1 rounded-full border border-border/80 bg-muted/40",
-                    "text-foreground/80 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-colors",
-                  )}
+                  className="text-xs text-muted-foreground transition-colors hover:text-primary"
                 >
                   #{s}
                 </button>
@@ -144,13 +138,13 @@ const TagPicker = ({
       )}
 
       {input.trim() && filteredSuggestions.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-x-3 gap-y-1.5">
           {filteredSuggestions.map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => addTag(s)}
-              className="text-xs px-2.5 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
+              className="text-xs text-muted-foreground transition-colors hover:text-primary"
             >
               #{s}
             </button>

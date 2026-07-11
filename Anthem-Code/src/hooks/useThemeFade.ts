@@ -30,8 +30,8 @@ export function useThemeFade() {
 
   useEffect(() => setMounted(true), []);
 
-  const preference = (theme ?? "light") as ThemePreference;
-  const resolved = (resolvedTheme ?? theme ?? "light") as "light" | "dark";
+  const preference = (theme ?? "system") as ThemePreference;
+  const resolved = (resolvedTheme ?? "light") as "light" | "dark";
   const isDark = resolved === "dark";
 
   const setThemeWithFade = useCallback(

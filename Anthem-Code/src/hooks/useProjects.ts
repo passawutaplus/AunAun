@@ -7,7 +7,11 @@ import { blendPersonalizedProjects, resolveTopCategories } from "@/lib/forYouBle
 import { getFeedSearchCategoryWeights } from "@/lib/feedSearchSignals";
 import { isOptionalQueryError } from "@/lib/supabaseErrors";
 import {
+  isSchemaAiDisclosureError,
+  isSchemaClientPermissionError,
   isSchemaContentPresentationError,
+  stripOptionalAiDisclosureFields,
+  stripOptionalClientPermissionFields,
   stripOptionalProjectContentFields,
 } from "@/lib/projectContentBlocks";
 
@@ -37,7 +41,19 @@ async function writeProjectRow(
   try {
     return await attempt(payload);
   } catch (e) {
+    if (isSchemaClientPermissionError(e)) {
+      console.warn("[projects] client permission column missing — saving without it", e);
+      return await attempt(stripOptionalClientPermissionFields(payload as Record<string, unknown>));
+    }
+    if (isSchemaAiDisclosureError(e)) {
+      console.warn("[projects] ai disclosure columns missing — saving without them", e);
+      return await attempt(stripOptionalAiDisclosureFields(payload as Record<string, unknown>));
+    }
     if (isSchemaContentPresentationError(e)) {
+      console.warn(
+        "[projects] content_blocks columns missing — saving without module layout (images only)",
+        e,
+      );
       return await attempt(stripOptionalProjectContentFields(payload as Record<string, unknown>));
     }
     throw e;

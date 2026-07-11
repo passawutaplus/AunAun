@@ -74,13 +74,25 @@ describe("commentSchema", () => {
 });
 
 describe("projectSchema", () => {
-  it("requires title and category", () => {
-    const r = projectSchema.safeParse({ title: "ab", category: "", status: "Draft", cover_url: "" });
+  it("requires title, category, and cover", () => {
+    const r = projectSchema.safeParse({ title: "", category: "", status: "Draft", cover_url: "" });
     expect(r.success).toBe(false);
   });
-  it("accepts valid draft", () => {
+  it("rejects draft without cover", () => {
     const r = projectSchema.safeParse({
-      title: "My Project", category: "Design", status: "Draft", cover_url: "",
+      title: "My Project",
+      category: "Design",
+      status: "Draft",
+      cover_url: "",
+    });
+    expect(r.success).toBe(false);
+  });
+  it("accepts valid draft with cover", () => {
+    const r = projectSchema.safeParse({
+      title: "My Project",
+      category: "Design",
+      status: "Draft",
+      cover_url: "https://cdn.example/cover.jpg",
     });
     expect(r.success).toBe(true);
   });

@@ -1,7 +1,7 @@
+import { ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 export type ProjectContextForm = {
@@ -34,36 +34,44 @@ const ProjectContextEditorFields = ({
   disabled,
 }: Props) => (
   <section className="space-y-3">
-    <label
-      htmlFor="project-context-toggle"
-      className="flex items-center gap-3 cursor-pointer"
-    >
-      <Checkbox
-        id="project-context-toggle"
-        checked={expanded}
-        onCheckedChange={(checked) => onExpandedChange(checked === true)}
-        disabled={disabled}
-      />
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-sm font-semibold text-foreground">เล่าเบื้องหลังผลงาน</span>
-        <span className="text-[11px] font-medium text-primary">ไม่บังคับ</span>
-      </div>
-    </label>
-
     <div className="space-y-1.5">
-      <Label className={fieldLabel}>รายละเอียดแบบย่อ</Label>
+      <Label className={fieldLabel}>
+        รายละเอียดแบบย่อ <span className="text-primary">*</span>
+      </Label>
       <Textarea
         value={shortDescription}
         onChange={(e) => onShortDescriptionChange(e.target.value)}
         placeholder="สรุปสั้น ๆ ว่างานนี้คืออะไร ทำอะไร หรือจุดเด่นที่อยากให้จำ..."
         rows={3}
         maxLength={2000}
+        required
         disabled={disabled}
         className="bg-background resize-y min-h-[80px] text-sm"
+        aria-required
       />
     </div>
 
+    <button
+      type="button"
+      id="project-context-toggle"
+      aria-expanded={expanded}
+      aria-controls="project-context-fields"
+      disabled={disabled}
+      onClick={() => onExpandedChange(!expanded)}
+      className="flex w-full items-center justify-center gap-1.5 py-1 text-sm font-medium text-foreground hover:text-primary transition-colors disabled:opacity-50"
+    >
+      <span>เล่าเบื้องหลังผลงานเพิ่มเติม</span>
+      <ChevronDown
+        className={cn(
+          "w-4 h-4 text-muted-foreground transition-transform duration-200",
+          expanded && "rotate-180",
+        )}
+        aria-hidden
+      />
+    </button>
+
     <div
+      id="project-context-fields"
       className={cn(
         "grid transition-[grid-template-rows] duration-200 ease-out",
         expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",

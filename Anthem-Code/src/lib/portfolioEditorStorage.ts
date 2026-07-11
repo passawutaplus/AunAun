@@ -62,8 +62,8 @@ export function portfolioEditorHasContent(snap: {
     Array.isArray(snap.content_blocks) &&
     snap.content_blocks.some((b) => {
       if (!b || typeof b !== "object") return false;
-      const row = b as { heading?: string; body?: string };
-      return !!(row.heading?.trim() || row.body?.trim());
+      const row = b as { heading?: string; body?: string; url?: string; type?: string };
+      return !!(row.heading?.trim() || row.body?.trim() || row.url?.trim());
     });
   return !!(
     snap.title?.trim() ||

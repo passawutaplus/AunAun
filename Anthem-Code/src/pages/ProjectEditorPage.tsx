@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Eye, Handshake, ImagePlus, Library, Loader2, Save, Upload, X } from "lucide-react";
+import { Eye, Handshake, ImagePlus, Library, Loader2, Save, X } from "lucide-react";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ import { uploadProjectVideo } from "@/lib/uploadVideo";
 import { useSubscription } from "@/core/subscription";
 import { getProjectLimits } from "@/lib/projectLimits";
 import { supabase } from "@/integrations/supabase/client";
-import { projectSchema, validateProjectPublish } from "@/lib/validators";
+import { projectSchema, validateProjectBasics, validateProjectPublish } from "@/lib/validators";
 import { portfolioEditorHasContent } from "@/lib/portfolioEditorStorage";
 import { categories, DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory } from "@/data/projectTypes";
 import PageLoader from "@/components/ui/PageLoader";
@@ -37,6 +37,13 @@ import TagPicker from "@/components/tags/TagPicker";
 import ToolPicker from "@/components/tools/ToolPicker";
 import ProjectPreviewDialog, { type ProjectPreviewData } from "@/components/project/ProjectPreviewDialog";
 import { PortfolioCoverCropDialog } from "@/components/project/PortfolioCoverCropDialog";
+import {
+  ModuleImageCropDialog,
+  urlToImageFile,
+  type ModuleImageCropConfirmResult,
+} from "@/components/project/ModuleImageCropDialog";
+import { cropImageFileToAspectFile, cropImageUrlToAspectFile } from "@/lib/cropImage";
+import { communityMediaAspectMeta, normalizeCommunityMediaAspect } from "@/lib/communityMediaAspect";
 import ProjectContextEditorFields, {
   type ProjectContextForm,
 } from "@/components/project/ProjectContextEditorFields";
@@ -53,35 +60,52 @@ import { hasProjectContextContent } from "@/lib/opportunity";
 import type { ProjectPreviewMode } from "@/components/project/ProjectPreviewModeTabs";
 import ThirdPartyAssetsToggle from "@/components/license/ThirdPartyAssetsToggle";
 import OriginalWorkAttestation from "@/components/license/OriginalWorkAttestation";
+import AiDisclosureToggle from "@/components/license/AiDisclosureToggle";
+import ClientPermissionConfirm from "@/components/license/ClientPermissionConfirm";
 import { LEGAL_ATTESTATION_VERSION } from "@/lib/legalConfig";
 import { type LicenseType, isLicenseType } from "@/lib/licenses";
 import { ProjectEditorToolsSidebar } from "@/components/project/ProjectEditorToolsSidebar";
-import { ProjectEditorGallerySection } from "@/components/project/ProjectEditorGallerySection";
-import { ProjectEditorContinueAdd } from "@/components/project/ProjectEditorContinueAdd";
+import { ProjectEditorMetaSidebar } from "@/components/project/ProjectEditorMetaSidebar";
+import { ProjectCanvasEditor } from "@/components/project/ProjectCanvasEditor";
 import { PortfolioLinkedPostPicker } from "@/components/project/PortfolioLinkedPostPicker";
 import { isAplus1LaunchMinimal, isAplus1SubscriptionsEnabled, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 import { PortfolioCollabUserPicker } from "@/components/project/PortfolioCollabUserPicker";
-import { SortableGalleryGrid } from "@/components/project/SortableGalleryGrid";
-import { ProjectContentBlocksEditor } from "@/components/project/ProjectContentBlocksEditor";
 import {
-  blocksFromLegacyDescription,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import type { CanvasToolPayload } from "@/lib/canvasToolDrag";
+import { useCanvasTemplates, type UserCanvasTemplate } from "@/hooks/useCanvasTemplates";
+import {
   createContentBlock,
-  parseContentBlocks,
+  createGalleryPlaceholder,
+  createGridPlaceholder,
+  createMediaBlock,
+  createMediaPlaceholder,
+  createMultiRowPlaceholder,
+  createImageTextPlaceholder,
+  hydrateProjectCanvas,
+  mediaItemsFromBlocks,
   parseGalleryDisplayMode,
   PROJECT_CONTENT_BLOCKS_MAX,
+  splitMediaFromBlocks,
   toStoredContentBlocks,
+  blockImageUrls,
   type GalleryDisplayMode,
   type ProjectContentBlock,
-  type ProjectContentBlockType,
 } from "@/lib/projectContentBlocks";
-import { parsePhotoGridLayout, photoGridSlotCount, type PhotoGridLayout } from "@/lib/photoGridLayouts";
 import {
-  countMediaByKind,
-  mediaItemFromUrl,
-  mediaItemsFromProject,
-  splitMediaItems,
-  type PortfolioMediaItem,
-} from "@/lib/portfolioMedia";
+  isThreeSplitGridLayout,
+  parsePhotoGridPickerLayout,
+  photoGridSlotCount,
+  threeSplitSlotCropSpec,
+  type PhotoGridLayout,
+} from "@/lib/photoGridLayouts";
+import { countMediaByKind } from "@/lib/portfolioMedia";
 import { mergeDrillTags } from "@/lib/drillProject";
 import { DrillPostNotice } from "@/components/drill/DrillPostNotice";
 import {
@@ -139,7 +163,6 @@ const ProjectEditorPage = () => {
   const [gridLayout, setGridLayout] = useState<PhotoGridLayout>("four_quad");
   const [category, setCategory] = useState<string>("");
   const [cover, setCover] = useState<string>("");
-  const [mediaItems, setMediaItems] = useState<PortfolioMediaItem[]>([]);
   const [tools, setTools] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [price, setPrice] = useState<string>("");
@@ -155,15 +178,31 @@ const ProjectEditorPage = () => {
   const [copyrightHolder, setCopyrightHolder] = useState("");
   const [hasThirdPartyAssets, setHasThirdPartyAssets] = useState(false);
   const [thirdPartyNote, setThirdPartyNote] = useState("");
+  const [aiAssisted, setAiAssisted] = useState(false);
+  const [aiDisclosureNote, setAiDisclosureNote] = useState("");
+  const [clientPermissionConfirmed, setClientPermissionConfirmed] = useState(false);
   const [rightsAttested, setRightsAttested] = useState(false);
   const [toolInput, setToolInput] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [uploadingCover, setUploadingCover] = useState(false);
   const [coverCropFile, setCoverCropFile] = useState<File | null>(null);
   const [coverCropOpen, setCoverCropOpen] = useState(false);
+  const [moduleCropFile, setModuleCropFile] = useState<File | null>(null);
+  const [moduleCropOpen, setModuleCropOpen] = useState(false);
+  const [moduleCropTarget, setModuleCropTarget] = useState<{
+    blockId: string;
+    slotIndex?: number;
+    sourceUrl: string;
+    gallerySlide?: boolean;
+    lockedCrop?: { ratio: number; exportW: number; exportH: number; label: string };
+  } | null>(null);
   const [uploadingGallery, setUploadingGallery] = useState(false);
-  const [uploadingGridSlot, setUploadingGridSlot] = useState<number | null>(null);
+  const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
   const [toolsExpanded, setToolsExpanded] = useState(false);
+  const [toolsTab, setToolsTab] = useState<"template" | "module">("module");
+  const emptyStartImageInputRef = useRef<HTMLInputElement>(null);
+  const [metaExpanded, setMetaExpanded] = useState(true);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<ProjectPreviewMode>("pc");
@@ -182,6 +221,24 @@ const ProjectEditorPage = () => {
   });
   const [projectAssets, setProjectAssets] = useState<ProjectAsset[]>([]);
   const [contextExpanded, setContextExpanded] = useState(false);
+  const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
+  const [templateNameDialog, setTemplateNameDialog] = useState<
+    null | { mode: "save" } | { mode: "rename"; template: UserCanvasTemplate }
+  >(null);
+  const [templateNameDraft, setTemplateNameDraft] = useState("");
+  const [pendingUpdateTemplate, setPendingUpdateTemplate] = useState<UserCanvasTemplate | null>(null);
+  const [pendingDeleteTemplate, setPendingDeleteTemplate] = useState<UserCanvasTemplate | null>(null);
+  const {
+    templates,
+    isLoading: templatesLoading,
+    atLimit: templatesAtLimit,
+    createFromBlocks,
+    rename: renameTemplate,
+    updateModulesFromBlocks,
+    remove: removeTemplate,
+    buildBlocks,
+  } = useCanvasTemplates();
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const patchProjectContext = useCallback((patch: Partial<ProjectContextForm>) => {
     setProjectContext((c) => ({ ...c, ...patch }));
   }, []);
@@ -265,27 +322,24 @@ const ProjectEditorPage = () => {
     setTitle(existing.title);
       const extContent = existing as {
         content_blocks?: unknown;
-        gallery_display_mode?: string;
-        grid_layout?: string;
       };
-      const parsedBlocks = parseContentBlocks(extContent.content_blocks);
-      if (parsedBlocks.length) {
-        setContentBlocks(parsedBlocks);
-        setShortDescription(existing.description ?? "");
-      } else {
-        setContentBlocks(blocksFromLegacyDescription(existing.description));
-        setShortDescription("");
-      }
-      setGalleryDisplayMode(parseGalleryDisplayMode(extContent.gallery_display_mode));
-      setGridLayout(parsePhotoGridLayout(extContent.grid_layout));
+      const canvas = hydrateProjectCanvas({
+        content_blocks: extContent.content_blocks,
+        description: existing.description,
+        gallery_urls: existing.gallery_urls ?? [],
+        video_urls: ((existing as { video_urls?: string[] }).video_urls) ?? [],
+      });
+      setContentBlocks(canvas);
+      // If DB already had content_blocks, keep description as short blurb; else description was folded into canvas.
+      const hadStoredBlocks =
+        Array.isArray(extContent.content_blocks) && extContent.content_blocks.length > 0;
+      setShortDescription(hadStoredBlocks ? (existing.description ?? "") : "");
+      setGalleryDisplayMode(
+        parseGalleryDisplayMode((existing as { gallery_display_mode?: string }).gallery_display_mode),
+      );
+      setGridLayout(parsePhotoGridPickerLayout((existing as { grid_layout?: string }).grid_layout));
       setCategory(existing.category);
       setCover(existing.cover_url ?? "");
-      setMediaItems(
-        mediaItemsFromProject(
-          existing.gallery_urls ?? [],
-          ((existing as { video_urls?: string[] }).video_urls) ?? [],
-        ),
-      );
       setTools(existing.tools ?? []);
       setTags(existing.tags ?? []);
       setPrice(existing.price_thb ? String(existing.price_thb) : "");
@@ -301,6 +355,12 @@ const ProjectEditorPage = () => {
       setCopyrightHolder((existing as { copyright_holder?: string }).copyright_holder ?? "");
       setHasThirdPartyAssets((existing as { has_third_party_assets?: boolean }).has_third_party_assets ?? false);
       setThirdPartyNote((existing as { third_party_note?: string }).third_party_note ?? "");
+      setAiAssisted((existing as { ai_assisted?: boolean }).ai_assisted ?? false);
+      setAiDisclosureNote((existing as { ai_disclosure_note?: string }).ai_disclosure_note ?? "");
+      setClientPermissionConfirmed(
+        (existing as { client_permission_confirmed?: boolean }).client_permission_confirmed ??
+          !!(existing as { copyright_holder?: string }).copyright_holder?.trim(),
+      );
       setRightsAttested(!!(existing as { rights_attested_at?: string | null }).rights_attested_at);
       const extCtx = existing as {
         brief?: string | null;
@@ -367,7 +427,7 @@ const ProjectEditorPage = () => {
 
   const buildProjectPayload = useCallback(
     (targetStatus: Status) => {
-      const { gallery_urls, video_urls } = splitMediaItems(mediaItems);
+      const { gallery_urls, video_urls } = splitMediaFromBlocks(contentBlocks);
       const finalTags = mergeDrillTags(
         tags,
         drillMetaRef.current.drill_type,
@@ -399,7 +459,10 @@ const ProjectEditorPage = () => {
         license_note: licenseNote.trim(),
         has_third_party_assets: hasThirdPartyAssets,
         third_party_note: thirdPartyNote.trim(),
-        copyright_holder: copyrightHolder.trim(),
+        ai_assisted: aiAssisted,
+        ai_disclosure_note: aiAssisted ? aiDisclosureNote.trim() : "",
+        client_permission_confirmed: clientPermissionConfirmed,
+        copyright_holder: clientPermissionConfirmed ? copyrightHolder.trim() : "",
         rights_attested_at: rightsAttestedAt,
         rights_attestation_version: rightsAttested ? LEGAL_ATTESTATION_VERSION : null,
         brief: projectContext.brief.trim(),
@@ -418,7 +481,6 @@ const ProjectEditorPage = () => {
       };
     },
     [
-      mediaItems,
       tags,
       title,
       shortDescription,
@@ -437,6 +499,9 @@ const ProjectEditorPage = () => {
       licenseNote,
       hasThirdPartyAssets,
       thirdPartyNote,
+      aiAssisted,
+      aiDisclosureNote,
+      clientPermissionConfirmed,
       copyrightHolder,
       rightsAttested,
       allLinkedPostIds,
@@ -510,7 +575,7 @@ const ProjectEditorPage = () => {
   const persistDraft = useCallback(
     async (projectId?: string | null): Promise<{ id: string } | null> => {
       if (!user) throw new Error("UNAUTHORIZED");
-      const media = splitMediaItems(mediaItems);
+      const media = splitMediaFromBlocks(contentBlocks);
       if (
         !portfolioEditorHasContent({
           title,
@@ -558,7 +623,6 @@ const ProjectEditorPage = () => {
     },
     [
       user,
-      mediaItems,
       title,
       shortDescription,
       contentBlocks,
@@ -609,31 +673,47 @@ const ProjectEditorPage = () => {
     openCoverCrop(file);
   };
 
-  const handleSetCoverFromGallery = async (url: string) => {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("fetch failed");
-      const blob = await res.blob();
-      if (!blob.type.startsWith("image/")) throw new Error("not image");
-      const file = new File([blob], "gallery-cover.webp", { type: blob.type || "image/webp" });
-      openCoverCrop(file);
-    } catch {
-      toast.error("โหลดรูปไม่สำเร็จ — ลองอัปโหลดภาพปกใหม่");
-    }
-  };
+  const appendMediaBlocks = useCallback((kind: "image" | "video", urls: string[]) => {
+    setContentBlocks((prev) => {
+      const room = PROJECT_CONTENT_BLOCKS_MAX - prev.length;
+      if (room <= 0) {
+        toast.message(`เพิ่มบล็อกได้สูงสุด ${PROJECT_CONTENT_BLOCKS_MAX} บล็อก`);
+        return prev;
+      }
+      const added = urls.slice(0, room).map((url) => createMediaBlock(kind, url));
+      if (urls.length > room) {
+        toast.message(`เพิ่มได้แค่ ${room} บล็อก (เต็ม ${PROJECT_CONTENT_BLOCKS_MAX})`);
+      }
+      return [...prev, ...added];
+    });
+  }, []);
 
   const handleGallery = async (files: FileList | File[]) => {
     if (!user) return;
-    const arr = Array.from(files);
+    const arr = Array.from(files).filter((f) => f.type.match(/^image\/(jpeg|png|webp)$/i));
+    if (!arr.length) {
+      toast.error("รองรับเฉพาะ JPG, PNG, WebP");
+      return;
+    }
+    const maxImages = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
+    const currentImages = countMediaByKind(mediaItemsFromBlocks(contentBlocks), "image");
+    const room = Math.max(0, maxImages - currentImages);
+    if (room <= 0) {
+      toast.error(`อัปโหลดภาพได้สูงสุด ${maxImages} ไฟล์/ผลงาน`);
+      return;
+    }
+    const toUpload = arr.slice(0, room);
     setUploadingGallery(true);
     try {
       const urls: string[] = [];
-      for (const f of arr) {
+      for (const f of toUpload) {
         const u = await uploadProjectImage(f, user.id, folderRef.current, tier);
         urls.push(u);
       }
-      const added = urls.map(mediaItemFromUrl);
-      setMediaItems((prev) => [...prev, ...added]);
+      appendMediaBlocks("image", urls);
+      if (!cover && urls[0]) {
+        setCover(urls[0]);
+      }
       toast.success(`อัปโหลด ${urls.length} ภาพสำเร็จ`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
@@ -642,95 +722,17 @@ const ProjectEditorPage = () => {
     }
   };
 
-  const handleGridSlotUpload = async (slotIndex: number, file: File) => {
-    if (!user) return;
-    if (!file.type.match(/^image\/(jpeg|png|webp)$/i)) {
-      toast.error("รองรับเฉพาะ JPG, PNG, WebP");
-      return;
-    }
-    const images = mediaItems.filter((m) => m.kind === "image");
-    const slots = photoGridSlotCount(gridLayout);
-    if (slotIndex >= slots) return;
-
-    if (slotIndex > images.length) {
-      toast.error("กรุณาเติมช่องก่อนหน้าก่อน");
-      return;
-    }
-
-    setUploadingGridSlot(slotIndex);
-    try {
-      const url = await uploadProjectImage(file, user.id, folderRef.current, tier);
-      const newItem = mediaItemFromUrl(url);
-      setMediaItems((prev) => {
-        const imgs = prev.filter((m) => m.kind === "image");
-        const vids = prev.filter((m) => m.kind === "video");
-        const nextImgs = [...imgs];
-        if (slotIndex < nextImgs.length) {
-          nextImgs[slotIndex] = newItem;
-        } else {
-          nextImgs.push(newItem);
-        }
-        return [...nextImgs, ...vids];
-      });
-      toast.success("อัปโหลดภาพสำเร็จ");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
-    } finally {
-      setUploadingGridSlot(null);
-    }
-  };
-
-  const handleGridSlotRemove = (slotIndex: number) => {
-    setMediaItems((prev) => {
-      const images = prev.filter((m) => m.kind === "image");
-      const videos = prev.filter((m) => m.kind === "video");
-      if (slotIndex >= images.length) return prev;
-      const removed = images[slotIndex];
-      const nextImages = images.filter((_, i) => i !== slotIndex);
-      if (removed?.url === cover) {
-        const nextCover = nextImages[0]?.url ?? "";
-        setCover(nextCover);
-      }
-      return [...nextImages, ...videos];
-    });
-  };
-
-  const removeMediaItem = (index: number) => {
-    setMediaItems((prev) => {
-      const removed = prev[index];
-      const next = prev.filter((_, j) => j !== index);
-      if (removed?.kind === "image" && removed.url === cover) {
-        const nextCover = next.find((m) => m.kind === "image")?.url ?? "";
-        setCover(nextCover);
-      }
-      return next;
-    });
-  };
-
-
-  const handleVideo = async (file: File) => {
-    if (!user) return;
-    if (countMediaByKind(mediaItems, "video") >= limits.videosPerProject) {
-      toast.error(`แพ็กเกจนี้อัปโหลดวิดีโอได้สูงสุด ${limits.videosPerProject} คลิป/ผลงาน`);
-      return;
-    }
-    setUploadingVideo(true);
-    try {
-      const url = await uploadProjectVideo(file, user.id, folderRef.current, tier);
-      setMediaItems((prev) => [...prev, mediaItemFromUrl(url)]);
-      toast.success("อัปโหลดวิดีโอสำเร็จ");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
-    } finally {
-      setUploadingVideo(false);
-    }
-  };
-
   const handleSubmit = async (publish?: boolean, projectIdOverride?: string) => {
     if (!user) return;
     const targetStatus: Status = publish === undefined ? status : publish ? "Published" : "Draft";
     const resolvedId =
       projectIdOverride ?? (editing && id && isUuid(id) ? id : undefined);
+
+    const basicsErr = validateProjectBasics({ title, cover_url: cover });
+    if (basicsErr) {
+      toast.error(basicsErr);
+      return;
+    }
 
     if (targetStatus === "Published" && existing?.status !== "Published") {
       const maxPublished = limits.published;
@@ -775,8 +777,8 @@ const ProjectEditorPage = () => {
       toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
       return;
     }
-    if (targetStatus === "Published" && !cover) {
-      toast.error("ต้องมีภาพปกก่อนเผยแพร่");
+    if (targetStatus === "Published" && !shortDescription.trim()) {
+      toast.error("กรุณากรอกรายละเอียดแบบย่อ");
       return;
     }
     if (targetStatus === "Published" && !rightsAttested) {
@@ -838,16 +840,23 @@ const ProjectEditorPage = () => {
   };
 
   const cats = categories.filter((c) => c !== "Explore");
-  const isUploadingMedia = uploadingCover || uploadingGallery || uploadingVideo || uploadingGridSlot !== null;
+  const isUploadingMedia = uploadingCover || uploadingGallery || uploadingVideo;
   const isBusy = publishing || savingDraft || isUploadingMedia;
-  const canPublish = !!cover && rightsAttested;
-  const publishBlockedReason = !cover
-    ? "ต้องมีภาพปกก่อนเผยแพร่"
-    : !rightsAttested
-      ? "กรุณายืนยันสิทธิ์ในผลงานก่อนเผยแพร่"
-      : undefined;
+  const canPublish = !!title.trim() && !!cover && rightsAttested;
+  const publishBlockedReason = !title.trim()
+    ? "กรอกชื่องานก่อนเผยแพร่"
+    : !cover
+      ? "ต้องมีภาพปกก่อนเผยแพร่"
+      : !rightsAttested
+        ? "กรุณายืนยันสิทธิ์ในผลงานก่อนเผยแพร่"
+        : undefined;
 
   const handleSaveDraft = async (silent = false) => {
+    const basicsErr = validateProjectBasics({ title, cover_url: cover });
+    if (basicsErr) {
+      if (!silent) toast.error(basicsErr);
+      return;
+    }
     setSavingDraft(true);
     try {
       const result = await persistDraft();
@@ -874,49 +883,416 @@ const ProjectEditorPage = () => {
     }
   };
 
-  const handleGalleryDisplayModeChange = (mode: GalleryDisplayMode) => {
-    if (mode === "single") {
-      const images = mediaItems.filter((m) => m.kind === "image");
-      if (images.length > 1) {
-        const keepId = images[0]!.id;
-        setMediaItems((prev) => prev.filter((m) => m.kind !== "image" || m.id === keepId));
-        toast.message("โหมดภาพเดียว — คงภาพแรกไว้");
-      }
-    }
-    setGalleryDisplayMode(mode);
-  };
+  const applyCanvasTemplate = useCallback(
+    (template: UserCanvasTemplate, mode: "replace" | "append") => {
+      const added = buildBlocks(template);
+      if (!added.length) return;
 
-  const handleGridLayoutSelect = (layout: PhotoGridLayout) => {
-    setGridLayout(layout);
-    handleGalleryDisplayModeChange("grid");
-  };
+      setContentBlocks((prev) => {
+        if (mode === "replace") return added.slice(0, PROJECT_CONTENT_BLOCKS_MAX);
+        const room = PROJECT_CONTENT_BLOCKS_MAX - prev.length;
+        if (room <= 0) {
+          toast.message(`เพิ่มบล็อกได้สูงสุด ${PROJECT_CONTENT_BLOCKS_MAX} บล็อก`);
+          return prev;
+        }
+        if (added.length > room) {
+          toast.message(`เพิ่มได้แค่ ${room} บล็อกจากเทมเพลต (เต็ม ${PROJECT_CONTENT_BLOCKS_MAX})`);
+        }
+        return [...prev, ...added.slice(0, room)];
+      });
 
-  const handleAddTextBlock = useCallback(
-    (type: ProjectContentBlockType) => {
-      if (contentBlocks.length >= PROJECT_CONTENT_BLOCKS_MAX) {
-        toast.message(`เพิ่มบล็อกได้สูงสุด ${PROJECT_CONTENT_BLOCKS_MAX} บล็อก`);
-        return;
+      const firstGrid = added.find((b) => b.type === "image" && b.mediaLayout === "grid");
+      const firstGallery = added.find((b) => b.type === "image" && b.mediaLayout === "gallery");
+      if (firstGrid?.gridLayout) {
+        setGridLayout(parsePhotoGridPickerLayout(firstGrid.gridLayout));
+        setGalleryDisplayMode("grid");
+      } else if (firstGallery) {
+        setGalleryDisplayMode("gallery");
+      } else {
+        setGalleryDisplayMode("single");
       }
-      setContentBlocks((prev) => [...prev, createContentBlock(type)]);
+
+      if (template.open_context) setContextExpanded(true);
+      toast.success(`ใช้เทมเพลต「${template.name}」แล้ว — อัปภาพและแก้ข้อความได้เลย`);
+      window.setTimeout(() => titleInputRef.current?.focus(), 80);
     },
-    [contentBlocks.length],
+    [buildBlocks],
   );
 
-  const focusToolsSidebar = useCallback(() => {
-    setToolsExpanded(true);
+  const handleApplyTemplate = useCallback(
+    (templateId: string) => {
+      const template = templates.find((t) => t.id === templateId);
+      if (!template) return;
+      if (contentBlocks.length === 0) {
+        applyCanvasTemplate(template, "replace");
+        return;
+      }
+      setPendingTemplateId(templateId);
+    },
+    [applyCanvasTemplate, contentBlocks.length, templates],
+  );
+
+  const pendingTemplate = pendingTemplateId
+    ? templates.find((t) => t.id === pendingTemplateId) ?? null
+    : null;
+
+  const handlePlaceTool = useCallback((payload: CanvasToolPayload, insertAt?: number) => {
+    if (payload.tool === "grid") {
+      setGridLayout(payload.layout);
+      setGalleryDisplayMode("grid");
+    }
+    if (payload.tool === "single" || payload.tool === "gallery") {
+      setGalleryDisplayMode(payload.tool);
+    }
+
+    setContentBlocks((prev) => {
+      const room = PROJECT_CONTENT_BLOCKS_MAX - prev.length;
+      if (room <= 0) {
+        toast.message(`เพิ่มบล็อกได้สูงสุด ${PROJECT_CONTENT_BLOCKS_MAX} บล็อก`);
+        return prev;
+      }
+
+      let added: ProjectContentBlock[] = [];
+      if (payload.tool === "heading" || payload.tool === "heading_body" || payload.tool === "body") {
+        added = [createContentBlock(payload.tool)];
+      } else if (payload.tool === "video") {
+        added = [createMediaPlaceholder("video")];
+      } else if (payload.tool === "single") {
+        added = [createMediaPlaceholder("image")];
+      } else if (payload.tool === "gallery") {
+        added = [createGalleryPlaceholder(2)];
+      } else if (payload.tool === "multi") {
+        added = [createMultiRowPlaceholder(payload.columns)];
+      } else if (payload.tool === "image_text") {
+        added = [createImageTextPlaceholder(payload.side)];
+      } else if (payload.tool === "grid") {
+        added = [createGridPlaceholder(payload.layout, photoGridSlotCount(payload.layout))];
+      }
+
+      if (!added.length) return prev;
+
+      const at =
+        typeof insertAt === "number" && insertAt >= 0 && insertAt <= prev.length
+          ? insertAt
+          : prev.length;
+      return [...prev.slice(0, at), ...added, ...prev.slice(at)];
+    });
   }, []);
 
-  const hasPresentationContent =
-    galleryDisplayMode === "grid" || mediaItems.length > 0 || contentBlocks.length > 0;
+  const handleUploadToBlock = useCallback(
+    async (blockId: string, file: File, slotIndex?: number) => {
+      if (!user) return;
+      const block = contentBlocks.find((b) => b.id === blockId);
+      if (!block || (block.type !== "image" && block.type !== "video" && block.type !== "image_text")) return;
 
+      if (block.type === "image_text") {
+        if (!file.type.match(/^image\/(jpeg|png|webp)$/i)) {
+          toast.error("รองรับเฉพาะ JPG, PNG, WebP");
+          return;
+        }
+        setUploadingBlockId(blockId);
+        setUploadingGallery(true);
+        try {
+          const url = await uploadProjectImage(file, user.id, folderRef.current, tier);
+          setContentBlocks((prev) =>
+            prev.map((b) => (b.id === blockId && b.type === "image_text" ? { ...b, url } : b)),
+          );
+          if (!cover) setCover(url);
+          toast.success("อัปโหลดภาพสำเร็จ");
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+        } finally {
+          setUploadingBlockId(null);
+          setUploadingGallery(false);
+        }
+        return;
+      }
+
+      if (block.type === "image") {
+        if (!file.type.match(/^image\/(jpeg|png|webp)$/i)) {
+          toast.error("รองรับเฉพาะ JPG, PNG, WebP");
+          return;
+        }
+        setUploadingBlockId(blockId);
+        setUploadingGallery(true);
+        try {
+          let uploadFile = file;
+          let resolvedSlot = typeof slotIndex === "number" && slotIndex >= 0 ? slotIndex : undefined;
+          if (block.mediaLayout === "grid" && isThreeSplitGridLayout(block.gridLayout)) {
+            if (resolvedSlot === undefined) {
+              const urls = blockImageUrls(block);
+              const next = [...(urls.length ? urls : ["", "", ""])];
+              const empty = next.findIndex((u) => !u.trim());
+              resolvedSlot = empty >= 0 ? empty : Math.min(next.length, 2);
+            }
+            const spec = threeSplitSlotCropSpec(resolvedSlot);
+            uploadFile = await cropImageFileToAspectFile(file, spec.ratio, file.type || "image/jpeg", {
+              width: spec.exportW,
+              height: spec.exportH,
+            });
+          }
+          const url = await uploadProjectImage(uploadFile, user.id, folderRef.current, tier);
+          setContentBlocks((prev) =>
+            prev.map((b) => {
+              if (b.id !== blockId || b.type !== "image") return b;
+              const urls = blockImageUrls(b);
+              if (b.mediaLayout === "gallery") {
+                const filled = urls.map((u) => u.trim()).filter(Boolean);
+                if (typeof slotIndex === "number" && slotIndex >= 0 && slotIndex < filled.length) {
+                  const next = [...filled];
+                  next[slotIndex] = url;
+                  return { ...b, mediaLayout: "gallery", urls: next, url: next[0] ?? url };
+                }
+                const next = [...filled, url];
+                return { ...b, mediaLayout: "gallery", urls: next, url: next[0] ?? url };
+              }
+              const multi =
+                b.mediaLayout === "grid" ||
+                b.mediaLayout === "multi" ||
+                urls.length > 1;
+              if (multi) {
+                const next = [...(urls.length ? urls : ["", ""])];
+                const idx =
+                  typeof resolvedSlot === "number"
+                    ? resolvedSlot
+                    : typeof slotIndex === "number" && slotIndex >= 0
+                      ? slotIndex
+                      : next.findIndex((u) => !u.trim());
+                const target = idx >= 0 ? idx : next.length;
+                while (next.length <= target) next.push("");
+                next[target] = url;
+                return {
+                  ...b,
+                  urls: next,
+                  url: next.find((u) => u.trim()) ?? url,
+                };
+              }
+              return { ...b, type: "image", url, mediaLayout: "single" };
+            }),
+          );
+          if (!cover) setCover(url);
+          toast.success("อัปโหลดภาพสำเร็จ");
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+        } finally {
+          setUploadingBlockId(null);
+          setUploadingGallery(false);
+        }
+        return;
+      }
+
+      if (
+        !(block.url ?? "").trim() &&
+        countMediaByKind(mediaItemsFromBlocks(contentBlocks), "video") >= limits.videosPerProject
+      ) {
+        toast.error(`แพ็กเกจนี้อัปโหลดวิดีโอได้สูงสุด ${limits.videosPerProject} คลิป/ผลงาน`);
+        return;
+      }
+      setUploadingBlockId(blockId);
+      setUploadingVideo(true);
+      try {
+        const url = await uploadProjectVideo(file, user.id, folderRef.current, tier);
+        setContentBlocks((prev) =>
+          prev.map((b) => (b.id === blockId ? { ...b, type: "video", url } : b)),
+        );
+        toast.success("อัปโหลดวิดีโอสำเร็จ");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+      } finally {
+        setUploadingBlockId(null);
+        setUploadingVideo(false);
+      }
+    },
+    [user, contentBlocks, cover, tier, limits.videosPerProject],
+  );
+
+  const handleUploadManyToBlock = useCallback(
+    async (blockId: string, files: File[]) => {
+      if (!user || !files.length) return;
+      const block = contentBlocks.find((b) => b.id === blockId);
+      if (!block || block.type !== "image" || block.mediaLayout !== "gallery") return;
+
+      const images = files.filter((f) => /^image\/(jpeg|png|webp)$/i.test(f.type));
+      if (!images.length) {
+        toast.error("รองรับเฉพาะ JPG, PNG, WebP");
+        return;
+      }
+
+      setUploadingBlockId(blockId);
+      setUploadingGallery(true);
+      try {
+        const uploaded: string[] = [];
+        for (const file of images) {
+          const url = await uploadProjectImage(file, user.id, folderRef.current, tier);
+          uploaded.push(url);
+        }
+        setContentBlocks((prev) =>
+          prev.map((b) => {
+            if (b.id !== blockId || b.type !== "image") return b;
+            const existing = blockImageUrls(b).map((u) => u.trim()).filter(Boolean);
+            const next = [...existing, ...uploaded];
+            return {
+              ...b,
+              mediaLayout: "gallery",
+              urls: next,
+              url: next[0] ?? "",
+            };
+          }),
+        );
+        if (!cover && uploaded[0]) setCover(uploaded[0]);
+        toast.success(uploaded.length > 1 ? `อัปโหลด ${uploaded.length} ภาพสำเร็จ` : "อัปโหลดภาพสำเร็จ");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+      } finally {
+        setUploadingBlockId(null);
+        setUploadingGallery(false);
+      }
+    },
+    [user, contentBlocks, cover, tier],
+  );
+
+  const handleCropImage = useCallback(async (blockId: string, imageUrl: string, slotIndex?: number) => {
+    try {
+      const block = contentBlocks.find((b) => b.id === blockId);
+      const gallerySlide =
+        block?.type === "image" &&
+        block.mediaLayout === "gallery" &&
+        blockImageUrls(block).map((u) => u.trim()).filter(Boolean).length >= 2;
+      const lockedCrop =
+        block?.type === "image" &&
+        block.mediaLayout === "grid" &&
+        isThreeSplitGridLayout(block.gridLayout)
+          ? (() => {
+              const slot = typeof slotIndex === "number" && slotIndex >= 0 ? slotIndex : 0;
+              const spec = threeSplitSlotCropSpec(slot);
+              return {
+                ratio: spec.ratio,
+                exportW: spec.exportW,
+                exportH: spec.exportH,
+                label: slot === 0 ? "1:2" : "1:1",
+              };
+            })()
+          : undefined;
+      const file = await urlToImageFile(imageUrl);
+      setModuleCropTarget({ blockId, slotIndex, sourceUrl: imageUrl, gallerySlide, lockedCrop });
+      setModuleCropFile(file);
+      setModuleCropOpen(true);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "โหลดรูปเพื่อครอบไม่สำเร็จ");
+    }
+  }, [contentBlocks]);
+
+  const handleModuleCropConfirm = useCallback(
+    async (result: ModuleImageCropConfirmResult) => {
+      if (!user || !moduleCropTarget) return;
+      const { file, applyToAll, aspect, cornerRadiusPercent } = result;
+      const { blockId, slotIndex, sourceUrl, gallerySlide } = moduleCropTarget;
+      setUploadingBlockId(blockId);
+      setUploadingGallery(true);
+      try {
+        if (applyToAll && gallerySlide) {
+          const block = contentBlocks.find((b) => b.id === blockId);
+          if (!block || block.type !== "image") throw new Error("ไม่พบโมดูลสไลด์");
+          const urls = blockImageUrls(block).map((u) => u.trim()).filter(Boolean);
+          if (urls.length < 2) throw new Error("ต้องมีอย่างน้อย 2 ภาพในสไลด์");
+
+          const meta = communityMediaAspectMeta(normalizeCommunityMediaAspect(aspect));
+          const primaryIndex =
+            typeof slotIndex === "number" && slotIndex >= 0 && slotIndex < urls.length
+              ? slotIndex
+              : Math.max(0, urls.findIndex((u) => u === sourceUrl));
+
+          const next: string[] = [];
+          for (let i = 0; i < urls.length; i++) {
+            let uploadFile = file;
+            if (i !== primaryIndex) {
+              const sourceFile = await urlToImageFile(urls[i]);
+              const objectUrl = URL.createObjectURL(sourceFile);
+              try {
+                uploadFile = await cropImageUrlToAspectFile(
+                  objectUrl,
+                  meta.ratio,
+                  `slide-${i + 1}.png`,
+                  "image/png",
+                  {
+                    width: meta.exportW,
+                    height: meta.exportH,
+                    cornerRadiusPercent,
+                  },
+                );
+              } finally {
+                URL.revokeObjectURL(objectUrl);
+              }
+            }
+            const url = await uploadProjectImage(uploadFile, user.id, folderRef.current, tier, {
+              skipCompression: true,
+            });
+            next.push(url);
+          }
+
+          setContentBlocks((prev) =>
+            prev.map((b) =>
+              b.id === blockId && b.type === "image"
+                ? { ...b, mediaLayout: "gallery", urls: next, url: next[0] ?? "" }
+                : b,
+            ),
+          );
+          if (!cover && next[0]) setCover(next[0]);
+          toast.success(`ครอบภาพทั้งสไลด์สำเร็จ (${next.length} ภาพ)`);
+          return;
+        }
+
+        const url = await uploadProjectImage(file, user.id, folderRef.current, tier, {
+          skipCompression: true,
+        });
+        setContentBlocks((prev) =>
+          prev.map((b) => {
+            if (b.id !== blockId) return b;
+            if (b.type === "image_text") {
+              return { ...b, url };
+            }
+            if (b.type !== "image") return b;
+            const urls = blockImageUrls(b).map((u) => u.trim());
+            if (
+              b.mediaLayout === "single" ||
+              (!b.mediaLayout && urls.filter(Boolean).length <= 1 && typeof slotIndex !== "number")
+            ) {
+              return { ...b, type: "image", url, mediaLayout: b.mediaLayout ?? "single" };
+            }
+            const next = urls.length ? [...urls] : [sourceUrl];
+            if (typeof slotIndex === "number" && slotIndex >= 0) {
+              while (next.length <= slotIndex) next.push("");
+              next[slotIndex] = url;
+            } else {
+              const idx = next.findIndex((u) => u === sourceUrl);
+              if (idx >= 0) next[idx] = url;
+              else next.push(url);
+            }
+            return {
+              ...b,
+              urls: next,
+              url: next.find((u) => u.trim()) ?? url,
+            };
+          }),
+        );
+        toast.success("ครอบภาพสำเร็จ");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "บันทึกภาพที่ครอบไม่สำเร็จ");
+      } finally {
+        setUploadingBlockId(null);
+        setUploadingGallery(false);
+        setModuleCropFile(null);
+        setModuleCropTarget(null);
+        setModuleCropOpen(false);
+      }
+    },
+    [user, moduleCropTarget, tier, contentBlocks, cover],
+  );
+
+  const mediaItems = useMemo(() => mediaItemsFromBlocks(contentBlocks), [contentBlocks]);
   const imageCount = countMediaByKind(mediaItems, "image");
   const videoCount = countMediaByKind(mediaItems, "video");
-  const maxGallery =
-    galleryDisplayMode === "single"
-      ? 1
-      : Number.isFinite(limits.galleryImages)
-        ? limits.galleryImages
-        : 20;
+  const maxGallery = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
 
   const previewData: ProjectPreviewData = {
     title,
@@ -937,6 +1313,17 @@ const ProjectEditorPage = () => {
     copyrightHolder,
     hasThirdPartyAssets,
     thirdPartyNote,
+    aiAssisted,
+    aiDisclosureNote,
+    clientPermissionConfirmed,
+    context: {
+      brief: projectContext.brief,
+      creator_role: projectContext.creatorRole,
+      process_note: projectContext.processNote,
+      deliverables: projectContext.deliverables,
+      duration_label: projectContext.durationLabel,
+      outcome_note: projectContext.outcomeNote,
+    },
   };
 
   if (editing && id && !isUuid(id)) {
@@ -1068,81 +1455,97 @@ const ProjectEditorPage = () => {
         </div>
       ) : null}
 
-      <div className="flex w-full">
+      <div className="flex w-full flex-col lg:flex-row">
+        <div className="flex min-w-0 flex-1">
         <ProjectEditorToolsSidebar
           galleryDisplayMode={galleryDisplayMode}
           gridLayout={gridLayout}
-          onDisplayModeChange={handleGalleryDisplayModeChange}
-          onGridLayoutSelect={handleGridLayoutSelect}
-          imageDisabled={uploadingGallery || uploadingGridSlot !== null}
-          videoDisabled={uploadingVideo}
+          onDisplayModeChange={setGalleryDisplayMode}
+          onPlaceTool={handlePlaceTool}
+          templates={templates}
+          templatesLoading={templatesLoading}
+          templatesAtLimit={templatesAtLimit}
+          canSaveTemplate={contentBlocks.length > 0 && !templatesAtLimit}
+          onApplyTemplate={handleApplyTemplate}
+          onSaveAsTemplate={() => {
+            if (contentBlocks.length === 0) {
+              toast.message("จัดโมดูลบนแคนวาสก่อนบันทึกเป็นเทมเพลต");
+              return;
+            }
+            if (templatesAtLimit) {
+              toast.message("เทมเพลตเต็มแล้ว — ลบหรืออัปเดตอันเดิม");
+              return;
+            }
+            setTemplateNameDraft("");
+            setTemplateNameDialog({ mode: "save" });
+          }}
+          onRenameTemplate={(template) => {
+            setTemplateNameDraft(template.name);
+            setTemplateNameDialog({ mode: "rename", template });
+          }}
+          onUpdateTemplate={(template) => {
+            if (contentBlocks.length === 0) {
+              toast.message("จัดโมดูลบนแคนวาสก่อนอัปเดตเทมเพลต");
+              return;
+            }
+            setPendingUpdateTemplate(template);
+          }}
+          onDeleteTemplate={(template) => setPendingDeleteTemplate(template)}
+          imageDisabled={uploadingGallery || imageCount >= maxGallery}
+          videoDisabled={uploadingVideo || videoCount >= limits.videosPerProject}
           textDisabled={isBusy}
-          uploadingImage={uploadingGallery || uploadingGridSlot !== null}
+          uploadingImage={uploadingGallery}
           uploadingVideo={uploadingVideo}
-          onPickImages={handleGallery}
-          onPickVideo={(f) => void handleVideo(f)}
-          onAddTextBlock={handleAddTextBlock}
           expanded={toolsExpanded}
           onExpandedChange={setToolsExpanded}
+          toolsTab={toolsTab}
+          onToolsTabChange={setToolsTab}
         />
 
         <div className="min-w-0 flex-1">
-
-      <div className="max-w-6xl mx-auto px-4 py-6 pb-28 lg:pb-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-        {/* Left: content */}
-        <div className="order-2 mx-auto w-full max-w-2xl space-y-6 lg:order-none">
-          <section className="space-y-2">
-            {galleryDisplayMode === "grid" || mediaItems.length > 0 ? (
-              <div className="space-y-3">
-                <ProjectEditorGallerySection
-                  items={mediaItems}
-                  displayMode={galleryDisplayMode}
-                  gridLayout={gridLayout}
-                  title={title}
-                  coverUrl={cover}
-                  disabled={isBusy}
-                  uploadingGridSlot={uploadingGridSlot}
-                  onReorder={setMediaItems}
-                  onSetCover={(url) => void handleSetCoverFromGallery(url)}
-                  onRemove={removeMediaItem}
-                  onGridSlotUpload={(slot, file) => void handleGridSlotUpload(slot, file)}
-                  onGridSlotRemove={handleGridSlotRemove}
-                />
-                {mediaItems.length === 0 && galleryDisplayMode !== "grid" ? (
-                  <GalleryDrop
-                    loading={uploadingGallery}
-                    onPick={handleGallery}
-                    displayMode={galleryDisplayMode}
-                  />
-                ) : null}
-                {(uploadingGallery || uploadingVideo) && (
-                  <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" /> กำลังอัปโหลด...
-                  </div>
-                )}
+          <div className="mx-auto w-full max-w-[min(100%,calc(42rem+3.5rem))] space-y-6 pl-4 pr-2 py-6 pb-28 sm:pr-4 lg:pb-6">
+          {/* Left: canvas — content max-w-2xl; side rail uses the extra gutter */}
+          <section className="max-w-2xl space-y-3">
+            <ProjectCanvasEditor
+              blocks={contentBlocks}
+              onChange={setContentBlocks}
+              disabled={isBusy}
+              uploading={uploadingGallery || uploadingVideo}
+              uploadingBlockId={uploadingBlockId}
+              onEmptyDropImages={(files) => void handleGallery(files)}
+              onStartFromTemplate={() => {
+                setToolsExpanded(true);
+                setToolsTab("template");
+              }}
+              onStartFromImage={() => emptyStartImageInputRef.current?.click()}
+              onStartFromHeading={() => handlePlaceTool({ tool: "heading" })}
+              onPlaceTool={handlePlaceTool}
+              onUploadToBlock={(id, file, slot) => void handleUploadToBlock(id, file, slot)}
+              onUploadManyToBlock={(id, files) => void handleUploadManyToBlock(id, files)}
+              onCropImage={(id, url, slot) => void handleCropImage(id, url, slot)}
+              selectedBlockId={selectedBlockId}
+              onSelectedBlockIdChange={setSelectedBlockId}
+            />
+            <input
+              ref={emptyStartImageInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                const files = e.target.files;
+                if (files?.length) void handleGallery(files);
+                e.target.value = "";
+              }}
+            />
+            {(uploadingGallery || uploadingVideo) && contentBlocks.length > 0 && !uploadingBlockId ? (
+              <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin mr-2" /> กำลังอัปโหลด...
               </div>
-            ) : (
-              <GalleryDrop
-                loading={uploadingGallery}
-                onPick={handleGallery}
-                displayMode={galleryDisplayMode}
-              />
-            )}
+            ) : null}
           </section>
 
-          <div className="space-y-6">
-          {/* Content blocks */}
-          <ProjectContentBlocksEditor
-            blocks={contentBlocks}
-            onChange={setContentBlocks}
-            disabled={isBusy}
-            hideAddButtons
-          />
-
-          {hasPresentationContent ? (
-            <ProjectEditorContinueAdd onClick={focusToolsSidebar} disabled={isBusy} />
-          ) : null}
-
+          <div className="max-w-2xl border-t border-border/70 pt-6 space-y-6">
           <ProjectContextEditorFields
             value={projectContext}
             onChange={patchProjectContext}
@@ -1153,25 +1556,6 @@ const ProjectEditorPage = () => {
             disabled={isBusy}
           />
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <ToolPicker
-              userId={user?.id}
-              tools={tools}
-              onChange={setTools}
-              input={toolInput}
-              setInput={setToolInput}
-              variant="compact"
-            />
-            <TagPicker
-              userId={user?.id}
-              tags={tags}
-              onChange={setTags}
-              input={tagInput}
-              setInput={setTagInput}
-              variant="compact"
-            />
-          </div>
-
           {user ? (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
@@ -1180,14 +1564,24 @@ const ProjectEditorPage = () => {
                   onChange={setLicenseType}
                   licenseNote={licenseNote}
                   onLicenseNoteChange={setLicenseNote}
-                  copyrightHolder={copyrightHolder}
-                  onCopyrightHolderChange={setCopyrightHolder}
                 />
                 <ThirdPartyAssetsToggle
                   enabled={hasThirdPartyAssets}
                   onEnabledChange={setHasThirdPartyAssets}
                   note={thirdPartyNote}
                   onNoteChange={setThirdPartyNote}
+                />
+                <ClientPermissionConfirm
+                  confirmed={clientPermissionConfirmed}
+                  onConfirmedChange={setClientPermissionConfirmed}
+                  copyrightHolder={copyrightHolder}
+                  onCopyrightHolderChange={setCopyrightHolder}
+                />
+                <AiDisclosureToggle
+                  enabled={aiAssisted}
+                  onEnabledChange={setAiAssisted}
+                  note={aiDisclosureNote}
+                  onNoteChange={setAiDisclosureNote}
                 />
                 {status === "Published" && (
                   <OriginalWorkAttestation
@@ -1218,26 +1612,40 @@ const ProjectEditorPage = () => {
             </section>
           ) : null}
           </div>
+          </div>
+        </div>
         </div>
 
-        {/* Right: sidebar */}
-        <aside className="order-first space-y-5 lg:order-none lg:sticky lg:top-20 lg:self-start">
-          <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="เช่น โลโก้ร้านกาแฟเชียงใหม่ Doi Brew"
-              aria-label="ชื่อผลงาน"
-              className="text-base font-medium h-11 px-3"
-              maxLength={120}
-            />
-            <CoverDrop
-              url={cover}
-              loading={uploadingCover}
-              onPick={handleCoverPick}
-              onClear={() => setCover("")}
-              compact
-            />
+        {/* Right: meta sidebar (docked, collapsible) */}
+        <ProjectEditorMetaSidebar expanded={metaExpanded} onExpandedChange={setMetaExpanded}>
+          <div className="rounded-2xl border border-border bg-card p-4 space-y-4 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase">
+                ชื่องาน *
+              </Label>
+              <Input
+                ref={titleInputRef}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="เช่น โลโก้ร้านกาแฟเชียงใหม่ Doi Brew"
+                aria-label="ชื่องาน"
+                aria-required
+                className="text-base font-medium h-11 px-3"
+                maxLength={120}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase">
+                ภาพปก *
+              </Label>
+              <CoverDrop
+                url={cover}
+                loading={uploadingCover}
+                onPick={handleCoverPick}
+                onClear={() => setCover("")}
+                compact
+              />
+            </div>
 
             <div className="space-y-2">
               <Label className="text-xs font-semibold text-muted-foreground uppercase">หมวดงาน *</Label>
@@ -1277,17 +1685,13 @@ const ProjectEditorPage = () => {
                   ))}
                 </SelectContent>
               </Select>
-              {mySeries.length === 0 ? (
+              {mySeries.length === 0 && (
                 <p className="text-[11px] text-muted-foreground leading-snug">
                   ยังไม่มีชุดงาน —{" "}
                   <Link to="/series" className="text-primary hover:underline">
                     สร้างชุดว่างได้ก่อน
                   </Link>{" "}
                   แล้วค่อยเลือกที่นี่
-                </p>
-              ) : (
-                <p className="text-[11px] text-muted-foreground leading-snug">
-                  ผลงานหนึ่งชิ้นอยู่ในชุดได้ทีละชุด
                 </p>
               )}
             </div>
@@ -1307,7 +1711,7 @@ const ProjectEditorPage = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <label htmlFor="show-price" className="text-xs font-semibold text-muted-foreground uppercase cursor-pointer">
-                  ราคาเริ่มต้น (฿)
+                  ราคาเริ่มต้นงานนี้ (฿)
                 </label>
                 <Switch
                   id="show-price"
@@ -1328,24 +1732,17 @@ const ProjectEditorPage = () => {
             </div>
 
             <div className="space-y-3 pt-2 border-t border-border/60">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase">ปุ่มติดต่อในผลงานนี้</Label>
               <div className="flex items-center justify-between gap-3">
-                <label htmlFor="allow-hire" className="min-w-0 flex flex-1 items-start gap-2 cursor-pointer">
-                  <BriefcaseIcon className="w-4 h-4 text-primary shrink-0 mt-0.5" aria-hidden />
-                  <div className="min-w-0">
-                    <p className="text-sm text-foreground">ปุ่ม "สนใจจ้างงาน"</p>
-                    <p className="text-xs text-muted-foreground">ให้ผู้ชมส่งคำขอจ้างได้</p>
-                  </div>
+                <label htmlFor="allow-hire" className="min-w-0 flex flex-1 items-center gap-2 cursor-pointer">
+                  <BriefcaseIcon className="w-4 h-4 text-primary shrink-0" aria-hidden />
+                  <p className="text-sm text-foreground">เปิดปุ่ม &quot;สนใจจ้างงาน&quot;</p>
                 </label>
                 <Switch id="allow-hire" checked={allowHire} onCheckedChange={setAllowHire} className="shrink-0" />
               </div>
               <div className="flex items-center justify-between gap-3">
-                <label htmlFor="allow-collab" className="min-w-0 flex flex-1 items-start gap-2 cursor-pointer">
-                  <Handshake className="w-4 h-4 text-primary shrink-0 mt-0.5" aria-hidden />
-                  <div className="min-w-0">
-                    <p className="text-sm text-foreground">ปุ่ม "สนใจคอลแลป"</p>
-                    <p className="text-xs text-muted-foreground">เปิดรับ Collab จากผู้ชม</p>
-                  </div>
+                <label htmlFor="allow-collab" className="min-w-0 flex flex-1 items-center gap-2 cursor-pointer">
+                  <Handshake className="w-4 h-4 text-primary shrink-0" aria-hidden />
+                  <p className="text-sm text-foreground">เปิดปุ่ม &quot;สนใจคอลแลป&quot;</p>
                 </label>
                 <Switch id="allow-collab" checked={allowCollab} onCheckedChange={setAllowCollab} className="shrink-0" />
               </div>
@@ -1365,6 +1762,25 @@ const ProjectEditorPage = () => {
                 pendingUsers={collabPending}
               />
             )}
+
+            <div className="space-y-3 pt-2 border-t border-border/60">
+              <ToolPicker
+                userId={user?.id}
+                tools={tools}
+                onChange={setTools}
+                input={toolInput}
+                setInput={setToolInput}
+                variant="compact"
+              />
+              <TagPicker
+                userId={user?.id}
+                tags={tags}
+                onChange={setTags}
+                input={tagInput}
+                setInput={setTagInput}
+                variant="compact"
+              />
+            </div>
           </div>
 
           {user && (
@@ -1376,12 +1792,7 @@ const ProjectEditorPage = () => {
               ownerId={user.id}
             />
           )}
-
-
-
-        </aside>
-      </div>
-        </div>
+        </ProjectEditorMetaSidebar>
       </div>
 
       {/* Mobile sticky actions */}
@@ -1441,6 +1852,209 @@ const ProjectEditorPage = () => {
           setCoverCropOpen(false);
         }}
       />
+
+      <ModuleImageCropDialog
+        file={moduleCropFile}
+        open={moduleCropOpen}
+        onOpenChange={setModuleCropOpen}
+        showApplyToAll={!!moduleCropTarget?.gallerySlide}
+        lockedRatio={moduleCropTarget?.lockedCrop?.ratio}
+        lockedExport={
+          moduleCropTarget?.lockedCrop
+            ? {
+                width: moduleCropTarget.lockedCrop.exportW,
+                height: moduleCropTarget.lockedCrop.exportH,
+              }
+            : undefined
+        }
+        lockedRatioLabel={moduleCropTarget?.lockedCrop?.label}
+        onConfirm={(result) => void handleModuleCropConfirm(result)}
+        onCancel={() => {
+          setModuleCropFile(null);
+          setModuleCropTarget(null);
+          setModuleCropOpen(false);
+        }}
+      />
+
+      <Dialog
+        open={pendingTemplateId !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingTemplateId(null);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>ใช้เทมเพลต</DialogTitle>
+            <DialogDescription>
+              แคนวาสมีโมดูลอยู่แล้ว — ต้องการแทนที่ทั้งหมด หรือต่อท้ายเทมเพลต「
+              {pendingTemplate?.name ?? ""}」?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
+            <Button
+              type="button"
+              onClick={() => {
+                if (!pendingTemplate) return;
+                const t = pendingTemplate;
+                setPendingTemplateId(null);
+                applyCanvasTemplate(t, "replace");
+              }}
+            >
+              แทนที่ทั้งหมด
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                if (!pendingTemplate) return;
+                const t = pendingTemplate;
+                setPendingTemplateId(null);
+                applyCanvasTemplate(t, "append");
+              }}
+            >
+              ต่อท้าย
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => setPendingTemplateId(null)}>
+              ยกเลิก
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={templateNameDialog !== null}
+        onOpenChange={(open) => {
+          if (!open) setTemplateNameDialog(null);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {templateNameDialog?.mode === "rename" ? "เปลี่ยนชื่อเทมเพลต" : "บันทึกเป็นเทมเพลต"}
+            </DialogTitle>
+            <DialogDescription>
+              {templateNameDialog?.mode === "rename"
+                ? "ตั้งชื่อใหม่ให้เทมเพลตนี้"
+                : "เก็บเฉพาะโครงโมดูล (ไม่เก็บรูป/ข้อความจริง) — สูงสุด 5 อัน"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="template-name-input">ชื่อเทมเพลต</Label>
+            <Input
+              id="template-name-input"
+              value={templateNameDraft}
+              onChange={(e) => setTemplateNameDraft(e.target.value)}
+              placeholder="เช่น เคสแบรนด์สั้น"
+              maxLength={80}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                (e.currentTarget.form as HTMLFormElement | null)?.requestSubmit?.();
+              }}
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button type="button" variant="ghost" onClick={() => setTemplateNameDialog(null)}>
+              ยกเลิก
+            </Button>
+            <Button
+              type="button"
+              disabled={!templateNameDraft.trim() || createFromBlocks.isPending || renameTemplate.isPending}
+              onClick={() => {
+                const name = templateNameDraft.trim();
+                if (!name || !templateNameDialog) return;
+                if (templateNameDialog.mode === "save") {
+                  createFromBlocks.mutate(
+                    { name, blocks: contentBlocks, openContext: contextExpanded },
+                    { onSuccess: () => setTemplateNameDialog(null) },
+                  );
+                  return;
+                }
+                renameTemplate.mutate(
+                  { id: templateNameDialog.template.id, name },
+                  { onSuccess: () => setTemplateNameDialog(null) },
+                );
+              }}
+            >
+              {templateNameDialog?.mode === "rename" ? "บันทึกชื่อ" : "บันทึกเทมเพลต"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={pendingUpdateTemplate !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingUpdateTemplate(null);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>อัปเดตเทมเพลต</DialogTitle>
+            <DialogDescription>
+              แทนที่โครงของ「{pendingUpdateTemplate?.name ?? ""}」ด้วยโมดูลบนแคนวาสปัจจุบัน
+              (ไม่เก็บรูป/ข้อความจริง)
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button type="button" variant="ghost" onClick={() => setPendingUpdateTemplate(null)}>
+              ยกเลิก
+            </Button>
+            <Button
+              type="button"
+              disabled={updateModulesFromBlocks.isPending || contentBlocks.length === 0}
+              onClick={() => {
+                if (!pendingUpdateTemplate) return;
+                updateModulesFromBlocks.mutate(
+                  {
+                    id: pendingUpdateTemplate.id,
+                    blocks: contentBlocks,
+                    openContext: contextExpanded,
+                  },
+                  { onSuccess: () => setPendingUpdateTemplate(null) },
+                );
+              }}
+            >
+              อัปเดตโครง
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={pendingDeleteTemplate !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteTemplate(null);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>ลบเทมเพลต</DialogTitle>
+            <DialogDescription>
+              ลบ「{pendingDeleteTemplate?.name ?? ""}」ออกจากรายการของคุณ? กู้คืนไม่ได้
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button type="button" variant="ghost" onClick={() => setPendingDeleteTemplate(null)}>
+              ยกเลิก
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={removeTemplate.isPending}
+              onClick={() => {
+                if (!pendingDeleteTemplate) return;
+                removeTemplate.mutate(pendingDeleteTemplate.id, {
+                  onSuccess: () => setPendingDeleteTemplate(null),
+                });
+              }}
+            >
+              ลบ
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
@@ -1532,7 +2146,7 @@ const CoverDrop = ({
         <ImagePlus className={cn("text-muted-foreground", compact ? "h-6 w-6" : "h-8 w-8")} />
       )}
       <p className={cn("text-center font-medium text-foreground", compact ? "text-xs leading-snug" : "text-sm")}>
-        ลากภาพมาวาง หรือคลิกเพื่อเลือก
+        อัปโหลดภาพหน้าปก *
       </p>
       {!compact ? (
         <p className="text-xs text-muted-foreground">JPG / PNG / WebP — สูงสุด 30MB · ครอปเป็น 4:3 แนวนอน</p>
@@ -1542,43 +2156,5 @@ const CoverDrop = ({
   );
 };
 
-const GalleryDrop = ({
-  loading,
-  onPick,
-  displayMode = "gallery",
-}: {
-  loading: boolean;
-  onPick: (f: FileList) => void;
-  displayMode?: GalleryDisplayMode;
-}) => {
-  const ref = useRef<HTMLInputElement>(null);
-  const [drag, setDrag] = useState(false);
-  const single = displayMode === "single";
-  return (
-    <div
-      onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-      onDragLeave={() => setDrag(false)}
-      onDrop={(e) => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files?.length) onPick(e.dataTransfer.files); }}
-      onClick={() => ref.current?.click()}
-      className={cn(
-        "cursor-pointer min-h-[180px] flex flex-col items-center justify-center gap-3 transition-colors p-12",
-        drag ? "text-primary" : "text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {loading ? <Loader2 className="w-6 h-6 animate-spin text-primary" /> : <Upload className="w-8 h-8 text-muted-foreground" />}
-      <p className="text-sm font-medium text-foreground">
-        {single ? "ลากภาพมาวาง หรือคลิกเพื่อเลือก" : "ลากภาพหลายไฟล์มาวาง หรือคลิกเพื่อเลือก"}
-      </p>
-      <input
-        ref={ref}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        multiple={!single}
-        hidden
-        onChange={(e) => e.target.files && onPick(e.target.files)}
-      />
-    </div>
-  );
-};
 
 export default ProjectEditorPage;

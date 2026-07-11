@@ -20,7 +20,7 @@ const ThirdPartyAssetsToggle = ({ enabled, onEnabledChange, note, onNoteChange }
         <Layers className="w-4 h-4 text-primary shrink-0 mt-0.5" aria-hidden />
         <span className="text-sm text-foreground leading-snug">
           มี asset จากที่อื่น
-          <span className="text-xs text-muted-foreground"> · ฟอนต์, stock, เสียง, AI</span>
+          <span className="text-xs text-muted-foreground"> · ฟอนต์, stock, เสียง</span>
         </span>
       </label>
       <Switch

@@ -204,11 +204,11 @@ export const profileSchema = z.object({
 export type ProfileInput = z.infer<typeof profileSchema>;
 
 export const projectSchema = z.object({
-  title: z.string().trim().min(3, "อย่างน้อย 3 ตัวอักษร").max(120),
+  title: z.string().trim().min(1, "กรอกชื่องาน").max(120),
   subtitle: z.string().trim().max(180).optional().default(""),
   description: z.string().trim().max(5000).optional().default(""),
   category: z.string().trim().min(1, "เลือกหมวดงาน"),
-  cover_url: z.string().trim().url("ต้องอัปโหลดภาพปก").or(z.literal("")),
+  cover_url: z.string().trim().url("ต้องอัปโหลดภาพปก"),
   gallery_urls: z.array(z.string().url()).max(20, "ไม่เกิน 20 ภาพ").default([]),
   video_urls: z.array(z.string().url()).max(5, "ไม่เกิน 5 วิดีโอ").default([]),
   tools: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
@@ -225,6 +225,9 @@ export const projectSchema = z.object({
   license_note: z.string().trim().max(500).optional().default(""),
   has_third_party_assets: z.boolean().default(false),
   third_party_note: z.string().trim().max(300).optional().default(""),
+  ai_assisted: z.boolean().default(false),
+  ai_disclosure_note: z.string().trim().max(300).optional().default(""),
+  client_permission_confirmed: z.boolean().default(false),
   copyright_holder: z.string().trim().max(120).optional().default(""),
   rights_attested_at: z.string().datetime().nullable().optional(),
   rights_attestation_version: z.string().trim().max(32).nullable().optional(),
@@ -267,27 +270,43 @@ export const projectSchema = z.object({
     .array(
       z.object({
         id: z.string(),
-        type: z.enum(["heading", "heading_body", "body"]),
+        type: z.enum(["heading", "heading_body", "body", "image", "video", "image_text"]),
         heading: z.string().max(PROJECT_BLOCK_HEADING_MAX).optional(),
         body: z.string().max(PROJECT_BLOCK_BODY_MAX).optional(),
+        url: z.string().url().optional().or(z.literal("")),
+        urls: z.array(z.string()).max(20).optional(),
+        mediaLayout: z.enum(["single", "gallery", "grid", "multi"]).optional(),
+        gridLayout: z.enum(["two_stack", "two_side", "three_split", "three_split_rev", "four_quad"]).optional(),
+        rowColumns: z.union([z.literal(2), z.literal(3), z.literal(4)]).optional(),
+        splitSide: z.enum(["image_left", "text_left"]).optional(),
+        textVerticalAlign: z.enum(["top", "middle", "bottom"]).optional(),
+        gapAfter: z.enum(["spaced", "tight"]).optional(),
       }),
     )
     .max(PROJECT_CONTENT_BLOCKS_MAX)
     .default([]),
   gallery_display_mode: z.enum(["single", "gallery", "grid"]).default("gallery"),
   grid_layout: z
-    .enum(["two_stack", "two_side", "three_split", "four_quad"])
+    .enum(["two_stack", "two_side", "three_split", "three_split_rev", "four_quad"])
     .default("four_quad"),
 });
 
 export type ProjectInput = z.infer<typeof projectSchema>;
 
-/** Relaxed validation for autosave / draft saves (title may be empty). */
-export const projectDraftSchema = projectSchema.extend({
-  title: z.string().trim().max(120).optional().default(""),
-});
+/** Draft saves also require title + cover. */
+export const projectDraftSchema = projectSchema;
 
 export type ProjectDraftInput = z.infer<typeof projectDraftSchema>;
+
+/** Missing title/cover — shared by draft + publish gates. */
+export function validateProjectBasics(input: {
+  title?: string | null;
+  cover_url?: string | null;
+}): string | null {
+  if (!input.title?.trim()) return "กรอกชื่องานก่อน";
+  if (!input.cover_url?.trim()) return "อัปโหลดภาพปกก่อน";
+  return null;
+}
 
 /** Extra publish-time checks beyond base projectSchema */
 export function validateProjectPublish(input: ProjectInput): string | null {

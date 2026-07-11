@@ -37,6 +37,19 @@
   </head>
 
   <body>
+    <script>
+      (function () {
+        try {
+          var key = "an1hem-theme";
+          var stored = localStorage.getItem(key);
+          var preferDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var theme = stored || "system";
+          var dark = theme === "dark" || (theme === "system" && preferDark);
+          if (dark) document.documentElement.classList.add("dark");
+          else document.documentElement.classList.remove("dark");
+        } catch (_) {}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

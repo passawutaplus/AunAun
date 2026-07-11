@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
-import { useEffect } from "react";
 
 interface Props {
   images: string[];
@@ -21,16 +20,21 @@ const ProjectGallery = ({ images, alt }: Props) => {
 
   return (
     <div className="space-y-3">
-      <Carousel setApi={setApi} className="rounded-2xl overflow-hidden border border-border bg-card">
+      <Carousel setApi={setApi} className="overflow-hidden rounded-none bg-transparent">
         <CarouselContent>
           {images.map((src, i) => (
             <CarouselItem key={i}>
-              <img src={src} alt={`${alt} ${i + 1}`} className="w-full aspect-[16/10] object-cover" loading="lazy" />
+              <img
+                src={src}
+                alt={`${alt} ${i + 1}`}
+                className="max-h-[min(80vh,720px)] w-full object-contain"
+                loading="lazy"
+              />
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="left-3" />
-        <CarouselNext className="right-3" />
+        <CarouselPrevious className="left-3 border-0 bg-background/20 text-foreground/55 shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80 disabled:opacity-20" />
+        <CarouselNext className="right-3 border-0 bg-background/20 text-foreground/55 shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80 disabled:opacity-20" />
       </Carousel>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
@@ -38,11 +42,11 @@ const ProjectGallery = ({ images, alt }: Props) => {
           <button
             key={i}
             onClick={() => api?.scrollTo(i)}
-            className={`shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
+            className={`h-14 w-20 shrink-0 overflow-hidden rounded-none border-2 bg-transparent transition-all ${
               current === i ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
             }`}
           >
-            <img src={src} alt="" className="w-20 h-14 object-cover" />
+            <img src={src} alt="" className="h-full w-full object-contain" />
           </button>
         ))}
       </div>

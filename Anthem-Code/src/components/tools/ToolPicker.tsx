@@ -20,21 +20,14 @@ interface Props {
 const SuggestionChip = ({
   label,
   onClick,
-  variant = "muted",
 }: {
   label: string;
   onClick: () => void;
-  variant?: "muted" | "primary";
 }) => (
   <button
     type="button"
     onClick={onClick}
-    className={cn(
-      "inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors",
-      variant === "muted"
-        ? "border-border/80 bg-muted/40 text-foreground/80 hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
-        : "border-primary/30 bg-primary/5 text-primary hover:bg-primary/10",
-    )}
+    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-primary"
   >
     <ToolIcon name={label} size="xs" />
     {label}
@@ -120,7 +113,7 @@ const ToolPicker = ({ userId, tools, onChange, input, setInput, max = 20, varian
       </div>
 
       {showQuick && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-x-3 gap-y-1.5">
           {filteredSuggestions.map((s) => (
             <SuggestionChip key={s} label={s} onClick={() => addTool(s)} />
           ))}
@@ -128,9 +121,9 @@ const ToolPicker = ({ userId, tools, onChange, input, setInput, max = 20, varian
       )}
 
       {input.trim() && filteredSuggestions.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-x-3 gap-y-1.5">
           {filteredSuggestions.map((s) => (
-            <SuggestionChip key={s} label={s} onClick={() => addTool(s)} variant="primary" />
+            <SuggestionChip key={s} label={s} onClick={() => addTool(s)} />
           ))}
         </div>
       )}

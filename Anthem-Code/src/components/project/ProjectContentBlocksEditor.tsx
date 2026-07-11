@@ -1,7 +1,6 @@
 import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { ProjectRichTextField } from "@/components/project/ProjectRichTextField";
 import {
   CONTENT_BLOCK_META,
   PROJECT_BLOCK_BODY_MAX,
@@ -127,24 +126,25 @@ export function ProjectContentBlocksEditor({
                 </div>
 
                 {block.type !== "body" && (
-                  <Input
+                  <ProjectRichTextField
                     value={block.heading ?? ""}
-                    onChange={(e) => patchBlock(block.id, { heading: e.target.value })}
+                    onChange={(heading) => patchBlock(block.id, { heading })}
                     placeholder="พิมพ์หัวข้อ..."
                     maxLength={PROJECT_BLOCK_HEADING_MAX}
                     disabled={disabled}
-                    className={cn(block.type === "heading" && "text-center font-semibold")}
+                    variant="heading"
+                    className={cn(block.type === "heading" && "[&_[role=textbox]]:text-center")}
                   />
                 )}
 
                 {block.type !== "heading" && (
-                  <Textarea
+                  <ProjectRichTextField
                     value={block.body ?? ""}
-                    onChange={(e) => patchBlock(block.id, { body: e.target.value })}
+                    onChange={(body) => patchBlock(block.id, { body })}
                     placeholder="เล่าที่มา แนวคิด กระบวนการ หรือผลลัพธ์..."
-                    rows={block.type === "body" ? 5 : 4}
                     maxLength={PROJECT_BLOCK_BODY_MAX}
                     disabled={disabled}
+                    minHeightClass={block.type === "body" ? "min-h-[120px]" : "min-h-[96px]"}
                   />
                 )}
               </div>

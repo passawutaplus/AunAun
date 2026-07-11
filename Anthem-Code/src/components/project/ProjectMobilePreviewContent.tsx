@@ -1,8 +1,11 @@
 import { ChevronLeft, Layers3, MessageCircle, Share2 } from "lucide-react";
 import ProjectSidePanel from "@/components/ProjectSidePanel";
-import LicenseDetailBlock from "@/components/license/LicenseDetailBlock";
-import SafeDemoImage from "@/components/SafeDemoImage";
-import { isVideoUrl } from "@/lib/portfolioMedia";
+import { ProjectContentBlocksView } from "@/components/project/ProjectContentBlocksView";
+import ProjectContextCard from "@/components/project/ProjectContextCard";
+import {
+  resolveProjectCanvas,
+} from "@/lib/projectContentBlocks";
+import { mediaItemFromUrl } from "@/lib/portfolioMedia";
 import { cn } from "@/lib/utils";
 import type { ProjectPreviewData } from "@/components/project/ProjectPreviewDialog";
 
@@ -12,22 +15,27 @@ type Props = {
   ownerAvatar?: string;
   ownerId?: string;
   displayTitle: string;
-  images: string[];
   onPreviewAction: () => void;
   className?: string;
 };
 
-/** Scrollable mobile project detail — mirrors /project/:id on phone. */
+/** Scrollable mobile project detail — same canvas layout as PC /project/:id. */
 export function ProjectMobilePreviewContent({
   data,
   ownerName,
   ownerAvatar,
   ownerId,
   displayTitle,
-  images,
   onPreviewAction,
   className,
 }: Props) {
+  const canvasBlocks = resolveProjectCanvas({
+    content_blocks: data.contentBlocks,
+    description: data.description,
+    gallery_urls: data.gallery,
+    video_urls: data.gallery.filter((u) => mediaItemFromUrl(u).kind === "video"),
+  });
+
   return (
     <div className={cn("h-full flex flex-col min-h-0 bg-app-ambient", className)}>
       <header className="shrink-0 z-10 border-b border-border bg-background/90 backdrop-blur-md">
@@ -56,30 +64,14 @@ export function ProjectMobilePreviewContent({
       >
         <div className="px-3 py-4 space-y-4">
           <section className="space-y-3 min-w-0">
-            {images.length > 0 ? (
-              images.map((src, i) =>
-                isVideoUrl(src) ? (
-                  <video
-                    key={src + i}
-                    src={src}
-                    controls
-                    playsInline
-                    className="w-full rounded-2xl border border-border/60 bg-black"
-                  />
-                ) : (
-                  <SafeDemoImage
-                    key={src + i}
-                    src={src}
-                    index={i}
-                    alt={`${displayTitle} ${i + 1}`}
-                    className="w-full rounded-2xl border border-border/60 bg-card object-contain"
-                    loading="lazy"
-                  />
-                ),
-              )
+            {data.subtitle?.trim() ? (
+              <p className="text-sm text-muted-foreground">{data.subtitle.trim()}</p>
+            ) : null}
+            {canvasBlocks.length > 0 ? (
+              <ProjectContentBlocksView blocks={canvasBlocks} className="max-w-2xl" />
             ) : (
               <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center text-sm text-muted-foreground">
-                ยังไม่มีรูปภาพ
+                ยังไม่มีเนื้อหา — เพิ่มภาพหรือข้อความบนแคนวาสเพื่อดูพรีวิว
               </div>
             )}
           </section>
@@ -104,31 +96,26 @@ export function ProjectMobilePreviewContent({
             onCollab={onPreviewAction}
             allowHire={data.allowHire}
             allowCollab={data.allowCollab}
-          />
-
-          <LicenseDetailBlock
             licenseType={data.licenseType}
             licenseNote={data.licenseNote}
             copyrightHolder={data.copyrightHolder}
-            ownerName={ownerName}
             hasThirdPartyAssets={data.hasThirdPartyAssets}
             thirdPartyNote={data.thirdPartyNote}
-            allowHire={data.allowHire}
-            onHire={onPreviewAction}
+            aiAssisted={data.aiAssisted}
+            aiDisclosureNote={data.aiDisclosureNote}
+            clientPermissionConfirmed={data.clientPermissionConfirmed}
           />
 
+          {data.context ? <ProjectContextCard context={data.context} /> : null}
+
           <section className="rounded-2xl glass-panel p-4 space-y-3 pointer-events-none opacity-90">
-            <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
-              <MessageCircle className="w-4 h-4 text-muted-foreground" />
+            <h3 className="text-sm font-medium flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
               ความคิดเห็น
             </h3>
-            <p className="text-sm text-muted-foreground py-6 text-center">
-              ยังไม่มีความคิดเห็น — จะแสดงที่นี่เมื่อเผยแพร่แล้ว
-            </p>
+            <p className="text-xs text-muted-foreground">ความคิดเห็นจะแสดงหลังเผยแพร่ผลงาน</p>
           </section>
         </div>
-
-        <div className="h-8 shrink-0" aria-hidden />
       </div>
     </div>
   );

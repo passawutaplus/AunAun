@@ -5,7 +5,7 @@ import { BRAND_STORAGE_THEME } from "@/lib/brandConfig";
 export const ThemeProvider = ({ children }: { children: ReactNode }) => (
   <NextThemesProvider
     attribute="class"
-    defaultTheme="light"
+    defaultTheme="system"
     enableSystem
     disableTransitionOnChange={false}
     storageKey={BRAND_STORAGE_THEME}

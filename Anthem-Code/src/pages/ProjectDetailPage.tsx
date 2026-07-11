@@ -15,14 +15,11 @@ import ProjectContextCard from "@/components/project/ProjectContextCard";
 import { hasPendingProjectAssets, parseProjectAssets } from "@/lib/projectAssets";
 import ProjectCreditsBlock from "@/components/ProjectCreditsBlock";
 import { supabase } from "@/integrations/supabase/client";
-import { ProjectPresentationGallery } from "@/components/project/ProjectPresentationGallery";
 import { ProjectContentBlocksView } from "@/components/project/ProjectContentBlocksView";
 import {
-  mergeContentBlocks,
-  parseContentBlocks,
-  parseGalleryDisplayMode,
+  mediaItemsFromBlocks,
+  resolveProjectCanvas,
 } from "@/lib/projectContentBlocks";
-import { parsePhotoGridLayout } from "@/lib/photoGridLayouts";
 import { useQuery } from "@tanstack/react-query";
 
 import { useProject } from "@/hooks/useProjects";
@@ -40,7 +37,6 @@ import { Megaphone, ExternalLink } from "lucide-react";
 import { truncateDescription } from "@/lib/seo";
 import { openSafeExternalUrl } from "@/lib/safeUrl";
 import { FadeUp } from "@/components/motion/FadeUp";
-import { mediaItemsFromProject } from "@/lib/portfolioMedia";
 import { ProjectLinkedPostsBlock } from "@/components/project/ProjectLinkedPostsBlock";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { ProjectOwnerMenu } from "@/components/project/ProjectOwnerMenu";
@@ -138,26 +134,15 @@ const ProjectDetailPage = () => {
     },
   });
 
-  const mediaItems = dbProject
-    ? mediaItemsFromProject(
-        dbProject.gallery_urls ?? [],
-        ((dbProject as { video_urls?: string[] }).video_urls) ?? [],
-      )
+  const canvasBlocks = dbProject
+    ? resolveProjectCanvas({
+        content_blocks: (dbProject as { content_blocks?: unknown }).content_blocks,
+        description: dbProject.description,
+        gallery_urls: dbProject.gallery_urls ?? [],
+        video_urls: ((dbProject as { video_urls?: string[] }).video_urls) ?? [],
+      })
     : [];
-
-  const contentBlocks = dbProject
-    ? mergeContentBlocks(
-        parseContentBlocks((dbProject as { content_blocks?: unknown }).content_blocks),
-        dbProject.description,
-      )
-    : [];
-  const galleryDisplayMode = dbProject
-    ? parseGalleryDisplayMode((dbProject as { gallery_display_mode?: string }).gallery_display_mode)
-    : "gallery";
-  const gridLayout = dbProject
-    ? parsePhotoGridLayout((dbProject as { grid_layout?: string }).grid_layout)
-    : "four_quad";
-  const hasStructuredContent = contentBlocks.length > 0;
+  const mediaItems = mediaItemsFromBlocks(canvasBlocks);
 
   const project = dbProject
     ? {
@@ -188,6 +173,10 @@ const ProjectDetailPage = () => {
         copyrightHolder: dbProject.copyright_holder ?? "",
         hasThirdPartyAssets: dbProject.has_third_party_assets ?? false,
         thirdPartyNote: dbProject.third_party_note ?? "",
+        aiAssisted: (dbProject as { ai_assisted?: boolean }).ai_assisted ?? false,
+        aiDisclosureNote: (dbProject as { ai_disclosure_note?: string }).ai_disclosure_note ?? "",
+        clientPermissionConfirmed:
+          (dbProject as { client_permission_confirmed?: boolean }).client_permission_confirmed ?? false,
         context: {
           brief: (dbProject as { brief?: string }).brief,
           creator_role: (dbProject as { creator_role?: string }).creator_role,
@@ -379,22 +368,13 @@ const ProjectDetailPage = () => {
                 ownerId={dbProject.owner_id}
               />
             )}
-            {project.gallery.length > 0 ? (
-              <ProjectPresentationGallery
-                items={mediaItems}
-                title={project.title}
-                projectId={project.id}
-                displayMode={galleryDisplayMode}
-                gridLayout={gridLayout}
-              />
+            {canvasBlocks.length > 0 ? (
+              <ProjectContentBlocksView blocks={canvasBlocks} className="max-w-2xl" />
             ) : (
               <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
-                ยังไม่มีรูปภาพ
+                ยังไม่มีเนื้อหา
               </div>
             )}
-            {hasStructuredContent ? (
-              <ProjectContentBlocksView blocks={contentBlocks} className="max-w-2xl" />
-            ) : null}
           </div>
 
           {/* Right: Side panel (sticky on desktop) */}
@@ -430,6 +410,9 @@ const ProjectDetailPage = () => {
               copyrightHolder={project.copyrightHolder}
               hasThirdPartyAssets={project.hasThirdPartyAssets}
               thirdPartyNote={project.thirdPartyNote}
+              aiAssisted={project.aiAssisted}
+              aiDisclosureNote={project.aiDisclosureNote}
+              clientPermissionConfirmed={project.clientPermissionConfirmed}
             />
           </FadeUp>
         </div>

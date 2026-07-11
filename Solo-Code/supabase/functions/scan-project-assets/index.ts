@@ -105,6 +105,35 @@ async function deepScanFile(
   };
 }
 
+const URL_SHORTENER_HOSTS = new Set([
+  "bit.ly", "bitly.com", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd",
+  "buff.ly", "rebrand.ly", "cutt.ly", "shorturl.at", "tiny.cc", "rb.gy",
+  "lnkd.in", "s.id", "v.gd", "clck.ru", "adf.ly", "bc.vc",
+]);
+
+const DANGEROUS_PATH_EXT = new Set([
+  "exe", "msi", "bat", "cmd", "scr", "com", "apk", "dmg", "vbs", "ps1", "jar", "hta",
+]);
+
+function hostMatchesShortener(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/\.$/, "");
+  if (URL_SHORTENER_HOSTS.has(host)) return true;
+  for (const short of URL_SHORTENER_HOSTS) {
+    if (host.endsWith(`.${short}`)) return true;
+  }
+  return false;
+}
+
+function isBlockedLinkHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/\.$/, "");
+  if (!host) return true;
+  if (host === "localhost" || host.endsWith(".localhost")) return true;
+  if (host === "::1" || host === "[::1]") return true;
+  if (host.includes(":") || (host.startsWith("[") && host.endsWith("]"))) return true;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return true;
+  return BLOCKED_HOST.some((p) => p.test(host));
+}
+
 async function deepScanLink(asset: ScanAsset): Promise<ScanAsset> {
   const safe = safeHttpUrl(asset.url);
   if (!safe) {
@@ -116,9 +145,9 @@ async function deepScanLink(asset: ScanAsset): Promise<ScanAsset> {
     };
   }
 
-  let host = "";
+  let parsed: URL;
   try {
-    host = new URL(safe).hostname;
+    parsed = new URL(safe);
   } catch {
     return {
       ...asset,
@@ -128,11 +157,40 @@ async function deepScanLink(asset: ScanAsset): Promise<ScanAsset> {
     };
   }
 
-  if (BLOCKED_HOST.some((p) => p.test(host))) {
+  if (parsed.username || parsed.password) {
     return {
       ...asset,
       scan_status: "blocked",
-      scan_reason: "ไม่รองรับลิงก์ localhost หรือ IP ภายใน",
+      scan_reason: "ไม่รองรับลิงก์ที่มีชื่อผู้ใช้หรือรหัสผ่านใน URL",
+      scanned_at: new Date().toISOString(),
+    };
+  }
+
+  if (isBlockedLinkHost(parsed.hostname)) {
+    return {
+      ...asset,
+      scan_status: "blocked",
+      scan_reason: "ไม่รองรับลิงก์ localhost, IP ภายใน หรือที่อยู่ IP โดยตรง",
+      scanned_at: new Date().toISOString(),
+    };
+  }
+
+  if (hostMatchesShortener(parsed.hostname)) {
+    return {
+      ...asset,
+      scan_status: "blocked",
+      scan_reason: "ไม่รองรับลิงก์ย่อ เพราะซ่อนปลายทางจริงได้ — ใส่ลิงก์เต็มแทน",
+      scanned_at: new Date().toISOString(),
+    };
+  }
+
+  const base = parsed.pathname.split("/").pop() ?? "";
+  const pathExt = ext(base.split("?")[0]?.split("#")[0] ?? "");
+  if (pathExt && DANGEROUS_PATH_EXT.has(pathExt)) {
+    return {
+      ...asset,
+      scan_status: "blocked",
+      scan_reason: "ลิงก์ชี้ไปไฟล์ที่อาจเป็นอันตราย (เช่น .exe, .apk)",
       scanned_at: new Date().toISOString(),
     };
   }

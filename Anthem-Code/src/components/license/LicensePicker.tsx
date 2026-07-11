@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Scale } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -10,21 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { LICENSE_LIST, getLicenseMeta, type LicenseType } from "@/lib/licenses";
-import { cn } from "@/lib/utils";
 
 interface Props {
   value: LicenseType;
   onChange: (v: LicenseType) => void;
   licenseNote: string;
   onLicenseNoteChange: (v: string) => void;
-  copyrightHolder: string;
-  onCopyrightHolderChange: (v: string) => void;
 }
 
 const LicensePicker = ({
@@ -32,17 +22,15 @@ const LicensePicker = ({
   onChange,
   licenseNote,
   onLicenseNoteChange,
-  copyrightHolder,
-  onCopyrightHolderChange,
 }: Props) => {
-  const [advancedOpen, setAdvancedOpen] = useState(
-    () => value === "custom" || copyrightHolder.trim().length > 0,
-  );
   const selected = getLicenseMeta(value);
 
   return (
     <div className="space-y-2">
-      <Label className="text-xs font-semibold text-muted-foreground uppercase">สิทธิ์การใช้งาน</Label>
+      <Label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
+        <Scale className="w-3.5 h-3.5" aria-hidden />
+        สิทธิ์การใช้งาน
+      </Label>
       <Select value={value} onValueChange={(v) => onChange(v as LicenseType)}>
         <SelectTrigger>
           <SelectValue />
@@ -70,25 +58,6 @@ const LicensePicker = ({
           <p className="text-[10px] text-muted-foreground text-right">{licenseNote.length}/500</p>
         </div>
       )}
-
-      <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-        <CollapsibleTrigger className="flex items-center gap-1 text-xs text-primary hover:underline">
-          <ChevronDown
-            className={cn("w-3.5 h-3.5 transition-transform", advancedOpen && "rotate-180")}
-            aria-hidden
-          />
-          ตั้งค่าเพิ่มเติม
-        </CollapsibleTrigger>
-        <CollapsibleContent className="overflow-hidden data-[state=closed]:hidden pt-2 space-y-2">
-          <Label className="text-xs text-muted-foreground">ชื่อเจ้าของลิขสิทธิ์ (ถ้าไม่ใช่คุณ)</Label>
-          <Input
-            value={copyrightHolder}
-            onChange={(e) => onCopyrightHolderChange(e.target.value)}
-            placeholder="เว้นว่าง = ใช้ชื่อโปรไฟล์ของคุณ"
-            maxLength={120}
-          />
-        </CollapsibleContent>
-      </Collapsible>
     </div>
   );
 };

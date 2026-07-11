@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Download, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { fetchProjectAssetDownloadUrl } from "@/lib/downloadProjectAsset";
-import { projectAssetDownloadUrl, type ProjectAsset } from "@/lib/projectAssets";
+import { resolveProjectAssetForOpen } from "@/lib/downloadProjectAsset";
+import { assertProjectAssetSafeToOpen } from "@/lib/projectAssetScan";
+import type { ProjectAsset } from "@/lib/projectAssets";
+import { openSafeExternalUrl } from "@/lib/safeUrl";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -15,38 +17,49 @@ const ProjectAssetDownloadButton = ({ projectId, asset, className }: Props) => {
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
-    if (asset.scan_status !== "clean") return;
-
-    if (asset.kind === "link") {
-      const href = projectAssetDownloadUrl(asset);
-      if (href) window.open(href, "_blank", "noopener,noreferrer");
+    const localGate = assertProjectAssetSafeToOpen(asset);
+    if (!localGate.ok) {
+      toast.error(localGate.reason);
       return;
     }
 
     setLoading(true);
     try {
-      const url = await fetchProjectAssetDownloadUrl(projectId, asset);
-      if (!url) {
-        toast.error("ไม่สามารถดาวน์โหลดไฟล์ได้");
+      const resolved = await resolveProjectAssetForOpen(projectId, asset);
+      if (!resolved.ok) {
+        toast.error(resolved.reason);
         return;
       }
-      window.open(url, "_blank", "noopener,noreferrer");
+
+      if (!openSafeExternalUrl(resolved.url)) {
+        toast.error(
+          asset.kind === "link"
+            ? "ลิงก์นี้ไม่ปลอดภัยหรือเปิดไม่ได้"
+            : "ไม่สามารถดาวน์โหลดไฟล์ได้",
+        );
+      }
     } catch {
-      toast.error("ไม่สามารถดาวน์โหลดไฟล์ได้");
+      toast.error(
+        asset.kind === "link"
+          ? "ไม่สามารถเปิดลิงก์ได้"
+          : "ไม่สามารถดาวน์โหลดไฟล์ได้",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const Icon = asset.kind === "file" ? Download : ExternalLink;
+  const blocked = asset.scan_status !== "clean";
 
   return (
     <button
       type="button"
       onClick={() => void handleClick()}
-      disabled={loading}
+      disabled={loading || blocked}
       className={cn(
         "flex items-center gap-2 rounded-xl border border-border/50 bg-muted/20 px-3 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors w-full text-left",
+        (loading || blocked) && "opacity-60 cursor-not-allowed",
         className,
       )}
     >

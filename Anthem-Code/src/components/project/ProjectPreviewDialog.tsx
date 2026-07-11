@@ -4,24 +4,20 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import ProjectSidePanel from "@/components/ProjectSidePanel";
-import LicenseDetailBlock from "@/components/license/LicenseDetailBlock";
 import ToolsGrid from "@/components/ToolsGrid";
-import SafeDemoImage from "@/components/SafeDemoImage";
 import { ProjectPreviewModeTabs, type ProjectPreviewMode } from "@/components/project/ProjectPreviewModeTabs";
 import { ProjectFeedPreview } from "@/components/project/ProjectFeedPreview";
 import { ProjectMobilePreviewContent } from "@/components/project/ProjectMobilePreviewContent";
-import { supabase } from "@/integrations/supabase/client";
 import { profilesPublicFrom } from "@/lib/profileAccess";
 import type { LicenseType } from "@/lib/licenses";
 import { ProjectContentBlocksView } from "@/components/project/ProjectContentBlocksView";
-import { ProjectPresentationGallery } from "@/components/project/ProjectPresentationGallery";
+import ProjectContextCard, { type ProjectContextData } from "@/components/project/ProjectContextCard";
 import {
-  mergeContentBlocks,
-  parseGalleryDisplayMode,
+  resolveProjectCanvas,
   type GalleryDisplayMode,
   type ProjectContentBlock,
 } from "@/lib/projectContentBlocks";
-import { parsePhotoGridLayout, type PhotoGridLayout } from "@/lib/photoGridLayouts";
+import { type PhotoGridLayout } from "@/lib/photoGridLayouts";
 import { isVideoUrl, mediaItemFromUrl } from "@/lib/portfolioMedia";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -46,6 +42,11 @@ export interface ProjectPreviewData {
   copyrightHolder: string;
   hasThirdPartyAssets: boolean;
   thirdPartyNote: string;
+  aiAssisted?: boolean;
+  aiDisclosureNote?: string;
+  clientPermissionConfirmed?: boolean;
+  /** Behind-the-scenes story — same as published project detail. */
+  context?: ProjectContextData;
 }
 
 interface Props {
@@ -64,20 +65,19 @@ function ProjectPcPreview({
   ownerAvatar,
   ownerId,
   displayTitle,
-  images,
-  mediaItems,
 }: {
   data: ProjectPreviewData;
   ownerName: string;
   ownerAvatar?: string;
   ownerId?: string;
   displayTitle: string;
-  images: string[];
-  mediaItems: { id: string; kind: "image" | "video"; url: string }[];
 }) {
-  const contentBlocks = mergeContentBlocks(data.contentBlocks ?? [], data.description);
-  const galleryMode = parseGalleryDisplayMode(data.galleryDisplayMode);
-  const gridLayout = parsePhotoGridLayout(data.gridLayout);
+  const canvasBlocks = resolveProjectCanvas({
+    content_blocks: data.contentBlocks,
+    description: data.description,
+    gallery_urls: data.gallery,
+    video_urls: data.gallery.filter((u) => mediaItemFromUrl(u).kind === "video"),
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 lg:py-8">
@@ -86,44 +86,13 @@ function ProjectPcPreview({
           {data.subtitle?.trim() && (
             <p className="text-sm text-muted-foreground">{data.subtitle.trim()}</p>
           )}
-          {mediaItems.length > 0 ? (
-            <ProjectPresentationGallery
-              items={mediaItems}
-              title={displayTitle}
-              projectId="preview"
-              displayMode={galleryMode}
-              gridLayout={gridLayout}
-            />
-          ) : images.length > 0 ? (
-            images.map((src, i) =>
-              isVideoUrl(src) ? (
-                <video
-                  key={src + i}
-                  src={src}
-                  controls
-                  playsInline
-                  className="w-full rounded-2xl border border-border/60 bg-black max-h-[480px]"
-                />
-              ) : (
-                <SafeDemoImage
-                  key={src + i}
-                  src={src}
-                  index={i}
-                  alt={`${displayTitle} ${i + 1}`}
-                  className="w-full rounded-2xl border border-border/60 bg-card object-contain"
-                  loading="lazy"
-                />
-              ),
-            )
+          {canvasBlocks.length > 0 ? (
+            <ProjectContentBlocksView blocks={canvasBlocks} className="max-w-2xl" />
           ) : (
             <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center text-sm text-muted-foreground">
-              ยังไม่มีรูปภาพ — อัปโหลดภาพปกหรือแกลเลอรีเพื่อดูพรีวิว
+              ยังไม่มีเนื้อหา — เพิ่มภาพหรือข้อความบนแคนวาสเพื่อดูพรีวิว
             </div>
           )}
-
-          {contentBlocks.length > 0 ? (
-            <ProjectContentBlocksView blocks={contentBlocks} className="max-w-2xl" />
-          ) : null}
 
           {data.tools.length > 0 && (
             <div className="rounded-2xl glass-panel p-5 space-y-3 lg:hidden">
@@ -167,19 +136,23 @@ function ProjectPcPreview({
             onCollab={previewToast}
             allowHire={data.allowHire}
             allowCollab={data.allowCollab}
-          />
-          <LicenseDetailBlock
             licenseType={data.licenseType}
             licenseNote={data.licenseNote}
             copyrightHolder={data.copyrightHolder}
-            ownerName={ownerName}
             hasThirdPartyAssets={data.hasThirdPartyAssets}
             thirdPartyNote={data.thirdPartyNote}
-            allowHire={data.allowHire}
-            onHire={previewToast}
+            aiAssisted={data.aiAssisted}
+            aiDisclosureNote={data.aiDisclosureNote}
+            clientPermissionConfirmed={data.clientPermissionConfirmed}
           />
         </div>
       </div>
+
+      {data.context ? (
+        <div className="mt-10 lg:mt-14 max-w-3xl">
+          <ProjectContextCard context={data.context} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -213,10 +186,6 @@ const ProjectPreviewDialog = ({
 
   const images =
     data.gallery.length > 0 ? data.gallery : data.cover ? [data.cover] : [];
-  const previewMediaItems =
-    data.gallery.length > 0
-      ? data.gallery.map((url) => mediaItemFromUrl(url))
-      : [];
   const displayTitle = data.title.trim() || "ชื่อผลงาน (ยังไม่ได้กรอก)";
   const coverImage = data.cover || images.find((u) => !isVideoUrl(u)) || "";
 
@@ -271,7 +240,6 @@ const ProjectPreviewDialog = ({
                   ownerAvatar={ownerAvatar}
                   ownerId={ownerId}
                   displayTitle={displayTitle}
-                  images={images}
                   onPreviewAction={previewToast}
                   className="rounded-[1.35rem] overflow-hidden"
                 />
@@ -284,8 +252,6 @@ const ProjectPreviewDialog = ({
               ownerAvatar={ownerAvatar}
               ownerId={ownerId}
               displayTitle={displayTitle}
-              images={images}
-              mediaItems={previewMediaItems}
             />
           )}
         </div>

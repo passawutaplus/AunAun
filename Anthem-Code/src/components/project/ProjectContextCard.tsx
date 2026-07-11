@@ -26,20 +26,20 @@ function FieldBlock({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** Same field order as ProjectContextEditorFields (publish form). */
 const ProjectContextCard = ({ context, className }: Props) => {
   const [open, setOpen] = useState(false);
-  const rows: { label: string; value: string }[] = [];
-  if (context.creator_role?.trim()) rows.push({ label: "บทบาทของฉัน", value: context.creator_role.trim() });
-  if (context.brief?.trim()) rows.push({ label: "โจทย์ของงาน", value: context.brief.trim() });
-  if (context.process_note?.trim()) rows.push({ label: "วิธีคิด / ขั้นตอนทำงาน", value: context.process_note.trim() });
-  if (context.deliverables?.trim()) rows.push({ label: "สิ่งที่ส่งมอบ", value: context.deliverables.trim() });
-  if (context.duration_label?.trim()) rows.push({ label: "ระยะเวลา", value: context.duration_label.trim() });
-  if (context.outcome_note?.trim()) rows.push({ label: "ผลลัพธ์ / สิ่งที่ได้เรียนรู้", value: context.outcome_note.trim() });
 
-  if (rows.length === 0) return null;
+  const creatorRole = context.creator_role?.trim() ?? "";
+  const brief = context.brief?.trim() ?? "";
+  const processNote = context.process_note?.trim() ?? "";
+  const deliverables = context.deliverables?.trim() ?? "";
+  const durationLabel = context.duration_label?.trim() ?? "";
+  const outcomeNote = context.outcome_note?.trim() ?? "";
 
-  const shortRows = rows.filter((r) => r.label === "สิ่งที่ส่งมอบ" || r.label === "ระยะเวลา");
-  const longRows = rows.filter((r) => r.label !== "สิ่งที่ส่งมอบ" && r.label !== "ระยะเวลา");
+  const hasAny =
+    !!creatorRole || !!brief || !!processNote || !!deliverables || !!durationLabel || !!outcomeNote;
+  if (!hasAny) return null;
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className={className}>
@@ -53,11 +53,11 @@ const ProjectContextCard = ({ context, className }: Props) => {
           >
             <div className="min-w-0 space-y-1">
               <h2 className="text-base font-semibold text-foreground">เล่าเบื้องหลังผลงาน</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {open
-                  ? "ย่อรายละเอียด"
-                  : "อ่านรายละเอียดเพิ่มเติม — โจทย์ บทบาท วิธีคิด และผลลัพธ์ของงานนี้"}
-              </p>
+              {!open ? (
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  รายละเอียดเพิ่มเติม — โจทย์ บทบาท วิธีคิด และผลลัพธ์ของงานนี้
+                </p>
+              ) : null}
             </div>
             <ChevronDown
               className={cn(
@@ -70,20 +70,21 @@ const ProjectContextCard = ({ context, className }: Props) => {
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <div className="px-5 pb-5 sm:px-6 sm:pb-6 pt-0 space-y-5 border-t border-border/50">
-            {shortRows.length > 0 && (
-              <div className="grid sm:grid-cols-2 gap-3 pt-5">
-                {shortRows.map((r) => (
-                  <FieldBlock key={r.label} label={r.label} value={r.value} />
-                ))}
+          <div className="space-y-3 border-t border-border/50 px-5 pb-5 pt-5 sm:px-6 sm:pb-6">
+            {creatorRole ? <FieldBlock label="บทบาทของฉัน" value={creatorRole} /> : null}
+            {brief ? <FieldBlock label="โจทย์ของงาน" value={brief} /> : null}
+            {processNote ? <FieldBlock label="วิธีคิด / ขั้นตอนทำงาน" value={processNote} /> : null}
+
+            {(deliverables || durationLabel) && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {deliverables ? <FieldBlock label="สิ่งที่ส่งมอบ" value={deliverables} /> : null}
+                {durationLabel ? <FieldBlock label="ระยะเวลา" value={durationLabel} /> : null}
               </div>
             )}
 
-            <div className={cn("space-y-3", shortRows.length > 0 ? "" : "pt-5")}>
-              {longRows.map((r) => (
-                <FieldBlock key={r.label} label={r.label} value={r.value} />
-              ))}
-            </div>
+            {outcomeNote ? (
+              <FieldBlock label="ผลลัพธ์ / สิ่งที่ได้เรียนรู้" value={outcomeNote} />
+            ) : null}
           </div>
         </CollapsibleContent>
       </section>

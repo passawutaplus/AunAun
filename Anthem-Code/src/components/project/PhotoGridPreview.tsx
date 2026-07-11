@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import SafeDemoImage from "@/components/SafeDemoImage";
 import { Button } from "@/components/ui/button";
-import { photoGridSlotCount, type PhotoGridLayout } from "@/lib/photoGridLayouts";
+import { isThreeSplitGridLayout, photoGridSlotCount, type PhotoGridLayout } from "@/lib/photoGridLayouts";
 import { cn } from "@/lib/utils";
 
 type GridImage = { url: string; alt?: string };
@@ -31,6 +31,7 @@ function GridCell({
   onSlotPick,
   onSlotRemove,
   className,
+  cover,
 }: {
   image?: GridImage;
   index: number;
@@ -42,6 +43,8 @@ function GridCell({
   onSlotPick?: (index: number) => void;
   onSlotRemove?: (index: number) => void;
   className?: string;
+  /** Fill cell (locked 3-up grid). */
+  cover?: boolean;
 }) {
   const canUpload = editor && onSlotPick && !disabled && !uploading;
 
@@ -71,7 +74,8 @@ function GridCell({
                   : undefined
             }
             className={cn(
-              "absolute inset-0 h-full w-full object-cover",
+              "absolute inset-0 h-full w-full bg-transparent",
+              cover ? "object-cover" : "object-contain",
               (canUpload || onImageClick) && "cursor-pointer",
             )}
             loading="lazy"
@@ -144,6 +148,8 @@ export function PhotoGridPreview({
     onSlotRemove,
   };
 
+  const lockedCover = isThreeSplitGridLayout(layout);
+
   const renderSlot = (img: GridImage | undefined, i: number, className: string) => (
     <GridCell
       key={i}
@@ -152,6 +158,7 @@ export function PhotoGridPreview({
       {...cellProps}
       uploading={uploadingSlot === i}
       className={className}
+      cover={lockedCover}
     />
   );
 
@@ -161,7 +168,7 @@ export function PhotoGridPreview({
     grid = (
       <div
         className={cn(
-          "grid mx-auto max-w-lg w-full grid-cols-1 gap-1.5 sm:gap-2 rounded-2xl overflow-hidden",
+          "grid mx-auto w-full max-w-lg grid-cols-1 gap-1.5 sm:gap-2 rounded-none overflow-hidden bg-transparent",
           className,
         )}
       >
@@ -172,7 +179,7 @@ export function PhotoGridPreview({
     grid = (
       <div
         className={cn(
-          "grid mx-auto max-w-lg w-full grid-cols-2 gap-1.5 sm:gap-2 rounded-2xl overflow-hidden",
+          "grid mx-auto max-w-lg w-full grid-cols-2 gap-1.5 sm:gap-2 rounded-none overflow-hidden bg-transparent",
           className,
         )}
       >
@@ -183,7 +190,7 @@ export function PhotoGridPreview({
     grid = (
       <div
         className={cn(
-          "grid mx-auto max-w-lg w-full aspect-square grid-cols-2 grid-rows-2 gap-1.5 sm:gap-2 rounded-2xl overflow-hidden",
+          "grid mx-auto max-w-lg w-full aspect-square grid-cols-2 grid-rows-2 gap-1.5 sm:gap-2 rounded-none overflow-hidden bg-transparent",
           className,
         )}
       >
@@ -192,11 +199,24 @@ export function PhotoGridPreview({
         {renderSlot(slotImages[2], 2, cellClass)}
       </div>
     );
+  } else if (layout === "three_split_rev") {
+    grid = (
+      <div
+        className={cn(
+          "grid mx-auto max-w-lg w-full aspect-square grid-cols-2 grid-rows-2 gap-1.5 sm:gap-2 rounded-none overflow-hidden bg-transparent",
+          className,
+        )}
+      >
+        {renderSlot(slotImages[1], 1, cellClass)}
+        {renderSlot(slotImages[0], 0, "row-span-2 col-start-2 row-start-1 h-full min-h-0")}
+        {renderSlot(slotImages[2], 2, cellClass)}
+      </div>
+    );
   } else {
     grid = (
       <div
         className={cn(
-          "grid mx-auto max-w-lg w-full grid-cols-2 gap-1.5 sm:gap-2 rounded-2xl overflow-hidden",
+          "grid mx-auto max-w-lg w-full grid-cols-2 gap-1.5 sm:gap-2 rounded-none overflow-hidden bg-transparent",
           className,
         )}
       >

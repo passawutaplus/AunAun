@@ -45,6 +45,9 @@ interface Props {
   copyrightHolder?: string | null;
   hasThirdPartyAssets?: boolean;
   thirdPartyNote?: string | null;
+  aiAssisted?: boolean;
+  aiDisclosureNote?: string | null;
+  clientPermissionConfirmed?: boolean;
 }
 
 const ProjectSidePanel = (p: Props) => {
@@ -179,6 +182,9 @@ const ProjectSidePanel = (p: Props) => {
           ownerName={p.ownerName}
           hasThirdPartyAssets={p.hasThirdPartyAssets}
           thirdPartyNote={p.thirdPartyNote}
+          aiAssisted={p.aiAssisted}
+          aiDisclosureNote={p.aiDisclosureNote}
+          clientPermissionConfirmed={p.clientPermissionConfirmed}
           allowHire={p.allowHire}
           onHire={p.onHire}
         />

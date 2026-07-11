@@ -1,7 +1,7 @@
 /** Shared Supabase column lists — avoids select("*") and heavy columns (e.g. embedding). */
 
 export const PROJECT_LICENSE_EXTRA_SELECT =
-  "license_note, has_third_party_assets, third_party_note, copyright_holder, rights_attested_at, rights_attestation_version";
+  "license_note, has_third_party_assets, third_party_note, copyright_holder, rights_attested_at, rights_attestation_version, ai_assisted, ai_disclosure_note, client_permission_confirmed";
 
 export const PROJECT_LICENSE_SELECT = `license_type, ${PROJECT_LICENSE_EXTRA_SELECT}`;
 

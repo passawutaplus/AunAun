@@ -12,11 +12,12 @@
 
 @layer base {
   :root {
-    /* Pure White */
-    --background: 0 0% 100%;
+    /* Soft cool off-white — app shell sits behind white cards */
+    --background: 220 24% 97%;
     /* Coal Black #141517 */
     --foreground: 210 7% 9%;
 
+    /* Cards stay pure white so they lift off the gray shell */
     --card: 0 0% 100%;
     --card-foreground: 210 7% 9%;
 
@@ -27,14 +28,14 @@
     --primary: 14 100% 55%;
     --primary-foreground: 0 0% 100%;
 
-    /* Fog Gray #F2F4F7 */
-    --secondary: 220 20% 96%;
+    /* Fog Gray — a step darker than the shell so chips/wells read as recessed */
+    --secondary: 220 18% 93%;
     --secondary-foreground: 210 7% 12%;
 
-    --muted: 220 20% 96%;
-    --muted-foreground: 215 10% 40%;
+    --muted: 220 18% 93%;
+    --muted-foreground: 215 11% 38%;
 
-    --accent: 220 20% 96%;
+    --accent: 220 18% 92%;
     --accent-foreground: 210 7% 9%;
 
     --destructive: 0 72% 51%;
@@ -43,19 +44,19 @@
     --success: 142 71% 38%;
     --success-foreground: 0 0% 100%;
 
-    --border: 220 16% 92%;
-    --input: 220 16% 92%;
+    --border: 220 14% 88%;
+    --input: 220 14% 88%;
     --ring: 14 100% 55%;
 
     --radius: 0.875rem;
 
-    --sidebar-background: 0 0% 100%;
+    --sidebar-background: 220 22% 98%;
     --sidebar-foreground: 210 7% 26%;
     --sidebar-primary: 210 7% 9%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 220 20% 96%;
+    --sidebar-accent: 220 18% 93%;
     --sidebar-accent-foreground: 210 7% 9%;
-    --sidebar-border: 220 16% 92%;
+    --sidebar-border: 220 14% 88%;
     --sidebar-ring: 14 100% 55%;
 
     /* Chat persona tokens */
@@ -312,7 +313,7 @@
   .glass-panel {
     background-color: hsl(0 0% 100%);
     border: 1px solid hsl(var(--border));
-    box-shadow: 0 1px 2px hsl(0 0% 0% / 0.04);
+    box-shadow: 0 1px 2px hsl(220 20% 20% / 0.05), 0 4px 12px -4px hsl(220 20% 20% / 0.06);
   }
   .dark .glass-panel {
     background-color: hsl(var(--card));
@@ -323,11 +324,11 @@
   }
 
   .glass-panel-strong {
-    background-color: hsl(0 0% 100% / 0.85);
+    background-color: hsl(0 0% 100% / 0.88);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     backdrop-filter: blur(16px) saturate(160%);
     border: 1px solid hsl(var(--border));
-    box-shadow: 0 2px 8px hsl(0 0% 0% / 0.04);
+    box-shadow: 0 2px 8px hsl(220 20% 20% / 0.06), 0 8px 24px -8px hsl(220 20% 20% / 0.08);
   }
   .dark .glass-panel-strong {
     background-color: hsl(var(--card) / 0.92);
