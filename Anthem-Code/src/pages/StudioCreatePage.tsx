@@ -124,7 +124,7 @@ const StudioCreateInner = () => {
     let cancelled = false;
     (async () => {
       const { data } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("user_id, display_name, avatar_url, username")
         .eq("user_id", inviteId)
         .maybeSingle();
@@ -148,7 +148,7 @@ const StudioCreateInner = () => {
     queryFn: async () => {
       const term = `%${search.trim()}%`;
       const { data } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("id, display_name, avatar_url, username")
         .or(`display_name.ilike.${term},username.ilike.${term}`)
         .neq("id", user?.id ?? "")

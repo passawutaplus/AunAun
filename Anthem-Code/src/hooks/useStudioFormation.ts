@@ -53,7 +53,7 @@ export const useMyPendingFormationInvites = () => {
       const inviteeIds = Array.from(new Set((allInvites ?? []).map((i: any) => i.invitee_id)));
       const allIds = Array.from(new Set([...founderIds, ...inviteeIds]));
       const { data: profiles } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("id, display_name, avatar_url, username")
         .in("id", allIds);
       const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));

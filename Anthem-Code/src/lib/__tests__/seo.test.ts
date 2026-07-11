@@ -4,8 +4,17 @@ import {
   SITE_TAGLINE,
   absoluteUrl,
   buildTitle,
+  canonicalPath,
+  isThinProfile,
+  shouldNoindexSearchParams,
   truncateDescription,
 } from "@/lib/seo";
+import {
+  breadcrumbJsonLd,
+  jobPostingJsonLd,
+  organizationJsonLd,
+  websiteJsonLd,
+} from "@/lib/seoSchemas";
 
 describe("seo helpers", () => {
   describe("buildTitle", () => {
@@ -44,5 +53,58 @@ describe("seo helpers", () => {
     it("normalizes paths without leading slash", () => {
       expect(absoluteUrl("jobs")).toBe(`${window.location.origin}/jobs`);
     });
+  });
+
+  describe("canonicalPath", () => {
+    it("strips query and hash", () => {
+      expect(canonicalPath("/jobs?sort=new#x")).toBe("/jobs");
+      expect(canonicalPath("/project/abc?utm=1")).toBe("/project/abc");
+    });
+  });
+
+  describe("shouldNoindexSearchParams", () => {
+    it("flags filter/search params", () => {
+      expect(shouldNoindexSearchParams("q=logo")).toBe(true);
+      expect(shouldNoindexSearchParams("with=Figma")).toBe(true);
+      expect(shouldNoindexSearchParams("mode=designers")).toBe(false);
+    });
+  });
+
+  describe("isThinProfile", () => {
+    it("marks empty profiles as thin", () => {
+      expect(isThinProfile({ bio: "", projectCount: 0 })).toBe(true);
+      expect(isThinProfile({ bio: "x".repeat(50), projectCount: 0 })).toBe(false);
+      expect(isThinProfile({ bio: "", projectCount: 2 })).toBe(false);
+    });
+  });
+});
+
+describe("seoSchemas", () => {
+  it("builds website and organization", () => {
+    expect(websiteJsonLd()["@type"]).toBe("WebSite");
+    expect(organizationJsonLd()["@type"]).toBe("Organization");
+  });
+
+  it("builds job posting with remote support", () => {
+    const ld = jobPostingJsonLd({
+      id: "11111111-1111-1111-1111-111111111111",
+      title: "Designer",
+      description: "ทำแบรนด์",
+      employment_type: "freelance",
+      location_type: "remote",
+      status: "open",
+      created_at: "2026-01-01T00:00:00Z",
+    });
+    expect(ld["@type"]).toBe("JobPosting");
+    expect(ld.jobLocationType).toBe("TELECOMMUTE");
+  });
+
+  it("builds breadcrumb list", () => {
+    const ld = breadcrumbJsonLd([
+      { name: "หน้าแรก", path: "/" },
+      { name: "งาน", path: "/jobs" },
+    ]);
+    expect(ld["@type"]).toBe("BreadcrumbList");
+    expect((ld.itemListElement as unknown[]).length).toBe(2);
   });
 });

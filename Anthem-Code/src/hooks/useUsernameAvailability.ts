@@ -12,7 +12,7 @@ async function isUsernameTaken(username: string, excludeUserId?: string): Promis
   if (isReservedPublicHandle(normalized)) return true;
 
   const { data, error } = await supabase
-    .from("profiles")
+    .from("profiles_public")
     .select("user_id")
     .eq("username", normalized)
     .limit(2);

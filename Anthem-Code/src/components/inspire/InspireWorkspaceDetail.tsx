@@ -142,7 +142,7 @@ export function InspireWorkspaceDetail({ boardId, focusItemId, onDeleted }: Prop
     enabled: !!sourceProject?.owner_id,
     queryFn: async () => {
       const { data } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("user_id, display_name, avatar_url, username")
         .eq("user_id", sourceProject!.owner_id)
         .maybeSingle();

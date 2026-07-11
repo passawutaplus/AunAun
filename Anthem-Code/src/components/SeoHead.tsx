@@ -2,12 +2,14 @@ import { useEffect } from "react";
 import {
   absoluteUrl,
   buildTitle,
+  canonicalPath,
   DEFAULT_OG_IMAGE,
   SITE_DESCRIPTION,
   SITE_NAME,
   truncateDescription,
   type SeoProps,
 } from "@/lib/seo";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/seoSchemas";
 
 const META_IDS = {
   description: "seo-description",
@@ -17,6 +19,8 @@ const META_IDS = {
   ogImage: "seo-og-image",
   ogUrl: "seo-og-url",
   ogType: "seo-og-type",
+  ogLocale: "seo-og-locale",
+  twCard: "seo-tw-card",
   twTitle: "seo-tw-title",
   twDesc: "seo-tw-description",
   twImage: "seo-tw-image",
@@ -73,6 +77,7 @@ function removeJsonLd(id: string) {
 
 /**
  * Updates document title and meta tags for SPA SEO / social sharing.
+ * Canonical always uses a query-stripped path.
  */
 const SeoHead = ({
   title,
@@ -86,7 +91,8 @@ const SeoHead = ({
   useEffect(() => {
     const fullTitle = buildTitle(title);
     const desc = truncateDescription(description ?? SITE_DESCRIPTION);
-    const url = absoluteUrl(path);
+    const cleanPath = canonicalPath(path);
+    const url = absoluteUrl(cleanPath);
     const img = image.startsWith("http") ? image : absoluteUrl(image);
 
     document.title = fullTitle;
@@ -99,30 +105,23 @@ const SeoHead = ({
     upsertMeta(META_IDS.ogImage, "property", "og:image", img);
     upsertMeta(META_IDS.ogUrl, "property", "og:url", url);
     upsertMeta(META_IDS.ogType, "property", "og:type", type);
+    upsertMeta(META_IDS.ogLocale, "property", "og:locale", "th_TH");
+    upsertMeta(META_IDS.twCard, "name", "twitter:card", "summary_large_image");
     upsertMeta(META_IDS.twTitle, "name", "twitter:title", fullTitle);
     upsertMeta(META_IDS.twDesc, "name", "twitter:description", desc);
     upsertMeta(META_IDS.twImage, "name", "twitter:image", img);
     upsertCanonical("seo-canonical", url);
 
-    const defaultLd = {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      name: SITE_NAME,
-      url: absoluteUrl("/"),
-      description: SITE_DESCRIPTION,
-      inLanguage: "th",
-    };
-
     if (jsonLd) {
       upsertJsonLd("seo-jsonld", jsonLd);
-    } else if (path === "/") {
-      upsertJsonLd("seo-jsonld", defaultLd);
+    } else if (cleanPath === "/") {
+      upsertJsonLd("seo-jsonld", [websiteJsonLd(), organizationJsonLd()]);
     } else {
       removeJsonLd("seo-jsonld");
     }
 
     return () => {
-      // Keep base title on unmount — next page's SeoHead will overwrite
+      // Keep tags — next page SeoHead overwrites
     };
   }, [title, description, path, image, type, noindex, jsonLd]);
 
@@ -130,3 +129,6 @@ const SeoHead = ({
 };
 
 export default SeoHead;
+
+// Re-export for convenience in tests
+export { SITE_NAME };

@@ -40,7 +40,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose }: Props)
     enabled: !!otherId && !isGroup,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select(PUBLIC_PROFILE_SELECT)
         .eq("user_id", otherId!)
         .maybeSingle();

@@ -12,13 +12,18 @@ import HireDialog from "@/components/HireDialog";
 import CollabDialog from "@/components/CollabDialog";
 import { useProfilesByIds } from "@/core/profiles";
 import { useProjectsByTag, useProjectsByTool, filterProjectsByTools } from "@/hooks/useExploreProjects";
-import { decodeExploreParam, normalizeToolName, parseExtraTools, type ExploreKind } from "@/lib/exploreRoutes";
+import { decodeExploreParam, normalizeToolName, parseExtraTools, exploreProjectsUrl, type ExploreKind } from "@/lib/exploreRoutes";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth, stashPendingHire, consumePendingHire } from "@/lib/authRedirect";
 import type { Category, Project, ProjectStatus } from "@/data/projectTypes";
 import { DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory } from "@/data/projectTypes";
 import type { DBProject } from "@/hooks/useProjects";
+import SeoHead from "@/components/SeoHead";
+import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
+import { shouldNoindexSearchParams } from "@/lib/seo";
+import { breadcrumbJsonLd, collectionPageJsonLd } from "@/lib/seoSchemas";
+import { absoluteUrl } from "@/lib/seo";
 
 function mapToCard(projects: DBProject[], owners: Record<string, { name: string; avatar: string }>): Project[] {
   return projects.map((p) => {
@@ -192,12 +197,35 @@ const ExploreProjectsPage = () => {
       ? `ยังไม่มีผลงานที่ใช้ ${[value, ...extraTools].join(" + ")} ครบทุกเครื่องมือ`
       : `ยังไม่มีผลงานเผยแพร่ที่ระบุเครื่องมือ "${value}"`;
 
+  const explorePath = exploreProjectsUrl(exploreKind, value);
+  const crumbs = [
+    { name: "หน้าแรก", path: "/" },
+    { name: "สำรวจ", path: "/" },
+    { name: title, path: explorePath },
+  ];
+  const seoNoindex = extraTools.length > 0 || shouldNoindexSearchParams(searchParams);
+  const seoDesc =
+    exploreKind === "tool"
+      ? `ค้นพบผลงานครีเอเตอร์ที่ใช้ ${value} บน Aplus1`
+      : `ค้นพบผลงานแท็ก #${value.replace(/^#+/, "")} บน Aplus1`;
+
   return (
     <div className="min-h-screen bg-app-ambient pb-24">
+      <SeoHead
+        title={title}
+        description={seoDesc}
+        path={explorePath}
+        noindex={seoNoindex}
+        jsonLd={[
+          collectionPageJsonLd({ name: title, description: seoDesc, url: absoluteUrl(explorePath) }),
+          breadcrumbJsonLd(crumbs),
+        ]}
+      />
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
           <BackButton className="shrink-0" />
           <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+            <SeoBreadcrumb items={crumbs} className="mb-0" />
             <div className="flex items-center gap-2 min-w-0">
               {exploreKind === "tool" && extraTools.length === 0 ? (
                 <ToolIcon name={value} size="sm" />

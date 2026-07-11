@@ -29,7 +29,7 @@ export async function fetchMutualFollowCandidates(userId: string): Promise<Tagge
   if (!mutualIds.length) return [];
 
   const { data: profs, error } = await supabase
-    .from("profiles")
+    .from("profiles_public")
     .select("user_id, display_name, avatar_url, username")
     .in("user_id", mutualIds);
   if (error) throw error;
@@ -51,7 +51,7 @@ export async function fetchMutualFollowCandidates(userId: string): Promise<Tagge
 export async function fetchTaggedUserSummaries(ids: string[]): Promise<TaggedUserSummary[]> {
   if (!ids.length) return [];
   const { data, error } = await supabase
-    .from("profiles")
+    .from("profiles_public")
     .select("user_id, display_name, avatar_url, username")
     .in("user_id", ids);
   if (error) throw error;

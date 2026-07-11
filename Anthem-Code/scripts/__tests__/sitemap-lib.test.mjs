@@ -5,6 +5,7 @@ import {
   CATALOG_PROJECT_COUNT,
   buildSitemapUrls,
   buildSitemapXml,
+  buildSitemapBundles,
   catalogProjectId,
   catalogUid,
 } from "../sitemap-lib.mjs";
@@ -69,5 +70,18 @@ describe("sitemap-lib", () => {
     expect(xml).toContain("<loc>https://aplus1.app/legal/community</loc>");
     expect(xml).not.toMatch(/<loc>[^<]*\/admin<\/loc>/);
     expect(xml).not.toMatch(/<loc>[^<]*\/jobs<\/loc>/);
+  });
+
+  it("builds sitemap index and type bundles", () => {
+    const { files, indexEntries, urlCount } = buildSitemapBundles("https://aplus1.app", {
+      projectIds: ["p1"],
+      profileUserIds: ["u1"],
+    });
+    expect(urlCount).toBeGreaterThan(0);
+    expect(files["sitemap.xml"]).toContain("<urlset");
+    expect(files["sitemap-index.xml"]).toContain("<sitemapindex");
+    expect(indexEntries).toContain("sitemap-static.xml");
+    expect(files["sitemap-projects.xml"]).toContain("/project/p1");
+    expect(files["sitemap-profiles.xml"]).toContain("/u/u1");
   });
 });

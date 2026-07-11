@@ -31,8 +31,14 @@ import { highlight } from "@/lib/highlight";
 import { PROJECT_FEED_SELECT, PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
 import { profileReadFrom } from "@/lib/profileAccess";
 import SeoHead from "@/components/SeoHead";
+import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
 import { BRAND_NAME } from "@/lib/brandConfig";
-import { truncateDescription } from "@/lib/seo";
+import { absoluteUrl, isThinProfile, truncateDescription } from "@/lib/seo";
+import {
+  breadcrumbJsonLd,
+  personJsonLd,
+  profilePageJsonLd,
+} from "@/lib/seoSchemas";
 import { isUuid, profilePublicPath, profilePublicPathLabel, profilePublicUrl, profileShareMessage, profileShareTitle } from "@/lib/profileRoutes";
 import ProfileSharePopover from "@/components/profile/ProfileSharePopover";
 import { sortPortfolioProjects } from "@/lib/portfolioSort";
@@ -178,6 +184,7 @@ const PublicProfilePage = () => {
   if (!profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <SeoHead title="ไม่พบโปรไฟล์" path="/u/not-found" noindex />
         <EmptyState
           icon={UserX}
           title="ไม่พบโปรไฟล์นี้"
@@ -226,6 +233,14 @@ const PublicProfilePage = () => {
   const seoDesc = truncateDescription(
     profile.bio || `ดูพอร์ตโฟลิโอและผลงานของ ${displayName} บน ${BRAND_NAME}`,
   );
+  const profilePath = profilePublicPath(profile);
+  const profileAbsUrl = absoluteUrl(profilePath);
+  const thin = isThinProfile({ bio: profile.bio, projectCount: projects.length });
+  const crumbs = [
+    { name: "หน้าแรก", path: "/" },
+    { name: "ครีเอเตอร์", path: "/?mode=designers" },
+    { name: displayName, path: profilePath },
+  ];
 
   const statItems = [
     { label: "ผลงาน", value: projects.length },
@@ -240,17 +255,25 @@ const PublicProfilePage = () => {
       <SeoHead
         title={displayName}
         description={seoDesc}
-        path={profilePublicPath(profile)}
+        path={profilePath}
         image={profile.avatar_url ?? undefined}
         type="profile"
-        jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "Person",
-          name: displayName,
-          description: profile.bio || undefined,
-          image: profile.avatar_url || undefined,
-          url: typeof window !== "undefined" ? window.location.href : undefined,
-        }}
+        noindex={thin}
+        jsonLd={[
+          personJsonLd({
+            name: displayName,
+            description: profile.bio || undefined,
+            image: profile.avatar_url || undefined,
+            url: profileAbsUrl,
+          }),
+          profilePageJsonLd({
+            name: displayName,
+            description: profile.bio || undefined,
+            image: profile.avatar_url || undefined,
+            url: profileAbsUrl,
+          }),
+          breadcrumbJsonLd(crumbs),
+        ]}
       />
       <div className="sticky top-0 z-20 glass-panel border-x-0 border-t-0 rounded-none">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-2">
@@ -258,6 +281,7 @@ const PublicProfilePage = () => {
             to={visitorPreview ? "/portfolio" : "/"}
             label={visitorPreview ? "กลับแดชบอร์ด" : "กลับฟีด"}
           />
+          <SeoBreadcrumb items={crumbs} className="mb-0 hidden sm:flex flex-1 min-w-0" />
           {visitorPreview && (
             <div className="flex-1 min-w-0 flex items-center justify-between gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5">
               <span className="inline-flex items-center gap-1.5 text-xs text-foreground min-w-0">

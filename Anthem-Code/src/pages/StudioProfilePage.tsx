@@ -19,7 +19,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { requireAuth } from "@/lib/requireAuth";
 import SeoHead from "@/components/SeoHead";
 import { BRAND_NAME } from "@/lib/brandConfig";
-import { truncateDescription } from "@/lib/seo";
+import { absoluteUrl, truncateDescription } from "@/lib/seo";
+import { breadcrumbJsonLd } from "@/lib/seoSchemas";
+import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
 import ReportTrigger from "@/components/report/ReportTrigger";
 import { useSubscription } from "@/core/subscription/useSubscription";
 import {
@@ -82,21 +84,48 @@ const StudioProfilePage = () => {
   if (!studio) return <div className="min-h-screen grid place-items-center text-muted-foreground">ไม่พบสตูดิโอ</div>;
 
   const websiteUrl = safeHttpUrl(studio.website);
+  const studioPath = `/s/${slug}`;
+  const crumbs = [
+    { name: "หน้าแรก", path: "/" },
+    { name: "สตูดิโอ", path: "/" },
+    { name: studio.name, path: studioPath },
+  ];
 
   return (
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-12">
       <SeoHead
         title={studio.name}
         description={truncateDescription(studio.description || `สตูดิโอ ${studio.name} บน ${BRAND_NAME}`)}
-        path={`/s/${slug}`}
+        path={studioPath}
         image={studio.cover_url ?? studio.avatar_url ?? undefined}
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: studio.name,
+            description: studio.description || undefined,
+            url: absoluteUrl(studioPath),
+            logo: studio.avatar_url || undefined,
+            image: studio.cover_url || undefined,
+          },
+          breadcrumbJsonLd(crumbs),
+        ]}
       />
       <div className="relative h-48 lg:h-64 bg-gradient-to-br from-primary/20 to-primary/5">
-        {studio.cover_url && <img src={studio.cover_url} alt="" className="w-full h-full object-cover" />}
+        {studio.cover_url && (
+          <img
+            src={studio.cover_url}
+            alt={`ปกสตูดิโอ ${studio.name}`}
+            className="w-full h-full object-cover"
+            width={1600}
+            height={400}
+          />
+        )}
         <BackButton className="absolute top-4 left-4 bg-background/70 backdrop-blur" />
       </div>
 
       <div className="max-w-5xl mx-auto px-4 -mt-12 relative">
+        <SeoBreadcrumb items={crumbs} className="mb-3 relative z-10" />
         <div className="glass-panel-strong rounded-2xl p-5 lg:p-6">
           <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
             <Avatar className="w-24 h-24 ring-4 ring-background">

@@ -31,6 +31,10 @@ import {
 import { cn } from "@/lib/utils";
 import ReportTrigger from "@/components/report/ReportTrigger";
 import JobApplyDialog from "@/components/jobs/JobApplyDialog";
+import SeoHead from "@/components/SeoHead";
+import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
+import { truncateDescription } from "@/lib/seo";
+import { breadcrumbJsonLd, jobPostingJsonLd } from "@/lib/seoSchemas";
 
 const fmt = (n: number | null) => (n ? `฿${n.toLocaleString()}` : "");
 
@@ -76,15 +80,43 @@ const JobDetailPage = () => {
     updateStatus.mutate({ id: appId, status, markContacted });
   };
 
+  const jobPath = `/jobs/${job.id}`;
+  const crumbs = [
+    { name: "หน้าแรก", path: "/" },
+    { name: "งาน", path: "/jobs" },
+    { name: job.title, path: jobPath },
+  ];
+  const isOpen = job.status === "open";
+
   return (
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-12">
+      <SeoHead
+        title={job.title}
+        description={truncateDescription(job.description || `${job.title} — โอกาสงานบน Aplus1`)}
+        path={jobPath}
+        image={job.cover_image_url || undefined}
+        noindex={!isOpen}
+        jsonLd={
+          isOpen
+            ? [jobPostingJsonLd(job), breadcrumbJsonLd(crumbs)]
+            : breadcrumbJsonLd(crumbs)
+        }
+      />
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
         <BackButton />
+        <SeoBreadcrumb items={crumbs} />
 
         <div className="relative h-48 rounded-2xl overflow-hidden border border-border/40">
           {hasCover ? (
             <>
-              <img src={job.cover_image_url!} alt="" className="w-full h-full object-cover dark:brightness-75 dark:saturate-90" />
+              <img
+                src={job.cover_image_url!}
+                alt={job.title}
+                width={1200}
+                height={384}
+                className="w-full h-full object-cover dark:brightness-75 dark:saturate-90"
+                loading="eager"
+              />
               <div className="absolute inset-0 bg-black/25 dark:bg-black/45" />
             </>
           ) : (

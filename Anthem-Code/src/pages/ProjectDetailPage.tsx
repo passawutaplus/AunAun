@@ -30,11 +30,13 @@ import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { toast } from "sonner";
 import { isCategoryAllowed } from "@/lib/cookieConsent";
 import SeoHead from "@/components/SeoHead";
+import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import BoostButton from "@/components/boost/BoostButton";
 import { useAdCampaign, logAdEvent } from "@/hooks/useAds";
 import { Megaphone, ExternalLink } from "lucide-react";
-import { truncateDescription } from "@/lib/seo";
+import { absoluteUrl, truncateDescription } from "@/lib/seo";
+import { breadcrumbJsonLd, creativeWorkJsonLd } from "@/lib/seoSchemas";
 import { openSafeExternalUrl } from "@/lib/safeUrl";
 import { FadeUp } from "@/components/motion/FadeUp";
 import { ProjectLinkedPostsBlock } from "@/components/project/ProjectLinkedPostsBlock";
@@ -272,6 +274,14 @@ const ProjectDetailPage = () => {
     project.gallery.find((url) => !isVideoUrl(url)) ??
     "";
 
+  const projectPath = `/project/${project.id}`;
+  const crumbs = [
+    { name: "หน้าแรก", path: "/" },
+    { name: "ผลงาน", path: "/" },
+    { name: project.title, path: projectPath },
+  ];
+  const authorUrl = project.ownerId ? absoluteUrl(`/u/${project.ownerId}`) : undefined;
+
   return (
     <div className="min-h-screen bg-app-ambient">
       <SeoHead
@@ -279,22 +289,27 @@ const ProjectDetailPage = () => {
         description={truncateDescription(
           project.description || `${project.title} โดย ${project.owner} — ${project.category} บน ${BRAND_NAME}`,
         )}
-        path={`/project/${project.id}`}
+        path={projectPath}
         image={coverImage || undefined}
         type="article"
-        jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "CreativeWork",
-          name: project.title,
-          description: project.description || project.title,
-          image: coverImage || undefined,
-          author: { "@type": "Person", name: project.owner },
-          url: typeof window !== "undefined" ? window.location.href : undefined,
-        }}
+        jsonLd={[
+          creativeWorkJsonLd({
+            name: project.title,
+            description: project.description || project.title,
+            image: coverImage || undefined,
+            authorName: project.owner,
+            authorUrl,
+            url: absoluteUrl(projectPath),
+          }),
+          breadcrumbJsonLd(crumbs),
+        ]}
       />
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <BackButton />
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <BackButton />
+            <SeoBreadcrumb items={crumbs} className="mb-0 hidden md:flex min-w-0" />
+          </div>
           <div className="flex items-center gap-1">
             {isOwner && dbProject ? (
               <ProjectOwnerMenu projectId={dbProject.id} projectTitle={project.title} />

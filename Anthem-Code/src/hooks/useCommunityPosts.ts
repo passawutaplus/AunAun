@@ -101,7 +101,7 @@ export async function enrichCommunityPosts(rows: CommunityPost[]): Promise<Commu
 
   const authorIds = Array.from(new Set(rows.map((r) => r.author_id)));
   const { data: profs } = await supabase
-    .from("profiles")
+    .from("profiles_public")
     .select("user_id, display_name, avatar_url, username")
     .in("user_id", authorIds);
 
@@ -255,7 +255,7 @@ export const useCommunityPost = (id: string | undefined) =>
       if (!data) return null;
       const row = data as CommunityPost;
       const { data: prof } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("user_id, display_name, avatar_url, username")
         .eq("user_id", row.author_id)
         .maybeSingle();
@@ -746,7 +746,7 @@ export const useCommunityComments = (postId: string | undefined) => {
       const rows = (data ?? []) as CommunityComment[];
       const ids = Array.from(new Set(rows.map((r) => r.user_id)));
       const { data: profs } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("user_id, display_name, avatar_url, username")
         .in("user_id", ids);
       const map = new Map((profs ?? []).map((p) => [p.user_id, p]));
@@ -827,7 +827,7 @@ export const useCreateCommunityComment = () => {
       const actorName =
         (
           await supabase
-            .from("profiles")
+            .from("profiles_public")
             .select("display_name, username")
             .eq("user_id", payload.user_id)
             .maybeSingle()

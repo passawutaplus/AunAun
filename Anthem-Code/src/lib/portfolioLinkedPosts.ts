@@ -26,7 +26,7 @@ export async function fetchLinkedPostSummaries(ids: string[]): Promise<LinkedPos
   const rows = data ?? [];
   const authorIds = Array.from(new Set(rows.map((r) => r.author_id)));
   const { data: profs } = await supabase
-    .from("profiles")
+    .from("profiles_public")
     .select("user_id, display_name, username")
     .in("user_id", authorIds);
   const nameById = new Map(

@@ -11,6 +11,8 @@ import { useProfilesByIds } from "@/core/profiles";
 import Footer from "@/components/Footer";
 import FeedHero from "@/components/feed/FeedHero";
 import FeedToolbar from "@/components/feed/FeedToolbar";
+import SeoHead from "@/components/SeoHead";
+import { shouldNoindexSearchParams } from "@/lib/seo";
 import DrillFeedPanel from "@/components/drill/DrillFeedPanel";
 import ProjectCard from "@/components/ProjectCard";
 import AdCard from "@/components/feed/AdCard";
@@ -406,6 +408,9 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
 
   return (
     <main className={cn("min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
+      {(shouldNoindexSearchParams(searchParams) || search.trim().length > 0) && (
+        <SeoHead path="/" noindex title="ค้นหาผลงาน" description="ผลการค้นหาบน Aplus1" />
+      )}
       <div className="max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 2xl:px-10 pt-4 py-4 space-y-4">
         <FeedHero mode={mode} />
 

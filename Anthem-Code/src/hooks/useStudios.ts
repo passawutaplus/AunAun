@@ -107,7 +107,7 @@ export const useStudioMembers = (studioId?: string) =>
       const ids = (data ?? []).map((m: any) => m.user_id);
       if (ids.length === 0) return [];
       const { data: profiles } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("user_id, display_name, avatar_url, username")
         .in("user_id", ids);
       const map = new Map((profiles ?? []).map((p: { user_id: string }) => [p.user_id, p]));

@@ -87,7 +87,7 @@ const EarningsPage = () => {
     enabled: senderIds.length > 0,
     queryFn: async () => {
       const { data } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("id, display_name, avatar_url, username")
         .in("id", senderIds);
       return data ?? [];

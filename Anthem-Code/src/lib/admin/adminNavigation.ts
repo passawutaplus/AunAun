@@ -24,6 +24,7 @@ import {
   MessageSquare,
   MessageSquareHeart,
   ScrollText,
+  Search,
   Shield,
   ShieldCheck,
   Sparkles,
@@ -134,6 +135,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         label: "Analytics",
         hint: "แนวโน้มและ conversion",
         icon: BarChart3,
+      },
+      {
+        to: "/admin/seo",
+        label: "SEO",
+        hint: "Sitemap, meta, indexing checklist",
+        icon: Search,
       },
       {
         to: "/admin/activity",

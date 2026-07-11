@@ -19,6 +19,9 @@ interface Props {
   drillActive?: boolean;
   onChange: (v: FeedMode) => void;
   onDrillSelect?: () => void;
+  className?: string;
+  /** Icon-only (e.g. mobile while search is expanded) */
+  compact?: boolean;
 }
 
 const items: ToggleItem[] = [
@@ -43,7 +46,14 @@ const slideTransition = {
 
 type IndicatorBox = { x: number; width: number };
 
-const FeedModeToggle = ({ value, drillActive = false, onChange, onDrillSelect }: Props) => {
+const FeedModeToggle = ({
+  value,
+  drillActive = false,
+  onChange,
+  onDrillSelect,
+  className,
+  compact = false,
+}: Props) => {
   const reduced = useReducedMotion();
   const trackRef = useRef<HTMLDivElement>(null);
   const btnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
@@ -96,14 +106,15 @@ const FeedModeToggle = ({ value, drillActive = false, onChange, onDrillSelect }:
       ro?.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [activeId, visibleKey, equalSplit]);
+  }, [activeId, visibleKey, equalSplit, compact]);
 
   return (
     <div
       ref={trackRef}
       className={cn(
-        "relative shrink-0 flex items-center rounded-full glass-panel p-0.5",
-        equalSplit && "min-w-[11.5rem] sm:min-w-[14.5rem]",
+        "relative shrink-0 flex items-center rounded-full glass-panel p-0.5 transition-[min-width] duration-200",
+        equalSplit && !compact && "min-w-[12.5rem] sm:min-w-[14.5rem]",
+        className,
       )}
       role="group"
       aria-label="Feed view"
@@ -146,16 +157,25 @@ const FeedModeToggle = ({ value, drillActive = false, onChange, onDrillSelect }:
             aria-pressed={active}
             onClick={() => (id === "drill" ? onDrillSelect?.() : onChange(id))}
             className={cn(
-              "relative z-10 items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors duration-200",
+              "relative z-10 items-center justify-center rounded-full text-xs font-medium transition-[padding,gap,colors] duration-200",
+              compact ? "gap-0 px-2.5 py-1.5" : "gap-1.5 px-3 py-1.5",
               visibility,
-              equalSplit && "flex-1 justify-center",
+              equalSplit && !compact && "flex-1",
               active
                 ? "text-white"
                 : "text-foreground/75 hover:text-foreground",
             )}
           >
             <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden />
-            <span className="hidden sm:inline">{label}</span>
+            <span
+              className={cn(
+                "overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-200",
+                compact ? "max-w-0 opacity-0" : "max-w-[6rem] opacity-100",
+              )}
+              aria-hidden={compact}
+            >
+              {label}
+            </span>
           </button>
         );
       })}

@@ -14,6 +14,7 @@ import AuthCallbackPage from "./pages/AuthCallbackPage.tsx";
 import AuthForgotPage from "./pages/AuthForgotPage.tsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
 import CookieConsent from "./components/CookieConsent.tsx";
+import GoogleAnalytics from "./components/seo/GoogleAnalytics.tsx";
 import PolicyReconsentGate from "./components/legal/PolicyReconsentGate.tsx";
 import FloatingNav from "./components/FloatingNav.tsx";
 import RequireAuth from "./components/RequireAuth.tsx";
@@ -78,6 +79,7 @@ const AdminContractsPage = lazy(() => import("./pages/admin/AdminContractsPage")
 const AdminWalletPage = lazy(() => import("./pages/admin/AdminWalletPage"));
 const AdminApplicationsPage = lazy(() => import("./pages/admin/AdminApplicationsPage"));
 const AdminAnalyticsPage = lazy(() => import("./pages/admin/AdminAnalyticsPage"));
+const AdminSeoPage = lazy(() => import("./pages/admin/AdminSeoPage"));
 const AdminSystemPage = lazy(() => import("./pages/admin/AdminSystemPage"));
 const AdminAdsPage = lazy(() => import("./pages/admin/AdminAdsPage"));
 const AdminReportsPage = lazy(() => import("./pages/admin/AdminReportsPage"));
@@ -226,6 +228,7 @@ const App = () => (
                 <Route path="kuy-radar/*" element={<LegacyMarketingRedirect />} />
                 <Route path="activity" element={<AdminActivityPage />} />
                 <Route path="analytics" element={<AdminAnalyticsPage />} />
+                <Route path="seo" element={<AdminSeoPage />} />
                 <Route path="contracts" element={<AdminContractsPage />} />
                 <Route path="wallet" element={<AdminWalletPage />} />
                 <Route path="applications" element={<AdminApplicationsPage />} />
@@ -290,6 +293,7 @@ const App = () => (
             </Routes>
           </Suspense>
           <CookieConsent />
+          <GoogleAnalytics />
           <PolicyReconsentGate />
           <FloatingNav />
           <AuthDialog />

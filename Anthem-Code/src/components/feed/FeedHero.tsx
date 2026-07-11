@@ -95,7 +95,16 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
     );
 
   return (
-    <section className={cn("relative overflow-hidden rounded-[1.75rem] ring-1 ring-border/35 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12)] min-h-[26rem] sm:min-h-[28rem] md:min-h-[19rem] lg:min-h-[21rem] -mx-1 sm:mx-0", className)}>
+    <section
+      className={cn(
+        "relative overflow-hidden min-h-[26rem] sm:min-h-[28rem] md:min-h-[19rem] lg:min-h-[21rem]",
+        // Mobile: edge-to-edge (cancel page padding), no radius
+        "-mx-3 -mt-4 rounded-none ring-0 shadow-none sm:-mx-4",
+        // Desktop/tablet card treatment
+        "md:mx-0 md:mt-0 md:rounded-[1.75rem] md:ring-1 md:ring-border/35 md:shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12)] lg:mx-0",
+        className,
+      )}
+    >
       {reduced ? (
         showcase
       ) : (
@@ -114,7 +123,7 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
       )}
 
       <div
-        className="absolute inset-0 z-[1] pointer-events-none md:hidden bg-gradient-to-b from-transparent from-[18%] via-background/55 via-[48%] to-background to-[72%]"
+        className="absolute inset-0 z-[1] pointer-events-none md:hidden bg-gradient-to-b from-transparent from-[14%] via-background/45 via-[42%] to-background/55 to-[100%]"
         aria-hidden
       />
       <div
@@ -160,19 +169,19 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
         {/* ช่องว่างเดิมของคำอธิบาย — มือถือ/แท็บเลตเท่านั้น */}
         <div className="min-h-[2.75rem] sm:min-h-[3rem] md:hidden" aria-hidden />
 
-        <div className="mt-auto grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2.5 w-full sm:w-auto md:mt-0">
+        <div className="mt-auto flex flex-wrap gap-2 w-fit max-w-full md:mt-0 md:gap-2.5">
           {(isAplus1LaunchMinimal() ? STATS.filter(({ key }) => key !== "collabs") : STATS).map(({ key, label }) => (
             <div
               key={key}
-              className="rounded-xl border border-border bg-card/95 px-3 py-2.5 shadow-sm dark:bg-card dark:shadow-[inset_0_1px_0_0_hsl(0_0%_100%_/_0.04)]"
+              className="w-fit rounded-xl border border-white/20 bg-white/15 px-2.5 py-2 shadow-sm backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/10 md:border-white/15 md:bg-white/10 md:px-3 md:py-2.5 md:backdrop-blur-xl dark:border-white/15 dark:bg-white/[0.12] dark:shadow-[inset_0_1px_0_0_hsl(0_0%_100%_/_0.1)] dark:supports-[backdrop-filter]:bg-white/[0.08]"
             >
-              <span className="block text-[11px] uppercase tracking-[0.12em] text-foreground/70 font-medium thai-body">
+              <span className="block text-[10px] uppercase tracking-[0.1em] text-foreground/70 font-medium thai-body whitespace-nowrap md:text-[11px] md:tracking-[0.12em]">
                 {label}
               </span>
               {isLoading ? (
-                <Skeleton className="h-7 w-10 mt-1.5" />
+                <Skeleton className="h-6 w-8 mt-1 md:h-7 md:w-10 md:mt-1.5" />
               ) : (
-                <span className="mt-1 block text-xl md:text-2xl font-semibold text-foreground tabular-nums leading-none">
+                <span className="mt-1 block text-lg font-semibold text-foreground tabular-nums leading-none md:text-2xl">
                   {formatNum(s[key])}
                 </span>
               )}

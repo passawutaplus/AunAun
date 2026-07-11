@@ -100,7 +100,7 @@ const attachPosters = async (jobs: JobPost[]): Promise<JobPost[]> => {
   const ids = Array.from(new Set(jobs.filter((j) => !j.studio_id).map((j) => j.posted_by)));
   if (ids.length === 0) return jobs;
   const { data } = await supabase
-    .from("profiles")
+    .from("profiles_public")
     .select("user_id, display_name, avatar_url, username")
     .in("user_id", ids);
   const map = new Map((data ?? []).map((p: { user_id: string }) => [p.user_id, p]));
@@ -144,7 +144,7 @@ export const useOpenForWorkCreators = (opts?: { limit?: number }) =>
     queryKey: ["open-for-work-creators", opts?.limit ?? 60],
     queryFn: async (): Promise<OpenForWorkProfile[]> => {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select(
           "user_id, display_name, username, avatar_url, role, skills, location, open_for_work, open_for_work_badge, availability_status, hourly_rate_min, daily_rate_min, project_rate_note",
         )
@@ -300,7 +300,7 @@ export const useJobApplications = (jobId?: string) =>
       const ids = Array.from(new Set(rows.map((r) => r.applicant_id)));
       if (ids.length === 0) return rows;
       const { data: profiles } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("user_id, display_name, avatar_url, username")
         .in("user_id", ids);
       const map = new Map((profiles ?? []).map((p: { user_id: string }) => [p.user_id, p]));

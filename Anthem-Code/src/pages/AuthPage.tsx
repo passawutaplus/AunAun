@@ -29,6 +29,7 @@ import {
   BRAND_STORAGE_NO_PERSIST,
   BRAND_TAGLINE,
 } from "@/lib/brandConfig";
+import SeoHead from "@/components/SeoHead";
 
 const PasswordInput = ({ id, value, onChange, placeholder, autoComplete, minLength, required, invalid }: {
   id: string;
@@ -99,6 +100,7 @@ const AuthPage = () => {
       "relative min-h-screen overflow-hidden bg-background transition-opacity duration-300",
       fadeOut && "opacity-0"
     )}>
+      <SeoHead title="เข้าสู่ระบบ" path="/auth" noindex />
       {/* Ambient blobs */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-32 -left-24 w-[420px] h-[420px] rounded-full blur-3xl opacity-30 bg-gradient-brand" />

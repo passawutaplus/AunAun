@@ -33,7 +33,7 @@ async function fetchConversationIds(requestIds: string[]): Promise<Record<string
 const fetchProfiles = async (ids: string[]) => {
   if (ids.length === 0) return {} as Record<string, { name: string; avatar: string }>;
   const { data } = await supabase
-    .from("profiles")
+    .from("profiles_public")
     .select("id, display_name, username, avatar_url")
     .in("id", ids);
   const map: Record<string, { name: string; avatar: string }> = {};

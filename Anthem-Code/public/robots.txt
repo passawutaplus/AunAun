@@ -18,9 +18,23 @@ Disallow: /settings
 Disallow: /notifications
 Disallow: /chat
 Disallow: /portfolio/manage
+Disallow: /portfolio/saved
+Disallow: /portfolio/followers
 Disallow: /earnings
 Disallow: /verify
+Disallow: /referrals
+Disallow: /contracts
+Disallow: /inspire
+Disallow: /collections
+Disallow: /me/
+Disallow: /studio/manage
+Disallow: /studio/new
+Disallow: /studio/invites
+Disallow: /api/
+Disallow: /reset-password
 
+# Prefer clean URLs — parameterized discovery stays noindex via SeoHead
 Sitemap: https://aplus1.app/sitemap.xml
+Sitemap: https://aplus1.app/sitemap-index.xml
 
 # AI / agent context: https://aplus1.app/llms.txt

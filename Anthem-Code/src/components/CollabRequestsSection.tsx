@@ -51,7 +51,7 @@ const CollabRequestsSection = () => {
     enabled: senderIds.length > 0,
     queryFn: async () => {
       const { data } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("user_id, display_name, avatar_url, role")
         .in("user_id", senderIds);
       const map: Record<string, { name: string; avatar: string; role: string }> = {};

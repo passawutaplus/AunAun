@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import FilterChips from "@/components/FilterChips";
@@ -19,6 +20,7 @@ import type { Category, FeedFilter } from "@/data/projectTypes";
 import type { CommunityFeedFilter } from "@/data/communityTopics";
 import { DESIGN_DRILL_CHIP, type ProjectChipFilter } from "@/lib/drillProject";
 import { FEED_MODE_LABELS, FEED_MODE_ORDER } from "@/lib/feedModeLabels";
+import { cn } from "@/lib/utils";
 
 const FEED_MODE_OPTIONS = FEED_MODE_ORDER.map((value) => ({
   value,
@@ -96,6 +98,7 @@ const FeedToolbar = ({
   drillActive = false,
   onDrillSelect,
 }: Props) => {
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(search.length > 0);
   const isProjects = mode === "projects";
   const isDesigners = mode === "designers";
   const isStudios = mode === "studios";
@@ -203,9 +206,9 @@ const FeedToolbar = ({
       data-feed-toolbar
       className="sticky top-0 z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 bg-background/75 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 border-b border-border/50"
     >
-      {/* Mobile / tablet: single row */}
+      {/* Mobile / tablet: single row — profile lives in bottom nav */}
       <div className="flex items-center gap-2 lg:hidden">
-        <div className="flex-1 min-w-0">
+        <div className={cn(mobileSearchOpen ? "flex-1 min-w-0" : "shrink-0")}>
           <SearchBar
             value={search}
             onChange={onSearchChange}
@@ -213,10 +216,15 @@ const FeedToolbar = ({
             filterCount={filterCount}
             filterContent={filterContent}
             compact
+            expandable
+            onExpandedChange={setMobileSearchOpen}
           />
         </div>
-        <FeedModeToggle {...toggleProps} />
-        <ProfileButton />
+        <FeedModeToggle
+          {...toggleProps}
+          compact={mobileSearchOpen}
+          className="ml-auto"
+        />
       </div>
 
       {/* Desktop: two rows — mode toggle stays outside mode-specific branches */}

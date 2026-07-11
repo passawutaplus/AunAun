@@ -24,6 +24,7 @@ PATHS=(
   "/error/404"
   "/robots.txt"
   "/sitemap.xml"
+  "/sitemap-index.xml"
 )
 
 fail=0
@@ -39,12 +40,14 @@ check_robots_txt() {
     fail=1
     return
   fi
-  for rule in 'Disallow: /admin' 'Sitemap:'; do
-    if ! grep -qF "$rule" "$body_file"; then
-      echo "FAIL /robots.txt missing ${rule}"
-      seo_fail=1
-    fi
-  done
+  if (!grep -qF 'Sitemap: https://aplus1.app/sitemap.xml' "$body_file"; then
+    echo "FAIL /robots.txt missing Sitemap aplus1.app"
+    seo_fail=1
+  fi
+  if ! grep -qF 'Disallow: /portfolio/saved' "$body_file"; then
+    echo "FAIL /robots.txt missing Disallow /portfolio/saved"
+    seo_fail=1
+  fi
   if grep -qi 'Sitemap:.*pixel100\.com' "$body_file"; then
     echo "FAIL /robots.txt Sitemap still points at pixel100.com"
     seo_fail=1
@@ -80,6 +83,31 @@ check_sitemap_xml() {
   fi
   if [[ "$seo_fail" -eq 0 ]]; then
     echo "OK   /sitemap.xml SEO content"
+  else
+    fail=1
+  fi
+}
+
+check_sitemap_index() {
+  local url="${BASE_URL}/sitemap-index.xml"
+  local code
+  local seo_fail=0
+  code=$(curl -sS -o "$body_file" -w "%{http_code}" --max-time 30 "$url" || echo "000")
+  if [[ "$code" == "000" ]] || [[ "$code" -ge 400 ]]; then
+    echo "FAIL /sitemap-index.xml SEO check status=${code}"
+    fail=1
+    return
+  fi
+  if ! grep -q '<sitemapindex' "$body_file"; then
+    echo "FAIL /sitemap-index.xml missing sitemapindex root"
+    seo_fail=1
+  fi
+  if ! grep -q 'sitemap-static.xml' "$body_file"; then
+    echo "FAIL /sitemap-index.xml missing sitemap-static.xml"
+    seo_fail=1
+  fi
+  if [[ "$seo_fail" -eq 0 ]]; then
+    echo "OK   /sitemap-index.xml SEO content"
   else
     fail=1
   fi
@@ -125,6 +153,7 @@ done
 echo "==> SEO asset checks"
 check_robots_txt
 check_sitemap_xml
+check_sitemap_index
 
 dash_url=$(curl -sS -o /dev/null -w "%{url_effective}" -L --max-time 30 "${BASE_URL}/chat" || echo "")
 if [[ "$dash_url" == *"/chat"* && "$dash_url" != *"/auth"* ]]; then

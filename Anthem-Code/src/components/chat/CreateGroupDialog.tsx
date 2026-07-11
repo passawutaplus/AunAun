@@ -48,7 +48,7 @@ const CreateGroupDialog = ({ open, onOpenChange, onCreated }: Props) => {
     queryFn: async () => {
       const term = `%${searchTerm}%`;
       const { data } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("user_id, display_name, avatar_url, username")
         .or(`display_name.ilike.${term},username.ilike.${term}`)
         .neq("user_id", user?.id ?? "")
