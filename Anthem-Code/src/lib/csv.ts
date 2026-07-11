@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Lightweight CSV export. Escapes per RFC 4180 and triggers a browser download.
  */
 export function toCsv<T extends Record<string, unknown>>(rows: T[], columns?: (keyof T)[]): string {
@@ -17,6 +17,10 @@ export function toCsv<T extends Record<string, unknown>>(rows: T[], columns?: (k
 
 export function downloadCsv(filename: string, csv: string) {
   const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8;" });
+  downloadBlob(filename, blob);
+}
+
+export function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useMarketingContext } from "@/hooks/admin/MarketingContext";
 import { useMarketingBusinesses } from "@/hooks/admin/useMarketingBusinesses";
@@ -33,7 +33,7 @@ export default function MarketingSettingsPanel() {
   const save = async () => {
     try {
       await saveSettings(form);
-      toast.success(uiLanguage === "th" ? "บันทึกการตั้งค่าแล้ว" : "Settings saved");
+      toast.success(uiLanguage === "th" ? "à¸šà¸±à¸™à¸—à¸¶à¸à¸à¸²à¸£à¸•à¸±à¹‰à¸‡à¸„à¹ˆà¸²à¹à¸¥à¹‰à¸§" : "Settings saved");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
     }
@@ -41,7 +41,7 @@ export default function MarketingSettingsPanel() {
 
   const wipe = async () => {
     if (!activeBusinessId) return;
-    if (!confirm(uiLanguage === "th" ? "ลบข้อมูลธุรกิจนี้ทั้งหมด?" : "Delete all data for this business?")) return;
+    if (!confirm(uiLanguage === "th" ? "à¸¥à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸˜à¸¸à¸£à¸à¸´à¸ˆà¸™à¸µà¹‰à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”?" : "Delete all data for this business?")) return;
     try {
       await deleteBusinessData(activeBusinessId);
       toast.success("Deleted");
@@ -92,7 +92,7 @@ export default function MarketingSettingsPanel() {
               onChange={(e) => setForm((f) => ({ ...f, export_default_format: e.target.value }))}
             >
               <option value="csv">CSV</option>
-              <option value="xlsx">XLSX</option>
+              <option value="xlsx">Excel (.xls)</option>
               <option value="pdf">PDF</option>
             </select>
           </label>
@@ -106,7 +106,7 @@ export default function MarketingSettingsPanel() {
           AI mock mode (VITE_MARKETING_AI_MOCK)
         </label>
         <p className="mt-4 text-xs text-admin-muted">
-          Official API connectors (Google CSE, etc.) — coming soon placeholder in admin settings.
+          Official API connectors (Google CSE, etc.) â€” coming soon placeholder in admin settings.
         </p>
         <button type="button" onClick={() => void save()} className="marketing-btn-primary mt-4 rounded-lg px-4 py-2 text-sm">
           Save
@@ -114,7 +114,7 @@ export default function MarketingSettingsPanel() {
       </MarketingCard>
       <MarketingCard className="marketing-danger-zone p-5">
         <h3 className="font-semibold text-red-800">PDPA delete path</h3>
-        <p className="mt-1 text-sm text-admin-muted">ลบ leads, competitors, content, insights และธุรกิจนี้</p>
+        <p className="mt-1 text-sm text-admin-muted">à¸¥à¸š leads, competitors, content, insights à¹à¸¥à¸°à¸˜à¸¸à¸£à¸à¸´à¸ˆà¸™à¸µà¹‰</p>
         <button type="button" onClick={() => void wipe()} className="mt-3 rounded-lg border border-red-300 px-4 py-2 text-sm text-red-700">
           Delete business data
         </button>
@@ -122,3 +122,4 @@ export default function MarketingSettingsPanel() {
     </div>
   );
 }
+

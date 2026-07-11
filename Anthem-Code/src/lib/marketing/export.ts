@@ -1,7 +1,15 @@
-import { downloadCsv, toCsv } from "@/lib/csv";
+﻿import { downloadBlob, downloadCsv, toCsv } from "@/lib/csv";
 import { assertExportAllowed } from "./compliance";
 
 export type ExportFormat = "csv" | "xlsx" | "pdf";
+
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 export function exportRowsToCsv(filename: string, headers: string[], rows: string[][]): void {
   const records = rows.map((row) => {
@@ -15,30 +23,53 @@ export function exportRowsToCsv(filename: string, headers: string[], rows: strin
   downloadCsv(filename.endsWith(".csv") ? filename : `${filename}.csv`, csv);
 }
 
+/**
+ * Excel-compatible SpreadsheetML (.xls) — no third-party xlsx dependency
+ * (avoids SheetJS prototype-pollution / ReDoS advisories).
+ */
 export async function exportRowsToXlsx(
   filename: string,
   sheetName: string,
   headers: string[],
   rows: string[][],
 ): Promise<void> {
-  const XLSX = await import("xlsx");
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31));
-  XLSX.writeFile(wb, filename.endsWith(".xlsx") ? filename : `${filename}.xlsx`);
+  const safeName = escapeXml(sheetName.slice(0, 31) || "Sheet1");
+  const tableRows = [headers, ...rows]
+    .map(
+      (row) =>
+        `<Row>${row
+          .map((cell) => `<Cell><Data ss:Type="String">${escapeXml(cell ?? "")}</Data></Cell>`)
+          .join("")}</Row>`,
+    )
+    .join("");
+
+  const xml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Worksheet ss:Name="${safeName}">
+  <Table>${tableRows}</Table>
+ </Worksheet>
+</Workbook>`;
+
+  const base = filename.replace(/\.(xlsx|xls)$/i, "");
+  const blob = new Blob([xml], { type: "application/vnd.ms-excel;charset=utf-8" });
+  downloadBlob(`${base}.xls`, blob);
 }
 
 export function exportHtmlToPdf(title: string, htmlBody: string): void {
   const win = window.open("", "_blank", "noopener,noreferrer");
   if (!win) return;
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
 <style>
 body{font-family:system-ui,sans-serif;padding:24px;color:#111}
 h1{font-size:20px} table{width:100%;border-collapse:collapse;margin-top:16px;font-size:12px}
 th,td{border:1px solid #ddd;padding:6px;text-align:left} th{background:#f5f5f5}
 .note{margin-top:16px;font-size:11px;color:#666}
 </style></head><body>
-<h1>${title}</h1>
+<h1>${escapeHtml(title)}</h1>
 ${htmlBody}
 <p class="note">AI insight is decision support. Public data + user import only. PDPA/GDPR applies.</p>
 </body></html>`);
