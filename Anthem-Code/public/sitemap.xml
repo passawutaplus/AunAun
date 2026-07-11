@@ -417,6 +417,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://aplus1.app/u/87e74514-156b-4f17-ada0-3878e81a771e</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://aplus1.app/u/17bc992f-2371-4e4b-a173-1e6545581818</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -443,6 +448,16 @@
   </url>
   <url>
     <loc>https://aplus1.app/u/00000000-0000-0000-0000-00000000a013</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/u/00000000-0000-0000-0000-00000000a012</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/u/00000000-0000-0000-0000-00000000a011</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -498,16 +513,6 @@
   </url>
   <url>
     <loc>https://aplus1.app/u/00000000-0000-0000-0000-00000000a00e</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://aplus1.app/u/00000000-0000-0000-0000-00000000a012</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://aplus1.app/u/00000000-0000-0000-0000-00000000a011</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -697,6 +702,11 @@
     <priority>0.75</priority>
   </url>
   <url>
+    <loc>https://aplus1.app/@pinyokijanan.work_87e745</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
     <loc>https://aplus1.app/@first.pinyokijanan_17bc99</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
@@ -713,6 +723,16 @@
   </url>
   <url>
     <loc>https://aplus1.app/@phattranit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/@nattawut</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/@manatsanan</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
@@ -768,16 +788,6 @@
   </url>
   <url>
     <loc>https://aplus1.app/@kritsana</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://aplus1.app/@nattawut</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://aplus1.app/@manatsanan</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>

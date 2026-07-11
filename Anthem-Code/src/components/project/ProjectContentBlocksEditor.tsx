@@ -5,7 +5,6 @@ import {
   CONTENT_BLOCK_META,
   PROJECT_BLOCK_BODY_MAX,
   PROJECT_BLOCK_HEADING_MAX,
-  PROJECT_CONTENT_BLOCKS_MAX,
   createContentBlock,
   type ProjectContentBlock,
   type ProjectContentBlockType,
@@ -61,10 +60,7 @@ export function ProjectContentBlocksEditor({
   disabled,
   hideAddButtons = false,
 }: Props) {
-  const canAdd = blocks.length < PROJECT_CONTENT_BLOCKS_MAX;
-
   const addBlock = (type: ProjectContentBlockType) => {
-    if (!canAdd) return;
     onChange([...blocks, createContentBlock(type)]);
   };
 
@@ -161,7 +157,7 @@ export function ProjectContentBlocksEditor({
             <button
               key={type}
               type="button"
-              disabled={disabled || !canAdd}
+              disabled={disabled}
               onClick={() => addBlock(type)}
               className={cn(
                 "rounded-xl border border-dashed border-border bg-muted/30 p-3 text-left transition-colors",

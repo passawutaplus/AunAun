@@ -91,7 +91,6 @@ import {
   hydrateProjectCanvas,
   mediaItemsFromBlocks,
   parseGalleryDisplayMode,
-  PROJECT_CONTENT_BLOCKS_MAX,
   splitMediaFromBlocks,
   toStoredContentBlocks,
   blockImageUrls,
@@ -154,6 +153,8 @@ const ProjectEditorPage = () => {
     editing && id && isUuid(id) ? id : undefined,
   );
   const seriesHydratedRef = useRef(false);
+  /** Prevent re-applying DB → form when auth refreshes / query identity churns (loses in-progress edits). */
+  const formHydratedForIdRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
 
   const [title, setTitle] = useState("");
@@ -182,6 +183,8 @@ const ProjectEditorPage = () => {
   const [aiDisclosureNote, setAiDisclosureNote] = useState("");
   const [clientPermissionConfirmed, setClientPermissionConfirmed] = useState(false);
   const [rightsAttested, setRightsAttested] = useState(false);
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
+  const [publishAttestChecked, setPublishAttestChecked] = useState(false);
   const [toolInput, setToolInput] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -260,6 +263,12 @@ const ProjectEditorPage = () => {
     if (!authLoading && !user) navigate("/auth?redirect=/portfolio/new");
   }, [authLoading, user, navigate]);
 
+  // Switching projects (or leaving edit) must allow a fresh hydrate.
+  useEffect(() => {
+    formHydratedForIdRef.current = null;
+    seriesHydratedRef.current = false;
+  }, [id]);
+
   useEffect(() => {
     if (editing) return;
     const prefillSeries = params.get("series")?.trim();
@@ -319,6 +328,11 @@ const ProjectEditorPage = () => {
   useEffect(() => {
     if (!existing) return;
     if (editing && user && existing.owner_id !== user.id && !isAdmin) return;
+    // Only hydrate once per project id. Re-running on every `user`/`existing`
+    // reference change (e.g. TOKEN_REFRESHED when returning to the tab) was
+    // wiping canvas/title edits that had not been saved yet.
+    if (formHydratedForIdRef.current === existing.id) return;
+    formHydratedForIdRef.current = existing.id;
     setTitle(existing.title);
       const extContent = existing as {
         content_blocks?: unknown;
@@ -674,18 +688,8 @@ const ProjectEditorPage = () => {
   };
 
   const appendMediaBlocks = useCallback((kind: "image" | "video", urls: string[]) => {
-    setContentBlocks((prev) => {
-      const room = PROJECT_CONTENT_BLOCKS_MAX - prev.length;
-      if (room <= 0) {
-        toast.message(`เพิ่มบล็อกได้สูงสุด ${PROJECT_CONTENT_BLOCKS_MAX} บล็อก`);
-        return prev;
-      }
-      const added = urls.slice(0, room).map((url) => createMediaBlock(kind, url));
-      if (urls.length > room) {
-        toast.message(`เพิ่มได้แค่ ${room} บล็อก (เต็ม ${PROJECT_CONTENT_BLOCKS_MAX})`);
-      }
-      return [...prev, ...added];
-    });
+    if (!urls.length) return;
+    setContentBlocks((prev) => [...prev, ...urls.map((url) => createMediaBlock(kind, url))]);
   }, []);
 
   const handleGallery = async (files: FileList | File[]) => {
@@ -722,11 +726,16 @@ const ProjectEditorPage = () => {
     }
   };
 
-  const handleSubmit = async (publish?: boolean, projectIdOverride?: string) => {
+  const handleSubmit = async (
+    publish?: boolean,
+    projectIdOverride?: string,
+    options?: { rightsAttested?: boolean },
+  ) => {
     if (!user) return;
     const targetStatus: Status = publish === undefined ? status : publish ? "Published" : "Draft";
     const resolvedId =
       projectIdOverride ?? (editing && id && isUuid(id) ? id : undefined);
+    const attested = options?.rightsAttested ?? rightsAttested;
 
     const basicsErr = validateProjectBasics({ title, cover_url: cover });
     if (basicsErr) {
@@ -764,12 +773,12 @@ const ProjectEditorPage = () => {
       }
     }
 
-    const rightsAttestedAt = rightsAttested ? new Date().toISOString() : null;
+    const rightsAttestedAt = attested ? new Date().toISOString() : null;
 
     const payload = {
       ...buildProjectPayload(targetStatus),
       rights_attested_at: rightsAttestedAt,
-      rights_attestation_version: rightsAttested ? LEGAL_ATTESTATION_VERSION : null,
+      rights_attestation_version: attested ? LEGAL_ATTESTATION_VERSION : null,
     };
 
     const parsed = projectSchema.safeParse(payload);
@@ -781,7 +790,7 @@ const ProjectEditorPage = () => {
       toast.error("กรุณากรอกรายละเอียดแบบย่อ");
       return;
     }
-    if (targetStatus === "Published" && !rightsAttested) {
+    if (targetStatus === "Published" && !attested) {
       toast.error("กรุณายืนยันสิทธิ์ในผลงานก่อนเผยแพร่");
       return;
     }
@@ -791,7 +800,7 @@ const ProjectEditorPage = () => {
       return;
     }
 
-    if (targetStatus === "Published" && rightsAttested) {
+    if (targetStatus === "Published" && attested) {
       try {
         await ensureVerified("ยืนยันสิทธิ์และเผยแพร่ผลงาน");
       } catch {
@@ -842,14 +851,12 @@ const ProjectEditorPage = () => {
   const cats = categories.filter((c) => c !== "Explore");
   const isUploadingMedia = uploadingCover || uploadingGallery || uploadingVideo;
   const isBusy = publishing || savingDraft || isUploadingMedia;
-  const canPublish = !!title.trim() && !!cover && rightsAttested;
+  const canPublish = !!title.trim() && !!cover;
   const publishBlockedReason = !title.trim()
     ? "กรอกชื่องานก่อนเผยแพร่"
     : !cover
       ? "ต้องมีภาพปกก่อนเผยแพร่"
-      : !rightsAttested
-        ? "กรุณายืนยันสิทธิ์ในผลงานก่อนเผยแพร่"
-        : undefined;
+      : undefined;
 
   const handleSaveDraft = async (silent = false) => {
     const basicsErr = validateProjectBasics({ title, cover_url: cover });
@@ -874,10 +881,32 @@ const ProjectEditorPage = () => {
     }
   };
 
-  const handlePublishClick = async () => {
+  const handlePublishClick = () => {
+    const basicsErr = validateProjectBasics({ title, cover_url: cover });
+    if (basicsErr) {
+      toast.error(basicsErr);
+      return;
+    }
+    if (!shortDescription.trim()) {
+      toast.error("กรุณากรอกรายละเอียดแบบย่อ");
+      return;
+    }
+    setPublishAttestChecked(false);
+    setPublishConfirmOpen(true);
+  };
+
+  const handleConfirmPublish = async () => {
+    if (!publishAttestChecked) {
+      toast.error("กรุณายืนยันสิทธิ์ในผลงานก่อนเผยแพร่");
+      return;
+    }
+    setRightsAttested(true);
+    setPublishConfirmOpen(false);
     setPublishing(true);
     try {
-      await handleSubmit(true, editing && id && isUuid(id) ? id : undefined);
+      await handleSubmit(true, editing && id && isUuid(id) ? id : undefined, {
+        rightsAttested: true,
+      });
     } finally {
       setPublishing(false);
     }
@@ -888,18 +917,7 @@ const ProjectEditorPage = () => {
       const added = buildBlocks(template);
       if (!added.length) return;
 
-      setContentBlocks((prev) => {
-        if (mode === "replace") return added.slice(0, PROJECT_CONTENT_BLOCKS_MAX);
-        const room = PROJECT_CONTENT_BLOCKS_MAX - prev.length;
-        if (room <= 0) {
-          toast.message(`เพิ่มบล็อกได้สูงสุด ${PROJECT_CONTENT_BLOCKS_MAX} บล็อก`);
-          return prev;
-        }
-        if (added.length > room) {
-          toast.message(`เพิ่มได้แค่ ${room} บล็อกจากเทมเพลต (เต็ม ${PROJECT_CONTENT_BLOCKS_MAX})`);
-        }
-        return [...prev, ...added.slice(0, room)];
-      });
+      setContentBlocks((prev) => (mode === "replace" ? added : [...prev, ...added]));
 
       const firstGrid = added.find((b) => b.type === "image" && b.mediaLayout === "grid");
       const firstGallery = added.find((b) => b.type === "image" && b.mediaLayout === "gallery");
@@ -946,12 +964,6 @@ const ProjectEditorPage = () => {
     }
 
     setContentBlocks((prev) => {
-      const room = PROJECT_CONTENT_BLOCKS_MAX - prev.length;
-      if (room <= 0) {
-        toast.message(`เพิ่มบล็อกได้สูงสุด ${PROJECT_CONTENT_BLOCKS_MAX} บล็อก`);
-        return prev;
-      }
-
       let added: ProjectContentBlock[] = [];
       if (payload.tool === "heading" || payload.tool === "heading_body" || payload.tool === "body") {
         added = [createContentBlock(payload.tool)];
@@ -1290,9 +1302,6 @@ const ProjectEditorPage = () => {
   );
 
   const mediaItems = useMemo(() => mediaItemsFromBlocks(contentBlocks), [contentBlocks]);
-  const imageCount = countMediaByKind(mediaItems, "image");
-  const videoCount = countMediaByKind(mediaItems, "video");
-  const maxGallery = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
 
   const previewData: ProjectPreviewData = {
     title,
@@ -1437,7 +1446,7 @@ const ProjectEditorPage = () => {
             </Button>
             <Button
               size="sm"
-              onClick={() => void handlePublishClick()}
+              onClick={handlePublishClick}
               disabled={isBusy || !canPublish}
               title={publishBlockedReason}
               className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
@@ -1491,8 +1500,8 @@ const ProjectEditorPage = () => {
             setPendingUpdateTemplate(template);
           }}
           onDeleteTemplate={(template) => setPendingDeleteTemplate(template)}
-          imageDisabled={uploadingGallery || imageCount >= maxGallery}
-          videoDisabled={uploadingVideo || videoCount >= limits.videosPerProject}
+          imageDisabled={uploadingGallery}
+          videoDisabled={uploadingVideo}
           textDisabled={isBusy}
           uploadingImage={uploadingGallery}
           uploadingVideo={uploadingVideo}
@@ -1583,12 +1592,6 @@ const ProjectEditorPage = () => {
                   note={aiDisclosureNote}
                   onNoteChange={setAiDisclosureNote}
                 />
-                {status === "Published" && (
-                  <OriginalWorkAttestation
-                    checked={rightsAttested}
-                    onCheckedChange={setRightsAttested}
-                  />
-                )}
               </div>
               <ProjectAssetsEditor
                 assets={projectAssets}
@@ -1815,7 +1818,7 @@ const ProjectEditorPage = () => {
           <Button
             type="button"
             className="flex-1 rounded-xl bg-primary text-primary-foreground"
-            onClick={() => void handlePublishClick()}
+            onClick={handlePublishClick}
             disabled={isBusy || !canPublish}
             title={publishBlockedReason}
           >
@@ -1841,6 +1844,56 @@ const ProjectEditorPage = () => {
         ownerId={user?.id}
         defaultMode={previewMode}
       />
+
+      <Dialog
+        open={publishConfirmOpen}
+        onOpenChange={(open) => {
+          if (publishing) return;
+          setPublishConfirmOpen(open);
+          if (!open) setPublishAttestChecked(false);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>ยืนยันก่อนเผยแพร่</DialogTitle>
+            <DialogDescription>
+              ติ๊กยืนยันสิทธิ์ในผลงาน แล้วกดยืนยันเผยแพร่
+            </DialogDescription>
+          </DialogHeader>
+          <OriginalWorkAttestation
+            checked={publishAttestChecked}
+            onCheckedChange={setPublishAttestChecked}
+          />
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={publishing}
+              onClick={() => {
+                setPublishConfirmOpen(false);
+                setPublishAttestChecked(false);
+              }}
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              type="button"
+              disabled={publishing || !publishAttestChecked}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => void handleConfirmPublish()}
+            >
+              {publishing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                  กำลังเผยแพร่…
+                </>
+              ) : (
+                "ยืนยันเผยแพร่"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <PortfolioCoverCropDialog
         file={coverCropFile}

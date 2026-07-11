@@ -56,7 +56,8 @@ export const CONTENT_BLOCK_META: Record<
   body: { label: "เนื้อหา", description: "ย่อหน้าอธิบายอย่างเดียว" },
 };
 
-export const PROJECT_CONTENT_BLOCKS_MAX = 40;
+/** Safety ceiling only (JSON / abuse) — UI does not treat this as a product cap. */
+export const PROJECT_CONTENT_BLOCKS_MAX = 500;
 export const PROJECT_BLOCK_HEADING_MAX = 200;
 export const PROJECT_BLOCK_BODY_MAX = 3000;
 

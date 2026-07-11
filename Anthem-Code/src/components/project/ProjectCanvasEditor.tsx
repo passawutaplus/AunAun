@@ -36,7 +36,6 @@ import { CANVAS_TOOL_MIME, readCanvasToolDragData, type CanvasToolPayload } from
 import {
   PROJECT_BLOCK_BODY_MAX,
   PROJECT_BLOCK_HEADING_MAX,
-  PROJECT_CONTENT_BLOCKS_MAX,
   blockImageUrls,
   canvasBlockLabel,
   duplicateContentBlock,
@@ -878,7 +877,6 @@ export function ProjectCanvasEditor({
   };
 
   const duplicateBlock = (id: string) => {
-    if (blocks.length >= PROJECT_CONTENT_BLOCKS_MAX) return;
     const index = blocks.findIndex((b) => b.id === id);
     if (index < 0) return;
     const source = blocks[index];
@@ -886,7 +884,7 @@ export function ProjectCanvasEditor({
     const clone = duplicateContentBlock(source);
     const next = [...blocks];
     next.splice(index + 1, 0, clone);
-    onChange(next.slice(0, PROJECT_CONTENT_BLOCKS_MAX));
+    onChange(next);
     setSelectedId(clone.id);
   };
 
@@ -1050,7 +1048,7 @@ export function ProjectCanvasEditor({
                   onPatch={(patch) => patchBlock(block.id, patch)}
                   onRemove={() => removeBlock(block.id)}
                   onMove={(dir) => moveBlock(block.id, dir)}
-                  canDuplicate={blocks.length < PROJECT_CONTENT_BLOCKS_MAX}
+                  canDuplicate={!disabled}
                   onDuplicate={() => duplicateBlock(block.id)}
                   onUpload={
                     (isMediaBlockType(block.type) || isImageTextBlockType(block.type)) && onUploadToBlock
