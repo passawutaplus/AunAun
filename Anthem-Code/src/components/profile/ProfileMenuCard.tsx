@@ -12,6 +12,7 @@ import {
   UserPlus,
   FolderKanban,
   Handshake,
+  Sparkles,
 } from "lucide-react";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,6 +56,9 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
         </button>
         <button onClick={() => navigate("/collections")} className={item}>
           <Layers3 className="w-4 h-4 text-primary" /> คอลเลกชันของฉัน
+        </button>
+        <button onClick={() => navigate("/inspire")} className={item}>
+          <Sparkles className="w-4 h-4 text-primary" /> My Inspire
         </button>
         {!launchMinimal ? (
           <button

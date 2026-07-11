@@ -9,21 +9,59 @@ interface Props {
   className?: string;
   /** กริด 2 คอลัมน์บนมือถือ — ตัวอักษรกะทัดรัด */
   compact?: boolean;
+  /** แถวแนวนอนสำหรับโหมดรายการ */
+  list?: boolean;
+  /** Workspace select instead of navigating to public detail */
+  onSelect?: (collection: CollectionWithCovers) => void;
 }
 
-const CollectionCard = ({ collection, to, className, compact = false }: Props) => {
+const CollectionCard = ({
+  collection,
+  to,
+  className,
+  compact = false,
+  list = false,
+  onSelect,
+}: Props) => {
   const href = to ?? `/collections/${collection.id}`;
   const covers = collection.covers ?? [];
   const placeholders = Array.from({ length: 4 - covers.length });
 
-  return (
-    <Link
-      to={href}
-      className={cn(
-        "group block rounded-xl overflow-hidden glass-panel hover:shadow-lg transition-all",
-        className,
-      )}
-    >
+  const shellClass = cn(
+    list
+      ? "group flex items-center gap-3 rounded-[8px] glass-panel px-3 py-2.5 hover:shadow-md transition-all text-left w-full"
+      : "group block rounded-[8px] overflow-hidden glass-panel hover:shadow-lg transition-all text-left w-full",
+    className,
+  );
+
+  const body = list ? (
+    <>
+      <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-md bg-muted">
+        {covers.length === 0 ? (
+          <div className="absolute inset-0 flex items-center justify-center text-primary">
+            <Layers3 className="w-5 h-5" strokeWidth={2.25} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 grid-rows-2 gap-px absolute inset-0">
+            {covers.slice(0, 4).map((url, i) => (
+              <img key={i} src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <h3 className="font-medium text-sm text-foreground line-clamp-1 flex items-center gap-1.5">
+          {collection.name}
+          {!collection.is_public && <Lock className="w-3 h-3 text-muted-foreground shrink-0" />}
+        </h3>
+        <p className="text-[11px] text-muted-foreground mt-0.5">
+          {collection.item_count} ผลงาน
+          {collection.category ? ` · ${collection.category}` : ""}
+        </p>
+      </div>
+    </>
+  ) : (
+    <>
       <div className="relative aspect-[4/3] bg-muted overflow-hidden">
         {covers.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center text-primary">
@@ -70,6 +108,20 @@ const CollectionCard = ({ collection, to, className, compact = false }: Props) =
           {collection.category && <span className="truncate ml-2">{collection.category}</span>}
         </div>
       </div>
+    </>
+  );
+
+  if (onSelect) {
+    return (
+      <button type="button" onClick={() => onSelect(collection)} className={shellClass}>
+        {body}
+      </button>
+    );
+  }
+
+  return (
+    <Link to={href} className={shellClass}>
+      {body}
     </Link>
   );
 };

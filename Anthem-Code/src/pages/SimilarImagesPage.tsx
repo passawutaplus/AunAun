@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useProject } from "@/hooks/useProjects";
 import {
   useSimilarImages,
+  projectImageUrls,
   DEFAULT_SIMILAR_ASPECTS,
   SIMILAR_ASPECTS,
   type SimilarAspect,
@@ -28,8 +29,18 @@ const SimilarImagesPage = () => {
   const [aspects, setAspects] = useState<SimilarAspect[]>(DEFAULT_SIMILAR_ASPECTS);
   const { data: similar = [], isLoading } = useSimilarImages(projectId, aspects, imgIdx);
 
-  const sourceImage =
-    project?.gallery_urls?.[imgIdx] || project?.gallery_urls?.[0] || project?.cover_url || "";
+  const sourceUrls = useMemo(
+    () =>
+      project
+        ? projectImageUrls({
+            gallery_urls: project.gallery_urls,
+            cover_url: project.cover_url,
+            content_blocks: (project as { content_blocks?: unknown }).content_blocks,
+          })
+        : [],
+    [project],
+  );
+  const sourceImage = sourceUrls[imgIdx] || sourceUrls[0] || "";
 
   const activeAspectLabels = useMemo(
     () => SIMILAR_ASPECTS.filter((a) => aspects.includes(a.key)).map((a) => a.label),
@@ -88,11 +99,11 @@ const SimilarImagesPage = () => {
         <div className="grid lg:grid-cols-[420px_1fr] gap-6">
           <div className="lg:sticky lg:top-28 lg:self-start space-y-4">
             {sourceImage ? (
-              <div className="rounded-2xl overflow-hidden border border-border bg-card shadow-sm">
+              <div className="rounded-[5px] overflow-hidden border border-border bg-card shadow-sm">
                 <img src={sourceImage} alt={project?.title ?? ""} className="w-full object-cover" />
               </div>
             ) : (
-              <InlineLoader className="py-16 aspect-square rounded-2xl border border-border bg-card" />
+              <InlineLoader className="py-16 aspect-square rounded-[5px] border border-border bg-card" />
             )}
             {project && (
               <div className="space-y-2">
@@ -129,12 +140,9 @@ const SimilarImagesPage = () => {
                   <Link
                     key={`${s.project_id}-${i}`}
                     to={`/project/${s.project_id}`}
-                    className="group mb-3 block break-inside-avoid rounded-xl overflow-hidden border border-border bg-card hover:border-primary/50 transition relative"
+                    className="group mb-3 block break-inside-avoid rounded-[5px] overflow-hidden border border-border bg-card hover:border-primary/50 transition relative"
                   >
                     <img src={s.image_url} alt={s.title} className="w-full object-cover" loading="lazy" />
-                    <div className="absolute top-2 right-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] text-white tabular-nums">
-                      {Math.round(s.similarity * 100)}%
-                    </div>
                     <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition">
                       <p className="text-white text-xs font-medium truncate">{s.title}</p>
                       <p className="text-white/70 text-[10px]">{s.category}</p>

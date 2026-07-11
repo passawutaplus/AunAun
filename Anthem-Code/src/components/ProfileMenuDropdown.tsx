@@ -1,5 +1,5 @@
 import type { PointerEvent, ReactNode } from "react";
-import { User, LogOut, Settings, Layers3, Coins, FolderKanban, Library } from "lucide-react";
+import { User, LogOut, Settings, Layers3, Coins, FolderKanban, Library, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -47,15 +47,16 @@ export function ProfileMenuContent({ onNavigate }: ProfileMenuContentProps) {
       <DropdownMenuItem onClick={() => go("/series")} className="rounded-lg">
         <Library className="w-4 h-4 mr-2" /> ชุดผลงานของฉัน
       </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => go("/collections")} className="rounded-lg">
+        <Layers3 className="w-4 h-4 mr-2" /> คอลเลกชันของฉัน
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => go("/inspire")} className="rounded-lg">
+        <Sparkles className="w-4 h-4 mr-2" /> My Inspire
+      </DropdownMenuItem>
       {!isAplus1LaunchMinimal() ? (
-        <>
-          <DropdownMenuItem onClick={() => go("/collections")} className="rounded-lg">
-            <Layers3 className="w-4 h-4 mr-2" /> คอลเลกชันของฉัน
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => go("/earnings")} className="rounded-lg">
-            <Coins className="w-4 h-4 mr-2 text-primary" /> รายได้ &amp; กระเป๋า Pixel
-          </DropdownMenuItem>
-        </>
+        <DropdownMenuItem onClick={() => go("/earnings")} className="rounded-lg">
+          <Coins className="w-4 h-4 mr-2 text-primary" /> รายได้ &amp; กระเป๋า Pixel
+        </DropdownMenuItem>
       ) : null}
       <DropdownMenuSeparator />
       <div className="px-2 py-1.5 space-y-1" onPointerDown={preventClose}>

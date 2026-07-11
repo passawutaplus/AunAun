@@ -1,6 +1,7 @@
 export type SeriesWorksDensity = "large" | "medium" | "small" | "list";
 
 export const SERIES_GRID_DENSITY_STORAGE_KEY = "aplus1.series.grid.density";
+export const SERIES_ITEMS_GRID_STORAGE_KEY = "aplus1.series.items.grid.density";
 /** @deprecated use SERIES_GRID_DENSITY_STORAGE_KEY */
 export const SERIES_WORKS_DENSITY_STORAGE_KEY = SERIES_GRID_DENSITY_STORAGE_KEY;
 /** @deprecated use SERIES_GRID_DENSITY_STORAGE_KEY */

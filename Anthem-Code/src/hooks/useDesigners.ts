@@ -12,11 +12,11 @@ const PROJECTS_PER_DESIGNER = 6;
 
 export const useDesigners = () =>
   useQuery({
-    queryKey: ["designers-feed", "v5"],
+    queryKey: ["designers-feed", "v6"],
     queryFn: async (): Promise<DesignerCardData[]> => {
       const { data: profiles, error } = await profilesPublicFrom()
         .select(PROFILE_DESIGNER_SELECT)
-        .order("updated_at", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(DESIGNERS_PAGE);
       if (error) throw error;
       const list = profiles ?? [];

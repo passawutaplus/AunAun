@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import SafeDemoImage from "@/components/SafeDemoImage";
+import ImageActionBar from "@/components/project/ImageActionBar";
 import { Button } from "@/components/ui/button";
 import { isThreeSplitGridLayout, photoGridSlotCount, type PhotoGridLayout } from "@/lib/photoGridLayouts";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,9 @@ type Props = {
   onImageClick?: (index: number) => void;
   onSlotUpload?: (slotIndex: number, file: File) => void;
   onSlotRemove?: (slotIndex: number) => void;
+  projectId?: string;
+  projectTitle?: string;
+  imageIndexOffset?: number;
 };
 
 function GridCell({
@@ -32,6 +36,9 @@ function GridCell({
   onSlotRemove,
   className,
   cover,
+  projectId,
+  projectTitle,
+  imageIndex,
 }: {
   image?: GridImage;
   index: number;
@@ -45,13 +52,17 @@ function GridCell({
   className?: string;
   /** Fill cell (locked 3-up grid). */
   cover?: boolean;
+  projectId?: string;
+  projectTitle?: string;
+  imageIndex?: number;
 }) {
   const canUpload = editor && onSlotPick && !disabled && !uploading;
+  const showActions = !editor && !!projectId && !!projectTitle && !!image?.url;
 
   return (
     <div
       className={cn(
-        "relative overflow-hidden",
+        "relative group overflow-hidden",
         editor && !image && "border border-dashed border-border/50",
         className,
       )}
@@ -80,6 +91,14 @@ function GridCell({
             )}
             loading="lazy"
           />
+          {showActions ? (
+            <ImageActionBar
+              projectId={projectId}
+              projectTitle={projectTitle}
+              imageUrl={image.url}
+              imageIndex={imageIndex ?? index}
+            />
+          ) : null}
           {editor && onSlotRemove && !disabled ? (
             <Button
               type="button"
@@ -126,6 +145,9 @@ export function PhotoGridPreview({
   onImageClick,
   onSlotUpload,
   onSlotRemove,
+  projectId,
+  projectTitle,
+  imageIndexOffset = 0,
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const pendingSlotRef = useRef<number | null>(null);
@@ -146,6 +168,8 @@ export function PhotoGridPreview({
     onImageClick,
     onSlotPick: onSlotUpload ? pickSlot : undefined,
     onSlotRemove,
+    projectId,
+    projectTitle,
   };
 
   const lockedCover = isThreeSplitGridLayout(layout);
@@ -156,6 +180,7 @@ export function PhotoGridPreview({
       image={img}
       index={i}
       {...cellProps}
+      imageIndex={imageIndexOffset + i}
       uploading={uploadingSlot === i}
       className={className}
       cover={lockedCover}

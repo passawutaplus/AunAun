@@ -172,6 +172,9 @@ describe("launch route allowlist", () => {
     "/me/reports",
     "/me/feedback",
     "/@designer",
+    "/similar/proj",
+    "/inspire",
+    "/inspire/board",
   ];
 
   const blocked = [
@@ -188,8 +191,6 @@ describe("launch route allowlist", () => {
     "/s/studio-slug",
     "/contracts",
     "/research",
-    "/inspire/board",
-    "/similar/proj",
     "/verify",
     "/ads/abc",
   ];

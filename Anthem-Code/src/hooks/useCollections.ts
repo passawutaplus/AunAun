@@ -31,17 +31,35 @@ const fetchItemCounts = async (collectionIds: string[]): Promise<Record<string, 
 const fetchCovers = async (collectionIds: string[]): Promise<Record<string, string[]>> => {
   if (!collectionIds.length) return {};
   try {
-    const { data, error } = await supabase
+    // No PostgREST embed: collection_items.project_id may lack an FK (embeds fail silently for UI).
+    const { data: rows, error } = await supabase
       .from("collection_items")
-      .select("collection_id, added_at, projects:project_id(cover_url, gallery_urls)")
+      .select("collection_id, project_id, added_at")
       .in("collection_id", collectionIds)
       .order("added_at", { ascending: false });
     if (error) return {};
+    const projectIds = [
+      ...new Set(
+        (rows ?? [])
+          .map((r: { project_id: string | null }) => r.project_id)
+          .filter((id): id is string => !!id),
+      ),
+    ];
+    if (!projectIds.length) return {};
+    const { data: projects, error: pErr } = await supabase
+      .from("projects")
+      .select("id, cover_url, gallery_urls")
+      .in("id", projectIds);
+    if (pErr) return {};
+    const byId = new Map(
+      (projects ?? []).map((p: { id: string; cover_url?: string | null; gallery_urls?: string[] | null }) => [p.id, p]),
+    );
     const map: Record<string, string[]> = {};
-    (data ?? []).forEach((row: { collection_id: string; projects?: { cover_url?: string; gallery_urls?: string[] } | null }) => {
+    (rows ?? []).forEach((row: { collection_id: string; project_id: string | null }) => {
       const arr = map[row.collection_id] ?? (map[row.collection_id] = []);
-      if (arr.length >= 4) return;
-      const url = row.projects?.cover_url || row.projects?.gallery_urls?.[0];
+      if (arr.length >= 4 || !row.project_id) return;
+      const project = byId.get(row.project_id);
+      const url = project?.cover_url || project?.gallery_urls?.[0];
       if (url) arr.push(url);
     });
     return map;
@@ -113,15 +131,30 @@ export const useCollectionItems = (collectionId: string | undefined) =>
     queryKey: ["collection-items", collectionId],
     enabled: !!collectionId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Two-step fetch: PostgREST embed needs an FK on project_id which may be missing.
+      const { data: rows, error } = await supabase
         .from("collection_items")
-        .select("project_id, added_at, projects:project_id(*)")
+        .select("project_id, added_at")
         .eq("collection_id", collectionId!)
         .order("added_at", { ascending: false });
       if (error) throw error;
-      return (data ?? [])
-        .map((r: any) => r.projects)
-        .filter((p: any) => p);
+      const projectIds = [
+        ...new Set(
+          (rows ?? [])
+            .map((r: { project_id: string | null }) => r.project_id)
+            .filter((id): id is string => !!id),
+        ),
+      ];
+      if (!projectIds.length) return [];
+      const { data: projects, error: pErr } = await supabase
+        .from("projects")
+        .select("*")
+        .in("id", projectIds);
+      if (pErr) throw pErr;
+      const byId = new Map((projects ?? []).map((p: { id: string }) => [p.id, p]));
+      return (rows ?? [])
+        .map((r: { project_id: string | null }) => (r.project_id ? byId.get(r.project_id) : null))
+        .filter((p): p is NonNullable<typeof p> => !!p);
     },
   });
 
@@ -129,14 +162,14 @@ export const useProjectCollectionIds = (projectId: string | undefined, ownerId: 
   useQuery({
     queryKey: ["project-in-collections", projectId, ownerId],
     enabled: !!projectId && !!ownerId,
-    queryFn: async () => {
+    queryFn: async (): Promise<string[]> => {
       const { data, error } = await supabase
         .from("collection_items")
         .select("collection_id, collections:collection_id!inner(owner_id)")
         .eq("project_id", projectId!)
         .eq("collections.owner_id", ownerId!);
       if (error) throw error;
-      return new Set((data ?? []).map((r: any) => r.collection_id as string));
+      return (data ?? []).map((r: { collection_id: string }) => r.collection_id);
     },
   });
 
@@ -222,18 +255,58 @@ export const useToggleCollectionItem = () => {
         if (input.communityPostId) q = q.eq("community_post_id", input.communityPostId);
         const { error } = await q;
         if (error) throw error;
-        return "removed" as const;
+      } else {
+        const { error } = await supabase.from("collection_items").insert({
+          collection_id: input.collectionId,
+          project_id: input.projectId ?? null,
+          community_post_id: input.communityPostId ?? null,
+        });
+        if (error && !`${error.message}`.includes("duplicate")) throw error;
       }
-      const { error } = await supabase.from("collection_items").insert({
-        collection_id: input.collectionId,
-        project_id: input.projectId ?? null,
-        community_post_id: input.communityPostId ?? null,
+
+      const { count } = await supabase
+        .from("collection_items")
+        .select("collection_id", { count: "exact", head: true })
+        .eq("collection_id", input.collectionId);
+      await supabase
+        .from("collections")
+        .update({
+          item_count: count ?? 0,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", input.collectionId);
+
+      return input.remove ? ("removed" as const) : ("added" as const);
+    },
+    onMutate: async (vars) => {
+      if (!vars.projectId) return {};
+      await qc.cancelQueries({ queryKey: ["project-in-collections", vars.projectId] });
+      const previous = qc.getQueriesData<string[]>({ queryKey: ["project-in-collections", vars.projectId] });
+      qc.setQueriesData<string[]>({ queryKey: ["project-in-collections", vars.projectId] }, (old) => {
+        const list = old ?? [];
+        if (vars.remove) return list.filter((id) => id !== vars.collectionId);
+        return list.includes(vars.collectionId) ? list : [...list, vars.collectionId];
       });
-      if (error && !`${error.message}`.includes("duplicate")) throw error;
-      return "added" as const;
+      qc.setQueriesData<CollectionWithCovers[]>({ queryKey: ["collections"] }, (old) => {
+        if (!old) return old;
+        return old.map((c) => {
+          if (c.id !== vars.collectionId) return c;
+          const nextCount = Math.max(0, (c.item_count ?? 0) + (vars.remove ? -1 : 1));
+          return { ...c, item_count: nextCount };
+        });
+      });
+      return { previous };
+    },
+    onError: (_err, vars, ctx) => {
+      if (!vars.projectId || !ctx?.previous) return;
+      for (const [key, data] of ctx.previous) {
+        qc.setQueryData(key, data);
+      }
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["collections"] });
+      qc.invalidateQueries({ queryKey: ["collections-public"] });
+      qc.invalidateQueries({ queryKey: ["collection", vars.collectionId] });
       qc.invalidateQueries({ queryKey: ["collection-items", vars.collectionId] });
       if (vars.projectId) {
         qc.invalidateQueries({ queryKey: ["project-in-collections", vars.projectId] });
@@ -252,13 +325,13 @@ export const useCommunityPostCollectionIds = (
   useQuery({
     queryKey: ["community-post-in-collections", postId, ownerId],
     enabled: !!postId && !!ownerId,
-    queryFn: async () => {
+    queryFn: async (): Promise<string[]> => {
       const { data, error } = await supabase
         .from("collection_items")
         .select("collection_id, collections:collection_id!inner(owner_id)")
         .eq("community_post_id", postId!)
         .eq("collections.owner_id", ownerId!);
       if (error) throw error;
-      return new Set((data ?? []).map((r: { collection_id: string }) => r.collection_id));
+      return (data ?? []).map((r: { collection_id: string }) => r.collection_id);
     },
   });

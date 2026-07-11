@@ -53,6 +53,7 @@ const StudioCreatePage = lazy(() => import("./pages/StudioCreatePage.tsx"));
 const StudioInvitesPage = lazy(() => import("./pages/StudioInvitesPage.tsx"));
 const StudioManagePage = lazy(() => import("./pages/StudioManagePage.tsx"));
 const SimilarImagesPage = lazy(() => import("./pages/SimilarImagesPage.tsx"));
+const InspireBoardsPage = lazy(() => import("./pages/InspireBoardsPage.tsx"));
 const InspireBoardDetailPage = lazy(() => import("./pages/InspireBoardDetailPage.tsx"));
 const MyReportsPage = lazy(() => import("./pages/MyReportsPage.tsx"));
 const MyFeedbackPage = lazy(() => import("./pages/MyFeedbackPage.tsx"));
@@ -179,7 +180,8 @@ const App = () => (
               <Route path="/drill" element={<DrillGalleryPage />} />
               <Route path="/explore/:kind/:value" element={<ExploreProjectsPage />} />
               <Route path="/similar/:projectId" element={<SimilarImagesPage />} />
-              <Route path="/inspire/:boardId" element={<InspireBoardDetailPage />} />
+              <Route path="/inspire" element={<RequireAuth><InspireBoardsPage /></RequireAuth>} />
+              <Route path="/inspire/:boardId" element={<RequireAuth><InspireBoardDetailPage /></RequireAuth>} />
               <Route path="/u/:userId" element={<PublicProfilePage />} />
               <Route path="/u/:userId/followers" element={<FollowConnectionsPage />} />
               <Route path="/earnings" element={<RequireAuth><EarningsPage /></RequireAuth>} />
@@ -193,7 +195,7 @@ const App = () => (
               <Route path="/community" element={<CommunityFeedPage />} />
               <Route path="/community/:id" element={<CommunityPostDetailPage />} />
               <Route path="/collections" element={<RequireAuth><CollectionsPage /></RequireAuth>} />
-              <Route path="/collections/:id" element={<RequireAuth><CollectionDetailPage /></RequireAuth>} />
+              <Route path="/collections/:id" element={<CollectionDetailPage />} />
               <Route path="/series" element={<RequireAuth><SeriesListPage /></RequireAuth>} />
               <Route path="/series/:id" element={<SeriesDetailPage />} />
               <Route path="/me/reports" element={<RequireAuth><MyReportsPage /></RequireAuth>} />

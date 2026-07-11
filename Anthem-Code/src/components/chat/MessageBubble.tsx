@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { th } from "date-fns/locale";
-import { ExternalLink, Reply, Undo2 } from "lucide-react";
+import { ExternalLink, FileText, Reply, Undo2 } from "lucide-react";
 import ReportTrigger from "@/components/report/ReportTrigger";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +27,33 @@ function ChatAttachmentImage({ refUrl }: { refUrl: string }) {
   const src = useSignedStorageUrl(refUrl);
   if (!src) return <div className="rounded-2xl mb-1 h-32 bg-muted animate-pulse" />;
   return <img src={src} alt="" className="rounded-2xl mb-1 max-h-72 object-cover" />;
+}
+
+function isImageAttachmentPath(refUrl: string): boolean {
+  return /\.(jpe?g|png|webp|gif)(?:$|\?)/i.test(refUrl);
+}
+
+function ChatAttachmentFile({ refUrl, fileName }: { refUrl: string; fileName: string }) {
+  const src = useSignedStorageUrl(refUrl);
+  const label = fileName.trim() || refUrl.split("/").pop() || "ไฟล์แนบ";
+  return (
+    <a
+      href={src || undefined}
+      target="_blank"
+      rel="noopener noreferrer"
+      download={label}
+      className="mb-1 flex items-center gap-2.5 rounded-2xl border border-border/70 bg-card/80 px-3 py-2.5 text-left transition-colors hover:bg-accent/40"
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+        <FileText className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium text-foreground">{label}</span>
+        <span className="block text-[11px] text-muted-foreground">แตะเพื่อเปิด / ดาวน์โหลด</span>
+      </span>
+      <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-60" />
+    </a>
+  );
 }
 
 interface Props {
@@ -117,11 +144,22 @@ const MessageBubble = ({
         ? "bg-card text-foreground border border-border"
         : "bg-muted text-foreground border border-border";
 
-  const displayContent = message.content
-    ? isSystemFallbackContent(message.content)
-      ? stripSystemFallbackPrefix(message.content)
+  const isFileAttachment =
+    !!message.attachment_url &&
+    (message.message_type === "file" ||
+      (message.message_type !== "image" &&
+        message.message_type !== "project" &&
+        message.message_type !== "profile" &&
+        !isImageAttachmentPath(message.attachment_url)));
+
+  const displayContent =
+    isFileAttachment
+      ? ""
       : message.content
-    : "";
+        ? isSystemFallbackContent(message.content)
+          ? stripSystemFallbackPrefix(message.content)
+          : message.content
+        : "";
 
   const offer = !deleted ? parseChatOffer(message.content) : null;
 
@@ -197,7 +235,14 @@ const MessageBubble = ({
                   )}
                 >
                   {replyQuote}
-                  <ChatAttachmentImage refUrl={message.attachment_url} />
+                  {isFileAttachment ? (
+                    <ChatAttachmentFile
+                      refUrl={message.attachment_url}
+                      fileName={message.content?.trim() || ""}
+                    />
+                  ) : (
+                    <ChatAttachmentImage refUrl={message.attachment_url} />
+                  )}
                 </div>
               )}
             {message.message_type === "project" && project && (

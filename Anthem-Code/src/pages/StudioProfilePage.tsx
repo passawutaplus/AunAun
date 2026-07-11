@@ -7,11 +7,12 @@ import { useStudioJobs } from "@/hooks/useJobs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, CheckCircle2, FileText, MapPin, Globe, Users } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import StudioFollowButton from "@/components/StudioFollowButton";
 import { useStudioFollowState } from "@/hooks/useStudioFollow";
+import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import { safeHttpUrl } from "@/lib/safeUrl";
 import JobCard from "@/components/jobs/JobCard";
 import { useAuth } from "@/hooks/useAuth";
@@ -56,6 +57,7 @@ const StudioProfilePage = () => {
   const [hireOpen, setHireOpen] = useState(false);
   const [clientPickerOpen, setClientPickerOpen] = useState(false);
   const [upsellOpen, setUpsellOpen] = useState(false);
+  const [tab, setTab] = useState("projects");
 
   const launchStudioQuote = async (ctx: StudioClientContext) => {
     if (!studio) return;
@@ -183,7 +185,7 @@ const StudioProfilePage = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="projects" className="mt-6">
+        <Tabs value={tab} onValueChange={setTab} className="mt-6">
           <TabsList className="rounded-xl">
             <TabsTrigger value="projects" className="rounded-lg">ผลงาน</TabsTrigger>
             <TabsTrigger value="members" className="rounded-lg">สมาชิก ({members.length})</TabsTrigger>
@@ -191,53 +193,49 @@ const StudioProfilePage = () => {
             <TabsTrigger value="about" className="rounded-lg">เกี่ยวกับ</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="projects" className="mt-5">
-            <div className="text-sm text-muted-foreground text-center py-10 glass-panel rounded-2xl">
-              ยังไม่มีผลงานในนามสตูดิโอ
-            </div>
-          </TabsContent>
-
-          <TabsContent value="members" className="mt-5">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {members.map((m) => (
-                <Link
-                  key={m.user_id}
-                  to={`/u/${m.user_id}`}
-                  className="glass-panel rounded-2xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow"
-                >
-                  <Avatar className="w-12 h-12">
-                    <AvatarImage src={m.profile?.avatar_url ?? undefined} />
-                    <AvatarFallback>{m.profile?.display_name?.[0] ?? "?"}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">{m.profile?.display_name}</div>
-                    <div className="text-[11px] text-muted-foreground truncate">
-                      {m.role === "owner" ? "ผู้ก่อตั้ง" : m.role === "admin" ? "แอดมิน" : "สมาชิก"}
-                      {m.credit_title && ` · ${m.credit_title}`}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="jobs" className="mt-5">
-            {jobs.length === 0 ? (
+          <FeedModeTransition modeKey={tab} className="mt-5">
+            {tab === "projects" ? (
               <div className="text-sm text-muted-foreground text-center py-10 glass-panel rounded-2xl">
-                ยังไม่มีประกาศหา designer
+                ยังไม่มีผลงานในนามสตูดิโอ
               </div>
+            ) : tab === "members" ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {members.map((m) => (
+                  <Link
+                    key={m.user_id}
+                    to={`/u/${m.user_id}`}
+                    className="glass-panel rounded-2xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow"
+                  >
+                    <Avatar className="w-12 h-12">
+                      <AvatarImage src={m.profile?.avatar_url ?? undefined} />
+                      <AvatarFallback>{m.profile?.display_name?.[0] ?? "?"}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{m.profile?.display_name}</div>
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {m.role === "owner" ? "ผู้ก่อตั้ง" : m.role === "admin" ? "แอดมิน" : "สมาชิก"}
+                        {m.credit_title && ` · ${m.credit_title}`}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : tab === "jobs" ? (
+              jobs.length === 0 ? (
+                <div className="text-sm text-muted-foreground text-center py-10 glass-panel rounded-2xl">
+                  ยังไม่มีประกาศหา designer
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {jobs.map((j) => <JobCard key={j.id} job={j} />)}
+                </div>
+              )
             ) : (
-              <div className="grid sm:grid-cols-2 gap-3">
-                {jobs.map((j) => <JobCard key={j.id} job={j} />)}
+              <div className="glass-panel rounded-2xl p-5">
+                <p className="text-base whitespace-pre-wrap leading-relaxed">{studio.bio || "ยังไม่มีรายละเอียด"}</p>
               </div>
             )}
-          </TabsContent>
-
-          <TabsContent value="about" className="mt-5">
-            <div className="glass-panel rounded-2xl p-5">
-              <p className="text-base whitespace-pre-wrap leading-relaxed">{studio.bio || "ยังไม่มีรายละเอียด"}</p>
-            </div>
-          </TabsContent>
+          </FeedModeTransition>
         </Tabs>
       </div>
 

@@ -17,6 +17,7 @@ import { Search, Plus, UserSearch, SlidersHorizontal, X, Briefcase } from "lucid
 import { BackButton } from "@/components/ui/BackButton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import Footer from "@/components/Footer";
+import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import { cn } from "@/lib/utils";
 import SeoHead from "@/components/SeoHead";
 import { BRAND_NAME } from "@/lib/brandConfig";
@@ -295,6 +296,8 @@ const JobsPage = () => {
           ))}
         </div>
 
+        <FeedModeTransition modeKey={tab}>
+        <div className="space-y-5">
         {tab !== "dashboard" && (
           <div className="glass-panel rounded-2xl p-3 space-y-3">
             <div className="flex gap-2">
@@ -471,6 +474,8 @@ const JobsPage = () => {
             )}
           </div>
         )}
+        </div>
+        </FeedModeTransition>
       </div>
       <Footer />
       <JobPostDialog open={dialogOpen} onOpenChange={setDialogOpen} defaultMode={dialogMode} />

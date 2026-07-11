@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import JobCard from "@/components/jobs/JobCard";
+import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import { Badge } from "@/components/ui/badge";
 import { applicationStatusLabel } from "@/components/jobs/jobCardUtils";
 import { cn } from "@/lib/utils";
@@ -66,68 +67,70 @@ const MyWorkPanel = ({ subTab, onSubTabChange }: Props) => {
         ))}
       </div>
 
-      {isLoading ? (
-        <div className="grid sm:grid-cols-2 gap-4">
-          {[1, 2].map((i) => <div key={i} className="h-48 rounded-2xl animate-pulse bg-muted/50" />)}
-        </div>
-      ) : subTab === "posted" ? (
-        posted.length === 0 ? (
-          <EmptyState text="ยังไม่มีประกาศที่โพสต์" />
+      <FeedModeTransition modeKey={subTab}>
+        {isLoading ? (
+          <div className="grid sm:grid-cols-2 gap-4">
+            {[1, 2].map((i) => <div key={i} className="h-48 rounded-2xl animate-pulse bg-muted/50" />)}
+          </div>
+        ) : subTab === "posted" ? (
+          posted.length === 0 ? (
+            <EmptyState text="ยังไม่มีประกาศที่โพสต์" />
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {posted.map((j) => <JobCard key={j.id} job={j} />)}
+            </div>
+          )
+        ) : subTab === "applied" ? (
+          applied.length === 0 ? (
+            <EmptyState text="ยังไม่ได้สมัครงาน" />
+          ) : (
+            <div className="space-y-2">
+              {applied.map((a) => (
+                <Link
+                  key={a.id}
+                  to={a.job ? `/jobs/${a.job_id}` : "#"}
+                  className="block glass-panel rounded-xl p-4 hover:border-primary/30 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium thai-display text-sm">{(a.job as { title?: string })?.title ?? "ประกาศงาน"}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        สมัคร {new Date(a.created_at).toLocaleDateString("th-TH")}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="text-[10px] shrink-0">
+                      {applicationStatusLabel[a.status] ?? a.status}
+                    </Badge>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )
+        ) : subTab === "invited" ? (
+          invited.length === 0 ? (
+            <EmptyState text="ยังไม่มีคำชวน" />
+          ) : (
+            <div className="space-y-2">
+              {invited.map((inv: { id: string; project_title: string; job_post_id: string | null; job_post?: { title?: string }; created_at: string; status: string }) => (
+                <Link
+                  key={inv.id}
+                  to={inv.job_post_id ? `/jobs/${inv.job_post_id}` : "#"}
+                  className="block glass-panel rounded-xl p-4 hover:border-primary/30 transition-colors"
+                >
+                  <p className="font-medium text-sm">{inv.job_post?.title ?? inv.project_title}</p>
+                  <p className="text-xs text-muted-foreground">ชวนเมื่อ {new Date(inv.created_at).toLocaleDateString("th-TH")} · {inv.status}</p>
+                </Link>
+              ))}
+            </div>
+          )
+        ) : saved.length === 0 ? (
+          <EmptyState text="ยังไม่มีประกาศที่บันทึก" />
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {posted.map((j) => <JobCard key={j.id} job={j} />)}
+            {saved.map((j) => <JobCard key={j.id} job={j} />)}
           </div>
-        )
-      ) : subTab === "applied" ? (
-        applied.length === 0 ? (
-          <EmptyState text="ยังไม่ได้สมัครงาน" />
-        ) : (
-          <div className="space-y-2">
-            {applied.map((a) => (
-              <Link
-                key={a.id}
-                to={a.job ? `/jobs/${a.job_id}` : "#"}
-                className="block glass-panel rounded-xl p-4 hover:border-primary/30 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium thai-display text-sm">{(a.job as { title?: string })?.title ?? "ประกาศงาน"}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      สมัคร {new Date(a.created_at).toLocaleDateString("th-TH")}
-                    </p>
-                  </div>
-                  <Badge variant="secondary" className="text-[10px] shrink-0">
-                    {applicationStatusLabel[a.status] ?? a.status}
-                  </Badge>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )
-      ) : subTab === "invited" ? (
-        invited.length === 0 ? (
-          <EmptyState text="ยังไม่มีคำชวน" />
-        ) : (
-          <div className="space-y-2">
-            {invited.map((inv: { id: string; project_title: string; job_post_id: string | null; job_post?: { title?: string }; created_at: string; status: string }) => (
-              <Link
-                key={inv.id}
-                to={inv.job_post_id ? `/jobs/${inv.job_post_id}` : "#"}
-                className="block glass-panel rounded-xl p-4 hover:border-primary/30 transition-colors"
-              >
-                <p className="font-medium text-sm">{inv.job_post?.title ?? inv.project_title}</p>
-                <p className="text-xs text-muted-foreground">ชวนเมื่อ {new Date(inv.created_at).toLocaleDateString("th-TH")} · {inv.status}</p>
-              </Link>
-            ))}
-          </div>
-        )
-      ) : saved.length === 0 ? (
-        <EmptyState text="ยังไม่มีประกาศที่บันทึก" />
-      ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {saved.map((j) => <JobCard key={j.id} job={j} />)}
-        </div>
-      )}
+        )}
+      </FeedModeTransition>
     </div>
   );
 };

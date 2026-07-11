@@ -45,8 +45,9 @@ const APP_ROUTE_SAMPLES: { path: string; launchEnabled: boolean }[] = [
   { path: "/earnings", launchEnabled: false },
   { path: "/referrals", launchEnabled: false },
   { path: "/drill", launchEnabled: false },
-  { path: "/similar/:projectId", launchEnabled: false },
-  { path: "/inspire/:boardId", launchEnabled: false },
+  { path: "/similar/:projectId", launchEnabled: true },
+  { path: "/inspire", launchEnabled: true },
+  { path: "/inspire/:boardId", launchEnabled: true },
   { path: "/hire-requests", launchEnabled: false },
   { path: "/collab-requests", launchEnabled: false },
 ];

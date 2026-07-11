@@ -69,7 +69,7 @@ const ImageActionBar = ({ projectId, projectTitle, imageUrl, imageIndex }: Props
         count={likes}
         onClick={handleLike}
         ariaLabel={liked ? "ยกเลิกถูกใจ" : "ถูกใจ"}
-        className={`${btn} text-white hover:text-white ${liked ? "!bg-primary/90 hover:!bg-primary [&_span]:text-white" : "[&_span]:text-white/90"}`}
+        className={`${btn} text-white hover:text-white hover:bg-black/45 [&_span]:text-white/90`}
       />
 
       <InspirePopover

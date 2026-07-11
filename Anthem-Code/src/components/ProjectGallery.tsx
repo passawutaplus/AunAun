@@ -1,12 +1,22 @@
 import { useState, useEffect } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
+import ImageActionBar from "@/components/project/ImageActionBar";
 
 interface Props {
   images: string[];
   alt: string;
+  projectId?: string;
+  projectTitle?: string;
+  imageIndexOffset?: number;
 }
 
-const ProjectGallery = ({ images, alt }: Props) => {
+const ProjectGallery = ({
+  images,
+  alt,
+  projectId,
+  projectTitle,
+  imageIndexOffset = 0,
+}: Props) => {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
 
@@ -18,9 +28,11 @@ const ProjectGallery = ({ images, alt }: Props) => {
 
   if (!images?.length) return null;
 
+  const showActions = !!projectId && !!projectTitle;
+
   return (
     <div className="space-y-3">
-      <Carousel setApi={setApi} className="overflow-hidden rounded-none bg-transparent">
+      <Carousel setApi={setApi} className="relative group overflow-hidden rounded-none bg-transparent">
         <CarouselContent>
           {images.map((src, i) => (
             <CarouselItem key={i}>
@@ -35,6 +47,14 @@ const ProjectGallery = ({ images, alt }: Props) => {
         </CarouselContent>
         <CarouselPrevious className="left-3 border-0 bg-background/20 text-foreground/55 shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80 disabled:opacity-20" />
         <CarouselNext className="right-3 border-0 bg-background/20 text-foreground/55 shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80 disabled:opacity-20" />
+        {showActions && images[current] ? (
+          <ImageActionBar
+            projectId={projectId}
+            projectTitle={projectTitle}
+            imageUrl={images[current]}
+            imageIndex={imageIndexOffset + current}
+          />
+        ) : null}
       </Carousel>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">

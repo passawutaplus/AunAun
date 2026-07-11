@@ -1,21 +1,34 @@
+import { useEffect, useState } from "react";
 import { UserPlus, Users } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EmptyState from "@/components/ui/EmptyState";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import FollowUserRow from "@/components/follow/FollowUserRow";
+import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import { useFollowersList, useFollowingList } from "@/hooks/useFollowLists";
+
+type TabId = "followers" | "following";
 
 type Props = {
   userId: string;
-  defaultTab?: "followers" | "following";
+  defaultTab?: TabId;
 };
 
 const FollowConnectionsPanel = ({ userId, defaultTab = "followers" }: Props) => {
+  const [tab, setTab] = useState<TabId>(defaultTab);
   const { data: followers = [], isLoading: loadingFollowers } = useFollowersList(userId);
   const { data: following = [], isLoading: loadingFollowing } = useFollowingList(userId);
 
+  useEffect(() => {
+    setTab(defaultTab);
+  }, [defaultTab]);
+
   return (
-    <Tabs defaultValue={defaultTab} className="w-full">
+    <Tabs
+      value={tab}
+      onValueChange={(v) => setTab(v as TabId)}
+      className="w-full"
+    >
       <TabsList className="grid w-full grid-cols-2 bg-secondary rounded-full p-1 h-11 border border-border">
         <TabsTrigger value="followers" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 text-sm">
           <UserPlus className="w-4 h-4" />
@@ -33,33 +46,37 @@ const FollowConnectionsPanel = ({ userId, defaultTab = "followers" }: Props) => 
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="followers" className="mt-4 space-y-2">
-        {loadingFollowers ? (
-          <InlineLoader />
-        ) : followers.length === 0 ? (
-          <EmptyState
-            icon={UserPlus}
-            title="ยังไม่มีผู้ติดตาม"
-            description="เมื่อมีคนติดตามคุณ รายชื่อจะปรากฏที่นี่"
-          />
+      <FeedModeTransition modeKey={tab} className="mt-4">
+        {tab === "followers" ? (
+          <div className="space-y-2">
+            {loadingFollowers ? (
+              <InlineLoader />
+            ) : followers.length === 0 ? (
+              <EmptyState
+                icon={UserPlus}
+                title="ยังไม่มีผู้ติดตาม"
+                description="เมื่อมีคนติดตามคุณ รายชื่อจะปรากฏที่นี่"
+              />
+            ) : (
+              followers.map((u) => <FollowUserRow key={u.userId} user={u} showFollowBack />)
+            )}
+          </div>
         ) : (
-          followers.map((u) => <FollowUserRow key={u.userId} user={u} showFollowBack />)
+          <div className="space-y-2">
+            {loadingFollowing ? (
+              <InlineLoader />
+            ) : following.length === 0 ? (
+              <EmptyState
+                icon={Users}
+                title="ยังไม่ได้ติดตามใคร"
+                description="ติดตามดีไซเนอร์เพื่อดูผลงานและอัปเดตของพวกเขา"
+              />
+            ) : (
+              following.map((u) => <FollowUserRow key={u.userId} user={u} showFollowBack />)
+            )}
+          </div>
         )}
-      </TabsContent>
-
-      <TabsContent value="following" className="mt-4 space-y-2">
-        {loadingFollowing ? (
-          <InlineLoader />
-        ) : following.length === 0 ? (
-          <EmptyState
-            icon={Users}
-            title="ยังไม่ได้ติดตามใคร"
-            description="ติดตามดีไซเนอร์เพื่อดูผลงานและอัปเดตของพวกเขา"
-          />
-        ) : (
-          following.map((u) => <FollowUserRow key={u.userId} user={u} showFollowBack />)
-        )}
-      </TabsContent>
+      </FeedModeTransition>
     </Tabs>
   );
 };

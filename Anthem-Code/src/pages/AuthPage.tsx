@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { SocialButtons, AuthEmailSeparator } from "@/components/auth/SocialButtons";
@@ -168,17 +169,21 @@ const AuthPage = () => {
                 <TabsTrigger value="signup" className="rounded-lg">สมัครสมาชิก</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="login" className="space-y-4 mt-0">
-                <SocialButtons redirectTo={redirect} />
-                <AuthEmailSeparator />
-                <LoginForm redirect={redirect} onSwitch={() => setTab("signup")} />
-              </TabsContent>
-
-              <TabsContent value="signup" className="space-y-4 mt-0">
-                <SocialButtons redirectTo={redirect} />
-                <AuthEmailSeparator />
-                <SignupForm onSwitch={() => setTab("login")} />
-              </TabsContent>
+              <FeedModeTransition modeKey={tab}>
+                {tab === "login" ? (
+                  <div className="space-y-4">
+                    <SocialButtons redirectTo={redirect} />
+                    <AuthEmailSeparator />
+                    <LoginForm redirect={redirect} onSwitch={() => setTab("signup")} />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <SocialButtons redirectTo={redirect} />
+                    <AuthEmailSeparator />
+                    <SignupForm onSwitch={() => setTab("login")} />
+                  </div>
+                )}
+              </FeedModeTransition>
             </Tabs>
 
             <p className="mt-8 text-center text-[11px] text-muted-foreground">

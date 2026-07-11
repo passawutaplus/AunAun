@@ -1,13 +1,7 @@
-import { Children, isValidElement, useEffect, useRef, useState, type ReactNode } from "react";
-import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
-import { smoothEase } from "@/lib/motion";
-import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
+import { AnimatedDensityGrid } from "@/components/ui/AnimatedDensityGrid";
 import type { SeriesWorksDensity } from "@/lib/seriesGridDensity";
 import { seriesDensityGridClass } from "@/lib/seriesGridDensity";
-
-const layoutTransition = {
-  layout: { duration: 0.42, ease: smoothEase },
-};
 
 type Props = {
   density: SeriesWorksDensity;
@@ -23,57 +17,14 @@ export function SeriesAnimatedGrid({
   children,
   layoutGroupId = "series-works-grid",
 }: Props) {
-  const reduced = useReducedMotion();
-  const items = Children.toArray(children);
-  const prevDensity = useRef(density);
-  const [shifting, setShifting] = useState(false);
-
-  useEffect(() => {
-    if (prevDensity.current === density) return;
-    prevDensity.current = density;
-    setShifting(true);
-    const timer = window.setTimeout(() => setShifting(false), 420);
-    return () => window.clearTimeout(timer);
-  }, [density]);
-
-  if (reduced) {
-    return (
-      <div className={cn(seriesDensityGridClass(density), className)} data-series-density={density}>
-        {items.map((child, i) => {
-          if (!isValidElement(child)) return child;
-          return (
-            <div key={child.key ?? `series-item-${i}`}>{child}</div>
-          );
-        })}
-      </div>
-    );
-  }
-
   return (
-    <LayoutGroup id={layoutGroupId}>
-      <motion.div
-        layout
-        data-series-density={density}
-        className={cn(seriesDensityGridClass(density), className)}
-        animate={{ opacity: shifting ? 0.94 : 1 }}
-        transition={{
-          opacity: { duration: 0.22, ease: smoothEase },
-          layout: layoutTransition.layout,
-        }}
-      >
-        {items.map((child, i) => {
-          if (!isValidElement(child)) return child;
-          return (
-            <motion.div
-              key={child.key ?? `series-item-${i}`}
-              layout
-              transition={{ layout: layoutTransition.layout }}
-            >
-              {child}
-            </motion.div>
-          );
-        })}
-      </motion.div>
-    </LayoutGroup>
+    <AnimatedDensityGrid
+      density={density}
+      gridClassName={seriesDensityGridClass(density)}
+      className={className}
+      layoutGroupId={layoutGroupId}
+    >
+      {children}
+    </AnimatedDensityGrid>
   );
 }

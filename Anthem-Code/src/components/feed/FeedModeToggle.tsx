@@ -1,4 +1,6 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import { LayoutGrid, Users, Building2, Orbit, Target } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { isAplus1LaunchMinimal, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 
@@ -20,7 +22,7 @@ interface Props {
 }
 
 const items: ToggleItem[] = [
-  { id: "projects", label: "Projects", icon: LayoutGrid, desktopOnly: true },
+  { id: "projects", label: "Projects", icon: LayoutGrid },
   { id: "community", label: "Area", icon: Orbit, desktopOnly: true },
   { id: "drill", label: "Design Drill", icon: Target, mobileOnly: true },
   { id: "designers", label: "Designers", icon: Users },
@@ -31,19 +33,101 @@ const launchItems = items.filter(
   (item) => item.id === "projects" || item.id === "designers",
 );
 
+/** Smooth horizontal slide — spring tuned for a short pill travel. */
+const slideTransition = {
+  type: "spring" as const,
+  stiffness: 380,
+  damping: 34,
+  mass: 0.7,
+};
+
+type IndicatorBox = { x: number; width: number };
+
 const FeedModeToggle = ({ value, drillActive = false, onChange, onDrillSelect }: Props) => {
+  const reduced = useReducedMotion();
+  const trackRef = useRef<HTMLDivElement>(null);
+  const btnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const [indicator, setIndicator] = useState<IndicatorBox | null>(null);
+
   const visible = (isAplus1LaunchMinimal() ? launchItems : items).filter(
     (item) => item.id !== "drill" || isLaunchDesignDrillEnabled(),
   );
 
+  /** Equal-width segments → pill mostly translates X (feels like a clean L/R slide). */
+  const equalSplit = visible.every((item) => !item.mobileOnly && !item.desktopOnly);
+
+  const activeId = drillActive ? "drill" : value;
+  const visibleKey = visible.map((v) => v.id).join("|");
+
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const measure = () => {
+      const btn = btnRefs.current.get(activeId);
+      if (!btn) {
+        setIndicator(null);
+        return;
+      }
+      const btnRect = btn.getBoundingClientRect();
+      if (btnRect.width < 1) {
+        setIndicator(null);
+        return;
+      }
+      const trackRect = track.getBoundingClientRect();
+      const next = {
+        x: btnRect.left - trackRect.left,
+        width: btnRect.width,
+      };
+      setIndicator((prev) =>
+        prev &&
+        Math.abs(prev.x - next.x) < 0.5 &&
+        Math.abs(prev.width - next.width) < 0.5
+          ? prev
+          : next,
+      );
+    };
+
+    measure();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    ro?.observe(track);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [activeId, visibleKey, equalSplit]);
+
   return (
     <div
-      className="shrink-0 flex items-center rounded-full glass-panel p-0.5"
+      ref={trackRef}
+      className={cn(
+        "relative shrink-0 flex items-center rounded-full glass-panel p-0.5",
+        equalSplit && "min-w-[11.5rem] sm:min-w-[14.5rem]",
+      )}
       role="group"
       aria-label="Feed view"
     >
+      {indicator ? (
+        reduced ? (
+          <span
+            className="pointer-events-none absolute top-0.5 bottom-0.5 left-0 rounded-full bg-gradient-brand"
+            style={{ transform: `translateX(${indicator.x}px)`, width: indicator.width }}
+            aria-hidden
+          />
+        ) : (
+          <motion.span
+            className="pointer-events-none absolute top-0.5 bottom-0.5 left-0 rounded-full bg-gradient-brand will-change-transform"
+            initial={false}
+            animate={{ x: indicator.x, width: indicator.width }}
+            transition={slideTransition}
+            aria-hidden
+          />
+        )
+      ) : null}
+
       {visible.map(({ id, label, icon: Icon, mobileOnly, desktopOnly }) => {
-        const active = id === "drill" ? drillActive : value === id;
+        const active = id === activeId;
         const visibility = mobileOnly
           ? "flex lg:hidden"
           : desktopOnly
@@ -54,18 +138,23 @@ const FeedModeToggle = ({ value, drillActive = false, onChange, onDrillSelect }:
           <button
             key={id}
             type="button"
+            ref={(el) => {
+              if (el) btnRefs.current.set(id, el);
+              else btnRefs.current.delete(id);
+            }}
             aria-label={`${label} view`}
             aria-pressed={active}
             onClick={() => (id === "drill" ? onDrillSelect?.() : onChange(id))}
             className={cn(
-              "items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition",
+              "relative z-10 items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors duration-200",
               visibility,
+              equalSplit && "flex-1 justify-center",
               active
-                ? "bg-gradient-brand text-white"
+                ? "text-white"
                 : "text-foreground/75 hover:text-foreground",
             )}
           >
-            <Icon className="w-3.5 h-3.5" aria-hidden />
+            <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden />
             <span className="hidden sm:inline">{label}</span>
           </button>
         );

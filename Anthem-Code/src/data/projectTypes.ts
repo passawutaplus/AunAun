@@ -9,6 +9,7 @@ export const PROJECT_CATEGORIES = [
   "UI/UX",
   "Web / App",
   "3D / CG / Game",
+  "Art Toy / Model",
   "Architecture / Interior",
   "Product / Industrial",
   "Fashion / Textile",

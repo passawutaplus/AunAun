@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
 const COLLAB_TYPE_LABELS: Record<string, string> = {
+  chat: "พูดคุย",
   "joint-project": "ร่วมโปรเจกต์",
   "skill-swap": "แลกเปลี่ยนสกิล",
   studio: "Studio/ทีม",

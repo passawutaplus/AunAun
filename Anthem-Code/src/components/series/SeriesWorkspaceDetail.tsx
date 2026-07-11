@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BarChart3, FolderKanban, Globe2, Lock, Pencil, Plus, Trash2, X } from "lucide-react";
+import { BarChart3, FolderKanban, Globe2, Lock, Pencil, Plus, Share2, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -18,10 +18,12 @@ import {
   useProjectSeries,
   useProjectSeriesItems,
   useRemoveProjectFromSeries,
+  useUpdateProjectSeries,
   type ProjectSeries,
 } from "@/hooks/useProjectSeries";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { SeriesAnimatedGrid } from "@/components/series/SeriesAnimatedGrid";
+import SharePopover from "@/components/SharePopover";
 import { cn } from "@/lib/utils";
 import type { SeriesWorksDensity } from "@/lib/seriesGridDensity";
 import type { ProjectManageSortMode } from "@/lib/portfolioManageSort";
@@ -84,6 +86,22 @@ export function SeriesWorkspaceDetail({
   const { data: items = [], isLoading: itemsLoading } = useProjectSeriesItems(seriesId);
   const remove = useRemoveProjectFromSeries();
   const del = useDeleteProjectSeries();
+  const update = useUpdateProjectSeries();
+
+  const shareUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/series/${seriesId}`
+      : `/series/${seriesId}`;
+
+  const makePublic = async () => {
+    if (!series || series.is_public) return;
+    try {
+      await update.mutateAsync({ id: series.id, patch: { is_public: true } });
+      toast.success("ตั้งเป็นสาธารณะแล้ว — ลิงก์แชร์ดูได้โดยไม่ต้องล็อกอิน");
+    } catch (e) {
+      toast.error((e as Error).message || "ตั้งค่าสาธารณะไม่สำเร็จ");
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -154,9 +172,37 @@ export function SeriesWorkspaceDetail({
               {items.length} ชิ้นในชุด
               {items.length === 0 ? " — ยังว่าง กด「เพิ่มผลงาน」เมื่อพร้อม" : ""}
             </p>
+            {!series.is_public ? (
+              <p className="text-xs text-muted-foreground">
+                ต้องการแชร์ให้คนอื่นดูได้?{" "}
+                <button type="button" className="text-primary hover:underline" onClick={() => void makePublic()}>
+                  ตั้งเป็นสาธารณะ
+                </button>
+              </p>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <SharePopover url={shareUrl} title={series.title} label="แชร์ชุดผลงาน">
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                onClick={() => {
+                  if (!series.is_public) {
+                    toast.message("ชุดผลงานยังเป็นส่วนตัว", {
+                      description: "คนอื่นเปิดลิงก์นี้ไม่ได้จนกว่าจะตั้งเป็นสาธารณะ",
+                      action: {
+                        label: "ตั้งสาธารณะ",
+                        onClick: () => void makePublic(),
+                      },
+                    });
+                  }
+                }}
+              >
+                <Share2 className="w-4 h-4 mr-1" /> แชร์
+              </Button>
+            </SharePopover>
             <Button
               size="sm"
               variant="outline"

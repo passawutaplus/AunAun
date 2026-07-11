@@ -27,9 +27,9 @@ import { validateProjectInquiry } from "@/domain/inquiry";
 import ProjectReferencePreview from "@/components/opportunity/ProjectReferencePreview";
 
 const COLLAB_TYPES = [
+  { key: "chat", label: "พูดคุย" },
   { key: "joint-project", label: "ร่วมโปรเจกต์ใหม่" },
   { key: "skill-swap", label: "แลกเปลี่ยนสกิล" },
-  { key: "studio", label: "เปิด studio / ทีม" },
   { key: "experiment", label: "งานทดลอง / สะสมพอร์ต" },
   { key: "content", label: "คอนเทนต์ / โปรโมตร่วม" },
   { key: "other", label: "อื่นๆ" },

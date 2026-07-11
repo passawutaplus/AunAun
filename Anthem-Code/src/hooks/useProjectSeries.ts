@@ -26,6 +26,9 @@ export type ProjectSeriesItemProject = {
   gallery_urls: string[] | null;
   status: string;
   category?: string | null;
+  likes?: number | null;
+  views?: number | null;
+  created_at?: string | null;
 };
 
 export type ProjectSeriesItem = {
@@ -61,6 +64,9 @@ type ProjectMeta = {
   gallery_urls: string[] | null;
   status: string;
   category?: string | null;
+  likes?: number | null;
+  views?: number | null;
+  created_at?: string | null;
 };
 
 async function fetchProjectsByIds(projectIds: string[]): Promise<Map<string, ProjectMeta>> {
@@ -69,7 +75,7 @@ async function fetchProjectsByIds(projectIds: string[]): Promise<Map<string, Pro
   const unique = [...new Set(projectIds)];
   const { data, error } = await supabase
     .from("projects")
-    .select("id, title, cover_url, gallery_urls, status, category")
+    .select("id, title, cover_url, gallery_urls, status, category, likes, views, created_at")
     .in("id", unique);
   if (error) return map;
   for (const row of (data ?? []) as ProjectMeta[]) {

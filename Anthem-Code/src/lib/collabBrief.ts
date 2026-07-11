@@ -1,6 +1,7 @@
 import { DEFAULT_COLLAB_MESSAGE } from "@/lib/chatContext";
 
 const COLLAB_TYPE_LABELS: Record<string, string> = {
+  chat: "พูดคุย",
   "joint-project": "ร่วมโปรเจกต์",
   "skill-swap": "แลกเปลี่ยนสกิล",
   studio: "Studio/ทีม",

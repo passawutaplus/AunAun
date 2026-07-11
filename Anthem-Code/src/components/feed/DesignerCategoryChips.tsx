@@ -1,8 +1,11 @@
 import { categories } from "@/data/projectTypes";
 import type { Category } from "@/data/projectTypes";
+import { HorizontalScrollRail } from "@/components/ui/HorizontalScrollRail";
+import { SlidingChip, SlidingChipRail } from "@/components/ui/SlidingChip";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_CHIPS = ["All", ...categories.filter((c) => c !== "Explore")] as const;
+const GROUP_ID = "designer-category-chips";
 
 type Props = {
   selected: Category | "All";
@@ -17,32 +20,19 @@ const DesignerCategoryChips = ({
   chips = DEFAULT_CHIPS,
   className,
 }: Props) => (
-  <div
-    className={cn(
-      "flex items-center gap-5 sm:gap-6 overflow-x-auto pb-0 scrollbar-hide",
-      className,
-    )}
-  >
-    {chips.map((cat) => {
-      const active = selected === cat;
-      return (
-        <button
+  <SlidingChipRail layoutGroupId={GROUP_ID}>
+    <HorizontalScrollRail className={cn("flex items-center gap-5 sm:gap-6 pb-0", className)}>
+      {chips.map((cat) => (
+        <SlidingChip
           key={cat}
-          type="button"
+          layoutGroupId={GROUP_ID}
+          label={cat === "All" ? "ทั้งหมด" : cat}
+          active={selected === cat}
           onClick={() => onSelect(cat)}
-          className={cn(
-            "relative shrink-0 whitespace-nowrap text-sm font-medium py-1.5 transition-colors",
-            active ? "text-primary" : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          {cat === "All" ? "ทั้งหมด" : cat}
-          {active && (
-            <span className="absolute left-0 right-0 -bottom-0.5 h-0.5 bg-primary rounded-full" />
-          )}
-        </button>
-      );
-    })}
-  </div>
+        />
+      ))}
+    </HorizontalScrollRail>
+  </SlidingChipRail>
 );
 
 export default DesignerCategoryChips;

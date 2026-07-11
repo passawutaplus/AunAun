@@ -61,6 +61,7 @@ export const useFollowState = (followingId: string | undefined) => {
       qc.invalidateQueries({ queryKey: ["is-following", followingId, user?.id] });
       qc.invalidateQueries({ queryKey: ["followers-list"] });
       qc.invalidateQueries({ queryKey: ["following-list"] });
+      qc.invalidateQueries({ queryKey: ["followed-user-ids", user?.id] });
     },
   });
 
@@ -74,3 +75,18 @@ export const useFollowState = (followingId: string | undefined) => {
     isPending: toggle.isPending,
   };
 };
+
+/** User ids the viewer follows — for Designers "ติดตาม" feed. */
+export const useFollowedUserIds = (userId: string | undefined) =>
+  useQuery({
+    queryKey: ["followed-user-ids", userId],
+    enabled: !!userId,
+    queryFn: async (): Promise<Set<string>> => {
+      const { data, error } = await supabase
+        .from("follows")
+        .select("following_id")
+        .eq("follower_id", userId!);
+      if (error) throw error;
+      return new Set((data ?? []).map((r) => r.following_id));
+    },
+  });

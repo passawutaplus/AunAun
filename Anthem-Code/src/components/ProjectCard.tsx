@@ -116,7 +116,7 @@ const ProjectCard = ({
       <div
         ref={wrapRef}
         className={cn(
-          "relative w-full overflow-hidden rounded-sm bg-muted",
+          "relative w-full overflow-hidden rounded-[6px] bg-muted",
           !naturalCover && "aspect-[4/3]",
         )}
       >

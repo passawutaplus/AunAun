@@ -369,7 +369,12 @@ const ProjectDetailPage = () => {
               />
             )}
             {canvasBlocks.length > 0 ? (
-              <ProjectContentBlocksView blocks={canvasBlocks} className="max-w-2xl" />
+              <ProjectContentBlocksView
+                blocks={canvasBlocks}
+                className="max-w-2xl"
+                projectId={dbProject?.id ?? project.id}
+                projectTitle={project.title}
+              />
             ) : (
               <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
                 ยังไม่มีเนื้อหา

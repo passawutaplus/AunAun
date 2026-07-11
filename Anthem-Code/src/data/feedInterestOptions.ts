@@ -20,6 +20,7 @@ const SUBTITLES: Record<ProjectCategory, string> = {
   "UI/UX": "ออกแบบประสบการณ์ หน้าจอ แอป",
   "Web / App": "เว็บไซต์ แอปพลิเคชัน ดิจิทัลโปรดักต์",
   "3D / CG / Game": "โมเดล 3D เกม เรンダer",
+  "Art Toy / Model": "อาร์ตทอย ฟิกเกอร์ โมเดล",
   "Architecture / Interior": "สถาปัตยกรรม ตกแต่งภายใน",
   "Product / Industrial": "ออกแบบผลิตภัณฑ์ อุตสาหกรรม",
   "Fashion / Textile": "แฟชั่น สิ่งทอ พิมพ์ลาย",

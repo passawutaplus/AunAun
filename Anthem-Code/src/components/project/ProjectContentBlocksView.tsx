@@ -2,6 +2,7 @@ import { Film } from "lucide-react";
 import type { ReactNode } from "react";
 import ProjectGallery from "@/components/ProjectGallery";
 import { PhotoGridPreview } from "@/components/project/PhotoGridPreview";
+import ImageActionBar from "@/components/project/ImageActionBar";
 import { ProjectRichTextView } from "@/components/project/ProjectRichTextField";
 import {
   mergeContentBlocks,
@@ -16,6 +17,11 @@ import {
 import { parsePhotoGridLayout } from "@/lib/photoGridLayouts";
 import { cn } from "@/lib/utils";
 
+type ActionContext = {
+  projectId: string;
+  projectTitle: string;
+};
+
 type Props = {
   blocks?: ProjectContentBlock[] | null;
   legacyDescription?: string | null;
@@ -23,9 +29,50 @@ type Props = {
   galleryUrls?: string[] | null;
   videoUrls?: string[] | null;
   className?: string;
+  /** Enables hover actions (like / inspire / share) on images. */
+  projectId?: string;
+  projectTitle?: string;
 };
 
-function MultiRowImages({ urls, columns }: { urls: string[]; columns: 2 | 3 | 4 }) {
+function ImageFrame({
+  url,
+  imageIndex,
+  actions,
+  className,
+  imgClassName,
+}: {
+  url: string;
+  imageIndex: number;
+  actions?: ActionContext | null;
+  className?: string;
+  imgClassName?: string;
+}) {
+  return (
+    <div className={cn("relative group overflow-hidden rounded-none bg-transparent", className)}>
+      <img src={url} alt="" className={cn("w-full object-contain", imgClassName)} loading="lazy" />
+      {actions ? (
+        <ImageActionBar
+          projectId={actions.projectId}
+          projectTitle={actions.projectTitle}
+          imageUrl={url}
+          imageIndex={imageIndex}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function MultiRowImages({
+  urls,
+  columns,
+  actions,
+  indexOffset = 0,
+}: {
+  urls: string[];
+  columns: 2 | 3 | 4;
+  actions?: ActionContext | null;
+  indexOffset?: number;
+}) {
   return (
     <div
       className={cn(
@@ -33,10 +80,14 @@ function MultiRowImages({ urls, columns }: { urls: string[]; columns: 2 | 3 | 4 
         columns === 4 ? "grid-cols-4" : columns === 3 ? "grid-cols-3" : "grid-cols-2",
       )}
     >
-      {urls.map((url) => (
-        <div key={url} className="min-w-0 overflow-hidden rounded-none bg-transparent">
-          <img src={url} alt="" className="w-full object-contain" loading="lazy" />
-        </div>
+      {urls.map((url, i) => (
+        <ImageFrame
+          key={`${url}-${i}`}
+          url={url}
+          imageIndex={indexOffset + i}
+          actions={actions}
+          className="min-w-0"
+        />
       ))}
     </div>
   );
@@ -47,16 +98,18 @@ function ImageTextBlockView({
   body,
   splitSide,
   textVerticalAlign,
+  actions,
+  imageIndex,
 }: {
   url?: string;
   body?: string;
   splitSide?: "image_left" | "text_left";
   textVerticalAlign?: "top" | "middle" | "bottom";
+  actions?: ActionContext | null;
+  imageIndex: number;
 }) {
   const image = url?.trim() ? (
-    <div className="min-w-0 overflow-hidden rounded-none bg-transparent">
-      <img src={url} alt="" className="w-full object-contain" loading="lazy" />
-    </div>
+    <ImageFrame url={url} imageIndex={imageIndex} actions={actions} className="min-w-0" />
   ) : null;
   const text = body?.trim() ? (
     <ProjectRichTextView
@@ -82,13 +135,25 @@ function ImageTextBlockView({
   );
 }
 
-function renderBlock(block: ProjectContentBlock) {
+function renderBlock(
+  block: ProjectContentBlock,
+  actions: ActionContext | null,
+  imageIndexOffset: number,
+) {
   if (block.type === "image") {
     const urls = blockImageUrls(block).filter((u) => u.trim());
     if (!urls.length) return null;
 
     if (block.mediaLayout === "gallery") {
-      return <ProjectGallery images={urls} alt="" />;
+      return (
+        <ProjectGallery
+          images={urls}
+          alt={actions?.projectTitle ?? ""}
+          projectId={actions?.projectId}
+          projectTitle={actions?.projectTitle}
+          imageIndexOffset={imageIndexOffset}
+        />
+      );
     }
 
     if (block.mediaLayout === "grid") {
@@ -97,31 +162,46 @@ function renderBlock(block: ProjectContentBlock) {
         <PhotoGridPreview
           images={urls.map((url) => ({ url }))}
           layout={layout}
-          title=""
+          title={actions?.projectTitle ?? ""}
           className="max-w-none"
+          projectId={actions?.projectId}
+          projectTitle={actions?.projectTitle}
+          imageIndexOffset={imageIndexOffset}
         />
       );
     }
 
     if (block.mediaLayout === "multi") {
       const columns = block.rowColumns === 3 || block.rowColumns === 4 ? block.rowColumns : 2;
-      return <MultiRowImages urls={urls} columns={columns} />;
+      return (
+        <MultiRowImages
+          urls={urls}
+          columns={columns}
+          actions={actions}
+          indexOffset={imageIndexOffset}
+        />
+      );
     }
 
     if (urls.length === 1) {
       return (
-        <div className="overflow-hidden rounded-none bg-transparent">
-          <img
-            src={urls[0]}
-            alt=""
-            className="max-h-[min(80vh,900px)] w-full object-contain"
-            loading="lazy"
-          />
-        </div>
+        <ImageFrame
+          url={urls[0]}
+          imageIndex={imageIndexOffset}
+          actions={actions}
+          imgClassName="max-h-[min(80vh,900px)]"
+        />
       );
     }
 
-    return <MultiRowImages urls={urls} columns={2} />;
+    return (
+      <MultiRowImages
+        urls={urls}
+        columns={2}
+        actions={actions}
+        indexOffset={imageIndexOffset}
+      />
+    );
   }
 
   if (block.type === "video" && block.url) {
@@ -148,6 +228,8 @@ function renderBlock(block: ProjectContentBlock) {
         body={block.body}
         splitSide={block.splitSide}
         textVerticalAlign={block.textVerticalAlign}
+        actions={actions}
+        imageIndex={imageIndexOffset}
       />
     );
   }
@@ -192,12 +274,20 @@ function renderBlock(block: ProjectContentBlock) {
   );
 }
 
+function countBlockImages(block: ProjectContentBlock): number {
+  if (block.type === "image") return blockImageUrls(block).filter((u) => u.trim()).length;
+  if (isImageTextBlockType(block.type) && block.url?.trim()) return 1;
+  return 0;
+}
+
 export function ProjectContentBlocksView({
   blocks,
   legacyDescription,
   galleryUrls,
   videoUrls,
   className,
+  projectId,
+  projectTitle,
 }: Props) {
   const items =
     galleryUrls != null || videoUrls != null
@@ -211,9 +301,16 @@ export function ProjectContentBlocksView({
 
   if (!items.length) return null;
 
-  const rendered = items
-    .map((block) => ({ block, content: renderBlock(block) }))
-    .filter((row): row is { block: ProjectContentBlock; content: ReactNode } => row.content != null);
+  const actions: ActionContext | null =
+    projectId && projectTitle ? { projectId, projectTitle } : null;
+
+  let imageIndexOffset = 0;
+  const rendered: { block: ProjectContentBlock; content: ReactNode }[] = [];
+  for (const block of items) {
+    const content = renderBlock(block, actions, imageIndexOffset);
+    imageIndexOffset += countBlockImages(block);
+    if (content != null) rendered.push({ block, content });
+  }
 
   if (!rendered.length) return null;
 

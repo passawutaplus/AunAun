@@ -40,6 +40,7 @@ import ProjectManageGridSelect, {
 } from "@/components/portfolio/ProjectManageGridSelect";
 import PortfolioOverviewChart from "@/components/portfolio/PortfolioOverviewChart";
 import { DashboardSeriesSection } from "@/components/series/DashboardSeriesSection";
+import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import { smoothEase, staggerReveal } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -306,7 +307,8 @@ const PortfolioManagePage = () => {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 space-y-6 pb-8">
-
+        <FeedModeTransition modeKey={manageTab}>
+        <div className="space-y-6">
         {manageTab === "projects" || !communityManageEnabled ? (
           <>
         {user ? <PortfolioOverviewChart ownerId={user.id} projectIds={projectIds} /> : null}
@@ -472,6 +474,8 @@ const PortfolioManagePage = () => {
             </div>
           </>
         )}
+        </div>
+        </FeedModeTransition>
       </div>
 
       <DeleteConfirmDialog

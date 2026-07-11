@@ -30,7 +30,7 @@ const WalletPopover = () => {
         <span className="text-xs font-medium text-foreground tabular-nums">
           {totalPx.toLocaleString()}
         </span>
-        <span className="text-[10px] text-muted-foreground">px</span>
+        <span className="hidden sm:inline text-[10px] text-muted-foreground">px</span>
       </button>
 
       <TopUpDialog open={topUpOpen} onOpenChange={setTopUpOpen} />

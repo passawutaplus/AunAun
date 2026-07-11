@@ -230,13 +230,13 @@ const ChatSidebar = ({
             <Button
               type="button"
               variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full border border-border/60 bg-muted/40"
-              aria-label="กลับหน้าแรก"
+              className="h-8 gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2.5"
+              aria-label="กลับหน้าแรก — Feed"
               title="กลับหน้าแรก"
               onClick={goProjectsHome}
             >
-              <LayoutGrid className="w-4 h-4" />
+              <LayoutGrid className="w-4 h-4 shrink-0" />
+              <span className="text-xs font-medium">Feed</span>
             </Button>
             {isAplus1SubscriptionsEnabled() ? (
               <Button

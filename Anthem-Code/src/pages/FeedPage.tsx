@@ -25,6 +25,7 @@ import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import { type FeedMode } from "@/components/feed/FeedModeToggle";
 import DesignerGrid from "@/components/feed/DesignerGrid";
 import { type DesignerSort } from "@/components/feed/DesignerToolbar";
+import type { DesignerFeedSource } from "@/components/feed/DesignerFeedDropdown";
 import StudioGrid from "@/components/feed/StudioGrid";
 import type { StudioFeedSource } from "@/components/studio/StudioFilterPanel";
 import { useDesigners } from "@/hooks/useDesigners";
@@ -102,6 +103,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     projectCoverUrl?: string;
   }>({ recipientName: "" });
   const [designerSort, setDesignerSort] = useState<DesignerSort>("newest");
+  const [designerFeedSource, setDesignerFeedSource] = useState<DesignerFeedSource>("all");
   const [designerCategory, setDesignerCategory] = useState<Category | "All">("All");
   const [designerTools, setDesignerTools] = useState<string[]>([]);
   const [studioFeedSource, setStudioFeedSource] = useState<StudioFeedSource>("all");
@@ -417,6 +419,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           category={category}
           onCategoryChange={setCategory}
           categoryChips={projectChipFilters}
+          designerFeedSource={designerFeedSource}
+          onDesignerFeedSourceChange={setDesignerFeedSource}
           designerSort={designerSort}
           onDesignerSort={setDesignerSort}
           designerCategory={designerCategory}
@@ -426,6 +430,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           designerToolOptions={designerToolOptions}
           onToggleDesignerTool={(t) => setDesignerTools((l) => toggle(l, t))}
           onClearFilters={() => {
+            setDesignerFeedSource("all");
             setDesignerSort("newest");
             setDesignerCategory("All");
             setDesignerTools([]);
@@ -467,6 +472,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               onCollab={handleCollabDesigner}
               search={search}
               sort={designerSort}
+              feedSource={designerFeedSource}
               categories={designerCategory !== "All" ? [designerCategory] : []}
               tools={designerTools}
             />

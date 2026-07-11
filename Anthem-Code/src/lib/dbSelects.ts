@@ -29,4 +29,4 @@ export const PUBLIC_PROFILE_SELECT =
 
 /** Designer directory list. */
 export const PROFILE_DESIGNER_SELECT =
-  "user_id, display_name, username, avatar_url, bio, role, skills, updated_at";
+  "user_id, display_name, username, avatar_url, bio, role, skills, created_at, updated_at";

@@ -11,8 +11,9 @@ import { useMyProjects } from "@/hooks/useProjects";
 import { useFollowState } from "@/hooks/useFollow";
 import { useCollections } from "@/hooks/useCollections";
 import { useMyProjectSeries } from "@/hooks/useProjectSeries";
-import { useInspireBoards } from "@/hooks/useInspire";
+import { useInspireBoards, isDefaultInspireBoard } from "@/hooks/useInspire";
 import CollectionCard from "@/components/collections/CollectionCard";
+import InspireBoardCard from "@/components/inspire/InspireBoardCard";
 import { SeriesCard } from "@/components/series/SeriesCard";
 import type { ExperienceItem } from "@/lib/validators";
 import { ProfileAboutReadOnly } from "@/components/profile/ProfileAboutReadOnly";
@@ -53,7 +54,11 @@ const PortfolioProfilePage = () => {
   const { followers, following } = useFollowState(user?.id);
   const { data: collections = [] } = useCollections(user?.id);
   const { data: seriesList = [] } = useMyProjectSeries(user?.id);
-  const { data: inspireBoards = [] } = useInspireBoards(user?.id);
+  const { data: inspireBoardsRaw = [] } = useInspireBoards(user?.id);
+  const inspireBoards = useMemo(
+    () => inspireBoardsRaw.filter((b) => !isDefaultInspireBoard(b)),
+    [inspireBoardsRaw],
+  );
 
   const [opportunityOpen, setOpportunityOpen] = useState(false);
 
@@ -208,13 +213,13 @@ const PortfolioProfilePage = () => {
             title="ชุดผลงานของฉัน"
             count={seriesList.length}
             action={
-              <Button
-                size="sm"
+              <button
+                type="button"
                 onClick={() => navigate("/series")}
-                className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-8"
+                className="text-xs text-primary hover:underline"
               >
-                <Plus className="w-3.5 h-3.5 mr-1" /> จัดการ
-              </Button>
+                จัดการ
+              </button>
             }
           >
             {seriesList.length ? (
@@ -238,13 +243,13 @@ const PortfolioProfilePage = () => {
             title="คอลเลกชันของฉัน"
             count={collections.length}
             action={
-              <Button
-                size="sm"
+              <button
+                type="button"
                 onClick={() => navigate("/collections")}
-                className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-8"
+                className="text-xs text-primary hover:underline"
               >
-                <Plus className="w-3.5 h-3.5 mr-1" /> จัดการ
-              </Button>
+                จัดการ
+              </button>
             }
           >
             {collections.length ? (
@@ -268,40 +273,30 @@ const PortfolioProfilePage = () => {
             title="My Inspire"
             count={inspireBoards.length}
             action={
-              inspireBoards.length > 0 ? (
-                <span className="text-xs text-muted-foreground">รวมภาพที่ฉันชอบ</span>
-              ) : null
+              <button
+                type="button"
+                onClick={() => navigate("/inspire")}
+                className="text-xs text-primary hover:underline"
+              >
+                จัดการ
+              </button>
             }
           >
             {inspireBoards.length ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                 {inspireBoards.slice(0, 6).map((b) => (
-                  <button
+                  <InspireBoardCard
                     key={b.id}
-                    onClick={() => navigate(`/inspire/${b.id}`)}
-                    className="group text-left rounded-2xl overflow-hidden border border-border bg-card hover:border-primary/60 hover:shadow-md transition"
-                  >
-                    <div className="aspect-[4/3] bg-muted overflow-hidden">
-                      {b.cover_url ? (
-                        <img src={b.cover_url} alt={b.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
-                      ) : (
-                        <div className="w-full h-full grid place-items-center text-muted-foreground">
-                          <Sparkles className="w-6 h-6" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-3">
-                      <p className="text-sm font-medium text-foreground truncate">{b.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{b.item_count} ภาพ</p>
-                    </div>
-                  </button>
+                    board={b}
+                    onSelect={(board) => navigate(`/inspire?b=${board.id}`)}
+                  />
                 ))}
               </div>
             ) : (
               <EmptyHint
                 text="ยังไม่มีบอร์ดแรงบันดาลใจ กดปุ่ม Inspire บนภาพในผลงานเพื่อเริ่มเก็บ"
-                cta="ดูฟีดเพื่อหาแรงบันดาลใจ"
-                onClick={() => navigate("/")}
+                cta="สร้างบอร์ด Inspire"
+                onClick={() => navigate("/inspire")}
               />
             )}
           </Section>

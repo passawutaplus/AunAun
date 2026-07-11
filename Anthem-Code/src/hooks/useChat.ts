@@ -20,7 +20,7 @@ const MESSAGE_SELECT =
   "id, conversation_id, sender_id, content, attachment_url, read_at, created_at, reply_to_id, deleted_at, message_type, project_id, profile_user_id";
 
 export type ChatKind = "hire" | "collab" | "group" | "studio";
-export type MessageType = "text" | "image" | "project" | "system" | "profile";
+export type MessageType = "text" | "image" | "file" | "project" | "system" | "profile";
 export type ConversationType = "direct" | "group";
 
 type ConversationRow = Database["public"]["Tables"]["conversations"]["Row"];
@@ -292,11 +292,12 @@ export const useSendMessage = () => {
       if (projectId) row.project_id = projectId;
       if (profileUserId) row.profile_user_id = profileUserId;
       if (messageType === "image" && attachmentUrl) row.message_type = "image";
+      if (messageType === "file" && attachmentUrl) row.message_type = "file";
 
       let { error } = await supabase.from("messages").insert(row as never);
       if (
         error &&
-        (messageType === "system" || messageType === "profile") &&
+        (messageType === "system" || messageType === "profile" || messageType === "file") &&
         String(error.message).includes("message_type")
       ) {
         const fallback: Record<string, unknown> = {
@@ -305,7 +306,7 @@ export const useSendMessage = () => {
           content:
             messageType === "system"
               ? `${SYSTEM_MESSAGE_PREFIX}${content}`
-              : content || "โปรไฟล์",
+              : content || (messageType === "file" ? "ไฟล์แนบ" : "โปรไฟล์"),
         };
         delete fallback.profile_user_id;
         ({ error } = await supabase.from("messages").insert(fallback as never));

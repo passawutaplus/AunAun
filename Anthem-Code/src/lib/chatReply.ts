@@ -9,7 +9,15 @@ export function replyPreviewText(msg: ReplyPreviewSource): string {
   if (msg.deleted_at) return "ข้อความถูกยกเลิก";
   if (msg.message_type === "project") return msg.content?.trim() || "ผลงาน";
   if (msg.message_type === "profile") return "โปรไฟล์";
-  if (msg.attachment_url || msg.message_type === "image") return "รูปภาพ";
+  if (msg.message_type === "file") return msg.content?.trim() || "ไฟล์แนบ";
+  if (msg.message_type === "image") return "รูปภาพ";
+  if (msg.attachment_url) {
+    const name = msg.content?.trim();
+    if (name && !/\.(jpe?g|png|webp|gif)$/i.test(msg.attachment_url)) {
+      return name;
+    }
+    return "รูปภาพ";
+  }
   if (msg.content?.startsWith("__APLUS1_OFFER__:")) return "ข้อเสนอราคา";
   return msg.content?.trim() || "ข้อความ";
 }

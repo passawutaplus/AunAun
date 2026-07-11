@@ -39,7 +39,7 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
     isError: collectionsError,
     refetch: refetchCollections,
   } = useCollections(enabled ? user?.id : undefined);
-  const { data: activeIds = new Set<string>() } = useProjectCollectionIds(
+  const { data: activeIds = [] } = useProjectCollectionIds(
     enabled ? projectId : undefined,
     enabled ? user?.id : undefined,
   );
@@ -118,11 +118,12 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
             ) : (
               <ul className="py-1">
                 {collections.map((c) => {
-                  const isIn = activeIds.has(c.id);
+                  const isIn = activeIds.includes(c.id);
                   return (
                     <li key={c.id}>
                       <button
-                        onClick={() => toggleItem(c.id, isIn)}
+                        type="button"
+                        onClick={() => void toggleItem(c.id, isIn)}
                         disabled={toggle.isPending}
                         className="w-full flex items-center gap-3 px-3 py-2 hover:bg-accent text-left transition-colors"
                       >

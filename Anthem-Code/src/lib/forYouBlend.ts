@@ -98,6 +98,7 @@ export function mapSearchQueryToCategories(query: string): string[] {
     "UI/UX": ["ui", "ux", "figma", "interface", "wireframe", "prototype", "design system"],
     "Web / App": ["web", "app", "website", "frontend", "nextjs", "react", "webflow"],
     "3D / CG / Game": ["3d", "cg", "game", "blender", "unity", "unreal", "modeling", "render"],
+    "Art Toy / Model": ["art toy", "arttoy", "figurine", "figure", "soft vinyl", "sofubi", "resin", "garage kit", "model kit", "อาร์ตทอย", "ฟิกเกอร์", "โมเดล"],
     "Architecture / Interior": ["architecture", "interior", "spatial", "building", "floor plan"],
     "Product / Industrial": ["product design", "industrial", "packaging", "cad"],
     "Fashion / Textile": ["fashion", "textile", "garment", "pattern", "lookbook"],

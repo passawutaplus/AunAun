@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { Send, Image as ImageIcon, Loader2, X, FolderOpen } from "lucide-react";
+import { Send, Image as ImageIcon, Loader2, X, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -13,11 +13,36 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import ModerationBanBanner from "@/components/moderation/ModerationBanBanner";
 import { maskProfanity, detectProfanity, PROFANITY_WARNING, COMMUNITY_GUIDELINES_PATH } from "@/lib/profanity";
-import { ChatPortfolioDialog } from "@/components/chat/ChatPortfolioSection";
-import { useChatPortfolio } from "@/components/chat/useChatPortfolio";
 
 const CHAT_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 const CHAT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
+const CHAT_FILE_MAX_BYTES = 25 * 1024 * 1024;
+const CHAT_FILE_EXTS = new Set([
+  "pdf",
+  "zip",
+  "rar",
+  "7z",
+  "doc",
+  "docx",
+  "xls",
+  "xlsx",
+  "ppt",
+  "pptx",
+  "txt",
+  "csv",
+  "ttf",
+  "otf",
+  "woff",
+  "woff2",
+]);
+const CHAT_FILE_ACCEPT = Array.from(CHAT_FILE_EXTS)
+  .map((ext) => `.${ext}`)
+  .join(",");
+
+function fileExt(name: string): string {
+  const i = name.lastIndexOf(".");
+  return i >= 0 ? name.slice(i + 1).toLowerCase() : "";
+}
 
 interface Props {
   conversationId: string;
@@ -32,19 +57,17 @@ interface Props {
 const ChatComposer = ({
   conversationId,
   kind,
-  userId,
   quickReplies = [],
   replyTo,
   replyToSenderName,
   onClearReply,
 }: Props) => {
   const [text, setText] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [portfolioOpen, setPortfolioOpen] = useState(false);
+  const [uploading, setUploading] = useState<"image" | "file" | null>(null);
+  const imageRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const send = useSendMessage();
-  const { data: myProjects = [] } = useChatPortfolio(userId);
 
   useEffect(() => {
     if (replyTo) textareaRef.current?.focus();
@@ -79,7 +102,9 @@ const ChatComposer = ({
       toast.warning(PROFANITY_WARNING, {
         action: {
           label: "กฎชุมชน",
-          onClick: () => { window.location.href = COMMUNITY_GUIDELINES_PATH; },
+          onClick: () => {
+            window.location.href = COMMUNITY_GUIDELINES_PATH;
+          },
         },
       });
     }
@@ -97,7 +122,7 @@ const ChatComposer = ({
     }
   };
 
-  const onAttach = async (file: File) => {
+  const onAttachImage = async (file: File) => {
     if (!CHAT_IMAGE_ACCEPT.split(",").includes(file.type)) {
       toast.error("รองรับเฉพาะ JPG, PNG หรือ WebP");
       return;
@@ -106,7 +131,7 @@ const ChatComposer = ({
       toast.error("รูปใหญ่เกินไป — สูงสุด 8 MB");
       return;
     }
-    setUploading(true);
+    setUploading("image");
     try {
       const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
       const path = `anthem/chat/${conversationId}/${crypto.randomUUID()}.${ext}`;
@@ -125,26 +150,52 @@ const ChatComposer = ({
     } catch (e: unknown) {
       toast.error(getSupabaseErrorMessage(e, "อัปโหลดไม่สำเร็จ"));
     } finally {
-      setUploading(false);
+      setUploading(null);
     }
   };
 
-  const sendProject = async (project: { id: string; title: string }) => {
+  const onAttachFile = async (file: File) => {
+    if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
+      toast.error("รูปและวิดีโอใช้ปุ่มรูปภาพทางขวา");
+      return;
+    }
+    const ext = fileExt(file.name);
+    if (!ext || !CHAT_FILE_EXTS.has(ext)) {
+      toast.error("รองรับ PDF, ZIP, Word, Excel, PowerPoint, TXT, CSV, ฟอนต์");
+      return;
+    }
+    if (file.size > CHAT_FILE_MAX_BYTES) {
+      toast.error("ไฟล์ใหญ่เกินไป — สูงสุด 25 MB");
+      return;
+    }
+    setUploading("file");
     try {
+      const safeName = file.name.replace(/[^\w.\-()\u0E00-\u0E7F]+/g, "_").slice(0, 120);
+      const path = `anthem/chat/${conversationId}/${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await sharedStorage.storage
+        .from(SHARED_MEDIA_BUCKET)
+        .upload(path, file, {
+          upsert: false,
+          contentType: file.type || "application/octet-stream",
+        });
+      if (upErr) throw upErr;
       await send.mutateAsync({
         conversationId,
-        content: project.title,
-        messageType: "project",
-        projectId: project.id,
+        content: safeName || `file.${ext}`,
+        attachmentUrl: path,
+        messageType: "file",
         replyToId: replyTo?.id,
       });
-      toast.success("ส่งผลงานในแชทแล้ว");
-      setPortfolioOpen(false);
       onClearReply?.();
+      toast.success("ส่งไฟล์แล้ว");
     } catch (e: unknown) {
-      toast.error(getSupabaseErrorMessage(e, "ส่งไม่สำเร็จ"));
+      toast.error(getSupabaseErrorMessage(e, "อัปโหลดไฟล์ไม่สำเร็จ"));
+    } finally {
+      setUploading(null);
     }
   };
+
+  const busy = !!uploading || send.isPending;
 
   return (
     <div className="border-t border-border bg-background/80 backdrop-blur-md px-3 py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] shrink-0">
@@ -170,6 +221,7 @@ const ChatComposer = ({
           {quickReplies.map((q) => (
             <button
               key={q}
+              type="button"
               onClick={() => submit(q)}
               className="shrink-0 text-xs px-3 py-1.5 rounded-full border border-border bg-card hover:bg-accent text-foreground transition-colors"
             >
@@ -182,37 +234,55 @@ const ChatComposer = ({
         <input
           ref={fileRef}
           type="file"
+          accept={CHAT_FILE_ACCEPT}
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void onAttachFile(f);
+            e.target.value = "";
+          }}
+        />
+        <input
+          ref={imageRef}
+          type="file"
           accept={CHAT_IMAGE_ACCEPT}
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) onAttach(f);
+            if (f) void onAttachImage(f);
             e.target.value = "";
           }}
         />
-        {userId && myProjects.length > 0 && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="rounded-full shrink-0"
-            onClick={() => setPortfolioOpen(true)}
-            disabled={send.isPending}
-            aria-label="ส่งผลงาน"
-          >
-            <FolderOpen className="w-5 h-5" />
-          </Button>
-        )}
         <Button
           type="button"
           variant="ghost"
           size="icon"
           className="rounded-full shrink-0"
           onClick={() => fileRef.current?.click()}
-          disabled={uploading}
+          disabled={busy}
+          aria-label="แนบไฟล์จากเครื่อง"
+          title="แนบไฟล์ (PDF, ZIP, เอกสาร)"
+        >
+          {uploading === "file" ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Paperclip className="w-5 h-5" />
+          )}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="rounded-full shrink-0"
+          onClick={() => imageRef.current?.click()}
+          disabled={busy}
           aria-label="แนบรูป"
         >
-          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
+          {uploading === "image" ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <ImageIcon className="w-5 h-5" />
+          )}
         </Button>
         <Textarea
           ref={textareaRef}
@@ -221,7 +291,7 @@ const ChatComposer = ({
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              submit();
+              void submit();
             }
           }}
           rows={1}
@@ -234,25 +304,14 @@ const ChatComposer = ({
         <Button
           type="button"
           size="icon"
-          onClick={() => submit()}
-          disabled={!text.trim() || send.isPending}
+          onClick={() => void submit()}
+          disabled={!text.trim() || busy}
           className={cn("rounded-full shrink-0", sendBtn)}
           aria-label="ส่งข้อความ"
         >
           <Send className="w-4 h-4" />
         </Button>
       </div>
-
-      {userId && (
-        <ChatPortfolioDialog
-          open={portfolioOpen}
-          onOpenChange={setPortfolioOpen}
-          title="ส่งผลงานในแชท"
-          projects={myProjects}
-          onSend={sendProject}
-          sending={send.isPending}
-        />
-      )}
     </div>
   );
 };
