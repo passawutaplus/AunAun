@@ -29,6 +29,33 @@ const since = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
 
 const zeroCount = { count: 0, error: null, data: null };
 
+/** Users with last_active_at within this window count as online. */
+export const ADMIN_ONLINE_WINDOW_MS = 5 * 60 * 1000;
+
+export function useAdminPresenceStats() {
+  return useQuery({
+    queryKey: ["admin-presence"],
+    refetchInterval: 15_000,
+    queryFn: async () => {
+      const onlineSince = new Date(Date.now() - ADMIN_ONLINE_WINDOW_MS).toISOString();
+      const [totalRes, onlineRes] = await Promise.all([
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
+        supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .gte("last_active_at", onlineSince),
+      ]);
+      const total = totalRes.count ?? 0;
+      const online = onlineRes.count ?? 0;
+      return {
+        online,
+        offline: Math.max(0, total - online),
+        total,
+      };
+    },
+  });
+}
+
 export function useAdminStats() {
   return useQuery<AdminStats>({
     queryKey: ["admin-stats", isAplus1LaunchMinimal()],

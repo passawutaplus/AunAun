@@ -31,6 +31,7 @@ import {
   ShieldCheck,
   Sparkles,
   FileCheck,
+  Timer,
   UserPlus,
   Users,
   Wallet,
@@ -150,10 +151,10 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         icon: Lightbulb,
       },
       {
-        to: "/admin/seo",
-        label: "SEO",
-        hint: "Sitemap, meta, indexing checklist",
-        icon: Search,
+        to: "/admin/page-time",
+        label: "เวลาบนหน้า",
+        hint: "อยู่หน้าไหนกี่นาที เฉลี่ย/นานสุด",
+        icon: Timer,
       },
       {
         to: "/admin/activity",
@@ -441,6 +442,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         icon: HardDrive,
       },
       {
+        to: "/admin/seo",
+        label: "SEO",
+        hint: "Sitemap, meta, indexing checklist",
+        icon: Search,
+      },
+      {
         to: "/admin/audit",
         label: "บันทึกการใช้งาน",
         hint: "Admin audit trail",
@@ -487,6 +494,7 @@ const SIDEBAR_PATHS_ORDERED: { sectionId: string; to: string }[] = [
   { sectionId: "command", to: "/admin/analytics" },
   { sectionId: "command", to: "/admin/data" },
   { sectionId: "command", to: "/admin/insights" },
+  { sectionId: "command", to: "/admin/page-time" },
   { sectionId: "command", to: "/admin/activity" },
   { sectionId: "command", to: "/admin/dev-tasks" },
   { sectionId: "people", to: "/admin/users" },
@@ -514,6 +522,7 @@ const SIDEBAR_PATHS_ORDERED: { sectionId: string; to: string }[] = [
   { sectionId: "trust", to: "/admin/feedback" },
   { sectionId: "ops", to: "/admin/ai" },
   { sectionId: "ops", to: "/admin/storage" },
+  { sectionId: "ops", to: "/admin/seo" },
   { sectionId: "ops", to: "/admin/audit" },
   { sectionId: "ops", to: "/admin/system" },
 ];

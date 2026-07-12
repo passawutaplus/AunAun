@@ -8,6 +8,7 @@ import { isCategoryAllowed } from "@/lib/cookieConsent";
 
 export type ProductEventName =
   | "page_view"
+  | "page_dwell"
   | "project_view"
   | "profile_view"
   | "feed_search"

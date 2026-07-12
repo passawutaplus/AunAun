@@ -82,6 +82,7 @@ const AdminApplicationsPage = lazy(() => import("./pages/admin/AdminApplications
 const AdminAnalyticsPage = lazy(() => import("./pages/admin/AdminAnalyticsPage"));
 const AdminDataHubPage = lazy(() => import("./pages/admin/AdminDataHubPage"));
 const AdminContentInsightsPage = lazy(() => import("./pages/admin/AdminContentInsightsPage"));
+const AdminPageDwellPage = lazy(() => import("./pages/admin/AdminPageDwellPage"));
 const AdminSeoPage = lazy(() => import("./pages/admin/AdminSeoPage"));
 const AdminSystemPage = lazy(() => import("./pages/admin/AdminSystemPage"));
 const AdminAdsPage = lazy(() => import("./pages/admin/AdminAdsPage"));
@@ -234,6 +235,7 @@ const App = () => (
                 <Route path="analytics" element={<AdminAnalyticsPage />} />
                 <Route path="data" element={<AdminDataHubPage />} />
                 <Route path="insights" element={<AdminContentInsightsPage />} />
+                <Route path="page-time" element={<AdminPageDwellPage />} />
                 <Route path="seo" element={<AdminSeoPage />} />
                 <Route path="contracts" element={<AdminContractsPage />} />
                 <Route path="wallet" element={<AdminWalletPage />} />

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { flushPendingSignupConsent } from "@/lib/legalCompliance";
+import { useTrackActivity } from "@/hooks/useTrackActivity";
 
 type AuthState = {
   session: Session | null;
@@ -33,8 +34,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session, user, loading }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ session, user, loading }}>
+      <ActivityTracker />
+      {children}
+    </AuthContext.Provider>
   );
+}
+
+function ActivityTracker() {
+  const ctx = useContext(AuthContext);
+  useTrackActivity(ctx?.user?.id);
+  return null;
 }
 
 export const useAuth = () => {

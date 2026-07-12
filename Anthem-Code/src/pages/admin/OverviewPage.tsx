@@ -15,7 +15,12 @@ import {
   type AdminNavItem,
   type AdminNavSection,
 } from "@/lib/admin/adminNavigation";
-import { useAdminStats, useAdminTimeline, useLiveActivity } from "@/hooks/admin/useAdminData";
+import {
+  useAdminPresenceStats,
+  useAdminStats,
+  useAdminTimeline,
+  useLiveActivity,
+} from "@/hooks/admin/useAdminData";
 import { useAdminAlertCounts } from "@/hooks/admin/useAdminAlerts";
 
 const typeIcon = {
@@ -86,6 +91,7 @@ function OverviewSection({
 
 export default function OverviewPage() {
   const { data: stats } = useAdminStats();
+  const { data: presence } = useAdminPresenceStats();
   const { data: timeline } = useAdminTimeline(14);
   const events = useLiveActivity();
   const { data: alerts } = useAdminAlertCounts();
@@ -116,6 +122,27 @@ export default function OverviewPage() {
         eyebrow={`${BRAND_NAME} admin / live`}
         title="ภาพรวมแพลตฟอร์ม"
         description={`${BRAND_TAGLINE} — จัดกลุ่มตามเมนูด้านซ้าย อัปเดตทุก ~30 วินาที`}
+        actions={
+          <div
+            className="flex items-stretch gap-3 rounded-sm border border-admin-border bg-admin-surface px-3 py-2"
+            title="ออนไลน์ = มีกิจกรรมภายใน 5 นาทีล่าสุด"
+          >
+            <div className="min-w-[4.5rem] text-right">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-admin-muted">ออนไลน์</p>
+              <p className="mt-0.5 flex items-center justify-end gap-1.5 font-mono text-xl tabular-nums text-admin-fg">
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
+                {presence?.online ?? "—"}
+              </p>
+            </div>
+            <div className="w-px self-stretch bg-admin-border" aria-hidden />
+            <div className="min-w-[4.5rem] text-right">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-admin-muted">ออฟไลน์</p>
+              <p className="mt-0.5 font-mono text-xl tabular-nums text-admin-muted">
+                {presence?.offline ?? "—"}
+              </p>
+            </div>
+          </div>
+        }
       />
 
       <section className="grid gap-3 md:grid-cols-3">

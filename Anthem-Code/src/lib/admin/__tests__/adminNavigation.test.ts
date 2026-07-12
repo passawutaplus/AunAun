@@ -34,6 +34,7 @@ describe("adminNavigation launch minimal", () => {
     expect(paths).not.toContain("/admin/jobs");
     expect(paths).toContain("/admin/data");
     expect(paths).toContain("/admin/insights");
+    expect(paths).toContain("/admin/page-time");
     expect(paths).toContain("/admin/projects");
     expect(paths).toContain("/admin/chats");
     expect(paths).toContain("/admin/compliance");

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Download, Database, ShieldAlert, Lightbulb } from "lucide-react";
+import { Download, Database, ShieldAlert, Lightbulb, Activity, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import SectionHeader from "@/components/admin/SectionHeader";
 import KpiCard from "@/components/admin/KpiCard";
@@ -48,7 +48,7 @@ export default function AdminDataHubPage() {
       <SectionHeader
         eyebrow="คลังข้อมูล"
         title="Data Hub — ข้อมูลดิบ"
-        description="รวบรวมการเคลื่อนไหวของผู้ใช้เพื่อวิเคราะห์ธุรกิจและการตลาด ส่งออกเป็น CSV ใน ZIP (รองรับภาษาไทยใน Excel)"
+        description="รวบรวม Insights ผลงาน · กิจกรรมทั้งเว็บ · เวลาบนหน้า และ funnel — ส่งออก CSV ใน ZIP ทีเดียว (รองรับภาษาไทยใน Excel)"
         actions={
           <div className="flex flex-wrap gap-1">
             {RANGES.map((r) => (
@@ -135,7 +135,19 @@ export default function AdminDataHubPage() {
         <Button type="button" size="sm" variant="outline" className="rounded-sm border-admin-border" asChild>
           <Link to="/admin/insights">
             <Lightbulb className="w-3.5 h-3.5 mr-1.5" />
-            ดู Insights ผลงาน
+            Insights ผลงาน
+          </Link>
+        </Button>
+        <Button type="button" size="sm" variant="outline" className="rounded-sm border-admin-border" asChild>
+          <Link to="/admin/activity">
+            <Activity className="w-3.5 h-3.5 mr-1.5" />
+            กิจกรรมทั้งเว็บ
+          </Link>
+        </Button>
+        <Button type="button" size="sm" variant="outline" className="rounded-sm border-admin-border" asChild>
+          <Link to="/admin/page-time">
+            <Clock className="w-3.5 h-3.5 mr-1.5" />
+            เวลาบนหน้า
           </Link>
         </Button>
       </div>

@@ -116,7 +116,7 @@ export const DATA_TABLE_LABELS_TH: Record<string, string> = {
   comments: "คอมเมนต์",
   follows: "ติดตาม",
   product_events: "อีเวนต์ผลิตภัณฑ์",
-  platform_events: "อีเวนต์แพลตฟอร์ม",
+  platform_events: "กิจกรรมทั้งเว็บ",
   ecosystem_links: "ลิงก์ข้ามแอป",
   feedback: "ฟีดแบ็ก",
   top_views: "ผลงานคนดูเยอะ",
@@ -126,6 +126,12 @@ export const DATA_TABLE_LABELS_TH: Record<string, string> = {
   opportunity_gaps: "ช่องว่างโอกาสจ้าง",
   category_stats: "สถิติตามหมวด",
   projects_ranked: "จัดอันดับผลงาน",
+  page_dwell_events: "เวลาบนหน้าดิบ",
+  page_time_longest_avg: "เวลาบนหน้าเฉลี่ยนานสุด",
+  page_time_shortest_avg: "เวลาบนหน้าเฉลี่ยน้อยสุด",
+  page_time_longest_max: "เวลาบนหน้านานสุดครั้งเดียว",
+  page_time_by_feature: "เวลาบนหน้าตามฟีเจอร์",
+  page_time_paths_ranked: "เวลาบนหน้าจัดอันดับ",
 };
 
 export function packTablesToCsvFiles(
@@ -181,7 +187,22 @@ export const DATA_HUB_PACKS = [
   {
     id: "full" as const,
     label: "ข้อมูลดิบทั้งหมด",
-    hint: "ผู้ใช้ ผลงาน funnel engagement และอีเวนต์",
+    hint: "รวม Insights · กิจกรรมทั้งเว็บ · เวลาบนหน้า · funnel · อีเวนต์",
+  },
+  {
+    id: "content" as const,
+    label: "Insights ผลงาน",
+    hint: "top/bottom views, rising, หมวด, วิวสูงแต่ไม่แปลง",
+  },
+  {
+    id: "activity" as const,
+    label: "กิจกรรมทั้งเว็บ",
+    hint: "platform_events เหตุการณ์ล่าสุดทั้งระบบ",
+  },
+  {
+    id: "page_time" as const,
+    label: "เวลาบนหน้า",
+    hint: "page_dwell ดิบ + จัดอันดับเฉลี่ย/นานสุด/น้อยสุด",
   },
   {
     id: "growth" as const,
@@ -207,11 +228,6 @@ export const DATA_HUB_PACKS = [
     id: "marketing" as const,
     label: "การตลาด",
     hint: "ผู้ใช้ ลีด funnel ลิงก์ข้ามแอป ฟีดแบ็ก",
-  },
-  {
-    id: "content" as const,
-    label: "ผลงาน (คนดูเยอะ/น้อย)",
-    hint: "top/bottom views, หมวด, วิวสูงแต่ไม่แปลง",
   },
 ];
 
