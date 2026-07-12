@@ -1,5 +1,9 @@
--- Fast path: bump conversation, in-app chat notification, enable realtime for bell/list/likes
--- Applied to remote via Supabase MCP (chat_notify_realtime_fast_path). Keep for source of truth.
+-- Full corrected trigger source (keep in sync with remote)
+-- Applied via MCP: fix_chat_trigger_replica_identity
+
+ALTER TABLE shared.conversations REPLICA IDENTITY FULL;
+ALTER TABLE shared.notifications REPLICA IDENTITY FULL;
+ALTER TABLE shared.messages REPLICA IDENTITY FULL;
 
 CREATE OR REPLACE FUNCTION shared.trg_messages_bump_and_notify()
 RETURNS trigger
@@ -51,7 +55,7 @@ BEGIN
     END IF;
   END IF;
 
-  IF cardinality(recipients) = 0 THEN
+  IF recipients IS NULL OR cardinality(recipients) = 0 THEN
     RETURN NEW;
   END IF;
 
@@ -74,6 +78,7 @@ BEGIN
   title_text := sender_name || ' ส่งข้อความ';
 
   FOREACH recipient IN ARRAY recipients LOOP
+    existing_id := NULL;
     SELECT n.id INTO existing_id
     FROM shared.notifications n
     WHERE n.user_id = recipient
@@ -123,25 +128,3 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-DROP TRIGGER IF EXISTS trg_messages_bump_and_notify ON shared.messages;
-CREATE TRIGGER trg_messages_bump_and_notify
-  AFTER INSERT ON shared.messages
-  FOR EACH ROW
-  EXECUTE FUNCTION shared.trg_messages_bump_and_notify();
-
-DO $$
-BEGIN
-  BEGIN
-    ALTER PUBLICATION supabase_realtime ADD TABLE shared.notifications;
-  EXCEPTION WHEN duplicate_object THEN NULL;
-  END;
-  BEGIN
-    ALTER PUBLICATION supabase_realtime ADD TABLE shared.conversations;
-  EXCEPTION WHEN duplicate_object THEN NULL;
-  END;
-  BEGIN
-    ALTER PUBLICATION supabase_realtime ADD TABLE anthem.project_likes;
-  EXCEPTION WHEN duplicate_object THEN NULL;
-  END;
-END $$;

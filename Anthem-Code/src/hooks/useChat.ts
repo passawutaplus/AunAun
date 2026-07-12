@@ -329,11 +329,7 @@ export const useSendMessage = () => {
       }
       if (error) throw error;
 
-      // Backup bump if DB trigger is unavailable; trigger is source of truth.
-      void supabase
-        .from("conversations")
-        .update({ last_message_at: new Date().toISOString() })
-        .eq("id", conversationId);
+      // last_message_at is bumped by DB trigger trg_messages_bump_and_notify
 
       if (messageType !== "system") {
         void supabase.functions.invoke("notify-anthem-chat", {
