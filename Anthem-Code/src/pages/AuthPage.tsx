@@ -30,6 +30,7 @@ import {
   BRAND_TAGLINE,
 } from "@/lib/brandConfig";
 import SeoHead from "@/components/SeoHead";
+import { hasCompletedFeedInterestSurvey } from "@/hooks/useFeedInterests";
 
 const PasswordInput = ({ id, value, onChange, placeholder, autoComplete, minLength, required, invalid }: {
   id: string;
@@ -89,10 +90,23 @@ const AuthPage = () => {
   }, [rawRedirect, params, navigate]);
 
   useEffect(() => {
-    if (user) {
-      setFadeOut(true);
-      setTimeout(() => navigate(redirect, { replace: true }), 250);
-    }
+    if (!user) return;
+    let cancelled = false;
+    setFadeOut(true);
+    void (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("feed_interests, feed_interests_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const needsInterestSurvey = !hasCompletedFeedInterestSurvey(data);
+      const dest = needsInterestSurvey ? "/" : redirect;
+      window.setTimeout(() => navigate(dest, { replace: true }), 250);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [user, navigate, redirect]);
 
   return (

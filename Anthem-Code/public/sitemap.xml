@@ -43,6 +43,15 @@
     <priority>0.2</priority>
   </url>
   <url>
+    <loc>https://aplus1.app/project/3a95c87d-fe79-4a70-8d34-dcd3ee453ca5</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://zkflkpbmbozrchqncpzi.supabase.co/storage/v1/object/public/project-media/anthem/09a013b7-4f44-461c-a0dc-57dbe4dff876/3dbb8f52-3e45-4e60-9179-e89712e98738/7ad2ca5d-8692-4307-867a-a87cac74e8c9.png</image:loc>
+      <image:title>ทผส้ดเ้หรเ้รกดนเ</image:title>
+    </image:image>
+  </url>
+  <url>
     <loc>https://aplus1.app/project/1fa5f711-4b42-4de1-a755-4573d5e89ce0</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -70,21 +79,12 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000002e</loc>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000045</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>Pattern SS26</image:title>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000044</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>ผลงานต่อยอด — Calligraphy wedding suite</image:title>
+      <image:loc>https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>ผลงานต่อยอด — Content playbook F&amp;B</image:title>
     </image:image>
   </url>
   <url>
@@ -103,6 +103,15 @@
     <image:image>
       <image:loc>https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
       <image:title>Podcast cover series</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000002e</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>Pattern SS26</image:title>
     </image:image>
   </url>
   <url>
@@ -223,21 +232,21 @@
     </image:image>
   </url>
   <url>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000044</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>ผลงานต่อยอด — Calligraphy wedding suite</image:title>
+    </image:image>
+  </url>
+  <url>
     <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000002a</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
       <image:loc>https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
       <image:title>Mural คาเฟ่ 12m</image:title>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000045</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>ผลงานต่อยอด — Content playbook F&amp;B</image:title>
     </image:image>
   </url>
   <url>
@@ -520,15 +529,6 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000000d</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>Motion Graphic อธิบายสินค้า</image:title>
-    </image:image>
-  </url>
-  <url>
     <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000011</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -538,12 +538,12 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000000b</loc>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000000</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>พรีเวดดิ้งสไตล์มินิมอลเชียงราย</image:title>
+      <image:loc>https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>โลโก้ร้านกาแฟเชียงใหม่ Doi Brew</image:title>
     </image:image>
   </url>
   <url>
@@ -574,24 +574,6 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000000</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>โลโก้ร้านกาแฟเชียงใหม่ Doi Brew</image:title>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000010</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>Mascot น้องหมูเด้ง Pop Art</image:title>
-    </image:image>
-  </url>
-  <url>
     <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000009</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -601,21 +583,12 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000004</loc>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000000d</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>เซรามิกสไตล์มินิมอล Earth Tone</image:title>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000006</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>UI App จองคิวสปา Thai Wellness</image:title>
+      <image:loc>https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>Motion Graphic อธิบายสินค้า</image:title>
     </image:image>
   </url>
   <url>
@@ -628,12 +601,21 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000013</loc>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000004</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>เว็บไซต์โรงแรม Boutique หัวหิน</image:title>
+      <image:loc>https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>เซรามิกสไตล์มินิมอล Earth Tone</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000007</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>Landing Page คอร์สเรียนทำขนม</image:title>
     </image:image>
   </url>
   <url>
@@ -643,6 +625,15 @@
     <image:image>
       <image:loc>https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
       <image:title>เพลงประกอบโฆษณาแบรนด์ไทย</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000013</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>เว็บไซต์โรงแรม Boutique หัวหิน</image:title>
     </image:image>
   </url>
   <url>
@@ -661,6 +652,15 @@
     <image:image>
       <image:loc>https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
       <image:title>ตัดต่อ Vlog ท่องเที่ยวภาคใต้</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000006</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>UI App จองคิวสปา Thai Wellness</image:title>
     </image:image>
   </url>
   <url>
@@ -691,12 +691,21 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000007</loc>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000000b</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>Landing Page คอร์สเรียนทำขนม</image:title>
+      <image:loc>https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>พรีเวดดิ้งสไตล์มินิมอลเชียงราย</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000010</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>Mascot น้องหมูเด้ง Pop Art</image:title>
     </image:image>
   </url>
   <url>
@@ -858,6 +867,11 @@
     <loc>https://aplus1.app/u/00000000-0000-0000-0000-00000000a01f</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/series/ec0db127-5555-405b-b386-b078c0ca3191</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
   </url>
   <url>
     <loc>https://aplus1.app/series/3b43c6a6-9530-4598-a7ce-44c61b7b14bb</loc>

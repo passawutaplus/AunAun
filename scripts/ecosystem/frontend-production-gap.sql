@@ -170,9 +170,19 @@ CREATE POLICY "collab sender insert"
   WITH CHECK (auth.uid() = sender_id AND sender_id <> recipient_id);
 
 DROP POLICY IF EXISTS "collab recipient update" ON anthem.collab_requests;
-CREATE POLICY "collab recipient update"
+DROP POLICY IF EXISTS "collab participants update" ON anthem.collab_requests;
+CREATE POLICY "collab participants update"
   ON anthem.collab_requests FOR UPDATE TO authenticated
-  USING (auth.uid() = recipient_id OR public.has_role(auth.uid(), 'admin'));
+  USING (
+    auth.uid() = recipient_id
+    OR auth.uid() = sender_id
+    OR public.has_role(auth.uid(), 'admin')
+  )
+  WITH CHECK (
+    auth.uid() = recipient_id
+    OR auth.uid() = sender_id
+    OR public.has_role(auth.uid(), 'admin')
+  );
 
 -- ========== ecosystem_notifications view ==========
 DO $$ BEGIN

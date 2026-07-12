@@ -187,11 +187,20 @@ CREATE POLICY "Anyone can view requests"
   );
 
 DROP POLICY IF EXISTS "Freelancer can update their requests" ON anthem.hiring_requests;
-CREATE POLICY "Freelancer can update their requests"
+DROP POLICY IF EXISTS "Participants can update hiring requests" ON anthem.hiring_requests;
+CREATE POLICY "Participants can update hiring requests"
   ON anthem.hiring_requests FOR UPDATE TO authenticated
   USING (
     auth.uid() = freelancer_id
+    OR auth.uid() = client_id
     OR (studio_id IS NOT NULL AND public.is_studio_admin(studio_id))
+    OR public.has_role(auth.uid(), 'admin')
+  )
+  WITH CHECK (
+    auth.uid() = freelancer_id
+    OR auth.uid() = client_id
+    OR (studio_id IS NOT NULL AND public.is_studio_admin(studio_id))
+    OR public.has_role(auth.uid(), 'admin')
   );
 
 DROP POLICY IF EXISTS "Authenticated users can create requests" ON anthem.hiring_requests;

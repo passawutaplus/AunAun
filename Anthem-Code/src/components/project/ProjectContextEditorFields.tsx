@@ -35,6 +35,7 @@ type Props = {
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
   disabled?: boolean;
+  shortDescriptionInvalid?: boolean;
 };
 
 const fieldLabel = "text-xs font-semibold text-muted-foreground";
@@ -47,6 +48,7 @@ const ProjectContextEditorFields = ({
   expanded,
   onExpandedChange,
   disabled,
+  shortDescriptionInvalid,
 }: Props) => {
   const [roleMode, setRoleMode] = useState<CreatorRoleMode | "">(() =>
     creatorRoleModeFromValue(value.creatorRole),
@@ -63,7 +65,7 @@ const ProjectContextEditorFields = ({
 
   return (
     <section className="space-y-3">
-      <div className="space-y-1.5">
+      <div className="space-y-1.5" id="project-short-description">
         <Label className={fieldLabel}>
           รายละเอียดแบบย่อ <span className="text-primary">*</span>
         </Label>
@@ -75,7 +77,11 @@ const ProjectContextEditorFields = ({
           maxLength={2000}
           required
           disabled={disabled}
-          className="bg-background resize-y min-h-[80px] text-sm"
+          aria-invalid={shortDescriptionInvalid || undefined}
+          className={cn(
+            "bg-background resize-y min-h-[80px] text-sm",
+            shortDescriptionInvalid && "border-destructive focus-visible:ring-destructive/40",
+          )}
           aria-required
         />
       </div>
@@ -87,12 +93,12 @@ const ProjectContextEditorFields = ({
         aria-controls="project-context-fields"
         disabled={disabled}
         onClick={() => onExpandedChange(!expanded)}
-        className="flex w-full items-center justify-center gap-1.5 py-1 text-sm font-medium text-foreground hover:text-primary transition-colors disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-muted/70 px-3 py-2.5 text-sm font-medium text-primary hover:bg-muted transition-colors disabled:opacity-50"
       >
         <span>เล่าเบื้องหลังผลงานเพิ่มเติม</span>
         <ChevronDown
           className={cn(
-            "w-4 h-4 text-muted-foreground transition-transform duration-200",
+            "w-4 h-4 text-primary transition-transform duration-200",
             expanded && "rotate-180",
           )}
           aria-hidden

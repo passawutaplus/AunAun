@@ -1,17 +1,24 @@
 import type { LucideIcon } from "lucide-react";
-import { Briefcase, Copyright, Eye, Link2, PenLine, User } from "lucide-react";
+import { Briefcase, Copyright, CreativeCommons, Link2, PenLine, Unlock, User } from "lucide-react";
 import { BRAND_NAME } from "@/lib/brandConfig";
 
+/** All values that may exist in DB (including legacy). */
 export const LICENSE_TYPES = [
   "all_rights",
   "portfolio_only",
   "personal_ok",
   "attribution_ok",
   "commercial_license",
+  "free_use",
   "custom",
 ] as const;
 
 export type LicenseType = (typeof LICENSE_TYPES)[number];
+
+/** Choices shown in the project editor picker. */
+export const LICENSE_PICKER_TYPES = ["all_rights", "attribution_ok", "free_use", "custom"] as const;
+
+export type LicensePickerType = (typeof LICENSE_PICKER_TYPES)[number];
 
 export interface LicenseMeta {
   id: LicenseType;
@@ -28,23 +35,23 @@ export interface LicenseMeta {
 export const LICENSE_PRESETS: Record<LicenseType, LicenseMeta> = {
   all_rights: {
     id: "all_rights",
-    icon: Copyright,
+    icon: CreativeCommons,
     shortLabel: "สงวนสิทธิ์ทั้งหมด",
-    description: `ดูได้บน ${BRAND_NAME} เท่านั้น ห้ามคัดลอกหรือนำไปใช้`,
+    description: "ผู้อื่นสามารถรับชมผลงานได้เท่านั้น ต้องขออนุญาตก่อนนำไปใช้ คัดลอก หรือดัดแปลง",
     detailParagraph:
-      `ผลงานนี้แสดงบน ${BRAND_NAME} เพื่อชมเท่านั้น ห้ามดาวน์โหลด คัดลอก หรือนำไปใช้ซ้ำโดยไม่ได้รับอนุญาตจากเจ้าของผลงาน`,
+      `ผู้อื่นสามารถรับชมผลงานได้เท่านั้นบน ${BRAND_NAME} — ต้องขออนุญาตจากเจ้าของก่อนนำไปใช้ คัดลอก หรือดัดแปลง`,
     allowsReuse: false,
     allowsCommercial: false,
     requiresAttribution: false,
     tooltipLines: [
-      "ใช้ซ้ำ: ไม่ได้",
-      "เชิงพาณิชย์: ต้องติดต่อเจ้าของ",
-      "อ้างอิง: ไม่จำเป็น",
+      "รับชม: ได้",
+      "คัดลอก/ดัดแปลง: ต้องขออนุญาต",
+      "เชิงพาณิชย์: ต้องขออนุญาต",
     ],
   },
   portfolio_only: {
     id: "portfolio_only",
-    icon: Eye,
+    icon: Copyright,
     shortLabel: "โชว์พอร์ตเท่านั้น",
     description: "แสดงเป็นตัวอย่างผลงาน ไม่ให้ดาวน์โหลดหรือใช้ซ้ำ",
     detailParagraph:
@@ -78,16 +85,17 @@ export const LICENSE_PRESETS: Record<LicenseType, LicenseMeta> = {
     id: "attribution_ok",
     icon: Link2,
     shortLabel: "อ้างอิงได้",
-    description: "ใช้ได้ถ้าระบุเครดิตชื่อครีเอเตอร์",
+    description:
+      "อนุญาตให้แชร์ผลงานหรือลิงก์ได้เลย แต่ต้องระบุชื่อเจ้าของผลงานเสมอ โดยห้ามดัดแปลงและห้ามใช้เชิงพาณิชย์",
     detailParagraph:
-      "อนุญาตให้นำไปใช้ได้ถ้าระบุชื่อครีเอเตอร์และลิงก์กลับมาที่ผลงานนี้ การใช้เชิงพาณิชย์ควรติดต่อเจ้าของก่อน",
+      "อนุญาตให้แชร์ผลงานหรือลิงก์ได้เลย แต่ต้องระบุชื่อเจ้าของผลงานเสมอ ห้ามดัดแปลง และห้ามใช้เชิงพาณิชย์",
     allowsReuse: true,
     allowsCommercial: false,
     requiresAttribution: true,
     tooltipLines: [
-      "ใช้ซ้ำ: ได้ (ต้องอ้างอิง)",
-      "เชิงพาณิชย์: ติดต่อเจ้าของ",
-      "อ้างอิง: จำเป็น",
+      "แชร์/ลิงก์: ได้ (ต้องระบุเครดิต)",
+      "ดัดแปลง: ไม่ได้",
+      "เชิงพาณิชย์: ไม่ได้",
     ],
   },
   commercial_license: {
@@ -104,6 +112,22 @@ export const LICENSE_PRESETS: Record<LicenseType, LicenseMeta> = {
       "ใช้ซ้ำ: ต้องติดต่อจ้าง",
       "เชิงพาณิชย์: ติดต่อเจ้าของ",
       "อ้างอิง: ตามสัญญา",
+    ],
+  },
+  free_use: {
+    id: "free_use",
+    icon: Unlock,
+    shortLabel: "เปิดให้ใช้ได้อย่างอิสระ",
+    description: "อนุญาตให้ คัดลอก ดัดแปลง หรือนำไปใช้ทั้งส่วนตัว และเชิงพาณิชย์ได้เลย",
+    detailParagraph:
+      "อนุญาตให้คัดลอก ดัดแปลง หรือนำไปใช้ได้ทั้งส่วนตัวและเชิงพาณิชย์ โดยไม่ต้องขออนุญาตเพิ่ม",
+    allowsReuse: true,
+    allowsCommercial: true,
+    requiresAttribution: false,
+    tooltipLines: [
+      "คัดลอก/ดัดแปลง: ได้",
+      "ส่วนตัว: ได้",
+      "เชิงพาณิชย์: ได้",
     ],
   },
   custom: {
@@ -123,7 +147,20 @@ export const LICENSE_PRESETS: Record<LicenseType, LicenseMeta> = {
   },
 };
 
-export const LICENSE_LIST = LICENSE_TYPES.map((id) => LICENSE_PRESETS[id]);
+/** Options shown when picking a license (editor + legal docs). */
+export const LICENSE_LIST = LICENSE_PICKER_TYPES.map((id) => LICENSE_PRESETS[id]);
+
+export function isLicensePickerType(v: string): v is LicensePickerType {
+  return (LICENSE_PICKER_TYPES as readonly string[]).includes(v);
+}
+
+/** Picker options; if current value is a legacy type, keep it visible so Select stays valid. */
+export function getLicensePickerOptions(current?: string | null): LicenseMeta[] {
+  if (current && isLicenseType(current) && !isLicensePickerType(current)) {
+    return [LICENSE_PRESETS[current], ...LICENSE_LIST];
+  }
+  return LICENSE_LIST;
+}
 
 export function getLicenseMeta(type: string | null | undefined): LicenseMeta {
   if (type && type in LICENSE_PRESETS) {
@@ -140,6 +177,7 @@ export function isLicenseType(v: string): v is LicenseType {
 export function suggestIpOwner(licenseType: LicenseType): "hirer" | "contractor" | "shared" {
   if (licenseType === "commercial_license") return "hirer";
   if (licenseType === "attribution_ok" || licenseType === "personal_ok") return "shared";
+  if (licenseType === "free_use") return "shared";
   return "contractor";
 }
 

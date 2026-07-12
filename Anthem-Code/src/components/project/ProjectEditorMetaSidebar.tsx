@@ -34,6 +34,7 @@ export function ProjectEditorMetaSidebar({
   return (
     <>
       <aside
+        id="project-meta-sidebar"
         className={cn(
           "order-first shrink-0 transition-[width] duration-200 ease-out lg:order-none lg:sticky lg:top-16 lg:z-auto lg:self-start",
           expanded

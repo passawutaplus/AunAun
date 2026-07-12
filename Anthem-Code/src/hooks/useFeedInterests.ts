@@ -25,6 +25,15 @@ async function ensureProfileRow(userId: string): Promise<void> {
   if (error && !/duplicate|unique/i.test(error.message)) throw error;
 }
 
+/** Completed only when user actually picked ≥1 interest (skip must not count). */
+export function hasCompletedFeedInterestSurvey(data: {
+  feed_interests?: string[] | null;
+  feed_interests_at?: string | null;
+} | null | undefined): boolean {
+  const interests = data?.feed_interests ?? [];
+  return Boolean(data?.feed_interests_at) && interests.length > 0;
+}
+
 export function useFeedInterestSurvey(userId: string | undefined) {
   const qc = useQueryClient();
 
@@ -48,6 +57,9 @@ export function useFeedInterestSurvey(userId: string | undefined) {
   const markComplete = useMutation({
     mutationFn: async (interests: FeedInterestId[]) => {
       if (!userId) throw new Error("ยังไม่ได้เข้าสู่ระบบ");
+      if (interests.length === 0) {
+        throw new Error("เลือกอย่างน้อย 1 แนวที่สนใจ");
+      }
       await ensureProfileRow(userId);
       const completedAt = new Date().toISOString();
       const { data, error } = await supabase
@@ -77,14 +89,16 @@ export function useFeedInterestSurvey(userId: string | undefined) {
   });
 
   const interests = (profileQuery.data?.feed_interests ?? []) as FeedInterestId[];
-  const shouldShow = !!userId && !profileQuery.isLoading && !profileQuery.data?.feed_interests_at;
+  const shouldShow =
+    !!userId && !profileQuery.isLoading && !hasCompletedFeedInterestSurvey(profileQuery.data);
 
   return {
     shouldShow,
     interests,
     isLoading: profileQuery.isLoading,
     save: (selected: FeedInterestId[]) => markComplete.mutateAsync(selected),
-    skip: () => markComplete.mutateAsync([]),
+    /** Session-only dismiss — next login shows survey again until they pick interests. */
+    skip: async () => undefined,
     isSaving: markComplete.isPending,
   };
 }

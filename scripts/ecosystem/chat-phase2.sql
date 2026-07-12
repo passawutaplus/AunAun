@@ -87,24 +87,83 @@ REVOKE ALL ON FUNCTION shared.user_in_conversation(uuid, uuid) FROM PUBLIC, anon
 GRANT EXECUTE ON FUNCTION shared.user_in_conversation(uuid, uuid) TO authenticated, service_role;
 
 -- Update message policies to use helper (drop old participant checks)
+﻿-- Messages participant policies without shared.user_in_conversation()
+
 DROP POLICY IF EXISTS "Participants can view messages" ON shared.messages;
 CREATE POLICY "Participants can view messages"
   ON shared.messages FOR SELECT TO authenticated
-  USING (shared.user_in_conversation(conversation_id, auth.uid()));
+  USING (
+    EXISTS (
+      SELECT 1 FROM shared.conversations c
+      WHERE c.id = messages.conversation_id
+        AND (
+          c.client_id = auth.uid()
+          OR c.freelancer_id = auth.uid()
+          OR c.created_by = auth.uid()
+          OR EXISTS (
+            SELECT 1 FROM shared.conversation_members m
+            WHERE m.conversation_id = c.id AND m.user_id = auth.uid()
+          )
+        )
+    )
+    OR public.has_role(auth.uid(), 'admin')
+  );
 
 DROP POLICY IF EXISTS "Participants can send messages" ON shared.messages;
 CREATE POLICY "Participants can send messages"
   ON shared.messages FOR INSERT TO authenticated
   WITH CHECK (
     auth.uid() = sender_id
-    AND shared.user_in_conversation(conversation_id, auth.uid())
+    AND EXISTS (
+      SELECT 1 FROM shared.conversations c
+      WHERE c.id = conversation_id
+        AND (
+          c.client_id = auth.uid()
+          OR c.freelancer_id = auth.uid()
+          OR c.created_by = auth.uid()
+          OR EXISTS (
+            SELECT 1 FROM shared.conversation_members m
+            WHERE m.conversation_id = c.id AND m.user_id = auth.uid()
+          )
+        )
+    )
   );
 
-DROP POLICY IF EXISTS "Recipient can mark as read" ON shared.messages;
+DROP POLICY IF EXISTS "Participants can update messages" ON shared.messages;
 CREATE POLICY "Participants can update messages"
   ON shared.messages FOR UPDATE TO authenticated
-  USING (shared.user_in_conversation(conversation_id, auth.uid()))
-  WITH CHECK (shared.user_in_conversation(conversation_id, auth.uid()));
+  USING (
+    EXISTS (
+      SELECT 1 FROM shared.conversations c
+      WHERE c.id = messages.conversation_id
+        AND (
+          c.client_id = auth.uid()
+          OR c.freelancer_id = auth.uid()
+          OR c.created_by = auth.uid()
+          OR EXISTS (
+            SELECT 1 FROM shared.conversation_members m
+            WHERE m.conversation_id = c.id AND m.user_id = auth.uid()
+          )
+        )
+    )
+    OR public.has_role(auth.uid(), 'admin')
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM shared.conversations c
+      WHERE c.id = messages.conversation_id
+        AND (
+          c.client_id = auth.uid()
+          OR c.freelancer_id = auth.uid()
+          OR c.created_by = auth.uid()
+          OR EXISTS (
+            SELECT 1 FROM shared.conversation_members m
+            WHERE m.conversation_id = c.id AND m.user_id = auth.uid()
+          )
+        )
+    )
+    OR public.has_role(auth.uid(), 'admin')
+  );
 
 DROP POLICY IF EXISTS "Sender can unsend own messages" ON shared.messages;
 CREATE POLICY "Sender can unsend own messages"
@@ -116,24 +175,53 @@ CREATE POLICY "Sender can unsend own messages"
   WITH CHECK (auth.uid() = sender_id);
 
 -- Conversation policies for groups
+﻿-- Fix conversations INSERT...RETURNING RLS 403 for hire/collab instant chat.
+
 DROP POLICY IF EXISTS "Participants can view conversations" ON shared.conversations;
 CREATE POLICY "Participants can view conversations"
   ON shared.conversations FOR SELECT TO authenticated
-  USING (shared.user_in_conversation(id, auth.uid()));
-
-DROP POLICY IF EXISTS "Participants can create conversations" ON shared.conversations;
-CREATE POLICY "Participants can create conversations"
-  ON shared.conversations FOR INSERT TO authenticated
-  WITH CHECK (
-    auth.uid() = created_by
-    OR auth.uid() = client_id
+  USING (
+    auth.uid() = client_id
     OR auth.uid() = freelancer_id
+    OR auth.uid() = created_by
+    OR EXISTS (
+      SELECT 1 FROM shared.conversation_members m
+      WHERE m.conversation_id = conversations.id
+        AND m.user_id = auth.uid()
+    )
+    OR public.has_role(auth.uid(), 'admin')
   );
 
 DROP POLICY IF EXISTS "Participants can update conversations" ON shared.conversations;
 CREATE POLICY "Participants can update conversations"
   ON shared.conversations FOR UPDATE TO authenticated
-  USING (shared.user_in_conversation(id, auth.uid()));
+  USING (
+    auth.uid() = client_id
+    OR auth.uid() = freelancer_id
+    OR auth.uid() = created_by
+    OR EXISTS (
+      SELECT 1 FROM shared.conversation_members m
+      WHERE m.conversation_id = conversations.id
+        AND m.user_id = auth.uid()
+    )
+    OR public.has_role(auth.uid(), 'admin')
+  )
+  WITH CHECK (
+    auth.uid() = client_id
+    OR auth.uid() = freelancer_id
+    OR auth.uid() = created_by
+    OR EXISTS (
+      SELECT 1 FROM shared.conversation_members m
+      WHERE m.conversation_id = conversations.id
+        AND m.user_id = auth.uid()
+    )
+    OR public.has_role(auth.uid(), 'admin')
+  );
+
+DROP POLICY IF EXISTS "Admins view all conversations" ON shared.conversations;
+CREATE POLICY "Admins view all conversations"
+  ON shared.conversations FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
 
 -- conversation_members RLS
 DROP POLICY IF EXISTS "Members can view conversation members" ON shared.conversation_members;

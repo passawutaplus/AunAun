@@ -61,7 +61,7 @@ export function ProfileMenuContent({ onNavigate }: ProfileMenuContentProps) {
       <DropdownMenuSeparator />
       <div className="px-2 py-1.5 space-y-1" onPointerDown={preventClose}>
         <ThemeModePicker label="Theme" />
-        <FeedGridDensityPicker label="ฟีดผลงาน" />
+        <FeedGridDensityPicker label="Grid Feed" />
       </div>
       <DropdownMenuSeparator />
       <DropdownMenuItem onClick={() => go("/settings")} className="rounded-lg">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -12,18 +12,28 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FEED_INTEREST_OPTIONS, type FeedInterestId } from "@/data/feedInterestOptions";
+import { type FeedInterestId } from "@/data/feedInterestOptions";
 import { useFeedInterestSurvey } from "@/hooks/useFeedInterests";
+import { useInterestCategoryCovers } from "@/hooks/useInterestCategoryCovers";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+
+/** TEMP preview â€” set false before ship */
+const FORCE_SHOW_INTEREST_SURVEY = false;
 
 export function InterestSurveyGate() {
   const { pathname } = useLocation();
   const { user } = useAuth();
-  const { shouldShow, save, skip, isSaving } = useFeedInterestSurvey(user?.id);
+  const { shouldShow, save, isSaving, isLoading } = useFeedInterestSurvey(user?.id);
   const [selected, setSelected] = useState<Set<FeedInterestId>>(new Set());
   const [dismissed, setDismissed] = useState(false);
   const [cookiePending, setCookiePending] = useState(() => hasConsentBannerPending());
+
+  const surveyVisible = FORCE_SHOW_INTEREST_SURVEY
+    ? !dismissed
+    : Boolean(user && !isLoading && shouldShow && !dismissed && !cookiePending && !shouldDeferInterestSurvey(pathname));
+
+  const { options: interestOptions } = useInterestCategoryCovers(surveyVisible);
 
   useEffect(() => {
     setDismissed(false);
@@ -36,8 +46,7 @@ export function InterestSurveyGate() {
     return () => window.removeEventListener(COOKIE_CONSENT_CHANGED_EVENT, sync);
   }, []);
 
-  if (!shouldShow || dismissed) return null;
-  if (cookiePending || shouldDeferInterestSurvey(pathname)) return null;
+  if (!surveyVisible) return null;
 
   const toggle = (id: FeedInterestId) => {
     setSelected((prev) => {
@@ -50,22 +59,23 @@ export function InterestSurveyGate() {
 
   const handleSave = async () => {
     if (selected.size === 0) return;
+    if (FORCE_SHOW_INTEREST_SURVEY && !user) {
+      setDismissed(true);
+      toast.message("à¸žà¸£à¸µà¸§à¸´à¸§ â€” à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸šà¸±à¸™à¸—à¸¶à¸ (à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¥à¹‡à¸­à¸à¸­à¸´à¸™)");
+      return;
+    }
     try {
       await save(Array.from(selected));
       setDismissed(true);
-      toast.success("บันทึกความสนใจแล้ว — ฟีด Explore จะเสนอผลงานตามแนวที่เลือก");
+      toast.success("à¸šà¸±à¸™à¸—à¸¶à¸à¸„à¸§à¸²à¸¡à¸ªà¸™à¹ƒà¸ˆà¹à¸¥à¹‰à¸§ â€” à¸Ÿà¸µà¸” Explore à¸ˆà¸°à¹€à¸ªà¸™à¸­à¸œà¸¥à¸‡à¸²à¸™à¸•à¸²à¸¡à¹à¸™à¸§à¸—à¸µà¹ˆà¹€à¸¥à¸·à¸­à¸");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : "à¸šà¸±à¸™à¸—à¸¶à¸à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ");
     }
   };
 
   const handleSkip = async () => {
-    try {
-      await skip();
-      setDismissed(true);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "ข้ามไม่สำเร็จ");
-    }
+    // Session dismiss only â€” do not write feed_interests_at so next login asks again
+    setDismissed(true);
   };
 
   return (
@@ -79,18 +89,18 @@ export function InterestSurveyGate() {
           <DialogHeader className="text-left space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-medium w-fit">
               <Sparkles className="h-3.5 w-3.5" aria-hidden />
-              ตั้งค่าฟีดของคุณ
+              à¸•à¸±à¹‰à¸‡à¸„à¹ˆà¸²à¸Ÿà¸µà¸”à¸‚à¸­à¸‡à¸„à¸¸à¸“
             </div>
             <DialogTitle className="text-xl sm:text-2xl thai-display">
-              เลือกแนวที่สนใจ
+              à¹€à¸¥à¸·à¸­à¸à¹à¸™à¸§à¸—à¸µà¹ˆà¸ªà¸™à¹ƒà¸ˆ
             </DialogTitle>
             <DialogDescription className="text-sm thai-body">
-              เลือกได้มากกว่า 1 — เราจะเสนอผลงานใน Explore ตามแนวนี้ แล้วปรับต่อจากพฤติกรรมของคุณ
+              à¹€à¸¥à¸·à¸­à¸à¹„à¸”à¹‰à¸¡à¸²à¸à¸à¸§à¹ˆà¸² 1 â€” à¹€à¸£à¸²à¸ˆà¸°à¹€à¸ªà¸™à¸­à¸œà¸¥à¸‡à¸²à¸™à¹ƒà¸™ Explore à¸•à¸²à¸¡à¹à¸™à¸§à¸™à¸µà¹‰ à¹à¸¥à¹‰à¸§à¸›à¸£à¸±à¸šà¸•à¹ˆà¸­à¸ˆà¸²à¸à¸žà¸¤à¸•à¸´à¸à¸£à¸£à¸¡à¸‚à¸­à¸‡à¸„à¸¸à¸“
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-            {FEED_INTEREST_OPTIONS.map((opt) => {
+            {interestOptions.map((opt) => {
               const active = selected.has(opt.id);
               return (
                 <button
@@ -135,7 +145,7 @@ export function InterestSurveyGate() {
               disabled={isSaving}
               className="rounded-full text-muted-foreground"
             >
-              ข้ามไปก่อน
+              à¸‚à¹‰à¸²à¸¡à¹„à¸›à¸à¹ˆà¸­à¸™
             </Button>
             <Button
               type="button"
@@ -146,10 +156,10 @@ export function InterestSurveyGate() {
               {isSaving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden />
-                  กำลังบันทึก…
+                  à¸à¸³à¸¥à¸±à¸‡à¸šà¸±à¸™à¸—à¸¶à¸â€¦
                 </>
               ) : (
-                `เริ่มดูผลงาน (${selected.size || 0})`
+                `à¹€à¸£à¸´à¹ˆà¸¡à¸”à¸¹à¸œà¸¥à¸‡à¸²à¸™ (${selected.size || 0})`
               )}
             </Button>
           </div>
@@ -158,3 +168,4 @@ export function InterestSurveyGate() {
     </Dialog>
   );
 }
+

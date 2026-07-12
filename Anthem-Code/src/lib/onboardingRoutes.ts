@@ -1,27 +1,15 @@
 /**
- * Routes where task completion must not be blocked by the interest survey or cookie banner.
+ * Routes where the interest survey must not interrupt auth / legal / system flows.
+ * First-time users should see the survey on feed and most app pages after login.
  */
 const DEFERRED_SURVEY_PREFIXES = [
   "/auth",
-  "/chat",
-  "/project/",
-  "/collections",
-  "/portfolio/",
-  "/jobs",
-  "/settings",
-  "/verify",
-  "/advertise",
-  "/admin",
-  "/studio/",
-  "/notifications",
-  "/hire-requests",
-  "/collab-requests",
-  "/contracts/",
-  "/me/",
+  "/legal",
   "/error/",
+  "/admin",
 ] as const;
 
-/** Show interest survey only on discovery/home routes (not deep task flows). */
+/** Defer interest survey only on auth/legal/admin/error — show it for first login elsewhere. */
 export function shouldDeferInterestSurvey(pathname: string): boolean {
   if (pathname === "/") return false;
   return DEFERRED_SURVEY_PREFIXES.some(

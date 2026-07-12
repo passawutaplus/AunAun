@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,8 @@ import { useAuthDialog } from "@/stores/authDialogStore";
 import { ReferralSignupHint } from "@/components/referral/ReferralSignupHint";
 import LegalSignupConsents from "@/components/legal/LegalSignupConsents";
 import { recordSignupConsents, markPendingSignupConsent } from "@/lib/legalCompliance";
+import { isAuthRoute } from "@/lib/onboardingRoutes";
+import { hasCompletedFeedInterestSurvey } from "@/hooks/useFeedInterests";
 
 const PasswordInput = ({ id, value, onChange, placeholder, autoComplete, minLength, required, invalid }: {
   id: string; value: string;
@@ -48,11 +51,31 @@ const PasswordInput = ({ id, value, onChange, placeholder, autoComplete, minLeng
 const AuthDialog = () => {
   const { open, mode, setMode, close, redirectPath } = useAuthDialog();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
 
-  // Auto-close on successful login
+  // Auto-close on successful login — send first-time users home for interest survey
   useEffect(() => {
-    if (user && open) close();
-  }, [user, open, close]);
+    if (!user || !open) return;
+    const dest = redirectPath || "/";
+    close();
+    void (async () => {
+      await qc.invalidateQueries({ queryKey: ["profile", user.id, "feed-interests"] });
+      const { data } = await supabase
+        .from("profiles")
+        .select("feed_interests, feed_interests_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const needsInterestSurvey = !hasCompletedFeedInterestSurvey(data);
+      if (needsInterestSurvey) {
+        navigate("/", { replace: true });
+        return;
+      }
+      if (dest !== "/" && !isAuthRoute(dest.split("?")[0] ?? dest)) {
+        navigate(dest, { replace: true });
+      }
+    })();
+  }, [user, open, close, redirectPath, navigate, qc]);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>

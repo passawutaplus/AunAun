@@ -26,6 +26,12 @@ function FieldBlock({ label, value }: { label: string; value: string }) {
   );
 }
 
+function oneLine(raw: string, max = 88): string {
+  const t = raw.replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max - 1)}…`;
+}
+
 /** Same field order as ProjectContextEditorFields (publish form). */
 const ProjectContextCard = ({ context, className }: Props) => {
   const [open, setOpen] = useState(false);
@@ -41,36 +47,77 @@ const ProjectContextCard = ({ context, className }: Props) => {
     !!creatorRole || !!brief || !!processNote || !!deliverables || !!durationLabel || !!outcomeNote;
   if (!hasAny) return null;
 
+  const peekRole = creatorRole ? oneLine(creatorRole, 72) : "";
+  /** Second peek line: brief first, else next filled field in form order. */
+  const peekSecondary =
+    (brief && { label: "โจทย์", value: oneLine(brief, 96) }) ||
+    (processNote && { label: "วิธีคิด", value: oneLine(processNote, 96) }) ||
+    (deliverables && { label: "สิ่งที่ส่งมอบ", value: oneLine(deliverables, 96) }) ||
+    (durationLabel && { label: "ระยะเวลา", value: oneLine(durationLabel, 96) }) ||
+    (outcomeNote && { label: "ผลลัพธ์", value: oneLine(outcomeNote, 96) }) ||
+    null;
+  const hasPeek = !!peekRole || !!peekSecondary;
+
   return (
     <Collapsible open={open} onOpenChange={setOpen} className={className}>
-      <section className="rounded-2xl glass-panel overflow-hidden">
-        <CollapsibleTrigger asChild>
-          <button
-            type="button"
-            className="w-full flex items-start justify-between gap-3 px-5 py-4 sm:px-6 text-left hover:bg-muted/20 transition-colors"
-            aria-expanded={open}
-            aria-label={open ? "ย่อเล่าเบื้องหลังผลงาน" : "อ่านรายละเอียดเล่าเบื้องหลังผลงานเพิ่มเติม"}
-          >
-            <div className="min-w-0 space-y-1">
-              <h2 className="text-base font-semibold text-foreground">เล่าเบื้องหลังผลงาน</h2>
-              {!open ? (
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  รายละเอียดเพิ่มเติม — โจทย์ บทบาท วิธีคิด และผลลัพธ์ของงานนี้
-                </p>
-              ) : null}
+      <section className="overflow-hidden">
+        <div className="px-5 py-4 sm:px-6 sm:py-5">
+          <div className="min-w-0 space-y-2.5">
+            <div className="space-y-1">
+              <h2 className="text-base font-semibold leading-snug text-foreground sm:text-[17px]">
+                เล่าเบื้องหลังผลงานนี้
+              </h2>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                โจทย์ · บทบาท · วิธีคิด · ผลลัพธ์ — ข้อมูลที่ทีมงานอยากรู้ก่อนคุย
+              </p>
             </div>
-            <ChevronDown
-              className={cn(
-                "w-5 h-5 text-muted-foreground shrink-0 mt-0.5 transition-transform duration-200",
-                open && "rotate-180",
-              )}
-              aria-hidden
-            />
-          </button>
-        </CollapsibleTrigger>
+
+            {!open && hasPeek ? (
+              <div className="space-y-1.5 rounded-xl border border-border/40 bg-background/50 px-3.5 py-3">
+                {peekRole ? (
+                  <p className="text-sm leading-snug text-foreground">
+                    <span className="font-medium text-primary">บทบาท</span>
+                    <span className="text-muted-foreground"> · </span>
+                    {peekRole}
+                  </p>
+                ) : null}
+                {peekSecondary ? (
+                  <p className="text-sm leading-snug text-foreground">
+                    <span className="font-medium text-primary">{peekSecondary.label}</span>
+                    <span className="text-muted-foreground"> · </span>
+                    {peekSecondary.value}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {!open && !hasPeek ? (
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                มีเบื้องหลังงานนี้ให้ดูเพิ่ม — กดอ่านได้ด้านล่าง
+              </p>
+            ) : null}
+
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 py-0.5 text-xs font-medium text-primary transition-opacity hover:opacity-80"
+                aria-expanded={open}
+              >
+                {open ? "ย่อ" : "อ่านเพิ่มเติม"}
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 transition-transform duration-200",
+                    open && "rotate-180",
+                  )}
+                  aria-hidden
+                />
+              </button>
+            </CollapsibleTrigger>
+          </div>
+        </div>
 
         <CollapsibleContent>
-          <div className="space-y-3 border-t border-border/50 px-5 pb-5 pt-5 sm:px-6 sm:pb-6">
+          <div className="space-y-3 border-t border-border/50 px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
             {creatorRole ? <FieldBlock label="บทบาทของฉัน" value={creatorRole} /> : null}
             {brief ? <FieldBlock label="โจทย์ของงาน" value={brief} /> : null}
             {processNote ? <FieldBlock label="วิธีคิด / ขั้นตอนทำงาน" value={processNote} /> : null}

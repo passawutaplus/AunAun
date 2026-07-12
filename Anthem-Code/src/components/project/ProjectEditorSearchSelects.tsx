@@ -10,6 +10,7 @@ type CategoryPickerProps = {
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  invalid?: boolean;
 };
 
 export function ProjectCategoryPicker({
@@ -18,6 +19,7 @@ export function ProjectCategoryPicker({
   onChange,
   placeholder = "เลือกหมวดหมู่",
   disabled,
+  invalid,
 }: CategoryPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -40,10 +42,12 @@ export function ProjectCategoryPicker({
         <button
           type="button"
           disabled={disabled}
+          aria-invalid={invalid || undefined}
           className={cn(
             "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
             "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
             "disabled:cursor-not-allowed disabled:opacity-50",
+            invalid && "border-destructive focus:ring-destructive/40",
           )}
         >
           <span className={cn("truncate", !value && "text-muted-foreground")}>

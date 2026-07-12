@@ -76,7 +76,7 @@ const IntellectualPropertyPage = () => (
 
     <h2>6. ความหมายแต่ละแบบสิทธิ์</h2>
     <div className="not-prose space-y-3 my-4">
-      {LICENSE_LIST.filter((p) => p.id !== "custom").map((preset) => {
+      {LICENSE_LIST.map((preset) => {
         const Icon = preset.icon;
         return (
           <div key={preset.id} className="rounded-xl border border-border/60 p-4 space-y-1">
@@ -85,16 +85,16 @@ const IntellectualPropertyPage = () => (
               {preset.shortLabel}
             </div>
             <p className="text-sm text-muted-foreground">{preset.description}</p>
-            <p className="text-xs text-muted-foreground">{preset.detailParagraph}</p>
+            {preset.id !== "custom" ? (
+              <p className="text-xs text-muted-foreground">{preset.detailParagraph}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                คุณพิมพ์เงื่อนไขเองได้สูงสุด 500 ตัวอักษร — เหมาะกับงานที่มีข้อตกลงเฉพาะ
+              </p>
+            )}
           </div>
         );
       })}
-      <div className="rounded-xl border border-border/60 p-4 space-y-1">
-        <p className="font-medium text-foreground">กำหนดเอง</p>
-        <p className="text-sm text-muted-foreground">
-          คุณพิมพ์เงื่อนไขเองได้สูงสุด 500 ตัวอักษร — เหมาะกับงานที่มีข้อตกลงเฉพาะ
-        </p>
-      </div>
     </div>
 
     <h2>7. ถ้าใช้ asset จากคนอื่น</h2>

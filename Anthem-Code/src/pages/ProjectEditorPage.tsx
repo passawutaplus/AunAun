@@ -192,6 +192,13 @@ const ProjectEditorPage = () => {
   const [rightsAttested, setRightsAttested] = useState(false);
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [publishAttestChecked, setPublishAttestChecked] = useState(false);
+  const [publishFieldErrors, setPublishFieldErrors] = useState<Partial<Record<
+    "title" | "cover" | "shortDescription" | "category" | "licenseNote" | "thirdPartyNote" | "status" | "canvasImage",
+    string
+  >>>({});
+  const [publishChecklist, setPublishChecklist] = useState<string[]>([]);
+  const [publishChecklistTick, setPublishChecklistTick] = useState(0);
+  const [publishPopupOpaque, setPublishPopupOpaque] = useState(false);
   const [toolInput, setToolInput] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -680,6 +687,7 @@ const ProjectEditorPage = () => {
         skipCompression: true,
       });
       setCover(url);
+      clearPublishFieldError("cover");
       setCoverCropFile(null);
       toast.success("อัปโหลดภาพปกสำเร็จ");
     } catch (e) {
@@ -861,12 +869,66 @@ const ProjectEditorPage = () => {
   const cats = categories.filter((c) => c !== "Explore");
   const isUploadingMedia = uploadingCover || uploadingGallery || uploadingVideo;
   const isBusy = publishing || savingDraft || isUploadingMedia;
-  const canPublish = !!title.trim() && !!cover;
-  const publishBlockedReason = !title.trim()
-    ? "กรอกชื่องานก่อนเผยแพร่"
-    : !cover
-      ? "ต้องมีภาพปกก่อนเผยแพร่"
-      : undefined;
+
+  const clearPublishFieldError = useCallback((key: "title" | "cover" | "shortDescription" | "category" | "licenseNote" | "thirdPartyNote" | "status" | "canvasImage") => {
+    setPublishFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      setPublishChecklist(Object.values(next).filter(Boolean));
+      return next;
+    });
+  }, []);
+
+  const collectPublishGaps = useCallback(() => {
+    const errors: typeof publishFieldErrors = {};
+    const checklist: string[] = [];
+    if (!title.trim()) {
+      errors.title = "กรอกชื่องาน";
+      checklist.push("กรอกชื่องาน");
+    }
+    if (!cover.trim()) {
+      errors.cover = "อัปโหลดภาพปก";
+      checklist.push("อัปโหลดภาพปก");
+    }
+    if (!category.trim()) {
+      errors.category = "เลือกหมวดงาน";
+      checklist.push("เลือกหมวดงาน");
+    }
+    if (!shortDescription.trim()) {
+      errors.shortDescription = "กรอกรายละเอียดแบบย่อ";
+      checklist.push("กรอกรายละเอียดแบบย่อ");
+    }
+    if (status !== "Published") {
+      errors.status = "ตั้งการมองเห็นเป็น Published";
+      checklist.push("ตั้งการมองเห็นเป็น Published");
+    }
+    const canvasImages = countMediaByKind(mediaItemsFromBlocks(contentBlocks), "image");
+    if (canvasImages < 1) {
+      errors.canvasImage = "เพิ่มภาพในแคนวาสอย่างน้อย 1 ภาพ";
+      checklist.push("เพิ่มภาพในแคนวาสอย่างน้อย 1 ภาพ");
+    }
+    if (licenseType === "custom" && !licenseNote.trim()) {
+      errors.licenseNote = "กรอกเงื่อนไขสิทธิ์กำหนดเอง";
+      checklist.push("กรอกเงื่อนไขสิทธิ์กำหนดเอง");
+    }
+    if (hasThirdPartyAssets && !thirdPartyNote.trim()) {
+      errors.thirdPartyNote = "ระบุแหล่งที่มาของ asset จากที่อื่น";
+      checklist.push("ระบุแหล่งที่มาของ asset จากที่อื่น");
+    }
+    return { errors, checklist };
+  }, [
+    title,
+    cover,
+    category,
+    shortDescription,
+    status,
+    contentBlocks,
+    licenseType,
+    licenseNote,
+    hasThirdPartyAssets,
+    thirdPartyNote,
+  ]);
 
   const handleSaveDraft = async (silent = false) => {
     const basicsErr = validateProjectBasics({ title, cover_url: cover });
@@ -892,18 +954,68 @@ const ProjectEditorPage = () => {
   };
 
   const handlePublishClick = () => {
-    const basicsErr = validateProjectBasics({ title, cover_url: cover });
-    if (basicsErr) {
-      toast.error(basicsErr);
+    const { errors, checklist } = collectPublishGaps();
+    setPublishFieldErrors(errors);
+    if (checklist.length > 0) {
+      setPublishChecklist(checklist);
+      setPublishPopupOpaque(true);
+      setPublishChecklistTick((n) => n + 1);
+      if (errors.title || errors.cover || errors.category || errors.status) setMetaExpanded(true);
+      const firstKey = Object.keys(errors)[0];
+      window.setTimeout(() => {
+        if (firstKey === "title") titleInputRef.current?.focus();
+        else if (firstKey === "shortDescription") {
+          document.getElementById("project-short-description")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else if (firstKey === "cover" || firstKey === "category" || firstKey === "status") {
+          document.getElementById("project-meta-sidebar")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        } else if (firstKey === "canvasImage") {
+          document.getElementById("project-canvas-editor")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 80);
       return;
     }
-    if (!shortDescription.trim()) {
-      toast.error("กรุณากรอกรายละเอียดแบบย่อ");
-      return;
-    }
+    setPublishChecklist([]);
+    setPublishPopupOpaque(false);
     setPublishAttestChecked(false);
     setPublishConfirmOpen(true);
   };
+
+  useEffect(() => {
+    if (publishChecklist.length === 0) return;
+    const fadeTimer = window.setTimeout(() => setPublishPopupOpaque(false), 2600);
+    const clearTimer = window.setTimeout(() => setPublishChecklist([]), 3000);
+    return () => {
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(clearTimer);
+    };
+  }, [publishChecklist, publishChecklistTick]);
+
+  useEffect(() => {
+    if (countMediaByKind(mediaItemsFromBlocks(contentBlocks), "image") >= 1) {
+      clearPublishFieldError("canvasImage");
+    }
+  }, [contentBlocks, clearPublishFieldError]);
+
+  const renderPublishGapPopup = () =>
+    publishChecklist.length > 0 ? (
+      <div
+        role="alert"
+        className={cn(
+          "w-max max-w-[min(16rem,calc(100vw-2rem))] rounded-xl border border-destructive/40 bg-card px-3 py-2.5 shadow-lg shadow-black/30 transition-opacity duration-300 ease-out",
+          publishPopupOpaque ? "opacity-100" : "opacity-0 pointer-events-none",
+        )}
+      >
+        <p className="text-xs font-medium text-destructive">กรอกข้อมูลที่จำเป็นก่อนเผยแพร่</p>
+        <ul className="mt-1.5 space-y-0.5 text-xs text-destructive/90">
+          {publishChecklist.map((item) => (
+            <li key={item} className="flex items-start gap-1.5">
+              <span aria-hidden>•</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : null;
 
   const handleConfirmPublish = async () => {
     if (!publishAttestChecked) {
@@ -1445,16 +1557,22 @@ const ProjectEditorPage = () => {
               )}
               บันทึกฉบับร่าง
             </Button>
-            <Button
-              size="sm"
-              onClick={handlePublishClick}
-              disabled={isBusy || !canPublish}
-              title={publishBlockedReason}
-              className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
-              {publishing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-              เผยแพร่
-            </Button>
+            <div className="relative">
+              <Button
+                size="sm"
+                onClick={handlePublishClick}
+                disabled={isBusy}
+                className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {publishing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                เผยแพร่
+              </Button>
+              {publishChecklist.length > 0 ? (
+                <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 hidden lg:block">
+                  {renderPublishGapPopup()}
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
@@ -1515,10 +1633,21 @@ const ProjectEditorPage = () => {
         <div className="min-w-0 flex-1">
           <div className="mx-auto w-full max-w-[min(100%,calc(42rem+3.5rem))] space-y-5 px-3 py-5 pb-28 pl-12 sm:space-y-6 sm:px-4 sm:pl-14 sm:pr-4 lg:pb-6 lg:pl-4">
           {/* Left: canvas — content max-w-2xl; side rail uses the extra gutter */}
-          <section className="max-w-2xl space-y-3">
+          <section
+            id="project-canvas-editor"
+            className={cn(
+              "max-w-2xl space-y-3 rounded-xl",
+              publishFieldErrors.canvasImage && "ring-2 ring-destructive/50 ring-offset-2 ring-offset-background",
+            )}
+          >
             <ProjectCanvasEditor
               blocks={contentBlocks}
-              onChange={setContentBlocks}
+              onChange={(next) => {
+                setContentBlocks(next);
+                if (countMediaByKind(mediaItemsFromBlocks(next), "image") >= 1) {
+                  clearPublishFieldError("canvasImage");
+                }
+              }}
               disabled={isBusy}
               uploading={uploadingGallery || uploadingVideo}
               uploadingBlockId={uploadingBlockId}
@@ -1560,10 +1689,14 @@ const ProjectEditorPage = () => {
             value={projectContext}
             onChange={patchProjectContext}
             shortDescription={shortDescription}
-            onShortDescriptionChange={setShortDescription}
+            onShortDescriptionChange={(v) => {
+              setShortDescription(v);
+              clearPublishFieldError("shortDescription");
+            }}
             expanded={contextExpanded}
             onExpandedChange={setContextExpanded}
             disabled={isBusy}
+            shortDescriptionInvalid={!!publishFieldErrors.shortDescription}
           />
 
           {user ? (
@@ -1571,15 +1704,29 @@ const ProjectEditorPage = () => {
               <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
                 <LicensePicker
                   value={licenseType}
-                  onChange={setLicenseType}
+                  onChange={(v) => {
+                    setLicenseType(v);
+                    if (v !== "custom") clearPublishFieldError("licenseNote");
+                  }}
                   licenseNote={licenseNote}
-                  onLicenseNoteChange={setLicenseNote}
+                  onLicenseNoteChange={(v) => {
+                    setLicenseNote(v);
+                    clearPublishFieldError("licenseNote");
+                  }}
+                  noteInvalid={!!publishFieldErrors.licenseNote}
                 />
                 <ThirdPartyAssetsToggle
                   enabled={hasThirdPartyAssets}
-                  onEnabledChange={setHasThirdPartyAssets}
+                  onEnabledChange={(v) => {
+                    setHasThirdPartyAssets(v);
+                    if (!v) clearPublishFieldError("thirdPartyNote");
+                  }}
                   note={thirdPartyNote}
-                  onNoteChange={setThirdPartyNote}
+                  onNoteChange={(v) => {
+                    setThirdPartyNote(v);
+                    clearPublishFieldError("thirdPartyNote");
+                  }}
+                  noteInvalid={!!publishFieldErrors.thirdPartyNote}
                 />
                 <ClientPermissionConfirm
                   confirmed={clientPermissionConfirmed}
@@ -1625,39 +1772,58 @@ const ProjectEditorPage = () => {
           <div className="rounded-2xl border border-border bg-card p-4 space-y-4 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
             <div className="space-y-2">
               <Label className="text-xs font-semibold text-muted-foreground uppercase">
-                ชื่องาน *
+                ชื่องาน <span className="text-primary">*</span>
               </Label>
               <Input
                 ref={titleInputRef}
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  clearPublishFieldError("title");
+                }}
                 placeholder="เช่น โลโก้ร้านกาแฟเชียงใหม่ Doi Brew"
                 aria-label="ชื่องาน"
                 aria-required
-                className="text-base font-medium h-11 px-3"
+                aria-invalid={!!publishFieldErrors.title || undefined}
+                className={cn(
+                  "text-base font-medium h-11 px-3",
+                  publishFieldErrors.title && "border-destructive focus-visible:ring-destructive/40",
+                )}
                 maxLength={120}
               />
             </div>
             <div className="space-y-2">
               <Label className="text-xs font-semibold text-muted-foreground uppercase">
-                ภาพปก *
+                ภาพปก <span className="text-primary">*</span>
               </Label>
               <CoverDrop
                 url={cover}
                 loading={uploadingCover}
-                onPick={handleCoverPick}
-                onClear={() => setCover("")}
+                onPick={(f) => {
+                  clearPublishFieldError("cover");
+                  handleCoverPick(f);
+                }}
+                onClear={() => {
+                  setCover("");
+                }}
                 compact
+                invalid={!!publishFieldErrors.cover}
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase">หมวดงาน *</Label>
+              <Label className="text-xs font-semibold text-muted-foreground uppercase">
+                หมวดงาน <span className="text-primary">*</span>
+              </Label>
               <ProjectCategoryPicker
                 value={category}
                 options={cats}
-                onChange={setCategory}
+                onChange={(v) => {
+                  setCategory(v);
+                  clearPublishFieldError("category");
+                }}
                 disabled={isBusy}
+                invalid={!!publishFieldErrors.category}
               />
             </div>
 
@@ -1686,10 +1852,23 @@ const ProjectEditorPage = () => {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase">การมองเห็น</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as Status)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+            <div className="space-y-2" id="project-visibility">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase">
+                การมองเห็น <span className="text-primary">*</span>
+              </Label>
+              <Select
+                value={status}
+                onValueChange={(v) => {
+                  setStatus(v as Status);
+                  if (v === "Published") clearPublishFieldError("status");
+                }}
+              >
+                <SelectTrigger
+                  aria-invalid={!!publishFieldErrors.status || undefined}
+                  className={cn(publishFieldErrors.status && "border-destructive focus:ring-destructive/40")}
+                >
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Draft">Draft — ฉบับร่าง</SelectItem>
                   <SelectItem value="Published">Published — เผยแพร่</SelectItem>
@@ -1802,26 +1981,29 @@ const ProjectEditorPage = () => {
               "บันทึกฉบับร่าง"
             )}
           </Button>
-          <Button
-            type="button"
-            className="flex-1 rounded-xl bg-primary text-primary-foreground"
-            onClick={handlePublishClick}
-            disabled={isBusy || !canPublish}
-            title={publishBlockedReason}
-          >
-            {publishing ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin mr-1 inline" />
-                กำลังเผยแพร่…
-              </>
-            ) : (
-              "เผยแพร่"
-            )}
-          </Button>
+          <div className="relative flex-1">
+            <Button
+              type="button"
+              className="w-full rounded-xl bg-primary text-primary-foreground"
+              onClick={handlePublishClick}
+              disabled={isBusy}
+            >
+              {publishing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-1 inline" />
+                  กำลังเผยแพร่…
+                </>
+              ) : (
+                "เผยแพร่"
+              )}
+            </Button>
+            {publishChecklist.length > 0 ? (
+              <div className="absolute bottom-[calc(100%+0.5rem)] right-0 z-50 lg:hidden">
+                {renderPublishGapPopup()}
+              </div>
+            ) : null}
+          </div>
         </div>
-        {!canPublish && publishBlockedReason && (
-          <p className="text-xs text-destructive mt-2 text-center">{publishBlockedReason}</p>
-        )}
       </div>
 
       <ProjectPreviewDialog
@@ -2084,12 +2266,14 @@ const CoverDrop = ({
   onPick,
   onClear,
   compact = false,
+  invalid = false,
 }: {
   url: string;
   loading: boolean;
   onPick: (f: File) => void;
   onClear: () => void;
   compact?: boolean;
+  invalid?: boolean;
 }) => {
   const ref = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
@@ -2104,6 +2288,7 @@ const CoverDrop = ({
         className={cn(
           "group relative w-full overflow-hidden rounded-xl border border-border bg-muted",
           compact ? "aspect-[4/3]" : "aspect-[4/3] rounded-2xl",
+          invalid && "border-destructive ring-1 ring-destructive/40",
         )}
       >
         <img src={url} alt="cover" className="absolute inset-0 h-full w-full object-cover" />
@@ -2153,7 +2338,9 @@ const CoverDrop = ({
         compact ? "aspect-[4/3] px-3 py-4" : "min-h-[200px] gap-3 rounded-2xl",
         drag
           ? "border-primary bg-primary/10 shadow-lg shadow-primary/10"
-          : "border-border/80 hover:border-primary/40 hover:bg-muted/20",
+          : invalid
+            ? "border-destructive bg-destructive/5"
+            : "border-border/80 hover:border-primary/40 hover:bg-muted/20",
       )}
     >
       {loading ? (
@@ -2162,7 +2349,7 @@ const CoverDrop = ({
         <ImagePlus className={cn("text-muted-foreground", compact ? "h-6 w-6" : "h-8 w-8")} />
       )}
       <p className={cn("text-center font-medium text-foreground", compact ? "text-xs leading-snug" : "text-sm")}>
-        อัปโหลดภาพหน้าปก *
+        อัปโหลดภาพหน้าปก <span className="text-primary">*</span>
       </p>
       {!compact ? (
         <p className="text-xs text-muted-foreground">JPG / PNG / WebP — สูงสุด 30MB · ครอปเป็น 4:3 แนวนอน</p>

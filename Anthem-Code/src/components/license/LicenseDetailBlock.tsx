@@ -23,13 +23,15 @@ interface Props {
   embedded?: boolean;
 }
 
-const BoolRow = ({ label, value }: { label: string; value: boolean | "partial" }) => (
+const BoolRow = ({ label, value }: { label: string; value: boolean | "partial" | "optional" }) => (
   <div className="flex items-center justify-between text-sm">
     <span className="text-muted-foreground">{label}</span>
     {value === true ? (
       <span className="flex items-center gap-1 text-emerald-600"><Check className="w-3.5 h-3.5" /> ได้</span>
     ) : value === "partial" ? (
       <span className="flex items-center gap-1 text-amber-600"><Minus className="w-3.5 h-3.5" /> ติดต่อเจ้าของ</span>
+    ) : value === "optional" ? (
+      <span className="flex items-center gap-1 text-muted-foreground"><Minus className="w-3.5 h-3.5" /> ไม่บังคับ</span>
     ) : (
       <span className="flex items-center gap-1 text-muted-foreground"><X className="w-3.5 h-3.5" /> ไม่ได้</span>
     )}
@@ -53,7 +55,16 @@ const LicenseDetailBlock = ({
   const [open, setOpen] = useState(false);
   const meta = getLicenseMeta(licenseType);
   const holder = copyrightHolder?.trim() || ownerName || "เจ้าของผลงาน";
-  const commercialValue = meta.allowsCommercial ? true : meta.id === "commercial_license" || meta.id === "attribution_ok" ? "partial" : false;
+  const commercialValue = meta.allowsCommercial
+    ? true
+    : meta.id === "commercial_license"
+      ? "partial"
+      : false;
+  const attributionValue = meta.requiresAttribution
+    ? true
+    : meta.id === "free_use"
+      ? "optional"
+      : false;
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -92,7 +103,7 @@ const LicenseDetailBlock = ({
               <p className="text-xs text-muted-foreground">เจ้าของลิขสิทธิ์: <span className="text-foreground">{holder}</span></p>
               <BoolRow label="นำไปใช้ซ้ำ" value={meta.allowsReuse} />
               <BoolRow label="ใช้เชิงพาณิชย์" value={commercialValue} />
-              <BoolRow label="ต้องอ้างอิงเครดิต" value={meta.requiresAttribution} />
+              <BoolRow label="ต้องอ้างอิงเครดิต" value={attributionValue} />
             </div>
 
             {hasThirdPartyAssets && thirdPartyNote?.trim() && (
