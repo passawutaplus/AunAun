@@ -50,8 +50,9 @@ function mapRow(row: DbRow): UserCanvasTemplate {
   return {
     id: row.id,
     user_id: row.user_id,
-    name: row.name,
-    hint: row.hint ?? "",
+    // Keep system seed copy in sync even if DB was seeded with older labels.
+    name: seed?.label ?? row.name,
+    hint: seed?.hint ?? row.hint ?? "",
     source_key: row.source_key,
     modules: parseCanvasTemplateModules(row.modules),
     open_context: Boolean(row.open_context),

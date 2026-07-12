@@ -167,9 +167,9 @@ const FeedToolbar = ({
       type="button"
       onClick={onCommunityPostClick}
       aria-label="โพสต์ชุมชน"
-      className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-colors shrink-0"
+      className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gradient-brand text-white hover:opacity-90 transition-opacity shrink-0"
     >
-      <Plus className="w-5 h-5" />
+      <Plus className="w-5 h-5" strokeWidth={2.5} />
     </button>
   ) : null;
 
@@ -179,9 +179,9 @@ const FeedToolbar = ({
         type="button"
         onClick={onCreateClick}
         aria-label="สร้างเนื้อหาใหม่"
-        className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-colors shrink-0"
+        className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gradient-brand text-white hover:opacity-90 transition-opacity shrink-0"
       >
-        <Plus className="w-5 h-5" />
+        <Plus className="w-5 h-5" strokeWidth={2.5} />
       </button>
     ) : null;
 

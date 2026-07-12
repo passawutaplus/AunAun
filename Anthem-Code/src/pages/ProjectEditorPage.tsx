@@ -67,6 +67,12 @@ import { type LicenseType, isLicenseType } from "@/lib/licenses";
 import { ProjectEditorToolsSidebar } from "@/components/project/ProjectEditorToolsSidebar";
 import { ProjectEditorMetaSidebar } from "@/components/project/ProjectEditorMetaSidebar";
 import { ProjectCanvasEditor } from "@/components/project/ProjectCanvasEditor";
+import { CanvasTemplatePreviewDialog } from "@/components/project/CanvasTemplatePreviewDialog";
+import {
+  ProjectCategoryPicker,
+  ProjectSeriesPicker,
+} from "@/components/project/ProjectEditorSearchSelects";
+import { SeriesFormDialog } from "@/components/series/SeriesFormDialog";
 import { PortfolioLinkedPostPicker } from "@/components/project/PortfolioLinkedPostPicker";
 import { isAplus1LaunchMinimal, isAplus1SubscriptionsEnabled, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 import { PortfolioCollabUserPicker } from "@/components/project/PortfolioCollabUserPicker";
@@ -170,6 +176,7 @@ const ProjectEditorPage = () => {
   const [showPrice, setShowPrice] = useState(false);
   const [status, setStatus] = useState<Status>("Draft");
   const [seriesId, setSeriesId] = useState<string>("");
+  const [seriesCreateOpen, setSeriesCreateOpen] = useState(false);
   const [allowHire, setAllowHire] = useState(true);
   const [allowCollab, setAllowCollab] = useState(true);
   const [studioId, setStudioId] = useState<string | null>(null);
@@ -204,7 +211,7 @@ const ProjectEditorPage = () => {
   const [toolsExpanded, setToolsExpanded] = useState(false);
   const [toolsTab, setToolsTab] = useState<"template" | "module">("module");
   const emptyStartImageInputRef = useRef<HTMLInputElement>(null);
-  const [metaExpanded, setMetaExpanded] = useState(true);
+  const [metaExpanded, setMetaExpanded] = useState(false);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -224,7 +231,7 @@ const ProjectEditorPage = () => {
   });
   const [projectAssets, setProjectAssets] = useState<ProjectAsset[]>([]);
   const [contextExpanded, setContextExpanded] = useState(false);
-  const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
+  const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null);
   const [templateNameDialog, setTemplateNameDialog] = useState<
     null | { mode: "save" } | { mode: "rename"; template: UserCanvasTemplate }
   >(null);
@@ -319,7 +326,10 @@ const ProjectEditorPage = () => {
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
-    const sync = () => setToolsExpanded(mq.matches);
+    const sync = () => {
+      setToolsExpanded(mq.matches);
+      setMetaExpanded(mq.matches);
+    };
     sync();
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
@@ -937,21 +947,12 @@ const ProjectEditorPage = () => {
     [buildBlocks],
   );
 
-  const handleApplyTemplate = useCallback(
-    (templateId: string) => {
-      const template = templates.find((t) => t.id === templateId);
-      if (!template) return;
-      if (contentBlocks.length === 0) {
-        applyCanvasTemplate(template, "replace");
-        return;
-      }
-      setPendingTemplateId(templateId);
-    },
-    [applyCanvasTemplate, contentBlocks.length, templates],
-  );
+  const handleSelectTemplate = useCallback((templateId: string) => {
+    setPreviewTemplateId(templateId);
+  }, []);
 
-  const pendingTemplate = pendingTemplateId
-    ? templates.find((t) => t.id === pendingTemplateId) ?? null
+  const previewTemplate = previewTemplateId
+    ? templates.find((t) => t.id === previewTemplateId) ?? null
     : null;
 
   const handlePlaceTool = useCallback((payload: CanvasToolPayload, insertAt?: number) => {
@@ -1475,7 +1476,7 @@ const ProjectEditorPage = () => {
           templatesLoading={templatesLoading}
           templatesAtLimit={templatesAtLimit}
           canSaveTemplate={contentBlocks.length > 0 && !templatesAtLimit}
-          onApplyTemplate={handleApplyTemplate}
+          onApplyTemplate={handleSelectTemplate}
           onSaveAsTemplate={() => {
             if (contentBlocks.length === 0) {
               toast.message("จัดโมดูลบนแคนวาสก่อนบันทึกเป็นเทมเพลต");
@@ -1512,7 +1513,7 @@ const ProjectEditorPage = () => {
         />
 
         <div className="min-w-0 flex-1">
-          <div className="mx-auto w-full max-w-[min(100%,calc(42rem+3.5rem))] space-y-6 pl-4 pr-2 py-6 pb-28 sm:pr-4 lg:pb-6">
+          <div className="mx-auto w-full max-w-[min(100%,calc(42rem+3.5rem))] space-y-5 px-3 py-5 pb-28 pl-12 sm:space-y-6 sm:px-4 sm:pl-14 sm:pr-4 lg:pb-6 lg:pl-4">
           {/* Left: canvas — content max-w-2xl; side rail uses the extra gutter */}
           <section className="max-w-2xl space-y-3">
             <ProjectCanvasEditor
@@ -1652,12 +1653,12 @@ const ProjectEditorPage = () => {
 
             <div className="space-y-2">
               <Label className="text-xs font-semibold text-muted-foreground uppercase">หมวดงาน *</Label>
-              <Select value={category || undefined} onValueChange={setCategory}>
-                <SelectTrigger><SelectValue placeholder="เลือกหมวดหมู่" /></SelectTrigger>
-                <SelectContent>
-                  {cats.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <ProjectCategoryPicker
+                value={category}
+                options={cats}
+                onChange={setCategory}
+                disabled={isBusy}
+              />
             </div>
 
             <div className="space-y-2">
@@ -1671,30 +1672,16 @@ const ProjectEditorPage = () => {
                   จัดการชุด
                 </Link>
               </div>
-              <Select
-                value={seriesId || "__none__"}
-                onValueChange={(v) => setSeriesId(v === "__none__" ? "" : v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="ไม่ใส่ในชุด" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">ไม่ใส่ในชุด</SelectItem>
-                  {mySeries.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.title}
-                      {s.is_public ? "" : " (ส่วนตัว)"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ProjectSeriesPicker
+                value={seriesId}
+                options={mySeries}
+                onChange={setSeriesId}
+                onCreateNew={() => setSeriesCreateOpen(true)}
+                disabled={isBusy}
+              />
               {mySeries.length === 0 && (
                 <p className="text-[11px] text-muted-foreground leading-snug">
-                  ยังไม่มีชุดงาน —{" "}
-                  <Link to="/series" className="text-primary hover:underline">
-                    สร้างชุดว่างได้ก่อน
-                  </Link>{" "}
-                  แล้วค่อยเลือกที่นี่
+                  ยังไม่มีชุดงาน — กดเปิดรายการแล้วเลือก「เพิ่มชุดงานใหม่」ได้เลย
                 </p>
               )}
             </div>
@@ -1929,50 +1916,26 @@ const ProjectEditorPage = () => {
         }}
       />
 
-      <Dialog
-        open={pendingTemplateId !== null}
+      <CanvasTemplatePreviewDialog
+        template={previewTemplate}
+        canvasHasBlocks={contentBlocks.length > 0}
+        open={previewTemplateId !== null}
         onOpenChange={(open) => {
-          if (!open) setPendingTemplateId(null);
+          if (!open) setPreviewTemplateId(null);
         }}
-      >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>ใช้เทมเพลต</DialogTitle>
-            <DialogDescription>
-              แคนวาสมีโมดูลอยู่แล้ว — ต้องการแทนที่ทั้งหมด หรือต่อท้ายเทมเพลต「
-              {pendingTemplate?.name ?? ""}」?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
-            <Button
-              type="button"
-              onClick={() => {
-                if (!pendingTemplate) return;
-                const t = pendingTemplate;
-                setPendingTemplateId(null);
-                applyCanvasTemplate(t, "replace");
-              }}
-            >
-              แทนที่ทั้งหมด
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => {
-                if (!pendingTemplate) return;
-                const t = pendingTemplate;
-                setPendingTemplateId(null);
-                applyCanvasTemplate(t, "append");
-              }}
-            >
-              ต่อท้าย
-            </Button>
-            <Button type="button" variant="ghost" onClick={() => setPendingTemplateId(null)}>
-              ยกเลิก
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onConfirm={(mode) => {
+          if (!previewTemplate) return;
+          const t = previewTemplate;
+          setPreviewTemplateId(null);
+          applyCanvasTemplate(t, mode);
+        }}
+      />
+
+      <SeriesFormDialog
+        open={seriesCreateOpen}
+        onOpenChange={setSeriesCreateOpen}
+        onCreated={(id) => setSeriesId(id)}
+      />
 
       <Dialog
         open={templateNameDialog !== null}

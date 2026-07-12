@@ -213,7 +213,7 @@ const FloatingNav = () => {
           aria-label="สร้างเนื้อหาใหม่"
           className={cn(
             "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full",
-            "bg-gradient-brand text-white shadow-lg shadow-primary/25",
+            "bg-gradient-brand text-white",
             "hover:opacity-90 active:scale-95 transition-all",
           )}
         >

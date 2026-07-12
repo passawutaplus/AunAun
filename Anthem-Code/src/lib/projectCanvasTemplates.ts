@@ -42,8 +42,8 @@ export const CANVAS_TEMPLATE_MAX = 5;
 export const CANVAS_TEMPLATE_SEEDS: CanvasTemplateSeed[] = [
   {
     sourceKey: "case_short",
-    label: "เคสสั้น",
-    hint: "แนะนำ · โครงครบแต่ไม่ยาว",
+    label: "ลงเร็ว",
+    hint: "ลงผลงานเร็ว · โครงกระชับ",
     recommended: true,
     openContext: true,
     modules: [
@@ -56,8 +56,8 @@ export const CANVAS_TEMPLATE_SEEDS: CanvasTemplateSeed[] = [
   },
   {
     sourceKey: "gallery_heavy",
-    label: "แกลเลอรีงาน",
-    hint: "เน้นภาพเยอะ เลื่อนดูได้",
+    label: "เน้นภาพ",
+    hint: "โชว์ภาพเป็นหลัก เลื่อนดูได้",
     modules: [
       { kind: "heading" },
       { kind: "gallery" },
@@ -67,8 +67,8 @@ export const CANVAS_TEMPLATE_SEEDS: CanvasTemplateSeed[] = [
   },
   {
     sourceKey: "story_case",
-    label: "สตอรี่ / เคสศึกษา",
-    hint: "เล่าโจทย์ → ภาพ → ผลลัพธ์",
+    label: "เล่าเรื่องครบ",
+    hint: "โจทย์ → ภาพ → ผลลัพธ์",
     openContext: true,
     modules: [
       { kind: "heading_body" },

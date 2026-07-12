@@ -111,10 +111,10 @@ function ImageTextWireframe({ side }: { side: ImageTextSplitSide }) {
   const image = <div className="aspect-square w-full bg-foreground/20" />;
   const text = (
     <div className="flex h-full w-full flex-col justify-center gap-1 py-0.5">
-      <div className="h-px w-full bg-foreground/35" />
-      <div className="h-px w-full bg-foreground/35" />
-      <div className="h-px w-[85%] bg-foreground/35" />
-      <div className="h-px w-[70%] bg-foreground/35" />
+      <div className="h-1.5 w-[42%] rounded-full bg-foreground/45" />
+      <div className="h-0.5 w-full rounded-full bg-foreground/30" />
+      <div className="h-0.5 w-[85%] rounded-full bg-foreground/30" />
+      <div className="h-0.5 w-[72%] rounded-full bg-foreground/30" />
     </div>
   );
   return (
@@ -134,38 +134,68 @@ function ImageTextWireframe({ side }: { side: ImageTextSplitSide }) {
   );
 }
 
+function TextSkeletonLines({
+  variant,
+  dense,
+}: {
+  variant: "heading" | "heading_body" | "body";
+  dense?: boolean;
+}) {
+  const headingBar = cn(
+    "rounded-full bg-foreground/45",
+    dense ? "h-1.5" : "h-2.5",
+  );
+  const bodyBar = cn(
+    "rounded-full bg-foreground/30",
+    dense ? "h-0.5" : "h-1",
+  );
+  if (variant === "heading") {
+    return <div className={cn(headingBar, "w-[72%]")} />;
+  }
+  if (variant === "heading_body") {
+    return (
+      <>
+        <div className={cn(headingBar, "w-[55%]")} />
+        <div className={cn(bodyBar, "w-full")} />
+        <div className={cn(bodyBar, "w-[85%]")} />
+        <div className={cn(bodyBar, "w-[72%]")} />
+      </>
+    );
+  }
+  return (
+    <>
+      <div className={cn(bodyBar, "w-full")} />
+      <div className={cn(bodyBar, "w-full")} />
+      <div className={cn(bodyBar, "w-[85%]")} />
+      <div className={cn(bodyBar, "w-[72%]")} />
+    </>
+  );
+}
+
 function TemplateSlotPreview({ slot }: { slot: CanvasTemplatePreviewSlot }) {
   if (slot.kind === "heading") {
     return (
-      <div className="flex w-full items-center justify-center rounded-[1px] bg-muted/50 px-2 py-1.5">
-        <div className="h-1 w-2/5 rounded-full bg-foreground/45" />
+      <div className="flex w-full items-center justify-center rounded-sm bg-muted/50 px-2.5 py-2.5">
+        <TextSkeletonLines variant="heading" dense />
       </div>
     );
   }
   if (slot.kind === "heading_body") {
     return (
-      <div className="flex w-full flex-col items-center gap-0.5 rounded-[1px] bg-muted/40 px-2 py-1.5">
-        <div className="h-1 w-2/5 rounded-full bg-foreground/45" />
-        <div className="h-0.5 w-full rounded-full bg-foreground/25" />
-        <div className="h-0.5 w-4/5 rounded-full bg-foreground/25" />
+      <div className="flex w-full flex-col items-start gap-1.5 rounded-sm bg-muted/40 px-2.5 py-2">
+        <TextSkeletonLines variant="heading_body" dense />
       </div>
     );
   }
   if (slot.kind === "body") {
     return (
-      <div className="flex w-full flex-col gap-0.5 rounded-[1px] bg-muted/30 px-2 py-1.5">
-        <div className="h-0.5 w-full rounded-full bg-foreground/30" />
-        <div className="h-0.5 w-full rounded-full bg-foreground/30" />
-        <div className="h-0.5 w-3/4 rounded-full bg-foreground/30" />
+      <div className="flex w-full flex-col items-start gap-1 rounded-sm bg-muted/40 px-2.5 py-2">
+        <TextSkeletonLines variant="body" dense />
       </div>
     );
   }
   if (slot.kind === "image") {
-    return (
-      <div className="flex h-7 w-full items-center justify-center rounded-[1px] bg-foreground/15">
-        <Image className="h-3.5 w-3.5 text-muted-foreground/70" strokeWidth={1.5} />
-      </div>
-    );
+    return <div className="h-7 w-full rounded-[1px] bg-foreground/15" />;
   }
   if (slot.kind === "video") {
     return (
@@ -176,13 +206,22 @@ function TemplateSlotPreview({ slot }: { slot: CanvasTemplatePreviewSlot }) {
   }
   if (slot.kind === "gallery") {
     return (
-      <div className="relative flex h-7 w-full items-center justify-center rounded-[1px] bg-foreground/15">
-        <Image className="h-3.5 w-3.5 text-muted-foreground/70" strokeWidth={1.5} />
-        <span className="absolute bottom-1 left-1/2 flex -translate-x-1/2 gap-0.5">
-          <span className="h-0.5 w-0.5 rounded-full bg-foreground/50" />
-          <span className="h-0.5 w-0.5 rounded-full bg-foreground/30" />
-          <span className="h-0.5 w-0.5 rounded-full bg-foreground/30" />
-        </span>
+      <div className="flex w-full flex-col gap-1">
+        <div className="relative h-8 w-full rounded-[1px] bg-foreground/15">
+          <span className="absolute inset-y-0 left-1 flex items-center text-[8px] text-foreground/35">‹</span>
+          <span className="absolute inset-y-0 right-1 flex items-center text-[8px] text-foreground/35">›</span>
+        </div>
+        <div className="flex gap-0.5">
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className={cn(
+                "h-2.5 flex-1 rounded-[1px] bg-foreground/20",
+                i === 0 && "bg-foreground/40 ring-1 ring-primary/50",
+              )}
+            />
+          ))}
+        </div>
       </div>
     );
   }
@@ -225,10 +264,10 @@ function TemplateSlotPreview({ slot }: { slot: CanvasTemplatePreviewSlot }) {
   if (slot.kind !== "image_text") return null;
   const image = <div className="aspect-square h-6 w-6 shrink-0 bg-foreground/25" />;
   const text = (
-    <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-      <div className="h-0.5 w-full bg-foreground/35" />
-      <div className="h-0.5 w-full bg-foreground/35" />
-      <div className="h-0.5 w-2/3 bg-foreground/35" />
+    <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+      <div className="h-1.5 w-[42%] rounded-full bg-foreground/45" />
+      <div className="h-0.5 w-full rounded-full bg-foreground/30" />
+      <div className="h-0.5 w-[72%] rounded-full bg-foreground/30" />
     </div>
   );
   return (
@@ -288,7 +327,7 @@ function TemplateCard({
         disabled={disabled}
         onClick={onClick}
         className="flex w-full flex-col gap-2 text-left"
-        aria-label={`ใช้เทมเพลต ${template.name}`}
+        aria-label={`ดูตัวอย่างเทมเพลต ${template.name}`}
       >
         <TemplatePreviewStack slots={template.modules} />
         <div className="min-w-0 space-y-0.5 pr-6">
@@ -413,26 +452,15 @@ function ToolPreview({ kind, compact }: { kind: PreviewKind; compact?: boolean }
   }
   if (kind === "heading") {
     return (
-      <div className={cn(shell, "flex-col gap-0.5")}>
-        <div className={cn(box, "h-1.5 w-3/4")} />
+      <div className={cn("flex h-9 w-full items-center justify-center", !compact && "h-10")}>
+        <TextSkeletonLines variant="heading" dense />
       </div>
     );
   }
-  if (kind === "heading_body") {
+  if (kind === "heading_body" || kind === "body") {
     return (
-      <div className={cn(shell, "flex-col gap-0.5")}>
-        <div className={cn(box, "h-1 w-2/3 self-start")} />
-        <div className={cn(box, "h-0.5 w-full")} />
-        <div className={cn(box, "h-0.5 w-4/5 self-start")} />
-      </div>
-    );
-  }
-  if (kind === "body") {
-    return (
-      <div className={cn(shell, "flex-col gap-0.5")}>
-        <div className={cn(box, "h-0.5 w-full")} />
-        <div className={cn(box, "h-0.5 w-4/5 self-start")} />
-        <div className={cn(box, "h-0.5 w-full")} />
+      <div className={cn(shell, "flex-col items-start justify-center gap-1 px-0.5")}>
+        <TextSkeletonLines variant={kind} dense />
       </div>
     );
   }
@@ -756,18 +784,30 @@ export function ProjectEditorToolsSidebar({
 
   return (
     <TooltipProvider delayDuration={300}>
+      <>
+      {expanded ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-black/45 lg:hidden"
+          aria-label="ปิดแถบเครื่องมือ"
+          onClick={() => setExpanded(false)}
+        />
+      ) : null}
       <aside
         className={cn(
           "shrink-0 transition-[width] duration-200 ease-out",
           expanded
-            ? "w-[248px] border-r border-border/80 bg-card/95 backdrop-blur-md lg:sticky lg:top-16 lg:z-auto lg:self-start"
+            ? cn(
+                "fixed bottom-0 left-0 top-14 z-50 w-[min(280px,88vw)] border-r border-border/80 bg-card shadow-xl",
+                "lg:sticky lg:inset-auto lg:top-16 lg:z-auto lg:w-[248px] lg:self-start lg:bg-card/95 lg:shadow-none lg:backdrop-blur-md",
+              )
             : "w-0 border-0 bg-transparent",
           className,
         )}
         aria-label="เครื่องมือเพิ่มเนื้อหา"
       >
         {expanded ? (
-          <div className="flex h-[calc(100dvh-4rem)] flex-col">
+          <div className="flex h-full flex-col lg:h-[calc(100dvh-4rem)]">
             <div className="flex items-center justify-between gap-2 p-2 pl-3">
               <p className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground leading-snug">
                 {sidebarTab === "template" ? (
@@ -1100,7 +1140,7 @@ export function ProjectEditorToolsSidebar({
             </div>
           </div>
         ) : (
-          <div className="pointer-events-none fixed left-2 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-1 sm:left-3">
+          <div className="pointer-events-none fixed left-2 top-[calc(50%+1.5rem)] z-30 flex -translate-y-1/2 flex-col items-center gap-1 sm:left-3 lg:top-1/2">
             <div className="pointer-events-auto flex flex-col items-center gap-1">
               <CollapsedRailButton
                 label="ข้อความ"
@@ -1176,6 +1216,7 @@ export function ProjectEditorToolsSidebar({
           </div>
         )}
       </aside>
+      </>
     </TooltipProvider>
   );
 }
