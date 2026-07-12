@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
@@ -40,30 +39,8 @@ export const useProjectLike = (projectId: string | undefined) => {
     },
   });
 
-  useEffect(() => {
-    if (!projectId) return;
-    const ch = supabase
-      .channel(`project-like-rt-${projectId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "anthem",
-          table: "project_likes",
-          filter: `project_id=eq.${projectId}`,
-        },
-        () => {
-          qc.invalidateQueries({ queryKey: ["project-like-count", projectId] });
-          if (user?.id) {
-            qc.invalidateQueries({ queryKey: ["project-liked", projectId, user.id] });
-          }
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [projectId, user?.id, qc]);
+  // No Realtime channel here: many cards may mount with the same projectId
+  // and reusing a subscribed channel throws after subscribe().
 
   const toggle = useMutation({
     mutationFn: async () => {

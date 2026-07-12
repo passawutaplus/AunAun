@@ -895,31 +895,10 @@ export const useConversationUnreadCounts = (conversationIds: string[]) => {
 /** Unread messages + pending hire/collab requests for header chat badge */
 export const useChatInboxBadgeCount = () => {
   const { user } = useAuth();
-  const qc = useQueryClient();
 
-  useEffect(() => {
-    if (!user?.id) return;
-    const ch = supabase
-      .channel(`chat-badge-rt-${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "shared", table: "messages" },
-        () => {
-          qc.invalidateQueries({ queryKey: ["chat-inbox-badge", user.id] });
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "shared", table: "conversations" },
-        () => {
-          qc.invalidateQueries({ queryKey: ["chat-inbox-badge", user.id] });
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [user?.id, qc]);
+  // Do NOT attach Realtime here: this hook mounts in multiple nav components
+  // with the same channel topic, which throws after subscribe() and crashes the app.
+  // Badge refresh: refetchInterval + useConversations realtime invalidation.
 
   const query = useQuery({
     queryKey: ["chat-inbox-badge", user?.id],
