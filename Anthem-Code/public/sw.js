@@ -1,4 +1,4 @@
-const CACHE_VERSION = "pixel100-shell-v1";
+const CACHE_VERSION = "aplus1-shell-v2";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [OFFLINE_URL, "/manifest.webmanifest", "/icons/icon-192.png"];
 
@@ -25,6 +25,12 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/") || url.pathname.includes("supabase")) return;
+
+  // Vite hashed bundles must never be cache-first — old shell → deleted chunk = 404.
+  if (url.pathname.startsWith("/assets/")) {
+    event.respondWith(fetch(request));
+    return;
+  }
 
   if (request.mode === "navigate") {
     event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));
