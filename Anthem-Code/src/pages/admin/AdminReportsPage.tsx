@@ -50,6 +50,12 @@ const targetLink = (r: ReportRow) => {
       return `/admin/comments`;
     case "message":
       return `/admin/chats`;
+    case "forum_topic":
+      return `/forum/t/${r.target_id}`;
+    case "forum_reply":
+      return `/forum/admin?tab=moderation`;
+    case "community_post":
+      return `/community/${r.target_id}`;
     default:
       return "#";
   }

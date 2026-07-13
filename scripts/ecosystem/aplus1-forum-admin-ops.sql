@@ -1,0 +1,5 @@
+-- Forum admin ops (applied remotely)
+-- - forum_attachments admin SELECT
+-- - admin_set_forum_category
+-- - forum_topics.admin_note + admin_set_forum_topic(_admin_note)
+-- - forum_topics / forum_categories admin SELECT

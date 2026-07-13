@@ -12,6 +12,8 @@ export function pageTransitionKey(pathname: string): string | null {
   if (pathname === "/error" || pathname.startsWith("/error/")) return null;
   // Chat shell stays mounted while switching threads
   if (pathname === "/chat" || pathname.startsWith("/chat/")) return "/chat";
+  // Forum shell stays mounted; slide is handled inside ForumLayout
+  if (pathname === "/forum" || pathname.startsWith("/forum/")) return "/forum";
   return pathname;
 }
 

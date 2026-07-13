@@ -6,7 +6,7 @@
 |----------------|--------|-----|----------|--------|
 | **solo-demo** | So1o production | https://solofreelancer.com | `passawutaplus/Solo-Code` | `./scripts/deploy-vercel.sh production solo` |
 | **solo-demo-liart** | So1o demo | https://solo-demo-liart.vercel.app | `passawutaplus/Solo-Code` | `./scripts/deploy-vercel.sh demo solo` |
-| **aplus1-prod** | Aplus1 production | https://aplus1.app | `passawutaplus/Anthem-Code` | `./scripts/deploy-vercel.sh production 1px` |
+| **aplus1-prod** | Aplus1 production | https://aplus1.app (+ vanity `forum.aplus1.app` → `/forum`) | `passawutaplus/Anthem-Code` | `./scripts/deploy-vercel.sh production 1px` |
 | **aplus1-demo** | Aplus1 demo | https://aplus1-demo.vercel.app | `passawutaplus/Anthem-Code` | `./scripts/deploy-vercel.sh demo 1px` |
 | **so1o-ops-hub** | Ops Hub (admin) | https://so1o-ops-hub.vercel.app | `passawutaplus/AunAun` · root **`Ops-Hub`** | `cd Ops-Hub && npm run deploy:demo` |
 

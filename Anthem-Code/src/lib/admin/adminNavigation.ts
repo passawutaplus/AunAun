@@ -49,6 +49,7 @@ export const ADMIN_LAUNCH_HIDDEN_ADMIN_PATHS = [
   "/admin/collections",
   "/admin/inspire",
   "/admin/community",
+  "/admin/forum",
   "/admin/jobs",
   "/admin/applications",
   "/admin/hiring",
@@ -234,6 +235,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         label: "โพสต์ชุมชน",
         hint: "ฟีด Q&A และโพสต์สาธารณะ",
         icon: MessageSquare,
+      },
+      {
+        to: "/admin/forum",
+        label: "ฟอรัม",
+        hint: "เว็บบอร์ดช่วยเหลือและไอเดีย",
+        icon: MessageSquareHeart,
       },
       {
         to: "/admin/comments",
@@ -503,6 +510,7 @@ const SIDEBAR_PATHS_ORDERED: { sectionId: string; to: string }[] = [
   { sectionId: "content", to: "/admin/collections" },
   { sectionId: "content", to: "/admin/inspire" },
   { sectionId: "content", to: "/admin/community" },
+  { sectionId: "content", to: "/admin/forum" },
   { sectionId: "content", to: "/admin/comments" },
   { sectionId: "marketplace", to: "/admin/jobs" },
   { sectionId: "marketplace", to: "/admin/applications" },

@@ -3,6 +3,20 @@
   "framework": "vite",
   "buildCommand": "npm run sitemap:gen && npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "forum.aplus1.app" }],
+      "destination": "https://aplus1.app/forum",
+      "permanent": false
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "forum.aplus1.app" }],
+      "destination": "https://aplus1.app/forum/:path*",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     {

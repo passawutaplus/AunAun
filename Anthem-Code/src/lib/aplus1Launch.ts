@@ -45,6 +45,7 @@ export const LAUNCH_ALLOWED_ROUTE_PATTERNS: readonly RegExp[] = [
   /^\/series(\/|$)/,
   /^\/similar\/[^/]+$/,
   /^\/inspire(\/|$)/,
+  /^\/forum(\/|$)/,
   /^\/legal\//,
   /^\/admin(\/|$)/,
   /^\/error(\/|$)/,

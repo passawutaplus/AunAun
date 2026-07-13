@@ -12,6 +12,10 @@ export const BRAND_DOMAIN = "aplus1.app";
 /** Production URL */
 export const APLUS1_PRODUCTION_URL = "https://aplus1.app";
 
+/** Community forum vanity subdomain (redirects to /forum on apex) */
+export const FORUM_URL = "https://forum.aplus1.app";
+export const FORUM_PATH = "/forum";
+
 /** URL เดโม่บน Vercel */
 export const APLUS1_DEMO_URL = "https://aplus1-demo.vercel.app";
 

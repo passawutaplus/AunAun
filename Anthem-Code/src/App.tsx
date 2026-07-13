@@ -19,6 +19,7 @@ import GoogleAnalytics from "./components/seo/GoogleAnalytics.tsx";
 import PolicyReconsentGate from "./components/legal/PolicyReconsentGate.tsx";
 import FloatingNav from "./components/FloatingNav.tsx";
 import RequireAuth from "./components/RequireAuth.tsx";
+import AdminGuard from "./components/admin/AdminGuard.tsx";
 import AuthDialog from "./components/AuthDialog.tsx";
 import { InterestSurveyGate } from "./components/onboarding/InterestSurveyDialog.tsx";
 import RedirectTo from "./components/RedirectTo.tsx";
@@ -121,7 +122,15 @@ const CommunityPostDetailPage = lazy(() => import("./pages/CommunityPostDetailPa
 const CommunityPostEditorPage = lazy(() => import("./pages/CommunityPostEditorPage.tsx"));
 const CommunityFeedPage = lazy(() => import("./pages/CommunityFeedPage.tsx"));
 const AdminCommunityPage = lazy(() => import("./pages/admin/AdminCommunityPage"));
+const AdminForumPage = lazy(() => import("./pages/admin/AdminForumPage"));
 const AdminModerationPage = lazy(() => import("./pages/admin/AdminModerationPage"));
+const ForumHomePage = lazy(() => import("./pages/forum/ForumHomePage"));
+const ForumCategoryPage = lazy(() => import("./pages/forum/ForumCategoryPage"));
+const ForumTopicPage = lazy(() => import("./pages/forum/ForumTopicPage"));
+const ForumNewTopicPage = lazy(() => import("./pages/forum/ForumNewTopicPage"));
+const ForumSearchPage = lazy(() => import("./pages/forum/ForumSearchPage"));
+const ForumAdminPage = lazy(() => import("./pages/forum/ForumAdminPage"));
+const ForumLayoutRoute = lazy(() => import("./components/forum/ForumLayout"));
 const AdminCompliancePage = lazy(() => import("./pages/admin/AdminCompliancePage"));
 const AdminCopyrightReportsPage = lazy(() => import("./pages/admin/AdminCopyrightReportsPage"));
 const AdminPrivacyRequestsPage = lazy(() => import("./pages/admin/AdminPrivacyRequestsPage"));
@@ -202,6 +211,14 @@ const App = () => (
               <Route path="/community/:id/edit" element={<RequireAuth><CommunityPostEditorPage /></RequireAuth>} />
               <Route path="/community" element={<CommunityFeedPage />} />
               <Route path="/community/:id" element={<CommunityPostDetailPage />} />
+              <Route path="/forum" element={<ForumLayoutRoute />}>
+                <Route index element={<ForumHomePage />} />
+                <Route path="search" element={<ForumSearchPage />} />
+                <Route path="new" element={<RequireAuth><ForumNewTopicPage /></RequireAuth>} />
+                <Route path="admin" element={<RequireAuth><AdminGuard><ForumAdminPage /></AdminGuard></RequireAuth>} />
+                <Route path="c/:slug" element={<ForumCategoryPage />} />
+                <Route path="t/:id" element={<ForumTopicPage />} />
+              </Route>
               <Route path="/collections" element={<RequireAuth><CollectionsPage /></RequireAuth>} />
               <Route path="/collections/:id" element={<CollectionDetailPage />} />
               <Route path="/series" element={<RequireAuth><SeriesListPage /></RequireAuth>} />
@@ -260,6 +277,7 @@ const App = () => (
                 <Route path="audit" element={<AdminAuditPage />} />
                 <Route path="reports" element={<AdminReportsPage />} />
                 <Route path="community" element={<AdminCommunityPage />} />
+                <Route path="forum" element={<AdminForumPage />} />
                 <Route path="moderation" element={<AdminModerationPage />} />
                 <Route path="compliance" element={<AdminCompliancePage />} />
                 <Route path="compliance/copyright" element={<AdminCopyrightReportsPage />} />

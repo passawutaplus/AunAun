@@ -12,7 +12,9 @@ export type ReportTargetType =
   | "message"
   | "job"
   | "community_post"
-  | "community_comment";
+  | "community_comment"
+  | "forum_topic"
+  | "forum_reply";
 export type ReportReason =
   | "spam"
   | "harassment"

@@ -19,12 +19,13 @@ export function featureFromRoute(pathname: string): string {
   if (pathname.startsWith("/advertise") || pathname.startsWith("/ads/")) return "ads";
   if (pathname.startsWith("/similar/")) return "similar_images";
   if (pathname.startsWith("/inspire/")) return "inspire";
+  if (pathname.startsWith("/forum")) return "forum";
   if (pathname.startsWith("/legal/")) return "legal";
   return "other";
 }
 
 // Routes where the floating feedback button should be hidden.
-const HIDDEN_FEATURE_PREFIXES = ["/auth", "/admin"];
+const HIDDEN_FEATURE_PREFIXES = ["/auth", "/admin", "/forum"];
 export function shouldHideFeedbackFab(pathname: string): boolean {
   return HIDDEN_FEATURE_PREFIXES.some((p) => pathname.startsWith(p)) || pathname === "/";
 }

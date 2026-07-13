@@ -32,6 +32,10 @@ const targetLink = (t: string, id: string) => {
       return `/jobs/${id}`;
     case "community_post":
       return `/community/${id}`;
+    case "forum_topic":
+      return `/forum/t/${id}`;
+    case "forum_reply":
+      return `/forum`;
     default:
       return "#";
   }
