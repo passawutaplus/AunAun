@@ -11,10 +11,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
 import OpportunityProfilePreview from "@/components/opportunity/OpportunityProfilePreview";
+import { ChipMultiSelectWithOther } from "@/components/ui/ChipMultiSelectWithOther";
 import {
   OPPORTUNITY_NOTE_MAX,
   OPPORTUNITY_TYPE_KEYS,
@@ -22,7 +22,6 @@ import {
   needsOpportunityTypeHint,
   normalizeOpportunityNote,
   normalizeOpportunityProfile,
-  type OpportunityTypeKey,
 } from "@/lib/opportunity";
 
 type Props = {
@@ -35,7 +34,7 @@ const OpportunityStatusDialog = ({ open, onOpenChange }: Props) => {
   const { data: profile, isLoading } = useProfile(open ? user?.id : undefined);
   const updateMut = useUpdateProfile(user?.id);
 
-  const [types, setTypes] = useState<OpportunityTypeKey[]>([]);
+  const [types, setTypes] = useState<string[]>([]);
   const [note, setNote] = useState("");
 
   useEffect(() => {
@@ -47,12 +46,6 @@ const OpportunityStatusDialog = ({ open, onOpenChange }: Props) => {
     setTypes(normalized.types);
     setNote(normalizeOpportunityNote((profile as { opportunity_note?: string | null }).opportunity_note));
   }, [open, profile]);
-
-  const toggleType = (key: OpportunityTypeKey) => {
-    setTypes((prev) =>
-      prev.includes(key) ? prev.filter((t) => t !== key) : [...prev, key],
-    );
-  };
 
   const canSave = !needsOpportunityTypeHint("open_to_opportunities", types);
 
@@ -100,27 +93,16 @@ const OpportunityStatusDialog = ({ open, onOpenChange }: Props) => {
                 <h3 className="text-sm font-semibold text-foreground">กำลังมองหา</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">เลือกได้หลายข้อ — แสดงเป็นชิปบนโปรไฟล์</p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {OPPORTUNITY_TYPE_KEYS.map((key) => {
-                  const active = types.includes(key);
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => toggleType(key)}
-                      className={cn(
-                        "px-3.5 py-2 min-h-10 rounded-full text-xs font-medium transition-all",
-                        "border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
-                        active
-                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                          : "bg-secondary/80 text-foreground border-border/60 hover:border-primary/30 hover:bg-accent",
-                      )}
-                    >
-                      {labelOpportunityType(key)}
-                    </button>
-                  );
-                })}
-              </div>
+              <ChipMultiSelectWithOther
+                options={OPPORTUNITY_TYPE_KEYS.map((id) => ({
+                  id,
+                  label: labelOpportunityType(id),
+                }))}
+                selected={types}
+                onChange={setTypes}
+                knownIds={OPPORTUNITY_TYPE_KEYS}
+                otherPlaceholder="พิมพ์สิ่งที่มองหาแล้วกด Enter"
+              />
               {types.length === 0 && (
                 <p className="text-xs text-amber-500/90 leading-relaxed">
                   เลือกอย่างน้อย 1 อย่าง เพื่อให้คนทักคุณได้ตรงขึ้น

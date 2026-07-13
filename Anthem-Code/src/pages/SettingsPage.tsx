@@ -10,7 +10,13 @@ import { profileSchema, experienceItemSchema } from "@/lib/validators";
 import type { ExperienceItem } from "@/lib/validators";
 import ExperienceEditor from "@/components/profile/ExperienceEditor";
 import SkillsEditor from "@/components/profile/SkillsEditor";
+import WorkDisciplineEditor from "@/components/profile/WorkDisciplineEditor";
 import ContactEditor from "@/components/profile/ContactEditor";
+import { ChipMultiSelectWithOther } from "@/components/ui/ChipMultiSelectWithOther";
+import {
+  OPPORTUNITY_TYPE_KEYS,
+  labelOpportunityType,
+} from "@/lib/opportunity";
 import { isReservedPublicHandle } from "@/lib/reservedHandles";
 import { z } from "zod";
 import PageLoader from "@/components/ui/PageLoader";
@@ -22,6 +28,7 @@ import { ChangePasswordSection } from "@/components/settings/ChangePasswordSecti
 import { EmailNotificationSection } from "@/components/settings/EmailNotificationSection";
 import { cn } from "@/lib/utils";
 import { useUsernameAvailability, normalizeUsername } from "@/hooks/useUsernameAvailability";
+import { USERNAME_COOLDOWN_DAYS, USERNAME_COOLDOWN_MS } from "@/lib/usernamePolicy";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +54,8 @@ const settingsFormSchema = profileSchema.pick({
   instagram: true,
   skills: true,
   experience: true,
+  preferredCategories: true,
+  opportunityTypes: true,
   notifyEmail: true,
   notifyHire: true,
   notifyCollab: true,
@@ -74,6 +83,8 @@ const empty: SettingsFormInput = {
   instagram: "",
   skills: [],
   experience: [],
+  preferredCategories: [],
+  opportunityTypes: [],
   notifyEmail: true,
   notifyHire: true,
   notifyCollab: true,
@@ -100,7 +111,7 @@ const SettingsPage = () => {
     ?.username_changed_at;
   const usernameCooldownUntil = useMemo(() => {
     if (!usernameChangedAt) return null;
-    const until = new Date(usernameChangedAt).getTime() + 14 * 24 * 60 * 60 * 1000;
+    const until = new Date(usernameChangedAt).getTime() + USERNAME_COOLDOWN_MS;
     return until > Date.now() ? new Date(until) : null;
   }, [usernameChangedAt]);
   const usernameOnCooldown = !!usernameCooldownUntil;
@@ -179,6 +190,12 @@ const SettingsPage = () => {
         instagram: profile.instagram ?? "",
         skills: parseSkills(profile.skills),
         experience: parseExperience(profile.experience),
+        preferredCategories: parseSkills(
+          (profile as { preferred_categories?: unknown }).preferred_categories,
+        ),
+        opportunityTypes: parseSkills(
+          (profile as { opportunity_types?: unknown }).opportunity_types,
+        ),
         notifyEmail: profile.notify_email ?? true,
         notifyHire: profile.notify_hire ?? true,
         notifyCollab: (profile as { notify_collab?: boolean }).notify_collab ?? true,
@@ -282,7 +299,7 @@ const SettingsPage = () => {
             </p>
             {usernameOnCooldown && usernameCooldownUntil ? (
               <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                เปลี่ยนชื่อผู้ใช้ได้ทุก 14 วัน — ครั้งถัดไปได้หลัง{" "}
+                เปลี่ยนชื่อผู้ใช้ได้ทุก {USERNAME_COOLDOWN_DAYS} วัน — ครั้งถัดไปได้หลัง{" "}
                 {usernameCooldownUntil.toLocaleDateString("th-TH", {
                   day: "numeric",
                   month: "short",
@@ -395,6 +412,30 @@ const SettingsPage = () => {
             <p className="mt-1 text-xs text-muted-foreground">{(form.bio ?? "").length}/500 ตัวอักษร</p>
           </div>
 
+          <div className="border-t border-border/60 pt-5 space-y-3">
+            <h3 className="text-sm font-medium text-foreground">กำลังมองหา</h3>
+            <p className="text-xs text-muted-foreground -mt-1">เลือกอย่างน้อย 1 — แสดงบนโปรไฟล์และแชท</p>
+            <ChipMultiSelectWithOther
+              options={OPPORTUNITY_TYPE_KEYS.map((id) => ({
+                id,
+                label: labelOpportunityType(id),
+              }))}
+              selected={form.opportunityTypes}
+              onChange={(opportunityTypes) => update("opportunityTypes", opportunityTypes)}
+              knownIds={OPPORTUNITY_TYPE_KEYS}
+              otherPlaceholder="พิมพ์สิ่งที่มองหาแล้วกด Enter"
+            />
+          </div>
+
+          <div className="border-t border-border/60 pt-5 space-y-3">
+            <h3 className="text-sm font-medium text-foreground">สายงาน</h3>
+            <p className="text-xs text-muted-foreground -mt-1">หมวดงานที่คุณทำ — แสดงบนโปรไฟล์และแชท</p>
+            <WorkDisciplineEditor
+              value={form.preferredCategories}
+              onChange={(preferredCategories) => update("preferredCategories", preferredCategories)}
+            />
+          </div>
+
           <div className="border-t border-border/60 pt-5 space-y-4">
             <h3 className="text-sm font-medium text-foreground">ประสบการณ์ทำงาน</h3>
             <ExperienceEditor
@@ -405,6 +446,7 @@ const SettingsPage = () => {
 
           <div className="border-t border-border/60 pt-5 space-y-3">
             <h3 className="text-sm font-medium text-foreground">ความชำนาญ</h3>
+            <p className="text-xs text-muted-foreground -mt-1">เครื่องมือและสไตล์ที่ถนัด</p>
             <SkillsEditor value={form.skills} onChange={(skills) => update("skills", skills)} />
           </div>
 

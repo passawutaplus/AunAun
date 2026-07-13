@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useShowFirstPostLabel } from "@/hooks/useHasPublishedProject";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 
 import { useAuthDialog } from "@/stores/authDialogStore";
@@ -56,6 +57,7 @@ const FloatingNav = () => {
   const feedMode = new URLSearchParams(search).get("mode");
   const { user } = useAuth();
   const { data: myProfile } = useProfile(user?.id);
+  const showFirstPostLabel = useShowFirstPostLabel(user?.id);
   const openAuth = useAuthDialog((s) => s.openSignup);
   const { showBottomNav } = useAppLayout();
   const { data: chatBadgeCount = 0 } = useChatInboxBadgeCount();
@@ -210,14 +212,47 @@ const FloatingNav = () => {
         <button
           type="button"
           onClick={openCreate}
-          aria-label="สร้างเนื้อหาใหม่"
+          aria-label={showFirstPostLabel ? "ลงผลงานแรก" : "สร้างเนื้อหาใหม่"}
           className={cn(
-            "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full",
-            "bg-gradient-brand text-white",
-            "hover:opacity-90 active:scale-95 transition-all",
+            "pointer-events-auto flex shrink-0 items-center justify-center",
+            "active:scale-95 transition-all duration-200 ease-out",
+            showFirstPostLabel
+              ? cn(
+                  "group h-14 rounded-full border border-transparent bg-transparent gap-0 pl-0 pr-0",
+                  "text-primary dark:text-white shadow-lg shadow-black/20",
+                  "hover:border-primary hover:bg-background hover:gap-2 hover:pl-4 hover:pr-1.5",
+                  "focus-visible:border-primary focus-visible:bg-background focus-visible:gap-2 focus-visible:pl-4 focus-visible:pr-1.5",
+                )
+              : "h-14 w-14 rounded-full bg-gradient-brand text-white hover:opacity-90",
           )}
         >
-          <Plus className="h-6 w-6" strokeWidth={2.5} />
+          {showFirstPostLabel ? (
+            <>
+              <span
+                className={cn(
+                  "max-w-0 overflow-hidden opacity-0 whitespace-nowrap text-sm font-medium",
+                  "group-hover:max-w-[7.5rem] group-hover:opacity-100",
+                  "group-focus-visible:max-w-[7.5rem] group-focus-visible:opacity-100",
+                  "transition-all duration-200 ease-out",
+                )}
+              >
+                ลงผลงานแรก
+              </span>
+              <span
+                className={cn(
+                  "inline-flex items-center justify-center h-14 w-14 rounded-full",
+                  "bg-gradient-brand text-white",
+                  "group-hover:h-11 group-hover:w-11 group-hover:bg-primary group-hover:text-primary-foreground",
+                  "group-focus-visible:h-11 group-focus-visible:w-11 group-focus-visible:bg-primary group-focus-visible:text-primary-foreground",
+                  "transition-all duration-200 ease-out",
+                )}
+              >
+                <Plus className="h-6 w-6 group-hover:h-5 group-hover:w-5 group-focus-visible:h-5 group-focus-visible:w-5" strokeWidth={2.5} />
+              </span>
+            </>
+          ) : (
+            <Plus className="h-6 w-6" strokeWidth={2.5} />
+          )}
         </button>
       </nav>
     </>

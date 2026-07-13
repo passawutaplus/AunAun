@@ -19,6 +19,7 @@ import { OPS_HUB_URL } from "@/lib/productLinks";
 
 interface Row {
   id: string;
+  user_id?: string;
   display_name: string;
   username: string | null;
   email: string | null;
@@ -28,12 +29,17 @@ interface Row {
   is_verified: boolean | null;
   risk_score: number | null;
   created_at: string;
+  preferred_categories: string[] | null;
+  skills: string[] | null;
+  opportunity_types: string[] | null;
+  feed_interests: string[] | null;
+  profile_onboarding_at: string | null;
 }
 
 export default function AdminUsersPage() {
   const { data, isLoading } = useAdminList<Row>(
     "profiles",
-    "id,display_name,username,email,role,location,account_status,is_verified,risk_score,created_at",
+    "id,user_id,display_name,username,email,role,location,account_status,is_verified,risk_score,created_at,preferred_categories,skills,opportunity_types,feed_interests,profile_onboarding_at",
   );
   const [searchParams] = useSearchParams();
   const initialQ = searchParams.get("q") ?? "";
@@ -106,6 +112,34 @@ export default function AdminUsersPage() {
       ),
     },
     { key: "role", header: "Role", render: (r) => (r.role ? <StatusPill status={r.role} tone="muted" /> : "—") },
+    {
+      key: "disciplines",
+      header: "สายงาน",
+      render: (r) => (
+        <span className="text-xs text-admin-muted line-clamp-2 max-w-[10rem]">
+          {(r.preferred_categories ?? []).slice(0, 3).join(", ") || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "looking",
+      header: "กำลังมองหา",
+      render: (r) => (
+        <span className="text-xs text-admin-muted line-clamp-2 max-w-[10rem]">
+          {(r.opportunity_types ?? []).slice(0, 3).join(", ") || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "onboard",
+      header: "Onboard",
+      render: (r) =>
+        r.profile_onboarding_at ? (
+          <StatusPill status="done" tone="muted" />
+        ) : (
+          <StatusPill status="pending" tone="accent" />
+        ),
+    },
     { key: "risk", header: "Risk", render: (r) => <span className="font-mono text-xs">{r.risk_score ?? 0}</span> },
     { key: "joined", header: "สมัครเมื่อ", render: (r) => <span className="font-mono text-xs">{formatThaiDate(r.created_at)}</span> },
     {
@@ -172,6 +206,12 @@ export default function AdminUsersPage() {
     email: r.email,
     account_status: r.account_status,
     is_admin: adminSet.has(r.id),
+    role: r.role,
+    disciplines: (r.preferred_categories ?? []).join("|"),
+    skills: (r.skills ?? []).join("|"),
+    looking_for: (r.opportunity_types ?? []).join("|"),
+    feed_interests: (r.feed_interests ?? []).join("|"),
+    profile_onboarding_at: r.profile_onboarding_at,
     risk_score: r.risk_score,
     created_at: r.created_at,
   }));

@@ -16,6 +16,7 @@ const kindLabel: Record<MarketingInternalSignal["kind"], { th: string; en: strin
   job_no_applicants: { th: "งานเปิดไม่มีผู้สมัคร", en: "Open job, no applicants" },
   collab_pending: { th: "คอลแลปค้าง", en: "Pending collab" },
   ux_theme: { th: "UX pain", en: "UX theme" },
+  profile_incomplete: { th: "โปรไฟล์ onboarding ไม่ครบ", en: "Incomplete profile onboarding" },
 };
 
 export default function MarketingSignalsPage() {

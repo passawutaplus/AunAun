@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
-import { BarChart3, Bookmark, Eye, Handshake, Layers3, Loader2, Mail } from "lucide-react";
+import { BarChart3, Bookmark, Eye, Handshake, Layers3, Loader2, Mail, MessageCircle, RefreshCw } from "lucide-react";
 
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 
@@ -30,19 +32,23 @@ import type { Project } from "@/data/projectTypes";
 
 import {
 
+  EMPTY_PROJECT_METRIC_SERIES,
+
   EMPTY_PROJECT_STATS_IN_RANGE,
+
+  type ProjectStatsMetric,
 
   useProjectManageStatsForRange,
 
-  useProjectViewSeries,
+  useProjectMetricSeries,
 
 } from "@/hooks/usePortfolioProjectStats";
 
 import { timeAgoTH } from "@/lib/format";
 
-import {
+import { supabase } from "@/integrations/supabase/client";
 
-  DEFAULT_PROJECT_STATS_DATE_RANGE,
+import {
 
   getProjectStatsRangeBounds,
 
@@ -55,6 +61,8 @@ import {
 import ProjectStatsDateRangePicker from "@/components/portfolio/ProjectStatsDateRangePicker";
 
 import ProjectViewsChart from "@/components/portfolio/ProjectViewsChart";
+
+import { cn } from "@/lib/utils";
 
 
 
@@ -76,6 +84,62 @@ type Props = {
 
 };
 
+const STATS_DIALOG_DEFAULT_RANGE: ProjectStatsDateRange = { preset: "today" };
+
+const PROJECT_STATS_METRIC_CONFIG: Record<
+  ProjectStatsMetric,
+  {
+    title: string;
+    description: string;
+    valueLabel: string;
+    color: string;
+    icon: ReactNode;
+  }
+> = {
+  views: {
+    title: "การเข้าชม",
+    description: "ผู้ชมที่ล็อกอินในช่วงที่เลือก",
+    valueLabel: "ครั้ง",
+    color: "hsl(var(--primary))",
+    icon: <Eye className="w-3 h-3" />,
+  },
+  hires: {
+    title: "สนใจจ้างงาน",
+    description: "คำขอจ้างจากผลงานนี้ในช่วงที่เลือก",
+    valueLabel: "คำขอ",
+    color: "hsl(var(--chat-hire))",
+    icon: <BriefcaseIcon className="w-3 h-3" />,
+  },
+  collabs: {
+    title: "สนใจคอลแลป",
+    description: "คำขอคอลแลปจากผลงานนี้ในช่วงที่เลือก",
+    valueLabel: "คำขอ",
+    color: "hsl(var(--chat-collab))",
+    icon: <Handshake className="w-3 h-3" />,
+  },
+  likes: {
+    title: "ถูกใจ",
+    description: "คนที่กดถูกใจผลงานนี้ในช่วงที่เลือก",
+    valueLabel: "ครั้ง",
+    color: "hsl(var(--primary))",
+    icon: <PlusOneControl active={false} count={0} size="sm" className="pointer-events-none" />,
+  },
+  saves: {
+    title: "บันทึก",
+    description: "บุ๊กมาร์กและคอลเลกชันจากผลงานนี้ในช่วงที่เลือก",
+    valueLabel: "ครั้ง",
+    color: "hsl(199 89% 48%)",
+    icon: <Bookmark className="w-3 h-3" />,
+  },
+  comments: {
+    title: "คอมเมนต์",
+    description: "คอมเมนต์ใหม่ในผลงานนี้ในช่วงที่เลือก",
+    valueLabel: "ครั้ง",
+    color: "hsl(142 71% 45%)",
+    icon: <MessageCircle className="w-3 h-3" />,
+  },
+};
+
 
 
 function StatCell({
@@ -90,6 +154,10 @@ function StatCell({
 
   loading,
 
+  active,
+
+  onSelect,
+
 }: {
 
   label: string;
@@ -102,11 +170,24 @@ function StatCell({
 
   loading?: boolean;
 
+  active?: boolean;
+
+  onSelect?: () => void;
+
 }) {
+  const Comp = onSelect ? "button" : "div";
 
   return (
 
-    <div className="rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 text-center">
+    <Comp
+      type={onSelect ? "button" : undefined}
+      onClick={onSelect}
+      className={cn(
+        "rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 text-center transition-colors",
+        onSelect && "cursor-pointer hover:border-primary/60 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+        active && "border-primary/70 bg-primary/10",
+      )}
+    >
 
       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
 
@@ -130,7 +211,7 @@ function StatCell({
 
       {hint ? <p className="text-[10px] text-muted-foreground mt-0.5">{hint}</p> : null}
 
-    </div>
+    </Comp>
 
   );
 
@@ -157,14 +238,19 @@ export default function ProjectManageStatsDialog({
 }: Props) {
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const [dateRange, setDateRange] = useState<ProjectStatsDateRange>(DEFAULT_PROJECT_STATS_DATE_RANGE);
+  const [dateRange, setDateRange] = useState<ProjectStatsDateRange>(STATS_DIALOG_DEFAULT_RANGE);
+  const [selectedMetric, setSelectedMetric] = useState<ProjectStatsMetric>("views");
 
 
 
   useEffect(() => {
 
-    if (!open) setDateRange(DEFAULT_PROJECT_STATS_DATE_RANGE);
+    if (!open) {
+      setDateRange(STATS_DIALOG_DEFAULT_RANGE);
+      setSelectedMetric("views");
+    }
 
   }, [open]);
 
@@ -176,7 +262,12 @@ export default function ProjectManageStatsDialog({
 
 
 
-  const { data: rangeStats = EMPTY_PROJECT_STATS_IN_RANGE, isLoading, isFetching } =
+  const {
+    data: rangeStats = EMPTY_PROJECT_STATS_IN_RANGE,
+    isLoading,
+    isFetching,
+    refetch: refetchRangeStats,
+  } =
 
     useProjectManageStatsForRange(
 
@@ -195,17 +286,14 @@ export default function ProjectManageStatsDialog({
 
 
   const {
+    data: metricSeriesPayload = EMPTY_PROJECT_METRIC_SERIES,
+    isLoading: metricSeriesLoading,
+    isFetching: metricSeriesFetching,
+    refetch: refetchMetricSeries,
+  } = useProjectMetricSeries(
 
-    data: viewSeriesPayload = { current: [], previous: [] },
-
-    isLoading: viewSeriesLoading,
-
-    isFetching: viewSeriesFetching,
-
-  } = useProjectViewSeries(
-
+    ownerId,
     project?.id,
-
     bounds?.from.toISOString(),
 
     bounds?.to.toISOString(),
@@ -218,7 +306,39 @@ export default function ProjectManageStatsDialog({
 
   const statsLoading = isLoading || isFetching;
 
-  const chartLoading = viewSeriesLoading || viewSeriesFetching;
+  const chartLoading = metricSeriesLoading || metricSeriesFetching;
+
+  const metricConfig = PROJECT_STATS_METRIC_CONFIG[selectedMetric];
+
+  const selectedSeries = metricSeriesPayload[selectedMetric] ?? EMPTY_PROJECT_METRIC_SERIES.views;
+
+  const refreshStats = useCallback(() => {
+    void refetchRangeStats();
+    void refetchMetricSeries();
+    if (ownerId) {
+      void queryClient.invalidateQueries({ queryKey: ["portfolio-project-stats", ownerId] });
+      void queryClient.invalidateQueries({ queryKey: ["my-projects", ownerId] });
+    }
+  }, [ownerId, queryClient, refetchMetricSeries, refetchRangeStats]);
+
+  useEffect(() => {
+    if (!open || !project?.id) return;
+    const invalidate = () => refreshStats();
+    const ch = supabase
+      .channel(`project-stats-dialog-${project.id}`)
+      .on("postgres_changes", { event: "*", schema: "anthem", table: "project_views", filter: `project_id=eq.${project.id}` }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "anthem", table: "project_likes", filter: `project_id=eq.${project.id}` }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "anthem", table: "project_bookmarks", filter: `project_id=eq.${project.id}` }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "anthem", table: "collection_items", filter: `project_id=eq.${project.id}` }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "anthem", table: "project_comments", filter: `project_id=eq.${project.id}` }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "anthem", table: "hiring_requests", filter: `project_id=eq.${project.id}` }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "anthem", table: "collab_requests" }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "anthem", table: "projects", filter: `id=eq.${project.id}` }, invalidate)
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [open, project?.id, refreshStats]);
 
 
 
@@ -288,7 +408,21 @@ export default function ProjectManageStatsDialog({
 
             </div>
 
-            <ProjectStatsDateRangePicker value={dateRange} onChange={setDateRange} />
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={refreshStats}
+                disabled={statsLoading || chartLoading}
+                className="h-8 w-8 rounded-full p-0"
+                aria-label="รีเฟรชสถิติ"
+                title="รีเฟรชสถิติ"
+              >
+                <RefreshCw className={cn("w-3.5 h-3.5", (statsLoading || chartLoading) && "animate-spin")} />
+              </Button>
+              <ProjectStatsDateRangePicker value={dateRange} onChange={setDateRange} />
+            </div>
 
           </div>
 
@@ -300,10 +434,15 @@ export default function ProjectManageStatsDialog({
 
           {bounds ? (
             <ProjectViewsChart
-              viewedAt={viewSeriesPayload.current}
-              previousViewedAt={viewSeriesPayload.previous}
+              viewedAt={selectedSeries.current}
+              previousViewedAt={selectedSeries.previous}
               bounds={bounds}
               dateRange={dateRange}
+              title={metricConfig.title}
+              description={metricConfig.description}
+              valueLabel={metricConfig.valueLabel}
+              color={metricConfig.color}
+              icon={metricConfig.icon}
               loading={chartLoading}
             />
           ) : null}
@@ -324,9 +463,19 @@ export default function ProjectManageStatsDialog({
 
                 loading={statsLoading}
 
+                active={selectedMetric === "views"}
+
+                onSelect={() => setSelectedMetric("views")}
+
               />
 
-              <StatCell label="ยอดดูรวม" value={project.views} hint="ตลอดเวลา" />
+              <StatCell
+                label="ยอดดูรวม"
+                value={project.views}
+                hint="ตลอดเวลา"
+                active={selectedMetric === "views"}
+                onSelect={() => setSelectedMetric("views")}
+              />
 
             </div>
 
@@ -356,6 +505,10 @@ export default function ProjectManageStatsDialog({
 
                 loading={statsLoading}
 
+                active={selectedMetric === "hires"}
+
+                onSelect={() => setSelectedMetric("hires")}
+
               />
 
               <StatCell
@@ -367,6 +520,10 @@ export default function ProjectManageStatsDialog({
                 accent={rangeStats.collabCount > 0}
 
                 loading={statsLoading}
+
+                active={selectedMetric === "collabs"}
+
+                onSelect={() => setSelectedMetric("collabs")}
 
               />
 
@@ -398,35 +555,31 @@ export default function ProjectManageStatsDialog({
 
             <div className="grid grid-cols-3 gap-2">
 
-              <div className="rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 text-center">
+              <StatCell
+                label="ถูกใจ"
+                value={rangeStats.likeCount}
+                hint={`รวม ${project.likes.toLocaleString()}`}
+                accent={rangeStats.likeCount > 0}
+                loading={statsLoading}
+                active={selectedMetric === "likes"}
+                onSelect={() => setSelectedMetric("likes")}
+              />
 
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">ถูกใจ</p>
+              <StatCell
+                label="บันทึก"
+                value={saves}
+                loading={statsLoading}
+                active={selectedMetric === "saves"}
+                onSelect={() => setSelectedMetric("saves")}
+              />
 
-                <div className="mt-1 flex justify-center">
-
-                  <PlusOneControl
-
-                    active={false}
-
-                    count={project.likes}
-
-                    showCount
-
-                    size="sm"
-
-                    className="pointer-events-none text-foreground"
-
-                  />
-
-                </div>
-
-                <p className="text-[10px] text-muted-foreground mt-0.5">ตลอดเวลา</p>
-
-              </div>
-
-              <StatCell label="บันทึก" value={saves} loading={statsLoading} />
-
-              <StatCell label="คอมเมนต์" value={rangeStats.commentCount} loading={statsLoading} />
+              <StatCell
+                label="คอมเมนต์"
+                value={rangeStats.commentCount}
+                loading={statsLoading}
+                active={selectedMetric === "comments"}
+                onSelect={() => setSelectedMetric("comments")}
+              />
 
             </div>
 

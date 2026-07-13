@@ -1,9 +1,12 @@
+import type { ReactNode } from "react";
 import { MapPin } from "lucide-react";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import ExperienceTimeline from "@/components/profile/ExperienceTimeline";
 import SkillsList from "@/components/profile/SkillsList";
 import ContactCards from "@/components/profile/ContactCards";
 import type { ExperienceItem } from "@/lib/validators";
+import { WORK_DISCIPLINE_LABELS, type WorkDisciplineId } from "@/data/workDisciplineOptions";
+import { labelOpportunityType } from "@/lib/opportunity";
 
 type ProfileAbout = {
   role: string | null;
@@ -21,9 +24,53 @@ type Props = {
   profile: ProfileAbout;
   experience: ExperienceItem[];
   skills: string[];
+  disciplines?: string[];
+  opportunityTypes?: string[];
 };
 
-export function ProfileAboutReadOnly({ profile, experience, skills }: Props) {
+function DisciplineList({ items }: { items: string[] }) {
+  if (!items.length) {
+    return <p className="text-sm text-muted-foreground text-center py-6">ยังไม่ได้เลือกสายงาน</p>;
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map((id) => (
+        <span
+          key={id}
+          className="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-medium bg-secondary text-foreground border border-border"
+        >
+          {WORK_DISCIPLINE_LABELS[id as WorkDisciplineId] ?? id}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function LookingList({ items }: { items: string[] }) {
+  if (!items.length) {
+    return <p className="text-sm text-muted-foreground text-center py-6">ยังไม่ได้ระบุว่ากำลังมองหาอะไร</p>;
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map((id) => (
+        <span
+          key={id}
+          className="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20"
+        >
+          {labelOpportunityType(id)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export function ProfileAboutReadOnly({
+  profile,
+  experience,
+  skills,
+  disciplines = [],
+  opportunityTypes = [],
+}: Props) {
   return (
     <div className="space-y-0">
       <AboutRow title="ตำแหน่ง / สาขา">
@@ -54,6 +101,14 @@ export function ProfileAboutReadOnly({ profile, experience, skills }: Props) {
         ) : (
           <EmptyLine text="ยังไม่ได้แนะนำตัว" />
         )}
+      </AboutRow>
+
+      <AboutRow title="กำลังมองหา" count={opportunityTypes.length}>
+        <LookingList items={opportunityTypes} />
+      </AboutRow>
+
+      <AboutRow title="สายงาน" count={disciplines.length}>
+        <DisciplineList items={disciplines} />
       </AboutRow>
 
       <AboutRow title="ประสบการณ์ทำงาน">
@@ -89,7 +144,7 @@ const AboutRow = ({
 }: {
   title: string;
   count?: number;
-  children: React.ReactNode;
+  children: ReactNode;
 }) => (
   <div className="border-t border-border/60 pt-5 first:border-0 first:pt-0">
     <h3 className="text-sm font-medium text-foreground mb-3">

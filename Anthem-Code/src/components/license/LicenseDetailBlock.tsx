@@ -82,13 +82,18 @@ const LicenseDetailBlock = ({
             )}
             aria-label={open ? "ย่อรายละเอียดสิทธิ์การใช้งาน" : "ดูรายละเอียดสิทธิ์การใช้งาน"}
           >
-            <LicenseBadgeInline licenseType={licenseType} />
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-muted-foreground transition-transform shrink-0",
-                open && "rotate-180",
-              )}
-            />
+            <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">
+              สิทธิ์ของผลงานนี้
+            </span>
+            <span className="flex items-center gap-1.5 shrink-0 ml-auto">
+              <LicenseBadgeInline licenseType={licenseType} />
+              <ChevronDown
+                className={cn(
+                  "w-4 h-4 text-muted-foreground transition-transform shrink-0",
+                  open && "rotate-180",
+                )}
+              />
+            </span>
           </button>
         </CollapsibleTrigger>
 

@@ -617,6 +617,12 @@ const PublicProfilePage = () => {
                 }}
                 experience={parseExperience((profile as { experience?: unknown }).experience)}
                 skills={parseSkills(profile.skills)}
+                disciplines={parseSkills(
+                  (profile as { preferred_categories?: unknown }).preferred_categories,
+                )}
+                opportunityTypes={parseSkills(
+                  (profile as { opportunity_types?: unknown }).opportunity_types,
+                )}
               />
             </div>
           )}

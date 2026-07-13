@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { BanterLoader } from "@/components/ui/BanterLoader";
 import {
   Area,
@@ -28,14 +29,12 @@ type Props = {
   previousViewedAt: string[];
   bounds: ProjectStatsRangeBounds;
   dateRange: ProjectStatsDateRange;
+  title?: string;
+  description?: string;
+  valueLabel?: string;
+  color?: string;
+  icon?: ReactNode;
   loading?: boolean;
-};
-
-const chartConfig = {
-  views: {
-    label: "ผู้ชม",
-    color: "hsl(var(--primary))",
-  },
 };
 
 function formatTrend(pct: number | null): { text: string; positive: boolean } | null {
@@ -52,6 +51,11 @@ export default function ProjectViewsChart({
   previousViewedAt,
   bounds,
   dateRange,
+  title = "การเข้าชม",
+  description = "ผู้ชมที่ล็อกอินในช่วงที่เลือก",
+  valueLabel = "ครั้ง",
+  color = "hsl(var(--primary))",
+  icon = <Eye className="w-3 h-3" />,
   loading,
 }: Props) {
   const options = useMemo(
@@ -76,6 +80,15 @@ export default function ProjectViewsChart({
   const average = averageViewSeries(series);
   const previousTotal = previousViewedAt.length;
   const trend = formatTrend(viewSeriesTrendPercent(total, previousTotal));
+  const chartConfig = useMemo(
+    () => ({
+      views: {
+        label: title,
+        color,
+      },
+    }),
+    [color, title],
+  );
 
   const tickInterval = series.length > 8 ? Math.ceil(series.length / 6) : 0;
 
@@ -84,8 +97,8 @@ export default function ProjectViewsChart({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[10px] uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-            <Eye className="w-3 h-3" />
-            การเข้าชม
+            {icon}
+            {title}
           </p>
           {loading ? (
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground mt-1" />
@@ -109,7 +122,7 @@ export default function ProjectViewsChart({
               {trend.text}
             </p>
           ) : (
-            <p className="text-[10px] text-muted-foreground mt-0.5">ผู้ชมที่ล็อกอินในช่วงที่เลือก</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{description}</p>
           )}
         </div>
 
@@ -141,7 +154,7 @@ export default function ProjectViewsChart({
           </div>
         ) : series.length === 0 ? (
           <div className="h-full flex items-center justify-center text-xs text-muted-foreground text-center px-4">
-            ยังไม่มีข้อมูลผู้ชมในช่วงนี้
+            ยังไม่มีข้อมูล{title}ในช่วงนี้
           </div>
         ) : (
           <ChartContainer config={chartConfig} className="h-full w-full aspect-auto">
@@ -172,7 +185,7 @@ export default function ProjectViewsChart({
                 content={
                   <ChartTooltipContent
                     labelFormatter={(_, payload) => payload?.[0]?.payload?.label ?? ""}
-                    formatter={(value) => [`${value} คน`, "ผู้ชม"]}
+                    formatter={(value) => [`${value} ${valueLabel}`, title]}
                   />
                 }
               />

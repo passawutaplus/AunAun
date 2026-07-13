@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 import type { ProfileInput } from "@/lib/validators";
 import { assertUsernameAvailable, normalizeUsername } from "@/hooks/useUsernameAvailability";
+import { USERNAME_COOLDOWN_DAYS } from "@/lib/usernamePolicy";
 import { useAuth } from "@/hooks/useAuth";
 import { profileReadFrom } from "@/lib/profileAccess";
 
@@ -72,7 +73,7 @@ export const useUpdateProfile = (userId: string | undefined) => {
         }
         const msg = error.message || "";
         if (msg.includes("USERNAME_COOLDOWN")) {
-          throw new Error("เปลี่ยนชื่อผู้ใช้ได้ทุก 14 วัน — ลองใหม่เมื่อครบกำหนด");
+          throw new Error(`เปลี่ยนชื่อผู้ใช้ได้ทุก ${USERNAME_COOLDOWN_DAYS} วัน — ลองใหม่เมื่อครบกำหนด`);
         }
         throw new Error(msg || "บันทึกไม่สำเร็จ");
       }

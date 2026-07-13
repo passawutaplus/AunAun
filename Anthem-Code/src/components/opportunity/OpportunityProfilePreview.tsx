@@ -5,12 +5,11 @@ import {
   labelOpportunityType,
   normalizeOpportunityNote,
   type OpportunityStatusKey,
-  type OpportunityTypeKey,
 } from "@/lib/opportunity";
 
 type Props = {
   status: OpportunityStatusKey;
-  types: OpportunityTypeKey[];
+  types: string[];
   note?: string;
   className?: string;
 };

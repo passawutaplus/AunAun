@@ -21,6 +21,8 @@ import { profilePublicPath } from "@/lib/profileRoutes";
 import ChatMetaPanel from "@/components/chat/ChatMetaPanel";
 import ChatPortfolioSection from "@/components/chat/ChatPortfolioSection";
 import { cn } from "@/lib/utils";
+import { WORK_DISCIPLINE_LABELS, type WorkDisciplineId } from "@/data/workDisciplineOptions";
+import { labelOpportunityType } from "@/lib/opportunity";
 
 interface Props {
   conversation: Conversation;
@@ -63,6 +65,8 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose }: Props)
   );
 
   const skills = (profile?.skills as string[] | null) ?? [];
+  const disciplines = (profile?.preferred_categories as string[] | null) ?? [];
+  const lookingFor = (profile?.opportunity_types as string[] | null) ?? [];
   const displayName = profile?.display_name || profile?.username || "ผู้ใช้";
   const partnerLabel = displayName !== "ผู้ใช้" ? `ผลงานของ ${displayName}` : "ผลงานของคู่แชท";
 
@@ -128,10 +132,28 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose }: Props)
                   {profile.bio}
                 </p>
               )}
-              {skills.length > 0 && (
+              {lookingFor.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
+                  {lookingFor.slice(0, 4).map((t) => (
+                    <Badge key={t} className="text-xs font-normal bg-primary/10 text-primary border-0">
+                      {labelOpportunityType(t)}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              {disciplines.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2 justify-center">
+                  {disciplines.slice(0, 6).map((d) => (
+                    <Badge key={d} variant="secondary" className="text-xs font-normal">
+                      {WORK_DISCIPLINE_LABELS[d as WorkDisciplineId] ?? d}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              {skills.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2 justify-center">
                   {skills.slice(0, 8).map((s) => (
-                    <Badge key={s} variant="secondary" className="text-xs font-normal">
+                    <Badge key={s} variant="outline" className="text-xs font-normal">
                       {s}
                     </Badge>
                   ))}

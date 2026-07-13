@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Settings, Sparkles, UserPlus, FileCheck, Plus, Layers3, Target, UserRound, Pencil, Library } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ const parseSkills = (raw: unknown): string[] =>
 
 const PortfolioProfilePage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const { data: profile, isLoading } = useProfile(user?.id);
   const launchMinimal = isAplus1LaunchMinimal();
@@ -104,10 +105,71 @@ const PortfolioProfilePage = () => {
     },
   });
 
+  const { data: collabCount = 0 } = useQuery({
+    queryKey: ["collab-count", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("collab_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("recipient_id", user!.id);
+      return count ?? 0;
+    },
+  });
+
   const published = useMemo(() => myProjects.filter((p) => p.status === "Published"), [myProjects]);
   const totalViews = useMemo(() => published.reduce((s, p) => s + (p.views ?? 0), 0), [published]);
+  const projectIds = useMemo(() => myProjects.map((p) => p.id), [myProjects]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const invalidateRequests = () => {
+      void queryClient.invalidateQueries({ queryKey: ["hire-count", user.id] });
+      void queryClient.invalidateQueries({ queryKey: ["collab-count", user.id] });
+      void queryClient.invalidateQueries({ queryKey: ["hiring_requests", user.id] });
+      void queryClient.invalidateQueries({ queryKey: ["collab-requests"] });
+    };
+    const invalidateProjects = () => {
+      void queryClient.invalidateQueries({ queryKey: ["my-projects", user.id] });
+    };
+    const projectIdSet = new Set(projectIds);
+    const ch = supabase
+      .channel(`portfolio-profile-stats-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "anthem", table: "hiring_requests", filter: `freelancer_id=eq.${user.id}` },
+        invalidateRequests,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "anthem", table: "collab_requests", filter: `recipient_id=eq.${user.id}` },
+        invalidateRequests,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "anthem", table: "projects", filter: `owner_id=eq.${user.id}` },
+        invalidateProjects,
+      )
+      .on("postgres_changes", { event: "INSERT", schema: "anthem", table: "project_views" }, (payload) => {
+        const projectId = (payload.new as { project_id?: string }).project_id;
+        if (!projectId || projectIdSet.has(projectId)) invalidateProjects();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [projectIds, queryClient, user?.id]);
+
   const experience = parseExperience(profile?.experience);
   const skills = parseSkills(profile?.skills);
+  const disciplines = parseSkills(
+    (profile as { preferred_categories?: unknown } | null | undefined)?.preferred_categories,
+  );
+  const opportunityTypes = parseSkills(
+    (profile as { opportunity_types?: unknown } | null | undefined)?.opportunity_types,
+  );
 
   if (authLoading || isLoading || !profile) {
     return <PageLoader />;
@@ -164,9 +226,9 @@ const PortfolioProfilePage = () => {
       <div className="max-w-6xl mx-auto px-4 pt-2 pb-16 grid grid-cols-1 md:grid-cols-[300px_1fr] gap-6 md:gap-8">
         <aside className="md:sticky md:top-20 md:self-start space-y-4">
           <div className="rounded-3xl glass-panel p-5 grid grid-cols-3 gap-3">
-            <MiniStat icon={UserPlus} label="คำขอจ้าง" value={hireCount} />
+            <RequestMiniStat icon={UserPlus} label="คำขอ" hireCount={hireCount} collabCount={collabCount} />
             <MiniStat icon={FileCheck} label="เผยแพร่" value={published.length} />
-            <MiniStat icon={Sparkles} label="ยอดดูรวม" value={totalViews} />
+            <MiniStat icon={Sparkles} label="คนดู" value={totalViews} />
           </div>
 
           {!launchMinimal && <ProfileWalletCard />}
@@ -200,7 +262,13 @@ const PortfolioProfilePage = () => {
               </Button>
             }
           >
-            <ProfileAboutReadOnly profile={profile} experience={experience} skills={skills} />
+            <ProfileAboutReadOnly
+              profile={profile}
+              experience={experience}
+              skills={skills}
+              disciplines={disciplines}
+              opportunityTypes={opportunityTypes}
+            />
           </Section>
 
           <ProfileHiringRequestsSection />
@@ -313,6 +381,32 @@ const MiniStat = ({ icon: Icon, label, value }: { icon: React.ComponentType<{ cl
     </div>
     <div>
       <p className="text-sm font-medium text-foreground leading-none">{value}</p>
+      <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
+    </div>
+  </div>
+);
+
+const RequestMiniStat = ({
+  icon: Icon,
+  label,
+  hireCount,
+  collabCount,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  hireCount: number;
+  collabCount: number;
+}) => (
+  <div className="flex items-center gap-2.5">
+    <div className="text-primary flex items-center justify-center">
+      <Icon className="w-5 h-5" />
+    </div>
+    <div>
+      <p className="text-sm leading-none" aria-label={`จ้าง ${hireCount} คอลแลป ${collabCount}`}>
+        <span className="font-semibold text-sky-400">{hireCount}</span>
+        <span className="px-0.5 text-muted-foreground">/</span>
+        <span className="font-semibold text-primary">{collabCount}</span>
+      </p>
       <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
     </div>
   </div>

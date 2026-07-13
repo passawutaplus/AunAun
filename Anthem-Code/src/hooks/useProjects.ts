@@ -317,6 +317,7 @@ export const useCreateProject = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-projects"] });
       qc.invalidateQueries({ queryKey: ["published-projects"] });
+      qc.invalidateQueries({ queryKey: ["has-published-project"] });
       qc.invalidateQueries({ queryKey: ["drill-gallery"] });
       qc.invalidateQueries({ queryKey: ["for-you-projects"] });
       qc.invalidateQueries({ queryKey: ["top-projects"] });
@@ -332,6 +333,7 @@ export const useUpdateProject = () => {
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["my-projects"] });
       qc.invalidateQueries({ queryKey: ["published-projects"] });
+      qc.invalidateQueries({ queryKey: ["has-published-project"] });
       qc.invalidateQueries({ queryKey: ["for-you-projects"] });
       qc.invalidateQueries({ queryKey: ["top-projects"] });
       qc.invalidateQueries({ queryKey: ["project", vars.id] });
@@ -349,6 +351,7 @@ export const useDeleteProject = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-projects"] });
       qc.invalidateQueries({ queryKey: ["published-projects"] });
+      qc.invalidateQueries({ queryKey: ["has-published-project"] });
       qc.invalidateQueries({ queryKey: ["drill-gallery"] });
       qc.invalidateQueries({ queryKey: ["for-you-projects"] });
       qc.invalidateQueries({ queryKey: ["top-projects"] });

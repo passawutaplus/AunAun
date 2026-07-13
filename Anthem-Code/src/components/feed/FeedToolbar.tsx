@@ -50,6 +50,8 @@ type Props = {
   onClearFilters: () => void;
   onCreateClick: () => void;
   showCreate: boolean;
+  /** Expand create control with "ลงผลงานแรก" until first Published project. */
+  showFirstPostLabel?: boolean;
   communityFeedSource?: CommunityFeedFilter["feedSource"];
   onCommunityFeedSourceChange?: (source: CommunityFeedFilter["feedSource"]) => void;
   communityCategory?: string;
@@ -86,6 +88,7 @@ const FeedToolbar = ({
   onClearFilters,
   onCreateClick,
   showCreate,
+  showFirstPostLabel = false,
   communityFeedSource = "all",
   onCommunityFeedSourceChange,
   communityCategory = "All",
@@ -175,14 +178,53 @@ const FeedToolbar = ({
 
   const createButton =
     showCreate && !isCommunity ? (
-      <button
-        type="button"
-        onClick={onCreateClick}
-        aria-label="สร้างเนื้อหาใหม่"
-        className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gradient-brand text-white hover:opacity-90 transition-opacity shrink-0"
-      >
-        <Plus className="w-5 h-5" strokeWidth={2.5} />
-      </button>
+      showFirstPostLabel ? (
+        <button
+          type="button"
+          onClick={onCreateClick}
+          aria-label="ลงผลงานแรก"
+          className={cn(
+            "group inline-flex items-center h-9 rounded-full shrink-0",
+            "border border-transparent bg-transparent gap-0 pl-0 pr-0",
+            "text-primary dark:text-white",
+            "hover:border-primary hover:bg-background hover:gap-2 hover:pl-3 hover:pr-1",
+            "focus-visible:border-primary focus-visible:bg-background focus-visible:gap-2 focus-visible:pl-3 focus-visible:pr-1",
+            "hover:bg-primary/5 focus-visible:bg-primary/5",
+            "transition-all duration-200 ease-out",
+          )}
+        >
+          <span
+            className={cn(
+              "max-w-0 overflow-hidden opacity-0 whitespace-nowrap text-sm font-medium",
+              "group-hover:max-w-[7.5rem] group-hover:opacity-100",
+              "group-focus-visible:max-w-[7.5rem] group-focus-visible:opacity-100",
+              "transition-all duration-200 ease-out",
+            )}
+          >
+            ลงผลงานแรก
+          </span>
+          <span
+            className={cn(
+              "inline-flex items-center justify-center w-9 h-9 rounded-full",
+              "bg-gradient-brand text-white",
+              "group-hover:w-7 group-hover:h-7 group-hover:bg-primary group-hover:text-primary-foreground",
+              "group-focus-visible:w-7 group-focus-visible:h-7 group-focus-visible:bg-primary group-focus-visible:text-primary-foreground",
+              "transition-all duration-200 ease-out",
+            )}
+          >
+            <Plus className="w-5 h-5 group-hover:w-4 group-hover:h-4 group-focus-visible:w-4 group-focus-visible:h-4" strokeWidth={2.5} />
+          </span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onCreateClick}
+          aria-label="สร้างเนื้อหาใหม่"
+          className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gradient-brand text-white hover:opacity-90 transition-opacity shrink-0"
+        >
+          <Plus className="w-5 h-5" strokeWidth={2.5} />
+        </button>
+      )
     ) : null;
 
   /** Keep each toggle mounted in a stable tree slot so the pill can slide. */

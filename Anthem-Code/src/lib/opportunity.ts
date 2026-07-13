@@ -39,15 +39,21 @@ export const OPPORTUNITY_TYPES = {
   paid_work: "หางานจ้าง",
   join_team: "มองหางาน Full-time",
   internship: "มองหาฝึกงาน",
-  collaboration: "หาคอลแลป",
   network_collab: "ร่วมโปรเจกต์",
   connection: "หาคอนเนกชัน",
-  feedback_mentor: "อยากได้ Feedback",
+  show_work: "หาพื้นที่โชว์ผลงาน",
+  designer_community: "หาคอมมูนิตี้ designer&artist",
 } as const;
 
 export type OpportunityTypeKey = keyof typeof OPPORTUNITY_TYPES;
 
 export const OPPORTUNITY_TYPE_KEYS = Object.keys(OPPORTUNITY_TYPES) as OpportunityTypeKey[];
+
+/** Labels for types removed from the picker (still shown if already saved). */
+const LEGACY_OPPORTUNITY_TYPE_LABELS: Record<string, string> = {
+  collaboration: "หาคอลแลป",
+  feedback_mentor: "อยากได้ Feedback",
+};
 
 const LEGACY_TYPE_ALIASES: Record<string, OpportunityTypeKey | null> = {
   soft_open: null,
@@ -57,7 +63,7 @@ const LEGACY_TYPE_ALIASES: Record<string, OpportunityTypeKey | null> = {
 export function normalizeOpportunityProfile(
   status: string | null | undefined,
   types: string[] | null | undefined,
-): { status: OpportunityStatusKey; types: OpportunityTypeKey[] } {
+): { status: OpportunityStatusKey; types: string[] } {
   let normalizedStatus = (status ?? "open_to_opportunities") as OpportunityStatusKey;
   const rawTypes = [...(types ?? [])];
 
@@ -66,8 +72,13 @@ export function normalizeOpportunityProfile(
   }
 
   const normalizedTypes = rawTypes
-    .map((t) => LEGACY_TYPE_ALIASES[t] ?? t)
-    .filter((t): t is OpportunityTypeKey => !!t && t in OPPORTUNITY_TYPES);
+    .map((t) => {
+      const aliased = LEGACY_TYPE_ALIASES[t];
+      if (aliased === null) return null;
+      return aliased ?? t;
+    })
+    .filter((t): t is string => typeof t === "string" && t.trim().length > 0)
+    .map((t) => t.trim());
 
   if (!OPPORTUNITY_STATUS_KEYS.includes(normalizedStatus)) {
     normalizedStatus = "open_to_opportunities";
@@ -82,7 +93,11 @@ export function labelOpportunityStatus(status: string | null | undefined): strin
 }
 
 export function labelOpportunityType(type: string): string {
-  return OPPORTUNITY_TYPES[type as OpportunityTypeKey] ?? type;
+  return (
+    OPPORTUNITY_TYPES[type as OpportunityTypeKey] ??
+    LEGACY_OPPORTUNITY_TYPE_LABELS[type] ??
+    type
+  );
 }
 
 /** True when primary contact CTA should show on project/profile. */
@@ -93,7 +108,7 @@ export function isHireCtaAvailable(status: string | null | undefined): boolean {
 
 export function needsOpportunityTypeHint(
   status: OpportunityStatusKey,
-  types: OpportunityTypeKey[],
+  types: string[],
 ): boolean {
   return status === "open_to_opportunities" && types.length === 0;
 }

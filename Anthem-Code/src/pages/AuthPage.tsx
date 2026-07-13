@@ -30,7 +30,7 @@ import {
   BRAND_TAGLINE,
 } from "@/lib/brandConfig";
 import SeoHead from "@/components/SeoHead";
-import { hasCompletedFeedInterestSurvey } from "@/hooks/useFeedInterests";
+import { hasCompletedProfileOnboarding } from "@/hooks/useFeedInterests";
 
 const PasswordInput = ({ id, value, onChange, placeholder, autoComplete, minLength, required, invalid }: {
   id: string;
@@ -96,11 +96,13 @@ const AuthPage = () => {
     void (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("feed_interests, feed_interests_at")
+        .select(
+          "feed_interests, feed_interests_at, username, opportunity_types, preferred_categories, skills, profile_onboarding_at",
+        )
         .eq("user_id", user.id)
         .maybeSingle();
       if (cancelled) return;
-      const needsInterestSurvey = !hasCompletedFeedInterestSurvey(data);
+      const needsInterestSurvey = !hasCompletedProfileOnboarding(data);
       const dest = needsInterestSurvey ? "/" : redirect;
       window.setTimeout(() => navigate(dest, { replace: true }), 250);
     })();

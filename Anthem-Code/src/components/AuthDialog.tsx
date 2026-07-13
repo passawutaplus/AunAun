@@ -21,7 +21,7 @@ import { ReferralSignupHint } from "@/components/referral/ReferralSignupHint";
 import LegalSignupConsents from "@/components/legal/LegalSignupConsents";
 import { recordSignupConsents, markPendingSignupConsent } from "@/lib/legalCompliance";
 import { isAuthRoute } from "@/lib/onboardingRoutes";
-import { hasCompletedFeedInterestSurvey } from "@/hooks/useFeedInterests";
+import { hasCompletedProfileOnboarding } from "@/hooks/useFeedInterests";
 
 const PasswordInput = ({ id, value, onChange, placeholder, autoComplete, minLength, required, invalid }: {
   id: string; value: string;
@@ -63,10 +63,12 @@ const AuthDialog = () => {
       await qc.invalidateQueries({ queryKey: ["profile", user.id, "feed-interests"] });
       const { data } = await supabase
         .from("profiles")
-        .select("feed_interests, feed_interests_at")
+        .select(
+          "feed_interests, feed_interests_at, username, opportunity_types, preferred_categories, skills, profile_onboarding_at",
+        )
         .eq("user_id", user.id)
         .maybeSingle();
-      const needsInterestSurvey = !hasCompletedFeedInterestSurvey(data);
+      const needsInterestSurvey = !hasCompletedProfileOnboarding(data);
       if (needsInterestSurvey) {
         navigate("/", { replace: true });
         return;

@@ -8,7 +8,8 @@ export type MarketingSignalKind =
   | "hirer_stale"
   | "job_no_applicants"
   | "collab_pending"
-  | "ux_theme";
+  | "ux_theme"
+  | "profile_incomplete";
 
 export type MarketingInternalSignal = {
   id: string;
@@ -31,7 +32,9 @@ async function fetchInternalSignals(): Promise<MarketingInternalSignal[]> {
 
   const { data: staleProfiles } = await supabase
     .from("profiles")
-    .select("user_id, display_name, username, created_at")
+    .select(
+      "user_id, display_name, username, created_at, preferred_categories, opportunity_types, skills, profile_onboarding_at, feed_interests",
+    )
     .lt("created_at", threeDaysAgo())
     .order("created_at", { ascending: true })
     .limit(80);
@@ -45,6 +48,21 @@ async function fetchInternalSignals(): Promise<MarketingInternalSignal[]> {
       .in("owner_id", userIds);
     const publishedSet = new Set((published ?? []).map((p) => p.owner_id));
     for (const p of staleProfiles) {
+      if (!p.profile_onboarding_at) {
+        const discs = (p.preferred_categories as string[] | null) ?? [];
+        signals.push({
+          id: `onboard-${p.user_id}`,
+          kind: "profile_incomplete",
+          title: p.display_name || p.username || "Creator",
+          summary: discs.length
+            ? `ยังไม่จบ onboarding · สายงาน: ${discs.slice(0, 3).join(", ")}`
+            : "สมัครแล้วแต่ยังไม่จบโปรไฟล์ onboarding",
+          adminUrl: `${SITE}/admin/users?user_id=${p.user_id}`,
+          userId: p.user_id,
+          score: 72,
+          detectedAt: p.created_at,
+        });
+      }
       if (publishedSet.has(p.user_id)) continue;
       signals.push({
         id: `creator-${p.user_id}`,

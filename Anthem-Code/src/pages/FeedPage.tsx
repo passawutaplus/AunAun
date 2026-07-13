@@ -42,6 +42,7 @@ import {
   type DBProject,
 } from "@/hooks/useProjects";
 import { useAuth } from "@/hooks/useAuth";
+import { useShowFirstPostLabel } from "@/hooks/useHasPublishedProject";
 import { navigateToAuth, stashPendingHire, consumePendingHire } from "@/lib/authRedirect";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import CommunityFeedPanel from "@/components/community/CommunityFeedPanel";
@@ -79,6 +80,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const showFirstPostLabel = useShowFirstPostLabel(user?.id);
   const [search, setSearch] = useState("");
   const [feedMode, setFeedModeRaw] = useState<FeedMode2>("Explore");
   const [category, setCategory] = useState<ProjectChipFilter>("All");
@@ -447,6 +449,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           }}
           onCreateClick={openNewPortfolio}
           showCreate={mode !== "community"}
+          showFirstPostLabel={showFirstPostLabel}
           communityFeedSource={communityFilter.feedSource}
           onCommunityFeedSourceChange={(feedSource) =>
             setCommunityFilter({ ...communityFilter, feedSource })
