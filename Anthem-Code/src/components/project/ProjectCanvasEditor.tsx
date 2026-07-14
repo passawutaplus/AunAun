@@ -61,6 +61,7 @@ import {
 } from "@/lib/canvasImageSlotDnD";
 import { CanvasImageSlotDropDialog } from "@/components/project/CanvasImageSlotDropDialog";
 import { ModuleImageWithCrop } from "@/components/project/ModuleImageWithCrop";
+import { PROJECT_VIDEO_ACCEPT } from "@/lib/videoAccept";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -188,7 +189,7 @@ function ModuleVideoWithReplace({
           <input
             ref={inputRef}
             type="file"
-            accept="video/mp4,video/webm,video/quicktime"
+            accept={PROJECT_VIDEO_ACCEPT}
             className="sr-only"
             disabled={disabled || uploading}
             onChange={(e) => {
@@ -296,7 +297,10 @@ function EmptyImageTile({
       {uploading ? (
         <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
       ) : (
-        <ImageIcon className="h-8 w-8 text-muted-foreground/50" strokeWidth={1.25} />
+        <>
+          <ImageIcon className="h-8 w-8 text-muted-foreground/50" strokeWidth={1.25} />
+          <span className="text-xs font-medium text-muted-foreground/80">+Upload</span>
+        </>
       )}
       <input
         ref={inputRef}
@@ -852,10 +856,10 @@ function SortableCanvasBlock({
               }}
             >
               {uploading ? <Loader2 className="h-7 w-7 animate-spin" /> : <Film className="h-8 w-8 text-muted-foreground/50" />}
-              <span className="text-xs text-muted-foreground">อัปโหลดวิดีโอ</span>
+              <span className="text-xs font-medium text-muted-foreground/80">+Upload</span>
               <input
                 type="file"
-                accept="video/mp4,video/webm,video/quicktime"
+                accept={PROJECT_VIDEO_ACCEPT}
                 className="sr-only"
                 disabled={disabled || uploading}
                 onChange={(e) => {

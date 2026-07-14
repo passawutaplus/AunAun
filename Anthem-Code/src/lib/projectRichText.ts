@@ -48,18 +48,44 @@ function serializeNode(node: Node): string {
   const kids = Array.from(el.childNodes).map(serializeNode).join("");
 
   if (tag === "SPAN") {
-    if (align) return `<span style="text-align:${align}">${kids}</span>`;
-    return kids;
+    let wrapped = kids;
+    const fw = (el.style?.fontWeight || "").toLowerCase();
+    if (fw === "bold" || fw === "bolder" || Number.parseInt(fw, 10) >= 600) {
+      wrapped = `<b>${wrapped}</b>`;
+    }
+    if ((el.style?.fontStyle || "").toLowerCase() === "italic") {
+      wrapped = `<i>${wrapped}</i>`;
+    }
+    const deco = `${el.style?.textDecorationLine || ""} ${el.style?.textDecoration || ""}`.toLowerCase();
+    if (deco.includes("underline")) wrapped = `<u>${wrapped}</u>`;
+    if (deco.includes("line-through")) wrapped = `<s>${wrapped}</s>`;
+    if (align) return `<span style="text-align:${align}">${wrapped}</span>`;
+    return wrapped;
   }
 
   const outTag =
     tag === "STRONG" ? "b" : tag === "EM" ? "i" : tag === "STRIKE" ? "s" : tag.toLowerCase();
 
+  // Preserve inline format when browser puts font-weight on a block wrapper.
+  let blockKids = kids;
+  if (outTag === "p" || outTag === "div") {
+    const fw = (el.style?.fontWeight || "").toLowerCase();
+    if (fw === "bold" || fw === "bolder" || Number.parseInt(fw, 10) >= 600) {
+      blockKids = `<b>${blockKids}</b>`;
+    }
+    if ((el.style?.fontStyle || "").toLowerCase() === "italic") {
+      blockKids = `<i>${blockKids}</i>`;
+    }
+    const deco = `${el.style?.textDecorationLine || ""} ${el.style?.textDecoration || ""}`.toLowerCase();
+    if (deco.includes("underline")) blockKids = `<u>${blockKids}</u>`;
+    if (deco.includes("line-through")) blockKids = `<s>${blockKids}</s>`;
+  }
+
   if ((outTag === "p" || outTag === "div") && align) {
-    return `<${outTag} style="text-align:${align}">${kids}</${outTag}>`;
+    return `<${outTag} style="text-align:${align}">${blockKids}</${outTag}>`;
   }
   if (outTag === "p" || outTag === "div") {
-    return `<${outTag}>${kids}</${outTag}>`;
+    return `<${outTag}>${blockKids}</${outTag}>`;
   }
   return `<${outTag}>${kids}</${outTag}>`;
 }

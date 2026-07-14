@@ -87,7 +87,7 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
     return (
       <div className="text-center py-16 text-muted-foreground">
         <Bell className="w-10 h-10 mx-auto mb-2 opacity-50" />
-        <p className="text-sm">ยังไม่มีการแจ้งเตือนในกล่องข้อความ</p>
+        <p className="text-sm">ยังไม่มีการแจ้งเตือน</p>
       </div>
     );
   }
@@ -146,7 +146,12 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
                     )}
                   </p>
                   {!isFollow && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{n.body}</p>}
-                  <p className="text-[11px] text-muted-foreground mt-1">{timeAgo(n.created_at)}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-[11px] text-muted-foreground">{timeAgo(n.created_at)}</p>
+                    {n.is_read ? (
+                      <span className="text-[10px] text-muted-foreground/80">อ่านแล้ว</span>
+                    ) : null}
+                  </div>
                 </div>
               </button>
               {isFollow && followerId ? (

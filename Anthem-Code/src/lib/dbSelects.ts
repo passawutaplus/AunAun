@@ -13,7 +13,8 @@ export const PROJECT_EXTERNAL_LINKS_SELECT = "external_links";
 
 export const PROJECT_ASSETS_SELECT = "project_assets";
 
-export const PROJECT_CONTENT_SELECT = "content_blocks, gallery_display_mode, grid_layout";
+export const PROJECT_CONTENT_SELECT =
+  "content_blocks, gallery_display_mode, grid_layout, editor_mode, flex_grid_layout";
 
 export const PROJECT_FEED_SELECT =
   `id, title, cover_url, gallery_urls, category, owner_id, likes, views, status, created_at, tools, tags, allow_hire, allow_collab, license_type, sort_order, is_pinned`;

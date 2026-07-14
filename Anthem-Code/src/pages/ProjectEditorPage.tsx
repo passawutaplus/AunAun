@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Eye, Handshake, ImagePlus, Library, Loader2, Save, X } from "lucide-react";
+import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { isUuid } from "@/lib/uuid";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { uploadProjectVideo } from "@/lib/uploadVideo";
+import { isVideoFile } from "@/lib/videoAccept";
 import { useSubscription } from "@/core/subscription";
 import { getProjectLimits } from "@/lib/projectLimits";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,6 +69,11 @@ import { type LicenseType, isLicenseType } from "@/lib/licenses";
 import { ProjectEditorToolsSidebar } from "@/components/project/ProjectEditorToolsSidebar";
 import { ProjectEditorMetaSidebar } from "@/components/project/ProjectEditorMetaSidebar";
 import { ProjectCanvasEditor } from "@/components/project/ProjectCanvasEditor";
+import { FlexGridToolsSidebar, type FlexGridLayerRef } from "@/components/project/FlexGridToolsSidebar";
+import {
+  ProjectFlexGridEditor,
+  placeFlexGridModuleAtCenter,
+} from "@/components/project/ProjectFlexGridEditor";
 import { CanvasTemplatePreviewDialog } from "@/components/project/CanvasTemplatePreviewDialog";
 import {
   ProjectCategoryPicker,
@@ -112,6 +119,23 @@ import {
   type PhotoGridLayout,
 } from "@/lib/photoGridLayouts";
 import { countMediaByKind } from "@/lib/portfolioMedia";
+import {
+  alignFlexModules,
+  defaultFlexGridLayout,
+  distributeFlexModules,
+  duplicateFlexBoard,
+  flexGridHasContent,
+  flexGridMediaItems,
+  parseEditorMode,
+  parseFlexGridLayout,
+  reSnapLayout,
+  setModuleLocked,
+  splitMediaFromFlexGrid,
+  toStoredFlexGridLayout,
+  type FlexGridLayout,
+  type ProjectEditorMode,
+} from "@/lib/flexGridLayout";
+import { useFlexGridHistory } from "@/hooks/useFlexGridHistory";
 import { mergeDrillTags } from "@/lib/drillProject";
 import { DrillPostNotice } from "@/components/drill/DrillPostNotice";
 import {
@@ -141,6 +165,7 @@ const ProjectEditorPage = () => {
   const isDailyDrillPost = isDrillPost && params.get("drill_type") === "daily";
   const { user, loading: authLoading } = useAuth();
   const ensureVerified = useEnsureSensitiveAction();
+  const reduceMotion = useReducedMotion();
   const { data: isAdmin } = useIsAdmin();
   const { tier } = useSubscription();
   const limits = getProjectLimits(tier);
@@ -169,6 +194,14 @@ const ProjectEditorPage = () => {
   const [contentBlocks, setContentBlocks] = useState<ProjectContentBlock[]>([]);
   const [galleryDisplayMode, setGalleryDisplayMode] = useState<GalleryDisplayMode>("gallery");
   const [gridLayout, setGridLayout] = useState<PhotoGridLayout>("four_quad");
+  const [editorMode, setEditorMode] = useState<ProjectEditorMode>("casual");
+  const [flexGridLayout, setFlexGridLayout] = useState<FlexGridLayout>(() => defaultFlexGridLayout());
+  const flexHistory = useFlexGridHistory(flexGridLayout, setFlexGridLayout);
+  const [flexGridSelection, setFlexGridSelection] = useState<FlexGridLayerRef[]>([]);
+  const flexGridSelected = flexGridSelection[flexGridSelection.length - 1] ?? null;
+  const [flexGridVisible, setFlexGridVisible] = useState(true);
+  const [flexGridSnapEnabled, setFlexGridSnapEnabled] = useState(true);
+  const [uploadingFlexModuleId, setUploadingFlexModuleId] = useState<string | null>(null);
   const [category, setCategory] = useState<string>("");
   const [cover, setCover] = useState<string>("");
   const [tools, setTools] = useState<string[]>([]);
@@ -200,6 +233,7 @@ const ProjectEditorPage = () => {
   const [publishChecklist, setPublishChecklist] = useState<string[]>([]);
   const [publishChecklistTick, setPublishChecklistTick] = useState(0);
   const [publishPopupOpaque, setPublishPopupOpaque] = useState(false);
+  const [publishFieldHighlightOpaque, setPublishFieldHighlightOpaque] = useState(false);
   const [toolInput, setToolInput] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -370,6 +404,10 @@ const ProjectEditorPage = () => {
         parseGalleryDisplayMode((existing as { gallery_display_mode?: string }).gallery_display_mode),
       );
       setGridLayout(parsePhotoGridPickerLayout((existing as { grid_layout?: string }).grid_layout));
+      setEditorMode(parseEditorMode((existing as { editor_mode?: string }).editor_mode));
+      setFlexGridLayout(parseFlexGridLayout((existing as { flex_grid_layout?: unknown }).flex_grid_layout));
+      setFlexGridSelection([]);
+      flexHistory.resetHistory();
       setCategory(existing.category);
       setCover(existing.cover_url ?? "");
       setTools(existing.tools ?? []);
@@ -459,7 +497,12 @@ const ProjectEditorPage = () => {
 
   const buildProjectPayload = useCallback(
     (targetStatus: Status) => {
-      const { gallery_urls, video_urls } = splitMediaFromBlocks(contentBlocks);
+      const casualMedia = splitMediaFromBlocks(contentBlocks);
+      const flexMedia = splitMediaFromFlexGrid(flexGridLayout);
+      const gallery_urls =
+        editorMode === "flex_grid" ? flexMedia.gallery_urls : casualMedia.gallery_urls;
+      const video_urls =
+        editorMode === "flex_grid" ? flexMedia.video_urls : casualMedia.video_urls;
       const finalTags = mergeDrillTags(
         tags,
         drillMetaRef.current.drill_type,
@@ -510,6 +553,8 @@ const ProjectEditorPage = () => {
         content_blocks: storedBlocks,
         gallery_display_mode: galleryDisplayMode,
         grid_layout: gridLayout,
+        editor_mode: editorMode,
+        flex_grid_layout: toStoredFlexGridLayout(flexGridLayout),
       };
     },
     [
@@ -519,6 +564,8 @@ const ProjectEditorPage = () => {
       contentBlocks,
       galleryDisplayMode,
       gridLayout,
+      editorMode,
+      flexGridLayout,
       category,
       cover,
       showPrice,
@@ -607,7 +654,10 @@ const ProjectEditorPage = () => {
   const persistDraft = useCallback(
     async (projectId?: string | null): Promise<{ id: string } | null> => {
       if (!user) throw new Error("UNAUTHORIZED");
-      const media = splitMediaFromBlocks(contentBlocks);
+      const media =
+        editorMode === "flex_grid"
+          ? splitMediaFromFlexGrid(flexGridLayout)
+          : splitMediaFromBlocks(contentBlocks);
       if (
         !portfolioEditorHasContent({
           title,
@@ -618,7 +668,8 @@ const ProjectEditorPage = () => {
           video_urls: media.video_urls,
           tools,
           tags,
-        })
+        }) &&
+        !flexGridHasContent(flexGridLayout)
       ) {
         return null;
       }
@@ -658,6 +709,8 @@ const ProjectEditorPage = () => {
       title,
       shortDescription,
       contentBlocks,
+      editorMode,
+      flexGridLayout,
       cover,
       tools,
       tags,
@@ -904,7 +957,10 @@ const ProjectEditorPage = () => {
       errors.status = "ตั้งการมองเห็นเป็น Published";
       checklist.push("ตั้งการมองเห็นเป็น Published");
     }
-    const canvasImages = countMediaByKind(mediaItemsFromBlocks(contentBlocks), "image");
+    const canvasImages =
+      editorMode === "flex_grid"
+        ? countMediaByKind(flexGridMediaItems(flexGridLayout), "image")
+        : countMediaByKind(mediaItemsFromBlocks(contentBlocks), "image");
     if (canvasImages < 1) {
       errors.canvasImage = "เพิ่มภาพในแคนวาสอย่างน้อย 1 ภาพ";
       checklist.push("เพิ่มภาพในแคนวาสอย่างน้อย 1 ภาพ");
@@ -925,6 +981,8 @@ const ProjectEditorPage = () => {
     shortDescription,
     status,
     contentBlocks,
+    editorMode,
+    flexGridLayout,
     licenseType,
     licenseNote,
     hasThirdPartyAssets,
@@ -960,6 +1018,7 @@ const ProjectEditorPage = () => {
     if (checklist.length > 0) {
       setPublishChecklist(checklist);
       setPublishPopupOpaque(true);
+      setPublishFieldHighlightOpaque(true);
       setPublishChecklistTick((n) => n + 1);
       if (errors.title || errors.cover || errors.category || errors.status) setMetaExpanded(true);
       const firstKey = Object.keys(errors)[0];
@@ -991,6 +1050,19 @@ const ProjectEditorPage = () => {
     };
   }, [publishChecklist, publishChecklistTick]);
 
+  /** Red field/canvas outlines: hold ~5s, then fade out (casual + flex grid). */
+  useEffect(() => {
+    if (publishChecklistTick === 0) return;
+    const fadeTimer = window.setTimeout(() => setPublishFieldHighlightOpaque(false), 5000);
+    const clearTimer = window.setTimeout(() => setPublishFieldErrors({}), 5500);
+    return () => {
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(clearTimer);
+    };
+  }, [publishChecklistTick]);
+
+  const publishFieldHighlight = (active: boolean | string | undefined) =>
+    !!active && publishFieldHighlightOpaque;
   useEffect(() => {
     if (countMediaByKind(mediaItemsFromBlocks(contentBlocks), "image") >= 1) {
       clearPublishFieldError("canvasImage");
@@ -1474,7 +1546,96 @@ const ProjectEditorPage = () => {
     [user, moduleCropTarget, tier, contentBlocks, cover],
   );
 
-  const mediaItems = useMemo(() => mediaItemsFromBlocks(contentBlocks), [contentBlocks]);
+  const mediaItems = useMemo(() => {
+    if (editorMode === "flex_grid") return flexGridMediaItems(flexGridLayout);
+    return mediaItemsFromBlocks(contentBlocks);
+  }, [editorMode, flexGridLayout, contentBlocks]);
+
+  const handleUploadToFlexModule = useCallback(
+    async (boardId: string, moduleId: string, file: File) => {
+      if (!user || !file) return;
+      const board = flexGridLayout.boards.find((b) => b.id === boardId);
+      const mod = board?.modules.find((m) => m.id === moduleId);
+      if (!mod || (mod.type !== "image" && mod.type !== "video")) return;
+
+      if (mod.type === "video") {
+        if (!isVideoFile(file)) {
+          toast.error("โมดูลวิดีโอรับเฉพาะไฟล์วิดีโอ");
+          return;
+        }
+        if (
+          countMediaByKind(flexGridMediaItems(flexGridLayout), "video") >= limits.videosPerProject &&
+          !mod.url
+        ) {
+          toast.error(`แพ็กเกจนี้อัปโหลดวิดีโอได้สูงสุด ${limits.videosPerProject} คลิป/ผลงาน`);
+          return;
+        }
+        setUploadingFlexModuleId(moduleId);
+        setUploadingVideo(true);
+        try {
+          const url = await uploadProjectVideo(file, user.id, folderRef.current, tier);
+          setFlexGridLayout((prev) => ({
+            ...prev,
+            boards: prev.boards.map((b) =>
+              b.id !== boardId
+                ? b
+                : {
+                    ...b,
+                    modules: b.modules.map((m) => (m.id === moduleId ? { ...m, url } : m)),
+                  },
+            ),
+          }));
+          if (!cover) setCover(url);
+          clearPublishFieldError("canvasImage");
+        } catch (e) {
+          toast.error(mapWriteFlowError(e, "อัปโหลดวิดีโอไม่สำเร็จ"));
+        } finally {
+          setUploadingFlexModuleId(null);
+          setUploadingVideo(false);
+        }
+        return;
+      }
+
+      const maxImages = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
+      const currentImages = countMediaByKind(flexGridMediaItems(flexGridLayout), "image");
+      if (!mod.url && currentImages >= maxImages) {
+        toast.error(`อัปโหลดภาพได้สูงสุด ${maxImages} ภาพ/ผลงาน`);
+        return;
+      }
+      setUploadingFlexModuleId(moduleId);
+      setUploadingGallery(true);
+      try {
+        const url = await uploadProjectImage(file, user.id, folderRef.current, tier);
+        setFlexGridLayout((prev) => ({
+          ...prev,
+          boards: prev.boards.map((b) =>
+            b.id !== boardId
+              ? b
+              : {
+                  ...b,
+                  modules: b.modules.map((m) => (m.id === moduleId ? { ...m, url } : m)),
+                },
+          ),
+        }));
+        if (!cover) setCover(url);
+        clearPublishFieldError("canvasImage");
+      } catch (e) {
+        toast.error(mapWriteFlowError(e, "อัปโหลดภาพไม่สำเร็จ"));
+      } finally {
+        setUploadingFlexModuleId(null);
+        setUploadingGallery(false);
+      }
+    },
+    [
+      user,
+      flexGridLayout,
+      limits.videosPerProject,
+      limits.galleryImages,
+      tier,
+      cover,
+      clearPublishFieldError,
+    ],
+  );
 
   const previewData: ProjectPreviewData = {
     title,
@@ -1482,6 +1643,8 @@ const ProjectEditorPage = () => {
     contentBlocks: toStoredContentBlocks(contentBlocks),
     galleryDisplayMode,
     gridLayout,
+    editorMode,
+    flexGridLayout: toStoredFlexGridLayout(flexGridLayout),
     category,
     cover,
     gallery: mediaItems.map((m) => m.url),
@@ -1570,11 +1733,63 @@ const ProjectEditorPage = () => {
       <div className="sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
           <BackButton />
-          <div className="min-w-0 flex-1">
-            <h1 className="text-base font-semibold text-foreground truncate">{editing ? "แก้ไขผลงาน" : "เพิ่มผลงานใหม่"}</h1>
-            {isUploadingMedia && (
-              <p className="text-[11px] text-muted-foreground lg:hidden">กำลังอัปโหลดไฟล์…</p>
-            )}
+          <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-1">
+            <div className="min-w-0">
+              <h1 className="text-base font-semibold text-foreground truncate">
+                {editing ? "แก้ไขผลงาน" : "ลงผลงานใหม่"}
+              </h1>
+              {isUploadingMedia && (
+                <p className="text-[11px] text-muted-foreground lg:hidden">กำลังอัปโหลดไฟล์…</p>
+              )}
+            </div>
+            <LayoutGroup id="project-editor-mode">
+              <div
+                role="tablist"
+                aria-label="โหมดแก้ไข"
+                className="hidden sm:inline-flex relative items-center rounded-full border border-border/80 bg-card p-0.5 shrink-0"
+              >
+                {(
+                  [
+                    { value: "casual" as const, label: "Casual" },
+                    { value: "flex_grid" as const, label: "Grid" },
+                  ] as const
+                ).map((mode) => {
+                  const active = editorMode === mode.value;
+                  return (
+                    <button
+                      key={mode.value}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setEditorMode(mode.value)}
+                      className={cn(
+                        "relative rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+                        active
+                          ? "text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {active ? (
+                        reduceMotion ? (
+                          <span
+                            className="absolute inset-0 rounded-full bg-primary"
+                            aria-hidden
+                          />
+                        ) : (
+                          <motion.span
+                            layoutId="project-editor-mode-pill"
+                            className="absolute inset-0 rounded-full bg-primary"
+                            transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                            aria-hidden
+                          />
+                        )
+                      ) : null}
+                      <span className="relative z-10">{mode.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </LayoutGroup>
           </div>
           <Button
             variant="outline"
@@ -1646,6 +1861,193 @@ const ProjectEditorPage = () => {
 
       <div className="flex w-full flex-col lg:flex-row">
         <div className="flex min-w-0 flex-1">
+        {editorMode === "flex_grid" ? (
+          <FlexGridToolsSidebar
+            layout={flexGridLayout}
+            selected={flexGridSelected}
+            selection={flexGridSelection}
+            onSelect={(ref, additive) => {
+              if (!ref) {
+                setFlexGridSelection([]);
+                return;
+              }
+              if (additive) {
+                setFlexGridSelection((prev) => {
+                  const exists = prev.some(
+                    (p) => p.boardId === ref.boardId && p.moduleId === ref.moduleId,
+                  );
+                  if (exists) {
+                    return prev.filter(
+                      (p) => !(p.boardId === ref.boardId && p.moduleId === ref.moduleId),
+                    );
+                  }
+                  const sameBoard = prev.filter((p) => p.boardId === ref.boardId);
+                  return [...sameBoard, ref];
+                });
+              } else {
+                setFlexGridSelection([ref]);
+              }
+            }}
+            onGridChange={(grid) => {
+              flexHistory.commit((prev) => reSnapLayout({ ...prev, grid }));
+            }}
+            onDeleteModule={({ boardId, moduleId }) => {
+              const mod = flexGridLayout.boards
+                .find((b) => b.id === boardId)
+                ?.modules.find((m) => m.id === moduleId);
+              if (mod?.locked) return;
+              flexHistory.commit((prev) => ({
+                ...prev,
+                boards: prev.boards.map((b) =>
+                  b.id === boardId
+                    ? { ...b, modules: b.modules.filter((m) => m.id !== moduleId) }
+                    : b,
+                ),
+              }));
+              setFlexGridSelection((prev) =>
+                prev.filter((p) => !(p.boardId === boardId && p.moduleId === moduleId)),
+              );
+            }}
+            onDeleteBoard={(boardId) => {
+              flexHistory.commit((prev) => {
+                if (prev.boards.length <= 1) return prev;
+                return {
+                  ...prev,
+                  boards: prev.boards.filter((b) => b.id !== boardId),
+                };
+              });
+              setFlexGridSelection((prev) => prev.filter((p) => p.boardId !== boardId));
+            }}
+            onDuplicateBoard={(boardId) => {
+              flexHistory.commit((prev) => {
+                const result = duplicateFlexBoard(prev, boardId);
+                return result?.layout ?? prev;
+              });
+            }}
+            onRenameBoard={(boardId, name) => {
+              const trimmed = name.trim();
+              flexHistory.commit((prev) => ({
+                ...prev,
+                boards: prev.boards.map((b) =>
+                  b.id === boardId ? { ...b, name: trimmed || undefined } : b,
+                ),
+              }));
+            }}
+            onRenameModule={({ boardId, moduleId }, name) => {
+              const trimmed = name.trim();
+              flexHistory.commit((prev) => ({
+                ...prev,
+                boards: prev.boards.map((b) =>
+                  b.id !== boardId
+                    ? b
+                    : {
+                        ...b,
+                        modules: b.modules.map((m) =>
+                          m.id === moduleId ? { ...m, name: trimmed || undefined } : m,
+                        ),
+                      },
+                ),
+              }));
+            }}
+            onToggleLock={({ boardId, moduleId }) => {
+              const mod = flexGridLayout.boards
+                .find((b) => b.id === boardId)
+                ?.modules.find((m) => m.id === moduleId);
+              if (!mod) return;
+              flexHistory.commit((prev) =>
+                setModuleLocked(prev, boardId, moduleId, !mod.locked),
+              );
+            }}
+            onAlign={(kind) => {
+              if (flexGridSelection.length < 2) return;
+              const boardId = flexGridSelection[0].boardId;
+              if (!flexGridSelection.every((r) => r.boardId === boardId)) return;
+              flexHistory.commit((prev) =>
+                alignFlexModules(
+                  prev,
+                  boardId,
+                  flexGridSelection.map((r) => r.moduleId),
+                  kind,
+                ),
+              );
+            }}
+            onDistribute={(kind) => {
+              if (flexGridSelection.length < 3) return;
+              const boardId = flexGridSelection[0].boardId;
+              if (!flexGridSelection.every((r) => r.boardId === boardId)) return;
+              flexHistory.commit((prev) =>
+                distributeFlexModules(
+                  prev,
+                  boardId,
+                  flexGridSelection.map((r) => r.moduleId),
+                  kind,
+                ),
+              );
+            }}
+            onReorderLayer={(boardId, fromModuleId, toModuleId) => {
+              flexHistory.commit((prev) => ({
+                ...prev,
+                boards: prev.boards.map((b) => {
+                  if (b.id !== boardId) return b;
+                  const order = [...b.modules].sort((a, c) => c.z - a.z);
+                  const fromIdx = order.findIndex((m) => m.id === fromModuleId);
+                  const toIdx = order.findIndex((m) => m.id === toModuleId);
+                  if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return b;
+                  const [item] = order.splice(fromIdx, 1);
+                  order.splice(toIdx, 0, item);
+                  const n = order.length;
+                  const zById = new Map(order.map((m, idx) => [m.id, n - idx + 10]));
+                  return {
+                    ...b,
+                    modules: b.modules.map((m) => ({
+                      ...m,
+                      z: zById.get(m.id) ?? m.z,
+                    })),
+                  };
+                }),
+              }));
+            }}
+            onMoveLayer={(boardId, moduleId, direction) => {
+              flexHistory.commit((prev) => ({
+                ...prev,
+                boards: prev.boards.map((b) => {
+                  if (b.id !== boardId) return b;
+                  const order = [...b.modules].sort((a, c) => c.z - a.z);
+                  const idx = order.findIndex((m) => m.id === moduleId);
+                  if (idx < 0) return b;
+                  const swapWith = direction === "up" ? idx - 1 : idx + 1;
+                  if (swapWith < 0 || swapWith >= order.length) return b;
+                  const next = [...order];
+                  [next[idx], next[swapWith]] = [next[swapWith], next[idx]];
+                  const n = next.length;
+                  const zById = new Map(next.map((m, i) => [m.id, n - i + 10]));
+                  return {
+                    ...b,
+                    modules: b.modules.map((m) => ({
+                      ...m,
+                      z: zById.get(m.id) ?? m.z,
+                    })),
+                  };
+                }),
+              }));
+            }}
+            onPlaceModule={(type) => {
+              const { layout: next, ref } = placeFlexGridModuleAtCenter(
+                flexGridLayout,
+                type,
+                flexGridSelected?.boardId,
+              );
+              flexHistory.commit(next);
+              setFlexGridSelection([ref]);
+            }}
+            gridVisible={flexGridVisible}
+            onGridVisibleChange={setFlexGridVisible}
+            snapEnabled={flexGridSnapEnabled}
+            onSnapEnabledChange={setFlexGridSnapEnabled}
+            expanded={toolsExpanded}
+            onExpandedChange={setToolsExpanded}
+          />
+        ) : (
         <ProjectEditorToolsSidebar
           galleryDisplayMode={galleryDisplayMode}
           gridLayout={gridLayout}
@@ -1690,17 +2092,49 @@ const ProjectEditorPage = () => {
           toolsTab={toolsTab}
           onToolsTabChange={setToolsTab}
         />
+        )}
 
         <div className="min-w-0 flex-1">
-          <div className="mx-auto w-full max-w-[min(100%,calc(42rem+3.5rem))] space-y-5 px-3 py-5 pb-28 pl-12 sm:space-y-6 sm:px-4 sm:pl-14 sm:pr-4 lg:pb-6 lg:pl-4">
+          <div
+            className={cn(
+              "mx-auto w-full space-y-5 px-3 py-5 pb-28 pl-12 sm:space-y-6 sm:px-4 sm:pl-14 sm:pr-4 lg:pb-6 lg:pl-4",
+              editorMode === "flex_grid"
+                ? "max-w-[min(100%,calc(52rem+3.5rem))]"
+                : "max-w-[min(100%,calc(42rem+3.5rem))]",
+            )}
+          >
           {/* Left: canvas — content max-w-2xl; side rail uses the extra gutter */}
           <section
             id="project-canvas-editor"
             className={cn(
-              "max-w-2xl space-y-3 rounded-xl",
-              publishFieldErrors.canvasImage && "ring-2 ring-destructive/50 ring-offset-2 ring-offset-background",
+              "space-y-3 rounded-xl transition-[box-shadow] duration-500 ease-out",
+              editorMode === "flex_grid" ? "max-w-none" : "max-w-2xl",
+              publishFieldHighlight(publishFieldErrors.canvasImage) &&
+                "ring-2 ring-destructive/50 ring-offset-2 ring-offset-background",
             )}
           >
+            {editorMode === "flex_grid" ? (
+              <ProjectFlexGridEditor
+                layout={flexGridLayout}
+                onChange={flexHistory.patch}
+                onCommit={flexHistory.commit}
+                onHistoryBegin={flexHistory.beginGesture}
+                onHistoryEnd={flexHistory.endGesture}
+                canUndo={flexHistory.canUndo}
+                canRedo={flexHistory.canRedo}
+                onUndo={flexHistory.undo}
+                onRedo={flexHistory.redo}
+                selection={flexGridSelection}
+                onSelectionChange={setFlexGridSelection}
+                gridVisible={flexGridVisible}
+                snapEnabled={flexGridSnapEnabled}
+                disabled={isBusy}
+                uploadingModuleId={uploadingFlexModuleId}
+                onUploadToModule={(boardId, moduleId, file) =>
+                  void handleUploadToFlexModule(boardId, moduleId, file)
+                }
+              />
+            ) : (
             <ProjectCanvasEditor
               blocks={contentBlocks}
               onChange={(next) => {
@@ -1726,6 +2160,7 @@ const ProjectEditorPage = () => {
               selectedBlockId={selectedBlockId}
               onSelectedBlockIdChange={setSelectedBlockId}
             />
+            )}
             <input
               ref={emptyStartImageInputRef}
               type="file"
@@ -1738,14 +2173,16 @@ const ProjectEditorPage = () => {
                 e.target.value = "";
               }}
             />
-            {(uploadingGallery || uploadingVideo) && contentBlocks.length > 0 && !uploadingBlockId ? (
+            {(uploadingGallery || uploadingVideo) &&
+            ((editorMode === "casual" && contentBlocks.length > 0 && !uploadingBlockId) ||
+              (editorMode === "flex_grid" && !uploadingFlexModuleId)) ? (
               <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin mr-2" /> กำลังอัปโหลด...
               </div>
             ) : null}
           </section>
 
-          <div className="max-w-2xl border-t border-border/70 pt-6 space-y-6">
+          <div className="mx-auto w-full max-w-2xl border-t border-border/70 pt-6 space-y-6">
           <ProjectContextEditorFields
             value={projectContext}
             onChange={patchProjectContext}
@@ -1757,7 +2194,7 @@ const ProjectEditorPage = () => {
             expanded={contextExpanded}
             onExpandedChange={setContextExpanded}
             disabled={isBusy}
-            shortDescriptionInvalid={!!publishFieldErrors.shortDescription}
+            shortDescriptionInvalid={publishFieldHighlight(publishFieldErrors.shortDescription)}
           />
 
           {user ? (
@@ -1774,7 +2211,7 @@ const ProjectEditorPage = () => {
                     setLicenseNote(v);
                     clearPublishFieldError("licenseNote");
                   }}
-                  noteInvalid={!!publishFieldErrors.licenseNote}
+                  noteInvalid={publishFieldHighlight(publishFieldErrors.licenseNote)}
                 />
                 <ThirdPartyAssetsToggle
                   enabled={hasThirdPartyAssets}
@@ -1787,7 +2224,7 @@ const ProjectEditorPage = () => {
                     setThirdPartyNote(v);
                     clearPublishFieldError("thirdPartyNote");
                   }}
-                  noteInvalid={!!publishFieldErrors.thirdPartyNote}
+                  noteInvalid={publishFieldHighlight(publishFieldErrors.thirdPartyNote)}
                 />
                 <ClientPermissionConfirm
                   confirmed={clientPermissionConfirmed}
@@ -1847,8 +2284,9 @@ const ProjectEditorPage = () => {
                 aria-required
                 aria-invalid={!!publishFieldErrors.title || undefined}
                 className={cn(
-                  "text-base font-medium h-11 px-3",
-                  publishFieldErrors.title && "border-destructive focus-visible:ring-destructive/40",
+                  "text-base font-medium h-11 px-3 transition-colors duration-500 ease-out",
+                  publishFieldHighlight(publishFieldErrors.title) &&
+                    "border-destructive focus-visible:ring-destructive/40",
                 )}
                 maxLength={120}
               />
@@ -1868,7 +2306,7 @@ const ProjectEditorPage = () => {
                   setCover("");
                 }}
                 compact
-                invalid={!!publishFieldErrors.cover}
+                invalid={publishFieldHighlight(publishFieldErrors.cover)}
               />
             </div>
 
@@ -1884,7 +2322,7 @@ const ProjectEditorPage = () => {
                   clearPublishFieldError("category");
                 }}
                 disabled={isBusy}
-                invalid={!!publishFieldErrors.category}
+                invalid={publishFieldHighlight(publishFieldErrors.category)}
               />
             </div>
 
@@ -1926,7 +2364,11 @@ const ProjectEditorPage = () => {
               >
                 <SelectTrigger
                   aria-invalid={!!publishFieldErrors.status || undefined}
-                  className={cn(publishFieldErrors.status && "border-destructive focus:ring-destructive/40")}
+                  className={cn(
+                    "transition-colors duration-500 ease-out",
+                    publishFieldHighlight(publishFieldErrors.status) &&
+                      "border-destructive focus:ring-destructive/40",
+                  )}
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -2073,6 +2515,13 @@ const ProjectEditorPage = () => {
         data={previewData}
         ownerId={user?.id}
         defaultMode={previewMode}
+        onPublish={() => {
+          const { checklist } = collectPublishGaps();
+          if (checklist.length > 0) setPreviewOpen(false);
+          handlePublishClick();
+        }}
+        publishing={publishing}
+        publishDisabled={isBusy}
       />
 
       <Dialog
@@ -2094,7 +2543,7 @@ const ProjectEditorPage = () => {
             checked={publishAttestChecked}
             onCheckedChange={setPublishAttestChecked}
           />
-          <DialogFooter className="gap-2 sm:justify-end">
+          <DialogFooter className="gap-2 sm:justify-end flex-col-reverse sm:flex-row">
             <Button
               type="button"
               variant="ghost"
@@ -2108,8 +2557,23 @@ const ProjectEditorPage = () => {
             </Button>
             <Button
               type="button"
+              variant="outline"
+              disabled={publishing}
+              className="rounded-full"
+              onClick={() => {
+                setPublishConfirmOpen(false);
+                setPublishAttestChecked(false);
+                setPreviewMode("pc");
+                setPreviewOpen(true);
+              }}
+            >
+              <Eye className="w-4 h-4 mr-1" />
+              ดูตัวอย่าง
+            </Button>
+            <Button
+              type="button"
               disabled={publishing || !publishAttestChecked}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
               onClick={() => void handleConfirmPublish()}
             >
               {publishing ? (
@@ -2347,7 +2811,7 @@ const CoverDrop = ({
     return (
       <div
         className={cn(
-          "group relative w-full overflow-hidden rounded-xl border border-border bg-muted",
+          "group relative w-full overflow-hidden rounded-xl border border-border bg-muted transition-[border-color,box-shadow] duration-500 ease-out",
           compact ? "aspect-[4/3]" : "aspect-[4/3] rounded-2xl",
           invalid && "border-destructive ring-1 ring-destructive/40",
         )}
@@ -2395,7 +2859,7 @@ const CoverDrop = ({
       onClick={() => ref.current?.click()}
       aria-label="ภาพปก"
       className={cn(
-        "flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition glass-panel",
+        "flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-[border-color,background-color,box-shadow] duration-500 ease-out glass-panel",
         compact ? "aspect-[4/3] px-3 py-4" : "min-h-[200px] gap-3 rounded-2xl",
         drag
           ? "border-primary bg-primary/10 shadow-lg shadow-primary/10"

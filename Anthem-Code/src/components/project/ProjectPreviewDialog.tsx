@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, X } from "lucide-react";
+import { Eye, Loader2, X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { ProjectMobilePreviewContent } from "@/components/project/ProjectMobileP
 import { profilesPublicFrom } from "@/lib/profileAccess";
 import type { LicenseType } from "@/lib/licenses";
 import { ProjectContentBlocksView } from "@/components/project/ProjectContentBlocksView";
+import { FlexGridView } from "@/components/project/FlexGridView";
 import ProjectContextCard, { type ProjectContextData } from "@/components/project/ProjectContextCard";
 import {
   resolveProjectCanvas,
@@ -18,6 +19,7 @@ import {
   type ProjectContentBlock,
 } from "@/lib/projectContentBlocks";
 import { type PhotoGridLayout } from "@/lib/photoGridLayouts";
+import type { FlexGridLayout, ProjectEditorMode } from "@/lib/flexGridLayout";
 import { isVideoUrl, mediaItemFromUrl } from "@/lib/portfolioMedia";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -29,6 +31,8 @@ export interface ProjectPreviewData {
   contentBlocks?: ProjectContentBlock[];
   galleryDisplayMode?: GalleryDisplayMode;
   gridLayout?: PhotoGridLayout;
+  editorMode?: ProjectEditorMode;
+  flexGridLayout?: FlexGridLayout | unknown;
   category: string;
   cover: string;
   gallery: string[];
@@ -55,6 +59,10 @@ interface Props {
   data: ProjectPreviewData;
   ownerId?: string;
   defaultMode?: ProjectPreviewMode;
+  /** Show publish CTA in the preview header (editor flow). */
+  onPublish?: () => void;
+  publishing?: boolean;
+  publishDisabled?: boolean;
 }
 
 const previewToast = () => toast.message("นี่คือพรีวิว — บันทึกผลงานก่อนจึงจะโต้ตอบได้จริง");
@@ -72,6 +80,7 @@ function ProjectPcPreview({
   ownerId?: string;
   displayTitle: string;
 }) {
+  const isFlex = data.editorMode === "flex_grid";
   const canvasBlocks = resolveProjectCanvas({
     content_blocks: data.contentBlocks,
     description: data.description,
@@ -86,7 +95,9 @@ function ProjectPcPreview({
           {data.subtitle?.trim() && (
             <p className="text-sm text-muted-foreground">{data.subtitle.trim()}</p>
           )}
-          {canvasBlocks.length > 0 ? (
+          {isFlex ? (
+            <FlexGridView layout={data.flexGridLayout} className="max-w-3xl" />
+          ) : canvasBlocks.length > 0 ? (
             <ProjectContentBlocksView blocks={canvasBlocks} className="max-w-2xl" />
           ) : (
             <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center text-sm text-muted-foreground">
@@ -163,6 +174,9 @@ const ProjectPreviewDialog = ({
   data,
   ownerId,
   defaultMode = "pc",
+  onPublish,
+  publishing = false,
+  publishDisabled = false,
 }: Props) => {
   const [ownerName, setOwnerName] = useState("คุณ");
   const [ownerAvatar, setOwnerAvatar] = useState<string | undefined>();
@@ -191,7 +205,7 @@ const ProjectPreviewDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl w-[calc(100vw-1.5rem)] h-[min(92vh,900px)] p-0 gap-0 flex flex-col overflow-hidden">
+      <DialogContent className="max-w-7xl w-[calc(100vw-1.5rem)] h-[min(92vh,900px)] p-0 gap-0 flex flex-col overflow-hidden [&>button]:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <Eye className="w-4 h-4 text-primary shrink-0" />
@@ -200,9 +214,23 @@ const ProjectPreviewDialog = ({
               ตัวอย่าง
             </Badge>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} aria-label="ปิดพรีวิว">
-            <X className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            {onPublish ? (
+              <Button
+                type="button"
+                size="sm"
+                disabled={publishing || publishDisabled}
+                className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                onClick={onPublish}
+              >
+                {publishing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                เผยแพร่
+              </Button>
+            ) : null}
+            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} aria-label="ปิดพรีวิว">
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="px-4 pt-3 pb-2 border-b border-border/50 shrink-0">

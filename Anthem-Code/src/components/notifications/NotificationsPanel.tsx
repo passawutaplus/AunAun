@@ -1,15 +1,12 @@
 import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bookmark, MessageCircle, Handshake, Bell, Sparkles, Megaphone, CheckCircle2, XCircle, CreditCard, Inbox, UserPlus } from "lucide-react";
+import { Bookmark, MessageCircle, Handshake, Bell, Inbox, UserPlus } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useActivityNotifications, useHireNotifications, useCollabNotifications, type HireNotif, type CollabNotif } from "@/hooks/useNotifications";
 import { useFollowNotifications } from "@/hooks/useFollowLists";
-import { useUnreadJobMatchCount } from "@/hooks/useJobMatchNotifications";
-import { JobMatchList } from "@/components/notifications/JobMatchList";
-import { useAdApplicationNotifications } from "@/hooks/useAds";
 import { useAuth } from "@/hooks/useAuth";
 import { useUpdateCollabStatus } from "@/hooks/useCollabRequests";
 import { useAcceptRequest, useFindConversationByRequest, useOpenHireCollabChat } from "@/hooks/useChat";
@@ -100,9 +97,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
   const { data: hires = [], isLoading: lh } = useHireNotifications();
   const { data: collabs = [], isLoading: lc } = useCollabNotifications();
   const { data: followNotifs = [] } = useFollowNotifications();
-  const { data: unreadMatches = 0 } = useUnreadJobMatchCount();
   const updateCollab = useUpdateCollabStatus();
-  const { data: adNotifs = [], isLoading: lad } = useAdApplicationNotifications();
   const createHireEscrow = useCreateEscrowFromHire();
   const accept = useAcceptRequest();
   const openHireCollabChat = useOpenHireCollabChat();
@@ -169,21 +164,18 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
   };
 
   const tabs: TabDef[] = [
-    { value: "inbox", label: "กล่อง", icon: Inbox, count: inbox.unreadCount },
+    { value: "inbox", label: "ทั้งหมด", icon: Inbox, count: inbox.unreadCount },
     { value: "follows", label: "ติดตาม", icon: UserPlus, count: followNotifs.length },
-    { value: "matches", label: "งานที่ใช่", icon: Sparkles, count: unreadMatches },
     { value: "activity", label: "กิจกรรม", icon: Bell, count: activity.length },
     { value: "hire", label: "จ้างงาน", icon: BriefcaseIcon, count: hires.length },
     { value: "collab", label: "Collab", icon: Handshake, count: collabs.length },
-    { value: "ads", label: "โฆษณา", icon: Megaphone, count: adNotifs.length },
   ];
 
   const tabBar = (
     <TabsList
       className={cn(
         "w-full h-auto min-h-0 p-1.5 gap-1.5",
-        "grid grid-cols-4 auto-rows-fr",
-        "md:grid-cols-7 md:gap-1",
+        "grid grid-cols-5 auto-rows-fr",
         "bg-secondary rounded-2xl border border-border",
         "justify-items-stretch",
       )}
@@ -219,10 +211,6 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
 
       <TabsContent value="follows" className={contentMt}>
         <FollowNotificationsList onBeforeNavigate={onBeforeNavigate} />
-      </TabsContent>
-
-      <TabsContent value="matches" className={contentMt}>
-        <JobMatchList onBeforeNavigate={onBeforeNavigate} />
       </TabsContent>
 
       <TabsContent value="activity" className={cn(contentMt, "space-y-2")}>
@@ -399,50 +387,6 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
               )}
             </div>
           ))
-        )}
-      </TabsContent>
-
-      <TabsContent value="ads" className={cn(contentMt, "space-y-2")}>
-        {lad ? (
-          <InlineLoader />
-        ) : adNotifs.length === 0 ? (
-          <Empty icon={Megaphone} text="ยังไม่มีอัปเดตเกี่ยวกับโฆษณาของคุณ" />
-        ) : (
-          adNotifs.map((n) => {
-            const meta =
-              n.status === "approved"
-                ? { Icon: CheckCircle2, color: "text-emerald-600", verb: "อนุมัติแล้ว · กำลังแสดง" }
-                : n.status === "rejected"
-                ? { Icon: XCircle, color: "text-red-600", verb: "ถูกปฏิเสธ" }
-                : { Icon: CreditCard, color: "text-blue-600", verb: "ชำระเงินแล้ว · รออนุมัติ" };
-            const { Icon } = meta;
-            return (
-              <button
-                key={n.id}
-                onClick={() => go("/advertise")}
-                className="w-full flex items-start gap-3 p-3 rounded-2xl glass-panel hover:border-primary/30 transition-colors text-left"
-              >
-                {n.imageUrl ? (
-                  <img src={n.imageUrl} alt="" className="w-11 h-11 rounded-lg object-cover shrink-0" />
-                ) : (
-                  <div className="w-11 h-11 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                    <Megaphone className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Icon className={`w-4 h-4 ${meta.color}`} />
-                    <span className={`text-sm font-medium ${meta.color}`}>{meta.verb}</span>
-                  </div>
-                  <p className="text-sm text-foreground mt-0.5 truncate">"{n.adTitle}"</p>
-                  {n.adminNote && (
-                    <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">หมายเหตุ: {n.adminNote}</p>
-                  )}
-                  <p className="text-[11px] text-muted-foreground mt-1">{timeAgo(n.reviewedAt ?? n.updatedAt)}</p>
-                </div>
-              </button>
-            );
-          })
         )}
       </TabsContent>
       </div>

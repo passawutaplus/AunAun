@@ -173,6 +173,22 @@ export function useNotifications(userId: string | null | undefined) {
     [userId],
   );
 
+  const markAllRead = useCallback(async () => {
+    if (!userId) return;
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("user_id", userId)
+      .eq("is_read", false)
+      .eq("is_dismissed", false);
+    if (error) throw error;
+    const active = stores.get(userId);
+    if (active) {
+      active.items = active.items.map((n) => (n.is_read ? n : { ...n, is_read: true }));
+      emit(active);
+    }
+  }, [userId]);
+
   const dismiss = useCallback(
     async (id: string) => {
       if (!userId) return;
@@ -199,5 +215,5 @@ export function useNotifications(userId: string | null | undefined) {
 
   const unreadCount = items.filter((n) => !n.is_read).length;
 
-  return { items, loading, unreadCount, refetch, markRead, dismiss };
+  return { items, loading, unreadCount, refetch, markRead, markAllRead, dismiss };
 }

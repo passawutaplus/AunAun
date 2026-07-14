@@ -321,7 +321,6 @@ const ChatSidebar = ({
             ) : null}
           </div>
           <div className="flex items-center gap-2 min-w-0">
-            <h1 className="text-lg font-semibold text-foreground shrink-0">ข้อความ</h1>
             {user && (
               <Button
                 type="button"

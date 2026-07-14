@@ -37,4 +37,11 @@ describe("projectRichText", () => {
     expect(html).toContain("<p>a</p>");
     expect(html).toContain("<p>b</p>");
   });
+
+  it("keeps bold when browser uses span font-weight (full selection)", () => {
+    const html = sanitizeProjectRichText(
+      '<p><span style="font-weight:700">หกดฟหกดฟหก</span></p>',
+    );
+    expect(html).toContain("<b>หกดฟหกดฟหก</b>");
+  });
 });

@@ -29,7 +29,9 @@ export const FORUM_VIDEO_MAX_BYTES = 15 * 1024 * 1024;
 export const FORUM_ATTACH_STAGING_BUCKET = "forum-attachments";
 
 const IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "webp", "gif"]);
-const VIDEO_EXTS = new Set(["mp4", "webm", "mov"]);
+const VIDEO_EXTS = new Set([
+  "mp4", "m4v", "webm", "mov", "qt", "avi", "mkv", "ogv", "ogg", "mpeg", "mpg", "mpe", "3gp", "3g2",
+]);
 const FILE_EXTS = new Set([
   "pdf", "zip", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv",
   "ttf", "otf", "woff", "woff2",
@@ -68,7 +70,7 @@ export function assertForumAttachmentAllowed(file: File): ForumAttachmentKind {
 }
 
 export const FORUM_ATTACH_ACCEPT =
-  "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,.pdf,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.ttf,.otf,.woff,.woff2";
+  "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,video/x-m4v,video/x-msvideo,video/x-matroska,video/ogg,video/mpeg,video/3gpp,.mp4,.m4v,.webm,.mov,.avi,.mkv,.ogv,.mpeg,.mpg,.3gp,.pdf,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.ttf,.otf,.woff,.woff2";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const forumDb = supabase as any;

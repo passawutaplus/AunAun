@@ -1,5 +1,6 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
+import { isVideoFile } from "@/lib/videoAccept";
 
 const MAX_INPUT_MB = 80;
 const TARGET_MB = 12;
@@ -33,9 +34,16 @@ async function getFfmpeg(onProgress?: (pct: number) => void): Promise<FFmpeg> {
 
 function extFromType(type: string, name: string): string {
   const fromName = name.split(".").pop()?.toLowerCase();
-  if (fromName && ["mp4", "webm", "mov", "m4v"].includes(fromName)) return fromName;
+  if (
+    fromName &&
+    ["mp4", "webm", "mov", "m4v", "avi", "mkv", "ogv", "mpeg", "mpg", "3gp", "3g2"].includes(fromName)
+  ) {
+    return fromName === "3g2" ? "3gp" : fromName;
+  }
   if (type.includes("webm")) return "webm";
   if (type.includes("quicktime")) return "mov";
+  if (type.includes("matroska")) return "mkv";
+  if (type.includes("avi")) return "avi";
   return "mp4";
 }
 
@@ -44,7 +52,7 @@ export async function compressCommunityVideo(
   file: File,
   onProgress?: (pct: number) => void,
 ): Promise<File> {
-  if (!file.type.startsWith("video/")) throw new Error("ไฟล์ไม่ใช่วิดีโอ");
+  if (!isVideoFile(file)) throw new Error("ไฟล์ไม่ใช่วิดีโอ");
   if (file.size > MAX_INPUT_MB * 1024 * 1024) {
     throw new Error(`วิดีโอใหญ่เกิน ${MAX_INPUT_MB}MB`);
   }

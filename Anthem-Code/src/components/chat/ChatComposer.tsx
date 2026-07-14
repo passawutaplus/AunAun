@@ -199,10 +199,20 @@ const ChatComposer = ({
   const busy = !!uploading || send.isPending;
   const locked = !!lockedHint;
 
+  if (locked) {
+    return (
+      <div className="border-t border-border bg-muted/30 px-4 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] shrink-0">
+        <p className="text-xs leading-relaxed text-muted-foreground text-center sm:text-left">
+          {lockedHint}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="border-t border-border bg-background/80 backdrop-blur-md px-3 py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] shrink-0">
       <ModerationBanBanner className="mb-2" />
-      {!locked && replyTo && (
+      {replyTo && (
         <div className="flex items-stretch gap-2 mb-2 rounded-xl bg-muted/80 border border-border overflow-hidden">
           <div className="w-1 shrink-0 bg-primary" />
           <div className="flex-1 min-w-0 py-2 pr-1">
@@ -247,7 +257,7 @@ const ChatComposer = ({
           size="icon"
           className="rounded-full shrink-0"
           onClick={() => fileRef.current?.click()}
-          disabled={busy || locked}
+          disabled={busy}
           aria-label="แนบไฟล์จากเครื่อง"
           title="แนบไฟล์ (PDF, ZIP, เอกสาร)"
         >
@@ -263,7 +273,7 @@ const ChatComposer = ({
           size="icon"
           className="rounded-full shrink-0"
           onClick={() => imageRef.current?.click()}
-          disabled={busy || locked}
+          disabled={busy}
           aria-label="แนบรูป"
         >
           {uploading === "image" ? (
@@ -277,26 +287,23 @@ const ChatComposer = ({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
-            if (locked) return;
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               void submit();
             }
           }}
           rows={1}
-          disabled={locked}
           placeholder={placeholder}
           className={cn(
             "resize-none min-h-[40px] max-h-32 rounded-2xl bg-muted border-0 focus-visible:ring-2",
             accentRing,
-            locked && "opacity-60 cursor-not-allowed",
           )}
         />
         <Button
           type="button"
           size="icon"
           onClick={() => void submit()}
-          disabled={locked || !text.trim() || busy}
+          disabled={!text.trim() || busy}
           className={cn("rounded-full shrink-0", sendBtn)}
           aria-label="ส่งข้อความ"
         >

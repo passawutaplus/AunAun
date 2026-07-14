@@ -16,10 +16,16 @@ import { hasPendingProjectAssets, parseProjectAssets } from "@/lib/projectAssets
 import ProjectCreditsBlock from "@/components/ProjectCreditsBlock";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectContentBlocksView } from "@/components/project/ProjectContentBlocksView";
+import { FlexGridView } from "@/components/project/FlexGridView";
 import {
   mediaItemsFromBlocks,
   resolveProjectCanvas,
 } from "@/lib/projectContentBlocks";
+import {
+  flexGridMediaItems,
+  parseEditorMode,
+  parseFlexGridLayout,
+} from "@/lib/flexGridLayout";
 import { useQuery } from "@tanstack/react-query";
 
 import { useProject } from "@/hooks/useProjects";
@@ -145,6 +151,12 @@ const ProjectDetailPage = () => {
     },
   });
 
+  const editorMode = dbProject
+    ? parseEditorMode((dbProject as { editor_mode?: string }).editor_mode)
+    : "casual";
+  const flexLayout = dbProject
+    ? parseFlexGridLayout((dbProject as { flex_grid_layout?: unknown }).flex_grid_layout)
+    : null;
   const canvasBlocks = dbProject
     ? resolveProjectCanvas({
         content_blocks: (dbProject as { content_blocks?: unknown }).content_blocks,
@@ -153,7 +165,10 @@ const ProjectDetailPage = () => {
         video_urls: ((dbProject as { video_urls?: string[] }).video_urls) ?? [],
       })
     : [];
-  const mediaItems = mediaItemsFromBlocks(canvasBlocks);
+  const mediaItems =
+    editorMode === "flex_grid" && flexLayout
+      ? flexGridMediaItems(flexLayout)
+      : mediaItemsFromBlocks(canvasBlocks);
 
   const project = dbProject
     ? {
@@ -392,7 +407,9 @@ const ProjectDetailPage = () => {
                 ownerId={dbProject.owner_id}
               />
             )}
-            {canvasBlocks.length > 0 ? (
+            {editorMode === "flex_grid" && flexLayout ? (
+              <FlexGridView layout={flexLayout} className="max-w-3xl" />
+            ) : canvasBlocks.length > 0 ? (
               <ProjectContentBlocksView
                 blocks={canvasBlocks}
                 className="max-w-2xl"

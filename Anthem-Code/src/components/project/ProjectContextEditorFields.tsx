@@ -79,7 +79,7 @@ const ProjectContextEditorFields = ({
           disabled={disabled}
           aria-invalid={shortDescriptionInvalid || undefined}
           className={cn(
-            "bg-background resize-y min-h-[80px] text-sm",
+            "bg-background resize-y min-h-[80px] text-sm transition-colors duration-500 ease-out",
             shortDescriptionInvalid && "border-destructive focus-visible:ring-destructive/40",
           )}
           aria-required

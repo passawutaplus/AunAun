@@ -326,6 +326,8 @@ export const projectSchema = z.object({
   grid_layout: z
     .enum(["two_stack", "two_side", "three_split", "three_split_rev", "four_quad"])
     .default("four_quad"),
+  editor_mode: z.enum(["casual", "flex_grid"]).default("casual"),
+  flex_grid_layout: z.unknown().optional().default({}),
 });
 
 export type ProjectInput = z.infer<typeof projectSchema>;

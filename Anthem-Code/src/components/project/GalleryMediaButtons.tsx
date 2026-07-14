@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Film, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GALLERY_DISPLAY_MODES, type GalleryDisplayMode } from "@/lib/projectContentBlocks";
+import { PROJECT_VIDEO_ACCEPT } from "@/lib/videoAccept";
 import { cn } from "@/lib/utils";
 
 interface GalleryMediaButtonsProps {
@@ -111,7 +112,7 @@ export function GalleryMediaButtons({
       <input
         ref={videoRef}
         type="file"
-        accept="video/mp4,video/webm,video/quicktime"
+        accept={PROJECT_VIDEO_ACCEPT}
         hidden
         onChange={(e) => {
           const f = e.target.files?.[0];

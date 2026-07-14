@@ -16,9 +16,9 @@ export const JOB_TYPES = [
 export const HIRE_ENGAGEMENT_TYPES = [
   { id: "piece", label: "จ้างทำชิ้นงาน" },
   { id: "project", label: "จ้างทำเป็นโปรเจค" },
-  { id: "full_time", label: "จ้าง Full-time" },
-  { id: "part_time", label: "จ้าง Part-time" },
-  { id: "retainer", label: "จ้างเป็น Freelance ประจำ" },
+  { id: "full_time", label: "จ้างFull-time" },
+  { id: "part_time", label: "จ้างPart-time" },
+  { id: "retainer", label: "จ้างเป็นFreelanceประจำ" },
 ] as const;
 
 

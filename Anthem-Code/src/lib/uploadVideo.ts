@@ -5,6 +5,7 @@ import {
 import type { Tier } from "@/core/subscription/useSubscription";
 import { assertAnthemStorageAvailable } from "@/lib/anthemStorageUsage";
 import { compressCommunityVideo } from "@/lib/compressCommunityVideo";
+import { isVideoFile } from "@/lib/videoAccept";
 
 const MAX_VIDEO_MB = 15;
 
@@ -16,7 +17,7 @@ export async function uploadProjectVideo(
   tier: Tier = "free",
   onCompressProgress?: (pct: number) => void,
 ): Promise<string> {
-  if (!file.type.startsWith("video/")) throw new Error("ไฟล์ไม่ใช่วิดีโอ");
+  if (!isVideoFile(file)) throw new Error("ไฟล์ไม่ใช่วิดีโอ");
 
   const prepared = await compressCommunityVideo(file, onCompressProgress);
 

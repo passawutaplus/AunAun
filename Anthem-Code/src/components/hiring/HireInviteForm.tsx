@@ -163,8 +163,8 @@ const HireInviteForm = ({
                 className={cn(
                   "px-3 py-1.5 rounded-full text-xs border transition-colors",
                   selected
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border text-muted-foreground hover:text-foreground",
+                    ? "border-orange-500 bg-transparent text-orange-500"
+                    : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/40",
                 )}
               >
                 {j.label}

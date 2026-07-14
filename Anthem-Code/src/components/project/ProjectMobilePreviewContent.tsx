@@ -1,6 +1,7 @@
 import { ChevronLeft, Layers3, MessageCircle, Share2 } from "lucide-react";
 import ProjectSidePanel from "@/components/ProjectSidePanel";
 import { ProjectContentBlocksView } from "@/components/project/ProjectContentBlocksView";
+import { FlexGridView } from "@/components/project/FlexGridView";
 import ProjectContextCard from "@/components/project/ProjectContextCard";
 import {
   resolveProjectCanvas,
@@ -29,6 +30,7 @@ export function ProjectMobilePreviewContent({
   onPreviewAction,
   className,
 }: Props) {
+  const isFlex = data.editorMode === "flex_grid";
   const canvasBlocks = resolveProjectCanvas({
     content_blocks: data.contentBlocks,
     description: data.description,
@@ -67,7 +69,9 @@ export function ProjectMobilePreviewContent({
             {data.subtitle?.trim() ? (
               <p className="text-sm text-muted-foreground">{data.subtitle.trim()}</p>
             ) : null}
-            {canvasBlocks.length > 0 ? (
+            {isFlex ? (
+              <FlexGridView layout={data.flexGridLayout} />
+            ) : canvasBlocks.length > 0 ? (
               <ProjectContentBlocksView blocks={canvasBlocks} className="max-w-2xl" />
             ) : (
               <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center text-sm text-muted-foreground">

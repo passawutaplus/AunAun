@@ -28,11 +28,6 @@ import { PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import ChatMetaPanel from "@/components/chat/ChatMetaPanel";
 import ChatPortfolioSection from "@/components/chat/ChatPortfolioSection";
-import {
-  HIRE_CHAT_LOCKED_HINT,
-  hireChatLockedByMessages,
-  isHireChatComposerLocked,
-} from "@/lib/hireRejectChat";
 import { cn } from "@/lib/utils";
 import { WORK_DISCIPLINE_LABELS, type WorkDisciplineId } from "@/data/workDisciplineOptions";
 import { labelOpportunityType } from "@/lib/opportunity";
@@ -61,26 +56,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
   const navigate = useNavigate();
   const { user } = useAuth();
   const isGroup = isGroupConversation(conversation);
-  const isHire = conversation.kind === "hire";
   const otherId = otherParticipantId(conversation, user?.id ?? "");
-
-  const { data: hirePostRejectChat = null } = useQuery({
-    queryKey: ["chat-hire-forward-src", conversation.request_id],
-    enabled: isHire && !!conversation.request_id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("hiring_requests")
-        .select("post_reject_chat")
-        .eq("id", conversation.request_id!)
-        .maybeSingle();
-      if (error) throw error;
-      return (data as { post_reject_chat?: string | null } | null)?.post_reject_chat ?? null;
-    },
-  });
-
-  const chatLocked =
-    isHire &&
-    (isHireChatComposerLocked(hirePostRejectChat) || hireChatLockedByMessages(messages));
 
   const { data: groupMembers = [], isLoading: membersLoading } = useQuery({
     queryKey: ["group-panel-members", conversation.id],
@@ -266,11 +242,6 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
         className,
       )}
     >
-      {chatLocked && (
-        <div className="shrink-0 border-b border-border bg-muted/40 px-3 py-2.5 text-left">
-          <p className="text-[11px] leading-snug text-muted-foreground">{HIRE_CHAT_LOCKED_HINT}</p>
-        </div>
-      )}
       {onClose && (
         <div className="shrink-0 flex items-center justify-between gap-2 px-3 py-2 border-b border-border">
           <p className="text-[11px] font-medium text-muted-foreground truncate">ข้อมูลคู่แชท</p>
