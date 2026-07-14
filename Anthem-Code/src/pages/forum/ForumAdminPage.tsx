@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   AlertTriangle,
   BarChart3,
   FileWarning,
   Flame,
+  Megaphone,
   MessageSquareWarning,
   Pin,
   Settings2,
@@ -13,8 +14,10 @@ import {
 } from "lucide-react";
 import { ForumPageHeader } from "@/components/forum/ForumLayout";
 import { ForumRankChip, ForumUserAvatar } from "@/components/forum/ForumUserAvatar";
+import { ForumAttachmentComposer } from "@/components/forum/ForumAttachmentComposer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -25,8 +28,11 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  useAdminCreateForumAnnouncement,
+  useAdminUpdateForumAnnouncement,
   useAdminSetForumRank,
   useAdminSetForumTopic,
+  useForumAnnouncements,
   useForumCategories,
   useForumProfileSearch,
   useForumRanks,
@@ -49,14 +55,17 @@ import {
   FORUM_STATUS_LABELS,
   PRODUCT_FEEDBACK_STATUSES,
   formatRelativeTh,
+  parseTagsInput,
   type ForumRankSlug,
   type ForumTopicStatus,
 } from "@/lib/forum";
 import { formatBytes } from "@/lib/forumAttachments";
+import type { ForumAttachment } from "@/lib/forumAttachments";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { id: "overview", label: "ภาพรวม", icon: Flame },
+  { id: "announcements", label: "ประกาศ", icon: Megaphone },
   { id: "moderation", label: "คิวดูแล", icon: MessageSquareWarning },
   { id: "topics", label: "กระทู้", icon: Pin },
   { id: "feedback", label: "Feedback", icon: AlertTriangle },
@@ -177,6 +186,9 @@ function OverviewTab({ onGo }: { onGo: (tab: TabId) => void }) {
       </div>
 
       <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" onClick={() => onGo("announcements")}>
+          เขียนประกาศ
+        </Button>
         <Button size="sm" variant="outline" onClick={() => onGo("moderation")}>
           เปิดคิวดูแล
         </Button>
@@ -202,6 +214,240 @@ function OverviewTab({ onGo }: { onGo: (tab: TabId) => void }) {
             </li>
           ))}
         </ul>
+      </section>
+    </div>
+  );
+}
+
+function AnnouncementsTab() {
+  const navigate = useNavigate();
+  const create = useAdminCreateForumAnnouncement();
+  const update = useAdminUpdateForumAnnouncement();
+  const { data: list = [], isLoading } = useForumAnnouncements(20);
+  const setTopic = useAdminSetForumTopic();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [tagsRaw, setTagsRaw] = useState("");
+  const [lockComments, setLockComments] = useState(false);
+  const [attachments, setAttachments] = useState<ForumAttachment[]>([]);
+
+  const busy = create.isPending || update.isPending;
+  const canSubmit = title.trim().length >= 3 && body.trim().length >= 1 && !busy;
+
+  const resetForm = () => {
+    setEditingId(null);
+    setTitle("");
+    setBody("");
+    setTagsRaw("");
+    setLockComments(false);
+    setAttachments([]);
+  };
+
+  const startEdit = (t: (typeof list)[number]) => {
+    setEditingId(t.id);
+    setTitle(t.title);
+    setBody(t.body);
+    setTagsRaw((t.tags ?? []).join(" "));
+    setLockComments(!!t.is_locked);
+    setAttachments([]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    if (editingId) {
+      await update.mutateAsync({
+        topicId: editingId,
+        title: title.trim(),
+        body: body.trim(),
+        tags: parseTagsInput(tagsRaw),
+        lockComments,
+      });
+      resetForm();
+      return;
+    }
+    const id = await create.mutateAsync({
+      title: title.trim(),
+      body: body.trim(),
+      tags: parseTagsInput(tagsRaw),
+      lockComments,
+      attachmentIds: attachments.map((a) => a.id),
+    });
+    resetForm();
+    navigate(`/forum/t/${id}`);
+  };
+
+  return (
+    <div className="space-y-8 max-w-2xl">
+      <form onSubmit={(e) => void onSubmit(e)} className="rounded-xl border border-border bg-card p-4 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Megaphone className="h-4 w-4 text-orange-600" />
+            <h3 className="text-sm font-semibold">
+              {editingId ? "แก้ไขประกาศจากทีม" : "เขียนประกาศจากทีม"}
+            </h3>
+          </div>
+          {editingId ? (
+            <Button type="button" size="sm" variant="ghost" className="h-8 text-xs" onClick={resetForm}>
+              ยกเลิกแก้ไข
+            </Button>
+          ) : null}
+        </div>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {editingId
+            ? "แก้หัวข้อและเนื้อหาแล้วกดบันทึก — การเปลี่ยนแปลงจะโชว์ทันทีบนหน้าชุมชน"
+            : "ประกาศจะไปหมวด “ประกาศจากทีม” อัตโนมัติ ปักหมุด และแสดงแบนเนอร์หน้าแรกชุมชน"}
+        </p>
+        <div className="space-y-2">
+          <Label htmlFor="announce-title">หัวข้อ</Label>
+          <Input
+            id="announce-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="เช่น อัปเดตสัปดาห์นี้ / บำรุงรักษา…"
+            maxLength={200}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="announce-body">เนื้อหา</Label>
+          <Textarea
+            id="announce-body"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={8}
+            className="resize-y min-h-[140px]"
+            required
+          />
+        </div>
+        {!editingId ? (
+          <div className="space-y-2">
+            <Label>แนบไฟล์ (ถ้ามี)</Label>
+            <ForumAttachmentComposer
+              value={attachments}
+              onChange={setAttachments}
+              variant="topic"
+              disabled={busy}
+            />
+          </div>
+        ) : null}
+        <div className="space-y-2">
+          <Label htmlFor="announce-tags">แท็ก</Label>
+          <Input
+            id="announce-tags"
+            value={tagsRaw}
+            onChange={(e) => setTagsRaw(e.target.value)}
+            placeholder="เช่น release maintenance"
+          />
+        </div>
+        <label className="inline-flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={lockComments}
+            onChange={(e) => setLockComments(e.target.checked)}
+            className="rounded border-border"
+          />
+          ล็อกความเห็น (อ่านอย่างเดียว)
+        </label>
+        <div className="flex justify-end gap-2">
+          {editingId ? (
+            <Button type="button" variant="outline" onClick={resetForm} disabled={busy}>
+              ยกเลิก
+            </Button>
+          ) : null}
+          <Button type="submit" disabled={!canSubmit}>
+            {busy
+              ? editingId
+                ? "กำลังบันทึก…"
+                : "กำลังเผยแพร่…"
+              : editingId
+                ? "บันทึกการแก้ไข"
+                : "เผยแพร่ประกาศ"}
+          </Button>
+        </div>
+      </form>
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-semibold">ประกาศล่าสุด</h3>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">กำลังโหลด…</p>
+        ) : list.length === 0 ? (
+          <p className="text-sm text-muted-foreground rounded-xl border border-dashed border-border p-6 text-center">
+            ยังไม่มีประกาศ
+          </p>
+        ) : (
+          <ul className="divide-y divide-border rounded-xl border border-border overflow-hidden">
+            {list.map((t) => (
+              <li
+                key={t.id}
+                className={cn(
+                  "px-3 py-3 bg-card space-y-2",
+                  editingId === t.id && "ring-1 ring-inset ring-primary/40 bg-primary/[0.03]",
+                )}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <Link to={`/forum/t/${t.id}`} className="text-sm font-medium text-primary hover:underline">
+                    {t.title}
+                  </Link>
+                  <span className="text-[11px] text-muted-foreground">{formatRelativeTh(t.created_at)}</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={editingId === t.id ? "default" : "outline"}
+                    className="h-7 text-xs"
+                    disabled={busy}
+                    onClick={() => startEdit(t)}
+                  >
+                    แก้ไข
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    disabled={setTopic.isPending}
+                    onClick={() =>
+                      setTopic.mutate({ topicId: t.id, isPinned: !t.is_pinned })
+                    }
+                  >
+                    {t.is_pinned ? "ถอนหมุด" : "ปักหมุด"}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    disabled={setTopic.isPending}
+                    onClick={() =>
+                      setTopic.mutate({ topicId: t.id, isLocked: !t.is_locked })
+                    }
+                  >
+                    {t.is_locked ? "ปลดล็อกคอมเมนต์" : "ล็อกคอมเมนต์"}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    disabled={setTopic.isPending}
+                    onClick={() =>
+                      setTopic.mutate({
+                        topicId: t.id,
+                        moderationState: t.moderation_state === "hidden" ? "published" : "hidden",
+                      })
+                    }
+                  >
+                    {t.moderation_state === "hidden" ? "แสดงอีกครั้ง" : "ซ่อน"}
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );
@@ -837,7 +1083,7 @@ export default function ForumAdminPage() {
     <>
       <ForumPageHeader
         title="แอดมินฟอรัม"
-        subtitle="มอนิเตอร์ชุมชน · ดูแลรายงาน · Feedback · ยศ · ไฟล์ · สถิติ"
+        subtitle="ประกาศจากทีม · มอนิเตอร์ชุมชน · ดูแลรายงาน · Feedback · ยศ · ไฟล์ · สถิติ"
       />
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)} className="space-y-5">
@@ -855,6 +1101,9 @@ export default function ForumAdminPage() {
 
         <TabsContent value="overview">
           <OverviewTab onGo={setTab} />
+        </TabsContent>
+        <TabsContent value="announcements">
+          <AnnouncementsTab />
         </TabsContent>
         <TabsContent value="moderation">
           <ModerationTab />

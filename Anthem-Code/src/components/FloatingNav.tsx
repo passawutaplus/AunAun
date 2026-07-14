@@ -218,12 +218,12 @@ const FloatingNav = () => {
             "active:scale-95 transition-all duration-200 ease-out",
             showFirstPostLabel
               ? cn(
-                  "group h-14 rounded-full border border-transparent bg-transparent gap-0 pl-0 pr-0",
-                  "text-primary dark:text-white shadow-lg shadow-black/20",
+                  "first-post-plus-aura group h-14 rounded-full border border-transparent bg-transparent gap-0 pl-0 pr-0",
+                  "text-primary dark:text-white",
                   "hover:border-primary hover:bg-background hover:gap-2 hover:pl-4 hover:pr-1.5",
                   "focus-visible:border-primary focus-visible:bg-background focus-visible:gap-2 focus-visible:pl-4 focus-visible:pr-1.5",
                 )
-              : "h-14 w-14 rounded-full bg-gradient-brand text-white hover:opacity-90",
+              : "h-14 w-14 rounded-full bg-gradient-brand text-white hover:opacity-90 shadow-lg shadow-black/20",
           )}
         >
           {showFirstPostLabel ? (
@@ -240,7 +240,7 @@ const FloatingNav = () => {
               </span>
               <span
                 className={cn(
-                  "inline-flex items-center justify-center h-14 w-14 rounded-full",
+                  "relative z-10 inline-flex items-center justify-center h-14 w-14 rounded-full",
                   "bg-gradient-brand text-white",
                   "group-hover:h-11 group-hover:w-11 group-hover:bg-primary group-hover:text-primary-foreground",
                   "group-focus-visible:h-11 group-focus-visible:w-11 group-focus-visible:bg-primary group-focus-visible:text-primary-foreground",

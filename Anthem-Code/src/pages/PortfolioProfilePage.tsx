@@ -226,9 +226,30 @@ const PortfolioProfilePage = () => {
       <div className="max-w-6xl mx-auto px-4 pt-2 pb-16 grid grid-cols-1 md:grid-cols-[300px_1fr] gap-6 md:gap-8">
         <aside className="md:sticky md:top-20 md:self-start space-y-4">
           <div className="rounded-3xl glass-panel p-5 grid grid-cols-3 gap-3">
-            <RequestMiniStat icon={UserPlus} label="คำขอ" hireCount={hireCount} collabCount={collabCount} />
-            <MiniStat icon={FileCheck} label="เผยแพร่" value={published.length} />
-            <MiniStat icon={Sparkles} label="คนดู" value={totalViews} />
+            <RequestMiniStat
+              icon={UserPlus}
+              label="คำขอ"
+              hireCount={hireCount}
+              collabCount={collabCount}
+              onClick={() => {
+                const el =
+                  document.getElementById("hiring-section") ??
+                  document.getElementById("collab-section");
+                el?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            />
+            <MiniStat
+              icon={FileCheck}
+              label="เผยแพร่"
+              value={published.length}
+              onClick={() => navigate("/portfolio/manage")}
+            />
+            <MiniStat
+              icon={Sparkles}
+              label="คนดู"
+              value={totalViews}
+              title="รวมยอดเข้าชมหน้ารายละเอียดผลงานที่เผยแพร่แล้ว (นับครั้งต่อเซสชันต่อชิ้น)"
+            />
           </div>
 
           {!launchMinimal && <ProfileWalletCard />}
@@ -374,43 +395,90 @@ const PortfolioProfilePage = () => {
   );
 };
 
-const MiniStat = ({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number }) => (
-  <div className="flex items-center gap-2.5">
-    <div className="text-primary flex items-center justify-center">
-      <Icon className="w-5 h-5" />
+const MiniStat = ({
+  icon: Icon,
+  label,
+  value,
+  onClick,
+  title,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  onClick?: () => void;
+  title?: string;
+}) => {
+  const body = (
+    <>
+      <div className="text-primary flex items-center justify-center">
+        <Icon className="w-5 h-5" />
+      </div>
+      <div>
+        <p className="text-sm font-medium text-foreground leading-none">{value}</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
+      </div>
+    </>
+  );
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        title={title}
+        className="flex items-center gap-2.5 rounded-xl text-left hover:bg-muted/40 transition-colors -m-1.5 p-1.5"
+      >
+        {body}
+      </button>
+    );
+  }
+  return (
+    <div className="flex items-center gap-2.5" title={title}>
+      {body}
     </div>
-    <div>
-      <p className="text-sm font-medium text-foreground leading-none">{value}</p>
-      <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
-    </div>
-  </div>
-);
+  );
+};
 
 const RequestMiniStat = ({
   icon: Icon,
   label,
   hireCount,
   collabCount,
+  onClick,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   hireCount: number;
   collabCount: number;
-}) => (
-  <div className="flex items-center gap-2.5">
-    <div className="text-primary flex items-center justify-center">
-      <Icon className="w-5 h-5" />
-    </div>
-    <div>
-      <p className="text-sm leading-none" aria-label={`จ้าง ${hireCount} คอลแลป ${collabCount}`}>
-        <span className="font-semibold text-sky-400">{hireCount}</span>
-        <span className="px-0.5 text-muted-foreground">/</span>
-        <span className="font-semibold text-primary">{collabCount}</span>
-      </p>
-      <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
-    </div>
-  </div>
-);
+  onClick?: () => void;
+}) => {
+  const body = (
+    <>
+      <div className="text-primary flex items-center justify-center">
+        <Icon className="w-5 h-5" />
+      </div>
+      <div>
+        <p className="text-sm leading-none" aria-label={`จ้าง ${hireCount} คอลแลป ${collabCount}`}>
+          <span className="font-semibold text-sky-400">{hireCount}</span>
+          <span className="px-0.5 text-muted-foreground">/</span>
+          <span className="font-semibold text-primary">{collabCount}</span>
+        </p>
+        <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
+      </div>
+    </>
+  );
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex items-center gap-2.5 rounded-xl text-left hover:bg-muted/40 transition-colors -m-1.5 p-1.5"
+      >
+        {body}
+      </button>
+    );
+  }
+  return <div className="flex items-center gap-2.5">{body}</div>;
+};
 
 const Section = ({
   id,

@@ -263,6 +263,8 @@ const ChatPortfolioSection = ({
         content: project.title,
         messageType: "project",
         projectId: project.id,
+        /** Whose portfolio tab this was sent from (shown in group chat). */
+        profileUserId: userId,
       });
       toast.success("ส่งผลงานในแชทแล้ว");
     } catch (e: unknown) {

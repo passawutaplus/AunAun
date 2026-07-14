@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Flag, Loader2 } from "lucide-react";
 import { useCreateReport, type ReportReason, type ReportTargetType, type EvidenceFile } from "@/hooks/useReports";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,9 +19,11 @@ import EvidenceUploader from "./EvidenceUploader";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import { useEnsureSensitiveAction } from "@/components/legal/SensitiveActionReauthProvider";
 import { safeHttpUrl } from "@/lib/safeUrl";
+import { useBlockUser, useUserBlocks } from "@/hooks/useCommunityPostInteractions";
 
 const REASONS: { value: ReportReason; label: string }[] = [
   { value: "spam", label: "สแปม / โฆษณา" },
+  { value: "job_spam", label: "ลงหางาน / ประกาศจ้างในฟอรัม" },
   { value: "harassment", label: "คุกคาม / Hate speech" },
   { value: "nsfw", label: "เนื้อหา 18+ / ไม่เหมาะสม" },
   { value: "copyright", label: "ละเมิดลิขสิทธิ์" },
@@ -34,28 +37,52 @@ interface Props {
   targetId: string;
   targetOwnerId?: string | null;
   children?: React.ReactNode;
+  /** Controlled open (e.g. from message ⋮ menu). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Hide the default trigger when controlling open from outside. */
+  hideTrigger?: boolean;
 }
 
-const ReportDialog = ({ targetType, targetId, targetOwnerId, children }: Props) => {
+const ReportDialog = ({
+  targetType,
+  targetId,
+  targetOwnerId,
+  children,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
+  hideTrigger = false,
+}: Props) => {
   const { user } = useAuth();
   const openLogin = useAuthDialog((s) => s.openLogin);
   const create = useCreateReport();
+  const blockUser = useBlockUser();
+  const { data: blockedSet } = useUserBlocks(user?.id);
   const ensureVerified = useEnsureSensitiveAction();
 
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = openProp ?? uncontrolledOpen;
+  const setOpen = onOpenChangeProp ?? setUncontrolledOpen;
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState("");
   const [evidence, setEvidence] = useState("");
   const [files, setFiles] = useState<EvidenceFile[]>([]);
+  const [alsoBlock, setAlsoBlock] = useState(false);
 
   // Don't allow reporting yourself.
   const isSelf = !!user && !!targetOwnerId && user.id === targetOwnerId;
+  const canBlock =
+    !!user &&
+    !!targetOwnerId &&
+    targetOwnerId !== user.id;
+  const alreadyBlocked = !!(targetOwnerId && blockedSet?.has(targetOwnerId));
 
   const reset = () => {
     setReason(null);
     setDetails("");
     setEvidence("");
     setFiles([]);
+    setAlsoBlock(false);
   };
 
   const handleOpenChange = (next: boolean) => {
@@ -90,6 +117,13 @@ const ReportDialog = ({ targetType, targetId, targetOwnerId, children }: Props) 
         evidence_urls: [...urls, ...files.map((f) => f.url)],
         evidence_files: files,
       });
+      if (alsoBlock && canBlock && targetOwnerId && !alreadyBlocked) {
+        try {
+          await blockUser.mutateAsync(targetOwnerId);
+        } catch {
+          /* report already sent */
+        }
+      }
       setOpen(false);
       reset();
     } catch {
@@ -99,15 +133,19 @@ const ReportDialog = ({ targetType, targetId, targetOwnerId, children }: Props) 
 
   if (isSelf) return null;
 
+  const busy = create.isPending || blockUser.isPending;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {children ?? (
-          <Button variant="ghost" size="icon" aria-label="รายงาน">
-            <Flag className="w-5 h-5" />
-          </Button>
-        )}
-      </DialogTrigger>
+      {!hideTrigger ? (
+        <DialogTrigger asChild>
+          {children ?? (
+            <Button variant="ghost" size="icon" aria-label="รายงาน">
+              <Flag className="w-5 h-5" />
+            </Button>
+          )}
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -168,13 +206,34 @@ const ReportDialog = ({ targetType, targetId, targetOwnerId, children }: Props) 
             <Label className="text-sm">ไฟล์แนบ</Label>
             <EvidenceUploader value={files} onChange={setFiles} />
           </div>
+
+          {canBlock ? (
+            <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+              <p className="text-sm font-medium text-foreground">จะบล็อกด้วยไหม?</p>
+              {alreadyBlocked ? (
+                <p className="text-xs text-muted-foreground">คุณบล็อกผู้ใช้นี้อยู่แล้ว</p>
+              ) : (
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <Checkbox
+                    checked={alsoBlock}
+                    onCheckedChange={(v) => setAlsoBlock(v === true)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-xs text-muted-foreground leading-relaxed">
+                    บล็อกผู้ใช้นี้ด้วย — จะส่งคำขอจ้างงานหรือคอลแลปหาคุณไม่ได้อีก
+                    จนกว่าคุณจะปลดบล็อกทีหลัง
+                  </span>
+                </label>
+              )}
+            </div>
+          ) : null}
         </div>
 
         <DialogFooter className="gap-2">
           <Button variant="ghost" onClick={() => setOpen(false)}>ยกเลิก</Button>
-          <Button onClick={submit} disabled={!reason || create.isPending}>
-            {create.isPending && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
-            ส่งรายงาน
+          <Button onClick={() => void submit()} disabled={!reason || busy}>
+            {busy && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+            {alsoBlock && !alreadyBlocked ? "ส่งรายงานและบล็อก" : "ส่งรายงาน"}
           </Button>
         </DialogFooter>
       </DialogContent>

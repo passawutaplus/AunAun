@@ -11,29 +11,34 @@ import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { jobTypeLabel } from "@/lib/hireBrief";
-import { JOB_TYPES } from "@/components/hiring/HireWizardFields";
+import { HIRE_ENGAGEMENT_TYPES } from "@/components/hiring/HireWizardFields";
 
 export type HireInviteFormState = {
-  jobType: string;
+  jobTypes: string[];
   details: string;
-  budgetAmount: string;
+  budgetMin: string;
+  budgetMax: string;
   deadline: string;
   referenceUrl: string;
   attachmentUrls: string[];
 };
 
 export const emptyHireInviteForm = (): HireInviteFormState => ({
-  jobType: "",
+  jobTypes: ["piece"], // default: จ้างทำชิ้นงาน — user can deselect
   details: "",
-  budgetAmount: "",
+  budgetMin: "",
+  budgetMax: "",
   deadline: "",
   referenceUrl: "",
   attachmentUrls: [],
 });
 
 export function buildHireInviteMessage(form: HireInviteFormState): string | null {
+  const typeLabel = form.jobTypes.length
+    ? form.jobTypes.map(jobTypeLabel).join(" · ")
+    : null;
   const parts = [
-    form.jobType.trim() ? `ประเภทงาน: ${jobTypeLabel(form.jobType)}` : null,
+    typeLabel ? `ประเภทงาน: ${typeLabel}` : null,
     form.details.trim() ? `รายละเอียด:\n${form.details.trim()}` : null,
     form.referenceUrl.trim() ? `ลิงก์อ้างอิง: ${form.referenceUrl.trim()}` : null,
   ].filter(Boolean);
@@ -48,6 +53,8 @@ export function buildHireInviteMessage(form: HireInviteFormState): string | null
 
 type JobOption = { id: string; title: string };
 
+type HireFieldErrorKey = "deadline" | "budgetMax" | "jobTypes";
+
 type Props = {
   form: HireInviteFormState;
   setForm: React.Dispatch<React.SetStateAction<HireInviteFormState>>;
@@ -56,8 +63,9 @@ type Props = {
   onJobPostIdChange: (id: string) => void;
   userId?: string;
   maxImages?: number;
-  /** When true, all brief fields are optional (instant chat flow). */
-  optional?: boolean;
+  /** Highlight required fields that failed validation. */
+  fieldErrors?: Partial<Record<HireFieldErrorKey, string>>;
+  onClearFieldError?: (key: HireFieldErrorKey) => void;
 };
 
 const HireInviteForm = ({
@@ -68,7 +76,8 @@ const HireInviteForm = ({
   onJobPostIdChange,
   userId,
   maxImages = 3,
-  optional = false,
+  fieldErrors,
+  onClearFieldError,
 }: Props) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -89,6 +98,17 @@ const HireInviteForm = ({
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
     }
+  };
+
+  const toggleJobType = (id: string) => {
+    setForm((f) => {
+      const has = f.jobTypes.includes(id);
+      return {
+        ...f,
+        jobTypes: has ? f.jobTypes.filter((x) => x !== id) : [...f.jobTypes, id],
+      };
+    });
+    onClearFieldError?.("jobTypes");
   };
 
   return (
@@ -121,34 +141,45 @@ const HireInviteForm = ({
         </div>
       ) : null}
 
-      <div>
+      <div id="hire-job-types">
         <Label>
-          ประเภทงาน {!optional && <span className="text-destructive">*</span>}
-          {optional && <span className="text-muted-foreground font-normal"> (ไม่บังคับ)</span>}
+          ประเภทงาน <span className="text-orange-500">*</span>
+          <span className="text-muted-foreground font-normal"> (เลือกได้มากกว่า 1)</span>
         </Label>
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          {JOB_TYPES.map((j) => (
-            <button
-              key={j.id}
-              type="button"
-              onClick={() => setForm((f) => ({ ...f, jobType: j.id }))}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs border transition-colors",
-                form.jobType === j.id
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {j.label}
-            </button>
-          ))}
+        <div
+          className={cn(
+            "flex flex-wrap gap-1.5 mt-2 rounded-xl p-1 -m-1",
+            fieldErrors?.jobTypes && "ring-1 ring-destructive",
+          )}
+        >
+          {HIRE_ENGAGEMENT_TYPES.map((j) => {
+            const selected = form.jobTypes.includes(j.id);
+            return (
+              <button
+                key={j.id}
+                type="button"
+                onClick={() => toggleJobType(j.id)}
+                aria-pressed={selected}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs border transition-colors",
+                  selected
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {j.label}
+              </button>
+            );
+          })}
         </div>
+        {fieldErrors?.jobTypes ? (
+          <p className="text-xs text-destructive mt-1.5">{fieldErrors.jobTypes}</p>
+        ) : null}
       </div>
 
       <div>
         <Label htmlFor="hire-details">
-          รายละเอียดงาน {!optional && <span className="text-destructive">*</span>}
-          {optional && <span className="text-muted-foreground font-normal"> (ไม่บังคับ)</span>}
+          รายละเอียดงาน <span className="text-muted-foreground font-normal">(ไม่บังคับ)</span>
         </Label>
         <Textarea
           id="hire-details"
@@ -210,26 +241,66 @@ const HireInviteForm = ({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label htmlFor="hire-budget">งบประมาณ (บาท)</Label>
-          <Input
-            id="hire-budget"
-            inputMode="numeric"
-            value={form.budgetAmount}
-            onChange={(e) => setForm((f) => ({ ...f, budgetAmount: e.target.value }))}
-            placeholder="เช่น 15000"
-            className="rounded-xl mt-1.5"
-          />
+        <div className="col-span-2 sm:col-span-1 space-y-1.5">
+          <Label>งบประมาณ (บาท) <span className="text-muted-foreground font-normal">ช่วงราคา</span></Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              id="hire-budget-min"
+              inputMode="numeric"
+              value={form.budgetMin}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, budgetMin: e.target.value }));
+                onClearFieldError?.("budgetMax");
+              }}
+              placeholder="ต่ำสุด"
+              className={cn(
+                "rounded-xl",
+                fieldErrors?.budgetMax && "border-destructive focus-visible:ring-destructive",
+              )}
+            />
+            <Input
+              id="hire-budget-max"
+              inputMode="numeric"
+              value={form.budgetMax}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, budgetMax: e.target.value }));
+                onClearFieldError?.("budgetMax");
+              }}
+              placeholder="สูงสุด"
+              className={cn(
+                "rounded-xl",
+                fieldErrors?.budgetMax && "border-destructive focus-visible:ring-destructive",
+              )}
+              aria-invalid={!!fieldErrors?.budgetMax}
+            />
+          </div>
+          {fieldErrors?.budgetMax ? (
+            <p className="text-xs text-destructive">{fieldErrors.budgetMax}</p>
+          ) : null}
         </div>
-        <div>
-          <Label htmlFor="hire-deadline">กำหนดส่งงาน</Label>
+        <div className="col-span-2 sm:col-span-1">
+          <Label htmlFor="hire-deadline">
+            กำหนดส่งงาน <span className="text-orange-500">*</span>
+          </Label>
           <Input
             id="hire-deadline"
+            type="date"
             value={form.deadline}
-            onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
-            placeholder="เช่น 2 สัปดาห์"
-            className="rounded-xl mt-1.5"
+            min={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => {
+              setForm((f) => ({ ...f, deadline: e.target.value }));
+              onClearFieldError?.("deadline");
+            }}
+            className={cn(
+              "rounded-xl mt-1.5",
+              fieldErrors?.deadline && "border-destructive focus-visible:ring-destructive",
+            )}
+            aria-invalid={!!fieldErrors?.deadline}
+            required
           />
+          {fieldErrors?.deadline ? (
+            <p className="text-xs text-destructive mt-1">{fieldErrors.deadline}</p>
+          ) : null}
         </div>
       </div>
     </div>

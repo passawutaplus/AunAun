@@ -64,9 +64,16 @@ deploy_production() {
   echo "→ Checking Vercel login…"
   npx vercel whoami
 
-  if [[ ! -f "$dir/.vercel/project.json" ]]; then
+  # aplus1-prod has Root Directory=Anthem-Code — CLI must run from monorepo root
+  # (deploying from Anthem-Code/ looks for Anthem-Code/Anthem-Code and fails).
+  local deploy_cwd="$dir"
+  if [[ "$vercel_project" == "aplus1-prod" ]]; then
+    deploy_cwd="."
+  fi
+
+  if [[ ! -f "$deploy_cwd/.vercel/project.json" ]] || ! grep -q "\"projectName\": \"$vercel_project\"" "$deploy_cwd/.vercel/project.json" 2>/dev/null; then
     echo "→ Linking Vercel project $vercel_project…"
-    (cd "$dir" && npx vercel link --yes --project="$vercel_project")
+    (cd "$deploy_cwd" && npx vercel link --yes --project="$vercel_project")
   fi
 
   export DEPLOY_TARGET=production
@@ -104,7 +111,7 @@ deploy_production() {
   fi
 
   DEPLOY_OUTPUT="$(mktemp)"
-  (cd "$dir" && npx vercel deploy --prod --yes --project="$vercel_project" "${BUILD_ENVS[@]}") | tee "$DEPLOY_OUTPUT"
+  (cd "$deploy_cwd" && npx vercel deploy --prod --yes --project="$vercel_project" "${BUILD_ENVS[@]}") | tee "$DEPLOY_OUTPUT"
   DEPLOY_URL="$(grep -Eo 'https://[a-zA-Z0-9._-]+\.(vercel\.app|[a-z0-9.-]+)' "$DEPLOY_OUTPUT" | tail -1)"
   rm -f "$DEPLOY_OUTPUT"
 

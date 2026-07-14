@@ -130,6 +130,7 @@ const ForumTopicPage = lazy(() => import("./pages/forum/ForumTopicPage"));
 const ForumNewTopicPage = lazy(() => import("./pages/forum/ForumNewTopicPage"));
 const ForumSearchPage = lazy(() => import("./pages/forum/ForumSearchPage"));
 const ForumAdminPage = lazy(() => import("./pages/forum/ForumAdminPage"));
+const ForumMyPage = lazy(() => import("./pages/forum/ForumMyPage"));
 const ForumLayoutRoute = lazy(() => import("./components/forum/ForumLayout"));
 const AdminCompliancePage = lazy(() => import("./pages/admin/AdminCompliancePage"));
 const AdminCopyrightReportsPage = lazy(() => import("./pages/admin/AdminCopyrightReportsPage"));
@@ -214,6 +215,7 @@ const App = () => (
               <Route path="/forum" element={<ForumLayoutRoute />}>
                 <Route index element={<ForumHomePage />} />
                 <Route path="search" element={<ForumSearchPage />} />
+                <Route path="me" element={<RequireAuth><ForumMyPage /></RequireAuth>} />
                 <Route path="new" element={<RequireAuth><ForumNewTopicPage /></RequireAuth>} />
                 <Route path="admin" element={<RequireAuth><AdminGuard><ForumAdminPage /></AdminGuard></RequireAuth>} />
                 <Route path="c/:slug" element={<ForumCategoryPage />} />

@@ -10,6 +10,8 @@ import {
   Sparkles,
   MessagesSquare,
   Shield,
+  BookOpen,
+  ArrowLeft,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,14 +56,10 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
 
   return (
     <>
-      <DropdownMenuItem onClick={() => go("/portfolio")} className="rounded-lg">
-        <User className="w-4 h-4 mr-2" /> โปรไฟล์ของฉัน
+      <DropdownMenuItem onClick={() => go(variant === "forum" ? "/forum/me" : "/portfolio")} className="rounded-lg">
+        <User className="w-4 h-4 mr-2" />{" "}
+        {variant === "forum" ? "โปรไฟล์ชุมชนของฉัน" : "โปรไฟล์ของฉัน"}
       </DropdownMenuItem>
-      {variant === "forum" && isAdmin ? (
-        <DropdownMenuItem onClick={() => go("/forum/admin")} className="rounded-lg">
-          <Shield className="w-4 h-4 mr-2 text-primary" /> แอดมินฟอรัม
-        </DropdownMenuItem>
-      ) : null}
       {variant !== "forum" ? (
         <>
           <DropdownMenuItem onClick={() => go("/portfolio/manage")} className="rounded-lg">
@@ -76,15 +74,6 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
           <DropdownMenuItem onClick={() => go("/inspire")} className="rounded-lg">
             <Sparkles className="w-4 h-4 mr-2" /> My Inspire
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => {
-              window.open("/forum", "_blank", "noopener,noreferrer");
-              onNavigate?.();
-            }}
-            className="rounded-lg"
-          >
-            <MessagesSquare className="w-4 h-4 mr-2" /> กระทู้ชุมชน
-          </DropdownMenuItem>
           {!isAplus1LaunchMinimal() ? (
             <DropdownMenuItem onClick={() => go("/earnings")} className="rounded-lg">
               <Coins className="w-4 h-4 mr-2 text-primary" /> รายได้ &amp; กระเป๋า Pixel
@@ -92,9 +81,17 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
           ) : null}
         </>
       ) : (
-        <DropdownMenuItem onClick={() => go("/forum")} className="rounded-lg">
-          <MessagesSquare className="w-4 h-4 mr-2" /> หน้าแรกชุมชน
-        </DropdownMenuItem>
+        <>
+          <DropdownMenuItem onClick={() => go("/")} className="rounded-lg">
+            <ArrowLeft className="w-4 h-4 mr-2" /> กลับฟีดหลัก
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => go("/forum")} className="rounded-lg">
+            <MessagesSquare className="w-4 h-4 mr-2" /> หน้าแรกชุมชน
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => go("/legal/community")} className="rounded-lg">
+            <BookOpen className="w-4 h-4 mr-2" /> แนวทางชุมชน
+          </DropdownMenuItem>
+        </>
       )}
       <DropdownMenuSeparator />
       <div className="px-2 py-1.5 space-y-1" onPointerDown={preventClose}>
@@ -102,9 +99,25 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
         {variant !== "forum" ? <FeedGridDensityPicker label="Grid Feed" /> : null}
       </div>
       <DropdownMenuSeparator />
+      {variant !== "forum" ? (
+        <DropdownMenuItem
+          onClick={() => {
+            window.open("/forum", "_blank", "noopener,noreferrer");
+            onNavigate?.();
+          }}
+          className="rounded-lg"
+        >
+          <MessagesSquare className="w-4 h-4 mr-2" /> กระทู้ชุมชน
+        </DropdownMenuItem>
+      ) : null}
       <DropdownMenuItem onClick={() => go("/settings")} className="rounded-lg">
         <Settings className="w-4 h-4 mr-2" /> ตั้งค่า
       </DropdownMenuItem>
+      {variant === "forum" && isAdmin ? (
+        <DropdownMenuItem onClick={() => go("/forum/admin")} className="rounded-lg">
+          <Shield className="w-4 h-4 mr-2 text-primary" /> แอดมินฟอรัม
+        </DropdownMenuItem>
+      ) : null}
       <DropdownMenuSeparator />
       <DropdownMenuItem onClick={() => void signOut()} className="rounded-lg text-destructive focus:text-destructive">
         <LogOut className="w-4 h-4 mr-2" /> ออกจากระบบ

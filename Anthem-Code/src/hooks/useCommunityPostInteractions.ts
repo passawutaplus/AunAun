@@ -372,11 +372,18 @@ export const useBlockUser = () => {
   return useMutation({
     mutationFn: async (blockedId: string) => {
       if (!user) throw new Error("ต้องเข้าสู่ระบบก่อน");
+      if (blockedId === user.id) throw new Error("บล็อกตัวเองไม่ได้");
       const { error } = await supabase.from("user_blocks").insert({
         blocker_id: user.id,
         blocked_id: blockedId,
       });
-      if (error) throw error;
+      if (error) {
+        // already blocked
+        if (String(error.code) === "23505" || String(error.message).includes("duplicate")) {
+          return;
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["user-blocks", user?.id] });
@@ -385,3 +392,39 @@ export const useBlockUser = () => {
     },
   });
 };
+
+export const useUnblockUser = () => {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (blockedId: string) => {
+      if (!user) throw new Error("ต้องเข้าสู่ระบบก่อน");
+      const { error } = await supabase
+        .from("user_blocks")
+        .delete()
+        .eq("blocker_id", user.id)
+        .eq("blocked_id", blockedId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user-blocks", user?.id] });
+      qc.invalidateQueries({ queryKey: ["community-posts"] });
+      toast.success("ปลดบล็อกแล้ว");
+    },
+  });
+};
+
+/** True when `targetUserId` has blocked the current viewer (viewer cannot hire/collab them). */
+export async function isBlockedFromOpportunity(
+  actorId: string,
+  targetUserId: string,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("user_blocks")
+    .select("blocker_id")
+    .eq("blocker_id", targetUserId)
+    .eq("blocked_id", actorId)
+    .maybeSingle();
+  if (error) throw error;
+  return !!data;
+}

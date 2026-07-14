@@ -11,8 +11,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
+import { cn } from "@/lib/utils";
 
-const ProfileButton = () => {
+type Props = {
+  className?: string;
+  /** Stretch chip to fill remaining feed right-rail width. */
+  fillRail?: boolean;
+};
+
+const ProfileButton = ({ className, fillRail = false }: Props) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<{ avatar_url: string | null; display_name: string | null } | null>(null);
@@ -32,11 +39,18 @@ const ProfileButton = () => {
 
   if (!user) {
     return (
-      <div className="flex items-center gap-1.5">
-        <div className="hidden lg:flex items-center gap-1.5">
+      <div className={cn("flex items-center gap-1.5", fillRail && "min-w-0 flex-1", className)}>
+        <div className={cn("hidden lg:flex items-center gap-1.5", fillRail && "min-w-0 flex-1")}>
           {!isAplus1LaunchMinimal() && <JobsNavButton />}
-          <ChatNavButton />
-          <NotificationBell />
+          <div
+            className={cn(
+              "flex items-center rounded-full glass-chip px-1 py-1",
+              fillRail ? "w-full min-w-0 justify-evenly gap-0" : "gap-0.5",
+            )}
+          >
+            <ChatNavButton />
+            <NotificationBell />
+          </div>
         </div>
         <Button
           onClick={() => navigate("/auth")}
@@ -50,29 +64,36 @@ const ProfileButton = () => {
   }
 
   return (
-    <div className="flex items-center gap-1.5">
-      <div className="hidden lg:flex items-center gap-1.5">
+    <div className={cn("flex items-center gap-1.5", fillRail && "min-w-0 flex-1", className)}>
+      <div className={cn("hidden lg:flex items-center gap-1.5", fillRail && "min-w-0 flex-1")}>
         {!isAplus1LaunchMinimal() && <JobsNavButton />}
-        <ChatNavButton />
-        <NotificationBell />
+        <div
+          className={cn(
+            "flex items-center rounded-full glass-chip py-1 hover:shadow-md hover:shadow-primary/20 transition-all",
+            fillRail ? "w-full min-w-0 justify-evenly gap-0 px-1" : "gap-0.5 pl-1 pr-1.5",
+          )}
+        >
+          <ChatNavButton />
+          <NotificationBell />
+          <ProfileMenuDropdown
+            trigger={
+              <button
+                aria-label="โปรไฟล์"
+                className="flex items-center gap-1.5 pl-0.5 pr-1 py-0.5 rounded-full hover:bg-accent/60 transition-colors"
+              >
+                <UserAvatar
+                  src={profile?.avatar_url}
+                  name={profile?.display_name ?? "P"}
+                  className="w-8 h-8"
+                  fallbackClassName="text-sm"
+                />
+                <ChevronDown className="w-4 h-4 text-muted-foreground hidden sm:block" />
+              </button>
+            }
+          />
+        </div>
         {!isAplus1LaunchMinimal() && <WalletBadge />}
       </div>
-      <ProfileMenuDropdown
-        trigger={
-          <button
-            aria-label="โปรไฟล์"
-            className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full glass-chip hover:shadow-md hover:shadow-primary/20 transition-all"
-          >
-            <UserAvatar
-              src={profile?.avatar_url}
-              name={profile?.display_name ?? "P"}
-              className="w-8 h-8"
-              fallbackClassName="text-sm"
-            />
-            <ChevronDown className="w-4 h-4 text-muted-foreground hidden sm:block" />
-          </button>
-        }
-      />
     </div>
   );
 };

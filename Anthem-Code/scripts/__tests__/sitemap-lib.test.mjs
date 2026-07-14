@@ -14,11 +14,19 @@ describe("sitemap-lib", () => {
   it("includes launch-public static routes", () => {
     const paths = STATIC_PATHS.map((p) => p.loc);
     expect(paths).toContain("/");
+    expect(paths).toContain("/forum");
+    expect(paths).toContain("/forum/c/announcements");
+    expect(paths).toContain("/forum/c/help");
+    expect(paths).toContain("/forum/c/bug");
+    expect(paths).toContain("/forum/c/idea");
+    expect(paths).toContain("/forum/c/feedback");
     expect(paths).toContain("/legal/community");
     expect(paths).toContain("/legal/copyright-report");
     expect(paths).not.toContain("/jobs");
     expect(paths).not.toContain("/advertise");
     expect(paths).not.toContain("/admin");
+    expect(paths).not.toContain("/forum/admin");
+    expect(paths).not.toContain("/forum/new");
   });
 
   it("builds catalog IDs deterministically", () => {
@@ -34,6 +42,10 @@ describe("sitemap-lib", () => {
     }
     expect(paths.some((p) => p.startsWith("/s/"))).toBe(false);
     expect(paths).not.toContain("/jobs");
+    expect(paths).toContain("/forum");
+    expect(paths).not.toContain("/forum/admin");
+    expect(paths).not.toContain("/forum/new");
+    expect(paths).not.toContain("/forum/search");
   });
 
   it("includes expanded seed catalog by default", () => {
@@ -67,9 +79,11 @@ describe("sitemap-lib", () => {
     const xml = buildSitemapXml("https://aplus1.app");
     expect(xml).toContain("<urlset");
     expect(xml).toContain("<loc>https://aplus1.app/</loc>");
+    expect(xml).toContain("<loc>https://aplus1.app/forum</loc>");
     expect(xml).toContain("<loc>https://aplus1.app/legal/community</loc>");
     expect(xml).not.toMatch(/<loc>[^<]*\/admin<\/loc>/);
     expect(xml).not.toMatch(/<loc>[^<]*\/jobs<\/loc>/);
+    expect(xml).not.toMatch(/<loc>[^<]*\/forum\/admin<\/loc>/);
   });
 
   it("builds sitemap index and type bundles", () => {

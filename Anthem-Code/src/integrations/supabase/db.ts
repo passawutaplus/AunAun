@@ -131,6 +131,7 @@ const SHARED_TABLES = new Set([
   "conversations",
   "conversation_members",
   "conversation_pins",
+  "conversation_hides",
   "messages",
   "aml_flags",
   "kyc_requests",

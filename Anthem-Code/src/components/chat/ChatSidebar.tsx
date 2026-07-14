@@ -1,11 +1,21 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutGrid, MessageCircle, Handshake, Pin, PinOff, Plus, Search, Users } from "lucide-react";
+import { LayoutGrid, MessageCircle, Handshake, Pin, PinOff, Plus, Search, Users, X } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublicFrom } from "@/lib/profileAccess";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +26,7 @@ import {
   useConversations,
   useConversationPins,
   useConversationUnreadCounts,
+  useHideConversation,
   isGroupConversation,
   otherParticipantId,
   type ChatKind,
@@ -60,10 +71,12 @@ const ChatSidebar = ({
   const { data: myProfile } = useProfile(user?.id);
   const { tier } = useSubscription();
   const [groupOpen, setGroupOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const { data: conversations = [], isLoading, isError, error } = useConversations(
     tab === "all" ? undefined : tab,
   );
   const { data: pins = [], togglePin } = useConversationPins();
+  const hideConversation = useHideConversation();
   const pinnedSet = useMemo(() => new Set(pins.map((p) => p.conversation_id)), [pins]);
 
   const otherIds = useMemo(
@@ -193,7 +206,32 @@ const ChatSidebar = ({
 
   const handleTogglePin = (e: React.MouseEvent, convId: string) => {
     e.stopPropagation();
-    togglePin.mutate({ conversationId: convId, pinned: pinnedSet.has(convId) });
+    const wasPinned = pinnedSet.has(convId);
+    togglePin.mutate(
+      { conversationId: convId, pinned: wasPinned },
+      {
+        onSuccess: () => toast.success(wasPinned ? "เลิกปักหมุดแล้ว" : "ปักหมุดแล้ว"),
+        onError: (err: Error) => toast.error(err.message || "ปักหมุดไม่สำเร็จ"),
+      },
+    );
+  };
+
+  const handleAskDelete = (e: React.MouseEvent, convId: string) => {
+    e.stopPropagation();
+    setDeleteTargetId(convId);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteTargetId) return;
+    const id = deleteTargetId;
+    hideConversation.mutate(id, {
+      onSuccess: () => {
+        toast.success("ลบแชทออกจากรายการแล้ว");
+        setDeleteTargetId(null);
+        if (selectedId === id) navigate("/chat");
+      },
+      onError: (err: Error) => toast.error(err.message || "ลบแชทไม่สำเร็จ"),
+    });
   };
 
   const goProjectsHome = () => {
@@ -205,6 +243,31 @@ const ChatSidebar = ({
     <aside className={cn("flex flex-col h-full border-r border-border bg-background", className)}>
       <div className="shrink-0 p-3 border-b border-border space-y-3">
         <div className="flex items-center justify-between gap-2 px-1">
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-8 gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2.5 transition-[box-shadow] duration-200 hover:shadow-md hover:shadow-primary/20"
+              aria-label="กลับหน้าแรก — Feed"
+              title="กลับหน้าแรก"
+              onClick={goProjectsHome}
+            >
+              <LayoutGrid className="w-4 h-4 shrink-0" />
+              <span className="text-xs font-medium">Feed</span>
+            </Button>
+            {isAplus1SubscriptionsEnabled() ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                aria-label="สร้างกลุ่มแชท"
+                onClick={handleCreateGroup}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            ) : null}
+          </div>
           <div className="flex items-center gap-2 min-w-0">
             <h1 className="text-lg font-semibold text-foreground shrink-0">ข้อความ</h1>
             {user && (
@@ -225,31 +288,6 @@ const ChatSidebar = ({
                 />
               </Button>
             )}
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-8 gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2.5"
-              aria-label="กลับหน้าแรก — Feed"
-              title="กลับหน้าแรก"
-              onClick={goProjectsHome}
-            >
-              <LayoutGrid className="w-4 h-4 shrink-0" />
-              <span className="text-xs font-medium">Feed</span>
-            </Button>
-            {isAplus1SubscriptionsEnabled() ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                aria-label="สร้างกลุ่มแชท"
-                onClick={handleCreateGroup}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            ) : null}
           </div>
         </div>
         <div className="relative">
@@ -341,20 +379,41 @@ const ChatSidebar = ({
             const p = otherId ? profilesMap[otherId] : undefined;
             const last = lastMessages[c.id];
             const isHire = c.kind === "hire";
+            const groupTag =
+              isGroup && (c.group_tag === "hire" || c.group_tag === "collab")
+                ? c.group_tag
+                : null;
             const selected = selectedId === c.id;
             const unread = unreadCounts[c.id] ?? 0;
             const isPinned = pinnedSet.has(c.id);
             const accentBorder = isGroup
-              ? "border-primary"
+              ? groupTag === "hire"
+                ? "border-[hsl(var(--chat-hire))]"
+                : groupTag === "collab"
+                  ? "border-[hsl(var(--chat-collab))]"
+                  : "border-primary"
               : isHire
                 ? "border-[hsl(var(--chat-hire))]"
                 : "border-[hsl(var(--chat-collab))]";
             const badgeBg = isGroup
-              ? "bg-primary/10 text-primary"
+              ? groupTag === "hire"
+                ? "bg-[hsl(var(--chat-hire-soft))] text-[hsl(var(--chat-hire))]"
+                : groupTag === "collab"
+                  ? "bg-[hsl(var(--chat-collab-soft))] text-[hsl(var(--chat-collab))]"
+                  : "bg-primary/10 text-primary"
               : isHire
                 ? "bg-[hsl(var(--chat-hire-soft))] text-[hsl(var(--chat-hire))]"
                 : "bg-[hsl(var(--chat-collab-soft))] text-[hsl(var(--chat-collab))]";
             const listName = isGroup ? c.title || c.project_title || "กลุ่มแชท" : p?.name ?? "ผู้ใช้";
+            const listBadge = isGroup
+              ? groupTag === "hire"
+                ? "กลุ่มจ้าง"
+                : groupTag === "collab"
+                  ? "กลุ่มคอลแลป"
+                  : "กลุ่ม"
+              : isHire
+                ? "จ้าง"
+                : "คอลแลป";
 
             return (
               <li key={c.id} className="relative">
@@ -362,7 +421,7 @@ const ChatSidebar = ({
                   type="button"
                   onClick={() => selectConversation(c)}
                   className={cn(
-                    "w-full flex items-center gap-3 p-3 pr-10 rounded-xl transition-colors text-left border-l-4",
+                    "w-full flex items-center gap-3 p-3 pr-11 rounded-xl transition-colors text-left border-l-4",
                     selected ? cn("bg-accent/80", accentBorder) : "border-transparent hover:bg-accent/50",
                     isPinned && !selected && "bg-muted/40",
                   )}
@@ -390,7 +449,7 @@ const ChatSidebar = ({
                             badgeBg,
                           )}
                         >
-                          {isGroup ? "กลุ่ม" : isHire ? "จ้าง" : "คอลแลป"}
+                          {listBadge}
                         </span>
                       </div>
                       <span className="text-[11px] text-muted-foreground shrink-0">
@@ -420,19 +479,53 @@ const ChatSidebar = ({
                     )}
                   </div>
                 </button>
-                <button
-                  type="button"
-                  onClick={(e) => handleTogglePin(e, c.id)}
-                  className="absolute top-3 right-2 p-1 rounded-full hover:bg-background/80 text-muted-foreground hover:text-foreground z-10"
-                  aria-label={isPinned ? "เลิกปักหมุด" : "ปักหมุด"}
-                >
-                  {isPinned ? <Pin className="w-3.5 h-3.5 text-primary" /> : <PinOff className="w-3.5 h-3.5 opacity-40" />}
-                </button>
+                <div className="absolute top-2 right-1.5 flex flex-col items-center gap-0.5 z-10">
+                  <button
+                    type="button"
+                    onClick={(e) => handleTogglePin(e, c.id)}
+                    className="p-1 rounded-full hover:bg-background/80 text-muted-foreground hover:text-foreground"
+                    aria-label={isPinned ? "เลิกปักหมุด" : "ปักหมุด"}
+                  >
+                    {isPinned ? <Pin className="w-3.5 h-3.5 text-primary" /> : <PinOff className="w-3.5 h-3.5 opacity-40" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => handleAskDelete(e, c.id)}
+                    className="p-1 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                    aria-label="ลบแชท"
+                  >
+                    <X className="w-3.5 h-3.5 opacity-50 hover:opacity-100" />
+                  </button>
+                </div>
               </li>
             );
           })}
         </ul>
       </div>
+
+      <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>ลบแชทนี้ออกจากรายการ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              แชทจะหายจากรายการของคุณเท่านั้น คู่สนทนายังเห็นอยู่ และจะกลับมาอีกครั้งถ้ามีข้อความใหม่
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={hideConversation.isPending}>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={hideConversation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmDelete();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {hideConversation.isPending ? "กำลังลบ…" : "ลบแชท"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <CreateGroupDialog
         open={groupOpen}

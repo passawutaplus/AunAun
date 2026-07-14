@@ -155,6 +155,8 @@ export interface HireNotif {
   freelancerId: string;
   projectId: string | null;
   conversationId: string | null;
+  forwardedFromRequestId: string | null;
+  forwardNote: string | null;
 }
 
 export const useHireNotifications = () => {
@@ -165,7 +167,9 @@ export const useHireNotifications = () => {
     queryFn: async (): Promise<HireNotif[]> => {
       const { data } = await supabase
         .from("hiring_requests")
-        .select("id, created_at, client_name, email, project_title, message, status, budget_amount, client_id, freelancer_id, project_id")
+        .select(
+          "id, created_at, client_name, email, project_title, message, status, budget_amount, client_id, freelancer_id, project_id, forwarded_from_request_id, forward_note",
+        )
         .eq("freelancer_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -184,6 +188,9 @@ export const useHireNotifications = () => {
         freelancerId: r.freelancer_id,
         projectId: r.project_id,
         conversationId: convMap[r.id] ?? null,
+        forwardedFromRequestId:
+          (r as { forwarded_from_request_id?: string | null }).forwarded_from_request_id ?? null,
+        forwardNote: (r as { forward_note?: string | null }).forward_note ?? null,
       }));
     },
   });

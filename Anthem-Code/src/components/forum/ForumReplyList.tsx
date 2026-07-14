@@ -110,7 +110,7 @@ export function ForumReplyList({ topic, replies }: Props) {
                           className="h-8 text-xs"
                           onClick={() => setQuoteId(r.id)}
                         >
-                          อ้างอิง
+                          ตอบกลับ
                         </Button>
                       ) : null}
                       {canAccept && !r.is_accepted ? (
@@ -148,7 +148,7 @@ export function ForumReplyList({ topic, replies }: Props) {
           <h3 className="text-sm font-semibold">ตอบกระทู้</h3>
           {quote ? (
             <div className="flex items-start justify-between gap-2 rounded-lg bg-muted/60 px-3 py-2 text-xs">
-              <span className="line-clamp-2 text-muted-foreground">อ้างอิง: {quote.body}</span>
+              <span className="line-clamp-2 text-muted-foreground">ตอบกลับ: {quote.body}</span>
               <button type="button" className="text-primary shrink-0" onClick={() => setQuoteId(null)}>
                 ยกเลิก
               </button>

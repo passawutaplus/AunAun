@@ -67,18 +67,21 @@ const ProjectDetailPage = () => {
   useEffect(() => {
     if (!dbProject?.id) return;
     const analyticsOk = isCategoryAllowed("analytics");
-    // Global counter — once per session per project (requires analytics consent)
+    // Creator-facing view counter — once per session per project (no visitor PII).
+    // Not gated on analytics cookies so "คนดู" on portfolio stays accurate.
     const key = `viewed:${dbProject.id}`;
-    if (analyticsOk && !sessionStorage.getItem(key)) {
+    if (!sessionStorage.getItem(key)) {
       sessionStorage.setItem(key, "1");
       void supabase
         .rpc("increment_project_view", { _project_id: dbProject.id })
         .then(() => {
           void refetch();
         }, () => {});
+    }
+    if (analyticsOk) {
       void trackProductEvent("project_view", { project_id: dbProject.id }, { debounceMs: 5_000 });
     }
-    // Per-user history (only when signed-in)
+    // Per-user history (signed-in + analytics consent) for personalized Explore
     if (user?.id && analyticsOk) {
       supabase
         .from("project_views")

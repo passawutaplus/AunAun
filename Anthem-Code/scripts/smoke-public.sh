@@ -77,6 +77,14 @@ check_sitemap_xml() {
     echo "FAIL /sitemap.xml missing /legal/community"
     seo_fail=1
   fi
+  if ! grep -q '/forum</loc>' "$body_file" && ! grep -q 'aplus1.app/forum</loc>' "$body_file"; then
+    echo "FAIL /sitemap.xml missing /forum"
+    seo_fail=1
+  fi
+  if grep -qE '<loc>[^<]*/forum/admin</loc>|<loc>[^<]*/forum/new</loc>' "$body_file"; then
+    echo "FAIL /sitemap.xml contains private forum route"
+    seo_fail=1
+  fi
   if grep -qE '<loc>[^<]*/admin</loc>|<loc>[^<]*/auth</loc>' "$body_file"; then
     echo "FAIL /sitemap.xml contains private route"
     seo_fail=1

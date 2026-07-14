@@ -100,6 +100,7 @@ import {
   splitMediaFromBlocks,
   toStoredContentBlocks,
   blockImageUrls,
+  imageModuleSlotCapacity,
   type GalleryDisplayMode,
   type ProjectContentBlock,
 } from "@/lib/projectContentBlocks";
@@ -1235,7 +1236,9 @@ const ProjectEditorPage = () => {
     async (blockId: string, files: File[]) => {
       if (!user || !files.length) return;
       const block = contentBlocks.find((b) => b.id === blockId);
-      if (!block || block.type !== "image" || block.mediaLayout !== "gallery") return;
+      if (!block || block.type !== "image") return;
+      const layout = block.mediaLayout;
+      if (layout !== "gallery" && layout !== "grid" && layout !== "multi") return;
 
       const images = files.filter((f) => /^image\/(jpeg|png|webp)$/i.test(f.type));
       if (!images.length) {
@@ -1243,28 +1246,85 @@ const ProjectEditorPage = () => {
         return;
       }
 
+      const capacity = imageModuleSlotCapacity(block);
+
+      if (layout === "gallery") {
+        setUploadingBlockId(blockId);
+        setUploadingGallery(true);
+        try {
+          const uploaded: string[] = [];
+          for (const file of images.slice(0, capacity)) {
+            const url = await uploadProjectImage(file, user.id, folderRef.current, tier);
+            uploaded.push(url);
+          }
+          setContentBlocks((prev) =>
+            prev.map((b) => {
+              if (b.id !== blockId || b.type !== "image") return b;
+              const existing = blockImageUrls(b).map((u) => u.trim()).filter(Boolean);
+              const next = [...existing, ...uploaded];
+              return {
+                ...b,
+                mediaLayout: "gallery",
+                urls: next,
+                url: next[0] ?? "",
+              };
+            }),
+          );
+          if (!cover && uploaded[0]) setCover(uploaded[0]);
+          toast.success(uploaded.length > 1 ? `อัปโหลด ${uploaded.length} ภาพสำเร็จ` : "อัปโหลดภาพสำเร็จ");
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+        } finally {
+          setUploadingBlockId(null);
+          setUploadingGallery(false);
+        }
+        return;
+      }
+
+      const slots = Array.from({ length: capacity }, (_, i) => (blockImageUrls(block)[i] ?? "").trim());
+      const emptyIndexes = slots.map((url, i) => (!url ? i : -1)).filter((i) => i >= 0);
+      if (!emptyIndexes.length) {
+        toast.error("ช่องภาพเต็มแล้ว — ลบหรือสลับก่อนอัปเพิ่ม");
+        return;
+      }
+
+      const toUpload = images.slice(0, emptyIndexes.length);
+      if (images.length > toUpload.length) {
+        toast(`รับได้ ${toUpload.length} ภาพตามช่องว่างของโมดูลนี้`);
+      }
+
       setUploadingBlockId(blockId);
       setUploadingGallery(true);
       try {
-        const uploaded: string[] = [];
-        for (const file of images) {
-          const url = await uploadProjectImage(file, user.id, folderRef.current, tier);
-          uploaded.push(url);
+        const uploaded: { slot: number; url: string }[] = [];
+        for (let i = 0; i < toUpload.length; i++) {
+          const file = toUpload[i]!;
+          const slot = emptyIndexes[i]!;
+          let uploadFile = file;
+          if (layout === "grid" && isThreeSplitGridLayout(block.gridLayout)) {
+            const spec = threeSplitSlotCropSpec(slot);
+            uploadFile = await cropImageFileToAspectFile(file, spec.ratio, file.type || "image/jpeg", {
+              width: spec.exportW,
+              height: spec.exportH,
+            });
+          }
+          const url = await uploadProjectImage(uploadFile, user.id, folderRef.current, tier);
+          uploaded.push({ slot, url });
         }
+
         setContentBlocks((prev) =>
           prev.map((b) => {
             if (b.id !== blockId || b.type !== "image") return b;
-            const existing = blockImageUrls(b).map((u) => u.trim()).filter(Boolean);
-            const next = [...existing, ...uploaded];
+            const next = Array.from({ length: capacity }, (_, i) => (blockImageUrls(b)[i] ?? "").trim());
+            for (const item of uploaded) next[item.slot] = item.url;
             return {
               ...b,
-              mediaLayout: "gallery",
               urls: next,
-              url: next[0] ?? "",
+              url: next.find((u) => u.trim()) ?? "",
             };
           }),
         );
-        if (!cover && uploaded[0]) setCover(uploaded[0]);
+        if (!cover && uploaded[0]) setCover(uploaded[0].url);
         toast.success(uploaded.length > 1 ? `อัปโหลด ${uploaded.length} ภาพสำเร็จ` : "อัปโหลดภาพสำเร็จ");
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
@@ -1532,16 +1592,17 @@ const ProjectEditorPage = () => {
           <div className="hidden lg:flex items-center gap-2 shrink-0">
             <Button
               variant="outline"
-              size="icon"
+              size="sm"
               className="rounded-full shrink-0"
               onClick={() => {
                 setPreviewMode("pc");
                 setPreviewOpen(true);
               }}
-              title="พรีวิวผลงาน"
-              aria-label="พรีวิวผลงาน"
+              title="ดูตัวอย่าง"
+              aria-label="ดูตัวอย่าง"
             >
-              <Eye className="w-4 h-4" />
+              <Eye className="w-4 h-4 mr-1" />
+              ดูตัวอย่าง
             </Button>
             <Button
               variant="outline"

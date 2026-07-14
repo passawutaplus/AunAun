@@ -8,6 +8,36 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://aplus1.app/forum</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/forum/c/announcements</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/forum/c/help</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/forum/c/bug</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/forum/c/idea</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/forum/c/feedback</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://aplus1.app/legal/privacy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>

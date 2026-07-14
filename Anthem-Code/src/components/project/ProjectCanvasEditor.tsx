@@ -39,6 +39,7 @@ import {
   blockImageUrls,
   canvasBlockLabel,
   duplicateContentBlock,
+  imageModuleSlotCapacity,
   isImageTextBlockType,
   isMediaBlockType,
   isTextBlockType,
@@ -48,6 +49,17 @@ import {
   type ProjectContentBlock,
 } from "@/lib/projectContentBlocks";
 import { GallerySlideBlockEditor } from "@/components/project/GallerySlideBlockEditor";
+import {
+  applyCanvasImageSlotAction,
+  endCanvasImageSlotDrag,
+  isCanvasImageSlotDrag,
+  readCanvasImageSlotDrag,
+  readCanvasImageSlotUrl,
+  type CanvasImageSlotAction,
+  type CanvasImageSlotRef,
+  type CanvasImageSlotTarget,
+} from "@/lib/canvasImageSlotDnD";
+import { CanvasImageSlotDropDialog } from "@/components/project/CanvasImageSlotDropDialog";
 import { ModuleImageWithCrop } from "@/components/project/ModuleImageWithCrop";
 import { cn } from "@/lib/utils";
 
@@ -195,23 +207,67 @@ function EmptyImageTile({
   disabled,
   uploading,
   onPick,
+  onPickMany,
+  onSlotDrop,
+  multiple = false,
+  maxFiles = 1,
   className,
 }: {
   disabled?: boolean;
   uploading?: boolean;
   onPick: (file: File) => void;
+  onPickMany?: (files: File[]) => void;
+  onSlotDrop?: (from: CanvasImageSlotRef) => void;
+  multiple?: boolean;
+  maxFiles?: number;
   className?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
+  const limit = Math.max(1, maxFiles);
+  const allowMany = multiple && !!onPickMany && limit > 1;
+
+  const takeImageFiles = (list: FileList | File[] | null | undefined): File[] => {
+    if (!list) return [];
+    return Array.from(list)
+      .filter((f) => /^image\/(jpeg|png|webp)$/i.test(f.type))
+      .slice(0, limit);
+  };
+
+  const handleFiles = (list: FileList | File[] | null | undefined) => {
+    const files = takeImageFiles(list);
+    if (!files.length) return;
+    if (allowMany) onPickMany?.(files);
+    else onPick(files[0]!);
+  };
 
   return (
-    <button
-      type="button"
-      disabled={disabled || uploading}
-      onClick={() => inputRef.current?.click()}
+    <div
+      role="button"
+      tabIndex={disabled || uploading ? -1 : 0}
+      aria-disabled={disabled || uploading || undefined}
+      aria-label={allowMany ? `เพิ่มภาพ (เลือกได้สูงสุด ${limit} ภาพ)` : "เพิ่มภาพ"}
+      onClick={() => {
+        if (disabled || uploading) return;
+        inputRef.current?.click();
+      }}
+      onKeyDown={(e) => {
+        if (disabled || uploading) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
       onDragOver={(e) => {
         if (isToolDrag(e.dataTransfer)) return;
+        if (isCanvasImageSlotDrag(e.dataTransfer)) {
+          if (!onSlotDrop || disabled) return;
+          e.preventDefault();
+          e.stopPropagation();
+          e.dataTransfer.dropEffect = "move";
+          setDrag(true);
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
         setDrag(true);
@@ -222,13 +278,18 @@ function EmptyImageTile({
         e.preventDefault();
         e.stopPropagation();
         setDrag(false);
-        const file = e.dataTransfer.files?.[0];
-        if (file) onPick(file);
+        if (isCanvasImageSlotDrag(e.dataTransfer)) {
+          const from = readCanvasImageSlotDrag(e.dataTransfer);
+          endCanvasImageSlotDrag();
+          if (from) onSlotDrop?.(from);
+          return;
+        }
+        handleFiles(e.dataTransfer.files);
       }}
       className={cn(
-        "aspect-square w-full min-w-0 rounded-none bg-muted/70 flex flex-col items-center justify-center gap-1 transition-colors",
+        "aspect-square w-full min-w-0 rounded-none bg-muted/70 flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer",
         drag ? "ring-2 ring-primary bg-primary/5" : "hover:bg-muted",
-        (disabled || uploading) && "opacity-60",
+        (disabled || uploading) && "opacity-60 pointer-events-none",
         className,
       )}
     >
@@ -241,15 +302,15 @@ function EmptyImageTile({
         ref={inputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp"
+        multiple={allowMany}
         className="sr-only"
         disabled={disabled || uploading}
         onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) onPick(file);
+          handleFiles(e.target.files);
           e.target.value = "";
         }}
       />
-    </button>
+    </div>
   );
 }
 
@@ -343,6 +404,7 @@ function SortableCanvasBlock({
   onUpload,
   onUploadMany,
   onCrop,
+  onImageSlotDrop,
   onToolDragOver,
   onToolDragLeave,
   onToolDrop,
@@ -363,6 +425,7 @@ function SortableCanvasBlock({
   onUpload?: (file: File, slotIndex?: number) => void;
   onUploadMany?: (files: File[]) => void;
   onCrop?: (imageUrl: string, slotIndex?: number) => void;
+  onImageSlotDrop?: (from: CanvasImageSlotRef, to: CanvasImageSlotTarget) => void;
   onToolDragOver?: (e: DragEvent, el: HTMLElement) => void;
   onToolDragLeave?: () => void;
   onToolDrop?: (e: DragEvent, el: HTMLElement) => void;
@@ -432,6 +495,29 @@ function SortableCanvasBlock({
     : imageUrls.length
       ? imageUrls
       : [""];
+
+  const slotCapacity = block.type === "image" ? imageModuleSlotCapacity(block) : 1;
+  const allowMultiPick =
+    !!onUploadMany &&
+    block.type === "image" &&
+    (isGallery || block.mediaLayout === "grid" || block.mediaLayout === "multi");
+  const emptyMultiProps = allowMultiPick
+    ? {
+        multiple: true as const,
+        maxFiles: slotCapacity,
+        onPickMany: onUploadMany,
+      }
+    : {};
+
+  const slotDnD = (slotIndex: number, url: string) => {
+    const trimmed = url.trim();
+    return {
+      dragSlot: !disabled && trimmed ? { blockId: block.id, slotIndex, url: trimmed } : null,
+      onSlotDrop: onImageSlotDrop
+        ? (from: CanvasImageSlotRef) => onImageSlotDrop(from, { blockId: block.id, slotIndex })
+        : undefined,
+    };
+  };
 
   return (
     <div
@@ -506,6 +592,7 @@ function SortableCanvasBlock({
                       onCrop={onCrop ? () => onCrop(block.url!, undefined) : undefined}
                       onReplace={onUpload ? (file) => onUpload(file) : undefined}
                       imgClassName="w-full object-contain"
+                      {...slotDnD(0, block.url)}
                     />
                   </div>
                 ) : (
@@ -513,6 +600,7 @@ function SortableCanvasBlock({
                     disabled={disabled}
                     uploading={uploading}
                     onPick={(file) => onUpload?.(file)}
+                    onSlotDrop={slotDnD(0, "").onSlotDrop}
                   />
                 )}
               </div>
@@ -562,6 +650,7 @@ function SortableCanvasBlock({
               onUploadMany={(files) => onUploadMany?.(files)}
               onReplaceAt={(index, file) => onUpload?.(file, index)}
               onCropAt={(index, url) => onCrop?.(url, index)}
+              onReorder={(next) => onPatch({ mediaLayout: "gallery", urls: next, url: next[0] ?? "" })}
             />
           ) : block.mediaLayout === "grid" &&
           (block.gridLayout === "three_split" || block.gridLayout === "three_split_rev") ? (
@@ -578,6 +667,7 @@ function SortableCanvasBlock({
                           imgClassName="h-full w-full object-cover"
                           onCrop={onCrop ? () => onCrop(slots[0], 0) : undefined}
                           onReplace={onUpload ? (file) => onUpload(file, 0) : undefined}
+                          {...slotDnD(0, slots[0])}
                         />
                       </div>
                     ) : (
@@ -585,7 +675,9 @@ function SortableCanvasBlock({
                         disabled={disabled}
                         uploading={uploading}
                         onPick={(file) => onUpload?.(file, 0)}
+                        onSlotDrop={slotDnD(0, "").onSlotDrop}
                         className="!aspect-auto h-full min-h-0"
+                        {...emptyMultiProps}
                       />
                     )}
                   </div>
@@ -599,6 +691,7 @@ function SortableCanvasBlock({
                           imgClassName="h-full w-full object-cover"
                           onCrop={onCrop ? () => onCrop(slots[slotIndex], slotIndex) : undefined}
                           onReplace={onUpload ? (file) => onUpload(file, slotIndex) : undefined}
+                          {...slotDnD(slotIndex, slots[slotIndex])}
                         />
                       </div>
                     ) : (
@@ -607,7 +700,9 @@ function SortableCanvasBlock({
                         disabled={disabled}
                         uploading={uploading}
                         onPick={(file) => onUpload?.(file, slotIndex)}
+                        onSlotDrop={slotDnD(slotIndex, "").onSlotDrop}
                         className="!aspect-auto h-full min-h-0"
+                        {...emptyMultiProps}
                       />
                     ),
                   )}
@@ -630,6 +725,7 @@ function SortableCanvasBlock({
                           imgClassName="h-full w-full object-cover"
                           onCrop={onCrop ? () => onCrop(slots[slotIndex], slotIndex) : undefined}
                           onReplace={onUpload ? (file) => onUpload(file, slotIndex) : undefined}
+                          {...slotDnD(slotIndex, slots[slotIndex])}
                         />
                       </div>
                     ) : (
@@ -644,7 +740,9 @@ function SortableCanvasBlock({
                           disabled={disabled}
                           uploading={uploading}
                           onPick={(file) => onUpload?.(file, slotIndex)}
+                          onSlotDrop={slotDnD(slotIndex, "").onSlotDrop}
                           className="!aspect-auto h-full min-h-0"
+                          {...emptyMultiProps}
                         />
                       </div>
                     ),
@@ -659,6 +757,7 @@ function SortableCanvasBlock({
                           imgClassName="h-full w-full object-cover"
                           onCrop={onCrop ? () => onCrop(slots[0], 0) : undefined}
                           onReplace={onUpload ? (file) => onUpload(file, 0) : undefined}
+                          {...slotDnD(0, slots[0])}
                         />
                       </div>
                     ) : (
@@ -666,7 +765,9 @@ function SortableCanvasBlock({
                         disabled={disabled}
                         uploading={uploading}
                         onPick={(file) => onUpload?.(file, 0)}
+                        onSlotDrop={slotDnD(0, "").onSlotDrop}
                         className="!aspect-auto h-full min-h-0"
+                        {...emptyMultiProps}
                       />
                     )}
                   </div>
@@ -713,6 +814,7 @@ function SortableCanvasBlock({
                           ? "h-full w-full object-contain"
                           : "w-full object-contain"
                       }
+                      {...slotDnD(multi ? slotIndex : 0, url)}
                     />
                   </div>
                 ) : (
@@ -721,6 +823,8 @@ function SortableCanvasBlock({
                     disabled={disabled}
                     uploading={uploading}
                     onPick={(file) => onUpload?.(file, multi ? slotIndex : undefined)}
+                    onSlotDrop={slotDnD(multi ? slotIndex : 0, "").onSlotDrop}
+                    {...emptyMultiProps}
                   />
                 ),
               )}
@@ -830,6 +934,10 @@ export function ProjectCanvasEditor({
   const [toolDragOver, setToolDragOver] = useState(false);
   const [insertHint, setInsertHint] = useState<InsertHint | null>(null);
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(null);
+  const [pendingSlotDrop, setPendingSlotDrop] = useState<{
+    from: CanvasImageSlotRef;
+    to: CanvasImageSlotTarget;
+  } | null>(null);
   const selectedId = selectedBlockId !== undefined ? selectedBlockId : internalSelectedId;
   const setSelectedId = (id: string | null) => {
     if (selectedBlockId === undefined) setInternalSelectedId(id);
@@ -861,6 +969,26 @@ export function ProjectCanvasEditor({
 
   const patchBlock = (id: string, patch: Partial<ProjectContentBlock>) => {
     onChange(blocks.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+  };
+
+  const resolveImageSlotDrop = (from: CanvasImageSlotRef, to: CanvasImageSlotTarget) => {
+    if (disabled) return;
+    if (from.blockId === to.blockId && from.slotIndex === to.slotIndex) return;
+    const targetBlock = blocks.find((b) => b.id === to.blockId);
+    if (!targetBlock) return;
+    const targetUrl = readCanvasImageSlotUrl(targetBlock, to.slotIndex);
+    // Empty target → move immediately (swap with blank slot, no popup).
+    if (!targetUrl) {
+      onChange(applyCanvasImageSlotAction(blocks, from, to, "move"));
+      return;
+    }
+    setPendingSlotDrop({ from, to });
+  };
+
+  const confirmImageSlotDrop = (mode: Extract<CanvasImageSlotAction, "swap" | "replace">) => {
+    if (!pendingSlotDrop) return;
+    onChange(applyCanvasImageSlotAction(blocks, pendingSlotDrop.from, pendingSlotDrop.to, mode));
+    setPendingSlotDrop(null);
   };
 
   const removeBlock = (id: string) => {
@@ -1056,13 +1184,24 @@ export function ProjectCanvasEditor({
                       : undefined
                   }
                   onUploadMany={
-                    block.type === "image" && block.mediaLayout === "gallery" && onUploadManyToBlock
+                    block.type === "image" &&
+                    (block.mediaLayout === "gallery" ||
+                      block.mediaLayout === "grid" ||
+                      block.mediaLayout === "multi") &&
+                    onUploadManyToBlock
                       ? (files) => onUploadManyToBlock(block.id, files)
                       : undefined
                   }
                   onCrop={
                     (block.type === "image" || isImageTextBlockType(block.type)) && onCropImage
                       ? (imageUrl, slotIndex) => onCropImage(block.id, imageUrl, slotIndex)
+                      : undefined
+                  }
+                  onImageSlotDrop={
+                    !disabled &&
+                    (isImageTextBlockType(block.type) ||
+                      (block.type === "image" && block.mediaLayout !== "gallery"))
+                      ? resolveImageSlotDrop
                       : undefined
                   }
                   onToolDragOver={(e, el) => {
@@ -1095,6 +1234,15 @@ export function ProjectCanvasEditor({
           </div>
         </SortableContext>
       </DndContext>
+
+      <CanvasImageSlotDropDialog
+        open={!!pendingSlotDrop}
+        onOpenChange={(open) => {
+          if (!open) setPendingSlotDrop(null);
+        }}
+        onSwap={() => confirmImageSlotDrop("swap")}
+        onReplace={() => confirmImageSlotDrop("replace")}
+      />
     </div>
   );
 }

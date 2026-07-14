@@ -52,6 +52,8 @@ interface Props {
   replyTo?: Message | null;
   replyToSenderName?: string;
   onClearReply?: () => void;
+  /** When set, hide input and show this status instead. */
+  lockedHint?: string | null;
 }
 
 const ChatComposer = ({
@@ -61,6 +63,7 @@ const ChatComposer = ({
   replyTo,
   replyToSenderName,
   onClearReply,
+  lockedHint = null,
 }: Props) => {
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState<"image" | "file" | null>(null);
@@ -196,6 +199,15 @@ const ChatComposer = ({
   };
 
   const busy = !!uploading || send.isPending;
+
+  if (lockedHint) {
+    return (
+      <div className="border-t border-border bg-background/80 backdrop-blur-md px-3 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] shrink-0">
+        <ModerationBanBanner className="mb-2" />
+        <p className="text-center text-xs text-muted-foreground leading-relaxed px-2">{lockedHint}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="border-t border-border bg-background/80 backdrop-blur-md px-3 py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] shrink-0">

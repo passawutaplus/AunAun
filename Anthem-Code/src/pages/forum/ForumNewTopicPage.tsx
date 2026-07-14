@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Bug, LifeBuoy, Lightbulb, MessageCircleHeart, type LucideIcon } from "lucide-react";
 import { ForumPageHeader } from "@/components/forum/ForumLayout";
@@ -15,6 +15,7 @@ import {
   isForumCategorySlug,
   type ForumCategorySlug,
 } from "@/data/forumCategories";
+import { FORUM_JOB_WARNING, looksLikeForumJobPost } from "@/lib/forumJobSpam";
 import { parseTagsInput } from "@/lib/forum";
 import type { ForumAttachment } from "@/lib/forumAttachments";
 import { cn } from "@/lib/utils";
@@ -43,20 +44,28 @@ export default function ForumNewTopicPage() {
   );
   const [tagsRaw, setTagsRaw] = useState("");
   const [attachments, setAttachments] = useState<ForumAttachment[]>([]);
+  const [ackJobWarning, setAckJobWarning] = useState(false);
   const patternRef = useRef(body);
   const titleRef = useRef<HTMLInputElement>(null);
 
   const meta = categorySlug ? FORUM_CATEGORY_META[categorySlug] : null;
   const similar = useForumSearch(title.length >= 4 ? title : "");
+  const jobWarning = useMemo(
+    () => looksLikeForumJobPost(`${title}\n${body}`),
+    [title, body],
+  );
 
   useEffect(() => {
     if (categorySlug) titleRef.current?.focus();
   }, [categorySlug]);
 
+  useEffect(() => {
+    if (!jobWarning) setAckJobWarning(false);
+  }, [jobWarning]);
+
   const pickCategory = (slug: ForumCategorySlug) => {
     const nextPattern = buildWritingPattern(slug);
     const prevPattern = patternRef.current;
-    // Replace body only if empty or still the previous category pattern
     setBody((cur) => {
       const trimmed = cur.trim();
       if (!trimmed || trimmed === prevPattern.trim()) return nextPattern;
@@ -71,7 +80,8 @@ export default function ForumNewTopicPage() {
     !!categorySlug &&
     title.trim().length >= 3 &&
     body.trim().length >= 1 &&
-    !create.isPending;
+    !create.isPending &&
+    (!jobWarning || ackJobWarning);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,14 +96,15 @@ export default function ForumNewTopicPage() {
     navigate(`/forum/t/${id}`);
   };
 
-  const categoryCards = (categories.length
-    ? categories.filter((c) => isForumCategorySlug(c.slug))
-    : ALL_SLUGS.map((slug) => ({
-        slug,
-        name_th: FORUM_CATEGORY_META[slug].nameTh,
-        description: FORUM_CATEGORY_META[slug].description,
-        id: slug,
-      }))
+  const categoryCards = (
+    categories.length
+      ? categories.filter((c) => isForumCategorySlug(c.slug))
+      : ALL_SLUGS.map((slug) => ({
+          slug,
+          name_th: FORUM_CATEGORY_META[slug].nameTh,
+          description: FORUM_CATEGORY_META[slug].description,
+          id: slug,
+        }))
   ) as Array<{ slug: string; name_th: string; description: string; id: string }>;
 
   return (
@@ -106,6 +117,11 @@ export default function ForumNewTopicPage() {
             : "เลือกหมวดหมู่ก่อน แล้วค่อยเขียนรายละเอียด"
         }
       />
+
+      <div className="mb-5 max-w-2xl rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-xs text-muted-foreground leading-relaxed">
+        ฟอรัมนี้มีไว้คุยและช่วยพัฒนาแพลตฟอร์ม —{" "}
+        <span className="font-medium text-foreground">ห้ามลงหางานหรือประกาศจ้าง</span>
+      </div>
 
       {!categorySlug ? (
         <div className="max-w-2xl space-y-3">
@@ -189,6 +205,26 @@ export default function ForumNewTopicPage() {
                   </li>
                 ))}
               </ul>
+            </div>
+          ) : null}
+
+          {jobWarning ? (
+            <div className="rounded-xl border border-rose-200 bg-rose-50/70 dark:bg-rose-950/30 p-3 space-y-3">
+              <p className="text-xs text-rose-900 dark:text-rose-200 leading-relaxed">{FORUM_JOB_WARNING}</p>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" size="sm" asChild>
+                  <Link to="/jobs">ไปลงประกาศโอกาส</Link>
+                </Button>
+                <label className="inline-flex items-center gap-2 text-xs text-rose-900/90 dark:text-rose-200">
+                  <input
+                    type="checkbox"
+                    checked={ackJobWarning}
+                    onChange={(e) => setAckJobWarning(e.target.checked)}
+                    className="rounded border-rose-300"
+                  />
+                  ไม่ใช่ประกาศหางาน — โพสต์ต่อ
+                </label>
+              </div>
             </div>
           ) : null}
 

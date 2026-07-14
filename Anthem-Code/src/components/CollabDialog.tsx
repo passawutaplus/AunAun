@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Handshake, Sparkles, UserCircle2, FolderOpen, Globe, ChevronDown, ChevronUp, MessageCircle, Loader2 } from "lucide-react";
+import { Check, Handshake, Sparkles, UserCircle2, Link2, MessageCircle, Loader2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,9 @@ import {
 import { validateProjectInquiry } from "@/domain/inquiry";
 import ProjectReferencePreview from "@/components/opportunity/ProjectReferencePreview";
 import { trackProductEvent } from "@/lib/productEvents";
+import { serializeCollabReferenceLinks } from "@/lib/collabBrief";
+import { safeHttpUrl } from "@/lib/safeUrl";
+import { isBlockedFromOpportunity } from "@/hooks/useCommunityPostInteractions";
 
 const COLLAB_TYPES = [
   { key: "chat", label: "พูดคุย" },
@@ -36,25 +39,31 @@ const COLLAB_TYPES = [
   { key: "other", label: "อื่นๆ" },
 ] as const;
 
-const optionalUrl = z
-  .string()
-  .trim()
-  .max(500)
-  .refine((v) => v === "" || /^https?:\/\/.+\..+/.test(v), "ลิงก์ไม่ถูกต้อง (ต้องขึ้นต้น http/https)")
-  .optional();
+const MAX_COLLAB_LINKS = 8;
+
+/** Normalize + allow only safe http(s) absolute URLs. */
+function validateCollabLink(raw: string): string | null {
+  let v = raw.trim();
+  if (!v) return null;
+  if (!/^https?:\/\//i.test(v)) v = `https://${v}`;
+  return safeHttpUrl(v) ?? null;
+}
 
 const collabDetailsSchema = z
   .object({
     collabTypes: z.array(z.string()),
     message: z.string().trim().max(1000),
     attached: z.array(z.string()).max(3, "แนบได้สูงสุด 3 ชิ้น"),
-    externalDriveUrl: optionalUrl,
-    websiteUrl: optionalUrl,
+    referenceLinks: z.array(z.string()).max(MAX_COLLAB_LINKS, `ใส่ลิงก์ได้สูงสุด ${MAX_COLLAB_LINKS} อัน`),
     otherTypeNote: z.string().trim().max(80).optional(),
   })
   .refine(
     (d) => !d.collabTypes.includes("other") || (d.otherTypeNote && d.otherTypeNote.length > 0),
     { message: "กรุณาระบุประเภท 'อื่นๆ'", path: ["otherTypeNote"] },
+  )
+  .refine(
+    (d) => d.referenceLinks.every((u) => !!safeHttpUrl(u)),
+    { message: "มีลิงก์ที่ไม่ปลอดภัย", path: ["referenceLinks"] },
   );
 
 interface CollabDialogProps {
@@ -89,9 +98,8 @@ const CollabDialog = ({
   const [otherNote, setOtherNote] = useState("");
   const [message, setMessage] = useState("");
   const [attached, setAttached] = useState<string[]>([]);
-  const [driveUrl, setDriveUrl] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [showAllWorks, setShowAllWorks] = useState(false);
+  const [linkDraft, setLinkDraft] = useState("");
+  const [referenceLinks, setReferenceLinks] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const busy = createReq.isPending || openChat.isPending;
 
@@ -105,12 +113,17 @@ const CollabDialog = ({
   }, [open, projectId, recipientId, source]);
 
   const published = useMemo(() => myProjects.filter((p) => p.status === "Published"), [myProjects]);
-  const initialWorks = published.slice(0, 6);
+  const needsWorkPicker = published.length > 3;
   const otherSelected = selectedTypes.includes("other");
 
   const reset = () => {
-    setSelectedTypes([]); setOtherNote(""); setMessage(""); setAttached([]);
-    setDriveUrl(""); setWebsiteUrl(""); setShowAllWorks(false); setSubmitError(null);
+    setSelectedTypes([]);
+    setOtherNote("");
+    setMessage("");
+    setAttached([]);
+    setLinkDraft("");
+    setReferenceLinks([]);
+    setSubmitError(null);
   };
 
   const toggleType = (key: string) =>
@@ -126,6 +139,24 @@ const CollabDialog = ({
       return [...s, id];
     });
 
+  const addReferenceLink = () => {
+    const safe = validateCollabLink(linkDraft);
+    if (!safe) {
+      toast.error("ลิงก์ไม่ปลอดภัยหรือไม่ถูกต้อง — ใช้เฉพาะ http/https");
+      return;
+    }
+    if (referenceLinks.includes(safe)) {
+      toast.info("ลิงก์นี้เพิ่มแล้ว");
+      return;
+    }
+    if (referenceLinks.length >= MAX_COLLAB_LINKS) {
+      toast.info(`ใส่ลิงก์ได้สูงสุด ${MAX_COLLAB_LINKS} อัน`);
+      return;
+    }
+    setReferenceLinks((prev) => [...prev, safe]);
+    setLinkDraft("");
+  };
+
   const submitCollab = async () => {
     if (!user) {
       onOpenChange(false);
@@ -136,7 +167,19 @@ const CollabDialog = ({
       toast.error("ผลงานนี้ยังไม่มีเจ้าของในระบบ — ไม่สามารถส่งคำขอได้");
       return;
     }
-    if (recipientId === user.id) { toast.info("ส่งคำขอให้ตัวเองไม่ได้"); return; }
+    if (recipientId === user.id) {
+      toast.info("ส่งคำขอให้ตัวเองไม่ได้");
+      return;
+    }
+
+    try {
+      if (await isBlockedFromOpportunity(user.id, recipientId)) {
+        toast.error("คุณถูกบล็อก — ส่งคำขอคอลแลปไปยังผู้ใช้นี้ไม่ได้");
+        return;
+      }
+    } catch {
+      /* fall through to server check */
+    }
 
     const inquiryErr = validateProjectInquiry({ source, projectId });
     if (inquiryErr) {
@@ -148,8 +191,7 @@ const CollabDialog = ({
       collabTypes: selectedTypes,
       message,
       attached,
-      externalDriveUrl: driveUrl,
-      websiteUrl,
+      referenceLinks,
       otherTypeNote: otherNote,
     });
     if (!parsed.success) {
@@ -161,8 +203,7 @@ const CollabDialog = ({
       collabTypes: parsed.data.collabTypes,
       message: parsed.data.message.trim() || DEFAULT_COLLAB_MESSAGE,
       attached: parsed.data.attached,
-      externalDriveUrl: parsed.data.externalDriveUrl,
-      websiteUrl: parsed.data.websiteUrl,
+      referenceLinks: parsed.data.referenceLinks,
       otherTypeNote: otherSelected ? (parsed.data.otherTypeNote || undefined) : undefined,
     };
 
@@ -175,8 +216,8 @@ const CollabDialog = ({
         collab_types: payload.collabTypes,
         message: payload.message,
         attached_project_ids: payload.attached,
-        external_drive_url: payload.externalDriveUrl || null,
-        website_url: payload.websiteUrl || null,
+        external_drive_url: serializeCollabReferenceLinks(payload.referenceLinks) || null,
+        website_url: null,
         other_type_note: payload.otherTypeNote ?? null,
       });
       void supabase.functions.invoke("notify-anthem-collab", {
@@ -242,7 +283,6 @@ const CollabDialog = ({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Your profile preview */}
           {user && profile && (
             <div className="rounded-2xl border border-border bg-muted/30 p-4">
               <div className="flex items-center justify-between mb-3">
@@ -274,7 +314,6 @@ const CollabDialog = ({
             </div>
           )}
 
-          {/* Collab types */}
           <div>
             <Label className="text-sm font-semibold">
               อยากร่วมงานแบบไหน
@@ -293,7 +332,7 @@ const CollabDialog = ({
                       "px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all",
                       on
                         ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                        : "bg-card text-foreground border-border hover:border-primary/40"
+                        : "bg-card text-foreground border-border hover:border-primary/40",
                     )}
                   >
                     {on && <Check className="w-3 h-3 inline mr-1 -mt-0.5" />}
@@ -313,142 +352,162 @@ const CollabDialog = ({
             )}
           </div>
 
-          {/* Attach my works */}
           {published.length > 0 && (
             <div>
               <Label className="text-sm font-semibold">แนบผลงานของฉัน</Label>
-              <p className="text-xs text-muted-foreground mb-2.5">เลือกได้สูงสุด 3 ชิ้น ({attached.length}/3)</p>
+              <p className="text-xs text-muted-foreground mb-2.5">
+                {needsWorkPicker
+                  ? `มี ${published.length} ชิ้น — กดเลือกได้สูงสุด 3 ชิ้น (${attached.length}/3)`
+                  : `เลือกได้สูงสุด 3 ชิ้น (${attached.length}/3)`}
+              </p>
 
-              {!showAllWorks ? (
-                <>
-                  <div className="grid grid-cols-3 gap-2">
-                    {initialWorks.map((p) => {
-                      const on = attached.includes(p.id);
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => toggleAttach(p.id)}
-                          className={cn(
-                            "relative aspect-square rounded-xl overflow-hidden border-2 transition-all",
-                            on ? "border-primary shadow-md" : "border-transparent hover:border-border"
-                          )}
-                        >
+              {needsWorkPicker ? (
+                <div className="space-y-1.5 max-h-72 overflow-y-auto rounded-xl border border-border p-1.5 bg-muted/20">
+                  {published.map((p) => {
+                    const on = attached.includes(p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => toggleAttach(p.id)}
+                        className={cn(
+                          "w-full flex items-center gap-3 p-2 rounded-lg border text-left transition-all",
+                          on ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted hover:border-border",
+                        )}
+                      >
+                        <div className="w-12 h-12 shrink-0 rounded-md overflow-hidden bg-muted">
                           {p.cover_url ? (
                             <img src={p.cover_url} alt={p.title} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground">{p.title}</div>
-                          )}
-                          {on && (
-                            <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
-                              <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                                <Check className="w-4 h-4" />
-                              </div>
+                            <div className="w-full h-full flex items-center justify-center text-[9px] text-muted-foreground p-1 text-center">
+                              {p.title}
                             </div>
                           )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {published.length > 6 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowAllWorks(true)}
-                      className="w-full mt-2.5 rounded-xl text-xs h-9"
-                    >
-                      ดูผลงานทั้งหมด ({published.length}) <ChevronDown className="w-3.5 h-3.5 ml-1" />
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="space-y-1.5 max-h-72 overflow-y-auto rounded-xl border border-border p-1.5 bg-muted/20">
-                    {published.map((p) => {
-                      const on = attached.includes(p.id);
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => toggleAttach(p.id)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{p.title}</p>
+                          {p.category ? (
+                            <p className="text-[10px] text-muted-foreground truncate">{p.category}</p>
+                          ) : null}
+                        </div>
+                        <div
                           className={cn(
-                            "w-full flex items-center gap-3 p-2 rounded-lg border text-left transition-all",
-                            on
-                              ? "border-primary bg-primary/5"
-                              : "border-transparent hover:bg-muted hover:border-border"
+                            "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
+                            on ? "bg-primary border-primary" : "border-border",
                           )}
                         >
-                          <div className="w-12 h-12 shrink-0 rounded-md overflow-hidden bg-muted">
-                            {p.cover_url ? (
-                              <img src={p.cover_url} alt={p.title} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-[9px] text-muted-foreground p-1 text-center">{p.title}</div>
-                            )}
+                          {on && <Check className="w-3 h-3 text-primary-foreground" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {published.map((p) => {
+                    const on = attached.includes(p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => toggleAttach(p.id)}
+                        className={cn(
+                          "relative aspect-square rounded-xl overflow-hidden border-2 transition-all",
+                          on ? "border-primary shadow-md" : "border-transparent hover:border-border",
+                        )}
+                      >
+                        {p.cover_url ? (
+                          <img src={p.cover_url} alt={p.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground p-1 text-center">
+                            {p.title}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{p.title}</p>
-                            {p.category && (
-                              <p className="text-[10px] text-muted-foreground truncate">{p.category}</p>
-                            )}
+                        )}
+                        {on && (
+                          <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
+                            <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                              <Check className="w-4 h-4" />
+                            </div>
                           </div>
-                          <div
-                            className={cn(
-                              "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
-                              on ? "bg-primary border-primary" : "border-border"
-                            )}
-                          >
-                            {on && <Check className="w-3 h-3 text-primary-foreground" />}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setShowAllWorks(false)}
-                    className="w-full mt-2 rounded-xl text-xs h-9 text-muted-foreground"
-                  >
-                    ย่อรายการ <ChevronUp className="w-3.5 h-3.5 ml-1" />
-                  </Button>
-                </>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             </div>
           )}
 
-          {/* External drive link */}
           <div>
-            <Label htmlFor="collab-drive" className="text-sm font-semibold flex items-center gap-1.5">
-              <FolderOpen className="w-3.5 h-3.5 text-primary" /> ลิงก์ไดรฟ์/ไฟล์ผลงานเพิ่มเติม (ไม่บังคับ)
+            <Label htmlFor="collab-link-draft" className="text-sm font-semibold flex items-center gap-1.5">
+              <Link2 className="w-3.5 h-3.5 text-primary" /> ลิงก์อ้างอิง (ไดรฟ์ / เว็บ / พอร์ต)
+              <span className="text-muted-foreground font-normal"> (ไม่บังคับ)</span>
             </Label>
-            <Input
-              id="collab-drive"
-              type="url"
-              value={driveUrl}
-              onChange={(e) => setDriveUrl(e.target.value)}
-              placeholder="https://drive.google.com/..."
-              maxLength={500}
-              className="mt-1.5 rounded-xl"
-            />
+            <p className="text-xs text-muted-foreground mt-1 mb-1.5">
+              ใส่ทีละลิงก์แล้วกด + — ระบบตรวจว่าเป็นลิงก์ http/https ที่ปลอดภัยก่อนเพิ่ม
+            </p>
+            <div className="flex gap-2">
+              <Input
+                id="collab-link-draft"
+                type="url"
+                value={linkDraft}
+                onChange={(e) => setLinkDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addReferenceLink();
+                  }
+                }}
+                placeholder="https://drive.google.com/..."
+                maxLength={500}
+                className="rounded-xl font-mono text-xs"
+              />
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                className="rounded-xl shrink-0 h-10 w-10"
+                onClick={addReferenceLink}
+                aria-label="เพิ่มลิงก์"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            {referenceLinks.length > 0 && (
+              <ul className="mt-2 space-y-1.5">
+                {referenceLinks.map((url) => (
+                  <li
+                    key={url}
+                    className="flex items-center gap-2 rounded-xl border border-border bg-muted/20 px-2.5 py-2 text-xs"
+                  >
+                    <span
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600"
+                      title="ลิงก์ปลอดภัย"
+                    >
+                      <Check className="w-3 h-3" strokeWidth={2.5} />
+                    </span>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="min-w-0 flex-1 truncate font-mono text-foreground hover:underline"
+                    >
+                      {url}
+                    </a>
+                    <button
+                      type="button"
+                      aria-label="ลบลิงก์"
+                      className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      onClick={() => setReferenceLinks((prev) => prev.filter((u) => u !== url))}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
-          {/* Website link */}
-          <div>
-            <Label htmlFor="collab-website" className="text-sm font-semibold flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-primary" /> ลิงก์เว็บไซต์/พอร์ตโฟลิโอ (ไม่บังคับ)
-            </Label>
-            <Input
-              id="collab-website"
-              type="url"
-              value={websiteUrl}
-              onChange={(e) => setWebsiteUrl(e.target.value)}
-              placeholder="https://yourwebsite.com"
-              maxLength={500}
-              className="mt-1.5 rounded-xl"
-            />
-          </div>
-
-          {/* Message */}
           <div>
             <Label htmlFor="collab-msg" className="text-sm font-semibold">
               ข้อความถึง {recipientName}

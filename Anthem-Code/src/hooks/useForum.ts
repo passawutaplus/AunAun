@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
-import type { ForumSortTab, ForumTopicStatus, ForumRankSlug } from "@/lib/forum";
+import type { ForumListFilter, ForumSortTab, ForumTopicStatus, ForumRankSlug } from "@/lib/forum";
 import { FORUM_RANK_LABELS } from "@/lib/forum";
 
 /** Forum tables not yet in generated Database types */
@@ -50,6 +50,7 @@ export type ForumTopic = {
   is_locked: boolean;
   is_pinned: boolean;
   pinned_at: string | null;
+  is_announcement?: boolean;
   moderation_state: "published" | "hidden";
   created_at: string;
   updated_at: string;
@@ -60,6 +61,10 @@ export type ForumTopic = {
   participants?: ForumParticipant[];
   author_rank?: ForumRankSlug | null;
   author_is_admin?: boolean;
+  /** Preview image URLs for list rows (up to 5 shown). */
+  preview_images?: string[];
+  /** Total clean image count on the topic (for +N overlay). */
+  preview_image_count?: number;
 };
 
 export type ForumReply = {
@@ -98,6 +103,7 @@ type TopicRow = Omit<
 >;
 
 function friendlyError(msg: string): string {
+  if (msg.startsWith("FORBIDDEN:")) return msg.replace("FORBIDDEN:", "").trim();
   if (msg.startsWith("RATE_LIMIT:")) return msg.replace("RATE_LIMIT:", "").trim();
   if (msg.startsWith("AUTH:")) return msg.replace("AUTH:", "").trim();
   if (msg.startsWith("INVALID:")) return msg.replace("INVALID:", "").trim();
@@ -239,6 +245,36 @@ async function attachCategories(rows: TopicRow[]): Promise<ForumTopic[]> {
   }));
 }
 
+async function attachPreviewImages(topics: ForumTopic[]): Promise<ForumTopic[]> {
+  if (!topics.length) return topics;
+  const ids = topics.map((t) => t.id);
+  const { data, error } = await forumDb
+    .from("forum_attachments")
+    .select("topic_id, public_url, created_at")
+    .in("topic_id", ids)
+    .eq("kind", "image")
+    .eq("scan_status", "clean")
+    .not("public_url", "is", null)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+
+  const urlsByTopic = new Map<string, string[]>();
+  for (const row of (data ?? []) as { topic_id: string; public_url: string }[]) {
+    if (!row.public_url) continue;
+    const list = urlsByTopic.get(row.topic_id) ?? [];
+    list.push(row.public_url);
+    urlsByTopic.set(row.topic_id, list);
+  }
+  return topics.map((t) => {
+    const all = urlsByTopic.get(t.id) ?? [];
+    return {
+      ...t,
+      preview_images: all.slice(0, 5),
+      preview_image_count: all.length,
+    };
+  });
+}
+
 export function useForumCategories(opts?: { includeInactive?: boolean }) {
   const includeInactive = !!opts?.includeInactive;
   return useQuery({
@@ -260,14 +296,27 @@ export function useForumCategories(opts?: { includeInactive?: boolean }) {
 export function useForumTopics(opts: {
   categorySlug?: string;
   sort?: ForumSortTab;
+  filter?: ForumListFilter | null;
   limit?: number;
 }) {
-  const { categorySlug, sort = "latest", limit = 40 } = opts;
+  const { categorySlug, sort = "latest", filter = null, limit = 40 } = opts;
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["forum", "topics", categorySlug ?? "all", sort, limit, user?.id ?? "guest"],
+    queryKey: [
+      "forum",
+      "topics",
+      categorySlug ?? "all",
+      sort,
+      filter ?? "none",
+      limit,
+      user?.id ?? "guest",
+    ],
     queryFn: async () => {
+      if ((filter === "mine" || filter === "saved") && !user?.id) {
+        return [] as ForumTopic[];
+      }
+
       let categoryId: string | undefined;
       if (categorySlug) {
         const { data: cat, error: catErr } = await forumDb
@@ -280,19 +329,57 @@ export function useForumTopics(opts: {
         categoryId = (cat as { id: string }).id;
       }
 
+      let savedIds: string[] | null = null;
+      if (filter === "saved") {
+        const { data: bookmarks, error: bErr } = await forumDb
+          .from("forum_topic_bookmarks")
+          .select("topic_id, created_at")
+          .eq("user_id", user!.id)
+          .order("created_at", { ascending: false })
+          .limit(limit);
+        if (bErr) throw bErr;
+        savedIds = ((bookmarks ?? []) as { topic_id: string }[]).map((b) => b.topic_id);
+        if (!savedIds.length) return [] as ForumTopic[];
+      }
+
+      let adminIds: string[] | null = null;
+      if (filter === "admin") {
+        const { data: roles, error: roleErr } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin");
+        if (roleErr) throw roleErr;
+        adminIds = ((roles ?? []) as { user_id: string }[]).map((r) => r.user_id);
+        if (!adminIds.length) return [] as ForumTopic[];
+      }
+
       let q = forumDb
         .from("forum_topics")
         .select(
-          "id, category_id, author_id, title, body, status, tags, reply_count, like_count, view_count, last_activity_at, accepted_reply_id, is_locked, is_pinned, pinned_at, moderation_state, created_at, updated_at",
+          "id, category_id, author_id, title, body, status, tags, reply_count, like_count, view_count, last_activity_at, accepted_reply_id, is_locked, is_pinned, pinned_at, is_announcement, moderation_state, created_at, updated_at",
         )
         .eq("moderation_state", "published");
 
       if (categoryId) q = q.eq("category_id", categoryId);
+      if (filter === "mine") q = q.eq("author_id", user!.id);
+      if (adminIds) q = q.in("author_id", adminIds);
+      if (savedIds) q = q.in("id", savedIds);
 
-      // Pinned topics always float to the top for every user
-      q = q.order("is_pinned", { ascending: false }).order("pinned_at", { ascending: false, nullsFirst: false });
+      const chronological = filter === "newest" || filter === "oldest";
+      if (!chronological && filter !== "saved") {
+        // Pinned topics float to the top (except pure chronological / saved order)
+        q = q
+          .order("is_pinned", { ascending: false })
+          .order("pinned_at", { ascending: false, nullsFirst: false });
+      }
 
-      if (sort === "popular") {
+      if (filter === "oldest") {
+        q = q.order("created_at", { ascending: true });
+      } else if (filter === "newest") {
+        q = q.order("created_at", { ascending: false });
+      } else if (filter === "saved") {
+        // Keep bookmark order after fetch
+      } else if (sort === "popular") {
         q = q.order("like_count", { ascending: false }).order("reply_count", { ascending: false });
       } else if (sort === "unanswered") {
         q = q.eq("reply_count", 0).order("created_at", { ascending: false });
@@ -302,9 +389,16 @@ export function useForumTopics(opts: {
 
       const { data, error } = await q.limit(limit);
       if (error) throw error;
-      const rows = (data ?? []) as TopicRow[];
+      let rows = (data ?? []) as TopicRow[];
+
+      if (filter === "saved" && savedIds) {
+        const order = new Map(savedIds.map((id, i) => [id, i]));
+        rows = rows.slice().sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+      }
+
       const base = await attachCategories(rows);
-      const topics = await attachParticipants(base);
+      const withPeople = await attachParticipants(base);
+      const topics = await attachPreviewImages(withPeople);
 
       if (!user?.id || !topics.length) return topics;
 
@@ -322,7 +416,7 @@ export function useForumTopics(opts: {
       return topics.map((t) => ({
         ...t,
         liked_by_me: liked.has(t.id),
-        bookmarked_by_me: booked.has(t.id),
+        bookmarked_by_me: booked.has(t.id) || filter === "saved",
       }));
     },
   });
@@ -337,7 +431,7 @@ export function useForumTopic(topicId: string | undefined) {
       const { data, error } = await forumDb
         .from("forum_topics")
         .select(
-          "id, category_id, author_id, title, body, status, tags, reply_count, like_count, view_count, last_activity_at, accepted_reply_id, is_locked, is_pinned, pinned_at, moderation_state, created_at, updated_at",
+          "id, category_id, author_id, title, body, status, tags, reply_count, like_count, view_count, last_activity_at, accepted_reply_id, is_locked, is_pinned, pinned_at, is_announcement, moderation_state, created_at, updated_at",
         )
         .eq("id", topicId!)
         .maybeSingle();
@@ -432,7 +526,7 @@ export function useForumSearch(q: string) {
       const { data, error } = await forumDb
         .from("forum_topics")
         .select(
-          "id, category_id, author_id, title, body, status, tags, reply_count, like_count, view_count, last_activity_at, accepted_reply_id, is_locked, is_pinned, pinned_at, moderation_state, created_at, updated_at",
+          "id, category_id, author_id, title, body, status, tags, reply_count, like_count, view_count, last_activity_at, accepted_reply_id, is_locked, is_pinned, pinned_at, is_announcement, moderation_state, created_at, updated_at",
         )
         .eq("moderation_state", "published")
         .or(`title.ilike.${pattern},body.ilike.${pattern}`)
@@ -441,7 +535,8 @@ export function useForumSearch(q: string) {
         .limit(40);
       if (error) throw error;
       const base = await attachCategories((data ?? []) as TopicRow[]);
-      return attachParticipants(base);
+      const withPeople = await attachParticipants(base);
+      return attachPreviewImages(withPeople);
     },
   });
 }
@@ -464,6 +559,14 @@ export function useTrendingForumTopics(limit = 5) {
       return (data ?? []) as Pick<ForumTopic, "id" | "title" | "reply_count" | "like_count" | "last_activity_at">[];
     },
   });
+}
+
+function forumWriteFriendlyError(msg: string): string {
+  if (msg.startsWith("FORBIDDEN:")) return msg.replace("FORBIDDEN:", "").trim();
+  if (msg.startsWith("RATE_LIMIT:")) return msg.replace("RATE_LIMIT:", "").trim();
+  if (msg.startsWith("AUTH:")) return msg.replace("AUTH:", "").trim();
+  if (msg.startsWith("INVALID:")) return msg.replace("INVALID:", "").trim();
+  return msg;
 }
 
 export function useCreateForumTopic() {
@@ -503,7 +606,177 @@ export function useCreateForumTopic() {
     },
     onError: (err: unknown) => {
       const raw = err instanceof Error ? err.message : "สร้างกระทู้ไม่สำเร็จ";
-      toast.error(mapWriteFlowError(err, friendlyError(raw)));
+      toast.error(mapWriteFlowError(err, forumWriteFriendlyError(raw)));
+    },
+  });
+}
+
+export function useAdminCreateForumAnnouncement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      title: string;
+      body: string;
+      tags?: string[];
+      lockComments?: boolean;
+      attachmentIds?: string[];
+    }) => {
+      const { data, error } = await (supabase.rpc as any)("admin_create_forum_announcement" as never, {
+        _title: input.title,
+        _body: input.body,
+        _tags: input.tags ?? [],
+        _lock_comments: input.lockComments ?? false,
+      } as never);
+      if (error) throw error;
+      const id = data as string;
+      if (input.attachmentIds?.length) {
+        const { linkForumAttachments } = await import("@/lib/forumAttachments");
+        await linkForumAttachments({ attachmentIds: input.attachmentIds, topicId: id });
+      }
+      const { logAdminAudit } = await import("@/lib/adminAudit");
+      await logAdminAudit({
+        action: "forum_announcement.create",
+        targetType: "forum_topic",
+        targetId: id,
+        metadata: { lockComments: input.lockComments ?? false },
+      });
+      return id;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["forum"] });
+      qc.invalidateQueries({ queryKey: ["admin", "forum"] });
+      toast.success("เผยแพร่ประกาศแล้ว");
+    },
+    onError: (err: unknown) => {
+      const raw = err instanceof Error ? err.message : "สร้างประกาศไม่สำเร็จ";
+      toast.error(mapWriteFlowError(err, forumWriteFriendlyError(raw)));
+    },
+  });
+}
+
+export function useAdminUpdateForumAnnouncement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      topicId: string;
+      title: string;
+      body: string;
+      tags?: string[];
+      lockComments?: boolean;
+    }) => {
+      const { error } = await (supabase.rpc as any)("admin_update_forum_announcement" as never, {
+        _topic_id: input.topicId,
+        _title: input.title,
+        _body: input.body,
+        _tags: input.tags ?? [],
+        _lock_comments: input.lockComments ?? null,
+      } as never);
+      if (error) throw error;
+      const { logAdminAudit } = await import("@/lib/adminAudit");
+      await logAdminAudit({
+        action: "forum_announcement.update",
+        targetType: "forum_topic",
+        targetId: input.topicId,
+        metadata: { lockComments: input.lockComments },
+      });
+      return input.topicId;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["forum"] });
+      qc.invalidateQueries({ queryKey: ["admin", "forum"] });
+      toast.success("บันทึกประกาศแล้ว");
+    },
+    onError: (err: unknown) => {
+      const raw = err instanceof Error ? err.message : "แก้ไขประกาศไม่สำเร็จ";
+      toast.error(mapWriteFlowError(err, forumWriteFriendlyError(raw)));
+    },
+  });
+}
+
+export function useForumAnnouncements(limit = 3) {
+  return useQuery({
+    queryKey: ["forum", "announcements", limit],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data: cat, error: catErr } = await forumDb
+        .from("forum_categories")
+        .select("id")
+        .eq("slug", "announcements")
+        .maybeSingle();
+      if (catErr) throw catErr;
+      if (!cat) return [] as ForumTopic[];
+
+      const { data, error } = await forumDb
+        .from("forum_topics")
+        .select(
+          "id, category_id, author_id, title, body, status, tags, reply_count, like_count, view_count, last_activity_at, accepted_reply_id, is_locked, is_pinned, pinned_at, is_announcement, moderation_state, created_at, updated_at",
+        )
+        .eq("moderation_state", "published")
+        .eq("category_id", (cat as { id: string }).id)
+        .order("pinned_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      const rows = (data ?? []) as TopicRow[];
+      return attachCategories(rows);
+    },
+  });
+}
+
+export function useMyForumTopics(limit = 50) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["forum", "mine", "topics", user?.id ?? "guest", limit],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await forumDb
+        .from("forum_topics")
+        .select(
+          "id, category_id, author_id, title, body, status, tags, reply_count, like_count, view_count, last_activity_at, accepted_reply_id, is_locked, is_pinned, pinned_at, is_announcement, moderation_state, created_at, updated_at",
+        )
+        .eq("author_id", user!.id)
+        .neq("moderation_state", "hidden")
+        .order("last_activity_at", { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      const base = await attachCategories((data ?? []) as TopicRow[]);
+      const withPeople = await attachParticipants(base);
+      return attachPreviewImages(withPeople);
+    },
+  });
+}
+
+export function useMyForumBookmarks(limit = 50) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["forum", "mine", "bookmarks", user?.id ?? "guest", limit],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data: bookmarks, error: bErr } = await forumDb
+        .from("forum_topic_bookmarks")
+        .select("topic_id, created_at")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (bErr) throw bErr;
+      const ids = ((bookmarks ?? []) as { topic_id: string }[]).map((b) => b.topic_id);
+      if (!ids.length) return [] as ForumTopic[];
+
+      const { data, error } = await forumDb
+        .from("forum_topics")
+        .select(
+          "id, category_id, author_id, title, body, status, tags, reply_count, like_count, view_count, last_activity_at, accepted_reply_id, is_locked, is_pinned, pinned_at, is_announcement, moderation_state, created_at, updated_at",
+        )
+        .in("id", ids)
+        .eq("moderation_state", "published");
+      if (error) throw error;
+      const base = await attachCategories((data ?? []) as TopicRow[]);
+      const withPeople = await attachParticipants(base);
+      const topics = await attachPreviewImages(withPeople);
+      const order = new Map(ids.map((id, i) => [id, i]));
+      return topics
+        .map((t) => ({ ...t, bookmarked_by_me: true }))
+        .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
     },
   });
 }

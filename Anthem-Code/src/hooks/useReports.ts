@@ -22,7 +22,8 @@ export type ReportReason =
   | "copyright"
   | "scam"
   | "impersonation"
-  | "other";
+  | "other"
+  | "job_spam";
 
 export interface EvidenceFile {
   url: string;

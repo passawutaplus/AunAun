@@ -217,6 +217,23 @@ export function blockImageUrls(block: ProjectContentBlock): string[] {
   return [];
 }
 
+/** Max image slots for multi / grid modules (used for multi-file upload). */
+export function imageModuleSlotCapacity(block: ProjectContentBlock): number {
+  if (block.type !== "image") return 1;
+  if (block.mediaLayout === "multi") {
+    return block.rowColumns === 3 || block.rowColumns === 4 ? block.rowColumns : 2;
+  }
+  if (block.mediaLayout === "grid") {
+    const layout = block.gridLayout ?? "four_quad";
+    if (layout === "three_split" || layout === "three_split_rev") return 3;
+    if (layout === "four_quad") return 4;
+    if (layout === "two_stack" || layout === "two_side") return 2;
+    return Math.max(2, blockImageUrls(block).length || 2);
+  }
+  if (block.mediaLayout === "gallery") return 24;
+  return 1;
+}
+
 export function isMediaPlaceholder(block: ProjectContentBlock): boolean {
   if (isImageTextBlockType(block.type)) return !(block.url ?? "").trim();
   if (!isMediaBlockType(block.type)) return false;

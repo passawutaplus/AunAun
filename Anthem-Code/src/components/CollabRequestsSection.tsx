@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Handshake, MessageCircle, Paperclip, X, UserCircle2, FolderOpen, Globe } from "lucide-react";
+import { Handshake, MessageCircle, Paperclip, X, UserCircle2, Link2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { useAcceptRequest, useRejectRequest, useFindConversationByRequest } from
 import { timeAgoTH } from "@/lib/format";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { collectCollabReferenceLinks } from "@/lib/collabBrief";
 
 const COLLAB_TYPE_LABELS: Record<string, string> = {
   chat: "พูดคุย",
@@ -116,7 +117,9 @@ const CollabRequestsSection = () => {
   return (
     <div className="space-y-3 scroll-mt-24 rounded-3xl glass-panel p-5 md:p-6" id="collab-section">
       <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-[hsl(var(--chat-collab-soft))]"><Handshake className="w-5 h-5 text-[hsl(var(--chat-collab))]" /></div>
+        <div className="text-primary">
+          <Handshake className="w-5 h-5" strokeWidth={2.25} />
+        </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h2 className="font-medium text-foreground">คำขอร่วมงาน (Collab)</h2>
@@ -174,30 +177,29 @@ const CollabRequestsSection = () => {
 
                   <p className="text-base text-foreground mt-2 leading-6 whitespace-pre-wrap">{req.message}</p>
 
-                  {((req as { external_drive_url?: string }).external_drive_url || (req as { website_url?: string }).website_url) && (
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {(req as { external_drive_url?: string }).external_drive_url && (
-                        <a
-                          href={(req as { external_drive_url: string }).external_drive_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border border-border bg-card hover:border-primary/40 text-foreground"
-                        >
-                          <FolderOpen className="w-3 h-3 text-primary" /> ไดรฟ์/ไฟล์ผลงาน
-                        </a>
-                      )}
-                      {(req as { website_url?: string }).website_url && (
-                        <a
-                          href={(req as { website_url: string }).website_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border border-border bg-card hover:border-primary/40 text-foreground"
-                        >
-                          <Globe className="w-3 h-3 text-primary" /> เว็บไซต์
-                        </a>
-                      )}
-                    </div>
-                  )}
+                  {(() => {
+                    const links = collectCollabReferenceLinks({
+                      external_drive_url: (req as { external_drive_url?: string | null }).external_drive_url,
+                      website_url: (req as { website_url?: string | null }).website_url,
+                    });
+                    if (!links.length) return null;
+                    return (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {links.map((url, i) => (
+                          <a
+                            key={`${url}-${i}`}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border border-border bg-card hover:border-primary/40 text-foreground max-w-full"
+                          >
+                            <Link2 className="w-3 h-3 text-primary shrink-0" />
+                            <span className="truncate">{url.replace(/^https?:\/\//, "")}</span>
+                          </a>
+                        ))}
+                      </div>
+                    );
+                  })()}
 
                   {req.timeline && (
                     <p className="text-xs text-muted-foreground mt-1.5">⏰ {req.timeline}</p>

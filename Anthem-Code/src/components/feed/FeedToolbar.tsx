@@ -184,35 +184,35 @@ const FeedToolbar = ({
           onClick={onCreateClick}
           aria-label="ลงผลงานแรก"
           className={cn(
-            "group inline-flex items-center h-9 rounded-full shrink-0",
-            "border border-transparent bg-transparent gap-0 pl-0 pr-0",
-            "text-primary dark:text-white",
-            "hover:border-primary hover:bg-background hover:gap-2 hover:pl-3 hover:pr-1",
-            "focus-visible:border-primary focus-visible:bg-background focus-visible:gap-2 focus-visible:pl-3 focus-visible:pr-1",
-            "hover:bg-primary/5 focus-visible:bg-primary/5",
-            "transition-all duration-200 ease-out",
+            "first-post-create first-post-create-idle group relative inline-flex h-10 items-center rounded-full shrink-0 overflow-visible",
+            "transition-[box-shadow] duration-300",
           )}
         >
+          <span className="first-post-create-beam rounded-full" aria-hidden />
           <span
             className={cn(
-              "max-w-0 overflow-hidden opacity-0 whitespace-nowrap text-sm font-medium",
-              "group-hover:max-w-[7.5rem] group-hover:opacity-100",
-              "group-focus-visible:max-w-[7.5rem] group-focus-visible:opacity-100",
+              "first-post-create-inner relative z-10 inline-flex h-full items-center rounded-full m-[1.5px] overflow-hidden",
+              "gap-0 pl-0 pr-0",
+              "bg-transparent text-primary dark:text-white",
+              "border border-transparent",
+              "group-hover:gap-2 group-hover:pl-3.5 group-hover:bg-background/95 group-hover:border-border/60",
+              "group-focus-visible:gap-2 group-focus-visible:pl-3.5 group-focus-visible:bg-background/95 group-focus-visible:border-border/60",
               "transition-all duration-200 ease-out",
             )}
           >
-            ลงผลงานแรก
-          </span>
-          <span
-            className={cn(
-              "inline-flex items-center justify-center w-9 h-9 rounded-full",
-              "bg-gradient-brand text-white",
-              "group-hover:w-7 group-hover:h-7 group-hover:bg-primary group-hover:text-primary-foreground",
-              "group-focus-visible:w-7 group-focus-visible:h-7 group-focus-visible:bg-primary group-focus-visible:text-primary-foreground",
-              "transition-all duration-200 ease-out",
-            )}
-          >
-            <Plus className="w-5 h-5 group-hover:w-4 group-hover:h-4 group-focus-visible:w-4 group-focus-visible:h-4" strokeWidth={2.5} />
+            <span
+              className={cn(
+                "max-w-0 overflow-hidden opacity-0 whitespace-nowrap text-sm font-medium",
+                "group-hover:max-w-[7.5rem] group-hover:opacity-100",
+                "group-focus-visible:max-w-[7.5rem] group-focus-visible:opacity-100",
+                "transition-all duration-200 ease-out",
+              )}
+            >
+              ลงผลงานแรก
+            </span>
+            <span className="inline-flex items-center justify-center rounded-full bg-gradient-brand text-white shrink-0 h-[37px] w-[37px]">
+              <Plus className="w-5 h-5" strokeWidth={2.5} />
+            </span>
           </span>
         </button>
       ) : (
@@ -220,12 +220,14 @@ const FeedToolbar = ({
           type="button"
           onClick={onCreateClick}
           aria-label="สร้างเนื้อหาใหม่"
-          className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gradient-brand text-white hover:opacity-90 transition-opacity shrink-0"
+          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-brand text-white hover:opacity-90 transition-opacity shrink-0"
         >
           <Plus className="w-5 h-5" strokeWidth={2.5} />
         </button>
       )
     ) : null;
+
+  const rightAction = isCommunity ? postButton : createButton;
 
   /** Keep each toggle mounted in a stable tree slot so the pill can slide. */
   const toggleProps = {
@@ -246,7 +248,7 @@ const FeedToolbar = ({
   return (
     <div
       data-feed-toolbar
-      className="sticky top-0 z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 bg-background/75 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 border-b border-border/50"
+      className="sticky top-0 z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 bg-background/75 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 border-b border-border/50 overflow-visible"
     >
       {/* Mobile / tablet: single row — profile lives in bottom nav */}
       <div className="flex items-center gap-2 lg:hidden">
@@ -269,7 +271,7 @@ const FeedToolbar = ({
         />
       </div>
 
-      {/* Desktop: two rows — mode toggle stays outside mode-specific branches */}
+      {/* Desktop: two rows — right rail (+ / profile) matches Projects–Designers pill width */}
       <div className="hidden lg:block space-y-3">
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
@@ -281,7 +283,20 @@ const FeedToolbar = ({
               filterContent={filterContent}
             />
           </div>
-          <ProfileButton />
+          {/* Create grows left into search; profile pill width stays fixed (no jump). */}
+          <div className="relative z-20 flex shrink-0 items-center gap-1.5 overflow-visible">
+            {rightAction ? (
+              <div className="relative z-30 shrink-0 overflow-visible">{rightAction}</div>
+            ) : null}
+            <div
+              className={cn(
+                "min-w-0 shrink-0",
+                rightAction ? "w-[11.6rem]" : "w-[14.5rem]",
+              )}
+            >
+              <ProfileButton fillRail />
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-3 min-h-9">
           <FeedModeTransition modeKey={mode} className="flex-1 min-w-0">
@@ -342,9 +357,8 @@ const FeedToolbar = ({
             </div>
           </FeedModeTransition>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {isCommunity ? postButton : createButton}
-            <FeedModeToggle {...toggleProps} />
+          <div className="flex w-[14.5rem] shrink-0 items-center">
+            <FeedModeToggle {...toggleProps} className="w-full" />
           </div>
         </div>
       </div>

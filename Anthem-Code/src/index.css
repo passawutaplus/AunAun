@@ -238,6 +238,19 @@
   20% { opacity: 1; transform: scale(1.15); }
   100% { opacity: 0; transform: scale(1); }
 }
+@keyframes first-post-aura-spin {
+  to { transform: rotate(360deg); }
+}
+
+@property --first-post-beam-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes first-post-beam-rotate {
+  to { --first-post-beam-angle: 360deg; }
+}
 
 @layer utilities {
   .animate-fade-up { animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
@@ -246,6 +259,90 @@
   .animate-input-shake { animation: input-shake 0.4s ease-in-out; }
   .animate-community-heart-burst { animation: community-heart-burst 0.75s ease-out forwards; }
   .animate-plus-one-burst { animation: plus-one-burst 0.75s ease-out forwards; }
+  .animate-first-post-aura-spin { animation: first-post-aura-spin 2.2s linear infinite; }
+
+  /* Soft orange aura orbit (no hard border-beam) */
+  .first-post-create {
+    position: relative;
+    isolation: isolate;
+  }
+  .first-post-create-beam {
+    position: absolute;
+    inset: -4px;
+    border-radius: 9999px;
+    opacity: 0;
+    transition: opacity 0.28s ease;
+    pointer-events: none;
+    background: conic-gradient(
+      from var(--first-post-beam-angle, 0deg),
+      transparent 0deg,
+      transparent 220deg,
+      hsl(14 100% 55% / 0.2) 250deg,
+      hsl(14 100% 55% / 0.55) 285deg,
+      hsl(24 100% 58% / 0.3) 315deg,
+      transparent 340deg,
+      transparent 360deg
+    );
+    filter: blur(5px);
+  }
+  /* Idle soft aura while "ลงผลงานแรก" text is collapsed — medium orbit */
+  .first-post-create-idle .first-post-create-beam {
+    opacity: 0.95;
+    animation: first-post-beam-rotate 1.8s linear infinite;
+  }
+  .first-post-create-idle {
+    box-shadow: 0 0 10px -3px hsl(14 100% 50% / 0.3);
+  }
+  .first-post-create-idle:hover .first-post-create-beam,
+  .first-post-create-idle:focus-visible .first-post-create-beam {
+    opacity: 0.55;
+  }
+  .first-post-create-idle:hover,
+  .first-post-create-idle:focus-visible {
+    box-shadow: 0 0 12px -3px hsl(14 100% 50% / 0.35);
+  }
+  /* Circular + FAB soft aura (mobile nav) */
+  .first-post-plus-aura {
+    position: relative;
+    isolation: isolate;
+  }
+  .first-post-plus-aura::before {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border-radius: 9999px;
+    pointer-events: none;
+    background: conic-gradient(
+      from var(--first-post-beam-angle, 0deg),
+      transparent 0deg,
+      transparent 220deg,
+      hsl(14 100% 55% / 0.2) 250deg,
+      hsl(14 100% 55% / 0.55) 285deg,
+      hsl(24 100% 58% / 0.3) 315deg,
+      transparent 340deg,
+      transparent 360deg
+    );
+    filter: blur(5px);
+    animation: first-post-beam-rotate 1.8s linear infinite;
+    transition: opacity 0.2s ease;
+  }
+  .first-post-plus-aura:hover::before,
+  .first-post-plus-aura:focus-visible::before {
+    opacity: 0;
+  }
+  @supports not (background: conic-gradient(from var(--first-post-beam-angle), red, red)) {
+    .first-post-create-idle .first-post-create-beam,
+    .first-post-plus-aura::before {
+      animation: first-post-aura-spin 1.8s linear infinite;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-first-post-aura-spin,
+    .first-post-create-idle .first-post-create-beam,
+    .first-post-plus-aura::before {
+      animation: none;
+    }
+  }
 
   .scrollbar-hide::-webkit-scrollbar,
   .scrollbar-none::-webkit-scrollbar,

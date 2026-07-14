@@ -19,6 +19,10 @@ import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 
 import { useFollowState } from "@/hooks/useFollow";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  useUnblockUser,
+  useUserBlocks,
+} from "@/hooks/useCommunityPostInteractions";
 import { usePublicCollections } from "@/hooks/useCollections";
 import { useMyProjectSeries, usePublicProjectSeries } from "@/hooks/useProjectSeries";
 import PortfolioGrid from "@/components/profile/PortfolioGrid";
@@ -93,6 +97,9 @@ const PublicProfilePage = () => {
   const showAsVisitor = !isSelf || visitorPreview;
 
   const { followers, following } = useFollowState(resolvedUserId);
+  const { data: blockedSet } = useUserBlocks(user?.id);
+  const unblockUser = useUnblockUser();
+  const iBlockedThem = !!(resolvedUserId && blockedSet?.has(resolvedUserId));
   const { data: collections = [] } = usePublicCollections(resolvedUserId);
   const { data: publicSeries = [] } = usePublicProjectSeries(resolvedUserId);
   const { data: ownerSeries = [] } = useMyProjectSeries(
@@ -517,13 +524,26 @@ const PublicProfilePage = () => {
               )}
 
               {!isSelf && (
-                <div className="mt-3">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   <ReportTrigger
                     targetType="user"
                     targetId={resolvedUserId!}
                     targetOwnerId={resolvedUserId!}
                     variant="text"
                   />
+                  {iBlockedThem ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full h-8 text-xs"
+                      disabled={unblockUser.isPending}
+                      onClick={() => void unblockUser.mutateAsync(resolvedUserId!)}
+                    >
+                      <UserX className="w-3.5 h-3.5 mr-1" />
+                      ปลดบล็อก
+                    </Button>
+                  ) : null}
                 </div>
               )}
 

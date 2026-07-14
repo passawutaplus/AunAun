@@ -12,6 +12,16 @@ export const JOB_TYPES = [
   { id: "other", label: "อื่นๆ" },
 ] as const;
 
+/** Hire invite engagement types (multi-select, required). */
+export const HIRE_ENGAGEMENT_TYPES = [
+  { id: "piece", label: "จ้างทำชิ้นงาน" },
+  { id: "project", label: "จ้างทำเป็นโปรเจค" },
+  { id: "full_time", label: "จ้าง Full-time" },
+  { id: "part_time", label: "จ้าง Part-time" },
+  { id: "retainer", label: "จ้างเป็น Freelance ประจำ" },
+] as const;
+
+
 export const DELIVERABLES = [
   "โลโก้และอัตลักษณ์แบรนด์",
   "ชุดโซเชียลมีเดีย",
@@ -31,10 +41,12 @@ export type HireWizardForm = {
   clientName: string;
   email: string;
   phone: string;
-  budgetAmount: string;
+  budgetMin: string;
+  budgetMax: string;
   deadline: string;
   message: string;
   jobType: string;
+  jobTypeOther: string;
   serviceType: string;
   deliverables: string[];
   referenceUrl: string;
@@ -44,18 +56,26 @@ export const emptyHireWizardForm = (): HireWizardForm => ({
   clientName: "",
   email: "",
   phone: "",
-  budgetAmount: "",
+  budgetMin: "",
+  budgetMax: "",
   deadline: "",
   message: "",
   jobType: "branding",
+  jobTypeOther: "",
   serviceType: "design",
   deliverables: [],
   referenceUrl: "",
 });
 
 export const buildHireMessage = (form: HireWizardForm, extras?: { studio?: boolean }) => {
+  const typeLabel =
+    extras?.studio
+      ? STUDIO_SERVICES.find((s) => s.id === form.serviceType)?.label ?? form.serviceType
+      : form.jobType === "other" && form.jobTypeOther.trim()
+        ? `อื่นๆ — ${form.jobTypeOther.trim()}`
+        : JOB_TYPES.find((j) => j.id === form.jobType)?.label ?? form.jobType;
   const meta = [
-    extras?.studio ? `บริการ: ${STUDIO_SERVICES.find((s) => s.id === form.serviceType)?.label ?? form.serviceType}` : `ประเภทงาน: ${JOB_TYPES.find((j) => j.id === form.jobType)?.label ?? form.jobType}`,
+    extras?.studio ? `บริการ: ${typeLabel}` : `ประเภทงาน: ${typeLabel}`,
     form.deliverables.length ? `สิ่งที่ต้องการส่งมอบ: ${form.deliverables.join(", ")}` : null,
     form.referenceUrl ? `อ้างอิง: ${form.referenceUrl}` : null,
   ].filter(Boolean);
@@ -114,6 +134,14 @@ export const HireWizardStepOne = ({ form, setForm, studio }: StepProps) => (
             </button>
           ))}
         </div>
+        {form.jobType === "other" ? (
+          <Input
+            value={form.jobTypeOther}
+            onChange={(e) => setForm((f) => ({ ...f, jobTypeOther: e.target.value }))}
+            placeholder="ระบุประเภทงาน"
+            className="mt-2"
+          />
+        ) : null}
       </div>
     )}
 
@@ -141,23 +169,36 @@ export const HireWizardStepOne = ({ form, setForm, studio }: StepProps) => (
     </div>
 
     <div className="grid grid-cols-2 gap-3">
-      <div>
-        <Label htmlFor="hire-budget">งบประมาณ (บาท)</Label>
-        <Input
-          id="hire-budget"
-          inputMode="numeric"
-          value={form.budgetAmount}
-          onChange={(e) => setForm((f) => ({ ...f, budgetAmount: e.target.value }))}
-          placeholder="เช่น 15000"
-        />
+      <div className="col-span-2 sm:col-span-1 space-y-1.5">
+        <Label>งบประมาณ (บาท) — ช่วงราคา</Label>
+        <div className="grid grid-cols-2 gap-2">
+          <Input
+            id="hire-budget-min"
+            inputMode="numeric"
+            value={form.budgetMin}
+            onChange={(e) => setForm((f) => ({ ...f, budgetMin: e.target.value }))}
+            placeholder="ต่ำสุด"
+          />
+          <Input
+            id="hire-budget-max"
+            inputMode="numeric"
+            value={form.budgetMax}
+            onChange={(e) => setForm((f) => ({ ...f, budgetMax: e.target.value }))}
+            placeholder="สูงสุด"
+          />
+        </div>
       </div>
-      <div>
-        <Label htmlFor="hire-deadline">กำหนดส่งงาน</Label>
+      <div className="col-span-2 sm:col-span-1">
+        <Label htmlFor="hire-deadline">
+          กำหนดส่งงาน <span className="text-orange-500">*</span>
+        </Label>
         <Input
           id="hire-deadline"
+          type="date"
           value={form.deadline}
+          min={new Date().toISOString().slice(0, 10)}
           onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
-          placeholder="เช่น 2 สัปดาห์"
+          required
         />
       </div>
     </div>
@@ -208,8 +249,18 @@ export const HireWizardSummary = ({ form, studio }: StepProps) => (
     {form.deliverables.length > 0 && (
       <p><span className="text-muted-foreground">สิ่งที่ส่งมอบ:</span> {form.deliverables.join(", ")}</p>
     )}
-    {form.budgetAmount && <p><span className="text-muted-foreground">งบ:</span> ฿{form.budgetAmount}</p>}
+    {form.budgetMin || form.budgetMax ? (
+      <p>
+        <span className="text-muted-foreground">งบ:</span>{" "}
+        {[form.budgetMin && `฿${form.budgetMin}`, form.budgetMax && `฿${form.budgetMax}`]
+          .filter(Boolean)
+          .join("–")}
+      </p>
+    ) : null}
     {form.deadline && <p><span className="text-muted-foreground">กำหนดส่ง:</span> {form.deadline}</p>}
+    {form.jobType === "other" && form.jobTypeOther ? (
+      <p><span className="text-muted-foreground">ประเภทอื่น:</span> {form.jobTypeOther}</p>
+    ) : null}
     <p><span className="text-muted-foreground">ติดต่อ:</span> {form.clientName} · {form.email}</p>
     {form.referenceUrl && <p className="break-all"><span className="text-muted-foreground">อ้างอิง:</span> {form.referenceUrl}</p>}
     {form.message && <p className="text-base text-foreground whitespace-pre-wrap">{form.message}</p>}

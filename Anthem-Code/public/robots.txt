@@ -32,6 +32,10 @@ Disallow: /studio/new
 Disallow: /studio/invites
 Disallow: /api/
 Disallow: /reset-password
+Disallow: /forum/admin
+Disallow: /forum/new
+Disallow: /forum/search
+Disallow: /forum/me
 
 # Prefer clean URLs — parameterized discovery stays noindex via SeoHead
 Sitemap: https://aplus1.app/sitemap.xml

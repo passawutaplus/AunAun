@@ -1,10 +1,21 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { th } from "date-fns/locale";
-import { ExternalLink, FileText, Reply, Undo2 } from "lucide-react";
-import ReportTrigger from "@/components/report/ReportTrigger";
+import {
+  Copy,
+  ExternalLink,
+  FileText,
+  Flag,
+  Languages,
+  Megaphone,
+  MoreVertical,
+  Reply,
+  Undo2,
+} from "lucide-react";
+import ReportDialog from "@/components/report/ReportDialog";
 import { Button } from "@/components/ui/button";
 import {
   ContextMenu,
@@ -12,6 +23,12 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { PROJECT_FEED_SELECT, PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
 import { profilesPublicFrom } from "@/lib/profileAccess";
@@ -20,8 +37,24 @@ import { isSystemFallbackContent, stripSystemFallbackPrefix } from "@/lib/chatCo
 import { replyPreviewText } from "@/lib/chatReply";
 import { parseChatOffer } from "@/lib/chatOffer";
 import { ChatOfferCard } from "@/components/chat/ChatOfferCard";
+import { parseHireForwardMessage } from "@/lib/hireForwardChat";
+import HireForwardCard from "@/components/chat/HireForwardCard";
+import HireInviteCard, { type HireInviteActions } from "@/components/chat/HireInviteCard";
+import HireRejectChoiceCard, {
+  type HireRejectChoiceActions,
+} from "@/components/chat/HireRejectChoiceCard";
+import HireContinueAskCard, {
+  type HireContinueAskActions,
+} from "@/components/chat/HireContinueAskCard";
+import {
+  isHireProtocolMessage,
+  parseHireContinueAskMessage,
+  parseHireRejectChoiceMessage,
+} from "@/lib/hireRejectChat";
+import { isHireBriefChatMessage } from "@/lib/hireBrief";
 import { UNSEND_WINDOW_MS, type Message } from "@/hooks/useChat";
 import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
+import { toast } from "sonner";
 
 function ChatAttachmentImage({ refUrl }: { refUrl: string }) {
   const src = useSignedStorageUrl(refUrl);
@@ -56,12 +89,31 @@ function ChatAttachmentFile({ refUrl, fileName }: { refUrl: string; fileName: st
   );
 }
 
+/** Offer translate when message looks mostly non-Thai. */
+export function looksForeignLanguage(text: string | null | undefined): boolean {
+  if (!text?.trim()) return false;
+  const letters = text.replace(/[^\p{L}]/gu, "");
+  if (letters.length < 4) return false;
+  const thai = (letters.match(/\p{Script=Thai}/gu) ?? []).length;
+  return thai / letters.length < 0.45;
+}
+
 interface Props {
   message: Message;
   mine: boolean;
   kind: "hire" | "collab" | "group";
+  /** Hire chat: client can open chat with forwarded creator. */
+  viewerIsClient?: boolean;
+  /** Freelancer respond actions on auto hire-invite card. */
+  hireInviteActions?: HireInviteActions | null;
+  /** Client post-reject choice (close vs ask continue). */
+  hireRejectChoiceActions?: HireRejectChoiceActions | null;
+  /** Freelancer respond to client continue-ask. */
+  hireContinueAskActions?: HireContinueAskActions | null;
   onReply?: (message: Message) => void;
   onUnsend?: (message: Message) => void;
+  /** Pin/announce message to conversation header (LINE-style). */
+  onAnnounce?: (message: Message, previewText: string) => void;
   getSenderLabel?: (senderId: string) => string;
   onScrollToMessage?: (messageId: string) => void;
   highlight?: boolean;
@@ -71,12 +123,18 @@ const MessageBubble = ({
   message,
   mine,
   kind,
+  viewerIsClient = false,
+  hireInviteActions = null,
+  hireRejectChoiceActions = null,
+  hireContinueAskActions = null,
   onReply,
   onUnsend,
+  onAnnounce,
   getSenderLabel,
   onScrollToMessage,
   highlight = false,
 }: Props) => {
+  const [reportOpen, setReportOpen] = useState(false);
   const time = format(new Date(message.created_at), "HH:mm");
   const deleted = !!message.deleted_at;
   const canUnsend =
@@ -91,6 +149,11 @@ const MessageBubble = ({
   const profileUserId =
     message.message_type === "profile"
       ? (message as Message & { profile_user_id?: string }).profile_user_id ?? message.sender_id
+      : null;
+
+  const projectFromProfileId =
+    message.message_type === "project"
+      ? (message.profile_user_id ?? null)
       : null;
 
   const { data: replyTo } = useQuery({
@@ -118,6 +181,32 @@ const MessageBubble = ({
       return data;
     },
   });
+
+  const projectOwnerId = projectFromProfileId || (project as { owner_id?: string } | null)?.owner_id || null;
+
+  const { data: projectOwnerProfile } = useQuery({
+    queryKey: ["msg-project-owner", projectOwnerId],
+    enabled:
+      kind === "group" &&
+      message.message_type === "project" &&
+      !!projectOwnerId &&
+      !deleted,
+    queryFn: async () => {
+      const { data } = await profilesPublicFrom()
+        .select("user_id, display_name, username, avatar_url")
+        .eq("user_id", projectOwnerId!)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const projectFromLabel =
+    kind === "group" && message.message_type === "project"
+      ? projectOwnerProfile?.username ||
+        projectOwnerProfile?.display_name ||
+        (projectOwnerId ? getSenderLabel?.(projectOwnerId) : null) ||
+        null
+      : null;
 
   const { data: profileCard } = useQuery({
     queryKey: ["msg-profile", profileUserId],
@@ -152,16 +241,42 @@ const MessageBubble = ({
         message.message_type !== "profile" &&
         !isImageAttachmentPath(message.attachment_url)));
 
-  const displayContent =
-    isFileAttachment
-      ? ""
-      : message.content
-        ? isSystemFallbackContent(message.content)
-          ? stripSystemFallbackPrefix(message.content)
-          : message.content
-        : "";
-
   const offer = !deleted ? parseChatOffer(message.content) : null;
+  const hireForward = !deleted ? parseHireForwardMessage(message.content) : null;
+  const hireRejectChoice = !deleted ? parseHireRejectChoiceMessage(message.content) : null;
+  const hireContinueAsk = !deleted ? parseHireContinueAskMessage(message.content) : null;
+  const rawForDisplay =
+    message.content && isSystemFallbackContent(message.content)
+      ? stripSystemFallbackPrefix(message.content)
+      : message.content || "";
+  // Never show internal protocol payloads as plain chat text.
+  const displayContent =
+    isFileAttachment || isHireProtocolMessage(message.content) || isHireProtocolMessage(rawForDisplay)
+      ? ""
+      : rawForDisplay;
+
+  const hireBrief =
+    !deleted &&
+    !offer &&
+    !hireForward &&
+    !hireRejectChoice &&
+    !hireContinueAsk &&
+    isHireBriefChatMessage(rawForDisplay)
+      ? rawForDisplay
+      : null;
+
+  const isStructuredChatCard = !!(
+    offer ||
+    hireForward ||
+    hireRejectChoice ||
+    hireContinueAsk ||
+    hireBrief ||
+    (!deleted && isHireProtocolMessage(message.content))
+  );
+  const copyText = replyPreviewText(message);
+  const showTranslate = looksForeignLanguage(
+    hireRejectChoice?.reasonLabel || hireBrief || displayContent || copyText,
+  );
 
   const replyQuote =
     message.reply_to_id && replyTo ? (
@@ -182,24 +297,22 @@ const MessageBubble = ({
       </button>
     ) : null;
 
-  const replyButton =
-    onReply && !deleted ? (
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className={cn(
-          "h-7 w-7 rounded-full shrink-0 text-muted-foreground hover:text-foreground",
-          "opacity-60 sm:opacity-0 sm:group-hover/msg:opacity-100 transition-opacity",
-        )}
-        onClick={() => onReply(message)}
-        aria-label="ตอบกลับ"
-      >
-        <Reply className="w-3.5 h-3.5" />
-      </Button>
-    ) : null;
+  const copyMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(copyText);
+      toast.success("คัดลอกแล้ว");
+    } catch {
+      toast.error("คัดลอกไม่สำเร็จ");
+    }
+  };
 
-  if (isSystem && !deleted) {
+  const translateMessage = () => {
+    const q = encodeURIComponent(copyText.slice(0, 900));
+    window.open(`https://translate.google.com/?sl=auto&tl=th&text=${q}`, "_blank", "noopener,noreferrer");
+  };
+
+  // Structured cards (hire reject / continue / forward / offer) win over system-pill rendering.
+  if (isSystem && !deleted && !isStructuredChatCard) {
     return (
       <div className="flex justify-center my-2 px-4">
         <p className="text-xs text-center text-muted-foreground bg-muted/80 px-3 py-1.5 rounded-full max-w-[90%] leading-relaxed">
@@ -209,6 +322,58 @@ const MessageBubble = ({
     );
   }
 
+  const messageMenu = !deleted ? (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-full shrink-0 text-muted-foreground hover:text-foreground"
+            aria-label="เมนูข้อความ"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align={mine ? "end" : "start"} className="w-44">
+          {onReply ? (
+            <DropdownMenuItem onClick={() => onReply(message)}>
+              <Reply className="w-4 h-4 mr-2" />
+              ตอบกลับ
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem onClick={() => void copyMessage()}>
+            <Copy className="w-4 h-4 mr-2" />
+            คัดลอก
+          </DropdownMenuItem>
+          {showTranslate ? (
+            <DropdownMenuItem onClick={translateMessage}>
+              <Languages className="w-4 h-4 mr-2" />
+              แปลภาษา
+            </DropdownMenuItem>
+          ) : null}
+          {onAnnounce ? (
+            <DropdownMenuItem onClick={() => onAnnounce(message, copyText)}>
+              <Megaphone className="w-4 h-4 mr-2" />
+              ประกาศ
+            </DropdownMenuItem>
+          ) : null}
+          {mine && onUnsend && canUnsend ? (
+            <DropdownMenuItem onClick={() => onUnsend(message)} className="text-destructive">
+              <Undo2 className="w-4 h-4 mr-2" />
+              ยกเลิกการส่ง
+            </DropdownMenuItem>
+          ) : null}
+          {!mine ? (
+            <DropdownMenuItem onClick={() => setReportOpen(true)}>
+              <Flag className="w-4 h-4 mr-2" />
+              รายงาน
+            </DropdownMenuItem>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ) : null;
+
   const bubbleBody = (
     <div
       className={cn(
@@ -217,7 +382,6 @@ const MessageBubble = ({
         highlight && "ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
       )}
     >
-      {mine && replyButton}
       <div className={cn("max-w-[78%] md:max-w-[60%]")}>
         {deleted ? (
           <div className="px-3.5 py-2 rounded-2xl text-sm italic text-muted-foreground bg-muted/60">
@@ -267,9 +431,21 @@ const MessageBubble = ({
                       ไม่มีรูปปก
                     </div>
                   )}
-                  <div className={cn("px-3 py-2 flex items-center justify-between gap-2", mine ? "bg-black/10" : "bg-card")}>
-                    <span className="text-sm font-medium truncate">{project.title}</span>
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                  <div className={cn("px-3 py-2 space-y-0.5", mine ? "bg-black/10" : "bg-card")}>
+                    {projectFromLabel && (
+                      <p
+                        className={cn(
+                          "text-[10px] truncate",
+                          mine ? "text-white/75" : "text-muted-foreground",
+                        )}
+                      >
+                        #{projectFromLabel.replace(/^#/, "")}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium truncate">{project.title}</span>
+                      <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                    </div>
                   </div>
                 </Link>
               </div>
@@ -324,8 +500,52 @@ const MessageBubble = ({
                 />
               </div>
             )}
+            {hireForward && (
+              <div>
+                {replyQuote}
+                <HireForwardCard
+                  payload={hireForward}
+                  mine={mine}
+                  canOpenChat={viewerIsClient}
+                />
+              </div>
+            )}
+            {hireRejectChoice && (
+              <div>
+                {replyQuote}
+                <HireRejectChoiceCard
+                  payload={hireRejectChoice}
+                  mine={mine}
+                  actions={hireRejectChoiceActions}
+                />
+              </div>
+            )}
+            {hireContinueAsk && (
+              <div>
+                {replyQuote}
+                <HireContinueAskCard
+                  payload={hireContinueAsk}
+                  mine={mine}
+                  actions={hireContinueAskActions}
+                />
+              </div>
+            )}
+            {hireBrief && (
+              <div>
+                {replyQuote}
+                <HireInviteCard
+                  content={hireBrief}
+                  mine={mine}
+                  actions={hireInviteActions}
+                />
+              </div>
+            )}
             {displayContent &&
               !offer &&
+              !hireForward &&
+              !hireRejectChoice &&
+              !hireContinueAsk &&
+              !hireBrief &&
               message.message_type !== "project" &&
               message.message_type !== "profile" && (
               <div
@@ -340,6 +560,10 @@ const MessageBubble = ({
             )}
             {!displayContent &&
               !offer &&
+              !hireForward &&
+              !hireRejectChoice &&
+              !hireContinueAsk &&
+              !hireBrief &&
               !message.attachment_url &&
               message.message_type !== "project" &&
               message.message_type !== "profile" &&
@@ -358,31 +582,42 @@ const MessageBubble = ({
         <div
           className={cn(
             "flex items-center gap-1 mt-1 text-[10px] text-muted-foreground",
-            mine ? "justify-end" : "justify-start",
+            mine ? "justify-end" : "justify-between",
           )}
         >
-          <span>{time}</span>
-          {mine && !deleted && <span>{message.read_at ? "อ่านแล้ว" : "ส่งแล้ว"}</span>}
-          {!mine && !deleted && (
-            <ReportTrigger
-              targetType="message"
-              targetId={message.id}
-              targetOwnerId={message.sender_id}
-              className="opacity-0 group-hover/msg:opacity-100 ml-0.5"
-            />
-          )}
+          {mine ? messageMenu : null}
+          <span className="inline-flex items-center gap-1">
+            <span>{time}</span>
+            {mine && !deleted && <span>{message.read_at ? "อ่านแล้ว" : "ส่งแล้ว"}</span>}
+          </span>
+          {!mine ? messageMenu : null}
         </div>
       </div>
-      {!mine && replyButton}
     </div>
   );
 
-  if (!onReply && !onUnsend) return bubbleBody;
+  const withReport = (
+    <>
+      {bubbleBody}
+      {!mine && !deleted ? (
+        <ReportDialog
+          targetType="message"
+          targetId={message.id}
+          targetOwnerId={message.sender_id}
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          hideTrigger
+        />
+      ) : null}
+    </>
+  );
+
+  if (!onReply && !onUnsend) return withReport;
 
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild disabled={deleted}>
-        <div>{bubbleBody}</div>
+        <div>{withReport}</div>
       </ContextMenuTrigger>
       <ContextMenuContent>
         {onReply && !deleted && (

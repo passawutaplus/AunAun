@@ -20,12 +20,16 @@ import {
   type ChatEntrySource,
 } from "@/lib/chatContext";
 import { validateProjectInquiry } from "@/domain/inquiry";
+import { hireInviteBriefSchema } from "@/lib/validators";
 import HireInviteForm, {
   buildHireInviteMessage,
   emptyHireInviteForm,
 } from "@/components/hiring/HireInviteForm";
 import ProjectReferencePreview from "@/components/opportunity/ProjectReferencePreview";
 import { trackProductEvent } from "@/lib/productEvents";
+import { isBlockedFromOpportunity } from "@/hooks/useCommunityPostInteractions";
+
+type HireFieldErrorKey = "deadline" | "budgetMax" | "jobTypes";
 
 interface HireDialogProps {
   open: boolean;
@@ -56,6 +60,7 @@ const HireDialog = ({
   const { data: myJobs = [] } = useMyOpenJobPosts();
   const [jobPostId, setJobPostId] = useState("");
   const [form, setForm] = useState(emptyHireInviteForm());
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<HireFieldErrorKey, string>>>({});
   const busy = createReq.isPending || openChat.isPending;
 
   useEffect(() => {
@@ -70,11 +75,21 @@ const HireDialog = ({
   const reset = () => {
     setForm(emptyHireInviteForm());
     setJobPostId("");
+    setFieldErrors({});
   };
 
   const handleOpenChange = (next: boolean) => {
     if (!next) reset();
     onOpenChange(next);
+  };
+
+  const clearFieldError = (key: HireFieldErrorKey) => {
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   };
 
   const resolvedTitle = () => {
@@ -104,6 +119,15 @@ const HireDialog = ({
       return;
     }
 
+    try {
+      if (await isBlockedFromOpportunity(user.id, freelancerId)) {
+        toast.error("คุณถูกบล็อก — ส่งคำขอจ้างไปยังผู้ใช้นี้ไม่ได้");
+        return;
+      }
+    } catch {
+      /* fall through to server check */
+    }
+
     const inquiryErr = validateProjectInquiry({ source, projectId });
     if (inquiryErr) {
       toast.error(inquiryErr);
@@ -116,7 +140,53 @@ const HireDialog = ({
       return;
     }
 
-    const budgetNum = parseMoneyInput(form.budgetAmount) ?? undefined;
+    const budgetMin = parseMoneyInput(form.budgetMin) ?? undefined;
+    const budgetMax = parseMoneyInput(form.budgetMax) ?? undefined;
+    const briefCheck = hireInviteBriefSchema.safeParse({
+      jobTypes: form.jobTypes,
+      details: form.details || undefined,
+      budgetMin,
+      budgetMax,
+      deadline: form.deadline.trim(),
+    });
+    if (!briefCheck.success) {
+      const nextErrors: Partial<Record<HireFieldErrorKey, string>> = {};
+      for (const issue of briefCheck.error.issues) {
+        const path = issue.path[0];
+        if (path === "deadline" || path === "budgetMax" || path === "jobTypes") {
+          nextErrors[path] = issue.message;
+        }
+      }
+      if (!form.deadline.trim() && !nextErrors.deadline) {
+        nextErrors.deadline = "กรุณาเลือกกำหนดส่งงาน";
+      }
+      if (!form.jobTypes.length && !nextErrors.jobTypes) {
+        nextErrors.jobTypes = "กรุณาเลือกประเภทงานอย่างน้อย 1 อย่าง";
+      }
+      setFieldErrors(nextErrors);
+      const firstMsg =
+        nextErrors.jobTypes ||
+        nextErrors.deadline ||
+        nextErrors.budgetMax ||
+        briefCheck.error.issues[0]?.message ||
+        "กรุณากรอกข้อมูลที่บังคับ";
+      toast.error(firstMsg);
+      const focusId = nextErrors.jobTypes
+        ? "hire-job-types"
+        : nextErrors.deadline
+          ? "hire-deadline"
+          : nextErrors.budgetMax
+            ? "hire-budget-max"
+            : "hire-job-types";
+      requestAnimationFrame(() => {
+        const el = document.getElementById(focusId);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (focusId !== "hire-job-types") el?.focus();
+      });
+      return;
+    }
+    setFieldErrors({});
+    const budgetNum = budgetMin ?? budgetMax;
     const inviteMessage = buildHireInviteMessage(form) ?? DEFAULT_HIRE_MESSAGE;
     const safeProjectId = projectId && isUuid(projectId) ? projectId : null;
 
@@ -132,8 +202,12 @@ const HireDialog = ({
         email,
         phone: profile?.phone?.trim() || null,
         budget_amount: budgetNum ?? null,
-        deadline: form.deadline || null,
+        budget_min: budgetMin ?? null,
+        budget_max: budgetMax ?? null,
+        deadline: form.deadline.trim(),
         message: inviteMessage,
+        job_type: form.jobTypes.join(",") || null,
+        job_type_other: null,
         job_post_id: jobPostId && isUuid(jobPostId) ? jobPostId : null,
         attachment_urls: form.attachmentUrls.length ? form.attachmentUrls : null,
       } as never);
@@ -195,7 +269,8 @@ const HireDialog = ({
           jobPostId={jobPostId}
           onJobPostIdChange={setJobPostId}
           userId={user?.id}
-          optional
+          fieldErrors={fieldErrors}
+          onClearFieldError={clearFieldError}
         />
 
         <p className="text-[11px] leading-relaxed text-muted-foreground border-t border-border/40 pt-3">

@@ -81,7 +81,7 @@ AS $$
 BEGIN
   UPDATE anthem.projects
   SET views = coalesce(views, 0) + 1
-  WHERE id = _project_id::text
+  WHERE id = _project_id
     AND status = 'Published';
 END;
 $$;
@@ -265,8 +265,14 @@ BEGIN
     RAISE EXCEPTION 'TOO_MANY_MEMBERS';
   END IF;
 
-  INSERT INTO shared.conversations (kind, conversation_type, title, created_by, last_message_at)
-  VALUES ('group', 'group', trim(p_title), _uid, now())
+  INSERT INTO shared.conversations (
+    kind, conversation_type, title, created_by,
+    client_id, freelancer_id, last_message_at
+  )
+  VALUES (
+    'group', 'group', trim(p_title), _uid,
+    _uid, _uid, now()
+  )
   RETURNING id INTO _conv_id;
 
   INSERT INTO shared.conversation_members (conversation_id, user_id, joined_at)

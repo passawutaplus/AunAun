@@ -67,17 +67,54 @@ export const hireRequestSchema = z.object({
   budgetAmount: z
     .union([z.number().int().nonnegative().max(10_000_000), z.nan()])
     .optional(),
+  budgetMin: z.number().int().nonnegative().max(10_000_000).optional(),
+  budgetMax: z.number().int().nonnegative().max(10_000_000).optional(),
   deadline: z.string().trim().max(50).optional(),
   message: z.string().trim().max(1000).optional(),
 });
 
-/** Optional brief fields on the hire invite form. */
-export const hireInviteBriefSchema = z.object({
-  jobType: z.string().trim().max(50).optional(),
-  details: z.string().trim().max(1000).optional(),
-  budgetAmount: z.number().int().positive().max(10_000_000).optional(),
-  deadline: z.string().trim().max(50).optional(),
-});
+/** Brief fields on the hire invite form. */
+export const hireInviteBriefSchema = z
+  .object({
+    jobTypes: z
+      .array(z.string().trim().min(1).max(50))
+      .min(1, "กรุณาเลือกประเภทงานอย่างน้อย 1 อย่าง")
+      .max(5),
+    details: z.string().trim().max(1000).optional(),
+    budgetAmount: z.number().int().positive().max(10_000_000).optional(),
+    budgetMin: z.number().int().nonnegative().max(10_000_000).optional(),
+    budgetMax: z.number().int().nonnegative().max(10_000_000).optional(),
+    deadline: z
+      .string()
+      .trim()
+      .min(1, "กรุณาเลือกกำหนดส่งงาน")
+      .max(50),
+  })
+  .superRefine((val, ctx) => {
+    if (
+      val.budgetMin != null &&
+      val.budgetMax != null &&
+      val.budgetMin > val.budgetMax
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "งบต่ำสุดต้องไม่เกินงบสูงสุด",
+        path: ["budgetMax"],
+      });
+    }
+    if (val.deadline && /^\d{4}-\d{2}-\d{2}/.test(val.deadline)) {
+      const day = new Date(`${val.deadline.slice(0, 10)}T12:00:00`);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (!Number.isNaN(day.getTime()) && day < today) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "กำหนดส่งงานต้องเป็นวันนี้หรือวันในอนาคต",
+          path: ["deadline"],
+        });
+      }
+    }
+  });
 
 export type HireRequestInput = z.infer<typeof hireRequestSchema>;
 export type HireRequestQuickInput = z.infer<typeof hireRequestQuickSchema>;

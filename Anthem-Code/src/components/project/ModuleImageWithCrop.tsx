@@ -1,5 +1,12 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Crop, ImagePlus } from "lucide-react";
+import {
+  endCanvasImageSlotDrag,
+  isCanvasImageSlotDrag,
+  readCanvasImageSlotDrag,
+  writeCanvasImageSlotDrag,
+  type CanvasImageSlotRef,
+} from "@/lib/canvasImageSlotDnD";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -13,6 +20,10 @@ type Props = {
   replaceLabel?: string;
   className?: string;
   imgClassName?: string;
+  /** Enable dragging this image to another canvas slot. */
+  dragSlot?: CanvasImageSlotRef | null;
+  /** Drop another canvas image onto this slot. */
+  onSlotDrop?: (from: CanvasImageSlotRef) => void;
 };
 
 const TOOL_BTN =
@@ -29,13 +40,50 @@ export function ModuleImageWithCrop({
   replaceLabel = "เปลี่ยนภาพ",
   className,
   imgClassName,
+  dragSlot,
+  onSlotDrop,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [dropOver, setDropOver] = useState(false);
   const showToolbar = !disabled && (!!onCrop || !!onReplace);
+  const canDrag = !disabled && !!dragSlot?.url;
+  const canDrop = !disabled && !!onSlotDrop;
 
   return (
-    <div className={cn("group/crop relative w-full overflow-hidden", className)}>
-      <img src={src} alt={alt} className={cn("w-full object-contain", imgClassName)} draggable={false} />
+    <div
+      className={cn(
+        "group/crop relative w-full overflow-hidden",
+        canDrag && "cursor-grab active:cursor-grabbing",
+        dropOver && "ring-2 ring-primary ring-inset",
+        className,
+      )}
+      draggable={canDrag}
+      onDragStart={(e) => {
+        if (!canDrag || !dragSlot) return;
+        e.stopPropagation();
+        writeCanvasImageSlotDrag(e.dataTransfer, dragSlot);
+      }}
+      onDragEnd={() => endCanvasImageSlotDrag()}
+      onDragOver={(e) => {
+        if (!canDrop || !isCanvasImageSlotDrag(e.dataTransfer)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = "move";
+        setDropOver(true);
+      }}
+      onDragLeave={() => setDropOver(false)}
+      onDrop={(e) => {
+        if (!canDrop) return;
+        if (!isCanvasImageSlotDrag(e.dataTransfer)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setDropOver(false);
+        const from = readCanvasImageSlotDrag(e.dataTransfer);
+        endCanvasImageSlotDrag();
+        if (from) onSlotDrop?.(from);
+      }}
+    >
+      <img src={src} alt={alt} className={cn("w-full object-contain pointer-events-none", imgClassName)} draggable={false} />
       {showToolbar ? (
         <div className="absolute right-2 top-2 z-10 flex gap-1 opacity-100 sm:opacity-0 sm:group-hover/crop:opacity-100">
           {onReplace ? (
@@ -48,6 +96,7 @@ export function ModuleImageWithCrop({
                 e.stopPropagation();
                 inputRef.current?.click();
               }}
+              onPointerDown={(e) => e.stopPropagation()}
             >
               <ImagePlus className="h-3.5 w-3.5" />
             </button>
@@ -62,6 +111,7 @@ export function ModuleImageWithCrop({
                 e.stopPropagation();
                 onCrop();
               }}
+              onPointerDown={(e) => e.stopPropagation()}
             >
               <Crop className="h-3.5 w-3.5" />
             </button>

@@ -18,6 +18,9 @@ export function replyPreviewText(msg: ReplyPreviewSource): string {
     }
     return "รูปภาพ";
   }
-  if (msg.content?.startsWith("__APLUS1_OFFER__:")) return "ข้อเสนอราคา";
+  if (msg.content?.includes("__APLUS1_OFFER__")) return "ข้อเสนอราคา";
+  if (msg.content?.includes("__APLUS1_HIRE_FORWARD__")) return "ส่งต่องาน";
+  if (msg.content?.includes("__APLUS1_HIRE_REJECT_CHOICE__")) return "ปฏิเสธคำขอจ้าง";
+  if (msg.content?.includes("__APLUS1_HIRE_CONTINUE_ASK__")) return "ขอคุยรายละเอียดเพิ่มเติม";
   return msg.content?.trim() || "ข้อความ";
 }

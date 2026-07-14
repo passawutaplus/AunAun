@@ -4,8 +4,17 @@
  * Public static routes that are indexable under launch-minimal.
  * Do not list launch-hidden paths (/jobs, /advertise, /community, /s/*, …).
  */
+export const FORUM_CATEGORY_SLUGS = ["announcements", "help", "bug", "idea", "feedback"];
+
 export const STATIC_PATHS = [
   { loc: "/", priority: "1.0", changefreq: "daily", group: "static" },
+  { loc: "/forum", priority: "0.85", changefreq: "daily", group: "static" },
+  ...FORUM_CATEGORY_SLUGS.map((slug) => ({
+    loc: `/forum/c/${slug}`,
+    priority: "0.7",
+    changefreq: "daily",
+    group: "static",
+  })),
   { loc: "/legal/privacy", priority: "0.3", changefreq: "monthly", group: "static" },
   { loc: "/legal/terms", priority: "0.3", changefreq: "monthly", group: "static" },
   { loc: "/legal/cookies", priority: "0.2", changefreq: "monthly", group: "static" },
@@ -46,6 +55,10 @@ export const EXCLUDED_PATHS = [
   "/collections",
   "/api",
   "/reset-password",
+  "/forum/admin",
+  "/forum/new",
+  "/forum/search",
+  "/forum/me",
 ];
 
 /** Catalog project IDs present in seed (0x00–0x45). */

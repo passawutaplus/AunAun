@@ -6,11 +6,11 @@ import {
   Home,
   LifeBuoy,
   Lightbulb,
+  Megaphone,
   MessageCircleHeart,
   Bookmark,
   type LucideIcon,
 } from "lucide-react";
-import { ForumGuidelinesCard } from "@/components/forum/ForumStatusBadge";
 import { forumCategoryTone } from "@/data/forumCategories";
 import { useTrendingForumTopics, type ForumCategory } from "@/hooks/useForum";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Bug,
   Lightbulb,
   MessageCircleHeart,
+  Megaphone,
   Home,
   Bookmark,
 };
@@ -41,15 +42,6 @@ export function ForumSidebar({ categories, className, onNavigate }: Props) {
 
   return (
     <aside className={cn("space-y-6", className)}>
-      <Link
-        to="/"
-        onClick={onNavigate}
-        className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4 text-muted-foreground shrink-0" />
-        กลับฟีดหลัก
-      </Link>
-
       <nav className="space-y-1">
         {nav.map((item) => {
           const Icon = item.icon;
@@ -106,6 +98,19 @@ export function ForumSidebar({ categories, className, onNavigate }: Props) {
             );
           })}
         </nav>
+
+        <div className="mt-3 border-t border-border pt-3 px-3">
+          <Link
+            to="/"
+            onClick={onNavigate}
+            className="group inline-flex items-center gap-2 text-sm font-medium text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 shrink-0 transition-colors group-hover:text-primary" aria-hidden />
+            <span className="border-b border-foreground/80 pb-0.5 transition-colors group-hover:border-primary group-hover:text-primary">
+              กลับฟีดหลัก
+            </span>
+          </Link>
+        </div>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4 space-y-3">
@@ -132,8 +137,6 @@ export function ForumSidebar({ categories, className, onNavigate }: Props) {
           </ul>
         )}
       </div>
-
-      <ForumGuidelinesCard />
     </aside>
   );
 }

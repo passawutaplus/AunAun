@@ -13,6 +13,22 @@ export type ForumTopicStatus =
 
 export type ForumSortTab = "latest" | "popular" | "unanswered";
 
+/** List filter from the filter popover (home + category). */
+export type ForumListFilter = "newest" | "oldest" | "admin" | "mine" | "saved";
+
+export const FORUM_LIST_FILTERS: { id: ForumListFilter; label: string; needsAuth?: boolean }[] = [
+  { id: "oldest", label: "เก่าสุด" },
+  { id: "newest", label: "ใหม่สุด" },
+  { id: "admin", label: "เฉพาะแอดมิน" },
+  { id: "mine", label: "เฉพาะของเรา", needsAuth: true },
+  { id: "saved", label: "ที่บันทึก", needsAuth: true },
+];
+
+export function parseForumListFilter(raw: string | null): ForumListFilter | null {
+  if (!raw) return null;
+  return FORUM_LIST_FILTERS.some((f) => f.id === raw) ? (raw as ForumListFilter) : null;
+}
+
 export const FORUM_STATUS_LABELS: Record<ForumTopicStatus, string> = {
   open: "เปิดอยู่",
   under_review: "กำลังพิจารณา",

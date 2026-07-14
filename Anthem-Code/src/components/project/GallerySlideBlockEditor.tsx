@@ -1,6 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2, Plus } from "lucide-react";
 import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   Carousel,
   CarouselContent,
   CarouselItem,
@@ -16,11 +34,62 @@ type Props = {
   onUploadMany: (files: File[]) => void;
   onReplaceAt?: (index: number, file: File) => void;
   onCropAt?: (index: number, url: string) => void;
+  onReorder?: (urls: string[]) => void;
 };
 
 function pickImageFiles(list: FileList | File[] | null | undefined): File[] {
   if (!list) return [];
   return Array.from(list).filter((f) => /^image\/(jpeg|png|webp)$/i.test(f.type));
+}
+
+function thumbId(index: number) {
+  return `slide-thumb-${index}`;
+}
+
+function SortableThumb({
+  src,
+  index,
+  active,
+  disabled,
+  onSelect,
+}: {
+  src: string;
+  index: number;
+  active: boolean;
+  disabled?: boolean;
+  onSelect: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: thumbId(index),
+    disabled,
+  });
+
+  return (
+    <button
+      ref={setNodeRef}
+      type="button"
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+      onClick={() => {
+        if (!isDragging) onSelect();
+      }}
+      aria-label={`สไลด์ที่ ${index + 1} — ลากเพื่อเรียงลำดับ`}
+      title="จิ้มค้างลากเพื่อสลับตำแหน่ง"
+      className={cn(
+        "h-14 w-20 shrink-0 overflow-hidden rounded-none border-2 transition-all touch-none",
+        "cursor-grab active:cursor-grabbing",
+        active ? "border-primary" : "border-transparent opacity-60 hover:opacity-100",
+        isDragging && "z-20 opacity-100 shadow-lg ring-2 ring-primary/50",
+        disabled && "cursor-default",
+      )}
+      {...attributes}
+      {...listeners}
+    >
+      <img src={src} alt="" className="pointer-events-none h-full w-full object-cover" draggable={false} />
+    </button>
+  );
 }
 
 export function GallerySlideBlockEditor({
@@ -30,11 +99,18 @@ export function GallerySlideBlockEditor({
   onUploadMany,
   onReplaceAt,
   onCropAt,
+  onReorder,
 }: Props) {
   const filled = urls.map((u) => u.trim()).filter(Boolean);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const multiInputRef = useRef<HTMLInputElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   useEffect(() => {
     if (!api) return;
@@ -45,6 +121,19 @@ export function GallerySlideBlockEditor({
       api.off("select", onSelect);
     };
   }, [api]);
+
+  const handleThumbDragEnd = (event: DragEndEvent) => {
+    if (!onReorder || disabled) return;
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = filled.findIndex((_, i) => thumbId(i) === String(active.id));
+    const newIndex = filled.findIndex((_, i) => thumbId(i) === String(over.id));
+    if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return;
+    const next = arrayMove(filled, oldIndex, newIndex);
+    onReorder(next);
+    // Keep preview on the image the user moved (same asset, new index).
+    requestAnimationFrame(() => api?.scrollTo(newIndex));
+  };
 
   if (!filled.length) {
     return (
@@ -124,19 +213,36 @@ export function GallerySlideBlockEditor({
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-0.5">
-        {filled.map((src, i) => (
-          <button
-            key={`${src}-thumb-${i}`}
-            type="button"
-            onClick={() => api?.scrollTo(i)}
-            className={cn(
-              "h-14 w-20 shrink-0 overflow-hidden rounded-none border-2 transition-all",
-              current === i ? "border-primary" : "border-transparent opacity-60 hover:opacity-100",
-            )}
-          >
-            <img src={src} alt="" className="h-full w-full object-cover" draggable={false} />
-          </button>
-        ))}
+        {onReorder && filled.length > 1 && !disabled ? (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleThumbDragEnd}>
+            <SortableContext items={filled.map((_, i) => thumbId(i))} strategy={horizontalListSortingStrategy}>
+              {filled.map((src, i) => (
+                <SortableThumb
+                  key={`${src}-thumb-${i}`}
+                  src={src}
+                  index={i}
+                  active={current === i}
+                  disabled={disabled}
+                  onSelect={() => api?.scrollTo(i)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+        ) : (
+          filled.map((src, i) => (
+            <button
+              key={`${src}-thumb-${i}`}
+              type="button"
+              onClick={() => api?.scrollTo(i)}
+              className={cn(
+                "h-14 w-20 shrink-0 overflow-hidden rounded-none border-2 transition-all",
+                current === i ? "border-primary" : "border-transparent opacity-60 hover:opacity-100",
+              )}
+            >
+              <img src={src} alt="" className="h-full w-full object-cover" draggable={false} />
+            </button>
+          ))
+        )}
         <button
           type="button"
           disabled={disabled || uploading}

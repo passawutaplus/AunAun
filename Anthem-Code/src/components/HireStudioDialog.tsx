@@ -73,15 +73,23 @@ const HireStudioDialog = ({
       openAuth();
       return;
     }
-    const budgetNum = parseMoneyInput(form.budgetAmount) ?? undefined;
+    const budgetMin = parseMoneyInput(form.budgetMin) ?? undefined;
+    const budgetMax = parseMoneyInput(form.budgetMax) ?? undefined;
+    const budgetNum = budgetMin ?? budgetMax;
+    if (!form.deadline.trim()) {
+      toast.error("กรุณาเลือกกำหนดส่งงาน");
+      return;
+    }
     const inviteMessage = buildHireMessage(form, { studio: true });
     if (!inviteMessage) {
       toast.error("กรุณากรอกรายละเอียดงาน");
       return;
     }
     const briefCheck = hireInviteBriefSchema.safeParse({
-      jobType: form.serviceType || form.jobType,
+      jobTypes: [form.serviceType || form.jobType || "project"].filter(Boolean),
       details: form.message,
+      budgetMin,
+      budgetMax,
       budgetAmount: budgetNum,
       deadline: form.deadline,
     });
@@ -94,6 +102,8 @@ const HireStudioDialog = ({
       email: form.email,
       phone: form.phone,
       budgetAmount: budgetNum,
+      budgetMin,
+      budgetMax,
       deadline: form.deadline,
       message: inviteMessage,
     });
@@ -110,9 +120,11 @@ const HireStudioDialog = ({
         email: parsed.data.email,
         phone: parsed.data.phone || null,
         budget_amount: budgetNum ?? null,
+        budget_min: budgetMin ?? null,
+        budget_max: budgetMax ?? null,
         deadline: parsed.data.deadline || null,
         message: buildHireMessage(form, { studio: true }),
-      });
+      } as never);
       void supabase.functions.invoke("notify-hire-request", {
         body: { request_id: requestId },
       });

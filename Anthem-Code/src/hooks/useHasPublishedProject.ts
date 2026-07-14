@@ -27,5 +27,6 @@ export function useShowFirstPostLabel(userId: string | undefined) {
   const { data: hasPublishedProject } = useHasPublishedProject(userId);
   if (FORCE_SHOW_FIRST_POST_LABEL) return true;
   if (!userId) return true;
-  return hasPublishedProject === false;
+  // Keep CTA visible while loading — only hide after we know they published.
+  return hasPublishedProject !== true;
 }

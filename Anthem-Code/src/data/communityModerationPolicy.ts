@@ -95,7 +95,7 @@ export const PROFANITY_CATEGORY_LABELS: Record<ProfanityCategory, string> = {
 
 export const COMMUNITY_GUIDELINES_PATH = "/legal/community";
 
-export const COMMUNITY_GUIDELINES_UPDATED_AT = "10 กรกฎาคม 2569";
+export const COMMUNITY_GUIDELINES_UPDATED_AT = "14 กรกฎาคม 2569";
 
 export const COMMUNITY_REPORT_TARGETS = [
   { id: "community_post", label: "โพสต์ชุมชน" },
@@ -106,10 +106,13 @@ export const COMMUNITY_REPORT_TARGETS = [
   { id: "message", label: "ข้อความแชท" },
   { id: "job", label: "ประกาศจ้างงาน" },
   { id: "studio", label: "สตูดิโอ" },
+  { id: "forum_topic", label: "กระทู้ฟอรัม" },
+  { id: "forum_reply", label: "ความเห็นในฟอรัม" },
 ] as const;
 
 export const COMMUNITY_REPORT_REASONS = [
   { id: "spam", label: "สแปม / โฆษณา" },
+  { id: "job_spam", label: "ลงหางาน / ประกาศจ้างในฟอรัม" },
   { id: "harassment", label: "คุกคาม / Hate speech" },
   { id: "nsfw", label: "เนื้อหา 18+ / ไม่เหมาะสม" },
   { id: "copyright", label: "ละเมิดลิขสิทธิ์" },

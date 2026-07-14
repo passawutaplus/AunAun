@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Bookmark, Heart } from "lucide-react";
+import { Bookmark, Heart, Megaphone } from "lucide-react";
 import { ForumStatusBadge } from "@/components/forum/ForumStatusBadge";
 import { ForumReplyList } from "@/components/forum/ForumReplyList";
 import { ForumRankChip, ForumUserAvatar } from "@/components/forum/ForumUserAvatar";
@@ -15,6 +15,7 @@ import {
   useToggleForumLike,
 } from "@/hooks/useForum";
 import { useAuth } from "@/hooks/useAuth";
+import { isAnnouncementsSlug } from "@/data/forumCategories";
 import { formatRelativeTh, type ForumTopicStatus } from "@/lib/forum";
 import { cn } from "@/lib/utils";
 import { ForumAttachmentList } from "@/components/forum/ForumAttachmentList";
@@ -50,6 +51,7 @@ export default function ForumTopicPage() {
   }
 
   const name = topic.profile?.display_name || "สมาชิก";
+  const isAnnounce = !!topic.is_announcement || isAnnouncementsSlug(topic.category?.slug);
 
   return (
     <>
@@ -70,7 +72,12 @@ export default function ForumTopicPage() {
       <article className="rounded-xl border border-border bg-card p-5 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="text-xl font-bold tracking-tight leading-snug inline-flex flex-wrap items-center gap-2">
-            {topic.is_pinned ? (
+            {isAnnounce ? (
+              <span className="inline-flex items-center gap-1 rounded-md border border-orange-300/60 bg-orange-50 text-orange-800 dark:bg-orange-950/40 dark:text-orange-200 px-2 py-0.5 text-xs font-medium">
+                <Megaphone className="h-3.5 w-3.5" />
+                ประกาศจากทีม
+              </span>
+            ) : topic.is_pinned ? (
               <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                 ปักหมุด
               </span>

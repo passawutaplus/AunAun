@@ -6,9 +6,11 @@ import { cn } from "@/lib/utils";
 type Props = {
   attachments: ForumAttachment[];
   className?: string;
+  /** Topic detail: full-width images. Compact grid for denser contexts. */
+  layout?: "full" | "grid";
 };
 
-export function ForumAttachmentList({ attachments, className }: Props) {
+export function ForumAttachmentList({ attachments, className, layout = "full" }: Props) {
   const visible = attachments.filter((a) => a.scan_status === "clean" && a.public_url);
   if (!visible.length) return null;
 
@@ -19,19 +21,39 @@ export function ForumAttachmentList({ attachments, className }: Props) {
   return (
     <div className={cn("space-y-3", className)}>
       {images.length ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {images.map((a) => (
-            <a
-              key={a.id}
-              href={a.public_url!}
-              target="_blank"
-              rel="noreferrer"
-              className="block overflow-hidden rounded-lg border border-border bg-muted/40 aspect-video"
-            >
-              <img src={a.public_url!} alt={a.file_name} className="h-full w-full object-cover" />
-            </a>
-          ))}
-        </div>
+        layout === "grid" ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {images.map((a) => (
+              <a
+                key={a.id}
+                href={a.public_url!}
+                target="_blank"
+                rel="noreferrer"
+                className="block overflow-hidden rounded-lg border border-border bg-muted/40 aspect-video"
+              >
+                <img src={a.public_url!} alt={a.file_name} className="h-full w-full object-cover" />
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {images.map((a) => (
+              <a
+                key={a.id}
+                href={a.public_url!}
+                target="_blank"
+                rel="noreferrer"
+                className="block overflow-hidden rounded-xl border border-border bg-muted/30"
+              >
+                <img
+                  src={a.public_url!}
+                  alt={a.file_name}
+                  className="w-full h-auto max-h-[min(85vh,960px)] object-contain"
+                />
+              </a>
+            ))}
+          </div>
+        )
       ) : null}
 
       {videos.map((a) => (
@@ -39,7 +61,7 @@ export function ForumAttachmentList({ attachments, className }: Props) {
           key={a.id}
           src={a.public_url!}
           controls
-          className="w-full max-h-80 rounded-lg border border-border bg-black"
+          className="w-full max-h-[min(85vh,720px)] rounded-xl border border-border bg-black"
           preload="metadata"
         >
           <track kind="captions" />

@@ -12,7 +12,7 @@ import { JobMatchList } from "@/components/notifications/JobMatchList";
 import { useAdApplicationNotifications } from "@/hooks/useAds";
 import { useAuth } from "@/hooks/useAuth";
 import { useUpdateCollabStatus } from "@/hooks/useCollabRequests";
-import { useAcceptRequest, useFindConversationByRequest } from "@/hooks/useChat";
+import { useAcceptRequest, useFindConversationByRequest, useOpenHireCollabChat } from "@/hooks/useChat";
 import { useNotifications as useInbox } from "@/core/notifications";
 import InboxList from "@/components/notifications/InboxList";
 import FollowNotificationsList from "@/components/notifications/FollowNotificationsList";
@@ -105,6 +105,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
   const { data: adNotifs = [], isLoading: lad } = useAdApplicationNotifications();
   const createHireEscrow = useCreateEscrowFromHire();
   const accept = useAcceptRequest();
+  const openHireCollabChat = useOpenHireCollabChat();
   const findConv = useFindConversationByRequest();
 
   const go = (path: string) => {
@@ -116,14 +117,30 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
     try {
       let convId = h.conversationId ?? (await findConv("hire", h.id));
       if (!convId && h.clientId && h.freelancerId) {
-        convId = await accept.mutateAsync({
-          kind: "hire",
-          requestId: h.id,
-          clientId: h.clientId,
-          freelancerId: h.freelancerId,
-          projectId: h.projectId,
-          projectTitle: h.projectTitle,
-        });
+        const pending = h.status === "ใหม่" || h.status === "ที่ต้องตอบ";
+        if (pending) {
+          convId = await openHireCollabChat.mutateAsync({
+            kind: "hire",
+            requestId: h.id,
+            clientId: h.clientId,
+            freelancerId: h.freelancerId,
+            projectId: h.projectId,
+            projectTitle: h.projectTitle,
+            contextMessage: h.forwardedFromRequestId
+              ? "สวัสดีครับ/ค่ะ — สนใจคุยต่อจากงานที่ถูกส่งต่อมา"
+              : "เริ่มสนทนางานจ้าง — คุยรายละเอียดได้เลย",
+            skipStatusUpdate: true,
+          });
+        } else {
+          convId = await accept.mutateAsync({
+            kind: "hire",
+            requestId: h.id,
+            clientId: h.clientId,
+            freelancerId: h.freelancerId,
+            projectId: h.projectId,
+            projectTitle: h.projectTitle,
+          });
+        }
       }
       if (convId) go(`/chat/${convId}`);
       else toast.error("ไม่พบห้องสนทนา");
@@ -273,7 +290,15 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                 </div>
                 <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-secondary text-foreground/80">{h.status}</span>
               </div>
+              {h.forwardedFromRequestId ? (
+                <p className="text-xs font-medium text-[hsl(var(--chat-hire))] mb-1">
+                  เพื่อนส่งต่องานมาให้คุณ
+                </p>
+              ) : null}
               <p className="text-sm text-foreground mb-1">สนใจจ้าง <span className="font-medium">"{h.projectTitle}"</span></p>
+              {h.forwardNote?.trim() ? (
+                <p className="text-xs text-muted-foreground line-clamp-3 mb-1">โน้ตจากเพื่อน: {h.forwardNote.trim()}</p>
+              ) : null}
               {h.message && <p className="text-xs text-muted-foreground line-clamp-3">{h.message}</p>}
               <div className="flex items-center justify-between mt-2 text-[11px] text-muted-foreground">
                 <span>{timeAgo(h.createdAt)}</span>
@@ -285,7 +310,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                     type="button"
                     size="sm"
                     className="w-full bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
-                    disabled={accept.isPending}
+                    disabled={accept.isPending || openHireCollabChat.isPending}
                     onClick={() => void openHireChat(h)}
                   >
                     <MessageCircle className="w-3.5 h-3.5 mr-1" />
@@ -313,7 +338,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                   type="button"
                   size="sm"
                   className="w-full mt-3 bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
-                  disabled={accept.isPending}
+                  disabled={accept.isPending || openHireCollabChat.isPending}
                   onClick={() => void openHireChat(h)}
                 >
                   <MessageCircle className="w-3.5 h-3.5 mr-1" />

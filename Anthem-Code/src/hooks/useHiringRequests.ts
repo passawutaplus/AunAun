@@ -141,3 +141,103 @@ export const useUpdateHireStatus = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["hiring_requests"] }),
   });
 };
+
+/** Clone a hire request to another freelancer (forward). Multiple people OK — one submit each. */
+export const useForwardHireRequest = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      request: HiringRow;
+      toUserId: string;
+      note?: string | null;
+      /** Client-facing reject reason id (same as decline reasons). */
+      rejectReason?: string | null;
+      /** Optional note stored on original request (often client reason text). */
+      rejectNote?: string | null;
+    }) => {
+      const src = input.request;
+      if (input.toUserId === src.freelancer_id) {
+        throw new Error("ส่งต่อให้ตัวเองไม่ได้");
+      }
+      if (input.toUserId === src.client_id) {
+        throw new Error("ส่งต่อให้ผู้จ้างไม่ได้");
+      }
+
+      const { data: dup } = await supabase
+        .from("hiring_requests")
+        .select("id")
+        .eq("forwarded_from_request_id", src.id)
+        .eq("freelancer_id", input.toUserId)
+        .maybeSingle();
+      if (dup?.id) {
+        throw new Error("ส่งต่องานนี้ให้คนนี้ไปแล้ว");
+      }
+
+      const friendNote = input.note?.trim() || null;
+
+      const { data: created, error: createErr } = await supabase
+        .from("hiring_requests")
+        .insert({
+          freelancer_id: input.toUserId,
+          client_id: src.client_id,
+          target_type: "freelancer",
+          project_id: src.project_id,
+          project_title: src.project_title,
+          client_name: src.client_name,
+          email: src.email,
+          phone: src.phone,
+          budget_amount: src.budget_amount,
+          budget_min: (src as { budget_min?: number | null }).budget_min ?? null,
+          budget_max: (src as { budget_max?: number | null }).budget_max ?? null,
+          deadline: src.deadline,
+          message: src.message,
+          job_type: (src as { job_type?: string | null }).job_type ?? null,
+          job_type_other: (src as { job_type_other?: string | null }).job_type_other ?? null,
+          attachment_urls: src.attachment_urls,
+          forwarded_from_request_id: src.id,
+          forward_note: friendNote,
+          status: "ใหม่",
+        } as never)
+        .select("id")
+        .single();
+      if (createErr) throw createErr;
+
+      const alreadyForwarded = !!(src as { forwarded_to_user_id?: string | null }).forwarded_to_user_id;
+      const srcPatch: Record<string, unknown> = {
+        forwarded_to_user_id: input.toUserId,
+      };
+      if (!alreadyForwarded && src.status !== "ปฏิเสธ" && src.status !== "ปิดแล้ว") {
+        srcPatch.status = "ปฏิเสธ";
+        srcPatch.reject_reason = input.rejectReason ?? "forwarded";
+        srcPatch.reject_note = input.rejectNote ?? null;
+      }
+
+      const { error: updErr } = await supabase
+        .from("hiring_requests")
+        .update(srcPatch as never)
+        .eq("id", src.id);
+      if (updErr) throw updErr;
+
+      try {
+        await supabase.rpc("notify_hire_forwarded" as never, {
+          p_to_user_id: input.toUserId,
+          p_new_request_id: created.id,
+          p_note: friendNote,
+          p_project_title: src.project_title ?? null,
+        } as never);
+      } catch {
+        /* notification is best-effort */
+      }
+
+      return {
+        newRequestId: created.id as string,
+        toUserId: input.toUserId,
+        fromRequestId: src.id,
+      };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["hiring_requests"] });
+      qc.invalidateQueries({ queryKey: ["notif-hire"] });
+    },
+  });
+};

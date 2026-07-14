@@ -30,6 +30,7 @@ export type Conversation = ConversationRow & {
   conversation_type?: ConversationType | string | null;
   title?: string | null;
   created_by?: string | null;
+  group_tag?: string | null;
 };
 
 export type Message = MessageRow & {
@@ -44,6 +45,12 @@ export type ConversationPin = {
   user_id: string;
   conversation_id: string;
   pinned_at: string;
+};
+
+export type ConversationHide = {
+  user_id: string;
+  conversation_id: string;
+  hidden_at: string;
 };
 
 const UNSEND_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -94,6 +101,13 @@ export const useConversations = (kind?: ChatKind) => {
         .eq("user_id", user!.id);
       if (memErr && !String(memErr.message).includes("does not exist")) throw memErr;
 
+      const { data: hides, error: hideErr } = await supabase
+        .from("conversation_hides")
+        .select("conversation_id")
+        .eq("user_id", user!.id);
+      if (hideErr && !isOptionalQueryError(hideErr)) throw hideErr;
+      const hiddenIds = new Set((hides ?? []).map((h) => h.conversation_id));
+
       const groupIds = (memberships ?? []).map((m) => m.conversation_id);
       let groups: Conversation[] = [];
       if (groupIds.length > 0) {
@@ -120,9 +134,11 @@ export const useConversations = (kind?: ChatKind) => {
       [...(direct ?? []), ...groups, ...(ownedGroups ?? [])].forEach((c) =>
         merged.set(c.id, c as Conversation),
       );
-      let list = Array.from(merged.values()).sort(
-        (a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime(),
-      );
+      let list = Array.from(merged.values())
+        .filter((c) => !hiddenIds.has(c.id))
+        .sort(
+          (a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime(),
+        );
 
       if (kind === "group") list = list.filter((c) => isGroupConversation(c));
       else if (kind) list = list.filter((c) => !isGroupConversation(c) && c.kind === kind);
@@ -149,6 +165,11 @@ export const useConversations = (kind?: ChatKind) => {
       .on(
         "postgres_changes",
         { event: "*", schema: "shared", table: "conversation_members", filter: `user_id=eq.${user.id}` },
+        invalidateInbox,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "shared", table: "conversation_hides", filter: `user_id=eq.${user.id}` },
         invalidateInbox,
       )
       .on(
@@ -419,14 +440,47 @@ export const useConversationPins = () => {
   return { ...query, togglePin };
 };
 
+/* ───────────────── Hide / delete from sidebar ───────────────── */
+
+export const useHideConversation = () => {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (conversationId: string) => {
+      if (!user?.id) throw new Error("ต้องเข้าสู่ระบบ");
+      const { error } = await supabase.from("conversation_hides").upsert({
+        user_id: user.id,
+        conversation_id: conversationId,
+        hidden_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+      // drop pin if any — hidden chats shouldn't stay pinned
+      await supabase.from("conversation_pins").delete().eq("user_id", user.id).eq("conversation_id", conversationId);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["conversations", user?.id] });
+      qc.invalidateQueries({ queryKey: ["conversation-pins", user?.id] });
+      qc.invalidateQueries({ queryKey: ["chat-inbox-badge", user?.id] });
+    },
+  });
+};
+
 /* ───────────────── Group chat ───────────────── */
 
-function mapGroupChatRpcError(error: { message?: string }): string {
+function mapGroupChatRpcError(error: { message?: string }, fallback = "สร้างกลุ่มไม่สำเร็จ"): string {
   const msg = error.message ?? "";
   if (msg.includes("UNAUTHORIZED")) return "ต้องเข้าสู่ระบบ";
   if (msg.includes("INVALID_TITLE")) return "ชื่อกลุ่มต้องมี 1–100 ตัวอักษร";
   if (msg.includes("NEED_OTHER_MEMBERS")) return "เลือกสมาชิกอย่างน้อย 1 คน";
   if (msg.includes("TOO_MANY_MEMBERS")) return "สมาชิกเกินจำกัด (สูงสุด 50 คน)";
+  if (msg.includes("NOT_A_MEMBER")) return "คุณไม่ได้อยู่ในกลุ่มนี้";
+  if (msg.includes("NOT_A_GROUP")) return "เพิ่มสมาชิกได้เฉพาะแชทกลุ่ม";
+  if (msg.includes("NEED_NEW_MEMBERS")) return "เลือกเพื่อนอย่างน้อย 1 คน";
+  if (msg.includes("INVALID_GROUP_TAG")) return "แท็กกลุ่มไม่ถูกต้อง";
+  if (msg.includes("NOT_MUTUAL_FOLLOW") || msg.includes("NOT_FOLLOWING")) {
+    return "เพิ่มได้เฉพาะคนที่คุณติดตาม";
+  }
   if (
     msg.includes("MEMBERSHIP_INSERT_FAILED") ||
     msg.includes("CREATOR_NOT_MEMBER") ||
@@ -434,7 +488,7 @@ function mapGroupChatRpcError(error: { message?: string }): string {
   ) {
     return "สร้างกลุ่มไม่สมบูรณ์ — ยังเปิดห้องแชทไม่ได้ ลองใหม่อีกครั้ง";
   }
-  return "สร้างกลุ่มไม่สำเร็จ";
+  return fallback;
 }
 
 async function verifyConversationReadable(conversationId: string): Promise<void> {
@@ -451,12 +505,21 @@ export const useCreateGroupConversation = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ title, memberIds }: { title: string; memberIds: string[] }) => {
+    mutationFn: async ({
+      title,
+      memberIds,
+      groupTag,
+    }: {
+      title: string;
+      memberIds: string[];
+      groupTag?: "hire" | "collab" | null;
+    }) => {
       if (!user?.id) throw new Error("ต้องเข้าสู่ระบบ");
       const uniqueMembers = Array.from(new Set(memberIds.filter((id) => id !== user.id)));
       const { data, error } = await supabase.rpc("create_group_conversation" as never, {
         p_title: title.trim(),
         p_member_ids: uniqueMembers,
+        p_group_tag: groupTag ?? null,
       } as never);
       if (error) throw new Error(mapGroupChatRpcError(error));
       const convId = data as string;
@@ -481,6 +544,70 @@ export const useCreateGroupConversation = () => {
   });
 };
 
+/** Update group title / purpose tag. */
+export const useUpdateGroupSettings = () => {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      conversationId,
+      title,
+      groupTag,
+      clearGroupTag,
+    }: {
+      conversationId: string;
+      title?: string;
+      groupTag?: "hire" | "collab" | null;
+      clearGroupTag?: boolean;
+    }) => {
+      if (!user?.id) throw new Error("ต้องเข้าสู่ระบบ");
+      const { error } = await supabase.rpc("update_group_conversation_settings" as never, {
+        p_conversation_id: conversationId,
+        p_title: title?.trim() || null,
+        p_group_tag: clearGroupTag ? null : groupTag ?? null,
+        p_clear_group_tag: !!clearGroupTag || groupTag === null,
+      } as never);
+      if (error) throw new Error(mapGroupChatRpcError(error, "บันทึกตั้งค่ากลุ่มไม่สำเร็จ"));
+      return conversationId;
+    },
+    onSuccess: (conversationId) => {
+      void qc.invalidateQueries({ queryKey: ["conversations", user?.id] });
+      void qc.invalidateQueries({ queryKey: ["conversation", user?.id, conversationId] });
+    },
+  });
+};
+
+/** Any group member can add people they follow. */
+export const useAddGroupMembers = () => {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      conversationId,
+      memberIds,
+    }: {
+      conversationId: string;
+      memberIds: string[];
+    }) => {
+      if (!user?.id) throw new Error("ต้องเข้าสู่ระบบ");
+      const unique = Array.from(new Set(memberIds.filter((id) => id !== user.id)));
+      if (unique.length === 0) throw new Error("เลือกเพื่อนอย่างน้อย 1 คน");
+      const { error } = await supabase.rpc("add_group_conversation_members" as never, {
+        p_conversation_id: conversationId,
+        p_member_ids: unique,
+      } as never);
+      if (error) throw new Error(mapGroupChatRpcError(error, "เพิ่มสมาชิกไม่สำเร็จ"));
+      return conversationId;
+    },
+    onSuccess: (conversationId) => {
+      void qc.invalidateQueries({ queryKey: ["conversations", user?.id] });
+      void qc.invalidateQueries({ queryKey: ["group-member-ids", conversationId] });
+      void qc.invalidateQueries({ queryKey: ["group-panel-members", conversationId] });
+      void qc.invalidateQueries({ queryKey: ["conversation", user?.id, conversationId] });
+    },
+  });
+};
+
 /* ───────────────── Open hire/collab chat (instant, no accept gate) ───────────────── */
 
 export type OpenHireCollabChatArgs = {
@@ -493,6 +620,8 @@ export type OpenHireCollabChatArgs = {
   contextMessage: string;
   /** Legacy inbox: mark hire as ตอบรับ instead of ติดต่อแล้ว */
   legacyAccept?: boolean;
+  /** Open chat without changing request status (forwarded hire awaiting friend accept/reject). */
+  skipStatusUpdate?: boolean;
 };
 
 async function findConversationByRequest(kind: ChatKind, requestId: string): Promise<string | null> {
@@ -692,21 +821,23 @@ async function seedInstantChatMessages(
 }
 
 export async function openHireCollabChat(args: OpenHireCollabChatArgs): Promise<string> {
-  const { kind, requestId, legacyAccept } = args;
+  const { kind, requestId, legacyAccept, skipStatusUpdate } = args;
 
-  if (kind === "hire") {
-    const status = legacyAccept ? "ตอบรับ" : "ติดต่อแล้ว";
-    const { error } = await supabase
-      .from("hiring_requests")
-      .update({ status: status as never })
-      .eq("id", requestId);
-    if (error) throw error;
-  } else {
-    const { error } = await supabase
-      .from("collab_requests")
-      .update({ status: "accepted" as never })
-      .eq("id", requestId);
-    if (error) throw error;
+  if (!skipStatusUpdate) {
+    if (kind === "hire") {
+      const status = legacyAccept ? "ตอบรับ" : "ติดต่อแล้ว";
+      const { error } = await supabase
+        .from("hiring_requests")
+        .update({ status: status as never })
+        .eq("id", requestId);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from("collab_requests")
+        .update({ status: "accepted" as never })
+        .eq("id", requestId);
+      if (error) throw error;
+    }
   }
 
   const convId = await ensureConversation(args);
@@ -829,9 +960,36 @@ export const useAcceptStudioHireRequest = () => {
 export const useRejectRequest = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ kind, requestId }: { kind: ChatKind; requestId: string }) => {
+    mutationFn: async ({
+      kind,
+      requestId,
+      reason,
+      note,
+      status,
+      postRejectChat,
+    }: {
+      kind: ChatKind;
+      requestId: string;
+      reason?: string | null;
+      note?: string | null;
+      /** Hire only — default ปฏิเสธ; soft-decline can use ติดต่อแล้ว */
+      status?: string;
+      /** Hire only — post-reject chat gate */
+      postRejectChat?: "awaiting_client" | "awaiting_freelancer" | "open" | "locked" | null;
+    }) => {
       if (kind === "hire") {
-        const { error } = await supabase.from("hiring_requests").update({ status: "ปฏิเสธ" as never }).eq("id", requestId);
+        const patch: Record<string, unknown> = {
+          status: status ?? "ปฏิเสธ",
+          reject_reason: reason ?? null,
+          reject_note: note ?? null,
+        };
+        if (postRejectChat !== undefined) {
+          patch.post_reject_chat = postRejectChat;
+        }
+        const { error } = await supabase
+          .from("hiring_requests")
+          .update(patch as never)
+          .eq("id", requestId);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("collab_requests").update({ status: "declined" as never }).eq("id", requestId);
@@ -841,6 +999,8 @@ export const useRejectRequest = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["hiring_requests"] });
       qc.invalidateQueries({ queryKey: ["collab-requests"] });
+      qc.invalidateQueries({ queryKey: ["chat-hire-forward-src"] });
+      qc.invalidateQueries({ queryKey: ["chat-hire-meta"] });
     },
   });
 };

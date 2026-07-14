@@ -6,7 +6,11 @@ import {
   FileText,
   Handshake,
   Info,
+  Megaphone,
+  Settings2,
+  Share2,
   Users,
+  X,
 } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { BackButton } from "@/components/ui/BackButton";
@@ -16,6 +20,10 @@ import { useSubscription } from "@/core/subscription/useSubscription";
 import { canOpenStudioCombinedQuote, canShowStudioQuoteUpsell, openStudioQuotation } from "@/lib/studioQuotationHandoff";
 import { StudioQuoteUpsellDialog } from "@/components/studio/StudioQuoteUpsellDialog";
 import { ChatOfferDialog } from "@/components/chat/ChatOfferDialog";
+import HireForwardInChatDialog from "@/components/chat/HireForwardInChatDialog";
+import CreateGroupDialog from "@/components/chat/CreateGroupDialog";
+import GroupSettingsDialog from "@/components/chat/GroupSettingsDialog";
+import { groupTagLabel, normalizeGroupTag } from "@/lib/groupChatTag";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublicFrom } from "@/lib/profileAccess";
 import { Button } from "@/components/ui/button";
@@ -25,12 +33,29 @@ import {
   isGroupConversation,
   isStudioConversation,
   otherParticipantId,
+  useAcceptRequest,
+  useRejectRequest,
+  useSendMessage,
   useUnsendMessage,
   type Conversation,
   type Message,
 } from "@/hooks/useChat";
+import { useForwardHireRequest, type HiringRow } from "@/hooks/useHiringRequests";
+import { encodeHireForwardMessage } from "@/lib/hireForwardChat";
+import { hireForwardClientNotice, hireRejectReasonLabel } from "@/lib/hireBrief";
+import {
+  encodeHireContinueAskMessage,
+  encodeHireRejectChoiceMessage,
+  HIRE_CLIENT_ACCEPT_REJECT_TEXT,
+  HIRE_FREELANCER_ACCEPT_CONTINUE_TEXT,
+  HIRE_FREELANCER_DECLINE_CONTINUE_TEXT,
+  hireChatLockHint,
+  isHireChatComposerLocked,
+  type HirePostRejectChat,
+} from "@/lib/hireRejectChat";
 import MessageBubble, { DateSeparator } from "@/components/chat/MessageBubble";
 import ChatComposer from "@/components/chat/ChatComposer";
+import HireRejectDialog from "@/components/hiring/HireRejectDialog";
 import ReportTrigger from "@/components/report/ReportTrigger";
 import { tierLabel } from "@/lib/tierMembership";
 import type { PlanId } from "@/data/plans";
@@ -38,6 +63,9 @@ import { isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import BriefcaseIcon from "../icons/BriefcaseIcon";
+import type { HireInviteActions } from "@/components/chat/HireInviteCard";
+import type { HireRejectChoiceActions } from "@/components/chat/HireRejectChoiceCard";
+import type { HireContinueAskActions } from "@/components/chat/HireContinueAskCard";
 
 const HIRE_QUICK_BASE = [
   "ขอรายละเอียดเพิ่มเติม",
@@ -85,13 +113,380 @@ const ChatThreadView = ({
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const unsend = useUnsendMessage();
+  const sendMessage = useSendMessage();
+  const acceptHire = useAcceptRequest();
+  const rejectHire = useRejectRequest();
+  const forwardHire = useForwardHireRequest();
   const { tier } = useSubscription();
 
   const isGroup = isGroupConversation(conv);
   const isStudio = isStudioConversation(conv);
   const isHire = conv.kind === "hire";
+  const groupTag = normalizeGroupTag(conv.group_tag);
   const isStudioHire = isHire && !!conv.studio_id;
   const hasStudioQuoteContext = isStudio || isStudioHire;
+  const [forwardOpen, setForwardOpen] = useState(false);
+  const [inviteGroupOpen, setInviteGroupOpen] = useState(false);
+  const [groupSettingsOpen, setGroupSettingsOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [announced, setAnnounced] = useState<{
+    messageId: string | null;
+    text: string | null;
+  }>(() => ({
+    messageId: (conv as { announced_message_id?: string | null }).announced_message_id ?? null,
+    text: (conv as { announced_text?: string | null }).announced_text ?? null,
+  }));
+  const isFreelancer = !!user?.id && user.id === conv.freelancer_id;
+  const isClient = !!user?.id && user.id === conv.client_id;
+
+  const { data: hireRequestRow = null } = useQuery({
+    queryKey: ["chat-hire-forward-src", conv.request_id],
+    enabled: !!conv.request_id && isHire,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("hiring_requests")
+        .select("*")
+        .eq("id", conv.request_id!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as HiringRow | null;
+    },
+  });
+  const alreadyForwarded = !!(hireRequestRow as { forwarded_to_user_id?: string | null } | null)
+    ?.forwarded_to_user_id;
+  const hireStatus = hireRequestRow?.status ?? null;
+  const hireRejectReason = (hireRequestRow as { reject_reason?: string | null } | null)?.reject_reason;
+  const postRejectChat = (hireRequestRow as { post_reject_chat?: HirePostRejectChat | null } | null)
+    ?.post_reject_chat ?? null;
+
+  useEffect(() => {
+    setAnnounced({
+      messageId: (conv as { announced_message_id?: string | null }).announced_message_id ?? null,
+      text: (conv as { announced_text?: string | null }).announced_text ?? null,
+    });
+  }, [conv]);
+
+  const announceMessage = async (message: Message, previewText: string) => {
+    const text = previewText.trim().slice(0, 280) || "ข้อความที่ประกาศ";
+    try {
+      const { error } = await supabase
+        .from("conversations")
+        .update({
+          announced_message_id: message.id,
+          announced_text: text,
+        } as never)
+        .eq("id", conv.id);
+      if (error) throw error;
+      setAnnounced({ messageId: message.id, text });
+      toast.success("ปักประกาศไว้ที่หัวแชทแล้ว");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "ประกาศไม่สำเร็จ");
+    }
+  };
+
+  const clearAnnouncement = async () => {
+    try {
+      const { error } = await supabase
+        .from("conversations")
+        .update({
+          announced_message_id: null,
+          announced_text: null,
+        } as never)
+        .eq("id", conv.id);
+      if (error) throw error;
+      setAnnounced({ messageId: null, text: null });
+      toast.success("เอาประกาศออกแล้ว");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "เอาประกาศออกไม่สำเร็จ");
+    }
+  };
+
+  const hirePendingResponse =
+    isHire &&
+    isFreelancer &&
+    !!hireRequestRow &&
+    !alreadyForwarded &&
+    !hireRejectReason &&
+    hireStatus !== "ตอบรับ" &&
+    hireStatus !== "ปฏิเสธ" &&
+    hireStatus !== "ปิดแล้ว";
+  const hireRespondBusy =
+    acceptHire.isPending || rejectHire.isPending || forwardHire.isPending || sendMessage.isPending;
+  const composerLockedHint =
+    isHire && isHireChatComposerLocked(postRejectChat) ? hireChatLockHint(postRejectChat) : null;
+
+  const otherId = otherParticipantId(conv, user?.id ?? "");
+  const { data: other } = useQuery({
+    queryKey: ["chat-other", otherId],
+    enabled: !!otherId && !isGroup,
+    queryFn: async () => {
+      const { data } = await profilesPublicFrom()
+        .select("user_id, display_name, avatar_url, role, username, subscription_tier")
+        .eq("user_id", otherId!)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const inviteLockedMembers = useMemo(() => {
+    if (!otherId) return [];
+    return [
+      {
+        id: otherId,
+        display_name: other?.display_name || other?.username || "คู่สนทนา",
+        avatar_url: other?.avatar_url ?? null,
+      },
+    ];
+  }, [otherId, other?.display_name, other?.username, other?.avatar_url]);
+
+  const hirePendingForClient =
+    isHire &&
+    isClient &&
+    !!hireRequestRow &&
+    !alreadyForwarded &&
+    !hireRejectReason &&
+    hireStatus !== "ตอบรับ" &&
+    hireStatus !== "ปฏิเสธ" &&
+    hireStatus !== "ปิดแล้ว";
+
+  const hireInviteActions: HireInviteActions | null = useMemo(() => {
+    if (!isHire || !hireRequestRow) return null;
+    if (hirePendingResponse) {
+      return {
+        canRespond: true,
+        busy: hireRespondBusy,
+        onAccept: () => {
+          void (async () => {
+            if (!conv.request_id || !conv.client_id || !conv.freelancer_id) return;
+            try {
+              await acceptHire.mutateAsync({
+                kind: "hire",
+                requestId: conv.request_id,
+                clientId: conv.client_id,
+                freelancerId: conv.freelancer_id,
+                projectId: conv.project_id ?? null,
+                projectTitle: conv.project_title ?? hireRequestRow.project_title,
+              });
+              try {
+                await sendMessage.mutateAsync({
+                  conversationId: conv.id,
+                  content: "ขอบคุณครับ/ค่ะ ยินดีรับงานและคุยรายละเอียดต่อได้เลย",
+                });
+              } catch {
+                /* accept already succeeded */
+              }
+              void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", conv.request_id] });
+              void qc.invalidateQueries({ queryKey: ["chat-hire-meta", conv.request_id] });
+              toast.success("ตอบรับแล้ว — คุยต่อได้เลย");
+            } catch (e: unknown) {
+              toast.error(e instanceof Error ? e.message : "ตอบรับไม่สำเร็จ");
+            }
+          })();
+        },
+        onDecline: () => setRejectOpen(true),
+      };
+    }
+    if (hirePendingForClient) {
+      const waitingName =
+        other?.username?.trim() ||
+        other?.display_name?.trim() ||
+        "ครีเอเตอร์";
+      return {
+        canRespond: false,
+        statusHint: `รอ ${waitingName} ตอบกลับ / สามารถแชทพูดคุยต่อได้`,
+        onAccept: () => {},
+        onDecline: () => {},
+      };
+    }
+    if (!isFreelancer) return null;
+    if (hireStatus === "ตอบรับ") {
+      return { canRespond: false, statusHint: "ตอบรับแล้ว — คุยรายละเอียดต่อได้", onAccept: () => {}, onDecline: () => {} };
+    }
+    if (hireRejectReason === "busy_but_chat" || postRejectChat === "open") {
+      return {
+        canRespond: false,
+        statusHint: "ยังไม่พร้อมทำตอนนี้ — คุยรายละเอียดต่อได้",
+        onAccept: () => {},
+        onDecline: () => {},
+      };
+    }
+    // Rejected / forwarded: keep invite card clean (reason lives on reject-choice card).
+    return null;
+  }, [
+    alreadyForwarded,
+    acceptHire,
+    conv.client_id,
+    conv.freelancer_id,
+    conv.id,
+    conv.project_id,
+    conv.project_title,
+    conv.request_id,
+    hirePendingForClient,
+    hirePendingResponse,
+    hireRejectReason,
+    hireRequestRow,
+    hireRespondBusy,
+    hireStatus,
+    isFreelancer,
+    isHire,
+    other?.display_name,
+    other?.username,
+    postRejectChat,
+    qc,
+    sendMessage,
+  ]);
+
+  const hireRejectChoiceActions: HireRejectChoiceActions | null = useMemo(() => {
+    if (!isHire || !hireRequestRow) return null;
+    if (postRejectChat === "awaiting_client" && isClient) {
+      return {
+        canRespond: true,
+        busy: hireRespondBusy,
+        onAcceptClose: () => {
+          void (async () => {
+            try {
+              await rejectHire.mutateAsync({
+                kind: "hire",
+                requestId: hireRequestRow.id,
+                reason: hireRejectReason,
+                note: (hireRequestRow as { reject_note?: string | null }).reject_note ?? null,
+                status: "ปฏิเสธ",
+                postRejectChat: "locked",
+              });
+              await sendMessage.mutateAsync({
+                conversationId: conv.id,
+                content: HIRE_CLIENT_ACCEPT_REJECT_TEXT,
+              });
+              toast.success("ปิดแชทแล้ว");
+            } catch (e: unknown) {
+              toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
+            }
+          })();
+        },
+        onAskContinue: () => {
+          void (async () => {
+            try {
+              await rejectHire.mutateAsync({
+                kind: "hire",
+                requestId: hireRequestRow.id,
+                reason: hireRejectReason,
+                note: (hireRequestRow as { reject_note?: string | null }).reject_note ?? null,
+                status: "ปฏิเสธ",
+                postRejectChat: "awaiting_freelancer",
+              });
+              await sendMessage.mutateAsync({
+                conversationId: conv.id,
+                content: encodeHireContinueAskMessage({
+                  v: 1,
+                  kind: "continue_ask",
+                  requestId: hireRequestRow.id,
+                }),
+              });
+              toast.success("ส่งคำขอคุยต่อแล้ว");
+            } catch (e: unknown) {
+              toast.error(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
+            }
+          })();
+        },
+      };
+    }
+    if (postRejectChat === "awaiting_client") {
+      // Freelancer already sent the reject card — no status footer on their bubble.
+      return null;
+    }
+    if (postRejectChat === "awaiting_freelancer") {
+      return { canRespond: false, statusHint: "รอครีเอเตอร์ตอบคำขอคุยต่อ", onAcceptClose: () => {}, onAskContinue: () => {} };
+    }
+    if (postRejectChat === "locked") {
+      return { canRespond: false, statusHint: "แชทปิดแล้ว", onAcceptClose: () => {}, onAskContinue: () => {} };
+    }
+    if (postRejectChat === "open") {
+      return { canRespond: false, statusHint: "คุยต่อได้แล้ว", onAcceptClose: () => {}, onAskContinue: () => {} };
+    }
+    return null;
+  }, [
+    conv.id,
+    hireRejectReason,
+    hireRequestRow,
+    hireRespondBusy,
+    isClient,
+    isHire,
+    postRejectChat,
+    rejectHire,
+    sendMessage,
+  ]);
+
+  const hireContinueAskActions: HireContinueAskActions | null = useMemo(() => {
+    if (!isHire || !hireRequestRow) return null;
+    if (postRejectChat === "awaiting_freelancer" && isFreelancer) {
+      return {
+        canRespond: true,
+        busy: hireRespondBusy,
+        onAccept: () => {
+          void (async () => {
+            try {
+              await rejectHire.mutateAsync({
+                kind: "hire",
+                requestId: hireRequestRow.id,
+                reason: "busy_but_chat",
+                note: (hireRequestRow as { reject_note?: string | null }).reject_note ?? null,
+                status: "ติดต่อแล้ว",
+                postRejectChat: "open",
+              });
+              await sendMessage.mutateAsync({
+                conversationId: conv.id,
+                content: HIRE_FREELANCER_ACCEPT_CONTINUE_TEXT,
+              });
+              toast.success("เปิดแชทคุยต่อแล้ว — ยังไม่รับงาน");
+            } catch (e: unknown) {
+              toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
+            }
+          })();
+        },
+        onDecline: () => {
+          void (async () => {
+            try {
+              await rejectHire.mutateAsync({
+                kind: "hire",
+                requestId: hireRequestRow.id,
+                reason: hireRejectReason,
+                note: (hireRequestRow as { reject_note?: string | null }).reject_note ?? null,
+                status: "ปฏิเสธ",
+                postRejectChat: "locked",
+              });
+              await sendMessage.mutateAsync({
+                conversationId: conv.id,
+                content: HIRE_FREELANCER_DECLINE_CONTINUE_TEXT,
+              });
+              toast.success("ปิดแชทแล้ว");
+            } catch (e: unknown) {
+              toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
+            }
+          })();
+        },
+      };
+    }
+    if (postRejectChat === "awaiting_freelancer") {
+      return { canRespond: false, statusHint: "รอครีเอเตอร์ตอบคำขอคุยต่อ", onAccept: () => {}, onDecline: () => {} };
+    }
+    if (postRejectChat === "locked") {
+      return { canRespond: false, statusHint: "ปฏิเสธการคุยต่อ · แชทปิดแล้ว", onAccept: () => {}, onDecline: () => {} };
+    }
+    if (postRejectChat === "open") {
+      return { canRespond: false, statusHint: "ยอมรับแล้ว — คุยต่อได้", onAccept: () => {}, onDecline: () => {} };
+    }
+    return null;
+  }, [
+    conv.id,
+    hireRejectReason,
+    hireRequestRow,
+    hireRespondBusy,
+    isFreelancer,
+    isHire,
+    postRejectChat,
+    rejectHire,
+    sendMessage,
+  ]);
 
   const { data: studioForQuote = null } = useStudioForConversation(
     hasStudioQuoteContext ? conv.id : undefined,
@@ -114,21 +509,9 @@ const ChatThreadView = ({
   const [upsellOpen, setUpsellOpen] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
   const [showPanelHint, setShowPanelHint] = useState(false);
-  const otherId = otherParticipantId(conv, user?.id ?? "");
-  const isFreelancer = !!user?.id && user.id === conv.freelancer_id;
   const kind = (isStudio ? "studio" : isGroup ? "group" : conv.kind) as "hire" | "collab" | "group" | "studio";
-
-  const { data: other } = useQuery({
-    queryKey: ["chat-other", otherId],
-    enabled: !!otherId && !isGroup,
-    queryFn: async () => {
-      const { data } = await profilesPublicFrom()
-        .select("user_id, display_name, avatar_url, role, username")
-        .eq("user_id", otherId!)
-        .maybeSingle();
-      return data;
-    },
-  });
+  const canForwardHire =
+    isHire && isFreelancer && !!conv.request_id && !!hireRequestRow && !isStudioHire;
 
   const { data: hireMeta } = useQuery({
     queryKey: ["chat-hire-meta", conv.request_id],
@@ -292,7 +675,13 @@ const ChatThreadView = ({
         )}
         <button
           type="button"
-          onClick={() => !isGroup && other?.user_id && onOpenPartnerPanel?.()}
+          onClick={() => {
+            if (isGroup) {
+              onOpenPartnerPanel?.();
+              return;
+            }
+            if (other?.user_id) onOpenPartnerPanel?.();
+          }}
           className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
         >
           {isGroup ? (
@@ -332,16 +721,34 @@ const ChatThreadView = ({
                 </Badge>
               )}
               {isGroup && !isStudio && (
-                <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5 shrink-0">
-                  กลุ่ม
-                </Badge>
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0",
+                    groupTag === "hire"
+                      ? "bg-[hsl(var(--chat-hire-soft))] text-[hsl(var(--chat-hire))]"
+                      : groupTag === "collab"
+                        ? "bg-[hsl(var(--chat-collab-soft))] text-[hsl(var(--chat-collab))]"
+                        : "bg-primary/10 text-primary",
+                  )}
+                >
+                  {groupTag === "hire" ? (
+                    <BriefcaseIcon className="w-3 h-3" />
+                  ) : groupTag === "collab" ? (
+                    <Handshake className="w-3 h-3" />
+                  ) : null}
+                  {groupTagLabel(groupTag)}
+                </span>
               )}
             </div>
             <p className="text-[11px] text-muted-foreground truncate">
               {isStudio
                 ? "แชททีมสตูดิโอ"
                 : isGroup
-                ? "แชทกลุ่ม"
+                ? groupTag
+                  ? groupTag === "hire"
+                    ? "กลุ่มพูดคุยงานจ้าง"
+                    : "กลุ่มพูดคุยคอลแลป"
+                  : "แชทกลุ่ม"
                 : conv.project_title || (isHire ? "พูดคุยรายละเอียดงาน" : "พูดคุยแนวทางคอลแลป")}
             </p>
           </div>
@@ -350,6 +757,50 @@ const ChatThreadView = ({
         <div className="flex items-center gap-1 shrink-0">
           {!isGroup && otherId && (
             <ReportTrigger targetType="user" targetId={otherId} targetOwnerId={otherId} />
+          )}
+          {canForwardHire && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setForwardOpen(true)}
+              className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full text-[hsl(var(--chat-hire))]"
+              aria-label="ส่งต่องาน"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">ส่งต่องาน</span>
+            </Button>
+          )}
+          {!isGroup && otherId && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setInviteGroupOpen(true)}
+              className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full"
+              aria-label="ชวนสร้างกลุ่ม"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">ชวนสร้างกลุ่ม</span>
+            </Button>
+          )}
+          {isGroup && !isStudio && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setGroupSettingsOpen(true)}
+              className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full"
+              aria-label="ตั้งค่ากลุ่ม"
+            >
+              <Settings2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">ตั้งค่ากลุ่ม</span>
+            </Button>
+          )}
+          {isHire && isFreelancer && alreadyForwarded && (
+            <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5 shrink-0">
+              ส่งต่อแล้ว
+            </Badge>
           )}
           {canStudioCombinedQuote ? (
             <Button
@@ -405,7 +856,7 @@ const ChatThreadView = ({
               <Building2 className="w-4 h-4" />
             </Button>
           )}
-          {showPartnerToggle && !isGroup && (
+          {showPartnerToggle && (
             <Button
               variant="ghost"
               size="icon"
@@ -418,6 +869,30 @@ const ChatThreadView = ({
           )}
         </div>
       </header>
+
+      {announced.text ? (
+        <div className="px-3 py-2 border-b border-border bg-muted/40 flex items-start gap-2">
+          <Megaphone className="w-4 h-4 mt-0.5 shrink-0 text-[hsl(var(--chat-hire))]" />
+          <button
+            type="button"
+            className="flex-1 min-w-0 text-left"
+            onClick={() => announced.messageId && scrollToMessage(announced.messageId)}
+          >
+            <p className="text-[11px] font-medium text-foreground">ประกาศในแชทนี้</p>
+            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{announced.text}</p>
+          </button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0 rounded-full"
+            aria-label="เอาประกาศออก"
+            onClick={() => void clearAnnouncement()}
+          >
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      ) : null}
 
       {showPanelHint && showPartnerToggle && (
         <div className="md:hidden px-3 py-2 bg-primary/5 border-b border-border flex items-center justify-between gap-2">
@@ -465,9 +940,14 @@ const ChatThreadView = ({
               <MessageBubble
                 message={it.m}
                 mine={it.m.sender_id === user?.id}
-                kind={kind}
-                onReply={setReplyTo}
+                kind={kind === "studio" ? "hire" : kind}
+                viewerIsClient={isClient}
+                hireInviteActions={hireInviteActions}
+                hireRejectChoiceActions={hireRejectChoiceActions}
+                hireContinueAskActions={hireContinueAskActions}
+                onReply={composerLockedHint ? undefined : setReplyTo}
                 onUnsend={handleUnsend}
+                onAnnounce={announceMessage}
                 getSenderLabel={getSenderLabel}
                 onScrollToMessage={scrollToMessage}
                 highlight={highlightId === it.m.id}
@@ -482,10 +962,11 @@ const ChatThreadView = ({
         conversationId={conv.id}
         kind={kind}
         userId={user?.id}
-        quickReplies={quickReplies}
-        replyTo={replyTo}
+        quickReplies={composerLockedHint ? [] : quickReplies}
+        replyTo={composerLockedHint ? null : replyTo}
         replyToSenderName={replyTo ? getSenderLabel(replyTo.sender_id) : undefined}
         onClearReply={() => setReplyTo(null)}
+        lockedHint={composerLockedHint}
       />
 
       <StudioQuoteUpsellDialog
@@ -501,6 +982,164 @@ const ChatThreadView = ({
         defaultClientName={hireMeta?.client_name ?? ""}
         defaultClientEmail={hireMeta?.email ?? ""}
         defaultClientPhone={hireMeta?.phone ?? ""}
+      />
+      <HireForwardInChatDialog
+        open={forwardOpen}
+        onOpenChange={setForwardOpen}
+        busy={forwardHire.isPending || sendMessage.isPending}
+        projectTitle={conv.project_title ?? hireRequestRow?.project_title}
+        onConfirm={async (pick) => {
+          if (!hireRequestRow || !user?.id) return;
+          try {
+            const result = await forwardHire.mutateAsync({
+              request: hireRequestRow,
+              toUserId: pick.userId,
+              note: pick.note || null,
+              rejectReason: pick.reason,
+              rejectNote: pick.clientMessage || null,
+            });
+            if (pick.clientMessage.trim()) {
+              await sendMessage.mutateAsync({
+                conversationId: conv.id,
+                content: pick.clientMessage.trim(),
+              });
+            }
+            await sendMessage.mutateAsync({
+              conversationId: conv.id,
+              content: hireForwardClientNotice(pick.displayName),
+            });
+            await sendMessage.mutateAsync({
+              conversationId: conv.id,
+              content: encodeHireForwardMessage({
+                v: 1,
+                requestId: result.newRequestId,
+                fromRequestId: result.fromRequestId,
+                toUserId: pick.userId,
+                toName: pick.displayName,
+                toUsername: pick.username,
+                toAvatarUrl: pick.avatarUrl,
+              }),
+            });
+            void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", conv.request_id] });
+            void qc.invalidateQueries({ queryKey: ["chat-hire-meta", conv.request_id] });
+            toast.success("ส่งต่องานแล้ว — แจ้งเพื่อนแล้ว (ส่งต่อคนอื่นได้จากปุ่มส่งต่อ)");
+            setForwardOpen(false);
+          } catch (e: unknown) {
+            toast.error(e instanceof Error ? e.message : "ส่งต่องานไม่สำเร็จ");
+          }
+        }}
+      />
+      <CreateGroupDialog
+        open={inviteGroupOpen}
+        onOpenChange={setInviteGroupOpen}
+        lockedMembers={inviteLockedMembers}
+        followingOnly
+        minTotalMembers={3}
+        defaultGroupTag={isHire ? "hire" : conv.kind === "collab" ? "collab" : null}
+        onCreated={(convId) => {
+          setInviteGroupOpen(false);
+          navigate(`/chat/${convId}`);
+        }}
+      />
+      {isGroup && !isStudio && (
+        <GroupSettingsDialog
+          open={groupSettingsOpen}
+          onOpenChange={setGroupSettingsOpen}
+          conversationId={conv.id}
+        />
+      )}
+      <HireRejectDialog
+        open={rejectOpen && !!hireRequestRow}
+        onOpenChange={setRejectOpen}
+        request={hireRequestRow}
+        busy={hireRespondBusy}
+        onConfirm={async ({ action, reason, note, friendNote, forwardToUserId, forwardToDisplayName }) => {
+          if (!hireRequestRow) return;
+          try {
+            if (action === "forward" && forwardToUserId) {
+              const result = await forwardHire.mutateAsync({
+                request: hireRequestRow,
+                toUserId: forwardToUserId,
+                note: friendNote || null,
+                rejectReason: reason,
+                rejectNote: note || null,
+              });
+              const friendName = forwardToDisplayName?.trim() || "เพื่อนครีเอเตอร์";
+              if (note.trim()) {
+                await sendMessage.mutateAsync({ conversationId: conv.id, content: note.trim() });
+              }
+              await sendMessage.mutateAsync({
+                conversationId: conv.id,
+                content: hireForwardClientNotice(friendName),
+              });
+              await sendMessage.mutateAsync({
+                conversationId: conv.id,
+                content: encodeHireForwardMessage({
+                  v: 1,
+                  requestId: result.newRequestId,
+                  fromRequestId: result.fromRequestId,
+                  toUserId: forwardToUserId,
+                  toName: friendName,
+                  toUsername: null,
+                  toAvatarUrl: null,
+                }),
+              });
+              void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", conv.request_id] });
+              void qc.invalidateQueries({ queryKey: ["chat-hire-meta", conv.request_id] });
+              toast.success("ส่งต่องานแล้ว — แจ้งเพื่อนแล้ว");
+              setRejectOpen(false);
+              return;
+            }
+
+            if (action === "busy_chat") {
+              await rejectHire.mutateAsync({
+                kind: "hire",
+                requestId: hireRequestRow.id,
+                reason,
+                note: note || null,
+                status: "ติดต่อแล้ว",
+                postRejectChat: "open",
+              });
+              await sendMessage.mutateAsync({
+                conversationId: conv.id,
+                content:
+                  note ||
+                  "สวัสดีครับ/ค่ะ — ตอนนี้ยังไม่พร้อมรับงานจากเวลาและงบที่แจ้งมา แต่อยากคุยรายละเอียดก่อนได้ครับ/ค่ะ",
+              });
+              void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", conv.request_id] });
+              toast.success("บันทึกแล้ว — คุยต่อได้เลย");
+              setRejectOpen(false);
+              return;
+            }
+
+            const reasonText = note.trim() || hireRejectReasonLabel(reason);
+            await rejectHire.mutateAsync({
+              kind: "hire",
+              requestId: hireRequestRow.id,
+              reason,
+              note: note || null,
+              status: "ปฏิเสธ",
+              postRejectChat: "awaiting_client",
+            });
+            await sendMessage.mutateAsync({
+              conversationId: conv.id,
+              content: encodeHireRejectChoiceMessage({
+                v: 1,
+                kind: "reject_choice",
+                requestId: hireRequestRow.id,
+                reasonId: reason,
+                reasonLabel: reasonText || hireRejectReasonLabel(reason) || "ปฏิเสธคำขอจ้าง",
+                note: null,
+              }),
+            });
+            void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", conv.request_id] });
+            void qc.invalidateQueries({ queryKey: ["chat-hire-meta", conv.request_id] });
+            toast.success("ปฏิเสธคำขอแล้ว — รอผู้จ้างเลือก");
+            setRejectOpen(false);
+          } catch (e: unknown) {
+            toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
+          }
+        }}
       />
     </div>
   );

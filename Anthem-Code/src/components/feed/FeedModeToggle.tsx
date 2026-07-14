@@ -112,8 +112,9 @@ const FeedModeToggle = ({
     <div
       ref={trackRef}
       className={cn(
-        "relative shrink-0 flex items-center rounded-full glass-panel p-0.5 transition-[min-width] duration-200",
-        equalSplit && !compact && "min-w-[12.5rem] sm:min-w-[14.5rem]",
+        "relative shrink-0 flex items-center rounded-full glass-panel p-0.5 transition-[width,box-shadow] duration-200",
+        "hover:shadow-md hover:shadow-primary/20",
+        equalSplit && !compact && "w-[14.5rem]",
         className,
       )}
       role="group"

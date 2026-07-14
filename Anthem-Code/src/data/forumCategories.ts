@@ -1,6 +1,9 @@
 /** Client-side category labels + create-topic templates */
 
+/** Member-creatable categories (not team announcements). */
 export type ForumCategorySlug = "help" | "bug" | "idea" | "feedback";
+
+export type ForumAllCategorySlug = ForumCategorySlug | "announcements";
 
 export type ForumTemplateField = {
   key: string;
@@ -19,7 +22,14 @@ export type ForumCategoryTone = {
   softActive: string;
 };
 
-export const FORUM_CATEGORY_TONES: Record<ForumCategorySlug, ForumCategoryTone> = {
+export const FORUM_CATEGORY_TONES: Record<ForumAllCategorySlug, ForumCategoryTone> = {
+  announcements: {
+    swatch: "bg-orange-500",
+    icon: "text-orange-600 dark:text-orange-400",
+    text: "text-orange-800 dark:text-orange-300",
+    soft: "hover:bg-orange-50 dark:hover:bg-orange-950/40",
+    softActive: "bg-orange-50 text-orange-900 dark:bg-orange-950/50 dark:text-orange-200",
+  },
   help: {
     swatch: "bg-sky-500",
     icon: "text-sky-600 dark:text-sky-400",
@@ -52,7 +62,7 @@ export const FORUM_CATEGORY_TONES: Record<ForumCategorySlug, ForumCategoryTone> 
 
 export function forumCategoryTone(slug: string | undefined | null): ForumCategoryTone {
   if (slug && slug in FORUM_CATEGORY_TONES) {
-    return FORUM_CATEGORY_TONES[slug as ForumCategorySlug];
+    return FORUM_CATEGORY_TONES[slug as ForumAllCategorySlug];
   }
   return {
     swatch: "bg-primary/70",
@@ -106,8 +116,17 @@ export const FORUM_CATEGORY_META: Record<
   },
 };
 
+export const FORUM_ANNOUNCEMENTS_META = {
+  nameTh: "ประกาศจากทีม",
+  description: "ข่าวอัปเดต โรดแมป และการบำรุงรักษาจากทีม Aplus1",
+} as const;
+
 export function isForumCategorySlug(v: string): v is ForumCategorySlug {
   return v === "help" || v === "bug" || v === "idea" || v === "feedback";
+}
+
+export function isAnnouncementsSlug(v: string | undefined | null): boolean {
+  return v === "announcements";
 }
 
 /** One continuous writing starter for a category (not split form sections). */
