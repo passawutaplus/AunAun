@@ -348,9 +348,12 @@ export const useSendMessage = () => {
           .maybeSingle());
         inserted = data as { id: string } | null;
       }
-      if (error) throw error;
-
-      // last_message_at is bumped by DB trigger trg_messages_bump_and_notify
+      if (error) {
+        if (String(error.message).includes("HIRE_CHAT_LOCKED")) {
+          throw new Error("แชทนี้ปิดแล้ว — ทั้งสองฝ่ายพิมพ์ต่อไม่ได้");
+        }
+        throw error;
+      }
 
       if (messageType !== "system") {
         void supabase.functions.invoke("notify-anthem-chat", {
@@ -842,6 +845,13 @@ export async function openHireCollabChat(args: OpenHireCollabChatArgs): Promise<
 
   const convId = await ensureConversation(args);
   await seedInstantChatMessages(convId, args);
+  try {
+    await supabase.rpc("maybe_send_chat_auto_reply" as never, {
+      p_conversation_id: convId,
+    } as never);
+  } catch {
+    /* auto-reply is best-effort — don't block opening chat */
+  }
   return convId;
 }
 
@@ -905,6 +915,13 @@ export const useAcceptRequest = () => {
             .from("collab_requests")
             .update({ status: "accepted" as never })
             .eq("id", requestId);
+        }
+        try {
+          await supabase.rpc("maybe_send_chat_auto_reply" as never, {
+            p_conversation_id: existing,
+          } as never);
+        } catch {
+          /* best-effort */
         }
         return existing;
       }
@@ -1001,6 +1018,7 @@ export const useRejectRequest = () => {
       qc.invalidateQueries({ queryKey: ["collab-requests"] });
       qc.invalidateQueries({ queryKey: ["chat-hire-forward-src"] });
       qc.invalidateQueries({ queryKey: ["chat-hire-meta"] });
+      qc.invalidateQueries({ queryKey: ["chat-list-hire-locked"] });
     },
   });
 };

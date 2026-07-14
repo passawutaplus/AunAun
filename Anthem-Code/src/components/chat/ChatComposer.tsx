@@ -48,7 +48,6 @@ interface Props {
   conversationId: string;
   kind: "hire" | "collab" | "group" | "studio";
   userId?: string;
-  quickReplies?: string[];
   replyTo?: Message | null;
   replyToSenderName?: string;
   onClearReply?: () => void;
@@ -59,7 +58,6 @@ interface Props {
 const ChatComposer = ({
   conversationId,
   kind,
-  quickReplies = [],
   replyTo,
   replyToSenderName,
   onClearReply,
@@ -96,12 +94,12 @@ const ChatComposer = ({
         ? "bg-gradient-to-br from-[hsl(var(--chat-collab))] to-[hsl(var(--chat-collab)/0.85)] hover:opacity-90 text-white"
         : "bg-primary hover:bg-primary/90 text-primary-foreground";
 
-  const submit = async (overrideText?: string) => {
-    const value = (overrideText ?? text).trim();
+  const submit = async () => {
+    const value = text.trim();
     if (!value) return;
     const { hasProfanity } = detectProfanity(value);
     const toSend = hasProfanity ? maskProfanity(value) : value;
-    if (hasProfanity && !overrideText) {
+    if (hasProfanity) {
       toast.warning(PROFANITY_WARNING, {
         action: {
           label: "กฎชุมชน",
@@ -118,7 +116,7 @@ const ChatComposer = ({
         replyToId: replyTo?.id,
         hadProfanity: hasProfanity,
       });
-      if (!overrideText) setText("");
+      setText("");
       onClearReply?.();
     } catch (e: unknown) {
       toast.error(getSupabaseErrorMessage(e, "ส่งไม่สำเร็จ"));
@@ -199,20 +197,12 @@ const ChatComposer = ({
   };
 
   const busy = !!uploading || send.isPending;
-
-  if (lockedHint) {
-    return (
-      <div className="border-t border-border bg-background/80 backdrop-blur-md px-3 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] shrink-0">
-        <ModerationBanBanner className="mb-2" />
-        <p className="text-center text-xs text-muted-foreground leading-relaxed px-2">{lockedHint}</p>
-      </div>
-    );
-  }
+  const locked = !!lockedHint;
 
   return (
     <div className="border-t border-border bg-background/80 backdrop-blur-md px-3 py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] shrink-0">
       <ModerationBanBanner className="mb-2" />
-      {replyTo && (
+      {!locked && replyTo && (
         <div className="flex items-stretch gap-2 mb-2 rounded-xl bg-muted/80 border border-border overflow-hidden">
           <div className="w-1 shrink-0 bg-primary" />
           <div className="flex-1 min-w-0 py-2 pr-1">
@@ -226,20 +216,6 @@ const ChatComposer = ({
           <Button type="button" variant="ghost" size="icon" className="h-auto w-8 shrink-0 self-center mr-1" onClick={onClearReply}>
             <X className="w-4 h-4" />
           </Button>
-        </div>
-      )}
-      {quickReplies.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-          {quickReplies.map((q) => (
-            <button
-              key={q}
-              type="button"
-              onClick={() => submit(q)}
-              className="shrink-0 text-xs px-3 py-1.5 rounded-full border border-border bg-card hover:bg-accent text-foreground transition-colors"
-            >
-              {q}
-            </button>
-          ))}
         </div>
       )}
       <div className="flex items-end gap-2">
@@ -271,7 +247,7 @@ const ChatComposer = ({
           size="icon"
           className="rounded-full shrink-0"
           onClick={() => fileRef.current?.click()}
-          disabled={busy}
+          disabled={busy || locked}
           aria-label="แนบไฟล์จากเครื่อง"
           title="แนบไฟล์ (PDF, ZIP, เอกสาร)"
         >
@@ -287,7 +263,7 @@ const ChatComposer = ({
           size="icon"
           className="rounded-full shrink-0"
           onClick={() => imageRef.current?.click()}
-          disabled={busy}
+          disabled={busy || locked}
           aria-label="แนบรูป"
         >
           {uploading === "image" ? (
@@ -301,23 +277,26 @@ const ChatComposer = ({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
+            if (locked) return;
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               void submit();
             }
           }}
           rows={1}
+          disabled={locked}
           placeholder={placeholder}
           className={cn(
             "resize-none min-h-[40px] max-h-32 rounded-2xl bg-muted border-0 focus-visible:ring-2",
             accentRing,
+            locked && "opacity-60 cursor-not-allowed",
           )}
         />
         <Button
           type="button"
           size="icon"
           onClick={() => void submit()}
-          disabled={!text.trim() || busy}
+          disabled={locked || !text.trim() || busy}
           className={cn("rounded-full shrink-0", sendBtn)}
           aria-label="ส่งข้อความ"
         >

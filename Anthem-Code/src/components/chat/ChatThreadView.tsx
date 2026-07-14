@@ -7,6 +7,8 @@ import {
   Handshake,
   Info,
   Megaphone,
+  PanelRightClose,
+  PanelRightOpen,
   Settings2,
   Share2,
   Users,
@@ -50,6 +52,7 @@ import {
   HIRE_FREELANCER_ACCEPT_CONTINUE_TEXT,
   HIRE_FREELANCER_DECLINE_CONTINUE_TEXT,
   hireChatLockHint,
+  hireChatLockedByMessages,
   isHireChatComposerLocked,
   type HirePostRejectChat,
 } from "@/lib/hireRejectChat";
@@ -67,19 +70,6 @@ import type { HireInviteActions } from "@/components/chat/HireInviteCard";
 import type { HireRejectChoiceActions } from "@/components/chat/HireRejectChoiceCard";
 import type { HireContinueAskActions } from "@/components/chat/HireContinueAskCard";
 
-const HIRE_QUICK_BASE = [
-  "ขอรายละเอียดเพิ่มเติม",
-  "ขอ timeline ของงาน",
-  "ขอบคุณสำหรับการติดต่อครับ",
-];
-const HIRE_QUICK_OFFER = "ขอส่งใบเสนอราคาให้พิจารณา";
-const COLLAB_QUICK_BASE = [
-  "เริ่มจาก mood board ไหม?",
-  "ส่งร่างไอเดียให้ดูได้ไหม",
-  "พร้อมเริ่มเลย!",
-  "ส่งพอร์ตเพิ่มให้ดูได้ไหม",
-];
-
 const CHAT_PANEL_HINT_KEY = "aplus1-chat-panel-hint-dismissed";
 
 interface Props {
@@ -91,6 +81,10 @@ interface Props {
   onBack?: () => void;
   onOpenPartnerPanel?: () => void;
   showPartnerToggle?: boolean;
+  /** Desktop: whether the right partner sidebar is currently open. */
+  partnerPanelOpen?: boolean;
+  /** Desktop: toggle partner sidebar open/closed. */
+  onTogglePartnerPanel?: () => void;
 }
 
 const TIER_BADGE_TIERS = new Set<PlanId>(["pro", "pro_plus", "inhouse"]);
@@ -104,6 +98,8 @@ const ChatThreadView = ({
   onBack,
   onOpenPartnerPanel,
   showPartnerToggle,
+  partnerPanelOpen,
+  onTogglePartnerPanel,
 }: Props) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -158,6 +154,34 @@ const ChatThreadView = ({
   const hireRejectReason = (hireRequestRow as { reject_reason?: string | null } | null)?.reject_reason;
   const postRejectChat = (hireRequestRow as { post_reject_chat?: HirePostRejectChat | null } | null)
     ?.post_reject_chat ?? null;
+  const effectivePostRejectChat: HirePostRejectChat | null =
+    postRejectChat === "locked" || hireChatLockedByMessages(messages)
+      ? "locked"
+      : postRejectChat;
+
+  useEffect(() => {
+    if (!conv.request_id || !isHire) return;
+    const ch = supabase
+      .channel(`hire-req-rt-${conv.request_id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "anthem",
+          table: "hiring_requests",
+          filter: `id=eq.${conv.request_id}`,
+        },
+        () => {
+          void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", conv.request_id] });
+          void qc.invalidateQueries({ queryKey: ["chat-hire-meta", conv.request_id] });
+          void qc.invalidateQueries({ queryKey: ["chat-list-hire-locked"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(ch);
+    };
+  }, [conv.request_id, isHire, qc]);
 
   useEffect(() => {
     setAnnounced({
@@ -212,8 +236,8 @@ const ChatThreadView = ({
     hireStatus !== "ปิดแล้ว";
   const hireRespondBusy =
     acceptHire.isPending || rejectHire.isPending || forwardHire.isPending || sendMessage.isPending;
-  const composerLockedHint =
-    isHire && isHireChatComposerLocked(postRejectChat) ? hireChatLockHint(postRejectChat) : null;
+  const composerLocked = isHire && isHireChatComposerLocked(effectivePostRejectChat);
+  const composerLockedHint = composerLocked ? hireChatLockHint("locked") : null;
 
   const otherId = otherParticipantId(conv, user?.id ?? "");
   const { data: other } = useQuery({
@@ -230,10 +254,14 @@ const ChatThreadView = ({
 
   const inviteLockedMembers = useMemo(() => {
     if (!otherId) return [];
+    const name =
+      (other?.username?.trim() && `@${other.username.trim()}`) ||
+      other?.display_name?.trim() ||
+      null;
     return [
       {
         id: otherId,
-        display_name: other?.display_name || other?.username || "คู่สนทนา",
+        display_name: name || "ผู้ใช้",
         avatar_url: other?.avatar_url ?? null,
       },
     ];
@@ -302,7 +330,7 @@ const ChatThreadView = ({
     if (hireStatus === "ตอบรับ") {
       return { canRespond: false, statusHint: "ตอบรับแล้ว — คุยรายละเอียดต่อได้", onAccept: () => {}, onDecline: () => {} };
     }
-    if (hireRejectReason === "busy_but_chat" || postRejectChat === "open") {
+    if (hireRejectReason === "busy_but_chat" || effectivePostRejectChat === "open") {
       return {
         canRespond: false,
         statusHint: "ยังไม่พร้อมทำตอนนี้ — คุยรายละเอียดต่อได้",
@@ -331,20 +359,24 @@ const ChatThreadView = ({
     isHire,
     other?.display_name,
     other?.username,
-    postRejectChat,
+    effectivePostRejectChat,
     qc,
     sendMessage,
   ]);
 
   const hireRejectChoiceActions: HireRejectChoiceActions | null = useMemo(() => {
     if (!isHire || !hireRequestRow) return null;
-    if (postRejectChat === "awaiting_client" && isClient) {
+    if (effectivePostRejectChat === "awaiting_client" && isClient) {
       return {
         canRespond: true,
         busy: hireRespondBusy,
         onAcceptClose: () => {
           void (async () => {
             try {
+              await sendMessage.mutateAsync({
+                conversationId: conv.id,
+                content: HIRE_CLIENT_ACCEPT_REJECT_TEXT,
+              });
               await rejectHire.mutateAsync({
                 kind: "hire",
                 requestId: hireRequestRow.id,
@@ -353,11 +385,7 @@ const ChatThreadView = ({
                 status: "ปฏิเสธ",
                 postRejectChat: "locked",
               });
-              await sendMessage.mutateAsync({
-                conversationId: conv.id,
-                content: HIRE_CLIENT_ACCEPT_REJECT_TEXT,
-              });
-              toast.success("ปิดแชทแล้ว");
+              toast.success("ปิดแชทแล้ว — ทั้งสองฝ่ายพิมพ์ต่อไม่ได้");
             } catch (e: unknown) {
               toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
             }
@@ -390,35 +418,35 @@ const ChatThreadView = ({
         },
       };
     }
-    if (postRejectChat === "awaiting_client") {
+    if (effectivePostRejectChat === "awaiting_client") {
       // Freelancer already sent the reject card — no status footer on their bubble.
       return null;
     }
-    if (postRejectChat === "awaiting_freelancer") {
+    if (effectivePostRejectChat === "awaiting_freelancer") {
       return { canRespond: false, statusHint: "รอครีเอเตอร์ตอบคำขอคุยต่อ", onAcceptClose: () => {}, onAskContinue: () => {} };
     }
-    if (postRejectChat === "locked") {
+    if (effectivePostRejectChat === "locked") {
       return { canRespond: false, statusHint: "แชทปิดแล้ว", onAcceptClose: () => {}, onAskContinue: () => {} };
     }
-    if (postRejectChat === "open") {
+    if (effectivePostRejectChat === "open") {
       return { canRespond: false, statusHint: "คุยต่อได้แล้ว", onAcceptClose: () => {}, onAskContinue: () => {} };
     }
     return null;
   }, [
     conv.id,
+    effectivePostRejectChat,
     hireRejectReason,
     hireRequestRow,
     hireRespondBusy,
     isClient,
     isHire,
-    postRejectChat,
     rejectHire,
     sendMessage,
   ]);
 
   const hireContinueAskActions: HireContinueAskActions | null = useMemo(() => {
     if (!isHire || !hireRequestRow) return null;
-    if (postRejectChat === "awaiting_freelancer" && isFreelancer) {
+    if (effectivePostRejectChat === "awaiting_freelancer" && isFreelancer) {
       return {
         canRespond: true,
         busy: hireRespondBusy,
@@ -446,6 +474,10 @@ const ChatThreadView = ({
         onDecline: () => {
           void (async () => {
             try {
+              await sendMessage.mutateAsync({
+                conversationId: conv.id,
+                content: HIRE_FREELANCER_DECLINE_CONTINUE_TEXT,
+              });
               await rejectHire.mutateAsync({
                 kind: "hire",
                 requestId: hireRequestRow.id,
@@ -454,11 +486,7 @@ const ChatThreadView = ({
                 status: "ปฏิเสธ",
                 postRejectChat: "locked",
               });
-              await sendMessage.mutateAsync({
-                conversationId: conv.id,
-                content: HIRE_FREELANCER_DECLINE_CONTINUE_TEXT,
-              });
-              toast.success("ปิดแชทแล้ว");
+              toast.success("ปิดแชทแล้ว — ทั้งสองฝ่ายพิมพ์ต่อไม่ได้");
             } catch (e: unknown) {
               toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
             }
@@ -466,24 +494,24 @@ const ChatThreadView = ({
         },
       };
     }
-    if (postRejectChat === "awaiting_freelancer") {
+    if (effectivePostRejectChat === "awaiting_freelancer") {
       return { canRespond: false, statusHint: "รอครีเอเตอร์ตอบคำขอคุยต่อ", onAccept: () => {}, onDecline: () => {} };
     }
-    if (postRejectChat === "locked") {
+    if (effectivePostRejectChat === "locked") {
       return { canRespond: false, statusHint: "ปฏิเสธการคุยต่อ · แชทปิดแล้ว", onAccept: () => {}, onDecline: () => {} };
     }
-    if (postRejectChat === "open") {
+    if (effectivePostRejectChat === "open") {
       return { canRespond: false, statusHint: "ยอมรับแล้ว — คุยต่อได้", onAccept: () => {}, onDecline: () => {} };
     }
     return null;
   }, [
     conv.id,
+    effectivePostRejectChat,
     hireRejectReason,
     hireRequestRow,
     hireRespondBusy,
     isFreelancer,
     isHire,
-    postRejectChat,
     rejectHire,
     sendMessage,
   ]);
@@ -589,18 +617,6 @@ const ChatThreadView = ({
     if (typeof window === "undefined" || isGroup) return;
     setShowPanelHint(localStorage.getItem(CHAT_PANEL_HINT_KEY) !== "1");
   }, [conv.id, isGroup]);
-
-  const quickReplies = useMemo(() => {
-    if (isGroup) return [] as string[];
-    const title = conv.project_title?.trim();
-    if (isHire) {
-      const extra = title ? [`ชอบผลงาน "${title}" มาก`] : [];
-      const offerLine = isAplus1ChatOffersEnabled() ? [HIRE_QUICK_OFFER] : [];
-      return [...extra, ...HIRE_QUICK_BASE.slice(0, 2), ...offerLine, ...HIRE_QUICK_BASE.slice(2)];
-    }
-    const extra = title ? [`ชอบผลงาน "${title}" — อยากคุยต่อ`] : [];
-    return [...extra, ...COLLAB_QUICK_BASE];
-  }, [isGroup, isHire, conv.project_title]);
 
   const grouped = useMemo(() => {
     const items: Array<{ type: "date"; date: string } | { type: "msg"; m: Message }> = [];
@@ -857,15 +873,33 @@ const ChatThreadView = ({
             </Button>
           )}
           {showPartnerToggle && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden rounded-full h-8 w-8"
-              onClick={onOpenPartnerPanel}
-              aria-label="ข้อมูลโปรไฟล์"
-            >
-              <Info className="w-5 h-5" />
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden rounded-full h-8 w-8"
+                onClick={onOpenPartnerPanel}
+                aria-label="ข้อมูลโปรไฟล์คู่แชท"
+                title="ข้อมูลคู่แชท"
+              >
+                <Info className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden md:inline-flex rounded-full h-8 w-8"
+                onClick={onTogglePartnerPanel}
+                aria-label={partnerPanelOpen ? "หุบแผงคู่แชท" : "กางแผงคู่แชท"}
+                title={partnerPanelOpen ? "หุบแผง" : "กางแผง"}
+                aria-pressed={partnerPanelOpen}
+              >
+                {partnerPanelOpen ? (
+                  <PanelRightClose className="w-5 h-5" />
+                ) : (
+                  <PanelRightOpen className="w-5 h-5" />
+                )}
+              </Button>
+            </>
           )}
         </div>
       </header>
@@ -962,7 +996,6 @@ const ChatThreadView = ({
         conversationId={conv.id}
         kind={kind}
         userId={user?.id}
-        quickReplies={composerLockedHint ? [] : quickReplies}
         replyTo={composerLockedHint ? null : replyTo}
         replyToSenderName={replyTo ? getSenderLabel(replyTo.sender_id) : undefined}
         onClearReply={() => setReplyTo(null)}

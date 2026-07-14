@@ -1,3 +1,10 @@
+import {
+  HIRE_CHAT_LOCKED_LIST_LABEL,
+  HIRE_CLIENT_ACCEPT_REJECT_TEXT,
+  HIRE_CLIENT_ACCEPT_REJECT_TEXT_LEGACY,
+  HIRE_FREELANCER_DECLINE_CONTINUE_TEXT,
+} from "@/lib/hireRejectChat";
+
 export type ReplyPreviewSource = {
   content?: string | null;
   attachment_url?: string | null;
@@ -22,5 +29,13 @@ export function replyPreviewText(msg: ReplyPreviewSource): string {
   if (msg.content?.includes("__APLUS1_HIRE_FORWARD__")) return "ส่งต่องาน";
   if (msg.content?.includes("__APLUS1_HIRE_REJECT_CHOICE__")) return "ปฏิเสธคำขอจ้าง";
   if (msg.content?.includes("__APLUS1_HIRE_CONTINUE_ASK__")) return "ขอคุยรายละเอียดเพิ่มเติม";
-  return msg.content?.trim() || "ข้อความ";
+  const text = msg.content?.trim() ?? "";
+  if (
+    text === HIRE_FREELANCER_DECLINE_CONTINUE_TEXT ||
+    text === HIRE_CLIENT_ACCEPT_REJECT_TEXT ||
+    text === HIRE_CLIENT_ACCEPT_REJECT_TEXT_LEGACY
+  ) {
+    return HIRE_CHAT_LOCKED_LIST_LABEL;
+  }
+  return text || "ข้อความ";
 }

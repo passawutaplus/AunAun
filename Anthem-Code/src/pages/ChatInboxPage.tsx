@@ -14,6 +14,19 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { smoothEase } from "@/lib/motion";
 
+const PARTNER_PANEL_KEY = "aplus1-chat-partner-panel-open";
+
+function readPartnerPanelOpen(): boolean {
+  try {
+    const v = localStorage.getItem(PARTNER_PANEL_KEY);
+    if (v === "0") return false;
+    if (v === "1") return true;
+  } catch {
+    /* ignore */
+  }
+  return true;
+}
+
 const ChatInboxPage = () => {
   const { id } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
@@ -24,6 +37,7 @@ const ChatInboxPage = () => {
   const [tab, setTab] = useState<"all" | ChatKind>("all");
   const [search, setSearch] = useState("");
   const [showPartnerMobile, setShowPartnerMobile] = useState(false);
+  const [partnerPanelOpen, setPartnerPanelOpen] = useState(readPartnerPanelOpen);
   const reducedMotion = useReducedMotion();
 
   const {
@@ -43,6 +57,14 @@ const ChatInboxPage = () => {
   useEffect(() => {
     setShowPartnerMobile(false);
   }, [id]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PARTNER_PANEL_KEY, partnerPanelOpen ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [partnerPanelOpen]);
 
   useEffect(() => {
     const studioId = searchParams.get("studio");
@@ -72,6 +94,15 @@ const ChatInboxPage = () => {
     if (user?.id) {
       void qc.invalidateQueries({ queryKey: ["conversations", user.id] });
     }
+  };
+
+  const openPartnerPanel = () => {
+    setPartnerPanelOpen(true);
+    setShowPartnerMobile(true);
+  };
+
+  const togglePartnerPanel = () => {
+    setPartnerPanelOpen((open) => !open);
   };
 
   const threadContent = (
@@ -117,7 +148,9 @@ const ChatInboxPage = () => {
           showBack
           onBack={clearConversation}
           showPartnerToggle
-          onOpenPartnerPanel={() => setShowPartnerMobile(true)}
+          partnerPanelOpen={partnerPanelOpen}
+          onOpenPartnerPanel={openPartnerPanel}
+          onTogglePartnerPanel={togglePartnerPanel}
         />
       )}
       {!id && (
@@ -134,7 +167,15 @@ const ChatInboxPage = () => {
 
   return (
     <div className="h-[100dvh] bg-background overflow-hidden">
-      <div className="h-full md:grid md:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)]">
+      <div
+        className={cn(
+          "h-full md:grid",
+          "transition-[grid-template-columns] duration-[350ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          partnerPanelOpen
+            ? "md:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)]"
+            : "md:grid-cols-[minmax(260px,320px)_1fr_0fr]",
+        )}
+      >
         <div
           className={cn(
             "h-full min-h-0",
@@ -162,14 +203,39 @@ const ChatInboxPage = () => {
           <ChatErrorBoundary onBack={clearConversation}>{threadContent}</ChatErrorBoundary>
         </div>
 
-        <div className="hidden md:block h-full min-h-0 min-w-0">
-          <ChatErrorBoundary onBack={clearConversation}>
-            {conv ? (
-              <ChatPartnerPanel conversation={conv} messages={messages} />
-            ) : (
-              <aside className="h-full border-l border-border bg-muted/20" />
-            )}
-          </ChatErrorBoundary>
+        <div
+          className={cn(
+            "hidden md:block h-full min-h-0 min-w-0 overflow-hidden",
+            !partnerPanelOpen && "pointer-events-none",
+          )}
+          aria-hidden={!partnerPanelOpen}
+        >
+          <motion.div
+            className="h-full w-full min-w-[280px] max-w-[340px] ml-auto"
+            initial={false}
+            animate={
+              reducedMotion
+                ? { opacity: partnerPanelOpen ? 1 : 0 }
+                : {
+                    x: partnerPanelOpen ? 0 : 28,
+                    opacity: partnerPanelOpen ? 1 : 0,
+                  }
+            }
+            transition={{ duration: 0.35, ease: smoothEase }}
+          >
+            <ChatErrorBoundary onBack={clearConversation}>
+              {conv ? (
+                <ChatPartnerPanel
+                  conversation={conv}
+                  messages={messages}
+                  onClose={() => setPartnerPanelOpen(false)}
+                  collapseLabel="หุบแผง"
+                />
+              ) : (
+                <aside className="h-full border-l border-border bg-muted/20" />
+              )}
+            </ChatErrorBoundary>
+          </motion.div>
         </div>
       </div>
 
@@ -193,7 +259,7 @@ const ChatInboxPage = () => {
               initial={reducedMotion ? false : { x: "100%" }}
               animate={{ x: 0 }}
               exit={reducedMotion ? { opacity: 0 } : { x: "100%" }}
-              transition={{ duration: 0.28, ease: smoothEase }}
+              transition={{ duration: 0.32, ease: smoothEase }}
             >
               <ChatErrorBoundary onBack={() => setShowPartnerMobile(false)}>
                 <ChatPartnerPanel

@@ -1,7 +1,19 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutGrid, MessageCircle, Handshake, Pin, PinOff, Plus, Search, Users, X } from "lucide-react";
+import {
+  Flag,
+  LayoutGrid,
+  MessageCircle,
+  Handshake,
+  MoreVertical,
+  Pin,
+  PinOff,
+  Plus,
+  Search,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { Input } from "@/components/ui/input";
@@ -16,6 +28,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublicFrom } from "@/lib/profileAccess";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,9 +52,14 @@ import {
   type Conversation,
 } from "@/hooks/useChat";
 import CreateGroupDialog from "@/components/chat/CreateGroupDialog";
+import ReportDialog from "@/components/report/ReportDialog";
 import { isAplus1SubscriptionsEnabled } from "@/lib/aplus1Launch";
-import { timeAgoTH } from "@/lib/format";
+import { clockTimeTH } from "@/lib/format";
 import { replyPreviewText } from "@/lib/chatReply";
+import {
+  HIRE_CHAT_LOCKED_HINT,
+  HIRE_CHAT_LOCKED_LIST_LABEL,
+} from "@/lib/hireRejectChat";
 import { cn } from "@/lib/utils";
 import { DEMO_RESEARCH_ACCOUNTS, isDemoMode } from "@/lib/demoMode";
 import { toast } from "sonner";
@@ -72,6 +96,10 @@ const ChatSidebar = ({
   const { tier } = useSubscription();
   const [groupOpen, setGroupOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [reportTarget, setReportTarget] = useState<{
+    targetId: string;
+    targetOwnerId: string;
+  } | null>(null);
   const { data: conversations = [], isLoading, isError, error } = useConversations(
     tab === "all" ? undefined : tab,
   );
@@ -153,6 +181,32 @@ const ChatSidebar = ({
     },
   });
 
+  const hireRequestIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          conversations
+            .filter((c) => c.kind === "hire" && !!c.request_id)
+            .map((c) => c.request_id as string),
+        ),
+      ),
+    [conversations],
+  );
+
+  const { data: lockedHireRequestIds = new Set<string>() } = useQuery({
+    queryKey: ["chat-list-hire-locked", hireRequestIds],
+    enabled: hireRequestIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("hiring_requests")
+        .select("id, post_reject_chat")
+        .in("id", hireRequestIds)
+        .eq("post_reject_chat", "locked");
+      if (error) throw error;
+      return new Set((data ?? []).map((r) => r.id as string));
+    },
+  });
+
   const { data: unreadCounts = {} } = useConversationUnreadCounts(convIds);
 
   const filtered = useMemo(() => {
@@ -204,8 +258,7 @@ const ChatSidebar = ({
     setGroupOpen(true);
   };
 
-  const handleTogglePin = (e: React.MouseEvent, convId: string) => {
-    e.stopPropagation();
+  const handleTogglePin = (convId: string) => {
     const wasPinned = pinnedSet.has(convId);
     togglePin.mutate(
       { conversationId: convId, pinned: wasPinned },
@@ -216,8 +269,7 @@ const ChatSidebar = ({
     );
   };
 
-  const handleAskDelete = (e: React.MouseEvent, convId: string) => {
-    e.stopPropagation();
+  const handleAskDelete = (convId: string) => {
     setDeleteTargetId(convId);
   };
 
@@ -379,6 +431,11 @@ const ChatSidebar = ({
             const p = otherId ? profilesMap[otherId] : undefined;
             const last = lastMessages[c.id];
             const isHire = c.kind === "hire";
+            const isLocked = Boolean(
+              isHire &&
+                ((c.request_id && lockedHireRequestIds.has(c.request_id)) ||
+                  last?.preview === HIRE_CHAT_LOCKED_LIST_LABEL),
+            );
             const groupTag =
               isGroup && (c.group_tag === "hire" || c.group_tag === "collab")
                 ? c.group_tag
@@ -386,6 +443,12 @@ const ChatSidebar = ({
             const selected = selectedId === c.id;
             const unread = unreadCounts[c.id] ?? 0;
             const isPinned = pinnedSet.has(c.id);
+            const reportUserId =
+              !isGroup
+                ? otherId
+                : c.created_by && c.created_by !== user?.id
+                  ? c.created_by
+                  : null;
             const accentBorder = isGroup
               ? groupTag === "hire"
                 ? "border-[hsl(var(--chat-hire))]"
@@ -421,7 +484,7 @@ const ChatSidebar = ({
                   type="button"
                   onClick={() => selectConversation(c)}
                   className={cn(
-                    "w-full flex items-center gap-3 p-3 pr-11 rounded-xl transition-colors text-left border-l-4",
+                    "w-full flex items-center gap-3 p-3 pr-10 rounded-xl transition-colors text-left border-l-4",
                     selected ? cn("bg-accent/80", accentBorder) : "border-transparent hover:bg-accent/50",
                     isPinned && !selected && "bg-muted/40",
                   )}
@@ -439,9 +502,9 @@ const ChatSidebar = ({
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0 pr-6">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
                         <span className="font-semibold text-foreground truncate text-sm">{listName}</span>
                         <span
                           className={cn(
@@ -451,20 +514,33 @@ const ChatSidebar = ({
                         >
                           {listBadge}
                         </span>
+                        {isLocked && (
+                          <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            {HIRE_CHAT_LOCKED_LIST_LABEL}
+                          </span>
+                        )}
                       </div>
-                      <span className="text-[11px] text-muted-foreground shrink-0">
-                        {timeAgoTH(last?.created_at ?? c.last_message_at)}
+                      <span className="text-[11px] text-muted-foreground shrink-0 tabular-nums ml-auto">
+                        {clockTimeTH(last?.created_at ?? c.last_message_at)}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between gap-2 mt-0.5">
-                      <p className="text-xs text-muted-foreground truncate flex-1">
-                        {last
-                          ? (last.mine ? "คุณ: " : "") + last.preview
-                          : isGroup
-                            ? "เริ่มแชทกลุ่มได้เลย"
-                            : isHire
-                              ? "เริ่มพูดคุยเรื่องงานได้เลย"
-                              : "เริ่มคุยคอลแลปได้เลย"}
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p
+                        className={cn(
+                          "text-xs truncate flex-1",
+                          isLocked ? "text-muted-foreground/90" : "text-muted-foreground",
+                        )}
+                        title={isLocked ? HIRE_CHAT_LOCKED_HINT : undefined}
+                      >
+                        {isLocked
+                          ? HIRE_CHAT_LOCKED_HINT
+                          : last
+                            ? (last.mine ? "คุณ: " : "") + last.preview
+                            : isGroup
+                              ? "เริ่มแชทกลุ่มได้เลย"
+                              : isHire
+                                ? "เริ่มพูดคุยเรื่องงานได้เลย"
+                                : "เริ่มคุยคอลแลปได้เลย"}
                       </p>
                       {unread > 0 && (
                         <span className="shrink-0 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-semibold rounded-full bg-destructive text-destructive-foreground">
@@ -473,29 +549,59 @@ const ChatSidebar = ({
                       )}
                     </div>
                     {!isGroup && c.project_title && (
-                      <p className="text-[11px] text-muted-foreground/80 truncate mt-0.5">
+                      <p className="text-[11px] text-muted-foreground/80 truncate mt-0.5 pr-1">
                         {c.project_title}
                       </p>
                     )}
                   </div>
                 </button>
-                <div className="absolute top-2 right-1.5 flex flex-col items-center gap-0.5 z-10">
-                  <button
-                    type="button"
-                    onClick={(e) => handleTogglePin(e, c.id)}
-                    className="p-1 rounded-full hover:bg-background/80 text-muted-foreground hover:text-foreground"
-                    aria-label={isPinned ? "เลิกปักหมุด" : "ปักหมุด"}
-                  >
-                    {isPinned ? <Pin className="w-3.5 h-3.5 text-primary" /> : <PinOff className="w-3.5 h-3.5 opacity-40" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => handleAskDelete(e, c.id)}
-                    className="p-1 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-                    aria-label="ลบแชท"
-                  >
-                    <X className="w-3.5 h-3.5 opacity-50 hover:opacity-100" />
-                  </button>
+                <div className="absolute bottom-2 right-1.5 z-10 flex items-center gap-0.5">
+                  {isPinned && (
+                    <Pin className="w-3 h-3 text-primary shrink-0" aria-hidden />
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 rounded-full hover:bg-background/80 text-muted-foreground hover:text-foreground"
+                        aria-label="เมนูแชท"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenuItem onClick={() => handleTogglePin(c.id)}>
+                        {isPinned ? (
+                          <PinOff className="w-4 h-4 mr-2" />
+                        ) : (
+                          <Pin className="w-4 h-4 mr-2" />
+                        )}
+                        {isPinned ? "เลิกปักหมุด" : "ปักหมุด"}
+                      </DropdownMenuItem>
+                      {reportUserId ? (
+                        <DropdownMenuItem
+                          onClick={() =>
+                            setReportTarget({
+                              targetId: reportUserId,
+                              targetOwnerId: reportUserId,
+                            })
+                          }
+                        >
+                          <Flag className="w-4 h-4 mr-2" />
+                          รายงานแชท
+                        </DropdownMenuItem>
+                      ) : null}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => handleAskDelete(c.id)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        ลบแชท
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </li>
             );
@@ -526,6 +632,19 @@ const ChatSidebar = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {reportTarget && (
+        <ReportDialog
+          targetType="user"
+          targetId={reportTarget.targetId}
+          targetOwnerId={reportTarget.targetOwnerId}
+          open={!!reportTarget}
+          onOpenChange={(open) => {
+            if (!open) setReportTarget(null);
+          }}
+          hideTrigger
+        />
+      )}
 
       <CreateGroupDialog
         open={groupOpen}

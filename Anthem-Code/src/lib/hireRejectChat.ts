@@ -9,7 +9,10 @@ export type HirePostRejectChat =
 export const HIRE_REJECT_CHOICE_PREFIX = "__APLUS1_HIRE_REJECT_CHOICE__:";
 export const HIRE_CONTINUE_ASK_PREFIX = "__APLUS1_HIRE_CONTINUE_ASK__:";
 
-export const HIRE_CLIENT_ACCEPT_REJECT_TEXT = "ได้ครับ ไว้โอกาสหน้าร่วมงานกันครับ";
+export const HIRE_CLIENT_ACCEPT_REJECT_TEXT =
+  "เข้าใจครับ/ค่ะ ไว้โอกาสหน้าร่วมงานกันครับ/ค่ะ";
+/** Legacy close text — still treated as chat-locked in history. */
+export const HIRE_CLIENT_ACCEPT_REJECT_TEXT_LEGACY = "ได้ครับ ไว้โอกาสหน้าร่วมงานกันครับ";
 export const HIRE_CLIENT_ASK_CONTINUE_TEXT = "งั้นขอคุยรายละเอียดเพิ่มเติมก่อนได้มั้ย";
 export const HIRE_FREELANCER_ACCEPT_CONTINUE_TEXT =
   "ได้ครับ ยังไม่รับงานนี้ แต่คุยรายละเอียดต่อได้เลยครับ";
@@ -147,14 +150,33 @@ export function isHireProtocolMessage(content: string | null | undefined): boole
   );
 }
 
-/** Only permanently closed chats lock the composer — pending accept/reject still allows typing. */
+/** Permanently closed after round-2 reject (decline continue / client accepts close). */
 export function isHireChatComposerLocked(postRejectChat: string | null | undefined): boolean {
   return postRejectChat === "locked";
 }
 
+/** Fallback when DB state is stale — detect round-2 close messages already in the thread. */
+export function hireChatLockedByMessages(
+  messages: Array<{ content?: string | null }> | null | undefined,
+): boolean {
+  if (!messages?.length) return false;
+  return messages.some((m) => {
+    const c = m.content?.trim() ?? "";
+    return (
+      c === HIRE_FREELANCER_DECLINE_CONTINUE_TEXT ||
+      c === HIRE_CLIENT_ACCEPT_REJECT_TEXT ||
+      c === HIRE_CLIENT_ACCEPT_REJECT_TEXT_LEGACY
+    );
+  });
+}
+
+export const HIRE_CHAT_LOCKED_HINT =
+  "แชทนี้ปิดแล้วหลังปฏิเสธครบ 2 รอบ — ทั้งสองฝ่ายพิมพ์ต่อไม่ได้ ทักจากหน้าผลงานถ้าสนใจอีกครั้ง";
+
+/** Short label for conversation list / badges. */
+export const HIRE_CHAT_LOCKED_LIST_LABEL = "แชทปิดแล้ว";
+
 export function hireChatLockHint(postRejectChat: string | null | undefined): string | null {
-  if (postRejectChat === "locked") {
-    return "แชทนี้ปิดแล้ว — ทักจากหน้าผลงานเพื่อเริ่มคุยใหม่";
-  }
+  if (postRejectChat === "locked") return HIRE_CHAT_LOCKED_HINT;
   return null;
 }

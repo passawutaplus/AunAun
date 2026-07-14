@@ -36,3 +36,17 @@ export const timeAgoTH = (iso: string) => {
   if (day < 30) return `${day} วันก่อน`;
   return formatThaiDate(iso);
 };
+
+/** 24h clock for chat list, e.g. `14:05น.` */
+export const clockTimeTH = (iso: string | null | undefined) => {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${hh}:${mm}น.`;
+  } catch {
+    return "";
+  }
+};

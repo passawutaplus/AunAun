@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, ChevronDown, ExternalLink, ImageIcon } from "lucide-react";
+import { BadgeCheck, ChevronDown, ChevronRight, ExternalLink, ImageIcon } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,11 @@ import { PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import ChatMetaPanel from "@/components/chat/ChatMetaPanel";
 import ChatPortfolioSection from "@/components/chat/ChatPortfolioSection";
+import {
+  HIRE_CHAT_LOCKED_HINT,
+  hireChatLockedByMessages,
+  isHireChatComposerLocked,
+} from "@/lib/hireRejectChat";
 import { cn } from "@/lib/utils";
 import { WORK_DISCIPLINE_LABELS, type WorkDisciplineId } from "@/data/workDisciplineOptions";
 import { labelOpportunityType } from "@/lib/opportunity";
@@ -37,6 +42,8 @@ interface Props {
   messages: Message[];
   className?: string;
   onClose?: () => void;
+  /** Desktop collapse aria/title; defaults to closing the slide-over on mobile. */
+  collapseLabel?: string;
 }
 
 type MemberOption = {
@@ -50,11 +57,30 @@ const RESIZE_HANDLE_H = 16;
 const WORKS_MIN_H = 140;
 const META_BAR_H = 40;
 
-const ChatPartnerPanel = ({ conversation, messages, className, onClose }: Props) => {
+const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapseLabel }: Props) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isGroup = isGroupConversation(conversation);
+  const isHire = conversation.kind === "hire";
   const otherId = otherParticipantId(conversation, user?.id ?? "");
+
+  const { data: hirePostRejectChat = null } = useQuery({
+    queryKey: ["chat-hire-forward-src", conversation.request_id],
+    enabled: isHire && !!conversation.request_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("hiring_requests")
+        .select("post_reject_chat")
+        .eq("id", conversation.request_id!)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as { post_reject_chat?: string | null } | null)?.post_reject_chat ?? null;
+    },
+  });
+
+  const chatLocked =
+    isHire &&
+    (isHireChatComposerLocked(hirePostRejectChat) || hireChatLockedByMessages(messages));
 
   const { data: groupMembers = [], isLoading: membersLoading } = useQuery({
     queryKey: ["group-panel-members", conversation.id],
@@ -240,6 +266,27 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose }: Props)
         className,
       )}
     >
+      {chatLocked && (
+        <div className="shrink-0 border-b border-border bg-muted/40 px-3 py-2.5 text-left">
+          <p className="text-[11px] leading-snug text-muted-foreground">{HIRE_CHAT_LOCKED_HINT}</p>
+        </div>
+      )}
+      {onClose && (
+        <div className="shrink-0 flex items-center justify-between gap-2 px-3 py-2 border-b border-border">
+          <p className="text-[11px] font-medium text-muted-foreground truncate">ข้อมูลคู่แชท</p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-lg shrink-0"
+            onClick={onClose}
+            aria-label={collapseLabel ?? "ปิดแผง"}
+            title={collapseLabel ?? "ปิดแผง"}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
       <div
         className="shrink-0 overflow-y-auto bg-background"
         style={{ height: profileH ?? undefined, maxHeight: profileH ? undefined : "42%" }}

@@ -26,6 +26,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { SettingsPreferencesSection } from "@/components/settings/SettingsPreferencesSection";
 import { ChangePasswordSection } from "@/components/settings/ChangePasswordSection";
 import { EmailNotificationSection } from "@/components/settings/EmailNotificationSection";
+import { ChatSettingsSection } from "@/components/settings/ChatSettingsSection";
 import { cn } from "@/lib/utils";
 import { useUsernameAvailability, normalizeUsername } from "@/hooks/useUsernameAvailability";
 import { USERNAME_COOLDOWN_DAYS, USERNAME_COOLDOWN_MS } from "@/lib/usernamePolicy";
@@ -474,6 +475,16 @@ const SettingsPage = () => {
           }}
           onChange={update}
         />
+
+        <div
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") {
+              e.preventDefault();
+            }
+          }}
+        >
+          <ChatSettingsSection />
+        </div>
 
         <SettingsPreferencesSection />
 

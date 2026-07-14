@@ -387,6 +387,7 @@ export const useBlockUser = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["user-blocks", user?.id] });
+      qc.invalidateQueries({ queryKey: ["blocked-chat-users", user?.id] });
       qc.invalidateQueries({ queryKey: ["community-posts"] });
       toast.success("บล็อกผู้ใช้แล้ว");
     },
@@ -408,6 +409,7 @@ export const useUnblockUser = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["user-blocks", user?.id] });
+      qc.invalidateQueries({ queryKey: ["blocked-chat-users", user?.id] });
       qc.invalidateQueries({ queryKey: ["community-posts"] });
       toast.success("ปลดบล็อกแล้ว");
     },

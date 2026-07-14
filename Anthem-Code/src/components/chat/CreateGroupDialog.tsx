@@ -77,9 +77,35 @@ const CreateGroupDialog = ({
     setMembers(lockedMembers);
     setTitle("");
     setSearch("");
-    // Intentionally sync only when dialog opens or locked set changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- lockedMembers identity may change; lockedKey is the signal
   }, [open, lockedKey]);
+
+  // Keep locked member labels in sync when profile loads after dialog opens
+  useEffect(() => {
+    if (!open || lockedMembers.length === 0) return;
+    setMembers((prev) => {
+      const lockedById = new Map(lockedMembers.map((m) => [m.id, m]));
+      let changed = false;
+      const next = prev.map((m) => {
+        const locked = lockedById.get(m.id);
+        if (!locked) return m;
+        if (
+          locked.display_name === m.display_name &&
+          locked.avatar_url === m.avatar_url
+        ) {
+          return m;
+        }
+        changed = true;
+        return { ...m, display_name: locked.display_name, avatar_url: locked.avatar_url };
+      });
+      for (const locked of lockedMembers) {
+        if (!next.some((m) => m.id === locked.id)) {
+          next.unshift(locked);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [open, lockedMembers]);
 
   const memberIdsKey = useMemo(
     () => members.map((m) => m.id).sort().join(","),
@@ -195,11 +221,14 @@ const CreateGroupDialog = ({
     }
   };
 
+  const partnerLabel = lockedMembers[0]?.display_name;
   const titleText = dialogTitle ?? (followingOnly ? "ชวนสร้างกลุ่ม" : "สร้างกลุ่มแชท");
   const descText =
     dialogDescription ??
     (followingOnly
-      ? `คุณและคู่สนทนาอยู่ในกลุ่มแล้ว — เลือกเพื่อนที่คุณติดตามให้ครบอย่างน้อย ${minTotalMembers} คน`
+      ? partnerLabel && partnerLabel !== "ผู้ใช้"
+        ? `คุณและ ${partnerLabel} อยู่ในกลุ่มแล้ว — เลือกเพื่อนที่คุณติดตามให้ครบอย่างน้อย ${minTotalMembers} คน`
+        : `คุณและคู่สนทนาอยู่ในกลุ่มแล้ว — เลือกเพื่อนที่คุณติดตามให้ครบอย่างน้อย ${minTotalMembers} คน`
       : "ตั้งชื่อกลุ่มและเชิญสมาชิกอย่างน้อย 1 คน (รวมคุณสูงสุด 20 คน)");
 
   return (
@@ -261,6 +290,10 @@ const CreateGroupDialog = ({
               </span>
               {members.map((m) => {
                 const locked = lockedIds.has(m.id);
+                const label =
+                  (locked
+                    ? lockedMembers.find((x) => x.id === m.id)?.display_name
+                    : null) || m.display_name;
                 return (
                   <span
                     key={m.id}
@@ -271,15 +304,15 @@ const CreateGroupDialog = ({
                   >
                     <Avatar className="h-6 w-6">
                       <AvatarImage src={m.avatar_url ?? undefined} />
-                      <AvatarFallback className="text-[10px]">{m.display_name[0]}</AvatarFallback>
+                      <AvatarFallback className="text-[10px]">{label[0]}</AvatarFallback>
                     </Avatar>
-                    {m.display_name}
+                    {label}
                     {!locked && (
                       <button
                         type="button"
                         onClick={() => removeMember(m.id)}
                         className="ml-0.5 text-muted-foreground hover:text-foreground"
-                        aria-label={`ลบ ${m.display_name} ออกจากกลุ่ม`}
+                        aria-label={`ลบ ${label} ออกจากกลุ่ม`}
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -288,11 +321,6 @@ const CreateGroupDialog = ({
                 );
               })}
             </div>
-            {needMore > 0 && (
-              <p className="text-xs text-muted-foreground">
-                เลือกเพิ่มอีกอย่างน้อย {needMore} คน
-              </p>
-            )}
           </div>
 
           <div className="space-y-2">
