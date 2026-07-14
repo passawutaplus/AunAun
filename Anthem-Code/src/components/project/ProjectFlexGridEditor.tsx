@@ -514,7 +514,6 @@ export function ProjectFlexGridEditor({
               selection={selection}
               onSelectModule={selectModule}
               disabled={disabled}
-              snapEnabled={snapEnabled}
               uploadingModuleId={uploadingModuleId}
               dropGhost={dropGhost?.boardId === board.id ? dropGhost : null}
               onDragOver={(e) => handleBoardDragOver(e, board)}
