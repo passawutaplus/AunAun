@@ -3,9 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { Globe, Instagram, Facebook, MessageSquare, UserX, Handshake, Eye, X, Share2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
-import PageLoader from "@/components/ui/PageLoader";
 import EmptyState from "@/components/ui/EmptyState";
+import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { Button } from "@/components/ui/button";
+import { useSlowLoadFallback } from "@/hooks/useSlowLoadFallback";
+import { trackProductEvent } from "@/lib/productEvents";
 import { Badge } from "@/components/ui/badge";
 import { ProfileSectionTabs } from "@/components/profile/ProfileSectionTabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,10 +25,8 @@ import {
   useUnblockUser,
   useUserBlocks,
 } from "@/hooks/useCommunityPostInteractions";
-import { usePublicCollections } from "@/hooks/useCollections";
 import { useMyProjectSeries, usePublicProjectSeries } from "@/hooks/useProjectSeries";
 import PortfolioGrid from "@/components/profile/PortfolioGrid";
-import CollectionCard from "@/components/collections/CollectionCard";
 import { SeriesCard } from "@/components/series/SeriesCard";
 import { ProfileAboutReadOnly } from "@/components/profile/ProfileAboutReadOnly";
 import type { ExperienceItem } from "@/lib/validators";
@@ -74,7 +74,12 @@ const PublicProfilePage = () => {
   const [collabOpen, setCollabOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("works");
 
-  const { data: profile, isLoading } = useQuery({
+  const {
+    data: profile,
+    isLoading,
+    isError: profileError,
+    refetch: refetchProfile,
+  } = useQuery({
     queryKey: ["public-profile", slug],
     enabled: !!slug && !vanityRedirect,
     queryFn: async () => {
@@ -90,6 +95,7 @@ const PublicProfilePage = () => {
       return data;
     },
   });
+  const profileSlow = useSlowLoadFallback(isLoading);
 
   const resolvedUserId = profile?.user_id;
   const isSelf = !!user?.id && !!resolvedUserId && user.id === resolvedUserId;
@@ -100,14 +106,18 @@ const PublicProfilePage = () => {
   const { data: blockedSet } = useUserBlocks(user?.id);
   const unblockUser = useUnblockUser();
   const iBlockedThem = !!(resolvedUserId && blockedSet?.has(resolvedUserId));
-  const { data: collections = [] } = usePublicCollections(resolvedUserId);
   const { data: publicSeries = [] } = usePublicProjectSeries(resolvedUserId);
   const { data: ownerSeries = [] } = useMyProjectSeries(
     isSelf && !visitorPreview ? resolvedUserId : undefined,
   );
   const seriesList = isSelf && !visitorPreview ? ownerSeries : publicSeries;
 
-  const { data: projects = [] } = useQuery({
+  const {
+    data: projects = [],
+    isLoading: projectsLoading,
+    isError: projectsError,
+    refetch: refetchProjects,
+  } = useQuery({
     queryKey: ["public-projects", resolvedUserId],
     enabled: !!resolvedUserId,
     queryFn: async () => {
@@ -124,6 +134,7 @@ const PublicProfilePage = () => {
       return data ?? [];
     },
   });
+  const projectsSlow = useSlowLoadFallback(projectsLoading && !!resolvedUserId);
 
   const orderedProjects = useMemo(
     () => sortPortfolioProjects(projects as Parameters<typeof sortPortfolioProjects>[0]),
@@ -169,12 +180,37 @@ const PublicProfilePage = () => {
     setSearchParams(q ? next : {}, { replace: true });
   }, [user, params, setSearchParams, resolvedUserId, isSelf]);
 
+  useEffect(() => {
+    if (!resolvedUserId || isSelf) return;
+    void trackProductEvent(
+      "profile_view",
+      { profile_user_id: resolvedUserId },
+      { debounceMs: 5_000 },
+    );
+  }, [resolvedUserId, isSelf]);
+
   if (vanityRedirect) {
     return <Navigate to={vanityRedirect} replace />;
   }
 
-  if (isLoading) {
-    return <PageLoader label="กำลังโหลดโปรไฟล์..." />;
+  if (profileError || isLoading) {
+    return (
+      <div className="min-h-screen bg-app-ambient flex items-center justify-center px-4">
+        <div className="w-full max-w-lg">
+          <QueryStatusPanel
+            isLoading={isLoading}
+            isError={profileError}
+            isSlow={profileSlow}
+            onRetry={() => void refetchProfile()}
+            fullPageLoader
+            loadingLabel="กำลังโหลดโปรไฟล์..."
+            errorTitle="โหลดโปรไฟล์ไม่สำเร็จ"
+            errorDescription="เน็ตอาจสะดุดชั่วคราว — กดลองใหม่ได้เลย"
+            emptyIcon={UserX}
+          />
+        </div>
+      </div>
+    );
   }
 
   if (
@@ -569,21 +605,37 @@ const PublicProfilePage = () => {
                 </>
               ),
             },
-            {
-              value: "collections",
-              label: (
-                <>
-                  <span className="sm:hidden">คอลฯ ({collections.length})</span>
-                  <span className="hidden sm:inline">คอลเลกชัน ({collections.length})</span>
-                </>
-              ),
-            },
             { value: "about", label: "เกี่ยวกับ" },
           ]}
         >
           {activeTab === "works" &&
-            (portfolioProjects.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground glass-panel rounded-2xl">ยังไม่มีผลงานที่เผยแพร่</div>
+            (projectsError || projectsLoading ? (
+              <QueryStatusPanel
+                isLoading={projectsLoading}
+                isError={projectsError}
+                isSlow={projectsSlow}
+                onRetry={() => void refetchProjects()}
+                loadingLabel="กำลังโหลดผลงาน..."
+                errorTitle="โหลดผลงานไม่สำเร็จ"
+                errorDescription="กดลองใหม่เพื่อดึงผลงานของครีเอเตอร์นี้"
+              />
+            ) : portfolioProjects.length === 0 ? (
+              <EmptyState
+                icon={Eye}
+                title="ยังไม่มีผลงานที่เผยแพร่"
+                description={
+                  isSelf && !visitorPreview
+                    ? "ลงผลงานชิ้นแรกเพื่อให้คนอื่นเห็นศักยภาพของคุณ"
+                    : "ครีเอเตอร์คนนี้ยังไม่ได้เผยแพร่ผลงานสาธารณะ"
+                }
+                action={
+                  isSelf && !visitorPreview ? (
+                    <Button className="rounded-full" onClick={() => navigate("/portfolio/new")}>
+                      ลงผลงาน
+                    </Button>
+                  ) : undefined
+                }
+              />
             ) : (
               <PortfolioGrid projects={portfolioProjects as any} />
             ))}
@@ -606,17 +658,6 @@ const PublicProfilePage = () => {
               <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
                 {seriesList.map((s) => (
                   <SeriesCard key={s.id} series={s} compact />
-                ))}
-              </div>
-            ))}
-
-          {activeTab === "collections" &&
-            (collections.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground glass-panel rounded-2xl">ยังไม่มีคอลเลกชันสาธารณะ</div>
-            ) : (
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
-                {collections.map((c) => (
-                  <CollectionCard key={c.id} collection={c} compact />
                 ))}
               </div>
             ))}

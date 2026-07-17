@@ -142,6 +142,52 @@ export const useUpdateHireStatus = () => {
   });
 };
 
+/** Mark hire as completed (DB: ปิดแล้ว → UI จบงาน). */
+export const useCompleteHireRequest = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      const { error } = await supabase
+        .from("hiring_requests")
+        .update({ status: "ปิดแล้ว" as never })
+        .eq("id", requestId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["hiring_requests"] });
+      qc.invalidateQueries({ queryKey: ["chat-hire-forward-src"] });
+      qc.invalidateQueries({ queryKey: ["chat-hire-meta"] });
+    },
+  });
+};
+
+/** Client cancels hire mid-way with reason. */
+export const useCancelHireRequest = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      requestId: string;
+      reason: string;
+      note?: string | null;
+    }) => {
+      const { error } = await supabase
+        .from("hiring_requests")
+        .update({
+          status: "ยกเลิก",
+          cancel_reason: input.reason,
+          cancel_note: input.note?.trim() || null,
+        } as never)
+        .eq("id", input.requestId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["hiring_requests"] });
+      qc.invalidateQueries({ queryKey: ["chat-hire-forward-src"] });
+      qc.invalidateQueries({ queryKey: ["chat-hire-meta"] });
+    },
+  });
+};
+
 /** Clone a hire request to another freelancer (forward). Multiple people OK — one submit each. */
 export const useForwardHireRequest = () => {
   const qc = useQueryClient();
@@ -206,7 +252,12 @@ export const useForwardHireRequest = () => {
       const srcPatch: Record<string, unknown> = {
         forwarded_to_user_id: input.toUserId,
       };
-      if (!alreadyForwarded && src.status !== "ปฏิเสธ" && src.status !== "ปิดแล้ว") {
+      if (
+        !alreadyForwarded &&
+        src.status !== "ปฏิเสธ" &&
+        src.status !== "ปิดแล้ว" &&
+        src.status !== "ยกเลิก"
+      ) {
         srcPatch.status = "ปฏิเสธ";
         srcPatch.reject_reason = input.rejectReason ?? "forwarded";
         srcPatch.reject_note = input.rejectNote ?? null;

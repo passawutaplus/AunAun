@@ -72,7 +72,7 @@ const CashoutDialog = ({ open, onOpenChange }: Props) => {
       {
         onSuccess: () => {
           toast.success(`ส่งคำขอถอน ${amountNum.toLocaleString()} px แล้ว`, {
-            description: `สุทธิประมาณ ฿ ${net.toLocaleString()} หลังหักค่าธรรมเนียม ${feeLabel} — admin จะโอนผ่าน Stripe Connect`,
+            description: `สุทธิประมาณ ฿ ${net.toLocaleString()} หลังหักค่าธรรมเนียม ${feeLabel} — รอบโอนผ่าน Aplus1 (Omise) กำลังเปิด`,
           });
           onOpenChange(false);
           setAmount("");

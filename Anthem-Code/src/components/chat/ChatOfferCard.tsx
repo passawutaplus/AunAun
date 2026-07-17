@@ -12,6 +12,7 @@ import {
 } from "@/lib/chatOffer";
 import { ChatOfferTimeline } from "@/components/chat/ChatOfferTimeline";
 import { cn } from "@/lib/utils";
+import { useMarkHireOfferAccepted } from "@/hooks/useHireCancelRequest";
 
 type Props = {
   offer: ChatOfferPayload;
@@ -19,10 +20,19 @@ type Props = {
   mine: boolean;
   /** Recipient can accept/decline. */
   canRespond: boolean;
+  /** When set, accepting the offer marks hiring_requests.offer_accepted_at */
+  hiringRequestId?: string | null;
 };
 
-export function ChatOfferCard({ offer, conversationId, mine, canRespond }: Props) {
+export function ChatOfferCard({
+  offer,
+  conversationId,
+  mine,
+  canRespond,
+  hiringRequestId,
+}: Props) {
   const send = useSendMessage();
+  const markOfferAccepted = useMarkHireOfferAccepted();
   const hasTimeline = !!(
     offer.startDate ||
     offer.endDate ||
@@ -35,6 +45,13 @@ export function ChatOfferCard({ offer, conversationId, mine, canRespond }: Props
 
   const respond = async (accepted: boolean) => {
     try {
+      if (accepted && hiringRequestId) {
+        try {
+          await markOfferAccepted.mutateAsync(hiringRequestId);
+        } catch {
+          /* chat accept message still useful */
+        }
+      }
       await send.mutateAsync({
         conversationId,
         content: accepted ? offerAcceptMessage(offer) : offerDeclineMessage(offer),

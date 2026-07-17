@@ -36,6 +36,7 @@ import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { toast } from "sonner";
 import { isCategoryAllowed } from "@/lib/cookieConsent";
 import { trackProductEvent } from "@/lib/productEvents";
+import { recordProjectViewAffinity } from "@/lib/viewAffinity";
 import SeoHead from "@/components/SeoHead";
 import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
 import { BRAND_NAME } from "@/lib/brandConfig";
@@ -87,6 +88,10 @@ const ProjectDetailPage = () => {
     if (analyticsOk) {
       void trackProductEvent("project_view", { project_id: dbProject.id }, { debounceMs: 5_000 });
     }
+    recordProjectViewAffinity({
+      category: dbProject.category,
+      opportunityTypes: (dbProject as { opportunity_types?: string[] | null }).opportunity_types,
+    });
     // Per-user history (signed-in + analytics consent) for personalized Explore
     if (user?.id && analyticsOk) {
       supabase
@@ -97,7 +102,7 @@ const ProjectDetailPage = () => {
         )
         .then(() => {}, () => {});
     }
-  }, [user?.id, dbProject?.id, refetch]);
+  }, [user?.id, dbProject?.id, dbProject?.category, refetch]);
 
   // Owner: refresh while attachments are still scanning (background job).
   useEffect(() => {

@@ -10,6 +10,35 @@ const COLLAB_TYPE_LABELS: Record<string, string> = {
   other: "อื่นๆ",
 };
 
+/** Soft decline reasons for collab — no forward / money paths. */
+export const COLLAB_REJECT_REASONS = [
+  {
+    id: "busy_now",
+    label: "ตอนนี้โฟกัสงานอื่นอยู่ ยังไม่พร้อมร่วมงาน",
+  },
+  {
+    id: "style_mismatch",
+    label: "ทิศทางหรือสไตล์ยังไม่ตรงกัน",
+  },
+  {
+    id: "not_ready",
+    label: "ยังไม่พร้อมลงมือจริงตอนนี้",
+  },
+  {
+    id: "solo_focus",
+    label: "ช่วงนี้โฟกัสทำคนเดียว / ยังไม่รับคอลแลป",
+  },
+  { id: "other", label: "อื่นๆ" },
+] as const;
+
+export type CollabRejectReasonId = (typeof COLLAB_REJECT_REASONS)[number]["id"];
+
+export function collabRejectReasonLabel(id: string | null | undefined): string {
+  if (!id) return "";
+  if (id === "busy_but_chat") return "ยังไม่พร้อมร่วมงานตอนนี้ แต่คุยไอเดียได้";
+  return COLLAB_REJECT_REASONS.find((r) => r.id === id)?.label ?? id;
+}
+
 export type CollabBriefSource = {
   project_title?: string | null;
   message?: string | null;
@@ -33,6 +62,13 @@ export function formatCollabBriefChatText(collab: CollabBriefSource): string {
   ].filter(Boolean);
 
   return lines.join("\n");
+}
+
+/** Auto-seeded collab invitation bubble in chat. */
+export function isCollabBriefChatMessage(content: string | null | undefined): boolean {
+  if (!content) return false;
+  const t = content.trim();
+  return t.startsWith("🤝 คำชวนคอลแลป") || t.startsWith("คำชวนคอลแลป");
 }
 
 /** Parse one-or-many reference links from a multi-line / comma-separated field. */

@@ -52,3 +52,29 @@ export const useUpdateCollabStatus = () => {
     },
   });
 };
+
+/** Requester (sender) cancels collab mid-way with reason. */
+export const useCancelCollabRequest = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      requestId: string;
+      reason: string;
+      note?: string | null;
+    }) => {
+      const { error } = await supabase
+        .from("collab_requests")
+        .update({
+          status: "cancelled",
+          cancel_reason: input.reason,
+          cancel_note: input.note?.trim() || null,
+        } as never)
+        .eq("id", input.requestId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["collab-requests"] });
+      qc.invalidateQueries({ queryKey: ["chat-collab-meta"] });
+    },
+  });
+};

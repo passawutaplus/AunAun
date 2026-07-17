@@ -19,8 +19,8 @@ const formatNum = (n: number) => n.toLocaleString("th-TH");
 const STATS = [
   { key: "designers", label: "ดีไซเนอร์" },
   { key: "projects", label: "ผลงาน" },
-  { key: "collabs", label: "คอลแลป" },
   { key: "hires", label: "จ้างงาน" },
+  { key: "successfulCollabs", label: "คอลแลปสำเร็จ" },
 ] as const;
 
 const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
@@ -80,7 +80,7 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
   const { data, isLoading } = useFeedStats();
   const { slides: designerSlides } = useDesignerHeroSlides();
   const { data: studioSlides = [] } = useStudioHeroSlides();
-  const s = data ?? { designers: 0, projects: 0, collabs: 0, hires: 0 };
+  const s = data ?? { designers: 0, projects: 0, hires: 0, successfulCollabs: 0 };
   const copy = HERO_COPY[mode];
 
   const showcase =
@@ -170,7 +170,7 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
         <div className="min-h-[2.75rem] sm:min-h-[3rem] md:hidden" aria-hidden />
 
         <div className="mt-auto flex flex-wrap gap-2 w-fit max-w-full md:mt-0 md:gap-2.5">
-          {(isAplus1LaunchMinimal() ? STATS.filter(({ key }) => key !== "collabs") : STATS).map(({ key, label }) => (
+          {STATS.map(({ key, label }) => (
             <div
               key={key}
               className="w-fit rounded-xl border border-white/20 bg-white/15 px-2.5 py-2 shadow-sm backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/10 md:border-white/15 md:bg-white/10 md:px-3 md:py-2.5 md:backdrop-blur-xl dark:border-white/15 dark:bg-white/[0.12] dark:shadow-[inset_0_1px_0_0_hsl(0_0%_100%_/_0.1)] dark:supports-[backdrop-filter]:bg-white/[0.08]"

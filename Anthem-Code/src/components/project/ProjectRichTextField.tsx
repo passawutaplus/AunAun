@@ -17,6 +17,18 @@ import {
   projectRichTextPlainLength,
   sanitizeProjectRichText,
 } from "@/lib/projectRichText";
+import {
+  applyAlign,
+  applyFontFamily,
+  applyFontSize,
+  INLINE_BY_CMD,
+  restoreSelection,
+  saveSelection,
+  toggleInlineFormat,
+  type AlignCmd,
+  type InlineCmd,
+} from "@/lib/projectRichTextFormat";
+import { PROJECT_TEXT_FONTS, PROJECT_TEXT_SIZES } from "@/lib/projectTextFonts";
 import type { TextVerticalAlign } from "@/lib/projectContentBlocks";
 import { cn } from "@/lib/utils";
 
@@ -34,172 +46,6 @@ type Props = {
   verticalAlign?: TextVerticalAlign;
   onVerticalAlignChange?: (align: TextVerticalAlign) => void;
 };
-
-type InlineTag = "b" | "i" | "u" | "s";
-type AlignCmd = "justifyLeft" | "justifyCenter" | "justifyRight";
-
-const INLINE_BY_CMD: Record<"bold" | "italic" | "underline" | "strikeThrough", InlineTag> = {
-  bold: "b",
-  italic: "i",
-  underline: "u",
-  strikeThrough: "s",
-};
-
-function saveSelection(root: HTMLElement): Range | null {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return null;
-  const range = sel.getRangeAt(0);
-  if (!root.contains(range.commonAncestorContainer)) return null;
-  return range.cloneRange();
-}
-
-function restoreSelection(range: Range | null) {
-  if (!range) return;
-  const sel = window.getSelection();
-  if (!sel) return;
-  sel.removeAllRanges();
-  sel.addRange(range);
-}
-
-function normalizeText(s: string): string {
-  return s.replace(/\u00a0/g, " ").replace(/\s+/g, "").trim();
-}
-
-function selectionCoversAllText(root: HTMLElement, range: Range): boolean {
-  const selected = normalizeText(range.toString());
-  const all = normalizeText(root.textContent ?? "");
-  return !!selected && !!all && selected === all;
-}
-
-function closestFormatTag(node: Node | null, root: HTMLElement, tag: InlineTag): HTMLElement | null {
-  let cur: Node | null = node;
-  const upper = tag.toUpperCase();
-  const aliases =
-    tag === "b" ? new Set(["B", "STRONG"]) :
-    tag === "i" ? new Set(["I", "EM"]) :
-    tag === "s" ? new Set(["S", "STRIKE"]) :
-    new Set(["U"]);
-
-  while (cur && cur !== root) {
-    if (cur.nodeType === Node.ELEMENT_NODE) {
-      const el = cur as HTMLElement;
-      if (aliases.has(el.tagName) || el.tagName === upper) return el;
-    }
-    cur = cur.parentNode;
-  }
-  return null;
-}
-
-function unwrapElement(el: HTMLElement) {
-  const parent = el.parentNode;
-  if (!parent) return;
-  while (el.firstChild) parent.insertBefore(el.firstChild, el);
-  parent.removeChild(el);
-}
-
-/** True when every text char in root is already inside `tag`. */
-function isEntirelyFormatted(root: HTMLElement, tag: InlineTag): boolean {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let node = walker.nextNode();
-  let saw = false;
-  while (node) {
-    const text = node.textContent ?? "";
-    if (normalizeText(text)) {
-      saw = true;
-      if (!closestFormatTag(node, root, tag)) return false;
-    }
-    node = walker.nextNode();
-  }
-  return saw;
-}
-
-function wrapRangeWithTag(range: Range, tag: InlineTag): void {
-  const wrapper = document.createElement(tag);
-  try {
-    range.surroundContents(wrapper);
-  } catch {
-    const frag = range.extractContents();
-    wrapper.appendChild(frag);
-    range.insertNode(wrapper);
-  }
-}
-
-function wrapAllTextInTag(root: HTMLElement, tag: InlineTag): void {
-  const blocks = Array.from(root.children).filter(
-    (el): el is HTMLElement =>
-      el instanceof HTMLElement && (el.tagName === "P" || el.tagName === "DIV"),
-  );
-
-  if (blocks.length === 0) {
-    if (!normalizeText(root.textContent ?? "")) return;
-    const wrapper = document.createElement(tag);
-    while (root.firstChild) wrapper.appendChild(root.firstChild);
-    root.appendChild(wrapper);
-    return;
-  }
-
-  for (const block of blocks) {
-    if (!normalizeText(block.textContent ?? "")) continue;
-    if (isEntirelyFormatted(block, tag)) continue;
-    const wrapper = document.createElement(tag);
-    while (block.firstChild) wrapper.appendChild(block.firstChild);
-    block.appendChild(wrapper);
-  }
-}
-
-function unwrapAllTag(root: HTMLElement, tag: InlineTag): void {
-  const aliases =
-    tag === "b" ? "b,strong" :
-    tag === "i" ? "i,em" :
-    tag === "s" ? "s,strike" :
-    "u";
-  root.querySelectorAll(aliases).forEach((el) => unwrapElement(el as HTMLElement));
-}
-
-function toggleInlineFormat(root: HTMLElement, tag: InlineTag): void {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return;
-  const range = sel.getRangeAt(0);
-  if (!root.contains(range.commonAncestorContainer)) return;
-
-  const coversAll = range.collapsed
-    ? false
-    : selectionCoversAllText(root, range);
-
-  // Full-cover (or empty caret in already-all-bold field): toggle whole editor.
-  if (coversAll || (range.collapsed && isEntirelyFormatted(root, tag))) {
-    if (isEntirelyFormatted(root, tag)) unwrapAllTag(root, tag);
-    else wrapAllTextInTag(root, tag);
-    return;
-  }
-
-  if (range.collapsed) return;
-
-  // Partial selection: if already inside same tag, unwrap nearest; else wrap.
-  const startTag = closestFormatTag(range.startContainer, root, tag);
-  const endTag = closestFormatTag(range.endContainer, root, tag);
-  if (startTag && startTag === endTag) {
-    unwrapElement(startTag);
-    return;
-  }
-
-  // Prefer semantic tags over CSS spans from the browser.
-  try {
-    document.execCommand("styleWithCSS", false, "false");
-  } catch {
-    /* ignore */
-  }
-  wrapRangeWithTag(range, tag);
-}
-
-function applyAlign(cmd: AlignCmd): void {
-  try {
-    document.execCommand("styleWithCSS", false, "false");
-  } catch {
-    /* ignore */
-  }
-  document.execCommand(cmd, false);
-}
 
 function ToolbarButton({
   label,
@@ -283,27 +129,31 @@ export function ProjectRichTextField({
     onChange(html);
   };
 
-  const applyInline = (cmd: keyof typeof INLINE_BY_CMD) => {
+  const withSelection = (fn: (el: HTMLElement) => void) => {
     if (disabled) return;
     const el = ref.current;
     if (!el) return;
     const saved = saveSelection(el);
     el.focus();
     restoreSelection(saved);
-    toggleInlineFormat(el, INLINE_BY_CMD[cmd]);
-    // Normalize browser markup → semantic tags, then persist.
+    fn(el);
     emit({ rewriteDom: true });
   };
 
+  const applyInline = (cmd: InlineCmd) => {
+    withSelection((el) => toggleInlineFormat(el, INLINE_BY_CMD[cmd]));
+  };
+
   const applyAlignCmd = (cmd: AlignCmd) => {
-    if (disabled) return;
-    const el = ref.current;
-    if (!el) return;
-    const saved = saveSelection(el);
-    el.focus();
-    restoreSelection(saved);
-    applyAlign(cmd);
-    emit({ rewriteDom: true });
+    withSelection(() => applyAlign(cmd));
+  };
+
+  const applyFont = (stack: string) => {
+    withSelection((el) => applyFontFamily(el, stack));
+  };
+
+  const applySize = (size: string) => {
+    withSelection((el) => applyFontSize(el, size));
   };
 
   return (
@@ -320,6 +170,38 @@ export function ProjectRichTextField({
         role="toolbar"
         aria-label="จัดรูปแบบข้อความ"
       >
+        <select
+          aria-label="ฟอนต์"
+          disabled={disabled}
+          defaultValue="inherit"
+          className="mr-0.5 h-7 max-w-[8.5rem] rounded-md border border-border/60 bg-background px-1.5 text-[11px] text-foreground disabled:opacity-40"
+          onMouseDown={(e) => e.stopPropagation()}
+          onChange={(e) => {
+            applyFont(e.target.value);
+          }}
+        >
+          {PROJECT_TEXT_FONTS.map((f) => (
+            <option key={f.id} value={f.stack} style={{ fontFamily: f.stack === "inherit" ? undefined : f.stack }}>
+              {f.label}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="ขนาดตัวอักษร"
+          disabled={disabled}
+          defaultValue=""
+          className="mr-0.5 h-7 w-[3.75rem] rounded-md border border-border/60 bg-background px-1 text-[11px] text-foreground disabled:opacity-40"
+          onMouseDown={(e) => e.stopPropagation()}
+          onChange={(e) => {
+            applySize(e.target.value);
+          }}
+        >
+          {PROJECT_TEXT_SIZES.map((s) => (
+            <option key={s.id} value={s.size}>
+              {s.label}
+            </option>
+          ))}
+        </select>
         <ToolbarButton label="ตัวหนา" disabled={disabled} onClick={() => applyInline("bold")}>
           <Bold className="h-3.5 w-3.5" />
         </ToolbarButton>

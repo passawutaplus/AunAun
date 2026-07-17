@@ -1,6 +1,10 @@
 import { cn } from "@/lib/utils";
-import type { PhotoGridLayout } from "@/lib/photoGridLayouts";
-import { PHOTO_GRID_LAYOUTS } from "@/lib/photoGridLayouts";
+import {
+  getMosaicPhotoGridLayout,
+  isMosaicPhotoGridLayout,
+  PHOTO_GRID_LAYOUTS,
+  type PhotoGridLayout,
+} from "@/lib/photoGridLayouts";
 
 type Props = {
   value: PhotoGridLayout;
@@ -8,8 +12,39 @@ type Props = {
   disabled?: boolean;
 };
 
-export function PhotoGridLayoutWireframe({ layout, active }: { layout: PhotoGridLayout; active: boolean }) {
+export function PhotoGridLayoutWireframe({
+  layout,
+  active,
+}: {
+  layout: PhotoGridLayout;
+  active: boolean;
+}) {
   const cell = cn("bg-foreground/20", active && "bg-primary/50");
+
+  if (isMosaicPhotoGridLayout(layout)) {
+    const meta = getMosaicPhotoGridLayout(layout);
+    return (
+      <div
+        className="grid h-11 w-full gap-0.5 p-0.5"
+        style={{
+          gridTemplateColumns: `repeat(${meta.cols}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${meta.rows}, minmax(0, 1fr))`,
+        }}
+        aria-hidden
+      >
+        {meta.cells.map((c, i) => (
+          <div
+            key={i}
+            className={cn(cell, "rounded-[2px] min-h-0 min-w-0")}
+            style={{
+              gridColumn: `${c.col} / span ${c.colSpan ?? 1}`,
+              gridRow: `${c.row} / span ${c.rowSpan ?? 1}`,
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
 
   if (layout === "two_stack") {
     return (
@@ -57,7 +92,7 @@ export function PhotoGridLayoutWireframe({ layout, active }: { layout: PhotoGrid
 
 export function PhotoGridLayoutPicker({ value, onChange, disabled }: Props) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
       {PHOTO_GRID_LAYOUTS.map((layout) => {
         const active = value === layout.id;
         return (

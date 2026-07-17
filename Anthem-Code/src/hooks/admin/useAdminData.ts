@@ -56,6 +56,90 @@ export function useAdminPresenceStats() {
   });
 }
 
+export type ProductLoopStats = {
+  projectViews24h: number;
+  hireOpens24h: number;
+  collectionSaves24h: number;
+  projectViews7d: number;
+  hireOpens7d: number;
+  collectionSaves7d: number;
+  /** True when counts came from product_events; false = proxy tables */
+  fromProductEvents: boolean;
+};
+
+async function countProductEvent(eventName: string, sinceIso: string): Promise<number | null> {
+  const { count, error } = await supabase
+    .from("product_events" as never)
+    .select("*", { count: "exact", head: true })
+    .eq("event_name" as never, eventName as never)
+    .gte("created_at" as never, sinceIso as never);
+  if (error) return null;
+  return count ?? 0;
+}
+
+/** Opportunity-loop analytics for admin Overview (launch-minimal safe). */
+export function useAdminProductLoopStats() {
+  return useQuery<ProductLoopStats>({
+    queryKey: ["admin-product-loop-stats"],
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const since24 = since(24);
+      const since7d = new Date(Date.now() - 7 * 86_400_000).toISOString();
+
+      const [
+        pv24,
+        hire24,
+        save24,
+        pv7,
+        hire7,
+        save7,
+      ] = await Promise.all([
+        countProductEvent("project_view", since24),
+        countProductEvent("hire_open", since24),
+        countProductEvent("collection_save", since24),
+        countProductEvent("project_view", since7d),
+        countProductEvent("hire_open", since7d),
+        countProductEvent("collection_save", since7d),
+      ]);
+
+      const fromProductEvents =
+        pv24 !== null && hire24 !== null && save24 !== null;
+
+      if (fromProductEvents) {
+        return {
+          projectViews24h: pv24 ?? 0,
+          hireOpens24h: hire24 ?? 0,
+          collectionSaves24h: save24 ?? 0,
+          projectViews7d: pv7 ?? 0,
+          hireOpens7d: hire7 ?? 0,
+          collectionSaves7d: save7 ?? 0,
+          fromProductEvents: true,
+        };
+      }
+
+      // Fallback proxies when product_events is not readable / missing.
+      const [views24, views7, hiring24, hiring7, saves24, saves7] = await Promise.all([
+        supabase.from("project_views").select("*", { count: "exact", head: true }).gte("viewed_at", since24),
+        supabase.from("project_views").select("*", { count: "exact", head: true }).gte("viewed_at", since7d),
+        supabase.from("hiring_requests").select("*", { count: "exact", head: true }).gte("created_at", since24),
+        supabase.from("hiring_requests").select("*", { count: "exact", head: true }).gte("created_at", since7d),
+        supabase.from("collection_items" as never).select("*", { count: "exact", head: true }).gte("created_at" as never, since24 as never),
+        supabase.from("collection_items" as never).select("*", { count: "exact", head: true }).gte("created_at" as never, since7d as never),
+      ]);
+
+      return {
+        projectViews24h: views24.count ?? 0,
+        hireOpens24h: hiring24.count ?? 0,
+        collectionSaves24h: saves24.count ?? 0,
+        projectViews7d: views7.count ?? 0,
+        hireOpens7d: hiring7.count ?? 0,
+        collectionSaves7d: saves7.count ?? 0,
+        fromProductEvents: false,
+      };
+    },
+  });
+}
+
 export function useAdminStats() {
   return useQuery<AdminStats>({
     queryKey: ["admin-stats", isAplus1LaunchMinimal()],

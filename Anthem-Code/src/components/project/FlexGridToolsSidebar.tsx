@@ -1,4 +1,4 @@
-import { useEffect, useState, Fragment } from "react";
+import { useEffect, useState, Fragment, type ReactNode } from "react";
 import {
   AlignCenterHorizontal,
   AlignCenterVertical,
@@ -8,11 +8,13 @@ import {
   AlignStartHorizontal,
   AlignStartVertical,
   AlignVerticalDistributeCenter,
+  Box,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
   Copy,
+  FileImage,
   Film,
   GripVertical,
   Image as ImageIcon,
@@ -41,7 +43,6 @@ import {
   FLEX_GRID_PRESET_META,
   FLEX_GRID_PRESETS,
   boardDisplayName,
-  gridSettingsSummary,
   type FlexAlignKind,
   type FlexDistributeKind,
   type FlexGridLayout,
@@ -58,9 +59,9 @@ export function flexGridBoardDomId(boardId: string) {
 }
 
 /** Browsers block getData() during dragover — stash active drag type here. */
-export let activeFlexGridDragType: "image" | "text" | "video" | null = null;
+export let activeFlexGridDragType: FlexGridModuleType | null = null;
 
-export function setActiveFlexGridDragType(type: "image" | "text" | "video" | null) {
+export function setActiveFlexGridDragType(type: FlexGridModuleType | null) {
   activeFlexGridDragType = type;
 }
 
@@ -102,8 +103,10 @@ const MODULE_CARDS: {
   icon: typeof ImageIcon;
 }[] = [
   { type: "image", label: "Image", hint: "วางภาพบนกริด", icon: ImageIcon },
+  { type: "gif", label: "GIF", hint: "ภาพเคลื่อนไหว .gif", icon: FileImage },
   { type: "text", label: "Text", hint: "ข้อความแก้ไขได้", icon: Type },
   { type: "video", label: "Video", hint: "วางวิดีโอ", icon: Film },
+  { type: "model3d", label: "3D Model", hint: "ไฟล์ STL/OBJ หมุน 360°", icon: Box },
 ];
 
 function HybridField({
@@ -142,6 +145,68 @@ function HybridField({
   );
 }
 
+type SidebarSectionKey = "modules" | "view" | "align" | "grid" | "layers";
+
+function SidebarSection({
+  title,
+  hint,
+  open,
+  onToggle,
+  bordered,
+  children,
+}: {
+  title: string;
+  hint?: ReactNode;
+  open: boolean;
+  onToggle: () => void;
+  bordered?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className={cn("space-y-1.5", bordered && "border-t border-border/60 pt-3")}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 px-0.5 py-1 text-left hover:text-foreground"
+        aria-expanded={open}
+      >
+        <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {title}
+          </span>
+          {hint ? (
+            <span className="text-[10px] text-muted-foreground tabular-nums">{hint}</span>
+          ) : null}
+        </span>
+        <ChevronDown
+          className={cn(
+            "ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-300 ease-out",
+            open && "rotate-180",
+          )}
+          aria-hidden
+        />
+      </button>
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-300 ease-out",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div
+            className={cn(
+              "space-y-1.5 transition-opacity duration-300 ease-out",
+              open ? "opacity-100" : "opacity-0",
+            )}
+          >
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function FlexGridToolsSidebar({
   layout,
   selected,
@@ -176,6 +241,16 @@ export function FlexGridToolsSidebar({
   };
 
   const [gridPanelOpen, setGridPanelOpen] = useState(false);
+  const [openSections, setOpenSections] = useState<Record<SidebarSectionKey, boolean>>({
+    modules: true,
+    view: true,
+    align: true,
+    grid: true,
+    layers: true,
+  });
+  const toggleSection = (key: SidebarSectionKey) => {
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
   const [dragLayerId, setDragLayerId] = useState<string | null>(null);
   const [pendingDeleteBoard, setPendingDeleteBoard] = useState<{
     id: string;
@@ -237,14 +312,14 @@ export function FlexGridToolsSidebar({
             : "w-0 border-0 bg-transparent",
           className,
         )}
-        aria-label="เครื่องมือ Grid"
+        aria-label="เครื่องมือ Full Grid"
       >
         {expanded ? (
           <div className="flex h-full flex-col lg:h-[calc(100dvh-4rem)]">
             <div className="flex items-center justify-between gap-2 p-2 pl-3">
               <p className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground leading-snug">
                 <LayoutGrid className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                Grid
+                Full Grid
               </p>
               <button
                 type="button"
@@ -257,10 +332,11 @@ export function FlexGridToolsSidebar({
             </div>
 
             <div className="flex-1 overflow-y-auto p-3 pt-1 space-y-4">
-              <div className="space-y-1.5">
-                <p className="px-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Modules
-                </p>
+              <SidebarSection
+                title="Modules"
+                open={openSections.modules}
+                onToggle={() => toggleSection("modules")}
+              >
                 <div className="grid grid-cols-1 gap-1.5">
                   {MODULE_CARDS.map((card) => {
                     const Icon = card.icon;
@@ -270,6 +346,7 @@ export function FlexGridToolsSidebar({
                         type="button"
                         draggable
                         onDragStart={(e) => {
+                          setActiveFlexPhotoGridPreset(null);
                           setActiveFlexGridDragType(card.type);
                           e.dataTransfer.setData(FLEX_GRID_TOOL_MIME, card.type);
                           e.dataTransfer.setData("text/plain", card.type);
@@ -291,14 +368,15 @@ export function FlexGridToolsSidebar({
                     );
                   })}
                 </div>
-              </div>
+              </SidebarSection>
 
-              <div className="space-y-2 border-t border-border/60 pt-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    View
-                  </p>
-                  <div className="flex flex-wrap items-center justify-end gap-2">
+              <SidebarSection
+                title="View"
+                bordered
+                open={openSections.view}
+                onToggle={() => toggleSection("view")}
+              >
+                <div className="flex flex-wrap items-center gap-2 px-0.5">
                     <label className="inline-flex cursor-pointer items-center gap-1.5">
                       <Checkbox
                         checked={gridVisible}
@@ -329,14 +407,15 @@ export function FlexGridToolsSidebar({
                     >
                       {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
                     </button>
-                  </div>
                 </div>
-              </div>
+              </SidebarSection>
 
-              <div className="space-y-1.5 border-t border-border/60 pt-3">
-                <p className="px-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Align
-                </p>
+              <SidebarSection
+                title="Align"
+                bordered
+                open={openSections.align}
+                onToggle={() => toggleSection("align")}
+              >
                 <div className="flex flex-wrap items-center gap-0.5">
                   {(
                     [
@@ -400,17 +479,14 @@ export function FlexGridToolsSidebar({
                     );
                   })}
                 </div>
-              </div>
+              </SidebarSection>
 
-              <div className="space-y-2 border-t border-border/60 pt-3">
-                <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Grid
-                  </p>
-                  <p className="text-[10px] text-muted-foreground tabular-nums">
-                    {gridSettingsSummary(grid)}
-                  </p>
-                </div>
+              <SidebarSection
+                title="Grid"
+                bordered
+                open={openSections.grid}
+                onToggle={() => toggleSection("grid")}
+              >
                 <div className="grid grid-cols-3 gap-2">
                   {FLEX_GRID_PRESET_META.map((preset) => {
                     const active = matchedPreset === preset.key;
@@ -488,13 +564,13 @@ export function FlexGridToolsSidebar({
                 <button
                   type="button"
                   onClick={() => setGridPanelOpen((v) => !v)}
-                  className="flex w-full items-center justify-between px-0.5 py-1.5 text-xs text-foreground hover:text-primary"
+                  className="inline-flex items-center gap-1 px-0.5 py-1.5 text-xs text-foreground hover:text-primary"
                   aria-expanded={gridPanelOpen}
                 >
                   ปรับอย่างละเอียด
                   <ChevronDown
                     className={cn(
-                      "h-3.5 w-3.5 transition-transform duration-300 ease-out",
+                      "h-3.5 w-3.5 shrink-0 transition-transform duration-300 ease-out",
                       gridPanelOpen && "rotate-180",
                     )}
                   />
@@ -559,12 +635,14 @@ export function FlexGridToolsSidebar({
                     </div>
                   </div>
                 </div>
-              </div>
+              </SidebarSection>
 
-              <div className="space-y-1.5 border-t border-border/60 pt-3">
-                <p className="px-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Layers
-                </p>
+              <SidebarSection
+                title="Layers"
+                bordered
+                open={openSections.layers}
+                onToggle={() => toggleSection("layers")}
+              >
                 <div className="space-y-2.5">
                   {layersByBoard.map(({ board, boardIndex, modules }) => {
                     const title = boardDisplayName(board, boardIndex);
@@ -699,7 +777,7 @@ export function FlexGridToolsSidebar({
                     );
                   })}
                 </div>
-              </div>
+              </SidebarSection>
             </div>
           </div>
         ) : null}
@@ -729,7 +807,7 @@ export function FlexGridToolsSidebar({
           type="button"
           onClick={() => setExpanded(true)}
           className="fixed left-2 top-[4.75rem] z-30 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card shadow-md lg:sticky lg:top-20 lg:z-auto lg:self-start"
-          aria-label="เปิดแถบเครื่องมือ Grid"
+          aria-label="เปิดแถบเครื่องมือ Full Grid"
         >
           <ChevronRight className="h-4 w-4" />
         </button>

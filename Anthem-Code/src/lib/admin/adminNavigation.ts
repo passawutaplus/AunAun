@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import {
   Activity,
+  Banknote,
   BarChart3,
   Bell,
   Bookmark,
@@ -56,6 +57,7 @@ export const ADMIN_LAUNCH_HIDDEN_ADMIN_PATHS = [
   "/admin/collabs",
   "/admin/contracts",
   "/admin/wallet",
+  "/admin/finance",
   "/admin/gifts",
   "/admin/ads",
   "/admin/kyc",
@@ -87,7 +89,7 @@ export function adminNavSectionsForBuild(): AdminNavSection[] {
   return filterNavSectionsForLaunch(ADMIN_NAV_SECTIONS);
 }
 
-export type AdminBadgeKey = "reports" | "cashouts" | "kyc" | "aml";
+export type AdminBadgeKey = "reports" | "cashouts" | "kyc" | "aml" | "finance";
 
 export type AdminStatKey = keyof AdminStats;
 
@@ -329,6 +331,14 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         accent: true,
       },
       {
+        to: "/admin/finance",
+        label: "การเงิน Omise",
+        hint: "THB ledger, payout, webhook, fee/FX — แยกจาก PX",
+        icon: Banknote,
+        badgeKey: "finance",
+        accent: true,
+      },
+      {
         to: "/admin/gifts",
         label: "ของขวัญ",
         hint: "การสนับสนุน creator",
@@ -489,6 +499,7 @@ export function adminPendingQueue(stats: AdminStats | undefined): Array<{ to: st
   if (!launch && stats.pendingCashouts > 0) {
     rows.push({ to: "/admin/wallet", label: "ถอนเงิน", count: stats.pendingCashouts });
   }
+  // Omise finance queue counts come from useAdminAlertCounts badge, not AdminStats.
   if (!launch && stats.pendingKyc > 0) rows.push({ to: "/admin/kyc", label: "KYC", count: stats.pendingKyc });
   if (!launch && stats.openAmlFlags > 0) rows.push({ to: "/admin/aml", label: "AML", count: stats.openAmlFlags });
   if (stats.openFeedback > 0) rows.push({ to: "/admin/feedback", label: "ฟีดแบ็ก", count: stats.openFeedback });
@@ -518,6 +529,7 @@ const SIDEBAR_PATHS_ORDERED: { sectionId: string; to: string }[] = [
   { sectionId: "marketplace", to: "/admin/collabs" },
   { sectionId: "marketplace", to: "/admin/contracts" },
   { sectionId: "money", to: "/admin/wallet" },
+  { sectionId: "money", to: "/admin/finance" },
   { sectionId: "money", to: "/admin/gifts" },
   { sectionId: "money", to: "/admin/ads" },
   { sectionId: "comms", to: "/admin/chats" },

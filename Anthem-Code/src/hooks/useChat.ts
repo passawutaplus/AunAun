@@ -834,7 +834,8 @@ export async function openHireCollabChat(args: OpenHireCollabChatArgs): Promise<
         .update({ status: status as never })
         .eq("id", requestId);
       if (error) throw error;
-    } else {
+    } else if (legacyAccept) {
+      // Instant open keeps `pending` (= ติดต่อใหม่). Explicit accept → accepted.
       const { error } = await supabase
         .from("collab_requests")
         .update({ status: "accepted" as never })
@@ -984,6 +985,7 @@ export const useRejectRequest = () => {
       note,
       status,
       postRejectChat,
+      keepChat,
     }: {
       kind: ChatKind;
       requestId: string;
@@ -993,6 +995,8 @@ export const useRejectRequest = () => {
       status?: string;
       /** Hire only — post-reject chat gate */
       postRejectChat?: "awaiting_client" | "awaiting_freelancer" | "open" | "locked" | null;
+      /** Collab only — decline but keep ideation chat open */
+      keepChat?: boolean;
     }) => {
       if (kind === "hire") {
         const patch: Record<string, unknown> = {
@@ -1008,9 +1012,19 @@ export const useRejectRequest = () => {
           .update(patch as never)
           .eq("id", requestId);
         if (error) throw error;
-      } else {
-        const { error } = await supabase.from("collab_requests").update({ status: "declined" as never }).eq("id", requestId);
+      } else if (kind === "collab") {
+        const { error } = await supabase
+          .from("collab_requests")
+          .update({
+            status: "declined",
+            reject_reason: reason ?? null,
+            reject_note: note ?? null,
+            keep_chat: !!keepChat || reason === "busy_but_chat",
+          } as never)
+          .eq("id", requestId);
         if (error) throw error;
+      } else {
+        throw new Error("Unsupported kind");
       }
     },
     onSuccess: () => {
@@ -1018,6 +1032,8 @@ export const useRejectRequest = () => {
       qc.invalidateQueries({ queryKey: ["collab-requests"] });
       qc.invalidateQueries({ queryKey: ["chat-hire-forward-src"] });
       qc.invalidateQueries({ queryKey: ["chat-hire-meta"] });
+      qc.invalidateQueries({ queryKey: ["chat-collab-meta"] });
+      qc.invalidateQueries({ queryKey: ["chat-collab-meta-panel"] });
       qc.invalidateQueries({ queryKey: ["chat-list-hire-locked"] });
     },
   });

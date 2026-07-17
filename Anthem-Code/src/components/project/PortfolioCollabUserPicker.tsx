@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   fetchMutualFollowCandidates,
-  MAX_COMMUNITY_USER_TAGS,
   type TaggedUserSummary,
 } from "@/lib/communityTaggedUsers";
 import { MAX_PORTFOLIO_COLLAB_USERS } from "@/lib/portfolioCollabInvites";
@@ -27,7 +26,7 @@ function userLabel(u: TaggedUserSummary) {
   return u.username ? `@${u.username}` : u.display_name;
 }
 
-const maxTags = Math.min(MAX_COMMUNITY_USER_TAGS, MAX_PORTFOLIO_COLLAB_USERS);
+const maxTags = MAX_PORTFOLIO_COLLAB_USERS;
 
 export function PortfolioCollabUserPicker({
   userId,

@@ -27,6 +27,13 @@ export default function AdminSidebar() {
     if (key === "cashouts") return alerts.pendingCashouts;
     if (key === "kyc") return alerts.pendingKyc;
     if (key === "aml") return alerts.openAml;
+    if (key === "finance") {
+      return (
+        (alerts.financePayoutQueue ?? 0) +
+        (alerts.financeWebhookIssues ?? 0) +
+        (alerts.openFinanceDisputes ?? 0)
+      );
+    }
     return 0;
   };
 

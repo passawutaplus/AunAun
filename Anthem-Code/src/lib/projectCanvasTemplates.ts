@@ -99,7 +99,13 @@ function isPhotoGridLayout(v: unknown): v is PhotoGridLayout {
     v === "two_side" ||
     v === "three_split" ||
     v === "three_split_rev" ||
-    v === "four_quad"
+    v === "four_quad" ||
+    v === "tower_stack_tower" ||
+    v === "two_over_wide" ||
+    v === "stack_tower_stack" ||
+    v === "wide_over_two" ||
+    v === "alt_stack_tower_4" ||
+    v === "alt_tower_stack_4"
   );
 }
 

@@ -8,7 +8,20 @@ import type { PortfolioMediaItem } from "@/lib/portfolioMedia";
 
 export type ProjectEditorMode = "casual" | "flex_grid";
 
-export type FlexGridModuleType = "image" | "text" | "video";
+export type FlexGridModuleType = "image" | "gif" | "text" | "video" | "model3d";
+
+/** 3D model file format supported by the model3d module. */
+export type Model3dFormat = "stl" | "obj";
+
+/** Spherical camera orbit around the model target (Three.js Spherical). */
+export type Model3dOrbit = {
+  /** Azimuth around Y (radians) */
+  theta: number;
+  /** Polar angle from +Y (radians) */
+  phi: number;
+  /** Distance from target */
+  radius: number;
+};
 
 export type FlexGridModule = {
   id: string;
@@ -18,7 +31,7 @@ export type FlexGridModule = {
   w: number;
   h: number;
   z: number;
-  /** image / video storage URL */
+  /** image / video / 3d-model storage URL */
   url?: string;
   /** text module HTML (sanitized) */
   text?: string;
@@ -26,6 +39,12 @@ export type FlexGridModule = {
   name?: string;
   /** When true, module cannot be moved/resized/deleted */
   locked?: boolean;
+  /** model3d file format (stl | obj) */
+  format?: Model3dFormat;
+  /** model3d: saved camera orbit used as initial view (preview + published) */
+  orbit?: Model3dOrbit;
+  /** model3d: author locked the start angle for the published page */
+  viewLocked?: boolean;
 };
 
 export type FlexGridBoard = {
@@ -60,8 +79,10 @@ export const FLEX_GRID_MODULE_DEFAULTS: Record<
   { spanCols: number; spanRows: number; label: string }
 > = {
   image: { spanCols: 4, spanRows: 8, label: "IMAGE" },
+  gif: { spanCols: 4, spanRows: 8, label: "GIF" },
   text: { spanCols: 6, spanRows: 5, label: "TEXT" },
   video: { spanCols: 6, spanRows: 10, label: "VIDEO" },
+  model3d: { spanCols: 6, spanRows: 12, label: "3D" },
 };
 
 export const FLEX_GRID_PRESETS: Record<string, FlexGridSettings> = {
@@ -122,11 +143,42 @@ function clampNum(n: unknown, min: number, max: number, fallback: number): numbe
   return Math.max(min, Math.min(max, v));
 }
 
+function parseOrbit(raw: unknown): Model3dOrbit | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const theta = typeof o.theta === "number" && Number.isFinite(o.theta) ? o.theta : null;
+  const phi = typeof o.phi === "number" && Number.isFinite(o.phi) ? o.phi : null;
+  const radius = typeof o.radius === "number" && Number.isFinite(o.radius) ? o.radius : null;
+  if (theta === null || phi === null || radius === null || radius <= 0) return undefined;
+  return {
+    theta,
+    phi: Math.max(0.01, Math.min(Math.PI - 0.01, phi)),
+    radius: Math.max(0.01, Math.min(1e6, radius)),
+  };
+}
+
+function serializeOrbit(orbit: Model3dOrbit): Model3dOrbit {
+  return {
+    theta: Math.round(orbit.theta * 1e5) / 1e5,
+    phi: Math.round(orbit.phi * 1e5) / 1e5,
+    radius: Math.round(orbit.radius * 1e5) / 1e5,
+  };
+}
+
 function parseModule(raw: unknown): FlexGridModule | null {
   if (!raw || typeof raw !== "object") return null;
   const m = raw as Record<string, unknown>;
-  const type = m.type === "image" || m.type === "text" || m.type === "video" ? m.type : null;
+  const type =
+    m.type === "image" ||
+    m.type === "gif" ||
+    m.type === "text" ||
+    m.type === "video" ||
+    m.type === "model3d"
+      ? m.type
+      : null;
   if (!type) return null;
+  const format = m.format === "stl" || m.format === "obj" ? m.format : undefined;
+  const orbit = type === "model3d" ? parseOrbit(m.orbit) : undefined;
   return {
     id: typeof m.id === "string" && m.id ? m.id : newId(),
     type,
@@ -140,6 +192,9 @@ function parseModule(raw: unknown): FlexGridModule | null {
     bgTransparent: m.bgTransparent === true,
     name: typeof m.name === "string" ? m.name : undefined,
     locked: m.locked === true,
+    format: type === "model3d" ? format : undefined,
+    orbit,
+    viewLocked: type === "model3d" ? m.viewLocked === true : undefined,
   };
 }
 
@@ -212,6 +267,15 @@ export function toStoredFlexGridLayout(layout: FlexGridLayout): FlexGridLayout {
           if (m.bgTransparent) out.bgTransparent = true;
         } else if (m.url?.trim()) {
           out.url = m.url.trim();
+          if (m.type === "model3d" && (m.format === "stl" || m.format === "obj")) {
+            out.format = m.format;
+          }
+          if (m.type === "model3d" && m.orbit) {
+            out.orbit = serializeOrbit(m.orbit);
+          }
+          if (m.type === "model3d" && m.viewLocked) {
+            out.viewLocked = true;
+          }
         }
         if (m.name?.trim()) out.name = m.name.trim();
         if (m.locked) out.locked = true;
@@ -239,10 +303,11 @@ export function flexGridMediaItems(layout: FlexGridLayout): PortfolioMediaItem[]
   const out: PortfolioMediaItem[] = [];
   for (const board of layout.boards) {
     for (const m of board.modules) {
-      if (m.type !== "image" && m.type !== "video") continue;
+      if (m.type !== "image" && m.type !== "video" && m.type !== "gif") continue;
       const url = (m.url ?? "").trim();
       if (!url) continue;
-      out.push({ id: m.id, kind: m.type, url });
+      // GIFs count as images for cover/gallery purposes.
+      out.push({ id: m.id, kind: m.type === "video" ? "video" : "image", url });
     }
   }
   return out;
@@ -350,7 +415,9 @@ export function createFlexGridModule(
   ctx: FlexGridSnapContext,
   xRaw: number,
   yRaw: number,
-  extras?: Partial<Pick<FlexGridModule, "url" | "text" | "name" | "z">> & { snap?: boolean },
+  extras?: Partial<Pick<FlexGridModule, "url" | "text" | "name" | "z" | "format">> & {
+    snap?: boolean;
+  },
 ): FlexGridModule {
   const size = defaultModuleSize(type, ctx);
   const snap = extras?.snap !== false;
@@ -378,6 +445,7 @@ export function createFlexGridModule(
     url: extras?.url,
     text: extras?.text,
     name: extras?.name,
+    format: type === "model3d" ? extras?.format : undefined,
   };
 }
 

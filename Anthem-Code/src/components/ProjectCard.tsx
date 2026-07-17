@@ -98,9 +98,17 @@ const ProjectCard = ({
     ? naturalFeedCoverUrl(project.image)
     : optimizedFeedImageUrl(project.image, { width: 480, quality: 70, natural: false });
 
-  const goToOwner = () => {
-    if (project.ownerId) navigate(`/profile/${project.ownerId}`);
+  const goToProfile = (userId?: string) => {
+    if (userId) navigate(`/u/${userId}`);
   };
+  const creators = [
+    {
+      id: project.ownerId,
+      name: project.owner,
+      avatar: project.ownerAvatar,
+    },
+    ...(project.collaborators ?? []),
+  ];
 
   return (
     <motion.div
@@ -241,23 +249,45 @@ const ProjectCard = ({
         </button>
       </div>
 
-      {/* Owner row — avatar + name, with view/like on the right */}
+      {/* Creator row — owner/collaborators on the left, view/like on the right */}
       <div className="pt-2 px-0.5 flex items-center justify-between gap-2">
-        <button
-          onClick={stop(goToOwner)}
-          className="flex items-center gap-2 min-w-0 group/owner"
-          aria-label={`โปรไฟล์ ${project.owner}`}
-        >
-          <img
-            src={project.ownerAvatar}
-            alt={project.owner}
-            className="w-6 h-6 rounded-full object-cover shrink-0"
-            loading="lazy"
-          />
-          <span className="text-sm text-foreground/90 line-clamp-1 thai-leading-tight group-hover/owner:text-foreground transition-colors">
-            {project.owner}
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex shrink-0 -space-x-1.5 isolate" aria-label="เจ้าของผลงานและผู้ร่วมคอลแลป">
+            {creators.map((creator, index) => {
+              const avatar = (
+                <img
+                  src={creator.avatar}
+                  alt={creator.name}
+                  className="w-6 h-6 rounded-full object-cover ring-2 ring-background"
+                  loading="lazy"
+                />
+              );
+              return creator.id ? (
+                <button
+                  key={creator.id}
+                  type="button"
+                  onClick={stop(() => goToProfile(creator.id))}
+                  className="relative rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  style={{ zIndex: creators.length - index }}
+                  aria-label={`เปิดโปรไฟล์ ${creator.name}`}
+                  title={creator.name}
+                >
+                  {avatar}
+                </button>
+              ) : (
+                <span key={`${creator.name}-${index}`} className="relative" aria-hidden>
+                  {avatar}
+                </span>
+              );
+            })}
+          </div>
+          <span
+            className="text-sm text-foreground/90 line-clamp-1 thai-leading-tight"
+            title={creators.map((creator) => creator.name).join(", ")}
+          >
+            {creators.map((creator) => creator.name).join(", ")}
           </span>
-        </button>
+        </div>
         <div className="flex items-center gap-2 shrink-0 text-xs text-muted-foreground">
           <span className="flex items-center gap-1" title="ยอดเข้าชม" aria-label="ยอดเข้าชม">
             <Eye className="w-3.5 h-3.5" />

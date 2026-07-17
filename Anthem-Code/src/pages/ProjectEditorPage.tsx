@@ -23,7 +23,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { isUuid } from "@/lib/uuid";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { uploadProjectVideo } from "@/lib/uploadVideo";
+import { uploadProjectModel3d } from "@/lib/uploadProjectModel3d";
+import { uploadProjectGif, isGifFile } from "@/lib/uploadProjectGif";
 import { isVideoFile } from "@/lib/videoAccept";
+import { isModel3dFile } from "@/lib/model3dAccept";
 import { useSubscription } from "@/core/subscription";
 import { getProjectLimits } from "@/lib/projectLimits";
 import { supabase } from "@/integrations/supabase/client";
@@ -148,6 +151,7 @@ import {
 } from "@/lib/portfolioLinkedPosts";
 import {
   fetchProjectCollabInvites,
+  MAX_PORTFOLIO_COLLAB_USERS,
   syncProjectCollabInvites,
   type ProjectCollabInvite,
 } from "@/lib/portfolioCollabInvites";
@@ -160,6 +164,8 @@ const ProjectEditorPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [params] = useSearchParams();
+  const collabRequestId = params.get("collab_request_id");
+  const collabConversationId = params.get("collab_conversation_id");
   const editing = !!id;
   const isDrillPost = params.get("from") === "so1o" && params.get("drill_type");
   const isDailyDrillPost = isDrillPost && params.get("drill_type") === "daily";
@@ -193,7 +199,7 @@ const ProjectEditorPage = () => {
   const [shortDescription, setShortDescription] = useState("");
   const [contentBlocks, setContentBlocks] = useState<ProjectContentBlock[]>([]);
   const [galleryDisplayMode, setGalleryDisplayMode] = useState<GalleryDisplayMode>("gallery");
-  const [gridLayout, setGridLayout] = useState<PhotoGridLayout>("four_quad");
+  const [gridLayout, setGridLayout] = useState<PhotoGridLayout>("three_split");
   const [editorMode, setEditorMode] = useState<ProjectEditorMode>("casual");
   const [flexGridLayout, setFlexGridLayout] = useState<FlexGridLayout>(() => defaultFlexGridLayout());
   const flexHistory = useFlexGridHistory(flexGridLayout, setFlexGridLayout);
@@ -263,6 +269,8 @@ const ProjectEditorPage = () => {
   const [collabSelected, setCollabSelected] = useState<TaggedUserSummary[]>([]);
   const [collabAccepted, setCollabAccepted] = useState<TaggedUserSummary[]>([]);
   const [collabPending, setCollabPending] = useState<TaggedUserSummary[]>([]);
+  const collabRequestHydratedRef = useRef<string | null>(null);
+  const collabConversationHydratedRef = useRef<string | null>(null);
   const [projectContext, setProjectContext] = useState<ProjectContextForm>({
     brief: "",
     creatorRole: "",
@@ -311,6 +319,148 @@ const ProjectEditorPage = () => {
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?redirect=/portfolio/new");
   }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (
+      editing ||
+      !user?.id ||
+      !collabRequestId ||
+      !!collabConversationId ||
+      collabRequestHydratedRef.current === collabRequestId
+    ) {
+      return;
+    }
+    collabRequestHydratedRef.current = collabRequestId;
+
+    void (async () => {
+      const { data, error } = await supabase
+        .from("collab_requests")
+        .select("id, sender_id, recipient_id, status, message")
+        .eq("id", collabRequestId)
+        .maybeSingle();
+      if (error || !data) {
+        toast.error("ไม่พบคอลแลปที่ต้องการสร้างผลงานร่วม");
+        return;
+      }
+      if (
+        data.status !== "accepted" ||
+        (data.sender_id !== user.id && data.recipient_id !== user.id)
+      ) {
+        toast.error("สร้างผลงานร่วมได้เฉพาะคอลแลปที่ตอบรับแล้ว");
+        return;
+      }
+
+      const partnerId = data.sender_id === user.id ? data.recipient_id : data.sender_id;
+      setCollabAccepted(await fetchTaggedUserSummaries([partnerId]));
+      setAllowCollab(true);
+      setShortDescription((current) => current.trim() || data.message?.trim() || "");
+      toast.success("เพิ่มผู้ร่วมคอลแลปให้แล้ว");
+    })();
+  }, [collabRequestId, collabConversationId, editing, user?.id]);
+
+  useEffect(() => {
+    if (
+      editing ||
+      !user?.id ||
+      !collabConversationId ||
+      collabConversationHydratedRef.current === collabConversationId
+    ) {
+      return;
+    }
+    collabConversationHydratedRef.current = collabConversationId;
+
+    let cancelled = false;
+    const showInvalidGroupToast = () => {
+      if (cancelled) return;
+      toast.error(
+        "ไม่สามารถสร้างผลงานร่วมจากกลุ่มนี้ได้ กรุณาเปิดจากแชทกลุ่มคอลแลปที่คุณเป็นสมาชิก",
+      );
+    };
+
+    void (async () => {
+      try {
+        if (!isUuid(collabConversationId)) {
+          showInvalidGroupToast();
+          return;
+        }
+
+        // Treat the query string only as a lookup key. RLS plus this explicit
+        // membership check determine whether the current user can use the group.
+        const { data: membership, error: membershipError } = await supabase
+          .from("conversation_members")
+          .select("user_id")
+          .eq("conversation_id", collabConversationId)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (membershipError || !membership) {
+          showInvalidGroupToast();
+          return;
+        }
+
+        const { data: conversation, error: conversationError } = await supabase
+          .from("conversations")
+          .select("id, conversation_type, kind, group_tag")
+          .eq("id", collabConversationId)
+          .maybeSingle();
+        const group = conversation as {
+          conversation_type?: string | null;
+          kind?: string | null;
+          group_tag?: string | null;
+        } | null;
+        if (
+          conversationError ||
+          !group ||
+          (group.conversation_type !== "group" && group.kind !== "group") ||
+          group.group_tag !== "collab"
+        ) {
+          showInvalidGroupToast();
+          return;
+        }
+
+        const { data: memberRows, error: membersError } = await supabase
+          .from("conversation_members")
+          .select("user_id")
+          .eq("conversation_id", collabConversationId)
+          .neq("user_id", user.id);
+        if (membersError) {
+          showInvalidGroupToast();
+          return;
+        }
+
+        const collaboratorIds = Array.from(
+          new Set(
+            ((memberRows ?? []) as unknown as Array<{ user_id: string }>)
+              .map((row) => row.user_id)
+              .filter(Boolean),
+          ),
+        );
+        if (
+          collaboratorIds.length < 1 ||
+          collaboratorIds.length > MAX_PORTFOLIO_COLLAB_USERS
+        ) {
+          showInvalidGroupToast();
+          return;
+        }
+
+        const collaborators = await fetchTaggedUserSummaries(collaboratorIds);
+        if (collaborators.length !== collaboratorIds.length) {
+          showInvalidGroupToast();
+          return;
+        }
+        if (cancelled) return;
+
+        setCollabAccepted(collaborators);
+        setAllowCollab(true);
+        toast.success(`เพิ่มผู้ร่วมงานจากกลุ่มแล้ว ${collaborators.length} คน`);
+      } catch {
+        if (!cancelled) showInvalidGroupToast();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [collabConversationId, editing, user?.id]);
 
   // Switching projects (or leaving edit) must allow a fresh hydrate.
   useEffect(() => {
@@ -701,7 +851,12 @@ const ProjectEditorPage = () => {
       }
 
       const created = await create.mutateAsync({ ...payload, owner_id: user.id });
-      navigate(`/portfolio/${created.id}/edit`, { replace: true });
+      const collabQuery = collabConversationId
+        ? `?collab_conversation_id=${encodeURIComponent(collabConversationId)}`
+        : collabRequestId
+          ? `?collab_request_id=${encodeURIComponent(collabRequestId)}`
+          : "";
+      navigate(`/portfolio/${created.id}/edit${collabQuery}`, { replace: true });
       return { id: created.id };
     },
     [
@@ -724,6 +879,8 @@ const ProjectEditorPage = () => {
       update,
       limits.draft,
       create,
+      collabRequestId,
+      collabConversationId,
       navigate,
     ],
   );
@@ -796,6 +953,20 @@ const ProjectEditorPage = () => {
     } finally {
       setUploadingGallery(false);
     }
+  };
+
+  const completeLinkedCollab = async (projectId: string, targetStatus: Status) => {
+    if (targetStatus !== "Published" || !collabRequestId) return;
+    const { error } = await (supabase.rpc as (
+      name: string,
+      args: Record<string, unknown>,
+    ) => ReturnType<typeof supabase.rpc>)("complete_collab_with_project", {
+      _request_id: collabRequestId,
+      _project_id: projectId,
+    });
+    if (error) throw error;
+    void queryClient.invalidateQueries({ queryKey: ["collab-requests"] });
+    void queryClient.invalidateQueries({ queryKey: ["chat-collab-meta"] });
   };
 
   const handleSubmit = async (
@@ -889,6 +1060,7 @@ const ProjectEditorPage = () => {
         const savedId = resolvedId;
         await update.mutateAsync({ id: savedId, patch: payload });
         await runProjectLinkSideEffects(savedId);
+        await completeLinkedCollab(savedId, targetStatus);
         toast.success(targetStatus === "Published" ? "เผยแพร่ผลงานแล้ว" : "บันทึกการเปลี่ยนแปลงแล้ว");
         scheduleBackgroundAssetScan(savedId);
         if (
@@ -903,6 +1075,7 @@ const ProjectEditorPage = () => {
       } else {
         const created = await create.mutateAsync({ ...payload, owner_id: user.id });
         await runProjectLinkSideEffects(created.id);
+        await completeLinkedCollab(created.id, targetStatus);
         toast.success(targetStatus === "Published" ? "เผยแพร่ผลงานแล้ว" : "บันทึกฉบับร่างแล้ว");
         scheduleBackgroundAssetScan(created.id);
         if (
@@ -1556,7 +1729,86 @@ const ProjectEditorPage = () => {
       if (!user || !file) return;
       const board = flexGridLayout.boards.find((b) => b.id === boardId);
       const mod = board?.modules.find((m) => m.id === moduleId);
-      if (!mod || (mod.type !== "image" && mod.type !== "video")) return;
+      if (
+        !mod ||
+        (mod.type !== "image" &&
+          mod.type !== "gif" &&
+          mod.type !== "video" &&
+          mod.type !== "model3d")
+      )
+        return;
+
+      if (mod.type === "gif") {
+        if (!isGifFile(file)) {
+          toast.error("โมดูล GIF รับเฉพาะไฟล์ .gif");
+          return;
+        }
+        const maxImages = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
+        const currentImages = countMediaByKind(flexGridMediaItems(flexGridLayout), "image");
+        if (!mod.url && currentImages >= maxImages) {
+          toast.error(`อัปโหลดภาพได้สูงสุด ${maxImages} ภาพ/ผลงาน`);
+          return;
+        }
+        setUploadingFlexModuleId(moduleId);
+        setUploadingGallery(true);
+        try {
+          const url = await uploadProjectGif(file, user.id, folderRef.current, tier);
+          setFlexGridLayout((prev) => ({
+            ...prev,
+            boards: prev.boards.map((b) =>
+              b.id !== boardId
+                ? b
+                : {
+                    ...b,
+                    modules: b.modules.map((m) => (m.id === moduleId ? { ...m, url } : m)),
+                  },
+            ),
+          }));
+          if (!cover) setCover(url);
+          clearPublishFieldError("canvasImage");
+        } catch (e) {
+          toast.error(mapWriteFlowError(e, "อัปโหลด GIF ไม่สำเร็จ"));
+        } finally {
+          setUploadingFlexModuleId(null);
+          setUploadingGallery(false);
+        }
+        return;
+      }
+
+      if (mod.type === "model3d") {
+        if (!isModel3dFile(file)) {
+          toast.error("โมดูล 3D รับเฉพาะไฟล์ .stl และ .obj");
+          return;
+        }
+        setUploadingFlexModuleId(moduleId);
+        try {
+          const { url, format } = await uploadProjectModel3d(
+            file,
+            user.id,
+            folderRef.current,
+            tier,
+          );
+          setFlexGridLayout((prev) => ({
+            ...prev,
+            boards: prev.boards.map((b) =>
+              b.id !== boardId
+                ? b
+                : {
+                    ...b,
+                    modules: b.modules.map((m) =>
+                      m.id === moduleId ? { ...m, url, format } : m,
+                    ),
+                  },
+            ),
+          }));
+          clearPublishFieldError("canvasImage");
+        } catch (e) {
+          toast.error(mapWriteFlowError(e, "อัปโหลดไฟล์ 3D ไม่สำเร็จ"));
+        } finally {
+          setUploadingFlexModuleId(null);
+        }
+        return;
+      }
 
       if (mod.type === "video") {
         if (!isVideoFile(file)) {
@@ -1751,7 +2003,7 @@ const ProjectEditorPage = () => {
                 {(
                   [
                     { value: "casual" as const, label: "Casual" },
-                    { value: "flex_grid" as const, label: "Grid" },
+                    { value: "flex_grid" as const, label: "Full Grid" },
                   ] as const
                 ).map((mode) => {
                   const active = editorMode === mode.value;

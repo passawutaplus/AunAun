@@ -44,4 +44,37 @@ describe("projectRichText", () => {
     );
     expect(html).toContain("<b>หกดฟหกดฟหก</b>");
   });
+
+  it("keeps whitelisted font-family on span", () => {
+    const html = sanitizeProjectRichText(
+      `<p><span style="font-family:'Sarabun', sans-serif">สวัสดี</span></p>`,
+    );
+    expect(html).toContain("font-family:");
+    expect(html).toMatch(/Sarabun/i);
+    expect(html).toContain("สวัสดี");
+  });
+
+  it("strips unknown font-family", () => {
+    const html = sanitizeProjectRichText(
+      `<p><span style="font-family:Comic Sans MS">x</span></p>`,
+    );
+    expect(html).not.toContain("Comic");
+    expect(html).toContain("x");
+  });
+
+  it("keeps whitelisted font-size on span", () => {
+    const html = sanitizeProjectRichText(
+      `<p><span style="font-size:24px">ใหญ่</span></p>`,
+    );
+    expect(html).toContain("font-size:24px");
+    expect(html).toContain("ใหญ่");
+  });
+
+  it("strips unknown font-size", () => {
+    const html = sanitizeProjectRichText(
+      `<p><span style="font-size:99px">x</span></p>`,
+    );
+    expect(html).not.toContain("99px");
+    expect(html).toContain("x");
+  });
 });

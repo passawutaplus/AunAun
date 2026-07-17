@@ -28,6 +28,8 @@ import { EarningsGiftFeed } from "@/components/earnings/EarningsGiftFeed";
 import EarningsGiftCatalog from "@/components/earnings/EarningsGiftCatalog";
 import { EarningsCashoutHistory } from "@/components/earnings/EarningsCashoutHistory";
 import { EarningsClosedLoopNote } from "@/components/earnings/EarningsClosedLoopNote";
+import EarningsBalanceCards from "@/components/payments/EarningsBalanceCards";
+import DisplayCurrencyToggle from "@/components/payments/DisplayCurrencyToggle";
 import { computeGiftablePx } from "@/lib/walletDisplay";
 
 const EarningsPage = () => {
@@ -126,6 +128,22 @@ const EarningsPage = () => {
           lifetimeEarned={lifetimeEarned}
           feeLabel={feeLabel}
         />
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold">รายได้จ้างงาน (THB)</h2>
+            <DisplayCurrencyToggle />
+          </div>
+          <EarningsBalanceCards
+            pendingSatang={0}
+            availableSatang={0}
+            payoutReservedSatang={0}
+            paidOutSatang={0}
+          />
+          <p className="text-[11px] text-muted-foreground">
+            ยอดจ้างงานผ่าน Aplus1/Omise จะแสดงที่นี่หลังเปิดรับชำระ — แยกจากกระเป๋า PX
+          </p>
+        </div>
 
         <EarningsQuickActions
           onTopUp={() => setTopupOpen(true)}

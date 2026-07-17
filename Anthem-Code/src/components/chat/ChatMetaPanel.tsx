@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Conversation } from "@/hooks/useChat";
 import { ChatQuoteActions } from "@/components/chat/ChatQuoteActions";
+import { ChatCollabActions } from "@/components/chat/ChatCollabActions";
 
 const COLLAB_TYPE_LABELS: Record<string, string> = {
   chat: "พูดคุย",
@@ -126,8 +127,13 @@ const ChatMetaPanel = ({
           </>
         )}
         {(conversation.kind === "hire" || conversation.studio_id) && (
-          <ChatQuoteActions conversation={conversation} />
+          <div className="pt-1">
+            <ChatQuoteActions conversation={conversation} />
+          </div>
         )}
+        {conversation.kind === "collab" && conversation.request_id ? (
+          <ChatCollabActions conversation={conversation} />
+        ) : null}
       </div>
     </aside>
   );

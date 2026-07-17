@@ -5,7 +5,7 @@ import {
   type TaggedUserSummary,
 } from "@/lib/communityTaggedUsers";
 
-export const MAX_PORTFOLIO_COLLAB_USERS = 5;
+export const MAX_PORTFOLIO_COLLAB_USERS = 19;
 
 export type ProjectCollabInvite = {
   id: string;
@@ -62,9 +62,21 @@ export async function syncProjectCollabInvites(input: {
   desiredUserIds: string[];
   acceptedUserIds: string[];
 }): Promise<void> {
-  const desired = await resolveCollabUserIds(input.ownerId, input.desiredUserIds);
   const accepted = new Set(input.acceptedUserIds);
-  const target = desired.filter((id) => !accepted.has(id));
+  const uniqueDesired = Array.from(new Set(input.desiredUserIds)).filter(
+    (id) => id !== input.ownerId,
+  );
+  if (uniqueDesired.length > MAX_PORTFOLIO_COLLAB_USERS) {
+    throw new Error(`เพิ่มผู้ร่วมงานได้สูงสุด ${MAX_PORTFOLIO_COLLAB_USERS} คน`);
+  }
+
+  // Accepted collaborators were verified by their source flow (accepted invite/request
+  // or a collab group membership). Only new invitees need the mutual-follow gate.
+  const target = await resolveCollabUserIds(
+    input.ownerId,
+    uniqueDesired.filter((id) => !accepted.has(id)),
+  );
+  if (!target.length) return;
 
   const existing = await fetchProjectCollabInvites(input.projectId);
   const existingByUser = new Map(existing.map((i) => [i.invited_user_id, i]));

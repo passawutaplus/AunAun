@@ -16,6 +16,10 @@ import {
 import type { DesignerSort } from "./DesignerToolbar";
 import type { DesignerFeedSource } from "./DesignerFeedDropdown";
 import EmptyState from "@/components/ui/EmptyState";
+import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
+import { useSlowLoadFallback } from "@/hooks/useSlowLoadFallback";
+import type { OpportunityFilter } from "@/components/feed/OpportunityFilterChips";
+import { projectMatchesOpportunityFilter } from "@/lib/viewAffinity";
 
 interface Props {
   onHire: (recipientId: string, recipientName: string) => void;
@@ -25,6 +29,7 @@ interface Props {
   feedSource?: DesignerFeedSource;
   categories?: string[];
   tools?: string[];
+  opportunityFilter?: OpportunityFilter;
 }
 
 const scoreSort = (d: DesignerCardData, sort: DesignerSort): number => {
@@ -52,9 +57,10 @@ const DesignerGrid = ({
   feedSource = "all",
   categories = [],
   tools = [],
+  opportunityFilter = "All",
 }: Props) => {
   const { user } = useAuth();
-  const { data = [], isLoading } = useDesigners();
+  const { data = [], isLoading, isError, refetch } = useDesigners();
   const { interests } = useFeedInterestSurvey(feedSource === "all" ? user?.id : undefined);
   const { data: followedIds, isLoading: followingLoading } = useFollowedUserIds(
     feedSource === "following" ? user?.id : undefined,
@@ -83,6 +89,19 @@ const DesignerGrid = ({
         d.projects.some((p) => (p.tools ?? []).some((t) => set.has(t.toLowerCase()))),
       );
     }
+    if (opportunityFilter !== "All") {
+      rows = rows.filter((d) => {
+        const ownerTypes = (d.profile as { opportunity_types?: string[] | null }).opportunity_types;
+        const projectHit = d.projects.some((p) =>
+          projectMatchesOpportunityFilter(
+            opportunityFilter,
+            (p as { opportunity_types?: string[] | null }).opportunity_types,
+            ownerTypes,
+          ),
+        );
+        return projectHit || projectMatchesOpportunityFilter(opportunityFilter, null, ownerTypes);
+      });
+    }
 
     if (feedSource === "all") {
       return rankDesignersForYou(rows, interests);
@@ -91,9 +110,24 @@ const DesignerGrid = ({
       return rankDesignersNewest(rows);
     }
     return [...rows].sort((a, b) => scoreSort(b, sort) - scoreSort(a, sort));
-  }, [data, search, categories, tools, sort, feedSource, user, followedIds, interests]);
+  }, [data, search, categories, tools, sort, feedSource, user, followedIds, interests, opportunityFilter]);
 
   const loading = isLoading || (feedSource === "following" && !!user && followingLoading);
+  const slow = useSlowLoadFallback(loading);
+
+  if (isError || (loading && slow)) {
+    return (
+      <QueryStatusPanel
+        isLoading={loading}
+        isError={isError}
+        isSlow={slow}
+        onRetry={() => void refetch()}
+        loadingLabel="กำลังโหลดดีไซเนอร์..."
+        errorTitle="โหลดดีไซเนอร์ไม่สำเร็จ"
+        errorDescription="กดลองใหม่ หรือเปลี่ยนตัวกรอง"
+      />
+    );
+  }
 
   if (loading) {
     return (

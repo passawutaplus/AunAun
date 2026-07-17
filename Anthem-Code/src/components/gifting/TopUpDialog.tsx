@@ -123,6 +123,10 @@ const TopUpDialog = ({ open, onOpenChange }: Props) => {
 
         <DailyPxClaimCard enabled={open} />
 
+        <p className="text-[11px] text-muted-foreground rounded-lg border border-dashed border-border px-3 py-2">
+          เติม PX ด้วยบัตร/โอนผ่าน So1o ปิดแล้ว — กำลังเปิดรับชำระผ่าน Aplus1 · ของขวัญและ daily px ใช้ได้ตามปกติ
+        </p>
+
         <section className="rounded-xl border border-border p-3 space-y-2.5">
           <div>
             <p className="text-sm font-semibold text-foreground">กำหนดจำนวนเอง</p>

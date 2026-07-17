@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  isMosaicPhotoGridLayout,
   isThreeSplitGridLayout,
   parsePhotoGridLayout,
+  parsePhotoGridPickerLayout,
   photoGridSlotCount,
   threeSplitSlotCropSpec,
 } from "../photoGridLayouts";
@@ -11,7 +13,8 @@ describe("photoGridLayouts", () => {
     expect(parsePhotoGridLayout("two_stack")).toBe("two_stack");
     expect(parsePhotoGridLayout("three_split")).toBe("three_split");
     expect(parsePhotoGridLayout("three_split_rev")).toBe("three_split_rev");
-    expect(parsePhotoGridLayout("invalid")).toBe("four_quad");
+    expect(parsePhotoGridLayout("tower_stack_tower")).toBe("tower_stack_tower");
+    expect(parsePhotoGridLayout("invalid")).toBe("three_split");
   });
 
   it("returns slot counts", () => {
@@ -19,6 +22,18 @@ describe("photoGridLayouts", () => {
     expect(photoGridSlotCount("three_split")).toBe(3);
     expect(photoGridSlotCount("three_split_rev")).toBe(3);
     expect(photoGridSlotCount("four_quad")).toBe(4);
+    expect(photoGridSlotCount("tower_stack_tower")).toBe(4);
+    expect(photoGridSlotCount("stack_tower_stack")).toBe(5);
+    expect(photoGridSlotCount("alt_tower_stack_4")).toBe(6);
+  });
+
+  it("picker includes classic and mosaic layouts", () => {
+    expect(isMosaicPhotoGridLayout("tower_stack_tower")).toBe(true);
+    expect(isMosaicPhotoGridLayout("four_quad")).toBe(false);
+    expect(parsePhotoGridPickerLayout("four_quad")).toBe("four_quad");
+    expect(parsePhotoGridPickerLayout("three_split")).toBe("three_split");
+    expect(parsePhotoGridPickerLayout("wide_over_two")).toBe("wide_over_two");
+    expect(parsePhotoGridPickerLayout("two_stack")).toBe("three_split");
   });
 
   it("detects locked 3-up layouts", () => {

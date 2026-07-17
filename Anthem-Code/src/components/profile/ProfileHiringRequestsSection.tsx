@@ -1,15 +1,36 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, FileText, Briefcase, Mail, MessageCircle, Phone, Share2, X } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  FileText,
+  Briefcase,
+  Mail,
+  MessageCircle,
+  Phone,
+  Share2,
+  Trash2,
+  X,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import {
+  useCompleteHireRequest,
   useForwardHireRequest,
   useHiringRequests,
   type HiringRow,
-  type HiringStatusDB,
 } from "@/hooks/useHiringRequests";
 import {
   useAcceptRequest,
@@ -27,25 +48,35 @@ import {
   hireForwardClientNotice,
   hireRejectReasonLabel,
 } from "@/lib/hireBrief";
+import {
+  HIRE_TAB_ACCEPTED,
+  HIRE_TAB_ALL,
+  HIRE_TAB_CANCELLED,
+  HIRE_TAB_COMPLETED,
+  HIRE_TAB_CONTACTED_NEW,
+  HIRE_TAB_DECLINED,
+  HIRE_TAB_FORWARDED,
+  HIRE_TAB_ORDER,
+  canCompleteHireStatus,
+  isContactedNewStatus,
+  isHireCancelledStatus,
+  isHireCompletedStatus,
+  isHireTerminalStatus,
+  labelHireStatus,
+  type HireInboxTab,
+} from "@/lib/hiringStatus";
+import {
+  canHideHireFromInbox,
+  getHiddenHireRequestIds,
+  hideHireRequestFromInbox,
+  unhideHireRequestFromInbox,
+} from "@/lib/hireInboxHidden";
+import { requestCancelReasonLabel } from "@/lib/requestOutcome";
 import { encodeHireForwardMessage } from "@/lib/hireForwardChat";
 import { encodeHireRejectChoiceMessage } from "@/lib/hireRejectChat";
 import HireRejectDialog from "@/components/hiring/HireRejectDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-type HiringTab = HiringStatusDB | "ส่งต่อ" | "ทั้งหมด";
-
-const STATUSES: HiringStatusDB[] = ["ใหม่", "ที่ต้องตอบ", "ตอบรับ", "ปฏิเสธ", "ติดต่อแล้ว", "ปิดแล้ว"];
-const TAB_ORDER: HiringTab[] = [
-  "ใหม่",
-  "ที่ต้องตอบ",
-  "ตอบรับ",
-  "ปฏิเสธ",
-  "ส่งต่อ",
-  "ติดต่อแล้ว",
-  "ปิดแล้ว",
-  "ทั้งหมด",
-];
 
 function isForwardedOut(req: HiringRow): boolean {
   return (
@@ -59,6 +90,8 @@ function friendStatusLabel(status: string | null | undefined): { label: string; 
     case "ตอบรับ":
       return { label: "เพื่อนตอบรับแล้ว", tone: "bg-emerald-500/15 text-emerald-600 border-emerald-500/25" };
     case "ติดต่อแล้ว":
+    case "ใหม่":
+    case "ที่ต้องตอบ":
       return {
         label: "เพื่อนคุยกับลูกค้าแล้ว",
         tone: "bg-[hsl(var(--chat-hire-soft))] text-[hsl(var(--chat-hire))] border-[hsl(var(--chat-hire))/0.25]",
@@ -66,9 +99,9 @@ function friendStatusLabel(status: string | null | undefined): { label: string; 
     case "ปฏิเสธ":
       return { label: "เพื่อนปฏิเสธ", tone: "bg-destructive/10 text-destructive border-destructive/20" };
     case "ปิดแล้ว":
-      return { label: "ปิดแล้ว", tone: "bg-muted text-muted-foreground border-border" };
-    case "ที่ต้องตอบ":
-    case "ใหม่":
+      return { label: "จบงาน", tone: "bg-muted text-muted-foreground border-border" };
+    case "ยกเลิก":
+      return { label: "ยกเลิก", tone: "bg-muted text-muted-foreground border-border" };
     default:
       return {
         label: "รอเพื่อนตอบ",
@@ -86,10 +119,25 @@ export function ProfileHiringRequestsSection() {
   const forwardHire = useForwardHireRequest();
   const sendMessage = useSendMessage();
   const findConv = useFindConversationByRequest();
-  const [hiringTab, setHiringTab] = useState<HiringTab>("ที่ต้องตอบ");
+  const completeHire = useCompleteHireRequest();
+  const [hiringTab, setHiringTab] = useState<HireInboxTab>(HIRE_TAB_CONTACTED_NEW);
   const [rejectTarget, setRejectTarget] = useState<HiringRow | null>(null);
+  const [hideTarget, setHideTarget] = useState<HiringRow | null>(null);
+  const [completeTarget, setCompleteTarget] = useState<HiringRow | null>(null);
+  const [hiddenTick, setHiddenTick] = useState(0);
 
-  const forwardedOut = useMemo(() => requests.filter(isForwardedOut), [requests]);
+  const hiddenIds = useMemo(() => {
+    if (!user?.id) return new Set<string>();
+    void hiddenTick;
+    return getHiddenHireRequestIds(user.id);
+  }, [user?.id, hiddenTick]);
+
+  const visibleRequests = useMemo(
+    () => requests.filter((r) => !hiddenIds.has(r.id)),
+    [requests, hiddenIds],
+  );
+
+  const forwardedOut = useMemo(() => visibleRequests.filter(isForwardedOut), [visibleRequests]);
   const forwardedIds = useMemo(() => forwardedOut.map((r) => r.id), [forwardedOut]);
 
   const { data: childByFromId = {} } = useQuery({
@@ -154,30 +202,79 @@ export function ProfileHiringRequestsSection() {
   });
 
   const counts = useMemo(() => {
-    const base = STATUSES.reduce(
-      (acc, s) => {
-        acc[s] = requests.filter((r) => {
-          if (s === "ปฏิเสธ") return r.status === "ปฏิเสธ" && !isForwardedOut(r);
-          return r.status === s;
-        }).length;
-        return acc;
-      },
-      {} as Record<HiringStatusDB, number>,
-    );
-    return { ...base, ส่งต่อ: forwardedOut.length };
-  }, [requests, forwardedOut.length]);
+    const contactedNew = visibleRequests.filter(
+      (r) => isContactedNewStatus(r.status) && !isForwardedOut(r),
+    ).length;
+    const accepted = visibleRequests.filter((r) => r.status === HIRE_TAB_ACCEPTED).length;
+    const declined = visibleRequests.filter(
+      (r) => r.status === HIRE_TAB_DECLINED && !isForwardedOut(r),
+    ).length;
+    const cancelled = visibleRequests.filter((r) => isHireCancelledStatus(r.status)).length;
+    const completed = visibleRequests.filter((r) => isHireCompletedStatus(r.status)).length;
+    return {
+      [HIRE_TAB_CONTACTED_NEW]: contactedNew,
+      [HIRE_TAB_ACCEPTED]: accepted,
+      [HIRE_TAB_DECLINED]: declined,
+      [HIRE_TAB_FORWARDED]: forwardedOut.length,
+      [HIRE_TAB_CANCELLED]: cancelled,
+      [HIRE_TAB_COMPLETED]: completed,
+    } as Record<Exclude<HireInboxTab, typeof HIRE_TAB_ALL>, number>;
+  }, [visibleRequests, forwardedOut.length]);
 
   const filteredHiring = useMemo(() => {
-    if (hiringTab === "ทั้งหมด") return requests;
-    if (hiringTab === "ส่งต่อ") return forwardedOut;
-    if (hiringTab === "ปฏิเสธ") {
-      return requests.filter((r) => r.status === "ปฏิเสธ" && !isForwardedOut(r));
+    if (hiringTab === HIRE_TAB_ALL) return visibleRequests;
+    if (hiringTab === HIRE_TAB_FORWARDED) return forwardedOut;
+    if (hiringTab === HIRE_TAB_DECLINED) {
+      return visibleRequests.filter((r) => r.status === HIRE_TAB_DECLINED && !isForwardedOut(r));
     }
-    return requests.filter((r) => r.status === hiringTab);
-  }, [hiringTab, requests, forwardedOut]);
+    if (hiringTab === HIRE_TAB_CONTACTED_NEW) {
+      return visibleRequests.filter((r) => isContactedNewStatus(r.status) && !isForwardedOut(r));
+    }
+    if (hiringTab === HIRE_TAB_CANCELLED) {
+      return visibleRequests.filter((r) => isHireCancelledStatus(r.status));
+    }
+    if (hiringTab === HIRE_TAB_COMPLETED) {
+      return visibleRequests.filter((r) => isHireCompletedStatus(r.status));
+    }
+    return visibleRequests.filter((r) => r.status === hiringTab);
+  }, [hiringTab, visibleRequests, forwardedOut]);
 
-  const pendingCount = (counts["ใหม่"] ?? 0) + (counts["ที่ต้องตอบ"] ?? 0);
-  const rejectBusy = reject.isPending || forwardHire.isPending || accept.isPending || sendMessage.isPending;
+  const confirmHideFromInbox = () => {
+    if (!user?.id || !hideTarget) return;
+    const id = hideTarget.id;
+    hideHireRequestFromInbox(user.id, id);
+    setHiddenTick((n) => n + 1);
+    setHideTarget(null);
+    toast.success("นำออกจากรายการแล้ว", {
+      action: {
+        label: "เลิกทำ",
+        onClick: () => {
+          unhideHireRequestFromInbox(user.id, id);
+          setHiddenTick((n) => n + 1);
+        },
+      },
+    });
+  };
+
+  const pendingCount = counts[HIRE_TAB_CONTACTED_NEW] ?? 0;
+  const rejectBusy =
+    reject.isPending ||
+    forwardHire.isPending ||
+    accept.isPending ||
+    sendMessage.isPending ||
+    completeHire.isPending;
+
+  const confirmCompleteHire = async () => {
+    if (!completeTarget) return;
+    try {
+      await completeHire.mutateAsync(completeTarget.id);
+      toast.success("บันทึกจบงานแล้ว");
+      setCompleteTarget(null);
+      setHiringTab(HIRE_TAB_COMPLETED);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "บันทึกจบงานไม่สำเร็จ");
+    }
+  };
 
   const openChatFor = async (req: HiringRow, systemNote?: string) => {
     let id = await findConv("hire", req.id);
@@ -224,7 +321,7 @@ export function ProfileHiringRequestsSection() {
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        {TAB_ORDER.map((s) => (
+        {HIRE_TAB_ORDER.map((s) => (
           <button
             key={s}
             type="button"
@@ -236,7 +333,7 @@ export function ProfileHiringRequestsSection() {
             }`}
           >
             {s}{" "}
-            {s !== "ทั้งหมด" ? `(${s === "ส่งต่อ" ? counts.ส่งต่อ : counts[s as HiringStatusDB] ?? 0})` : ""}
+            {s !== HIRE_TAB_ALL ? `(${counts[s] ?? 0})` : ""}
           </button>
         ))}
       </div>
@@ -244,7 +341,10 @@ export function ProfileHiringRequestsSection() {
       <div className="space-y-3">
         {filteredHiring.map((req) => {
           const forwarded = isForwardedOut(req);
-          const isDeclined = req.status === "ปฏิเสธ";
+          const isDeclined = req.status === HIRE_TAB_DECLINED;
+          const isCancelled = isHireCancelledStatus(req.status);
+          const canHide = canHideHireFromInbox(req.status);
+          const canComplete = !forwarded && canCompleteHireStatus(req.status);
           const canQuote =
             isAplus1ChatOffersEnabled() &&
             !forwarded &&
@@ -252,6 +352,9 @@ export function ProfileHiringRequestsSection() {
               req.status === "ติดต่อแล้ว" ||
               req.status === "ใหม่" ||
               req.status === "ที่ต้องตอบ");
+          const cancelLabel = requestCancelReasonLabel(
+            (req as { cancel_reason?: string | null }).cancel_reason,
+          );
           const budgetLabel = formatHireBudgetLabel({
             budget_min: (req as { budget_min?: number | null }).budget_min,
             budget_max: (req as { budget_max?: number | null }).budget_max,
@@ -316,7 +419,7 @@ export function ProfileHiringRequestsSection() {
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="text-xs">
-                        {req.status}
+                        {labelHireStatus(req.status)}
                       </Badge>
                     )}
                     {budgetLabel ? (
@@ -348,7 +451,7 @@ export function ProfileHiringRequestsSection() {
                       </Badge>
                       {child?.status ? (
                         <p className="text-[11px] text-muted-foreground">
-                          สถานะคำขอของเพื่อน: {child.status}
+                          สถานะคำขอของเพื่อน: {labelHireStatus(child.status)}
                           {child.updated_at ? ` · อัปเดต ${timeAgoTH(child.updated_at)}` : ""}
                         </p>
                       ) : (
@@ -357,6 +460,8 @@ export function ProfileHiringRequestsSection() {
                     </div>
                   ) : isDeclined && rejectLabel ? (
                     <p className="text-xs text-muted-foreground mt-1">เหตุผล: {rejectLabel}</p>
+                  ) : isCancelled && cancelLabel ? (
+                    <p className="text-xs text-muted-foreground mt-1">เหตุผลยกเลิก: {cancelLabel}</p>
                   ) : null}
                   <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
                     <span>⏱ {timeAgoTH(req.created_at)}</span>
@@ -378,7 +483,7 @@ export function ProfileHiringRequestsSection() {
                     )}
                   </div>
                   <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-border/50 flex-wrap">
-                    {!isDeclined && !forwarded && (
+                    {!isHireTerminalStatus(req.status) && !forwarded && (
                       <>
                         {canQuote && (
                           <Button
@@ -388,6 +493,17 @@ export function ProfileHiringRequestsSection() {
                             className="rounded-full h-8 text-xs gap-1"
                           >
                             <FileText className="w-3.5 h-3.5" /> ใบเสนอราคา
+                          </Button>
+                        )}
+                        {canComplete && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setCompleteTarget(req)}
+                            disabled={rejectBusy}
+                            className="rounded-full h-8 text-xs gap-1"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" /> จบงาน
                           </Button>
                         )}
                         <Button
@@ -419,6 +535,19 @@ export function ProfileHiringRequestsSection() {
                         <MessageCircle className="w-3.5 h-3.5 mr-1" /> ดูแชทเดิม
                       </Button>
                     ) : null}
+                    {canHide ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setHideTarget(req)}
+                        className="rounded-full h-8 text-xs text-muted-foreground hover:text-destructive"
+                        title="นำออกจากรายการ"
+                        aria-label="ลบออกจากรายการ"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" />
+                        ลบ
+                      </Button>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -427,12 +556,47 @@ export function ProfileHiringRequestsSection() {
         })}
         {filteredHiring.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-6">
-            {hiringTab === "ส่งต่อ"
+            {hiringTab === HIRE_TAB_FORWARDED
               ? "ยังไม่มีงานที่ส่งต่อให้เพื่อน"
               : "ยังไม่มีคำขอจ้างงานในสถานะนี้"}
           </p>
         )}
       </div>
+
+      <AlertDialog
+        open={!!completeTarget}
+        onOpenChange={(open) => {
+          if (!open) setCompleteTarget(null);
+        }}
+      >
+        <AlertDialogContent className="rounded-2xl max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>ยืนยันจบงาน?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ใช้เมื่องานเสร็จและรับเงินแล้ว — คำขอของ{" "}
+              <span className="font-medium text-foreground">
+                {completeTarget?.client_name ?? "ลูกค้า"}
+              </span>{" "}
+              จะย้ายไปแท็บจบงาน
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full" disabled={completeHire.isPending}>
+              กลับ
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-full"
+              disabled={completeHire.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmCompleteHire();
+              }}
+            >
+              ยืนยันจบงาน
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <HireRejectDialog
         open={!!rejectTarget}
@@ -548,6 +712,35 @@ export function ProfileHiringRequestsSection() {
           }
         }}
       />
+
+      <AlertDialog
+        open={!!hideTarget}
+        onOpenChange={(open) => {
+          if (!open) setHideTarget(null);
+        }}
+      >
+        <AlertDialogContent className="rounded-2xl max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>นำออกจากรายการ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ซ่อนคำขอของ{" "}
+              <span className="font-medium text-foreground">
+                {hideTarget?.client_name ?? "ลูกค้า"}
+              </span>{" "}
+              ออกจากกล่องคำขอจ้างงานของคุณ — แชทและประวัติฝั่งลูกค้ายังอยู่
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full">ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmHideFromInbox}
+            >
+              ลบออกจากรายการ
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

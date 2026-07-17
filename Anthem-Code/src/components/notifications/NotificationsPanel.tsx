@@ -1,23 +1,26 @@
 import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bookmark, MessageCircle, Handshake, Bell, Inbox, UserPlus } from "lucide-react";
+import { Bookmark, Check, MessageCircle, Handshake, Bell, Inbox, UserPlus, X } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useActivityNotifications, useHireNotifications, useCollabNotifications, type HireNotif, type CollabNotif } from "@/hooks/useNotifications";
 import { useFollowNotifications } from "@/hooks/useFollowLists";
 import { useAuth } from "@/hooks/useAuth";
-import { useUpdateCollabStatus } from "@/hooks/useCollabRequests";
-import { useAcceptRequest, useFindConversationByRequest, useOpenHireCollabChat } from "@/hooks/useChat";
+import { useAcceptRequest, useFindConversationByRequest, useOpenHireCollabChat, useRejectRequest } from "@/hooks/useChat";
 import { useNotifications as useInbox } from "@/core/notifications";
 import InboxList from "@/components/notifications/InboxList";
 import FollowNotificationsList from "@/components/notifications/FollowNotificationsList";
 import UserAvatar from "@/components/UserAvatar";
-import { useCreateEscrowFromHire } from "@/hooks/useEscrow";
-import { isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck } from "lucide-react";
+import CollabRejectDialog from "@/components/collab/CollabRejectDialog";
+import {
+  isCollabAcceptedStatus,
+  isCollabContactedNewStatus,
+  isCollabDeclinedStatus,
+  labelCollabStatus,
+} from "@/lib/collabInbox";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -97,11 +100,11 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
   const { data: hires = [], isLoading: lh } = useHireNotifications();
   const { data: collabs = [], isLoading: lc } = useCollabNotifications();
   const { data: followNotifs = [] } = useFollowNotifications();
-  const updateCollab = useUpdateCollabStatus();
-  const createHireEscrow = useCreateEscrowFromHire();
   const accept = useAcceptRequest();
+  const reject = useRejectRequest();
   const openHireCollabChat = useOpenHireCollabChat();
   const findConv = useFindConversationByRequest();
+  const [collabRejectTarget, setCollabRejectTarget] = useState<CollabNotif | null>(null);
 
   const go = (path: string) => {
     onBeforeNavigate?.();
@@ -112,7 +115,8 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
     try {
       let convId = h.conversationId ?? (await findConv("hire", h.id));
       if (!convId && h.clientId && h.freelancerId) {
-        const pending = h.status === "ใหม่" || h.status === "ที่ต้องตอบ";
+        const pending =
+          h.status === "ติดต่อแล้ว" || h.status === "ใหม่" || h.status === "ที่ต้องตอบ";
         if (pending) {
           convId = await openHireCollabChat.mutateAsync({
             kind: "hire",
@@ -148,18 +152,38 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
     try {
       let convId = c.conversationId ?? (await findConv("collab", c.id));
       if (!convId) {
-        convId = await accept.mutateAsync({
+        // Open chat without accepting — matching hire skipStatusUpdate.
+        convId = await openHireCollabChat.mutateAsync({
           kind: "collab",
           requestId: c.id,
           clientId: c.senderId,
           freelancerId: c.recipientId,
           projectId: c.projectId,
           projectTitle: "คอลแลปไอเดียใหม่",
+          contextMessage: "เริ่มสนทนาคอลแลป — คุยไอเดียได้เลย",
+          skipStatusUpdate: true,
         });
       }
       go(`/chat/${convId}`);
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "เปิดแชทไม่สำเร็จ");
+    }
+  };
+
+  const acceptCollab = async (c: CollabNotif) => {
+    try {
+      const convId = await accept.mutateAsync({
+        kind: "collab",
+        requestId: c.id,
+        clientId: c.senderId,
+        freelancerId: c.recipientId,
+        projectId: c.projectId,
+        projectTitle: "คอลแลปไอเดียใหม่",
+      });
+      toast.success("ตอบรับร่วมงานแล้ว");
+      go(`/chat/${convId}`);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "ตอบรับไม่สำเร็จ");
     }
   };
 
@@ -304,21 +328,8 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                     <MessageCircle className="w-3.5 h-3.5 mr-1" />
                     เปิดแชท
                   </Button>
-                  {isSoloEcosystemEnabled() && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="w-full"
-                      disabled={createHireEscrow.isPending}
-                      onClick={() => createHireEscrow.mutate(h.id)}
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5 mr-1" />
-                      สร้าง Escrow (ทางเลือก)
-                    </Button>
-                  )}
                   <p className="text-[10px] text-muted-foreground text-center">
-                    หรือโอนตรง/Job Tracker — ไม่ผ่านแพลตฟอร์ม
+                    ชำระผ่าน Aplus1 กำลังเปิดเร็ว ๆ นี้ — คุยรายละเอียดในแชทได้ตามปกติ
                   </p>
                 </div>
               ) : (
@@ -367,28 +378,101 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
               )}
               <p className="text-base text-foreground whitespace-pre-wrap line-clamp-4">{c.message}</p>
               {c.timeline && <p className="text-xs text-muted-foreground mt-1">ช่วงเวลา: {c.timeline}</p>}
-              {c.status !== "passed" && c.status !== "declined" && (
-                <div className="flex gap-2 mt-3">
-                  <button
-                    onClick={() => void openCollabChat(c)}
-                    disabled={accept.isPending}
-                    className="flex-1 py-2 rounded-full bg-gradient-brand text-white text-xs font-medium hover:opacity-90 disabled:opacity-50"
+              <p className="text-[10px] text-muted-foreground mt-1">{labelCollabStatus(c.status)}</p>
+              {isCollabContactedNewStatus(c.status) ? (
+                <div className="flex flex-col gap-2 mt-3">
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={accept.isPending || reject.isPending || openHireCollabChat.isPending}
+                      className="flex-1 rounded-full"
+                      onClick={() => void openCollabChat(c)}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 mr-1" />
+                      เปิดแชท
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={accept.isPending || reject.isPending}
+                      className="flex-1 rounded-full text-destructive hover:bg-destructive/10"
+                      onClick={() => setCollabRejectTarget(c)}
+                    >
+                      <X className="w-3.5 h-3.5 mr-1" />
+                      ยังไม่พร้อม
+                    </Button>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={accept.isPending || reject.isPending}
+                    className="w-full rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                    onClick={() => void acceptCollab(c)}
                   >
-                    <MessageCircle className="w-3.5 h-3.5 inline mr-1" />
-                    เปิดแชท
-                  </button>
-                  <button
-                    onClick={() => updateCollab.mutate({ id: c.id, status: "passed" })}
-                    className="flex-1 py-2 rounded-full bg-secondary text-foreground text-xs font-medium hover:bg-accent"
-                  >
-                    ผ่านไปก่อน
-                  </button>
+                    <Check className="w-3.5 h-3.5 mr-1" />
+                    ตอบรับร่วมงาน
+                  </Button>
                 </div>
-              )}
+              ) : isCollabAcceptedStatus(c.status) || isCollabDeclinedStatus(c.status) ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={openHireCollabChat.isPending}
+                  className="w-full mt-3 rounded-full"
+                  onClick={() => void openCollabChat(c)}
+                >
+                  <MessageCircle className="w-3.5 h-3.5 mr-1" />
+                  เปิดแชท
+                </Button>
+              ) : null}
             </div>
           ))
         )}
       </TabsContent>
+
+      <CollabRejectDialog
+        open={!!collabRejectTarget}
+        onOpenChange={(open) => {
+          if (!open) setCollabRejectTarget(null);
+        }}
+        busy={reject.isPending}
+        request={
+          collabRejectTarget
+            ? {
+                id: collabRejectTarget.id,
+                sender_name: collabRejectTarget.senderName,
+                message: collabRejectTarget.message,
+                timeline: collabRejectTarget.timeline,
+                collab_types: collabRejectTarget.collabTypes,
+                project_id: collabRejectTarget.projectId,
+              }
+            : null
+        }
+        onConfirm={async ({ action, reason, note }) => {
+          if (!collabRejectTarget) return;
+          try {
+            await reject.mutateAsync({
+              kind: "collab",
+              requestId: collabRejectTarget.id,
+              reason,
+              note,
+              keepChat: action === "busy_chat",
+            });
+            setCollabRejectTarget(null);
+            toast.success(
+              action === "busy_chat"
+                ? "แจ้งแล้ว — ยังคุยไอเดียต่อได้"
+                : "แจ้งแล้วว่ายังไม่พร้อมร่วมงาน",
+            );
+          } catch (e: unknown) {
+            toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
+          }
+        }}
+      />
       </div>
     </Tabs>
   );

@@ -9,6 +9,7 @@
 - UX/UI/demo/usability: `ANTHEM_UX_RESEARCH_SKILL.md`
 - **ใบเสนอราคาในแชท (รอบถัดไป — อ้างอิง Fastwork):** [`../product/fastwork-quotation-ux-reference.md`](../product/fastwork-quotation-ux-reference.md) · เกต `isAplus1ChatOffersEnabled()`
 - Referral/PX/reward/cashout copy: `ANTHEM_REFERRAL_REWARD_SKILL.md`
+- **Payments / Omise / hire money / FX display (ไม่ใช่ PX):** `ANTHEM_PAYMENTS_SKILL.md` + [`../payments-omise.md`](../payments-omise.md)
 - Report/moderation/profanity/community trust: `ANTHEM_COMMUNITY_SAFETY_SKILL.md`
 - Android/iOS/app readiness: `ANTHEM_MOBILE_APP_SKILL.md`
 - Launch/content/referral campaign: `ANTHEM_MARKETING_SKILL.md`

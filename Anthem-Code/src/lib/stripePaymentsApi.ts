@@ -1,7 +1,14 @@
-import { supabase } from "@/integrations/supabase/client";
-import { assertAplus1PaymentsEnabled } from "@/lib/aplus1Launch";
-import { SO1O_APP_URL } from "@/lib/productLinks";
-import { assertExternalDigitalPurchaseAllowed } from "@/lib/nativePlatform";
+/**
+ * @deprecated Solo Stripe hub for Aplus1 — CUT OVER.
+ * Do not call Solo `/api/payments/*` for new Aplus1 flows.
+ * Use `src/lib/payments/*` + Omise (see docs/payments-omise.md).
+ *
+ * Exports kept so existing UI can show a controlled coming-soon error.
+ */
+import {
+  APLUS1_SOLO_PAYMENTS_CUTOVER_TH,
+  assertAplus1PaymentsEnabled,
+} from "@/lib/aplus1Launch";
 
 export type StripePaymentsEnv = "sandbox" | "live";
 
@@ -11,116 +18,39 @@ export function getStripePaymentsEnv(): StripePaymentsEnv {
   return "sandbox";
 }
 
-async function authHeaders(): Promise<HeadersInit> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  if (!token) throw new Error("กรุณาเข้าสู่ระบบก่อน");
-  return {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
+function refuseSoloPayment(): never {
+  throw new Error(APLUS1_SOLO_PAYMENTS_CUTOVER_TH);
 }
 
-export async function startStripeCheckout(opts: {
+/** @deprecated Cut — no Solo checkout. */
+export async function startStripeCheckout(_opts: {
   priceId: string;
   successPath: string;
   cancelPath?: string;
   amountPx?: number;
 }): Promise<void> {
   assertAplus1PaymentsEnabled();
-  assertExternalDigitalPurchaseAllowed();
-  const origin = window.location.origin;
-  const successUrl = opts.successPath.startsWith("http")
-    ? opts.successPath
-    : `${origin}${opts.successPath}`;
-  const cancelUrl = opts.cancelPath
-    ? opts.cancelPath.startsWith("http")
-      ? opts.cancelPath
-      : `${origin}${opts.cancelPath}`
-    : `${origin}/earnings?topup=canceled`;
-
-  const res = await fetch(`${SO1O_APP_URL.replace(/\/$/, "")}/api/payments/checkout`, {
-    method: "POST",
-    headers: await authHeaders(),
-    body: JSON.stringify({
-      priceId: opts.priceId,
-      environment: getStripePaymentsEnv(),
-      successUrl,
-      cancelUrl,
-      ...(opts.amountPx != null ? { amountPx: opts.amountPx } : {}),
-    }),
-  });
-
-  let json: { url?: string; error?: string };
-  try {
-    json = (await res.json()) as { url?: string; error?: string };
-  } catch {
-    throw new Error(
-      res.status === 0
-        ? "ไม่สามารถเชื่อมต่อระบบชำระเงินได้ — ลองใหม่อีกครั้ง"
-        : "ระบบชำระเงินตอบกลับไม่ถูกต้อง",
-    );
-  }
-  if (!res.ok || json.error || !json.url) {
-    throw new Error(json.error ?? "ไม่สามารถเริ่ม checkout ได้");
-  }
-  window.location.href = json.url;
+  refuseSoloPayment();
 }
 
-export async function startConnectOnboarding(opts: {
+/** @deprecated Cut — no Solo Connect. */
+export async function startConnectOnboarding(_opts: {
   returnPath: string;
   refreshPath?: string;
 }): Promise<void> {
   assertAplus1PaymentsEnabled();
-  const origin = window.location.origin;
-  const returnUrl = opts.returnPath.startsWith("http")
-    ? opts.returnPath
-    : `${origin}${opts.returnPath}`;
-  const refreshUrl = opts.refreshPath
-    ? opts.refreshPath.startsWith("http")
-      ? opts.refreshPath
-      : `${origin}${opts.refreshPath}`
-    : `${origin}/earnings?connect=refresh`;
-
-  const res = await fetch(`${SO1O_APP_URL.replace(/\/$/, "")}/api/payments/connect/onboard`, {
-    method: "POST",
-    headers: await authHeaders(),
-    body: JSON.stringify({
-      environment: getStripePaymentsEnv(),
-      returnUrl,
-      refreshUrl,
-    }),
-  });
-
-  const json = (await res.json()) as { url?: string; error?: string };
-  if (!res.ok || json.error || !json.url) {
-    throw new Error(json.error ?? "ไม่สามารถเริ่มเชื่อมบัญชีได้");
-  }
-  window.location.href = json.url;
+  refuseSoloPayment();
 }
 
+/** @deprecated Cut — admin must use Omise/manual payout path. */
 export async function processCashoutViaStripe(
-  cashoutId: string,
-  opts?: { admin?: boolean },
+  _cashoutId: string,
+  _opts?: { admin?: boolean },
 ): Promise<string> {
-  if (!opts?.admin) assertAplus1PaymentsEnabled();
-  const res = await fetch(`${SO1O_APP_URL.replace(/\/$/, "")}/api/payments/cashout/process`, {
-    method: "POST",
-    headers: await authHeaders(),
-    body: JSON.stringify({
-      cashoutId,
-      environment: getStripePaymentsEnv(),
-    }),
-  });
-
-  const json = (await res.json()) as { transferId?: string; error?: string };
-  if (!res.ok || json.error || !json.transferId) {
-    throw new Error(json.error ?? "โอน Stripe ล้มเหลว");
-  }
-  return json.transferId;
+  refuseSoloPayment();
 }
 
-/** Map preset px amounts to Stripe lookup keys. */
+/** Map preset px amounts (UI labels only — paid top-up via Solo is cut). */
 export const PX_PRICE_BY_AMOUNT: Record<number, string> = {
   500: "px_500",
   2000: "px_2000",
@@ -131,41 +61,15 @@ export const PX_CUSTOM_PRICE_ID = "px_custom";
 export const PX_CUSTOM_MIN = 100;
 export const PX_CUSTOM_MAX = 10_000;
 
-export async function startBoostCheckout(opts: {
+/** @deprecated Cut — no Solo boost checkout. */
+export async function startBoostCheckout(_opts: {
   boostId: string;
   priceId: string;
   successPath: string;
   cancelPath?: string;
 }): Promise<void> {
   assertAplus1PaymentsEnabled();
-  assertExternalDigitalPurchaseAllowed();
-  const origin = window.location.origin;
-  const successUrl = opts.successPath.startsWith("http")
-    ? opts.successPath
-    : `${origin}${opts.successPath}`;
-  const cancelUrl = opts.cancelPath
-    ? opts.cancelPath.startsWith("http")
-      ? opts.cancelPath
-      : `${origin}${opts.cancelPath}`
-    : `${origin}/?boost=canceled`;
-
-  const res = await fetch(`${SO1O_APP_URL.replace(/\/$/, "")}/api/payments/checkout`, {
-    method: "POST",
-    headers: await authHeaders(),
-    body: JSON.stringify({
-      priceId: opts.priceId,
-      environment: getStripePaymentsEnv(),
-      successUrl,
-      cancelUrl,
-      boostId: opts.boostId,
-    }),
-  });
-
-  const json = (await res.json()) as { url?: string; error?: string };
-  if (!res.ok || json.error || !json.url) {
-    throw new Error(json.error ?? "ไม่สามารถเริ่ม checkout ได้");
-  }
-  window.location.href = json.url;
+  refuseSoloPayment();
 }
 
 const AD_PACKAGE_PRICE: Record<string, string> = {
@@ -178,38 +82,13 @@ export function adPriceIdForPackage(pkg: "basic" | "standard" | "premium"): stri
   return AD_PACKAGE_PRICE[pkg];
 }
 
-export async function startAdCheckout(opts: {
+/** @deprecated Cut — no Solo ad checkout. */
+export async function startAdCheckout(_opts: {
   applicationId: string;
   package: "basic" | "standard" | "premium";
   successPath: string;
   cancelPath?: string;
 }): Promise<void> {
   assertAplus1PaymentsEnabled();
-  const origin = window.location.origin;
-  const successUrl = opts.successPath.startsWith("http")
-    ? opts.successPath
-    : `${origin}${opts.successPath}`;
-  const cancelUrl = opts.cancelPath
-    ? opts.cancelPath.startsWith("http")
-      ? opts.cancelPath
-      : `${origin}${opts.cancelPath}`
-    : `${origin}/advertise?pay=canceled`;
-
-  const res = await fetch(`${SO1O_APP_URL.replace(/\/$/, "")}/api/payments/checkout`, {
-    method: "POST",
-    headers: await authHeaders(),
-    body: JSON.stringify({
-      priceId: adPriceIdForPackage(opts.package),
-      environment: getStripePaymentsEnv(),
-      successUrl,
-      cancelUrl,
-      applicationId: opts.applicationId,
-    }),
-  });
-
-  const json = (await res.json()) as { url?: string; error?: string };
-  if (!res.ok || json.error || !json.url) {
-    throw new Error(json.error ?? "ไม่สามารถเริ่ม checkout ได้");
-  }
-  window.location.href = json.url;
+  refuseSoloPayment();
 }

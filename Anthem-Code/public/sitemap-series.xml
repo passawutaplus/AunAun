@@ -3,6 +3,11 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
+    <loc>https://aplus1.app/series/cc9c9925-9da2-4ce9-a282-2c042e504a94</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
     <loc>https://aplus1.app/series/ec0db127-5555-405b-b386-b078c0ca3191</loc>
     <changefreq>weekly</changefreq>
     <priority>0.65</priority>

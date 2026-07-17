@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState } from "react";
-import { Film } from "lucide-react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Box, Film, Loader2 } from "lucide-react";
 import {
   parseFlexGridLayout,
   type FlexGridLayout,
   type FlexGridModule,
 } from "@/lib/flexGridLayout";
 import { cn } from "@/lib/utils";
+
+const Model3dViewer = lazy(() => import("@/components/project/Model3dViewer"));
 
 type Props = {
   layout: FlexGridLayout | unknown;
@@ -95,6 +97,14 @@ function ModuleView({ module }: { module: FlexGridModule }) {
         )
       ) : null}
 
+      {module.type === "gif" ? (
+        module.url ? (
+          <img src={module.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <div className="h-full w-full bg-muted" />
+        )
+      ) : null}
+
       {module.type === "video" ? (
         module.url ? (
           <div className="relative h-full w-full bg-black">
@@ -113,9 +123,33 @@ function ModuleView({ module }: { module: FlexGridModule }) {
         )
       ) : null}
 
+      {module.type === "model3d" ? (
+        module.url && module.format ? (
+          <Suspense
+            fallback={
+              <div className="flex h-full w-full items-center justify-center bg-muted/30">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            }
+          >
+            <Model3dViewer
+              url={module.url}
+              format={module.format}
+              orbit={module.orbit}
+              autoRotate={!module.viewLocked}
+              viewLocked={!!module.viewLocked}
+            />
+          </Suspense>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+            <Box className="h-8 w-8" />
+          </div>
+        )
+      ) : null}
+
       {module.type === "text" ? (
         <div
-          className="h-full w-full overflow-auto bg-transparent p-1 text-sm leading-relaxed text-foreground"
+          className="h-full w-full overflow-auto bg-transparent p-1 text-sm leading-relaxed text-foreground [&_b]:font-bold [&_strong]:font-bold"
           dangerouslySetInnerHTML={{ __html: module.text || "" }}
         />
       ) : null}

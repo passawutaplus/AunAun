@@ -21,7 +21,11 @@ export type ChatOfferPayload = {
   v: 1 | 2 | 3;
   title: string;
   amount: number;
-  currency: "THB";
+  /** Settlement currency for the offer amount (ledger settle is always THB satang). */
+  currency: "THB" | "USD";
+  /** Optional display preference at offer create time (FX label only). */
+  displayCurrency?: "THB" | "USD";
+  fxRateSnapshot?: { quoteCurrency: "USD"; rate: number; source: string; asOf: string } | null;
   /** Summary of line items (backward compat / chat card). */
   deliverables: string;
   items?: ChatOfferLineItem[];

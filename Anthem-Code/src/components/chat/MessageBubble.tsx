@@ -40,6 +40,7 @@ import { ChatOfferCard } from "@/components/chat/ChatOfferCard";
 import { parseHireForwardMessage } from "@/lib/hireForwardChat";
 import HireForwardCard from "@/components/chat/HireForwardCard";
 import HireInviteCard, { type HireInviteActions } from "@/components/chat/HireInviteCard";
+import CollabInviteCard, { type CollabInviteActions } from "@/components/chat/CollabInviteCard";
 import HireRejectChoiceCard, {
   type HireRejectChoiceActions,
 } from "@/components/chat/HireRejectChoiceCard";
@@ -51,10 +52,14 @@ import {
   parseHireContinueAskMessage,
   parseHireRejectChoiceMessage,
 } from "@/lib/hireRejectChat";
+import { parseHireCancelCardMessage } from "@/lib/hireCancelRequest";
+import HireCancelCard from "@/components/chat/HireCancelCard";
 import { isHireBriefChatMessage } from "@/lib/hireBrief";
+import { isCollabBriefChatMessage } from "@/lib/collabBrief";
 import { UNSEND_WINDOW_MS, type Message } from "@/hooks/useChat";
 import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
 import { toast } from "sonner";
+import type { HireCancelRequestRow } from "@/lib/hireCancelRequest";
 
 function ChatAttachmentImage({ refUrl }: { refUrl: string }) {
   const src = useSignedStorageUrl(refUrl);
@@ -106,10 +111,17 @@ interface Props {
   viewerIsClient?: boolean;
   /** Freelancer respond actions on auto hire-invite card. */
   hireInviteActions?: HireInviteActions | null;
+  /** Recipient respond actions on auto collab-invite card. */
+  collabInviteActions?: CollabInviteActions | null;
   /** Client post-reject choice (close vs ask continue). */
   hireRejectChoiceActions?: HireRejectChoiceActions | null;
   /** Freelancer respond to client continue-ask. */
   hireContinueAskActions?: HireContinueAskActions | null;
+  /** Hire cancel-request card actions. */
+  hiringRequestId?: string | null;
+  onHireCancelEdit?: (row: HireCancelRequestRow) => void;
+  onHireCancelWithdraw?: (row: HireCancelRequestRow) => void;
+  hireCancelWithdrawBusy?: boolean;
   onReply?: (message: Message) => void;
   onUnsend?: (message: Message) => void;
   /** Pin/announce message to conversation header (LINE-style). */
@@ -125,8 +137,13 @@ const MessageBubble = ({
   kind,
   viewerIsClient = false,
   hireInviteActions = null,
+  collabInviteActions = null,
   hireRejectChoiceActions = null,
   hireContinueAskActions = null,
+  hiringRequestId = null,
+  onHireCancelEdit,
+  onHireCancelWithdraw,
+  hireCancelWithdrawBusy,
   onReply,
   onUnsend,
   onAnnounce,
@@ -245,6 +262,7 @@ const MessageBubble = ({
   const hireForward = !deleted ? parseHireForwardMessage(message.content) : null;
   const hireRejectChoice = !deleted ? parseHireRejectChoiceMessage(message.content) : null;
   const hireContinueAsk = !deleted ? parseHireContinueAskMessage(message.content) : null;
+  const hireCancel = !deleted ? parseHireCancelCardMessage(message.content) : null;
   const rawForDisplay =
     message.content && isSystemFallbackContent(message.content)
       ? stripSystemFallbackPrefix(message.content)
@@ -261,7 +279,20 @@ const MessageBubble = ({
     !hireForward &&
     !hireRejectChoice &&
     !hireContinueAsk &&
+    !hireCancel &&
     isHireBriefChatMessage(rawForDisplay)
+      ? rawForDisplay
+      : null;
+
+  const collabBrief =
+    !deleted &&
+    !offer &&
+    !hireForward &&
+    !hireRejectChoice &&
+    !hireContinueAsk &&
+    !hireCancel &&
+    !hireBrief &&
+    isCollabBriefChatMessage(rawForDisplay)
       ? rawForDisplay
       : null;
 
@@ -270,7 +301,9 @@ const MessageBubble = ({
     hireForward ||
     hireRejectChoice ||
     hireContinueAsk ||
+    hireCancel ||
     hireBrief ||
+    collabBrief ||
     (!deleted && isHireProtocolMessage(message.content))
   );
   const copyText = replyPreviewText(message);
@@ -497,6 +530,7 @@ const MessageBubble = ({
                   conversationId={message.conversation_id}
                   mine={mine}
                   canRespond={!mine}
+                  hiringRequestId={hiringRequestId}
                 />
               </div>
             )}
@@ -530,6 +564,18 @@ const MessageBubble = ({
                 />
               </div>
             )}
+            {hireCancel && (
+              <div>
+                {replyQuote}
+                <HireCancelCard
+                  payload={hireCancel}
+                  mine={mine}
+                  onEdit={onHireCancelEdit}
+                  onWithdraw={onHireCancelWithdraw}
+                  withdrawBusy={hireCancelWithdrawBusy}
+                />
+              </div>
+            )}
             {hireBrief && (
               <div>
                 {replyQuote}
@@ -540,12 +586,24 @@ const MessageBubble = ({
                 />
               </div>
             )}
+            {collabBrief && (
+              <div>
+                {replyQuote}
+                <CollabInviteCard
+                  content={collabBrief}
+                  mine={mine}
+                  actions={collabInviteActions}
+                />
+              </div>
+            )}
             {displayContent &&
               !offer &&
               !hireForward &&
               !hireRejectChoice &&
               !hireContinueAsk &&
+              !hireCancel &&
               !hireBrief &&
+              !collabBrief &&
               message.message_type !== "project" &&
               message.message_type !== "profile" && (
               <div
@@ -563,6 +621,7 @@ const MessageBubble = ({
               !hireForward &&
               !hireRejectChoice &&
               !hireContinueAsk &&
+              !hireCancel &&
               !hireBrief &&
               !message.attachment_url &&
               message.message_type !== "project" &&

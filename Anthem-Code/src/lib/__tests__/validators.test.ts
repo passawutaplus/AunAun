@@ -96,4 +96,23 @@ describe("projectSchema", () => {
     });
     expect(r.success).toBe(true);
   });
+  it("accepts up to 19 collaborators and rejects 20", () => {
+    const base = {
+      title: "Group Project",
+      category: "Design",
+      status: "Draft",
+      cover_url: "https://cdn.example/cover.jpg",
+    };
+    const collaboratorIds = Array.from(
+      { length: 20 },
+      (_, index) => `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+    );
+
+    expect(
+      projectSchema.safeParse({ ...base, collab_user_ids: collaboratorIds.slice(0, 19) }).success,
+    ).toBe(true);
+    expect(projectSchema.safeParse({ ...base, collab_user_ids: collaboratorIds }).success).toBe(
+      false,
+    );
+  });
 });

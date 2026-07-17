@@ -4,8 +4,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { LogIn, SearchX } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
-import PageLoader from "@/components/ui/PageLoader";
+import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { useProfilesByIds } from "@/core/profiles";
+import { useSlowLoadFallback } from "@/hooks/useSlowLoadFallback";
+import OpportunityFilterChips, {
+  type OpportunityFilter,
+} from "@/components/feed/OpportunityFilterChips";
+import {
+  projectMatchesOpportunityFilter,
+  sortByViewAffinity,
+} from "@/lib/viewAffinity";
 
 
 import Footer from "@/components/Footer";
@@ -84,6 +92,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const [search, setSearch] = useState("");
   const [feedMode, setFeedModeRaw] = useState<FeedMode2>("Explore");
   const [category, setCategory] = useState<ProjectChipFilter>("All");
+  const [opportunityFilter, setOpportunityFilter] = useState<OpportunityFilter>("All");
   const [mode, setMode] = useState<FeedMode>(() => {
     if (typeof window === "undefined") return "projects";
     if (!isCategoryAllowed("functional")) return "projects";
@@ -272,49 +281,85 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     return () => window.clearTimeout(t);
   }, [search, user?.id, feedMode, queryClient]);
 
-  const projectsLoading =
+  const activeProjectsQuery =
     feedMode === "Top 1"
-      ? top.isLoading
+      ? top
       : feedMode === "Following"
-        ? following.isLoading
+        ? following
         : feedMode === "Explore" && user
-          ? explorePersonalized.isLoading
-          : published.isLoading;
+          ? explorePersonalized
+          : published;
+
+  const projectsLoading = activeProjectsQuery.isLoading;
+  const projectsError = activeProjectsQuery.isError;
+  const projectsSlow = useSlowLoadFallback(projectsLoading);
+  const refetchProjects = () => {
+    void activeProjectsQuery.refetch();
+  };
 
   const sourceData: DBProject[] = useMemo(() => {
+    let rows: DBProject[];
     switch (feedMode) {
-      case "Top 1":      return (top.data ?? []) as DBProject[];
-      case "Following":  return (following.data ?? []) as DBProject[];
-      case "Newest":     return (published.data ?? []) as DBProject[];
+      case "Top 1":
+        rows = (top.data ?? []) as DBProject[];
+        break;
+      case "Following":
+        rows = (following.data ?? []) as DBProject[];
+        break;
+      case "Newest":
+        rows = (published.data ?? []) as DBProject[];
+        break;
       case "Explore":
-        return user
+        rows = user
           ? ((explorePersonalized.data ?? []) as DBProject[])
           : ((published.data ?? []) as DBProject[]);
-      default:           return (published.data ?? []) as DBProject[];
+        break;
+      default:
+        rows = (published.data ?? []) as DBProject[];
     }
+    // Guests (and cold Explore): re-rank by local view affinity from projects they opened.
+    if (feedMode === "Explore" && !user) {
+      return sortByViewAffinity(rows);
+    }
+    return rows;
   }, [feedMode, published.data, top.data, following.data, explorePersonalized.data, user]);
 
-  const ownerIds = useMemo(
-    () => Array.from(new Set(sourceData.map((p) => p.owner_id).filter(Boolean))),
+  const creatorIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          sourceData.flatMap((p) => [
+            p.owner_id,
+            ...((p.collab_user_ids ?? []) as string[]),
+          ]).filter(Boolean),
+        ),
+      ),
     [sourceData]
   );
 
-  const { data: ownersData } = useProfilesByIds(ownerIds);
-  const ownersMap = useMemo(() => {
-    const map: Record<string, { name: string; avatar: string }> = {};
-    (ownersData?.list ?? []).forEach((p) => {
+  const { data: creatorsData } = useProfilesByIds(creatorIds);
+  const creatorsMap = useMemo(() => {
+    const map: Record<
+      string,
+      { name: string; avatar: string; opportunityTypes: string[] }
+    > = {};
+    (creatorsData?.list ?? []).forEach((p) => {
       const profileUserId = (p as { user_id?: string }).user_id ?? p.id;
       map[profileUserId] = {
         name: p.display_name || p.username || "ฟรีแลนซ์",
         avatar: p.avatar_url || "",
+        opportunityTypes: p.opportunity_types ?? [],
       };
     });
     return map;
-  }, [ownersData]);
+  }, [creatorsData]);
 
   const projects: Project[] = useMemo(() => {
     const mapped: Project[] = sourceData.map((p) => {
-      const o = ownersMap[p.owner_id];
+      const o = creatorsMap[p.owner_id];
+      const collaboratorIds = Array.from(
+        new Set(((p.collab_user_ids ?? []) as string[]).filter((id) => id !== p.owner_id)),
+      );
       return {
         id: p.id,
         title: p.title,
@@ -324,6 +369,11 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
         owner: o?.name ?? "ฟรีแลนซ์",
         ownerId: p.owner_id,
         ownerAvatar: o?.avatar ?? "",
+        collaborators: collaboratorIds.map((id) => ({
+          id,
+          name: creatorsMap[id]?.name ?? "ผู้ร่วมคอลแลป",
+          avatar: creatorsMap[id]?.avatar ?? "",
+        })),
         likes: p.likes,
         views: p.views,
         comments: 0,
@@ -332,8 +382,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
         publishedDate: p.created_at,
         tools: p.tools ?? [],
         tags: p.tags ?? [],
-        allowHire: (p as any).allow_hire ?? true,
-        allowCollab: (p as any).allow_collab ?? true,
+        allowHire: p.allow_hire ?? true,
+        allowCollab: p.allow_collab ?? true,
         licenseType: (p as { license_type?: string }).license_type ?? "all_rights",
       };
     });
@@ -343,7 +393,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       );
     }
     return mapped;
-  }, [sourceData, ownersMap, feedMode]);
+  }, [sourceData, creatorsMap, feedMode]);
 
   const isDrillView = isLaunchDesignDrillEnabled() && mode === "projects" && category === DESIGN_DRILL_CHIP;
 
@@ -355,6 +405,17 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     [],
   );
 
+  const opportunityByProjectId = useMemo(() => {
+    const map = new Map<string, { project: string[]; owner: string[] }>();
+    for (const p of sourceData) {
+      map.set(p.id, {
+        project: (p as { opportunity_types?: string[] | null }).opportunity_types ?? [],
+        owner: creatorsMap[p.owner_id]?.opportunityTypes ?? [],
+      });
+    }
+    return map;
+  }, [sourceData, creatorsMap]);
+
   const filtered = projects.filter((p) => {
     if (isDrillView) return false;
     const matchCat =
@@ -364,7 +425,13 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       !search ||
       p.title.toLowerCase().includes(search.toLowerCase()) ||
       p.owner.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
+    const opp = opportunityByProjectId.get(p.id);
+    const matchOpp = projectMatchesOpportunityFilter(
+      opportunityFilter,
+      opp?.project,
+      opp?.owner,
+    );
+    return matchCat && matchSearch && matchOpp;
   });
 
   const { data: activeBoosts = [] } = useActiveBoosts(80);
@@ -445,6 +512,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             setDesignerTools([]);
             setStudioFeedSource("all");
             setCategory("All");
+            setOpportunityFilter("All");
             setFeedModeRaw("Explore");
           }}
           onCreateClick={openNewPortfolio}
@@ -467,6 +535,13 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           onDrillSelect={openDrill}
         />
 
+        {(mode === "projects" || mode === "designers") && (
+          <OpportunityFilterChips
+            selected={opportunityFilter}
+            onSelect={setOpportunityFilter}
+          />
+        )}
+
         <FeedModeTransition modeKey={feedPanelKey}>
           {needsLogin ? (
             <div className="text-center py-16 glass-panel rounded-2xl">
@@ -485,6 +560,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               feedSource={designerFeedSource}
               categories={designerCategory !== "All" ? [designerCategory] : []}
               tools={designerTools}
+              opportunityFilter={opportunityFilter}
             />
           ) : mode === "studios" ? (
             <StudioGrid search={search} feedSource={studioFeedSource} />
@@ -509,8 +585,18 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             </div>
           ) : isDrillView ? (
             <DrillFeedPanel />
-          ) : projectsLoading ? (
-            <PageLoader fullPage={false} label="กำลังโหลดผลงาน..." />
+          ) : projectsError || projectsLoading ? (
+            <QueryStatusPanel
+              isLoading={projectsLoading}
+              isError={projectsError}
+              isSlow={projectsSlow}
+              onRetry={refetchProjects}
+              loadingLabel="กำลังโหลดผลงาน..."
+              errorTitle="โหลดผลงานไม่สำเร็จ"
+              errorDescription="เน็ตอาจสะดุดชั่วคราว — กดลองใหม่ หรือเปลี่ยนโหมดฟีด"
+              slowTitle="โหลดผลงานนานผิดปกติ"
+              slowDescription="ยังพยายามอยู่ ถ้าเกินไปลองกดใหม่ หรือเช็กการเชื่อมต่อ"
+            />
           ) : (
             <>
               <FeedProjectGrid>
@@ -546,25 +632,26 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                 )}
               </FeedProjectGrid>
 
-              {!projectsLoading && filtered.length === 0 && (
+              {filtered.length === 0 && (
                 <EmptyState
                   icon={SearchX}
                   title="ไม่พบผลงานที่ตรงกับตัวกรอง"
                   description={
                     feedMode === "Following"
                       ? "ติดตามดีไซเนอร์ที่ชอบ แล้วกลับมาดูผลงานล่าสุดของพวกเขาที่นี่"
-                      : search
-                        ? `ลองคำอื่น หรือเปลี่ยนหมวดหมู่ — ไม่มีผลลัพธ์สำหรับ "${search}"`
+                      : search || opportunityFilter !== "All"
+                        ? "ลองเปลี่ยนคำค้น หมวดหมู่ หรือประเภทโอกาส"
                         : "ลองเปลี่ยนหมวดหมู่หรือโหมดฟีด (เช่น Top 1 / Newest)"
                   }
                   action={
-                    search || category !== "All" ? (
+                    search || category !== "All" || opportunityFilter !== "All" ? (
                       <Button
                         variant="outline"
                         className="rounded-full"
                         onClick={() => {
                           setSearch("");
                           setCategory("All");
+                          setOpportunityFilter("All");
                         }}
                       >
                         ล้างตัวกรอง

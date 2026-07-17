@@ -146,6 +146,7 @@ export function isHireProtocolMessage(content: string | null | undefined): boole
     content.includes("__APLUS1_HIRE_REJECT_CHOICE__") ||
     content.includes("__APLUS1_HIRE_CONTINUE_ASK__") ||
     content.includes("__APLUS1_HIRE_FORWARD__") ||
+    content.includes("__APLUS1_HIRE_CANCEL__") ||
     content.includes("__APLUS1_OFFER__")
   );
 }

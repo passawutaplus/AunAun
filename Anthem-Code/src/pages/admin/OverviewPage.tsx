@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Activity, Building2, FolderKanban, HandshakeIcon, MessageSquare, UserPlus } from "lucide-react";
+import { Activity, Building2, Eye, FolderKanban, HandshakeIcon, Layers3, MessageSquare, UserPlus } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
@@ -17,6 +17,7 @@ import {
 } from "@/lib/admin/adminNavigation";
 import {
   useAdminPresenceStats,
+  useAdminProductLoopStats,
   useAdminStats,
   useAdminTimeline,
   useLiveActivity,
@@ -93,6 +94,7 @@ export default function OverviewPage() {
   const { data: stats } = useAdminStats();
   const { data: presence } = useAdminPresenceStats();
   const { data: timeline } = useAdminTimeline(14);
+  const { data: loopStats } = useAdminProductLoopStats();
   const events = useLiveActivity();
   const { data: alerts } = useAdminAlertCounts();
   const queue = adminPendingQueue(stats);
@@ -145,7 +147,40 @@ export default function OverviewPage() {
         }
       />
 
-      <section className="grid gap-3 md:grid-cols-3">
+      <section className="mt-6">
+        <div className="mb-3 border-b border-admin-border pb-3">
+          <h2 className="text-base font-medium text-admin-fg">ลูปโอกาส (product events)</h2>
+          <p className="mt-0.5 text-xs text-admin-muted">
+            ดูผลงาน → เปิดคุยจากผลงาน → เซฟคอลเลกชัน
+            {loopStats && !loopStats.fromProductEvents
+              ? " · ใช้ตัวเลขสำรองจากตารางหลัก (product_events อ่านไม่ได้)"
+              : " · 24 ชม. / 7 วัน"}
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <KpiCard
+            label="project_view 24ชม."
+            value={loopStats?.projectViews24h ?? "—"}
+            delta={loopStats ? `7 วัน: ${loopStats.projectViews7d}` : undefined}
+            icon={Eye}
+          />
+          <KpiCard
+            label="hire_open 24ชม."
+            value={loopStats?.hireOpens24h ?? "—"}
+            delta={loopStats ? `7 วัน: ${loopStats.hireOpens7d}` : undefined}
+            icon={HandshakeIcon}
+            accent
+          />
+          <KpiCard
+            label="collection_save 24ชม."
+            value={loopStats?.collectionSaves24h ?? "—"}
+            delta={loopStats ? `7 วัน: ${loopStats.collectionSaves7d}` : undefined}
+            icon={Layers3}
+          />
+        </div>
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-3 mt-6">
         <div className="md:col-span-2 rounded-sm border border-admin-border bg-admin-surface p-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-admin-muted">กิจกรรม 14 วัน</p>

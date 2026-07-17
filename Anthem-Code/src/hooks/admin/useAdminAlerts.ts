@@ -10,6 +10,11 @@ export interface AdminAlertCounts {
   openAml: number;
   highRiskKyc: number;
   urgentReports: number;
+  /** Omise payout queue + failed */
+  financePayoutQueue: number;
+  /** Unprocessed / errored provider webhooks */
+  financeWebhookIssues: number;
+  openFinanceDisputes: number;
 }
 
 export function useAdminAlertCounts() {
@@ -17,7 +22,7 @@ export function useAdminAlertCounts() {
     queryKey: ["admin-alert-counts"],
     refetchInterval: 30_000,
     queryFn: async () => {
-      const [reports, cashouts, kyc, aml, kycHigh, urgent] = await Promise.all([
+      const [reports, cashouts, kyc, aml, kycHigh, urgent, financeOv] = await Promise.all([
         supabase.from("user_reports" as never).select("*", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
         supabase.from("cashout_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
@@ -32,7 +37,24 @@ export function useAdminAlertCounts() {
           .select("*", { count: "exact", head: true })
           .in("status", ["open", "reviewing"])
           .or("ai_priority.gte.70,ai_recommendation.eq.urgent"),
+        supabase.rpc("admin_finance_overview" as never),
       ]);
+
+      let financePayoutQueue = 0;
+      let financeWebhookIssues = 0;
+      let openFinanceDisputes = 0;
+      if (!financeOv.error && financeOv.data && typeof financeOv.data === "object") {
+        const o = financeOv.data as {
+          payout_queued_count?: number;
+          payout_failed_count?: number;
+          webhook_unprocessed_count?: number;
+          open_disputes?: number;
+        };
+        financePayoutQueue = (o.payout_queued_count ?? 0) + (o.payout_failed_count ?? 0);
+        financeWebhookIssues = o.webhook_unprocessed_count ?? 0;
+        openFinanceDisputes = o.open_disputes ?? 0;
+      }
+
       return {
         openReports: reports.count ?? 0,
         pendingCashouts: cashouts.count ?? 0,
@@ -40,6 +62,9 @@ export function useAdminAlertCounts() {
         openAml: aml.count ?? 0,
         highRiskKyc: kycHigh.count ?? 0,
         urgentReports: urgent.count ?? 0,
+        financePayoutQueue,
+        financeWebhookIssues,
+        openFinanceDisputes,
       };
     },
   });

@@ -73,6 +73,15 @@
     <priority>0.2</priority>
   </url>
   <url>
+    <loc>https://aplus1.app/project/56954306-6ee1-4624-819f-7e57eb508611</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://zkflkpbmbozrchqncpzi.supabase.co/storage/v1/object/public/project-media/anthem/bd356b99-dd50-403f-961e-236dfb29cda7/e81b0389-f90f-434b-8ee2-7bffe115d594/79e8c941-6663-4819-8cdf-b3284187bdb0.webp</image:loc>
+      <image:title>fdfd</image:title>
+    </image:image>
+  </url>
+  <url>
     <loc>https://aplus1.app/project/2fd0f2b2-4324-4bc8-9e22-5b62e851c1a6</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -127,15 +136,6 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000001e</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>ลายเซรามิก limited</image:title>
-    </image:image>
-  </url>
-  <url>
     <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000002b</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -154,12 +154,12 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000027</loc>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000037</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>Content playbook F&amp;B</image:title>
+      <image:loc>https://images.unsplash.com/photo-1551650975-87deedd944c3?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>ผลงานต่อยอด — Social Template 30 วัน</image:title>
     </image:image>
   </url>
   <url>
@@ -208,6 +208,15 @@
     </image:image>
   </url>
   <url>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000001e</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>ลายเซรามิก limited</image:title>
+    </image:image>
+  </url>
+  <url>
     <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000023</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -253,12 +262,12 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000037</loc>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000027</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1551650975-87deedd944c3?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>ผลงานต่อยอด — Social Template 30 วัน</image:title>
+      <image:loc>https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>Content playbook F&amp;B</image:title>
     </image:image>
   </url>
   <url>
@@ -915,6 +924,11 @@
     <loc>https://aplus1.app/u/00000000-0000-0000-0000-00000000a01f</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/series/cc9c9925-9da2-4ce9-a282-2c042e504a94</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
   </url>
   <url>
     <loc>https://aplus1.app/series/ec0db127-5555-405b-b386-b078c0ca3191</loc>

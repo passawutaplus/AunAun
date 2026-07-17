@@ -1,10 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, TablesUpdate, Tables } from "@/integrations/supabase/types";
-import { PROJECT_FEED_SELECT } from "@/lib/dbSelects";
+import { PROJECT_FEED_CARD_SELECT } from "@/lib/dbSelects";
 import { fetchProjectRow, fetchProjectRows } from "@/lib/fetchProjectRow";
-import { blendPersonalizedProjects, resolveTopCategories } from "@/lib/forYouBlend";
+import {
+  blendPersonalizedProjects,
+  buildCategoryWeights,
+  buildOpportunityTypeWeights,
+  mergeViewCategoryWeights,
+  pickTopCategories,
+  pickTopOpportunityTypes,
+  resolveTopCategories,
+} from "@/lib/forYouBlend";
 import { getFeedSearchCategoryWeights } from "@/lib/feedSearchSignals";
+import { getViewAffinityWeights } from "@/lib/viewAffinity";
 import { isOptionalQueryError } from "@/lib/supabaseErrors";
 import {
   isSchemaAiDisclosureError,
@@ -15,7 +24,13 @@ import {
   stripOptionalProjectContentFields,
 } from "@/lib/projectContentBlocks";
 
-export type DBProject = Tables<"projects">;
+export type DBProject = Tables<"projects"> & {
+  collab_user_ids?: string[] | null;
+};
+
+// Generated DB types can lag optional deployed columns; runtime still requests
+// the explicit scoped list while PostgREST types it as the full project row.
+const PROJECT_LIST_SELECT = PROJECT_FEED_CARD_SELECT as "*";
 
 async function writeProjectRow(
   mode: "insert" | "update",
@@ -68,7 +83,7 @@ const EXPLORE_RECENT_FILL = 40;
 async function fetchRecentPublished(limit: number): Promise<DBProject[]> {
   const { data, error } = await supabase
     .from("projects")
-    .select(PROJECT_FEED_SELECT)
+    .select(PROJECT_LIST_SELECT)
     .eq("status", "Published")
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -120,7 +135,7 @@ export const usePublishedProjects = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
-        .select(PROJECT_FEED_SELECT)
+        .select(PROJECT_LIST_SELECT)
         .eq("status", "Published")
         .order("created_at", { ascending: false })
         .limit(PUBLISHED_LIST_LIMIT);
@@ -135,7 +150,7 @@ export const useTopProjects = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
-        .select(PROJECT_FEED_SELECT)
+        .select(PROJECT_LIST_SELECT)
         .eq("status", "Published")
         .order("likes", { ascending: false })
         .order("views", { ascending: false })
@@ -159,7 +174,7 @@ export const useFollowingProjects = (userId: string | undefined) =>
       if (!ids.length) return [];
       const { data, error } = await supabase
         .from("projects")
-        .select(PROJECT_FEED_SELECT)
+        .select(PROJECT_LIST_SELECT)
         .eq("status", "Published")
         .in("owner_id", ids)
         .order("created_at", { ascending: false })
@@ -204,7 +219,7 @@ export const useForYouProjects = (userId: string | undefined) =>
         if (!recErr) {
           const ids = (recIds ?? []).map((r: { id: string }) => r.id);
           if (ids.length) {
-            const { data: full } = await supabase.from("projects").select(PROJECT_FEED_SELECT).in("id", ids);
+            const { data: full } = await supabase.from("projects").select(PROJECT_LIST_SELECT).in("id", ids);
             const orderMap = new Map(ids.map((id, i) => [id, i]));
             aiRecs = (full ?? []).sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
           }
@@ -213,50 +228,115 @@ export const useForYouProjects = (userId: string | undefined) =>
         }
       }
 
+      // Views are newest-first — preserve order for recency-weighted affinity.
+      const viewedIdsOrdered = (viewsRes.data ?? []).map((r) => r.project_id);
+      const signalIdList = Array.from(
+        new Set([...viewedIdsOrdered, ...Array.from(seenIds)]),
+      );
+
+      const viewedCategoriesNewestFirst: string[] = [];
+      const viewedOppTypesNewestFirst: string[][] = [];
       const behaviorCategories: string[] = [];
-      if (seenIds.size > 0) {
+
+      if (signalIdList.length > 0) {
         const { data: signalProjects } = await supabase
           .from("projects")
-          .select("category")
-          .in("id", Array.from(seenIds));
-        (signalProjects ?? []).forEach((p) => {
+          .select("id, category, opportunity_types")
+          .in("id", signalIdList);
+        const byId = new Map(
+          (signalProjects ?? []).map((p) => [
+            p.id,
+            p as { id: string; category: string | null; opportunity_types: string[] | null },
+          ]),
+        );
+        for (const id of viewedIdsOrdered) {
+          const p = byId.get(id);
+          if (!p) continue;
+          if (p.category) viewedCategoriesNewestFirst.push(p.category);
+          viewedOppTypesNewestFirst.push(p.opportunity_types ?? []);
+        }
+        for (const p of byId.values()) {
           if (p.category) behaviorCategories.push(p.category);
-        });
+        }
       }
 
-      const topCats = resolveTopCategories({
+      const localAffinity = getViewAffinityWeights();
+      let categoryWeights = buildCategoryWeights({
         behaviorCategories,
         feedInterests,
         searchCategoryWeights,
       });
+      categoryWeights = mergeViewCategoryWeights(categoryWeights, viewedCategoriesNewestFirst);
+      for (const [cat, w] of Object.entries(localAffinity.categories)) {
+        categoryWeights[cat] = (categoryWeights[cat] ?? 0) + w;
+      }
 
-      if (!seenIds.size && aiRecs.length === 0) {
-        let personalized: DBProject[] = [];
+      const opportunityWeights = {
+        ...buildOpportunityTypeWeights(viewedOppTypesNewestFirst),
+      };
+      for (const [t, w] of Object.entries(localAffinity.opportunityTypes)) {
+        opportunityWeights[t] = (opportunityWeights[t] ?? 0) + w;
+      }
+
+      const topCats =
+        pickTopCategories(categoryWeights, feedInterests).length > 0
+          ? pickTopCategories(categoryWeights, feedInterests)
+          : resolveTopCategories({
+              behaviorCategories,
+              feedInterests,
+              searchCategoryWeights,
+            });
+      const topOppTypes = pickTopOpportunityTypes(opportunityWeights);
+
+      const fetchPool = async (): Promise<DBProject[]> => {
         if (topCats.length > 0) {
           const { data, error } = await supabase
             .from("projects")
-            .select(PROJECT_FEED_SELECT)
+            .select(PROJECT_LIST_SELECT)
             .eq("status", "Published")
             .in("category", topCats)
             .order("likes", { ascending: false })
             .limit(FOR_YOU_LIMIT);
           if (error) throw error;
-          personalized = (data ?? []) as DBProject[];
-        } else {
-          const { data, error } = await supabase
-            .from("projects")
-            .select(PROJECT_FEED_SELECT)
-            .eq("status", "Published")
-            .order("created_at", { ascending: false })
-            .limit(60);
-          if (error) throw error;
-          personalized = (data ?? []) as DBProject[];
+          return (data ?? []) as DBProject[];
         }
+        const { data, error } = await supabase
+          .from("projects")
+          .select(PROJECT_LIST_SELECT)
+          .eq("status", "Published")
+          .order("created_at", { ascending: false })
+          .limit(60);
+        if (error) throw error;
+        return (data ?? []) as DBProject[];
+      };
+
+      // Prefer projects whose opportunity_types overlap view affinity (extra pool).
+      let oppBoost: DBProject[] = [];
+      if (topOppTypes.length > 0) {
+        const { data: oppRows, error: oppErr } = await supabase
+          .from("projects")
+          .select(PROJECT_LIST_SELECT)
+          .eq("status", "Published")
+          .overlaps("opportunity_types", topOppTypes)
+          .order("likes", { ascending: false })
+          .limit(40);
+        if (!oppErr) oppBoost = (oppRows ?? []) as DBProject[];
+        else if (!isOptionalQueryError(oppErr)) throw oppErr;
+      }
+
+      if (!seenIds.size && aiRecs.length === 0) {
+        const personalized = await fetchPool();
+        const blended = blendPersonalizedProjects(
+          oppBoost,
+          personalized,
+          seenIds,
+          { categoryWeights, opportunityWeights },
+        );
         const [recentPublished, ownPublishedRes] = await Promise.all([
           fetchRecentPublished(EXPLORE_RECENT_FILL),
           supabase
             .from("projects")
-            .select(PROJECT_FEED_SELECT)
+            .select(PROJECT_LIST_SELECT)
             .eq("status", "Published")
             .eq("owner_id", userId!)
             .order("created_at", { ascending: false })
@@ -264,25 +344,25 @@ export const useForYouProjects = (userId: string | undefined) =>
         ]);
         if (ownPublishedRes.error) throw ownPublishedRes.error;
         return mergeExploreFeed(
-          personalized,
+          blended,
           recentPublished,
           (ownPublishedRes.data ?? []) as DBProject[],
         );
       }
 
-      const query = supabase.from("projects").select(PROJECT_FEED_SELECT).eq("status", "Published");
-      const { data: catBased, error } = topCats.length
-        ? await query.in("category", topCats).order("likes", { ascending: false }).limit(FOR_YOU_LIMIT)
-        : await query.order("created_at", { ascending: false }).limit(60);
-      if (error) throw error;
-
-      const blended = blendPersonalizedProjects(aiRecs, (catBased ?? []) as DBProject[], seenIds);
+      const catBased = await fetchPool();
+      const blended = blendPersonalizedProjects(
+        [...aiRecs, ...oppBoost],
+        catBased,
+        seenIds,
+        { categoryWeights, opportunityWeights },
+      );
 
       const [recentPublished, ownPublishedRes] = await Promise.all([
         fetchRecentPublished(EXPLORE_RECENT_FILL),
         supabase
           .from("projects")
-          .select(PROJECT_FEED_SELECT)
+            .select(PROJECT_LIST_SELECT)
           .eq("status", "Published")
           .eq("owner_id", userId!)
           .order("created_at", { ascending: false })

@@ -3,7 +3,13 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import SafeDemoImage from "@/components/SafeDemoImage";
 import ImageActionBar from "@/components/project/ImageActionBar";
 import { Button } from "@/components/ui/button";
-import { isThreeSplitGridLayout, photoGridSlotCount, type PhotoGridLayout } from "@/lib/photoGridLayouts";
+import {
+  getMosaicPhotoGridLayout,
+  isMosaicPhotoGridLayout,
+  isThreeSplitGridLayout,
+  photoGridSlotCount,
+  type PhotoGridLayout,
+} from "@/lib/photoGridLayouts";
 import { cn } from "@/lib/utils";
 
 type GridImage = { url: string; alt?: string };
@@ -39,6 +45,7 @@ function GridCell({
   projectId,
   projectTitle,
   imageIndex,
+  style,
 }: {
   image?: GridImage;
   index: number;
@@ -50,11 +57,12 @@ function GridCell({
   onSlotPick?: (index: number) => void;
   onSlotRemove?: (index: number) => void;
   className?: string;
-  /** Fill cell (locked 3-up grid). */
+  /** Fill cell (locked 3-up grid / mosaic). */
   cover?: boolean;
   projectId?: string;
   projectTitle?: string;
   imageIndex?: number;
+  style?: React.CSSProperties;
 }) {
   const canUpload = editor && onSlotPick && !disabled && !uploading;
   const showActions = !editor && !!projectId && !!projectTitle && !!image?.url;
@@ -62,10 +70,11 @@ function GridCell({
   return (
     <div
       className={cn(
-        "relative group overflow-hidden",
+        "relative group overflow-hidden min-h-0 min-w-0",
         editor && !image && "border border-dashed border-border/50",
         className,
       )}
+      style={style}
     >
       {uploading ? (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
@@ -172,9 +181,14 @@ export function PhotoGridPreview({
     projectTitle,
   };
 
-  const lockedCover = isThreeSplitGridLayout(layout);
+  const lockedCover = isThreeSplitGridLayout(layout) || isMosaicPhotoGridLayout(layout);
 
-  const renderSlot = (img: GridImage | undefined, i: number, className: string) => (
+  const renderSlot = (
+    img: GridImage | undefined,
+    i: number,
+    className: string,
+    style?: React.CSSProperties,
+  ) => (
     <GridCell
       key={i}
       image={img}
@@ -184,12 +198,34 @@ export function PhotoGridPreview({
       uploading={uploadingSlot === i}
       className={className}
       cover={lockedCover}
+      style={style}
     />
   );
 
   let grid: React.ReactNode;
 
-  if (layout === "two_stack") {
+  if (isMosaicPhotoGridLayout(layout)) {
+    const meta = getMosaicPhotoGridLayout(layout);
+    grid = (
+      <div
+        className={cn(
+          "grid mx-auto max-w-lg w-full aspect-[3/2] gap-1.5 sm:gap-2 rounded-none overflow-hidden bg-transparent",
+          className,
+        )}
+        style={{
+          gridTemplateColumns: `repeat(${meta.cols}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${meta.rows}, minmax(0, 1fr))`,
+        }}
+      >
+        {meta.cells.map((c, i) =>
+          renderSlot(slotImages[i], i, "h-full w-full", {
+            gridColumn: `${c.col} / span ${c.colSpan ?? 1}`,
+            gridRow: `${c.row} / span ${c.rowSpan ?? 1}`,
+          }),
+        )}
+      </div>
+    );
+  } else if (layout === "two_stack") {
     grid = (
       <div
         className={cn(

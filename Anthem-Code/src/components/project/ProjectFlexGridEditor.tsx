@@ -6,18 +6,22 @@ import {
   ArrowDownRight,
   ArrowUp,
   Bold,
+  Box,
   ChevronsDown,
   ChevronsUp,
   Copy,
+  FileImage,
   Film,
   Image as ImageIcon,
   ImagePlus,
   Italic,
-  Loader2,
   Move,
   Plus,
+  RefreshCw,
+  Crosshair,
   Strikethrough,
   Trash2,
+  Underline,
   Undo2,
   Redo2,
   ZoomIn,
@@ -26,7 +30,7 @@ import {
   Lock,
   LockOpen,
 } from "lucide-react";
-import { Fragment, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, forwardRef, type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { Fragment, lazy, Suspense, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, forwardRef, type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { FLEX_GRID_TOOL_MIME, activeFlexGridDragType, flexGridBoardDomId } from "@/components/project/FlexGridToolsSidebar";
 import type { FlexGridLayerRef } from "@/components/project/FlexGridToolsSidebar";
 import {
@@ -49,9 +53,31 @@ import {
   type FlexGridModuleType,
   type FlexGridSnapContext,
 } from "@/lib/flexGridLayout";
+import { LoadPercentBar } from "@/components/project/LoadPercentBar";
 import { PROJECT_VIDEO_ACCEPT, isVideoFile } from "@/lib/videoAccept";
+import { PROJECT_MODEL3D_ACCEPT, isModel3dFile } from "@/lib/model3dAccept";
+import { isGifFile } from "@/lib/uploadProjectGif";
+import { sanitizeProjectRichText } from "@/lib/projectRichText";
+import {
+  applyAlign,
+  applyFontFamily,
+  applyFontSize,
+  INLINE_BY_CMD,
+  restoreSelection,
+  saveSelection,
+  toggleInlineFormat,
+  type AlignCmd,
+  type InlineCmd,
+} from "@/lib/projectRichTextFormat";
+import { PROJECT_TEXT_FONTS, PROJECT_TEXT_SIZES } from "@/lib/projectTextFonts";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+const Model3dViewer = lazy(() => import("@/components/project/Model3dViewer"));
+
+const PROJECT_GIF_ACCEPT = "image/gif,.gif";
+
+type ModuleUploadKind = "image" | "gif" | "video" | "model3d";
 
 type Props = {
   layout: FlexGridLayout;
@@ -210,10 +236,14 @@ export function ProjectFlexGridEditor({
   }, [disabled, onUndo, onRedo]);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const gifInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
-  const pendingUploadRef = useRef<{ boardId: string; moduleId: string; kind: "image" | "video" } | null>(
-    null,
-  );
+  const model3dInputRef = useRef<HTMLInputElement>(null);
+  const pendingUploadRef = useRef<{
+    boardId: string;
+    moduleId: string;
+    kind: ModuleUploadKind;
+  } | null>(null);
 
   const placeModule = useCallback(
     (type: FlexGridModuleType, boardId: string, xRaw: number, yRaw: number) => {
@@ -290,16 +320,23 @@ export function ProjectFlexGridEditor({
     onCommit(updateModule(layout, boardId, moduleId, { z: nextZ }));
   };
 
-  const openUpload = (boardId: string, moduleId: string, type: "image" | "video") => {
+  const openUpload = (boardId: string, moduleId: string, type: ModuleUploadKind) => {
     if (disabled || !onUploadToModule) return;
     pendingUploadRef.current = { boardId, moduleId, kind: type };
-    const input = type === "video" ? videoInputRef.current : imageInputRef.current;
+    const input =
+      type === "video"
+        ? videoInputRef.current
+        : type === "model3d"
+          ? model3dInputRef.current
+          : type === "gif"
+            ? gifInputRef.current
+            : imageInputRef.current;
     if (!input) return;
     input.value = "";
     input.click();
   };
 
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>, kind: "image" | "video") => {
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>, kind: ModuleUploadKind) => {
     const file = e.target.files?.[0];
     const pending = pendingUploadRef.current;
     e.target.value = "";
@@ -313,6 +350,14 @@ export function ProjectFlexGridEditor({
       toast.error("โมดูลภาพรับเฉพาะไฟล์รูปภาพ");
       return;
     }
+    if (kind === "model3d" && !isModel3dFile(file)) {
+      toast.error("โมดูล 3D รับเฉพาะไฟล์ .stl และ .obj");
+      return;
+    }
+    if (kind === "gif" && !isGifFile(file)) {
+      toast.error("โมดูล GIF รับเฉพาะไฟล์ .gif");
+      return;
+    }
     onUploadToModule?.(pending.boardId, pending.moduleId, file);
   };
 
@@ -322,7 +367,13 @@ export function ProjectFlexGridEditor({
       e.dataTransfer.getData(FLEX_GRID_TOOL_MIME) ||
       e.dataTransfer.getData("text/plain");
     const probeType: FlexGridModuleType =
-      raw === "image" || raw === "text" || raw === "video" ? raw : "text";
+      raw === "image" ||
+      raw === "gif" ||
+      raw === "text" ||
+      raw === "video" ||
+      raw === "model3d"
+        ? raw
+        : "text";
     if (
       !activeFlexGridDragType &&
       !e.dataTransfer.types.includes(FLEX_GRID_TOOL_MIME) &&
@@ -361,14 +412,21 @@ export function ProjectFlexGridEditor({
   const handleBoardDrop = (e: DragEvent, board: FlexGridBoard) => {
     e.preventDefault();
     setDropGhost(null);
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const mx = (e.clientX - rect.left) / zoom;
+    const my = (e.clientY - rect.top) / zoom;
     const raw =
       activeFlexGridDragType ||
       e.dataTransfer.getData(FLEX_GRID_TOOL_MIME) ||
       e.dataTransfer.getData("text/plain");
-    if (raw !== "image" && raw !== "text" && raw !== "video") return;
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const mx = (e.clientX - rect.left) / zoom;
-    const my = (e.clientY - rect.top) / zoom;
+    if (
+      raw !== "image" &&
+      raw !== "gif" &&
+      raw !== "text" &&
+      raw !== "video" &&
+      raw !== "model3d"
+    )
+      return;
     placeModule(raw, board.id, mx, my);
   };
 
@@ -577,6 +635,20 @@ export function ProjectFlexGridEditor({
         className="hidden"
         onChange={(e) => onFileChange(e, "video")}
       />
+      <input
+        ref={gifInputRef}
+        type="file"
+        accept={PROJECT_GIF_ACCEPT}
+        className="hidden"
+        onChange={(e) => onFileChange(e, "gif")}
+      />
+      <input
+        ref={model3dInputRef}
+        type="file"
+        accept={PROJECT_MODEL3D_ACCEPT}
+        className="hidden"
+        onChange={(e) => onFileChange(e, "model3d")}
+      />
 
     </div>
   );
@@ -657,7 +729,7 @@ function BoardSurface({
   onDeleteModule: (moduleId: string) => void;
   onArrangeModule: (moduleId: string, act: "front" | "forward" | "backward" | "back") => void;
   onCopyModule: (moduleId: string) => void;
-  onUploadClick: (boardId: string, moduleId: string, type: "image" | "video") => void;
+  onUploadClick: (boardId: string, moduleId: string, type: ModuleUploadKind) => void;
 }) {
   const ctx = boardCtx(layout, board);
   const cw = colWidth(ctx);
@@ -815,7 +887,12 @@ function BoardSurface({
               onArrange={(act) => onArrangeModule(mod.id, act)}
               onCopy={() => onCopyModule(mod.id)}
               onUploadClick={() => {
-                if (mod.type === "image" || mod.type === "video") {
+                if (
+                  mod.type === "image" ||
+                  mod.type === "gif" ||
+                  mod.type === "video" ||
+                  mod.type === "model3d"
+                ) {
                   onUploadClick(board.id, mod.id, mod.type);
                 }
               }}
@@ -823,6 +900,37 @@ function BoardSurface({
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ModuleUploadingOverlay({
+  className,
+  label = "กำลังอัปโหลด",
+}: {
+  className?: string;
+  label?: string;
+}) {
+  const [percent, setPercent] = useState(8);
+  useEffect(() => {
+    setPercent(8);
+    const id = window.setInterval(() => {
+      setPercent((p) => {
+        if (p >= 92) return p;
+        const step = p < 40 ? 6 : p < 70 ? 3 : 1;
+        return Math.min(92, p + step);
+      });
+    }, 280);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <div
+      className={cn(
+        "absolute inset-0 z-20 flex items-center justify-center bg-background/60 px-4",
+        className,
+      )}
+    >
+      <LoadPercentBar percent={percent} label={label} />
     </div>
   );
 }
@@ -864,6 +972,7 @@ function PlacedModule({
 }) {
   const ctx = boardCtx(layout, board);
   const textEditorRef = useRef<TextModuleBodyHandle>(null);
+  const skipClickSelectRef = useRef(false);
   const locked = !!module.locked;
 
   const onMovePointerDown = (e: ReactPointerEvent) => {
@@ -873,7 +982,12 @@ function PlacedModule({
     if (el.closest("button") && !el.closest("[data-flex-move-handle]")) return;
     e.preventDefault();
     e.stopPropagation();
-    onSelect(e.ctrlKey || e.metaKey);
+    const additive = e.ctrlKey || e.metaKey;
+    onSelect(additive);
+    // pointerdown + click would toggle additive selection twice — swallow the follow-up click
+    skipClickSelectRef.current = true;
+    // Ctrl/Cmd+click = multi-select only, do not start a drag
+    if (additive) return;
     onHistoryBegin();
     const startX = e.clientX;
     const startY = e.clientY;
@@ -961,7 +1075,22 @@ function PlacedModule({
       }}
       onClick={(e) => {
         e.stopPropagation();
+        if (skipClickSelectRef.current) {
+          skipClickSelectRef.current = false;
+          return;
+        }
         onSelect(e.ctrlKey || e.metaKey);
+      }}
+      onPointerDown={(e) => {
+        // Ctrl/Cmd+click anywhere on the module (incl. text) for multi-select
+        if (disabled) return;
+        if (!(e.ctrlKey || e.metaKey)) return;
+        const el = e.target as HTMLElement;
+        if (el.closest("button") && !el.closest("[data-flex-move-handle]")) return;
+        e.preventDefault();
+        e.stopPropagation();
+        onSelect(true);
+        skipClickSelectRef.current = true;
       }}
     >
       <div
@@ -1025,12 +1154,19 @@ function PlacedModule({
             ? selected || inSelection
               ? "border border-primary bg-card shadow-sm ring-2 ring-primary/30"
               : "border border-transparent bg-transparent shadow-none"
-            : cn(
-                "border bg-card shadow-sm",
-                selected || inSelection
-                  ? "border-primary ring-2 ring-primary/30"
-                  : "border-border/80",
-              ),
+            : module.type === "model3d"
+              ? cn(
+                  "border bg-transparent shadow-none",
+                  selected || inSelection
+                    ? "border-primary ring-2 ring-primary/30"
+                    : "border-transparent",
+                )
+              : cn(
+                  "border bg-card shadow-sm",
+                  selected || inSelection
+                    ? "border-primary ring-2 ring-primary/30"
+                    : "border-border/80",
+                ),
         )}
       >
         <div className="relative h-full w-full overflow-hidden">
@@ -1080,7 +1216,7 @@ function PlacedModule({
                 onPointerDown={locked || disabled ? undefined : onMovePointerDown}
               >
                 {uploading ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <ModuleUploadingOverlay label="กำลังอัปโหลดภาพ" />
                 ) : (
                   <button
                     type="button"
@@ -1100,40 +1236,217 @@ function PlacedModule({
             )
           ) : null}
 
-          {module.type === "video" ? (
+          {module.type === "gif" ? (
             module.url ? (
-              <div className="relative h-full w-full bg-black">
-                <video src={module.url} className="h-full w-full object-cover" muted playsInline />
-                <button
-                  type="button"
-                  className="absolute inset-0 flex items-center justify-center bg-black/20 text-white"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onUploadClick();
-                  }}
-                  title="เปลี่ยนวิดีโอ"
-                >
-                  <Film className="h-7 w-7" />
-                </button>
+              <div
+                className={cn(
+                  "relative h-full w-full",
+                  !locked && !disabled && "cursor-grab active:cursor-grabbing",
+                )}
+                data-flex-move-handle={locked || disabled ? undefined : true}
+                onPointerDown={locked || disabled ? undefined : onMovePointerDown}
+              >
+                <img
+                  src={module.url}
+                  alt=""
+                  className="pointer-events-none h-full w-full object-cover"
+                  draggable={false}
+                />
+                {!disabled ? (
+                  <button
+                    type="button"
+                    title="เปลี่ยน GIF"
+                    aria-label="เปลี่ยน GIF"
+                    className={cn(
+                      "absolute left-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-md border border-border/70 bg-card/95 text-foreground shadow-sm",
+                      "opacity-0 transition-opacity group-hover:opacity-100",
+                      selected && "opacity-100",
+                    )}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUploadClick();
+                    }}
+                  >
+                    <FileImage className="h-3.5 w-3.5" strokeWidth={2} />
+                  </button>
+                ) : null}
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onUploadClick();
-                }}
-                className="flex h-full w-full flex-col items-center justify-center gap-1 bg-muted/40 text-muted-foreground hover:bg-muted/60"
+              <div
+                className={cn(
+                  "relative flex h-full w-full items-center justify-center bg-muted/40",
+                  !locked && !disabled && "cursor-grab active:cursor-grabbing",
+                )}
+                data-flex-move-handle={locked || disabled ? undefined : true}
+                onPointerDown={locked || disabled ? undefined : onMovePointerDown}
               >
                 {uploading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <ModuleUploadingOverlay label="กำลังอัปโหลด GIF" />
                 ) : (
-                  <>
+                  <button
+                    type="button"
+                    title="เลือกไฟล์ GIF"
+                    className="flex flex-col items-center justify-center gap-1 rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUploadClick();
+                    }}
+                  >
+                    <FileImage className="h-6 w-6" strokeWidth={1.4} />
+                    <span className="text-[10px]">เลือก GIF</span>
+                    <span className="text-[9px] text-muted-foreground/70">.gif</span>
+                  </button>
+                )}
+              </div>
+            )
+          ) : null}
+
+          {module.type === "video" ? (
+            module.url ? (
+              <div
+                className={cn(
+                  "relative h-full w-full bg-black",
+                  !locked && !disabled && "cursor-grab active:cursor-grabbing",
+                )}
+                data-flex-move-handle={locked || disabled ? undefined : true}
+                onPointerDown={locked || disabled ? undefined : onMovePointerDown}
+              >
+                <video
+                  src={module.url}
+                  className="pointer-events-none h-full w-full object-cover"
+                  muted
+                  playsInline
+                />
+                {!disabled ? (
+                  <button
+                    type="button"
+                    title="เปลี่ยนวิดีโอ"
+                    aria-label="เปลี่ยนวิดีโอ"
+                    className={cn(
+                      "absolute left-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-md border border-border/70 bg-card/95 text-foreground shadow-sm",
+                      "opacity-0 transition-opacity group-hover:opacity-100",
+                      selected && "opacity-100",
+                    )}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUploadClick();
+                    }}
+                  >
+                    <Film className="h-3.5 w-3.5" strokeWidth={2} />
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  "relative flex h-full w-full items-center justify-center bg-muted/40",
+                  !locked && !disabled && "cursor-grab active:cursor-grabbing",
+                )}
+                data-flex-move-handle={locked || disabled ? undefined : true}
+                onPointerDown={locked || disabled ? undefined : onMovePointerDown}
+              >
+                {uploading ? (
+                  <ModuleUploadingOverlay label="กำลังอัปโหลดวิดีโอ" />
+                ) : (
+                  <button
+                    type="button"
+                    title="เลือกวิดีโอ"
+                    className="flex flex-col items-center justify-center gap-1 rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUploadClick();
+                    }}
+                  >
                     <Film className="h-6 w-6" strokeWidth={1.4} />
                     <span className="text-[10px]">เลือกวิดีโอ</span>
-                  </>
+                  </button>
                 )}
-              </button>
+              </div>
+            )
+          ) : null}
+
+          {module.type === "model3d" ? (
+            module.url && module.format ? (
+              <div
+                className={cn(
+                  "relative h-full w-full",
+                  !locked && !disabled && "cursor-grab active:cursor-grabbing",
+                )}
+                data-flex-move-handle={locked || disabled ? undefined : true}
+                onPointerDown={locked || disabled ? undefined : onMovePointerDown}
+              >
+                {/* Orbit on mesh; empty frame area passes through for module drag. */}
+                <div className="h-full w-full">
+                  <Suspense
+                    fallback={
+                      <div className="flex h-full w-full items-center justify-center bg-muted/40 px-4">
+                        <LoadPercentBar percent={12} label="กำลังโหลดโมเดล 3D" />
+                      </div>
+                    }
+                  >
+                    <Model3dViewer
+                      url={module.url}
+                      format={module.format}
+                      orbit={module.orbit}
+                      meshOnlyOrbit
+                      autoRotate={!module.viewLocked}
+                      viewLocked={!!module.viewLocked}
+                      onOrbitChange={(orbit) => onChange({ orbit })}
+                    />
+                  </Suspense>
+                </div>
+                {!disabled ? (
+                  <button
+                    type="button"
+                    title="เปลี่ยนไฟล์ 3D"
+                    aria-label="เปลี่ยนไฟล์ 3D"
+                    className={cn(
+                      "absolute left-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-md border border-border/70 bg-card/95 text-foreground shadow-sm",
+                      "opacity-0 transition-opacity group-hover:opacity-100",
+                      selected && "opacity-100",
+                    )}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUploadClick();
+                    }}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" strokeWidth={2} />
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  "relative flex h-full w-full items-center justify-center bg-muted/40",
+                  !locked && !disabled && "cursor-grab active:cursor-grabbing",
+                )}
+                data-flex-move-handle={locked || disabled ? undefined : true}
+                onPointerDown={locked || disabled ? undefined : onMovePointerDown}
+              >
+                {uploading ? (
+                  <ModuleUploadingOverlay label="กำลังอัปโหลดไฟล์ 3D" />
+                ) : (
+                  <button
+                    type="button"
+                    title="เลือกไฟล์ 3D (.stl, .obj)"
+                    className="flex flex-col items-center justify-center gap-1 rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUploadClick();
+                    }}
+                  >
+                    <Box className="h-6 w-6" strokeWidth={1.4} />
+                    <span className="text-[10px]">เลือกไฟล์ 3D</span>
+                    <span className="text-[9px] text-muted-foreground/70">.stl · .obj</span>
+                  </button>
+                )}
+              </div>
             )
           ) : null}
 
@@ -1149,9 +1462,17 @@ function PlacedModule({
           ) : null}
 
           {uploading && module.url ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/60">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
+            <ModuleUploadingOverlay
+              label={
+                module.type === "model3d"
+                  ? "กำลังอัปโหลดไฟล์ 3D"
+                  : module.type === "video"
+                    ? "กำลังอัปโหลดวิดีโอ"
+                    : module.type === "gif"
+                      ? "กำลังอัปโหลด GIF"
+                      : "กำลังอัปโหลดภาพ"
+              }
+            />
           ) : null}
         </div>
 
@@ -1192,6 +1513,24 @@ function PlacedModule({
           <ArrangeBtn title="Send to Back" onClick={() => onArrange("back")}>
             <ChevronsDown className="h-3.5 w-3.5" />
           </ArrangeBtn>
+          {module.type === "model3d" ? (
+            <>
+              <span className="mx-0.5 h-3.5 w-px shrink-0 bg-border" aria-hidden />
+              <ArrangeBtn
+                title={
+                  module.viewLocked
+                    ? "ปลดล็อกมุม — หมุนอัตโนมัติและลากเปลี่ยนมุมได้อีกครั้ง"
+                    : "ล็อกมุม — หยุดหมุนอัตโนมัติ และลากเปลี่ยนมุมไม่ได้"
+                }
+                onClick={() => onChange({ viewLocked: !module.viewLocked })}
+              >
+                <Crosshair
+                  className={cn("h-3.5 w-3.5", module.viewLocked && "text-primary")}
+                  strokeWidth={module.viewLocked ? 2.5 : 2}
+                />
+              </ArrangeBtn>
+            </>
+          ) : null}
           <span className="mx-0.5 h-3.5 w-px shrink-0 bg-border" aria-hidden />
           <ArrangeBtn title="ก๊อปปี้โมดูล" onClick={onCopy}>
             <Copy className="h-3.5 w-3.5" />
@@ -1217,18 +1556,20 @@ function PlacedModule({
   );
 }
 
+type FlexTextCommand =
+  | { kind: "inline"; cmd: InlineCmd }
+  | { kind: "align"; cmd: AlignCmd }
+  | { kind: "font"; stack: string }
+  | { kind: "size"; size: string };
+
 function FlexTextFormatToolbar({
   onCommand,
   className,
 }: {
-  onCommand: (cmd: string) => void;
+  onCommand: (cmd: FlexTextCommand) => void;
   className?: string;
 }) {
-  const btn = (
-    label: string,
-    cmd: string,
-    icon: ReactNode,
-  ) => (
+  const btn = (label: string, cmd: FlexTextCommand, icon: ReactNode) => (
     <button
       type="button"
       title={label}
@@ -1250,25 +1591,59 @@ function FlexTextFormatToolbar({
       role="toolbar"
       aria-label="จัดรูปแบบข้อความ"
       className={cn(
-        "flex items-center gap-0.5 rounded-md border border-border/60 bg-card/95 px-1 py-0.5 shadow-sm",
+        "flex flex-wrap items-center gap-0.5 rounded-md border border-border/60 bg-card/95 px-1 py-0.5 shadow-sm",
         className,
       )}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      {btn("ตัวหนา", "bold", <Bold className="h-3.5 w-3.5" />)}
-      {btn("ตัวเอียง", "italic", <Italic className="h-3.5 w-3.5" />)}
-      {btn("ขีดเส้นใต้", "underline", <Underline className="h-3.5 w-3.5" />)}
-      {btn("ขีดกลาง", "strikeThrough", <Strikethrough className="h-3.5 w-3.5" />)}
+      <select
+        aria-label="ฟอนต์"
+        className="mr-0.5 h-6 max-w-[7.5rem] rounded border border-border/50 bg-background px-1 text-[10px] text-foreground"
+        defaultValue="inherit"
+        onMouseDown={(e) => e.stopPropagation()}
+        onChange={(e) => onCommand({ kind: "font", stack: e.target.value })}
+      >
+        {PROJECT_TEXT_FONTS.map((f) => (
+          <option key={f.id} value={f.stack}>
+            {f.label}
+          </option>
+        ))}
+      </select>
+      <select
+        aria-label="ขนาดตัวอักษร"
+        className="mr-0.5 h-6 w-[3.25rem] rounded border border-border/50 bg-background px-0.5 text-[10px] text-foreground"
+        defaultValue=""
+        onMouseDown={(e) => e.stopPropagation()}
+        onChange={(e) => onCommand({ kind: "size", size: e.target.value })}
+      >
+        {PROJECT_TEXT_SIZES.map((s) => (
+          <option key={s.id} value={s.size}>
+            {s.label}
+          </option>
+        ))}
+      </select>
+      {btn("ตัวหนา", { kind: "inline", cmd: "bold" }, <Bold className="h-3.5 w-3.5" />)}
+      {btn("ตัวเอียง", { kind: "inline", cmd: "italic" }, <Italic className="h-3.5 w-3.5" />)}
+      {btn("ขีดเส้นใต้", { kind: "inline", cmd: "underline" }, <Underline className="h-3.5 w-3.5" />)}
+      {btn(
+        "ขีดกลาง",
+        { kind: "inline", cmd: "strikeThrough" },
+        <Strikethrough className="h-3.5 w-3.5" />,
+      )}
       <span className="mx-0.5 h-3.5 w-px shrink-0 bg-border" aria-hidden />
-      {btn("ชิดซ้าย", "justifyLeft", <AlignLeft className="h-3.5 w-3.5" />)}
-      {btn("กึ่งกลาง", "justifyCenter", <AlignCenter className="h-3.5 w-3.5" />)}
-      {btn("ชิดขวา", "justifyRight", <AlignRight className="h-3.5 w-3.5" />)}
+      {btn("ชิดซ้าย", { kind: "align", cmd: "justifyLeft" }, <AlignLeft className="h-3.5 w-3.5" />)}
+      {btn(
+        "กึ่งกลาง",
+        { kind: "align", cmd: "justifyCenter" },
+        <AlignCenter className="h-3.5 w-3.5" />,
+      )}
+      {btn("ชิดขวา", { kind: "align", cmd: "justifyRight" }, <AlignRight className="h-3.5 w-3.5" />)}
     </div>
   );
 }
 
 type TextModuleBodyHandle = {
-  applyCommand: (cmd: string) => void;
+  applyCommand: (cmd: FlexTextCommand) => void;
 };
 
 const TextModuleBody = forwardRef<
@@ -1294,18 +1669,30 @@ const TextModuleBody = forwardRef<
     }
   }, [initialHtml]);
 
+  const commit = (el: HTMLElement) => {
+    onCommit(sanitizeProjectRichText(el.innerHTML));
+  };
+
   useImperativeHandle(ref, () => ({
-    applyCommand(cmd: string) {
+    applyCommand(cmd: FlexTextCommand) {
       const el = editorRef.current;
       if (!el || disabled) return;
+      const saved = saveSelection(el);
       el.focus();
-      try {
-        document.execCommand("styleWithCSS", false, "false");
-      } catch {
-        /* ignore */
+      restoreSelection(saved);
+      if (cmd.kind === "inline") {
+        toggleInlineFormat(el, INLINE_BY_CMD[cmd.cmd]);
+      } else if (cmd.kind === "align") {
+        applyAlign(cmd.cmd);
+      } else if (cmd.kind === "font") {
+        applyFontFamily(el, cmd.stack);
+      } else {
+        applyFontSize(el, cmd.size);
       }
-      document.execCommand(cmd, false);
-      onCommit(el.innerHTML);
+      // Normalize markup after format (select-all bold/font especially).
+      const safe = sanitizeProjectRichText(el.innerHTML);
+      if (el.innerHTML !== safe) el.innerHTML = safe;
+      onCommit(safe);
     },
   }));
 
@@ -1314,13 +1701,13 @@ const TextModuleBody = forwardRef<
       ref={editorRef}
       className={cn(
         "h-full w-full overflow-auto text-sm leading-relaxed outline-none",
-        "[&_p]:my-0 [&_p+p]:mt-1.5",
+        "[&_p]:my-0 [&_p+p]:mt-1.5 [&_b]:font-bold [&_strong]:font-bold",
         "bg-transparent text-foreground",
         editing ? "p-3" : "p-1",
       )}
       contentEditable={!disabled}
       suppressContentEditableWarning
-      onBlur={(e) => onCommit(e.currentTarget.innerHTML)}
+      onBlur={(e) => commit(e.currentTarget)}
     />
   );
 });

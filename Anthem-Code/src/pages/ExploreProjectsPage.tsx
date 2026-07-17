@@ -25,9 +25,15 @@ import { shouldNoindexSearchParams } from "@/lib/seo";
 import { breadcrumbJsonLd, collectionPageJsonLd } from "@/lib/seoSchemas";
 import { absoluteUrl } from "@/lib/seo";
 
-function mapToCard(projects: DBProject[], owners: Record<string, { name: string; avatar: string }>): Project[] {
+function mapToCard(
+  projects: DBProject[],
+  creators: Record<string, { name: string; avatar: string }>,
+): Project[] {
   return projects.map((p) => {
-    const o = owners[p.owner_id];
+    const o = creators[p.owner_id];
+    const collaboratorIds = Array.from(
+      new Set(((p.collab_user_ids ?? []) as string[]).filter((id) => id !== p.owner_id)),
+    );
     return {
       id: p.id,
       title: p.title,
@@ -37,6 +43,11 @@ function mapToCard(projects: DBProject[], owners: Record<string, { name: string;
       owner: o?.name ?? "ฟรีแลนซ์",
       ownerId: p.owner_id,
       ownerAvatar: o?.avatar ?? "",
+      collaborators: collaboratorIds.map((id) => ({
+        id,
+        name: creators[id]?.name ?? "ผู้ร่วมคอลแลป",
+        avatar: creators[id]?.avatar ?? "",
+      })),
       likes: p.likes,
       views: p.views,
       comments: 0,
@@ -120,20 +131,30 @@ const ExploreProjectsPage = () => {
     return filteredRows;
   }, [filteredRows, exploreKind, toolSort]);
 
-  const ownerIds = useMemo(() => Array.from(new Set(sortedRows.map((p) => p.owner_id))), [sortedRows]);
-  const { data: ownersData } = useProfilesByIds(ownerIds);
-  const ownersMap = useMemo(() => {
+  const creatorIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          sortedRows
+            .flatMap((p) => [p.owner_id, ...((p.collab_user_ids ?? []) as string[])])
+            .filter(Boolean),
+        ),
+      ),
+    [sortedRows],
+  );
+  const { data: creatorsData } = useProfilesByIds(creatorIds);
+  const creatorsMap = useMemo(() => {
     const map: Record<string, { name: string; avatar: string }> = {};
-    (ownersData?.list ?? []).forEach((p) => {
+    (creatorsData?.list ?? []).forEach((p) => {
       map[p.user_id ?? p.id] = {
         name: p.display_name || p.username || "ฟรีแลนซ์",
         avatar: p.avatar_url || "",
       };
     });
     return map;
-  }, [ownersData]);
+  }, [creatorsData]);
 
-  const projects = useMemo(() => mapToCard(sortedRows, ownersMap), [sortedRows, ownersMap]);
+  const projects = useMemo(() => mapToCard(sortedRows, creatorsMap), [sortedRows, creatorsMap]);
 
   const [hireOpen, setHireOpen] = useState(false);
   const [hireProject, setHireProject] = useState("");

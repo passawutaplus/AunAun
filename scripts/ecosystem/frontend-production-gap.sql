@@ -97,12 +97,26 @@ STABLE
 SECURITY DEFINER
 SET search_path = anthem, public
 AS $$
+  WITH counts AS (
+    SELECT
+      (SELECT count(*)::int FROM public.profiles) AS designers,
+      (SELECT count(*)::int FROM anthem.projects WHERE status = 'Published') AS projects,
+      (SELECT count(*)::int FROM anthem.hiring_requests) AS hires,
+      (
+        SELECT count(*)::int
+        FROM anthem.projects
+        WHERE status = 'Published'
+          AND cardinality(collab_user_ids) > 0
+      ) AS successful_collabs
+  )
   SELECT jsonb_build_object(
-    'designers', (SELECT count(*)::int FROM public.profiles),
-    'projects', (SELECT count(*)::int FROM anthem.projects WHERE status = 'Published'),
-    'collabs', (SELECT count(*)::int FROM anthem.collab_requests),
-    'hires', (SELECT count(*)::int FROM anthem.hiring_requests)
-  );
+    'designers', designers,
+    'projects', projects,
+    'hires', hires,
+    'successful_collabs', successful_collabs,
+    'collabs', successful_collabs
+  )
+  FROM counts;
 $$;
 
 REVOKE ALL ON FUNCTION public.public_feed_stats() FROM PUBLIC;

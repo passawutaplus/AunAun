@@ -1,3 +1,8 @@
+import {
+  resolveWhitelistedFontSize,
+  resolveWhitelistedFontStack,
+} from "@/lib/projectTextFonts";
+
 /** Allowed inline/block tags for project text modules. */
 const ALLOWED_TAGS = new Set([
   "B",
@@ -59,7 +64,13 @@ function serializeNode(node: Node): string {
     const deco = `${el.style?.textDecorationLine || ""} ${el.style?.textDecoration || ""}`.toLowerCase();
     if (deco.includes("underline")) wrapped = `<u>${wrapped}</u>`;
     if (deco.includes("line-through")) wrapped = `<s>${wrapped}</s>`;
-    if (align) return `<span style="text-align:${align}">${wrapped}</span>`;
+    const fontStack = resolveWhitelistedFontStack(el.style?.fontFamily || "");
+    const fontSize = resolveWhitelistedFontSize(el.style?.fontSize || "");
+    const styles: string[] = [];
+    if (align) styles.push(`text-align:${align}`);
+    if (fontStack) styles.push(`font-family:${fontStack}`);
+    if (fontSize) styles.push(`font-size:${fontSize}`);
+    if (styles.length) return `<span style="${styles.join(";")}">${wrapped}</span>`;
     return wrapped;
   }
 

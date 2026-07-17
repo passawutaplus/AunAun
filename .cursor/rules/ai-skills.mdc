@@ -31,6 +31,7 @@ Index: `Anthem-Code/docs/ai-skills/README.md`
 |-------|-----|
 | `MASTER_CURSOR_BRIEF.md` + `docs/product/*` | product direction, opportunity loop, P0 spec |
 | `ANTHEM_PRODUCT_SKILL.md` | feature ใหม่, feed, portfolio |
+| `ANTHEM_PAYMENTS_SKILL.md` + `docs/payments-omise.md` | Omise, hire money, ledger, FX display (ไม่ใช่ PX) |
 | `ANTHEM_UX_RESEARCH_SKILL.md` | UX/demo/usability |
 | `ANTHEM_REFERRAL_REWARD_SKILL.md` | referral, PX, reward |
 | `ANTHEM_COMMUNITY_SAFETY_SKILL.md` | moderation, report, profanity |

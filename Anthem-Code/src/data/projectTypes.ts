@@ -78,6 +78,12 @@ export type FeedFilter = Category | SpecialFilter;
 export type ProjectStatus = "Published" | "Draft" | "Private";
 export type HiringStatus = "ที่ต้องตอบ" | "ใหม่" | "ติดต่อแล้ว" | "ปิดแล้ว";
 
+export interface ProjectCreator {
+  id: string;
+  name: string;
+  avatar: string;
+}
+
 export interface Project {
   id: string;
   title: string;
@@ -87,6 +93,7 @@ export interface Project {
   owner: string;
   ownerId?: string;
   ownerAvatar: string;
+  collaborators?: ProjectCreator[];
   likes: number;
   views: number;
   comments: number;

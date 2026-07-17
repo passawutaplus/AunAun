@@ -17,7 +17,10 @@ export const PROJECT_CONTENT_SELECT =
   "content_blocks, gallery_display_mode, grid_layout, editor_mode, flex_grid_layout";
 
 export const PROJECT_FEED_SELECT =
-  `id, title, cover_url, gallery_urls, category, owner_id, likes, views, status, created_at, tools, tags, allow_hire, allow_collab, license_type, sort_order, is_pinned`;
+  `id, title, cover_url, gallery_urls, category, owner_id, likes, views, status, created_at, tools, tags, allow_hire, allow_collab, license_type, sort_order, is_pinned, opportunity_types`;
+
+/** Homepage/discovery cards also show collaborators. */
+export const PROJECT_FEED_CARD_SELECT = `${PROJECT_FEED_SELECT}, collab_user_ids`;
 
 export const PROJECT_DETAIL_SELECT =
   `${PROJECT_FEED_SELECT}, description, price_thb, subtitle, studio_id, credited_user_ids, linked_community_post_ids, collab_user_ids, video_urls, updated_at, ${PROJECT_LICENSE_EXTRA_SELECT}, ${PROJECT_CONTEXT_SELECT}, ${PROJECT_EXTERNAL_LINKS_SELECT}, ${PROJECT_ASSETS_SELECT}, ${PROJECT_CONTENT_SELECT}`;
@@ -30,4 +33,4 @@ export const PUBLIC_PROFILE_SELECT =
 
 /** Designer directory list. */
 export const PROFILE_DESIGNER_SELECT =
-  "user_id, display_name, username, avatar_url, bio, role, skills, created_at, updated_at";
+  "user_id, display_name, username, avatar_url, bio, role, skills, created_at, updated_at, opportunity_status, opportunity_types";

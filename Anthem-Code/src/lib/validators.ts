@@ -257,7 +257,7 @@ export const projectSchema = z.object({
   studio_id: z.string().uuid().nullable().optional(),
   credited_user_ids: z.array(z.string().uuid()).max(20).default([]),
   linked_community_post_ids: z.array(z.string().uuid()).max(5).default([]),
-  collab_user_ids: z.array(z.string().uuid()).max(5).default([]),
+  collab_user_ids: z.array(z.string().uuid()).max(19).default([]),
   license_type: z.enum(LICENSE_TYPES).default("all_rights"),
   license_note: z.string().trim().max(500).optional().default(""),
   has_third_party_assets: z.boolean().default(false),
@@ -313,7 +313,21 @@ export const projectSchema = z.object({
         url: z.string().url().optional().or(z.literal("")),
         urls: z.array(z.string()).max(20).optional(),
         mediaLayout: z.enum(["single", "gallery", "grid", "multi"]).optional(),
-        gridLayout: z.enum(["two_stack", "two_side", "three_split", "three_split_rev", "four_quad"]).optional(),
+        gridLayout: z
+          .enum([
+            "two_stack",
+            "two_side",
+            "three_split",
+            "three_split_rev",
+            "four_quad",
+            "tower_stack_tower",
+            "two_over_wide",
+            "stack_tower_stack",
+            "wide_over_two",
+            "alt_stack_tower_4",
+            "alt_tower_stack_4",
+          ])
+          .optional(),
         rowColumns: z.union([z.literal(2), z.literal(3), z.literal(4)]).optional(),
         splitSide: z.enum(["image_left", "text_left"]).optional(),
         textVerticalAlign: z.enum(["top", "middle", "bottom"]).optional(),
@@ -324,8 +338,20 @@ export const projectSchema = z.object({
     .default([]),
   gallery_display_mode: z.enum(["single", "gallery", "grid"]).default("gallery"),
   grid_layout: z
-    .enum(["two_stack", "two_side", "three_split", "three_split_rev", "four_quad"])
-    .default("four_quad"),
+    .enum([
+      "two_stack",
+      "two_side",
+      "three_split",
+      "three_split_rev",
+      "four_quad",
+      "tower_stack_tower",
+      "two_over_wide",
+      "stack_tower_stack",
+      "wide_over_two",
+      "alt_stack_tower_4",
+      "alt_tower_stack_4",
+    ])
+    .default("three_split"),
   editor_mode: z.enum(["casual", "flex_grid"]).default("casual"),
   flex_grid_layout: z.unknown().optional().default({}),
 });

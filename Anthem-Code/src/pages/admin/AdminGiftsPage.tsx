@@ -14,7 +14,6 @@ import { Gift, Wallet, ArrowUpRight, Users, Sparkles, Coins, ExternalLink, Searc
 import { toast } from "sonner";
 import AdminRowActions from "@/components/admin/AdminRowActions";
 import { useAdminRejectCashout, useAdminUpdateGift, useAdminUpdateGiftLimits } from "@/hooks/admin/useAdminMutations";
-import { processCashoutViaStripe } from "@/lib/stripePaymentsApi";
 import { notifyAnthem } from "@/lib/notifyAnthem";
 import { Label } from "@/components/ui/label";
 
@@ -137,17 +136,6 @@ export default function AdminGiftsPage() {
     onSuccess: (id) => {
       notifyAnthem({ event: "cashout", request_id: id, status: "paid" });
       toast.success("ทำเครื่องหมายว่าจ่ายแล้ว (manual)");
-      qc.invalidateQueries({ queryKey: ["admin-cashouts"] });
-      qc.invalidateQueries({ queryKey: ["admin-gift-overview"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const stripePayout = useMutation({
-    mutationFn: (id: string) => processCashoutViaStripe(id, { admin: true }),
-    onSuccess: (transferId, id) => {
-      notifyAnthem({ event: "cashout", request_id: id, status: "paid" });
-      toast.success(`โอน Stripe สำเร็จ (${transferId})`);
       qc.invalidateQueries({ queryKey: ["admin-cashouts"] });
       qc.invalidateQueries({ queryKey: ["admin-gift-overview"] });
     },
@@ -388,10 +376,11 @@ export default function AdminGiftsPage() {
           <div className="flex flex-wrap gap-1">
             <Button
               size="sm"
-              disabled={stripePayout.isPending}
-              onClick={() => stripePayout.mutate(r.id)}
+              variant="secondary"
+              disabled
+              title="ตัดเส้น Solo Stripe แล้ว — ใช้ Omise payout หรือ manual"
             >
-              โอน Stripe
+              Solo โอน (ปิด)
             </Button>
             <Button size="sm" variant="outline" disabled={markPaid.isPending} onClick={() => markPaid.mutate(r.id)}>
               manual

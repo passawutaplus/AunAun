@@ -14,6 +14,7 @@ import {
   useProjectCollectionIds,
   useToggleCollectionItem,
 } from "@/hooks/useCollections";
+import { trackProductEvent } from "@/lib/productEvents";
 import CollectionFormDialog from "./CollectionFormDialog";
 
 interface Props {
@@ -64,6 +65,13 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
     if (!projectId) return;
     try {
       await toggle.mutateAsync({ collectionId: cid, projectId, remove: isIn });
+      if (!isIn) {
+        void trackProductEvent(
+          "collection_save",
+          { project_id: projectId, collection_id: cid },
+          { debounceMs: 1_000 },
+        );
+      }
       toast.success(isIn ? "เอาออกจากคอลเลกชันแล้ว" : "เพิ่มเข้าคอลเลกชันแล้ว");
     } catch (e: unknown) {
       toast.error(mapWriteFlowError(e, "ผิดพลาด"));
@@ -179,6 +187,11 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
           await refetchCollections();
           if (projectId) {
             await toggle.mutateAsync({ collectionId: id, projectId });
+            void trackProductEvent(
+              "collection_save",
+              { project_id: projectId, collection_id: id },
+              { debounceMs: 1_000 },
+            );
             toast.success("เพิ่มเข้าคอลเลกชันใหม่แล้ว");
           }
         }}

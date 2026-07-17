@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PROJECT_FEED_SELECT } from "@/lib/dbSelects";
+import { PROJECT_FEED_CARD_SELECT } from "@/lib/dbSelects";
 import { normalizeTag, normalizeToolName } from "@/lib/exploreRoutes";
 import type { DBProject } from "@/hooks/useProjects";
 
@@ -45,7 +45,7 @@ export function filterProjectsByTag(projects: DBProject[], tag: string): DBProje
 async function fetchPublishedPool(): Promise<DBProject[]> {
   const { data, error } = await supabase
     .from("projects")
-    .select(PROJECT_FEED_SELECT)
+    .select(PROJECT_FEED_CARD_SELECT)
     .eq("status", "Published")
     .order("created_at", { ascending: false })
     .limit(EXPLORE_LIMIT);

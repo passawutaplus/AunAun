@@ -48,6 +48,10 @@ import {
   type BlockGapAfter,
   type ProjectContentBlock,
 } from "@/lib/projectContentBlocks";
+import {
+  getMosaicPhotoGridLayout,
+  isMosaicPhotoGridLayout,
+} from "@/lib/photoGridLayouts";
 import { GallerySlideBlockEditor } from "@/components/project/GallerySlideBlockEditor";
 import {
   applyCanvasImageSlotAction,
@@ -656,6 +660,55 @@ function SortableCanvasBlock({
               onCropAt={(index, url) => onCrop?.(url, index)}
               onReorder={(next) => onPatch({ mediaLayout: "gallery", urls: next, url: next[0] ?? "" })}
             />
+          ) : block.mediaLayout === "grid" && isMosaicPhotoGridLayout(block.gridLayout) ? (
+            (() => {
+              const meta = getMosaicPhotoGridLayout(block.gridLayout);
+              return (
+                <div
+                  className="grid aspect-[3/2] w-full min-w-0 gap-2"
+                  style={{
+                    gridTemplateColumns: `repeat(${meta.cols}, minmax(0, 1fr))`,
+                    gridTemplateRows: `repeat(${meta.rows}, minmax(0, 1fr))`,
+                  }}
+                >
+                  {meta.cells.map((cell, slotIndex) => {
+                    const url = slots[slotIndex] ?? "";
+                    const cellStyle = {
+                      gridColumn: `${cell.col} / span ${cell.colSpan ?? 1}`,
+                      gridRow: `${cell.row} / span ${cell.rowSpan ?? 1}`,
+                    } as const;
+                    return (
+                      <div
+                        key={slotIndex}
+                        className="min-h-0 min-w-0 overflow-hidden rounded-none bg-transparent"
+                        style={cellStyle}
+                      >
+                        {url.trim() ? (
+                          <ModuleImageWithCrop
+                            src={url}
+                            disabled={disabled}
+                            className="h-full"
+                            imgClassName="h-full w-full object-cover"
+                            onCrop={onCrop ? () => onCrop(url, slotIndex) : undefined}
+                            onReplace={onUpload ? (file) => onUpload(file, slotIndex) : undefined}
+                            {...slotDnD(slotIndex, url)}
+                          />
+                        ) : (
+                          <EmptyImageTile
+                            disabled={disabled}
+                            uploading={uploading}
+                            onPick={(file) => onUpload?.(file, slotIndex)}
+                            onSlotDrop={slotDnD(slotIndex, "").onSlotDrop}
+                            className="!aspect-auto h-full min-h-0"
+                            {...emptyMultiProps}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()
           ) : block.mediaLayout === "grid" &&
           (block.gridLayout === "three_split" || block.gridLayout === "three_split_rev") ? (
             <div className="grid aspect-square w-full min-w-0 grid-cols-2 grid-rows-2 gap-2">

@@ -3,7 +3,25 @@ import {
   mediaItemsFromProject,
   type PortfolioMediaItem,
 } from "@/lib/portfolioMedia";
-import { photoGridSlotCount, type PhotoGridLayout } from "@/lib/photoGridLayouts";
+import {
+  isMosaicPhotoGridLayout,
+  photoGridSlotCount,
+  type PhotoGridLayout,
+} from "@/lib/photoGridLayouts";
+
+function parseStoredGridLayout(raw: unknown): PhotoGridLayout | undefined {
+  if (
+    raw === "two_stack" ||
+    raw === "two_side" ||
+    raw === "three_split" ||
+    raw === "three_split_rev" ||
+    raw === "four_quad" ||
+    isMosaicPhotoGridLayout(raw)
+  ) {
+    return raw;
+  }
+  return undefined;
+}
 
 export type ProjectTextBlockType = "heading" | "heading_body" | "body";
 export type ProjectMediaBlockType = "image" | "video";
@@ -22,7 +40,7 @@ export type ProjectContentBlock = {
   /** Multi-slot image module (gallery / grid / multi-row). Empty string = slot awaiting upload. */
   urls?: string[];
   mediaLayout?: "single" | "gallery" | "grid" | "multi";
-  gridLayout?: "two_stack" | "two_side" | "three_split" | "three_split_rev" | "four_quad";
+  gridLayout?: PhotoGridLayout;
   /** Columns for mediaLayout "multi" (single row). */
   rowColumns?: 2 | 3 | 4;
   /** Side-by-side image + text module. */
@@ -181,7 +199,7 @@ export function resizeImageSlots(urls: string[], slotCount: number): string[] {
 }
 
 export function createGridPlaceholder(
-  layout: "two_stack" | "two_side" | "three_split" | "three_split_rev" | "four_quad",
+  layout: PhotoGridLayout,
   slotCount: number,
 ): ProjectContentBlock {
   const n = Math.max(1, Math.min(slotCount, 8));
@@ -224,11 +242,7 @@ export function imageModuleSlotCapacity(block: ProjectContentBlock): number {
     return block.rowColumns === 3 || block.rowColumns === 4 ? block.rowColumns : 2;
   }
   if (block.mediaLayout === "grid") {
-    const layout = block.gridLayout ?? "four_quad";
-    if (layout === "three_split" || layout === "three_split_rev") return 3;
-    if (layout === "four_quad") return 4;
-    if (layout === "two_stack" || layout === "two_side") return 2;
-    return Math.max(2, blockImageUrls(block).length || 2);
+    return photoGridSlotCount(block.gridLayout ?? "three_split");
   }
   if (block.mediaLayout === "gallery") return 24;
   return 1;
@@ -283,14 +297,7 @@ export function parseContentBlocks(raw: unknown): ProjectContentBlock[] {
           : urlsRaw.length > 1
             ? "gallery"
             : "single";
-      const gridLayout =
-        row.gridLayout === "two_stack" ||
-        row.gridLayout === "two_side" ||
-        row.gridLayout === "three_split" ||
-        row.gridLayout === "three_split_rev" ||
-        row.gridLayout === "four_quad"
-          ? row.gridLayout
-          : undefined;
+      const gridLayout = parseStoredGridLayout(row.gridLayout);
       const rowColumns =
         row.rowColumns === 2 || row.rowColumns === 3 || row.rowColumns === 4
           ? row.rowColumns

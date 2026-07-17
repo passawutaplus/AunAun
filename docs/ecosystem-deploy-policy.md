@@ -206,7 +206,19 @@ VITE_DEMO_SUPABASE_PUBLISHABLE_KEY=<demo anon>
 | [demo-pack.md](demo-pack.md) | ลิงก์ + login ส่ง reviewer |
 | [Anthem-Code/docs/demo-isolation.md](../Anthem-Code/docs/demo-isolation.md) | Phase B รายละเอียด |
 | [Anthem-Code/docs/production-readiness.md](../Anthem-Code/docs/production-readiness.md) | Gate ก่อน launch |
+| [Anthem-Code/docs/payments-omise.md](../Anthem-Code/docs/payments-omise.md) | Aplus1 Omise + ledger (ไม่พึ่ง Solo เป็น billing hub) |
 | [scripts/prepare-demo.sh](../scripts/prepare-demo.sh) | เตรียม demo ครั้งเดียว (Phase A) |
+
+### Aplus1 payments env (deploy notes)
+
+Production/demo Aplus1 **must not** rely on Solo Stripe checkout for new fiat volume. Prefer:
+
+- `PAYMENT_PROVIDER=omise`
+- `OMISE_MODE=test` until marketplace approved
+- `OMISE_MARKETPLACE_APPROVED=false` blocks live charge/transfer
+- `VITE_APLUS1_PAYMENTS_ENABLED` gates UI
+
+Solo keeps its own `STRIPE_*` for So1o product only.
 
 ---
 

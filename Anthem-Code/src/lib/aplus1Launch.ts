@@ -118,21 +118,32 @@ export const SOLO_ECOSYSTEM_COMING_SOON_TH =
 export const SOLO_ECOSYSTEM_COMING_SOON_SHORT = "So1o — เร็ว ๆ นี้";
 
 export const APLUS1_PAYMENTS_DISABLED_TH =
-  "การชำระเงินผ่าน Stripe กำลังจะเปิดเร็ว ๆ นี้ — รับของขวัญและ daily px ใช้ได้ตามปกติ";
+  "กำลังเปิดรับชำระผ่าน Aplus1 — รับของขวัญและ daily px ใช้ได้ตามปกติ";
 
-/** Stripe checkout / Connect / cashout / boost / ads — explicit opt-in only. */
+/** Legacy Solo/Stripe fiat paths are cut — use Omise when enabled. */
+export const APLUS1_SOLO_PAYMENTS_CUTOVER_TH =
+  "Aplus1 ไม่รับชำระผ่าน So1o อีกต่อไป — ระบบชำระเงินใหม่กำลังเปิดเร็ว ๆ นี้";
+
+/** Omise hire/checkout UI — explicit opt-in (still blocked live without marketplace approval). */
 export function isAplus1PaymentsEnabled(): boolean {
   if (isAplus1LaunchMinimal()) return false;
   return import.meta.env.VITE_APLUS1_PAYMENTS_ENABLED === "true";
 }
 
+/** THB/USD display switcher for offers / portfolio / checkout labels (not PX). */
+export function isDisplayCurrencyEnabled(): boolean {
+  if (isAplus1LaunchMinimal()) return false;
+  return import.meta.env.VITE_APLUS1_DISPLAY_CURRENCY_ENABLED === "true";
+}
+
 /**
- * In-chat quotation / offer docs — after first product-flow round + money follow-up.
- * Fail-closed: off in launch minimal; full product still needs explicit env.
+ * In-chat quotation / offer docs.
+ * Enabled by default for hire-chat testing, including launch minimal.
+ * Can still be explicitly disabled with VITE_APLUS1_CHAT_OFFERS_ENABLED=false.
  */
 export function isAplus1ChatOffersEnabled(): boolean {
-  if (isAplus1LaunchMinimal()) return false;
-  return import.meta.env.VITE_APLUS1_CHAT_OFFERS_ENABLED === "true";
+  const explicit = import.meta.env.VITE_APLUS1_CHAT_OFFERS_ENABLED as string | undefined;
+  return explicit !== "false";
 }
 
 export const APLUS1_CHAT_OFFERS_COMING_SOON_TH =

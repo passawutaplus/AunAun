@@ -58,13 +58,74 @@ export function resolveTopCategories(input: CategoryWeightsInput): string[] {
   return [];
 }
 
-export type BlendableProject = { id: string };
+export type BlendableProject = {
+  id: string;
+  category?: string | null;
+  opportunity_types?: string[] | null;
+};
 
-/** AI recs first, then category pool; dedupe; push seen ids to bottom. */
+const VIEW_CAT_WEIGHT = 2;
+const VIEW_OPP_WEIGHT = 1.5;
+
+/** Recency-weighted opportunity types from viewed projects (index 0 = most recent). */
+export function buildOpportunityTypeWeights(viewedTypesNewestFirst: string[][]): Record<string, number> {
+  const weights: Record<string, number> = {};
+  viewedTypesNewestFirst.forEach((types, idx) => {
+    const recency = Math.max(1, viewedTypesNewestFirst.length - idx);
+    for (const t of types) {
+      if (t) weights[t] = (weights[t] ?? 0) + recency * VIEW_OPP_WEIGHT;
+    }
+  });
+  return weights;
+}
+
+export function pickTopOpportunityTypes(
+  weights: Record<string, number>,
+  limit = TOP_CATS_LIMIT,
+): string[] {
+  return Object.entries(weights)
+    .filter(([, w]) => w > 0)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([t]) => t);
+}
+
+/** Extra weight for categories from recent views (index 0 = most recent). */
+export function mergeViewCategoryWeights(
+  base: Record<string, number>,
+  viewedCategoriesNewestFirst: string[],
+): Record<string, number> {
+  const out = { ...base };
+  viewedCategoriesNewestFirst.forEach((cat, idx) => {
+    if (!cat) return;
+    const recency = Math.max(1, viewedCategoriesNewestFirst.length - idx);
+    out[cat] = (out[cat] ?? 0) + recency * VIEW_CAT_WEIGHT;
+  });
+  return out;
+}
+
+function affinityScore(
+  p: BlendableProject,
+  catWeights: Record<string, number>,
+  oppWeights: Record<string, number>,
+): number {
+  let score = 0;
+  if (p.category && catWeights[p.category]) score += catWeights[p.category];
+  for (const t of p.opportunity_types ?? []) {
+    if (oppWeights[t]) score += oppWeights[t];
+  }
+  return score;
+}
+
+/** AI recs first, then category pool; dedupe; rank by view affinity; push fully-seen ids down. */
 export function blendPersonalizedProjects<T extends BlendableProject>(
   aiRecs: T[],
   catBased: T[],
   seenIds: Set<string>,
+  opts?: {
+    categoryWeights?: Record<string, number>;
+    opportunityWeights?: Record<string, number>;
+  },
 ): T[] {
   const seenInList = new Set<string>();
   const blended: T[] = [];
@@ -73,7 +134,17 @@ export function blendPersonalizedProjects<T extends BlendableProject>(
     seenInList.add(p.id);
     blended.push(p);
   }
-  return blended.sort((a, b) => Number(seenIds.has(a.id)) - Number(seenIds.has(b.id)));
+  const catWeights = opts?.categoryWeights ?? {};
+  const oppWeights = opts?.opportunityWeights ?? {};
+  const hasAffinity =
+    Object.keys(catWeights).length > 0 || Object.keys(oppWeights).length > 0;
+
+  return blended.sort((a, b) => {
+    const seenDiff = Number(seenIds.has(a.id)) - Number(seenIds.has(b.id));
+    if (seenDiff !== 0) return seenDiff;
+    if (!hasAffinity) return 0;
+    return affinityScore(b, catWeights, oppWeights) - affinityScore(a, catWeights, oppWeights);
+  });
 }
 
 /** Map free-text search query to canonical feed categories. */
