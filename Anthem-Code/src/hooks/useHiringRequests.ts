@@ -25,8 +25,10 @@ export const useHiringRequests = (freelancerId: string | undefined) => {
 
   useEffect(() => {
     if (!freelancerId) return;
+    // Unique channel per mount — shared name "hiring-rt" crashes when Dashboard +
+    // ProfileHiringRequestsSection both subscribe (cannot add postgres_changes after subscribe).
     const ch = supabase
-      .channel("hiring-rt")
+      .channel(`hiring-rt-${freelancerId}-${crypto.randomUUID()}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "hiring_requests", filter: `freelancer_id=eq.${freelancerId}` },
@@ -34,7 +36,7 @@ export const useHiringRequests = (freelancerId: string | undefined) => {
       )
       .subscribe();
     return () => {
-      supabase.removeChannel(ch);
+      void supabase.removeChannel(ch);
     };
   }, [freelancerId, qc]);
 

@@ -305,6 +305,7 @@ const App = () => (
               <Route path="/studio/new" element={<StudioCreatePage />} />
               <Route path="/studio/invites" element={<StudioInvitesPage />} />
               <Route path="/studio/manage" element={<StudioManagePage />} />
+              <Route path="/legal" element={<RedirectTo to="/legal/terms" />} />
               <Route path="/legal/privacy" element={<PrivacyPage />} />
               <Route path="/legal/terms" element={<TermsPage />} />
               <Route path="/legal/cookies" element={<CookiesPage />} />

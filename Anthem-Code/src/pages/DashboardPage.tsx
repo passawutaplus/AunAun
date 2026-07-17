@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, Handshake, Loader2 } from "lucide-react";
+import { Briefcase, Handshake, Loader2, Settings } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
+import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import StatsCard from "@/components/StatsCard";
 import SeoHead from "@/components/SeoHead";
@@ -16,6 +17,7 @@ import {
   DashboardDocumentStrip,
   DashboardLinkedWorkStrip,
 } from "@/components/dashboard/DashboardRequestStrips";
+import ManageModeNav from "@/components/dashboard/ManageModeNav";
 import EarningsBalanceCards from "@/components/payments/EarningsBalanceCards";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -51,6 +53,7 @@ function readLinkedProjectId(row: Record<string, unknown>): string | null {
 }
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const mode = resolveMode(searchParams.get("mode"));
@@ -172,55 +175,73 @@ export default function DashboardPage() {
 
   return (
     <div className={`min-h-screen bg-app-ambient ${MOBILE_PAGE_BOTTOM_CLASS}`}>
-      <SeoHead title="แดชบอร์ด & จัดการ" path="/dashboard" noindex />
+      <SeoHead title="แดชบอร์ด & จัดการ — จ้างงาน & คอลแลป" path="/dashboard" noindex />
 
-      <div className="sticky top-0 z-20 glass-panel border-x-0 border-t-0 rounded-none">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <BackButton to="/portfolio" label="กลับโปรไฟล์" />
-          <h1 className="text-sm font-semibold truncate">แดชบอร์ด &amp; จัดการ</h1>
-          <div className="w-12 shrink-0" />
+      <div className="bg-gradient-to-b from-primary/10 to-background">
+        <div className="mx-auto max-w-5xl px-4 pb-4 pt-6">
+          <BackButton to="/portfolio" label="กลับโปรไฟล์" className="mb-4" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Briefcase className="h-6 w-6 text-primary" />
+              <h1 className="text-2xl font-medium text-foreground">แดชบอร์ด &amp; จัดการ</h1>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/settings")}
+              className="rounded-full"
+            >
+              <Settings className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">ตั้งค่า</span>
+            </Button>
+          </div>
+          <ManageModeNav className="mt-4" />
+          <p className="mt-2 text-sm text-muted-foreground">
+            {mode === "hire"
+              ? "ดูคำขอจ้างงาน ลิงก์ผลงาน และเอกสารที่เกี่ยวข้อง"
+              : "ดูคำขอคอลแลป ตอบรับ/ปฏิเสธ และลิงก์ผลงานร่วม"}
+          </p>
+          <ToggleGroup
+            type="single"
+            value={mode}
+            onValueChange={(v) => {
+              if (v === "hire" || v === "collab") setMode(v);
+            }}
+            className="mt-4 inline-flex w-full max-w-md rounded-full border border-border bg-background p-1"
+          >
+            <ToggleGroupItem
+              value="hire"
+              className={cn(
+                "flex-1 gap-2 rounded-full py-2.5 text-sm data-[state=on]:bg-[hsl(var(--chat-hire))] data-[state=on]:text-white",
+              )}
+            >
+              <Briefcase className="h-4 w-4 shrink-0" />
+              จ้างงาน
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="collab"
+              className={cn(
+                "flex-1 gap-2 rounded-full py-2.5 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
+              )}
+            >
+              <Handshake className="h-4 w-4 shrink-0" />
+              ร่วมงาน
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
-        <ToggleGroup
-          type="single"
-          value={mode}
-          onValueChange={(v) => {
-            if (v === "hire" || v === "collab") setMode(v);
-          }}
-          className="inline-flex w-full rounded-full border border-border bg-background p-1"
-        >
-          <ToggleGroupItem
-            value="hire"
-            className={cn(
-              "rounded-full flex-1 py-2.5 text-sm gap-2 data-[state=on]:bg-[hsl(var(--chat-hire))] data-[state=on]:text-white",
-            )}
-          >
-            <Briefcase className="w-4 h-4 shrink-0" />
-            จ้างงาน
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            value="collab"
-            className={cn(
-              "rounded-full flex-1 py-2.5 text-sm gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
-            )}
-          >
-            <Handshake className="w-4 h-4 shrink-0" />
-            ร่วมงาน
-          </ToggleGroupItem>
-        </ToggleGroup>
-
+      <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 pb-10">
         {authLoading || !user ? (
-          <div className="flex items-center justify-center py-16 text-muted-foreground gap-2 text-sm">
-            <Loader2 className="w-4 h-4 animate-spin" />
+          <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
             กำลังโหลด…
           </div>
         ) : (
           <>
             {mode === "hire" ? (
-              <>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
                   <StatsCard
                     label={HIRE_TAB_CONTACTED_NEW}
                     value={stats.contactedNew}
@@ -231,8 +252,7 @@ export default function DashboardPage() {
                   <StatsCard label={HIRE_TAB_COMPLETED} value={stats.completed} icon={Briefcase} />
                   <StatsCard label="ทั้งหมด" value={stats.total} icon={Briefcase} />
                 </div>
-
-                <div className="space-y-2">
+                <div className="space-y-2 rounded-2xl border border-border/70 bg-card/50 p-4">
                   <h2 className="text-sm font-semibold">รายได้จ้างงาน (THB)</h2>
                   <EarningsBalanceCards
                     pendingSatang={0}
@@ -244,9 +264,9 @@ export default function DashboardPage() {
                     ยอดจ้างงานผ่าน Omise จะแสดงที่นี่หลังเปิดรับชำระ
                   </p>
                 </div>
-              </>
+              </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <StatsCard
                   label="ติดต่อใหม่"
                   value={stats.contactedNew}
@@ -260,8 +280,8 @@ export default function DashboardPage() {
             )}
 
             {listLoading ? (
-              <div className="flex items-center justify-center py-12 text-muted-foreground gap-2 text-sm">
-                <Loader2 className="w-4 h-4 animate-spin" />
+              <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
                 กำลังโหลดรายการ…
               </div>
             ) : mode === "hire" ? (

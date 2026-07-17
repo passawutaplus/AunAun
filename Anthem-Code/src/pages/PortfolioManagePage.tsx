@@ -41,6 +41,7 @@ import ProjectManageGridSelect, {
 import PortfolioOverviewChart from "@/components/portfolio/PortfolioOverviewChart";
 import { DashboardSeriesSection } from "@/components/series/DashboardSeriesSection";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
+import ManageModeNav from "@/components/dashboard/ManageModeNav";
 import { smoothEase, staggerReveal } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -246,6 +247,7 @@ const PortfolioManagePage = () => {
               </Button>
             </div>
           </div>
+          <ManageModeNav className="mt-4" />
           <p className="text-sm text-muted-foreground mt-1">
             {manageTab === "posts"
               ? "จัดการโพสต์ชุมชน — แก้ไข แบบร่าง และลบโพสต์ของคุณ"

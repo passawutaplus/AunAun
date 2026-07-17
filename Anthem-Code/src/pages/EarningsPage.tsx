@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Settings, WalletCards } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWallet, useAvailablePurchasedPx } from "@/hooks/useWallet";
@@ -31,7 +33,9 @@ import { EarningsClosedLoopNote } from "@/components/earnings/EarningsClosedLoop
 import EarningsBalanceCards from "@/components/payments/EarningsBalanceCards";
 import DisplayCurrencyToggle from "@/components/payments/DisplayCurrencyToggle";
 import TaxEstimateCard from "@/components/payments/TaxEstimateCard";
+import ManageModeNav from "@/components/dashboard/ManageModeNav";
 import { computeGiftablePx } from "@/lib/walletDisplay";
+import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 
 const EarningsPage = () => {
   const navigate = useNavigate();
@@ -111,40 +115,60 @@ const EarningsPage = () => {
         : `อีก ${Math.max(0, MIN_CASHOUT_PX - earnedPx).toLocaleString()} px ถึงขั้นต่ำถอน`;
 
   return (
-    <div className="min-h-screen bg-app-ambient">
-      <SeoHead title="รายได้ของฉัน" path="/earnings" noindex />
-      <div className="sticky top-0 z-20 glass-panel border-x-0 border-t-0 rounded-none">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <BackButton />
-          <h1 className="text-sm font-semibold">รายได้ของฉัน</h1>
-          <div className="w-12" />
+    <div className={`min-h-screen bg-app-ambient ${MOBILE_PAGE_BOTTOM_CLASS}`}>
+      <SeoHead title="แดชบอร์ด & จัดการ — กระเป๋า" path="/earnings" noindex />
+
+      <div className="bg-gradient-to-b from-primary/10 to-background">
+        <div className="mx-auto max-w-5xl px-4 pb-4 pt-6">
+          <BackButton to="/portfolio" label="กลับโปรไฟล์" className="mb-4" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <WalletCards className="h-6 w-6 text-primary" />
+              <h1 className="text-2xl font-medium text-foreground">แดชบอร์ด &amp; จัดการ</h1>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/settings")}
+              className="rounded-full"
+            >
+              <Settings className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">ตั้งค่า</span>
+            </Button>
+          </div>
+          <ManageModeNav className="mt-4" />
+          <p className="mt-2 text-sm text-muted-foreground">
+            ดูรายได้ PX รายได้จ้างงาน ประมาณการภาษี และประวัติถอนเงิน
+          </p>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-5 pb-24">
-        <EarningsHeroCard
-          netThb={netThb}
-          earnedPx={earnedPx}
-          giftablePx={giftablePx}
-          lifetimeEarned={lifetimeEarned}
-          feeLabel={feeLabel}
-        />
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold">รายได้จ้างงาน (THB)</h2>
-            <DisplayCurrencyToggle />
-          </div>
-          <EarningsBalanceCards
-            pendingSatang={0}
-            availableSatang={0}
-            payoutReservedSatang={0}
-            paidOutSatang={0}
+      <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 pb-10">
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+          <EarningsHeroCard
+            netThb={netThb}
+            earnedPx={earnedPx}
+            giftablePx={giftablePx}
+            lifetimeEarned={lifetimeEarned}
+            feeLabel={feeLabel}
           />
-          <p className="text-[11px] text-muted-foreground">
-            ยอดจ้างงานผ่าน Aplus1/Omise จะแสดงที่นี่หลังเปิดรับชำระ — แยกจากกระเป๋า PX
-          </p>
-          <TaxEstimateCard userId={user?.id} />
+
+          <div className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold">รายได้จ้างงาน (THB)</h2>
+              <DisplayCurrencyToggle />
+            </div>
+            <EarningsBalanceCards
+              pendingSatang={0}
+              availableSatang={0}
+              payoutReservedSatang={0}
+              paidOutSatang={0}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              ยอดจ้างงานผ่าน Aplus1/Omise จะแสดงที่นี่หลังเปิดรับชำระ — แยกจากกระเป๋า PX
+            </p>
+            <TaxEstimateCard userId={user?.id} />
+          </div>
         </div>
 
         <EarningsQuickActions
@@ -155,25 +179,26 @@ const EarningsPage = () => {
           cashoutHint={cashoutHint}
         />
 
-        <DailyPxClaimCard />
-
-        {eligibility && (
-          <EarningsCashoutReadiness eligibility={eligibility} earnedPx={earnedPx} />
-        )}
-
-        <EarningsGiftCatalog gifts={gifts} />
-
-        <EarningsGiftFeed
-          items={received}
-          giftById={giftById}
-          senderById={senderById}
-          onGoPortfolio={() => navigate("/portfolio/manage")}
-        />
-
-        <EarningsCashoutHistory items={cashouts} />
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+          <div className="space-y-5">
+            <DailyPxClaimCard />
+            {eligibility && (
+              <EarningsCashoutReadiness eligibility={eligibility} earnedPx={earnedPx} />
+            )}
+            <EarningsGiftCatalog gifts={gifts} />
+          </div>
+          <div className="space-y-5">
+            <EarningsGiftFeed
+              items={received}
+              giftById={giftById}
+              senderById={senderById}
+              onGoPortfolio={() => navigate("/portfolio/manage")}
+            />
+            <EarningsCashoutHistory items={cashouts} />
+          </div>
+        </div>
 
         <WalletEarnMoreSection />
-
         <EarningsClosedLoopNote />
       </div>
 

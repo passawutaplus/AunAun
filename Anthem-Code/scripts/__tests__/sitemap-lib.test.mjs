@@ -22,6 +22,8 @@ describe("sitemap-lib", () => {
     expect(paths).toContain("/forum/c/feedback");
     expect(paths).toContain("/legal/community");
     expect(paths).toContain("/legal/copyright-report");
+    expect(paths).toContain("/legal/payment-refund");
+    expect(paths).toContain("/legal/service-agreement");
     expect(paths).not.toContain("/jobs");
     expect(paths).not.toContain("/advertise");
     expect(paths).not.toContain("/admin");
