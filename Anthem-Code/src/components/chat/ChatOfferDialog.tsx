@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Banknote,
+  Building2,
   CalendarRange,
   Eye,
   EyeOff,
@@ -22,24 +24,36 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toast } from "sonner";
 import { useSendMessage } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { sharedDb } from "@/integrations/supabase/db";
+import type { Json } from "@/integrations/supabase/types";
+import { billingToParty, type BillingProfileFields } from "@/lib/billingProfile";
 import {
   DEPOSIT_PRESETS,
   defaultOfferMilestones,
   emptyOfferItem,
+  emptyParty,
   encodeChatOffer,
   formatOfferAmount,
   formatOfferBaht,
+  isValidThaiTaxId,
   makeOfferNumber,
   offerItemSubtotal,
   offerItemsSubtotal,
+  partyDisplayName,
   paymentTermsLabel,
   summarizeOfferItems,
   type ChatOfferLineItem,
   type ChatOfferMilestone,
   type ChatOfferPayload,
+  type OfferPartyInfo,
+  type OfferPartyType,
+  type OfferPaymentMode,
 } from "@/lib/chatOffer";
 import { ChatOfferTimeline } from "@/components/chat/ChatOfferTimeline";
 import { ChatOfferPreview } from "@/components/chat/ChatOfferPreview";
@@ -49,6 +63,7 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   conversationId: string;
+  hiringRequestId?: string | null;
   defaultTitle?: string;
   defaultClientName?: string;
   defaultClientEmail?: string;
@@ -61,10 +76,44 @@ function newMilestoneId() {
   return `ms-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function profileToBillingFields(
+  profile: Record<string, unknown> | null | undefined,
+  fallbackEmail?: string | null,
+): BillingProfileFields | null {
+  if (!profile) {
+    return fallbackEmail ? { email: fallbackEmail } : null;
+  }
+  return {
+    billing_type: profile.billing_type as string | null | undefined,
+    legal_name: profile.legal_name as string | null | undefined,
+    company_name: profile.company_name as string | null | undefined,
+    tax_id: profile.tax_id as string | null | undefined,
+    billing_address: profile.billing_address as string | null | undefined,
+    branch: profile.branch as string | null | undefined,
+    contact_person: profile.contact_person as string | null | undefined,
+    contact_role: profile.contact_role as string | null | undefined,
+    vat_registered: profile.vat_registered as boolean | null | undefined,
+    display_name: profile.display_name as string | null | undefined,
+    email: (profile.email as string | null | undefined) || fallbackEmail || null,
+    phone: profile.phone as string | null | undefined,
+  };
+}
+
+function IssuerField({ label, value }: { label: string; value?: string | null }) {
+  if (!value?.trim()) return null;
+  return (
+    <div>
+      <p className="text-[10px] text-muted-foreground">{label}</p>
+      <p className="text-sm text-foreground whitespace-pre-line">{value.trim()}</p>
+    </div>
+  );
+}
+
 export function ChatOfferDialog({
   open,
   onOpenChange,
   conversationId,
+  hiringRequestId,
   defaultTitle,
   defaultClientName,
   defaultClientEmail,
@@ -74,15 +123,25 @@ export function ChatOfferDialog({
 }: Props) {
   const send = useSendMessage();
   const { user } = useAuth();
+  const { data: profile } = useProfile(user?.id);
+
   const [title, setTitle] = useState(defaultTitle?.trim() || "");
   const [items, setItems] = useState<ChatOfferLineItem[]>(() => [emptyOfferItem()]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [clientType, setClientType] = useState<OfferPartyType>("individual");
   const [clientName, setClientName] = useState(defaultClientName?.trim() || "");
   const [clientEmail, setClientEmail] = useState(defaultClientEmail?.trim() || "");
   const [clientPhone, setClientPhone] = useState(defaultClientPhone?.trim() || "");
   const [clientAddress, setClientAddress] = useState(defaultClientAddress?.trim() || "");
-  const [clientTaxId, setClientTaxId] = useState(defaultClientTaxId?.trim() || "");
+  const [companyName, setCompanyName] = useState(defaultClientName?.trim() || "");
+  const [taxId, setTaxId] = useState(defaultClientTaxId?.trim() || "");
+  const [corpAddress, setCorpAddress] = useState(defaultClientAddress?.trim() || "");
+  const [contactPerson, setContactPerson] = useState("");
+  const [contactRole, setContactRole] = useState("");
+  const [corpPhone, setCorpPhone] = useState(defaultClientPhone?.trim() || "");
+  const [corpEmail, setCorpEmail] = useState(defaultClientEmail?.trim() || "");
+  const [paymentMode, setPaymentMode] = useState<OfferPaymentMode>("deposit");
   const [depositPercent, setDepositPercent] = useState(50);
   const [customDeposit, setCustomDeposit] = useState("50");
   const [whtEnabled, setWhtEnabled] = useState(true);
@@ -95,12 +154,59 @@ export function ChatOfferDialog({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<"view" | "confirm">("view");
 
-  const issuerName =
-    (typeof user?.user_metadata?.display_name === "string" && user.user_metadata.display_name) ||
-    (typeof user?.user_metadata?.full_name === "string" && user.user_metadata.full_name) ||
-    (typeof user?.user_metadata?.name === "string" && user.user_metadata.name) ||
-    undefined;
-  const issuerEmail = user?.email ?? undefined;
+  const issuerParty = useMemo(
+    () => billingToParty(profileToBillingFields(profile, user?.email)),
+    [profile, user?.email],
+  );
+
+  const buildClientParty = (): OfferPartyInfo => {
+    if (clientType === "corporate") {
+      return {
+        ...emptyParty("corporate"),
+        companyName: companyName.trim() || null,
+        taxId: taxId.replace(/\D/g, "").slice(0, 13) || null,
+        address: corpAddress.trim() || null,
+        contactPerson: contactPerson.trim() || null,
+        contactRole: contactRole.trim() || null,
+        phone: corpPhone.trim() || null,
+        email: corpEmail.trim() || null,
+        name: contactPerson.trim() || companyName.trim() || null,
+      };
+    }
+    return {
+      ...emptyParty("individual"),
+      name: clientName.trim() || null,
+      email: clientEmail.trim() || null,
+      phone: clientPhone.trim() || null,
+      address: clientAddress.trim() || null,
+    };
+  };
+
+  const clientParty = useMemo(
+    () => buildClientParty(),
+    [
+      clientType,
+      clientName,
+      clientEmail,
+      clientPhone,
+      clientAddress,
+      companyName,
+      taxId,
+      corpAddress,
+      contactPerson,
+      contactRole,
+      corpPhone,
+      corpEmail,
+    ],
+  );
+
+  const effectiveDepositPercent = paymentMode === "full" ? 100 : depositPercent;
+  const whtApplicable = clientType === "corporate" && whtEnabled;
+
+  useEffect(() => {
+    if (clientType !== "corporate") setWhtEnabled(false);
+    else setWhtEnabled(true);
+  }, [clientType]);
 
   const itemsTotal = useMemo(() => Math.round(offerItemsSubtotal(items)), [items]);
 
@@ -128,8 +234,12 @@ export function ChatOfferDialog({
 
   const previewOffer: ChatOfferPayload = useMemo(() => {
     const named = items.filter((it) => it.name.trim());
+    const flatClientName =
+      clientType === "corporate"
+        ? clientParty.companyName || clientParty.name
+        : clientParty.name;
     return {
-      v: 3,
+      v: 4,
       title: title.trim() || "ชื่องาน",
       amount: itemsTotal,
       currency: "THB",
@@ -139,17 +249,20 @@ export function ChatOfferDialog({
       endDate: endDate || null,
       dueDate: endDate || null,
       number: docNumber,
-      clientName: clientName.trim() || null,
-      clientEmail: clientEmail.trim() || null,
-      clientPhone: clientPhone.trim() || null,
-      clientAddress: clientAddress.trim() || null,
-      clientTaxId: clientTaxId.trim() || null,
-      issuerName: issuerName || null,
-      issuerEmail: issuerEmail || null,
-      depositPercent,
+      clientName: flatClientName || null,
+      clientEmail: clientParty.email || null,
+      clientPhone: clientParty.phone || null,
+      clientAddress: clientParty.address || null,
+      clientTaxId: clientParty.taxId || null,
+      issuerName: partyDisplayName(issuerParty) || null,
+      issuerEmail: issuerParty.email || null,
+      party: { issuer: issuerParty, client: clientParty },
+      paymentMode,
+      depositPercent: effectiveDepositPercent,
       depositDueDate: null,
-      paymentTerms: paymentTermsLabel(depositPercent),
-      whtEnabled,
+      paymentTerms: paymentTermsLabel(effectiveDepositPercent),
+      whtEnabled: whtApplicable,
+      whtApplicable,
       whtRate: 3,
       milestones,
       clientNotes: clientNotes.trim() || null,
@@ -162,15 +275,12 @@ export function ChatOfferDialog({
     startDate,
     endDate,
     docNumber,
-    clientName,
-    clientEmail,
-    clientPhone,
-    clientAddress,
-    clientTaxId,
-    issuerName,
-    issuerEmail,
-    depositPercent,
-    whtEnabled,
+    clientType,
+    clientParty,
+    issuerParty,
+    paymentMode,
+    effectiveDepositPercent,
+    whtApplicable,
     milestones,
     clientNotes,
     internalNotes,
@@ -181,11 +291,19 @@ export function ChatOfferDialog({
     setItems([emptyOfferItem()]);
     setStartDate("");
     setEndDate("");
+    setClientType("individual");
     setClientName(defaultClientName?.trim() || "");
     setClientEmail(defaultClientEmail?.trim() || "");
     setClientPhone(defaultClientPhone?.trim() || "");
     setClientAddress(defaultClientAddress?.trim() || "");
-    setClientTaxId(defaultClientTaxId?.trim() || "");
+    setCompanyName(defaultClientName?.trim() || "");
+    setTaxId(defaultClientTaxId?.trim() || "");
+    setCorpAddress(defaultClientAddress?.trim() || "");
+    setContactPerson("");
+    setContactRole("");
+    setCorpPhone(defaultClientPhone?.trim() || "");
+    setCorpEmail(defaultClientEmail?.trim() || "");
+    setPaymentMode("deposit");
     setDepositPercent(50);
     setCustomDeposit("50");
     setWhtEnabled(true);
@@ -201,7 +319,11 @@ export function ChatOfferDialog({
       setClientEmail(defaultClientEmail?.trim() || "");
       setClientPhone(defaultClientPhone?.trim() || "");
       setClientAddress(defaultClientAddress?.trim() || "");
-      setClientTaxId(defaultClientTaxId?.trim() || "");
+      setCompanyName(defaultClientName?.trim() || "");
+      setTaxId(defaultClientTaxId?.trim() || "");
+      setCorpAddress(defaultClientAddress?.trim() || "");
+      setCorpPhone(defaultClientPhone?.trim() || "");
+      setCorpEmail(defaultClientEmail?.trim() || "");
     } else {
       setPreviewOpen(false);
       setPreviewMode("view");
@@ -229,6 +351,16 @@ export function ChatOfferDialog({
       toast.error("วันจบงานต้องไม่อยู่ก่อนวันเริ่มงาน");
       return null;
     }
+    if (clientType === "corporate") {
+      if (!companyName.trim()) {
+        toast.error("ใส่ชื่อบริษัท/นิติบุคคล");
+        return null;
+      }
+      if (taxId.trim() && !isValidThaiTaxId(taxId)) {
+        toast.error("เลขผู้เสียภาษีไม่ถูกต้อง (13 หลัก)");
+        return null;
+      }
+    }
     return { title: trimmedTitle, named };
   };
 
@@ -242,19 +374,53 @@ export function ChatOfferDialog({
     const ok = validateOffer();
     if (!ok) return;
 
+    const payload: ChatOfferPayload = {
+      ...previewOffer,
+      title: ok.title,
+      amount: itemsTotal,
+      items: ok.named,
+      deliverables: summarizeOfferItems(ok.named),
+    };
+
+    let quoteId: string | null = null;
+
+    if (hiringRequestId && user?.id) {
+      try {
+        const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+        const { data, error } = await sharedDb
+          .from("hire_quotes" as never)
+          .insert({
+            hiring_request_id: hiringRequestId,
+            conversation_id: conversationId,
+            version: 4,
+            status: "sent",
+            payload: payload as unknown as Json,
+            deposit_percent: effectiveDepositPercent,
+            wht_enabled: whtApplicable,
+            amount_satang: itemsTotal * 100,
+            currency: "THB",
+            doc_number: docNumber,
+            expires_at: expiresAt,
+            created_by: user.id,
+          } as never)
+          .select("id")
+          .single();
+
+        if (!error && data && typeof (data as { id?: string }).id === "string") {
+          quoteId = (data as { id: string }).id;
+        }
+      } catch {
+        // Table may not exist yet — still send chat message.
+      }
+    }
+
     try {
       await send.mutateAsync({
         conversationId,
-        content: encodeChatOffer({
-          ...previewOffer,
-          title: ok.title,
-          amount: itemsTotal,
-          items: ok.named,
-          deliverables: summarizeOfferItems(ok.named),
-        }),
+        content: encodeChatOffer({ ...payload, quoteId }),
         messageType: "text",
       });
-      toast.success("ส่งข้อเสนอแล้ว");
+      toast.success("ส่งใบเสนอราคาแล้ว");
       setPreviewOpen(false);
       handleOpen(false);
     } catch (e) {
@@ -266,86 +432,211 @@ export function ChatOfferDialog({
 
   return (
     <>
-    <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogContent className="sm:max-w-6xl max-h-[92vh] overflow-y-auto rounded-2xl p-4 sm:p-6">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Banknote className="w-5 h-5 text-primary" />
-            เสนอราคา
-          </DialogTitle>
-          <DialogDescription>
-            กรอกรายละเอียดแบบใบเสนอราคา — กดส่งแล้วจะขึ้นพรีวิวให้เช็คก่อนส่งจริง
-          </DialogDescription>
-        </DialogHeader>
+      <Dialog open={open} onOpenChange={handleOpen}>
+        <DialogContent className="sm:max-w-6xl max-h-[92vh] overflow-y-auto rounded-2xl p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Banknote className="w-5 h-5 text-primary" />
+              เสนอราคา
+            </DialogTitle>
+            <DialogDescription>
+              กรอกรายละเอียดแบบใบเสนอราคา — กดส่งแล้วจะขึ้นพรีวิวให้เช็คก่อนส่งจริง
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-4 py-1 min-w-0">
-            {/* Client */}
-            <section className="rounded-2xl border border-border bg-card p-3.5 space-y-3">
-              <div className="flex items-start gap-2">
-                <UserRound className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold">ลูกค้า</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    ข้อมูลที่จะแสดงบนใบเสนอราคา
-                  </p>
+          <div className="space-y-4 py-1 min-w-0">
+            {/* Issuer + Client */}
+            <section className="grid gap-4 lg:grid-cols-2 lg:items-start">
+              <div className="rounded-2xl border border-border bg-card p-3.5 space-y-3">
+                <div className="flex items-start gap-2">
+                  <Building2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold">ผู้เสนอราคา</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      จากโปรไฟล์การออกบิลของคุณ
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2 rounded-xl bg-muted/30 p-3">
+                  <p className="text-sm font-semibold">{partyDisplayName(issuerParty) || "—"}</p>
+                  {issuerParty.type === "corporate" && issuerParty.companyName ? (
+                    <p className="text-[11px] text-muted-foreground">{issuerParty.companyName}</p>
+                  ) : null}
+                  <IssuerField label="ที่อยู่" value={issuerParty.address} />
+                  <IssuerField label="เลขผู้เสียภาษี" value={issuerParty.taxId} />
+                  <IssuerField label="อีเมล" value={issuerParty.email} />
+                  <IssuerField label="โทร" value={issuerParty.phone} />
+                  {!partyDisplayName(issuerParty) && !issuerParty.email ? (
+                    <p className="text-[11px] text-muted-foreground">
+                      ตั้งค่าโปรไฟล์การออกบิลใน Settings เพื่อแสดงข้อมูลผู้เสนอราคา
+                    </p>
+                  ) : null}
                 </div>
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label htmlFor="offer-client">ชื่อลูกค้า / บริษัท</Label>
-                  <Input
-                    id="offer-client"
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    placeholder="ชื่อลูกค้า / บริษัท"
-                    maxLength={80}
-                  />
+
+              <div className="rounded-2xl border border-border bg-card p-3.5 space-y-3">
+                <div className="flex items-start gap-2">
+                  <UserRound className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold">ลูกค้า</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      ข้อมูลที่จะแสดงบนใบเสนอราคา
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="offer-client-email">อีเมล</Label>
-                  <Input
-                    id="offer-client-email"
-                    type="email"
-                    value={clientEmail}
-                    onChange={(e) => setClientEmail(e.target.value)}
-                    placeholder="client@email.com"
-                    maxLength={120}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="offer-client-phone">เบอร์โทร</Label>
-                  <Input
-                    id="offer-client-phone"
-                    type="tel"
-                    value={clientPhone}
-                    onChange={(e) => setClientPhone(e.target.value)}
-                    placeholder="08x-xxx-xxxx"
-                    maxLength={40}
-                  />
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label htmlFor="offer-client-address">ที่อยู่</Label>
-                  <Textarea
-                    id="offer-client-address"
-                    value={clientAddress}
-                    onChange={(e) => setClientAddress(e.target.value)}
-                    placeholder="ที่อยู่สำหรับออกเอกสาร (ไม่บังคับ)"
-                    rows={2}
-                    maxLength={300}
-                    className="resize-none text-sm"
-                  />
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label htmlFor="offer-client-tax">เลขผู้เสียภาษี</Label>
-                  <Input
-                    id="offer-client-tax"
-                    value={clientTaxId}
-                    onChange={(e) => setClientTaxId(e.target.value.replace(/[^\d]/g, "").slice(0, 13))}
-                    placeholder="13 หลัก (ไม่บังคับ)"
-                    inputMode="numeric"
-                    maxLength={13}
-                  />
-                </div>
+
+                <ToggleGroup
+                  type="single"
+                  value={clientType}
+                  onValueChange={(v) => {
+                    if (v === "individual" || v === "corporate") setClientType(v);
+                  }}
+                  className="inline-flex rounded-full border border-border bg-background p-1 w-full"
+                >
+                  <ToggleGroupItem
+                    value="individual"
+                    className="rounded-full px-3 py-1.5 text-xs flex-1 data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                  >
+                    บุคคลธรรมดา
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="corporate"
+                    className="rounded-full px-3 py-1.5 text-xs flex-1 data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                  >
+                    นิติบุคคล
+                  </ToggleGroupItem>
+                </ToggleGroup>
+
+                {clientType === "individual" ? (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="offer-client">ชื่อลูกค้า</Label>
+                      <Input
+                        id="offer-client"
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                        placeholder="ชื่อ-นามสกุล"
+                        maxLength={80}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="offer-client-email">อีเมล</Label>
+                      <Input
+                        id="offer-client-email"
+                        type="email"
+                        value={clientEmail}
+                        onChange={(e) => setClientEmail(e.target.value)}
+                        placeholder="client@email.com"
+                        maxLength={120}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="offer-client-phone">เบอร์โทร</Label>
+                      <Input
+                        id="offer-client-phone"
+                        type="tel"
+                        value={clientPhone}
+                        onChange={(e) => setClientPhone(e.target.value)}
+                        placeholder="08x-xxx-xxxx"
+                        maxLength={40}
+                      />
+                    </div>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="offer-client-address">ที่อยู่</Label>
+                      <Textarea
+                        id="offer-client-address"
+                        value={clientAddress}
+                        onChange={(e) => setClientAddress(e.target.value)}
+                        placeholder="ที่อยู่สำหรับออกเอกสาร (ไม่บังคับ)"
+                        rows={2}
+                        maxLength={300}
+                        className="resize-none text-sm"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="offer-company">
+                        ชื่อบริษัท / นิติบุคคล <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="offer-company"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        placeholder="ชื่อบริษัท"
+                        maxLength={160}
+                      />
+                    </div>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="offer-corp-tax">เลขผู้เสียภาษี (13 หลัก)</Label>
+                      <Input
+                        id="offer-corp-tax"
+                        value={taxId}
+                        onChange={(e) =>
+                          setTaxId(e.target.value.replace(/[^\d]/g, "").slice(0, 13))
+                        }
+                        placeholder="13 หลัก"
+                        inputMode="numeric"
+                        maxLength={13}
+                      />
+                    </div>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="offer-corp-address">ที่อยู่</Label>
+                      <Textarea
+                        id="offer-corp-address"
+                        value={corpAddress}
+                        onChange={(e) => setCorpAddress(e.target.value)}
+                        placeholder="ที่อยู่สำหรับออกเอกสาร"
+                        rows={2}
+                        maxLength={300}
+                        className="resize-none text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="offer-contact-person">ผู้ติดต่อ</Label>
+                      <Input
+                        id="offer-contact-person"
+                        value={contactPerson}
+                        onChange={(e) => setContactPerson(e.target.value)}
+                        placeholder="ชื่อผู้ติดต่อ"
+                        maxLength={80}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="offer-contact-role">ตำแหน่ง</Label>
+                      <Input
+                        id="offer-contact-role"
+                        value={contactRole}
+                        onChange={(e) => setContactRole(e.target.value)}
+                        placeholder="เช่น ฝ่ายจัดซื้อ"
+                        maxLength={80}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="offer-corp-phone">เบอร์โทร</Label>
+                      <Input
+                        id="offer-corp-phone"
+                        type="tel"
+                        value={corpPhone}
+                        onChange={(e) => setCorpPhone(e.target.value)}
+                        placeholder="08x-xxx-xxxx"
+                        maxLength={40}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="offer-corp-email">อีเมล</Label>
+                      <Input
+                        id="offer-corp-email"
+                        type="email"
+                        value={corpEmail}
+                        onChange={(e) => setCorpEmail(e.target.value)}
+                        placeholder="client@email.com"
+                        maxLength={120}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -497,316 +788,385 @@ export function ChatOfferDialog({
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label>เงื่อนไขการชำระ</Label>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {DEPOSIT_PRESETS.map((p) => (
-                    <Button
-                      key={p}
-                      type="button"
-                      size="sm"
-                      variant={depositPercent === p ? "default" : "outline"}
-                      className="rounded-full h-8 shrink-0"
-                      onClick={() => applyDeposit(p)}
-                    >
-                      {p === 100 ? "จ่ายเต็ม" : `${p}%`}
-                    </Button>
-                  ))}
-                  <span className="text-[12px] text-muted-foreground whitespace-nowrap pl-0.5">
-                    หรือกำหนดเอง:
-                  </span>
-                  <Input
-                    className={cn(
-                      "h-8 w-14 shrink-0",
-                      depositPercent !== 50 && depositPercent !== 100
-                        ? "border-primary ring-1 ring-primary/30"
-                        : "",
-                    )}
-                    inputMode="numeric"
-                    value={customDeposit}
-                    onChange={(e) => {
-                      const v = e.target.value.replace(/[^\d]/g, "");
-                      setCustomDeposit(v);
-                      if (v) applyDeposit(Number(v));
-                    }}
-                    onFocus={() => {
-                      if (customDeposit) applyDeposit(Number(customDeposit) || 50);
-                    }}
-                  />
-                  <span className="text-[12px] text-muted-foreground">%</span>
-                </div>
+              <div className="space-y-2">
+                <Label>รูปแบบการชำระ</Label>
+                <ToggleGroup
+                  type="single"
+                  value={paymentMode}
+                  onValueChange={(v) => {
+                    if (v === "full" || v === "deposit") {
+                      setPaymentMode(v);
+                      if (v === "full") applyDeposit(100);
+                      else if (depositPercent >= 100) applyDeposit(50);
+                    }
+                  }}
+                  className="inline-flex rounded-full border border-border bg-background p-1 w-full sm:w-auto"
+                >
+                  <ToggleGroupItem
+                    value="full"
+                    className="rounded-full px-4 py-1.5 text-xs flex-1 sm:flex-none data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                  >
+                    เต็มจำนวน
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="deposit"
+                    className="rounded-full px-4 py-1.5 text-xs flex-1 sm:flex-none data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                  >
+                    มัดจำ %
+                  </ToggleGroupItem>
+                </ToggleGroup>
+
+                {paymentMode === "deposit" ? (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {DEPOSIT_PRESETS.filter((p) => p < 100).map((p) => (
+                      <Button
+                        key={p}
+                        type="button"
+                        size="sm"
+                        variant={depositPercent === p ? "default" : "outline"}
+                        className="rounded-full h-8 shrink-0"
+                        onClick={() => applyDeposit(p)}
+                      >
+                        {p}%
+                      </Button>
+                    ))}
+                    <span className="text-[12px] text-muted-foreground whitespace-nowrap pl-0.5">
+                      หรือกำหนดเอง:
+                    </span>
+                    <Input
+                      className={cn(
+                        "h-8 w-14 shrink-0",
+                        depositPercent !== 50 && depositPercent !== 100
+                          ? "border-primary ring-1 ring-primary/30"
+                          : "",
+                      )}
+                      inputMode="numeric"
+                      value={customDeposit}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/[^\d]/g, "");
+                        setCustomDeposit(v);
+                        if (v) applyDeposit(Number(v));
+                      }}
+                      onFocus={() => {
+                        if (customDeposit) applyDeposit(Number(customDeposit) || 50);
+                      }}
+                    />
+                    <span className="text-[12px] text-muted-foreground">%</span>
+                  </div>
+                ) : null}
               </div>
 
-              <button
-                type="button"
-                onClick={() => setWhtEnabled((v) => !v)}
+              <div
                 className={cn(
-                  "w-full flex items-start gap-2.5 rounded-xl border p-3 text-left transition-colors",
-                  whtEnabled ? "border-primary/40 bg-primary/5" : "border-border",
+                  "flex items-start gap-2.5 rounded-xl border p-3",
+                  whtApplicable ? "border-primary/40 bg-primary/5" : "border-border",
                 )}
               >
-                <span
-                  className={cn(
-                    "mt-0.5 h-4 w-4 rounded-full border-2 shrink-0",
-                    whtEnabled ? "border-primary bg-primary" : "border-muted-foreground/40",
-                  )}
+                <Checkbox
+                  id="offer-wht"
+                  checked={whtApplicable}
+                  onCheckedChange={(v) => setWhtEnabled(v === true)}
+                  disabled={clientType !== "corporate"}
+                  className="mt-0.5"
                 />
-                <span>
-                  <span className="text-sm font-medium block">หัก ณ ที่จ่าย 3%</span>
-                  <span className="text-[11px] text-muted-foreground">
-                    แสดงในพรีวิวใบเสนอราคา (ปิดได้ถ้าไม่ต้องการ)
-                  </span>
-                </span>
-              </button>
+                <div className="space-y-0.5">
+                  <Label
+                    htmlFor="offer-wht"
+                    className={cn(
+                      "text-sm font-medium cursor-pointer",
+                      clientType !== "corporate" && "text-muted-foreground cursor-not-allowed",
+                    )}
+                  >
+                    หักภาษี ณ ที่จ่าย 3%
+                  </Label>
+                  {clientType !== "corporate" ? (
+                    <p className="text-[11px] text-muted-foreground">
+                      ใช้ได้เมื่อลูกค้าเป็นนิติบุคคล
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground">
+                      แสดงในพรีวิวใบเสนอราคา (ปิดได้ถ้าไม่ต้องการ)
+                    </p>
+                  )}
+                </div>
+              </div>
             </section>
 
-            {/* Timeline */}
-            <section className="rounded-2xl border border-border bg-card p-3.5 space-y-3">
-              <div className="flex items-start gap-2">
-                <CalendarRange className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            {/* Timeline + Notes side by side on lg+ */}
+            <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+              <section className="rounded-2xl border border-border bg-card p-3.5 space-y-3">
+                <div className="flex items-start gap-2">
+                  <CalendarRange className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold">ไทม์ไลน์และงวดงาน</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      วันที่เหล่านี้จะปรากฏบนใบเสนอราคา
+                    </p>
+                  </div>
+                </div>
+
                 <div>
-                  <p className="text-sm font-semibold">ไทม์ไลน์และงวดงาน</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    วันที่เหล่านี้จะปรากฏบนใบเสนอราคา
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-[12px] font-medium mb-1.5">วันที่โครงการ</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="offer-start">วันที่เริ่ม</Label>
-                    <Input
-                      id="offer-start"
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => {
-                        const next = e.target.value;
-                        setStartDate(next);
-                        if (endDate && next && endDate < next) setEndDate("");
-                        syncMilestoneDates(next, endDate && next && endDate < next ? "" : endDate);
-                      }}
-                    />
+                  <p className="text-[12px] font-medium mb-1.5">วันที่โครงการ</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="offer-start">วันที่เริ่ม</Label>
+                      <Input
+                        id="offer-start"
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          setStartDate(next);
+                          if (endDate && next && endDate < next) setEndDate("");
+                          syncMilestoneDates(
+                            next,
+                            endDate && next && endDate < next ? "" : endDate,
+                          );
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="offer-end">วันที่จบงาน</Label>
+                      <Input
+                        id="offer-end"
+                        type="date"
+                        value={endDate}
+                        min={startDate || undefined}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          setEndDate(next);
+                          syncMilestoneDates(startDate, next);
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="offer-end">วันที่จบงาน</Label>
-                    <Input
-                      id="offer-end"
-                      type="date"
-                      value={endDate}
-                      min={startDate || undefined}
-                      onChange={(e) => {
-                        const next = e.target.value;
-                        setEndDate(next);
-                        syncMilestoneDates(startDate, next);
-                      }}
-                    />
-                  </div>
+                  {startDate && endDate && endDate < startDate ? (
+                    <p className="text-[11px] text-destructive mt-1.5" role="alert">
+                      วันจบงานต้องไม่อยู่ก่อนวันเริ่มงาน
+                    </p>
+                  ) : null}
+                  <ChatOfferTimeline offer={previewOffer} className="mt-2" />
                 </div>
-                {startDate && endDate && endDate < startDate ? (
-                  <p className="text-[11px] text-destructive mt-1.5" role="alert">
-                    วันจบงานต้องไม่อยู่ก่อนวันเริ่มงาน
-                  </p>
-                ) : null}
-                <ChatOfferTimeline offer={previewOffer} className="mt-2" />
-              </div>
 
-              <div className="space-y-2">
-                <p className="text-[12px] font-medium">งวดการชำระเงิน / ลำดับงาน</p>
-                <div className="space-y-2.5">
-                  {milestones.map((m, i) => (
-                    <div key={m.id} className="flex gap-2 items-start">
-                      <div className="pt-2.5">
-                        <span
-                          className={cn(
-                            "block h-3 w-3 rounded-full border-2 border-primary",
-                            i === 0 || i === milestones.length - 1 ? "bg-primary" : "bg-transparent",
-                          )}
-                        />
-                      </div>
-                      <div className="flex-1 space-y-1.5">
-                        <div className="flex items-center gap-2">
+                <div className="space-y-2">
+                  <p className="text-[12px] font-medium">งวดการชำระเงิน / ลำดับงาน</p>
+                  <div className="space-y-2.5">
+                    {milestones.map((m, i) => (
+                      <div key={m.id} className="flex gap-2 items-start">
+                        <div className="pt-2.5">
+                          <span
+                            className={cn(
+                              "block h-3 w-3 rounded-full border-2 border-primary",
+                              i === 0 || i === milestones.length - 1
+                                ? "bg-primary"
+                                : "bg-transparent",
+                            )}
+                          />
+                        </div>
+                        <div className="flex-1 space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={m.label}
+                              onChange={(e) =>
+                                setMilestones((prev) =>
+                                  prev.map((x) =>
+                                    x.id === m.id ? { ...x, label: e.target.value } : x,
+                                  ),
+                                )
+                              }
+                              className="h-8 text-xs font-medium"
+                              placeholder="ชื่องวด"
+                              maxLength={80}
+                            />
+                            {milestones.length > 1 ? (
+                              <button
+                                type="button"
+                                className="text-destructive p-1"
+                                aria-label="ลบงวด"
+                                onClick={() =>
+                                  setMilestones((prev) => prev.filter((x) => x.id !== m.id))
+                                }
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            ) : null}
+                          </div>
                           <Input
-                            value={m.label}
+                            type="date"
+                            value={m.date || ""}
+                            min={startDate || undefined}
                             onChange={(e) =>
                               setMilestones((prev) =>
                                 prev.map((x) =>
-                                  x.id === m.id ? { ...x, label: e.target.value } : x,
+                                  x.id === m.id ? { ...x, date: e.target.value || null } : x,
                                 ),
                               )
                             }
-                            className="h-8 text-xs font-medium"
-                            placeholder="ชื่องวด"
-                            maxLength={80}
+                            className="h-8 text-xs border-0 bg-transparent shadow-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                           />
-                          {milestones.length > 1 ? (
-                            <button
-                              type="button"
-                              className="text-destructive p-1"
-                              aria-label="ลบงวด"
-                              onClick={() =>
-                                setMilestones((prev) => prev.filter((x) => x.id !== m.id))
-                              }
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          ) : null}
                         </div>
-                        <Input
-                          type="date"
-                          value={m.date || ""}
-                          min={startDate || undefined}
-                          onChange={(e) =>
-                            setMilestones((prev) =>
-                              prev.map((x) =>
-                                x.id === m.id ? { ...x, date: e.target.value || null } : x,
-                              ),
-                            )
-                          }
-                          className="h-8 text-xs border-0 bg-transparent shadow-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                        />
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                  {milestones.length < 6 ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="w-full h-8 text-xs"
+                      onClick={() =>
+                        setMilestones((prev) => [
+                          ...prev,
+                          { id: newMilestoneId(), label: "งวดใหม่", date: null },
+                        ])
+                      }
+                    >
+                      <Plus className="h-3 w-3 mr-1" /> เพิ่มงวด
+                    </Button>
+                  ) : null}
                 </div>
-                {milestones.length < 6 ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="w-full h-8 text-xs"
-                    onClick={() =>
-                      setMilestones((prev) => [
-                        ...prev,
-                        { id: newMilestoneId(), label: "งวดใหม่", date: null },
-                      ])
-                    }
-                  >
-                    <Plus className="h-3 w-3 mr-1" /> เพิ่มงวด
-                  </Button>
-                ) : null}
-              </div>
-            </section>
+              </section>
 
-            {/* Notes */}
-            <section className="rounded-2xl border border-border bg-card p-3.5 space-y-3">
-              <div className="flex items-start gap-2">
-                <StickyNote className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold">หมายเหตุ</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    แยกหมายเหตุที่ลูกค้าเห็น กับโน้ตภายในของคุณ
+              <section className="rounded-2xl border border-border bg-card p-3.5 space-y-3">
+                <div className="flex items-start gap-2">
+                  <StickyNote className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold">หมายเหตุ</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      แยกหมายเหตุที่ลูกค้าเห็น กับโน้ตภายในของคุณ
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="offer-client-notes" className="inline-flex items-center gap-1.5">
+                    <Eye className="h-3.5 w-3.5 text-primary" aria-hidden />
+                    หมายเหตุฝั่งลูกค้า
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground -mt-0.5">
+                    แสดงบนใบเสนอราคาให้ลูกค้าอ่านได้
                   </p>
+                  <Textarea
+                    id="offer-client-notes"
+                    value={clientNotes}
+                    onChange={(e) => setClientNotes(e.target.value)}
+                    placeholder="เช่น รวมไฟล์ต้นฉบับ · ชำระมัดจำก่อนเริ่มงาน · แก้ไข 2 รอบ"
+                    rows={3}
+                    maxLength={800}
+                    className="resize-none text-sm"
+                  />
                 </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="offer-client-notes" className="inline-flex items-center gap-1.5">
-                  <Eye className="h-3.5 w-3.5 text-primary" aria-hidden />
-                  หมายเหตุฝั่งลูกค้า
-                </Label>
-                <p className="text-[11px] text-muted-foreground -mt-0.5">
-                  แสดงบนใบเสนอราคาให้ลูกค้าอ่านได้
-                </p>
-                <Textarea
-                  id="offer-client-notes"
-                  value={clientNotes}
-                  onChange={(e) => setClientNotes(e.target.value)}
-                  placeholder="เช่น รวมไฟล์ต้นฉบับ · ชำระมัดจำก่อนเริ่มงาน · แก้ไข 2 รอบ"
-                  rows={3}
-                  maxLength={800}
-                  className="resize-none text-sm"
-                />
-              </div>
-              <div className="space-y-1.5 rounded-xl border border-dashed border-border/80 bg-muted/20 p-3">
-                <Label htmlFor="offer-internal-notes" className="inline-flex items-center gap-1.5">
-                  <EyeOff className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-                  หมายเหตุฝั่งเรา (ภายใน)
-                </Label>
-                <p className="text-[11px] text-muted-foreground -mt-0.5">
-                  เห็นเฉพาะคุณตอนเปิดดูข้อเสนอที่ส่งแล้ว — ไม่โชว์บนใบเสนอราคา
-                </p>
-                <Textarea
-                  id="offer-internal-notes"
-                  value={internalNotes}
-                  onChange={(e) => setInternalNotes(e.target.value)}
-                  placeholder="เช่น ต้นทุนจริง · คุยส่วนลดไว้ · ติดตามมัดจำวันไหน"
-                  rows={3}
-                  maxLength={800}
-                  className="resize-none text-sm bg-background"
-                />
-              </div>
-            </section>
-        </div>
-
-        <DialogFooter className="gap-2 sm:justify-between">
-          <Button type="button" variant="outline" onClick={() => openPreview("view")}>
-            <Eye className="w-4 h-4 mr-1.5" />
-            ดูพรีวิว
-          </Button>
-          <div className="flex gap-2 w-full sm:w-auto justify-end">
-            <Button type="button" variant="ghost" onClick={() => handleOpen(false)}>
-              ยกเลิก
-            </Button>
-            <Button type="button" onClick={() => openPreview("confirm")} disabled={send.isPending}>
-              ส่งข้อเสนอ
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-      <DialogContent className="sm:max-w-6xl max-h-[92vh] overflow-y-auto rounded-2xl">
-        <DialogHeader>
-          <DialogTitle>
-            {previewMode === "confirm" ? "เช็คพรีวิวก่อนส่ง" : "พรีวิวใบเสนอราคา"}
-          </DialogTitle>
-          <DialogDescription>
-            {previewMode === "confirm"
-              ? "ตรวจรายละเอียดให้ครบ แล้วกดยืนยันเพื่อส่งให้ลูกค้าในแชท"
-              : "เอกสารที่จะส่งให้ลูกค้าในแชท"}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mx-auto w-full max-w-2xl space-y-3">
-          <ChatOfferPreview
-            offer={previewOffer}
-            issuerName={issuerName}
-            issuerEmail={issuerEmail}
-          />
-          {internalNotes.trim() ? (
-            <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3 space-y-1">
-              <p className="text-[11px] font-semibold text-muted-foreground inline-flex items-center gap-1.5">
-                <EyeOff className="h-3.5 w-3.5" aria-hidden />
-                หมายเหตุภายใน (ไม่โชว์ลูกค้า)
-              </p>
-              <p className="text-sm whitespace-pre-wrap">{internalNotes.trim()}</p>
+                <div className="space-y-1.5 rounded-xl border border-dashed border-border/80 bg-muted/20 p-3">
+                  <Label htmlFor="offer-internal-notes" className="inline-flex items-center gap-1.5">
+                    <EyeOff className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                    หมายเหตุฝั่งเรา (ภายใน)
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground -mt-0.5">
+                    เห็นเฉพาะคุณตอนเปิดดูข้อเสนอที่ส่งแล้ว — ไม่โชว์บนใบเสนอราคา
+                  </p>
+                  <Textarea
+                    id="offer-internal-notes"
+                    value={internalNotes}
+                    onChange={(e) => setInternalNotes(e.target.value)}
+                    placeholder="เช่น ต้นทุนจริง · คุยส่วนลดไว้ · ติดตามมัดจำวันไหน"
+                    rows={3}
+                    maxLength={800}
+                    className="resize-none text-sm bg-background"
+                  />
+                </div>
+              </section>
             </div>
-          ) : null}
-        </div>
-        <DialogFooter className="gap-2 sm:justify-between">
-          {previewMode === "confirm" ? (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setPreviewOpen(false)}
-                disabled={send.isPending}
+          </div>
+
+          <DialogFooter className="flex-col gap-3 sm:flex-col sm:items-stretch">
+            <p className="text-[10px] text-muted-foreground text-center w-full order-first sm:order-none">
+              การส่งถือว่ายอมรับ{" "}
+              <Link
+                to="/legal/payment-refund"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-foreground"
               >
-                กลับไปแก้
+                นโยบายชำระเงิน/คืนเงิน
+              </Link>{" "}
+              และ{" "}
+              <Link
+                to="/legal/service-agreement"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                ข้อตกลงบริการ
+              </Link>
+            </p>
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-between w-full">
+              <Button type="button" variant="outline" onClick={() => openPreview("view")}>
+                <Eye className="w-4 h-4 mr-1.5" />
+                ดูพรีวิว
               </Button>
-              <Button type="button" onClick={() => void confirmSend()} disabled={send.isPending}>
-                {send.isPending ? "กำลังส่ง..." : "ยืนยันส่งข้อเสนอ"}
+              <div className="flex gap-2 w-full sm:w-auto justify-end">
+                <Button type="button" variant="ghost" onClick={() => handleOpen(false)}>
+                  ยกเลิก
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => openPreview("confirm")}
+                  disabled={send.isPending}
+                >
+                  ส่งใบเสนอราคา
+                </Button>
+              </div>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="sm:max-w-6xl max-h-[92vh] overflow-y-auto rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {previewMode === "confirm" ? "เช็คพรีวิวก่อนส่ง" : "พรีวิวใบเสนอราคา"}
+            </DialogTitle>
+            <DialogDescription>
+              {previewMode === "confirm"
+                ? "ตรวจรายละเอียดให้ครบ แล้วกดยืนยันเพื่อส่งให้ลูกค้าในแชท"
+                : "เอกสารที่จะส่งให้ลูกค้าในแชท"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mx-auto w-full max-w-2xl space-y-3">
+            <ChatOfferPreview offer={previewOffer} />
+            {internalNotes.trim() ? (
+              <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3 space-y-1">
+                <p className="text-[11px] font-semibold text-muted-foreground inline-flex items-center gap-1.5">
+                  <EyeOff className="h-3.5 w-3.5" aria-hidden />
+                  หมายเหตุภายใน (ไม่โชว์ลูกค้า)
+                </p>
+                <p className="text-sm whitespace-pre-wrap">{internalNotes.trim()}</p>
+              </div>
+            ) : null}
+          </div>
+          <DialogFooter className="gap-2 sm:justify-between">
+            {previewMode === "confirm" ? (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setPreviewOpen(false)}
+                  disabled={send.isPending}
+                >
+                  กลับไปแก้
+                </Button>
+                <Button type="button" onClick={() => void confirmSend()} disabled={send.isPending}>
+                  {send.isPending ? "กำลังส่ง..." : "ยืนยันส่ง"}
+                </Button>
+              </>
+            ) : (
+              <Button type="button" variant="secondary" onClick={() => setPreviewOpen(false)}>
+                ปิด
               </Button>
-            </>
-          ) : (
-            <Button type="button" variant="secondary" onClick={() => setPreviewOpen(false)}>
-              ปิด
-            </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

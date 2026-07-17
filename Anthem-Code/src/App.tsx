@@ -38,6 +38,7 @@ import PageTransition from "./components/motion/PageTransition.tsx";
 const AuthPage = lazy(() => import("./pages/AuthPage.tsx"));
 const PortfolioProfilePage = lazy(() => import("./pages/PortfolioProfilePage.tsx"));
 const PortfolioManagePage = lazy(() => import("./pages/PortfolioManagePage.tsx"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage.tsx"));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage.tsx"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage.tsx"));
 const ProjectEditorPage = lazy(() => import("./pages/ProjectEditorPage.tsx"));
@@ -119,6 +120,8 @@ const DataRightsPage = lazy(() => import("./pages/legal/DataRightsPage.tsx"));
 const IntellectualPropertyPage = lazy(() => import("./pages/legal/IntellectualPropertyPage.tsx"));
 const CommunityGuidelinesPage = lazy(() => import("./pages/legal/CommunityGuidelinesPage.tsx"));
 const CopyrightReportPage = lazy(() => import("./pages/legal/CopyrightReportPage.tsx"));
+const PaymentRefundPage = lazy(() => import("./pages/legal/PaymentRefundPage.tsx"));
+const ServiceAgreementPage = lazy(() => import("./pages/legal/ServiceAgreementPage.tsx"));
 const CommunityPostDetailPage = lazy(() => import("./pages/CommunityPostDetailPage.tsx"));
 const CommunityPostEditorPage = lazy(() => import("./pages/CommunityPostEditorPage.tsx"));
 const CommunityFeedPage = lazy(() => import("./pages/CommunityFeedPage.tsx"));
@@ -190,9 +193,10 @@ const App = () => (
               <Route path="/portfolio" element={<RequireAuth><PortfolioProfilePage /></RequireAuth>} />
               <Route path="/portfolio/saved" element={<RequireAuth><SavedPostsPage /></RequireAuth>} />
               <Route path="/portfolio/manage" element={<RequireAuth><PortfolioManagePage /></RequireAuth>} />
+              <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
               <Route path="/portfolio/followers" element={<RequireAuth><FollowConnectionsPage /></RequireAuth>} />
-              <Route path="/hire-requests" element={<RequireAuth><RedirectTo to="/portfolio?focus=hiring" /></RequireAuth>} />
-              <Route path="/collab-requests" element={<RequireAuth><RedirectTo to="/portfolio?focus=collab" /></RequireAuth>} />
+              <Route path="/hire-requests" element={<RequireAuth><RedirectTo to="/dashboard?mode=hire" /></RequireAuth>} />
+              <Route path="/collab-requests" element={<RequireAuth><RedirectTo to="/dashboard?mode=collab" /></RequireAuth>} />
               <Route path="/portfolio/new" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
               <Route path="/portfolio/:id/edit" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
               <Route path="/project/:id" element={<ProjectDetailPage />} />
@@ -308,6 +312,8 @@ const App = () => (
               <Route path="/legal/ip" element={<IntellectualPropertyPage />} />
               <Route path="/legal/community" element={<CommunityGuidelinesPage />} />
               <Route path="/legal/copyright-report" element={<CopyrightReportPage />} />
+              <Route path="/legal/payment-refund" element={<PaymentRefundPage />} />
+              <Route path="/legal/service-agreement" element={<ServiceAgreementPage />} />
               <Route path="/error" element={<ErrorPage />} />
               <Route path="/error/404" element={<ErrorPage defaultKind="404" />} />
               <Route path="/error/405" element={<ErrorPage defaultKind="405" />} />

@@ -5,6 +5,8 @@ const LINKS = [
   { to: "/legal/privacy", label: "ความเป็นส่วนตัว (PDPA)" },
   { to: "/legal/cookies", label: "คุกกี้" },
   { to: "/legal/terms", label: "ข้อกำหนด" },
+  { to: "/legal/payment-refund", label: "ชำระเงิน/คืนเงิน" },
+  { to: "/legal/service-agreement", label: "ข้อตกลงจ้างงาน" },
   { to: "/legal/ip", label: "ลิขสิทธิ์" },
   { to: "/legal/community", label: "กฎชุมชน" },
   { to: "/legal/copyright-report", label: "แจ้งลิขสิทธิ์" },

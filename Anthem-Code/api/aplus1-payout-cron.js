@@ -24,6 +24,15 @@ module.exports = async function handler(req, res) {
   const url = new URL(req.url || "/", "http://localhost");
   const kind = url.searchParams.get("kind") || "weekly";
 
+  if (kind === "expire-quotes") {
+    return json(res, 200, {
+      ok: true,
+      kind,
+      message: "use /api/aplus1-quote-expiry-cron?kind=expire-quotes",
+      redirect: "/api/aplus1-quote-expiry-cron?kind=expire-quotes",
+    });
+  }
+
   if (readEnv("OMISE_MODE") === "live" && readEnv("OMISE_MARKETPLACE_APPROVED") !== "true") {
     return json(res, 503, { error: "live_blocked", kind });
   }

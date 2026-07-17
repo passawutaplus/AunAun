@@ -27,6 +27,7 @@ import { isAplus1ChatOffersEnabled } from "@/lib/aplus1Launch";
 import { hireForwardClientNotice, hireRejectReasonLabel } from "@/lib/hireBrief";
 import { encodeHireForwardMessage } from "@/lib/hireForwardChat";
 import { encodeHireRejectChoiceMessage } from "@/lib/hireRejectChat";
+import { cn } from "@/lib/utils";
 
 type Props = {
   conversation: Conversation;
@@ -239,30 +240,27 @@ export function ChatQuoteActions({ conversation }: Props) {
           <Button
             type="button"
             size="sm"
-            className="w-full rounded-xl"
-            disabled={!hireAccepted}
-            title={
-              hireAccepted
-                ? "เสนอราคาในแชท"
-                : hireStatus === "ปฏิเสธ"
-                  ? "ปฏิเสธงานแล้ว — เสนอราคาไม่ได้"
-                  : "ตอบรับงานก่อน จึงจะเสนอราคาได้"
-            }
-            onClick={() => {
-              if (!hireAccepted) return;
-              setOfferOpen(true);
-            }}
+            variant="outline"
+            className={cn(
+              "w-full rounded-xl border-orange-400/60 bg-transparent text-orange-600",
+              "transition-all duration-200",
+              "hover:bg-orange-500 hover:text-white hover:border-orange-500",
+              "hover:shadow-[0_0_18px_2px_rgba(249,115,22,0.55)]",
+            )}
+            title="ทำใบเสนอราคา — เปิดได้ตลอด (ยอมรับงานอัตโนมัติเมื่อผู้จ้างชำระเงิน)"
+            onClick={() => setOfferOpen(true)}
           >
             <Banknote className="w-3.5 h-3.5 mr-1.5" />
-            เสนอราคา
+            ทำใบเสนอราคา
           </Button>
         )}
       </div>
 
       <ChatOfferDialog
-        open={chatOffersOn && hireAccepted && offerOpen}
+        open={chatOffersOn && offerOpen}
         onOpenChange={setOfferOpen}
         conversationId={conversation.id}
+        hiringRequestId={conversation.request_id ?? null}
         defaultTitle={hireRow?.project_title ?? conversation.project_title ?? ""}
         defaultClientName={hireRow?.client_name ?? ""}
         defaultClientEmail={hireRow?.email ?? ""}

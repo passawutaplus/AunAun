@@ -15,6 +15,8 @@ Related: [aml-compliance.md](./aml-compliance.md) (PX closed-loop) · hire cance
 | PX | In-app unit (gifts/rewards). **Not** FX. |
 | Display currency | THB + USD (and admin rates) for offers / portfolio prices / checkout display |
 | Settlement | THB satang in internal ledger + Omise charges |
+| Role | Aplus1 is a **payment intermediary / collection agent** — hire money is held for the seller; Aplus1 revenue is **platform fee only** |
+| Docs | Quotation → Invoice → Receipt (seller↔buyer) + platform fee receipt (Aplus1→seller); optional WHT 50 ทวิ |
 | Live | Blocked until `OMISE_MARKETPLACE_APPROVED=true` |
 
 ```mermaid
@@ -38,6 +40,9 @@ flowchart LR
 | `OMISE_MERCHANT_NAME` | Statement / merchant display |
 | `PAYMENT_PROVIDER` | `omise` for Aplus1 |
 | `VITE_APLUS1_PAYMENTS_ENABLED` | Product gate for payment UI |
+| `VITE_LEGAL_VAT_REGISTERED` | `true` when Aplus1 issues VAT tax invoices on fee receipts |
+| `VITE_LEGAL_COMPANY_TAX_ID` | Company tax ID on fee receipts / ETDA disclosure |
+| `VITE_HIRE_POLICY_VERSION` / `VITE_PAYMENT_POLICY_VERSION` | Consent versions stored on quote accept |
 | `VITE_APLUS1_DISPLAY_CURRENCY_ENABLED` | FX display switcher |
 
 Feature flags (config / admin):  
@@ -63,11 +68,14 @@ Entry types include: `payment_received`, `payment_processing_fee`, `platform_fee
 
 ## Hire money lifecycle
 
-1. Offer accepted → create `hire_order` + Omise charge (PromptPay/Card)
-2. Webhook paid → ledger pending (seller)
-3. Work submitted → client approve or auto-approve
-4. Pending → available
-5. Seller withdraws per Aplus1 Payout policy (aggregated transfer)
+1. Seller sends quote (`hire_quotes`, 48h expiry) → buyer accepts policies → checkout
+2. Omise charge (full or deposit %) → webhook paid → `hiring_requests=ตอบรับ`, ledger pending
+3. Seller submits work (`hire_deliveries`) → `awaiting_approval` (+7d dispute window if client silent)
+4. Client approve only (no auto-approve) → pending → available + platform fee receipt
+5. Optional WHT 50 ทวิ flow (does not block payout)
+6. Seller withdraws per Aplus1 Payout policy
+
+SQL: `scripts/ecosystem/aplus1-hire-flow-docs.sql` (+ `aplus1-omise-payments.sql`). Dashboard: `/dashboard`.
 
 Hire cancel (`hire_cancel_requests` money terms) must eventually drive real refund/compensation ledger + Omise refund — not agreement text only.
 

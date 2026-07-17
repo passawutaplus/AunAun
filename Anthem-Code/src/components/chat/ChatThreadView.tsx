@@ -1352,6 +1352,7 @@ const ChatThreadView = ({
                 hireRejectChoiceActions={hireRejectChoiceActions}
                 hireContinueAskActions={hireContinueAskActions}
                 hiringRequestId={isHire ? conv.request_id : null}
+                hireProjectTitle={conv.project_title ?? null}
                 onHireCancelEdit={(row) => {
                   setHireCancelEditRow(row);
                   setHireCancelDialogOpen(true);

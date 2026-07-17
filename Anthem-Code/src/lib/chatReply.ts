@@ -29,6 +29,7 @@ export function replyPreviewText(msg: ReplyPreviewSource): string {
   if (msg.content?.includes("__APLUS1_HIRE_FORWARD__")) return "ส่งต่องาน";
   if (msg.content?.includes("__APLUS1_HIRE_REJECT_CHOICE__")) return "ปฏิเสธคำขอจ้าง";
   if (msg.content?.includes("__APLUS1_HIRE_CONTINUE_ASK__")) return "ขอคุยรายละเอียดเพิ่มเติม";
+  if (msg.content?.includes("__APLUS1_HIRE_DELIVERY__")) return "ส่งมอบผลงาน";
   const text = msg.content?.trim() ?? "";
   if (
     text === HIRE_FREELANCER_DECLINE_CONTINUE_TEXT ||

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { User, Save, LogOut, Shield, CheckCircle2, Loader2, Briefcase, MapPin, AlertTriangle } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ import { SettingsPreferencesSection } from "@/components/settings/SettingsPrefer
 import { ChangePasswordSection } from "@/components/settings/ChangePasswordSection";
 import { EmailNotificationSection } from "@/components/settings/EmailNotificationSection";
 import { ChatSettingsSection } from "@/components/settings/ChatSettingsSection";
+import { BillingProfileSection } from "@/components/settings/BillingProfileSection";
 import { cn } from "@/lib/utils";
 import { useUsernameAvailability, normalizeUsername } from "@/hooks/useUsernameAvailability";
 import { USERNAME_COOLDOWN_DAYS, USERNAME_COOLDOWN_MS } from "@/lib/usernamePolicy";
@@ -93,6 +95,7 @@ const empty: SettingsFormInput = {
 
 const SettingsPage = () => {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const { data: profile, isLoading, isError } = useProfile(user?.id);
   const updateMut = useUpdateProfile(user?.id);
@@ -466,6 +469,16 @@ const SettingsPage = () => {
             />
           </div>
         </section>
+
+        {user?.id ? (
+          <BillingProfileSection
+            userId={user.id}
+            profile={profile as Record<string, unknown> | null | undefined}
+            onSaved={() => {
+              void qc.invalidateQueries({ queryKey: ["profile", user.id] });
+            }}
+          />
+        ) : null}
 
         <EmailNotificationSection
           value={{

@@ -30,6 +30,7 @@ import { EarningsCashoutHistory } from "@/components/earnings/EarningsCashoutHis
 import { EarningsClosedLoopNote } from "@/components/earnings/EarningsClosedLoopNote";
 import EarningsBalanceCards from "@/components/payments/EarningsBalanceCards";
 import DisplayCurrencyToggle from "@/components/payments/DisplayCurrencyToggle";
+import TaxEstimateCard from "@/components/payments/TaxEstimateCard";
 import { computeGiftablePx } from "@/lib/walletDisplay";
 
 const EarningsPage = () => {
@@ -143,6 +144,7 @@ const EarningsPage = () => {
           <p className="text-[11px] text-muted-foreground">
             ยอดจ้างงานผ่าน Aplus1/Omise จะแสดงที่นี่หลังเปิดรับชำระ — แยกจากกระเป๋า PX
           </p>
+          <TaxEstimateCard userId={user?.id} />
         </div>
 
         <EarningsQuickActions

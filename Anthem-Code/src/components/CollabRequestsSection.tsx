@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
@@ -85,7 +85,19 @@ const statusTone = (label: string) => {
   }
 };
 
-const CollabRequestsSection = () => {
+type CollabRequestsSectionProps = {
+  embed?: boolean;
+  renderCardExtras?: (req: {
+    id: string;
+    status: string | null;
+    linked_project_id?: string | null;
+  }) => ReactNode;
+};
+
+const CollabRequestsSection = ({
+  embed = false,
+  renderCardExtras,
+}: CollabRequestsSectionProps = {}) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: requests = [] } = useReceivedCollabRequests();
@@ -252,24 +264,26 @@ const CollabRequestsSection = () => {
 
   return (
     <div className="space-y-3 scroll-mt-24 rounded-3xl glass-panel p-5 md:p-6" id="collab-section">
-      <div className="flex items-center gap-3">
-        <div className="text-primary">
-          <Handshake className="w-5 h-5" strokeWidth={2.25} />
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="font-medium text-foreground">คำขอร่วมงาน (Collab)</h2>
-            {pendingCount > 0 && (
-              <Badge className="bg-primary text-primary-foreground border-0 hover:bg-primary text-[10px] px-1.5">
-                {pendingCount} ติดต่อใหม่
-              </Badge>
-            )}
+      {!embed ? (
+        <div className="flex items-center gap-3">
+          <div className="text-primary">
+            <Handshake className="w-5 h-5" strokeWidth={2.25} />
           </div>
-          <p className="text-xs text-muted-foreground">
-            ครีเอเตอร์ที่อยากร่วมงานกับคุณ — เปลี่ยนสถานะเพื่อติดตาม
-          </p>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="font-medium text-foreground">คำขอร่วมงาน (Collab)</h2>
+              {pendingCount > 0 && (
+                <Badge className="bg-primary text-primary-foreground border-0 hover:bg-primary text-[10px] px-1.5">
+                  {pendingCount} ติดต่อใหม่
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              ครีเอเตอร์ที่อยากร่วมงานกับคุณ — เปลี่ยนสถานะเพื่อติดตาม
+            </p>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
         {COLLAB_TAB_ORDER.map((s) => (
@@ -448,6 +462,8 @@ const CollabRequestsSection = () => {
                       </div>
                     </div>
                   )}
+
+                  {renderCardExtras?.(req)}
 
                   <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/50 gap-2 flex-wrap">
                     <span className="text-xs text-muted-foreground">

@@ -12,6 +12,7 @@ import {
   Shield,
   BookOpen,
   ArrowLeft,
+  Briefcase,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,7 +64,10 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
       {variant !== "forum" ? (
         <>
           <DropdownMenuItem onClick={() => go("/portfolio/manage")} className="rounded-lg">
-            <FolderKanban className="w-4 h-4 mr-2" /> แดชบอร์ด &amp; จัดการ
+            <FolderKanban className="w-4 h-4 mr-2" /> แดชบอร์ด &amp; จัดการผลงาน
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => go("/dashboard")} className="rounded-lg">
+            <Briefcase className="w-4 h-4 mr-2" /> คำขอจ้าง &amp; ร่วมงาน
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => go("/series")} className="rounded-lg">
             <Library className="w-4 h-4 mr-2" /> ชุดผลงานของฉัน

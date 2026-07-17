@@ -7,6 +7,7 @@ export type DisplayCurrency = "THB" | "USD";
 export type HireOrderStatus =
   | "draft"
   | "awaiting_payment"
+  | "deposit_paid"
   | "paid_pending"
   | "in_progress"
   | "awaiting_approval"
@@ -16,6 +17,22 @@ export type HireOrderStatus =
   | "disputed"
   | "cancelled"
   | "failed";
+
+export type HireQuoteStatus =
+  | "sent"
+  | "declined_by_client"
+  | "expired"
+  | "accepted"
+  | "superseded";
+
+export type HireWhtStatus = "none" | "awaiting_cert" | "complete";
+
+export type HireDocumentKind =
+  | "quotation"
+  | "invoice"
+  | "receipt"
+  | "platform_fee_receipt"
+  | "wht_cert";
 
 export type PaymentMethod = "promptpay" | "card" | "bank_transfer";
 
@@ -58,6 +75,8 @@ export type FeeSnapshot = {
   cardSurchargePercent: number;
   cardSurchargeSatang: number;
   feeVersion: string;
+  whtSatang?: number;
+  whtRate?: number;
 };
 
 export type FxSnapshot = {
@@ -72,6 +91,8 @@ export type MoneyBreakdown = {
   buyerPaysSatang: number;
   sellerNetSatang: number;
   fee: FeeSnapshot;
+  whtSatang?: number;
+  chargeBaseSatang?: number;
 };
 
 export type CreateChargeInput = {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -110,7 +110,16 @@ function friendStatusLabel(status: string | null | undefined): { label: string; 
   }
 }
 
-export function ProfileHiringRequestsSection() {
+type ProfileHiringRequestsSectionProps = {
+  /** Hide section title when embedded in /dashboard */
+  embed?: boolean;
+  renderCardExtras?: (req: HiringRow) => ReactNode;
+};
+
+export function ProfileHiringRequestsSection({
+  embed = false,
+  renderCardExtras,
+}: ProfileHiringRequestsSectionProps = {}) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: requests = [] } = useHiringRequests(user?.id);
@@ -301,24 +310,26 @@ export function ProfileHiringRequestsSection() {
 
   return (
     <div className="space-y-3 scroll-mt-24 rounded-3xl glass-panel p-5 md:p-6" id="hiring-section">
-      <div className="flex items-center gap-3">
-        <div className="text-[hsl(var(--chat-hire))]">
-          <Briefcase className="w-5 h-5" strokeWidth={2.25} />
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="font-medium text-foreground">คำขอจ้างงาน</h2>
-            {pendingCount > 0 && (
-              <Badge className="bg-[hsl(var(--chat-hire))] text-white border-0 text-[10px] px-1.5">
-                {pendingCount} รอตอบ
-              </Badge>
-            )}
+      {!embed ? (
+        <div className="flex items-center gap-3">
+          <div className="text-[hsl(var(--chat-hire))]">
+            <Briefcase className="w-5 h-5" strokeWidth={2.25} />
           </div>
-          <p className="text-xs text-muted-foreground">
-            ลูกค้าที่ส่งคำขอจ้างงานมายังคุณ — เปลี่ยนสถานะเพื่อติดตาม
-          </p>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="font-medium text-foreground">คำขอจ้างงาน</h2>
+              {pendingCount > 0 && (
+                <Badge className="bg-[hsl(var(--chat-hire))] text-white border-0 text-[10px] px-1.5">
+                  {pendingCount} รอตอบ
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              ลูกค้าที่ส่งคำขอจ้างงานมายังคุณ — เปลี่ยนสถานะเพื่อติดตาม
+            </p>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
         {HIRE_TAB_ORDER.map((s) => (
@@ -482,6 +493,7 @@ export function ProfileHiringRequestsSection() {
                       </a>
                     )}
                   </div>
+                  {renderCardExtras?.(req)}
                   <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-border/50 flex-wrap">
                     {!isHireTerminalStatus(req.status) && !forwarded && (
                       <>

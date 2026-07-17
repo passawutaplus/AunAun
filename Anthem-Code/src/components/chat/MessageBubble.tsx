@@ -54,6 +54,8 @@ import {
 } from "@/lib/hireRejectChat";
 import { parseHireCancelCardMessage } from "@/lib/hireCancelRequest";
 import HireCancelCard from "@/components/chat/HireCancelCard";
+import { parseHireDeliveryMessage } from "@/lib/hireDeliveryChat";
+import HireDeliveryCard from "@/components/hire/HireDeliveryCard";
 import { isHireBriefChatMessage } from "@/lib/hireBrief";
 import { isCollabBriefChatMessage } from "@/lib/collabBrief";
 import { UNSEND_WINDOW_MS, type Message } from "@/hooks/useChat";
@@ -119,6 +121,7 @@ interface Props {
   hireContinueAskActions?: HireContinueAskActions | null;
   /** Hire cancel-request card actions. */
   hiringRequestId?: string | null;
+  hireProjectTitle?: string | null;
   onHireCancelEdit?: (row: HireCancelRequestRow) => void;
   onHireCancelWithdraw?: (row: HireCancelRequestRow) => void;
   hireCancelWithdrawBusy?: boolean;
@@ -141,6 +144,7 @@ const MessageBubble = ({
   hireRejectChoiceActions = null,
   hireContinueAskActions = null,
   hiringRequestId = null,
+  hireProjectTitle = null,
   onHireCancelEdit,
   onHireCancelWithdraw,
   hireCancelWithdrawBusy,
@@ -263,6 +267,7 @@ const MessageBubble = ({
   const hireRejectChoice = !deleted ? parseHireRejectChoiceMessage(message.content) : null;
   const hireContinueAsk = !deleted ? parseHireContinueAskMessage(message.content) : null;
   const hireCancel = !deleted ? parseHireCancelCardMessage(message.content) : null;
+  const hireDelivery = !deleted ? parseHireDeliveryMessage(message.content) : null;
   const rawForDisplay =
     message.content && isSystemFallbackContent(message.content)
       ? stripSystemFallbackPrefix(message.content)
@@ -280,6 +285,7 @@ const MessageBubble = ({
     !hireRejectChoice &&
     !hireContinueAsk &&
     !hireCancel &&
+    !hireDelivery &&
     isHireBriefChatMessage(rawForDisplay)
       ? rawForDisplay
       : null;
@@ -291,6 +297,7 @@ const MessageBubble = ({
     !hireRejectChoice &&
     !hireContinueAsk &&
     !hireCancel &&
+    !hireDelivery &&
     !hireBrief &&
     isCollabBriefChatMessage(rawForDisplay)
       ? rawForDisplay
@@ -302,6 +309,7 @@ const MessageBubble = ({
     hireRejectChoice ||
     hireContinueAsk ||
     hireCancel ||
+    hireDelivery ||
     hireBrief ||
     collabBrief ||
     (!deleted && isHireProtocolMessage(message.content))
@@ -573,6 +581,17 @@ const MessageBubble = ({
                   onEdit={onHireCancelEdit}
                   onWithdraw={onHireCancelWithdraw}
                   withdrawBusy={hireCancelWithdrawBusy}
+                />
+              </div>
+            )}
+            {hireDelivery && (
+              <div>
+                {replyQuote}
+                <HireDeliveryCard
+                  payload={hireDelivery}
+                  hiringRequestId={hiringRequestId}
+                  projectTitle={hireProjectTitle}
+                  mine={mine}
                 />
               </div>
             )}

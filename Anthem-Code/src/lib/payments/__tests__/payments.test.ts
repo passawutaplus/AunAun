@@ -49,6 +49,22 @@ describe("fees", () => {
     expect(money.fee.cardSurchargeSatang).toBe(3_000);
     expect(money.buyerPaysSatang).toBe(103_000);
   });
+
+  it("WHT reduces buyer charge and seller net", () => {
+    const job = thbToSatang(1000);
+    const wht = percentOfSatang(job, 3);
+    const money = snapshotFees(job, "promptpay", undefined, { whtSatang: wht });
+    expect(money.whtSatang).toBe(3_000);
+    expect(money.buyerPaysSatang).toBe(97_000);
+    expect(money.sellerNetSatang).toBe(87_000);
+  });
+
+  it("deposit chargePercent charges installment only", () => {
+    const job = thbToSatang(1000);
+    const money = snapshotFees(job, "promptpay", undefined, { chargePercent: 50 });
+    expect(money.buyerPaysSatang).toBe(50_000);
+    expect(money.fee.platformFeeSatang).toBe(10_000);
+  });
 });
 
 describe("ledger hire lifecycle", () => {

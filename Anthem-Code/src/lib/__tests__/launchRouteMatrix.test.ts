@@ -13,7 +13,8 @@ const APP_ROUTE_SAMPLES: { path: string; launchEnabled: boolean }[] = [
   { path: "/reset-password", launchEnabled: true },
   { path: "/portfolio", launchEnabled: true },
   { path: "/portfolio/new", launchEnabled: true },
-  { path: "/portfolio/saved", launchEnabled: true },
+  { path: "/portfolio/manage", launchEnabled: true },
+  { path: "/dashboard", launchEnabled: true },
   { path: "/project/:id", launchEnabled: true },
   { path: "/explore/tool/Figma", launchEnabled: true },
   { path: "/u/:userId", launchEnabled: true },
@@ -48,8 +49,8 @@ const APP_ROUTE_SAMPLES: { path: string; launchEnabled: boolean }[] = [
   { path: "/similar/:projectId", launchEnabled: true },
   { path: "/inspire", launchEnabled: true },
   { path: "/inspire/:boardId", launchEnabled: true },
-  { path: "/hire-requests", launchEnabled: false },
-  { path: "/collab-requests", launchEnabled: false },
+  { path: "/hire-requests", launchEnabled: true },
+  { path: "/collab-requests", launchEnabled: true },
 ];
 
 function resolveSample(path: string): string {

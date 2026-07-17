@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Conversation } from "@/hooks/useChat";
 import { ChatQuoteActions } from "@/components/chat/ChatQuoteActions";
 import { ChatCollabActions } from "@/components/chat/ChatCollabActions";
+import { HireOrderFlowPanel } from "@/components/hire/HireOrderFlowPanel";
 
 const COLLAB_TYPE_LABELS: Record<string, string> = {
   chat: "พูดคุย",
@@ -131,6 +132,12 @@ const ChatMetaPanel = ({
             <ChatQuoteActions conversation={conversation} />
           </div>
         )}
+        {isHire && conversation.request_id ? (
+          <HireOrderFlowPanel
+            conversation={conversation}
+            projectTitle={conversation.project_title ?? meta?.hire?.project_title ?? null}
+          />
+        ) : null}
         {conversation.kind === "collab" && conversation.request_id ? (
           <ChatCollabActions conversation={conversation} />
         ) : null}

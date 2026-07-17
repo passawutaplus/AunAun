@@ -5,6 +5,7 @@ import {
   formatOfferDateShort,
   offerDepositAmount,
   offerWhtAmount,
+  partyDisplayName,
   paymentTermsLabel,
   type ChatOfferPayload,
 } from "@/lib/chatOffer";
@@ -39,9 +40,19 @@ function TotalRow({
 /** Solo-style quotation paper preview for in-chat offers. */
 export function ChatOfferPreview({ offer, issuerName, issuerEmail, className }: Props) {
   const today = formatOfferDateLong(new Date().toISOString().slice(0, 10));
-  const brand = (offer.issuerName || issuerName || "").trim() || BRAND_NAME;
-  const email = (offer.issuerEmail || issuerEmail || "").trim();
-  const client = (offer.clientName || "").trim() || "—";
+  const brand =
+    partyDisplayName(offer.party?.issuer) ||
+    (offer.issuerName || issuerName || "").trim() ||
+    BRAND_NAME;
+  const email =
+    (offer.party?.issuer?.email || offer.issuerEmail || issuerEmail || "").trim();
+  const clientParty = offer.party?.client;
+  const client =
+    (clientParty ? partyDisplayName(clientParty) : (offer.clientName || "").trim()) || "—";
+  const clientAddress = clientParty?.address?.trim() || offer.clientAddress?.trim() || "";
+  const clientPhone = clientParty?.phone?.trim() || offer.clientPhone?.trim() || "";
+  const clientEmail = clientParty?.email?.trim() || offer.clientEmail?.trim() || "";
+  const clientTaxId = clientParty?.taxId?.trim() || offer.clientTaxId?.trim() || "";
   const amount = offer.amount || 0;
   const lineItems =
     offer.items && offer.items.length > 0
@@ -64,7 +75,7 @@ export function ChatOfferPreview({ offer, issuerName, issuerEmail, className }: 
           },
         ];
   const depositPct = offer.depositPercent ?? 50;
-  const whtOn = offer.whtEnabled !== false;
+  const whtOn = offer.whtApplicable ?? offer.whtEnabled !== false;
   const whtRate = offer.whtRate ?? 3;
   const wht = whtOn ? offerWhtAmount(amount, whtRate) : 0;
   const grand = Math.max(0, amount - wht);
@@ -124,19 +135,21 @@ export function ChatOfferPreview({ offer, issuerName, issuerEmail, className }: 
               เรียน / สำหรับ
             </p>
             <p className="text-sm font-semibold text-neutral-900">{client}</p>
-            {offer.clientAddress?.trim() ? (
+            {clientParty?.type === "corporate" && clientParty.contactPerson ? (
+              <p className="text-[10px] text-neutral-600 mt-0.5">
+                ผู้ติดต่อ {clientParty.contactPerson}
+                {clientParty.contactRole ? ` (${clientParty.contactRole})` : ""}
+              </p>
+            ) : null}
+            {clientAddress ? (
               <p className="text-[10px] text-neutral-600 leading-snug mt-0.5 whitespace-pre-line">
-                {offer.clientAddress.trim()}
+                {clientAddress}
               </p>
             ) : null}
             <div className="text-[10px] text-neutral-600 mt-1 space-y-0.5">
-              {offer.clientPhone?.trim() ? <p>โทร {offer.clientPhone.trim()}</p> : null}
-              {offer.clientEmail?.trim() ? (
-                <p className="truncate">{offer.clientEmail.trim()}</p>
-              ) : null}
-              {offer.clientTaxId?.trim() ? (
-                <p className="tabular-nums">เลขผู้เสียภาษี {offer.clientTaxId.trim()}</p>
-              ) : null}
+              {clientPhone ? <p>โทร {clientPhone}</p> : null}
+              {clientEmail ? <p className="truncate">{clientEmail}</p> : null}
+              {clientTaxId ? <p className="tabular-nums">เลขผู้เสียภาษี {clientTaxId}</p> : null}
             </div>
           </div>
         </div>

@@ -17,8 +17,26 @@ export type ChatOfferLineItem = {
   unitPrice: number;
 };
 
+export type OfferPartyType = "individual" | "corporate";
+
+export type OfferPartyInfo = {
+  type: OfferPartyType;
+  name?: string | null;
+  companyName?: string | null;
+  taxId?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  branch?: string | null;
+  contactPerson?: string | null;
+  contactRole?: string | null;
+  vatRegistered?: boolean;
+};
+
+export type OfferPaymentMode = "full" | "deposit";
+
 export type ChatOfferPayload = {
-  v: 1 | 2 | 3;
+  v: 1 | 2 | 3 | 4;
   title: string;
   amount: number;
   /** Settlement currency for the offer amount (ledger settle is always THB satang). */
@@ -41,18 +59,47 @@ export type ChatOfferPayload = {
   clientTaxId?: string | null;
   issuerName?: string | null;
   issuerEmail?: string | null;
+  /** Structured parties (v4+). Flat client* kept for backward compat. */
+  party?: { issuer: OfferPartyInfo; client: OfferPartyInfo };
+  paymentMode?: OfferPaymentMode;
   /** Deposit % — presets 50 | 100, or custom 1–100 */
   depositPercent?: number;
   depositDueDate?: string | null;
   paymentTerms?: string | null;
   whtEnabled?: boolean;
   whtRate?: number;
+  /** True when client is corporate and WHT checkbox applies. */
+  whtApplicable?: boolean;
   milestones?: ChatOfferMilestone[];
   /** Shown on the quotation for the client. */
   clientNotes?: string | null;
   /** Freelancer-only note — do not render on the paper preview. */
   internalNotes?: string | null;
+  /** DB quote id when persisted. */
+  quoteId?: string | null;
 };
+
+export function emptyParty(type: OfferPartyType = "individual"): OfferPartyInfo {
+  return {
+    type,
+    name: null,
+    companyName: null,
+    taxId: null,
+    address: null,
+    phone: null,
+    email: null,
+    branch: null,
+    contactPerson: null,
+    contactRole: null,
+    vatRegistered: false,
+  };
+}
+
+export function partyDisplayName(p: OfferPartyInfo | null | undefined): string {
+  if (!p) return "";
+  if (p.type === "corporate") return (p.companyName || p.name || "").trim();
+  return (p.name || "").trim();
+}
 
 export type ChatOfferTimelineEvent = {
   date: string;
@@ -144,10 +191,59 @@ export function parseChatOffer(content: string | null | undefined): ChatOfferPay
           date: clampDate(m?.date),
         }))
       : undefined;
-    const v = raw.v === 3 ? 3 : raw.v === 2 ? 2 : 1;
+    const v = raw.v === 4 ? 4 : raw.v === 3 ? 3 : raw.v === 2 ? 2 : 1;
     const deliverables = items?.length
       ? summarizeOfferItems(items)
       : clampStr(raw.deliverables, 500);
+    const clientType: OfferPartyType =
+      raw.party?.client?.type === "corporate" ? "corporate" : "individual";
+    const issuerType: OfferPartyType =
+      raw.party?.issuer?.type === "corporate" ? "corporate" : "individual";
+    const party = {
+      issuer: {
+        type: issuerType,
+        name: clampStr(raw.party?.issuer?.name || raw.issuerName, 120) || null,
+        companyName: raw.party?.issuer?.companyName
+          ? clampStr(raw.party.issuer.companyName, 160)
+          : null,
+        taxId: raw.party?.issuer?.taxId ? clampStr(raw.party.issuer.taxId, 13) : null,
+        address: raw.party?.issuer?.address ? clampStr(raw.party.issuer.address, 300) : null,
+        phone: raw.party?.issuer?.phone ? clampStr(raw.party.issuer.phone, 40) : null,
+        email: clampStr(raw.party?.issuer?.email || raw.issuerEmail, 120) || null,
+        branch: raw.party?.issuer?.branch ? clampStr(raw.party.issuer.branch, 80) : null,
+        contactPerson: raw.party?.issuer?.contactPerson
+          ? clampStr(raw.party.issuer.contactPerson, 80)
+          : null,
+        contactRole: raw.party?.issuer?.contactRole
+          ? clampStr(raw.party.issuer.contactRole, 80)
+          : null,
+        vatRegistered: !!raw.party?.issuer?.vatRegistered,
+      },
+      client: {
+        type: clientType,
+        name: clampStr(raw.party?.client?.name || raw.clientName, 120) || null,
+        companyName: raw.party?.client?.companyName
+          ? clampStr(raw.party.client.companyName, 160)
+          : null,
+        taxId: clampStr(raw.party?.client?.taxId || raw.clientTaxId, 13) || null,
+        address: clampStr(raw.party?.client?.address || raw.clientAddress, 300) || null,
+        phone: clampStr(raw.party?.client?.phone || raw.clientPhone, 40) || null,
+        email: clampStr(raw.party?.client?.email || raw.clientEmail, 120) || null,
+        branch: raw.party?.client?.branch ? clampStr(raw.party.client.branch, 80) : null,
+        contactPerson: raw.party?.client?.contactPerson
+          ? clampStr(raw.party.client.contactPerson, 80)
+          : null,
+        contactRole: raw.party?.client?.contactRole
+          ? clampStr(raw.party.client.contactRole, 80)
+          : null,
+        vatRegistered: !!raw.party?.client?.vatRegistered,
+      },
+    };
+    const paymentMode: OfferPaymentMode =
+      raw.paymentMode === "deposit" || (depositPercent < 100 && raw.paymentMode !== "full")
+        ? "deposit"
+        : "full";
+    const whtApplicable = clientType === "corporate" && raw.whtEnabled !== false;
     return {
       v,
       title: clampStr(raw.title, 120),
@@ -159,21 +255,25 @@ export function parseChatOffer(content: string | null | undefined): ChatOfferPay
       startDate,
       endDate,
       number: raw.number ? clampStr(raw.number, 32) : undefined,
-      clientName: raw.clientName ? clampStr(raw.clientName, 80) : null,
-      clientEmail: raw.clientEmail ? clampStr(raw.clientEmail, 120) : null,
-      clientPhone: raw.clientPhone ? clampStr(raw.clientPhone, 40) : null,
-      clientAddress: raw.clientAddress ? clampStr(raw.clientAddress, 300) : null,
-      clientTaxId: raw.clientTaxId ? clampStr(raw.clientTaxId, 40) : null,
-      issuerName: raw.issuerName ? clampStr(raw.issuerName, 80) : null,
-      issuerEmail: raw.issuerEmail ? clampStr(raw.issuerEmail, 120) : null,
-      depositPercent,
+      clientName: raw.clientName ? clampStr(raw.clientName, 80) : party.client.name,
+      clientEmail: raw.clientEmail ? clampStr(raw.clientEmail, 120) : party.client.email,
+      clientPhone: raw.clientPhone ? clampStr(raw.clientPhone, 40) : party.client.phone,
+      clientAddress: raw.clientAddress ? clampStr(raw.clientAddress, 300) : party.client.address,
+      clientTaxId: raw.clientTaxId ? clampStr(raw.clientTaxId, 40) : party.client.taxId,
+      issuerName: raw.issuerName ? clampStr(raw.issuerName, 80) : party.issuer.name,
+      issuerEmail: raw.issuerEmail ? clampStr(raw.issuerEmail, 120) : party.issuer.email,
+      party,
+      paymentMode,
+      depositPercent: paymentMode === "full" ? 100 : depositPercent,
       depositDueDate: clampDate(raw.depositDueDate),
       paymentTerms: raw.paymentTerms ? clampStr(raw.paymentTerms, 120) : null,
-      whtEnabled: raw.whtEnabled !== false,
+      whtEnabled: whtApplicable,
+      whtApplicable,
       whtRate: typeof raw.whtRate === "number" ? raw.whtRate : 3,
       milestones,
       clientNotes: raw.clientNotes ? clampStr(raw.clientNotes, 800) : null,
       internalNotes: raw.internalNotes ? clampStr(raw.internalNotes, 800) : null,
+      quoteId: raw.quoteId ? clampStr(raw.quoteId, 40) : null,
     };
   } catch {
     return null;
@@ -290,4 +390,39 @@ export function offerAcceptMessage(offer: ChatOfferPayload): string {
 
 export function offerDeclineMessage(offer: ChatOfferPayload): string {
   return `ยังไม่รับข้อเสนอ «${offer.title}» · ${formatOfferAmount(offer.amount)} — คุยรายละเอียดเพิ่มก่อนนะ`;
+}
+
+export const QUOTE_DECLINE_REASONS = [
+  { id: "revise_details", label: "ขอแก้ไขรายละเอียด / ราคา" },
+  { id: "scope_change", label: "ขอปรับเปลี่ยนสโคปงาน" },
+  { id: "timeline", label: "ระยะเวลาไม่ตรงกัน" },
+  { id: "budget", label: "งบไม่ตรงกัน" },
+  { id: "not_ready", label: "ยังไม่สะดวกจ้างตอนนี้" },
+  { id: "other", label: "อื่น ๆ" },
+] as const;
+
+export type QuoteDeclineReasonId = (typeof QUOTE_DECLINE_REASONS)[number]["id"];
+
+export function quoteDeclineReasonLabel(id: string | null | undefined): string {
+  return QUOTE_DECLINE_REASONS.find((r) => r.id === id)?.label || "ปฏิเสธใบเสนอราคา";
+}
+
+export function offerDeclineWithReasonMessage(
+  offer: ChatOfferPayload,
+  reasonId: QuoteDeclineReasonId,
+  note?: string | null,
+): string {
+  const label = quoteDeclineReasonLabel(reasonId);
+  const extra = note?.trim() ? ` — ${note.trim()}` : "";
+  return `ปฏิเสธใบเสนอราคา «${offer.title}» · ${formatOfferAmount(offer.amount)} — ${label}${extra}`;
+}
+
+/** Thai tax ID checksum (13 digits). */
+export function isValidThaiTaxId(raw: string | null | undefined): boolean {
+  const s = String(raw || "").replace(/\D/g, "");
+  if (s.length !== 13) return false;
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += Number(s[i]) * (13 - i);
+  const check = (11 - (sum % 11)) % 10;
+  return check === Number(s[12]);
 }
