@@ -216,8 +216,19 @@ const ChatThreadView = ({
    * งานเริ่มแล้ว = ลูกค้าจ่ายเงินจากใบเสนอราคา (งวดแรกหรือเต็ม).
    * ใช้ offer_accepted_at เป็นสัญญาณจ่ายเงิน — สถานะ "ตอบรับ" เฉย ๆ (ฟรีแลนซ์รับงาน)
    * ยังไม่นับว่าเริ่มงาน.
+   * เสริมจากข้อความในแชทด้วย — กันกรณี meta ค้าง / realtime ช้า ทำให้การ์ดใบเสนอราคาไม่อัปเดต.
    */
-  const hireWorkStarted = !!offerAcceptedAt;
+  const hirePaidInThread = useMemo(
+    () =>
+      messages.some(
+        (m) =>
+          isHirePaidMessage(m.content) ||
+          !!parseLegacyHirePaidText(m.content) ||
+          isHireWorkStartMessage(m.content),
+      ),
+    [messages],
+  );
+  const hireWorkStarted = !!offerAcceptedAt || hirePaidInThread;
   const hireRejectReason = (hireRequestRow as { reject_reason?: string | null } | null)?.reject_reason;
   const postRejectChat = (hireRequestRow as { post_reject_chat?: HirePostRejectChat | null } | null)
     ?.post_reject_chat ?? null;

@@ -188,39 +188,53 @@ export async function createHireOrderAfterPayment(
     const status = isDeposit ? "deposit_paid" : "paid_pending";
     const now = new Date().toISOString();
 
-    const { data: orderRow, error: orderErr } = await sharedDb
+    const orderPayload = {
+      hiring_request_id: hiringRequestId,
+      conversation_id: input.conversationId,
+      buyer_id: buyerId,
+      seller_id: sellerId,
+      status,
+      job_price_satang: money.jobPriceSatang,
+      buyer_pays_satang: money.buyerPaysSatang,
+      seller_net_satang: money.sellerNetSatang,
+      platform_fee_percent: money.fee.platformFeePercent,
+      platform_fee_satang: money.fee.platformFeeSatang,
+      card_surcharge_satang: money.fee.cardSurchargeSatang,
+      fee_version: money.fee.feeVersion,
+      payment_method: input.method,
+      display_currency: input.offer.displayCurrency ?? "THB",
+      currency: "THB",
+      quote_id: quoteId,
+      amount_paid_satang: input.paidAmountSatang,
+      balance_due_satang: isDeposit ? installment.balanceSatang : 0,
+      wht_satang: whtSatang,
+      deposit_percent: depositPct,
+      wht_status: whtSatang > 0 ? "none" : "none",
+      paid_at: now,
+      metadata: {
+        charge_id: input.chargeId ?? null,
+        offer_title: input.offer.title,
+        offer_number: input.offer.number ?? null,
+      },
+    };
+
+    let { data: orderRow, error: orderErr } = await sharedDb
       .from("hire_orders" as never)
-      .insert({
-        hiring_request_id: hiringRequestId,
-        conversation_id: input.conversationId,
-        buyer_id: buyerId,
-        seller_id: sellerId,
-        status,
-        job_price_satang: money.jobPriceSatang,
-        buyer_pays_satang: money.buyerPaysSatang,
-        seller_net_satang: money.sellerNetSatang,
-        platform_fee_percent: money.fee.platformFeePercent,
-        platform_fee_satang: money.fee.platformFeeSatang,
-        card_surcharge_satang: money.fee.cardSurchargeSatang,
-        fee_version: money.fee.feeVersion,
-        payment_method: input.method,
-        display_currency: input.offer.displayCurrency ?? "THB",
-        currency: "THB",
-        quote_id: quoteId,
-        amount_paid_satang: input.paidAmountSatang,
-        balance_due_satang: isDeposit ? installment.balanceSatang : 0,
-        wht_satang: whtSatang,
-        deposit_percent: depositPct,
-        wht_status: whtSatang > 0 ? "none" : "none",
-        paid_at: now,
-        metadata: {
-          charge_id: input.chargeId ?? null,
-          offer_title: input.offer.title,
-          offer_number: input.offer.number ?? null,
-        },
-      } as never)
+      .insert(orderPayload as never)
       .select("id")
       .single();
+
+    // Stale/missing quote row must not block order persistence (detail popup depends on it).
+    if ((orderErr || !orderRow) && quoteId) {
+      const msg = String(orderErr?.message ?? "");
+      if (msg.includes("quote_id") || msg.includes("foreign key") || msg.includes("hire_quotes")) {
+        ({ data: orderRow, error: orderErr } = await sharedDb
+          .from("hire_orders" as never)
+          .insert({ ...orderPayload, quote_id: null } as never)
+          .select("id")
+          .single());
+      }
+    }
 
     if (orderErr || !orderRow) {
       console.warn("[createHireOrderAfterPayment] insert failed", orderErr);

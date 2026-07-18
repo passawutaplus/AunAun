@@ -566,9 +566,12 @@ export function useMarkHireOfferAccepted() {
         .is("offer_accepted_at", null);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_d, hiringRequestId) => {
       void qc.invalidateQueries({ queryKey: ["hiring_requests"] });
       void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src"] });
+      void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", hiringRequestId] });
+      void qc.invalidateQueries({ queryKey: ["chat-hire-meta", hiringRequestId] });
+      void qc.invalidateQueries({ queryKey: ["chat-hire-meta-panel", hiringRequestId] });
     },
   });
 }

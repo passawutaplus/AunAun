@@ -55,8 +55,9 @@ export function isHirePaidMessage(content: string | null | undefined): boolean {
 /** Legacy plain-text payment success (pre-card). */
 export function parseLegacyHirePaidText(content: string | null | undefined): HirePaidChatPayload | null {
   if (!content) return null;
-  const m = content.match(
-    /^ชำระเงิน\s*฿?([\d,]+(?:\.\d+)?)\s*สำเร็จแล้ว\s*—\s*Aplus1\s*พักเงิน/,
+  const text = content.replace(/^\[context\]\s*/, "").trim();
+  const m = text.match(
+    /^ชำระเงิน\s*฿?\s*([\d,]+(?:\.\d+)?)\s*สำเร็จ(?:แล้ว)?\s*[—\-–]\s*Aplus1\s*พักเงิน/,
   );
   if (!m) return null;
   const paid = Number(m[1].replace(/,/g, ""));

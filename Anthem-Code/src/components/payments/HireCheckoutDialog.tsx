@@ -187,10 +187,15 @@ export default function HireCheckoutDialog({
         chargeId: result.chargeId,
       });
       orderId = persisted?.orderId ?? null;
+      if (!orderId) {
+        console.warn("[HireCheckoutDialog] hire_orders persist failed after payment");
+      }
       if (hiringRequestId) {
         void qc.invalidateQueries({ queryKey: ["hire-order-by-request", hiringRequestId] });
         void qc.invalidateQueries({ queryKey: ["hire-orders-by-request", hiringRequestId] });
         void qc.invalidateQueries({ queryKey: ["chat-hire-latest-quote", hiringRequestId] });
+        void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", hiringRequestId] });
+        void qc.invalidateQueries({ queryKey: ["chat-hire-meta", hiringRequestId] });
       }
       if (orderId) {
         void qc.invalidateQueries({ queryKey: ["hire-order-by-id", orderId] });
@@ -198,8 +203,11 @@ export default function HireCheckoutDialog({
       }
     }
 
+    void qc.invalidateQueries({ queryKey: ["messages", user?.id, conversationId] });
+
     // Paid card, then work-start (timeline + items) — send separately so one failure
     // does not block the other.
+    let paidPosted = false;
     try {
       await send.mutateAsync({
         conversationId,
@@ -214,8 +222,9 @@ export default function HireCheckoutDialog({
         }),
         messageType: "system",
       });
-    } catch {
-      /* payment state is source of truth */
+      paidPosted = true;
+    } catch (e) {
+      console.warn("[HireCheckoutDialog] hire paid card failed", e);
     }
     try {
       await send.mutateAsync({
@@ -225,8 +234,12 @@ export default function HireCheckoutDialog({
         ),
         messageType: "system",
       });
-    } catch {
+    } catch (e) {
+      console.warn("[HireCheckoutDialog] work-start card failed", e);
       /* ChatThreadView backfills work-start when hire is settled */
+    }
+    if (!paidPosted) {
+      toast.message("ชำระเงินแล้ว — รีเฟรชแชทถ้ายังไม่เห็นการ์ดอัปเดต");
     }
   };
 
