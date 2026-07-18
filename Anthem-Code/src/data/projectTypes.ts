@@ -104,6 +104,8 @@ export interface Project {
   tags?: string[];
   description?: string;
   price?: string;
+  /** Numeric THB budget for FX display dropdown. */
+  priceThb?: number | null;
   allowHire?: boolean;
   allowCollab?: boolean;
   licenseType?: string;

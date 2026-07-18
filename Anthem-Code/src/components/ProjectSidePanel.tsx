@@ -15,6 +15,7 @@ import type { ProjectAsset } from "@/lib/projectAssets";
 import ProjectAssetsSection from "@/components/project/ProjectAssetsSection";
 import LicenseDetailBlock from "@/components/license/LicenseDetailBlock";
 import { ProjectSeriesBlock } from "@/components/series/ProjectSeriesBlock";
+import { PriceCurrencyAmount } from "@/components/payments/PriceCurrencySelect";
 
 
 interface Props {
@@ -28,7 +29,10 @@ interface Props {
   description?: string;
   tools: string[];
   tags?: string[];
+  /** Formatted fallback label (legacy). Prefer priceThb. */
   price?: string;
+  /** Starting budget in THB — enables FX display dropdown. */
+  priceThb?: number | null;
   views: number;
   likes: number;
   commentsCount: number;
@@ -144,12 +148,16 @@ const ProjectSidePanel = (p: Props) => {
 
 
 
-        {p.price && (
-          <p className="text-center text-sm">
+        {(typeof p.priceThb === "number" && p.priceThb > 0) || p.price ? (
+          <p className="text-center text-sm flex flex-wrap items-center justify-center gap-1">
             <span className="text-muted-foreground">งบประมาณงานนี้ : </span>
-            <span className="text-primary font-semibold">{p.price}</span>
+            {typeof p.priceThb === "number" && p.priceThb > 0 ? (
+              <PriceCurrencyAmount amountThb={p.priceThb} />
+            ) : (
+              <span className="text-primary font-semibold">{p.price}</span>
+            )}
           </p>
-        )}
+        ) : null}
 
         <div className="grid grid-cols-2 gap-2">
           <PlusOneControl

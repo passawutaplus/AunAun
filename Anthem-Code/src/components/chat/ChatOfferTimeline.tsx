@@ -1,6 +1,7 @@
 import { Circle, CircleDot, Flag, Repeat, Wallet } from "lucide-react";
 import {
   formatOfferDateShort,
+  offerDisplayMilestones,
   offerDurationDays,
   offerTimelineEvents,
   type ChatOfferPayload,
@@ -10,7 +11,13 @@ import { cn } from "@/lib/utils";
 type Props = {
   offer: Pick<
     ChatOfferPayload,
-    "startDate" | "endDate" | "dueDate" | "depositDueDate" | "milestones" | "depositPercent"
+    | "startDate"
+    | "endDate"
+    | "dueDate"
+    | "depositDueDate"
+    | "milestones"
+    | "depositPercent"
+    | "showFullTimeline"
   >;
   compact?: boolean;
   className?: string;
@@ -27,9 +34,9 @@ export function ChatOfferTimeline({
 }: Props) {
   const events = offerTimelineEvents(offer);
   const days = offerDurationDays(offer.startDate, offer.endDate || offer.dueDate);
-  const milestones = offer.milestones?.filter((m) => m.label) ?? [];
+  const milestones = offerDisplayMilestones(offer).filter((m) => m.label);
 
-  // Prefer full milestone list (with empty dates) when editing; else dated events only
+  // Prefer display milestone list (with empty dates) when present; else dated events only
   const rows =
     milestones.length > 0
       ? milestones.map((m, i, arr) => ({

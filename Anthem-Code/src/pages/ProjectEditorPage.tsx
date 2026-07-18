@@ -41,6 +41,7 @@ import LicensePicker from "@/components/license/LicensePicker";
 import TagPicker from "@/components/tags/TagPicker";
 import ToolPicker from "@/components/tools/ToolPicker";
 import ProjectPreviewDialog, { type ProjectPreviewData } from "@/components/project/ProjectPreviewDialog";
+import StartingPriceField from "@/components/project/StartingPriceField";
 import { PortfolioCoverCropDialog } from "@/components/project/PortfolioCoverCropDialog";
 import {
   ModuleImageCropDialog,
@@ -1903,6 +1904,7 @@ const ProjectEditorPage = () => {
     tools,
     tags,
     price: showPrice && price ? `฿${Number(price).toLocaleString("th-TH")}` : undefined,
+    priceThb: showPrice && price ? Number(price) || null : null,
     allowHire,
     allowCollab,
     licenseType,
@@ -2632,28 +2634,12 @@ const ProjectEditorPage = () => {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <label htmlFor="show-price" className="text-xs font-semibold text-muted-foreground uppercase cursor-pointer">
-                  ราคาเริ่มต้นงานนี้ (฿)
-                </label>
-                <Switch
-                  id="show-price"
-                  checked={showPrice}
-                  onCheckedChange={setShowPrice}
-                  className="shrink-0"
-                />
-              </div>
-              {showPrice && (
-                <Input
-                  type="number"
-                  min={0}
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="เช่น 3500"
-                />
-              )}
-            </div>
+            <StartingPriceField
+              showPrice={showPrice}
+              onShowPriceChange={setShowPrice}
+              price={price}
+              onPriceChange={setPrice}
+            />
 
             <div className="space-y-3 pt-2 border-t border-border/60">
               <div className="flex items-center justify-between gap-3">

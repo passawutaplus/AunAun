@@ -39,6 +39,7 @@ export interface ProjectPreviewData {
   tools: string[];
   tags: string[];
   price?: string;
+  priceThb?: number | null;
   allowHire: boolean;
   allowCollab: boolean;
   licenseType: LicenseType;
@@ -138,6 +139,7 @@ function ProjectPcPreview({
             tools={data.tools}
             tags={data.tags}
             price={data.price}
+            priceThb={data.priceThb}
             views={0}
             likes={0}
             commentsCount={0}

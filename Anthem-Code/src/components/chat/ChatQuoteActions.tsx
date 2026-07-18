@@ -242,10 +242,9 @@ export function ChatQuoteActions({ conversation }: Props) {
             size="sm"
             variant="outline"
             className={cn(
-              "w-full rounded-xl border-orange-400/60 bg-transparent text-orange-600",
-              "transition-all duration-200",
-              "hover:bg-orange-500 hover:text-white hover:border-orange-500",
-              "hover:shadow-[0_0_18px_2px_rgba(249,115,22,0.55)]",
+              "quote-offer-btn w-full rounded-xl border-[hsl(var(--chat-hire)/0.7)] bg-transparent text-[hsl(var(--chat-hire))]",
+              "transition-colors duration-200",
+              "hover:bg-[hsl(var(--chat-hire))] hover:text-white hover:border-[hsl(var(--chat-hire))]",
             )}
             title="ทำใบเสนอราคา — เปิดได้ตลอด (ยอมรับงานอัตโนมัติเมื่อผู้จ้างชำระเงิน)"
             onClick={() => setOfferOpen(true)}

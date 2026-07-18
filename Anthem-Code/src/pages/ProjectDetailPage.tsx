@@ -196,6 +196,7 @@ const ProjectDetailPage = () => {
         tools: dbProject.tools ?? [],
         tags: dbProject.tags ?? [],
         price: dbProject.price_thb ? `฿${dbProject.price_thb.toLocaleString("th-TH")}` : undefined,
+        priceThb: dbProject.price_thb ?? null,
         description: dbProject.description ?? "",
         allowHire: (dbProject as any).allow_hire ?? true,
         allowCollab: (dbProject as any).allow_collab ?? true,
@@ -442,6 +443,7 @@ const ProjectDetailPage = () => {
               tools={project.tools}
               tags={project.tags}
               price={project.price}
+              priceThb={project.priceThb}
               views={project.views}
               likes={likeCount}
               commentsCount={commentsCount}

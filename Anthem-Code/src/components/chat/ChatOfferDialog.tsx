@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Banknote,
@@ -40,11 +40,12 @@ import {
   emptyParty,
   encodeChatOffer,
   formatOfferAmount,
-  formatOfferBaht,
   isValidThaiTaxId,
   makeOfferNumber,
+  offerDepositAmount,
   offerItemSubtotal,
   offerItemsSubtotal,
+  offerWhtAmount,
   partyDisplayName,
   paymentTermsLabel,
   summarizeOfferItems,
@@ -57,7 +58,23 @@ import {
 } from "@/lib/chatOffer";
 import { ChatOfferTimeline } from "@/components/chat/ChatOfferTimeline";
 import { ChatOfferPreview } from "@/components/chat/ChatOfferPreview";
+import { CurrencyMenu } from "@/components/payments/PriceCurrencySelect";
+import { useFxRates } from "@/hooks/useFxRates";
+import {
+  convertFxToThb,
+  convertThbToFx,
+  currencySymbol,
+  formatPortfolioMoney,
+  readPortfolioFxCurrency,
+  writePortfolioFxCurrency,
+  type PortfolioFxCurrency,
+} from "@/lib/payments/fxDaily";
 import { cn } from "@/lib/utils";
+
+/** YYYY-MM-DD in Asia/Bangkok (quotation “created today”). */
+function todayOfferDateYmd() {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
+}
 
 type Props = {
   open: boolean;
@@ -100,12 +117,96 @@ function profileToBillingFields(
 }
 
 function IssuerField({ label, value }: { label: string; value?: string | null }) {
-  if (!value?.trim()) return null;
+  const text = value?.trim() || "";
   return (
     <div>
       <p className="text-[10px] text-muted-foreground">{label}</p>
-      <p className="text-sm text-foreground whitespace-pre-line">{value.trim()}</p>
+      <p
+        className={cn(
+          "text-sm whitespace-pre-line",
+          text ? "text-foreground" : "text-muted-foreground/70",
+        )}
+      >
+        {text || "—"}
+      </p>
     </div>
+  );
+}
+
+function sanitizeAmountInput(raw: string, allowDecimal: boolean): string {
+  let s = raw.replace(/[^\d.]/g, "");
+  if (!allowDecimal) return s.replace(/\./g, "");
+  const dot = s.indexOf(".");
+  if (dot === -1) return s;
+  return s.slice(0, dot + 1) + s.slice(dot + 1).replace(/\./g, "").slice(0, 2);
+}
+
+function thbUnitToDisplay(
+  thb: number,
+  currency: PortfolioFxCurrency,
+  rates: Parameters<typeof convertThbToFx>[2],
+): string {
+  if (!Number.isFinite(thb) || thb <= 0) return thb === 0 ? "0" : "";
+  if (currency === "THB") return String(Math.round(thb));
+  const converted = convertThbToFx(thb, currency, rates);
+  if (currency === "JPY") return String(Math.round(converted));
+  return String(Math.round(converted * 100) / 100);
+}
+
+/** Unit price cell — type in selected FX; store THB on blur. */
+function OfferUnitPriceInput({
+  unitPriceThb,
+  currency,
+  rates,
+  onCommitThb,
+}: {
+  unitPriceThb: number;
+  currency: PortfolioFxCurrency;
+  rates: Parameters<typeof convertThbToFx>[2];
+  onCommitThb: (thb: number) => void;
+}) {
+  const focusedRef = useRef(false);
+  const [display, setDisplay] = useState(() => thbUnitToDisplay(unitPriceThb, currency, rates));
+
+  useEffect(() => {
+    if (focusedRef.current) return;
+    setDisplay(thbUnitToDisplay(unitPriceThb, currency, rates));
+  }, [unitPriceThb, currency, rates]);
+
+  return (
+    <Input
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      value={display}
+      placeholder="0"
+      aria-label="ราคาต่อหน่วย"
+      className="h-8 text-sm tabular-nums text-right col-start-2 sm:col-start-auto"
+      onFocus={() => {
+        focusedRef.current = true;
+      }}
+      onChange={(e) => {
+        setDisplay(sanitizeAmountInput(e.target.value, currency !== "THB" && currency !== "JPY"));
+      }}
+      onBlur={() => {
+        focusedRef.current = false;
+        const trimmed = display.trim();
+        if (!trimmed || trimmed === ".") {
+          onCommitThb(0);
+          setDisplay("0");
+          return;
+        }
+        const n = Number(trimmed);
+        if (!Number.isFinite(n) || n < 0) {
+          onCommitThb(0);
+          setDisplay("0");
+          return;
+        }
+        const thb = Math.max(0, Math.round(convertFxToThb(n, currency, rates)));
+        onCommitThb(thb);
+        setDisplay(thbUnitToDisplay(thb, currency, rates));
+      }}
+    />
   );
 }
 
@@ -124,6 +225,10 @@ export function ChatOfferDialog({
   const send = useSendMessage();
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
+  const { data: fx } = useFxRates();
+  const [displayCurrency, setDisplayCurrency] = useState<PortfolioFxCurrency>(() =>
+    readPortfolioFxCurrency("THB"),
+  );
 
   const [title, setTitle] = useState(defaultTitle?.trim() || "");
   const [items, setItems] = useState<ChatOfferLineItem[]>(() => [emptyOfferItem()]);
@@ -145,12 +250,18 @@ export function ChatOfferDialog({
   const [depositPercent, setDepositPercent] = useState(50);
   const [customDeposit, setCustomDeposit] = useState("50");
   const [whtEnabled, setWhtEnabled] = useState(true);
+  const [discountMode, setDiscountMode] = useState<"thb" | "percent">("thb");
+  const [discount, setDiscount] = useState(0);
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountInput, setDiscountInput] = useState("");
   const [clientNotes, setClientNotes] = useState("");
   const [internalNotes, setInternalNotes] = useState("");
   const [docNumber] = useState(() => makeOfferNumber());
   const [milestones, setMilestones] = useState<ChatOfferMilestone[]>(() =>
     defaultOfferMilestones(),
   );
+  /** Unchecked = quotation shows only final delivery date. */
+  const [showFullTimeline, setShowFullTimeline] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<"view" | "confirm">("view");
 
@@ -209,9 +320,54 @@ export function ChatOfferDialog({
   }, [clientType]);
 
   const itemsTotal = useMemo(() => Math.round(offerItemsSubtotal(items)), [items]);
+  const clampedDiscount = useMemo(() => {
+    if (discountMode === "percent") {
+      const pct = Math.min(100, Math.max(0, Math.round(discountPercent)));
+      return Math.min(itemsTotal, Math.round((itemsTotal * pct) / 100));
+    }
+    return Math.min(itemsTotal, Math.max(0, Math.round(discount)));
+  }, [discountMode, discount, discountPercent, itemsTotal]);
+  const netTotal = Math.max(0, itemsTotal - clampedDiscount);
+
+  useEffect(() => {
+    if (discountMode !== "thb") return;
+    if (discount > itemsTotal) {
+      setDiscount(itemsTotal);
+      setDiscountInput(itemsTotal > 0 ? String(itemsTotal) : "");
+    }
+  }, [itemsTotal, discount, discountMode]);
 
   const updateItem = (id: string, patch: Partial<ChatOfferLineItem>) => {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+  };
+
+  const applyDiscountInput = (raw: string) => {
+    const digits = raw.replace(/[^\d]/g, "");
+    const n = Math.max(0, Number(digits) || 0);
+    if (discountMode === "percent") {
+      const pct = Math.min(100, n);
+      setDiscountPercent(pct);
+      setDiscountInput(digits ? String(pct) : "");
+    } else {
+      setDiscount(n);
+      setDiscountInput(digits);
+    }
+  };
+
+  const toggleDiscountMode = () => {
+    if (discountMode === "thb") {
+      const pct =
+        itemsTotal > 0
+          ? Math.min(100, Math.round((clampedDiscount / itemsTotal) * 100))
+          : 0;
+      setDiscountMode("percent");
+      setDiscountPercent(pct);
+      setDiscountInput(pct > 0 ? String(pct) : "");
+    } else {
+      setDiscountMode("thb");
+      setDiscount(clampedDiscount);
+      setDiscountInput(clampedDiscount > 0 ? String(clampedDiscount) : "");
+    }
   };
 
   const applyDeposit = (pct: number) => {
@@ -232,6 +388,23 @@ export function ChatOfferDialog({
     });
   };
 
+  const fxRate =
+    displayCurrency !== "THB" && fx?.rates?.[displayCurrency]
+      ? fx.rates[displayCurrency]!
+      : null;
+
+  const moneyLabel = (thb: number) => {
+    if (displayCurrency === "THB" || !fxRate) return formatOfferAmount(thb);
+    return formatPortfolioMoney(convertThbToFx(thb, displayCurrency, fx?.rates), displayCurrency);
+  };
+
+  const pickDisplayCurrency = (c: PortfolioFxCurrency) => {
+    writePortfolioFxCurrency(c);
+    setDisplayCurrency(c);
+  };
+
+  const effectiveStartDate = startDate || todayOfferDateYmd();
+
   const previewOffer: ChatOfferPayload = useMemo(() => {
     const named = items.filter((it) => it.name.trim());
     const flatClientName =
@@ -241,11 +414,27 @@ export function ChatOfferDialog({
     return {
       v: 4,
       title: title.trim() || "ชื่องาน",
-      amount: itemsTotal,
+      amount: netTotal,
       currency: "THB",
+      displayCurrency,
+      fxRateSnapshot:
+        displayCurrency !== "THB" && fxRate
+          ? {
+              quoteCurrency: displayCurrency,
+              rate: fxRate,
+              source: fx?.source || "frankfurter.app",
+              asOf: fx?.asOf || "",
+            }
+          : null,
       deliverables: summarizeOfferItems(named),
       items: named.length ? named : items,
-      startDate: startDate || null,
+      discount: clampedDiscount > 0 ? clampedDiscount : undefined,
+      discountMode: clampedDiscount > 0 ? discountMode : undefined,
+      discountPercent:
+        discountMode === "percent" && discountPercent > 0
+          ? Math.min(100, Math.round(discountPercent))
+          : undefined,
+      startDate: effectiveStartDate,
       endDate: endDate || null,
       dueDate: endDate || null,
       number: docNumber,
@@ -265,14 +454,18 @@ export function ChatOfferDialog({
       whtApplicable,
       whtRate: 3,
       milestones,
+      showFullTimeline,
       clientNotes: clientNotes.trim() || null,
       internalNotes: internalNotes.trim() || null,
     };
   }, [
     title,
     items,
-    itemsTotal,
-    startDate,
+    netTotal,
+    clampedDiscount,
+    discountMode,
+    discountPercent,
+    effectiveStartDate,
     endDate,
     docNumber,
     clientType,
@@ -282,8 +475,13 @@ export function ChatOfferDialog({
     effectiveDepositPercent,
     whtApplicable,
     milestones,
+    showFullTimeline,
     clientNotes,
     internalNotes,
+    displayCurrency,
+    fxRate,
+    fx?.source,
+    fx?.asOf,
   ]);
 
   const reset = () => {
@@ -307,9 +505,14 @@ export function ChatOfferDialog({
     setDepositPercent(50);
     setCustomDeposit("50");
     setWhtEnabled(true);
+    setDiscountMode("thb");
+    setDiscount(0);
+    setDiscountPercent(0);
+    setDiscountInput("");
     setClientNotes("");
     setInternalNotes("");
     setMilestones(defaultOfferMilestones());
+    setShowFullTimeline(false);
   };
 
   const handleOpen = (next: boolean) => {
@@ -347,7 +550,15 @@ export function ChatOfferDialog({
       toast.error("ใส่ราคาในรายการให้มียอดรวมมากกว่า 0");
       return null;
     }
-    if (startDate && endDate && endDate < startDate) {
+    if (netTotal <= 0) {
+      toast.error("ส่วนลดต้องน้อยกว่ายอดรวมรายการ");
+      return null;
+    }
+    if (!endDate) {
+      toast.error("ใส่วันที่จบงานด้วย");
+      return null;
+    }
+    if (endDate < effectiveStartDate) {
       toast.error("วันจบงานต้องไม่อยู่ก่อนวันเริ่มงาน");
       return null;
     }
@@ -374,12 +585,28 @@ export function ChatOfferDialog({
     const ok = validateOffer();
     if (!ok) return;
 
+    const syncedMilestones = milestones.map((m, i, arr) => {
+      if (i === 0 && !m.date) return { ...m, date: effectiveStartDate };
+      if (i === arr.length - 1 && !m.date && endDate) return { ...m, date: endDate };
+      return m;
+    });
+
     const payload: ChatOfferPayload = {
       ...previewOffer,
       title: ok.title,
-      amount: itemsTotal,
+      amount: netTotal,
+      startDate: effectiveStartDate,
+      endDate,
+      dueDate: endDate,
+      discount: clampedDiscount > 0 ? clampedDiscount : undefined,
+      discountMode: clampedDiscount > 0 ? discountMode : undefined,
+      discountPercent:
+        discountMode === "percent" && discountPercent > 0
+          ? Math.min(100, Math.round(discountPercent))
+          : undefined,
       items: ok.named,
       deliverables: summarizeOfferItems(ok.named),
+      milestones: syncedMilestones,
     };
 
     let quoteId: string | null = null;
@@ -397,7 +624,7 @@ export function ChatOfferDialog({
             payload: payload as unknown as Json,
             deposit_percent: effectiveDepositPercent,
             wht_enabled: whtApplicable,
-            amount_satang: itemsTotal * 100,
+            amount_satang: netTotal * 100,
             currency: "THB",
             doc_number: docNumber,
             expires_at: expiresAt,
@@ -428,7 +655,13 @@ export function ChatOfferDialog({
     }
   };
 
-  const totalLabel = formatOfferAmount(itemsTotal);
+  const totalLabel = moneyLabel(netTotal);
+  const whtAmount = whtApplicable ? offerWhtAmount(netTotal, 3) : 0;
+  const afterWht = Math.max(0, netTotal - whtAmount);
+  const depositAmount =
+    paymentMode === "deposit" && effectiveDepositPercent < 100
+      ? offerDepositAmount(afterWht, effectiveDepositPercent)
+      : 0;
 
   return (
     <>
@@ -448,29 +681,62 @@ export function ChatOfferDialog({
             {/* Issuer + Client */}
             <section className="grid gap-4 lg:grid-cols-2 lg:items-start">
               <div className="rounded-2xl border border-border bg-card p-3.5 space-y-3">
-                <div className="flex items-start gap-2">
-                  <Building2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold">ผู้เสนอราคา</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      จากโปรไฟล์การออกบิลของคุณ
-                    </p>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2 min-w-0">
+                    <Building2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold">ผู้เสนอราคา</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        จากโปรไฟล์การออกบิลของคุณ
+                      </p>
+                    </div>
                   </div>
+                  <Link
+                    to="/settings#billing-profile"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="shrink-0 text-sm text-primary hover:underline"
+                  >
+                    แก้ไข
+                  </Link>
                 </div>
-                <div className="space-y-2 rounded-xl bg-muted/30 p-3">
-                  <p className="text-sm font-semibold">{partyDisplayName(issuerParty) || "—"}</p>
-                  {issuerParty.type === "corporate" && issuerParty.companyName ? (
-                    <p className="text-[11px] text-muted-foreground">{issuerParty.companyName}</p>
-                  ) : null}
-                  <IssuerField label="ที่อยู่" value={issuerParty.address} />
-                  <IssuerField label="เลขผู้เสียภาษี" value={issuerParty.taxId} />
-                  <IssuerField label="อีเมล" value={issuerParty.email} />
-                  <IssuerField label="โทร" value={issuerParty.phone} />
-                  {!partyDisplayName(issuerParty) && !issuerParty.email ? (
-                    <p className="text-[11px] text-muted-foreground">
-                      ตั้งค่าโปรไฟล์การออกบิลใน Settings เพื่อแสดงข้อมูลผู้เสนอราคา
+                <div className="space-y-2.5 rounded-xl bg-muted/30 p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold">
+                      {partyDisplayName(issuerParty) || "—"}
                     </p>
-                  ) : null}
+                    <span className="rounded-full bg-background/80 px-2 py-0.5 text-[10px] text-muted-foreground border border-border">
+                      {issuerParty.type === "corporate" ? "นิติบุคคล" : "บุคคลธรรมดา"}
+                    </span>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {issuerParty.type === "corporate" ? (
+                      <>
+                        <IssuerField label="ชื่อบริษัท / นิติบุคคล" value={issuerParty.companyName} />
+                        <IssuerField label="ชื่อผู้มีอำนาจ / ชื่อที่แสดง" value={issuerParty.name} />
+                        <IssuerField label="สาขา" value={issuerParty.branch} />
+                        <IssuerField label="เลขผู้เสียภาษี" value={issuerParty.taxId} />
+                        <IssuerField label="ผู้ติดต่อ" value={issuerParty.contactPerson} />
+                        <IssuerField label="ตำแหน่ง" value={issuerParty.contactRole} />
+                      </>
+                    ) : (
+                      <>
+                        <IssuerField label="ชื่อ-นามสกุล" value={issuerParty.name} />
+                        <IssuerField label="เลขผู้เสียภาษี" value={issuerParty.taxId} />
+                      </>
+                    )}
+                    <IssuerField label="อีเมล" value={issuerParty.email} />
+                    <IssuerField label="โทร" value={issuerParty.phone} />
+                    <div className="sm:col-span-2">
+                      <IssuerField label="ที่อยู่" value={issuerParty.address} />
+                    </div>
+                    {issuerParty.type === "corporate" ? (
+                      <IssuerField
+                        label="จดทะเบียน VAT"
+                        value={issuerParty.vatRegistered ? "ใช่" : "ไม่ใช่"}
+                      />
+                    ) : null}
+                  </div>
                 </div>
               </div>
 
@@ -642,17 +908,12 @@ export function ChatOfferDialog({
 
             {/* Document details */}
             <section className="rounded-2xl border border-border bg-card p-3.5 space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-start gap-2">
-                  <FileText className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold">รายละเอียดเอกสาร</p>
-                    <p className="text-[11px] text-muted-foreground">ข้อมูลโครงการและเงื่อนไขชำระ</p>
-                  </div>
+              <div className="flex items-start gap-2">
+                <FileText className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold">รายละเอียดเอกสาร</p>
+                  <p className="text-[11px] text-muted-foreground">ข้อมูลโครงการและเงื่อนไขชำระ</p>
                 </div>
-                <p className="text-sm font-semibold text-primary tabular-nums shrink-0">
-                  ยอดรวม {totalLabel}
-                </p>
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2">
@@ -675,20 +936,30 @@ export function ChatOfferDialog({
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <Label>
                     รายการ <span className="text-destructive">*</span>
                   </Label>
-                  <span className="text-[11px] text-muted-foreground tabular-nums">
-                    รวมเป็นเงิน ฿{formatOfferBaht(itemsTotal)}
-                  </span>
+                  <div className="inline-flex items-center gap-1.5">
+                    <span className="text-[11px] text-muted-foreground">เปลี่ยนสกุลเงิน</span>
+                    <CurrencyMenu
+                      value={displayCurrency}
+                      onChange={pickDisplayCurrency}
+                      variant="label"
+                      asOf={fx?.asOf}
+                    />
+                  </div>
                 </div>
 
                 <div className="rounded-xl border border-border overflow-hidden">
-                  <div className="hidden sm:grid grid-cols-[minmax(0,1.4fr)_64px_88px_88px_32px] gap-1.5 px-2.5 py-1.5 bg-muted/50 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                  <div className="hidden sm:grid grid-cols-[28px_minmax(0,1.4fr)_64px_88px_88px_32px] gap-1.5 px-2.5 py-1.5 bg-muted/50 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                    <span className="text-center">#</span>
                     <span>รายละเอียด</span>
                     <span className="text-center">จำนวน</span>
-                    <span className="text-right">ราคา/หน่วย</span>
+                    <span className="text-right">
+                      ราคา/หน่วย
+                      {displayCurrency !== "THB" ? ` (${currencySymbol(displayCurrency)})` : ""}
+                    </span>
                     <span className="text-right">รวม</span>
                     <span />
                   </div>
@@ -699,17 +970,19 @@ export function ChatOfferDialog({
                       return (
                         <div
                           key={it.id}
-                          className="p-2.5 grid grid-cols-1 gap-1.5 sm:grid-cols-[minmax(0,1.4fr)_64px_88px_88px_32px] sm:gap-x-1.5 sm:gap-y-1.5 sm:items-center"
+                          className="p-2.5 grid grid-cols-[28px_minmax(0,1fr)] gap-1.5 sm:grid-cols-[28px_minmax(0,1.4fr)_64px_88px_88px_32px] sm:gap-x-1.5 sm:gap-y-1.5 sm:items-center"
                         >
-                          <p className="sm:hidden text-[10px] text-muted-foreground">
-                            รายการที่ {idx + 1}
-                          </p>
+                          <div className="flex h-8 items-center justify-center">
+                            <span className="text-xs font-medium tabular-nums text-muted-foreground">
+                              {idx + 1}
+                            </span>
+                          </div>
                           <Input
                             value={it.name}
                             onChange={(e) => updateItem(it.id, { name: e.target.value })}
                             placeholder="เช่น ออกแบบโลโก้"
                             maxLength={120}
-                            className="h-8 text-sm font-medium min-w-0"
+                            className="h-8 text-sm font-medium min-w-0 col-span-1 sm:col-span-1"
                           />
                           <Input
                             inputMode="numeric"
@@ -723,30 +996,21 @@ export function ChatOfferDialog({
                               })
                             }
                             aria-label="จำนวน"
-                            className="h-8 text-sm tabular-nums text-center"
+                            className="h-8 text-sm tabular-nums text-center col-start-2 sm:col-start-auto"
                           />
-                          <Input
-                            inputMode="numeric"
-                            value={it.unitPrice || ""}
-                            onChange={(e) =>
-                              updateItem(it.id, {
-                                unitPrice: Math.max(
-                                  0,
-                                  Number(e.target.value.replace(/[^\d]/g, "")) || 0,
-                                ),
-                              })
-                            }
-                            placeholder="0"
-                            aria-label="ราคาต่อหน่วย"
-                            className="h-8 text-sm tabular-nums text-right"
+                          <OfferUnitPriceInput
+                            unitPriceThb={it.unitPrice || 0}
+                            currency={displayCurrency}
+                            rates={fx?.rates}
+                            onCommitThb={(thb) => updateItem(it.id, { unitPrice: thb })}
                           />
-                          <div className="flex h-8 items-center justify-between sm:justify-end">
+                          <div className="flex h-8 items-center justify-between col-start-2 sm:col-start-auto sm:justify-end">
                             <span className="sm:hidden text-[10px] text-muted-foreground">รวม</span>
                             <p className="text-sm font-semibold tabular-nums leading-none">
-                              ฿{formatOfferBaht(rowTotal)}
+                              {moneyLabel(rowTotal)}
                             </p>
                           </div>
-                          <div className="flex h-8 items-center justify-end">
+                          <div className="flex h-8 items-center justify-end col-start-2 sm:col-start-auto">
                             <button
                               type="button"
                               className="text-muted-foreground hover:text-destructive p-1 disabled:opacity-30"
@@ -766,14 +1030,14 @@ export function ChatOfferDialog({
                             }
                             placeholder="รายละเอียดเพิ่มเติม (ไม่บังคับ)"
                             maxLength={300}
-                            className="h-8 text-xs text-muted-foreground min-w-0 sm:col-start-1"
+                            className="h-8 min-w-0 rounded-none border-0 border-b border-border/60 bg-transparent px-0 text-xs text-muted-foreground shadow-none focus-visible:border-primary focus-visible:ring-0 focus-visible:ring-offset-0 col-start-2 sm:col-start-2"
                           />
                         </div>
                       );
                     })}
                   </div>
 
-                  <div className="p-2 border-t border-border bg-muted/20">
+                  <div className="p-2 border-t border-border bg-muted/20 space-y-3">
                     <Button
                       type="button"
                       size="sm"
@@ -784,110 +1048,198 @@ export function ChatOfferDialog({
                     >
                       <Plus className="h-3.5 w-3.5 mr-1" /> เพิ่มรายการ
                     </Button>
+
+                    <div className="space-y-1.5 px-0.5">
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-muted-foreground">ยอดรวมรายการ</span>
+                        <span className="tabular-nums">{moneyLabel(itemsTotal)}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <Label htmlFor="offer-discount" className="text-muted-foreground font-normal">
+                          ส่วนลด
+                        </Label>
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className="inline-flex h-8 items-stretch overflow-hidden rounded-md border border-border bg-muted/40 text-xs font-medium"
+                            role="group"
+                            aria-label="หน่วยส่วนลด"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (discountMode !== "percent") toggleDiscountMode();
+                              }}
+                              className={cn(
+                                "px-2 transition-colors",
+                                discountMode === "percent"
+                                  ? "bg-primary/15 text-primary"
+                                  : "text-muted-foreground hover:text-foreground",
+                              )}
+                              title="ส่วนลดเป็นเปอร์เซ็นต์"
+                              aria-pressed={discountMode === "percent"}
+                            >
+                              %
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (discountMode !== "thb") toggleDiscountMode();
+                              }}
+                              className={cn(
+                                "border-l border-border px-2 transition-colors",
+                                discountMode === "thb"
+                                  ? "bg-primary/15 text-primary"
+                                  : "text-muted-foreground hover:text-foreground",
+                              )}
+                              title={`ส่วนลดเป็นจำนวนเงิน (${currencySymbol(displayCurrency)})`}
+                              aria-pressed={discountMode === "thb"}
+                            >
+                              {currencySymbol(displayCurrency)}
+                            </button>
+                          </div>
+                          <Input
+                            id="offer-discount"
+                            inputMode="numeric"
+                            value={discountInput}
+                            onChange={(e) => applyDiscountInput(e.target.value)}
+                            placeholder="0"
+                            className="h-8 w-24 text-right tabular-nums text-sm"
+                            aria-label={
+                              discountMode === "thb"
+                                ? `ส่วนลด (${currencySymbol(displayCurrency)})`
+                                : "ส่วนลด (เปอร์เซ็นต์)"
+                            }
+                          />
+                          {discountMode === "percent" && clampedDiscount > 0 ? (
+                            <span className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
+                              = {moneyLabel(clampedDiscount)}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Checkbox
+                            id="offer-wht"
+                            checked={whtApplicable}
+                            onCheckedChange={(v) => setWhtEnabled(v === true)}
+                            disabled={clientType !== "corporate"}
+                          />
+                          <Label
+                            htmlFor="offer-wht"
+                            className={cn(
+                              "text-sm font-normal cursor-pointer",
+                              clientType !== "corporate"
+                                ? "text-muted-foreground cursor-not-allowed"
+                                : "text-muted-foreground",
+                            )}
+                            title={
+                              clientType !== "corporate"
+                                ? "ใช้ได้เมื่อลูกค้าเป็นนิติบุคคล"
+                                : undefined
+                            }
+                          >
+                            หัก ณ ที่จ่าย 3%
+                          </Label>
+                        </div>
+                        <span className="tabular-nums text-emerald-600 dark:text-emerald-400 shrink-0">
+                          {whtAmount > 0 ? `−${moneyLabel(whtAmount)}` : moneyLabel(0)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-muted-foreground">
+                          มัดจำที่ต้องชำระ
+                          {depositAmount > 0 ? ` (${effectiveDepositPercent}%)` : ""}
+                        </span>
+                        <span className="tabular-nums">{moneyLabel(depositAmount)}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 border-t border-border pt-2">
+                        <span className="text-sm font-semibold">ยอดรวม</span>
+                        <span className="text-sm font-semibold text-primary tabular-nums">
+                          {totalLabel}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground text-right leading-relaxed">
+                        {displayCurrency === "THB"
+                          ? "กรอกราคาต่อหน่วยเป็นบาท — ชำระจริงเป็นบาท"
+                          : `พิมพ์จำนวนในสกุลที่เลือก (${currencySymbol(displayCurrency)}) — จะแปลงเป็นบาทเมื่อออกจากช่อง`}
+                        {fx?.asOf && fx.asOf !== "fallback" ? ` · อัตรา ${fx.asOf}` : ""}
+                        {displayCurrency !== "THB" ? " · ชำระจริงเป็นบาท" : ""}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>รูปแบบการชำระ</Label>
-                <ToggleGroup
-                  type="single"
-                  value={paymentMode}
-                  onValueChange={(v) => {
-                    if (v === "full" || v === "deposit") {
-                      setPaymentMode(v);
-                      if (v === "full") applyDeposit(100);
-                      else if (depositPercent >= 100) applyDeposit(50);
-                    }
-                  }}
-                  className="inline-flex rounded-full border border-border bg-background p-1 w-full sm:w-auto"
-                >
-                  <ToggleGroupItem
-                    value="full"
-                    className="rounded-full px-4 py-1.5 text-xs flex-1 sm:flex-none data-[state=on]:bg-muted data-[state=on]:text-foreground"
-                  >
-                    เต็มจำนวน
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="deposit"
-                    className="rounded-full px-4 py-1.5 text-xs flex-1 sm:flex-none data-[state=on]:bg-muted data-[state=on]:text-foreground"
-                  >
-                    มัดจำ %
-                  </ToggleGroupItem>
-                </ToggleGroup>
-
-                {paymentMode === "deposit" ? (
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {DEPOSIT_PRESETS.filter((p) => p < 100).map((p) => (
-                      <Button
-                        key={p}
-                        type="button"
-                        size="sm"
-                        variant={depositPercent === p ? "default" : "outline"}
-                        className="rounded-full h-8 shrink-0"
-                        onClick={() => applyDeposit(p)}
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                  <Label className="shrink-0">รูปแบบการชำระ</Label>
+                  <div className="flex flex-wrap items-center gap-2 min-w-0">
+                    <ToggleGroup
+                      type="single"
+                      value={paymentMode}
+                      onValueChange={(v) => {
+                        if (v === "full" || v === "deposit") {
+                          setPaymentMode(v);
+                          if (v === "full") applyDeposit(100);
+                          else if (depositPercent >= 100) applyDeposit(50);
+                        }
+                      }}
+                      className="inline-flex rounded-full border border-border bg-background p-1"
+                    >
+                      <ToggleGroupItem
+                        value="full"
+                        className="rounded-full px-3 py-1.5 text-xs data-[state=on]:bg-muted data-[state=on]:text-foreground"
                       >
-                        {p}%
-                      </Button>
-                    ))}
-                    <span className="text-[12px] text-muted-foreground whitespace-nowrap pl-0.5">
-                      หรือกำหนดเอง:
-                    </span>
-                    <Input
-                      className={cn(
-                        "h-8 w-14 shrink-0",
-                        depositPercent !== 50 && depositPercent !== 100
-                          ? "border-primary ring-1 ring-primary/30"
-                          : "",
-                      )}
-                      inputMode="numeric"
-                      value={customDeposit}
-                      onChange={(e) => {
-                        const v = e.target.value.replace(/[^\d]/g, "");
-                        setCustomDeposit(v);
-                        if (v) applyDeposit(Number(v));
-                      }}
-                      onFocus={() => {
-                        if (customDeposit) applyDeposit(Number(customDeposit) || 50);
-                      }}
-                    />
-                    <span className="text-[12px] text-muted-foreground">%</span>
-                  </div>
-                ) : null}
-              </div>
+                        เต็มจำนวน
+                      </ToggleGroupItem>
+                      <ToggleGroupItem
+                        value="deposit"
+                        className="rounded-full px-3 py-1.5 text-xs data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                      >
+                        มัดจำ %
+                      </ToggleGroupItem>
+                    </ToggleGroup>
 
-              <div
-                className={cn(
-                  "flex items-start gap-2.5 rounded-xl border p-3",
-                  whtApplicable ? "border-primary/40 bg-primary/5" : "border-border",
-                )}
-              >
-                <Checkbox
-                  id="offer-wht"
-                  checked={whtApplicable}
-                  onCheckedChange={(v) => setWhtEnabled(v === true)}
-                  disabled={clientType !== "corporate"}
-                  className="mt-0.5"
-                />
-                <div className="space-y-0.5">
-                  <Label
-                    htmlFor="offer-wht"
-                    className={cn(
-                      "text-sm font-medium cursor-pointer",
-                      clientType !== "corporate" && "text-muted-foreground cursor-not-allowed",
-                    )}
-                  >
-                    หักภาษี ณ ที่จ่าย 3%
-                  </Label>
-                  {clientType !== "corporate" ? (
-                    <p className="text-[11px] text-muted-foreground">
-                      ใช้ได้เมื่อลูกค้าเป็นนิติบุคคล
-                    </p>
-                  ) : (
-                    <p className="text-[11px] text-muted-foreground">
-                      แสดงในพรีวิวใบเสนอราคา (ปิดได้ถ้าไม่ต้องการ)
-                    </p>
-                  )}
+                    {paymentMode === "deposit" ? (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {DEPOSIT_PRESETS.filter((p) => p < 100).map((p) => (
+                          <Button
+                            key={p}
+                            type="button"
+                            size="sm"
+                            variant={depositPercent === p ? "default" : "outline"}
+                            className="rounded-full h-8 shrink-0"
+                            onClick={() => applyDeposit(p)}
+                          >
+                            {p}%
+                          </Button>
+                        ))}
+                        <span className="text-[12px] text-muted-foreground whitespace-nowrap">
+                          หรือกำหนดเอง:
+                        </span>
+                        <Input
+                          className={cn(
+                            "h-8 w-14 shrink-0",
+                            depositPercent !== 50 && depositPercent !== 100
+                              ? "border-primary ring-1 ring-primary/30"
+                              : "",
+                          )}
+                          inputMode="numeric"
+                          value={customDeposit}
+                          onChange={(e) => {
+                            const v = e.target.value.replace(/[^\d]/g, "");
+                            setCustomDeposit(v);
+                            if (v) applyDeposit(Number(v));
+                          }}
+                          onFocus={() => {
+                            if (customDeposit) applyDeposit(Number(customDeposit) || 50);
+                          }}
+                        />
+                        <span className="text-[12px] text-muted-foreground">%</span>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </section>
@@ -901,6 +1253,33 @@ export function ChatOfferDialog({
                     <p className="text-sm font-semibold">ไทม์ไลน์และงวดงาน</p>
                     <p className="text-[11px] text-muted-foreground">
                       วันที่เหล่านี้จะปรากฏบนใบเสนอราคา
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className={cn(
+                    "flex items-start gap-2.5 rounded-xl border p-3",
+                    showFullTimeline ? "border-primary/40 bg-primary/5" : "border-border",
+                  )}
+                >
+                  <Checkbox
+                    id="offer-show-full-timeline"
+                    checked={showFullTimeline}
+                    onCheckedChange={(v) => setShowFullTimeline(v === true)}
+                    className="mt-0.5"
+                  />
+                  <div className="space-y-0.5">
+                    <Label
+                      htmlFor="offer-show-full-timeline"
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      ต้องการแสดงไทม์ไลน์แบบเต็มในใบเสนอราคาไหม
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground">
+                      {showFullTimeline
+                        ? "แสดงลำดับงวดงานทั้งหมดเหมือนพรีวิวด้านล่าง"
+                        : "ไม่ติ๊ก = แสดงแค่วันส่งมอบสุดท้ายบนใบเสนอราคา"}
                     </p>
                   </div>
                 </div>
@@ -919,28 +1298,36 @@ export function ChatOfferDialog({
                           setStartDate(next);
                           if (endDate && next && endDate < next) setEndDate("");
                           syncMilestoneDates(
-                            next,
+                            next || todayOfferDateYmd(),
                             endDate && next && endDate < next ? "" : endDate,
                           );
                         }}
                       />
+                      {!startDate ? (
+                        <p className="text-[10px] text-muted-foreground">
+                          ไม่ใส่ = ใช้วันที่ทำใบเสนอราคาอัตโนมัติ
+                        </p>
+                      ) : null}
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="offer-end">วันที่จบงาน</Label>
+                      <Label htmlFor="offer-end">
+                        วันที่จบงาน <span className="text-destructive">*</span>
+                      </Label>
                       <Input
                         id="offer-end"
                         type="date"
                         value={endDate}
-                        min={startDate || undefined}
+                        min={effectiveStartDate}
+                        required
                         onChange={(e) => {
                           const next = e.target.value;
                           setEndDate(next);
-                          syncMilestoneDates(startDate, next);
+                          syncMilestoneDates(startDate || todayOfferDateYmd(), next);
                         }}
                       />
                     </div>
                   </div>
-                  {startDate && endDate && endDate < startDate ? (
+                  {endDate && endDate < effectiveStartDate ? (
                     <p className="text-[11px] text-destructive mt-1.5" role="alert">
                       วันจบงานต้องไม่อยู่ก่อนวันเริ่มงาน
                     </p>
@@ -994,7 +1381,7 @@ export function ChatOfferDialog({
                           <Input
                             type="date"
                             value={m.date || ""}
-                            min={startDate || undefined}
+                            min={effectiveStartDate}
                             onChange={(e) =>
                               setMilestones((prev) =>
                                 prev.map((x) =>

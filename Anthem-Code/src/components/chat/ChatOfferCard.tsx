@@ -23,6 +23,7 @@ import {
   offerAcceptMessage,
   offerDeclineWithReasonMessage,
   offerDepositAmount,
+  offerDisplayMilestones,
   QUOTE_DECLINE_REASONS,
   type ChatOfferPayload,
   type QuoteDeclineReasonId,
@@ -64,12 +65,8 @@ export function ChatOfferCard({
   const [declineReason, setDeclineReason] = useState<QuoteDeclineReasonId>("revise_details");
   const [declineNote, setDeclineNote] = useState("");
 
-  const hasTimeline = !!(
-    offer.startDate ||
-    offer.endDate ||
-    offer.dueDate ||
-    (offer.milestones && offer.milestones.length > 0)
-  );
+  const displayMilestones = offerDisplayMilestones(offer);
+  const hasTimeline = displayMilestones.length > 0;
   const depositPct = offer.depositPercent ?? 50;
   const deposit =
     depositPct < 100 ? offerDepositAmount(offer.amount, depositPct) : null;
@@ -243,23 +240,7 @@ export function ChatOfferCard({
             mine ? (
               <div className="rounded-xl border border-dashed border-white/30 bg-black/20 p-2 space-y-1">
                 <p className="text-[10px] font-semibold text-white/90">ไทม์ไลน์งาน</p>
-                {(offer.milestones && offer.milestones.length > 0
-                  ? offer.milestones
-                  : [
-                      ...(offer.startDate
-                        ? [{ id: "s", label: "เริ่มงาน", date: offer.startDate }]
-                        : []),
-                      ...((offer.endDate || offer.dueDate)
-                        ? [
-                            {
-                              id: "e",
-                              label: "ส่งมอบ / จบงาน",
-                              date: offer.endDate || offer.dueDate,
-                            },
-                          ]
-                        : []),
-                    ]
-                ).map((m) => (
+                {displayMilestones.map((m) => (
                   <p key={m.id} className="flex justify-between text-[11px] text-white/80 gap-2">
                     <span className="truncate">{m.label}</span>
                     <span className="tabular-nums shrink-0">

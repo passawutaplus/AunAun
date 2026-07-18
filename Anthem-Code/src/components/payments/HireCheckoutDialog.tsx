@@ -1,5 +1,12 @@
 import { useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
+import {
+  CreditCard,
+  Landmark,
+  Loader2,
+  Lock,
+  QrCode,
+  ShieldCheck,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -10,30 +17,26 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import HireCheckoutSummary from "@/components/payments/HireCheckoutSummary";
+import HirePromptPayView from "@/components/payments/HirePromptPayView";
+import HirePaySuccessView from "@/components/payments/HirePaySuccessView";
 import { useSendMessage } from "@/hooks/useChat";
+import { useHireCharge, type HireChargeResult } from "@/hooks/useHireCharge";
 import {
   formatOfferAmount,
   offerWhtAmount,
   type ChatOfferPayload,
 } from "@/lib/chatOffer";
-import { DEFAULT_PAYMENT_FEATURE_FLAGS } from "@/lib/payments/flags";
 import {
   DEFAULT_FEE_CONFIG,
   planInstallmentSatang,
+  satangToThb,
   snapshotFees,
   thbToSatang,
 } from "@/lib/payments/fees";
 import { buildCheckoutDisplay } from "@/lib/payments/fxDisplay";
 import type { PaymentMethod } from "@/lib/payments/types";
+import { cn } from "@/lib/utils";
 
 type Props = {
   open: boolean;
@@ -43,22 +46,55 @@ type Props = {
   hiringRequestId?: string | null;
 };
 
+type Step = "method" | "qr" | "success";
+
 const METHOD_LABELS: Record<PaymentMethod, string> = {
-  promptpay: "พร้อมเพย์",
-  card: "บัตรเครdit/เดbit",
-  bank_transfer: "โอนธนาคาร",
+  promptpay: "พร้อมเพย์ (QR)",
+  card: "บัตรเครดิต / เดบิต",
+  bank_transfer: "โอนผ่านบัญชีธนาคาร",
 };
 
-/** Buyer checkout for an accepted in-chat hire quote. Omise charge is stubbed until API is wired. */
+const METHOD_OPTIONS: {
+  id: PaymentMethod;
+  label: string;
+  hint: string;
+  badge?: string;
+  icon: typeof QrCode;
+}[] = [
+  {
+    id: "promptpay",
+    label: "พร้อมเพย์ (QR)",
+    hint: "สแกนจ่ายผ่านแอปธนาคาร ไม่มีค่าธรรมเนียม",
+    badge: "แนะนำ",
+    icon: QrCode,
+  },
+  {
+    id: "card",
+    label: "บัตรเครดิต / เดบิต",
+    hint: "Visa · Mastercard · JCB (อาจมีค่าธรรมเนียมบัตร)",
+    icon: CreditCard,
+  },
+  {
+    id: "bank_transfer",
+    label: "โอนผ่านบัญชีธนาคาร",
+    hint: "โอนแล้วแนบสลิปเพื่อยืนยัน",
+    icon: Landmark,
+  },
+];
+
+/** Buyer checkout for an accepted in-chat hire quote (UI-first; Omise charge mocked when flags off). */
 export default function HireCheckoutDialog({
   open,
   onOpenChange,
   offer,
   conversationId,
+  hiringRequestId,
 }: Props) {
   const send = useSendMessage();
+  const { createCharge, pending } = useHireCharge();
   const [method, setMethod] = useState<PaymentMethod>("promptpay");
-  const [paying, setPaying] = useState(false);
+  const [step, setStep] = useState<Step>("method");
+  const [charge, setCharge] = useState<HireChargeResult | null>(null);
 
   const checkout = useMemo(() => {
     const jobPriceSatang = thbToSatang(offer.amount || 0);
@@ -88,113 +124,195 @@ export default function HireCheckoutDialog({
     return { money, installment, depositPct, display };
   }, [offer, method]);
 
-  const handlePay = async () => {
-    setPaying(true);
+  const resetAndClose = () => {
+    onOpenChange(false);
+    // Delay reset so closing animation doesn't flash the first step.
+    setTimeout(() => {
+      setStep("method");
+      setCharge(null);
+      setMethod("promptpay");
+    }, 250);
+  };
+
+  const startCharge = async () => {
     try {
-      const methodLabel = METHOD_LABELS[method];
-      const amountLabel = formatOfferAmount(checkout.money.buyerPaysSatang / 100);
-
-      // Server-side Omise only (omiseProvider.ts) — no client charge API yet.
-      const omiseReady =
-        DEFAULT_PAYMENT_FEATURE_FLAGS.omisePaymentsEnabled &&
-        (method !== "promptpay" || DEFAULT_PAYMENT_FEATURE_FLAGS.omisePromptPayEnabled) &&
-        (method !== "card" || DEFAULT_PAYMENT_FEATURE_FLAGS.omiseCardEnabled) &&
-        (method !== "bank_transfer" || DEFAULT_PAYMENT_FEATURE_FLAGS.bankTransferEnabled);
-
-      if (omiseReady) {
-        toast.info("รอเชื่อม Omise — บันทึกคำขอชำระแล้ว");
-      } else {
-        toast.success("บันทึกคำขอชำระแล้ว — รอเชื่อม Omise");
-      }
-
-      await send.mutateAsync({
+      const result = await createCharge({
+        amountSatang: checkout.money.buyerPaysSatang,
+        method,
+        title: offer.title,
+        quoteId: offer.quoteId ?? null,
+        hiringRequestId: hiringRequestId ?? null,
         conversationId,
-        content: omiseReady
-          ? `กำลังเตรียมชำระเงิน ${amountLabel} ผ่าน ${methodLabel} — Aplus1 เป็นตัวกลาง`
-          : `กำลังเตรียมชำระเงิน ${amountLabel} ผ่าน ${methodLabel} (รอเชื่อม Omise) — Aplus1 เป็นตัวกลาง`,
-        messageType: "system",
       });
-
-      onOpenChange(false);
+      setCharge(result);
+      setStep(method === "promptpay" ? "qr" : "success");
+      if (method !== "promptpay" && !result.live) {
+        await announcePaid(result);
+      }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "ชำระเงินไม่สำเร็จ");
-    } finally {
-      setPaying(false);
+      toast.error(e instanceof Error ? e.message : "เริ่มการชำระเงินไม่สำเร็จ");
     }
   };
 
+  const announcePaid = async (result: HireChargeResult) => {
+    try {
+      await send.mutateAsync({
+        conversationId,
+        content: `ชำระเงิน ${formatOfferAmount(satangToThb(result.amountSatang))} สำเร็จแล้ว — Aplus1 พักเงินไว้ในฐานะตัวกลาง และจะโอนให้ผู้รับงานหลังอนุมัติงาน`,
+        messageType: "system",
+      });
+    } catch {
+      // Non-blocking — payment state is the source of truth.
+    }
+  };
+
+  const handleSimulatePaid = async () => {
+    if (charge) await announcePaid(charge);
+    setStep("success");
+  };
+
+  const buyerBaht = formatOfferAmount(satangToThb(checkout.money.buyerPaysSatang));
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => (v ? onOpenChange(true) : resetAndClose())}>
       <DialogContent className="rounded-2xl max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>ชำระเงินจ้างงาน</DialogTitle>
+          <DialogTitle>
+            {step === "success"
+              ? "ชำระเงินสำเร็จ"
+              : step === "qr"
+                ? "สแกนเพื่อชำระเงิน"
+                : "ชำระเงินจ้างงาน"}
+          </DialogTitle>
           <DialogDescription>
             {offer.title}
             {offer.number ? ` · ${offer.number}` : ""}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-1">
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Aplus1 เป็นตัวกลาง — รับชำระจากผู้จ้างและโอนให้ผู้รับงานหลังอนุมัติงานตามเงื่อนไขแพลตฟอร์ม
-          </p>
+        {step === "method" ? (
+          <>
+            <div className="space-y-4 py-1">
+              <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                <ShieldCheck className="h-4 w-4" />
+                ชำระเงินปลอดภัย 100% ผ่านตัวกลาง Aplus1
+              </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="hire-pay-method">วิธีชำระเงิน</Label>
-            <Select
-              value={method}
-              onValueChange={(v) => setMethod(v as PaymentMethod)}
-              disabled={paying}
-            >
-              <SelectTrigger id="hire-pay-method" className="rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="promptpay">พร้อมเพย์</SelectItem>
-                <SelectItem value="card">บัตรเครdit/เดbit</SelectItem>
-                <SelectItem value="bank_transfer">โอนธนาคาร</SelectItem>
-              </SelectContent>
-            </Select>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Aplus1 เป็นตัวกลาง — รับชำระจากผู้จ้างและโอนให้ผู้รับงานหลังอนุมัติงานตามเงื่อนไขแพลตฟอร์ม
+              </p>
+
+              <div className="space-y-2">
+                {METHOD_OPTIONS.map(({ id, label, hint, badge, icon: Icon }) => {
+                  const active = method === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      disabled={pending}
+                      onClick={() => setMethod(id)}
+                      className={cn(
+                        "flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors",
+                        active
+                          ? "border-primary bg-primary/5 ring-1 ring-primary/40"
+                          : "border-border hover:border-primary/40 hover:bg-secondary/40",
+                      )}
+                    >
+                      <Icon
+                        className={cn(
+                          "h-5 w-5 shrink-0",
+                          active ? "text-primary" : "text-muted-foreground",
+                        )}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-foreground">{label}</span>
+                          {badge ? (
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                              {badge}
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="block text-[11px] text-muted-foreground">{hint}</span>
+                      </span>
+                      <span
+                        className={cn(
+                          "h-4 w-4 shrink-0 rounded-full border-2",
+                          active ? "border-primary bg-primary" : "border-muted-foreground/40",
+                        )}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+
+              {checkout.depositPct < 100 ? (
+                <p className="text-xs text-muted-foreground">
+                  รอบนี้ชำระมัดจำ {checkout.depositPct}% · คงเหลือ{" "}
+                  {formatOfferAmount(satangToThb(checkout.installment.balanceSatang))} หลังเริ่มงาน
+                </p>
+              ) : null}
+
+              <HireCheckoutSummary
+                jobPriceSatang={checkout.money.jobPriceSatang}
+                buyerPaysSatang={checkout.money.buyerPaysSatang}
+                platformFeePercent={checkout.money.fee.platformFeePercent}
+                cardSurchargeSatang={checkout.money.fee.cardSurchargeSatang}
+                methodLabel={METHOD_LABELS[method]}
+                quoteLabel={checkout.display.quoteLabel ?? null}
+                className="rounded-xl border border-border/60 bg-muted/20 p-3"
+              />
+
+              <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                <Lock className="h-3 w-3" />
+                ข้อมูลการชำระเงินถูกเข้ารหัสและประมวลผลผ่านผู้ให้บริการที่ได้รับมาตรฐาน
+              </p>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-full"
+                disabled={pending}
+                onClick={resetAndClose}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                type="button"
+                className="rounded-full"
+                disabled={pending || send.isPending}
+                onClick={() => void startCharge()}
+              >
+                {pending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+                ชำระเงิน ({buyerBaht})
+              </Button>
+            </DialogFooter>
+          </>
+        ) : null}
+
+        {step === "qr" && charge ? (
+          <div className="py-1">
+            <HirePromptPayView
+              charge={charge}
+              onSimulatePaid={() => void handleSimulatePaid()}
+              onSwitchMethod={(m) => {
+                setMethod(m);
+                setCharge(null);
+                setStep("method");
+              }}
+            />
           </div>
+        ) : null}
 
-          {checkout.depositPct < 100 ? (
-            <p className="text-xs text-muted-foreground">
-              รอบนี้ชำระมัดจำ {checkout.depositPct}% · คงเหลือ{" "}
-              {formatOfferAmount(checkout.installment.balanceSatang / 100)} หลังเริ่มงาน
-            </p>
-          ) : null}
-
-          <HireCheckoutSummary
-            jobPriceSatang={checkout.money.jobPriceSatang}
-            buyerPaysSatang={checkout.money.buyerPaysSatang}
-            platformFeePercent={checkout.money.fee.platformFeePercent}
-            cardSurchargeSatang={checkout.money.fee.cardSurchargeSatang}
-            methodLabel={METHOD_LABELS[method]}
-            quoteLabel={checkout.display.quoteLabel ?? null}
-            className="rounded-xl border border-border/60 bg-muted/20 p-3"
+        {step === "success" && charge ? (
+          <HirePaySuccessView
+            amountSatang={charge.amountSatang}
+            reference={charge.reference}
+            onDone={resetAndClose}
           />
-        </div>
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-full"
-            disabled={paying}
-            onClick={() => onOpenChange(false)}
-          >
-            ยกเลิก
-          </Button>
-          <Button
-            type="button"
-            className="rounded-full"
-            disabled={paying || send.isPending}
-            onClick={() => void handlePay()}
-          >
-            {paying ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-            ชำระเงิน
-          </Button>
-        </DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

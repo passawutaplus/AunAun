@@ -82,7 +82,7 @@ export function BillingProfileSection({ userId, profile, onSaved }: Props) {
   };
 
   return (
-    <section className="rounded-2xl glass-panel p-6 space-y-4">
+    <section id="billing-profile" className="rounded-2xl glass-panel p-6 space-y-4 scroll-mt-24">
       <div className="flex items-center gap-2">
         <FileText className="w-5 h-5 text-primary" />
         <h2 className="font-semibold text-foreground">ข้อมูลออกเอกสาร / ภาษี</h2>

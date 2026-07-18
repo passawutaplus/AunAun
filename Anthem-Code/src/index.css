@@ -344,6 +344,55 @@
     }
   }
 
+  /* Hire quote CTA — blue border/text + orbiting aura on hover */
+  .quote-offer-btn {
+    position: relative;
+    isolation: isolate;
+  }
+  .quote-offer-btn::before {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.22s ease;
+    background: conic-gradient(
+      from var(--first-post-beam-angle, 0deg),
+      transparent 0deg,
+      transparent 200deg,
+      hsl(215 88% 52% / 0.15) 235deg,
+      hsl(215 88% 52% / 0.7) 280deg,
+      hsl(210 90% 62% / 0.45) 315deg,
+      transparent 345deg,
+      transparent 360deg
+    );
+    filter: blur(6px);
+  }
+  .quote-offer-btn:hover::before,
+  .quote-offer-btn:focus-visible::before {
+    opacity: 1;
+    animation: first-post-beam-rotate 1.6s linear infinite;
+  }
+  .quote-offer-btn:hover,
+  .quote-offer-btn:focus-visible {
+    box-shadow: 0 0 16px -2px hsl(215 88% 50% / 0.45);
+  }
+  @supports not (background: conic-gradient(from var(--first-post-beam-angle), red, red)) {
+    .quote-offer-btn:hover::before,
+    .quote-offer-btn:focus-visible::before {
+      animation: first-post-aura-spin 1.6s linear infinite;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .quote-offer-btn:hover::before,
+    .quote-offer-btn:focus-visible::before {
+      animation: none;
+      opacity: 0.55;
+    }
+  }
+
   .scrollbar-hide::-webkit-scrollbar,
   .scrollbar-none::-webkit-scrollbar,
   .no-scrollbar::-webkit-scrollbar {

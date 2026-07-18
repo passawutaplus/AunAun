@@ -4,11 +4,19 @@ import {
   formatOfferDateLong,
   formatOfferDateShort,
   offerDepositAmount,
+  offerDisplayMilestones,
+  offerItemsSubtotal,
   offerWhtAmount,
   partyDisplayName,
   paymentTermsLabel,
   type ChatOfferPayload,
 } from "@/lib/chatOffer";
+import {
+  convertThbToFx,
+  formatPortfolioMoney,
+  isPortfolioFxCurrency,
+  type PortfolioFxCurrency,
+} from "@/lib/payments/fxDaily";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -74,6 +82,14 @@ export function ChatOfferPreview({ offer, issuerName, issuerEmail, className }: 
             amount,
           },
         ];
+  const itemsSubtotal =
+    offer.items && offer.items.length > 0
+      ? Math.round(offerItemsSubtotal(offer.items))
+      : amount + Math.max(0, Math.round(offer.discount || 0));
+  const discount = Math.min(
+    itemsSubtotal,
+    Math.max(0, Math.round(offer.discount || Math.max(0, itemsSubtotal - amount))),
+  );
   const depositPct = offer.depositPercent ?? 50;
   const whtOn = offer.whtApplicable ?? offer.whtEnabled !== false;
   const whtRate = offer.whtRate ?? 3;
@@ -82,15 +98,22 @@ export function ChatOfferPreview({ offer, issuerName, issuerEmail, className }: 
   const deposit = offerDepositAmount(grand, depositPct);
   const terms = offer.paymentTerms || paymentTermsLabel(depositPct);
   const end = offer.endDate || offer.dueDate;
-  const milestones =
-    offer.milestones && offer.milestones.length > 0
-      ? offer.milestones
-      : [
-          ...(offer.startDate
-            ? [{ id: "a", label: "มัดจำ / เริ่มงาน", date: offer.startDate }]
-            : []),
-          ...(end ? [{ id: "b", label: "ส่งมอบสุดท้าย", date: end }] : []),
-        ];
+  const milestones = offerDisplayMilestones(offer);
+
+  const displayCur = isPortfolioFxCurrency(offer.displayCurrency)
+    ? (offer.displayCurrency as PortfolioFxCurrency)
+    : "THB";
+  const fxRate =
+    displayCur !== "THB" && offer.fxRateSnapshot?.rate && offer.fxRateSnapshot.rate > 0
+      ? offer.fxRateSnapshot.rate
+      : null;
+  const money = (thb: number) => {
+    if (!fxRate || displayCur === "THB") return `฿${formatOfferBaht(thb)}`;
+    return formatPortfolioMoney(
+      convertThbToFx(thb, displayCur, { [displayCur]: fxRate }),
+      displayCur,
+    );
+  };
 
   return (
     <div
@@ -203,12 +226,12 @@ export function ChatOfferPreview({ offer, issuerName, issuerEmail, className }: 
                   ) : null}
                   {it.quantity > 1 ? (
                     <p className="text-[10px] text-neutral-400 tabular-nums mt-0.5">
-                      {it.quantity} × ฿{formatOfferBaht(it.unitPrice)}
+                      {it.quantity} × {money(it.unitPrice)}
                     </p>
                   ) : null}
                 </div>
                 <div className="col-span-4 text-right text-[12px] tabular-nums font-medium text-neutral-900">
-                  {formatOfferBaht(it.amount)}
+                  {money(it.amount)}
                 </div>
               </div>
             ))
@@ -218,27 +241,45 @@ export function ChatOfferPreview({ offer, issuerName, issuerEmail, className }: 
         {/* Totals */}
         <div className="flex justify-end">
           <div className="w-full max-w-[70%] space-y-1.5">
-            <TotalRow label="ยอดรวมก่อนภาษี" value={`฿${formatOfferBaht(amount)}`} />
+            <TotalRow label="ยอดรวมรายการ" value={money(itemsSubtotal)} />
+            {discount > 0 ? (
+              <TotalRow
+                label={
+                  offer.discountMode === "percent" && offer.discountPercent
+                    ? `ส่วนลด ${offer.discountPercent}%`
+                    : "ส่วนลด"
+                }
+                value={`−${money(discount)}`}
+                tone="text-emerald-600"
+              />
+            ) : null}
+            <TotalRow label="ยอดรวมก่อนภาษี" value={money(amount)} />
             {whtOn ? (
               <TotalRow
                 label={`หัก ณ ที่จ่าย ${whtRate}%`}
-                value={`−฿${formatOfferBaht(wht)}`}
+                value={`−${money(wht)}`}
                 tone="text-emerald-600"
               />
             ) : null}
             <div className="flex items-center justify-between px-3 py-2 mt-1 rounded bg-primary/10 border border-primary/25">
               <span className="text-[12px] font-semibold text-primary">รวมทั้งสิ้น</span>
               <span className="tabular-nums font-bold text-[13px] text-primary">
-                ฿{formatOfferBaht(grand)}
+                {money(grand)}
               </span>
             </div>
             {depositPct < 100 ? (
               <div className="flex items-center justify-between px-3 py-2 rounded bg-primary/10 border border-primary/25">
                 <span className="text-[12px] font-semibold text-primary">มัดจำที่ต้องชำระ</span>
                 <span className="tabular-nums font-bold text-[13px] text-primary">
-                  ฿{formatOfferBaht(deposit)}
+                  {money(deposit)}
                 </span>
               </div>
+            ) : null}
+            {fxRate && displayCur !== "THB" ? (
+              <p className="text-[9px] text-neutral-500 text-right pt-0.5">
+                แสดง {displayCur} อัตราอ้างอิง — ชำระจริงเป็นบาท
+                {offer.fxRateSnapshot?.asOf ? ` (${offer.fxRateSnapshot.asOf})` : ""}
+              </p>
             ) : null}
           </div>
         </div>

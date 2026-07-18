@@ -91,6 +91,7 @@ export function ProjectMobilePreviewContent({
             tools={data.tools}
             tags={data.tags}
             price={data.price}
+            priceThb={data.priceThb}
             views={0}
             likes={0}
             commentsCount={0}

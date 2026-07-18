@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Building2,
-  CheckCircle2,
   FileText,
   Handshake,
   Info,
@@ -15,16 +14,6 @@ import {
   Users,
   X,
 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { BackButton } from "@/components/ui/BackButton";
 import { isAplus1ChatOffersEnabled, isAplus1LaunchMinimal, isAplus1SubscriptionsEnabled } from "@/lib/aplus1Launch";
@@ -70,7 +59,6 @@ import HireCancelRequestDialog from "@/components/hiring/HireCancelRequestDialog
 import { encodeHireForwardMessage } from "@/lib/hireForwardChat";
 import { hireForwardClientNotice, hireRejectReasonLabel } from "@/lib/hireBrief";
 import {
-  canCompleteHireStatus,
   isHireCancelledStatus,
   isHireCompletedStatus,
   labelHireStatus,
@@ -87,7 +75,6 @@ import { collabRejectReasonLabel } from "@/lib/collabBrief";
 import { requestCancelReasonLabel } from "@/lib/requestOutcome";
 import RequestCancelDialog from "@/components/requests/RequestCancelDialog";
 import {
-  useCompleteHireRequest,
   useForwardHireRequest,
   type HiringRow,
 } from "@/hooks/useHiringRequests";
@@ -161,7 +148,6 @@ const ChatThreadView = ({
   const acceptHire = useAcceptRequest();
   const rejectHire = useRejectRequest();
   const forwardHire = useForwardHireRequest();
-  const completeHire = useCompleteHireRequest();
   const cancelCollab = useCancelCollabRequest();
   const submitHireCancel = useSubmitHireCancelRequest();
   const editHireCancel = useEditHireCancelRequest();
@@ -182,7 +168,6 @@ const ChatThreadView = ({
   const [cancelOpen, setCancelOpen] = useState(false);
   const [hireCancelDialogOpen, setHireCancelDialogOpen] = useState(false);
   const [hireCancelEditRow, setHireCancelEditRow] = useState<HireCancelRequestRow | null>(null);
-  const [completeOpen, setCompleteOpen] = useState(false);
   const [collabRejectOpen, setCollabRejectOpen] = useState(false);
   const [announced, setAnnounced] = useState<{
     messageId: string | null;
@@ -212,7 +197,12 @@ const ChatThreadView = ({
   const hireStatus = hireRequestRow?.status ?? null;
   const offerAcceptedAt = (hireRequestRow as { offer_accepted_at?: string | null } | null)
     ?.offer_accepted_at;
-  const hireOfferConfirmed = !!offerAcceptedAt || hireStatus === "ตอบรับ";
+  /**
+   * งานเริ่มแล้ว = ลูกค้าจ่ายเงินจากใบเสนอราคา (งวดแรกหรือเต็ม).
+   * ใช้ offer_accepted_at เป็นสัญญาณจ่ายเงิน — สถานะ "ตอบรับ" เฉย ๆ (ฟรีแลนซ์รับงาน)
+   * ยังไม่นับว่าเริ่มงาน.
+   */
+  const hireWorkStarted = !!offerAcceptedAt;
   const hireRejectReason = (hireRequestRow as { reject_reason?: string | null } | null)?.reject_reason;
   const postRejectChat = (hireRequestRow as { post_reject_chat?: HirePostRejectChat | null } | null)
     ?.post_reject_chat ?? null;
@@ -355,7 +345,6 @@ const ChatThreadView = ({
   );
 
   const outcomeBusy =
-    completeHire.isPending ||
     cancelCollab.isPending ||
     submitHireCancel.isPending ||
     editHireCancel.isPending ||
@@ -425,7 +414,7 @@ const ChatThreadView = ({
     !!conv.request_id &&
     !!hireRequestRow &&
     !!user?.id &&
-    hireOfferConfirmed &&
+    hireWorkStarted &&
     !alreadyForwarded &&
     hireStatus === "ตอบรับ" &&
     !isHireCancelOpenStatus(activeHireCancel?.status) &&
@@ -440,13 +429,6 @@ const ChatThreadView = ({
     (collabStatus === "pending" || collabStatus === "accepted");
 
   const canCancelRequest = canRequestHireCancel || canCancelCollabRequest;
-
-  const canCompleteRequest =
-    !!conv.request_id &&
-    isHire &&
-    !!hireRequestRow &&
-    !alreadyForwarded &&
-    canCompleteHireStatus(hireStatus);
 
   const canCreateCollabProject =
     !!conv.request_id &&
@@ -1071,20 +1053,6 @@ const ChatThreadView = ({
                 {requestStatusLabel}
               </Badge>
             )}
-          {canCompleteRequest && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setCompleteOpen(true)}
-              disabled={outcomeBusy}
-              className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full"
-              aria-label="จบงาน"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">จบงาน</span>
-            </Button>
-          )}
           {(canCreateCollabProject || canCreateGroupCollabProject) && (
             <Button
               type="button"
@@ -1205,26 +1173,17 @@ const ChatThreadView = ({
             isFreelancer && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                disabled={hireStatus !== "ตอบรับ"}
-                title={
-                  hireStatus === "ตอบรับ"
-                    ? "เสนอราคาในแชท"
-                    : hireStatus === "ปฏิเสธ"
-                      ? "ปฏิเสธงานแล้ว — เสนอราคาไม่ได้"
-                      : "ตอบรับงานก่อน จึงจะเสนอราคาได้"
-                }
-                onClick={() => {
-                  if (hireStatus !== "ตอบรับ") return;
-                  setOfferOpen(true);
-                }}
-                className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full disabled:opacity-40"
-                aria-label={
-                  hireStatus === "ตอบรับ"
-                    ? "เสนอราคาในแชท"
-                    : "เสนอราคา — ต้องตอบรับงานก่อน"
-                }
+                title="ทำใบเสนอราคา — เปิดได้ตลอด (ยอมรับงานอัตโนมัติเมื่อผู้จ้างชำระเงิน)"
+                onClick={() => setOfferOpen(true)}
+                className={cn(
+                  "quote-offer-btn inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full",
+                  "border-[hsl(var(--chat-hire)/0.7)] bg-transparent text-[hsl(var(--chat-hire))]",
+                  "hover:bg-[hsl(var(--chat-hire))] hover:text-white hover:border-[hsl(var(--chat-hire))]",
+                  "transition-colors duration-200",
+                )}
+                aria-label="เสนอราคาในแชท"
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">เสนอราคา</span>
@@ -1410,9 +1369,10 @@ const ChatThreadView = ({
         onUpgrade={() => navigate("/upgrade#tier-details")}
       />
       <ChatOfferDialog
-        open={chatOffersOn && hireStatus === "ตอบรับ" && offerOpen}
+        open={chatOffersOn && offerOpen}
         onOpenChange={setOfferOpen}
         conversationId={conv.id}
+        hiringRequestId={conv.request_id ?? null}
         defaultTitle={hireMeta?.project_title ?? conv.project_title ?? ""}
         defaultClientName={hireMeta?.client_name ?? ""}
         defaultClientEmail={hireMeta?.email ?? ""}
@@ -1717,48 +1677,6 @@ const ChatThreadView = ({
           }
         }}
       />
-      <AlertDialog open={isHire && completeOpen} onOpenChange={setCompleteOpen}>
-        <AlertDialogContent className="rounded-2xl max-w-sm">
-          <AlertDialogHeader>
-            <AlertDialogTitle>ยืนยันจบงาน?</AlertDialogTitle>
-            <AlertDialogDescription>
-              ใช้เมื่องานเสร็จและรับเงินแล้ว — คำขอจะย้ายไปแท็บจบงาน
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-full" disabled={outcomeBusy}>
-              กลับ
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className="rounded-full"
-              disabled={outcomeBusy}
-              onClick={(e) => {
-                e.preventDefault();
-                void (async () => {
-                  if (!conv.request_id) return;
-                  try {
-                    await completeHire.mutateAsync(conv.request_id);
-                    try {
-                      await sendMessage.mutateAsync({
-                        conversationId: conv.id,
-                        content: "ยืนยันจบงานแล้ว",
-                      });
-                    } catch {
-                      /* status already saved */
-                    }
-                    toast.success("บันทึกจบงานแล้ว");
-                    setCompleteOpen(false);
-                  } catch (err: unknown) {
-                    toast.error(err instanceof Error ? err.message : "บันทึกจบงานไม่สำเร็จ");
-                  }
-                })();
-              }}
-            >
-              ยืนยันจบงาน
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

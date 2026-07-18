@@ -41,12 +41,23 @@ export type ChatOfferPayload = {
   amount: number;
   /** Settlement currency for the offer amount (ledger settle is always THB satang). */
   currency: "THB" | "USD";
-  /** Optional display preference at offer create time (FX label only). */
-  displayCurrency?: "THB" | "USD";
-  fxRateSnapshot?: { quoteCurrency: "USD"; rate: number; source: string; asOf: string } | null;
+  /** Display preference at offer create time (FX label only — not settlement). */
+  displayCurrency?: string;
+  fxRateSnapshot?: {
+    quoteCurrency: string;
+    rate: number;
+    source: string;
+    asOf: string;
+  } | null;
   /** Summary of line items (backward compat / chat card). */
   deliverables: string;
   items?: ChatOfferLineItem[];
+  /** Discount in THB (same unit as amount / line items). Always the resolved baht amount. */
+  discount?: number;
+  /** How the seller entered the discount. */
+  discountMode?: "thb" | "percent";
+  /** Percent value when discountMode is percent (1–100). */
+  discountPercent?: number;
   /** @deprecated use endDate — kept for older messages */
   dueDate?: string | null;
   startDate?: string | null;
@@ -71,6 +82,12 @@ export type ChatOfferPayload = {
   /** True when client is corporate and WHT checkbox applies. */
   whtApplicable?: boolean;
   milestones?: ChatOfferMilestone[];
+  /**
+   * When true, quotation shows full milestone timeline.
+   * When false, only the final delivery date.
+   * Undefined (legacy messages) keeps full timeline.
+   */
+  showFullTimeline?: boolean;
   /** Shown on the quotation for the client. */
   clientNotes?: string | null;
   /** Freelancer-only note — do not render on the paper preview. */
@@ -171,9 +188,25 @@ export function parseChatOffer(content: string | null | undefined): ChatOfferPay
     if (!raw?.title) return null;
     const items = parseOfferItems(raw);
     const fromItems = items ? Math.round(offerItemsSubtotal(items)) : 0;
+    const discountMode: "thb" | "percent" =
+      raw.discountMode === "percent" ? "percent" : "thb";
+    const discountPercent =
+      typeof raw.discountPercent === "number" && Number.isFinite(raw.discountPercent)
+        ? Math.min(100, Math.max(0, Math.round(raw.discountPercent)))
+        : undefined;
+    let discount =
+      typeof raw.discount === "number" && Number.isFinite(raw.discount)
+        ? Math.max(0, Math.round(raw.discount))
+        : 0;
+    if (items && items.length > 0 && discountMode === "percent" && discountPercent != null) {
+      discount = Math.round((fromItems * discountPercent) / 100);
+    }
+    if (items && items.length > 0) {
+      discount = Math.min(discount, fromItems);
+    }
     const amount =
       items && items.length > 0
-        ? fromItems
+        ? Math.max(0, fromItems - discount)
         : typeof raw.amount === "number"
           ? Math.max(0, Math.round(raw.amount))
           : 0;
@@ -249,8 +282,29 @@ export function parseChatOffer(content: string | null | undefined): ChatOfferPay
       title: clampStr(raw.title, 120),
       amount,
       currency: "THB",
+      displayCurrency:
+        typeof raw.displayCurrency === "string" && raw.displayCurrency.trim()
+          ? clampStr(raw.displayCurrency, 8)
+          : undefined,
+      fxRateSnapshot:
+        raw.fxRateSnapshot &&
+        typeof raw.fxRateSnapshot.rate === "number" &&
+        raw.fxRateSnapshot.rate > 0
+          ? {
+              quoteCurrency: clampStr(raw.fxRateSnapshot.quoteCurrency || "USD", 8),
+              rate: raw.fxRateSnapshot.rate,
+              source: clampStr(raw.fxRateSnapshot.source || "fx", 40),
+              asOf: clampStr(raw.fxRateSnapshot.asOf || "", 40),
+            }
+          : null,
       deliverables,
       items,
+      discount: discount > 0 ? discount : undefined,
+      discountMode: discount > 0 || discountPercent ? discountMode : undefined,
+      discountPercent:
+        discountMode === "percent" && discountPercent != null && discountPercent > 0
+          ? discountPercent
+          : undefined,
       dueDate: endDate,
       startDate,
       endDate,
@@ -271,6 +325,7 @@ export function parseChatOffer(content: string | null | undefined): ChatOfferPay
       whtApplicable,
       whtRate: typeof raw.whtRate === "number" ? raw.whtRate : 3,
       milestones,
+      showFullTimeline: typeof raw.showFullTimeline === "boolean" ? raw.showFullTimeline : undefined,
       clientNotes: raw.clientNotes ? clampStr(raw.clientNotes, 800) : null,
       internalNotes: raw.internalNotes ? clampStr(raw.internalNotes, 800) : null,
       quoteId: raw.quoteId ? clampStr(raw.quoteId, 40) : null,
@@ -345,14 +400,43 @@ export function defaultOfferMilestones(
   ];
 }
 
+/** Milestones shown on the quotation paper / chat card (respects showFullTimeline). */
+export function offerDisplayMilestones(
+  offer: Pick<
+    ChatOfferPayload,
+    "milestones" | "startDate" | "endDate" | "dueDate" | "showFullTimeline"
+  >,
+): ChatOfferMilestone[] {
+  const end = offer.endDate || offer.dueDate || null;
+  if (offer.showFullTimeline === false) {
+    return end ? [{ id: "end", label: "ส่งมอบสุดท้าย", date: end }] : [];
+  }
+  if (offer.milestones && offer.milestones.length > 0) {
+    return offer.milestones;
+  }
+  return [
+    ...(offer.startDate
+      ? [{ id: "a", label: "มัดจำ / เริ่มงาน", date: offer.startDate }]
+      : []),
+    ...(end ? [{ id: "b", label: "ส่งมอบสุดท้าย", date: end }] : []),
+  ];
+}
+
 export function offerTimelineEvents(
   offer: Pick<
     ChatOfferPayload,
-    "startDate" | "endDate" | "dueDate" | "depositDueDate" | "milestones" | "depositPercent"
+    | "startDate"
+    | "endDate"
+    | "dueDate"
+    | "depositDueDate"
+    | "milestones"
+    | "depositPercent"
+    | "showFullTimeline"
   >,
 ): ChatOfferTimelineEvent[] {
-  if (offer.milestones && offer.milestones.length > 0) {
-    return offer.milestones
+  const display = offerDisplayMilestones(offer);
+  if (display.length > 0) {
+    return display
       .filter((m) => m.date)
       .map((m, i, arr) => ({
         date: m.date!,
