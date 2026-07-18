@@ -127,7 +127,7 @@ export type ChatOfferTimelineEvent = {
 export const DEPOSIT_PRESETS = [50, 100] as const;
 
 export function isChatOfferContent(content: string | null | undefined): boolean {
-  return !!content?.startsWith(CHAT_OFFER_PREFIX);
+  return !!content?.includes(CHAT_OFFER_PREFIX);
 }
 
 export function encodeChatOffer(payload: ChatOfferPayload): string {
@@ -182,9 +182,10 @@ function parseOfferItems(raw: ChatOfferPayload): ChatOfferLineItem[] | undefined
 }
 
 export function parseChatOffer(content: string | null | undefined): ChatOfferPayload | null {
-  if (!content?.startsWith(CHAT_OFFER_PREFIX)) return null;
+  if (!content?.includes(CHAT_OFFER_PREFIX)) return null;
+  const idx = content.indexOf(CHAT_OFFER_PREFIX);
   try {
-    const raw = JSON.parse(content.slice(CHAT_OFFER_PREFIX.length)) as ChatOfferPayload;
+    const raw = JSON.parse(content.slice(idx + CHAT_OFFER_PREFIX.length)) as ChatOfferPayload;
     if (!raw?.title) return null;
     const items = parseOfferItems(raw);
     const fromItems = items ? Math.round(offerItemsSubtotal(items)) : 0;

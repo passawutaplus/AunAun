@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,6 @@ import { useSendMessage } from "@/hooks/useChat";
 import {
   formatOfferAmount,
   formatOfferDateShort,
-  offerAcceptMessage,
   offerDeclineWithReasonMessage,
   offerDepositAmount,
   offerDisplayMilestones,
@@ -32,9 +31,14 @@ import { HIRE_POLICY_VERSION, PAYMENT_POLICY_VERSION } from "@/lib/legalConfig";
 import { sharedDb } from "@/integrations/supabase/client";
 import { ChatOfferTimeline } from "@/components/chat/ChatOfferTimeline";
 import { ChatOfferPreview } from "@/components/chat/ChatOfferPreview";
+import {
+  ChatCardShell,
+  ChatCardStatus,
+  ChatCardOrderMenu,
+  chatCardAccent,
+} from "@/components/chat/ChatCardShell";
 import HireCheckoutDialog from "@/components/payments/HireCheckoutDialog";
 import { cn } from "@/lib/utils";
-import { useMarkHireOfferAccepted } from "@/hooks/useHireCancelRequest";
 
 type Props = {
   offer: ChatOfferPayload;
@@ -42,8 +46,12 @@ type Props = {
   mine: boolean;
   /** Recipient can accept/decline. */
   canRespond: boolean;
-  /** When set, accepting the offer marks hiring_requests.offer_accepted_at */
+  /** Paid / offer accepted — hide quote CTA so buyer cannot re-open checkout. */
+  settled?: boolean;
+  /** When set, accepting the offer marks hiring_requests.offer_accepted_at after payment */
   hiringRequestId?: string | null;
+  /** Opens the order-detail popup from the card's document icon (hire flow). */
+  onOpenOrderDetail?: (orderId?: string | null) => void;
 };
 
 export function ChatOfferCard({
@@ -51,11 +59,12 @@ export function ChatOfferCard({
   conversationId,
   mine,
   canRespond,
+  settled = false,
   hiringRequestId,
+  onOpenOrderDetail,
 }: Props) {
   const { user } = useAuth();
   const send = useSendMessage();
-  const markOfferAccepted = useMarkHireOfferAccepted();
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [declineMode, setDeclineMode] = useState(false);
@@ -70,6 +79,13 @@ export function ChatOfferCard({
   const depositPct = offer.depositPercent ?? 50;
   const deposit =
     depositPct < 100 ? offerDepositAmount(offer.amount, depositPct) : null;
+
+  useEffect(() => {
+    if (!settled) return;
+    setQuoteOpen(false);
+    setCheckoutOpen(false);
+    setDeclineMode(false);
+  }, [settled]);
 
   const resetQuoteDialog = () => {
     setDeclineMode(false);
@@ -102,19 +118,8 @@ export function ChatOfferCard({
     if (!agreedService || !agreedPayment) return;
     setBusy(true);
     try {
+      // Policy acceptance before checkout; chat accept + paid card post after payment succeeds.
       await recordPolicyAcceptance();
-      if (hiringRequestId) {
-        try {
-          await markOfferAccepted.mutateAsync(hiringRequestId);
-        } catch {
-          /* chat accept message still useful */
-        }
-      }
-      await send.mutateAsync({
-        conversationId,
-        content: offerAcceptMessage(offer),
-        messageType: "text",
-      });
       setQuoteOpen(false);
       resetQuoteDialog();
       setCheckoutOpen(true);
@@ -161,120 +166,97 @@ export function ChatOfferCard({
 
   return (
     <>
-      <div
-        className={cn(
-          "rounded-2xl border overflow-hidden shadow-sm min-w-[16rem] max-w-[22rem]",
-          mine ? "border-white/25 bg-black/15" : "border-border bg-card",
-        )}
-      >
-        <div
-          className={cn(
-            "px-3 py-2 text-[11px] font-semibold uppercase tracking-wide flex items-center justify-between gap-2",
-            mine ? "bg-black/20 text-white/90" : "bg-primary/10 text-primary",
-          )}
-        >
-          <span>ข้อเสนอราคา</span>
-          {offer.number ? (
-            <span className={cn("font-normal tabular-nums normal-case", mine ? "text-white/70" : "text-primary/80")}>
-              {offer.number}
-            </span>
-          ) : null}
-        </div>
-        <div className={cn("px-3 py-3 space-y-2", mine ? "text-white" : "text-foreground")}>
-          <p className="text-sm font-semibold leading-snug">{offer.title}</p>
-          <p className={cn("text-xl font-semibold tabular-nums", mine ? "text-white" : "text-primary")}>
-            {formatOfferAmount(offer.amount)}
-          </p>
-          {deposit != null ? (
-            <p className={cn("text-[11px]", mine ? "text-white/75" : "text-muted-foreground")}>
-              มัดจำ {depositPct}% · {formatOfferAmount(deposit)}
-              {offer.depositDueDate
-                ? ` · ครบกำหนด ${formatOfferDateShort(offer.depositDueDate)}`
-                : ""}
+      <ChatCardShell
+        tone="hire"
+        icon={FileText}
+        title="ข้อเสนอราคา"
+        meta={offer.number || undefined}
+        action={
+          onOpenOrderDetail ? (
+            <ChatCardOrderMenu onOpenOrderDetail={() => onOpenOrderDetail()} />
+          ) : undefined
+        }
+        footer={
+          settled ? (
+            <p className={cn("text-[11px] font-medium", chatCardAccent("success"))}>
+              ชำระตามใบเสนอราคาแล้ว
             </p>
-          ) : (
-            <p className={cn("text-[11px]", mine ? "text-white/75" : "text-muted-foreground")}>
-              จ่ายเต็มจำนวน
-            </p>
-          )}
-          {offer.items && offer.items.length > 0 ? (
-            <ul className={cn("text-xs space-y-1", mine ? "text-white/85" : "text-muted-foreground")}>
-              {offer.items.slice(0, 4).map((it) => (
-                <li key={it.id} className="flex justify-between gap-2">
-                  <span className="truncate">
-                    {it.name}
-                    {it.quantity > 1 ? ` ×${it.quantity}` : ""}
-                  </span>
-                  <span className="tabular-nums shrink-0">
-                    {formatOfferAmount((it.quantity || 0) * (it.unitPrice || 0))}
-                  </span>
-                </li>
-              ))}
-              {offer.items.length > 4 ? (
-                <li className="text-[11px] opacity-70">+ อีก {offer.items.length - 4} รายการ</li>
-              ) : null}
-            </ul>
-          ) : offer.deliverables ? (
-            <p
-              className={cn(
-                "text-xs leading-relaxed whitespace-pre-wrap",
-                mine ? "text-white/85" : "text-muted-foreground",
-              )}
-            >
-              {offer.deliverables}
-            </p>
-          ) : null}
-          {offer.clientNotes?.trim() ? (
-            <p className={cn("text-[11px] whitespace-pre-wrap", mine ? "text-white/75" : "text-muted-foreground")}>
-              <span className="font-medium">หมายเหตุ: </span>
-              {offer.clientNotes.trim()}
-            </p>
-          ) : null}
-          {mine && offer.internalNotes?.trim() ? (
-            <div className="rounded-xl border border-dashed border-white/30 bg-black/20 p-2 space-y-0.5">
-              <p className="text-[10px] font-semibold text-white/80">หมายเหตุภายใน (เห็นเฉพาะคุณ)</p>
-              <p className="text-[11px] text-white/75 whitespace-pre-wrap">{offer.internalNotes.trim()}</p>
-            </div>
-          ) : null}
-          {hasTimeline ? (
-            mine ? (
-              <div className="rounded-xl border border-dashed border-white/30 bg-black/20 p-2 space-y-1">
-                <p className="text-[10px] font-semibold text-white/90">ไทม์ไลน์งาน</p>
-                {displayMilestones.map((m) => (
-                  <p key={m.id} className="flex justify-between text-[11px] text-white/80 gap-2">
-                    <span className="truncate">{m.label}</span>
-                    <span className="tabular-nums shrink-0">
-                      {m.date ? formatOfferDateShort(m.date) : "—"}
-                    </span>
-                  </p>
-                ))}
-              </div>
-            ) : (
-              <ChatOfferTimeline offer={offer} compact title="ไทม์ไลน์งาน" />
-            )
-          ) : null}
-        </div>
-        {canRespond ? (
-          <div className="px-3 pb-3">
+          ) : canRespond ? (
             <Button
               type="button"
               size="sm"
-              className="w-full rounded-full"
+              className="w-full rounded-full bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
               disabled={send.isPending}
               onClick={() => setQuoteOpen(true)}
             >
               <FileText className="w-3.5 h-3.5 mr-1" />
               ดูใบเสนอราคา
             </Button>
-          </div>
-        ) : mine ? (
-          <p className={cn("px-3 pb-3 text-[11px]", mine ? "text-white/70" : "text-muted-foreground")}>
-            รออีกฝ่ายตอบรับ
+          ) : mine ? (
+            <ChatCardStatus>รออีกฝ่ายตอบรับ</ChatCardStatus>
+          ) : null
+        }
+      >
+        <div>
+          <p className="text-sm font-semibold leading-snug">{offer.title}</p>
+          <p className={cn("text-xl font-semibold tabular-nums mt-0.5", chatCardAccent("hire"))}>
+            {formatOfferAmount(offer.amount)}
+          </p>
+        </div>
+        {deposit != null ? (
+          <p className="text-[11px] text-muted-foreground">
+            มัดจำ {depositPct}% · {formatOfferAmount(deposit)}
+            {offer.depositDueDate
+              ? ` · ครบกำหนด ${formatOfferDateShort(offer.depositDueDate)}`
+              : ""}
+          </p>
+        ) : (
+          <p className="text-[11px] text-muted-foreground">จ่ายเต็มจำนวน</p>
+        )}
+        {offer.items && offer.items.length > 0 ? (
+          <ul className="text-xs space-y-1 text-muted-foreground">
+            {offer.items.slice(0, 4).map((it) => (
+              <li key={it.id} className="flex justify-between gap-2">
+                <span className="truncate">
+                  {it.name}
+                  {it.quantity > 1 ? ` ×${it.quantity}` : ""}
+                </span>
+                <span className="tabular-nums shrink-0">
+                  {formatOfferAmount((it.quantity || 0) * (it.unitPrice || 0))}
+                </span>
+              </li>
+            ))}
+            {offer.items.length > 4 ? (
+              <li className="text-[11px] opacity-70">+ อีก {offer.items.length - 4} รายการ</li>
+            ) : null}
+          </ul>
+        ) : offer.deliverables ? (
+          <p className="text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground">
+            {offer.deliverables}
           </p>
         ) : null}
-      </div>
+        {offer.clientNotes?.trim() ? (
+          <p className="text-[11px] whitespace-pre-wrap text-muted-foreground">
+            <span className="font-medium">หมายเหตุ: </span>
+            {offer.clientNotes.trim()}
+          </p>
+        ) : null}
+        {mine && offer.internalNotes?.trim() ? (
+          <div className="rounded-xl border border-dashed border-border bg-muted/40 p-2 space-y-0.5">
+            <p className="text-[10px] font-semibold text-muted-foreground">
+              หมายเหตุภายใน (เห็นเฉพาะคุณ)
+            </p>
+            <p className="text-[11px] text-muted-foreground whitespace-pre-wrap">
+              {offer.internalNotes.trim()}
+            </p>
+          </div>
+        ) : null}
+        {hasTimeline ? (
+          <ChatOfferTimeline offer={offer} compact title="ไทม์ไลน์งาน" />
+        ) : null}
+      </ChatCardShell>
 
-      <Dialog open={quoteOpen} onOpenChange={handleQuoteOpenChange}>
+      <Dialog open={quoteOpen && !settled} onOpenChange={handleQuoteOpenChange}>
         <DialogContent className="rounded-2xl max-w-lg max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{declineMode ? "ปฏิเสธใบเสนอราคา" : "ใบเสนอราคา"}</DialogTitle>
@@ -414,7 +396,7 @@ export function ChatOfferCard({
       </Dialog>
 
       <HireCheckoutDialog
-        open={checkoutOpen}
+        open={checkoutOpen && !settled}
         onOpenChange={setCheckoutOpen}
         offer={offer}
         conversationId={conversationId}

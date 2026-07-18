@@ -7,6 +7,7 @@ import type { Conversation } from "@/hooks/useChat";
 import { ChatQuoteActions } from "@/components/chat/ChatQuoteActions";
 import { ChatCollabActions } from "@/components/chat/ChatCollabActions";
 import { HireOrderFlowPanel } from "@/components/hire/HireOrderFlowPanel";
+import { HireOrderDetailContent } from "@/components/hire/HireOrderDetailDialog";
 
 const COLLAB_TYPE_LABELS: Record<string, string> = {
   chat: "พูดคุย",
@@ -133,10 +134,20 @@ const ChatMetaPanel = ({
           </div>
         )}
         {isHire && conversation.request_id ? (
-          <HireOrderFlowPanel
-            conversation={conversation}
-            projectTitle={conversation.project_title ?? meta?.hire?.project_title ?? null}
-          />
+          <>
+            <HireOrderFlowPanel
+              conversation={conversation}
+              projectTitle={conversation.project_title ?? meta?.hire?.project_title ?? null}
+            />
+            <div className="pt-3 border-t border-border">
+              <HireOrderDetailContent
+                conversation={conversation}
+                deadline={meta?.hire?.deadline ?? null}
+                showDeadline={false}
+                showPartner={false}
+              />
+            </div>
+          </>
         ) : null}
         {conversation.kind === "collab" && conversation.request_id ? (
           <ChatCollabActions conversation={conversation} />

@@ -8,6 +8,7 @@ import {
   shouldSendAnthemEmail,
 } from "../_shared/enqueue-anthem-email.ts";
 import { sharedDb } from "../_shared/ecosystem-db.ts";
+import { chatMessagePreview } from "../_shared/chat-protocol-preview.ts";
 
 const BodySchema = z.object({
   conversation_id: z.string().uuid(),
@@ -102,8 +103,7 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   const senderName = senderProfile?.display_name ?? "มีข้อความใหม่";
-  const raw = msgRow.content ?? "";
-  const preview = raw.length > 120 ? `${raw.slice(0, 120)}…` : raw || "(ไฟล์แนบ)";
+  const preview = chatMessagePreview(msgRow.content ?? "");
   const siteUrl = anthemSiteUrl();
   const chatPath = `/chat/${conv.id}`;
   const actionUrl = `${siteUrl}${chatPath}`;

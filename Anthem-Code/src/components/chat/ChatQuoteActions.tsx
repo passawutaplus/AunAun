@@ -12,7 +12,8 @@ import { useForwardHireRequest, type HiringRow } from "@/hooks/useHiringRequests
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/core/subscription/useSubscription";
 import { useStudioForConversation, useStudioMembers } from "@/hooks/useStudios";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, sharedDb } from "@/integrations/supabase/client";
+import { isHireOrderActive, type HireOrderRow } from "@/hooks/useHireOrderFlow";
 import {
   canOpenStudioCombinedQuote,
   canShowStudioQuoteUpsell,
@@ -82,6 +83,54 @@ export function ChatQuoteActions({ conversation }: Props) {
     },
   });
 
+  // Latest quote for this hire — lock re-creating while one is still active/accepted.
+  const { data: latestQuote = null } = useQuery({
+    queryKey: ["chat-hire-latest-quote", conversation.request_id],
+    enabled: !!conversation.request_id && isHire && isFreelancer,
+    queryFn: async () => {
+      const { data, error } = await sharedDb
+        .from("hire_quotes" as never)
+        .select("id,status,expires_at")
+        .eq("hiring_request_id", conversation.request_id!)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) return null;
+      return (data ?? null) as {
+        id: string;
+        status: string;
+        expires_at: string | null;
+      } | null;
+    },
+  });
+
+  const quoteStatus = latestQuote?.status ?? null;
+  // Active quote = pending offer not past expiry (accepted alone does not block if order is terminal).
+  const quotePending =
+    quoteStatus === "sent" &&
+    (!latestQuote?.expires_at ||
+      new Date(latestQuote.expires_at).getTime() > Date.now());
+
+  // Latest order — block new quote while money flow is still active.
+  const { data: latestOrder = null } = useQuery({
+    queryKey: ["hire-order-by-request", conversation.request_id],
+    enabled: !!conversation.request_id && isHire && isFreelancer,
+    queryFn: async () => {
+      const { data, error } = await sharedDb
+        .from("hire_orders" as never)
+        .select("id,status")
+        .eq("hiring_request_id", conversation.request_id!)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) return null;
+      return (data ?? null) as Pick<HireOrderRow, "id" | "status"> | null;
+    },
+  });
+
+  const orderBlocksNewQuote = isHireOrderActive(latestOrder?.status);
+  const quoteLocked = quotePending || orderBlocksNewQuote;
+
   const hireStatus = hireRow?.status ?? null;
   const hireAccepted = hireStatus === "ตอบรับ";
   const alreadyForwarded = !!(hireRow as { forwarded_to_user_id?: string | null } | null)
@@ -99,6 +148,7 @@ export function ChatQuoteActions({ conversation }: Props) {
     acceptHire.isPending || rejectHire.isPending || forwardHire.isPending || sendMessage.isPending;
 
   const invalidateHire = () => {
+    void qc.invalidateQueries({ queryKey: ["chat-hire-latest-quote", conversation.request_id] });
     void qc.invalidateQueries({ queryKey: ["chat-hire-meta-panel", conversation.request_id] });
     void qc.invalidateQueries({ queryKey: ["chat-meta", "hire", conversation.request_id] });
     void qc.invalidateQueries({ queryKey: ["chat-hire-meta", conversation.request_id] });
@@ -236,28 +286,49 @@ export function ChatQuoteActions({ conversation }: Props) {
           <p className="text-[11px] text-muted-foreground">ปฏิเสธคำขอนี้แล้ว</p>
         )}
 
-        {chatOffersOn && (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className={cn(
-              "quote-offer-btn w-full rounded-xl border-[hsl(var(--chat-hire)/0.7)] bg-transparent text-[hsl(var(--chat-hire))]",
-              "transition-colors duration-200",
-              "hover:bg-[hsl(var(--chat-hire))] hover:text-white hover:border-[hsl(var(--chat-hire))]",
-            )}
-            title="ทำใบเสนอราคา — เปิดได้ตลอด (ยอมรับงานอัตโนมัติเมื่อผู้จ้างชำระเงิน)"
-            onClick={() => setOfferOpen(true)}
-          >
-            <Banknote className="w-3.5 h-3.5 mr-1.5" />
-            ทำใบเสนอราคา
-          </Button>
-        )}
+        {chatOffersOn &&
+          (quoteLocked ? (
+            <div className="rounded-xl border border-[hsl(var(--chat-hire)/0.3)] bg-[hsl(var(--chat-hire-soft))] px-3 py-2">
+              <p className="text-[11px] font-medium text-[hsl(var(--chat-hire))]">
+                {orderBlocksNewQuote
+                  ? "มีออเดอร์ที่ยังไม่จบ — รอจบหรือยกเลิกก่อน"
+                  : "ส่งใบเสนอราคาแล้ว — รอผู้จ้างตอบรับ"}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {orderBlocksNewQuote
+                  ? "เมื่อออเดอร์จบ/ยกเลิก/คืนเงินแล้ว จะเสนอราคาออเดอร์ใหม่ในแชทนี้ได้"
+                  : "ทำใบใหม่ได้เมื่อใบนี้ถูกปฏิเสธหรือหมดอายุ"}
+              </p>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className={cn(
+                "quote-offer-btn w-full rounded-xl border-[hsl(var(--chat-hire)/0.7)] bg-transparent text-[hsl(var(--chat-hire))]",
+                "transition-colors duration-200",
+                "hover:bg-[hsl(var(--chat-hire))] hover:text-white hover:border-[hsl(var(--chat-hire))]",
+              )}
+              title="เสนอราคาออเดอร์ใหม่ในแชทนี้"
+              onClick={() => setOfferOpen(true)}
+            >
+              <Banknote className="w-3.5 h-3.5 mr-1.5" />
+              {latestOrder ? "เสนอราคาออเดอร์ใหม่" : "ทำใบเสนอราคา"}
+            </Button>
+          ))}
       </div>
 
       <ChatOfferDialog
         open={chatOffersOn && offerOpen}
-        onOpenChange={setOfferOpen}
+        onOpenChange={(v) => {
+          setOfferOpen(v);
+          if (!v) {
+            void qc.invalidateQueries({
+              queryKey: ["chat-hire-latest-quote", conversation.request_id],
+            });
+          }
+        }}
         conversationId={conversation.id}
         hiringRequestId={conversation.request_id ?? null}
         defaultTitle={hireRow?.project_title ?? conversation.project_title ?? ""}

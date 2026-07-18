@@ -87,6 +87,8 @@ type Props = {
   defaultClientPhone?: string;
   defaultClientAddress?: string;
   defaultClientTaxId?: string;
+  /** Auto-fill the client section from the hiring user's profile (editable after). */
+  defaultClientParty?: OfferPartyInfo | null;
 };
 
 function newMilestoneId() {
@@ -221,6 +223,7 @@ export function ChatOfferDialog({
   defaultClientPhone,
   defaultClientAddress,
   defaultClientTaxId,
+  defaultClientParty,
 }: Props) {
   const send = useSendMessage();
   const { user } = useAuth();
@@ -318,6 +321,48 @@ export function ChatOfferDialog({
     if (clientType !== "corporate") setWhtEnabled(false);
     else setWhtEnabled(true);
   }, [clientType]);
+
+  // Auto-fill client details from the hiring user's profile when the dialog opens.
+  // Only fills when the client section is still empty, so manual edits are preserved.
+  const prevOpenRef = useRef(false);
+  useEffect(() => {
+    const justOpened = open && !prevOpenRef.current;
+    prevOpenRef.current = open;
+    if (!justOpened || !defaultClientParty) return;
+
+    const clientSectionEmpty =
+      !clientName.trim() &&
+      !clientEmail.trim() &&
+      !clientPhone.trim() &&
+      !clientAddress.trim() &&
+      !companyName.trim() &&
+      !taxId.trim() &&
+      !corpAddress.trim() &&
+      !corpPhone.trim() &&
+      !corpEmail.trim() &&
+      !contactPerson.trim() &&
+      !contactRole.trim();
+    if (!clientSectionEmpty) return;
+
+    const p = defaultClientParty;
+    if (p.type === "corporate") {
+      setClientType("corporate");
+      setCompanyName((p.companyName || p.name || "").trim());
+      setTaxId((p.taxId || "").trim());
+      setCorpAddress((p.address || "").trim());
+      setCorpPhone((p.phone || "").trim());
+      setCorpEmail((p.email || "").trim());
+      setContactPerson((p.contactPerson || "").trim());
+      setContactRole((p.contactRole || "").trim());
+    } else {
+      setClientType("individual");
+      setClientName((p.name || "").trim());
+      setClientEmail((p.email || "").trim());
+      setClientPhone((p.phone || "").trim());
+      setClientAddress((p.address || "").trim());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- autofill once per open
+  }, [open, defaultClientParty]);
 
   const itemsTotal = useMemo(() => Math.round(offerItemsSubtotal(items)), [items]);
   const clampedDiscount = useMemo(() => {

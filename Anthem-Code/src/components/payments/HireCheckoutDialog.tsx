@@ -21,12 +21,18 @@ import HireCheckoutSummary from "@/components/payments/HireCheckoutSummary";
 import HirePromptPayView from "@/components/payments/HirePromptPayView";
 import HirePaySuccessView from "@/components/payments/HirePaySuccessView";
 import { useSendMessage } from "@/hooks/useChat";
+import { useAuth } from "@/hooks/useAuth";
 import { useHireCharge, type HireChargeResult } from "@/hooks/useHireCharge";
 import {
   formatOfferAmount,
   offerWhtAmount,
   type ChatOfferPayload,
 } from "@/lib/chatOffer";
+import { encodeHirePaidMessage } from "@/lib/hirePaymentChat";
+import {
+  buildHireWorkStartPayload,
+  encodeHireWorkStartMessage,
+} from "@/lib/hireWorkStartChat";
 import {
   DEFAULT_FEE_CONFIG,
   planInstallmentSatang,
@@ -34,9 +40,12 @@ import {
   snapshotFees,
   thbToSatang,
 } from "@/lib/payments/fees";
+import { createHireOrderAfterPayment } from "@/lib/payments/createHireOrderAfterPayment";
 import { buildCheckoutDisplay } from "@/lib/payments/fxDisplay";
 import type { PaymentMethod } from "@/lib/payments/types";
+import { useMarkHireOfferAccepted } from "@/hooks/useHireCancelRequest";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
 
 type Props = {
   open: boolean;
@@ -90,6 +99,9 @@ export default function HireCheckoutDialog({
   conversationId,
   hiringRequestId,
 }: Props) {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const markOfferAccepted = useMarkHireOfferAccepted();
   const send = useSendMessage();
   const { createCharge, pending } = useHireCharge();
   const [method, setMethod] = useState<PaymentMethod>("promptpay");
@@ -155,14 +167,66 @@ export default function HireCheckoutDialog({
   };
 
   const announcePaid = async (result: HireChargeResult) => {
+    if (hiringRequestId) {
+      try {
+        await markOfferAccepted.mutateAsync(hiringRequestId);
+      } catch {
+        /* chat card still useful if RLS/status race */
+      }
+    }
+
+    let orderId: string | null = null;
+    if (user?.id) {
+      const persisted = await createHireOrderAfterPayment({
+        offer,
+        conversationId,
+        hiringRequestId,
+        method: result.method,
+        paidAmountSatang: result.amountSatang,
+        buyerId: user.id,
+        chargeId: result.chargeId,
+      });
+      orderId = persisted?.orderId ?? null;
+      if (hiringRequestId) {
+        void qc.invalidateQueries({ queryKey: ["hire-order-by-request", hiringRequestId] });
+        void qc.invalidateQueries({ queryKey: ["hire-orders-by-request", hiringRequestId] });
+        void qc.invalidateQueries({ queryKey: ["chat-hire-latest-quote", hiringRequestId] });
+      }
+      if (orderId) {
+        void qc.invalidateQueries({ queryKey: ["hire-order-by-id", orderId] });
+        void qc.invalidateQueries({ queryKey: ["hire-order-documents", orderId] });
+      }
+    }
+
+    // Paid card, then work-start (timeline + items) — send separately so one failure
+    // does not block the other.
     try {
       await send.mutateAsync({
         conversationId,
-        content: `ชำระเงิน ${formatOfferAmount(satangToThb(result.amountSatang))} สำเร็จแล้ว — Aplus1 พักเงินไว้ในฐานะตัวกลาง และจะโอนให้ผู้รับงานหลังอนุมัติงาน`,
+        content: encodeHirePaidMessage({
+          v: 1,
+          kind: "hire_paid",
+          offerTitle: offer.title,
+          offerAmountThb: offer.amount || 0,
+          paidAmountThb: satangToThb(result.amountSatang),
+          quoteId: offer.quoteId ?? null,
+          orderId,
+        }),
         messageType: "system",
       });
     } catch {
-      // Non-blocking — payment state is the source of truth.
+      /* payment state is source of truth */
+    }
+    try {
+      await send.mutateAsync({
+        conversationId,
+        content: encodeHireWorkStartMessage(
+          buildHireWorkStartPayload(offer, { orderId }),
+        ),
+        messageType: "system",
+      });
+    } catch {
+      /* ChatThreadView backfills work-start when hire is settled */
     }
   };
 

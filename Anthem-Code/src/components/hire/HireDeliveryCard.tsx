@@ -23,6 +23,7 @@ import {
   useOpenHireDispute,
 } from "@/hooks/useHireOrderFlow";
 import type { HireDeliveryChatPayload } from "@/lib/hireDeliveryChat";
+import { ChatCardOrderMenu } from "@/components/chat/ChatCardShell";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -30,6 +31,8 @@ type Props = {
   hiringRequestId?: string | null;
   projectTitle?: string | null;
   mine: boolean;
+  /** Opens the order-detail popup from the card's document icon (hire flow). */
+  onOpenOrderDetail?: (orderId?: string | null) => void;
 };
 
 export default function HireDeliveryCard({
@@ -37,6 +40,7 @@ export default function HireDeliveryCard({
   hiringRequestId,
   projectTitle,
   mine,
+  onOpenOrderDetail,
 }: Props) {
   const { user } = useAuth();
   const { data: order } = useHireOrderById(payload.orderId);
@@ -105,15 +109,24 @@ export default function HireDeliveryCard({
           mine ? "border-primary/30 bg-primary/5" : "border-border bg-card",
         )}
       >
-        <div className="px-4 py-3 border-b border-border/60 bg-muted/30">
-          <p className="text-sm font-semibold text-foreground">ส่งมอบผลงาน</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
-            รอบที่ {payload.revision} · {submittedLabel}
-          </p>
-          {order ? (
-            <p className="text-[11px] text-muted-foreground mt-1">
-              สถานะ: {labelHireOrderStatus(order.status)}
+        <div className="px-4 py-3 border-b border-border/60 bg-muted/30 flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground">ส่งมอบผลงาน</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              รอบที่ {payload.revision} · {submittedLabel}
             </p>
+            {order ? (
+              <p className="text-[11px] text-muted-foreground mt-1">
+                สถานะ: {labelHireOrderStatus(order.status)}
+              </p>
+            ) : null}
+          </div>
+          {onOpenOrderDetail ? (
+            <div className="shrink-0 text-muted-foreground">
+              <ChatCardOrderMenu
+                onOpenOrderDetail={() => onOpenOrderDetail(payload.orderId)}
+              />
+            </div>
           ) : null}
         </div>
 

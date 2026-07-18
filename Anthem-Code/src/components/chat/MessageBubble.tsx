@@ -56,6 +56,13 @@ import { parseHireCancelCardMessage } from "@/lib/hireCancelRequest";
 import HireCancelCard from "@/components/chat/HireCancelCard";
 import { parseHireDeliveryMessage } from "@/lib/hireDeliveryChat";
 import HireDeliveryCard from "@/components/hire/HireDeliveryCard";
+import { parseHirePaidMessage, parseLegacyHirePaidText } from "@/lib/hirePaymentChat";
+import HirePaidCard from "@/components/chat/HirePaidCard";
+import {
+  isPlainOfferAcceptMessage,
+  parseHireWorkStartMessage,
+} from "@/lib/hireWorkStartChat";
+import HireWorkStartCard from "@/components/chat/HireWorkStartCard";
 import { isHireBriefChatMessage } from "@/lib/hireBrief";
 import { isCollabBriefChatMessage } from "@/lib/collabBrief";
 import { UNSEND_WINDOW_MS, type Message } from "@/hooks/useChat";
@@ -121,7 +128,11 @@ interface Props {
   hireContinueAskActions?: HireContinueAskActions | null;
   /** Hire cancel-request card actions. */
   hiringRequestId?: string | null;
+  /** Hire quote already paid / accepted — lock offer CTA. */
+  hireQuoteSettled?: boolean;
   hireProjectTitle?: string | null;
+  /** Opens the hire order-detail popup from a card's document icon. Pass orderId when known. */
+  onOpenHireOrderDetail?: (orderId?: string | null) => void;
   onHireCancelEdit?: (row: HireCancelRequestRow) => void;
   onHireCancelWithdraw?: (row: HireCancelRequestRow) => void;
   hireCancelWithdrawBusy?: boolean;
@@ -144,7 +155,9 @@ const MessageBubble = ({
   hireRejectChoiceActions = null,
   hireContinueAskActions = null,
   hiringRequestId = null,
+  hireQuoteSettled = false,
   hireProjectTitle = null,
+  onOpenHireOrderDetail,
   onHireCancelEdit,
   onHireCancelWithdraw,
   hireCancelWithdrawBusy,
@@ -268,13 +281,24 @@ const MessageBubble = ({
   const hireContinueAsk = !deleted ? parseHireContinueAskMessage(message.content) : null;
   const hireCancel = !deleted ? parseHireCancelCardMessage(message.content) : null;
   const hireDelivery = !deleted ? parseHireDeliveryMessage(message.content) : null;
+  const hirePaid = !deleted
+    ? parseHirePaidMessage(message.content) || parseLegacyHirePaidText(message.content)
+    : null;
+  const hireWorkStart = !deleted ? parseHireWorkStartMessage(message.content) : null;
+  /** Work-start card belongs on the hiree (freelancer) side, even if buyer posted it. */
+  const alignMine = hireWorkStart ? !viewerIsClient : mine;
   const rawForDisplay =
     message.content && isSystemFallbackContent(message.content)
       ? stripSystemFallbackPrefix(message.content)
       : message.content || "";
-  // Never show internal protocol payloads as plain chat text.
+  // Never show internal protocol payloads / legacy accept text as plain chat bubbles.
   const displayContent =
-    isFileAttachment || isHireProtocolMessage(message.content) || isHireProtocolMessage(rawForDisplay)
+    isFileAttachment ||
+    !!hirePaid ||
+    !!hireWorkStart ||
+    isPlainOfferAcceptMessage(rawForDisplay) ||
+    isHireProtocolMessage(message.content) ||
+    isHireProtocolMessage(rawForDisplay)
       ? ""
       : rawForDisplay;
 
@@ -286,6 +310,8 @@ const MessageBubble = ({
     !hireContinueAsk &&
     !hireCancel &&
     !hireDelivery &&
+    !hirePaid &&
+    !hireWorkStart &&
     isHireBriefChatMessage(rawForDisplay)
       ? rawForDisplay
       : null;
@@ -298,6 +324,8 @@ const MessageBubble = ({
     !hireContinueAsk &&
     !hireCancel &&
     !hireDelivery &&
+    !hirePaid &&
+    !hireWorkStart &&
     !hireBrief &&
     isCollabBriefChatMessage(rawForDisplay)
       ? rawForDisplay
@@ -310,14 +338,22 @@ const MessageBubble = ({
     hireContinueAsk ||
     hireCancel ||
     hireDelivery ||
+    hirePaid ||
+    hireWorkStart ||
     hireBrief ||
     collabBrief ||
-    (!deleted && isHireProtocolMessage(message.content))
+    (!deleted && isHireProtocolMessage(message.content)) ||
+    (!deleted && isPlainOfferAcceptMessage(message.content))
   );
   const copyText = replyPreviewText(message);
-  const showTranslate = looksForeignLanguage(
-    hireRejectChoice?.reasonLabel || hireBrief || displayContent || copyText,
-  );
+  const isPortfolioOrProfileCard =
+    message.message_type === "project" || message.message_type === "profile";
+  // Portfolio / profile share cards — no translate (title/media only).
+  const showTranslate =
+    !isPortfolioOrProfileCard &&
+    looksForeignLanguage(
+      hireRejectChoice?.reasonLabel || hireBrief || displayContent || copyText,
+    );
 
   const replyQuote =
     message.reply_to_id && replyTo ? (
@@ -352,6 +388,11 @@ const MessageBubble = ({
     window.open(`https://translate.google.com/?sl=auto&tl=th&text=${q}`, "_blank", "noopener,noreferrer");
   };
 
+  // Legacy plain "ยอมรับข้อเสนอ …" bubbles — hide; paid + work-start cards replace them.
+  if (!deleted && isPlainOfferAcceptMessage(message.content) && !hirePaid && !hireWorkStart) {
+    return null;
+  }
+
   // Structured cards (hire reject / continue / forward / offer) win over system-pill rendering.
   if (isSystem && !deleted && !isStructuredChatCard) {
     return (
@@ -363,7 +404,9 @@ const MessageBubble = ({
     );
   }
 
-  const messageMenu = !deleted ? (
+  // Hire/system structured cards — no ⋮ menu. Portfolio cards keep menu (without translate).
+  const messageMenu =
+    !deleted && !isStructuredChatCard ? (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -419,7 +462,7 @@ const MessageBubble = ({
     <div
       className={cn(
         "flex items-end gap-1 group/msg transition-colors duration-500 rounded-2xl",
-        mine ? "justify-end" : "justify-start",
+        alignMine ? "justify-end" : "justify-start",
         highlight && "ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
       )}
     >
@@ -436,7 +479,7 @@ const MessageBubble = ({
                 <div
                   className={cn(
                     "rounded-2xl overflow-hidden shadow-sm",
-                    message.reply_to_id && replyTo ? cn("p-2", mine ? mineBg : theirBg) : "",
+                    message.reply_to_id && replyTo ? cn("p-2", alignMine ? mineBg : theirBg) : "",
                   )}
                 >
                   {replyQuote}
@@ -537,8 +580,10 @@ const MessageBubble = ({
                   offer={offer}
                   conversationId={message.conversation_id}
                   mine={mine}
-                  canRespond={!mine}
+                  canRespond={!mine && !hireQuoteSettled}
+                  settled={hireQuoteSettled}
                   hiringRequestId={hiringRequestId}
+                  onOpenOrderDetail={onOpenHireOrderDetail}
                 />
               </div>
             )}
@@ -592,6 +637,27 @@ const MessageBubble = ({
                   hiringRequestId={hiringRequestId}
                   projectTitle={hireProjectTitle}
                   mine={mine}
+                  onOpenOrderDetail={onOpenHireOrderDetail}
+                />
+              </div>
+            )}
+            {hirePaid && (
+              <div>
+                {replyQuote}
+                <HirePaidCard
+                  payload={hirePaid}
+                  mine={mine}
+                  onOpenOrderDetail={onOpenHireOrderDetail}
+                />
+              </div>
+            )}
+            {hireWorkStart && (
+              <div>
+                {replyQuote}
+                <HireWorkStartCard
+                  payload={hireWorkStart}
+                  mine={alignMine}
+                  onOpenOrderDetail={onOpenHireOrderDetail}
                 />
               </div>
             )}
@@ -621,6 +687,8 @@ const MessageBubble = ({
               !hireRejectChoice &&
               !hireContinueAsk &&
               !hireCancel &&
+              !hirePaid &&
+              !hireWorkStart &&
               !hireBrief &&
               !collabBrief &&
               message.message_type !== "project" &&
@@ -660,15 +728,17 @@ const MessageBubble = ({
         <div
           className={cn(
             "flex items-center gap-1 mt-1 text-[10px] text-muted-foreground",
-            mine ? "justify-end" : "justify-between",
+            alignMine ? "justify-end" : "justify-between",
           )}
         >
-          {mine ? messageMenu : null}
+          {alignMine ? messageMenu : null}
           <span className="inline-flex items-center gap-1">
             <span>{time}</span>
-            {mine && !deleted && <span>{message.read_at ? "อ่านแล้ว" : "ส่งแล้ว"}</span>}
+            {alignMine && !deleted && !hireWorkStart && (
+              <span>{message.read_at ? "อ่านแล้ว" : "ส่งแล้ว"}</span>
+            )}
           </span>
-          {!mine ? messageMenu : null}
+          {!alignMine ? messageMenu : null}
         </div>
       </div>
     </div>

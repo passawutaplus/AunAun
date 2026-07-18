@@ -495,7 +495,11 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
             onClick={() => setMetaOpen(false)}
             className="flex shrink-0 items-center justify-between w-full px-4 py-2.5 text-xs font-medium text-foreground bg-background border-b border-border hover:bg-muted/40 transition-colors"
           >
-            {showHireMeta ? "ข้อมูลงาน / มีเดีย" : "มีเดียในแชท"}
+            {showHireMeta
+              ? conversation.kind === "hire"
+                ? "รายละเอียดออเดอร์ / มีเดีย"
+                : "ข้อมูลงาน / มีเดีย"
+              : "มีเดียในแชท"}
             <ChevronDown
               className={cn(
                 "w-4 h-4 text-muted-foreground rotate-180",
@@ -539,7 +543,11 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
           onClick={() => setMetaOpen(true)}
           className="flex shrink-0 items-center justify-between w-full px-4 py-2.5 text-xs font-medium text-foreground bg-background border-t border-border hover:bg-muted/40 transition-colors"
         >
-          {showHireMeta ? "ข้อมูลงาน / มีเดีย" : "มีเดียในแชท"}
+          {showHireMeta
+            ? conversation.kind === "hire"
+              ? "รายละเอียดออเดอร์ / มีเดีย"
+              : "ข้อมูลงาน / มีเดีย"
+            : "มีเดียในแชท"}
           <ChevronDown className="w-4 h-4 text-muted-foreground" />
         </button>
       )}

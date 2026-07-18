@@ -33,6 +33,9 @@ export type HireOrderRow = {
   approved_at?: string | null;
   quote_id?: string | null;
   payment_method?: string | null;
+  deposit_percent?: number | null;
+  amount_paid_satang?: number;
+  balance_due_satang?: number;
 };
 
 export type HireDeliveryRow = {
@@ -58,7 +61,7 @@ export type HireWhtDocRow = {
 };
 
 const HIRE_ORDER_SELECT =
-  "id,hiring_request_id,conversation_id,buyer_id,seller_id,status,job_price_satang,buyer_pays_satang,seller_net_satang,platform_fee_percent,platform_fee_satang,wht_satang,wht_status,auto_dispute_at,work_submitted_at,approved_at,quote_id,payment_method";
+  "id,hiring_request_id,conversation_id,buyer_id,seller_id,status,job_price_satang,buyer_pays_satang,seller_net_satang,platform_fee_percent,platform_fee_satang,wht_satang,wht_status,auto_dispute_at,work_submitted_at,approved_at,quote_id,payment_method,deposit_percent,amount_paid_satang,balance_due_satang";
 
 function missingTableMessage(err: unknown): string {
   if (isMissingResourceError(err as { message?: string; code?: string })) {
@@ -116,6 +119,30 @@ export function labelHireOrderStatus(status: HireOrderStatus): string {
   }
 }
 
+/** Terminal statuses — a new quote/order may be created after these. */
+export const HIRE_ORDER_TERMINAL: HireOrderStatus[] = [
+  "available",
+  "cancelled",
+  "refunded",
+  "partially_refunded",
+  "failed",
+];
+
+/** Active money statuses — block creating another order for the same chat. */
+export const HIRE_ORDER_ACTIVE: HireOrderStatus[] = [
+  "draft",
+  "awaiting_payment",
+  "deposit_paid",
+  "paid_pending",
+  "in_progress",
+  "awaiting_approval",
+  "disputed",
+];
+
+export function isHireOrderActive(status: HireOrderStatus | null | undefined): boolean {
+  return !!status && HIRE_ORDER_ACTIVE.includes(status);
+}
+
 export function useHireOrderByRequest(hiringRequestId: string | undefined) {
   return useQuery({
     queryKey: ["hire-order-by-request", hiringRequestId],
@@ -135,6 +162,70 @@ export function useHireOrderByRequest(hiringRequestId: string | undefined) {
       return (data as HireOrderRow | null) ?? null;
     },
     refetchInterval: 30_000,
+  });
+}
+
+/** All orders for a hiring request (history in the same chat). */
+export function useHireOrdersByRequest(hiringRequestId: string | undefined) {
+  return useQuery({
+    queryKey: ["hire-orders-by-request", hiringRequestId],
+    enabled: !!hiringRequestId,
+    queryFn: async () => {
+      const { data, error } = await sharedDb
+        .from("hire_orders" as never)
+        .select(HIRE_ORDER_SELECT + ",created_at")
+        .eq("hiring_request_id", hiringRequestId!)
+        .order("created_at", { ascending: false });
+      if (error) {
+        if (isBenignQueryError(error)) return [] as (HireOrderRow & { created_at?: string })[];
+        throw error;
+      }
+      return (data ?? []) as (HireOrderRow & { created_at?: string })[];
+    },
+    refetchInterval: 30_000,
+  });
+}
+
+export type HireQuoteRow = {
+  id: string;
+  hiring_request_id: string;
+  status: string;
+  doc_number: string | null;
+  payload: ChatOfferPayloadLike | null;
+  expires_at: string | null;
+  amount_satang: number;
+  deposit_percent: number | null;
+};
+
+type ChatOfferPayloadLike = {
+  title?: string;
+  number?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  dueDate?: string | null;
+  milestones?: { id?: string; label?: string; date?: string | null }[];
+  showFullTimeline?: boolean;
+  depositPercent?: number;
+  depositDueDate?: string | null;
+  items?: { id?: string; name?: string; quantity?: number; unitPrice?: number }[];
+};
+
+export function useHireQuoteById(quoteId: string | undefined | null) {
+  return useQuery({
+    queryKey: ["hire-quote-by-id", quoteId],
+    enabled: !!quoteId,
+    queryFn: async () => {
+      const { data, error } = await sharedDb
+        .from("hire_quotes" as never)
+        .select("id,hiring_request_id,status,doc_number,payload,expires_at,amount_satang,deposit_percent")
+        .eq("id", quoteId!)
+        .maybeSingle();
+      if (error) {
+        if (isBenignQueryError(error)) return null;
+        throw error;
+      }
+      return (data as HireQuoteRow | null) ?? null;
+    },
   });
 }
 
@@ -172,6 +263,37 @@ export function useHireDeliveries(orderId: string | undefined) {
         throw error;
       }
       return (data ?? []) as HireDeliveryRow[];
+    },
+  });
+}
+
+export type HireDocumentRow = {
+  id: string;
+  hire_order_id: string;
+  quote_id: string | null;
+  kind: import("@/lib/payments/types").HireDocumentKind;
+  doc_number: string;
+  snapshot: import("@/lib/documents/documentPayload").BusinessDocument;
+  file_url: string | null;
+  issued_at: string;
+};
+
+/** Issued business documents (quote / invoice / receipt) for a hire order. */
+export function useHireOrderDocuments(orderId: string | undefined) {
+  return useQuery({
+    queryKey: ["hire-order-documents", orderId],
+    enabled: !!orderId,
+    queryFn: async () => {
+      const { data, error } = await sharedDb
+        .from("hire_documents" as never)
+        .select("id,hire_order_id,quote_id,kind,doc_number,snapshot,file_url,issued_at")
+        .eq("hire_order_id", orderId!)
+        .order("issued_at", { ascending: true });
+      if (error) {
+        if (isBenignQueryError(error)) return [] as HireDocumentRow[];
+        throw error;
+      }
+      return (data ?? []) as unknown as HireDocumentRow[];
     },
   });
 }
@@ -324,14 +446,8 @@ export function useApproveHireWork() {
         .eq("id", input.orderId);
       if (updErr) throw new Error(missingTableMessage(updErr));
 
-      try {
-        await supabase
-          .from("hiring_requests")
-          .update({ status: "ปิดแล้ว" } as never)
-          .eq("id", input.hiringRequestId);
-      } catch {
-        /* best-effort */
-      }
+      // Do NOT set hiring_requests.status = 'ปิดแล้ว' — relationship stays open
+      // so the same chat can host a new order after this one completes.
 
       try {
         const buyer = await fetchBillingParty(row.buyer_id);

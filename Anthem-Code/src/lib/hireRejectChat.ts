@@ -148,6 +148,8 @@ export function isHireProtocolMessage(content: string | null | undefined): boole
     content.includes("__APLUS1_HIRE_FORWARD__") ||
     content.includes("__APLUS1_HIRE_CANCEL__") ||
     content.includes("__APLUS1_HIRE_DELIVERY__") ||
+    content.includes("__APLUS1_HIRE_PAID__") ||
+    content.includes("__APLUS1_HIRE_WORK_START__") ||
     content.includes("__APLUS1_OFFER__")
   );
 }

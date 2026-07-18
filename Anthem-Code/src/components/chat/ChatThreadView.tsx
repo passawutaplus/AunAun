@@ -56,6 +56,7 @@ import {
   type HireCancelRequestRow,
 } from "@/lib/hireCancelRequest";
 import HireCancelRequestDialog from "@/components/hiring/HireCancelRequestDialog";
+import HireOrderDetailDialog from "@/components/hire/HireOrderDetailDialog";
 import { encodeHireForwardMessage } from "@/lib/hireForwardChat";
 import { hireForwardClientNotice, hireRejectReasonLabel } from "@/lib/hireBrief";
 import {
@@ -91,6 +92,18 @@ import {
 } from "@/lib/hireRejectChat";
 import MessageBubble, { DateSeparator } from "@/components/chat/MessageBubble";
 import ChatComposer from "@/components/chat/ChatComposer";
+import { parseChatOffer, type ChatOfferPayload, type OfferPartyInfo } from "@/lib/chatOffer";
+import { billingToParty, type BillingProfileFields } from "@/lib/billingProfile";
+import {
+  isHirePaidMessage,
+  parseHirePaidMessage,
+  parseLegacyHirePaidText,
+} from "@/lib/hirePaymentChat";
+import {
+  buildHireWorkStartPayload,
+  encodeHireWorkStartMessage,
+  isHireWorkStartMessage,
+} from "@/lib/hireWorkStartChat";
 import HireRejectDialog from "@/components/hiring/HireRejectDialog";
 import CollabRejectDialog from "@/components/collab/CollabRejectDialog";
 import ReportTrigger from "@/components/report/ReportTrigger";
@@ -162,6 +175,8 @@ const ChatThreadView = ({
   const isStudioHire = isHire && !!conv.studio_id;
   const hasStudioQuoteContext = isStudio || isStudioHire;
   const [forwardOpen, setForwardOpen] = useState(false);
+  const [orderDetailOpen, setOrderDetailOpen] = useState(false);
+  const [orderDetailOrderId, setOrderDetailOrderId] = useState<string | null>(null);
   const [inviteGroupOpen, setInviteGroupOpen] = useState(false);
   const [groupSettingsOpen, setGroupSettingsOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -824,7 +839,137 @@ const ChatThreadView = ({
     },
   });
 
-  const visibleMessages = messages;
+  // Hiring client's billing profile — used to auto-fill the quote client section.
+  // RLS may hide sensitive fields; the query fails soft and we fall back to hire request data.
+  const { data: clientBilling } = useQuery({
+    queryKey: ["chat-client-billing", conv.client_id],
+    enabled: isHire && isFreelancer && !!conv.client_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select(
+          "billing_type, legal_name, company_name, tax_id, billing_address, branch, contact_person, contact_role, vat_registered, display_name, email, phone",
+        )
+        .eq("user_id", conv.client_id!)
+        .maybeSingle();
+      return (data ?? null) as BillingProfileFields | null;
+    },
+  });
+
+  /** Client party auto-filled from the hiring user (profile + hire request), editable in the form. */
+  const defaultClientParty = useMemo((): OfferPartyInfo | null => {
+    if (!isHire || !isFreelancer) return null;
+    const base = billingToParty(clientBilling);
+    const fromRequestName = hireMeta?.client_name?.trim() || null;
+    const fromRequestEmail = hireMeta?.email?.trim() || null;
+    const fromRequestPhone = hireMeta?.phone?.trim() || null;
+    const fallbackName = other?.display_name?.trim() || other?.username?.trim() || null;
+    return {
+      ...base,
+      name: base.name || fromRequestName || fallbackName,
+      email: base.email || fromRequestEmail,
+      phone: base.phone || fromRequestPhone,
+    };
+  }, [
+    isHire,
+    isFreelancer,
+    clientBilling,
+    hireMeta?.client_name,
+    hireMeta?.email,
+    hireMeta?.phone,
+    other?.display_name,
+    other?.username,
+  ]);
+
+  /** If paid but work-start message missing (older pays / send race), synthesize + backfill. */
+  const workStartOffer = useMemo((): ChatOfferPayload | null => {
+    if (!isHire) return null;
+    if (messages.some((m) => isHireWorkStartMessage(m.content))) return null;
+    const hasPaid = messages.some(
+      (m) => isHirePaidMessage(m.content) || !!parseLegacyHirePaidText(m.content),
+    );
+    if (!hasPaid) return null;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const offer = parseChatOffer(messages[i].content);
+      if (offer) return offer;
+    }
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const paid =
+        parseHirePaidMessage(messages[i].content) || parseLegacyHirePaidText(messages[i].content);
+      if (paid) {
+        return {
+          v: 1,
+          title: paid.offerTitle || conv.project_title || "งานจ้าง",
+          amount: paid.offerAmountThb || 0,
+          currency: "THB",
+          deliverables: "",
+          items: [],
+          milestones: [],
+          showFullTimeline: true,
+          quoteId: paid.quoteId ?? null,
+        };
+      }
+    }
+    return null;
+  }, [isHire, messages, conv.project_title]);
+
+  const visibleMessages = useMemo(() => {
+    if (!workStartOffer) return messages;
+    let lastPaidIdx = -1;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (isHirePaidMessage(messages[i].content) || parseLegacyHirePaidText(messages[i].content)) {
+        lastPaidIdx = i;
+        break;
+      }
+    }
+    if (lastPaidIdx < 0) return messages;
+    const paidMsg = messages[lastPaidIdx];
+    const synthetic: Message = {
+      ...paidMsg,
+      id: `synthetic-hire-work-start-${conv.request_id || paidMsg.id}`,
+      // Align to hiree side in the thread (freelancer).
+      sender_id: conv.freelancer_id || paidMsg.sender_id,
+      content: encodeHireWorkStartMessage(buildHireWorkStartPayload(workStartOffer)),
+      message_type: "system",
+      created_at: new Date(new Date(paidMsg.created_at).getTime() + 500).toISOString(),
+      deleted_at: null,
+      reply_to_id: null,
+    };
+    const next = messages.slice();
+    next.splice(lastPaidIdx + 1, 0, synthetic);
+    return next;
+  }, [messages, workStartOffer, conv.request_id, conv.freelancer_id]);
+
+  const workStartBackfillKey = conv.request_id
+    ? `hire-work-start-bf:${conv.request_id}`
+    : `hire-work-start-bf:${conv.id}`;
+  const workStartBackfillStarted = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!workStartOffer || !isClient || !user?.id || !conv.id) return;
+    if (workStartBackfillStarted.current === workStartBackfillKey) return;
+    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(workStartBackfillKey)) {
+      return;
+    }
+    workStartBackfillStarted.current = workStartBackfillKey;
+    void (async () => {
+      try {
+        await sendMessage.mutateAsync({
+          conversationId: conv.id,
+          content: encodeHireWorkStartMessage(buildHireWorkStartPayload(workStartOffer)),
+          messageType: "system",
+        });
+        if (typeof sessionStorage !== "undefined") {
+          sessionStorage.setItem(workStartBackfillKey, "1");
+        }
+      } catch {
+        workStartBackfillStarted.current = null;
+        /* synthetic card already visible */
+      }
+    })();
+    // Intentionally once when workStartOffer appears for this thread.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- backfill once per settled hire
+  }, [workStartOffer, isClient, user?.id, conv.id, workStartBackfillKey]);
 
   const senderIds = useMemo(
     () => [...new Set(visibleMessages.map((m) => m.sender_id).filter(Boolean))],
@@ -1311,7 +1456,16 @@ const ChatThreadView = ({
                 hireRejectChoiceActions={hireRejectChoiceActions}
                 hireContinueAskActions={hireContinueAskActions}
                 hiringRequestId={isHire ? conv.request_id : null}
+                hireQuoteSettled={isHire && hireWorkStarted}
                 hireProjectTitle={conv.project_title ?? null}
+                onOpenHireOrderDetail={
+                  isHire && conv.request_id
+                    ? (oid) => {
+                        setOrderDetailOrderId(oid ?? null);
+                        setOrderDetailOpen(true);
+                      }
+                    : undefined
+                }
                 onHireCancelEdit={(row) => {
                   setHireCancelEditRow(row);
                   setHireCancelDialogOpen(true);
@@ -1377,6 +1531,32 @@ const ChatThreadView = ({
         defaultClientName={hireMeta?.client_name ?? ""}
         defaultClientEmail={hireMeta?.email ?? ""}
         defaultClientPhone={hireMeta?.phone ?? ""}
+        defaultClientParty={defaultClientParty}
+      />
+      <HireOrderDetailDialog
+        open={orderDetailOpen}
+        onOpenChange={(v) => {
+          setOrderDetailOpen(v);
+          if (!v) setOrderDetailOrderId(null);
+        }}
+        conversation={conv}
+        projectTitle={conv.project_title ?? hireRequestRow?.project_title ?? null}
+        deadline={hireMeta?.deadline ?? null}
+        orderId={orderDetailOrderId}
+        onCancelOrder={() => {
+          setOrderDetailOpen(false);
+          setHireCancelEditRow(null);
+          setHireCancelDialogOpen(true);
+        }}
+        partner={
+          other
+            ? {
+                name: other.display_name || other.username || "ผู้ใช้",
+                avatarUrl: other.avatar_url,
+                role: other.role ?? null,
+              }
+            : null
+        }
       />
       <HireForwardInChatDialog
         open={forwardOpen}
