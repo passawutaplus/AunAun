@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { signInWithOAuth } from "@/integrations/oauth";
+import { openOAuthPopup, signInWithOAuth } from "@/integrations/oauth";
 import { cn } from "@/lib/utils";
 
-async function handleGoogleOAuth(redirectTo?: string) {
-  const result = await signInWithOAuth({ redirectTo });
+async function handleGoogleOAuth(redirectTo?: string, popup?: Window | null) {
+  const result = await signInWithOAuth({ redirectTo, popup });
   if (result.error) {
     toast.error(result.error.message || "เข้าสู่ระบบด้วย Google ไม่สำเร็จ");
   }
@@ -38,8 +38,11 @@ export function SocialButtons({
         disabled={busy}
         onClick={async () => {
           setBusy(true);
+          // Open the popup synchronously (still inside the click gesture) so
+          // browsers don't block it once we `await` the Supabase call below.
+          const popup = openOAuthPopup();
           try {
-            await handleGoogleOAuth(redirectTo);
+            await handleGoogleOAuth(redirectTo, popup);
           } finally {
             setBusy(false);
           }

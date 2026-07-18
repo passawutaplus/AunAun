@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { establishSession } from "@/lib/authSession";
-import { consumeOAuthRedirect } from "@/lib/oauthRedirect";
+import { consumeOAuthRedirect, isOAuthPopupWindow } from "@/lib/oauthRedirect";
 import { HttpErrorPage } from "@/components/HttpErrorPage";
 
 const AuthCallbackPage = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const isPopup = isOAuthPopupWindow();
 
   useEffect(() => {
     let cancelled = false;
@@ -16,6 +17,14 @@ const AuthCallbackPage = () => {
       if (cancelled) return;
       if (msg) {
         setError(msg);
+        // The opener tab is polling supabase.auth.getSession() itself, so this
+        // popup has nothing more useful to do — close it after a short delay
+        // so the error is still readable if the user glances at it.
+        if (isPopup) window.setTimeout(() => { try { window.close(); } catch { /* noop */ } }, 2000);
+        return;
+      }
+      if (isPopup) {
+        try { window.close(); } catch { /* noop */ }
         return;
       }
       navigate(consumeOAuthRedirect("/"), { replace: true });
@@ -24,9 +33,19 @@ const AuthCallbackPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [navigate]);
+  }, [navigate, isPopup]);
 
   if (error) {
+    if (isPopup) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-3 p-6 text-center text-sm text-destructive">
+          <p>{error}</p>
+          <button type="button" className="underline text-muted-foreground" onClick={() => window.close()}>
+            ปิดหน้านี้
+          </button>
+        </div>
+      );
+    }
     return (
       <HttpErrorPage
         kind="token"

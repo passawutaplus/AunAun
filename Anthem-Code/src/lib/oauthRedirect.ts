@@ -4,6 +4,18 @@ export { safeRelativePath };
 
 const STORAGE_KEY = "ecosystem_oauth_redirect";
 
+/**
+ * window.name of the popup used for Google sign-in. Checked (not window.opener,
+ * which can be severed by cross-origin COOP headers on Google/Supabase pages)
+ * by AuthCallbackPage to know it's running inside that popup and should just
+ * close itself instead of navigating the tiny popup window.
+ */
+export const OAUTH_POPUP_WINDOW_NAME = "google-oauth-signin";
+
+export function isOAuthPopupWindow(): boolean {
+  return typeof window !== "undefined" && window.name === OAUTH_POPUP_WINDOW_NAME;
+}
+
 export function getAppOrigin(): string {
   if (typeof window === "undefined") return "";
   const configured = import.meta.env.VITE_SITE_URL as string | undefined;
