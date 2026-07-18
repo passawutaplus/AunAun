@@ -1,8 +1,9 @@
 import { Film } from "lucide-react";
-import type { ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import ProjectGallery from "@/components/ProjectGallery";
 import { PhotoGridPreview } from "@/components/project/PhotoGridPreview";
 import ImageActionBar from "@/components/project/ImageActionBar";
+import ImageLightbox from "@/components/project/ImageLightbox";
 import { ProjectRichTextView } from "@/components/project/ProjectRichTextField";
 import {
   mergeContentBlocks,
@@ -40,16 +41,34 @@ function ImageFrame({
   actions,
   className,
   imgClassName,
+  onOpenImage,
 }: {
   url: string;
   imageIndex: number;
   actions?: ActionContext | null;
   className?: string;
   imgClassName?: string;
+  onOpenImage?: (url: string) => void;
 }) {
   return (
     <div className={cn("relative group overflow-hidden rounded-none bg-transparent", className)}>
-      <img src={url} alt="" className={cn("w-full object-contain", imgClassName)} loading="lazy" />
+      <button
+        type="button"
+        className={cn(
+          "block w-full border-0 bg-transparent p-0 text-left",
+          onOpenImage && "cursor-zoom-in",
+        )}
+        onClick={onOpenImage ? () => onOpenImage(url) : undefined}
+        aria-label={onOpenImage ? "ดูภาพขนาดใหญ่" : undefined}
+        disabled={!onOpenImage}
+      >
+        <img
+          src={url}
+          alt=""
+          className={cn("pointer-events-none w-full object-contain", imgClassName)}
+          loading="lazy"
+        />
+      </button>
       {actions ? (
         <ImageActionBar
           projectId={actions.projectId}
@@ -67,11 +86,13 @@ function MultiRowImages({
   columns,
   actions,
   indexOffset = 0,
+  onOpenImage,
 }: {
   urls: string[];
   columns: 2 | 3 | 4;
   actions?: ActionContext | null;
   indexOffset?: number;
+  onOpenImage?: (url: string) => void;
 }) {
   return (
     <div
@@ -87,6 +108,7 @@ function MultiRowImages({
           imageIndex={indexOffset + i}
           actions={actions}
           className="min-w-0"
+          onOpenImage={onOpenImage}
         />
       ))}
     </div>
@@ -100,6 +122,7 @@ function ImageTextBlockView({
   textVerticalAlign,
   actions,
   imageIndex,
+  onOpenImage,
 }: {
   url?: string;
   body?: string;
@@ -107,9 +130,16 @@ function ImageTextBlockView({
   textVerticalAlign?: "top" | "middle" | "bottom";
   actions?: ActionContext | null;
   imageIndex: number;
+  onOpenImage?: (url: string) => void;
 }) {
   const image = url?.trim() ? (
-    <ImageFrame url={url} imageIndex={imageIndex} actions={actions} className="min-w-0" />
+    <ImageFrame
+      url={url}
+      imageIndex={imageIndex}
+      actions={actions}
+      className="min-w-0"
+      onOpenImage={onOpenImage}
+    />
   ) : null;
   const text = body?.trim() ? (
     <ProjectRichTextView
@@ -139,6 +169,7 @@ function renderBlock(
   block: ProjectContentBlock,
   actions: ActionContext | null,
   imageIndexOffset: number,
+  onOpenImage?: (url: string) => void,
 ) {
   if (block.type === "image") {
     const urls = blockImageUrls(block).filter((u) => u.trim());
@@ -167,6 +198,14 @@ function renderBlock(
           projectId={actions?.projectId}
           projectTitle={actions?.projectTitle}
           imageIndexOffset={imageIndexOffset}
+          onImageClick={
+            onOpenImage
+              ? (i) => {
+                  const u = urls[i];
+                  if (u) onOpenImage(u);
+                }
+              : undefined
+          }
         />
       );
     }
@@ -179,6 +218,7 @@ function renderBlock(
           columns={columns}
           actions={actions}
           indexOffset={imageIndexOffset}
+          onOpenImage={onOpenImage}
         />
       );
     }
@@ -190,6 +230,7 @@ function renderBlock(
           imageIndex={imageIndexOffset}
           actions={actions}
           imgClassName="max-h-[min(80vh,900px)]"
+          onOpenImage={onOpenImage}
         />
       );
     }
@@ -200,6 +241,7 @@ function renderBlock(
         columns={2}
         actions={actions}
         indexOffset={imageIndexOffset}
+        onOpenImage={onOpenImage}
       />
     );
   }
@@ -230,6 +272,7 @@ function renderBlock(
         textVerticalAlign={block.textVerticalAlign}
         actions={actions}
         imageIndex={imageIndexOffset}
+        onOpenImage={onOpenImage}
       />
     );
   }
@@ -280,6 +323,20 @@ function countBlockImages(block: ProjectContentBlock): number {
   return 0;
 }
 
+function collectBlockImageUrls(items: ProjectContentBlock[]): string[] {
+  const urls: string[] = [];
+  for (const block of items) {
+    if (block.type === "image") {
+      for (const u of blockImageUrls(block)) {
+        if (u.trim()) urls.push(u.trim());
+      }
+    } else if (isImageTextBlockType(block.type) && block.url?.trim()) {
+      urls.push(block.url.trim());
+    }
+  }
+  return urls;
+}
+
 export function ProjectContentBlocksView({
   blocks,
   legacyDescription,
@@ -289,6 +346,7 @@ export function ProjectContentBlocksView({
   projectId,
   projectTitle,
 }: Props) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const items =
     galleryUrls != null || videoUrls != null
       ? resolveProjectCanvas({
@@ -299,6 +357,13 @@ export function ProjectContentBlocksView({
         })
       : mergeContentBlocks(blocks ?? [], legacyDescription);
 
+  const imageUrls = useMemo(() => collectBlockImageUrls(items), [items]);
+
+  const openImage = (url: string) => {
+    const i = imageUrls.indexOf(url);
+    setLightboxIndex(i >= 0 ? i : 0);
+  };
+
   if (!items.length) return null;
 
   const actions: ActionContext | null =
@@ -307,7 +372,7 @@ export function ProjectContentBlocksView({
   let imageIndexOffset = 0;
   const rendered: { block: ProjectContentBlock; content: ReactNode }[] = [];
   for (const block of items) {
-    const content = renderBlock(block, actions, imageIndexOffset);
+    const content = renderBlock(block, actions, imageIndexOffset, openImage);
     imageIndexOffset += countBlockImages(block);
     if (content != null) rendered.push({ block, content });
   }
@@ -327,6 +392,16 @@ export function ProjectContentBlocksView({
           {content}
         </div>
       ))}
+      <ImageLightbox
+        images={imageUrls}
+        index={lightboxIndex ?? 0}
+        open={lightboxIndex != null}
+        onClose={() => setLightboxIndex(null)}
+        onIndexChange={setLightboxIndex}
+        alt={projectTitle ?? ""}
+        projectId={projectId}
+        projectTitle={projectTitle}
+      />
     </div>
   );
 }

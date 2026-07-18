@@ -9,6 +9,7 @@ import {
   useRecordProfanityStrike,
   prepareModeratedContent,
 } from "@/hooks/useModeration";
+import { detectCommunitySpam } from "@/lib/profanity";
 
 export interface CommentWithProfile {
   id: string;
@@ -101,6 +102,10 @@ export const useCreateComment = () => {
       parent_id?: string | null;
       depth?: number;
     }) => {
+      if (detectCommunitySpam(payload.content)) {
+        throw new Error("เนื้อหาน่าสงสัยว่าเป็น spam — กรุณาแก้ไขก่อนโพสต์");
+      }
+
       const checkCanPost = async () => {
         const { data } = await refetchMod();
         return data ?? { allowed: true, reason: null, banned_until: null, strikes: 0 };

@@ -711,9 +711,9 @@ export function FlexGridToolsSidebar({
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   className="text-xs gap-2 text-destructive focus:text-destructive"
-                                  disabled={layout.boards.length <= 1}
+                                  disabled={layout.boards.length <= 1 || !!board.locked}
                                   onSelect={() => {
-                                    if (layout.boards.length <= 1) return;
+                                    if (layout.boards.length <= 1 || board.locked) return;
                                     setPendingDeleteBoard({
                                       id: board.id,
                                       name: title,

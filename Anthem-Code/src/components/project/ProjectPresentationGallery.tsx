@@ -26,13 +26,18 @@ export function ProjectPresentationGallery({
   displayMode,
   gridLayout = "four_quad",
 }: Props) {
-  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   if (!items.length) return null;
 
   const imageItems = items.filter((m) => m.kind === "image");
   const videoItems = items.filter((m) => m.kind === "video");
   const heroImages = displayMode === "single" ? imageItems.slice(0, 1) : imageItems;
+  const lightboxImages = heroImages.map((m) => m.url);
+
+  const openAt = (i: number) => {
+    if (i >= 0 && i < lightboxImages.length) setLightboxIndex(i);
+  };
 
   const imgIndex = (i: number) =>
     projectId.split("").reduce((a, c) => a + c.charCodeAt(0), 0) + i;
@@ -50,10 +55,7 @@ export function ProjectPresentationGallery({
             images={heroImages.slice(0, photoGridSlotCount(gridLayout)).map((m) => ({ url: m.url }))}
             layout={gridLayout}
             title={title}
-            onImageClick={(i) => {
-              const item = heroImages[i];
-              if (item) setLightboxSrc(item.url);
-            }}
+            onImageClick={openAt}
           />
         </motion.div>
       ) : displayMode === "gallery" && heroImages.length > 1 ? (
@@ -78,7 +80,7 @@ export function ProjectPresentationGallery({
               src={item.url}
               index={imgIndex(i)}
               alt={`${title} ${i + 1}`}
-              onClick={() => setLightboxSrc(item.url)}
+              onClick={() => openAt(i)}
               className="w-full rounded-2xl border border-border/60 bg-card object-contain cursor-zoom-in"
               loading="lazy"
             />
@@ -110,10 +112,14 @@ export function ProjectPresentationGallery({
       ))}
 
       <ImageLightbox
-        src={lightboxSrc ?? ""}
+        images={lightboxImages}
+        index={lightboxIndex ?? 0}
+        open={lightboxIndex != null}
+        onClose={() => setLightboxIndex(null)}
+        onIndexChange={setLightboxIndex}
         alt={title}
-        open={!!lightboxSrc}
-        onClose={() => setLightboxSrc(null)}
+        projectId={projectId}
+        projectTitle={title}
       />
     </div>
   );

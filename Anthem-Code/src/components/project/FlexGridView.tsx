@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Film, Loader2 } from "lucide-react";
 import {
   parseFlexGridLayout,
@@ -7,18 +7,41 @@ import {
 } from "@/lib/flexGridLayout";
 import { cn } from "@/lib/utils";
 import { isVideoUrl } from "@/lib/videoAccept";
+import ImageLightbox from "@/components/project/ImageLightbox";
 
 const Model3dViewer = lazy(() => import("@/components/project/Model3dViewer"));
 
 type Props = {
   layout: FlexGridLayout | unknown;
   className?: string;
+  projectId?: string;
+  projectTitle?: string;
 };
 
-export function FlexGridView({ layout: rawLayout, className }: Props) {
+function collectImageUrls(layout: FlexGridLayout): string[] {
+  const urls: string[] = [];
+  for (const board of layout.boards) {
+    for (const mod of board.modules) {
+      if ((mod.type === "image" || mod.type === "gif") && mod.url?.trim()) {
+        if (mod.type === "gif" && isVideoUrl(mod.url)) continue;
+        urls.push(mod.url.trim());
+      }
+    }
+  }
+  return urls;
+}
+
+export function FlexGridView({
+  layout: rawLayout,
+  className,
+  projectId,
+  projectTitle,
+}: Props) {
   const layout = parseFlexGridLayout(rawLayout);
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const imageUrls = useMemo(() => collectImageUrls(layout), [layout]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -50,7 +73,7 @@ export function FlexGridView({ layout: rawLayout, className }: Props) {
   return (
     <div ref={containerRef} className={cn("w-full", className)}>
       <div className="mx-auto flex flex-col gap-0" style={{ width: layout.canvasWidth * scale }}>
-      {layout.boards.map((board) => (
+        {layout.boards.map((board) => (
           <div
             key={board.id}
             className="relative overflow-hidden bg-background"
@@ -68,17 +91,41 @@ export function FlexGridView({ layout: rawLayout, className }: Props) {
               }}
             >
               {board.modules.map((mod) => (
-                <ModuleView key={mod.id} module={mod} />
+                <ModuleView
+                  key={mod.id}
+                  module={mod}
+                  onOpenImage={(url) => {
+                    const i = imageUrls.indexOf(url);
+                    setLightboxIndex(i >= 0 ? i : 0);
+                  }}
+                />
               ))}
             </div>
           </div>
-      ))}
+        ))}
       </div>
+
+      <ImageLightbox
+        images={imageUrls}
+        index={lightboxIndex ?? 0}
+        open={lightboxIndex != null}
+        onClose={() => setLightboxIndex(null)}
+        onIndexChange={setLightboxIndex}
+        projectId={projectId}
+        projectTitle={projectTitle}
+        alt={projectTitle ?? ""}
+      />
     </div>
   );
 }
 
-function ModuleView({ module }: { module: FlexGridModule }) {
+function ModuleView({
+  module,
+  onOpenImage,
+}: {
+  module: FlexGridModule;
+  onOpenImage: (url: string) => void;
+}) {
   return (
     <div
       className="absolute overflow-hidden"
@@ -92,7 +139,19 @@ function ModuleView({ module }: { module: FlexGridModule }) {
     >
       {module.type === "image" ? (
         module.url ? (
-          <img src={module.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+          <button
+            type="button"
+            className="h-full w-full cursor-zoom-in border-0 bg-transparent p-0"
+            onClick={() => onOpenImage(module.url!)}
+            aria-label="ดูภาพขนาดใหญ่"
+          >
+            <img
+              src={module.url}
+              alt=""
+              className="pointer-events-none h-full w-full object-cover"
+              loading="lazy"
+            />
+          </button>
         ) : (
           <div className="h-full w-full bg-muted" />
         )
@@ -111,7 +170,19 @@ function ModuleView({ module }: { module: FlexGridModule }) {
               preload="metadata"
             />
           ) : (
-            <img src={module.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+            <button
+              type="button"
+              className="h-full w-full cursor-zoom-in border-0 bg-transparent p-0"
+              onClick={() => onOpenImage(module.url!)}
+              aria-label="ดูภาพขนาดใหญ่"
+            >
+              <img
+                src={module.url}
+                alt=""
+                className="pointer-events-none h-full w-full object-cover"
+                loading="lazy"
+              />
+            </button>
           )
         ) : (
           <div className="h-full w-full bg-muted" />

@@ -30,10 +30,14 @@ import {
   Hand,
   Lock,
   LockOpen,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 import { Fragment, lazy, Suspense, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, forwardRef, type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { FLEX_GRID_TOOL_MIME, activeFlexGridDragType, flexGridBoardDomId } from "@/components/project/FlexGridToolsSidebar";
 import type { FlexGridLayerRef } from "@/components/project/FlexGridToolsSidebar";
+import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import {
   FLEX_GRID_MODULE_DEFAULTS,
   boardDisplayName,
@@ -42,8 +46,10 @@ import {
   createEmptyFlexGridBoard,
   createFlexGridModule,
   effectiveRowUnit,
+  moveFlexBoard,
   nextZIndex,
   rowStart,
+  setBoardLocked,
   snapHeight,
   snapWidth,
   snapX,
@@ -55,7 +61,11 @@ import {
   type FlexGridSnapContext,
 } from "@/lib/flexGridLayout";
 import { LoadPercentBar, AutoLoadPercentBar } from "@/components/project/LoadPercentBar";
-import { useAutoPercent } from "@/hooks/useAutoPercent";
+import {
+  FlexGridInlineCrop,
+  type FlexGridInlineCropHandle,
+  type FlexGridInlineCropResult,
+} from "@/components/project/FlexGridInlineCrop";
 import { PROJECT_VIDEO_ACCEPT, isVideoFile, isVideoUrl } from "@/lib/videoAccept";
 import { PROJECT_MODEL3D_ACCEPT, isModel3dFile } from "@/lib/model3dAccept";
 import { isGifFile } from "@/lib/uploadProjectGif";
@@ -116,7 +126,7 @@ function fileMatchesKind(kind: ModuleUploadKind, file: File): boolean {
   if (kind === "gif") return isGifFile(file);
   if (kind === "model3d") return isModel3dFile(file);
   if (isVideoFile(file) || isModel3dFile(file)) return false;
-  return file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|avif)$/i.test(file.name);
+  return file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|avif|heic|heif|hif)$/i.test(file.name);
 }
 
 function pickFileForKind(kind: ModuleUploadKind, list: FileList | null | undefined): File | null {
@@ -156,8 +166,18 @@ type Props = {
   /** Real progress 0–100 when known; omit for an indeterminate simulated ramp. */
   uploadStagePercent?: number | null;
   onUploadToModule?: (boardId: string, moduleId: string, file: File) => void;
-  /** Open crop dialog for an image module (locked to module aspect). */
-  onCropModule?: (boardId: string, moduleId: string, imageUrl: string) => void;
+  /** Module currently in inline crop mode (Full Grid). */
+  croppingModuleId?: string | null;
+  onBeginCropModule?: (boardId: string, moduleId: string, imageUrl: string) => void;
+  onConfirmInlineCrop?: (
+    boardId: string,
+    moduleId: string,
+    result: FlexGridInlineCropResult,
+  ) => void;
+  onRestoreOriginalModule?: (boardId: string, moduleId: string) => void;
+  onCancelInlineCrop?: () => void;
+  /** True while uploading a confirmed inline crop. */
+  inlineCropSaving?: boolean;
   className?: string;
 };
 
@@ -211,7 +231,12 @@ export function ProjectFlexGridEditor({
   uploadStageLabel,
   uploadStagePercent,
   onUploadToModule,
-  onCropModule,
+  croppingModuleId,
+  onBeginCropModule,
+  onConfirmInlineCrop,
+  onRestoreOriginalModule,
+  onCancelInlineCrop,
+  inlineCropSaving,
   className,
 }: Props) {
   const selected = selection[selection.length - 1] ?? null;
@@ -312,10 +337,21 @@ export function ProjectFlexGridEditor({
     file: File;
   } | null>(null);
 
+  const [renamingBoardId, setRenamingBoardId] = useState<string | null>(null);
+  const [pendingDeleteBoard, setPendingDeleteBoard] = useState<{
+    id: string;
+    name: string;
+    moduleCount: number;
+  } | null>(null);
+
   const placeModule = useCallback(
     (type: FlexGridModuleType, boardId: string, xRaw: number, yRaw: number): FlexGridModule | null => {
       const board = layout.boards.find((b) => b.id === boardId);
       if (!board) return null;
+      if (board.locked) {
+        toast.error("บอร์ดถูกล็อก — ปลดล็อกก่อนเพิ่มโมดูล");
+        return null;
+      }
       const ctx = boardCtx(layout, board);
       const mod = createFlexGridModule(type, ctx, xRaw, yRaw, {
         z: nextZIndex(board),
@@ -354,10 +390,51 @@ export function ProjectFlexGridEditor({
     });
   };
 
+  const renameBoard = (boardId: string, name: string) => {
+    const trimmed = name.trim();
+    onCommit({
+      ...layout,
+      boards: layout.boards.map((b) =>
+        b.id === boardId ? { ...b, name: trimmed || undefined } : b,
+      ),
+    });
+    setRenamingBoardId(null);
+  };
+
+  const toggleBoardLock = (boardId: string) => {
+    const board = layout.boards.find((b) => b.id === boardId);
+    if (!board) return;
+    onCommit(setBoardLocked(layout, boardId, !board.locked));
+  };
+
+  const moveBoard = (boardId: string, direction: -1 | 1) => {
+    const next = moveFlexBoard(layout, boardId, direction);
+    if (next === layout) return;
+    onCommit(next);
+  };
+
+  const requestDeleteBoard = (boardId: string) => {
+    const board = layout.boards.find((b) => b.id === boardId);
+    if (!board) return;
+    if (layout.boards.length <= 1) {
+      toast.error("ต้องมีอย่างน้อย 1 บอร์ด");
+      return;
+    }
+    if (board.locked) {
+      toast.error("บอร์ดถูกล็อก — ปลดล็อกก่อนลบ");
+      return;
+    }
+    setPendingDeleteBoard({
+      id: board.id,
+      name: boardDisplayName(board, layout.boards.findIndex((b) => b.id === boardId)),
+      moduleCount: board.modules.length,
+    });
+  };
+
   const copySelected = (boardId: string, moduleId: string) => {
     const board = layout.boards.find((b) => b.id === boardId);
     const mod = board?.modules.find((m) => m.id === moduleId);
-    if (!board || !mod || mod.locked) return;
+    if (!board || !mod || mod.locked || board.locked) return;
     const ctx = boardCtx(layout, board);
     const ox = Math.min(mod.x + 24, layout.canvasWidth - mod.w);
     const oy = Math.min(mod.y + 24, board.height - mod.h);
@@ -387,7 +464,7 @@ export function ProjectFlexGridEditor({
     act: "front" | "forward" | "backward" | "back",
   ) => {
     const board = layout.boards.find((b) => b.id === boardId);
-    if (!board) return;
+    if (!board || board.locked) return;
     const zs = board.modules.map((m) => m.z);
     const cur = board.modules.find((m) => m.id === moduleId);
     if (!cur || cur.locked) return;
@@ -433,6 +510,10 @@ export function ProjectFlexGridEditor({
   };
 
   const handleBoardDragOver = (e: DragEvent, board: FlexGridBoard) => {
+    if (board.locked) {
+      setDropGhost(null);
+      return;
+    }
     const fileDrag = !disabled && !!onUploadToModule && isFileDrag(e.dataTransfer);
     const raw =
       activeFlexGridDragType ||
@@ -487,6 +568,10 @@ export function ProjectFlexGridEditor({
   const handleBoardDrop = (e: DragEvent, board: FlexGridBoard) => {
     e.preventDefault();
     setDropGhost(null);
+    if (board.locked) {
+      toast.error("บอร์ดถูกล็อก — ปลดล็อกก่อนเพิ่มโมดูล");
+      return;
+    }
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const mx = (e.clientX - rect.left) / zoom;
     const my = (e.clientY - rect.top) / zoom;
@@ -622,7 +707,8 @@ export function ProjectFlexGridEditor({
       <div
         ref={scrollRef}
         className={cn(
-          "overflow-auto rounded-xl border border-border/70 bg-muted/20 p-3 sm:p-4",
+          // Isolate so module/board z-index (selection/crop chrome) cannot paint above Dialogs (z-50).
+          "relative z-0 isolate overflow-auto rounded-xl border border-border/70 bg-muted/20 p-3 sm:p-4",
           (panMode || isPanning) && "cursor-grab",
           isPanning && "cursor-grabbing",
         )}
@@ -653,6 +739,7 @@ export function ProjectFlexGridEditor({
               key={board.id}
               board={board}
               boardIndex={bi}
+              boardCount={layout.boards.length}
               layout={layout}
               zoom={zoom}
               gridVisible={gridVisible}
@@ -660,7 +747,7 @@ export function ProjectFlexGridEditor({
               selected={selected}
               selection={selection}
               onSelectModule={selectModule}
-              disabled={disabled}
+              disabled={disabled || !!croppingModuleId}
               uploadingModuleId={uploadingModuleId}
               uploadStageLabel={uploadStageLabel}
               uploadStagePercent={uploadStagePercent}
@@ -669,6 +756,7 @@ export function ProjectFlexGridEditor({
               onDragLeave={() => setDropGhost(null)}
               onDrop={(e) => handleBoardDrop(e, board)}
               onChangeModule={(moduleId, patch, live) => {
+                if (board.locked) return;
                 const next = updateModule(layout, board.id, moduleId, patch);
                 if (live) onChange(next);
                 else onCommit(next);
@@ -677,7 +765,7 @@ export function ProjectFlexGridEditor({
               onHistoryEnd={onHistoryEnd}
               onDeleteModule={(moduleId) => {
                 const mod = board.modules.find((m) => m.id === moduleId);
-                if (mod?.locked) return;
+                if (mod?.locked || board.locked) return;
                 onCommit({
                   ...layout,
                   boards: layout.boards.map((b) =>
@@ -694,6 +782,10 @@ export function ProjectFlexGridEditor({
               onCopyModule={(moduleId) => copySelected(board.id, moduleId)}
               onUploadClick={openUpload}
               onUploadFile={(moduleId, kind, files) => {
+                if (board.locked) {
+                  toast.error("บอร์ดถูกล็อก — ปลดล็อกก่อนอัปไฟล์");
+                  return;
+                }
                 const file = pickFileForKind(kind, files);
                 if (!file) {
                   toastWrongModuleFile(kind);
@@ -701,15 +793,28 @@ export function ProjectFlexGridEditor({
                 }
                 submitModuleFile(board.id, moduleId, kind, file);
               }}
-              onCropModule={onCropModule}
+              croppingModuleId={croppingModuleId}
+              onBeginCropModule={onBeginCropModule}
+              onConfirmInlineCrop={onConfirmInlineCrop}
+              onRestoreOriginalModule={onRestoreOriginalModule}
+              onCancelInlineCrop={onCancelInlineCrop}
+              inlineCropSaving={inlineCropSaving}
+              renaming={renamingBoardId === board.id}
+              onBeginRename={() => setRenamingBoardId(board.id)}
+              onRename={(name) => renameBoard(board.id, name)}
+              onCancelRename={() => setRenamingBoardId(null)}
+              onToggleLock={() => toggleBoardLock(board.id)}
+              onMoveUp={() => moveBoard(board.id, -1)}
+              onMoveDown={() => moveBoard(board.id, 1)}
+              onDeleteBoard={() => requestDeleteBoard(board.id)}
             />
           ))}
 
           <div className="flex items-stretch gap-2">
-            <div className="w-14 shrink-0 sm:w-16" aria-hidden />
+            <div className="w-[4.25rem] shrink-0 sm:w-20" aria-hidden />
             <button
               type="button"
-              disabled={disabled || panMode}
+              disabled={disabled || panMode || !!croppingModuleId}
               onClick={addBoard}
               style={{ width: layout.canvasWidth * zoom }}
               className="flex items-center justify-center gap-1.5 border border-dashed border-border/80 bg-card/60 py-3 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:opacity-50"
@@ -724,7 +829,7 @@ export function ProjectFlexGridEditor({
       <input
         ref={imageInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif,image/*"
+        accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif,.hif,image/*"
         className="hidden"
         onChange={(e) => onFileChange(e, "image")}
       />
@@ -750,7 +855,65 @@ export function ProjectFlexGridEditor({
         onChange={(e) => onFileChange(e, "model3d")}
       />
 
+      <DeleteConfirmDialog
+        open={!!pendingDeleteBoard}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteBoard(null);
+        }}
+        title={`ลบ ${pendingDeleteBoard?.name ?? "Board"}?`}
+        description={
+          pendingDeleteBoard && pendingDeleteBoard.moduleCount > 0
+            ? `การลบ Board นี้จะลบโมดูลทั้งหมดใน board ด้วย (${pendingDeleteBoard.moduleCount} โมดูล) ไม่สามารถกู้คืนได้`
+            : "ยืนยันลบ Board นี้หรือไม่"
+        }
+        confirmLabel="ลบ board"
+        onConfirm={() => {
+          if (!pendingDeleteBoard) return;
+          onCommit({
+            ...layout,
+            boards: layout.boards.filter((b) => b.id !== pendingDeleteBoard.id),
+          });
+          onSelectionChange(selection.filter((s) => s.boardId !== pendingDeleteBoard.id));
+          setPendingDeleteBoard(null);
+        }}
+      />
     </div>
+  );
+}
+
+function BoardGutterBtn({
+  children,
+  onClick,
+  title,
+  disabled,
+  danger,
+  active,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  title: string;
+  disabled?: boolean;
+  danger?: boolean;
+  active?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      disabled={disabled}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      className={cn(
+        "flex h-6 w-6 items-center justify-center rounded-sm bg-transparent text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-30",
+        danger && "hover:text-destructive",
+        active && "text-primary",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -783,6 +946,7 @@ function ArrangeBtn({
 function BoardSurface({
   board,
   boardIndex,
+  boardCount,
   layout,
   zoom,
   gridVisible,
@@ -806,10 +970,24 @@ function BoardSurface({
   onCopyModule,
   onUploadClick,
   onUploadFile,
-  onCropModule,
+  croppingModuleId,
+  onBeginCropModule,
+  onConfirmInlineCrop,
+  onRestoreOriginalModule,
+  onCancelInlineCrop,
+  inlineCropSaving,
+  renaming,
+  onBeginRename,
+  onRename,
+  onCancelRename,
+  onToggleLock,
+  onMoveUp,
+  onMoveDown,
+  onDeleteBoard,
 }: {
   board: FlexGridBoard;
   boardIndex: number;
+  boardCount: number;
   layout: FlexGridLayout;
   zoom: number;
   gridVisible: boolean;
@@ -837,25 +1015,119 @@ function BoardSurface({
   onCopyModule: (moduleId: string) => void;
   onUploadClick: (boardId: string, moduleId: string, type: ModuleUploadKind) => void;
   onUploadFile: (moduleId: string, kind: ModuleUploadKind, files: FileList) => void;
-  onCropModule?: (boardId: string, moduleId: string, imageUrl: string) => void;
+  croppingModuleId?: string | null;
+  onBeginCropModule?: (boardId: string, moduleId: string, imageUrl: string) => void;
+  onConfirmInlineCrop?: (
+    boardId: string,
+    moduleId: string,
+    result: FlexGridInlineCropResult,
+  ) => void;
+  onRestoreOriginalModule?: (boardId: string, moduleId: string) => void;
+  onCancelInlineCrop?: () => void;
+  inlineCropSaving?: boolean;
+  renaming?: boolean;
+  onBeginRename: () => void;
+  onRename: (name: string) => void;
+  onCancelRename: () => void;
+  onToggleLock: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onDeleteBoard: () => void;
 }) {
   const ctx = boardCtx(layout, board);
   const cw = colWidth(ctx);
+  const title = boardDisplayName(board, boardIndex);
+  const boardLocked = !!board.locked;
+  const boardIsCropping =
+    !!croppingModuleId && board.modules.some((m) => m.id === croppingModuleId);
+  const boardHasSelection = selection.some((s) => s.boardId === board.id);
+  // Module toolbars / crop chrome stick out past the board edge — lift this board
+  // above neighbors so chrome isn't painted under the board below.
+  const boardElevated = boardIsCropping || boardHasSelection;
 
   return (
-    <div id={flexGridBoardDomId(board.id)} className="relative flex scroll-mt-3 items-stretch gap-2">
-      <div
-        className="flex w-14 shrink-0 items-start justify-end pt-2 sm:w-16"
-        aria-hidden={false}
-      >
-        <span className="max-w-full truncate text-right text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-          {boardDisplayName(board, boardIndex)}
-        </span>
+    <div
+      id={flexGridBoardDomId(board.id)}
+      className="relative flex scroll-mt-3 items-stretch gap-2"
+      style={{
+        zIndex: boardElevated ? 80 : boardIndex + 1,
+      }}
+    >
+      <div className="flex w-[4.25rem] shrink-0 flex-col items-end gap-1.5 pt-2 sm:w-20">
+        {renaming ? (
+          <input
+            autoFocus
+            defaultValue={board.name?.trim() || title}
+            className="w-full rounded border border-border bg-card px-1 py-0.5 text-right text-[10px] font-semibold text-foreground outline-none ring-1 ring-primary/40"
+            aria-label={`ชื่อ ${title}`}
+            onBlur={(e) => onRename(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") onCancelRename();
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span
+            className={cn(
+              "max-w-full truncate text-right text-[10px] font-semibold uppercase tracking-wide text-muted-foreground",
+              boardLocked && "text-primary",
+            )}
+            title={title}
+          >
+            {title}
+          </span>
+        )}
+        {!disabled ? (
+          <div className="flex flex-col items-end gap-0.5">
+            <BoardGutterBtn
+              title={boardLocked ? "ปลดล็อกบอร์ด" : "ล็อกบอร์ด"}
+              active={boardLocked}
+              onClick={onToggleLock}
+            >
+              {boardLocked ? (
+                <Lock className="h-3 w-3" strokeWidth={2.2} />
+              ) : (
+                <LockOpen className="h-3 w-3" strokeWidth={2.2} />
+              )}
+            </BoardGutterBtn>
+            <BoardGutterBtn
+              title="แก้ไขชื่อบอร์ด"
+              disabled={boardLocked}
+              onClick={onBeginRename}
+            >
+              <Pencil className="h-3 w-3" strokeWidth={2.2} />
+            </BoardGutterBtn>
+            <BoardGutterBtn
+              title="ย้ายบอร์ดขึ้น"
+              disabled={boardIndex <= 0}
+              onClick={onMoveUp}
+            >
+              <ArrowUp className="h-3 w-3" strokeWidth={2.2} />
+            </BoardGutterBtn>
+            <BoardGutterBtn
+              title="ย้ายบอร์ดลง"
+              disabled={boardIndex >= boardCount - 1}
+              onClick={onMoveDown}
+            >
+              <ArrowDown className="h-3 w-3" strokeWidth={2.2} />
+            </BoardGutterBtn>
+            <BoardGutterBtn
+              title="ลบบอร์ด"
+              danger
+              disabled={boardCount <= 1 || boardLocked}
+              onClick={onDeleteBoard}
+            >
+              <Trash2 className="h-3 w-3" strokeWidth={2.2} />
+            </BoardGutterBtn>
+          </div>
+        ) : null}
       </div>
       <div
         className={cn(
           "relative overflow-visible border-x border-b border-border bg-background",
           boardIndex === 0 && "border-t",
+          boardElevated && "z-10",
         )}
         style={{
           width: layout.canvasWidth * zoom,
@@ -872,6 +1144,7 @@ function BoardSurface({
             width: layout.canvasWidth,
             height: board.height,
             transform: `scale(${zoom})`,
+            zIndex: boardElevated ? 20 : undefined,
           }}
         >
           {/* Grid scales with zoom; board overflow-hidden keeps strokes inside the frame. */}
@@ -956,7 +1229,7 @@ function BoardSurface({
 
           {board.modules.length === 0 ? (
             <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
-              ลากโมดูลจากแถบซ้ายมาวางที่นี่
+              {boardLocked ? "บอร์ดถูกล็อก" : "ลากโมดูลจากแถบซ้ายมาวางที่นี่"}
             </p>
           ) : null}
 
@@ -975,7 +1248,9 @@ function BoardSurface({
           {board.modules.map((mod) => (
             <PlacedModule
               key={mod.id}
-              module={mod}
+              module={
+                boardLocked && !mod.locked ? { ...mod, locked: true } : mod
+              }
               board={board}
               layout={layout}
               selected={selected?.boardId === board.id && selected?.moduleId === mod.id}
@@ -997,6 +1272,10 @@ function BoardSurface({
               onArrange={(act) => onArrangeModule(mod.id, act)}
               onCopy={() => onCopyModule(mod.id)}
               onUploadClick={() => {
+                if (boardLocked) {
+                  toast.error("บอร์ดถูกล็อก — ปลดล็อกก่อนแก้ไข");
+                  return;
+                }
                 if (
                   mod.type === "image" ||
                   mod.type === "gif" ||
@@ -1016,11 +1295,24 @@ function BoardSurface({
                   onUploadFile(mod.id, mod.type, files);
                 }
               }}
-              onCrop={
-                mod.type === "image" && mod.url && onCropModule
-                  ? () => onCropModule(board.id, mod.id, mod.url!)
+              cropping={croppingModuleId === mod.id}
+              onBeginCrop={
+                mod.type === "image" && mod.url && onBeginCropModule && !boardLocked
+                  ? () => onBeginCropModule(board.id, mod.id, mod.url!)
                   : undefined
               }
+              onConfirmInlineCrop={
+                onConfirmInlineCrop
+                  ? (result) => onConfirmInlineCrop(board.id, mod.id, result)
+                  : undefined
+              }
+              onRestoreOriginal={
+                onRestoreOriginalModule
+                  ? () => onRestoreOriginalModule(board.id, mod.id)
+                  : undefined
+              }
+              onCancelInlineCrop={onCancelInlineCrop}
+              inlineCropSaving={inlineCropSaving && croppingModuleId === mod.id}
             />
           ))}
         </div>
@@ -1051,35 +1343,6 @@ function ModuleUploadingOverlay({
   );
 }
 
-/** Compact "what's happening now" strip shown in the module's name bar while uploading. */
-function ModuleBarProgress({
-  label,
-  percent,
-}: {
-  label?: string | null;
-  percent?: number | null;
-}) {
-  const pct = Math.min(100, Math.max(0, Math.round(useAutoPercent(percent))));
-  return (
-    <div className="pointer-events-none flex min-w-0 flex-col gap-0.5 rounded border border-border/60 bg-card/95 px-1.5 py-1 shadow-sm">
-      <div className="flex items-center justify-between gap-1.5">
-        <span className="min-w-0 flex-1 truncate text-[10px] font-medium text-foreground/90">
-          {label ?? "กำลังอัปโหลด..."}
-        </span>
-        <span className="shrink-0 text-[9px] font-semibold tabular-nums text-muted-foreground">
-          {pct}%
-        </span>
-      </div>
-      <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-primary transition-[width] duration-150 ease-out"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
 function PlacedModule({
   module,
   board,
@@ -1100,7 +1363,12 @@ function PlacedModule({
   onCopy,
   onUploadClick,
   onUploadFile,
-  onCrop,
+  cropping,
+  onBeginCrop,
+  onConfirmInlineCrop,
+  onRestoreOriginal,
+  onCancelInlineCrop,
+  inlineCropSaving,
 }: {
   module: FlexGridModule;
   board: FlexGridBoard;
@@ -1121,10 +1389,16 @@ function PlacedModule({
   onCopy: () => void;
   onUploadClick: () => void;
   onUploadFile?: (files: FileList) => void;
-  onCrop?: () => void;
+  cropping?: boolean;
+  onBeginCrop?: () => void;
+  onConfirmInlineCrop?: (result: FlexGridInlineCropResult) => void;
+  onRestoreOriginal?: () => void;
+  onCancelInlineCrop?: () => void;
+  inlineCropSaving?: boolean;
 }) {
   const ctx = boardCtx(layout, board);
   const textEditorRef = useRef<TextModuleBodyHandle>(null);
+  const inlineCropRef = useRef<FlexGridInlineCropHandle>(null);
   const skipClickSelectRef = useRef(false);
   const locked = !!module.locked;
   const [fileDragOver, setFileDragOver] = useState(false);
@@ -1133,13 +1407,14 @@ function PlacedModule({
     !disabled &&
     !locked &&
     !uploading &&
+    !cropping &&
     (module.type === "image" ||
       module.type === "gif" ||
       module.type === "video" ||
       module.type === "model3d");
 
   const onMovePointerDown = (e: ReactPointerEvent) => {
-    if (disabled || locked) return;
+    if (disabled || locked || cropping) return;
     const el = e.target as HTMLElement;
     if (el.closest("[contenteditable], input, textarea")) return;
     if (el.closest("button") && !el.closest("[data-flex-move-handle]")) return;
@@ -1187,7 +1462,7 @@ function PlacedModule({
   };
 
   const onResizePointerDown = (e: ReactPointerEvent) => {
-    if (disabled || locked) return;
+    if (disabled || locked || cropping) return;
     e.preventDefault();
     e.stopPropagation();
     onSelect();
@@ -1198,28 +1473,81 @@ function PlacedModule({
     const originH = module.h;
     const left = module.x;
     const top = module.y;
+    // Image / GIF / video keep the frame aspect so resize doesn't squash the media.
+    const lockAspect =
+      module.type === "image" || module.type === "gif" || module.type === "video";
+    const aspect = originW / Math.max(1, originH);
+    const maxW = layout.canvasWidth - left;
+    const maxH = board.height - top;
+
+    const sizeFromPointer = (clientX: number, clientY: number) => {
+      const dx = clientX - startX;
+      const dy = clientY - startY;
+      if (!lockAspect) {
+        return {
+          w: Math.max(40, Math.min(maxW, originW + dx)),
+          h: Math.max(20, Math.min(maxH, originH + dy)),
+        };
+      }
+      const scaleFromX = (originW + dx) / Math.max(1, originW);
+      const scaleFromY = (originH + dy) / Math.max(1, originH);
+      const scale = Math.abs(dx) >= Math.abs(dy) ? scaleFromX : scaleFromY;
+      let w = originW * scale;
+      let h = w / aspect;
+      if (w > maxW) {
+        w = maxW;
+        h = w / aspect;
+      }
+      if (h > maxH) {
+        h = maxH;
+        w = h * aspect;
+      }
+      if (w < 40) {
+        w = 40;
+        h = w / aspect;
+      }
+      if (h < 20) {
+        h = 20;
+        w = h * aspect;
+      }
+      if (w > maxW) {
+        w = maxW;
+        h = w / aspect;
+      }
+      if (h > maxH) {
+        h = maxH;
+        w = h * aspect;
+      }
+      return { w: Math.round(w), h: Math.round(h) };
+    };
+
+    const commitSize = (clientX: number, clientY: number, snap: boolean) => {
+      let { w, h } = sizeFromPointer(clientX, clientY);
+      if (snap && snapEnabled) {
+        if (lockAspect) {
+          w = snapWidth(ctx, w, left);
+          h = Math.round(w / aspect);
+          if (h > maxH) {
+            h = snapHeight(ctx, maxH, top);
+            w = Math.round(h * aspect);
+            w = Math.min(maxW, Math.max(40, w));
+          }
+          h = Math.min(maxH, Math.max(20, h));
+        } else {
+          w = snapWidth(ctx, w, left);
+          h = snapHeight(ctx, h, top);
+        }
+      }
+      onChange({ w, h }, true);
+    };
 
     const onMove = (ev: PointerEvent) => {
-      const nw = Math.max(40, Math.min(layout.canvasWidth - left, originW + (ev.clientX - startX)));
-      const nh = Math.max(20, Math.min(board.height - top, originH + (ev.clientY - startY)));
-      onChange({ w: nw, h: nh }, true);
+      commitSize(ev.clientX, ev.clientY, false);
     };
     const onUp = (ev: PointerEvent) => {
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
-      const nw = Math.max(40, Math.min(layout.canvasWidth - left, originW + (ev.clientX - startX)));
-      const nh = Math.max(20, Math.min(board.height - top, originH + (ev.clientY - startY)));
-      if (snapEnabled) {
-        onChange(
-          {
-            w: snapWidth(ctx, nw, left),
-            h: snapHeight(ctx, nh, top),
-          },
-          true,
-        );
-      } else {
-        onChange({ w: nw, h: nh }, true);
-      }
+      commitSize(ev.clientX, ev.clientY, true);
       onHistoryEnd();
     };
     document.addEventListener("pointermove", onMove);
@@ -1234,10 +1562,14 @@ function PlacedModule({
         top: module.y,
         width: module.w,
         height: module.h,
-        zIndex: fileDragOver ? Math.max(module.z, 10_000) : module.z,
+        zIndex:
+          cropping || fileDragOver || selected || inSelection
+            ? Math.max(module.z, 50_000)
+            : module.z,
       }}
       onClick={(e) => {
         e.stopPropagation();
+        if (cropping) return;
         if (skipClickSelectRef.current) {
           skipClickSelectRef.current = false;
           return;
@@ -1266,7 +1598,7 @@ function PlacedModule({
       }}
       onPointerDown={(e) => {
         // Ctrl/Cmd+click anywhere on the module (incl. text) for multi-select
-        if (disabled) return;
+        if (disabled || cropping) return;
         if (!(e.ctrlKey || e.metaKey)) return;
         const el = e.target as HTMLElement;
         if (el.closest("button") && !el.closest("[data-flex-move-handle]")) return;
@@ -1276,11 +1608,12 @@ function PlacedModule({
         skipClickSelectRef.current = true;
       }}
     >
+      {!cropping ? (
       <div
         className={cn(
           "absolute bottom-full left-0 right-0 z-20 mb-1 flex flex-col items-stretch gap-0.5",
           "opacity-0 transition-opacity group-hover:opacity-100",
-          (selected || inSelection || uploading) && "opacity-100",
+          (selected || inSelection) && "opacity-100",
         )}
       >
         {module.type === "text" && !disabled ? (
@@ -1289,9 +1622,6 @@ function PlacedModule({
             onCommand={(cmd) => textEditorRef.current?.applyCommand(cmd)}
           />
         ) : null}
-        {uploading ? (
-          <ModuleBarProgress label={uploadStageLabel} percent={uploadStagePercent} />
-        ) : (
         <div className="pointer-events-auto flex min-w-0 items-center gap-1">
         <button
           type="button"
@@ -1331,12 +1661,14 @@ function PlacedModule({
             </>
           ) : null}
         </div>
-        )}
       </div>
+      ) : null}
 
       <div
         className={cn(
-          "relative h-full w-full overflow-hidden",
+          "relative h-full w-full",
+          // Allow crop chrome (aspect / zoom) to sit outside the frame.
+          cropping ? "overflow-visible" : "overflow-hidden",
           module.type === "text"
             ? selected || inSelection
               ? "border border-primary bg-card shadow-sm ring-2 ring-primary/30"
@@ -1350,16 +1682,32 @@ function PlacedModule({
                 )
               : cn(
                   "border bg-card shadow-sm",
-                  selected || inSelection
+                  selected || inSelection || cropping
                     ? "border-primary ring-2 ring-primary/30"
                     : "border-border/80",
                 ),
           fileDragOver && "border-primary ring-2 ring-primary bg-primary/5",
         )}
       >
-        <div className="relative h-full w-full overflow-hidden">
+        <div
+          className={cn(
+            "relative h-full w-full",
+            cropping ? "overflow-visible" : "overflow-hidden",
+          )}
+        >
           {module.type === "image" ? (
             module.url ? (
+              cropping && onConfirmInlineCrop && onCancelInlineCrop ? (
+                <FlexGridInlineCrop
+                  ref={inlineCropRef}
+                  imageUrl={module.url}
+                  originalImageUrl={module.originalUrl || module.url}
+                  onConfirm={onConfirmInlineCrop}
+                  onRestoreOriginal={onRestoreOriginal}
+                  onCancel={onCancelInlineCrop}
+                  saving={inlineCropSaving}
+                />
+              ) : (
               <div
                 className={cn(
                   "relative h-full w-full",
@@ -1394,7 +1742,7 @@ function PlacedModule({
                     >
                       <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} />
                     </button>
-                    {onCrop ? (
+                    {onBeginCrop ? (
                       <button
                         type="button"
                         title="ครอบภาพ"
@@ -1403,7 +1751,7 @@ function PlacedModule({
                         onPointerDown={(e) => e.stopPropagation()}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onCrop();
+                          onBeginCrop();
                         }}
                       >
                         <Crop className="h-3.5 w-3.5" strokeWidth={2} />
@@ -1412,6 +1760,7 @@ function PlacedModule({
                   </div>
                 ) : null}
               </div>
+              )
             ) : (
               <div
                 className={cn(
@@ -1708,14 +2057,22 @@ function PlacedModule({
           ) : null}
         </div>
 
-      {!disabled && !locked ? (
+      {!disabled && !locked && !cropping ? (
         <div
           className={cn(
             "absolute bottom-0 right-0 z-30 flex h-4 w-4 cursor-se-resize items-center justify-center bg-primary text-primary-foreground opacity-0 transition-opacity group-hover:opacity-100",
             selected && "opacity-100",
           )}
-          title="ลากเพื่อขยาย/หด"
-          aria-label="ขยายหรือหดโมดูล"
+          title={
+            module.type === "image" || module.type === "gif" || module.type === "video"
+              ? "ลากเพื่อขยาย/หด (คงสัดส่วน)"
+              : "ลากเพื่อขยาย/หด"
+          }
+          aria-label={
+            module.type === "image" || module.type === "gif" || module.type === "video"
+              ? "ขยายหรือหดโมดูลโดยคงสัดส่วน"
+              : "ขยายหรือหดโมดูล"
+          }
           onPointerDown={onResizePointerDown}
         >
           <ArrowDownRight className="h-3 w-3" strokeWidth={2.5} />
@@ -1723,10 +2080,46 @@ function PlacedModule({
       ) : null}
       </div>
 
-      {!disabled ? (
+      {cropping ? (
+        <div
+          className="absolute left-1/2 top-full z-[60] mt-1 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border/70 bg-card px-1.5 py-1 shadow-md opacity-100"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            disabled={inlineCropSaving}
+            title="ยกเลิก"
+            aria-label="ยกเลิก"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-destructive disabled:opacity-50"
+            onClick={() => onCancelInlineCrop?.()}
+          >
+            <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+          </button>
+          <button
+            type="button"
+            disabled={inlineCropSaving}
+            title={inlineCropSaving ? "กำลังบันทึก..." : "ใช้ภาพนี้"}
+            aria-label={inlineCropSaving ? "กำลังบันทึก..." : "ใช้ภาพนี้"}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            onClick={() => void inlineCropRef.current?.confirm()}
+          >
+            <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+          </button>
+          <button
+            type="button"
+            disabled={inlineCropSaving}
+            title="คืนภาพเต็ม 100% ตามสัดส่วนที่อัปโหลดมา"
+            className="rounded-full px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+            onClick={() => void inlineCropRef.current?.restoreOriginal()}
+          >
+            Original
+          </button>
+        </div>
+      ) : !disabled ? (
         <div
           className={cn(
-            "absolute left-1/2 top-full z-40 mt-1 flex -translate-x-1/2 items-center gap-0.5 rounded-full border border-border/70 bg-card px-1 py-0.5 shadow-sm",
+            "absolute left-1/2 top-full z-[60] mt-1 flex -translate-x-1/2 items-center gap-0.5 rounded-full border border-border/70 bg-card px-1 py-0.5 shadow-md",
             "opacity-0 transition-opacity group-hover:opacity-100",
             selected && "opacity-100",
           )}

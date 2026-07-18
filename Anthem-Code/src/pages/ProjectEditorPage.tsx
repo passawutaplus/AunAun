@@ -28,7 +28,9 @@ import { uploadProjectGif, isGifFile } from "@/lib/uploadProjectGif";
 import { isVideoFile } from "@/lib/videoAccept";
 import { isModel3dFile } from "@/lib/model3dAccept";
 import { useUploadStageReporter } from "@/hooks/useUploadStageReporter";
-import { AutoLoadPercentBar } from "@/components/project/LoadPercentBar";
+import { normalizeImageForUpload, isAllowedPortfolioImage } from "@/lib/normalizeImageUpload";
+import { sizeModuleToAspect } from "@/lib/flexGridCropAspect";
+import type { FlexGridInlineCropResult } from "@/components/project/FlexGridInlineCrop";
 import { useSubscription } from "@/core/subscription";
 import { getProjectLimits } from "@/lib/projectLimits";
 import { supabase } from "@/integrations/supabase/client";
@@ -254,24 +256,23 @@ const ProjectEditorPage = () => {
   const [coverCropOpen, setCoverCropOpen] = useState(false);
   const [moduleCropFile, setModuleCropFile] = useState<File | null>(null);
   const [moduleCropOpen, setModuleCropOpen] = useState(false);
-  const [moduleCropTarget, setModuleCropTarget] = useState<
-    | {
-        editor: "casual";
-        blockId: string;
-        slotIndex?: number;
-        sourceUrl: string;
-        gallerySlide?: boolean;
-        lockedCrop?: { ratio: number; exportW: number; exportH: number; label: string };
-      }
-    | {
-        editor: "flex_grid";
-        boardId: string;
-        moduleId: string;
-        sourceUrl: string;
-        lockedCrop: { ratio: number; exportW: number; exportH: number; label: string };
-      }
-    | null
-  >(null);
+  const [moduleCropTarget, setModuleCropTarget] = useState<{
+    editor: "casual";
+    blockId: string;
+    slotIndex?: number;
+    sourceUrl: string;
+    gallerySlide?: boolean;
+    lockedCrop?: { ratio: number; exportW: number; exportH: number; label: string };
+  } | null>(null);
+  /** Full Grid inline crop session (no popup). */
+  const [flexInlineCrop, setFlexInlineCrop] = useState<{
+    boardId: string;
+    moduleId: string;
+    sourceUrl: string;
+    prevW: number;
+    prevH: number;
+  } | null>(null);
+  const [inlineCropSaving, setInlineCropSaving] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
   const [toolsExpanded, setToolsExpanded] = useState(false);
@@ -928,12 +929,19 @@ const ProjectEditorPage = () => {
     }
   };
 
-  const handleCoverPick = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("รองรับเฉพาะ JPG, PNG, WebP");
+  const handleCoverPick = async (file: File) => {
+    if (!isAllowedPortfolioImage(file)) {
+      toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
       return;
     }
-    openCoverCrop(file);
+    try {
+      const prepared = await normalizeImageForUpload(file, uploadReporter);
+      openCoverCrop(prepared);
+    } catch {
+      toast.error("แปลงรูป HEIC ไม่สำเร็จ — ลองไฟล์ JPG/PNG");
+    } finally {
+      resetUploadStage();
+    }
   };
 
   const appendMediaBlocks = useCallback((kind: "image" | "video", urls: string[]) => {
@@ -943,9 +951,9 @@ const ProjectEditorPage = () => {
 
   const handleGallery = async (files: FileList | File[]) => {
     if (!user) return;
-    const arr = Array.from(files).filter((f) => f.type.match(/^image\/(jpeg|png|webp)$/i));
+    const arr = Array.from(files).filter(isAllowedPortfolioImage);
     if (!arr.length) {
-      toast.error("รองรับเฉพาะ JPG, PNG, WebP");
+      toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
       return;
     }
     const maxImages = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
@@ -976,6 +984,47 @@ const ProjectEditorPage = () => {
       resetUploadStage();
       setUploadingGallery(false);
     }
+  };
+
+  const appendVideoFiles = async (videos: File[]) => {
+    if (!user || !videos.length) return;
+    const maxVideos = Number.isFinite(limits.videosPerProject) ? limits.videosPerProject : 3;
+    const currentVideos = countMediaByKind(mediaItemsFromBlocks(contentBlocks), "video");
+    const room = Math.max(0, maxVideos - currentVideos);
+    if (room <= 0) {
+      toast.error(`แพ็กเกจนี้อัปโหลดวิดีโอได้สูงสุด ${maxVideos} คลิป/ผลงาน`);
+      return;
+    }
+    const toUpload = videos.slice(0, room);
+    setUploadingVideo(true);
+    try {
+      const urls: string[] = [];
+      for (const f of toUpload) {
+        const u = await uploadProjectVideo(f, user.id, folderRef.current, tier, uploadReporter);
+        urls.push(u);
+      }
+      appendMediaBlocks("video", urls);
+      toast.success(`อัปโหลด ${urls.length} วิดีโอสำเร็จ`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+    } finally {
+      resetUploadStage();
+      setUploadingVideo(false);
+    }
+  };
+
+  /** Casual canvas drop: route image files to the gallery and video files to video blocks. */
+  const handleCanvasDropFiles = async (files: FileList | File[]) => {
+    if (!user) return;
+    const all = Array.from(files);
+    const images = all.filter(isAllowedPortfolioImage);
+    const videos = all.filter((f) => !isAllowedPortfolioImage(f) && isVideoFile(f));
+    if (!images.length && !videos.length) {
+      toast.error("รองรับเฉพาะรูปภาพ (JPG, PNG, WebP, HEIC) หรือวิดีโอ");
+      return;
+    }
+    if (images.length) await handleGallery(images);
+    if (videos.length) await appendVideoFiles(videos);
   };
 
   const completeLinkedCollab = async (projectId: string, targetStatus: Status) => {
@@ -1382,8 +1431,8 @@ const ProjectEditorPage = () => {
       if (!block || (block.type !== "image" && block.type !== "video" && block.type !== "image_text")) return;
 
       if (block.type === "image_text") {
-        if (!file.type.match(/^image\/(jpeg|png|webp)$/i)) {
-          toast.error("รองรับเฉพาะ JPG, PNG, WebP");
+        if (!isAllowedPortfolioImage(file)) {
+          toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
           return;
         }
         setUploadingBlockId(blockId);
@@ -1408,14 +1457,15 @@ const ProjectEditorPage = () => {
       }
 
       if (block.type === "image") {
-        if (!file.type.match(/^image\/(jpeg|png|webp)$/i)) {
-          toast.error("รองรับเฉพาะ JPG, PNG, WebP");
+        if (!isAllowedPortfolioImage(file)) {
+          toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
           return;
         }
         setUploadingBlockId(blockId);
         setUploadingGallery(true);
         try {
-          let uploadFile = file;
+          // HEIC → JPEG up front so the canvas-based crop below can decode it.
+          let uploadFile = await normalizeImageForUpload(file, uploadReporter);
           let resolvedSlot = typeof slotIndex === "number" && slotIndex >= 0 ? slotIndex : undefined;
           if (block.mediaLayout === "grid" && isThreeSplitGridLayout(block.gridLayout)) {
             if (resolvedSlot === undefined) {
@@ -1425,7 +1475,7 @@ const ProjectEditorPage = () => {
               resolvedSlot = empty >= 0 ? empty : Math.min(next.length, 2);
             }
             const spec = threeSplitSlotCropSpec(resolvedSlot);
-            uploadFile = await cropImageFileToAspectFile(file, spec.ratio, file.type || "image/jpeg", {
+            uploadFile = await cropImageFileToAspectFile(uploadFile, spec.ratio, uploadFile.type || "image/jpeg", {
               width: spec.exportW,
               height: spec.exportH,
             });
@@ -1521,9 +1571,9 @@ const ProjectEditorPage = () => {
       const layout = block.mediaLayout;
       if (layout !== "gallery" && layout !== "grid" && layout !== "multi") return;
 
-      const images = files.filter((f) => /^image\/(jpeg|png|webp)$/i.test(f.type));
+      const images = files.filter(isAllowedPortfolioImage);
       if (!images.length) {
-        toast.error("รองรับเฉพาะ JPG, PNG, WebP");
+        toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
         return;
       }
 
@@ -1584,10 +1634,10 @@ const ProjectEditorPage = () => {
         for (let i = 0; i < toUpload.length; i++) {
           const file = toUpload[i]!;
           const slot = emptyIndexes[i]!;
-          let uploadFile = file;
+          let uploadFile = await normalizeImageForUpload(file, uploadReporter);
           if (layout === "grid" && isThreeSplitGridLayout(block.gridLayout)) {
             const spec = threeSplitSlotCropSpec(slot);
-            uploadFile = await cropImageFileToAspectFile(file, spec.ratio, file.type || "image/jpeg", {
+            uploadFile = await cropImageFileToAspectFile(uploadFile, spec.ratio, uploadFile.type || "image/jpeg", {
               width: spec.exportW,
               height: spec.exportH,
             });
@@ -1661,81 +1711,146 @@ const ProjectEditorPage = () => {
     }
   }, [contentBlocks]);
 
-  const handleCropFlexModule = useCallback(
-    async (boardId: string, moduleId: string, imageUrl: string) => {
-      try {
-        const board = flexGridLayout.boards.find((b) => b.id === boardId);
-        const mod = board?.modules.find((m) => m.id === moduleId);
-        if (!mod || mod.type !== "image" || !mod.url) {
-          toast.error("ไม่พบโมดูลภาพ");
-          return;
-        }
-        const w = Math.max(1, mod.w);
-        const h = Math.max(1, mod.h);
-        const ratio = w / h;
-        const long = 1600;
-        const exportW = ratio >= 1 ? long : Math.max(1, Math.round(long * ratio));
-        const exportH = ratio >= 1 ? Math.max(1, Math.round(long / ratio)) : long;
-        const file = await urlToImageFile(imageUrl);
-        setModuleCropTarget({
-          editor: "flex_grid",
-          boardId,
-          moduleId,
-          sourceUrl: imageUrl,
-          lockedCrop: { ratio, exportW, exportH, label: "ตามโมดูล" },
-        });
-        setModuleCropFile(file);
-        setModuleCropOpen(true);
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "โหลดรูปเพื่อครอบไม่สำเร็จ");
+  const handleBeginFlexCrop = useCallback(
+    (boardId: string, moduleId: string, imageUrl: string) => {
+      const board = flexGridLayout.boards.find((b) => b.id === boardId);
+      const mod = board?.modules.find((m) => m.id === moduleId);
+      if (!mod || mod.type !== "image" || !mod.url) {
+        toast.error("ไม่พบโมดูลภาพ");
+        return;
       }
+      setFlexInlineCrop({
+        boardId,
+        moduleId,
+        sourceUrl: imageUrl,
+        prevW: mod.w,
+        prevH: mod.h,
+      });
     },
     [flexGridLayout],
   );
+
+  const handleCancelFlexCrop = useCallback(() => {
+    setFlexInlineCrop((session) => {
+      if (!session) return null;
+      setFlexGridLayout((prev) => ({
+        ...prev,
+        boards: prev.boards.map((b) => {
+          if (b.id !== session.boardId) return b;
+          return {
+            ...b,
+            modules: b.modules.map((m) =>
+              m.id === session.moduleId && m.type === "image"
+                ? { ...m, w: session.prevW, h: session.prevH }
+                : m,
+            ),
+          };
+        }),
+      }));
+      return null;
+    });
+    setInlineCropSaving(false);
+  }, []);
+
+  const handleConfirmFlexCrop = useCallback(
+    async (boardId: string, moduleId: string, result: FlexGridInlineCropResult) => {
+      if (!user) return;
+      setInlineCropSaving(true);
+      setUploadingFlexModuleId(moduleId);
+      setUploadingGallery(true);
+      try {
+        const url = await uploadProjectImage(result.file, user.id, folderRef.current, tier, {
+          skipCompression: true,
+          reporter: uploadReporter,
+        });
+        const frameAspect = result.frameAspectRatio;
+        setFlexGridLayout((prev) => ({
+          ...prev,
+          boards: prev.boards.map((b) => {
+            if (b.id !== boardId) return b;
+            return {
+              ...b,
+              modules: b.modules.map((m) => {
+                if (m.id !== moduleId || m.type !== "image") return m;
+                // Keep first-upload URL so restore can go back to pre-crop.
+                const originalUrl = m.originalUrl?.trim() || m.url?.trim() || url;
+                if (typeof frameAspect === "number" && frameAspect > 0) {
+                  const next = sizeModuleToAspect(m, frameAspect, prev.canvasWidth, b.height);
+                  return { ...m, url, originalUrl, w: next.w, h: next.h };
+                }
+                return { ...m, url, originalUrl };
+              }),
+            };
+          }),
+        }));
+        if (!cover) setCover(url);
+        clearPublishFieldError("canvasImage");
+        toast.success("ครอบภาพสำเร็จ");
+        setFlexInlineCrop(null);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "บันทึกภาพที่ครอบไม่สำเร็จ");
+      } finally {
+        setUploadingFlexModuleId(null);
+        setUploadingGallery(false);
+        setInlineCropSaving(false);
+        resetUploadStage();
+      }
+    },
+    [user, tier, cover, clearPublishFieldError, uploadReporter, resetUploadStage],
+  );
+
+  /** Restore module to the first uploaded image + its natural aspect (no re-upload). */
+  const handleRestoreFlexOriginal = useCallback(async (boardId: string, moduleId: string) => {
+    const board = flexGridLayoutRef.current.boards.find((b) => b.id === boardId);
+    const mod = board?.modules.find((m) => m.id === moduleId);
+    if (!mod || mod.type !== "image") return;
+    const src = (mod.originalUrl || mod.url || "").trim();
+    if (!src) {
+      toast.error("ไม่พบภาพต้นฉบับ");
+      return;
+    }
+    setInlineCropSaving(true);
+    try {
+      const { w, h } = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.onerror = () => reject(new Error("โหลดภาพต้นฉบับไม่สำเร็จ"));
+        img.src = src;
+      });
+      const ratio = w / Math.max(1, h);
+      setFlexGridLayout((prev) => ({
+        ...prev,
+        boards: prev.boards.map((b) => {
+          if (b.id !== boardId) return b;
+          return {
+            ...b,
+            modules: b.modules.map((m) => {
+              if (m.id !== moduleId || m.type !== "image") return m;
+              const next = sizeModuleToAspect(m, ratio, prev.canvasWidth, b.height);
+              return {
+                ...m,
+                url: src,
+                originalUrl: m.originalUrl?.trim() || src,
+                w: next.w,
+                h: next.h,
+              };
+            }),
+          };
+        }),
+      }));
+      setFlexInlineCrop(null);
+      toast.success("คืนภาพต้นฉบับแล้ว");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "คืนภาพต้นฉบับไม่สำเร็จ");
+    } finally {
+      setInlineCropSaving(false);
+    }
+  }, []);
 
   const handleModuleCropConfirm = useCallback(
     async (result: ModuleImageCropConfirmResult) => {
       if (!user || !moduleCropTarget) return;
       const { file, applyToAll, aspect, cornerRadiusPercent } = result;
-
-      if (moduleCropTarget.editor === "flex_grid") {
-        const { boardId, moduleId } = moduleCropTarget;
-        setUploadingFlexModuleId(moduleId);
-        setUploadingGallery(true);
-        try {
-          const url = await uploadProjectImage(file, user.id, folderRef.current, tier, {
-            skipCompression: true,
-            reporter: uploadReporter,
-          });
-          setFlexGridLayout((prev) => ({
-            ...prev,
-            boards: prev.boards.map((b) =>
-              b.id !== boardId
-                ? b
-                : {
-                    ...b,
-                    modules: b.modules.map((m) =>
-                      m.id === moduleId && m.type === "image" ? { ...m, url } : m,
-                    ),
-                  },
-            ),
-          }));
-          if (!cover) setCover(url);
-          clearPublishFieldError("canvasImage");
-          toast.success("ครอบภาพสำเร็จ");
-        } catch (e) {
-          toast.error(e instanceof Error ? e.message : "บันทึกภาพที่ครอบไม่สำเร็จ");
-        } finally {
-          setUploadingFlexModuleId(null);
-          setUploadingGallery(false);
-          setModuleCropFile(null);
-          setModuleCropTarget(null);
-          setModuleCropOpen(false);
-          resetUploadStage();
-        }
-        return;
-      }
-
       const { blockId, slotIndex, sourceUrl, gallerySlide } = moduleCropTarget;
       setUploadingBlockId(blockId);
       setUploadingGallery(true);
@@ -2008,7 +2123,12 @@ const ProjectEditorPage = () => {
               ? b
               : {
                   ...b,
-                  modules: b.modules.map((m) => (m.id === moduleId ? { ...m, url } : m)),
+                  modules: b.modules.map((m) =>
+                    m.id === moduleId
+                      ? // New upload becomes the new original for "คืนภาพต้นฉบับ".
+                        { ...m, url, originalUrl: url }
+                      : m,
+                  ),
                 },
           ),
         }));
@@ -2042,6 +2162,7 @@ const ProjectEditorPage = () => {
     gridLayout,
     editorMode,
     flexGridLayout: toStoredFlexGridLayout(flexGridLayout),
+    projectId: editing && id && isUuid(id) ? id : undefined,
     category,
     cover,
     gallery: mediaItems.map((m) => m.url),
@@ -2246,16 +2367,6 @@ const ProjectEditorPage = () => {
             </div>
           </div>
         </div>
-        {isUploadingMedia ? (
-          <div className="mx-auto w-full max-w-6xl px-4 pb-2.5">
-            <AutoLoadPercentBar
-              percent={uploadStage?.percent}
-              label={uploadStage?.label ?? "กำลังอัปโหลดไฟล์…"}
-              showLabel
-              className="max-w-md"
-            />
-          </div>
-        ) : null}
       </div>
 
       {isDrillPost ? (
@@ -2316,6 +2427,8 @@ const ProjectEditorPage = () => {
             onDeleteBoard={(boardId) => {
               flexHistory.commit((prev) => {
                 if (prev.boards.length <= 1) return prev;
+                const target = prev.boards.find((b) => b.id === boardId);
+                if (target?.locked) return prev;
                 return {
                   ...prev,
                   boards: prev.boards.filter((b) => b.id !== boardId),
@@ -2540,9 +2653,16 @@ const ProjectEditorPage = () => {
                 onUploadToModule={(boardId, moduleId, file) =>
                   void handleUploadToFlexModule(boardId, moduleId, file)
                 }
-                onCropModule={(boardId, moduleId, url) =>
-                  void handleCropFlexModule(boardId, moduleId, url)
+                croppingModuleId={flexInlineCrop?.moduleId ?? null}
+                onBeginCropModule={handleBeginFlexCrop}
+                onConfirmInlineCrop={(boardId, moduleId, result) =>
+                  void handleConfirmFlexCrop(boardId, moduleId, result)
                 }
+                onRestoreOriginalModule={(boardId, moduleId) =>
+                  void handleRestoreFlexOriginal(boardId, moduleId)
+                }
+                onCancelInlineCrop={handleCancelFlexCrop}
+                inlineCropSaving={inlineCropSaving}
               />
             ) : (
             <ProjectCanvasEditor
@@ -2558,7 +2678,7 @@ const ProjectEditorPage = () => {
               uploadingBlockId={uploadingBlockId}
               uploadStageLabel={uploadStage?.label}
               uploadStagePercent={uploadStage?.percent}
-              onEmptyDropImages={(files) => void handleGallery(files)}
+              onEmptyDropImages={(files) => void handleCanvasDropFiles(files)}
               onStartFromTemplate={() => {
                 setToolsExpanded(true);
                 setToolsTab("template");
@@ -2585,18 +2705,6 @@ const ProjectEditorPage = () => {
                 e.target.value = "";
               }}
             />
-            {(uploadingGallery || uploadingVideo) &&
-            ((editorMode === "casual" && contentBlocks.length > 0 && !uploadingBlockId) ||
-              (editorMode === "flex_grid" && !uploadingFlexModuleId)) ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-4">
-                <AutoLoadPercentBar
-                  percent={uploadStage?.percent}
-                  label={uploadStage?.label ?? "กำลังอัปโหลด..."}
-                  showLabel
-                  className="max-w-[260px]"
-                />
-              </div>
-            ) : null}
           </section>
 
           <div className="mx-auto w-full max-w-2xl border-t border-border/70 pt-6 space-y-6">
@@ -2717,7 +2825,7 @@ const ProjectEditorPage = () => {
                 loading={uploadingCover}
                 onPick={(f) => {
                   clearPublishFieldError("cover");
-                  handleCoverPick(f);
+                  void handleCoverPick(f);
                 }}
                 onClear={() => {
                   setCover("");
@@ -3005,9 +3113,7 @@ const ProjectEditorPage = () => {
         file={moduleCropFile}
         open={moduleCropOpen}
         onOpenChange={setModuleCropOpen}
-        showApplyToAll={
-          moduleCropTarget?.editor === "casual" && !!moduleCropTarget.gallerySlide
-        }
+        showApplyToAll={!!moduleCropTarget?.gallerySlide}
         lockedRatio={moduleCropTarget?.lockedCrop?.ratio}
         lockedExport={
           moduleCropTarget?.lockedCrop
@@ -3247,7 +3353,7 @@ const CoverDrop = ({
             <X className="w-3.5 h-3.5 mr-1" /> ลบ
           </Button>
         </div>
-        <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => pickFile(e.target.files?.[0])} />
+        <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,.hif" hidden onChange={(e) => pickFile(e.target.files?.[0])} />
       </div>
     );
   }
@@ -3282,7 +3388,7 @@ const CoverDrop = ({
       {!compact ? (
         <p className="text-xs text-muted-foreground">JPG / PNG / WebP — สูงสุด 30MB · ครอปเป็น 4:3 แนวนอน</p>
       ) : null}
-      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => pickFile(e.target.files?.[0])} />
+      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,.hif" hidden onChange={(e) => pickFile(e.target.files?.[0])} />
     </div>
   );
 };

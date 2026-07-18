@@ -9,21 +9,29 @@ import { useAuthDialog } from "@/stores/authDialogStore";
 import InspirePopover from "@/components/inspire/InspirePopover";
 import SharePopover from "@/components/share/SharePopover";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Props {
   projectId: string;
   projectTitle: string;
   imageUrl: string;
   imageIndex: number;
+  /** Always show (e.g. lightbox) — skip hover-only fade on desktop. */
+  forceVisible?: boolean;
+  /** Stack actions vertically (lightbox top-left). */
+  vertical?: boolean;
+  className?: string;
 }
 
-const formatCount = (n: number) => {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
-  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
-  return String(n);
-};
-
-const ImageActionBar = ({ projectId, projectTitle, imageUrl, imageIndex }: Props) => {
+const ImageActionBar = ({
+  projectId,
+  projectTitle,
+  imageUrl,
+  imageIndex,
+  forceVisible,
+  vertical,
+  className,
+}: Props) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const openAuth = useAuthDialog((s) => s.openLogin);
@@ -34,7 +42,6 @@ const ImageActionBar = ({ projectId, projectTitle, imageUrl, imageIndex }: Props
   const [shareOpen, setShareOpen] = useState(false);
 
   const likes = stats?.likes ?? 0;
-  const shares = stats?.shares ?? 0;
 
   const requireAuth = () => {
     if (!user) {
@@ -58,9 +65,18 @@ const ImageActionBar = ({ projectId, projectTitle, imageUrl, imageIndex }: Props
   const btn =
     "flex items-center gap-1.5 px-3 py-2 rounded-full bg-black/25 hover:bg-black/45 text-white text-xs font-medium backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] transition-all border border-white/10 shadow-lg";
 
+  const labelClass = vertical ? "inline" : "hidden sm:inline";
+
   return (
     <div
-      className="absolute top-3 left-3 right-3 z-10 flex flex-wrap items-center gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 pointer-events-none md:group-hover:pointer-events-auto [&>*]:pointer-events-auto"
+      className={cn(
+        "z-10 flex gap-2 transition-opacity duration-200 [&>*]:pointer-events-auto",
+        vertical ? "flex-col items-start" : "flex-wrap items-center",
+        forceVisible
+          ? "relative opacity-100 pointer-events-auto"
+          : "absolute top-3 left-3 right-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 pointer-events-none md:group-hover:pointer-events-auto",
+        className,
+      )}
       style={{ pointerEvents: "auto" }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -83,11 +99,13 @@ const ImageActionBar = ({ projectId, projectTitle, imageUrl, imageIndex }: Props
       >
         <button type="button" className={btn} title="เก็บแรงบันดาลใจ">
           <Sparkles className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Inspire</span>
+          <span className={labelClass}>Inspire</span>
         </button>
       </InspirePopover>
 
-      <span aria-hidden="true" className="w-px h-6 bg-white/30 self-center mx-0.5 rounded-full" />
+      {!vertical ? (
+        <span aria-hidden="true" className="w-px h-6 bg-white/30 self-center mx-0.5 rounded-full" />
+      ) : null}
 
       <button
         type="button"
@@ -96,10 +114,9 @@ const ImageActionBar = ({ projectId, projectTitle, imageUrl, imageIndex }: Props
         title="ดูภาพคล้าย"
       >
         <ImageIcon className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">ภาพคล้าย</span>
+        <span className={labelClass}>ภาพคล้าย</span>
       </button>
 
-      {/* Share with inline count */}
       <SharePopover
         open={shareOpen}
         onOpenChange={setShareOpen}
@@ -108,10 +125,8 @@ const ImageActionBar = ({ projectId, projectTitle, imageUrl, imageIndex }: Props
         imageUrl={imageUrl}
         projectId={projectId}
       >
-        <button type="button" className={btn} title="แชร์">
+        <button type="button" className={btn} title="แชร์" aria-label="แชร์">
           <Share2 className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">แชร์</span>
-          <span className="tabular-nums opacity-90">{formatCount(shares)}</span>
         </button>
       </SharePopover>
     </div>

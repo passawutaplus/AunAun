@@ -414,7 +414,12 @@ const ProjectDetailPage = () => {
               />
             )}
             {editorMode === "flex_grid" && flexLayout ? (
-              <FlexGridView layout={flexLayout} className="max-w-3xl" />
+              <FlexGridView
+                layout={flexLayout}
+                className="max-w-3xl"
+                projectId={dbProject?.id ?? project.id}
+                projectTitle={project.title}
+              />
             ) : canvasBlocks.length > 0 ? (
               <ProjectContentBlocksView
                 blocks={canvasBlocks}

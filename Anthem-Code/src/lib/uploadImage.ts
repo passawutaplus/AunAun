@@ -10,6 +10,7 @@ import {
 } from "@/lib/anthemStorageUsage";
 import { uploadToSharedMedia } from "@/lib/sharedMediaUpload";
 import { assertRealImage } from "@/lib/imageSignature";
+import { normalizeImageForUpload } from "@/lib/normalizeImageUpload";
 import { UPLOAD_STAGE, type UploadStageReporter } from "@/lib/uploadProgress";
 
 const MAX_INPUT_MB = 30;
@@ -58,14 +59,17 @@ export async function uploadProjectImage(
   tier: Tier = "free",
   options?: UploadProjectImageOptions,
 ): Promise<string> {
-  if (!file.type.startsWith("image/")) throw new Error("ไฟล์ไม่ใช่รูปภาพ");
   if (file.size > MAX_INPUT_MB * 1024 * 1024) {
     throw new Error(`ไฟล์ใหญ่เกิน ${MAX_INPUT_MB}MB`);
   }
 
-  await assertRealImage(file);
+  // iPhone HEIC/HEIF → JPEG so desktop browsers can decode & compress it.
+  const normalized = await normalizeImageForUpload(file, options?.reporter);
+  if (!normalized.type.startsWith("image/")) throw new Error("ไฟล์ไม่ใช่รูปภาพ");
 
-  const compressed = await compressForUpload(file, options?.skipCompression, options?.reporter);
+  await assertRealImage(normalized);
+
+  const compressed = await compressForUpload(normalized, options?.skipCompression, options?.reporter);
 
   await assertAnthemStorageAvailable(userId, tier, compressed.size, {
     nonBlocking: options?.fastQuotaCheck,

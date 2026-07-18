@@ -34,6 +34,11 @@ export type FlexGridModule = {
   z: number;
   /** image / video / 3d-model storage URL */
   url?: string;
+  /**
+   * First uploaded image URL for this module (before any crop).
+   * Used by "คืนภาพต้นฉบับ" to restore original proportions.
+   */
+  originalUrl?: string;
   /** text module HTML (sanitized) */
   text?: string;
   bgTransparent?: boolean;
@@ -52,6 +57,8 @@ export type FlexGridBoard = {
   id: string;
   height: number;
   name?: string;
+  /** When true, modules on this board cannot be moved/resized/deleted. */
+  locked?: boolean;
   modules: FlexGridModule[];
 };
 
@@ -189,6 +196,10 @@ function parseModule(raw: unknown): FlexGridModule | null {
     h: clampNum(m.h, 20, 4000, 100),
     z: clampNum(m.z, 0, 10000, 10),
     url: typeof m.url === "string" ? m.url : undefined,
+    originalUrl:
+      typeof m.originalUrl === "string" && m.originalUrl.trim()
+        ? m.originalUrl.trim()
+        : undefined,
     text: typeof m.text === "string" ? m.text : undefined,
     bgTransparent: m.bgTransparent === true,
     name: typeof m.name === "string" ? m.name : undefined,
@@ -209,6 +220,7 @@ function parseBoard(raw: unknown): FlexGridBoard | null {
     id: typeof b.id === "string" && b.id ? b.id : newId(),
     height: clampNum(b.height, 200, 4000, FLEX_GRID_CANVAS_HEIGHT),
     name: typeof b.name === "string" && b.name.trim() ? b.name.trim() : undefined,
+    locked: b.locked === true ? true : undefined,
     modules,
   };
 }
@@ -252,6 +264,7 @@ export function toStoredFlexGridLayout(layout: FlexGridLayout): FlexGridLayout {
       id: b.id,
       height: b.height,
       ...(b.name?.trim() ? { name: b.name.trim() } : {}),
+      ...(b.locked ? { locked: true as const } : {}),
       modules: b.modules.map((m) => {
         const out: FlexGridModule = {
           id: m.id,
@@ -268,6 +281,9 @@ export function toStoredFlexGridLayout(layout: FlexGridLayout): FlexGridLayout {
           if (m.bgTransparent) out.bgTransparent = true;
         } else if (m.url?.trim()) {
           out.url = m.url.trim();
+          if (m.type === "image" && m.originalUrl?.trim()) {
+            out.originalUrl = m.originalUrl.trim();
+          }
           if (m.type === "model3d" && (m.format === "stl" || m.format === "obj")) {
             out.format = m.format;
           }
@@ -575,6 +591,7 @@ export function duplicateFlexBoard(
     id: newId(),
     height: src.height,
     name: src.name?.trim() ? `${src.name.trim()} copy` : undefined,
+    locked: undefined,
     modules: src.modules.map((m) => ({
       ...m,
       id: newId(),
@@ -583,6 +600,35 @@ export function duplicateFlexBoard(
   const boards = [...layout.boards];
   boards.splice(idx + 1, 0, copy);
   return { layout: { ...layout, boards }, newBoardId: copy.id };
+}
+
+/** Swap a board one step up (−1) or down (+1) in the stack. */
+export function moveFlexBoard(
+  layout: FlexGridLayout,
+  boardId: string,
+  direction: -1 | 1,
+): FlexGridLayout {
+  const idx = layout.boards.findIndex((b) => b.id === boardId);
+  if (idx < 0) return layout;
+  const next = idx + direction;
+  if (next < 0 || next >= layout.boards.length) return layout;
+  const boards = [...layout.boards];
+  const [item] = boards.splice(idx, 1);
+  boards.splice(next, 0, item);
+  return { ...layout, boards };
+}
+
+export function setBoardLocked(
+  layout: FlexGridLayout,
+  boardId: string,
+  locked: boolean,
+): FlexGridLayout {
+  return {
+    ...layout,
+    boards: layout.boards.map((b) =>
+      b.id === boardId ? { ...b, locked: locked || undefined } : b,
+    ),
+  };
 }
 
 export function setModuleLocked(

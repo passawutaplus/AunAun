@@ -52,6 +52,8 @@ export interface ProjectPreviewData {
   clientPermissionConfirmed?: boolean;
   /** Behind-the-scenes story — same as published project detail. */
   context?: ProjectContextData;
+  /** When editing an existing project — enables lightbox like / inspire / share. */
+  projectId?: string;
 }
 
 interface Props {
@@ -97,9 +99,19 @@ function ProjectPcPreview({
             <p className="text-sm text-muted-foreground">{data.subtitle.trim()}</p>
           )}
           {isFlex ? (
-            <FlexGridView layout={data.flexGridLayout} className="max-w-3xl" />
+            <FlexGridView
+              layout={data.flexGridLayout}
+              className="max-w-3xl"
+              projectId={data.projectId}
+              projectTitle={displayTitle}
+            />
           ) : canvasBlocks.length > 0 ? (
-            <ProjectContentBlocksView blocks={canvasBlocks} className="max-w-2xl" />
+            <ProjectContentBlocksView
+              blocks={canvasBlocks}
+              className="max-w-2xl"
+              projectId={data.projectId}
+              projectTitle={displayTitle}
+            />
           ) : (
             <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center text-sm text-muted-foreground">
               ยังไม่มีเนื้อหา — เพิ่มภาพหรือข้อความบนแคนวาสเพื่อดูพรีวิว
