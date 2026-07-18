@@ -40,3 +40,11 @@ export function isVideoFile(file: File): boolean {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
   return VIDEO_EXT.has(ext);
 }
+
+/** Detect a stored media URL that points to a video (e.g. GIFs converted to mp4). */
+export function isVideoUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const clean = url.split("?")[0]?.split("#")[0] ?? "";
+  const ext = clean.split(".").pop()?.toLowerCase() ?? "";
+  return VIDEO_EXT.has(ext);
+}

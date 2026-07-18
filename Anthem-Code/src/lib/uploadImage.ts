@@ -8,6 +8,9 @@ import {
   assertAnthemStorageAvailable,
   bumpAnthemStorageCache,
 } from "@/lib/anthemStorageUsage";
+import { uploadToSharedMedia } from "@/lib/sharedMediaUpload";
+import { assertRealImage } from "@/lib/imageSignature";
+import { UPLOAD_STAGE, type UploadStageReporter } from "@/lib/uploadProgress";
 
 const MAX_INPUT_MB = 30;
 /** Cropped community exports are already ≤1920px — skip second pass under this size. */
@@ -18,21 +21,29 @@ export type UploadProjectImageOptions = {
   skipCompression?: boolean;
   /** Do not block on a cold storage scan (quota refresh runs in background). */
   fastQuotaCheck?: boolean;
+  /** Report compression/upload stage + percent for progress UI. */
+  reporter?: UploadStageReporter;
 };
 
 function canSkipCompression(file: File): boolean {
   return file.size <= SKIP_RECOMPRESS_MAX_BYTES && file.type.startsWith("image/");
 }
 
-async function compressForUpload(file: File, skipCompression?: boolean): Promise<File> {
+async function compressForUpload(
+  file: File,
+  skipCompression: boolean | undefined,
+  reporter: UploadStageReporter | undefined,
+): Promise<File> {
   if (skipCompression && canSkipCompression(file)) return file;
 
+  reporter?.onStage?.(UPLOAD_STAGE.compressingImage);
   return imageCompression(file, {
     maxSizeMB: 1.0,
     maxWidthOrHeight: 1920,
     useWebWorker: false,
     fileType: "image/webp",
     initialQuality: 0.85,
+    onProgress: reporter?.onPercent,
   });
 }
 
@@ -52,7 +63,9 @@ export async function uploadProjectImage(
     throw new Error(`ไฟล์ใหญ่เกิน ${MAX_INPUT_MB}MB`);
   }
 
-  const compressed = await compressForUpload(file, options?.skipCompression);
+  await assertRealImage(file);
+
+  const compressed = await compressForUpload(file, options?.skipCompression, options?.reporter);
 
   await assertAnthemStorageAvailable(userId, tier, compressed.size, {
     nonBlocking: options?.fastQuotaCheck,
@@ -63,13 +76,8 @@ export async function uploadProjectImage(
   const name = `${crypto.randomUUID()}.${ext}`;
   const path = `anthem/${userId}/${folder}/${name}`;
 
-  const { error } = await sharedStorage.storage
-    .from(SHARED_MEDIA_BUCKET)
-    .upload(path, compressed, {
-      contentType,
-      upsert: false,
-    });
-  if (error) throw error;
+  options?.reporter?.onStage?.(UPLOAD_STAGE.uploadingImage);
+  await uploadToSharedMedia(path, compressed, contentType);
 
   bumpAnthemStorageCache(userId, compressed.size);
 

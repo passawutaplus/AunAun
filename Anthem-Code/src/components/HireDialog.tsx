@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Loader2 } from "lucide-react";
+import { Briefcase, Loader2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { INQUIRY_PLATFORM_DISCLAIMER } from "@/lib/legalSignupCopy";
 import { parseMoneyInput } from "@/lib/parseMoney";
@@ -246,15 +246,23 @@ const HireDialog = ({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-1 text-left">
-          <DialogTitle>{source === "project" ? "คุยโอกาสจากผลงานนี้" : "ชวนมาทำงาน"}</DialogTitle>
-          <DialogDescription>
+        <DialogHeader className="space-y-2 text-left">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+            <Briefcase className="w-6 h-6 text-primary" />
+          </div>
+          <DialogTitle className="text-xl">คำขอจ้างงาน</DialogTitle>
+          <DialogDescription className="text-sm leading-6">
             {source === "profile" ? (
-              <>จากโปรไฟล์: <span className="font-medium text-primary">{profileName ?? projectTitle}</span></>
+              <>
+                จากโปรไฟล์:{" "}
+                <span className="font-medium text-foreground">{profileName ?? projectTitle}</span>
+                <span className="block mt-1 text-xs text-muted-foreground">
+                  เติมรายละเอียดได้ถ้าต้องการ — ไม่กรอกก็คุยต่อได้เลย
+                </span>
+              </>
             ) : (
-              <>คุยโอกาสจากผลงานที่คุณเลือก</>
+              <>เติมรายละเอียดได้ถ้าต้องการ — ไม่กรอกก็คุยต่อได้เลย</>
             )}
-            <span className="block mt-1 text-xs">เติมรายละเอียดได้ถ้าต้องการ — ไม่กรอกก็คุยต่อได้เลย</span>
           </DialogDescription>
         </DialogHeader>
 

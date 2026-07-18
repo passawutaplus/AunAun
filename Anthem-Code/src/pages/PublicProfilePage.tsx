@@ -321,8 +321,8 @@ const PublicProfilePage = () => {
       <div className="sticky top-0 z-20 glass-panel border-x-0 border-t-0 rounded-none">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-2">
           <BackButton
-            to={visitorPreview ? "/portfolio" : "/"}
-            label={visitorPreview ? "กลับแดชบอร์ด" : "กลับฟีด"}
+            to={visitorPreview ? "/portfolio" : undefined}
+            label={visitorPreview ? "กลับแดชบอร์ด" : "ย้อนกลับ"}
           />
           <SeoBreadcrumb items={crumbs} className="mb-0 hidden sm:flex flex-1 min-w-0" />
           {visitorPreview && (

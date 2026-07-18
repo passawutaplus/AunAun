@@ -20,6 +20,7 @@ import { makeProvisionalDocNumber } from "@/lib/documents/numbering";
 import {
   DEFAULT_FEE_CONFIG,
   planInstallmentSatang,
+  satangToThb,
   snapshotFees,
   thbToSatang,
 } from "@/lib/payments/fees";
@@ -39,6 +40,11 @@ export type CreateHireOrderAfterPaymentInput = {
 export type CreateHireOrderAfterPaymentResult = {
   orderId: string;
   created: boolean;
+  isDeposit: boolean;
+  depositPercent: number;
+  paidAmountSatang: number;
+  receiptDocumentId?: string | null;
+  receiptDocNumber?: string | null;
 };
 
 function lineItemsFromOffer(offer: ChatOfferPayload): DocumentLineItem[] {
@@ -130,13 +136,40 @@ export async function createHireOrderAfterPayment(
     if (quoteId) {
       const { data: existing } = await sharedDb
         .from("hire_orders" as never)
-        .select("id")
+        .select("id, status, deposit_percent, amount_paid_satang")
         .eq("quote_id", quoteId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      const existingId = (existing as { id?: string } | null)?.id;
-      if (existingId) return { orderId: existingId, created: false };
+      const existingRow = existing as {
+        id?: string;
+        status?: string;
+        deposit_percent?: number | null;
+        amount_paid_satang?: number | null;
+      } | null;
+      const existingId = existingRow?.id;
+      if (existingId) {
+        const { data: receipt } = await sharedDb
+          .from("hire_documents" as never)
+          .select("id, doc_number")
+          .eq("hire_order_id", existingId)
+          .eq("kind", "receipt")
+          .order("issued_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const rcp = receipt as { id?: string; doc_number?: string } | null;
+        const depPct = Math.min(100, Math.max(1, Math.round(Number(existingRow?.deposit_percent) || 100)));
+        return {
+          orderId: existingId,
+          created: false,
+          isDeposit: existingRow?.status === "deposit_paid" || depPct < 100,
+          depositPercent: depPct,
+          paidAmountSatang:
+            Number(existingRow?.amount_paid_satang) || input.paidAmountSatang,
+          receiptDocumentId: rcp?.id ?? null,
+          receiptDocNumber: rcp?.doc_number ?? null,
+        };
+      }
     }
 
     let buyerId = input.buyerId;
@@ -312,29 +345,63 @@ export async function createHireOrderAfterPayment(
       /* optional */
     }
 
+    let receiptDocumentId: string | null = null;
+    let receiptDocNumber: string | null = null;
     try {
+      const receiptItems: DocumentLineItem[] = isDeposit
+        ? [
+            {
+              id: "deposit",
+              name: `มัดจำ ${depositPct}% — ${input.offer.title || "งานจ้าง"}`,
+              quantity: 1,
+              unitPrice: satangToThb(input.paidAmountSatang),
+              amount: satangToThb(input.paidAmountSatang),
+            },
+          ]
+        : lineItems;
       const rcp = buildReceiptSnapshot({
-        order: ctx,
-        projectTitle: input.offer.title,
+        order: {
+          ...ctx,
+          // Deposit receipt totals should match the paid installment, not full job.
+          jobPriceSatang: isDeposit ? input.paidAmountSatang : ctx.jobPriceSatang,
+          buyerPaysSatang: isDeposit ? input.paidAmountSatang : ctx.buyerPaysSatang,
+          whtSatang: isDeposit ? 0 : whtSatang,
+        },
+        projectTitle: isDeposit
+          ? `มัดจำ — ${input.offer.title || "งานจ้าง"}`
+          : input.offer.title,
         issuer,
         client,
-        lineItems,
+        lineItems: receiptItems,
         amountPaidSatang: input.paidAmountSatang,
         paymentMethodLabel: input.method,
         providerChargeId: input.chargeId ?? null,
       });
-      await insertHireDocument(sharedDb, {
+      if (isDeposit) {
+        rcp.notes = `ใบเสร็จรับเงินมัดจำ ${depositPct}% — ยอดคงเหลือชำระตามเงื่อนไขในใบเสนอราคา`;
+      }
+      const inserted = await insertHireDocument(sharedDb, {
         hireOrderId: orderId,
         quoteId,
         kind: "receipt",
         doc: rcp,
         createdBy: buyerId,
       });
+      receiptDocumentId = inserted?.id ?? null;
+      receiptDocNumber = inserted?.docNumber ?? rcp.docNumber ?? null;
     } catch {
       /* optional */
     }
 
-    return { orderId, created: true };
+    return {
+      orderId,
+      created: true,
+      isDeposit,
+      depositPercent: depositPct,
+      paidAmountSatang: input.paidAmountSatang,
+      receiptDocumentId,
+      receiptDocNumber,
+    };
   } catch (e) {
     console.warn("[createHireOrderAfterPayment]", e);
     return null;

@@ -82,6 +82,12 @@ export function chatProtocolPreviewText(content: string): string | null {
     return "เริ่มทำงาน";
   }
 
+  if (content.includes("__APLUS1_HIRE_RECEIPT__")) {
+    return content.includes('"isDeposit":true') || content.includes('"isDeposit": true')
+      ? "ใบเสร็จมัดจำ"
+      : "ใบเสร็จรับเงิน";
+  }
+
   if (/^ชำระเงิน\s*฿?[\d,]/.test(content) && content.includes("พักเงิน")) {
     return "ยอมรับข้อเสนอและชำระแล้ว";
   }

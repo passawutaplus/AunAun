@@ -5,6 +5,7 @@ import {
   type ProjectContentBlock,
 } from "@/lib/projectContentBlocks";
 import type { PortfolioMediaItem } from "@/lib/portfolioMedia";
+import { isVideoUrl } from "@/lib/videoAccept";
 
 export type ProjectEditorMode = "casual" | "flex_grid";
 
@@ -306,8 +307,9 @@ export function flexGridMediaItems(layout: FlexGridLayout): PortfolioMediaItem[]
       if (m.type !== "image" && m.type !== "video" && m.type !== "gif") continue;
       const url = (m.url ?? "").trim();
       if (!url) continue;
-      // GIFs count as images for cover/gallery purposes.
-      out.push({ id: m.id, kind: m.type === "video" ? "video" : "image", url });
+      // Static GIFs count as images; large GIFs converted to mp4 count as video.
+      const kind = m.type === "video" || isVideoUrl(url) ? "video" : "image";
+      out.push({ id: m.id, kind, url });
     }
   }
   return out;

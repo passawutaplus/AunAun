@@ -39,7 +39,9 @@ import {
 import type { Conversation } from "@/hooks/useChat";
 import type { HireOrderStatus } from "@/lib/payments/types";
 import { docKindLabelTh } from "@/lib/documents/numbering";
-import { formatOfferAmount } from "@/lib/chatOffer";
+import { buildHireAccountingMockup } from "@/lib/documents/hireAccountingMockup";
+import { formatOfferAmount, parseChatOffer, type ChatOfferPayload } from "@/lib/chatOffer";
+import { parseHirePaidMessage, parseLegacyHirePaidText } from "@/lib/hirePaymentChat";
 import { satangToThb } from "@/lib/payments/fees";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -196,6 +198,62 @@ export function HireOrderDetailContent({
   const activeDocs = selectedHistoryId && selectedHistoryId !== order?.id ? viewingDocs : documents;
   const activeQuote = selectedHistoryId && selectedHistoryId !== order?.id ? viewingQuote : quote;
 
+  /** When DB order/docs missing, rebuild a full Thai accounting mock from chat offer + paid. */
+  const { data: chatAccountingHint } = useQuery({
+    queryKey: ["hire-accounting-chat-hint", conversation.id],
+    enabled: !!conversation.id && (!order || documents.length === 0),
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("content, created_at")
+        .eq("conversation_id", conversation.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      let offer: ChatOfferPayload | null = null;
+      let paidThb = 0;
+      let paidAt: string | null = null;
+      for (const row of data ?? []) {
+        const content = (row as { content?: string | null }).content;
+        const createdAt = (row as { created_at?: string }).created_at ?? null;
+        if (!offer) {
+          const parsed = parseChatOffer(content);
+          if (parsed) offer = parsed;
+        }
+        if (!paidThb) {
+          const paid = parseHirePaidMessage(content) || parseLegacyHirePaidText(content);
+          if (paid) {
+            paidThb = paid.paidAmountThb || 0;
+            paidAt = createdAt;
+          }
+        }
+        if (offer && paidThb) break;
+      }
+      return { offer, paidThb, paidAt };
+    },
+  });
+
+  const accountingMock = useMemo(() => {
+    if (activeOrder && activeDocs.length > 0) return null;
+    const offer = chatAccountingHint?.offer;
+    if (!offer) return null;
+    return buildHireAccountingMockup({
+      offer,
+      paidAmountThb: chatAccountingHint?.paidThb || 0,
+      orderCodeSeed: conversation.request_id,
+      partnerName: partner?.name,
+      paymentMethod: "promptpay",
+      paidAt: chatAccountingHint?.paidAt,
+    });
+  }, [
+    activeOrder,
+    activeDocs.length,
+    chatAccountingHint,
+    conversation.request_id,
+    partner?.name,
+  ]);
+
   const { data: sourceProject } = useQuery({
     queryKey: ["hire-source-project", conversation.request_id],
     enabled: !!conversation.request_id,
@@ -224,8 +282,16 @@ export function HireOrderDetailContent({
     },
   });
 
-  const orderCode = orderCodeFromId(activeOrder?.id || conversation.request_id);
-  const pay = paymentStatusLabel(activeOrder);
+  const orderCode =
+    accountingMock?.payment.orderCode ||
+    orderCodeFromId(activeOrder?.id || conversation.request_id);
+  const livePay = paymentStatusLabel(activeOrder);
+  const pay = accountingMock
+    ? {
+        text: accountingMock.payment.statusLabel,
+        className: accountingMock.payment.statusClassName,
+      }
+    : livePay;
   const deadlineLabel = useMemo(() => {
     if (!deadline) return "—";
     try {
@@ -235,15 +301,17 @@ export function HireOrderDetailContent({
     }
   }, [deadline]);
 
+  const displayDocs = activeDocs.length > 0 ? activeDocs : accountingMock?.documents ?? [];
   const sortedDocs = useMemo(
     () =>
-      [...activeDocs].sort((a, b) => DOC_ORDER.indexOf(a.kind) - DOC_ORDER.indexOf(b.kind)),
-    [activeDocs],
+      [...displayDocs].sort((a, b) => DOC_ORDER.indexOf(a.kind) - DOC_ORDER.indexOf(b.kind)),
+    [displayDocs],
   );
 
   const quoteNumber =
     activeQuote?.doc_number ||
     (activeQuote?.payload as { number?: string } | null)?.number ||
+    accountingMock?.payment.quoteNumber ||
     null;
 
   const timelineOffer = useMemo(() => {
@@ -275,7 +343,11 @@ export function HireOrderDetailContent({
       window.open(doc.file_url, "_blank", "noopener,noreferrer");
     } else {
       setViewDoc(doc);
-      toast.info("กด Ctrl/⌘+P เพื่อบันทึกเป็น PDF");
+      toast.info(
+        doc.id.startsWith("mock-")
+          ? "เอกสารตัวอย่าง (mock) — กด Ctrl/⌘+P เพื่อบันทึกเป็น PDF"
+          : "กด Ctrl/⌘+P เพื่อบันทึกเป็น PDF",
+      );
     }
   };
 
@@ -298,11 +370,20 @@ export function HireOrderDetailContent({
     <>
       <div className="space-y-4">
         <section className="space-y-0.5">
-          <h3 className="text-sm font-semibold mb-1">รายละเอียดออเดอร์</h3>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <h3 className="text-sm font-semibold">รายละเอียดออเดอร์</h3>
+            {accountingMock ? (
+              <Badge variant="outline" className="text-[10px] font-normal text-amber-700 dark:text-amber-400 border-amber-500/40">
+                เอกสารตัวอย่าง
+              </Badge>
+            ) : null}
+          </div>
           <div className="divide-y divide-border/60">
             <DetailRow label="สถานะ">
               <Badge variant="secondary" className="text-[10px] font-normal">
-                {activeOrder ? labelHireOrderStatus(activeOrder.status) : "ยังไม่มีออเดอร์"}
+                {activeOrder
+                  ? labelHireOrderStatus(activeOrder.status)
+                  : accountingMock?.payment.orderStatusLabel || "ยังไม่มีออเดอร์"}
               </Badge>
             </DetailRow>
             <DetailRow label="เลขคำสั่งซื้อ">
@@ -336,6 +417,34 @@ export function HireOrderDetailContent({
                     {formatOfferAmount(satangToThb(activeOrder.buyer_pays_satang))}
                   </span>
                 </DetailRow>
+                {(activeOrder.balance_due_satang ?? 0) > 0 ? (
+                  <DetailRow label="ยอดคงเหลือ">
+                    {formatOfferAmount(satangToThb(activeOrder.balance_due_satang ?? 0))}
+                  </DetailRow>
+                ) : null}
+              </>
+            ) : accountingMock ? (
+              <>
+                <DetailRow label="มูลค่างานทั้งสัญญา">
+                  <span className="text-[hsl(var(--chat-hire))]">
+                    {formatOfferAmount(accountingMock.payment.jobPriceThb)}
+                  </span>
+                </DetailRow>
+                <DetailRow label={accountingMock.payment.isDeposit ? "มัดจำที่ชำระแล้ว" : "ยอดที่ชำระแล้ว"}>
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    {formatOfferAmount(accountingMock.payment.paidThb)}
+                    {accountingMock.payment.isDeposit
+                      ? ` (${accountingMock.payment.depositPercent}%)`
+                      : ""}
+                  </span>
+                </DetailRow>
+                {accountingMock.payment.balanceThb > 0 ? (
+                  <DetailRow label="ยอดคงเหลือ">
+                    {formatOfferAmount(accountingMock.payment.balanceThb)}
+                  </DetailRow>
+                ) : null}
+                <DetailRow label="วิธีชำระ">{accountingMock.payment.methodLabel}</DetailRow>
+                <DetailRow label="วันที่ชำระ">{accountingMock.payment.paidAtLabel}</DetailRow>
               </>
             ) : null}
             {showDeadline ? (
@@ -435,44 +544,61 @@ export function HireOrderDetailContent({
         ) : null}
 
         <section className="space-y-1">
-          <h3 className="text-sm font-semibold mb-1">เอกสาร</h3>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <h3 className="text-sm font-semibold">เอกสาร</h3>
+            {accountingMock && activeDocs.length === 0 ? (
+              <span className="text-[10px] text-amber-700 dark:text-amber-400">
+                ชุดบัญชีตัวอย่าง
+              </span>
+            ) : null}
+          </div>
           {sortedDocs.length > 0 ? (
             <ul>
-              {sortedDocs.map((doc) => (
-                <li
-                  key={doc.id}
-                  className="flex items-center justify-between gap-3 py-2 border-b border-border/60 last:border-0"
-                >
-                  <div className="min-w-0">
-                    <span className="text-sm block truncate">{docKindLabelTh(doc.kind)}</span>
-                    <span className="text-[10px] text-muted-foreground tabular-nums">
-                      {doc.doc_number}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full"
-                      aria-label={`ดู${docKindLabelTh(doc.kind)}`}
-                      onClick={() => setViewDoc(doc)}
-                    >
-                      <FileText className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full"
-                      aria-label={`ดาวน์โหลด${docKindLabelTh(doc.kind)}`}
-                      onClick={() => downloadDoc(doc)}
-                    >
-                      <Download className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
+              {sortedDocs.map((doc) => {
+                const receiptLabel =
+                  doc.kind === "receipt" &&
+                  (accountingMock?.payment.isDeposit ||
+                    (activeOrder?.status === "deposit_paid" &&
+                      (activeOrder.deposit_percent ?? 100) < 100))
+                    ? "ใบเสร็จรับเงินมัดจำ"
+                    : docKindLabelTh(doc.kind);
+                return (
+                  <li
+                    key={doc.id}
+                    className="flex items-center justify-between gap-3 py-2 border-b border-border/60 last:border-0"
+                  >
+                    <div className="min-w-0">
+                      <span className="text-sm block truncate">{receiptLabel}</span>
+                      <span className="text-[10px] text-muted-foreground tabular-nums">
+                        {doc.doc_number}
+                        {doc.id.startsWith("mock-") ? " · mock" : ""}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full"
+                        aria-label={`ดู${receiptLabel}`}
+                        onClick={() => setViewDoc(doc as HireDocumentRow)}
+                      >
+                        <FileText className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full"
+                        aria-label={`ดาวน์โหลด${receiptLabel}`}
+                        onClick={() => downloadDoc(doc as HireDocumentRow)}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="text-xs text-muted-foreground">ยังไม่มีเอกสารสำหรับออเดอร์นี้</p>
@@ -570,9 +696,18 @@ export function HireOrderDetailContent({
         <DialogContent className="rounded-2xl max-w-2xl max-h-[92vh] overflow-y-auto p-0">
           <DialogHeader className="px-4 pt-4">
             <DialogTitle className="text-base">
-              {viewDoc ? docKindLabelTh(viewDoc.kind) : "เอกสาร"}
+              {viewDoc?.kind === "receipt" &&
+              (viewDoc.snapshot.notes?.includes("มัดจำ") ||
+                viewDoc.snapshot.title?.includes("มัดจำ"))
+                ? "ใบเสร็จรับเงินมัดจำ"
+                : viewDoc
+                  ? docKindLabelTh(viewDoc.kind)
+                  : "เอกสาร"}
             </DialogTitle>
-            <DialogDescription>{viewDoc?.doc_number}</DialogDescription>
+            <DialogDescription>
+              {viewDoc?.doc_number}
+              {viewDoc?.id.startsWith("mock-") ? " · เอกสารตัวอย่าง (mock)" : ""}
+            </DialogDescription>
           </DialogHeader>
           {viewDoc ? (
             <div className="p-4">

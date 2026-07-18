@@ -337,15 +337,16 @@ const CommunityPostEditorPage = () => {
       return;
     }
     setUploadingVideo(true);
-    const toastId = toast.loading("กำลังประมวลผลวิดีโอ...");
+    const toastId = toast.loading("กำลังตรวจสอบไฟล์วิดีโอ...");
+    let stageLabel = "กำลังประมวลผลวิดีโอ...";
     try {
-      const url = await uploadProjectVideo(
-        file,
-        user.id,
-        folderRef.current,
-        tier,
-        (pct) => toast.loading(`กำลังประมวลผลวิดีโอ... ${pct}%`, { id: toastId }),
-      );
+      const url = await uploadProjectVideo(file, user.id, folderRef.current, tier, {
+        onStage: (label) => {
+          stageLabel = label;
+          toast.loading(label, { id: toastId });
+        },
+        onPercent: (pct) => toast.loading(`${stageLabel} (${pct}%)`, { id: toastId }),
+      });
       setMediaItems((items) => [...items, mediaItemFromUrl(url)]);
       toast.success("อัปโหลดวิดีโอแล้ว", { id: toastId });
     } catch (err) {

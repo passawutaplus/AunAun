@@ -61,6 +61,9 @@ export function DocumentPaper({ doc, className }: Props) {
   const issued = formatOfferDateLong(doc.issuedAt.slice(0, 10));
   const isFee = doc.kind === "platform_fee_receipt";
   const titleTh = docKindLabelTh(doc.kind);
+  const isDepositReceipt =
+    doc.kind === "receipt" &&
+    (!!doc.notes?.includes("มัดจำ") || !!doc.title?.includes("มัดจำ"));
   const en =
     doc.kind === "quotation"
       ? "Quotation"
@@ -70,15 +73,19 @@ export function DocumentPaper({ doc, className }: Props) {
           ? "Platform Fee Receipt"
           : doc.kind === "wht_cert"
             ? "WHT Certificate"
-            : "Receipt";
+            : isDepositReceipt
+              ? "Deposit Receipt"
+              : "Receipt";
   const vatOn = isFee
     ? LEGAL_VAT_REGISTERED || !!doc.vatRegisteredIssuer
     : !!doc.vatRegisteredIssuer;
   const receiptTitle =
     doc.kind === "receipt" || doc.kind === "platform_fee_receipt"
-      ? vatOn
-        ? `${titleTh}/ใบกำกับภาษี`
-        : titleTh
+      ? isDepositReceipt
+        ? "ใบเสร็จรับเงินมัดจำ"
+        : vatOn
+          ? `${titleTh}/ใบกำกับภาษี`
+          : titleTh
       : titleTh;
 
   const issuerForFee = isFee

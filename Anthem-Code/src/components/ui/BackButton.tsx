@@ -9,6 +9,20 @@ type BackButtonProps = {
   className?: string;
 };
 
+function goBackOrHome(navigate: ReturnType<typeof useNavigate>) {
+  const idx = (window.history.state as { idx?: number } | null)?.idx;
+  if (typeof idx === "number" && idx > 0) {
+    navigate(-1);
+    return;
+  }
+  // Fallback when history index is unavailable (external entry / odd browsers).
+  if (window.history.length > 1) {
+    navigate(-1);
+    return;
+  }
+  navigate("/");
+}
+
 export function BackButton({ onClick, to, label = "กลับ", className }: BackButtonProps) {
   const navigate = useNavigate();
 
@@ -32,7 +46,7 @@ export function BackButton({ onClick, to, label = "กลับ", className }: B
   return (
     <button
       type="button"
-      onClick={onClick ?? (() => navigate(-1))}
+      onClick={onClick ?? (() => goBackOrHome(navigate))}
       className={classNames}
       aria-label={label}
     >

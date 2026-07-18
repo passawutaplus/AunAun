@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Bell, Gift, UserPlus, Briefcase, Handshake, MessageCircle, Banknote, Megaphone, Users } from "lucide-react";
 import type { Notification } from "@/core/notifications";
 import { resolveNotificationLink } from "@/lib/notificationLinks";
+import { notificationBodyPreview } from "@/lib/chatReply";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import UserAvatar from "@/components/UserAvatar";
 import FollowButton from "@/components/FollowButton";
@@ -145,7 +146,11 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
                       n.title
                     )}
                   </p>
-                  {!isFollow && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{n.body}</p>}
+                  {!isFollow && n.body ? (
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                      {notificationBodyPreview(n.body)}
+                    </p>
+                  ) : null}
                   <div className="flex items-center gap-2 mt-1">
                     <p className="text-[11px] text-muted-foreground">{timeAgo(n.created_at)}</p>
                     {n.is_read ? (

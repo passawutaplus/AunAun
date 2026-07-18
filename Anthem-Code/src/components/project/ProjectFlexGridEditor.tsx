@@ -10,6 +10,7 @@ import {
   ChevronsDown,
   ChevronsUp,
   Copy,
+  Crop,
   FileImage,
   Film,
   Image as ImageIcon,
@@ -53,8 +54,9 @@ import {
   type FlexGridModuleType,
   type FlexGridSnapContext,
 } from "@/lib/flexGridLayout";
-import { LoadPercentBar } from "@/components/project/LoadPercentBar";
-import { PROJECT_VIDEO_ACCEPT, isVideoFile } from "@/lib/videoAccept";
+import { LoadPercentBar, AutoLoadPercentBar } from "@/components/project/LoadPercentBar";
+import { useAutoPercent } from "@/hooks/useAutoPercent";
+import { PROJECT_VIDEO_ACCEPT, isVideoFile, isVideoUrl } from "@/lib/videoAccept";
 import { PROJECT_MODEL3D_ACCEPT, isModel3dFile } from "@/lib/model3dAccept";
 import { isGifFile } from "@/lib/uploadProjectGif";
 import { sanitizeProjectRichText } from "@/lib/projectRichText";
@@ -79,6 +81,56 @@ const PROJECT_GIF_ACCEPT = "image/gif,.gif";
 
 type ModuleUploadKind = "image" | "gif" | "video" | "model3d";
 
+function isFileDrag(dt: DataTransfer): boolean {
+  return Array.from(dt.types).includes("Files");
+}
+
+function mediaKindFromFile(file: File): ModuleUploadKind | null {
+  if (isVideoFile(file)) return "video";
+  if (isModel3dFile(file)) return "model3d";
+  if (isGifFile(file)) return "gif";
+  if (file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|avif)$/i.test(file.name)) {
+    return "image";
+  }
+  return null;
+}
+
+/** Best-effort type probe while dragging (files may be empty until drop). */
+function mediaKindFromDataTransfer(dt: DataTransfer): ModuleUploadKind | null {
+  if (dt.files?.length) return mediaKindFromFile(dt.files[0]!);
+  for (const item of Array.from(dt.items ?? [])) {
+    if (item.kind !== "file") continue;
+    const t = item.type.toLowerCase();
+    if (t.startsWith("video/")) return "video";
+    if (t === "image/gif") return "gif";
+    if (t.includes("stl") || t.includes("obj") || t === "model/stl" || t === "model/obj") {
+      return "model3d";
+    }
+    if (t.startsWith("image/")) return "image";
+  }
+  return null;
+}
+
+function fileMatchesKind(kind: ModuleUploadKind, file: File): boolean {
+  if (kind === "video") return isVideoFile(file);
+  if (kind === "gif") return isGifFile(file);
+  if (kind === "model3d") return isModel3dFile(file);
+  if (isVideoFile(file) || isModel3dFile(file)) return false;
+  return file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|avif)$/i.test(file.name);
+}
+
+function pickFileForKind(kind: ModuleUploadKind, list: FileList | null | undefined): File | null {
+  if (!list?.length) return null;
+  return Array.from(list).find((f) => fileMatchesKind(kind, f)) ?? null;
+}
+
+function toastWrongModuleFile(kind: ModuleUploadKind) {
+  if (kind === "video") toast.error("โมดูลวิดีโอรับเฉพาะไฟล์วิดีโอ");
+  else if (kind === "gif") toast.error("โมดูล GIF รับเฉพาะไฟล์ .gif");
+  else if (kind === "model3d") toast.error("โมดูล 3D รับเฉพาะไฟล์ .stl และ .obj");
+  else toast.error("โมดูลภาพรับเฉพาะไฟล์รูปภาพ");
+}
+
 type Props = {
   layout: FlexGridLayout;
   /** Live updates (e.g. during drag) — no history */
@@ -99,7 +151,13 @@ type Props = {
   onZoomChange?: (zoom: number) => void;
   disabled?: boolean;
   uploadingModuleId?: string | null;
+  /** Short Thai description of what's happening now (e.g. compressing, uploading). */
+  uploadStageLabel?: string | null;
+  /** Real progress 0–100 when known; omit for an indeterminate simulated ramp. */
+  uploadStagePercent?: number | null;
   onUploadToModule?: (boardId: string, moduleId: string, file: File) => void;
+  /** Open crop dialog for an image module (locked to module aspect). */
+  onCropModule?: (boardId: string, moduleId: string, imageUrl: string) => void;
   className?: string;
 };
 
@@ -150,7 +208,10 @@ export function ProjectFlexGridEditor({
   onZoomChange,
   disabled,
   uploadingModuleId,
+  uploadStageLabel,
+  uploadStagePercent,
   onUploadToModule,
+  onCropModule,
   className,
 }: Props) {
   const selected = selection[selection.length - 1] ?? null;
@@ -244,11 +305,17 @@ export function ProjectFlexGridEditor({
     moduleId: string;
     kind: ModuleUploadKind;
   } | null>(null);
+  /** After placing a module from a file drop, upload once the new module is in `layout`. */
+  const pendingFileUploadRef = useRef<{
+    boardId: string;
+    moduleId: string;
+    file: File;
+  } | null>(null);
 
   const placeModule = useCallback(
-    (type: FlexGridModuleType, boardId: string, xRaw: number, yRaw: number) => {
+    (type: FlexGridModuleType, boardId: string, xRaw: number, yRaw: number): FlexGridModule | null => {
       const board = layout.boards.find((b) => b.id === boardId);
-      if (!board) return;
+      if (!board) return null;
       const ctx = boardCtx(layout, board);
       const mod = createFlexGridModule(type, ctx, xRaw, yRaw, {
         z: nextZIndex(board),
@@ -263,9 +330,21 @@ export function ProjectFlexGridEditor({
         ),
       });
       selectModule({ boardId, moduleId: mod.id });
+      return mod;
     },
     [layout, onCommit, selectModule, snapEnabled],
   );
+
+  useEffect(() => {
+    const pending = pendingFileUploadRef.current;
+    if (!pending || !onUploadToModule) return;
+    const exists = layout.boards.some(
+      (b) => b.id === pending.boardId && b.modules.some((m) => m.id === pending.moduleId),
+    );
+    if (!exists) return;
+    pendingFileUploadRef.current = null;
+    onUploadToModule(pending.boardId, pending.moduleId, pending.file);
+  }, [layout, onUploadToModule]);
 
   const addBoard = () => {
     const n = layout.boards.length + 1;
@@ -336,51 +415,47 @@ export function ProjectFlexGridEditor({
     input.click();
   };
 
+  const submitModuleFile = (boardId: string, moduleId: string, kind: ModuleUploadKind, file: File) => {
+    if (!fileMatchesKind(kind, file)) {
+      toastWrongModuleFile(kind);
+      return;
+    }
+    onUploadToModule?.(boardId, moduleId, file);
+  };
+
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>, kind: ModuleUploadKind) => {
     const file = e.target.files?.[0];
     const pending = pendingUploadRef.current;
     e.target.value = "";
     pendingUploadRef.current = null;
     if (!file || !pending || pending.kind !== kind) return;
-    if (kind === "video" && !isVideoFile(file)) {
-      toast.error("โมดูลวิดีโอรับเฉพาะไฟล์วิดีโอ");
-      return;
-    }
-    if (kind === "image" && file.type.startsWith("video/")) {
-      toast.error("โมดูลภาพรับเฉพาะไฟล์รูปภาพ");
-      return;
-    }
-    if (kind === "model3d" && !isModel3dFile(file)) {
-      toast.error("โมดูล 3D รับเฉพาะไฟล์ .stl และ .obj");
-      return;
-    }
-    if (kind === "gif" && !isGifFile(file)) {
-      toast.error("โมดูล GIF รับเฉพาะไฟล์ .gif");
-      return;
-    }
-    onUploadToModule?.(pending.boardId, pending.moduleId, file);
+    submitModuleFile(pending.boardId, pending.moduleId, kind, file);
   };
 
   const handleBoardDragOver = (e: DragEvent, board: FlexGridBoard) => {
+    const fileDrag = !disabled && !!onUploadToModule && isFileDrag(e.dataTransfer);
     const raw =
       activeFlexGridDragType ||
       e.dataTransfer.getData(FLEX_GRID_TOOL_MIME) ||
       e.dataTransfer.getData("text/plain");
-    const probeType: FlexGridModuleType =
+    const toolType: FlexGridModuleType | null =
       raw === "image" ||
       raw === "gif" ||
       raw === "text" ||
       raw === "video" ||
       raw === "model3d"
         ? raw
-        : "text";
-    if (
-      !activeFlexGridDragType &&
-      !e.dataTransfer.types.includes(FLEX_GRID_TOOL_MIME) &&
-      !e.dataTransfer.types.includes("text/plain")
-    ) {
-      return;
-    }
+        : null;
+    const hasTool =
+      !!activeFlexGridDragType ||
+      e.dataTransfer.types.includes(FLEX_GRID_TOOL_MIME) ||
+      e.dataTransfer.types.includes("text/plain");
+    if (!fileDrag && !hasTool) return;
+
+    const probeType: FlexGridModuleType = fileDrag
+      ? (mediaKindFromDataTransfer(e.dataTransfer) ?? "image")
+      : (toolType ?? "text");
+
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -415,6 +490,20 @@ export function ProjectFlexGridEditor({
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const mx = (e.clientX - rect.left) / zoom;
     const my = (e.clientY - rect.top) / zoom;
+
+    if (!disabled && onUploadToModule && isFileDrag(e.dataTransfer) && e.dataTransfer.files?.length) {
+      const file = e.dataTransfer.files[0]!;
+      const kind = mediaKindFromFile(file);
+      if (!kind) {
+        toast.error("รองรับเฉพาะภาพ, GIF, วิดีโอ หรือไฟล์ 3D (.stl/.obj)");
+        return;
+      }
+      const mod = placeModule(kind, board.id, mx, my);
+      if (!mod) return;
+      pendingFileUploadRef.current = { boardId: board.id, moduleId: mod.id, file };
+      return;
+    }
+
     const raw =
       activeFlexGridDragType ||
       e.dataTransfer.getData(FLEX_GRID_TOOL_MIME) ||
@@ -573,6 +662,8 @@ export function ProjectFlexGridEditor({
               onSelectModule={selectModule}
               disabled={disabled}
               uploadingModuleId={uploadingModuleId}
+              uploadStageLabel={uploadStageLabel}
+              uploadStagePercent={uploadStagePercent}
               dropGhost={dropGhost?.boardId === board.id ? dropGhost : null}
               onDragOver={(e) => handleBoardDragOver(e, board)}
               onDragLeave={() => setDropGhost(null)}
@@ -602,6 +693,15 @@ export function ProjectFlexGridEditor({
               onArrangeModule={(moduleId, act) => arrangeModule(board.id, moduleId, act)}
               onCopyModule={(moduleId) => copySelected(board.id, moduleId)}
               onUploadClick={openUpload}
+              onUploadFile={(moduleId, kind, files) => {
+                const file = pickFileForKind(kind, files);
+                if (!file) {
+                  toastWrongModuleFile(kind);
+                  return;
+                }
+                submitModuleFile(board.id, moduleId, kind, file);
+              }}
+              onCropModule={onCropModule}
             />
           ))}
 
@@ -692,6 +792,8 @@ function BoardSurface({
   onSelectModule,
   disabled,
   uploadingModuleId,
+  uploadStageLabel,
+  uploadStagePercent,
   dropGhost,
   onDragOver,
   onDragLeave,
@@ -703,6 +805,8 @@ function BoardSurface({
   onArrangeModule,
   onCopyModule,
   onUploadClick,
+  onUploadFile,
+  onCropModule,
 }: {
   board: FlexGridBoard;
   boardIndex: number;
@@ -715,6 +819,8 @@ function BoardSurface({
   onSelectModule: (ref: FlexGridLayerRef | null, additive?: boolean) => void;
   disabled?: boolean;
   uploadingModuleId?: string | null;
+  uploadStageLabel?: string | null;
+  uploadStagePercent?: number | null;
   dropGhost: { x: number; y: number; w: number; h: number } | null;
   onDragOver: (e: DragEvent) => void;
   onDragLeave: () => void;
@@ -730,6 +836,8 @@ function BoardSurface({
   onArrangeModule: (moduleId: string, act: "front" | "forward" | "backward" | "back") => void;
   onCopyModule: (moduleId: string) => void;
   onUploadClick: (boardId: string, moduleId: string, type: ModuleUploadKind) => void;
+  onUploadFile: (moduleId: string, kind: ModuleUploadKind, files: FileList) => void;
+  onCropModule?: (boardId: string, moduleId: string, imageUrl: string) => void;
 }) {
   const ctx = boardCtx(layout, board);
   const cw = colWidth(ctx);
@@ -877,6 +985,8 @@ function BoardSurface({
               disabled={disabled}
               snapEnabled={snapEnabled}
               uploading={uploadingModuleId === mod.id}
+              uploadStageLabel={uploadStageLabel}
+              uploadStagePercent={uploadStagePercent}
               onSelect={(additive) =>
                 onSelectModule({ boardId: board.id, moduleId: mod.id }, additive)
               }
@@ -896,6 +1006,21 @@ function BoardSurface({
                   onUploadClick(board.id, mod.id, mod.type);
                 }
               }}
+              onUploadFile={(files) => {
+                if (
+                  mod.type === "image" ||
+                  mod.type === "gif" ||
+                  mod.type === "video" ||
+                  mod.type === "model3d"
+                ) {
+                  onUploadFile(mod.id, mod.type, files);
+                }
+              }}
+              onCrop={
+                mod.type === "image" && mod.url && onCropModule
+                  ? () => onCropModule(board.id, mod.id, mod.url!)
+                  : undefined
+              }
             />
           ))}
         </div>
@@ -907,22 +1032,13 @@ function BoardSurface({
 function ModuleUploadingOverlay({
   className,
   label = "กำลังอัปโหลด",
+  percent,
 }: {
   className?: string;
   label?: string;
+  /** Real progress (0–100) when known; falls back to a simulated ramp otherwise. */
+  percent?: number | null;
 }) {
-  const [percent, setPercent] = useState(8);
-  useEffect(() => {
-    setPercent(8);
-    const id = window.setInterval(() => {
-      setPercent((p) => {
-        if (p >= 92) return p;
-        const step = p < 40 ? 6 : p < 70 ? 3 : 1;
-        return Math.min(92, p + step);
-      });
-    }, 280);
-    return () => window.clearInterval(id);
-  }, []);
   return (
     <div
       className={cn(
@@ -930,7 +1046,36 @@ function ModuleUploadingOverlay({
         className,
       )}
     >
-      <LoadPercentBar percent={percent} label={label} />
+      <AutoLoadPercentBar percent={percent} label={label} showLabel />
+    </div>
+  );
+}
+
+/** Compact "what's happening now" strip shown in the module's name bar while uploading. */
+function ModuleBarProgress({
+  label,
+  percent,
+}: {
+  label?: string | null;
+  percent?: number | null;
+}) {
+  const pct = Math.min(100, Math.max(0, Math.round(useAutoPercent(percent))));
+  return (
+    <div className="pointer-events-none flex min-w-0 flex-col gap-0.5 rounded border border-border/60 bg-card/95 px-1.5 py-1 shadow-sm">
+      <div className="flex items-center justify-between gap-1.5">
+        <span className="min-w-0 flex-1 truncate text-[10px] font-medium text-foreground/90">
+          {label ?? "กำลังอัปโหลด..."}
+        </span>
+        <span className="shrink-0 text-[9px] font-semibold tabular-nums text-muted-foreground">
+          {pct}%
+        </span>
+      </div>
+      <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-primary transition-[width] duration-150 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   );
 }
@@ -944,6 +1089,8 @@ function PlacedModule({
   disabled,
   snapEnabled,
   uploading,
+  uploadStageLabel,
+  uploadStagePercent,
   onSelect,
   onChange,
   onHistoryBegin,
@@ -952,6 +1099,8 @@ function PlacedModule({
   onArrange,
   onCopy,
   onUploadClick,
+  onUploadFile,
+  onCrop,
 }: {
   module: FlexGridModule;
   board: FlexGridBoard;
@@ -961,6 +1110,8 @@ function PlacedModule({
   disabled?: boolean;
   snapEnabled: boolean;
   uploading?: boolean;
+  uploadStageLabel?: string | null;
+  uploadStagePercent?: number | null;
   onSelect: (additive?: boolean) => void;
   onChange: (patch: Partial<FlexGridModule>, live?: boolean) => void;
   onHistoryBegin: () => void;
@@ -969,11 +1120,23 @@ function PlacedModule({
   onArrange: (act: "front" | "forward" | "backward" | "back") => void;
   onCopy: () => void;
   onUploadClick: () => void;
+  onUploadFile?: (files: FileList) => void;
+  onCrop?: () => void;
 }) {
   const ctx = boardCtx(layout, board);
   const textEditorRef = useRef<TextModuleBodyHandle>(null);
   const skipClickSelectRef = useRef(false);
   const locked = !!module.locked;
+  const [fileDragOver, setFileDragOver] = useState(false);
+  const acceptsFileDrop =
+    !!onUploadFile &&
+    !disabled &&
+    !locked &&
+    !uploading &&
+    (module.type === "image" ||
+      module.type === "gif" ||
+      module.type === "video" ||
+      module.type === "model3d");
 
   const onMovePointerDown = (e: ReactPointerEvent) => {
     if (disabled || locked) return;
@@ -1071,7 +1234,7 @@ function PlacedModule({
         top: module.y,
         width: module.w,
         height: module.h,
-        zIndex: module.z,
+        zIndex: fileDragOver ? Math.max(module.z, 10_000) : module.z,
       }}
       onClick={(e) => {
         e.stopPropagation();
@@ -1080,6 +1243,26 @@ function PlacedModule({
           return;
         }
         onSelect(e.ctrlKey || e.metaKey);
+      }}
+      onDragOver={(e) => {
+        if (!acceptsFileDrop || !isFileDrag(e.dataTransfer)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = "copy";
+        setFileDragOver(true);
+      }}
+      onDragLeave={(e) => {
+        if (!acceptsFileDrop) return;
+        const next = e.relatedTarget as Node | null;
+        if (next && e.currentTarget.contains(next)) return;
+        setFileDragOver(false);
+      }}
+      onDrop={(e) => {
+        if (!acceptsFileDrop || !isFileDrag(e.dataTransfer)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setFileDragOver(false);
+        if (e.dataTransfer.files?.length) onUploadFile?.(e.dataTransfer.files);
       }}
       onPointerDown={(e) => {
         // Ctrl/Cmd+click anywhere on the module (incl. text) for multi-select
@@ -1097,7 +1280,7 @@ function PlacedModule({
         className={cn(
           "absolute bottom-full left-0 right-0 z-20 mb-1 flex flex-col items-stretch gap-0.5",
           "opacity-0 transition-opacity group-hover:opacity-100",
-          (selected || inSelection) && "opacity-100",
+          (selected || inSelection || uploading) && "opacity-100",
         )}
       >
         {module.type === "text" && !disabled ? (
@@ -1106,6 +1289,9 @@ function PlacedModule({
             onCommand={(cmd) => textEditorRef.current?.applyCommand(cmd)}
           />
         ) : null}
+        {uploading ? (
+          <ModuleBarProgress label={uploadStageLabel} percent={uploadStagePercent} />
+        ) : (
         <div className="pointer-events-auto flex min-w-0 items-center gap-1">
         <button
           type="button"
@@ -1145,6 +1331,7 @@ function PlacedModule({
             </>
           ) : null}
         </div>
+        )}
       </div>
 
       <div
@@ -1167,6 +1354,7 @@ function PlacedModule({
                     ? "border-primary ring-2 ring-primary/30"
                     : "border-border/80",
                 ),
+          fileDragOver && "border-primary ring-2 ring-primary bg-primary/5",
         )}
       >
         <div className="relative h-full w-full overflow-hidden">
@@ -1187,23 +1375,41 @@ function PlacedModule({
                   draggable={false}
                 />
                 {!disabled ? (
-                  <button
-                    type="button"
-                    title="เปลี่ยนภาพ"
-                    aria-label="เปลี่ยนภาพ"
+                  <div
                     className={cn(
-                      "absolute left-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-md border border-border/70 bg-card/95 text-foreground shadow-sm",
-                      "opacity-0 transition-opacity group-hover:opacity-100",
+                      "absolute left-1 top-1 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100",
                       selected && "opacity-100",
                     )}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onUploadClick();
-                    }}
                   >
-                    <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} />
-                  </button>
+                    <button
+                      type="button"
+                      title="เปลี่ยนภาพ"
+                      aria-label="เปลี่ยนภาพ"
+                      className="flex h-7 w-7 items-center justify-center rounded-md border border-border/70 bg-card/95 text-foreground shadow-sm"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUploadClick();
+                      }}
+                    >
+                      <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} />
+                    </button>
+                    {onCrop ? (
+                      <button
+                        type="button"
+                        title="ครอบภาพ"
+                        aria-label="ครอบภาพ"
+                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border/70 bg-card/95 text-foreground shadow-sm"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCrop();
+                        }}
+                      >
+                        <Crop className="h-3.5 w-3.5" strokeWidth={2} />
+                      </button>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             ) : (
@@ -1216,7 +1422,10 @@ function PlacedModule({
                 onPointerDown={locked || disabled ? undefined : onMovePointerDown}
               >
                 {uploading ? (
-                  <ModuleUploadingOverlay label="กำลังอัปโหลดภาพ" />
+                  <ModuleUploadingOverlay
+                    label={uploadStageLabel ?? "กำลังอัปโหลดภาพ"}
+                    percent={uploadStagePercent}
+                  />
                 ) : (
                   <button
                     type="button"
@@ -1246,12 +1455,24 @@ function PlacedModule({
                 data-flex-move-handle={locked || disabled ? undefined : true}
                 onPointerDown={locked || disabled ? undefined : onMovePointerDown}
               >
-                <img
-                  src={module.url}
-                  alt=""
-                  className="pointer-events-none h-full w-full object-cover"
-                  draggable={false}
-                />
+                {isVideoUrl(module.url) ? (
+                  <video
+                    src={module.url}
+                    className="pointer-events-none h-full w-full object-cover"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
+                ) : (
+                  <img
+                    src={module.url}
+                    alt=""
+                    className="pointer-events-none h-full w-full object-cover"
+                    draggable={false}
+                  />
+                )}
                 {!disabled ? (
                   <button
                     type="button"
@@ -1282,7 +1503,10 @@ function PlacedModule({
                 onPointerDown={locked || disabled ? undefined : onMovePointerDown}
               >
                 {uploading ? (
-                  <ModuleUploadingOverlay label="กำลังอัปโหลด GIF" />
+                  <ModuleUploadingOverlay
+                    label={uploadStageLabel ?? "กำลังอัปโหลด GIF"}
+                    percent={uploadStagePercent}
+                  />
                 ) : (
                   <button
                     type="button"
@@ -1349,7 +1573,10 @@ function PlacedModule({
                 onPointerDown={locked || disabled ? undefined : onMovePointerDown}
               >
                 {uploading ? (
-                  <ModuleUploadingOverlay label="กำลังอัปโหลดวิดีโอ" />
+                  <ModuleUploadingOverlay
+                    label={uploadStageLabel ?? "กำลังอัปโหลดวิดีโอ"}
+                    percent={uploadStagePercent}
+                  />
                 ) : (
                   <button
                     type="button"
@@ -1429,7 +1656,10 @@ function PlacedModule({
                 onPointerDown={locked || disabled ? undefined : onMovePointerDown}
               >
                 {uploading ? (
-                  <ModuleUploadingOverlay label="กำลังอัปโหลดไฟล์ 3D" />
+                  <ModuleUploadingOverlay
+                    label={uploadStageLabel ?? "กำลังอัปโหลดไฟล์ 3D"}
+                    percent={uploadStagePercent}
+                  />
                 ) : (
                   <button
                     type="button"
@@ -1464,14 +1694,16 @@ function PlacedModule({
           {uploading && module.url ? (
             <ModuleUploadingOverlay
               label={
-                module.type === "model3d"
+                uploadStageLabel ??
+                (module.type === "model3d"
                   ? "กำลังอัปโหลดไฟล์ 3D"
                   : module.type === "video"
                     ? "กำลังอัปโหลดวิดีโอ"
                     : module.type === "gif"
                       ? "กำลังอัปโหลด GIF"
-                      : "กำลังอัปโหลดภาพ"
+                      : "กำลังอัปโหลดภาพ")
               }
+              percent={uploadStagePercent}
             />
           ) : null}
         </div>

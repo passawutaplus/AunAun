@@ -63,11 +63,11 @@ export async function uploadAndScanForumAttachment(
   let kind = assertForumAttachmentAllowed(file);
 
   if (kind === "video") {
-    onProgress?.("กำลังบีบอัดวิดีโอ…");
-    uploadFile = await compressCommunityVideo(file);
+    uploadFile = await compressCommunityVideo(file, { onStage: onProgress });
     kind = assertForumAttachmentAllowed(uploadFile);
   }
 
+  onProgress?.("กำลังอัปโหลดไฟล์…");
   await assertAnthemStorageAvailable(userId, tier, uploadFile.size);
 
   const safeName = uploadFile.name.replace(/[^\w.\-()\u0E00-\u0E7F]+/g, "_").slice(0, 120);

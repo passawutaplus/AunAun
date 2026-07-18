@@ -7,13 +7,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { useProfilesByIds } from "@/core/profiles";
 import { useSlowLoadFallback } from "@/hooks/useSlowLoadFallback";
-import OpportunityFilterChips, {
-  type OpportunityFilter,
-} from "@/components/feed/OpportunityFilterChips";
-import {
-  projectMatchesOpportunityFilter,
-  sortByViewAffinity,
-} from "@/lib/viewAffinity";
+import { sortByViewAffinity } from "@/lib/viewAffinity";
 
 
 import Footer from "@/components/Footer";
@@ -92,7 +86,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const [search, setSearch] = useState("");
   const [feedMode, setFeedModeRaw] = useState<FeedMode2>("Explore");
   const [category, setCategory] = useState<ProjectChipFilter>("All");
-  const [opportunityFilter, setOpportunityFilter] = useState<OpportunityFilter>("All");
   const [mode, setMode] = useState<FeedMode>(() => {
     if (typeof window === "undefined") return "projects";
     if (!isCategoryAllowed("functional")) return "projects";
@@ -405,17 +398,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     [],
   );
 
-  const opportunityByProjectId = useMemo(() => {
-    const map = new Map<string, { project: string[]; owner: string[] }>();
-    for (const p of sourceData) {
-      map.set(p.id, {
-        project: (p as { opportunity_types?: string[] | null }).opportunity_types ?? [],
-        owner: creatorsMap[p.owner_id]?.opportunityTypes ?? [],
-      });
-    }
-    return map;
-  }, [sourceData, creatorsMap]);
-
   const filtered = projects.filter((p) => {
     if (isDrillView) return false;
     const matchCat =
@@ -425,13 +407,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       !search ||
       p.title.toLowerCase().includes(search.toLowerCase()) ||
       p.owner.toLowerCase().includes(search.toLowerCase());
-    const opp = opportunityByProjectId.get(p.id);
-    const matchOpp = projectMatchesOpportunityFilter(
-      opportunityFilter,
-      opp?.project,
-      opp?.owner,
-    );
-    return matchCat && matchSearch && matchOpp;
+    return matchCat && matchSearch;
   });
 
   const { data: activeBoosts = [] } = useActiveBoosts(80);
@@ -512,7 +488,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             setDesignerTools([]);
             setStudioFeedSource("all");
             setCategory("All");
-            setOpportunityFilter("All");
             setFeedModeRaw("Explore");
           }}
           onCreateClick={openNewPortfolio}
@@ -535,13 +510,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           onDrillSelect={openDrill}
         />
 
-        {(mode === "projects" || mode === "designers") && (
-          <OpportunityFilterChips
-            selected={opportunityFilter}
-            onSelect={setOpportunityFilter}
-          />
-        )}
-
         <FeedModeTransition modeKey={feedPanelKey}>
           {needsLogin ? (
             <div className="text-center py-16 glass-panel rounded-2xl">
@@ -560,7 +528,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               feedSource={designerFeedSource}
               categories={designerCategory !== "All" ? [designerCategory] : []}
               tools={designerTools}
-              opportunityFilter={opportunityFilter}
             />
           ) : mode === "studios" ? (
             <StudioGrid search={search} feedSource={studioFeedSource} />
@@ -639,19 +606,18 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                   description={
                     feedMode === "Following"
                       ? "ติดตามดีไซเนอร์ที่ชอบ แล้วกลับมาดูผลงานล่าสุดของพวกเขาที่นี่"
-                      : search || opportunityFilter !== "All"
-                        ? "ลองเปลี่ยนคำค้น หมวดหมู่ หรือประเภทโอกาส"
+                      : search
+                        ? "ลองเปลี่ยนคำค้นหรือหมวดหมู่"
                         : "ลองเปลี่ยนหมวดหมู่หรือโหมดฟีด (เช่น Top 1 / Newest)"
                   }
                   action={
-                    search || category !== "All" || opportunityFilter !== "All" ? (
+                    search || category !== "All" ? (
                       <Button
                         variant="outline"
                         className="rounded-full"
                         onClick={() => {
                           setSearch("");
                           setCategory("All");
-                          setOpportunityFilter("All");
                         }}
                       >
                         ล้างตัวกรอง

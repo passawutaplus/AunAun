@@ -27,6 +27,8 @@ import { uploadProjectModel3d } from "@/lib/uploadProjectModel3d";
 import { uploadProjectGif, isGifFile } from "@/lib/uploadProjectGif";
 import { isVideoFile } from "@/lib/videoAccept";
 import { isModel3dFile } from "@/lib/model3dAccept";
+import { useUploadStageReporter } from "@/hooks/useUploadStageReporter";
+import { AutoLoadPercentBar } from "@/components/project/LoadPercentBar";
 import { useSubscription } from "@/core/subscription";
 import { getProjectLimits } from "@/lib/projectLimits";
 import { supabase } from "@/integrations/supabase/client";
@@ -204,11 +206,15 @@ const ProjectEditorPage = () => {
   const [editorMode, setEditorMode] = useState<ProjectEditorMode>("casual");
   const [flexGridLayout, setFlexGridLayout] = useState<FlexGridLayout>(() => defaultFlexGridLayout());
   const flexHistory = useFlexGridHistory(flexGridLayout, setFlexGridLayout);
+  const flexGridLayoutRef = useRef(flexGridLayout);
+  flexGridLayoutRef.current = flexGridLayout;
   const [flexGridSelection, setFlexGridSelection] = useState<FlexGridLayerRef[]>([]);
   const flexGridSelected = flexGridSelection[flexGridSelection.length - 1] ?? null;
   const [flexGridVisible, setFlexGridVisible] = useState(true);
   const [flexGridSnapEnabled, setFlexGridSnapEnabled] = useState(true);
   const [uploadingFlexModuleId, setUploadingFlexModuleId] = useState<string | null>(null);
+  const { stage: uploadStage, reporter: uploadReporter, resetStage: resetUploadStage } =
+    useUploadStageReporter();
   const [category, setCategory] = useState<string>("");
   const [cover, setCover] = useState<string>("");
   const [tools, setTools] = useState<string[]>([]);
@@ -248,13 +254,24 @@ const ProjectEditorPage = () => {
   const [coverCropOpen, setCoverCropOpen] = useState(false);
   const [moduleCropFile, setModuleCropFile] = useState<File | null>(null);
   const [moduleCropOpen, setModuleCropOpen] = useState(false);
-  const [moduleCropTarget, setModuleCropTarget] = useState<{
-    blockId: string;
-    slotIndex?: number;
-    sourceUrl: string;
-    gallerySlide?: boolean;
-    lockedCrop?: { ratio: number; exportW: number; exportH: number; label: string };
-  } | null>(null);
+  const [moduleCropTarget, setModuleCropTarget] = useState<
+    | {
+        editor: "casual";
+        blockId: string;
+        slotIndex?: number;
+        sourceUrl: string;
+        gallerySlide?: boolean;
+        lockedCrop?: { ratio: number; exportW: number; exportH: number; label: string };
+      }
+    | {
+        editor: "flex_grid";
+        boardId: string;
+        moduleId: string;
+        sourceUrl: string;
+        lockedCrop: { ratio: number; exportW: number; exportH: number; label: string };
+      }
+    | null
+  >(null);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
   const [toolsExpanded, setToolsExpanded] = useState(false);
@@ -897,6 +914,7 @@ const ProjectEditorPage = () => {
     try {
       const url = await uploadProjectImage(file, user.id, folderRef.current, tier, {
         skipCompression: true,
+        reporter: uploadReporter,
       });
       setCover(url);
       clearPublishFieldError("cover");
@@ -906,6 +924,7 @@ const ProjectEditorPage = () => {
       toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
     } finally {
       setUploadingCover(false);
+      resetUploadStage();
     }
   };
 
@@ -941,7 +960,9 @@ const ProjectEditorPage = () => {
     try {
       const urls: string[] = [];
       for (const f of toUpload) {
-        const u = await uploadProjectImage(f, user.id, folderRef.current, tier);
+        const u = await uploadProjectImage(f, user.id, folderRef.current, tier, {
+          reporter: uploadReporter,
+        });
         urls.push(u);
       }
       appendMediaBlocks("image", urls);
@@ -952,6 +973,7 @@ const ProjectEditorPage = () => {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
     } finally {
+      resetUploadStage();
       setUploadingGallery(false);
     }
   };
@@ -1097,6 +1119,8 @@ const ProjectEditorPage = () => {
   const cats = categories.filter((c) => c !== "Explore");
   const isUploadingMedia = uploadingCover || uploadingGallery || uploadingVideo;
   const isBusy = publishing || savingDraft || isUploadingMedia;
+  /** Keep canvas/Full Grid interactive while media uploads — only lock on save/publish. */
+  const editorLocked = publishing || savingDraft;
 
   const clearPublishFieldError = useCallback((key: "title" | "cover" | "shortDescription" | "category" | "licenseNote" | "thirdPartyNote" | "status" | "canvasImage") => {
     setPublishFieldErrors((prev) => {
@@ -1365,7 +1389,9 @@ const ProjectEditorPage = () => {
         setUploadingBlockId(blockId);
         setUploadingGallery(true);
         try {
-          const url = await uploadProjectImage(file, user.id, folderRef.current, tier);
+          const url = await uploadProjectImage(file, user.id, folderRef.current, tier, {
+            reporter: uploadReporter,
+          });
           setContentBlocks((prev) =>
             prev.map((b) => (b.id === blockId && b.type === "image_text" ? { ...b, url } : b)),
           );
@@ -1376,6 +1402,7 @@ const ProjectEditorPage = () => {
         } finally {
           setUploadingBlockId(null);
           setUploadingGallery(false);
+          resetUploadStage();
         }
         return;
       }
@@ -1403,7 +1430,9 @@ const ProjectEditorPage = () => {
               height: spec.exportH,
             });
           }
-          const url = await uploadProjectImage(uploadFile, user.id, folderRef.current, tier);
+          const url = await uploadProjectImage(uploadFile, user.id, folderRef.current, tier, {
+            reporter: uploadReporter,
+          });
           setContentBlocks((prev) =>
             prev.map((b) => {
               if (b.id !== blockId || b.type !== "image") return b;
@@ -1449,10 +1478,15 @@ const ProjectEditorPage = () => {
         } finally {
           setUploadingBlockId(null);
           setUploadingGallery(false);
+          resetUploadStage();
         }
         return;
       }
 
+      if (!isVideoFile(file)) {
+        toast.error("รองรับเฉพาะไฟล์วิดีโอ");
+        return;
+      }
       if (
         !(block.url ?? "").trim() &&
         countMediaByKind(mediaItemsFromBlocks(contentBlocks), "video") >= limits.videosPerProject
@@ -1463,7 +1497,7 @@ const ProjectEditorPage = () => {
       setUploadingBlockId(blockId);
       setUploadingVideo(true);
       try {
-        const url = await uploadProjectVideo(file, user.id, folderRef.current, tier);
+        const url = await uploadProjectVideo(file, user.id, folderRef.current, tier, uploadReporter);
         setContentBlocks((prev) =>
           prev.map((b) => (b.id === blockId ? { ...b, type: "video", url } : b)),
         );
@@ -1473,9 +1507,10 @@ const ProjectEditorPage = () => {
       } finally {
         setUploadingBlockId(null);
         setUploadingVideo(false);
+        resetUploadStage();
       }
     },
-    [user, contentBlocks, cover, tier, limits.videosPerProject],
+    [user, contentBlocks, cover, tier, limits.videosPerProject, uploadReporter, resetUploadStage],
   );
 
   const handleUploadManyToBlock = useCallback(
@@ -1500,7 +1535,9 @@ const ProjectEditorPage = () => {
         try {
           const uploaded: string[] = [];
           for (const file of images.slice(0, capacity)) {
-            const url = await uploadProjectImage(file, user.id, folderRef.current, tier);
+            const url = await uploadProjectImage(file, user.id, folderRef.current, tier, {
+              reporter: uploadReporter,
+            });
             uploaded.push(url);
           }
           setContentBlocks((prev) =>
@@ -1523,6 +1560,7 @@ const ProjectEditorPage = () => {
         } finally {
           setUploadingBlockId(null);
           setUploadingGallery(false);
+          resetUploadStage();
         }
         return;
       }
@@ -1554,7 +1592,9 @@ const ProjectEditorPage = () => {
               height: spec.exportH,
             });
           }
-          const url = await uploadProjectImage(uploadFile, user.id, folderRef.current, tier);
+          const url = await uploadProjectImage(uploadFile, user.id, folderRef.current, tier, {
+            reporter: uploadReporter,
+          });
           uploaded.push({ slot, url });
         }
 
@@ -1577,6 +1617,7 @@ const ProjectEditorPage = () => {
       } finally {
         setUploadingBlockId(null);
         setUploadingGallery(false);
+        resetUploadStage();
       }
     },
     [user, contentBlocks, cover, tier],
@@ -1605,7 +1646,14 @@ const ProjectEditorPage = () => {
             })()
           : undefined;
       const file = await urlToImageFile(imageUrl);
-      setModuleCropTarget({ blockId, slotIndex, sourceUrl: imageUrl, gallerySlide, lockedCrop });
+      setModuleCropTarget({
+        editor: "casual",
+        blockId,
+        slotIndex,
+        sourceUrl: imageUrl,
+        gallerySlide,
+        lockedCrop,
+      });
       setModuleCropFile(file);
       setModuleCropOpen(true);
     } catch (e) {
@@ -1613,10 +1661,81 @@ const ProjectEditorPage = () => {
     }
   }, [contentBlocks]);
 
+  const handleCropFlexModule = useCallback(
+    async (boardId: string, moduleId: string, imageUrl: string) => {
+      try {
+        const board = flexGridLayout.boards.find((b) => b.id === boardId);
+        const mod = board?.modules.find((m) => m.id === moduleId);
+        if (!mod || mod.type !== "image" || !mod.url) {
+          toast.error("ไม่พบโมดูลภาพ");
+          return;
+        }
+        const w = Math.max(1, mod.w);
+        const h = Math.max(1, mod.h);
+        const ratio = w / h;
+        const long = 1600;
+        const exportW = ratio >= 1 ? long : Math.max(1, Math.round(long * ratio));
+        const exportH = ratio >= 1 ? Math.max(1, Math.round(long / ratio)) : long;
+        const file = await urlToImageFile(imageUrl);
+        setModuleCropTarget({
+          editor: "flex_grid",
+          boardId,
+          moduleId,
+          sourceUrl: imageUrl,
+          lockedCrop: { ratio, exportW, exportH, label: "ตามโมดูล" },
+        });
+        setModuleCropFile(file);
+        setModuleCropOpen(true);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "โหลดรูปเพื่อครอบไม่สำเร็จ");
+      }
+    },
+    [flexGridLayout],
+  );
+
   const handleModuleCropConfirm = useCallback(
     async (result: ModuleImageCropConfirmResult) => {
       if (!user || !moduleCropTarget) return;
       const { file, applyToAll, aspect, cornerRadiusPercent } = result;
+
+      if (moduleCropTarget.editor === "flex_grid") {
+        const { boardId, moduleId } = moduleCropTarget;
+        setUploadingFlexModuleId(moduleId);
+        setUploadingGallery(true);
+        try {
+          const url = await uploadProjectImage(file, user.id, folderRef.current, tier, {
+            skipCompression: true,
+            reporter: uploadReporter,
+          });
+          setFlexGridLayout((prev) => ({
+            ...prev,
+            boards: prev.boards.map((b) =>
+              b.id !== boardId
+                ? b
+                : {
+                    ...b,
+                    modules: b.modules.map((m) =>
+                      m.id === moduleId && m.type === "image" ? { ...m, url } : m,
+                    ),
+                  },
+            ),
+          }));
+          if (!cover) setCover(url);
+          clearPublishFieldError("canvasImage");
+          toast.success("ครอบภาพสำเร็จ");
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "บันทึกภาพที่ครอบไม่สำเร็จ");
+        } finally {
+          setUploadingFlexModuleId(null);
+          setUploadingGallery(false);
+          setModuleCropFile(null);
+          setModuleCropTarget(null);
+          setModuleCropOpen(false);
+          resetUploadStage();
+        }
+        return;
+      }
+
       const { blockId, slotIndex, sourceUrl, gallerySlide } = moduleCropTarget;
       setUploadingBlockId(blockId);
       setUploadingGallery(true);
@@ -1657,6 +1776,7 @@ const ProjectEditorPage = () => {
             }
             const url = await uploadProjectImage(uploadFile, user.id, folderRef.current, tier, {
               skipCompression: true,
+              reporter: uploadReporter,
             });
             next.push(url);
           }
@@ -1675,6 +1795,7 @@ const ProjectEditorPage = () => {
 
         const url = await uploadProjectImage(file, user.id, folderRef.current, tier, {
           skipCompression: true,
+          reporter: uploadReporter,
         });
         setContentBlocks((prev) =>
           prev.map((b) => {
@@ -1715,9 +1836,10 @@ const ProjectEditorPage = () => {
         setModuleCropFile(null);
         setModuleCropTarget(null);
         setModuleCropOpen(false);
+        resetUploadStage();
       }
     },
-    [user, moduleCropTarget, tier, contentBlocks, cover],
+    [user, moduleCropTarget, tier, contentBlocks, cover, clearPublishFieldError],
   );
 
   const mediaItems = useMemo(() => {
@@ -1728,7 +1850,8 @@ const ProjectEditorPage = () => {
   const handleUploadToFlexModule = useCallback(
     async (boardId: string, moduleId: string, file: File) => {
       if (!user || !file) return;
-      const board = flexGridLayout.boards.find((b) => b.id === boardId);
+      const layoutNow = flexGridLayoutRef.current;
+      const board = layoutNow.boards.find((b) => b.id === boardId);
       const mod = board?.modules.find((m) => m.id === moduleId);
       if (
         !mod ||
@@ -1745,7 +1868,7 @@ const ProjectEditorPage = () => {
           return;
         }
         const maxImages = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
-        const currentImages = countMediaByKind(flexGridMediaItems(flexGridLayout), "image");
+        const currentImages = countMediaByKind(flexGridMediaItems(layoutNow), "image");
         if (!mod.url && currentImages >= maxImages) {
           toast.error(`อัปโหลดภาพได้สูงสุด ${maxImages} ภาพ/ผลงาน`);
           return;
@@ -1753,7 +1876,13 @@ const ProjectEditorPage = () => {
         setUploadingFlexModuleId(moduleId);
         setUploadingGallery(true);
         try {
-          const url = await uploadProjectGif(file, user.id, folderRef.current, tier);
+          const { url, isVideo } = await uploadProjectGif(
+            file,
+            user.id,
+            folderRef.current,
+            tier,
+            uploadReporter,
+          );
           setFlexGridLayout((prev) => ({
             ...prev,
             boards: prev.boards.map((b) =>
@@ -1765,13 +1894,15 @@ const ProjectEditorPage = () => {
                   },
             ),
           }));
-          if (!cover) setCover(url);
+          // Converted GIFs become mp4 — keep cover an image only.
+          if (!cover && !isVideo) setCover(url);
           clearPublishFieldError("canvasImage");
         } catch (e) {
           toast.error(mapWriteFlowError(e, "อัปโหลด GIF ไม่สำเร็จ"));
         } finally {
           setUploadingFlexModuleId(null);
           setUploadingGallery(false);
+          resetUploadStage();
         }
         return;
       }
@@ -1788,6 +1919,7 @@ const ProjectEditorPage = () => {
             user.id,
             folderRef.current,
             tier,
+            uploadReporter,
           );
           setFlexGridLayout((prev) => ({
             ...prev,
@@ -1807,6 +1939,7 @@ const ProjectEditorPage = () => {
           toast.error(mapWriteFlowError(e, "อัปโหลดไฟล์ 3D ไม่สำเร็จ"));
         } finally {
           setUploadingFlexModuleId(null);
+          resetUploadStage();
         }
         return;
       }
@@ -1817,7 +1950,7 @@ const ProjectEditorPage = () => {
           return;
         }
         if (
-          countMediaByKind(flexGridMediaItems(flexGridLayout), "video") >= limits.videosPerProject &&
+          countMediaByKind(flexGridMediaItems(layoutNow), "video") >= limits.videosPerProject &&
           !mod.url
         ) {
           toast.error(`แพ็กเกจนี้อัปโหลดวิดีโอได้สูงสุด ${limits.videosPerProject} คลิป/ผลงาน`);
@@ -1826,7 +1959,13 @@ const ProjectEditorPage = () => {
         setUploadingFlexModuleId(moduleId);
         setUploadingVideo(true);
         try {
-          const url = await uploadProjectVideo(file, user.id, folderRef.current, tier);
+          const url = await uploadProjectVideo(
+            file,
+            user.id,
+            folderRef.current,
+            tier,
+            uploadReporter,
+          );
           setFlexGridLayout((prev) => ({
             ...prev,
             boards: prev.boards.map((b) =>
@@ -1845,12 +1984,13 @@ const ProjectEditorPage = () => {
         } finally {
           setUploadingFlexModuleId(null);
           setUploadingVideo(false);
+          resetUploadStage();
         }
         return;
       }
 
       const maxImages = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
-      const currentImages = countMediaByKind(flexGridMediaItems(flexGridLayout), "image");
+      const currentImages = countMediaByKind(flexGridMediaItems(layoutNow), "image");
       if (!mod.url && currentImages >= maxImages) {
         toast.error(`อัปโหลดภาพได้สูงสุด ${maxImages} ภาพ/ผลงาน`);
         return;
@@ -1858,7 +1998,9 @@ const ProjectEditorPage = () => {
       setUploadingFlexModuleId(moduleId);
       setUploadingGallery(true);
       try {
-        const url = await uploadProjectImage(file, user.id, folderRef.current, tier);
+        const url = await uploadProjectImage(file, user.id, folderRef.current, tier, {
+          reporter: uploadReporter,
+        });
         setFlexGridLayout((prev) => ({
           ...prev,
           boards: prev.boards.map((b) =>
@@ -1877,16 +2019,18 @@ const ProjectEditorPage = () => {
       } finally {
         setUploadingFlexModuleId(null);
         setUploadingGallery(false);
+        resetUploadStage();
       }
     },
     [
       user,
-      flexGridLayout,
       limits.videosPerProject,
       limits.galleryImages,
       tier,
       cover,
       clearPublishFieldError,
+      uploadReporter,
+      resetUploadStage,
     ],
   );
 
@@ -1992,9 +2136,6 @@ const ProjectEditorPage = () => {
               <h1 className="text-base font-semibold text-foreground truncate">
                 {editing ? "แก้ไขผลงาน" : "ลงผลงานใหม่"}
               </h1>
-              {isUploadingMedia && (
-                <p className="text-[11px] text-muted-foreground lg:hidden">กำลังอัปโหลดไฟล์…</p>
-              )}
             </div>
             <LayoutGroup id="project-editor-mode">
               <div
@@ -2105,6 +2246,16 @@ const ProjectEditorPage = () => {
             </div>
           </div>
         </div>
+        {isUploadingMedia ? (
+          <div className="mx-auto w-full max-w-6xl px-4 pb-2.5">
+            <AutoLoadPercentBar
+              percent={uploadStage?.percent}
+              label={uploadStage?.label ?? "กำลังอัปโหลดไฟล์…"}
+              showLabel
+              className="max-w-md"
+            />
+          </div>
+        ) : null}
       </div>
 
       {isDrillPost ? (
@@ -2382,10 +2533,15 @@ const ProjectEditorPage = () => {
                 onSelectionChange={setFlexGridSelection}
                 gridVisible={flexGridVisible}
                 snapEnabled={flexGridSnapEnabled}
-                disabled={isBusy}
+                disabled={editorLocked}
                 uploadingModuleId={uploadingFlexModuleId}
+                uploadStageLabel={uploadStage?.label}
+                uploadStagePercent={uploadStage?.percent}
                 onUploadToModule={(boardId, moduleId, file) =>
                   void handleUploadToFlexModule(boardId, moduleId, file)
+                }
+                onCropModule={(boardId, moduleId, url) =>
+                  void handleCropFlexModule(boardId, moduleId, url)
                 }
               />
             ) : (
@@ -2397,9 +2553,11 @@ const ProjectEditorPage = () => {
                   clearPublishFieldError("canvasImage");
                 }
               }}
-              disabled={isBusy}
+              disabled={editorLocked}
               uploading={uploadingGallery || uploadingVideo}
               uploadingBlockId={uploadingBlockId}
+              uploadStageLabel={uploadStage?.label}
+              uploadStagePercent={uploadStage?.percent}
               onEmptyDropImages={(files) => void handleGallery(files)}
               onStartFromTemplate={() => {
                 setToolsExpanded(true);
@@ -2430,8 +2588,13 @@ const ProjectEditorPage = () => {
             {(uploadingGallery || uploadingVideo) &&
             ((editorMode === "casual" && contentBlocks.length > 0 && !uploadingBlockId) ||
               (editorMode === "flex_grid" && !uploadingFlexModuleId)) ? (
-              <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin mr-2" /> กำลังอัปโหลด...
+              <div className="flex flex-col items-center justify-center gap-2 py-4">
+                <AutoLoadPercentBar
+                  percent={uploadStage?.percent}
+                  label={uploadStage?.label ?? "กำลังอัปโหลด..."}
+                  showLabel
+                  className="max-w-[260px]"
+                />
               </div>
             ) : null}
           </section>
@@ -2842,7 +3005,9 @@ const ProjectEditorPage = () => {
         file={moduleCropFile}
         open={moduleCropOpen}
         onOpenChange={setModuleCropOpen}
-        showApplyToAll={!!moduleCropTarget?.gallerySlide}
+        showApplyToAll={
+          moduleCropTarget?.editor === "casual" && !!moduleCropTarget.gallerySlide
+        }
         lockedRatio={moduleCropTarget?.lockedCrop?.ratio}
         lockedExport={
           moduleCropTarget?.lockedCrop

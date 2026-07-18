@@ -58,6 +58,8 @@ import { parseHireDeliveryMessage } from "@/lib/hireDeliveryChat";
 import HireDeliveryCard from "@/components/hire/HireDeliveryCard";
 import { parseHirePaidMessage, parseLegacyHirePaidText } from "@/lib/hirePaymentChat";
 import HirePaidCard from "@/components/chat/HirePaidCard";
+import { parseHireReceiptMessage } from "@/lib/hireReceiptChat";
+import HireReceiptCard from "@/components/chat/HireReceiptCard";
 import {
   isPlainOfferAcceptMessage,
   parseHireWorkStartMessage,
@@ -285,6 +287,7 @@ const MessageBubble = ({
     ? parseHirePaidMessage(message.content) || parseLegacyHirePaidText(message.content)
     : null;
   const hireWorkStart = !deleted ? parseHireWorkStartMessage(message.content) : null;
+  const hireReceipt = !deleted ? parseHireReceiptMessage(message.content) : null;
   /** Work-start card belongs on the hiree (freelancer) side, even if buyer posted it. */
   const alignMine = hireWorkStart ? !viewerIsClient : mine;
   const rawForDisplay =
@@ -296,6 +299,7 @@ const MessageBubble = ({
     isFileAttachment ||
     !!hirePaid ||
     !!hireWorkStart ||
+    !!hireReceipt ||
     isPlainOfferAcceptMessage(rawForDisplay) ||
     isHireProtocolMessage(message.content) ||
     isHireProtocolMessage(rawForDisplay)
@@ -312,6 +316,7 @@ const MessageBubble = ({
     !hireDelivery &&
     !hirePaid &&
     !hireWorkStart &&
+    !hireReceipt &&
     isHireBriefChatMessage(rawForDisplay)
       ? rawForDisplay
       : null;
@@ -326,6 +331,7 @@ const MessageBubble = ({
     !hireDelivery &&
     !hirePaid &&
     !hireWorkStart &&
+    !hireReceipt &&
     !hireBrief &&
     isCollabBriefChatMessage(rawForDisplay)
       ? rawForDisplay
@@ -340,6 +346,7 @@ const MessageBubble = ({
     hireDelivery ||
     hirePaid ||
     hireWorkStart ||
+    hireReceipt ||
     hireBrief ||
     collabBrief ||
     (!deleted && isHireProtocolMessage(message.content)) ||
@@ -661,6 +668,15 @@ const MessageBubble = ({
                 />
               </div>
             )}
+            {hireReceipt && (
+              <div>
+                {replyQuote}
+                <HireReceiptCard
+                  payload={hireReceipt}
+                  onOpenOrderDetail={onOpenHireOrderDetail}
+                />
+              </div>
+            )}
             {hireBrief && (
               <div>
                 {replyQuote}
@@ -689,6 +705,7 @@ const MessageBubble = ({
               !hireCancel &&
               !hirePaid &&
               !hireWorkStart &&
+              !hireReceipt &&
               !hireBrief &&
               !collabBrief &&
               message.message_type !== "project" &&

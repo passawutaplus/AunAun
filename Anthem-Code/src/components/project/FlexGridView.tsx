@@ -6,6 +6,7 @@ import {
   type FlexGridModule,
 } from "@/lib/flexGridLayout";
 import { cn } from "@/lib/utils";
+import { isVideoUrl } from "@/lib/videoAccept";
 
 const Model3dViewer = lazy(() => import("@/components/project/Model3dViewer"));
 
@@ -99,7 +100,19 @@ function ModuleView({ module }: { module: FlexGridModule }) {
 
       {module.type === "gif" ? (
         module.url ? (
-          <img src={module.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+          isVideoUrl(module.url) ? (
+            <video
+              src={module.url}
+              className="h-full w-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+            />
+          ) : (
+            <img src={module.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+          )
         ) : (
           <div className="h-full w-full bg-muted" />
         )

@@ -264,7 +264,7 @@ export function ProjectRichTextField({
         suppressContentEditableWarning
         data-placeholder={placeholder}
         className={cn(
-          "px-3 py-2 text-sm text-foreground outline-none empty:before:pointer-events-none empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]",
+          "px-3 py-2 text-sm text-foreground outline-none empty:before:pointer-events-none empty:before:text-muted-foreground/45 empty:before:font-light empty:before:content-[attr(data-placeholder)]",
           // Keep heading size, but don't force semibold — it hides <b> toggles.
           variant === "heading" && "text-base",
           minHeightClass ?? (variant === "heading" ? "min-h-[42px]" : "min-h-[96px]"),

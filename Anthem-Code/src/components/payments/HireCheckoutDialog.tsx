@@ -29,6 +29,7 @@ import {
   type ChatOfferPayload,
 } from "@/lib/chatOffer";
 import { encodeHirePaidMessage } from "@/lib/hirePaymentChat";
+import { encodeHireReceiptMessage } from "@/lib/hireReceiptChat";
 import {
   buildHireWorkStartPayload,
   encodeHireWorkStartMessage,
@@ -176,6 +177,10 @@ export default function HireCheckoutDialog({
     }
 
     let orderId: string | null = null;
+    let receiptDocumentId: string | null = null;
+    let receiptDocNumber: string | null = null;
+    let isDeposit = (offer.depositPercent ?? 100) < 100;
+    let depositPercent = Math.min(100, Math.max(1, Math.round(offer.depositPercent ?? 100)));
     if (user?.id) {
       const persisted = await createHireOrderAfterPayment({
         offer,
@@ -187,6 +192,12 @@ export default function HireCheckoutDialog({
         chargeId: result.chargeId,
       });
       orderId = persisted?.orderId ?? null;
+      receiptDocumentId = persisted?.receiptDocumentId ?? null;
+      receiptDocNumber = persisted?.receiptDocNumber ?? null;
+      if (persisted) {
+        isDeposit = persisted.isDeposit;
+        depositPercent = persisted.depositPercent;
+      }
       if (!orderId) {
         console.warn("[HireCheckoutDialog] hire_orders persist failed after payment");
       }
@@ -205,8 +216,8 @@ export default function HireCheckoutDialog({
 
     void qc.invalidateQueries({ queryKey: ["messages", user?.id, conversationId] });
 
-    // Paid card, then work-start (timeline + items) — send separately so one failure
-    // does not block the other.
+    // Paid → work-start → deposit/payment receipt — send separately so one failure
+    // does not block the others.
     let paidPosted = false;
     try {
       await send.mutateAsync({
@@ -237,6 +248,29 @@ export default function HireCheckoutDialog({
     } catch (e) {
       console.warn("[HireCheckoutDialog] work-start card failed", e);
       /* ChatThreadView backfills work-start when hire is settled */
+    }
+    // Deposit (and full pay) receipt card — especially important for มัดจำ.
+    try {
+      await send.mutateAsync({
+        conversationId,
+        content: encodeHireReceiptMessage({
+          v: 1,
+          kind: "hire_receipt",
+          offerTitle: offer.title,
+          offerAmountThb: offer.amount || 0,
+          paidAmountThb: satangToThb(result.amountSatang),
+          isDeposit,
+          depositPercent: isDeposit ? depositPercent : null,
+          docNumber: receiptDocNumber,
+          documentId: receiptDocumentId,
+          orderId,
+          quoteId: offer.quoteId ?? null,
+          paymentMethod: result.method,
+        }),
+        messageType: "system",
+      });
+    } catch (e) {
+      console.warn("[HireCheckoutDialog] hire receipt card failed", e);
     }
     if (!paidPosted) {
       toast.message("ชำระเงินแล้ว — รีเฟรชแชทถ้ายังไม่เห็นการ์ดอัปเดต");

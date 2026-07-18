@@ -95,6 +95,27 @@ function newMilestoneId() {
   return `ms-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+type OfferFieldError =
+  | "title"
+  | "items"
+  | "endDate"
+  | "companyName"
+  | "taxId"
+  | "endBeforeStart";
+
+/** Scroll order matches form sections top → bottom. */
+const OFFER_FIELD_ORDER: OfferFieldError[] = [
+  "companyName",
+  "taxId",
+  "title",
+  "items",
+  "endDate",
+  "endBeforeStart",
+];
+
+const fieldErrorClass =
+  "border-destructive focus-visible:ring-destructive focus-visible:ring-offset-0";
+
 function profileToBillingFields(
   profile: Record<string, unknown> | null | undefined,
   fallbackEmail?: string | null,
@@ -267,6 +288,36 @@ export function ChatOfferDialog({
   const [showFullTimeline, setShowFullTimeline] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<"view" | "confirm">("view");
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<OfferFieldError, string>>>({});
+  const fieldRefs = useRef<Partial<Record<OfferFieldError, HTMLElement | null>>>({});
+
+  const setFieldRef = (key: OfferFieldError) => (el: HTMLElement | null) => {
+    fieldRefs.current[key] = el;
+  };
+
+  const clearFieldError = (key: OfferFieldError) => {
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const focusFirstError = (errors: Partial<Record<OfferFieldError, string>>) => {
+    const first = OFFER_FIELD_ORDER.find((k) => errors[k]);
+    if (!first) return;
+    requestAnimationFrame(() => {
+      const el = fieldRefs.current[first];
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      const focusable =
+        el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
+          ? el
+          : el.querySelector<HTMLElement>("input, textarea");
+      focusable?.focus?.();
+    });
+  };
 
   const issuerParty = useMemo(
     () => billingToParty(profileToBillingFields(profile, user?.email)),
@@ -384,6 +435,7 @@ export function ChatOfferDialog({
 
   const updateItem = (id: string, patch: Partial<ChatOfferLineItem>) => {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+    clearFieldError("items");
   };
 
   const applyDiscountInput = (raw: string) => {
@@ -558,6 +610,7 @@ export function ChatOfferDialog({
     setInternalNotes("");
     setMilestones(defaultOfferMilestones());
     setShowFullTimeline(false);
+    setFieldErrors({});
   };
 
   const handleOpen = (next: boolean) => {
@@ -572,6 +625,7 @@ export function ChatOfferDialog({
       setCorpAddress(defaultClientAddress?.trim() || "");
       setCorpPhone(defaultClientPhone?.trim() || "");
       setCorpEmail(defaultClientEmail?.trim() || "");
+      setFieldErrors({});
     } else {
       setPreviewOpen(false);
       setPreviewMode("view");
@@ -583,39 +637,38 @@ export function ChatOfferDialog({
   const validateOffer = (): { title: string; named: typeof items } | null => {
     const trimmedTitle = title.trim();
     const named = items.filter((it) => it.name.trim());
+    const errors: Partial<Record<OfferFieldError, string>> = {};
+
     if (!trimmedTitle) {
-      toast.error("ใส่ชื่องานด้วย");
-      return null;
+      errors.title = "ใส่ชื่องานด้วย";
     }
     if (named.length === 0) {
-      toast.error("เพิ่มอย่างน้อย 1 รายการ");
-      return null;
-    }
-    if (itemsTotal <= 0) {
-      toast.error("ใส่ราคาในรายการให้มียอดรวมมากกว่า 0");
-      return null;
-    }
-    if (netTotal <= 0) {
-      toast.error("ส่วนลดต้องน้อยกว่ายอดรวมรายการ");
-      return null;
+      errors.items = "เพิ่มอย่างน้อย 1 รายการ";
+    } else if (itemsTotal <= 0) {
+      errors.items = "ใส่ราคาในรายการให้มียอดรวมมากกว่า 0";
+    } else if (netTotal <= 0) {
+      errors.items = "ส่วนลดต้องน้อยกว่ายอดรวมรายการ";
     }
     if (!endDate) {
-      toast.error("ใส่วันที่จบงานด้วย");
-      return null;
-    }
-    if (endDate < effectiveStartDate) {
-      toast.error("วันจบงานต้องไม่อยู่ก่อนวันเริ่มงาน");
-      return null;
+      errors.endDate = "ใส่วันที่จบงานด้วย";
+    } else if (endDate < effectiveStartDate) {
+      errors.endBeforeStart = "วันจบงานต้องไม่อยู่ก่อนวันเริ่มงาน";
     }
     if (clientType === "corporate") {
       if (!companyName.trim()) {
-        toast.error("ใส่ชื่อบริษัท/นิติบุคคล");
-        return null;
+        errors.companyName = "ใส่ชื่อบริษัท/นิติบุคคล";
       }
       if (taxId.trim() && !isValidThaiTaxId(taxId)) {
-        toast.error("เลขผู้เสียภาษีไม่ถูกต้อง (13 หลัก)");
-        return null;
+        errors.taxId = "เลขผู้เสียภาษีไม่ถูกต้อง (13 หลัก)";
       }
+    }
+
+    setFieldErrors(errors);
+    const firstKey = OFFER_FIELD_ORDER.find((k) => errors[k]);
+    if (firstKey) {
+      toast.error(errors[firstKey]);
+      focusFirstError(errors);
+      return null;
     }
     return { title: trimmedTitle, named };
   };
@@ -867,30 +920,48 @@ export function ChatOfferDialog({
                   </div>
                 ) : (
                   <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="space-y-1.5 sm:col-span-2">
+                    <div className="space-y-1.5 sm:col-span-2" ref={setFieldRef("companyName")}>
                       <Label htmlFor="offer-company">
-                        ชื่อบริษัท / นิติบุคคล <span className="text-destructive">*</span>
+                        ชื่อบริษัท / นิติบุคคล <span className="text-orange-500">*</span>
                       </Label>
                       <Input
                         id="offer-company"
                         value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
+                        onChange={(e) => {
+                          setCompanyName(e.target.value);
+                          clearFieldError("companyName");
+                        }}
                         placeholder="ชื่อบริษัท"
                         maxLength={160}
+                        className={cn(fieldErrors.companyName && fieldErrorClass)}
+                        aria-invalid={!!fieldErrors.companyName}
                       />
+                      {fieldErrors.companyName ? (
+                        <p className="text-[11px] text-destructive" role="alert">
+                          {fieldErrors.companyName}
+                        </p>
+                      ) : null}
                     </div>
-                    <div className="space-y-1.5 sm:col-span-2">
+                    <div className="space-y-1.5 sm:col-span-2" ref={setFieldRef("taxId")}>
                       <Label htmlFor="offer-corp-tax">เลขผู้เสียภาษี (13 หลัก)</Label>
                       <Input
                         id="offer-corp-tax"
                         value={taxId}
-                        onChange={(e) =>
-                          setTaxId(e.target.value.replace(/[^\d]/g, "").slice(0, 13))
-                        }
+                        onChange={(e) => {
+                          setTaxId(e.target.value.replace(/[^\d]/g, "").slice(0, 13));
+                          clearFieldError("taxId");
+                        }}
                         placeholder="13 หลัก"
                         inputMode="numeric"
                         maxLength={13}
+                        className={cn(fieldErrors.taxId && fieldErrorClass)}
+                        aria-invalid={!!fieldErrors.taxId}
                       />
+                      {fieldErrors.taxId ? (
+                        <p className="text-[11px] text-destructive" role="alert">
+                          {fieldErrors.taxId}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="space-y-1.5 sm:col-span-2">
                       <Label htmlFor="offer-corp-address">ที่อยู่</Label>
@@ -962,17 +1033,27 @@ export function ChatOfferDialog({
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2">
-                <div className="space-y-1.5 sm:col-span-2">
+                <div className="space-y-1.5 sm:col-span-2" ref={setFieldRef("title")}>
                   <Label htmlFor="offer-title">
-                    ชื่อโครงการ <span className="text-destructive">*</span>
+                    ชื่อโครงการ <span className="text-orange-500">*</span>
                   </Label>
                   <Input
                     id="offer-title"
                     value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    onChange={(e) => {
+                      setTitle(e.target.value);
+                      clearFieldError("title");
+                    }}
                     placeholder="เช่น ออกแบบโลโก้ + brand kit"
                     maxLength={120}
+                    className={cn(fieldErrors.title && fieldErrorClass)}
+                    aria-invalid={!!fieldErrors.title}
                   />
+                  {fieldErrors.title ? (
+                    <p className="text-[11px] text-destructive" role="alert">
+                      {fieldErrors.title}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="offer-number">เลขที่ใบเสนอราคา</Label>
@@ -983,7 +1064,7 @@ export function ChatOfferDialog({
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <Label>
-                    รายการ <span className="text-destructive">*</span>
+                    รายการ <span className="text-orange-500">*</span>
                   </Label>
                   <div className="inline-flex items-center gap-1.5">
                     <span className="text-[11px] text-muted-foreground">เปลี่ยนสกุลเงิน</span>
@@ -996,7 +1077,13 @@ export function ChatOfferDialog({
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border overflow-hidden">
+                <div
+                  ref={setFieldRef("items")}
+                  className={cn(
+                    "rounded-xl border overflow-hidden",
+                    fieldErrors.items ? "border-destructive ring-1 ring-destructive/40" : "border-border",
+                  )}
+                >
                   <div className="hidden sm:grid grid-cols-[28px_minmax(0,1.4fr)_64px_88px_88px_32px] gap-1.5 px-2.5 py-1.5 bg-muted/50 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
                     <span className="text-center">#</span>
                     <span>รายละเอียด</span>
@@ -1024,7 +1111,10 @@ export function ChatOfferDialog({
                           </div>
                           <Input
                             value={it.name}
-                            onChange={(e) => updateItem(it.id, { name: e.target.value })}
+                            onChange={(e) => {
+                              updateItem(it.id, { name: e.target.value });
+                              clearFieldError("items");
+                            }}
                             placeholder="เช่น ออกแบบโลโก้"
                             maxLength={120}
                             className="h-8 text-sm font-medium min-w-0 col-span-1 sm:col-span-1"
@@ -1214,6 +1304,11 @@ export function ChatOfferDialog({
                     </div>
                   </div>
                 </div>
+                {fieldErrors.items ? (
+                  <p className="text-[11px] text-destructive" role="alert">
+                    {fieldErrors.items}
+                  </p>
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -1354,9 +1449,15 @@ export function ChatOfferDialog({
                         </p>
                       ) : null}
                     </div>
-                    <div className="space-y-1.5">
+                    <div
+                      className="space-y-1.5"
+                      ref={(el) => {
+                        setFieldRef("endDate")(el);
+                        setFieldRef("endBeforeStart")(el);
+                      }}
+                    >
                       <Label htmlFor="offer-end">
-                        วันที่จบงาน <span className="text-destructive">*</span>
+                        วันที่จบงาน <span className="text-orange-500">*</span>
                       </Label>
                       <Input
                         id="offer-end"
@@ -1367,14 +1468,22 @@ export function ChatOfferDialog({
                         onChange={(e) => {
                           const next = e.target.value;
                           setEndDate(next);
+                          clearFieldError("endDate");
+                          clearFieldError("endBeforeStart");
                           syncMilestoneDates(startDate || todayOfferDateYmd(), next);
                         }}
+                        className={cn(
+                          (fieldErrors.endDate || fieldErrors.endBeforeStart) && fieldErrorClass,
+                        )}
+                        aria-invalid={!!(fieldErrors.endDate || fieldErrors.endBeforeStart)}
                       />
                     </div>
                   </div>
-                  {endDate && endDate < effectiveStartDate ? (
+                  {fieldErrors.endDate || fieldErrors.endBeforeStart || (endDate && endDate < effectiveStartDate) ? (
                     <p className="text-[11px] text-destructive mt-1.5" role="alert">
-                      วันจบงานต้องไม่อยู่ก่อนวันเริ่มงาน
+                      {fieldErrors.endDate ||
+                        fieldErrors.endBeforeStart ||
+                        "วันจบงานต้องไม่อยู่ก่อนวันเริ่มงาน"}
                     </p>
                   ) : null}
                   <ChatOfferTimeline offer={previewOffer} className="mt-2" />
@@ -1427,13 +1536,21 @@ export function ChatOfferDialog({
                             type="date"
                             value={m.date || ""}
                             min={effectiveStartDate}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const next = e.target.value || null;
                               setMilestones((prev) =>
-                                prev.map((x) =>
-                                  x.id === m.id ? { ...x, date: e.target.value || null } : x,
-                                ),
-                              )
-                            }
+                                prev.map((x) => (x.id === m.id ? { ...x, date: next } : x)),
+                              );
+                              // Link timeline ↔ project dates both ways.
+                              if (i === 0) {
+                                setStartDate(next || "");
+                              }
+                              if (i === milestones.length - 1) {
+                                setEndDate(next || "");
+                                clearFieldError("endDate");
+                                clearFieldError("endBeforeStart");
+                              }
+                            }}
                             className="h-8 text-xs border-0 bg-transparent shadow-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                           />
                         </div>

@@ -65,8 +65,10 @@ import {
 } from "@/lib/canvasImageSlotDnD";
 import { CanvasImageSlotDropDialog } from "@/components/project/CanvasImageSlotDropDialog";
 import { ModuleImageWithCrop } from "@/components/project/ModuleImageWithCrop";
-import { PROJECT_VIDEO_ACCEPT } from "@/lib/videoAccept";
+import { AutoLoadPercentBar } from "@/components/project/LoadPercentBar";
+import { isVideoFile, PROJECT_VIDEO_ACCEPT } from "@/lib/videoAccept";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type Props = {
   blocks: ProjectContentBlock[];
@@ -86,9 +88,32 @@ type Props = {
   onCropImage?: (blockId: string, imageUrl: string, slotIndex?: number) => void;
   uploadingBlockId?: string | null;
   uploading?: boolean;
+  /** Short Thai description of the current upload/compress stage. */
+  uploadStageLabel?: string | null;
+  /** Real progress 0–100 when known. */
+  uploadStagePercent?: number | null;
   selectedBlockId?: string | null;
   onSelectedBlockIdChange?: (id: string | null) => void;
 };
+
+function CanvasUploadProgress({
+  label,
+  percent,
+  className,
+}: {
+  label?: string | null;
+  percent?: number | null;
+  className?: string;
+}) {
+  return (
+    <AutoLoadPercentBar
+      percent={percent}
+      label={label ?? "กำลังอัปโหลด..."}
+      showLabel
+      className={cn("max-w-[220px]", className)}
+    />
+  );
+}
 
 type InsertEdge = "before" | "after";
 type InsertHint = { blockId: string; edge: InsertEdge };
@@ -161,6 +186,11 @@ function BlockGapToggle({
   );
 }
 
+function takeVideoFile(list: FileList | File[] | null | undefined): File | null {
+  if (!list) return null;
+  return Array.from(list).find((f) => isVideoFile(f)) ?? null;
+}
+
 function ModuleVideoWithReplace({
   src,
   disabled,
@@ -173,8 +203,39 @@ function ModuleVideoWithReplace({
   onReplace?: (file: File) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [drag, setDrag] = useState(false);
+
+  const acceptVideoDrop = (fileList: FileList | null) => {
+    const file = takeVideoFile(fileList);
+    if (!file) {
+      toast.error("รองรับเฉพาะไฟล์วิดีโอ");
+      return;
+    }
+    onReplace?.(file);
+  };
+
   return (
-    <div className="group/crop relative overflow-hidden rounded-none bg-transparent">
+    <div
+      className={cn(
+        "group/crop relative overflow-hidden rounded-none bg-transparent",
+        drag && "ring-2 ring-primary",
+      )}
+      onDragOver={(e) => {
+        if (!onReplace || disabled || uploading || isToolDrag(e.dataTransfer)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = "copy";
+        setDrag(true);
+      }}
+      onDragLeave={() => setDrag(false)}
+      onDrop={(e) => {
+        if (!onReplace || disabled || uploading || isToolDrag(e.dataTransfer)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setDrag(false);
+        acceptVideoDrop(e.dataTransfer.files);
+      }}
+    >
       <video src={src} controls className="max-h-[480px] w-full" preload="metadata" />
       {onReplace && !disabled ? (
         <>
@@ -198,12 +259,102 @@ function ModuleVideoWithReplace({
             disabled={disabled || uploading}
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) onReplace(file);
+              if (file) {
+                if (!isVideoFile(file)) {
+                  toast.error("รองรับเฉพาะไฟล์วิดีโอ");
+                } else {
+                  onReplace(file);
+                }
+              }
               e.target.value = "";
             }}
           />
         </>
       ) : null}
+    </div>
+  );
+}
+
+/** Empty video module — click upload or drag-and-drop video files. */
+function EmptyVideoTile({
+  disabled,
+  uploading,
+  onPick,
+}: {
+  disabled?: boolean;
+  uploading?: boolean;
+  onPick?: (file: File) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [drag, setDrag] = useState(false);
+
+  const acceptFiles = (list: FileList | File[] | null | undefined) => {
+    const file = takeVideoFile(list);
+    if (!file) {
+      toast.error("รองรับเฉพาะไฟล์วิดีโอ");
+      return;
+    }
+    onPick?.(file);
+  };
+
+  return (
+    <div
+      role="button"
+      tabIndex={disabled || uploading ? -1 : 0}
+      aria-disabled={disabled || uploading || undefined}
+      aria-label="อัปโหลดวิดีโอ"
+      onClick={() => {
+        if (disabled || uploading) return;
+        inputRef.current?.click();
+      }}
+      onKeyDown={(e) => {
+        if (disabled || uploading) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
+      onDragOver={(e) => {
+        if (isToolDrag(e.dataTransfer)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = "copy";
+        setDrag(true);
+      }}
+      onDragLeave={() => setDrag(false)}
+      onDrop={(e) => {
+        if (isToolDrag(e.dataTransfer)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setDrag(false);
+        acceptFiles(e.dataTransfer.files);
+      }}
+      className={cn(
+        "flex min-h-[160px] w-full flex-col items-center justify-center gap-2 rounded-none bg-muted/70 transition-colors cursor-pointer",
+        drag ? "ring-2 ring-primary bg-primary/5" : "hover:bg-muted",
+        (disabled || uploading) && "opacity-60 pointer-events-none",
+      )}
+    >
+      {uploading ? (
+        <Loader2 className="h-7 w-7 animate-spin" />
+      ) : (
+        <>
+          <Film className="h-8 w-8 text-muted-foreground/50" />
+          <span className="text-xs font-medium text-muted-foreground/80">+Upload</span>
+          <span className="text-[10px] text-muted-foreground/60">ลากวิดีโอมาวางได้</span>
+        </>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept={PROJECT_VIDEO_ACCEPT}
+        className="sr-only"
+        disabled={disabled || uploading}
+        onChange={(e) => {
+          acceptFiles(e.target.files);
+          e.target.value = "";
+        }}
+      />
     </div>
   );
 }
@@ -404,6 +555,8 @@ function SortableCanvasBlock({
   selected,
   insertHint,
   canDuplicate,
+  uploadStageLabel,
+  uploadStagePercent,
   onSelect,
   onPatch,
   onRemove,
@@ -422,6 +575,8 @@ function SortableCanvasBlock({
   total: number;
   disabled?: boolean;
   uploading?: boolean;
+  uploadStageLabel?: string | null;
+  uploadStagePercent?: number | null;
   selected?: boolean;
   insertHint?: InsertEdge | null;
   canDuplicate?: boolean;
@@ -898,30 +1053,11 @@ function SortableCanvasBlock({
               onReplace={onUpload}
             />
           ) : (
-            <button
-              type="button"
-              disabled={disabled || uploading}
-              className="flex min-h-[160px] w-full flex-col items-center justify-center gap-2 rounded-none bg-muted/70 hover:bg-muted"
-              onClick={(e) => {
-                e.stopPropagation();
-                const input = e.currentTarget.querySelector("input");
-                input?.click();
-              }}
-            >
-              {uploading ? <Loader2 className="h-7 w-7 animate-spin" /> : <Film className="h-8 w-8 text-muted-foreground/50" />}
-              <span className="text-xs font-medium text-muted-foreground/80">+Upload</span>
-              <input
-                type="file"
-                accept={PROJECT_VIDEO_ACCEPT}
-                className="sr-only"
-                disabled={disabled || uploading}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) onUpload?.(file);
-                  e.target.value = "";
-                }}
-              />
-            </button>
+            <EmptyVideoTile
+              disabled={disabled}
+              uploading={uploading}
+              onPick={onUpload}
+            />
           )
         ) : null}
 
@@ -963,6 +1099,12 @@ function SortableCanvasBlock({
         onDuplicate={onDuplicate}
         onRemove={onRemove}
       />
+
+      {uploading ? (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/65 px-4">
+          <CanvasUploadProgress label={uploadStageLabel} percent={uploadStagePercent} />
+        </div>
+      ) : null}
       </div>
 
       {insertHint ? <InsertDropZone active={insertHint === "after"} /> : null}
@@ -985,6 +1127,8 @@ export function ProjectCanvasEditor({
   onCropImage,
   uploadingBlockId,
   uploading,
+  uploadStageLabel,
+  uploadStagePercent,
   selectedBlockId,
   onSelectedBlockIdChange,
 }: Props) {
@@ -1130,6 +1274,9 @@ export function ProjectCanvasEditor({
             เลือกทางที่ถนัด — แก้โครงทีหลังได้
           </p>
         </div>
+        {uploading ? (
+          <CanvasUploadProgress label={uploadStageLabel} percent={uploadStagePercent} />
+        ) : null}
 
         {hasStarterActions ? (
           <div className="grid w-full max-w-md grid-cols-1 gap-2 sm:grid-cols-3">
@@ -1227,6 +1374,8 @@ export function ProjectCanvasEditor({
                   total={blocks.length}
                   disabled={disabled}
                   uploading={uploadingBlockId === block.id}
+                  uploadStageLabel={uploadStageLabel}
+                  uploadStagePercent={uploadStagePercent}
                   selected={selectedId === block.id}
                   insertHint={insertHint?.blockId === block.id ? insertHint.edge : null}
                   onSelect={() => setSelectedId(block.id)}
