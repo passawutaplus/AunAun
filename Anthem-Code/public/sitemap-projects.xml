@@ -3,6 +3,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
+    <loc>https://aplus1.app/project/d4b6a03d-5902-4dfa-901f-8e81d1f7f70a</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://zkflkpbmbozrchqncpzi.supabase.co/storage/v1/object/public/project-media/anthem/67066e01-ab2b-4750-ae66-19b0b8825bee/d4b6a03d-5902-4dfa-901f-8e81d1f7f70a/3fb67170-70d2-444a-a04d-ec0b89f7d170.png</image:loc>
+      <image:title>รับออกแบบปกคลิป</image:title>
+    </image:image>
+  </url>
+  <url>
     <loc>https://aplus1.app/project/919a9486-b163-467d-8938-ddf4d47fa9f8</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -90,15 +99,6 @@
     <image:image>
       <image:loc>https://zkflkpbmbozrchqncpzi.supabase.co/storage/v1/object/public/project-media/anthem/82039b6d-cdf4-4c46-958a-d770d849382c/d5a97959-a32e-4dd6-8b70-ccbfa7f0aa51/7edfaaa6-54f4-4e1c-93b1-7bbef8b22b7b.webp</image:loc>
       <image:title>Journey U+nknow</image:title>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000002a</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>Mural คาเฟ่ 12m</image:title>
     </image:image>
   </url>
   <url>
@@ -216,6 +216,15 @@
     <image:image>
       <image:loc>https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
       <image:title>Portfolio review live</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000002a</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>Mural คาเฟ่ 12m</image:title>
     </image:image>
   </url>
   <url>
