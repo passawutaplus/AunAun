@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Building2 } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
-import { displayInitial } from "@/lib/avatarPool";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -42,20 +41,13 @@ const HeroSpotlightCorner = ({
               <Building2 className="h-6 w-6" aria-hidden />
             )}
           </span>
-        ) : avatarUrl ? (
+        ) : (
           <UserAvatar
             src={avatarUrl}
             name={name}
             className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl"
             fallbackClassName="rounded-2xl text-base"
           />
-        ) : (
-          <span
-            className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center bg-gradient-brand text-white text-base font-medium"
-            aria-hidden
-          >
-            {displayInitial(name)}
-          </span>
         )}
       </button>
     </div>

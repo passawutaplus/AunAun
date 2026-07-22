@@ -30,18 +30,17 @@ export function buildHireContextMessage(input: HireContextInput): string {
 
 export function buildCollabContextMessage(input: CollabContextInput): string {
   const title = input.projectTitle?.trim();
+  const lines = ["🤝 คำชวนคอลแลป"];
   if (input.source === "project" && title) {
-    return `สนใจคอลแลปจากผลงาน «${title}» — อยากคุยกัน`;
-  }
-  if (input.source === "profile") {
+    lines.push(`อ้างอิง: ${title}`);
+  } else if (input.source === "profile") {
     const name = input.profileName?.trim();
-    return name
-      ? `ดูโปรไฟล์ ${name} แล้วสนใจร่วมงาน — อยากคุยกัน`
-      : "ดูโปรไฟล์แล้วสนใจร่วมงาน — อยากคุยกัน";
+    if (name) lines.push(`จากโปรไฟล์: ${name}`);
+  } else if (title) {
+    lines.push(`อ้างอิง: ${title}`);
   }
-  return title
-    ? `สนใจคอลแลปจากผลงาน «${title}» — อยากคุยกัน`
-    : "สนใจคอลแลป — อยากคุยกัน";
+  lines.push("", "สนใจร่วมงาน — อยากคุยรายละเอียดเพิ่ม");
+  return lines.join("\n");
 }
 
 /** Default collab message when user skips the form (DB requires non-empty message). */

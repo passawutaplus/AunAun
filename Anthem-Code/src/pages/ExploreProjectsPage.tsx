@@ -27,7 +27,7 @@ import { absoluteUrl } from "@/lib/seo";
 
 function mapToCard(
   projects: DBProject[],
-  creators: Record<string, { name: string; avatar: string }>,
+  creators: Record<string, { name: string; avatar: string; username?: string }>,
 ): Project[] {
   return projects.map((p) => {
     const o = creators[p.owner_id];
@@ -43,10 +43,12 @@ function mapToCard(
       owner: o?.name ?? "ฟรีแลนซ์",
       ownerId: p.owner_id,
       ownerAvatar: o?.avatar ?? "",
+      ownerUsername: o?.username,
       collaborators: collaboratorIds.map((id) => ({
         id,
         name: creators[id]?.name ?? "ผู้ร่วมคอลแลป",
         avatar: creators[id]?.avatar ?? "",
+        username: creators[id]?.username,
       })),
       likes: p.likes,
       views: p.views,
@@ -144,11 +146,12 @@ const ExploreProjectsPage = () => {
   );
   const { data: creatorsData } = useProfilesByIds(creatorIds);
   const creatorsMap = useMemo(() => {
-    const map: Record<string, { name: string; avatar: string }> = {};
+    const map: Record<string, { name: string; avatar: string; username?: string }> = {};
     (creatorsData?.list ?? []).forEach((p) => {
       map[p.user_id ?? p.id] = {
         name: p.display_name || p.username || "ฟรีแลนซ์",
         avatar: p.avatar_url || "",
+        username: p.username ?? undefined,
       };
     });
     return map;
@@ -318,7 +321,7 @@ const ExploreProjectsPage = () => {
         ) : (
           <StaggerGrid
             dense
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-x-2 sm:gap-x-3 lg:gap-x-4 gap-y-4 sm:gap-y-5 lg:gap-y-6"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-x-2 sm:gap-x-3 lg:gap-x-4 gap-y-[26px] sm:gap-y-[30px] lg:gap-y-[34px]"
           >
             {projects.map((p) => (
               <ProjectCard

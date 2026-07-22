@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { userHasEmailPassword, verifyUserPassword } from "@/lib/sensitiveActionAuth";
-import { buildResetPasswordUrl } from "@/lib/oauthRedirect";
+import { buildEmailConfirmUrl, buildResetPasswordUrl } from "@/lib/oauthRedirect";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -76,7 +76,11 @@ export function ChangePasswordSection({ user }: { user: User }) {
     }
     setVerifyBusy(true);
     try {
-      const { error } = await supabase.auth.resend({ type: "signup", email });
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: buildEmailConfirmUrl() },
+      });
       if (error) toast.error(error.message);
       else toast.success("ส่งอีเมลยืนยันตัวตนแล้ว — ตรวจกล่องจดหมายของคุณ");
     } finally {

@@ -4,7 +4,7 @@ export const FEED_PROJECT_GRID =
 
 /** Slightly taller row gap than column gap for breathing room between rows. */
 export const FEED_PROJECT_GRID_GAP =
-  "gap-x-2 sm:gap-x-3 lg:gap-x-4 gap-y-4 sm:gap-y-5 lg:gap-y-6";
+  "gap-x-2 sm:gap-x-3 lg:gap-x-4 gap-y-[26px] sm:gap-y-[30px] lg:gap-y-[34px]";
 
 export const FEED_AREA_MASONRY_COLUMNS = "columns-2 md:columns-3 lg:columns-4";
 

@@ -35,6 +35,11 @@ import type { StudioFeedSource } from "@/components/studio/StudioFilterPanel";
 import { useDesigners } from "@/hooks/useDesigners";
 
 import { categories as allCategories, categoryMatchesFilter, DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory, type Category, type Project, type ProjectCategory, type ProjectStatus, type SpecialFilter } from "@/data/projectTypes";
+import {
+  getCategoryParent,
+  projectMatchesSubs,
+  type CategoryParentId,
+} from "@/data/categoryTaxonomy";
 import { isCategoryAllowed } from "@/lib/cookieConsent";
 import {
   usePublishedProjects,
@@ -59,15 +64,15 @@ import { recordFeedSearch } from "@/lib/feedSearchSignals";
 import { trackProductEvent } from "@/lib/productEvents";
 
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
-import { DESIGN_DRILL_CHIP, type ProjectChipFilter } from "@/lib/drillProject";
+import { DESIGN_DRILL_CHIP } from "@/lib/drillProject";
 import { markOnboardingVisit, type OnboardingVisitId } from "@/lib/onboardingStorage";
 import { coerceLaunchFeedMode, isAplus1LaunchMinimal, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 
 type FeedMode2 = "Explore" | SpecialFilter;
 const requiresAuth = (m: FeedMode2) => m === "Following";
 
-const CATEGORY_CHIPS: Category[] = allCategories.filter((c) => c !== "Explore");
-const PROJECT_CHIP_FILTERS: ProjectChipFilter[] = [DESIGN_DRILL_CHIP, "All", ...CATEGORY_CHIPS];
+/** Feed bar chip: parent taxonomy id, All, or Design Drill. */
+type FeedCategoryChip = "All" | typeof DESIGN_DRILL_CHIP | CategoryParentId;
 
 const FEED_MODE_VISIT: Partial<Record<FeedMode, OnboardingVisitId>> = {
   projects: "explore_feed",
@@ -85,7 +90,9 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const showFirstPostLabel = useShowFirstPostLabel(user?.id);
   const [search, setSearch] = useState("");
   const [feedMode, setFeedModeRaw] = useState<FeedMode2>("Explore");
-  const [category, setCategory] = useState<ProjectChipFilter>("All");
+  const [category, setCategory] = useState<FeedCategoryChip>("All");
+  const [projectLeaves, setProjectLeaves] = useState<ProjectCategory[]>([]);
+  const [projectStyles, setProjectStyles] = useState<string[]>([]);
   const [mode, setMode] = useState<FeedMode>(() => {
     if (typeof window === "undefined") return "projects";
     if (!isCategoryAllowed("functional")) return "projects";
@@ -178,9 +185,22 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     if (!isLaunchDesignDrillEnabled()) return;
     setMode("projects");
     setCategory(DESIGN_DRILL_CHIP);
+    setProjectLeaves([]);
+    setProjectStyles([]);
     if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "projects");
     navigate("/?drill=1", { replace: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const setFeedCategory = (next: FeedCategoryChip) => {
+    setCategory(next);
+    if (next !== DESIGN_DRILL_CHIP && searchParams.get("drill") === "1") {
+      const params = new URLSearchParams(searchParams);
+      params.delete("drill");
+      params.delete("feed");
+      const q = params.toString();
+      navigate(q ? `/?${q}` : "/", { replace: true });
+    }
   };
 
   useEffect(() => {
@@ -238,6 +258,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     if (!resetAt) return;
     setMode("projects");
     setCategory("All");
+    setProjectLeaves([]);
+    setProjectStyles([]);
     setSearch("");
     setFeedModeRaw("Explore");
     setDesignerSort("newest");
@@ -334,13 +356,14 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const creatorsMap = useMemo(() => {
     const map: Record<
       string,
-      { name: string; avatar: string; opportunityTypes: string[] }
+      { name: string; avatar: string; username?: string; opportunityTypes: string[] }
     > = {};
     (creatorsData?.list ?? []).forEach((p) => {
       const profileUserId = (p as { user_id?: string }).user_id ?? p.id;
       map[profileUserId] = {
         name: p.display_name || p.username || "ฟรีแลนซ์",
         avatar: p.avatar_url || "",
+        username: p.username ?? undefined,
         opportunityTypes: p.opportunity_types ?? [],
       };
     });
@@ -362,10 +385,12 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
         owner: o?.name ?? "ฟรีแลนซ์",
         ownerId: p.owner_id,
         ownerAvatar: o?.avatar ?? "",
+        ownerUsername: o?.username,
         collaborators: collaboratorIds.map((id) => ({
           id,
           name: creatorsMap[id]?.name ?? "ผู้ร่วมคอลแลป",
           avatar: creatorsMap[id]?.avatar ?? "",
+          username: creatorsMap[id]?.username,
         })),
         likes: p.likes,
         views: p.views,
@@ -390,24 +415,24 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
 
   const isDrillView = isLaunchDesignDrillEnabled() && mode === "projects" && category === DESIGN_DRILL_CHIP;
 
-  const projectChipFilters = useMemo(
-    (): ProjectChipFilter[] =>
-      isLaunchDesignDrillEnabled()
-        ? PROJECT_CHIP_FILTERS
-        : (["All", ...CATEGORY_CHIPS] as ProjectChipFilter[]),
-    [],
-  );
+  const activeParent =
+    category !== "All" && category !== DESIGN_DRILL_CHIP ? getCategoryParent(category) : null;
 
   const filtered = projects.filter((p) => {
     if (isDrillView) return false;
-    const matchCat =
-      category === "All" ||
-      (category !== DESIGN_DRILL_CHIP && categoryMatchesFilter(p.category, category as ProjectCategory));
+    let matchCat = true;
+    if (activeParent) {
+      matchCat = activeParent.leaves.some((leaf) => categoryMatchesFilter(p.category, leaf));
+    }
+    const matchSub = projectMatchesSubs(p.category, p.tags, projectStyles, activeParent);
+    const q = search.trim().toLowerCase();
     const matchSearch =
-      !search ||
-      p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.owner.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
+      !q ||
+      p.title.toLowerCase().includes(q) ||
+      p.owner.toLowerCase().includes(q) ||
+      (p.tags ?? []).some((t) => t.toLowerCase().includes(q)) ||
+      (p.tools ?? []).some((t) => t.toLowerCase().includes(q));
+    return matchCat && matchSub && matchSearch;
   });
 
   const { data: activeBoosts = [] } = useActiveBoosts(80);
@@ -469,8 +494,13 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           search={search}
           onSearchChange={setSearch}
           category={category}
-          onCategoryChange={setCategory}
-          categoryChips={projectChipFilters}
+          onCategoryChange={setFeedCategory}
+          projectLeaves={projectLeaves}
+          onProjectLeavesChange={setProjectLeaves}
+          projectStyles={projectStyles}
+          onProjectStylesChange={setProjectStyles}
+          includeDesignDrillChip={isLaunchDesignDrillEnabled()}
+          projectResultCount={filtered.length}
           designerFeedSource={designerFeedSource}
           onDesignerFeedSourceChange={setDesignerFeedSource}
           designerSort={designerSort}
@@ -488,6 +518,9 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             setDesignerTools([]);
             setStudioFeedSource("all");
             setCategory("All");
+            setProjectLeaves([]);
+            setProjectStyles([]);
+            setSearch("");
             setFeedModeRaw("Explore");
           }}
           onCreateClick={openNewPortfolio}
@@ -611,13 +644,18 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                         : "ลองเปลี่ยนหมวดหมู่หรือโหมดฟีด (เช่น Top 1 / Newest)"
                   }
                   action={
-                    search || category !== "All" ? (
+                    search ||
+                    category !== "All" ||
+                    projectLeaves.length > 0 ||
+                    projectStyles.length > 0 ? (
                       <Button
                         variant="outline"
                         className="rounded-full"
                         onClick={() => {
                           setSearch("");
                           setCategory("All");
+                          setProjectLeaves([]);
+                          setProjectStyles([]);
                         }}
                       >
                         ล้างตัวกรอง

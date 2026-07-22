@@ -57,6 +57,11 @@ export function buildOAuthCallbackUrl(): string {
   return "/auth/callback";
 }
 
+/** Email confirm / resend signup links — always land on AuthCallbackPage (not Site URL / Solo). */
+export function buildEmailConfirmUrl(): string {
+  return buildOAuthCallbackUrl();
+}
+
 export function buildResetPasswordUrl(): string {
   if (typeof window !== "undefined") {
     return `${window.location.origin}/reset-password`;

@@ -16,6 +16,7 @@ import { DrillProjectBadge } from "@/components/drill/DrillProjectBadge";
 import { projectHasDrillTag } from "@/lib/drillProject";
 import { logBoostEvent } from "@/hooks/useBoost";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
+import UserAvatar from "@/components/UserAvatar";
 
 interface ProjectCardProps {
   project: Project;
@@ -106,6 +107,7 @@ const ProjectCard = ({
       id: project.ownerId,
       name: project.owner,
       avatar: project.ownerAvatar,
+      username: project.ownerUsername,
     },
     ...(project.collaborators ?? []),
   ];
@@ -255,11 +257,12 @@ const ProjectCard = ({
           <div className="flex shrink-0 -space-x-1.5 isolate" aria-label="เจ้าของผลงานและผู้ร่วมคอลแลป">
             {creators.map((creator, index) => {
               const avatar = (
-                <img
+                <UserAvatar
                   src={creator.avatar}
-                  alt={creator.name}
-                  className="w-6 h-6 rounded-full object-cover ring-2 ring-background"
-                  loading="lazy"
+                  name={creator.name}
+                  username={creator.username}
+                  className="w-6 h-6 ring-2 ring-background"
+                  fallbackClassName="text-[10px]"
                 />
               );
               return creator.id ? (

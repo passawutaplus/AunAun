@@ -101,11 +101,11 @@ const HireRejectDialog = ({ open, onOpenChange, request, busy, onConfirm }: Prop
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader className="text-left space-y-1">
-          <DialogTitle>{mode === "forward" ? "ส่งต่องานให้เพื่อน" : "ปฏิเสธคำขอจ้าง"}</DialogTitle>
+          <DialogTitle>{mode === "forward" ? "ส่งต่องานให้เพื่อน" : "ไม่สนใจคำขอจ้าง"}</DialogTitle>
           <DialogDescription className="sr-only">
             {mode === "forward"
               ? "เลือกคนที่คุณติดตามเพื่อส่งต่องาน"
-              : `ปฏิเสธคำขอจาก ${request.client_name}`}
+              : `ไม่สนใจคำขอจาก ${request.client_name}`}
           </DialogDescription>
         </DialogHeader>
 
@@ -151,7 +151,7 @@ const HireRejectDialog = ({ open, onOpenChange, request, busy, onConfirm }: Prop
         {mode === "reasons" ? (
           <div className="space-y-4">
             <div>
-              <Label className="text-xs">ปฏิเสธทันทีไม่คุยต่อ โดยให้เหตุผล:</Label>
+              <Label className="text-xs">ไม่สนใจทันทีไม่คุยต่อ โดยให้เหตุผล:</Label>
               <div className="flex flex-col gap-1.5 mt-2">
                 {HIRE_REJECT_REASONS.map((r) => (
                   <button
@@ -326,7 +326,7 @@ const HireRejectDialog = ({ open, onOpenChange, request, busy, onConfirm }: Prop
                 })
               }
             >
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "ยืนยันปฏิเสธ"}
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "ยืนยันไม่สนใจ"}
             </Button>
           ) : (
             <Button

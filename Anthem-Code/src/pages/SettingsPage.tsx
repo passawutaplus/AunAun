@@ -23,6 +23,7 @@ import { z } from "zod";
 import PageLoader from "@/components/ui/PageLoader";
 import { HttpErrorPage } from "@/components/HttpErrorPage";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutApp } from "@/lib/signOutApp";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { SettingsPreferencesSection } from "@/components/settings/SettingsPreferencesSection";
 import { ChangePasswordSection } from "@/components/settings/ChangePasswordSection";
@@ -102,7 +103,7 @@ const SettingsPage = () => {
   const { data: isAdmin } = useIsAdmin();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await signOutApp(qc);
     toast.success("ออกจากระบบแล้ว");
     navigate("/");
   };
@@ -261,8 +262,22 @@ const SettingsPage = () => {
     return <PageLoader />;
   }
 
-  if (isError || !profile) {
+  if (isError) {
     return <HttpErrorPage kind="500" homeTo="/portfolio" />;
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-app-ambient flex flex-col items-center justify-center gap-3 px-4 text-center">
+        <p className="text-sm text-muted-foreground">ยังโหลดโปรไฟล์ไม่ได้ — ลองรีเฟรชอีกครั้ง</p>
+        <Button type="button" variant="outline" onClick={() => window.location.reload()}>
+          รีเฟรช
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => navigate("/portfolio")}>
+          กลับพอร์ตโฟลิโอ
+        </Button>
+      </div>
+    );
   }
 
   return (

@@ -20,7 +20,7 @@ const STATS = [
   { key: "designers", label: "ดีไซเนอร์" },
   { key: "projects", label: "ผลงาน" },
   { key: "hires", label: "จ้างงาน" },
-  { key: "successfulCollabs", label: "คอลแลปสำเร็จ" },
+  { key: "successfulCollabs", label: "คอลแลป" },
 ] as const;
 
 const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
@@ -169,24 +169,29 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
         {/* ช่องว่างเดิมของคำอธิบาย — มือถือ/แท็บเลตเท่านั้น */}
         <div className="min-h-[2.75rem] sm:min-h-[3rem] md:hidden" aria-hidden />
 
-        <div className="mt-auto flex flex-wrap gap-2 w-fit max-w-full md:mt-0 md:gap-2.5">
-          {STATS.map(({ key, label }) => (
-            <div
-              key={key}
-              className="w-fit rounded-xl border border-white/20 bg-white/15 px-2.5 py-2 shadow-sm backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/10 md:border-white/15 md:bg-white/10 md:px-3 md:py-2.5 md:backdrop-blur-xl dark:border-white/15 dark:bg-white/[0.12] dark:shadow-[inset_0_1px_0_0_hsl(0_0%_100%_/_0.1)] dark:supports-[backdrop-filter]:bg-white/[0.08]"
-            >
-              <span className="block text-[10px] uppercase tracking-[0.1em] text-foreground/70 font-medium thai-body whitespace-nowrap md:text-[11px] md:tracking-[0.12em]">
-                {label}
-              </span>
-              {isLoading ? (
-                <Skeleton className="h-6 w-8 mt-1 md:h-7 md:w-10 md:mt-1.5" />
-              ) : (
-                <span className="mt-1 block text-lg font-semibold text-foreground tabular-nums leading-none md:text-2xl">
-                  {formatNum(s[key])}
+        <div className="mt-auto flex flex-col items-start gap-2 w-fit max-w-full md:mt-0 md:gap-2.5">
+          <div className="flex flex-wrap gap-2 w-fit max-w-full md:gap-2.5">
+            {STATS.map(({ key, label }) => (
+              <div
+                key={key}
+                className="w-fit rounded-xl border border-white/20 bg-white/15 px-2.5 py-2 shadow-sm backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/10 md:border-white/15 md:bg-white/10 md:px-3 md:py-2.5 md:backdrop-blur-xl dark:border-white/15 dark:bg-white/[0.12] dark:shadow-[inset_0_1px_0_0_hsl(0_0%_100%_/_0.1)] dark:supports-[backdrop-filter]:bg-white/[0.08]"
+              >
+                <span className="block text-[10px] uppercase tracking-[0.1em] text-foreground/70 font-medium thai-body whitespace-nowrap md:text-[11px] md:tracking-[0.12em]">
+                  {label}
                 </span>
-              )}
-            </div>
-          ))}
+                {isLoading ? (
+                  <Skeleton className="h-6 w-8 mt-1 md:h-7 md:w-10 md:mt-1.5" />
+                ) : (
+                  <span className="mt-1 block text-lg font-semibold text-foreground tabular-nums leading-none md:text-2xl">
+                    {formatNum(s[key])}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] font-medium tracking-[0.08em] text-foreground/55 uppercase md:text-[11px]">
+            Live platform overview
+          </p>
         </div>
       </FadeUp>
     </section>

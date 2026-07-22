@@ -38,6 +38,7 @@ import {
 } from "@/hooks/useHireOrderFlow";
 import type { Conversation } from "@/hooks/useChat";
 import type { HireOrderStatus } from "@/lib/payments/types";
+import { SafeHttpLinks } from "@/components/hire/SafeHttpLinks";
 import { docKindLabelTh } from "@/lib/documents/numbering";
 import { buildHireAccountingMockup } from "@/lib/documents/hireAccountingMockup";
 import { formatOfferAmount, parseChatOffer, type ChatOfferPayload } from "@/lib/chatOffer";
@@ -524,21 +525,12 @@ export function HireOrderDetailContent({
               {showWork ? "ซ่อนงานที่ส่ง" : "ดูงานที่ส่ง"}
             </Button>
             {showWork ? (
-              <ul className="space-y-1 rounded-xl border border-border bg-muted/30 p-2.5">
-                {deliveryLinks.map((link, i) => (
-                  <li key={`${link}-${i}`}>
-                    <a
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline inline-flex items-center gap-1 break-all"
-                    >
-                      {link}
-                      <ExternalLink className="w-3 h-3 shrink-0" />
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              <SafeHttpLinks
+                links={deliveryLinks}
+                className="rounded-xl border border-border bg-muted/30 p-2.5"
+                itemClassName="text-xs text-primary hover:underline inline-flex items-center gap-1 break-all"
+                mutedClassName="text-xs text-muted-foreground break-all"
+              />
             ) : null}
           </div>
         ) : null}

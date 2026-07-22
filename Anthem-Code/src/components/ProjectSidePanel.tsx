@@ -16,7 +16,7 @@ import ProjectAssetsSection from "@/components/project/ProjectAssetsSection";
 import LicenseDetailBlock from "@/components/license/LicenseDetailBlock";
 import { ProjectSeriesBlock } from "@/components/series/ProjectSeriesBlock";
 import { PriceCurrencyAmount } from "@/components/payments/PriceCurrencySelect";
-
+import { formatCategoryBreadcrumb, stripCategorySubTags } from "@/data/categoryTaxonomy";
 
 interface Props {
   projectId?: string;
@@ -65,7 +65,7 @@ const ProjectSidePanel = (p: Props) => {
       <div className="rounded-2xl glass-panel p-5 space-y-4 backdrop-blur-sm">
         <div className="flex items-start justify-between gap-2">
           <Badge className="bg-primary/15 text-primary border-0 hover:bg-primary/15">
-            <Sparkles className="w-3 h-3 mr-1" /> {p.category}
+            <Sparkles className="w-3 h-3 mr-1" /> {formatCategoryBreadcrumb(p.category, p.tags)}
           </Badge>
           {p.projectId && p.ownerId && (
             <ReportTrigger
@@ -220,28 +220,32 @@ const ProjectSidePanel = (p: Props) => {
         </div>
       )}
 
-      {p.tags && p.tags.length > 0 && (
-        <div className="rounded-2xl glass-panel p-5 space-y-3">
-          <h3 className="text-sm font-medium text-foreground">แท็ก</h3>
-          <div className="flex flex-wrap gap-1.5">
-            {p.tags.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => navigate(exploreProjectsUrl("tag", t))}
-                className="inline-flex"
-              >
-                <Badge
-                  variant="secondary"
-                  className="rounded-full font-normal hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+      {(() => {
+        const visibleTags = stripCategorySubTags(p.tags);
+        if (!visibleTags.length) return null;
+        return (
+          <div className="rounded-2xl glass-panel p-5 space-y-3">
+            <h3 className="text-sm font-medium text-foreground">แท็ก</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {visibleTags.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => navigate(exploreProjectsUrl("tag", t))}
+                  className="inline-flex"
                 >
-                  #{t}
-                </Badge>
-              </button>
-            ))}
+                  <Badge
+                    variant="secondary"
+                    className="rounded-full font-normal hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+                  >
+                    #{t}
+                  </Badge>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       <ProjectSeriesBlock projectId={p.projectId} compact />
     </aside>

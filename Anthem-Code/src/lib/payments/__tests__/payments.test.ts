@@ -24,6 +24,7 @@ import {
 import { planWeeklyAutoPayouts, planEndOfMonthSweeps } from "@/lib/payments/payoutCron";
 import { diffReconciliation } from "@/lib/payments/reconciliation";
 import { canChargeLive, DEFAULT_PAYMENT_FEATURE_FLAGS } from "@/lib/payments/flags";
+import { canClientConfirmHireCharge } from "@/lib/payments/chargeIds";
 import { buildPaymentNotify } from "@/lib/payments/notifications";
 import { maskBankAccount } from "@/lib/payments/payoutService";
 
@@ -211,5 +212,12 @@ describe("hire order status + cron + misc", () => {
     expect(canChargeLive(DEFAULT_PAYMENT_FEATURE_FLAGS, true)).toBe(false);
     expect(buildPaymentNotify("payment_succeeded", "u").titleTh).toContain("ชำระ");
     expect(maskBankAccount("1234567890")).toBe("******7890");
+  });
+
+  it("client may confirm mock/local charges only", () => {
+    expect(canClientConfirmHireCharge("mock_abc")).toBe(true);
+    expect(canClientConfirmHireCharge("local_demo")).toBe(true);
+    expect(canClientConfirmHireCharge("chrg_test_xxx")).toBe(false);
+    expect(canClientConfirmHireCharge("")).toBe(false);
   });
 });

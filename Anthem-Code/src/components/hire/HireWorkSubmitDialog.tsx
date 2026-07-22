@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useSubmitHireWork } from "@/hooks/useHireOrderFlow";
+import { safeHttpUrl } from "@/lib/safeUrl";
 
 type Props = {
   open: boolean;
@@ -47,11 +48,16 @@ export default function HireWorkSubmitDialog({
       toast.error("ใส่ลิงก์ผลงานอย่างน้อย 1 รายการ");
       return;
     }
+    const safe = clean.map((l) => safeHttpUrl(l)).filter((u): u is string => !!u);
+    if (safe.length !== clean.length) {
+      toast.error("ใช้ได้เฉพาะลิงก์ http หรือ https");
+      return;
+    }
     try {
       await submit.mutateAsync({
         orderId,
         conversationId,
-        links: clean,
+        links: safe,
         note,
         userId,
       });

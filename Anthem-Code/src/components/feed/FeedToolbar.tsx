@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Plus, X } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import FilterChips from "@/components/FilterChips";
 import FeedModeDropdown from "@/components/feed/FeedModeDropdown";
@@ -16,7 +16,16 @@ import DesignerFeedDropdown, {
 import DesignerFilterPanel from "@/components/feed/DesignerFilterPanel";
 import StudioFilterPanel, { type StudioFeedSource } from "@/components/studio/StudioFilterPanel";
 import { FilterPanel, type DesignerSort } from "@/components/feed/DesignerToolbar";
-import type { Category, FeedFilter } from "@/data/projectTypes";
+import ProjectSearchFilterSheet, {
+  countActiveProjectFilters,
+  useParentChipOptions,
+  type ProjectSearchFilterValue,
+} from "@/components/feed/ProjectSearchFilterSheet";
+import {
+  getCategoryParent,
+  type CategoryParentId,
+} from "@/data/categoryTaxonomy";
+import type { Category, FeedFilter, ProjectCategory } from "@/data/projectTypes";
 import type { CommunityFeedFilter } from "@/data/communityTopics";
 import { DESIGN_DRILL_CHIP, type ProjectChipFilter } from "@/lib/drillProject";
 import { FEED_MODE_LABELS, FEED_MODE_ORDER } from "@/lib/feedModeLabels";
@@ -34,9 +43,16 @@ type Props = {
   onFeedModeChange: (m: FeedFilter) => void;
   search: string;
   onSearchChange: (v: string) => void;
-  category: ProjectChipFilter;
-  onCategoryChange: (c: ProjectChipFilter) => void;
-  categoryChips: ProjectChipFilter[];
+  /** Projects feed: parent chip id, All, or Design Drill */
+  category: ProjectChipFilter | CategoryParentId;
+  onCategoryChange: (c: ProjectChipFilter | CategoryParentId) => void;
+  /** Leaf categories selected inside filter sheet (empty = all under parent) */
+  projectLeaves?: ProjectCategory[];
+  onProjectLeavesChange?: (leaves: ProjectCategory[]) => void;
+  projectStyles?: string[];
+  onProjectStylesChange?: (styles: string[]) => void;
+  /** @deprecated chips derived from taxonomy for projects mode */
+  categoryChips?: ProjectChipFilter[];
   designerFeedSource?: DesignerFeedSource;
   onDesignerFeedSourceChange?: (source: DesignerFeedSource) => void;
   designerSort: DesignerSort;
@@ -50,7 +66,6 @@ type Props = {
   onClearFilters: () => void;
   onCreateClick: () => void;
   showCreate: boolean;
-  /** Expand create control with "ลงผลงานแรก" until first Published project. */
   showFirstPostLabel?: boolean;
   communityFeedSource?: CommunityFeedFilter["feedSource"];
   onCommunityFeedSourceChange?: (source: CommunityFeedFilter["feedSource"]) => void;
@@ -63,6 +78,8 @@ type Props = {
   onStudioFeedSourceChange?: (source: StudioFeedSource) => void;
   drillActive?: boolean;
   onDrillSelect?: () => void;
+  includeDesignDrillChip?: boolean;
+  projectResultCount?: number;
 };
 
 const FeedToolbar = ({
@@ -74,7 +91,10 @@ const FeedToolbar = ({
   onSearchChange,
   category,
   onCategoryChange,
-  categoryChips,
+  projectLeaves = [],
+  onProjectLeavesChange,
+  projectStyles = [],
+  onProjectStylesChange,
   designerFeedSource = "all",
   onDesignerFeedSourceChange,
   designerSort,
@@ -100,19 +120,46 @@ const FeedToolbar = ({
   onStudioFeedSourceChange,
   drillActive = false,
   onDrillSelect,
+  includeDesignDrillChip = false,
+  projectResultCount,
 }: Props) => {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(search.length > 0);
+  const [projectSheetOpen, setProjectSheetOpen] = useState(false);
   const isProjects = mode === "projects";
   const isDesigners = mode === "designers";
   const isStudios = mode === "studios";
   const isCommunity = mode === "community";
 
+  const parentChips = useParentChipOptions(includeDesignDrillChip);
+
+  const projectFilterValue: ProjectSearchFilterValue = useMemo(
+    () => ({
+      search,
+      parentId:
+        category === "All" || category === DESIGN_DRILL_CHIP
+          ? "All"
+          : (category as CategoryParentId),
+      leaves: projectLeaves,
+      styles: projectStyles,
+    }),
+    [search, category, projectLeaves, projectStyles],
+  );
+
+  const projectFilterCount = isProjects
+    ? countActiveProjectFilters({
+        ...projectFilterValue,
+        parentId:
+          category === DESIGN_DRILL_CHIP
+            ? "All"
+            : projectFilterValue.parentId,
+      }) + (category === DESIGN_DRILL_CHIP ? 1 : 0) + (feedMode !== "Explore" ? 1 : 0)
+    : 0;
+
   const filterCount =
     (isDesigners ? (designerSort !== "newest" ? 1 : 0) + designerTools.length : 0) +
     (isDesigners && designerFeedSource !== "all" ? 1 : 0) +
     (isDesigners && designerCategory !== "All" ? 1 : 0) +
-    (isProjects && category !== "All" ? 1 : 0) +
-    (isProjects && feedMode !== "Explore" ? 1 : 0) +
+    (isProjects ? projectFilterCount : 0) +
     (isCommunity && communityCategory !== "All" ? 1 : 0) +
     (isCommunity && communityFeedSource !== "all" ? 1 : 0) +
     (isCommunity && communityPostKind ? 1 : 0) +
@@ -153,10 +200,6 @@ const FeedToolbar = ({
       selectedTools={designerTools}
       onToggleTool={onToggleDesignerTool}
       showTools={false}
-      categories={categoryChips}
-      selectedCategory={category}
-      onCategorySelect={(c) => onCategoryChange(c as ProjectChipFilter)}
-      showCategories={isProjects}
       feedModes={FEED_MODE_OPTIONS}
       selectedFeedMode={feedMode}
       onFeedModeSelect={(v) => onFeedModeChange(v as FeedFilter)}
@@ -164,6 +207,28 @@ const FeedToolbar = ({
       onClear={onClearFilters}
     />
   );
+
+  const openProjectSheet = () => setProjectSheetOpen(true);
+
+  const applyProjectSheet = (next: ProjectSearchFilterValue) => {
+    onSearchChange(next.search);
+    onCategoryChange(next.parentId === "All" ? "All" : next.parentId);
+    onProjectLeavesChange?.(next.leaves);
+    onProjectStylesChange?.(next.styles);
+  };
+
+  const activeSubLabels = useMemo(() => {
+    if (!isProjects || !projectStyles.length) return [];
+    const parent =
+      category !== "All" && category !== DESIGN_DRILL_CHIP
+        ? getCategoryParent(category)
+        : null;
+    const subs = parent?.subs ?? [];
+    return projectStyles.map((id) => ({
+      id,
+      label: subs.find((s) => s.id === id)?.label ?? id,
+    }));
+  }, [isProjects, projectStyles, category]);
 
   const postButton = onCommunityPostClick ? (
     <button
@@ -229,7 +294,6 @@ const FeedToolbar = ({
 
   const rightAction = isCommunity ? postButton : createButton;
 
-  /** Keep each toggle mounted in a stable tree slot so the pill can slide. */
   const toggleProps = {
     value: mode,
     drillActive,
@@ -245,33 +309,44 @@ const FeedToolbar = ({
         ? "ค้นหาสตูดิโอ"
         : "ค้นหาผลงาน";
 
+  const projectSearchBarProps = isProjects
+    ? {
+        onFilterClick: openProjectSheet,
+        filterContent: undefined as undefined,
+      }
+    : {
+        filterContent,
+      };
+
   return (
     <div
       data-feed-toolbar
       className="sticky top-0 z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 bg-background/75 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 border-b border-border/50 overflow-visible"
     >
-      {/* Mobile / tablet: single row — profile lives in bottom nav */}
+      {/* Mobile / tablet */}
       <div className="flex items-center gap-2 lg:hidden">
-        <div className={cn(mobileSearchOpen ? "flex-1 min-w-0" : "shrink-0")}>
+        <div className={cn(mobileSearchOpen && !isProjects ? "flex-1 min-w-0" : "shrink-0")}>
           <SearchBar
             value={search}
             onChange={onSearchChange}
             placeholder={searchPlaceholder}
             filterCount={filterCount}
-            filterContent={filterContent}
             compact
             expandable
             onExpandedChange={setMobileSearchOpen}
+            {...(isProjects
+              ? { onExpandClick: openProjectSheet, onFilterClick: openProjectSheet }
+              : { filterContent })}
           />
         </div>
         <FeedModeToggle
           {...toggleProps}
-          compact={mobileSearchOpen}
+          compact={mobileSearchOpen && !isProjects}
           className="ml-auto"
         />
       </div>
 
-      {/* Desktop: two rows — right rail (+ / profile) matches Projects–Designers pill width */}
+      {/* Desktop */}
       <div className="hidden lg:block space-y-3">
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
@@ -280,10 +355,10 @@ const FeedToolbar = ({
               onChange={onSearchChange}
               placeholder={searchPlaceholder}
               filterCount={filterCount}
-              filterContent={filterContent}
+              {...projectSearchBarProps}
+              {...(!isProjects ? { filterContent } : {})}
             />
           </div>
-          {/* Create grows left into search; profile pill width stays fixed (no jump). */}
           <div className="relative z-20 flex shrink-0 items-center gap-1.5 overflow-visible">
             {rightAction ? (
               <div className="relative z-30 shrink-0 overflow-visible">{rightAction}</div>
@@ -345,9 +420,18 @@ const FeedToolbar = ({
                   {isProjects && (
                     <div className="flex-1 min-w-0">
                       <FilterChips
-                        categories={categoryChips}
-                        selected={category}
-                        onSelect={(c) => onCategoryChange(c as ProjectChipFilter)}
+                        options={parentChips}
+                        selected={String(category)}
+                        onSelect={(id) => {
+                          if (id === DESIGN_DRILL_CHIP) {
+                            onDrillSelect?.();
+                            onCategoryChange(DESIGN_DRILL_CHIP);
+                          } else {
+                            onCategoryChange(id as CategoryParentId | "All");
+                          }
+                          onProjectLeavesChange?.([]);
+                          onProjectStylesChange?.([]);
+                        }}
                       />
                     </div>
                   )}
@@ -362,6 +446,54 @@ const FeedToolbar = ({
           </div>
         </div>
       </div>
+
+      {/* Mobile parent chips under toolbar */}
+      {isProjects ? (
+        <div className="lg:hidden mt-3 space-y-2">
+          <FilterChips
+            options={parentChips}
+            selected={String(category)}
+            onSelect={(id) => {
+              if (id === DESIGN_DRILL_CHIP) {
+                onDrillSelect?.();
+                onCategoryChange(DESIGN_DRILL_CHIP);
+              } else {
+                onCategoryChange(id as CategoryParentId | "All");
+              }
+              onProjectLeavesChange?.([]);
+              onProjectStylesChange?.([]);
+            }}
+          />
+        </div>
+      ) : null}
+
+      {isProjects && activeSubLabels.length > 0 ? (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {activeSubLabels.map(({ id, label }) => (
+            <button
+              key={`sub-${id}`}
+              type="button"
+              onClick={() =>
+                onProjectStylesChange?.(projectStyles.filter((s) => s !== id))
+              }
+              className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-[11px] text-primary"
+            >
+              {label}
+              <X className="w-3 h-3" />
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {isProjects ? (
+        <ProjectSearchFilterSheet
+          open={projectSheetOpen}
+          onOpenChange={setProjectSheetOpen}
+          value={projectFilterValue}
+          onApply={applyProjectSheet}
+          resultCount={projectResultCount}
+        />
+      ) : null}
     </div>
   );
 };

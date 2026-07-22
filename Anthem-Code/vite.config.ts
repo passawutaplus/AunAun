@@ -28,6 +28,17 @@ export default defineConfig({
     hmr: {
       overlay: false,
     },
+    // Local Omise APIs: run `npm run dev:api` (port 8787) alongside `npm run dev`
+    proxy: {
+      "/api/hire-charge": {
+        target: "http://127.0.0.1:8787",
+        changeOrigin: true,
+      },
+      "/api/omise-webhook": {
+        target: "http://127.0.0.1:8787",
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [react()],
   resolve: {

@@ -46,6 +46,8 @@ import TagPicker from "@/components/tags/TagPicker";
 import ToolPicker from "@/components/tools/ToolPicker";
 import ProjectPreviewDialog, { type ProjectPreviewData } from "@/components/project/ProjectPreviewDialog";
 import StartingPriceField from "@/components/project/StartingPriceField";
+import { HireSellerReadinessDialog, HireSellerReadyBadge } from "@/components/project/HireSellerReadinessDialog";
+import { useHireSellerReadiness } from "@/hooks/useHireSellerReadiness";
 import { PortfolioCoverCropDialog } from "@/components/project/PortfolioCoverCropDialog";
 import {
   ModuleImageCropDialog,
@@ -83,10 +85,14 @@ import {
   placeFlexGridModuleAtCenter,
 } from "@/components/project/ProjectFlexGridEditor";
 import { CanvasTemplatePreviewDialog } from "@/components/project/CanvasTemplatePreviewDialog";
+import { ProjectSeriesPicker } from "@/components/project/ProjectEditorSearchSelects";
+import { ProjectTaxonomyPicker } from "@/components/project/ProjectTaxonomyPicker";
 import {
-  ProjectCategoryPicker,
-  ProjectSeriesPicker,
-} from "@/components/project/ProjectEditorSearchSelects";
+  inferTaxonomySelection,
+  mergeCategorySubTag,
+  resolveDbCategory,
+  type CategoryParentId,
+} from "@/data/categoryTaxonomy";
 import { SeriesFormDialog } from "@/components/series/SeriesFormDialog";
 import { PortfolioLinkedPostPicker } from "@/components/project/PortfolioLinkedPostPicker";
 import { isAplus1LaunchMinimal, isAplus1SubscriptionsEnabled, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
@@ -175,6 +181,7 @@ const ProjectEditorPage = () => {
   const isDrillPost = params.get("from") === "so1o" && params.get("drill_type");
   const isDailyDrillPost = isDrillPost && params.get("drill_type") === "daily";
   const { user, loading: authLoading } = useAuth();
+  const hireSeller = useHireSellerReadiness(user?.id);
   const ensureVerified = useEnsureSensitiveAction();
   const reduceMotion = useReducedMotion();
   const { data: isAdmin } = useIsAdmin();
@@ -218,6 +225,8 @@ const ProjectEditorPage = () => {
   const { stage: uploadStage, reporter: uploadReporter, resetStage: resetUploadStage } =
     useUploadStageReporter();
   const [category, setCategory] = useState<string>("");
+  const [categoryParentId, setCategoryParentId] = useState<CategoryParentId | null>(null);
+  const [categorySubId, setCategorySubId] = useState<string | null>(null);
   const [cover, setCover] = useState<string>("");
   const [tools, setTools] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
@@ -226,7 +235,8 @@ const ProjectEditorPage = () => {
   const [status, setStatus] = useState<Status>("Draft");
   const [seriesId, setSeriesId] = useState<string>("");
   const [seriesCreateOpen, setSeriesCreateOpen] = useState(false);
-  const [allowHire, setAllowHire] = useState(true);
+  const [allowHire, setAllowHire] = useState(false);
+  const [hireReadyOpen, setHireReadyOpen] = useState(false);
   const [allowCollab, setAllowCollab] = useState(true);
   const [studioId, setStudioId] = useState<string | null>(null);
   const [creditedIds, setCreditedIds] = useState<string[]>([]);
@@ -358,14 +368,14 @@ const ProjectEditorPage = () => {
         .eq("id", collabRequestId)
         .maybeSingle();
       if (error || !data) {
-        toast.error("ไม่พบคอลแลปที่ต้องการสร้างผลงานร่วม");
+        toast.error("ไม่พบคอลแลปที่ต้องการลงผลงานร่วมกัน");
         return;
       }
       if (
         data.status !== "accepted" ||
         (data.sender_id !== user.id && data.recipient_id !== user.id)
       ) {
-        toast.error("สร้างผลงานร่วมได้เฉพาะคอลแลปที่ตอบรับแล้ว");
+        toast.error("ลงผลงานร่วมกันได้เฉพาะคอลแลปที่ตอบรับแล้ว");
         return;
       }
 
@@ -392,7 +402,7 @@ const ProjectEditorPage = () => {
     const showInvalidGroupToast = () => {
       if (cancelled) return;
       toast.error(
-        "ไม่สามารถสร้างผลงานร่วมจากกลุ่มนี้ได้ กรุณาเปิดจากแชทกลุ่มคอลแลปที่คุณเป็นสมาชิก",
+        "ไม่สามารถลงผลงานร่วมกันจากกลุ่มนี้ได้ กรุณาเปิดจากแชทกลุ่มคอลแลปที่คุณเป็นสมาชิก",
       );
     };
 
@@ -513,15 +523,25 @@ const ProjectEditorPage = () => {
     if (prefillDesc) setShortDescription(prefillDesc);
     if (prefillCat) {
       const resolved = normalizeProjectCategory(prefillCat) ?? (categories.includes(prefillCat as Category) ? prefillCat : null);
-      if (resolved) setCategory(resolved);
+      if (resolved) {
+        setCategory(resolved);
+        const inferred = inferTaxonomySelection(resolved, null);
+        setCategoryParentId(inferred.parentId);
+        setCategorySubId(inferred.subId);
+      }
     }
     if (prefillTags) {
-      setTags(
-        prefillTags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-      );
+      const parsed = prefillTags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      setTags(parsed);
+      if (prefillCat) {
+        const resolved = normalizeProjectCategory(prefillCat) ?? prefillCat;
+        const inferred = inferTaxonomySelection(resolved, parsed);
+        setCategoryParentId(inferred.parentId);
+        setCategorySubId(inferred.subId);
+      }
     }
     drillMetaRef.current = { drill_type: drillType, drill_date: drillDate };
     if (prefillClient && !prefillDesc) {
@@ -545,6 +565,11 @@ const ProjectEditorPage = () => {
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
+
+  useEffect(() => {
+    if (hireSeller.isLoading) return;
+    if (!hireSeller.ready) setAllowHire(false);
+  }, [hireSeller.isLoading, hireSeller.ready]);
 
   useEffect(() => {
     if (!existing) return;
@@ -578,13 +603,18 @@ const ProjectEditorPage = () => {
       setFlexGridSelection([]);
       flexHistory.resetHistory();
       setCategory(existing.category);
+      {
+        const inferred = inferTaxonomySelection(existing.category, existing.tags ?? []);
+        setCategoryParentId(inferred.parentId);
+        setCategorySubId(inferred.subId);
+      }
       setCover(existing.cover_url ?? "");
       setTools(existing.tools ?? []);
       setTags(existing.tags ?? []);
       setPrice(existing.price_thb ? String(existing.price_thb) : "");
       setShowPrice(!!existing.price_thb);
       setStatus(existing.status as Status);
-      setAllowHire((existing as any).allow_hire ?? true);
+      setAllowHire(!!(existing as { allow_hire?: boolean }).allow_hire);
       setAllowCollab((existing as any).allow_collab ?? true);
       setStudioId((existing as any).studio_id ?? null);
       setCreditedIds(((existing as any).credited_user_ids as string[]) ?? []);
@@ -672,11 +702,17 @@ const ProjectEditorPage = () => {
         editorMode === "flex_grid" ? flexMedia.gallery_urls : casualMedia.gallery_urls;
       const video_urls =
         editorMode === "flex_grid" ? flexMedia.video_urls : casualMedia.video_urls;
-      const finalTags = mergeDrillTags(
-        tags,
-        drillMetaRef.current.drill_type,
-        drillMetaRef.current.drill_date,
+      const finalTags = mergeCategorySubTag(
+        mergeDrillTags(
+          tags,
+          drillMetaRef.current.drill_type,
+          drillMetaRef.current.drill_date,
+        ),
+        categorySubId,
       );
+      const resolvedCategory = categoryParentId
+        ? resolveDbCategory(categoryParentId, categorySubId)
+        : category;
       const rightsAttestedAt = rightsAttested ? new Date().toISOString() : null;
 
       const storedBlocks = toStoredContentBlocks(contentBlocks);
@@ -685,7 +721,7 @@ const ProjectEditorPage = () => {
         title: title.trim(),
         subtitle: "",
         description: shortDescription.trim(),
-        category,
+        category: resolvedCategory,
         cover_url: cover,
         gallery_urls,
         video_urls,
@@ -693,7 +729,7 @@ const ProjectEditorPage = () => {
         tags: finalTags,
         price_thb: showPrice && price ? Number(price) : null,
         status: targetStatus,
-        allow_hire: allowHire,
+        allow_hire: allowHire && hireSeller.ready,
         allow_collab: allowCollab,
         studio_id: studioId,
         credited_user_ids: studioId ? creditedIds : [],
@@ -736,10 +772,13 @@ const ProjectEditorPage = () => {
       editorMode,
       flexGridLayout,
       category,
+      categoryParentId,
+      categorySubId,
       cover,
       showPrice,
       price,
       allowHire,
+      hireSeller.ready,
       allowCollab,
       studioId,
       creditedIds,
@@ -1165,7 +1204,6 @@ const ProjectEditorPage = () => {
     }
   };
 
-  const cats = categories.filter((c) => c !== "Explore");
   const isUploadingMedia = uploadingCover || uploadingGallery || uploadingVideo;
   const isBusy = publishing || savingDraft || isUploadingMedia;
   /** Keep canvas/Full Grid interactive while media uploads — only lock on save/publish. */
@@ -1192,9 +1230,9 @@ const ProjectEditorPage = () => {
       errors.cover = "อัปโหลดภาพปก";
       checklist.push("อัปโหลดภาพปก");
     }
-    if (!category.trim()) {
-      errors.category = "เลือกหมวดงาน";
-      checklist.push("เลือกหมวดงาน");
+    if (!categoryParentId) {
+      errors.category = "เลือกหมวดใหญ่";
+      checklist.push("เลือกหมวดใหญ่");
     }
     if (!shortDescription.trim()) {
       errors.shortDescription = "กรอกรายละเอียดแบบย่อ";
@@ -1224,7 +1262,7 @@ const ProjectEditorPage = () => {
   }, [
     title,
     cover,
-    category,
+    categoryParentId,
     shortDescription,
     status,
     contentBlocks,
@@ -2170,7 +2208,7 @@ const ProjectEditorPage = () => {
     tags,
     price: showPrice && price ? `฿${Number(price).toLocaleString("th-TH")}` : undefined,
     priceThb: showPrice && price ? Number(price) || null : null,
-    allowHire,
+    allowHire: allowHire && hireSeller.ready,
     allowCollab,
     licenseType,
     licenseNote,
@@ -2835,19 +2873,29 @@ const ProjectEditorPage = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase">
-                หมวดงาน <span className="text-primary">*</span>
-              </Label>
-              <ProjectCategoryPicker
-                value={category}
-                options={cats}
-                onChange={(v) => {
-                  setCategory(v);
-                  clearPublishFieldError("category");
-                }}
+            <div
+              className={cn(
+                "rounded-md transition-colors duration-500 ease-out",
+                publishFieldHighlight(publishFieldErrors.category) && "ring-2 ring-destructive/40 p-2 -m-2",
+              )}
+            >
+              <ProjectTaxonomyPicker
+                parentId={categoryParentId}
+                subId={categorySubId}
                 disabled={isBusy}
                 invalid={publishFieldHighlight(publishFieldErrors.category)}
+                onChange={({ parentId, subId }) => {
+                  setCategoryParentId(parentId);
+                  setCategorySubId(subId);
+                  if (parentId) {
+                    setCategory(resolveDbCategory(parentId, subId));
+                    setTags((prev) => mergeCategorySubTag(prev, subId));
+                  } else {
+                    setCategory("");
+                    setTags((prev) => mergeCategorySubTag(prev, null));
+                  }
+                  clearPublishFieldError("category");
+                }}
               />
             </div>
 
@@ -2913,12 +2961,38 @@ const ProjectEditorPage = () => {
             />
 
             <div className="space-y-3 pt-2 border-t border-border/60">
+              {hireSeller.ready && !hireSeller.isLoading ? <HireSellerReadyBadge /> : null}
               <div className="flex items-center justify-between gap-3">
                 <label htmlFor="allow-hire" className="min-w-0 flex flex-1 items-center gap-2 cursor-pointer">
                   <BriefcaseIcon className="w-4 h-4 text-primary shrink-0" aria-hidden />
-                  <p className="text-sm text-foreground">เปิดปุ่ม &quot;สนใจจ้างงาน&quot;</p>
+                  <div className="min-w-0">
+                    <p className="text-sm text-foreground">เปิดปุ่ม &quot;สนใจจ้างงาน&quot;</p>
+                    {!hireSeller.ready && !hireSeller.isLoading ? (
+                      <p className="text-[10px] text-muted-foreground leading-snug">
+                        กดเปิดเพื่อตรวจความพร้อม — ยังไม่ครบจะขึ้นขั้นตอนให้ทำ
+                      </p>
+                    ) : null}
+                  </div>
                 </label>
-                <Switch id="allow-hire" checked={allowHire} onCheckedChange={setAllowHire} className="shrink-0" />
+                <Switch
+                  id="allow-hire"
+                  checked={allowHire && hireSeller.ready}
+                  disabled={hireSeller.isLoading}
+                  onCheckedChange={(on) => {
+                    if (!on) {
+                      setAllowHire(false);
+                      return;
+                    }
+                    if (hireSeller.isLoading) return;
+                    if (hireSeller.ready) {
+                      setAllowHire(true);
+                      return;
+                    }
+                    setAllowHire(false);
+                    setHireReadyOpen(true);
+                  }}
+                  className="shrink-0"
+                />
               </div>
               <div className="flex items-center justify-between gap-3">
                 <label htmlFor="allow-collab" className="min-w-0 flex flex-1 items-center gap-2 cursor-pointer">
@@ -2929,7 +3003,9 @@ const ProjectEditorPage = () => {
               </div>
               {licenseType === "commercial_license" && !allowHire && (
                 <p className="text-xs text-amber-600 bg-amber-500/10 rounded-lg px-3 py-2">
-                  แนะนำเปิดปุ่ม &quot;สนใจจ้างงาน&quot; เพื่อให้ผู้ชมติดต่อซื้อสิทธิ์ได้ง่ายขึ้น
+                  {hireSeller.ready
+                    ? "แนะนำเปิดปุ่ม \"สนใจจ้างงาน\" เพื่อให้ผู้ชมติดต่อซื้อสิทธิ์ได้ง่ายขึ้น"
+                    : "สิทธิ์เชิงพาณิชย์แนะนำเปิดรับจ้าง — กดสวิตช์เพื่อดูขั้นตอนตั้งบัญชี"}
                 </p>
               )}
             </div>
@@ -3017,6 +3093,19 @@ const ProjectEditorPage = () => {
           </div>
         </div>
       </div>
+
+      <HireSellerReadinessDialog
+        open={hireReadyOpen}
+        onOpenChange={setHireReadyOpen}
+        readiness={hireSeller}
+        draftBusy={savingDraft}
+        onSaveDraft={async () => {
+          await handleSaveDraft();
+          setHireReadyOpen(false);
+          const next = hireSeller.items.find((i) => !i.done);
+          if (next) navigate(next.href);
+        }}
+      />
 
       <ProjectPreviewDialog
         open={previewOpen}

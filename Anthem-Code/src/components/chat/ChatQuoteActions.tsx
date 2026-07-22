@@ -28,6 +28,7 @@ import { isAplus1ChatOffersEnabled } from "@/lib/aplus1Launch";
 import { hireForwardClientNotice, hireRejectReasonLabel } from "@/lib/hireBrief";
 import { encodeHireForwardMessage } from "@/lib/hireForwardChat";
 import { encodeHireRejectChoiceMessage } from "@/lib/hireRejectChat";
+import { CHAT_CARD_DECLINE_LABEL } from "@/components/chat/ChatCardShell";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -263,7 +264,7 @@ export function ChatQuoteActions({ conversation }: Props) {
                 onClick={() => setRejectOpen(true)}
               >
                 {busy ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <X className="w-3.5 h-3.5 mr-1" />}
-                ปฏิเสธ
+                {CHAT_CARD_DECLINE_LABEL}
               </Button>
               <Button
                 type="button"
@@ -283,7 +284,7 @@ export function ChatQuoteActions({ conversation }: Props) {
           <p className="text-[11px] text-muted-foreground">ตอบรับแล้ว — คุยรายละเอียดต่อได้</p>
         )}
         {hireStatus === "ปฏิเสธ" && (
-          <p className="text-[11px] text-muted-foreground">ปฏิเสธคำขอนี้แล้ว</p>
+          <p className="text-[11px] text-muted-foreground">ไม่สนใจคำขอนี้แล้ว</p>
         )}
 
         {chatOffersOn &&

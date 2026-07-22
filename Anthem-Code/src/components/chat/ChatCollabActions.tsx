@@ -14,13 +14,18 @@ import { supabase } from "@/integrations/supabase/client";
 import CollabRejectDialog from "@/components/collab/CollabRejectDialog";
 import {
   collabRejectReasonLabel,
+  buildCollabDeclineChatMessage,
 } from "@/lib/collabBrief";
 import {
   isCollabAcceptedStatus,
   isCollabContactedNewStatus,
   isCollabDeclinedStatus,
 } from "@/lib/collabInbox";
+import { buildCollabPlanDocumentMessage, emptyCollabPlanState, emptyPlanPayload } from "@/lib/collabToolkit";
+import { useCollabPlanUi } from "@/stores/collabPlanUiStore";
+import { sharedDb } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 
 type Props = {
   conversation: Conversation;
@@ -45,6 +50,7 @@ export function ChatCollabActions({ conversation }: Props) {
   const qc = useQueryClient();
   const { user } = useAuth();
   const [rejectOpen, setRejectOpen] = useState(false);
+  const collabPlanUi = useCollabPlanUi();
 
   const accept = useAcceptRequest();
   const reject = useRejectRequest();
@@ -89,6 +95,7 @@ export function ChatCollabActions({ conversation }: Props) {
   const accepted = isCollabAcceptedStatus(row.status);
   const declined = isCollabDeclinedStatus(row.status);
   const busy = accept.isPending || reject.isPending || sendMessage.isPending;
+  const publishPath = `/portfolio/new?collab_request_id=${encodeURIComponent(row.id)}`;
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["collab-requests"] });
@@ -118,15 +125,37 @@ export function ChatCollabActions({ conversation }: Props) {
                     projectTitle: conversation.project_title ?? "คอลแลปไอเดียใหม่",
                   });
                   try {
+                    await sharedDb.from("collab_plans" as never).upsert(
+                      {
+                        conversation_id: conversation.id,
+                        status: "draft",
+                        current_step: "align",
+                        payload: emptyPlanPayload(),
+                        acks: {},
+                        version: 1,
+                        stages: emptyCollabPlanState().stages,
+                        updated_at: new Date().toISOString(),
+                      } as never,
+                      { onConflict: "conversation_id", ignoreDuplicates: true },
+                    );
+                  } catch {
+                    /* optional */
+                  }
+                  try {
                     await sendMessage.mutateAsync({
                       conversationId: conversation.id,
-                      content: "ตอบรับร่วมงานแล้ว — คุยไอเดียต่อได้เลย เมื่อพร้อมกดสร้างผลงานร่วมได้",
+                      content: buildCollabPlanDocumentMessage({
+                        projectTitle: conversation.project_title,
+                      }),
                     });
                   } catch {
                     /* accept already succeeded */
                   }
                   invalidate();
-                  toast.success("ตอบรับร่วมงานแล้ว");
+                  void qc.invalidateQueries({ queryKey: ["collab-plan", conversation.id] });
+                  void qc.invalidateQueries({ queryKey: ["collab-plan-doc", conversation.id] });
+                  collabPlanUi.openFor(conversation.id);
+                  toast.success("ตอบรับแล้ว — เปิดเอกสารแผนคอลแลปให้แล้ว");
                 } catch (e: unknown) {
                   toast.error(e instanceof Error ? e.message : "ตอบรับไม่สำเร็จ");
                 }
@@ -151,20 +180,21 @@ export function ChatCollabActions({ conversation }: Props) {
       ) : null}
 
       {accepted ? (
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="w-full rounded-full"
-          onClick={() =>
-            navigate(
-              `/portfolio/new?collab_request_id=${encodeURIComponent(row.id)}`,
-            )
-          }
-        >
-          <FileText className="w-3.5 h-3.5 mr-1" />
-          สร้างผลงานร่วม
-        </Button>
+        <div className="space-y-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="w-full rounded-full"
+            onClick={() => navigate(publishPath)}
+          >
+            <FileText className="w-3.5 h-3.5 mr-1" />
+            ลงผลงานร่วมกัน
+          </Button>
+          <p className="text-[10px] text-muted-foreground leading-snug">
+            แผนงานร่วมกันอยู่ด้านบนแผงนี้ หรือปุ่มหัวแชท「วางแผนงานร่วมกัน」
+          </p>
+        </div>
       ) : null}
 
       {declined ? (
@@ -203,10 +233,10 @@ export function ChatCollabActions({ conversation }: Props) {
             try {
               await sendMessage.mutateAsync({
                 conversationId: conversation.id,
-                content:
-                  action === "busy_chat"
-                    ? `ยังไม่พร้อมร่วมงานตอนนี้ แต่คุยไอเดียได้ — ${note || collabRejectReasonLabel(reason)}`
-                    : `ยังไม่พร้อมร่วมงาน — ${note || collabRejectReasonLabel(reason)}`,
+                content: buildCollabDeclineChatMessage({
+                  reasonLabel: note || collabRejectReasonLabel(reason),
+                  keepChat: action === "busy_chat",
+                }),
               });
             } catch {
               /* status already saved */
@@ -219,7 +249,7 @@ export function ChatCollabActions({ conversation }: Props) {
                 : "แจ้งแล้วว่ายังไม่พร้อมร่วมงาน",
             );
           } catch (e: unknown) {
-            toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
+            toast.error(mapWriteFlowError(e, "บันทึกไม่สำเร็จ"));
           }
         }}
       />

@@ -8,7 +8,11 @@ import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { SocialButtons, AuthEmailSeparator } from "@/components/auth/SocialButtons";
-import { safeRelativePath, shouldStripRedirectParam } from "@/lib/oauthRedirect";
+import {
+  buildEmailConfirmUrl,
+  safeRelativePath,
+  shouldStripRedirectParam,
+} from "@/lib/oauthRedirect";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -196,8 +200,13 @@ const AuthPage = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <SocialButtons redirectTo={redirect} />
-                    <AuthEmailSeparator />
+                    {/* Demo: no Google on signup — email signup blocked; avoid accidental OAuth account create */}
+                    {import.meta.env.VITE_DEMO_MODE === "true" ? null : (
+                      <>
+                        <SocialButtons redirectTo={redirect} />
+                        <AuthEmailSeparator />
+                      </>
+                    )}
                     <SignupForm onSwitch={() => setTab("login")} />
                   </div>
                 )}
@@ -352,7 +361,7 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: window.location.origin + "/",
+          emailRedirectTo: buildEmailConfirmUrl(),
           data: { display_name: displayName || email.split("@")[0] },
         },
       });

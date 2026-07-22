@@ -26,6 +26,7 @@ import {
 import { useFollowState } from "@/hooks/useFollow";
 import { PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
 import { profilePublicPath } from "@/lib/profileRoutes";
+import { safeHttpUrl } from "@/lib/safeUrl";
 import ChatMetaPanel from "@/components/chat/ChatMetaPanel";
 import ChatPortfolioSection from "@/components/chat/ChatPortfolioSection";
 import { cn } from "@/lib/utils";
@@ -498,7 +499,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
             {showHireMeta
               ? conversation.kind === "hire"
                 ? "รายละเอียดออเดอร์ / มีเดีย"
-                : "ข้อมูลงาน / มีเดีย"
+                : "ข้อมูลแผนงานร่วมกัน"
               : "มีเดียในแชท"}
             <ChevronDown
               className={cn(
@@ -518,17 +519,28 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
-                  {attachments.map(({ url }) => (
-                    <a
-                      key={url}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="aspect-square rounded-lg overflow-hidden bg-muted hover:opacity-90 transition-opacity"
-                    >
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                    </a>
-                  ))}
+                  {attachments.map(({ url }) => {
+                    const href = safeHttpUrl(url);
+                    if (!href) {
+                      return (
+                        <div
+                          key={url}
+                          className="aspect-square rounded-lg overflow-hidden bg-muted"
+                        />
+                      );
+                    }
+                    return (
+                      <a
+                        key={url}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="aspect-square rounded-lg overflow-hidden bg-muted hover:opacity-90 transition-opacity"
+                      >
+                        <img src={href} alt="" className="w-full h-full object-cover" />
+                      </a>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -546,7 +558,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
           {showHireMeta
             ? conversation.kind === "hire"
               ? "รายละเอียดออเดอร์ / มีเดีย"
-              : "ข้อมูลงาน / มีเดีย"
+              : "ข้อมูลแผนงานร่วมกัน"
             : "มีเดียในแชท"}
           <ChevronDown className="w-4 h-4 text-muted-foreground" />
         </button>

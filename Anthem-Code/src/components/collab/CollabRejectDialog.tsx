@@ -92,7 +92,7 @@ const CollabRejectDialog = ({ open, onOpenChange, request, busy, onConfirm }: Pr
         <DialogHeader className="text-left space-y-1">
           <DialogTitle>ยังไม่พร้อมร่วมงาน</DialogTitle>
           <DialogDescription className="sr-only">
-            ปฏิเสธคำขอคอลแลปจาก {request.sender_name ?? "ผู้ส่ง"}
+            ไม่สนใจคำขอคอลแลปจาก {request.sender_name ?? "ผู้ส่ง"}
           </DialogDescription>
         </DialogHeader>
 
@@ -166,38 +166,29 @@ const CollabRejectDialog = ({ open, onOpenChange, request, busy, onConfirm }: Pr
           </p>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-col gap-2">
+        <DialogFooter className="flex-row gap-2 sm:justify-stretch">
           <Button
             type="button"
             variant="outline"
             disabled={busy || (reason === "other" && !note.trim())}
-            className="w-full rounded-full"
+            className="flex-1 rounded-full"
             onClick={() => void submit("busy_chat")}
           >
             {busy ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-1" />
+              <Loader2 className="w-4 h-4 animate-spin mr-1 shrink-0" />
             ) : (
-              <MessageCircle className="w-4 h-4 mr-1" />
+              <MessageCircle className="w-4 h-4 mr-1 shrink-0" />
             )}
-            ยังไม่พร้อม แต่คุยได้
+            <span className="truncate">ยังไม่พร้อม แต่คุยได้</span>
           </Button>
           <Button
             type="button"
             disabled={busy || (reason === "other" && !note.trim())}
-            className="w-full rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="flex-1 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
             onClick={() => void submit("decline")}
           >
-            {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-            ยืนยันว่ายังไม่พร้อมร่วมงาน
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={busy}
-            className="w-full rounded-full"
-            onClick={() => handleOpenChange(false)}
-          >
-            กลับ
+            {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1 shrink-0" /> : null}
+            <span className="truncate">ยืนยันไม่สนใจ</span>
           </Button>
         </DialogFooter>
       </DialogContent>

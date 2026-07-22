@@ -5,6 +5,7 @@ import {
   setAvatarPoolUrls,
   getGuestAvatarUrl,
   displayInitial,
+  displayInitials,
 } from "@/lib/avatarPool";
 
 describe("avatarPool", () => {
@@ -33,5 +34,13 @@ describe("avatarPool", () => {
   it("formats display initial", () => {
     expect(displayInitial("ภัส")).toBe("ภ");
     expect(displayInitial("")).toBe("?");
+  });
+
+  it("formats two-letter default initials from username", () => {
+    expect(displayInitials("nutth")).toBe("NU");
+    expect(displayInitials("@nutth")).toBe("NU");
+    expect(displayInitials("a")).toBe("A");
+    expect(displayInitials("")).toBe("?");
+    expect(displayInitials("passawut")).toBe("PA");
   });
 });

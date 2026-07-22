@@ -22,6 +22,7 @@ import { type PhotoGridLayout } from "@/lib/photoGridLayouts";
 import type { FlexGridLayout, ProjectEditorMode } from "@/lib/flexGridLayout";
 import { isVideoUrl, mediaItemFromUrl } from "@/lib/portfolioMedia";
 import { cn } from "@/lib/utils";
+import { stripCategorySubTags } from "@/data/categoryTaxonomy";
 import { toast } from "sonner";
 
 export interface ProjectPreviewData {
@@ -125,11 +126,11 @@ function ProjectPcPreview({
             </div>
           )}
 
-          {data.tags.length > 0 && (
+          {stripCategorySubTags(data.tags).length > 0 && (
             <div className="rounded-2xl glass-panel p-5 space-y-3 lg:hidden">
               <h3 className="text-sm font-medium text-foreground">แท็ก</h3>
               <div className="flex flex-wrap gap-1.5">
-                {data.tags.map((t) => (
+                {stripCategorySubTags(data.tags).map((t) => (
                   <Badge key={t} variant="secondary" className="rounded-full font-normal">
                     #{t}
                   </Badge>

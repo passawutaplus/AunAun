@@ -13,6 +13,16 @@ interface SearchBarProps {
   /** Mobile: show search icon only until tapped */
   expandable?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
+  /**
+   * When set, filter button opens this callback instead of the popover.
+   * Use with a dedicated search/filter sheet.
+   */
+  onFilterClick?: () => void;
+  /**
+   * When set with expandable, tapping the collapsed search icon opens
+   * this callback (e.g. mobile search sheet) instead of expanding inline.
+   */
+  onExpandClick?: () => void;
 }
 
 const SearchBar = ({
@@ -24,30 +34,38 @@ const SearchBar = ({
   compact = false,
   expandable = false,
   onExpandedChange,
+  onFilterClick,
+  onExpandClick,
 }: SearchBarProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(() => value.length > 0);
-  const isOpen = !expandable || expanded || value.length > 0;
+  const sheetMode = Boolean(onExpandClick);
+  const isOpen = sheetMode ? false : !expandable || expanded || value.length > 0;
 
   useEffect(() => {
+    if (sheetMode) {
+      onExpandedChange?.(false);
+      return;
+    }
     onExpandedChange?.(isOpen);
-  }, [isOpen, onExpandedChange]);
+  }, [isOpen, onExpandedChange, sheetMode]);
 
   useEffect(() => {
-    if (!expandable || !expanded) return;
+    if (!expandable || !expanded || sheetMode) return;
     inputRef.current?.focus();
-  }, [expanded, expandable]);
+  }, [expanded, expandable, sheetMode]);
 
   const collapse = () => {
-    if (!expandable || value.length > 0) return;
+    if (!expandable || value.length > 0 || sheetMode) return;
     setExpanded(false);
   };
 
-  const filterButton = filterContent ? (
-    <Popover>
-      <PopoverTrigger asChild>
+  const filterButton =
+    onFilterClick || filterContent ? (
+      onFilterClick ? (
         <button
           type="button"
+          onClick={onFilterClick}
           className="relative p-1.5 rounded-lg hover:bg-secondary transition-colors"
           aria-label="ตัวกรอง"
         >
@@ -56,22 +74,42 @@ const SearchBar = ({
             <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
           )}
         </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        sideOffset={8}
-        className="w-[calc(100vw-1.5rem)] sm:w-80 max-w-sm rounded-2xl p-4 glass-panel max-h-[70vh] overflow-y-auto overscroll-contain"
-      >
-        {filterContent}
-      </PopoverContent>
-    </Popover>
-  ) : null;
+      ) : (
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="relative p-1.5 rounded-lg hover:bg-secondary transition-colors"
+              aria-label="ตัวกรอง"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
+              {filterCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
+              )}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            sideOffset={8}
+            className="w-[calc(100vw-1.5rem)] sm:w-80 max-w-sm rounded-2xl p-4 glass-panel max-h-[70vh] overflow-y-auto overscroll-contain"
+          >
+            {filterContent}
+          </PopoverContent>
+        </Popover>
+      )
+    ) : null;
 
   if (expandable && !isOpen) {
     return (
       <button
         type="button"
-        onClick={() => setExpanded(true)}
+        onClick={() => {
+          if (onExpandClick) {
+            onExpandClick();
+            return;
+          }
+          setExpanded(true);
+        }}
         aria-label={placeholder}
         className="relative inline-flex items-center justify-center w-9 h-9 rounded-full bg-secondary border border-border text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors shrink-0"
       >
@@ -111,7 +149,7 @@ const SearchBar = ({
       />
       {expandable ? (
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
-          {value.length === 0 && (
+          {value.length === 0 && !onExpandClick && (
             <button
               type="button"
               onClick={() => setExpanded(false)}
@@ -124,7 +162,7 @@ const SearchBar = ({
           {filterButton}
         </div>
       ) : (
-        filterContent && (
+        filterButton && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">{filterButton}</div>
         )
       )}

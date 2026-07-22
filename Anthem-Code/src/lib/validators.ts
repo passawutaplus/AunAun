@@ -252,7 +252,7 @@ export const projectSchema = z.object({
   tags: z.array(z.string().trim().min(1).max(30)).max(15).default([]),
   price_thb: z.number().int().min(0).max(10_000_000).nullable().optional(),
   status: z.enum(["Published", "Draft", "Private"]),
-  allow_hire: z.boolean().default(true),
+  allow_hire: z.boolean().default(false),
   allow_collab: z.boolean().default(true),
   studio_id: z.string().uuid().nullable().optional(),
   credited_user_ids: z.array(z.string().uuid()).max(20).default([]),

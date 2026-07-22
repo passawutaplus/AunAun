@@ -47,9 +47,22 @@ export function getGuestAvatarUrl(urls = getAvatarPoolUrls()): string | null {
   }
 }
 
+/** First grapheme of a name (legacy single-letter callers). */
 export function displayInitial(name?: string | null): string {
-  const ch = name?.trim()?.[0];
-  return ch ? ch.toUpperCase() : "?";
+  const letters = displayInitials(name, 1);
+  return letters === "?" ? "?" : letters;
+}
+
+/**
+ * Default avatar label: first N letters of username/display name.
+ * Prefer username so new accounts without a photo show e.g. "NU" for "nutth".
+ */
+export function displayInitials(name?: string | null, count = 2): string {
+  const cleaned = name?.trim().replace(/^@+/, "") ?? "";
+  if (!cleaned) return "?";
+  const chars = Array.from(cleaned);
+  const slice = chars.slice(0, Math.max(1, count)).join("");
+  return slice.toLocaleUpperCase("en-US");
 }
 
 export async function loadAvatarPoolManifest(): Promise<AvatarPoolManifest> {

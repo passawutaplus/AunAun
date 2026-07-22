@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Paperclip, X } from "lucide-react";
+import { ArrowLeft, Ban, Loader2, Paperclip, PencilLine, Send, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -134,7 +134,14 @@ const HireCancelRequestDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="rounded-2xl max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{mode === "edit" ? "แก้ไขคำขอยกเลิกงาน" : "ขอยกเลิกงาน"}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {mode === "edit" ? (
+              <PencilLine className="w-5 h-5 shrink-0" />
+            ) : (
+              <Ban className="w-5 h-5 shrink-0" />
+            )}
+            {mode === "edit" ? "แก้ไขคำขอยกเลิกงาน" : "ขอยกเลิกงาน"}
+          </DialogTitle>
           <DialogDescription>
             สรุปสิ่งที่คุยในแชทแล้ว — อีกฝ่ายจะได้ยืนยันในระบบ · แก้/ถอนได้ภายใน 24 ชม. แรก
             (เวลารอพิจารณา 48 ชม. นับต่อเนื่อง)
@@ -250,6 +257,7 @@ const HireCancelRequestDialog = ({
             disabled={busy}
             onClick={() => onOpenChange(false)}
           >
+            <ArrowLeft className="w-4 h-4 mr-1.5" />
             กลับ
           </Button>
           <Button
@@ -266,7 +274,13 @@ const HireCancelRequestDialog = ({
               })
             }
           >
-            {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+            {busy ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+            ) : mode === "edit" ? (
+              <PencilLine className="w-4 h-4 mr-1.5" />
+            ) : (
+              <Send className="w-4 h-4 mr-1.5" />
+            )}
             {mode === "edit" ? "บันทึกการแก้ไข" : "ส่งคำขอยกเลิก"}
           </Button>
         </DialogFooter>

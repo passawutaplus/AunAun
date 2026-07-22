@@ -82,6 +82,8 @@ export interface ProjectCreator {
   id: string;
   name: string;
   avatar: string;
+  /** Used for default initials avatar when no photo. */
+  username?: string;
 }
 
 export interface Project {
@@ -93,6 +95,8 @@ export interface Project {
   owner: string;
   ownerId?: string;
   ownerAvatar: string;
+  /** Used for default initials avatar when no photo. */
+  ownerUsername?: string;
   collaborators?: ProjectCreator[];
   likes: number;
   views: number;

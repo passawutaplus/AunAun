@@ -54,6 +54,10 @@ import {
 } from "@/lib/hireRejectChat";
 import { parseHireCancelCardMessage } from "@/lib/hireCancelRequest";
 import HireCancelCard from "@/components/chat/HireCancelCard";
+import { parseCollabEndCardMessage } from "@/lib/collabEndRequest";
+import CollabEndCard from "@/components/chat/CollabEndCard";
+import { parseCollabGroupExpandCardMessage } from "@/lib/collabGroupExpand";
+import CollabGroupExpandCard from "@/components/chat/CollabGroupExpandCard";
 import { parseHireDeliveryMessage } from "@/lib/hireDeliveryChat";
 import HireDeliveryCard from "@/components/hire/HireDeliveryCard";
 import { parseHirePaidMessage, parseLegacyHirePaidText } from "@/lib/hirePaymentChat";
@@ -66,11 +70,31 @@ import {
 } from "@/lib/hireWorkStartChat";
 import HireWorkStartCard from "@/components/chat/HireWorkStartCard";
 import { isHireBriefChatMessage } from "@/lib/hireBrief";
-import { isCollabBriefChatMessage } from "@/lib/collabBrief";
+import { isCollabBriefChatMessage, isCollabDeclineChatMessage } from "@/lib/collabBrief";
+import CollabDeclineCard from "@/components/chat/CollabDeclineCard";
+import {
+  detectCollabToolKind,
+  isAlignDiscussionTemplateMessage,
+  isChangeDoneMessage,
+  isChangeRequestMessage,
+  isCollabPlanDocumentMessage,
+  isStepLockedMessage,
+  parseChangeRequestMessage,
+} from "@/lib/collabToolkit";
+import { CollabToolkitCard } from "@/components/chat/CollabToolkitCard";
+import { CollabPlanDocCard } from "@/components/chat/CollabPlanDocCard";
+import {
+  CollabChangeDoneCard,
+  CollabChangeRequestCard,
+  CollabDiscussionTemplateCard,
+  CollabStepLockedCard,
+} from "@/components/chat/CollabPlanEventCards";
 import { UNSEND_WINDOW_MS, type Message } from "@/hooks/useChat";
 import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
 import { toast } from "sonner";
 import type { HireCancelRequestRow } from "@/lib/hireCancelRequest";
+import type { CollabEndRequestRow } from "@/lib/collabEndRequest";
+import type { CollabGroupExpandRequestRow } from "@/lib/collabGroupExpand";
 
 function ChatAttachmentImage({ refUrl }: { refUrl: string }) {
   const src = useSignedStorageUrl(refUrl);
@@ -138,6 +162,19 @@ interface Props {
   onHireCancelEdit?: (row: HireCancelRequestRow) => void;
   onHireCancelWithdraw?: (row: HireCancelRequestRow) => void;
   hireCancelWithdrawBusy?: boolean;
+  onCollabEndEdit?: (row: CollabEndRequestRow) => void;
+  onCollabEndWithdraw?: (row: CollabEndRequestRow) => void;
+  collabEndWithdrawBusy?: boolean;
+  collabGroupExpandSourceMemberIds?: string[];
+  collabGroupExpandPartnerUserId?: string | null;
+  onCollabGroupExpandWithdraw?: (row: CollabGroupExpandRequestRow) => void;
+  collabGroupExpandWithdrawBusy?: boolean;
+  /** Opens the shared collab plan document sheet. */
+  onOpenCollabPlan?: () => void;
+  /** Approve a pending collab plan change request from the chat card. */
+  onApproveCollabChange?: (requestId: string) => void;
+  collabChangeAlreadyApproved?: boolean;
+  collabChangeApproveBusy?: boolean;
   onReply?: (message: Message) => void;
   onUnsend?: (message: Message) => void;
   /** Pin/announce message to conversation header (LINE-style). */
@@ -163,6 +200,17 @@ const MessageBubble = ({
   onHireCancelEdit,
   onHireCancelWithdraw,
   hireCancelWithdrawBusy,
+  onCollabEndEdit,
+  onCollabEndWithdraw,
+  collabEndWithdrawBusy,
+  collabGroupExpandSourceMemberIds = [],
+  collabGroupExpandPartnerUserId,
+  onCollabGroupExpandWithdraw,
+  collabGroupExpandWithdrawBusy,
+  onOpenCollabPlan,
+  onApproveCollabChange,
+  collabChangeAlreadyApproved = false,
+  collabChangeApproveBusy = false,
   onReply,
   onUnsend,
   onAnnounce,
@@ -282,6 +330,8 @@ const MessageBubble = ({
   const hireRejectChoice = !deleted ? parseHireRejectChoiceMessage(message.content) : null;
   const hireContinueAsk = !deleted ? parseHireContinueAskMessage(message.content) : null;
   const hireCancel = !deleted ? parseHireCancelCardMessage(message.content) : null;
+  const collabEnd = !deleted ? parseCollabEndCardMessage(message.content) : null;
+  const collabGroupExpand = !deleted ? parseCollabGroupExpandCardMessage(message.content) : null;
   const hireDelivery = !deleted ? parseHireDeliveryMessage(message.content) : null;
   const hirePaid = !deleted
     ? parseHirePaidMessage(message.content) || parseLegacyHirePaidText(message.content)
@@ -302,7 +352,13 @@ const MessageBubble = ({
     !!hireReceipt ||
     isPlainOfferAcceptMessage(rawForDisplay) ||
     isHireProtocolMessage(message.content) ||
-    isHireProtocolMessage(rawForDisplay)
+    isHireProtocolMessage(rawForDisplay) ||
+    !!detectCollabToolKind(rawForDisplay) ||
+    isCollabPlanDocumentMessage(rawForDisplay) ||
+    isAlignDiscussionTemplateMessage(rawForDisplay) ||
+    isCollabDeclineChatMessage(rawForDisplay) ||
+    !!collabEnd ||
+    !!collabGroupExpand
       ? ""
       : rawForDisplay;
 
@@ -313,6 +369,8 @@ const MessageBubble = ({
     !hireRejectChoice &&
     !hireContinueAsk &&
     !hireCancel &&
+    !collabEnd &&
+    !collabGroupExpand &&
     !hireDelivery &&
     !hirePaid &&
     !hireWorkStart &&
@@ -328,6 +386,8 @@ const MessageBubble = ({
     !hireRejectChoice &&
     !hireContinueAsk &&
     !hireCancel &&
+    !collabEnd &&
+    !collabGroupExpand &&
     !hireDelivery &&
     !hirePaid &&
     !hireWorkStart &&
@@ -337,18 +397,118 @@ const MessageBubble = ({
       ? rawForDisplay
       : null;
 
+  const collabDecline =
+    !deleted &&
+    !offer &&
+    !hireBrief &&
+    !collabBrief &&
+    isCollabDeclineChatMessage(rawForDisplay)
+      ? rawForDisplay
+      : null;
+
+  const collabPlanDoc =
+    !deleted &&
+    !offer &&
+    !hireForward &&
+    !hireRejectChoice &&
+    !hireContinueAsk &&
+    !hireCancel &&
+    !collabEnd &&
+    !collabGroupExpand &&
+    !hireDelivery &&
+    !hirePaid &&
+    !hireWorkStart &&
+    !hireReceipt &&
+    !hireBrief &&
+    !collabBrief &&
+    !collabDecline &&
+    isCollabPlanDocumentMessage(rawForDisplay)
+      ? rawForDisplay
+      : null;
+
+  const collabDiscussionTpl =
+    !deleted &&
+    !offer &&
+    !hireBrief &&
+    !collabBrief &&
+    !collabDecline &&
+    !collabPlanDoc &&
+    isAlignDiscussionTemplateMessage(rawForDisplay)
+      ? rawForDisplay
+      : null;
+
+  const collabChangeReq =
+    !deleted &&
+    !offer &&
+    !collabPlanDoc &&
+    !collabDiscussionTpl &&
+    isChangeRequestMessage(rawForDisplay)
+      ? rawForDisplay
+      : null;
+
+  const collabChangeDone =
+    !deleted &&
+    !offer &&
+    !collabPlanDoc &&
+    !collabChangeReq &&
+    isChangeDoneMessage(rawForDisplay)
+      ? rawForDisplay
+      : null;
+
+  const collabStepLocked =
+    !deleted &&
+    !offer &&
+    !collabPlanDoc &&
+    !collabChangeReq &&
+    !collabChangeDone &&
+    isStepLockedMessage(rawForDisplay)
+      ? rawForDisplay
+      : null;
+
+  const collabToolKind =
+    !deleted &&
+    !offer &&
+    !hireForward &&
+    !hireRejectChoice &&
+    !hireContinueAsk &&
+    !hireCancel &&
+    !collabEnd &&
+    !collabGroupExpand &&
+    !hireDelivery &&
+    !hirePaid &&
+    !hireWorkStart &&
+    !hireReceipt &&
+    !hireBrief &&
+    !collabBrief &&
+    !collabDecline &&
+    !collabPlanDoc &&
+    !collabDiscussionTpl &&
+    !collabChangeReq &&
+    !collabChangeDone &&
+    !collabStepLocked
+      ? detectCollabToolKind(rawForDisplay)
+      : null;
+
   const isStructuredChatCard = !!(
     offer ||
     hireForward ||
     hireRejectChoice ||
     hireContinueAsk ||
     hireCancel ||
+    collabEnd ||
     hireDelivery ||
     hirePaid ||
     hireWorkStart ||
     hireReceipt ||
     hireBrief ||
     collabBrief ||
+    collabDecline ||
+    collabPlanDoc ||
+    collabDiscussionTpl ||
+    collabChangeReq ||
+    collabChangeDone ||
+    collabStepLocked ||
+    collabToolKind ||
     (!deleted && isHireProtocolMessage(message.content)) ||
     (!deleted && isPlainOfferAcceptMessage(message.content))
   );
@@ -636,6 +796,31 @@ const MessageBubble = ({
                 />
               </div>
             )}
+            {collabEnd && (
+              <div>
+                {replyQuote}
+                <CollabEndCard
+                  payload={collabEnd}
+                  mine={mine}
+                  onEdit={onCollabEndEdit}
+                  onWithdraw={onCollabEndWithdraw}
+                  withdrawBusy={collabEndWithdrawBusy}
+                />
+              </div>
+            )}
+            {collabGroupExpand && (
+              <div>
+                {replyQuote}
+                <CollabGroupExpandCard
+                  payload={collabGroupExpand}
+                  mine={mine}
+                  sourceMemberIds={collabGroupExpandSourceMemberIds}
+                  partnerUserId={collabGroupExpandPartnerUserId}
+                  onWithdraw={onCollabGroupExpandWithdraw}
+                  withdrawBusy={collabGroupExpandWithdrawBusy}
+                />
+              </div>
+            )}
             {hireDelivery && (
               <div>
                 {replyQuote}
@@ -697,17 +882,86 @@ const MessageBubble = ({
                 />
               </div>
             )}
+            {collabDecline && (
+              <div>
+                {replyQuote}
+                <CollabDeclineCard content={collabDecline} mine={mine} />
+              </div>
+            )}
+            {collabPlanDoc && (
+              <div>
+                {replyQuote}
+                <CollabPlanDocCard
+                  content={collabPlanDoc}
+                  onOpenPlan={() => onOpenCollabPlan?.()}
+                />
+              </div>
+            )}
+            {collabDiscussionTpl && (
+              <div>
+                {replyQuote}
+                <CollabDiscussionTemplateCard onOpenPlan={() => onOpenCollabPlan?.()} />
+              </div>
+            )}
+            {collabChangeReq && (
+              <div>
+                {replyQuote}
+                <CollabChangeRequestCard
+                  content={collabChangeReq}
+                  mine={mine}
+                  alreadyApproved={collabChangeAlreadyApproved}
+                  busy={collabChangeApproveBusy}
+                  onApprove={() => {
+                    const parsed = parseChangeRequestMessage(collabChangeReq);
+                    if (parsed?.requestId) onApproveCollabChange?.(parsed.requestId);
+                  }}
+                  onOpenPlan={() => onOpenCollabPlan?.()}
+                />
+              </div>
+            )}
+            {collabChangeDone && (
+              <div>
+                {replyQuote}
+                <CollabChangeDoneCard
+                  content={collabChangeDone}
+                  onOpenPlan={() => onOpenCollabPlan?.()}
+                />
+              </div>
+            )}
+            {collabStepLocked && (
+              <div>
+                {replyQuote}
+                <CollabStepLockedCard
+                  content={collabStepLocked}
+                  onOpenPlan={() => onOpenCollabPlan?.()}
+                />
+              </div>
+            )}
+            {collabToolKind && (
+              <div>
+                {replyQuote}
+                <CollabToolkitCard kind={collabToolKind} content={rawForDisplay} />
+              </div>
+            )}
             {displayContent &&
               !offer &&
               !hireForward &&
               !hireRejectChoice &&
               !hireContinueAsk &&
               !hireCancel &&
+    !collabEnd &&
+    !collabGroupExpand &&
               !hirePaid &&
               !hireWorkStart &&
               !hireReceipt &&
               !hireBrief &&
               !collabBrief &&
+              !collabDecline &&
+              !collabPlanDoc &&
+              !collabChangeReq &&
+              !collabChangeDone &&
+              !collabStepLocked &&
+              !collabToolKind &&
               message.message_type !== "project" &&
               message.message_type !== "profile" && (
               <div
@@ -726,6 +980,8 @@ const MessageBubble = ({
               !hireRejectChoice &&
               !hireContinueAsk &&
               !hireCancel &&
+    !collabEnd &&
+    !collabGroupExpand &&
               !hireBrief &&
               !message.attachment_url &&
               message.message_type !== "project" &&

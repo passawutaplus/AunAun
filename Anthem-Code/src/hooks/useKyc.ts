@@ -123,13 +123,18 @@ export const usePayoutProfile = () => {
   return useQuery({
     queryKey: ["payout-profile", user?.id],
     enabled: !!user?.id,
+    // Missing row / RLS miss should not crash hire-readiness or settings.
+    retry: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("payout_profiles")
         .select("bank_name, account_number, account_name, verified_at")
         .eq("user_id", user!.id)
         .maybeSingle();
-      if (error) throw error;
+      if (error) {
+        console.warn("[payout_profiles]", error.message);
+        return null;
+      }
       return data;
     },
   });

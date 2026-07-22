@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Handshake, Sparkles, UserCircle2, Link2, MessageCircle, Loader2, Plus, X } from "lucide-react";
+import { Check, Handshake, Sparkles, UserCircle2, Link2, MessageCircle, Loader2, Plus, X, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { cn } from "@/lib/utils";
@@ -19,14 +19,14 @@ import { useOpenHireCollabChat } from "@/hooks/useChat";
 import { isUuid } from "@/lib/uuid";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  buildCollabContextMessage,
   DEFAULT_COLLAB_MESSAGE,
   type ChatEntrySource,
 } from "@/lib/chatContext";
 import { validateProjectInquiry } from "@/domain/inquiry";
 import ProjectReferencePreview from "@/components/opportunity/ProjectReferencePreview";
 import { trackProductEvent } from "@/lib/productEvents";
-import { serializeCollabReferenceLinks } from "@/lib/collabBrief";
+import { serializeCollabReferenceLinks, buildCollabInviteChatMessage } from "@/lib/collabBrief";
+import { briefTemplateForTypes } from "@/lib/collabToolkit";
 import { safeHttpUrl } from "@/lib/safeUrl";
 import { isBlockedFromOpportunity } from "@/hooks/useCommunityPostInteractions";
 
@@ -49,11 +49,21 @@ function validateCollabLink(raw: string): string | null {
   return safeHttpUrl(v) ?? null;
 }
 
+const DEFAULT_COLLAB_TYPE = "chat";
+
+type CollabFieldErrorKey = "attached" | "collabTypes" | "otherNote";
+
 const collabDetailsSchema = z
   .object({
-    collabTypes: z.array(z.string()),
+    collabTypes: z
+      .array(z.string())
+      .min(1, "เลือกประเภทการร่วมงานอย่างน้อย 1 แบบ")
+      .max(1, "เลือกได้เพียง 1 แบบ"),
     message: z.string().trim().max(1000),
-    attached: z.array(z.string()).max(3, "แนบได้สูงสุด 3 ชิ้น"),
+    attached: z
+      .array(z.string())
+      .min(1, "เลือกอ้างอิงผลงานของตัวเองอย่างน้อย 1 ชิ้น")
+      .max(3, "แนบได้สูงสุด 3 ชิ้น"),
     referenceLinks: z.array(z.string()).max(MAX_COLLAB_LINKS, `ใส่ลิงก์ได้สูงสุด ${MAX_COLLAB_LINKS} อัน`),
     otherTypeNote: z.string().trim().max(80).optional(),
   })
@@ -94,17 +104,23 @@ const CollabDialog = ({
   const createReq = useCreateCollabRequest();
   const openChat = useOpenHireCollabChat();
 
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([DEFAULT_COLLAB_TYPE]);
   const [otherNote, setOtherNote] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(() => briefTemplateForTypes([DEFAULT_COLLAB_TYPE])?.body ?? "");
+  const [messageTouched, setMessageTouched] = useState(false);
   const [attached, setAttached] = useState<string[]>([]);
   const [linkDraft, setLinkDraft] = useState("");
   const [referenceLinks, setReferenceLinks] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<CollabFieldErrorKey, string>>>({});
   const busy = createReq.isPending || openChat.isPending;
 
   useEffect(() => {
     if (!open) return;
+    setSelectedTypes((prev) => (prev.length === 1 ? prev : [DEFAULT_COLLAB_TYPE]));
+    setMessageTouched(false);
+    setMessage(briefTemplateForTypes([DEFAULT_COLLAB_TYPE])?.body ?? "");
+    setFieldErrors({});
     void trackProductEvent(
       "collab_open",
       { project_id: projectId ?? null, recipient_id: recipientId, source },
@@ -117,19 +133,45 @@ const CollabDialog = ({
   const otherSelected = selectedTypes.includes("other");
 
   const reset = () => {
-    setSelectedTypes([]);
+    setSelectedTypes([DEFAULT_COLLAB_TYPE]);
     setOtherNote("");
-    setMessage("");
+    setMessage(briefTemplateForTypes([DEFAULT_COLLAB_TYPE])?.body ?? "");
+    setMessageTouched(false);
     setAttached([]);
     setLinkDraft("");
     setReferenceLinks([]);
     setSubmitError(null);
+    setFieldErrors({});
   };
 
-  const toggleType = (key: string) =>
-    setSelectedTypes((s) => (s.includes(key) ? s.filter((k) => k !== key) : [...s, key]));
+  const clearFieldError = (key: CollabFieldErrorKey) => {
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
 
-  const toggleAttach = (id: string) =>
+  const scrollToField = (id: string) => {
+    requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  };
+
+  const selectType = (key: string) => {
+    setSelectedTypes([key]);
+    if (key !== "other") setOtherNote("");
+    clearFieldError("collabTypes");
+    clearFieldError("otherNote");
+    if (!messageTouched) {
+      const tpl = briefTemplateForTypes([key]);
+      if (tpl) setMessage(tpl.body);
+    }
+  };
+
+  const toggleAttach = (id: string) => {
+    clearFieldError("attached");
     setAttached((s) => {
       if (s.includes(id)) return s.filter((x) => x !== id);
       if (s.length >= 3) {
@@ -138,6 +180,7 @@ const CollabDialog = ({
       }
       return [...s, id];
     });
+  };
 
   const addReferenceLink = () => {
     const safe = validateCollabLink(linkDraft);
@@ -187,6 +230,40 @@ const CollabDialog = ({
       return;
     }
 
+    if (published.length === 0) {
+      toast.error("ต้องมีผลงานที่เผยแพร่ก่อน — ไปโพสต์ผลงานแล้วค่อยชวนคอลแลป");
+      scrollToField("collab-attached-section");
+      return;
+    }
+
+    const nextErrors: Partial<Record<CollabFieldErrorKey, string>> = {};
+    if (attached.length === 0) {
+      nextErrors.attached = "เลือกอ้างอิงผลงานของตัวเองอย่างน้อย 1 ชิ้น";
+    }
+    if (selectedTypes.length !== 1) {
+      nextErrors.collabTypes = "เลือกประเภทการร่วมงาน 1 แบบ";
+    }
+    if (otherSelected && !otherNote.trim()) {
+      nextErrors.otherNote = "กรุณาระบุประเภท 'อื่นๆ'";
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      const firstMsg =
+        nextErrors.attached ||
+        nextErrors.collabTypes ||
+        nextErrors.otherNote ||
+        "กรุณากรอกข้อมูลที่บังคับ";
+      toast.error(firstMsg);
+      const focusId = nextErrors.attached
+        ? "collab-attached-section"
+        : nextErrors.collabTypes
+          ? "collab-types-section"
+          : "collab-other-note";
+      scrollToField(focusId);
+      return;
+    }
+    setFieldErrors({});
+
     const parsed = collabDetailsSchema.safeParse({
       collabTypes: selectedTypes,
       message,
@@ -232,10 +309,13 @@ const CollabDialog = ({
         freelancerId: recipientId,
         projectId: projectId && isUuid(projectId) ? projectId : null,
         projectTitle: title,
-        contextMessage: buildCollabContextMessage({
-          source,
-          projectTitle: title,
-          profileName: source === "profile" ? recipientName : undefined,
+        contextMessage: buildCollabInviteChatMessage({
+          project_title: source === "project" ? title : null,
+          message: payload.message,
+          collab_types: payload.collabTypes,
+          timeline: null,
+          sender_name: profile.display_name ?? null,
+          sender_username: profile.username ?? null,
         }),
       });
 
@@ -269,7 +349,7 @@ const CollabDialog = ({
           </div>
           <DialogTitle className="text-xl">ชวน {recipientName} ร่วมงาน</DialogTitle>
           <DialogDescription className="text-sm leading-6">
-            ไม่ใช่การจ้างงาน — เติมรายละเอียดได้ถ้าต้องการ ไม่กรอกก็แชทได้เลย
+            ไม่ใช่การจ้างงาน — ต้องอ้างอิงผลงานของตัวเองอย่างน้อย 1 ชิ้น รายละเอียดอื่นเติมได้ถ้าต้องการ
             {source === "profile" && <> จากโปรไฟล์ <span className="text-foreground font-medium">{recipientName}</span></>}
           </DialogDescription>
         </DialogHeader>
@@ -314,12 +394,162 @@ const CollabDialog = ({
             </div>
           )}
 
-          <div>
+          <div
+            id="collab-attached-section"
+            className={cn(
+              "rounded-2xl transition-shadow",
+              fieldErrors.attached && "ring-2 ring-destructive ring-offset-2 ring-offset-background",
+            )}
+          >
+            <Label className="text-sm font-semibold">
+              อ้างอิงผลงานของฉัน
+              <span className="text-primary font-normal"> *</span>
+            </Label>
+            <p className="text-xs text-muted-foreground mb-2.5">
+              {published.length === 0
+                ? "ต้องเผยแพร่ผลงานอย่างน้อย 1 ชิ้นก่อนถึงจะชวนคอลแลป / แชทได้"
+                : `บังคับเลือกอย่างน้อย 1 ชิ้นที่เผยแพร่แล้ว — สูงสุด 3 ชิ้น (${attached.length}/3)`}
+            </p>
+            {fieldErrors.attached ? (
+              <p className="text-xs text-destructive mb-2">{fieldErrors.attached}</p>
+            ) : null}
+
+            {published.length === 0 ? (
+              <div className="space-y-2.5">
+                <div className="grid grid-cols-4 gap-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <button
+                      key={`empty-slot-${i}`}
+                      type="button"
+                      onClick={() => {
+                        onOpenChange(false);
+                        navigate("/portfolio/new");
+                      }}
+                      className={cn(
+                        "aspect-square rounded-xl border-2 border-dashed border-primary/45",
+                        "bg-primary/5 hover:bg-primary/10 transition-colors",
+                        "flex flex-col items-center justify-center gap-1 px-1 text-center",
+                      )}
+                      aria-label="ไปลงผลงานก่อน"
+                    >
+                      <ImagePlus className="w-4 h-4 text-primary/80" />
+                      <span className="text-[9px] leading-tight text-muted-foreground">
+                        {i === 0 ? "ลงผลงาน" : "ว่าง"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3 py-2.5 space-y-2">
+                  <p className="text-sm text-foreground leading-snug">
+                    ยังไม่ได้ลงผลงาน — ลงอย่างน้อย 1 ชิ้นก่อน ถึงจะกด「แชทเลย」ได้
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => {
+                      onOpenChange(false);
+                      navigate("/portfolio/new");
+                    }}
+                  >
+                    ไปลงผลงานก่อน
+                  </Button>
+                </div>
+              </div>
+            ) : needsWorkPicker ? (
+              <div className="space-y-1.5 max-h-72 overflow-y-auto rounded-xl border border-border p-1.5 bg-muted/20">
+                {published.map((p) => {
+                  const on = attached.includes(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => toggleAttach(p.id)}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-2 rounded-lg border text-left transition-all",
+                        on ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted hover:border-border",
+                      )}
+                    >
+                      <div className="w-12 h-12 shrink-0 rounded-md overflow-hidden bg-muted">
+                        {p.cover_url ? (
+                          <img src={p.cover_url} alt={p.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[9px] text-muted-foreground p-1 text-center">
+                            {p.title}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{p.title}</p>
+                        {p.category ? (
+                          <p className="text-[10px] text-muted-foreground truncate">{p.category}</p>
+                        ) : null}
+                      </div>
+                      <div
+                        className={cn(
+                          "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
+                          on ? "bg-primary border-primary" : "border-border",
+                        )}
+                      >
+                        {on && <Check className="w-3 h-3 text-primary-foreground" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {published.map((p) => {
+                  const on = attached.includes(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => toggleAttach(p.id)}
+                      className={cn(
+                        "relative aspect-square rounded-xl overflow-hidden border-2 transition-all",
+                        on ? "border-primary shadow-md" : "border-transparent hover:border-border",
+                      )}
+                    >
+                      {p.cover_url ? (
+                        <img src={p.cover_url} alt={p.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground p-1 text-center">
+                          {p.title}
+                        </div>
+                      )}
+                      {on && (
+                        <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
+                          <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                            <Check className="w-4 h-4" />
+                          </div>
+                        </div>
+                      )}
+                      <span className="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[10px] px-1 py-0.5 truncate">
+                        {p.title}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div
+            id="collab-types-section"
+            className={cn(
+              "rounded-2xl transition-shadow",
+              fieldErrors.collabTypes && "ring-2 ring-destructive ring-offset-2 ring-offset-background",
+            )}
+          >
             <Label className="text-sm font-semibold">
               อยากร่วมงานแบบไหน
-              <span className="text-muted-foreground font-normal"> (ไม่บังคับ)</span>
+              <span className="text-primary font-normal"> *</span>
             </Label>
-            <p className="text-xs text-muted-foreground mb-2.5">เลือกได้หลายแบบ</p>
+            <p className="text-xs text-muted-foreground mb-2.5">บังคับเลือก 1 แบบ — ค่าเริ่มต้นคือ「พูดคุย」</p>
+            {fieldErrors.collabTypes ? (
+              <p className="text-xs text-destructive mb-2">{fieldErrors.collabTypes}</p>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               {COLLAB_TYPES.map((t) => {
                 const on = selectedTypes.includes(t.key);
@@ -327,7 +557,7 @@ const CollabDialog = ({
                   <button
                     key={t.key}
                     type="button"
-                    onClick={() => toggleType(t.key)}
+                    onClick={() => selectType(t.key)}
                     className={cn(
                       "px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all",
                       on
@@ -343,100 +573,25 @@ const CollabDialog = ({
             </div>
             {otherSelected && (
               <Input
+                id="collab-other-note"
                 value={otherNote}
-                onChange={(e) => setOtherNote(e.target.value)}
+                onChange={(e) => {
+                  setOtherNote(e.target.value);
+                  clearFieldError("otherNote");
+                }}
                 placeholder="ระบุประเภทที่อยากร่วมงาน เช่น เวิร์กชอป, นิทรรศการ"
                 maxLength={80}
-                className="mt-2.5 rounded-xl"
+                className={cn(
+                  "mt-2.5 rounded-xl",
+                  fieldErrors.otherNote && "border-destructive focus-visible:ring-destructive",
+                )}
+                aria-invalid={!!fieldErrors.otherNote}
               />
             )}
+            {fieldErrors.otherNote ? (
+              <p className="text-xs text-destructive mt-1.5">{fieldErrors.otherNote}</p>
+            ) : null}
           </div>
-
-          {published.length > 0 && (
-            <div>
-              <Label className="text-sm font-semibold">แนบผลงานของฉัน</Label>
-              <p className="text-xs text-muted-foreground mb-2.5">
-                {needsWorkPicker
-                  ? `มี ${published.length} ชิ้น — กดเลือกได้สูงสุด 3 ชิ้น (${attached.length}/3)`
-                  : `เลือกได้สูงสุด 3 ชิ้น (${attached.length}/3)`}
-              </p>
-
-              {needsWorkPicker ? (
-                <div className="space-y-1.5 max-h-72 overflow-y-auto rounded-xl border border-border p-1.5 bg-muted/20">
-                  {published.map((p) => {
-                    const on = attached.includes(p.id);
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => toggleAttach(p.id)}
-                        className={cn(
-                          "w-full flex items-center gap-3 p-2 rounded-lg border text-left transition-all",
-                          on ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted hover:border-border",
-                        )}
-                      >
-                        <div className="w-12 h-12 shrink-0 rounded-md overflow-hidden bg-muted">
-                          {p.cover_url ? (
-                            <img src={p.cover_url} alt={p.title} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[9px] text-muted-foreground p-1 text-center">
-                              {p.title}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{p.title}</p>
-                          {p.category ? (
-                            <p className="text-[10px] text-muted-foreground truncate">{p.category}</p>
-                          ) : null}
-                        </div>
-                        <div
-                          className={cn(
-                            "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
-                            on ? "bg-primary border-primary" : "border-border",
-                          )}
-                        >
-                          {on && <Check className="w-3 h-3 text-primary-foreground" />}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-2">
-                  {published.map((p) => {
-                    const on = attached.includes(p.id);
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => toggleAttach(p.id)}
-                        className={cn(
-                          "relative aspect-square rounded-xl overflow-hidden border-2 transition-all",
-                          on ? "border-primary shadow-md" : "border-transparent hover:border-border",
-                        )}
-                      >
-                        {p.cover_url ? (
-                          <img src={p.cover_url} alt={p.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground p-1 text-center">
-                            {p.title}
-                          </div>
-                        )}
-                        {on && (
-                          <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
-                            <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                              <Check className="w-4 h-4" />
-                            </div>
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
 
           <div>
             <Label htmlFor="collab-link-draft" className="text-sm font-semibold flex items-center gap-1.5">
@@ -516,11 +671,13 @@ const CollabDialog = ({
             <Textarea
               id="collab-msg"
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder={`ชอบงาน "${projectTitle ?? "นี้"}" มาก สนใจอยากลองทำ...`}
-              rows={4}
+              onChange={(e) => {
+                setMessage(e.target.value);
+                setMessageTouched(true);
+              }}
+              rows={5}
               maxLength={1000}
-              className="mt-1.5 rounded-xl"
+              className="mt-1.5 rounded-xl text-sm"
             />
             <p className="text-[10px] text-muted-foreground text-right mt-1">{message.length}/1000</p>
           </div>
@@ -544,7 +701,11 @@ const CollabDialog = ({
               className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
             >
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-              {user ? (busy ? "กำลังเปิดแชท..." : "แชทเลย") : "เข้าสู่ระบบเพื่อแชท"}
+              {!user
+                ? "เข้าสู่ระบบเพื่อแชท"
+                : busy
+                  ? "กำลังเปิดแชท..."
+                  : "แชทเลย"}
             </Button>
           </DialogFooter>
         </form>

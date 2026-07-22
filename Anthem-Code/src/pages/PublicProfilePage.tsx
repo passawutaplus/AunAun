@@ -18,6 +18,7 @@ import HireDialog from "@/components/HireDialog";
 import OpportunityTypeChips from "@/components/opportunity/OpportunityTypeChips";
 import CollabDialog from "@/components/CollabDialog";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
+import UserAvatar from "@/components/UserAvatar";
 
 import { useFollowState } from "@/hooks/useFollow";
 import { useAuth } from "@/hooks/useAuth";
@@ -391,17 +392,13 @@ const PublicProfilePage = () => {
             )}
           >
             <div className="shrink-0">
-              {profile.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt=""
-                  className="w-[4.5rem] h-[4.5rem] sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full object-cover border-[3px] sm:border-4 border-white/70 shadow-lg"
-                />
-              ) : (
-                <div className="w-[4.5rem] h-[4.5rem] sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-gradient-brand flex items-center justify-center text-2xl sm:text-3xl font-medium text-white border-[3px] sm:border-4 border-white/70 shadow-lg">
-                  {profile.display_name?.[0] ?? "?"}
-                </div>
-              )}
+              <UserAvatar
+                src={profile.avatar_url}
+                name={profile.display_name}
+                username={profile.username}
+                className="w-[4.5rem] h-[4.5rem] sm:w-24 sm:h-24 md:w-28 md:h-28 border-[3px] sm:border-4 border-white/70 shadow-lg"
+                fallbackClassName="text-2xl sm:text-3xl"
+              />
             </div>
 
             <div className="flex-1 min-w-0">

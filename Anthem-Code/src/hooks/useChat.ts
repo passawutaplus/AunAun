@@ -12,6 +12,7 @@ import {
   stripAttachmentBlock,
 } from "@/lib/hireBrief";
 import { formatCollabBriefChatText } from "@/lib/collabBrief";
+import { profilesPublicFrom } from "@/lib/profileAccess";
 import {
   SYSTEM_MESSAGE_PREFIX,
 } from "@/lib/chatContext";
@@ -749,7 +750,7 @@ async function seedHireBriefIfPresent(conversationId: string, requestId: string)
 async function seedCollabMessages(conversationId: string, requestId: string): Promise<void> {
   const { data: collab } = await supabase
     .from("collab_requests")
-    .select("sender_id, message, timeline, collab_types, attached_project_ids")
+    .select("sender_id, message, timeline, collab_types, attached_project_ids, project_id")
     .eq("id", requestId)
     .maybeSingle();
 
@@ -757,22 +758,34 @@ async function seedCollabMessages(conversationId: string, requestId: string): Pr
 
   const senderId = collab.sender_id as string;
   const projectIds = (collab.attached_project_ids as string[] | null) ?? [];
+  const mainProjectId =
+    typeof (collab as { project_id?: string | null }).project_id === "string"
+      ? (collab as { project_id: string }).project_id
+      : null;
 
   let projectTitle: string | null = null;
-  if (projectIds.length > 0) {
+  const titleId = projectIds[0] || mainProjectId;
+  if (titleId) {
     const { data: first } = await supabase
       .from("projects")
       .select("title")
-      .eq("id", projectIds[0])
+      .eq("id", titleId)
       .maybeSingle();
     projectTitle = first?.title ?? null;
   }
+
+  const { data: senderProfile } = await profilesPublicFrom()
+    .select("display_name, username")
+    .eq("user_id", senderId)
+    .maybeSingle();
 
   const brief = formatCollabBriefChatText({
     project_title: projectTitle,
     message: collab.message as string | null,
     timeline: collab.timeline as string | null,
     collab_types: collab.collab_types as string[] | null,
+    sender_name: (senderProfile as { display_name?: string | null } | null)?.display_name ?? null,
+    sender_username: (senderProfile as { username?: string | null } | null)?.username ?? null,
   });
 
   if (brief.trim()) {
@@ -814,12 +827,20 @@ async function seedInstantChatMessages(
     .eq("conversation_id", conversationId);
   if ((count ?? 0) > 0) return;
 
-  await insertContextMessage(conversationId, args.clientId, args.contextMessage);
-
   if (args.kind === "hire") {
+    await insertContextMessage(conversationId, args.clientId, args.contextMessage);
     await seedHireBriefIfPresent(conversationId, args.requestId);
-  } else {
-    await seedCollabMessages(conversationId, args.requestId);
+    return;
+  }
+
+  // Collab: one invite card only (from request row). Fallback to contextMessage.
+  await seedCollabMessages(conversationId, args.requestId);
+  const { count: after } = await supabase
+    .from("messages")
+    .select("id", { count: "exact", head: true })
+    .eq("conversation_id", conversationId);
+  if ((after ?? 0) === 0) {
+    await insertContextMessage(conversationId, args.clientId, args.contextMessage);
   }
 }
 
@@ -1022,7 +1043,10 @@ export const useRejectRequest = () => {
             keep_chat: !!keepChat || reason === "busy_but_chat",
           } as never)
           .eq("id", requestId);
-        if (error) throw error;
+        if (error) {
+          const msg = [error.message, error.details, error.hint].filter(Boolean).join(" — ");
+          throw new Error(msg || "ปฏิเสธคอลแลปไม่สำเร็จ");
+        }
       } else {
         throw new Error("Unsupported kind");
       }

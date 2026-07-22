@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RequireAuth from "../RequireAuth";
 
 // Mock supabase client (used inside VerifyEmailGate)
@@ -18,30 +19,34 @@ vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-const renderAt = (path = "/protected") =>
-  render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/auth" element={<div>AUTH PAGE</div>} />
-        <Route
-          path="/protected"
-          element={
-            <RequireAuth>
-              <div>SECRET CONTENT</div>
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/lenient"
-          element={
-            <RequireAuth allowUnverified>
-              <div>LENIENT CONTENT</div>
-            </RequireAuth>
-          }
-        />
-      </Routes>
-    </MemoryRouter>,
+const renderAt = (path = "/protected") => {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/auth" element={<div>AUTH PAGE</div>} />
+          <Route
+            path="/protected"
+            element={
+              <RequireAuth>
+                <div>SECRET CONTENT</div>
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/lenient"
+            element={
+              <RequireAuth allowUnverified>
+                <div>LENIENT CONTENT</div>
+              </RequireAuth>
+            }
+          />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
+};
 
 describe("RequireAuth", () => {
   beforeEach(() => mockUseAuth.mockReset());
@@ -59,14 +64,35 @@ describe("RequireAuth", () => {
     expect(screen.getByText("AUTH PAGE")).toBeInTheDocument();
   });
 
-  it("blocks unverified users with verify-email gate", () => {
+  it("blocks unverified email/password users with verify-email gate", () => {
     mockUseAuth.mockReturnValue({
-      user: { id: "u1", email: "a@b.co", email_confirmed_at: null },
+      user: {
+        id: "u1",
+        email: "a@b.co",
+        email_confirmed_at: null,
+        identities: [{ provider: "email" }],
+        app_metadata: { providers: ["email"] },
+      },
       loading: false,
     });
     renderAt();
     expect(screen.getByText(/ยืนยันอีเมล/)).toBeInTheDocument();
     expect(screen.queryByText("SECRET CONTENT")).not.toBeInTheDocument();
+  });
+
+  it("lets Google/OAuth users through without email_confirmed_at", () => {
+    mockUseAuth.mockReturnValue({
+      user: {
+        id: "u1",
+        email: "a@b.co",
+        email_confirmed_at: null,
+        identities: [{ provider: "google" }],
+        app_metadata: { providers: ["google"] },
+      },
+      loading: false,
+    });
+    renderAt();
+    expect(screen.getByText("SECRET CONTENT")).toBeInTheDocument();
   });
 
   it("renders children for verified users", () => {

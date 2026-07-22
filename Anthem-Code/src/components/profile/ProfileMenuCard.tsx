@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Layers3,
   Library,
@@ -15,11 +16,11 @@ import {
   Sparkles,
 } from "lucide-react";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
-import { supabase } from "@/integrations/supabase/client";
 import { useMyStudios, useSetActiveStudio } from "@/hooks/useStudios";
 import ReferralShareSheet from "@/components/referral/ReferralShareSheet";
 import OpportunityStatusDialog from "@/components/opportunity/OpportunityStatusDialog";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
+import { signOutApp } from "@/lib/signOutApp";
 
 type ProfileMenuCardProps = {
   opportunityOpen?: boolean;
@@ -28,6 +29,7 @@ type ProfileMenuCardProps = {
 
 const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMenuCardProps = {}) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const launchMinimal = isAplus1LaunchMinimal();
   const [referralOpen, setReferralOpen] = useState(false);
   const [opportunityOpenLocal, setOpportunityOpenLocal] = useState(false);
@@ -119,7 +121,7 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
         </button>
         <button
           onClick={async () => {
-            await supabase.auth.signOut();
+            await signOutApp(queryClient);
             navigate("/");
           }}
           className={`${item} text-destructive hover:text-destructive`}

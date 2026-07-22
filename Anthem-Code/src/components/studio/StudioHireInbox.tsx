@@ -3,6 +3,7 @@ import { Check, MessageCircle, X } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CHAT_CARD_DECLINE_LABEL } from "@/components/chat/ChatCardShell";
 import { useStudioHiringRequests, type HiringRow } from "@/hooks/useHiringRequests";
 import { useAcceptStudioHireRequest, useRejectRequest } from "@/hooks/useChat";
 import { timeAgoTH } from "@/lib/format";
@@ -99,7 +100,7 @@ export function StudioHireInbox({ studioId }: Props) {
                   onClick={() => void handleReject(req.id)}
                 >
                   <X className="w-3.5 h-3.5 mr-1" />
-                  ปฏิเสธ
+                  {CHAT_CARD_DECLINE_LABEL}
                 </Button>
               </div>
             ) : (

@@ -4,7 +4,7 @@ import { ReceiptText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Semantic tone for hire/collab chat cards. */
-export type ChatCardTone = "hire" | "success" | "danger" | "neutral";
+export type ChatCardTone = "hire" | "collab" | "success" | "danger" | "neutral";
 
 type ToneStyle = {
   header: string;
@@ -17,6 +17,11 @@ const TONE: Record<ChatCardTone, ToneStyle> = {
     header: "bg-[hsl(var(--chat-hire-soft))] text-[hsl(var(--chat-hire))]",
     border: "border-[hsl(var(--chat-hire)/0.35)]",
     accentText: "text-[hsl(var(--chat-hire))]",
+  },
+  collab: {
+    header: "bg-[hsl(var(--chat-collab-soft))] text-[hsl(var(--chat-collab))]",
+    border: "border-[hsl(var(--chat-collab)/0.35)]",
+    accentText: "text-[hsl(var(--chat-collab))]",
   },
   success: {
     header: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
@@ -133,5 +138,8 @@ export const CHAT_CARD_PRIMARY_BTN =
 /** Destructive/decline outline button classes. */
 export const CHAT_CARD_DECLINE_BTN =
   "flex-1 rounded-full border-destructive/40 text-destructive hover:bg-destructive/10";
+
+/** ปุ่มปฏิเสธคำขอจ้าง/คอลแลป — ใช้คำว่า「ไม่สนใจ」แทน「ปฏิเสธ」 */
+export const CHAT_CARD_DECLINE_LABEL = "ไม่สนใจ";
 
 export default ChatCardShell;

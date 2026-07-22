@@ -26,6 +26,7 @@ import { LEGAL_DPO_EMAIL } from "@/lib/legalConfig";
 import { LEGAL_SOLO_URL } from "@/lib/legalConfig";
 import { SoloExternalLink } from "@/components/ecosystem/SoloExternalLink";
 import { isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
+import { OWN_PROFILE_SELECT } from "@/lib/dbSelects";
 import { useEnsureSensitiveAction } from "@/components/legal/SensitiveActionReauthProvider";
 import { useMyPrivacyRequests, useSubmitPrivacyRequest } from "@/hooks/useLegalCompliance";
 
@@ -56,7 +57,7 @@ export function AccountPrivacySection({ embedded = false }: { embedded?: boolean
     setExporting(true);
     try {
       const [profile, kyc, payout] = await Promise.all([
-        supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase.from("profiles").select(OWN_PROFILE_SELECT).eq("user_id", user.id).maybeSingle(),
         supabase.from("kyc_requests").select("*").eq("user_id", user.id),
         supabase.from("payout_profiles").select("*").eq("user_id", user.id).maybeSingle(),
       ]);

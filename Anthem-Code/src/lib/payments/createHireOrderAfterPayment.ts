@@ -24,6 +24,7 @@ import {
   snapshotFees,
   thbToSatang,
 } from "@/lib/payments/fees";
+import { canClientConfirmHireCharge } from "@/lib/payments/chargeIds";
 import type { PaymentMethod } from "@/lib/payments/types";
 
 export type CreateHireOrderAfterPaymentInput = {
@@ -218,7 +219,8 @@ export async function createHireOrderAfterPayment(
     });
 
     const isDeposit = depositPct < 100;
-    const status = isDeposit ? "deposit_paid" : "paid_pending";
+    // Client may only create awaiting/draft — paid status is webhook/RPC only.
+    const status = "awaiting_payment";
     const now = new Date().toISOString();
 
     const orderPayload = {
@@ -238,12 +240,12 @@ export async function createHireOrderAfterPayment(
       display_currency: input.offer.displayCurrency ?? "THB",
       currency: "THB",
       quote_id: quoteId,
-      amount_paid_satang: input.paidAmountSatang,
+      amount_paid_satang: 0,
       balance_due_satang: isDeposit ? installment.balanceSatang : 0,
       wht_satang: whtSatang,
       deposit_percent: depositPct,
       wht_status: whtSatang > 0 ? "none" : "none",
-      paid_at: now,
+      paid_at: null as string | null,
       metadata: {
         charge_id: input.chargeId ?? null,
         offer_title: input.offer.title,
@@ -275,6 +277,22 @@ export async function createHireOrderAfterPayment(
     }
 
     const orderId = (orderRow as { id: string }).id;
+
+    const chargeId = String(input.chargeId ?? "");
+    if (canClientConfirmHireCharge(chargeId)) {
+      const paidStatus = isDeposit ? "deposit_paid" : "paid_pending";
+      const { error: confirmErr } = await sharedDb.rpc(
+        "confirm_hire_order_payment" as never,
+        {
+          _order_id: orderId,
+          _charge_id: chargeId,
+          _paid_status: paidStatus,
+        } as never,
+      );
+      if (confirmErr) {
+        console.warn("[createHireOrderAfterPayment] confirm failed", confirmErr);
+      }
+    }
 
     if (quoteId) {
       try {

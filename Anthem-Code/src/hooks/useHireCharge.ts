@@ -1,6 +1,18 @@
 import { useState } from "react";
-import { DEFAULT_PAYMENT_FEATURE_FLAGS } from "@/lib/payments/flags";
+import { supabase } from "@/integrations/supabase/client";
+import { makeHireReference } from "@/lib/payments/chargeIds";
+import { canChargeOmiseClient, DEFAULT_PAYMENT_FEATURE_FLAGS } from "@/lib/payments/flags";
 import type { PaymentMethod } from "@/lib/payments/types";
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("auth_required");
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+}
 
 export type HireChargeInput = {
   amountSatang: number;
@@ -9,6 +21,7 @@ export type HireChargeInput = {
   quoteId?: string | null;
   hiringRequestId?: string | null;
   conversationId: string;
+  cardToken?: string | null;
 };
 
 export type HireChargeResult = {
@@ -25,19 +38,15 @@ export type HireChargeResult = {
   expiresAt: string;
   /** true = real Omise charge, false = local mock for demo/preview. */
   live: boolean;
+  paid?: boolean;
 };
 
 const MOCK_TTL_MS = 15 * 60 * 1000;
 
-function makeReference(): string {
-  const rand = Math.random().toString(36).toUpperCase().replace(/[^A-Z0-9]/g, "");
-  return `AP${rand.slice(0, 14).padEnd(14, "0")}`;
-}
-
 function mockCharge(input: HireChargeInput): HireChargeResult {
   return {
     chargeId: `mock_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    reference: makeReference(),
+    reference: makeHireReference(),
     qrCodeUri: null,
     authorizeUri: null,
     amountSatang: input.amountSatang,
@@ -47,19 +56,9 @@ function mockCharge(input: HireChargeInput): HireChargeResult {
   };
 }
 
-/** Whether a live Omise charge can be attempted for this method (else mock). */
-function liveChargeEnabled(method: PaymentMethod): boolean {
-  const f = DEFAULT_PAYMENT_FEATURE_FLAGS;
-  if (!f.omisePaymentsEnabled || !f.liveMarketplacePaymentsEnabled) return false;
-  if (method === "promptpay") return f.omisePromptPayEnabled;
-  if (method === "card") return f.omiseCardEnabled;
-  return f.bankTransferEnabled;
-}
-
 /**
- * Create a hire charge. UI-first: when live Omise is not enabled, returns a local
- * mock so the whole checkout → QR → success flow is demoable. When enabled, calls
- * the server route which creates the Omise charge and returns QR/reference.
+ * Create a hire charge. When Omise test/live charges are enabled, calls /api/hire-charge.
+ * Otherwise returns a local mock so checkout UX stays demoable.
  */
 export function useHireCharge() {
   const [pending, setPending] = useState(false);
@@ -67,15 +66,14 @@ export function useHireCharge() {
   async function createCharge(input: HireChargeInput): Promise<HireChargeResult> {
     setPending(true);
     try {
-      if (!liveChargeEnabled(input.method)) {
-        // Small delay so the UI transition feels intentional.
+      if (!canChargeOmiseClient(DEFAULT_PAYMENT_FEATURE_FLAGS, input.method)) {
         await new Promise((r) => setTimeout(r, 400));
         return mockCharge(input);
       }
 
       const res = await fetch("/api/hire-charge", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await authHeaders(),
         body: JSON.stringify({
           amountSatang: input.amountSatang,
           method: input.method,
@@ -83,12 +81,15 @@ export function useHireCharge() {
           hiringRequestId: input.hiringRequestId ?? null,
           conversationId: input.conversationId,
           title: input.title,
+          cardToken: input.cardToken ?? null,
         }),
       });
+      const data = (await res.json().catch(() => ({}))) as Partial<HireChargeResult> & {
+        error?: string;
+      };
       if (!res.ok) {
-        throw new Error(`charge_failed_${res.status}`);
+        throw new Error(data.error || `charge_failed_${res.status}`);
       }
-      const data = (await res.json()) as Partial<HireChargeResult>;
       return {
         chargeId: data.chargeId ?? `srv_${Date.now()}`,
         reference: data.reference ?? makeReference(),
@@ -98,11 +99,24 @@ export function useHireCharge() {
         method: input.method,
         expiresAt: data.expiresAt ?? new Date(Date.now() + MOCK_TTL_MS).toISOString(),
         live: true,
+        paid: data.paid === true,
       };
     } finally {
       setPending(false);
     }
   }
 
-  return { createCharge, pending };
+  /** Test-mode only: mark PromptPay charge paid via Omise (triggers webhook). */
+  async function markTestPaid(chargeId: string): Promise<boolean> {
+    const res = await fetch("/api/hire-charge", {
+      method: "POST",
+      headers: await authHeaders(),
+      body: JSON.stringify({ action: "mark_paid", chargeId }),
+    });
+    if (!res.ok) return false;
+    const data = (await res.json()) as { paid?: boolean };
+    return data.paid === true;
+  }
+
+  return { createCharge, markTestPaid, pending };
 }

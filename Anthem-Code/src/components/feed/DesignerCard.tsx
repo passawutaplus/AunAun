@@ -62,7 +62,9 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
           <UserAvatar
             src={profile.avatar_url}
             name={name}
+            username={profile.username}
             className="w-11 h-11"
+            fallbackClassName="text-sm"
           />
         </button>
         <div className="flex-1 min-w-0">

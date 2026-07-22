@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Building2,
+  Ban,
   FileText,
   Handshake,
   Info,
@@ -24,6 +25,7 @@ import { StudioQuoteUpsellDialog } from "@/components/studio/StudioQuoteUpsellDi
 import { ChatOfferDialog } from "@/components/chat/ChatOfferDialog";
 import HireForwardInChatDialog from "@/components/chat/HireForwardInChatDialog";
 import CreateGroupDialog from "@/components/chat/CreateGroupDialog";
+import CreateCollabGroupDialog from "@/components/chat/CreateCollabGroupDialog";
 import GroupSettingsDialog from "@/components/chat/GroupSettingsDialog";
 import { groupTagLabel, normalizeGroupTag } from "@/lib/groupChatTag";
 import { supabase } from "@/integrations/supabase/client";
@@ -72,9 +74,39 @@ import {
   isCollabDeclinedStatus,
   labelCollabStatus,
 } from "@/lib/collabInbox";
-import { collabRejectReasonLabel } from "@/lib/collabBrief";
+import { collabRejectReasonLabel, buildCollabDeclineChatMessage } from "@/lib/collabBrief";
+import {
+  buildCollabPlanDocumentMessage,
+  emptyCollabPlanState,
+  emptyPlanPayload,
+} from "@/lib/collabToolkit";
+import { useCollabPlanUi } from "@/stores/collabPlanUiStore";
+import { useCollabPlan } from "@/hooks/useCollabPlan";
+import { sharedDb } from "@/integrations/supabase/client";
 import { requestCancelReasonLabel } from "@/lib/requestOutcome";
+import {
+  useActiveCollabEndRequest,
+  useEditCollabEndRequest,
+  useSubmitCollabEndRequest,
+  useWithdrawCollabEndRequest,
+} from "@/hooks/useCollabEndRequest";
+import {
+  encodeCollabEndCardMessage,
+  detectCollabEndTier,
+  buildCollabEndCreditFields,
+  isCollabEndOpenStatus,
+  type CollabEndRequestRow,
+} from "@/lib/collabEndRequest";
+import {
+  encodeCollabGroupExpandCardMessage,
+  isCollabGroupExpandOpenStatus,
+} from "@/lib/collabGroupExpand";
+import {
+  useActiveCollabGroupExpandRequest,
+  useWithdrawCollabGroupExpandRequest,
+} from "@/hooks/useCollabGroupExpand";
 import RequestCancelDialog from "@/components/requests/RequestCancelDialog";
+import CollabEndRequestDialog from "@/components/collab/CollabEndRequestDialog";
 import {
   useForwardHireRequest,
   type HiringRow,
@@ -92,6 +124,7 @@ import {
 } from "@/lib/hireRejectChat";
 import MessageBubble, { DateSeparator } from "@/components/chat/MessageBubble";
 import ChatComposer from "@/components/chat/ChatComposer";
+import { CollabPlanSheet } from "@/components/chat/CollabPlanSheet";
 import { parseChatOffer, type ChatOfferPayload, type OfferPartyInfo } from "@/lib/chatOffer";
 import { billingToParty, type BillingProfileFields } from "@/lib/billingProfile";
 import {
@@ -112,6 +145,7 @@ import type { PlanId } from "@/data/plans";
 import { isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import BriefcaseIcon from "../icons/BriefcaseIcon";
 import type { HireInviteActions } from "@/components/chat/HireInviteCard";
 import type { CollabInviteActions } from "@/components/chat/CollabInviteCard";
@@ -165,6 +199,10 @@ const ChatThreadView = ({
   const submitHireCancel = useSubmitHireCancelRequest();
   const editHireCancel = useEditHireCancelRequest();
   const withdrawHireCancel = useWithdrawHireCancelRequest();
+  const submitCollabEnd = useSubmitCollabEndRequest();
+  const editCollabEnd = useEditCollabEndRequest();
+  const withdrawCollabEnd = useWithdrawCollabEndRequest();
+  const withdrawCollabGroupExpand = useWithdrawCollabGroupExpandRequest();
   const { tier } = useSubscription();
 
   const isGroup = isGroupConversation(conv);
@@ -183,7 +221,22 @@ const ChatThreadView = ({
   const [cancelOpen, setCancelOpen] = useState(false);
   const [hireCancelDialogOpen, setHireCancelDialogOpen] = useState(false);
   const [hireCancelEditRow, setHireCancelEditRow] = useState<HireCancelRequestRow | null>(null);
+  const [collabEndDialogOpen, setCollabEndDialogOpen] = useState(false);
+  const [collabEndEditRow, setCollabEndEditRow] = useState<CollabEndRequestRow | null>(null);
   const [collabRejectOpen, setCollabRejectOpen] = useState(false);
+  const collabPlanUi = useCollabPlanUi();
+  const collabPlanOpen =
+    collabPlanUi.open && collabPlanUi.conversationId === conv.id;
+  const showCollabPlanUi = isCollab || (!!isGroup && !isStudio && groupTag === "collab");
+  const {
+    approveChange: approveCollabChange,
+    myChangeApproved: collabChangeAlreadyApproved,
+    doc: collabPlanDoc,
+    planPersisted: collabPlanPersisted,
+    memberIds: collabMemberIds,
+    pendingChange: collabPendingChange,
+  } = useCollabPlan(conv, showCollabPlanUi);
+  const [collabChangeApproveBusy, setCollabChangeApproveBusy] = useState(false);
   const [announced, setAnnounced] = useState<{
     messageId: string | null;
     text: string | null;
@@ -369,12 +422,28 @@ const ChatThreadView = ({
   const { data: activeHireCancel = null } = useActiveHireCancelRequest(
     isHire ? conv.request_id ?? undefined : undefined,
   );
+  const { data: activeCollabEnd = null } = useActiveCollabEndRequest(
+    isCollab ? conv.request_id ?? undefined : undefined,
+  );
+  const { data: activeCollabGroupExpand = null } = useActiveCollabGroupExpandRequest(
+    isCollab ? conv.id : undefined,
+  );
+
+  const collabEndTier = useMemo(
+    () => detectCollabEndTier(collabPlanDoc, collabPlanPersisted),
+    [collabPlanDoc, collabPlanPersisted],
+  );
+  const collabEnded = isCollabCancelledStatus(collabStatus);
 
   const outcomeBusy =
     cancelCollab.isPending ||
     submitHireCancel.isPending ||
     editHireCancel.isPending ||
     withdrawHireCancel.isPending ||
+    submitCollabEnd.isPending ||
+    editCollabEnd.isPending ||
+    withdrawCollabEnd.isPending ||
+    withdrawCollabGroupExpand.isPending ||
     sendMessage.isPending;
   const hireRespondBusy =
     acceptHire.isPending || rejectHire.isPending || forwardHire.isPending || outcomeBusy;
@@ -447,14 +516,50 @@ const ChatThreadView = ({
     !isHireCancelledStatus(hireStatus) &&
     !isHireCompletedStatus(hireStatus);
 
-  const canCancelCollabRequest =
+  const canWithdrawCollabRequest =
     isCollab &&
     isClient &&
     !!conv.request_id &&
     !!collabRequestRow &&
-    (collabStatus === "pending" || collabStatus === "accepted");
+    isCollabContactedNewStatus(collabStatus);
 
-  const canCancelRequest = canRequestHireCancel || canCancelCollabRequest;
+  const canRequestCollabEnd =
+    isCollab &&
+    !!conv.request_id &&
+    !!collabRequestRow &&
+    !!user?.id &&
+    isCollabAcceptedStatus(collabStatus) &&
+    !isCollabCancelledStatus(collabStatus) &&
+    !isCollabCompletedStatus(collabStatus) &&
+    !isCollabEndOpenStatus(activeCollabEnd?.status);
+
+  const canCancelRequest = canRequestHireCancel || canWithdrawCollabRequest || canRequestCollabEnd;
+
+  const useCollabGroupExpandFlow =
+    isCollab &&
+    collabPlanPersisted &&
+    isCollabAcceptedStatus(collabStatus) &&
+    !collabEnded;
+
+  const groupExpandBlocked =
+    isCollabEndOpenStatus(activeCollabEnd?.status) ||
+    isCollabGroupExpandOpenStatus(activeCollabGroupExpand?.status) ||
+    !!collabPendingChange ||
+    collabPlanDoc.status === "change_pending";
+
+  const openCreateGroupDialog = () => {
+    if (useCollabGroupExpandFlow && groupExpandBlocked) {
+      if (isCollabEndOpenStatus(activeCollabEnd?.status)) {
+        toast.error("มีคำขอยุติคอลแลปค้าง — จัดการก่อนสร้างกลุ่ม");
+      } else if (isCollabGroupExpandOpenStatus(activeCollabGroupExpand?.status)) {
+        toast.error("มีคำขอสร้างกลุ่มค้างอยู่แล้ว");
+      } else {
+        toast.error("มีการขอแก้แผนค้าง — จัดการแผนก่อนสร้างกลุ่ม");
+      }
+      return;
+    }
+    setInviteGroupOpen(true);
+  };
 
   const canCreateCollabProject =
     !!conv.request_id &&
@@ -578,16 +683,36 @@ const ChatThreadView = ({
                 projectTitle: conv.project_title ?? "คอลแลปไอเดียใหม่",
               });
               try {
+                await sharedDb.from("collab_plans" as never).upsert(
+                  {
+                    conversation_id: conv.id,
+                    status: "draft",
+                    current_step: "align",
+                    payload: emptyPlanPayload(),
+                    acks: {},
+                    version: 1,
+                    stages: emptyCollabPlanState().stages,
+                    updated_at: new Date().toISOString(),
+                  } as never,
+                  { onConflict: "conversation_id", ignoreDuplicates: true },
+                );
+              } catch {
+                /* plan row optional — sheet can create on first edit */
+              }
+              try {
                 await sendMessage.mutateAsync({
                   conversationId: conv.id,
-                  content:
-                    "ตอบรับร่วมงานแล้ว — คุยไอเดียต่อได้เลย เมื่อพร้อมกดสร้างผลงานร่วมได้",
+                  content: buildCollabPlanDocumentMessage({
+                    projectTitle: conv.project_title,
+                  }),
                 });
               } catch {
                 /* accept already succeeded */
               }
               void qc.invalidateQueries({ queryKey: ["chat-collab-meta", conv.request_id] });
-              toast.success("ตอบรับร่วมงานแล้ว");
+              void qc.invalidateQueries({ queryKey: ["collab-plan", conv.id] });
+              collabPlanUi.openFor(conv.id);
+              toast.success("ตอบรับแล้ว — เปิดเอกสารแผนคอลแลปให้แล้ว");
             } catch (e: unknown) {
               toast.error(e instanceof Error ? e.message : "ตอบรับไม่สำเร็จ");
             }
@@ -598,7 +723,7 @@ const ChatThreadView = ({
     }
     if (collabPendingForClient) {
       const waitingName =
-        other?.username?.trim() || other?.display_name?.trim() || "เพื่อน";
+        other?.username?.trim() || other?.display_name?.trim() || "ครีเอเตอร์";
       return {
         canRespond: false,
         statusHint: `รอ ${waitingName} ตอบกลับ / สามารถแชทพูดคุยต่อได้`,
@@ -610,7 +735,7 @@ const ChatThreadView = ({
     if (isCollabAcceptedStatus(collabStatus)) {
       return {
         canRespond: false,
-        statusHint: "ตอบรับร่วมงานแล้ว — เมื่อพร้อมกดสร้างผลงานร่วมได้",
+        statusHint: "ตอบรับแล้ว — เปิดเอกสารแผนคอลแลปเพื่อเริ่มวางแผนร่วมกัน",
         onAccept: () => {},
         onDecline: () => {},
       };
@@ -621,7 +746,7 @@ const ChatThreadView = ({
     ) {
       return {
         canRespond: false,
-        statusHint: "ยังไม่พร้อมร่วมงานตอนนี้ — คุยไอเดียต่อได้",
+        statusHint: "ขอบคุณสำหรับคำชวน — คุยไอเดียต่อได้ตามสบาย",
         onAccept: () => {},
         onDecline: () => {},
       };
@@ -1222,10 +1347,10 @@ const ChatThreadView = ({
                 )
               }
               className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full text-[hsl(var(--chat-collab))]"
-              aria-label="สร้างผลงานร่วม"
+              aria-label="ลงผลงานร่วมกัน"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">สร้างผลงานร่วม</span>
+              <span className="hidden sm:inline">ลงผลงานร่วมกัน</span>
             </Button>
           )}
           {canCancelRequest && (
@@ -1237,21 +1362,36 @@ const ChatThreadView = ({
                 if (isHire) {
                   setHireCancelEditRow(null);
                   setHireCancelDialogOpen(true);
+                } else if (canRequestCollabEnd) {
+                  setCollabEndEditRow(null);
+                  setCollabEndDialogOpen(true);
                 } else {
                   setCancelOpen(true);
                 }
               }}
               disabled={outcomeBusy}
               className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full text-muted-foreground hover:text-destructive"
-              aria-label="ขอยกเลิกงาน"
+              aria-label={isHire ? "ขอยกเลิกงาน" : canRequestCollabEnd ? "ถอนตัวจากคอลแลป" : "ยกเลิกคำขอ"}
             >
-              <X className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">ขอยกเลิกงาน</span>
+              <Ban className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden sm:inline">
+                {isHire ? "ขอยกเลิกงาน" : canRequestCollabEnd ? "ถอนตัว" : "ยกเลิกคำขอ"}
+              </span>
             </Button>
           )}
           {isHire && isHireCancelOpenStatus(activeHireCancel?.status) && (
             <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5 shrink-0">
               รอพิจารณายกเลิก
+            </Badge>
+          )}
+          {isCollab && isCollabEndOpenStatus(activeCollabEnd?.status) && (
+            <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5 shrink-0">
+              รอตอบคำขอเก่า
+            </Badge>
+          )}
+          {isCollab && isCollabGroupExpandOpenStatus(activeCollabGroupExpand?.status) && (
+            <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5 shrink-0">
+              รออนุมัติสร้างกลุ่ม
             </Badge>
           )}
           {canForwardHire && (
@@ -1272,7 +1412,7 @@ const ChatThreadView = ({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => setInviteGroupOpen(true)}
+              onClick={openCreateGroupDialog}
               className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full"
               aria-label="สร้างกลุ่ม"
             >
@@ -1356,6 +1496,24 @@ const ChatThreadView = ({
               onClick={() => navigate(`/studio/new?invite=${otherId}`)}
             >
               <Building2 className="w-4 h-4" />
+            </Button>
+          )}
+          {(isCollab || (!!isGroup && !isStudio && groupTag === "collab")) && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => collabPlanUi.openFor(conv.id)}
+              className={cn(
+                "collab-plan-btn inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full",
+                "border-[hsl(var(--chat-collab)/0.7)] bg-transparent text-[hsl(var(--chat-collab))]",
+                "hover:bg-[hsl(var(--chat-collab))] hover:text-white hover:border-[hsl(var(--chat-collab))]",
+                "transition-colors duration-200",
+              )}
+              aria-label="วางแผนงาน"
+            >
+              <Handshake className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">วางแผนงาน</span>
             </Button>
           )}
           {showPartnerToggle && (
@@ -1505,6 +1663,74 @@ const ChatThreadView = ({
                   })();
                 }}
                 hireCancelWithdrawBusy={withdrawHireCancel.isPending}
+                onCollabEndEdit={(row) => {
+                  setCollabEndEditRow(row);
+                  setCollabEndDialogOpen(true);
+                }}
+                onCollabEndWithdraw={(row) => {
+                  if (!user?.id) return;
+                  const otherUserId =
+                    row.initiator_id === conv.client_id ? conv.freelancer_id : conv.client_id;
+                  void (async () => {
+                    try {
+                      await withdrawCollabEnd.mutateAsync({
+                        row,
+                        userId: user.id,
+                        otherUserId: otherUserId || "",
+                      });
+                      await sendMessage.mutateAsync({
+                        conversationId: conv.id,
+                        content: "ถอนคำขอยุติคอลแลปแล้ว — ทำต่อได้ตามเดิม",
+                        messageType: "system",
+                      });
+                      toast.success("ถอนคำขอยุติแล้ว");
+                    } catch (e: unknown) {
+                      toast.error(e instanceof Error ? e.message : "ถอนไม่สำเร็จ");
+                    }
+                  })();
+                }}
+                collabEndWithdrawBusy={withdrawCollabEnd.isPending}
+                collabGroupExpandSourceMemberIds={collabMemberIds}
+                collabGroupExpandPartnerUserId={otherId}
+                onCollabGroupExpandWithdraw={(row) => {
+                  if (!user?.id || !otherId) return;
+                  void (async () => {
+                    try {
+                      await withdrawCollabGroupExpand.mutateAsync({
+                        row,
+                        userId: user.id,
+                        partnerUserId: otherId,
+                      });
+                      await sendMessage.mutateAsync({
+                        conversationId: conv.id,
+                        content: "ถอนคำขอสร้างกลุ่มแล้ว",
+                        messageType: "system",
+                      });
+                      toast.success("ถอนคำขอสร้างกลุ่มแล้ว");
+                    } catch (e: unknown) {
+                      toast.error(e instanceof Error ? e.message : "ถอนไม่สำเร็จ");
+                    }
+                  })();
+                }}
+                collabGroupExpandWithdrawBusy={withdrawCollabGroupExpand.isPending}
+                onOpenCollabPlan={() => collabPlanUi.openFor(conv.id)}
+                onApproveCollabChange={(requestId) => {
+                  void (async () => {
+                    setCollabChangeApproveBusy(true);
+                    try {
+                      const { approved } = await approveCollabChange(requestId);
+                      toast.success(
+                        approved ? "อนุมัติครบ — แก้ไขแผนได้แล้ว" : "อนุมัติแล้ว รอคนอื่น",
+                      );
+                    } catch (e: unknown) {
+                      toast.error(e instanceof Error ? e.message : "อนุมัติไม่สำเร็จ");
+                    } finally {
+                      setCollabChangeApproveBusy(false);
+                    }
+                  })();
+                }}
+                collabChangeAlreadyApproved={collabChangeAlreadyApproved}
+                collabChangeApproveBusy={collabChangeApproveBusy}
                 onReply={composerLockedHint ? undefined : setReplyTo}
                 onUnsend={handleUnsend}
                 onAnnounce={announceMessage}
@@ -1527,6 +1753,25 @@ const ChatThreadView = ({
         onClearReply={() => setReplyTo(null)}
         lockedHint={composerLockedHint}
       />
+
+      {(isCollab || (!!isGroup && !isStudio && groupTag === "collab")) && (
+        <CollabPlanSheet
+          open={collabPlanOpen}
+          onOpenChange={(open) => {
+            if (open) collabPlanUi.openFor(conv.id);
+            else collabPlanUi.close();
+          }}
+          conversationId={conv.id}
+          collabEnded={collabEnded}
+          publishPath={
+            canCreateGroupCollabProject
+              ? `/portfolio/new?collab_conversation_id=${encodeURIComponent(conv.id)}`
+              : canCreateCollabProject && conv.request_id
+                ? `/portfolio/new?collab_request_id=${encodeURIComponent(conv.request_id)}`
+                : null
+          }
+        />
+      )}
 
       <StudioQuoteUpsellDialog
         open={upsellOpen}
@@ -1615,18 +1860,47 @@ const ChatThreadView = ({
           }
         }}
       />
-      <CreateGroupDialog
-        open={inviteGroupOpen}
-        onOpenChange={setInviteGroupOpen}
-        lockedMembers={inviteLockedMembers}
-        followingOnly
-        minTotalMembers={3}
-        defaultGroupTag={isHire ? "hire" : conv.kind === "collab" ? "collab" : null}
-        onCreated={(convId) => {
-          setInviteGroupOpen(false);
-          navigate(`/chat/${convId}`);
-        }}
-      />
+      {useCollabGroupExpandFlow ? (
+        <CreateCollabGroupDialog
+          open={inviteGroupOpen}
+          onOpenChange={setInviteGroupOpen}
+          lockedMembers={inviteLockedMembers}
+          sourceConversationId={conv.id}
+          collabRequestId={conv.request_id}
+          partnerUserId={otherId || ""}
+          planDoc={collabPlanDoc}
+          sourceMemberIds={collabMemberIds}
+          onSubmitted={async (expandRequestId) => {
+            setInviteGroupOpen(false);
+            try {
+              await sendMessage.mutateAsync({
+                conversationId: conv.id,
+                content: encodeCollabGroupExpandCardMessage({
+                  v: 1,
+                  kind: "collab_group_expand",
+                  expandRequestId,
+                  sourceConversationId: conv.id,
+                }),
+              });
+            } catch {
+              /* card optional */
+            }
+          }}
+        />
+      ) : (
+        <CreateGroupDialog
+          open={inviteGroupOpen}
+          onOpenChange={setInviteGroupOpen}
+          lockedMembers={inviteLockedMembers}
+          followingOnly
+          minTotalMembers={3}
+          defaultGroupTag={isHire ? "hire" : conv.kind === "collab" ? "collab" : null}
+          onCreated={(convId) => {
+            setInviteGroupOpen(false);
+            navigate(`/chat/${convId}`);
+          }}
+        />
+      )}
       {isGroup && !isStudio && (
         <GroupSettingsDialog
           open={groupSettingsOpen}
@@ -1663,10 +1937,10 @@ const ChatThreadView = ({
             try {
               await sendMessage.mutateAsync({
                 conversationId: conv.id,
-                content:
-                  action === "busy_chat"
-                    ? `ยังไม่พร้อมร่วมงานตอนนี้ แต่คุยไอเดียได้ — ${note || collabRejectReasonLabel(reason)}`
-                    : `ยังไม่พร้อมร่วมงาน — ${note || collabRejectReasonLabel(reason)}`,
+                content: buildCollabDeclineChatMessage({
+                  reasonLabel: note || collabRejectReasonLabel(reason),
+                  keepChat: action === "busy_chat",
+                }),
               });
             } catch {
               /* status already saved */
@@ -1679,7 +1953,7 @@ const ChatThreadView = ({
                 : "แจ้งแล้วว่ายังไม่พร้อมร่วมงาน",
             );
           } catch (e: unknown) {
-            toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
+            toast.error(mapWriteFlowError(e, "บันทึกไม่สำเร็จ"));
           }
         }}
       />
@@ -1842,7 +2116,7 @@ const ChatThreadView = ({
         open={cancelOpen}
         onOpenChange={setCancelOpen}
         title="ยกเลิกคำขอร่วมงาน?"
-        description="แจ้งเหตุผลให้อีกฝ่ายทราบ — สถานะจะเป็นยกเลิก"
+        description="แจ้งเหตุผลให้อีกฝ่ายทราบ — สถานะจะเป็นยกเลิก (ก่อนตอบรับ)"
         busy={outcomeBusy}
         onConfirm={async ({ reason, note }) => {
           if (!conv.request_id || !isCollab) return;
@@ -1865,6 +2139,84 @@ const ChatThreadView = ({
             setCancelOpen(false);
           } catch (e: unknown) {
             toast.error(e instanceof Error ? e.message : "ยกเลิกไม่สำเร็จ");
+          }
+        }}
+      />
+      <CollabEndRequestDialog
+        open={collabEndDialogOpen}
+        onOpenChange={(open) => {
+          setCollabEndDialogOpen(open);
+          if (!open) setCollabEndEditRow(null);
+        }}
+        mode={collabEndEditRow ? "edit" : "create"}
+        tier={collabEndEditRow?.tier ?? collabEndTier}
+        planStep={collabEndEditRow?.plan_step ?? collabPlanDoc.currentStep}
+        planRightsSnapshot={
+          collabEndEditRow?.plan_rights_snapshot ??
+          collabPlanDoc.payload?.align?.rights ??
+          null
+        }
+        progressCount={
+          collabEndEditRow?.progress_count_initiator ??
+          buildCollabEndCreditFields(collabPlanDoc, user?.id).progressCount
+        }
+        existing={collabEndEditRow}
+        busy={submitCollabEnd.isPending || editCollabEnd.isPending}
+        onSubmit={async ({ reasonId, reasonNote }) => {
+          if (!conv.request_id || !user?.id) return;
+          const otherUserId = user.id === conv.client_id ? conv.freelancer_id : conv.client_id;
+          const creditFields = buildCollabEndCreditFields(collabPlanDoc, user.id);
+          try {
+            if (collabEndEditRow) {
+              await editCollabEnd.mutateAsync({
+                row: collabEndEditRow,
+                userId: user.id,
+                reasonId,
+                reasonNote,
+                planRightsSnapshot: creditFields.planRightsSnapshot,
+                progressCountInitiator: creditFields.progressCount,
+                otherUserId: otherUserId || "",
+              });
+              await sendMessage.mutateAsync({
+                conversationId: conv.id,
+                content: "มีการแก้ไขเหตุผลถอนตัว",
+                messageType: "system",
+              });
+              toast.success("บันทึกการแก้ไขแล้ว");
+            } else {
+              const result = await submitCollabEnd.mutateAsync({
+                collabRequestId: conv.request_id,
+                conversationId: conv.id,
+                initiatorId: user.id,
+                otherUserId: otherUserId || "",
+                tier: collabEndTier,
+                reasonId,
+                reasonNote,
+                planStep: collabPlanDoc.currentStep,
+                planRightsSnapshot: creditFields.planRightsSnapshot,
+                progressCountInitiator: creditFields.progressCount,
+              });
+              await sendMessage.mutateAsync({
+                conversationId: conv.id,
+                content: encodeCollabEndCardMessage({
+                  v: 1,
+                  kind: "collab_end",
+                  endRequestId: result.row.id,
+                  collabRequestId: conv.request_id,
+                }),
+              });
+              await sendMessage.mutateAsync({
+                conversationId: conv.id,
+                content:
+                  "ถอนตัวแล้ว — สละสิทธิ์และเครดิตทั้งหมด อีกฝ่ายทำต่อได้ (ไม่นับเป็นจบงาน)",
+                messageType: "system",
+              });
+              toast.success("ถอนตัวแล้ว — อีกฝ่ายทำต่อได้");
+            }
+            setCollabEndDialogOpen(false);
+            setCollabEndEditRow(null);
+          } catch (e: unknown) {
+            toast.error(e instanceof Error ? e.message : "ถอนตัวไม่สำเร็จ");
           }
         }}
       />

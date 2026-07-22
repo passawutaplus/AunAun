@@ -523,7 +523,7 @@ const CollabRequestsSection = ({
                             disabled={busy}
                             className="rounded-full h-8 text-xs"
                           >
-                            <FileText className="w-3.5 h-3.5 mr-1" /> สร้างผลงานร่วม
+                            <FileText className="w-3.5 h-3.5 mr-1" /> ลงผลงานร่วมกัน
                           </Button>
                           <Button
                             size="sm"

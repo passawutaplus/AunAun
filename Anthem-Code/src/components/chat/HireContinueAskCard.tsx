@@ -4,6 +4,7 @@ import {
   ChatCardShell,
   ChatCardStatus,
   CHAT_CARD_DECLINE_BTN,
+  CHAT_CARD_DECLINE_LABEL,
   CHAT_CARD_PRIMARY_BTN,
 } from "@/components/chat/ChatCardShell";
 import type { HireContinueAskPayload } from "@/lib/hireRejectChat";
@@ -45,7 +46,7 @@ const HireContinueAskCard = ({ actions }: Props) => {
               ) : (
                 <X className="w-3.5 h-3.5 mr-1" />
               )}
-              ปฏิเสธ
+              {CHAT_CARD_DECLINE_LABEL}
             </Button>
             <Button
               type="button"

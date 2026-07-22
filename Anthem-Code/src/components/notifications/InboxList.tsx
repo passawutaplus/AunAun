@@ -7,6 +7,7 @@ import { InlineLoader } from "@/components/ui/BanterLoader";
 import UserAvatar from "@/components/UserAvatar";
 import FollowButton from "@/components/FollowButton";
 import { Button } from "@/components/ui/button";
+import { CHAT_CARD_DECLINE_LABEL } from "@/components/chat/ChatCardShell";
 import { useRespondProjectCollabInvite } from "@/hooks/useProjectCollabInvites";
 import { useProfilesByIds } from "@/core/profiles";
 import { useMemo } from "react";
@@ -196,7 +197,7 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
                     onDismiss(n.id);
                   }}
                 >
-                  ปฏิเสธ
+                  {CHAT_CARD_DECLINE_LABEL}
                 </Button>
               </div>
             )}

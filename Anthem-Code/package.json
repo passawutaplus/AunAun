@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
+    "dev:api": "node scripts/local-api.mjs",
     "prebuild": "node scripts/check-build-env.mjs && node scripts/vendor-ecosystem-shared.mjs",
     "build": "npm run prebuild && vite build",
     "build:dev": "vite build --mode development",

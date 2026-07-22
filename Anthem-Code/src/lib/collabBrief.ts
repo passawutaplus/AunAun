@@ -1,4 +1,5 @@
 import { DEFAULT_COLLAB_MESSAGE } from "@/lib/chatContext";
+import { formatHireDeadlineLabel } from "@/lib/hireBrief";
 
 const COLLAB_TYPE_LABELS: Record<string, string> = {
   chat: "พูดคุย",
@@ -35,8 +36,44 @@ export type CollabRejectReasonId = (typeof COLLAB_REJECT_REASONS)[number]["id"];
 
 export function collabRejectReasonLabel(id: string | null | undefined): string {
   if (!id) return "";
-  if (id === "busy_but_chat") return "ยังไม่พร้อมร่วมงานตอนนี้ แต่คุยไอเดียได้";
+  if (id === "busy_but_chat") return "ตอนนี้ยังไม่พร้อมร่วมงานจริงจัง แต่ยินดีคุยไอเดียต่อ";
   return COLLAB_REJECT_REASONS.find((r) => r.id === id)?.label ?? id;
+}
+
+/** Chat message prefix / tag for declined collab invites. */
+export const COLLAB_DECLINE_PREFIX = "🙏 ปฏิเสธคำชวนคอลแลป";
+
+export function isCollabDeclineChatMessage(content: string | null | undefined): boolean {
+  if (!content) return false;
+  const t = content.trim();
+  return (
+    t.startsWith(COLLAB_DECLINE_PREFIX) ||
+    t.startsWith("ปฏิเสธคำชวนคอลแลป") ||
+    t.startsWith("🙏 ปฏิเสธคำชวนคอลแลป") ||
+    // Legacy one-liner declines
+    t.startsWith("ยังไม่พร้อมร่วมงาน")
+  );
+}
+
+/** Soft, polite decline copy posted into chat after reject. */
+export function buildCollabDeclineChatMessage(opts: {
+  reasonLabel?: string | null;
+  /** Reserved — soft/hard decline share the same polite chat copy. */
+  keepChat?: boolean;
+}): string {
+  const reason = (opts.reasonLabel ?? "").trim() || "เหตุผลส่วนตัวในช่วงนี้";
+
+  return [
+    COLLAB_DECLINE_PREFIX,
+    "",
+    `เนื่องจาก: ${reason}`,
+    "",
+    "ขอบคุณที่สนใจผลงานและสนใจชวนคอลแลปนะ",
+    "",
+    `ต้องขอปฏิเสธเนื่องจาก ${reason}`,
+    "",
+    "จากนั้นถ้าอยากคุยเล่นหรือแลกไอเดียต่อ ก็คุยกันได้ตามสบายเลย",
+  ].join("\n");
 }
 
 export type CollabBriefSource = {
@@ -44,31 +81,60 @@ export type CollabBriefSource = {
   message?: string | null;
   timeline?: string | null;
   collab_types?: string[] | null;
+  sender_name?: string | null;
+  sender_username?: string | null;
+  sender_email?: string | null;
 };
 
+export function formatCollabTimelineLabel(timeline: string | null | undefined): string | null {
+  return formatHireDeadlineLabel(timeline);
+}
+
+function formatCollabContactLine(collab: CollabBriefSource): string | null {
+  const parts = [
+    collab.sender_username?.trim()
+      ? `@${collab.sender_username.trim()}`
+      : collab.sender_name?.trim() || null,
+    collab.sender_email?.trim() || null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : null;
+}
+
 export function formatCollabBriefChatText(collab: CollabBriefSource): string {
-  const body = collab.message?.trim();
-  const isDefault = !body || body === DEFAULT_COLLAB_MESSAGE;
+  const body = collab.message?.trim() || DEFAULT_COLLAB_MESSAGE;
   const types = (collab.collab_types ?? [])
     .map((t) => COLLAB_TYPE_LABELS[t] ?? t)
     .filter(Boolean);
+  const timeline = formatCollabTimelineLabel(collab.timeline);
+  const contact = formatCollabContactLine(collab);
 
   const lines = [
     "🤝 คำชวนคอลแลป",
     collab.project_title ? `อ้างอิง: ${collab.project_title}` : null,
+    timeline ? `ช่วงเวลา: ${timeline}` : null,
     types.length ? `ประเภท: ${types.join(" · ")}` : null,
-    collab.timeline ? `ช่วงเวลา: ${collab.timeline}` : null,
-    !isDefault && body ? `\n${body}` : null,
-  ].filter(Boolean);
+    body ? `\n${body}` : null,
+    contact ? `\nติดต่อ: ${contact}` : null,
+  ].filter((line) => line !== null && line !== "");
 
   return lines.join("\n");
 }
 
-/** Auto-seeded collab invitation bubble in chat. */
+/** Invite card seed text for opening a collab chat. */
+export function buildCollabInviteChatMessage(collab: CollabBriefSource): string {
+  return formatCollabBriefChatText(collab);
+}
+
+/** Auto-seeded collab invitation bubble in chat (card + accept/decline). */
 export function isCollabBriefChatMessage(content: string | null | undefined): boolean {
   if (!content) return false;
   const t = content.trim();
-  return t.startsWith("🤝 คำชวนคอลแลป") || t.startsWith("คำชวนคอลแลป");
+  if (t.startsWith("🤝 คำชวนคอลแลป") || t.startsWith("คำชวนคอลแลป")) return true;
+  // Legacy / context open-chat lines (before formal brief prefix)
+  if (t.startsWith("สนใจคอลแลป")) return true;
+  if (t.startsWith("สนใจร่วมงาน")) return true;
+  if (/^ดูโปรไฟล์ .+ แล้วสนใจร่วมงาน/.test(t)) return true;
+  return false;
 }
 
 /** Parse one-or-many reference links from a multi-line / comma-separated field. */

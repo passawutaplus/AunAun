@@ -131,7 +131,7 @@ const DesignerGrid = ({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-3 md:gap-x-4 gap-y-[22px] md:gap-y-[26px]">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="h-64 rounded-2xl glass-panel animate-pulse" />
         ))}
@@ -180,7 +180,7 @@ const DesignerGrid = ({
   }
 
   return (
-    <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+    <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 gap-x-3 md:gap-x-4 gap-y-[22px] md:gap-y-[26px]">
       {filtered.map((d) => (
         <DesignerCard
           key={designerUserId(d)}

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
-import { AlertTriangle, CheckCircle2, ExternalLink, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -24,6 +24,7 @@ import {
 } from "@/hooks/useHireOrderFlow";
 import type { HireDeliveryChatPayload } from "@/lib/hireDeliveryChat";
 import { ChatCardOrderMenu } from "@/components/chat/ChatCardShell";
+import { SafeHttpLinks } from "@/components/hire/SafeHttpLinks";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -133,21 +134,7 @@ export default function HireDeliveryCard({
         <div className="p-4 space-y-3">
           <div className="space-y-1.5">
             <p className="text-xs text-muted-foreground">ลิงก์ผลงาน</p>
-            <ul className="space-y-1">
-              {payload.links.map((link, i) => (
-                <li key={`${link}-${i}`}>
-                  <a
-                    href={link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline inline-flex items-center gap-1 break-all"
-                  >
-                    {link}
-                    <ExternalLink className="w-3 h-3 shrink-0" />
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <SafeHttpLinks links={payload.links} />
           </div>
 
           {payload.note?.trim() ? (

@@ -393,6 +393,55 @@
     }
   }
 
+  /* Collab plan CTA — orange border/text + orbiting aura (mirror quote-offer-btn) */
+  .collab-plan-btn {
+    position: relative;
+    isolation: isolate;
+  }
+  .collab-plan-btn::before {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.22s ease;
+    background: conic-gradient(
+      from var(--first-post-beam-angle, 0deg),
+      transparent 0deg,
+      transparent 200deg,
+      hsl(14 100% 55% / 0.15) 235deg,
+      hsl(14 100% 55% / 0.75) 280deg,
+      hsl(24 100% 62% / 0.5) 315deg,
+      transparent 345deg,
+      transparent 360deg
+    );
+    filter: blur(6px);
+  }
+  .collab-plan-btn:hover::before,
+  .collab-plan-btn:focus-visible::before {
+    opacity: 1;
+    animation: first-post-beam-rotate 1.6s linear infinite;
+  }
+  .collab-plan-btn:hover,
+  .collab-plan-btn:focus-visible {
+    box-shadow: 0 0 16px -2px hsl(14 100% 55% / 0.5);
+  }
+  @supports not (background: conic-gradient(from var(--first-post-beam-angle), red, red)) {
+    .collab-plan-btn:hover::before,
+    .collab-plan-btn:focus-visible::before {
+      animation: first-post-aura-spin 1.6s linear infinite;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .collab-plan-btn:hover::before,
+    .collab-plan-btn:focus-visible::before {
+      animation: none;
+      opacity: 0.55;
+    }
+  }
+
   .scrollbar-hide::-webkit-scrollbar,
   .scrollbar-none::-webkit-scrollbar,
   .no-scrollbar::-webkit-scrollbar {

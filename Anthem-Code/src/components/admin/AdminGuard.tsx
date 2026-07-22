@@ -2,6 +2,7 @@ import PageLoader from "@/components/ui/PageLoader";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { isEmailVerifiedForAccess } from "@/lib/authEmail";
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -11,7 +12,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
 
   if (loading) return checking;
   if (!user) return <Navigate to="/auth?redirect=/admin" replace />;
-  if (!user.email_confirmed_at) {
+  if (!isEmailVerifiedForAccess(user)) {
     return <Navigate to="/auth?redirect=/admin&verify=1" replace />;
   }
   // Wait until the admin role check has actually resolved (true/false) or errored.

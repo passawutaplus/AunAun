@@ -104,10 +104,11 @@ export default function HireCheckoutDialog({
   const qc = useQueryClient();
   const markOfferAccepted = useMarkHireOfferAccepted();
   const send = useSendMessage();
-  const { createCharge, pending } = useHireCharge();
+  const { createCharge, markTestPaid, pending } = useHireCharge();
   const [method, setMethod] = useState<PaymentMethod>("promptpay");
   const [step, setStep] = useState<Step>("method");
   const [charge, setCharge] = useState<HireChargeResult | null>(null);
+  const [acceptedRefundPolicy, setAcceptedRefundPolicy] = useState(false);
 
   const checkout = useMemo(() => {
     const jobPriceSatang = thbToSatang(offer.amount || 0);
@@ -144,10 +145,23 @@ export default function HireCheckoutDialog({
       setStep("method");
       setCharge(null);
       setMethod("promptpay");
+      setAcceptedRefundPolicy(false);
     }, 250);
   };
 
   const startCharge = async () => {
+    if (!acceptedRefundPolicy) {
+      toast.error("กรุณายอมรับนโยบายการคืนเงินก่อนชำระเงิน");
+      return;
+    }
+    if (method === "card") {
+      toast.message("บัตรเครดิตจะเปิดหลังยืนยัน tokenization — ใช้พร้อมเพย์ก่อนได้");
+      return;
+    }
+    if (method === "bank_transfer") {
+      toast.message("โอนผ่านบัญชียังไม่เปิดในรอบนี้ — ใช้พร้อมเพย์");
+      return;
+    }
     try {
       const result = await createCharge({
         amountSatang: checkout.money.buyerPaysSatang,
@@ -159,7 +173,7 @@ export default function HireCheckoutDialog({
       });
       setCharge(result);
       setStep(method === "promptpay" ? "qr" : "success");
-      if (method !== "promptpay" && !result.live) {
+      if (method !== "promptpay" && (!result.live || result.paid)) {
         await announcePaid(result);
       }
     } catch (e) {
@@ -278,7 +292,15 @@ export default function HireCheckoutDialog({
   };
 
   const handleSimulatePaid = async () => {
-    if (charge) await announcePaid(charge);
+    if (!charge) return;
+    if (charge.live && charge.chargeId.startsWith("chrg_")) {
+      const ok = await markTestPaid(charge.chargeId);
+      if (!ok) {
+        toast.error("ยืนยันชำระทดสอบไม่สำเร็จ — ลองใหม่หรือ Mark as paid ใน Omise Dashboard");
+        return;
+      }
+    }
+    await announcePaid(charge);
     setStep("success");
   };
 
@@ -378,6 +400,38 @@ export default function HireCheckoutDialog({
                 <Lock className="h-3 w-3" />
                 ข้อมูลการชำระเงินถูกเข้ารหัสและประมวลผลผ่านผู้ให้บริการที่ได้รับมาตรฐาน
               </p>
+
+              <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-border/70 bg-muted/15 px-3 py-2.5 text-left">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                  checked={acceptedRefundPolicy}
+                  onChange={(e) => setAcceptedRefundPolicy(e.target.checked)}
+                  disabled={pending}
+                />
+                <span className="text-[11px] leading-relaxed text-muted-foreground">
+                  ข้าพเจ้ายอมรับ{" "}
+                  <a
+                    href="/legal/payment-refund"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    นโยบายการชำระเงินและการคืนเงิน
+                  </a>{" "}
+                  และ{" "}
+                  <a
+                    href="/legal/terms"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    ข้อกำหนดการใช้งาน
+                  </a>
+                </span>
+              </label>
             </div>
 
             <DialogFooter className="gap-2 sm:gap-0">
@@ -393,7 +447,7 @@ export default function HireCheckoutDialog({
               <Button
                 type="button"
                 className="rounded-full"
-                disabled={pending || send.isPending}
+                disabled={pending || send.isPending || !acceptedRefundPolicy}
                 onClick={() => void startCharge()}
               >
                 {pending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}

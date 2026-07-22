@@ -8,6 +8,7 @@ import { useSubscription } from "@/core/subscription";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import OpportunityTypeChips from "@/components/opportunity/OpportunityTypeChips";
+import UserAvatar from "@/components/UserAvatar";
 
 type ProfileLike = {
   display_name: string | null;
@@ -126,17 +127,13 @@ export default function ProfileCoverHeader({
       <div className="relative px-4 md:px-8 -mt-12 sm:-mt-14 md:-mt-16">
         <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
           <div className="relative shrink-0 group/avatar self-start">
-            {profile.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt=""
-                className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full object-cover ring-4 ring-background shadow-lg"
-              />
-            ) : (
-              <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-3xl md:text-4xl font-medium ring-4 ring-background shadow-lg">
-                {(profile.display_name || "?")[0]}
-              </div>
-            )}
+            <UserAvatar
+              src={profile.avatar_url}
+              name={profile.display_name}
+              username={profile.username}
+              className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 ring-4 ring-background shadow-lg"
+              fallbackClassName="text-3xl md:text-4xl"
+            />
             <button
               type="button"
               disabled={avatarBusy}

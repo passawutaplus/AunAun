@@ -22,6 +22,8 @@ import LegalSignupConsents from "@/components/legal/LegalSignupConsents";
 import { recordSignupConsents, markPendingSignupConsent } from "@/lib/legalCompliance";
 import { isAuthRoute } from "@/lib/onboardingRoutes";
 import { hasCompletedProfileOnboarding } from "@/hooks/useFeedInterests";
+import { buildEmailConfirmUrl } from "@/lib/oauthRedirect";
+import { isDemoMode } from "@/lib/demoMode";
 
 const PasswordInput = ({ id, value, onChange, placeholder, autoComplete, minLength, required, invalid }: {
   id: string; value: string;
@@ -103,8 +105,12 @@ const AuthDialog = () => {
             </TabsList>
 
             <TabsContent value="signup" className="space-y-3.5 mt-0">
-              <SocialButtons redirectTo={redirectPath} />
-              <AuthEmailSeparator />
+              {isDemoMode() ? null : (
+                <>
+                  <SocialButtons redirectTo={redirectPath} />
+                  <AuthEmailSeparator />
+                </>
+              )}
               <SignupForm onSwitch={() => setMode("login")} />
             </TabsContent>
 
@@ -241,7 +247,7 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
       const { error } = await supabase.auth.signUp({
         email: email.trim(), password,
         options: {
-          emailRedirectTo: window.location.origin + "/",
+          emailRedirectTo: buildEmailConfirmUrl(),
           data: { display_name: displayName || email.split("@")[0] },
         },
       });

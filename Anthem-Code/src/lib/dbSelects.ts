@@ -31,6 +31,16 @@ export const PROJECT_MANAGE_SELECT = PROJECT_DETAIL_SELECT;
 export const PUBLIC_PROFILE_SELECT =
   "user_id, display_name, username, avatar_url, bio, role, skills, preferred_categories, experience, website, instagram, facebook, line_id, cover_url, is_verified, location, opportunity_status, opportunity_types, opportunity_note, open_for_work, open_for_work_badge";
 
+/** Own settings / hire-readiness profile — avoid select("*") (column grants drift). */
+export const OWN_PROFILE_SELECT = [
+  PUBLIC_PROFILE_SELECT,
+  "email, phone, tax_id, address, billing_address, billing_type, legal_name, company_name",
+  "branch, contact_person, contact_role, vat_registered",
+  "bank_name, bank_account_number, bank_account_name, verified_at, payment_qr_url",
+  "notify_email, notify_hire, notify_collab, preferred_categories, preferred_employment_types",
+  "username_changed_at, account_status, is_active, created_at, updated_at",
+].join(", ");
+
 /** Designer directory list. */
 export const PROFILE_DESIGNER_SELECT =
   "user_id, display_name, username, avatar_url, bio, role, skills, created_at, updated_at, opportunity_status, opportunity_types";

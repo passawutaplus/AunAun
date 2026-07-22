@@ -1,11 +1,15 @@
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import PageLoader from "@/components/ui/PageLoader";
 import { Button } from "@/components/ui/button";
 import { MailCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { isEmailVerifiedForAccess } from "@/lib/authEmail";
+import { buildEmailConfirmUrl } from "@/lib/oauthRedirect";
+import { signOutApp } from "@/lib/signOutApp";
 
 interface Props {
   children: ReactNode;
@@ -25,7 +29,8 @@ const RequireAuth = ({ children, allowUnverified = false }: Props) => {
     return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
-  if (!allowUnverified && !user.email_confirmed_at) {
+  // Email/password ต้องยืนยันอีเมล — OAuth (เช่น Google) ผ่านได้เลย
+  if (!allowUnverified && !isEmailVerifiedForAccess(user)) {
     return <VerifyEmailGate email={user.email ?? ""} />;
   }
 
@@ -33,15 +38,21 @@ const RequireAuth = ({ children, allowUnverified = false }: Props) => {
 };
 
 const VerifyEmailGate = ({ email }: { email: string }) => {
+  const queryClient = useQueryClient();
+
   const resend = async () => {
     if (!email) return;
-    const { error } = await supabase.auth.resend({ type: "signup", email });
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: buildEmailConfirmUrl() },
+    });
     if (error) toast.error(error.message);
     else toast.success("ส่งอีเมลยืนยันใหม่แล้ว ตรวจกล่องจดหมายของคุณ");
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await signOutApp(queryClient);
     window.location.href = "/auth";
   };
 

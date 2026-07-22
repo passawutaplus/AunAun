@@ -38,6 +38,7 @@ import { isCategoryAllowed } from "@/lib/cookieConsent";
 import { trackProductEvent } from "@/lib/productEvents";
 import { recordProjectViewAffinity } from "@/lib/viewAffinity";
 import SeoHead from "@/components/SeoHead";
+import { formatCategoryBreadcrumb } from "@/data/categoryTaxonomy";
 import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import BoostButton from "@/components/boost/BoostButton";
@@ -317,7 +318,8 @@ const ProjectDetailPage = () => {
       <SeoHead
         title={project.title}
         description={truncateDescription(
-          project.description || `${project.title} โดย ${project.owner} — ${project.category} บน ${BRAND_NAME}`,
+          project.description ||
+            `${project.title} โดย ${project.owner} — ${formatCategoryBreadcrumb(project.category, project.tags)} บน ${BRAND_NAME}`,
         )}
         path={projectPath}
         image={coverImage || undefined}

@@ -1,29 +1,60 @@
+import crypto from "node:crypto";
+import { json, readEnv, supabaseServiceConfig } from "./_helpers.js";
+
 /**
  * Omise webhook receiver (Vercel serverless).
- * Verifies secret header when configured; records provider events for idempotent processing.
+ * Requires OMISE_WEBHOOK_SECRET and verifies Omise-Signature HMAC (fail-closed).
  * On charge.complete / paid events: best-effort update hire_order + payment + hiring_request.
  *
  * POST /api/omise-webhook
  */
 
-function readEnv(name) {
-  return process.env[name] || "";
-}
+/**
+ * Verify Omise webhook HMAC-SHA256 (secret is base64-encoded).
+ * @returns {{ ok: boolean, rawBody: string }}
+ */
+function verifyOmiseSignature(req, rawBody) {
+  const secretB64 = readEnv("OMISE_WEBHOOK_SECRET");
+  // Fail closed: unsigned webhooks must never mutate money state.
+  if (!secretB64) return { ok: false, reason: "webhook_secret_required" };
 
-function json(res, status, body) {
-  res.statusCode = status;
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(body));
+  const signatureHeader = req.headers["omise-signature"] || req.headers["Omise-Signature"] || "";
+  const timestampHeader =
+    req.headers["omise-signature-timestamp"] || req.headers["Omise-Signature-Timestamp"] || "";
+  if (!signatureHeader || !timestampHeader) {
+    return { ok: false, reason: "missing_signature_headers" };
+  }
+
+  const signedPayload = `${timestampHeader}.${rawBody}`;
+  let secret;
+  try {
+    secret = Buffer.from(secretB64, "base64");
+  } catch {
+    return { ok: false, reason: "invalid_secret_encoding" };
+  }
+  if (!secret.length) return { ok: false, reason: "empty_secret" };
+
+  const expected = crypto.createHmac("sha256", secret).update(signedPayload, "utf8").digest();
+  const signatures = String(signatureHeader)
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  for (const sig of signatures) {
+    try {
+      const sigBuf = Buffer.from(sig, "hex");
+      if (sigBuf.length === expected.length && crypto.timingSafeEqual(sigBuf, expected)) {
+        return { ok: true };
+      }
+    } catch {
+      /* try next */
+    }
+  }
+  return { ok: false, reason: "signature_mismatch" };
 }
 
 function supabaseBase() {
-  const supabaseUrl = readEnv("SUPABASE_URL") || readEnv("VITE_SUPABASE_URL");
-  const serviceKey = readEnv("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceKey) return null;
-  return {
-    url: supabaseUrl.replace(/\/$/, ""),
-    key: serviceKey,
-  };
+  return supabaseServiceConfig();
 }
 
 async function restRequest(cfg, { schema, table, method, query, body, prefer }) {
@@ -199,106 +230,119 @@ async function processPaidCharge(cfg, charge, eventType) {
   return result;
 }
 
-module.exports = async function handler(req, res) {
-  if (req.method !== "POST") {
-    return json(res, 405, { error: "method_not_allowed" });
-  }
-
-  if (readEnv("PAYMENT_PROVIDER") && readEnv("PAYMENT_PROVIDER") !== "omise") {
-    return json(res, 503, { error: "provider_disabled" });
-  }
-
-  const marketplaceApproved = readEnv("OMISE_MARKETPLACE_APPROVED") === "true";
-  const mode = readEnv("OMISE_MODE") === "live" ? "live" : "test";
-  if (mode === "live" && !marketplaceApproved) {
-    return json(res, 503, { error: "live_blocked_until_marketplace_approved" });
-  }
-
-  const webhookSecret = readEnv("OMISE_WEBHOOK_SECRET");
-  const provided =
-    req.headers["x-omise-webhook-secret"] ||
-    req.headers["omise-signature"] ||
-    "";
-  if (webhookSecret && provided && provided !== webhookSecret) {
-    return json(res, 401, { error: "invalid_webhook_secret" });
-  }
-
-  let payload = req.body;
-  if (typeof payload === "string") {
-    try {
-      payload = JSON.parse(payload);
-    } catch {
-      return json(res, 400, { error: "invalid_json" });
-    }
-  }
-  if (!payload || typeof payload !== "object") {
-    return json(res, 400, { error: "empty_body" });
-  }
-
-  const eventId = payload.id || payload.key || `anon-${Date.now()}`;
-  const eventType = payload.key || payload.object || "unknown";
-
-  const cfg = supabaseBase();
-  let processResult = null;
-  let processError = null;
-
-  if (cfg) {
-    try {
-      await restRequest(cfg, {
-        schema: "shared",
-        table: "provider_events",
-        method: "POST",
-        body: {
-          provider: "omise",
-          provider_event_id: String(eventId),
-          event_type: String(eventType),
-          payload,
-        },
-        prefer: "resolution=ignore-duplicates,return=minimal",
-      });
-    } catch {
-      /* Acknowledge anyway */
+export default async function handler(req, res) {
+  try {
+    if (req.method !== "POST") {
+      return json(res, 405, { error: "method_not_allowed" });
     }
 
-    try {
-      const charge = extractCharge(payload);
-      if (charge) {
-        processResult = await processPaidCharge(cfg, charge, eventType);
+    if (readEnv("PAYMENT_PROVIDER") && readEnv("PAYMENT_PROVIDER") !== "omise") {
+      return json(res, 503, { error: "provider_disabled" });
+    }
+
+    const marketplaceApproved = readEnv("OMISE_MARKETPLACE_APPROVED") === "true";
+    const mode = readEnv("OMISE_MODE") === "live" ? "live" : "test";
+    if (mode === "live" && !marketplaceApproved) {
+      return json(res, 503, { error: "live_blocked_until_marketplace_approved" });
+    }
+
+    let rawBody = "";
+    let payload = req.body;
+    if (Buffer.isBuffer(payload)) {
+      rawBody = payload.toString("utf8");
+      try {
+        payload = JSON.parse(rawBody);
+      } catch {
+        return json(res, 400, { error: "invalid_json" });
       }
-      if (processResult && processResult.skipped === undefined) {
-        await restRequest(cfg, {
-          schema: "shared",
-          table: "provider_events",
-          method: "PATCH",
-          query: `provider=eq.omise&provider_event_id=eq.${encodeURIComponent(String(eventId))}`,
-          body: {
-            processed_at: new Date().toISOString(),
-            process_error: null,
-          },
-          prefer: "return=minimal",
-        });
+    } else if (typeof payload === "string") {
+      rawBody = payload;
+      try {
+        payload = JSON.parse(payload);
+      } catch {
+        return json(res, 400, { error: "invalid_json" });
       }
-    } catch (e) {
-      processError = e instanceof Error ? e.message : String(e);
+    } else if (payload && typeof payload === "object") {
+      // Runtime already parsed JSON — HMAC may fail if secret is set; prefer raw when available.
+      rawBody = JSON.stringify(payload);
+    } else {
+      return json(res, 400, { error: "empty_body" });
+    }
+
+    const verified = verifyOmiseSignature(req, rawBody);
+    if (!verified.ok) {
+      const status = verified.reason === "webhook_secret_required" ? 503 : 401;
+      return json(res, status, { error: "invalid_webhook_signature", reason: verified.reason });
+    }
+
+    const eventId = payload.id || payload.key || `anon-${Date.now()}`;
+    const eventType = payload.key || payload.object || "unknown";
+
+    const cfg = supabaseBase();
+    let processResult = null;
+    let processError = null;
+
+    if (cfg) {
       try {
         await restRequest(cfg, {
           schema: "shared",
           table: "provider_events",
-          method: "PATCH",
-          query: `provider=eq.omise&provider_event_id=eq.${encodeURIComponent(String(eventId))}`,
-          body: { process_error: processError },
-          prefer: "return=minimal",
+          method: "POST",
+          body: {
+            provider: "omise",
+            provider_event_id: String(eventId),
+            event_type: String(eventType),
+            payload,
+          },
+          prefer: "resolution=ignore-duplicates,return=minimal",
         });
       } catch {
-        /* ignore */
+        /* Acknowledge anyway */
+      }
+
+      try {
+        const charge = extractCharge(payload);
+        if (charge) {
+          processResult = await processPaidCharge(cfg, charge, eventType);
+        }
+        if (processResult && processResult.skipped === undefined) {
+          await restRequest(cfg, {
+            schema: "shared",
+            table: "provider_events",
+            method: "PATCH",
+            query: `provider=eq.omise&provider_event_id=eq.${encodeURIComponent(String(eventId))}`,
+            body: {
+              processed_at: new Date().toISOString(),
+              process_error: null,
+            },
+            prefer: "return=minimal",
+          });
+        }
+      } catch (e) {
+        processError = e instanceof Error ? e.message : String(e);
+        try {
+          await restRequest(cfg, {
+            schema: "shared",
+            table: "provider_events",
+            method: "PATCH",
+            query: `provider=eq.omise&provider_event_id=eq.${encodeURIComponent(String(eventId))}`,
+            body: { process_error: processError },
+            prefer: "return=minimal",
+          });
+        } catch {
+          /* ignore */
+        }
       }
     }
-  }
 
-  return json(res, 200, {
-    ok: true,
-    eventId: String(eventId),
-    processed: processResult,
-    processError,
-  });
-};
+    return json(res, 200, {
+      ok: true,
+      eventId: String(eventId),
+      processed: processResult,
+      processError,
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return json(res, 200, { ok: false, error: message });
+  }
+}

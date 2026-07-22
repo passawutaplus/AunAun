@@ -37,7 +37,7 @@ const HireForwardCard = ({ payload, canOpenChat }: Props) => {
         skipStatusUpdate: true,
       });
       navigate(`/chat/${convId}`);
-      toast.success("เปิดแชทแล้ว — รอครีเอเตอร์ตอบรับหรือปฏิเสธ");
+      toast.success("เปิดแชทแล้ว — รอครีเอเตอร์ตอบรับหรือไม่สนใจ");
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "เปิดแชทไม่สำเร็จ");
     }

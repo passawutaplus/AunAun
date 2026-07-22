@@ -14,7 +14,7 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   const secret = readEnv("CRON_SECRET");
   const auth = req.headers.authorization || "";
   if (secret && auth !== `Bearer ${secret}`) {
@@ -46,4 +46,4 @@ module.exports = async function handler(req, res) {
         ? "compare Omise vs ledger and alert admin — do not auto-adjust"
         : "enqueue payout candidates per Aplus1 payout policy",
   });
-};
+}

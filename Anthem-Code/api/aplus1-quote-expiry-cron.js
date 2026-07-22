@@ -53,7 +53,7 @@ async function expireQuotes() {
   return { ok: true, kind: "expire-quotes", expiredCount, stub: false };
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   const secret = readEnv("CRON_SECRET");
   const auth = req.headers.authorization || "";
   if (secret && auth !== `Bearer ${secret}`) {
@@ -77,4 +77,4 @@ module.exports = async function handler(req, res) {
       error: e instanceof Error ? e.message : "expire_quotes_failed",
     });
   }
-};
+}

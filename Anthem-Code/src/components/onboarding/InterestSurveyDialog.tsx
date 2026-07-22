@@ -26,6 +26,7 @@ import { uploadProjectImage } from "@/lib/uploadImage";
 import { OPPORTUNITY_TYPE_KEYS, labelOpportunityType } from "@/lib/opportunity";
 import { USERNAME_COOLDOWN_DAYS } from "@/lib/usernamePolicy";
 import { cn } from "@/lib/utils";
+import { displayInitials } from "@/lib/avatarPool";
 
 /** Local-only: force open so we can iterate on the dialog UI. Set false before ship. */
 const FORCE_SHOW_INTEREST_SURVEY = import.meta.env.DEV;
@@ -152,8 +153,10 @@ function ProfileIdentityPanel({
           {avatarUrl ? (
             <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
           ) : (
-            <span className="flex h-full w-full items-center justify-center text-muted-foreground">
-              <User className="h-10 w-10" />
+            <span className="flex h-full w-full items-center justify-center bg-gradient-brand text-white text-2xl font-semibold tracking-tight">
+              {normalizedUsername.length >= 1 ? displayInitials(normalizedUsername, 2) : (
+                <User className="h-10 w-10 text-white/90" />
+              )}
             </span>
           )}
           <span className="absolute inset-x-0 bottom-0 bg-black/55 py-1.5 flex justify-center">

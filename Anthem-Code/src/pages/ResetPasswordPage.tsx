@@ -24,10 +24,12 @@ const ResetPasswordPage = () => {
 
   useEffect(() => {
     let cancelled = false;
+    let recoveryOk = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (cancelled) return;
-      if (event === "PASSWORD_RECOVERY" || session) {
+      if (event === "PASSWORD_RECOVERY") {
+        recoveryOk = true;
         setSessionError(null);
         setReady(true);
       }
@@ -36,17 +38,20 @@ const ResetPasswordPage = () => {
     void (async () => {
       const msg = await establishSession();
       if (cancelled) return;
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setReady(true);
-        return;
-      }
+      if (recoveryOk) return;
       const hasAuthParams =
         new URLSearchParams(window.location.search).has("code") ||
         new URLSearchParams(window.location.search).has("token_hash") ||
-        window.location.hash.includes("access_token");
-      if (msg && hasAuthParams) setSessionError(msg);
-      else setReady(true);
+        window.location.hash.includes("access_token") ||
+        new URLSearchParams(window.location.search).get("type") === "recovery";
+      if (msg && hasAuthParams) {
+        setSessionError(msg);
+        return;
+      }
+      // Only recovery links may set a password here — not a normal logged-in session.
+      if (!recoveryOk) {
+        setSessionError("ลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้องหรือหมดอายุ — ขอลิงก์ใหม่จากหน้าลืมรหัสผ่าน");
+      }
     })();
 
     return () => {
@@ -70,8 +75,9 @@ const ResetPasswordPage = () => {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) toast.error(error.message);
       else {
-        toast.success("ตั้งรหัสผ่านใหม่สำเร็จ!");
-        setTimeout(() => navigate("/", { replace: true }), 600);
+        toast.success("ตั้งรหัสผ่านใหม่สำเร็จ — กรุณาเข้าสู่ระบบอีกครั้ง");
+        await supabase.auth.signOut({ scope: "global" });
+        setTimeout(() => navigate("/auth", { replace: true }), 600);
       }
     } finally {
       setBusy(false);

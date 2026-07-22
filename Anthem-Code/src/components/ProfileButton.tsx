@@ -22,7 +22,11 @@ type Props = {
 const ProfileButton = ({ className, fillRail = false }: Props) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<{ avatar_url: string | null; display_name: string | null } | null>(null);
+  const [profile, setProfile] = useState<{
+    avatar_url: string | null;
+    display_name: string | null;
+    username: string | null;
+  } | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -31,7 +35,7 @@ const ProfileButton = ({ className, fillRail = false }: Props) => {
     }
     supabase
       .from("profiles")
-      .select("avatar_url, display_name")
+      .select("avatar_url, display_name, username")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => setProfile(data ?? null));
@@ -83,9 +87,10 @@ const ProfileButton = ({ className, fillRail = false }: Props) => {
               >
                 <UserAvatar
                   src={profile?.avatar_url}
-                  name={profile?.display_name ?? "P"}
+                  name={profile?.display_name}
+                  username={profile?.username}
                   className="w-8 h-8"
-                  fallbackClassName="text-sm"
+                  fallbackClassName="text-xs"
                 />
                 <ChevronDown className="w-4 h-4 text-muted-foreground hidden sm:block" />
               </button>

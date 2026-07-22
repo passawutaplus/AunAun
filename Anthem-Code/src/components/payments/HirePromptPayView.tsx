@@ -122,14 +122,14 @@ export default function HirePromptPayView({
         </p>
       ) : null}
 
-      {!charge.live && onSimulatePaid ? (
+      {onSimulatePaid ? (
         <Button
           type="button"
           variant="outline"
           className="w-full rounded-full border-dashed"
           onClick={onSimulatePaid}
         >
-          จำลองชำระสำเร็จ (โหมดทดสอบ)
+          {charge.live ? "ยืนยันชำระทดสอบ (Omise test)" : "จำลองชำระสำเร็จ (โหมดทดสอบ)"}
         </Button>
       ) : null}
 

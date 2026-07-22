@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CHAT_CARD_DECLINE_LABEL } from "@/components/chat/ChatCardShell";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -525,7 +526,7 @@ export function ProfileHiringRequestsSection({
                           disabled={rejectBusy}
                           className="rounded-full h-8 text-xs text-muted-foreground hover:text-destructive"
                         >
-                          <X className="w-3.5 h-3.5 mr-1" /> ปฏิเสธ
+                          <X className="w-3.5 h-3.5 mr-1" /> {CHAT_CARD_DECLINE_LABEL}
                         </Button>
                         <Button
                           size="sm"

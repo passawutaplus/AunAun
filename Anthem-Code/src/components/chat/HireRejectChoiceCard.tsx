@@ -29,7 +29,7 @@ const HireRejectChoiceCard = ({ payload, actions }: Props) => {
     <ChatCardShell
       tone="danger"
       icon={XCircle}
-      title="ปฏิเสธคำขอจ้าง"
+      title="ไม่สนใจคำขอจ้าง"
       footer={
         actions?.canRespond ? (
           <div className="flex flex-col gap-2">

@@ -34,11 +34,14 @@ flowchart LR
 |----------|------|
 | `OMISE_PUBLIC_KEY` | Client tokenization only |
 | `OMISE_SECRET_KEY` | Server only — never Vite |
-| `OMISE_WEBHOOK_SECRET` | Webhook authenticity |
+| `OMISE_WEBHOOK_SECRET` | Base64 webhook HMAC secret (dashboard Roll secret) |
 | `OMISE_MODE` | `test` \| `live` |
 | `OMISE_MARKETPLACE_APPROVED` | `true` only after Omise marketplace/PayFac approval |
 | `OMISE_MERCHANT_NAME` | Statement / merchant display |
 | `PAYMENT_PROVIDER` | `omise` for Aplus1 |
+| `VITE_OMISE_CHARGES_ENABLED` | `true` → checkout calls `/api/hire-charge` (test OK without marketplace) |
+| `VITE_OMISE_MODE` | Client mirror of test/live gate |
+| `VITE_OMISE_PUBLIC_KEY` | Public key for future card tokenization |
 | `VITE_APLUS1_PAYMENTS_ENABLED` | Product gate for payment UI |
 | `VITE_LEGAL_VAT_REGISTERED` | `true` when Aplus1 issues VAT tax invoices on fee receipts |
 | `VITE_LEGAL_COMPANY_TAX_ID` | Company tax ID on fee receipts / ETDA disclosure |
@@ -132,7 +135,7 @@ Marketplace/PayFac, holding funds for third parties, recipients + KYC, delayed p
 
 1. Anthem stops calling Solo payment APIs (Phase 1) — `stripePaymentsApi.ts` refuses Solo hub calls
 2. New fiat flows use Omise + Aplus1 ledger (`src/lib/payments/*`, `scripts/ecosystem/aplus1-omise-payments.sql`)
-3. Webhooks: `Anthem-Code/api/omise-webhook.js` · cron stub: `api/aplus1-payout-cron.js`
+3. Charge API: `Anthem-Code/api/hire-charge.js` · Webhooks: `api/omise-webhook.js` · cron stub: `api/aplus1-payout-cron.js`
 4. Legacy Stripe/escrow rows: ops complete manually — no new Aplus1 volume on Solo hub
 5. Solo keeps its own Stripe for Solo product only (`Solo-Code/docs/stripe.md`)
 6. Admin: `/admin/finance` · Earnings THB buckets on `/earnings`

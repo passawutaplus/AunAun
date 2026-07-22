@@ -10,7 +10,7 @@ fi
 
 export SITE_URL="${SITE_URL:-https://solofreelancer.com}"
 export SO1O_SITE_URL="${SO1O_SITE_URL:-$SITE_URL}"
-export ANTHEM_SITE_URL="${ANTHEM_SITE_URL:-https://pixel100.com}"
+export ANTHEM_SITE_URL="${ANTHEM_SITE_URL:-https://aplus1.app}"
 
 if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
   echo "⚠  SUPABASE_ACCESS_TOKEN ไม่พบ — ตั้งใน Solo-Code/.env"
@@ -28,16 +28,24 @@ urls = [
   'http://localhost:8081/**', 'http://127.0.0.1:5173/**', 'http://127.0.0.1:8080/**',
   'http://127.0.0.1:3000/**', 'http://127.0.0.1:8081/**',
   'https://solofreelancer.com/**', 'https://www.solofreelancer.com/**',
-  os.environ.get('ANTHEM_SITE_URL', 'https://pixel100.com') + '/**',
-  'https://www.pixel100.com/**',
+  'https://aplus1.app/**', 'https://www.aplus1.app/**',
+  os.environ.get('ANTHEM_SITE_URL', 'https://aplus1.app') + '/**',
+  'https://www.pixel100.com/**', 'https://pixel100.com/**',
   'https://www.an1hem.app/**', 'https://so1o-ops-hub.vercel.app/**',
   'http://localhost:3090/**', 'http://127.0.0.1:3090/**',
   'https://aplus1-demo.vercel.app/**', 'https://solo-demo-liart.vercel.app/**',
   'https://*.vercel.app/**',
 ]
+# de-dupe while preserving order
+seen = set()
+uniq = []
+for u in urls:
+  if u not in seen:
+    seen.add(u)
+    uniq.append(u)
 print(json.dumps({
   'site_url': os.environ.get('SITE_URL') or os.environ.get('SO1O_SITE_URL', 'https://solofreelancer.com'),
-  'uri_allow_list': ','.join(urls),
+  'uri_allow_list': ','.join(uniq),
 }))
 " SITE_URL="$SITE_URL" ANTHEM_SITE_URL="$ANTHEM_SITE_URL")"
 

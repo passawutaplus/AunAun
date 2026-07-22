@@ -5,7 +5,8 @@ import type { ProfileInput } from "@/lib/validators";
 import { assertUsernameAvailable, normalizeUsername } from "@/hooks/useUsernameAvailability";
 import { USERNAME_COOLDOWN_DAYS } from "@/lib/usernamePolicy";
 import { useAuth } from "@/hooks/useAuth";
-import { profileReadFrom } from "@/lib/profileAccess";
+import { isOwnProfile, profileReadFrom } from "@/lib/profileAccess";
+import { OWN_PROFILE_SELECT, PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
 
 export const useProfile = (userId: string | undefined) => {
   const { user } = useAuth();
@@ -13,8 +14,9 @@ export const useProfile = (userId: string | undefined) => {
     queryKey: ["profile", userId, user?.id],
     enabled: !!userId,
     queryFn: async () => {
+      const own = isOwnProfile(user?.id, userId!);
       const { data, error } = await profileReadFrom(user?.id, userId!)
-        .select("*")
+        .select(own ? OWN_PROFILE_SELECT : PUBLIC_PROFILE_SELECT)
         .eq("user_id", userId!)
         .maybeSingle();
       if (error) throw error;
