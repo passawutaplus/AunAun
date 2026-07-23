@@ -247,39 +247,42 @@ const HireDialog = ({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-2 text-left">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-            <Briefcase className="w-6 h-6 text-primary" />
-          </div>
-          <DialogTitle className="text-xl">คำขอจ้างงาน</DialogTitle>
-          <DialogDescription className="text-sm leading-6">
-            {source === "profile" ? (
-              <>
-                จากโปรไฟล์:{" "}
-                <span className="font-medium text-foreground">{profileName ?? projectTitle}</span>
-                <span className="block mt-1 text-xs text-muted-foreground">
-                  เติมรายละเอียดได้ถ้าต้องการ — ไม่กรอกก็คุยต่อได้เลย
-                </span>
-              </>
-            ) : (
-              <>เติมรายละเอียดได้ถ้าต้องการ — ไม่กรอกก็คุยต่อได้เลย</>
-            )}
-          </DialogDescription>
+          <Briefcase className="h-8 w-8 text-primary" aria-hidden />
+          <DialogTitle className="text-2xl leading-tight tracking-tight sm:text-[1.75rem]">
+            Hire Request
+          </DialogTitle>
+          {source === "profile" ? (
+            <DialogDescription className="text-sm leading-6">
+              จากโปรไฟล์:{" "}
+              <span className="font-medium text-foreground">{profileName ?? projectTitle}</span>
+            </DialogDescription>
+          ) : (
+            <DialogDescription className="sr-only">ส่งคำขอจ้างงาน</DialogDescription>
+          )}
         </DialogHeader>
 
         {source === "project" && projectTitle && (
           <ProjectReferencePreview title={projectTitle} coverUrl={projectCoverUrl} />
         )}
 
-        <HireInviteForm
-          form={form}
-          setForm={setForm}
-          myJobs={myJobs}
-          jobPostId={jobPostId}
-          onJobPostIdChange={setJobPostId}
-          userId={user?.id}
-          fieldErrors={fieldErrors}
-          onClearFieldError={clearFieldError}
-        />
+        <div
+          className={
+            source === "project" && projectTitle
+              ? "border-t border-border/60 pt-5"
+              : undefined
+          }
+        >
+          <HireInviteForm
+            form={form}
+            setForm={setForm}
+            myJobs={myJobs}
+            jobPostId={jobPostId}
+            onJobPostIdChange={setJobPostId}
+            userId={user?.id}
+            fieldErrors={fieldErrors}
+            onClearFieldError={clearFieldError}
+          />
+        </div>
 
         <p className="text-[11px] leading-relaxed text-muted-foreground border-t border-border/40 pt-3">
           {INQUIRY_PLATFORM_DISCLAIMER}

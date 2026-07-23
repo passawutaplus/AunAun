@@ -104,9 +104,11 @@ export function ProjectPresentationGallery({
         >
           <video
             src={item.url}
+            poster={item.posterUrl || undefined}
             controls
             playsInline
             className="w-full rounded-2xl border border-border/60 bg-black max-h-[480px]"
+            preload="metadata"
           />
         </motion.div>
       ))}

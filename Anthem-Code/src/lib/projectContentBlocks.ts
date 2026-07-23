@@ -37,6 +37,8 @@ export type ProjectContentBlock = {
   heading?: string;
   body?: string;
   url?: string;
+  /** Video poster / thumbnail image URL (auto from clip or custom). */
+  posterUrl?: string;
   /** Multi-slot image module (gallery / grid / multi-row). Empty string = slot awaiting upload. */
   urls?: string[];
   mediaLayout?: "single" | "gallery" | "grid" | "multi";
@@ -154,8 +156,15 @@ export function createMediaBlock(
   type: ProjectMediaBlockType,
   url = "",
   id?: string,
+  posterUrl?: string,
 ): ProjectContentBlock {
-  return { id: id ?? newBlockId(), type, url, mediaLayout: type === "image" ? "single" : undefined };
+  return {
+    id: id ?? newBlockId(),
+    type,
+    url,
+    ...(type === "video" && posterUrl?.trim() ? { posterUrl: posterUrl.trim() } : {}),
+    mediaLayout: type === "image" ? "single" : undefined,
+  };
 }
 
 /** Empty media slot on canvas — upload later. */
@@ -305,7 +314,15 @@ export function parseContentBlocks(raw: unknown): ProjectContentBlock[] {
 
       if (row.type === "video") {
         if (!url || !isHttpUrl(url)) continue;
-        out.push({ id, type: "video", url, ...gapAfterFields(row.gapAfter) });
+        const posterRaw = typeof row.posterUrl === "string" ? row.posterUrl.trim() : "";
+        const posterUrl = posterRaw && isHttpUrl(posterRaw) ? posterRaw : undefined;
+        out.push({
+          id,
+          type: "video",
+          url,
+          ...(posterUrl ? { posterUrl } : {}),
+          ...gapAfterFields(row.gapAfter),
+        });
         continue;
       }
 
@@ -405,10 +422,13 @@ export function normalizeEditorBlocks(blocks: ProjectContentBlock[]): ProjectCon
       if (b.type === "video") {
         const url = (b.url ?? "").trim();
         if (url && !isHttpUrl(url)) continue;
+        const posterRaw = (b.posterUrl ?? "").trim();
+        const posterUrl = posterRaw && isHttpUrl(posterRaw) ? posterRaw : undefined;
         out.push({
           id: b.id || newBlockId(),
           type: "video",
           url: url && isHttpUrl(url) ? url : "",
+          ...(posterUrl ? { posterUrl } : {}),
           ...gapAfterFields(b.gapAfter),
         });
         continue;
@@ -498,7 +518,15 @@ export function mediaItemsFromBlocks(blocks: ProjectContentBlock[]): PortfolioMe
     if (!isMediaBlockType(b.type)) continue;
     if (b.type === "video") {
       const url = (b.url ?? "").trim();
-      if (url) out.push({ id: b.id, kind: "video", url });
+      if (url) {
+        const posterUrl = (b.posterUrl ?? "").trim();
+        out.push({
+          id: b.id,
+          kind: "video",
+          url,
+          ...(posterUrl && isHttpUrl(posterUrl) ? { posterUrl } : {}),
+        });
+      }
       continue;
     }
     blockImageUrls(b).forEach((url, i) => {
@@ -587,7 +615,15 @@ export function toStoredContentBlocks(blocks: ProjectContentBlock[]): ProjectCon
     if (b.type === "video") {
       const url = (b.url ?? "").trim();
       if (!url || !isHttpUrl(url)) continue;
-      out.push({ id: b.id, type: "video", url, ...gapAfterFields(b.gapAfter) });
+      const posterRaw = (b.posterUrl ?? "").trim();
+      const posterUrl = posterRaw && isHttpUrl(posterRaw) ? posterRaw : undefined;
+      out.push({
+        id: b.id,
+        type: "video",
+        url,
+        ...(posterUrl ? { posterUrl } : {}),
+        ...gapAfterFields(b.gapAfter),
+      });
       continue;
     }
     if (b.type === "image_text") {

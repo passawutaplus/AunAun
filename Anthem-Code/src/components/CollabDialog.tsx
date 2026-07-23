@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import { z } from "zod";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Handshake, Sparkles, UserCircle2, Link2, MessageCircle, Loader2, Plus, X, ImagePlus } from "lucide-react";
+import { Check, Handshake, Sparkles, UserCircle2, Link2, MessageCircle, Loader2, Plus, X, ImagePlus, Images, Tags, MessageSquareText } from "lucide-react";
 import { toast } from "sonner";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,7 @@ import { serializeCollabReferenceLinks, buildCollabInviteChatMessage } from "@/l
 import { briefTemplateForTypes } from "@/lib/collabToolkit";
 import { safeHttpUrl } from "@/lib/safeUrl";
 import { isBlockedFromOpportunity } from "@/hooks/useCommunityPostInteractions";
+import { uploadProjectImage } from "@/lib/uploadImage";
 
 const COLLAB_TYPES = [
   { key: "chat", label: "พูดคุย" },
@@ -40,6 +41,7 @@ const COLLAB_TYPES = [
 ] as const;
 
 const MAX_COLLAB_LINKS = 8;
+const MAX_COLLAB_IMAGES = 3;
 
 /** Normalize + allow only safe http(s) absolute URLs. */
 function validateCollabLink(raw: string): string | null {
@@ -111,9 +113,12 @@ const CollabDialog = ({
   const [attached, setAttached] = useState<string[]>([]);
   const [linkDraft, setLinkDraft] = useState("");
   const [referenceLinks, setReferenceLinks] = useState<string[]>([]);
+  const [attachmentUrls, setAttachmentUrls] = useState<string[]>([]);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<CollabFieldErrorKey, string>>>({});
-  const busy = createReq.isPending || openChat.isPending;
+  const busy = createReq.isPending || openChat.isPending || uploadingAttachment;
 
   useEffect(() => {
     if (!open) return;
@@ -140,6 +145,8 @@ const CollabDialog = ({
     setAttached([]);
     setLinkDraft("");
     setReferenceLinks([]);
+    setAttachmentUrls([]);
+    setUploadingAttachment(false);
     setSubmitError(null);
     setFieldErrors({});
   };
@@ -198,6 +205,31 @@ const CollabDialog = ({
     }
     setReferenceLinks((prev) => [...prev, safe]);
     setLinkDraft("");
+  };
+
+  const onPickAttachments = async (files: FileList | null) => {
+    if (!files?.length || !user) return;
+    const slots = MAX_COLLAB_IMAGES - attachmentUrls.length;
+    if (slots <= 0) {
+      toast.info(`แนบภาพได้สูงสุด ${MAX_COLLAB_IMAGES} รูป`);
+      return;
+    }
+    setUploadingAttachment(true);
+    try {
+      const added: string[] = [];
+      for (const file of Array.from(files).slice(0, slots)) {
+        const url = await uploadProjectImage(file, user.id, "collab-brief", "free", {
+          fastQuotaCheck: true,
+        });
+        added.push(url);
+      }
+      setAttachmentUrls((prev) => [...prev, ...added]);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "อัปโหลดรูปไม่สำเร็จ");
+    } finally {
+      setUploadingAttachment(false);
+      if (attachmentInputRef.current) attachmentInputRef.current.value = "";
+    }
   };
 
   const submitCollab = async () => {
@@ -284,6 +316,11 @@ const CollabDialog = ({
       otherTypeNote: otherSelected ? (parsed.data.otherTypeNote || undefined) : undefined,
     };
 
+    let finalMessage = payload.message;
+    if (attachmentUrls.length) {
+      finalMessage += `\n\n---\nแนบภาพ:\n${attachmentUrls.join("\n")}`;
+    }
+
     setSubmitError(null);
     try {
       const created = await createReq.mutateAsync({
@@ -291,7 +328,7 @@ const CollabDialog = ({
         recipient_id: recipientId,
         project_id: projectId && isUuid(projectId) ? projectId : null,
         collab_types: payload.collabTypes,
-        message: payload.message,
+        message: finalMessage,
         attached_project_ids: payload.attached,
         external_drive_url: serializeCollabReferenceLinks(payload.referenceLinks) || null,
         website_url: null,
@@ -311,7 +348,7 @@ const CollabDialog = ({
         projectTitle: title,
         contextMessage: buildCollabInviteChatMessage({
           project_title: source === "project" ? title : null,
-          message: payload.message,
+          message: finalMessage,
           collab_types: payload.collabTypes,
           timeline: null,
           sender_name: profile.display_name ?? null,
@@ -344,14 +381,18 @@ const CollabDialog = ({
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border-primary/20">
         <DialogHeader className="space-y-2 text-left">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-            <Handshake className="w-6 h-6 text-primary" />
-          </div>
-          <DialogTitle className="text-xl">ชวน {recipientName} ร่วมงาน</DialogTitle>
-          <DialogDescription className="text-sm leading-6">
-            ไม่ใช่การจ้างงาน — ต้องอ้างอิงผลงานของตัวเองอย่างน้อย 1 ชิ้น รายละเอียดอื่นเติมได้ถ้าต้องการ
-            {source === "profile" && <> จากโปรไฟล์ <span className="text-foreground font-medium">{recipientName}</span></>}
-          </DialogDescription>
+          <Handshake className="h-8 w-8 text-primary" aria-hidden />
+          <DialogTitle className="text-2xl leading-tight tracking-tight sm:text-[1.75rem]">
+            Collaboration Request
+          </DialogTitle>
+          {source === "profile" ? (
+            <DialogDescription className="text-sm leading-6">
+              จากโปรไฟล์{" "}
+              <span className="text-foreground font-medium">{recipientName}</span>
+            </DialogDescription>
+          ) : (
+            <DialogDescription className="sr-only">ชวนร่วมงานคอลแลป</DialogDescription>
+          )}
         </DialogHeader>
 
         {source === "project" && projectTitle && (
@@ -401,52 +442,41 @@ const CollabDialog = ({
               fieldErrors.attached && "ring-2 ring-destructive ring-offset-2 ring-offset-background",
             )}
           >
-            <Label className="text-sm font-semibold">
+            <Label className="flex items-center gap-1.5 text-sm font-semibold">
+              <Images className="h-3.5 w-3.5 text-primary" />
               อ้างอิงผลงานของฉัน
               <span className="text-primary font-normal"> *</span>
             </Label>
-            <p className="text-xs text-muted-foreground mb-2.5">
-              {published.length === 0
-                ? "ต้องเผยแพร่ผลงานอย่างน้อย 1 ชิ้นก่อนถึงจะชวนคอลแลป / แชทได้"
-                : `บังคับเลือกอย่างน้อย 1 ชิ้นที่เผยแพร่แล้ว — สูงสุด 3 ชิ้น (${attached.length}/3)`}
-            </p>
             {fieldErrors.attached ? (
-              <p className="text-xs text-destructive mb-2">{fieldErrors.attached}</p>
+              <p className="text-xs text-destructive mt-1.5 mb-2">{fieldErrors.attached}</p>
             ) : null}
 
             {published.length === 0 ? (
-              <div className="space-y-2.5">
-                <div className="grid grid-cols-4 gap-2">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <button
-                      key={`empty-slot-${i}`}
-                      type="button"
-                      onClick={() => {
-                        onOpenChange(false);
-                        navigate("/portfolio/new");
-                      }}
-                      className={cn(
-                        "aspect-square rounded-xl border-2 border-dashed border-primary/45",
-                        "bg-primary/5 hover:bg-primary/10 transition-colors",
-                        "flex flex-col items-center justify-center gap-1 px-1 text-center",
-                      )}
-                      aria-label="ไปลงผลงานก่อน"
-                    >
-                      <ImagePlus className="w-4 h-4 text-primary/80" />
-                      <span className="text-[9px] leading-tight text-muted-foreground">
-                        {i === 0 ? "ลงผลงาน" : "ว่าง"}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3 py-2.5 space-y-2">
+              <div className="mt-2.5 flex items-stretch gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenChange(false);
+                    navigate("/portfolio/new");
+                  }}
+                  className={cn(
+                    "aspect-square w-[4.75rem] shrink-0 rounded-xl border-2 border-dashed border-primary/45",
+                    "bg-primary/5 hover:bg-primary/10 transition-colors",
+                    "flex flex-col items-center justify-center gap-1 px-1 text-center",
+                  )}
+                  aria-label="ไปลงผลงานก่อน"
+                >
+                  <ImagePlus className="w-4 h-4 text-primary/80" />
+                  <span className="text-[9px] leading-tight text-muted-foreground">ลงผลงาน</span>
+                </button>
+                <div className="min-w-0 flex-1 flex flex-col justify-center gap-2 py-0.5">
                   <p className="text-sm text-foreground leading-snug">
                     ยังไม่ได้ลงผลงาน — ลงอย่างน้อย 1 ชิ้นก่อน ถึงจะกด「แชทเลย」ได้
                   </p>
                   <Button
                     type="button"
                     size="sm"
-                    className="rounded-full"
+                    className="rounded-full w-fit"
                     onClick={() => {
                       onOpenChange(false);
                       navigate("/portfolio/new");
@@ -457,7 +487,7 @@ const CollabDialog = ({
                 </div>
               </div>
             ) : needsWorkPicker ? (
-              <div className="space-y-1.5 max-h-72 overflow-y-auto rounded-xl border border-border p-1.5 bg-muted/20">
+              <div className="mt-2.5 space-y-1.5 max-h-72 overflow-y-auto rounded-xl border border-border p-1.5 bg-muted/20">
                 {published.map((p) => {
                   const on = attached.includes(p.id);
                   return (
@@ -498,7 +528,7 @@ const CollabDialog = ({
                 })}
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="mt-2.5 grid grid-cols-3 gap-2">
                 {published.map((p) => {
                   const on = attached.includes(p.id);
                   return (
@@ -538,19 +568,19 @@ const CollabDialog = ({
           <div
             id="collab-types-section"
             className={cn(
-              "rounded-2xl transition-shadow",
+              "border-t border-border/60 pt-5 rounded-2xl transition-shadow",
               fieldErrors.collabTypes && "ring-2 ring-destructive ring-offset-2 ring-offset-background",
             )}
           >
-            <Label className="text-sm font-semibold">
+            <Label className="flex items-center gap-1.5 text-sm font-semibold">
+              <Tags className="h-3.5 w-3.5 text-primary" />
               อยากร่วมงานแบบไหน
               <span className="text-primary font-normal"> *</span>
             </Label>
-            <p className="text-xs text-muted-foreground mb-2.5">บังคับเลือก 1 แบบ — ค่าเริ่มต้นคือ「พูดคุย」</p>
             {fieldErrors.collabTypes ? (
-              <p className="text-xs text-destructive mb-2">{fieldErrors.collabTypes}</p>
+              <p className="text-xs text-destructive mt-1.5 mb-2">{fieldErrors.collabTypes}</p>
             ) : null}
-            <div className="flex flex-wrap gap-2">
+            <div className="mt-2.5 flex flex-wrap gap-2">
               {COLLAB_TYPES.map((t) => {
                 const on = selectedTypes.includes(t.key);
                 return (
@@ -593,15 +623,12 @@ const CollabDialog = ({
             ) : null}
           </div>
 
-          <div>
+          <div className="border-t border-border/60 pt-5">
             <Label htmlFor="collab-link-draft" className="text-sm font-semibold flex items-center gap-1.5">
               <Link2 className="w-3.5 h-3.5 text-primary" /> ลิงก์อ้างอิง (ไดรฟ์ / เว็บ / พอร์ต)
               <span className="text-muted-foreground font-normal"> (ไม่บังคับ)</span>
             </Label>
-            <p className="text-xs text-muted-foreground mt-1 mb-1.5">
-              ใส่ทีละลิงก์แล้วกด + — ระบบตรวจว่าเป็นลิงก์ http/https ที่ปลอดภัยก่อนเพิ่ม
-            </p>
-            <div className="flex gap-2">
+            <div className="mt-2.5 flex gap-2">
               <Input
                 id="collab-link-draft"
                 type="url"
@@ -663,8 +690,60 @@ const CollabDialog = ({
             )}
           </div>
 
-          <div>
-            <Label htmlFor="collab-msg" className="text-sm font-semibold">
+          <div className="border-t border-border/60 pt-5">
+            <Label className="flex items-center gap-1.5 text-sm font-semibold">
+              <ImagePlus className="h-3.5 w-3.5 text-primary" />
+              แนบภาพอ้างอิง
+              <span className="text-muted-foreground font-normal"> (ไม่บังคับ)</span>
+            </Label>
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {attachmentUrls.map((url) => (
+                <div
+                  key={url}
+                  className="relative h-16 w-16 overflow-hidden rounded-lg border border-border"
+                >
+                  <img src={url} alt="" className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    aria-label="ลบรูป"
+                    className="absolute right-0.5 top-0.5 rounded-full bg-background/80 p-0.5"
+                    onClick={() =>
+                      setAttachmentUrls((prev) => prev.filter((u) => u !== url))
+                    }
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              {attachmentUrls.length < MAX_COLLAB_IMAGES && user ? (
+                <button
+                  type="button"
+                  disabled={uploadingAttachment}
+                  onClick={() => attachmentInputRef.current?.click()}
+                  className="flex h-16 w-16 flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-border text-[10px] text-muted-foreground hover:bg-muted/50"
+                >
+                  {uploadingAttachment ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ImagePlus className="h-4 w-4" />
+                  )}
+                  เพิ่มรูป
+                </button>
+              ) : null}
+            </div>
+            <input
+              ref={attachmentInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => void onPickAttachments(e.target.files)}
+            />
+          </div>
+
+          <div className="border-t border-border/60 pt-5">
+            <Label htmlFor="collab-msg" className="flex items-center gap-1.5 text-sm font-semibold">
+              <MessageSquareText className="h-3.5 w-3.5 text-primary" />
               ข้อความถึง {recipientName}
               <span className="text-muted-foreground font-normal"> (ไม่บังคับ)</span>
             </Label>
@@ -693,6 +772,10 @@ const CollabDialog = ({
               {submitError}
             </p>
           )}
+
+          <p className="text-[11px] leading-relaxed text-muted-foreground border-t border-border/40 pt-3">
+            ไม่ใช่การจ้างงาน — ต้องอ้างอิงผลงานของตัวเองอย่างน้อย 1 ชิ้น รายละเอียดอื่นเติมได้ถ้าต้องการ
+          </p>
 
           <DialogFooter className="gap-2 sm:justify-end pt-2">
             <Button

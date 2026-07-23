@@ -249,16 +249,17 @@ function renderBlock(
   if (block.type === "video" && block.url) {
     return (
       <div className="overflow-hidden rounded-none bg-transparent">
-        <video
-          src={block.url}
-          controls
-          className="max-h-[min(80vh,900px)] w-full"
-          preload="metadata"
-        />
-        <div className="flex items-center gap-1.5 px-3 py-2 text-xs text-muted-foreground">
-          <Film className="h-3.5 w-3.5" />
-          วิดีโอ
-        </div>
+          <video
+            src={block.url}
+            poster={block.posterUrl || undefined}
+            controls
+            className="max-h-[min(80vh,900px)] w-full bg-muted"
+            preload="metadata"
+          />
+          <div className="flex items-center gap-1.5 px-3 py-2 text-xs text-muted-foreground">
+            <Film className="h-3.5 w-3.5" />
+            วิดีโอ
+          </div>
       </div>
     );
   }

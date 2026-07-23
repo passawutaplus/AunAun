@@ -4,6 +4,8 @@ export interface PortfolioMediaItem {
   id: string;
   kind: PortfolioMediaKind;
   url: string;
+  /** Video poster / thumbnail (optional). */
+  posterUrl?: string;
 }
 
 const VIDEO_EXT_RE = /\.(mp4|webm|mov)(\?|$)/i;

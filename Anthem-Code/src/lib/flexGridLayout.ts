@@ -34,6 +34,8 @@ export type FlexGridModule = {
   z: number;
   /** image / video / 3d-model storage URL */
   url?: string;
+  /** Video poster / thumbnail image URL */
+  posterUrl?: string;
   /**
    * First uploaded image URL for this module (before any crop).
    * Used by "คืนภาพต้นฉบับ" to restore original proportions.
@@ -196,6 +198,8 @@ function parseModule(raw: unknown): FlexGridModule | null {
     h: clampNum(m.h, 20, 4000, 100),
     z: clampNum(m.z, 0, 10000, 10),
     url: typeof m.url === "string" ? m.url : undefined,
+    posterUrl:
+      typeof m.posterUrl === "string" && m.posterUrl.trim() ? m.posterUrl.trim() : undefined,
     originalUrl:
       typeof m.originalUrl === "string" && m.originalUrl.trim()
         ? m.originalUrl.trim()
@@ -281,6 +285,9 @@ export function toStoredFlexGridLayout(layout: FlexGridLayout): FlexGridLayout {
           if (m.bgTransparent) out.bgTransparent = true;
         } else if (m.url?.trim()) {
           out.url = m.url.trim();
+          if (m.type === "video" && m.posterUrl?.trim()) {
+            out.posterUrl = m.posterUrl.trim();
+          }
           if (m.type === "image" && m.originalUrl?.trim()) {
             out.originalUrl = m.originalUrl.trim();
           }
@@ -325,7 +332,13 @@ export function flexGridMediaItems(layout: FlexGridLayout): PortfolioMediaItem[]
       if (!url) continue;
       // Static GIFs count as images; large GIFs converted to mp4 count as video.
       const kind = m.type === "video" || isVideoUrl(url) ? "video" : "image";
-      out.push({ id: m.id, kind, url });
+      const posterUrl = (m.posterUrl ?? "").trim();
+      out.push({
+        id: m.id,
+        kind,
+        url,
+        ...(kind === "video" && posterUrl ? { posterUrl } : {}),
+      });
     }
   }
   return out;

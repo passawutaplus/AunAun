@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ImagePlus, Loader2, X } from "lucide-react";
+import { Check, ImagePlus, Loader2, Plus, X, Tags, FileText, Link2, Wallet, CalendarDays, ClipboardList } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -12,6 +14,16 @@ import { cn } from "@/lib/utils";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { jobTypeLabel } from "@/lib/hireBrief";
 import { HIRE_ENGAGEMENT_TYPES } from "@/components/hiring/HireWizardFields";
+import { safeHttpUrl } from "@/lib/safeUrl";
+
+const MAX_HIRE_LINKS = 8;
+
+function validateHireLink(raw: string): string | null {
+  let v = raw.trim();
+  if (!v) return null;
+  if (!/^https?:\/\//i.test(v)) v = `https://${v}`;
+  return safeHttpUrl(v) ?? null;
+}
 
 export type HireInviteFormState = {
   jobTypes: string[];
@@ -19,7 +31,7 @@ export type HireInviteFormState = {
   budgetMin: string;
   budgetMax: string;
   deadline: string;
-  referenceUrl: string;
+  referenceUrls: string[];
   attachmentUrls: string[];
 };
 
@@ -29,7 +41,7 @@ export const emptyHireInviteForm = (): HireInviteFormState => ({
   budgetMin: "",
   budgetMax: "",
   deadline: "",
-  referenceUrl: "",
+  referenceUrls: [],
   attachmentUrls: [],
 });
 
@@ -37,10 +49,13 @@ export function buildHireInviteMessage(form: HireInviteFormState): string | null
   const typeLabel = form.jobTypes.length
     ? form.jobTypes.map(jobTypeLabel).join(" · ")
     : null;
+  const links = form.referenceUrls.map((u) => u.trim()).filter(Boolean);
   const parts = [
     typeLabel ? `ประเภทงาน: ${typeLabel}` : null,
     form.details.trim() ? `รายละเอียด:\n${form.details.trim()}` : null,
-    form.referenceUrl.trim() ? `ลิงก์อ้างอิง: ${form.referenceUrl.trim()}` : null,
+    links.length
+      ? `ลิงก์อ้างอิง:\n${links.map((u) => `- ${u}`).join("\n")}`
+      : null,
   ].filter(Boolean);
 
   if (!parts.length) return null;
@@ -81,6 +96,7 @@ const HireInviteForm = ({
 }: Props) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [linkDraft, setLinkDraft] = useState("");
 
   const onPickImages = async (files: FileList | null) => {
     if (!files?.length || !userId) return;
@@ -100,6 +116,24 @@ const HireInviteForm = ({
     }
   };
 
+  const addReferenceLink = () => {
+    const safe = validateHireLink(linkDraft);
+    if (!safe) {
+      toast.error("ลิงก์ไม่ปลอดภัยหรือไม่ถูกต้อง — ใช้เฉพาะ http/https");
+      return;
+    }
+    if (form.referenceUrls.includes(safe)) {
+      toast.info("ลิงก์นี้เพิ่มแล้ว");
+      return;
+    }
+    if (form.referenceUrls.length >= MAX_HIRE_LINKS) {
+      toast.info(`ใส่ลิงก์ได้สูงสุด ${MAX_HIRE_LINKS} อัน`);
+      return;
+    }
+    setForm((f) => ({ ...f, referenceUrls: [...f.referenceUrls, safe] }));
+    setLinkDraft("");
+  };
+
   const toggleJobType = (id: string) => {
     setForm((f) => {
       const has = f.jobTypes.includes(id);
@@ -112,10 +146,13 @@ const HireInviteForm = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {!isAplus1LaunchMinimal() ? (
         <div>
-          <Label className="text-xs">ผูกประกาศงานของคุณ (ไม่บังคับ)</Label>
+          <Label className="flex items-center gap-1.5 text-xs">
+            <ClipboardList className="h-3.5 w-3.5 text-primary" />
+            ผูกประกาศงานของคุณ (ไม่บังคับ)
+          </Label>
           {myJobs.length === 0 ? (
             <p className="text-xs text-muted-foreground mt-1.5">
               ยังไม่มีประกาศ —{" "}
@@ -141,8 +178,9 @@ const HireInviteForm = ({
         </div>
       ) : null}
 
-      <div id="hire-job-types">
-        <Label>
+      <div id="hire-job-types" className={!isAplus1LaunchMinimal() ? "border-t border-border/60 pt-5" : undefined}>
+        <Label className="flex items-center gap-1.5">
+          <Tags className="h-3.5 w-3.5 text-primary" />
           ประเภทงาน <span className="text-orange-500">*</span>
           <span className="text-muted-foreground font-normal"> (เลือกได้มากกว่า 1)</span>
         </Label>
@@ -177,8 +215,9 @@ const HireInviteForm = ({
         ) : null}
       </div>
 
-      <div>
-        <Label htmlFor="hire-details">
+      <div className="border-t border-border/60 pt-5">
+        <Label htmlFor="hire-details" className="flex items-center gap-1.5">
+          <FileText className="h-3.5 w-3.5 text-primary" />
           รายละเอียดงาน <span className="text-muted-foreground font-normal">(ไม่บังคับ)</span>
         </Label>
         <Textarea
@@ -191,19 +230,84 @@ const HireInviteForm = ({
         />
       </div>
 
-      <div>
-        <Label htmlFor="hire-ref-url">ลิงก์อ้างอิง (ไฟล์ / brief) <span className="text-muted-foreground font-normal">(ไม่บังคับ)</span></Label>
-        <Input
-          id="hire-ref-url"
-          value={form.referenceUrl}
-          onChange={(e) => setForm((f) => ({ ...f, referenceUrl: e.target.value }))}
-          placeholder="https://drive.google.com/..."
-          className="rounded-xl mt-1.5"
-        />
+      <div className="border-t border-border/60 pt-5">
+        <Label htmlFor="hire-ref-url" className="flex items-center gap-1.5">
+          <Link2 className="h-3.5 w-3.5 text-primary" />
+          ลิงก์อ้างอิง (ไฟล์ / brief){" "}
+          <span className="text-muted-foreground font-normal">(ไม่บังคับ)</span>
+        </Label>
+        <div className="mt-1.5 flex gap-2">
+          <Input
+            id="hire-ref-url"
+            type="url"
+            value={linkDraft}
+            onChange={(e) => setLinkDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addReferenceLink();
+              }
+            }}
+            placeholder="https://drive.google.com/..."
+            maxLength={500}
+            className="rounded-xl font-mono text-xs"
+          />
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            className="h-10 w-10 shrink-0 rounded-xl"
+            onClick={addReferenceLink}
+            aria-label="เพิ่มลิงก์"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+        {form.referenceUrls.length > 0 ? (
+          <ul className="mt-2 space-y-1.5">
+            {form.referenceUrls.map((url) => (
+              <li
+                key={url}
+                className="flex items-center gap-2 rounded-xl border border-border bg-muted/20 px-2.5 py-2 text-xs"
+              >
+                <span
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600"
+                  title="ลิงก์ปลอดภัย"
+                >
+                  <Check className="h-3 w-3" strokeWidth={2.5} />
+                </span>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="min-w-0 flex-1 truncate font-mono text-foreground hover:underline"
+                >
+                  {url}
+                </a>
+                <button
+                  type="button"
+                  aria-label="ลบลิงก์"
+                  className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  onClick={() =>
+                    setForm((f) => ({
+                      ...f,
+                      referenceUrls: f.referenceUrls.filter((u) => u !== url),
+                    }))
+                  }
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
 
-      <div>
-        <Label>แนบภาพอ้างอิง (ไม่บังคับ)</Label>
+      <div className="border-t border-border/60 pt-5">
+        <Label className="flex items-center gap-1.5">
+          <ImagePlus className="h-3.5 w-3.5 text-primary" />
+          แนบภาพอ้างอิง (ไม่บังคับ)
+        </Label>
         <div className="flex flex-wrap gap-2 mt-2">
           {form.attachmentUrls.map((url) => (
             <div key={url} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border">
@@ -240,9 +344,12 @@ const HireInviteForm = ({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 border-t border-border/60 pt-5">
         <div className="col-span-2 sm:col-span-1 space-y-1.5">
-          <Label>งบประมาณ (บาท) <span className="text-muted-foreground font-normal">ช่วงราคา</span></Label>
+          <Label className="flex items-center gap-1.5">
+            <Wallet className="h-3.5 w-3.5 text-primary" />
+            งบประมาณ (บาท) <span className="text-muted-foreground font-normal">ช่วงราคา</span>
+          </Label>
           <div className="grid grid-cols-2 gap-2">
             <Input
               id="hire-budget-min"
@@ -279,7 +386,8 @@ const HireInviteForm = ({
           ) : null}
         </div>
         <div className="col-span-2 sm:col-span-1">
-          <Label htmlFor="hire-deadline">
+          <Label htmlFor="hire-deadline" className="flex items-center gap-1.5">
+            <CalendarDays className="h-3.5 w-3.5 text-primary" />
             กำหนดส่งงาน <span className="text-orange-500">*</span>
           </Label>
           <Input

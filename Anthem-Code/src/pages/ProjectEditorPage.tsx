@@ -22,7 +22,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { isUuid } from "@/lib/uuid";
 import { uploadProjectImage } from "@/lib/uploadImage";
-import { uploadProjectVideo } from "@/lib/uploadVideo";
+import { uploadProjectVideoWithPoster } from "@/lib/uploadVideo";
 import { uploadProjectModel3d } from "@/lib/uploadProjectModel3d";
 import { uploadProjectGif, isGifFile } from "@/lib/uploadProjectGif";
 import { isVideoFile } from "@/lib/videoAccept";
@@ -983,10 +983,16 @@ const ProjectEditorPage = () => {
     }
   };
 
-  const appendMediaBlocks = useCallback((kind: "image" | "video", urls: string[]) => {
-    if (!urls.length) return;
-    setContentBlocks((prev) => [...prev, ...urls.map((url) => createMediaBlock(kind, url))]);
-  }, []);
+  const appendMediaBlocks = useCallback(
+    (kind: "image" | "video", urls: string[], posters?: (string | null)[]) => {
+      if (!urls.length) return;
+      setContentBlocks((prev) => [
+        ...prev,
+        ...urls.map((url, i) => createMediaBlock(kind, url, undefined, posters?.[i] ?? undefined)),
+      ]);
+    },
+    [],
+  );
 
   const handleGallery = async (files: FileList | File[]) => {
     if (!user) return;
@@ -1038,11 +1044,21 @@ const ProjectEditorPage = () => {
     setUploadingVideo(true);
     try {
       const urls: string[] = [];
+      const posters: (string | null)[] = [];
       for (const f of toUpload) {
-        const u = await uploadProjectVideo(f, user.id, folderRef.current, tier, uploadReporter);
-        urls.push(u);
+        const { url, posterUrl } = await uploadProjectVideoWithPoster(
+          f,
+          user.id,
+          folderRef.current,
+          tier,
+          uploadReporter,
+        );
+        urls.push(url);
+        posters.push(posterUrl);
       }
-      appendMediaBlocks("video", urls);
+      appendMediaBlocks("video", urls, posters);
+      const firstPoster = posters.find((p) => !!p);
+      if (!cover && firstPoster) setCover(firstPoster);
       toast.success(`อัปโหลด ${urls.length} วิดีโอสำเร็จ`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
@@ -1585,10 +1601,26 @@ const ProjectEditorPage = () => {
       setUploadingBlockId(blockId);
       setUploadingVideo(true);
       try {
-        const url = await uploadProjectVideo(file, user.id, folderRef.current, tier, uploadReporter);
-        setContentBlocks((prev) =>
-          prev.map((b) => (b.id === blockId ? { ...b, type: "video", url } : b)),
+        const { url, posterUrl } = await uploadProjectVideoWithPoster(
+          file,
+          user.id,
+          folderRef.current,
+          tier,
+          uploadReporter,
         );
+        setContentBlocks((prev) =>
+          prev.map((b) =>
+            b.id === blockId
+              ? {
+                  ...b,
+                  type: "video",
+                  url,
+                  ...(posterUrl ? { posterUrl } : { posterUrl: undefined }),
+                }
+              : b,
+          ),
+        );
+        if (!cover && posterUrl) setCover(posterUrl);
         toast.success("อัปโหลดวิดีโอสำเร็จ");
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
@@ -1599,6 +1631,79 @@ const ProjectEditorPage = () => {
       }
     },
     [user, contentBlocks, cover, tier, limits.videosPerProject, uploadReporter, resetUploadStage],
+  );
+
+  const handleSetVideoPoster = useCallback(
+    async (blockId: string, file: File) => {
+      if (!user) return;
+      const block = contentBlocks.find((b) => b.id === blockId);
+      if (!block || block.type !== "video" || !(block.url ?? "").trim()) return;
+      if (!isAllowedPortfolioImage(file)) {
+        toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
+        return;
+      }
+      setUploadingBlockId(blockId);
+      setUploadingGallery(true);
+      try {
+        const posterUrl = await uploadProjectImage(file, user.id, folderRef.current, tier, {
+          reporter: uploadReporter,
+        });
+        setContentBlocks((prev) =>
+          prev.map((b) => (b.id === blockId ? { ...b, posterUrl } : b)),
+        );
+        if (!cover || cover === block.url) setCover(posterUrl);
+        toast.success("อัปเดต thumbnail แล้ว");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "อัปโหลด thumbnail ไม่สำเร็จ");
+      } finally {
+        setUploadingBlockId(null);
+        setUploadingGallery(false);
+        resetUploadStage();
+      }
+    },
+    [user, contentBlocks, cover, tier, uploadReporter, resetUploadStage],
+  );
+
+  const handleSetFlexModulePoster = useCallback(
+    async (boardId: string, moduleId: string, file: File) => {
+      if (!user) return;
+      if (!isAllowedPortfolioImage(file)) {
+        toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
+        return;
+      }
+      setUploadingFlexModuleId(moduleId);
+      setUploadingGallery(true);
+      try {
+        const posterUrl = await uploadProjectImage(file, user.id, folderRef.current, tier, {
+          reporter: uploadReporter,
+        });
+        setFlexGridLayout((prev) => ({
+          ...prev,
+          boards: prev.boards.map((b) =>
+            b.id !== boardId
+              ? b
+              : {
+                  ...b,
+                  modules: b.modules.map((m) =>
+                    m.id === moduleId ? { ...m, posterUrl } : m,
+                  ),
+                },
+          ),
+        }));
+        const mod = flexGridLayout.boards
+          .find((b) => b.id === boardId)
+          ?.modules.find((m) => m.id === moduleId);
+        if (!cover || (mod?.url && cover === mod.url)) setCover(posterUrl);
+        toast.success("อัปเดต thumbnail แล้ว");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "อัปโหลด thumbnail ไม่สำเร็จ");
+      } finally {
+        setUploadingFlexModuleId(null);
+        setUploadingGallery(false);
+        resetUploadStage();
+      }
+    },
+    [user, flexGridLayout, cover, tier, uploadReporter, resetUploadStage],
   );
 
   const handleUploadManyToBlock = useCallback(
@@ -2112,7 +2217,7 @@ const ProjectEditorPage = () => {
         setUploadingFlexModuleId(moduleId);
         setUploadingVideo(true);
         try {
-          const url = await uploadProjectVideo(
+          const { url, posterUrl } = await uploadProjectVideoWithPoster(
             file,
             user.id,
             folderRef.current,
@@ -2126,11 +2231,19 @@ const ProjectEditorPage = () => {
                 ? b
                 : {
                     ...b,
-                    modules: b.modules.map((m) => (m.id === moduleId ? { ...m, url } : m)),
+                    modules: b.modules.map((m) =>
+                      m.id === moduleId
+                        ? {
+                            ...m,
+                            url,
+                            ...(posterUrl ? { posterUrl } : { posterUrl: undefined }),
+                          }
+                        : m,
+                    ),
                   },
             ),
           }));
-          if (!cover) setCover(url);
+          if (!cover && posterUrl) setCover(posterUrl);
           clearPublishFieldError("canvasImage");
         } catch (e) {
           toast.error(mapWriteFlowError(e, "อัปโหลดวิดีโอไม่สำเร็จ"));
@@ -2691,6 +2804,9 @@ const ProjectEditorPage = () => {
                 onUploadToModule={(boardId, moduleId, file) =>
                   void handleUploadToFlexModule(boardId, moduleId, file)
                 }
+                onSetModulePoster={(boardId, moduleId, file) =>
+                  void handleSetFlexModulePoster(boardId, moduleId, file)
+                }
                 croppingModuleId={flexInlineCrop?.moduleId ?? null}
                 onBeginCropModule={handleBeginFlexCrop}
                 onConfirmInlineCrop={(boardId, moduleId, result) =>
@@ -2726,6 +2842,7 @@ const ProjectEditorPage = () => {
               onPlaceTool={handlePlaceTool}
               onUploadToBlock={(id, file, slot) => void handleUploadToBlock(id, file, slot)}
               onUploadManyToBlock={(id, files) => void handleUploadManyToBlock(id, files)}
+              onSetVideoPoster={(id, file) => void handleSetVideoPoster(id, file)}
               onCropImage={(id, url, slot) => void handleCropImage(id, url, slot)}
               selectedBlockId={selectedBlockId}
               onSelectedBlockIdChange={setSelectedBlockId}

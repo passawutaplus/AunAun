@@ -483,7 +483,12 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       {(shouldNoindexSearchParams(searchParams) || search.trim().length > 0) && (
         <SeoHead path="/" noindex title="ค้นหาผลงาน" description="ผลการค้นหาบน Aplus1" />
       )}
-      <div className="max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] pt-4 py-4 space-y-4">
+      <div
+        className={cn(
+          "max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-4",
+          mode === "projects" ? "pt-0 space-y-0" : "pt-4 space-y-4",
+        )}
+      >
         <FeedHero mode={mode} />
 
         <FeedToolbar
@@ -543,7 +548,10 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           onDrillSelect={openDrill}
         />
 
-        <FeedModeTransition modeKey={feedPanelKey}>
+        <FeedModeTransition
+          modeKey={feedPanelKey}
+          className={mode === "projects" ? "mt-8 sm:mt-10" : undefined}
+        >
           {needsLogin ? (
             <div className="text-center py-16 glass-panel rounded-2xl">
               <p className="text-foreground font-medium mb-2 thai-display">เข้าสู่ระบบเพื่อใช้หมวด "{feedMode}"</p>

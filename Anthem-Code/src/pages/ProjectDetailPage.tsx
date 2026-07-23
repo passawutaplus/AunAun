@@ -337,7 +337,7 @@ const ProjectDetailPage = () => {
         ]}
       />
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div className="max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+45px)] lg:px-[calc(1.5rem+45px)] 2xl:px-[calc(2.5rem+45px)] py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <BackButton />
             <SeoBreadcrumb items={crumbs} className="mb-0 hidden md:flex min-w-0" />
@@ -376,7 +376,7 @@ const ProjectDetailPage = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6 lg:py-10">
+      <div className="max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+45px)] lg:px-[calc(1.5rem+45px)] 2xl:px-[calc(2.5rem+45px)] py-6 lg:py-10">
         {sponsorAd && sponsorAdId ? (
           <div className="mb-4 rounded-xl border border-primary/25 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">
@@ -404,9 +404,8 @@ const ProjectDetailPage = () => {
             ) : null}
           </div>
         ) : null}
-        <div className="grid lg:grid-cols-[1fr_360px] gap-6 lg:gap-10">
-          {/* Left: Gallery */}
-          {/* Left: Gallery */}
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px] gap-6 lg:gap-8 xl:gap-10">
+          {/* Left: Gallery + below-fold content */}
           <div className="space-y-4 min-w-0">
             {dbProject && (
               <ProjectCreditsBlock
@@ -418,14 +417,14 @@ const ProjectDetailPage = () => {
             {editorMode === "flex_grid" && flexLayout ? (
               <FlexGridView
                 layout={flexLayout}
-                className="max-w-3xl"
+                className="w-full max-w-none"
                 projectId={dbProject?.id ?? project.id}
                 projectTitle={project.title}
               />
             ) : canvasBlocks.length > 0 ? (
               <ProjectContentBlocksView
                 blocks={canvasBlocks}
-                className="max-w-2xl"
+                className="w-full max-w-none"
                 projectId={dbProject?.id ?? project.id}
                 projectTitle={project.title}
               />
@@ -434,10 +433,19 @@ const ProjectDetailPage = () => {
                 ยังไม่มีเนื้อหา
               </div>
             )}
+
+            <div className="mt-10 lg:mt-14 space-y-6">
+              {linkedPosts.length > 0 && <ProjectLinkedPostsBlock posts={linkedPosts} />}
+              <ProjectContextCard context={project.context} />
+              <CommentSection projectId={project.id} />
+            </div>
           </div>
 
-          {/* Right: Side panel (sticky on desktop) */}
-          <FadeUp className="lg:sticky lg:top-20 lg:self-start" delay={0.06}>
+          {/* Right: Side panel — sticky + self-scroll when hovered */}
+          <FadeUp
+            className="lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:overscroll-contain scrollbar-hide"
+            delay={0.06}
+          >
             <ProjectSidePanel
               projectId={dbProject?.id}
               title={project.title}
@@ -475,12 +483,6 @@ const ProjectDetailPage = () => {
               clientPermissionConfirmed={project.clientPermissionConfirmed}
             />
           </FadeUp>
-        </div>
-
-        <div className="mt-10 lg:mt-14 max-w-3xl space-y-6">
-          {linkedPosts.length > 0 && <ProjectLinkedPostsBlock posts={linkedPosts} />}
-          <ProjectContextCard context={project.context} />
-          <CommentSection projectId={project.id} />
         </div>
       </div>
 

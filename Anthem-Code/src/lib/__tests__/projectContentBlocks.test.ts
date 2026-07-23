@@ -27,16 +27,36 @@ describe("projectContentBlocks", () => {
   it("parses image/video blocks", () => {
     const raw = [
       { id: "i1", type: "image", url: "https://cdn.example/a.jpg" },
-      { id: "v1", type: "video", url: "https://cdn.example/a.mp4" },
+      {
+        id: "v1",
+        type: "video",
+        url: "https://cdn.example/a.mp4",
+        posterUrl: "https://cdn.example/a-poster.jpg",
+      },
       { id: "t1", type: "body", body: "note" },
     ];
     const parsed = parseContentBlocks(raw);
     expect(parsed).toHaveLength(3);
+    expect(parsed.find((b) => b.id === "v1")).toMatchObject({
+      type: "video",
+      url: "https://cdn.example/a.mp4",
+      posterUrl: "https://cdn.example/a-poster.jpg",
+    });
     expect(hasMediaBlocks(parsed)).toBe(true);
     expect(splitMediaFromBlocks(parsed)).toEqual({
       gallery_urls: ["https://cdn.example/a.jpg", "https://cdn.example/a.mp4"],
       video_urls: ["https://cdn.example/a.mp4"],
     });
+    expect(toStoredContentBlocks(raw as never)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "v1",
+          type: "video",
+          url: "https://cdn.example/a.mp4",
+          posterUrl: "https://cdn.example/a-poster.jpg",
+        }),
+      ]),
+    );
   });
 
   it("hydrates legacy gallery + text into canvas", () => {

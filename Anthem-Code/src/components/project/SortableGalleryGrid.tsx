@@ -146,7 +146,14 @@ function SortableThumb({
         )}
       >
         {item.kind === "video" ? (
-          <video src={item.url} className="w-full max-h-[600px] object-contain bg-black" controls playsInline />
+          <video
+            src={item.url}
+            poster={item.posterUrl || undefined}
+            className="w-full max-h-[600px] object-contain bg-black"
+            controls
+            playsInline
+            preload="metadata"
+          />
         ) : (
           <img src={item.url} alt={label} className="w-full max-h-[600px] object-contain bg-muted/30" loading="lazy" />
         )}
@@ -192,7 +199,16 @@ function SortableThumb({
     >
       {item.kind === "video" ? (
         <>
-          <video src={item.url} className="w-full h-full object-cover bg-black" muted playsInline />
+          {item.posterUrl ? (
+            <img
+              src={item.posterUrl}
+              alt=""
+              className="w-full h-full object-cover bg-black"
+              loading="lazy"
+            />
+          ) : (
+            <video src={item.url} className="w-full h-full object-cover bg-black" muted playsInline preload="metadata" />
+          )}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <Film className="w-8 h-8 text-white/90 drop-shadow" />
           </div>

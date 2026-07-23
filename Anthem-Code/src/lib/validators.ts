@@ -311,6 +311,7 @@ export const projectSchema = z.object({
         heading: z.string().max(PROJECT_BLOCK_HEADING_MAX).optional(),
         body: z.string().max(PROJECT_BLOCK_BODY_MAX).optional(),
         url: z.string().url().optional().or(z.literal("")),
+        posterUrl: z.string().url().optional().or(z.literal("")),
         urls: z.array(z.string()).max(20).optional(),
         mediaLayout: z.enum(["single", "gallery", "grid", "multi"]).optional(),
         gridLayout: z

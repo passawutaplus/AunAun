@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { isAuthRoute } from "@/lib/onboardingRoutes";
-import { Cookie, Settings2, X } from "lucide-react";
+import { Cookie, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CookiePreferencesDialog from "@/components/CookiePreferencesDialog";
 import {
@@ -62,7 +62,7 @@ const CookieConsent = () => {
           className={
             compactAuth
               ? "fixed bottom-3 right-3 z-40 max-w-[min(100vw-1.5rem,22rem)] pointer-events-none sm:bottom-4 sm:right-4"
-              : "fixed inset-x-0 bottom-0 z-40 p-2 sm:p-3 pointer-events-none"
+              : "fixed inset-x-0 bottom-0 z-40 pb-2 sm:pb-3 pointer-events-none"
           }
           role="dialog"
           aria-label="แบนเนอร์ความยินยอมคุกกี้"
@@ -101,7 +101,17 @@ const CookieConsent = () => {
               </div>
             </div>
           ) : (
-            <div className="w-full pointer-events-auto rounded-2xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl px-4 py-3 sm:px-5">
+            <div className="mx-auto w-fit max-w-[calc(100%-1.5rem)] sm:max-w-[min(100%-2rem,52rem)] pointer-events-none">
+              <div
+                className={
+                  "pointer-events-auto rounded-2xl border border-white/15 " +
+                  "bg-background/45 backdrop-blur-2xl backdrop-saturate-150 " +
+                  "supports-[backdrop-filter]:bg-background/35 " +
+                  "shadow-[0_8px_32px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_0_hsl(0_0%_100%_/_0.08)] " +
+                  "dark:border-white/10 dark:bg-background/40 dark:supports-[backdrop-filter]:bg-background/30 " +
+                  "px-4 py-3 sm:px-5"
+                }
+              >
               <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-4">
                 <div className="flex items-start gap-2.5 min-w-0 flex-1">
                   <Cookie className="w-5 h-5 shrink-0 text-primary mt-0.5" strokeWidth={2.25} aria-hidden />
@@ -136,19 +146,8 @@ const CookieConsent = () => {
                   <Button size="sm" variant="outline" onClick={essentialOnly} className="min-h-10">
                     ปฏิเสธที่ไม่จำเป็น
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="gap-1 min-h-10"
-                    onClick={() => {
-                      setBannerOpen(false);
-                      setPrefsOpen(true);
-                    }}
-                  >
-                    <Settings2 className="w-3.5 h-3.5" />
-                    ปรับแต่ง
-                  </Button>
                 </div>
+              </div>
               </div>
             </div>
           )}

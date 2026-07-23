@@ -31,6 +31,7 @@ import {
   Trash2,
   Type,
 } from "lucide-react";
+import { isAllowedPortfolioImage } from "@/lib/normalizeImageUpload";
 import { ProjectRichTextField } from "@/components/project/ProjectRichTextField";
 import { CANVAS_TOOL_MIME, readCanvasToolDragData, type CanvasToolPayload } from "@/lib/canvasToolDrag";
 import {
@@ -85,6 +86,8 @@ type Props = {
   onPlaceTool?: (payload: CanvasToolPayload, insertAt?: number) => void;
   onUploadToBlock?: (blockId: string, file: File, slotIndex?: number) => void;
   onUploadManyToBlock?: (blockId: string, files: File[]) => void;
+  /** Custom video thumbnail (image file) for a video block. */
+  onSetVideoPoster?: (blockId: string, file: File) => void;
   onCropImage?: (blockId: string, imageUrl: string, slotIndex?: number) => void;
   uploadingBlockId?: string | null;
   uploading?: boolean;
@@ -193,16 +196,21 @@ function takeVideoFile(list: FileList | File[] | null | undefined): File | null 
 
 function ModuleVideoWithReplace({
   src,
+  posterUrl,
   disabled,
   uploading,
   onReplace,
+  onSetPoster,
 }: {
   src: string;
+  posterUrl?: string;
   disabled?: boolean;
   uploading?: boolean;
   onReplace?: (file: File) => void;
+  onSetPoster?: (file: File) => void;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const posterInputRef = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
 
   const acceptVideoDrop = (fileList: FileList | null) => {
@@ -236,7 +244,33 @@ function ModuleVideoWithReplace({
         acceptVideoDrop(e.dataTransfer.files);
       }}
     >
-      <video src={src} controls className="max-h-[480px] w-full" preload="metadata" />
+      <video
+        src={src}
+        poster={posterUrl || undefined}
+        controls
+        className="max-h-[480px] w-full bg-muted"
+        preload="metadata"
+      />
+      <div className="flex items-center justify-between gap-2 border-t border-border/40 bg-muted/40 px-3 py-2">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Film className="h-3.5 w-3.5 shrink-0" />
+          วิดีโอ
+        </div>
+        {onSetPoster && !disabled ? (
+          <button
+            type="button"
+            disabled={uploading}
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border/70 bg-background px-2.5 text-xs font-medium text-foreground shadow-sm transition hover:bg-muted disabled:opacity-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              posterInputRef.current?.click();
+            }}
+          >
+            <ImageIcon className="h-3.5 w-3.5" />
+            {posterUrl ? "เปลี่ยน thumbnail" : "ใส่ thumbnail"}
+          </button>
+        ) : null}
+      </div>
       {onReplace && !disabled ? (
         <>
           <button
@@ -246,13 +280,13 @@ function ModuleVideoWithReplace({
             className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-background/90 text-foreground opacity-100 shadow-sm backdrop-blur transition hover:bg-background sm:opacity-0 sm:group-hover/crop:opacity-100"
             onClick={(e) => {
               e.stopPropagation();
-              inputRef.current?.click();
+              videoInputRef.current?.click();
             }}
           >
             <ImagePlus className="h-3.5 w-3.5" />
           </button>
           <input
-            ref={inputRef}
+            ref={videoInputRef}
             type="file"
             accept={PROJECT_VIDEO_ACCEPT}
             className="sr-only"
@@ -270,6 +304,26 @@ function ModuleVideoWithReplace({
             }}
           />
         </>
+      ) : null}
+      {onSetPoster ? (
+        <input
+          ref={posterInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+          className="sr-only"
+          disabled={disabled || uploading}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              if (!isAllowedPortfolioImage(file)) {
+                toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
+              } else {
+                onSetPoster(file);
+              }
+            }
+            e.target.value = "";
+          }}
+        />
       ) : null}
     </div>
   );
@@ -564,6 +618,7 @@ function SortableCanvasBlock({
   onDuplicate,
   onUpload,
   onUploadMany,
+  onSetPoster,
   onCrop,
   onImageSlotDrop,
   onToolDragOver,
@@ -587,6 +642,7 @@ function SortableCanvasBlock({
   onDuplicate: () => void;
   onUpload?: (file: File, slotIndex?: number) => void;
   onUploadMany?: (files: File[]) => void;
+  onSetPoster?: (file: File) => void;
   onCrop?: (imageUrl: string, slotIndex?: number) => void;
   onImageSlotDrop?: (from: CanvasImageSlotRef, to: CanvasImageSlotTarget) => void;
   onToolDragOver?: (e: DragEvent, el: HTMLElement) => void;
@@ -1048,9 +1104,11 @@ function SortableCanvasBlock({
           block.url?.trim() ? (
             <ModuleVideoWithReplace
               src={block.url}
+              posterUrl={block.posterUrl}
               disabled={disabled}
               uploading={uploading}
               onReplace={onUpload}
+              onSetPoster={onSetPoster}
             />
           ) : (
             <EmptyVideoTile
@@ -1124,6 +1182,7 @@ export function ProjectCanvasEditor({
   onPlaceTool,
   onUploadToBlock,
   onUploadManyToBlock,
+  onSetVideoPoster,
   onCropImage,
   uploadingBlockId,
   uploading,
@@ -1396,6 +1455,11 @@ export function ProjectCanvasEditor({
                       block.mediaLayout === "multi") &&
                     onUploadManyToBlock
                       ? (files) => onUploadManyToBlock(block.id, files)
+                      : undefined
+                  }
+                  onSetPoster={
+                    block.type === "video" && onSetVideoPoster
+                      ? (file) => onSetVideoPoster(block.id, file)
                       : undefined
                   }
                   onCrop={

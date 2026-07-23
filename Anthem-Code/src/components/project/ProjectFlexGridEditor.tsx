@@ -166,6 +166,8 @@ type Props = {
   /** Real progress 0–100 when known; omit for an indeterminate simulated ramp. */
   uploadStagePercent?: number | null;
   onUploadToModule?: (boardId: string, moduleId: string, file: File) => void;
+  /** Custom video thumbnail for a flex video module. */
+  onSetModulePoster?: (boardId: string, moduleId: string, file: File) => void;
   /** Module currently in inline crop mode (Full Grid). */
   croppingModuleId?: string | null;
   onBeginCropModule?: (boardId: string, moduleId: string, imageUrl: string) => void;
@@ -231,6 +233,7 @@ export function ProjectFlexGridEditor({
   uploadStageLabel,
   uploadStagePercent,
   onUploadToModule,
+  onSetModulePoster,
   croppingModuleId,
   onBeginCropModule,
   onConfirmInlineCrop,
@@ -324,12 +327,14 @@ export function ProjectFlexGridEditor({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const gifInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const posterInputRef = useRef<HTMLInputElement>(null);
   const model3dInputRef = useRef<HTMLInputElement>(null);
   const pendingUploadRef = useRef<{
     boardId: string;
     moduleId: string;
     kind: ModuleUploadKind;
   } | null>(null);
+  const pendingPosterRef = useRef<{ boardId: string; moduleId: string } | null>(null);
   /** After placing a module from a file drop, upload once the new module is in `layout`. */
   const pendingFileUploadRef = useRef<{
     boardId: string;
@@ -487,6 +492,15 @@ export function ProjectFlexGridEditor({
           : type === "gif"
             ? gifInputRef.current
             : imageInputRef.current;
+    if (!input) return;
+    input.value = "";
+    input.click();
+  };
+
+  const openPosterPicker = (boardId: string, moduleId: string) => {
+    if (disabled || !onSetModulePoster) return;
+    pendingPosterRef.current = { boardId, moduleId };
+    const input = posterInputRef.current;
     if (!input) return;
     input.value = "";
     input.click();
@@ -781,6 +795,7 @@ export function ProjectFlexGridEditor({
               onArrangeModule={(moduleId, act) => arrangeModule(board.id, moduleId, act)}
               onCopyModule={(moduleId) => copySelected(board.id, moduleId)}
               onUploadClick={openUpload}
+              onSetPosterClick={openPosterPicker}
               onUploadFile={(moduleId, kind, files) => {
                 if (board.locked) {
                   toast.error("บอร์ดถูกล็อก — ปลดล็อกก่อนอัปไฟล์");
@@ -839,6 +854,24 @@ export function ProjectFlexGridEditor({
         accept={PROJECT_VIDEO_ACCEPT}
         className="hidden"
         onChange={(e) => onFileChange(e, "video")}
+      />
+      <input
+        ref={posterInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          const pending = pendingPosterRef.current;
+          e.target.value = "";
+          pendingPosterRef.current = null;
+          if (!file || !pending) return;
+          if (!/^image\//i.test(file.type) && !/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name)) {
+            toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
+            return;
+          }
+          onSetModulePoster?.(pending.boardId, pending.moduleId, file);
+        }}
       />
       <input
         ref={gifInputRef}
@@ -969,6 +1002,7 @@ function BoardSurface({
   onArrangeModule,
   onCopyModule,
   onUploadClick,
+  onSetPosterClick,
   onUploadFile,
   croppingModuleId,
   onBeginCropModule,
@@ -1014,6 +1048,7 @@ function BoardSurface({
   onArrangeModule: (moduleId: string, act: "front" | "forward" | "backward" | "back") => void;
   onCopyModule: (moduleId: string) => void;
   onUploadClick: (boardId: string, moduleId: string, type: ModuleUploadKind) => void;
+  onSetPosterClick?: (boardId: string, moduleId: string) => void;
   onUploadFile: (moduleId: string, kind: ModuleUploadKind, files: FileList) => void;
   croppingModuleId?: string | null;
   onBeginCropModule?: (boardId: string, moduleId: string, imageUrl: string) => void;
@@ -1285,6 +1320,17 @@ function BoardSurface({
                   onUploadClick(board.id, mod.id, mod.type);
                 }
               }}
+              onSetPosterClick={
+                mod.type === "video" && onSetPosterClick
+                  ? () => {
+                      if (boardLocked) {
+                        toast.error("บอร์ดถูกล็อก — ปลดล็อกก่อนแก้ไข");
+                        return;
+                      }
+                      onSetPosterClick(board.id, mod.id);
+                    }
+                  : undefined
+              }
               onUploadFile={(files) => {
                 if (
                   mod.type === "image" ||
@@ -1362,6 +1408,7 @@ function PlacedModule({
   onArrange,
   onCopy,
   onUploadClick,
+  onSetPosterClick,
   onUploadFile,
   cropping,
   onBeginCrop,
@@ -1388,6 +1435,7 @@ function PlacedModule({
   onArrange: (act: "front" | "forward" | "backward" | "back") => void;
   onCopy: () => void;
   onUploadClick: () => void;
+  onSetPosterClick?: () => void;
   onUploadFile?: (files: FileList) => void;
   cropping?: boolean;
   onBeginCrop?: () => void;
@@ -1886,30 +1934,63 @@ function PlacedModule({
                 data-flex-move-handle={locked || disabled ? undefined : true}
                 onPointerDown={locked || disabled ? undefined : onMovePointerDown}
               >
-                <video
-                  src={module.url}
-                  className="pointer-events-none h-full w-full object-cover"
-                  muted
-                  playsInline
-                />
+                {module.posterUrl ? (
+                  <img
+                    src={module.posterUrl}
+                    alt=""
+                    className="pointer-events-none h-full w-full object-cover"
+                    draggable={false}
+                  />
+                ) : (
+                  <video
+                    src={module.url}
+                    poster={module.posterUrl || undefined}
+                    className="pointer-events-none h-full w-full object-cover"
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
+                )}
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <Film className="h-8 w-8 text-white/90 drop-shadow" strokeWidth={1.5} />
+                </div>
                 {!disabled ? (
-                  <button
-                    type="button"
-                    title="เปลี่ยนวิดีโอ"
-                    aria-label="เปลี่ยนวิดีโอ"
+                  <div
                     className={cn(
-                      "absolute left-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-md border border-border/70 bg-card/95 text-foreground shadow-sm",
+                      "absolute left-1 top-1 z-10 flex gap-1",
                       "opacity-0 transition-opacity group-hover:opacity-100",
                       selected && "opacity-100",
                     )}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onUploadClick();
-                    }}
                   >
-                    <Film className="h-3.5 w-3.5" strokeWidth={2} />
-                  </button>
+                    <button
+                      type="button"
+                      title="เปลี่ยนวิดีโอ"
+                      aria-label="เปลี่ยนวิดีโอ"
+                      className="flex h-7 w-7 items-center justify-center rounded-md border border-border/70 bg-card/95 text-foreground shadow-sm"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUploadClick();
+                      }}
+                    >
+                      <Film className="h-3.5 w-3.5" strokeWidth={2} />
+                    </button>
+                    {onSetPosterClick ? (
+                      <button
+                        type="button"
+                        title={module.posterUrl ? "เปลี่ยน thumbnail" : "ใส่ thumbnail"}
+                        aria-label={module.posterUrl ? "เปลี่ยน thumbnail" : "ใส่ thumbnail"}
+                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border/70 bg-card/95 text-foreground shadow-sm"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSetPosterClick();
+                        }}
+                      >
+                        <ImageIcon className="h-3.5 w-3.5" strokeWidth={2} />
+                      </button>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             ) : (

@@ -321,7 +321,7 @@ const FeedToolbar = ({
   return (
     <div
       data-feed-toolbar
-      className="sticky top-0 z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 bg-background/75 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 border-b border-border/50 overflow-visible"
+      className="sticky top-0 z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65 overflow-visible shadow-[0_-24px_48px_-8px_hsl(var(--background))]"
     >
       {/* Mobile / tablet */}
       <div className="flex items-center gap-2 lg:hidden">

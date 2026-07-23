@@ -221,6 +221,38 @@
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
 }
+@keyframes work-wall-left {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+@keyframes work-wall-right {
+  from { transform: translate3d(-50%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+@keyframes work-cylinder-cw {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(-360deg); }
+}
+@keyframes work-cylinder-ccw {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(360deg); }
+}
+@keyframes hero-grid-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-48px, -48px, 0); }
+}
+@keyframes hero-grid-drift-alt {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(48px, -24px, 0); }
+}
+@keyframes hero-grid-bg {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 44px 44px, 44px 44px; }
+}
+@keyframes hero-grid-bg-alt {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: -44px 22px, -44px 22px; }
+}
 @keyframes input-shake {
   0%, 100% { transform: translateX(0); }
   20% { transform: translateX(-6px); }
@@ -256,6 +288,46 @@
   .animate-fade-up { animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
   .animate-fade-in { animation: fade-in 0.3s ease-out both; }
   .animate-scale-in { animation: scale-in 0.25s ease-out both; }
+  .animate-work-wall-left {
+    animation: work-wall-left 95s linear infinite;
+  }
+  .animate-work-wall-right {
+    animation: work-wall-right 110s linear infinite;
+  }
+  .animate-work-cylinder-cw {
+    animation: work-cylinder-cw 80s linear infinite;
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+  .animate-work-cylinder-ccw {
+    animation: work-cylinder-ccw 95s linear infinite;
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+  .animate-hero-grid-drift {
+    animation: hero-grid-drift 28s linear infinite;
+  }
+  .animate-hero-grid-drift-alt {
+    animation: hero-grid-drift-alt 36s linear infinite;
+  }
+  .animate-hero-grid-bg {
+    animation: hero-grid-bg 28s linear infinite;
+  }
+  .animate-hero-grid-bg-alt {
+    animation: hero-grid-bg-alt 36s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-work-wall-left,
+    .animate-work-wall-right,
+    .animate-work-cylinder-cw,
+    .animate-work-cylinder-ccw,
+    .animate-hero-grid-drift,
+    .animate-hero-grid-drift-alt,
+    .animate-hero-grid-bg,
+    .animate-hero-grid-bg-alt {
+      animation: none !important;
+    }
+  }
   .animate-input-shake { animation: input-shake 0.4s ease-in-out; }
   .animate-community-heart-burst { animation: community-heart-burst 0.75s ease-out forwards; }
   .animate-plus-one-burst { animation: plus-one-burst 0.75s ease-out forwards; }

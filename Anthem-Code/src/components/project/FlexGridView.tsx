@@ -194,6 +194,7 @@ function ModuleView({
           <div className="relative h-full w-full bg-black">
             <video
               src={module.url}
+              poster={module.posterUrl || undefined}
               className="h-full w-full object-cover"
               controls
               playsInline
