@@ -3,12 +3,22 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
-    <loc>https://aplus1.app/u/c165644b-a22a-4ee1-beed-bf64e6557ed0</loc>
+    <loc>https://aplus1.app/u/82039b6d-cdf4-4c46-958a-d770d849382c</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/u/82039b6d-cdf4-4c46-958a-d770d849382c</loc>
+    <loc>https://aplus1.app/u/14acc229-345a-4bb5-80fd-f98e2798ccf3</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/u/3d43d3db-7c62-4d6e-97ca-22a9c546b9e1</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/u/c165644b-a22a-4ee1-beed-bf64e6557ed0</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -343,12 +353,22 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/@blacksmithtools1997_c16564</loc>
+    <loc>https://aplus1.app/@passawut.a.plus_82039b</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/@passawut.a.plus_82039b</loc>
+    <loc>https://aplus1.app/@info_14acc2</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/@msk.petch_3d43d3</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/@blacksmithtools1997_c16564</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
