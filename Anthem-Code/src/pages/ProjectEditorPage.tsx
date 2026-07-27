@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Eye, Handshake, ImagePlus, Library, Loader2, Save, X } from "lucide-react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Eye, Handshake, ImagePlus, Library, Loader2, Save, X, ChevronRight } from "lucide-react";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { BackButton } from "@/components/ui/BackButton";
@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { useEnsureSensitiveAction } from "@/components/legal/SensitiveActionReauthProvider";
@@ -28,7 +27,7 @@ import { uploadProjectGif, isGifFile } from "@/lib/uploadProjectGif";
 import { isVideoFile } from "@/lib/videoAccept";
 import { isModel3dFile } from "@/lib/model3dAccept";
 import { useUploadStageReporter } from "@/hooks/useUploadStageReporter";
-import { normalizeImageForUpload, isAllowedPortfolioImage } from "@/lib/normalizeImageUpload";
+import { normalizeImageForUpload, isAllowedPortfolioImage, isAllowedPortfolioStillImage, PORTFOLIO_STILL_IMAGE_ACCEPT } from "@/lib/normalizeImageUpload";
 import { sizeModuleToAspect } from "@/lib/flexGridCropAspect";
 import type { FlexGridInlineCropResult } from "@/components/project/FlexGridInlineCrop";
 import { useSubscription } from "@/core/subscription";
@@ -59,7 +58,9 @@ import { communityMediaAspectMeta, normalizeCommunityMediaAspect } from "@/lib/c
 import ProjectContextEditorFields, {
   type ProjectContextForm,
 } from "@/components/project/ProjectContextEditorFields";
-import ProjectAssetsEditor from "@/components/project/ProjectAssetsEditor";
+import ProjectAssetsEditor, {
+  type ProjectAssetsEditorHandle,
+} from "@/components/project/ProjectAssetsEditor";
 import {
   parseProjectAssets,
   toStoredProjectAssets,
@@ -70,7 +71,6 @@ import {
 import { enqueueProjectAssetScan } from "@/lib/triggerProjectAssetScan";
 import { hasProjectContextContent } from "@/lib/opportunity";
 import type { ProjectPreviewMode } from "@/components/project/ProjectPreviewModeTabs";
-import ThirdPartyAssetsToggle from "@/components/license/ThirdPartyAssetsToggle";
 import OriginalWorkAttestation from "@/components/license/OriginalWorkAttestation";
 import AiDisclosureToggle from "@/components/license/AiDisclosureToggle";
 import ClientPermissionConfirm from "@/components/license/ClientPermissionConfirm";
@@ -95,7 +95,7 @@ import {
 } from "@/data/categoryTaxonomy";
 import { SeriesFormDialog } from "@/components/series/SeriesFormDialog";
 import { PortfolioLinkedPostPicker } from "@/components/project/PortfolioLinkedPostPicker";
-import { isAplus1LaunchMinimal, isAplus1SubscriptionsEnabled, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
+import { isAplus1LaunchMinimal, isAplus1SubscriptionsEnabled, isLaunchDesignDrillEnabled, isLaunchFullGridEditorEnabled } from "@/lib/aplus1Launch";
 import { PortfolioCollabUserPicker } from "@/components/project/PortfolioCollabUserPicker";
 import {
   Dialog,
@@ -243,16 +243,17 @@ const ProjectEditorPage = () => {
   const [licenseType, setLicenseType] = useState<LicenseType>("all_rights");
   const [licenseNote, setLicenseNote] = useState("");
   const [copyrightHolder, setCopyrightHolder] = useState("");
-  const [hasThirdPartyAssets, setHasThirdPartyAssets] = useState(false);
-  const [thirdPartyNote, setThirdPartyNote] = useState("");
   const [aiAssisted, setAiAssisted] = useState(false);
   const [aiDisclosureNote, setAiDisclosureNote] = useState("");
   const [clientPermissionConfirmed, setClientPermissionConfirmed] = useState(false);
   const [rightsAttested, setRightsAttested] = useState(false);
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [publishAttestChecked, setPublishAttestChecked] = useState(false);
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+  const [pendingLeaveTo, setPendingLeaveTo] = useState<string | null>(null);
+  const [leavingBusy, setLeavingBusy] = useState(false);
   const [publishFieldErrors, setPublishFieldErrors] = useState<Partial<Record<
-    "title" | "cover" | "shortDescription" | "category" | "licenseNote" | "thirdPartyNote" | "status" | "canvasImage",
+    "title" | "cover" | "shortDescription" | "category" | "licenseNote" | "canvasImage",
     string
   >>>({});
   const [publishChecklist, setPublishChecklist] = useState<string[]>([]);
@@ -328,6 +329,7 @@ const ProjectEditorPage = () => {
     buildBlocks,
   } = useCanvasTemplates();
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const projectAssetsEditorRef = useRef<ProjectAssetsEditorHandle>(null);
   const patchProjectContext = useCallback((patch: Partial<ProjectContextForm>) => {
     setProjectContext((c) => ({ ...c, ...patch }));
   }, []);
@@ -589,7 +591,24 @@ const ProjectEditorPage = () => {
         gallery_urls: existing.gallery_urls ?? [],
         video_urls: ((existing as { video_urls?: string[] }).video_urls) ?? [],
       });
-      setContentBlocks(canvas);
+      const storedFlexLayout = parseFlexGridLayout(
+        (existing as { flex_grid_layout?: unknown }).flex_grid_layout,
+      );
+      const wasFlexGrid =
+        parseEditorMode((existing as { editor_mode?: string }).editor_mode) === "flex_grid";
+      // Full Grid paused: if this project only had flex modules, lift media into Casual blocks.
+      let nextCanvas = canvas;
+      if (
+        !isLaunchFullGridEditorEnabled() &&
+        wasFlexGrid &&
+        mediaItemsFromBlocks(canvas).length === 0 &&
+        flexGridHasContent(storedFlexLayout)
+      ) {
+        nextCanvas = flexGridMediaItems(storedFlexLayout).map((m) =>
+          createMediaBlock(m.kind === "video" ? "video" : "image", m.url, undefined, m.posterUrl),
+        );
+      }
+      setContentBlocks(nextCanvas);
       // If DB already had content_blocks, keep description as short blurb; else description was folded into canvas.
       const hadStoredBlocks =
         Array.isArray(extContent.content_blocks) && extContent.content_blocks.length > 0;
@@ -598,8 +617,13 @@ const ProjectEditorPage = () => {
         parseGalleryDisplayMode((existing as { gallery_display_mode?: string }).gallery_display_mode),
       );
       setGridLayout(parsePhotoGridPickerLayout((existing as { grid_layout?: string }).grid_layout));
-      setEditorMode(parseEditorMode((existing as { editor_mode?: string }).editor_mode));
-      setFlexGridLayout(parseFlexGridLayout((existing as { flex_grid_layout?: unknown }).flex_grid_layout));
+      // Full Grid paused — always open Casual unless explicitly re-enabled.
+      setEditorMode(
+        isLaunchFullGridEditorEnabled()
+          ? parseEditorMode((existing as { editor_mode?: string }).editor_mode)
+          : "casual",
+      );
+      setFlexGridLayout(storedFlexLayout);
       setFlexGridSelection([]);
       flexHistory.resetHistory();
       setCategory(existing.category);
@@ -622,8 +646,6 @@ const ProjectEditorPage = () => {
       setLicenseType(isLicenseType(lt ?? "") ? lt : "all_rights");
       setLicenseNote((existing as { license_note?: string }).license_note ?? "");
       setCopyrightHolder((existing as { copyright_holder?: string }).copyright_holder ?? "");
-      setHasThirdPartyAssets((existing as { has_third_party_assets?: boolean }).has_third_party_assets ?? false);
-      setThirdPartyNote((existing as { third_party_note?: string }).third_party_note ?? "");
       setAiAssisted((existing as { ai_assisted?: boolean }).ai_assisted ?? false);
       setAiDisclosureNote((existing as { ai_disclosure_note?: string }).ai_disclosure_note ?? "");
       setClientPermissionConfirmed(
@@ -695,7 +717,7 @@ const ProjectEditorPage = () => {
   );
 
   const buildProjectPayload = useCallback(
-    (targetStatus: Status) => {
+    (targetStatus: Status, assetsOverride?: ProjectAsset[]) => {
       const casualMedia = splitMediaFromBlocks(contentBlocks);
       const flexMedia = splitMediaFromFlexGrid(flexGridLayout);
       const gallery_urls =
@@ -716,6 +738,7 @@ const ProjectEditorPage = () => {
       const rightsAttestedAt = rightsAttested ? new Date().toISOString() : null;
 
       const storedBlocks = toStoredContentBlocks(contentBlocks);
+      const assets = assetsOverride ?? projectAssets;
 
       return {
         title: title.trim(),
@@ -737,8 +760,8 @@ const ProjectEditorPage = () => {
         collab_user_ids: collabAccepted.map((u) => u.user_id),
         license_type: licenseType,
         license_note: licenseNote.trim(),
-        has_third_party_assets: hasThirdPartyAssets,
-        third_party_note: thirdPartyNote.trim(),
+        has_third_party_assets: false,
+        third_party_note: "",
         ai_assisted: aiAssisted,
         ai_disclosure_note: aiAssisted ? aiDisclosureNote.trim() : "",
         client_permission_confirmed: clientPermissionConfirmed,
@@ -753,12 +776,12 @@ const ProjectEditorPage = () => {
         outcome_note: projectContext.outcomeNote.trim(),
         opportunity_types: [],
         opportunity_note: "",
-        external_links: projectAssetsToExternalLinks(projectAssets),
-        project_assets: toStoredProjectAssets(projectAssets),
+        external_links: projectAssetsToExternalLinks(assets),
+        project_assets: toStoredProjectAssets(assets),
         content_blocks: storedBlocks,
         gallery_display_mode: galleryDisplayMode,
         grid_layout: gridLayout,
-        editor_mode: editorMode,
+        editor_mode: isLaunchFullGridEditorEnabled() ? editorMode : "casual",
         flex_grid_layout: toStoredFlexGridLayout(flexGridLayout),
       };
     },
@@ -784,8 +807,6 @@ const ProjectEditorPage = () => {
       creditedIds,
       licenseType,
       licenseNote,
-      hasThirdPartyAssets,
-      thirdPartyNote,
       aiAssisted,
       aiDisclosureNote,
       clientPermissionConfirmed,
@@ -883,8 +904,15 @@ const ProjectEditorPage = () => {
       }
 
       const pid = projectId ?? (editing && id && isUuid(id) ? id : null);
+      const pendingAssets = projectAssetsEditorRef.current?.commitPending();
+      if (pendingAssets?.error) {
+        throw new Error(pendingAssets.error);
+      }
+      if (pendingAssets?.added) {
+        setProjectAssets(pendingAssets.assets);
+      }
       const payload = {
-        ...buildProjectPayload(draftStatusForSave()),
+        ...buildProjectPayload(draftStatusForSave(), pendingAssets?.assets),
         rights_attested_at: rightsAttested
           ? new Date().toISOString()
           : (existing as { rights_attested_at?: string | null } | undefined)?.rights_attested_at ?? null,
@@ -969,15 +997,15 @@ const ProjectEditorPage = () => {
   };
 
   const handleCoverPick = async (file: File) => {
-    if (!isAllowedPortfolioImage(file)) {
-      toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
+    if (!isAllowedPortfolioStillImage(file)) {
+      toast.error("ภาพปกรองรับเฉพาะ JPG, PNG");
       return;
     }
     try {
       const prepared = await normalizeImageForUpload(file, uploadReporter);
       openCoverCrop(prepared);
     } catch {
-      toast.error("แปลงรูป HEIC ไม่สำเร็จ — ลองไฟล์ JPG/PNG");
+      toast.error("อัปโหลดภาพปกไม่สำเร็จ — ลองไฟล์ JPG/PNG");
     } finally {
       resetUploadStage();
     }
@@ -994,11 +1022,33 @@ const ProjectEditorPage = () => {
     [],
   );
 
+  const uploadRasterOrGif = useCallback(
+    async (file: File): Promise<{ url: string; asVideo: boolean }> => {
+      if (!user) throw new Error("UNAUTHORIZED");
+      if (isGifFile(file)) {
+        const { url, isVideo } = await uploadProjectGif(
+          file,
+          user.id,
+          folderRef.current,
+          tier,
+          uploadReporter,
+        );
+        return { url, asVideo: isVideo };
+      }
+      const prepared = await normalizeImageForUpload(file, uploadReporter);
+      const url = await uploadProjectImage(prepared, user.id, folderRef.current, tier, {
+        reporter: uploadReporter,
+      });
+      return { url, asVideo: false };
+    },
+    [user, tier, uploadReporter],
+  );
+
   const handleGallery = async (files: FileList | File[]) => {
     if (!user) return;
     const arr = Array.from(files).filter(isAllowedPortfolioImage);
     if (!arr.length) {
-      toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
+      toast.error("รองรับเฉพาะ JPG, PNG, GIF");
       return;
     }
     const maxImages = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
@@ -1011,18 +1061,22 @@ const ProjectEditorPage = () => {
     const toUpload = arr.slice(0, room);
     setUploadingGallery(true);
     try {
-      const urls: string[] = [];
+      const imageUrls: string[] = [];
+      const videoUrls: { url: string; posterUrl?: string }[] = [];
       for (const f of toUpload) {
-        const u = await uploadProjectImage(f, user.id, folderRef.current, tier, {
-          reporter: uploadReporter,
-        });
-        urls.push(u);
+        const { url, asVideo } = await uploadRasterOrGif(f);
+        if (asVideo) videoUrls.push({ url });
+        else imageUrls.push(url);
       }
-      appendMediaBlocks("image", urls);
-      if (!cover && urls[0]) {
-        setCover(urls[0]);
+      if (imageUrls.length) appendMediaBlocks("image", imageUrls);
+      for (const v of videoUrls) {
+        appendMediaBlocks("video", [v.url]);
       }
-      toast.success(`อัปโหลด ${urls.length} ภาพสำเร็จ`);
+      if (!cover && imageUrls[0]) {
+        setCover(imageUrls[0]);
+      }
+      const n = imageUrls.length + videoUrls.length;
+      toast.success(n > 1 ? `อัปโหลด ${n} ไฟล์สำเร็จ` : "อัปโหลดสำเร็จ");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
     } finally {
@@ -1075,7 +1129,7 @@ const ProjectEditorPage = () => {
     const images = all.filter(isAllowedPortfolioImage);
     const videos = all.filter((f) => !isAllowedPortfolioImage(f) && isVideoFile(f));
     if (!images.length && !videos.length) {
-      toast.error("รองรับเฉพาะรูปภาพ (JPG, PNG, WebP, HEIC) หรือวิดีโอ");
+      toast.error("รองรับเฉพาะรูปภาพ (JPG, PNG, GIF) หรือวิดีโอ");
       return;
     }
     if (images.length) await handleGallery(images);
@@ -1145,8 +1199,18 @@ const ProjectEditorPage = () => {
 
     const rightsAttestedAt = attested ? new Date().toISOString() : null;
 
+    const pendingAssets = projectAssetsEditorRef.current?.commitPending();
+    if (pendingAssets?.error) {
+      toast.error(pendingAssets.error);
+      return;
+    }
+    if (pendingAssets?.added) {
+      setProjectAssets(pendingAssets.assets);
+      toast.success("บันทึกลิงก์ที่กรอกค้างไว้แล้ว");
+    }
+
     const payload = {
-      ...buildProjectPayload(targetStatus),
+      ...buildProjectPayload(targetStatus, pendingAssets?.assets),
       rights_attested_at: rightsAttestedAt,
       rights_attestation_version: attested ? LEGAL_ATTESTATION_VERSION : null,
     };
@@ -1225,7 +1289,7 @@ const ProjectEditorPage = () => {
   /** Keep canvas/Full Grid interactive while media uploads — only lock on save/publish. */
   const editorLocked = publishing || savingDraft;
 
-  const clearPublishFieldError = useCallback((key: "title" | "cover" | "shortDescription" | "category" | "licenseNote" | "thirdPartyNote" | "status" | "canvasImage") => {
+  const clearPublishFieldError = useCallback((key: "title" | "cover" | "shortDescription" | "category" | "licenseNote" | "canvasImage") => {
     setPublishFieldErrors((prev) => {
       if (!prev[key]) return prev;
       const next = { ...prev };
@@ -1254,10 +1318,6 @@ const ProjectEditorPage = () => {
       errors.shortDescription = "กรอกรายละเอียดแบบย่อ";
       checklist.push("กรอกรายละเอียดแบบย่อ");
     }
-    if (status !== "Published") {
-      errors.status = "ตั้งการมองเห็นเป็น Published";
-      checklist.push("ตั้งการมองเห็นเป็น Published");
-    }
     const canvasImages =
       editorMode === "flex_grid"
         ? countMediaByKind(flexGridMediaItems(flexGridLayout), "image")
@@ -1270,24 +1330,17 @@ const ProjectEditorPage = () => {
       errors.licenseNote = "กรอกเงื่อนไขสิทธิ์กำหนดเอง";
       checklist.push("กรอกเงื่อนไขสิทธิ์กำหนดเอง");
     }
-    if (hasThirdPartyAssets && !thirdPartyNote.trim()) {
-      errors.thirdPartyNote = "ระบุแหล่งที่มาของ asset จากที่อื่น";
-      checklist.push("ระบุแหล่งที่มาของ asset จากที่อื่น");
-    }
     return { errors, checklist };
   }, [
     title,
     cover,
     categoryParentId,
     shortDescription,
-    status,
     contentBlocks,
     editorMode,
     flexGridLayout,
     licenseType,
     licenseNote,
-    hasThirdPartyAssets,
-    thirdPartyNote,
   ]);
 
   const handleSaveDraft = async (silent = false) => {
@@ -1313,6 +1366,99 @@ const ProjectEditorPage = () => {
     }
   };
 
+  const hasLeaveGuardContent = useMemo(() => {
+    const media =
+      editorMode === "flex_grid"
+        ? splitMediaFromFlexGrid(flexGridLayout)
+        : splitMediaFromBlocks(contentBlocks);
+    return (
+      portfolioEditorHasContent({
+        title,
+        description: shortDescription,
+        content_blocks: contentBlocks,
+        cover_url: cover,
+        gallery_urls: media.gallery_urls,
+        video_urls: media.video_urls,
+        tools,
+        tags,
+      }) ||
+      flexGridHasContent(flexGridLayout) ||
+      projectAssets.length > 0
+    );
+  }, [
+    editorMode,
+    flexGridLayout,
+    contentBlocks,
+    title,
+    shortDescription,
+    cover,
+    tools,
+    tags,
+    projectAssets.length,
+  ]);
+
+  const leaveEditor = useCallback((to?: string | null) => {
+    if (to) {
+      navigate(to);
+      return;
+    }
+    const idx = (window.history.state as { idx?: number } | null)?.idx;
+    if ((typeof idx === "number" && idx > 0) || window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate(editing ? "/portfolio/manage" : "/");
+  }, [navigate, editing]);
+
+  const requestLeave = (to?: string) => {
+    if (isBusy) return;
+    if (!hasLeaveGuardContent) {
+      leaveEditor(to ?? null);
+      return;
+    }
+    setPendingLeaveTo(to ?? null);
+    setLeaveConfirmOpen(true);
+  };
+
+  const handleBackClick = () => {
+    requestLeave();
+  };
+
+  const handleCatalogClick = () => {
+    requestLeave("/portfolio?tab=catalog");
+  };
+
+  const handleLeaveSaveDraft = async () => {
+    const basicsErr = validateProjectBasics({ title, cover_url: cover });
+    if (basicsErr) {
+      toast.error(basicsErr);
+      return;
+    }
+    setLeavingBusy(true);
+    try {
+      const result = await persistDraft();
+      if (result) {
+        await runProjectLinkSideEffects(result.id);
+        scheduleBackgroundAssetScan(result.id);
+        toast.success("บันทึกฉบับร่างแล้ว");
+        const dest = pendingLeaveTo;
+        setLeaveConfirmOpen(false);
+        setPendingLeaveTo(null);
+        leaveEditor(dest);
+      } else {
+        toast.message("ยังไม่มีเนื้อหาให้บันทึก");
+        const dest = pendingLeaveTo;
+        setLeaveConfirmOpen(false);
+        setPendingLeaveTo(null);
+        leaveEditor(dest);
+      }
+    } catch (e) {
+      toast.error(mapWriteFlowError(e, "บันทึกไม่สำเร็จ"));
+    } finally {
+      setLeavingBusy(false);
+    }
+  };
+
   const handlePublishClick = () => {
     const { errors, checklist } = collectPublishGaps();
     setPublishFieldErrors(errors);
@@ -1321,13 +1467,13 @@ const ProjectEditorPage = () => {
       setPublishPopupOpaque(true);
       setPublishFieldHighlightOpaque(true);
       setPublishChecklistTick((n) => n + 1);
-      if (errors.title || errors.cover || errors.category || errors.status) setMetaExpanded(true);
+      if (errors.title || errors.cover || errors.category) setMetaExpanded(true);
       const firstKey = Object.keys(errors)[0];
       window.setTimeout(() => {
         if (firstKey === "title") titleInputRef.current?.focus();
         else if (firstKey === "shortDescription") {
           document.getElementById("project-short-description")?.scrollIntoView({ behavior: "smooth", block: "center" });
-        } else if (firstKey === "cover" || firstKey === "category" || firstKey === "status") {
+        } else if (firstKey === "cover" || firstKey === "category") {
           document.getElementById("project-meta-sidebar")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
         } else if (firstKey === "canvasImage") {
           document.getElementById("project-canvas-editor")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1486,15 +1632,17 @@ const ProjectEditorPage = () => {
 
       if (block.type === "image_text") {
         if (!isAllowedPortfolioImage(file)) {
-          toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
+          toast.error("รองรับเฉพาะ JPG, PNG, GIF");
           return;
         }
         setUploadingBlockId(blockId);
         setUploadingGallery(true);
         try {
-          const url = await uploadProjectImage(file, user.id, folderRef.current, tier, {
-            reporter: uploadReporter,
-          });
+          const { url, asVideo } = await uploadRasterOrGif(file);
+          if (asVideo) {
+            toast.error("GIF นี้ใหญ่เกินไปสำหรับโมดูลภาพ+ข้อความ — ใช้โมดูลวิดีโอหรือย่อไฟล์");
+            return;
+          }
           setContentBlocks((prev) =>
             prev.map((b) => (b.id === blockId && b.type === "image_text" ? { ...b, url } : b)),
           );
@@ -1512,13 +1660,58 @@ const ProjectEditorPage = () => {
 
       if (block.type === "image") {
         if (!isAllowedPortfolioImage(file)) {
-          toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
+          toast.error("รองรับเฉพาะ JPG, PNG, GIF");
           return;
         }
         setUploadingBlockId(blockId);
         setUploadingGallery(true);
         try {
-          // HEIC → JPEG up front so the canvas-based crop below can decode it.
+          if (isGifFile(file)) {
+            const { url, asVideo } = await uploadRasterOrGif(file);
+            const multi =
+              block.mediaLayout === "gallery" ||
+              block.mediaLayout === "grid" ||
+              block.mediaLayout === "multi" ||
+              blockImageUrls(block).length > 1;
+            if (asVideo) {
+              if (multi) {
+                toast.error("GIF ใหญ่จะถูกแปลงเป็นวิดีโอ — ใช้โมดูลวิดีโอหรือย่อไฟล์ก่อน");
+                return;
+              }
+              setContentBlocks((prev) =>
+                prev.map((b) =>
+                  b.id === blockId
+                    ? { ...b, type: "video", url, mediaLayout: undefined, urls: undefined, posterUrl: undefined }
+                    : b,
+                ),
+              );
+              toast.success("อัปโหลด GIF สำเร็จ (แปลงเป็นวิดีโอ)");
+              return;
+            }
+            setContentBlocks((prev) =>
+              prev.map((b) => {
+                if (b.id !== blockId || b.type !== "image") return b;
+                if (multi) {
+                  const urls = blockImageUrls(b);
+                  const next = [...(urls.length ? urls : ["", ""])];
+                  const idx =
+                    typeof slotIndex === "number" && slotIndex >= 0
+                      ? slotIndex
+                      : next.findIndex((u) => !u.trim());
+                  const target = idx >= 0 ? idx : next.length;
+                  while (next.length <= target) next.push("");
+                  next[target] = url;
+                  return { ...b, urls: next, url: next.find((u) => u.trim()) ?? url };
+                }
+                return { ...b, type: "image", url, mediaLayout: "single" };
+              }),
+            );
+            if (!cover) setCover(url);
+            toast.success("อัปโหลด GIF สำเร็จ");
+            return;
+          }
+
+          // Still image — HEIC path kept for older files; normalize is a no-op for JPG/PNG.
           let uploadFile = await normalizeImageForUpload(file, uploadReporter);
           let resolvedSlot = typeof slotIndex === "number" && slotIndex >= 0 ? slotIndex : undefined;
           if (block.mediaLayout === "grid" && isThreeSplitGridLayout(block.gridLayout)) {
@@ -1630,7 +1823,7 @@ const ProjectEditorPage = () => {
         resetUploadStage();
       }
     },
-    [user, contentBlocks, cover, tier, limits.videosPerProject, uploadReporter, resetUploadStage],
+    [user, contentBlocks, cover, tier, limits.videosPerProject, uploadReporter, resetUploadStage, uploadRasterOrGif],
   );
 
   const handleSetVideoPoster = useCallback(
@@ -1638,8 +1831,8 @@ const ProjectEditorPage = () => {
       if (!user) return;
       const block = contentBlocks.find((b) => b.id === blockId);
       if (!block || block.type !== "video" || !(block.url ?? "").trim()) return;
-      if (!isAllowedPortfolioImage(file)) {
-        toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
+      if (!isAllowedPortfolioStillImage(file)) {
+        toast.error("รองรับเฉพาะ JPG, PNG");
         return;
       }
       setUploadingBlockId(blockId);
@@ -1667,8 +1860,8 @@ const ProjectEditorPage = () => {
   const handleSetFlexModulePoster = useCallback(
     async (boardId: string, moduleId: string, file: File) => {
       if (!user) return;
-      if (!isAllowedPortfolioImage(file)) {
-        toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
+      if (!isAllowedPortfolioStillImage(file)) {
+        toast.error("รองรับเฉพาะ JPG, PNG");
         return;
       }
       setUploadingFlexModuleId(moduleId);
@@ -1716,7 +1909,7 @@ const ProjectEditorPage = () => {
 
       const images = files.filter(isAllowedPortfolioImage);
       if (!images.length) {
-        toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
+        toast.error("รองรับเฉพาะ JPG, PNG, GIF");
         return;
       }
 
@@ -1728,11 +1921,14 @@ const ProjectEditorPage = () => {
         try {
           const uploaded: string[] = [];
           for (const file of images.slice(0, capacity)) {
-            const url = await uploadProjectImage(file, user.id, folderRef.current, tier, {
-              reporter: uploadReporter,
-            });
+            const { url, asVideo } = await uploadRasterOrGif(file);
+            if (asVideo) {
+              toast.error(`ข้าม ${file.name} — GIF ใหญ่เกินสำหรับแกลเลอรี`);
+              continue;
+            }
             uploaded.push(url);
           }
+          if (!uploaded.length) return;
           setContentBlocks((prev) =>
             prev.map((b) => {
               if (b.id !== blockId || b.type !== "image") return b;
@@ -1777,6 +1973,15 @@ const ProjectEditorPage = () => {
         for (let i = 0; i < toUpload.length; i++) {
           const file = toUpload[i]!;
           const slot = emptyIndexes[i]!;
+          if (isGifFile(file)) {
+            const { url, asVideo } = await uploadRasterOrGif(file);
+            if (asVideo) {
+              toast.error(`ข้าม ${file.name} — GIF ใหญ่เกินสำหรับช่องนี้`);
+              continue;
+            }
+            uploaded.push({ slot, url });
+            continue;
+          }
           let uploadFile = await normalizeImageForUpload(file, uploadReporter);
           if (layout === "grid" && isThreeSplitGridLayout(block.gridLayout)) {
             const spec = threeSplitSlotCropSpec(slot);
@@ -1790,6 +1995,8 @@ const ProjectEditorPage = () => {
           });
           uploaded.push({ slot, url });
         }
+
+        if (!uploaded.length) return;
 
         setContentBlocks((prev) =>
           prev.map((b) => {
@@ -1813,7 +2020,7 @@ const ProjectEditorPage = () => {
         resetUploadStage();
       }
     },
-    [user, contentBlocks, cover, tier],
+    [user, contentBlocks, cover, tier, uploadReporter, resetUploadStage, uploadRasterOrGif],
   );
 
   const handleCropImage = useCallback(async (blockId: string, imageUrl: string, slotIndex?: number) => {
@@ -2326,8 +2533,8 @@ const ProjectEditorPage = () => {
     licenseType,
     licenseNote,
     copyrightHolder,
-    hasThirdPartyAssets,
-    thirdPartyNote,
+    hasThirdPartyAssets: false,
+    thirdPartyNote: "",
     aiAssisted,
     aiDisclosureNote,
     clientPermissionConfirmed,
@@ -2399,64 +2606,66 @@ const ProjectEditorPage = () => {
 
   return (
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-0">
-      {/* Sticky header */}
+      {/* Sticky header — full-bleed to align with Module / Work Details sidebars */}
       <div className="sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-          <BackButton />
+        <div className="flex w-full items-center gap-3 px-3 py-3 sm:px-4">
+          <BackButton onClick={handleBackClick} />
           <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-1">
             <div className="min-w-0">
               <h1 className="text-base font-semibold text-foreground truncate">
-                {editing ? "แก้ไขผลงาน" : "ลงผลงานใหม่"}
+                {editing ? "แก้ไขผลงาน" : "Share your Project"}
               </h1>
             </div>
-            <LayoutGroup id="project-editor-mode">
-              <div
-                role="tablist"
-                aria-label="โหมดแก้ไข"
-                className="hidden sm:inline-flex relative items-center rounded-full border border-border/80 bg-card p-0.5 shrink-0"
-              >
-                {(
-                  [
-                    { value: "casual" as const, label: "Casual" },
-                    { value: "flex_grid" as const, label: "Full Grid" },
-                  ] as const
-                ).map((mode) => {
-                  const active = editorMode === mode.value;
-                  return (
-                    <button
-                      key={mode.value}
-                      type="button"
-                      role="tab"
-                      aria-selected={active}
-                      onClick={() => setEditorMode(mode.value)}
-                      className={cn(
-                        "relative rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
-                        active
-                          ? "text-primary-foreground"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {active ? (
-                        reduceMotion ? (
-                          <span
-                            className="absolute inset-0 rounded-full bg-primary"
-                            aria-hidden
-                          />
-                        ) : (
-                          <motion.span
-                            layoutId="project-editor-mode-pill"
-                            className="absolute inset-0 rounded-full bg-primary"
-                            transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                            aria-hidden
-                          />
-                        )
-                      ) : null}
-                      <span className="relative z-10">{mode.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </LayoutGroup>
+            {isLaunchFullGridEditorEnabled() ? (
+              <LayoutGroup id="project-editor-mode">
+                <div
+                  role="tablist"
+                  aria-label="โหมดแก้ไข"
+                  className="hidden sm:inline-flex relative items-center rounded-full border border-border/80 bg-card p-0.5 shrink-0"
+                >
+                  {(
+                    [
+                      { value: "casual" as const, label: "Casual" },
+                      { value: "flex_grid" as const, label: "Full Grid" },
+                    ] as const
+                  ).map((mode) => {
+                    const active = editorMode === mode.value;
+                    return (
+                      <button
+                        key={mode.value}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        onClick={() => setEditorMode(mode.value)}
+                        className={cn(
+                          "relative rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+                          active
+                            ? "text-primary-foreground"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {active ? (
+                          reduceMotion ? (
+                            <span
+                              className="absolute inset-0 rounded-full bg-primary"
+                              aria-hidden
+                            />
+                          ) : (
+                            <motion.span
+                              layoutId="project-editor-mode-pill"
+                              className="absolute inset-0 rounded-full bg-primary"
+                              transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                              aria-hidden
+                            />
+                          )
+                        ) : null}
+                        <span className="relative z-10">{mode.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </LayoutGroup>
+            ) : null}
           </div>
           <Button
             variant="outline"
@@ -2474,7 +2683,7 @@ const ProjectEditorPage = () => {
           <div className="hidden lg:flex items-center gap-2 shrink-0">
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
               className="rounded-full shrink-0"
               onClick={() => {
                 setPreviewMode("pc");
@@ -2483,8 +2692,7 @@ const ProjectEditorPage = () => {
               title="ดูตัวอย่าง"
               aria-label="ดูตัวอย่าง"
             >
-              <Eye className="w-4 h-4 mr-1" />
-              ดูตัวอย่าง
+              <Eye className="w-4 h-4" />
             </Button>
             <Button
               variant="outline"
@@ -2893,19 +3101,6 @@ const ProjectEditorPage = () => {
                   }}
                   noteInvalid={publishFieldHighlight(publishFieldErrors.licenseNote)}
                 />
-                <ThirdPartyAssetsToggle
-                  enabled={hasThirdPartyAssets}
-                  onEnabledChange={(v) => {
-                    setHasThirdPartyAssets(v);
-                    if (!v) clearPublishFieldError("thirdPartyNote");
-                  }}
-                  note={thirdPartyNote}
-                  onNoteChange={(v) => {
-                    setThirdPartyNote(v);
-                    clearPublishFieldError("thirdPartyNote");
-                  }}
-                  noteInvalid={publishFieldHighlight(publishFieldErrors.thirdPartyNote)}
-                />
                 <ClientPermissionConfirm
                   confirmed={clientPermissionConfirmed}
                   onConfirmedChange={setClientPermissionConfirmed}
@@ -2920,6 +3115,7 @@ const ProjectEditorPage = () => {
                 />
               </div>
               <ProjectAssetsEditor
+                ref={projectAssetsEditorRef}
                 assets={projectAssets}
                 onChange={setProjectAssets}
                 userId={user.id}
@@ -2949,7 +3145,7 @@ const ProjectEditorPage = () => {
         <ProjectEditorMetaSidebar expanded={metaExpanded} onExpandedChange={setMetaExpanded}>
           <div className="rounded-2xl border border-border bg-card p-4 space-y-4 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
             <div className="space-y-2">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase">
+              <Label className="text-xs font-semibold text-muted-foreground">
                 ชื่องาน <span className="text-primary">*</span>
               </Label>
               <Input
@@ -2972,7 +3168,7 @@ const ProjectEditorPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase">
+              <Label className="text-xs font-semibold text-muted-foreground">
                 ภาพปก <span className="text-primary">*</span>
               </Label>
               <CoverDrop
@@ -3018,14 +3214,17 @@ const ProjectEditorPage = () => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase">ชุดงาน</Label>
-                <Link
-                  to="/series"
-                  className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                <Label className="text-xs font-semibold text-muted-foreground">Catalog</Label>
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={handleCatalogClick}
+                  className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline disabled:opacity-50"
                 >
                   <Library className="h-3 w-3" />
-                  จัดการชุด
-                </Link>
+                  จัดการCatalog
+                  <ChevronRight className="h-3 w-3" />
+                </button>
               </div>
               <ProjectSeriesPicker
                 value={seriesId}
@@ -3036,38 +3235,9 @@ const ProjectEditorPage = () => {
               />
               {mySeries.length === 0 && (
                 <p className="text-[11px] text-muted-foreground leading-snug">
-                  ยังไม่มีชุดงาน — กดเปิดรายการแล้วเลือก「เพิ่มชุดงานใหม่」ได้เลย
+                  ยังไม่มี Catalog — กดเปิดรายการแล้วเลือก「เพิ่ม Catalog ใหม่」ได้เลย
                 </p>
               )}
-            </div>
-
-            <div className="space-y-2" id="project-visibility">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase">
-                การมองเห็น <span className="text-primary">*</span>
-              </Label>
-              <Select
-                value={status}
-                onValueChange={(v) => {
-                  setStatus(v as Status);
-                  if (v === "Published") clearPublishFieldError("status");
-                }}
-              >
-                <SelectTrigger
-                  aria-invalid={!!publishFieldErrors.status || undefined}
-                  className={cn(
-                    "transition-colors duration-500 ease-out",
-                    publishFieldHighlight(publishFieldErrors.status) &&
-                      "border-destructive focus:ring-destructive/40",
-                  )}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Draft">Draft — ฉบับร่าง</SelectItem>
-                  <SelectItem value="Published">Published — เผยแพร่</SelectItem>
-                  <SelectItem value="Private">Private — ส่วนตัว</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <StartingPriceField
@@ -3238,6 +3408,60 @@ const ProjectEditorPage = () => {
         publishing={publishing}
         publishDisabled={isBusy}
       />
+
+      <Dialog
+        open={leaveConfirmOpen}
+        onOpenChange={(open) => {
+          if (leavingBusy) return;
+          setLeaveConfirmOpen(open);
+          if (!open) setPendingLeaveTo(null);
+        }}
+      >
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>บันทึกฉบับร่างนี้ไหม?</DialogTitle>
+            <DialogDescription>
+              คุณกำลังจะออกจากหน้าแก้ไข — บันทึกฉบับร่างไว้ก่อนไหม เพื่อไม่ให้งานหาย
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:justify-end flex-col-reverse sm:flex-row">
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={leavingBusy}
+              onClick={() => {
+                setPendingLeaveTo(null);
+                setLeaveConfirmOpen(false);
+              }}
+            >
+              อยู่ต่อ
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={leavingBusy}
+              className="rounded-full"
+              onClick={() => {
+                const dest = pendingLeaveTo;
+                setLeaveConfirmOpen(false);
+                setPendingLeaveTo(null);
+                leaveEditor(dest);
+              }}
+            >
+              ออกโดยไม่บันทึก
+            </Button>
+            <Button
+              type="button"
+              disabled={leavingBusy}
+              className="rounded-full"
+              onClick={() => void handleLeaveSaveDraft()}
+            >
+              {leavingBusy ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
+              บันทึกฉบับร่างแล้วออก
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={publishConfirmOpen}
@@ -3559,7 +3783,7 @@ const CoverDrop = ({
             <X className="w-3.5 h-3.5 mr-1" /> ลบ
           </Button>
         </div>
-        <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,.hif" hidden onChange={(e) => pickFile(e.target.files?.[0])} />
+        <input ref={ref} type="file" accept={PORTFOLIO_STILL_IMAGE_ACCEPT} hidden onChange={(e) => pickFile(e.target.files?.[0])} />
       </div>
     );
   }
@@ -3592,9 +3816,9 @@ const CoverDrop = ({
         อัปโหลดภาพหน้าปก <span className="text-primary">*</span>
       </p>
       {!compact ? (
-        <p className="text-xs text-muted-foreground">JPG / PNG / WebP — สูงสุด 30MB · ครอปเป็น 4:3 แนวนอน</p>
+        <p className="text-xs text-muted-foreground">JPG / PNG — สูงสุด 30MB · ครอปเป็น 4:3 แนวนอน</p>
       ) : null}
-      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,.hif" hidden onChange={(e) => pickFile(e.target.files?.[0])} />
+      <input ref={ref} type="file" accept={PORTFOLIO_STILL_IMAGE_ACCEPT} hidden onChange={(e) => pickFile(e.target.files?.[0])} />
     </div>
   );
 };

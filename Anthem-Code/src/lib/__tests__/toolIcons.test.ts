@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveToolIconSlug, toolIconSources, toolIconUrl } from "@/lib/toolIcons";
+import { resolveToolIconSlug, toolIconSources, toolIconUrl, hasCatalogToolIcon } from "@/lib/toolIcons";
 
 describe("toolIcons", () => {
   it("builds theSVG CDN URLs", () => {
@@ -21,6 +21,12 @@ describe("toolIcons", () => {
     expect(resolveToolIconSlug("Tailwind CSS")).toBe("tailwind-css");
     expect(resolveToolIconSlug("VS Code")).toBe("visual-studio-code");
     expect(resolveToolIconSlug("Stable Diffusion")).toBe("stability-ai");
+  });
+
+  it("detects catalog tools for logo chips vs text fallback", () => {
+    expect(hasCatalogToolIcon("Illustrator")).toBe(true);
+    expect(hasCatalogToolIcon("Minimal")).toBe(false);
+    expect(hasCatalogToolIcon("Hand-drawn")).toBe(false);
   });
 
   it("still resolves tools missing from theSVG catalog for letter fallback", () => {

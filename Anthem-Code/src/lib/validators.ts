@@ -11,6 +11,7 @@ import {
   PROJECT_BLOCK_HEADING_MAX,
   PROJECT_CONTENT_BLOCKS_MAX,
 } from "@/lib/projectContentBlocks";
+import { profileAddressSchema } from "@/lib/profileAddress";
 
 export const communityMediaAspectSchema = z.enum([
   "square",
@@ -197,7 +198,14 @@ export const profileSchema = z.object({
     .regex(/^[a-zA-Z0-9_.]+$/, "ใช้ได้เฉพาะ a-z, 0-9, _ และ ."),
   bio: z.string().trim().max(500).optional().default(""),
   role: z.string().trim().max(60).optional().default(""),
-  location: z.string().trim().max(80).optional().default(""),
+  location: z.string().trim().max(200).optional().default(""),
+  profileAddress: profileAddressSchema.default({
+    line1: "",
+    subdistrict: "",
+    district: "",
+    province: "",
+    postalCode: "",
+  }),
   email: z.string().trim().email("อีเมลไม่ถูกต้อง").max(255),
   phone: z
     .string()
@@ -226,6 +234,22 @@ export const profileSchema = z.object({
     .default(""),
   instagram: z.string().trim().max(50).optional().default(""),
 
+  socialLinks: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1).max(64),
+        title: z.string().trim().min(1, "กรอกชื่อลิงก์").max(60),
+        url: z
+          .string()
+          .trim()
+          .url("URL ไม่ถูกต้อง")
+          .max(255)
+          .refine((v) => /^https?:\/\//i.test(v), "ต้องขึ้นต้นด้วย http:// หรือ https://"),
+      }),
+    )
+    .max(12)
+    .default([]),
+
   notifyEmail: z.boolean().default(true),
   notifyHire: z.boolean().default(true),
   notifyCollab: z.boolean().default(true),
@@ -239,6 +263,7 @@ export const profileSchema = z.object({
 });
 
 export type ProfileInput = z.infer<typeof profileSchema>;
+export type SocialLinkItem = ProfileInput["socialLinks"][number];
 
 export const projectSchema = z.object({
   title: z.string().trim().min(1, "กรอกชื่องาน").max(120),
@@ -379,9 +404,6 @@ export function validateProjectPublish(input: ProjectInput): string | null {
   if (input.status !== "Published") return null;
   if (!input.rights_attested_at) {
     return "กรุณายืนยันสิทธิ์ในผลงานก่อนเผยแพร่";
-  }
-  if (input.has_third_party_assets && !input.third_party_note?.trim()) {
-    return "กรุณาระบุแหล่งที่มาของ asset จากที่อื่น";
   }
   if (input.license_type === "custom" && !input.license_note?.trim()) {
     return "กรุณากรอกเงื่อนไขการใช้งานเมื่อเลือก 'กำหนดเอง'";

@@ -167,8 +167,8 @@ export function useAdminStats() {
         supabase.from("user_reports" as never).select("*", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
         launch ? Promise.resolve(zeroCount) : supabase.from("cashout_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("app_feedback" as never).select("*", { count: "exact", head: true }).eq("status", "new"),
-        launch ? Promise.resolve(zeroCount) : supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        launch ? Promise.resolve(zeroCount) : supabase.from("aml_flags").select("*", { count: "exact", head: true }).eq("status", "open"),
+        supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("aml_flags").select("*", { count: "exact", head: true }).eq("status", "open"),
       ]);
       return {
         totalUsers: users.count ?? 0,

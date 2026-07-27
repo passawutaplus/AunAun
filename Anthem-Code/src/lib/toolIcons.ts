@@ -203,6 +203,15 @@ export function sortToolsVisualFirst(tools: string[]): string[] {
   return [...tools].sort(compareToolsVisualFirst);
 }
 
+/** True when name matches a catalogued tool (has a real logo mapping). */
+export function hasCatalogToolIcon(name: string): boolean {
+  const trimmed = name.trim();
+  if (!trimmed) return false;
+  const spaced = normalizeToolLookupKey(trimmed);
+  const compact = compactKey(trimmed);
+  return slugByKey.has(spaced) || slugByKey.has(compact);
+}
+
 export function resolveToolIconSlug(name: string): string | null {
   const trimmed = name.trim();
   if (!trimmed) return null;

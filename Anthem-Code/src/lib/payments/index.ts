@@ -8,6 +8,7 @@ export * from "./payoutService";
 export * from "./payoutCron";
 export * from "./reconciliation";
 export * from "./hireOrder";
+export * from "./hireMoneyOutcome";
 export * from "./provider";
 export { createOmiseProvider } from "./omiseProvider";
 export * from "./notifications";

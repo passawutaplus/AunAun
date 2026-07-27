@@ -109,8 +109,81 @@ export const HIRE_CANCEL_MONEY_OPTIONS: {
   { id: "full_refund", label: "คืนเต็มจำนวน", hint: "เมื่อชำระผ่าน Aplus1 แล้ว ระบบจะสร้าง refund ตาม ledger/Omise" },
   { id: "half_refund", label: "คืน 50%", hint: "เมื่อชำระผ่าน Aplus1 แล้ว ระบบจะคืนครึ่งและปรับ ledger" },
   { id: "no_refund", label: "ไม่คืนเงิน", hint: "ใช้เมื่อตกลงกันแล้วว่าไม่คืน — ปรับสถานะออเดอร์ตามนั้น" },
-  { id: "none", label: "ยังไม่ระบุเงื่อนไขเงิน", hint: "เหมาะเมื่อผู้จ้างขอยกเลิกและยังไม่คุยเงิน" },
+  { id: "none", label: "ไม่ต้องการขอคืน", hint: "ยกเลิกงานโดยไม่ขอคืนเงินจากครีเอเตอร์" },
 ];
+
+/** Persist work-progress % (+ optional callback contact) in reason_note without a DB migration. */
+const WORK_PROGRESS_PREFIX_RE = /^\[ความคืบหน้า\s*(\d{1,3})%\]\s*/u;
+const CONTACT_PHONE_PREFIX_RE = /^\[ติดต่อกลับ[:：]\s*([^\]]+)\]\s*/u;
+const CONTACT_EMAIL_PREFIX_RE = /^\[อีเมลติดต่อ[:：]\s*([^\]]+)\]\s*/u;
+
+export function encodeHireCancelReasonNote(
+  note: string,
+  workProgressPct: number,
+  contactPhone?: string | null,
+  contactEmail?: string | null,
+): string {
+  const pct = Math.min(100, Math.max(0, Math.round(workProgressPct)));
+  const phone = (contactPhone ?? "").replace(/\s+/g, "").trim();
+  const email = (contactEmail ?? "").trim();
+  const lines = [`[ความคืบหน้า ${pct}%]`];
+  if (phone) lines.push(`[ติดต่อกลับ: ${phone}]`);
+  if (email) lines.push(`[อีเมลติดต่อ: ${email}]`);
+  const body = note.trim();
+  if (body) lines.push(body);
+  return lines.join("\n");
+}
+
+export function decodeHireCancelReasonNote(raw: string | null | undefined): {
+  note: string;
+  workProgressPct: number;
+  contactPhone: string;
+  contactEmail: string;
+} {
+  let text = (raw ?? "").trim();
+  let workProgressPct = 0;
+  let contactPhone = "";
+  let contactEmail = "";
+
+  const progressMatch = text.match(WORK_PROGRESS_PREFIX_RE);
+  if (progressMatch) {
+    workProgressPct = Math.min(100, Math.max(0, Number(progressMatch[1]) || 0));
+    text = text.slice(progressMatch[0].length).trim();
+  }
+
+  const phoneMatch = text.match(CONTACT_PHONE_PREFIX_RE);
+  if (phoneMatch) {
+    contactPhone = phoneMatch[1].trim();
+    text = text.slice(phoneMatch[0].length).trim();
+  }
+
+  const emailMatch = text.match(CONTACT_EMAIL_PREFIX_RE);
+  if (emailMatch) {
+    contactEmail = emailMatch[1].trim();
+    text = text.slice(emailMatch[0].length).trim();
+  }
+
+  return { note: text, workProgressPct, contactPhone, contactEmail };
+}
+
+/** Estimated client refund from proposed money terms (of paid/job amount). */
+export function estimateHireCancelRefundThb(
+  moneyTerms: HireCancelMoneyTerms | null | undefined,
+  orderAmountThb: number,
+): number {
+  const amount = Math.max(0, Number(orderAmountThb) || 0);
+  switch (moneyTerms) {
+    case "full_refund":
+      return amount;
+    case "half_refund":
+    case "compensation_50":
+      return Math.round(amount * 0.5 * 100) / 100;
+    case "no_refund":
+    case "none":
+    default:
+      return 0;
+  }
+}
 
 export function hireCancelReasonLabel(
   id: string | null | undefined,
@@ -137,7 +210,7 @@ export function hireCancelMoneyLabel(terms: HireCancelMoneyTerms | null | undefi
     case "compensation_50":
       return "ขอค่าชดเชย 50%";
     case "none":
-      return "ยังไม่ระบุเงื่อนไขเงิน";
+      return "ไม่ต้องการขอคืน";
     default:
       return "—";
   }

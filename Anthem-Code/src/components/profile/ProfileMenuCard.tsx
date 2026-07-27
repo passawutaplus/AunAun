@@ -1,25 +1,17 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Layers3,
-  Library,
+  LayoutGrid,
   MessageCircle,
+  MessagesSquare,
   Settings,
   LogOut,
-  Plus,
-  Building2,
-  Bookmark,
-  UserPlus,
-  FolderKanban,
-  Handshake,
-  Sparkles,
+  Rocket,
 } from "lucide-react";
-import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
-import { useMyStudios, useSetActiveStudio } from "@/hooks/useStudios";
-import ReferralShareSheet from "@/components/referral/ReferralShareSheet";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import OpportunityStatusDialog from "@/components/opportunity/OpportunityStatusDialog";
-import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
+import { FORUM_PATH } from "@/lib/brandConfig";
 import { signOutApp } from "@/lib/signOutApp";
 
 type ProfileMenuCardProps = {
@@ -30,13 +22,11 @@ type ProfileMenuCardProps = {
 const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMenuCardProps = {}) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const launchMinimal = isAplus1LaunchMinimal();
-  const [referralOpen, setReferralOpen] = useState(false);
-  const [opportunityOpenLocal, setOpportunityOpenLocal] = useState(false);
-  const opportunityDialogOpen = opportunityOpen ?? opportunityOpenLocal;
-  const setOpportunityDialogOpen = onOpportunityOpenChange ?? setOpportunityOpenLocal;
-  const { data: myStudios = [] } = useMyStudios();
-  const setActive = useSetActiveStudio();
+  const { user } = useAuth();
+  const { data: profile } = useProfile(user?.id);
+  const isVerified = !!(profile as { is_verified?: boolean } | null | undefined)?.is_verified;
+  const opportunityDialogOpen = opportunityOpen ?? false;
+  const setOpportunityDialogOpen = onOpportunityOpenChange ?? (() => undefined);
 
   const item =
     "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-foreground hover:bg-accent hover:text-foreground transition-colors text-left";
@@ -47,79 +37,31 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
         aria-label="เมนูโปรไฟล์"
         className="rounded-3xl glass-panel p-3 space-y-0.5"
       >
-        <button onClick={() => navigate("/portfolio/manage")} className={item}>
-          <FolderKanban className="w-4 h-4 text-primary" /> แดชบอร์ด &amp; จัดการ
+        <button type="button" onClick={() => navigate("/dashboard")} className={item}>
+          <LayoutGrid className="w-4 h-4 text-primary" /> จัดการงาน
         </button>
-        <button onClick={() => navigate("/series")} className={item}>
-          <Library className="w-4 h-4 text-primary" /> ชุดผลงานของฉัน
+        <button type="button" onClick={() => navigate("/chat")} className={item}>
+          <MessageCircle className="w-4 h-4 text-primary" /> Chat
         </button>
-        <button type="button" onClick={() => setOpportunityDialogOpen(true)} className={item}>
-          <Handshake className="w-4 h-4 text-primary" /> กำลังมองหาอะไร?
-        </button>
-        <button onClick={() => navigate("/collections")} className={item}>
-          <Layers3 className="w-4 h-4 text-primary" /> คอลเลกชันของฉัน
-        </button>
-        <button onClick={() => navigate("/inspire")} className={item}>
-          <Sparkles className="w-4 h-4 text-primary" /> My Inspire
-        </button>
-        {!launchMinimal ? (
-          <button
-            onClick={() => document.getElementById("saved-posts")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-            className={item}
-          >
-            <Bookmark className="w-4 h-4 text-primary" /> โพสต์ที่บันทึก
+        {!isVerified ? (
+          <button type="button" onClick={() => navigate("/hire/start")} className={item}>
+            <Rocket className="w-4 h-4 text-primary" /> Become a Creator
           </button>
         ) : null}
-        {!launchMinimal ? (
-          <button type="button" onClick={() => setReferralOpen(true)} className={item}>
-            <UserPlus className="w-4 h-4 text-primary" /> ชวนเพื่อนรับ Pixel
-          </button>
-        ) : null}
-        <button onClick={() => navigate("/chat")} className={item}>
-          <MessageCircle className="w-4 h-4 text-primary" /> ข้อความ
+        <button
+          type="button"
+          onClick={() => window.open(FORUM_PATH, "_blank", "noopener,noreferrer")}
+          className={item}
+        >
+          <MessagesSquare className="w-4 h-4 text-primary" /> ชุมชน
         </button>
-        {!launchMinimal ? (
-          <button onClick={() => navigate("/jobs")} className={item}>
-            <BriefcaseIcon className="w-4 h-4 text-primary" /> งานจาก Studio
-          </button>
-        ) : null}
-
-        {!launchMinimal ? (
-          <>
-            <div className="my-2 border-t border-border" />
-            <p className="px-3 pt-1 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Studio ของฉัน</p>
-
-            {myStudios.length === 0 ? (
-              <button onClick={() => navigate("/studio/new")} className={`${item} text-primary hover:text-primary`}>
-                <Plus className="w-4 h-4" /> ก่อตั้ง Studio
-              </button>
-            ) : (
-              <>
-                {myStudios.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => {
-                      setActive.mutate(s.id);
-                      navigate("/studio/manage");
-                    }}
-                    className={item}
-                  >
-                    <Building2 className="w-4 h-4 text-primary" /> {s.name}
-                  </button>
-                ))}
-                <button onClick={() => navigate("/studio/new")} className={`${item} text-muted-foreground`}>
-                  <Plus className="w-4 h-4" /> สร้าง Studio ใหม่
-                </button>
-              </>
-            )}
-          </>
-        ) : null}
 
         <div className="my-2 border-t border-border" />
-        <button onClick={() => navigate("/settings")} className={item}>
+        <button type="button" onClick={() => navigate("/settings")} className={item}>
           <Settings className="w-4 h-4 text-primary" /> ตั้งค่า
         </button>
         <button
+          type="button"
           onClick={async () => {
             await signOutApp(queryClient);
             navigate("/");
@@ -129,7 +71,6 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
           <LogOut className="w-4 h-4" /> ออกจากระบบ
         </button>
       </nav>
-      {!launchMinimal ? <ReferralShareSheet open={referralOpen} onOpenChange={setReferralOpen} /> : null}
       <OpportunityStatusDialog open={opportunityDialogOpen} onOpenChange={setOpportunityDialogOpen} />
     </>
   );

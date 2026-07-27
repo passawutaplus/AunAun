@@ -1,6 +1,6 @@
 /** Load brand fonts after first paint — avoids render-blocking CSS @import on mobile. */
 const FONT_HREF =
-  "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600&display=swap";
+  "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Sans+Thai+Looped:wght@300;400;500;600&family=Sarabun:wght@300;400;500;600;700&display=swap";
 
 let started = false;
 

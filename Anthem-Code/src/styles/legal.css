@@ -1,4 +1,4 @@
-/* Fonts load via loadBrandFonts() — no render-blocking @import. */
+/* Fonts load via loadBrandFonts() + index.html — no render-blocking @import. */
 .font-legal {
-  font-family: "IBM Plex Sans Thai Looped", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Sarabun", "IBM Plex Sans Thai Looped", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
 }

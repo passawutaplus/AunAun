@@ -7,6 +7,8 @@ import {
   type HireSellerReadiness,
 } from "@/lib/hireSellerReadiness";
 import type { BillingProfileFields } from "@/lib/billingProfile";
+import { mergeBillingWithKyc } from "@/lib/billingFromKyc";
+import { isKycExpired, resolveKycExpiresAt } from "@/lib/kycIdentity";
 
 function emailConfirmedFromUser(user: { email_confirmed_at?: string | null; confirmed_at?: string | null } | null | undefined): boolean {
   if (!user) return false;
@@ -27,7 +29,12 @@ export function useHireSellerReadiness(userId?: string): HireSellerReadiness & {
   const { data: kycRequests = [], isLoading: kycLoading } = useMyKycRequests();
 
   const result = useMemo(() => {
-    const approvedKyc = kycRequests.find((r) => r.status === "approved");
+    const approvedKyc = kycRequests.find((r) => {
+      if (r.status !== "approved") return false;
+      return !isKycExpired(
+        resolveKycExpiresAt({ kyc_expires_at: r.kyc_expires_at, reviewed_at: r.reviewed_at }),
+      );
+    });
     const pendingKyc = kycRequests.some((r) => r.status === "pending");
     const bankFromPayout =
       !payoutError && payout
@@ -48,22 +55,25 @@ export function useHireSellerReadiness(userId?: string): HireSellerReadiness & {
       : null;
 
     const billing: BillingProfileFields | null = profile
-      ? {
-          billing_type: (profile as { billing_type?: string | null }).billing_type,
-          legal_name: (profile as { legal_name?: string | null }).legal_name,
-          company_name: (profile as { company_name?: string | null }).company_name,
-          tax_id: (profile as { tax_id?: string | null }).tax_id,
-          billing_address:
-            (profile as { billing_address?: string | null }).billing_address ||
-            (profile as { address?: string | null }).address,
-          branch: (profile as { branch?: string | null }).branch,
-          contact_person: (profile as { contact_person?: string | null }).contact_person,
-          contact_role: (profile as { contact_role?: string | null }).contact_role,
-          vat_registered: (profile as { vat_registered?: boolean | null }).vat_registered,
-          display_name: profile.display_name,
-          email: (profile as { email?: string | null }).email ?? user?.email,
-          phone: (profile as { phone?: string | null }).phone,
-        }
+      ? mergeBillingWithKyc(
+          {
+            billing_type: (profile as { billing_type?: string | null }).billing_type,
+            legal_name: (profile as { legal_name?: string | null }).legal_name,
+            company_name: (profile as { company_name?: string | null }).company_name,
+            tax_id: (profile as { tax_id?: string | null }).tax_id,
+            billing_address:
+              (profile as { billing_address?: string | null }).billing_address ||
+              (profile as { address?: string | null }).address,
+            branch: (profile as { branch?: string | null }).branch,
+            contact_person: (profile as { contact_person?: string | null }).contact_person,
+            contact_role: (profile as { contact_role?: string | null }).contact_role,
+            vat_registered: (profile as { vat_registered?: boolean | null }).vat_registered,
+            display_name: profile.display_name,
+            email: (profile as { email?: string | null }).email ?? user?.email,
+            phone: (profile as { phone?: string | null }).phone,
+          },
+          approvedKyc,
+        )
       : null;
 
     const bankFromProfile =
@@ -78,10 +88,20 @@ export function useHireSellerReadiness(userId?: string): HireSellerReadiness & {
           }
         : null;
 
+    const profileExpires = (profile as { kyc_expires_at?: string | null } | null)?.kyc_expires_at;
+    const isVerified =
+      !!(profile as { is_verified?: boolean } | null)?.is_verified &&
+      !isKycExpired(
+        resolveKycExpiresAt({
+          kyc_expires_at: profileExpires ?? approvedKyc?.kyc_expires_at,
+          reviewed_at: approvedKyc?.reviewed_at,
+        }),
+      );
+
     return evaluateHireSellerReadiness({
       emailConfirmed: emailConfirmedFromUser(user),
       billing,
-      isVerified: !!(profile as { is_verified?: boolean } | null)?.is_verified,
+      isVerified,
       bank:
         bankFromPayout && (bankFromPayout.bank_name || bankFromPayout.account_number)
           ? bankFromPayout

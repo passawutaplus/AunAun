@@ -3,12 +3,14 @@ import { ArrowRight, Gift as GiftIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Gift } from "@/hooks/useGifting";
 import { giftIcon } from "@/components/earnings/giftIcons";
+import { isAplus1GiftEconomyEnabled } from "@/lib/aplus1Launch";
 
 type Props = {
   gifts: Gift[];
 };
 
 const EarningsGiftCatalog = ({ gifts }: Props) => {
+  if (!isAplus1GiftEconomyEnabled()) return null;
   if (gifts.length === 0) return null;
 
   return (

@@ -16,7 +16,7 @@ import type { ProjectManageStats } from "@/hooks/usePortfolioProjectStats";
 import { EMPTY_PROJECT_STATS } from "@/hooks/usePortfolioProjectStats";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { timeAgoTH } from "@/lib/format";
+import { formatThaiDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface ManageProjectCardProps {
@@ -59,7 +59,7 @@ const ManageProjectCard = ({
   const navigate = useNavigate();
   const dateLabel =
     project.publishedDate && !Number.isNaN(Date.parse(project.publishedDate))
-      ? timeAgoTH(project.publishedDate)
+      ? formatThaiDate(project.publishedDate)
       : project.publishedDate;
   const isList = layout === "list";
 
@@ -135,26 +135,30 @@ const ManageProjectCard = ({
         <button
           type="button"
           onClick={() => navigate(`/project/${project.id}`)}
-          className="px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          aria-label="ดูผลงาน"
+          title="ดูผลงาน"
         >
-          ดู
+          <Eye className="w-3.5 h-3.5" />
         </button>
       )}
       {editable && (
         <button
           type="button"
           onClick={() => navigate(`/portfolio/${project.id}/edit`)}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-primary hover:bg-primary/10 transition-colors"
+          className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+          aria-label="แก้ไขผลงาน"
+          title="แก้ไขผลงาน"
         >
           <Pencil className="w-3.5 h-3.5" />
-          แก้ไข
         </button>
       )}
       <button
         type="button"
         onClick={() => onDelete?.(project.id)}
-        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-destructive hover:bg-destructive/10 transition-colors"
+        className="p-1.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
         aria-label="ลบ"
+        title="ลบ"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -164,16 +168,16 @@ const ManageProjectCard = ({
   if (isList) {
     return (
       <div className="rounded-xl overflow-hidden glass-panel flex flex-col sm:flex-row sm:items-stretch gap-0">
-        <div className="relative w-full sm:w-36 md:w-40 h-28 sm:h-auto sm:min-h-[5.5rem] bg-muted shrink-0">
+        <div className="relative w-full sm:w-40 md:w-44 aspect-[4/3] sm:aspect-auto sm:self-stretch bg-muted shrink-0 min-h-[5.5rem]">
           {project.image ? (
             <img
               src={project.image}
               alt={project.title}
-              className="w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover"
               loading="lazy"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+            <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
               ไม่มีรูปปก
             </div>
           )}
@@ -186,17 +190,6 @@ const ManageProjectCard = ({
             </h3>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
               <span>{dateLabel}</span>
-              <span className="inline-flex items-center gap-1">
-                <Eye className="w-3.5 h-3.5" />
-                {project.views.toLocaleString()}
-              </span>
-              <PlusOneControl
-                active={false}
-                count={project.likes}
-                showCount
-                size="sm"
-                className="pointer-events-none text-muted-foreground"
-              />
               {stats.hireCount > 0 && (
                 <span className="inline-flex items-center gap-1 text-[hsl(var(--chat-hire))]">
                   <Mail className="w-3.5 h-3.5" />
@@ -209,6 +202,17 @@ const ManageProjectCard = ({
                   คอลแลป {stats.collabCount}
                 </span>
               )}
+              <span className="inline-flex items-center gap-1">
+                <Eye className="w-3.5 h-3.5" />
+                {project.views.toLocaleString()}
+              </span>
+              <PlusOneControl
+                active={false}
+                count={project.likes}
+                showCount
+                size="sm"
+                className="pointer-events-none text-muted-foreground"
+              />
             </div>
           </div>
           <div className="flex items-center justify-between gap-2 sm:flex-col sm:items-end sm:justify-center shrink-0">
@@ -234,16 +238,16 @@ const ManageProjectCard = ({
 
   return (
     <div className="rounded-xl overflow-hidden glass-panel h-full flex flex-col">
-      <div className={cn("relative bg-muted shrink-0", compact ? "h-28" : "h-40")}>
+      <div className="relative aspect-[4/3] w-full bg-muted shrink-0">
         {project.image ? (
           <img
             src={project.image}
             alt={project.title}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover"
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+          <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
             ไม่มีรูปปก
           </div>
         )}
@@ -277,25 +281,44 @@ const ManageProjectCard = ({
               />
             </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">{dateLabel}</p>
+          {compact ? (
+            <div className="mt-1 space-y-1 text-xs text-muted-foreground">
+              <p>{dateLabel}</p>
+              {(stats.hireCount > 0 || stats.collabCount > 0) && (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  {stats.hireCount > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[hsl(var(--chat-hire))]">
+                      <Mail className="w-3.5 h-3.5" />
+                      จ้าง {stats.hireCount}
+                    </span>
+                  )}
+                  {stats.collabCount > 0 && (
+                    <span className="inline-flex items-center gap-1 text-primary">
+                      <Handshake className="w-3.5 h-3.5" />
+                      คอลแลป {stats.collabCount}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span>{dateLabel}</span>
+              {stats.hireCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-[hsl(var(--chat-hire))]">
+                  <Mail className="w-3.5 h-3.5" />
+                  จ้าง {stats.hireCount}
+                </span>
+              )}
+              {stats.collabCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-primary">
+                  <Handshake className="w-3.5 h-3.5" />
+                  คอลแลป {stats.collabCount}
+                </span>
+              )}
+            </div>
+          )}
         </div>
-
-        {(stats.hireCount > 0 || stats.collabCount > 0) && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-            {stats.hireCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-[hsl(var(--chat-hire))]">
-                <Mail className="w-3.5 h-3.5" />
-                จ้าง {stats.hireCount}
-              </span>
-            )}
-            {stats.collabCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-primary">
-                <Handshake className="w-3.5 h-3.5" />
-                คอลแลป {stats.collabCount}
-              </span>
-            )}
-          </div>
-        )}
 
         {onShowStats && project.status === "Published" && (
           <button

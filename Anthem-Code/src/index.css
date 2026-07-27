@@ -6,7 +6,7 @@
 
 @layer utilities {
   .font-legal {
-    font-family: "IBM Plex Sans Thai Looped", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
+    font-family: "Sarabun", "IBM Plex Sans Thai Looped", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
   }
 }
 
@@ -114,8 +114,8 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'IBM Plex Sans Thai', sans-serif;
-    font-weight: 300;
+    font-family: "IBM Plex Sans Thai", "Sarabun", "IBM Plex Sans Thai Looped", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 400;
     letter-spacing: 0.012em;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
@@ -161,8 +161,8 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'IBM Plex Sans Thai', sans-serif;
-    font-weight: 400;
+    font-family: "IBM Plex Sans Thai", "Sarabun", "IBM Plex Sans Thai Looped", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 500;
     letter-spacing: 0;
     line-height: 1.3;
   }

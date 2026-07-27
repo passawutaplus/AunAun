@@ -88,7 +88,7 @@ export function evaluateHireSellerReadiness(input: HireSellerReadinessInput): Hi
     {
       id: "billing",
       label: "ข้อมูลออกเอกสาร / ภาษีครบ",
-      hint: "ชื่อ ที่อยู่ (และเลขผู้เสียภาษีถ้าเป็นนิติบุคคล)",
+      hint: "บุคคลธรรมดาใช้ชื่อ·ที่อยู่·เลขบัตรจาก KYC (นิติบุคคลกรอกเพิ่มในตั้งค่า)",
       done: billingDone,
       href: "/settings#billing-profile",
     },

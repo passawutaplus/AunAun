@@ -1,9 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { CheckCircle2, Clock, ShieldCheck, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, ShieldCheck, XCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useMyKycRequests } from "@/hooks/useKyc";
+import { isKycExpired, resolveKycExpiresAt } from "@/lib/kycIdentity";
 import { cn } from "@/lib/utils";
 
 type Props = { className?: string; showLink?: boolean };
@@ -13,16 +13,27 @@ export function useKycStatus() {
   const { data: profile } = useProfile(user?.id);
   const { data: requests = [], isLoading } = useMyKycRequests();
 
-  const isVerified = !!(profile as { is_verified?: boolean } | null)?.is_verified;
+  const profileRec = profile as {
+    is_verified?: boolean;
+    kyc_expires_at?: string | null;
+  } | null;
+  const approved = requests.find((r) => r.status === "approved");
+  const expiresAt = resolveKycExpiresAt({
+    kyc_expires_at: profileRec?.kyc_expires_at ?? approved?.kyc_expires_at,
+    reviewed_at: approved?.reviewed_at,
+  });
+  const expired = isKycExpired(expiresAt);
+  const isVerified = !!(profileRec?.is_verified) && !expired;
   const pending = requests.find((r) => r.status === "pending");
-  const latestRejected = !pending && !isVerified ? requests.find((r) => r.status === "rejected") : null;
+  const latestRejected = !pending && !isVerified && !expired ? requests.find((r) => r.status === "rejected") : null;
 
-  let status: "verified" | "pending" | "rejected" | "none" = "none";
+  let status: "verified" | "pending" | "rejected" | "expired" | "none" = "none";
   if (isVerified) status = "verified";
   else if (pending) status = "pending";
+  else if (expired) status = "expired";
   else if (latestRejected) status = "rejected";
 
-  return { status, pending, latestRejected, isVerified, isLoading };
+  return { status, pending, latestRejected, isVerified, expiresAt, isLoading };
 }
 
 const CONFIG = {
@@ -44,6 +55,12 @@ const CONFIG = {
     detail: "ยื่นคำขอใหม่ได้",
     className: "text-destructive",
   },
+  expired: {
+    icon: AlertTriangle,
+    label: "KYC หมดอายุ",
+    detail: "ยืนยันตัวตนใหม่เพื่อถอนเงิน",
+    className: "text-amber-600",
+  },
   none: {
     icon: ShieldCheck,
     label: "ยังไม่ยืนยันตัวตน",
@@ -53,7 +70,7 @@ const CONFIG = {
 } as const;
 
 export function KycStatusBadge({ className, showLink = true }: Props) {
-  const { status, latestRejected, isLoading } = useKycStatus();
+  const { status, latestRejected, expiresAt, isLoading } = useKycStatus();
   if (isLoading) return null;
 
   const cfg = CONFIG[status];
@@ -68,11 +85,17 @@ export function KycStatusBadge({ className, showLink = true }: Props) {
           <p className="text-xs text-muted-foreground mt-0.5">
             {status === "rejected" && latestRejected?.reject_reason_label
               ? latestRejected.reject_reason_label
-              : cfg.detail}
+              : status === "verified" && expiresAt
+                ? `หมดอายุ ${new Date(expiresAt).toLocaleDateString("th-TH")}`
+                : cfg.detail}
           </p>
           {showLink && status !== "verified" && (
             <Link to="/verify" className="text-xs text-primary underline mt-1 inline-block">
-              {status === "rejected" ? "ยื่นคำขอใหม่" : status === "pending" ? "ดูสถานะ" : "เริ่มยืนยันตัวตน"}
+              {status === "rejected" || status === "expired"
+                ? "ยื่นคำขอใหม่"
+                : status === "pending"
+                  ? "ดูสถานะ"
+                  : "เริ่มยืนยันตัวตน"}
             </Link>
           )}
         </div>

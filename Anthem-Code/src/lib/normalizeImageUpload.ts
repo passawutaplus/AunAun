@@ -29,13 +29,32 @@ export function isHeicByHint(file: File): boolean {
 }
 
 /**
- * Accept gate for portfolio image pickers: the standard web-safe types plus
- * HEIC/HEIF (transcoded on upload). HEIC often has an empty MIME on Windows,
- * so we also match by extension.
+ * Accept gate for canvas/portfolio image pickers: JPG, PNG, and GIF.
+ * Empty MIME (common on some Windows pickers) falls back to extension.
+ * Cover/crop stills should use {@link isAllowedPortfolioStillImage}.
  */
 export function isAllowedPortfolioImage(file: File): boolean {
-  return /^image\/(jpeg|png|webp)$/i.test(file.type) || isHeicByHint(file);
+  if (/^image\/(jpeg|png|gif)$/i.test(file.type)) return true;
+  if (!file.type && /\.(jpe?g|png|gif)$/i.test(file.name)) return true;
+  return false;
 }
+
+/** Still images only (cover crop / poster) — no GIF. */
+export function isAllowedPortfolioStillImage(file: File): boolean {
+  if (/^image\/(jpeg|png)$/i.test(file.type)) return true;
+  if (!file.type && /\.(jpe?g|png)$/i.test(file.name)) return true;
+  return false;
+}
+
+/** `<input accept>` for canvas image modules (includes GIF). */
+export const PORTFOLIO_IMAGE_ACCEPT = "image/jpeg,image/png,image/gif,.jpg,.jpeg,.png,.gif";
+
+/** Still-image accept (cover / poster). */
+export const PORTFOLIO_STILL_IMAGE_ACCEPT = "image/jpeg,image/png,.jpg,.jpeg,.png";
+
+/** Short user-facing format hint for canvas image modules. */
+export const PORTFOLIO_IMAGE_FORMAT_HINT = "JPG, PNG, GIF";
+
 
 function readBytes(file: Blob, n: number): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {

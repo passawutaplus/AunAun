@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { Check, ChevronDown, Plus, Search } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -123,7 +123,7 @@ export function ProjectSeriesPicker({
   options,
   onChange,
   onCreateNew,
-  placeholder = "ไม่ใส่ในชุด",
+  placeholder = "ไม่ใส่ใน Catalog",
   disabled,
 }: SeriesPickerProps) {
   const [open, setOpen] = useState(false);
@@ -171,7 +171,7 @@ export function ProjectSeriesPicker({
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="ค้นหาชุดงาน..."
+              placeholder="ค้นหา Catalog..."
               className="h-9 pl-8 text-sm"
               autoFocus
             />
@@ -190,11 +190,11 @@ export function ProjectSeriesPicker({
               !value ? "bg-primary/10 font-medium text-primary" : "hover:bg-muted/70",
             )}
           >
-            <span className="min-w-0 flex-1 truncate">ไม่ใส่ในชุด</span>
+            <span className="min-w-0 flex-1 truncate">ไม่ใส่ใน Catalog</span>
             {!value ? <Check className="h-3.5 w-3.5 shrink-0" /> : null}
           </button>
           {filtered.length === 0 ? (
-            <p className="px-2 py-3 text-center text-xs text-muted-foreground">ไม่พบชุดงาน</p>
+            <p className="px-2 py-3 text-center text-xs text-muted-foreground">ไม่พบ Catalog</p>
           ) : (
             filtered.map((s) => {
               const selected = s.id === value;
@@ -233,7 +233,7 @@ export function ProjectSeriesPicker({
             className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm font-medium text-primary transition-colors hover:bg-primary/10"
           >
             <Plus className="h-3.5 w-3.5 shrink-0" />
-            เพิ่มชุดงานใหม่
+            เพิ่ม Catalog ใหม่
           </button>
         </div>
       </PopoverContent>

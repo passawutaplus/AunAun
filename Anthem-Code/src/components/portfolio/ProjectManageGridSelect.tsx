@@ -23,8 +23,8 @@ const MOBILE_OPTIONS: GridOption[] = [
 ];
 
 const DESKTOP_OPTIONS: GridOption[] = [
-  { value: "cols3", label: "3 คอลัมน์", icon: Grid2x2 },
   { value: "cols5", label: "5 คอลัมน์", icon: Grid3x3 },
+  { value: "cols3", label: "3 คอลัมน์", icon: Grid2x2 },
   { value: "list", label: "รายการ", icon: List },
 ];
 
@@ -79,7 +79,7 @@ function writeKey(key: string, value: ProjectManageGridMode) {
 function readForViewport(isMobile: boolean): ProjectManageGridMode {
   const scoped = readKey(
     isMobile ? STORAGE_KEY_MOBILE : STORAGE_KEY_DESKTOP,
-    isMobile ? "cols1" : "cols3",
+    isMobile ? "cols1" : "cols5",
   );
   if (isMobile && isMobileMode(scoped)) return scoped;
   if (!isMobile && isDesktopMode(scoped)) return scoped;
@@ -95,19 +95,19 @@ function readForViewport(isMobile: boolean): ProjectManageGridMode {
       if (isMobileMode(legacy)) return legacy;
       return "cols1";
     }
-    if (legacy === "cols1") return "cols3";
+    if (legacy === "cols1") return "cols5";
     if (legacy === "cols2") return "cols5";
     if (isDesktopMode(legacy)) return legacy;
-    return "cols3";
+    return "cols5";
   }
 
-  return isMobile ? "cols1" : "cols3";
+  return isMobile ? "cols1" : "cols5";
 }
 
 export function useProjectManageGridMode() {
   const isMobile = useIsMobile();
   const [mode, setModeState] = useState<ProjectManageGridMode>(() =>
-    typeof window === "undefined" ? "cols3" : readForViewport(window.innerWidth < 768),
+    typeof window === "undefined" ? "cols5" : readForViewport(window.innerWidth < 768),
   );
 
   useEffect(() => {

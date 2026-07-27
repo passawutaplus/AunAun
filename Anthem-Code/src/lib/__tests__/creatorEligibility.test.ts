@@ -11,6 +11,7 @@ describe("computeCreatorEligibility", () => {
       isVerified: false,
     });
     expect(r.canReceiveGifts).toBe(false);
+    expect(r.canStartKyc).toBe(true);
     expect(r.tier).toBe("locked");
   });
 

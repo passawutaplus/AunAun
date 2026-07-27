@@ -8,7 +8,7 @@ import { ProfileMenuDropdown } from "@/components/ProfileMenuDropdown";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
+import { isAplus1GiftEconomyEnabled, isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
 import { cn } from "@/lib/utils";
@@ -97,7 +97,7 @@ const ProfileButton = ({ className, fillRail = false }: Props) => {
             }
           />
         </div>
-        {!isAplus1LaunchMinimal() && <WalletBadge />}
+        {isAplus1GiftEconomyEnabled() && !isAplus1LaunchMinimal() && <WalletBadge />}
       </div>
     </div>
   );

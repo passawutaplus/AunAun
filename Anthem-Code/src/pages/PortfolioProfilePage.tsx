@@ -1,7 +1,17 @@
 import { useMemo, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings, Sparkles, UserPlus, FileCheck, Plus, Layers3, Target, UserRound, Pencil, Library } from "lucide-react";
+import {
+  Settings,
+  Sparkles,
+  UserPlus,
+  FileCheck,
+  UserRound,
+  Pencil,
+  Briefcase,
+  Handshake,
+  LayoutGrid,
+} from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,17 +22,18 @@ import { useFollowState } from "@/hooks/useFollow";
 import { useCollections } from "@/hooks/useCollections";
 import { useMyProjectSeries } from "@/hooks/useProjectSeries";
 import { useInspireBoards, isDefaultInspireBoard } from "@/hooks/useInspire";
-import CollectionCard from "@/components/collections/CollectionCard";
-import InspireBoardCard from "@/components/inspire/InspireBoardCard";
-import { SeriesCard } from "@/components/series/SeriesCard";
+import CollectionsManagePanel from "@/components/collections/CollectionsManagePanel";
+import PortfolioWorksManagePanel from "@/components/portfolio/PortfolioWorksManagePanel";
+import InspireManagePanel from "@/components/inspire/InspireManagePanel";
+import CatalogManagePanel from "@/components/series/CatalogManagePanel";
 import type { ExperienceItem } from "@/lib/validators";
 import { ProfileAboutReadOnly } from "@/components/profile/ProfileAboutReadOnly";
 import PageLoader from "@/components/ui/PageLoader";
 import ProfileMenuCard from "@/components/profile/ProfileMenuCard";
 import ProfileWalletCard from "@/components/profile/ProfileWalletCard";
+import ProfileAboutMeCard from "@/components/profile/ProfileAboutMeCard";
 import ProfileCoverHeader from "@/components/profile/ProfileCoverHeader";
 import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
-import { DesignDrillSection } from "@/components/drill/DesignDrillSection";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
 import { markOnboardingVisit } from "@/lib/onboardingStorage";
@@ -35,8 +46,11 @@ import {
   profileVisitorPreviewPath,
 } from "@/lib/profileRoutes";
 import { isAplus1LaunchMinimal, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
-import { ProfileHiringRequestsSection } from "@/components/profile/ProfileHiringRequestsSection";
-import CollabRequestsSection from "@/components/CollabRequestsSection";
+import { parseSocialLinks } from "@/lib/parseSocialLinks";
+import { displayProfileAddress } from "@/lib/profileAddress";
+import { FEED_PAGE_GUTTER_X } from "@/components/feed/FeedHero";
+
+const PAGE_SHELL = cn("max-w-[1920px] mx-auto", FEED_PAGE_GUTTER_X);
 
 const parseExperience = (raw: unknown): ExperienceItem[] =>
   Array.isArray(raw) ? (raw as ExperienceItem[]) : [];
@@ -44,8 +58,18 @@ const parseExperience = (raw: unknown): ExperienceItem[] =>
 const parseSkills = (raw: unknown): string[] =>
   Array.isArray(raw) ? raw.filter((s): s is string => typeof s === "string") : [];
 
+type ProfileTab = "work" | "about" | "catalog" | "collections" | "inspire";
+
+const TAB_IDS: ProfileTab[] = ["work", "catalog", "collections", "inspire", "about"];
+
+function resolveTab(raw: string | null): ProfileTab {
+  if (raw && (TAB_IDS as string[]).includes(raw)) return raw as ProfileTab;
+  return "work";
+}
+
 const PortfolioProfilePage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const { data: profile, isLoading } = useProfile(user?.id);
@@ -62,36 +86,46 @@ const PortfolioProfilePage = () => {
   );
 
   const [opportunityOpen, setOpportunityOpen] = useState(false);
+  const activeTab = resolveTab(searchParams.get("tab"));
+
+  const setTab = (tab: ProfileTab) => {
+    const next = new URLSearchParams(searchParams);
+    if (tab === "work") next.delete("tab");
+    else next.set("tab", tab);
+    next.delete("focus");
+    if (tab !== "inspire") next.delete("b");
+    if (tab !== "catalog") next.delete("s");
+    if (tab !== "collections") next.delete("c");
+    setSearchParams(next, { replace: true });
+  };
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?redirect=/portfolio");
   }, [authLoading, user, navigate]);
 
+  // Legacy focus=hiring|collab → dedicated dashboard pages
   useEffect(() => {
-    if (!profile || !designDrillEnabled) return;
-    const drill = new URLSearchParams(window.location.search).get("drill");
-    if (drill !== "daily" && window.location.hash !== `#${PORTFOLIO_DRILL_HASH}`) return;
-    const timer = window.setTimeout(() => {
-      document.getElementById(PORTFOLIO_DRILL_HASH)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 150);
-    return () => window.clearTimeout(timer);
-  }, [profile, designDrillEnabled]);
+    const focus = searchParams.get("focus");
+    if (focus === "hiring") {
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+    if (focus === "collab") {
+      navigate("/dashboard/collab", { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   useEffect(() => {
-    if (!profile) return;
-    const focus = new URLSearchParams(window.location.search).get("focus");
-    const el =
-      focus === "collab"
-        ? document.getElementById("collab-section")
-        : focus === "hiring"
-          ? document.getElementById("hiring-section")
-          : null;
-    if (!el) return;
+    if (!profile || !designDrillEnabled) return;
+    const drill = searchParams.get("drill");
+    if (drill !== "daily" && window.location.hash !== `#${PORTFOLIO_DRILL_HASH}`) return;
+    setTab("work");
     const timer = window.setTimeout(() => {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 150);
+      document.getElementById(PORTFOLIO_DRILL_HASH)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
     return () => window.clearTimeout(timer);
-  }, [profile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to drill deep-link
+  }, [profile, designDrillEnabled, searchParams]);
 
   const { data: hireCount = 0 } = useQuery({
     queryKey: ["hire-count", user?.id],
@@ -170,6 +204,17 @@ const PortfolioProfilePage = () => {
   const opportunityTypes = parseSkills(
     (profile as { opportunity_types?: unknown } | null | undefined)?.opportunity_types,
   );
+  const socialLinks = parseSocialLinks(
+    (profile as { social_links?: unknown } | null | undefined)?.social_links,
+  );
+
+  const tabs: { id: ProfileTab; label: string; count?: number }[] = [
+    { id: "work", label: "Works", count: published.length },
+    { id: "catalog", label: "Catalogs", count: seriesList.length },
+    { id: "collections", label: "Collections", count: collections.length },
+    { id: "inspire", label: "Inspiration", count: inspireBoards.length },
+    { id: "about", label: "About Me" },
+  ];
 
   if (authLoading || isLoading || !profile) {
     return <PageLoader />;
@@ -177,9 +222,8 @@ const PortfolioProfilePage = () => {
 
   return (
     <div className={cn("min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
-      {/* Top bar */}
-      <div className="sticky top-0 z-30 glass-panel border-x-0 border-t-0 rounded-none">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="sticky top-0 z-30 lg:hidden border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30">
+        <div className={cn(PAGE_SHELL, "py-3 flex items-center justify-between")}>
           <BackButton to="/" label="กลับฟีด" />
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="rounded-full glass-chip border-0">
@@ -189,20 +233,19 @@ const PortfolioProfilePage = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto">
+      <div className={PAGE_SHELL}>
         <ProfileCoverHeader
           userId={user!.id}
           profile={profile}
           stats={{ works: published.length, followers, following }}
           opportunityStatus={(profile as { opportunity_status?: string }).opportunity_status}
           opportunityTypes={(profile as { opportunity_types?: string[] }).opportunity_types}
-          opportunityNote={(profile as { opportunity_note?: string | null }).opportunity_note}
+          disciplines={disciplines}
           onOpportunityEdit={() => setOpportunityOpen(true)}
           onPost={() => navigate("/portfolio/new")}
           onPreview={() =>
             navigate(profileVisitorPreviewPath({ user_id: user!.id, username: profile.username }))
           }
-          onManage={() => navigate("/portfolio/manage")}
           shareUrl={profilePublicUrl({ user_id: user!.id, username: profile.username })}
           shareTitle={profileShareTitle({
             user_id: user!.id,
@@ -223,7 +266,8 @@ const PortfolioProfilePage = () => {
         />
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 pt-2 pb-16 grid grid-cols-1 md:grid-cols-[300px_1fr] gap-6 md:gap-8">
+      <div className={cn(PAGE_SHELL, "pt-2 pb-16 grid grid-cols-1 md:grid-cols-[300px_1fr] gap-6 md:gap-8")}>
+        {/* SIDEBAR — unchanged structure */}
         <aside className="md:sticky md:top-20 md:self-start space-y-4">
           <div className="rounded-3xl glass-panel p-5 grid grid-cols-3 gap-3">
             <RequestMiniStat
@@ -232,17 +276,16 @@ const PortfolioProfilePage = () => {
               hireCount={hireCount}
               collabCount={collabCount}
               onClick={() => {
-                const el =
-                  document.getElementById("hiring-section") ??
-                  document.getElementById("collab-section");
-                el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                navigate(
+                  hireCount > 0 || collabCount === 0 ? "/dashboard" : "/dashboard/collab",
+                );
               }}
             />
             <MiniStat
               icon={FileCheck}
               label="เผยแพร่"
               value={published.length}
-              onClick={() => navigate("/portfolio/manage")}
+              onClick={() => setTab("work")}
             />
             <MiniStat
               icon={Sparkles}
@@ -252,6 +295,16 @@ const PortfolioProfilePage = () => {
             />
           </div>
 
+          <ProfileAboutMeCard
+            bio={profile.bio}
+            location={displayProfileAddress(
+              (profile as { profile_address?: unknown }).profile_address,
+              profile.location,
+              "full",
+            )}
+            onEdit={() => navigate("/settings#profile-about")}
+          />
+
           {!launchMinimal && <ProfileWalletCard />}
 
           <ProfileMenuCard opportunityOpen={opportunityOpen} onOpportunityOpenChange={setOpportunityOpen} />
@@ -259,136 +312,124 @@ const PortfolioProfilePage = () => {
           <OnboardingChecklist variant="full" />
         </aside>
 
-        {/* RIGHT: Sections */}
-        <main className="space-y-6 min-w-0">
-
-          {designDrillEnabled && (
-            <Section id={PORTFOLIO_DRILL_HASH} icon={Target} title="Design Drill">
-              <DesignDrillSection />
-            </Section>
+        {/* RIGHT: Tabs + one panel */}
+        <main className="min-w-0 space-y-4">
+          {(hireCount > 0 || collabCount > 0) && (
+            <div className="flex flex-wrap gap-2">
+              {hireCount > 0 ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full h-8 text-xs gap-1.5"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  <Briefcase className="w-3.5 h-3.5" />
+                  คำขอจ้างงาน
+                  <span className="tabular-nums text-sky-500 font-semibold">{hireCount}</span>
+                </Button>
+              ) : null}
+              {collabCount > 0 ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full h-8 text-xs gap-1.5"
+                  onClick={() => navigate("/dashboard/collab")}
+                >
+                  <Handshake className="w-3.5 h-3.5" />
+                  คำขอคอลแลป
+                  <span className="tabular-nums text-primary font-semibold">{collabCount}</span>
+                </Button>
+              ) : null}
+            </div>
           )}
 
-          <Section
-            icon={UserRound}
-            title="เกี่ยวกับฉัน"
-            action={
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => navigate("/settings#profile-about")}
-                className="rounded-full h-8 text-xs text-muted-foreground hover:text-primary"
-              >
-                <Pencil className="w-3.5 h-3.5 mr-1" /> แก้ไขที่ตั้งค่า
-              </Button>
-            }
-          >
-            <ProfileAboutReadOnly
-              profile={profile}
-              experience={experience}
-              skills={skills}
-              disciplines={disciplines}
-              opportunityTypes={opportunityTypes}
-            />
-          </Section>
+          <div className="flex items-end gap-2 border-b border-border/70">
+            <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide">
+              <nav className="flex min-w-max gap-1" aria-label="เมนูโปรไฟล์">
+                {tabs.map((tab) => {
+                  const active = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setTab(tab.id)}
+                      className={cn(
+                        "relative px-3.5 py-2.5 text-sm whitespace-nowrap transition-colors",
+                        active
+                          ? "font-semibold text-foreground"
+                          : "font-medium text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {tab.label}
+                      {typeof tab.count === "number" && tab.count > 0 ? (
+                        <span className="ml-1 text-xs text-muted-foreground font-normal tabular-nums">
+                          ({tab.count})
+                        </span>
+                      ) : null}
+                      {active ? (
+                        <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-foreground" />
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="mb-1.5 shrink-0 rounded-full h-8 text-xs gap-1.5"
+              onClick={() => navigate("/dashboard")}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              จัดการงาน
+            </Button>
+          </div>
 
-          <ProfileHiringRequestsSection />
+          {activeTab === "work" ? (
+            <PortfolioWorksManagePanel userId={user!.id} showDesignDrill />
+          ) : null}
 
-          <CollabRequestsSection />
-
-          {/* ชุดผลงาน */}
-          <Section
-            icon={Library}
-            title="ชุดผลงานของฉัน"
-            count={seriesList.length}
-            action={
-              <button
-                type="button"
-                onClick={() => navigate("/series")}
-                className="text-xs text-primary hover:underline"
-              >
-                จัดการ
-              </button>
-            }
-          >
-            {seriesList.length ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-                {seriesList.slice(0, 6).map((s) => (
-                  <SeriesCard key={s.id} series={s} />
-                ))}
-              </div>
-            ) : (
-              <EmptyHint
-                text="รวมหลายชิ้นของลูกค้า/โปรเจกต์เดียวกัน — สร้างโฟลเดอร์ว่างก่อนก็ได้"
-                cta="สร้างชุดผลงาน"
-                onClick={() => navigate("/series")}
+          {activeTab === "about" ? (
+            <Section
+              icon={UserRound}
+              title="เกี่ยวกับฉัน"
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => navigate("/settings#profile-about")}
+                  className="rounded-full h-8 text-xs text-muted-foreground hover:text-primary"
+                >
+                  <Pencil className="w-3.5 h-3.5 mr-1" /> แก้ไขที่ตั้งค่า
+                </Button>
+              }
+            >
+              <ProfileAboutReadOnly
+                profile={profile}
+                experience={experience}
+                skills={skills}
+                disciplines={disciplines}
+                opportunityTypes={opportunityTypes}
+                socialLinks={socialLinks}
               />
-            )}
-          </Section>
+            </Section>
+          ) : null}
 
-          {/* My Collections */}
-          <Section
-            icon={Layers3}
-            title="คอลเลกชันของฉัน"
-            count={collections.length}
-            action={
-              <button
-                type="button"
-                onClick={() => navigate("/collections")}
-                className="text-xs text-primary hover:underline"
-              >
-                จัดการ
-              </button>
-            }
-          >
-            {collections.length ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-                {collections.slice(0, 6).map((c) => (
-                  <CollectionCard key={c.id} collection={c} />
-                ))}
-              </div>
-            ) : (
-              <EmptyHint
-                text="ยังไม่มีคอลเลกชัน เริ่มเก็บผลงานที่บอกสไตล์ของคุณ"
-                cta="สร้างคอลเลกชัน"
-                onClick={() => navigate("/collections")}
-              />
-            )}
-          </Section>
+          {activeTab === "catalog" ? (
+            <CatalogManagePanel userId={user!.id} embedded />
+          ) : null}
 
-          {/* My Inspire */}
-          <Section
-            icon={Sparkles}
-            title="My Inspire"
-            count={inspireBoards.length}
-            action={
-              <button
-                type="button"
-                onClick={() => navigate("/inspire")}
-                className="text-xs text-primary hover:underline"
-              >
-                จัดการ
-              </button>
-            }
-          >
-            {inspireBoards.length ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-                {inspireBoards.slice(0, 6).map((b) => (
-                  <InspireBoardCard
-                    key={b.id}
-                    board={b}
-                    onSelect={(board) => navigate(`/inspire?b=${board.id}`)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <EmptyHint
-                text="ยังไม่มีบอร์ดแรงบันดาลใจ กดปุ่ม Inspire บนภาพในผลงานเพื่อเริ่มเก็บ"
-                cta="สร้างบอร์ด Inspire"
-                onClick={() => navigate("/inspire")}
-              />
-            )}
-          </Section>
+          {activeTab === "collections" ? (
+            <CollectionsManagePanel userId={user!.id} embedded />
+          ) : null}
+
+          {activeTab === "inspire" ? (
+            <InspireManagePanel userId={user!.id} embedded />
+          ) : null}
         </main>
       </div>
     </div>
@@ -482,7 +523,11 @@ const RequestMiniStat = ({
 
 const Section = ({
   id,
-  icon: Icon, title, count, action, children,
+  icon: Icon,
+  title,
+  count,
+  action,
+  children,
 }: {
   id?: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -499,22 +544,15 @@ const Section = ({
         </div>
         <h2 className="font-medium text-foreground">
           {title}
-          {typeof count === "number" && <span className="text-muted-foreground font-normal ml-1.5 text-sm">({count})</span>}
+          {typeof count === "number" && (
+            <span className="text-muted-foreground font-normal ml-1.5 text-sm">({count})</span>
+          )}
         </h2>
       </div>
       {action}
     </div>
     {children}
   </section>
-);
-
-const EmptyHint = ({ text, cta, onClick }: { text: string; cta: string; onClick: () => void }) => (
-  <div className="text-center py-8">
-    <p className="text-sm text-muted-foreground mb-3">{text}</p>
-    <Button size="sm" variant="outline" onClick={onClick} className="rounded-full">
-      <Plus className="w-3.5 h-3.5 mr-1" /> {cta}
-    </Button>
-  </div>
 );
 
 export default PortfolioProfilePage;

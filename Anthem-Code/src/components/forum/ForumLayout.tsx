@@ -75,8 +75,12 @@ export function ForumLayout({ children, title, subtitle, className }: Props) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto flex h-14 max-w-[1044px] items-center gap-3 px-4">
+      {/*
+        Desktop: DesktopTopNav is the main site chrome; this bar is forum tools under it.
+        Mobile: full forum header (DesktopTopNav is lg-only).
+      */}
+      <header className="sticky top-0 z-30 border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30 lg:top-14">
+        <div className="mx-auto flex h-14 max-w-[1044px] items-center gap-3 px-4 lg:max-w-[1920px] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden shrink-0" aria-label="เมนู">
@@ -88,12 +92,19 @@ export function ForumLayout({ children, title, subtitle, className }: Props) {
             </SheetContent>
           </Sheet>
 
-          <Link to="/forum" className="shrink-0 font-semibold tracking-tight text-foreground">
+          <Link
+            to="/forum"
+            className="shrink-0 font-semibold tracking-tight text-foreground lg:hidden"
+          >
             {BRAND_NAME} <span className="text-muted-foreground font-normal">|</span>{" "}
             <span className="text-primary">Community</span>
           </Link>
 
-          <form onSubmit={goSearch} className="hidden sm:flex flex-1 max-w-md mx-auto relative">
+          <p className="hidden shrink-0 text-sm font-medium text-muted-foreground lg:block">
+            Community
+          </p>
+
+          <form onSubmit={goSearch} className="hidden sm:flex flex-1 max-w-md relative lg:mx-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               value={q}
@@ -109,27 +120,33 @@ export function ForumLayout({ children, title, subtitle, className }: Props) {
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">สร้างกระทู้</span>
             </Button>
-            {user ? (
-              <>
-                <NotificationBell />
-                <ProfileMenuDropdown
-                  variant="forum"
-                  trigger={
-                    <button type="button" className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                      <UserAvatar
-                        src={(profile as { avatar_url?: string | null } | null)?.avatar_url}
-                        name={(profile as { display_name?: string | null } | null)?.display_name}
-                        className="h-8 w-8"
-                      />
-                    </button>
-                  }
-                />
-              </>
-            ) : (
-              <Button variant="ghost" size="sm" onClick={() => openLogin()}>
-                เข้าสู่ระบบ
-              </Button>
-            )}
+            {/* Mobile-only account chrome — desktop uses DesktopTopNav */}
+            <div className="flex items-center gap-1.5 lg:hidden">
+              {user ? (
+                <>
+                  <NotificationBell />
+                  <ProfileMenuDropdown
+                    variant="forum"
+                    trigger={
+                      <button
+                        type="button"
+                        className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <UserAvatar
+                          src={(profile as { avatar_url?: string | null } | null)?.avatar_url}
+                          name={(profile as { display_name?: string | null } | null)?.display_name}
+                          className="h-8 w-8"
+                        />
+                      </button>
+                    }
+                  />
+                </>
+              ) : (
+                <Button variant="ghost" size="sm" onClick={() => openLogin()}>
+                  เข้าสู่ระบบ
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </header>

@@ -2,6 +2,7 @@ import { Progress } from "@/components/ui/progress";
 import type { CreatorEligibilitySnapshot } from "@/lib/creatorEligibility";
 import CreatorEligibilityProgress from "@/components/verification/CreatorEligibilityProgress";
 import { MIN_CASHOUT_PX } from "@/hooks/useCashout";
+import { isAplus1GiftEconomyEnabled } from "@/lib/aplus1Launch";
 
 type Props = {
   eligibility: CreatorEligibilitySnapshot;
@@ -9,6 +10,8 @@ type Props = {
 };
 
 export function EarningsCashoutReadiness({ eligibility, earnedPx }: Props) {
+  if (!isAplus1GiftEconomyEnabled()) return null;
+
   const earnedPct = Math.min(100, (earnedPx / MIN_CASHOUT_PX) * 100);
   const earnedReady = earnedPx >= MIN_CASHOUT_PX;
   const remaining = Math.max(0, MIN_CASHOUT_PX - earnedPx);

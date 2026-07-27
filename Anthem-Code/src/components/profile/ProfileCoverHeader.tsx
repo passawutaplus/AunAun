@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
-import { Camera, Eye, LayoutGrid, Loader2, MapPin, Plus, Share2 } from "lucide-react";
+import { Camera, Eye, Loader2, MapPin, Pencil, Plus, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProfileSharePopover from "@/components/profile/ProfileSharePopover";
+import DisciplineChips from "@/components/profile/DisciplineChips";
 import { useUpdateProfileMedia } from "@/hooks/useProfile";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { useSubscription } from "@/core/subscription";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import OpportunityTypeChips from "@/components/opportunity/OpportunityTypeChips";
 import UserAvatar from "@/components/UserAvatar";
+import { displayProfileAddress } from "@/lib/profileAddress";
 
 type ProfileLike = {
   display_name: string | null;
@@ -17,13 +19,13 @@ type ProfileLike = {
   cover_url: string | null;
   role: string | null;
   location: string | null;
+  profile_address?: unknown;
 };
 
 type Props = {
   userId: string;
   profile: ProfileLike;
   stats: { works: number; followers: number; following: number };
-  onManage: () => void;
   shareUrl: string;
   shareTitle: string;
   shareMessage: string;
@@ -35,7 +37,7 @@ type Props = {
   onFollowingClick?: () => void;
   opportunityStatus?: string | null;
   opportunityTypes?: string[] | null;
-  opportunityNote?: string | null;
+  disciplines?: string[] | null;
   onOpportunityEdit?: () => void;
 };
 
@@ -43,7 +45,6 @@ export default function ProfileCoverHeader({
   userId,
   profile,
   stats,
-  onManage,
   shareUrl,
   shareTitle,
   shareMessage,
@@ -55,7 +56,7 @@ export default function ProfileCoverHeader({
   onFollowingClick,
   opportunityStatus,
   opportunityTypes,
-  opportunityNote,
+  disciplines,
   onOpportunityEdit,
 }: Props) {
   const { tier } = useSubscription();
@@ -87,8 +88,7 @@ export default function ProfileCoverHeader({
 
   return (
     <section className="mb-4 md:mb-6">
-      {/* Cover banner */}
-      <div className="relative h-40 sm:h-48 md:h-56 bg-muted overflow-hidden md:mx-4 md:rounded-b-3xl group/cover">
+      <div className="relative h-40 sm:h-48 md:h-56 bg-muted overflow-hidden rounded-b-2xl md:rounded-b-3xl group/cover">
         {hasCover ? (
           <img src={coverUrl} alt="" className="w-full h-full object-cover" />
         ) : (
@@ -117,14 +117,13 @@ export default function ProfileCoverHeader({
           accept="image/*"
           className="hidden"
           onChange={(e) => {
-            upload(e.target.files?.[0], "cover");
+            void upload(e.target.files?.[0], "cover");
             e.target.value = "";
           }}
         />
       </div>
 
-      {/* Avatar + identity — sits below cover, no overlap with main content */}
-      <div className="relative px-4 md:px-8 -mt-12 sm:-mt-14 md:-mt-16">
+      <div className="relative -mt-12 sm:-mt-14 md:-mt-16">
         <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
           <div className="relative shrink-0 group/avatar self-start">
             <UserAvatar
@@ -157,7 +156,7 @@ export default function ProfileCoverHeader({
               accept="image/*"
               className="hidden"
               onChange={(e) => {
-                upload(e.target.files?.[0], "avatar");
+                void upload(e.target.files?.[0], "avatar");
                 e.target.value = "";
               }}
             />
@@ -174,34 +173,44 @@ export default function ProfileCoverHeader({
               {profile.role && (
                 <p className="mt-1 text-sm text-primary font-medium">{profile.role}</p>
               )}
-              {profile.location && (
-                <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
-                  <MapPin className="w-3 h-3" /> {profile.location}
-                </p>
-              )}
-              {onOpportunityEdit ? (
-                <button
-                  type="button"
-                  onClick={onOpportunityEdit}
-                  className="mt-2.5 text-left rounded-xl -mx-1 px-1 py-1 hover:bg-accent/60 transition-colors"
-                  title="แตะเพื่อปรับว่าช่วงนี้กำลังมองหาอะไร"
-                >
+              {(() => {
+                const place = displayProfileAddress(
+                  profile.profile_address,
+                  profile.location,
+                  "short",
+                );
+                return place ? (
+                  <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <MapPin className="w-3 h-3" /> {place}
+                  </p>
+                ) : null;
+              })()}
+
+              <div className="mt-2.5 space-y-2">
+                <DisciplineChips disciplines={disciplines} size="md" />
+                <div className="flex flex-wrap items-start gap-2">
                   <OpportunityTypeChips
+                    className="min-w-0 flex-1"
                     status={opportunityStatus}
                     types={opportunityTypes}
-                    note={opportunityNote}
                     size="md"
                   />
-                </button>
-              ) : (
-                <OpportunityTypeChips
-                  className="mt-2.5"
-                  status={opportunityStatus}
-                  types={opportunityTypes}
-                  note={opportunityNote}
-                  size="md"
-                />
-              )}
+                  {onOpportunityEdit ? (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={onOpportunityEdit}
+                      className="h-8 w-8 shrink-0 rounded-full text-primary hover:text-primary hover:bg-primary/10"
+                      title="แก้ไขกำลังมองหาและสายงาน"
+                      aria-label="แก้ไขกำลังมองหาและสายงาน"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+
               <div className="mt-3 flex items-center gap-4 text-sm">
                 <span>
                   <strong className="text-foreground">{stats.works}</strong>{" "}
@@ -271,12 +280,6 @@ export default function ProfileCoverHeader({
                   <Share2 className="w-4 h-4" />
                 </Button>
               </ProfileSharePopover>
-              <Button
-                onClick={onManage}
-                className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                <LayoutGrid className="w-4 h-4 mr-1.5" /> แดชบอร์ด
-              </Button>
             </div>
           </div>
         </div>

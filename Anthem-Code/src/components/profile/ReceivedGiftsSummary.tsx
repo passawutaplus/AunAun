@@ -9,6 +9,7 @@ import {
   type CreatorEligibilitySnapshot,
 } from "@/lib/creatorEligibility";
 import { cn } from "@/lib/utils";
+import { isAplus1GiftEconomyEnabled } from "@/lib/aplus1Launch";
 
 interface Props {
   userId: string;
@@ -80,8 +81,13 @@ const GiftReceiveUnlockProgress = ({ data }: { data: CreatorEligibilitySnapshot 
 };
 
 const ReceivedGiftsSummary = ({ userId }: Props) => {
-  const { data, isLoading } = useReceivedGiftsByProject(userId);
-  const { data: eligibility, isLoading: eligibilityLoading } = useCreatorEligibility(userId);
+  const giftEconomy = isAplus1GiftEconomyEnabled();
+  const { data, isLoading } = useReceivedGiftsByProject(giftEconomy ? userId : undefined);
+  const { data: eligibility, isLoading: eligibilityLoading } = useCreatorEligibility(
+    giftEconomy ? userId : undefined,
+  );
+
+  if (!giftEconomy) return null;
 
   if (isLoading || eligibilityLoading) {
     return <InlineLoader className="py-6" />;

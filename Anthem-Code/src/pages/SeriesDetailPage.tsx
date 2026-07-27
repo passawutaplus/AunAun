@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { Pencil, Trash2, FolderKanban, Lock, Globe2, X, Plus, Share2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
@@ -121,8 +121,8 @@ const SeriesDetailPage = () => {
       <div className="min-h-screen bg-app-ambient flex items-center justify-center">
         <div className="text-center space-y-3">
           <Lock className="w-10 h-10 text-muted-foreground/50 mx-auto" />
-          <p className="text-foreground font-medium">ไม่พบชุดผลงานนี้</p>
-          <p className="text-sm text-muted-foreground">อาจเป็นชุดส่วนตัว หรือลิงก์ไม่ถูกต้อง</p>
+          <p className="text-foreground font-medium">ไม่พบ Catalog นี้</p>
+          <p className="text-sm text-muted-foreground">อาจเป็น Catalog ส่วนตัว หรือลิงก์ไม่ถูกต้อง</p>
           <Button onClick={() => navigate("/")}>กลับหน้าหลัก</Button>
         </div>
       </div>
@@ -135,7 +135,7 @@ const SeriesDetailPage = () => {
         title={series.title}
         description={
           series.summary?.trim() ||
-          `ชุดผลงาน ${series.title} · ${visibleItems.length} ชิ้น`
+          `Catalog ${series.title} · ${visibleItems.length} ชิ้น`
         }
         path={`/series/${series.id}`}
         noindex={!series.is_public}
@@ -146,18 +146,18 @@ const SeriesDetailPage = () => {
           <BackButton
             to={isOwner ? `/series?s=${encodeURIComponent(series.id)}` : undefined}
             onClick={isOwner ? undefined : () => navigate(-1)}
-            label={isOwner ? "กลับชุดผลงานของฉัน" : "กลับ"}
+            label={isOwner ? "กลับ My Catalog" : "กลับ"}
           />
           <div className="flex items-center gap-2 flex-wrap justify-end">
             {(isOwner || series.is_public) && (
-              <SharePopover url={shareUrl} title={series.title} label="แชร์ชุดผลงาน">
+              <SharePopover url={shareUrl} title={series.title} label="แชร์ Catalog">
                 <Button
                   size="sm"
                   variant="outline"
                   className="rounded-full"
                   onClick={() => {
                     if (isOwner && !series.is_public) {
-                      toast.message("ชุดผลงานยังเป็นส่วนตัว", {
+                      toast.message("Catalog ยังเป็นส่วนตัว", {
                         description: "คนอื่นเปิดลิงก์นี้ไม่ได้จนกว่าจะตั้งเป็นสาธารณะ",
                         action: {
                           label: "ตั้งสาธารณะ",
@@ -199,9 +199,9 @@ const SeriesDetailPage = () => {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>ลบชุดผลงานนี้?</AlertDialogTitle>
+                      <AlertDialogTitle>ลบ Catalog นี้?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        &quot;{series.title}&quot; จะถูกลบ — ผลงานต้นฉบับไม่ถูกลบ แค่เอาออกจากชุด
+                        &quot;{series.title}&quot; จะถูกลบ — ผลงานต้นฉบับไม่ถูกลบ แค่เอาออกจาก Catalog
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -227,7 +227,7 @@ const SeriesDetailPage = () => {
       <div className="max-w-6xl mx-auto px-4 pt-8 space-y-6">
         <header className="space-y-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <FolderKanban className="w-3.5 h-3.5" /> ชุดผลงาน
+            <FolderKanban className="w-3.5 h-3.5" /> Catalog
             {series.is_public ? (
               <span className="inline-flex items-center gap-1">
                 <Globe2 className="w-3 h-3" /> สาธารณะ
@@ -248,7 +248,7 @@ const SeriesDetailPage = () => {
             <p className="text-base text-foreground max-w-2xl leading-7 whitespace-pre-wrap">{series.summary}</p>
           )}
           <p className="text-xs text-muted-foreground">
-            {visibleItems.length} ชิ้นในชุด
+            {visibleItems.length} ชิ้นใน Catalog
             {isOwner && (series.item_count ?? 0) === 0
               ? " — ยังว่าง กด「เพิ่มผลงาน」เมื่อพร้อม"
               : ""}
@@ -266,9 +266,9 @@ const SeriesDetailPage = () => {
         {visibleItems.length === 0 ? (
           <div className="text-center py-16 glass-panel rounded-2xl">
             <FolderKanban className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-            <p className="text-foreground font-medium mb-1">ยังไม่มีผลงานในชุดนี้</p>
+            <p className="text-foreground font-medium mb-1">ยังไม่มีผลงานใน Catalog นี้</p>
             <p className="text-sm text-muted-foreground mb-4">
-              {isOwner ? "เพิ่มผลงานที่เผยแพร่แล้วเข้าชุดได้เลย" : "เจ้าของยังไม่ได้เพิ่มผลงาน"}
+              {isOwner ? "เพิ่มผลงานที่เผยแพร่แล้วเข้า Catalog ได้เลย" : "เจ้าของยังไม่ได้เพิ่มผลงาน"}
             </p>
             {isOwner && (
               <Button
@@ -342,9 +342,9 @@ const SeriesDetailPage = () => {
                               e.preventDefault();
                               e.stopPropagation();
                               await remove.mutateAsync({ seriesId: series.id, projectId: p.id });
-                              toast.success("เอาออกจากชุดแล้ว");
+                              toast.success("เอาออกจาก Catalog แล้ว");
                             }}
-                            aria-label="เอาออกจากชุด"
+                            aria-label="เอาออกจาก Catalog"
                             className="p-1.5 rounded-full hover:bg-destructive hover:text-destructive-foreground transition-colors"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -396,9 +396,9 @@ const SeriesDetailPage = () => {
                             e.preventDefault();
                             e.stopPropagation();
                             await remove.mutateAsync({ seriesId: series.id, projectId: p.id });
-                            toast.success("เอาออกจากชุดแล้ว");
+                            toast.success("เอาออกจาก Catalog แล้ว");
                           }}
-                          aria-label="เอาออกจากชุด"
+                          aria-label="เอาออกจาก Catalog"
                           className="absolute top-2 right-2 p-1.5 rounded-full bg-background/70 backdrop-blur-md border border-white/15 shadow-sm md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground"
                         >
                           <X className="w-3.5 h-3.5" />

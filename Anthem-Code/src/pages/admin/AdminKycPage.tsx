@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ShieldCheck, ExternalLink, Bot, ImageIcon } from "lucide-react";
+import { ShieldCheck, ExternalLink, Bot, ImageIcon, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { CompactLoader } from "@/components/ui/BanterLoader";
 import SectionHeader from "@/components/admin/SectionHeader";
+import {
+  AdminKycGuidePanel,
+  AdminKycReviewChecklist,
+} from "@/components/admin/AdminKycReviewGuide";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,8 +25,13 @@ import { getKycSignedUrl } from "@/lib/kycUpload";
 import { maskBankAccount } from "@/lib/kycPdpa";
 import { logKycAdminAccess } from "@/lib/adminAudit";
 import { formatThaiDate } from "@/lib/format";
-import { formatKycAddress, maskThaiNationalId } from "@/lib/kycIdentity";
+import { formatKycAddress, maskThaiIdLaserCode, maskThaiNationalId, KYC_PEP_STATUS_LABELS, KYC_SANCTIONS_STATUS_LABELS, type KycSanctionsStatus } from "@/lib/kycIdentity";
 import { KYC_REJECT_REASONS } from "@/lib/kycRejectReasons";
+import {
+  allKycReviewChecksPassed,
+  emptyKycReviewChecks,
+  type KycReviewCheckId,
+} from "@/lib/adminKycReviewGuide";
 import { kycRiskTone } from "@/lib/reportAiTriage";
 import {
   Select,
@@ -101,7 +110,9 @@ function KycDocumentGrid({ requestId }: { requestId: string }) {
 
   return (
     <div className="grid grid-cols-2 gap-2">
-      {docs.data.map((d) => (
+      {docs.data.map((d) => {
+        const isPdf = d.storage_path.toLowerCase().endsWith(".pdf");
+        return (
         <a
           key={d.doc_type}
           href={urls[d.doc_type]}
@@ -110,16 +121,18 @@ function KycDocumentGrid({ requestId }: { requestId: string }) {
           onClick={() => void logKycAdminAccess(requestId, "document_open", { doc_type: d.doc_type })}
           className="block rounded-lg border border-admin-border overflow-hidden bg-admin-hover/30 hover:ring-2 hover:ring-admin-accent/40"
         >
-          {urls[d.doc_type] ? (
+          {urls[d.doc_type] && !isPdf ? (
             <img src={urls[d.doc_type]} alt={d.doc_type} className="w-full h-28 object-cover" />
           ) : (
-            <div className="h-28 flex items-center justify-center text-admin-muted">
-              <ImageIcon className="w-6 h-6" />
+            <div className="h-28 flex flex-col items-center justify-center gap-1 text-admin-muted">
+              {isPdf ? <FileText className="w-6 h-6" /> : <ImageIcon className="w-6 h-6" />}
+              {isPdf && <span className="text-[10px]">เปิด PDF</span>}
             </div>
           )}
           <p className="text-[10px] px-2 py-1 text-admin-muted">{d.doc_type}</p>
         </a>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -133,6 +146,28 @@ export default function AdminKycPage() {
   const [reviewItem, setReviewItem] = useState<(KycRequest & { profile?: any }) | null>(null);
   const [note, setNote] = useState("");
   const [rejectReason, setRejectReason] = useState("blurry_id");
+  const [reviewChecks, setReviewChecks] = useState(emptyKycReviewChecks);
+
+  const openReview = (r: KycRequest & { profile?: any }) => {
+    setReviewItem(r);
+    setNote("");
+    setRejectReason("blurry_id");
+    setReviewChecks(emptyKycReviewChecks());
+    void logKycAdminAccess(r.id, "review_open");
+  };
+
+  const setCheck = (id: KycReviewCheckId, value: boolean) => {
+    setReviewChecks((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const markAllChecks = () => {
+    const next = emptyKycReviewChecks();
+    (Object.keys(next) as KycReviewCheckId[]).forEach((id) => {
+      next[id] = true;
+    });
+    setReviewChecks(next);
+  };
+
   return (
     <div className="space-y-6">
       <SectionHeader
@@ -140,6 +175,8 @@ export default function AdminKycPage() {
         title="KYC — ยืนยันตัวตนผู้ใช้"
         description="AI สรุปความเสี่ยงให้แล้ว — แอดมินตรวจเอกสารและกดอนุมัติ (เข้าถึงข้อมูลส่วนบุคคลตาม PDPA เท่าที่จำเป็น)"
       />
+
+      <AdminKycGuidePanel />
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as Status)}>
         <TabsList>
@@ -212,12 +249,7 @@ export default function AdminKycPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
-                            setReviewItem(r);
-                            setNote("");
-                            setRejectReason("blurry_id");
-                            void logKycAdminAccess(r.id, "review_open");
-                          }}
+                          onClick={() => openReview(r)}
                         >
                           <ShieldCheck className="w-3 h-3 mr-1" /> ตรวจสอบ
                         </Button>
@@ -251,12 +283,84 @@ export default function AdminKycPage() {
               <AiSummaryCard item={reviewItem} />
               <dl className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <dt className="text-muted-foreground text-xs">ชื่อตามบัตร</dt>
+                  <dt className="text-muted-foreground text-xs">ชื่อตามเอกสาร</dt>
                   <dd>{reviewItem.legal_name || "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground text-xs">เลขบัตร</dt>
+                  <dt className="text-muted-foreground text-xs">เลขบัตรประชาชน</dt>
                   <dd className="font-mono">{maskThaiNationalId(reviewItem.national_id_number)}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground text-xs">เลขหลังบัตร</dt>
+                  <dd className="font-mono">
+                    {maskThaiIdLaserCode(
+                      typeof reviewItem.submission_meta?.id_laser_code === "string"
+                        ? reviewItem.submission_meta.id_laser_code
+                        : null,
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground text-xs">วันเกิด / สัญชาติ</dt>
+                  <dd className="text-xs">
+                    {reviewItem.date_of_birth || "—"} · {reviewItem.nationality || "TH"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground text-xs">PEP / Sanctions</dt>
+                  <dd className="text-xs space-y-1">
+                    {(() => {
+                      const meta = (reviewItem.submission_meta ?? {}) as Record<string, unknown>;
+                      const pepStatus = typeof meta.pep_status === "string" ? (meta.pep_status as string) : null;
+                      const sanctionsStatus =
+                        typeof meta.sanctions_status === "string" ? (meta.sanctions_status as KycSanctionsStatus) : null;
+                      const pepEdd = meta.pep_edd as Record<string, string> | undefined;
+                      const sanctionsEdd = meta.sanctions_edd as Record<string, string> | undefined;
+                      const pepLabel =
+                        pepStatus === "yes" || pepStatus === "self" || pepStatus === "associate"
+                          ? KYC_PEP_STATUS_LABELS.yes
+                          : pepStatus === "none"
+                            ? KYC_PEP_STATUS_LABELS.none
+                            : null;
+                      return (
+                        <>
+                          <p>
+                            PEP:{" "}
+                            {pepLabel
+                              ? pepLabel
+                              : reviewItem.pep_declaration
+                                ? "รับรองข้อมูลแล้ว"
+                                : "—"}
+                          </p>
+                          {pepEdd && (pepEdd.position || pepEdd.organization) && (
+                            <p className="text-muted-foreground">
+                              EDD PEP: {[pepEdd.position, pepEdd.organization, pepEdd.relationship].filter(Boolean).join(" · ")}
+                              {pepEdd.leftAt ? ` · พ้นตำแหน่ง ${pepEdd.leftAt}` : ""}
+                            </p>
+                          )}
+                          <p>
+                            Sanctions:{" "}
+                            {sanctionsStatus && KYC_SANCTIONS_STATUS_LABELS[sanctionsStatus]
+                              ? KYC_SANCTIONS_STATUS_LABELS[sanctionsStatus]
+                              : reviewItem.sanctions_declaration
+                                ? "รับรองข้อมูลแล้ว"
+                                : "—"}
+                          </p>
+                          {sanctionsEdd?.detail && (
+                            <p className="text-muted-foreground">
+                              EDD Sanctions: {sanctionsEdd.detail}
+                              {[sanctionsEdd.listName, sanctionsEdd.country].filter(Boolean).length
+                                ? ` · ${[sanctionsEdd.listName, sanctionsEdd.country].filter(Boolean).join(" / ")}`
+                                : ""}
+                            </p>
+                          )}
+                          {!!meta.edd_required && (
+                            <p className="text-amber-600 dark:text-amber-400 font-medium">ต้อง Enhanced Due Diligence</p>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground text-xs">ติดต่อ</dt>
@@ -276,8 +380,20 @@ export default function AdminKycPage() {
                     {reviewItem.bank_name} {reviewItem.account_number} ({reviewItem.account_name})
                   </dd>
                 </div>
+                {reviewItem.kyc_expires_at && (
+                  <div className="col-span-2">
+                    <dt className="text-muted-foreground text-xs">KYC หมดอายุ</dt>
+                    <dd className="text-xs">{formatThaiDate(reviewItem.kyc_expires_at)}</dd>
+                  </div>
+                )}
               </dl>
               <KycDocumentGrid requestId={reviewItem.id} />
+              <AdminKycReviewChecklist
+                checks={reviewChecks}
+                onChange={setCheck}
+                onMarkAll={markAllChecks}
+                onClearAll={() => setReviewChecks(emptyKycReviewChecks())}
+              />
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">เหตุผลปฏิเสธ (ถ้ากดปฏิเสธ)</Label>
                 <Select value={rejectReason} onValueChange={setRejectReason}>
@@ -327,6 +443,7 @@ export default function AdminKycPage() {
                       toast.success("ปฏิเสธคำขอแล้ว");
                       setReviewItem(null);
                       setNote("");
+                      setReviewChecks(emptyKycReviewChecks());
                     },
                     onError: (e: Error) => toast.error(e.message),
                   },
@@ -339,6 +456,10 @@ export default function AdminKycPage() {
             <Button
               onClick={() => {
                 if (!reviewItem) return;
+                if (!allKycReviewChecksPassed(reviewChecks)) {
+                  toast.error("ติ๊ก checklist ให้ครบ 8 ข้อก่อนอนุมัติ");
+                  return;
+                }
                 approve.mutate(
                   { id: reviewItem.id, note },
                   {
@@ -346,6 +467,7 @@ export default function AdminKycPage() {
                       toast.success("ยืนยันตัวตนแล้ว");
                       setReviewItem(null);
                       setNote("");
+                      setReviewChecks(emptyKycReviewChecks());
                     },
                     onError: (e: Error) => toast.error(e.message),
                   },

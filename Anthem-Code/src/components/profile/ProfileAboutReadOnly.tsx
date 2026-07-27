@@ -4,13 +4,16 @@ import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import ExperienceTimeline from "@/components/profile/ExperienceTimeline";
 import SkillsList from "@/components/profile/SkillsList";
 import ContactCards from "@/components/profile/ContactCards";
-import type { ExperienceItem } from "@/lib/validators";
+import ProfileLinksList from "@/components/profile/ProfileLinksList";
+import type { ExperienceItem, SocialLinkItem } from "@/lib/validators";
 import { WORK_DISCIPLINE_LABELS, type WorkDisciplineId } from "@/data/workDisciplineOptions";
 import { labelOpportunityType } from "@/lib/opportunity";
+import { displayProfileAddress } from "@/lib/profileAddress";
 
 type ProfileAbout = {
   role: string | null;
   location: string | null;
+  profile_address?: unknown;
   bio: string | null;
   email: string | null;
   phone: string | null;
@@ -26,6 +29,7 @@ type Props = {
   skills: string[];
   disciplines?: string[];
   opportunityTypes?: string[];
+  socialLinks?: SocialLinkItem[];
 };
 
 function DisciplineList({ items }: { items: string[] }) {
@@ -70,7 +74,10 @@ export function ProfileAboutReadOnly({
   skills,
   disciplines = [],
   opportunityTypes = [],
+  socialLinks = [],
 }: Props) {
+  const addressLine = displayProfileAddress(profile.profile_address, profile.location, "full");
+
   return (
     <div className="space-y-0">
       <AboutRow title="ตำแหน่ง / สาขา">
@@ -84,14 +91,14 @@ export function ProfileAboutReadOnly({
         )}
       </AboutRow>
 
-      <AboutRow title="เมือง / ที่อยู่">
-        {profile.location ? (
-          <p className="text-sm text-foreground flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-primary shrink-0" />
-            {profile.location}
+      <AboutRow title="ที่อยู่">
+        {addressLine ? (
+          <p className="text-sm text-foreground flex items-start gap-2">
+            <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <span className="leading-relaxed">{addressLine}</span>
           </p>
         ) : (
-          <EmptyLine text="ยังไม่ได้ระบุเมืองหรือที่อยู่" />
+          <EmptyLine text="ยังไม่ได้ระบุที่อยู่" />
         )}
       </AboutRow>
 
@@ -103,12 +110,12 @@ export function ProfileAboutReadOnly({
         )}
       </AboutRow>
 
-      <AboutRow title="กำลังมองหา" count={opportunityTypes.length}>
-        <LookingList items={opportunityTypes} />
-      </AboutRow>
-
       <AboutRow title="สายงาน" count={disciplines.length}>
         <DisciplineList items={disciplines} />
+      </AboutRow>
+
+      <AboutRow title="กำลังมองหา" count={opportunityTypes.length}>
+        <LookingList items={opportunityTypes} />
       </AboutRow>
 
       <AboutRow title="ประสบการณ์ทำงาน">
@@ -121,6 +128,10 @@ export function ProfileAboutReadOnly({
 
       <AboutRow title="ความชำนาญ" count={skills.length}>
         <SkillsList skills={skills} />
+      </AboutRow>
+
+      <AboutRow title="ลิงก์โซเชียล" count={socialLinks.length}>
+        <ProfileLinksList links={socialLinks} />
       </AboutRow>
 
       <AboutRow title="ข้อมูลติดต่อ">

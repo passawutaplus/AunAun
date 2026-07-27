@@ -39,7 +39,7 @@ export function PlusOneControl({
         strokeWidth={active ? 0 : 2}
         aria-hidden
       />
-      {showCount && count != null && count > 0 && (
+      {showCount && count != null && (
         <span className="tabular-nums">{count}</span>
       )}
     </>

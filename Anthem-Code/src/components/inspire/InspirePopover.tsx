@@ -98,7 +98,7 @@ const InspirePopover = ({ open, onOpenChange, projectId, imageUrl, children }: P
       <PopoverContent className="w-72 p-3" align="start">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="w-4 h-4 text-primary" />
-          <p className="text-sm font-semibold">เก็บลง My Inspire</p>
+          <p className="text-sm font-semibold">เก็บลง Inspiration</p>
         </div>
 
         <button

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Flag,
-  LayoutGrid,
   MessageCircle,
   Handshake,
   MoreVertical,
@@ -13,6 +12,7 @@ import {
   Search,
   Trash2,
   Users,
+  ArrowLeft,
 } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import BriefcaseIcon from "../icons/BriefcaseIcon";
@@ -38,9 +38,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublicFrom } from "@/lib/profileAccess";
 import { useAuth } from "@/hooks/useAuth";
-import { useProfile } from "@/hooks/useProfile";
-import UserAvatar from "@/components/UserAvatar";
-import { useSubscription } from "@/core/subscription/useSubscription";
 import {
   useConversations,
   useConversationPins,
@@ -63,6 +60,7 @@ import {
 import { cn } from "@/lib/utils";
 import { DEMO_RESEARCH_ACCOUNTS, isDemoMode } from "@/lib/demoMode";
 import { toast } from "sonner";
+import { useSubscription } from "@/core/subscription/useSubscription";
 
 const TABS: { key: "all" | ChatKind; label: string; icon: typeof BriefcaseIcon }[] = [
   { key: "all", label: "ทั้งหมด", icon: MessageCircle },
@@ -92,7 +90,6 @@ const ChatSidebar = ({
 }: Props) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: myProfile } = useProfile(user?.id);
   const { tier } = useSubscription();
   const [groupOpen, setGroupOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -299,13 +296,13 @@ const ChatSidebar = ({
             <Button
               type="button"
               variant="ghost"
-              className="h-8 gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2.5 transition-[box-shadow] duration-200 hover:shadow-md hover:shadow-primary/20"
-              aria-label="กลับหน้าแรก — Feed"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              aria-label="กลับหน้าแรก"
               title="กลับหน้าแรก"
               onClick={goProjectsHome}
             >
-              <LayoutGrid className="w-4 h-4 shrink-0" />
-              <span className="text-xs font-medium">Feed</span>
+              <ArrowLeft className="w-4 h-4" />
             </Button>
             {isAplus1SubscriptionsEnabled() ? (
               <Button
@@ -319,26 +316,6 @@ const ChatSidebar = ({
                 <Plus className="w-4 h-4" />
               </Button>
             ) : null}
-          </div>
-          <div className="flex items-center gap-2 min-w-0">
-            {user && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="hidden md:inline-flex h-9 w-9 rounded-full shrink-0 p-0"
-                aria-label="โปรไฟล์ของฉัน"
-                title="โปรไฟล์ของฉัน"
-                onClick={() => navigate("/portfolio")}
-              >
-                <UserAvatar
-                  src={myProfile?.avatar_url}
-                  name={myProfile?.display_name ?? user.email ?? "P"}
-                  className="w-8 h-8"
-                  fallbackClassName="text-xs"
-                />
-              </Button>
-            )}
           </div>
         </div>
         <div className="relative">

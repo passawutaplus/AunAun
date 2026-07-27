@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { satangToThb } from "@/lib/payments/fees";
 import { formatMoneyLabel } from "@/lib/payments/fxDisplay";
+import { outcomeFromHireOrderRow } from "@/lib/payments/hireMoneyOutcome";
+import { HireMoneyOutcomePanel } from "@/components/payments/HireMoneyOutcomePanel";
 import { formatThaiDate } from "@/lib/format";
 import {
   useFinanceOverview,
@@ -905,6 +907,10 @@ export default function AdminFinancePage() {
                   <p>{detailOrder.paid_at ? formatThaiDate(detailOrder.paid_at) : "—"}</p>
                 </div>
               </div>
+              <HireMoneyOutcomePanel
+                variant="admin"
+                outcome={outcomeFromHireOrderRow(detailOrder)}
+              />
               <h4 className="font-medium text-xs pt-2">Ledger ของออเดอร์นี้</h4>
               <DataTable
                 columns={ledgerCols}

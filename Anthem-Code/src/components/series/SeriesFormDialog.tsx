@@ -43,7 +43,7 @@ export function SeriesFormDialog({ open, onOpenChange, initial, onCreated }: Pro
 
   const submit = async () => {
     if (!title.trim()) {
-      toast.error("กรุณาตั้งชื่อชุดผลงาน");
+      toast.error("กรุณาตั้งชื่อ Catalog");
       return;
     }
     const yearNum = year.trim() ? Number(year.trim()) : null;
@@ -74,7 +74,7 @@ export function SeriesFormDialog({ open, onOpenChange, initial, onCreated }: Pro
           year: yearNum,
           isPublic,
         });
-        toast.success("สร้างชุดผลงานแล้ว — เพิ่มผลงานเข้าชุดได้ทุกเมื่อ");
+        toast.success("สร้าง Catalog แล้ว — เพิ่มผลงานเข้า Catalog ได้ทุกเมื่อ");
         onCreated?.(created.id);
       }
       onOpenChange(false);
@@ -87,15 +87,15 @@ export function SeriesFormDialog({ open, onOpenChange, initial, onCreated }: Pro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "แก้ไขชุดผลงาน" : "สร้างชุดผลงาน"}</DialogTitle>
+          <DialogTitle>{isEdit ? "แก้ไข Catalog" : "สร้าง Catalog"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            สร้างโฟลเดอร์ว่างไว้ก่อนได้ แล้วค่อยเพิ่มผลงานทีหลัง — หรือมีงานแล้วค่อยโยนเข้าชุดก็ได้
+            สร้างโฟลเดอร์ว่างไว้ก่อนได้ แล้วค่อยเพิ่มผลงานทีหลัง — หรือมีงานแล้วค่อยโยนเข้า Catalog ก็ได้
           </p>
           <div className="space-y-1.5">
-            <Label htmlFor="series-title">ชื่อชุด *</Label>
+            <Label htmlFor="series-title">ชื่อ Catalog *</Label>
             <Input
               id="series-title"
               value={title}
@@ -138,7 +138,7 @@ export function SeriesFormDialog({ open, onOpenChange, initial, onCreated }: Pro
           <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">
             <div>
               <p className="text-sm font-medium">แสดงต่อสาธารณะ</p>
-              <p className="text-xs text-muted-foreground">โชว์บนโปรไฟล์เมื่อมีผลงานเผยแพร่ในชุด</p>
+              <p className="text-xs text-muted-foreground">โชว์บนโปรไฟล์เมื่อมีผลงานเผยแพร่ใน Catalog</p>
             </div>
             <Switch checked={isPublic} onCheckedChange={setIsPublic} />
           </div>
@@ -153,7 +153,7 @@ export function SeriesFormDialog({ open, onOpenChange, initial, onCreated }: Pro
             disabled={create.isPending || update.isPending}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            {isEdit ? "บันทึก" : "สร้างชุด"}
+            {isEdit ? "บันทึก" : "สร้าง Catalog"}
           </Button>
         </DialogFooter>
       </DialogContent>

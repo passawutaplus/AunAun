@@ -30,9 +30,12 @@ import { toast } from "sonner";
 import { useSendMessage } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useMyKycRequests } from "@/hooks/useKyc";
 import { sharedDb } from "@/integrations/supabase/db";
 import type { Json } from "@/integrations/supabase/types";
 import { billingToParty, type BillingProfileFields } from "@/lib/billingProfile";
+import { mergeBillingWithKyc } from "@/lib/billingFromKyc";
+import { isKycExpired, resolveKycExpiresAt } from "@/lib/kycIdentity";
 import {
   DEPOSIT_PRESETS,
   defaultOfferMilestones,
@@ -249,6 +252,17 @@ export function ChatOfferDialog({
   const send = useSendMessage();
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
+  const { data: kycRequests = [] } = useMyKycRequests();
+  const approvedKyc = useMemo(
+    () =>
+      kycRequests.find((r) => {
+        if (r.status !== "approved") return false;
+        return !isKycExpired(
+          resolveKycExpiresAt({ kyc_expires_at: r.kyc_expires_at, reviewed_at: r.reviewed_at }),
+        );
+      }) ?? null,
+    [kycRequests],
+  );
   const { data: fx } = useFxRates();
   const [displayCurrency, setDisplayCurrency] = useState<PortfolioFxCurrency>(() =>
     readPortfolioFxCurrency("THB"),
@@ -320,8 +334,11 @@ export function ChatOfferDialog({
   };
 
   const issuerParty = useMemo(
-    () => billingToParty(profileToBillingFields(profile, user?.email)),
-    [profile, user?.email],
+    () =>
+      billingToParty(
+        mergeBillingWithKyc(profileToBillingFields(profile, user?.email), approvedKyc),
+      ),
+    [profile, user?.email, approvedKyc],
   );
 
   const buildClientParty = (): OfferPartyInfo => {

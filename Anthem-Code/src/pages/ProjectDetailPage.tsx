@@ -2,9 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Orbit, Share2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
-import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPopover";
 import SharePopover from "@/components/SharePopover";
-import { Layers3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PageLoader from "@/components/ui/PageLoader";
 import HireDialog from "@/components/HireDialog";
@@ -355,11 +353,6 @@ const ProjectDetailPage = () => {
                 size="sm"
               />
             ) : null}
-            <SaveToCollectionPopover projectId={dbProject?.id}>
-              <Button variant="ghost" size="icon">
-                <Layers3 className="w-5 h-5" />
-              </Button>
-            </SaveToCollectionPopover>
             {dbProject?.status === "Published" && user?.id === dbProject.owner_id && !isAplus1LaunchMinimal() ? (
               <Button variant="ghost" size="icon" asChild title="แชร์ไป Area Post">
                 <Link to={`/community/new?fromProject=${dbProject.id}`}>

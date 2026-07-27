@@ -124,7 +124,7 @@ const WorkWallMarquee = ({ className }: { className?: string }) => {
   return (
     <div
       className={cn(
-        "absolute inset-0 z-0 flex flex-col justify-center gap-3 sm:gap-4 overflow-hidden py-10 sm:py-12 md:py-14",
+        "absolute inset-0 z-0 flex flex-col justify-center gap-3 sm:gap-4 overflow-hidden py-6 sm:py-8 md:py-10",
         className,
       )}
     >

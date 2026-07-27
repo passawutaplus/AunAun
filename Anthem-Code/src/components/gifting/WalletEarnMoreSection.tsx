@@ -12,6 +12,7 @@ import {
 } from "@/lib/onboardingTasks";
 import { friendlyAmlError } from "@/lib/amlErrors";
 import { ReferralInviteCard } from "@/components/referral/ReferralInviteCard";
+import { isAplus1GiftEconomyEnabled } from "@/lib/aplus1Launch";
 import { toast } from "sonner";
 
 type Props = {
@@ -23,11 +24,16 @@ type Props = {
 const MAX_MISSIONS_SHOWN = 4;
 
 const WalletEarnMoreSection = ({ onClose, hideReferral = false }: Props) => {
+  const giftEconomy = isAplus1GiftEconomyEnabled();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { tasks, isLoading: checklistLoading } = useOnboardingChecklist(user?.id);
-  const { claimedIds, lifetimeWelcomePx, claim, isLoading: missionsLoading } = useWelcomeMissions(user?.id);
+  const { tasks, isLoading: checklistLoading } = useOnboardingChecklist(giftEconomy ? user?.id : undefined);
+  const { claimedIds, lifetimeWelcomePx, claim, isLoading: missionsLoading } = useWelcomeMissions(
+    giftEconomy ? user?.id : undefined,
+  );
   const { data: rewardById } = useWelcomeMissionCatalog();
+
+  if (!giftEconomy) return null;
   const { data: welcomeCap = 100 } = useWelcomePxCap();
   const [claimingId, setClaimingId] = useState<OnboardingTaskId | null>(null);
 

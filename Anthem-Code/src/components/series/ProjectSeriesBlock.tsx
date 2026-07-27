@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import { FolderKanban } from "lucide-react";
 import { useSeriesForProject } from "@/hooks/useProjectSeries";
 import { cn } from "@/lib/utils";
@@ -35,7 +35,7 @@ export function ProjectSeriesBlock({ projectId, className, compact = false }: Pr
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground flex items-center gap-1.5">
             <FolderKanban className="w-3.5 h-3.5 text-primary shrink-0" />
-            ชุดงาน
+            Catalog
             {series.client_label ? ` · ${series.client_label}` : ""}
           </p>
           <Link
@@ -49,14 +49,14 @@ export function ProjectSeriesBlock({ projectId, className, compact = false }: Pr
           to={`/series/${series.id}`}
           className="text-[11px] text-primary hover:underline shrink-0 pt-0.5"
         >
-          ดูทั้งชุด
+          ดูทั้ง Catalog
         </Link>
       </div>
 
       {shown.length > 0 ? (
         <>
           <p className="text-xs text-muted-foreground">
-            งานอื่นในชุดนี้
+            งานอื่นใน Catalog นี้
             {siblings.length > MAX_SIBLINGS
               ? ` · แสดง ${shown.length}/${siblings.length}`
               : ` (${siblings.length})`}
@@ -89,12 +89,12 @@ export function ProjectSeriesBlock({ projectId, className, compact = false }: Pr
               to={`/series/${series.id}`}
               className="block text-center text-xs text-primary hover:underline pt-0.5"
             >
-              ดูอีก {moreCount} ชิ้นในชุด →
+              ดูอีก {moreCount} ชิ้นใน Catalog →
             </Link>
           )}
         </>
       ) : (
-        <p className="text-xs text-muted-foreground">ชิ้นนี้เป็นผลงานเดียวในชุดที่เผยแพร่แล้ว</p>
+        <p className="text-xs text-muted-foreground">ชิ้นนี้เป็นผลงานเดียวใน Catalog ที่เผยแพร่แล้ว</p>
       )}
     </section>
   );

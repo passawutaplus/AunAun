@@ -5,6 +5,9 @@
 const DEFERRED_SURVEY_PREFIXES = [
   "/auth",
   "/legal",
+  "/learn",
+  "/hire",
+  "/verify",
   "/error/",
   "/admin",
 ] as const;

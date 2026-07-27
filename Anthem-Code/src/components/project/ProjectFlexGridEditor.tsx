@@ -867,7 +867,7 @@ export function ProjectFlexGridEditor({
           pendingPosterRef.current = null;
           if (!file || !pending) return;
           if (!/^image\//i.test(file.type) && !/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name)) {
-            toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
+            toast.error("รองรับเฉพาะ JPG, PNG");
             return;
           }
           onSetModulePoster?.(pending.boardId, pending.moduleId, file);

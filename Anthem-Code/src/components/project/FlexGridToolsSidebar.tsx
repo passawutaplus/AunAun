@@ -317,8 +317,8 @@ export function FlexGridToolsSidebar({
         {expanded ? (
           <div className="flex h-full flex-col lg:h-[calc(100dvh-4rem)]">
             <div className="flex items-center justify-between gap-2 p-2 pl-3">
-              <p className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground leading-snug">
-                <LayoutGrid className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <p className="inline-flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
+                <LayoutGrid className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
                 Full Grid
               </p>
               <button

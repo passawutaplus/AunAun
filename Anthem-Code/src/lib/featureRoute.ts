@@ -21,6 +21,8 @@ export function featureFromRoute(pathname: string): string {
   if (pathname.startsWith("/inspire/")) return "inspire";
   if (pathname.startsWith("/forum")) return "forum";
   if (pathname.startsWith("/legal/")) return "legal";
+  if (pathname.startsWith("/help")) return "help";
+  if (pathname.startsWith("/learn")) return "learn";
   return "other";
 }
 

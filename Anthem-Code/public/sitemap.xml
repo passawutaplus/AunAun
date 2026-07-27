@@ -200,15 +200,6 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000002f</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://images.unsplash.com/photo-1551650975-87deedd944c3?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>VFX spot 15s</image:title>
-    </image:image>
-  </url>
-  <url>
     <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000043</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -497,6 +488,15 @@
     </image:image>
   </url>
   <url>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000002f</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1551650975-87deedd944c3?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>VFX spot 15s</image:title>
+    </image:image>
+  </url>
+  <url>
     <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000034</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -641,6 +641,24 @@
     </image:image>
   </url>
   <url>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000006</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>UI App จองคิวสปา Thai Wellness</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000009</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>รีวิวคาเฟ่สไตล์ minimal บน IG</image:title>
+    </image:image>
+  </url>
+  <url>
     <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000011</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -710,15 +728,6 @@
     <image:image>
       <image:loc>https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
       <image:title>เซรามิกสไตล์มินิมอล Earth Tone</image:title>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000006</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>UI App จองคิวสปา Thai Wellness</image:title>
     </image:image>
   </url>
   <url>
@@ -812,16 +821,17 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000009</loc>
+    <loc>https://aplus1.app/u/82039b6d-cdf4-4c46-958a-d770d849382c</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>รีวิวคาเฟ่สไตล์ minimal บน IG</image:title>
-    </image:image>
+    <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/u/82039b6d-cdf4-4c46-958a-d770d849382c</loc>
+    <loc>https://aplus1.app/u/87e74514-156b-4f17-ada0-3878e81a771e</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/u/17bc992f-2371-4e4b-a173-1e6545581818</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -842,11 +852,6 @@
   </url>
   <url>
     <loc>https://aplus1.app/u/67066e01-ab2b-4750-ae66-19b0b8825bee</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://aplus1.app/u/17bc992f-2371-4e4b-a173-1e6545581818</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -892,11 +897,6 @@
   </url>
   <url>
     <loc>https://aplus1.app/u/09a013b7-4f44-461c-a0dc-57dbe4dff876</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://aplus1.app/u/87e74514-156b-4f17-ada0-3878e81a771e</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1176,6 +1176,16 @@
     <priority>0.75</priority>
   </url>
   <url>
+    <loc>https://aplus1.app/@pinyokijanan.work_87e745</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/@first.pinyokijanan_17bc99</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
     <loc>https://aplus1.app/@info_14acc2</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
@@ -1192,11 +1202,6 @@
   </url>
   <url>
     <loc>https://aplus1.app/@nutthaa</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://aplus1.app/@first.pinyokijanan_17bc99</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
@@ -1237,11 +1242,6 @@
   </url>
   <url>
     <loc>https://aplus1.app/@cherpaer.rttnkrn_09a013</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://aplus1.app/@pinyokijanan.work_87e745</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>

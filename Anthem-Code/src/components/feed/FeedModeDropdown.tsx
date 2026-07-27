@@ -54,31 +54,23 @@ const FeedModeDropdown = ({ value, onChange }: Props) => {
   const label = FEED_MODE_LABELS[current];
 
   return (
-
-    <DropdownMenu>
-
+    // modal=false: avoid body scroll-lock layout jump on the home top nav
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-
         <Button
-
           variant="outline"
-
           className="h-9 rounded-full px-3.5 gap-1.5 bg-background/80 backdrop-blur-md border-border/60 thai-display"
-
         >
-
           <Icon className="w-3.5 h-3.5" />
-
           <span className="text-sm font-medium">{label}</span>
-
           <ChevronDown className="w-3.5 h-3.5 opacity-60" />
-
         </Button>
-
       </DropdownMenuTrigger>
-
-      <DropdownMenuContent align="start" className="w-48 rounded-xl">
-
+      <DropdownMenuContent
+        align="start"
+        className="w-48 rounded-xl"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         {FEED_MODE_ORDER.map((opt) => {
           const O = ICONS[opt];
           const active = opt === current;
@@ -90,19 +82,12 @@ const FeedModeDropdown = ({ value, onChange }: Props) => {
             >
               <O className="w-4 h-4 opacity-70" />
               <span className="flex-1 text-sm">{FEED_MODE_LABELS[opt]}</span>
-
               {active && <Check className="w-4 h-4 text-primary" />}
-
             </DropdownMenuItem>
-
           );
-
         })}
-
       </DropdownMenuContent>
-
     </DropdownMenu>
-
   );
 
 };

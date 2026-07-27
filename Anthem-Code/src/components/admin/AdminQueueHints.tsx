@@ -1,16 +1,14 @@
 import { Link } from "react-router-dom";
 import { Bot, ShieldAlert, Flag } from "lucide-react";
 import { useAdminAlertCounts } from "@/hooks/admin/useAdminAlerts";
-import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 
 /** Sticky hints for admin queues — AI assists, human approves. */
 export default function AdminQueueHints() {
   const { data } = useAdminAlertCounts();
-  const launchMinimal = isAplus1LaunchMinimal();
   if (!data) return null;
 
   const { openReports, pendingKyc, highRiskKyc, urgentReports } = data;
-  if (!openReports && (launchMinimal || pendingKyc <= 0)) return null;
+  if (!openReports && pendingKyc <= 0) return null;
 
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2 rounded-sm border border-admin-border bg-admin-surface px-3 py-2 text-xs">
@@ -29,7 +27,7 @@ export default function AdminQueueHints() {
           ) : null}
         </Link>
       ) : null}
-      {pendingKyc > 0 && !launchMinimal ? (
+      {pendingKyc > 0 ? (
         <Link
           to="/admin/kyc"
           className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 hover:bg-admin-hover ${

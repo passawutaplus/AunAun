@@ -1,13 +1,20 @@
-import { useEffect, useState } from "react";
-import { FileText, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { FileText, Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidThaiTaxId, type OfferPartyType } from "@/lib/chatOffer";
 import { cn } from "@/lib/utils";
+import { useMyKycRequests } from "@/hooks/useKyc";
+import { isKycExpired, resolveKycExpiresAt, maskThaiNationalId } from "@/lib/kycIdentity";
+import {
+  formatKycAddressJson,
+  hasApprovedKycBilling,
+  mergeBillingWithKyc,
+} from "@/lib/billingFromKyc";
 
 type Props = {
   userId: string;
@@ -16,6 +23,20 @@ type Props = {
 };
 
 export function BillingProfileSection({ userId, profile, onSaved }: Props) {
+  const { data: kycRequests = [], isLoading: kycLoading } = useMyKycRequests();
+  const approvedKyc = useMemo(() => {
+    return (
+      kycRequests.find((r) => {
+        if (r.status !== "approved") return false;
+        return !isKycExpired(
+          resolveKycExpiresAt({ kyc_expires_at: r.kyc_expires_at, reviewed_at: r.reviewed_at }),
+        );
+      }) ?? null
+    );
+  }, [kycRequests]);
+
+  const kycLocked = hasApprovedKycBilling(approvedKyc);
+
   const [type, setType] = useState<OfferPartyType>("individual");
   const [legalName, setLegalName] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -29,42 +50,87 @@ export function BillingProfileSection({ userId, profile, onSaved }: Props) {
 
   useEffect(() => {
     if (!profile) return;
-    setType(profile.billing_type === "corporate" ? "corporate" : "individual");
-    setLegalName(String(profile.legal_name || profile.display_name || ""));
-    setCompanyName(String(profile.company_name || ""));
-    setTaxId(String(profile.tax_id || "").replace(/\D/g, "").slice(0, 13));
-    setAddress(String(profile.billing_address || ""));
-    setBranch(String(profile.branch || "สำนักงานใหญ่"));
-    setContactPerson(String(profile.contact_person || ""));
-    setContactRole(String(profile.contact_role || ""));
-    setVatRegistered(!!profile.vat_registered);
-  }, [profile]);
+    const merged = mergeBillingWithKyc(
+      {
+        billing_type: profile.billing_type as string | null | undefined,
+        legal_name: profile.legal_name as string | null | undefined,
+        company_name: profile.company_name as string | null | undefined,
+        tax_id: profile.tax_id as string | null | undefined,
+        billing_address: (profile.billing_address || profile.address) as string | null | undefined,
+        branch: profile.branch as string | null | undefined,
+        contact_person: profile.contact_person as string | null | undefined,
+        contact_role: profile.contact_role as string | null | undefined,
+        vat_registered: profile.vat_registered as boolean | null | undefined,
+        display_name: profile.display_name as string | null | undefined,
+      },
+      approvedKyc,
+    );
+    setType(merged.billing_type === "corporate" ? "corporate" : "individual");
+    setLegalName(String(merged.legal_name || merged.display_name || ""));
+    setCompanyName(String(merged.company_name || ""));
+    setTaxId(String(merged.tax_id || "").replace(/\D/g, "").slice(0, 13));
+    setAddress(String(merged.billing_address || ""));
+    setBranch(String(merged.branch || "สำนักงานใหญ่"));
+    setContactPerson(String(merged.contact_person || ""));
+    setContactRole(String(merged.contact_role || ""));
+    setVatRegistered(!!merged.vat_registered);
+  }, [profile, approvedKyc]);
 
   const save = async () => {
-    if (taxId && !isValidThaiTaxId(taxId)) {
-      toast.error("เลขผู้เสียภาษี 13 หลักไม่ถูกต้อง");
+    if (!kycLocked && type === "individual") {
+      toast.error("ยืนยันตัวตน (KYC) ก่อน — ข้อมูลเอกสารจะดึงจาก KYC");
       return;
     }
-    if (type === "corporate" && !companyName.trim()) {
-      toast.error("ใส่ชื่อนิติบุคคล");
-      return;
+    if (type === "corporate") {
+      if (!companyName.trim()) {
+        toast.error("ใส่ชื่อนิติบุคคล");
+        return;
+      }
+      if (!isValidThaiTaxId(taxId) && !kycLocked) {
+        toast.error("เลขผู้เสียภาษี 13 หลักไม่ถูกต้อง");
+        return;
+      }
     }
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          billing_type: type,
-          legal_name: legalName.trim() || null,
-          company_name: type === "corporate" ? companyName.trim() || null : null,
-          tax_id: taxId || null,
-          billing_address: address.trim() || null,
-          branch: type === "corporate" ? branch.trim() || null : null,
-          contact_person: type === "corporate" ? contactPerson.trim() || null : null,
-          contact_role: type === "corporate" ? contactRole.trim() || null : null,
-          vat_registered: vatRegistered,
-        } as never)
-        .eq("user_id", userId);
+      const kycAddress = formatKycAddressJson(approvedKyc?.address_json);
+      const kycName = (approvedKyc?.legal_name || "").trim();
+      const kycTax = (approvedKyc?.national_id_number || "").replace(/\D/g, "").slice(0, 13);
+
+      const payload =
+        type === "individual"
+          ? {
+              billing_type: "individual" as const,
+              legal_name: kycName || legalName.trim() || null,
+              company_name: null,
+              tax_id: kycTax || taxId || null,
+              billing_address: kycAddress || address.trim() || null,
+              address: kycAddress || address.trim() || null,
+              branch: null,
+              contact_person: null,
+              contact_role: null,
+              vat_registered: vatRegistered,
+            }
+          : {
+              billing_type: "corporate" as const,
+              legal_name: (kycName || legalName.trim()) || null,
+              company_name: companyName.trim() || null,
+              // Corporate tax ID is company ID — keep editable; fall back to KYC only if empty.
+              tax_id: taxId || kycTax || null,
+              billing_address: address.trim() || kycAddress || null,
+              branch: branch.trim() || null,
+              contact_person: contactPerson.trim() || null,
+              contact_role: contactRole.trim() || null,
+              vat_registered: vatRegistered,
+            };
+
+      if (payload.tax_id && !isValidThaiTaxId(payload.tax_id)) {
+        toast.error("เลขผู้เสียภาษี 13 หลักไม่ถูกต้อง");
+        setSaving(false);
+        return;
+      }
+
+      const { error } = await supabase.from("profiles").update(payload as never).eq("user_id", userId);
       if (error) throw error;
       toast.success("บันทึกข้อมูลออกเอกสารแล้ว");
       onSaved?.();
@@ -88,8 +154,37 @@ export function BillingProfileSection({ userId, profile, onSaved }: Props) {
         <h2 className="font-semibold text-foreground">ข้อมูลออกเอกสาร / ภาษี</h2>
       </div>
       <p className="text-xs text-muted-foreground">
-        ใช้บนใบเสนอราคา ใบแจ้งหนี้ และใบเสร็จ — เก็บตาม PDPA เพื่อออกเอกสารเท่านั้น
+        ใช้บนใบเสนอราคา ใบแจ้งหนี้ และใบเสร็จ — ชื่อ ที่อยู่ และเลขบัตร/ผู้เสียภาษีของบุคคลธรรมดา ดึงจาก KYC
+        โดยตรง
       </p>
+
+      {kycLoading ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลดข้อมูล KYC…
+        </div>
+      ) : kycLocked ? (
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-sm text-foreground flex items-start gap-2">
+          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+          <div className="min-w-0 space-y-0.5">
+            <p className="font-medium">ใช้ข้อมูลจาก KYC ที่อนุมัติแล้ว</p>
+            <p className="text-xs text-muted-foreground">
+              ชื่อ · ที่อยู่ · เลขบัตรประชาชน (ใช้เป็นเลขผู้เสียภาษีบุคคลธรรมดา) — แก้ได้ที่{" "}
+              <Link to="/verify" className="text-primary underline-offset-2 hover:underline">
+                ยืนยันตัวตน
+              </Link>
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm space-y-2">
+          <p className="text-foreground">
+            ยังไม่มี KYC ที่อนุมัติ — ข้อมูลเอกสารบุคคลธรรมดาต้องมาจาก KYC
+          </p>
+          <Button type="button" size="sm" className="rounded-full" asChild>
+            <Link to="/verify">ไปยืนยันตัวตน</Link>
+          </Button>
+        </div>
+      )}
 
       <div className="flex gap-2">
         {(
@@ -112,62 +207,76 @@ export function BillingProfileSection({ userId, profile, onSaved }: Props) {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label>{type === "corporate" ? "ชื่อนิติบุคคล" : "ชื่อ-นามสกุล (ตามเอกสาร)"}</Label>
-          {type === "corporate" ? (
+        {type === "corporate" ? (
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>ชื่อนิติบุคคล</Label>
             <Input
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               maxLength={160}
               placeholder="บริษัท … จำกัด"
             />
-          ) : (
-            <Input
-              value={legalName}
-              onChange={(e) => setLegalName(e.target.value)}
-              maxLength={120}
-              placeholder="ชื่อ-นามสกุล"
-            />
-          )}
-        </div>
-        {type === "corporate" ? (
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label>ชื่อผู้แทน / ชื่อที่แสดง</Label>
-            <Input
-              value={legalName}
-              onChange={(e) => setLegalName(e.target.value)}
-              maxLength={120}
-              placeholder="ชื่อผู้มีอำนาจลงนาม (ไม่บังคับ)"
-            />
           </div>
         ) : null}
+
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label>
+            {type === "corporate" ? "ชื่อผู้แทน (จาก KYC)" : "ชื่อ-นามสกุลตามบัตร (จาก KYC)"}
+          </Label>
+          <Input value={legalName} readOnly disabled className="bg-muted/40" />
+        </div>
+
         <div className="space-y-1.5">
-          <Label>เลขประจำตัวผู้เสียภาษี</Label>
+          <Label>
+            {type === "corporate" ? "เลขประจำตัวผู้เสียภาษี (นิติบุคคล)" : "เลขบัตรประชาชน / ผู้เสียภาษี"}
+          </Label>
           <Input
-            value={taxId}
-            onChange={(e) => setTaxId(e.target.value.replace(/\D/g, "").slice(0, 13))}
+            value={
+              type === "individual" && taxId.length === 13
+                ? maskThaiNationalId(taxId)
+                : taxId
+            }
+            onChange={
+              type === "corporate"
+                ? (e) => setTaxId(e.target.value.replace(/\D/g, "").slice(0, 13))
+                : undefined
+            }
+            readOnly={type === "individual"}
+            disabled={type === "individual"}
             inputMode="numeric"
             maxLength={13}
             placeholder="13 หลัก"
-            className={cn(taxId.length === 13 && !isValidThaiTaxId(taxId) && "border-destructive")}
+            className={cn(
+              type === "individual" && "bg-muted/40",
+              type === "corporate" &&
+                taxId.length === 13 &&
+                !isValidThaiTaxId(taxId) &&
+                "border-destructive",
+            )}
           />
         </div>
+
         {type === "corporate" ? (
           <div className="space-y-1.5">
             <Label>สาขา</Label>
             <Input value={branch} onChange={(e) => setBranch(e.target.value)} maxLength={80} />
           </div>
         ) : null}
+
         <div className="space-y-1.5 sm:col-span-2">
-          <Label>ที่อยู่สำหรับออกเอกสาร</Label>
-          <Textarea
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            rows={2}
-            maxLength={300}
-            className="resize-none"
-          />
+          <Label>{type === "corporate" ? "ที่อยู่นิติบุคคลสำหรับออกเอกสาร" : "ที่อยู่ตามบัตร (จาก KYC)"}</Label>
+          {type === "individual" ? (
+            <Input value={address} readOnly disabled className="bg-muted/40" />
+          ) : (
+            <Input
+              value={address}
+              onChange={(e) => setAddress(e.target.value.slice(0, 300))}
+              maxLength={300}
+              placeholder="ที่อยู่บริษัทสำหรับออกเอกสาร"
+            />
+          )}
         </div>
+
         {type === "corporate" ? (
           <>
             <div className="space-y-1.5">
@@ -206,7 +315,12 @@ export function BillingProfileSection({ userId, profile, onSaved }: Props) {
         </span>
       </label>
 
-      <Button type="button" onClick={() => void save()} disabled={saving} className="rounded-xl">
+      <Button
+        type="button"
+        onClick={() => void save()}
+        disabled={saving || (!kycLocked && type === "individual")}
+        className="rounded-xl"
+      >
         {saving ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : null}
         บันทึกข้อมูลเอกสาร
       </Button>

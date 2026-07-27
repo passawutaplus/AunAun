@@ -8,7 +8,6 @@ import {
   Handshake,
   Info,
   Megaphone,
-  PanelRightClose,
   PanelRightOpen,
   Settings2,
   Share2,
@@ -1049,6 +1048,21 @@ const ChatThreadView = ({
     return null;
   }, [isHire, messages, conv.project_title]);
 
+  const hireCancelOrderAmountThb = useMemo(() => {
+    if (!isHire) return 0;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const offer = parseChatOffer(messages[i].content);
+      if (offer && Number(offer.amount) > 0) return Number(offer.amount);
+    }
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const paid =
+        parseHirePaidMessage(messages[i].content) || parseLegacyHirePaidText(messages[i].content);
+      if (paid && Number(paid.offerAmountThb) > 0) return Number(paid.offerAmountThb);
+    }
+    const budget = Number(hireMeta?.budget_amount);
+    return Number.isFinite(budget) && budget > 0 ? budget : 0;
+  }, [isHire, messages, hireMeta?.budget_amount]);
+
   const visibleMessages = useMemo(() => {
     if (!workStartOffer) return messages;
     let lastPaidIdx = -1;
@@ -1528,21 +1542,18 @@ const ChatThreadView = ({
               >
                 <Info className="w-5 h-5" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hidden md:inline-flex rounded-full h-8 w-8"
-                onClick={onTogglePartnerPanel}
-                aria-label={partnerPanelOpen ? "หุบแผงคู่แชท" : "กางแผงคู่แชท"}
-                title={partnerPanelOpen ? "หุบแผง" : "กางแผง"}
-                aria-pressed={partnerPanelOpen}
-              >
-                {partnerPanelOpen ? (
-                  <PanelRightClose className="w-5 h-5" />
-                ) : (
+              {!partnerPanelOpen ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hidden md:inline-flex rounded-full h-8 w-8"
+                  onClick={onTogglePartnerPanel}
+                  aria-label="กางแผงคู่แชท"
+                  title="กางแผง"
+                >
                   <PanelRightOpen className="w-5 h-5" />
-                )}
-              </Button>
+                </Button>
+              ) : null}
             </>
           )}
         </div>
@@ -2060,6 +2071,17 @@ const ChatThreadView = ({
         initiatedBy={hireCancelEditRow?.initiated_by ?? hireCancelInitiatedBy}
         existing={hireCancelEditRow}
         busy={submitHireCancel.isPending || editHireCancel.isPending}
+        orderAmountThb={hireCancelOrderAmountThb}
+        defaultContactPhone={
+          hireCancelInitiatedBy === "client"
+            ? defaultClientParty?.phone || hireMeta?.phone || null
+            : null
+        }
+        defaultContactEmail={
+          hireCancelInitiatedBy === "client"
+            ? defaultClientParty?.email || hireMeta?.email || null
+            : null
+        }
         onSubmit={async ({ reasonId, reasonNote, moneyTerms, evidenceUrls }) => {
           if (!conv.request_id || !user?.id) return;
           const otherUserId = isClient ? conv.freelancer_id : conv.client_id;

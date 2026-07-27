@@ -163,6 +163,7 @@ const ProjectSidePanel = (p: Props) => {
           <PlusOneControl
             active={p.liked}
             count={p.likes}
+            showCount={false}
             size="md"
             ariaLabel={p.liked ? "เลิกถูกใจ" : "ถูกใจ"}
             onClick={p.onLike}
@@ -171,7 +172,7 @@ const ProjectSidePanel = (p: Props) => {
           <SaveToCollectionPopover projectId={p.projectId}>
             <Button variant="outline" className="rounded-full w-full" size="sm">
               <Layers3 className="w-4 h-4 mr-1" />
-              เก็บเข้าคอลเลกชัน
+              Keep Collection
             </Button>
           </SaveToCollectionPopover>
         </div>

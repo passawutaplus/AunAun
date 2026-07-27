@@ -41,7 +41,8 @@ export function computeCreatorEligibility(input: {
   const referralComplete = input.qualifiedReferralCount >= MIN_SUCCESSFUL_REFERRALS;
 
   const canReceiveGifts = welcomeComplete && hasPublished;
-  const canStartKyc = canReceiveGifts;
+  // Hire payout KYC is open anytime — Welcome Bonus gates apply to gifts/cashout only.
+  const canStartKyc = true;
   const canCashout = canReceiveGifts && hasFollowers && referralComplete && input.isVerified;
 
   let tier: CreatorEligibilityTier = "locked";

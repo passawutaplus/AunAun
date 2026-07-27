@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
@@ -49,7 +49,7 @@ export function SeriesAddProjectsDialog({ open, onOpenChange, seriesId, seriesTi
     }
     try {
       await add.mutateAsync({ seriesId, projectIds: ids });
-      toast.success(`เพิ่ม ${ids.length} ผลงานเข้าชุดแล้ว`);
+      toast.success(`เพิ่ม ${ids.length} ผลงานเข้า Catalog แล้ว`);
       setSelected(new Set());
       onOpenChange(false);
     } catch (e: unknown) {
@@ -67,7 +67,7 @@ export function SeriesAddProjectsDialog({ open, onOpenChange, seriesId, seriesTi
     >
       <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>เพิ่มผลงานเข้าชุด</DialogTitle>
+          <DialogTitle>เพิ่มผลงานเข้า Catalog</DialogTitle>
           {seriesTitle ? (
             <p className="text-xs text-muted-foreground">{seriesTitle}</p>
           ) : null}
@@ -78,7 +78,7 @@ export function SeriesAddProjectsDialog({ open, onOpenChange, seriesId, seriesTi
             <div className="text-center py-10 text-sm text-muted-foreground">
               ไม่มีผลงานที่เผยแพร่แล้วให้เพิ่ม
               <br />
-              (ชิ้นที่อยู่ในชุดนี้อยู่แล้วจะไม่แสดง)
+              (ชิ้นที่อยู่ใน Catalog นี้อยู่แล้วจะไม่แสดง)
             </div>
           ) : (
             published.map((p) => {
@@ -128,7 +128,7 @@ export function SeriesAddProjectsDialog({ open, onOpenChange, seriesId, seriesTi
             disabled={add.isPending || selected.size === 0}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            เพิ่มเข้าชุด ({selected.size})
+            เพิ่มเข้า Catalog ({selected.size})
           </Button>
         </DialogFooter>
       </DialogContent>

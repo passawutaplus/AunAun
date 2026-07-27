@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
 import { useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useFeedStats } from "@/hooks/useFeedStats";
-import { useDesignerHeroSlides, useStudioHeroSlides } from "@/hooks/useHeroSlides";
+import { Check, Plus } from "lucide-react";
+import { useStudioHeroSlides } from "@/hooks/useHeroSlides";
+import { useAuth } from "@/hooks/useAuth";
+import { useAuthDialog } from "@/stores/authDialogStore";
 import { BRAND_CONCEPT } from "@/lib/brandConfig";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { carouselSlideTransition, carouselSlideVariants, smoothEase } from "@/lib/motion";
@@ -15,13 +17,16 @@ import WorkWallMarquee from "./WorkWallMarquee";
 import HeroGridSpotlight from "./HeroGridSpotlight";
 import { cn } from "@/lib/utils";
 
-const formatNum = (n: number) => n.toLocaleString("th-TH");
+/** Match FeedPage / DesktopTopNav horizontal gutters so hero copy lines up with the logo. */
+export const FEED_PAGE_GUTTER_X =
+  "px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]";
 
-const STATS = [
-  { key: "designers", label: "Designers" },
-  { key: "projects", label: "Projects" },
-  { key: "hires", label: "Hire" },
-  { key: "successfulCollabs", label: "Collab" },
+const HERO_GUTTER = FEED_PAGE_GUTTER_X;
+
+const HERO_POINTS = [
+  "แชร์ Project กับ Community ฟรี",
+  "ค้นพบ Designer Artist และ Creator ที่ตรงสไตล์",
+  "เริ่ม Collaboration หรือ Hiring ได้ในที่เดียว",
 ] as const;
 
 const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
@@ -76,25 +81,35 @@ type Props = {
   className?: string;
 };
 
-/** Projects: ambient work wall. Other modes: spotlight showcase. */
+/** Projects + Designers: ambient work wall. Other modes: spotlight showcase. */
 const FeedHero = ({ mode = "projects", className }: Props) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const openSignup = useAuthDialog((s) => s.openSignup);
   const reduced = useReducedMotion();
   const heroRef = useRef<HTMLElement>(null);
-  const { data, isLoading } = useFeedStats();
-  const { slides: designerSlides } = useDesignerHeroSlides();
   const { data: studioSlides = [] } = useStudioHeroSlides();
   const copy = HERO_COPY[mode];
-  const isProjects = mode === "projects";
-  const s = data ?? { designers: 0, projects: 0, hires: 0, successfulCollabs: 0 };
+  const useHomeHero = mode === "projects" || mode === "designers";
 
-  if (isProjects) {
+  const goShareProject = () => {
+    if (!user) {
+      openSignup("/portfolio/new");
+      return;
+    }
+    navigate("/portfolio/new");
+  };
+
+  if (useHomeHero) {
     return (
       <section
         ref={heroRef}
+        data-feed-hero
         className={cn(
           "relative overflow-hidden bg-background",
           "-mx-3 -mt-4 sm:-mx-[calc(1rem+25px)] lg:-mx-[calc(1.5rem+25px)] 2xl:-mx-[calc(2.5rem+25px)]",
-          "min-h-[min(88vh,44rem)] sm:min-h-[min(86vh,48rem)] md:min-h-[min(84vh,52rem)]",
+          "min-h-[min(72vh,36rem)] sm:min-h-[min(70vh,40rem)] md:min-h-[min(68vh,42rem)]",
+          "lg:pt-12",
           className,
         )}
       >
@@ -102,46 +117,54 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
         <HeroGridSpotlight trackRef={heroRef} className="z-0" />
 
         <div className="relative z-10 grid min-h-[inherit] md:grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)]">
-          <FadeUp className="relative z-10 flex flex-col justify-center px-5 py-10 sm:px-8 sm:py-12 md:px-10 md:py-14 lg:px-12 xl:px-14">
+          <FadeUp
+            className={cn(
+              "relative z-10 flex flex-col justify-center py-6 sm:py-8 md:py-10",
+              HERO_GUTTER,
+              "md:pr-6 lg:pr-8",
+            )}
+          >
             <div className="relative z-[1] max-w-xl">
               <h1 className="text-[2.35rem] sm:text-4xl md:text-[2.75rem] lg:text-[3.35rem] font-bold tracking-tight text-foreground leading-[0.95] sm:leading-[0.92] thai-display">
-                <span className="block">1 Profile to</span>
+                <span className="block text-[0.82em] sm:text-[0.85em]">1 Profile to</span>
                 <span className="block bg-gradient-brand bg-clip-text text-transparent">
                   100+ Opportunity
                 </span>
               </h1>
-              <p className="mt-4 sm:mt-5 text-sm sm:text-base text-muted-foreground leading-relaxed">
-                <span className="font-bold text-foreground">
-                  Discover inspiring work from designers and artists around the world.
-                </span>{" "}
-                Explore creative ideas, connect with like-minded people, and turn your
-                portfolio into new collaboration and career opportunities—all in one community.
+              <p className="mt-4 sm:mt-5 leading-relaxed">
+                <span className="block text-base sm:text-lg md:text-xl font-bold text-foreground">
+                  ให้ผลงานพาคุณไปสู่โอกาสใหม่ๆ
+                </span>
+                <span className="block mt-1.5 text-xs sm:text-sm text-muted-foreground">
+                  เชื่อมต่อผู้คน ดีไซเนอร์ ศิลปิน และครีเอเตอร์ สร้างโอกาสใหม่จากผลงานจริงของคุณ
+                </span>
               </p>
 
-              <div className="mt-6 sm:mt-8 flex flex-col items-start gap-2.5">
-                <div className="flex flex-wrap items-stretch divide-x divide-black/20 dark:divide-white/20">
-                  {STATS.map(({ key, label }) => (
-                    <div
-                      key={key}
-                      className="px-3.5 first:pl-0 last:pr-0 sm:px-4 py-0.5"
-                    >
-                      <span className="block text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.14em] text-foreground/65 whitespace-nowrap">
-                        {label}
-                      </span>
-                      {isLoading ? (
-                        <Skeleton className="mt-1.5 h-6 w-9 sm:h-7 sm:w-10" />
-                      ) : (
-                        <span className="mt-1.5 block text-xl sm:text-2xl font-bold text-foreground tabular-nums leading-none tracking-tight">
-                          {formatNum(s[key])}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[10px] sm:text-[11px] font-light tracking-[0.16em] text-foreground/50 uppercase">
-                  Live platform overview
-                </p>
-              </div>
+              <ul className="mt-6 sm:mt-8 space-y-2.5">
+                {HERO_POINTS.map((point) => (
+                  <li key={point} className="flex items-start gap-2.5 text-sm text-foreground/90">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                      <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
+                    </span>
+                    <span className="leading-snug thai-body">{point}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                type="button"
+                onClick={goShareProject}
+                aria-label="Share your Project"
+                className="first-post-create first-post-create-idle group mt-7 sm:mt-8 relative inline-flex h-11 items-center overflow-visible rounded-full"
+              >
+                <span className="first-post-create-beam rounded-full" aria-hidden />
+                <span className="first-post-create-inner relative z-10 m-[1.5px] inline-flex h-full items-center gap-2 rounded-full border border-border/60 bg-foreground py-0 pl-1.5 pr-5 text-sm font-medium text-background">
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-white">
+                    <Plus className="h-4 w-4" strokeWidth={2.5} />
+                  </span>
+                  <span className="whitespace-nowrap pr-0.5">Share your Project</span>
+                </span>
+              </button>
             </div>
           </FadeUp>
 
@@ -172,14 +195,14 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
   const showcase =
     mode === "community" ? (
       <CommunityHeroShowcase />
-    ) : mode === "designers" ? (
-      <HeroSpotlightShowcase slides={designerSlides} variant="designer" />
     ) : (
       <HeroSpotlightShowcase slides={studioSlides} variant="studio" />
     );
 
   return (
     <section
+      ref={heroRef}
+      data-feed-hero
       className={cn(
         "relative overflow-hidden min-h-[22rem] sm:min-h-[24rem] md:min-h-[19rem] lg:min-h-[21rem]",
         "-mx-3 -mt-4 rounded-none ring-0 shadow-none sm:-mx-4",

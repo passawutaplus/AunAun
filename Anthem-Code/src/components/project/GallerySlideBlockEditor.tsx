@@ -39,7 +39,11 @@ type Props = {
 
 function pickImageFiles(list: FileList | File[] | null | undefined): File[] {
   if (!list) return [];
-  return Array.from(list).filter((f) => /^image\/(jpeg|png|webp)$/i.test(f.type));
+  return Array.from(list).filter((f) => {
+    if (/^image\/(jpeg|png|gif)$/i.test(f.type)) return true;
+    if (!f.type && /\.(jpe?g|png|gif)$/i.test(f.name)) return true;
+    return false;
+  });
 }
 
 function thumbId(index: number) {
@@ -154,7 +158,7 @@ export function GallerySlideBlockEditor({
         <input
           ref={multiInputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/gif,.jpg,.jpeg,.png,.gif"
           multiple
           className="sr-only"
           disabled={disabled || uploading}
@@ -258,7 +262,7 @@ export function GallerySlideBlockEditor({
       <input
         ref={multiInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/jpeg,image/png,image/gif,.jpg,.jpeg,.png,.gif"
         multiple
         className="sr-only"
         disabled={disabled || uploading}

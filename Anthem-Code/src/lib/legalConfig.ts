@@ -15,7 +15,7 @@ export const LEGAL_COMPANY_NAME =
   (import.meta.env.VITE_LEGAL_COMPANY_NAME as string | undefined) ?? BRAND_COMPANY;
 
 export const LEGAL_UPDATED_AT =
-  (import.meta.env.VITE_LEGAL_UPDATED_AT as string | undefined) ?? "3 กรกฎาคม 2569";
+  (import.meta.env.VITE_LEGAL_UPDATED_AT as string | undefined) ?? "24 กรกฎาคม 2569";
 
 /** รุ่นข้อความคำแถลการยืนยันลิขสิทธิ์ — เก็บใน projects.rights_attestation_version */
 export const LEGAL_ATTESTATION_VERSION =
@@ -23,10 +23,10 @@ export const LEGAL_ATTESTATION_VERSION =
 
 /** รุ่นนโยบายที่ใช้บันทึก consent — sync กับ anthem.policy_versions */
 export const LEGAL_TERMS_VERSION =
-  (import.meta.env.VITE_LEGAL_TERMS_VERSION as string | undefined) ?? "2026-07-18";
+  (import.meta.env.VITE_LEGAL_TERMS_VERSION as string | undefined) ?? "2026-07-24";
 
 export const LEGAL_PRIVACY_VERSION =
-  (import.meta.env.VITE_LEGAL_PRIVACY_VERSION as string | undefined) ?? "2026-07-18";
+  (import.meta.env.VITE_LEGAL_PRIVACY_VERSION as string | undefined) ?? "2026-07-24";
 
 export const LEGAL_COOKIES_VERSION =
   (import.meta.env.VITE_LEGAL_COOKIES_VERSION as string | undefined) ?? "2026-07-03";

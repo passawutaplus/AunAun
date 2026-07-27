@@ -32,6 +32,8 @@ import ChatPortfolioSection from "@/components/chat/ChatPortfolioSection";
 import { cn } from "@/lib/utils";
 import { WORK_DISCIPLINE_LABELS, type WorkDisciplineId } from "@/data/workDisciplineOptions";
 import { labelOpportunityType } from "@/lib/opportunity";
+import ProfileSkillChips from "@/components/profile/ProfileSkillChips";
+import { displayProfileAddress } from "@/lib/profileAddress";
 
 interface Props {
   conversation: Conversation;
@@ -348,9 +350,16 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
                 <p className="text-sm text-muted-foreground mt-0.5">@{profile.username}</p>
               )}
               {profile?.role && <p className="text-xs text-muted-foreground mt-1">{profile.role}</p>}
-              {profile?.location && (
-                <p className="text-xs text-muted-foreground mt-0.5">{profile.location}</p>
-              )}
+              {(() => {
+                const place = displayProfileAddress(
+                  (profile as { profile_address?: unknown } | null | undefined)?.profile_address,
+                  profile?.location,
+                  "short",
+                );
+                return place ? (
+                  <p className="text-xs text-muted-foreground mt-0.5">{place}</p>
+                ) : null;
+              })()}
               <div ref={profileStatsRef} className="flex justify-center gap-4 mt-3 text-sm">
                 <span>
                   <span className="font-semibold text-foreground">{followers}</span>{" "}
@@ -367,18 +376,6 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
                     {profile.bio}
                   </p>
                 )}
-                {lookingFor.length > 0 && (
-                  <div className="mt-3 text-left">
-                    <p className="text-[11px] font-medium text-muted-foreground mb-1.5">กำลังมองหา</p>
-                    <div className="flex flex-wrap gap-1.5 justify-start">
-                      {lookingFor.slice(0, 4).map((t) => (
-                        <Badge key={t} className="text-xs font-normal bg-primary/10 text-primary border-0">
-                          {labelOpportunityType(t)}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
                 {disciplines.length > 0 && (
                   <div className="mt-3 text-left">
                     <p className="text-[11px] font-medium text-muted-foreground mb-1.5">สายงาน</p>
@@ -391,16 +388,22 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
                     </div>
                   </div>
                 )}
-                {skills.length > 0 && (
+                {lookingFor.length > 0 && (
                   <div className="mt-3 text-left">
-                    <p className="text-[11px] font-medium text-muted-foreground mb-1.5">ความชำนาญ</p>
+                    <p className="text-[11px] font-medium text-muted-foreground mb-1.5">กำลังมองหา</p>
                     <div className="flex flex-wrap gap-1.5 justify-start">
-                      {skills.slice(0, 8).map((s) => (
-                        <Badge key={s} variant="outline" className="text-xs font-normal">
-                          {s}
+                      {lookingFor.slice(0, 4).map((t) => (
+                        <Badge key={t} className="text-xs font-normal bg-primary/10 text-primary border-0">
+                          {labelOpportunityType(t)}
                         </Badge>
                       ))}
                     </div>
+                  </div>
+                )}
+                {skills.length > 0 && (
+                  <div className="mt-3 text-left">
+                    <p className="text-[11px] font-medium text-muted-foreground mb-1.5">ความชำนาญ</p>
+                    <ProfileSkillChips skills={skills.slice(0, 8)} />
                   </div>
                 )}
               </div>

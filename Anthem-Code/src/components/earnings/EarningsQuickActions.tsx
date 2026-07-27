@@ -7,6 +7,8 @@ type Props = {
   onReferral: () => void;
   canCashout: boolean;
   cashoutHint?: string;
+  /** Top-up is part of gift economy — hide when gifts are paused. */
+  showTopUp?: boolean;
 };
 
 type QuickAction = {
@@ -24,9 +26,12 @@ export function EarningsQuickActions({
   onReferral,
   canCashout,
   cashoutHint,
+  showTopUp = true,
 }: Props) {
   const actions: QuickAction[] = [
-    { id: "topup", label: "เติม Pixel", icon: Coins, onClick: onTopUp, disabled: false },
+    ...(showTopUp
+      ? [{ id: "topup", label: "เติม Pixel", icon: Coins, onClick: onTopUp, disabled: false } as QuickAction]
+      : []),
     {
       id: "cashout",
       label: "ถอนเงิน",
@@ -39,7 +44,7 @@ export function EarningsQuickActions({
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className={cn("grid gap-2", actions.length === 2 ? "grid-cols-2" : "grid-cols-3")}>
       {actions.map(({ id, label, icon: Icon, onClick, disabled, hint }) => (
         <button
           key={id}

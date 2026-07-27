@@ -42,14 +42,14 @@ export function ProjectEditorMetaSidebar({
             : "w-full border-b border-border/80 bg-card/95 lg:w-0 lg:overflow-hidden lg:border-0 lg:bg-transparent",
           className,
         )}
-        aria-label="รายละเอียดผลงาน"
+        aria-label="Work Details"
       >
         {expanded ? (
           <div className="flex flex-col lg:h-[calc(100dvh-4rem)]">
             <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-4 lg:pt-5">
-              <p className="inline-flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
-                <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                รายละเอียดผลงาน
+              <p className="inline-flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
+                <FileText className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
+                Work Details
               </p>
               <button
                 type="button"
@@ -68,9 +68,9 @@ export function ProjectEditorMetaSidebar({
             onClick={() => onExpandedChange(true)}
             className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left lg:hidden"
           >
-            <span className="inline-flex items-center gap-2 text-sm text-foreground">
-              <PanelRight className="h-4 w-4 text-muted-foreground" />
-              รายละเอียดผลงาน
+            <span className="inline-flex items-center gap-2 text-base font-semibold text-foreground">
+              <PanelRight className="h-5 w-5 text-foreground" strokeWidth={2.25} />
+              Work Details
             </span>
             <ChevronLeft className="h-4 w-4 text-muted-foreground" />
           </button>

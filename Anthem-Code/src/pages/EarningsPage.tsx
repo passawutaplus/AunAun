@@ -32,15 +32,17 @@ import { EarningsCashoutHistory } from "@/components/earnings/EarningsCashoutHis
 import { EarningsClosedLoopNote } from "@/components/earnings/EarningsClosedLoopNote";
 import EarningsBalanceCards from "@/components/payments/EarningsBalanceCards";
 import DisplayCurrencyToggle from "@/components/payments/DisplayCurrencyToggle";
-import TaxEstimateCard from "@/components/payments/TaxEstimateCard";
 import ManageModeNav from "@/components/dashboard/ManageModeNav";
+import { EarningsPlatformIncomeHistory } from "@/components/earnings/EarningsPlatformIncomeHistory";
 import { computeGiftablePx } from "@/lib/walletDisplay";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
+import { isAplus1GiftEconomyEnabled } from "@/lib/aplus1Launch";
 
 const EarningsPage = () => {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuth();
+  const giftEconomy = isAplus1GiftEconomyEnabled();
   const { data: wallet } = useWallet();
   const { data: availablePurchased = 0 } = useAvailablePurchasedPx();
   const { data: gifts = [] } = useGifts();
@@ -58,19 +60,23 @@ const EarningsPage = () => {
     if (!user?.id) return;
     void qc.invalidateQueries({ queryKey: ["wallet", user.id] });
     void qc.invalidateQueries({ queryKey: ["wallet-available-purchased", user.id] });
-    void qc.invalidateQueries({ queryKey: ["wallet-available-gift", user.id] });
-  }, [user?.id, qc]);
+    if (giftEconomy) {
+      void qc.invalidateQueries({ queryKey: ["wallet-available-gift", user.id] });
+    }
+  }, [user?.id, qc, giftEconomy]);
 
   useEffect(() => {
     const topup = searchParams.get("topup");
     const connect = searchParams.get("connect");
     if (topup === "success") {
-      toast.success("เติม Pixel สำเร็จ — ใช้ส่งของขวัญได้ทันที");
+      toast.success(giftEconomy ? "เติม Pixel สำเร็จ — ใช้ส่งของขวัญได้ทันที" : "เติม Pixel สำเร็จ");
       notifyAnthem({ event: "topup" });
       if (user?.id) {
         void qc.invalidateQueries({ queryKey: ["wallet", user.id] });
         void qc.invalidateQueries({ queryKey: ["wallet-available-purchased", user.id] });
-        void qc.invalidateQueries({ queryKey: ["wallet-available-gift", user.id] });
+        if (giftEconomy) {
+          void qc.invalidateQueries({ queryKey: ["wallet-available-gift", user.id] });
+        }
       }
       searchParams.delete("topup");
       setSearchParams(searchParams, { replace: true });
@@ -79,7 +85,7 @@ const EarningsPage = () => {
       searchParams.delete("connect");
       setSearchParams(searchParams, { replace: true });
     }
-  }, [searchParams, setSearchParams, user?.id, qc]);
+  }, [searchParams, setSearchParams, user?.id, qc, giftEconomy]);
 
   const giftablePx = computeGiftablePx(wallet, availablePurchased);
 
@@ -91,7 +97,7 @@ const EarningsPage = () => {
 
   const { data: senders = [] } = useQuery({
     queryKey: ["gift-senders", senderIds],
-    enabled: senderIds.length > 0,
+    enabled: giftEconomy && senderIds.length > 0,
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles_public")
@@ -111,20 +117,33 @@ const EarningsPage = () => {
     canCashout
       ? undefined
       : eligibility && !eligibility.canCashout
-        ? "ครบ Welcome Bonus, ผลงาน, ผู้ติดตาม, ชวนเพื่อน และยืนยันตัวตนก่อนถอน"
+        ? giftEconomy
+          ? "ครบ Welcome Bonus, ผลงาน, ผู้ติดตาม, ชวนเพื่อน และยืนยันตัวตนก่อนถอน"
+          : "ยืนยันตัวตนและเงื่อนไขถอนให้ครบก่อน"
         : `อีก ${Math.max(0, MIN_CASHOUT_PX - earnedPx).toLocaleString()} px ถึงขั้นต่ำถอน`;
 
   return (
     <div className={`min-h-screen bg-app-ambient ${MOBILE_PAGE_BOTTOM_CLASS}`}>
-      <SeoHead title="แดชบอร์ด & จัดการ — กระเป๋า" path="/earnings" noindex />
+      <SeoHead title="กระเป๋า & รายได้" path="/earnings" noindex />
 
       <div className="bg-gradient-to-b from-primary/10 to-background">
-        <div className="mx-auto max-w-5xl px-4 pb-4 pt-6">
-          <BackButton to="/portfolio" label="กลับโปรไฟล์" className="mb-4" />
+        <div className="mx-auto max-w-5xl px-4 pb-4 pt-6 lg:pt-8">
+          <BackButton
+            fallbackTo="/portfolio"
+            label="กลับโปรไฟล์"
+            className="mb-4"
+          />
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <WalletCards className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl font-medium text-foreground">แดชบอร์ด &amp; จัดการ</h1>
+              <div>
+                <h1 className="text-2xl font-medium text-foreground">กระเป๋า</h1>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  {giftEconomy
+                    ? "ดูรายได้ PX รายได้จ้างงาน และประวัติถอนเงิน"
+                    : "ดูรายได้ถอนได้ รายได้จ้างงาน และประวัติถอนเงิน"}
+                </p>
+              </div>
             </div>
             <Button
               variant="outline"
@@ -137,9 +156,6 @@ const EarningsPage = () => {
             </Button>
           </div>
           <ManageModeNav className="mt-4" />
-          <p className="mt-2 text-sm text-muted-foreground">
-            ดูรายได้ PX รายได้จ้างงาน ประมาณการภาษี และประวัติถอนเงิน
-          </p>
         </div>
       </div>
 
@@ -151,6 +167,7 @@ const EarningsPage = () => {
             giftablePx={giftablePx}
             lifetimeEarned={lifetimeEarned}
             feeLabel={feeLabel}
+            showGiftable={giftEconomy}
           />
 
           <div className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-4 sm:p-5">
@@ -167,7 +184,6 @@ const EarningsPage = () => {
             <p className="text-[11px] text-muted-foreground">
               ยอดจ้างงานผ่าน Aplus1/Omise จะแสดงที่นี่หลังเปิดรับชำระ — แยกจากกระเป๋า PX
             </p>
-            <TaxEstimateCard userId={user?.id} />
           </div>
         </div>
 
@@ -177,33 +193,43 @@ const EarningsPage = () => {
           onReferral={() => navigate("/referrals")}
           canCashout={canCashout}
           cashoutHint={cashoutHint}
+          showTopUp={giftEconomy}
         />
 
         <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-          <div className="space-y-5">
-            <DailyPxClaimCard />
-            {eligibility && (
-              <EarningsCashoutReadiness eligibility={eligibility} earnedPx={earnedPx} />
-            )}
-            <EarningsGiftCatalog gifts={gifts} />
-          </div>
-          <div className="space-y-5">
-            <EarningsGiftFeed
-              items={received}
-              giftById={giftById}
-              senderById={senderById}
-              onGoPortfolio={() => navigate("/portfolio/manage")}
-            />
+          {giftEconomy ? (
+            <div className="space-y-5">
+              <DailyPxClaimCard />
+              {eligibility && (
+                <EarningsCashoutReadiness eligibility={eligibility} earnedPx={earnedPx} />
+              )}
+              <EarningsGiftCatalog gifts={gifts} />
+            </div>
+          ) : null}
+          <div className={giftEconomy ? "space-y-5" : "space-y-5 lg:col-span-2"}>
+            {giftEconomy ? (
+              <EarningsGiftFeed
+                items={received}
+                giftById={giftById}
+                senderById={senderById}
+                onGoPortfolio={() => navigate("/portfolio")}
+              />
+            ) : null}
+            <EarningsPlatformIncomeHistory userId={user?.id} />
             <EarningsCashoutHistory items={cashouts} />
           </div>
         </div>
 
-        <WalletEarnMoreSection />
-        <EarningsClosedLoopNote />
+        {giftEconomy ? (
+          <>
+            <WalletEarnMoreSection />
+            <EarningsClosedLoopNote />
+          </>
+        ) : null}
       </div>
 
       <CashoutDialog open={cashoutOpen} onOpenChange={setCashoutOpen} />
-      <TopUpDialog open={topupOpen} onOpenChange={setTopupOpen} />
+      {giftEconomy ? <TopUpDialog open={topupOpen} onOpenChange={setTopupOpen} /> : null}
     </div>
   );
 };

@@ -108,7 +108,7 @@ export default function StartingPriceField({
       <div className="flex items-center justify-between gap-3">
         <label
           htmlFor="show-price"
-          className="text-xs font-semibold text-muted-foreground uppercase cursor-pointer inline-flex items-center gap-1"
+          className="text-xs font-semibold text-muted-foreground cursor-pointer inline-flex items-center gap-1"
         >
           ราคาเริ่มต้นงานนี้
           <CurrencyMenu

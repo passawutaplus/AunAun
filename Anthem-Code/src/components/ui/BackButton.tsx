@@ -5,25 +5,35 @@ import { cn } from "@/lib/utils";
 type BackButtonProps = {
   onClick?: () => void;
   to?: string;
+  /** When history cannot go back, navigate here instead of `/`. */
+  fallbackTo?: string;
   label?: string;
   className?: string;
 };
 
-function goBackOrHome(navigate: ReturnType<typeof useNavigate>) {
+function goBackOrFallback(
+  navigate: ReturnType<typeof useNavigate>,
+  fallbackTo = "/",
+) {
   const idx = (window.history.state as { idx?: number } | null)?.idx;
   if (typeof idx === "number" && idx > 0) {
     navigate(-1);
     return;
   }
-  // Fallback when history index is unavailable (external entry / odd browsers).
   if (window.history.length > 1) {
     navigate(-1);
     return;
   }
-  navigate("/");
+  navigate(fallbackTo);
 }
 
-export function BackButton({ onClick, to, label = "กลับ", className }: BackButtonProps) {
+export function BackButton({
+  onClick,
+  to,
+  fallbackTo = "/",
+  label = "กลับ",
+  className,
+}: BackButtonProps) {
   const navigate = useNavigate();
 
   const classNames = cn(
@@ -46,7 +56,7 @@ export function BackButton({ onClick, to, label = "กลับ", className }: B
   return (
     <button
       type="button"
-      onClick={onClick ?? (() => goBackOrHome(navigate))}
+      onClick={onClick ?? (() => goBackOrFallback(navigate, fallbackTo))}
       className={classNames}
       aria-label={label}
     >

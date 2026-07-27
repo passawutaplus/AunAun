@@ -4,6 +4,7 @@ import {
   computeCreatorEligibility,
   type CreatorEligibilitySnapshot,
 } from "@/lib/creatorEligibility";
+import { isKycExpired, resolveKycExpiresAt } from "@/lib/kycIdentity";
 
 export function useCreatorEligibility(userId: string | undefined) {
   return useQuery({
@@ -21,20 +22,29 @@ export function useCreatorEligibility(userId: string | undefined) {
           )
         : Promise.resolve(0);
 
-      const [claimsRes, publishedRes, followersRes, profileRes, qualifiedReferralCount] = await Promise.all([
-        supabase.from("welcome_mission_claims").select("reward_px").eq("user_id", uid),
-        supabase
-          .from("projects")
-          .select("id", { count: "exact", head: true })
-          .eq("owner_id", uid)
-          .eq("status", "Published"),
-        supabase
-          .from("follows")
-          .select("follower_id", { count: "exact", head: true })
-          .eq("following_id", uid),
-        supabase.from("profiles").select("is_verified").eq("user_id", uid).maybeSingle(),
-        referralPromise,
-      ]);
+      const [claimsRes, publishedRes, followersRes, profileRes, qualifiedReferralCount, kycRes] =
+        await Promise.all([
+          supabase.from("welcome_mission_claims").select("reward_px").eq("user_id", uid),
+          supabase
+            .from("projects")
+            .select("id", { count: "exact", head: true })
+            .eq("owner_id", uid)
+            .eq("status", "Published"),
+          supabase
+            .from("follows")
+            .select("follower_id", { count: "exact", head: true })
+            .eq("following_id", uid),
+          supabase.from("profiles").select("is_verified").eq("user_id", uid).maybeSingle(),
+          referralPromise,
+          supabase
+            .from("kyc_requests")
+            .select("reviewed_at")
+            .eq("user_id", uid)
+            .eq("status", "approved")
+            .order("reviewed_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ]);
 
       if (claimsRes.error) throw claimsRes.error;
       if (publishedRes.error) throw publishedRes.error;
@@ -42,13 +52,18 @@ export function useCreatorEligibility(userId: string | undefined) {
       if (profileRes.error) throw profileRes.error;
 
       const welcomeClaimedPx = (claimsRes.data ?? []).reduce((s, c) => s + (c.reward_px ?? 0), 0);
+      const profile = profileRes.data as { is_verified?: boolean } | null;
+      const expiresAt = resolveKycExpiresAt({
+        reviewed_at: kycRes.error ? null : (kycRes.data as { reviewed_at?: string | null } | null)?.reviewed_at,
+      });
+      const verified = !!(profile?.is_verified) && !isKycExpired(expiresAt);
 
       return computeCreatorEligibility({
         welcomeClaimedPx,
         publishedCount: publishedRes.count ?? 0,
         followerCount: followersRes.count ?? 0,
         qualifiedReferralCount,
-        isVerified: !!(profileRes.data as { is_verified?: boolean } | null)?.is_verified,
+        isVerified: verified,
       });
     },
   });

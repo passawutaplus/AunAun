@@ -179,7 +179,7 @@ export function InspireWorkspaceSidebar({
     >
       <div className="px-1 py-2 pr-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground truncate">My Inspire</p>
+          <p className="text-sm font-semibold text-foreground truncate">Inspiration</p>
           <p className="text-[11px] text-muted-foreground tabular-nums">
             {boards.length} บอร์ด · {totalImages} ภาพ
           </p>

@@ -13,6 +13,8 @@ import {
   BookOpen,
   ArrowLeft,
   Briefcase,
+  Handshake,
+  Rocket,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,7 +28,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeModePicker } from "@/components/settings/ThemeModePicker";
 import { FeedGridDensityPicker } from "@/components/feed/FeedGridDensityPicker";
+import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useProfile } from "@/hooks/useProfile";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +48,10 @@ type ProfileMenuContentProps = {
 export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileMenuContentProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { data: profile } = useProfile(user?.id);
   const { data: isAdmin } = useIsAdmin();
+  const isVerified = !!(profile as { is_verified?: boolean } | null)?.is_verified;
 
   const go = (path: string) => {
     navigate(path);
@@ -59,26 +66,32 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
 
   return (
     <>
-      <DropdownMenuItem onClick={() => go(variant === "forum" ? "/forum/me" : "/portfolio")} className="rounded-lg">
+      <DropdownMenuItem
+        onClick={() => go(variant === "forum" ? "/forum/me" : "/portfolio?tab=about")}
+        className="rounded-lg"
+      >
         <User className="w-4 h-4 mr-2" />{" "}
-        {variant === "forum" ? "โปรไฟล์ชุมชนของฉัน" : "โปรไฟล์ของฉัน"}
+        {variant === "forum" ? "โปรไฟล์ชุมชนของฉัน" : "About Me"}
       </DropdownMenuItem>
       {variant !== "forum" ? (
         <>
-          <DropdownMenuItem onClick={() => go("/portfolio/manage")} className="rounded-lg">
-            <FolderKanban className="w-4 h-4 mr-2" /> แดชบอร์ด &amp; จัดการผลงาน
+          <DropdownMenuItem onClick={() => go("/portfolio")} className="rounded-lg">
+            <FolderKanban className="w-4 h-4 mr-2" /> Works
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => go("/dashboard")} className="rounded-lg">
-            <Briefcase className="w-4 h-4 mr-2" /> คำขอจ้าง &amp; ร่วมงาน
+            <Briefcase className="w-4 h-4 mr-2" /> คำขอจ้างงาน
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => go("/series")} className="rounded-lg">
-            <Library className="w-4 h-4 mr-2" /> ชุดผลงานของฉัน
+          <DropdownMenuItem onClick={() => go("/dashboard/collab")} className="rounded-lg">
+            <Handshake className="w-4 h-4 mr-2" /> คำขอคอลแลป
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => go("/collections")} className="rounded-lg">
-            <Layers3 className="w-4 h-4 mr-2" /> คอลเลกชันของฉัน
+          <DropdownMenuItem onClick={() => go("/portfolio?tab=catalog")} className="rounded-lg">
+            <Library className="w-4 h-4 mr-2" /> Catalogs
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => go("/inspire")} className="rounded-lg">
-            <Sparkles className="w-4 h-4 mr-2" /> My Inspire
+          <DropdownMenuItem onClick={() => go("/portfolio?tab=collections")} className="rounded-lg">
+            <Layers3 className="w-4 h-4 mr-2" /> Collections
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => go("/portfolio?tab=inspire")} className="rounded-lg">
+            <Sparkles className="w-4 h-4 mr-2" /> Inspiration
           </DropdownMenuItem>
           {!isAplus1LaunchMinimal() ? (
             <DropdownMenuItem onClick={() => go("/earnings")} className="rounded-lg">
@@ -106,15 +119,22 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
       </div>
       <DropdownMenuSeparator />
       {variant !== "forum" ? (
-        <DropdownMenuItem
-          onClick={() => {
-            window.open("/forum", "_blank", "noopener,noreferrer");
-            onNavigate?.();
-          }}
-          className="rounded-lg"
-        >
-          <MessagesSquare className="w-4 h-4 mr-2" /> กระทู้ชุมชน
-        </DropdownMenuItem>
+        <>
+          {!isVerified ? (
+            <DropdownMenuItem onClick={() => go("/hire/start")} className="rounded-lg">
+              <Rocket className="w-4 h-4 mr-2 text-primary" /> Become a Creator
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem
+            onClick={() => {
+              window.open("/forum", "_blank", "noopener,noreferrer");
+              onNavigate?.();
+            }}
+            className="rounded-lg"
+          >
+            <MessagesSquare className="w-4 h-4 mr-2" /> กระทู้ชุมชน
+          </DropdownMenuItem>
+        </>
       ) : null}
       <DropdownMenuItem onClick={() => go("/settings")} className="rounded-lg">
         <Settings className="w-4 h-4 mr-2" /> ตั้งค่า
@@ -152,13 +172,15 @@ export function ProfileMenuDropdown({
   variant = "default",
 }: ProfileMenuDropdownProps) {
   return (
-    <DropdownMenu onOpenChange={onOpenChange}>
+    // modal=false: avoid body scroll-lock layout jump that makes the top nav kick upward
+    <DropdownMenu modal={false} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent
         side={side}
         align={align}
         sideOffset={sideOffset}
         className={cn("w-60 rounded-xl glass-panel-strong", contentClassName)}
+        onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <ProfileMenuContent variant={variant} />
       </DropdownMenuContent>

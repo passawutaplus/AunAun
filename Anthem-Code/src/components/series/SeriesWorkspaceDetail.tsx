@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+﻿import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { BarChart3, FolderKanban, Globe2, Lock, Pencil, Plus, Share2, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -130,7 +130,7 @@ export function SeriesWorkspaceDetail({
   if (!series) {
     return (
       <div className="rounded-2xl border border-border/60 bg-card/40 px-4 py-16 text-center">
-        <p className="text-foreground font-medium">ไม่พบชุดผลงานนี้</p>
+        <p className="text-foreground font-medium">ไม่พบ Catalog นี้</p>
         <p className="mt-1 text-sm text-muted-foreground">อาจถูกลบแล้ว หรือลิงก์ไม่ถูกต้อง</p>
       </div>
     );
@@ -143,7 +143,7 @@ export function SeriesWorkspaceDetail({
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1">
-                <FolderKanban className="h-3.5 w-3.5" /> ชุดผลงาน
+                <FolderKanban className="h-3.5 w-3.5" /> Catalog
               </span>
               {series.is_public ? (
                 <span className="inline-flex items-center gap-1">
@@ -169,7 +169,7 @@ export function SeriesWorkspaceDetail({
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              {items.length} ชิ้นในชุด
+              {items.length} ชิ้นใน Catalog
               {items.length === 0 ? " — ยังว่าง กด「เพิ่มผลงาน」เมื่อพร้อม" : ""}
             </p>
             {!series.is_public ? (
@@ -183,14 +183,14 @@ export function SeriesWorkspaceDetail({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <SharePopover url={shareUrl} title={series.title} label="แชร์ชุดผลงาน">
+            <SharePopover url={shareUrl} title={series.title} label="แชร์ Catalog">
               <Button
                 size="sm"
                 variant="outline"
                 className="rounded-full"
                 onClick={() => {
                   if (!series.is_public) {
-                    toast.message("ชุดผลงานยังเป็นส่วนตัว", {
+                    toast.message("Catalog ยังเป็นส่วนตัว", {
                       description: "คนอื่นเปิดลิงก์นี้ไม่ได้จนกว่าจะตั้งเป็นสาธารณะ",
                       action: {
                         label: "ตั้งสาธารณะ",
@@ -229,9 +229,9 @@ export function SeriesWorkspaceDetail({
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>ลบชุดผลงานนี้?</AlertDialogTitle>
+                  <AlertDialogTitle>ลบ Catalog นี้?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    &quot;{series.title}&quot; จะถูกลบ — ผลงานต้นฉบับไม่ถูกลบ แค่เอาออกจากชุด
+                    &quot;{series.title}&quot; จะถูกลบ — ผลงานต้นฉบับไม่ถูกลบ แค่เอาออกจาก Catalog
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -239,7 +239,7 @@ export function SeriesWorkspaceDetail({
                   <AlertDialogAction
                     onClick={async () => {
                       await del.mutateAsync(series.id);
-                      toast.success("ลบชุดผลงานแล้ว");
+                      toast.success("ลบ Catalog แล้ว");
                       onDeleted?.();
                     }}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -256,8 +256,8 @@ export function SeriesWorkspaceDetail({
       {items.length === 0 ? (
         <div className="rounded-2xl border border-border/60 bg-card/40 px-4 py-14 text-center">
           <FolderKanban className="mx-auto mb-3 h-12 w-12 text-muted-foreground/40" />
-          <p className="font-medium text-foreground mb-1">ยังไม่มีผลงานในชุดนี้</p>
-          <p className="text-sm text-muted-foreground mb-4">เพิ่มผลงานที่เผยแพร่แล้วเข้าชุดได้เลย</p>
+          <p className="font-medium text-foreground mb-1">ยังไม่มีผลงานใน Catalog นี้</p>
+          <p className="text-sm text-muted-foreground mb-4">เพิ่มผลงานที่เผยแพร่แล้วเข้า Catalog ได้เลย</p>
           <Button
             onClick={() => onAddProjects?.(series)}
             className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
@@ -391,9 +391,9 @@ export function SeriesWorkspaceDetail({
                     e.preventDefault();
                     e.stopPropagation();
                     await remove.mutateAsync({ seriesId: series.id, projectId: p.id });
-                    toast.success("เอาออกจากชุดแล้ว");
+                    toast.success("เอาออกจาก Catalog แล้ว");
                   }}
-                  aria-label="เอาออกจากชุด"
+                  aria-label="เอาออกจาก Catalog"
                   className={cn(
                     "absolute rounded-full border border-white/15 bg-background/70 p-1.5 shadow-sm backdrop-blur-md transition-opacity hover:bg-destructive hover:text-destructive-foreground md:opacity-0 md:group-hover:opacity-100",
                     isList ? "right-2 top-1/2 -translate-y-1/2" : "top-2 right-2",

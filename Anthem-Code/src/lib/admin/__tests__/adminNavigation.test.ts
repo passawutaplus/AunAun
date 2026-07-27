@@ -27,6 +27,13 @@ describe("adminNavigation launch minimal", () => {
     expect(isAdminLaunchHiddenPath("/admin")).toBe(false);
   });
 
+  it("keeps trust KYC/AML visible when launch minimal", () => {
+    vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "");
+    expect(isAdminLaunchHiddenPath("/admin/kyc")).toBe(false);
+    expect(isAdminLaunchHiddenPath("/admin/aml")).toBe(false);
+    expect(isAdminLaunchHiddenPath("/admin/wallet")).toBe(true);
+  });
+
   it("filters sidebar sections when launch minimal", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "");
     const paths = adminSidebarSections().flatMap((s) => s.items.map((i) => i.to));
@@ -38,6 +45,8 @@ describe("adminNavigation launch minimal", () => {
     expect(paths).toContain("/admin/projects");
     expect(paths).toContain("/admin/chats");
     expect(paths).toContain("/admin/compliance");
+    expect(paths).toContain("/admin/kyc");
+    expect(paths).toContain("/admin/aml");
     expect(paths).toContain("/admin/storage");
   });
 

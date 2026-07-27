@@ -16,6 +16,8 @@ import SupportButton from "@/components/gifting/SupportButton";
 import ReportTrigger from "@/components/report/ReportTrigger";
 import HireDialog from "@/components/HireDialog";
 import OpportunityTypeChips from "@/components/opportunity/OpportunityTypeChips";
+import DisciplineChips from "@/components/profile/DisciplineChips";
+import ProfileSkillChips from "@/components/profile/ProfileSkillChips";
 import CollabDialog from "@/components/CollabDialog";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import UserAvatar from "@/components/UserAvatar";
@@ -30,8 +32,10 @@ import { useMyProjectSeries, usePublicProjectSeries } from "@/hooks/useProjectSe
 import PortfolioGrid from "@/components/profile/PortfolioGrid";
 import { SeriesCard } from "@/components/series/SeriesCard";
 import { ProfileAboutReadOnly } from "@/components/profile/ProfileAboutReadOnly";
+import { ProfileReviewsSection } from "@/components/reviews/ProfileReviewsSection";
 import type { ExperienceItem } from "@/lib/validators";
 import { safeHttpUrl } from "@/lib/safeUrl";
+import { parseSocialLinks } from "@/lib/parseSocialLinks";
 import { highlight } from "@/lib/highlight";
 import { PROJECT_FEED_SELECT, PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
 import { profileReadFrom } from "@/lib/profileAccess";
@@ -147,13 +151,6 @@ const PublicProfilePage = () => {
     [orderedProjects],
   );
 
-  const topCategories = useMemo(() => {
-    const counts = new Map<string, number>();
-    orderedProjects.forEach((p) => {
-      if (p.category) counts.set(p.category, (counts.get(p.category) ?? 0) + 1);
-    });
-    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([c]) => c);
-  }, [orderedProjects]);
   const portfolioProjects = useMemo(
     () =>
       orderedProjects.filter(
@@ -319,8 +316,12 @@ const PublicProfilePage = () => {
           breadcrumbJsonLd(crumbs),
         ]}
       />
-      <div className="sticky top-0 z-20 glass-panel border-x-0 border-t-0 rounded-none">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-2">
+      <div
+        className={cn(
+          "sticky top-0 z-20 border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30",
+          !visitorPreview && "lg:hidden",
+        )}
+      >        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-2">
           <BackButton
             to={visitorPreview ? "/portfolio" : undefined}
             label={visitorPreview ? "กลับแดชบอร์ด" : "ย้อนกลับ"}
@@ -413,12 +414,17 @@ const PublicProfilePage = () => {
                   {highlight(profile.role, q)}
                 </Badge>
               )}
-              <OpportunityTypeChips
-                className="mt-2"
-                status={(profile as { opportunity_status?: string }).opportunity_status}
-                types={(profile as { opportunity_types?: string[] }).opportunity_types}
-                note={(profile as { opportunity_note?: string | null }).opportunity_note}
-              />
+              <div className="mt-2 space-y-2">
+                <DisciplineChips
+                  disciplines={parseSkills(
+                    (profile as { preferred_categories?: unknown }).preferred_categories,
+                  )}
+                />
+                <OpportunityTypeChips
+                  status={(profile as { opportunity_status?: string }).opportunity_status}
+                  types={(profile as { opportunity_types?: string[] }).opportunity_types}
+                />
+              </div>
               {(profile as { open_for_work?: boolean; open_for_work_badge?: string }).open_for_work && (
                 <Badge className="mt-2 ml-1 rounded-full bg-primary/15 text-primary border-0 text-xs font-normal">
                   {(profile as { open_for_work_badge?: string }).open_for_work_badge || "Open for Work"}
@@ -431,23 +437,11 @@ const PublicProfilePage = () => {
               )}
 
               {(profile.skills?.length ?? 0) > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2 sm:mt-3">
-                  {profile.skills!.map((s: string) => (
-                    <span key={s} className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-normal">
-                      {highlight(s, q)}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {topCategories.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {topCategories.map((c) => (
-                    <span key={c} className="text-xs px-2 py-0.5 rounded-full border border-border text-muted-foreground font-normal">
-                      {c}
-                    </span>
-                  ))}
-                </div>
+                <ProfileSkillChips
+                  className="mt-2 sm:mt-3"
+                  skills={profile.skills!}
+                  renderLabel={(s) => highlight(s, q)}
+                />
               )}
 
               <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-3 sm:mt-4 sm:flex sm:flex-wrap sm:gap-3">
@@ -597,12 +591,12 @@ const PublicProfilePage = () => {
               value: "series",
               label: (
                 <>
-                  <span className="sm:hidden">ชุด ({seriesList.length})</span>
-                  <span className="hidden sm:inline">ชุดงาน ({seriesList.length})</span>
+                  Catalog ({seriesList.length})
                 </>
               ),
             },
             { value: "about", label: "เกี่ยวกับ" },
+            { value: "reviews", label: "รีวิว" },
           ]}
         >
           {activeTab === "works" &&
@@ -640,14 +634,14 @@ const PublicProfilePage = () => {
           {activeTab === "series" &&
             (seriesList.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground glass-panel rounded-2xl space-y-3">
-                <p>ยังไม่มีชุดผลงานสาธารณะ</p>
+                <p>ยังไม่มี Catalog สาธารณะ</p>
                 {isSelf && !visitorPreview && (
                   <Button
                     size="sm"
                     className="rounded-full"
                     onClick={() => navigate("/series")}
                   >
-                    สร้างชุดผลงาน
+                    สร้าง Catalog
                   </Button>
                 )}
               </div>
@@ -665,6 +659,7 @@ const PublicProfilePage = () => {
                 profile={{
                   role: profile.role ?? null,
                   location: profile.location ?? null,
+                  profile_address: (profile as { profile_address?: unknown }).profile_address,
                   bio: profile.bio ?? null,
                   email: null,
                   phone: null,
@@ -681,9 +676,18 @@ const PublicProfilePage = () => {
                 opportunityTypes={parseSkills(
                   (profile as { opportunity_types?: unknown }).opportunity_types,
                 )}
+                socialLinks={parseSocialLinks(
+                  (profile as { social_links?: unknown }).social_links,
+                )}
               />
             </div>
           )}
+
+          {activeTab === "reviews" && resolvedUserId ? (
+            <div className="rounded-2xl glass-panel p-5 md:p-6">
+              <ProfileReviewsSection subjectUserId={resolvedUserId} />
+            </div>
+          ) : null}
         </ProfileSectionTabs>
       </div>
 

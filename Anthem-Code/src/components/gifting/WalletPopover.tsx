@@ -3,6 +3,7 @@ import { Coins } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useWallet, useAvailablePurchasedPx } from "@/hooks/useWallet";
 import { computeGiftablePx, computeWalletTotalPx } from "@/lib/walletDisplay";
+import { isAplus1GiftEconomyEnabled } from "@/lib/aplus1Launch";
 import TopUpDialog from "./TopUpDialog";
 
 const WalletPopover = () => {
@@ -11,7 +12,7 @@ const WalletPopover = () => {
   const { data: purchasedAvailable } = useAvailablePurchasedPx();
   const [topUpOpen, setTopUpOpen] = useState(false);
 
-  if (!user) return null;
+  if (!user || !isAplus1GiftEconomyEnabled()) return null;
 
   const totalPx = computeWalletTotalPx(wallet);
   const giftable = computeGiftablePx(wallet, purchasedAvailable);

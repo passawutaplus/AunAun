@@ -18,6 +18,7 @@ import CookieConsent from "./components/CookieConsent.tsx";
 import GoogleAnalytics from "./components/seo/GoogleAnalytics.tsx";
 import PolicyReconsentGate from "./components/legal/PolicyReconsentGate.tsx";
 import FloatingNav from "./components/FloatingNav.tsx";
+import DesktopTopNav from "./components/DesktopTopNav.tsx";
 import RequireAuth from "./components/RequireAuth.tsx";
 import AdminGuard from "./components/admin/AdminGuard.tsx";
 import AuthDialog from "./components/AuthDialog.tsx";
@@ -122,6 +123,8 @@ const CommunityGuidelinesPage = lazy(() => import("./pages/legal/CommunityGuidel
 const CopyrightReportPage = lazy(() => import("./pages/legal/CopyrightReportPage.tsx"));
 const PaymentRefundPage = lazy(() => import("./pages/legal/PaymentRefundPage.tsx"));
 const ServiceAgreementPage = lazy(() => import("./pages/legal/ServiceAgreementPage.tsx"));
+const KycAmlPage = lazy(() => import("./pages/legal/KycAmlPage.tsx"));
+const LegalIndexPage = lazy(() => import("./pages/legal/LegalIndexPage.tsx"));
 const CommunityPostDetailPage = lazy(() => import("./pages/CommunityPostDetailPage.tsx"));
 const CommunityPostEditorPage = lazy(() => import("./pages/CommunityPostEditorPage.tsx"));
 const CommunityFeedPage = lazy(() => import("./pages/CommunityFeedPage.tsx"));
@@ -144,6 +147,17 @@ const EarningsPage = lazy(() => import("./pages/EarningsPage.tsx"));
 const ResearchPage = lazy(() => import("./pages/ResearchPage.tsx"));
 const UxResearchFeedbackPage = lazy(() => import("./pages/UxResearchFeedbackPage.tsx"));
 const AdvertisePage = lazy(() => import("./pages/AdvertisePage.tsx"));
+const LearnShell = lazy(() =>
+  import("./components/learn/LearnShell.tsx").then((m) => ({ default: m.LearnShell })),
+);
+const LearnHubPage = lazy(() => import("./pages/learn/LearnHubPage.tsx"));
+const HelpShell = lazy(() =>
+  import("./components/help/HelpShell.tsx").then((m) => ({ default: m.HelpShell })),
+);
+const HelpHubPage = lazy(() => import("./pages/help/HelpHubPage.tsx"));
+const HelpCategoryPage = lazy(() => import("./pages/help/HelpCategoryPage.tsx"));
+const HelpArticlePage = lazy(() => import("./pages/help/HelpArticlePage.tsx"));
+const HireStartPage = lazy(() => import("./pages/HireStartPage.tsx"));
 const UpgradePage = lazy(() => import("./pages/UpgradePage.tsx"));
 const AdDetailPage = lazy(() => import("./pages/AdDetailPage.tsx"));
 const ContractEditorPage = lazy(() => import("./pages/ContractEditorPage.tsx"));
@@ -152,6 +166,8 @@ const DrillGalleryPage = lazy(() => import("./pages/DrillGalleryPage.tsx"));
 const SavedPostsPage = lazy(() => import("./pages/SavedPostsPage.tsx"));
 const ReferralPage = lazy(() => import("./pages/ReferralPage.tsx"));
 const FollowConnectionsPage = lazy(() => import("./pages/FollowConnectionsPage.tsx"));
+const ReviewFormPreviewPage = lazy(() => import("./pages/dev/ReviewFormPreviewPage.tsx"));
+const HireCancelPreviewPage = lazy(() => import("./pages/dev/HireCancelPreviewPage.tsx"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -179,11 +195,29 @@ const App = () => (
           <DemoModeBanner />
           <AvatarPoolBootstrap />
           <ReferralAttribution />
+          <DesktopTopNav />
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route element={<LaunchMinimalGate />}>
               <Route element={<PageTransition />}>
               <Route path="/" element={<Index />} />
+              <Route path="/learn" element={<LearnShell />}>
+                <Route index element={<LearnHubPage />} />
+              </Route>
+              <Route path="/learn/creators" element={<RedirectTo to="/learn#creators" />} />
+              <Route path="/learn/hirers" element={<RedirectTo to="/learn#hirers" />} />
+              <Route path="/learn/opportunity-loop" element={<RedirectTo to="/learn#opportunity-loop" />} />
+              <Route path="/learn/features" element={<RedirectTo to="/learn#features" />} />
+              <Route path="/learn/trust" element={<RedirectTo to="/learn#trust" />} />
+              <Route path="/learn/px" element={<RedirectTo to="/learn" />} />
+              <Route path="/learn/faq" element={<RedirectTo to="/help" />} />
+              <Route path="/help" element={<HelpShell />}>
+                <Route index element={<HelpHubPage />} />
+                <Route path=":categoryId" element={<HelpCategoryPage />} />
+                <Route path=":categoryId/:slug" element={<HelpArticlePage />} />
+              </Route>
+              <Route path="/dev/review-form" element={<ReviewFormPreviewPage />} />
+              <Route path="/dev/hire-cancel" element={<HireCancelPreviewPage />} />
               <Route path="/research" element={<ResearchPage />} />
               <Route path="/research/feedback" element={<UxResearchFeedbackPage />} />
               <Route path="/auth" element={<AuthPage />} />
@@ -193,10 +227,12 @@ const App = () => (
               <Route path="/portfolio" element={<RequireAuth><PortfolioProfilePage /></RequireAuth>} />
               <Route path="/portfolio/saved" element={<RequireAuth><SavedPostsPage /></RequireAuth>} />
               <Route path="/portfolio/manage" element={<RequireAuth><PortfolioManagePage /></RequireAuth>} />
-              <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
+              <Route path="/dashboard" element={<RequireAuth><DashboardPage mode="hire" /></RequireAuth>} />
+              <Route path="/dashboard/collab" element={<RequireAuth><DashboardPage mode="collab" /></RequireAuth>} />
               <Route path="/portfolio/followers" element={<RequireAuth><FollowConnectionsPage /></RequireAuth>} />
-              <Route path="/hire-requests" element={<RequireAuth><RedirectTo to="/dashboard?mode=hire" /></RequireAuth>} />
-              <Route path="/collab-requests" element={<RequireAuth><RedirectTo to="/dashboard?mode=collab" /></RequireAuth>} />
+              <Route path="/hire/start" element={<RequireAuth><HireStartPage /></RequireAuth>} />
+              <Route path="/hire-requests" element={<RequireAuth><RedirectTo to="/dashboard" /></RequireAuth>} />
+              <Route path="/collab-requests" element={<RequireAuth><RedirectTo to="/dashboard/collab" /></RequireAuth>} />
               <Route path="/portfolio/new" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
               <Route path="/portfolio/:id/edit" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
               <Route path="/project/:id" element={<ProjectDetailPage />} />
@@ -305,7 +341,7 @@ const App = () => (
               <Route path="/studio/new" element={<StudioCreatePage />} />
               <Route path="/studio/invites" element={<StudioInvitesPage />} />
               <Route path="/studio/manage" element={<StudioManagePage />} />
-              <Route path="/legal" element={<RedirectTo to="/legal/terms" />} />
+              <Route path="/legal" element={<LegalIndexPage />} />
               <Route path="/legal/privacy" element={<PrivacyPage />} />
               <Route path="/legal/terms" element={<TermsPage />} />
               <Route path="/legal/cookies" element={<CookiesPage />} />
@@ -315,6 +351,7 @@ const App = () => (
               <Route path="/legal/copyright-report" element={<CopyrightReportPage />} />
               <Route path="/legal/payment-refund" element={<PaymentRefundPage />} />
               <Route path="/legal/service-agreement" element={<ServiceAgreementPage />} />
+              <Route path="/legal/kyc-aml" element={<KycAmlPage />} />
               <Route path="/error" element={<ErrorPage />} />
               <Route path="/error/404" element={<ErrorPage defaultKind="404" />} />
               <Route path="/error/405" element={<ErrorPage defaultKind="405" />} />

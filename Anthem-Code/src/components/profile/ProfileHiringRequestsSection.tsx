@@ -12,6 +12,7 @@ import {
   Share2,
   Trash2,
   X,
+  Star,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  WorkReviewDialog,
+  type WorkReviewDialogTarget,
+} from "@/components/reviews/WorkReviewDialog";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useCompleteHireRequest,
@@ -134,6 +139,7 @@ export function ProfileHiringRequestsSection({
   const [rejectTarget, setRejectTarget] = useState<HiringRow | null>(null);
   const [hideTarget, setHideTarget] = useState<HiringRow | null>(null);
   const [completeTarget, setCompleteTarget] = useState<HiringRow | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<WorkReviewDialogTarget | null>(null);
   const [hiddenTick, setHiddenTick] = useState(0);
 
   const hiddenIds = useMemo(() => {
@@ -274,13 +280,34 @@ export function ProfileHiringRequestsSection({
     sendMessage.isPending ||
     completeHire.isPending;
 
+  const openHireReview = (req: HiringRow) => {
+    if (!user?.id || !req.client_id) return;
+    const subjectIsClient = user.id === req.freelancer_id;
+    const subjectUserId = subjectIsClient ? req.client_id : req.freelancer_id;
+    if (!subjectUserId) return;
+    const linkedId =
+      (req as { linked_project_id?: string | null }).linked_project_id ?? null;
+    setReviewTarget({
+      kind: "hire",
+      subjectUserId,
+      subjectName: subjectIsClient
+        ? (req.client_name ?? "ลูกค้า")
+        : "ครีเอเตอร์",
+      hireRequestId: req.id,
+      projectId: req.project_id ?? linkedId ?? null,
+      contextLabel: req.project_title ?? null,
+    });
+  };
+
   const confirmCompleteHire = async () => {
     if (!completeTarget) return;
+    const done = completeTarget;
     try {
-      await completeHire.mutateAsync(completeTarget.id);
+      await completeHire.mutateAsync(done.id);
       toast.success("บันทึกจบงานแล้ว");
       setCompleteTarget(null);
       setHiringTab(HIRE_TAB_COMPLETED);
+      openHireReview(done);
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "บันทึกจบงานไม่สำเร็จ");
     }
@@ -357,6 +384,7 @@ export function ProfileHiringRequestsSection({
           const isCancelled = isHireCancelledStatus(req.status);
           const canHide = canHideHireFromInbox(req.status);
           const canComplete = !forwarded && canCompleteHireStatus(req.status);
+          const completed = !forwarded && isHireCompletedStatus(req.status);
           const canQuote =
             isAplus1ChatOffersEnabled() &&
             !forwarded &&
@@ -538,6 +566,16 @@ export function ProfileHiringRequestsSection({
                         </Button>
                       </>
                     )}
+                    {completed && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openHireReview(req)}
+                        className="rounded-full h-8 text-xs gap-1"
+                      >
+                        <Star className="w-3.5 h-3.5" /> เขียนรีวิว
+                      </Button>
+                    )}
                     {forwarded ? (
                       <Button
                         size="sm"
@@ -590,7 +628,7 @@ export function ProfileHiringRequestsSection({
               <span className="font-medium text-foreground">
                 {completeTarget?.client_name ?? "ลูกค้า"}
               </span>{" "}
-              จะย้ายไปแท็บจบงาน
+              จะย้ายไปแท็บจบงาน แล้วให้รีวิวได้
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -610,6 +648,14 @@ export function ProfileHiringRequestsSection({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <WorkReviewDialog
+        open={!!reviewTarget}
+        onOpenChange={(open) => {
+          if (!open) setReviewTarget(null);
+        }}
+        target={reviewTarget}
+      />
 
       <HireRejectDialog
         open={!!rejectTarget}

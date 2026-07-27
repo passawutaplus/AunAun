@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "react";
 import {
   ExternalLink,
   Plus,
@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import ProjectAssetScanBadge from "@/components/project/ProjectAssetScanBadge";
 import {
   PROJECT_ASSETS_MAX,
@@ -42,16 +41,75 @@ type Props = {
   tier?: Tier;
 };
 
+export type ProjectAssetsEditorHandle = {
+  /** Commit typed-but-not-added link into assets before save/publish. */
+  commitPending: () => {
+    assets: ProjectAsset[];
+    added: boolean;
+    error?: string;
+  };
+};
+
 const ACCEPT = Array.from(PROJECT_ASSET_ALLOWED_EXTENSIONS)
   .map((e) => `.${e}`)
   .join(",");
 
-const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier = "free" }: Props) => {
+function tryBuildLinkAsset(
+  labelRaw: string,
+  urlRaw: string,
+  existing: ProjectAsset[],
+): { asset?: ProjectAsset; error?: string } {
+  const trimmedUrl = urlRaw.trim();
+  const trimmedLabel = labelRaw.trim();
+  if (!trimmedUrl) return {};
+
+  const safe = safeHttpUrl(trimmedUrl.startsWith("http") ? trimmedUrl : `https://${trimmedUrl}`);
+  if (!safe) {
+    return { error: "รองรับเฉพาะลิงก์ http/https" };
+  }
+  if (existing.length >= PROJECT_ASSETS_MAX) {
+    return { error: `เพิ่มได้ไม่เกิน ${PROJECT_ASSETS_MAX} รายการ` };
+  }
+
+  const safety = evaluateExternalLinkUrl(safe);
+  if (safety.scan_status === "blocked") {
+    return { error: safety.scan_reason ?? "ลิงก์ไม่ผ่านการตรวจสอบความปลอดภัย" };
+  }
+
+  let hostname = safe;
+  try {
+    hostname = new URL(safe).hostname;
+  } catch {
+    /* keep safe */
+  }
+
+  const draft = createProjectLinkAsset(trimmedLabel || hostname, safe);
+  const scanned = applyScanResult(draft, evaluateProjectAssetOnAdd(draft));
+  if (scanned.scan_status === "blocked") {
+    return { error: scanned.scan_reason ?? "ลิงก์ไม่ผ่านการตรวจสอบความปลอดภัย" };
+  }
+
+  const dup = existing.some(
+    (a) => a.kind === "link" && (a.url ?? "").replace(/\/$/, "") === safe.replace(/\/$/, ""),
+  );
+  if (dup) {
+    return { error: "ลิงก์นี้ถูกเพิ่มแล้ว" };
+  }
+
+  return { asset: scanned };
+}
+
+const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(function ProjectAssetsEditor(
+  { assets, onChange, userId, folder, projectId, tier = "free" },
+  ref,
+) {
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
   const [fileLabel, setFileLabel] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const draftRef = useRef({ label: "", url: "" });
+  draftRef.current = { label, url };
 
   const atLimit = assets.length >= PROJECT_ASSETS_MAX;
 
@@ -63,47 +121,43 @@ const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier
     if (result.scan_status === "blocked") {
       return { tone: "error" as const, message: result.scan_reason ?? "ลิงก์ไม่ปลอดภัย" };
     }
-    return { tone: "ok" as const, message: "ลิงก์ผ่านการตรวจสอบเบื้องต้น" };
+    return { tone: "ok" as const, message: "ลิงก์ผ่านการตรวจสอบเบื้องต้น — กดเพิ่มลิงก์ก่อนบันทึก" };
   }, [url]);
 
+  useImperativeHandle(ref, () => ({
+    commitPending: () => {
+      const { label: draftLabel, url: draftUrl } = draftRef.current;
+      if (!draftUrl.trim()) {
+        return { assets, added: false };
+      }
+      const built = tryBuildLinkAsset(draftLabel, draftUrl, assets);
+      if (built.error) {
+        return { assets, added: false, error: built.error };
+      }
+      if (!built.asset) {
+        return { assets, added: false };
+      }
+      const next = [...assets, built.asset];
+      onChange(next);
+      setLabel("");
+      setUrl("");
+      return { assets: next, added: true };
+    },
+  }));
+
   const addLink = () => {
-    const trimmedUrl = url.trim();
-    const trimmedLabel = label.trim();
-    if (!trimmedUrl) {
+    const built = tryBuildLinkAsset(label, url, assets);
+    if (!url.trim()) {
       toast.error("กรุณาใส่ URL");
       return;
     }
-    const safe = safeHttpUrl(trimmedUrl.startsWith("http") ? trimmedUrl : `https://${trimmedUrl}`);
-    if (!safe) {
-      toast.error("รองรับเฉพาะลิงก์ http/https");
+    if (built.error) {
+      toast.error(built.error);
       return;
     }
-    if (atLimit) {
-      toast.error(`เพิ่มได้ไม่เกิน ${PROJECT_ASSETS_MAX} รายการ`);
-      return;
-    }
+    if (!built.asset) return;
 
-    const safety = evaluateExternalLinkUrl(safe);
-    if (safety.scan_status === "blocked") {
-      toast.error(safety.scan_reason ?? "ลิงก์ไม่ผ่านการตรวจสอบความปลอดภัย");
-      return;
-    }
-
-    let hostname = safe;
-    try {
-      hostname = new URL(safe).hostname;
-    } catch {
-      /* keep safe */
-    }
-
-    const draft = createProjectLinkAsset(trimmedLabel || hostname, safe);
-    const scanned = applyScanResult(draft, evaluateProjectAssetOnAdd(draft));
-    if (scanned.scan_status === "blocked") {
-      toast.error(scanned.scan_reason ?? "ลิงก์ไม่ผ่านการตรวจสอบความปลอดภัย");
-      return;
-    }
-
-    onChange([...assets, scanned]);
+    onChange([...assets, built.asset]);
     setLabel("");
     setUrl("");
     toast.success("เพิ่มลิงก์แล้ว — ผ่านการตรวจสอบความปลอดภัย");
@@ -144,11 +198,13 @@ const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
-      <Label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
-        <Paperclip className="w-3.5 h-3.5" />
-        ไฟล์แนบ / ลิงก์
-      </Label>
+    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+      <div>
+        <p className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
+          <Paperclip className="w-3.5 h-3.5" />
+          ไฟล์แนบ / ลิงก์
+        </p>
+      </div>
 
       {assets.length > 0 && (
         <ul className="space-y-2">
@@ -161,7 +217,7 @@ const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier
                 className={cn(
                   "flex items-start gap-2 rounded-xl border px-3 py-2",
                   asset.scan_status === "blocked"
-                    ? "border-destructive/30 bg-destructive/5"
+                    ? "border-destructive/40 bg-destructive/5"
                     : "border-border/60 bg-muted/20",
                 )}
               >
@@ -176,14 +232,10 @@ const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier
                     <ProjectAssetScanBadge status={asset.scan_status} variant="owner" />
                   </div>
                   <p className="text-[10px] text-muted-foreground truncate">
-                    {asset.kind === "file"
-                      ? asset.file_name ?? "ไฟล์แนบ"
-                      : asset.url}
+                    {asset.kind === "file" ? asset.file_name ?? "ไฟล์แนบ" : asset.url}
                   </p>
                   {asset.scan_reason && asset.scan_status !== "clean" && (
-                    <p className="text-[10px] text-muted-foreground leading-relaxed">
-                      {asset.scan_reason}
-                    </p>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">{asset.scan_reason}</p>
                   )}
                   {canOpen && asset.kind === "link" && (href || projectId) && (
                     <button
@@ -273,7 +325,7 @@ const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier
                 addLink();
               }
             }}
-            placeholder="https://..."
+            placeholder="https://... (เช่น TikTok, Figma)"
             disabled={atLimit}
             className={cn(
               "min-w-0",
@@ -285,13 +337,14 @@ const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier
           />
           <Button
             type="button"
-            size="icon"
             variant="outline"
+            className="shrink-0 rounded-xl px-3"
             disabled={!url.trim() || atLimit || linkUrlFeedback?.tone === "error"}
             onClick={addLink}
             aria-label="เพิ่มลิงก์"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 mr-1" />
+            เพิ่ม
           </Button>
         </div>
         {linkUrlFeedback && (
@@ -352,6 +405,6 @@ const ProjectAssetsEditor = ({ assets, onChange, userId, folder, projectId, tier
       </p>
     </div>
   );
-};
+});
 
 export default ProjectAssetsEditor;

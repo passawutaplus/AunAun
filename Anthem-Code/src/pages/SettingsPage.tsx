@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { User, Save, LogOut, Shield, CheckCircle2, Loader2, Briefcase, MapPin, AlertTriangle } from "lucide-react";
+import { User, Save, LogOut, Shield, CheckCircle2, Loader2, Briefcase, AlertTriangle } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -9,11 +9,20 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
 import { profileSchema, experienceItemSchema } from "@/lib/validators";
 import type { ExperienceItem } from "@/lib/validators";
+import { parseSocialLinks } from "@/lib/parseSocialLinks";
 import ExperienceEditor from "@/components/profile/ExperienceEditor";
 import SkillsEditor from "@/components/profile/SkillsEditor";
 import WorkDisciplineEditor from "@/components/profile/WorkDisciplineEditor";
 import ContactEditor from "@/components/profile/ContactEditor";
+import ProfileLinksEditor from "@/components/profile/ProfileLinksEditor";
+import ProfileAddressEditor from "@/components/profile/ProfileAddressEditor";
 import { ChipMultiSelectWithOther } from "@/components/ui/ChipMultiSelectWithOther";
+import {
+  EMPTY_PROFILE_ADDRESS,
+  formatProfileAddressShort,
+  parseProfileAddress,
+  profileAddressToJson,
+} from "@/lib/profileAddress";
 import {
   OPPORTUNITY_TYPE_KEYS,
   labelOpportunityType,
@@ -30,6 +39,7 @@ import { ChangePasswordSection } from "@/components/settings/ChangePasswordSecti
 import { EmailNotificationSection } from "@/components/settings/EmailNotificationSection";
 import { ChatSettingsSection } from "@/components/settings/ChatSettingsSection";
 import { BillingProfileSection } from "@/components/settings/BillingProfileSection";
+import SettingsSideNav, { type SettingsNavItem } from "@/components/settings/SettingsSideNav";
 import { cn } from "@/lib/utils";
 import { useUsernameAvailability, normalizeUsername } from "@/hooks/useUsernameAvailability";
 import { USERNAME_COOLDOWN_DAYS, USERNAME_COOLDOWN_MS } from "@/lib/usernamePolicy";
@@ -44,18 +54,37 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+const SETTINGS_NAV: SettingsNavItem[] = [
+  { id: "settings-basic", label: "ข้อมูลพื้นฐาน" },
+  { id: "settings-address", label: "ที่อยู่" },
+  { id: "settings-bio", label: "แนะนำตัว" },
+  { id: "settings-disciplines", label: "สายงาน" },
+  { id: "settings-opportunity", label: "กำลังมองหา" },
+  { id: "settings-experience", label: "ประสบการณ์" },
+  { id: "settings-skills", label: "ความชำนาญ" },
+  { id: "settings-contact", label: "ข้อมูลติดต่อ" },
+  { id: "settings-links", label: "ลิงก์โซเชียล" },
+  { id: "billing-profile", label: "เอกสาร / ภาษี" },
+  { id: "settings-email", label: "แจ้งเตือนอีเมล" },
+  { id: "settings-chat", label: "แชท" },
+  { id: "settings-preferences", label: "การตั้งค่าเพิ่มเติม" },
+  { id: "settings-password", label: "รหัสผ่าน" },
+  { id: "settings-account", label: "บัญชี" },
+];
 const settingsFormSchema = profileSchema.pick({
   displayName: true,
   username: true,
   bio: true,
   role: true,
   location: true,
+  profileAddress: true,
   email: true,
   phone: true,
   website: true,
   lineId: true,
   facebook: true,
   instagram: true,
+  socialLinks: true,
   skills: true,
   experience: true,
   preferredCategories: true,
@@ -79,12 +108,14 @@ const empty: SettingsFormInput = {
   bio: "",
   role: "",
   location: "",
+  profileAddress: { ...EMPTY_PROFILE_ADDRESS },
   email: "",
   phone: "",
   website: "",
   lineId: "",
   facebook: "",
   instagram: "",
+  socialLinks: [],
   skills: [],
   experience: [],
   preferredCategories: [],
@@ -172,12 +203,19 @@ const SettingsPage = () => {
   }, [authLoading, user, navigate]);
 
   useEffect(() => {
-    if (window.location.hash !== "#profile-about") return;
+    const raw = window.location.hash.replace(/^#/, "");
+    const id =
+      raw === "profile-about" || raw === "settings-basic"
+        ? "settings-basic"
+        : SETTINGS_NAV.some((n) => n.id === raw)
+          ? raw
+          : null;
+    if (!id) return;
     const timer = window.setTimeout(() => {
-      document.getElementById("profile-about")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 150);
     return () => window.clearTimeout(timer);
-  }, [profile]);
+  }, [profile, isAdmin]);
 
   useEffect(() => {
     if (profile) {
@@ -187,12 +225,16 @@ const SettingsPage = () => {
         bio: profile.bio ?? "",
         role: profile.role ?? "",
         location: profile.location ?? "",
+        profileAddress: parseProfileAddress(
+          (profile as { profile_address?: unknown }).profile_address,
+        ),
         email: profile.email ?? user?.email ?? "",
         phone: profile.phone ?? "",
         website: profile.website ?? "",
         lineId: profile.line_id ?? "",
         facebook: profile.facebook ?? "",
         instagram: profile.instagram ?? "",
+        socialLinks: parseSocialLinks((profile as { social_links?: unknown }).social_links),
         skills: parseSkills(profile.skills),
         experience: parseExperience(profile.experience),
         preferredCategories: parseSkills(
@@ -243,7 +285,13 @@ const SettingsPage = () => {
         return;
       }
     }
-    const payload = { ...form, experience: cleanedExperience };
+    const address = profileAddressToJson(form.profileAddress);
+    const payload = {
+      ...form,
+      experience: cleanedExperience,
+      profileAddress: address,
+      location: formatProfileAddressShort(address) || form.location.trim(),
+    };
     const parsed = settingsFormSchema.safeParse(payload);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
@@ -280,28 +328,56 @@ const SettingsPage = () => {
     );
   }
 
+  const navItems = useMemo(() => {
+    if (isAdmin) {
+      return [
+        ...SETTINGS_NAV.slice(0, -1),
+        { id: "settings-admin", label: "ผู้ดูแลระบบ" },
+        SETTINGS_NAV[SETTINGS_NAV.length - 1]!,
+      ];
+    }
+    return SETTINGS_NAV;
+  }, [isAdmin]);
+
   return (
     <div className="min-h-screen bg-app-ambient">
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <BackButton />
+      <div className="sticky top-0 z-20 lg:hidden border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+          <BackButton fallbackTo="/portfolio" label="ย้อนกลับ" />
           <span className="text-sm font-medium text-foreground">ตั้งค่าบัญชี</span>
           <span className="w-12" />
         </div>
       </div>
 
       <div className="bg-gradient-to-b from-primary/10 via-background to-background">
-        <div className="max-w-3xl mx-auto px-4 pt-8 pb-6">
-          <h1 className="text-3xl md:text-4xl font-medium text-foreground">
-            ตั้งค่า<span className="text-primary">โปรไฟล์</span>ของคุณ
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">ปรับแต่งข้อมูลที่จะแสดงบนหน้าผลงานและคำขอจ้างงาน</p>
+        <div className="max-w-5xl mx-auto px-4 pt-8 pb-6">
+          <div className="flex items-start gap-3">
+            <BackButton
+              fallbackTo="/portfolio"
+              label="ย้อนกลับ"
+              className="hidden lg:inline-flex mt-1.5"
+            />
+            <div className="min-w-0">
+              <h1 className="text-3xl md:text-4xl font-medium text-foreground">
+                ตั้งค่า<span className="text-primary">โปรไฟล์</span>ของคุณ
+              </h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                ปรับแต่งข้อมูลที่จะแสดงบนหน้าผลงานและคำขอจ้างงาน
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <form onSubmit={handleSave} className="max-w-3xl mx-auto px-4 pb-24 space-y-6">
-        <section id="profile-about" className="rounded-2xl glass-panel p-6 space-y-5 scroll-mt-24">
-          <SectionTitle icon={User} title="ข้อมูลส่วนตัว" />
+      <form
+        onSubmit={handleSave}
+        className="max-w-5xl mx-auto px-4 pb-24 grid grid-cols-1 lg:grid-cols-[13rem_1fr] xl:grid-cols-[14rem_1fr] gap-6 lg:gap-8"
+      >
+        <SettingsSideNav items={navItems} />
+
+        <div className="min-w-0 space-y-6">
+        <section id="settings-basic" className="rounded-2xl glass-panel p-6 space-y-5 scroll-mt-24">
+          <SectionTitle icon={User} title="ข้อมูลพื้นฐาน" />
           <Field
             label="ชื่อที่แสดง"
             value={form.displayName}
@@ -410,79 +486,92 @@ const SettingsPage = () => {
             placeholder="เช่น Graphic Designer, UX/UI"
             id="settings-role"
           />
-          <Field
-            label="เมือง / ที่อยู่"
-            value={form.location}
-            onChange={(v) => update("location", v)}
-            icon={MapPin}
-            placeholder="กรุงเทพฯ, ประเทศไทย"
-            id="settings-location"
+        </section>
+
+        <section id="settings-address" className="rounded-2xl glass-panel p-6 space-y-5 scroll-mt-24">
+          <ProfileAddressEditor
+            value={form.profileAddress}
+            onChange={(profileAddress) => update("profileAddress", profileAddress)}
+            idPrefix="settings-address"
           />
-          <div>
-            <label htmlFor="settings-bio" className="text-sm font-medium text-foreground">แนะนำตัว</label>
-            <textarea
-              id="settings-bio"
-              value={form.bio ?? ""}
-              onChange={(e) => update("bio", e.target.value)}
-              rows={4}
-              maxLength={500}
-              className="mt-1 w-full px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">{(form.bio ?? "").length}/500 ตัวอักษร</p>
-          </div>
+        </section>
 
-          <div className="border-t border-border/60 pt-5 space-y-3">
-            <h3 className="text-sm font-medium text-foreground">กำลังมองหา</h3>
-            <p className="text-xs text-muted-foreground -mt-1">เลือกอย่างน้อย 1 — แสดงบนโปรไฟล์และแชท</p>
-            <ChipMultiSelectWithOther
-              options={OPPORTUNITY_TYPE_KEYS.map((id) => ({
-                id,
-                label: labelOpportunityType(id),
-              }))}
-              selected={form.opportunityTypes}
-              onChange={(opportunityTypes) => update("opportunityTypes", opportunityTypes)}
-              knownIds={OPPORTUNITY_TYPE_KEYS}
-              otherPlaceholder="พิมพ์สิ่งที่มองหาแล้วกด Enter"
-            />
-          </div>
+        <section id="settings-bio" className="rounded-2xl glass-panel p-6 space-y-3 scroll-mt-24">
+          <SectionTitle icon={User} title="แนะนำตัว" />
+          <textarea
+            id="settings-bio"
+            value={form.bio ?? ""}
+            onChange={(e) => update("bio", e.target.value)}
+            rows={4}
+            maxLength={500}
+            className="w-full px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+            placeholder="เล่าสั้น ๆ เกี่ยวกับตัวคุณและงานที่ทำ"
+          />
+          <p className="text-xs text-muted-foreground text-right">{(form.bio ?? "").length}/500 ตัวอักษร</p>
+        </section>
 
-          <div className="border-t border-border/60 pt-5 space-y-3">
-            <h3 className="text-sm font-medium text-foreground">สายงาน</h3>
-            <p className="text-xs text-muted-foreground -mt-1">หมวดงานที่คุณทำ — แสดงบนโปรไฟล์และแชท</p>
-            <WorkDisciplineEditor
-              value={form.preferredCategories}
-              onChange={(preferredCategories) => update("preferredCategories", preferredCategories)}
-            />
-          </div>
+        <section id="settings-disciplines" className="rounded-2xl glass-panel p-6 space-y-3 scroll-mt-24">
+          <h2 className="font-semibold text-foreground">สายงาน</h2>
+          <p className="text-xs text-muted-foreground -mt-1">หมวดงานที่คุณทำ — แสดงบนโปรไฟล์และแชท</p>
+          <WorkDisciplineEditor
+            value={form.preferredCategories}
+            onChange={(preferredCategories) => update("preferredCategories", preferredCategories)}
+          />
+        </section>
 
-          <div className="border-t border-border/60 pt-5 space-y-4">
-            <h3 className="text-sm font-medium text-foreground">ประสบการณ์ทำงาน</h3>
-            <ExperienceEditor
-              value={form.experience}
-              onChange={(experience) => update("experience", experience)}
-            />
-          </div>
+        <section id="settings-opportunity" className="rounded-2xl glass-panel p-6 space-y-3 scroll-mt-24">
+          <h2 className="font-semibold text-foreground">กำลังมองหา</h2>
+          <p className="text-xs text-muted-foreground -mt-1">เลือกอย่างน้อย 1 — แสดงบนโปรไฟล์และแชท</p>
+          <ChipMultiSelectWithOther
+            options={OPPORTUNITY_TYPE_KEYS.map((id) => ({
+              id,
+              label: labelOpportunityType(id),
+            }))}
+            selected={form.opportunityTypes}
+            onChange={(opportunityTypes) => update("opportunityTypes", opportunityTypes)}
+            knownIds={OPPORTUNITY_TYPE_KEYS}
+            otherPlaceholder="พิมพ์สิ่งที่มองหาแล้วกด Enter"
+          />
+        </section>
 
-          <div className="border-t border-border/60 pt-5 space-y-3">
-            <h3 className="text-sm font-medium text-foreground">ความชำนาญ</h3>
-            <p className="text-xs text-muted-foreground -mt-1">เครื่องมือและสไตล์ที่ถนัด</p>
-            <SkillsEditor value={form.skills} onChange={(skills) => update("skills", skills)} />
-          </div>
+        <section id="settings-experience" className="rounded-2xl glass-panel p-6 space-y-4 scroll-mt-24">
+          <h2 className="font-semibold text-foreground">ประสบการณ์ทำงาน</h2>
+          <ExperienceEditor
+            value={form.experience}
+            onChange={(experience) => update("experience", experience)}
+          />
+        </section>
 
-          <div className="border-t border-border/60 pt-5 space-y-3">
-            <h3 className="text-sm font-medium text-foreground">ข้อมูลติดต่อ</h3>
-            <ContactEditor
-              value={{
-                email: form.email,
-                phone: form.phone,
-                website: form.website,
-                lineId: form.lineId,
-                facebook: form.facebook,
-                instagram: form.instagram,
-              }}
-              onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
-            />
-          </div>
+        <section id="settings-skills" className="rounded-2xl glass-panel p-6 space-y-3 scroll-mt-24">
+          <h2 className="font-semibold text-foreground">ความชำนาญ</h2>
+          <p className="text-xs text-muted-foreground -mt-1">เครื่องมือและสไตล์ที่ถนัด</p>
+          <SkillsEditor value={form.skills} onChange={(skills) => update("skills", skills)} />
+        </section>
+
+        <section id="settings-contact" className="rounded-2xl glass-panel p-6 space-y-3 scroll-mt-24">
+          <h2 className="font-semibold text-foreground">ข้อมูลติดต่อ</h2>
+          <ContactEditor
+            value={{
+              email: form.email,
+              phone: form.phone,
+              website: form.website,
+              lineId: form.lineId,
+              facebook: form.facebook,
+              instagram: form.instagram,
+            }}
+            onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+          />
+        </section>
+
+        <section id="settings-links" className="rounded-2xl glass-panel p-6 space-y-3 scroll-mt-24">
+          <h2 className="font-semibold text-foreground">ลิงก์โซเชียล / ติดต่อ</h2>
+          <p className="text-xs text-muted-foreground -mt-1">
+            Facebook · Instagram · X · TikTok · Lemon8 และช่องทางติดต่ออื่น
+          </p>
+          <ProfileLinksEditor
+            value={form.socialLinks}
+            onChange={(socialLinks) => update("socialLinks", socialLinks)}
+          />
         </section>
 
         {user?.id ? (
@@ -495,16 +584,20 @@ const SettingsPage = () => {
           />
         ) : null}
 
-        <EmailNotificationSection
-          value={{
-            notifyEmail: form.notifyEmail,
-            notifyHire: form.notifyHire,
-            notifyCollab: form.notifyCollab,
-          }}
-          onChange={update}
-        />
+        <div id="settings-email" className="scroll-mt-24">
+          <EmailNotificationSection
+            value={{
+              notifyEmail: form.notifyEmail,
+              notifyHire: form.notifyHire,
+              notifyCollab: form.notifyCollab,
+            }}
+            onChange={update}
+          />
+        </div>
 
         <div
+          id="settings-chat"
+          className="scroll-mt-24"
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") {
               e.preventDefault();
@@ -514,12 +607,16 @@ const SettingsPage = () => {
           <ChatSettingsSection />
         </div>
 
-        <SettingsPreferencesSection />
+        <div id="settings-preferences" className="scroll-mt-24">
+          <SettingsPreferencesSection />
+        </div>
 
-        {user && <ChangePasswordSection user={user} />}
+        <div id="settings-password" className="scroll-mt-24">
+          {user && <ChangePasswordSection user={user} />}
+        </div>
 
         {isAdmin && (
-          <section className="rounded-2xl glass-panel p-6 space-y-3">
+          <section id="settings-admin" className="rounded-2xl glass-panel p-6 space-y-3 scroll-mt-24">
             <SectionTitle icon={Shield} title="ผู้ดูแลระบบ" />
             <p className="text-xs text-muted-foreground">เข้าถึงเครื่องมือมอนิเตอร์และจัดการทั้งระบบ</p>
             <button
@@ -532,7 +629,7 @@ const SettingsPage = () => {
           </section>
         )}
 
-        <section className="rounded-2xl glass-panel p-6 space-y-4">
+        <section id="settings-account" className="rounded-2xl glass-panel p-6 space-y-4 scroll-mt-24">
           <SectionTitle icon={LogOut} title="บัญชี" />
           <button
             type="button"
@@ -543,12 +640,12 @@ const SettingsPage = () => {
           </button>
         </section>
 
-
         <div className="sticky bottom-4 flex justify-end">
           <Button type="submit" size="lg" disabled={updateMut.isPending || !canSave}
             className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-lg px-8">
             <Save className="w-4 h-4 mr-1" /> {updateMut.isPending ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
           </Button>
+        </div>
         </div>
       </form>
 

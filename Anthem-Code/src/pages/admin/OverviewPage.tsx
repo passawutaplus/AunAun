@@ -277,11 +277,11 @@ export default function OverviewPage() {
         </div>
       ) : null}
 
-      {alerts && (alerts.urgentReports > 0 || (!launchMinimal && alerts.highRiskKyc > 0)) ? (
+      {alerts && (alerts.urgentReports > 0 || alerts.highRiskKyc > 0) ? (
         <p className="mt-3 text-xs text-admin-muted">
           AI triage:{" "}
           {alerts.urgentReports > 0 ? `รายงานด่วน ${alerts.urgentReports} ` : ""}
-          {!launchMinimal && alerts.highRiskKyc > 0 ? `KYC ความเสี่ยงสูง ${alerts.highRiskKyc}` : ""}
+          {alerts.highRiskKyc > 0 ? `KYC ความเสี่ยงสูง ${alerts.highRiskKyc}` : ""}
         </p>
       ) : null}
 

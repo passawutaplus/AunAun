@@ -31,7 +31,7 @@ import {
   Trash2,
   Type,
 } from "lucide-react";
-import { isAllowedPortfolioImage } from "@/lib/normalizeImageUpload";
+import { isAllowedPortfolioImage, isAllowedPortfolioStillImage, PORTFOLIO_IMAGE_ACCEPT, PORTFOLIO_STILL_IMAGE_ACCEPT } from "@/lib/normalizeImageUpload";
 import { ProjectRichTextField } from "@/components/project/ProjectRichTextField";
 import { CANVAS_TOOL_MIME, readCanvasToolDragData, type CanvasToolPayload } from "@/lib/canvasToolDrag";
 import {
@@ -309,14 +309,14 @@ function ModuleVideoWithReplace({
         <input
           ref={posterInputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+          accept={PORTFOLIO_STILL_IMAGE_ACCEPT}
           className="sr-only"
           disabled={disabled || uploading}
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) {
-              if (!isAllowedPortfolioImage(file)) {
-                toast.error("รองรับเฉพาะ JPG, PNG, WebP, HEIC");
+              if (!isAllowedPortfolioStillImage(file)) {
+                toast.error("รองรับเฉพาะ JPG, PNG");
               } else {
                 onSetPoster(file);
               }
@@ -395,6 +395,9 @@ function EmptyVideoTile({
         <>
           <Film className="h-8 w-8 text-muted-foreground/50" />
           <span className="text-xs font-medium text-muted-foreground/80">+Upload</span>
+          <span className="px-2 text-center text-[10px] leading-snug text-muted-foreground/65">
+            MP4, MOV, WebM · สูงสุด 50MB
+          </span>
           <span className="text-[10px] text-muted-foreground/60">ลากวิดีโอมาวางได้</span>
         </>
       )}
@@ -440,13 +443,17 @@ function EmptyImageTile({
   const takeImageFiles = (list: FileList | File[] | null | undefined): File[] => {
     if (!list) return [];
     return Array.from(list)
-      .filter((f) => /^image\/(jpeg|png|webp)$/i.test(f.type))
+      .filter((f) => isAllowedPortfolioImage(f))
       .slice(0, limit);
   };
 
   const handleFiles = (list: FileList | File[] | null | undefined) => {
+    if (!list || list.length === 0) return;
     const files = takeImageFiles(list);
-    if (!files.length) return;
+    if (!files.length) {
+      toast.error("รองรับเฉพาะ JPG, PNG, GIF");
+      return;
+    }
     if (allowMany) onPickMany?.(files);
     else onPick(files[0]!);
   };
@@ -509,12 +516,18 @@ function EmptyImageTile({
         <>
           <ImageIcon className="h-8 w-8 text-muted-foreground/50" strokeWidth={1.25} />
           <span className="text-xs font-medium text-muted-foreground/80">+Upload</span>
+          <span className="px-2 text-center text-[10px] leading-snug text-muted-foreground/65">
+            JPG, PNG, GIF
+          </span>
+          <span className="px-2 text-center text-[10px] leading-snug text-muted-foreground/65">
+            สูงสุด 30MB
+          </span>
         </>
       )}
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept={PORTFOLIO_IMAGE_ACCEPT}
         multiple={allowMany}
         className="sr-only"
         disabled={disabled || uploading}

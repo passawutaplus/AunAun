@@ -83,8 +83,8 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
   ) : (
     <button
       onClick={handleTriggerClick}
-      aria-label="เก็บเข้าคอลเลกชัน"
-      title="เก็บเข้าคอลเลกชัน"
+      aria-label="Keep Collection"
+      title="Keep Collection"
       className={cn(
         "p-2 rounded-md hover:bg-accent transition-colors",
         triggerClassName,
@@ -105,7 +105,7 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
           onClick={(e) => e.stopPropagation()}
         >
           <div className="px-3 py-2.5 border-b border-border/60 flex items-center justify-between">
-            <p className="text-sm font-semibold">เก็บเข้าคอลเลกชัน</p>
+            <p className="text-sm font-semibold">Keep Collection</p>
             <Layers3 className="w-4 h-4 text-primary" />
           </div>
 

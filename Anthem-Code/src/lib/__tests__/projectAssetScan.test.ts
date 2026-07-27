@@ -22,6 +22,14 @@ describe("projectAssetScan", () => {
     expect(result.scan_reason).toMatch(/ลิงก์ย่อ/);
   });
 
+  it("allows TikTok and Figma portfolio links", () => {
+    expect(evaluateExternalLinkUrl("https://www.tiktok.com/@user/video/123").scan_status).toBe(
+      "clean",
+    );
+    expect(evaluateExternalLinkUrl("https://vm.tiktok.com/ZMabc123/").scan_status).toBe("clean");
+    expect(evaluateExternalLinkUrl("https://www.figma.com/file/abc").scan_status).toBe("clean");
+  });
+
   it("blocks localhost and private IPs", () => {
     expect(evaluateExternalLinkUrl("http://localhost/x").scan_status).toBe("blocked");
     expect(evaluateExternalLinkUrl("http://127.0.0.1/x").scan_status).toBe("blocked");

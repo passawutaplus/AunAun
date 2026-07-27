@@ -40,9 +40,26 @@ Legacy SQL อ้างอิง: `scripts/ecosystem/stripe-payments.sql` (เ�
 
 ## KYC
 
-- `/verify` → `kyc_requests`  
-- Admin `/admin/kyc` → `profiles.is_verified`  
-- **Cashout / THB payout ต้อง verify**
+มาตรฐานปัจจุบัน (manual review + CDD light):
+
+| ข้อกำหนด | สถานะ |
+|----------|--------|
+| บัตรประชาชนไทย + selfie คู่บัตร + สมุดบัญชี (เฉพาะคนไทย) | ✓ |
+| OCR อ่านบัตร (client) → Auto-fill ชื่อ/เลข/วันเกิด/หมดอายุ — แก้ได้ | ✓ MVP |
+| AI เช็กคุณภาพรูป (บัตรจริง/ชัด/แสง/4 มุม/เบลอ/สะท้อน) → ไม่ผ่านให้ถ่ายใหม่ | ✓ MVP |
+| Selfie: วงกลมจัดใบหน้า + AI (กลาง/แสง/ชัด/ไม่มีคนอื่น) | ✓ MVP |
+| วันเกิด · อายุ ≥ 18 · ที่อยู่ครบตำบล · สัญชาติไทยเท่านั้น | ✓ |
+| เช็คเลขบัตรไทย (checksum) · เบอร์โทรไทย | ✓ |
+| PDPA consent · user attestation (`CONFIRM`) | ✓ |
+| Self-declaration ไม่ใช่ PEP / ไม่ติด sanctions | ✓ |
+| Selfie แนะนำจากกล้องหน้า + คู่มือคุณภาพเอกสาร | ✓ |
+| Re-KYC ทุก 2 ปี (`kyc_expires_at`) | ✓ |
+| OCR / face match อัตโนมัติ / screening list จริง | ยังไม่ (แอดมินตรวจมือ) |
+
+- `/verify` → `shared.kyc_requests` + `submit_kyc_verification`  
+- Admin `/admin/kyc` → อนุมัติแล้วตั้ง `profiles.is_verified` + `kyc_expires_at`  
+- Migration: `scripts/ecosystem/kyc-standard-v3.sql`  
+- **Cashout / THB payout ต้อง verify และยังไม่หมดอายุ**
 
 ## AML flags (`aml_flags`)
 

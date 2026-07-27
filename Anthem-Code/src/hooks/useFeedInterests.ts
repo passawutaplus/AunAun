@@ -30,6 +30,7 @@ async function ensureProfileRow(userId: string): Promise<void> {
 export type ProfileOnboardingRow = {
   feed_interests?: string[] | null;
   feed_interests_at?: string | null;
+  display_name?: string | null;
   username?: string | null;
   avatar_url?: string | null;
   cover_url?: string | null;
@@ -48,26 +49,19 @@ export function hasCompletedFeedInterestSurvey(data: {
   return Boolean(data?.feed_interests_at) && interests.length > 0;
 }
 
-function nonEmptyStrings(raw: string[] | null | undefined): string[] {
-  return (raw ?? []).map((s) => s.trim()).filter(Boolean);
-}
-
-/** Full first-login wizard: interests + username + looking-for + สายงาน + ความชำนาญ. */
+/** First-login wizard done when profile_onboarding_at is set (or legacy: interests + username). */
 export function hasCompletedProfileOnboarding(
   data: ProfileOnboardingRow | null | undefined,
 ): boolean {
   if (!data) return false;
   if (data.profile_onboarding_at) return true;
   if (!hasCompletedFeedInterestSurvey(data)) return false;
-  if (!data.username?.trim()) return false;
-  if (nonEmptyStrings(data.opportunity_types).length < 1) return false;
-  if (nonEmptyStrings(data.preferred_categories).length < 1) return false;
-  if (nonEmptyStrings(data.skills).length < 1) return false;
-  return true;
+  return Boolean(data.username?.trim());
 }
 
 export type ProfileOnboardingSaveInput = {
   feedInterests: FeedInterestId[];
+  displayName: string;
   username: string;
   avatarUrl?: string | null;
   coverUrl?: string | null;
@@ -86,7 +80,7 @@ export function useFeedInterestSurvey(userId: string | undefined) {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "feed_interests, feed_interests_at, username, avatar_url, cover_url, opportunity_types, preferred_categories, skills, profile_onboarding_at",
+          "feed_interests, feed_interests_at, display_name, username, avatar_url, cover_url, opportunity_types, preferred_categories, skills, profile_onboarding_at",
         )
         .eq("user_id", userId!)
         .maybeSingle();
@@ -98,31 +92,33 @@ export function useFeedInterestSurvey(userId: string | undefined) {
   const markComplete = useMutation({
     mutationFn: async (interests: FeedInterestId[]) => {
       if (!userId) throw new Error("ยังไม่ได้เข้าสู่ระบบ");
-      if (interests.length === 0) {
-        throw new Error("เลือกอย่างน้อย 1 แนวที่สนใจ");
-      }
       await ensureProfileRow(userId);
       const completedAt = new Date().toISOString();
       const { data, error } = await supabase
         .from("profiles")
         .update({
           feed_interests: interests,
-          feed_interests_at: completedAt,
+          feed_interests_at: interests.length > 0 ? completedAt : null,
+          profile_onboarding_at: completedAt,
         } as Record<string, unknown>)
         .eq("user_id", userId)
-        .select("feed_interests, feed_interests_at")
+        .select("feed_interests, feed_interests_at, profile_onboarding_at")
         .maybeSingle();
       if (error) throw error;
-      if (!data?.feed_interests_at) {
+      if (!data?.profile_onboarding_at) {
         throw new Error("บันทึกไม่สำเร็จ — ลองใหม่อีกครั้ง");
       }
-      return { interests, completedAt: data.feed_interests_at as string };
+      return {
+        interests,
+        completedAt: (data.feed_interests_at as string | null) ?? completedAt,
+      };
     },
     onSuccess: (result) => {
       qc.setQueryData(["profile", userId, "feed-interests"], (prev: ProfileOnboardingRow | null | undefined) => ({
         ...(prev ?? {}),
         feed_interests: result.interests,
         feed_interests_at: result.completedAt,
+        profile_onboarding_at: result.completedAt,
       }));
       void qc.invalidateQueries({ queryKey: ["profile", userId, "feed-interests"] });
       void qc.invalidateQueries({ queryKey: ["profile", userId] });
@@ -133,10 +129,10 @@ export function useFeedInterestSurvey(userId: string | undefined) {
   const saveOnboarding = useMutation({
     mutationFn: async (input: ProfileOnboardingSaveInput) => {
       if (!userId) throw new Error("ยังไม่ได้เข้าสู่ระบบ");
-      if (input.feedInterests.length === 0) throw new Error("เลือกอย่างน้อย 1 แนวที่สนใจ");
-      if (input.opportunityTypes.length === 0) throw new Error("เลือกอย่างน้อย 1 อย่างที่กำลังมองหา");
-      if (input.preferredCategories.length === 0) throw new Error("เลือกอย่างน้อย 1 สายงาน");
-      if (input.skills.length === 0) throw new Error("เลือกอย่างน้อย 1 ความชำนาญ");
+
+      const displayName = input.displayName.trim();
+      if (displayName.length < 1) throw new Error("กรอก Username");
+      if (displayName.length > 80) throw new Error("Username ยาวเกินไป");
 
       const username = normalizeUsername(input.username);
       await assertUsernameAvailable(username, userId);
@@ -144,9 +140,10 @@ export function useFeedInterestSurvey(userId: string | undefined) {
 
       const now = new Date().toISOString();
       const payload: Record<string, unknown> = {
-        feed_interests: input.feedInterests,
-        feed_interests_at: now,
+        display_name: displayName,
         username,
+        feed_interests: input.feedInterests,
+        feed_interests_at: input.feedInterests.length > 0 ? now : null,
         opportunity_status: "open_to_opportunities",
         opportunity_types: input.opportunityTypes,
         preferred_categories: input.preferredCategories,
@@ -161,11 +158,11 @@ export function useFeedInterestSurvey(userId: string | undefined) {
         .update(payload)
         .eq("user_id", userId)
         .select(
-          "feed_interests, feed_interests_at, username, avatar_url, cover_url, opportunity_types, preferred_categories, skills, profile_onboarding_at",
+          "feed_interests, feed_interests_at, display_name, username, avatar_url, cover_url, opportunity_types, preferred_categories, skills, profile_onboarding_at",
         )
         .maybeSingle();
       if (error) {
-        if (error.code === "23505") throw new Error("ชื่อผู้ใช้นี้ถูกใช้แล้ว — ลองชื่ออื่น");
+        if (error.code === "23505") throw new Error("Username นี้ถูกใช้แล้ว — ลองชื่ออื่น");
         throw error;
       }
       if (!data?.profile_onboarding_at) {

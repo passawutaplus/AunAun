@@ -28,7 +28,7 @@ export function DashboardSeriesSection({ series }: Props) {
             className="text-base font-semibold text-foreground flex items-center gap-2"
           >
             <Library className="h-4 w-4 text-primary shrink-0" />
-            ชุดผลงาน
+            Catalog
           </h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -39,7 +39,7 @@ export function DashboardSeriesSection({ series }: Props) {
             className="rounded-full"
             onClick={() => setFormOpen(true)}
           >
-            <Plus className="w-3.5 h-3.5 mr-1" /> สร้างชุด
+            <Plus className="w-3.5 h-3.5 mr-1" /> สร้าง Catalog
           </Button>
           <Button
             type="button"
@@ -47,7 +47,7 @@ export function DashboardSeriesSection({ series }: Props) {
             className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={() => navigate("/series")}
           >
-            จัดการชุด
+            จัดการ Catalog
             <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </Button>
         </div>
@@ -56,9 +56,9 @@ export function DashboardSeriesSection({ series }: Props) {
       {series.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border/70 bg-card/40 px-4 py-8 text-center">
           <FolderKanban className="mx-auto mb-2 h-9 w-9 text-muted-foreground/40" />
-          <p className="text-sm font-medium text-foreground">ยังไม่มีชุดผลงาน</p>
+          <p className="text-sm font-medium text-foreground">ยังไม่มี Catalog</p>
           <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
-            สร้างชุดว่างไว้ก่อน แล้วไปหน้าจัดการชุดเพื่อลากผลงานเข้าโฟลเดอร์
+            สร้าง Catalog ว่างไว้ก่อน แล้วไปหน้าจัดการเพื่อลากผลงานเข้าโฟลเดอร์
           </p>
           <Button
             type="button"
@@ -66,7 +66,7 @@ export function DashboardSeriesSection({ series }: Props) {
             className="mt-3 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={() => setFormOpen(true)}
           >
-            <Plus className="w-3.5 h-3.5 mr-1" /> สร้างชุดแรก
+            <Plus className="w-3.5 h-3.5 mr-1" /> สร้าง Catalog แรก
           </Button>
         </div>
       ) : (
@@ -88,7 +88,7 @@ export function DashboardSeriesSection({ series }: Props) {
           onClick={() => navigate("/series")}
           className="text-xs text-primary hover:underline"
         >
-          ดูทั้งหมด {series.length} ชุด
+          ดูทั้งหมด {series.length} Catalog
         </button>
       ) : null}
 

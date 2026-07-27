@@ -1,9 +1,8 @@
 import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bookmark, Check, MessageCircle, Handshake, Bell, Inbox, UserPlus, X } from "lucide-react";
+import { Bookmark, Check, Heart, MessageCircle, Handshake, Bell, Inbox, UserPlus, X } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
-import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useActivityNotifications, useHireNotifications, useCollabNotifications, type HireNotif, type CollabNotif } from "@/hooks/useNotifications";
 import { useFollowNotifications } from "@/hooks/useFollowLists";
@@ -244,8 +243,8 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
           <Empty icon={Bookmark} text="ยังไม่มีกิจกรรมบนผลงานของคุณ" />
         ) : (
           activity.map((n) => {
-            const verb = n.kind === "like" ? "+1 ผลงาน" : n.kind === "bookmark" ? "บันทึกผลงาน" : "คอมเมนต์ผลงาน";
-            const color = n.kind === "like" ? "text-primary" : n.kind === "bookmark" ? "text-primary" : "text-foreground";
+            const verb = n.kind === "like" ? "ถูกใจผลงาน" : n.kind === "bookmark" ? "บันทึกผลงาน" : "คอมเมนต์ผลงาน";
+            const color = n.kind === "like" ? "text-destructive" : n.kind === "bookmark" ? "text-primary" : "text-foreground";
             return (
               <button
                 key={n.id}
@@ -256,7 +255,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                   <ActorAvatar name={n.actorName} avatar={n.actorAvatar} />
                   <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-background border-2 border-background flex items-center justify-center ${color}`}>
                     {n.kind === "like" ? (
-                      <PlusOneMark className="text-[8px]" />
+                      <Heart className="w-3 h-3 fill-current" />
                     ) : n.kind === "bookmark" ? (
                       <Bookmark className="w-3 h-3" />
                     ) : (
@@ -312,38 +311,31 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                 <p className="text-xs text-muted-foreground line-clamp-3 mb-1">โน้ตจากเพื่อน: {h.forwardNote.trim()}</p>
               ) : null}
               {h.message && <p className="text-xs text-muted-foreground line-clamp-3">{h.message}</p>}
-              <div className="flex items-center justify-between mt-2 text-[11px] text-muted-foreground">
-                <span>{timeAgo(h.createdAt)}</span>
-                {h.budgetAmount && <span className="text-primary font-medium">฿{h.budgetAmount.toLocaleString("th-TH")}</span>}
-              </div>
-              {h.budgetAmount ? (
-                <div className="mt-3 space-y-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="w-full bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
-                    disabled={accept.isPending || openHireCollabChat.isPending}
-                    onClick={() => void openHireChat(h)}
-                  >
-                    <MessageCircle className="w-3.5 h-3.5 mr-1" />
-                    เปิดแชท
-                  </Button>
-                  <p className="text-[10px] text-muted-foreground text-center">
-                    ชำระผ่าน Aplus1 กำลังเปิดเร็ว ๆ นี้ — คุยรายละเอียดในแชทได้ตามปกติ
-                  </p>
-                </div>
-              ) : (
+              <div className="flex items-center gap-2 mt-2">
+                <span className="flex-1 min-w-0 truncate text-[11px] text-muted-foreground">
+                  {timeAgo(h.createdAt)}
+                </span>
+                {h.budgetAmount ? (
+                  <span className="text-[11px] text-primary font-medium shrink-0">
+                    ฿{h.budgetAmount.toLocaleString("th-TH")}
+                  </span>
+                ) : null}
                 <Button
                   type="button"
                   size="sm"
-                  className="w-full mt-3 bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+                  className="shrink-0 h-8 rounded-full px-3 bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
                   disabled={accept.isPending || openHireCollabChat.isPending}
                   onClick={() => void openHireChat(h)}
                 >
                   <MessageCircle className="w-3.5 h-3.5 mr-1" />
                   เปิดแชท
                 </Button>
-              )}
+              </div>
+              {h.budgetAmount ? (
+                <p className="text-[10px] text-muted-foreground mt-2 text-right">
+                  ชำระผ่าน Aplus1 กำลังเปิดเร็ว ๆ นี้ — คุยรายละเอียดในแชทได้ตามปกติ
+                </p>
+              ) : null}
             </div>
           ))
         )}
@@ -378,16 +370,15 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
               )}
               <p className="text-base text-foreground whitespace-pre-wrap line-clamp-4">{c.message}</p>
               {c.timeline && <p className="text-xs text-muted-foreground mt-1">ช่วงเวลา: {c.timeline}</p>}
-              <p className="text-[10px] text-muted-foreground mt-1">{labelCollabStatus(c.status)}</p>
               {isCollabContactedNewStatus(c.status) ? (
                 <div className="flex flex-col gap-2 mt-3">
-                  <div className="flex gap-2">
+                  <div className="flex items-center justify-end gap-2">
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
                       disabled={accept.isPending || reject.isPending || openHireCollabChat.isPending}
-                      className="flex-1 rounded-full"
+                      className="h-8 rounded-full px-3"
                       onClick={() => void openCollabChat(c)}
                     >
                       <MessageCircle className="w-3.5 h-3.5 mr-1" />
@@ -398,7 +389,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                       size="sm"
                       variant="ghost"
                       disabled={accept.isPending || reject.isPending}
-                      className="flex-1 rounded-full text-destructive hover:bg-destructive/10"
+                      className="h-8 rounded-full px-3 text-destructive hover:bg-destructive/10"
                       onClick={() => setCollabRejectTarget(c)}
                     >
                       <X className="w-3.5 h-3.5 mr-1" />
@@ -409,7 +400,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                     type="button"
                     size="sm"
                     disabled={accept.isPending || reject.isPending}
-                    className="w-full rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                    className="ml-auto h-8 rounded-full px-3 bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
                     onClick={() => void acceptCollab(c)}
                   >
                     <Check className="w-3.5 h-3.5 mr-1" />
@@ -417,18 +408,23 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                   </Button>
                 </div>
               ) : isCollabAcceptedStatus(c.status) || isCollabDeclinedStatus(c.status) ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={openHireCollabChat.isPending}
-                  className="w-full mt-3 rounded-full"
-                  onClick={() => void openCollabChat(c)}
-                >
-                  <MessageCircle className="w-3.5 h-3.5 mr-1" />
-                  เปิดแชท
-                </Button>
-              ) : null}
+                <div className="flex items-center justify-between gap-2 mt-2">
+                  <p className="text-[10px] text-muted-foreground min-w-0 truncate">{labelCollabStatus(c.status)}</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={openHireCollabChat.isPending}
+                    className="shrink-0 h-8 rounded-full px-3"
+                    onClick={() => void openCollabChat(c)}
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 mr-1" />
+                    เปิดแชท
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-[10px] text-muted-foreground mt-1">{labelCollabStatus(c.status)}</p>
+              )}
             </div>
           ))
         )}

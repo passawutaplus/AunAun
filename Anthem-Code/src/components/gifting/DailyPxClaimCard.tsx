@@ -1,6 +1,7 @@
 import { Check, Flame, Gift, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useClaimDailyPx, useDailyPxStatus } from "@/hooks/useDailyPxClaim";
+import { isAplus1GiftEconomyEnabled } from "@/lib/aplus1Launch";
 import { toast } from "sonner";
 
 type Props = {
@@ -8,8 +9,12 @@ type Props = {
 };
 
 const DailyPxClaimCard = ({ enabled = true }: Props) => {
-  const { data: status, isLoading: statusLoading } = useDailyPxStatus({ enabled });
+  const giftEconomy = isAplus1GiftEconomyEnabled();
+  const active = enabled && giftEconomy;
+  const { data: status, isLoading: statusLoading } = useDailyPxStatus({ enabled: active });
   const claim = useClaimDailyPx();
+
+  if (!giftEconomy) return null;
 
   const claimedToday = status?.claimed_today === true;
   const streak = status?.streak ?? 0;

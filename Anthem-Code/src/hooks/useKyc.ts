@@ -27,6 +27,12 @@ export interface KycRequest {
   address_json?: Record<string, string> | null;
   reject_reason_code?: string | null;
   reject_reason_label?: string | null;
+  date_of_birth?: string | null;
+  nationality?: string | null;
+  pep_declaration?: boolean | null;
+  sanctions_declaration?: boolean | null;
+  submission_meta?: Record<string, unknown> | null;
+  kyc_expires_at?: string | null;
 }
 
 export type KycAddressInput = {
@@ -39,7 +45,7 @@ export type KycAddressInput = {
 
 export type KycSubmissionInput = {
   legalName: string;
-  idType: "national_id" | "passport";
+  idType?: "national_id";
   nationalIdNumber: string;
   phone: string;
   contactEmail: string;
@@ -47,7 +53,12 @@ export type KycSubmissionInput = {
   bankName: string;
   accountNumber: string;
   accountName: string;
+  dateOfBirth: string;
+  nationality?: string;
+  pepDeclaration: boolean;
+  sanctionsDeclaration: boolean;
   contactNote?: string;
+  submissionMeta?: Record<string, unknown>;
   documents: { doc_type: KycDocType; storage_path: string }[];
 };
 
@@ -75,7 +86,7 @@ export const useSubmitKycVerification = () => {
     mutationFn: async (input: KycSubmissionInput) => {
       const { data, error } = await supabase.rpc("submit_kyc_verification", {
         _legal_name: input.legalName,
-        _id_type: input.idType,
+        _id_type: input.idType ?? "national_id",
         _bank_name: input.bankName,
         _account_number: input.accountNumber,
         _account_name: input.accountName,
@@ -91,6 +102,11 @@ export const useSubmitKycVerification = () => {
           province: input.address.province,
           postal_code: input.address.postalCode,
         },
+        _date_of_birth: input.dateOfBirth,
+        _nationality: input.nationality ?? "TH",
+        _pep_declaration: input.pepDeclaration,
+        _sanctions_declaration: input.sanctionsDeclaration,
+        _submission_meta: input.submissionMeta ?? {},
       });
       if (error) throw error;
       return data as KycRequest;

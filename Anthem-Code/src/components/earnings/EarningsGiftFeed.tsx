@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { formatThaiDate } from "@/lib/format";
 import { giftIcon } from "@/components/earnings/giftIcons";
 import type { GiftTransaction } from "@/hooks/useGifting";
+import { isAplus1GiftEconomyEnabled } from "@/lib/aplus1Launch";
 
 type GiftMeta = { id: string; name_th?: string; icon?: string };
 type SenderMeta = { id: string; display_name?: string | null; avatar_url?: string | null };
@@ -18,6 +19,8 @@ type Props = {
 const PREVIEW = 8;
 
 export function EarningsGiftFeed({ items, giftById, senderById, onGoPortfolio }: Props) {
+  if (!isAplus1GiftEconomyEnabled()) return null;
+
   const preview = items.slice(0, PREVIEW);
 
   return (

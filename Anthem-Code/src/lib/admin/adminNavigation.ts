@@ -60,8 +60,7 @@ export const ADMIN_LAUNCH_HIDDEN_ADMIN_PATHS = [
   "/admin/finance",
   "/admin/gifts",
   "/admin/ads",
-  "/admin/kyc",
-  "/admin/aml",
+  // Trust & safety (KYC / AML) stays visible — ops need them at launch.
   "/admin/ai",
   "/admin/audit",
 ] as const;
@@ -500,8 +499,8 @@ export function adminPendingQueue(stats: AdminStats | undefined): Array<{ to: st
     rows.push({ to: "/admin/wallet", label: "ถอนเงิน", count: stats.pendingCashouts });
   }
   // Omise finance queue counts come from useAdminAlertCounts badge, not AdminStats.
-  if (!launch && stats.pendingKyc > 0) rows.push({ to: "/admin/kyc", label: "KYC", count: stats.pendingKyc });
-  if (!launch && stats.openAmlFlags > 0) rows.push({ to: "/admin/aml", label: "AML", count: stats.openAmlFlags });
+  if (stats.pendingKyc > 0) rows.push({ to: "/admin/kyc", label: "KYC", count: stats.pendingKyc });
+  if (stats.openAmlFlags > 0) rows.push({ to: "/admin/aml", label: "AML", count: stats.openAmlFlags });
   if (stats.openFeedback > 0) rows.push({ to: "/admin/feedback", label: "ฟีดแบ็ก", count: stats.openFeedback });
   return rows;
 }

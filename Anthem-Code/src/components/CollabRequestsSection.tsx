@@ -11,6 +11,7 @@ import {
   Trash2,
   Check,
   FileText,
+  Star,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  WorkReviewDialog,
+  type WorkReviewDialogTarget,
+} from "@/components/reviews/WorkReviewDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useReceivedCollabRequests } from "@/hooks/useCollabRequests";
 import {
@@ -109,6 +114,7 @@ const CollabRequestsSection = ({
   const [tab, setTab] = useState<CollabInboxTab>(COLLAB_TAB_CONTACTED_NEW);
   const [hideTarget, setHideTarget] = useState<(typeof requests)[number] | null>(null);
   const [rejectTarget, setRejectTarget] = useState<(typeof requests)[number] | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<WorkReviewDialogTarget | null>(null);
   const [tick, setTick] = useState(0);
 
   const hiddenIds = useMemo(() => {
@@ -316,6 +322,7 @@ const CollabRequestsSection = ({
           const isAccepted = isCollabAcceptedStatus(req.status);
           const isCancelled = isCollabCancelledStatus(req.status);
           const isContactedNew = isCollabContactedNewStatus(req.status);
+          const isCompleted = isCollabCompletedStatus(req.status);
           const canHide = canHideCollabFromInbox(req.status);
           const cancelLabel = requestCancelReasonLabel(
             (req as { cancel_reason?: string | null }).cancel_reason,
@@ -536,6 +543,35 @@ const CollabRequestsSection = ({
                         </>
                       )}
 
+                      {isCompleted && user?.id && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const subjectUserId =
+                              user.id === req.recipient_id ? req.sender_id : req.recipient_id;
+                            const subjectName =
+                              user.id === req.recipient_id
+                                ? (sendersMap[req.sender_id]?.name ?? "คู่คอลแลป")
+                                : "คู่คอลแลป";
+                            setReviewTarget({
+                              kind: "collab",
+                              subjectUserId,
+                              subjectName,
+                              collabRequestId: req.id,
+                              projectId:
+                                req.project_id ??
+                                (req as { linked_project_id?: string | null }).linked_project_id ??
+                                null,
+                              contextLabel: "คอลแลป",
+                            });
+                          }}
+                          className="rounded-full h-8 text-xs gap-1"
+                        >
+                          <Star className="w-3.5 h-3.5" /> เขียนรีวิว
+                        </Button>
+                      )}
+
                       {canHide && (
                         <Button
                           size="sm"
@@ -623,6 +659,14 @@ const CollabRequestsSection = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <WorkReviewDialog
+        open={!!reviewTarget}
+        onOpenChange={(open) => {
+          if (!open) setReviewTarget(null);
+        }}
+        target={reviewTarget}
+      />
     </div>
   );
 };

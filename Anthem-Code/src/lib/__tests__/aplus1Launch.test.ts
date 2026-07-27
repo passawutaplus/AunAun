@@ -7,6 +7,7 @@ import {
   isAplus1ChatOffersEnabled,
   isAplus1SubscriptionsEnabled,
   isLaunchCreatorSupportEnabled,
+  isAplus1GiftEconomyEnabled,
   isLaunchDesignDrillEnabled,
   isLaunchBoostEnabled,
   isLaunchAllowedPath,
@@ -91,15 +92,24 @@ describe("aplus1Launch flags (fail-closed)", () => {
     expect(isAplus1SubscriptionsEnabled()).toBe(false);
   });
 
-  it("enables creator support only when full product and VITE_APLUS1_SUPPORT_ENABLED=true", () => {
+  it("enables creator support / gift economy only when full product and VITE_APLUS1_GIFT_ECONOMY_ENABLED=true", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
-    vi.stubEnv("VITE_APLUS1_SUPPORT_ENABLED", "true");
+    vi.stubEnv("VITE_APLUS1_GIFT_ECONOMY_ENABLED", "true");
     expect(isLaunchCreatorSupportEnabled()).toBe(true);
+    expect(isAplus1GiftEconomyEnabled()).toBe(true);
   });
 
-  it("launch minimal always disables creator support", () => {
+  it("launch minimal always disables creator support / gift economy", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "");
-    vi.stubEnv("VITE_APLUS1_SUPPORT_ENABLED", "true");
+    vi.stubEnv("VITE_APLUS1_GIFT_ECONOMY_ENABLED", "true");
+    expect(isLaunchCreatorSupportEnabled()).toBe(false);
+    expect(isAplus1GiftEconomyEnabled()).toBe(false);
+  });
+
+  it("gift economy stays off when full product but flag unset", () => {
+    vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
+    vi.stubEnv("VITE_APLUS1_GIFT_ECONOMY_ENABLED", "");
+    expect(isAplus1GiftEconomyEnabled()).toBe(false);
     expect(isLaunchCreatorSupportEnabled()).toBe(false);
   });
 
@@ -188,6 +198,9 @@ describe("launch route allowlist", () => {
     "/similar/proj",
     "/inspire",
     "/inspire/board",
+    "/hire/start",
+    "/verify",
+    "/earnings",
   ];
 
   const blocked = [
@@ -197,14 +210,12 @@ describe("launch route allowlist", () => {
     "/community/abc",
     "/advertise",
     "/upgrade",
-    "/earnings",
     "/referrals",
     "/drill",
     "/studio/new",
     "/s/studio-slug",
     "/contracts",
     "/research",
-    "/verify",
     "/ads/abc",
   ];
 

@@ -3,21 +3,20 @@ import { cn } from "@/lib/utils";
 import {
   OPPORTUNITY_AVAILABILITY,
   labelOpportunityType,
-  normalizeOpportunityNote,
   normalizeOpportunityProfile,
 } from "@/lib/opportunity";
 
 type Props = {
   status?: string | null;
   types?: string[] | null;
+  /** @deprecated Note no longer shown on profile. Kept for call-site compat. */
   note?: string | null;
   className?: string;
   size?: "sm" | "md";
 };
 
-const OpportunityTypeChips = ({ status, types, note, className, size = "sm" }: Props) => {
+const OpportunityTypeChips = ({ status, types, className, size = "sm" }: Props) => {
   const normalized = normalizeOpportunityProfile(status, types);
-  const trimmedNote = normalizeOpportunityNote(note);
   const badgeClass =
     size === "sm"
       ? "rounded-full text-xs font-normal border-0"
@@ -27,36 +26,24 @@ const OpportunityTypeChips = ({ status, types, note, className, size = "sm" }: P
     normalized.status !== "open_to_opportunities" || normalized.types.length === 0;
 
   return (
-    <div className={cn("space-y-1.5", className)}>
-      <div className="flex flex-wrap gap-1.5">
-        {showAvailability && (
-          <Badge
-            className={cn(
-              badgeClass,
-              normalized.status === "not_available"
-                ? "bg-muted text-muted-foreground"
-                : "bg-primary/15 text-primary",
-            )}
-          >
-            {OPPORTUNITY_AVAILABILITY[normalized.status].chipLabel}
-          </Badge>
-        )}
-        {normalized.types.map((t) => (
-          <Badge key={t} className={cn(badgeClass, "bg-primary/10 text-primary")}>
-            {labelOpportunityType(t)}
-          </Badge>
-        ))}
-      </div>
-      {trimmedNote && normalized.status !== "not_available" && (
-        <p
+    <div className={cn("flex flex-wrap gap-1.5", className)}>
+      {showAvailability && (
+        <Badge
           className={cn(
-            "text-muted-foreground leading-snug",
-            size === "md" ? "text-sm" : "text-xs",
+            badgeClass,
+            normalized.status === "not_available"
+              ? "bg-muted text-muted-foreground"
+              : "bg-primary/15 text-primary",
           )}
         >
-          {trimmedNote}
-        </p>
+          {OPPORTUNITY_AVAILABILITY[normalized.status].chipLabel}
+        </Badge>
       )}
+      {normalized.types.map((t) => (
+        <Badge key={t} className={cn(badgeClass, "bg-primary/10 text-primary")}>
+          {labelOpportunityType(t)}
+        </Badge>
+      ))}
     </div>
   );
 };

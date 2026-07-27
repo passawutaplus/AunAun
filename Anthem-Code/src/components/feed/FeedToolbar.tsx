@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Plus, X } from "lucide-react";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import SearchBar from "@/components/SearchBar";
 import FilterChips from "@/components/FilterChips";
 import FeedModeDropdown from "@/components/feed/FeedModeDropdown";
@@ -29,6 +31,8 @@ import type { Category, FeedFilter, ProjectCategory } from "@/data/projectTypes"
 import type { CommunityFeedFilter } from "@/data/communityTopics";
 import { DESIGN_DRILL_CHIP, type ProjectChipFilter } from "@/lib/drillProject";
 import { FEED_MODE_LABELS, FEED_MODE_ORDER } from "@/lib/feedModeLabels";
+import { BRAND_NAME } from "@/lib/brandConfig";
+import { useFeedHomeNavStore } from "@/stores/feedHomeNavStore";
 import { cn } from "@/lib/utils";
 
 const FEED_MODE_OPTIONS = FEED_MODE_ORDER.map((value) => ({
@@ -123,6 +127,7 @@ const FeedToolbar = ({
   includeDesignDrillChip = false,
   projectResultCount,
 }: Props) => {
+  const navigate = useNavigate();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(search.length > 0);
   const [projectSheetOpen, setProjectSheetOpen] = useState(false);
   const isProjects = mode === "projects";
@@ -318,10 +323,62 @@ const FeedToolbar = ({
         filterContent,
       };
 
+  const homeScrolled = useFeedHomeNavStore((s) => s.scrolled);
+
+  useEffect(() => {
+    const onFilterClick = isProjects ? () => setProjectSheetOpen(true) : undefined;
+    useFeedHomeNavStore.getState().register({
+      search,
+      searchPlaceholder,
+      filterCount,
+      feedMode,
+      onSearchChange,
+      onFilterClick,
+      onCreateClick,
+      onFeedModeChange: (m) => {
+        if (!isProjects) onModeChange("projects");
+        onFeedModeChange(m);
+      },
+      showCreate: showCreate && !isCommunity,
+      showFirstPostLabel,
+    });
+    return () => useFeedHomeNavStore.getState().unregister();
+    // Handlers + mode; search text synced in the patch effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    onSearchChange,
+    onCreateClick,
+    onFeedModeChange,
+    onModeChange,
+    showCreate,
+    showFirstPostLabel,
+    isCommunity,
+    isProjects,
+    searchPlaceholder,
+    feedMode,
+  ]);
+
+  useEffect(() => {
+    if (!useFeedHomeNavStore.getState().active) return;
+    useFeedHomeNavStore.getState().patch({
+      search,
+      searchPlaceholder,
+      filterCount,
+      feedMode,
+      showCreate: showCreate && !isCommunity,
+      showFirstPostLabel,
+    });
+  }, [search, searchPlaceholder, filterCount, feedMode, showCreate, showFirstPostLabel, isCommunity]);
+
   return (
     <div
       data-feed-toolbar
-      className="sticky top-0 z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65 overflow-visible shadow-[0_-24px_48px_-8px_hsl(var(--background))]"
+      className={cn(
+        "z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 overflow-visible",
+        homeScrolled
+          ? "sticky top-0 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65 shadow-[0_-24px_48px_-8px_hsl(var(--background))]"
+          : "relative bg-transparent shadow-none",
+      )}
     >
       {/* Mobile / tablet */}
       <div className="flex items-center gap-2 lg:hidden">
@@ -348,103 +405,166 @@ const FeedToolbar = ({
 
       {/* Desktop */}
       <div className="hidden lg:block space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 min-w-0">
-            <SearchBar
-              value={search}
-              onChange={onSearchChange}
-              placeholder={searchPlaceholder}
-              filterCount={filterCount}
-              {...projectSearchBarProps}
-              {...(!isProjects ? { filterContent } : {})}
-            />
-          </div>
-          <div className="relative z-20 flex shrink-0 items-center gap-1.5 overflow-visible">
-            {rightAction ? (
-              <div className="relative z-30 shrink-0 overflow-visible">{rightAction}</div>
-            ) : null}
-            <div
-              className={cn(
-                "min-w-0 shrink-0",
-                rightAction ? "w-[11.6rem]" : "w-[14.5rem]",
-              )}
-            >
-              <ProfileButton fillRail />
+        {!homeScrolled ? (
+          /* Under hero: search + Projects/Designers, then category chips */
+          <>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <SearchBar
+                  value={search}
+                  onChange={onSearchChange}
+                  placeholder={searchPlaceholder}
+                  filterCount={filterCount}
+                  {...projectSearchBarProps}
+                  {...(!isProjects ? { filterContent } : {})}
+                />
+              </div>
+              <div className="flex w-[14.5rem] shrink-0 items-center">
+                <FeedModeToggle {...toggleProps} className="w-full" />
+              </div>
             </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 min-h-9">
-          <FeedModeTransition modeKey={mode} className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 min-h-9 min-w-0">
-              {isCommunity ? (
-                <>
-                  <CommunityFeedTabs
-                    feedSource={communityFeedSource}
-                    onChange={onCommunityFeedSourceChange ?? (() => {})}
-                    className="shrink-0 justify-start gap-6 xl:hidden"
-                  />
-                  <div className="flex-1 min-w-0 overflow-hidden">
-                    <CommunityCategoryChips
-                      selected={communityCategory}
-                      onSelect={onCommunityCategoryChange ?? (() => {})}
-                      className="pb-0"
-                    />
-                  </div>
-                </>
+            <FeedModeTransition modeKey={mode} className="min-w-0">
+              {isProjects ? (
+                <FilterChips
+                  options={parentChips}
+                  selected={String(category)}
+                  onSelect={(id) => {
+                    if (id === DESIGN_DRILL_CHIP) {
+                      onDrillSelect?.();
+                      onCategoryChange(DESIGN_DRILL_CHIP);
+                    } else {
+                      onCategoryChange(id as CategoryParentId | "All");
+                    }
+                    onProjectLeavesChange?.([]);
+                    onProjectStylesChange?.([]);
+                  }}
+                />
               ) : isDesigners ? (
-                <>
-                  <DesignerFeedDropdown
-                    value={designerFeedSource}
-                    onChange={onDesignerFeedSourceChange ?? (() => {})}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <DesignerCategoryChips
-                      selected={designerCategory}
-                      onSelect={onDesignerCategoryChange}
-                      chips={designerCategoryChips}
-                    />
-                  </div>
-                </>
-              ) : isStudios ? (
-                <>
-                  <CommunityFeedTabs
-                    feedSource={studioFeedSource}
-                    onChange={onStudioFeedSourceChange ?? (() => {})}
-                    className="shrink-0 justify-start gap-6"
-                  />
-                  <div className="flex-1" />
-                </>
-              ) : (
-                <>
-                  {isProjects && <FeedModeDropdown value={feedMode} onChange={onFeedModeChange} />}
-                  {isProjects && (
-                    <div className="flex-1 min-w-0">
-                      <FilterChips
-                        options={parentChips}
-                        selected={String(category)}
-                        onSelect={(id) => {
-                          if (id === DESIGN_DRILL_CHIP) {
-                            onDrillSelect?.();
-                            onCategoryChange(DESIGN_DRILL_CHIP);
-                          } else {
-                            onCategoryChange(id as CategoryParentId | "All");
-                          }
-                          onProjectLeavesChange?.([]);
-                          onProjectStylesChange?.([]);
-                        }}
-                      />
-                    </div>
+                <DesignerCategoryChips
+                  selected={designerCategory}
+                  onSelect={onDesignerCategoryChange}
+                  chips={designerCategoryChips}
+                />
+              ) : null}
+            </FeedModeTransition>
+          </>
+        ) : (
+          /* Fixed after scroll: logo + classic feed bar (matches mock) */
+          <>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`${BRAND_NAME} หน้าแรก`}
+                onClick={() => {
+                  navigate("/");
+                  window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+                  useFeedHomeNavStore.getState().setScrolled(false);
+                }}
+              >
+                <BrandLogo size="sm" />
+              </button>
+              <div className="flex-1 min-w-0">
+                <SearchBar
+                  value={search}
+                  onChange={onSearchChange}
+                  placeholder={searchPlaceholder}
+                  filterCount={filterCount}
+                  {...projectSearchBarProps}
+                  {...(!isProjects ? { filterContent } : {})}
+                />
+              </div>
+              <div className="relative z-20 flex shrink-0 items-center gap-1.5 overflow-visible">
+                {rightAction ? (
+                  <div className="relative z-30 shrink-0 overflow-visible">{rightAction}</div>
+                ) : null}
+                <div
+                  className={cn(
+                    "min-w-0 shrink-0",
+                    rightAction ? "w-[11.6rem]" : "w-[14.5rem]",
                   )}
-                  {!isProjects && <div className="flex-1" />}
-                </>
-              )}
+                >
+                  <ProfileButton fillRail />
+                </div>
+              </div>
             </div>
-          </FeedModeTransition>
 
-          <div className="flex w-[14.5rem] shrink-0 items-center">
-            <FeedModeToggle {...toggleProps} className="w-full" />
-          </div>
-        </div>
+            <div className="flex items-center gap-3 min-h-9">
+              <FeedModeTransition modeKey={mode} className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 min-h-9 min-w-0">
+                  {isCommunity ? (
+                    <>
+                      <CommunityFeedTabs
+                        feedSource={communityFeedSource}
+                        onChange={onCommunityFeedSourceChange ?? (() => {})}
+                        className="shrink-0 justify-start gap-6 xl:hidden"
+                      />
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <CommunityCategoryChips
+                          selected={communityCategory}
+                          onSelect={onCommunityCategoryChange ?? (() => {})}
+                          className="pb-0"
+                        />
+                      </div>
+                    </>
+                  ) : isDesigners ? (
+                    <>
+                      <DesignerFeedDropdown
+                        value={designerFeedSource}
+                        onChange={onDesignerFeedSourceChange ?? (() => {})}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <DesignerCategoryChips
+                          selected={designerCategory}
+                          onSelect={onDesignerCategoryChange}
+                          chips={designerCategoryChips}
+                        />
+                      </div>
+                    </>
+                  ) : isStudios ? (
+                    <>
+                      <CommunityFeedTabs
+                        feedSource={studioFeedSource}
+                        onChange={onStudioFeedSourceChange ?? (() => {})}
+                        className="shrink-0 justify-start gap-6"
+                      />
+                      <div className="flex-1" />
+                    </>
+                  ) : (
+                    <>
+                      {isProjects && (
+                        <FeedModeDropdown value={feedMode} onChange={onFeedModeChange} />
+                      )}
+                      {isProjects && (
+                        <div className="flex-1 min-w-0">
+                          <FilterChips
+                            options={parentChips}
+                            selected={String(category)}
+                            onSelect={(id) => {
+                              if (id === DESIGN_DRILL_CHIP) {
+                                onDrillSelect?.();
+                                onCategoryChange(DESIGN_DRILL_CHIP);
+                              } else {
+                                onCategoryChange(id as CategoryParentId | "All");
+                              }
+                              onProjectLeavesChange?.([]);
+                              onProjectStylesChange?.([]);
+                            }}
+                          />
+                        </div>
+                      )}
+                      {!isProjects && <div className="flex-1" />}
+                    </>
+                  )}
+                </div>
+              </FeedModeTransition>
+
+              <div className="flex w-[14.5rem] shrink-0 items-center">
+                <FeedModeToggle {...toggleProps} className="w-full" />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Mobile parent chips under toolbar */}

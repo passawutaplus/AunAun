@@ -19,17 +19,21 @@ import { WORK_DISCIPLINE_OPTIONS } from "@/data/workDisciplineOptions";
 import { SKILL_CHIP_SUGGESTIONS } from "@/data/skillChipOptions";
 import { useFeedInterestSurvey } from "@/hooks/useFeedInterests";
 import { useInterestCategoryCovers } from "@/hooks/useInterestCategoryCovers";
+import {
+  checkUsernameAvailability,
+  deriveUsernameFromLabel,
+} from "@/hooks/useUsernameAvailability";
 import { useAuth } from "@/hooks/useAuth";
-import { useUsernameAvailability, normalizeUsername } from "@/hooks/useUsernameAvailability";
 import { useSubscription } from "@/core/subscription";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { OPPORTUNITY_TYPE_KEYS, labelOpportunityType } from "@/lib/opportunity";
-import { USERNAME_COOLDOWN_DAYS } from "@/lib/usernamePolicy";
 import { cn } from "@/lib/utils";
 import { displayInitials } from "@/lib/avatarPool";
 
-/** Local-only: force open so we can iterate on the dialog UI. Set false before ship. */
-const FORCE_SHOW_INTEREST_SURVEY = import.meta.env.DEV;
+/** Dev / ?onboarding=1: force open for UI review. */
+const FORCE_SHOW_INTEREST_SURVEY =
+  import.meta.env.DEV ||
+  (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("onboarding"));
 
 /** Matches Tailwind `sm` — side-by-side layout starts here. */
 const DESKTOP_MIN = 640;
@@ -77,25 +81,29 @@ function FieldBlock({
           {Icon ? <Icon className="h-4 w-4 shrink-0 text-primary" aria-hidden /> : null}
           {title}
         </h3>
-        {hint ? <p className="text-xs text-muted-foreground mt-0.5 pl-6">{hint}</p> : null}
+        {hint ? <p className="mt-0.5 pl-6 text-xs text-muted-foreground">{hint}</p> : null}
       </div>
       {children}
     </div>
   );
 }
 
+type UsernameVerifyUi =
+  | { kind: "idle" }
+  | { kind: "checking" }
+  | { kind: "ok"; text: string }
+  | { kind: "bad"; text: string };
+
 function ProfileIdentityPanel({
   coverUrl,
   avatarUrl,
   coverBusy,
   avatarBusy,
-  canUpload,
-  username,
-  setUsername,
-  normalizedUsername,
-  usernameOk,
-  checkingUsername,
-  availability,
+  displayName,
+  setDisplayName,
+  derivedUsername,
+  usernameVerify,
+  onVerifyUsername,
   onPickCover,
   onPickAvatar,
   className,
@@ -104,30 +112,25 @@ function ProfileIdentityPanel({
   avatarUrl: string | null;
   coverBusy: boolean;
   avatarBusy: boolean;
-  canUpload: boolean;
-  username: string;
-  setUsername: (v: string) => void;
-  normalizedUsername: string;
-  usernameOk: boolean;
-  checkingUsername: boolean;
-  availability?: { taken?: boolean; reserved?: boolean } | null;
+  displayName: string;
+  setDisplayName: (v: string) => void;
+  derivedUsername: string;
+  usernameVerify: UsernameVerifyUi;
+  onVerifyUsername: () => void;
   onPickCover: () => void;
   onPickAvatar: () => void;
   className?: string;
 }) {
-  const showUsernameStatus = normalizedUsername.length >= 2;
-  const usernameInvalid = showUsernameStatus && !/^[a-z0-9_.]+$/.test(normalizedUsername);
-  const usernameUnavailable =
-    showUsernameStatus && (usernameInvalid || Boolean(availability?.taken || availability?.reserved));
-  const usernameAvailable = showUsernameStatus && usernameOk && !checkingUsername;
+  const initialsSource = displayName.trim();
+  const showVerifyControl = Boolean(displayName.trim());
 
   return (
-    <div className={cn("flex flex-col bg-background overflow-hidden min-h-0 h-full", className)}>
+    <div className={cn("flex h-full min-h-0 flex-col overflow-hidden bg-background", className)}>
       <button
         type="button"
         onClick={onPickCover}
-        disabled={coverBusy || !canUpload}
-        className="group relative flex-1 min-h-[10rem] w-full text-left pb-12"
+        disabled={coverBusy}
+        className="group relative min-h-[10rem] w-full flex-1 cursor-pointer pb-6 text-left disabled:cursor-wait"
         aria-label="อัปโหลดภาพพื้นหลัง"
       >
         {coverUrl ? (
@@ -136,32 +139,36 @@ function ProfileIdentityPanel({
           <div className="absolute inset-0 bg-gradient-brand opacity-80" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-        <div className="absolute inset-x-0 bottom-12 p-3 sm:p-4 flex items-center gap-2 text-white/95">
-          {coverBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
-          <span className="text-xs font-medium">{coverUrl ? "เปลี่ยนพื้นหลัง" : "ใส่ภาพพื้นหลัง"}</span>
+        <div className="absolute bottom-3 left-3 right-3 text-white/95 sm:bottom-4 sm:left-4">
+          <span className="inline-flex items-center gap-2">
+            {coverBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+            <span className="text-xs font-medium">{coverUrl ? "เปลี่ยนพื้นหลัง" : "ใส่ภาพพื้นหลัง"}</span>
+          </span>
         </div>
       </button>
 
-      <div className="relative -mt-12 flex justify-center z-10 px-4">
+      <div className="relative z-10 -mt-12 flex justify-center px-4 pointer-events-none">
         <button
           type="button"
           onClick={onPickAvatar}
-          disabled={avatarBusy || !canUpload}
-          className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-4 border-background shadow-lg bg-muted"
+          disabled={avatarBusy}
+          className="pointer-events-auto relative h-24 w-24 cursor-pointer overflow-hidden rounded-full border-4 border-background bg-muted shadow-lg disabled:cursor-wait sm:h-28 sm:w-28"
           aria-label="อัปโหลดรูปโปรไฟล์"
         >
           {avatarUrl ? (
             <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
           ) : (
-            <span className="flex h-full w-full items-center justify-center bg-gradient-brand text-white text-2xl font-semibold tracking-tight">
-              {normalizedUsername.length >= 1 ? displayInitials(normalizedUsername, 2) : (
+            <span className="flex h-full w-full items-center justify-center bg-gradient-brand text-2xl font-semibold tracking-tight text-white">
+              {initialsSource.length >= 1 ? (
+                displayInitials(initialsSource, 2)
+              ) : (
                 <User className="h-10 w-10 text-white/90" />
               )}
             </span>
           )}
-          <span className="absolute inset-x-0 bottom-0 bg-black/55 py-1.5 flex justify-center">
+          <span className="absolute inset-x-0 bottom-0 flex justify-center bg-black/55 py-1.5">
             {avatarBusy ? (
-              <Loader2 className="h-3.5 w-3.5 text-white animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
             ) : (
               <Camera className="h-3.5 w-3.5 text-white" />
             )}
@@ -169,50 +176,69 @@ function ProfileIdentityPanel({
         </button>
       </div>
 
-      <div className="relative z-10 bg-background px-4 pt-3 pb-5 space-y-3 overflow-y-auto shrink-0">
-        <div className="space-y-1.5 text-center">
-          <label htmlFor="onboard-username" className="text-sm font-semibold text-foreground block">
-            User Name
+      <div className="relative z-10 shrink-0 overflow-y-auto bg-background px-4 pb-5 pt-3">
+        <div className="mx-auto w-full max-w-[20rem] space-y-1.5 text-center">
+          <label htmlFor="onboard-username" className="block text-sm font-semibold text-foreground">
+            Username
           </label>
-          <p className="text-[11px] text-muted-foreground leading-snug">
-            บังคับ · ใช้ทำ /@username · เปลี่ยนได้อีกครั้งหลัง {USERNAME_COOLDOWN_DAYS} วัน
-          </p>
-          <div className="flex items-center rounded-xl border border-border bg-secondary focus-within:ring-2 focus-within:ring-primary/30">
-            <span className="pl-3 text-sm text-muted-foreground shrink-0">@</span>
+          <div className="flex items-stretch gap-2">
             <input
               id="onboard-username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="flex-1 bg-transparent px-2 py-2.5 text-sm text-foreground text-left focus:outline-none min-w-0"
-              placeholder="yourname"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="min-w-0 flex-1 rounded-xl border border-border bg-secondary px-3 py-2.5 text-center text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              placeholder="เช่น somchai_design"
               autoComplete="username"
+              maxLength={80}
+              aria-invalid={usernameVerify.kind === "bad" || undefined}
             />
-            {showUsernameStatus ? (
-              <span className="pr-3 shrink-0" aria-hidden>
-                {checkingUsername ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                ) : usernameAvailable ? (
-                  <Check className="h-4 w-4 text-emerald-500" />
-                ) : usernameUnavailable ? (
-                  <X className="h-4 w-4 text-destructive" />
-                ) : null}
-              </span>
-            ) : null}
+            <button
+              type="button"
+              onClick={onVerifyUsername}
+              disabled={!showVerifyControl || usernameVerify.kind === "checking"}
+              title={
+                usernameVerify.kind === "ok"
+                  ? usernameVerify.text
+                  : usernameVerify.kind === "bad"
+                    ? `${usernameVerify.text} · กดเช็คอีกครั้ง`
+                    : "ตรวจสอบ Username"
+              }
+              aria-label="Verify username"
+              className={cn(
+                "inline-flex shrink-0 items-center justify-center rounded-xl text-xs font-semibold transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                "disabled:pointer-events-none disabled:opacity-50",
+                usernameVerify.kind === "ok" ||
+                  usernameVerify.kind === "bad" ||
+                  usernameVerify.kind === "checking"
+                  ? "h-10 w-10 px-0"
+                  : "gap-1 px-3",
+                usernameVerify.kind === "ok" && "bg-emerald-600 text-white hover:bg-emerald-600/90",
+                usernameVerify.kind === "bad" &&
+                  "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+                usernameVerify.kind !== "ok" &&
+                  usernameVerify.kind !== "bad" &&
+                  "bg-primary text-primary-foreground hover:bg-primary/90",
+              )}
+            >
+              {usernameVerify.kind === "checking" ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : usernameVerify.kind === "ok" ? (
+                <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              ) : usernameVerify.kind === "bad" ? (
+                <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              ) : (
+                <span>Verify</span>
+              )}
+            </button>
           </div>
-          {showUsernameStatus ? (
-            <p className="sr-only" aria-live="polite">
-              {checkingUsername
-                ? "กำลังตรวจสอบชื่อผู้ใช้"
-                : usernameAvailable
-                  ? "ชื่อผู้ใช้นี้ใช้ได้"
-                  : usernameUnavailable
-                    ? "ชื่อผู้ใช้นี้ใช้ไม่ได้"
-                    : ""}
+          {derivedUsername ? (
+            <p className="text-xs tabular-nums text-muted-foreground">@{derivedUsername}</p>
+          ) : !displayName.trim() ? (
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              ใช้เป็นชื่อแสดงและ @handle · แก้ทีหลังได้
             </p>
           ) : null}
-          <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
-            เปลี่ยนชื่อแล้วลิงก์ /@ เดิมที่เคยแชร์จะเปิดไม่ได้
-          </p>
         </div>
       </div>
     </div>
@@ -229,7 +255,9 @@ export function InterestSurveyGate() {
     typeof window !== "undefined" && window.innerWidth >= DESKTOP_MIN ? "interests" : "identity",
   );
   const [selected, setSelected] = useState<Set<FeedInterestId>>(new Set());
-  const [username, setUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [usernameVerify, setUsernameVerify] = useState<UsernameVerifyUi>({ kind: "idle" });
+  const [verifiedUsername, setVerifiedUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [avatarBusy, setAvatarBusy] = useState(false);
@@ -254,17 +282,6 @@ export function InterestSurveyGate() {
       );
 
   const { options: interestOptions } = useInterestCategoryCovers(surveyVisible);
-  const normalizedUsername = normalizeUsername(username);
-  const { data: availability, isFetching: checkingUsername } = useUsernameAvailability(
-    normalizedUsername,
-    user?.id,
-  );
-  const usernameOk =
-    normalizedUsername.length >= 2 &&
-    /^[a-z0-9_.]+$/.test(normalizedUsername) &&
-    !availability?.taken &&
-    !availability?.reserved;
-
   const mediaBusy = avatarBusy || coverBusy;
 
   useEffect(() => {
@@ -273,13 +290,17 @@ export function InterestSurveyGate() {
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps -- only reset on user change
 
   useEffect(() => {
+    if (FORCE_SHOW_INTEREST_SURVEY) setDismissed(false);
+  }, []);
+
+  useEffect(() => {
     if (!isNarrow && step === "identity") setStep("interests");
   }, [isNarrow, step]);
 
   useEffect(() => {
     if (!profile) return;
     if (profile.feed_interests?.length) setSelected(new Set(profile.feed_interests as FeedInterestId[]));
-    if (profile.username) setUsername(profile.username);
+    if (profile.display_name) setDisplayName(profile.display_name);
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
     if (profile.cover_url) setCoverUrl(profile.cover_url);
     if (profile.opportunity_types?.length) setLooking([...profile.opportunity_types]);
@@ -294,11 +315,36 @@ export function InterestSurveyGate() {
     return () => window.removeEventListener(COOKIE_CONSENT_CHANGED_EVENT, sync);
   }, []);
 
-  const canContinue = useMemo(() => {
-    if (step === "identity") return usernameOk;
-    if (step === "interests") return selected.size >= 1 && usernameOk;
-    return usernameOk && looking.length >= 1 && disciplines.length >= 1 && skills.length >= 1;
-  }, [step, selected.size, usernameOk, looking.length, disciplines.length, skills.length]);
+  const derivedUsername = useMemo(() => deriveUsernameFromLabel(displayName), [displayName]);
+  const derivedUsernameRef = useRef(derivedUsername);
+  derivedUsernameRef.current = derivedUsername;
+  const usernameOk = verifiedUsername === derivedUsername && usernameVerify.kind === "ok";
+
+  const setDisplayNameAndResetVerify = (value: string) => {
+    setDisplayName(value);
+    setVerifiedUsername(null);
+    setUsernameVerify({ kind: "idle" });
+  };
+
+  const onVerifyUsername = async () => {
+    if (!displayName.trim() || usernameVerify.kind === "checking") return;
+    const checkingFor = derivedUsername;
+    setUsernameVerify({ kind: "checking" });
+    const result = await checkUsernameAvailability(checkingFor, user?.id);
+    if (derivedUsernameRef.current !== checkingFor) return;
+    if (!result.ok) {
+      setVerifiedUsername(null);
+      setUsernameVerify({ kind: "bad", text: result.message });
+      return;
+    }
+    setVerifiedUsername(result.username);
+    setUsernameVerify({ kind: "ok", text: "ใช้ได้" });
+  };
+
+  const canContinue = useMemo(
+    () => (FORCE_SHOW_INTEREST_SURVEY && !user ? true : usernameOk),
+    [user, usernameOk],
+  );
 
   if (!surveyVisible) return null;
 
@@ -312,17 +358,7 @@ export function InterestSurveyGate() {
     else if (step === "interests" && isNarrow) setStep("identity");
   };
 
-  const goNext = async () => {
-    if (!canContinue) return;
-    if (step === "identity") {
-      setStep("interests");
-      return;
-    }
-    if (step === "interests") {
-      setStep("basics");
-      return;
-    }
-
+  const finishOnboarding = async () => {
     if (FORCE_SHOW_INTEREST_SURVEY && !user) {
       setDismissed(true);
       toast.message("พรีวิว — ยังไม่ได้บันทึก (ยังไม่ล็อกอิน)");
@@ -332,7 +368,8 @@ export function InterestSurveyGate() {
     try {
       await saveOnboarding({
         feedInterests: Array.from(selected),
-        username: normalizedUsername,
+        displayName: displayName.trim(),
+        username: derivedUsername,
         avatarUrl,
         coverUrl,
         opportunityTypes: looking,
@@ -346,17 +383,37 @@ export function InterestSurveyGate() {
     }
   };
 
-  const uploadMedia = async (file: File | undefined, kind: "avatar" | "cover") => {
-    if (!file || !user) {
-      toast.message("ล็อกอินก่อนจึงอัปโหลดรูปได้");
+  const goNext = async () => {
+    if (!canContinue) return;
+    if (step === "identity") {
+      setStep("interests");
       return;
     }
+    if (step === "interests") {
+      await finishOnboarding();
+      return;
+    }
+    await finishOnboarding();
+  };
+
+  const uploadMedia = async (file: File | undefined, kind: "avatar" | "cover") => {
+    if (!file) return;
     const setBusy = kind === "avatar" ? setAvatarBusy : setCoverBusy;
+    const setUrl = kind === "avatar" ? setAvatarUrl : setCoverUrl;
+
+    if (!user) {
+      if (!FORCE_SHOW_INTEREST_SURVEY) {
+        toast.message("ล็อกอินก่อนจึงอัปโหลดรูปได้");
+        return;
+      }
+      setUrl(URL.createObjectURL(file));
+      return;
+    }
+
     setBusy(true);
     try {
       const url = await uploadProjectImage(file, user.id, kind, tier);
-      if (kind === "avatar") setAvatarUrl(url);
-      else setCoverUrl(url);
+      setUrl(url);
       toast.success(kind === "avatar" ? "อัปโหลดรูปโปรไฟล์แล้ว" : "อัปโหลดภาพพื้นหลังแล้ว");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
@@ -370,13 +427,11 @@ export function InterestSurveyGate() {
     avatarUrl,
     coverBusy,
     avatarBusy,
-    canUpload: Boolean(user),
-    username,
-    setUsername,
-    normalizedUsername,
-    usernameOk,
-    checkingUsername,
-    availability,
+    displayName,
+    setDisplayName: setDisplayNameAndResetVerify,
+    derivedUsername,
+    usernameVerify,
+    onVerifyUsername,
     onPickCover: () => coverInput.current?.click(),
     onPickAvatar: () => avatarInput.current?.click(),
   };
@@ -384,48 +439,47 @@ export function InterestSurveyGate() {
   const showDesktopAside = !isNarrow;
   const showMobileIdentity = isNarrow && step === "identity";
   const showStepContent = !isNarrow || step !== "identity";
-  const showBack =
-    step === "basics" || (step === "interests" && isNarrow);
+  const showBack = step === "basics" || (step === "interests" && isNarrow);
 
   const stepTitle =
     step === "identity"
-      ? "Your Profile"
+      ? "ตั้งโปรไฟล์"
       : step === "interests"
         ? "You're Interesting"
-        : "Your Profile";
+        : "ตั้งโปรไฟล์";
   const stepDesc =
     step === "identity"
-      ? "ตั้งรูปและชื่อผู้ใช้ — แก้ทีหลังได้ที่โปรไฟล์"
+      ? "ตั้งรูปและ Username — แก้ทีหลังได้ที่โปรไฟล์"
       : step === "interests"
-        ? "เลือกได้มากกว่า 1 — เราจะเสนอผลงานใน Explore ตามที่สนใจก่อน"
+        ? "เลือกได้มากกว่า 1 หรือข้ามได้ — เราจะโชว์ผลงานใน Explore ตามที่สนใจก่อน"
         : "แก้ทีหลังได้ที่โปรไฟล์ › เกี่ยวกับฉัน";
 
   return (
     <Dialog open onOpenChange={() => {}}>
       <DialogContent
-        className="max-w-none w-[min(calc(100vw-2rem),58rem)] h-[min(84dvh,42rem)] overflow-hidden rounded-2xl p-0 gap-0 shadow-2xl [&>button]:hidden !flex !flex-col"
+        className="max-w-none w-[min(calc(100vw-2rem),72rem)] h-[min(84dvh,42rem)] overflow-hidden rounded-2xl p-0 gap-0 shadow-2xl [&>button]:hidden !flex !flex-col"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <div className="flex h-full min-h-0 flex-col sm:flex-row">
           {showDesktopAside ? (
-            <aside className="sm:w-[42%] sm:max-w-[22rem] shrink-0 sm:border-r border-border min-h-0">
+            <aside className="min-h-0 shrink-0 border-border sm:w-[36%] sm:max-w-[26rem] sm:border-r">
               <ProfileIdentityPanel {...identityProps} />
             </aside>
           ) : null}
 
           {showMobileIdentity ? (
-            <div className="flex flex-1 min-h-0 flex-col bg-background">
-              <div className="shrink-0 px-5 pt-5 pb-3 space-y-1">
-                <DialogHeader className="text-left space-y-1">
+            <div className="flex min-h-0 flex-1 flex-col bg-background">
+              <div className="shrink-0 space-y-1 px-5 pb-3 pt-5">
+                <DialogHeader className="space-y-1 text-left">
                   <DialogTitle className="text-xl thai-display">{stepTitle}</DialogTitle>
                   <DialogDescription className="text-sm thai-body">{stepDesc}</DialogDescription>
                 </DialogHeader>
               </div>
-              <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="min-h-0 flex-1 overflow-hidden">
                 <ProfileIdentityPanel {...identityProps} />
               </div>
-              <div className="shrink-0 z-10 flex items-center justify-between gap-3 border-t border-border px-5 py-3 bg-background">
+              <div className="z-10 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-background px-5 py-3">
                 <Button
                   type="button"
                   variant="ghost"
@@ -439,7 +493,7 @@ export function InterestSurveyGate() {
                   type="button"
                   onClick={() => void goNext()}
                   disabled={!canContinue || mediaBusy}
-                  className="rounded-full bg-gradient-brand text-white border-0 min-w-[10rem]"
+                  className="min-w-[10rem] rounded-full border-0 bg-gradient-brand text-white"
                 >
                   ถัดไป
                 </Button>
@@ -448,15 +502,15 @@ export function InterestSurveyGate() {
           ) : null}
 
           {showStepContent ? (
-            <div className="flex-1 min-h-0 flex flex-col bg-background overflow-hidden">
-              <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-7 space-y-5">
-                <DialogHeader className="text-left space-y-2">
-                  <DialogTitle className="text-xl sm:text-2xl thai-display">{stepTitle}</DialogTitle>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
+              <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-7">
+                <DialogHeader className="space-y-2 text-left">
+                  <DialogTitle className="text-xl thai-display sm:text-2xl">{stepTitle}</DialogTitle>
                   <DialogDescription className="text-sm thai-body">{stepDesc}</DialogDescription>
                 </DialogHeader>
 
                 {step === "interests" && (
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-2.5 lg:grid-cols-3">
                     {interestOptions.map((opt) => {
                       const active = selected.has(opt.id);
                       return (
@@ -465,9 +519,9 @@ export function InterestSurveyGate() {
                           type="button"
                           onClick={() => setSelected((prev) => toggleInSet(prev, opt.id))}
                           className={cn(
-                            "group relative overflow-hidden rounded-xl text-left border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 min-h-[5.5rem]",
+                            "group relative min-h-[5.5rem] overflow-hidden rounded-xl border-2 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
                             active
-                              ? "border-primary ring-2 ring-primary/30 shadow-md"
+                              ? "border-primary shadow-md ring-2 ring-primary/30"
                               : "border-border hover:border-primary/40",
                           )}
                         >
@@ -478,17 +532,18 @@ export function InterestSurveyGate() {
                               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                               loading="lazy"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
                           </div>
-                          <div className="absolute inset-x-0 bottom-0 p-2 text-white">
-                            <p className="text-[11px] sm:text-xs font-semibold leading-tight">{opt.label}</p>
-                            <p className="text-[10px] text-white/80 mt-0.5 line-clamp-1">{opt.subtitle}</p>
+                          <div className="absolute inset-x-0 bottom-0 p-2.5 text-white sm:p-3">
+                            <p className="text-sm font-semibold leading-snug drop-shadow-sm sm:text-base">
+                              {opt.label}
+                            </p>
                           </div>
-                          {active && (
-                            <span className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                          {active ? (
+                            <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
                               <Check className="h-3 w-3" aria-hidden />
                             </span>
-                          )}
+                          ) : null}
                         </button>
                       );
                     })}
@@ -543,17 +598,17 @@ export function InterestSurveyGate() {
                 )}
               </div>
 
-              <div className="shrink-0 z-10 flex items-center justify-between gap-3 border-t border-border px-5 py-3 sm:px-7 bg-background">
+              <div className="z-10 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-background px-5 py-3 sm:px-7">
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={handleSkip}
                   disabled={isSaving || mediaBusy}
-                  className="h-auto px-1 py-1 text-xs font-normal text-muted-foreground hover:bg-transparent hover:text-foreground shrink-0"
+                  className="h-auto shrink-0 px-1 py-1 text-xs font-normal text-muted-foreground hover:bg-transparent hover:text-foreground"
                 >
                   ข้ามไปก่อน
                 </Button>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex shrink-0 items-center gap-2">
                   {showBack ? (
                     <Button
                       type="button"
@@ -569,13 +624,19 @@ export function InterestSurveyGate() {
                     type="button"
                     onClick={() => void goNext()}
                     disabled={!canContinue || isSaving || mediaBusy}
-                    className="rounded-full bg-gradient-brand text-white border-0 min-w-[10rem]"
+                    className="min-w-[10rem] rounded-full border-0 bg-gradient-brand text-white"
                   >
                     {isSaving ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
                         กำลังบันทึก…
                       </>
+                    ) : step === "interests" ? (
+                      selected.size > 0 ? (
+                        "เริ่มใช้งาน"
+                      ) : (
+                        "ข้ามและเริ่มใช้งาน"
+                      )
                     ) : step === "basics" ? (
                       "เริ่มใช้งาน"
                     ) : (

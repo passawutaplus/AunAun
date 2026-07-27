@@ -30,7 +30,7 @@ export function ProjectOwnerMenu({ projectId, projectTitle, className, triggerCl
       await deleteProject.mutateAsync(projectId);
       toast.success("ลบผลงานแล้ว");
       setDeleteOpen(false);
-      navigate("/portfolio/manage", { replace: true });
+      navigate("/portfolio", { replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "ลบไม่สำเร็จ");
     }

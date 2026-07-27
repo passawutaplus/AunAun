@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -301,7 +301,7 @@ export const useDeleteProjectSeries = () => {
       qc.invalidateQueries({ queryKey: ["project-series"] });
       qc.invalidateQueries({ queryKey: ["project-series-public"] });
       qc.invalidateQueries({ queryKey: ["project-series-for-project"] });
-      toast.success("ลบชุดผลงานแล้ว");
+      toast.success("ลบ Catalog แล้ว");
     },
   });
 };
@@ -328,7 +328,7 @@ export const useAddProjectsToSeries = () => {
       const { error } = await itemsTable().insert(rows as never);
       if (error) {
         if (`${error.message}`.includes("project_series_items_project_unique") || error.code === "23505") {
-          throw new Error("ผลงานบางชิ้นอยู่ในชุดอื่นแล้ว — เอาออกจากชุดเดิมก่อน");
+          throw new Error("ผลงานบางชิ้นอยู่ใน Catalog อื่นแล้ว — เอาออกจาก Catalog เดิมก่อน");
         }
         throw error;
       }
@@ -402,7 +402,7 @@ export async function assignProjectToSeries(input: {
     } as never);
     if (error) {
       if (`${error.message}`.includes("project_series_items_project_unique") || error.code === "23505") {
-        throw new Error("ผลงานนี้อยู่ในชุดอื่นแล้ว");
+        throw new Error("ผลงานนี้อยู่ใน Catalog อื่นแล้ว");
       }
       throw error;
     }

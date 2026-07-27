@@ -661,7 +661,7 @@ export default function ProjectManageStatsDialog({
 
                 onOpenChange(false);
 
-                navigate("/portfolio?focus=hiring");
+                navigate("/dashboard");
 
               }}
 

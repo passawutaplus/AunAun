@@ -40,12 +40,19 @@ export const useUpdateProfile = (userId: string | undefined) => {
       if (p.bio !== undefined) payload.bio = p.bio;
       if (p.role !== undefined) payload.role = p.role;
       if (p.location !== undefined) payload.location = p.location;
+      if (p.profileAddress !== undefined) {
+        (payload as { profile_address?: Json }).profile_address =
+          p.profileAddress as unknown as Json;
+      }
       if (p.email !== undefined) payload.email = p.email;
       if (p.phone !== undefined) payload.phone = p.phone;
       if (p.website !== undefined) payload.website = p.website || null;
       if (p.lineId !== undefined) payload.line_id = p.lineId;
       if (p.facebook !== undefined) payload.facebook = p.facebook;
       if (p.instagram !== undefined) payload.instagram = p.instagram;
+      if (p.socialLinks !== undefined) {
+        (payload as { social_links?: Json }).social_links = p.socialLinks as unknown as Json;
+      }
       if (p.notifyEmail !== undefined) payload.notify_email = p.notifyEmail;
       if (p.notifyHire !== undefined) payload.notify_hire = p.notifyHire;
       if (p.notifyCollab !== undefined) {

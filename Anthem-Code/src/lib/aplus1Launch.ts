@@ -32,10 +32,16 @@ export function coerceLaunchFeedMode(mode: FeedMode): LaunchFeedMode {
  */
 export const LAUNCH_ALLOWED_ROUTE_PATTERNS: readonly RegExp[] = [
   /^\/$/,
+  /^\/learn(\/|$)/,
+  /^\/help(\/|$)/,
+  /^\/dev\/review-form$/,
+  /^\/dev\/hire-cancel$/,
+  /^\/hire(\/|$)/,
+  /^\/verify$/,
   /^\/auth(\/|$)/,
   /^\/reset-password$/,
   /^\/portfolio(\/|$)/,
-  /^\/dashboard$/,
+  /^\/dashboard(\/collab)?$/,
   /^\/hire-requests$/,
   /^\/collab-requests$/,
   /^\/project\/[^/]+$/,
@@ -156,10 +162,19 @@ export function isLaunchCollabEnabled(): boolean {
   return true;
 }
 
-/** Creator support / gifting CTA — disabled at launch until explicitly enabled. */
+/** Creator support / gifting CTA — disabled until gift economy is re-enabled. */
 export function isLaunchCreatorSupportEnabled(): boolean {
+  return isAplus1GiftEconomyEnabled();
+}
+
+/**
+ * PX gifts, daily free claim, gift catalog/missions, earn-readiness UI.
+ * Off by default — re-enable with VITE_APLUS1_GIFT_ECONOMY_ENABLED=true
+ * (and VITE_APLUS1_FULL_PRODUCT=true when launch-minimal).
+ */
+export function isAplus1GiftEconomyEnabled(): boolean {
   if (isAplus1LaunchMinimal()) return false;
-  return import.meta.env.VITE_APLUS1_SUPPORT_ENABLED === "true";
+  return import.meta.env.VITE_APLUS1_GIFT_ECONOMY_ENABLED === "true";
 }
 
 /** Design Drill — disabled at launch until explicitly enabled. */
@@ -172,6 +187,15 @@ export function isLaunchDesignDrillEnabled(): boolean {
 export function isLaunchBoostEnabled(): boolean {
   if (isAplus1LaunchMinimal()) return false;
   return import.meta.env.VITE_APLUS1_BOOST_ENABLED === "true";
+}
+
+/**
+ * Full Grid project editor — paused; focus on Casual module canvas first.
+ * Re-enable with VITE_APLUS1_FULL_GRID_ENABLED=true
+ * (existing flex_grid projects still open in Full Grid when editing).
+ */
+export function isLaunchFullGridEditorEnabled(): boolean {
+  return import.meta.env.VITE_APLUS1_FULL_GRID_ENABLED === "true";
 }
 
 export class SoloEcosystemDisabledError extends Error {

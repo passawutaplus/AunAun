@@ -6,6 +6,18 @@ export function normalizeUsername(raw: string): string {
   return raw.trim().toLowerCase();
 }
 
+/** Derive a handle from a display/Username label (spaces → _, drop invalid chars). */
+export function deriveUsernameFromLabel(raw: string): string {
+  return normalizeUsername(raw)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9._\s-]/g, "")
+    .replace(/[\s-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^[._]+|[._]+$/g, "")
+    .slice(0, 30);
+}
+
 async function isUsernameTaken(username: string, excludeUserId?: string): Promise<boolean> {
   const normalized = normalizeUsername(username);
   if (normalized.length < 2) return false;
@@ -40,18 +52,61 @@ export function useUsernameAvailability(username: string, excludeUserId?: string
   });
 }
 
-export async function assertUsernameAvailable(username: string, excludeUserId?: string) {
+export type UsernameCheckResult =
+  | { ok: true; username: string }
+  | { ok: false; username: string; reason: "short" | "format" | "reserved" | "taken" | "error"; message: string };
+
+/** Imperative availability check (for click-to-verify UX). */
+export async function checkUsernameAvailability(
+  username: string,
+  excludeUserId?: string,
+): Promise<UsernameCheckResult> {
   const normalized = normalizeUsername(username);
   if (normalized.length < 2) {
-    throw new Error("ชื่อผู้ใช้ต้องมีอย่างน้อย 2 ตัวอักษร");
+    return {
+      ok: false,
+      username: normalized,
+      reason: "short",
+      message: "ชื่อผู้ใช้ต้องมีอย่างน้อย 2 ตัวอักษร",
+    };
   }
   if (!/^[a-z0-9_.]+$/.test(normalized)) {
-    throw new Error("ใช้ได้เฉพาะ a-z, 0-9, _ และ .");
+    return {
+      ok: false,
+      username: normalized,
+      reason: "format",
+      message: "ใช้ได้เฉพาะ a-z, 0-9, _ และ .",
+    };
   }
   if (isReservedPublicHandle(normalized)) {
-    throw new Error("ชื่อผู้ใช้นี้สงวนไว้ — ลองชื่ออื่น");
+    return {
+      ok: false,
+      username: normalized,
+      reason: "reserved",
+      message: "ชื่อผู้ใช้นี้สงวนไว้ — ลองชื่ออื่น",
+    };
   }
-  if (await isUsernameTaken(normalized, excludeUserId)) {
-    throw new Error("ชื่อผู้ใช้นี้ถูกใช้แล้ว — ลองชื่ออื่น");
+  try {
+    if (await isUsernameTaken(normalized, excludeUserId)) {
+      return {
+        ok: false,
+        username: normalized,
+        reason: "taken",
+        message: "ชื่อผู้ใช้นี้ถูกใช้แล้ว — ลองชื่ออื่น",
+      };
+    }
+  } catch {
+    return {
+      ok: false,
+      username: normalized,
+      reason: "error",
+      message: "เช็คไม่สำเร็จ — ลองอีกครั้ง",
+    };
   }
+  return { ok: true, username: normalized };
+}
+
+export async function assertUsernameAvailable(username: string, excludeUserId?: string) {
+  const result = await checkUsernameAvailability(username, excludeUserId);
+  if (!result.ok) throw new Error(result.message);
 }

@@ -9,9 +9,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PIXEL_POLICY_PATH } from "@/lib/pixelPolicy";
+import { isAplus1GiftEconomyEnabled } from "@/lib/aplus1Launch";
 
 export function EarningsClosedLoopNote() {
   const [open, setOpen] = useState(false);
+  if (!isAplus1GiftEconomyEnabled()) return null;
 
   return (
     <>
