@@ -150,7 +150,7 @@ export default function ServiceEditorDialog({
   };
 
   const buildPreviewService = (): CreatorService => {
-    const max = Math.max(0, Math.round(form.price_thb));
+    let max = Math.max(0, Math.round(form.price_thb));
     let min = Math.max(0, Math.round(form.price_min_thb ?? max));
     if (min > max) [min, max] = [max, min];
     const items = deliverables.map((d) => d.trim()).filter(Boolean);

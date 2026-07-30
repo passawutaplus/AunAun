@@ -8,6 +8,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://aplus1.app/u/c165644b-a22a-4ee1-beed-bf64e6557ed0</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://aplus1.app/u/87e74514-156b-4f17-ada0-3878e81a771e</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -24,11 +29,6 @@
   </url>
   <url>
     <loc>https://aplus1.app/u/3d43d3db-7c62-4d6e-97ca-22a9c546b9e1</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://aplus1.app/u/c165644b-a22a-4ee1-beed-bf64e6557ed0</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -358,6 +358,11 @@
     <priority>0.75</priority>
   </url>
   <url>
+    <loc>https://aplus1.app/@blacksmithtools1997_c16564</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
     <loc>https://aplus1.app/@pinyokijanan.work_87e745</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
@@ -374,11 +379,6 @@
   </url>
   <url>
     <loc>https://aplus1.app/@msk.petch_3d43d3</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://aplus1.app/@blacksmithtools1997_c16564</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
