@@ -2,12 +2,11 @@
 import { Link } from "react-router-dom";
 import {
   ChevronRight,
-  Folder,
-  FolderOpen,
   Images,
   Lock,
   Search,
 } from "lucide-react";
+import CatalogIcon from "@/components/icons/CatalogIcon";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
@@ -94,11 +93,7 @@ function SeriesFolderRow({
           }}
           className="flex min-w-0 flex-1 items-center gap-2 py-1.5 pr-1.5 text-left text-sm"
         >
-          {expanded ? (
-            <FolderOpen className="h-4 w-4 shrink-0 opacity-90" />
-          ) : (
-            <Folder className="h-4 w-4 shrink-0 opacity-80" />
-          )}
+          <CatalogIcon className="h-4 w-4 shrink-0 opacity-90" />
           <span className="min-w-0 flex-1 truncate">{series.title}</span>
           {!series.is_public && (
             <Lock className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="ส่วนตัว" />
@@ -259,7 +254,7 @@ export function SeriesWorkspaceSidebar({
                   : "text-foreground hover:bg-accent/40",
               )}
             >
-              <Folder className="h-4 w-4 shrink-0" />
+              <CatalogIcon className="h-4 w-4 shrink-0" />
               <span className="min-w-0 flex-1 truncate font-medium">Catalog ทั้งหมด</span>
               <span className="tabular-nums text-[11px] text-muted-foreground">{series.length}</span>
             </button>

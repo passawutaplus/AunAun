@@ -6,7 +6,6 @@ import {
   Layers3,
   Coins,
   FolderKanban,
-  Library,
   Sparkles,
   MessagesSquare,
   Shield,
@@ -16,6 +15,7 @@ import {
   Handshake,
   Rocket,
 } from "lucide-react";
+import CatalogIcon from "@/components/icons/CatalogIcon";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { signOutApp } from "@/lib/signOutApp";
@@ -85,7 +85,7 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
             <Handshake className="w-4 h-4 mr-2" /> คำขอคอลแลป
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => go("/portfolio?tab=catalog")} className="rounded-lg">
-            <Library className="w-4 h-4 mr-2" /> Catalogs
+            <CatalogIcon className="w-4 h-4 mr-2" /> Catalogs
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => go("/portfolio?tab=collections")} className="rounded-lg">
             <Layers3 className="w-4 h-4 mr-2" /> Collections

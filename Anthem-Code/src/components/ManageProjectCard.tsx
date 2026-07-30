@@ -131,6 +131,17 @@ const ManageProjectCard = ({
 
   const primaryActions = (
     <div className="flex items-center gap-1">
+      {onShowStats && project.status === "Published" ? (
+        <button
+          type="button"
+          onClick={onShowStats}
+          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          aria-label="ดูสถิติผลงาน"
+          title="สถิติ"
+        >
+          <BarChart3 className="w-3.5 h-3.5" />
+        </button>
+      ) : null}
       {project.status === "Published" && (
         <button
           type="button"
@@ -216,16 +227,6 @@ const ManageProjectCard = ({
             </div>
           </div>
           <div className="flex items-center justify-between gap-2 sm:flex-col sm:items-end sm:justify-center shrink-0">
-            {onShowStats && project.status === "Published" && (
-              <button
-                type="button"
-                onClick={onShowStats}
-                className="inline-flex items-center gap-1 rounded-lg border border-dashed border-border/80 px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-              >
-                <BarChart3 className="w-3.5 h-3.5" />
-                สถิติ
-              </button>
-            )}
             <div className="flex items-center gap-1">
               {orderActions}
               {primaryActions}
@@ -319,25 +320,6 @@ const ManageProjectCard = ({
             </div>
           )}
         </div>
-
-        {onShowStats && project.status === "Published" && (
-          <button
-            type="button"
-            onClick={onShowStats}
-            className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border/80 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-          >
-            <BarChart3 className="w-3.5 h-3.5" />
-            ดูสถิติผลงาน
-            {(stats.views7d > 0 || stats.hireCount > 0 || stats.collabCount > 0) && (
-              <span className="text-[10px] text-primary">
-                · 7 วัน {stats.views7d}
-                {stats.hireCount + stats.collabCount > 0
-                  ? ` · โอกาส ${stats.hireCount + stats.collabCount}`
-                  : ""}
-              </span>
-            )}
-          </button>
-        )}
 
         <div className="flex items-center justify-between gap-1 pt-2 border-t border-border/50">
           {orderActions}

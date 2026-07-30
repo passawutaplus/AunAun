@@ -43,6 +43,8 @@ export function useAdminRealtime() {
       })
       .on("postgres_changes", { event: "*", schema: "anthem", table: "hiring_requests" }, () => {
         qc.invalidateQueries({ queryKey: ["admin-list", "hiring_requests"] });
+        qc.invalidateQueries({ queryKey: ["admin-package-overview"] });
+        qc.invalidateQueries({ queryKey: ["admin-list", "creator_services"] });
       })
       .on("postgres_changes", { event: "*", schema: "anthem", table: "collab_requests" }, () => {
         qc.invalidateQueries({ queryKey: ["admin-list", "collab_requests"] });
@@ -55,6 +57,15 @@ export function useAdminRealtime() {
       })
       .on("postgres_changes", { event: "*", schema: "anthem", table: "inspire_boards" }, () => {
         qc.invalidateQueries({ queryKey: ["admin-list", "inspire_boards"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "anthem", table: "creator_services" }, () => {
+        qc.invalidateQueries({ queryKey: ["admin-list", "creator_services"] });
+        qc.invalidateQueries({ queryKey: ["admin-package-overview"] });
+        qc.invalidateQueries({ queryKey: ["admin-stats"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "anthem", table: "creator_service_views" }, () => {
+        qc.invalidateQueries({ queryKey: ["admin-list", "creator_services"] });
+        qc.invalidateQueries({ queryKey: ["admin-package-overview"] });
       })
       .on("postgres_changes", { event: "*", schema: "shared", table: "gifts" }, () => {
         qc.invalidateQueries({ queryKey: ["admin-gifts-catalog"] });

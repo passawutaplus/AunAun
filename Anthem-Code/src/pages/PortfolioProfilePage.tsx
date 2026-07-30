@@ -26,6 +26,8 @@ import CollectionsManagePanel from "@/components/collections/CollectionsManagePa
 import PortfolioWorksManagePanel from "@/components/portfolio/PortfolioWorksManagePanel";
 import InspireManagePanel from "@/components/inspire/InspireManagePanel";
 import CatalogManagePanel from "@/components/series/CatalogManagePanel";
+import PortfolioPackagesManagePanel from "@/components/portfolio/PortfolioPackagesManagePanel";
+import { useCreatorServices } from "@/hooks/useCreatorServices";
 import type { ExperienceItem } from "@/lib/validators";
 import { ProfileAboutReadOnly } from "@/components/profile/ProfileAboutReadOnly";
 import PageLoader from "@/components/ui/PageLoader";
@@ -58,9 +60,9 @@ const parseExperience = (raw: unknown): ExperienceItem[] =>
 const parseSkills = (raw: unknown): string[] =>
   Array.isArray(raw) ? raw.filter((s): s is string => typeof s === "string") : [];
 
-type ProfileTab = "work" | "about" | "catalog" | "collections" | "inspire";
+type ProfileTab = "work" | "services" | "about" | "catalog" | "collections" | "inspire";
 
-const TAB_IDS: ProfileTab[] = ["work", "catalog", "collections", "inspire", "about"];
+const TAB_IDS: ProfileTab[] = ["work", "services", "catalog", "collections", "inspire", "about"];
 
 function resolveTab(raw: string | null): ProfileTab {
   if (raw && (TAB_IDS as string[]).includes(raw)) return raw as ProfileTab;
@@ -79,6 +81,7 @@ const PortfolioProfilePage = () => {
   const { followers, following } = useFollowState(user?.id);
   const { data: collections = [] } = useCollections(user?.id);
   const { data: seriesList = [] } = useMyProjectSeries(user?.id);
+  const { data: myServices = [] } = useCreatorServices(user?.id, { includeDrafts: true });
   const { data: inspireBoardsRaw = [] } = useInspireBoards(user?.id);
   const inspireBoards = useMemo(
     () => inspireBoardsRaw.filter((b) => !isDefaultInspireBoard(b)),
@@ -210,6 +213,7 @@ const PortfolioProfilePage = () => {
 
   const tabs: { id: ProfileTab; label: string; count?: number }[] = [
     { id: "work", label: "Works", count: published.length },
+    { id: "services", label: "Packages", count: myServices.length },
     { id: "catalog", label: "Catalogs", count: seriesList.length },
     { id: "collections", label: "Collections", count: collections.length },
     { id: "inspire", label: "Inspiration", count: inspireBoards.length },
@@ -347,31 +351,38 @@ const PortfolioProfilePage = () => {
 
           <div className="flex items-end gap-2 border-b border-border/70">
             <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide">
-              <nav className="flex min-w-max gap-1" aria-label="เมนูโปรไฟล์">
+              <nav className="flex min-w-max items-center gap-1" aria-label="เมนูโปรไฟล์">
                 {tabs.map((tab) => {
                   const active = activeTab === tab.id;
                   return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setTab(tab.id)}
-                      className={cn(
-                        "relative px-3.5 py-2.5 text-sm whitespace-nowrap transition-colors",
-                        active
-                          ? "font-semibold text-foreground"
-                          : "font-medium text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {tab.label}
-                      {typeof tab.count === "number" && tab.count > 0 ? (
-                        <span className="ml-1 text-xs text-muted-foreground font-normal tabular-nums">
-                          ({tab.count})
-                        </span>
+                    <div key={tab.id} className="flex items-center gap-1">
+                      {tab.id === "collections" ? (
+                        <span
+                          aria-hidden
+                          className="mx-1 h-4 w-px shrink-0 bg-border/80"
+                        />
                       ) : null}
-                      {active ? (
-                        <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-foreground" />
-                      ) : null}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setTab(tab.id)}
+                        className={cn(
+                          "relative px-3.5 py-2.5 text-sm whitespace-nowrap transition-colors",
+                          active
+                            ? "font-semibold text-foreground"
+                            : "font-medium text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {tab.label}
+                        {typeof tab.count === "number" && tab.count > 0 ? (
+                          <span className="ml-1 text-xs text-muted-foreground font-normal tabular-nums">
+                            ({tab.count})
+                          </span>
+                        ) : null}
+                        {active ? (
+                          <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-foreground" />
+                        ) : null}
+                      </button>
+                    </div>
                   );
                 })}
               </nav>
@@ -390,6 +401,10 @@ const PortfolioProfilePage = () => {
 
           {activeTab === "work" ? (
             <PortfolioWorksManagePanel userId={user!.id} showDesignDrill />
+          ) : null}
+
+          {activeTab === "services" ? (
+            <PortfolioPackagesManagePanel ownerId={user!.id} />
           ) : null}
 
           {activeTab === "about" ? (

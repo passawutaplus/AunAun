@@ -18,4 +18,13 @@ describe("validateProjectInquiry", () => {
   it("accepts valid project id for project source", () => {
     expect(validateProjectInquiry({ source: "project", projectId: VALID_UUID })).toBeNull();
   });
+
+  it("requires service id when source is service", () => {
+    expect(validateProjectInquiry({ source: "service" })).toMatch(/บริการอ้างอิง/);
+    expect(validateProjectInquiry({ source: "service", serviceId: "bad" })).toMatch(/บริการอ้างอิง/);
+  });
+
+  it("accepts valid service id for service source", () => {
+    expect(validateProjectInquiry({ source: "service", serviceId: VALID_UUID })).toBeNull();
+  });
 });

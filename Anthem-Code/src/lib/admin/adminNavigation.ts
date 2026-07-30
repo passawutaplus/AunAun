@@ -1,5 +1,4 @@
 import type { ComponentType } from "react";
-import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import {
   Activity,
   Banknote,
@@ -7,6 +6,7 @@ import {
   Bell,
   Bookmark,
   Bot,
+  Briefcase,
   Building2,
   ClipboardList,
   Database,
@@ -38,6 +38,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import type { AdminStats } from "@/hooks/admin/useAdminData";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 
@@ -216,6 +217,14 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         icon: FolderKanban,
         statKey: "publishedProjects",
         statLabel: "เผยแพร่",
+      },
+      {
+        to: "/admin/packages",
+        label: "แพ็กเกจ",
+        hint: "บริการครีเอเตอร์ — คนดูและกดจ้าง",
+        icon: Briefcase,
+        statKey: "totalPackages",
+        statLabel: "แพ็กเกจ",
       },
       {
         to: "/admin/collections",
@@ -517,6 +526,7 @@ const SIDEBAR_PATHS_ORDERED: { sectionId: string; to: string }[] = [
   { sectionId: "people", to: "/admin/users" },
   { sectionId: "people", to: "/admin/studios" },
   { sectionId: "content", to: "/admin/projects" },
+  { sectionId: "content", to: "/admin/packages" },
   { sectionId: "content", to: "/admin/collections" },
   { sectionId: "content", to: "/admin/inspire" },
   { sectionId: "content", to: "/admin/community" },

@@ -81,10 +81,28 @@ export const hireInviteBriefSchema = z
       .array(z.string().trim().min(1).max(50))
       .min(1, "กรุณาเลือกประเภทงานอย่างน้อย 1 อย่าง")
       .max(5),
-    details: z.string().trim().max(1000).optional(),
+    details: z
+      .string()
+      .trim()
+      .min(20, "กรุณาอธิบายรายละเอียดงานอย่างน้อย 20 ตัวอักษร")
+      .max(1000),
     budgetAmount: z.number().int().positive().max(10_000_000).optional(),
-    budgetMin: z.number().int().nonnegative().max(10_000_000).optional(),
-    budgetMax: z.number().int().nonnegative().max(10_000_000).optional(),
+    budgetMin: z
+      .number({
+        required_error: "กรุณาระบุงบประมาณต่ำสุด",
+        invalid_type_error: "กรุณาระบุงบประมาณต่ำสุด",
+      })
+      .int()
+      .nonnegative()
+      .max(10_000_000),
+    budgetMax: z
+      .number({
+        required_error: "กรุณาระบุงบประมาณสูงสุด",
+        invalid_type_error: "กรุณาระบุงบประมาณสูงสุด",
+      })
+      .int()
+      .nonnegative()
+      .max(10_000_000),
     deadline: z
       .string()
       .trim()
@@ -92,11 +110,7 @@ export const hireInviteBriefSchema = z
       .max(50),
   })
   .superRefine((val, ctx) => {
-    if (
-      val.budgetMin != null &&
-      val.budgetMax != null &&
-      val.budgetMin > val.budgetMax
-    ) {
+    if (val.budgetMin > val.budgetMax) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "งบต่ำสุดต้องไม่เกินงบสูงสุด",

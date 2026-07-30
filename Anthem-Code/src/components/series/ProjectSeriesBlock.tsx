@@ -1,5 +1,5 @@
 ﻿import { Link } from "react-router-dom";
-import { FolderKanban } from "lucide-react";
+import CatalogIcon from "@/components/icons/CatalogIcon";
 import { useSeriesForProject } from "@/hooks/useProjectSeries";
 import { cn } from "@/lib/utils";
 
@@ -34,9 +34,8 @@ export function ProjectSeriesBlock({ projectId, className, compact = false }: Pr
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-            <FolderKanban className="w-3.5 h-3.5 text-primary shrink-0" />
+            <CatalogIcon className="w-3.5 h-3.5 text-primary shrink-0" />
             Catalog
-            {series.client_label ? ` · ${series.client_label}` : ""}
           </p>
           <Link
             to={`/series/${series.id}`}

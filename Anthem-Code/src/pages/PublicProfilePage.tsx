@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { Globe, Instagram, Facebook, MessageSquare, UserX, Handshake, Eye, X, Share2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
+import { BrandLogo } from "@/components/brand/BrandLogo";
+import { DESKTOP_TOP_NAV_GLASS } from "@/components/DesktopTopNav";
 import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { Button } from "@/components/ui/button";
@@ -20,7 +22,10 @@ import DisciplineChips from "@/components/profile/DisciplineChips";
 import ProfileSkillChips from "@/components/profile/ProfileSkillChips";
 import CollabDialog from "@/components/CollabDialog";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
+import CatalogIcon from "@/components/icons/CatalogIcon";
 import UserAvatar from "@/components/UserAvatar";
+import ProfileServicesSection from "@/components/services/ProfileServicesSection";
+import { useCreatorServices } from "@/hooks/useCreatorServices";
 
 import { useFollowState } from "@/hooks/useFollow";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,7 +45,6 @@ import { highlight } from "@/lib/highlight";
 import { PROJECT_FEED_SELECT, PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
 import { profileReadFrom } from "@/lib/profileAccess";
 import SeoHead from "@/components/SeoHead";
-import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { absoluteUrl, isThinProfile, truncateDescription } from "@/lib/seo";
 import {
@@ -57,6 +61,7 @@ import { navigateToAuth, stripSearchParams } from "@/lib/authRedirect";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { toast } from "sonner";
 import { isLaunchCreatorSupportEnabled } from "@/lib/aplus1Launch";
+import { isLocalDevSelfHirePreview } from "@/lib/localDevSelfHire";
 
 const PREVIEW_TOAST = "นี่คือมุมมองผู้เยี่ยมชม — ปุ่มนี้ใช้งานได้จริงเมื่อคนอื่นเปิดโปรไฟล์ของคุณ";
 
@@ -76,8 +81,38 @@ const PublicProfilePage = () => {
   const q = params.get("q") ?? "";
   const { user } = useAuth();
   const [hireOpen, setHireOpen] = useState(false);
+  const [hirePanel, setHirePanel] = useState<"message" | "services">("message");
+  const [autoSubmitServiceId, setAutoSubmitServiceId] = useState<string | null>(null);
   const [collabOpen, setCollabOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("works");
+  const PROFILE_TABS = ["works", "series", "services", "about", "reviews"] as const;
+  type ProfileTab = (typeof PROFILE_TABS)[number];
+  const tabFromUrl = params.get("tab");
+  const [activeTab, setActiveTab] = useState<ProfileTab>(() =>
+    tabFromUrl && (PROFILE_TABS as readonly string[]).includes(tabFromUrl)
+      ? (tabFromUrl as ProfileTab)
+      : "works",
+  );
+
+  useEffect(() => {
+    const t = params.get("tab");
+    if (t && (PROFILE_TABS as readonly string[]).includes(t) && t !== activeTab) {
+      setActiveTab(t as ProfileTab);
+    }
+  }, [params, activeTab]);
+
+  const setProfileTab = useCallback(
+    (value: string) => {
+      const next = (PROFILE_TABS as readonly string[]).includes(value)
+        ? (value as ProfileTab)
+        : "works";
+      setActiveTab(next);
+      const sp = new URLSearchParams(params);
+      if (next === "works") sp.delete("tab");
+      else sp.set("tab", next);
+      setSearchParams(sp, { replace: true });
+    },
+    [params, setSearchParams],
+  );
 
   const {
     data: profile,
@@ -116,6 +151,13 @@ const PublicProfilePage = () => {
     isSelf && !visitorPreview ? resolvedUserId : undefined,
   );
   const seriesList = isSelf && !visitorPreview ? ownerSeries : publicSeries;
+  const { data: creatorServices = [] } = useCreatorServices(resolvedUserId, {
+    includeDrafts: isSelf && !visitorPreview,
+  });
+  const servicesTabCount =
+    isSelf && !visitorPreview
+      ? creatorServices.length
+      : creatorServices.filter((s) => s.status === "Published").length;
 
   const {
     data: projects = [],
@@ -172,6 +214,7 @@ const PublicProfilePage = () => {
 
   useEffect(() => {
     if (!user || params.get("hire") !== "1" || !resolvedUserId || isSelf) return;
+    setHirePanel("message");
     setHireOpen(true);
     const next = stripSearchParams(params, ["hire"]);
     const q = next.toString();
@@ -255,6 +298,11 @@ const PublicProfilePage = () => {
 
   const openHire = () => {
     if (visitorPreview) {
+      if (isLocalDevSelfHirePreview(profile.username)) {
+        setHirePanel("message");
+        setHireOpen(true);
+        return;
+      }
       previewToast();
       return;
     }
@@ -262,6 +310,7 @@ const PublicProfilePage = () => {
       navigateToAuth(navigate, { hire: "1" });
       return;
     }
+    setHirePanel("message");
     setHireOpen(true);
   };
   const openCollab = () => {
@@ -316,54 +365,81 @@ const PublicProfilePage = () => {
           breadcrumbJsonLd(crumbs),
         ]}
       />
-      <div
-        className={cn(
-          "sticky top-0 z-20 border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30",
-          !visitorPreview && "lg:hidden",
-        )}
-      >        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-2">
+      {/* Mobile top chrome (desktop uses DesktopTopNav + back) */}
+      <div className={cn("sticky top-0 z-30 lg:hidden", DESKTOP_TOP_NAV_GLASS)}>
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-2">
           <BackButton
             to={visitorPreview ? "/portfolio" : undefined}
-            label={visitorPreview ? "กลับแดชบอร์ด" : "ย้อนกลับ"}
+            fallbackTo="/"
+            label={visitorPreview ? "Back to portfolio" : "Back"}
           />
-          <SeoBreadcrumb items={crumbs} className="mb-0 hidden sm:flex flex-1 min-w-0" />
-          {visitorPreview && (
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={`${BRAND_NAME} home`}
+          >
+            <BrandLogo size="sm" />
+          </button>
+          {visitorPreview ? (
             <div className="flex-1 min-w-0 flex items-center justify-between gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5">
               <span className="inline-flex items-center gap-1.5 text-xs text-foreground min-w-0">
                 <Eye className="w-3.5 h-3.5 text-primary shrink-0" />
-                <span className="truncate">พรีวิว — ลิงก์ที่แชร์จะเปิดหน้านี้โดยไม่มีแถบนี้</span>
+                <span className="truncate">Preview — shared link hides this bar</span>
               </span>
               <button
                 type="button"
                 onClick={exitPreview}
                 className="inline-flex items-center gap-1 text-xs text-primary hover:underline shrink-0"
               >
-                <X className="w-3 h-3" /> ปิด
+                <X className="w-3 h-3" /> Close
               </button>
             </div>
-          )}
-          {showAsVisitor && !visitorPreview && (
-            <ProfileSharePopover
-              url={publicShareUrl}
-              title={publicShareTitle}
-              message={publicShareMessage}
-              pathLabel={publicSharePath}
-              align="end"
-            >
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="rounded-full ml-auto shrink-0"
-                title="แชร์พอร์ตโฟล์นี้"
-                aria-label="แชร์พอร์ตโฟล์นี้"
-              >
-                <Share2 className="w-4 h-4" />
-              </Button>
-            </ProfileSharePopover>
+          ) : (
+            <div className="ml-auto flex items-center gap-1">
+              {showAsVisitor ? (
+                <ProfileSharePopover
+                  url={publicShareUrl}
+                  title={publicShareTitle}
+                  message={publicShareMessage}
+                  pathLabel={publicSharePath}
+                  align="end"
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full shrink-0"
+                    title="Share profile"
+                    aria-label="Share profile"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </Button>
+                </ProfileSharePopover>
+              ) : null}
+            </div>
           )}
         </div>
       </div>
+
+      {/* Desktop preview strip (DesktopTopNav already has back + logo) */}
+      {visitorPreview ? (
+        <div className={cn("sticky top-14 z-20 hidden lg:block", DESKTOP_TOP_NAV_GLASS)}>
+          <div className="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5 text-xs text-foreground min-w-0">
+              <Eye className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="truncate">Preview — shared link hides this bar</span>
+            </span>
+            <button
+              type="button"
+              onClick={exitPreview}
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline shrink-0"
+            >
+              <X className="w-3 h-3" /> Close
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {/* Header */}
       <div className="max-w-5xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6">
@@ -584,19 +660,13 @@ const PublicProfilePage = () => {
         <ProfileSectionTabs
           className="mt-4 sm:mt-6"
           value={activeTab}
-          onValueChange={setActiveTab}
+          onValueChange={setProfileTab}
           tabs={[
-            { value: "works", label: `ผลงาน (${portfolioProjects.length})` },
-            {
-              value: "series",
-              label: (
-                <>
-                  Catalog ({seriesList.length})
-                </>
-              ),
-            },
-            { value: "about", label: "เกี่ยวกับ" },
-            { value: "reviews", label: "รีวิว" },
+            { value: "works", label: `Works (${portfolioProjects.length})` },
+            { value: "series", label: `Catalog (${seriesList.length})` },
+            { value: "services", label: `Packages (${servicesTabCount})` },
+            { value: "about", label: "About" },
+            { value: "reviews", label: "Review" },
           ]}
         >
           {activeTab === "works" &&
@@ -631,9 +701,34 @@ const PublicProfilePage = () => {
               <PortfolioGrid projects={portfolioProjects as any} />
             ))}
 
+          {activeTab === "services" && resolvedUserId ? (
+            <ProfileServicesSection
+              ownerId={resolvedUserId}
+              isSelf={isSelf}
+              visitorPreview={visitorPreview}
+              onRequestService={(svc) => {
+                if (!user) {
+                  navigateToAuth(navigate, { hire: "1" });
+                  return;
+                }
+                if (
+                  visitorPreview &&
+                  !isLocalDevSelfHirePreview(profile.username)
+                ) {
+                  previewToast();
+                  return;
+                }
+                setAutoSubmitServiceId(svc.id);
+                setHirePanel("services");
+                setHireOpen(true);
+              }}
+            />
+          ) : null}
+
           {activeTab === "series" &&
             (seriesList.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground glass-panel rounded-2xl space-y-3">
+                <CatalogIcon className="w-12 h-12 text-muted-foreground/40 mx-auto" />
                 <p>ยังไม่มี Catalog สาธารณะ</p>
                 {isSelf && !visitorPreview && (
                   <Button
@@ -693,11 +788,21 @@ const PublicProfilePage = () => {
 
       <HireDialog
         open={hireOpen}
-        onOpenChange={setHireOpen}
+        onOpenChange={(next) => {
+          setHireOpen(next);
+          if (!next) {
+            setHirePanel("message");
+            setAutoSubmitServiceId(null);
+          }
+        }}
         projectTitle={displayName}
         freelancerId={resolvedUserId}
         source="profile"
         profileName={displayName}
+        freelancerUsername={profile.username}
+        initialPanel={hirePanel}
+        autoSubmitServiceId={autoSubmitServiceId}
+        onAutoSubmitHandled={() => setAutoSubmitServiceId(null)}
       />
       <CollabDialog
         open={collabOpen}

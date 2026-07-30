@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, Loader2, Plus, Search, Send } from "lucide-react";
+import { Briefcase, ExternalLink, Loader2, Plus, Search, Send } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import ServiceDetailDialog from "@/components/services/ServiceDetailDialog";
 import { sortPortfolioProjects } from "@/lib/portfolioSort";
 import { useSendMessage } from "@/hooks/useChat";
+import {
+  formatServicePriceRange,
+  useCreatorServices,
+  type CreatorService,
+} from "@/hooks/useCreatorServices";
 import { cn } from "@/lib/utils";
 import { getSupabaseErrorMessage } from "@/lib/supabaseErrors";
 import { toast } from "sonner";
@@ -20,6 +26,55 @@ import { useChatPortfolio, type ChatPortfolioProject } from "@/components/chat/u
 const PREVIEW_COUNT = 4;
 
 export type { ChatPortfolioProject };
+
+type PortfolioKind = "works" | "packages";
+
+function KindToggle({
+  value,
+  onChange,
+  worksCount,
+  packagesCount,
+}: {
+  value: PortfolioKind;
+  onChange: (v: PortfolioKind) => void;
+  worksCount: number;
+  packagesCount: number;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="หมวดส่งในแชท"
+      className="flex w-full rounded-full bg-muted/60 p-1"
+    >
+      {(
+        [
+          { id: "works" as const, label: "ผลงาน", count: worksCount },
+          { id: "packages" as const, label: "Packages", count: packagesCount },
+        ] as const
+      ).map((tab) => {
+        const active = value === tab.id;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(tab.id)}
+            className={cn(
+              "flex-1 rounded-full py-1.5 text-xs font-medium transition-colors",
+              active
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {tab.label}
+            <span className="ml-1 tabular-nums opacity-70">({tab.count})</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function PortfolioRow({
   project,
@@ -38,7 +93,12 @@ function PortfolioRow({
         <div className="w-12 h-12 rounded-lg bg-muted shrink-0" />
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{project.title}</p>
+        <Link
+          to={`/project/${project.id}`}
+          className="block text-sm font-medium truncate hover:underline hover:text-primary"
+        >
+          {project.title}
+        </Link>
         <p className="text-[11px] text-muted-foreground truncate">{project.category ?? "—"}</p>
       </div>
       <Button
@@ -48,6 +108,54 @@ function PortfolioRow({
         className="shrink-0 h-8 text-xs rounded-full"
         disabled={sending}
         onClick={() => onSend(project)}
+      >
+        {sending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+        ส่งในแชท
+      </Button>
+    </div>
+  );
+}
+
+function PackageRow({
+  service,
+  onSend,
+  onOpen,
+  sending,
+}: {
+  service: CreatorService;
+  onSend: (s: CreatorService) => void;
+  onOpen: (s: CreatorService) => void;
+  sending: boolean;
+}) {
+  const cover = service.cover_url?.trim() || service.gallery_urls[0] || "";
+  return (
+    <div className="flex items-center gap-2 p-2 rounded-xl border border-border bg-card/50 hover:bg-accent/30 transition-colors">
+      {cover ? (
+        <img src={cover} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+      ) : (
+        <div className="w-12 h-12 rounded-lg bg-muted shrink-0 flex items-center justify-center text-muted-foreground">
+          <Briefcase className="w-5 h-5 opacity-50" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <button
+          type="button"
+          onClick={() => onOpen(service)}
+          className="block w-full text-left text-sm font-medium truncate hover:underline hover:text-primary"
+        >
+          {service.title}
+        </button>
+        <p className="text-[11px] text-primary font-medium tabular-nums truncate">
+          {formatServicePriceRange(service.price_min_thb, service.price_thb)}
+        </p>
+      </div>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="shrink-0 h-8 text-xs rounded-full"
+        disabled={sending}
+        onClick={() => onSend(service)}
       >
         {sending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
         ส่งในแชท
@@ -82,7 +190,12 @@ function PortfolioGridCard({
       </Link>
       <div className="p-2.5 space-y-2 flex-1 flex flex-col">
         <div className="min-h-0 flex-1">
-          <p className="text-sm font-medium line-clamp-2 leading-snug">{project.title}</p>
+          <Link
+            to={`/project/${project.id}`}
+            className="text-sm font-medium line-clamp-2 leading-snug hover:underline hover:text-primary"
+          >
+            {project.title}
+          </Link>
           <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{project.category ?? "—"}</p>
         </div>
         <div className="flex gap-1.5">
@@ -115,19 +228,101 @@ function PortfolioGridCard({
   );
 }
 
+function PackageGridCard({
+  service,
+  onSend,
+  onOpen,
+  sending,
+}: {
+  service: CreatorService;
+  onSend: (s: CreatorService) => void;
+  onOpen: (s: CreatorService) => void;
+  sending: boolean;
+}) {
+  const cover = service.cover_url?.trim() || service.gallery_urls[0] || "";
+  return (
+    <div className="flex flex-col rounded-xl border border-border bg-card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => onOpen(service)}
+        className="block aspect-square bg-muted overflow-hidden relative group text-left"
+      >
+        {cover ? (
+          <img
+            src={cover}
+            alt=""
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+            <Briefcase className="w-8 h-8 opacity-40" />
+          </div>
+        )}
+      </button>
+      <div className="p-2.5 space-y-2 flex-1 flex flex-col">
+        <div className="min-h-0 flex-1">
+          <button
+            type="button"
+            onClick={() => onOpen(service)}
+            className="text-left text-sm font-medium line-clamp-2 leading-snug hover:underline hover:text-primary"
+          >
+            {service.title}
+          </button>
+          <p className="text-[11px] text-primary font-medium tabular-nums mt-0.5 truncate">
+            {formatServicePriceRange(service.price_min_thb, service.price_thb)}
+          </p>
+        </div>
+        <div className="flex gap-1.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="flex-1 h-8 text-xs rounded-lg px-2"
+            onClick={() => onOpen(service)}
+          >
+            <ExternalLink className="w-3 h-3 mr-1 shrink-0" />
+            ดูแพ็กเกจ
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="flex-1 h-8 text-xs rounded-lg px-2"
+            disabled={sending}
+            onClick={() => onSend(service)}
+          >
+            {sending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1 shrink-0" />}
+            ส่ง
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ChatPortfolioDialog({
   open,
   onOpenChange,
   title,
   projects,
-  onSend,
+  packages,
+  kind,
+  onKindChange,
+  onSendProject,
+  onSendPackage,
+  onOpenPackage,
   sending,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   projects: ChatPortfolioProject[];
-  onSend: (p: ChatPortfolioProject) => void;
+  packages: CreatorService[];
+  kind: PortfolioKind;
+  onKindChange: (k: PortfolioKind) => void;
+  onSendProject: (p: ChatPortfolioProject) => void;
+  onSendPackage: (s: CreatorService) => void;
+  onOpenPackage: (s: CreatorService) => void;
   sending: boolean;
 }) {
   const [search, setSearch] = useState("");
@@ -141,7 +336,7 @@ export function ChatPortfolioDialog({
     return Array.from(set).sort((a, b) => a.localeCompare(b, "th"));
   }, [projects]);
 
-  const filtered = useMemo(() => {
+  const filteredProjects = useMemo(() => {
     const q = search.trim().toLowerCase();
     return projects.filter((p) => {
       if (category !== "all" && p.category !== category) return false;
@@ -151,6 +346,15 @@ export function ChatPortfolioDialog({
     });
   }, [projects, search, category]);
 
+  const filteredPackages = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return packages;
+    return packages.filter((s) => {
+      const hay = [s.title, s.summary].join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+  }, [packages, search]);
+
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       setSearch("");
@@ -158,6 +362,10 @@ export function ChatPortfolioDialog({
     }
     onOpenChange(next);
   };
+
+  const showingPackages = kind === "packages";
+  const filteredCount = showingPackages ? filteredPackages.length : filteredProjects.length;
+  const totalCount = showingPackages ? packages.length : projects.length;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -167,16 +375,22 @@ export function ChatPortfolioDialog({
         </DialogHeader>
 
         <div className="px-4 pb-3 space-y-2 shrink-0 border-b border-border">
+          <KindToggle
+            value={kind}
+            onChange={onKindChange}
+            worksCount={projects.length}
+            packagesCount={packages.length}
+          />
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="ค้นหาชื่อหรือแท็ก…"
+              placeholder={showingPackages ? "ค้นหาชื่อแพ็กเกจ…" : "ค้นหาชื่อหรือแท็ก…"}
               className="pl-9 h-9 rounded-full bg-muted border-0"
             />
           </div>
-          {categories.length > 0 && (
+          {!showingPackages && categories.length > 0 && (
             <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
               <button
                 type="button"
@@ -210,12 +424,35 @@ export function ChatPortfolioDialog({
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0">
-          {filtered.length === 0 ? (
+          {showingPackages ? (
+            filteredPackages.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-10">
+                ไม่พบแพ็กเกจที่ตรงกับตัวกรอง
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {filteredPackages.map((s) => (
+                  <PackageGridCard
+                    key={s.id}
+                    service={s}
+                    onSend={onSendPackage}
+                    onOpen={onOpenPackage}
+                    sending={sending}
+                  />
+                ))}
+              </div>
+            )
+          ) : filteredProjects.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-10">ไม่พบผลงานที่ตรงกับตัวกรอง</p>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              {filtered.map((p) => (
-                <PortfolioGridCard key={p.id} project={p} onSend={onSend} sending={sending} />
+              {filteredProjects.map((p) => (
+                <PortfolioGridCard
+                  key={p.id}
+                  project={p}
+                  onSend={onSendProject}
+                  sending={sending}
+                />
               ))}
             </div>
           )}
@@ -223,7 +460,7 @@ export function ChatPortfolioDialog({
 
         <div className="px-4 py-3 border-t border-border shrink-0 text-center">
           <p className="text-[11px] text-muted-foreground">
-            แสดง {filtered.length} จาก {projects.length} ผลงาน
+            แสดง {filteredCount} จาก {totalCount} {showingPackages ? "แพ็กเกจ" : "ผลงาน"}
           </p>
         </div>
       </DialogContent>
@@ -233,28 +470,35 @@ export function ChatPortfolioDialog({
 
 export interface ChatPortfolioSectionProps {
   userId: string;
-  label: string;
   dialogTitle: string;
   conversationId: string;
 }
 
 const ChatPortfolioSection = ({
   userId,
-  label,
   dialogTitle,
   conversationId,
 }: ChatPortfolioSectionProps) => {
   const send = useSendMessage();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { data: projects = [], isLoading } = useChatPortfolio(userId);
+  const [kind, setKind] = useState<PortfolioKind>("works");
+  const [detailService, setDetailService] = useState<CreatorService | null>(null);
+  const { data: projects = [], isLoading: projectsLoading } = useChatPortfolio(userId);
+  const { data: services = [], isLoading: servicesLoading } = useCreatorServices(userId);
 
   const ordered = useMemo(
     () => sortPortfolioProjects(projects as Parameters<typeof sortPortfolioProjects>[0]),
     [projects],
   );
+  const publishedPackages = useMemo(
+    () => services.filter((s) => s.status === "Published"),
+    [services],
+  );
 
-  const preview = ordered.slice(0, PREVIEW_COUNT);
-  const hasMore = ordered.length > PREVIEW_COUNT;
+  const previewProjects = ordered.slice(0, PREVIEW_COUNT);
+  const previewPackages = publishedPackages.slice(0, PREVIEW_COUNT);
+  const listCount = kind === "works" ? ordered.length : publishedPackages.length;
+  const hasMore = listCount > PREVIEW_COUNT;
 
   const sendProject = async (project: ChatPortfolioProject) => {
     try {
@@ -263,7 +507,6 @@ const ChatPortfolioSection = ({
         content: project.title,
         messageType: "project",
         projectId: project.id,
-        /** Whose portfolio tab this was sent from (shown in group chat). */
         profileUserId: userId,
       });
       toast.success("ส่งผลงานในแชทแล้ว");
@@ -272,28 +515,76 @@ const ChatPortfolioSection = ({
     }
   };
 
+  const sendPackage = async (service: CreatorService) => {
+    try {
+      await send.mutateAsync({
+        conversationId,
+        content: service.title,
+        messageType: "service",
+        serviceId: service.id,
+        profileUserId: userId,
+      });
+      toast.success("ส่งแพ็กเกจในแชทแล้ว");
+    } catch (e: unknown) {
+      toast.error(getSupabaseErrorMessage(e, "ส่งไม่สำเร็จ"));
+    }
+  };
+
+  const isLoading = projectsLoading || servicesLoading;
   if (isLoading) {
-    return <InlineLoader label="กำลังโหลดผลงาน…" className="py-6" />;
+    return <InlineLoader label="กำลังโหลด…" className="py-6" />;
   }
-  if (ordered.length === 0) {
-    return <p className="text-sm text-muted-foreground py-6 text-center">ยังไม่มีผลงานที่เผยแพร่</p>;
+
+  const emptyWorks = ordered.length === 0;
+  const emptyPackages = publishedPackages.length === 0;
+  if (emptyWorks && emptyPackages) {
+    return (
+      <p className="text-sm text-muted-foreground py-6 text-center">
+        ยังไม่มีผลงานหรือแพ็กเกจที่เผยแพร่
+      </p>
+    );
   }
 
   return (
     <>
       <div className="space-y-2">
-        <p className="text-xs font-medium text-muted-foreground px-1">{label}</p>
-        <div className="space-y-2">
-          {preview.map((p) => (
-            <PortfolioRow
-              key={p.id}
-              project={p}
-              onSend={sendProject}
-              sending={send.isPending}
-            />
-          ))}
-        </div>
-        {(hasMore || ordered.length > 0) && (
+        <KindToggle
+          value={kind}
+          onChange={setKind}
+          worksCount={ordered.length}
+          packagesCount={publishedPackages.length}
+        />
+        {kind === "works" ? (
+          emptyWorks ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">ยังไม่มีผลงานที่เผยแพร่</p>
+          ) : (
+            <div className="space-y-2">
+              {previewProjects.map((p) => (
+                <PortfolioRow
+                  key={p.id}
+                  project={p}
+                  onSend={sendProject}
+                  sending={send.isPending}
+                />
+              ))}
+            </div>
+          )
+        ) : emptyPackages ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">ยังไม่มีแพ็กเกจที่เผยแพร่</p>
+        ) : (
+          <div className="space-y-2">
+            {previewPackages.map((s) => (
+              <PackageRow
+                key={s.id}
+                service={s}
+                onSend={sendPackage}
+                onOpen={setDetailService}
+                sending={send.isPending}
+              />
+            ))}
+          </div>
+        )}
+        {(hasMore || listCount > 0) && (
           <Button
             type="button"
             variant="outline"
@@ -301,7 +592,7 @@ const ChatPortfolioSection = ({
             onClick={() => setDialogOpen(true)}
           >
             <Plus className="w-3.5 h-3.5 mr-1.5" />
-            ส่งเพิ่มเติม ({ordered.length} ผลงาน)
+            ส่งเพิ่มเติม ({listCount} {kind === "works" ? "ผลงาน" : "แพ็กเกจ"})
           </Button>
         )}
       </div>
@@ -311,8 +602,23 @@ const ChatPortfolioSection = ({
         onOpenChange={setDialogOpen}
         title={dialogTitle}
         projects={ordered}
-        onSend={sendProject}
+        packages={publishedPackages}
+        kind={kind}
+        onKindChange={setKind}
+        onSendProject={sendProject}
+        onSendPackage={sendPackage}
+        onOpenPackage={setDetailService}
         sending={send.isPending}
+      />
+
+      <ServiceDetailDialog
+        open={!!detailService}
+        onOpenChange={(next) => {
+          if (!next) setDetailService(null);
+        }}
+        service={detailService}
+        previewOnly
+        onRequest={() => setDetailService(null)}
       />
     </>
   );

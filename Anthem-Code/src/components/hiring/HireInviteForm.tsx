@@ -68,7 +68,7 @@ export function buildHireInviteMessage(form: HireInviteFormState): string | null
 
 type JobOption = { id: string; title: string };
 
-type HireFieldErrorKey = "deadline" | "budgetMax" | "jobTypes";
+type HireFieldErrorKey = "deadline" | "budgetMin" | "budgetMax" | "jobTypes" | "details";
 
 type Props = {
   form: HireInviteFormState;
@@ -218,16 +218,30 @@ const HireInviteForm = ({
       <div className="border-t border-border/60 pt-5">
         <Label htmlFor="hire-details" className="flex items-center gap-1.5">
           <FileText className="h-3.5 w-3.5 text-primary" />
-          รายละเอียดงาน <span className="text-muted-foreground font-normal">(ไม่บังคับ)</span>
+          รายละเอียดงาน <span className="text-destructive">*</span>
         </Label>
         <Textarea
           id="hire-details"
           rows={3}
           value={form.details}
-          onChange={(e) => setForm((f) => ({ ...f, details: e.target.value }))}
-          placeholder="เป้าหมายงาน กลุ่มเป้าหมาย ข้อจำกัด"
-          className="rounded-xl mt-1.5"
+          onChange={(e) => {
+            setForm((f) => ({ ...f, details: e.target.value }));
+            onClearFieldError?.("details");
+          }}
+          placeholder="เป้าหมายงาน กลุ่มเป้าหมาย ข้อจำกัด (อย่างน้อย 20 ตัวอักษร)"
+          className={cn(
+            "rounded-xl mt-1.5",
+            fieldErrors?.details && "border-destructive focus-visible:ring-destructive",
+          )}
+          aria-invalid={!!fieldErrors?.details}
         />
+        {fieldErrors?.details ? (
+          <p className="text-xs text-destructive mt-1.5">{fieldErrors.details}</p>
+        ) : (
+          <p className="text-[11px] text-muted-foreground mt-1.5">
+            อย่างน้อย 20 ตัวอักษร · ตอนนี้ {form.details.trim().length} ตัวอักษร
+          </p>
+        )}
       </div>
 
       <div className="border-t border-border/60 pt-5">
@@ -348,7 +362,9 @@ const HireInviteForm = ({
         <div className="col-span-2 sm:col-span-1 space-y-1.5">
           <Label className="flex items-center gap-1.5">
             <Wallet className="h-3.5 w-3.5 text-primary" />
-            งบประมาณ (บาท) <span className="text-muted-foreground font-normal">ช่วงราคา</span>
+            งบประมาณ (บาท){" "}
+            <span className="text-muted-foreground font-normal">ช่วงราคา</span>{" "}
+            <span className="text-destructive">*</span>
           </Label>
           <div className="grid grid-cols-2 gap-2">
             <Input
@@ -357,13 +373,16 @@ const HireInviteForm = ({
               value={form.budgetMin}
               onChange={(e) => {
                 setForm((f) => ({ ...f, budgetMin: e.target.value }));
+                onClearFieldError?.("budgetMin");
                 onClearFieldError?.("budgetMax");
               }}
               placeholder="ต่ำสุด"
               className={cn(
                 "rounded-xl",
-                fieldErrors?.budgetMax && "border-destructive focus-visible:ring-destructive",
+                (fieldErrors?.budgetMin || fieldErrors?.budgetMax) &&
+                  "border-destructive focus-visible:ring-destructive",
               )}
+              aria-invalid={!!fieldErrors?.budgetMin || !!fieldErrors?.budgetMax}
             />
             <Input
               id="hire-budget-max"
@@ -381,8 +400,10 @@ const HireInviteForm = ({
               aria-invalid={!!fieldErrors?.budgetMax}
             />
           </div>
-          {fieldErrors?.budgetMax ? (
-            <p className="text-xs text-destructive">{fieldErrors.budgetMax}</p>
+          {fieldErrors?.budgetMin || fieldErrors?.budgetMax ? (
+            <p className="text-xs text-destructive">
+              {fieldErrors.budgetMin || fieldErrors.budgetMax}
+            </p>
           ) : null}
         </div>
         <div className="col-span-2 sm:col-span-1">

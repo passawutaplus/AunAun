@@ -143,18 +143,19 @@ function DraggableWorkCard({
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
                 onDragStart={(e) => e.preventDefault()}
-                className="w-full flex items-center justify-center gap-1 rounded-lg border border-dashed border-border/80 py-1 text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                aria-label="ดูสถิติผลงาน"
+                title={
+                  stats.views7d > 0 || stats.hireCount > 0 || stats.collabCount > 0
+                    ? `สถิติ · 7 วัน ${stats.views7d}${
+                        stats.hireCount + stats.collabCount > 0
+                          ? ` · โอกาส ${stats.hireCount + stats.collabCount}`
+                          : ""
+                      }`
+                    : "สถิติ"
+                }
               >
-                <BarChart3 className="h-3 w-3" />
-                ดูสถิติผลงาน
-                {(stats.views7d > 0 || stats.hireCount > 0 || stats.collabCount > 0) && (
-                  <span className="text-[10px] text-primary">
-                    · 7 วัน {stats.views7d}
-                    {stats.hireCount + stats.collabCount > 0
-                      ? ` · โอกาส ${stats.hireCount + stats.collabCount}`
-                      : ""}
-                  </span>
-                )}
+                <BarChart3 className="h-3.5 w-3.5" />
               </button>
             ) : null}
           </div>

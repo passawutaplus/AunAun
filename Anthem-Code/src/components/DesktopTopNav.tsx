@@ -17,6 +17,12 @@ import type { FeedFilter } from "@/data/projectTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { isPortfolioEditorRoute } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
+import { BackButton } from "@/components/ui/BackButton";
+
+/** Public creator profile: `/u/:id` or vanity `/@handle`. */
+function isPublicProfilePath(pathname: string): boolean {
+  return pathname.startsWith("/u/") || pathname.startsWith("/@");
+}
 
 /** Site chrome: home feed + Learn / Help / Forum / dashboard / profile / settings. */
 function shouldShowDesktopTopNav(pathname: string): boolean {
@@ -30,7 +36,7 @@ function shouldShowDesktopTopNav(pathname: string): boolean {
     pathname.startsWith("/earnings") ||
     pathname.startsWith("/portfolio") ||
     pathname.startsWith("/settings") ||
-    pathname.startsWith("/u/") ||
+    isPublicProfilePath(pathname) ||
     pathname.startsWith("/verify")
   );
 }
@@ -45,7 +51,7 @@ function isStickySiteChromePath(pathname: string): boolean {
     pathname.startsWith("/earnings") ||
     pathname.startsWith("/portfolio") ||
     pathname.startsWith("/settings") ||
-    pathname.startsWith("/u/") ||
+    isPublicProfilePath(pathname) ||
     pathname.startsWith("/verify")
   );
 }
@@ -198,6 +204,9 @@ const DesktopTopNav = () => {
       )}
     >
       <div className="mx-auto flex h-14 max-w-[1920px] items-center gap-4 px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]">
+        {isPublicProfilePath(pathname) ? (
+          <BackButton fallbackTo="/" label="Back" className="border-border/60 bg-background/60" />
+        ) : null}
         <button
           type="button"
           onClick={goHome}

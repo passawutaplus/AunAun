@@ -1,5 +1,6 @@
 ﻿import { useMemo, useState } from "react";
 import { Check, ChevronDown, Plus, Search } from "lucide-react";
+import CatalogIcon from "@/components/icons/CatalogIcon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -160,7 +161,10 @@ export function ProjectSeriesPicker({
             "disabled:cursor-not-allowed disabled:opacity-50",
           )}
         >
-          <span className={cn("truncate", !value && "text-muted-foreground")}>{selectedLabel}</span>
+          <span className={cn("flex min-w-0 items-center gap-2 truncate", !value && "text-muted-foreground")}>
+            <CatalogIcon className="h-3.5 w-3.5 shrink-0 opacity-70" />
+            <span className="truncate">{selectedLabel}</span>
+          </span>
           <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
@@ -215,6 +219,7 @@ export function ProjectSeriesPicker({
                       : "hover:bg-muted/70",
                   )}
                 >
+                  <CatalogIcon className="h-3.5 w-3.5 shrink-0 opacity-70" />
                   <span className="min-w-0 flex-1 truncate">{label}</span>
                   {selected ? <Check className="h-3.5 w-3.5 shrink-0" /> : null}
                 </button>

@@ -136,12 +136,12 @@ export default function PortfolioWorksManagePanel({ userId, showDesignDrill }: P
         </section>
       ) : null}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         <Button
           className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-11 px-6"
           onClick={() => navigate("/portfolio/new")}
         >
-          <Plus className="w-4 h-4 mr-2" /> เพิ่มผลงาน
+          <Plus className="w-4 h-4 mr-2" /> Add Work
         </Button>
       </div>
 
@@ -155,7 +155,10 @@ export default function PortfolioWorksManagePanel({ userId, showDesignDrill }: P
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-base font-semibold text-foreground">ผลงานทั้งหมด</h2>
+        <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+          <LayoutGrid className="w-4 h-4 text-primary shrink-0" />
+          ผลงานทั้งหมด
+        </h2>
         <SearchBar placeholder="ค้นหาผลงาน..." value={projectSearch} onChange={setProjectSearch} />
         <div className="flex items-center justify-between gap-3">
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide min-w-0 flex-1">

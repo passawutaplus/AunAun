@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, FolderKanban, Library, Plus } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
+import CatalogIcon from "@/components/icons/CatalogIcon";
 import { Button } from "@/components/ui/button";
 import { SeriesCard } from "@/components/series/SeriesCard";
 import { SeriesFormDialog } from "@/components/series/SeriesFormDialog";
@@ -27,7 +28,7 @@ export function DashboardSeriesSection({ series }: Props) {
             id="dashboard-series-heading"
             className="text-base font-semibold text-foreground flex items-center gap-2"
           >
-            <Library className="h-4 w-4 text-primary shrink-0" />
+            <CatalogIcon className="h-4 w-4 text-primary shrink-0" />
             Catalog
           </h2>
         </div>
@@ -55,7 +56,7 @@ export function DashboardSeriesSection({ series }: Props) {
 
       {series.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border/70 bg-card/40 px-4 py-8 text-center">
-          <FolderKanban className="mx-auto mb-2 h-9 w-9 text-muted-foreground/40" />
+          <CatalogIcon className="mx-auto mb-2 h-9 w-9 text-muted-foreground/40" />
           <p className="text-sm font-medium text-foreground">ยังไม่มี Catalog</p>
           <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
             สร้าง Catalog ว่างไว้ก่อน แล้วไปหน้าจัดการเพื่อลากผลงานเข้าโฟลเดอร์
@@ -95,7 +96,7 @@ export function DashboardSeriesSection({ series }: Props) {
       <SeriesFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        onCreated={(id) => navigate(`/series?s=${encodeURIComponent(id)}`)}
+        onCreated={(created) => navigate(`/series?s=${encodeURIComponent(created.id)}`)}
       />
     </section>
   );

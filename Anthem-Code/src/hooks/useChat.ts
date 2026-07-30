@@ -18,10 +18,10 @@ import {
 } from "@/lib/chatContext";
 
 const MESSAGE_SELECT =
-  "id, conversation_id, sender_id, content, attachment_url, read_at, created_at, reply_to_id, deleted_at, message_type, project_id, profile_user_id";
+  "id, conversation_id, sender_id, content, attachment_url, read_at, created_at, reply_to_id, deleted_at, message_type, project_id, profile_user_id, service_id";
 
 export type ChatKind = "hire" | "collab" | "group" | "studio";
-export type MessageType = "text" | "image" | "file" | "project" | "system" | "profile";
+export type MessageType = "text" | "image" | "file" | "project" | "system" | "profile" | "service";
 export type ConversationType = "direct" | "group";
 
 type ConversationRow = Database["public"]["Tables"]["conversations"]["Row"];
@@ -40,6 +40,7 @@ export type Message = MessageRow & {
   message_type?: MessageType | string | null;
   project_id?: string | null;
   profile_user_id?: string | null;
+  service_id?: string | null;
 };
 
 export type ConversationPin = {
@@ -265,6 +266,7 @@ export type SendMessageArgs = {
   replyToId?: string;
   messageType?: MessageType;
   projectId?: string;
+  serviceId?: string;
   profileUserId?: string;
   hadProfanity?: boolean;
 };
@@ -283,6 +285,7 @@ export const useSendMessage = () => {
       replyToId,
       messageType = "text",
       projectId,
+      serviceId,
       profileUserId,
       hadProfanity,
     }: SendMessageArgs) => {
@@ -317,6 +320,7 @@ export const useSendMessage = () => {
       };
       if (replyToId) row.reply_to_id = replyToId;
       if (projectId) row.project_id = projectId;
+      if (serviceId) row.service_id = serviceId;
       if (profileUserId) row.profile_user_id = profileUserId;
       if (messageType === "image" && attachmentUrl) row.message_type = "image";
       if (messageType === "file" && attachmentUrl) row.message_type = "file";
@@ -330,7 +334,10 @@ export const useSendMessage = () => {
       inserted = data as { id: string } | null;
       if (
         error &&
-        (messageType === "system" || messageType === "profile" || messageType === "file") &&
+        (messageType === "system" ||
+          messageType === "profile" ||
+          messageType === "file" ||
+          messageType === "service") &&
         String(error.message).includes("message_type")
       ) {
         const fallback: Record<string, unknown> = {
@@ -339,9 +346,15 @@ export const useSendMessage = () => {
           content:
             messageType === "system"
               ? `${SYSTEM_MESSAGE_PREFIX}${content}`
-              : content || (messageType === "file" ? "ไฟล์แนบ" : "โปรไฟล์"),
+              : content ||
+                (messageType === "file"
+                  ? "ไฟล์แนบ"
+                  : messageType === "service"
+                    ? "แพ็กเกจ"
+                    : "โปรไฟล์"),
         };
         delete fallback.profile_user_id;
+        delete fallback.service_id;
         ({ data, error } = await supabase
           .from("messages")
           .insert(fallback as never)
@@ -621,6 +634,7 @@ export type OpenHireCollabChatArgs = {
   freelancerId: string;
   projectId?: string | null;
   projectTitle?: string;
+  serviceId?: string | null;
   contextMessage: string;
   /** Legacy inbox: mark hire as ตอบรับ instead of ติดต่อแล้ว */
   legacyAccept?: boolean;
@@ -639,12 +653,13 @@ async function findConversationByRequest(kind: ChatKind, requestId: string): Pro
 }
 
 async function ensureConversation(args: OpenHireCollabChatArgs): Promise<string> {
-  const { kind, requestId, clientId, freelancerId, projectId, projectTitle } = args;
+  const { kind, requestId, clientId, freelancerId, projectId, projectTitle, serviceId } = args;
 
   const existing = await findConversationByRequest(kind, requestId);
   if (existing) return existing;
 
   const safeProjectId = projectId && isUuid(projectId) ? projectId : null;
+  const safeServiceId = serviceId && isUuid(serviceId) ? serviceId : null;
 
   const { data, error } = await supabase
     .from("conversations")
@@ -656,6 +671,7 @@ async function ensureConversation(args: OpenHireCollabChatArgs): Promise<string>
       freelancer_id: freelancerId,
       project_id: safeProjectId,
       project_title: projectTitle ?? "",
+      service_id: safeServiceId,
       created_by: clientId,
     } as never)
     .select("id")
@@ -829,6 +845,26 @@ async function seedInstantChatMessages(
 
   if (args.kind === "hire") {
     await insertContextMessage(conversationId, args.clientId, args.contextMessage);
+    const safeServiceId = args.serviceId && isUuid(args.serviceId) ? args.serviceId : null;
+    if (safeServiceId) {
+      const { data: svc } = await supabase
+        .from("creator_services" as never)
+        .select("id, title")
+        .eq("id", safeServiceId)
+        .maybeSingle();
+      const title =
+        (svc as { title?: string } | null)?.title?.trim() ||
+        args.projectTitle?.trim() ||
+        "บริการ";
+      const { error: svcErr } = await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: args.clientId,
+        content: title,
+        message_type: "service",
+        service_id: safeServiceId,
+      } as never);
+      if (svcErr && !String(svcErr.message).includes("service_id")) throw svcErr;
+    }
     await seedHireBriefIfPresent(conversationId, args.requestId);
     return;
   }

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { FolderKanban, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
+import CatalogIcon from "@/components/icons/CatalogIcon";
 import { cn } from "@/lib/utils";
 import type { ProjectSeries } from "@/hooks/useProjectSeries";
 
@@ -24,9 +25,10 @@ export function SeriesCard({
 }: Props) {
   const href = to ?? `/series/${series.id}`;
   const covers = series.covers ?? [];
+  const customCover = series.cover_url?.trim() || null;
   const placeholders = Array.from({ length: 4 - covers.length });
   const count = series.published_count ?? series.item_count ?? 0;
-  const thumb = covers[0];
+  const thumb = customCover || covers[0];
 
   const body = list ? (
     <>
@@ -35,16 +37,13 @@ export function SeriesCard({
           <img src={thumb} alt="" className="h-full w-full object-cover" loading="lazy" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-primary">
-            <FolderKanban className="w-5 h-5" strokeWidth={2.25} />
+            <CatalogIcon className="w-5 h-5" strokeWidth={2.25} />
           </div>
         )}
       </div>
       <div className="min-w-0 flex-1 py-0.5">
         <h3 className="truncate text-sm font-medium text-foreground">{series.title}</h3>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
-          {count} ชิ้น
-          {series.client_label ? ` · ${series.client_label}` : ""}
-        </p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">{count} ชิ้น</p>
       </div>
       {!series.is_public ? (
         <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-label="ส่วนตัว" />
@@ -53,9 +52,16 @@ export function SeriesCard({
   ) : (
     <>
       <div className="relative aspect-[4/3] bg-muted overflow-hidden">
-        {covers.length === 0 ? (
+        {customCover ? (
+          <img
+            src={customCover}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            loading="lazy"
+          />
+        ) : covers.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center text-primary">
-            <FolderKanban className="w-10 h-10" strokeWidth={2.25} />
+            <CatalogIcon className="w-10 h-10" strokeWidth={2.25} />
           </div>
         ) : (
           <div className="grid grid-cols-2 grid-rows-2 gap-0.5 absolute inset-0">
@@ -95,7 +101,6 @@ export function SeriesCard({
           )}
         >
           <span>{count} ชิ้น</span>
-          {series.client_label ? <span className="truncate">{series.client_label}</span> : null}
         </div>
       </div>
     </>

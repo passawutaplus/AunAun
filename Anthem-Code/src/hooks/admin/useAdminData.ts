@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { fromCreatorServices } from "@/lib/creatorServicesDb";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 
 export interface AdminStats {
@@ -13,6 +14,7 @@ export interface AdminStats {
   pendingCollabs: number;
   messages24h: number;
   totalCollections: number;
+  totalPackages: number;
   likes24h: number;
   comments24h: number;
   follows24h: number;
@@ -147,7 +149,7 @@ export function useAdminStats() {
     queryFn: async () => {
       const launch = isAplus1LaunchMinimal();
       const [
-        users, newUsers, studios, projects, jobs, hiring, collabs, msgs, cols,
+        users, newUsers, studios, projects, jobs, hiring, collabs, msgs, cols, packages,
         likes, comments, follows, gifts, views, reports, cashouts, feedback, kyc, aml,
       ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
@@ -159,6 +161,7 @@ export function useAdminStats() {
         launch ? Promise.resolve(zeroCount) : supabase.from("collab_requests").select("*", { count: "exact", head: true }).eq("status", "ใหม่"),
         supabase.from("messages").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
         launch ? Promise.resolve(zeroCount) : supabase.from("collections").select("*", { count: "exact", head: true }),
+        fromCreatorServices().select("*", { count: "exact", head: true }),
         supabase.from("project_likes").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
         supabase.from("project_comments").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
         supabase.from("follows").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
@@ -180,6 +183,7 @@ export function useAdminStats() {
         pendingCollabs: collabs.count ?? 0,
         messages24h: msgs.count ?? 0,
         totalCollections: cols.count ?? 0,
+        totalPackages: packages.count ?? 0,
         likes24h: likes.count ?? 0,
         comments24h: comments.count ?? 0,
         follows24h: follows.count ?? 0,

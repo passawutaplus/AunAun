@@ -158,12 +158,6 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
     viewUserId === user?.id
       ? "คุณ"
       : profile?.display_name || profile?.username || "ผู้ใช้";
-  const partnerLabel =
-    viewUserId === user?.id
-      ? "ผลงานของคุณ"
-      : displayName !== "ผู้ใช้"
-        ? `ผลงานของ ${displayName}`
-        : "ผลงานของคู่แชท";
   const showPartnerWorks = !!viewUserId && viewUserId !== user?.id;
   const showHireMeta = !isGroup && (conversation.kind === "hire" || conversation.kind === "collab");
 
@@ -467,8 +461,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
               {user?.id && (
                 <ChatPortfolioSection
                   userId={user.id}
-                  label="ส่งผลงานของคุณในแชท"
-                  dialogTitle="ผลงานทั้งหมดของฉัน"
+                  dialogTitle="ผลงานและแพ็กเกจของฉัน"
                   conversationId={conversation.id}
                 />
               )}
@@ -477,8 +470,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
               <TabsContent value="partner" className="mt-0 p-3">
                 <ChatPortfolioSection
                   userId={viewUserId}
-                  label={partnerLabel}
-                  dialogTitle={`ผลงานทั้งหมด — ${displayName}`}
+                  dialogTitle={`ผลงานและแพ็กเกจ — ${displayName}`}
                   conversationId={conversation.id}
                 />
               </TabsContent>

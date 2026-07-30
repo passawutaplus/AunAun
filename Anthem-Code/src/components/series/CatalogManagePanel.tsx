@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { FolderKanban, PanelsTopLeft, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
+import CatalogIcon from "@/components/icons/CatalogIcon";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
@@ -292,7 +293,7 @@ export default function CatalogManagePanel({ userId, embedded }: Props) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <FolderKanban className="w-5 h-5 text-primary shrink-0" />
+            <CatalogIcon className="w-5 h-5 text-primary shrink-0" />
             <h2 className="text-lg font-medium text-foreground">Catalogs</h2>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
@@ -308,7 +309,7 @@ export default function CatalogManagePanel({ userId, embedded }: Props) {
             className="rounded-full lg:hidden"
             onClick={() => setMobileNavOpen(true)}
           >
-            <PanelsTopLeft className="w-4 h-4 mr-1" /> Catalog
+            <CatalogIcon className="w-4 h-4 mr-1" /> Catalog
           </Button>
           <Button
             size="sm"
@@ -422,7 +423,7 @@ export default function CatalogManagePanel({ userId, embedded }: Props) {
                   />
                 ) : series.length === 0 ? (
                   <div className="text-center py-16 glass-panel rounded-2xl">
-                    <FolderKanban className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
+                    <CatalogIcon className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
                     <p className="text-foreground font-medium mb-1">ยังไม่มี Catalog</p>
                     <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
                       สร้าง Catalog ว่างไว้ก่อน แล้วค่อยลากผลงานจาก「งานทั้งหมด」มาใส่
@@ -490,7 +491,10 @@ export default function CatalogManagePanel({ userId, embedded }: Props) {
           if (!open) setEditing(null);
         }}
         initial={editing}
-        onCreated={(id) => select(id)}
+        onCreated={(created) => {
+          select(created.id);
+          setAddFor(created);
+        }}
       />
 
       {addFor && (
@@ -501,6 +505,7 @@ export default function CatalogManagePanel({ userId, embedded }: Props) {
           }}
           seriesId={addFor.id}
           seriesTitle={addFor.title}
+          skipLabel="ข้ามไปก่อน"
         />
       )}
 

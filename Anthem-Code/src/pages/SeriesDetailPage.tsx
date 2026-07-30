@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { Pencil, Trash2, FolderKanban, Lock, Globe2, X, Plus, Share2 } from "lucide-react";
+import { Pencil, Trash2, Lock, Globe2, X, Plus, Share2 } from "lucide-react";
+import CatalogIcon from "@/components/icons/CatalogIcon";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import {
@@ -227,7 +228,7 @@ const SeriesDetailPage = () => {
       <div className="max-w-6xl mx-auto px-4 pt-8 space-y-6">
         <header className="space-y-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <FolderKanban className="w-3.5 h-3.5" /> Catalog
+            <CatalogIcon className="w-3.5 h-3.5" /> Catalog
             {series.is_public ? (
               <span className="inline-flex items-center gap-1">
                 <Globe2 className="w-3 h-3" /> สาธารณะ
@@ -239,11 +240,6 @@ const SeriesDetailPage = () => {
             )}
           </div>
           <h1 className="text-2xl md:text-4xl font-medium text-foreground leading-tight">{series.title}</h1>
-          {(series.client_label || series.year) && (
-            <p className="text-sm text-muted-foreground">
-              {[series.client_label, series.year].filter(Boolean).join(" · ")}
-            </p>
-          )}
           {series.summary && (
             <p className="text-base text-foreground max-w-2xl leading-7 whitespace-pre-wrap">{series.summary}</p>
           )}
@@ -265,7 +261,7 @@ const SeriesDetailPage = () => {
 
         {visibleItems.length === 0 ? (
           <div className="text-center py-16 glass-panel rounded-2xl">
-            <FolderKanban className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
+            <CatalogIcon className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
             <p className="text-foreground font-medium mb-1">ยังไม่มีผลงานใน Catalog นี้</p>
             <p className="text-sm text-muted-foreground mb-4">
               {isOwner ? "เพิ่มผลงานที่เผยแพร่แล้วเข้า Catalog ได้เลย" : "เจ้าของยังไม่ได้เพิ่มผลงาน"}

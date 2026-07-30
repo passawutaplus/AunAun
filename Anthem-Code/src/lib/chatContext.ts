@@ -1,9 +1,11 @@
-export type ChatEntrySource = "project" | "profile";
+export type ChatEntrySource = "project" | "profile" | "service";
 
 export type HireContextInput = {
   source: ChatEntrySource;
   projectTitle?: string | null;
   profileName?: string | null;
+  serviceTitle?: string | null;
+  servicePriceThb?: number | null;
 };
 
 export type CollabContextInput = {
@@ -14,6 +16,15 @@ export type CollabContextInput = {
 
 export function buildHireContextMessage(input: HireContextInput): string {
   const title = input.projectTitle?.trim();
+  const serviceTitle = input.serviceTitle?.trim();
+  if (input.source === "service" && serviceTitle) {
+    const price =
+      typeof input.servicePriceThb === "number"
+        ? ` — ฿${input.servicePriceThb.toLocaleString("th-TH")}`
+        : "";
+    const fromProject = title ? ` · จากผลงาน «${title}»` : "";
+    return `คุยจากบริการ «${serviceTitle}»${price}${fromProject} · สนใจใช้แพ็กนี้ อยากคุยรายละเอียด`;
+  }
   if (input.source === "project" && title) {
     return `คุยโอกาสจากผลงาน «${title}» — สนใจงานที่เกี่ยวข้องกับผลงานนี้`;
   }

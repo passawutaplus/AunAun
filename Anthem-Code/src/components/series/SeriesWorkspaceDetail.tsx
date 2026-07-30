@@ -1,6 +1,7 @@
 ﻿import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BarChart3, FolderKanban, Globe2, Lock, Pencil, Plus, Share2, Trash2, X } from "lucide-react";
+import { BarChart3, Globe2, Lock, Pencil, Plus, Share2, Trash2, X } from "lucide-react";
+import CatalogIcon from "@/components/icons/CatalogIcon";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -143,7 +144,7 @@ export function SeriesWorkspaceDetail({
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1">
-                <FolderKanban className="h-3.5 w-3.5" /> Catalog
+                <CatalogIcon className="h-3.5 w-3.5" /> Catalog
               </span>
               {series.is_public ? (
                 <span className="inline-flex items-center gap-1">
@@ -158,11 +159,6 @@ export function SeriesWorkspaceDetail({
             <h2 className="text-xl md:text-2xl font-medium text-foreground leading-tight">
               {series.title}
             </h2>
-            {(series.client_label || series.year) && (
-              <p className="text-sm text-muted-foreground">
-                {[series.client_label, series.year].filter(Boolean).join(" · ")}
-              </p>
-            )}
             {series.summary && (
               <p className="text-sm text-foreground/90 max-w-2xl leading-relaxed whitespace-pre-wrap">
                 {series.summary}
@@ -183,26 +179,6 @@ export function SeriesWorkspaceDetail({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <SharePopover url={shareUrl} title={series.title} label="แชร์ Catalog">
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-full"
-                onClick={() => {
-                  if (!series.is_public) {
-                    toast.message("Catalog ยังเป็นส่วนตัว", {
-                      description: "คนอื่นเปิดลิงก์นี้ไม่ได้จนกว่าจะตั้งเป็นสาธารณะ",
-                      action: {
-                        label: "ตั้งสาธารณะ",
-                        onClick: () => void makePublic(),
-                      },
-                    });
-                  }
-                }}
-              >
-                <Share2 className="w-4 h-4 mr-1" /> แชร์
-              </Button>
-            </SharePopover>
             <Button
               size="sm"
               variant="outline"
@@ -218,12 +194,47 @@ export function SeriesWorkspaceDetail({
             >
               <Plus className="w-4 h-4 mr-1" /> เพิ่มผลงาน
             </Button>
-            <Button size="sm" variant="outline" onClick={() => onEdit?.(series)} className="rounded-full">
-              <Pencil className="w-4 h-4 mr-1" /> แก้ไข
+            <SharePopover url={shareUrl} title={series.title} label="แชร์ Catalog">
+              <Button
+                size="icon"
+                variant="outline"
+                className="rounded-full h-8 w-8"
+                aria-label="แชร์"
+                title="แชร์"
+                onClick={() => {
+                  if (!series.is_public) {
+                    toast.message("Catalog ยังเป็นส่วนตัว", {
+                      description: "คนอื่นเปิดลิงก์นี้ไม่ได้จนกว่าจะตั้งเป็นสาธารณะ",
+                      action: {
+                        label: "ตั้งสาธารณะ",
+                        onClick: () => void makePublic(),
+                      },
+                    });
+                  }
+                }}
+              >
+                <Share2 className="w-4 h-4" />
+              </Button>
+            </SharePopover>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => onEdit?.(series)}
+              className="rounded-full h-8 w-8"
+              aria-label="แก้ไข"
+              title="แก้ไข"
+            >
+              <Pencil className="w-4 h-4" />
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="sm" variant="outline" className="rounded-full text-destructive hover:text-destructive">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="rounded-full h-8 w-8 text-destructive hover:text-destructive"
+                  aria-label="ลบ"
+                  title="ลบ"
+                >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </AlertDialogTrigger>
@@ -255,7 +266,7 @@ export function SeriesWorkspaceDetail({
 
       {items.length === 0 ? (
         <div className="rounded-2xl border border-border/60 bg-card/40 px-4 py-14 text-center">
-          <FolderKanban className="mx-auto mb-3 h-12 w-12 text-muted-foreground/40" />
+          <CatalogIcon className="mx-auto mb-3 h-12 w-12 text-muted-foreground/40" />
           <p className="font-medium text-foreground mb-1">ยังไม่มีผลงานใน Catalog นี้</p>
           <p className="text-sm text-muted-foreground mb-4">เพิ่มผลงานที่เผยแพร่แล้วเข้า Catalog ได้เลย</p>
           <Button
@@ -369,18 +380,19 @@ export function SeriesWorkspaceDetail({
                           onShowStats?.(p.id);
                         }}
                         onMouseDown={(e) => e.stopPropagation()}
-                        className="w-full flex items-center justify-center gap-1 rounded-lg border border-dashed border-border/80 py-1 text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                        aria-label="ดูสถิติผลงาน"
+                        title={
+                          stats.views7d > 0 || stats.hireCount > 0 || stats.collabCount > 0
+                            ? `สถิติ · 7 วัน ${stats.views7d}${
+                                stats.hireCount + stats.collabCount > 0
+                                  ? ` · โอกาส ${stats.hireCount + stats.collabCount}`
+                                  : ""
+                              }`
+                            : "สถิติ"
+                        }
                       >
-                        <BarChart3 className="h-3 w-3" />
-                        ดูสถิติผลงาน
-                        {(stats.views7d > 0 || stats.hireCount > 0 || stats.collabCount > 0) && (
-                          <span className="text-[10px] text-primary">
-                            · 7 วัน {stats.views7d}
-                            {stats.hireCount + stats.collabCount > 0
-                              ? ` · โอกาส ${stats.hireCount + stats.collabCount}`
-                              : ""}
-                          </span>
-                        )}
+                        <BarChart3 className="h-3.5 w-3.5" />
                       </button>
                     ) : null}
                   </div>

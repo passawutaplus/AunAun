@@ -41,6 +41,7 @@ const PortfolioProfilePage = lazy(() => import("./pages/PortfolioProfilePage.tsx
 const PortfolioManagePage = lazy(() => import("./pages/PortfolioManagePage.tsx"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage.tsx"));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage.tsx"));
+const ServiceDetailPage = lazy(() => import("./pages/ServiceDetailPage.tsx"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage.tsx"));
 const ProjectEditorPage = lazy(() => import("./pages/ProjectEditorPage.tsx"));
 const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage.tsx"));
@@ -75,6 +76,7 @@ const AdminCollabsPage = lazy(() => import("./pages/admin/AdminCollabsPage"));
 const AdminChatsPage = lazy(() => import("./pages/admin/AdminChatsPage"));
 const AdminCommentsPage = lazy(() => import("./pages/admin/AdminCommentsPage"));
 const AdminCollectionsPage = lazy(() => import("./pages/admin/AdminCollectionsPage"));
+const AdminPackagesPage = lazy(() => import("./pages/admin/AdminPackagesPage"));
 const AdminGiftsPage = lazy(() => import("./pages/admin/AdminGiftsPage"));
 const AdminNotificationsPage = lazy(() => import("./pages/admin/AdminNotificationsPage"));
 const AdminStoragePage = lazy(() => import("./pages/admin/AdminStoragePage"));
@@ -236,6 +238,7 @@ const App = () => (
               <Route path="/portfolio/new" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
               <Route path="/portfolio/:id/edit" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
               <Route path="/project/:id" element={<ProjectDetailPage />} />
+              <Route path="/service/:id" element={<ServiceDetailPage />} />
               <Route path="/drill" element={<DrillGalleryPage />} />
               <Route path="/explore/:kind/:value" element={<ExploreProjectsPage />} />
               <Route path="/similar/:projectId" element={<SimilarImagesPage />} />
@@ -311,6 +314,7 @@ const App = () => (
                 <Route path="chats" element={<AdminChatsPage />} />
                 <Route path="comments" element={<AdminCommentsPage />} />
                 <Route path="collections" element={<AdminCollectionsPage />} />
+                <Route path="packages" element={<AdminPackagesPage />} />
                 <Route path="inspire" element={<AdminInspirePage />} />
                 <Route path="gifts" element={<AdminGiftsPage />} />
                 <Route path="aml" element={<AdminAmlPage />} />

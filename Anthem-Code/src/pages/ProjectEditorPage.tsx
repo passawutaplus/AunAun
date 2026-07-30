@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Eye, Handshake, ImagePlus, Library, Loader2, Save, X, ChevronRight } from "lucide-react";
+import { Eye, Handshake, ImagePlus, Loader2, Save, X, ChevronRight } from "lucide-react";
+import CatalogIcon from "@/components/icons/CatalogIcon";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { BackButton } from "@/components/ui/BackButton";
@@ -3214,14 +3215,17 @@ const ProjectEditorPage = () => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <Label className="text-xs font-semibold text-muted-foreground">Catalog</Label>
+                <Label className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                  <CatalogIcon className="h-3.5 w-3.5" />
+                  Catalog
+                </Label>
                 <button
                   type="button"
                   disabled={isBusy}
                   onClick={handleCatalogClick}
                   className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline disabled:opacity-50"
                 >
-                  <Library className="h-3 w-3" />
+                  <CatalogIcon className="h-3 w-3" />
                   จัดการCatalog
                   <ChevronRight className="h-3 w-3" />
                 </button>
@@ -3580,7 +3584,7 @@ const ProjectEditorPage = () => {
       <SeriesFormDialog
         open={seriesCreateOpen}
         onOpenChange={setSeriesCreateOpen}
-        onCreated={(id) => setSeriesId(id)}
+        onCreated={(created) => setSeriesId(created.id)}
       />
 
       <Dialog

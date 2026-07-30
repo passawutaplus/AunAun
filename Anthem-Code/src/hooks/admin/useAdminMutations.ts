@@ -54,6 +54,41 @@ export function useAdminDeleteCollection() {
   });
 }
 
+export function useAdminDeleteCreatorService() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("admin_delete_creator_service" as never, {
+        _id: id,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-list", "creator_services"] });
+      qc.invalidateQueries({ queryKey: ["admin-package-overview"] });
+      qc.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+  });
+}
+
+export function useAdminSetCreatorServiceStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: "Draft" | "Published" }) => {
+      const { error } = await supabase.rpc("admin_set_creator_service_status" as never, {
+        _id: id,
+        _status: status,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-list", "creator_services"] });
+      qc.invalidateQueries({ queryKey: ["admin-package-overview"] });
+      qc.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+  });
+}
+
 export function useAdminSetJobStatus() {
   const qc = useQueryClient();
   return useMutation({

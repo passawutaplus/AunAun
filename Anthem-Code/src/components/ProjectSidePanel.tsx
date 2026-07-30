@@ -43,6 +43,8 @@ interface Props {
   allowHire?: boolean;
   allowCollab?: boolean;
   isOwner?: boolean;
+  /** Local Vite only — allow hire CTA on own work for allowlisted usernames. */
+  localSelfHirePreview?: boolean;
   projectAssets?: ProjectAsset[];
   licenseType?: string | null;
   licenseNote?: string | null;
@@ -59,6 +61,7 @@ const ProjectSidePanel = (p: Props) => {
   const showHire = p.allowHire ?? true;
   const showCollab = p.allowCollab ?? true;
   const ownerView = !!p.isOwner;
+  const hireLocked = ownerView && !p.localSelfHirePreview;
 
   return (
     <aside className="space-y-4">
@@ -113,9 +116,15 @@ const ProjectSidePanel = (p: Props) => {
         {showHire && (
           <Button
             onClick={p.onHire}
-            disabled={ownerView}
+            disabled={hireLocked}
             size="lg"
-            title={ownerView ? "ปุ่มนี้สำหรับผู้ชม — ไม่สามารถกดในผลงานของตัวเองได้" : undefined}
+            title={
+              hireLocked
+                ? "ปุ่มนี้สำหรับผู้ชม — ไม่สามารถกดในผลงานของตัวเองได้"
+                : ownerView && p.localSelfHirePreview
+                  ? "Local preview — ทดลองฟอร์มจ้างได้ (ไม่เปิดแชท)"
+                  : undefined
+            }
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-sm"
           >
             <BriefcaseIcon className="w-4 h-4 mr-1.5" />

@@ -3,7 +3,8 @@ export type CommunityMediaAspect =
   | "portrait"
   | "portrait916"
   | "landscape"
-  | "landscape54";
+  | "landscape54"
+  | "landscape43";
 
 export const DEFAULT_COMMUNITY_MEDIA_ASPECT: CommunityMediaAspect = "square";
 
@@ -63,6 +64,15 @@ export const COMMUNITY_MEDIA_ASPECTS: Record<CommunityMediaAspect, CommunityMedi
     tailwind: "aspect-[5/4]",
     cropFrameClass: "aspect-[5/4]",
   },
+  landscape43: {
+    label: "แนวนอน",
+    ratioLabel: "4:3",
+    ratio: 4 / 3,
+    exportW: 1600,
+    exportH: 1200,
+    tailwind: "aspect-[4/3]",
+    cropFrameClass: "aspect-[4/3]",
+  },
 };
 
 export const COMMUNITY_MEDIA_ASPECT_ORDER: CommunityMediaAspect[] = [
@@ -73,7 +83,7 @@ export const COMMUNITY_MEDIA_ASPECT_ORDER: CommunityMediaAspect[] = [
   "landscape54",
 ];
 
-const KNOWN_ASPECTS = new Set<string>(COMMUNITY_MEDIA_ASPECT_ORDER);
+const KNOWN_ASPECTS = new Set<string>(Object.keys(COMMUNITY_MEDIA_ASPECTS));
 
 export function normalizeCommunityMediaAspect(
   value: string | null | undefined,
@@ -107,6 +117,7 @@ export function communityMediaStripThumbClass(aspect: CommunityMediaAspect | und
   if (key === "portrait916") return "w-14 h-[4.95rem]";
   if (key === "portrait") return "w-16 h-20";
   if (key === "landscape54") return "w-[4.25rem] h-[3.4rem]";
+  if (key === "landscape43") return "w-[4.5rem] h-[3.375rem]";
   if (key === "landscape") return "w-[4.5rem] h-[2.55rem]";
   return "w-20 h-20";
 }

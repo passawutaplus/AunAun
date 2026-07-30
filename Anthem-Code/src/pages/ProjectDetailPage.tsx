@@ -25,6 +25,7 @@ import {
   parseFlexGridLayout,
 } from "@/lib/flexGridLayout";
 import { useQuery } from "@tanstack/react-query";
+import { isLocalDevSelfHirePreview } from "@/lib/localDevSelfHire";
 
 import { useProject } from "@/hooks/useProjects";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
@@ -297,6 +298,12 @@ const ProjectDetailPage = () => {
 
   const shareUrl = typeof window !== "undefined" ? window.location.href : `/project/${id}`;
   const isOwner = !!user?.id && user.id === dbProject?.owner_id;
+  const ownerUsername =
+    (ownerProfile as { username?: string | null } | null | undefined)?.username ?? null;
+  const localSelfHirePreview =
+    isOwner &&
+    (isLocalDevSelfHirePreview(ownerUsername) ||
+      isLocalDevSelfHirePreview(project.owner));
 
   const coverImage =
     dbProject?.cover_url ??
@@ -462,6 +469,7 @@ const ProjectDetailPage = () => {
               allowHire={project.allowHire}
               allowCollab={project.allowCollab}
               isOwner={isOwner}
+              localSelfHirePreview={localSelfHirePreview}
               projectAssets={parseProjectAssets(
                 (dbProject as { project_assets?: unknown } | undefined)?.project_assets,
                 (dbProject as { external_links?: unknown } | undefined)?.external_links,
@@ -487,6 +495,7 @@ const ProjectDetailPage = () => {
         projectId={project.id}
         projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.[0]}
         freelancerId={project.ownerId}
+        freelancerUsername={ownerUsername ?? project.owner}
       />
 
       <CollabDialog

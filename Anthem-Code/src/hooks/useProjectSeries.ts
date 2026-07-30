@@ -1,4 +1,4 @@
-﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -11,6 +11,8 @@ export type ProjectSeries = {
   year: number | null;
   is_public: boolean;
   cover_project_id: string | null;
+  /** Optional custom catalog cover; when null UI falls back to project thumbs. */
+  cover_url: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -124,12 +126,17 @@ async function enrichSeriesList(rows: ProjectSeries[]): Promise<ProjectSeries[]>
     }
   }
 
-  return rows.map((s) => ({
-    ...s,
-    item_count: total[s.id] ?? 0,
-    published_count: published[s.id] ?? 0,
-    covers: covers[s.id] ?? [],
-  }));
+  return rows.map((s) => {
+    const projectCovers = covers[s.id] ?? [];
+    const custom = s.cover_url?.trim();
+    return {
+      ...s,
+      cover_url: custom || null,
+      item_count: total[s.id] ?? 0,
+      published_count: published[s.id] ?? 0,
+      covers: custom ? [custom, ...projectCovers.filter((u) => u !== custom)].slice(0, 4) : projectCovers,
+    };
+  });
 }
 
 function mapItemsWithProjects(
@@ -246,18 +253,18 @@ export const useCreateProjectSeries = () => {
       ownerId: string;
       title: string;
       summary?: string;
-      clientLabel?: string;
-      year?: number | null;
       isPublic?: boolean;
+      coverUrl?: string | null;
     }) => {
       const { data, error } = await seriesTable()
         .insert({
           owner_id: input.ownerId,
           title: input.title.trim(),
           summary: (input.summary ?? "").trim(),
-          client_label: (input.clientLabel ?? "").trim(),
-          year: input.year ?? null,
+          client_label: "",
+          year: null,
           is_public: input.isPublic ?? true,
+          cover_url: input.coverUrl?.trim() || null,
         } as never)
         .select()
         .single();
@@ -276,7 +283,12 @@ export const useUpdateProjectSeries = () => {
   return useMutation({
     mutationFn: async (input: {
       id: string;
-      patch: Partial<Pick<ProjectSeries, "title" | "summary" | "client_label" | "year" | "is_public" | "cover_project_id">>;
+      patch: Partial<
+        Pick<
+          ProjectSeries,
+          "title" | "summary" | "client_label" | "year" | "is_public" | "cover_project_id" | "cover_url"
+        >
+      >;
     }) => {
       const { error } = await seriesTable().update(input.patch as never).eq("id", input.id);
       if (error) throw error;

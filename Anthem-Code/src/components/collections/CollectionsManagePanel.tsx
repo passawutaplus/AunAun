@@ -132,8 +132,11 @@ export default function CollectionsManagePanel({ userId, embedded }: Props) {
           </Button>
         ) : (
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-foreground">คอลเลกชันทั้งหมด</h2>
-            <p className="text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Layers3 className="w-5 h-5 text-primary shrink-0" />
+              <h2 className="text-lg font-semibold text-foreground">คอลเลกชันทั้งหมด</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
               เลือกคอลเลกชันเพื่อดูรายละเอียด หรือปรับขนาดการ์ดได้
             </p>
           </div>

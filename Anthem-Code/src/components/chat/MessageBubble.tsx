@@ -36,6 +36,8 @@ import { profilePublicPath } from "@/lib/profileRoutes";
 import { isSystemFallbackContent, stripSystemFallbackPrefix } from "@/lib/chatContext";
 import { replyPreviewText } from "@/lib/chatReply";
 import { parseChatOffer } from "@/lib/chatOffer";
+import { formatServicePrice } from "@/hooks/useCreatorServices";
+import { fromCreatorServices } from "@/lib/creatorServicesDb";
 import { ChatOfferCard } from "@/components/chat/ChatOfferCard";
 import { parseHireForwardMessage } from "@/lib/hireForwardChat";
 import HireForwardCard from "@/components/chat/HireForwardCard";
@@ -266,6 +268,33 @@ const MessageBubble = ({
     },
   });
 
+  const serviceId =
+    message.message_type === "service"
+      ? (message as Message & { service_id?: string | null }).service_id
+      : null;
+
+  const { data: serviceCard } = useQuery({
+    queryKey: ["msg-service", serviceId],
+    enabled: message.message_type === "service" && !!serviceId && !deleted,
+    queryFn: async () => {
+      const { data } = await fromCreatorServices()
+        .select("id, title, price_thb, summary, cover_url, gallery_urls, owner_id")
+        .eq("id", serviceId!)
+        .maybeSingle();
+      if (!data || typeof data !== "object") return null;
+      const row = data as {
+        id: string;
+        title: string;
+        price_thb: number;
+        summary: string;
+        cover_url: string | null;
+        gallery_urls?: string[] | null;
+        owner_id: string;
+      };
+      return row;
+    },
+  });
+
   const projectOwnerId = projectFromProfileId || (project as { owner_id?: string } | null)?.owner_id || null;
 
   const { data: projectOwnerProfile } = useQuery({
@@ -323,6 +352,7 @@ const MessageBubble = ({
       (message.message_type !== "image" &&
         message.message_type !== "project" &&
         message.message_type !== "profile" &&
+        message.message_type !== "service" &&
         !isImageAttachmentPath(message.attachment_url)));
 
   const offer = !deleted ? parseChatOffer(message.content) : null;
@@ -514,7 +544,9 @@ const MessageBubble = ({
   );
   const copyText = replyPreviewText(message);
   const isPortfolioOrProfileCard =
-    message.message_type === "project" || message.message_type === "profile";
+    message.message_type === "project" ||
+    message.message_type === "profile" ||
+    message.message_type === "service";
   // Portfolio / profile share cards — no translate (title/media only).
   const showTranslate =
     !isPortfolioOrProfileCard &&
@@ -736,6 +768,47 @@ const MessageBubble = ({
                       )}
                     </div>
                     <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                  </div>
+                </Link>
+              </div>
+            )}
+            {message.message_type === "service" && serviceCard && (
+              <div
+                className={cn(
+                  "rounded-2xl overflow-hidden shadow-sm",
+                  message.reply_to_id && replyTo ? cn("p-2", mine ? mineBg : theirBg) : "",
+                )}
+              >
+                {replyQuote}
+                <Link
+                  to={`/service/${serviceCard.id}`}
+                  className={cn(
+                    "block overflow-hidden border hover:opacity-95 transition-opacity rounded-xl",
+                    mine ? "border-white/20" : "border-border",
+                  )}
+                >
+                  {(serviceCard.cover_url || serviceCard.gallery_urls?.[0]) ? (
+                    <img
+                      src={serviceCard.cover_url || serviceCard.gallery_urls![0]}
+                      alt=""
+                      className="w-full max-h-40 object-cover"
+                    />
+                  ) : (
+                    <div className="h-20 bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                      Package
+                    </div>
+                  )}
+                  <div className={cn("px-3 py-2 space-y-0.5", mine ? "bg-black/10" : "bg-card")}>
+                    <p className={cn("text-[10px]", mine ? "text-white/75" : "text-muted-foreground")}>
+                      Package
+                    </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium truncate">{serviceCard.title}</span>
+                      <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                    </div>
+                    <p className={cn("text-xs font-semibold tabular-nums", mine ? "text-white" : "text-primary")}>
+                      {formatServicePrice(serviceCard.price_thb)}
+                    </p>
                   </div>
                 </Link>
               </div>
@@ -963,7 +1036,8 @@ const MessageBubble = ({
               !collabStepLocked &&
               !collabToolKind &&
               message.message_type !== "project" &&
-              message.message_type !== "profile" && (
+              message.message_type !== "profile" &&
+              message.message_type !== "service" && (
               <div
                 className={cn(
                   "px-3.5 py-2 rounded-2xl text-base leading-relaxed whitespace-pre-wrap break-words shadow-sm",
