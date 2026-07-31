@@ -153,7 +153,7 @@ const SkillsEditor = ({ value, onChange, withSuggestions = true, max = 30 }: Pro
               : "พิมพ์ทักษะแล้วกด Enter"
           }
           disabled={value.length >= max}
-          className="flex-1 bg-transparent py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed"
+          className="flex-1 bg-transparent py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none disabled:cursor-not-allowed"
           aria-label="ค้นหาความชำนาญ"
         />
         <button

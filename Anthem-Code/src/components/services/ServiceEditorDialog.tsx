@@ -22,6 +22,8 @@ import { ChevronLeft, ChevronRight, Eye, ImagePlus, Loader2, Plus, Trash2, Video
 import { toast } from "sonner";
 import { CommunityImageCropDialog } from "@/components/community/CommunityImageCropDialog";
 import ServiceDetailDialog from "@/components/services/ServiceDetailDialog";
+import { ProjectTaxonomyPicker } from "@/components/project/ProjectTaxonomyPicker";
+import TagPicker from "@/components/tags/TagPicker";
 import { useAuth } from "@/hooks/useAuth";
 import {
   CREATOR_SERVICES_GALLERY_MAX,
@@ -29,6 +31,13 @@ import {
   type CreatorServiceInput,
   type CreatorServiceStatus,
 } from "@/hooks/useCreatorServices";
+import {
+  inferTaxonomySelection,
+  mergeCategorySubTag,
+  resolveDbCategory,
+  stripCategorySubTags,
+  type CategoryParentId,
+} from "@/data/categoryTaxonomy";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { uploadProjectVideo } from "@/lib/uploadVideo";
 import { isVideoFile, isVideoUrl } from "@/lib/videoAccept";
@@ -53,6 +62,8 @@ const empty = (): CreatorServiceInput => ({
   revisions_label: "",
   cover_url: "",
   gallery_urls: [],
+  category: "",
+  tags: [],
   status: "Draft",
 });
 
@@ -77,6 +88,9 @@ export default function ServiceEditorDialog({
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<CreatorServiceInput>(empty());
   const [deliverables, setDeliverables] = useState<string[]>([""]);
+  const [categoryParentId, setCategoryParentId] = useState<CategoryParentId | null>(null);
+  const [categorySubId, setCategorySubId] = useState<string | null>(null);
+  const [tagInput, setTagInput] = useState("");
   const [uploading, setUploading] = useState(false);
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [cropOpen, setCropOpen] = useState(false);
@@ -101,18 +115,25 @@ export default function ServiceEditorDialog({
           revisions_label: digitsOnlyLabel(initial.revisions_label),
           cover_url: initial.cover_url ?? "",
           gallery_urls: initial.gallery_urls ?? [],
+          category: initial.category ?? "",
+          tags: initial.tags ?? [],
           status: initial.status,
         }
       : empty();
     const nextDel = initial?.deliverables?.length ? [...initial.deliverables] : [""];
+    const inferred = inferTaxonomySelection(nextForm.category, nextForm.tags);
     setForm(nextForm);
     setDeliverables(nextDel);
+    setCategoryParentId(inferred.parentId);
+    setCategorySubId(inferred.subId);
+    setTagInput("");
     setBaseline({ form: nextForm, deliverables: nextDel });
     setPreviewOpen(false);
     setExitAskOpen(false);
   }, [open, initial]);
 
   const gallery = form.gallery_urls ?? [];
+  const displayTags = stripCategorySubTags(form.tags ?? []);
 
   const isDirty = useMemo(() => {
     if (!baseline) return false;
@@ -127,6 +148,8 @@ export default function ServiceEditorDialog({
       (f.concepts_label ?? "") !== (b.concepts_label ?? "") ||
       (f.revisions_label ?? "") !== (b.revisions_label ?? "") ||
       (f.cover_url ?? "") !== (b.cover_url ?? "") ||
+      (f.category ?? "") !== (b.category ?? "") ||
+      !sameList(f.tags ?? [], b.tags ?? []) ||
       !sameList(f.gallery_urls ?? [], b.gallery_urls ?? []) ||
       !sameList(
         deliverables.map((d) => d.trim()).filter(Boolean),
@@ -167,6 +190,8 @@ export default function ServiceEditorDialog({
       revisions_label: digitsOnlyLabel(form.revisions_label),
       cover_url: form.cover_url?.trim() || null,
       gallery_urls: gallery,
+      category: form.category?.trim() || "",
+      tags: form.tags ?? [],
       status: "Draft",
       sort_order: 0,
       created_at: "",
@@ -180,15 +205,25 @@ export default function ServiceEditorDialog({
       toast.error("เผยแพร่ต้องมีภาพปก 4:3");
       return;
     }
+    if (status === "Published" && !categoryParentId) {
+      toast.error("เลือกหมวดหมู่ก่อนเผยแพร่");
+      return;
+    }
     if (!items.length) {
       toast.error("ใส่สิ่งที่ส่งมอบงานอย่างน้อย 1 ข้อ");
       return;
     }
+    const category = categoryParentId
+      ? resolveDbCategory(categoryParentId, categorySubId)
+      : (form.category ?? "").trim();
+    const tags = mergeCategorySubTag(displayTags, categorySubId);
     await onSubmit(
       {
         ...form,
         deliverables: items,
         status,
+        category,
+        tags,
         concepts_label: digitsOnlyLabel(form.concepts_label),
         revisions_label: digitsOnlyLabel(form.revisions_label),
         cover_url: form.cover_url?.trim() || null,
@@ -472,6 +507,50 @@ export default function ServiceEditorDialog({
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                 placeholder="เช่น โลโก้พรีเมียม"
                 maxLength={120}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>หมวดหมู่ *</Label>
+              <ProjectTaxonomyPicker
+                parentId={categoryParentId}
+                subId={categorySubId}
+                disabled={!!busy || uploading}
+                onChange={({ parentId, subId }) => {
+                  setCategoryParentId(parentId);
+                  setCategorySubId(subId);
+                  if (parentId) {
+                    setForm((f) => ({
+                      ...f,
+                      category: resolveDbCategory(parentId, subId),
+                      tags: mergeCategorySubTag(stripCategorySubTags(f.tags), subId),
+                    }));
+                  } else {
+                    setForm((f) => ({
+                      ...f,
+                      category: "",
+                      tags: mergeCategorySubTag(stripCategorySubTags(f.tags), null),
+                    }));
+                  }
+                }}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>แท็ก</Label>
+              <TagPicker
+                userId={user?.id}
+                tags={displayTags}
+                onChange={(next) =>
+                  setForm((f) => ({
+                    ...f,
+                    tags: mergeCategorySubTag(next, categorySubId),
+                  }))
+                }
+                input={tagInput}
+                setInput={setTagInput}
+                max={12}
+                variant="compact"
               />
             </div>
 

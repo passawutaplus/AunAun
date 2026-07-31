@@ -252,7 +252,7 @@ const FeedToolbar = ({
         <button
           type="button"
           onClick={onCreateClick}
-          aria-label="ลงผลงานแรก"
+          aria-label="ลงผลงาน"
           className={cn(
             "first-post-create first-post-create-idle group relative inline-flex h-10 items-center rounded-full shrink-0 overflow-visible",
             "transition-[box-shadow] duration-300",
@@ -278,7 +278,7 @@ const FeedToolbar = ({
                 "transition-all duration-200 ease-out",
               )}
             >
-              ลงผลงานแรก
+              ลงผลงาน
             </span>
             <span className="inline-flex items-center justify-center rounded-full bg-gradient-brand text-white shrink-0 h-[37px] w-[37px]">
               <Plus className="w-5 h-5" strokeWidth={2.5} />

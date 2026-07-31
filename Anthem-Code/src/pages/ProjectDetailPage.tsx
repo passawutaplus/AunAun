@@ -10,6 +10,7 @@ import CollabDialog from "@/components/CollabDialog";
 import CommentSection from "@/components/CommentSection";
 import ProjectSidePanel from "@/components/ProjectSidePanel";
 import ProjectContextCard from "@/components/project/ProjectContextCard";
+import { OwnerOtherWorks } from "@/components/project/OwnerOtherWorks";
 import { hasPendingProjectAssets, parseProjectAssets } from "@/lib/projectAssets";
 import ProjectCreditsBlock from "@/components/ProjectCreditsBlock";
 import { supabase } from "@/integrations/supabase/client";
@@ -342,7 +343,7 @@ const ProjectDetailPage = () => {
         ]}
       />
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+45px)] lg:px-[calc(1.5rem+45px)] 2xl:px-[calc(2.5rem+45px)] py-3 flex items-center justify-between gap-3">
+        <div className="max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <BackButton />
             <SeoBreadcrumb items={crumbs} className="mb-0 hidden md:flex min-w-0" />
@@ -376,7 +377,7 @@ const ProjectDetailPage = () => {
         </div>
       </div>
 
-      <div className="max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+45px)] lg:px-[calc(1.5rem+45px)] 2xl:px-[calc(2.5rem+45px)] py-6 lg:py-10">
+      <div className="max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-6 lg:py-10">
         {sponsorAd && sponsorAdId ? (
           <div className="mb-4 rounded-xl border border-primary/25 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">
@@ -404,9 +405,10 @@ const ProjectDetailPage = () => {
             ) : null}
           </div>
         ) : null}
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px] gap-6 lg:gap-8 xl:gap-10">
+        {/* Centered canvas + sidebar cluster — wider than old 1fr|320 so margins balance. */}
+        <div className="mx-auto flex w-full max-w-[84rem] flex-col gap-8 lg:flex-row lg:items-start lg:justify-center lg:gap-10 xl:gap-12">
           {/* Left: Gallery + below-fold content */}
-          <div className="space-y-4 min-w-0">
+          <div className="min-w-0 w-full max-w-4xl space-y-4 overflow-x-clip lg:flex-1">
             {dbProject && (
               <ProjectCreditsBlock
                 studioId={(dbProject as any).studio_id}
@@ -417,14 +419,14 @@ const ProjectDetailPage = () => {
             {editorMode === "flex_grid" && flexLayout ? (
               <FlexGridView
                 layout={flexLayout}
-                className="w-full max-w-none"
+                className="w-full min-w-0 max-w-full"
                 projectId={dbProject?.id ?? project.id}
                 projectTitle={project.title}
               />
             ) : canvasBlocks.length > 0 ? (
               <ProjectContentBlocksView
                 blocks={canvasBlocks}
-                className="w-full max-w-none"
+                className="w-full min-w-0 max-w-4xl"
                 projectId={dbProject?.id ?? project.id}
                 projectTitle={project.title}
               />
@@ -438,12 +440,17 @@ const ProjectDetailPage = () => {
               {linkedPosts.length > 0 && <ProjectLinkedPostsBlock posts={linkedPosts} />}
               <ProjectContextCard context={project.context} />
               <CommentSection projectId={project.id} />
+              <OwnerOtherWorks
+                ownerId={project.ownerId}
+                excludeProjectId={project.id}
+                ownerName={project.owner}
+              />
             </div>
           </div>
 
           {/* Right: Side panel — sticky + self-scroll when hovered */}
           <FadeUp
-            className="lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:overscroll-contain scrollbar-hide"
+            className="w-full min-w-0 shrink-0 lg:sticky lg:top-20 lg:w-[22.5rem] lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:overscroll-contain xl:w-[24rem] scrollbar-hide"
             delay={0.06}
           >
             <ProjectSidePanel

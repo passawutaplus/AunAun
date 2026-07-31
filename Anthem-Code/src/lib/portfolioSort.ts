@@ -1,6 +1,13 @@
-export type PortfolioSortMode = "portfolio" | "newest" | "views" | "likes";
+export type PortfolioSortMode =
+  | "portfolio"
+  | "newest"
+  | "oldest"
+  | "views"
+  | "likes"
+  | "hires";
 
 type SortableProject = {
+  id?: string;
   is_pinned?: boolean | null;
   sort_order?: number | null;
   created_at?: string | null;
@@ -12,6 +19,7 @@ type SortableProject = {
 export function sortPortfolioProjects<T extends SortableProject>(
   projects: T[],
   mode: PortfolioSortMode = "portfolio",
+  hireCounts?: Record<string, number>,
 ): T[] {
   const arr = [...projects];
   if (mode === "views") {
@@ -20,10 +28,23 @@ export function sortPortfolioProjects<T extends SortableProject>(
   if (mode === "likes") {
     return arr.sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0));
   }
+  if (mode === "hires") {
+    return arr.sort(
+      (a, b) =>
+        (hireCounts?.[b.id ?? ""] ?? 0) - (hireCounts?.[a.id ?? ""] ?? 0) ||
+        (b.views ?? 0) - (a.views ?? 0),
+    );
+  }
   if (mode === "newest") {
     return arr.sort(
       (a, b) =>
         new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
+    );
+  }
+  if (mode === "oldest") {
+    return arr.sort(
+      (a, b) =>
+        new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime(),
     );
   }
   return arr.sort((a, b) => {

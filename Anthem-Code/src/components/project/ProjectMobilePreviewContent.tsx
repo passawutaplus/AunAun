@@ -78,7 +78,7 @@ export function ProjectMobilePreviewContent({
             ) : canvasBlocks.length > 0 ? (
               <ProjectContentBlocksView
                 blocks={canvasBlocks}
-                className="max-w-2xl"
+                className="w-full max-w-full"
                 projectId={data.projectId}
                 projectTitle={displayTitle}
               />

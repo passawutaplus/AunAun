@@ -1,7 +1,7 @@
 import BriefcaseIcon from "../icons/BriefcaseIcon";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bookmark, Check, Heart, MessageCircle, Handshake, Bell, Inbox, UserPlus, X } from "lucide-react";
+import { Bookmark, Check, Heart, MessageCircle, Handshake, Bell, UserPlus, X } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useActivityNotifications, useHireNotifications, useCollabNotifications, type HireNotif, type CollabNotif } from "@/hooks/useNotifications";
@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
+import { isWorkLikePrefEnabled } from "@/lib/inAppNotifyPrefs";
 
 const timeAgo = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
@@ -95,10 +96,24 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
   const { user } = useAuth();
   const [tab, setTab] = useState("inbox");
   const inbox = useInbox(user?.id);
-  const { data: activity = [], isLoading: la } = useActivityNotifications();
+  const { data: activityRaw = [], isLoading: la } = useActivityNotifications();
   const { data: hires = [], isLoading: lh } = useHireNotifications();
   const { data: collabs = [], isLoading: lc } = useCollabNotifications();
   const { data: followNotifs = [] } = useFollowNotifications();
+  const [prefsTick, setPrefsTick] = useState(0);
+
+  useEffect(() => {
+    const onPrefs = () => setPrefsTick((n) => n + 1);
+    window.addEventListener("aplus1:in-app-notify-prefs", onPrefs);
+    return () => window.removeEventListener("aplus1:in-app-notify-prefs", onPrefs);
+  }, []);
+
+  const activity = useMemo(() => {
+    void prefsTick;
+    const showLikes = isWorkLikePrefEnabled(user?.id);
+    return activityRaw.filter((n) => (n.kind === "like" ? showLikes : true));
+  }, [activityRaw, user?.id, prefsTick]);
+
   const accept = useAcceptRequest();
   const reject = useRejectRequest();
   const openHireCollabChat = useOpenHireCollabChat();
@@ -187,7 +202,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
   };
 
   const tabs: TabDef[] = [
-    { value: "inbox", label: "ทั้งหมด", icon: Inbox, count: inbox.unreadCount },
+    { value: "inbox", label: "แชท", icon: MessageCircle, count: inbox.unreadCount },
     { value: "follows", label: "ติดตาม", icon: UserPlus, count: followNotifs.length },
     { value: "activity", label: "กิจกรรม", icon: Bell, count: activity.length },
     { value: "hire", label: "จ้างงาน", icon: BriefcaseIcon, count: hires.length },

@@ -6,6 +6,13 @@ import {
   fromCreatorServices,
   type CreatorServiceRow,
 } from "@/lib/creatorServicesDb";
+import { pickSimilarCreatorServices } from "@/lib/similarCreatorServices";
+import {
+  getCategoryParent,
+  parentIdForProjectCategory,
+  stripCategorySubTags,
+} from "@/data/categoryTaxonomy";
+import { categoryDbFilterValues, normalizeProjectCategory } from "@/data/projectTypes";
 
 export const CREATOR_SERVICES_MAX = 5;
 export const CREATOR_SERVICES_GALLERY_MAX = 6;
@@ -28,6 +35,9 @@ export type CreatorService = {
   revisions_label: string;
   cover_url: string | null;
   gallery_urls: string[];
+  /** Same vocabulary as projects.category */
+  category: string;
+  tags: string[];
   status: CreatorServiceStatus;
   sort_order: number;
   created_at: string;
@@ -45,6 +55,8 @@ export type CreatorServiceInput = {
   revisions_label?: string;
   cover_url?: string | null;
   gallery_urls?: string[];
+  category?: string;
+  tags?: string[];
   status?: CreatorServiceStatus;
   sort_order?: number;
 };
@@ -54,6 +66,14 @@ function normalizeGallery(raw: unknown): string[] {
   return raw
     .filter((u): u is string => typeof u === "string" && !!u.trim())
     .slice(0, CREATOR_SERVICES_GALLERY_MAX);
+}
+
+function normalizeTags(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((t): t is string => typeof t === "string" && !!t.trim())
+    .map((t) => t.trim())
+    .slice(0, 20);
 }
 
 function digitsOnly(raw: string | null | undefined): string {
@@ -79,6 +99,8 @@ export function mapCreatorServiceRow(row: CreatorServiceRow): CreatorService {
     revisions_label: String(row.revisions_label ?? ""),
     cover_url: typeof row.cover_url === "string" ? row.cover_url : null,
     gallery_urls: normalizeGallery(row.gallery_urls),
+    category: String(row.category ?? "").trim(),
+    tags: normalizeTags(row.tags),
     status: row.status === "Published" ? "Published" : "Draft",
     sort_order: Number(row.sort_order) || 0,
     created_at: String(row.created_at ?? ""),
@@ -175,6 +197,8 @@ export function useUpsertCreatorService(ownerId: string | undefined) {
         revisions_label: digitsOnly(args.patch.revisions_label),
         cover_url: args.patch.cover_url?.trim() || null,
         gallery_urls: gallery,
+        category: String(args.patch.category ?? "").trim(),
+        tags: normalizeTags(args.patch.tags ?? []),
         status: args.patch.status ?? "Draft",
         sort_order: args.patch.sort_order ?? 0,
         updated_at: new Date().toISOString(),
@@ -183,7 +207,9 @@ export function useUpsertCreatorService(ownerId: string | undefined) {
       if (!payload.summary) throw new Error("กรุณาใส่รายละเอียด");
       if (!payload.deliverables.length) throw new Error("กรุณาใส่สิ่งได้อย่างน้อย 1 ข้อ");
       if (max <= 0) throw new Error("กรุณาใส่ช่วงราคา");
-
+      if (payload.status === "Published" && !payload.category) {
+        throw new Error("เลือกหมวดหมู่ก่อนเผยแพร่");
+      }
       if (args.id) {
         const { data, error } = await fromCreatorServices()
           .update(payload)
@@ -220,6 +246,7 @@ export function useUpsertCreatorService(ownerId: string | undefined) {
     },
     onSuccess: (_data, vars) => {
       void qc.invalidateQueries({ queryKey: ["creator-services", ownerId] });
+      void qc.invalidateQueries({ queryKey: ["similar-creator-services"] });
       if (vars.id) void qc.invalidateQueries({ queryKey: ["creator-service", vars.id] });
     },
   });
@@ -262,6 +289,70 @@ export function useReorderCreatorServices(ownerId: string | undefined) {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["creator-services", ownerId] });
+    },
+  });
+}
+
+export function useSimilarCreatorServices(
+  service: Pick<CreatorService, "id" | "owner_id" | "category" | "tags"> | null | undefined,
+  limit = 4,
+) {
+  return useQuery({
+    queryKey: [
+      "similar-creator-services",
+      service?.id,
+      service?.category,
+      (service?.tags ?? []).join("|"),
+      limit,
+    ],
+    enabled: !!service?.id,
+    queryFn: async (): Promise<CreatorService[]> => {
+      const seed = service!;
+      const norm = normalizeProjectCategory(seed.category) ?? seed.category;
+      const parentId = parentIdForProjectCategory(norm);
+      const parent = parentId ? getCategoryParent(parentId) : null;
+      const categoryValues = parent
+        ? Array.from(new Set(parent.leaves.flatMap((leaf) => categoryDbFilterValues(leaf))))
+        : norm
+          ? categoryDbFilterValues(norm as never)
+          : [];
+
+      let q = fromCreatorServices()
+        .select(CREATOR_SERVICES_SELECT)
+        .eq("status", "Published")
+        .neq("id", seed.id)
+        .neq("owner_id", seed.owner_id)
+        .order("updated_at", { ascending: false })
+        .limit(48);
+
+      if (categoryValues.length === 1) q = q.eq("category", categoryValues[0]!);
+      else if (categoryValues.length > 1) q = q.in("category", categoryValues);
+
+      const { data, error } = await q;
+      if (error) throw error;
+
+      let rows = asCreatorServiceRows(data).map(mapCreatorServiceRow);
+
+      // Soft fallback when taxonomy is empty / no same-category peers.
+      if (rows.length < limit) {
+        const { data: fallback, error: fallbackError } = await fromCreatorServices()
+          .select(CREATOR_SERVICES_SELECT)
+          .eq("status", "Published")
+          .neq("id", seed.id)
+          .neq("owner_id", seed.owner_id)
+          .order("updated_at", { ascending: false })
+          .limit(48);
+        if (fallbackError) throw fallbackError;
+        const seen = new Set(rows.map((r) => r.id));
+        for (const row of asCreatorServiceRows(fallback).map(mapCreatorServiceRow)) {
+          if (seen.has(row.id)) continue;
+          rows.push(row);
+          seen.add(row.id);
+        }
+      }
+
+      const tagSeed = stripCategorySubTags(seed.tags);
+      return pickSimilarCreatorServices(rows, seed, limit, tagSeed);
     },
   });
 }

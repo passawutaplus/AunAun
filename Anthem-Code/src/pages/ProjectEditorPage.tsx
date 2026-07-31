@@ -311,7 +311,7 @@ const ProjectEditorPage = () => {
     outcomeNote: "",
   });
   const [projectAssets, setProjectAssets] = useState<ProjectAsset[]>([]);
-  const [contextExpanded, setContextExpanded] = useState(false);
+  const [contextEnabled, setContextEnabled] = useState(false);
   const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null);
   const [templateNameDialog, setTemplateNameDialog] = useState<
     null | { mode: "save" } | { mode: "rename"; template: UserCanvasTemplate }
@@ -676,9 +676,7 @@ const ProjectEditorPage = () => {
           (existing as { external_links?: unknown }).external_links,
         ),
       );
-      setContextExpanded(
-        hasProjectContextContent(extCtx) || !!(existing.description ?? "").trim(),
-      );
+      setContextEnabled(hasProjectContextContent(extCtx));
       void (async () => {
         const ext = existing as {
           linked_community_post_ids?: string[];
@@ -769,12 +767,12 @@ const ProjectEditorPage = () => {
         copyright_holder: clientPermissionConfirmed ? copyrightHolder.trim() : "",
         rights_attested_at: rightsAttestedAt,
         rights_attestation_version: rightsAttested ? LEGAL_ATTESTATION_VERSION : null,
-        brief: projectContext.brief.trim(),
-        creator_role: projectContext.creatorRole.trim(),
-        process_note: projectContext.processNote.trim(),
-        deliverables: projectContext.deliverables.trim(),
-        duration_label: projectContext.durationLabel.trim(),
-        outcome_note: projectContext.outcomeNote.trim(),
+        brief: contextEnabled ? projectContext.brief.trim() : "",
+        creator_role: contextEnabled ? projectContext.creatorRole.trim() : "",
+        process_note: contextEnabled ? projectContext.processNote.trim() : "",
+        deliverables: contextEnabled ? projectContext.deliverables.trim() : "",
+        duration_label: contextEnabled ? projectContext.durationLabel.trim() : "",
+        outcome_note: contextEnabled ? projectContext.outcomeNote.trim() : "",
         opportunity_types: [],
         opportunity_note: "",
         external_links: projectAssetsToExternalLinks(assets),
@@ -817,6 +815,7 @@ const ProjectEditorPage = () => {
       collabAccepted,
       projectContext,
       projectAssets,
+      contextEnabled,
     ],
   );
 
@@ -1260,7 +1259,10 @@ const ProjectEditorPage = () => {
           drillMetaRef.current.drill_type === "daily" &&
           isLaunchDesignDrillEnabled()
         ) {
-          navigate("/?drill=1");
+          navigate("/?drill=1", { replace: true });
+        } else if (targetStatus === "Published") {
+          // Replace editor in history so Back from the project page skips the editor.
+          navigate(`/project/${savedId}`, { replace: true });
         } else {
           navigate(`/project/${savedId}`);
         }
@@ -1275,7 +1277,9 @@ const ProjectEditorPage = () => {
           drillMetaRef.current.drill_type === "daily" &&
           isLaunchDesignDrillEnabled()
         ) {
-          navigate("/?drill=1");
+          navigate("/?drill=1", { replace: true });
+        } else if (targetStatus === "Published") {
+          navigate(`/project/${created.id}`, { replace: true });
         } else {
           navigate(`/project/${created.id}`);
         }
@@ -1573,7 +1577,7 @@ const ProjectEditorPage = () => {
         setGalleryDisplayMode("single");
       }
 
-      if (template.open_context) setContextExpanded(true);
+      if (template.open_context) setContextEnabled(true);
       toast.success(`ใช้เทมเพลต「${template.name}」แล้ว — อัปภาพและแก้ข้อความได้เลย`);
       window.setTimeout(() => titleInputRef.current?.focus(), 80);
     },
@@ -2539,14 +2543,16 @@ const ProjectEditorPage = () => {
     aiAssisted,
     aiDisclosureNote,
     clientPermissionConfirmed,
-    context: {
-      brief: projectContext.brief,
-      creator_role: projectContext.creatorRole,
-      process_note: projectContext.processNote,
-      deliverables: projectContext.deliverables,
-      duration_label: projectContext.durationLabel,
-      outcome_note: projectContext.outcomeNote,
-    },
+    context: contextEnabled
+      ? {
+          brief: projectContext.brief,
+          creator_role: projectContext.creatorRole,
+          process_note: projectContext.processNote,
+          deliverables: projectContext.deliverables,
+          duration_label: projectContext.durationLabel,
+          outcome_note: projectContext.outcomeNote,
+        }
+      : undefined,
   };
 
   if (editing && id && !isUuid(id)) {
@@ -2978,15 +2984,15 @@ const ProjectEditorPage = () => {
               "mx-auto w-full space-y-5 px-3 py-5 pb-28 pl-12 sm:space-y-6 sm:px-4 sm:pl-14 sm:pr-4 lg:pb-6 lg:pl-4",
               editorMode === "flex_grid"
                 ? "max-w-[min(100%,calc(52rem+3.5rem))]"
-                : "max-w-[min(100%,calc(42rem+3.5rem))]",
+                : "max-w-[min(100%,calc(56rem+3.5rem))]",
             )}
           >
-          {/* Left: canvas — content max-w-2xl; side rail uses the extra gutter */}
+          {/* Left: canvas — content max-w-4xl (match published detail); side rail uses the extra gutter */}
           <section
             id="project-canvas-editor"
             className={cn(
               "space-y-3 rounded-xl transition-[box-shadow] duration-500 ease-out",
-              editorMode === "flex_grid" ? "max-w-none" : "max-w-2xl",
+              editorMode === "flex_grid" ? "max-w-none" : "max-w-4xl",
               publishFieldHighlight(publishFieldErrors.canvasImage) &&
                 "ring-2 ring-destructive/50 ring-offset-2 ring-offset-background",
             )}
@@ -3071,7 +3077,7 @@ const ProjectEditorPage = () => {
             />
           </section>
 
-          <div className="mx-auto w-full max-w-2xl border-t border-border/70 pt-6 space-y-6">
+          <div className="mx-auto w-full max-w-4xl border-t border-border/70 pt-6 space-y-6">
           <ProjectContextEditorFields
             value={projectContext}
             onChange={patchProjectContext}
@@ -3080,8 +3086,8 @@ const ProjectEditorPage = () => {
               setShortDescription(v);
               clearPublishFieldError("shortDescription");
             }}
-            expanded={contextExpanded}
-            onExpandedChange={setContextExpanded}
+            enabled={contextEnabled}
+            onEnabledChange={setContextEnabled}
             disabled={isBusy}
             shortDescriptionInvalid={publishFieldHighlight(publishFieldErrors.shortDescription)}
           />
@@ -3632,7 +3638,7 @@ const ProjectEditorPage = () => {
                 if (!name || !templateNameDialog) return;
                 if (templateNameDialog.mode === "save") {
                   createFromBlocks.mutate(
-                    { name, blocks: contentBlocks, openContext: contextExpanded },
+                    { name, blocks: contentBlocks, openContext: contextEnabled },
                     { onSuccess: () => setTemplateNameDialog(null) },
                   );
                   return;
@@ -3676,7 +3682,7 @@ const ProjectEditorPage = () => {
                   {
                     id: pendingUpdateTemplate.id,
                     blocks: contentBlocks,
-                    openContext: contextExpanded,
+                    openContext: contextEnabled,
                   },
                   { onSuccess: () => setPendingUpdateTemplate(null) },
                 );

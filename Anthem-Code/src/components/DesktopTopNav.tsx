@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, Rocket, User } from "lucide-react";
+import { ChevronDown, Plus, User } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import ChatNavButton from "@/components/chat/ChatNavButton";
 import { CommunityNavDropdown } from "@/components/CommunityNavDropdown";
@@ -89,7 +89,6 @@ const DesktopTopNav = () => {
     avatar_url: string | null;
     display_name: string | null;
     username: string | null;
-    is_verified: boolean | null;
   } | null>(null);
 
   useEffect(() => {
@@ -99,20 +98,18 @@ const DesktopTopNav = () => {
     }
     supabase
       .from("profiles")
-      .select("avatar_url, display_name, username, is_verified")
+      .select("avatar_url, display_name, username")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => setProfile(data ?? null));
   }, [user]);
 
-  const showBecomeCreator = !user || !profile?.is_verified;
-
-  const onBecomeCreator = () => {
+  const onShareProject = () => {
     if (!user) {
-      openSignup("/hire/start");
+      openSignup("/portfolio/new");
       return;
     }
-    navigate("/hire/start");
+    navigate("/portfolio/new");
   };
 
   useEffect(() => {
@@ -228,17 +225,20 @@ const DesktopTopNav = () => {
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center gap-4 xl:gap-5">
-          {showBecomeCreator ? (
-            <Button
-              type="button"
-              size="sm"
-              onClick={onBecomeCreator}
-              className="hidden h-9 gap-1.5 rounded-full bg-gradient-brand px-4 text-white hover:opacity-90 sm:inline-flex"
-            >
-              <Rocket className="h-4 w-4" aria-hidden />
-              Become a Creator
-            </Button>
-          ) : null}
+          <button
+            type="button"
+            onClick={onShareProject}
+            aria-label="Share your Project"
+            className="first-post-create first-post-create-idle group relative hidden h-9 items-center overflow-visible rounded-full sm:inline-flex"
+          >
+            <span className="first-post-create-beam rounded-full" aria-hidden />
+            <span className="first-post-create-inner relative z-10 m-[1.5px] inline-flex h-full items-center gap-2 rounded-full border border-border/60 bg-foreground py-0 pl-1.5 pr-3.5 text-sm font-medium text-background">
+              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-white">
+                <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+              </span>
+              <span className="whitespace-nowrap">Share your Project</span>
+            </span>
+          </button>
           <ChatNavButton />
           <NotificationBell />
           {user ? (

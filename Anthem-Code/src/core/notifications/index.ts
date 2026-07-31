@@ -2,10 +2,14 @@
  * Cross-app notification feed (Aplus1 + So1o).
  * Backed by shared.notifications, exposed via public.notifications view.
  */
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { isOptionalQueryError } from "@/lib/supabaseErrors";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  isInAppKindEnabled,
+  loadInAppNotifyPrefs,
+} from "@/lib/inAppNotifyPrefs";
 
 export type AppKey = "anthem" | "so1o" | "shared";
 
@@ -136,6 +140,7 @@ function releaseStore(userId: string) {
 export function useNotifications(userId: string | null | undefined) {
   const [, tick] = useState(0);
   const rerender = useCallback(() => tick((n) => n + 1), []);
+  const [prefsTick, setPrefsTick] = useState(0);
 
   useEffect(() => {
     if (!userId) return;
@@ -151,9 +156,28 @@ export function useNotifications(userId: string | null | undefined) {
     };
   }, [userId, rerender]);
 
+  useEffect(() => {
+    const onPrefs = (e: Event) => {
+      const detail = (e as CustomEvent<{ userId?: string }>).detail;
+      if (!userId || !detail?.userId || detail.userId === userId) {
+        setPrefsTick((n) => n + 1);
+      }
+    };
+    window.addEventListener("aplus1:in-app-notify-prefs", onPrefs);
+    return () => window.removeEventListener("aplus1:in-app-notify-prefs", onPrefs);
+  }, [userId]);
+
   const store = userId ? stores.get(userId) : undefined;
-  const items = store?.items ?? [];
+  const rawItems = store?.items ?? [];
   const loading = store?.loading ?? false;
+  const prefs = useMemo(() => {
+    void prefsTick;
+    return loadInAppNotifyPrefs(userId);
+  }, [userId, prefsTick]);
+  const items = useMemo(
+    () => rawItems.filter((n) => isInAppKindEnabled(n.kind, prefs)),
+    [rawItems, prefs],
+  );
 
   const markRead = useCallback(
     async (id: string) => {

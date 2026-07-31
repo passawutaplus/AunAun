@@ -22,7 +22,7 @@ export function useHasPublishedProject(userId: string | undefined) {
   });
 }
 
-/** Whether create control should show the "ลงผลงานแรก" pill. */
+/** Whether create control should show the "ลงผลงาน" pill. */
 export function useShowFirstPostLabel(userId: string | undefined) {
   const { data: hasPublishedProject } = useHasPublishedProject(userId);
   if (FORCE_SHOW_FIRST_POST_LABEL) return true;

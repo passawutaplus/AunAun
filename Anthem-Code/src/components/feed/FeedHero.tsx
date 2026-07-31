@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check, Plus } from "lucide-react";
+import { Check, Rocket } from "lucide-react";
 import { useStudioHeroSlides } from "@/hooks/useHeroSlides";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthDialog } from "@/stores/authDialogStore";
@@ -15,6 +15,7 @@ import HeroSpotlightShowcase from "./HeroSpotlightShowcase";
 import CommunityHeroShowcase from "./CommunityHeroShowcase";
 import WorkWallMarquee from "./WorkWallMarquee";
 import HeroGridSpotlight from "./HeroGridSpotlight";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /** Match FeedPage / DesktopTopNav horizontal gutters so hero copy lines up with the logo. */
@@ -92,12 +93,12 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
   const copy = HERO_COPY[mode];
   const useHomeHero = mode === "projects" || mode === "designers";
 
-  const goShareProject = () => {
+  const goBecomeCreator = () => {
     if (!user) {
-      openSignup("/portfolio/new");
+      openSignup("/hire/start");
       return;
     }
-    navigate("/portfolio/new");
+    navigate("/hire/start");
   };
 
   if (useHomeHero) {
@@ -151,20 +152,16 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
                 ))}
               </ul>
 
-              <button
+              <Button
                 type="button"
-                onClick={goShareProject}
-                aria-label="Share your Project"
-                className="first-post-create first-post-create-idle group mt-7 sm:mt-8 relative inline-flex h-11 items-center overflow-visible rounded-full"
+                size="lg"
+                onClick={goBecomeCreator}
+                aria-label="Become a Creator"
+                className="mt-7 sm:mt-8 h-11 gap-2 rounded-full bg-gradient-brand px-5 text-sm font-medium text-white hover:opacity-90"
               >
-                <span className="first-post-create-beam rounded-full" aria-hidden />
-                <span className="first-post-create-inner relative z-10 m-[1.5px] inline-flex h-full items-center gap-2 rounded-full border border-border/60 bg-foreground py-0 pl-1.5 pr-5 text-sm font-medium text-background">
-                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-white">
-                    <Plus className="h-4 w-4" strokeWidth={2.5} />
-                  </span>
-                  <span className="whitespace-nowrap pr-0.5">Share your Project</span>
-                </span>
-              </button>
+                <Rocket className="h-4 w-4" aria-hidden />
+                Become a Creator
+              </Button>
             </div>
           </FadeUp>
 

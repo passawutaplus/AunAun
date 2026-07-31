@@ -160,7 +160,11 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
                 )}
                 aria-hidden
               >
-                <Icon className="h-4 w-4" />
+                <Icon
+                  className={
+                    platform.id === "lemon8" ? "h-6 w-6" : "h-4 w-4"
+                  }
+                />
               </span>
               <div className="min-w-0 flex-1 space-y-1">
                 <label
@@ -185,7 +189,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
                   }}
                   placeholder={platform.placeholder}
                   maxLength={255}
-                  className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
             </div>
@@ -208,7 +212,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
                 onChange={(e) => setOtherTitle(e.target.value)}
                 maxLength={60}
                 placeholder="เช่น LINE OA, Threads"
-                className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -228,7 +232,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
                 onChange={(e) => setOtherUrl(e.target.value)}
                 maxLength={255}
                 placeholder="https://… หรือ @username"
-                className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();

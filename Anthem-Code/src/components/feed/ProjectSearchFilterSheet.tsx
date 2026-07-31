@@ -131,7 +131,7 @@ function FilterBody({
             if (e.key === "Enter") onApply();
           }}
           placeholder="ค้นหาชื่อผลงาน เครื่องมือ สไตล์…"
-          className="w-full rounded-2xl bg-secondary border border-border pl-10 pr-10 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+          className="w-full rounded-2xl bg-secondary border border-border pl-10 pr-10 py-3 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
         {draft.search ? (
           <button

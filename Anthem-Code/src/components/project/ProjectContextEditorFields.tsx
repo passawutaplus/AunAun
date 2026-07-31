@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 /** Stored in `creator_role` when the author did the whole project alone. */
@@ -32,8 +33,9 @@ type Props = {
   onChange: (patch: Partial<ProjectContextForm>) => void;
   shortDescription: string;
   onShortDescriptionChange: (value: string) => void;
-  expanded: boolean;
-  onExpandedChange: (expanded: boolean) => void;
+  /** Checked = allow filling background story fields. */
+  enabled: boolean;
+  onEnabledChange: (enabled: boolean) => void;
   disabled?: boolean;
   shortDescriptionInvalid?: boolean;
 };
@@ -45,8 +47,8 @@ const ProjectContextEditorFields = ({
   onChange,
   shortDescription,
   onShortDescriptionChange,
-  expanded,
-  onExpandedChange,
+  enabled,
+  onEnabledChange,
   disabled,
   shortDescriptionInvalid,
 }: Props) => {
@@ -60,7 +62,8 @@ const ProjectContextEditorFields = ({
     if (next) setRoleMode(next);
   }, [value.creatorRole]);
 
-  const canEditRole = roleMode === "part" && !disabled;
+  const fieldsLocked = disabled || !enabled;
+  const canEditRole = roleMode === "part" && !fieldsLocked;
   const partRoleText = roleMode === "part" ? value.creatorRole : "";
 
   return (
@@ -86,39 +89,53 @@ const ProjectContextEditorFields = ({
         />
       </div>
 
-      <button
-        type="button"
+      <div
         id="project-context-toggle"
-        aria-expanded={expanded}
-        aria-controls="project-context-fields"
-        disabled={disabled}
-        onClick={() => onExpandedChange(!expanded)}
-        className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-muted/70 px-3 py-2.5 text-sm font-medium text-primary hover:bg-muted transition-colors disabled:opacity-50"
+        className={cn(
+          "flex w-full items-center gap-2.5 rounded-lg bg-muted/70 px-3 py-2.5 transition-colors",
+          disabled ? "opacity-50" : "hover:bg-muted",
+        )}
       >
-        <span>เล่าเบื้องหลังผลงานเพิ่มเติม</span>
-        <ChevronDown
-          className={cn(
-            "w-4 h-4 text-primary transition-transform duration-200",
-            expanded && "rotate-180",
-          )}
-          aria-hidden
+        <Checkbox
+          id="project-context-enabled"
+          checked={enabled}
+          disabled={disabled}
+          onCheckedChange={(v) => onEnabledChange(v === true)}
+          aria-controls="project-context-fields"
         />
-      </button>
+        <label
+          htmlFor="project-context-enabled"
+          className={cn(
+            "flex min-w-0 flex-1 items-center justify-between gap-2 text-sm font-medium text-primary",
+            disabled ? "cursor-not-allowed" : "cursor-pointer",
+          )}
+        >
+          <span>เล่าเบื้องหลังผลงานเพิ่มเติม</span>
+          <ChevronDown
+            className={cn(
+              "w-4 h-4 shrink-0 text-primary transition-transform duration-200",
+              enabled && "rotate-180",
+            )}
+            aria-hidden
+          />
+        </label>
+      </div>
 
       <div
         id="project-context-fields"
         className={cn(
           "grid transition-[grid-template-rows] duration-200 ease-out",
-          expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+          enabled ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         )}
+        aria-hidden={!enabled}
       >
         <div className="overflow-hidden">
-          <div className="space-y-3">
+          <div className={cn("space-y-3", fieldsLocked && "pointer-events-none opacity-60")}>
             <div className="space-y-2">
               <Label className={fieldLabel}>บทบาทของฉัน</Label>
               <RadioGroup
                 value={roleMode || undefined}
-                disabled={disabled}
+                disabled={fieldsLocked}
                 onValueChange={(next) => {
                   if (next === "solo") {
                     setRoleMode("solo");
@@ -141,7 +158,7 @@ const ProjectContextEditorFields = ({
                     className={cn(
                       "flex shrink-0 cursor-pointer items-center gap-2 rounded-md border border-border/70 bg-background px-3 py-2.5",
                       roleMode === "solo" && "border-primary/40 bg-primary/5",
-                      disabled && "cursor-not-allowed opacity-50",
+                      fieldsLocked && "cursor-not-allowed opacity-50",
                     )}
                   >
                     <RadioGroupItem id="creator-role-solo" value="solo" />
@@ -155,7 +172,7 @@ const ProjectContextEditorFields = ({
                     className={cn(
                       "flex shrink-0 cursor-pointer items-center gap-2 rounded-md border border-border/70 bg-background px-3 py-2.5",
                       roleMode === "part" && "border-primary/40 bg-primary/5",
-                      disabled && "cursor-not-allowed opacity-50",
+                      fieldsLocked && "cursor-not-allowed opacity-50",
                     )}
                   >
                     <RadioGroupItem id="creator-role-part" value="part" />
@@ -195,7 +212,7 @@ const ProjectContextEditorFields = ({
                 placeholder="งานนี้เริ่มจากโจทย์หรือปัญหาอะไร เช่น รีแบรนด์ร้าน, ออกแบบแคมเปญ, ทำภาพประกอบให้บทความ"
                 rows={3}
                 maxLength={1500}
-                disabled={disabled}
+                disabled={fieldsLocked}
                 className="bg-background resize-y min-h-[88px]"
               />
             </div>
@@ -208,7 +225,7 @@ const ProjectContextEditorFields = ({
                 placeholder="เล่าว่าคุณเริ่มคิดจากอะไร ทดลองอะไร หรือเลือกวิธีนี้เพราะอะไร"
                 rows={3}
                 maxLength={2000}
-                disabled={disabled}
+                disabled={fieldsLocked}
                 className="bg-background resize-y min-h-[88px]"
               />
             </div>
@@ -221,7 +238,7 @@ const ProjectContextEditorFields = ({
                   onChange={(e) => onChange({ deliverables: e.target.value })}
                   placeholder="เช่น โลโก้, Brand guideline, ภาพประกอบ 5 ชิ้น, UI 12 หน้าจอ, วิดีโอ 30 วินาที"
                   maxLength={200}
-                  disabled={disabled}
+                  disabled={fieldsLocked}
                   className="bg-background"
                 />
               </div>
@@ -232,7 +249,7 @@ const ProjectContextEditorFields = ({
                   onChange={(e) => onChange({ durationLabel: e.target.value })}
                   placeholder="เช่น 2 สัปดาห์, 1 เดือน, 3 วัน, โปรเจกต์ระยะยาว"
                   maxLength={60}
-                  disabled={disabled}
+                  disabled={fieldsLocked}
                   className="bg-background"
                 />
               </div>
@@ -246,7 +263,7 @@ const ProjectContextEditorFields = ({
                 placeholder="ผลลัพธ์ที่เกิดขึ้น หรือสิ่งที่คุณได้เรียนรู้จากงานนี้ เช่น ลูกค้านำไปใช้จริง, engagement ดีขึ้น, เข้าใจกลุ่มเป้าหมายมากขึ้น"
                 rows={3}
                 maxLength={1500}
-                disabled={disabled}
+                disabled={fieldsLocked}
                 className="bg-background resize-y min-h-[88px]"
               />
             </div>

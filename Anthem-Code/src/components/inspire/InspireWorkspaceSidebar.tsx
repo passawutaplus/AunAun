@@ -139,7 +139,7 @@ export function InspireWorkspaceSidebar({
   const filteredRecent = useMemo(() => {
     if (!isSearching) return [];
     return recent.filter((item) => {
-      const hay = `${item.board_name ?? ""}`.toLowerCase();
+      const hay = `${item.project_title ?? ""} ${item.board_name ?? ""}`.toLowerCase();
       return hay.includes(q);
     });
   }, [recent, isSearching, q]);
@@ -286,7 +286,9 @@ export function InspireWorkspaceSidebar({
                             loading="lazy"
                           />
                         </span>
-                        <span className="min-w-0 flex-1 truncate">{item.board_name ?? "บอร์ด"}</span>
+                        <span className="min-w-0 flex-1 truncate">
+                          {item.project_title?.trim() || item.board_name || "ผลงาน"}
+                        </span>
                       </button>
                     </li>
                   ))}

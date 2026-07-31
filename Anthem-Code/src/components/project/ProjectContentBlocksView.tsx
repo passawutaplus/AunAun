@@ -50,11 +50,16 @@ function ImageFrame({
   onOpenImage?: (url: string) => void;
 }) {
   return (
-    <div className={cn("relative group overflow-hidden rounded-none bg-transparent", className)}>
+    <div
+      className={cn(
+        "relative group min-w-0 max-w-full overflow-hidden rounded-none bg-transparent",
+        className,
+      )}
+    >
       <button
         type="button"
         className={cn(
-          "block w-full border-0 bg-transparent p-0 text-left",
+          "block w-full max-w-full border-0 bg-transparent p-0 text-left",
           onOpenImage && "cursor-zoom-in",
         )}
         onClick={onOpenImage ? () => onOpenImage(url) : undefined}
@@ -64,7 +69,10 @@ function ImageFrame({
         <img
           src={url}
           alt=""
-          className={cn("pointer-events-none w-full object-contain", imgClassName)}
+          className={cn(
+            "pointer-events-none h-auto w-full max-w-full object-contain",
+            imgClassName,
+          )}
           loading="lazy"
         />
       </button>
@@ -96,7 +104,7 @@ function MultiRowImages({
   return (
     <div
       className={cn(
-        "grid gap-2",
+        "grid w-full min-w-0 items-start gap-2",
         columns === 4 ? "grid-cols-4" : columns === 3 ? "grid-cols-3" : "grid-cols-2",
       )}
     >
@@ -148,15 +156,15 @@ function ImageTextBlockView({
   ) : null;
   if (!image && !text) return null;
   return (
-    <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4">
+    <div className="grid min-w-0 w-full grid-cols-2 gap-3 sm:gap-4">
       {splitSide === "text_left" ? (
         <>
           <div className={cn("flex h-full min-w-0", textVerticalAlignClass(textVerticalAlign))}>{text}</div>
-          <div className="min-w-0">{image}</div>
+          <div className="min-w-0 overflow-hidden">{image}</div>
         </>
       ) : (
         <>
-          <div className="min-w-0">{image}</div>
+          <div className="min-w-0 overflow-hidden">{image}</div>
           <div className={cn("flex h-full min-w-0", textVerticalAlignClass(textVerticalAlign))}>{text}</div>
         </>
       )}
@@ -228,7 +236,6 @@ function renderBlock(
           url={urls[0]}
           imageIndex={imageIndexOffset}
           actions={actions}
-          imgClassName="max-h-[min(80vh,900px)]"
           onOpenImage={onOpenImage}
         />
       );
@@ -376,12 +383,12 @@ export function ProjectContentBlocksView({
   if (!rendered.length) return null;
 
   return (
-    <div className={cn("flex flex-col", className)}>
+    <div className={cn("flex w-full min-w-0 max-w-full flex-col overflow-x-clip", className)}>
       {rendered.map(({ block, content }, index) => (
         <div
           key={block.id}
           className={cn(
-            "min-w-0",
+            "min-w-0 max-w-full",
             blockGapAfterClass(block.gapAfter, index === rendered.length - 1, "public"),
           )}
         >

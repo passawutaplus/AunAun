@@ -2,7 +2,8 @@ import { Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useImagePalette } from "@/hooks/useImagePalette";
 import { writeInspireItemDrag } from "@/lib/inspireDnD";
-import { isInspireItemPinned, type InspireRecentItem } from "@/hooks/useInspire";
+import { isInspireItemPinned, inspireItemWorkTitle, type InspireBoardWithCovers, type InspireRecentItem } from "@/hooks/useInspire";
+import { InspireItemActionsMenu } from "@/components/inspire/InspireItemActionsMenu";
 
 type Props = {
   item: InspireRecentItem;
@@ -12,7 +13,10 @@ type Props = {
   variant?: "grid" | "list";
   /** Allow drag onto board chips (library home). */
   draggable?: boolean;
+  boards?: InspireBoardWithCovers[];
   onTogglePin?: (item: InspireRecentItem) => void;
+  onMoveToBoard?: (item: InspireRecentItem, boardId: string) => void;
+  onDelete?: (item: InspireRecentItem) => void;
   className?: string;
 };
 
@@ -51,12 +55,16 @@ export function InspireLibraryCard({
   selected,
   variant = "grid",
   draggable = false,
+  boards = [],
   onTogglePin,
+  onMoveToBoard,
+  onDelete,
   className,
 }: Props) {
   const colors = useImagePalette(item.image_url, 6);
-  const title = item.board_name?.trim() || "ภาพอ้างอิง";
+  const title = inspireItemWorkTitle(item);
   const pinned = isInspireItemPinned(item);
+  const hasMenu = !!(onTogglePin || onMoveToBoard || onDelete);
 
   const onDragStart = (e: React.DragEvent) => {
     if (!draggable) return;
@@ -66,6 +74,20 @@ export function InspireLibraryCard({
     });
     e.dataTransfer.effectAllowed = "copy";
   };
+
+  const actionsMenu = hasMenu ? (
+    <InspireItemActionsMenu
+      item={item}
+      boards={boards}
+      pinned={pinned}
+      alwaysVisible
+      onPin={onTogglePin ? () => onTogglePin(item) : undefined}
+      onMoveToBoard={
+        onMoveToBoard ? (boardId) => onMoveToBoard(item, boardId) : undefined
+      }
+      onDelete={onDelete ? () => onDelete(item) : undefined}
+    />
+  ) : null;
 
   const pinButton = onTogglePin ? (
     <button
@@ -91,6 +113,54 @@ export function InspireLibraryCard({
 
   if (variant === "list") {
     return (
+      <div
+        className={cn(
+          "group flex w-full items-center gap-3 rounded-xl px-1 py-1.5 text-left transition-colors",
+          "hover:bg-muted/40",
+          selected && "bg-primary/10 ring-1 ring-primary/40",
+          pinned && "bg-primary/5",
+          className,
+        )}
+      >
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-pressed={selected}
+          draggable={draggable}
+          onDragStart={onDragStart}
+          className={cn(
+            "flex min-w-0 flex-1 items-center gap-3 text-left",
+            draggable && "cursor-grab active:cursor-grabbing",
+          )}
+        >
+          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
+            <img
+              src={item.image_url}
+              alt=""
+              draggable={false}
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+          <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+            {title}
+          </p>
+          {pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-primary fill-primary" /> : null}
+          <ColorStack itemId={item.id} colors={colors} />
+        </button>
+        {actionsMenu}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "group mb-4 w-full break-inside-avoid text-left",
+        "transition-transform duration-300 hover:-translate-y-0.5",
+        className,
+      )}
+    >
       <button
         type="button"
         onClick={onOpen}
@@ -98,53 +168,11 @@ export function InspireLibraryCard({
         draggable={draggable}
         onDragStart={onDragStart}
         className={cn(
-          "group flex w-full items-center gap-3 rounded-xl px-1 py-1.5 text-left transition-colors",
-          "hover:bg-muted/40",
-          selected && "bg-primary/10 ring-1 ring-primary/40",
-          pinned && "bg-primary/5",
-          draggable && "cursor-grab active:cursor-grabbing",
-          className,
-        )}
-      >
-        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
-          <img
-            src={item.image_url}
-            alt=""
-            draggable={false}
-            className="absolute inset-0 h-full w-full object-cover"
-            loading="lazy"
-          />
-        </div>
-        <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-          {title}
-        </p>
-        {pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-primary fill-primary" /> : null}
-        <ColorStack itemId={item.id} colors={colors} />
-        {pinButton}
-      </button>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      aria-pressed={selected}
-      draggable={draggable}
-      onDragStart={onDragStart}
-      className={cn(
-        "group mb-4 w-full break-inside-avoid text-left",
-        "transition-transform duration-300 hover:-translate-y-0.5",
-        draggable && "cursor-grab active:cursor-grabbing",
-        className,
-      )}
-    >
-      <div
-        className={cn(
-          "relative w-full overflow-hidden rounded-2xl bg-muted",
+          "relative block w-full overflow-hidden rounded-2xl bg-muted",
           aspectForId(item.id),
           selected && "ring-2 ring-primary ring-offset-2 ring-offset-background",
           pinned && "ring-2 ring-primary/50",
+          draggable && "cursor-grab active:cursor-grabbing",
         )}
       >
         <img
@@ -161,14 +189,19 @@ export function InspireLibraryCard({
             <Pin className="h-3.5 w-3.5 fill-current" />
           </div>
         ) : null}
-      </div>
+      </button>
 
-      <div className="mt-2.5 flex items-center gap-2 px-0.5">
-        <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+      <div className="mt-2.5 flex items-center gap-2.5 px-0.5">
+        <button
+          type="button"
+          onClick={onOpen}
+          className="min-w-0 flex-1 truncate text-left text-sm font-medium text-foreground"
+        >
           {title}
-        </p>
+        </button>
         <ColorStack itemId={item.id} colors={colors} />
+        {actionsMenu}
       </div>
-    </button>
+    </div>
   );
 }

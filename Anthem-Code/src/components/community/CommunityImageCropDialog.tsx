@@ -27,6 +27,8 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   onConfirm: (file: File) => void;
   onCancel: () => void;
+  title?: string;
+  description?: string;
 };
 
 const MAX_ZOOM = 3;
@@ -40,6 +42,8 @@ export function CommunityImageCropDialog({
   onOpenChange,
   onConfirm,
   onCancel,
+  title,
+  description,
 }: Props) {
   const aspectKey = normalizeCommunityMediaAspect(aspectProp);
   const meta = communityMediaAspectMeta(aspectKey);
@@ -108,12 +112,18 @@ export function CommunityImageCropDialog({
       <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-4 pt-4 pb-2">
           <DialogTitle className="text-base">
-            {allowAspectChoice ? "อัปรูปแรก — เลือกสัดส่วนโพสต์" : `ครอปรูป ${meta.ratioLabel}`}
+            {title
+              ? title
+              : allowAspectChoice
+                ? "อัปรูปแรก — เลือกสัดส่วนโพสต์"
+                : `ครอปรูป ${meta.ratioLabel}`}
           </DialogTitle>
           <p className="text-xs text-muted-foreground font-normal">
-            {allowAspectChoice
-              ? "เลือกสัดส่วนแล้วครอป — รูปและวิดีโอถัดไปใช้สัดส่วนเดียวกันทั้งโพสต์"
-              : `โพสต์นี้ใช้สัดส่วน ${meta.label} (${meta.ratioLabel}) — ลากและซูมเพื่อจัดกรอบ`}
+            {description
+              ? description
+              : allowAspectChoice
+                ? "เลือกสัดส่วนแล้วครอป — รูปและวิดีโอถัดไปใช้สัดส่วนเดียวกันทั้งโพสต์"
+                : `โพสต์นี้ใช้สัดส่วน ${meta.label} (${meta.ratioLabel}) — ลากและซูมเพื่อจัดกรอบ`}
           </p>
         </DialogHeader>
 

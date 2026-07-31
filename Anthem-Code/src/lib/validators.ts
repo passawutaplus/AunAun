@@ -134,13 +134,100 @@ export const hireInviteBriefSchema = z
 export type HireRequestInput = z.infer<typeof hireRequestSchema>;
 export type HireRequestQuickInput = z.infer<typeof hireRequestQuickSchema>;
 
+export const experienceEmploymentTypes = [
+  "full_time",
+  "part_time",
+  "freelance",
+  "contract",
+  "owner",
+  "consultant",
+] as const;
+
+export type ExperienceEmploymentType = (typeof experienceEmploymentTypes)[number];
+
+export const EXPERIENCE_EMPLOYMENT_LABELS: Record<ExperienceEmploymentType, string> = {
+  full_time: "พนักงานเต็มเวลา",
+  part_time: "พาร์ทไทม์",
+  freelance: "ฟรีแลนซ์",
+  contract: "สัญญาจ้าง",
+  owner: "เจ้าของ",
+  consultant: "ที่ปรึกษา",
+};
+
 export const experienceItemSchema = z.object({
   title: z.string().trim().min(1, "กรอกตำแหน่ง").max(80),
   company: z.string().trim().max(80).optional().default(""),
+  /** ข้อความช่วงเวลาที่โชว์บนโปรไฟล์ เช่น "2566 - ปัจจุบัน" */
   period: z.string().trim().max(60).optional().default(""),
+  periodStart: z.string().trim().max(40).optional().default(""),
+  periodEnd: z.string().trim().max(40).optional().default(""),
+  isCurrent: z.boolean().optional().default(false),
+  employmentType: z.enum(experienceEmploymentTypes).optional().nullable().default(null),
   description: z.string().trim().max(400).optional().default(""),
 });
 export type ExperienceItem = z.infer<typeof experienceItemSchema>;
+
+/** สร้างข้อความช่วงเวลาจากฟิลด์ย่อย — รองรับข้อมูลเก่าที่มีแค่ period */
+export function formatExperiencePeriod(item: {
+  period?: string | null;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  isCurrent?: boolean | null;
+}): string {
+  const start = (item.periodStart ?? "").trim();
+  const end = (item.periodEnd ?? "").trim();
+  const current = !!item.isCurrent;
+  if (start) {
+    if (current) return `${start} - ปัจจุบัน`;
+    if (end) return `${start} - ${end}`;
+    return start;
+  }
+  return (item.period ?? "").trim();
+}
+
+export function normalizeExperienceItem(raw: unknown): ExperienceItem | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const title = typeof r.title === "string" ? r.title.trim() : "";
+  if (!title) return null;
+  const period = typeof r.period === "string" ? r.period.trim() : "";
+  let periodStart = typeof r.periodStart === "string" ? r.periodStart.trim() : "";
+  let periodEnd = typeof r.periodEnd === "string" ? r.periodEnd.trim() : "";
+  let isCurrent = r.isCurrent === true;
+  if (!periodStart && period) {
+    const parts = period.split(/\s*[-–—]\s*/);
+    periodStart = (parts[0] ?? "").trim();
+    const tail = (parts[1] ?? "").trim();
+    if (/ปัจจุบัน|present|now/i.test(tail) || /ปัจจุบัน|present|now/i.test(period)) {
+      isCurrent = true;
+      periodEnd = "";
+    } else {
+      periodEnd = tail;
+    }
+  } else if (!isCurrent && /ปัจจุบัน|present|now/i.test(periodEnd || period)) {
+    isCurrent = true;
+    periodEnd = "";
+  }
+  const employmentRaw = typeof r.employmentType === "string" ? r.employmentType : null;
+  const employmentType = experienceEmploymentTypes.includes(
+    employmentRaw as ExperienceEmploymentType,
+  )
+    ? (employmentRaw as ExperienceEmploymentType)
+    : null;
+  const company = typeof r.company === "string" ? r.company.trim() : "";
+  const description = typeof r.description === "string" ? r.description.trim() : "";
+  const composed = formatExperiencePeriod({ period, periodStart, periodEnd, isCurrent });
+  return {
+    title,
+    company,
+    period: composed || period,
+    periodStart,
+    periodEnd: isCurrent ? "" : periodEnd,
+    isCurrent,
+    employmentType,
+    description,
+  };
+}
 
 const communityQuestionTopicSchema = z.enum([
   "feedback",
@@ -212,6 +299,24 @@ export const profileSchema = z.object({
     .regex(/^[a-zA-Z0-9_.]+$/, "ใช้ได้เฉพาะ a-z, 0-9, _ และ ."),
   bio: z.string().trim().max(500).optional().default(""),
   role: z.string().trim().max(60).optional().default(""),
+  /** ISO date YYYY-MM-DD or empty */
+  dateOfBirth: z
+    .string()
+    .trim()
+    .optional()
+    .default("")
+    .refine(
+      (v) => !v || /^\d{4}-\d{2}-\d{2}$/.test(v),
+      "รูปแบบวันเกิดไม่ถูกต้อง",
+    )
+    .refine((v) => {
+      if (!v) return true;
+      const d = new Date(`${v}T00:00:00`);
+      if (Number.isNaN(d.getTime())) return false;
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      return d <= today && d.getFullYear() >= 1900;
+    }, "วันเกิดไม่ถูกต้อง"),
   location: z.string().trim().max(200).optional().default(""),
   profileAddress: profileAddressSchema.default({
     line1: "",
@@ -267,6 +372,7 @@ export const profileSchema = z.object({
   notifyEmail: z.boolean().default(true),
   notifyHire: z.boolean().default(true),
   notifyCollab: z.boolean().default(true),
+  notifyJobMatch: z.boolean().default(true),
   preferredCategories: z.array(z.string().trim().min(1).max(60)).max(20).default([]),
   preferredEmploymentTypes: z.array(z.string().trim().min(1).max(20)).max(10).default([]),
   opportunityStatus: z.enum(["open_to_opportunities", "soft_open", "not_available"]).default("open_to_opportunities"),

@@ -5,6 +5,7 @@ export type EmailNotificationFields = {
   notifyEmail: boolean;
   notifyHire: boolean;
   notifyCollab: boolean;
+  notifyJobMatch: boolean;
 };
 
 type Props = {
@@ -23,33 +24,48 @@ export function EmailNotificationSection({ value, onChange }: Props) {
         <h2 className="font-semibold text-foreground">แจ้งเตือนทางอีเมล</h2>
       </div>
       <p className="text-xs text-muted-foreground leading-relaxed">
-        ควบคุมอีเมลจาก Aplus1 — แจ้งเตือนในแอปดูที่{" "}
+        ควบคุมอีเมลจาก Aplus1 — แจ้งเตือนกระดิ่งในเว็บตั้งค่าแยกด้านบน · ดูกล่องรวมที่{" "}
         <Link to="/notifications" className="text-primary hover:underline inline-flex items-center gap-0.5">
-          กล่องการแจ้งเตือน
+          การแจ้งเตือน
           <ChevronRight className="w-3 h-3" />
         </Link>
       </p>
 
       <Toggle
         label="เปิดอีเมลจาก Aplus1"
-        description="ปิดแล้วจะไม่ได้รับอีเมลทุกประเภท (แชท ของขวัญ การติดตาม การเงิน ฯลฯ)"
+        description="ปิดแล้วจะไม่ได้รับอีเมลทุกประเภท (แชท ของขวัญ การติดตาม ชุมชน การเงิน ฯลฯ)"
         checked={value.notifyEmail}
         onChange={(v) => onChange("notifyEmail", v)}
       />
-      <Toggle
-        label="แจ้งเตือนเมื่อมีคำขอจ้างงาน"
-        description="ส่งอีเมลทันทีที่มีคนสนใจจ้างจากผลงานของคุณ"
-        checked={value.notifyHire}
-        disabled={!value.notifyEmail}
-        onChange={(v) => onChange("notifyHire", v)}
-      />
-      <Toggle
-        label="แจ้งเตือนเมื่อมีคนสนใจคอลแลป"
-        description="ส่งอีเมลทันทีที่มีคนส่งคำขอคอลแลปถึงคุณ"
-        checked={value.notifyCollab}
-        disabled={!value.notifyEmail}
-        onChange={(v) => onChange("notifyCollab", v)}
-      />
+      <div className="rounded-xl border border-border/60 bg-secondary/40 px-3 py-2.5 space-y-2">
+        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+          ประเภทอีเมลสำคัญ
+        </p>
+        <Toggle
+          label="คำขอจ้างงาน"
+          description="มีคนสนใจจ้างจากผลงานหรือแพ็กเกจของคุณ"
+          checked={value.notifyHire}
+          disabled={!value.notifyEmail}
+          onChange={(v) => onChange("notifyHire", v)}
+        />
+        <Toggle
+          label="คำขอคอลแลป"
+          description="มีคนส่งคำชวนคอลแลปหรืออัปเดตสถานะคอลแลป"
+          checked={value.notifyCollab}
+          disabled={!value.notifyEmail}
+          onChange={(v) => onChange("notifyCollab", v)}
+        />
+        <Toggle
+          label="งานที่ตรงสาย"
+          description="จับคู่ประกาศงานกับสายงาน / ความสนใจของคุณ"
+          checked={value.notifyJobMatch}
+          disabled={!value.notifyEmail}
+          onChange={(v) => onChange("notifyJobMatch", v)}
+        />
+      </div>
+      <p className="text-[11px] text-muted-foreground leading-relaxed">
+        อีเมลธุรกรรมที่จำเป็น (เช่น ยืนยันอีเมล รีเซ็ตรหัสผ่าน ใบเสร็จ) ยังส่งได้แม้ปิดแจ้งเตือนทั่วไป
+      </p>
     </section>
   );
 }

@@ -18,13 +18,16 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import {
   useDeleteProjectSeries,
+  useMyProjectSeries,
   useProjectSeries,
   useProjectSeriesItems,
+  usePublicProjectSeries,
   useRemoveProjectFromSeries,
   useUpdateProjectSeries,
 } from "@/hooks/useProjectSeries";
 import { SeriesFormDialog } from "@/components/series/SeriesFormDialog";
 import { SeriesAddProjectsDialog } from "@/components/series/SeriesAddProjectsDialog";
+import { SeriesCard } from "@/components/series/SeriesCard";
 import {
   SeriesBrowseToolbar,
   type SeriesBrowseSortMode,
@@ -67,6 +70,15 @@ const SeriesDetailPage = () => {
   }, [density]);
 
   const isOwner = !!user?.id && !!series && user.id === series.owner_id;
+  const ownerId = series?.owner_id;
+  const { data: publicOwnerSeries = [] } = usePublicProjectSeries(ownerId);
+  const { data: myOwnerSeries = [] } = useMyProjectSeries(isOwner ? ownerId : undefined);
+  const otherCatalogs = useMemo(() => {
+    const list = isOwner ? myOwnerSeries : publicOwnerSeries;
+    if (!series?.id) return [];
+    return list.filter((s) => s.id !== series.id);
+  }, [isOwner, myOwnerSeries, publicOwnerSeries, series?.id]);
+
   const visibleItems = isOwner
     ? items
     : items.filter((i) => i.project?.status === "Published");
@@ -145,9 +157,8 @@ const SeriesDetailPage = () => {
       <div className="sticky top-0 z-20 glass-panel border-x-0 border-t-0 rounded-none">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <BackButton
-            to={isOwner ? `/series?s=${encodeURIComponent(series.id)}` : undefined}
-            onClick={isOwner ? undefined : () => navigate(-1)}
-            label={isOwner ? "กลับ My Catalog" : "กลับ"}
+            fallbackTo={isOwner ? `/series?s=${encodeURIComponent(series.id)}` : "/"}
+            label="กลับ"
           />
           <div className="flex items-center gap-2 flex-wrap justify-end">
             {(isOwner || series.is_public) && (
@@ -407,6 +418,37 @@ const SeriesDetailPage = () => {
             )}
           </>
         )}
+
+        {otherCatalogs.length > 0 ? (
+          <section className="border-t border-border/60 pt-8 pb-4 space-y-4">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold text-foreground">Catalog อื่น ๆ</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  จากเจ้าของ Catalog นี้
+                </p>
+              </div>
+              {ownerId ? (
+                <Link
+                  to={`/u/${ownerId}?tab=series`}
+                  className="text-xs text-primary hover:underline shrink-0"
+                >
+                  ดูทั้งหมด
+                </Link>
+              ) : null}
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin">
+              {otherCatalogs.map((s) => (
+                <SeriesCard
+                  key={s.id}
+                  series={s}
+                  compact
+                  className="w-[9.5rem] sm:w-[11rem] shrink-0"
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
       </div>
 
       <SeriesFormDialog open={editOpen} onOpenChange={setEditOpen} initial={series} />

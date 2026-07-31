@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, Copy, ExternalLink, Pin, X } from "lucide-react";
+import { ChevronDown, Copy, ExternalLink, Pin, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Sheet,
@@ -9,6 +9,17 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,14 +36,25 @@ import {
   writeInspireKeywords,
 } from "@/lib/inspireItemKeywords";
 import { readInspireNote, writeInspireNote } from "@/lib/inspireItemNotes";
-import { isInspireItemPinned, type InspireRecentItem } from "@/hooks/useInspire";
+import {
+  inspireItemWorkTitle,
+  isInspireItemPinned,
+  type InspireBoardWithCovers,
+  type InspireRecentItem,
+} from "@/hooks/useInspire";
+import { InspireMoveToBoardButton } from "@/components/inspire/InspireMoveToBoardButton";
 import { cn } from "@/lib/utils";
 
 type Props = {
   item: InspireRecentItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  boards?: InspireBoardWithCovers[];
   onTogglePin?: () => void;
+  onMoveToBoard?: (boardId: string) => void | Promise<void>;
+  onDelete?: () => void | Promise<void>;
+  movePending?: boolean;
+  deletePending?: boolean;
 };
 
 function formatSavedAt(iso: string | undefined): string {
@@ -51,7 +73,17 @@ async function copyValue(label: string, value: string) {
   }
 }
 
-export function InspireItemDetailSheet({ item, open, onOpenChange, onTogglePin }: Props) {
+export function InspireItemDetailSheet({
+  item,
+  open,
+  onOpenChange,
+  boards = [],
+  onTogglePin,
+  onMoveToBoard,
+  onDelete,
+  movePending,
+  deletePending,
+}: Props) {
   const paletteCss = useImagePalette(item?.image_url, 6);
   const hexes = useMemo(() => paletteCss.map(toHexColor), [paletteCss]);
   const analysis = useMemo(() => analyzeInspirePalette(hexes), [hexes]);
@@ -147,24 +179,34 @@ export function InspireItemDetailSheet({ item, open, onOpenChange, onTogglePin }
               <SheetHeader className="space-y-1 text-left p-0">
                 <div className="flex items-start justify-between gap-3">
                   <SheetTitle className="text-xl font-semibold tracking-tight min-w-0">
-                    This OBJECT
+                    {inspireItemWorkTitle(item)}
                   </SheetTitle>
-                  {item.project_id ? (
-                    <Button
-                      asChild
-                      size="sm"
-                      variant="outline"
-                      className="shrink-0 h-8 rounded-full px-3 text-xs text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
-                    >
-                      <Link
-                        to={`/project/${item.project_id}`}
-                        onClick={() => onOpenChange(false)}
+                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                    {onMoveToBoard ? (
+                      <InspireMoveToBoardButton
+                        item={item}
+                        boards={boards}
+                        pending={movePending}
+                        onMoveToBoard={onMoveToBoard}
+                      />
+                    ) : null}
+                    {item.project_id ? (
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="shrink-0 h-8 rounded-full px-3 text-xs text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
                       >
-                        <ExternalLink className="w-3.5 h-3.5 mr-1" />
-                        ไปหน้าผลงาน
-                      </Link>
-                    </Button>
-                  ) : null}
+                        <Link
+                          to={`/project/${item.project_id}`}
+                          onClick={() => onOpenChange(false)}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                          ไปหน้าผลงาน
+                        </Link>
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
                 <SheetDescription className="text-xs text-muted-foreground">
                   Saved via Inspire · {formatSavedAt(item.added_at)}
@@ -266,7 +308,7 @@ export function InspireItemDetailSheet({ item, open, onOpenChange, onTogglePin }
                   <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", codesOpen && "rotate-180")} />
                 </button>
                 {codesOpen ? (
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     {hexes.map((hex) => (
                       <div key={`code-${hex}`} className="flex gap-3">
                         <div
@@ -306,6 +348,41 @@ export function InspireItemDetailSheet({ item, open, onOpenChange, onTogglePin }
                 ) : null}
               </section>
             </div>
+
+            {onDelete ? (
+              <div className="shrink-0 border-t border-border/50 px-5 py-4">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={deletePending}
+                      className="w-full rounded-xl text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1.5" />
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>ลบภาพนี้ออกจาก Inspire?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        ภาพจะถูกลบออกจากคลังและบอร์ดทั้งหมด (ผลงานต้นฉบับไม่ถูกลบ)
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => void onDelete()}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ) : null}
           </>
         ) : null}
       </SheetContent>

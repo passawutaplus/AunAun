@@ -1,11 +1,12 @@
--- Username change cooldown (14 days between handle changes).
+-- Username change cooldown (60 days between handle changes).
 -- First change after signup is always allowed (username_changed_at IS NULL).
+-- Keep in sync with Anthem-Code/src/lib/usernamePolicy.ts
 
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS username_changed_at timestamptz;
 
 COMMENT ON COLUMN public.profiles.username_changed_at IS
-  'Last time the user changed username; enforces a 14-day cooldown.';
+  'Last time the user changed username; enforces a 60-day cooldown.';
 
 CREATE OR REPLACE FUNCTION public.enforce_username_change_cooldown()
 RETURNS trigger
@@ -14,12 +15,12 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  cooldown interval := interval '14 days';
+  cooldown interval := interval '60 days';
 BEGIN
   IF NEW.username IS DISTINCT FROM OLD.username THEN
     IF OLD.username_changed_at IS NOT NULL
        AND OLD.username_changed_at > (now() - cooldown) THEN
-      RAISE EXCEPTION 'USERNAME_COOLDOWN: username can only be changed every 14 days'
+      RAISE EXCEPTION 'USERNAME_COOLDOWN: username can only be changed every 60 days'
         USING ERRCODE = 'P0001';
     END IF;
     NEW.username_changed_at := now();

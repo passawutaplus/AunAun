@@ -807,7 +807,7 @@ export function ChatOfferDialog({
                     </div>
                   </div>
                   <Link
-                    to="/settings#billing-profile"
+                    to="/settings#billing"
                     target="_blank"
                     rel="noreferrer"
                     className="shrink-0 text-sm text-primary hover:underline"

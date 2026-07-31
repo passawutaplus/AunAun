@@ -250,10 +250,11 @@ export function InterestSurveyGate() {
   const { user } = useAuth();
   const { tier } = useSubscription();
   const isNarrow = useIsNarrow();
-  const { shouldShow, saveOnboarding, isSaving, isLoading, profile } = useFeedInterestSurvey(user?.id);
-  const [step, setStep] = useState<Step>(() =>
-    typeof window !== "undefined" && window.innerWidth >= DESKTOP_MIN ? "interests" : "identity",
+  const { shouldShow, saveOnboarding, save, isSaving, isLoading, profile } = useFeedInterestSurvey(
+    user?.id,
   );
+  /** Mobile + desktop: interests first; profile (identity) follows on mobile. */
+  const [step, setStep] = useState<Step>("interests");
   const [selected, setSelected] = useState<Set<FeedInterestId>>(new Set());
   const [displayName, setDisplayName] = useState("");
   const [usernameVerify, setUsernameVerify] = useState<UsernameVerifyUi>({ kind: "idle" });
@@ -286,8 +287,8 @@ export function InterestSurveyGate() {
 
   useEffect(() => {
     setDismissed(false);
-    setStep(isNarrow ? "identity" : "interests");
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps -- only reset on user change
+    setStep("interests");
+  }, [user?.id]);
 
   useEffect(() => {
     if (FORCE_SHOW_INTEREST_SURVEY) setDismissed(false);
@@ -300,7 +301,22 @@ export function InterestSurveyGate() {
   useEffect(() => {
     if (!profile) return;
     if (profile.feed_interests?.length) setSelected(new Set(profile.feed_interests as FeedInterestId[]));
-    if (profile.display_name) setDisplayName(profile.display_name);
+    if (profile.display_name) {
+      setDisplayName(profile.display_name);
+      // Assigned handle is already unique — show verified until the user edits.
+      const handle = deriveUsernameFromLabel(profile.display_name);
+      if (handle.length >= 2) {
+        setVerifiedUsername(handle);
+        setUsernameVerify({ kind: "ok", text: "ใช้ได้" });
+      }
+    } else if (profile.username?.trim()) {
+      setDisplayName(profile.username);
+      const handle = deriveUsernameFromLabel(profile.username);
+      if (handle.length >= 2) {
+        setVerifiedUsername(handle);
+        setUsernameVerify({ kind: "ok", text: "ใช้ได้" });
+      }
+    }
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
     if (profile.cover_url) setCoverUrl(profile.cover_url);
     if (profile.opportunity_types?.length) setLooking([...profile.opportunity_types]);
@@ -341,21 +357,44 @@ export function InterestSurveyGate() {
     setUsernameVerify({ kind: "ok", text: "ใช้ได้" });
   };
 
-  const canContinue = useMemo(
-    () => (FORCE_SHOW_INTEREST_SURVEY && !user ? true : usernameOk),
-    [user, usernameOk],
-  );
+  /** Username required to finish (desktop) or continue from identity (mobile). */
+  const canContinue = useMemo(() => {
+    if (FORCE_SHOW_INTEREST_SURVEY && !user) return true;
+    if (step === "interests" && isNarrow) return true;
+    if (step === "basics") return true;
+    return usernameOk;
+  }, [user, usernameOk, step, isNarrow]);
 
   if (!surveyVisible) return null;
 
-  const handleSkip = () => {
+  const completeWithInterestsOnly = async () => {
+    if (FORCE_SHOW_INTEREST_SURVEY && !user) {
+      setDismissed(true);
+      toast.message("พรีวิว — ยังไม่ได้บันทึก (ยังไม่ล็อกอิน)");
+      return;
+    }
+    await save(Array.from(selected));
     setDismissed(true);
-    toast.message("ตั้งค่าโปรไฟล์ทีหลังได้ที่เกี่ยวกับฉัน");
+    toast.message(
+      selected.size > 0
+        ? "บันทึกความสนใจแล้ว — ตั้งโปรไฟล์ทีหลังได้ที่เกี่ยวกับฉัน"
+        : "ตั้งค่าโปรไฟล์ทีหลังได้ที่เกี่ยวกับฉัน",
+    );
+  };
+
+  const handleSkip = () => {
+    void (async () => {
+      try {
+        await completeWithInterestsOnly();
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
+      }
+    })();
   };
 
   const goBack = () => {
     if (step === "basics") setStep("interests");
-    else if (step === "interests" && isNarrow) setStep("identity");
+    else if (step === "identity" && isNarrow) setStep("interests");
   };
 
   const finishOnboarding = async () => {
@@ -385,11 +424,15 @@ export function InterestSurveyGate() {
 
   const goNext = async () => {
     if (!canContinue) return;
-    if (step === "identity") {
-      setStep("interests");
+    if (step === "interests") {
+      if (isNarrow) {
+        setStep("identity");
+        return;
+      }
+      await finishOnboarding();
       return;
     }
-    if (step === "interests") {
+    if (step === "identity") {
       await finishOnboarding();
       return;
     }
@@ -439,7 +482,7 @@ export function InterestSurveyGate() {
   const showDesktopAside = !isNarrow;
   const showMobileIdentity = isNarrow && step === "identity";
   const showStepContent = !isNarrow || step !== "identity";
-  const showBack = step === "basics" || (step === "interests" && isNarrow);
+  const showBack = step === "basics" || (step === "identity" && isNarrow);
 
   const stepTitle =
     step === "identity"
@@ -453,6 +496,9 @@ export function InterestSurveyGate() {
       : step === "interests"
         ? "เลือกได้มากกว่า 1 หรือข้ามได้ — เราจะโชว์ผลงานใน Explore ตามที่สนใจก่อน"
         : "แก้ทีหลังได้ที่โปรไฟล์ › เกี่ยวกับฉัน";
+
+  const primaryLabel =
+    isSaving ? null : step === "interests" ? (isNarrow ? "ถัดไป" : selected.size > 0 ? "เริ่มใช้งาน" : "ข้ามและเริ่มใช้งาน") : step === "basics" ? "เริ่มใช้งาน" : "เริ่มใช้งาน";
 
   return (
     <Dialog open onOpenChange={() => {}}>
@@ -489,14 +535,34 @@ export function InterestSurveyGate() {
                 >
                   ข้ามไปก่อน
                 </Button>
-                <Button
-                  type="button"
-                  onClick={() => void goNext()}
-                  disabled={!canContinue || mediaBusy}
-                  className="min-w-[10rem] rounded-full border-0 bg-gradient-brand text-white"
-                >
-                  ถัดไป
-                </Button>
+                <div className="flex shrink-0 items-center gap-2">
+                  {showBack ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={goBack}
+                      disabled={isSaving}
+                      className="rounded-full text-muted-foreground"
+                    >
+                      ย้อนกลับ
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    onClick={() => void goNext()}
+                    disabled={!canContinue || isSaving || mediaBusy}
+                    className="min-w-[10rem] rounded-full border-0 bg-gradient-brand text-white"
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                        กำลังบันทึก…
+                      </>
+                    ) : (
+                      "เริ่มใช้งาน"
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           ) : null}
@@ -631,16 +697,8 @@ export function InterestSurveyGate() {
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
                         กำลังบันทึก…
                       </>
-                    ) : step === "interests" ? (
-                      selected.size > 0 ? (
-                        "เริ่มใช้งาน"
-                      ) : (
-                        "ข้ามและเริ่มใช้งาน"
-                      )
-                    ) : step === "basics" ? (
-                      "เริ่มใช้งาน"
                     ) : (
-                      "ถัดไป"
+                      primaryLabel
                     )}
                   </Button>
                 </div>

@@ -7,6 +7,7 @@ import {
   servicePreviewUrls,
   type CreatorService,
 } from "@/hooks/useCreatorServices";
+import { formatCategoryBreadcrumb, stripCategorySubTags } from "@/data/categoryTaxonomy";
 import { isVideoUrl } from "@/lib/videoAccept";
 import { PACKAGE_INQUIRY_PLATFORM_DISCLAIMER } from "@/lib/legalSignupCopy";
 import HireTargetProfilePreview from "@/components/opportunity/HireTargetProfilePreview";
@@ -116,6 +117,31 @@ export default function ServiceDetailView({
 
   const detailsBlock = (
     <>
+      {(service.category?.trim() || stripCategorySubTags(service.tags).length > 0) ? (
+        <div className="space-y-2">
+          {service.category?.trim() ? (
+            <p className="text-xs text-muted-foreground">
+              หมวด{" "}
+              <span className="font-medium text-foreground">
+                {formatCategoryBreadcrumb(service.category, service.tags)}
+              </span>
+            </p>
+          ) : null}
+          {stripCategorySubTags(service.tags).length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {stripCategorySubTags(service.tags).map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full border border-border/70 bg-muted/40 px-2 py-0.5 text-[11px] text-muted-foreground"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="space-y-2">
         <h3 className="text-sm font-semibold">รายละเอียด</h3>
         <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">

@@ -46,7 +46,8 @@ const FollowButton = ({
     toggle();
   };
 
-  const hideLabel = iconOnly || (variant === "compact" && isFollowing);
+  // เมื่อติดตามแล้วโชว์ไอคอนอย่างเดียว (ไม่มีข้อความ / จำนวน)
+  const hideLabel = iconOnly || isFollowing;
 
   return (
     <Button
@@ -64,7 +65,7 @@ const FollowButton = ({
         tone === "muted" && hideLabel && "w-9 h-9",
         tone === "muted" && !hideLabel && "h-8 px-3 text-xs font-medium",
         tone === "primary" && !hideLabel && (isFollowing ? "" : "bg-primary text-primary-foreground hover:bg-primary/90"),
-        tone === "primary" && hideLabel && "h-7 w-7",
+        tone === "primary" && hideLabel && "h-9 w-9",
         className,
       )}
     >

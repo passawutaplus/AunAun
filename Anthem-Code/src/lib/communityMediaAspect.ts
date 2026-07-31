@@ -4,7 +4,9 @@ export type CommunityMediaAspect =
   | "portrait916"
   | "landscape"
   | "landscape54"
-  | "landscape43";
+  | "landscape43"
+  /** Profile cover banner — half the height of 16:9 (32:9). */
+  | "coverBanner";
 
 export const DEFAULT_COMMUNITY_MEDIA_ASPECT: CommunityMediaAspect = "square";
 
@@ -73,6 +75,15 @@ export const COMMUNITY_MEDIA_ASPECTS: Record<CommunityMediaAspect, CommunityMedi
     tailwind: "aspect-[4/3]",
     cropFrameClass: "aspect-[4/3]",
   },
+  coverBanner: {
+    label: "ภาพปก",
+    ratioLabel: "32:9",
+    ratio: 32 / 9,
+    exportW: 1920,
+    exportH: 540,
+    tailwind: "aspect-[32/9]",
+    cropFrameClass: "aspect-[32/9]",
+  },
 };
 
 export const COMMUNITY_MEDIA_ASPECT_ORDER: CommunityMediaAspect[] = [
@@ -119,5 +130,6 @@ export function communityMediaStripThumbClass(aspect: CommunityMediaAspect | und
   if (key === "landscape54") return "w-[4.25rem] h-[3.4rem]";
   if (key === "landscape43") return "w-[4.5rem] h-[3.375rem]";
   if (key === "landscape") return "w-[4.5rem] h-[2.55rem]";
+  if (key === "coverBanner") return "w-[5rem] h-[1.4rem]";
   return "w-20 h-20";
 }

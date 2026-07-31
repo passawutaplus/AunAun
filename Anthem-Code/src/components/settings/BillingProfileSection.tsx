@@ -154,8 +154,8 @@ export function BillingProfileSection({ userId, profile, onSaved }: Props) {
         <h2 className="font-semibold text-foreground">ข้อมูลออกเอกสาร / ภาษี</h2>
       </div>
       <p className="text-xs text-muted-foreground">
-        ใช้บนใบเสนอราคา ใบแจ้งหนี้ และใบเสร็จ — ชื่อ ที่อยู่ และเลขบัตร/ผู้เสียภาษีของบุคคลธรรมดา ดึงจาก KYC
-        โดยตรง
+        ส่วน billing สำหรับใบเสนอราคา · ใบแจ้งหนี้ · ใบเสร็จ / ใบกำกับภาษี — ชื่อ ที่อยู่
+        และเลขบัตร/ผู้เสียภาษีของบุคคลธรรมดา ดึงจาก KYC โดยตรง
       </p>
 
       {kycLoading ? (
@@ -322,7 +322,7 @@ export function BillingProfileSection({ userId, profile, onSaved }: Props) {
         className="rounded-xl"
       >
         {saving ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : null}
-        บันทึกข้อมูลเอกสาร
+        บันทึกข้อมูล billing / เอกสาร
       </Button>
     </section>
   );

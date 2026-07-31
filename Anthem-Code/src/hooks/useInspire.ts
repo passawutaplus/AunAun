@@ -20,9 +20,19 @@ export type InspireRecentItem = Pick<
 > & {
   pinned_at?: string | null;
   board_name?: string;
+  /** Title of the portfolio project this image was saved from. */
+  project_title?: string | null;
   /** All boards this image currently sits on (for filter + chips). */
   board_ids?: string[];
 };
+
+/** Label under inspire library cards / detail title — prefer source work name. */
+export function inspireItemWorkTitle(
+  item: Pick<InspireRecentItem, "project_title"> | null | undefined,
+): string {
+  const t = item?.project_title?.trim();
+  return t || "ผลงาน";
+}
 
 export function isInspireItemPinned(
   item: Pick<{ pinned_at?: string | null }, "pinned_at"> | null | undefined,
@@ -278,13 +288,38 @@ export const useRecentInspireItems = (userId: string | undefined, limit = 120) =
         }
       }
 
-      return [...byUrl.values()]
+      const unique = [...byUrl.values()]
         .map((item) => ({
           ...item,
           board_ids: [...(memberships.get(item.image_url) ?? [item.board_id])],
         }))
         .sort((a, b) => compareInspireItemsByPinThenDate(a, b, "newest"))
         .slice(0, limit);
+
+      const projectIds = [
+        ...new Set(
+          unique
+            .map((i) => i.project_id)
+            .filter((id): id is string => typeof id === "string" && !!id.trim()),
+        ),
+      ];
+      const titleById = new Map<string, string>();
+      if (projectIds.length) {
+        const { data: projects } = await supabase
+          .from("projects")
+          .select("id, title")
+          .in("id", projectIds);
+        for (const p of projects ?? []) {
+          const id = (p as { id: string }).id;
+          const title = String((p as { title?: string | null }).title ?? "").trim();
+          if (id && title) titleById.set(id, title);
+        }
+      }
+
+      return unique.map((item) => ({
+        ...item,
+        project_title: item.project_id ? titleById.get(item.project_id) ?? null : null,
+      }));
     },
   });
 
@@ -497,6 +532,53 @@ export const useRemoveFromInspireBoard = (boardId: string | undefined) => {
       qc.invalidateQueries({ queryKey: ["inspire-board", boardId] });
       qc.invalidateQueries({ queryKey: ["inspire-boards"] });
       qc.invalidateQueries({ queryKey: ["inspire-recent-items"] });
+    },
+  });
+};
+
+/** Remove an image from every inspire board the user owns (library + folders). */
+export const useRemoveInspireImage = (userId: string | undefined) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      imageUrl,
+      boardIds,
+    }: {
+      imageUrl: string;
+      boardIds?: string[];
+    }) => {
+      if (!userId) throw new Error("ต้องเข้าสู่ระบบก่อน");
+      const url = imageUrl.trim();
+      if (!url) throw new Error("ไม่พบภาพ");
+
+      let ids = [...new Set((boardIds ?? []).filter(Boolean))];
+      if (!ids.length) {
+        const { data: boards, error: boardErr } = await supabase
+          .from("inspire_boards")
+          .select("id")
+          .eq("owner_id", userId);
+        if (boardErr) throw boardErr;
+        ids = (boards ?? []).map((b) => (b as { id: string }).id);
+      }
+      if (!ids.length) return { boardIds: [] as string[] };
+
+      const { error } = await supabase
+        .from("inspire_items")
+        .delete()
+        .eq("image_url", url)
+        .in("board_id", ids);
+      if (error) throw error;
+
+      await Promise.all(ids.map((id) => refreshBoardMeta(id)));
+      return { boardIds: ids };
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ["inspire-boards", userId] });
+      qc.invalidateQueries({ queryKey: ["inspire-recent-items", userId] });
+      for (const boardId of result.boardIds) {
+        qc.invalidateQueries({ queryKey: ["inspire-items", boardId] });
+        qc.invalidateQueries({ queryKey: ["inspire-board", boardId] });
+      }
     },
   });
 };

@@ -58,23 +58,24 @@ const ImageActionBar = ({
       {
         onSuccess: () => toast.success(liked ? "ยกเลิกแล้ว" : "ถูกใจแล้ว"),
         onError: (e: Error) => toast.error(e.message),
-      }
+      },
     );
   };
 
   const btn =
-    "flex items-center gap-1.5 px-3 py-2 rounded-full bg-black/25 hover:bg-black/45 text-white text-xs font-medium backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] transition-all border border-white/10 shadow-lg";
+    "flex shrink-0 items-center gap-1.5 px-3 py-2 rounded-full bg-black/25 hover:bg-black/45 text-white text-xs font-medium backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] transition-all border border-white/10 shadow-lg";
 
   const labelClass = vertical ? "inline" : "hidden sm:inline";
 
   return (
     <div
       className={cn(
-        "z-10 flex gap-2 transition-opacity duration-200 [&>*]:pointer-events-auto",
-        vertical ? "flex-col items-start" : "flex-wrap items-center",
+        "z-10 flex w-max max-w-none gap-2 transition-opacity duration-200 [&>*]:pointer-events-auto [&>*]:shrink-0",
+        vertical ? "flex-col items-start" : "flex-nowrap items-center",
         forceVisible
           ? "relative opacity-100 pointer-events-auto"
-          : "absolute top-3 left-3 right-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 pointer-events-none md:group-hover:pointer-events-auto",
+          : // Mobile: no overlay chrome — open lightbox to act. Desktop: hover bar.
+            "absolute top-3 left-3 hidden md:flex opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto",
         className,
       )}
       style={{ pointerEvents: "auto" }}

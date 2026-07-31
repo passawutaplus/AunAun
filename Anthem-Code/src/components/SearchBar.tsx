@@ -142,7 +142,7 @@ const SearchBar = ({
           collapse();
         }}
         className={cn(
-          "w-full rounded-2xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow",
+          "w-full rounded-2xl bg-secondary border border-border text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow",
           compact ? "pl-9 pr-10 py-2" : "pl-11 pr-12 py-3",
           expandable && "pr-16",
         )}

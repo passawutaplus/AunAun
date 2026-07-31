@@ -90,7 +90,7 @@ export function evaluateHireSellerReadiness(input: HireSellerReadinessInput): Hi
       label: "ข้อมูลออกเอกสาร / ภาษีครบ",
       hint: "บุคคลธรรมดาใช้ชื่อ·ที่อยู่·เลขบัตรจาก KYC (นิติบุคคลกรอกเพิ่มในตั้งค่า)",
       done: billingDone,
-      href: "/settings#billing-profile",
+      href: "/settings#billing",
     },
     {
       id: "identity",

@@ -12,6 +12,8 @@ import {
   compareInspireItemsByPinThenDate,
   isDefaultInspireBoard,
   isInspireItemPinned,
+  useAddToInspireBoard,
+  useRemoveInspireImage,
   useToggleInspireItemPin,
   type InspireBoardWithCovers,
   type InspireRecentItem,
@@ -128,6 +130,8 @@ export function InspireLibraryHome({
 }: Props) {
   const { user } = useAuth();
   const togglePin = useToggleInspireItemPin(user?.id);
+  const addToBoard = useAddToInspireBoard(user?.id);
+  const removeImage = useRemoveInspireImage(user?.id);
   const [query, setQuery] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("newest");
   const [boardFilter, setBoardFilter] = useState<string>("all");
@@ -157,7 +161,7 @@ export function InspireLibraryHome({
     }
     if (q) {
       list = list.filter((i) => {
-        const hay = `${i.board_name ?? ""}`.toLowerCase();
+        const hay = `${i.project_title ?? ""} ${i.board_name ?? ""}`.toLowerCase();
         return hay.includes(q);
       });
     }
@@ -182,6 +186,48 @@ export function InspireLibraryHome({
       toast.error((e as Error).message);
     }
   };
+
+  const handleMoveToBoard = async (item: InspireRecentItem, boardId: string) => {
+    const projectId = (item.project_id ?? "").trim();
+    if (!projectId) {
+      toast.error("ไม่พบผลงานต้นทางของภาพนี้");
+      return;
+    }
+    try {
+      const result = await addToBoard.mutateAsync({
+        boardId,
+        projectId,
+        imageUrl: item.image_url,
+      });
+      if (result === "duplicate") {
+        toast.info("ภาพนี้อยู่ในบอร์ดนี้แล้ว");
+      } else {
+        toast.success("เพิ่มเข้าบอร์ดแล้ว");
+        setSelected((prev) => {
+          if (!prev || prev.image_url !== item.image_url) return prev;
+          const ids = new Set(prev.board_ids?.length ? prev.board_ids : [prev.board_id]);
+          ids.add(boardId);
+          return { ...prev, board_ids: [...ids] };
+        });
+      }
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const handleDelete = async (item: InspireRecentItem) => {
+    try {
+      await removeImage.mutateAsync({
+        imageUrl: item.image_url,
+        boardIds: item.board_ids?.length ? item.board_ids : [item.board_id],
+      });
+      toast.success("ลบจาก Inspire แล้ว");
+      setSelected((prev) => (prev?.image_url === item.image_url ? null : prev));
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
   return (
     <div className="space-y-5">
       {customBoards.length > 0 ? (
@@ -262,12 +308,19 @@ export function InspireLibraryHome({
                 <InspireLibraryCard
                   key={item.id}
                   item={item}
+                  boards={boards}
                   draggable
                   variant={density === "list" ? "list" : "grid"}
                   selected={selected?.id === item.id}
                   onOpen={() => setSelected(item)}
                   onTogglePin={(it) => {
                     void handleTogglePin(it);
+                  }}
+                  onMoveToBoard={(it, boardId) => {
+                    void handleMoveToBoard(it, boardId);
+                  }}
+                  onDelete={(it) => {
+                    void handleDelete(it);
                   }}
                 />
               ))}
@@ -279,6 +332,7 @@ export function InspireLibraryHome({
       <InspireItemDetailSheet
         item={selected}
         open={!!selected}
+        boards={boards}
         onOpenChange={(next) => {
           if (!next) setSelected(null);
         }}
@@ -289,6 +343,18 @@ export function InspireLibraryHome({
               }
             : undefined
         }
+        onMoveToBoard={
+          selected
+            ? (boardId) => handleMoveToBoard(selected, boardId)
+            : undefined
+        }
+        onDelete={
+          selected
+            ? () => handleDelete(selected)
+            : undefined
+        }
+        movePending={addToBoard.isPending}
+        deletePending={removeImage.isPending}
       />
     </div>
   );

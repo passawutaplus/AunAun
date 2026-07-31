@@ -93,23 +93,23 @@ function ProjectPcPreview({
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 lg:py-8">
-      <div className="grid lg:grid-cols-[1fr_360px] gap-6 lg:gap-10">
-        <div className="space-y-4 min-w-0">
+    <div className="mx-auto w-full max-w-[84rem] px-4 py-6 lg:px-6 lg:py-8">
+      <div className="mx-auto flex w-full flex-col gap-8 lg:flex-row lg:items-start lg:justify-center lg:gap-10 xl:gap-12">
+        <div className="min-w-0 w-full max-w-4xl space-y-4 lg:flex-1">
           {data.subtitle?.trim() && (
             <p className="text-sm text-muted-foreground">{data.subtitle.trim()}</p>
           )}
           {isFlex ? (
             <FlexGridView
               layout={data.flexGridLayout}
-              className="max-w-3xl"
+              className="w-full max-w-full"
               projectId={data.projectId}
               projectTitle={displayTitle}
             />
           ) : canvasBlocks.length > 0 ? (
             <ProjectContentBlocksView
               blocks={canvasBlocks}
-              className="max-w-2xl"
+              className="w-full max-w-4xl"
               projectId={data.projectId}
               projectTitle={displayTitle}
             />
@@ -138,9 +138,15 @@ function ProjectPcPreview({
               </div>
             </div>
           )}
+
+          {data.context ? (
+            <div className="mt-10 lg:mt-14">
+              <ProjectContextCard context={data.context} />
+            </div>
+          ) : null}
         </div>
 
-        <div className="lg:sticky lg:top-4 lg:self-start space-y-4">
+        <div className="w-full shrink-0 space-y-4 lg:sticky lg:top-4 lg:w-[22.5rem] lg:self-start xl:w-[24rem]">
           <ProjectSidePanel
             title={displayTitle}
             category={data.category}
@@ -173,12 +179,6 @@ function ProjectPcPreview({
           />
         </div>
       </div>
-
-      {data.context ? (
-        <div className="mt-10 lg:mt-14 max-w-3xl">
-          <ProjectContextCard context={data.context} />
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -220,7 +220,7 @@ const ProjectPreviewDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl w-[calc(100vw-1.5rem)] h-[min(92vh,900px)] p-0 gap-0 flex flex-col overflow-hidden [&>button]:hidden">
+      <DialogContent className="max-w-[90rem] w-[calc(100vw-1.5rem)] h-[min(92vh,900px)] p-0 gap-0 flex flex-col overflow-hidden [&>button]:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <Eye className="w-4 h-4 text-primary shrink-0" />

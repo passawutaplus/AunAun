@@ -12,7 +12,6 @@ import {
   IdCard,
   Landmark,
   Loader2,
-  Phone,
   RefreshCw,
   SwitchCamera,
   User,
@@ -674,7 +673,7 @@ const VerificationWizard = () => {
         {step === 0 && (
           <div className="space-y-4">
             <h2 className="font-medium flex items-center gap-2.5">
-              <Phone className="w-5 h-5 text-primary shrink-0" aria-hidden />
+              <User className="w-5 h-5 text-primary shrink-0" aria-hidden />
               ยืนยันตัวตนเพื่อรับจ้างและรับเงิน
             </h2>
 

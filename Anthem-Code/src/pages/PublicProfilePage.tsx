@@ -35,15 +35,23 @@ import {
 } from "@/hooks/useCommunityPostInteractions";
 import { useMyProjectSeries, usePublicProjectSeries } from "@/hooks/useProjectSeries";
 import PortfolioGrid from "@/components/profile/PortfolioGrid";
+import { ProfileBrowseToolbar } from "@/components/profile/ProfileBrowseToolbar";
 import { SeriesCard } from "@/components/series/SeriesCard";
+import { SeriesAnimatedGrid } from "@/components/series/SeriesAnimatedGrid";
 import { ProfileAboutReadOnly } from "@/components/profile/ProfileAboutReadOnly";
 import { ProfileReviewsSection } from "@/components/reviews/ProfileReviewsSection";
 import type { ExperienceItem } from "@/lib/validators";
+import { normalizeExperienceItem } from "@/lib/validators";
 import { safeHttpUrl } from "@/lib/safeUrl";
 import { parseSocialLinks } from "@/lib/parseSocialLinks";
 import { highlight } from "@/lib/highlight";
 import { PROJECT_FEED_SELECT, PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
 import { profileReadFrom } from "@/lib/profileAccess";
+import {
+  readSeriesDensity,
+  writeSeriesDensity,
+  type SeriesWorksDensity,
+} from "@/lib/seriesGridDensity";
 import SeoHead from "@/components/SeoHead";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { absoluteUrl, isThinProfile, truncateDescription } from "@/lib/seo";
@@ -54,7 +62,7 @@ import {
 } from "@/lib/seoSchemas";
 import { isUuid, profilePublicPath, profilePublicPathLabel, profilePublicUrl, profileShareMessage, profileShareTitle } from "@/lib/profileRoutes";
 import ProfileSharePopover from "@/components/profile/ProfileSharePopover";
-import { sortPortfolioProjects } from "@/lib/portfolioSort";
+import { sortPortfolioProjects, type PortfolioSortMode } from "@/lib/portfolioSort";
 import { Navigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { navigateToAuth, stripSearchParams } from "@/lib/authRedirect";
@@ -65,8 +73,18 @@ import { isLocalDevSelfHirePreview } from "@/lib/localDevSelfHire";
 
 const PREVIEW_TOAST = "นี่คือมุมมองผู้เยี่ยมชม — ปุ่มนี้ใช้งานได้จริงเมื่อคนอื่นเปิดโปรไฟล์ของคุณ";
 
+const WORKS_SORT_OPTIONS: { value: PortfolioSortMode; label: string }[] = [
+  { value: "views", label: "วิวมากสุด" },
+  { value: "newest", label: "ล่าสุด" },
+  { value: "oldest", label: "เก่าสุด" },
+  { value: "likes", label: "ไลค์มากสุด" },
+  { value: "hires", label: "คนจ้างเยอะสุด" },
+];
+
 const parseExperience = (raw: unknown): ExperienceItem[] =>
-  Array.isArray(raw) ? (raw as ExperienceItem[]) : [];
+  Array.isArray(raw)
+    ? raw.map(normalizeExperienceItem).filter((x): x is ExperienceItem => !!x)
+    : [];
 
 const parseSkills = (raw: unknown): string[] =>
   Array.isArray(raw) ? raw.filter((s): s is string => typeof s === "string") : [];
@@ -84,6 +102,18 @@ const PublicProfilePage = () => {
   const [hirePanel, setHirePanel] = useState<"message" | "services">("message");
   const [autoSubmitServiceId, setAutoSubmitServiceId] = useState<string | null>(null);
   const [collabOpen, setCollabOpen] = useState(false);
+  const [worksSort, setWorksSort] = useState<PortfolioSortMode>("views");
+  const [worksDensity, setWorksDensity] = useState<SeriesWorksDensity>(() =>
+    typeof window === "undefined"
+      ? "large"
+      : readSeriesDensity("aplus1.profile.public.works.density", "large"),
+  );
+  const [catalogFilter, setCatalogFilter] = useState("all");
+  const [catalogDensity, setCatalogDensity] = useState<SeriesWorksDensity>(() =>
+    typeof window === "undefined"
+      ? "medium"
+      : readSeriesDensity("aplus1.profile.public.catalog.density", "medium"),
+  );
   const PROFILE_TABS = ["works", "series", "services", "about", "reviews"] as const;
   type ProfileTab = (typeof PROFILE_TABS)[number];
   const tabFromUrl = params.get("tab");
@@ -201,6 +231,79 @@ const PublicProfilePage = () => {
     [orderedProjects],
   );
 
+  const portfolioProjectIds = useMemo(
+    () => portfolioProjects.map((p) => p.id).filter(Boolean),
+    [portfolioProjects],
+  );
+
+  const { data: worksHireCounts = {} } = useQuery({
+    queryKey: ["public-project-hire-counts", resolvedUserId, portfolioProjectIds.join(",")],
+    enabled: !!resolvedUserId && portfolioProjectIds.length > 0 && worksSort === "hires",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("hiring_requests")
+        .select("project_id")
+        .eq("freelancer_id", resolvedUserId!)
+        .in("project_id", portfolioProjectIds);
+      // Public viewers may lack hire-row RLS — treat as zero counts.
+      if (error) return {} as Record<string, number>;
+      const counts: Record<string, number> = {};
+      for (const row of data ?? []) {
+        const id = row.project_id;
+        if (!id) continue;
+        counts[id] = (counts[id] ?? 0) + 1;
+      }
+      return counts;
+    },
+  });
+
+  const filteredWorks = useMemo(
+    () => sortPortfolioProjects(portfolioProjects, worksSort, worksHireCounts),
+    [portfolioProjects, worksSort, worksHireCounts],
+  );
+  const catalogFilterOptions = useMemo(
+    () => [
+      { value: "all", label: "ทั้งหมด" },
+      { value: "newest", label: "ใหม่สุด" },
+      { value: "oldest", label: "เก่าสุด" },
+      { value: "most", label: "ชิ้นเยอะสุด" },
+    ],
+    [],
+  );
+
+  const filteredCatalogs = useMemo(() => {
+    const list = [...seriesList];
+    if (catalogFilter === "oldest") {
+      list.sort(
+        (a, b) =>
+          Date.parse(a.created_at ?? "") - Date.parse(b.created_at ?? "") ||
+          a.title.localeCompare(b.title, "th"),
+      );
+    } else if (catalogFilter === "most") {
+      list.sort(
+        (a, b) =>
+          (b.published_count ?? b.item_count ?? 0) - (a.published_count ?? a.item_count ?? 0) ||
+          a.title.localeCompare(b.title, "th"),
+      );
+    } else if (catalogFilter === "newest") {
+      list.sort(
+        (a, b) =>
+          Date.parse(b.updated_at ?? b.created_at ?? "") -
+            Date.parse(a.updated_at ?? a.created_at ?? "") ||
+          a.title.localeCompare(b.title, "th"),
+      );
+    }
+    return list;
+  }, [seriesList, catalogFilter]);
+
+  useEffect(() => {
+    writeSeriesDensity("aplus1.profile.public.works.density", worksDensity);
+  }, [worksDensity]);
+
+  useEffect(() => {
+    writeSeriesDensity("aplus1.profile.public.catalog.density", catalogDensity);
+  }, [catalogDensity]);
+
   const previewToast = useCallback(() => {
     toast.message(PREVIEW_TOAST);
   }, []);
@@ -284,6 +387,8 @@ const PublicProfilePage = () => {
   }
 
   const displayName = profile.display_name || profile.username || "ครีเอเตอร์";
+  const coverUrl = (profile.cover_url ?? "").trim();
+  const hasCover = !!coverUrl && coverUrl.startsWith("http");
   const publicShareProfile = {
     user_id: resolvedUserId!,
     username: profile.username,
@@ -443,52 +548,81 @@ const PublicProfilePage = () => {
 
       {/* Header */}
       <div className="max-w-5xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6">
-        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl glass-panel p-4 sm:p-6 md:p-10">
-          <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-gradient-brand opacity-40 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-gradient-brand-soft blur-3xl pointer-events-none" />
-
-          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 md:top-6 md:right-6 z-10 hidden md:flex flex-col items-end gap-2">
-            {showAsVisitor && (
-              <>
-                <FollowButton freelancerId={resolvedUserId} visitorPreview={visitorPreview} />
-                <SupportButton
-                  recipientId={resolvedUserId}
-                  recipientName={profile.display_name ?? "ครีเอเตอร์"}
-                  recipientAvatar={profile.avatar_url ?? undefined}
-                  variant="compact"
-                  visitorPreview={visitorPreview}
-                />
-              </>
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl glass-panel">
+          <div className="relative aspect-[32/9] w-full bg-muted">
+            {hasCover ? (
+              <img src={coverUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-brand opacity-75" />
             )}
+
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 hidden md:flex flex-col items-end gap-2">
+              {showAsVisitor && (
+                <>
+                  <FollowButton freelancerId={resolvedUserId} visitorPreview={visitorPreview} />
+                  <SupportButton
+                    recipientId={resolvedUserId}
+                    recipientName={profile.display_name ?? "ครีเอเตอร์"}
+                    recipientAvatar={profile.avatar_url ?? undefined}
+                    variant="compact"
+                    visitorPreview={visitorPreview}
+                  />
+                </>
+              )}
+            </div>
           </div>
 
-          <div
-            className={cn(
-              "relative flex flex-row items-start gap-3.5 sm:gap-6 pr-0",
-              showAsVisitor && isLaunchCreatorSupportEnabled() ? "md:pr-36" : "md:pr-28",
-            )}
-          >
-            <div className="shrink-0">
-              <UserAvatar
-                src={profile.avatar_url}
-                name={profile.display_name}
-                username={profile.username}
-                className="w-[4.5rem] h-[4.5rem] sm:w-24 sm:h-24 md:w-28 md:h-28 border-[3px] sm:border-4 border-white/70 shadow-lg"
-                fallbackClassName="text-2xl sm:text-3xl"
-              />
-            </div>
+          <div className="relative px-4 sm:px-6 md:px-10 pb-4 sm:pb-6 md:pb-10 -mt-10 sm:-mt-12 md:-mt-14">
+            <div className="absolute -top-8 -right-16 w-56 h-56 rounded-full bg-gradient-brand opacity-25 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-20 -left-10 w-64 h-64 rounded-full bg-gradient-brand-soft blur-3xl pointer-events-none" />
 
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg sm:text-2xl md:text-3xl font-semibold text-foreground leading-snug tracking-normal">
-                {highlight(profile.display_name, q)}
-              </h1>
+            <div
+              className={cn(
+                "relative flex flex-row items-start gap-3.5 sm:gap-6 pr-0",
+                showAsVisitor && isLaunchCreatorSupportEnabled() ? "md:pr-36" : "md:pr-28",
+              )}
+            >
+              <div className="shrink-0">
+                <UserAvatar
+                  src={profile.avatar_url}
+                  name={profile.display_name}
+                  username={profile.username}
+                  className="w-[4.5rem] h-[4.5rem] sm:w-24 sm:h-24 md:w-28 md:h-28 border-[3px] sm:border-4 border-white/70 ring-4 ring-background shadow-lg"
+                  fallbackClassName="text-2xl sm:text-3xl"
+                />
+              </div>
+
+              <div className="flex-1 min-w-0 pt-10 sm:pt-12 md:pt-14">
+                <div className="flex items-start justify-between gap-3">
+                  <h1 className="text-lg sm:text-2xl md:text-3xl font-semibold text-foreground leading-snug tracking-normal min-w-0">
+                    {highlight(profile.display_name, q)}
+                  </h1>
+                  {!isSelf ? (
+                    <div className="shrink-0 flex flex-wrap items-center justify-end gap-1.5 pt-0.5 sm:pt-1">
+                      <ReportTrigger
+                        targetType="user"
+                        targetId={resolvedUserId!}
+                        targetOwnerId={resolvedUserId!}
+                        variant="text"
+                      />
+                      {iBlockedThem ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="rounded-full h-8 text-xs"
+                          disabled={unblockUser.isPending}
+                          onClick={() => void unblockUser.mutateAsync(resolvedUserId!)}
+                        >
+                          <UserX className="w-3.5 h-3.5 mr-1" />
+                          ปลดบล็อก
+                        </Button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
               {profile.username && (
                 <p className="text-sm text-muted-foreground mt-0.5">@{profile.username}</p>
-              )}
-              {profile.role && (
-                <Badge className="mt-2 rounded-full glass-chip text-foreground border-0 text-xs font-normal">
-                  {highlight(profile.role, q)}
-                </Badge>
               )}
               <div className="mt-2 space-y-2">
                 <DisciplineChips
@@ -626,31 +760,8 @@ const PublicProfilePage = () => {
                 </div>
               )}
 
-              {!isSelf && (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <ReportTrigger
-                    targetType="user"
-                    targetId={resolvedUserId!}
-                    targetOwnerId={resolvedUserId!}
-                    variant="text"
-                  />
-                  {iBlockedThem ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full h-8 text-xs"
-                      disabled={unblockUser.isPending}
-                      onClick={() => void unblockUser.mutateAsync(resolvedUserId!)}
-                    >
-                      <UserX className="w-3.5 h-3.5 mr-1" />
-                      ปลดบล็อก
-                    </Button>
-                  ) : null}
-                </div>
-              )}
-
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -698,7 +809,23 @@ const PublicProfilePage = () => {
                 }
               />
             ) : (
-              <PortfolioGrid projects={portfolioProjects as any} />
+              <div className="space-y-3">
+                <ProfileBrowseToolbar
+                  filterValue={worksSort}
+                  filterOptions={WORKS_SORT_OPTIONS}
+                  onFilterChange={(value) => setWorksSort(value as PortfolioSortMode)}
+                  filterLabel="เรียงตาม"
+                  density={worksDensity}
+                  onDensityChange={setWorksDensity}
+                />
+                {filteredWorks.length === 0 ? (
+                  <p className="py-10 text-center text-sm text-muted-foreground">
+                    ไม่มีผลงานในรายการนี้
+                  </p>
+                ) : (
+                  <PortfolioGrid projects={filteredWorks as any} density={worksDensity} />
+                )}
+              </div>
             ))}
 
           {activeTab === "services" && resolvedUserId ? (
@@ -741,10 +868,25 @@ const PublicProfilePage = () => {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
-                {seriesList.map((s) => (
-                  <SeriesCard key={s.id} series={s} compact />
-                ))}
+              <div className="space-y-3">
+                <ProfileBrowseToolbar
+                  filterValue={catalogFilter}
+                  filterOptions={catalogFilterOptions}
+                  onFilterChange={setCatalogFilter}
+                  filterLabel="เรียงตาม"
+                  density={catalogDensity}
+                  onDensityChange={setCatalogDensity}
+                />
+                <SeriesAnimatedGrid density={catalogDensity} layoutGroupId="profile-catalog-density">
+                  {filteredCatalogs.map((s) => (
+                    <SeriesCard
+                      key={s.id}
+                      series={s}
+                      compact={catalogDensity === "small"}
+                      list={catalogDensity === "list"}
+                    />
+                  ))}
+                </SeriesAnimatedGrid>
               </div>
             ))}
 
@@ -752,12 +894,13 @@ const PublicProfilePage = () => {
             <div className="rounded-2xl glass-panel p-5 md:p-6">
               <ProfileAboutReadOnly
                 profile={{
+                  display_name: profile.display_name ?? null,
+                  username: profile.username ?? null,
                   role: profile.role ?? null,
                   location: profile.location ?? null,
                   profile_address: (profile as { profile_address?: unknown }).profile_address,
                   bio: profile.bio ?? null,
                   email: null,
-                  phone: null,
                   website: profile.website ?? null,
                   line_id: profile.line_id ?? null,
                   facebook: profile.facebook ?? null,
@@ -774,6 +917,7 @@ const PublicProfilePage = () => {
                 socialLinks={parseSocialLinks(
                   (profile as { social_links?: unknown }).social_links,
                 )}
+                mode="public"
               />
             </div>
           )}

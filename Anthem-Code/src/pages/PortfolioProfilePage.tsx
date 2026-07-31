@@ -3,9 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Settings,
-  Sparkles,
-  UserPlus,
-  FileCheck,
+  Eye,
   UserRound,
   Pencil,
   Briefcase,
@@ -29,6 +27,7 @@ import CatalogManagePanel from "@/components/series/CatalogManagePanel";
 import PortfolioPackagesManagePanel from "@/components/portfolio/PortfolioPackagesManagePanel";
 import { useCreatorServices } from "@/hooks/useCreatorServices";
 import type { ExperienceItem } from "@/lib/validators";
+import { normalizeExperienceItem } from "@/lib/validators";
 import { ProfileAboutReadOnly } from "@/components/profile/ProfileAboutReadOnly";
 import PageLoader from "@/components/ui/PageLoader";
 import ProfileMenuCard from "@/components/profile/ProfileMenuCard";
@@ -55,7 +54,9 @@ import { FEED_PAGE_GUTTER_X } from "@/components/feed/FeedHero";
 const PAGE_SHELL = cn("max-w-[1920px] mx-auto", FEED_PAGE_GUTTER_X);
 
 const parseExperience = (raw: unknown): ExperienceItem[] =>
-  Array.isArray(raw) ? (raw as ExperienceItem[]) : [];
+  Array.isArray(raw)
+    ? raw.map(normalizeExperienceItem).filter((x): x is ExperienceItem => !!x)
+    : [];
 
 const parseSkills = (raw: unknown): string[] =>
   Array.isArray(raw) ? raw.filter((s): s is string => typeof s === "string") : [];
@@ -265,34 +266,32 @@ const PortfolioProfilePage = () => {
           })}
           sharePathLabel={profilePublicPathLabel({ user_id: user!.id, username: profile.username })}
           onShareInteract={() => markOnboardingVisit(user!.id, "share_profile")}
+          onSettings={() => navigate("/settings")}
           onFollowersClick={() => navigate("/portfolio/followers")}
           onFollowingClick={() => navigate("/portfolio/followers?tab=following")}
         />
       </div>
 
-      <div className={cn(PAGE_SHELL, "pt-2 pb-16 grid grid-cols-1 md:grid-cols-[300px_1fr] gap-6 md:gap-8")}>
-        {/* SIDEBAR — unchanged structure */}
-        <aside className="md:sticky md:top-20 md:self-start space-y-4">
-          <div className="rounded-3xl glass-panel p-5 grid grid-cols-3 gap-3">
-            <RequestMiniStat
-              icon={UserPlus}
-              label="คำขอ"
-              hireCount={hireCount}
-              collabCount={collabCount}
-              onClick={() => {
-                navigate(
-                  hireCount > 0 || collabCount === 0 ? "/dashboard" : "/dashboard/collab",
-                );
-              }}
+      <div className={cn(PAGE_SHELL, "pt-2 pb-16 grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6 md:gap-8")}>
+        {/* SIDEBAR */}
+        <aside className="md:sticky md:top-20 md:self-start space-y-0">
+          <div className="flex items-center justify-between gap-1 min-h-[2.75rem] border-b border-border/70 dark:border-border/50">
+            <MiniStat
+              icon={Briefcase}
+              label="จ้างงาน"
+              value={hireCount}
+              onClick={() => navigate("/dashboard")}
+              title="คำขอจ้างงานที่รอตอบ"
             />
             <MiniStat
-              icon={FileCheck}
-              label="เผยแพร่"
-              value={published.length}
-              onClick={() => setTab("work")}
+              icon={Handshake}
+              label="คอลแลป"
+              value={collabCount}
+              onClick={() => navigate("/dashboard/collab")}
+              title="คำขอคอลแลปที่รอตอบ"
             />
             <MiniStat
-              icon={Sparkles}
+              icon={Eye}
               label="คนดู"
               value={totalViews}
               title="รวมยอดเข้าชมหน้ารายละเอียดผลงานที่เผยแพร่แล้ว (นับครั้งต่อเซสชันต่อชิ้น)"
@@ -301,61 +300,40 @@ const PortfolioProfilePage = () => {
 
           <ProfileAboutMeCard
             bio={profile.bio}
+            role={profile.role}
             location={displayProfileAddress(
               (profile as { profile_address?: unknown }).profile_address,
               profile.location,
               "full",
             )}
+            email={(profile as { email?: string | null }).email}
+            skills={skills}
+            experience={experience}
+            socialLinks={socialLinks}
             onEdit={() => navigate("/settings#profile-about")}
           />
 
-          {!launchMinimal && <ProfileWalletCard />}
+          {!launchMinimal && (
+            <div className="pt-4 border-t border-border/70 dark:border-border/50">
+              <ProfileWalletCard />
+            </div>
+          )}
 
-          <ProfileMenuCard opportunityOpen={opportunityOpen} onOpportunityOpenChange={setOpportunityOpen} />
-
-          <OnboardingChecklist variant="full" />
+          <div className="pt-4 border-t border-border/70 dark:border-border/50 space-y-4">
+            <ProfileMenuCard opportunityOpen={opportunityOpen} onOpportunityOpenChange={setOpportunityOpen} />
+            <OnboardingChecklist variant="full" />
+          </div>
         </aside>
 
         {/* RIGHT: Tabs + one panel */}
         <main className="min-w-0 space-y-4">
-          {(hireCount > 0 || collabCount > 0) && (
-            <div className="flex flex-wrap gap-2">
-              {hireCount > 0 ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="rounded-full h-8 text-xs gap-1.5"
-                  onClick={() => navigate("/dashboard")}
-                >
-                  <Briefcase className="w-3.5 h-3.5" />
-                  คำขอจ้างงาน
-                  <span className="tabular-nums text-sky-500 font-semibold">{hireCount}</span>
-                </Button>
-              ) : null}
-              {collabCount > 0 ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="rounded-full h-8 text-xs gap-1.5"
-                  onClick={() => navigate("/dashboard/collab")}
-                >
-                  <Handshake className="w-3.5 h-3.5" />
-                  คำขอคอลแลป
-                  <span className="tabular-nums text-primary font-semibold">{collabCount}</span>
-                </Button>
-              ) : null}
-            </div>
-          )}
-
-          <div className="flex items-end gap-2 border-b border-border/70">
-            <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide">
-              <nav className="flex min-w-max items-center gap-1" aria-label="เมนูโปรไฟล์">
+          <div className="flex items-end gap-2 border-b border-border/70 min-h-[2.75rem]">
+            <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide self-stretch flex items-end">
+              <nav className="flex min-w-max items-center gap-1 h-full" aria-label="เมนูโปรไฟล์">
                 {tabs.map((tab) => {
                   const active = activeTab === tab.id;
                   return (
-                    <div key={tab.id} className="flex items-center gap-1">
+                    <div key={tab.id} className="flex items-center gap-1 h-full">
                       {tab.id === "collections" ? (
                         <span
                           aria-hidden
@@ -366,7 +344,7 @@ const PortfolioProfilePage = () => {
                         type="button"
                         onClick={() => setTab(tab.id)}
                         className={cn(
-                          "relative px-3.5 py-2.5 text-sm whitespace-nowrap transition-colors",
+                          "relative px-3.5 h-full inline-flex items-center text-sm whitespace-nowrap transition-colors",
                           active
                             ? "font-semibold text-foreground"
                             : "font-medium text-muted-foreground hover:text-foreground",
@@ -430,6 +408,7 @@ const PortfolioProfilePage = () => {
                 disciplines={disciplines}
                 opportunityTypes={opportunityTypes}
                 socialLinks={socialLinks}
+                mode="owner"
               />
             </Section>
           ) : null}
@@ -464,15 +443,11 @@ const MiniStat = ({
   onClick?: () => void;
   title?: string;
 }) => {
+  const tip = title ?? label;
   const body = (
     <>
-      <div className="text-primary flex items-center justify-center">
-        <Icon className="w-5 h-5" />
-      </div>
-      <div>
-        <p className="text-sm font-medium text-foreground leading-none">{value}</p>
-        <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
-      </div>
+      <Icon className="w-[18px] h-[18px] text-primary shrink-0" aria-hidden />
+      <span className="text-sm font-medium text-foreground tabular-nums leading-none">{value}</span>
     </>
   );
   if (onClick) {
@@ -480,60 +455,19 @@ const MiniStat = ({
       <button
         type="button"
         onClick={onClick}
-        title={title}
-        className="flex items-center gap-2.5 rounded-xl text-left hover:bg-muted/40 transition-colors -m-1.5 p-1.5"
+        title={tip}
+        aria-label={`${label} ${value}`}
+        className="inline-flex items-center gap-1.5 rounded-lg hover:bg-muted/40 transition-colors px-1.5 py-1"
       >
         {body}
       </button>
     );
   }
   return (
-    <div className="flex items-center gap-2.5" title={title}>
+    <div className="inline-flex items-center gap-1.5 px-1.5 py-1" title={tip} aria-label={`${label} ${value}`}>
       {body}
     </div>
   );
-};
-
-const RequestMiniStat = ({
-  icon: Icon,
-  label,
-  hireCount,
-  collabCount,
-  onClick,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  hireCount: number;
-  collabCount: number;
-  onClick?: () => void;
-}) => {
-  const body = (
-    <>
-      <div className="text-primary flex items-center justify-center">
-        <Icon className="w-5 h-5" />
-      </div>
-      <div>
-        <p className="text-sm leading-none" aria-label={`จ้าง ${hireCount} คอลแลป ${collabCount}`}>
-          <span className="font-semibold text-sky-400">{hireCount}</span>
-          <span className="px-0.5 text-muted-foreground">/</span>
-          <span className="font-semibold text-primary">{collabCount}</span>
-        </p>
-        <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
-      </div>
-    </>
-  );
-  if (onClick) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className="flex items-center gap-2.5 rounded-xl text-left hover:bg-muted/40 transition-colors -m-1.5 p-1.5"
-      >
-        {body}
-      </button>
-    );
-  }
-  return <div className="flex items-center gap-2.5">{body}</div>;
 };
 
 const Section = ({

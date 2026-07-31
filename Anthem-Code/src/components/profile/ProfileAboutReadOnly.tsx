@@ -1,6 +1,13 @@
 import type { ReactNode } from "react";
-import { MapPin } from "lucide-react";
-import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
+import {
+  Briefcase,
+  Layers,
+  Link2,
+  MapPin,
+  Monitor,
+  Search,
+  User,
+} from "lucide-react";
 import ExperienceTimeline from "@/components/profile/ExperienceTimeline";
 import SkillsList from "@/components/profile/SkillsList";
 import ContactCards from "@/components/profile/ContactCards";
@@ -9,6 +16,8 @@ import type { ExperienceItem, SocialLinkItem } from "@/lib/validators";
 import { WORK_DISCIPLINE_LABELS, type WorkDisciplineId } from "@/data/workDisciplineOptions";
 import { labelOpportunityType } from "@/lib/opportunity";
 import { displayProfileAddress } from "@/lib/profileAddress";
+import { safeHttpUrl } from "@/lib/safeUrl";
+import { cn } from "@/lib/utils";
 
 type ProfileAbout = {
   role: string | null;
@@ -16,7 +25,6 @@ type ProfileAbout = {
   profile_address?: unknown;
   bio: string | null;
   email: string | null;
-  phone: string | null;
   website: string | null;
   line_id: string | null;
   facebook: string | null;
@@ -30,12 +38,11 @@ type Props = {
   disciplines?: string[];
   opportunityTypes?: string[];
   socialLinks?: SocialLinkItem[];
+  /** owner = แสดงช่องว่างเป็น hint · public = ซ่อนหมวดที่ว่าง */
+  mode?: "owner" | "public";
 };
 
 function DisciplineList({ items }: { items: string[] }) {
-  if (!items.length) {
-    return <p className="text-sm text-muted-foreground text-center py-6">ยังไม่ได้เลือกสายงาน</p>;
-  }
   return (
     <div className="flex flex-wrap gap-2">
       {items.map((id) => (
@@ -51,9 +58,6 @@ function DisciplineList({ items }: { items: string[] }) {
 }
 
 function LookingList({ items }: { items: string[] }) {
-  if (!items.length) {
-    return <p className="text-sm text-muted-foreground text-center py-6">ยังไม่ได้ระบุว่ากำลังมองหาอะไร</p>;
-  }
   return (
     <div className="flex flex-wrap gap-2">
       {items.map((id) => (
@@ -68,6 +72,10 @@ function LookingList({ items }: { items: string[] }) {
   );
 }
 
+/**
+ * ลำดับ About (พรีวิว / มุมมองคนอื่น / แท็บ About):
+ * แนะนำตัว → กำลังมองหา → ตำแหน่งงาน → สายงาน → ความชำนาญ → ประสบการณ์ → ที่อยู่ → โซเชียล
+ */
 export function ProfileAboutReadOnly({
   profile,
   experience,
@@ -75,99 +83,204 @@ export function ProfileAboutReadOnly({
   disciplines = [],
   opportunityTypes = [],
   socialLinks = [],
+  mode = "owner",
 }: Props) {
+  const hideEmpty = mode === "public";
   const addressLine = displayProfileAddress(profile.profile_address, profile.location, "full");
+  const role = profile.role?.trim() || "";
+  const bio = profile.bio?.trim() || "";
+  const hasWebsite = !!safeHttpUrl(profile.website);
+  const hasLegacyContact = !!(
+    profile.line_id?.trim() ||
+    profile.facebook?.trim() ||
+    profile.instagram?.trim()
+  );
+  const hasEmail = mode === "owner" && !!profile.email?.trim();
+  const hasSocial = socialLinks.length > 0;
+  const hasContactBlock = hasWebsite || hasLegacyContact || hasEmail || hasSocial;
+
+  const rows: { key: string; node: ReactNode }[] = [];
+
+  if (bio || !hideEmpty) {
+    rows.push({
+      key: "bio",
+      node: (
+        <AboutRow icon={User} title="แนะนำตัว">
+          {bio ? (
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{bio}</p>
+          ) : (
+            <EmptyHint text="ยังไม่ได้แนะนำตัว" />
+          )}
+        </AboutRow>
+      ),
+    });
+  }
+
+  if (opportunityTypes.length || !hideEmpty) {
+    rows.push({
+      key: "opportunity",
+      node: (
+        <AboutRow icon={Search} title="กำลังมองหา" count={opportunityTypes.length || undefined}>
+          {opportunityTypes.length ? (
+            <LookingList items={opportunityTypes} />
+          ) : (
+            <EmptyHint text="ยังไม่ได้ระบุว่ากำลังมองหาอะไร" />
+          )}
+        </AboutRow>
+      ),
+    });
+  }
+
+  if (role || !hideEmpty) {
+    rows.push({
+      key: "role",
+      node: (
+        <AboutRow icon={Briefcase} title="ตำแหน่งงาน">
+          {role ? (
+            <p className="text-sm text-foreground">{role}</p>
+          ) : (
+            <EmptyHint text="ยังไม่ได้ระบุตำแหน่งงาน" />
+          )}
+        </AboutRow>
+      ),
+    });
+  }
+
+  if (disciplines.length || !hideEmpty) {
+    rows.push({
+      key: "disciplines",
+      node: (
+        <AboutRow icon={Layers} title="สายงาน" count={disciplines.length || undefined}>
+          {disciplines.length ? (
+            <DisciplineList items={disciplines} />
+          ) : (
+            <EmptyHint text="ยังไม่ได้เลือกสายงาน" />
+          )}
+        </AboutRow>
+      ),
+    });
+  }
+
+  if (skills.length || !hideEmpty) {
+    rows.push({
+      key: "skills",
+      node: (
+        <AboutRow icon={Monitor} title="ความชำนาญ" count={skills.length || undefined}>
+          {skills.length ? <SkillsList skills={skills} /> : <EmptyHint text="ยังไม่ได้เพิ่มความชำนาญ" />}
+        </AboutRow>
+      ),
+    });
+  }
+
+  if (experience.length || !hideEmpty) {
+    rows.push({
+      key: "experience",
+      node: (
+        <AboutRow icon={Briefcase} title="ประสบการณ์ทำงาน" count={experience.length || undefined}>
+          {experience.length ? (
+            <ExperienceTimeline items={experience} />
+          ) : (
+            <EmptyHint text="ยังไม่ได้เพิ่มประวัติการทำงาน" />
+          )}
+        </AboutRow>
+      ),
+    });
+  }
+
+  if (addressLine || !hideEmpty) {
+    rows.push({
+      key: "address",
+      node: (
+        <AboutRow icon={MapPin} title="ที่อยู่">
+          {addressLine ? (
+            <p className="text-sm text-foreground leading-relaxed">{addressLine}</p>
+          ) : (
+            <EmptyHint text="ยังไม่ได้ระบุที่อยู่" />
+          )}
+        </AboutRow>
+      ),
+    });
+  }
+
+  if (hasContactBlock || !hideEmpty) {
+    rows.push({
+      key: "contact",
+      node: (
+        <AboutRow
+          icon={Link2}
+          title="ลิงก์โซเชียล / ติดต่อ"
+          count={
+            hasContactBlock
+              ? socialLinks.length + (hasWebsite || hasEmail || hasLegacyContact ? 1 : 0)
+              : undefined
+          }
+        >
+          {hasContactBlock ? (
+            <div className="space-y-3">
+              {(hasWebsite || hasEmail || hasLegacyContact) && (
+                <ContactCards
+                  email={hasEmail ? profile.email : null}
+                  website={profile.website}
+                  lineId={profile.line_id}
+                  facebook={profile.facebook}
+                  instagram={profile.instagram}
+                />
+              )}
+              {hasSocial ? <ProfileLinksList links={socialLinks} /> : null}
+            </div>
+          ) : (
+            <EmptyHint text="ยังไม่ได้เพิ่มลิงก์หรือช่องทางติดต่อ" />
+          )}
+        </AboutRow>
+      ),
+    });
+  }
+
+  if (!rows.length) {
+    return <EmptyHint text="ยังไม่มีข้อมูลเกี่ยวกับฉัน" />;
+  }
 
   return (
     <div className="space-y-0">
-      <AboutRow title="ตำแหน่ง / สาขา">
-        {profile.role ? (
-          <p className="text-sm text-foreground flex items-center gap-2">
-            <BriefcaseIcon className="w-4 h-4 text-primary shrink-0" />
-            {profile.role}
-          </p>
-        ) : (
-          <EmptyLine text="ยังไม่ได้ระบุตำแหน่งหรือสาขา" />
-        )}
-      </AboutRow>
-
-      <AboutRow title="ที่อยู่">
-        {addressLine ? (
-          <p className="text-sm text-foreground flex items-start gap-2">
-            <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-            <span className="leading-relaxed">{addressLine}</span>
-          </p>
-        ) : (
-          <EmptyLine text="ยังไม่ได้ระบุที่อยู่" />
-        )}
-      </AboutRow>
-
-      <AboutRow title="แนะนำตัว">
-        {profile.bio ? (
-          <p className="text-base text-foreground leading-7 whitespace-pre-wrap">{profile.bio}</p>
-        ) : (
-          <EmptyLine text="ยังไม่ได้แนะนำตัว" />
-        )}
-      </AboutRow>
-
-      <AboutRow title="สายงาน" count={disciplines.length}>
-        <DisciplineList items={disciplines} />
-      </AboutRow>
-
-      <AboutRow title="กำลังมองหา" count={opportunityTypes.length}>
-        <LookingList items={opportunityTypes} />
-      </AboutRow>
-
-      <AboutRow title="ประสบการณ์ทำงาน">
-        {experience.length ? (
-          <ExperienceTimeline items={experience} />
-        ) : (
-          <EmptyLine text="ยังไม่ได้เพิ่มประวัติการทำงาน" />
-        )}
-      </AboutRow>
-
-      <AboutRow title="ความชำนาญ" count={skills.length}>
-        <SkillsList skills={skills} />
-      </AboutRow>
-
-      <AboutRow title="ลิงก์โซเชียล" count={socialLinks.length}>
-        <ProfileLinksList links={socialLinks} />
-      </AboutRow>
-
-      <AboutRow title="ข้อมูลติดต่อ">
-        <ContactCards
-          email={profile.email}
-          phone={profile.phone}
-          website={profile.website}
-          lineId={profile.line_id}
-          facebook={profile.facebook}
-          instagram={profile.instagram}
-        />
-      </AboutRow>
+      {rows.map((r, i) => (
+        <div
+          key={r.key}
+          className={i === 0 ? undefined : "border-t border-border/60 pt-8"}
+        >
+          {r.node}
+        </div>
+      ))}
     </div>
   );
 }
 
 const AboutRow = ({
+  icon: Icon,
   title,
   count,
   children,
 }: {
+  icon: React.ComponentType<{ className?: string }>;
   title: string;
   count?: number;
   children: ReactNode;
 }) => (
-  <div className="border-t border-border/60 pt-5 first:border-0 first:pt-0">
-    <h3 className="text-sm font-medium text-foreground mb-3">
-      {title}
-      {typeof count === "number" && (
-        <span className="text-muted-foreground font-normal ml-1.5 text-xs">({count})</span>
-      )}
+  <div>
+    <h3 className="mb-4 flex items-center gap-2 text-sm font-medium text-foreground">
+      <Icon className="w-5 h-5 text-primary shrink-0" aria-hidden />
+      <span>
+        {title}
+        {typeof count === "number" && count > 0 ? (
+          <span className="text-muted-foreground font-normal ml-1.5 text-xs">({count})</span>
+        ) : null}
+      </span>
     </h3>
     {children}
   </div>
 );
 
-const EmptyLine = ({ text }: { text: string }) => (
-  <p className="text-sm text-muted-foreground text-center py-4">{text}</p>
+const EmptyHint = ({ text }: { text: string }) => (
+  <p className={cn("text-xs font-light text-muted-foreground/70")}>{text}</p>
 );
+
+export default ProfileAboutReadOnly;

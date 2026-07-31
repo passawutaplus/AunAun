@@ -157,9 +157,9 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
           className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-11 px-6"
           disabled={atLimit}
           onClick={openCreate}
-          title={atLimit ? `สูงสุด ${CREATOR_SERVICES_MAX} แพ็กเกจ` : "เพิ่มแพ็กเกจ"}
+          title={atLimit ? `สูงสุด ${CREATOR_SERVICES_MAX} แพ็กเกจ` : "Add Package"}
         >
-          <Plus className="w-4 h-4 mr-2" /> เพิ่มแพ็กเกจ
+          <Plus className="w-4 h-4 mr-2" /> Add Package
         </Button>
       </div>
 
@@ -180,7 +180,7 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
           action={
             <Button className="rounded-full" onClick={openCreate}>
               <Plus className="w-4 h-4 mr-1" />
-              สร้างแพ็กเกจแรก
+              Add Package
             </Button>
           }
         />

@@ -1,5 +1,7 @@
 import type { ComponentType, SVGProps } from "react";
 import { Instagram, Link2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import lemon8WordmarkUrl from "@/assets/brands/lemon8-wordmark-transparent.png";
 
 type IconProps = SVGProps<SVGSVGElement> & { className?: string };
 
@@ -27,12 +29,23 @@ function FacebookMark({ className, ...props }: IconProps) {
   );
 }
 
-function Lemon8Mark({ className, ...props }: IconProps) {
+/** Official Lemon8 wordmark — monochrome via mask so it matches other social marks. */
+function Lemon8Mark({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden={true} {...props}>
-      <path d="M12 2.2c-3.4 0-6.2 2.5-6.7 5.8-.7 4.4 1.7 8.1 5.1 10.4.5.3 1.1.5 1.6.5s1.1-.2 1.6-.5c3.4-2.3 5.8-6 5.1-10.4C18.2 4.7 15.4 2.2 12 2.2zm0 16.3c-.2 0-.4-.1-.6-.2-2.8-1.9-4.8-4.9-4.3-8.5.4-2.5 2.5-4.4 4.9-4.4s4.5 1.9 4.9 4.4c.5 3.6-1.5 6.6-4.3 8.5-.2.1-.4.2-.6.2z" />
-      <circle cx="12" cy="10.2" r="2.2" />
-    </svg>
+    <span
+      aria-hidden={true}
+      className={cn("inline-block shrink-0 bg-current", className)}
+      style={{
+        WebkitMaskImage: `url(${lemon8WordmarkUrl})`,
+        maskImage: `url(${lemon8WordmarkUrl})`,
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+      }}
+    />
   );
 }
 

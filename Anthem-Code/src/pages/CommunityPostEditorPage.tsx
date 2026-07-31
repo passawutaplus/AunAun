@@ -531,7 +531,7 @@ const CommunityPostEditorPage = () => {
               onChange={(e) => setTitle(e.target.value)}
               maxLength={120}
               placeholder="Topic Header"
-              className="w-full border-0 bg-transparent px-4 py-3 text-base font-medium focus:outline-none focus:ring-0 placeholder:text-muted-foreground"
+              className="w-full border-0 bg-transparent px-4 py-3 text-base font-medium focus:outline-none focus:ring-0 placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40"
             />
             <div className="mx-4 border-t border-border/50" />
             <textarea
@@ -540,7 +540,7 @@ const CommunityPostEditorPage = () => {
               rows={10}
               maxLength={3000}
               placeholder="เขียนแคปชั่นพร้อมรายละเอียด"
-              className="w-full resize-none border-0 bg-transparent px-4 py-3 text-sm leading-relaxed focus:outline-none focus:ring-0 placeholder:text-muted-foreground"
+              className="w-full resize-none border-0 bg-transparent px-4 py-3 text-sm leading-relaxed focus:outline-none focus:ring-0 placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40"
             />
             <CommunityCaptionMetaInline tags={tags} tools={tools} className="px-4 pb-2" />
             <CommunityProfanityHint text={body} className="px-4 pb-2" compact />

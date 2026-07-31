@@ -177,6 +177,7 @@ describe("launch route allowlist", () => {
     "/portfolio/new",
     "/portfolio/saved",
     "/project/abc-123",
+    "/service/svc-123",
     "/u/user-id",
     "/u/user-id/followers",
     "/explore/tool/Figma",

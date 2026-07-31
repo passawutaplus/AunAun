@@ -13,9 +13,16 @@ import { assertRealImage } from "@/lib/imageSignature";
 import { normalizeImageForUpload } from "@/lib/normalizeImageUpload";
 import { UPLOAD_STAGE, type UploadStageReporter } from "@/lib/uploadProgress";
 
-const MAX_INPUT_MB = 30;
+export const IMAGE_UPLOAD_MAX_INPUT_MB = 30;
+const MAX_INPUT_MB = IMAGE_UPLOAD_MAX_INPUT_MB;
 /** Cropped community exports are already ≤1920px — skip second pass under this size. */
 const SKIP_RECOMPRESS_MAX_BYTES = 1.5 * 1024 * 1024;
+
+export function assertImageWithinUploadLimit(file: File): void {
+  if (file.size > MAX_INPUT_MB * 1024 * 1024) {
+    throw new Error(`ไฟล์ใหญ่เกิน ${MAX_INPUT_MB}MB`);
+  }
+}
 
 export type UploadProjectImageOptions = {
   /** File already cropped/resized — skip browser-image-compression when small enough. */
@@ -59,9 +66,7 @@ export async function uploadProjectImage(
   tier: Tier = "free",
   options?: UploadProjectImageOptions,
 ): Promise<string> {
-  if (file.size > MAX_INPUT_MB * 1024 * 1024) {
-    throw new Error(`ไฟล์ใหญ่เกิน ${MAX_INPUT_MB}MB`);
-  }
+  assertImageWithinUploadLimit(file);
 
   // iPhone HEIC/HEIF → JPEG so desktop browsers can decode & compress it.
   const normalized = await normalizeImageForUpload(file, options?.reporter);

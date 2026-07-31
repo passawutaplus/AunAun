@@ -67,11 +67,11 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
   return (
     <>
       <DropdownMenuItem
-        onClick={() => go(variant === "forum" ? "/forum/me" : "/portfolio?tab=about")}
+        onClick={() => go(variant === "forum" ? "/forum/me" : "/portfolio")}
         className="rounded-lg"
       >
         <User className="w-4 h-4 mr-2" />{" "}
-        {variant === "forum" ? "โปรไฟล์ชุมชนของฉัน" : "About Me"}
+        {variant === "forum" ? "โปรไฟล์ชุมชนของฉัน" : "My Profile"}
       </DropdownMenuItem>
       {variant !== "forum" ? (
         <>

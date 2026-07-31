@@ -93,7 +93,7 @@ export default function ProfileServicesSection({
             canManage ? (
               <Button className="rounded-full" onClick={openCreate}>
                 <Plus className="w-4 h-4 mr-1" />
-                เพิ่มแพ็กเกจ
+                Add Package
               </Button>
             ) : undefined
           }
@@ -121,10 +121,10 @@ export default function ProfileServicesSection({
             className="rounded-full"
             disabled={atLimit}
             onClick={openCreate}
-            title={atLimit ? `สูงสุด ${CREATOR_SERVICES_MAX}` : "เพิ่มแพ็กเกจ"}
+            title={atLimit ? `สูงสุด ${CREATOR_SERVICES_MAX}` : "Add Package"}
           >
             <Plus className="w-4 h-4 mr-1" />
-            เพิ่มแพ็กเกจ
+            Add Package
           </Button>
         </div>
       ) : null}

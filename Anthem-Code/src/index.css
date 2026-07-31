@@ -123,6 +123,16 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Placeholder = hint only — smaller + softer so it doesn't look like filled text */
+  input::placeholder,
+  textarea::placeholder {
+    color: hsl(var(--muted-foreground) / 0.42);
+    font-size: 0.75rem;
+    font-weight: 300;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+  }
+
   /* Smooth crossfade when toggling light/dark (View Transitions API) */
   @media (prefers-reduced-motion: no-preference) {
     ::view-transition-old(root),

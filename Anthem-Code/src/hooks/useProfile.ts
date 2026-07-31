@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 import type { ProfileInput } from "@/lib/validators";
 import { assertUsernameAvailable, normalizeUsername } from "@/hooks/useUsernameAvailability";
+import { DISPLAY_NAME_COOLDOWN_DAYS } from "@/lib/displayNamePolicy";
 import { USERNAME_COOLDOWN_DAYS } from "@/lib/usernamePolicy";
 import { useAuth } from "@/hooks/useAuth";
 import { isOwnProfile, profileReadFrom } from "@/lib/profileAccess";
@@ -39,12 +40,13 @@ export const useUpdateProfile = (userId: string | undefined) => {
       }
       if (p.bio !== undefined) payload.bio = p.bio;
       if (p.role !== undefined) payload.role = p.role;
+      // date_of_birth / email: ไม่ส่งจาก client — คอลัมน์ถูก revoke UPDATE
+      // (security P0) และ email ผูกกับ auth เท่านั้น
       if (p.location !== undefined) payload.location = p.location;
       if (p.profileAddress !== undefined) {
         (payload as { profile_address?: Json }).profile_address =
           p.profileAddress as unknown as Json;
       }
-      if (p.email !== undefined) payload.email = p.email;
       if (p.phone !== undefined) payload.phone = p.phone;
       if (p.website !== undefined) payload.website = p.website || null;
       if (p.lineId !== undefined) payload.line_id = p.lineId;
@@ -57,6 +59,9 @@ export const useUpdateProfile = (userId: string | undefined) => {
       if (p.notifyHire !== undefined) payload.notify_hire = p.notifyHire;
       if (p.notifyCollab !== undefined) {
         (payload as { notify_collab?: boolean }).notify_collab = p.notifyCollab;
+      }
+      if (p.notifyJobMatch !== undefined) {
+        (payload as { notify_job_match?: boolean }).notify_job_match = p.notifyJobMatch;
       }
       if (p.preferredCategories !== undefined) payload.preferred_categories = p.preferredCategories;
       if (p.preferredEmploymentTypes !== undefined) {
@@ -84,6 +89,9 @@ export const useUpdateProfile = (userId: string | undefined) => {
         if (msg.includes("USERNAME_COOLDOWN")) {
           throw new Error(`เปลี่ยนชื่อผู้ใช้ได้ทุก ${USERNAME_COOLDOWN_DAYS} วัน — ลองใหม่เมื่อครบกำหนด`);
         }
+        if (msg.includes("DISPLAY_NAME_COOLDOWN")) {
+          throw new Error(`เปลี่ยนชื่อที่แสดงได้ทุก ${DISPLAY_NAME_COOLDOWN_DAYS} วัน — ลองใหม่เมื่อครบกำหนด`);
+        }
         throw new Error(msg || "บันทึกไม่สำเร็จ");
       }
     },
@@ -94,9 +102,16 @@ export const useUpdateProfile = (userId: string | undefined) => {
 export const useUpdateProfileMedia = (userId: string | undefined) => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (media: { avatar_url?: string; cover_url?: string }) => {
+    mutationFn: async (media: {
+      avatar_url?: string;
+      cover_url?: string;
+      cover_original_url?: string | null;
+    }) => {
       if (!userId) throw new Error("ยังไม่ได้เข้าสู่ระบบ");
-      const { error } = await supabase.from("profiles").update(media).eq("user_id", userId);
+      const { error } = await supabase
+        .from("profiles")
+        .update(media as TablesUpdate<"profiles">)
+        .eq("user_id", userId);
       if (error) throw error;
     },
     onSuccess: () => {

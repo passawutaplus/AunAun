@@ -1,11 +1,17 @@
 import { z } from "zod";
+import { normalizeThaiProvince } from "@/lib/thaiProvinces";
 
 /** Full Thai-style address on profile (settings / About). */
 export const profileAddressSchema = z.object({
   line1: z.string().trim().max(120).default(""),
   subdistrict: z.string().trim().max(60).default(""),
   district: z.string().trim().max(60).default(""),
-  province: z.string().trim().max(60).default(""),
+  province: z
+    .string()
+    .trim()
+    .max(60)
+    .transform((v) => normalizeThaiProvince(v) || v.trim())
+    .default(""),
   postalCode: z
     .string()
     .trim()
@@ -29,18 +35,19 @@ export function parseProfileAddress(raw: unknown): ProfileAddress {
     return { ...EMPTY_PROFILE_ADDRESS };
   }
   const o = raw as Record<string, unknown>;
-  const postal =
-    typeof o.postalCode === "string"
-      ? o.postalCode
-      : typeof o.postal_code === "string"
-        ? o.postal_code
-        : "";
+  const str = (v: unknown) => {
+    if (typeof v === "string") return v;
+    if (typeof v === "number" && Number.isFinite(v)) return String(v);
+    return "";
+  };
+  const postalRaw =
+    o.postalCode ?? o.postal_code ?? o.zipcode ?? o.zip_code ?? "";
   const parsed = profileAddressSchema.safeParse({
-    line1: typeof o.line1 === "string" ? o.line1 : "",
-    subdistrict: typeof o.subdistrict === "string" ? o.subdistrict : "",
-    district: typeof o.district === "string" ? o.district : "",
-    province: typeof o.province === "string" ? o.province : "",
-    postalCode: postal.replace(/\D/g, "").slice(0, 5),
+    line1: str(o.line1),
+    subdistrict: str(o.subdistrict ?? o.sub_district ?? o.tambon),
+    district: str(o.district ?? o.amphoe),
+    province: str(o.province),
+    postalCode: str(postalRaw).replace(/\D/g, "").slice(0, 5),
   });
   return parsed.success ? parsed.data : { ...EMPTY_PROFILE_ADDRESS };
 }
@@ -81,11 +88,12 @@ export function formatProfileAddressShort(addr: ProfileAddress | null | undefine
 
 /** Persist shape (omit empties to keep jsonb lean). */
 export function profileAddressToJson(addr: ProfileAddress): ProfileAddress {
+  const province = normalizeThaiProvince(addr.province) || addr.province.trim();
   return {
     line1: addr.line1.trim(),
     subdistrict: addr.subdistrict.trim(),
     district: addr.district.trim(),
-    province: addr.province.trim(),
+    province,
     postalCode: addr.postalCode.trim().replace(/\D/g, "").slice(0, 5),
   };
 }

@@ -48,7 +48,7 @@ type Props = {
 
 export function SeriesDensitySelect({ value, onChange, className }: Props) {
   const [open, setOpen] = useState(false);
-  const current = OPTIONS.find((o) => o.value === value) ?? OPTIONS[1];
+  const current = OPTIONS.find((o) => o.value === value) ?? OPTIONS[0];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

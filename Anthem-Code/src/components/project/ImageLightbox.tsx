@@ -329,13 +329,13 @@ const ImageLightbox = ({
               draggable={false}
             />
 
-            {/* Bottom-center actions: hover image only; hidden while zoomed 200%. */}
+            {/* Bottom-center actions: always on mobile; hover on desktop. Hidden while zoomed 200%. */}
             {showActions && !zoomed ? (
               <div
                 className={cn(
                   "absolute bottom-3 left-1/2 z-20 -translate-x-1/2",
-                  "opacity-0 pointer-events-none transition-opacity duration-150",
-                  "group-hover:opacity-100 group-hover:pointer-events-auto",
+                  "opacity-100 pointer-events-auto transition-opacity duration-150",
+                  "md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto",
                 )}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
@@ -346,7 +346,7 @@ const ImageLightbox = ({
                   imageUrl={currentSrc}
                   imageIndex={safeIndex}
                   forceVisible
-                  className="justify-center"
+                  className="justify-center whitespace-nowrap"
                 />
               </div>
             ) : null}

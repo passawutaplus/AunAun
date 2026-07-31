@@ -306,6 +306,8 @@ const pick = <T>(data: T[] | null | undefined, map: (r: T) => ActivityEvent): Ac
 
 const EVENT_TYPE_MAP: Record<string, ActivityEventType> = {
   "user.signup": "user",
+  "user.username_change": "user",
+  "user.display_name_change": "user",
   "project.created": "project",
   "project.like": "like",
   "project.comment": "comment",
@@ -328,6 +330,8 @@ const EVENT_TYPE_MAP: Record<string, ActivityEventType> = {
 
 const EVENT_TITLE: Record<string, string> = {
   "user.signup": "สมาชิกใหม่",
+  "user.username_change": "คำขอเปลี่ยนชื่อผู้ใช้",
+  "user.display_name_change": "คำขอเปลี่ยนชื่อที่แสดง",
   "project.created": "ผลงานใหม่",
   "project.like": "ให้ +1",
   "project.comment": "คอมเมนต์ใหม่",
@@ -366,6 +370,9 @@ function mapPlatformEventRow(r: {
     (meta.reason as string) ||
     (meta.content as string) ||
     (meta.message as string) ||
+    (r.event_type === "user.username_change" && meta.from && meta.to
+      ? `@${String(meta.from)} → @${String(meta.to)}`
+      : null) ||
     r.event_type;
   let link: string | undefined;
   if (r.target_type === "project" && r.target_id) link = `/project/${r.target_id}`;
