@@ -83,6 +83,33 @@
     <priority>0.2</priority>
   </url>
   <url>
+    <loc>https://aplus1.app/project/3a08479e-ec0b-40bd-b54c-cb1a2724460a</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://zkflkpbmbozrchqncpzi.supabase.co/storage/v1/object/public/project-media/anthem/82039b6d-cdf4-4c46-958a-d770d849382c/b04d9734-3412-4d3c-a851-9164f5cb300f/0c699f0d-a0d4-469f-9578-ab5cb50ae154.webp</image:loc>
+      <image:title>Tra+veler</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://aplus1.app/project/acfff42e-8539-4979-a7a3-7ca439e26f68</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://zkflkpbmbozrchqncpzi.supabase.co/storage/v1/object/public/project-media/anthem/82039b6d-cdf4-4c46-958a-d770d849382c/8fca0cac-ea67-4a47-aa04-742f4082b885/a9733fa1-5c3b-4f66-bdbd-463e79a75737.webp</image:loc>
+      <image:title>light bends and silence glows</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://aplus1.app/project/70c9e4fe-8ee2-478f-97d9-17569f803ebe</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://zkflkpbmbozrchqncpzi.supabase.co/storage/v1/object/public/project-media/anthem/82039b6d-cdf4-4c46-958a-d770d849382c/4c1de83b-4cb7-4a1f-816e-f6850882f945/dcfbfd6c-6116-436c-b2b9-2ed3b11c8706.webp</image:loc>
+      <image:title>ถ า + โ ถ ม</image:title>
+    </image:image>
+  </url>
+  <url>
     <loc>https://aplus1.app/project/bab4f231-c4b7-40d1-ac7a-d7020e53e0d1</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -182,39 +209,12 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000001e</loc>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000002a</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>ลายเซรามิก limited</image:title>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000002e</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>Pattern SS26</image:title>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000002f</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://images.unsplash.com/photo-1551650975-87deedd944c3?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>VFX spot 15s</image:title>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000043</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>ผลงานต่อยอด — Toy line น้องแมวอวกาศ</image:title>
+      <image:loc>https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>Mural คาเฟ่ 12m</image:title>
     </image:image>
   </url>
   <url>
@@ -299,12 +299,39 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000002a</loc>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000027</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>Mural คาเฟ่ 12m</image:title>
+      <image:loc>https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>Content playbook F&amp;B</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000001e</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>ลายเซรามิก limited</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000002e</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>Pattern SS26</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-00000000002f</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1551650975-87deedd944c3?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>VFX spot 15s</image:title>
     </image:image>
   </url>
   <url>
@@ -425,12 +452,12 @@
     </image:image>
   </url>
   <url>
-    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000027</loc>
+    <loc>https://aplus1.app/project/00000000-0000-0000-0002-000000000043</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
-      <image:title>Content playbook F&amp;B</image:title>
+      <image:loc>https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&amp;h=900&amp;fit=crop&amp;q=80&amp;auto=format</image:loc>
+      <image:title>ผลงานต่อยอด — Toy line น้องแมวอวกาศ</image:title>
     </image:image>
   </url>
   <url>
@@ -822,6 +849,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://aplus1.app/u/a9fcadcb-b000-4c75-ae2a-e59b805a350a</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://aplus1.app/u/87e74514-156b-4f17-ada0-3878e81a771e</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -1162,12 +1194,17 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/@passawut.a.plus_82039b</loc>
+    <loc>https://aplus1.app/@passawut.a.plus</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
     <loc>https://aplus1.app/@blacksmithtools1997_c16564</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/@a.plus.studio1997</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
@@ -1495,6 +1532,11 @@
     <loc>https://aplus1.app/@passawutaplus</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/series/129646e0-9283-4056-b048-5842afdc57a8</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
   </url>
   <url>
     <loc>https://aplus1.app/series/cc9c9925-9da2-4ce9-a282-2c042e504a94</loc>

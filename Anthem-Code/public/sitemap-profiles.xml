@@ -13,6 +13,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://aplus1.app/u/a9fcadcb-b000-4c75-ae2a-e59b805a350a</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://aplus1.app/u/87e74514-156b-4f17-ada0-3878e81a771e</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -353,12 +358,17 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/@passawut.a.plus_82039b</loc>
+    <loc>https://aplus1.app/@passawut.a.plus</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
     <loc>https://aplus1.app/@blacksmithtools1997_c16564</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://aplus1.app/@a.plus.studio1997</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
