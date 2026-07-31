@@ -2,13 +2,16 @@ import { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import type { CreatorService } from "@/hooks/useCreatorServices";
 import { recordCreatorServiceView } from "@/hooks/usePackageOverviewSeries";
 import ServiceDetailView from "@/components/services/ServiceDetailView";
+import ServiceRelatedPackages from "@/components/services/ServiceRelatedPackages";
+import { PACKAGE_INQUIRY_PLATFORM_DISCLAIMER } from "@/lib/legalSignupCopy";
 
 type Props = {
   open: boolean;
@@ -22,12 +25,18 @@ type Props = {
   referrerProjectId?: string | null;
   busy?: boolean;
   previewOnly?: boolean;
+  /** Show Publish in preview header (editor flow). */
+  onPublish?: () => void;
+  publishBusy?: boolean;
   onRequest: (service: CreatorService) => void;
+  /** Switch to another package while staying in the modal (show flow). */
+  onSelectRelated?: (service: CreatorService) => void;
 };
 
 /**
  * Package detail modal.
  * Mobile: stacked + sticky CTA; tablet (md): 2-col; desktop (lg): wider shell.
+ * Close via the built-in X (top-right).
  */
 export default function ServiceDetailDialog({
   open,
@@ -41,7 +50,10 @@ export default function ServiceDetailDialog({
   referrerProjectId,
   busy,
   previewOnly,
+  onPublish,
+  publishBusy,
   onRequest,
+  onSelectRelated,
 }: Props) {
   const { user } = useAuth();
 
@@ -57,25 +69,34 @@ export default function ServiceDetailDialog({
 
   if (!service) return null;
 
+  const profilePackagesHref = `/u/${creatorUsername || service.owner_id}?tab=services`;
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={[
           "w-[calc(100vw-1rem)] max-w-lg",
-          "md:max-w-3xl lg:max-w-4xl",
+          "md:max-w-3xl lg:max-w-5xl",
           "max-h-[min(92dvh,92vh)]",
           "overflow-y-auto overscroll-contain p-0 gap-0",
           "rounded-2xl sm:rounded-lg",
         ].join(" ")}
       >
-        <DialogHeader className="space-y-0 px-4 pt-4 pb-0 text-left md:px-5 md:pt-5 lg:px-6 sticky top-0 z-[1] bg-card/95 backdrop-blur">
-          <DialogTitle className="text-lg md:text-xl leading-tight tracking-tight pr-10">
-            {service.title}
-          </DialogTitle>
-        </DialogHeader>
+        <DialogTitle className="sr-only">{service.title}</DialogTitle>
+        {previewOnly && onPublish ? (
+          <div className="sticky top-0 z-[1] flex justify-end bg-card/95 px-4 pt-3 pb-0 backdrop-blur md:px-5 md:pt-4 lg:px-6 pr-14">
+            <Button
+              type="button"
+              size="sm"
+              className="rounded-full shrink-0"
+              disabled={!!publishBusy || !!busy}
+              onClick={onPublish}
+            >
+              {publishBusy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+              เผยแพร่
+            </Button>
+          </div>
+        ) : null}
 
         <ServiceDetailView
           service={service}
@@ -88,8 +109,29 @@ export default function ServiceDetailDialog({
           previewOnly={previewOnly}
           variant="dialog"
           onRequest={onRequest}
-          onClosePreview={() => onOpenChange(false)}
         />
+
+        <div className="border-t border-border/50 px-4 py-5 md:px-5 lg:px-6 space-y-6">
+          <ServiceRelatedPackages
+            service={service}
+            creatorName={creatorName}
+            creatorUsername={creatorUsername}
+            creatorAvatarUrl={creatorAvatarUrl}
+            profilePackagesHref={previewOnly ? null : profilePackagesHref}
+            compact
+            alwaysShowCreatorSection={previewOnly}
+            onSelectService={
+              onSelectRelated
+                ? (svc) => onSelectRelated(svc)
+                : undefined
+            }
+          />
+          {!previewOnly ? (
+            <p className="text-[11px] leading-relaxed text-muted-foreground border-t border-border/50 pt-5">
+              {PACKAGE_INQUIRY_PLATFORM_DISCLAIMER}
+            </p>
+          ) : null}
+        </div>
       </DialogContent>
     </Dialog>
   );

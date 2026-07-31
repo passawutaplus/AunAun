@@ -18,6 +18,8 @@ type Props = {
   onChange: (next: { parentId: CategoryParentId | null; subId: string | null }) => void;
   disabled?: boolean;
   invalid?: boolean;
+  /** Hide the built-in "หมวดงาน *" label (parent form supplies its own). */
+  hideLabel?: boolean;
 };
 
 function formatSelection(parentId: CategoryParentId | null, subId: string | null): string {
@@ -33,6 +35,7 @@ export function ProjectTaxonomyPicker({
   onChange,
   disabled,
   invalid,
+  hideLabel,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -118,9 +121,11 @@ export function ProjectTaxonomyPicker({
 
   return (
     <div className="space-y-2">
-      <Label className="text-xs font-semibold text-muted-foreground uppercase">
-        หมวดงาน <span className="text-primary">*</span>
-      </Label>
+      {!hideLabel ? (
+        <Label className="text-xs font-semibold text-muted-foreground uppercase">
+          หมวดงาน <span className="text-primary">*</span>
+        </Label>
+      ) : null}
       <Popover
         open={open}
         onOpenChange={(next) => {

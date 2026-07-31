@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   Briefcase,
@@ -23,16 +24,13 @@ import ProjectManageGridSelect, {
 } from "@/components/portfolio/ProjectManageGridSelect";
 import ManageServiceCard from "@/components/services/ManageServiceCard";
 import PackageManageSortSelect from "@/components/services/PackageManageSortSelect";
-import ServiceEditorDialog from "@/components/services/ServiceEditorDialog";
 import ServiceDetailDialog from "@/components/services/ServiceDetailDialog";
 import {
   CREATOR_SERVICES_MAX,
   useCreatorServices,
   useDeleteCreatorService,
   useReorderCreatorServices,
-  useUpsertCreatorService,
   type CreatorService,
-  type CreatorServiceInput,
 } from "@/hooks/useCreatorServices";
 import {
   EMPTY_PACKAGE_STATS,
@@ -56,11 +54,11 @@ type Props = {
 
 /** Packages manage UI: stats, filters, editable package grid — mirrors Works dashboard. */
 export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
+  const navigate = useNavigate();
   const reducedMotion = useReducedMotion();
   const { data: services = [], isLoading, isError, refetch } = useCreatorServices(ownerId, {
     includeDrafts: true,
   });
-  const upsert = useUpsertCreatorService(ownerId);
   const remove = useDeleteCreatorService(ownerId);
   const reorder = useReorderCreatorServices(ownerId);
 
@@ -68,8 +66,6 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
   const [tab, setTab] = useState<PackageTab>("ทั้งหมด");
   const [sortMode, setSortMode] = useState<PackageManageSortMode>(DEFAULT_PACKAGE_MANAGE_SORT);
   const [grid, setGrid] = useProjectManageGridMode();
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editing, setEditing] = useState<CreatorService | null>(null);
   const [previewService, setPreviewService] = useState<CreatorService | null>(null);
   const [statsService, setStatsService] = useState<CreatorService | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -107,19 +103,11 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
       toast.message(`ลงได้สูงสุด ${CREATOR_SERVICES_MAX} แพ็กเกจ — แก้ไขหรือลบอันเดิมก่อน`);
       return;
     }
-    setEditing(null);
-    setEditorOpen(true);
+    navigate("/portfolio/packages/new");
   };
 
-  const handleSubmit = async (patch: CreatorServiceInput, id?: string) => {
-    try {
-      await upsert.mutateAsync({ id, patch });
-      toast.success(patch.status === "Published" ? "เผยแพร่แพ็กเกจแล้ว" : "บันทึกร่างแล้ว");
-      setEditorOpen(false);
-      setEditing(null);
-    } catch (e) {
-      toast.error(mapWriteFlowError(e, "บันทึกไม่สำเร็จ"));
-    }
+  const openEdit = (svc: CreatorService) => {
+    navigate(`/portfolio/packages/${svc.id}/edit`);
   };
 
   const moveService = (id: string, direction: -1 | 1) => {
@@ -152,16 +140,16 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-11 px-6"
-          disabled={atLimit}
-          onClick={openCreate}
-          title={atLimit ? `สูงสุด ${CREATOR_SERVICES_MAX} แพ็กเกจ` : "Add Package"}
-        >
-          <Plus className="w-4 h-4 mr-2" /> Add Package
-        </Button>
-      </div>
+      {!atLimit ? (
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-11 px-6"
+            onClick={openCreate}
+          >
+            <Plus className="w-4 h-4 mr-2" /> Add Package
+          </Button>
+        </div>
+      ) : null}
 
       <PackageOverviewChart ownerId={ownerId} serviceIds={serviceIds} />
 
@@ -178,10 +166,12 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
           title="ยังไม่มีแพ็กเกจ"
           description={`สร้างได้สูงสุด ${CREATOR_SERVICES_MAX} แพ็กเกจ — ลูกค้าขอใช้บริการจากแท็บ Packages บนโปรไฟล์สาธารณะ`}
           action={
-            <Button className="rounded-full" onClick={openCreate}>
-              <Plus className="w-4 h-4 mr-1" />
-              Add Package
-            </Button>
+            !atLimit ? (
+              <Button className="rounded-full" onClick={openCreate}>
+                <Plus className="w-4 h-4 mr-1" />
+                Add Package
+              </Button>
+            ) : undefined
           }
         />
       ) : (
@@ -261,10 +251,7 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
                       onMoveUp={() => moveService(svc.id, -1)}
                       onMoveDown={() => moveService(svc.id, 1)}
                       onPreview={() => setPreviewService(svc)}
-                      onEdit={() => {
-                        setEditing(svc);
-                        setEditorOpen(true);
-                      }}
+                      onEdit={() => openEdit(svc)}
                       onDelete={() => setPendingDeleteId(svc.id)}
                     />
                   </motion.div>
@@ -279,14 +266,6 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
           </AnimatePresence>
         </div>
       )}
-
-      <ServiceEditorDialog
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-        initial={editing}
-        busy={upsert.isPending}
-        onSubmit={handleSubmit}
-      />
 
       <ServiceDetailDialog
         open={!!previewService}
@@ -312,8 +291,7 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
         }}
         onEdit={() => {
           if (!statsService) return;
-          setEditing(statsService);
-          setEditorOpen(true);
+          openEdit(statsService);
           setStatsService(null);
         }}
       />

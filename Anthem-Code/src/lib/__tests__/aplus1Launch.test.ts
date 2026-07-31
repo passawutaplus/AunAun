@@ -202,6 +202,9 @@ describe("launch route allowlist", () => {
     "/hire/start",
     "/verify",
     "/earnings",
+    "/dashboard",
+    "/dashboard/collab",
+    "/dashboard/reviews",
   ];
 
   const blocked = [

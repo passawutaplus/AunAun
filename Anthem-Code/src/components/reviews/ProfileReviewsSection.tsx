@@ -2,9 +2,15 @@ import { useMemo, useState } from "react";
 import { MessageSquareHeart } from "lucide-react";
 import { StarAverageLabel, StarRating } from "@/components/reviews/StarRating";
 import { ReviewCategoryBreakdown } from "@/components/reviews/ReviewCategoryBreakdown";
+import { ReviewOriginBadges } from "@/components/reviews/ReviewOriginBadges";
 import UserAvatar from "@/components/UserAvatar";
 import { useSubjectWorkReviews } from "@/hooks/useWorkReviews";
-import { averageRating, hasCategoryScores, type WorkReviewKind } from "@/lib/workReviews";
+import {
+  averageRating,
+  hasCategoryScores,
+  reviewHasPackageOrigin,
+  type WorkReviewFilter,
+} from "@/lib/workReviews";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
@@ -15,40 +21,51 @@ type Props = {
 };
 
 export function ProfileReviewsSection({ subjectUserId, className }: Props) {
-  const [kind, setKind] = useState<WorkReviewKind | "all">("all");
+  const [filter, setFilter] = useState<WorkReviewFilter>("all");
   const hireQ = useSubjectWorkReviews(subjectUserId, "hire");
   const collabQ = useSubjectWorkReviews(subjectUserId, "collab");
 
   const hire = hireQ.data ?? [];
   const collab = collabQ.data ?? [];
-  const all = useMemo(() => [...hire, ...collab].sort((a, b) => b.created_at.localeCompare(a.created_at)), [hire, collab]);
+  const all = useMemo(
+    () => [...hire, ...collab].sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    [hire, collab],
+  );
 
-  const list = kind === "hire" ? hire : kind === "collab" ? collab : all;
-  const avgSource = kind === "hire" ? hire : kind === "collab" ? collab : all;
-  const avg = averageRating(avgSource);
+  const fromPackage = useMemo(() => all.filter(reviewHasPackageOrigin), [all]);
+
+  const list = useMemo(() => {
+    if (filter === "hire") return hire;
+    if (filter === "collab") return collab;
+    if (filter === "package") return fromPackage;
+    return all;
+  }, [filter, hire, collab, fromPackage, all]);
+
+  const avg = averageRating(list);
 
   const loading = hireQ.isLoading || collabQ.isLoading;
   const errored = hireQ.isError || collabQ.isError;
 
+  const tabs: { id: WorkReviewFilter; label: string }[] = [
+    { id: "all", label: `ทั้งหมด (${all.length})` },
+    { id: "hire", label: `จ้างงาน (${hire.length})` },
+    { id: "collab", label: `คอลแลป (${collab.length})` },
+    { id: "package", label: `แพ็กเกจ (${fromPackage.length})` },
+  ];
+
   return (
     <div className={cn("space-y-5", className)}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <StarAverageLabel average={avg} count={avgSource.length} />
-        <div className="flex rounded-full border border-border/60 p-0.5 text-xs">
-          {(
-            [
-              { id: "all" as const, label: `ทั้งหมด (${all.length})` },
-              { id: "hire" as const, label: `จ้างงาน (${hire.length})` },
-              { id: "collab" as const, label: `คอลแลป (${collab.length})` },
-            ] as const
-          ).map((tab) => (
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <StarAverageLabel average={avg} count={list.length} />
+        <div className="flex flex-wrap gap-1 rounded-2xl border border-border/60 p-0.5 text-xs">
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
-              onClick={() => setKind(tab.id)}
+              onClick={() => setFilter(tab.id)}
               className={cn(
-                "rounded-full px-3 py-1.5 font-medium transition-colors",
-                kind === tab.id
+                "rounded-full px-2.5 py-1.5 font-medium transition-colors",
+                filter === tab.id
                   ? "bg-foreground text-background"
                   : "text-muted-foreground hover:text-foreground",
               )}
@@ -66,9 +83,9 @@ export function ProfileReviewsSection({ subjectUserId, className }: Props) {
       ) : list.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border/70 px-5 py-10 text-center">
           <MessageSquareHeart className="mx-auto h-8 w-8 text-muted-foreground/50" aria-hidden />
-          <p className="mt-3 text-sm font-medium text-foreground">ยังไม่มีรีวิว</p>
+          <p className="mt-3 text-sm font-medium text-foreground">ยังไม่มีรีวิวในหมวดนี้</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            รีวิวจะโผล่หลังมีงานจบกับคนอื่น — เริ่มจากผลงานและคุยโอกาสได้เลย
+            รีวิวจะโผล่หลังจบงานจ้างหรือคอลแลป — และบอกได้ว่ามาจากแพ็กเกจไหน
           </p>
         </div>
       ) : (
@@ -105,6 +122,7 @@ export function ProfileReviewsSection({ subjectUserId, className }: Props) {
                       {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: th })}
                     </span>
                   </div>
+                  <ReviewOriginBadges review={r} showProject={false} />
                   <div className="mt-1.5 flex flex-wrap items-center gap-2">
                     <StarRating value={Number(r.rating)} readOnly size="sm" />
                     <span className="text-xs tabular-nums text-muted-foreground">

@@ -70,6 +70,7 @@ export type WorkReviewDialogTarget = {
   hireRequestId?: string | null;
   collabRequestId?: string | null;
   projectId?: string | null;
+  serviceId?: string | null;
   contextLabel?: string | null;
   projectCoverUrl?: string | null;
   subjectAvatarUrl?: string | null;
@@ -243,6 +244,7 @@ export function WorkReviewDialog({
         tags: [],
         body: body.trim() || null,
         projectId: target.projectId,
+        serviceId: target.serviceId,
       });
 
       const route = target.kind === "hire" ? "/dashboard" : "/dashboard/collab";

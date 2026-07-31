@@ -295,6 +295,7 @@ export function ProfileHiringRequestsSection({
         : "ครีเอเตอร์",
       hireRequestId: req.id,
       projectId: req.project_id ?? linkedId ?? null,
+      serviceId: (req as { service_id?: string | null }).service_id ?? null,
       contextLabel: req.project_title ?? null,
     });
   };

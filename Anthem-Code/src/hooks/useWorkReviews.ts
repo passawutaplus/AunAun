@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fromCreatorServices } from "@/lib/creatorServicesDb";
 import {
   averageCategoryScores,
   type CategoryScores,
   type WorkReview,
   type WorkReviewKind,
+  type WorkReviewOrigin,
   type WorkReviewWithAuthor,
 } from "@/lib/workReviews";
 
@@ -19,6 +21,7 @@ type SubmitInput = {
   tags: string[];
   body?: string | null;
   projectId?: string | null;
+  serviceId?: string | null;
 };
 
 async function fetchAuthorMap(ids: string[]) {
@@ -46,6 +49,63 @@ async function fetchAuthorMap(ids: string[]) {
   return map;
 }
 
+async function enrichReviewOrigins(rows: WorkReview[]): Promise<WorkReviewWithAuthor[]> {
+  const hireIds = [
+    ...new Set(
+      rows
+        .filter((r) => r.hire_request_id && !r.service_id)
+        .map((r) => r.hire_request_id as string),
+    ),
+  ];
+
+  const hireServiceMap = new Map<string, string>();
+  if (hireIds.length) {
+    const { data } = await supabase
+      .from("hiring_requests")
+      .select("id, service_id")
+      .in("id", hireIds);
+    for (const row of data ?? []) {
+      const r = row as { id: string; service_id: string | null };
+      if (r.service_id) hireServiceMap.set(r.id, r.service_id);
+    }
+  }
+
+  const withService = rows.map((r) => ({
+    ...r,
+    service_id: r.service_id || (r.hire_request_id ? hireServiceMap.get(r.hire_request_id) ?? null : null),
+  }));
+
+  const projectIds = [...new Set(withService.map((r) => r.project_id).filter(Boolean))] as string[];
+  const serviceIds = [...new Set(withService.map((r) => r.service_id).filter(Boolean))] as string[];
+
+  const projectTitleMap = new Map<string, string>();
+  if (projectIds.length) {
+    const { data } = await supabase.from("projects").select("id, title").in("id", projectIds);
+    for (const row of data ?? []) {
+      const r = row as { id: string; title: string };
+      projectTitleMap.set(r.id, r.title);
+    }
+  }
+
+  const serviceTitleMap = new Map<string, string>();
+  if (serviceIds.length) {
+    const { data } = await fromCreatorServices().select("id, title").in("id", serviceIds);
+    for (const row of (data ?? []) as { id: string; title: string }[]) {
+      serviceTitleMap.set(row.id, row.title);
+    }
+  }
+
+  return withService.map((r) => {
+    const origin: WorkReviewOrigin = {
+      projectId: r.project_id,
+      projectTitle: r.project_id ? projectTitleMap.get(r.project_id) ?? null : null,
+      serviceId: r.service_id,
+      serviceTitle: r.service_id ? serviceTitleMap.get(r.service_id) ?? null : null,
+    };
+    return { ...r, origin };
+  });
+}
+
 export function useSubjectWorkReviews(subjectUserId: string | undefined, kind?: WorkReviewKind) {
   return useQuery({
     queryKey: ["work_reviews", "subject", subjectUserId, kind ?? "all"],
@@ -62,7 +122,8 @@ export function useSubjectWorkReviews(subjectUserId: string | undefined, kind?: 
       if (error) throw error;
       const rows = (data ?? []) as unknown as WorkReview[];
       const authors = await fetchAuthorMap(rows.map((r) => r.author_user_id));
-      return rows.map((r) => ({
+      const enriched = await enrichReviewOrigins(rows);
+      return enriched.map((r) => ({
         ...r,
         author: authors.get(r.author_user_id) ?? null,
       })) as WorkReviewWithAuthor[];
@@ -117,6 +178,16 @@ export function useSubmitWorkReview() {
       if (input.kind === "hire" && !input.hireRequestId) throw new Error("ไม่พบงานจ้าง");
       if (input.kind === "collab" && !input.collabRequestId) throw new Error("ไม่พบคอลแลป");
 
+      let serviceId = input.serviceId ?? null;
+      if (!serviceId && input.kind === "hire" && input.hireRequestId) {
+        const { data: hire } = await supabase
+          .from("hiring_requests")
+          .select("service_id")
+          .eq("id", input.hireRequestId)
+          .maybeSingle();
+        serviceId = (hire as { service_id?: string | null } | null)?.service_id ?? null;
+      }
+
       const payload = {
         kind: input.kind,
         subject_user_id: input.subjectUserId,
@@ -132,6 +203,7 @@ export function useSubmitWorkReview() {
         tags: input.tags.slice(0, 6),
         body: input.body?.trim() || null,
         project_id: input.projectId ?? null,
+        service_id: serviceId,
         visibility: "public",
       };
 

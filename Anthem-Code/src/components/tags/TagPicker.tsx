@@ -16,6 +16,8 @@ interface Props {
   max?: number;
   variant?: "default" | "compact";
   presets?: readonly string[];
+  /** Cap suggestion chips to a single visual row (overflow hidden). */
+  suggestionsSingleLine?: boolean;
 }
 
 const TagPicker = ({
@@ -27,6 +29,7 @@ const TagPicker = ({
   max = 15,
   variant = "default",
   presets = [],
+  suggestionsSingleLine = false,
 }: Props) => {
   const suggestions = useTagSuggestions(userId);
   const selectedKeys = useMemo(() => new Set(tags.map(normalizeTag)), [tags]);
@@ -47,13 +50,18 @@ const TagPicker = ({
   const filteredSuggestions = useMemo(() => {
     const q = normalizeTag(input);
     const pool = suggestions.filter((s) => !selectedKeys.has(normalizeTag(s)));
-    if (!q) return pool.slice(0, 12);
+    const limit = suggestionsSingleLine ? 8 : 12;
+    if (!q) return pool.slice(0, limit);
     return pool
       .filter((s) => normalizeTag(s).includes(q) || q.includes(normalizeTag(s)))
-      .slice(0, 12);
-  }, [suggestions, input, selectedKeys]);
+      .slice(0, limit);
+  }, [suggestions, input, selectedKeys, suggestionsSingleLine]);
 
   const showQuick = !input.trim() && (availablePresets.length > 0 || filteredSuggestions.length > 0);
+  const chipRowClass = cn(
+    "flex gap-x-3 gap-y-1.5",
+    suggestionsSingleLine ? "flex-nowrap overflow-hidden" : "flex-wrap",
+  );
 
   return (
     <div
@@ -107,13 +115,13 @@ const TagPicker = ({
       {showQuick && (
         <div className="space-y-2">
           {availablePresets.length > 0 && (
-            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+            <div className={chipRowClass}>
               {availablePresets.map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => addTag(s)}
-                  className="text-xs text-muted-foreground transition-colors hover:text-primary"
+                  className="shrink-0 text-xs text-muted-foreground transition-colors hover:text-primary"
                 >
                   #{s}
                 </button>
@@ -121,13 +129,13 @@ const TagPicker = ({
             </div>
           )}
           {filteredSuggestions.length > 0 && (
-            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+            <div className={chipRowClass}>
               {filteredSuggestions.map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => addTag(s)}
-                  className="text-xs text-muted-foreground transition-colors hover:text-primary"
+                  className="shrink-0 text-xs text-muted-foreground transition-colors hover:text-primary"
                 >
                   #{s}
                 </button>
@@ -138,13 +146,13 @@ const TagPicker = ({
       )}
 
       {input.trim() && filteredSuggestions.length > 0 && (
-        <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+        <div className={chipRowClass}>
           {filteredSuggestions.map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => addTag(s)}
-              className="text-xs text-muted-foreground transition-colors hover:text-primary"
+              className="shrink-0 text-xs text-muted-foreground transition-colors hover:text-primary"
             >
               #{s}
             </button>

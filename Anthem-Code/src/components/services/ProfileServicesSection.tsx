@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Briefcase, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/EmptyState";
-import ServiceEditorDialog from "@/components/services/ServiceEditorDialog";
+import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import ServiceDetailDialog from "@/components/services/ServiceDetailDialog";
 import {
   CREATOR_SERVICES_MAX,
@@ -12,9 +12,7 @@ import {
   formatServicePriceRange,
   useCreatorServices,
   useDeleteCreatorService,
-  useUpsertCreatorService,
   type CreatorService,
-  type CreatorServiceInput,
 } from "@/hooks/useCreatorServices";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { useProfile } from "@/hooks/useProfile";
@@ -34,16 +32,15 @@ export default function ProfileServicesSection({
   visitorPreview,
   onRequestService,
 }: Props) {
+  const navigate = useNavigate();
   const canManage = isSelf && !visitorPreview;
   const { data: ownerProfile } = useProfile(ownerId);
   const { data: services = [], isLoading } = useCreatorServices(ownerId, {
     includeDrafts: canManage,
   });
-  const upsert = useUpsertCreatorService(ownerId);
   const remove = useDeleteCreatorService(ownerId);
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editing, setEditing] = useState<CreatorService | null>(null);
   const [detailService, setDetailService] = useState<CreatorService | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CreatorService | null>(null);
 
   const published = services.filter((s) => s.status === "Published");
   const visible = canManage ? services : published;
@@ -51,22 +48,10 @@ export default function ProfileServicesSection({
 
   const openCreate = () => {
     if (atLimit) {
-      toast.message(`ลงได้สูงสุด ${CREATOR_SERVICES_MAX} แพ็กเกจ — แก้ไขหรือลบอันเดิมก่อน`);
+      toast.message(`ลงได้สูงสุด ${CREATOR_SERVICES_MAX} แพ็กเกจ — ลบอันเดิมก่อนถึงจะเพิ่มใหม่ได้`);
       return;
     }
-    setEditing(null);
-    setEditorOpen(true);
-  };
-
-  const handleSubmit = async (patch: CreatorServiceInput, id?: string) => {
-    try {
-      await upsert.mutateAsync({ id, patch });
-      toast.success(patch.status === "Published" ? "เผยแพร่แพ็กเกจแล้ว" : "บันทึกร่างแล้ว");
-      setEditorOpen(false);
-      setEditing(null);
-    } catch (e) {
-      toast.error(mapWriteFlowError(e, "บันทึกไม่สำเร็จ"));
-    }
+    navigate("/portfolio/packages/new");
   };
 
   if (isLoading) {
@@ -80,32 +65,23 @@ export default function ProfileServicesSection({
 
   if (visible.length === 0) {
     return (
-      <>
-        <EmptyState
-          icon={Briefcase}
-          title={canManage ? "ยังไม่มีแพ็กเกจ" : "ยังไม่มีแพ็กเกจที่เผยแพร่"}
-          description={
-            canManage
-              ? `สร้างได้สูงสุด ${CREATOR_SERVICES_MAX} แพ็กเกจ — ลูกค้าขอใช้บริการจากแท็บ Packages`
-              : "ครีเอเตอร์คนนี้ยังไม่ได้เผยแพร่แพ็กเกจ"
-          }
-          action={
-            canManage ? (
-              <Button className="rounded-full" onClick={openCreate}>
-                <Plus className="w-4 h-4 mr-1" />
-                Add Package
-              </Button>
-            ) : undefined
-          }
-        />
-        <ServiceEditorDialog
-          open={editorOpen}
-          onOpenChange={setEditorOpen}
-          initial={editing}
-          busy={upsert.isPending}
-          onSubmit={handleSubmit}
-        />
-      </>
+      <EmptyState
+        icon={Briefcase}
+        title={canManage ? "ยังไม่มีแพ็กเกจ" : "ยังไม่มีแพ็กเกจที่เผยแพร่"}
+        description={
+          canManage
+            ? `สร้างได้สูงสุด ${CREATOR_SERVICES_MAX} แพ็กเกจ — ลูกค้าขอใช้บริการจากแท็บ Packages`
+            : "ครีเอเตอร์คนนี้ยังไม่ได้เผยแพร่แพ็กเกจ"
+        }
+        action={
+          canManage && !atLimit ? (
+            <Button className="rounded-full" onClick={openCreate}>
+              <Plus className="w-4 h-4 mr-1" />
+              Add Package
+            </Button>
+          ) : undefined
+        }
+      />
     );
   }
 
@@ -115,17 +91,14 @@ export default function ProfileServicesSection({
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
             {services.length}/{CREATOR_SERVICES_MAX} แพ็กเกจ
+            {atLimit ? " — ลบอันที่มีก่อนถึงจะเพิ่มใหม่ได้" : ""}
           </p>
-          <Button
-            size="sm"
-            className="rounded-full"
-            disabled={atLimit}
-            onClick={openCreate}
-            title={atLimit ? `สูงสุด ${CREATOR_SERVICES_MAX}` : "Add Package"}
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Add Package
-          </Button>
+          {!atLimit ? (
+            <Button size="sm" className="rounded-full" onClick={openCreate}>
+              <Plus className="w-4 h-4 mr-1" />
+              Add Package
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
@@ -192,10 +165,7 @@ export default function ProfileServicesSection({
                         size="sm"
                         variant="outline"
                         className="rounded-full h-8"
-                        onClick={() => {
-                          setEditing(svc);
-                          setEditorOpen(true);
-                        }}
+                        onClick={() => navigate(`/portfolio/packages/${svc.id}/edit`)}
                       >
                         <Pencil className="w-3.5 h-3.5 mr-1" />
                         แก้ไข
@@ -205,13 +175,7 @@ export default function ProfileServicesSection({
                         variant="ghost"
                         className="rounded-full h-8 text-destructive hover:text-destructive"
                         disabled={remove.isPending}
-                        onClick={() => {
-                          if (!window.confirm(`ลบแพ็กเกจ "${svc.title}"?`)) return;
-                          remove.mutate(svc.id, {
-                            onSuccess: () => toast.success("ลบแพ็กเกจแล้ว"),
-                            onError: (e) => toast.error(mapWriteFlowError(e, "ลบไม่สำเร็จ")),
-                          });
-                        }}
+                        onClick={() => setPendingDelete(svc)}
                       >
                         <Trash2 className="w-3.5 h-3.5 mr-1" />
                         ลบ
@@ -224,14 +188,6 @@ export default function ProfileServicesSection({
           );
         })}
       </div>
-
-      <ServiceEditorDialog
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-        initial={editing}
-        busy={upsert.isPending}
-        onSubmit={handleSubmit}
-      />
 
       <ServiceDetailDialog
         open={!!detailService}
@@ -247,10 +203,37 @@ export default function ProfileServicesSection({
         creatorUsername={ownerProfile?.username}
         creatorAvatarUrl={ownerProfile?.avatar_url}
         creatorRole={ownerProfile?.role}
+        onSelectRelated={(svc) => setDetailService(svc)}
         onRequest={(svc) => {
           setDetailService(null);
           onRequestService?.(svc);
         }}
+      />
+
+      <DeleteConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+        title="ลบแพ็กเกจนี้?"
+        description={
+          pendingDelete ? (
+            <>「{pendingDelete.title}」จะถูกลบถาวรและไม่สามารถกู้คืนได้ ต้องการลบจริงหรือไม่?</>
+          ) : (
+            ""
+          )
+        }
+        onConfirm={() => {
+          if (!pendingDelete) return;
+          remove.mutate(pendingDelete.id, {
+            onSuccess: () => {
+              toast.success("ลบแพ็กเกจแล้ว");
+              setPendingDelete(null);
+            },
+            onError: (e) => toast.error(mapWriteFlowError(e, "ลบไม่สำเร็จ")),
+          });
+        }}
+        loading={remove.isPending}
       />
     </div>
   );

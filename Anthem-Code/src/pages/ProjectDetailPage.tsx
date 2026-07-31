@@ -57,11 +57,14 @@ import {
   type LinkedPostSummary,
 } from "@/lib/portfolioLinkedPosts";
 import { profilesPublicFrom, PUBLIC_PROFILE_READ_SELECT } from "@/lib/profileAccess";
+import PackageReturnBanner from "@/components/services/PackageReturnBanner";
+import { cn } from "@/lib/utils";
 
 const ProjectDetailPage = () => {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const sponsorAdId = searchParams.get("sponsor");
+  const fromPackageId = searchParams.get("fromPackage");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -343,7 +346,12 @@ const ProjectDetailPage = () => {
         ]}
       />
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-3 flex items-center justify-between gap-3">
+        <div
+          className={cn(
+            "max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-3 flex items-center justify-between gap-3",
+            fromPackageId && "border-b border-border/60",
+          )}
+        >
           <div className="flex items-center gap-3 min-w-0">
             <BackButton />
             <SeoBreadcrumb items={crumbs} className="mb-0 hidden md:flex min-w-0" />
@@ -375,6 +383,7 @@ const ProjectDetailPage = () => {
             </SharePopover>
           </div>
         </div>
+        {fromPackageId ? <PackageReturnBanner serviceId={fromPackageId} /> : null}
       </div>
 
       <div className="max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-6 lg:py-10">

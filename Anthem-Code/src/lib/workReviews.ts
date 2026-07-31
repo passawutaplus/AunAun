@@ -150,9 +150,18 @@ export type WorkReview = {
   reply_body: string | null;
   reply_at: string | null;
   project_id: string | null;
+  /** Creator package when hire started from a package */
+  service_id: string | null;
   visibility: "public" | "hidden";
   created_at: string;
   updated_at: string;
+};
+
+export type WorkReviewOrigin = {
+  projectId: string | null;
+  projectTitle: string | null;
+  serviceId: string | null;
+  serviceTitle: string | null;
 };
 
 export type WorkReviewWithAuthor = WorkReview & {
@@ -161,7 +170,23 @@ export type WorkReviewWithAuthor = WorkReview & {
     username: string | null;
     avatar_url: string | null;
   } | null;
+  origin?: WorkReviewOrigin;
 };
+
+/** Filter chips on profile / dashboard review lists */
+export type WorkReviewFilter =
+  | "all"
+  | "hire"
+  | "collab"
+  | "package";
+
+export function reviewHasPackageOrigin(r: Pick<WorkReview, "service_id"> & { origin?: WorkReviewOrigin }) {
+  return !!(r.service_id || r.origin?.serviceId);
+}
+
+export function reviewHasProjectOrigin(r: Pick<WorkReview, "project_id"> & { origin?: WorkReviewOrigin }) {
+  return !!(r.project_id || r.origin?.projectId);
+}
 
 /** Extra tags after category scores (optional). */
 export const HIRE_REVIEW_TAGS = ["สื่อสารดี", "น่าทำงานด้วยอีก"] as const;

@@ -7,7 +7,10 @@ export const BOTTOM_NAV_MAX_WIDTH = 1023;
 export const NAV_HIDDEN_PREFIXES = ["/auth", "/admin", "/error", "/community/new", "/settings"];
 
 export const isPortfolioEditorRoute = (pathname: string) =>
-  pathname === "/portfolio/new" || /^\/portfolio\/[^/]+\/edit/.test(pathname);
+  pathname === "/portfolio/new" ||
+  /^\/portfolio\/[^/]+\/edit/.test(pathname) ||
+  pathname === "/portfolio/packages/new" ||
+  /^\/portfolio\/packages\/[^/]+\/edit/.test(pathname);
 
 export const isActiveChatThread = (pathname: string) => /^\/chat\/[^/]+/.test(pathname);
 

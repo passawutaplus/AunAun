@@ -109,7 +109,18 @@ const PrivacyPage = () => (
       <li>ข้อมูลอุปกรณ์และเทคนิค: ประเภทเบราว์เซอร์ ที่อยู่ IP (โดยผู้ให้บริการโฮสติ้ง)</li>
       <li>คุกกี้และ local storage — ดูรายละเอียดใน <a href="/legal/cookies">นโยบายคุกกี้</a></li>
     </ul>
-    <h3>3.4 ข้อมูลอ่อนไหว</h3>
+    <h3>3.5 ข้อมูลเกี่ยวกับแพ็กเกจบริการ</h3>
+    <ul>
+      <li>
+        ข้อมูลที่คุณใส่ในแพ็กเกจ (ชื่อบริการ รายละเอียด ราคา ระยะเวลา สิ่งที่ส่งมอบ สื่อประกอบ)
+        และสถิติการเปิดดู / กดขอใช้บริการ
+      </li>
+      <li>
+        รายละเอียดเพิ่มเติม — ดู{" "}
+        <a href="/legal/packages">นโยบายแพ็กเกจบริการ</a>
+      </li>
+    </ul>
+    <h3>3.6 ข้อมูลอ่อนไหว</h3>
     <p>
       เราไม่ได้ขอเก็บข้อมูลอ่อนไหว (เช่น เชื้อชาติ ศาสนา ประวัติสุขภาพ) เป็นปกติ
       หากมีการเก็บในกระบวนการ KYC หรือตามที่กฎหมายกำหนด เราจะเก็บเฉพาะที่จำเป็น มีฐานทางกฎหมายที่ชัดเจน
@@ -137,6 +148,16 @@ const PrivacyPage = () => (
             <td className="p-3 align-top">พอร์ตโฟลิโอและผลงาน</td>
             <td className="p-3 text-muted-foreground align-top">แสดงผลงาน ค้นหา แนะนำในฟีด</td>
             <td className="p-3 align-top">สัญญา / บริการที่ร้องขอ</td>
+          </tr>
+          <tr className="border-b border-border/40">
+            <td className="p-3 align-top">แพ็กเกจบริการ</td>
+            <td className="p-3 text-muted-foreground align-top">
+              แสดงแพ็กเกจ สถิติการเปิดดู / ขอใช้บริการ — ดู{" "}
+              <a href="/legal/packages" className="text-primary hover:underline">
+                นโยบายแพ็กเกจ
+              </a>
+            </td>
+            <td className="p-3 align-top">สัญญา / ประโยชน์โดยชอบ</td>
           </tr>
           <tr className="border-b border-border/40">
             <td className="p-3 align-top">แชทและจับคู่งาน</td>

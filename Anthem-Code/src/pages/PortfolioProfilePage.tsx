@@ -107,15 +107,20 @@ const PortfolioProfilePage = () => {
     if (!authLoading && !user) navigate("/auth?redirect=/portfolio");
   }, [authLoading, user, navigate]);
 
-  // Legacy focus=hiring|collab → dedicated dashboard pages
+  // Legacy focus=hiring|collab|reviews → dedicated dashboard pages
   useEffect(() => {
     const focus = searchParams.get("focus");
+    const tab = searchParams.get("tab");
     if (focus === "hiring") {
       navigate("/dashboard", { replace: true });
       return;
     }
     if (focus === "collab") {
       navigate("/dashboard/collab", { replace: true });
+      return;
+    }
+    if (tab === "reviews" || focus === "reviews") {
+      navigate("/dashboard/reviews", { replace: true });
     }
   }, [searchParams, navigate]);
 

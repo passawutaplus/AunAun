@@ -1,4 +1,4 @@
-import { Briefcase, Handshake, WalletCards } from "lucide-react";
+import { Briefcase, Handshake, MessageSquareQuote, WalletCards } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +16,12 @@ const MODES = [
     end: true,
   },
   {
+    to: "/dashboard/reviews",
+    label: "รีวิว",
+    icon: MessageSquareQuote,
+    end: true,
+  },
+  {
     to: "/earnings",
     label: "กระเป๋า",
     icon: WalletCards,
@@ -23,7 +29,7 @@ const MODES = [
   },
 ] as const;
 
-/** Separate pages for hire / collab / wallet. */
+/** Separate pages for hire / collab / reviews / wallet. */
 export default function ManageModeNav({ className }: { className?: string }) {
   return (
     <nav

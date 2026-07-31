@@ -78,9 +78,10 @@ function ContactIcons({
           title={`คัดลอก ${trimmedEmail}`}
           aria-label={`คัดลอกอีเมล ${trimmedEmail}`}
           onClick={() => void copyEmail(trimmedEmail)}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-secondary/80 ring-1 ring-border/50 text-foreground hover:ring-primary/40 hover:bg-primary/5 transition-colors"
+          className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-secondary/80 px-2 py-1 ring-1 ring-border/50 text-foreground hover:ring-primary/40 hover:bg-primary/5 transition-colors"
         >
-          <Mail className="w-3.5 h-3.5" />
+          <Mail className="w-3.5 h-3.5 shrink-0" />
+          <span className="min-w-0 truncate text-xs font-medium">{trimmedEmail}</span>
         </button>
       ) : null}
       {items.length ? (

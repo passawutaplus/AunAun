@@ -17,7 +17,6 @@ import {
   DashboardLinkedWorkStrip,
 } from "@/components/dashboard/DashboardRequestStrips";
 import ManageModeNav from "@/components/dashboard/ManageModeNav";
-import DashboardReviewsPanel from "@/components/dashboard/DashboardReviewsPanel";
 import DashboardHireDocumentsPanel from "@/components/dashboard/DashboardHireDocumentsPanel";
 import EarningsBalanceCards from "@/components/payments/EarningsBalanceCards";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,6 +73,10 @@ export default function DashboardPage({ mode: modeProp }: Props) {
     }
     if (legacy === "wallet" || hash === "wallet" || hash === "earnings") {
       navigate("/earnings", { replace: true });
+      return;
+    }
+    if (legacy === "reviews" || hash === "reviews") {
+      navigate("/dashboard/reviews", { replace: true });
       return;
     }
     if (legacy === "hire" || hash === "hiring" || hash === "hire") {
@@ -190,8 +193,8 @@ export default function DashboardPage({ mode: modeProp }: Props) {
   const pagePath = mode === "hire" ? "/dashboard" : "/dashboard/collab";
   const pageHint =
     mode === "hire"
-      ? "ดูคำขอจ้างงาน ลิงก์ผลงาน เอกสาร และจัดการรีวิวที่ได้รับ"
-      : "ดูคำขอคอลแลป ตอบรับ/ปฏิเสธ ลิงก์ผลงานร่วม และจัดการรีวิวที่ได้รับ";
+      ? "ดูคำขอจ้างงาน ลิงก์ผลงาน และเอกสาร"
+      : "ดูคำขอคอลแลป ตอบรับ/ปฏิเสธ และลิงก์ผลงานร่วม";
 
   return (
     <div className={`min-h-screen bg-app-ambient ${MOBILE_PAGE_BOTTOM_CLASS}`}>
@@ -291,8 +294,6 @@ export default function DashboardPage({ mode: modeProp }: Props) {
             ) : (
               <CollabRequestsSection embed renderCardExtras={renderCollabExtras} />
             )}
-
-            <DashboardReviewsPanel subjectUserId={user.id} kind={mode} />
           </>
         )}
       </div>

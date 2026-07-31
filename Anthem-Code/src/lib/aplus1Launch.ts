@@ -41,7 +41,7 @@ export const LAUNCH_ALLOWED_ROUTE_PATTERNS: readonly RegExp[] = [
   /^\/auth(\/|$)/,
   /^\/reset-password$/,
   /^\/portfolio(\/|$)/,
-  /^\/dashboard(\/collab)?$/,
+  /^\/dashboard(\/(collab|reviews))?$/,
   /^\/hire-requests$/,
   /^\/collab-requests$/,
   /^\/project\/[^/]+$/,

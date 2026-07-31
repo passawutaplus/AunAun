@@ -40,10 +40,12 @@ const AuthPage = lazy(() => import("./pages/AuthPage.tsx"));
 const PortfolioProfilePage = lazy(() => import("./pages/PortfolioProfilePage.tsx"));
 const PortfolioManagePage = lazy(() => import("./pages/PortfolioManagePage.tsx"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage.tsx"));
+const DashboardReviewsPage = lazy(() => import("./pages/DashboardReviewsPage.tsx"));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage.tsx"));
 const ServiceDetailPage = lazy(() => import("./pages/ServiceDetailPage.tsx"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage.tsx"));
 const ProjectEditorPage = lazy(() => import("./pages/ProjectEditorPage.tsx"));
+const PackageEditorPage = lazy(() => import("./pages/PackageEditorPage.tsx"));
 const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage.tsx"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage.tsx"));
 const ChatInboxPage = lazy(() => import("./pages/ChatInboxPage.tsx"));
@@ -125,6 +127,7 @@ const CommunityGuidelinesPage = lazy(() => import("./pages/legal/CommunityGuidel
 const CopyrightReportPage = lazy(() => import("./pages/legal/CopyrightReportPage.tsx"));
 const PaymentRefundPage = lazy(() => import("./pages/legal/PaymentRefundPage.tsx"));
 const ServiceAgreementPage = lazy(() => import("./pages/legal/ServiceAgreementPage.tsx"));
+const PackagesPolicyPage = lazy(() => import("./pages/legal/PackagesPolicyPage.tsx"));
 const KycAmlPage = lazy(() => import("./pages/legal/KycAmlPage.tsx"));
 const LegalIndexPage = lazy(() => import("./pages/legal/LegalIndexPage.tsx"));
 const CommunityPostDetailPage = lazy(() => import("./pages/CommunityPostDetailPage.tsx"));
@@ -231,10 +234,14 @@ const App = () => (
               <Route path="/portfolio/manage" element={<RequireAuth><PortfolioManagePage /></RequireAuth>} />
               <Route path="/dashboard" element={<RequireAuth><DashboardPage mode="hire" /></RequireAuth>} />
               <Route path="/dashboard/collab" element={<RequireAuth><DashboardPage mode="collab" /></RequireAuth>} />
+              <Route path="/dashboard/reviews" element={<RequireAuth><DashboardReviewsPage /></RequireAuth>} />
               <Route path="/portfolio/followers" element={<RequireAuth><FollowConnectionsPage /></RequireAuth>} />
               <Route path="/hire/start" element={<RequireAuth><HireStartPage /></RequireAuth>} />
               <Route path="/hire-requests" element={<RequireAuth><RedirectTo to="/dashboard" /></RequireAuth>} />
               <Route path="/collab-requests" element={<RequireAuth><RedirectTo to="/dashboard/collab" /></RequireAuth>} />
+              <Route path="/portfolio/packages" element={<Navigate to="/portfolio?tab=services" replace />} />
+              <Route path="/portfolio/packages/new" element={<RequireAuth><PackageEditorPage /></RequireAuth>} />
+              <Route path="/portfolio/packages/:id/edit" element={<RequireAuth><PackageEditorPage /></RequireAuth>} />
               <Route path="/portfolio/new" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
               <Route path="/portfolio/:id/edit" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
               <Route path="/project/:id" element={<ProjectDetailPage />} />
@@ -355,6 +362,7 @@ const App = () => (
               <Route path="/legal/copyright-report" element={<CopyrightReportPage />} />
               <Route path="/legal/payment-refund" element={<PaymentRefundPage />} />
               <Route path="/legal/service-agreement" element={<ServiceAgreementPage />} />
+              <Route path="/legal/packages" element={<PackagesPolicyPage />} />
               <Route path="/legal/kyc-aml" element={<KycAmlPage />} />
               <Route path="/error" element={<ErrorPage />} />
               <Route path="/error/404" element={<ErrorPage defaultKind="404" />} />

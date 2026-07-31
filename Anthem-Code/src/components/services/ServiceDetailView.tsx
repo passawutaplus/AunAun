@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, Loader2, MessageCircle } from "lucide-react";
+import { Check, Loader2, MessageCircle, X } from "lucide-react";
 import {
   formatServiceDurationDays,
   formatServicePriceRange,
+  formatServiceRevisions,
   servicePreviewUrls,
   type CreatorService,
 } from "@/hooks/useCreatorServices";
-import { formatCategoryBreadcrumb, stripCategorySubTags } from "@/data/categoryTaxonomy";
+import { formatCategoryBreadcrumb } from "@/data/categoryTaxonomy";
 import { isVideoUrl } from "@/lib/videoAccept";
-import { PACKAGE_INQUIRY_PLATFORM_DISCLAIMER } from "@/lib/legalSignupCopy";
 import HireTargetProfilePreview from "@/components/opportunity/HireTargetProfilePreview";
+import ServicePackageWorksSection from "@/components/services/ServicePackageWorksSection";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -24,14 +25,10 @@ type Props = {
   previewOnly?: boolean;
   /** dialog = compact modal shell; page = full-page layout */
   variant?: "dialog" | "page";
+  /** Hide creator header (e.g. live editor preview) */
+  hideCreator?: boolean;
   onRequest: (service: CreatorService) => void;
-  onClosePreview?: () => void;
 };
-
-function parseMetaCount(raw: string): number {
-  const n = Number.parseInt(String(raw ?? "").replace(/[^\d]/g, ""), 10);
-  return Number.isFinite(n) && n > 0 ? n : 0;
-}
 
 /**
  * Shared package detail body.
@@ -47,16 +44,36 @@ export default function ServiceDetailView({
   busy,
   previewOnly,
   variant = "dialog",
+  hideCreator,
   onRequest,
-  onClosePreview,
 }: Props) {
   const media = servicePreviewUrls(service);
   const [activeIdx, setActiveIdx] = useState(0);
   const active = media[Math.min(activeIdx, Math.max(0, media.length - 1))] ?? null;
   const duration = formatServiceDurationDays(service.duration_label);
-  const conceptsN = parseMetaCount(service.concepts_label);
-  const revisionsN = parseMetaCount(service.revisions_label);
+  const revisions = formatServiceRevisions(service.revisions_label);
+  const exclusions = service.exclusions_note?.trim() || "";
   const isPage = variant === "page";
+
+  const requestButton = (
+    <Button
+      type="button"
+      className="w-full rounded-full gap-1.5 min-h-11"
+      disabled={previewOnly || busy}
+      aria-disabled={previewOnly || busy}
+      onClick={() => {
+        if (previewOnly) return;
+        onRequest(service);
+      }}
+    >
+      {busy && !previewOnly ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
+      ) : (
+        <MessageCircle className="w-4 h-4" />
+      )}
+      {busy && !previewOnly ? "กำลังเปิด..." : "ขอใช้บริการนี้"}
+    </Button>
+  );
 
   const priceBlock = (
     <div
@@ -68,77 +85,51 @@ export default function ServiceDetailView({
       <p className="text-2xl font-semibold text-primary tabular-nums lg:text-[1.75rem]">
         {formatServicePriceRange(service.price_min_thb, service.price_thb)}
       </p>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
-        {duration ? (
-          <span>
-            ระยะเวลา: <span className="text-foreground font-medium">{duration}</span>
-          </span>
-        ) : null}
-        {conceptsN > 0 ? (
-          <span>
-            แนวคิด: <span className="text-foreground font-medium tabular-nums">{conceptsN}</span>
-          </span>
-        ) : null}
-        {revisionsN > 0 ? (
-          <span>
-            รอบแก้: <span className="text-foreground font-medium tabular-nums">{revisionsN}</span>
-          </span>
-        ) : null}
-      </div>
+      {duration || revisions ? (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+          {duration ? (
+            <span>
+              ระยะเวลา: <span className="text-foreground font-medium">{duration}</span>
+            </span>
+          ) : null}
+          {revisions ? (
+            <span>
+              แก้ไข: <span className="text-foreground font-medium">{revisions}</span>
+            </span>
+          ) : null}
+        </div>
+      ) : previewOnly ? (
+        <p className="text-sm text-muted-foreground">ระยะเวลา: —</p>
+      ) : null}
       {/* Desktop / tablet CTA in sidebar */}
-      <div className="hidden md:block">
-        {previewOnly ? (
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full rounded-full min-h-11"
-            onClick={onClosePreview}
-          >
-            ปิดตัวอย่าง
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            className="w-full rounded-full gap-1.5 min-h-11"
-            disabled={busy}
-            onClick={() => onRequest(service)}
-          >
-            {busy ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <MessageCircle className="w-4 h-4" />
-            )}
-            {busy ? "กำลังเปิด..." : "ขอใช้บริการนี้"}
-          </Button>
-        )}
-      </div>
+      <div className="hidden md:block">{requestButton}</div>
+      {previewOnly ? (
+        <p className="hidden md:block text-center text-[11px] text-muted-foreground">
+          ตัวอย่าง — ปุ่มขอใช้บริการกดไม่ได้
+        </p>
+      ) : null}
     </div>
   );
 
-  const detailsBlock = (
+  const aboutBlock = (
     <>
-      {(service.category?.trim() || stripCategorySubTags(service.tags).length > 0) ? (
-        <div className="space-y-2">
-          {service.category?.trim() ? (
-            <p className="text-xs text-muted-foreground">
-              หมวด{" "}
-              <span className="font-medium text-foreground">
-                {formatCategoryBreadcrumb(service.category, service.tags)}
-              </span>
-            </p>
-          ) : null}
-          {stripCategorySubTags(service.tags).length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {stripCategorySubTags(service.tags).map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full border border-border/70 bg-muted/40 px-2 py-0.5 text-[11px] text-muted-foreground"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          ) : null}
+      <h2
+        className={cn(
+          "font-semibold text-foreground tracking-tight leading-tight",
+          isPage ? "text-xl md:text-2xl" : "text-lg md:text-xl",
+        )}
+      >
+        {service.title}
+      </h2>
+
+      {service.category?.trim() ? (
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">
+            หมวด{" "}
+            <span className="font-medium text-foreground">
+              {formatCategoryBreadcrumb(service.category, service.tags)}
+            </span>
+          </p>
         </div>
       ) : null}
 
@@ -148,7 +139,11 @@ export default function ServiceDetailView({
           {service.summary}
         </p>
       </div>
+    </>
+  );
 
+  const sidebarDetailsBlock = (
+    <>
       {service.deliverables.length > 0 ? (
         <div className="space-y-2">
           <h3 className="text-sm font-semibold">สิ่งที่คุณจะได้</h3>
@@ -164,6 +159,24 @@ export default function ServiceDetailView({
             ))}
           </ul>
         </div>
+      ) : null}
+
+      {exclusions ? (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold">สิ่งที่ไม่รวม</h3>
+          <p className="flex items-start gap-2 text-sm text-muted-foreground whitespace-pre-wrap">
+            <X className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/80" />
+            <span>{exclusions}</span>
+          </p>
+        </div>
+      ) : null}
+
+      {(service.reference_project_ids?.length ?? 0) > 0 ? (
+        <ServicePackageWorksSection
+          projectIds={service.reference_project_ids}
+          serviceId={service.id}
+          compact={!isPage}
+        />
       ) : null}
     </>
   );
@@ -185,7 +198,7 @@ export default function ServiceDetailView({
               : "p-4 pt-3 md:p-5 md:pt-3 border-b md:border-b-0 md:border-r",
           )}
         >
-          {creatorName?.trim() ? (
+          {!hideCreator && creatorName?.trim() ? (
             <HireTargetProfilePreview
               name={creatorName}
               username={creatorUsername}
@@ -239,7 +252,9 @@ export default function ServiceDetailView({
             </div>
           ) : null}
 
-          {/* Mobile: price under media (before long text) */}
+          <div className="space-y-3 pt-1">{aboutBlock}</div>
+
+          {/* Mobile: price under media + about */}
           <div className="md:hidden">{priceBlock}</div>
         </div>
 
@@ -249,20 +264,13 @@ export default function ServiceDetailView({
             isPage ? "p-4 md:p-5 lg:p-6" : "p-4 pt-3 md:p-5 md:pt-3",
             // room for sticky mobile CTA
             !previewOnly && "pb-24 md:pb-4",
+            previewOnly && "pb-4",
           )}
         >
           <div className="hidden md:block">{priceBlock}</div>
-          {detailsBlock}
+          {sidebarDetailsBlock}
         </div>
       </div>
-
-      {!previewOnly ? (
-        <div className="border-t border-border/50 px-4 py-3 md:px-5 lg:px-6">
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            {PACKAGE_INQUIRY_PLATFORM_DISCLAIMER}
-          </p>
-        </div>
-      ) : null}
 
       {/* Mobile sticky CTA */}
       {!previewOnly ? (
@@ -293,15 +301,11 @@ export default function ServiceDetailView({
           </div>
         </div>
       ) : (
-        <div className="md:hidden px-4 pb-4">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full rounded-full min-h-11"
-            onClick={onClosePreview}
-          >
-            ปิดตัวอย่าง
-          </Button>
+        <div className="md:hidden px-4 pb-4 space-y-2">
+          {requestButton}
+          <p className="text-center text-[11px] text-muted-foreground">
+            ตัวอย่าง — ปุ่มขอใช้บริการกดไม่ได้
+          </p>
         </div>
       )}
     </div>

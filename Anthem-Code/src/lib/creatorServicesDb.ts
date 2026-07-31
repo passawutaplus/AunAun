@@ -6,7 +6,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export const CREATOR_SERVICES_SELECT =
-  "id, owner_id, title, price_thb, price_min_thb, summary, deliverables, duration_label, concepts_label, revisions_label, cover_url, gallery_urls, category, tags, status, sort_order, created_at, updated_at";
+  "id, owner_id, title, price_thb, price_min_thb, summary, deliverables, duration_label, concepts_label, revisions_label, exclusions_note, cover_url, gallery_urls, category, tags, reference_project_ids, status, sort_order, created_at, updated_at";
 
 export type CreatorServiceRow = {
   id: string;
@@ -19,10 +19,12 @@ export type CreatorServiceRow = {
   duration_label: string;
   concepts_label: string;
   revisions_label: string;
+  exclusions_note: string | null;
   cover_url: string | null;
   gallery_urls: string[] | null;
   category: string | null;
   tags: string[] | null;
+  reference_project_ids: string[] | null;
   status: string;
   sort_order: number;
   created_at: string;
@@ -39,10 +41,12 @@ export type CreatorServiceInsert = {
   duration_label: string;
   concepts_label: string;
   revisions_label: string;
+  exclusions_note: string;
   cover_url: string | null;
   gallery_urls: string[];
   category: string;
   tags: string[];
+  reference_project_ids: string[];
   status: string;
   sort_order: number;
   updated_at: string;
