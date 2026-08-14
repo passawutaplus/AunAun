@@ -77,3 +77,24 @@ export async function fetchProjectRows(
   if (lastError) throw lastError;
   return [];
 }
+
+type FeedListResult = {
+  data: unknown[] | null;
+  error: { message?: string; code?: string } | null;
+};
+
+/** List queries: try AI columns first, then the base feed select. */
+export async function fetchFeedCardRows(
+  buildQuery: (select: string) => PromiseLike<FeedListResult>,
+  withAi: string,
+  withoutAi: string,
+): Promise<Tables<"projects">[]> {
+  const first = await buildQuery(withAi);
+  if (!first.error) return (first.data ?? []) as Tables<"projects">[];
+  if (isSchemaMismatchError(first.error)) {
+    const second = await buildQuery(withoutAi);
+    if (second.error) throw second.error;
+    return (second.data ?? []) as Tables<"projects">[];
+  }
+  throw first.error;
+}

@@ -42,6 +42,9 @@ type Props = {
 
 const fieldLabel = "text-xs font-semibold text-muted-foreground";
 
+/** Sidebar short blurb — keep brief so the right panel stays scannable. */
+export const PROJECT_SHORT_DESCRIPTION_MAX = 300;
+
 const ProjectContextEditorFields = ({
   value,
   onChange,
@@ -66,6 +69,27 @@ const ProjectContextEditorFields = ({
   const canEditRole = roleMode === "part" && !fieldsLocked;
   const partRoleText = roleMode === "part" ? value.creatorRole : "";
 
+  const clearRole = () => {
+    setRoleMode("");
+    onChange({ creatorRole: "" });
+  };
+
+  const selectRole = (next: CreatorRoleMode) => {
+    if (roleMode === next) {
+      clearRole();
+      return;
+    }
+    if (next === "solo") {
+      setRoleMode("solo");
+      onChange({ creatorRole: CREATOR_ROLE_SOLO });
+      return;
+    }
+    setRoleMode("part");
+    onChange({
+      creatorRole: value.creatorRole.trim() === CREATOR_ROLE_SOLO ? "" : value.creatorRole,
+    });
+  };
+
   return (
     <section className="space-y-3">
       <div className="space-y-1.5" id="project-short-description">
@@ -74,19 +98,24 @@ const ProjectContextEditorFields = ({
         </Label>
         <Textarea
           value={shortDescription}
-          onChange={(e) => onShortDescriptionChange(e.target.value)}
+          onChange={(e) =>
+            onShortDescriptionChange(e.target.value.slice(0, PROJECT_SHORT_DESCRIPTION_MAX))
+          }
           placeholder="สรุปสั้น ๆ ว่างานนี้คืออะไร ทำอะไร หรือจุดเด่นที่อยากให้จำ..."
           rows={3}
-          maxLength={2000}
+          maxLength={PROJECT_SHORT_DESCRIPTION_MAX}
           required
           disabled={disabled}
           aria-invalid={shortDescriptionInvalid || undefined}
           className={cn(
-            "bg-background resize-y min-h-[80px] text-sm transition-colors duration-500 ease-out",
+            "bg-card resize-y min-h-[80px] text-sm transition-colors duration-500 ease-out",
             shortDescriptionInvalid && "border-destructive focus-visible:ring-destructive/40",
           )}
           aria-required
         />
+        <p className="text-[11px] text-muted-foreground text-right tabular-nums">
+          {shortDescription.length}/{PROJECT_SHORT_DESCRIPTION_MAX}
+        </p>
       </div>
 
       <div
@@ -129,7 +158,7 @@ const ProjectContextEditorFields = ({
         )}
         aria-hidden={!enabled}
       >
-        <div className="overflow-hidden">
+        <div className={cn(enabled ? "overflow-visible px-1" : "overflow-hidden")}>
           <div className={cn("space-y-3", fieldsLocked && "pointer-events-none opacity-60")}>
             <div className="space-y-2">
               <Label className={fieldLabel}>บทบาทของฉัน</Label>
@@ -137,31 +166,36 @@ const ProjectContextEditorFields = ({
                 value={roleMode || undefined}
                 disabled={fieldsLocked}
                 onValueChange={(next) => {
-                  if (next === "solo") {
-                    setRoleMode("solo");
-                    onChange({ creatorRole: CREATOR_ROLE_SOLO });
-                    return;
-                  }
-                  if (next === "part") {
-                    setRoleMode("part");
-                    onChange({
-                      creatorRole:
-                        value.creatorRole.trim() === CREATOR_ROLE_SOLO ? "" : value.creatorRole,
-                    });
-                  }
+                  if (next === "solo" || next === "part") selectRole(next);
                 }}
                 className="gap-2"
               >
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                   <label
                     htmlFor="creator-role-solo"
+                    onClick={(e) => {
+                      if (fieldsLocked) return;
+                      if (roleMode === "solo") {
+                        e.preventDefault();
+                        clearRole();
+                      }
+                    }}
                     className={cn(
-                      "flex shrink-0 cursor-pointer items-center gap-2 rounded-md border border-border/70 bg-background px-3 py-2.5",
+                      "flex shrink-0 cursor-pointer items-center gap-2 rounded-md border border-border/70 bg-card px-3 py-2.5",
                       roleMode === "solo" && "border-primary/40 bg-primary/5",
                       fieldsLocked && "cursor-not-allowed opacity-50",
                     )}
                   >
-                    <RadioGroupItem id="creator-role-solo" value="solo" />
+                    <RadioGroupItem
+                      id="creator-role-solo"
+                      value="solo"
+                      onClick={(e) => {
+                        if (roleMode !== "solo") return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        clearRole();
+                      }}
+                    />
                     <span className="whitespace-nowrap text-sm text-foreground leading-snug">
                       ฉันทำเองทั้งหมด
                     </span>
@@ -169,13 +203,29 @@ const ProjectContextEditorFields = ({
 
                   <label
                     htmlFor="creator-role-part"
+                    onClick={(e) => {
+                      if (fieldsLocked) return;
+                      if (roleMode === "part") {
+                        e.preventDefault();
+                        clearRole();
+                      }
+                    }}
                     className={cn(
-                      "flex shrink-0 cursor-pointer items-center gap-2 rounded-md border border-border/70 bg-background px-3 py-2.5",
+                      "flex shrink-0 cursor-pointer items-center gap-2 rounded-md border border-border/70 bg-card px-3 py-2.5",
                       roleMode === "part" && "border-primary/40 bg-primary/5",
                       fieldsLocked && "cursor-not-allowed opacity-50",
                     )}
                   >
-                    <RadioGroupItem id="creator-role-part" value="part" />
+                    <RadioGroupItem
+                      id="creator-role-part"
+                      value="part"
+                      onClick={(e) => {
+                        if (roleMode !== "part") return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        clearRole();
+                      }}
+                    />
                     <span className="whitespace-nowrap text-sm text-foreground leading-snug">
                       เป็นส่วนหนึ่งในงานนี้
                     </span>
@@ -188,14 +238,14 @@ const ProjectContextEditorFields = ({
                       onChange({ creatorRole: e.target.value });
                     }}
                     placeholder={
-                      roleMode === "solo"
-                        ? "เลือก「เป็นส่วนหนึ่งในงานนี้」เพื่อกรอกหน้าที่"
-                        : "ทำหน้าที่อะไร เช่น Art Director, ออกแบบ UI"
+                      roleMode === "part"
+                        ? "ทำหน้าที่อะไร เช่น Art Director, ออกแบบ UI"
+                        : "เลือก「เป็นส่วนหนึ่งในงานนี้」เพื่อกรอกหน้าที่"
                     }
                     maxLength={80}
                     disabled={!canEditRole}
                     className={cn(
-                      "min-w-0 flex-1 bg-background sm:min-w-[14rem]",
+                      "min-w-0 flex-1 bg-card sm:min-w-[14rem]",
                       !canEditRole && "cursor-not-allowed opacity-60",
                     )}
                     aria-label="หน้าที่ในงานนี้"
@@ -213,7 +263,7 @@ const ProjectContextEditorFields = ({
                 rows={3}
                 maxLength={1500}
                 disabled={fieldsLocked}
-                className="bg-background resize-y min-h-[88px]"
+                className="bg-card resize-y min-h-[88px]"
               />
             </div>
 
@@ -226,7 +276,7 @@ const ProjectContextEditorFields = ({
                 rows={3}
                 maxLength={2000}
                 disabled={fieldsLocked}
-                className="bg-background resize-y min-h-[88px]"
+                className="bg-card resize-y min-h-[88px]"
               />
             </div>
 
@@ -239,7 +289,7 @@ const ProjectContextEditorFields = ({
                   placeholder="เช่น โลโก้, Brand guideline, ภาพประกอบ 5 ชิ้น, UI 12 หน้าจอ, วิดีโอ 30 วินาที"
                   maxLength={200}
                   disabled={fieldsLocked}
-                  className="bg-background"
+                  className="bg-card"
                 />
               </div>
               <div className="space-y-1.5">
@@ -250,7 +300,7 @@ const ProjectContextEditorFields = ({
                   placeholder="เช่น 2 สัปดาห์, 1 เดือน, 3 วัน, โปรเจกต์ระยะยาว"
                   maxLength={60}
                   disabled={fieldsLocked}
-                  className="bg-background"
+                  className="bg-card"
                 />
               </div>
             </div>
@@ -264,7 +314,7 @@ const ProjectContextEditorFields = ({
                 rows={3}
                 maxLength={1500}
                 disabled={fieldsLocked}
-                className="bg-background resize-y min-h-[88px]"
+                className="bg-card resize-y min-h-[88px]"
               />
             </div>
           </div>

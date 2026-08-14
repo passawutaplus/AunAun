@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { exploreProjectsUrl } from "@/lib/exploreRoutes";
-import { Layers3, Eye, MessageCircle, Sparkles, Calendar, Handshake } from "lucide-react";
+import { Layers3, Eye, MessageCircle, Sparkles, Calendar, Handshake, AlignLeft, Palette, Hash, Share2 } from "lucide-react";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,14 @@ import ToolsGrid from "@/components/ToolsGrid";
 import FollowButton from "@/components/FollowButton";
 import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPopover";
 import SupportButton from "@/components/gifting/SupportButton";
-import ReportTrigger from "@/components/report/ReportTrigger";
+import SharePopover from "@/components/SharePopover";
+import { ProjectOwnerMenu } from "@/components/project/ProjectOwnerMenu";
+import { ProjectViewerMenu } from "@/components/project/ProjectViewerMenu";
 import { formatThaiDate, formatCompact } from "@/lib/format";
 import type { ProjectAsset } from "@/lib/projectAssets";
 import ProjectAssetsSection from "@/components/project/ProjectAssetsSection";
 import LicenseDetailBlock from "@/components/license/LicenseDetailBlock";
+import AiDisclosureBadge from "@/components/license/AiDisclosureBadge";
 import { ProjectSeriesBlock } from "@/components/series/ProjectSeriesBlock";
 import { PriceCurrencyAmount } from "@/components/payments/PriceCurrencySelect";
 import { formatCategoryBreadcrumb, stripCategorySubTags } from "@/data/categoryTaxonomy";
@@ -53,7 +56,11 @@ interface Props {
   thirdPartyNote?: string | null;
   aiAssisted?: boolean;
   aiDisclosureNote?: string | null;
-  clientPermissionConfirmed?: boolean;
+  shareUrl?: string;
+  shareTitle?: string;
+  shareImageUrl?: string;
+  onHidden?: () => void;
+  onBlocked?: () => void;
 }
 
 const ProjectSidePanel = (p: Props) => {
@@ -70,15 +77,47 @@ const ProjectSidePanel = (p: Props) => {
           <Badge className="bg-primary/15 text-primary border-0 hover:bg-primary/15">
             <Sparkles className="w-3 h-3 mr-1" /> {formatCategoryBreadcrumb(p.category, p.tags)}
           </Badge>
-          {p.projectId && p.ownerId && (
-            <ReportTrigger
-              targetType="project"
-              targetId={p.projectId}
-              targetOwnerId={p.ownerId}
-            />
-          )}
+          <div className="flex items-center shrink-0 -mr-1">
+            {p.shareUrl ? (
+              <SharePopover
+                url={p.shareUrl}
+                title={p.shareTitle || p.title}
+                label="แชร์"
+                imageUrl={p.shareImageUrl}
+              >
+                <button
+                  type="button"
+                  aria-label="แชร์ผลงาน"
+                  className="inline-flex items-center justify-center rounded-md p-2 min-h-11 min-w-11 text-muted-foreground/50 hover:bg-muted/30 hover:text-foreground transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+              </SharePopover>
+            ) : null}
+            {p.isOwner && p.projectId ? (
+              <ProjectOwnerMenu projectId={p.projectId} projectTitle={p.title} />
+            ) : !p.isOwner && p.projectId && p.ownerId ? (
+              <ProjectViewerMenu
+                projectId={p.projectId}
+                ownerId={p.ownerId}
+                ownerName={p.ownerName}
+                onHidden={p.onHidden}
+                onBlocked={p.onBlocked}
+              />
+            ) : null}
+          </div>
         </div>
         <h1 className="text-2xl font-medium text-foreground leading-tight">{p.title}</h1>
+        {p.aiAssisted ? (
+          <div className="pt-1">
+            <AiDisclosureBadge
+              assisted={p.aiAssisted}
+              note={p.aiDisclosureNote}
+              tone="inline"
+              size="md"
+            />
+          </div>
+        ) : null}
 
         <div className="flex items-center gap-3 pt-2 border-t border-border/50">
           {p.ownerId ? (
@@ -202,7 +241,6 @@ const ProjectSidePanel = (p: Props) => {
           thirdPartyNote={p.thirdPartyNote}
           aiAssisted={p.aiAssisted}
           aiDisclosureNote={p.aiDisclosureNote}
-          clientPermissionConfirmed={p.clientPermissionConfirmed}
           allowHire={p.allowHire}
           onHire={p.onHire}
         />
@@ -210,7 +248,10 @@ const ProjectSidePanel = (p: Props) => {
 
       {p.description && (
         <div className="rounded-2xl glass-panel p-5 space-y-2">
-          <h3 className="text-sm font-medium text-foreground">รายละเอียดแบบย่อ</h3>
+          <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
+            <AlignLeft className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
+            รายละเอียดแบบย่อ
+          </h3>
           <p className="text-base text-foreground leading-6 whitespace-pre-wrap">{p.description}</p>
         </div>
       )}
@@ -225,7 +266,10 @@ const ProjectSidePanel = (p: Props) => {
 
       {p.tools.length > 0 && (
         <div className="rounded-2xl glass-panel p-5 space-y-3">
-          <h3 className="text-sm font-medium text-foreground">เครื่องมือ &amp; เทคโนโลยี</h3>
+          <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
+            <Palette className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
+            เครื่องมือ &amp; เทคโนโลยี
+          </h3>
           <ToolsGrid tools={p.tools} compact />
         </div>
       )}
@@ -235,7 +279,10 @@ const ProjectSidePanel = (p: Props) => {
         if (!visibleTags.length) return null;
         return (
           <div className="rounded-2xl glass-panel p-5 space-y-3">
-            <h3 className="text-sm font-medium text-foreground">แท็ก</h3>
+            <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
+              <Hash className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
+              แท็ก
+            </h3>
             <div className="flex flex-wrap gap-1.5">
               {visibleTags.map((t) => (
                 <button

@@ -189,6 +189,27 @@ const DesktopTopNav = () => {
     useFeedHomeNavStore.getState().setScrolled(false);
   };
 
+  /** Guest home (hero, not scrolled): marketing chrome — no Explore / chat / bell. */
+  const isGuestHome = isHome && !user;
+
+  const mainNav = (
+    <nav
+      className={cn("flex min-w-0 items-center", isGuestHome ? "gap-6 xl:gap-8" : "gap-3")}
+      aria-label="เมนูหลัก"
+    >
+      {!isGuestHome && (
+        <FeedModeDropdown
+          value={feedNav.active ? feedNav.feedMode : "Explore"}
+          onChange={onExploreModeChange}
+        />
+      )}
+      <CommunityNavDropdown />
+      <NavLink to="/learn" end={false} className={linkClass}>
+        Learn more
+      </NavLink>
+    </nav>
+  );
+
   return (
     <header
       data-desktop-top-nav
@@ -213,18 +234,10 @@ const DesktopTopNav = () => {
           <BrandLogo size="sm" />
         </button>
 
-        <nav className="flex min-w-0 items-center gap-3" aria-label="เมนูหลัก">
-          <FeedModeDropdown
-            value={feedNav.active ? feedNav.feedMode : "Explore"}
-            onChange={onExploreModeChange}
-          />
-          <CommunityNavDropdown />
-          <NavLink to="/learn" end={false} className={linkClass}>
-            Learn more
-          </NavLink>
-        </nav>
+        {!isGuestHome ? mainNav : null}
 
         <div className="ml-auto flex shrink-0 items-center gap-4 xl:gap-5">
+          {isGuestHome ? mainNav : null}
           <button
             type="button"
             onClick={onShareProject}
@@ -239,8 +252,12 @@ const DesktopTopNav = () => {
               <span className="whitespace-nowrap">Share your Project</span>
             </span>
           </button>
-          <ChatNavButton />
-          <NotificationBell />
+          {user && (
+            <>
+              <ChatNavButton />
+              <NotificationBell />
+            </>
+          )}
           {user ? (
             <ProfileMenuDropdown
               trigger={

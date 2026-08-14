@@ -46,12 +46,12 @@ export function ProjectOwnerMenu({ projectId, projectTitle, className, triggerCl
             className={
               triggerClassName ??
               cn(
-                "rounded-full p-1.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                "inline-flex items-center justify-center rounded-md p-2 min-h-11 min-w-11 text-muted-foreground/50 hover:bg-muted/30 hover:text-foreground transition-colors",
                 className,
               )
             }
           >
-            <MoreHorizontal className="w-5 h-5" />
+            <MoreHorizontal className="w-4 h-4" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="rounded-xl w-48">

@@ -37,6 +37,7 @@ import { EmailNotificationSection } from "@/components/settings/EmailNotificatio
 import { InAppNotificationSection } from "@/components/settings/InAppNotificationSection";
 import { LineNotificationSection } from "@/components/settings/LineNotificationSection";
 import { ChatSettingsSection } from "@/components/settings/ChatSettingsSection";
+import { ProfileVisibilitySection } from "@/components/settings/ProfileVisibilitySection";
 import BillingSettingsPanel from "@/components/settings/BillingSettingsPanel";
 import { PrivacySecuritySection } from "@/components/settings/PrivacySecuritySection";
 import { ChangePasswordSection } from "@/components/settings/ChangePasswordSection";
@@ -255,7 +256,7 @@ const SettingsPage = () => {
   const showProfileSave = panel === "profile" || panel === "notifications";
 
   return (
-    <div className="min-h-screen bg-app-ambient">
+    <main id="main-content" className="min-h-screen bg-app-ambient">
       <div className="sticky top-0 z-20 lg:hidden border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <BackButton fallbackTo="/portfolio" label="ย้อนกลับ" />
@@ -466,6 +467,7 @@ const SettingsPage = () => {
             />
           </div>
         </section>
+        <ProfileVisibilitySection />
           </>
         ) : null}
 
@@ -575,7 +577,7 @@ const SettingsPage = () => {
           />
         </>
       ) : null}
-    </div>
+    </main>
   );
 };
 

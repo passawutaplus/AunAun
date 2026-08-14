@@ -2,11 +2,11 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { LogIn, SearchX } from "lucide-react";
-import EmptyState from "@/components/ui/EmptyState";
-import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
+import { LogIn } from "lucide-react";
+import QueryStatusPanel, { FilterEmptyState } from "@/components/ui/QueryStatusPanel";
 import { useProfilesByIds } from "@/core/profiles";
 import { useSlowLoadFallback } from "@/hooks/useSlowLoadFallback";
+import { useSearchHistory } from "@/hooks/useSearchHistory";
 import { sortByViewAffinity } from "@/lib/viewAffinity";
 
 
@@ -35,6 +35,7 @@ import type { StudioFeedSource } from "@/components/studio/StudioFilterPanel";
 import { useDesigners } from "@/hooks/useDesigners";
 
 import { categories as allCategories, categoryMatchesFilter, DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory, type Category, type Project, type ProjectCategory, type ProjectStatus, type SpecialFilter } from "@/data/projectTypes";
+import { projectAiCardFields } from "@/lib/aiDisclosure";
 import {
   getCategoryParent,
   projectMatchesSubs,
@@ -50,7 +51,12 @@ import {
 } from "@/hooks/useProjects";
 import { useAuth } from "@/hooks/useAuth";
 import { useShowFirstPostLabel } from "@/hooks/useHasPublishedProject";
-import { navigateToAuth, stashPendingHire, consumePendingHire } from "@/lib/authRedirect";
+import { consumePendingHire, navigateToAuth, stashPendingHire } from "@/lib/authRedirect";
+import {
+  coerceLaunchFeedMode,
+  isAplus1LaunchMinimal,
+  isLaunchDesignDrillEnabled,
+} from "@/lib/aplus1Launch";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import CommunityFeedPanel from "@/components/community/CommunityFeedPanel";
 import CommunityFeedSidebar, {
@@ -60,13 +66,12 @@ import { COMMUNITY_NEW_PATH } from "@/data/createActions";
 import { useCommunityFeedFilter } from "@/hooks/useCommunityFeedFilter";
 import { cn } from "@/lib/utils";
 import { sortToolsVisualFirst } from "@/lib/toolIcons";
-import { recordFeedSearch } from "@/lib/feedSearchSignals";
 import { trackProductEvent } from "@/lib/productEvents";
 
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { DESIGN_DRILL_CHIP } from "@/lib/drillProject";
 import { markOnboardingVisit, type OnboardingVisitId } from "@/lib/onboardingStorage";
-import { coerceLaunchFeedMode, isAplus1LaunchMinimal, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
+import { similarSearchSuggestions } from "@/lib/searchSuggestions";
 
 type FeedMode2 = "Explore" | SpecialFilter;
 const requiresAuth = (m: FeedMode2) => m === "Following";
@@ -87,6 +92,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { queries: recentSearches, record: recordSearch } = useSearchHistory(user?.id);
   const showFirstPostLabel = useShowFirstPostLabel(user?.id);
   const [search, setSearch] = useState("");
   const [feedMode, setFeedModeRaw] = useState<FeedMode2>("Explore");
@@ -287,14 +293,22 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const explorePersonalized = useForYouProjects(feedMode === "Explore" && user ? user.id : undefined);
 
   useEffect(() => {
-    if (!user?.id || !search.trim() || feedMode !== "Explore") return;
+    const q = searchParams.get("q");
+    if (q == null) return;
+    setSearch(q);
+    setMode("projects");
+  }, [searchParams]);
+
+  useEffect(() => {
     const t = window.setTimeout(() => {
-      recordFeedSearch(user.id, search);
-      void trackProductEvent("feed_search", { q: search.trim().slice(0, 120) }, { debounceMs: 1_500 });
-      void queryClient.invalidateQueries({ queryKey: ["for-you-projects", user.id] });
+      recordSearch(search);
+      if (user?.id) {
+        void trackProductEvent("feed_search", { q: search.trim().slice(0, 120) }, { debounceMs: 1_500 });
+        void queryClient.invalidateQueries({ queryKey: ["for-you-projects", user.id] });
+      }
     }, 800);
     return () => window.clearTimeout(t);
-  }, [search, user?.id, feedMode, queryClient]);
+  }, [search, user?.id, queryClient, recordSearch]);
 
   const activeProjectsQuery =
     feedMode === "Top 1"
@@ -403,6 +417,10 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
         allowHire: p.allow_hire ?? true,
         allowCollab: p.allow_collab ?? true,
         licenseType: (p as { license_type?: string }).license_type ?? "all_rights",
+        ...projectAiCardFields(p),
+        description: (p as { subtitle?: string; description?: string }).subtitle
+          || (p as { description?: string }).description
+          || "",
       };
     });
     if (feedMode === "Newest") {
@@ -430,6 +448,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       !q ||
       p.title.toLowerCase().includes(q) ||
       p.owner.toLowerCase().includes(q) ||
+      (p.description ?? "").toLowerCase().includes(q) ||
       (p.tags ?? []).some((t) => t.toLowerCase().includes(q)) ||
       (p.tools ?? []).some((t) => t.toLowerCase().includes(q));
     return matchCat && matchSub && matchSearch;
@@ -449,6 +468,11 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const feedItems = useMemo(
     () => interleaveAds(sortedFiltered, ads, { minGap: 8, maxGap: 14 }),
     [sortedFiltered, ads],
+  );
+
+  const searchSuggestions = useMemo(
+    () => (search.trim() && filtered.length === 0 ? similarSearchSuggestions(search, recentSearches) : []),
+    [search, filtered.length, recentSearches],
   );
 
   const handleHireDesigner = (recipientId: string, recipientName: string) => {
@@ -479,14 +503,14 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   };
 
   return (
-    <main className={cn("min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
+    <main id="main-content" className={cn("min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
       {(shouldNoindexSearchParams(searchParams) || search.trim().length > 0) && (
         <SeoHead path="/" noindex title="ค้นหาผลงาน" description="ผลการค้นหาบน Aplus1" />
       )}
       <div
         className={cn(
           "max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-4",
-          mode === "projects" ? "pt-0 space-y-0" : "pt-4 space-y-4",
+          mode === "projects" || mode === "designers" ? "pt-0 space-y-0" : "pt-4 space-y-4",
         )}
       >
         <FeedHero mode={mode} />
@@ -506,6 +530,9 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           onProjectStylesChange={setProjectStyles}
           includeDesignDrillChip={isLaunchDesignDrillEnabled()}
           projectResultCount={filtered.length}
+          resultCount={filtered.length}
+          recentSearches={recentSearches}
+          onRecentSearchSelect={setSearch}
           designerFeedSource={designerFeedSource}
           onDesignerFeedSourceChange={setDesignerFeedSource}
           designerSort={designerSort}
@@ -565,13 +592,14 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               onHire={handleHireDesigner}
               onCollab={handleCollabDesigner}
               search={search}
+              onClearSearch={() => setSearch("")}
               sort={designerSort}
               feedSource={designerFeedSource}
               categories={designerCategory !== "All" ? [designerCategory] : []}
               tools={designerTools}
             />
           ) : mode === "studios" ? (
-            <StudioGrid search={search} feedSource={studioFeedSource} />
+            <StudioGrid search={search} onClearSearch={() => setSearch("")} feedSource={studioFeedSource} />
           ) : mode === "community" ? (
             <div className="xl:grid xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-5 xl:items-start">
               <CommunityFeedSidebar
@@ -587,6 +615,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                   search={search}
                   filter={communityFilter}
                   onClearTag={clearTag}
+                  onClearSearch={() => setSearch("")}
                   onPostClick={openNewCommunityPost}
                 />
               </div>
@@ -615,6 +644,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                     <ProjectCard
                       key={item.key}
                       project={item.data}
+                      searchQuery={search}
                       boosted={boostedSets.projects.has(item.data.id)}
                       boostId={boostMaps.projects.get(item.data.id)}
                       onHireClick={() => {
@@ -641,34 +671,31 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               </FeedProjectGrid>
 
               {filtered.length === 0 && (
-                <EmptyState
-                  icon={SearchX}
+                <FilterEmptyState
                   title="ไม่พบผลงานที่ตรงกับตัวกรอง"
                   description={
                     feedMode === "Following"
                       ? "ติดตามดีไซเนอร์ที่ชอบ แล้วกลับมาดูผลงานล่าสุดของพวกเขาที่นี่"
                       : search
-                        ? "ลองเปลี่ยนคำค้นหรือหมวดหมู่"
+                        ? "ลองเปลี่ยนคำค้นหรือหมวดหมู่ หรือเลือกคำใกล้เคียงด้านล่าง"
                         : "ลองเปลี่ยนหมวดหมู่หรือโหมดฟีด (เช่น Top 1 / Newest)"
                   }
-                  action={
+                  suggestions={searchSuggestions.map((label) => ({
+                    label,
+                    onSelect: () => setSearch(label),
+                  }))}
+                  onClear={
                     search ||
                     category !== "All" ||
                     projectLeaves.length > 0 ||
-                    projectStyles.length > 0 ? (
-                      <Button
-                        variant="outline"
-                        className="rounded-full"
-                        onClick={() => {
+                    projectStyles.length > 0
+                      ? () => {
                           setSearch("");
                           setCategory("All");
                           setProjectLeaves([]);
                           setProjectStyles([]);
-                        }}
-                      >
-                        ล้างตัวกรอง
-                      </Button>
-                    ) : undefined
+                        }
+                      : undefined
                   }
                 />
               )}

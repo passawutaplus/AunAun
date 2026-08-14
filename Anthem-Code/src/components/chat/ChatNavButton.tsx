@@ -13,12 +13,14 @@ const ChatNavButton = ({ className }: Props) => {
   const { user } = useAuth();
   const { data: badgeCount = 0 } = useChatInboxBadgeCount();
 
+  if (!user) return null;
+
   const label = `แชท${badgeCount > 0 ? ` (${badgeCount} รายการใหม่)` : ""}`;
 
   return (
     <button
       type="button"
-      onClick={() => navigate(user ? "/chat" : "/auth?redirect=/chat")}
+      onClick={() => navigate("/chat")}
       aria-label={label}
       title="แชท"
       className={cn(
@@ -27,7 +29,7 @@ const ChatNavButton = ({ className }: Props) => {
       )}
     >
       <MessageCircle className="w-5 h-5" />
-      {user && badgeCount > 0 && (
+      {badgeCount > 0 && (
         <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-white text-[10px] font-semibold flex items-center justify-center leading-none">
           {badgeCount > 99 ? "99+" : badgeCount}
         </span>

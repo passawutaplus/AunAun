@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -56,6 +56,11 @@ export default function ServiceDetailDialog({
   onSelectRelated,
 }: Props) {
   const { user } = useAuth();
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) setLightboxOpen(false);
+  }, [open]);
 
   useEffect(() => {
     if (!open || previewOnly || !service?.id || !user?.id) return;
@@ -81,6 +86,18 @@ export default function ServiceDetailDialog({
           "overflow-y-auto overscroll-contain p-0 gap-0",
           "rounded-2xl sm:rounded-lg",
         ].join(" ")}
+        onPointerDownOutside={(e) => {
+          if (lightboxOpen) e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (lightboxOpen) e.preventDefault();
+        }}
+        onFocusOutside={(e) => {
+          if (lightboxOpen) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (lightboxOpen) e.preventDefault();
+        }}
       >
         <DialogTitle className="sr-only">{service.title}</DialogTitle>
         {previewOnly && onPublish ? (
@@ -109,6 +126,7 @@ export default function ServiceDetailDialog({
           previewOnly={previewOnly}
           variant="dialog"
           onRequest={onRequest}
+          onLightboxOpenChange={setLightboxOpen}
         />
 
         <div className="border-t border-border/50 px-4 py-5 md:px-5 lg:px-6 space-y-6">

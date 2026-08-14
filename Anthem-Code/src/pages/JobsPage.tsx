@@ -16,8 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus, UserSearch, SlidersHorizontal, X, Briefcase } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import Footer from "@/components/Footer";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
+import EmptyState from "@/components/ui/EmptyState";
+import { FilterEmptyState } from "@/components/ui/QueryStatusPanel";
 import { cn } from "@/lib/utils";
 import SeoHead from "@/components/SeoHead";
 import { BRAND_NAME } from "@/lib/brandConfig";
@@ -258,7 +259,7 @@ const JobsPage = () => {
     (tab === "available" && (loadingCreators || loadingSeeking));
 
   return (
-    <div className={cn("min-h-screen bg-app-ambient lg:pb-12", MOBILE_PAGE_BOTTOM_CLASS)}>
+    <main id="main-content" className={cn("min-h-screen bg-app-ambient lg:pb-12", MOBILE_PAGE_BOTTOM_CLASS)}>
       <SeoHead
         title="Jobs Board"
         description={`หาโอกาสงาน ประกาศพร้อมรับงาน และจัดการงานของคุณบน ${BRAND_NAME}`}
@@ -440,14 +441,68 @@ const JobsPage = () => {
           </div>
         ) : tab === "openings" ? (
           filteredHiring.length === 0 ? (
-            <EmptyBoard title="ยังไม่มีโอกาสใหม่" hint="กด ลงประกาศ แล้วเลือก หาคนมาช่วยงาน" actionLabel="ลงประกาศ" onAction={openPostDialog} />
+            search.trim() || activeFilterCount > 0 ? (
+              <FilterEmptyState
+                title="ไม่พบประกาศที่ตรงเงื่อนไข"
+                description={
+                  search.trim()
+                    ? `ไม่มีผลสำหรับ "${search.trim()}" — ลองเปลี่ยนคำค้นหรือล้างตัวกรอง`
+                    : "ลองเปลี่ยนตัวกรอง หรือล้างแล้วดูทั้งหมด"
+                }
+                onClear={() => {
+                  setSearch("");
+                  setLoc("all");
+                  setEmp("all");
+                  setPoster("all");
+                  setRoleCat("all");
+                }}
+              />
+            ) : (
+              <EmptyState
+                icon={Briefcase}
+                title="ยังไม่มีโอกาสใหม่"
+                description="กด ลงประกาศ แล้วเลือก หาคนมาช่วยงาน"
+                action={
+                  <Button className="rounded-xl bg-gradient-brand text-white border-0" onClick={openPostDialog}>
+                    <Plus className="w-4 h-4 mr-1" /> ลงประกาศ
+                  </Button>
+                }
+              />
+            )
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredHiring.map((j) => <JobCard key={j.id} job={j} />)}
             </div>
           )
         ) : availableEmpty ? (
-          <EmptyBoard title="ยังไม่มีใครประกาศพร้อมรับงาน" hint="กด ลงประกาศ แล้วเลือก ประกาศหางาน" actionLabel="ลงประกาศ" onAction={openPostDialog} />
+          search.trim() || activeAvailableFilterCount > 0 ? (
+            <FilterEmptyState
+              title="ไม่พบผู้พร้อมรับงาน"
+              description={
+                search.trim()
+                  ? `ไม่มีผลสำหรับ "${search.trim()}" — ลองเปลี่ยนคำค้นหรือล้างตัวกรอง`
+                  : "ลองเปลี่ยนตัวกรอง หรือล้างแล้วดูทั้งหมด"
+              }
+              onClear={() => {
+                setSearch("");
+                setAvailEmp("all");
+                setAvailRoleCat("all");
+                setAvailReady("all");
+                setAvailRate("all");
+              }}
+            />
+          ) : (
+            <EmptyState
+              icon={Briefcase}
+              title="ยังไม่มีใครประกาศพร้อมรับงาน"
+              description="กด ลงประกาศ แล้วเลือก ประกาศหางาน"
+              action={
+                <Button className="rounded-xl bg-gradient-brand text-white border-0" onClick={openPostDialog}>
+                  <Plus className="w-4 h-4 mr-1" /> ลงประกาศ
+                </Button>
+              }
+            />
+          )
         ) : (
           <div className="space-y-6">
             {visibleProfiles.length > 0 && (
@@ -477,33 +532,9 @@ const JobsPage = () => {
         </div>
         </FeedModeTransition>
       </div>
-      <Footer />
       <JobPostDialog open={dialogOpen} onOpenChange={setDialogOpen} defaultMode={dialogMode} />
-    </div>
+    </main>
   );
 };
-
-const EmptyBoard = ({
-  title,
-  hint,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  hint: string;
-  actionLabel?: string;
-  onAction?: () => void;
-}) => (
-  <div className="text-center py-16 glass-panel rounded-2xl">
-    <Briefcase className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
-    <p className="text-foreground font-medium thai-display">{title}</p>
-    <p className="text-sm text-muted-foreground mt-1 thai-body">{hint}</p>
-    {actionLabel && onAction && (
-      <Button className="mt-4 rounded-xl bg-gradient-brand text-white border-0" onClick={onAction}>
-        <Plus className="w-4 h-4 mr-1" /> {actionLabel}
-      </Button>
-    )}
-  </div>
-);
 
 export default JobsPage;

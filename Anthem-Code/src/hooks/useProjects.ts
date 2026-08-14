@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, TablesUpdate, Tables } from "@/integrations/supabase/types";
-import { PROJECT_FEED_CARD_SELECT } from "@/lib/dbSelects";
-import { fetchProjectRow, fetchProjectRows } from "@/lib/fetchProjectRow";
+import { PROJECT_FEED_CARD_SELECT, PROJECT_FEED_CARD_SELECT_WITH_AI } from "@/lib/dbSelects";
+import { fetchProjectRow, fetchProjectRows, fetchFeedCardRows } from "@/lib/fetchProjectRow";
 import {
   blendPersonalizedProjects,
   buildCategoryWeights,
@@ -26,11 +26,15 @@ import {
 
 export type DBProject = Tables<"projects"> & {
   collab_user_ids?: string[] | null;
+  ai_assisted?: boolean | null;
+  ai_disclosure_note?: string | null;
 };
 
-// Generated DB types can lag optional deployed columns; runtime still requests
-// the explicit scoped list while PostgREST types it as the full project row.
-const PROJECT_LIST_SELECT = PROJECT_FEED_CARD_SELECT as "*";
+async function fetchPublishedFeedCards(
+  build: (select: string) => PromiseLike<{ data: unknown[] | null; error: { message?: string; code?: string } | null }>,
+): Promise<DBProject[]> {
+  return fetchFeedCardRows(build, PROJECT_FEED_CARD_SELECT_WITH_AI, PROJECT_FEED_CARD_SELECT) as Promise<DBProject[]>;
+}
 
 async function writeProjectRow(
   mode: "insert" | "update",
@@ -81,14 +85,14 @@ const FOR_YOU_LIMIT = 80;
 const EXPLORE_RECENT_FILL = 40;
 
 async function fetchRecentPublished(limit: number): Promise<DBProject[]> {
-  const { data, error } = await supabase
-    .from("projects")
-    .select(PROJECT_LIST_SELECT)
-    .eq("status", "Published")
-    .order("created_at", { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return (data ?? []) as DBProject[];
+  return fetchPublishedFeedCards((select) =>
+    supabase
+      .from("projects")
+      .select(select)
+      .eq("status", "Published")
+      .order("created_at", { ascending: false })
+      .limit(limit),
+  );
 }
 
 /** Keep personalized order but ensure fresh + own published work always surfaces. */
@@ -132,32 +136,30 @@ export const useMyProjects = (userId: string | undefined) =>
 export const usePublishedProjects = () =>
   useQuery({
     queryKey: ["published-projects"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("projects")
-        .select(PROJECT_LIST_SELECT)
-        .eq("status", "Published")
-        .order("created_at", { ascending: false })
-        .limit(PUBLISHED_LIST_LIMIT);
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: async () =>
+      fetchPublishedFeedCards((select) =>
+        supabase
+          .from("projects")
+          .select(select)
+          .eq("status", "Published")
+          .order("created_at", { ascending: false })
+          .limit(PUBLISHED_LIST_LIMIT),
+      ),
   });
 
 export const useTopProjects = () =>
   useQuery({
     queryKey: ["top-projects"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("projects")
-        .select(PROJECT_LIST_SELECT)
-        .eq("status", "Published")
-        .order("likes", { ascending: false })
-        .order("views", { ascending: false })
-        .limit(TOP_LIST_LIMIT);
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: async () =>
+      fetchPublishedFeedCards((select) =>
+        supabase
+          .from("projects")
+          .select(select)
+          .eq("status", "Published")
+          .order("likes", { ascending: false })
+          .order("views", { ascending: false })
+          .limit(TOP_LIST_LIMIT),
+      ),
   });
 
 export const useFollowingProjects = (userId: string | undefined) =>
@@ -172,15 +174,15 @@ export const useFollowingProjects = (userId: string | undefined) =>
       if (fErr) throw fErr;
       const ids = (follows ?? []).map((f) => f.following_id);
       if (!ids.length) return [];
-      const { data, error } = await supabase
-        .from("projects")
-        .select(PROJECT_LIST_SELECT)
-        .eq("status", "Published")
-        .in("owner_id", ids)
-        .order("created_at", { ascending: false })
-        .limit(PUBLISHED_LIST_LIMIT);
-      if (error) throw error;
-      return data ?? [];
+      return fetchPublishedFeedCards((select) =>
+        supabase
+          .from("projects")
+          .select(select)
+          .eq("status", "Published")
+          .in("owner_id", ids)
+          .order("created_at", { ascending: false })
+          .limit(PUBLISHED_LIST_LIMIT),
+      );
     },
   });
 
@@ -219,9 +221,11 @@ export const useForYouProjects = (userId: string | undefined) =>
         if (!recErr) {
           const ids = (recIds ?? []).map((r: { id: string }) => r.id);
           if (ids.length) {
-            const { data: full } = await supabase.from("projects").select(PROJECT_LIST_SELECT).in("id", ids);
+            const full = await fetchPublishedFeedCards((select) =>
+              supabase.from("projects").select(select).in("id", ids),
+            );
             const orderMap = new Map(ids.map((id, i) => [id, i]));
-            aiRecs = (full ?? []).sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
+            aiRecs = full.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
           }
         } else if (!isOptionalQueryError(recErr)) {
           throw recErr;
@@ -290,38 +294,42 @@ export const useForYouProjects = (userId: string | undefined) =>
 
       const fetchPool = async (): Promise<DBProject[]> => {
         if (topCats.length > 0) {
-          const { data, error } = await supabase
-            .from("projects")
-            .select(PROJECT_LIST_SELECT)
-            .eq("status", "Published")
-            .in("category", topCats)
-            .order("likes", { ascending: false })
-            .limit(FOR_YOU_LIMIT);
-          if (error) throw error;
-          return (data ?? []) as DBProject[];
+          return fetchPublishedFeedCards((select) =>
+            supabase
+              .from("projects")
+              .select(select)
+              .eq("status", "Published")
+              .in("category", topCats)
+              .order("likes", { ascending: false })
+              .limit(FOR_YOU_LIMIT),
+          );
         }
-        const { data, error } = await supabase
-          .from("projects")
-          .select(PROJECT_LIST_SELECT)
-          .eq("status", "Published")
-          .order("created_at", { ascending: false })
-          .limit(60);
-        if (error) throw error;
-        return (data ?? []) as DBProject[];
+        return fetchPublishedFeedCards((select) =>
+          supabase
+            .from("projects")
+            .select(select)
+            .eq("status", "Published")
+            .order("created_at", { ascending: false })
+            .limit(60),
+        );
       };
 
       // Prefer projects whose opportunity_types overlap view affinity (extra pool).
       let oppBoost: DBProject[] = [];
       if (topOppTypes.length > 0) {
-        const { data: oppRows, error: oppErr } = await supabase
-          .from("projects")
-          .select(PROJECT_LIST_SELECT)
-          .eq("status", "Published")
-          .overlaps("opportunity_types", topOppTypes)
-          .order("likes", { ascending: false })
-          .limit(40);
-        if (!oppErr) oppBoost = (oppRows ?? []) as DBProject[];
-        else if (!isOptionalQueryError(oppErr)) throw oppErr;
+        try {
+          oppBoost = await fetchPublishedFeedCards((select) =>
+            supabase
+              .from("projects")
+              .select(select)
+              .eq("status", "Published")
+              .overlaps("opportunity_types", topOppTypes)
+              .order("likes", { ascending: false })
+              .limit(40),
+          );
+        } catch (oppErr) {
+          if (!isOptionalQueryError(oppErr as { message?: string; code?: string })) throw oppErr;
+        }
       }
 
       if (!seenIds.size && aiRecs.length === 0) {
@@ -332,22 +340,19 @@ export const useForYouProjects = (userId: string | undefined) =>
           seenIds,
           { categoryWeights, opportunityWeights },
         );
-        const [recentPublished, ownPublishedRes] = await Promise.all([
+        const [recentPublished, ownPublished] = await Promise.all([
           fetchRecentPublished(EXPLORE_RECENT_FILL),
-          supabase
-            .from("projects")
-            .select(PROJECT_LIST_SELECT)
-            .eq("status", "Published")
-            .eq("owner_id", userId!)
-            .order("created_at", { ascending: false })
-            .limit(20),
+          fetchPublishedFeedCards((select) =>
+            supabase
+              .from("projects")
+              .select(select)
+              .eq("status", "Published")
+              .eq("owner_id", userId!)
+              .order("created_at", { ascending: false })
+              .limit(20),
+          ),
         ]);
-        if (ownPublishedRes.error) throw ownPublishedRes.error;
-        return mergeExploreFeed(
-          blended,
-          recentPublished,
-          (ownPublishedRes.data ?? []) as DBProject[],
-        );
+        return mergeExploreFeed(blended, recentPublished, ownPublished);
       }
 
       const catBased = await fetchPool();
@@ -358,23 +363,20 @@ export const useForYouProjects = (userId: string | undefined) =>
         { categoryWeights, opportunityWeights },
       );
 
-      const [recentPublished, ownPublishedRes] = await Promise.all([
+      const [recentPublished, ownPublished] = await Promise.all([
         fetchRecentPublished(EXPLORE_RECENT_FILL),
-        supabase
-          .from("projects")
-            .select(PROJECT_LIST_SELECT)
-          .eq("status", "Published")
-          .eq("owner_id", userId!)
-          .order("created_at", { ascending: false })
-          .limit(20),
+        fetchPublishedFeedCards((select) =>
+          supabase
+            .from("projects")
+            .select(select)
+            .eq("status", "Published")
+            .eq("owner_id", userId!)
+            .order("created_at", { ascending: false })
+            .limit(20),
+        ),
       ]);
-      if (ownPublishedRes.error) throw ownPublishedRes.error;
 
-      return mergeExploreFeed(
-        blended,
-        recentPublished,
-        (ownPublishedRes.data ?? []) as DBProject[],
-      );
+      return mergeExploreFeed(blended, recentPublished, ownPublished);
     },
   });
 

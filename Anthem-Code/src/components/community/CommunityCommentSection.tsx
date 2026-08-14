@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ImagePlus, MessageCircle, Send, Reply, X } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Button } from "@/components/ui/button";
@@ -7,15 +7,16 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   useCommunityComments,
   useCreateCommunityComment,
+  useDeleteCommunityComment,
+  useUpdateCommunityComment,
   type CommunityCommentTree,
   type CommunityComment,
 } from "@/hooks/useCommunityPosts";
-import { useCommunityCommentLike } from "@/hooks/useCommunityPostInteractions";
+import { useCommunityCommentLike, useUserBlocks } from "@/hooks/useCommunityPostInteractions";
 import { commentSchema } from "@/lib/validators";
 import { toast } from "sonner";
 import { formatThaiDate } from "@/lib/format";
 import ModerationBanBanner from "@/components/moderation/ModerationBanBanner";
-import ReportTrigger from "@/components/report/ReportTrigger";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import { Link } from "react-router-dom";
 import CommunityProfanityHint from "@/components/community/CommunityProfanityHint";
@@ -28,6 +29,17 @@ import { uploadProjectImage } from "@/lib/uploadImage";
 import { useSubscription } from "@/core/subscription";
 import { cn } from "@/lib/utils";
 import { PlusOneMark } from "@/components/brand/PlusOneMark";
+import { renderCommentMentions } from "@/lib/commentMentions";
+import { CommentOwnerMenu } from "@/components/comments/CommentOwnerMenu";
+import { CommentViewerMenu } from "@/components/comments/CommentViewerMenu";
+import { CommentEmojiPicker } from "@/components/comments/CommentEmojiPicker";
+import {
+  MentionFriendPopup,
+  mentionQueryFromText,
+} from "@/components/comments/MentionFriendPopup";
+import { insertEmojiAtSelection, restoreTextareaCaret } from "@/lib/twemoji";
+import { useHiddenCommentIds } from "@/hooks/useHiddenCommentIds";
+import { filterCommentTree } from "@/lib/commentTree";
 
 interface Props {
   postId: string;
@@ -66,6 +78,22 @@ const Row = ({
 }) => {
   const c = node.comment;
   const canReply = depth < 2;
+  const mine = Boolean(userId && c.user_id === userId);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(c.content);
+  const updateMut = useUpdateCommunityComment();
+  const deleteMut = useDeleteCommunityComment();
+
+  const saveEdit = async () => {
+    try {
+      await updateMut.mutateAsync({ id: c.id, post_id: postId, content: draft });
+      setEditing(false);
+      toast.success("แก้ไขความคิดเห็นแล้ว");
+    } catch (err) {
+      toast.error(formatCommunityActionError(err));
+    }
+  };
+
   return (
     <div className={cn(depth > 0 && "ml-4 md:ml-8 border-l-2 border-border/60 pl-3")}>
       <div className="rounded-2xl glass-panel p-4 flex gap-3">
@@ -85,6 +113,7 @@ const Row = ({
               <p className="text-sm font-semibold">ผู้ใช้</p>
             )}
             <span className="text-xs text-muted-foreground">{formatThaiDate(c.created_at)}</span>
+            {c.edited_at ? <span className="text-[11px] text-muted-foreground">แก้ไขแล้ว</span> : null}
             <CommentLikeButton commentId={c.id} likeCount={c.like_count ?? 0} />
             {canReply && userId && (
               <button
@@ -95,14 +124,47 @@ const Row = ({
                 <Reply className="w-3 h-3" /> ตอบกลับ
               </button>
             )}
-            <ReportTrigger
-              targetType="community_comment"
-              targetId={c.id}
-              targetOwnerId={c.user_id}
-              className="ml-auto"
-            />
+            {mine ? (
+              <CommentOwnerMenu
+                deleting={deleteMut.isPending}
+                onEdit={() => {
+                  setDraft(c.content);
+                  setEditing(true);
+                }}
+                onDelete={async () => {
+                  try {
+                    await deleteMut.mutateAsync({ id: c.id, post_id: postId });
+                    toast.success("ลบความคิดเห็นแล้ว");
+                  } catch (err) {
+                    toast.error(formatCommunityActionError(err));
+                  }
+                }}
+              />
+            ) : (
+              <CommentViewerMenu
+                commentId={c.id}
+                authorId={c.user_id}
+                authorName={c.profile?.display_name ?? "ผู้ใช้นี้"}
+                reportType="community_comment"
+                className="ml-auto"
+              />
+            )}
           </div>
-          <p className="text-base mt-1 whitespace-pre-wrap break-words">{c.content}</p>
+          {editing ? (
+            <div className="mt-2 space-y-2">
+              <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={3} maxLength={800} />
+              <div className="flex gap-2">
+                <Button type="button" size="sm" className="rounded-full" disabled={updateMut.isPending} onClick={() => void saveEdit()}>
+                  บันทึก
+                </Button>
+                <Button type="button" size="sm" variant="ghost" className="rounded-full" onClick={() => setEditing(false)}>
+                  ยกเลิก
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-base mt-1 whitespace-pre-wrap break-words">{renderCommentMentions(c.content)}</p>
+          )}
           {(c.image_urls?.length ?? 0) > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
               {c.image_urls!.map((url) => (
@@ -132,9 +194,16 @@ const CommunityCommentSection = ({ postId }: Props) => {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const { data: tree = [], isLoading } = useCommunityComments(postId);
   const createMut = useCreateCommunityComment();
-  const sortedTree = sortCommunityCommentTree(tree, sort);
+  const hiddenIds = useHiddenCommentIds();
+  const { data: blockedSet } = useUserBlocks(user?.id);
+  const sortedTree = useMemo(
+    () =>
+      filterCommentTree(sortCommunityCommentTree(tree, sort), hiddenIds, blockedSet ?? new Set()),
+    [tree, sort, hiddenIds, blockedSet],
+  );
 
   const handleImagePick = async (file: File) => {
     if (!user || imageUrls.length >= 1) return;
@@ -176,6 +245,21 @@ const CommunityCommentSection = ({ postId }: Props) => {
       toast.error(formatCommunityActionError(err));
     }
   };
+
+  const startReply = (c: CommunityComment) => {
+    setReplyTo(c);
+    const handle = c.profile?.username?.trim();
+    if (handle) {
+      setText((prev) => {
+        const token = `@${handle}`;
+        if (prev.includes(token)) return prev;
+        const pad = prev && !prev.endsWith(" ") && prev.length > 0 ? " " : "";
+        return `${prev}${pad}${token} `;
+      });
+    }
+  };
+
+  const mentionNeedle = mentionQueryFromText(text);
 
   return (
     <section className="space-y-4">
@@ -220,14 +304,22 @@ const CommunityCommentSection = ({ postId }: Props) => {
                 </button>
               </div>
             )}
-            <Textarea
-              id="community-comment-input"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              rows={3}
-              maxLength={800}
-              placeholder="แชร์ความเห็นหรือตอบคำถาม..."
-            />
+            <div className="relative">
+              <Textarea
+                ref={inputRef}
+                id="community-comment-input"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={3}
+                maxLength={800}
+                placeholder="แชร์ความเห็น หรือพิมพ์ @ เพื่อกล่าวถึงเพื่อนหรือผลงาน"
+              />
+              <MentionFriendPopup
+                query={mentionNeedle}
+                text={text}
+                onPick={setText}
+              />
+            </div>
             {imageUrls.length > 0 && (
               <div className="relative inline-block">
                 <img src={imageUrls[0]} alt="" className="max-h-32 rounded-lg border border-border/60" />
@@ -252,6 +344,14 @@ const CommunityCommentSection = ({ postId }: Props) => {
                   const f = e.target.files?.[0];
                   if (f) void handleImagePick(f);
                   e.target.value = "";
+                }}
+              />
+              <CommentEmojiPicker
+                onPick={(emoji) => {
+                  const next = insertEmojiAtSelection(text, emoji, inputRef.current);
+                  if (!next) return;
+                  setText(next.text);
+                  restoreTextareaCaret(inputRef.current, next.caret);
                 }}
               />
               <Button
@@ -286,7 +386,7 @@ const CommunityCommentSection = ({ postId }: Props) => {
             depth={0}
             userId={user?.id}
             postId={postId}
-            onReply={setReplyTo}
+            onReply={startReply}
           />
         ))}
       </div>

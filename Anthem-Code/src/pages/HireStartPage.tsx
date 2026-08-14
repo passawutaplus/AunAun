@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { Briefcase, Check, Eye, ShieldCheck, Wallet } from "lucide-react";
-import Footer from "@/components/Footer";
 import SeoHead from "@/components/SeoHead";
 import { FadeUp } from "@/components/motion/FadeUp";
 import { BackButton } from "@/components/ui/BackButton";
@@ -222,8 +221,6 @@ export default function HireStartPage() {
           </FadeUp>
         </div>
       </section>
-
-      <Footer />
     </main>
   );
 }

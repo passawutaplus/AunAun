@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it, vi, afterEach, beforeEach } from "vitest";
 import {
   coerceLaunchFeedMode,
   isAplus1FullProduct,
@@ -237,5 +237,11 @@ describe("launch route allowlist", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
     expect(isLaunchHiddenPath("/jobs")).toBe(false);
     expect(isLaunchHiddenPath("/community/x")).toBe(false);
+  });
+
+  it("does not treat unknown URLs as coming-soon (real 404)", () => {
+    expect(isLaunchAllowedPath("/this-page-does-not-exist")).toBe(false);
+    expect(isLaunchHiddenPath("/this-page-does-not-exist")).toBe(false);
+    expect(isLaunchHiddenPath("/totally/missing/path")).toBe(false);
   });
 });

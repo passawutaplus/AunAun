@@ -82,6 +82,11 @@ export const COMMUNITY_CONTENT_RULES = [
     title: "เคารพลิขสิทธิ์",
     desc: "ไม่โพสต์งานที่ละเมิด IP หรืออ้างผลงานผู้อื่น",
   },
+  {
+    id: "ai-disclosure",
+    title: "ห้ามปกปิดการใช้ AI",
+    desc: "ใช้ AI ในผลงานแล้วไม่ติดแท็ก หรือเลือกระดับต่ำกว่าความเป็นจริง เพื่อให้งานดูเป็นงานมือ",
+  },
 ] as const;
 
 export const PROFANITY_CATEGORY_LABELS: Record<ProfanityCategory, string> = {
@@ -95,7 +100,7 @@ export const PROFANITY_CATEGORY_LABELS: Record<ProfanityCategory, string> = {
 
 export const COMMUNITY_GUIDELINES_PATH = "/legal/community";
 
-export const COMMUNITY_GUIDELINES_UPDATED_AT = "14 กรกฎาคม 2569";
+export const COMMUNITY_GUIDELINES_UPDATED_AT = "14 สิงหาคม 2569";
 
 export const COMMUNITY_REPORT_TARGETS = [
   { id: "community_post", label: "โพสต์ชุมชน" },
@@ -116,6 +121,7 @@ export const COMMUNITY_REPORT_REASONS = [
   { id: "harassment", label: "คุกคาม / Hate speech" },
   { id: "nsfw", label: "เนื้อหา 18+ / ไม่เหมาะสม" },
   { id: "copyright", label: "ละเมิดลิขสิทธิ์" },
+  { id: "ai_undisclosed", label: "ไม่เปิดเผยการใช้ AI / เลือกระดับไม่ตรงงาน" },
   { id: "scam", label: "หลอกลวง / Scam" },
   { id: "impersonation", label: "ปลอมเป็นผู้อื่น" },
   { id: "other", label: "อื่นๆ" },

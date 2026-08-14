@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import Footer from "@/components/Footer";
 import { LEARN_NAV } from "@/data/learnContent";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
@@ -64,7 +63,6 @@ export function LearnShell() {
         </nav>
       </div>
       <Outlet />
-      <Footer />
     </main>
   );
 }

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AtSign, Check, ChevronDown, Clock, Search, UserRound, X } from "lucide-react";
+import { AtSign, Check, Clock, Plus, Search, UserRound, X } from "lucide-react";
 import { CompactLoader } from "@/components/ui/BanterLoader";
 import UserAvatar from "@/components/UserAvatar";
 import { Input } from "@/components/ui/input";
@@ -78,10 +78,88 @@ export function PortfolioCollabUserPicker({
 
   return (
     <section className="space-y-2">
-      <p className="flex items-center gap-1.5 text-sm font-semibold">
-        <AtSign className="w-4 h-4 text-primary shrink-0" />
-        แท็กเพื่อนร่วมงาน
-      </p>
+      <div className="flex items-center gap-2">
+        <p className="flex min-w-0 flex-1 items-center gap-2 text-sm font-normal text-foreground">
+          <AtSign className="w-4 h-4 text-primary shrink-0" />
+          แท็กเพื่อนร่วมงาน
+        </p>
+        <Popover
+          open={open}
+          onOpenChange={(next) => {
+            setOpen(next);
+            if (!next) setQuery("");
+          }}
+        >
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              disabled={totalCount >= maxTags}
+              aria-label="เลือกเพื่อนที่ติดตามกัน"
+              title={totalCount >= maxTags ? `แท็กได้สูงสุด ${maxTags} คน` : "เลือกเพื่อนที่ติดตามกัน"}
+              className={cn(
+                "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm",
+                "hover:border-primary/50 hover:text-primary",
+                "disabled:cursor-not-allowed disabled:opacity-50",
+              )}
+            >
+              <Plus className="h-3 w-3" strokeWidth={2.5} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-[min(100vw-2rem,360px)] p-0">
+            <div className="p-3 border-b border-border/60">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="ค้นหาชื่อหรือ @username"
+                  className="pl-8 h-9 rounded-lg"
+                />
+              </div>
+            </div>
+            <div className="max-h-56 overflow-y-auto p-1">
+              {isLoading && (
+                <CompactLoader label="กำลังโหลดรายชื่อ…" className="py-6" />
+              )}
+              {!isLoading && candidates.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-6 px-3">
+                  ยังไม่มีเพื่อนที่ติดตามกันและกัน
+                </p>
+              )}
+              {filtered.map((u) => {
+                const on = selectedIds.has(u.user_id) || lockedIds.has(u.user_id);
+                const locked = lockedIds.has(u.user_id);
+                return (
+                  <button
+                    key={u.user_id}
+                    type="button"
+                    onClick={() => toggle(u)}
+                    disabled={locked}
+                    className={cn(
+                      "w-full flex items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors",
+                      on ? "bg-primary/10" : "hover:bg-muted/60",
+                      locked && "opacity-60 cursor-default",
+                    )}
+                  >
+                    <UserAvatar src={u.avatar_url} name={u.display_name} className="w-10 h-10 shrink-0" />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-medium truncate">{u.display_name}</span>
+                      {u.username && (
+                        <span className="block text-xs text-muted-foreground truncate">@{u.username}</span>
+                      )}
+                    </span>
+                    {on ? (
+                      <Check className="w-4 h-4 text-primary shrink-0" />
+                    ) : (
+                      <UserRound className="w-4 h-4 text-muted-foreground shrink-0 opacity-40" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
 
       {(acceptedUsers.length > 0 || pendingUsers.length > 0 || selected.length > 0) && (
         <div className="flex flex-wrap gap-2">
@@ -128,82 +206,6 @@ export function PortfolioCollabUserPicker({
           ))}
         </div>
       )}
-
-      <Popover
-        open={open}
-        onOpenChange={(next) => {
-          setOpen(next);
-          if (!next) setQuery("");
-        }}
-      >
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            disabled={totalCount >= maxTags}
-            className={cn(
-              "w-full flex items-center justify-between gap-2 rounded-xl border border-dashed border-border px-3 py-2.5 text-sm",
-              "hover:border-primary/40 hover:bg-muted/30 transition-colors",
-              totalCount >= maxTags && "opacity-50 cursor-not-allowed",
-            )}
-          >
-            <span className="text-muted-foreground">เลือกเพื่อนที่ติดตามกัน…</span>
-            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent align="start" className="w-[min(100vw-2rem,360px)] p-0">
-          <div className="p-3 border-b border-border/60">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="ค้นหาชื่อหรือ @username"
-                className="pl-8 h-9 rounded-lg"
-              />
-            </div>
-          </div>
-          <div className="max-h-56 overflow-y-auto p-1">
-            {isLoading && (
-              <CompactLoader label="กำลังโหลดรายชื่อ…" className="py-6" />
-            )}
-            {!isLoading && candidates.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-6 px-3">
-                ยังไม่มีเพื่อนที่ติดตามกันและกัน
-              </p>
-            )}
-            {filtered.map((u) => {
-              const on = selectedIds.has(u.user_id) || lockedIds.has(u.user_id);
-              const locked = lockedIds.has(u.user_id);
-              return (
-                <button
-                  key={u.user_id}
-                  type="button"
-                  onClick={() => toggle(u)}
-                  disabled={locked}
-                  className={cn(
-                    "w-full flex items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors",
-                    on ? "bg-primary/10" : "hover:bg-muted/60",
-                    locked && "opacity-60 cursor-default",
-                  )}
-                >
-                  <UserAvatar src={u.avatar_url} name={u.display_name} className="w-10 h-10 shrink-0" />
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-sm font-medium truncate">{u.display_name}</span>
-                    {u.username && (
-                      <span className="block text-xs text-muted-foreground truncate">@{u.username}</span>
-                    )}
-                  </span>
-                  {on ? (
-                    <Check className="w-4 h-4 text-primary shrink-0" />
-                  ) : (
-                    <UserRound className="w-4 h-4 text-muted-foreground shrink-0 opacity-40" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </PopoverContent>
-      </Popover>
     </section>
   );
 }

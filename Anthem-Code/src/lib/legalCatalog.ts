@@ -24,7 +24,7 @@ export const LEGAL_CATEGORIES = [
         to: "/legal/terms",
         label: "ข้อกำหนดการใช้งาน",
         shortLabel: "ข้อกำหนด",
-        summary: "เงื่อนไขการใช้บัญชี เนื้อหา และความรับผิดของแพลตฟอร์ม",
+        summary: "เงื่อนไขการใช้บัญชี การรับรองสิทธิ์เผยแพร่ผลงาน และความรับผิดของแพลตฟอร์ม",
       },
       {
         to: "/legal/service-agreement",
@@ -93,7 +93,7 @@ export const LEGAL_CATEGORIES = [
         to: "/legal/ip",
         label: "ลิขสิทธิ์และการใช้งานผลงาน",
         shortLabel: "ลิขสิทธิ์",
-        summary: "สิทธิในผลงานที่อัปโหลด และการยืนยันความเป็นเจ้าของ",
+        summary: "สิทธิในผลงาน คำแถลงก่อนเผยแพร่ และงานลูกค้า/asset ของผู้อื่น",
       },
       {
         to: "/legal/community",

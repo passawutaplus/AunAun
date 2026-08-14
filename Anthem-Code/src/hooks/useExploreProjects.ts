@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PROJECT_FEED_CARD_SELECT } from "@/lib/dbSelects";
+import { PROJECT_FEED_CARD_SELECT, PROJECT_FEED_CARD_SELECT_WITH_AI } from "@/lib/dbSelects";
+import { fetchFeedCardRows } from "@/lib/fetchProjectRow";
 import { normalizeTag, normalizeToolName } from "@/lib/exploreRoutes";
 import type { DBProject } from "@/hooks/useProjects";
 
@@ -43,14 +44,17 @@ export function filterProjectsByTag(projects: DBProject[], tag: string): DBProje
 }
 
 async function fetchPublishedPool(): Promise<DBProject[]> {
-  const { data, error } = await supabase
-    .from("projects")
-    .select(PROJECT_FEED_CARD_SELECT)
-    .eq("status", "Published")
-    .order("created_at", { ascending: false })
-    .limit(EXPLORE_LIMIT);
-  if (error) throw error;
-  return (data ?? []) as DBProject[];
+  return fetchFeedCardRows(
+    (select) =>
+      supabase
+        .from("projects")
+        .select(select)
+        .eq("status", "Published")
+        .order("created_at", { ascending: false })
+        .limit(EXPLORE_LIMIT),
+    PROJECT_FEED_CARD_SELECT_WITH_AI,
+    PROJECT_FEED_CARD_SELECT,
+  ) as Promise<DBProject[]>;
 }
 
 export const useProjectsByTool = (tool: string) =>

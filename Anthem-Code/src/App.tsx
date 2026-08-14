@@ -23,6 +23,8 @@ import RequireAuth from "./components/RequireAuth.tsx";
 import AdminGuard from "./components/admin/AdminGuard.tsx";
 import AuthDialog from "./components/AuthDialog.tsx";
 import { InterestSurveyGate } from "./components/onboarding/InterestSurveyDialog.tsx";
+import { SkipLink } from "./components/a11y/SkipLink.tsx";
+import { OfflineBanner } from "./components/OfflineBanner.tsx";
 import RedirectTo from "./components/RedirectTo.tsx";
 import VanityProfileRoute from "./components/profile/VanityProfileRoute.tsx";
 import RouteFallback from "./components/RouteFallback.tsx";
@@ -379,6 +381,8 @@ const App = () => (
               </Route>
             </Routes>
           </Suspense>
+          <SkipLink />
+          <OfflineBanner />
           <CookieConsent />
           <GoogleAnalytics />
           <PolicyReconsentGate />

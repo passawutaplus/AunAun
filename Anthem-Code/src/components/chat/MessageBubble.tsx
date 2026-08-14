@@ -94,6 +94,9 @@ import {
 import { UNSEND_WINDOW_MS, type Message } from "@/hooks/useChat";
 import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
 import { toast } from "sonner";
+import { ChatMessageReactions } from "@/components/chat/ChatMessageReactions";
+import { loadHideReadReceipts } from "@/lib/chatReadReceipts";
+import { useAuth } from "@/hooks/useAuth";
 import type { HireCancelRequestRow } from "@/lib/hireCancelRequest";
 import type { CollabEndRequestRow } from "@/lib/collabEndRequest";
 import type { CollabGroupExpandRequestRow } from "@/lib/collabGroupExpand";
@@ -221,6 +224,8 @@ const MessageBubble = ({
   highlight = false,
 }: Props) => {
   const [reportOpen, setReportOpen] = useState(false);
+  const { user } = useAuth();
+  const hideReceipts = loadHideReadReceipts(user?.id);
   const time = format(new Date(message.created_at), "HH:mm");
   const deleted = !!message.deleted_at;
   const canUnsend =
@@ -1081,12 +1086,15 @@ const MessageBubble = ({
           {alignMine ? messageMenu : null}
           <span className="inline-flex items-center gap-1">
             <span>{time}</span>
-            {alignMine && !deleted && !hireWorkStart && (
+            {alignMine && !deleted && !hireWorkStart && !hideReceipts && (
               <span>{message.read_at ? "อ่านแล้ว" : "ส่งแล้ว"}</span>
             )}
           </span>
           {!alignMine ? messageMenu : null}
         </div>
+        {!deleted && !isSystem ? (
+          <ChatMessageReactions messageId={message.id} userId={user?.id} />
+        ) : null}
       </div>
     </div>
   );

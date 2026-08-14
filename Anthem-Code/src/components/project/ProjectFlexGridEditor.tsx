@@ -17,6 +17,7 @@ import {
   ImagePlus,
   Italic,
   Move,
+  Loader2,
   Plus,
   RefreshCw,
   Crosshair,
@@ -60,7 +61,7 @@ import {
   type FlexGridModuleType,
   type FlexGridSnapContext,
 } from "@/lib/flexGridLayout";
-import { LoadPercentBar, AutoLoadPercentBar } from "@/components/project/LoadPercentBar";
+import { LoadPercentBar } from "@/components/project/LoadPercentBar";
 import {
   FlexGridInlineCrop,
   type FlexGridInlineCropHandle,
@@ -1370,21 +1371,20 @@ function BoardSurface({
 function ModuleUploadingOverlay({
   className,
   label = "กำลังอัปโหลด",
-  percent,
 }: {
   className?: string;
   label?: string;
-  /** Real progress (0–100) when known; falls back to a simulated ramp otherwise. */
   percent?: number | null;
 }) {
   return (
     <div
       className={cn(
-        "absolute inset-0 z-20 flex items-center justify-center bg-background/60 px-4",
+        "absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-background/50 px-4",
         className,
       )}
     >
-      <AutoLoadPercentBar percent={percent} label={label} showLabel />
+      <Loader2 className="h-7 w-7 animate-spin text-primary" aria-hidden />
+      <p className="max-w-[160px] text-center text-[11px] font-medium text-foreground">{label}</p>
     </div>
   );
 }
@@ -1770,6 +1770,12 @@ function PlacedModule({
                   className="pointer-events-none h-full w-full object-cover"
                   draggable={false}
                 />
+                {uploading ? (
+                  <ModuleUploadingOverlay
+                    label={uploadStageLabel ?? "กำลังอัปโหลดภาพ"}
+                    percent={uploadStagePercent}
+                  />
+                ) : null}
                 {!disabled ? (
                   <div
                     className={cn(

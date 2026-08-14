@@ -117,7 +117,6 @@ export function ProjectMobilePreviewContent({
             thirdPartyNote={data.thirdPartyNote}
             aiAssisted={data.aiAssisted}
             aiDisclosureNote={data.aiDisclosureNote}
-            clientPermissionConfirmed={data.clientPermissionConfirmed}
           />
 
           {data.context ? <ProjectContextCard context={data.context} /> : null}

@@ -9,6 +9,8 @@ import {
   parseGalleryDisplayMode,
   splitMediaFromBlocks,
   toStoredContentBlocks,
+  contentHasLocalPreview,
+  isLocalPreviewUrl,
 } from "../projectContentBlocks";
 
 describe("projectContentBlocks", () => {
@@ -165,5 +167,17 @@ describe("projectContentBlocks", () => {
       gridLayout: "three_split",
       urls: ["https://cdn.example/tall.jpg", "", ""],
     });
+  });
+
+  it("treats blob object URLs as local previews and does not persist them", () => {
+    const preview = { id: "p1", type: "image" as const, url: "blob:https://localhost/preview" };
+    const ready = { id: "p2", type: "image" as const, url: "https://cdn.example/a.jpg" };
+    expect(isLocalPreviewUrl(preview.url)).toBe(true);
+    expect(isLocalPreviewUrl(ready.url)).toBe(false);
+    expect(contentHasLocalPreview([preview, ready])).toBe(true);
+    expect(contentHasLocalPreview([ready])).toBe(false);
+    expect(toStoredContentBlocks([preview, ready])).toEqual([
+      expect.objectContaining({ id: "p2", url: "https://cdn.example/a.jpg" }),
+    ]);
   });
 });

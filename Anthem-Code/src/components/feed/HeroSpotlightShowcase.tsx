@@ -91,6 +91,13 @@ const HeroSpotlightShowcase = ({ slides, variant }: Props) => {
             />
           </AnimatePresence>
         )}
+        {current.projectTitle ? (
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-gradient-to-t from-black/60 to-transparent px-4 pb-3 pt-10">
+            <span className="block truncate text-left text-sm font-medium text-white drop-shadow">
+              {current.projectTitle}
+            </span>
+          </span>
+        ) : null}
       </button>
 
       <AnimatePresence mode="wait">

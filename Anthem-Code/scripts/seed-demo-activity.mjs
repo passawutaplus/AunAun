@@ -4,7 +4,8 @@
  * Run after run-seed.mjs. Idempotent fixed UUIDs.
  */
 import { createClient } from "@supabase/supabase-js";
-import { unsplashArt } from "./demo-images.mjs";
+import { napatsaraExtraCoverUrl, unsplashArt } from "./demo-images.mjs";
+import { buildNapatsaraExtraPresentation } from "./demo-catalog-canvas.mjs";
 import {
   catalogUid,
   catalogProjectId,
@@ -33,22 +34,49 @@ const usernames = [
 const EXTRA_PROJECT_ID = "00000000-0000-0000-0002-000000000014";
 
 async function seedNapatsaraSecondProject() {
-  const cover = unsplashArt(21);
+  const extra = {
+    title: "แม่ละมุน — ชุดเทศกาลสงกรานต์",
+    category: "Graphic / Branding",
+    description: "ต่อจากกล่องหลัก: สีน้ำเย็นและลายคลื่นสำหรับของฝากสงกรานต์",
+    brief: "ชุดเทศกาลที่ยังอยู่ในครอบครัวแบรนด์แม่ละมุน แต่รู้ทันทีว่าเป็นของช่วงสงกรานต์",
+    creatorRole: "ฉันทำเองทั้งหมด",
+    processNote: "ลดทอง เพิ่มฟ้าน้ำและลายคลื่นบาง ๆ บนฝากล่อง",
+    deliverables: "กล่องเทศกาล, สติกเกอร์ซีล, การ์ดข้อความ",
+    durationLabel: "2 สัปดาห์",
+    outcomeNote: "ใช้เป็นของฝากบริษัทช่วงเมษา",
+    tools: ["Illustrator", "Figma"],
+    tags: ["packaging", "festival"],
+    priceThb: 9500,
+    opportunityTypes: ["paid_work"],
+  };
+  const cover = napatsaraExtraCoverUrl();
+  const presentation = buildNapatsaraExtraPresentation();
   const row = {
     id: EXTRA_PROJECT_ID,
     owner_id: catalogUid(1),
-    title: "แพ็กเกจจิ้งขนมไทย Premium — ชุดที่ 2",
-    category: "Graphic",
+    title: extra.title,
+    category: extra.category,
     cover_url: cover,
-    gallery_urls: [cover, unsplashArt(22)],
-    tools: ["Illustrator", "Figma"],
+    gallery_urls: presentation.gallery_urls,
+    content_blocks: presentation.content_blocks,
+    editor_mode: presentation.editor_mode,
+    tools: extra.tools,
+    tags: extra.tags,
     status: "Published",
     views: 3200,
     likes: 186,
-    price_thb: 9500,
-    description: "ชุดที่สองของแบรนด์ขนมไทย — กล่อง premium + social template",
+    price_thb: extra.priceThb,
+    description: extra.description,
+    brief: extra.brief,
+    creator_role: extra.creatorRole,
+    process_note: extra.processNote,
+    deliverables: extra.deliverables,
+    duration_label: extra.durationLabel,
+    outcome_note: extra.outcomeNote,
+    opportunity_types: extra.opportunityTypes,
+    allow_hire: true,
     rights_attested_at: new Date().toISOString(),
-    rights_attestation_version: "2026-06-14",
+    rights_attestation_version: "2026-08-14",
   };
   const { error } = await anthemDb.from("projects").upsert(row, { onConflict: "id" });
   if (error) throw new Error(`extra project: ${error.message}`);

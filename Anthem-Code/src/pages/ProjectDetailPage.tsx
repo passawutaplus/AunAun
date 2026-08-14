@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Orbit, Share2 } from "lucide-react";
+import { Orbit } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
-import SharePopover from "@/components/SharePopover";
 import { Button } from "@/components/ui/button";
 import PageLoader from "@/components/ui/PageLoader";
 import HireDialog from "@/components/HireDialog";
@@ -31,6 +30,7 @@ import { isLocalDevSelfHirePreview } from "@/lib/localDevSelfHire";
 import { useProject } from "@/hooks/useProjects";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
 import { useAuth } from "@/hooks/useAuth";
+import { useHiddenProjectIds } from "@/hooks/useHiddenProjectIds";
 import { navigateToAuth, stripSearchParams } from "@/lib/authRedirect";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { toast } from "sonner";
@@ -50,7 +50,6 @@ import { openSafeExternalUrl } from "@/lib/safeUrl";
 import { FadeUp } from "@/components/motion/FadeUp";
 import { ProjectLinkedPostsBlock } from "@/components/project/ProjectLinkedPostsBlock";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
-import { ProjectOwnerMenu } from "@/components/project/ProjectOwnerMenu";
 import {
   fetchLinkedPostSummaries,
   fetchPostsMentioningProject,
@@ -71,8 +70,15 @@ const ProjectDetailPage = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [id]);
   const { user } = useAuth();
+  const hiddenProjectIds = useHiddenProjectIds();
   const { data: dbProject, isLoading, isError, refetch, isFetching } = useProject(id);
   const { data: sponsorAd } = useAdCampaign(sponsorAdId ?? undefined);
+
+  useEffect(() => {
+    if (!id || !hiddenProjectIds.has(id)) return;
+    if (user?.id && dbProject?.owner_id === user.id) return;
+    navigate("/", { replace: true });
+  }, [id, hiddenProjectIds, user?.id, dbProject?.owner_id, navigate]);
 
   // Track view: per-user history (for personalized Explore feed) + global counter (for stats)
   useEffect(() => {
@@ -211,8 +217,6 @@ const ProjectDetailPage = () => {
         thirdPartyNote: dbProject.third_party_note ?? "",
         aiAssisted: (dbProject as { ai_assisted?: boolean }).ai_assisted ?? false,
         aiDisclosureNote: (dbProject as { ai_disclosure_note?: string }).ai_disclosure_note ?? "",
-        clientPermissionConfirmed:
-          (dbProject as { client_permission_confirmed?: boolean }).client_permission_confirmed ?? false,
         context: {
           brief: (dbProject as { brief?: string }).brief,
           creator_role: (dbProject as { creator_role?: string }).creator_role,
@@ -323,7 +327,7 @@ const ProjectDetailPage = () => {
   const authorUrl = project.ownerId ? absoluteUrl(`/u/${project.ownerId}`) : undefined;
 
   return (
-    <div className="min-h-screen bg-app-ambient">
+    <main id="main-content" className="min-h-screen bg-app-ambient">
       <SeoHead
         title={project.title}
         description={truncateDescription(
@@ -357,9 +361,6 @@ const ProjectDetailPage = () => {
             <SeoBreadcrumb items={crumbs} className="mb-0 hidden md:flex min-w-0" />
           </div>
           <div className="flex items-center gap-1">
-            {isOwner && dbProject ? (
-              <ProjectOwnerMenu projectId={dbProject.id} projectTitle={project.title} />
-            ) : null}
             {dbProject ? (
               <BoostButton
                 targetType="project"
@@ -376,11 +377,6 @@ const ProjectDetailPage = () => {
                 </Link>
               </Button>
             ) : null}
-            <SharePopover url={shareUrl} title={project.title} label="แชร์ผลงาน">
-              <Button variant="ghost" size="icon">
-                <Share2 className="w-5 h-5" />
-              </Button>
-            </SharePopover>
           </div>
         </div>
         {fromPackageId ? <PackageReturnBanner serviceId={fromPackageId} /> : null}
@@ -445,7 +441,7 @@ const ProjectDetailPage = () => {
               </div>
             )}
 
-            <div className="mt-10 lg:mt-14 space-y-6">
+            <div className="pt-12 lg:pt-16 space-y-6">
               {linkedPosts.length > 0 && <ProjectLinkedPostsBlock posts={linkedPosts} />}
               <ProjectContextCard context={project.context} />
               <CommentSection projectId={project.id} />
@@ -497,7 +493,11 @@ const ProjectDetailPage = () => {
               thirdPartyNote={project.thirdPartyNote}
               aiAssisted={project.aiAssisted}
               aiDisclosureNote={project.aiDisclosureNote}
-              clientPermissionConfirmed={project.clientPermissionConfirmed}
+              shareUrl={shareUrl}
+              shareTitle={project.title}
+              shareImageUrl={coverImage || undefined}
+              onHidden={() => navigate("/", { replace: true })}
+              onBlocked={() => navigate("/", { replace: true })}
             />
           </FadeUp>
         </div>
@@ -523,7 +523,7 @@ const ProjectDetailPage = () => {
         projectTitle={project.title}
         projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.[0]}
       />
-    </div>
+    </main>
   );
 };
 

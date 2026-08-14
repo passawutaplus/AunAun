@@ -32,6 +32,7 @@ import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
 import { getSupabaseErrorMessage } from "@/lib/supabaseErrors";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import { cn } from "@/lib/utils";
+import { loadHideReadReceipts, saveHideReadReceipts } from "@/lib/chatReadReceipts";
 
 const TEXT_MAX = 1000;
 const LINK_MAX = 500;
@@ -202,6 +203,27 @@ function AutoReplyEditor({
   );
 }
 
+function HideReceiptsToggle() {
+  const { user } = useAuth();
+  const [hide, setHide] = useState(() => loadHideReadReceipts(user?.id));
+  useEffect(() => {
+    setHide(loadHideReadReceipts(user?.id));
+  }, [user?.id]);
+  return (
+    <Switch
+      checked={!hide}
+      onCheckedChange={(v) => {
+        if (!user?.id) return;
+        const nextHide = !v;
+        setHide(nextHide);
+        saveHideReadReceipts(user.id, nextHide);
+        toast.success(nextHide ? "ปิดใบตอบรับอ่านแล้ว" : "เปิดใบตอบรับอ่านแล้ว");
+      }}
+      aria-label="ใบตอบรับอ่านข้อความ"
+    />
+  );
+}
+
 export function ChatSettingsSection() {
   const { user } = useAuth();
   const { data: settings, isLoading } = useChatSettings();
@@ -307,6 +329,15 @@ export function ChatSettingsSection() {
         </div>
       ) : (
         <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-secondary/30 p-4">
+            <div>
+              <p className="text-sm font-medium">ใบตอบรับอ่านข้อความ</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                ปิดแล้วจะไม่ส่งสถานะอ่านแล้ว และไม่โชว์ว่าอีกฝ่ายอ่านหรือยัง
+              </p>
+            </div>
+            <HideReceiptsToggle />
+          </div>
           <AutoReplyEditor
             kind="hire"
             draft={draft}

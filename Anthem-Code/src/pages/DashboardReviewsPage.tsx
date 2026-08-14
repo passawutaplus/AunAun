@@ -24,7 +24,7 @@ export default function DashboardReviewsPage() {
 
       <div className="bg-gradient-to-b from-primary/10 to-background">
         <div className="mx-auto max-w-5xl px-4 pb-4 pt-6 lg:pt-8">
-          <BackButton fallbackTo="/portfolio" label="กลับโปรไฟล์" className="mb-4" />
+          <BackButton to="/portfolio" label="กลับโปรไฟล์" className="mb-4" />
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <MessageSquareQuote className="h-6 w-6 text-primary" />

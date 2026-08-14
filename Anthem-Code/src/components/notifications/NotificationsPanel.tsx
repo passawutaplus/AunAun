@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { isWorkLikePrefEnabled } from "@/lib/inAppNotifyPrefs";
+import EmptyState from "@/components/ui/EmptyState";
 
 const timeAgo = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
@@ -41,11 +42,30 @@ const ActorAvatar = ({ name, avatar }: { name: string; avatar: string }) => (
   <UserAvatar src={avatar} name={name} className="w-11 h-11 shrink-0" />
 );
 
-const Empty = ({ icon: Icon, text }: { icon: typeof Bell; text: string }) => (
-  <div className="text-center py-16 text-muted-foreground">
-    <Icon className="w-10 h-10 mx-auto mb-2 opacity-50" />
-    <p className="text-sm">{text}</p>
-  </div>
+const Empty = ({
+  icon: Icon,
+  text,
+  actionLabel,
+  onAction,
+}: {
+  icon: typeof Bell;
+  text: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) => (
+  <EmptyState
+    icon={Icon}
+    title={text}
+    description="เมื่อมีอัปเดตใหม่จะแสดงที่นี่"
+    action={
+      actionLabel && onAction ? (
+        <Button variant="outline" className="rounded-full" onClick={onAction}>
+          {actionLabel}
+        </Button>
+      ) : undefined
+    }
+    className="border-0 shadow-none bg-transparent py-12"
+  />
 );
 
 interface NotificationsPanelProps {
@@ -255,7 +275,12 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
         {la ? (
           <InlineLoader />
         ) : activity.length === 0 ? (
-          <Empty icon={Bookmark} text="ยังไม่มีกิจกรรมบนผลงานของคุณ" />
+          <Empty
+            icon={Bookmark}
+            text="ยังไม่มีกิจกรรมบนผลงานของคุณ"
+            actionLabel="ไปสำรวจผลงาน"
+            onAction={() => go("/")}
+          />
         ) : (
           activity.map((n) => {
             const verb = n.kind === "like" ? "ถูกใจผลงาน" : n.kind === "bookmark" ? "บันทึกผลงาน" : "คอมเมนต์ผลงาน";
@@ -300,7 +325,12 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
         {lh ? (
           <InlineLoader />
         ) : hires.length === 0 ? (
-          <Empty icon={BriefcaseIcon} text="ยังไม่มีคำขอจ้างงาน" />
+          <Empty
+            icon={BriefcaseIcon}
+            text="ยังไม่มีคำขอจ้างงาน"
+            actionLabel="ไปดู Jobs"
+            onAction={() => go("/jobs")}
+          />
         ) : (
           hires.map((h) => (
             <div key={h.id} className="p-4 rounded-2xl glass-panel hover:border-primary/30 transition-colors">
@@ -360,7 +390,12 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
         {lc ? (
           <InlineLoader />
         ) : collabs.length === 0 ? (
-          <Empty icon={Handshake} text="ยังไม่มีคำขอร่วมงาน" />
+          <Empty
+            icon={Handshake}
+            text="ยังไม่มีคำขอร่วมงาน"
+            actionLabel="ไปสำรวจผลงาน"
+            onAction={() => go("/")}
+          />
         ) : (
           collabs.map((c) => (
             <div key={c.id} className="p-4 rounded-2xl glass-panel hover:border-primary/30 transition-colors">

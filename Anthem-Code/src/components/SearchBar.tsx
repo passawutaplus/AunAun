@@ -23,6 +23,9 @@ interface SearchBarProps {
    * this callback (e.g. mobile search sheet) instead of expanding inline.
    */
   onExpandClick?: () => void;
+  /** Recent queries shown when focused and value is empty. */
+  recentSearches?: string[];
+  onRecentSelect?: (query: string) => void;
 }
 
 const SearchBar = ({
@@ -36,11 +39,16 @@ const SearchBar = ({
   onExpandedChange,
   onFilterClick,
   onExpandClick,
+  recentSearches = [],
+  onRecentSelect,
 }: SearchBarProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(() => value.length > 0);
+  const [focused, setFocused] = useState(false);
   const sheetMode = Boolean(onExpandClick);
   const isOpen = sheetMode ? false : !expandable || expanded || value.length > 0;
+  const showRecent =
+    focused && value.trim().length === 0 && recentSearches.length > 0;
 
   useEffect(() => {
     if (sheetMode) {
@@ -136,9 +144,11 @@ const SearchBar = ({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setFocused(true)}
         onBlur={(e) => {
           const next = e.relatedTarget as HTMLElement | null;
           if (next?.closest("[data-search-bar]")) return;
+          setFocused(false);
           collapse();
         }}
         className={cn(
@@ -166,6 +176,33 @@ const SearchBar = ({
           <div className="absolute right-3 top-1/2 -translate-y-1/2">{filterButton}</div>
         )
       )}
+
+      {showRecent ? (
+        <div
+          className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-40 rounded-2xl border border-border/60 bg-card/95 backdrop-blur-md shadow-lg p-2"
+          data-search-bar
+        >
+          <p className="px-2 py-1 text-[11px] text-muted-foreground">ค้นหาล่าสุด</p>
+          <div className="flex flex-wrap gap-1.5 px-1 pb-1">
+            {recentSearches.map((q) => (
+              <button
+                key={q}
+                type="button"
+                className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs text-foreground hover:bg-secondary/80"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onRecentSelect?.(q);
+                  onChange(q);
+                  setFocused(false);
+                }}
+              >
+                <Search className="w-3 h-3 text-muted-foreground" aria-hidden />
+                {q}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

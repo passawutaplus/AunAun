@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BackButton } from "@/components/ui/BackButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { HttpErrorPage } from "@/components/HttpErrorPage";
+import { PasswordField } from "@/components/ui/PasswordField";
 import { supabase } from "@/integrations/supabase/client";
 import { establishSession } from "@/lib/authSession";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const ResetPasswordPage = () => {
@@ -18,9 +17,8 @@ const ResetPasswordPage = () => {
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [showPass, setShowPass] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [touched, setTouched] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,16 +58,16 @@ const ResetPasswordPage = () => {
     };
   }, []);
 
+  const passError = touched && password.length > 0 && password.length < 8
+    ? "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"
+    : null;
+  const confirmError =
+    touched && confirm.length > 0 && password !== confirm ? "รหัสผ่านสองช่องไม่ตรงกัน" : null;
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 8) {
-      toast.error("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
-      return;
-    }
-    if (password !== confirm) {
-      toast.error("รหัสผ่านสองช่องไม่ตรงกัน");
-      return;
-    }
+    setTouched(true);
+    if (password.length < 8 || password !== confirm) return;
     setBusy(true);
     try {
       const { error } = await supabase.auth.updateUser({ password });
@@ -128,67 +126,47 @@ const ResetPasswordPage = () => {
             <form onSubmit={submit} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="reset-pass" className="text-xs">รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)</Label>
-                <div className="relative">
-                  <Input
-                    id="reset-pass"
-                    type={showPass ? "text" : "password"}
-                    autoComplete="new-password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    minLength={8}
-                    required
-                    className="h-11 rounded-xl pr-10 bg-background/60 backdrop-blur border-border/60"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass((s) => !s)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label={showPass ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
-                  >
-                    {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
+                <PasswordField
+                  id="reset-pass"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onBlur={() => setTouched(true)}
+                  minLength={8}
+                  showStrength
+                  invalid={!!passError}
+                  error={passError}
+                  required
+                />
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="reset-confirm" className="text-xs">ยืนยันรหัสผ่านใหม่</Label>
-                <div className="relative">
-                  <Input
-                    id="reset-confirm"
-                    type={showConfirm ? "text" : "password"}
-                    autoComplete="new-password"
-                    placeholder="••••••••"
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    required
-                    className={cn(
-                      "h-11 rounded-xl pr-10 bg-background/60 backdrop-blur border-border/60",
-                      confirm && password !== confirm && "border-destructive",
-                    )}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm((s) => !s)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label={showConfirm ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
-                  >
-                    {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
+                <PasswordField
+                  id="reset-confirm"
+                  autoComplete="new-password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  onBlur={() => setTouched(true)}
+                  invalid={!!confirmError}
+                  error={confirmError}
+                  required
+                />
               </div>
 
               <Button
                 type="submit"
                 disabled={busy}
-                className="w-full h-11 rounded-xl text-base font-semibold bg-gradient-brand text-white hover:opacity-95 border-0 shadow-md shadow-primary/20"
+                className="w-full h-11 rounded-xl text-base font-semibold bg-gradient-brand text-white hover:opacity-95 border-0"
               >
                 {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                ยืนยันรหัสผ่านใหม่
+                บันทึกรหัสผ่านใหม่
               </Button>
 
               <p className="text-center text-xs text-muted-foreground">
-                <Link to="/auth/forgot" className="text-primary hover:underline">ขอลิงก์ใหม่</Link>
+                <Link to="/auth" className="text-primary hover:underline">
+                  กลับไปเข้าสู่ระบบ
+                </Link>
               </p>
             </form>
           </div>

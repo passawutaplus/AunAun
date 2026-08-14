@@ -129,7 +129,7 @@ const EarningsPage = () => {
       <div className="bg-gradient-to-b from-primary/10 to-background">
         <div className="mx-auto max-w-5xl px-4 pb-4 pt-6 lg:pt-8">
           <BackButton
-            fallbackTo="/portfolio"
+            to="/portfolio"
             label="กลับโปรไฟล์"
             className="mb-4"
           />
@@ -168,6 +168,9 @@ const EarningsPage = () => {
             lifetimeEarned={lifetimeEarned}
             feeLabel={feeLabel}
             showGiftable={giftEconomy}
+            onCashout={() => setCashoutOpen(true)}
+            canCashout={canCashout}
+            cashoutHint={cashoutHint}
           />
 
           <div className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-4 sm:p-5">
@@ -189,10 +192,6 @@ const EarningsPage = () => {
 
         <EarningsQuickActions
           onTopUp={() => setTopupOpen(true)}
-          onCashout={() => setCashoutOpen(true)}
-          onReferral={() => navigate("/referrals")}
-          canCashout={canCashout}
-          cashoutHint={cashoutHint}
           showTopUp={giftEconomy}
         />
 

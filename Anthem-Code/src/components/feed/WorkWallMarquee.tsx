@@ -13,12 +13,9 @@ function wallThumbUrl(url: string) {
 }
 
 function splitRows(items: DBProject[]): [DBProject[], DBProject[]] {
-  const mid = Math.ceil(items.length / 2);
-  const rowA = items.slice(0, mid);
-  const rowB = items.slice(mid);
-  if (rowB.length < 4 && rowA.length > 4) {
-    return [items.filter((_, i) => i % 2 === 0), items.filter((_, i) => i % 2 === 1)];
-  }
+  if (items.length <= 1) return [items, items];
+  const rowA = items.filter((_, i) => i % 2 === 0);
+  const rowB = items.filter((_, i) => i % 2 === 1);
   return [rowA, rowB.length ? rowB : rowA];
 }
 
@@ -37,10 +34,10 @@ function MarqueeRow({
   const loop = items.length ? [...items, ...items] : [];
 
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative min-h-0 overflow-hidden max-lg:flex-1">
       <div
         className={cn(
-          "flex w-max gap-2.5 sm:gap-3 will-change-transform",
+          "flex w-max items-stretch gap-2.5 sm:gap-3 will-change-transform max-lg:h-full",
           animate && (direction === "left" ? "animate-work-wall-left" : "animate-work-wall-right"),
         )}
         style={animate ? undefined : { transform: "translateX(0)" }}
@@ -61,7 +58,7 @@ function MarqueeRow({
               onClick={() => navigate(`/project/${project.id}`)}
               className={cn(
                 "group relative shrink-0 overflow-hidden rounded-xl sm:rounded-2xl",
-                "h-[9.5rem] w-[13.5rem] sm:h-[12rem] sm:w-[17rem] md:h-[14rem] md:w-[20rem] lg:h-[16rem] lg:w-[23rem]",
+                "max-lg:h-full aspect-[7/5] lg:h-[14.5rem] lg:w-[20.5rem] lg:aspect-auto",
                 "bg-muted ring-1 ring-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
               )}
             >
@@ -75,7 +72,14 @@ function MarqueeRow({
                 fetchPriority={eager && index === 0 ? "high" : "low"}
                 className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
               />
-              <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent opacity-70" />
+              <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent opacity-80" />
+              {!isClone && project.title ? (
+                <span className="pointer-events-none absolute inset-x-0 bottom-0 px-2 pb-1.5 sm:px-2.5 sm:pb-2">
+                  <span className="block truncate text-left text-[11px] sm:text-xs font-medium text-white drop-shadow thai-leading-tight">
+                    {project.title}
+                  </span>
+                </span>
+              ) : null}
             </button>
           );
         })}
@@ -84,7 +88,7 @@ function MarqueeRow({
   );
 }
 
-/** Ambient portfolio wall — 1 row mobile, 2 rows desktop, continuous scroll. */
+/** Ambient portfolio wall — 2 sliding rows, opposite directions. */
 const WorkWallMarquee = ({ className }: { className?: string }) => {
   const reduced = useReducedMotion();
   const { data: top = [], isLoading } = useTopProjects();
@@ -124,21 +128,15 @@ const WorkWallMarquee = ({ className }: { className?: string }) => {
   return (
     <div
       className={cn(
-        "absolute inset-0 z-0 flex flex-col justify-center gap-3 sm:gap-4 overflow-hidden py-6 sm:py-8 md:py-10",
+        "absolute inset-0 z-0 flex h-full min-h-0 flex-col gap-2.5 sm:gap-3 overflow-hidden py-1 sm:py-2 lg:justify-center",
         className,
       )}
     >
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-10 sm:w-16 md:w-20 lg:w-28 bg-gradient-to-r from-background from-[8%] via-background/75 via-[45%] to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-10 sm:w-16 md:w-20 lg:w-28 bg-gradient-to-l from-background from-[8%] via-background/75 via-[45%] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-8 sm:w-12 md:w-16 bg-gradient-to-r from-background from-[8%] via-background/70 via-[45%] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-8 sm:w-12 md:w-16 bg-gradient-to-l from-background from-[8%] via-background/70 via-[45%] to-transparent" />
 
-      <div className="md:hidden">
-        <MarqueeRow items={withCover} direction="left" animate={animate} eagerCount={4} />
-      </div>
-
-      <div className="hidden md:flex md:flex-col md:gap-4">
-        <MarqueeRow items={rowA} direction="left" animate={animate} eagerCount={5} />
-        <MarqueeRow items={rowB} direction="right" animate={animate} eagerCount={3} />
-      </div>
+      <MarqueeRow items={rowA} direction="left" animate={animate} eagerCount={5} />
+      <MarqueeRow items={rowB} direction="right" animate={animate} eagerCount={3} />
     </div>
   );
 };

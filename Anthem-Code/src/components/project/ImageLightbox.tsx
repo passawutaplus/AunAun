@@ -118,6 +118,7 @@ const ImageLightbox = ({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
+        e.stopPropagation();
         if (zoomedRef.current) {
           resetView();
           return;
@@ -128,16 +129,18 @@ const ImageLightbox = ({
       if (zoomedRef.current) return;
       if (e.key === "ArrowLeft") {
         e.preventDefault();
+        e.stopPropagation();
         go(-1);
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
+        e.stopPropagation();
         go(1);
       }
     };
-    document.addEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey, true);
     document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("keydown", onKey, true);
       document.body.style.overflow = "";
     };
   }, [open, onClose, go, resetView]);

@@ -1,4 +1,9 @@
-/** Verified working Unsplash IDs for demo seed (checked 2026-06). */
+/**
+ * Demo catalog imagery (generated artifacts + portraits).
+ * Unsplash kept only as last-resort fallback if a local asset is missing.
+ */
+import { DEMO_CATALOG, catalogAssetRel } from "./demo-catalog-creators.mjs";
+
 export const UNSPLASH_ART = [
   "1618005182384-a83a8bd57fbe",
   "1561070791-2526d30994b5",
@@ -22,16 +27,41 @@ export const UNSPLASH_ART = [
   "1555949963-aa79dcee981c",
 ];
 
+export function demoAssetOrigin() {
+  return String(process.env.DEMO_ASSET_ORIGIN || process.env.VITE_PUBLIC_SITE_URL || "").replace(/\/$/, "");
+}
+
+/** Absolute when DEMO_ASSET_ORIGIN is set; otherwise same-origin public path. */
+export function demoCatalogUrl(relPath) {
+  const path = `/demo-catalog/${String(relPath).replace(/^\/+/, "")}`;
+  const origin = demoAssetOrigin();
+  return origin ? `${origin}${path}` : path;
+}
+
+export function demoCatalogCoverUrl(i) {
+  return demoCatalogUrl(catalogAssetRel("covers", ((i % 20) + 20) % 20));
+}
+
+export function demoCatalogAvatarUrl(i) {
+  return demoCatalogUrl(catalogAssetRel("avatars", ((i % 20) + 20) % 20));
+}
+
+export function napatsaraExtraCoverUrl() {
+  return demoCatalogUrl("covers/01b-napatsara-songkran.png");
+}
+
 export function unsplashArt(i, w = 1200, h = 900) {
-  const id = UNSPLASH_ART[((i % UNSPLASH_ART.length) + UNSPLASH_ART.length) % UNSPLASH_ART.length];
-  return `https://images.unsplash.com/photo-${id}?w=${w}&h=${h}&fit=crop&q=80&auto=format`;
+  return demoCatalogCoverUrl(i);
 }
 
 export function unsplashGallery(i) {
-  return [unsplashArt(i), unsplashArt(i + 7), unsplashArt(i + 13)];
+  const cover = demoCatalogCoverUrl(i);
+  const next = demoCatalogCoverUrl(i + 7);
+  return [cover, next];
 }
 
-/** SQL array literal for migrations */
 export function unsplashArtSqlArray() {
   return `ARRAY[\n      ${UNSPLASH_ART.map((id) => `'${id}'`).join(",\n      ")}\n    ]`;
 }
+
+export { DEMO_CATALOG, catalogAssetRel };

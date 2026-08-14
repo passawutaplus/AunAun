@@ -1,0 +1,117 @@
+.wandering-eyes {
+  container-type: size;
+  flex-shrink: 0;
+  --duration: 5s;
+}
+
+.wandering-eyes__pair {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--loading-ui-wandering-eyes-gap);
+}
+
+.wandering-eyes__eye {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  border-radius: 9999px;
+  width: var(--loading-ui-wandering-eyes-eye);
+  height: var(--loading-ui-wandering-eyes-eye);
+  background-color: var(--eye-color, color-mix(in srgb, currentColor 16%, transparent));
+  animation: loading-ui-wandering-eyes-blink var(--duration, 5s) infinite;
+}
+
+.wandering-eyes__pupil {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--loading-ui-wandering-eyes-eye) * var(--loading-ui-wandering-eyes-pupil-scale) * 2);
+  height: calc(var(--loading-ui-wandering-eyes-eye) * var(--loading-ui-wandering-eyes-pupil-scale) * 2);
+  border-radius: 9999px;
+  background-image: var(
+    --pupil-gradient,
+    linear-gradient(135deg, hsl(18 100% 62%) 0%, hsl(14 100% 55%) 50%, hsl(10 95% 48%) 100%)
+  );
+  animation: loading-ui-wandering-eyes-move var(--duration, 5s) infinite;
+}
+
+.dark .wandering-eyes__pupil {
+  background-image: var(
+    --pupil-gradient,
+    linear-gradient(135deg, hsl(20 100% 65%) 0%, hsl(14 100% 58%) 50%, hsl(10 95% 52%) 100%)
+  );
+}
+
+@keyframes loading-ui-wandering-eyes-move {
+  0%,
+  10% {
+    transform: translate(-50%, -50%);
+  }
+
+  13%,
+  40% {
+    transform: translate(
+      calc(-50% + (var(--loading-ui-wandering-eyes-eye) * var(--loading-ui-wandering-eyes-travel-scale) * -1)),
+      -50%
+    );
+  }
+
+  43%,
+  70% {
+    transform: translate(
+      calc(-50% + (var(--loading-ui-wandering-eyes-eye) * var(--loading-ui-wandering-eyes-travel-scale))),
+      -50%
+    );
+  }
+
+  73%,
+  90% {
+    transform: translate(
+      -50%,
+      calc(-50% + (var(--loading-ui-wandering-eyes-eye) * var(--loading-ui-wandering-eyes-travel-scale)))
+    );
+  }
+
+  93%,
+  100% {
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes loading-ui-wandering-eyes-blink {
+  0%,
+  10%,
+  12%,
+  20%,
+  22%,
+  40%,
+  42%,
+  60%,
+  62%,
+  70%,
+  72%,
+  90%,
+  92%,
+  98%,
+  100% {
+    height: var(--loading-ui-wandering-eyes-eye);
+  }
+
+  11%,
+  21%,
+  41%,
+  61%,
+  71%,
+  91%,
+  99% {
+    height: calc(var(--loading-ui-wandering-eyes-eye) * var(--loading-ui-wandering-eyes-blink));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wandering-eyes__eye,
+  .wandering-eyes__pupil {
+    animation: none !important;
+  }
+}

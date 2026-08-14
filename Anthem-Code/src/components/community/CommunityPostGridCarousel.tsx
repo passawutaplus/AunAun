@@ -7,6 +7,8 @@ type Props = {
   videoUrls: string[];
   aspectClass: string;
   className?: string;
+  /** Accessible label for media (post title). */
+  alt?: string;
 };
 
 export function CommunityPostGridCarousel({
@@ -14,6 +16,7 @@ export function CommunityPostGridCarousel({
   videoUrls,
   aspectClass,
   className,
+  alt = "สื่อโพสต์ชุมชน",
 }: Props) {
   const slides = [
     ...galleryUrls.map((url) => ({ kind: "image" as const, url })),
@@ -48,7 +51,7 @@ export function CommunityPostGridCarousel({
       {slide.kind === "image" ? (
         <img
           src={slide.url}
-          alt=""
+          alt={alt}
           className={cn("w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]", aspectClass)}
           loading="lazy"
         />

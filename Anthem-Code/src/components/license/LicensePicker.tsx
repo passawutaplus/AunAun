@@ -13,6 +13,7 @@ import {
   getLicensePickerOptions,
   type LicenseType,
 } from "@/lib/licenses";
+import { LicensePermissionSummary } from "@/components/license/LicensePermissionSummary";
 
 interface Props {
   value: LicenseType;
@@ -20,6 +21,7 @@ interface Props {
   licenseNote: string;
   onLicenseNoteChange: (v: string) => void;
   noteInvalid?: boolean;
+  hideHeading?: boolean;
 }
 
 const LicensePicker = ({
@@ -28,17 +30,20 @@ const LicensePicker = ({
   licenseNote,
   onLicenseNoteChange,
   noteInvalid,
+  hideHeading,
 }: Props) => {
   const selected = getLicenseMeta(value);
   const options = getLicensePickerOptions(value);
   const SelectedIcon = selected.icon;
 
   return (
-    <div className="space-y-2">
-      <Label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
-        <Scale className="w-3.5 h-3.5" aria-hidden />
-        สิทธิ์การใช้งาน
-      </Label>
+    <div className="space-y-3">
+      {hideHeading ? null : (
+        <Label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
+          <Scale className="w-3.5 h-3.5" aria-hidden />
+          สิทธิ์การใช้งาน
+        </Label>
+      )}
       <Select value={value} onValueChange={(v) => onChange(v as LicenseType)}>
         <SelectTrigger>
           <SelectValue>
@@ -79,6 +84,8 @@ const LicensePicker = ({
           <p className="text-[10px] text-muted-foreground text-right">{licenseNote.length}/500</p>
         </div>
       )}
+
+      <LicensePermissionSummary licenseType={value} />
     </div>
   );
 };

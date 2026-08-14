@@ -141,3 +141,19 @@ export const useDeleteComment = () => {
     onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: ["project-comments", v.project_id] }),
   });
 };
+
+export const useUpdateComment = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { id: string; project_id: string; content: string }) => {
+      const content = payload.content.trim();
+      if (!content) throw new Error("กรอกข้อความก่อนบันทึก");
+      const { error } = await supabase
+        .from("project_comments")
+        .update({ content })
+        .eq("id", payload.id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: ["project-comments", v.project_id] }),
+  });
+};

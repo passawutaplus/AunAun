@@ -86,7 +86,9 @@ const FloatingNav = () => {
   };
 
   const notificationsActive = pathname.startsWith("/notifications");
-  const navItems = isAplus1LaunchMinimal() ? launchNavItems : NAV_ITEMS;
+  const navItems = (isAplus1LaunchMinimal() ? launchNavItems : NAV_ITEMS).filter(
+    (item) => !(item.requiresAuth && !user),
+  );
 
   return (
     <>
@@ -119,14 +121,13 @@ const FloatingNav = () => {
                   aria-label={label}
                   aria-current={homeActive ? "page" : undefined}
                   className={cn(
-                    "relative flex items-center justify-center rounded-full transition-colors min-h-11",
+                    "relative flex items-center justify-center rounded-full transition-colors h-11 w-11 min-h-11",
                     homeActive
-                      ? "gap-1.5 bg-foreground text-background px-2.5 py-2 text-[11px] font-medium"
-                      : "p-2 text-muted-foreground hover:text-foreground hover:bg-accent w-10 min-h-10",
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent",
                   )}
                 >
-                  <Icon className={cn("shrink-0", homeActive ? "w-4 h-4" : "w-5 h-5")} strokeWidth={homeActive ? 2.2 : 2} />
-                  {homeActive && <span className="whitespace-nowrap max-w-[4.5rem] truncate">{label}</span>}
+                  <Icon className="h-5 w-5 shrink-0" strokeWidth={homeActive ? 2.2 : 2} />
                 </button>
               );
             }
@@ -144,24 +145,23 @@ const FloatingNav = () => {
                 aria-label={showChatBadge ? `${label} (${chatBadgeCount} รายการใหม่)` : label}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex items-center justify-center rounded-full transition-colors min-h-11",
+                  "relative flex items-center justify-center rounded-full transition-colors h-11 w-11 min-h-11",
                   active
-                    ? "gap-1.5 bg-foreground text-background px-2.5 py-2 text-[11px] font-medium"
-                    : "p-2 text-muted-foreground hover:text-foreground hover:bg-accent w-10 min-h-10",
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent",
                 )}
               >
-                <Icon className={cn("shrink-0", active ? "w-4 h-4" : "w-5 h-5")} strokeWidth={active ? 2.2 : 2} />
+                <Icon className="h-5 w-5 shrink-0" strokeWidth={active ? 2.2 : 2} />
                 {showChatBadge && (
-                  <span className="absolute top-1 right-1 min-w-[14px] h-[14px] px-0.5 rounded-full bg-primary text-white text-[9px] font-semibold flex items-center justify-center leading-none">
+                  <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-primary text-white text-[9px] font-semibold flex items-center justify-center leading-none">
                     {chatBadgeCount > 99 ? "99+" : chatBadgeCount}
                   </span>
                 )}
-                {active && <span className="whitespace-nowrap max-w-[4.5rem] truncate">{label}</span>}
               </NavLink>
             );
           })}
 
-          <NotificationBell variant="nav" active={notificationsActive} />
+          {user && <NotificationBell variant="nav" active={notificationsActive} />}
 
           {user ? (
             <ProfileMenuDropdown
@@ -174,24 +174,18 @@ const FloatingNav = () => {
                   aria-label="Profile"
                   aria-haspopup="menu"
                   className={cn(
-                    "flex items-center justify-center rounded-full transition-colors min-h-11",
+                    "flex items-center justify-center rounded-full transition-colors h-11 w-11 min-h-11",
                     PROFILE_MATCH(pathname)
-                      ? "gap-1.5 bg-foreground text-background px-2.5 py-2 text-[11px] font-medium"
-                      : "p-2 text-muted-foreground hover:text-foreground hover:bg-accent w-10 min-h-10",
+                      ? "bg-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent",
                   )}
                 >
                   <UserAvatar
                     src={myProfile?.avatar_url}
                     name={myProfile?.display_name ?? user.email ?? "U"}
-                    className={cn(
-                      "shrink-0 ring-2 ring-background",
-                      PROFILE_MATCH(pathname) ? "w-6 h-6" : "w-7 h-7",
-                    )}
-                    fallbackClassName={PROFILE_MATCH(pathname) ? "text-[10px]" : "text-xs"}
+                    className="h-7 w-7 shrink-0 ring-2 ring-background"
+                    fallbackClassName="text-xs"
                   />
-                  {PROFILE_MATCH(pathname) && (
-                    <span className="whitespace-nowrap max-w-[4.5rem] truncate">Profile</span>
-                  )}
                 </button>
               }
             />
@@ -200,7 +194,7 @@ const FloatingNav = () => {
               type="button"
               aria-label="Profile"
               onClick={() => openAuth("/portfolio")}
-              className="flex items-center justify-center rounded-full transition-colors min-h-11 p-2 text-muted-foreground hover:text-foreground hover:bg-accent w-10 min-h-10"
+              className="flex h-11 w-11 min-h-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <User className="w-5 h-5 shrink-0" strokeWidth={2} />
             </button>

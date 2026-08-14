@@ -45,7 +45,8 @@ import { normalizeExperienceItem } from "@/lib/validators";
 import { safeHttpUrl } from "@/lib/safeUrl";
 import { parseSocialLinks } from "@/lib/parseSocialLinks";
 import { highlight } from "@/lib/highlight";
-import { PROJECT_FEED_SELECT, PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
+import { PROJECT_FEED_SELECT, PROJECT_FEED_SELECT_WITH_AI, PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
+import { fetchFeedCardRows } from "@/lib/fetchProjectRow";
 import { profileReadFrom } from "@/lib/profileAccess";
 import {
   readSeriesDensity,
@@ -68,8 +69,13 @@ import { cn } from "@/lib/utils";
 import { navigateToAuth, stripSearchParams } from "@/lib/authRedirect";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { toast } from "sonner";
+import { formatThaiDate } from "@/lib/format";
 import { isLaunchCreatorSupportEnabled } from "@/lib/aplus1Launch";
 import { isLocalDevSelfHirePreview } from "@/lib/localDevSelfHire";
+import {
+  loadProfileVisibility,
+  parseProfileVisibility,
+} from "@/lib/profileVisibility";
 
 const PREVIEW_TOAST = "นี่คือมุมมองผู้เยี่ยมชม — ปุ่มนี้ใช้งานได้จริงเมื่อคนอื่นเปิดโปรไฟล์ของคุณ";
 
@@ -154,13 +160,19 @@ const PublicProfilePage = () => {
     enabled: !!slug && !vanityRedirect,
     queryFn: async () => {
       const table = profileReadFrom(user?.id, isUuid(slug) ? slug : "");
-      let query = table.select(PUBLIC_PROFILE_SELECT);
+      let query = table.select(`${PUBLIC_PROFILE_SELECT}, created_at`);
       if (isUuid(slug)) {
         query = query.eq("user_id", slug);
       } else {
         query = query.eq("username", slug.toLowerCase());
       }
-      const { data, error } = await query.maybeSingle();
+      const first = await query.maybeSingle();
+      if (!first.error) return first.data;
+      if (!String(first.error.message ?? "").includes("created_at")) throw first.error;
+      let fallback = table.select(PUBLIC_PROFILE_SELECT);
+      if (isUuid(slug)) fallback = fallback.eq("user_id", slug);
+      else fallback = fallback.eq("username", slug.toLowerCase());
+      const { data, error } = await fallback.maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -197,19 +209,21 @@ const PublicProfilePage = () => {
   } = useQuery({
     queryKey: ["public-projects", resolvedUserId],
     enabled: !!resolvedUserId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("projects")
-        .select(PROJECT_FEED_SELECT)
-        .eq("owner_id", resolvedUserId!)
-        .eq("status", "Published")
-        .order("is_pinned", { ascending: false })
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: false })
-        .limit(60);
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: async () =>
+      fetchFeedCardRows(
+        (select) =>
+          supabase
+            .from("projects")
+            .select(select)
+            .eq("owner_id", resolvedUserId!)
+            .eq("status", "Published")
+            .order("is_pinned", { ascending: false })
+            .order("sort_order", { ascending: true })
+            .order("created_at", { ascending: false })
+            .limit(60),
+        PROJECT_FEED_SELECT_WITH_AI,
+        PROJECT_FEED_SELECT,
+      ),
   });
   const projectsSlow = useSlowLoadFallback(projectsLoading && !!resolvedUserId);
 
@@ -387,6 +401,12 @@ const PublicProfilePage = () => {
   }
 
   const displayName = profile.display_name || profile.username || "ครีเอเตอร์";
+  const vis = parseProfileVisibility(
+    isSelf
+      ? loadProfileVisibility(user?.id)
+      : (profile as { public_visibility?: unknown }).public_visibility,
+  );
+  const joinedAt = (profile as { created_at?: string }).created_at;
   const coverUrl = (profile.cover_url ?? "").trim();
   const hasCover = !!coverUrl && coverUrl.startsWith("http");
   const publicShareProfile = {
@@ -640,13 +660,18 @@ const PublicProfilePage = () => {
                   {(profile as { open_for_work_badge?: string }).open_for_work_badge || "Open for Work"}
                 </Badge>
               )}
-              {profile.bio && (
+              {vis.bio && profile.bio && (
                 <p className="text-base text-foreground mt-2 sm:mt-3 max-w-xl leading-relaxed">
                   {highlight(profile.bio, q)}
                 </p>
               )}
+              {vis.joined && joinedAt ? (
+                <p className="text-xs text-muted-foreground mt-2">
+                  เข้าร่วม {formatThaiDate(joinedAt)}
+                </p>
+              ) : null}
 
-              {(profile.skills?.length ?? 0) > 0 && (
+              {vis.skills && (profile.skills?.length ?? 0) > 0 && (
                 <ProfileSkillChips
                   className="mt-2 sm:mt-3"
                   skills={profile.skills!}
@@ -743,7 +768,7 @@ const PublicProfilePage = () => {
                 </div>
               )}
 
-              {(profile.website || profile.instagram || profile.facebook || profile.line_id) && (
+              {vis.socials && (profile.website || profile.instagram || profile.facebook || profile.line_id) && (
                 <div className="flex items-center gap-3 mt-3 sm:mt-4 text-muted-foreground flex-wrap">
                   {safeHttpUrl(profile.website) && (
                     <a href={safeHttpUrl(profile.website)} target="_blank" rel="noopener noreferrer" className="hover:text-primary"><Globe className="w-4 h-4" /></a>

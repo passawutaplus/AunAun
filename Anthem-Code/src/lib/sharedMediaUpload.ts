@@ -26,9 +26,13 @@ export async function uploadToSharedMedia(
   body: Blob | File,
   contentType: string,
   retries = 2,
+  signal?: AbortSignal,
 ): Promise<void> {
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
+    if (signal?.aborted) {
+      throw new DOMException("Upload cancelled", "AbortError");
+    }
     const { error } = await sharedStorage.storage
       .from(SHARED_MEDIA_BUCKET)
       .upload(path, body, { contentType, upsert: false });

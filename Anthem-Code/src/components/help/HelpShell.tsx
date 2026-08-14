@@ -1,5 +1,4 @@
 import { NavLink, Outlet } from "react-router-dom";
-import Footer from "@/components/Footer";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +25,6 @@ export function HelpShell() {
         </div>
       </div>
       <Outlet />
-      <Footer />
     </main>
   );
 }

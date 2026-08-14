@@ -1,6 +1,7 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "react";
 import {
   ExternalLink,
+  Pencil,
   Plus,
   X,
   Paperclip,
@@ -39,6 +40,8 @@ type Props = {
   folder: string;
   projectId?: string;
   tier?: Tier;
+  /** Skip outer card + heading when wrapped in CollapsibleEditorCard. */
+  bare?: boolean;
 };
 
 export type ProjectAssetsEditorHandle = {
@@ -100,13 +103,16 @@ function tryBuildLinkAsset(
 }
 
 const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(function ProjectAssetsEditor(
-  { assets, onChange, userId, folder, projectId, tier = "free" },
+  { assets, onChange, userId, folder, projectId, tier = "free", bare = false },
   ref,
 ) {
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
   const [fileLabel, setFileLabel] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const skipRenameCommitRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const draftRef = useRef({ label: "", url: "" });
   draftRef.current = { label, url };
@@ -194,17 +200,58 @@ const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(functio
   };
 
   const removeAsset = (id: string) => {
+    if (editingId === id) {
+      setEditingId(null);
+    }
     onChange(assets.filter((a) => a.id !== id));
   };
 
+  const fallbackDisplayName = (asset: ProjectAsset) => {
+    if (asset.kind === "file") {
+      const fileName = asset.file_name ?? "ไฟล์แนบ";
+      const stem = fileName.replace(/\.[^.]+$/, "");
+      return stem.trim() || fileName;
+    }
+    try {
+      return new URL(asset.url ?? "").hostname;
+    } catch {
+      return asset.url ?? "ลิงก์";
+    }
+  };
+
+  const beginRename = (asset: ProjectAsset) => {
+    setEditingId(asset.id);
+    setEditLabel(asset.label);
+  };
+
+  const commitRename = (id: string) => {
+    if (skipRenameCommitRef.current) {
+      skipRenameCommitRef.current = false;
+      setEditingId(null);
+      return;
+    }
+    const asset = assets.find((a) => a.id === id);
+    if (!asset) {
+      setEditingId(null);
+      return;
+    }
+    const next = (editLabel.trim() || fallbackDisplayName(asset)).slice(0, 80);
+    if (next !== asset.label) {
+      onChange(assets.map((a) => (a.id === id ? { ...a, label: next } : a)));
+    }
+    setEditingId(null);
+  };
+
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+    <div className={bare ? "space-y-3" : "rounded-2xl border border-border bg-card p-4 space-y-3"}>
+      {bare ? null : (
       <div>
         <p className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
           <Paperclip className="w-3.5 h-3.5" />
           ไฟล์แนบ / ลิงก์
         </p>
       </div>
+      )}
 
       {assets.length > 0 && (
         <ul className="space-y-2">
@@ -228,9 +275,35 @@ const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(functio
                 )}
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-xs font-medium text-foreground truncate">{asset.label}</p>
+                    {editingId === asset.id ? (
+                      <Input
+                        autoFocus
+                        value={editLabel}
+                        onChange={(e) => setEditLabel(e.target.value)}
+                        onBlur={() => commitRename(asset.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            e.currentTarget.blur();
+                          }
+                          if (e.key === "Escape") {
+                            e.preventDefault();
+                            skipRenameCommitRef.current = true;
+                            setEditingId(null);
+                          }
+                        }}
+                        maxLength={80}
+                        aria-label="ชื่อที่แสดงบนหน้าผลงาน"
+                        className="h-7 min-w-0 flex-1 text-xs font-medium"
+                      />
+                    ) : (
+                      <p className="text-xs font-medium text-foreground truncate">{asset.label}</p>
+                    )}
                     <ProjectAssetScanBadge status={asset.scan_status} variant="owner" />
                   </div>
+                  {editingId === asset.id ? (
+                    <p className="text-[10px] text-muted-foreground">ชื่อนี้จะแสดงบนหน้าผลงาน</p>
+                  ) : null}
                   <p className="text-[10px] text-muted-foreground truncate">
                     {asset.kind === "file" ? asset.file_name ?? "ไฟล์แนบ" : asset.url}
                   </p>
@@ -292,14 +365,36 @@ const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(functio
                     </button>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => removeAsset(asset.id)}
-                  className="shrink-0 text-muted-foreground hover:text-destructive"
-                  aria-label={`ลบ ${asset.label}`}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <button
+                    type="button"
+                    title="ตั้งชื่อที่แสดงบนหน้าผลงาน"
+                    aria-label={`ตั้งชื่อที่แสดงบนหน้าผลงาน: ${asset.label}`}
+                    className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    onMouseDown={(e) => {
+                      if (editingId === asset.id) {
+                        e.preventDefault();
+                        commitRename(asset.id);
+                      }
+                    }}
+                    onClick={() => {
+                      if (editingId !== asset.id) beginRename(asset);
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      if (editingId === asset.id) e.preventDefault();
+                    }}
+                    onClick={() => removeAsset(asset.id)}
+                    className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-destructive"
+                    aria-label={`ลบ ${asset.label}`}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </li>
             );
           })}
@@ -307,7 +402,10 @@ const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(functio
       )}
 
       <div className="space-y-3 pt-1 border-t border-border/50">
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase">ลิงก์ภายนอก</p>
+        <p className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
+          <ExternalLink className="h-3 w-3 text-primary shrink-0" aria-hidden />
+          External Link
+        </p>
         <Input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
@@ -364,8 +462,11 @@ const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(functio
         )}
       </div>
 
-      <div className="space-y-2">
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase">แนบไฟล์</p>
+      <div className="space-y-2 border-t border-border/60 pt-3">
+        <p className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
+          <Paperclip className="h-3 w-3 text-primary shrink-0" aria-hidden />
+          Add File
+        </p>
         <Input
           value={fileLabel}
           onChange={(e) => setFileLabel(e.target.value)}

@@ -91,9 +91,16 @@ export function isLaunchAllowedPath(pathname: string): boolean {
   return LAUNCH_ALLOWED_ROUTE_PATTERNS.some((re) => re.test(pathname));
 }
 
+/**
+ * Coming-soon only for known deferred prefixes that are not on the allowlist.
+ * Unknown URLs must fall through to the real 404 page — not “ยังไม่เปิดในเวอร์ชันนี้”.
+ */
 export function isLaunchHiddenPath(pathname: string): boolean {
   if (!isAplus1LaunchMinimal()) return false;
-  return !isLaunchAllowedPath(pathname);
+  if (isLaunchAllowedPath(pathname)) return false;
+  return LAUNCH_HIDDEN_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 }
 
 export const LAUNCH_COMING_SOON_TH =

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,17 @@ import { BrandLogo } from "@/components/brand/BrandLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { buildResetPasswordUrl } from "@/lib/oauthRedirect";
 import { toast } from "sonner";
+import { readLoginEmailPrefill } from "@/lib/loginEmailPrefill";
 
 const AuthForgotPage = () => {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    const prefill = readLoginEmailPrefill();
+    if (prefill) setEmail(prefill);
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

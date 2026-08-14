@@ -6,12 +6,11 @@ import { toast } from "sonner";
 import { hasConsentBannerPending, COOKIE_CONSENT_CHANGED_EVENT } from "@/lib/cookieConsent";
 import { shouldDeferInterestSurvey } from "@/lib/onboardingRoutes";
 import {
-  Dialog,
-  DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ResponsiveOverlay } from "@/components/ui/ResponsiveOverlay";
 import { Button } from "@/components/ui/button";
 import { ChipMultiSelectWithOther } from "@/components/ui/ChipMultiSelectWithOther";
 import { type FeedInterestId } from "@/data/feedInterestOptions";
@@ -250,7 +249,7 @@ export function InterestSurveyGate() {
   const { user } = useAuth();
   const { tier } = useSubscription();
   const isNarrow = useIsNarrow();
-  const { shouldShow, saveOnboarding, save, isSaving, isLoading, profile } = useFeedInterestSurvey(
+  const { shouldShow, saveOnboarding, isSaving, isLoading, profile } = useFeedInterestSurvey(
     user?.id,
   );
   /** Mobile + desktop: interests first; profile (identity) follows on mobile. */
@@ -271,16 +270,12 @@ export function InterestSurveyGate() {
   const avatarInput = useRef<HTMLInputElement>(null);
   const coverInput = useRef<HTMLInputElement>(null);
 
-  const surveyVisible = FORCE_SHOW_INTEREST_SURVEY
-    ? !dismissed
-    : Boolean(
-        user &&
-          !isLoading &&
-          shouldShow &&
-          !dismissed &&
-          !cookiePending &&
-          !shouldDeferInterestSurvey(pathname),
-      );
+  const surveyVisible = Boolean(
+    !dismissed &&
+      !cookiePending &&
+      !shouldDeferInterestSurvey(pathname) &&
+      (FORCE_SHOW_INTEREST_SURVEY || (user && !isLoading && shouldShow)),
+  );
 
   const { options: interestOptions } = useInterestCategoryCovers(surveyVisible);
   const mediaBusy = avatarBusy || coverBusy;
@@ -357,40 +352,18 @@ export function InterestSurveyGate() {
     setUsernameVerify({ kind: "ok", text: "ใช้ได้" });
   };
 
-  /** Username required to finish (desktop) or continue from identity (mobile). */
+  const hasInterests = selected.size > 0;
+
+  /** Interests required; username required to finish (desktop) or continue from identity (mobile). */
   const canContinue = useMemo(() => {
+    if (step === "interests" && !hasInterests) return false;
     if (FORCE_SHOW_INTEREST_SURVEY && !user) return true;
     if (step === "interests" && isNarrow) return true;
     if (step === "basics") return true;
     return usernameOk;
-  }, [user, usernameOk, step, isNarrow]);
+  }, [user, usernameOk, step, isNarrow, hasInterests]);
 
   if (!surveyVisible) return null;
-
-  const completeWithInterestsOnly = async () => {
-    if (FORCE_SHOW_INTEREST_SURVEY && !user) {
-      setDismissed(true);
-      toast.message("พรีวิว — ยังไม่ได้บันทึก (ยังไม่ล็อกอิน)");
-      return;
-    }
-    await save(Array.from(selected));
-    setDismissed(true);
-    toast.message(
-      selected.size > 0
-        ? "บันทึกความสนใจแล้ว — ตั้งโปรไฟล์ทีหลังได้ที่เกี่ยวกับฉัน"
-        : "ตั้งค่าโปรไฟล์ทีหลังได้ที่เกี่ยวกับฉัน",
-    );
-  };
-
-  const handleSkip = () => {
-    void (async () => {
-      try {
-        await completeWithInterestsOnly();
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
-      }
-    })();
-  };
 
   const goBack = () => {
     if (step === "basics") setStep("interests");
@@ -398,9 +371,12 @@ export function InterestSurveyGate() {
   };
 
   const finishOnboarding = async () => {
+    if (!hasInterests) {
+      toast.error("เลือกความสนใจอย่างน้อย 1 หมวด");
+      return;
+    }
     if (FORCE_SHOW_INTEREST_SURVEY && !user) {
       setDismissed(true);
-      toast.message("พรีวิว — ยังไม่ได้บันทึก (ยังไม่ล็อกอิน)");
       return;
     }
 
@@ -494,19 +470,24 @@ export function InterestSurveyGate() {
     step === "identity"
       ? "ตั้งรูปและ Username — แก้ทีหลังได้ที่โปรไฟล์"
       : step === "interests"
-        ? "เลือกได้มากกว่า 1 หรือข้ามได้ — เราจะโชว์ผลงานใน Explore ตามที่สนใจก่อน"
+        ? "เลือกอย่างน้อย 1 หมวด — เลือกได้มากกว่า 1 เราจะโชว์ผลงานใน Explore ตามที่สนใจก่อน"
         : "แก้ทีหลังได้ที่โปรไฟล์ › เกี่ยวกับฉัน";
 
   const primaryLabel =
-    isSaving ? null : step === "interests" ? (isNarrow ? "ถัดไป" : selected.size > 0 ? "เริ่มใช้งาน" : "ข้ามและเริ่มใช้งาน") : step === "basics" ? "เริ่มใช้งาน" : "เริ่มใช้งาน";
+    isSaving ? null : step === "interests" ? (isNarrow ? "ถัดไป" : "เริ่มใช้งาน") : "เริ่มใช้งาน";
 
   return (
-    <Dialog open onOpenChange={() => {}}>
-      <DialogContent
-        className="max-w-none w-[min(calc(100vw-2rem),72rem)] h-[min(84dvh,42rem)] overflow-hidden rounded-2xl p-0 gap-0 shadow-2xl [&>button]:hidden !flex !flex-col"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-      >
+    <ResponsiveOverlay
+      open
+      onOpenChange={() => {}}
+      accessibleTitle={stepTitle}
+      preventDismiss
+      hideCloseButton
+      showGrabHandle={false}
+      desktopClassName="max-w-none w-[min(calc(100vw-2rem),72rem)] h-[min(84dvh,42rem)] overflow-hidden rounded-2xl !flex !flex-col max-h-[min(84dvh,42rem)]"
+      sheetClassName="h-[min(88dvh,720px)]"
+      bodyClassName="p-0 overflow-hidden !flex !flex-col h-full min-h-0"
+    >
         <div className="flex h-full min-h-0 flex-col sm:flex-row">
           {showDesktopAside ? (
             <aside className="min-h-0 shrink-0 border-border sm:w-[36%] sm:max-w-[26rem] sm:border-r">
@@ -525,44 +506,33 @@ export function InterestSurveyGate() {
               <div className="min-h-0 flex-1 overflow-hidden">
                 <ProfileIdentityPanel {...identityProps} />
               </div>
-              <div className="z-10 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-background px-5 py-3">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={handleSkip}
-                  disabled={isSaving || mediaBusy}
-                  className="h-auto px-1 py-1 text-xs font-normal text-muted-foreground hover:bg-transparent hover:text-foreground"
-                >
-                  ข้ามไปก่อน
-                </Button>
-                <div className="flex shrink-0 items-center gap-2">
-                  {showBack ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={goBack}
-                      disabled={isSaving}
-                      className="rounded-full text-muted-foreground"
-                    >
-                      ย้อนกลับ
-                    </Button>
-                  ) : null}
+              <div className="z-10 flex shrink-0 items-center justify-end gap-2 border-t border-border bg-background px-5 py-3">
+                {showBack ? (
                   <Button
                     type="button"
-                    onClick={() => void goNext()}
-                    disabled={!canContinue || isSaving || mediaBusy}
-                    className="min-w-[10rem] rounded-full border-0 bg-gradient-brand text-white"
+                    variant="ghost"
+                    onClick={goBack}
+                    disabled={isSaving}
+                    className="rounded-full text-muted-foreground"
                   >
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                        กำลังบันทึก…
-                      </>
-                    ) : (
-                      "เริ่มใช้งาน"
-                    )}
+                    ย้อนกลับ
                   </Button>
-                </div>
+                ) : null}
+                <Button
+                  type="button"
+                  onClick={() => void goNext()}
+                  disabled={!canContinue || isSaving || mediaBusy}
+                  className="min-w-[10rem] rounded-full border-0 bg-gradient-brand text-white"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                      กำลังบันทึก…
+                    </>
+                  ) : (
+                    "เริ่มใช้งาน"
+                  )}
+                </Button>
               </div>
             </div>
           ) : null}
@@ -664,44 +634,34 @@ export function InterestSurveyGate() {
                 )}
               </div>
 
-              <div className="z-10 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-background px-5 py-3 sm:px-7">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={handleSkip}
-                  disabled={isSaving || mediaBusy}
-                  className="h-auto shrink-0 px-1 py-1 text-xs font-normal text-muted-foreground hover:bg-transparent hover:text-foreground"
-                >
-                  ข้ามไปก่อน
-                </Button>
-                <div className="flex shrink-0 items-center gap-2">
-                  {showBack ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={goBack}
-                      disabled={isSaving}
-                      className="rounded-full text-muted-foreground"
-                    >
-                      ย้อนกลับ
-                    </Button>
-                  ) : null}
+              <div className="z-10 flex shrink-0 items-center justify-end gap-2 border-t border-border bg-background px-5 py-3 sm:px-7">
+                {showBack ? (
                   <Button
                     type="button"
-                    onClick={() => void goNext()}
-                    disabled={!canContinue || isSaving || mediaBusy}
-                    className="min-w-[10rem] rounded-full border-0 bg-gradient-brand text-white"
+                    variant="ghost"
+                    onClick={goBack}
+                    disabled={isSaving}
+                    className="rounded-full text-muted-foreground"
                   >
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                        กำลังบันทึก…
-                      </>
-                    ) : (
-                      primaryLabel
-                    )}
+                    ย้อนกลับ
                   </Button>
-                </div>
+                ) : null}
+                <Button
+                  type="button"
+                  onClick={() => void goNext()}
+                  disabled={!canContinue || isSaving || mediaBusy}
+                  title={!hasInterests && step === "interests" ? "เลือกอย่างน้อย 1 หมวด" : undefined}
+                  className="min-w-[10rem] rounded-full border-0 bg-gradient-brand text-white"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                      กำลังบันทึก…
+                    </>
+                  ) : (
+                    primaryLabel
+                  )}
+                </Button>
               </div>
             </div>
           ) : null}
@@ -721,7 +681,6 @@ export function InterestSurveyGate() {
           className="hidden"
           onChange={(e) => void uploadMedia(e.target.files?.[0], "avatar")}
         />
-      </DialogContent>
-    </Dialog>
+    </ResponsiveOverlay>
   );
 }

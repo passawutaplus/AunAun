@@ -83,10 +83,14 @@ export function FilterEmptyState({
   title,
   description,
   onClear,
+  clearLabel = "ล้างตัวกรอง",
+  suggestions,
 }: {
   title: string;
   description?: string;
   onClear?: () => void;
+  clearLabel?: string;
+  suggestions?: { label: string; onSelect: () => void }[];
 }) {
   return (
     <EmptyState
@@ -94,10 +98,28 @@ export function FilterEmptyState({
       title={title}
       description={description}
       action={
-        onClear ? (
-          <Button variant="outline" className="rounded-full" onClick={onClear}>
-            ล้างตัวกรอง
-          </Button>
+        (suggestions && suggestions.length > 0) || onClear ? (
+          <div className="flex flex-col items-center gap-3">
+            {suggestions && suggestions.length > 0 ? (
+              <div className="flex flex-wrap justify-center gap-1.5 max-w-md">
+                {suggestions.map((s) => (
+                  <button
+                    key={s.label}
+                    type="button"
+                    onClick={s.onSelect}
+                    className="rounded-full border border-border px-3 py-1 text-xs text-foreground hover:border-primary/50 hover:bg-primary/5"
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {onClear ? (
+              <Button variant="outline" className="rounded-full" onClick={onClear}>
+                {clearLabel}
+              </Button>
+            ) : null}
+          </div>
         ) : undefined
       }
     />

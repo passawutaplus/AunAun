@@ -46,15 +46,6 @@ const ProfileButton = ({ className, fillRail = false }: Props) => {
       <div className={cn("flex items-center gap-1.5", fillRail && "min-w-0 flex-1", className)}>
         <div className={cn("hidden lg:flex items-center gap-1.5", fillRail && "min-w-0 flex-1")}>
           {!isAplus1LaunchMinimal() && <JobsNavButton />}
-          <div
-            className={cn(
-              "flex items-center rounded-full glass-chip px-1 py-1",
-              fillRail ? "w-full min-w-0 justify-evenly gap-0" : "gap-0.5",
-            )}
-          >
-            <ChatNavButton />
-            <NotificationBell />
-          </div>
         </div>
         <Button
           onClick={() => navigate("/auth")}

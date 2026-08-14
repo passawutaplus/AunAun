@@ -1,0 +1,47 @@
+const KEY = "aplus1:hidden-comments";
+const EMPTY = new Set<string>();
+
+const listeners = new Set<() => void>();
+let snapshot: Set<string> = EMPTY;
+let loaded = false;
+
+function readStorage(): Set<string> {
+  if (typeof window === "undefined") return EMPTY;
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(KEY) ?? "[]") as unknown;
+    return new Set(Array.isArray(raw) ? raw.filter((id): id is string => typeof id === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function ensureLoaded(): Set<string> {
+  if (!loaded) {
+    snapshot = readStorage();
+    loaded = true;
+  }
+  return snapshot;
+}
+
+export function hideCommentId(commentId: string): void {
+  const next = new Set(ensureLoaded());
+  next.add(commentId);
+  snapshot = next;
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(KEY, JSON.stringify([...next]));
+  }
+  listeners.forEach((fn) => fn());
+}
+
+export function subscribeHiddenComments(onStoreChange: () => void): () => void {
+  listeners.add(onStoreChange);
+  return () => listeners.delete(onStoreChange);
+}
+
+export function getHiddenCommentIds(): Set<string> {
+  return ensureLoaded();
+}
+
+export function getHiddenCommentIdsSnapshot(): Set<string> {
+  return EMPTY;
+}

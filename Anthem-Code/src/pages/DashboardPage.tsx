@@ -203,7 +203,7 @@ export default function DashboardPage({ mode: modeProp }: Props) {
       <div className="bg-gradient-to-b from-primary/10 to-background">
         <div className="mx-auto max-w-5xl px-4 pb-4 pt-6 lg:pt-8">
           <BackButton
-            fallbackTo="/portfolio"
+            to="/portfolio"
             label="กลับโปรไฟล์"
             className="mb-4"
           />

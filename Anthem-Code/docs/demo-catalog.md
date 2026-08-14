@@ -31,9 +31,9 @@ npm run seed:demo-full
 
 | Username | บทบาท |
 |----------|--------|
-| `phatsawut` | ครีเอเตอร์ใหม่ — Welcome PX, checklist |
-| `napatsara` | ครีเอเตอร์ยอดนิยม — 2 ผลงาน, engagement สูง |
-| `chatchai` | ผู้จ้าง — งาน, hiring, แชตจ้างงาน |
+| `phatsawut` | Brand designer — ครีเอเตอร์ใหม่, Welcome PX |
+| `napatsara` | Packaging — 2 ผลงาน, engagement สูง |
+| `chatchai` | Art director — ผู้จ้าง, hiring, แชต |
 
 ### Username ทั้ง 20 คน
 
@@ -63,7 +63,13 @@ UUID: `00000000-0000-0000-0000-00000000a000` … `a013` (index 0..19)
 | Community posts | 24 |
 | กระเป๋า + welcome PX | 20 |
 
-รูปภาพ: **Unsplash** (art/design) + **Dicebear** (avatar)
+รูปภาพ: ภาพเจนใน `public/demo-catalog/` (ปกผลงาน + โปรไฟล์) — ไม่ใช้ Unsplash/Dicebear เป็นหลัก
+
+Seed จะเขียน `cover_url` / `avatar_url` เป็น path `/demo-catalog/...` (หรือ URL เต็มถ้าตั้ง `DEMO_ASSET_ORIGIN`)
+
+ผลงานมีฟิลด์ลงงานปัจจุบัน: `brief`, `creator_role`, `process_note`, `deliverables`, `duration_label`, `outcome_note`, หมวดตาม taxonomy ใหม่
+
+แค็ตตาล็อกตัวละคร: `scripts/demo-catalog-creators.mjs`
 
 ## โหมดทดสอบบนเว็บ
 

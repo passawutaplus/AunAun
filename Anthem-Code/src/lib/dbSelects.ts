@@ -17,13 +17,20 @@ export const PROJECT_CONTENT_SELECT =
   "content_blocks, gallery_display_mode, grid_layout, editor_mode, flex_grid_layout";
 
 export const PROJECT_FEED_SELECT =
-  `id, title, cover_url, gallery_urls, category, owner_id, likes, views, status, created_at, tools, tags, allow_hire, allow_collab, license_type, sort_order, is_pinned, opportunity_types`;
+  `id, title, subtitle, cover_url, gallery_urls, category, owner_id, likes, views, status, created_at, tools, tags, allow_hire, allow_collab, license_type, sort_order, is_pinned, opportunity_types`;
+
+/** Optional on list cards — detail already gets these via PROJECT_LICENSE_EXTRA_SELECT. */
+export const PROJECT_AI_SELECT = "ai_assisted, ai_disclosure_note";
+
+export const PROJECT_FEED_SELECT_WITH_AI = `${PROJECT_FEED_SELECT}, ${PROJECT_AI_SELECT}`;
 
 /** Homepage/discovery cards also show collaborators. */
 export const PROJECT_FEED_CARD_SELECT = `${PROJECT_FEED_SELECT}, collab_user_ids`;
 
+export const PROJECT_FEED_CARD_SELECT_WITH_AI = `${PROJECT_FEED_CARD_SELECT}, ${PROJECT_AI_SELECT}`;
+
 export const PROJECT_DETAIL_SELECT =
-  `${PROJECT_FEED_SELECT}, description, price_thb, subtitle, studio_id, credited_user_ids, linked_community_post_ids, collab_user_ids, video_urls, updated_at, ${PROJECT_LICENSE_EXTRA_SELECT}, ${PROJECT_CONTEXT_SELECT}, ${PROJECT_EXTERNAL_LINKS_SELECT}, ${PROJECT_ASSETS_SELECT}, ${PROJECT_CONTENT_SELECT}`;
+  `${PROJECT_FEED_SELECT}, description, price_thb, studio_id, credited_user_ids, linked_community_post_ids, collab_user_ids, video_urls, updated_at, ${PROJECT_LICENSE_EXTRA_SELECT}, ${PROJECT_CONTEXT_SELECT}, ${PROJECT_EXTERNAL_LINKS_SELECT}, ${PROJECT_ASSETS_SELECT}, ${PROJECT_CONTENT_SELECT}`;
 
 export const PROJECT_MANAGE_SELECT = PROJECT_DETAIL_SELECT;
 

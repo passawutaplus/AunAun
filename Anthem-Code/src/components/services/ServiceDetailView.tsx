@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, Loader2, MessageCircle, X } from "lucide-react";
+import { Check, Expand, Loader2, MessageCircle, X } from "lucide-react";
 import {
   formatServiceDurationDays,
   formatServicePriceRange,
@@ -12,6 +12,7 @@ import { formatCategoryBreadcrumb } from "@/data/categoryTaxonomy";
 import { isVideoUrl } from "@/lib/videoAccept";
 import HireTargetProfilePreview from "@/components/opportunity/HireTargetProfilePreview";
 import ServicePackageWorksSection from "@/components/services/ServicePackageWorksSection";
+import ImageLightbox from "@/components/project/ImageLightbox";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -28,6 +29,8 @@ type Props = {
   /** Hide creator header (e.g. live editor preview) */
   hideCreator?: boolean;
   onRequest: (service: CreatorService) => void;
+  /** Parent dialogs can block dismiss while the lightbox is open. */
+  onLightboxOpenChange?: (open: boolean) => void;
 };
 
 /**
@@ -46,14 +49,37 @@ export default function ServiceDetailView({
   variant = "dialog",
   hideCreator,
   onRequest,
+  onLightboxOpenChange,
 }: Props) {
   const media = servicePreviewUrls(service);
+  const imageMedia = useMemo(() => media.filter((u) => !isVideoUrl(u)), [media]);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const active = media[Math.min(activeIdx, Math.max(0, media.length - 1))] ?? null;
   const duration = formatServiceDurationDays(service.duration_label);
   const revisions = formatServiceRevisions(service.revisions_label);
   const exclusions = service.exclusions_note?.trim() || "";
   const isPage = variant === "page";
+
+  useEffect(() => {
+    onLightboxOpenChange?.(lightboxOpen);
+  }, [lightboxOpen, onLightboxOpenChange]);
+
+  const setLightbox = (next: boolean) => {
+    setLightboxOpen(next);
+    onLightboxOpenChange?.(next);
+  };
+
+  const openLightbox = (mediaIndex = activeIdx) => {
+    const url = media[mediaIndex];
+    if (!url || isVideoUrl(url)) return;
+    const imgIdx = imageMedia.indexOf(url);
+    if (imgIdx < 0) return;
+    setActiveIdx(mediaIndex);
+    setLightboxIndex(imgIdx);
+    setLightbox(true);
+  };
 
   const requestButton = (
     <Button
@@ -220,7 +246,17 @@ export default function ServiceDetailView({
                     className="h-full w-full object-contain bg-black"
                   />
                 ) : (
-                  <img src={active} alt="" className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => openLightbox(activeIdx)}
+                    className="group relative block h-full w-full cursor-zoom-in"
+                    aria-label="ดูภาพเต็ม"
+                  >
+                    <img src={active} alt="" className="h-full w-full object-cover" />
+                    <span className="pointer-events-none absolute bottom-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white opacity-90 transition group-hover:bg-black/70">
+                      <Expand className="h-3.5 w-3.5" aria-hidden />
+                    </span>
+                  </button>
                 )
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -237,10 +273,12 @@ export default function ServiceDetailView({
                   key={`${url}-${i}`}
                   type="button"
                   onClick={() => setActiveIdx(i)}
+                  onDoubleClick={() => openLightbox(i)}
                   className={cn(
                     "relative h-14 w-[4.5rem] shrink-0 overflow-hidden rounded-lg border touch-manipulation",
                     i === activeIdx ? "border-primary ring-1 ring-primary" : "border-border/60",
                   )}
+                  aria-label={isVideoUrl(url) ? `วิดีโอ ${i + 1}` : `ดูภาพ ${i + 1}`}
                 >
                   {isVideoUrl(url) ? (
                     <video src={url} muted playsInline className="h-full w-full object-cover" />
@@ -308,6 +346,21 @@ export default function ServiceDetailView({
           </p>
         </div>
       )}
+
+      <ImageLightbox
+        images={imageMedia}
+        index={lightboxIndex}
+        open={lightboxOpen && imageMedia.length > 0}
+        onClose={() => setLightbox(false)}
+        onIndexChange={(idx) => {
+          setLightboxIndex(idx);
+          const url = imageMedia[idx];
+          if (!url) return;
+          const mediaIdx = media.indexOf(url);
+          if (mediaIdx >= 0) setActiveIdx(mediaIdx);
+        }}
+        alt={service.title}
+      />
     </div>
   );
 }

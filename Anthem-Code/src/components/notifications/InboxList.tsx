@@ -12,6 +12,8 @@ import { useRespondProjectCollabInvite } from "@/hooks/useProjectCollabInvites";
 import { useProfilesByIds } from "@/core/profiles";
 import { useMemo } from "react";
 import { profilePublicPath } from "@/lib/profileRoutes";
+import EmptyState from "@/components/ui/EmptyState";
+import { groupByNotificationDate } from "@/lib/notificationDateGroups";
 
 const kindIcon = (kind: string) => {
   if (kind.includes("gift")) return Gift;
@@ -34,7 +36,8 @@ const timeAgo = (iso: string) => {
   if (h < 24) return `${h} ชม.ที่แล้ว`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d} วันที่แล้ว`;
-  return new Date(iso).toLocaleDateString("th-TH");
+  const dt = new Date(iso);
+  return `${dt.toLocaleDateString("th-TH")} ${dt.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}`;
 };
 
 function extractFollowerId(n: Notification): string | null {
@@ -87,16 +90,37 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
   }
   if (items.length === 0) {
     return (
-      <div className="text-center py-16 text-muted-foreground">
-        <Bell className="w-10 h-10 mx-auto mb-2 opacity-50" />
-        <p className="text-sm">ยังไม่มีการแจ้งเตือน</p>
-      </div>
+      <EmptyState
+        icon={Bell}
+        title="ยังไม่มีการแจ้งเตือน"
+        description="เมื่อมีคนติดตาม จ้างงาน หรือส่งข้อความ จะขึ้นที่นี่"
+        action={
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={() => {
+              onBeforeNavigate?.();
+              navigate("/");
+            }}
+          >
+            ไปสำรวจผลงาน
+          </Button>
+        }
+        className="border-0 shadow-none bg-transparent"
+      />
     );
   }
 
+  const groups = groupByNotificationDate(items);
+
   return (
-    <div className="space-y-2">
-      {items.map((n) => {
+    <div className="space-y-4">
+      {groups.map((group) => (
+        <section key={group.key} className="space-y-2">
+          <h3 className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground px-1">
+            {group.label}
+          </h3>
+          {group.items.map((n) => {
         const Icon = kindIcon(n.kind);
         const isFollow = n.kind.includes("follow");
         const collabInvite = isPendingCollabInvite(n);
@@ -203,7 +227,9 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
             )}
           </div>
         );
-      })}
+          })}
+        </section>
+      ))}
     </div>
   );
 };

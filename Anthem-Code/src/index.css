@@ -239,6 +239,14 @@
   from { transform: translate3d(-50%, 0, 0); }
   to { transform: translate3d(0, 0, 0); }
 }
+@keyframes work-wall-up {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, -50%, 0); }
+}
+@keyframes work-wall-down {
+  from { transform: translate3d(0, -50%, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
 @keyframes work-cylinder-cw {
   from { transform: rotateY(0deg); }
   to { transform: rotateY(-360deg); }
@@ -293,6 +301,16 @@
 @keyframes first-post-beam-rotate {
   to { --first-post-beam-angle: 360deg; }
 }
+@keyframes footer-cta-wave-drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  33% { transform: translate3d(6%, -4%, 0) scale(1.08) rotate(3deg); }
+  66% { transform: translate3d(-5%, 5%, 0) scale(1.05) rotate(-2deg); }
+}
+@keyframes footer-cta-wave-drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.02) rotate(0deg); }
+  40% { transform: translate3d(-7%, 6%, 0) scale(1.1) rotate(-4deg); }
+  70% { transform: translate3d(5%, -5%, 0) scale(1.06) rotate(3deg); }
+}
 
 @layer utilities {
   .animate-fade-up { animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
@@ -303,6 +321,12 @@
   }
   .animate-work-wall-right {
     animation: work-wall-right 110s linear infinite;
+  }
+  .animate-work-wall-up {
+    animation: work-wall-up 34s linear infinite;
+  }
+  .animate-work-wall-down {
+    animation: work-wall-down 42s linear infinite;
   }
   .animate-work-cylinder-cw {
     animation: work-cylinder-cw 80s linear infinite;
@@ -329,6 +353,8 @@
   @media (prefers-reduced-motion: reduce) {
     .animate-work-wall-left,
     .animate-work-wall-right,
+    .animate-work-wall-up,
+    .animate-work-wall-down,
     .animate-work-cylinder-cw,
     .animate-work-cylinder-ccw,
     .animate-hero-grid-drift,
@@ -566,6 +592,61 @@
 
   .bg-gradient-brand {
     background-image: linear-gradient(135deg, hsl(18 100% 62%) 0%, hsl(14 100% 55%) 50%, hsl(10 95% 48%) 100%);
+  }
+
+  /* Footer CTA — grainy mesh gradient that drifts like a wave */
+  .footer-cta-wave {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background-color: hsl(14 100% 52%);
+  }
+  .footer-cta-wave-mesh {
+    position: absolute;
+    inset: -60% -45%;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .footer-cta-wave-mesh-a {
+    background:
+      radial-gradient(ellipse 78% 120% at 10% 55%, hsl(16 100% 54%) 0%, transparent 54%),
+      radial-gradient(ellipse 62% 95% at 36% 28%, hsl(14 100% 48%) 0%, transparent 52%),
+      radial-gradient(ellipse 70% 110% at 58% 72%, hsl(10 100% 44%) 0%, transparent 54%),
+      radial-gradient(ellipse 72% 100% at 88% 42%, hsl(18 100% 52%) 0%, transparent 56%),
+      linear-gradient(108deg, hsl(22 100% 56%) 0%, hsl(14 100% 50%) 46%, hsl(8 100% 42%) 100%);
+    animation: footer-cta-wave-drift-a 16s ease-in-out infinite;
+  }
+  .footer-cta-wave-mesh-b {
+    background:
+      radial-gradient(ellipse 95% 42% at 28% 48%, hsl(32 100% 62% / 0.7) 0%, transparent 58%),
+      radial-gradient(ellipse 70% 38% at 55% 40%, hsl(38 100% 72% / 0.5) 0%, transparent 52%),
+      radial-gradient(ellipse 58% 72% at 80% 62%, hsl(8 100% 40% / 0.58) 0%, transparent 56%),
+      radial-gradient(ellipse 42% 55% at 8% 82%, hsl(30 80% 80% / 0.32) 0%, transparent 50%),
+      radial-gradient(ellipse 38% 48% at 94% 16%, hsl(32 75% 84% / 0.28) 0%, transparent 48%);
+    animation: footer-cta-wave-drift-b 22s ease-in-out infinite;
+  }
+  .dark .footer-cta-wave {
+    background-color: hsl(14 100% 54%);
+  }
+  .footer-cta-wave-noise {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.48;
+    mix-blend-mode: overlay;
+    filter: contrast(1.25);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='footerCtaGrain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23footerCtaGrain)'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+  }
+  .footer-cta-wave h2 {
+    text-shadow: 0 1px 16px hsl(12 100% 28% / 0.32);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .footer-cta-wave-mesh-a,
+    .footer-cta-wave-mesh-b {
+      animation: none !important;
+    }
   }
 
   .bg-gradient-brand-soft {

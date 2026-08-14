@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import CashoutDialog from "@/components/gifting/CashoutDialog";
 import TopUpDialog from "@/components/gifting/TopUpDialog";
 import { EarningsHeroCard } from "@/components/earnings/EarningsHeroCard";
@@ -26,7 +25,6 @@ type Props = {
 
 /** Wallet category block for the combined /dashboard page. */
 export default function DashboardWalletSection({ userId }: Props) {
-  const navigate = useNavigate();
   const giftEconomy = isAplus1GiftEconomyEnabled();
   const { data: wallet } = useWallet();
   const { data: availablePurchased = 0 } = useAvailablePurchasedPx();
@@ -64,6 +62,9 @@ export default function DashboardWalletSection({ userId }: Props) {
           lifetimeEarned={lifetimeEarned}
           feeLabel={feeLabel}
           showGiftable={giftEconomy}
+          onCashout={() => setCashoutOpen(true)}
+          canCashout={canCashout}
+          cashoutHint={cashoutHint}
         />
 
         <div className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-4 sm:p-5">
@@ -85,10 +86,6 @@ export default function DashboardWalletSection({ userId }: Props) {
 
       <EarningsQuickActions
         onTopUp={() => setTopupOpen(true)}
-        onCashout={() => setCashoutOpen(true)}
-        onReferral={() => navigate("/referrals")}
-        canCashout={canCashout}
-        cashoutHint={cashoutHint}
         showTopUp={giftEconomy}
       />
 

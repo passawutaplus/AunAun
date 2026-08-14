@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check, Rocket } from "lucide-react";
+import { Rocket } from "lucide-react";
 import { useStudioHeroSlides } from "@/hooks/useHeroSlides";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthDialog } from "@/stores/authDialogStore";
@@ -23,12 +23,6 @@ export const FEED_PAGE_GUTTER_X =
   "px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]";
 
 const HERO_GUTTER = FEED_PAGE_GUTTER_X;
-
-const HERO_POINTS = [
-  "แชร์ Project กับ Community ฟรี",
-  "ค้นพบ Designer Artist และ Creator ที่ตรงสไตล์",
-  "เริ่ม Collaboration หรือ Hiring ได้ในที่เดียว",
-] as const;
 
 const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
   projects: {
@@ -108,56 +102,44 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
         data-feed-hero
         className={cn(
           "relative overflow-hidden bg-background",
-          "-mx-3 -mt-4 sm:-mx-[calc(1rem+25px)] lg:-mx-[calc(1.5rem+25px)] 2xl:-mx-[calc(2.5rem+25px)]",
-          "min-h-[min(72vh,36rem)] sm:min-h-[min(70vh,40rem)] md:min-h-[min(68vh,42rem)]",
-          "lg:pt-12",
+          "-mx-3 sm:-mx-[calc(1rem+25px)] lg:-mx-[calc(1.5rem+25px)] 2xl:-mx-[calc(2.5rem+25px)]",
+          // Mobile: leave room for FloatingNav (same 5.5rem + safe-area as mobileFabBottom).
+          // Desktop (lg+): full viewport — nav overlays the hero.
+          "h-[calc(100dvh-env(safe-area-inset-bottom,0px)-5.5rem)] min-h-[32rem]",
+          "pt-[env(safe-area-inset-top)] lg:h-dvh lg:min-h-dvh",
           className,
         )}
       >
-        {/* Full-hero ambient grid (left copy + right slides) */}
         <HeroGridSpotlight trackRef={heroRef} className="z-0" />
 
-        <div className="relative z-10 grid min-h-[inherit] md:grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)]">
+        <div className="relative z-10 flex h-full min-h-0 flex-col">
           <FadeUp
             className={cn(
-              "relative z-10 flex flex-col justify-center py-6 sm:py-8 md:py-10",
+              "relative z-10 grid shrink-0 gap-3 sm:gap-6 lg:grid-cols-2 lg:items-end lg:gap-12",
               HERO_GUTTER,
-              "md:pr-6 lg:pr-8",
+              "pt-6 pb-4 sm:pt-10 sm:pb-12 lg:pt-[4.75rem] lg:pb-16",
             )}
           >
-            <div className="relative z-[1] max-w-xl">
-              <h1 className="text-[2.35rem] sm:text-4xl md:text-[2.75rem] lg:text-[3.35rem] font-bold tracking-tight text-foreground leading-[0.95] sm:leading-[0.92] thai-display">
-                <span className="block text-[0.82em] sm:text-[0.85em]">1 Profile to</span>
-                <span className="block bg-gradient-brand bg-clip-text text-transparent">
-                  100+ Opportunity
-                </span>
-              </h1>
-              <p className="mt-4 sm:mt-5 leading-relaxed">
-                <span className="block text-base sm:text-lg md:text-xl font-bold text-foreground">
+            <h1 className="text-left text-[2.35rem] sm:text-4xl md:text-[2.75rem] lg:text-[3.35rem] font-bold tracking-tight text-foreground leading-[0.95] sm:leading-[0.92]">
+              <span className="block">1 Profile to</span>
+              <span className="block text-primary">100+ Opportunity</span>
+            </h1>
+
+            <div className="flex max-w-md flex-col lg:ml-auto lg:pb-1">
+              <p className="leading-relaxed">
+                <span className="block text-base sm:text-lg font-bold text-foreground">
                   ให้ผลงานพาคุณไปสู่โอกาสใหม่ๆ
                 </span>
-                <span className="block mt-1.5 text-xs sm:text-sm text-muted-foreground">
+                <span className="mt-1.5 block text-xs sm:text-sm text-muted-foreground">
                   เชื่อมต่อผู้คน ดีไซเนอร์ ศิลปิน และครีเอเตอร์ สร้างโอกาสใหม่จากผลงานจริงของคุณ
                 </span>
               </p>
-
-              <ul className="mt-6 sm:mt-8 space-y-2.5">
-                {HERO_POINTS.map((point) => (
-                  <li key={point} className="flex items-start gap-2.5 text-sm text-foreground/90">
-                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-                      <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
-                    </span>
-                    <span className="leading-snug thai-body">{point}</span>
-                  </li>
-                ))}
-              </ul>
-
               <Button
                 type="button"
                 size="lg"
                 onClick={goBecomeCreator}
                 aria-label="Become a Creator"
-                className="mt-7 sm:mt-8 h-11 gap-2 rounded-full bg-gradient-brand px-5 text-sm font-medium text-white hover:opacity-90"
+                className="mt-5 h-11 w-fit gap-2 rounded-full bg-gradient-brand px-5 text-sm font-medium text-white hover:opacity-90 sm:mt-6"
               >
                 <Rocket className="h-4 w-4" aria-hidden />
                 Become a Creator
@@ -165,24 +147,12 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
             </div>
           </FadeUp>
 
-          <div className="relative min-h-[16rem] sm:min-h-[20rem] md:min-h-0 overflow-hidden">
+          <div className="relative min-h-0 flex-1 overflow-hidden">
             <WorkWallMarquee />
-            <div
-              className="pointer-events-none absolute inset-y-0 left-0 z-[2] w-16 sm:w-24 md:w-32 lg:w-40 bg-gradient-to-r from-background from-[10%] via-background/70 via-[50%] to-transparent"
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-16 sm:h-20 bg-gradient-to-t from-background to-transparent"
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-8 bg-gradient-to-b from-background/40 to-transparent md:hidden"
-              aria-hidden
-            />
           </div>
         </div>
         <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-[12] h-20 sm:h-24 bg-gradient-to-t from-background via-background/70 to-transparent"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-[12] h-16 sm:h-20 bg-gradient-to-t from-background via-background/70 to-transparent"
           aria-hidden
         />
       </section>

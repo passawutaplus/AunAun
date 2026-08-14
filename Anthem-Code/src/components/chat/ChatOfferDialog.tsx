@@ -1436,7 +1436,7 @@ export function ChatOfferDialog({
                     <p className="text-[11px] text-muted-foreground">
                       {showFullTimeline
                         ? "แสดงลำดับงวดงานทั้งหมดเหมือนพรีวิวด้านล่าง"
-                        : "ไม่ติ๊ก = แสดงแค่วันส่งมอบสุดท้ายบนใบเสนอราคา"}
+                        : "ไม่เลือก = แสดงแค่วันส่งมอบสุดท้ายบนใบเสนอราคา"}
                     </p>
                   </div>
                 </div>

@@ -54,7 +54,7 @@ describe("RequireAuth", () => {
   it("shows loader while auth is initialising", () => {
     mockUseAuth.mockReturnValue({ user: null, loading: true });
     const { container } = renderAt();
-    expect(container.querySelector(".banter-loader")).toBeTruthy();
+    expect(container.querySelector(".wandering-eyes")).toBeTruthy();
     expect(screen.getByRole("status")).toBeInTheDocument();
   });
 

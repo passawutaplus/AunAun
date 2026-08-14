@@ -20,9 +20,9 @@ export const catalogJobId = (i) => {
   return `00000000-0000-0000-0003-0000000000${hex}`;
 };
 
-export const catalogAdId = (i) => {
+export const catalogServiceId = (i) => {
   const hex = i.toString(16).padStart(2, "0");
-  return `00000000-0000-0000-0004-0000000000${hex}`;
+  return `00000000-0000-0000-0010-0000000000${hex}`;
 };
 
 export const commentId = (n) => {

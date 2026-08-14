@@ -10,6 +10,9 @@ export type UploadStageReporter = {
   onPercent?: (pct: number) => void;
 };
 
+/** Toast when the user tries to publish/save while compress+upload is still running. */
+export const MEDIA_STILL_UPLOADING_MESSAGE = "กำลังจัดการอัปโหลดภาพ";
+
 export const UPLOAD_STAGE = {
   checkingVideo: "กำลังตรวจสอบไฟล์วิดีโอ...",
   repairingVideo: "กำลังซ่อมไฟล์วิดีโอที่เสียหาย...",

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Banknote } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { CurrencyMenu } from "@/components/payments/PriceCurrencySelect";
@@ -108,9 +109,10 @@ export default function StartingPriceField({
       <div className="flex items-center justify-between gap-3">
         <label
           htmlFor="show-price"
-          className="text-xs font-semibold text-muted-foreground cursor-pointer inline-flex items-center gap-1"
+          className="min-w-0 flex flex-1 items-center gap-2 cursor-pointer"
         >
-          ราคาเริ่มต้นงานนี้
+          <Banknote className="w-4 h-4 text-primary shrink-0" aria-hidden />
+          <span className="text-sm text-foreground">ราคาเริ่มต้นงานนี้</span>
           <CurrencyMenu
             value={currency}
             onChange={pickCurrency}

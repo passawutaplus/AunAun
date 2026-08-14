@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/EmptyState";
+import { FilterEmptyState } from "@/components/ui/QueryStatusPanel";
 import { usePublicStudios } from "@/hooks/usePublicStudios";
 import { useFollowedStudioIds } from "@/hooks/useStudioFollow";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,10 +13,11 @@ import StudioCard from "./StudioCard";
 
 interface Props {
   search?: string;
+  onClearSearch?: () => void;
   feedSource?: StudioFeedSource;
 }
 
-const StudioGrid = ({ search = "", feedSource = "all" }: Props) => {
+const StudioGrid = ({ search = "", onClearSearch, feedSource = "all" }: Props) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data = [], isLoading } = usePublicStudios();
@@ -75,18 +77,25 @@ const StudioGrid = ({ search = "", feedSource = "all" }: Props) => {
       </div>
 
       {!filtered.length ? (
-        <EmptyState
-          title={
-            feedSource === "following" && !user
-              ? "เข้าสู่ระบบก่อน"
-              : search.trim()
-                ? "ไม่พบสตูดิโอ"
+        search.trim() ? (
+          <FilterEmptyState
+            title="ไม่พบสตูดิโอ"
+            description={emptyDescription}
+            onClear={onClearSearch}
+            clearLabel="ล้างคำค้น"
+          />
+        ) : (
+          <EmptyState
+            title={
+              feedSource === "following" && !user
+                ? "เข้าสู่ระบบก่อน"
                 : feedSource === "following"
                   ? "ยังไม่ได้ติดตามสตูดิโอ"
                   : "ยังไม่มีสตูดิโอ"
-          }
-          description={emptyDescription}
-        />
+            }
+            description={emptyDescription}
+          />
+        )
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           {filtered.map((d) => <StudioCard key={d.studio.id} data={d} />)}

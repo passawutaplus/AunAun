@@ -169,6 +169,21 @@ export function getLicenseMeta(type: string | null | undefined): LicenseMeta {
   return LICENSE_PRESETS.all_rights;
 }
 
+/** Display value for the "ใช้เชิงพาณิชย์" row (true / ติดต่อเจ้าของ / ไม่ได้). */
+export type LicenseFlagDisplay = boolean | "partial" | "optional";
+
+export function licenseCommercialDisplay(meta: LicenseMeta): LicenseFlagDisplay {
+  if (meta.allowsCommercial) return true;
+  if (meta.id === "commercial_license") return "partial";
+  return false;
+}
+
+export function licenseAttributionDisplay(meta: LicenseMeta): LicenseFlagDisplay {
+  if (meta.requiresAttribution) return true;
+  if (meta.id === "free_use") return "optional";
+  return false;
+}
+
 export function isLicenseType(v: string): v is LicenseType {
   return (LICENSE_TYPES as readonly string[]).includes(v);
 }

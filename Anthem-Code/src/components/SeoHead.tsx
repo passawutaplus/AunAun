@@ -20,6 +20,8 @@ const META_IDS = {
   ogUrl: "seo-og-url",
   ogType: "seo-og-type",
   ogLocale: "seo-og-locale",
+  ogSiteName: "seo-og-site-name",
+  ogImageAlt: "seo-og-image-alt",
   twCard: "seo-tw-card",
   twTitle: "seo-tw-title",
   twDesc: "seo-tw-description",
@@ -103,9 +105,11 @@ const SeoHead = ({
     upsertMeta(META_IDS.ogTitle, "property", "og:title", fullTitle);
     upsertMeta(META_IDS.ogDesc, "property", "og:description", desc);
     upsertMeta(META_IDS.ogImage, "property", "og:image", img);
+    upsertMeta(META_IDS.ogImageAlt, "property", "og:image:alt", fullTitle);
     upsertMeta(META_IDS.ogUrl, "property", "og:url", url);
     upsertMeta(META_IDS.ogType, "property", "og:type", type);
     upsertMeta(META_IDS.ogLocale, "property", "og:locale", "th_TH");
+    upsertMeta(META_IDS.ogSiteName, "property", "og:site_name", SITE_NAME);
     upsertMeta(META_IDS.twCard, "name", "twitter:card", "summary_large_image");
     upsertMeta(META_IDS.twTitle, "name", "twitter:title", fullTitle);
     upsertMeta(META_IDS.twDesc, "name", "twitter:description", desc);

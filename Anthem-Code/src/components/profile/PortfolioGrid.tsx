@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Eye } from "lucide-react";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import { DrillProjectBadge } from "@/components/drill/DrillProjectBadge";
+import AiDisclosureBadge from "@/components/license/AiDisclosureBadge";
 import { SeriesAnimatedGrid } from "@/components/series/SeriesAnimatedGrid";
 import { smoothEase } from "@/lib/motion";
 import type { Tables } from "@/integrations/supabase/types";
@@ -71,9 +72,13 @@ function ProjectThumb({
           </div>
         )}
 
-        {projectHasDrillTag(tags) ? (
-          <div className="absolute top-2 right-2 z-10">
-            <DrillProjectBadge tags={tags} />
+        {projectHasDrillTag(tags) || (project as { ai_assisted?: boolean }).ai_assisted ? (
+          <div className="absolute top-2 right-2 z-10 flex flex-col items-end gap-1">
+            {projectHasDrillTag(tags) ? <DrillProjectBadge tags={tags} /> : null}
+            <AiDisclosureBadge
+              assisted={(project as { ai_assisted?: boolean }).ai_assisted}
+              note={(project as { ai_disclosure_note?: string | null }).ai_disclosure_note}
+            />
           </div>
         ) : null}
 

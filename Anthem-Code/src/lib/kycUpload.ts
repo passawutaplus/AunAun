@@ -18,7 +18,7 @@ export const KYC_FILE_ACCEPT = "image/jpeg,image/jpg,image/png,application/pdf,.
 /** Selfie: camera or photo only (no PDF). */
 export const KYC_SELFIE_ACCEPT = "image/jpeg,image/jpg,image/png,.jpg,.jpeg,.png";
 
-export const KYC_FILE_HINT = "อัปโหลดได้เฉพาะไฟล์ JPG, PNG หรือ PDF";
+export const KYC_FILE_HINT = "JPG, PNG หรือ PDF · สูงสุด 8 MB";
 
 function normalizeMime(file: File): string {
   const t = (file.type || "").toLowerCase();

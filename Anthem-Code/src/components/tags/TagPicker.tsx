@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Plus, X } from "lucide-react";
+import { Hash, Plus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ interface Props {
   presets?: readonly string[];
   /** Cap suggestion chips to a single visual row (overflow hidden). */
   suggestionsSingleLine?: boolean;
+  showHeading?: boolean;
 }
 
 const TagPicker = ({
@@ -30,9 +31,11 @@ const TagPicker = ({
   variant = "default",
   presets = [],
   suggestionsSingleLine = false,
+  showHeading = false,
 }: Props) => {
   const suggestions = useTagSuggestions(userId);
   const selectedKeys = useMemo(() => new Set(tags.map(normalizeTag)), [tags]);
+  const twoRowSuggestions = variant === "compact" && !suggestionsSingleLine;
 
   const addTag = (raw: string) => {
     const label = raw.trim().replace(/^#+/, "");
@@ -50,17 +53,66 @@ const TagPicker = ({
   const filteredSuggestions = useMemo(() => {
     const q = normalizeTag(input);
     const pool = suggestions.filter((s) => !selectedKeys.has(normalizeTag(s)));
-    const limit = suggestionsSingleLine ? 8 : 12;
+    const limit = suggestionsSingleLine ? 8 : twoRowSuggestions ? 16 : 12;
     if (!q) return pool.slice(0, limit);
     return pool
       .filter((s) => normalizeTag(s).includes(q) || q.includes(normalizeTag(s)))
       .slice(0, limit);
-  }, [suggestions, input, selectedKeys, suggestionsSingleLine]);
+  }, [suggestions, input, selectedKeys, suggestionsSingleLine, twoRowSuggestions]);
 
   const showQuick = !input.trim() && (availablePresets.length > 0 || filteredSuggestions.length > 0);
   const chipRowClass = cn(
-    "flex gap-x-3 gap-y-1.5",
-    suggestionsSingleLine ? "flex-nowrap overflow-hidden" : "flex-wrap",
+    "flex gap-x-3 gap-y-1.5 leading-4",
+    suggestionsSingleLine
+      ? "flex-nowrap overflow-hidden"
+      : twoRowSuggestions
+        ? "flex-wrap overflow-hidden max-h-[38px]"
+        : "flex-wrap",
+  );
+
+  const tagChips =
+    tags.length > 0 ? (
+      <div className="flex flex-wrap gap-1.5">
+        {tags.map((t, i) => (
+          <Badge key={t + i} variant="secondary" className="rounded-full pl-3 pr-1 py-1 text-xs">
+            #{t}
+            <button
+              type="button"
+              onClick={() => onChange(tags.filter((_, j) => j !== i))}
+              className="ml-1 hover:text-destructive"
+              aria-label={`ลบแท็ก ${t}`}
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </Badge>
+        ))}
+      </div>
+    ) : null;
+
+  const inputRow = (
+    <div className="flex gap-2">
+      <Input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            addTag(input);
+          }
+        }}
+        placeholder="พิมพ์แท็กใหม่ หรือเลือกด้านล่าง"
+        disabled={tags.length >= max}
+      />
+      <Button
+        type="button"
+        size="icon"
+        variant="outline"
+        disabled={!input.trim() || tags.length >= max}
+        onClick={() => addTag(input)}
+      >
+        <Plus className="w-4 h-4" />
+      </Button>
+    </div>
   );
 
   return (
@@ -70,47 +122,22 @@ const TagPicker = ({
         variant === "default" && "rounded-2xl border border-border bg-card p-4",
       )}
     >
-      {tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {tags.map((t, i) => (
-            <Badge key={t + i} variant="secondary" className="rounded-full pl-3 pr-1 py-1 text-xs">
-              #{t}
-              <button
-                type="button"
-                onClick={() => onChange(tags.filter((_, j) => j !== i))}
-                className="ml-1 hover:text-destructive"
-                aria-label={`ลบแท็ก ${t}`}
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </Badge>
-          ))}
+      {showHeading ? (
+        <div className="space-y-1.5">
+          <p className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+            <Hash className="h-4 w-4 text-primary shrink-0" aria-hidden />
+            แท็ก
+          </p>
+          {inputRow}
         </div>
+      ) : (
+        <>
+          {tagChips}
+          {inputRow}
+        </>
       )}
 
-      <div className="flex gap-2">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === ",") {
-              e.preventDefault();
-              addTag(input);
-            }
-          }}
-          placeholder="พิมพ์แท็กใหม่ หรือเลือกด้านล่าง"
-          disabled={tags.length >= max}
-        />
-        <Button
-          type="button"
-          size="icon"
-          variant="outline"
-          disabled={!input.trim() || tags.length >= max}
-          onClick={() => addTag(input)}
-        >
-          <Plus className="w-4 h-4" />
-        </Button>
-      </div>
+      {showHeading ? tagChips : null}
 
       {showQuick && (
         <div className="space-y-2">
@@ -121,7 +148,7 @@ const TagPicker = ({
                   key={s}
                   type="button"
                   onClick={() => addTag(s)}
-                  className="shrink-0 text-xs text-muted-foreground transition-colors hover:text-primary"
+                  className="shrink-0 text-xs leading-4 text-muted-foreground transition-colors hover:text-primary"
                 >
                   #{s}
                 </button>
@@ -135,7 +162,7 @@ const TagPicker = ({
                   key={s}
                   type="button"
                   onClick={() => addTag(s)}
-                  className="shrink-0 text-xs text-muted-foreground transition-colors hover:text-primary"
+                  className="shrink-0 text-xs leading-4 text-muted-foreground transition-colors hover:text-primary"
                 >
                   #{s}
                 </button>
@@ -152,7 +179,7 @@ const TagPicker = ({
               key={s}
               type="button"
               onClick={() => addTag(s)}
-              className="shrink-0 text-xs text-muted-foreground transition-colors hover:text-primary"
+              className="shrink-0 text-xs leading-4 text-muted-foreground transition-colors hover:text-primary"
             >
               #{s}
             </button>

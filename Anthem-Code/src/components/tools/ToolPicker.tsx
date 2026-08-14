@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Plus, X } from "lucide-react";
+import { Palette, Plus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ interface Props {
   setInput: (v: string) => void;
   max?: number;
   variant?: "default" | "compact";
+  showHeading?: boolean;
 }
 
 const SuggestionChip = ({
@@ -34,7 +35,16 @@ const SuggestionChip = ({
   </button>
 );
 
-const ToolPicker = ({ userId, tools, onChange, input, setInput, max = 20, variant = "default" }: Props) => {
+const ToolPicker = ({
+  userId,
+  tools,
+  onChange,
+  input,
+  setInput,
+  max = 20,
+  variant = "default",
+  showHeading = false,
+}: Props) => {
   const suggestions = useToolSuggestions(userId);
   const selectedKeys = useMemo(() => new Set(tools.map(normalizeToolKey)), [tools]);
 
@@ -62,6 +72,52 @@ const ToolPicker = ({ userId, tools, onChange, input, setInput, max = 20, varian
 
   const showQuick = !input.trim() && filteredSuggestions.length > 0;
 
+  const toolChips =
+    tools.length > 0 ? (
+      <div className="flex flex-wrap gap-1.5">
+        {tools.map((t, i) => (
+          <Badge key={t + i} variant="secondary" className="rounded-full pl-1.5 pr-1 py-1 text-xs gap-1.5">
+            <ToolIcon name={t} size="xs" />
+            {t}
+            <button
+              type="button"
+              onClick={() => onChange(tools.filter((_, j) => j !== i))}
+              className="ml-0.5 hover:text-destructive"
+              aria-label={`ลบ ${t}`}
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </Badge>
+        ))}
+      </div>
+    ) : null;
+
+  const inputRow = (
+    <div className="flex gap-2">
+      <Input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            addTool(input);
+          }
+        }}
+        placeholder="พิมพ์เครื่องมือใหม่ หรือเลือกด้านล่าง"
+        disabled={tools.length >= max}
+      />
+      <Button
+        type="button"
+        size="icon"
+        variant="outline"
+        disabled={!input.trim() || tools.length >= max}
+        onClick={() => addTool(input)}
+      >
+        <Plus className="w-4 h-4" />
+      </Button>
+    </div>
+  );
+
   return (
     <div
       className={cn(
@@ -69,48 +125,22 @@ const ToolPicker = ({ userId, tools, onChange, input, setInput, max = 20, varian
         variant === "default" && "rounded-2xl border border-border bg-card p-4",
       )}
     >
-      {tools.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {tools.map((t, i) => (
-            <Badge key={t + i} variant="secondary" className="rounded-full pl-1.5 pr-1 py-1 text-xs gap-1.5">
-              <ToolIcon name={t} size="xs" />
-              {t}
-              <button
-                type="button"
-                onClick={() => onChange(tools.filter((_, j) => j !== i))}
-                className="ml-0.5 hover:text-destructive"
-                aria-label={`ลบ ${t}`}
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </Badge>
-          ))}
+      {showHeading ? (
+        <div className="space-y-1.5">
+          <p className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+            <Palette className="h-4 w-4 text-primary shrink-0" aria-hidden />
+            เครื่องมือ & เทคโนโลยี
+          </p>
+          {inputRow}
         </div>
+      ) : (
+        <>
+          {toolChips}
+          {inputRow}
+        </>
       )}
 
-      <div className="flex gap-2">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === ",") {
-              e.preventDefault();
-              addTool(input);
-            }
-          }}
-          placeholder="พิมพ์เครื่องมือใหม่ หรือเลือกด้านล่าง"
-          disabled={tools.length >= max}
-        />
-        <Button
-          type="button"
-          size="icon"
-          variant="outline"
-          disabled={!input.trim() || tools.length >= max}
-          onClick={() => addTool(input)}
-        >
-          <Plus className="w-4 h-4" />
-        </Button>
-      </div>
+      {showHeading ? toolChips : null}
 
       {showQuick && (
         <div className="flex flex-wrap gap-x-3 gap-y-1.5">

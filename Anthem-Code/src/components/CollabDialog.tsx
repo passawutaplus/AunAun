@@ -2,18 +2,22 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import { z } from "zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { ResponsiveOverlay } from "@/components/ui/ResponsiveOverlay";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Handshake, Sparkles, UserCircle2, Link2, MessageCircle, Loader2, Plus, X, ImagePlus, Images, Tags, MessageSquareText } from "lucide-react";
+import { Check, Handshake, Sparkles, UserCircle2, Link2, MessageCircle, Loader2, Plus, X, ImagePlus, Images, Tags, MessageSquareText, Search } from "lucide-react";
+import CatalogIcon from "@/components/icons/CatalogIcon";
 import { toast } from "sonner";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useMyProjects } from "@/hooks/useProjects";
+import { useMyProjectSeries, useProjectSeriesItems } from "@/hooks/useProjectSeries";
+import { CompactLoader } from "@/components/ui/BanterLoader";
 import { useCreateCollabRequest } from "@/hooks/useCollabRequests";
 import { useOpenHireCollabChat } from "@/hooks/useChat";
 import { isUuid } from "@/lib/uuid";
@@ -28,6 +32,7 @@ import { trackProductEvent } from "@/lib/productEvents";
 import { serializeCollabReferenceLinks, buildCollabInviteChatMessage } from "@/lib/collabBrief";
 import { briefTemplateForTypes } from "@/lib/collabToolkit";
 import { safeHttpUrl } from "@/lib/safeUrl";
+import { FieldError } from "@/components/ui/FieldError";
 import { isBlockedFromOpportunity } from "@/hooks/useCommunityPostInteractions";
 import { uploadProjectImage } from "@/lib/uploadImage";
 
@@ -52,6 +57,169 @@ function validateCollabLink(raw: string): string | null {
 }
 
 const DEFAULT_COLLAB_TYPE = "chat";
+const RECENT_WORK_CARDS = 3;
+
+type CollabWorkRef = {
+  id: string;
+  title: string;
+  cover_url: string | null;
+  category?: string | null;
+  gallery_urls?: string[] | null;
+};
+
+function workThumb(p: CollabWorkRef) {
+  return p.cover_url || p.gallery_urls?.[0] || null;
+}
+
+function CollabWorkCard({
+  project,
+  selected,
+  onToggle,
+}: {
+  project: CollabWorkRef;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  const thumb = workThumb(project);
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={selected}
+      aria-label={selected ? `ยกเลิก ${project.title}` : `เลือก ${project.title}`}
+      className={cn(
+        "relative aspect-square rounded-xl overflow-hidden border-2 transition-all",
+        selected ? "border-primary shadow-md" : "border-transparent hover:border-border",
+      )}
+    >
+      {thumb ? (
+        <img src={thumb} alt="" className="w-full h-full object-cover" />
+      ) : (
+        <div className="w-full h-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground p-1 text-center">
+          {project.title}
+        </div>
+      )}
+      {selected && (
+        <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+            <Check className="w-4 h-4" />
+          </div>
+        </div>
+      )}
+      <span className="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[10px] px-1 py-0.5 truncate">
+        {project.title}
+      </span>
+    </button>
+  );
+}
+
+function CollabCatalogThumb({
+  title,
+  coverUrl,
+  covers,
+  count,
+  selected,
+  onSelect,
+  all,
+}: {
+  title: string;
+  coverUrl?: string | null;
+  covers?: string[];
+  count?: number;
+  selected: boolean;
+  onSelect: () => void;
+  all?: boolean;
+}) {
+  const custom = coverUrl?.trim() || null;
+  const collage = !custom && (covers?.length ?? 0) > 1 ? covers!.slice(0, 4) : null;
+  const thumb = custom || (!collage ? covers?.[0] || null : null);
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={selected}
+      className="flex min-w-0 flex-col gap-1 text-left"
+    >
+      <div
+        className={cn(
+          "relative aspect-square w-full overflow-hidden rounded-lg border-2 bg-muted",
+          selected ? "border-primary shadow-sm" : "border-transparent",
+        )}
+      >
+        {thumb ? (
+          <img src={thumb} alt="" className="h-full w-full object-cover" />
+        ) : collage ? (
+          <div className="grid h-full grid-cols-2 grid-rows-2 gap-px">
+            {collage.map((url, i) => (
+              <img key={i} src={url} alt="" className="h-full w-full object-cover" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid h-full place-items-center text-primary">
+            {all ? <Images className="h-5 w-5" /> : <CatalogIcon className="h-5 w-5" />}
+          </div>
+        )}
+        {selected ? (
+          <div className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary">
+            <Check className="h-2.5 w-2.5 text-primary-foreground" />
+          </div>
+        ) : null}
+      </div>
+      <span className="truncate text-[10px] font-medium leading-tight">{title}</span>
+      {count != null ? (
+        <span className="text-[9px] leading-none text-muted-foreground">{count} ชิ้น</span>
+      ) : null}
+    </button>
+  );
+}
+
+function CollabWorkRow({
+  project,
+  selected,
+  onToggle,
+}: {
+  project: CollabWorkRef;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  const thumb = workThumb(project);
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={selected}
+      aria-label={selected ? `ยกเลิก ${project.title}` : `เลือก ${project.title}`}
+      className={cn(
+        "w-full flex items-center gap-3 p-2 rounded-lg border text-left transition-all",
+        selected ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted hover:border-border",
+      )}
+    >
+      <div className="w-12 h-12 shrink-0 rounded-md overflow-hidden bg-muted">
+        {thumb ? (
+          <img src={thumb} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-[9px] text-muted-foreground p-1 text-center">
+            {project.title}
+          </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground truncate">{project.title}</p>
+        {project.category ? (
+          <p className="text-[10px] text-muted-foreground truncate">{project.category}</p>
+        ) : null}
+      </div>
+      <div
+        className={cn(
+          "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
+          selected ? "bg-primary border-primary" : "border-border",
+        )}
+      >
+        {selected && <Check className="w-3 h-3 text-primary-foreground" />}
+      </div>
+    </button>
+  );
+}
 
 type CollabFieldErrorKey = "attached" | "collabTypes" | "otherNote";
 
@@ -103,6 +271,9 @@ const CollabDialog = ({
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
   const { data: myProjects = [] } = useMyProjects(user?.id);
+  const { data: mySeries = [], isLoading: catalogsLoading } = useMyProjectSeries(
+    open ? user?.id : undefined,
+  );
   const createReq = useCreateCollabRequest();
   const openChat = useOpenHireCollabChat();
 
@@ -118,6 +289,9 @@ const CollabDialog = ({
   const attachmentInputRef = useRef<HTMLInputElement>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<CollabFieldErrorKey, string>>>({});
+  const [workCatalogOpen, setWorkCatalogOpen] = useState(false);
+  const [workQuery, setWorkQuery] = useState("");
+  const [selectedCatalogId, setSelectedCatalogId] = useState<string | null>(null);
   const busy = createReq.isPending || openChat.isPending || uploadingAttachment;
 
   useEffect(() => {
@@ -133,8 +307,62 @@ const CollabDialog = ({
     );
   }, [open, projectId, recipientId, source]);
 
-  const published = useMemo(() => myProjects.filter((p) => p.status === "Published"), [myProjects]);
-  const needsWorkPicker = published.length > 3;
+  const published = useMemo(
+    () =>
+      myProjects
+        .filter((p) => p.status === "Published")
+        .slice()
+        .sort((a, b) => {
+          const tb = new Date(b.created_at ?? 0).getTime();
+          const ta = new Date(a.created_at ?? 0).getTime();
+          return tb - ta;
+        }),
+    [myProjects],
+  );
+  const previewWorks = useMemo(() => {
+    const recent = published.slice(0, RECENT_WORK_CARDS);
+    if (attached.length === 0) return recent;
+
+    const byId = new Map(published.map((p) => [p.id, p]));
+    const selected = attached
+      .map((id) => byId.get(id))
+      .filter((p): p is (typeof published)[number] => !!p);
+    const recentIds = new Set(recent.map((p) => p.id));
+    const extras = selected.filter((p) => !recentIds.has(p.id));
+    if (extras.length === 0) return recent;
+
+    const next = [...recent];
+    let extraIdx = 0;
+    for (let i = 0; i < next.length && extraIdx < extras.length; i += 1) {
+      if (!attached.includes(next[i].id)) {
+        next[i] = extras[extraIdx];
+        extraIdx += 1;
+      }
+    }
+    return next;
+  }, [published, attached]);
+  const catalogs = useMemo(
+    () => mySeries.filter((s) => (s.published_count ?? 0) > 0),
+    [mySeries],
+  );
+  const { data: catalogItems = [], isLoading: catalogItemsLoading } = useProjectSeriesItems(
+    workCatalogOpen ? selectedCatalogId ?? undefined : undefined,
+  );
+  const catalogFiltered = useMemo(() => {
+    const q = workQuery.trim().toLowerCase();
+    let list = published;
+    if (selectedCatalogId) {
+      const ids = new Set(catalogItems.map((item) => item.project_id));
+      list = published.filter((p) => ids.has(p.id));
+    }
+    if (!q) return list;
+    return list.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        (p.category && p.category.toLowerCase().includes(q)),
+    );
+  }, [published, workQuery, selectedCatalogId, catalogItems]);
+  const selectedCatalog = catalogs.find((s) => s.id === selectedCatalogId) ?? null;
   const otherSelected = selectedTypes.includes("other");
 
   const reset = () => {
@@ -149,6 +377,9 @@ const CollabDialog = ({
     setUploadingAttachment(false);
     setSubmitError(null);
     setFieldErrors({});
+    setWorkCatalogOpen(false);
+    setWorkQuery("");
+    setSelectedCatalogId(null);
   };
 
   const clearFieldError = (key: CollabFieldErrorKey) => {
@@ -378,8 +609,19 @@ const CollabDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border-primary/20">
+    <>
+    <ResponsiveOverlay
+      open={open}
+      onOpenChange={(o) => {
+        if (!o && workCatalogOpen) return;
+        if (!o) reset();
+        onOpenChange(o);
+      }}
+      accessibleTitle="Collaboration Request"
+      desktopClassName="max-w-xl max-h-[90vh] rounded-3xl border-primary/20"
+      bodyClassName="gap-4 pt-2"
+      showGrabHandle
+    >
         <DialogHeader className="space-y-2 text-left">
           <Handshake className="h-8 w-8 text-primary" aria-hidden />
           <DialogTitle className="text-2xl leading-tight tracking-tight sm:text-[1.75rem]">
@@ -448,7 +690,7 @@ const CollabDialog = ({
               <span className="text-primary font-normal"> *</span>
             </Label>
             {fieldErrors.attached ? (
-              <p className="text-xs text-destructive mt-1.5 mb-2">{fieldErrors.attached}</p>
+              <FieldError className="mt-1.5 mb-2" message={fieldErrors.attached} />
             ) : null}
 
             {published.length === 0 ? (
@@ -486,81 +728,32 @@ const CollabDialog = ({
                   </Button>
                 </div>
               </div>
-            ) : needsWorkPicker ? (
-              <div className="mt-2.5 space-y-1.5 max-h-72 overflow-y-auto rounded-xl border border-border p-1.5 bg-muted/20">
-                {published.map((p) => {
-                  const on = attached.includes(p.id);
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => toggleAttach(p.id)}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-2 rounded-lg border text-left transition-all",
-                        on ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted hover:border-border",
-                      )}
-                    >
-                      <div className="w-12 h-12 shrink-0 rounded-md overflow-hidden bg-muted">
-                        {p.cover_url ? (
-                          <img src={p.cover_url} alt={p.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-[9px] text-muted-foreground p-1 text-center">
-                            {p.title}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{p.title}</p>
-                        {p.category ? (
-                          <p className="text-[10px] text-muted-foreground truncate">{p.category}</p>
-                        ) : null}
-                      </div>
-                      <div
-                        className={cn(
-                          "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
-                          on ? "bg-primary border-primary" : "border-border",
-                        )}
-                      >
-                        {on && <Check className="w-3 h-3 text-primary-foreground" />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
             ) : (
-              <div className="mt-2.5 grid grid-cols-3 gap-2">
-                {published.map((p) => {
-                  const on = attached.includes(p.id);
-                  return (
-                    <button
+              <div className="mt-2.5 space-y-2">
+                <div className="grid grid-cols-3 gap-2">
+                  {previewWorks.map((p) => (
+                    <CollabWorkCard
                       key={p.id}
+                      project={p}
+                      selected={attached.includes(p.id)}
+                      onToggle={() => toggleAttach(p.id)}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] text-muted-foreground">
+                    เลือกแล้ว {attached.length}/3
+                  </p>
+                  {published.length > RECENT_WORK_CARDS ? (
+                    <button
                       type="button"
-                      onClick={() => toggleAttach(p.id)}
-                      className={cn(
-                        "relative aspect-square rounded-xl overflow-hidden border-2 transition-all",
-                        on ? "border-primary shadow-md" : "border-transparent hover:border-border",
-                      )}
+                      onClick={() => setWorkCatalogOpen(true)}
+                      className="rounded-sm text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
-                      {p.cover_url ? (
-                        <img src={p.cover_url} alt={p.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground p-1 text-center">
-                          {p.title}
-                        </div>
-                      )}
-                      {on && (
-                        <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
-                          <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                            <Check className="w-4 h-4" />
-                          </div>
-                        </div>
-                      )}
-                      <span className="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[10px] px-1 py-0.5 truncate">
-                        {p.title}
-                      </span>
+                      ดูทั้งหมด ({published.length})
                     </button>
-                  );
-                })}
+                  ) : null}
+                </div>
               </div>
             )}
           </div>
@@ -578,7 +771,7 @@ const CollabDialog = ({
               <span className="text-primary font-normal"> *</span>
             </Label>
             {fieldErrors.collabTypes ? (
-              <p className="text-xs text-destructive mt-1.5 mb-2">{fieldErrors.collabTypes}</p>
+              <FieldError className="mt-1.5 mb-2" message={fieldErrors.collabTypes} />
             ) : null}
             <div className="mt-2.5 flex flex-wrap gap-2">
               {COLLAB_TYPES.map((t) => {
@@ -619,7 +812,7 @@ const CollabDialog = ({
               />
             )}
             {fieldErrors.otherNote ? (
-              <p className="text-xs text-destructive mt-1.5">{fieldErrors.otherNote}</p>
+              <FieldError className="mt-1.5" message={fieldErrors.otherNote} />
             ) : null}
           </div>
 
@@ -792,8 +985,114 @@ const CollabDialog = ({
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveOverlay>
+
+    <ResponsiveOverlay
+      open={open && workCatalogOpen}
+      onOpenChange={(o) => {
+        setWorkCatalogOpen(o);
+        if (!o) {
+          setWorkQuery("");
+          setSelectedCatalogId(null);
+        }
+      }}
+      title={
+        <span className="inline-flex items-center gap-2">
+          <CatalogIcon className="h-4 w-4 text-primary" />
+          เลือกผลงานจาก Catalog
+        </span>
+      }
+      accessibleTitle="เลือกผลงานจาก Catalog"
+      desktopClassName="max-w-lg max-h-[85vh] rounded-3xl"
+      bodyClassName="gap-0 pt-3"
+      showGrabHandle
+      stacked
+    >
+      <div className="sticky top-0 z-10 bg-background pb-3">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={workQuery}
+            onChange={(e) => setWorkQuery(e.target.value)}
+            placeholder="ค้นหาใน Catalog"
+            className="h-10 rounded-xl pl-9"
+            aria-label="ค้นหาใน Catalog"
+          />
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          เลือกได้สูงสุด 3 ชิ้น · เลือกแล้ว {attached.length}/3
+        </p>
+      </div>
+
+      {catalogsLoading ? (
+        <CompactLoader label="กำลังโหลด Catalog…" className="py-4" />
+      ) : catalogs.length > 0 ? (
+        <section className="pb-4">
+          <p className="mb-2 text-xs font-semibold text-foreground">Catalog</p>
+          <div className="grid grid-cols-4 gap-2">
+            <CollabCatalogThumb
+              title="ทั้งหมด"
+              count={published.length}
+              selected={!selectedCatalogId}
+              onSelect={() => setSelectedCatalogId(null)}
+              all
+            />
+            {catalogs.map((series) => (
+              <CollabCatalogThumb
+                key={series.id}
+                title={series.title}
+                coverUrl={series.cover_url}
+                covers={series.covers}
+                count={series.published_count ?? series.item_count}
+                selected={selectedCatalogId === series.id}
+                onSelect={() =>
+                  setSelectedCatalogId((id) => (id === series.id ? null : series.id))
+                }
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <section className="pb-2">
+        <p className="mb-2 text-xs font-semibold text-foreground">
+          {selectedCatalog ? selectedCatalog.title : "ผลงานทั้งหมด"}
+        </p>
+        {selectedCatalogId && catalogItemsLoading ? (
+          <CompactLoader label="กำลังโหลดผลงาน…" className="py-6" />
+        ) : catalogFiltered.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            {workQuery.trim() ? "ไม่พบผลงานที่ตรงกับคำค้น" : "ยังไม่มีผลงานในหมวดนี้"}
+          </p>
+        ) : (
+          <div className="space-y-1">
+            {catalogFiltered.map((p) => (
+              <CollabWorkRow
+                key={p.id}
+                project={p}
+                selected={attached.includes(p.id)}
+                onToggle={() => toggleAttach(p.id)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <div className="sticky bottom-0 bg-background pt-2">
+        <Button
+          type="button"
+          className="w-full rounded-full"
+          onClick={() => {
+            setWorkCatalogOpen(false);
+            setWorkQuery("");
+            setSelectedCatalogId(null);
+          }}
+        >
+          เสร็จแล้ว
+        </Button>
+      </div>
+    </ResponsiveOverlay>
+    </>
   );
 };
 

@@ -84,6 +84,10 @@ type Props = {
   onDrillSelect?: () => void;
   includeDesignDrillChip?: boolean;
   projectResultCount?: number;
+  /** Visible result count for current mode (projects/designers/etc.). */
+  resultCount?: number;
+  recentSearches?: string[];
+  onRecentSearchSelect?: (q: string) => void;
 };
 
 const FeedToolbar = ({
@@ -126,6 +130,9 @@ const FeedToolbar = ({
   onDrillSelect,
   includeDesignDrillChip = false,
   projectResultCount,
+  resultCount,
+  recentSearches = [],
+  onRecentSearchSelect,
 }: Props) => {
   const navigate = useNavigate();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(search.length > 0);
@@ -314,6 +321,26 @@ const FeedToolbar = ({
         ? "ค้นหาสตูดิโอ"
         : "ค้นหาผลงาน";
 
+  const modeResultLabel = isCommunity
+    ? "โพสต์"
+    : isDesigners
+      ? "ดีไซเนอร์"
+      : isStudios
+        ? "สตูดิโอ"
+        : "ผลงาน";
+
+  const displayResultCount =
+    typeof resultCount === "number"
+      ? resultCount
+      : isProjects
+        ? projectResultCount
+        : undefined;
+
+  const searchBarShared = {
+    recentSearches,
+    onRecentSelect: onRecentSearchSelect,
+  };
+
   const projectSearchBarProps = isProjects
     ? {
         onFilterClick: openProjectSheet,
@@ -391,6 +418,7 @@ const FeedToolbar = ({
             compact
             expandable
             onExpandedChange={setMobileSearchOpen}
+            {...searchBarShared}
             {...(isProjects
               ? { onExpandClick: openProjectSheet, onFilterClick: openProjectSheet }
               : { filterContent })}
@@ -402,6 +430,12 @@ const FeedToolbar = ({
           className="ml-auto"
         />
       </div>
+      {typeof displayResultCount === "number" && (search.trim().length > 0 || filterCount > 0) ? (
+        <p className="lg:hidden mt-1.5 text-[11px] text-muted-foreground px-0.5">
+          พบ {displayResultCount.toLocaleString("th-TH")} {modeResultLabel}
+          <span className="text-muted-foreground/70"> · {modeResultLabel}</span>
+        </p>
+      ) : null}
 
       {/* Desktop */}
       <div className="hidden lg:block space-y-3">
@@ -415,6 +449,7 @@ const FeedToolbar = ({
                   onChange={onSearchChange}
                   placeholder={searchPlaceholder}
                   filterCount={filterCount}
+                  {...searchBarShared}
                   {...projectSearchBarProps}
                   {...(!isProjects ? { filterContent } : {})}
                 />
@@ -423,6 +458,11 @@ const FeedToolbar = ({
                 <FeedModeToggle {...toggleProps} className="w-full" />
               </div>
             </div>
+            {typeof displayResultCount === "number" && (search.trim().length > 0 || filterCount > 0) ? (
+              <p className="text-xs text-muted-foreground">
+                พบ {displayResultCount.toLocaleString("th-TH")} {modeResultLabel}
+              </p>
+            ) : null}
             <FeedModeTransition modeKey={mode} className="min-w-0">
               {isProjects ? (
                 <FilterChips
@@ -470,6 +510,7 @@ const FeedToolbar = ({
                   onChange={onSearchChange}
                   placeholder={searchPlaceholder}
                   filterCount={filterCount}
+                  {...searchBarShared}
                   {...projectSearchBarProps}
                   {...(!isProjects ? { filterContent } : {})}
                 />
@@ -612,6 +653,8 @@ const FeedToolbar = ({
           value={projectFilterValue}
           onApply={applyProjectSheet}
           resultCount={projectResultCount}
+          recentSearches={recentSearches}
+          onRecentSelect={onRecentSearchSelect}
         />
       ) : null}
     </div>

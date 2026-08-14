@@ -13,10 +13,12 @@ import { naturalFeedCoverUrl, optimizedFeedImageUrl } from "@/lib/feedProjectCov
 import { smoothEase } from "@/lib/motion";
 import BoostBadge from "@/components/boost/BoostBadge";
 import { DrillProjectBadge } from "@/components/drill/DrillProjectBadge";
+import AiDisclosureBadge from "@/components/license/AiDisclosureBadge";
 import { projectHasDrillTag } from "@/lib/drillProject";
 import { logBoostEvent } from "@/hooks/useBoost";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import UserAvatar from "@/components/UserAvatar";
+import { extractSearchSnippet, highlight } from "@/lib/highlight";
 
 interface ProjectCardProps {
   project: Project;
@@ -26,6 +28,8 @@ interface ProjectCardProps {
   boostId?: string;
   /** Feed masonry — preserve original cover aspect (no CDN crop). */
   naturalCover?: boolean;
+  /** Optional search query for title highlight. */
+  searchQuery?: string;
 }
 
 const formatCompact = (n: number) => {
@@ -41,6 +45,7 @@ const ProjectCard = ({
   boosted,
   boostId,
   naturalCover = false,
+  searchQuery = "",
 }: ProjectCardProps) => {
   const navigate = useNavigate();
   const isDbProject = /^[0-9a-f]{8}-/.test(project.id);
@@ -153,9 +158,13 @@ const ProjectCard = ({
           </div>
         ) : null}
 
-        {projectHasDrillTag(project.tags) ? (
-          <div className="absolute top-2 right-2 z-10">
-            <DrillProjectBadge tags={project.tags} />
+        {projectHasDrillTag(project.tags) || project.aiAssisted ? (
+          <div className="absolute top-2 right-2 z-10 flex flex-col items-end gap-1">
+            {projectHasDrillTag(project.tags) ? <DrillProjectBadge tags={project.tags} /> : null}
+            <AiDisclosureBadge
+              assisted={project.aiAssisted}
+              note={project.aiDisclosureNote}
+            />
           </div>
         ) : null}
 
@@ -179,8 +188,21 @@ const ProjectCard = ({
           )}
         >
           <p className="text-white text-sm font-medium line-clamp-1 thai-leading-tight drop-shadow">
-            {project.title}
+            {searchQuery.trim() ? highlight(project.title, searchQuery) : project.title}
           </p>
+          {searchQuery.trim()
+            ? (() => {
+                const fromDesc = extractSearchSnippet(project.description, searchQuery);
+                const fromTags = extractSearchSnippet((project.tags ?? []).join(" · "), searchQuery);
+                const fromTools = extractSearchSnippet((project.tools ?? []).join(" · "), searchQuery);
+                const snippet = fromDesc || fromTags || fromTools;
+                return snippet ? (
+                  <p className="mt-0.5 text-[11px] text-white/80 line-clamp-2 drop-shadow">
+                    {highlight(snippet, searchQuery)}
+                  </p>
+                ) : null;
+              })()
+            : null}
         </div>
 
         {/* Action icons — hover on desktop, menu open, or tap ⋯ on mobile */}
@@ -222,7 +244,12 @@ const ProjectCard = ({
               <Layers3 className="w-4 h-4" />
             </button>
           </SaveToCollectionPopover>
-          <SharePopover url={shareUrl} title={project.title} label="แชร์ผลงาน" align="start">
+          <SharePopover
+            url={shareUrl}
+            title={project.title}
+            label="แชร์"
+            imageUrl={coverSrc}
+          >
             <button
               type="button"
               onClick={(e) => e.stopPropagation()}

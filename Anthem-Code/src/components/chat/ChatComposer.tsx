@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import ModerationBanBanner from "@/components/moderation/ModerationBanBanner";
 import { maskProfanity, detectProfanity, PROFANITY_WARNING, COMMUNITY_GUIDELINES_PATH } from "@/lib/profanity";
+import { UploadFileHint } from "@/components/ui/UploadFileHint";
 
 const CHAT_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 const CHAT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
@@ -65,6 +66,10 @@ const ChatComposer = ({
 }: Props) => {
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState<"image" | "file" | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [failedFile, setFailedFile] = useState<File | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const imageRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -132,14 +137,22 @@ const ChatComposer = ({
       toast.error("รูปใหญ่เกินไป — สูงสุด 8 MB");
       return;
     }
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+    setFailedFile(null);
     setUploading("image");
+    setUploadProgress(15);
     try {
       const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
       const path = `anthem/chat/${conversationId}/${crypto.randomUUID()}.${ext}`;
+      setUploadProgress(45);
       const { error: upErr } = await sharedStorage.storage
         .from(SHARED_MEDIA_BUCKET)
         .upload(path, file, { upsert: false, contentType: file.type });
+      if (ac.signal.aborted) return;
       if (upErr) throw upErr;
+      setUploadProgress(80);
       await send.mutateAsync({
         conversationId,
         content: "",
@@ -148,10 +161,16 @@ const ChatComposer = ({
         replyToId: replyTo?.id,
       });
       onClearReply?.();
+      setUploadProgress(100);
     } catch (e: unknown) {
+      if (ac.signal.aborted) return;
+      setFailedFile(file);
       toast.error(getSupabaseErrorMessage(e, "อัปโหลดไม่สำเร็จ"));
     } finally {
-      setUploading(null);
+      if (!ac.signal.aborted) {
+        setUploading(null);
+        setUploadProgress(null);
+      }
     }
   };
 
@@ -169,17 +188,25 @@ const ChatComposer = ({
       toast.error("ไฟล์ใหญ่เกินไป — สูงสุด 25 MB");
       return;
     }
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+    setFailedFile(null);
     setUploading("file");
+    setUploadProgress(15);
     try {
       const safeName = file.name.replace(/[^\w.\-()\u0E00-\u0E7F]+/g, "_").slice(0, 120);
       const path = `anthem/chat/${conversationId}/${crypto.randomUUID()}.${ext}`;
+      setUploadProgress(45);
       const { error: upErr } = await sharedStorage.storage
         .from(SHARED_MEDIA_BUCKET)
         .upload(path, file, {
           upsert: false,
           contentType: file.type || "application/octet-stream",
         });
+      if (ac.signal.aborted) return;
       if (upErr) throw upErr;
+      setUploadProgress(80);
       await send.mutateAsync({
         conversationId,
         content: safeName || `file.${ext}`,
@@ -189,11 +216,24 @@ const ChatComposer = ({
       });
       onClearReply?.();
       toast.success("ส่งไฟล์แล้ว");
+      setUploadProgress(100);
     } catch (e: unknown) {
+      if (ac.signal.aborted) return;
+      setFailedFile(file);
       toast.error(getSupabaseErrorMessage(e, "อัปโหลดไฟล์ไม่สำเร็จ"));
     } finally {
-      setUploading(null);
+      if (!ac.signal.aborted) {
+        setUploading(null);
+        setUploadProgress(null);
+      }
     }
+  };
+
+  const handleDroppedFiles = (files: FileList | File[]) => {
+    const file = Array.from(files)[0];
+    if (!file) return;
+    if (file.type.startsWith("image/")) void onAttachImage(file);
+    else void onAttachFile(file);
   };
 
   const busy = !!uploading || send.isPending;
@@ -210,7 +250,27 @@ const ChatComposer = ({
   }
 
   return (
-    <div className="border-t border-border bg-background/80 backdrop-blur-md px-3 py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] shrink-0">
+    <div
+      className={cn(
+        "border-t border-border bg-background/80 backdrop-blur-md px-3 py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] shrink-0",
+        dragOver && "ring-2 ring-inset ring-primary/50 bg-primary/5",
+      )}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        handleDroppedFiles(e.dataTransfer.files);
+      }}
+    >
       <ModerationBanBanner className="mb-2" />
       {replyTo && (
         <div className="flex items-stretch gap-2 mb-2 rounded-xl bg-muted/80 border border-border overflow-hidden">
@@ -259,7 +319,7 @@ const ChatComposer = ({
           onClick={() => fileRef.current?.click()}
           disabled={busy}
           aria-label="แนบไฟล์จากเครื่อง"
-          title="แนบไฟล์ (PDF, ZIP, เอกสาร)"
+          title="แนบไฟล์ (PDF, ZIP, เอกสาร · สูงสุด 25 MB)"
         >
           {uploading === "file" ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -275,6 +335,7 @@ const ChatComposer = ({
           onClick={() => imageRef.current?.click()}
           disabled={busy}
           aria-label="แนบรูป"
+          title="แนบรูป JPG/PNG/WebP · สูงสุด 8 MB"
         >
           {uploading === "image" ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -310,6 +371,43 @@ const ChatComposer = ({
           <Send className="w-4 h-4" />
         </Button>
       </div>
+      <UploadFileHint
+        formats="รูป JPG/PNG/WebP · ไฟล์ PDF/ZIP/เอกสาร · ลากวางได้"
+        maxMb={25}
+        className="pl-1 pt-1"
+      />
+      {uploading && uploadProgress != null ? (
+        <div className="flex items-center gap-2 pt-1.5 pl-1">
+          <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+            <div className="h-full bg-primary transition-all" style={{ width: `${uploadProgress}%` }} />
+          </div>
+          <button
+            type="button"
+            className="text-[11px] text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              abortRef.current?.abort();
+              setUploading(null);
+              setUploadProgress(null);
+            }}
+          >
+            ยกเลิก
+          </button>
+        </div>
+      ) : null}
+      {failedFile && !uploading ? (
+        <button
+          type="button"
+          className="text-[11px] text-primary hover:underline pt-1 pl-1"
+          onClick={() => {
+            const f = failedFile;
+            setFailedFile(null);
+            if (f.type.startsWith("image/")) void onAttachImage(f);
+            else void onAttachFile(f);
+          }}
+        >
+          อัปโหลดไม่สำเร็จ — ลองใหม่
+        </button>
+      ) : null}
     </div>
   );
 };

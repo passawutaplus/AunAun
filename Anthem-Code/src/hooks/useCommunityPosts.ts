@@ -14,7 +14,7 @@ import {
   fetchCommunityPostMaybeSingle,
   fetchCommunityPostRows,
 } from "@/lib/communityPostQuery";
-import { moderateCommunityComment, moderateCommunityPost } from "@/lib/communityModeration";
+import { extractMentionHandles } from "@/lib/commentMentions";
 import { normalizeCommunityMediaAspect } from "@/lib/communityMediaAspect";
 import { fetchMentionedProjectSummaries } from "@/lib/communityMentionedProjects";
 import type { MentionedProjectSummary } from "@/lib/communityMentionedProjects";
@@ -83,6 +83,7 @@ export interface CommunityComment {
   like_count: number;
   image_urls: string[];
   created_at: string;
+  edited_at?: string | null;
   profile?: { display_name: string; avatar_url: string | null; username: string | null } | null;
 }
 
@@ -868,6 +869,31 @@ export const useCreateCommunityComment = () => {
           metadata: { post_id: payload.post_id, comment_id: commentId },
         });
       }
+
+      const handles = extractMentionHandles(content);
+      if (handles.length) {
+        const { data: mentioned } = await supabase
+          .from("profiles_public")
+          .select("user_id, username")
+          .in("username", handles);
+        const skip = new Set(
+          [payload.user_id, postRow?.author_id].filter(Boolean) as string[],
+        );
+        await Promise.all(
+          (mentioned ?? [])
+            .filter((row) => row.user_id && !skip.has(row.user_id))
+            .map((row) =>
+              notifyCommunityEvent({
+                recipientId: row.user_id,
+                kind: "community_mention",
+                title: "มีคนพูดถึงคุณในความคิดเห็น",
+                body: `${actorName} กล่าวถึงคุณในความคิดเห็น`,
+                link,
+                metadata: { post_id: payload.post_id, comment_id: commentId },
+              }),
+            ),
+        );
+      }
     },
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["community-comments", v.post_id] });
@@ -876,3 +902,41 @@ export const useCreateCommunityComment = () => {
     },
   });
 };
+
+export const useUpdateCommunityComment = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { id: string; post_id: string; content: string }) => {
+      const parsed = payload.content.trim();
+      if (!parsed) throw new Error("กรอกข้อความก่อนบันทึก");
+      const withEdited = await supabase
+        .from("community_post_comments")
+        .update({ content: parsed, edited_at: new Date().toISOString() } as never)
+        .eq("id", payload.id);
+      if (!withEdited.error) return;
+      const { error } = await supabase
+        .from("community_post_comments")
+        .update({ content: parsed })
+        .eq("id", payload.id);
+      if (error) throw toCommunityActionError(error);
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["community-comments", v.post_id] });
+    },
+  });
+};
+
+export const useDeleteCommunityComment = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { id: string; post_id: string }) => {
+      const { error } = await supabase.from("community_post_comments").delete().eq("id", payload.id);
+      if (error) throw toCommunityActionError(error);
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["community-comments", v.post_id] });
+      qc.invalidateQueries({ queryKey: ["community-post", v.post_id] });
+    },
+  });
+};
+

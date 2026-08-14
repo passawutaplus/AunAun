@@ -1,0 +1,15 @@
+<!-- Instagram mark  circular well + camera glyph for share sheet. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-hidden="true">
+  <defs>
+    <radialGradient id="ig" cx="30%" cy="107%" r="150%">
+      <stop offset="0%" stop-color="#fdf497"/>
+      <stop offset="45%" stop-color="#fd5949"/>
+      <stop offset="60%" stop-color="#d6249f"/>
+      <stop offset="90%" stop-color="#285AEB"/>
+    </radialGradient>
+  </defs>
+  <circle cx="24" cy="24" r="24" fill="url(#ig)"/>
+  <rect x="14" y="14" width="20" height="20" rx="6" fill="none" stroke="#fff" stroke-width="2.2"/>
+  <circle cx="24" cy="24" r="5.1" fill="none" stroke="#fff" stroke-width="2.2"/>
+  <circle cx="30.6" cy="17.4" r="1.35" fill="#fff"/>
+</svg>

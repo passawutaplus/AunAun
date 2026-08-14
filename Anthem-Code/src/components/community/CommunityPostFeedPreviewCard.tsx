@@ -112,6 +112,7 @@ export function CommunityPostFeedPreviewCard({
             galleryUrls={gallery_urls}
             videoUrls={video_urls}
             aspectClass={aspectClass}
+            alt={title || "โพสต์ชุมชน"}
           />
           {hasVideo && gallery_urls.length === 0 && video_urls.length === 1 && (
             <span className="absolute top-2 right-2 inline-flex rounded-full bg-black/50 p-1.5 text-white pointer-events-none">

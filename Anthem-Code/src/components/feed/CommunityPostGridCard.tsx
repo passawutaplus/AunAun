@@ -140,6 +140,7 @@ const CommunityPostGridCard = ({ post, boosted, boostId }: Props) => {
                 galleryUrls={post.gallery_urls ?? []}
                 videoUrls={post.video_urls ?? []}
                 aspectClass={aspectClass}
+                alt={post.title || "โพสต์ชุมชน"}
               />
             </div>
           </CommunityDoubleTapLike>

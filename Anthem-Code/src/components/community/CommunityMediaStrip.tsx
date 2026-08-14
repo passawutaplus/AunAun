@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -22,6 +22,8 @@ import type { PortfolioMediaItem } from "@/lib/portfolioMedia";
 import type { CommunityMediaAspect } from "@/lib/communityMediaAspect";
 import { communityMediaStripThumbClass } from "@/lib/communityMediaAspect";
 import { cn } from "@/lib/utils";
+import { UploadFileHint } from "@/components/ui/UploadFileHint";
+import { IMAGE_UPLOAD_MAX_INPUT_MB } from "@/lib/uploadImage";
 
 type Props = {
   items: PortfolioMediaItem[];
@@ -104,6 +106,7 @@ export function CommunityMediaStrip({
   onReorder,
 }: Props) {
   const mediaRef = useRef<HTMLInputElement>(null);
+  const [fileDrag, setFileDrag] = useState(false);
   const sortable = items.length > 1;
   const thumbClass = communityMediaStripThumbClass(mediaAspect);
   /** Empty composer: square add slot (default 1:1) until first media locks aspect. */
@@ -156,7 +159,28 @@ export function CommunityMediaStrip({
   );
 
   return (
-    <div className="px-4 pb-3 pt-0">
+    <div
+      className={cn("px-4 pb-3 pt-0", fileDrag && "rounded-xl ring-2 ring-primary/40 bg-primary/5")}
+      onDragEnter={(e) => {
+        if (![...e.dataTransfer.types].includes("Files")) return;
+        e.preventDefault();
+        setFileDrag(true);
+      }}
+      onDragOver={(e) => {
+        if (![...e.dataTransfer.types].includes("Files")) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        setFileDrag(true);
+      }}
+      onDragLeave={() => setFileDrag(false)}
+      onDrop={(e) => {
+        if (![...e.dataTransfer.types].includes("Files")) return;
+        e.preventDefault();
+        setFileDrag(false);
+        const picked = Array.from(e.dataTransfer.files ?? []);
+        if (picked.length) onPickFiles(picked);
+      }}
+    >
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
         {sortable ? (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -201,6 +225,11 @@ export function CommunityMediaStrip({
           if (picked.length) onPickFiles(picked);
           e.target.value = "";
         }}
+      />
+      <UploadFileHint
+        formats="รูปหรือวิดีโอ"
+        maxMb={IMAGE_UPLOAD_MAX_INPUT_MB}
+        className="pt-0.5"
       />
     </div>
   );

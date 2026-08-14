@@ -113,6 +113,8 @@ export interface Project {
   allowHire?: boolean;
   allowCollab?: boolean;
   licenseType?: string;
+  aiAssisted?: boolean;
+  aiDisclosureNote?: string | null;
 }
 
 export interface HiringRequest {

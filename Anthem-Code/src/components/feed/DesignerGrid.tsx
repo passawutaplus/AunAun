@@ -16,7 +16,7 @@ import {
 import type { DesignerSort } from "./DesignerToolbar";
 import type { DesignerFeedSource } from "./DesignerFeedDropdown";
 import EmptyState from "@/components/ui/EmptyState";
-import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
+import QueryStatusPanel, { FilterEmptyState } from "@/components/ui/QueryStatusPanel";
 import { useSlowLoadFallback } from "@/hooks/useSlowLoadFallback";
 import type { OpportunityFilter } from "@/components/feed/OpportunityFilterChips";
 import { projectMatchesOpportunityFilter } from "@/lib/viewAffinity";
@@ -25,6 +25,7 @@ interface Props {
   onHire: (recipientId: string, recipientName: string) => void;
   onCollab: (recipientId: string, recipientName: string) => void;
   search?: string;
+  onClearSearch?: () => void;
   sort?: DesignerSort;
   feedSource?: DesignerFeedSource;
   categories?: string[];
@@ -53,6 +54,7 @@ const DesignerGrid = ({
   onHire,
   onCollab,
   search = "",
+  onClearSearch,
   sort = "newest",
   feedSource = "all",
   categories = [],
@@ -158,22 +160,28 @@ const DesignerGrid = ({
 
   if (!filtered.length) {
     const followingEmpty = feedSource === "following";
+    if (search.trim()) {
+      return (
+        <FilterEmptyState
+          title="ไม่พบดีไซเนอร์"
+          description={`ลองคำอื่น เช่น logo, ux, branding — ไม่มีผลลัพธ์สำหรับ "${search}"`}
+          onClear={onClearSearch}
+          clearLabel="ล้างคำค้น"
+        />
+      );
+    }
     return (
       <EmptyState
         icon={followingEmpty ? UserPlus : SearchX}
         title={
-          search
-            ? "ไม่พบดีไซเนอร์"
-            : followingEmpty
-              ? "ยังไม่ได้ติดตามใคร"
-              : "ยังไม่มีดีไซเนอร์ในฟีด"
+          followingEmpty
+            ? "ยังไม่ได้ติดตามใคร"
+            : "ยังไม่มีดีไซเนอร์ในฟีด"
         }
         description={
-          search
-            ? `ลองคำอื่น เช่น logo, ux, branding — ไม่มีผลลัพธ์สำหรับ "${search}"`
-            : followingEmpty
-              ? "กดติดตามครีเอเตอร์ที่ชอบ แล้วกลับมาดูที่นี่"
-              : "เมื่อมีครีเอเตอร์เผยแพร่ผลงาน รายชื่อจะปรากฏที่นี่"
+          followingEmpty
+            ? "กดติดตามครีเอเตอร์ที่ชอบ แล้วกลับมาดูที่นี่"
+            : "เมื่อมีครีเอเตอร์เผยแพร่ผลงาน รายชื่อจะปรากฏที่นี่"
         }
       />
     );

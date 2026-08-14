@@ -1,4 +1,5 @@
-import { Sparkles } from "lucide-react";
+import { Banknote, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Props = {
   netThb: number;
@@ -7,6 +8,9 @@ type Props = {
   lifetimeEarned: number;
   feeLabel: string;
   showGiftable?: boolean;
+  onCashout?: () => void;
+  canCashout?: boolean;
+  cashoutHint?: string;
 };
 
 /** Hero: estimated cashout value. Optional giftable PX when gift economy is on. */
@@ -17,6 +21,9 @@ export function EarningsHeroCard({
   lifetimeEarned,
   feeLabel,
   showGiftable = true,
+  onCashout,
+  canCashout = false,
+  cashoutHint,
 }: Props) {
   return (
     <div className="space-y-3">
@@ -31,6 +38,23 @@ export function EarningsHeroCard({
         <p className="mt-1 text-xs text-background/60">
           สะสมรวม {lifetimeEarned.toLocaleString()} px · หลังหักค่าธรรมเนียม {feeLabel}
         </p>
+        {onCashout ? (
+          <button
+            type="button"
+            onClick={onCashout}
+            disabled={!canCashout}
+            title={!canCashout ? cashoutHint : "ถอนเงิน"}
+            className={cn(
+              "mt-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+              canCashout
+                ? "bg-background text-foreground hover:bg-background/90"
+                : "bg-background/15 text-background/50 cursor-not-allowed",
+            )}
+          >
+            <Banknote className="h-3.5 w-3.5" />
+            ถอนเงิน
+          </button>
+        ) : null}
       </div>
 
       {showGiftable ? (

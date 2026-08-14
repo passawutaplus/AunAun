@@ -1,0 +1,12 @@
+<!-- Messenger mark  circular well + bolt bubble for share sheet. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-hidden="true">
+  <defs>
+    <linearGradient id="msgr" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00B2FF"/>
+      <stop offset="55%" stop-color="#006AFF"/>
+      <stop offset="100%" stop-color="#A033FF"/>
+    </linearGradient>
+  </defs>
+  <circle cx="24" cy="24" r="24" fill="url(#msgr)"/>
+  <path fill="#fff" d="M24 11.2c-7.4 0-13.4 5.4-13.4 12.1 0 3.8 1.9 7.2 4.9 9.5v3.2l4.5-2.47c1.26.35 2.6.54 4 .54 7.4 0 13.4-5.4 13.4-12.07S31.4 11.2 24 11.2zm1.35 16.3-3.4-3.63-6.62 3.63 7.32-7.82 3.46 3.63 6.55-3.63-7.31 7.82z"/>
+</svg>

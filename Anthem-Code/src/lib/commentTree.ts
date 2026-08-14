@@ -38,3 +38,17 @@ export function buildCommentTree<T extends { id: string; parent_id?: string | nu
 export function countThread(nodes: CommentNode<unknown>[]): number {
   return nodes.reduce((acc, n) => acc + 1 + countThread(n.replies as CommentNode<unknown>[]), 0);
 }
+
+/** Drop hidden comments and posts from blocked authors (and their replies). */
+export function filterCommentTree<T extends { id: string; user_id: string }>(
+  nodes: CommentNode<T>[],
+  hiddenIds: Set<string>,
+  blockedIds: Set<string>,
+): CommentNode<T>[] {
+  return nodes
+    .filter((n) => !hiddenIds.has(n.comment.id) && !blockedIds.has(n.comment.user_id))
+    .map((n) => ({
+      ...n,
+      replies: filterCommentTree(n.replies, hiddenIds, blockedIds),
+    }));
+}

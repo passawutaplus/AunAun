@@ -17,7 +17,7 @@ export const config = {
 };
 
 const BOT_UA =
-  /googlebot|bingbot|yandex|baiduspider|twitterbot|facebookexternalhit|linkedinbot|slackbot|discordbot|whatsapp|telegrambot|applebot|duckduckbot|semrushbot|ahrefsbot|bytespider|gptbot|claudebot|perplexity/i;
+  /googlebot|bingbot|yandex|baiduspider|twitterbot|facebookexternalhit|linkedinbot|slackbot|discordbot|whatsapp|telegrambot|applebot|duckduckbot|semrushbot|ahrefsbot|bytespider|gptbot|claudebot|perplexity|line\/|micromessenger|instagram/i;
 
 export default async function middleware(request) {
   const ua = request.headers.get("user-agent") || "";

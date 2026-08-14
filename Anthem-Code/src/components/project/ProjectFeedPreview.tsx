@@ -4,6 +4,7 @@ import UserAvatar from "@/components/UserAvatar";
 import { ProjectFeedPreviewToolbar } from "@/components/project/ProjectFeedPreviewToolbar";
 import { naturalFeedCoverUrl } from "@/lib/feedProjectCover";
 import { cn } from "@/lib/utils";
+import AiDisclosureBadge from "@/components/license/AiDisclosureBadge";
 
 const SKELETON_HEIGHTS = ["h-36", "h-44", "h-32", "h-40", "h-36", "h-48"] as const;
 
@@ -25,9 +26,19 @@ type Props = {
   ownerName: string;
   ownerAvatar?: string;
   fit?: boolean;
+  aiAssisted?: boolean;
+  aiDisclosureNote?: string | null;
 };
 
-export function ProjectFeedPreview({ title, cover, ownerName, ownerAvatar, fit = false }: Props) {
+export function ProjectFeedPreview({
+  title,
+  cover,
+  ownerName,
+  ownerAvatar,
+  fit = false,
+  aiAssisted,
+  aiDisclosureNote,
+}: Props) {
   const displayTitle = title.trim() || "ชื่อผลงาน";
   const coverSrc = naturalFeedCoverUrl(cover);
   const hasCover = !!coverSrc;
@@ -55,6 +66,9 @@ export function ProjectFeedPreview({ title, cover, ownerName, ownerAvatar, fit =
               <p className="text-white text-sm font-medium line-clamp-1 thai-leading-tight drop-shadow">
                 {displayTitle}
               </p>
+            </div>
+            <div className="absolute top-2 right-2 z-10">
+              <AiDisclosureBadge assisted={aiAssisted} note={aiDisclosureNote} />
             </div>
           </>
         ) : (

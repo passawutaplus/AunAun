@@ -6,7 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import Footer from "@/components/Footer";
 import { BackButton } from "@/components/ui/BackButton";
 import {
   ExternalLink,
@@ -204,7 +203,6 @@ const AdDetailPage = () => {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

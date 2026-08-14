@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { BookOpen, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
 export type ProjectContextData = {
@@ -17,19 +17,15 @@ type Props = {
   className?: string;
 };
 
-function FieldBlock({ label, value }: { label: string; value: string }) {
+type FieldItem = { label: string; value: string };
+
+function FieldRow({ label, value, showDivider }: { label: string; value: string; showDivider: boolean }) {
   return (
-    <div className="rounded-xl border border-border/50 bg-background/40 px-4 py-3 space-y-1.5">
-      <p className="text-xs font-semibold text-primary">{label}</p>
-      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{value}</p>
+    <div className={cn("space-y-1 py-3.5", showDivider && "border-b border-border/55")}>
+      <p className="text-sm font-semibold text-foreground">{label}</p>
+      <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{value}</p>
     </div>
   );
-}
-
-function oneLine(raw: string, max = 88): string {
-  const t = raw.replace(/\s+/g, " ").trim();
-  if (t.length <= max) return t;
-  return `${t.slice(0, max - 1)}…`;
 }
 
 /** Same field order as ProjectContextEditorFields (publish form). */
@@ -43,97 +39,68 @@ const ProjectContextCard = ({ context, className }: Props) => {
   const durationLabel = context.duration_label?.trim() ?? "";
   const outcomeNote = context.outcome_note?.trim() ?? "";
 
-  const hasAny =
-    !!creatorRole || !!brief || !!processNote || !!deliverables || !!durationLabel || !!outcomeNote;
-  if (!hasAny) return null;
+  const fields: FieldItem[] = [
+    creatorRole ? { label: "บทบาทของฉัน", value: creatorRole } : null,
+    brief ? { label: "โจทย์ของงาน", value: brief } : null,
+    processNote ? { label: "วิธีคิด / ขั้นตอนทำงาน", value: processNote } : null,
+    deliverables ? { label: "สิ่งที่ส่งมอบ", value: deliverables } : null,
+    durationLabel ? { label: "ระยะเวลา", value: durationLabel } : null,
+    outcomeNote ? { label: "ผลลัพธ์ / สิ่งที่ได้เรียนรู้", value: outcomeNote } : null,
+  ].filter((item): item is FieldItem => item != null);
 
-  const peekRole = creatorRole ? oneLine(creatorRole, 72) : "";
-  /** Second peek line: brief first, else next filled field in form order. */
-  const peekSecondary =
-    (brief && { label: "โจทย์", value: oneLine(brief, 96) }) ||
-    (processNote && { label: "วิธีคิด", value: oneLine(processNote, 96) }) ||
-    (deliverables && { label: "สิ่งที่ส่งมอบ", value: oneLine(deliverables, 96) }) ||
-    (durationLabel && { label: "ระยะเวลา", value: oneLine(durationLabel, 96) }) ||
-    (outcomeNote && { label: "ผลลัพธ์", value: oneLine(outcomeNote, 96) }) ||
-    null;
-  const hasPeek = !!peekRole || !!peekSecondary;
+  if (!fields.length) return null;
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className={className}>
       <section className="overflow-hidden">
-        <div className="px-5 py-4 sm:px-6 sm:py-5">
-          <div className="min-w-0 space-y-2.5">
-            <div className="space-y-1">
-              <h2 className="text-base font-semibold leading-snug text-foreground sm:text-[17px]">
+        <h2>
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-3 border-y border-foreground/20 py-4 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-expanded={open}
+            >
+              <span className="flex min-w-0 items-center gap-2 text-lg font-semibold leading-snug text-foreground">
+                <BookOpen className="h-5 w-5 shrink-0 text-primary" aria-hidden />
                 เล่าเบื้องหลังผลงานนี้
-              </h2>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                โจทย์ · บทบาท · วิธีคิด · ผลลัพธ์ — ข้อมูลที่ทีมงานอยากรู้ก่อนคุย
-              </p>
-            </div>
-
-            {!open && hasPeek ? (
-              <div className="space-y-1.5 rounded-xl border border-border/40 bg-background/50 px-3.5 py-3">
-                {peekRole ? (
-                  <p className="text-sm leading-snug text-foreground">
-                    <span className="font-medium text-primary">บทบาท</span>
-                    <span className="text-muted-foreground"> · </span>
-                    {peekRole}
-                  </p>
-                ) : null}
-                {peekSecondary ? (
-                  <p className="text-sm leading-snug text-foreground">
-                    <span className="font-medium text-primary">{peekSecondary.label}</span>
-                    <span className="text-muted-foreground"> · </span>
-                    {peekSecondary.value}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-
-            {!open && !hasPeek ? (
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                มีเบื้องหลังงานนี้ให้ดูเพิ่ม — กดอ่านได้ด้านล่าง
-              </p>
-            ) : null}
-
-            <CollapsibleTrigger asChild>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 py-0.5 text-xs font-medium text-primary transition-opacity hover:opacity-80"
-                aria-expanded={open}
-              >
+              </span>
+              <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary">
                 {open ? "ย่อ" : "อ่านเพิ่มเติม"}
                 <ChevronDown
                   className={cn(
-                    "h-3.5 w-3.5 transition-transform duration-200",
+                    "h-4 w-4 transition-transform duration-300 ease-out motion-reduce:transition-none",
                     open && "rotate-180",
                   )}
                   aria-hidden
                 />
-              </button>
-            </CollapsibleTrigger>
+              </span>
+            </button>
+          </CollapsibleTrigger>
+        </h2>
+
+        <div
+          className={cn(
+            "grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none",
+            open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+          )}
+        >
+          <div
+            className={cn(
+              "min-h-0 overflow-hidden transition-opacity duration-300 ease-out motion-reduce:transition-none",
+              open ? "opacity-100" : "opacity-0",
+            )}
+            aria-hidden={!open}
+          >
+            {fields.map((field, index) => (
+              <FieldRow
+                key={field.label}
+                label={field.label}
+                value={field.value}
+                showDivider={index < fields.length - 1}
+              />
+            ))}
           </div>
         </div>
-
-        <CollapsibleContent>
-          <div className="space-y-3 border-t border-border/50 px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
-            {creatorRole ? <FieldBlock label="บทบาทของฉัน" value={creatorRole} /> : null}
-            {brief ? <FieldBlock label="โจทย์ของงาน" value={brief} /> : null}
-            {processNote ? <FieldBlock label="วิธีคิด / ขั้นตอนทำงาน" value={processNote} /> : null}
-
-            {(deliverables || durationLabel) && (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {deliverables ? <FieldBlock label="สิ่งที่ส่งมอบ" value={deliverables} /> : null}
-                {durationLabel ? <FieldBlock label="ระยะเวลา" value={durationLabel} /> : null}
-              </div>
-            )}
-
-            {outcomeNote ? (
-              <FieldBlock label="ผลลัพธ์ / สิ่งที่ได้เรียนรู้" value={outcomeNote} />
-            ) : null}
-          </div>
-        </CollapsibleContent>
       </section>
     </Collapsible>
   );

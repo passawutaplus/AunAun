@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { PROJECT_FEED_SELECT } from "@/lib/dbSelects";
+import { PROJECT_FEED_SELECT, PROJECT_FEED_SELECT_WITH_AI } from "@/lib/dbSelects";
+import { fetchFeedCardRows } from "@/lib/fetchProjectRow";
 import { todayISO } from "@/lib/dailySeedPick.vendored";
 import { projectHasDailyDrillTag } from "@/lib/drillProject";
 import PortfolioGrid from "@/components/profile/PortfolioGrid";
@@ -14,15 +15,18 @@ export default function DrillFeedPanel() {
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ["drill-gallery", date],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("projects")
-        .select(PROJECT_FEED_SELECT)
-        .eq("status", "Published")
-        .contains("tags", ["So1oDrill"])
-        .order("created_at", { ascending: false })
-        .limit(120);
-      if (error) throw error;
-      return (data ?? []).filter((p) => projectHasDailyDrillTag(p.tags as string[], date));
+      return fetchFeedCardRows(
+        (select) =>
+          supabase
+            .from("projects")
+            .select(select)
+            .eq("status", "Published")
+            .contains("tags", ["So1oDrill"])
+            .order("created_at", { ascending: false })
+            .limit(120),
+        PROJECT_FEED_SELECT_WITH_AI,
+        PROJECT_FEED_SELECT,
+      ).then((rows) => rows.filter((p) => projectHasDailyDrillTag(p.tags as string[], date)));
     },
   });
 

@@ -31,7 +31,7 @@ import {
   Trash2,
   Type,
 } from "lucide-react";
-import { isAllowedPortfolioImage, isAllowedPortfolioStillImage, PORTFOLIO_IMAGE_ACCEPT, PORTFOLIO_STILL_IMAGE_ACCEPT } from "@/lib/normalizeImageUpload";
+import { UploadFileHint } from "@/components/ui/UploadFileHint";
 import { ProjectRichTextField } from "@/components/project/ProjectRichTextField";
 import { CANVAS_TOOL_MIME, readCanvasToolDragData, type CanvasToolPayload } from "@/lib/canvasToolDrag";
 import {
@@ -41,6 +41,7 @@ import {
   canvasBlockLabel,
   duplicateContentBlock,
   imageModuleSlotCapacity,
+  blockHasLocalPreview,
   isImageTextBlockType,
   isMediaBlockType,
   isTextBlockType,
@@ -66,7 +67,6 @@ import {
 } from "@/lib/canvasImageSlotDnD";
 import { CanvasImageSlotDropDialog } from "@/components/project/CanvasImageSlotDropDialog";
 import { ModuleImageWithCrop } from "@/components/project/ModuleImageWithCrop";
-import { AutoLoadPercentBar } from "@/components/project/LoadPercentBar";
 import { isVideoFile, PROJECT_VIDEO_ACCEPT } from "@/lib/videoAccept";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -101,26 +101,38 @@ type Props = {
   uploadStageLabel?: string | null;
   /** Real progress 0–100 when known. */
   uploadStagePercent?: number | null;
+  /** Cancel in-flight upload when progress is shown. */
+  onCancelUpload?: () => void;
   selectedBlockId?: string | null;
   onSelectedBlockIdChange?: (id: string | null) => void;
 };
 
 function CanvasUploadProgress({
   label,
-  percent,
+  onCancel,
   className,
 }: {
   label?: string | null;
   percent?: number | null;
+  onCancel?: () => void;
   className?: string;
 }) {
   return (
-    <AutoLoadPercentBar
-      percent={percent}
-      label={label ?? "กำลังอัปโหลด..."}
-      showLabel
-      className={cn("max-w-[220px]", className)}
-    />
+    <div className={cn("flex flex-col items-center gap-2", className)}>
+      <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
+      <p className="max-w-[220px] text-center text-xs font-medium text-foreground">
+        {label ?? "กำลังอัปโหลด..."}
+      </p>
+      {onCancel ? (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="pointer-events-auto text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
+        >
+          ยกเลิก
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -522,12 +534,7 @@ function EmptyImageTile({
         <>
           <ImageIcon className="h-8 w-8 text-muted-foreground/50" strokeWidth={1.25} />
           <span className="text-xs font-medium text-muted-foreground/80">+Upload</span>
-          <span className="px-2 text-center text-[10px] leading-snug text-muted-foreground/65">
-            JPG, PNG, GIF
-          </span>
-          <span className="px-2 text-center text-[10px] leading-snug text-muted-foreground/65">
-            สูงสุด 30MB
-          </span>
+          <UploadFileHint formats="JPG, PNG, GIF" maxMb={30} className="px-2 text-center" />
         </>
       )}
       <input
@@ -1178,8 +1185,12 @@ function SortableCanvasBlock({
       />
 
       {uploading ? (
-        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/65 px-4">
-          <CanvasUploadProgress label={uploadStageLabel} percent={uploadStagePercent} />
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 px-4">
+          <CanvasUploadProgress
+            label={uploadStageLabel}
+            percent={uploadStagePercent}
+            onCancel={onCancelUpload}
+          />
         </div>
       ) : null}
       </div>
@@ -1210,6 +1221,7 @@ export function ProjectCanvasEditor({
   uploading,
   uploadStageLabel,
   uploadStagePercent,
+  onCancelUpload,
   selectedBlockId,
   onSelectedBlockIdChange,
 }: Props) {
@@ -1360,7 +1372,11 @@ export function ProjectCanvasEditor({
           </p>
         </div>
         {uploading ? (
-          <CanvasUploadProgress label={uploadStageLabel} percent={uploadStagePercent} />
+          <CanvasUploadProgress
+            label={uploadStageLabel}
+            percent={uploadStagePercent}
+            onCancel={onCancelUpload}
+          />
         ) : null}
 
         {hasQuickTemplates || hasStarterActions ? (
@@ -1508,7 +1524,7 @@ export function ProjectCanvasEditor({
                   index={index}
                   total={blocks.length}
                   disabled={disabled}
-                  uploading={uploadingBlockId === block.id}
+                  uploading={uploadingBlockId === block.id || blockHasLocalPreview(block)}
                   uploadStageLabel={uploadStageLabel}
                   uploadStagePercent={uploadStagePercent}
                   selected={selectedId === block.id}

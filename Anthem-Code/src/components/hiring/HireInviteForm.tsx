@@ -15,6 +15,7 @@ import { uploadProjectImage } from "@/lib/uploadImage";
 import { jobTypeLabel } from "@/lib/hireBrief";
 import { HIRE_ENGAGEMENT_TYPES } from "@/components/hiring/HireWizardFields";
 import { safeHttpUrl } from "@/lib/safeUrl";
+import { FieldError } from "@/components/ui/FieldError";
 
 const MAX_HIRE_LINKS = 8;
 
@@ -211,7 +212,7 @@ const HireInviteForm = ({
           })}
         </div>
         {fieldErrors?.jobTypes ? (
-          <p className="text-xs text-destructive mt-1.5">{fieldErrors.jobTypes}</p>
+          <FieldError className="mt-1.5" message={fieldErrors.jobTypes} />
         ) : null}
       </div>
 
@@ -234,9 +235,10 @@ const HireInviteForm = ({
             fieldErrors?.details && "border-destructive focus-visible:ring-destructive",
           )}
           aria-invalid={!!fieldErrors?.details}
+          aria-describedby={fieldErrors?.details ? "hire-details-error" : undefined}
         />
         {fieldErrors?.details ? (
-          <p className="text-xs text-destructive mt-1.5">{fieldErrors.details}</p>
+          <FieldError id="hire-details-error" className="mt-1.5" message={fieldErrors.details} />
         ) : (
           <p className="text-[11px] text-muted-foreground mt-1.5">
             อย่างน้อย 20 ตัวอักษร · ตอนนี้ {form.details.trim().length} ตัวอักษร
@@ -401,9 +403,10 @@ const HireInviteForm = ({
             />
           </div>
           {fieldErrors?.budgetMin || fieldErrors?.budgetMax ? (
-            <p className="text-xs text-destructive">
-              {fieldErrors.budgetMin || fieldErrors.budgetMax}
-            </p>
+            <FieldError
+              className="mt-1"
+              message={fieldErrors.budgetMin || fieldErrors.budgetMax}
+            />
           ) : null}
         </div>
         <div className="space-y-1.5">
@@ -428,7 +431,7 @@ const HireInviteForm = ({
             required
           />
           {fieldErrors?.deadline ? (
-            <p className="text-xs text-destructive">{fieldErrors.deadline}</p>
+            <FieldError message={fieldErrors.deadline} />
           ) : null}
         </div>
       </div>

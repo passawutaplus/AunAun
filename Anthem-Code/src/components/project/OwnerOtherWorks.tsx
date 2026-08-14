@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { fetchFeedCardRows } from "@/lib/fetchProjectRow";
+import AiDisclosureBadge from "@/components/license/AiDisclosureBadge";
 
 type OwnerWorkThumb = {
   id: string;
@@ -10,6 +12,8 @@ type OwnerWorkThumb = {
   cover_url: string | null;
   gallery_urls: string[] | null;
   views: number | null;
+  ai_assisted?: boolean | null;
+  ai_disclosure_note?: string | null;
 };
 
 type Props = {
@@ -20,6 +24,8 @@ type Props = {
 };
 
 const LIMIT = 4;
+const THUMB_SELECT = "id, title, cover_url, gallery_urls, views";
+const THUMB_SELECT_WITH_AI = `${THUMB_SELECT}, ai_assisted, ai_disclosure_note`;
 
 export function OwnerOtherWorks({
   ownerId,
@@ -31,15 +37,19 @@ export function OwnerOtherWorks({
     queryKey: ["owner-other-works", ownerId, excludeProjectId],
     enabled: !!ownerId,
     queryFn: async (): Promise<OwnerWorkThumb[]> => {
-      const { data, error } = await supabase
-        .from("projects")
-        .select("id, title, cover_url, gallery_urls, views")
-        .eq("owner_id", ownerId!)
-        .eq("status", "Published")
-        .order("views", { ascending: false })
-        .limit(LIMIT + 4);
-      if (error) throw error;
-      return ((data ?? []) as OwnerWorkThumb[])
+      const data = await fetchFeedCardRows(
+        (select) =>
+          supabase
+            .from("projects")
+            .select(select)
+            .eq("owner_id", ownerId!)
+            .eq("status", "Published")
+            .order("views", { ascending: false })
+            .limit(LIMIT + 4),
+        THUMB_SELECT_WITH_AI,
+        THUMB_SELECT,
+      );
+      return (data as OwnerWorkThumb[])
         .filter((p) => p.id !== excludeProjectId)
         .slice(0, LIMIT);
     },
@@ -71,6 +81,9 @@ export function OwnerOtherWorks({
                     loading="lazy"
                   />
                 ) : null}
+                <div className="absolute top-1.5 right-1.5 z-10">
+                  <AiDisclosureBadge assisted={p.ai_assisted} note={p.ai_disclosure_note} />
+                </div>
                 <span className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-0.5 rounded-full bg-background/80 px-1.5 py-0.5 text-[10px] text-foreground tabular-nums backdrop-blur-sm">
                   <Eye className="h-2.5 w-2.5" aria-hidden />
                   {views.toLocaleString("th-TH")}

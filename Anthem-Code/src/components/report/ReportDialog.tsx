@@ -21,12 +21,19 @@ import { useEnsureSensitiveAction } from "@/components/legal/SensitiveActionReau
 import { safeHttpUrl } from "@/lib/safeUrl";
 import { useBlockUser, useUserBlocks } from "@/hooks/useCommunityPostInteractions";
 
-const REASONS: { value: ReportReason; label: string }[] = [
+/** UI-only; RPC allow-list has no dedicated code — maps to `other` with a details prefix. */
+const AI_UNDISCLOSED = "ai_undisclosed" as const;
+const AI_UNDISCLOSED_PREFIX = "ไม่เปิดเผยการใช้ AI / เลือกระดับไม่ตรงงาน";
+
+type ReportReasonChoice = ReportReason | typeof AI_UNDISCLOSED;
+
+const REASONS: { value: ReportReasonChoice; label: string }[] = [
   { value: "spam", label: "สแปม / โฆษณา" },
   { value: "job_spam", label: "ลงหางาน / ประกาศจ้างในฟอรัม" },
   { value: "harassment", label: "คุกคาม / Hate speech" },
   { value: "nsfw", label: "เนื้อหา 18+ / ไม่เหมาะสม" },
   { value: "copyright", label: "ละเมิดลิขสิทธิ์" },
+  { value: AI_UNDISCLOSED, label: AI_UNDISCLOSED_PREFIX },
   { value: "scam", label: "หลอกลวง / Scam" },
   { value: "impersonation", label: "ปลอมเป็นผู้อื่น" },
   { value: "other", label: "อื่นๆ" },
@@ -63,7 +70,7 @@ const ReportDialog = ({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const open = openProp ?? uncontrolledOpen;
   const setOpen = onOpenChangeProp ?? setUncontrolledOpen;
-  const [reason, setReason] = useState<ReportReason | null>(null);
+  const [reason, setReason] = useState<ReportReasonChoice | null>(null);
   const [details, setDetails] = useState("");
   const [evidence, setEvidence] = useState("");
   const [files, setFiles] = useState<EvidenceFile[]>([]);
@@ -107,13 +114,20 @@ const ReportDialog = ({
       .map((u) => safeHttpUrl(u.trim()))
       .filter((u): u is string => !!u)
       .slice(0, 3);
+    const rpcReason: ReportReason = reason === AI_UNDISCLOSED ? "other" : reason;
+    const extra = details.trim();
+    const rpcDetails = (
+      reason === AI_UNDISCLOSED
+        ? (extra ? `${AI_UNDISCLOSED_PREFIX} — ${extra}` : AI_UNDISCLOSED_PREFIX)
+        : extra
+    ).slice(0, 1000);
     try {
       await create.mutateAsync({
         target_type: targetType,
         target_id: targetId,
         target_owner_id: targetOwnerId ?? null,
-        reason,
-        details: details.trim().slice(0, 1000),
+        reason: rpcReason,
+        details: rpcDetails,
         evidence_urls: [...urls, ...files.map((f) => f.url)],
         evidence_files: files,
       });

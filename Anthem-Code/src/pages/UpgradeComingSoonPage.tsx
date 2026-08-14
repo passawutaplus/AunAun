@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/core/subscription";
-import Footer from "@/components/Footer";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { UPGRADE_COMING_SOON_TH, isAplus1PaymentsEnabled, isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
 import { tierLabel, normalizePlanId } from "@/lib/tierMembership";
@@ -73,8 +72,6 @@ export function UpgradeComingSoonPage() {
           </Button>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

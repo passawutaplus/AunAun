@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,64 +16,27 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import {
-  User as UserIcon, Eye, EyeOff, Loader2,
-  Sparkles, Info, Bookmark, Share2,
-} from "lucide-react";
-import { PlusOneMark } from "@/components/brand/PlusOneMark";
+import { User as UserIcon, Loader2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
+import AuthWorkWall from "@/components/auth/AuthWorkWall";
+import HeroGridSpotlight from "@/components/feed/HeroGridSpotlight";
 import { DemoLoginHint, DemoSignupBlocked } from "@/components/DemoAuthHints";
 import { ReferralSignupHint } from "@/components/referral/ReferralSignupHint";
 import LegalSignupConsents from "@/components/legal/LegalSignupConsents";
 import { recordSignupConsents, markPendingSignupConsent } from "@/lib/legalCompliance";
 import {
-  BRAND_HERO_SUBTITLE,
-  BRAND_NAME,
   BRAND_STORAGE_NO_PERSIST,
-  BRAND_TAGLINE,
 } from "@/lib/brandConfig";
 import SeoHead from "@/components/SeoHead";
 import { hasCompletedProfileOnboarding } from "@/hooks/useFeedInterests";
-
-const PasswordInput = ({ id, value, onChange, placeholder, autoComplete, minLength, required, invalid }: {
-  id: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder?: string;
-  autoComplete?: string;
-  minLength?: number;
-  required?: boolean;
-  invalid?: boolean;
-}) => {
-  const [show, setShow] = useState(false);
-  return (
-    <div className="relative">
-      <Input
-        id={id}
-        type={show ? "text" : "password"}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        minLength={minLength}
-        required={required}
-        className={cn(
-          "h-11 rounded-xl pr-10 bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40",
-          invalid && "border-destructive focus-visible:ring-destructive/30"
-        )}
-      />
-      <button
-        type="button"
-        onClick={() => setShow((s) => !s)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-        aria-label={show ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
-      >
-        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-      </button>
-    </div>
-  );
-};
+import { PasswordField } from "@/components/ui/PasswordField";
+import { FieldError } from "@/components/ui/FieldError";
+import {
+  saveLoginEmailPrefill,
+  loginEmailFormatError,
+  loginPasswordEmptyError,
+} from "@/lib/loginEmailPrefill";
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -82,6 +45,7 @@ const AuthPage = () => {
   const redirect = safeRelativePath(rawRedirect, "/");
 
   const { user } = useAuth();
+  const authHeroRef = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<"login" | "signup">("login");
   const [fadeOut, setFadeOut] = useState(false);
 
@@ -116,59 +80,44 @@ const AuthPage = () => {
   }, [user, navigate, redirect]);
 
   return (
-    <div className={cn(
+    <div
+      ref={authHeroRef}
+      className={cn(
       "relative min-h-screen overflow-hidden bg-background transition-opacity duration-300",
       fadeOut && "opacity-0"
     )}>
       <SeoHead title="เข้าสู่ระบบ" path="/auth" noindex />
-      {/* Ambient blobs */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-32 -left-24 w-[420px] h-[420px] rounded-full blur-3xl opacity-30 bg-gradient-brand" />
-        <div className="absolute top-1/3 -right-24 w-[380px] h-[380px] rounded-full blur-3xl opacity-25 bg-gradient-brand" />
-        <div className="absolute bottom-0 left-1/3 w-[320px] h-[320px] rounded-full blur-3xl opacity-20 bg-gradient-brand" />
-      </div>
+      <main id="main-content" className="contents">
+      <HeroGridSpotlight trackRef={authHeroRef} className="z-0" />
 
       <BackButton to="/" label="กลับหน้าแรก" className="absolute top-4 left-4 z-30" />
 
-      <div className="relative min-h-screen grid lg:grid-cols-2">
-        {/* LEFT: Brand banner */}
-        <div className="hidden lg:flex relative p-8 xl:p-10">
-          <div className="relative w-full rounded-3xl overflow-hidden bg-gradient-brand p-10 flex flex-col justify-between text-white shadow-2xl">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.25),transparent_40%),radial-gradient(circle_at_80%_90%,rgba(255,255,255,0.18),transparent_50%)]" />
-            <div className="relative">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur text-xs font-medium">
-                <Sparkles className="w-3.5 h-3.5" /> {BRAND_NAME} · {BRAND_HERO_SUBTITLE}
-              </div>
-              <h2 className="mt-8 text-4xl xl:text-5xl font-semibold thai-display whitespace-pre-line">
-                {BRAND_TAGLINE.replace(/ /, "\n")}
-              </h2>
-              <p className="mt-4 text-white/85 text-sm xl:text-base thai-body max-w-md">
-                สร้างโปรไฟล์ ลงผลงาน ไถฟีดหาแรงบันดาลใจ คอลแลป และรับงาน ในที่เดียว
-              </p>
-            </div>
-
-            <div className="relative grid grid-cols-3 gap-3 mt-10">
-              {[
-                { label: "+1 ผลงาน", plusOne: true },
-                { icon: Bookmark, label: "บันทึกไอเดีย" },
-                { icon: Share2, label: "แชร์โปรเจกต์" },
-              ].map(({ icon: Icon, label, plusOne }) => (
-                <div key={label} className="rounded-2xl bg-white/12 backdrop-blur border border-white/15 p-3.5">
-                  {plusOne ? (
-                    <PlusOneMark className="text-sm mb-2" />
-                  ) : Icon ? (
-                    <Icon className="w-4 h-4 mb-2" />
-                  ) : null}
-                  <p className="text-xs font-medium">{label}</p>
-                </div>
-              ))}
-            </div>
+      <div className="relative z-10 min-h-screen grid lg:grid-cols-2">
+        {/* LEFT: Full-bleed work wall. Hidden on mobile. */}
+        <div className="relative hidden min-h-screen overflow-hidden lg:block">
+          <AuthWorkWall className="z-[1] pointer-events-none" />
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 z-[2] w-20 bg-gradient-to-l from-background to-transparent"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-16 bg-gradient-to-b from-background/50 to-transparent"
+            aria-hidden
+          />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-background from-[18%] via-background/75 via-[55%] to-transparent px-8 pb-8 pt-24">
+            <p className="text-left text-3xl font-bold tracking-tight leading-[0.95] text-foreground xl:text-4xl">
+              <span className="block">1 Profile to</span>
+              <span className="block text-primary">100+ Opportunity</span>
+            </p>
+            <p className="mt-1.5 max-w-md text-sm font-normal leading-relaxed text-muted-foreground xl:text-base">
+              ให้ผลงานพาคุณไปสู่โอกาสใหม่ๆ
+            </p>
           </div>
         </div>
 
         {/* RIGHT: Form */}
         <div className="flex items-center justify-center p-4 sm:p-6 lg:p-8">
-          <div className="w-full max-w-md">
+            <div className="w-full max-w-md pb-24">
             <div className="flex justify-center mb-6 lg:hidden">
               <BrandLogo />
             </div>
@@ -222,6 +171,7 @@ const AuthPage = () => {
           </div>
         </div>
       </div>
+      </main>
     </div>
   );
 };
@@ -231,25 +181,35 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const nextEmailErr = loginEmailFormatError(email);
+    const nextPassErr = loginPasswordEmptyError(password);
+    setEmailError(nextEmailErr);
+    setPasswordError(nextPassErr);
+    if (nextEmailErr || nextPassErr) {
+      setShake(true);
+      setTimeout(() => setShake(false), 450);
+      return;
+    }
     setBusy(true);
-    setErr(null);
     try {
       if (!remember) sessionStorage.setItem(BRAND_STORAGE_NO_PERSIST, "1");
       else sessionStorage.removeItem(BRAND_STORAGE_NO_PERSIST);
+      saveLoginEmailPrefill(email);
 
       const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
       if (error) {
-        setErr(error.message.toLowerCase().includes("invalid")
-          ? "อ๊ะ! อีเมลหรือรหัสผ่านไม่ถูกต้อง"
-          : error.message);
+        const invalid = error.message.toLowerCase().includes("invalid");
+        setEmailError(null);
+        setPasswordError(invalid ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง" : error.message);
         setShake(true);
         setTimeout(() => setShake(false), 450);
       } else {
@@ -268,6 +228,9 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
         onUseAccount={(demoEmail, demoPassword) => {
           setEmail(demoEmail);
           setPassword(demoPassword);
+          setEmailError(null);
+          setPasswordError(null);
+          saveLoginEmailPrefill(demoEmail);
         }}
       />
       <div className="space-y-1.5">
@@ -278,25 +241,37 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
           autoComplete="email"
           placeholder="you@example.com"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40"
+          onChange={(e) => {
+            setEmail(e.target.value);
+            saveLoginEmailPrefill(e.target.value);
+          }}
+          onBlur={() => setEmailError(loginEmailFormatError(email))}
+          onFocus={() => setEmailError(null)}
+          aria-invalid={!!emailError || undefined}
+          aria-describedby={emailError ? "login-email-error" : undefined}
+          className={cn(
+            "h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40",
+            emailError && "border-destructive",
+          )}
           required
         />
+        <FieldError id="login-email-error" message={emailError} />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="login-pass" className="text-xs">รหัสผ่าน</Label>
-        <PasswordInput
+        <PasswordField
           id="login-pass"
           autoComplete="current-password"
           placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          invalid={!!err}
+          onBlur={() => setPasswordError(loginPasswordEmptyError(password))}
+          onFocus={() => setPasswordError(null)}
+          invalid={!!passwordError}
+          error={passwordError}
           required
         />
       </div>
-
-      {err && <p className="text-xs text-destructive">{err}</p>}
 
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 cursor-pointer text-xs text-muted-foreground">
@@ -338,20 +313,28 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [consents, setConsents] = useState({ terms: false, privacy: false });
   const [busy, setBusy] = useState(false);
-  const [touched, setTouched] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passTouched, setPassTouched] = useState(false);
+  const [confirmTouched, setConfirmTouched] = useState(false);
+  const [consentError, setConsentError] = useState<string | null>(null);
 
   const emailValid = !email || /^\S+@\S+\.\S+$/.test(email.trim());
   const passValid = password.length >= 8;
   const confirmValid = password === confirmPassword && confirmPassword.length > 0;
+  const emailError = emailTouched && email && !emailValid ? "กรุณากรอกอีเมลให้ถูกต้อง" : null;
+  const passError = passTouched && password && !passValid ? "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" : null;
+  const confirmError =
+    confirmTouched && confirmPassword && !confirmValid ? "รหัสผ่านยืนยันไม่ตรงกัน" : null;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setTouched(true);
-    if (!emailValid) { toast.error("กรุณากรอกอีเมลให้ถูกต้อง"); return; }
-    if (!passValid) { toast.error("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"); return; }
-    if (!confirmValid) { toast.error("รหัสผ่านยืนยันไม่ตรงกัน"); return; }
+    setEmailTouched(true);
+    setPassTouched(true);
+    setConfirmTouched(true);
+    setConsentError(null);
+    if (!emailValid || !passValid || !confirmValid) return;
     if (!consents.terms || !consents.privacy) {
-      toast.error("กรุณายืนยันข้อกำหนดและความเป็นส่วนตัวก่อนสมัคร");
+      setConsentError("กรุณายืนยันข้อกำหนดและความเป็นส่วนตัวก่อนสมัคร");
       return;
     }
 
@@ -403,43 +386,53 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
           placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          onBlur={() => setTouched(true)}
+          onBlur={() => setEmailTouched(true)}
+          onFocus={() => setEmailTouched(false)}
+          aria-invalid={!!emailError || undefined}
+          aria-describedby={emailError ? "su-email-error" : undefined}
           className={cn(
             "h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40",
-            touched && email && !emailValid && "border-destructive"
+            emailError && "border-destructive"
           )}
           required
         />
+        <FieldError id="su-email-error" message={emailError} />
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="su-pass" className="text-xs">รหัสผ่าน (อย่างน้อย 8 ตัว)</Label>
-        <PasswordInput
+        <PasswordField
           id="su-pass"
           autoComplete="new-password"
           placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          minLength={8}
-          invalid={touched && !!password && !passValid}
+          onBlur={() => setPassTouched(true)}
+          onFocus={() => setPassTouched(false)}
+          showStrength
+          invalid={!!passError}
+          error={passError}
           required
         />
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="su-pass-confirm" className="text-xs">ยืนยันรหัสผ่าน</Label>
-        <PasswordInput
+        <PasswordField
           id="su-pass-confirm"
           autoComplete="new-password"
           placeholder="••••••••"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          invalid={touched && !!confirmPassword && !confirmValid}
+          onBlur={() => setConfirmTouched(true)}
+          onFocus={() => setConfirmTouched(false)}
+          error={confirmError}
           required
         />
       </div>
 
-      <LegalSignupConsents value={consents} onChange={setConsents} compact />
+      <LegalSignupConsents value={consents} onChange={(v) => { setConsents(v); setConsentError(null); }} compact />
+      <FieldError message={consentError} />
 
       <Button
         type="submit"

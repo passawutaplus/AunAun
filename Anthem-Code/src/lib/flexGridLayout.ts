@@ -1,6 +1,7 @@
 import { sanitizeProjectRichText } from "@/lib/projectRichText";
 import {
   blockImageUrls,
+  isLocalPreviewUrl,
   PROJECT_BLOCK_BODY_MAX,
   type ProjectContentBlock,
 } from "@/lib/projectContentBlocks";
@@ -321,6 +322,13 @@ export function flexGridHasContent(layout: FlexGridLayout | null | undefined): b
 
 export function flexGridModuleCount(layout: FlexGridLayout): number {
   return layout.boards.reduce((n, b) => n + b.modules.length, 0);
+}
+
+export function flexGridHasLocalPreview(layout: FlexGridLayout | null | undefined): boolean {
+  if (!layout) return false;
+  return layout.boards.some((b) =>
+    b.modules.some((m) => isLocalPreviewUrl(m.url) || isLocalPreviewUrl(m.posterUrl)),
+  );
 }
 
 export function flexGridMediaItems(layout: FlexGridLayout): PortfolioMediaItem[] {

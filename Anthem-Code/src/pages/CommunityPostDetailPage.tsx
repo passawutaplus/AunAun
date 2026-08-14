@@ -31,8 +31,6 @@ import BoostButton from "@/components/boost/BoostButton";
 
 import FollowButton from "@/components/FollowButton";
 
-import Footer from "@/components/Footer";
-
 import UserAvatar from "@/components/UserAvatar";
 
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
@@ -300,9 +298,6 @@ const CommunityPostDetailPage = () => {
         <CommunityRelatedPosts posts={related} />
 
       </div>
-
-      <Footer />
-
     </main>
 
   );

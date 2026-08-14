@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, Loader2, X } from "lucide-react";
+import { Eye, Hash, Loader2, Palette, X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,6 @@ export interface ProjectPreviewData {
   thirdPartyNote: string;
   aiAssisted?: boolean;
   aiDisclosureNote?: string;
-  clientPermissionConfirmed?: boolean;
   /** Behind-the-scenes story — same as published project detail. */
   context?: ProjectContextData;
   /** When editing an existing project — enables lightbox like / inspire / share. */
@@ -121,14 +120,20 @@ function ProjectPcPreview({
 
           {data.tools.length > 0 && (
             <div className="rounded-2xl glass-panel p-5 space-y-3 lg:hidden">
-              <h3 className="text-sm font-medium text-foreground">เครื่องมือ &amp; เทคโนโลยี</h3>
+              <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                <Palette className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
+                เครื่องมือ &amp; เทคโนโลยี
+              </h3>
               <ToolsGrid tools={data.tools} compact linkable={false} />
             </div>
           )}
 
           {stripCategorySubTags(data.tags).length > 0 && (
             <div className="rounded-2xl glass-panel p-5 space-y-3 lg:hidden">
-              <h3 className="text-sm font-medium text-foreground">แท็ก</h3>
+              <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                <Hash className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
+                แท็ก
+              </h3>
               <div className="flex flex-wrap gap-1.5">
                 {stripCategorySubTags(data.tags).map((t) => (
                   <Badge key={t} variant="secondary" className="rounded-full font-normal">
@@ -140,7 +145,7 @@ function ProjectPcPreview({
           )}
 
           {data.context ? (
-            <div className="mt-10 lg:mt-14">
+            <div className="pt-12 lg:pt-16">
               <ProjectContextCard context={data.context} />
             </div>
           ) : null}
@@ -175,7 +180,6 @@ function ProjectPcPreview({
             thirdPartyNote={data.thirdPartyNote}
             aiAssisted={data.aiAssisted}
             aiDisclosureNote={data.aiDisclosureNote}
-            clientPermissionConfirmed={data.clientPermissionConfirmed}
           />
         </div>
       </div>
@@ -266,6 +270,8 @@ const ProjectPreviewDialog = ({
                 ownerName={ownerName}
                 ownerAvatar={ownerAvatar}
                 fit
+                aiAssisted={data.aiAssisted}
+                aiDisclosureNote={data.aiDisclosureNote}
               />
             </div>
           ) : mode === "mobile" ? (

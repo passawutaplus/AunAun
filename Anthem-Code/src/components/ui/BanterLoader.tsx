@@ -1,5 +1,5 @@
-import "./banter-loader.css";
 import { cn } from "@/lib/utils";
+import { WanderingEyes } from "@/components/loading-ui/wandering-eyes";
 
 type Size = "sm" | "md";
 
@@ -11,15 +11,11 @@ type BanterLoaderProps = {
 
 export function BanterLoader({ size = "md", className, "aria-label": ariaLabel }: BanterLoaderProps) {
   return (
-    <div
-      className={cn("banter-loader", size === "sm" && "banter-loader--sm", className)}
+    <WanderingEyes
+      className={cn(size === "sm" ? "h-6 w-[54px]" : "h-12 w-[108px]", className)}
       role="img"
       aria-label={ariaLabel ?? "กำลังโหลด"}
-    >
-      {Array.from({ length: 9 }, (_, i) => (
-        <div key={i} className="banter-loader__box" />
-      ))}
-    </div>
+    />
   );
 }
 

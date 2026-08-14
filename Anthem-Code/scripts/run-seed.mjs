@@ -8,13 +8,21 @@ import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
 import ws from "ws";
-import { unsplashArt } from "./demo-images.mjs";
+import {
+  DEMO_CATALOG,
+  demoCatalogAvatarUrl,
+  demoCatalogCoverUrl,
+  unsplashArt,
+} from "./demo-images.mjs";
+import { buildDemoProjectPresentation } from "./demo-catalog-canvas.mjs";
+import { buildDemoHirePackages } from "./demo-catalog-packages.mjs";
 
 const anthemRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = join(anthemRoot, "..");
 const envPaths = [
   join(repoRoot, "scripts", "ecosystem", ".env.seed.local"),
   join(repoRoot, "Solo-Code", ".env"),
+  join(anthemRoot, ".env"),
 ];
 
 function loadEnv(path) {
@@ -32,8 +40,8 @@ function loadEnv(path) {
 
 for (const p of envPaths) loadEnv(p);
 
-const url = process.env.SUPABASE_URL;
-const demoPassword = process.env.DEMO_SEED_PASSWORD;
+const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const demoPassword = process.env.DEMO_SEED_PASSWORD || "pixel100-demo-seed";
 // Prefer legacy service_role JWT (eyJ...); sb_secret_* often fails Auth Admin via REST on Lovable-hosted projects.
 const key =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -82,55 +90,9 @@ const catalogAdId = (i) => {
   return `00000000-0000-0000-0004-0000000000${hex}`;
 };
 
-const names = [
-  "ภัสวุฒิ ศรีวงค์", "นภัสรา ทองดี", "พิมพ์ชนก ใจดี", "วรรณกร พันธ์ทอง", "ธัญญา รัตนพร",
-  "ฉัตรชัย วรกุล", "อาทิตยา จันทร์เพ็ญ", "พลอยไพลิน ขจร", "ธนกร แสงทอง", "อนุชา ภูมิดี",
-  "ปาริชาต สวยงาม", "เจษฎา ท่องเที่ยว", "สุพัตรา โมชั่น", "วทัญญู เสียงดี", "กฤษณา เมโลดี้",
-  "ศิริพร เงินงาม", "กิตติพงษ์ ดิจิทัล", "มนัสนันท์ อาร์ต", "ณัฐวุฒิ ภาพถ่าย", "ภัทรานิษฐ์ คอนเทนต์",
-];
-const usernames = [
-  "phatsawut", "napatsara", "pimchanok", "wannakorn", "thanya", "chatchai", "atittaya", "ploypailin",
-  "thanakorn", "anucha", "parichat", "jessada", "supatra", "wathanyu", "kritsana", "siriporn",
-  "kittipong", "manatsanan", "nattawut", "phattranit",
-];
-const roles = [
-  "Brand & Logo Designer", "Brand Identity Designer", "Illustrator", "Pattern & Textile Designer",
-  "Ceramic Artist", "Web & Poster Designer", "UX/UI Designer", "Content Creator", "IG Content & Photo",
-  "Product Photographer", "Wedding Photographer", "Video Editor", "Motion Designer", "Sound Designer",
-  "Music Producer", "Jewelry Designer", "Web Developer & UI", "Digital Illustrator",
-  "Street Photographer", "Content Strategist",
-];
-const bios = [
-  "ออกแบบโลโก้ & แบรนด์ดิ้งสไตล์มินิมอล", "สร้างแบรนด์ขนมไทยและร้านคาเฟ่", "ภาพประกอบเด็ก & Pop Art",
-  "ลายผ้าไทยสไตล์โมเดิร์น", "เซรามิกแฮนด์เมด Earth Tone", "เว็บไซต์ร้านอาหาร & โปสเตอร์หนัง",
-  "ออกแบบแอป & เว็บโรงแรม Boutique", "TikTok สายอาหารเหนือ", "รีวิวคาเฟ่สไตล์มินิมอล",
-  "ถ่ายภาพสินค้า OTOP & ผ้าทอ", "พรีเวดดิ้งสไตล์มินิมอล", "ตัดต่อ Vlog ท่องเที่ยว",
-  "Motion Graphic อธิบายสินค้า", "Sound Design พอดแคสต์", "เพลงประกอบโฆษณา",
-  "เครื่องประดับเงินแฮนด์เมด", "Landing page & E-commerce", "ภาพประกอบดิจิทัล & สติกเกอร์",
-  "ภาพสตรีท กรุงเทพ & ต่างจังหวัด", "วางแผนคอนเทนต์แบรนด์",
-];
-const projTitles = [
-  "โลโก้ร้านกาแฟเชียงใหม่ Doi Brew", "แบรนด์ดิ้งร้านขนมไทย แม่ละมุน", "ภาพประกอบหนังสือเด็ก ช้างน้อยกับดวงดาว",
-  "Pattern ผ้าขาวม้าโมเดิร์น", "เซรามิกสไตล์มินิมอล Earth Tone", "เว็บไซต์ร้านอาหารอีสาน ส้มตำลำซิ่ง",
-  "UI App จองคิวสปา Thai Wellness", "Landing Page คอร์สเรียนทำขนม", "คอนเทนต์ TikTok สายอาหารเหนือ",
-  "รีวิวคาเฟ่สไตล์ minimal บน IG", "ถ่ายภาพสินค้า OTOP ผ้าทอภาคเหนือ", "พรีเวดดิ้งสไตล์มินิมอลเชียงราย",
-  "ตัดต่อ Vlog ท่องเที่ยวภาคใต้", "Motion Graphic อธิบายสินค้า", "Sound Design พอดแคสต์ไทย คุยเรื่องผี",
-  "เพลงประกอบโฆษณาแบรนด์ไทย", "Mascot น้องหมูเด้ง Pop Art", "เครื่องประดับเงินแฮนด์เมด",
-  "โปสเตอร์เทศกาลภาพยนตร์อิสระ", "เว็บไซต์โรงแรม Boutique หัวหิน",
-];
-const projCats = [
-  "Graphic", "Graphic", "Illustration", "Craft", "Craft", "Web/UI", "Web/UI", "Web/UI", "Content", "Content",
-  "Photography", "Photography", "Video", "Video", "Music/Audio", "Music/Audio", "Illustration", "Craft", "Graphic", "Web/UI",
-];
-const projTools = [
-  ["Illustrator", "Photoshop"], ["Illustrator", "Figma"], ["Procreate", "Photoshop"],
-  ["Illustrator", "Procreate"], ["Lightroom", "Photoshop"], ["Figma", "Webflow"],
-  ["Figma", "Notion"], ["Figma", "Webflow"], ["Premiere", "CapCut"], ["Lightroom", "Canva"],
-  ["Lightroom", "Photoshop"], ["Lightroom"], ["Premiere", "After Effects"],
-  ["After Effects", "Illustrator"], ["Audition", "Logic Pro"], ["Logic Pro", "Ableton"],
-  ["Procreate", "Illustrator"], ["Lightroom"], ["Photoshop", "Illustrator"], ["Figma", "Webflow"],
-];
-const projPrices = [3500, 8000, 12000, 6500, 4800, 18000, 22000, 9500, 3200, 2500, 7500, 15000, 8000, 12500, 4000, 18000, 9000, 2800, 5500, 35000];
+const names = DEMO_CATALOG.map((c) => c.displayName);
+const usernames = DEMO_CATALOG.map((c) => c.username);
+const roles = DEMO_CATALOG.map((c) => c.role);
 const studioNames = [
   "Doi Studio", "Lotus Lab", "Mango Pixel", "Inkwell Co.", "Frame & Field",
   "Sundaze Crafts", "Soundwave Bangkok", "Pixel Garden", "Yim Studio", "Talay Creative",
@@ -229,69 +191,56 @@ async function main() {
   }
   console.log("Auth users OK (20)");
 
-  const profiles = Array.from({ length: 20 }, (_, i) => ({
+  const profiles = DEMO_CATALOG.map((c, i) => ({
     user_id: catalogUid(i),
-    display_name: names[i],
-    username: usernames[i],
-    email: `${usernames[i]}@demo.pixel100.com`,
-    role: roles[i],
-    bio: bios[i],
-    skills:
-      i === 0
-        ? ["Logo", "Branding", "Illustrator"]
-        : i === 1
-          ? ["Branding", "Packaging", "Figma"]
-          : i === 2
-            ? ["Procreate", "Illustration", "Character"]
-            : ["Design", "Creative"],
-    location: i % 3 === 0 ? "Bangkok" : i % 3 === 1 ? "Chiang Mai" : "Phuket",
-    avatar_url: `https://api.dicebear.com/7.x/notionists/svg?seed=${usernames[i]}&backgroundColor=f5f0e8,e8dcc8`,
-    cover_url: unsplashArt(i + 3, 1600, 500),
+    display_name: c.displayName,
+    username: c.username,
+    email: `${c.username}@demo.pixel100.com`,
+    role: c.role,
+    bio: c.bio,
+    skills: c.skills,
+    location: c.location,
+    avatar_url: demoCatalogAvatarUrl(i),
+    cover_url: demoCatalogCoverUrl(i),
   }));
   const { error: pErr } = await publicDb.from("profiles").upsert(profiles, { onConflict: "user_id" });
   if (pErr) throw new Error(`profiles: ${pErr.message}`);
   console.log("Profiles upserted:", profiles.length);
 
-  const projDescriptions = [
-    "ชุดโลโก้และ visual identity สำหรับร้านกาแฟสเปเชียลตี้ เชียงใหม่ โทนสีน้ำตาล–ครีม",
-    "รีแบรนด์ร้านขนมไทย premium: กล่อง, ถุง, และ social template",
-    "ภาพประกอบหนังสือเด็ก 12 หน้า สไตล์ watercolour นุ่ม",
-    "ลายผ้าขาวม้าโมเดิร์น จาก motif ดอกบัวและเส้นสายเรขาคณิต",
-    "คอลเลกชันเซรามิก 8 ชิ้น earth tone มือทอ",
-    "เว็บไซต์ร้านอาหารอีสาน + โปสเตอร์โปรโมชัน responsive",
-    "UI/UX แอปจองสปา 14 หน้าจอ design system สีเขียวมินต์",
-    "Landing page คอร์สอบขนม conversion-focused",
-    "ตัวอย่างคอนเทนต์ TikTok 9:16 สายอาหารเหนือ",
-    "ชุดภาพรีวิวคาเฟ่ 12 ภาพ โทนมินิมอล",
-    "ถ่ายสินค้า OTOP ผ้าทอ white backdrop + lifestyle",
-    "พรีเวดดิ้งเชียงราย documentary โทนอบอุ่น",
-    "ตัดต่อ vlog ท่องเที่ยว 8 นาที subtitle ไทย–อังกฤษ",
-    "Motion graphic 30 วินาที flat + icon animation",
-    "Sound design podcast 45 นาที ambient ไทย",
-    "Jingle 10 วินาที แบรนด์อาหาร",
-    "Mascot น้องหมูเด้ง sticker LINE + key visual",
-    "เครื่องประดับเงิน lookbook มืด",
-    "โปสเตอร์เทศกาลหนังอิสระ A2 limited colour",
-    "เว็บไซต์โรงแรม boutique หัวหิน ไทย–อังกฤษ",
-  ];
   const attestedAt = new Date().toISOString();
-  const projects = Array.from({ length: 20 }, (_, i) => {
-    const cover = unsplashArt(i);
+  const projects = DEMO_CATALOG.map((c, i) => {
+    const cover = demoCatalogCoverUrl(i);
+    const p = c.project;
+    const presentation = buildDemoProjectPresentation(i);
     return {
       id: catalogProjectId(i),
       owner_id: catalogUid(i),
-      title: projTitles[i],
-      category: projCats[i],
+      title: p.title,
+      category: p.category,
       cover_url: cover,
-      gallery_urls: [cover, unsplashArt(i + 5), unsplashArt(i + 11)],
-      tools: projTools[i],
+      gallery_urls: presentation.gallery_urls,
+      content_blocks: presentation.content_blocks,
+      editor_mode: presentation.editor_mode,
+      tools: p.tools,
+      tags: p.tags,
       status: "Published",
       views: 280 + ((i * 53) % 2400),
       likes: 24 + ((i * 17) % 180),
-      price_thb: projPrices[i],
-      description: projDescriptions[i],
+      price_thb: p.priceThb || null,
+      description: p.description,
+      brief: p.brief,
+      creator_role: p.creatorRole,
+      process_note: p.processNote,
+      deliverables: p.deliverables,
+      duration_label: p.durationLabel,
+      outcome_note: p.outcomeNote,
+      opportunity_types: p.opportunityTypes,
+      allow_hire: presentation.allow_hire,
+      allow_collab: true,
+      ai_assisted: Boolean(p.aiAssisted),
+      ai_disclosure_note: p.aiNote ?? "",
       rights_attested_at: attestedAt,
-      rights_attestation_version: "2026-06-14",
+      rights_attestation_version: "2026-08-14",
     };
   });
   const { error: projErr } = await anthemDb.from("projects").upsert(projects, { onConflict: "id" });
@@ -303,9 +252,9 @@ async function main() {
     slug: studioSlugs[i],
     name: studioNames[i],
     tagline: "สตูดิโอครีเอทีฟไทย",
-    bio: "ทีมดีไซน์และคราฟต์จากชุมชน an1hem",
-    avatar_url: `https://api.dicebear.com/7.x/shapes/svg?seed=studio-${studioSlugs[i]}&backgroundColor=e8f4f8,f0e6ff`,
-    cover_url: unsplashArt(i + 2, 1600, 500),
+    bio: "ทีมดีไซน์และคราฟต์จากชุมชน Aplus1",
+    avatar_url: demoCatalogAvatarUrl(i),
+    cover_url: demoCatalogCoverUrl(i + 2),
     location: i % 2 === 0 ? "Bangkok" : "Chiang Mai",
     verified: i % 3 === 0,
     created_by: catalogUid(i),
@@ -412,6 +361,11 @@ async function main() {
   const { error: adErr } = await anthemDb.from("ad_campaigns").upsert(ads, { onConflict: "id" });
   if (adErr) console.warn("ad_campaigns:", adErr.message);
   else console.log("Active ad campaigns upserted:", ads.length);
+
+  const packages = buildDemoHirePackages();
+  const { error: pkgErr } = await anthemDb.from("creator_services").upsert(packages, { onConflict: "id" });
+  if (pkgErr) console.warn("creator_services:", pkgErr.message);
+  else console.log("Hire packages upserted:", packages.length);
 
   const { count: after } = await anthemDb
     .from("projects")

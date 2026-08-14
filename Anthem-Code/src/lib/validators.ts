@@ -388,7 +388,7 @@ export type SocialLinkItem = ProfileInput["socialLinks"][number];
 export const projectSchema = z.object({
   title: z.string().trim().min(1, "กรอกชื่องาน").max(120),
   subtitle: z.string().trim().max(180).optional().default(""),
-  description: z.string().trim().max(5000).optional().default(""),
+  description: z.string().trim().max(300).optional().default(""),
   category: z.string().trim().min(1, "เลือกหมวดงาน"),
   cover_url: z.string().trim().url("ต้องอัปโหลดภาพปก"),
   gallery_urls: z.array(z.string().url()).max(20, "ไม่เกิน 20 ภาพ").default([]),

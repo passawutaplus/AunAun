@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth, stashPendingHire, consumePendingHire } from "@/lib/authRedirect";
 import type { Category, Project, ProjectStatus } from "@/data/projectTypes";
 import { DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory } from "@/data/projectTypes";
+import { projectAiCardFields } from "@/lib/aiDisclosure";
 import type { DBProject } from "@/hooks/useProjects";
 import SeoHead from "@/components/SeoHead";
 import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
@@ -60,6 +61,7 @@ function mapToCard(
       allowHire: (p as { allow_hire?: boolean }).allow_hire ?? true,
       allowCollab: (p as { allow_collab?: boolean }).allow_collab ?? true,
       licenseType: (p as { license_type?: string }).license_type ?? "all_rights",
+      ...projectAiCardFields(p),
     };
   });
 }

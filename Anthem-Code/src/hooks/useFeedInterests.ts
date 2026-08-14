@@ -92,6 +92,7 @@ export function useFeedInterestSurvey(userId: string | undefined) {
   const markComplete = useMutation({
     mutationFn: async (interests: FeedInterestId[]) => {
       if (!userId) throw new Error("ยังไม่ได้เข้าสู่ระบบ");
+      if (interests.length < 1) throw new Error("เลือกความสนใจอย่างน้อย 1 หมวด");
       await ensureProfileRow(userId);
       const completedAt = new Date().toISOString();
       const { data, error } = await supabase
@@ -131,6 +132,7 @@ export function useFeedInterestSurvey(userId: string | undefined) {
       if (!userId) throw new Error("ยังไม่ได้เข้าสู่ระบบ");
 
       const displayName = input.displayName.trim();
+      if (input.feedInterests.length < 1) throw new Error("เลือกความสนใจอย่างน้อย 1 หมวด");
       if (displayName.length < 1) throw new Error("กรอก Username");
       if (displayName.length > 80) throw new Error("Username ยาวเกินไป");
 

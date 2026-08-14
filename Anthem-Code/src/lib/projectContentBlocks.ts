@@ -145,7 +145,25 @@ function isBlockType(v: unknown): v is ProjectContentBlockType {
 }
 
 export function isHttpUrl(url: string): boolean {
-  return /^https?:\/\//i.test(url.trim());
+  const u = url.trim();
+  if (/^https?:\/\//i.test(u)) return true;
+  // Same-origin public assets (demo catalog on local Vite / Vercel).
+  if (u.startsWith("/") && !u.startsWith("//")) return true;
+  return false;
+}
+
+/** Local object-URL used as an instant preview while compress/upload runs. */
+export function isLocalPreviewUrl(url: string | undefined | null): boolean {
+  return typeof url === "string" && url.startsWith("blob:");
+}
+
+export function blockHasLocalPreview(block: ProjectContentBlock): boolean {
+  if (isLocalPreviewUrl(block.url) || isLocalPreviewUrl(block.posterUrl)) return true;
+  return (block.urls ?? []).some((u) => isLocalPreviewUrl(u));
+}
+
+export function contentHasLocalPreview(blocks: ProjectContentBlock[]): boolean {
+  return blocks.some(blockHasLocalPreview);
 }
 
 export function createContentBlock(type: ProjectTextBlockType): ProjectContentBlock {

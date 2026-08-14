@@ -51,7 +51,7 @@ import { parseSocialLinks } from "@/lib/parseSocialLinks";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { FEED_PAGE_GUTTER_X } from "@/components/feed/FeedHero";
 
-const PAGE_SHELL = cn("max-w-[1920px] mx-auto", FEED_PAGE_GUTTER_X);
+const PAGE_SHELL = cn("max-w-7xl mx-auto", FEED_PAGE_GUTTER_X);
 
 const parseExperience = (raw: unknown): ExperienceItem[] =>
   Array.isArray(raw)
@@ -277,7 +277,7 @@ const PortfolioProfilePage = () => {
         />
       </div>
 
-      <div className={cn(PAGE_SHELL, "pt-2 pb-16 grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6 md:gap-8")}>
+      <div className={cn(PAGE_SHELL, "pt-2 pb-16 grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6 md:gap-12 lg:gap-16")}>
         {/* SIDEBAR */}
         <aside className="md:sticky md:top-20 md:self-start space-y-0">
           <div className="flex items-center justify-between gap-1 min-h-[2.75rem] border-b border-border/70 dark:border-border/50">

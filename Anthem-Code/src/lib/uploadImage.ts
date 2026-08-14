@@ -31,6 +31,8 @@ export type UploadProjectImageOptions = {
   fastQuotaCheck?: boolean;
   /** Report compression/upload stage + percent for progress UI. */
   reporter?: UploadStageReporter;
+  /** Cancel in-flight upload (checked between stages / retries). */
+  signal?: AbortSignal;
 };
 
 function canSkipCompression(file: File): boolean {
@@ -48,7 +50,7 @@ async function compressForUpload(
   return imageCompression(file, {
     maxSizeMB: 1.0,
     maxWidthOrHeight: 1920,
-    useWebWorker: false,
+    useWebWorker: true,
     fileType: "image/webp",
     initialQuality: 0.85,
     onProgress: reporter?.onPercent,
@@ -86,7 +88,10 @@ export async function uploadProjectImage(
   const path = `anthem/${userId}/${folder}/${name}`;
 
   options?.reporter?.onStage?.(UPLOAD_STAGE.uploadingImage);
-  await uploadToSharedMedia(path, compressed, contentType);
+  if (options?.signal?.aborted) {
+    throw new DOMException("Upload cancelled", "AbortError");
+  }
+  await uploadToSharedMedia(path, compressed, contentType, 2, options?.signal);
 
   bumpAnthemStorageCache(userId, compressed.size);
 

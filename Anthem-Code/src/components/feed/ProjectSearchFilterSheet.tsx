@@ -40,6 +40,8 @@ type Props = {
   value: ProjectSearchFilterValue;
   onApply: (next: ProjectSearchFilterValue) => void;
   resultCount?: number;
+  recentSearches?: string[];
+  onRecentSelect?: (query: string) => void;
 };
 
 function Chip({
@@ -74,6 +76,8 @@ function FilterBody({
   onClose,
   resultCount,
   autoFocusSearch,
+  recentSearches = [],
+  onRecentSelect,
 }: {
   draft: ProjectSearchFilterValue;
   setDraft: Dispatch<SetStateAction<ProjectSearchFilterValue>>;
@@ -81,6 +85,8 @@ function FilterBody({
   onClose: () => void;
   resultCount?: number;
   autoFocusSearch?: boolean;
+  recentSearches?: string[];
+  onRecentSelect?: (query: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const parent = draft.parentId === "All" ? null : getCategoryParent(draft.parentId);
@@ -144,6 +150,28 @@ function FilterBody({
           </button>
         ) : null}
       </div>
+
+      {!draft.search.trim() && recentSearches.length > 0 ? (
+        <div className="mt-3 shrink-0">
+          <p className="text-[11px] text-muted-foreground mb-1.5">ค้นหาล่าสุด</p>
+          <div className="flex flex-wrap gap-1.5">
+            {recentSearches.map((q) => (
+              <button
+                key={q}
+                type="button"
+                className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs text-foreground hover:bg-secondary/80"
+                onClick={() => {
+                  setDraft((p) => ({ ...p, search: q }));
+                  onRecentSelect?.(q);
+                }}
+              >
+                <Search className="w-3 h-3 text-muted-foreground" aria-hidden />
+                {q}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain mt-4 space-y-5 pb-2">
         <section>
@@ -212,6 +240,8 @@ const ProjectSearchFilterSheet = ({
   value,
   onApply,
   resultCount,
+  recentSearches = [],
+  onRecentSelect,
 }: Props) => {
   const isMobile = useIsMobile();
   const [draft, setDraft] = useState(value);
@@ -255,6 +285,8 @@ const ProjectSearchFilterSheet = ({
             onClose={() => onOpenChange(false)}
             resultCount={resultCount}
             autoFocusSearch
+            recentSearches={recentSearches}
+            onRecentSelect={onRecentSelect}
           />
         </SheetContent>
       </Sheet>
@@ -275,6 +307,8 @@ const ProjectSearchFilterSheet = ({
           onClose={() => onOpenChange(false)}
           resultCount={resultCount}
           autoFocusSearch
+          recentSearches={recentSearches}
+          onRecentSelect={onRecentSelect}
         />
       </DialogContent>
     </Dialog>

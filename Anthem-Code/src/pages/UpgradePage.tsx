@@ -25,7 +25,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import Footer from "@/components/Footer";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { SO1O_APP_URL, SO1O_PRICING_URL } from "@/lib/productLinks";
 import { cn } from "@/lib/utils";
@@ -312,8 +311,6 @@ const UpgradePageLive = () => {
           ราคารวม VAT แล้ว · ชำระผ่านบัตรเครดิตอย่างปลอดภัย · ยกเลิกได้ทุกเมื่อ
         </p>
       </main>
-
-      <Footer />
     </div>
   );
 };

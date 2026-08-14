@@ -10,6 +10,7 @@ import {
   isInAppKindEnabled,
   loadInAppNotifyPrefs,
 } from "@/lib/inAppNotifyPrefs";
+import { isNotifyGloballyMuted } from "@/lib/notifyDeliveryPrefs";
 
 export type AppKey = "anthem" | "so1o" | "shared";
 
@@ -174,10 +175,10 @@ export function useNotifications(userId: string | null | undefined) {
     void prefsTick;
     return loadInAppNotifyPrefs(userId);
   }, [userId, prefsTick]);
-  const items = useMemo(
-    () => rawItems.filter((n) => isInAppKindEnabled(n.kind, prefs)),
-    [rawItems, prefs],
-  );
+  const items = useMemo(() => {
+    if (isNotifyGloballyMuted(userId)) return [];
+    return rawItems.filter((n) => isInAppKindEnabled(n.kind, prefs));
+  }, [rawItems, prefs, userId, prefsTick]);
 
   const markRead = useCallback(
     async (id: string) => {

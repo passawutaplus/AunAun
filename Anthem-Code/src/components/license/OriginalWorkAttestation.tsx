@@ -23,7 +23,7 @@ interface Props {
 }
 
 const OriginalWorkAttestation = ({ checked, onCheckedChange, required = true }: Props) => {
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(true);
 
   return (
     <div
@@ -60,7 +60,7 @@ const OriginalWorkAttestation = ({ checked, onCheckedChange, required = true }: 
                 className={cn("w-3 h-3 transition-transform", detailsOpen && "rotate-180")}
                 aria-hidden
               />
-              รายละเอียดคำแถล
+              รายละเอียดคำแถลง
             </CollapsibleTrigger>
             <CollapsibleContent className="overflow-hidden data-[state=closed]:hidden pt-2 space-y-1.5">
               <ul className="text-[11px] text-muted-foreground list-disc pl-4 space-y-0.5">

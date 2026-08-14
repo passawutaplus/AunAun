@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/EmptyState";
+import { FilterEmptyState } from "@/components/ui/QueryStatusPanel";
 import { CompactLoader, InlineLoader } from "@/components/ui/BanterLoader";
 import CommunityPostGridCard from "@/components/feed/CommunityPostGridCard";
 import { COMMUNITY_NEW_PATH } from "@/data/createActions";
@@ -13,6 +14,7 @@ import { useActiveBoosts, buildBoostedIdSet, buildBoostTargetMaps } from "@/hook
 import { sortByBoostedIds } from "@/lib/boostFeedSort";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthDialog } from "@/stores/authDialogStore";
+import { useSlowLoadFallback } from "@/hooks/useSlowLoadFallback";
 import { formatCommunityActionError } from "@/lib/communityRateLimit";
 import {
   canUseStaticCommunityShowcase,
@@ -33,9 +35,10 @@ type Props = {
   filter: CommunityFeedPanelFilter;
   onPostClick?: () => void;
   onClearTag?: () => void;
+  onClearSearch?: () => void;
 };
 
-const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Props) => {
+const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag, onClearSearch }: Props) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
@@ -65,6 +68,7 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Pr
     fetchNextPage,
     isFetchingNextPage,
   } = useCommunityPosts(postsFilter);
+  const loadMoreSlow = useSlowLoadFallback(Boolean(hasNextPage && isFetchingNextPage), 10_000);
   const { data: activeBoosts = [] } = useActiveBoosts(80);
   const boostedPosts = useMemo(() => buildBoostedIdSet(activeBoosts).posts, [activeBoosts]);
   const boostPostMap = useMemo(() => buildBoostTargetMaps(activeBoosts).posts, [activeBoosts]);
@@ -171,12 +175,27 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Pr
           action={postButton}
         />
       ) : visiblePosts.length === 0 ? (
-        <EmptyState
-          icon={SearchX}
-          title="ยังไม่มีโพสต์ในฟีดนี้"
-          description={emptyDescription}
-          action={postButton}
-        />
+        search.trim() || filter.tag || filter.category !== "All" ? (
+          <FilterEmptyState
+            title="ไม่พบโพสต์ในฟีดนี้"
+            description={emptyDescription}
+            onClear={
+              search.trim()
+                ? onClearSearch
+                : filter.tag && onClearTag
+                  ? onClearTag
+                  : undefined
+            }
+            clearLabel={search.trim() ? "ล้างคำค้น" : filter.tag ? "ล้างแท็ก" : "ล้างตัวกรอง"}
+          />
+        ) : (
+          <EmptyState
+            icon={SearchX}
+            title="ยังไม่มีโพสต์ในฟีดนี้"
+            description={emptyDescription}
+            action={postButton}
+          />
+        )
       ) : (
         <CommunityAreaGrid>
           {visiblePosts.map((post) => (
@@ -190,9 +209,21 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag }: Pr
         </CommunityAreaGrid>
       )}
       {hasNextPage && (
-        <div ref={loadMoreRef} className="flex min-h-14 items-center justify-center pt-2">
+        <div ref={loadMoreRef} className="flex min-h-14 flex-col items-center justify-center gap-2 pt-2">
           {isFetchingNextPage ? (
             <CompactLoader label="กำลังโหลดโพสต์เพิ่ม..." className="py-2" />
+          ) : null}
+          {(loadMoreSlow || !isFetchingNextPage) ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              disabled={isFetchingNextPage}
+              onClick={() => void fetchNextPage()}
+            >
+              โหลดเพิ่ม
+            </Button>
           ) : null}
         </div>
       )}

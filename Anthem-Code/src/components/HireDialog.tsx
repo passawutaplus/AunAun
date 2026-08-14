@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { ResponsiveOverlay } from "@/components/ui/ResponsiveOverlay";
 import { Button } from "@/components/ui/button";
 import { Briefcase, Loader2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -535,8 +536,14 @@ const HireDialog = ({
 
   return (
     <>
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg max-h-[min(90dvh,90vh)] overflow-y-auto overscroll-contain w-[calc(100vw-1rem)] sm:w-full">
+    <ResponsiveOverlay
+      open={open}
+      onOpenChange={handleOpenChange}
+      accessibleTitle="Hire Request"
+      desktopClassName="max-w-lg max-h-[min(90dvh,90vh)]"
+      bodyClassName="gap-4 pt-2"
+      showGrabHandle
+    >
         <DialogHeader className="space-y-2 text-left">
           <Briefcase className="h-8 w-8 text-primary" aria-hidden />
           <DialogTitle className="text-2xl leading-tight tracking-tight sm:text-[1.75rem]">
@@ -800,8 +807,7 @@ const HireDialog = ({
             ? PACKAGE_INQUIRY_PLATFORM_DISCLAIMER
             : INQUIRY_PLATFORM_DISCLAIMER}
         </p>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveOverlay>
 
     <ServiceDetailDialog
       open={!!detailService}

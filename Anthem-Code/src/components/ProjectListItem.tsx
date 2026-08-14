@@ -6,6 +6,7 @@ import type { Project } from "@/data/projectTypes";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import AiDisclosureBadge from "@/components/license/AiDisclosureBadge";
 interface ProjectListItemProps {
   project: Project;
   onHireClick?: (projectId: string) => void;
@@ -30,6 +31,9 @@ const ProjectListItem = ({ project, onHireClick, onCollabClick }: ProjectListIte
     >
       <div className="relative shrink-0 w-20 h-20 sm:w-28 sm:h-28 rounded-lg overflow-hidden bg-muted">
         <img src={project.image} alt={project.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+        <div className="absolute top-1 right-1">
+          <AiDisclosureBadge assisted={project.aiAssisted} note={project.aiDisclosureNote} />
+        </div>
       </div>
 
       <div className="flex-1 min-w-0">

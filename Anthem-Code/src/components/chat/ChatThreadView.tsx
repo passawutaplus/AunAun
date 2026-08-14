@@ -32,6 +32,7 @@ import { profilesPublicFrom } from "@/lib/profileAccess";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { loadHideReadReceipts } from "@/lib/chatReadReceipts";
 import {
   isGroupConversation,
   isStudioConversation,
@@ -1156,6 +1157,7 @@ const ChatThreadView = ({
 
   useEffect(() => {
     if (!user || !conv.id || messages.length === 0) return;
+    if (loadHideReadReceipts(user.id)) return;
     const unread = messages
       .filter((m) => m.sender_id !== user.id && !m.read_at && !m.deleted_at)
       .map((m) => m.id);

@@ -166,7 +166,7 @@ const ChatInboxPage = () => {
   );
 
   return (
-    <div className="h-[100dvh] bg-background overflow-hidden">
+    <main id="main-content" className="h-[100dvh] bg-background overflow-hidden">
       <div
         className={cn(
           "h-full md:grid",
@@ -272,7 +272,7 @@ const ChatInboxPage = () => {
           </>
         )}
       </AnimatePresence>
-    </div>
+    </main>
   );
 };
 

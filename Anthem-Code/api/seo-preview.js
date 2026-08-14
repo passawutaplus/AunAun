@@ -22,8 +22,9 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
-function shell({ title, description, url, image, noindex, jsonLd }) {
+function shell({ title, description, url, image, noindex, jsonLd, type }) {
   const robots = noindex ? "noindex, nofollow" : "index, follow";
+  const ogType = type || "website";
   const ld = jsonLd
     ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>`
     : "";
@@ -36,16 +37,19 @@ function shell({ title, description, url, image, noindex, jsonLd }) {
   <meta name="description" content="${escapeHtml(description)}" />
   <meta name="robots" content="${robots}" />
   <link rel="canonical" href="${escapeHtml(url)}" />
+  <meta property="og:site_name" content="Aplus1" />
   <meta property="og:title" content="${escapeHtml(title)}" />
   <meta property="og:description" content="${escapeHtml(description)}" />
   <meta property="og:url" content="${escapeHtml(url)}" />
   <meta property="og:image" content="${escapeHtml(image)}" />
-  <meta property="og:type" content="website" />
+  <meta property="og:image:alt" content="${escapeHtml(title)}" />
+  <meta property="og:type" content="${escapeHtml(ogType)}" />
   <meta property="og:locale" content="th_TH" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeHtml(title)}" />
   <meta name="twitter:description" content="${escapeHtml(description)}" />
   <meta name="twitter:image" content="${escapeHtml(image)}" />
+  <meta name="twitter:image:alt" content="${escapeHtml(title)}" />
   ${ld}
 </head>
 <body>
@@ -73,6 +77,7 @@ async function resolveMeta(pathname, base) {
     image: `${base}/icons/icon-512.png`,
     noindex: false,
     jsonLd: null,
+    type: "website",
   };
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -101,17 +106,24 @@ async function resolveMeta(pathname, base) {
     );
     const p = rows?.[0];
     if (!p) return { ...defaultMeta, noindex: true, title: "ไม่พบผลงาน | Aplus1" };
+    const cover = p.cover_url
+      ? p.cover_url.startsWith("http")
+        ? p.cover_url
+        : `${base}${p.cover_url.startsWith("/") ? "" : "/"}${p.cover_url}`
+      : defaultMeta.image;
     return {
       title: `${p.title} | Aplus1`,
       description: (p.description || p.title || "").slice(0, 160),
       url: `${base}/project/${p.id}`,
-      image: p.cover_url || defaultMeta.image,
+      image: cover,
       noindex: false,
+      type: "article",
       jsonLd: {
         "@context": "https://schema.org",
         "@type": "CreativeWork",
         name: p.title,
         url: `${base}/project/${p.id}`,
+        image: cover,
       },
     };
   }
