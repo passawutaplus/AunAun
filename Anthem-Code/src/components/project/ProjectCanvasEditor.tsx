@@ -22,10 +22,10 @@ import {
   ArrowUp,
   Copy,
   Film,
+  GalleryHorizontal,
   GripVertical,
   Image as ImageIcon,
   ImagePlus,
-  LayoutTemplate,
   Loader2,
   Plus,
   Trash2,
@@ -77,12 +77,18 @@ type Props = {
   disabled?: boolean;
   emptyHint?: string;
   onEmptyDropImages?: (files: FileList) => void;
-  /** First-time empty canvas: open template picker in tools sidebar. */
-  onStartFromTemplate?: () => void;
+  /** Quick-pick system templates shown above the starter action buttons. */
+  starterTemplates?: Array<{ id: string; name: string; recommended?: boolean }>;
+  /** First-time empty canvas: pick a named starter template. */
+  onPickStarterTemplate?: (templateId: string) => void;
   /** First-time empty canvas: pick image file(s) to start. */
   onStartFromImage?: () => void;
   /** First-time empty canvas: place a heading module. */
   onStartFromHeading?: () => void;
+  /** First-time empty canvas: place a video module. */
+  onStartFromVideo?: () => void;
+  /** First-time empty canvas: place a gallery/slide module. */
+  onStartFromSlide?: () => void;
   onPlaceTool?: (payload: CanvasToolPayload, insertAt?: number) => void;
   onUploadToBlock?: (blockId: string, file: File, slotIndex?: number) => void;
   onUploadManyToBlock?: (blockId: string, files: File[]) => void;
@@ -1189,9 +1195,12 @@ export function ProjectCanvasEditor({
   disabled,
   emptyHint = "หรือลากไฟล์มาวาง / ลากโมดูลจากแถบเครื่องมือ",
   onEmptyDropImages,
-  onStartFromTemplate,
+  starterTemplates,
+  onPickStarterTemplate,
   onStartFromImage,
   onStartFromHeading,
+  onStartFromVideo,
+  onStartFromSlide,
   onPlaceTool,
   onUploadToBlock,
   onUploadManyToBlock,
@@ -1314,7 +1323,11 @@ export function ProjectCanvasEditor({
   };
 
   if (blocks.length === 0) {
-    const hasStarterActions = Boolean(onStartFromTemplate || onStartFromImage || onStartFromHeading);
+    const hasStarterActions = Boolean(
+      onStartFromImage || onStartFromHeading || onStartFromVideo || onStartFromSlide,
+    );
+    const quickTemplates = (starterTemplates ?? []).slice(0, 3);
+    const hasQuickTemplates = quickTemplates.length > 0 && Boolean(onPickStarterTemplate);
     return (
       <div
         className={cn(
@@ -1350,49 +1363,99 @@ export function ProjectCanvasEditor({
           <CanvasUploadProgress label={uploadStageLabel} percent={uploadStagePercent} />
         ) : null}
 
-        {hasStarterActions ? (
-          <div className="grid w-full max-w-md grid-cols-1 gap-2 sm:grid-cols-3">
-            {onStartFromTemplate ? (
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={onStartFromTemplate}
-                className={cn(
-                  "flex flex-col items-center gap-1.5 rounded-xl border border-border/70 bg-card/80 px-3 py-3 text-center transition-colors",
-                  "hover:border-primary/40 hover:bg-primary/5",
-                )}
-              >
-                <LayoutTemplate className="h-4 w-4 text-primary" aria-hidden />
-                <span className="text-[11px] font-semibold text-foreground">ใช้เทมเพลต</span>
-              </button>
+        {hasQuickTemplates || hasStarterActions ? (
+          <div className="flex w-full max-w-lg flex-col gap-2.5">
+            {hasQuickTemplates ? (
+              <div className="space-y-1.5">
+                <p className="text-sm font-semibold text-foreground">เริ่มจากเทมเพลต</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {quickTemplates.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => onPickStarterTemplate?.(t.id)}
+                      className={cn(
+                        "rounded-lg border px-2 py-2 text-center transition-colors",
+                        t.recommended
+                          ? "border-primary/40 bg-primary/5 hover:border-primary/55 hover:bg-primary/10"
+                          : "border-border/70 bg-card/80 hover:border-primary/35 hover:bg-primary/5",
+                      )}
+                      aria-label={`ใช้เทมเพลต ${t.name}`}
+                    >
+                      <span className="block truncate text-[11px] font-semibold text-foreground leading-tight">
+                        {t.name}
+                      </span>
+                      {t.recommended ? (
+                        <span className="mt-0.5 block text-[9px] font-medium text-primary">แนะนำ</span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : null}
-            {onStartFromImage ? (
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={onStartFromImage}
-                className={cn(
-                  "flex flex-col items-center gap-1.5 rounded-xl border border-border/70 bg-card/80 px-3 py-3 text-center transition-colors",
-                  "hover:border-primary/40 hover:bg-primary/5",
-                )}
-              >
-                <ImageIcon className="h-4 w-4 text-primary" aria-hidden />
-                <span className="text-[11px] font-semibold text-foreground">เริ่มจากภาพ</span>
-              </button>
+            {hasQuickTemplates && hasStarterActions ? (
+              <div className="h-px w-full bg-border/80" role="separator" />
             ) : null}
-            {onStartFromHeading ? (
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={onStartFromHeading}
-                className={cn(
-                  "flex flex-col items-center gap-1.5 rounded-xl border border-border/70 bg-card/80 px-3 py-3 text-center transition-colors",
-                  "hover:border-primary/40 hover:bg-primary/5",
-                )}
-              >
-                <Type className="h-4 w-4 text-primary" aria-hidden />
-                <span className="text-[11px] font-semibold text-foreground">เริ่มจากหัวข้อ</span>
-              </button>
+            {hasStarterActions ? (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {onStartFromHeading ? (
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={onStartFromHeading}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 rounded-xl border border-border/70 bg-card/80 px-2.5 py-3 text-center transition-colors",
+                      "hover:border-primary/40 hover:bg-primary/5",
+                    )}
+                  >
+                    <Type className="h-4 w-4 text-primary" aria-hidden />
+                    <span className="text-[11px] font-semibold text-foreground leading-tight">เริ่มจากหัวข้อ</span>
+                  </button>
+                ) : null}
+                {onStartFromImage ? (
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={onStartFromImage}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 rounded-xl border border-border/70 bg-card/80 px-2.5 py-3 text-center transition-colors",
+                      "hover:border-primary/40 hover:bg-primary/5",
+                    )}
+                  >
+                    <ImageIcon className="h-4 w-4 text-primary" aria-hidden />
+                    <span className="text-[11px] font-semibold text-foreground leading-tight">เริ่มจากภาพ</span>
+                  </button>
+                ) : null}
+                {onStartFromSlide ? (
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={onStartFromSlide}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 rounded-xl border border-border/70 bg-card/80 px-2.5 py-3 text-center transition-colors",
+                      "hover:border-primary/40 hover:bg-primary/5",
+                    )}
+                  >
+                    <GalleryHorizontal className="h-4 w-4 text-primary" aria-hidden />
+                    <span className="text-[11px] font-semibold text-foreground leading-tight">เริ่มจากสไลด์</span>
+                  </button>
+                ) : null}
+                {onStartFromVideo ? (
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={onStartFromVideo}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 rounded-xl border border-border/70 bg-card/80 px-2.5 py-3 text-center transition-colors",
+                      "hover:border-primary/40 hover:bg-primary/5",
+                    )}
+                  >
+                    <Film className="h-4 w-4 text-primary" aria-hidden />
+                    <span className="text-[11px] font-semibold text-foreground leading-tight">เริ่มจากวิดีโอ</span>
+                  </button>
+                ) : null}
+              </div>
             ) : null}
           </div>
         ) : null}

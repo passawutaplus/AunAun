@@ -1,6 +1,6 @@
 # Aplus1 Product Docs
 
-Updated: 2026-07-03
+Updated: 2026-07-31
 
 Use this folder as the build-ready product layer that converts the research pack into implementation guidance.
 
@@ -20,6 +20,10 @@ Use this folder as the build-ready product layer that converts the research pack
 
 5. `fastwork-quotation-ux-reference.md` *(deferred — post launch-flow + money)*  
    Fastwork-inspired in-chat quotation UX; gate `isAplus1ChatOffersEnabled()`.
+
+6. `aplus1-future-commerce-roadmap.md` *(deferred — post web + app)*  
+   ลำดับชั้นถัดไป: บอร์ดประกาศงาน → Art Shop → ประมูล → ไลฟ์ collab → คอร์ส  
+   รวม gate สินค้า (ผลงาน+KYC), แยก Package, ops แอดมิน+AI — เปิดหัวข้อย่อยเมื่อเริ่มทำจริง
 
 ## Source Research
 

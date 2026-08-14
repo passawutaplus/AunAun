@@ -358,8 +358,8 @@ const HireInviteForm = ({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 border-t border-border/60 pt-5">
-        <div className="col-span-2 sm:col-span-1 space-y-1.5">
+      <div className="space-y-3 border-t border-border/60 pt-5">
+        <div className="space-y-1.5">
           <Label className="flex items-center gap-1.5">
             <Wallet className="h-3.5 w-3.5 text-primary" />
             งบประมาณ (บาท){" "}
@@ -406,7 +406,7 @@ const HireInviteForm = ({
             </p>
           ) : null}
         </div>
-        <div className="col-span-2 sm:col-span-1">
+        <div className="space-y-1.5">
           <Label htmlFor="hire-deadline" className="flex items-center gap-1.5">
             <CalendarDays className="h-3.5 w-3.5 text-primary" />
             กำหนดส่งงาน <span className="text-orange-500">*</span>
@@ -421,14 +421,14 @@ const HireInviteForm = ({
               onClearFieldError?.("deadline");
             }}
             className={cn(
-              "rounded-xl mt-1.5",
+              "rounded-xl",
               fieldErrors?.deadline && "border-destructive focus-visible:ring-destructive",
             )}
             aria-invalid={!!fieldErrors?.deadline}
             required
           />
           {fieldErrors?.deadline ? (
-            <p className="text-xs text-destructive mt-1">{fieldErrors.deadline}</p>
+            <p className="text-xs text-destructive">{fieldErrors.deadline}</p>
           ) : null}
         </div>
       </div>

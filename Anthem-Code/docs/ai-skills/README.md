@@ -5,6 +5,7 @@
 ## อ่านตามประเภทงาน
 
 - **Product direction / feature ใหม่ (อ่านก่อน skill นี้):** [`../MASTER_CURSOR_BRIEF.md`](../MASTER_CURSOR_BRIEF.md) → `../product/*` → `../research/*`
+- **ชั้นอนาคต (Shop / ประมูล / ไลฟ์ / คอร์ส / บอร์ดงาน):** [`../product/aplus1-future-commerce-roadmap.md`](../product/aplus1-future-commerce-roadmap.md) — deferred หลังเว็บ+แอป
 - Product/feature ใหม่: `ANTHEM_PRODUCT_SKILL.md`
 - UX/UI/demo/usability: `ANTHEM_UX_RESEARCH_SKILL.md`
 - **ใบเสนอราคาในแชท (รอบถัดไป — อ้างอิง Fastwork):** [`../product/fastwork-quotation-ux-reference.md`](../product/fastwork-quotation-ux-reference.md) · เกต `isAplus1ChatOffersEnabled()`

@@ -287,7 +287,7 @@ export function CanvasTemplatePreviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[min(90vh,720px)] w-[calc(100%-1.25rem)] max-w-md gap-0 overflow-hidden p-0 sm:max-w-lg">
+      <DialogContent className="max-h-[min(94vh,900px)] w-[calc(100%-1.25rem)] max-w-md gap-0 overflow-hidden p-0 sm:max-w-lg">
         <DialogHeader className="space-y-1.5 border-b border-border/60 px-4 py-3.5 text-left sm:px-5 sm:py-4">
           <DialogTitle className="text-base">
             {template.name}
@@ -300,7 +300,7 @@ export function CanvasTemplatePreviewDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[min(48vh,380px)] overflow-y-auto px-3 py-3 sm:max-h-[min(52vh,420px)] sm:px-5 sm:py-4">
+        <div className="max-h-[min(70vh,580px)] overflow-y-auto px-3 py-3 sm:max-h-[min(72vh,620px)] sm:px-5 sm:py-4">
           <div className="mb-2 flex items-baseline justify-between gap-2">
             <p className="text-[11px] font-medium text-muted-foreground">ตัวอย่างหน้าตา</p>
             <p className="text-[10px] text-muted-foreground/80">{template.modules.length} โมดูล</p>

@@ -108,6 +108,7 @@ import {
 } from "@/components/ui/dialog";
 import type { CanvasToolPayload } from "@/lib/canvasToolDrag";
 import { useCanvasTemplates, type UserCanvasTemplate } from "@/hooks/useCanvasTemplates";
+import { CANVAS_TEMPLATE_SEEDS } from "@/lib/projectCanvasTemplates";
 import {
   createContentBlock,
   createGalleryPlaceholder,
@@ -329,6 +330,21 @@ const ProjectEditorPage = () => {
     remove: removeTemplate,
     buildBlocks,
   } = useCanvasTemplates();
+  const starterTemplates = useMemo(() => {
+    const bySourceKey = new Map(
+      templates
+        .filter((t): t is UserCanvasTemplate & { source_key: string } => Boolean(t.source_key))
+        .map((t) => [t.source_key, t]),
+    );
+    return CANVAS_TEMPLATE_SEEDS.slice(0, 3).map((seed) => {
+      const t = bySourceKey.get(seed.sourceKey);
+      return {
+        id: t?.id ?? seed.sourceKey,
+        name: t?.name ?? seed.label,
+        recommended: t?.recommended ?? seed.recommended,
+      };
+    });
+  }, [templates]);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const projectAssetsEditorRef = useRef<ProjectAssetsEditorHandle>(null);
   const patchProjectContext = useCallback((patch: Partial<ProjectContextForm>) => {
@@ -1587,6 +1603,21 @@ const ProjectEditorPage = () => {
   const handleSelectTemplate = useCallback((templateId: string) => {
     setPreviewTemplateId(templateId);
   }, []);
+
+  const pickStarterTemplate = useCallback(
+    (templateId: string) => {
+      const matched =
+        templates.find((t) => t.id === templateId) ??
+        templates.find((t) => t.source_key === templateId);
+      if (matched) {
+        handleSelectTemplate(matched.id);
+        return;
+      }
+      setToolsExpanded(true);
+      setToolsTab("template");
+    },
+    [templates, handleSelectTemplate],
+  );
 
   const previewTemplate = previewTemplateId
     ? templates.find((t) => t.id === previewTemplateId) ?? null
@@ -3048,10 +3079,10 @@ const ProjectEditorPage = () => {
               uploadStageLabel={uploadStage?.label}
               uploadStagePercent={uploadStage?.percent}
               onEmptyDropImages={(files) => void handleCanvasDropFiles(files)}
-              onStartFromTemplate={() => {
-                setToolsExpanded(true);
-                setToolsTab("template");
-              }}
+              starterTemplates={starterTemplates}
+              onPickStarterTemplate={pickStarterTemplate}
+              onStartFromVideo={() => handlePlaceTool({ tool: "video" })}
+              onStartFromSlide={() => handlePlaceTool({ tool: "gallery" })}
               onStartFromImage={() => emptyStartImageInputRef.current?.click()}
               onStartFromHeading={() => handlePlaceTool({ tool: "heading" })}
               onPlaceTool={handlePlaceTool}
