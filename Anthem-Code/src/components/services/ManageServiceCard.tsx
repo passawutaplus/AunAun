@@ -1,4 +1,5 @@
-import { ArrowDown, ArrowUp, BarChart3, Briefcase, Clock, Eye, Mail, Pencil, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, BarChart3, Clock, Eye, Mail, Pencil, Trash2 } from "lucide-react";
+import PackagesIcon from "@/components/icons/PackagesIcon";
 import { Badge } from "@/components/ui/badge";
 import {
   formatServiceDurationDays,
@@ -194,7 +195,7 @@ export default function ManageServiceCard({
         />
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-muted-foreground">
-          <Briefcase className="w-6 h-6 opacity-40" />
+          <PackagesIcon className="w-6 h-6 opacity-40" />
           <span className="text-xs">ไม่มีภาพปก</span>
         </div>
       )}

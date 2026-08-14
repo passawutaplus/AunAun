@@ -24,6 +24,7 @@ import {
 import type { ProjectCategory } from "@/data/projectTypes";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { HideAiToggle } from "@/components/icons/NoAiIcon";
 
 export type ProjectSearchFilterValue = {
   search: string;
@@ -32,6 +33,8 @@ export type ProjectSearchFilterValue = {
   leaves: ProjectCategory[];
   /** Selected subcategory ids under the parent */
   styles: string[];
+  /** When true, hide projects marked as AI-assisted */
+  hideAi: boolean;
 };
 
 type Props = {
@@ -39,6 +42,8 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   value: ProjectSearchFilterValue;
   onApply: (next: ProjectSearchFilterValue) => void;
+  /** Apply hide-AI immediately, without waiting for ดูผลงาน. */
+  onHideAiChange?: (hide: boolean) => void;
   resultCount?: number;
   recentSearches?: string[];
   onRecentSelect?: (query: string) => void;
@@ -78,6 +83,7 @@ function FilterBody({
   autoFocusSearch,
   recentSearches = [],
   onRecentSelect,
+  onHideAiChange,
 }: {
   draft: ProjectSearchFilterValue;
   setDraft: Dispatch<SetStateAction<ProjectSearchFilterValue>>;
@@ -87,6 +93,7 @@ function FilterBody({
   autoFocusSearch?: boolean;
   recentSearches?: string[];
   onRecentSelect?: (query: string) => void;
+  onHideAiChange?: (hide: boolean) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const parent = draft.parentId === "All" ? null : getCategoryParent(draft.parentId);
@@ -119,10 +126,11 @@ function FilterBody({
   };
 
   const clearAll = () => {
-    setDraft({ search: "", parentId: "All", leaves: [], styles: [] });
+    setDraft({ search: "", parentId: "All", leaves: [], styles: [], hideAi: false });
+    onHideAiChange?.(false);
   };
 
-  const activeExtra = draft.styles.length + (draft.search.trim() ? 1 : 0);
+  const activeExtra = draft.styles.length + (draft.search.trim() ? 1 : 0) + (draft.hideAi ? 1 : 0);
 
   return (
     <div className="flex flex-col min-h-0 flex-1">
@@ -239,6 +247,7 @@ const ProjectSearchFilterSheet = ({
   onOpenChange,
   value,
   onApply,
+  onHideAiChange,
   resultCount,
   recentSearches = [],
   onRecentSelect,
@@ -247,8 +256,11 @@ const ProjectSearchFilterSheet = ({
   const [draft, setDraft] = useState(value);
 
   useEffect(() => {
-    if (open) setDraft({ ...value, styles: value.styles ?? [] });
-  }, [open, value]);
+    if (!open) return;
+    setDraft({ ...value, styles: value.styles ?? [], hideAi: value.hideAi ?? false });
+    // Snapshot when opening — live hide-AI must not wipe other draft chips.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const apply = () => {
     onApply({ ...draft, leaves: [] });
@@ -257,6 +269,13 @@ const ProjectSearchFilterSheet = ({
 
   const title = "ค้นหาและกรองผลงาน";
   const description = "หมวดใหญ่บนฟีด · เลือกรายละเอียด design & art ที่นี่";
+  const toggleHideAi = () => {
+    setDraft((p) => {
+      const hideAi = !p.hideAi;
+      onHideAiChange?.(hideAi);
+      return { ...p, hideAi };
+    });
+  };
 
   const titleRow = (
     <span className="inline-flex items-center gap-2">
@@ -275,8 +294,13 @@ const ProjectSearchFilterSheet = ({
           className="h-[92dvh] rounded-t-2xl p-4 flex flex-col gap-0"
         >
           <SheetHeader className="text-left pb-3 shrink-0">
-            <SheetTitle className="text-base">{titleRow}</SheetTitle>
-            <SheetDescription className="text-xs pl-10">{description}</SheetDescription>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <SheetTitle className="text-base">{titleRow}</SheetTitle>
+                <SheetDescription className="text-xs pl-10">{description}</SheetDescription>
+              </div>
+              <HideAiToggle active={draft.hideAi} onToggle={toggleHideAi} className="h-10 w-10 mt-0.5 [&_svg]:h-6 [&_svg]:w-6" />
+            </div>
           </SheetHeader>
           <FilterBody
             draft={draft}
@@ -287,6 +311,7 @@ const ProjectSearchFilterSheet = ({
             autoFocusSearch
             recentSearches={recentSearches}
             onRecentSelect={onRecentSelect}
+            onHideAiChange={onHideAiChange}
           />
         </SheetContent>
       </Sheet>
@@ -296,9 +321,14 @@ const ProjectSearchFilterSheet = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-5 sm:rounded-2xl">
-        <DialogHeader className="pb-3 shrink-0">
-          <DialogTitle className="text-base">{titleRow}</DialogTitle>
-          <DialogDescription className="text-xs pl-10">{description}</DialogDescription>
+        <DialogHeader className="pb-3 shrink-0 pr-12">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <DialogTitle className="text-base">{titleRow}</DialogTitle>
+              <DialogDescription className="text-xs pl-10">{description}</DialogDescription>
+            </div>
+            <HideAiToggle active={draft.hideAi} onToggle={toggleHideAi} className="h-10 w-10 mt-0.5 [&_svg]:h-6 [&_svg]:w-6" />
+          </div>
         </DialogHeader>
         <FilterBody
           draft={draft}
@@ -309,6 +339,7 @@ const ProjectSearchFilterSheet = ({
           autoFocusSearch
           recentSearches={recentSearches}
           onRecentSelect={onRecentSelect}
+          onHideAiChange={onHideAiChange}
         />
       </DialogContent>
     </Dialog>
@@ -321,7 +352,8 @@ export function countActiveProjectFilters(value: ProjectSearchFilterValue): numb
   return (
     (value.parentId !== "All" ? 1 : 0) +
     value.styles.length +
-    (value.search.trim() ? 1 : 0)
+    (value.search.trim() ? 1 : 0) +
+    (value.hideAi ? 1 : 0)
   );
 }
 

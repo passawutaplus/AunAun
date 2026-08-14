@@ -16,7 +16,6 @@ import { formatThaiDate, formatCompact } from "@/lib/format";
 import type { ProjectAsset } from "@/lib/projectAssets";
 import ProjectAssetsSection from "@/components/project/ProjectAssetsSection";
 import LicenseDetailBlock from "@/components/license/LicenseDetailBlock";
-import AiDisclosureBadge from "@/components/license/AiDisclosureBadge";
 import { ProjectSeriesBlock } from "@/components/series/ProjectSeriesBlock";
 import { PriceCurrencyAmount } from "@/components/payments/PriceCurrencySelect";
 import { formatCategoryBreadcrumb, stripCategorySubTags } from "@/data/categoryTaxonomy";
@@ -108,16 +107,6 @@ const ProjectSidePanel = (p: Props) => {
           </div>
         </div>
         <h1 className="text-2xl font-medium text-foreground leading-tight">{p.title}</h1>
-        {p.aiAssisted ? (
-          <div className="pt-1">
-            <AiDisclosureBadge
-              assisted={p.aiAssisted}
-              note={p.aiDisclosureNote}
-              tone="inline"
-              size="md"
-            />
-          </div>
-        ) : null}
 
         <div className="flex items-center gap-3 pt-2 border-t border-border/50">
           {p.ownerId ? (

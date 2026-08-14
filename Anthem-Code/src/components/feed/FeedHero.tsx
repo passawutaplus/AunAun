@@ -24,6 +24,11 @@ export const FEED_PAGE_GUTTER_X =
 
 const HERO_GUTTER = FEED_PAGE_GUTTER_X;
 
+/** Width of DesktopTopNav’s right cluster so the CTA column starts on the Share button. */
+const HERO_CTA_COL =
+  "lg:w-[22.75rem] xl:w-[23.5rem]";
+const HERO_CTA_COL_GUEST = "lg:w-[21rem]";
+
 const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
   projects: {
     badge: BRAND_CONCEPT,
@@ -115,23 +120,29 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
         <div className="relative z-10 flex h-full min-h-0 flex-col">
           <FadeUp
             className={cn(
-              "relative z-10 grid shrink-0 gap-3 sm:gap-6 lg:grid-cols-2 lg:items-end lg:gap-12",
+              "relative z-10 mx-auto flex w-full max-w-[1920px] shrink-0 flex-col gap-3 sm:gap-6",
+              "lg:flex-row lg:items-end lg:justify-between lg:gap-10",
               HERO_GUTTER,
               "pt-6 pb-4 sm:pt-10 sm:pb-12 lg:pt-[4.75rem] lg:pb-16",
             )}
           >
-            <h1 className="text-left text-[2.35rem] sm:text-4xl md:text-[2.75rem] lg:text-[3.35rem] font-bold tracking-tight text-foreground leading-[0.95] sm:leading-[0.92]">
+            <h1 className="min-w-0 text-left text-[2.35rem] sm:text-4xl md:text-[2.75rem] lg:text-[3.35rem] font-bold tracking-tight text-foreground leading-[0.95] sm:leading-[0.92]">
               <span className="block">1 Profile to</span>
               <span className="block text-primary">100+ Opportunity</span>
             </h1>
 
-            <div className="flex max-w-md flex-col lg:ml-auto lg:pb-1">
+            <div
+              className={cn(
+                "flex max-w-md flex-col lg:max-w-none lg:shrink-0 lg:pb-1",
+                user ? HERO_CTA_COL : HERO_CTA_COL_GUEST,
+              )}
+            >
               <p className="leading-relaxed">
                 <span className="block text-base sm:text-lg font-bold text-foreground">
                   ให้ผลงานพาคุณไปสู่โอกาสใหม่ๆ
                 </span>
                 <span className="mt-1.5 block text-xs sm:text-sm text-muted-foreground">
-                  เชื่อมต่อผู้คน ดีไซเนอร์ ศิลปิน และครีเอเตอร์ สร้างโอกาสใหม่จากผลงานจริงของคุณ
+                  เชื่อมต่อผู้คน สร้างโอกาสใหม่จากผลงานจริงของคุณ
                 </span>
               </p>
               <Button

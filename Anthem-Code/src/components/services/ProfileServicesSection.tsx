@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Briefcase, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import PackagesIcon from "@/components/icons/PackagesIcon";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/EmptyState";
@@ -66,7 +67,7 @@ export default function ProfileServicesSection({
   if (visible.length === 0) {
     return (
       <EmptyState
-        icon={Briefcase}
+        icon={PackagesIcon}
         title={canManage ? "ยังไม่มีแพ็กเกจ" : "ยังไม่มีแพ็กเกจที่เผยแพร่"}
         description={
           canManage
@@ -125,7 +126,7 @@ export default function ProfileServicesSection({
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                      <Briefcase className="h-8 w-8 opacity-40" />
+                      <PackagesIcon className="h-8 w-8 opacity-40" />
                     </div>
                   )}
                 </div>

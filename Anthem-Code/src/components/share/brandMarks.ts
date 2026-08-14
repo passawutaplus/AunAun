@@ -1,4 +1,4 @@
-/** Brand marks for the share sheet. Facebook / X / LINE from https://thesvg.org (CC0-1.0). */
+/** Brand marks for the share sheet. Facebook / Messenger / Instagram / LINE / WeChat / X from https://thesvg.org (CC0-1.0). */
 export const BRAND_ICON_SRC = {
   facebook: "/brand-icons/facebook.svg",
   messenger: "/brand-icons/messenger.svg",

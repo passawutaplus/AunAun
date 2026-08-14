@@ -37,6 +37,7 @@ import { isSystemFallbackContent, stripSystemFallbackPrefix } from "@/lib/chatCo
 import { replyPreviewText } from "@/lib/chatReply";
 import { parseChatOffer } from "@/lib/chatOffer";
 import { formatServicePrice } from "@/hooks/useCreatorServices";
+import PackagesIcon from "@/components/icons/PackagesIcon";
 import { fromCreatorServices } from "@/lib/creatorServicesDb";
 import { ChatOfferCard } from "@/components/chat/ChatOfferCard";
 import { parseHireForwardMessage } from "@/lib/hireForwardChat";
@@ -799,8 +800,8 @@ const MessageBubble = ({
                       className="w-full max-h-40 object-cover"
                     />
                   ) : (
-                    <div className="h-20 bg-muted flex items-center justify-center text-xs text-muted-foreground">
-                      Package
+                    <div className="h-20 bg-muted flex items-center justify-center text-muted-foreground">
+                      <PackagesIcon className="h-8 w-8 opacity-40" />
                     </div>
                   )}
                   <div className={cn("px-3 py-2 space-y-0.5", mine ? "bg-black/10" : "bg-card")}>

@@ -19,8 +19,9 @@ export type ShareTarget = {
   icon: "facebook" | "messenger" | "instagram" | "line" | "whatsapp" | "wechat" | "x" | "mail";
   wellClass: string;
   imgClass: string;
-  /** Direct web/app share URL. Null = copy the link, then open/instruct. */
-  href: (url: string, title: string) => string | null;
+  /** Opens in a new tab. Direct share composer when the platform has one. */
+  href: (url: string, title: string) => string;
+  /** If set, copy the link first so the user can paste on the opened page. */
   copyHint?: string;
 };
 
@@ -39,10 +40,12 @@ export function isLikelyMobileShareClient(): boolean {
   return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 }
 
-/** Messenger deep link works on phones with the app; desktop has no public share URL. */
-export function messengerHref(url: string): string | null {
-  if (!isLikelyMobileShareClient()) return null;
-  return `fb-messenger://share/?link=${enc(url)}`;
+/** Messenger app share on phones; desktop opens Messenger web so the user can paste. */
+export function messengerHref(url: string): string {
+  if (isLikelyMobileShareClient()) {
+    return `fb-messenger://share/?link=${enc(url)}`;
+  }
+  return "https://www.messenger.com/";
 }
 
 export const SHARE_TARGETS: ShareTarget[] = [
@@ -69,8 +72,8 @@ export const SHARE_TARGETS: ShareTarget[] = [
     icon: "instagram",
     wellClass: "",
     imgClass: "h-12 w-12",
-    href: () => null,
-    copyHint: "คัดลอกแล้ว — เปิด Instagram แล้ววางลิงก์ในแชทหรือสตอรี่",
+    href: () => "https://www.instagram.com/",
+    copyHint: "คัดลอกแล้ว — วางลิงก์ในแชทหรือสตอรี่ได้เลย",
   },
   {
     key: "line",
@@ -94,7 +97,7 @@ export const SHARE_TARGETS: ShareTarget[] = [
     icon: "wechat",
     wellClass: "",
     imgClass: "h-12 w-12",
-    href: () => null,
+    href: () => "https://web.wechat.com/",
     copyHint: "คัดลอกแล้ว — วางลิงก์ใน WeChat ได้เลย",
   },
   {

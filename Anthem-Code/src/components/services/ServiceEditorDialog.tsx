@@ -20,7 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Briefcase, ChevronLeft, ChevronRight, Eye, ImagePlus, Loader2, Plus, Trash2, Video } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, ImagePlus, Loader2, Plus, Trash2, Video } from "lucide-react";
+import PackagesIcon from "@/components/icons/PackagesIcon";
 import { toast } from "sonner";
 import { CommunityImageCropDialog } from "@/components/community/CommunityImageCropDialog";
 import ServiceDetailDialog from "@/components/services/ServiceDetailDialog";
@@ -1132,7 +1133,7 @@ export default function ServiceEditorDialog({
       <section className="space-y-4 rounded-2xl border border-border/60 bg-card/40 p-4 sm:p-5">
         <div>
           <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            <Briefcase className="h-3.5 w-3.5 text-primary" />
+            <PackagesIcon className="h-3.5 w-3.5 text-primary" />
             ข้อมูลแพ็กเกจ
           </h2>
         </div>
@@ -1329,7 +1330,8 @@ export default function ServiceEditorDialog({
             <div className="mx-auto flex max-w-6xl items-center gap-3 px-3 py-3 sm:px-6">
               <BackButton onClick={requestClose} fallbackTo="/portfolio?tab=services" />
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <p className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  <PackagesIcon className="h-3.5 w-3.5 shrink-0" />
                   Packages
                 </p>
                 <h1 className="truncate text-base font-semibold text-foreground">

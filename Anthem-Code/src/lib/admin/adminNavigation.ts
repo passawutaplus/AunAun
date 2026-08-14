@@ -6,7 +6,6 @@ import {
   Bell,
   Bookmark,
   Bot,
-  Briefcase,
   Building2,
   ClipboardList,
   Database,
@@ -39,6 +38,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
+import PackagesIcon from "@/components/icons/PackagesIcon";
 import type { AdminStats } from "@/hooks/admin/useAdminData";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 
@@ -222,7 +222,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         to: "/admin/packages",
         label: "แพ็กเกจ",
         hint: "บริการครีเอเตอร์ — คนดูและกดจ้าง",
-        icon: Briefcase,
+        icon: PackagesIcon,
         statKey: "totalPackages",
         statLabel: "แพ็กเกจ",
       },

@@ -35,7 +35,7 @@ import type { StudioFeedSource } from "@/components/studio/StudioFilterPanel";
 import { useDesigners } from "@/hooks/useDesigners";
 
 import { categories as allCategories, categoryMatchesFilter, DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory, type Category, type Project, type ProjectCategory, type ProjectStatus, type SpecialFilter } from "@/data/projectTypes";
-import { projectAiCardFields } from "@/lib/aiDisclosure";
+import { projectAiCardFields, projectHasAiTag } from "@/lib/aiDisclosure";
 import {
   getCategoryParent,
   projectMatchesSubs,
@@ -99,6 +99,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const [category, setCategory] = useState<FeedCategoryChip>("All");
   const [projectLeaves, setProjectLeaves] = useState<ProjectCategory[]>([]);
   const [projectStyles, setProjectStyles] = useState<string[]>([]);
+  const [hideAi, setHideAi] = useState(false);
   const [mode, setMode] = useState<FeedMode>(() => {
     if (typeof window === "undefined") return "projects";
     if (!isCategoryAllowed("functional")) return "projects";
@@ -193,6 +194,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     setCategory(DESIGN_DRILL_CHIP);
     setProjectLeaves([]);
     setProjectStyles([]);
+    setHideAi(false);
     if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "projects");
     navigate("/?drill=1", { replace: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -266,6 +268,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     setCategory("All");
     setProjectLeaves([]);
     setProjectStyles([]);
+    setHideAi(false);
     setSearch("");
     setFeedModeRaw("Explore");
     setDesignerSort("newest");
@@ -443,6 +446,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       matchCat = activeParent.leaves.some((leaf) => categoryMatchesFilter(p.category, leaf));
     }
     const matchSub = projectMatchesSubs(p.category, p.tags, projectStyles, activeParent);
+    if (hideAi && projectHasAiTag(p)) return false;
     const q = search.trim().toLowerCase();
     const matchSearch =
       !q ||
@@ -528,6 +532,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           onProjectLeavesChange={setProjectLeaves}
           projectStyles={projectStyles}
           onProjectStylesChange={setProjectStyles}
+          hideAi={hideAi}
+          onHideAiChange={setHideAi}
           includeDesignDrillChip={isLaunchDesignDrillEnabled()}
           projectResultCount={filtered.length}
           resultCount={filtered.length}
@@ -552,6 +558,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             setCategory("All");
             setProjectLeaves([]);
             setProjectStyles([]);
+            setHideAi(false);
             setSearch("");
             setFeedModeRaw("Explore");
           }}
@@ -688,12 +695,14 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                     search ||
                     category !== "All" ||
                     projectLeaves.length > 0 ||
-                    projectStyles.length > 0
+                    projectStyles.length > 0 ||
+                    hideAi
                       ? () => {
                           setSearch("");
                           setCategory("All");
                           setProjectLeaves([]);
                           setProjectStyles([]);
+                          setHideAi(false);
                         }
                       : undefined
                   }

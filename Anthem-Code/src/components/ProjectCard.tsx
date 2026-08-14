@@ -159,7 +159,7 @@ const ProjectCard = ({
         ) : null}
 
         {projectHasDrillTag(project.tags) || project.aiAssisted ? (
-          <div className="absolute top-2 right-2 z-10 flex flex-col items-end gap-1">
+          <div className="absolute top-2 right-2 z-10 flex flex-col items-end gap-1 pointer-events-auto">
             {projectHasDrillTag(project.tags) ? <DrillProjectBadge tags={project.tags} /> : null}
             <AiDisclosureBadge
               assisted={project.aiAssisted}

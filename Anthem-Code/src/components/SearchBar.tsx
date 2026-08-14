@@ -1,6 +1,7 @@
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { HideAiToggle } from "@/components/icons/NoAiIcon";
 import { cn } from "@/lib/utils";
 
 interface SearchBarProps {
@@ -26,6 +27,9 @@ interface SearchBarProps {
   /** Recent queries shown when focused and value is empty. */
   recentSearches?: string[];
   onRecentSelect?: (query: string) => void;
+  /** Hide AI-assisted works — shown left of the filter button. */
+  hideAi?: boolean;
+  onHideAiToggle?: () => void;
 }
 
 const SearchBar = ({
@@ -41,6 +45,8 @@ const SearchBar = ({
   onExpandClick,
   recentSearches = [],
   onRecentSelect,
+  hideAi = false,
+  onHideAiToggle,
 }: SearchBarProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(() => value.length > 0);
@@ -107,6 +113,12 @@ const SearchBar = ({
       )
     ) : null;
 
+  const hideAiButton = onHideAiToggle ? (
+    <HideAiToggle active={hideAi} onToggle={onHideAiToggle} className="h-8 w-8" />
+  ) : null;
+
+  const hasTrailing = Boolean(hideAiButton || filterButton);
+
   if (expandable && !isOpen) {
     return (
       <button
@@ -153,12 +165,20 @@ const SearchBar = ({
         }}
         className={cn(
           "w-full rounded-2xl bg-secondary border border-border text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow",
-          compact ? "pl-9 pr-10 py-2" : "pl-11 pr-12 py-3",
-          expandable && "pr-16",
+          compact ? "pl-9 py-2" : "pl-11 py-3",
+          hideAiButton && filterButton
+            ? expandable
+              ? "pr-[6.5rem]"
+              : "pr-[5.5rem]"
+            : expandable
+              ? "pr-16"
+              : compact
+                ? "pr-10"
+                : "pr-12",
         )}
       />
       {expandable ? (
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+        <div className="absolute right-2 top-1/2 z-10 -translate-y-1/2 flex items-center gap-0.5">
           {value.length === 0 && !onExpandClick && (
             <button
               type="button"
@@ -169,11 +189,15 @@ const SearchBar = ({
               <X className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
           )}
+          {hideAiButton}
           {filterButton}
         </div>
       ) : (
-        filterButton && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">{filterButton}</div>
+        hasTrailing && (
+          <div className="absolute right-2 top-1/2 z-10 -translate-y-1/2 flex items-center gap-0.5">
+            {hideAiButton}
+            {filterButton}
+          </div>
         )
       )}
 

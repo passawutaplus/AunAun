@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Briefcase, ExternalLink, Loader2, Plus, Search, Send } from "lucide-react";
+import { ExternalLink, Loader2, Plus, Search, Send } from "lucide-react";
+import PackagesIcon from "@/components/icons/PackagesIcon";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,12 +62,13 @@ function KindToggle({
             aria-selected={active}
             onClick={() => onChange(tab.id)}
             className={cn(
-              "flex-1 rounded-full py-1.5 text-xs font-medium transition-colors",
+              "flex-1 inline-flex items-center justify-center gap-1 rounded-full py-1.5 text-xs font-medium transition-colors",
               active
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
+            {tab.id === "packages" ? <PackagesIcon className="h-3 w-3 shrink-0" /> : null}
             {tab.label}
             <span className="ml-1 tabular-nums opacity-70">({tab.count})</span>
           </button>
@@ -134,7 +136,7 @@ function PackageRow({
         <img src={cover} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
       ) : (
         <div className="w-12 h-12 rounded-lg bg-muted shrink-0 flex items-center justify-center text-muted-foreground">
-          <Briefcase className="w-5 h-5 opacity-50" />
+          <PackagesIcon className="w-5 h-5 opacity-50" />
         </div>
       )}
       <div className="flex-1 min-w-0">
@@ -255,7 +257,7 @@ function PackageGridCard({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            <Briefcase className="w-8 h-8 opacity-40" />
+            <PackagesIcon className="w-8 h-8 opacity-40" />
           </div>
         )}
       </button>

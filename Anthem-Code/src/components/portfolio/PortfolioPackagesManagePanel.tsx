@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
-  Briefcase,
   Eye,
   Globe,
   LayoutGrid,
   Mail,
   Plus,
 } from "lucide-react";
+import PackagesIcon from "@/components/icons/PackagesIcon";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import StatsCard from "@/components/StatsCard";
@@ -162,7 +162,7 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
 
       {services.length === 0 ? (
         <EmptyState
-          icon={Briefcase}
+          icon={PackagesIcon}
           title="ยังไม่มีแพ็กเกจ"
           description={`สร้างได้สูงสุด ${CREATOR_SERVICES_MAX} แพ็กเกจ — ลูกค้าขอใช้บริการจากแท็บ Packages บนโปรไฟล์สาธารณะ`}
           action={
@@ -178,7 +178,7 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
         <div className="space-y-3">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-              <Briefcase className="w-4 h-4 text-primary shrink-0" />
+              <PackagesIcon className="w-4 h-4 text-primary shrink-0" />
               แพ็กเกจทั้งหมด
             </h2>
             <p className="text-xs text-muted-foreground tabular-nums">

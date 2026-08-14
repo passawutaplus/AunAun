@@ -5,6 +5,8 @@ import { DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/co
 import { ResponsiveOverlay } from "@/components/ui/ResponsiveOverlay";
 import { Button } from "@/components/ui/button";
 import { Briefcase, Loader2, MessageCircle } from "lucide-react";
+import BriefIcon from "@/components/icons/BriefIcon";
+import PackagesIcon from "@/components/icons/PackagesIcon";
 import { toast } from "sonner";
 import { INQUIRY_PLATFORM_DISCLAIMER, PACKAGE_INQUIRY_PLATFORM_DISCLAIMER } from "@/lib/legalSignupCopy";
 import { parseMoneyInput } from "@/lib/parseMoney";
@@ -618,7 +620,7 @@ const HireDialog = ({
                     else hireTabBtnRefs.current.delete(tab.id);
                   }}
                   className={cn(
-                    "relative z-10 flex-1 rounded-full py-2 text-sm font-medium transition-colors",
+                    "relative z-10 flex-1 inline-flex items-center justify-center gap-1.5 rounded-full py-2 text-sm font-medium transition-colors",
                     active
                       ? hireTabIndicator
                         ? "text-foreground"
@@ -628,6 +630,11 @@ const HireDialog = ({
                   )}
                   onClick={() => setPanel(tab.id)}
                 >
+                  {tab.id === "message" ? (
+                    <BriefIcon className="h-3.5 w-3.5 shrink-0" />
+                  ) : (
+                    <PackagesIcon className="h-3.5 w-3.5 shrink-0" />
+                  )}
                   {tab.label}
                 </button>
               );
@@ -721,7 +728,7 @@ const HireDialog = ({
                             />
                           ) : (
                             <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                              <Briefcase className="h-6 w-6 opacity-40" />
+                              <PackagesIcon className="h-6 w-6 opacity-40" />
                             </div>
                           )}
                         </div>

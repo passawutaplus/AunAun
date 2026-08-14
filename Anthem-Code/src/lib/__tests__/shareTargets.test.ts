@@ -23,19 +23,19 @@ describe("shareTargets", () => {
     expect(hrefOf("email")).toMatch(/^mailto:\?subject=/);
   });
 
-  it("does not invent Instagram or WeChat share URLs", () => {
+  it("opens Instagram, WeChat, and desktop Messenger so the user can paste", () => {
     const hrefOf = (key: string) =>
       SHARE_TARGETS.find((t) => t.key === key)?.href("https://aplus1.app/project/1", "งาน");
-    expect(hrefOf("instagram")).toBeNull();
-    expect(hrefOf("wechat")).toBeNull();
+    expect(hrefOf("instagram")).toBe("https://www.instagram.com/");
+    expect(hrefOf("wechat")).toBe("https://web.wechat.com/");
   });
 
-  it("uses Messenger deep link only on mobile", () => {
+  it("uses Messenger deep link on mobile and Messenger web on desktop", () => {
     vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)" });
     expect(messengerHref("https://aplus1.app/project/1")).toContain("fb-messenger://share");
 
     vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" });
-    expect(messengerHref("https://aplus1.app/project/1")).toBeNull();
+    expect(messengerHref("https://aplus1.app/project/1")).toBe("https://www.messenger.com/");
   });
 
   it("reads a clean host for the preview card", () => {

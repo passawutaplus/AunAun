@@ -84,14 +84,19 @@ export function OwnerOtherWorks({
                 <div className="absolute top-1.5 right-1.5 z-10">
                   <AiDisclosureBadge assisted={p.ai_assisted} note={p.ai_disclosure_note} />
                 </div>
-                <span className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-0.5 rounded-full bg-background/80 px-1.5 py-0.5 text-[10px] text-foreground tabular-nums backdrop-blur-sm">
+              </div>
+              <div className="flex min-w-0 items-center gap-1.5 px-2 py-1.5">
+                <p className="min-w-0 flex-1 truncate text-xs font-medium leading-snug text-foreground">
+                  {p.title}
+                </p>
+                <span
+                  className="inline-flex shrink-0 items-center gap-0.5 text-[10px] text-muted-foreground tabular-nums"
+                  aria-label={`${views.toLocaleString("th-TH")} วิว`}
+                >
                   <Eye className="h-2.5 w-2.5" aria-hidden />
                   {views.toLocaleString("th-TH")}
                 </span>
               </div>
-              <p className="px-2 py-1.5 text-xs font-medium text-foreground line-clamp-2 leading-snug">
-                {p.title}
-              </p>
             </Link>
           );
         })}

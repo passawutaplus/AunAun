@@ -1,4 +1,5 @@
-import { Briefcase, Check, Loader2, X } from "lucide-react";
+import { Check, Loader2, X } from "lucide-react";
+import BriefIcon from "@/components/icons/BriefIcon";
 import { Button } from "@/components/ui/button";
 import {
   ChatCardShell,
@@ -26,7 +27,7 @@ const HireInviteCard = ({ content, actions }: Props) => {
   return (
     <ChatCardShell
       tone="hire"
-      icon={Briefcase}
+      icon={BriefIcon}
       title="คำขอจ้างงาน"
       footer={
         actions?.canRespond ? (

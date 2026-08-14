@@ -8,17 +8,17 @@ export const AI_USE_LEVEL_META: Record<
   assist: {
     shortLabel: "ช่วยทำ",
     hint: "ใช้ปรับปรุงภาพ หรือขึ้นต้นแบบ",
-    badgeLabel: "AI ช่วย",
+    badgeLabel: "AI",
   },
   partial: {
     shortLabel: "ส่วนหนึ่ง",
     hint: "ใช้เป็นส่วนหนึ่งในผลงาน",
-    badgeLabel: "มี AI",
+    badgeLabel: "AI",
   },
   full: {
     shortLabel: "AI 100%",
     hint: "สร้างจาก AI ทั้งชิ้น",
-    badgeLabel: "AI 100%",
+    badgeLabel: "AI",
   },
 };
 
@@ -51,4 +51,21 @@ export function projectAiCardFields(row: {
     aiAssisted: row.ai_assisted ?? false,
     aiDisclosureNote: row.ai_disclosure_note ?? "",
   };
+}
+
+/** True when the work shows an AI badge or an AI subcategory tag. */
+export function projectHasAiTag(project: {
+  aiAssisted?: boolean | null;
+  ai_assisted?: boolean | null;
+  aiDisclosureNote?: string | null;
+  ai_disclosure_note?: string | null;
+  tags?: string[] | null;
+}): boolean {
+  if (project.aiAssisted || project.ai_assisted) return true;
+  const note = (project.aiDisclosureNote ?? project.ai_disclosure_note ?? "").trim();
+  if (isAiUseLevel(note)) return true;
+  return (project.tags ?? []).some((raw) => {
+    const t = raw.trim().toLowerCase();
+    return t === "ai" || t === "catsub:ai" || t.endsWith(":ai");
+  });
 }

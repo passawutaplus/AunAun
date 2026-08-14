@@ -63,8 +63,8 @@ const LicenseDetailBlock = ({
               สิทธิ์ของผลงานนี้
             </span>
             <span className="flex items-center gap-1.5 shrink-0 ml-auto">
-              {aiLevel ? <AiDisclosureBadge level={aiLevel} tone="inline" /> : null}
               <LicenseBadgeInline licenseType={licenseType} />
+              {aiLevel ? <AiDisclosureBadge level={aiLevel} tone="inline" interactive={false} /> : null}
               <ChevronDown
                 className={cn(
                   "w-4 h-4 text-muted-foreground transition-transform shrink-0",

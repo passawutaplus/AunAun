@@ -1,4 +1,4 @@
-import { Briefcase } from "lucide-react";
+import PackagesIcon from "@/components/icons/PackagesIcon";
 import { formatServicePriceRange } from "@/hooks/useCreatorServices";
 
 type Props = {
@@ -29,7 +29,7 @@ export default function ServiceReferencePreview({
         <img src={coverUrl} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
       ) : (
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Briefcase className="h-6 w-6" />
+          <PackagesIcon className="h-6 w-6" />
         </div>
       )}
       <div className="min-w-0 flex-1">

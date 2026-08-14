@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Briefcase, Eye, FilePenLine, Globe, Mail } from "lucide-react";
+import { Eye, FilePenLine, Globe, Mail } from "lucide-react";
+import PackagesIcon from "@/components/icons/PackagesIcon";
 import { toast } from "sonner";
 import SectionHeader from "@/components/admin/SectionHeader";
 import DataTable, { Column } from "@/components/admin/DataTable";
@@ -46,7 +47,7 @@ export default function AdminPackagesPage() {
           <img src={r.cover_url} alt="" className="h-10 w-14 rounded object-cover border border-admin-border" />
         ) : (
           <div className="h-10 w-14 rounded border border-admin-border bg-admin-surface flex items-center justify-center">
-            <Briefcase className="w-3.5 h-3.5 text-admin-muted" />
+            <PackagesIcon className="w-3.5 h-3.5 text-admin-muted" />
           </div>
         ),
     },
@@ -166,7 +167,7 @@ export default function AdminPackagesPage() {
       />
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-        <KpiCard label="ทั้งหมด" value={overview?.total ?? 0} icon={Briefcase} />
+        <KpiCard label="ทั้งหมด" value={overview?.total ?? 0} icon={PackagesIcon} />
         <KpiCard label="เผยแพร่" value={overview?.published ?? 0} icon={Globe} accent />
         <KpiCard label="แบบร่าง" value={overview?.drafts ?? 0} icon={FilePenLine} />
         <KpiCard

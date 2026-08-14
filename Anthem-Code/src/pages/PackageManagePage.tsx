@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Briefcase } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
+import PackagesIcon from "@/components/icons/PackagesIcon";
 import PageLoader from "@/components/ui/PageLoader";
 import PortfolioPackagesManagePanel from "@/components/portfolio/PortfolioPackagesManagePanel";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,7 +30,7 @@ export default function PackageManagePage() {
           <BackButton fallbackTo="/portfolio?tab=services" className="mt-0.5" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Briefcase className="h-3.5 w-3.5 shrink-0" />
+              <PackagesIcon className="h-3.5 w-3.5 shrink-0" />
               <p className="text-[11px] font-medium uppercase tracking-wide">Packages</p>
             </div>
             <h1 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">

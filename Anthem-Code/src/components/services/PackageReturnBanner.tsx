@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Package } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import PackagesIcon from "@/components/icons/PackagesIcon";
 import {
   asCreatorServiceRow,
   fromCreatorServices,
@@ -41,7 +42,7 @@ export default function PackageReturnBanner({ serviceId, className }: Props) {
           )}
         >
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-background/80 text-primary shadow-sm ring-1 ring-border/60">
-            <Package className="h-4 w-4" />
+            <PackagesIcon className="h-4 w-4" />
           </span>
           <span className="min-w-0 text-left">
             <span className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-primary/80">

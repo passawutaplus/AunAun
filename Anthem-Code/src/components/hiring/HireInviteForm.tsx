@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, ImagePlus, Loader2, Plus, X, Tags, FileText, Link2, Wallet, CalendarDays, ClipboardList } from "lucide-react";
+import { Check, ImagePlus, Loader2, Plus, X, Tags, Link2, Wallet, CalendarDays, ClipboardList } from "lucide-react";
+import BriefIcon from "@/components/icons/BriefIcon";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -218,7 +219,7 @@ const HireInviteForm = ({
 
       <div className="border-t border-border/60 pt-5">
         <Label htmlFor="hire-details" className="flex items-center gap-1.5">
-          <FileText className="h-3.5 w-3.5 text-primary" />
+          <BriefIcon className="h-3.5 w-3.5 text-primary" />
           รายละเอียดงาน <span className="text-destructive">*</span>
         </Label>
         <Textarea

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseAiUseLevel, serializeAiUseLevel } from "@/lib/aiDisclosure";
+import { parseAiUseLevel, projectHasAiTag, serializeAiUseLevel } from "@/lib/aiDisclosure";
 
 describe("parseAiUseLevel", () => {
   it("returns null when not assisted", () => {
@@ -20,6 +20,22 @@ describe("parseAiUseLevel", () => {
   it("defaults empty assisted note to assist", () => {
     expect(parseAiUseLevel("", true)).toBe("assist");
     expect(parseAiUseLevel(null, true)).toBe("assist");
+  });
+});
+
+describe("projectHasAiTag", () => {
+  it("hides works with the AI disclosure flag", () => {
+    expect(projectHasAiTag({ aiAssisted: true })).toBe(true);
+    expect(projectHasAiTag({ ai_assisted: true })).toBe(true);
+  });
+
+  it("hides works tagged catsub:ai", () => {
+    expect(projectHasAiTag({ tags: ["catsub:ai"] })).toBe(true);
+    expect(projectHasAiTag({ tags: ["AI"] })).toBe(true);
+  });
+
+  it("keeps works without AI disclosure or tag", () => {
+    expect(projectHasAiTag({ aiAssisted: false, tags: ["logo"] })).toBe(false);
   });
 });
 

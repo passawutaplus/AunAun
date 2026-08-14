@@ -1,7 +1,8 @@
 import { useMemo, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, BadgeCheck } from "lucide-react";
+import { BadgeCheck } from "lucide-react";
+import PackagesIcon from "@/components/icons/PackagesIcon";
 import UserAvatar from "@/components/UserAvatar";
 import {
   formatServicePriceRange,
@@ -48,7 +49,7 @@ function PackageRowCard({
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-            <Briefcase className="h-5 w-5 opacity-40" />
+            <PackagesIcon className="h-5 w-5 opacity-40" />
           </div>
         )}
       </div>
@@ -205,7 +206,7 @@ export default function ServiceRelatedPackages({
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-sm font-semibold text-foreground sm:text-base">
-              แพ็กเกจของ {name}
+              Packages of {name}
             </h2>
             {profilePackagesHref && !onSelectService && otherPackages.length > 0 ? (
               <Link
@@ -251,7 +252,7 @@ export default function ServiceRelatedPackages({
       {showSimilarBlock ? (
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-foreground sm:text-base">
-            แพ็กเกจจากครีเอเตอร์อื่น
+            More Like This Packages
           </h2>
           {similarLoading ? (
             <PackageRow>

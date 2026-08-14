@@ -65,15 +65,19 @@ const ShareDialogPanel = ({
     }
   };
 
-  const handleTarget = async (item: ShareTarget) => {
-    const ok = await copyLink(item.copyHint ?? copySuccessMessage);
-    if (ok) onPlatform?.(item.key);
+  const handleTargetClick = (item: ShareTarget) => {
+    if (item.copyHint) void copyLink(item.copyHint);
+    onPlatform?.(item.key);
+    onDone?.();
   };
 
   return (
     <div className="flex max-h-[min(90vh,40rem)] flex-col overflow-y-auto">
       <div className="px-5 pb-3 pt-5 pr-12">
-        <DialogTitle className="text-xl font-semibold tracking-tight">{label}</DialogTitle>
+        <DialogTitle className="flex items-center gap-2 text-xl font-semibold tracking-tight">
+          <Share2 className="h-5 w-5 text-primary" aria-hidden />
+          {label}
+        </DialogTitle>
         <DialogDescription className="sr-only">
           คัดลอกลิงก์หรือแชร์ไปยัง Facebook, Messenger, Instagram, LINE, WhatsApp, WeChat, X และอีเมล
         </DialogDescription>
@@ -135,66 +139,39 @@ const ShareDialogPanel = ({
 
       <div className="border-t border-border/60 bg-muted/50 px-4 py-4">
         <div className="grid grid-cols-4 gap-x-1 gap-y-3">
-          {SHARE_TARGETS.map((item) => {
-            const href = item.href(url, title);
-            const className =
-              "flex w-full min-w-0 flex-col items-center gap-1.5 rounded-xl px-1 py-1.5 text-foreground transition-colors hover:bg-background/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
-            const icon = (
-              <>
-                <span
-                  className={cn(
-                    "flex h-12 w-12 items-center justify-center overflow-hidden rounded-full shadow-sm ring-1 ring-black/10 dark:ring-white/15",
-                    item.wellClass,
-                  )}
-                >
-                  {item.icon === "mail" ? (
-                    <Mail className="h-5 w-5" aria-hidden />
-                  ) : (
-                    <img
-                      src={BRAND_ICON_SRC[item.icon]}
-                      alt=""
-                      className={item.imgClass}
-                      width={48}
-                      height={48}
-                    />
-                  )}
-                </span>
-                <span className="h-8 w-full text-center text-[11px] font-medium leading-tight">
-                  {item.label}
-                </span>
-              </>
-            );
-
-            if (href) {
-              return (
-                <a
-                  key={item.key}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => {
-                    onPlatform?.(item.key);
-                    onDone?.();
-                  }}
-                  className={className}
-                >
-                  {icon}
-                </a>
-              );
-            }
-
-            return (
-              <button
-                key={item.key}
-                type="button"
-                title={`คัดลอกลิงก์ไปวางใน ${item.label}`}
-                onClick={() => void handleTarget(item)}
-                className={className}
+          {SHARE_TARGETS.map((item) => (
+            <a
+              key={item.key}
+              href={item.href(url, title)}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={item.copyHint ? `คัดลอกลิงก์แล้วเปิด ${item.label}` : `แชร์ไปยัง ${item.label}`}
+              onClick={() => handleTargetClick(item)}
+              className="flex w-full min-w-0 flex-col items-center gap-1.5 rounded-xl px-1 py-1.5 text-foreground transition-colors hover:bg-background/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span
+                className={cn(
+                  "flex h-12 w-12 items-center justify-center overflow-hidden rounded-full shadow-sm ring-1 ring-black/10 dark:ring-white/15",
+                  item.wellClass,
+                )}
               >
-                {icon}
-              </button>
-            );
-          })}
+                {item.icon === "mail" ? (
+                  <Mail className="h-5 w-5" aria-hidden />
+                ) : (
+                  <img
+                    src={BRAND_ICON_SRC[item.icon]}
+                    alt=""
+                    className={item.imgClass}
+                    width={48}
+                    height={48}
+                  />
+                )}
+              </span>
+              <span className="h-8 w-full text-center text-[11px] font-medium leading-tight">
+                {item.label}
+              </span>
+            </a>
+          ))}
         </div>
         {canNativeShare ? (
           <button

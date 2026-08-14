@@ -1,8 +1,10 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
+import { Eye, Heart } from "lucide-react";
 import { useTopProjects, type DBProject } from "@/hooks/useProjects";
 import { optimizedFeedImageUrl } from "@/lib/feedProjectCover";
+import { formatCompact } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const projectCover = (p: DBProject) =>
@@ -39,6 +41,7 @@ function MarqueeRow({
         className={cn(
           "flex w-max items-stretch gap-2.5 sm:gap-3 will-change-transform max-lg:h-full",
           animate && (direction === "left" ? "animate-work-wall-left" : "animate-work-wall-right"),
+          animate && "hover:[animation-play-state:paused] focus-within:[animation-play-state:paused]",
         )}
         style={animate ? undefined : { transform: "translateX(0)" }}
       >
@@ -72,11 +75,24 @@ function MarqueeRow({
                 fetchPriority={eager && index === 0 ? "high" : "low"}
                 className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
               />
-              <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent opacity-80" />
-              {!isClone && project.title ? (
-                <span className="pointer-events-none absolute inset-x-0 bottom-0 px-2 pb-1.5 sm:px-2.5 sm:pb-2">
-                  <span className="block truncate text-left text-[11px] sm:text-xs font-medium text-white drop-shadow thai-leading-tight">
+              <span
+                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 group-active:opacity-100"
+                aria-hidden
+              />
+              {project.title ? (
+                <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 px-2 pb-1.5 sm:px-2.5 sm:pb-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 group-active:opacity-100">
+                  <span className="min-w-0 truncate text-left text-[11px] sm:text-xs font-medium text-white drop-shadow thai-leading-tight">
                     {project.title}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2 text-[10px] sm:text-[11px] font-medium text-white/90 drop-shadow">
+                    <span className="inline-flex items-center gap-0.5" aria-hidden>
+                      <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      {formatCompact(project.views ?? 0)}
+                    </span>
+                    <span className="inline-flex items-center gap-0.5" aria-hidden>
+                      <Heart className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      {formatCompact(project.likes ?? 0)}
+                    </span>
                   </span>
                 </span>
               ) : null}

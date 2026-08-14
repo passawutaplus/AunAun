@@ -43,9 +43,19 @@ describe("SharePopover", () => {
       "href",
       expect.stringContaining("mailto:"),
     );
-    expect(screen.getByRole("button", { name: "Instagram" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "WeChat" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Messenger" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Instagram" })).toHaveAttribute(
+      "href",
+      "https://www.instagram.com/",
+    );
+    expect(screen.getByRole("link", { name: "Instagram" })).toHaveAttribute("target", "_blank");
+    expect(screen.getByRole("link", { name: "WeChat" })).toHaveAttribute(
+      "href",
+      "https://web.wechat.com/",
+    );
+    expect(screen.getByRole("link", { name: "Messenger" })).toHaveAttribute(
+      "href",
+      "https://www.messenger.com/",
+    );
     expect(screen.getByRole("button", { name: "คัดลอกลิงก์" })).toBeInTheDocument();
     expect(screen.getByDisplayValue("https://aplus1.app/project/1")).toBeInTheDocument();
   });

@@ -55,6 +55,8 @@ type Props = {
   onProjectLeavesChange?: (leaves: ProjectCategory[]) => void;
   projectStyles?: string[];
   onProjectStylesChange?: (styles: string[]) => void;
+  hideAi?: boolean;
+  onHideAiChange?: (hide: boolean) => void;
   /** @deprecated chips derived from taxonomy for projects mode */
   categoryChips?: ProjectChipFilter[];
   designerFeedSource?: DesignerFeedSource;
@@ -103,6 +105,8 @@ const FeedToolbar = ({
   onProjectLeavesChange,
   projectStyles = [],
   onProjectStylesChange,
+  hideAi = false,
+  onHideAiChange,
   designerFeedSource = "all",
   onDesignerFeedSourceChange,
   designerSort,
@@ -153,8 +157,9 @@ const FeedToolbar = ({
           : (category as CategoryParentId),
       leaves: projectLeaves,
       styles: projectStyles,
+      hideAi,
     }),
-    [search, category, projectLeaves, projectStyles],
+    [search, category, projectLeaves, projectStyles, hideAi],
   );
 
   const projectFilterCount = isProjects
@@ -227,6 +232,7 @@ const FeedToolbar = ({
     onCategoryChange(next.parentId === "All" ? "All" : next.parentId);
     onProjectLeavesChange?.(next.leaves);
     onProjectStylesChange?.(next.styles);
+    onHideAiChange?.(next.hideAi);
   };
 
   const activeSubLabels = useMemo(() => {
@@ -345,6 +351,8 @@ const FeedToolbar = ({
     ? {
         onFilterClick: openProjectSheet,
         filterContent: undefined as undefined,
+        hideAi,
+        onHideAiToggle: () => onHideAiChange?.(!hideAi),
       }
     : {
         filterContent,
@@ -420,7 +428,12 @@ const FeedToolbar = ({
             onExpandedChange={setMobileSearchOpen}
             {...searchBarShared}
             {...(isProjects
-              ? { onExpandClick: openProjectSheet, onFilterClick: openProjectSheet }
+              ? {
+                  onExpandClick: openProjectSheet,
+                  onFilterClick: openProjectSheet,
+                  hideAi,
+                  onHideAiToggle: () => onHideAiChange?.(!hideAi),
+                }
               : { filterContent })}
           />
         </div>
@@ -652,6 +665,7 @@ const FeedToolbar = ({
           onOpenChange={setProjectSheetOpen}
           value={projectFilterValue}
           onApply={applyProjectSheet}
+          onHideAiChange={onHideAiChange}
           resultCount={projectResultCount}
           recentSearches={recentSearches}
           onRecentSelect={onRecentSearchSelect}
