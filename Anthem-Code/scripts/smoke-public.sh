@@ -40,7 +40,7 @@ check_robots_txt() {
     fail=1
     return
   fi
-  if (!grep -qF 'Sitemap: https://aplus1.app/sitemap.xml' "$body_file"; then
+  if ! grep -qF 'Sitemap: https://aplus1.app/sitemap.xml' "$body_file"; then
     echo "FAIL /robots.txt missing Sitemap aplus1.app"
     seo_fail=1
   fi
