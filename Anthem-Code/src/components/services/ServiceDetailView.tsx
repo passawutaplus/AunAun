@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Check, Expand, Loader2, MessageCircle, X } from "lucide-react";
 import {
@@ -8,8 +9,8 @@ import {
   servicePreviewUrls,
   type CreatorService,
 } from "@/hooks/useCreatorServices";
-import { formatCategoryBreadcrumb } from "@/data/categoryTaxonomy";
 import { isVideoUrl } from "@/lib/videoAccept";
+import { packageDetailTags, packageTagFeedUrl } from "@/lib/packageRoutes";
 import HireTargetProfilePreview from "@/components/opportunity/HireTargetProfilePreview";
 import ServicePackageWorksSection from "@/components/services/ServicePackageWorksSection";
 import ImageLightbox from "@/components/project/ImageLightbox";
@@ -53,6 +54,10 @@ export default function ServiceDetailView({
 }: Props) {
   const media = servicePreviewUrls(service);
   const imageMedia = useMemo(() => media.filter((u) => !isVideoUrl(u)), [media]);
+  const detailTags = useMemo(
+    () => packageDetailTags(service.category, service.tags),
+    [service.category, service.tags],
+  );
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -148,14 +153,17 @@ export default function ServiceDetailView({
         {service.title}
       </h2>
 
-      {service.category?.trim() ? (
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">
-            หมวด{" "}
-            <span className="font-medium text-foreground">
-              {formatCategoryBreadcrumb(service.category, service.tags)}
-            </span>
-          </p>
+      {detailTags.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {detailTags.map((tag) => (
+            <Link
+              key={tag}
+              to={packageTagFeedUrl(tag)}
+              className="rounded-full border border-border/70 bg-muted/40 px-2.5 py-0.5 text-[11px] font-medium text-foreground hover:border-primary/40 hover:bg-primary/10 hover:text-primary transition-colors"
+            >
+              {tag}
+            </Link>
+          ))}
         </div>
       ) : null}
 

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Plus, LayoutGrid, Globe, Eye } from "lucide-react";
+import ManageWorkIcon from "@/components/icons/ManageWorkIcon";
 import { PlusOneMark } from "@/components/brand/PlusOneMark";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -137,6 +138,15 @@ export default function PortfolioWorksManagePanel({ userId, showDesignDrill }: P
       ) : null}
 
       <div className="flex flex-wrap justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="rounded-xl h-11 px-4 gap-1.5 text-primary border-primary/40 hover:bg-primary/5 hover:text-primary"
+          onClick={() => navigate("/dashboard")}
+        >
+          <ManageWorkIcon className="w-4 h-4" />
+          จัดการงาน
+        </Button>
         <Button
           className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-11 px-6"
           onClick={() => navigate("/portfolio/new")}

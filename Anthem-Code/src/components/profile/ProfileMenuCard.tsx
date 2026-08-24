@@ -1,13 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  LayoutGrid,
   MessageCircle,
   MessagesSquare,
   Settings,
   LogOut,
   Rocket,
 } from "lucide-react";
+import ManageWorkIcon from "@/components/icons/ManageWorkIcon";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import OpportunityStatusDialog from "@/components/opportunity/OpportunityStatusDialog";
@@ -38,7 +38,7 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
         className="rounded-3xl glass-panel p-3 space-y-0.5"
       >
         <button type="button" onClick={() => navigate("/dashboard")} className={item}>
-          <LayoutGrid className="w-4 h-4 text-primary" /> จัดการงาน
+          <ManageWorkIcon className="w-4 h-4 text-primary" /> จัดการงาน
         </button>
         <button type="button" onClick={() => navigate("/chat")} className={item}>
           <MessageCircle className="w-4 h-4 text-primary" /> Chat

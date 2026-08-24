@@ -93,11 +93,11 @@ export function LearnLoopRail({ steps }: { steps: readonly string[] }) {
       {steps.map((label, i) => (
         <motion.li
           key={label}
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-24px" }}
-          transition={{ delay: i * 0.06, duration: 0.45, ease: smoothEase }}
-          whileHover={reduced ? undefined : { y: -4 }}
+          initial={{ opacity: 0, y: 20, scale: 0.96 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true, amount: 0.45, margin: "-40px" }}
+          transition={{ delay: i * 0.08, duration: 0.5, ease: smoothEase }}
+          whileHover={reduced ? undefined : { y: -6 }}
           className="min-w-[8.5rem] flex-1 rounded-2xl border border-border/60 bg-background/70 px-3 py-4 sm:min-w-0"
         >
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-brand text-xs font-semibold text-white">

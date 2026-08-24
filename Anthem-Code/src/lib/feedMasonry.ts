@@ -2,6 +2,12 @@
 export const FEED_PROJECT_GRID =
   "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 2xl:grid-cols-5";
 
+/** Packages listing — always 4 columns from md up (density picker does not apply). */
+export const PACKAGE_FEED_GRID = "grid grid-cols-2 md:grid-cols-4";
+
+/** Profile Booking tab — 3 columns so cards fill the profile content column. */
+export const PACKAGE_BOOKING_GRID = "grid grid-cols-2 md:grid-cols-3";
+
 /** Slightly taller row gap than column gap for breathing room between rows. */
 export const FEED_PROJECT_GRID_GAP =
   "gap-x-2 sm:gap-x-3 lg:gap-x-4 gap-y-[26px] sm:gap-y-[30px] lg:gap-y-[34px]";

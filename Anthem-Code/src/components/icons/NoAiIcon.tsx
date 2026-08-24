@@ -2,6 +2,11 @@ import { cn } from "@/lib/utils";
 
 const STRIKE_LEN = 120;
 
+/** Rounded-square AI mark with sparkle. */
+export function AiIcon({ className }: { className?: string }) {
+  return <NoAiIcon className={className} />;
+}
+
 /** AI badge (rounded square + sparkle); strikethrough draws in when hiding AI works. */
 export function NoAiIcon({
   className,

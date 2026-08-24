@@ -2,13 +2,16 @@
 
 Checklist สำหรับ **aplus1.app** (Aplus1 community)
 
+เกตคุณภาพเว็บทั้งก้อน (ไม่ใช่แค่ SEO): [aplus1-web-audit-checklist.md](./aplus1-web-audit-checklist.md)
+
 ## สถานะในโค้ด (อัปเดต)
 
 | รายการ | สถานะ |
 |--------|--------|
 | `<html lang="th">` | ✅ `index.html` + `SeoHead` |
 | Meta title / description | ✅ `SeoHead` ต่อหน้า |
-| Open Graph + Twitter card | ✅ static + SPA update |
+| Open Graph + Twitter card | ⚠️ แท็กครบ — `DEFAULT_OG_IMAGE` ยังเป็นไฟล์ Lovable |
+| Soft 404 (SPA HTTP 200) | ⚠️ หน้า UI มีที่ `/error/404` — unknown URL ยัง rewrite เป็น `index.html` |
 | JSON-LD (WebSite, Organization, Person, ProfilePage, CreativeWork, JobPosting, BreadcrumbList) | ✅ |
 | Breadcrumb UI | ✅ `SeoBreadcrumb` |
 | `robots.txt` | ✅ Disallow private + Sitemap links |

@@ -27,8 +27,9 @@
 - หลีกเลี่ยง card ซ้อน card
 - card radius ไม่ควรใหญ่เกินถ้าเป็น dashboard/tool UI
 - อย่าทำ palette โทนเดียวจนทั้งเว็บตัน
-- ปุ่มสำคัญต้อง contrast ดี
+- ปุ่มสำคัญต้อง contrast ดี — สีแบรนด์ส้มอย่าใช้เป็นตัวหนังสือบางบนพื้นขาวถ้า contrast ไม่ถึง 4.5:1
 - form field ต้องมี label ไม่ใช่ placeholder อย่างเดียว
+- กัน "AI-looking UI": หัวข้ออังกฤษลอยในหน้าไทย, emoji ใน heading, sparkles ตกแต่งเปล่า, glow ปุ่มเกิน, CTA หลักเป็นคำว่าข้าม
 
 ## Mobile Rules
 

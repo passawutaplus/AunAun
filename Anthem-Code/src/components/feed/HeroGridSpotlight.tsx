@@ -78,8 +78,7 @@ const HeroGridSpotlight = ({ className, trackRef }: Props) => {
       className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)}
       aria-hidden
     >
-      <div className="absolute -left-[18%] bottom-[-12%] h-[58%] w-[72%] rounded-full bg-[radial-gradient(circle,hsl(210_85%_58%_/_0.14)_0%,transparent_70%)] blur-3xl dark:opacity-100 opacity-70" />
-      <div className="absolute -right-[12%] top-[-10%] h-[52%] w-[68%] rounded-full bg-[radial-gradient(circle,hsl(14_100%_55%_/_0.18)_0%,transparent_70%)] blur-3xl" />
+      {/* Color wash lives in HomeHeroWash so it can expand with page scroll. */}
 
       <div
         className={cn("absolute inset-0 opacity-80 dark:opacity-70", !reduced && "animate-hero-grid-bg")}
@@ -104,7 +103,7 @@ const HeroGridSpotlight = ({ className, trackRef }: Props) => {
       <div
         className="absolute inset-0 duration-100 ease-out"
         style={{
-          background: "hsl(var(--background) / 0.22)",
+          background: "hsl(var(--background) / 0.08)",
           backdropFilter: reduced ? undefined : "blur(8px) saturate(130%)",
           WebkitBackdropFilter: reduced ? undefined : "blur(8px) saturate(130%)",
           WebkitMaskImage: reduced || !hovering ? undefined : veilHole,
@@ -120,7 +119,7 @@ const HeroGridSpotlight = ({ className, trackRef }: Props) => {
             : undefined
         }
       />
-      <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-background/50 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-background/20 to-transparent" />
     </div>
   );
 };

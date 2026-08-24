@@ -7,12 +7,91 @@ export type LearnNavItem = {
 
 /** In-page sections on /learn (single page). */
 export const LEARN_NAV: LearnNavItem[] = [
-  { id: "creators", label: "ครีเอเตอร์" },
-  { id: "hirers", label: "คนจ้าง / ให้โอกาส" },
+  { id: "who", label: "เราคือใคร" },
+  { id: "start", label: "เริ่มใช้" },
+  { id: "creators", label: "ลงผลงาน" },
+  { id: "hirers", label: "จ้างงาน" },
   { id: "opportunity-loop", label: "ลูปโอกาส" },
-  { id: "features", label: "ฟีเจอร์" },
-  { id: "trust", label: "ความน่าเชื่อถือ" },
+  { id: "trust", label: "น่าเชื่อถือ" },
 ];
+
+export const LEARN_IMAGES = {
+  hero: "/learn/learn-hero-wall.png",
+  who: "/learn/learn-who-fan.png",
+  split: "/learn/learn-split-roles.png",
+  firstVisit: "/learn/learn-first-visit.png",
+  publish: "/learn/learn-publish.png",
+  shortlist: "/learn/learn-shortlist.png",
+  chat: "/learn/learn-chat-bridge.png",
+  cta: "/learn/learn-cta-attract.png",
+} as const;
+
+export const LEARN_FILM = {
+  cover: "/learn/learn-film-cover.png",
+  poster: "/learn/learn-film-poster.png",
+  avatar: "/learn/learn-film-avatar.png",
+  tiles: [
+    "/learn/learn-film-bottle.png",
+    "/learn/learn-film-tea.png",
+    "/learn/learn-film-silk.png",
+    "/learn/learn-film-box.png",
+    "/learn/learn-film-night.png",
+    "/demo-catalog/covers/01-napatsara.png",
+  ],
+} as const;
+
+export const LEARN_WHO_NOT = [
+  {
+    title: "ไม่ใช่แค่โชว์รูป",
+    body: "ผลงานมีบทบาท กระบวนการ และผลลัพธ์ — คนดูเข้าใจว่าคุณทำอะไรได้จริง",
+  },
+  {
+    title: "ไม่เริ่มจากราคา",
+    body: "คนจ้างเห็นสไตล์ก่อน แล้วค่อยคุยขอบเขต — ไม่เลือกจากแพ็กเกจถูกสุด",
+  },
+  {
+    title: "ไม่เริ่มจากใบสมัครยาว",
+    body: "ทักจากชิ้นงานที่ชอบ ไม่ต้องเดาจากเรซูเม่หรือประกาศตำแหน่ง",
+  },
+] as const;
+
+export const LEARN_ROLES = [
+  {
+    id: "creators",
+    title: "ฉันอยากโชว์ผลงาน",
+    body: "ลงงานจริง ให้คนเห็นสไตล์ แล้วทักจากชิ้นที่ใช่",
+    cta: "ดูขั้นลงผลงาน",
+  },
+  {
+    id: "hirers",
+    title: "ฉันอยากหาคนทำงาน",
+    body: "เลื่อนดูของจริง เก็บ shortlist แล้วคุยจากงานที่ชอบ",
+    cta: "ดูขั้นจ้างงาน",
+  },
+] as const;
+
+export const LEARN_FIRST_VISIT = [
+  {
+    step: "01",
+    title: "เลื่อน Explore",
+    body: "หน้าแรกคือผลงานจริง สลับแท็บ Projects กับ Designers ได้เลย ยังไม่ต้องล็อกอิน",
+  },
+  {
+    step: "02",
+    title: "เปิดชิ้นที่สะดุดตา",
+    body: "ดูรูป บทบาท และบริบทงาน — รู้สไตล์ก่อนตัดสินใจทัก",
+  },
+  {
+    step: "03",
+    title: "เปิดโปรไฟล์คนนั้น",
+    body: "ดูงานอื่นและสถานะรับโอกาส ว่าเขาเปิดรับจ้าง คอลแลป หรือแค่คุย",
+  },
+  {
+    step: "04",
+    title: "สมัครเมื่อจะลงมือ",
+    body: "บันทึก ทัก หรือลงผลงาน ระบบจึงขอเข้าสู่ระบบ แล้วย้อนกลับหน้าที่ค้างไว้ได้",
+  },
+] as const;
 
 export const LEARN_GLOSSARY = [
   {
@@ -28,12 +107,8 @@ export const LEARN_GLOSSARY = [
     meaning: "ร่วมงาน / แลกสกิล ไม่จำเป็นต้องเป็นจ้างเต็มรูปแบบ",
   },
   {
-    term: "สมัครงาน",
-    meaning: "สมัครเข้าประกาศงานที่มีอยู่",
-  },
-  {
     term: "สนับสนุน",
-    meaning: "ส่ง PX หรือของขวัญให้ครีเอเตอร์",
+    meaning: "ส่ง PX หรือของขวัญให้ครีเอเตอร์ — ไม่ใช่การจ้าง",
   },
   {
     term: "Catalog",
@@ -98,49 +173,42 @@ export const LEARN_FEATURES = [
     auth: true,
   },
   {
-    title: "Community (Forum)",
-    body: "พูดคุย แลกเทคนิค และถามตอบในชุมชนครีเอทีฟ",
-    to: FORUM_PATH,
-    cta: "เข้า Forum",
-  },
-  {
     title: "สถานะรับโอกาส",
     body: "บอกได้ว่างานแบบไหนที่เปิดรับ เพื่อให้คนที่ใช่เข้ามาหา",
     to: "/settings",
     cta: "ตั้งค่าโปรไฟล์",
     auth: true,
   },
-  {
-    title: "Inspire",
-    body: "เก็บแรงบันดาลใจและบอร์ดอ้างอิงสำหรับงานต่อไป",
-    to: "/inspire",
-    cta: "เปิด Inspire",
-    auth: true,
-  },
 ] as const;
 
-export const LEARN_CREATOR_SECTIONS = [
+export const LEARN_CREATOR_JOURNEY = [
   {
-    title: "ทำไมต้องลงงานพร้อมบริบท",
-    body: "ชื่อโปรเจกต์ บทบาท เครื่องมือ และผลลัพธ์ช่วยให้คนจ้างเข้าใจศักยภาพเร็วกว่าดูแค่ภาพสวย",
+    title: "ตั้งโปรไฟล์สั้นๆ",
+    body: "ชื่อ รูป และแนะนำตัวสั้นๆ ให้คนที่ทักรู้ว่าคุยกับใคร",
   },
   {
     title: "ตั้งสถานะรับโอกาส",
-    body: "บอกได้ว่าเปิดรับจ้างงาน คอลแลป ฝึกงาน เข้าทีม หรือแค่คุยโอกาส — แก้ทีหลังที่โปรไฟล์ได้",
+    body: "บอกว่าเปิดรับจ้างงาน คอลแลป ฝึกงาน เข้าทีม หรือแค่คุย — แก้ทีหลังได้",
   },
   {
-    title: "จัด Catalog",
-    body: "จัดกลุ่มผลงานเป็นชุด ให้งานที่เกี่ยวข้องอยู่ด้วยกัน ดูเป็นระบบตอนเปิดโปรไฟล์",
+    title: "ลงผลงานชิ้นแรก",
+    body: "เริ่ม 1–3 ชิ้นที่อธิบายบทบาทได้ชัด ดีกว่ารายการยาวที่ว่าง",
   },
   {
-    title: "ถูกค้นพบยังไง",
-    body: "งานขึ้นบน Explore ตามหมวดและความสนใจของผู้เลื่อนดู — ไม่ต้องยิงแอดเองเพื่อเริ่มต้น",
+    title: "ใส่บริบท ไม่ใช่แค่รูป",
+    body: "บทบาท เครื่องมือ กระบวนการ ผลลัพธ์ — คนจ้างเข้าใจศักยภาพเร็วขึ้น",
   },
   {
-    title: "เมื่อมีคนสนใจ",
-    body: "การคุยเริ่มจากชิ้นงานที่เขาเห็น ไม่ต้องเล่าพอร์ตทั้งก้อนใหม่ทุกครั้ง",
+    title: "เผยแพร่สาธารณะ",
+    body: "งานขึ้นบน Explore ตามหมวด — ไม่ต้องยิงแอดเองเพื่อเริ่มต้น",
+  },
+  {
+    title: "ตอบเมื่อมีคนทัก",
+    body: "แชทผูกกับชิ้นงานที่เขาเห็น ไม่ต้องเล่าพอร์ตทั้งก้อนใหม่",
   },
 ] as const;
+
+export const LEARN_CREATOR_SECTIONS = LEARN_CREATOR_JOURNEY;
 
 export const LEARN_CREATOR_CHECKLIST = [
   "รูปปกที่อ่านงานได้ชัด",
@@ -150,28 +218,30 @@ export const LEARN_CREATOR_CHECKLIST = [
   "มองเห็นสาธารณะเมื่อพร้อมรับโอกาส",
 ] as const;
 
-export const LEARN_HIRER_SECTIONS = [
+export const LEARN_HIRER_JOURNEY = [
   {
     title: "เลื่อนดูงานก่อน คน",
     body: "เริ่มจากสไตล์และคุณภาพงาน แล้วค่อยเปิดโปรไฟล์ — ไม่เริ่มจากแพ็กเกจราคา",
   },
   {
     title: "กรองหมวด / สไตล์",
-    body: "ใช้ Explore และหมวดงานเพื่อเจองานที่ใกล้โจทย์ของคุณเร็วขึ้น",
+    body: "ใช้ Explore เพื่อเจองานที่ใกล้โจทย์เร็วขึ้น",
   },
   {
     title: "บันทึกไว้ก่อนคุย",
-    body: "เก็บงานที่ชอบในคอลเลกชัน เปรียบเทียบสไตล์ แล้วค่อยทักเมื่อพร้อม",
+    body: "เก็บหลายชิ้นในคอลเลกชัน เปรียบเทียบสไตล์ แล้วค่อยทักเมื่อพร้อม",
   },
   {
-    title: "คุยจากชิ้นงาน",
-    body: "อ้างอิงผลงานที่สนใจตอนทัก — ครีเอเตอร์รู้ทันทีว่าคุณเห็นอะไรในงานเขา",
+    title: "กดคุยต่อจากผลงานนี้",
+    body: "เลือกจ้างงานหรือคอลแลป แล้วสรุปโจทย์สั้นๆ — ครีเอเตอร์รู้ทันทีว่าคุณเห็นชิ้นไหน",
   },
   {
-    title: "จ้างงาน vs คอลแลป vs ประกาศ",
-    body: "คุยตรงจากผลงานเมื่อมีคนในใจแล้ว หรือใช้ประกาศงานเมื่อต้องการเปิดรับหลายคน",
+    title: "คุยในแชทที่มีบริบทงาน",
+    body: "ขอบเขต ไทม์ไลน์ และรายละเอียดต่อจากชิ้นที่อ้างอิง ไม่ต้องเริ่มจากศูนย์",
   },
 ] as const;
+
+export const LEARN_HIRER_SECTIONS = LEARN_HIRER_JOURNEY;
 
 export const LEARN_HIRER_TIPS = [
   "สรุปโจทย์สั้นๆ 1–3 ประโยค",
@@ -179,6 +249,8 @@ export const LEARN_HIRER_TIPS = [
   "ไทม์ไลน์ที่คาดหวัง",
   "อ้างอิงผลงานบน Aplus1 ที่ชอบ",
 ] as const;
+
+export const LEARN_LOOP_WORDS = ["จ้างงาน", "คอลแลป", "สนับสนุน"] as const;
 
 export const LEARN_PX_POINTS = [
   {
@@ -207,9 +279,9 @@ export const LEARN_TRUST_LINKS = [
   { to: "/legal", label: "กฎหมายและนโยบาย", body: "ดัชนีเอกสารทั้งหมด แยกตามหมวด" },
   { to: "/legal/community", label: "กฎชุมชน", body: "สิ่งที่ทำได้ / ไม่ได้บน Aplus1" },
   { to: "/legal/ip", label: "ทรัพย์สินทางปัญญา", body: "สิทธิ์งานและความรับผิดชอบตอนลงผลงาน" },
-  { to: "/legal/privacy", label: "ความเป็นส่วนตัว", body: "ข้อมูลที่เก็บและวิธีใช้" },
+  { to: "/legal/privacy", label: "ความเป็นส่วนตัว", body: "ข้อมูลที่เก็บและใช้" },
   { to: "/legal/terms", label: "ข้อกำหนดการใช้", body: "เงื่อนไขการใช้บริการ" },
-  { to: FORUM_PATH, label: "Forum / Help", body: "ถามตอบและแจ้งปัญหากับชุมชน" },
+  { to: FORUM_PATH, label: "Forum", body: "ถามตอบและแจ้งปัญหากับชุมชน" },
   { to: "/help", label: "Help Center", body: "คำถามที่พบบ่อยและวิธีใช้" },
 ] as const;
 
@@ -247,6 +319,6 @@ export const LEARN_FAQ = [
   {
     id: "community",
     q: "Help Center กับ Learn more ต่างกันยังไง?",
-    a: "Help Center คือที่หาคำตอบและวิธีใช้เมื่อมีคำถาม Learn more คือพรีวิวภาพรวมของ Aplus1 ส่วน Forum เป็นที่คุยกับชุมชน",
+    a: "Help Center คือที่หาคำตอบและวิธีใช้เมื่อมีคำถาม Learn more คือเรื่องราวภาพรวมของ Aplus1 ส่วน Forum เป็นที่คุยกับชุมชน",
   },
 ] as const;

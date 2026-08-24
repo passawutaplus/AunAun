@@ -31,7 +31,7 @@ export function writeSeriesDensity(key: string, density: SeriesWorksDensity): vo
 export function seriesDensityGridClass(density: SeriesWorksDensity): string {
   switch (density) {
     case "large":
-      return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4";
+      return "grid grid-cols-2 lg:grid-cols-3 gap-3";
     case "medium":
       return "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3";
     case "small":

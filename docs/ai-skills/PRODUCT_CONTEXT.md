@@ -20,6 +20,11 @@
    - โฟกัส payment, cashout, dashboard, in-house workflow, admin/ops
    - เป็นส่วนที่จริงจังเรื่องเงิน, client work, documents, operational flow
 
+เว็บร้าน BlackSmith อยู่คนละ repo ไม่ได้อยู่ในโฟลเดอร์นี้:
+
+- `F:\blacksmith-tools` (GitHub `blacksmithtools`) — ร้านอุปกรณ์เสริมเครื่องมือช่าง, พิมพ์ 3D, ผู้ช่วยงานช่างที่ `/assistant`
+- ผูกไว้ใน `AunAun.code-workspace` แล้ว ห้ามสร้าง `Craftsman-Code` หรือ `Blacksmith-Code` ซ้ำใน monorepo
+
 ## Product Relationship
 
 Anthem และ Solo ไม่ใช่เว็บเดียวกัน แต่ช่วยกันใน ecosystem:
@@ -86,6 +91,7 @@ Solo คือระบบสำหรับ freelance/business operation:
 
 - ถ้าทำ UX/UI Anthem demo: เริ่มจาก `Anthem-Code`
 - ถ้าทำ payment/cashout/dashboard: เริ่มจาก `Solo-Code`
+- ถ้าทำร้าน BlackSmith / ผู้ช่วยงานช่าง / หน้าเกี่ยวกับเราของร้าน: เริ่มจาก `F:\blacksmith-tools`
 - ถ้าทำ ecosystem sync หรือดูภาพรวม: ใช้ `AunAun`
 - ถ้าขัดกันระหว่าง repo ให้ดู standalone repo ที่ deploy จริงก่อน แล้วค่อย sync เข้า AunAun
 

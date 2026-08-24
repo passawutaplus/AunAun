@@ -11,15 +11,20 @@ const layoutTransition = {
 
 type Props = {
   className?: string;
+  /** Stretch cards to the row height (package listing). */
+  itemClassName?: string;
+  /** Override density picker, e.g. locked 4-column package grid. */
+  columnsClass?: string;
   children: ReactNode;
 };
 
 /** Project feed grid with smooth layout animation when density changes. */
-export function FeedProjectGrid({ className, children }: Props) {
+export function FeedProjectGrid({ className, itemClassName, columnsClass, children }: Props) {
   const { density, mobileColumns, narrow, gridClass } = useFeedGridDensity();
   const reduced = useReducedMotion();
   const items = Children.toArray(children);
-  const layoutKey = narrow ? mobileColumns : density;
+  const resolvedGrid = columnsClass ?? gridClass;
+  const layoutKey = columnsClass ? "locked" : narrow ? mobileColumns : density;
   const prevLayoutKey = useRef(layoutKey);
   const [shifting, setShifting] = useState(false);
 
@@ -33,8 +38,18 @@ export function FeedProjectGrid({ className, children }: Props) {
 
   if (reduced) {
     return (
-      <div className={cn(gridClass, FEED_PROJECT_GRID_GAP, className)} data-feed-density={layoutKey}>
-        {children}
+      <div className={cn(resolvedGrid, FEED_PROJECT_GRID_GAP, className)} data-feed-density={layoutKey}>
+        {itemClassName
+          ? items.map((child, i) =>
+              isValidElement(child) ? (
+                <div key={child.key ?? `feed-item-${i}`} className={itemClassName}>
+                  {child}
+                </div>
+              ) : (
+                child
+              ),
+            )
+          : children}
       </div>
     );
   }
@@ -44,7 +59,7 @@ export function FeedProjectGrid({ className, children }: Props) {
       <motion.div
         layout
         data-feed-density={layoutKey}
-        className={cn(gridClass, FEED_PROJECT_GRID_GAP, className)}
+        className={cn(resolvedGrid, FEED_PROJECT_GRID_GAP, className)}
         animate={{ opacity: shifting ? 0.94 : 1 }}
         transition={{
           opacity: { duration: 0.22, ease: smoothEase },
@@ -57,6 +72,7 @@ export function FeedProjectGrid({ className, children }: Props) {
             <motion.div
               key={child.key ?? `feed-item-${i}`}
               layout
+              className={itemClassName}
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={viewportOnce}

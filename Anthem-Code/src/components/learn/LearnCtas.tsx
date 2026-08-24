@@ -7,14 +7,22 @@ import { FORUM_PATH } from "@/lib/brandConfig";
 
 export function LearnPrimaryCtas({
   secondaryToForum = false,
+  align = "center",
 }: {
   secondaryToForum?: boolean;
+  align?: "center" | "start";
 }) {
   const { user } = useAuth();
   const openSignup = useAuthDialog((s) => s.openSignup);
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3">
+    <div
+      className={
+        align === "start"
+          ? "flex flex-wrap items-center justify-start gap-3"
+          : "flex flex-wrap items-center justify-center gap-3"
+      }
+    >
       <Button asChild className="rounded-full bg-gradient-brand px-6 text-white hover:opacity-90">
         <Link to="/">สำรวจผลงาน</Link>
       </Button>

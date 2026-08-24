@@ -16,7 +16,8 @@ const ROWS: Row[] = [
   { area: "robots.txt", status: "done", detail: "Disallow private + Sitemap links", href: "/robots.txt" },
   { area: "Indexing / noindex", status: "done", detail: "SeoHead noindex สำหรับ private, search, thin profile, closed jobs" },
   { area: "Canonical", status: "done", detail: "absolute + strip query ผ่าน SeoHead" },
-  { area: "Open Graph / Twitter", status: "done", detail: "og:* + twitter:card ทุกหน้าที่มี SeoHead" },
+  { area: "Open Graph / Twitter", status: "partial", detail: "แท็กครบ — รูป DEFAULT_OG_IMAGE ยังเป็นไฟล์ Lovable ต้องเปลี่ยน" },
+  { area: "HTTP 404 (ไม่ใช่ SPA 200)", status: "partial", detail: "มีหน้า /error/404 — unknown URL ยัง rewrite เป็น index.html" },
   { area: "Structured data", status: "done", detail: "WebSite, Organization, Person, ProfilePage, CreativeWork, JobPosting, BreadcrumbList" },
   { area: "Breadcrumb UI + schema", status: "done", detail: "SeoBreadcrumb บนโปรเจกต์ / งาน / โปรไฟล์ / สำรวจ / สตูดิโอ" },
   { area: "Job SEO", status: "done", detail: "JobDetail SeoHead + JobPosting; noindex เมื่อปิดรับ" },
@@ -111,7 +112,8 @@ const AdminSeoPage = () => {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        เอกสาร: <code className="text-[11px]">Anthem-Code/docs/seo-deploy.md</code> · ทดสอบ:{" "}
+        เอกสาร: <code className="text-[11px]">docs/seo-deploy.md</code> ·{" "}
+        <code className="text-[11px]">docs/aplus1-web-audit-checklist.md</code> · ทดสอบ:{" "}
         <code className="text-[11px]">npm run e2e:seo</code> / <code className="text-[11px]">npm run smoke:public</code>
       </p>
     </div>

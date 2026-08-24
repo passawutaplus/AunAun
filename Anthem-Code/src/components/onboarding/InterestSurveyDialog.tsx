@@ -249,7 +249,7 @@ export function InterestSurveyGate() {
   const { user } = useAuth();
   const { tier } = useSubscription();
   const isNarrow = useIsNarrow();
-  const { shouldShow, saveOnboarding, isSaving, isLoading, profile } = useFeedInterestSurvey(
+  const { shouldShow, saveOnboarding, save, isSaving, isLoading, profile } = useFeedInterestSurvey(
     user?.id,
   );
   /** Mobile + desktop: interests first; profile (identity) follows on mobile. */
@@ -354,14 +354,13 @@ export function InterestSurveyGate() {
 
   const hasInterests = selected.size > 0;
 
-  /** Interests required; username required to finish (desktop) or continue from identity (mobile). */
+  /** Interests ≥1 to leave interests step; username only required on identity (mobile). */
   const canContinue = useMemo(() => {
-    if (step === "interests" && !hasInterests) return false;
+    if (step === "interests") return hasInterests;
     if (FORCE_SHOW_INTEREST_SURVEY && !user) return true;
-    if (step === "interests" && isNarrow) return true;
     if (step === "basics") return true;
     return usernameOk;
-  }, [user, usernameOk, step, isNarrow, hasInterests]);
+  }, [user, usernameOk, step, hasInterests]);
 
   if (!surveyVisible) return null;
 
@@ -381,18 +380,24 @@ export function InterestSurveyGate() {
     }
 
     try {
-      await saveOnboarding({
-        feedInterests: Array.from(selected),
-        displayName: displayName.trim(),
-        username: derivedUsername,
-        avatarUrl,
-        coverUrl,
-        opportunityTypes: looking,
-        preferredCategories: disciplines,
-        skills,
-      });
+      // Desktop “เริ่มใช้งาน”: save interests (+ profile when username ready) then close.
+      if (usernameOk && displayName.trim()) {
+        await saveOnboarding({
+          feedInterests: Array.from(selected),
+          displayName: displayName.trim(),
+          username: derivedUsername,
+          avatarUrl,
+          coverUrl,
+          opportunityTypes: looking,
+          preferredCategories: disciplines,
+          skills,
+        });
+        toast.success("ตั้งค่าโปรไฟล์แล้ว — แก้ทีหลังได้ที่เกี่ยวกับฉัน");
+      } else {
+        await save(Array.from(selected));
+        toast.success("บันทึกความสนใจแล้ว");
+      }
       setDismissed(true);
-      toast.success("ตั้งค่าโปรไฟล์แล้ว — แก้ทีหลังได้ที่เกี่ยวกับฉัน");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
     }

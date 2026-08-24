@@ -1,9 +1,9 @@
-import { Sparkles } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { AiIcon } from "@/components/icons/NoAiIcon";
 import { cn } from "@/lib/utils";
 import {
   AI_USE_LEVEL_META,
@@ -36,31 +36,28 @@ const AiDisclosureBadge = ({
   if (!resolved) return null;
   const meta = AI_USE_LEVEL_META[resolved];
   const strong = resolved === "full";
+  const iconSize = size === "sm" ? "h-5 w-5" : "h-6 w-6";
 
   const badge = (
     <span
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-full font-medium",
-        tone === "inline"
-          ? strong
-            ? "border border-primary/40 bg-primary/10 text-primary"
-            : "border border-border bg-muted/50 text-foreground"
+        "inline-flex items-center justify-center",
+        tone === "overlay"
+          ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]"
           : strong
-            ? "bg-primary/90 text-primary-foreground shadow-sm"
-            : "bg-black/55 text-white backdrop-blur-sm shadow-sm",
-        size === "sm" ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-xs",
+            ? "text-primary"
+            : "text-foreground",
         className,
       )}
     >
-      <Sparkles className={cn(size === "sm" ? "h-2.5 w-2.5" : "h-3 w-3")} aria-hidden />
-      {meta.badgeLabel}
+      <AiIcon className={iconSize} />
     </span>
   );
 
   const trigger = interactive ? (
     <button
       type="button"
-      className="pointer-events-auto inline-flex rounded-full"
+      className="pointer-events-auto inline-flex rounded-md"
       aria-label={`ใช้ AI ระดับ${meta.shortLabel} — ${meta.hint}`}
       onClick={(e) => {
         e.preventDefault();
@@ -72,7 +69,7 @@ const AiDisclosureBadge = ({
   ) : (
     <span
       tabIndex={0}
-      className="inline-flex rounded-full outline-none"
+      className="inline-flex rounded-md outline-none"
       aria-label={`ใช้ AI ระดับ${meta.shortLabel} — ${meta.hint}`}
     >
       {badge}

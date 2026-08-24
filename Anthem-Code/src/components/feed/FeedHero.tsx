@@ -1,11 +1,9 @@
 import type { ReactNode } from "react";
 import { useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Rocket } from "lucide-react";
 import { useStudioHeroSlides } from "@/hooks/useHeroSlides";
-import { useAuth } from "@/hooks/useAuth";
-import { useAuthDialog } from "@/stores/authDialogStore";
 import { BRAND_CONCEPT } from "@/lib/brandConfig";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { carouselSlideTransition, carouselSlideVariants, smoothEase } from "@/lib/motion";
@@ -15,6 +13,7 @@ import HeroSpotlightShowcase from "./HeroSpotlightShowcase";
 import CommunityHeroShowcase from "./CommunityHeroShowcase";
 import WorkWallMarquee from "./WorkWallMarquee";
 import HeroGridSpotlight from "./HeroGridSpotlight";
+import HeroRotatingWord, { HeroHundredPlus, useHeroRotatingCycle } from "./HeroRotatingWord";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -23,11 +22,6 @@ export const FEED_PAGE_GUTTER_X =
   "px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]";
 
 const HERO_GUTTER = FEED_PAGE_GUTTER_X;
-
-/** Width of DesktopTopNav’s right cluster so the CTA column starts on the Share button. */
-const HERO_CTA_COL =
-  "lg:w-[22.75rem] xl:w-[23.5rem]";
-const HERO_CTA_COL_GUEST = "lg:w-[21rem]";
 
 const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
   projects: {
@@ -51,6 +45,16 @@ const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
         <span className="bg-gradient-brand bg-clip-text text-transparent">
           {isAplus1LaunchMinimal() ? "ไม่ใช่จากแพ็กเกจ" : "ที่ใช่สำหรับคุณ"}
         </span>
+      </>
+    ),
+  },
+  packages: {
+    badge: "ขอบเขตงานจากผลงานจริง",
+    title: (
+      <>
+        ค้นพบแพ็กเกจ
+        <br />
+        <span className="bg-gradient-brand bg-clip-text text-transparent">จากครีเอเตอร์ที่มีงานโชว์</span>
       </>
     ),
   },
@@ -83,22 +87,12 @@ type Props = {
 
 /** Projects + Designers: ambient work wall. Other modes: spotlight showcase. */
 const FeedHero = ({ mode = "projects", className }: Props) => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const openSignup = useAuthDialog((s) => s.openSignup);
   const reduced = useReducedMotion();
   const heroRef = useRef<HTMLElement>(null);
   const { data: studioSlides = [] } = useStudioHeroSlides();
   const copy = HERO_COPY[mode];
-  const useHomeHero = mode === "projects" || mode === "designers";
-
-  const goBecomeCreator = () => {
-    if (!user) {
-      openSignup("/hire/start");
-      return;
-    }
-    navigate("/hire/start");
-  };
+  const useHomeHero = mode === "projects" || mode === "designers" || mode === "packages";
+  const heroCycle = useHeroRotatingCycle();
 
   if (useHomeHero) {
     return (
@@ -106,12 +100,12 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
         ref={heroRef}
         data-feed-hero
         className={cn(
-          "relative overflow-hidden bg-background",
+          "relative overflow-hidden bg-transparent",
           "-mx-3 sm:-mx-[calc(1rem+25px)] lg:-mx-[calc(1.5rem+25px)] 2xl:-mx-[calc(2.5rem+25px)]",
           // Mobile: leave room for FloatingNav (same 5.5rem + safe-area as mobileFabBottom).
-          // Desktop (lg+): full viewport — nav overlays the hero.
-          "h-[calc(100dvh-env(safe-area-inset-bottom,0px)-5.5rem)] min-h-[32rem]",
-          "pt-[env(safe-area-inset-top)] lg:h-dvh lg:min-h-dvh",
+          // Desktop (lg+): fill the viewport under the sticky site header (h-14).
+          "h-[calc(100dvh-env(safe-area-inset-bottom,0px)-5.5rem)] min-h-[36rem]",
+          "pt-[env(safe-area-inset-top)] lg:h-[calc(100dvh-3.5rem)] lg:min-h-[40rem]",
           className,
         )}
       >
@@ -120,46 +114,38 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
         <div className="relative z-10 flex h-full min-h-0 flex-col">
           <FadeUp
             className={cn(
-              "relative z-10 mx-auto flex w-full max-w-[1920px] shrink-0 flex-col gap-3 sm:gap-6",
-              "lg:flex-row lg:items-end lg:justify-between lg:gap-10",
+              "relative z-10 mx-auto flex w-full max-w-3xl shrink-0 flex-col items-center text-center",
               HERO_GUTTER,
-              "pt-6 pb-4 sm:pt-10 sm:pb-12 lg:pt-[4.75rem] lg:pb-16",
+              "pt-4 pb-3 sm:pt-6 sm:pb-4 lg:pt-5 lg:pb-5",
             )}
           >
-            <h1 className="min-w-0 text-left text-[2.35rem] sm:text-4xl md:text-[2.75rem] lg:text-[3.35rem] font-bold tracking-tight text-foreground leading-[0.95] sm:leading-[0.92]">
+            <h1 className="text-[2.15rem] sm:text-4xl md:text-[2.85rem] lg:text-[3.25rem] font-bold tracking-tight text-foreground leading-[0.98] sm:leading-[0.95]">
               <span className="block">1 Profile to</span>
-              <span className="block text-primary">100+ Opportunity</span>
+              <span className="block text-primary">
+                <HeroHundredPlus /> <HeroRotatingWord cycle={heroCycle} lang="en" />
+              </span>
             </h1>
-
-            <div
-              className={cn(
-                "flex max-w-md flex-col lg:max-w-none lg:shrink-0 lg:pb-1",
-                user ? HERO_CTA_COL : HERO_CTA_COL_GUEST,
-              )}
+            <p className="mt-4 max-w-md text-base sm:mt-5 sm:text-lg font-normal text-foreground">
+              <span className="inline-flex flex-wrap items-baseline justify-center gap-x-1.5">
+                <span>ให้ผลงานพาคุณไปสู่</span>
+                <HeroRotatingWord cycle={heroCycle} lang="th" className="font-semibold text-primary" />
+                <span>ใหม่ๆ</span>
+              </span>
+            </p>
+            <Button
+              asChild
+              size="lg"
+              className="mt-5 h-11 gap-2 rounded-full bg-gradient-brand px-7 text-sm font-medium text-white hover:opacity-90 sm:mt-6"
             >
-              <p className="leading-relaxed">
-                <span className="block text-base sm:text-lg font-bold text-foreground">
-                  ให้ผลงานพาคุณไปสู่โอกาสใหม่ๆ
-                </span>
-                <span className="mt-1.5 block text-xs sm:text-sm text-muted-foreground">
-                  เชื่อมต่อผู้คน สร้างโอกาสใหม่จากผลงานจริงของคุณ
-                </span>
-              </p>
-              <Button
-                type="button"
-                size="lg"
-                onClick={goBecomeCreator}
-                aria-label="Become a Creator"
-                className="mt-5 h-11 w-fit gap-2 rounded-full bg-gradient-brand px-5 text-sm font-medium text-white hover:opacity-90 sm:mt-6"
-              >
+              <Link to="/learn">
                 <Rocket className="h-4 w-4" aria-hidden />
-                Become a Creator
-              </Button>
-            </div>
+                Let's start
+              </Link>
+            </Button>
           </FadeUp>
 
-          <div className="relative min-h-0 flex-1 overflow-hidden">
-            <WorkWallMarquee />
+          <div className="relative z-10 min-h-0 w-full flex-1 overflow-hidden pb-4 sm:pb-6">
+            <WorkWallMarquee embed />
           </div>
         </div>
         <div

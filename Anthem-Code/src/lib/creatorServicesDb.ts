@@ -82,6 +82,18 @@ export function fromCreatorServiceViews(): any {
   return (supabase as unknown as AnthemTableClient).from("creator_service_views");
 }
 
+/** Bookmarks for published packages (Booking tab / package feed save). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function fromCreatorServiceBookmarks(): any {
+  return (supabase as unknown as AnthemTableClient).from("creator_service_bookmarks");
+}
+
+export type CreatorServiceBookmarkRow = {
+  service_id: string;
+  user_id: string;
+  created_at?: string;
+};
+
 /** Narrow query results to CreatorServiceRow without `as never` at call sites. */
 export function asCreatorServiceRows(data: unknown): CreatorServiceRow[] {
   if (!Array.isArray(data)) return [];

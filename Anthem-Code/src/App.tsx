@@ -211,6 +211,8 @@ const App = () => (
               <Route path="/learn" element={<LearnShell />}>
                 <Route index element={<LearnHubPage />} />
               </Route>
+              <Route path="/learn/who" element={<RedirectTo to="/learn#who" />} />
+              <Route path="/learn/start" element={<RedirectTo to="/learn#start" />} />
               <Route path="/learn/creators" element={<RedirectTo to="/learn#creators" />} />
               <Route path="/learn/hirers" element={<RedirectTo to="/learn#hirers" />} />
               <Route path="/learn/opportunity-loop" element={<RedirectTo to="/learn#opportunity-loop" />} />

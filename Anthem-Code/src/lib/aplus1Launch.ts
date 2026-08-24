@@ -13,7 +13,7 @@ export function isAplus1LaunchMinimal(): boolean {
   return !isAplus1FullProduct();
 }
 
-export const LAUNCH_FEED_MODES = ["projects", "designers"] as const;
+export const LAUNCH_FEED_MODES = ["projects", "designers", "packages"] as const;
 export type LaunchFeedMode = (typeof LAUNCH_FEED_MODES)[number];
 
 export function isLaunchFeedMode(mode: FeedMode): mode is LaunchFeedMode {

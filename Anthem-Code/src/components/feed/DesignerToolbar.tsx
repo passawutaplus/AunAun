@@ -12,6 +12,11 @@ export const SORT_LABELS: Record<DesignerSort, string> = {
   views: "วิวมากสุด",
 };
 
+export const PACKAGE_SORT_LABELS: Record<DesignerSort, string> = {
+  ...SORT_LABELS,
+  projects: "ราคาสูงสุด",
+};
+
 interface FilterPanelProps {
   sort: DesignerSort;
   onSort: (s: DesignerSort) => void;
@@ -28,6 +33,7 @@ interface FilterPanelProps {
   selectedFeedMode?: string;
   onFeedModeSelect?: (v: string) => void;
   showFeedModes?: boolean;
+  sortLabels?: Record<DesignerSort, string>;
 }
 
 export const FilterPanel = ({
@@ -46,6 +52,7 @@ export const FilterPanel = ({
   selectedFeedMode,
   onFeedModeSelect,
   showFeedModes = false,
+  sortLabels = SORT_LABELS,
 }: FilterPanelProps) => {
   const activeCount =
     (sort !== "newest" && showTools ? 1 : 0) +
@@ -111,7 +118,7 @@ export const FilterPanel = ({
             <ArrowDownUp className="w-3 h-3" /> เรียงตาม
           </p>
           <div className="flex flex-wrap gap-1.5">
-            {(Object.keys(SORT_LABELS) as DesignerSort[]).map((k) => {
+            {(Object.keys(sortLabels) as DesignerSort[]).map((k) => {
               const active = sort === k;
               return (
                 <button
@@ -124,7 +131,7 @@ export const FilterPanel = ({
                       : "border-border text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {SORT_LABELS[k]}
+                  {sortLabels[k]}
                 </button>
               );
             })}

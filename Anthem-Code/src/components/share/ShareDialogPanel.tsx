@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Link2, Mail, Share2 } from "lucide-react";
 import { DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,9 @@ type Props = {
   imageUrl?: string;
   subtitle?: string;
   copySuccessMessage?: string;
+  /** Clipboard payload; defaults to `url`. */
+  copyPayload?: string;
+  extraFooter?: ReactNode;
   onPlatform?: (platform: SharePlatform) => void;
   onDone?: () => void;
 };
@@ -31,6 +34,8 @@ const ShareDialogPanel = ({
   imageUrl,
   subtitle,
   copySuccessMessage = "คัดลอกลิงก์แล้ว",
+  copyPayload,
+  extraFooter,
   onPlatform,
   onDone,
 }: Props) => {
@@ -40,7 +45,7 @@ const ShareDialogPanel = ({
 
   const copyLink = async (successMessage = copySuccessMessage) => {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(copyPayload || url);
       setCopied(true);
       toast.success(successMessage);
       return true;
@@ -183,6 +188,7 @@ const ShareDialogPanel = ({
             แชร์ด้วยแอปอื่น
           </button>
         ) : null}
+        {extraFooter}
       </div>
     </div>
   );

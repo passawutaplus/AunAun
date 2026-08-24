@@ -6,7 +6,7 @@ Updated: 2026-07-03
 
 Production: **https://aplus1.app** · Demo: **https://aplus1-demo.vercel.app**
 
-Manual QA checklist แยก: [qa-checklist.md](./qa-checklist.md) · Ecosystem: [MANUAL-TESTING.md](../../docs/MANUAL-TESTING.md)
+Manual QA: [qa-checklist.md](./qa-checklist.md) · Web audit: [aplus1-web-audit-checklist.md](./aplus1-web-audit-checklist.md) · Ecosystem: [MANUAL-TESTING.md](../../docs/MANUAL-TESTING.md)
 
 ---
 

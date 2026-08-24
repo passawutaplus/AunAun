@@ -4,4 +4,10 @@ export type DesignerCardData = {
   profile: Tables<"profiles">;
   projects: Tables<"projects">[];
   searchHaystack: string;
+  /** Published works (not capped to the 6 cover thumbnails). */
+  projectCount: number;
+  /** Published creator packages (0 if none). */
+  packageCount: number;
+  /** Has at least one published creator package. */
+  hasService: boolean;
 };

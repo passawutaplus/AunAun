@@ -155,6 +155,7 @@ describe("aplus1Launch flags (fail-closed)", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "");
     expect(isLaunchFeedMode("projects")).toBe(true);
     expect(isLaunchFeedMode("designers")).toBe(true);
+    expect(isLaunchFeedMode("packages")).toBe(true);
     expect(isLaunchFeedMode("community")).toBe(false);
     expect(coerceLaunchFeedMode("studios")).toBe("projects");
   });

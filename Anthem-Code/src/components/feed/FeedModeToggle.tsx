@@ -1,15 +1,17 @@
 import { useLayoutEffect, useRef, useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import { LayoutGrid, Users, Building2, Orbit, Target } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import PackagesIcon from "@/components/icons/PackagesIcon";
 import { isAplus1LaunchMinimal, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 
-export type FeedMode = "projects" | "designers" | "studios" | "community";
+export type FeedMode = "projects" | "designers" | "packages" | "studios" | "community";
 
 type ToggleItem = {
   id: FeedMode | "drill";
   label: string;
-  icon: typeof LayoutGrid;
+  icon: LucideIcon;
   mobileOnly?: boolean;
   desktopOnly?: boolean;
 };
@@ -29,11 +31,12 @@ const items: ToggleItem[] = [
   { id: "community", label: "Area", icon: Orbit, desktopOnly: true },
   { id: "drill", label: "Design Drill", icon: Target, mobileOnly: true },
   { id: "designers", label: "Designers", icon: Users },
+  { id: "packages", label: "Packages", icon: PackagesIcon },
   { id: "studios", label: "Studios", icon: Building2 },
 ];
 
 const launchItems = items.filter(
-  (item) => item.id === "projects" || item.id === "designers",
+  (item) => item.id === "projects" || item.id === "designers" || item.id === "packages",
 );
 
 /** Smooth horizontal slide — spring tuned for a short pill travel. */
@@ -114,7 +117,8 @@ const FeedModeToggle = ({
       className={cn(
         "relative shrink-0 flex items-center rounded-full glass-panel p-0.5 transition-[width,box-shadow] duration-200",
         "hover:shadow-md hover:shadow-primary/20",
-        equalSplit && !compact && "w-[14.5rem]",
+        equalSplit && !compact && visible.length === 2 && "w-[14.5rem]",
+        equalSplit && !compact && visible.length === 3 && "w-[21.75rem]",
         className,
       )}
       role="group"

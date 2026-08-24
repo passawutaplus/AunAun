@@ -26,20 +26,22 @@ function MarqueeRow({
   direction,
   animate,
   eagerCount,
+  fillHeight,
 }: {
   items: DBProject[];
   direction: "left" | "right";
   animate: boolean;
   eagerCount: number;
+  fillHeight?: boolean;
 }) {
   const navigate = useNavigate();
   const loop = items.length ? [...items, ...items] : [];
 
   return (
-    <div className="relative min-h-0 overflow-hidden max-lg:flex-1">
+    <div className="relative min-h-0 flex-1 overflow-hidden">
       <div
         className={cn(
-          "flex w-max items-stretch gap-2.5 sm:gap-3 will-change-transform max-lg:h-full",
+          "flex w-max items-stretch gap-2.5 sm:gap-3 will-change-transform h-full",
           animate && (direction === "left" ? "animate-work-wall-left" : "animate-work-wall-right"),
           animate && "hover:[animation-play-state:paused] focus-within:[animation-play-state:paused]",
         )}
@@ -61,7 +63,9 @@ function MarqueeRow({
               onClick={() => navigate(`/project/${project.id}`)}
               className={cn(
                 "group relative shrink-0 overflow-hidden rounded-xl sm:rounded-2xl",
-                "max-lg:h-full aspect-[7/5] lg:h-[14.5rem] lg:w-[20.5rem] lg:aspect-auto",
+                fillHeight
+                  ? "h-full aspect-[7/5]"
+                  : "max-lg:h-full aspect-[7/5] lg:h-[14.5rem] lg:w-[20.5rem] lg:aspect-auto",
                 "bg-muted ring-1 ring-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
               )}
             >
@@ -105,7 +109,14 @@ function MarqueeRow({
 }
 
 /** Ambient portfolio wall — 2 sliding rows, opposite directions. */
-const WorkWallMarquee = ({ className }: { className?: string }) => {
+const WorkWallMarquee = ({
+  className,
+  embed = false,
+}: {
+  className?: string;
+  /** In-flow hero slot: fill the parent height instead of covering the section. */
+  embed?: boolean;
+}) => {
   const reduced = useReducedMotion();
   const { data: top = [], isLoading } = useTopProjects();
 
@@ -121,7 +132,8 @@ const WorkWallMarquee = ({ className }: { className?: string }) => {
     return (
       <div
         className={cn(
-          "absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-muted/30 to-muted/50 animate-pulse",
+          embed ? "h-full" : "absolute inset-0",
+          "bg-gradient-to-br from-primary/[0.06] via-muted/30 to-muted/50 animate-pulse",
           className,
         )}
         aria-hidden
@@ -133,7 +145,8 @@ const WorkWallMarquee = ({ className }: { className?: string }) => {
     return (
       <div
         className={cn(
-          "absolute inset-0 bg-gradient-to-br from-primary/[0.08] via-muted/40 to-background",
+          embed ? "h-full" : "absolute inset-0",
+          "bg-gradient-to-br from-primary/[0.08] via-muted/40 to-background",
           className,
         )}
         aria-hidden
@@ -144,15 +157,16 @@ const WorkWallMarquee = ({ className }: { className?: string }) => {
   return (
     <div
       className={cn(
-        "absolute inset-0 z-0 flex h-full min-h-0 flex-col gap-2.5 sm:gap-3 overflow-hidden py-1 sm:py-2 lg:justify-center",
+        "z-0 flex min-h-0 flex-col gap-2.5 sm:gap-3 overflow-hidden py-1 sm:py-2",
+        embed ? "relative h-full" : "absolute inset-0 lg:justify-center",
         className,
       )}
     >
       <div className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-8 sm:w-12 md:w-16 bg-gradient-to-r from-background from-[8%] via-background/70 via-[45%] to-transparent" />
       <div className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-8 sm:w-12 md:w-16 bg-gradient-to-l from-background from-[8%] via-background/70 via-[45%] to-transparent" />
 
-      <MarqueeRow items={rowA} direction="left" animate={animate} eagerCount={5} />
-      <MarqueeRow items={rowB} direction="right" animate={animate} eagerCount={3} />
+      <MarqueeRow items={rowA} direction="left" animate={animate} eagerCount={5} fillHeight={embed} />
+      <MarqueeRow items={rowB} direction="right" animate={animate} eagerCount={3} fillHeight={embed} />
     </div>
   );
 };

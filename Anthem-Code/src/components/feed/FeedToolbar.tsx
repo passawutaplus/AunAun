@@ -13,11 +13,17 @@ import CommunityCategoryChips from "@/components/community/CommunityCategoryChip
 import CommunityFilterPanel from "@/components/community/CommunityFilterPanel";
 import DesignerCategoryChips from "@/components/feed/DesignerCategoryChips";
 import DesignerFeedDropdown, {
+  PACKAGE_FEED_ORDER,
   type DesignerFeedSource,
 } from "@/components/feed/DesignerFeedDropdown";
 import DesignerFilterPanel from "@/components/feed/DesignerFilterPanel";
 import StudioFilterPanel, { type StudioFeedSource } from "@/components/studio/StudioFilterPanel";
-import { FilterPanel, type DesignerSort } from "@/components/feed/DesignerToolbar";
+import {
+  FilterPanel,
+  PACKAGE_SORT_LABELS,
+  SORT_LABELS,
+  type DesignerSort,
+} from "@/components/feed/DesignerToolbar";
 import ProjectSearchFilterSheet, {
   countActiveProjectFilters,
   useParentChipOptions,
@@ -86,8 +92,6 @@ type Props = {
   onDrillSelect?: () => void;
   includeDesignDrillChip?: boolean;
   projectResultCount?: number;
-  /** Visible result count for current mode (projects/designers/etc.). */
-  resultCount?: number;
   recentSearches?: string[];
   onRecentSearchSelect?: (q: string) => void;
 };
@@ -134,7 +138,6 @@ const FeedToolbar = ({
   onDrillSelect,
   includeDesignDrillChip = false,
   projectResultCount,
-  resultCount,
   recentSearches = [],
   onRecentSearchSelect,
 }: Props) => {
@@ -143,6 +146,7 @@ const FeedToolbar = ({
   const [projectSheetOpen, setProjectSheetOpen] = useState(false);
   const isProjects = mode === "projects";
   const isDesigners = mode === "designers";
+  const isPackages = mode === "packages";
   const isStudios = mode === "studios";
   const isCommunity = mode === "community";
 
@@ -173,9 +177,9 @@ const FeedToolbar = ({
     : 0;
 
   const filterCount =
-    (isDesigners ? (designerSort !== "newest" ? 1 : 0) + designerTools.length : 0) +
-    (isDesigners && designerFeedSource !== "all" ? 1 : 0) +
-    (isDesigners && designerCategory !== "All" ? 1 : 0) +
+    (isDesigners || isPackages ? (designerSort !== "newest" ? 1 : 0) + designerTools.length : 0) +
+    ((isDesigners || isPackages) && designerFeedSource !== "all" ? 1 : 0) +
+    ((isDesigners || isPackages) && designerCategory !== "All" ? 1 : 0) +
     (isProjects ? projectFilterCount : 0) +
     (isCommunity && communityCategory !== "All" ? 1 : 0) +
     (isCommunity && communityFeedSource !== "all" ? 1 : 0) +
@@ -195,7 +199,7 @@ const FeedToolbar = ({
       feedSource={studioFeedSource}
       onFeedSourceChange={onStudioFeedSourceChange ?? (() => {})}
     />
-  ) : isDesigners ? (
+  ) : isDesigners || isPackages ? (
     <DesignerFilterPanel
       feedSource={designerFeedSource}
       onFeedSourceChange={onDesignerFeedSourceChange ?? (() => {})}
@@ -208,6 +212,9 @@ const FeedToolbar = ({
       onCategoryChange={onDesignerCategoryChange}
       categoryChips={designerCategoryChips}
       onClear={onClearFilters}
+      hideTools={isPackages}
+      sortLabels={isPackages ? PACKAGE_SORT_LABELS : SORT_LABELS}
+      feedSources={isPackages ? PACKAGE_FEED_ORDER : undefined}
     />
   ) : (
     <FilterPanel
@@ -253,7 +260,7 @@ const FeedToolbar = ({
       type="button"
       onClick={onCommunityPostClick}
       aria-label="โพสต์ชุมชน"
-      className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gradient-brand text-white hover:opacity-90 transition-opacity shrink-0"
+      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-brand text-white hover:opacity-90 transition-opacity shrink-0"
     >
       <Plus className="w-5 h-5" strokeWidth={2.5} />
     </button>
@@ -261,53 +268,14 @@ const FeedToolbar = ({
 
   const createButton =
     showCreate && !isCommunity ? (
-      showFirstPostLabel ? (
-        <button
-          type="button"
-          onClick={onCreateClick}
-          aria-label="ลงผลงาน"
-          className={cn(
-            "first-post-create first-post-create-idle group relative inline-flex h-10 items-center rounded-full shrink-0 overflow-visible",
-            "transition-[box-shadow] duration-300",
-          )}
-        >
-          <span className="first-post-create-beam rounded-full" aria-hidden />
-          <span
-            className={cn(
-              "first-post-create-inner relative z-10 inline-flex h-full items-center rounded-full m-[1.5px] overflow-hidden",
-              "gap-0 pl-0 pr-0",
-              "bg-transparent text-primary dark:text-white",
-              "border border-transparent",
-              "group-hover:gap-2 group-hover:pl-3.5 group-hover:bg-background/95 group-hover:border-border/60",
-              "group-focus-visible:gap-2 group-focus-visible:pl-3.5 group-focus-visible:bg-background/95 group-focus-visible:border-border/60",
-              "transition-all duration-200 ease-out",
-            )}
-          >
-            <span
-              className={cn(
-                "max-w-0 overflow-hidden opacity-0 whitespace-nowrap text-sm font-medium",
-                "group-hover:max-w-[7.5rem] group-hover:opacity-100",
-                "group-focus-visible:max-w-[7.5rem] group-focus-visible:opacity-100",
-                "transition-all duration-200 ease-out",
-              )}
-            >
-              ลงผลงาน
-            </span>
-            <span className="inline-flex items-center justify-center rounded-full bg-gradient-brand text-white shrink-0 h-[37px] w-[37px]">
-              <Plus className="w-5 h-5" strokeWidth={2.5} />
-            </span>
-          </span>
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={onCreateClick}
-          aria-label="สร้างเนื้อหาใหม่"
-          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-brand text-white hover:opacity-90 transition-opacity shrink-0"
-        >
-          <Plus className="w-5 h-5" strokeWidth={2.5} />
-        </button>
-      )
+      <button
+        type="button"
+        onClick={onCreateClick}
+        aria-label={showFirstPostLabel ? "ลงผลงาน" : "สร้างเนื้อหาใหม่"}
+        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-brand text-white hover:opacity-90 transition-opacity shrink-0"
+      >
+        <Plus className="w-5 h-5" strokeWidth={2.5} />
+      </button>
     ) : null;
 
   const rightAction = isCommunity ? postButton : createButton;
@@ -323,24 +291,11 @@ const FeedToolbar = ({
     ? "ค้นหาโพสต์ชุมชน"
     : isDesigners
       ? "ค้นหาดีไซเนอร์"
-      : isStudios
-        ? "ค้นหาสตูดิโอ"
-        : "ค้นหาผลงาน";
-
-  const modeResultLabel = isCommunity
-    ? "โพสต์"
-    : isDesigners
-      ? "ดีไซเนอร์"
-      : isStudios
-        ? "สตูดิโอ"
-        : "ผลงาน";
-
-  const displayResultCount =
-    typeof resultCount === "number"
-      ? resultCount
-      : isProjects
-        ? projectResultCount
-        : undefined;
+      : isPackages
+        ? "ค้นหาแพ็กเกจ"
+        : isStudios
+          ? "ค้นหาสตูดิโอ"
+          : "ค้นหาผลงาน";
 
   const searchBarShared = {
     recentSearches,
@@ -443,17 +398,10 @@ const FeedToolbar = ({
           className="ml-auto"
         />
       </div>
-      {typeof displayResultCount === "number" && (search.trim().length > 0 || filterCount > 0) ? (
-        <p className="lg:hidden mt-1.5 text-[11px] text-muted-foreground px-0.5">
-          พบ {displayResultCount.toLocaleString("th-TH")} {modeResultLabel}
-          <span className="text-muted-foreground/70"> · {modeResultLabel}</span>
-        </p>
-      ) : null}
 
       {/* Desktop */}
       <div className="hidden lg:block space-y-3">
         {!homeScrolled ? (
-          /* Under hero: search + Projects/Designers, then category chips */
           <>
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
@@ -467,15 +415,10 @@ const FeedToolbar = ({
                   {...(!isProjects ? { filterContent } : {})}
                 />
               </div>
-              <div className="flex w-[14.5rem] shrink-0 items-center">
+              <div className="flex w-[21.75rem] max-w-[min(21.75rem,calc(100vw-2rem))] shrink-0 items-center">
                 <FeedModeToggle {...toggleProps} className="w-full" />
               </div>
             </div>
-            {typeof displayResultCount === "number" && (search.trim().length > 0 || filterCount > 0) ? (
-              <p className="text-xs text-muted-foreground">
-                พบ {displayResultCount.toLocaleString("th-TH")} {modeResultLabel}
-              </p>
-            ) : null}
             <FeedModeTransition modeKey={mode} className="min-w-0">
               {isProjects ? (
                 <FilterChips
@@ -492,7 +435,7 @@ const FeedToolbar = ({
                     onProjectStylesChange?.([]);
                   }}
                 />
-              ) : isDesigners ? (
+              ) : isDesigners || isPackages ? (
                 <DesignerCategoryChips
                   selected={designerCategory}
                   onSelect={onDesignerCategoryChange}
@@ -502,7 +445,6 @@ const FeedToolbar = ({
             </FeedModeTransition>
           </>
         ) : (
-          /* Fixed after scroll: logo + classic feed bar (matches mock) */
           <>
             <div className="flex items-center gap-3">
               <button
@@ -561,11 +503,12 @@ const FeedToolbar = ({
                         />
                       </div>
                     </>
-                  ) : isDesigners ? (
+                  ) : isDesigners || isPackages ? (
                     <>
                       <DesignerFeedDropdown
                         value={designerFeedSource}
                         onChange={onDesignerFeedSourceChange ?? (() => {})}
+                        sources={isPackages ? PACKAGE_FEED_ORDER : undefined}
                       />
                       <div className="flex-1 min-w-0">
                         <DesignerCategoryChips
@@ -613,7 +556,7 @@ const FeedToolbar = ({
                 </div>
               </FeedModeTransition>
 
-              <div className="flex w-[14.5rem] shrink-0 items-center">
+              <div className="flex w-[21.75rem] max-w-[min(21.75rem,calc(100vw-2rem))] shrink-0 items-center">
                 <FeedModeToggle {...toggleProps} className="w-full" />
               </div>
             </div>
@@ -622,7 +565,15 @@ const FeedToolbar = ({
       </div>
 
       {/* Mobile parent chips under toolbar */}
-      {isProjects ? (
+      {isDesigners || isPackages ? (
+        <div className="lg:hidden mt-3">
+          <DesignerCategoryChips
+            selected={designerCategory}
+            onSelect={onDesignerCategoryChange}
+            chips={designerCategoryChips}
+          />
+        </div>
+      ) : isProjects ? (
         <div className="lg:hidden mt-3 space-y-2">
           <FilterChips
             options={parentChips}

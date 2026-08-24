@@ -5,6 +5,7 @@
 ใช้ skill นี้เมื่อทำงานเกี่ยวกับ:
 
 - usability review
+- web audit ตาม [`../aplus1-web-audit-checklist.md`](../aplus1-web-audit-checklist.md) (คะแนน 🔴🟠🟡🔵🟢 ไม่ใช่ลิสต์ 300 ข้อ)
 - onboarding
 - first post flow
 - referral/reward understanding

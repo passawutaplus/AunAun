@@ -21,6 +21,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import AuthWorkWall from "@/components/auth/AuthWorkWall";
 import HeroGridSpotlight from "@/components/feed/HeroGridSpotlight";
+import HeroRotatingWord, { HeroHundredPlus, useHeroRotatingCycle } from "@/components/feed/HeroRotatingWord";
 import { DemoLoginHint, DemoSignupBlocked } from "@/components/DemoAuthHints";
 import { ReferralSignupHint } from "@/components/referral/ReferralSignupHint";
 import LegalSignupConsents from "@/components/legal/LegalSignupConsents";
@@ -46,6 +47,7 @@ const AuthPage = () => {
 
   const { user } = useAuth();
   const authHeroRef = useRef<HTMLDivElement>(null);
+  const heroCycle = useHeroRotatingCycle();
   const [tab, setTab] = useState<"login" | "signup">("login");
   const [fadeOut, setFadeOut] = useState(false);
 
@@ -107,10 +109,16 @@ const AuthPage = () => {
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-background from-[18%] via-background/75 via-[55%] to-transparent px-8 pb-8 pt-24">
             <p className="text-left text-3xl font-bold tracking-tight leading-[0.95] text-foreground xl:text-4xl">
               <span className="block">1 Profile to</span>
-              <span className="block text-primary">100+ Opportunity</span>
+              <span className="block text-primary">
+                <HeroHundredPlus /> <HeroRotatingWord cycle={heroCycle} lang="en" />
+              </span>
             </p>
             <p className="mt-1.5 max-w-md text-sm font-normal leading-relaxed text-muted-foreground xl:text-base">
-              ให้ผลงานพาคุณไปสู่โอกาสใหม่ๆ
+              <span className="inline-flex flex-wrap items-baseline gap-x-1.5">
+                <span>ให้ผลงานพาคุณไปสู่</span>
+                <HeroRotatingWord cycle={heroCycle} lang="th" className="font-semibold text-primary" />
+                <span>ใหม่ๆ</span>
+              </span>
             </p>
           </div>
         </div>

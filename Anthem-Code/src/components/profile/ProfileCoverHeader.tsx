@@ -386,6 +386,11 @@ export default function ProfileCoverHeader({
                 title={shareTitle}
                 message={shareMessage}
                 pathLabel={sharePathLabel}
+                imageUrl={
+                  coverUrl && coverUrl.startsWith("http")
+                    ? coverUrl
+                    : profile.avatar_url ?? undefined
+                }
                 align="end"
                 onShared={onShareInteract}
               >

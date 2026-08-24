@@ -1,4 +1,4 @@
-import { ChevronDown, Check, Compass, UserCheck, Clock, type LucideIcon } from "lucide-react";
+import { ChevronDown, Check, Compass, UserCheck, Clock, Bookmark, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -7,30 +7,35 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 
-export type DesignerFeedSource = "all" | "newest" | "following";
+export type DesignerFeedSource = "all" | "newest" | "following" | "saved";
 
 export const DESIGNER_FEED_ORDER: DesignerFeedSource[] = ["all", "newest", "following"];
+export const PACKAGE_FEED_ORDER: DesignerFeedSource[] = ["all", "newest", "following", "saved"];
 
 export const DESIGNER_FEED_LABELS: Record<DesignerFeedSource, string> = {
   all: "Discovery",
   newest: "หน้าใหม่",
   following: "ติดตาม",
+  saved: "ที่บันทึก",
 };
 
 const ICONS: Record<DesignerFeedSource, LucideIcon> = {
   all: Compass,
   newest: Clock,
   following: UserCheck,
+  saved: Bookmark,
 };
 
 type Props = {
   value: DesignerFeedSource;
   onChange: (source: DesignerFeedSource) => void;
+  sources?: DesignerFeedSource[];
 };
 
-/** Same pill dropdown pattern as Projects Explore — for Designers feed source. */
-const DesignerFeedDropdown = ({ value, onChange }: Props) => {
-  const current: DesignerFeedSource = DESIGNER_FEED_ORDER.includes(value) ? value : "all";
+/** Same pill dropdown pattern as Projects Explore — for Designers / Packages feed source. */
+const DesignerFeedDropdown = ({ value, onChange, sources = DESIGNER_FEED_ORDER }: Props) => {
+  const order = sources.length ? sources : DESIGNER_FEED_ORDER;
+  const current: DesignerFeedSource = order.includes(value) ? value : "all";
   const Icon = ICONS[current];
   const label = DESIGNER_FEED_LABELS[current];
 
@@ -47,7 +52,7 @@ const DesignerFeedDropdown = ({ value, onChange }: Props) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48 rounded-xl">
-        {DESIGNER_FEED_ORDER.map((opt) => {
+        {order.map((opt) => {
           const O = ICONS[opt];
           const active = opt === current;
           return (

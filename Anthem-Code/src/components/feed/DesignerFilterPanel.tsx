@@ -6,7 +6,7 @@ import {
 } from "@/components/feed/DesignerFeedDropdown";
 import type { Category } from "@/data/projectTypes";
 import type { DesignerSort } from "@/components/feed/DesignerToolbar";
-import { FilterPanel } from "@/components/feed/DesignerToolbar";
+import { FilterPanel, SORT_LABELS } from "@/components/feed/DesignerToolbar";
 
 type Props = {
   feedSource: DesignerFeedSource;
@@ -20,6 +20,9 @@ type Props = {
   onCategoryChange: (c: Category | "All") => void;
   categoryChips: (Category | "All")[];
   onClear: () => void;
+  hideTools?: boolean;
+  sortLabels?: Record<DesignerSort, string>;
+  feedSources?: DesignerFeedSource[];
 };
 
 /** Feed source, sort, tools, categories — mobile filter popover on Designers tab. */
@@ -35,12 +38,15 @@ const DesignerFilterPanel = ({
   onCategoryChange,
   categoryChips,
   onClear,
+  hideTools = false,
+  sortLabels = SORT_LABELS,
+  feedSources = DESIGNER_FEED_ORDER,
 }: Props) => (
   <div className="space-y-4">
     <div>
       <p className="text-xs font-medium text-muted-foreground mb-2">โหมดฟีด</p>
       <div className="flex flex-wrap gap-1.5">
-        {DESIGNER_FEED_ORDER.map((opt) => {
+        {feedSources.map((opt) => {
           const active = feedSource === opt;
           return (
             <button
@@ -66,11 +72,12 @@ const DesignerFilterPanel = ({
     <FilterPanel
       sort={sort}
       onSort={onSort}
-      tools={tools}
+      tools={hideTools ? [] : tools}
       selectedTools={selectedTools}
       onToggleTool={onToggleTool}
       showTools
       showCategories={false}
+      sortLabels={sortLabels}
       onClear={onClear}
     />
   </div>

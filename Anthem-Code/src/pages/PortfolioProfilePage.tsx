@@ -8,7 +8,6 @@ import {
   Pencil,
   Briefcase,
   Handshake,
-  LayoutGrid,
 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,9 @@ import PortfolioWorksManagePanel from "@/components/portfolio/PortfolioWorksMana
 import InspireManagePanel from "@/components/inspire/InspireManagePanel";
 import CatalogManagePanel from "@/components/series/CatalogManagePanel";
 import PortfolioPackagesManagePanel from "@/components/portfolio/PortfolioPackagesManagePanel";
+import PortfolioBookingPanel from "@/components/portfolio/PortfolioBookingPanel";
 import { useCreatorServices } from "@/hooks/useCreatorServices";
+import { useSavedCreatorServiceIds } from "@/hooks/useCreatorServiceBookmarks";
 import type { ExperienceItem } from "@/lib/validators";
 import { normalizeExperienceItem } from "@/lib/validators";
 import { ProfileAboutReadOnly } from "@/components/profile/ProfileAboutReadOnly";
@@ -61,9 +62,9 @@ const parseExperience = (raw: unknown): ExperienceItem[] =>
 const parseSkills = (raw: unknown): string[] =>
   Array.isArray(raw) ? raw.filter((s): s is string => typeof s === "string") : [];
 
-type ProfileTab = "work" | "services" | "about" | "catalog" | "collections" | "inspire";
+type ProfileTab = "work" | "services" | "about" | "catalog" | "collections" | "booking" | "inspire";
 
-const TAB_IDS: ProfileTab[] = ["work", "services", "catalog", "collections", "inspire", "about"];
+const TAB_IDS: ProfileTab[] = ["work", "services", "catalog", "collections", "booking", "inspire", "about"];
 
 function resolveTab(raw: string | null): ProfileTab {
   if (raw && (TAB_IDS as string[]).includes(raw)) return raw as ProfileTab;
@@ -83,6 +84,7 @@ const PortfolioProfilePage = () => {
   const { data: collections = [] } = useCollections(user?.id);
   const { data: seriesList = [] } = useMyProjectSeries(user?.id);
   const { data: myServices = [] } = useCreatorServices(user?.id, { includeDrafts: true });
+  const { data: savedPackageIds } = useSavedCreatorServiceIds();
   const { data: inspireBoardsRaw = [] } = useInspireBoards(user?.id);
   const inspireBoards = useMemo(
     () => inspireBoardsRaw.filter((b) => !isDefaultInspireBoard(b)),
@@ -222,6 +224,7 @@ const PortfolioProfilePage = () => {
     { id: "services", label: "Packages", count: myServices.length },
     { id: "catalog", label: "Catalogs", count: seriesList.length },
     { id: "collections", label: "Collections", count: collections.length },
+    { id: "booking", label: "Booking", count: savedPackageIds?.size ?? 0 },
     { id: "inspire", label: "Inspiration", count: inspireBoards.length },
     { id: "about", label: "About Me" },
   ];
@@ -332,7 +335,7 @@ const PortfolioProfilePage = () => {
 
         {/* RIGHT: Tabs + one panel */}
         <main className="min-w-0 space-y-4">
-          <div className="flex items-end gap-2 border-b border-border/70 min-h-[2.75rem]">
+          <div className="flex items-end border-b border-border/70 min-h-[2.75rem]">
             <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide self-stretch flex items-end">
               <nav className="flex min-w-max items-center gap-1 h-full" aria-label="เมนูโปรไฟล์">
                 {tabs.map((tab) => {
@@ -370,16 +373,6 @@ const PortfolioProfilePage = () => {
                 })}
               </nav>
             </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="mb-1.5 shrink-0 rounded-full h-8 text-xs gap-1.5"
-              onClick={() => navigate("/dashboard")}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              จัดการงาน
-            </Button>
           </div>
 
           {activeTab === "work" ? (
@@ -424,6 +417,10 @@ const PortfolioProfilePage = () => {
 
           {activeTab === "collections" ? (
             <CollectionsManagePanel userId={user!.id} embedded />
+          ) : null}
+
+          {activeTab === "booking" ? (
+            <PortfolioBookingPanel userId={user!.id} />
           ) : null}
 
           {activeTab === "inspire" ? (

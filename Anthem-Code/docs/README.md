@@ -42,6 +42,7 @@ Entry point สำหรับ dev ใหม่:
 | [`../../docs/README.md`](../../docs/README.md) | Ecosystem docs index |
 | [`full-test-plan.md`](./full-test-plan.md) | แผนเทสจัดเต็ม |
 | [`../../docs/MANUAL-TESTING.md`](../../docs/MANUAL-TESTING.md) | Manual QA |
+| [`aplus1-web-audit-checklist.md`](./aplus1-web-audit-checklist.md) | **Web audit** — UI→deploy + คะแนน 🔴🟠🟡🔵🟢 |
 | [`qa-checklist.md`](./qa-checklist.md) | Checklist ก่อน release |
 | [`qa-onboarding.md`](./qa-onboarding.md) | Onboarding QA |
 | [`test-accounts.md`](./test-accounts.md) | Role matrix |

@@ -13,6 +13,7 @@ import { sortByViewAffinity } from "@/lib/viewAffinity";
 import Footer from "@/components/Footer";
 import FeedHero from "@/components/feed/FeedHero";
 import FeedToolbar from "@/components/feed/FeedToolbar";
+import HomeHeroWash from "@/components/feed/HomeHeroWash";
 import SeoHead from "@/components/SeoHead";
 import { shouldNoindexSearchParams } from "@/lib/seo";
 import DrillFeedPanel from "@/components/drill/DrillFeedPanel";
@@ -28,6 +29,7 @@ import { FeedProjectGrid } from "@/components/feed/FeedProjectGrid";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import { type FeedMode } from "@/components/feed/FeedModeToggle";
 import DesignerGrid from "@/components/feed/DesignerGrid";
+import PackageGrid from "@/components/feed/PackageGrid";
 import { type DesignerSort } from "@/components/feed/DesignerToolbar";
 import type { DesignerFeedSource } from "@/components/feed/DesignerFeedDropdown";
 import StudioGrid from "@/components/feed/StudioGrid";
@@ -104,7 +106,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     if (typeof window === "undefined") return "projects";
     if (!isCategoryAllowed("functional")) return "projects";
     const urlMode = new URLSearchParams(window.location.search).get("mode");
-    if (urlMode === "designers" || urlMode === "studios" || urlMode === "projects" || urlMode === "community") {
+    if (urlMode === "designers" || urlMode === "packages" || urlMode === "studios" || urlMode === "projects" || urlMode === "community") {
       return coerceLaunchFeedMode(urlMode);
     }
     const stored = localStorage.getItem("feed-mode") as FeedMode | null;
@@ -218,7 +220,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     if (tag && !isAplus1LaunchMinimal()) {
       setMode("community");
       if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "community");
-    } else if (view === "designers" || view === "studios" || view === "projects" || view === "community") {
+    } else if (view === "designers" || view === "packages" || view === "studios" || view === "projects" || view === "community") {
       const coerced = coerceLaunchFeedMode(view);
       setMode(coerced);
       if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", coerced);
@@ -246,6 +248,18 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       setCategory("All");
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (mode === "packages" && searchParams.get("feed") === "saved") {
+      setDesignerFeedSource("saved");
+    }
+  }, [mode, searchParams]);
+
+  useEffect(() => {
+    if (mode !== "packages" && designerFeedSource === "saved") {
+      setDesignerFeedSource("all");
+    }
+  }, [mode, designerFeedSource]);
 
   useEffect(() => {
     trackFeedModeVisit(mode);
@@ -299,7 +313,10 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     const q = searchParams.get("q");
     if (q == null) return;
     setSearch(q);
-    setMode("projects");
+    const view = searchParams.get("mode");
+    if (!view || view === "projects") {
+      setMode("projects");
+    }
   }, [searchParams]);
 
   useEffect(() => {
@@ -507,14 +524,15 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   };
 
   return (
-    <main id="main-content" className={cn("min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
+    <main id="main-content" className={cn("relative min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
       {(shouldNoindexSearchParams(searchParams) || search.trim().length > 0) && (
         <SeoHead path="/" noindex title="ค้นหาผลงาน" description="ผลการค้นหาบน Aplus1" />
       )}
+      {(mode === "projects" || mode === "designers" || mode === "packages") && <HomeHeroWash />}
       <div
         className={cn(
-          "max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-4",
-          mode === "projects" || mode === "designers" ? "pt-0 space-y-0" : "pt-4 space-y-4",
+          "relative z-[1] max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-4",
+          mode === "projects" || mode === "designers" || mode === "packages" ? "pt-0 space-y-0" : "pt-4 space-y-4",
         )}
       >
         <FeedHero mode={mode} />
@@ -536,7 +554,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           onHideAiChange={setHideAi}
           includeDesignDrillChip={isLaunchDesignDrillEnabled()}
           projectResultCount={filtered.length}
-          resultCount={filtered.length}
           recentSearches={recentSearches}
           onRecentSearchSelect={setSearch}
           designerFeedSource={designerFeedSource}
@@ -604,6 +621,14 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               feedSource={designerFeedSource}
               categories={designerCategory !== "All" ? [designerCategory] : []}
               tools={designerTools}
+            />
+          ) : mode === "packages" ? (
+            <PackageGrid
+              search={search}
+              onClearSearch={() => setSearch("")}
+              sort={designerSort}
+              feedSource={designerFeedSource}
+              categories={designerCategory !== "All" ? [designerCategory] : []}
             />
           ) : mode === "studios" ? (
             <StudioGrid search={search} onClearSearch={() => setSearch("")} feedSource={studioFeedSource} />

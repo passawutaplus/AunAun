@@ -2,6 +2,8 @@
 
 Run this checklist before every release and when onboarding external QA.
 
+Web quality scorecard (UI / a11y / SEO / perf / security): [aplus1-web-audit-checklist.md](./aplus1-web-audit-checklist.md)
+
 ## Browsers
 
 - [ ] Chrome (latest, desktop)

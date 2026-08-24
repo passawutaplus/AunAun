@@ -19,6 +19,7 @@ import { logBoostEvent } from "@/hooks/useBoost";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import UserAvatar from "@/components/UserAvatar";
 import { extractSearchSnippet, highlight } from "@/lib/highlight";
+import { profilePublicPath } from "@/lib/profileRoutes";
 
 interface ProjectCardProps {
   project: Project;
@@ -104,8 +105,9 @@ const ProjectCard = ({
     ? naturalFeedCoverUrl(project.image)
     : optimizedFeedImageUrl(project.image, { width: 480, quality: 70, natural: false });
 
-  const goToProfile = (userId?: string) => {
-    if (userId) navigate(`/u/${userId}`);
+  const goToProfile = (creator?: { id?: string; username?: string }) => {
+    if (!creator?.id) return;
+    navigate(profilePublicPath({ user_id: creator.id, username: creator.username }));
   };
   const creators = [
     {
@@ -296,7 +298,7 @@ const ProjectCard = ({
                 <button
                   key={creator.id}
                   type="button"
-                  onClick={stop(() => goToProfile(creator.id))}
+                  onClick={stop(() => goToProfile(creator))}
                   className="relative rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   style={{ zIndex: creators.length - index }}
                   aria-label={`เปิดโปรไฟล์ ${creator.name}`}
@@ -311,12 +313,28 @@ const ProjectCard = ({
               );
             })}
           </div>
-          <span
-            className="text-sm text-foreground/90 line-clamp-1 thai-leading-tight"
+          <p
+            className="text-sm text-foreground/90 thai-leading-tight min-w-0 truncate"
             title={creators.map((creator) => creator.name).join(", ")}
           >
-            {creators.map((creator) => creator.name).join(", ")}
-          </span>
+            {creators.map((creator, index) => (
+              <span key={creator.id ?? `${creator.name}-${index}`}>
+                {index > 0 ? <span className="text-muted-foreground">, </span> : null}
+                {creator.id ? (
+                  <button
+                    type="button"
+                    onClick={stop(() => goToProfile(creator))}
+                    className="inline max-w-full truncate text-left hover:text-primary hover:underline underline-offset-2 decoration-primary/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                    aria-label={`เปิดโปรไฟล์ ${creator.name}`}
+                  >
+                    {creator.name}
+                  </button>
+                ) : (
+                  <span>{creator.name}</span>
+                )}
+              </span>
+            ))}
+          </p>
         </div>
         <div className="flex items-center gap-2 shrink-0 text-xs text-muted-foreground">
           <span className="flex items-center gap-1" title="ยอดเข้าชม" aria-label="ยอดเข้าชม">

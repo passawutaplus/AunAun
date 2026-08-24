@@ -37,6 +37,39 @@ export const timeAgoTH = (iso: string) => {
   return formatThaiDate(iso);
 };
 
+/** Same 5-minute window as activity heartbeat / admin presence. */
+export const DESIGNER_ONLINE_WINDOW_MS = 5 * 60_000;
+
+export type DesignerPresence = {
+  live: boolean;
+  label: string;
+};
+
+/**
+ * Designer-card presence. Null when the timestamp is missing.
+ * Live = last seen within 5 minutes. Otherwise relative ACTIVE … AGO.
+ */
+export const formatDesignerPresence = (
+  iso: string | null | undefined,
+  now = Date.now(),
+): DesignerPresence | null => {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return null;
+  const diff = Math.max(0, now - t);
+  if (diff < DESIGNER_ONLINE_WINDOW_MS) {
+    return { live: true, label: "ACTIVE NOW" };
+  }
+  const min = Math.floor(diff / 60_000);
+  if (min < 60) return { live: false, label: `ACTIVE ${min} MIN AGO` };
+  const hr = Math.floor(min / 60);
+  if (hr < 24) {
+    return { live: false, label: `ACTIVE ${hr} ${hr === 1 ? "HOUR" : "HOURS"} AGO` };
+  }
+  const day = Math.floor(hr / 24);
+  return { live: false, label: `ACTIVE ${day} ${day === 1 ? "DAY" : "DAYS"} AGO` };
+};
+
 /** 24h clock for chat list, e.g. `14:05น.` */
 export const clockTimeTH = (iso: string | null | undefined) => {
   if (!iso) return "";

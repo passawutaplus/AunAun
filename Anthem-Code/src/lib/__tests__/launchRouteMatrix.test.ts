@@ -9,6 +9,8 @@ import { isLaunchHiddenPath } from "@/lib/aplus1Launch";
 const APP_ROUTE_SAMPLES: { path: string; launchEnabled: boolean }[] = [
   { path: "/", launchEnabled: true },
   { path: "/learn", launchEnabled: true },
+  { path: "/learn/who", launchEnabled: true },
+  { path: "/learn/start", launchEnabled: true },
   { path: "/learn/creators", launchEnabled: true },
   { path: "/help", launchEnabled: true },
   { path: "/help/portfolio", launchEnabled: true },

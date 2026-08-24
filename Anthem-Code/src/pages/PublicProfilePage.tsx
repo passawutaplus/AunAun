@@ -111,8 +111,8 @@ const PublicProfilePage = () => {
   const [worksSort, setWorksSort] = useState<PortfolioSortMode>("views");
   const [worksDensity, setWorksDensity] = useState<SeriesWorksDensity>(() =>
     typeof window === "undefined"
-      ? "large"
-      : readSeriesDensity("aplus1.profile.public.works.density", "large"),
+      ? "medium"
+      : readSeriesDensity("aplus1.profile.public.works.density", "medium"),
   );
   const [catalogFilter, setCatalogFilter] = useState("all");
   const [catalogDensity, setCatalogDensity] = useState<SeriesWorksDensity>(() =>
@@ -520,30 +520,7 @@ const PublicProfilePage = () => {
                 <X className="w-3 h-3" /> Close
               </button>
             </div>
-          ) : (
-            <div className="ml-auto flex items-center gap-1">
-              {showAsVisitor ? (
-                <ProfileSharePopover
-                  url={publicShareUrl}
-                  title={publicShareTitle}
-                  message={publicShareMessage}
-                  pathLabel={publicSharePath}
-                  align="end"
-                >
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="rounded-full shrink-0"
-                    title="Share profile"
-                    aria-label="Share profile"
-                  >
-                    <Share2 className="w-4 h-4" />
-                  </Button>
-                </ProfileSharePopover>
-              ) : null}
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -576,17 +553,40 @@ const PublicProfilePage = () => {
               <div className="w-full h-full bg-gradient-brand opacity-75" />
             )}
 
-            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 hidden md:flex flex-col items-end gap-2">
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex flex-col items-end gap-2">
               {showAsVisitor && (
                 <>
-                  <FollowButton freelancerId={resolvedUserId} visitorPreview={visitorPreview} />
-                  <SupportButton
-                    recipientId={resolvedUserId}
-                    recipientName={profile.display_name ?? "ครีเอเตอร์"}
-                    recipientAvatar={profile.avatar_url ?? undefined}
-                    variant="compact"
-                    visitorPreview={visitorPreview}
-                  />
+                  <div className="flex items-center gap-2">
+                    <FollowButton freelancerId={resolvedUserId} visitorPreview={visitorPreview} />
+                    <ProfileSharePopover
+                      url={publicShareUrl}
+                      title={publicShareTitle}
+                      message={publicShareMessage}
+                      pathLabel={publicSharePath}
+                      imageUrl={hasCover ? coverUrl : profile.avatar_url ?? undefined}
+                      align="end"
+                    >
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="rounded-full shrink-0 bg-background/90 hover:bg-background border-0 shadow-sm"
+                        title="แชร์โปรไฟล์"
+                        aria-label="แชร์โปรไฟล์"
+                      >
+                        <Share2 className="w-4 h-4 text-primary" />
+                      </Button>
+                    </ProfileSharePopover>
+                  </div>
+                  <div className="hidden md:block">
+                    <SupportButton
+                      recipientId={resolvedUserId}
+                      recipientName={profile.display_name ?? "ครีเอเตอร์"}
+                      recipientAvatar={profile.avatar_url ?? undefined}
+                      variant="compact"
+                      visitorPreview={visitorPreview}
+                    />
+                  </div>
                 </>
               )}
             </div>
@@ -724,19 +724,8 @@ const PublicProfilePage = () => {
                       สนใจคอลแลป
                     </Button>
                   </div>
-                  <div
-                    className={cn(
-                      "md:hidden",
-                      isLaunchCreatorSupportEnabled() ? "grid grid-cols-2 gap-2" : "flex",
-                    )}
-                  >
-                    <FollowButton
-                      freelancerId={resolvedUserId}
-                      showFollowerCount={false}
-                      className="w-full h-10 text-sm font-medium"
-                      visitorPreview={visitorPreview}
-                    />
-                    {isLaunchCreatorSupportEnabled() && (
+                  {isLaunchCreatorSupportEnabled() ? (
+                    <div className="md:hidden">
                       <SupportButton
                         recipientId={resolvedUserId}
                         recipientName={profile.display_name ?? "ครีเอเตอร์"}
@@ -746,8 +735,8 @@ const PublicProfilePage = () => {
                         className="w-full items-center"
                         visitorPreview={visitorPreview}
                       />
-                    )}
-                  </div>
+                    </div>
+                  ) : null}
                 </div>
               )}
 
