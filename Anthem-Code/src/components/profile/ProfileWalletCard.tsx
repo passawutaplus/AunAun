@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, Coins } from "lucide-react";
 import { useWallet } from "@/hooks/useWallet";
 import { computeWalletTotalPx } from "@/lib/walletDisplay";
+import { isAplus1PxEnabled } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
 const fmt = (n: number) => n.toLocaleString();
@@ -12,8 +13,11 @@ type Props = {
 
 const ProfileWalletCard = ({ className }: Props) => {
   const navigate = useNavigate();
-  const { data: wallet, isLoading } = useWallet();
+  const pxOn = isAplus1PxEnabled();
+  const { data: wallet, isLoading } = useWallet({ enabled: pxOn });
   const totalPx = computeWalletTotalPx(wallet);
+
+  if (!pxOn) return null;
 
   return (
     <button

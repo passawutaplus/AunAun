@@ -31,3 +31,23 @@ export function kycRejectLabel(code: string | null | undefined): string | null {
   if (!code) return null;
   return KYC_REJECT_REASONS.find((r) => r.code === code)?.label ?? code;
 }
+
+export const KYC_REJECT_REASON_GROUPS: { heading: string; codes: KycRejectReasonCode[] }[] = [
+  {
+    heading: "เอกสาร / รูป",
+    codes: ["blurry_id", "blurry_selfie", "blurry_bank_book", "incomplete_docs"],
+  },
+  {
+    heading: "ข้อมูลตัวตน",
+    codes: ["name_mismatch", "id_number_mismatch"],
+  },
+  {
+    heading: "บัญชีธนาคาร",
+    codes: ["bank_name_mismatch", "invalid_bank_account", "duplicate_bank"],
+  },
+  {
+    heading: "อื่นๆ",
+    codes: ["suspected_fraud", "other"],
+  },
+];
+

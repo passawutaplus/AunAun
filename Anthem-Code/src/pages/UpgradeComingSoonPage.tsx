@@ -49,13 +49,11 @@ export function UpgradeComingSoonPage() {
           </p>
           <ul className="text-sm text-muted-foreground space-y-2 list-disc pl-5">
             <li>โพสต์ผลงานและเปิดรับโอกาส</li>
-            <li>รับ 1 px ฟรีทุกวันที่หน้าเติม Pixel</li>
-            <li>ส่งและรับของขวัญด้วย Pixel</li>
             {isAplus1PaymentsEnabled() && (
-              <li>เติม Pixel, ถอนรายได้, Boost และลงโฆษณา — ชำระผ่าน Stripe ได้แล้ว</li>
+              <li>ชำระค่าจ้างและรับเงินเข้าบัญชี — เปิดแล้ว</li>
             )}
             {!isAplus1PaymentsEnabled() && (
-              <li>การเติม Pixel / ถอนรายได้ / ชำระเงิน — เร็ว ๆ นี้</li>
+              <li>การชำระค่าจ้างและการรับเงิน — เร็ว ๆ นี้</li>
             )}
             {!isSoloEcosystemEnabled() && (
               <li>แพ็ก Pro และการเชื่อม So1o Freelancer — เร็ว ๆ นี้</li>
@@ -68,7 +66,7 @@ export function UpgradeComingSoonPage() {
             กลับไปใช้งาน
           </Button>
           <Button variant="outline" className="rounded-full" asChild>
-            <Link to="/earnings">ดูรายได้ &amp; Pixel</Link>
+            <Link to="/earnings">ดูกระเป๋า</Link>
           </Button>
         </div>
       </main>

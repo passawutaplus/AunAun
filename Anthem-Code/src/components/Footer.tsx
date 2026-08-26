@@ -45,14 +45,11 @@ const Footer = () => {
 
   return (
     <footer className="mt-16">
-      <div className="footer-cta-wave text-primary-foreground">
-        <div className="footer-cta-wave-mesh footer-cta-wave-mesh-a" aria-hidden="true" />
-        <div className="footer-cta-wave-mesh footer-cta-wave-mesh-b" aria-hidden="true" />
-        <div className="footer-cta-wave-noise" aria-hidden="true" />
+      <div className="footer-cta-wave footer-cta-wave--blend-top text-primary-foreground">
         <div
           className={cn(
             SHELL,
-            "relative z-10 flex flex-col gap-6 py-10 sm:py-12 md:flex-row md:items-center md:justify-between md:gap-10 md:py-14",
+            "relative z-10 flex flex-col gap-6 pt-16 pb-10 sm:pt-20 sm:pb-12 md:flex-row md:items-center md:justify-between md:gap-10 md:pt-24 md:pb-14",
           )}
         >
           <h2 className="thai-display text-4xl font-medium leading-[1.05] tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">

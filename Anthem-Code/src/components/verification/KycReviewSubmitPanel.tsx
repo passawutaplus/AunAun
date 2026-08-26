@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Building2, ClipboardCheck, IdCard, Info, Lock, Mail } from "lucide-react";
+import { Building2, CheckCircle2, ClipboardCheck, FileText, IdCard, Info, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -20,12 +20,38 @@ import {
 import { LEGAL_DPO_EMAIL } from "@/lib/legalConfig";
 import { cn } from "@/lib/utils";
 
+const KYC_INPUT_CLASS =
+  "bg-muted border-border placeholder:text-muted-foreground/55";
+const KYC_ERROR_CLASS = "border-destructive focus-visible:ring-destructive";
+
+function ReqStar() {
+  return (
+    <span className="text-primary" aria-hidden="true">
+      {" *"}
+    </span>
+  );
+}
+
+function kycFieldClass(invalid: boolean, extra?: string) {
+  return cn(KYC_INPUT_CLASS, invalid && KYC_ERROR_CLASS, extra);
+}
+
+export type KycReviewUpload = {
+  label: string;
+  preview?: string;
+  previewKind?: "image" | "pdf";
+  uploaded: boolean;
+};
+
 type Props = {
-  legalName: string;
+  givenName: string;
+  familyName: string;
   nationalIdMasked: string;
+  identityUploads: KycReviewUpload[];
   bankName: string;
   accountMasked: string;
   accountName: string;
+  bankUpload: KycReviewUpload;
   contactPhone: string;
   contactEmail: string;
   contactLine?: string;
@@ -44,6 +70,7 @@ type Props = {
   onEditIdentity: () => void;
   onEditBank: () => void;
   onEditContact: () => void;
+  showErrors?: boolean;
 };
 
 function SummaryCard({
@@ -72,6 +99,33 @@ function SummaryCard({
       </div>
       {children}
     </section>
+  );
+}
+
+function UploadedFileRow({ item }: { item: KycReviewUpload }) {
+  const showImage = item.previewKind === "image" && !!item.preview && item.preview !== "pdf";
+  return (
+    <div className="flex items-center gap-2.5 min-w-0">
+      {showImage ? (
+        <img
+          src={item.preview}
+          alt=""
+          className="w-11 h-11 rounded-lg object-cover border border-border/70 bg-muted/40 shrink-0"
+        />
+      ) : (
+        <span className="w-11 h-11 rounded-lg border border-border/70 bg-muted/40 grid place-items-center shrink-0">
+          <FileText className="w-4 h-4 text-muted-foreground" />
+        </span>
+      )}
+      <span className="text-sm font-medium truncate flex-1">{item.label}</span>
+      {item.uploaded && item.previewKind === "pdf" ? (
+        <span className="text-sm text-muted-foreground shrink-0">PDF</span>
+      ) : item.uploaded ? (
+        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" aria-label="อัปโหลดแล้ว" />
+      ) : (
+        <span className="text-sm text-destructive shrink-0">ยังไม่อัป</span>
+      )}
+    </div>
   );
 }
 
@@ -121,11 +175,14 @@ function InfoHint({
 
 /** Final KYC review: summary cards + PEP/Sanctions + submit confirm. */
 export function KycReviewSubmitPanel({
-  legalName,
+  givenName,
+  familyName,
   nationalIdMasked,
+  identityUploads,
   bankName,
   accountMasked,
   accountName,
+  bankUpload,
   contactPhone,
   contactEmail,
   contactLine,
@@ -144,8 +201,18 @@ export function KycReviewSubmitPanel({
   onEditIdentity,
   onEditBank,
   onEditContact,
+  showErrors = false,
 }: Props) {
   const showPepEdd = needsPepEdd(pepStatus);
+  const pepInvalid = showErrors && !pepStatus;
+  const pepEddInvalid = {
+    position: showErrors && showPepEdd && !pepEdd.position.trim(),
+    organization: showErrors && showPepEdd && !pepEdd.organization.trim(),
+    relationship: showErrors && showPepEdd && !pepEdd.relationship.trim(),
+  };
+  const sanctionsInvalid = showErrors && !sanctionsAttested;
+  const confirmOk = confirmText.trim().toUpperCase() === KYC_CONFIRM_PHRASE;
+  const confirmInvalid = showErrors && !confirmOk;
 
   return (
     <div className="space-y-5 text-base [&_input]:!text-base">
@@ -162,22 +229,36 @@ export function KycReviewSubmitPanel({
           <dl className="space-y-2.5">
             <div>
               <dt className="text-sm text-muted-foreground">ชื่อ</dt>
-              <dd className="text-base font-medium break-words">{legalName.trim() || "—"}</dd>
+              <dd className="text-base font-medium break-words">{givenName.trim() || "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-muted-foreground">นามสกุล</dt>
+              <dd className="text-base font-medium break-words">{familyName.trim() || "—"}</dd>
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">เลขบัตร</dt>
               <dd className="text-base font-medium font-mono">{nationalIdMasked}</dd>
             </div>
+            {identityUploads.length > 0 && (
+              <div className="pt-1 space-y-2">
+                {identityUploads.map((item) => (
+                  <UploadedFileRow key={item.label} item={item} />
+                ))}
+              </div>
+            )}
           </dl>
         </SummaryCard>
 
         <SummaryCard icon={<Building2 className="w-4 h-4" />} title="Bank" onEdit={onEditBank}>
-          <div className="space-y-1">
-            <p className="text-base font-medium">{bankName.trim() || "—"}</p>
-            <p className="text-base font-mono text-muted-foreground">{accountMasked}</p>
-            {accountName.trim() && (
-              <p className="text-sm text-muted-foreground pt-1">ชื่อบัญชี · {accountName.trim()}</p>
-            )}
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-base font-medium">{bankName.trim() || "—"}</p>
+              <p className="text-base font-mono text-muted-foreground">{accountMasked}</p>
+              {accountName.trim() && (
+                <p className="text-sm text-muted-foreground pt-1">ชื่อบัญชี · {accountName.trim()}</p>
+              )}
+            </div>
+            <UploadedFileRow item={bankUpload} />
           </div>
         </SummaryCard>
 
@@ -203,9 +284,18 @@ export function KycReviewSubmitPanel({
 
       {/* Declarations — disclose status (EDD), attest truth; do not hard-reject */}
       <div className="space-y-4">
-        <section className="rounded-xl border border-border bg-card/30 p-4 space-y-3">
+        <section
+          data-kyc-error={pepInvalid ? "true" : undefined}
+          className={cn(
+            "rounded-xl border bg-card/30 p-4 space-y-3",
+            pepInvalid ? "border-destructive" : "border-border",
+          )}
+        >
           <div className="flex items-start justify-between gap-2">
-            <Label className="text-base font-medium leading-snug">สถานะเป็นบุคคลที่มีสถานภาพทางการเมือง (PEP) *</Label>
+            <Label className="text-base font-medium leading-snug">
+              สถานะเป็นบุคคลที่มีสถานภาพทางการเมือง (PEP)
+              <ReqStar />
+            </Label>
             <InfoHint
               label="อธิบาย PEP"
               title="PEP คืออะไร?"
@@ -253,35 +343,51 @@ export function KycReviewSubmitPanel({
               <p className="text-xs font-medium text-foreground">ข้อมูลเพิ่มเติมสำหรับ Enhanced Due Diligence (EDD)</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5 sm:col-span-2">
-                  <Label>ตำแหน่ง *</Label>
+                  <Label>
+                    ตำแหน่ง
+                    <ReqStar />
+                  </Label>
                   <Input
+                    className={kycFieldClass(pepEddInvalid.position)}
                     value={pepEdd.position}
                     onChange={(e) => onPepEddChange({ position: e.target.value })}
                     placeholder="เช่น ส.ส. / กรรมการรัฐวิสาหกิจ"
+                    aria-invalid={pepEddInvalid.position}
                   />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
-                  <Label>หน่วยงาน *</Label>
+                  <Label>
+                    หน่วยงาน
+                    <ReqStar />
+                  </Label>
                   <Input
+                    className={kycFieldClass(pepEddInvalid.organization)}
                     value={pepEdd.organization}
                     onChange={(e) => onPepEddChange({ organization: e.target.value })}
                     placeholder="เช่น กระทรวง / บริษัทของรัฐ"
+                    aria-invalid={pepEddInvalid.organization}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label>วันที่พ้นจากตำแหน่ง (ถ้ามี)</Label>
                   <Input
+                    className={KYC_INPUT_CLASS}
                     type="date"
                     value={pepEdd.leftAt}
                     onChange={(e) => onPepEddChange({ leftAt: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>ความสัมพันธ์ *</Label>
+                  <Label>
+                    ความสัมพันธ์
+                    <ReqStar />
+                  </Label>
                   <Input
+                    className={kycFieldClass(pepEddInvalid.relationship)}
                     value={pepEdd.relationship}
                     onChange={(e) => onPepEddChange({ relationship: e.target.value })}
                     placeholder="เช่น ตนเอง / คู่สมรส / บุตร / คู่ค้าใกล้ชิด"
+                    aria-invalid={pepEddInvalid.relationship}
                   />
                 </div>
               </div>
@@ -289,9 +395,18 @@ export function KycReviewSubmitPanel({
           )}
         </section>
 
-        <section className="rounded-xl border border-border bg-card/30 p-4 space-y-3">
+        <section
+          data-kyc-error={sanctionsInvalid ? "true" : undefined}
+          className={cn(
+            "rounded-xl border bg-card/30 p-4 space-y-3",
+            sanctionsInvalid ? "border-destructive" : "border-border",
+          )}
+        >
           <div className="flex items-start justify-between gap-2">
-            <Label className="text-base font-medium leading-snug">สถานะบัญชีคว่ำบาตร (Sanctions) *</Label>
+            <Label className="text-base font-medium leading-snug">
+              สถานะบัญชีคว่ำบาตร (Sanctions)
+              <ReqStar />
+            </Label>
             <InfoHint
               label="อธิบาย Sanctions List"
               title="บัญชีคว่ำบาตรคืออะไร?"
@@ -312,8 +427,8 @@ export function KycReviewSubmitPanel({
           </div>
           <label
             className={cn(
-              "flex items-start gap-3 rounded-lg border border-border px-3 py-2.5 cursor-pointer hover:bg-muted/25",
-              sanctionsAttested && "border-primary/50 bg-primary/5",
+              "flex items-start gap-3 rounded-lg border px-3 py-2.5 cursor-pointer hover:bg-muted/25",
+              sanctionsInvalid ? "border-destructive" : sanctionsAttested ? "border-primary/50 bg-primary/5" : "border-border",
             )}
           >
             <Checkbox
@@ -361,16 +476,21 @@ export function KycReviewSubmitPanel({
         </p>
       </section>
 
-      <div className="space-y-2">
-        <Label>
-          Type &quot;{KYC_CONFIRM_PHRASE}&quot;
+      <div className="space-y-2" data-kyc-error={confirmInvalid ? "true" : undefined}>
+        <Label className="leading-snug">
+          พิมพ์ &quot;{KYC_CONFIRM_PHRASE}&quot; เป็นตัวพิมพ์ใหญ่
+          <ReqStar />
         </Label>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          เพื่อรับรองว่าข้าพเจ้าเป็นเจ้าของข้อมูล และข้อมูลที่ระบุเป็นความจริง
+        </p>
         <Input
           value={confirmText}
           onChange={(e) => onConfirmChange(e.target.value)}
           placeholder={KYC_CONFIRM_PHRASE}
-          className="font-mono uppercase"
+          className={kycFieldClass(confirmInvalid, "font-mono uppercase")}
           autoComplete="off"
+          aria-invalid={confirmInvalid}
         />
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Activity, Building2, Eye, FolderKanban, HandshakeIcon, Layers3, MessageSquare, UserPlus } from "lucide-react";
+import { Activity, Building2, Eye, FolderKanban, HandshakeIcon, Layers3, MessageSquare, ShieldCheck, UserPlus } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
@@ -259,6 +259,42 @@ export default function OverviewPage() {
           <KpiCard key={kpi.label} label={kpi.label} value={kpi.value} icon={kpi.icon} accent={kpi.accent} delta="live" />
         ))}
       </div>
+
+      <section className="mt-4">
+        <div className="mb-3 flex items-end justify-between border-b border-admin-border pb-3">
+          <div>
+            <h2 className="text-base font-medium text-admin-fg">ยืนยันตัวตน (KYC)</h2>
+            <p className="mt-0.5 text-xs text-admin-muted">ใครผ่านแล้ว และคิวที่ยังต้องตรวจ</p>
+          </div>
+          <Link to="/admin/kyc" className="text-xs text-admin-accent hover:underline">
+            เปิดหน้า KYC →
+          </Link>
+        </div>
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
+          <Link to="/admin/users?kyc=verified" className="block">
+            <KpiCard
+              label="ผ่านแล้ว"
+              value={stats?.kycVerified ?? "—"}
+              icon={ShieldCheck}
+              accent
+              delta="โปรไฟล์ที่ยืนยันแล้ว"
+            />
+          </Link>
+          <Link to="/admin/kyc" className="block">
+            <KpiCard
+              label="รอตรวจสอบ"
+              value={stats?.pendingKyc ?? "—"}
+              delta="คิวแอดมิน"
+            />
+          </Link>
+          <Link to="/admin/kyc" className="block">
+            <KpiCard
+              label="ถูกปฏิเสธ"
+              value={stats?.kycRejected ?? "—"}
+            />
+          </Link>
+        </div>
+      </section>
 
       {queue.length > 0 ? (
         <div className="mt-4 rounded-sm border border-admin-accent/30 bg-admin-accent/5 p-4">

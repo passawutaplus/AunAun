@@ -199,6 +199,7 @@ const ProjectDetailPage = () => {
         ownerId: dbProject.owner_id,
         owner: ownerProfile?.display_name || "ฟรีแลนซ์",
         ownerAvatar: ownerProfile?.avatar_url ?? "",
+        ownerVerified: !!(ownerProfile as { is_verified?: boolean } | null)?.is_verified,
         likes: dbProject.likes,
         views: dbProject.views,
         bookmarked: false,
@@ -465,6 +466,7 @@ const ProjectDetailPage = () => {
               ownerName={project.owner}
               ownerAvatar={project.ownerAvatar}
               ownerId={project.ownerId}
+              ownerVerified={project.ownerVerified}
               publishedDate={project.publishedDate}
               description={project.description}
               tools={project.tools}

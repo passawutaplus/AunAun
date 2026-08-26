@@ -45,11 +45,11 @@ export function formatCashoutFeeLabel(tier: Tier | string | undefined): string {
     : `${pct}% (Free)`;
 }
 
-export const useCashoutHistory = () => {
+export const useCashoutHistory = (opts?: { enabled?: boolean }) => {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["cashouts", user?.id],
-    enabled: !!user?.id,
+    enabled: !!user?.id && (opts?.enabled ?? true),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cashout_requests")

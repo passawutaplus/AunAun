@@ -47,6 +47,7 @@ import {
 } from "@/lib/brandConfig";
 import { smoothEase, staggerDelay } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+import { isAplus1PxEnabled } from "@/lib/aplus1Launch";
 
 const LOOP = ["เห็นผลงาน", "เข้าใจบริบท", "เชื่อศักยภาพ", "เก็บไว้ / คุยต่อ", "เกิดโอกาส"] as const;
 
@@ -81,6 +82,9 @@ export default function LearnHubPage() {
   const heroRef = useRef<HTMLElement>(null);
   const { reduced, rotate, y, secondY } = useHeroScroll(heroRef);
   const reducePref = useReducedMotion();
+  const pxOn = isAplus1PxEnabled();
+  const glossary = pxOn ? LEARN_GLOSSARY : LEARN_GLOSSARY.filter((item) => item.term !== "สนับสนุน");
+  const faq = pxOn ? LEARN_FAQ : LEARN_FAQ.filter((item) => item.id !== "px-money");
 
   useEffect(() => {
     if (hash) scrollToHash(hash);
@@ -355,10 +359,14 @@ export default function LearnHubPage() {
           <SectionIntro
             eyebrow="น่าเชื่อถือ"
             title="เล่นในชุมชนอย่างปลอดภัย"
-            body="โอกาสเกิดจากผลงานและการคุยจริง — PX ไม่ใช่เงินฝาก และไม่การันตีรายได้"
+            body={
+              pxOn
+                ? "โอกาสเกิดจากผลงานและการคุยจริง — PX ไม่ใช่เงินฝาก และไม่การันตีรายได้"
+                : "โอกาสเกิดจากผลงานและการคุยจริง — ไม่การันตีรายได้"
+            }
           />
           <dl className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {LEARN_GLOSSARY.map((item, i) => (
+            {glossary.map((item, i) => (
               <EnterView key={item.term} delay={staggerDelay(i, { dense: true })}>
                 <div className="rounded-2xl border border-border/60 bg-card/30 px-5 py-4">
                   <dt className="text-sm font-semibold text-foreground">{item.term}</dt>
@@ -368,7 +376,7 @@ export default function LearnHubPage() {
             ))}
           </dl>
           <Accordion type="single" collapsible className="mt-12">
-            {LEARN_FAQ.map((item) => (
+            {faq.map((item) => (
               <AccordionItem key={item.id} value={item.id}>
                 <AccordionTrigger className="text-left text-base">{item.q}</AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">{item.a}</AccordionContent>

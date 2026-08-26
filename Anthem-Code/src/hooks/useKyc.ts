@@ -26,6 +26,7 @@ export interface KycRequest {
   contact_email?: string | null;
   address_json?: Record<string, string> | null;
   reject_reason_code?: string | null;
+  reject_reason_codes?: string[] | null;
   reject_reason_label?: string | null;
   date_of_birth?: string | null;
   nationality?: string | null;
@@ -157,6 +158,26 @@ export const usePayoutProfile = () => {
 };
 
 /** Admin */
+export const useAdminKycCounts = () =>
+  useQuery({
+    queryKey: ["admin-kyc-counts"],
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const [pending, approved, rejected, verified] = await Promise.all([
+        supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "approved"),
+        supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "rejected"),
+        supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_verified", true),
+      ]);
+      return {
+        pending: pending.count ?? 0,
+        approved: approved.count ?? 0,
+        rejected: rejected.count ?? 0,
+        verified: verified.count ?? 0,
+      };
+    },
+  });
+
 export const useAdminKycList = (status: "pending" | "approved" | "rejected" | "all" = "pending") =>
   useQuery({
     queryKey: ["admin-kyc", status],
@@ -199,13 +220,30 @@ export const useAdminApproveKyc = () => {
     mutationFn: async ({ id, note }: { id: string; note?: string }) => {
       const { data, error } = await supabase.rpc("admin_approve_kyc", { _request_id: id, _note: note ?? "" });
       if (error) throw error;
+      void supabase.functions.invoke("notify-kyc", { body: { request_id: id, status: "approved" } }).catch(() => {});
       return data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-kyc"] });
+      qc.invalidateQueries({ queryKey: ["admin-kyc-counts"] });
+      qc.invalidateQueries({ queryKey: ["admin-stats"] });
     },
   });
 };
+
+export const useMyKycDocuments = (requestId: string | undefined) =>
+  useQuery({
+    queryKey: ["kyc-mine-docs", requestId],
+    enabled: !!requestId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("kyc_documents")
+        .select("doc_type, storage_path")
+        .eq("request_id", requestId!);
+      if (error) throw error;
+      return (data ?? []) as { doc_type: string; storage_path: string }[];
+    },
+  });
 
 export const useAdminRejectKyc = () => {
   const qc = useQueryClient();
@@ -213,23 +251,28 @@ export const useAdminRejectKyc = () => {
     mutationFn: async ({
       id,
       note,
-      reasonCode,
-      reasonLabel,
+      reasonCodes,
+      reasonLabels,
     }: {
       id: string;
       note?: string;
-      reasonCode: string;
-      reasonLabel: string;
+      reasonCodes: string[];
+      reasonLabels: string[];
     }) => {
       const { data, error } = await supabase.rpc("admin_reject_kyc", {
         _request_id: id,
         _note: note ?? "",
-        _reason_code: reasonCode,
-        _reason_label: reasonLabel,
+        _reason_codes: reasonCodes,
+        _reason_labels: reasonLabels,
       });
       if (error) throw error;
+      void supabase.functions.invoke("notify-kyc", { body: { request_id: id, status: "rejected" } }).catch(() => {});
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-kyc"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-kyc"] });
+      qc.invalidateQueries({ queryKey: ["admin-kyc-counts"] });
+      qc.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
   });
 };

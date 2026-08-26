@@ -91,7 +91,8 @@ export type AnthemEmailKind =
   | "follow"
   | "job_application"
   | "topup"
-  | "cashout";
+  | "cashout"
+  | "kyc";
 
 export async function shouldSendAnthemEmail(
   admin: SupabaseClient,

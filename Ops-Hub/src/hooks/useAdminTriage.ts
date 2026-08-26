@@ -60,13 +60,13 @@ async function fetchViaQueries(): Promise<AdminTriageSnapshot> {
       .from("kyc_requests")
       .select("*", { count: "exact", head: true })
       .eq("status", "pending")
-      .gt("ai_risk_score", KYC_HIGH_RISK_THRESHOLD),
+      .lt("ai_risk_score", KYC_HIGH_RISK_THRESHOLD),
     supabase
       .from("kyc_requests")
       .select("id, user_id, legal_name, ai_risk_score, ai_summary, ai_recommendation, submitted_at")
       .eq("status", "pending")
-      .gt("ai_risk_score", KYC_HIGH_RISK_THRESHOLD)
-      .order("ai_risk_score", { ascending: false })
+      .lt("ai_risk_score", KYC_HIGH_RISK_THRESHOLD)
+      .order("ai_risk_score", { ascending: true })
       .limit(5),
     supabase
       .from("user_reports")

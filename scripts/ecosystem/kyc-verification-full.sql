@@ -76,6 +76,9 @@ CREATE TABLE IF NOT EXISTS shared.kyc_documents (
 
 CREATE INDEX IF NOT EXISTS idx_kyc_documents_user ON shared.kyc_documents (user_id);
 CREATE INDEX IF NOT EXISTS idx_kyc_documents_request ON shared.kyc_documents (request_id);
+-- Existing tables skip UNIQUE in CREATE TABLE IF NOT EXISTS; keep ON CONFLICT working.
+CREATE UNIQUE INDEX IF NOT EXISTS kyc_documents_request_id_doc_type_key
+  ON shared.kyc_documents (request_id, doc_type);
 
 CREATE TABLE IF NOT EXISTS shared.payout_profiles (
   user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,

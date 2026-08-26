@@ -1,9 +1,9 @@
 import { useMemo, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck } from "lucide-react";
 import PackagesIcon from "@/components/icons/PackagesIcon";
 import UserAvatar from "@/components/UserAvatar";
+import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import {
   formatServicePriceRange,
   useCreatorServices,
@@ -67,9 +67,7 @@ function PackageRowCard({
               fallbackClassName="text-[9px]"
             />
             <span className="truncate text-xs text-muted-foreground">{name}</span>
-            {owner?.is_verified ? (
-              <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-primary" aria-label="ยืนยันแล้ว" />
-            ) : null}
+            <VerifiedBadge verified={!!owner?.is_verified} size="sm" />
           </div>
         ) : null}
         <p className="text-sm font-semibold tabular-nums text-foreground">

@@ -1,12 +1,14 @@
 import { Link } from "react-router-dom";
-import { Copyright, FileCheck, Flag, Loader2, Shield, Trash2 } from "lucide-react";
+import { Copyright, Flag, Loader2, Shield, ShieldCheck } from "lucide-react";
 import SectionHeader from "@/components/admin/SectionHeader";
 import KpiCard from "@/components/admin/KpiCard";
 import { Button } from "@/components/ui/button";
 import { useAdminComplianceOverview } from "@/hooks/useLegalCompliance";
+import { useAdminStats } from "@/hooks/admin/useAdminData";
 
 export default function AdminCompliancePage() {
   const { data, isLoading, error, refetch } = useAdminComplianceOverview();
+  const { data: stats } = useAdminStats();
 
   const queues = [
     {
@@ -24,6 +26,14 @@ export default function AdminCompliancePage() {
       count: data?.copyright_new ?? 0,
       icon: Copyright,
       accent: (data?.copyright_new ?? 0) > 0,
+    },
+    {
+      to: "/admin/kyc",
+      label: "ยืนยันตัวตน (KYC)",
+      hint: `${stats?.kycVerified ?? 0} คนผ่านแล้ว`,
+      count: stats?.pendingKyc ?? 0,
+      icon: ShieldCheck,
+      accent: (stats?.pendingKyc ?? 0) > 0,
     },
     {
       to: "/admin/compliance/privacy",
@@ -54,12 +64,12 @@ export default function AdminCompliancePage() {
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Consent 7 วัน" value={isLoading ? "…" : String(data?.consents_7d ?? 0)} />
         <KpiCard label="Cookie log 7 วัน" value={isLoading ? "…" : String(data?.cookie_logs_7d ?? 0)} />
-        <KpiCard label="คำขอลบบัญชี" value={isLoading ? "…" : String(data?.privacy_delete ?? 0)} accent={(data?.privacy_delete ?? 0) > 0} />
-        <KpiCard label="คิวรวม" value={isLoading ? "…" : String((data?.open_reports ?? 0) + (data?.copyright_new ?? 0) + (data?.privacy_new ?? 0))} accent />
+        <KpiCard label="KYC ผ่านแล้ว" value={String(stats?.kycVerified ?? 0)} icon={ShieldCheck} accent />
+        <KpiCard label="KYC รอตรวจ" value={String(stats?.pendingKyc ?? 0)} accent={(stats?.pendingKyc ?? 0) > 0} />
       </div>
 
       <h2 className="mt-8 text-sm font-medium text-admin-fg">คิวที่ต้องดูแล</h2>
-      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {queues.map((q) => {
           const Icon = q.icon;
           return (

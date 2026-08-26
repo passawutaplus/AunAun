@@ -101,7 +101,7 @@ export async function fetchProfilesByOwnerIds(ownerIds: string[]): Promise<Table
 
 export const usePackageFeed = () =>
   useQuery({
-    queryKey: ["package-feed", "listing", "v3"],
+    queryKey: ["package-feed", "listing", "v4"],
     queryFn: async (): Promise<PackageFeedCard[]> => {
       const { data: serviceRows, error: serviceError } = await fromCreatorServices()
         .select(CREATOR_SERVICES_SELECT)

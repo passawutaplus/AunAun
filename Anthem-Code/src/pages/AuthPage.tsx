@@ -85,7 +85,8 @@ const AuthPage = () => {
     <div
       ref={authHeroRef}
       className={cn(
-      "relative min-h-screen overflow-hidden bg-background transition-opacity duration-300",
+      "relative min-h-screen overflow-x-hidden bg-background transition-opacity duration-300",
+      "lg:overflow-hidden",
       fadeOut && "opacity-0"
     )}>
       <SeoHead title="เข้าสู่ระบบ" path="/auth" noindex />
@@ -125,7 +126,7 @@ const AuthPage = () => {
 
         {/* RIGHT: Form */}
         <div className="flex items-center justify-center p-4 sm:p-6 lg:p-8">
-            <div className="w-full max-w-md pb-24">
+            <div className="w-full max-w-md pb-6 lg:pb-24">
             <div className="flex justify-center mb-6 lg:hidden">
               <BrandLogo />
             </div>
@@ -177,6 +178,11 @@ const AuthPage = () => {
               <Link to="/legal/privacy" className="hover:text-foreground underline underline-offset-2">นโยบายความเป็นส่วนตัว</Link>
             </p>
           </div>
+        </div>
+
+        {/* Mobile / tablet: 2-col vertical work slider below login */}
+        <div className="relative z-10 lg:hidden">
+          <AuthWorkWall embed className="mx-auto w-full max-w-md px-4 pb-10" />
         </div>
       </div>
       </main>

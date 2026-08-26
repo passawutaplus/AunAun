@@ -223,7 +223,7 @@ export default function DashboardPage({ mode: modeProp }: Props) {
               variant="outline"
               size="sm"
               onClick={() => navigate("/settings")}
-              className="rounded-full"
+              className="rounded-full border-primary-bright text-primary hover:bg-primary-bright/10"
             >
               <Settings className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">ตั้งค่า</span>
@@ -259,13 +259,9 @@ export default function DashboardPage({ mode: modeProp }: Props) {
                     <h2 className="text-sm font-semibold">รายได้จ้างงาน (THB)</h2>
                     <EarningsBalanceCards
                       pendingSatang={0}
-                      availableSatang={0}
                       payoutReservedSatang={0}
                       paidOutSatang={0}
                     />
-                    <p className="text-[11px] text-muted-foreground">
-                      ยอดจ้างงานผ่าน Omise จะแสดงที่นี่หลังเปิดรับชำระ
-                    </p>
                   </div>
                 </div>
                 <DashboardHireDocumentsPanel userId={user.id} />

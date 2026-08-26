@@ -390,7 +390,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const creatorsMap = useMemo(() => {
     const map: Record<
       string,
-      { name: string; avatar: string; username?: string; opportunityTypes: string[] }
+      { name: string; avatar: string; username?: string; opportunityTypes: string[]; verified?: boolean }
     > = {};
     (creatorsData?.list ?? []).forEach((p) => {
       const profileUserId = (p as { user_id?: string }).user_id ?? p.id;
@@ -399,6 +399,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
         avatar: p.avatar_url || "",
         username: p.username ?? undefined,
         opportunityTypes: p.opportunity_types ?? [],
+        verified: !!p.is_verified,
       };
     });
     return map;
@@ -420,11 +421,13 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
         ownerId: p.owner_id,
         ownerAvatar: o?.avatar ?? "",
         ownerUsername: o?.username,
+        ownerVerified: o?.verified,
         collaborators: collaboratorIds.map((id) => ({
           id,
           name: creatorsMap[id]?.name ?? "ผู้ร่วมคอลแลป",
           avatar: creatorsMap[id]?.avatar ?? "",
           username: creatorsMap[id]?.username,
+          verified: creatorsMap[id]?.verified,
         })),
         likes: p.likes,
         views: p.views,

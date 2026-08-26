@@ -24,6 +24,8 @@ export interface AdminStats {
   pendingCashouts: number;
   openFeedback: number;
   pendingKyc: number;
+  kycVerified: number;
+  kycRejected: number;
   openAmlFlags: number;
 }
 
@@ -150,7 +152,7 @@ export function useAdminStats() {
       const launch = isAplus1LaunchMinimal();
       const [
         users, newUsers, studios, projects, jobs, hiring, collabs, msgs, cols, packages,
-        likes, comments, follows, gifts, views, reports, cashouts, feedback, kyc, aml,
+        likes, comments, follows, gifts, views, reports, cashouts, feedback, kyc, kycOk, kycNo, aml,
       ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
@@ -171,6 +173,8 @@ export function useAdminStats() {
         launch ? Promise.resolve(zeroCount) : supabase.from("cashout_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("app_feedback" as never).select("*", { count: "exact", head: true }).eq("status", "new"),
         supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_verified", true),
+        supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "rejected"),
         supabase.from("aml_flags").select("*", { count: "exact", head: true }).eq("status", "open"),
       ]);
       return {
@@ -193,6 +197,8 @@ export function useAdminStats() {
         pendingCashouts: cashouts.count ?? 0,
         openFeedback: feedback.count ?? 0,
         pendingKyc: kyc.count ?? 0,
+        kycVerified: kycOk.count ?? 0,
+        kycRejected: kycNo.count ?? 0,
         openAmlFlags: aml.count ?? 0,
       };
     },

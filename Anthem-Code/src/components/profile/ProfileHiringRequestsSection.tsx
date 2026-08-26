@@ -368,7 +368,7 @@ export function ProfileHiringRequestsSection({
             onClick={() => setHiringTab(s)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
               hiringTab === s
-                ? "bg-primary text-primary-foreground"
+                ? "bg-primary-bright text-white"
                 : "bg-card text-secondary-foreground border border-border hover:bg-secondary"
             }`}
           >

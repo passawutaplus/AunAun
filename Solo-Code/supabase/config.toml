@@ -57,3 +57,6 @@ verify_jwt = true
 
 [functions.marketing-outreach]
 verify_jwt = true
+
+[functions.notify-kyc]
+verify_jwt = true

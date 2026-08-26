@@ -8,6 +8,7 @@ import {
   isAplus1SubscriptionsEnabled,
   isLaunchCreatorSupportEnabled,
   isAplus1GiftEconomyEnabled,
+  isAplus1PxEnabled,
   isLaunchDesignDrillEnabled,
   isLaunchBoostEnabled,
   isLaunchAllowedPath,
@@ -32,6 +33,8 @@ describe("aplus1Launch flags (fail-closed)", () => {
     expect(isAplus1ChatOffersEnabled()).toBe(true);
     expect(isAplus1SubscriptionsEnabled()).toBe(false);
     expect(isLaunchCreatorSupportEnabled()).toBe(false);
+    expect(isAplus1PxEnabled()).toBe(false);
+    expect(isAplus1GiftEconomyEnabled()).toBe(false);
     expect(isLaunchDesignDrillEnabled()).toBe(false);
     expect(isLaunchBoostEnabled()).toBe(false);
     expect(isSoloEcosystemEnabled()).toBe(false);
@@ -92,11 +95,34 @@ describe("aplus1Launch flags (fail-closed)", () => {
     expect(isAplus1SubscriptionsEnabled()).toBe(false);
   });
 
-  it("enables creator support / gift economy only when full product and VITE_APLUS1_GIFT_ECONOMY_ENABLED=true", () => {
+  it("enables Pixel only when full product and VITE_APLUS1_PX_ENABLED=true", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
+    vi.stubEnv("VITE_APLUS1_PX_ENABLED", "true");
+    expect(isAplus1PxEnabled()).toBe(true);
+    expect(isAplus1GiftEconomyEnabled()).toBe(false);
+  });
+
+  it("launch minimal always disables Pixel", () => {
+    vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "");
+    vi.stubEnv("VITE_APLUS1_PX_ENABLED", "true");
+    expect(isAplus1PxEnabled()).toBe(false);
+  });
+
+  it("enables creator support / gift economy only when Pixel and gift flags are on", () => {
+    vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
+    vi.stubEnv("VITE_APLUS1_PX_ENABLED", "true");
     vi.stubEnv("VITE_APLUS1_GIFT_ECONOMY_ENABLED", "true");
     expect(isLaunchCreatorSupportEnabled()).toBe(true);
     expect(isAplus1GiftEconomyEnabled()).toBe(true);
+  });
+
+  it("gift economy stays off when Pixel is off even if gift flag is set", () => {
+    vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
+    vi.stubEnv("VITE_APLUS1_PX_ENABLED", "");
+    vi.stubEnv("VITE_APLUS1_GIFT_ECONOMY_ENABLED", "true");
+    expect(isAplus1PxEnabled()).toBe(false);
+    expect(isAplus1GiftEconomyEnabled()).toBe(false);
+    expect(isLaunchCreatorSupportEnabled()).toBe(false);
   });
 
   it("launch minimal always disables creator support / gift economy", () => {

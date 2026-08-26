@@ -233,6 +233,8 @@ const PortfolioProfilePage = () => {
     return <PageLoader />;
   }
 
+  const isVerified = !!(profile as { is_verified?: boolean }).is_verified;
+
   return (
     <div className={cn("min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
       <div className="sticky top-0 z-30 lg:hidden border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30">
@@ -256,6 +258,8 @@ const PortfolioProfilePage = () => {
           disciplines={disciplines}
           onOpportunityEdit={() => setOpportunityOpen(true)}
           onPost={() => navigate("/portfolio/new")}
+          onBecomeCreator={!isVerified ? () => navigate("/verify") : undefined}
+          onWallet={isVerified ? () => navigate("/earnings") : undefined}
           onPreview={() =>
             navigate(profileVisitorPreviewPath({ user_id: user!.id, username: profile.username }))
           }

@@ -23,7 +23,7 @@ function profileUserId(p: { user_id?: string; id?: string }) {
 
 export const useDesigners = () =>
   useQuery({
-    queryKey: ["designers-feed", "v10"],
+    queryKey: ["designers-feed", "v11"],
     queryFn: async (): Promise<DesignerCardData[]> => {
       let { data: profiles, error } = await profilesPublicFrom()
         .select(PROFILE_DESIGNER_SELECT)

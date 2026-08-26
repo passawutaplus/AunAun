@@ -6,19 +6,19 @@ import { cn } from "@/lib/utils";
 export function SelfieExample({ className }: { className?: string }) {
   return (
     <div className={cn("rounded-xl border border-border/70 bg-muted/15 p-3 space-y-3", className)}>
-      <p className="text-sm font-medium">ข้อควรระวังเมื่อถ่ายรูปเซลฟี่</p>
+      <p className="text-sm font-medium">ตัวอย่างเซลฟี่ถือบัตร</p>
       <div className="grid grid-cols-2 gap-2">
         <GuideCard
           ok
           title="รูปแบบที่ถูกต้อง"
-          bullets={["เห็นเต็มใบหน้า", "ถือบัตรข้างใบหน้า", "เห็นบัตรเต็มใบ", "แสงพอ ไม่สะท้อน"]}
+          bullets={["เห็นเต็มใบหน้า", "ถือบัตรข้างแก้ม", "เห็นบัตรเต็มใบ อ่านเลขได้", "แสงพอ ไม่สะท้อน"]}
         >
           <CorrectSelfieArt />
         </GuideCard>
         <GuideCard
           ok={false}
           title="รูปแบบที่ไม่ถูกต้อง"
-          bullets={["บัตรบังใบหน้า", "แสงสะท้อนบนบัตร", "มือบังบัตร", "ใบหน้า/บัตรถูกตัดเฟรม"]}
+          bullets={["บัตรบังใบหน้า", "แสงสะท้อนบนบัตร", "มือบังเลขบัตร", "ใบหน้า/บัตรถูกตัดเฟรม"]}
         >
           <IncorrectSelfieArt />
         </GuideCard>
@@ -74,14 +74,14 @@ function CorrectSelfieArt() {
   return (
     <svg viewBox="0 0 160 120" className="w-full h-auto" aria-hidden>
       <rect width="160" height="120" fill="hsl(var(--muted))" opacity="0.25" />
-      {/* Face */}
-      <circle cx="80" cy="42" r="22" fill="hsl(var(--muted-foreground))" opacity="0.35" />
-      <ellipse cx="80" cy="88" rx="36" ry="24" fill="hsl(var(--muted-foreground))" opacity="0.25" />
-      {/* ID card held to the side — not covering face */}
-      <rect x="108" y="48" width="42" height="28" rx="3" fill="hsl(var(--card))" stroke="#22c55e" strokeWidth="1.5" />
-      <rect x="112" y="52" width="10" height="12" rx="1" fill="hsl(var(--muted))" opacity="0.5" />
-      <rect x="125" y="54" width="20" height="3" rx="1" fill="hsl(var(--muted-foreground))" opacity="0.35" />
-      <rect x="125" y="60" width="16" height="3" rx="1" fill="hsl(var(--muted-foreground))" opacity="0.25" />
+      {/* Face on the left — card held beside the cheek, not covering */}
+      <circle cx="52" cy="44" r="22" fill="hsl(var(--muted-foreground))" opacity="0.35" />
+      <ellipse cx="52" cy="92" rx="32" ry="22" fill="hsl(var(--muted-foreground))" opacity="0.25" />
+      <rect x="88" y="38" width="58" height="38" rx="3" fill="hsl(var(--card))" stroke="#22c55e" strokeWidth="1.5" />
+      <rect x="93" y="43" width="12" height="16" rx="1" fill="hsl(var(--muted))" opacity="0.5" />
+      <rect x="109" y="45" width="30" height="3" rx="1" fill="hsl(var(--muted-foreground))" opacity="0.4" />
+      <rect x="109" y="51" width="26" height="3" rx="1" fill="hsl(var(--muted-foreground))" opacity="0.3" />
+      <rect x="109" y="57" width="22" height="3" rx="1" fill="hsl(var(--muted-foreground))" opacity="0.22" />
     </svg>
   );
 }

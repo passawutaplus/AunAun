@@ -9,9 +9,10 @@ export type WelcomeMissionCatalogRow = {
   active: boolean;
 };
 
-export function useWelcomeMissionCatalog() {
+export function useWelcomeMissionCatalog(opts?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["welcome-mission-catalog"],
+    enabled: opts?.enabled ?? true,
     staleTime: 300_000,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -28,9 +29,10 @@ export function useWelcomeMissionCatalog() {
   });
 }
 
-export function useWelcomePxCap() {
+export function useWelcomePxCap(opts?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["welcome-px-cap"],
+    enabled: opts?.enabled ?? true,
     staleTime: 300_000,
     queryFn: async () => {
       const { data, error } = await supabase

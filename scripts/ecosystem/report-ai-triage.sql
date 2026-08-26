@@ -113,7 +113,7 @@ BEGIN
   RETURN jsonb_build_object(
     'high_risk_kyc', (
       SELECT count(*)::int FROM shared.kyc_requests
-      WHERE status = 'pending' AND coalesce(ai_risk_score, 0) > 40
+      WHERE status = 'pending' AND ai_risk_score IS NOT NULL AND ai_risk_score < 60
     ),
     'urgent_reports', (
       SELECT count(*)::int FROM anthem.user_reports
@@ -135,8 +135,8 @@ BEGIN
       FROM (
         SELECT id, user_id, legal_name, ai_risk_score, ai_summary, ai_recommendation, submitted_at
         FROM shared.kyc_requests
-        WHERE status = 'pending' AND coalesce(ai_risk_score, 0) > 40
-        ORDER BY ai_risk_score DESC NULLS LAST, submitted_at ASC
+        WHERE status = 'pending' AND ai_risk_score IS NOT NULL AND ai_risk_score < 60
+        ORDER BY ai_risk_score ASC NULLS LAST, submitted_at ASC
         LIMIT 5
       ) t
     ), '[]'::jsonb),

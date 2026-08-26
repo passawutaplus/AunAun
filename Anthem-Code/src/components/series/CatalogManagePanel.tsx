@@ -313,8 +313,9 @@ export default function CatalogManagePanel({ userId, embedded }: Props) {
           </Button>
           <Button
             size="sm"
+            variant="gradient"
             onClick={openCreate}
-            className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+            className="rounded-full"
           >
             <Plus className="w-4 h-4 mr-1" /> Catalog ใหม่
           </Button>

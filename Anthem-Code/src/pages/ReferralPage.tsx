@@ -8,10 +8,13 @@ import { Progress } from "@/components/ui/progress";
 import { useReferralDashboard } from "@/hooks/useReferral";
 import { formatThaiDate } from "@/lib/format";
 import SeoHead from "@/components/SeoHead";
+import { isAplus1PxEnabled } from "@/lib/aplus1Launch";
+import LaunchUnavailablePage from "@/pages/LaunchUnavailablePage";
 
 export default function ReferralPage() {
+  const pxOn = isAplus1PxEnabled();
   const navigate = useNavigate();
-  const { data, isLoading, error } = useReferralDashboard();
+  const { data, isLoading, error } = useReferralDashboard({ enabled: pxOn });
   const referralLink = useMemo(
     () => data?.code && typeof window !== "undefined" ? `${window.location.origin}/?ref=${data.code}` : "",
     [data?.code],
@@ -38,6 +41,8 @@ export default function ReferralPage() {
       /* User cancelled the native share sheet. */
     }
   };
+
+  if (!pxOn) return <LaunchUnavailablePage />;
 
   return (
     <div className="min-h-screen bg-app-ambient">

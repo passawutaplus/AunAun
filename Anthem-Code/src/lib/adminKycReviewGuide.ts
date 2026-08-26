@@ -25,7 +25,7 @@ export const KYC_REVIEW_CHECKLIST: KycReviewCheckItem[] = [
     id: "docs_clear",
     step: 1,
     label: "เอกสารครบและอ่านได้",
-    hint: "บัตรประชาชน + สมุดบัญชีชัด อ่านชื่อ/เลขได้",
+    hint: "บัตรด้านหน้า + เซลฟี่ถือบัตร + สมุดบัญชีชัด อ่านชื่อ/เลขได้",
     failReason: "blurry_id",
   },
   {

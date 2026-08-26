@@ -1,44 +1,72 @@
+import { CheckCircle2, Clock, Send, type LucideIcon } from "lucide-react";
 import { formatMoneyLabel } from "@/lib/payments/fxDisplay";
 import { satangToThb } from "@/lib/payments/fees";
-import { PAYOUT_MIN_SATANG } from "@/lib/payments/payoutPolicy";
+import { cn } from "@/lib/utils";
 
 type Props = {
   pendingSatang: number;
-  availableSatang: number;
+  /** Kept for ledger callers; hire-available is not shown on this row. */
+  availableSatang?: number;
   payoutReservedSatang?: number;
   paidOutSatang?: number;
   className?: string;
 };
 
+type Row = {
+  label: string;
+  hint: string;
+  satang: number;
+  icon: LucideIcon;
+  iconClass: string;
+};
+
 export default function EarningsBalanceCards({
   pendingSatang,
-  availableSatang,
   payoutReservedSatang = 0,
   paidOutSatang = 0,
   className,
 }: Props) {
-  const rows = [
-    { label: "รอตรวจสอบ", satang: pendingSatang, hint: "หลังชำระ ก่อนอนุมัติงาน" },
+  const rows: Row[] = [
     {
-      label: "พร้อมถอน",
-      satang: availableSatang,
-      hint: `ขั้นต่ำ ${formatMoneyLabel(satangToThb(PAYOUT_MIN_SATANG), "THB")}`,
+      label: "รอตรวจสอบ",
+      hint: "ผู้จ้างจ่ายแล้ว รอรับงาน",
+      satang: pendingSatang,
+      icon: Clock,
+      iconClass: "text-amber-700 dark:text-amber-400",
     },
-    { label: "กำลังโอน", satang: payoutReservedSatang, hint: "รอบโอนที่คิวอยู่" },
-    { label: "โอนแล้ว", satang: paidOutSatang, hint: "เข้าบัญชีที่ยืนยันแล้ว" },
+    {
+      label: "กำลังโอน",
+      hint: "กำลังส่งเข้าบัญชี",
+      satang: payoutReservedSatang,
+      icon: Send,
+      iconClass: "text-sky-700 dark:text-sky-400",
+    },
+    {
+      label: "โอนแล้ว",
+      hint: "เข้าบัญชีแล้ว",
+      satang: paidOutSatang,
+      icon: CheckCircle2,
+      iconClass: "text-emerald-700 dark:text-emerald-400",
+    },
   ];
 
   return (
-    <div className={className ?? "grid grid-cols-2 gap-3 sm:grid-cols-4"}>
-      {rows.map((r) => (
-        <div key={r.label} className="rounded-lg border border-border p-3">
-          <p className="text-xs text-muted-foreground">{r.label}</p>
-          <p className="text-lg font-semibold tabular-nums">
-            {formatMoneyLabel(satangToThb(r.satang), "THB")}
-          </p>
-          <p className="text-[10px] text-muted-foreground mt-1">{r.hint}</p>
-        </div>
-      ))}
+    <div className={className ?? "grid grid-cols-1 gap-3 sm:grid-cols-3"}>
+      {rows.map((r) => {
+        const Icon = r.icon;
+        return (
+          <div key={r.label} className="rounded-lg border border-border p-3">
+            <div className="flex items-center gap-1.5">
+              <Icon className={cn("h-3.5 w-3.5 shrink-0", r.iconClass)} aria-hidden />
+              <p className="text-xs text-muted-foreground">{r.label}</p>
+            </div>
+            <p className="mt-1 text-lg font-semibold tabular-nums">
+              {formatMoneyLabel(satangToThb(r.satang), "THB")}
+            </p>
+            <p className="mt-1 text-[10px] text-muted-foreground">{r.hint}</p>
+          </div>
+        );
+      })}
     </div>
   );
 }

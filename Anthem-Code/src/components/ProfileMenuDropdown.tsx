@@ -4,7 +4,7 @@ import {
   LogOut,
   Settings,
   Layers3,
-  Coins,
+  Wallet,
   FolderKanban,
   Sparkles,
   MessagesSquare,
@@ -31,7 +31,6 @@ import { FeedGridDensityPicker } from "@/components/feed/FeedGridDensityPicker";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useProfile } from "@/hooks/useProfile";
-import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
 function preventClose(e: PointerEvent) {
@@ -93,11 +92,9 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
           <DropdownMenuItem onClick={() => go("/portfolio?tab=inspire")} className="rounded-lg">
             <Sparkles className="w-4 h-4 mr-2" /> Inspiration
           </DropdownMenuItem>
-          {!isAplus1LaunchMinimal() ? (
-            <DropdownMenuItem onClick={() => go("/earnings")} className="rounded-lg">
-              <Coins className="w-4 h-4 mr-2 text-primary" /> รายได้ &amp; กระเป๋า Pixel
-            </DropdownMenuItem>
-          ) : null}
+          <DropdownMenuItem onClick={() => go("/earnings")} className="rounded-lg">
+            <Wallet className="w-4 h-4 mr-2 text-primary" /> กระเป๋า
+          </DropdownMenuItem>
         </>
       ) : (
         <>
@@ -121,7 +118,7 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
       {variant !== "forum" ? (
         <>
           {!isVerified ? (
-            <DropdownMenuItem onClick={() => go("/hire/start")} className="rounded-lg">
+            <DropdownMenuItem onClick={() => go("/verify")} className="rounded-lg">
               <Rocket className="w-4 h-4 mr-2 text-primary" /> Become a Creator
             </DropdownMenuItem>
           ) : null}

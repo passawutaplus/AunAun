@@ -103,7 +103,7 @@ export function inAppPrefKeyForKind(kind: string): InAppNotifyKey {
   }
   if (k.includes("comment") && !k.includes("community")) return "workLike";
   // Unused channels for now — keep under system so they don't get a dedicated toggle
-  if (k.includes("gift") || k.includes("px") || k.includes("job")) return "system";
+  if (k.includes("gift") || k.includes("px") || k.includes("job") || k.includes("kyc")) return "system";
   return "system";
 }
 

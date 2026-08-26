@@ -44,10 +44,10 @@ Legacy SQL อ้างอิง: `scripts/ecosystem/stripe-payments.sql` (เ�
 
 | ข้อกำหนด | สถานะ |
 |----------|--------|
-| บัตรประชาชนไทย + selfie คู่บัตร + สมุดบัญชี (เฉพาะคนไทย) | ✓ |
-| OCR อ่านบัตร (client) → Auto-fill ชื่อ/เลข/วันเกิด/หมดอายุ — แก้ได้ | ✓ MVP |
-| AI เช็กคุณภาพรูป (บัตรจริง/ชัด/แสง/4 มุม/เบลอ/สะท้อน) → ไม่ผ่านให้ถ่ายใหม่ | ✓ MVP |
-| Selfie: วงกลมจัดใบหน้า + AI (กลาง/แสง/ชัด/ไม่มีคนอื่น) | ✓ MVP |
+| บัตรประชาชนไทยด้านหน้า + เซลฟี่ถือบัตร + สมุดบัญชี (ไม่บังคับภาพหลังบัตร / เลขหลังบัตร) | ✓ |
+| กรอกชื่อ/เลข/วันเกิด/ที่อยู่จากบัตรด้วยตนเอง (ไม่ auto-fill จาก OCR) | ✓ |
+| ระบบช่วยเช็คความถูกต้องของรูป (บัตรจริง/ชัด/แสง/เต็มใบ/เบลอ/สะท้อน) → ไม่ผ่านให้ถ่ายใหม่ | ✓ MVP |
+| เซลฟี่ถือบัตร: กล้องหน้า · เห็นใบหน้า · ถือบัตรข้างแก้ม | ✓ MVP |
 | วันเกิด · อายุ ≥ 18 · ที่อยู่ครบตำบล · สัญชาติไทยเท่านั้น | ✓ |
 | เช็คเลขบัตรไทย (checksum) · เบอร์โทรไทย | ✓ |
 | PDPA consent · user attestation (`CONFIRM`) | ✓ |
@@ -58,7 +58,7 @@ Legacy SQL อ้างอิง: `scripts/ecosystem/stripe-payments.sql` (เ�
 
 - `/verify` → `shared.kyc_requests` + `submit_kyc_verification`  
 - Admin `/admin/kyc` → อนุมัติแล้วตั้ง `profiles.is_verified` + `kyc_expires_at`  
-- Migration: `scripts/ecosystem/kyc-standard-v3.sql`  
+- Migration: `scripts/ecosystem/kyc-standard-v3.sql` + `scripts/ecosystem/kyc-front-selfie-only.sql`  
 - **Cashout / THB payout ต้อง verify และยังไม่หมดอายุ**
 
 ## AML flags (`aml_flags`)

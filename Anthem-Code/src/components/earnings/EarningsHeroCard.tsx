@@ -27,15 +27,15 @@ export function EarningsHeroCard({
 }: Props) {
   return (
     <div className="space-y-3">
-      <div className="rounded-3xl bg-foreground text-background p-6 shadow-lg shadow-foreground/10">
-        <p className="text-xs text-background/70 font-medium">มูลค่าถอนได้โดยประมาณ</p>
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-wallet p-6 text-white shadow-lg shadow-primary/25">
+        <p className="text-xs font-medium text-white/85">มูลค่าถอนได้โดยประมาณ</p>
         <p className="mt-1 text-4xl font-semibold tabular-nums tracking-tight">
           ฿ {netThb.toLocaleString()}
         </p>
-        <p className="mt-2 text-sm text-background/75 tabular-nums">
+        <p className="mt-2 text-sm tabular-nums text-white/90">
           จาก {earnedPx.toLocaleString()} px ที่ถอนได้
         </p>
-        <p className="mt-1 text-xs text-background/60">
+        <p className="mt-1 text-xs text-white/75">
           สะสมรวม {lifetimeEarned.toLocaleString()} px · หลังหักค่าธรรมเนียม {feeLabel}
         </p>
         {onCashout ? (
@@ -47,8 +47,8 @@ export function EarningsHeroCard({
             className={cn(
               "mt-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
               canCashout
-                ? "bg-background text-foreground hover:bg-background/90"
-                : "bg-background/15 text-background/50 cursor-not-allowed",
+                ? "bg-white text-primary hover:bg-white/90"
+                : "cursor-not-allowed bg-white/20 text-white/70",
             )}
           >
             <Banknote className="h-3.5 w-3.5" />

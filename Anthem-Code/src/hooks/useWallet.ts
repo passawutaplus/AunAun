@@ -44,11 +44,11 @@ function parseWalletRow(row: Record<string, unknown>, userId: string): Wallet {
   };
 }
 
-export const useWallet = () => {
+export const useWallet = (opts?: { enabled?: boolean }) => {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["wallet", user?.id],
-    enabled: !!user?.id,
+    enabled: !!user?.id && (opts?.enabled ?? true),
     staleTime: 15_000,
     placeholderData: keepPreviousData,
     queryFn: async (): Promise<Wallet> => {
@@ -79,11 +79,11 @@ export const useWallet = () => {
 };
 
 /** Purchased px พร้อมใช้ส่งของขวัญ (ใช้ได้ทันทีหลังเติม) */
-export const useAvailablePurchasedPx = () => {
+export const useAvailablePurchasedPx = (opts?: { enabled?: boolean }) => {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["wallet-available-purchased", user?.id],
-    enabled: !!user?.id,
+    enabled: !!user?.id && (opts?.enabled ?? true),
     refetchInterval: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("available_purchased_px", { _uid: user!.id });

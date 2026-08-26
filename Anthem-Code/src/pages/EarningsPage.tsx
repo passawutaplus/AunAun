@@ -36,19 +36,20 @@ import ManageModeNav from "@/components/dashboard/ManageModeNav";
 import { EarningsPlatformIncomeHistory } from "@/components/earnings/EarningsPlatformIncomeHistory";
 import { computeGiftablePx } from "@/lib/walletDisplay";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
-import { isAplus1GiftEconomyEnabled } from "@/lib/aplus1Launch";
+import { isAplus1GiftEconomyEnabled, isAplus1PxEnabled } from "@/lib/aplus1Launch";
 
 const EarningsPage = () => {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuth();
+  const pxOn = isAplus1PxEnabled();
   const giftEconomy = isAplus1GiftEconomyEnabled();
-  const { data: wallet } = useWallet();
-  const { data: availablePurchased = 0 } = useAvailablePurchasedPx();
-  const { data: gifts = [] } = useGifts();
-  const { data: received = [] } = useReceivedGifts(user?.id);
-  const { data: cashouts = [] } = useCashoutHistory();
-  const { data: eligibility } = useCreatorEligibility(user?.id);
+  const { data: wallet } = useWallet({ enabled: pxOn });
+  const { data: availablePurchased = 0 } = useAvailablePurchasedPx({ enabled: pxOn });
+  const { data: gifts = [] } = useGifts({ enabled: giftEconomy });
+  const { data: received = [] } = useReceivedGifts(giftEconomy ? user?.id : undefined);
+  const { data: cashouts = [] } = useCashoutHistory({ enabled: pxOn });
+  const { data: eligibility } = useCreatorEligibility(pxOn ? user?.id : undefined);
   const { data: subData } = useSubscription();
   const feeRate = getCashoutFeeRate(subData?.profileTier);
   const feeLabel = formatCashoutFeeLabel(subData?.profileTier);
@@ -57,15 +58,16 @@ const EarningsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !pxOn) return;
     void qc.invalidateQueries({ queryKey: ["wallet", user.id] });
     void qc.invalidateQueries({ queryKey: ["wallet-available-purchased", user.id] });
     if (giftEconomy) {
       void qc.invalidateQueries({ queryKey: ["wallet-available-gift", user.id] });
     }
-  }, [user?.id, qc, giftEconomy]);
+  }, [user?.id, qc, giftEconomy, pxOn]);
 
   useEffect(() => {
+    if (!pxOn) return;
     const topup = searchParams.get("topup");
     const connect = searchParams.get("connect");
     if (topup === "success") {
@@ -85,7 +87,7 @@ const EarningsPage = () => {
       searchParams.delete("connect");
       setSearchParams(searchParams, { replace: true });
     }
-  }, [searchParams, setSearchParams, user?.id, qc, giftEconomy]);
+  }, [searchParams, setSearchParams, user?.id, qc, giftEconomy, pxOn]);
 
   const giftablePx = computeGiftablePx(wallet, availablePurchased);
 
@@ -139,9 +141,11 @@ const EarningsPage = () => {
               <div>
                 <h1 className="text-2xl font-medium text-foreground">กระเป๋า</h1>
                 <p className="mt-0.5 text-sm text-muted-foreground">
-                  {giftEconomy
-                    ? "ดูรายได้ PX รายได้จ้างงาน และประวัติถอนเงิน"
-                    : "ดูรายได้ถอนได้ รายได้จ้างงาน และประวัติถอนเงิน"}
+                  {pxOn
+                    ? giftEconomy
+                      ? "ดูรายได้ PX รายได้จ้างงาน และประวัติถอนเงิน"
+                      : "ดูรายได้ถอนได้ รายได้จ้างงาน และประวัติถอนเงิน"
+                    : "รายได้จากงานจ้าง — รอตรวจสอบ กำลังโอน และโอนแล้ว"}
                 </p>
               </div>
             </div>
@@ -160,19 +164,33 @@ const EarningsPage = () => {
       </div>
 
       <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 pb-10">
-        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-          <EarningsHeroCard
-            netThb={netThb}
-            earnedPx={earnedPx}
-            giftablePx={giftablePx}
-            lifetimeEarned={lifetimeEarned}
-            feeLabel={feeLabel}
-            showGiftable={giftEconomy}
-            onCashout={() => setCashoutOpen(true)}
-            canCashout={canCashout}
-            cashoutHint={cashoutHint}
-          />
+        {pxOn ? (
+          <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+            <EarningsHeroCard
+              netThb={netThb}
+              earnedPx={earnedPx}
+              giftablePx={giftablePx}
+              lifetimeEarned={lifetimeEarned}
+              feeLabel={feeLabel}
+              showGiftable={giftEconomy}
+              onCashout={() => setCashoutOpen(true)}
+              canCashout={canCashout}
+              cashoutHint={cashoutHint}
+            />
 
+            <div className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-sm font-semibold">รายได้จ้างงาน (THB)</h2>
+                <DisplayCurrencyToggle />
+              </div>
+              <EarningsBalanceCards
+                pendingSatang={0}
+                payoutReservedSatang={0}
+                paidOutSatang={0}
+              />
+            </div>
+          </div>
+        ) : (
           <div className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-4 sm:p-5">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold">รายได้จ้างงาน (THB)</h2>
@@ -180,20 +198,18 @@ const EarningsPage = () => {
             </div>
             <EarningsBalanceCards
               pendingSatang={0}
-              availableSatang={0}
               payoutReservedSatang={0}
               paidOutSatang={0}
             />
-            <p className="text-[11px] text-muted-foreground">
-              ยอดจ้างงานผ่าน Aplus1/Omise จะแสดงที่นี่หลังเปิดรับชำระ — แยกจากกระเป๋า PX
-            </p>
           </div>
-        </div>
+        )}
 
-        <EarningsQuickActions
-          onTopUp={() => setTopupOpen(true)}
-          showTopUp={giftEconomy}
-        />
+        {pxOn ? (
+          <EarningsQuickActions
+            onTopUp={() => setTopupOpen(true)}
+            showTopUp={giftEconomy}
+          />
+        ) : null}
 
         <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
           {giftEconomy ? (
@@ -215,7 +231,7 @@ const EarningsPage = () => {
               />
             ) : null}
             <EarningsPlatformIncomeHistory userId={user?.id} />
-            <EarningsCashoutHistory items={cashouts} />
+            {pxOn ? <EarningsCashoutHistory items={cashouts} /> : null}
           </div>
         </div>
 
@@ -227,7 +243,7 @@ const EarningsPage = () => {
         ) : null}
       </div>
 
-      <CashoutDialog open={cashoutOpen} onOpenChange={setCashoutOpen} />
+      {pxOn ? <CashoutDialog open={cashoutOpen} onOpenChange={setCashoutOpen} /> : null}
       {giftEconomy ? <TopUpDialog open={topupOpen} onOpenChange={setTopupOpen} /> : null}
     </div>
   );

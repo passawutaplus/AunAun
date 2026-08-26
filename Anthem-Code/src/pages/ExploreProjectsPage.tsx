@@ -28,7 +28,7 @@ import { absoluteUrl } from "@/lib/seo";
 
 function mapToCard(
   projects: DBProject[],
-  creators: Record<string, { name: string; avatar: string; username?: string }>,
+  creators: Record<string, { name: string; avatar: string; username?: string; verified?: boolean }>,
 ): Project[] {
   return projects.map((p) => {
     const o = creators[p.owner_id];
@@ -45,11 +45,13 @@ function mapToCard(
       ownerId: p.owner_id,
       ownerAvatar: o?.avatar ?? "",
       ownerUsername: o?.username,
+      ownerVerified: o?.verified,
       collaborators: collaboratorIds.map((id) => ({
         id,
         name: creators[id]?.name ?? "ผู้ร่วมคอลแลป",
         avatar: creators[id]?.avatar ?? "",
         username: creators[id]?.username,
+        verified: creators[id]?.verified,
       })),
       likes: p.likes,
       views: p.views,
@@ -148,12 +150,13 @@ const ExploreProjectsPage = () => {
   );
   const { data: creatorsData } = useProfilesByIds(creatorIds);
   const creatorsMap = useMemo(() => {
-    const map: Record<string, { name: string; avatar: string; username?: string }> = {};
+    const map: Record<string, { name: string; avatar: string; username?: string; verified?: boolean }> = {};
     (creatorsData?.list ?? []).forEach((p) => {
       map[p.user_id ?? p.id] = {
         name: p.display_name || p.username || "ฟรีแลนซ์",
         avatar: p.avatar_url || "",
         username: p.username ?? undefined,
+        verified: !!p.is_verified,
       };
     });
     return map;

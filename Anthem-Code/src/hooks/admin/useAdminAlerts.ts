@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { KYC_HIGH_RISK_THRESHOLD } from "@/lib/reportAiTriage";
 
 export interface AdminAlertCounts {
   openReports: number;
@@ -31,7 +32,7 @@ export function useAdminAlertCounts() {
           .from("kyc_requests")
           .select("*", { count: "exact", head: true })
           .eq("status", "pending")
-          .gt("ai_risk_score", 40),
+          .lt("ai_risk_score", KYC_HIGH_RISK_THRESHOLD),
         supabase
           .from("user_reports" as never)
           .select("*", { count: "exact", head: true })

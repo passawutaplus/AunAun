@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, ChevronDown, ChevronRight, ExternalLink, ImageIcon } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, ImageIcon } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -336,9 +337,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
               )}
               <div className="mt-3 flex items-center justify-center gap-1.5">
                 <h2 className="font-semibold text-foreground">{displayName}</h2>
-                {profile?.is_verified && (
-                  <BadgeCheck className="w-4 h-4 text-primary shrink-0" aria-label="ยืนยันแล้ว" />
-                )}
+                <VerifiedBadge verified={!!profile?.is_verified} />
               </div>
               {profile?.username && (
                 <p className="text-sm text-muted-foreground mt-0.5">@{profile.username}</p>

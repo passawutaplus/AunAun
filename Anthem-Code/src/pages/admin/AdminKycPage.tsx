@@ -4,6 +4,7 @@ import { ShieldCheck, ExternalLink, Bot, ImageIcon, FileText } from "lucide-reac
 import { toast } from "sonner";
 import { CompactLoader } from "@/components/ui/BanterLoader";
 import SectionHeader from "@/components/admin/SectionHeader";
+import KpiCard from "@/components/admin/KpiCard";
 import {
   AdminKycGuidePanel,
   AdminKycReviewChecklist,
@@ -13,9 +14,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   useAdminKycList,
+  useAdminKycCounts,
   useAdminKycDocuments,
   useAdminApproveKyc,
   useAdminRejectKyc,
@@ -25,21 +28,14 @@ import { getKycSignedUrl } from "@/lib/kycUpload";
 import { maskBankAccount } from "@/lib/kycPdpa";
 import { logKycAdminAccess } from "@/lib/adminAudit";
 import { formatThaiDate } from "@/lib/format";
-import { formatKycAddress, maskThaiIdLaserCode, maskThaiNationalId, KYC_PEP_STATUS_LABELS, KYC_SANCTIONS_STATUS_LABELS, type KycSanctionsStatus } from "@/lib/kycIdentity";
-import { KYC_REJECT_REASONS } from "@/lib/kycRejectReasons";
+import { formatKycAddress, formatThaiNationalId, maskThaiIdLaserCode, KYC_PEP_STATUS_LABELS, KYC_SANCTIONS_STATUS_LABELS, type KycSanctionsStatus } from "@/lib/kycIdentity";
+import { KYC_REJECT_REASONS, KYC_REJECT_REASON_GROUPS } from "@/lib/kycRejectReasons";
 import {
   allKycReviewChecksPassed,
   emptyKycReviewChecks,
   type KycReviewCheckId,
 } from "@/lib/adminKycReviewGuide";
-import { kycRiskTone } from "@/lib/reportAiTriage";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { kycRiskTone, kycScoreClass } from "@/lib/reportAiTriage";
 
 type Status = "pending" | "approved" | "rejected";
 
@@ -73,7 +69,7 @@ function AiSummaryCard({ item }: { item: KycRequest }) {
       </p>
       {item.ai_risk_score != null && (
         <p className="text-xs text-admin-muted">
-          ความเสี่ยง {item.ai_risk_score}/100
+          คะแนน {item.ai_risk_score}/100
           {item.ai_recommendation && ` · ${AI_REC_LABEL[item.ai_recommendation] ?? item.ai_recommendation}`}
         </p>
       )}
@@ -129,7 +125,17 @@ function KycDocumentGrid({ requestId }: { requestId: string }) {
               {isPdf && <span className="text-[10px]">เปิด PDF</span>}
             </div>
           )}
-          <p className="text-[10px] px-2 py-1 text-admin-muted">{d.doc_type}</p>
+          <p className="text-[10px] px-2 py-1 text-admin-muted">
+            {d.doc_type === "id_front"
+              ? "บัตรด้านหน้า"
+              : d.doc_type === "id_back"
+                ? "บัตรด้านหลัง"
+                : d.doc_type === "selfie"
+                  ? "เซลฟี่ถือบัตร"
+                  : d.doc_type === "bank_book"
+                    ? "สมุดบัญชี"
+                    : d.doc_type}
+          </p>
         </a>
         );
       })}
@@ -140,18 +146,21 @@ function KycDocumentGrid({ requestId }: { requestId: string }) {
 export default function AdminKycPage() {
   const [tab, setTab] = useState<Status>("pending");
   const list = useAdminKycList(tab);
+  const counts = useAdminKycCounts();
   const approve = useAdminApproveKyc();
   const reject = useAdminRejectKyc();
 
   const [reviewItem, setReviewItem] = useState<(KycRequest & { profile?: any }) | null>(null);
   const [note, setNote] = useState("");
-  const [rejectReason, setRejectReason] = useState("blurry_id");
+  const [rejectIntent, setRejectIntent] = useState(false);
+  const [rejectReasons, setRejectReasons] = useState<string[]>([]);
   const [reviewChecks, setReviewChecks] = useState(emptyKycReviewChecks);
 
   const openReview = (r: KycRequest & { profile?: any }) => {
     setReviewItem(r);
     setNote("");
-    setRejectReason("blurry_id");
+    setRejectIntent(false);
+    setRejectReasons([]);
     setReviewChecks(emptyKycReviewChecks());
     void logKycAdminAccess(r.id, "review_open");
   };
@@ -178,15 +187,42 @@ export default function AdminKycPage() {
 
       <AdminKycGuidePanel />
 
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <button type="button" className="text-left" onClick={() => setTab("approved")}>
+          <KpiCard
+            label="ผ่านแล้ว"
+            value={counts.data?.verified ?? "—"}
+            icon={ShieldCheck}
+            accent
+            delta="โปรไฟล์ที่ยืนยันแล้ว"
+          />
+        </button>
+        <button type="button" className="text-left" onClick={() => setTab("pending")}>
+          <KpiCard label="รอตรวจสอบ" value={counts.data?.pending ?? "—"} delta="คิวตรวจ" />
+        </button>
+        <button type="button" className="text-left" onClick={() => setTab("rejected")}>
+          <KpiCard label="ถูกปฏิเสธ" value={counts.data?.rejected ?? "—"} />
+        </button>
+      </div>
+
       <Tabs value={tab} onValueChange={(v) => setTab(v as Status)}>
         <TabsList>
-          <TabsTrigger value="pending">รอตรวจสอบ</TabsTrigger>
-          <TabsTrigger value="approved">อนุมัติแล้ว</TabsTrigger>
-          <TabsTrigger value="rejected">ถูกปฏิเสธ</TabsTrigger>
+          <TabsTrigger value="pending">รอตรวจสอบ ({counts.data?.pending ?? 0})</TabsTrigger>
+          <TabsTrigger value="approved">อนุมัติแล้ว ({counts.data?.approved ?? 0})</TabsTrigger>
+          <TabsTrigger value="rejected">ถูกปฏิเสธ ({counts.data?.rejected ?? 0})</TabsTrigger>
         </TabsList>
 
         <TabsContent value={tab} className="mt-4">
           <div className="border border-admin-border rounded-sm overflow-hidden bg-admin-surface">
+            {list.isLoading ? (
+              <div className="py-10">
+                <CompactLoader label="กำลังโหลดคำขอ..." labelClassName="text-admin-muted" />
+              </div>
+            ) : list.isError ? (
+              <p className="text-center py-8 text-sm text-destructive px-4">
+                โหลดรายการไม่สำเร็จ — รีเฟรชแล้วลองใหม่
+              </p>
+            ) : (
             <table className="w-full text-sm">
               <thead className="bg-admin-hover/40 text-[11px] uppercase tracking-wider text-admin-muted">
                 <tr>
@@ -202,7 +238,7 @@ export default function AdminKycPage() {
                 {[...(list.data ?? [])]
                   .sort((a, b) => {
                     if (tab !== "pending") return 0;
-                    return (b.ai_risk_score ?? 0) - (a.ai_risk_score ?? 0);
+                    return (a.ai_risk_score ?? 100) - (b.ai_risk_score ?? 100);
                   })
                   .map((r: KycRequest & { profile?: any }) => {
                   const highRisk = tab === "pending" && kycRiskTone(r.ai_risk_score) === "high";
@@ -231,7 +267,7 @@ export default function AdminKycPage() {
                     </td>
                     <td className="px-3 py-2 text-xs">
                       {r.ai_risk_score != null ? (
-                        <span className={r.ai_risk_score <= 15 ? "text-emerald-600" : r.ai_risk_score <= 40 ? "text-amber-600" : "text-destructive"}>
+                        <span className={kycScoreClass(r.ai_risk_score)}>
                           {r.ai_risk_score}/100
                         </span>
                       ) : (
@@ -269,6 +305,7 @@ export default function AdminKycPage() {
                 )}
               </tbody>
             </table>
+            )}
           </div>
         </TabsContent>
       </Tabs>
@@ -288,18 +325,21 @@ export default function AdminKycPage() {
                 </div>
                 <div>
                   <dt className="text-muted-foreground text-xs">เลขบัตรประชาชน</dt>
-                  <dd className="font-mono">{maskThaiNationalId(reviewItem.national_id_number)}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground text-xs">เลขหลังบัตร</dt>
-                  <dd className="font-mono">
-                    {maskThaiIdLaserCode(
-                      typeof reviewItem.submission_meta?.id_laser_code === "string"
-                        ? reviewItem.submission_meta.id_laser_code
-                        : null,
-                    )}
+                  <dd className="font-mono tracking-wide">
+                    {reviewItem.national_id_number
+                      ? formatThaiNationalId(reviewItem.national_id_number)
+                      : "—"}
                   </dd>
                 </div>
+                {typeof reviewItem.submission_meta?.id_laser_code === "string" &&
+                  reviewItem.submission_meta.id_laser_code.trim() && (
+                  <div>
+                    <dt className="text-muted-foreground text-xs">เลขหลังบัตร (คำขอเก่า)</dt>
+                    <dd className="font-mono">
+                      {maskThaiIdLaserCode(reviewItem.submission_meta.id_laser_code)}
+                    </dd>
+                  </div>
+                )}
                 <div>
                   <dt className="text-muted-foreground text-xs">วันเกิด / สัญชาติ</dt>
                   <dd className="text-xs">
@@ -394,23 +434,77 @@ export default function AdminKycPage() {
                 onMarkAll={markAllChecks}
                 onClearAll={() => setReviewChecks(emptyKycReviewChecks())}
               />
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">เหตุผลปฏิเสธ (ถ้ากดปฏิเสธ)</Label>
-                <Select value={rejectReason} onValueChange={setRejectReason}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {KYC_REJECT_REASONS.map((r) => (
-                      <SelectItem key={r.code} value={r.code}>
-                        {r.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-2 rounded-lg border border-border p-3">
+                <label htmlFor="kyc-reject-intent" className="flex items-start gap-2.5 cursor-pointer">
+                  <Checkbox
+                    id="kyc-reject-intent"
+                    checked={rejectIntent}
+                    onCheckedChange={(v) => {
+                      const on = v === true;
+                      setRejectIntent(on);
+                      if (!on) setRejectReasons([]);
+                    }}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    <span className="text-sm font-medium">จะปฏิเสธคำขอนี้</span>
+                    <span className="block text-[11px] text-muted-foreground mt-0.5">
+                      ติ๊กก่อน แล้วเลือกเหตุผลได้หลายข้อ จึงกดปฏิเสธได้
+                    </span>
+                  </span>
+                </label>
+                {rejectIntent && (
+                  <div className="space-y-3 pt-1 pl-6">
+                    <Label className="text-xs text-muted-foreground">เหตุผลปฏิเสธ (เลือกได้หลายข้อ)</Label>
+                    <div className="space-y-3">
+                      {KYC_REJECT_REASON_GROUPS.map((group) => (
+                        <div key={group.heading} className="border-t border-border pt-2 first:border-t-0 first:pt-0">
+                          <p className="text-[11px] font-medium text-muted-foreground mb-1.5">
+                            {group.heading}
+                          </p>
+                          <ul className="divide-y divide-border/80 rounded-md border border-border/70 overflow-hidden">
+                            {group.codes.map((code) => {
+                              const r = KYC_REJECT_REASONS.find((item) => item.code === code);
+                              if (!r) return null;
+                              const id = `kyc-reject-${r.code}`;
+                              const checked = rejectReasons.includes(r.code);
+                              return (
+                                <li key={r.code} className="bg-background">
+                                  <label
+                                    htmlFor={id}
+                                    className="flex items-start gap-2 cursor-pointer text-sm px-2.5 py-2 hover:bg-muted/40"
+                                  >
+                                    <Checkbox
+                                      id={id}
+                                      checked={checked}
+                                      onCheckedChange={(v) => {
+                                        const on = v === true;
+                                        setRejectReasons((prev) =>
+                                          on ? [...prev, r.code] : prev.filter((c) => c !== r.code),
+                                        );
+                                      }}
+                                      className="mt-0.5"
+                                    />
+                                    <span>{r.label}</span>
+                                  </label>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <Textarea
-                placeholder="บันทึกแอดมิน (ทางเลือก) หรือเหตุผลในการปฏิเสธ"
+                placeholder={
+                  rejectIntent
+                    ? rejectReasons.includes("other")
+                      ? "ระบุเหตุผลในการปฏิเสธ"
+                      : "บันทึกแอดมิน (ทางเลือก)"
+                    : "บันทึกแอดมิน (ทางเลือก)"
+                }
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 rows={3}
@@ -426,8 +520,16 @@ export default function AdminKycPage() {
               className="border-destructive text-destructive"
               onClick={() => {
                 if (!reviewItem) return;
-                const reason = KYC_REJECT_REASONS.find((r) => r.code === rejectReason)!;
-                if (reason.code === "other" && !note.trim()) {
+                if (!rejectIntent) {
+                  toast.error("ติ๊ก “จะปฏิเสธคำขอนี้” ก่อน");
+                  return;
+                }
+                const reasons = KYC_REJECT_REASONS.filter((r) => rejectReasons.includes(r.code));
+                if (!reasons.length) {
+                  toast.error("เลือกเหตุผลปฏิเสธอย่างน้อย 1 ข้อ");
+                  return;
+                }
+                if (reasons.some((r) => r.code === "other") && !note.trim()) {
                   toast.error("กรุณาระบุเหตุผลในหมายเหตุ");
                   return;
                 }
@@ -435,27 +537,39 @@ export default function AdminKycPage() {
                   {
                     id: reviewItem.id,
                     note,
-                    reasonCode: reason.code,
-                    reasonLabel: reason.label,
+                    reasonCodes: reasons.map((r) => r.code),
+                    reasonLabels: reasons.map((r) => r.label),
                   },
                   {
                     onSuccess: () => {
                       toast.success("ปฏิเสธคำขอแล้ว");
                       setReviewItem(null);
                       setNote("");
+                      setRejectIntent(false);
+                      setRejectReasons([]);
                       setReviewChecks(emptyKycReviewChecks());
                     },
                     onError: (e: Error) => toast.error(e.message),
                   },
                 );
               }}
-              disabled={reject.isPending || approve.isPending}
+              disabled={
+                reject.isPending ||
+                approve.isPending ||
+                !rejectIntent ||
+                rejectReasons.length === 0 ||
+                (rejectReasons.includes("other") && !note.trim())
+              }
             >
               ปฏิเสธ
             </Button>
             <Button
               onClick={() => {
                 if (!reviewItem) return;
+                if (rejectIntent) {
+                  toast.error("เอาติ๊กปฏิเสธออกก่อนถ้าจะอนุมัติ");
+                  return;
+                }
                 if (!allKycReviewChecksPassed(reviewChecks)) {
                   toast.error("ติ๊ก checklist ให้ครบ 8 ข้อก่อนอนุมัติ");
                   return;
@@ -467,13 +581,15 @@ export default function AdminKycPage() {
                       toast.success("ยืนยันตัวตนแล้ว");
                       setReviewItem(null);
                       setNote("");
+                      setRejectIntent(false);
+                      setRejectReasons([]);
                       setReviewChecks(emptyKycReviewChecks());
                     },
                     onError: (e: Error) => toast.error(e.message),
                   },
                 );
               }}
-              disabled={approve.isPending || reject.isPending}
+              disabled={approve.isPending || reject.isPending || rejectIntent}
             >
               อนุมัติ
             </Button>

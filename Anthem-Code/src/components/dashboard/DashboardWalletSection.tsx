@@ -17,7 +17,7 @@ import {
 import { useCreatorEligibility } from "@/hooks/useCreatorEligibility";
 import { useSubscription } from "@/core/subscription/useSubscription";
 import { computeGiftablePx } from "@/lib/walletDisplay";
-import { isAplus1GiftEconomyEnabled } from "@/lib/aplus1Launch";
+import { isAplus1GiftEconomyEnabled, isAplus1PxEnabled } from "@/lib/aplus1Launch";
 
 type Props = {
   userId: string;
@@ -25,11 +25,12 @@ type Props = {
 
 /** Wallet category block for the combined /dashboard page. */
 export default function DashboardWalletSection({ userId }: Props) {
+  const pxOn = isAplus1PxEnabled();
   const giftEconomy = isAplus1GiftEconomyEnabled();
-  const { data: wallet } = useWallet();
-  const { data: availablePurchased = 0 } = useAvailablePurchasedPx();
-  const { data: cashouts = [] } = useCashoutHistory();
-  const { data: eligibility } = useCreatorEligibility(userId);
+  const { data: wallet } = useWallet({ enabled: pxOn });
+  const { data: availablePurchased = 0 } = useAvailablePurchasedPx({ enabled: pxOn });
+  const { data: cashouts = [] } = useCashoutHistory({ enabled: pxOn });
+  const { data: eligibility } = useCreatorEligibility(pxOn ? userId : undefined);
   const { data: subData } = useSubscription();
   const feeRate = getCashoutFeeRate(subData?.profileTier);
   const feeLabel = formatCashoutFeeLabel(subData?.profileTier);
@@ -52,47 +53,52 @@ export default function DashboardWalletSection({ userId }: Props) {
     return `อีก ${Math.max(0, MIN_CASHOUT_PX - earnedPx).toLocaleString()} px ถึงขั้นต่ำถอน`;
   }, [canCashout, eligibility, earnedPx, giftEconomy]);
 
+  const hireBlock = (
+    <div className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">รายได้จ้างงาน (THB)</h3>
+        <DisplayCurrencyToggle />
+      </div>
+      <EarningsBalanceCards
+        pendingSatang={0}
+        payoutReservedSatang={0}
+        paidOutSatang={0}
+      />
+    </div>
+  );
+
   return (
     <>
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-        <EarningsHeroCard
-          netThb={netThb}
-          earnedPx={earnedPx}
-          giftablePx={giftablePx}
-          lifetimeEarned={lifetimeEarned}
-          feeLabel={feeLabel}
-          showGiftable={giftEconomy}
-          onCashout={() => setCashoutOpen(true)}
-          canCashout={canCashout}
-          cashoutHint={cashoutHint}
-        />
-
-        <div className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-4 sm:p-5">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold">รายได้จ้างงาน (THB)</h3>
-            <DisplayCurrencyToggle />
-          </div>
-          <EarningsBalanceCards
-            pendingSatang={0}
-            availableSatang={0}
-            payoutReservedSatang={0}
-            paidOutSatang={0}
+      {pxOn ? (
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+          <EarningsHeroCard
+            netThb={netThb}
+            earnedPx={earnedPx}
+            giftablePx={giftablePx}
+            lifetimeEarned={lifetimeEarned}
+            feeLabel={feeLabel}
+            showGiftable={giftEconomy}
+            onCashout={() => setCashoutOpen(true)}
+            canCashout={canCashout}
+            cashoutHint={cashoutHint}
           />
-          <p className="text-[11px] text-muted-foreground">
-            ยอดจ้างงานผ่าน Aplus1/Omise จะแสดงที่นี่หลังเปิดรับชำระ — แยกจากกระเป๋า PX
-          </p>
+          {hireBlock}
         </div>
-      </div>
+      ) : (
+        hireBlock
+      )}
 
-      <EarningsQuickActions
-        onTopUp={() => setTopupOpen(true)}
-        showTopUp={giftEconomy}
-      />
+      {pxOn ? (
+        <EarningsQuickActions
+          onTopUp={() => setTopupOpen(true)}
+          showTopUp={giftEconomy}
+        />
+      ) : null}
 
       <EarningsPlatformIncomeHistory userId={userId} />
-      <EarningsCashoutHistory items={cashouts} />
+      {pxOn ? <EarningsCashoutHistory items={cashouts} /> : null}
 
-      <CashoutDialog open={cashoutOpen} onOpenChange={setCashoutOpen} />
+      {pxOn ? <CashoutDialog open={cashoutOpen} onOpenChange={setCashoutOpen} /> : null}
       {giftEconomy ? <TopUpDialog open={topupOpen} onOpenChange={setTopupOpen} /> : null}
     </>
   );

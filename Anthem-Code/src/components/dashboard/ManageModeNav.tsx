@@ -48,7 +48,7 @@ export default function ManageModeNav({ className }: { className?: string }) {
                 "flex min-h-10 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-2.5 py-2 text-xs font-medium transition-colors sm:gap-2 sm:px-3 sm:text-sm",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                 isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
+                  ? "bg-primary-bright text-white shadow-sm"
                   : "text-muted-foreground hover:bg-secondary hover:text-foreground",
               )
             }

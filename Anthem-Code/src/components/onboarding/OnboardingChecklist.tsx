@@ -9,7 +9,7 @@ import { useWelcomeMissions } from "@/hooks/useWelcomeMissions";
 import { useWelcomeMissionCatalog } from "@/hooks/useWelcomeMissionCatalog";
 import { getVisibleOnboardingTasks, likeMissionHint } from "@/lib/onboardingTasks";
 import { friendlyAmlError } from "@/lib/amlErrors";
-import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
+import { isAplus1LaunchMinimal, isAplus1PxEnabled } from "@/lib/aplus1Launch";
 import { springProgress } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ type Props = {
 };
 
 export default function OnboardingChecklist({ variant = "full" }: Props) {
-  const tourMode = isAplus1LaunchMinimal();
+  const tourMode = isAplus1LaunchMinimal() || !isAplus1PxEnabled();
   const { user } = useAuth();
   const navigate = useNavigate();
   const {
@@ -37,7 +37,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
     signals,
   } = useOnboardingChecklist(user?.id);
 
-  const { data: rewardById } = useWelcomeMissionCatalog();
+  const { data: rewardById } = useWelcomeMissionCatalog({ enabled: !tourMode });
   const {
     claimedIds,
     lifetimeWelcomePx,

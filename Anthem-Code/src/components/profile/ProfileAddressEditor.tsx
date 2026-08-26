@@ -17,14 +17,36 @@ import {
   listSubdistrictsForDistrict,
   resolvePostalCode,
 } from "@/lib/thaiAddressLookup";
+import { cn } from "@/lib/utils";
+
+type AddressInvalid = {
+  line1?: boolean;
+  province?: boolean;
+  district?: boolean;
+  subdistrict?: boolean;
+  postalCode?: boolean;
+};
 
 type Props = {
   value: ProfileAddress;
   onChange: (next: ProfileAddress) => void;
   idPrefix?: string;
+  required?: boolean;
+  hideHeader?: boolean;
+  line1Label?: string;
+  invalid?: AddressInvalid;
+  fieldClassName?: string;
 };
 
 const NONE = "__none__";
+
+function ReqStar() {
+  return (
+    <span className="text-primary" aria-hidden="true">
+      {" *"}
+    </span>
+  );
+}
 
 function withLegacy(options: string[], current: string): string[] {
   const t = current.trim();
@@ -33,7 +55,16 @@ function withLegacy(options: string[], current: string): string[] {
 }
 
 /** ที่อยู่แบบมาตรฐาน: จังหวัด → อำเภอ/เขต → ตำบล/แขวง → รหัสไปรษณีย์ */
-export default function ProfileAddressEditor({ value, onChange, idPrefix = "profile-address" }: Props) {
+export default function ProfileAddressEditor({
+  value,
+  onChange,
+  idPrefix = "profile-address",
+  required = false,
+  hideHeader = false,
+  line1Label = "บ้านเลขที่ / หมู่ / ซอย / ถนน",
+  invalid,
+  fieldClassName,
+}: Props) {
   const province = normalizeThaiProvince(value.province) || value.province.trim();
 
   const districts = useMemo(() => {
@@ -108,22 +139,39 @@ export default function ProfileAddressEditor({ value, onChange, idPrefix = "prof
   const districtDisabled = !province;
   const subdistrictDisabled = !province || !value.district.trim();
   const postalDisabled = !province || !value.district.trim() || !value.subdistrict.trim();
+  const triggerClass = (bad?: boolean) =>
+    cn(
+      "rounded-xl bg-secondary border-border",
+      fieldClassName,
+      bad && "border-destructive focus:ring-destructive",
+    );
+  const inputClass = (bad?: boolean) =>
+    cn(
+      "rounded-xl bg-secondary border-border",
+      fieldClassName,
+      bad && "border-destructive focus-visible:ring-destructive",
+    );
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <MapPin className="w-4 h-4 text-primary shrink-0" />
-        <div>
-          <h3 className="text-sm font-medium text-foreground">ที่อยู่</h3>
-          <p className="text-xs text-muted-foreground">
-            เลือกจังหวัด → อำเภอ/เขต → ตำบล/แขวง แล้วระบบใส่รหัสไปรษณีย์ให้
-          </p>
+      {!hideHeader && (
+        <div className="flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-primary shrink-0" />
+          <div>
+            <h3 className="text-sm font-medium text-foreground">ที่อยู่</h3>
+            <p className="text-xs text-muted-foreground">
+              เลือกจังหวัด → อำเภอ/เขต → ตำบล/แขวง แล้วระบบใส่รหัสไปรษณีย์ให้
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label htmlFor={`${idPrefix}-line1`}>บ้านเลขที่ / หมู่ / ซอย / ถนน</Label>
+        <div className="space-y-1.5 sm:col-span-2" data-kyc-error={invalid?.line1 ? "true" : undefined}>
+          <Label htmlFor={`${idPrefix}-line1`}>
+            {line1Label}
+            {required ? <ReqStar /> : null}
+          </Label>
           <Input
             id={`${idPrefix}-line1`}
             value={value.line1}
@@ -132,12 +180,16 @@ export default function ProfileAddressEditor({ value, onChange, idPrefix = "prof
             }
             placeholder="เช่น 123/4 หมู่ 5 ซอยสุขุมวิท 21"
             maxLength={120}
-            className="rounded-xl bg-secondary border-border"
+            className={inputClass(invalid?.line1)}
+            aria-invalid={invalid?.line1}
           />
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor={`${idPrefix}-province`}>จังหวัด</Label>
+        <div className="space-y-1.5" data-kyc-error={invalid?.province ? "true" : undefined}>
+          <Label htmlFor={`${idPrefix}-province`}>
+            จังหวัด
+            {required ? <ReqStar /> : null}
+          </Label>
           <Select
             key={`province-${province || "none"}`}
             value={province || undefined}
@@ -145,12 +197,13 @@ export default function ProfileAddressEditor({ value, onChange, idPrefix = "prof
           >
             <SelectTrigger
               id={`${idPrefix}-province`}
-              className="rounded-xl bg-secondary border-border"
+              className={triggerClass(invalid?.province)}
+              aria-invalid={invalid?.province}
             >
               <SelectValue placeholder="เลือกจังหวัด" />
             </SelectTrigger>
             <SelectContent className="max-h-72">
-              <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
+              {!required && <SelectItem value={NONE}>ไม่ระบุ</SelectItem>}
               {THAI_PROVINCES.map((p) => (
                 <SelectItem key={p} value={p}>
                   {p}
@@ -160,8 +213,11 @@ export default function ProfileAddressEditor({ value, onChange, idPrefix = "prof
           </Select>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor={`${idPrefix}-district`}>อำเภอ / เขต</Label>
+        <div className="space-y-1.5" data-kyc-error={invalid?.district ? "true" : undefined}>
+          <Label htmlFor={`${idPrefix}-district`}>
+            อำเภอ / เขต
+            {required ? <ReqStar /> : null}
+          </Label>
           <Select
             key={`district-${province}-${value.district.trim() || "none"}`}
             value={value.district.trim() || undefined}
@@ -170,12 +226,13 @@ export default function ProfileAddressEditor({ value, onChange, idPrefix = "prof
           >
             <SelectTrigger
               id={`${idPrefix}-district`}
-              className="rounded-xl bg-secondary border-border"
+              className={triggerClass(invalid?.district)}
+              aria-invalid={invalid?.district}
             >
               <SelectValue placeholder={districtDisabled ? "เลือกจังหวัดก่อน" : "เลือกอำเภอ / เขต"} />
             </SelectTrigger>
             <SelectContent className="max-h-72">
-              <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
+              {!required && <SelectItem value={NONE}>ไม่ระบุ</SelectItem>}
               {districts.map((d) => (
                 <SelectItem key={d} value={d}>
                   {d}
@@ -185,8 +242,11 @@ export default function ProfileAddressEditor({ value, onChange, idPrefix = "prof
           </Select>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor={`${idPrefix}-subdistrict`}>ตำบล / แขวง</Label>
+        <div className="space-y-1.5" data-kyc-error={invalid?.subdistrict ? "true" : undefined}>
+          <Label htmlFor={`${idPrefix}-subdistrict`}>
+            ตำบล / แขวง
+            {required ? <ReqStar /> : null}
+          </Label>
           <Select
             key={`subdistrict-${province}-${value.district.trim()}-${value.subdistrict.trim() || "none"}`}
             value={value.subdistrict.trim() || undefined}
@@ -195,14 +255,15 @@ export default function ProfileAddressEditor({ value, onChange, idPrefix = "prof
           >
             <SelectTrigger
               id={`${idPrefix}-subdistrict`}
-              className="rounded-xl bg-secondary border-border"
+              className={triggerClass(invalid?.subdistrict)}
+              aria-invalid={invalid?.subdistrict}
             >
               <SelectValue
                 placeholder={subdistrictDisabled ? "เลือกอำเภอ / เขตก่อน" : "เลือกตำบล / แขวง"}
               />
             </SelectTrigger>
             <SelectContent className="max-h-72">
-              <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
+              {!required && <SelectItem value={NONE}>ไม่ระบุ</SelectItem>}
               {subdistricts.map((s) => (
                 <SelectItem key={s} value={s}>
                   {s}
@@ -212,8 +273,11 @@ export default function ProfileAddressEditor({ value, onChange, idPrefix = "prof
           </Select>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor={`${idPrefix}-postal`}>รหัสไปรษณีย์</Label>
+        <div className="space-y-1.5" data-kyc-error={invalid?.postalCode ? "true" : undefined}>
+          <Label htmlFor={`${idPrefix}-postal`}>
+            รหัสไปรษณีย์
+            {required ? <ReqStar /> : null}
+          </Label>
           {postalOptions.length > 1 ? (
             <Select
               value={value.postalCode.trim() || undefined}
@@ -222,12 +286,13 @@ export default function ProfileAddressEditor({ value, onChange, idPrefix = "prof
             >
               <SelectTrigger
                 id={`${idPrefix}-postal`}
-                className="rounded-xl bg-secondary border-border"
+                className={triggerClass(invalid?.postalCode)}
+                aria-invalid={invalid?.postalCode}
               >
                 <SelectValue placeholder="เลือกรหัสไปรษณีย์" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
+                {!required && <SelectItem value={NONE}>ไม่ระบุ</SelectItem>}
                 {postalOptions.map((z) => (
                   <SelectItem key={z} value={z}>
                     {z}
@@ -241,7 +306,8 @@ export default function ProfileAddressEditor({ value, onChange, idPrefix = "prof
               value={value.postalCode}
               readOnly
               placeholder={postalDisabled ? "เลือกตำบล / แขวงก่อน" : "—"}
-              className="rounded-xl bg-secondary border-border"
+              className={inputClass(invalid?.postalCode)}
+              aria-invalid={invalid?.postalCode}
             />
           )}
         </div>

@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight, Handshake, MapPin } from "lucide-react";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import UserAvatar from "@/components/UserAvatar";
+import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import type { DesignerCardData } from "@/hooks/useDesigners";
 import FollowButton from "@/components/FollowButton";
 import { useFollowState } from "@/hooks/useFollow";
@@ -134,14 +135,15 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
       </div>
 
       <div className="min-w-0">
-        <h3 className="text-xl font-semibold tracking-tight leading-snug truncate">
+        <h3 className="text-xl font-semibold tracking-tight leading-snug flex items-center gap-1.5 min-w-0">
           <button
             type="button"
             onClick={() => gotoProfile()}
-            className="max-w-full truncate text-left text-foreground hover:text-primary hover:underline underline-offset-4 decoration-primary/80 transition-colors"
+            className="min-w-0 truncate text-left text-foreground hover:text-primary hover:underline underline-offset-4 decoration-primary/80 transition-colors"
           >
             {highlight(name, search)}
           </button>
+          <VerifiedBadge verified={!!(profile as { is_verified?: boolean }).is_verified} />
         </h3>
         <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground truncate">
           {highlight(role, search)}

@@ -143,7 +143,8 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
       {!atLimit ? (
         <div className="flex flex-wrap justify-end gap-2">
           <Button
-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-11 px-6"
+            variant="gradient"
+            className="rounded-xl h-11 px-6"
             onClick={openCreate}
           >
             <Plus className="w-4 h-4 mr-2" /> Add Package
@@ -167,7 +168,7 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
           description={`สร้างได้สูงสุด ${CREATOR_SERVICES_MAX} แพ็กเกจ — ลูกค้าขอใช้บริการจากแท็บ Packages บนโปรไฟล์สาธารณะ`}
           action={
             !atLimit ? (
-              <Button className="rounded-full" onClick={openCreate}>
+              <Button variant="gradient" className="rounded-full" onClick={openCreate}>
                 <Plus className="w-4 h-4 mr-1" />
                 Add Package
               </Button>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
+import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import PackagesIcon from "@/components/icons/PackagesIcon";
 import type { PackageFeedCard } from "@/hooks/usePackageFeed";
 import { formatServicePrice } from "@/hooks/useCreatorServices";
@@ -199,9 +200,10 @@ const PackageCard = ({ data, search = "" }: Props) => {
             <button
               type="button"
               onClick={goProfile}
-              className="min-w-0 max-w-full text-left text-xs text-foreground truncate hover:underline"
+              className="inline-flex min-w-0 max-w-full items-center gap-1 text-left text-xs text-foreground hover:underline"
             >
-              {highlight(name, search)}
+              <span className="truncate">{highlight(name, search)}</span>
+              <VerifiedBadge verified={!!(profile as { is_verified?: boolean }).is_verified} size="sm" />
             </button>
           </div>
 

@@ -44,7 +44,7 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
           <MessageCircle className="w-4 h-4 text-primary" /> Chat
         </button>
         {!isVerified ? (
-          <button type="button" onClick={() => navigate("/hire/start")} className={item}>
+          <button type="button" onClick={() => navigate("/verify")} className={item}>
             <Rocket className="w-4 h-4 text-primary" /> Become a Creator
           </button>
         ) : null}

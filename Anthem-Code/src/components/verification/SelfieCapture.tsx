@@ -9,10 +9,13 @@ type Props = {
   uploading?: boolean;
   onCapture: (file: File) => void;
   className?: string;
+  invalid?: boolean;
+  /** Sit beside the ID-front tile in the wizard grid. */
+  compact?: boolean;
 };
 
-/** Selfie capture — open camera or upload (no face-circle guide). */
-export function SelfieCapture({ previewUrl, uploading, onCapture, className }: Props) {
+/** Selfie-with-card capture — front camera or upload (no face-circle guide). */
+export function SelfieCapture({ previewUrl, uploading, onCapture, className, invalid, compact }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [cameraOn, setCameraOn] = useState(false);
@@ -68,15 +71,33 @@ export function SelfieCapture({ previewUrl, uploading, onCapture, className }: P
   };
 
   return (
-    <div className={cn("rounded-xl border border-border overflow-hidden bg-card", className)}>
-      <div className="px-3 py-2.5 border-b border-border space-y-0.5">
-        <p className="text-base font-medium">ถ่ายภาพใบหน้าของคุณ</p>
-        <p className="text-sm text-muted-foreground">ถือบัตรข้างใบหน้า · เห็นเต็มใบหน้าและบัตรเต็มใบ</p>
+    <div
+      data-kyc-error={invalid ? "true" : undefined}
+      className={cn(
+        "rounded-xl border overflow-hidden bg-card",
+        compact && "flex flex-col min-h-[140px]",
+        invalid ? "border-destructive" : compact ? "border-dashed border-border" : "border-border",
+        compact && previewUrl && !invalid && "border-primary/40 border-solid",
+        className,
+      )}
+    >
+      <div className={cn("border-b border-border space-y-0.5", compact ? "px-2 py-1.5" : "px-3 py-2.5")}>
+        <p className={cn("font-medium", compact ? "text-sm" : "text-base")}>
+          เซลฟี่ถือบัตร
+          <span className="text-primary" aria-hidden="true">
+            {" *"}
+          </span>
+        </p>
+        <p className="text-sm text-muted-foreground">ถือบัตรข้างแก้ม · เห็นเต็มใบหน้าและบัตรเต็มใบ อ่านเลขได้</p>
       </div>
 
       {previewUrl && !cameraOn ? (
         <div className="relative">
-          <img src={previewUrl} alt="selfie" className="w-full max-h-[320px] object-cover bg-black" />
+          <img
+            src={previewUrl}
+            alt="เซลฟี่ถือบัตร"
+            className={cn("w-full object-cover bg-black", compact ? "h-28" : "max-h-[320px]")}
+          />
           {uploading && (
             <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -110,7 +131,7 @@ export function SelfieCapture({ previewUrl, uploading, onCapture, className }: P
             ref={videoRef}
             playsInline
             muted
-            className="w-full max-h-[360px] object-cover"
+            className={cn("w-full object-cover", compact ? "h-40" : "max-h-[360px]")}
             style={{ transform: "scaleX(-1)" }}
           />
           <div className="p-2 flex gap-2 bg-background">
@@ -123,10 +144,10 @@ export function SelfieCapture({ previewUrl, uploading, onCapture, className }: P
           </div>
         </div>
       ) : (
-        <div className="p-4 space-y-3">
-          <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
-            <Camera className="w-8 h-8" />
-            <p className="text-sm text-center">เปิดกล้องถ่าย หรืออัปโหลดรูปจากเครื่อง</p>
+        <div className={cn("space-y-3", compact ? "p-2" : "p-4")}>
+          <div className={cn("flex flex-col items-center gap-2 text-muted-foreground", compact ? "py-4" : "py-6")}>
+            <Camera className={compact ? "w-6 h-6" : "w-8 h-8"} />
+            <p className="text-sm text-center">เปิดกล้องหน้า แล้วถือบัตรข้างใบหน้า</p>
           </div>
           {cameraError && <p className="text-sm text-destructive text-center">{cameraError}</p>}
           <div className="flex gap-2">

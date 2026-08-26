@@ -26,9 +26,10 @@ export interface GiftTransaction {
   created_at: string;
 }
 
-export const useGifts = () =>
+export const useGifts = (opts?: { enabled?: boolean }) =>
   useQuery({
     queryKey: ["gifts"],
+    enabled: opts?.enabled ?? true,
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase

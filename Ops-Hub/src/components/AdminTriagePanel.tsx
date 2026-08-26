@@ -123,7 +123,7 @@ export function AdminTriagePanel() {
                   <PreviewRow
                     key={k.id}
                     title={k.legal_name || `User ${k.user_id.slice(0, 8)}…`}
-                    meta={`ความเสี่ยง ${k.ai_risk_score ?? "—"}/100 · ${KYC_REC_LABEL[k.ai_recommendation ?? ""] ?? "รอ AI"}`}
+                    meta={`คะแนน ${k.ai_risk_score ?? "—"}/100 · ${KYC_REC_LABEL[k.ai_recommendation ?? ""] ?? "รอ AI"}`}
                     summary={k.ai_summary || "ยังไม่มีสรุป AI — เปิดดูเอกสาร"}
                     href={anthemAdmin("/kyc")}
                     tone={tone === "high" ? "urgent" : "high"}

@@ -34,12 +34,14 @@ function MarqueeColumn({
   animate,
   duration,
   className,
+  compact = false,
 }: {
   items: DBProject[];
   direction: "up" | "down";
   animate: boolean;
   duration: string;
   className?: string;
+  compact?: boolean;
 }) {
   const loop = items.length ? [...items, ...items] : [];
 
@@ -47,7 +49,8 @@ function MarqueeColumn({
     <div className={cn("relative min-h-0 min-w-0 flex-1 overflow-hidden", className)}>
       <div
         className={cn(
-          "flex flex-col gap-4 will-change-transform",
+          "flex flex-col will-change-transform",
+          compact ? "gap-2.5" : "gap-4",
           animate && (direction === "up" ? "animate-work-wall-up" : "animate-work-wall-down"),
         )}
         style={animate ? { animationDuration: duration } : undefined}
@@ -61,7 +64,10 @@ function MarqueeColumn({
             <div
               key={`${project.id}-${index}`}
               aria-hidden={isClone || undefined}
-              className="relative aspect-[3/4] w-full shrink-0 overflow-hidden rounded-2xl bg-muted ring-1 ring-white/10"
+              className={cn(
+                "relative aspect-[3/4] w-full shrink-0 overflow-hidden bg-muted ring-1 ring-white/10",
+                compact ? "rounded-xl" : "rounded-2xl",
+              )}
             >
               <img
                 src={src}
@@ -81,21 +87,71 @@ function MarqueeColumn({
   );
 }
 
-/** Vertical zigzag work wall for the auth page — 2 cols at lg, 3 at xl. */
-const AuthWorkWall = ({ className }: { className?: string }) => {
+type AuthWorkWallProps = {
+  className?: string;
+  /** In-flow 2-col vertical slider under the login form (mobile / tablet). */
+  embed?: boolean;
+};
+
+/** Vertical zigzag work wall — full-bleed on desktop, 2-col embed on mobile. */
+const AuthWorkWall = ({ className, embed = false }: AuthWorkWallProps) => {
   const reduced = useReducedMotion();
   const { data: top = [], isLoading } = useTopProjects();
 
   const withCover = useMemo(
-    () => top.filter((p) => projectCover(p)).slice(0, 18),
-    [top],
+    () => top.filter((p) => projectCover(p)).slice(0, embed ? 16 : 18),
+    [top, embed],
   );
 
-  const [colA, colB, colC] = useMemo(
-    () => splitIntoColumns(withCover, 3),
-    [withCover],
+  const cols = useMemo(
+    () => splitIntoColumns(withCover, embed ? 2 : 3, embed ? 4 : 5),
+    [withCover, embed],
   );
   const animate = !reduced && withCover.length >= 4;
+
+  if (embed) {
+    if (isLoading && !withCover.length) {
+      return (
+        <div
+          className={cn("h-[24rem] animate-pulse rounded-2xl bg-muted/20", className)}
+          aria-hidden
+        />
+      );
+    }
+
+    if (!withCover.length) return null;
+
+    return (
+      <div className={cn("pointer-events-none relative", className)} aria-hidden>
+        <div className="relative h-[24rem] overflow-hidden sm:h-[28rem]">
+          <div className="flex h-full gap-2.5 overflow-hidden">
+            <MarqueeColumn
+              items={cols[0]}
+              direction="up"
+              animate={animate}
+              duration="42s"
+              compact
+            />
+            <MarqueeColumn
+              items={cols[1]}
+              direction="down"
+              animate={animate}
+              duration="54s"
+              compact
+            />
+          </div>
+          <div
+            className="absolute inset-x-0 top-0 z-[1] h-10 bg-gradient-to-b from-background to-transparent"
+            aria-hidden
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 z-[1] h-12 bg-gradient-to-t from-background to-transparent"
+            aria-hidden
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading && !withCover.length) {
     return (
@@ -113,10 +169,10 @@ const AuthWorkWall = ({ className }: { className?: string }) => {
       className={cn("pointer-events-none absolute inset-0 flex gap-3 overflow-hidden", className)}
       aria-hidden
     >
-      <MarqueeColumn items={colA} direction="up" animate={animate} duration="34s" />
-      <MarqueeColumn items={colB} direction="down" animate={animate} duration="42s" />
+      <MarqueeColumn items={cols[0]} direction="up" animate={animate} duration="34s" />
+      <MarqueeColumn items={cols[1]} direction="down" animate={animate} duration="42s" />
       <MarqueeColumn
-        items={colC}
+        items={cols[2]}
         direction="up"
         animate={animate}
         duration="38s"

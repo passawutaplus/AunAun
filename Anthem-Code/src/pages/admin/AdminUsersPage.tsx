@@ -6,6 +6,7 @@ import SectionHeader from "@/components/admin/SectionHeader";
 import DataTable, { Column } from "@/components/admin/DataTable";
 import StatusPill from "@/components/admin/StatusPill";
 import { SearchBar } from "@/components/admin/SearchBar";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminRowActions from "@/components/admin/AdminRowActions";
 import AdminExportButton from "@/components/admin/AdminExportButton";
 import { MemberCodeCopy } from "@/components/MemberCodeCopy";
@@ -43,18 +44,28 @@ export default function AdminUsersPage() {
   );
   const [searchParams] = useSearchParams();
   const initialQ = searchParams.get("q") ?? "";
+  const initialKyc = searchParams.get("kyc") === "verified" ? "verified" : searchParams.get("kyc") === "unverified" ? "unverified" : "all";
   const [q, setQ] = useState(initialQ);
+  const [kycFilter, setKycFilter] = useState<"all" | "verified" | "unverified">(initialKyc);
 
   useEffect(() => {
     const urlQ = searchParams.get("q") ?? "";
     if (urlQ) setQ(urlQ);
+    const kyc = searchParams.get("kyc");
+    if (kyc === "verified" || kyc === "unverified") setKycFilter(kyc);
   }, [searchParams]);
   const filtered = useMemo(() => {
     const rows = data ?? [];
     const query = q.trim();
-    if (!query) return rows;
+    const byKyc =
+      kycFilter === "verified"
+        ? rows.filter((r) => !!r.is_verified)
+        : kycFilter === "unverified"
+          ? rows.filter((r) => !r.is_verified)
+          : rows;
+    if (!query) return byKyc;
     const lower = query.toLowerCase();
-    return rows.filter((r) => {
+    return byKyc.filter((r) => {
       if (memberCodeMatchesUserId(query, r.id)) return true;
       if (formatMemberCode(r.id).toLowerCase().includes(lower)) return true;
       if (r.id.toLowerCase().startsWith(lower)) return true;
@@ -66,7 +77,7 @@ export default function AdminUsersPage() {
         (r.account_status ?? "").toLowerCase().includes(lower)
       );
     });
-  }, [data, q]);
+  }, [data, q, kycFilter]);
   const setRole = useAdminSetUserRole();
   const freeze = useFreezeAccount();
   const unfreeze = useUnfreezeAccount();
@@ -99,6 +110,16 @@ export default function AdminUsersPage() {
       render: (r) => <MemberCodeCopy userId={r.id} size="sm" />,
     },
     {
+      key: "kyc",
+      header: "KYC",
+      render: (r) =>
+        r.is_verified ? (
+          <StatusPill status="ผ่าน" tone="muted" />
+        ) : (
+          <span className="text-xs text-admin-muted">ยังไม่ผ่าน</span>
+        ),
+    },
+    {
       key: "status",
       header: "สถานะ",
       render: (r) => (
@@ -106,7 +127,6 @@ export default function AdminUsersPage() {
           {r.account_status && r.account_status !== "active" && (
             <StatusPill status={r.account_status} tone="accent" />
           )}
-          {r.is_verified && <StatusPill status="verified" tone="muted" />}
           {adminSet.has(r.id) && <StatusPill status="admin" tone="accent" />}
         </div>
       ),
@@ -205,6 +225,7 @@ export default function AdminUsersPage() {
     username: r.username,
     email: r.email,
     account_status: r.account_status,
+    is_verified: r.is_verified,
     is_admin: adminSet.has(r.id),
     role: r.role,
     disciplines: (r.preferred_categories ?? []).join("|"),
@@ -216,12 +237,14 @@ export default function AdminUsersPage() {
     created_at: r.created_at,
   }));
 
+  const verifiedOnPage = (data ?? []).filter((r) => r.is_verified).length;
+
   return (
     <div>
       <SectionHeader
         eyebrow="users"
         title="ผู้ใช้ทั้งหมด"
-        description={`${data?.length ?? 0} บัญชี (สูงสุด 200 รายการล่าสุด)`}
+        description={`${verifiedOnPage} จาก ${data?.length ?? 0} บัญชีในหน้านี้อยืนยันตัวตนแล้ว (สูงสุด 200 รายการล่าสุด)`}
         actions={
           <div className="flex items-center gap-2">
             <AdminExportButton rows={exportRows} filename="admin-users.csv" />
@@ -229,6 +252,17 @@ export default function AdminUsersPage() {
           </div>
         }
       />
+      <Tabs
+        value={kycFilter}
+        onValueChange={(v) => setKycFilter(v as "all" | "verified" | "unverified")}
+        className="mb-4"
+      >
+        <TabsList className="bg-admin-surface border border-admin-border">
+          <TabsTrigger value="all">ทั้งหมด ({data?.length ?? 0})</TabsTrigger>
+          <TabsTrigger value="verified">KYC ผ่าน ({verifiedOnPage})</TabsTrigger>
+          <TabsTrigger value="unverified">ยังไม่ผ่าน ({(data?.length ?? 0) - verifiedOnPage})</TabsTrigger>
+        </TabsList>
+      </Tabs>
       <DataTable columns={cols} rows={filtered} loading={isLoading} rowKey={(r) => r.id} />
     </div>
   );

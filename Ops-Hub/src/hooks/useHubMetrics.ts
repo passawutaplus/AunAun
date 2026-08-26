@@ -255,7 +255,7 @@ export function useHubMetrics() {
             .from("kyc_requests")
             .select("*", { count: "exact", head: true })
             .eq("status", "pending")
-            .gt("ai_risk_score", 40),
+            .lt("ai_risk_score", 60),
         ),
         safeCount(
           "reports_urgent",

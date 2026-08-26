@@ -11,13 +11,14 @@ export type ProfileLite = {
   avatar_url: string | null;
   username: string | null;
   opportunity_types?: string[] | null;
+  is_verified?: boolean | null;
 };
 
 /** Batch fetch public profiles by user_id. */
 export async function getProfilesByIds(ids: string[]): Promise<ProfileLite[]> {
   if (!ids.length) return [];
   const { data, error } = await profilesPublicFrom()
-    .select("user_id, id, display_name, avatar_url, username, opportunity_types")
+    .select("user_id, id, display_name, avatar_url, username, opportunity_types, is_verified")
     .in("user_id", ids);
   if (error) throw error;
   return (data ?? []).map((p) => ({
@@ -26,6 +27,7 @@ export async function getProfilesByIds(ids: string[]): Promise<ProfileLite[]> {
     avatar_url: p.avatar_url,
     username: p.username,
     opportunity_types: (p as { opportunity_types?: string[] | null }).opportunity_types ?? null,
+    is_verified: !!(p as { is_verified?: boolean | null }).is_verified,
   }));
 }
 

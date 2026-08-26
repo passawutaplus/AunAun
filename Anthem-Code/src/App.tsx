@@ -164,7 +164,6 @@ const HelpShell = lazy(() =>
 const HelpHubPage = lazy(() => import("./pages/help/HelpHubPage.tsx"));
 const HelpCategoryPage = lazy(() => import("./pages/help/HelpCategoryPage.tsx"));
 const HelpArticlePage = lazy(() => import("./pages/help/HelpArticlePage.tsx"));
-const HireStartPage = lazy(() => import("./pages/HireStartPage.tsx"));
 const UpgradePage = lazy(() => import("./pages/UpgradePage.tsx"));
 const AdDetailPage = lazy(() => import("./pages/AdDetailPage.tsx"));
 const ContractEditorPage = lazy(() => import("./pages/ContractEditorPage.tsx"));
@@ -241,7 +240,7 @@ const App = () => (
               <Route path="/dashboard/collab" element={<RequireAuth><DashboardPage mode="collab" /></RequireAuth>} />
               <Route path="/dashboard/reviews" element={<RequireAuth><DashboardReviewsPage /></RequireAuth>} />
               <Route path="/portfolio/followers" element={<RequireAuth><FollowConnectionsPage /></RequireAuth>} />
-              <Route path="/hire/start" element={<RequireAuth><HireStartPage /></RequireAuth>} />
+              <Route path="/hire/start" element={<RequireAuth><RedirectTo to="/verify" /></RequireAuth>} />
               <Route path="/hire-requests" element={<RequireAuth><RedirectTo to="/dashboard" /></RequireAuth>} />
               <Route path="/collab-requests" element={<RequireAuth><RedirectTo to="/dashboard/collab" /></RequireAuth>} />
               <Route path="/portfolio/packages" element={<Navigate to="/portfolio?tab=services" replace />} />

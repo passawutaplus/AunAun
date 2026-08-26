@@ -18,6 +18,7 @@ import { projectHasDrillTag } from "@/lib/drillProject";
 import { logBoostEvent } from "@/hooks/useBoost";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import UserAvatar from "@/components/UserAvatar";
+import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import { extractSearchSnippet, highlight } from "@/lib/highlight";
 import { profilePublicPath } from "@/lib/profileRoutes";
 
@@ -115,6 +116,7 @@ const ProjectCard = ({
       name: project.owner,
       avatar: project.ownerAvatar,
       username: project.ownerUsername,
+      verified: project.ownerVerified,
     },
     ...(project.collaborators ?? []),
   ];
@@ -318,7 +320,7 @@ const ProjectCard = ({
             title={creators.map((creator) => creator.name).join(", ")}
           >
             {creators.map((creator, index) => (
-              <span key={creator.id ?? `${creator.name}-${index}`}>
+              <span key={creator.id ?? `${creator.name}-${index}`} className="inline-flex items-center gap-0.5">
                 {index > 0 ? <span className="text-muted-foreground">, </span> : null}
                 {creator.id ? (
                   <button
@@ -332,6 +334,7 @@ const ProjectCard = ({
                 ) : (
                   <span>{creator.name}</span>
                 )}
+                <VerifiedBadge verified={creator.verified} size="sm" />
               </span>
             ))}
           </p>

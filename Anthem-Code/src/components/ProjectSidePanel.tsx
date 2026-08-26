@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ToolsGrid from "@/components/ToolsGrid";
 import FollowButton from "@/components/FollowButton";
+import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPopover";
 import SupportButton from "@/components/gifting/SupportButton";
 import SharePopover from "@/components/SharePopover";
@@ -27,6 +28,7 @@ interface Props {
   ownerName: string;
   ownerAvatar?: string;
   ownerId?: string;
+  ownerVerified?: boolean;
   publishedDate?: string;
   description?: string;
   tools: string[];
@@ -119,7 +121,10 @@ const ProjectSidePanel = (p: Props) => {
                 </div>
               )}
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">{p.ownerName}</p>
+                <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-1 min-w-0">
+                  <span className="truncate">{p.ownerName}</span>
+                  <VerifiedBadge verified={p.ownerVerified} size="sm" />
+                </p>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <Calendar className="w-3 h-3" /> {formatThaiDate(p.publishedDate)}
                 </p>
@@ -131,7 +136,10 @@ const ProjectSidePanel = (p: Props) => {
                 {p.ownerName[0]}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{p.ownerName}</p>
+                <p className="text-sm font-semibold text-foreground flex items-center gap-1 min-w-0">
+                  <span className="truncate">{p.ownerName}</span>
+                  <VerifiedBadge verified={p.ownerVerified} size="sm" />
+                </p>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <Calendar className="w-3 h-3" /> {formatThaiDate(p.publishedDate)}
                 </p>

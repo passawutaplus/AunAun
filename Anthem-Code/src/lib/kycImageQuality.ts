@@ -1,4 +1,8 @@
-/** Client-side AI image validation for KYC uploads (blur / light / corners / glare / card-like). */
+/** Client-side image validation for KYC uploads (ID, selfie-with-card, bank book / app screenshot).
+ *  ID thresholds: Thai national-ID front photos (phone 4:3, table margins).
+ *  Selfie: indoor photos holding the card beside the cheek.
+ *  Bank book: physical passbook photos and bright digital shots (e.g. K PLUS K-eSavings).
+ */
 
 export type KycQualityCheckId =
   | "real_card"
@@ -28,15 +32,15 @@ export type KycQualityResult = {
 
 export const KYC_QUALITY_LABELS: Record<KycQualityCheckId, string> = {
   real_card: "บัตรจริงหรือไม่",
-  clear: "รูปชัดหรือไม่",
+  clear: "รูปชัด แสงพอหรือไม่",
   lighting: "แสงพอหรือไม่",
-  four_corners: "ครบทั้ง 4 มุม",
-  not_blurry: "ไม่เบลอ",
+  four_corners: "เห็นบัตรเต็มใบ",
+  not_blurry: "ไม่เบลอ ไม่สะท้อนแสง",
   no_glare: "ไม่สะท้อนแสง",
-  face_centered: "หน้าอยู่ตรงกลาง",
+  face_centered: "เห็นใบหน้า",
   face_lighting: "แสง",
   face_sharp: "ชัด",
-  face_alone: "ไม่มีคนอื่น",
+  face_alone: "ถือบัตรข้างใบหน้า",
 };
 
 const RETAKE_MSG = "กรุณาถ่ายใหม่";
@@ -212,6 +216,23 @@ async function detectFacesWithApi(
   }
 }
 
+/** Printed card tends to sit on one side of a selfie-with-ID (beside the face). */
+export function cardBesideFaceScore(
+  gray: Float32Array,
+  w: number,
+  h: number,
+): { pass: boolean; leftE: number; rightE: number } {
+  const leftE = regionEdgeScore(gray, w, h, 0, h * 0.12, w * 0.48, h * 0.92);
+  const rightE = regionEdgeScore(gray, w, h, w * 0.52, h * 0.12, w, h * 0.92);
+  const stronger = Math.max(leftE, rightE);
+  const weaker = Math.min(leftE, rightE);
+  return {
+    pass: stronger >= 9 && stronger >= weaker * 1.08,
+    leftE,
+    rightE,
+  };
+}
+
 export function evaluateSelfieQuality(
   stats: GrayStats,
   face: { centerRatio: number; edgeRatio: number; skinClusters: number },
@@ -219,31 +240,34 @@ export function evaluateSelfieQuality(
 ): KycQualityResult {
   const { gray, width: w, height: h, mean, std } = stats;
   const blurVar = laplacianVariance(gray, w, h);
+  const card = cardBesideFaceScore(gray, w, h);
 
-  const centered =
+  // Face may sit left/right of center because the ID is held beside the cheek.
+  const faceVisible =
     apiFaces != null
-      ? apiFaces.centered && apiFaces.count >= 1
-      : face.centerRatio >= 0.12 && face.centerRatio > face.edgeRatio * 1.15;
+      ? apiFaces.count >= 1
+      : face.centerRatio >= 0.06 || face.edgeRatio >= 0.06;
 
-  const lightingOk = mean >= 60 && mean <= 200;
+  const lightingOk = mean >= 50 && mean <= 210;
   const sharpOk = blurVar >= 35 && std >= 14;
-  const alone =
-    apiFaces != null ? apiFaces.count <= 1 && apiFaces.count >= 1 : face.skinClusters <= 5 && face.centerRatio >= 0.08;
+  // ID portrait can register as a second face; indoor hands/background inflate skin clusters.
+  const crowd = apiFaces != null && apiFaces.count >= 3;
+  const cardOk = !crowd && card.pass;
 
   const checks: KycQualityCheck[] = [
     {
       id: "face_centered",
       label: KYC_QUALITY_LABELS.face_centered,
-      pass: centered,
-      score: centered ? 85 : Math.round(Math.min(70, face.centerRatio * 400)),
-      detail: centered ? undefined : "ขยับใบหน้าให้อยู่กลางเฟรม",
+      pass: faceVisible,
+      score: faceVisible ? 85 : Math.round(Math.min(70, Math.max(face.centerRatio, face.edgeRatio) * 400)),
+      detail: faceVisible ? undefined : "ให้เห็นเต็มใบหน้า ไม่ถูกบัตรบัง",
     },
     {
       id: "face_lighting",
       label: KYC_QUALITY_LABELS.face_lighting,
       pass: lightingOk,
-      score: lightingOk ? 90 : scoreFromThreshold(mean, 60, 130, true),
-      detail: mean < 60 ? "มืดเกินไป" : mean > 200 ? "สว่างจ้าเกินไป" : undefined,
+      score: lightingOk ? 90 : scoreFromThreshold(mean, 50, 130, true),
+      detail: mean < 50 ? "มืดเกินไป" : mean > 210 ? "สว่างจ้าเกินไป" : undefined,
     },
     {
       id: "face_sharp",
@@ -255,9 +279,13 @@ export function evaluateSelfieQuality(
     {
       id: "face_alone",
       label: KYC_QUALITY_LABELS.face_alone,
-      pass: alone,
-      score: alone ? 90 : 30,
-      detail: alone ? undefined : "ตรวจพบหลายคนในภาพ",
+      pass: cardOk,
+      score: cardOk ? 90 : 30,
+      detail: crowd
+        ? "ถ่ายคนเดียว"
+        : cardOk
+          ? undefined
+          : "ถือบัตรข้างใบหน้า ให้เห็นบัตรเต็มใบ",
     },
   ];
 
@@ -265,7 +293,7 @@ export function evaluateSelfieQuality(
   return {
     passed,
     checks,
-    message: passed ? "ผ่านการตรวจใบหน้า" : RETAKE_MSG,
+    message: passed ? "ผ่านการตรวจเซลฟี่ถือบัตร" : RETAKE_MSG,
   };
 }
 
@@ -286,6 +314,64 @@ function regionEdgeScore(gray: Float32Array, w: number, h: number, x0: number, y
     }
   }
   return n ? sum / n : 0;
+}
+
+/** Find the high-detail rectangle (the card) inside phone photos that include table margins. */
+export function documentContentBounds(
+  gray: Float32Array,
+  w: number,
+  h: number,
+): { x0: number; y0: number; x1: number; y1: number } {
+  const colE = new Float32Array(w);
+  const rowE = new Float32Array(h);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      const g = Math.abs(gray[i + 1]! - gray[i - 1]!) + Math.abs(gray[i + w]! - gray[i - w]!);
+      colE[x]! += g;
+      rowE[y]! += g;
+    }
+  }
+  const colCut = median(colE) * 0.85;
+  const rowCut = median(rowE) * 0.85;
+  let x0 = 0;
+  let x1 = w - 1;
+  let y0 = 0;
+  let y1 = h - 1;
+  for (let x = 0; x < w; x++) {
+    if (colE[x]! > colCut) {
+      x0 = x;
+      break;
+    }
+  }
+  for (let x = w - 1; x >= 0; x--) {
+    if (colE[x]! > colCut) {
+      x1 = x;
+      break;
+    }
+  }
+  for (let y = 0; y < h; y++) {
+    if (rowE[y]! > rowCut) {
+      y0 = y;
+      break;
+    }
+  }
+  for (let y = h - 1; y >= 0; y--) {
+    if (rowE[y]! > rowCut) {
+      y1 = y;
+      break;
+    }
+  }
+  if (x1 - x0 < w * 0.4 || y1 - y0 < h * 0.4) {
+    return { x0: 0, y0: 0, x1: w - 1, y1: h - 1 };
+  }
+  return { x0, y0, x1, y1 };
+}
+
+function median(values: Float32Array): number {
+  const copy = Array.from(values).sort((a, b) => a - b);
+  const mid = Math.floor(copy.length / 2);
+  return copy[mid] ?? 0;
 }
 
 function glareRatio(ctx: CanvasRenderingContext2D, w: number, h: number): number {
@@ -320,6 +406,64 @@ function scoreFromThreshold(value: number, passAt: number, goodAt: number, highe
 
 export type KycQualityDocKind = "id_card" | "selfie" | "bank_book";
 
+function evaluateBankBookQuality(stats: GrayStats, glare: number): KycQualityResult {
+  const { width: w, height: h, mean, std, gray } = stats;
+  const blurVar = laplacianVariance(gray, w, h);
+  const aspect = w / h;
+  const frameOk = aspect >= 0.42 && aspect <= 2.4;
+  const textureOk = std >= 10;
+  const lightingOk = mean >= 45 && mean <= 248;
+  const notBlurry = blurVar >= 22;
+  // Digital passbooks (K PLUS / SCB Easy) have large cream/white fields — not camera glare.
+  const noGlare = glare <= 0.55;
+  const realPass = frameOk && textureOk && lightingOk;
+  const fullDoc = frameOk;
+  const clearAndLightOk = lightingOk && textureOk && notBlurry;
+  const sharpAndNoGlare = notBlurry && noGlare;
+
+  const checks: KycQualityCheck[] = [
+    {
+      id: "real_card",
+      label: "เป็นเอกสารบัญชีหรือไม่",
+      pass: realPass,
+      score: scoreFromThreshold((realPass ? 70 : 30) + (textureOk ? 20 : 0), 50, 90, true),
+      detail: realPass ? undefined : "ไม่พบลักษณะเอกสารบัญชี",
+    },
+    {
+      id: "four_corners",
+      label: "เห็นเอกสารเต็มภาพ",
+      pass: fullDoc,
+      score: fullDoc ? 90 : 40,
+      detail: fullDoc ? undefined : "ถ่ายให้เห็นหน้าสมุดหรือภาพจากแอปเต็มใบ",
+    },
+    {
+      id: "clear",
+      label: KYC_QUALITY_LABELS.clear,
+      pass: clearAndLightOk,
+      score: Math.round(
+        (scoreFromThreshold(std, 10, 30, true) + scoreFromThreshold(mean, 45, 160, true)) / 2,
+      ),
+      detail: !lightingOk ? (mean < 45 ? "มืดเกินไป" : "สว่างจ้าเกินไป") : !textureOk ? "รูปไม่ชัดพอ" : undefined,
+    },
+    {
+      id: "not_blurry",
+      label: KYC_QUALITY_LABELS.not_blurry,
+      pass: sharpAndNoGlare,
+      score: Math.round(
+        (scoreFromThreshold(blurVar, 22, 80, true) + scoreFromThreshold(glare, 0.55, 0.2, false)) / 2,
+      ),
+      detail: !notBlurry ? "ภาพเบลอ" : !noGlare ? "มีแสงสะท้อนบังข้อมูล" : undefined,
+    },
+  ];
+
+  const passed = checks.every((c) => c.pass);
+  return {
+    passed,
+    checks,
+    message: passed ? "ผ่านการตรวจคุณภาพรูป" : RETAKE_MSG,
+  };
+}
+
 export function evaluateQualityFromStats(
   stats: GrayStats,
   glare: number,
@@ -334,32 +478,43 @@ export function evaluateQualityFromStats(
     };
   }
 
+  if (kind === "bank_book") {
+    return evaluateBankBookQuality(stats, glare);
+  }
+
   const { width: w, height: h, gray, mean, std } = stats;
   const blurVar = laplacianVariance(gray, w, h);
   const aspect = w / h;
 
-  const cornerPadX = w * 0.18;
-  const cornerPadY = h * 0.18;
+  const box = documentContentBounds(gray, w, h);
+  const bw = Math.max(8, box.x1 - box.x0);
+  const bh = Math.max(8, box.y1 - box.y0);
+  const padX = Math.max(4, bw * 0.12);
+  const padY = Math.max(4, bh * 0.12);
   const corners = [
-    regionEdgeScore(gray, w, h, 0, 0, cornerPadX, cornerPadY),
-    regionEdgeScore(gray, w, h, w - cornerPadX, 0, w, cornerPadY),
-    regionEdgeScore(gray, w, h, 0, h - cornerPadY, cornerPadX, h),
-    regionEdgeScore(gray, w, h, w - cornerPadX, h - cornerPadY, w, h),
+    regionEdgeScore(gray, w, h, box.x0, box.y0, box.x0 + padX, box.y0 + padY),
+    regionEdgeScore(gray, w, h, box.x1 - padX, box.y0, box.x1, box.y0 + padY),
+    regionEdgeScore(gray, w, h, box.x0, box.y1 - padY, box.x0 + padX, box.y1),
+    regionEdgeScore(gray, w, h, box.x1 - padX, box.y1 - padY, box.x1, box.y1),
   ];
-  const cornersOk = corners.filter((c) => c >= 12).length;
+  const cornersOk = corners.filter((c) => c >= 8).length;
   const cornerAvg = corners.reduce((a, b) => a + b, 0) / 4;
 
-  const idAspectOk = aspect >= 1.25 && aspect <= 1.95;
+  // Phone photos of Thai IDs are often 4:3 with small margins, not the card's 1.58 ratio.
+  const idAspectOk = aspect >= 1.15 && aspect <= 2.05;
   const textureOk = std >= 18;
-  const realPass = idAspectOk && textureOk && cornerAvg >= 10;
+  const printedDoc = textureOk && std <= 48 && blurVar >= 45;
+  const realPass = idAspectOk && textureOk && (cornerAvg >= 8 || printedDoc);
 
   const blurPassAt = 45;
   const blurGoodAt = 120;
   const notBlurry = blurVar >= blurPassAt;
   const lightingOk = mean >= 55 && mean <= 210;
   const clearOk = notBlurry && std >= 16;
-  const fourCorners = cornersOk >= 3;
-  const noGlare = glare <= 0.045;
+  const fourCorners = cornersOk >= 3 || printedDoc;
+  const noGlare = glare <= 0.06;
+  const clearAndLightOk = clearOk && lightingOk;
+  const sharpAndNoGlare = notBlurry && noGlare;
 
   const checks: KycQualityCheck[] = [
     {
@@ -370,37 +525,31 @@ export function evaluateQualityFromStats(
       detail: realPass ? undefined : "ไม่พบลักษณะเอกสารที่ชัด",
     },
     {
-      id: "clear",
-      label: KYC_QUALITY_LABELS.clear,
-      pass: clearOk,
-      score: scoreFromThreshold(std + Math.min(40, blurVar / 4), 30, 70, true),
-    },
-    {
-      id: "lighting",
-      label: KYC_QUALITY_LABELS.lighting,
-      pass: lightingOk,
-      score: lightingOk ? scoreFromThreshold(100 - Math.abs(mean - 130) / 1.3, 50, 90, true) : scoreFromThreshold(mean, 55, 130, true),
-      detail: mean < 55 ? "มืดเกินไป" : mean > 210 ? "สว่างจ้าเกินไป" : undefined,
-    },
-    {
       id: "four_corners",
       label: KYC_QUALITY_LABELS.four_corners,
       pass: fourCorners,
-      score: Math.round((cornersOk / 4) * 100),
-      detail: fourCorners ? undefined : `เห็นชัด ${cornersOk}/4 มุม`,
+      score: fourCorners ? Math.max(75, Math.round((cornersOk / 4) * 100)) : Math.round((cornersOk / 4) * 100),
+      detail: fourCorners ? undefined : "ถ่ายให้เห็นบัตรเต็มใบ",
+    },
+    {
+      id: "clear",
+      label: KYC_QUALITY_LABELS.clear,
+      pass: clearAndLightOk,
+      score: Math.round(
+        (scoreFromThreshold(std + Math.min(40, blurVar / 4), 30, 70, true) +
+          (lightingOk ? scoreFromThreshold(100 - Math.abs(mean - 130) / 1.3, 50, 90, true) : scoreFromThreshold(mean, 55, 130, true))) /
+          2,
+      ),
+      detail: !lightingOk ? (mean < 55 ? "มืดเกินไป" : "สว่างจ้าเกินไป") : !clearOk ? "รูปไม่ชัดพอ" : undefined,
     },
     {
       id: "not_blurry",
       label: KYC_QUALITY_LABELS.not_blurry,
-      pass: notBlurry,
-      score: scoreFromThreshold(blurVar, blurPassAt, blurGoodAt, true),
-    },
-    {
-      id: "no_glare",
-      label: KYC_QUALITY_LABELS.no_glare,
-      pass: noGlare,
-      score: scoreFromThreshold(glare, 0.045, 0.015, false),
-      detail: noGlare ? undefined : "มีแสงสะท้อนบังข้อมูล",
+      pass: sharpAndNoGlare,
+      score: Math.round(
+        (scoreFromThreshold(blurVar, blurPassAt, blurGoodAt, true) + scoreFromThreshold(glare, 0.06, 0.015, false)) / 2,
+      ),
+      detail: !noGlare ? "มีแสงสะท้อนบังข้อมูล" : !notBlurry ? "ภาพเบลอ" : undefined,
     },
   ];
 
@@ -412,14 +561,7 @@ export function evaluateQualityFromStats(
   };
 }
 
-const DOC_CHECK_IDS: KycQualityCheckId[] = [
-  "real_card",
-  "clear",
-  "lighting",
-  "four_corners",
-  "not_blurry",
-  "no_glare",
-];
+const DOC_CHECK_IDS: KycQualityCheckId[] = ["real_card", "four_corners", "clear", "not_blurry"];
 
 export async function analyzeKycImageQuality(
   source: File | Blob,

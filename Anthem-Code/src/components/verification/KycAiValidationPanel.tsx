@@ -5,12 +5,15 @@ import { cn } from "@/lib/utils";
 type Props = {
   status: "idle" | "running" | "done" | "failed";
   result?: KycQualityResult | null;
-  docLabel?: string;
   className?: string;
+  /** Keep the grid column even before this slot has a result. */
+  keepSlot?: boolean;
 };
 
-export function KycAiValidationPanel({ status, result, docLabel, className }: Props) {
-  if (status === "idle") return null;
+export function KycAiValidationPanel({ status, result, className, keepSlot }: Props) {
+  if (status === "idle") {
+    return keepSlot ? <div className="hidden sm:block" aria-hidden /> : null;
+  }
 
   return (
     <div
@@ -32,14 +35,13 @@ export function KycAiValidationPanel({ status, result, docLabel, className }: Pr
         ) : (
           <RefreshCw className="w-4 h-4 text-destructive" />
         )}
-        <span>
+        <span className="leading-snug">
           {status === "running"
-            ? "AI กำลังเช็กคุณภาพรูป…"
+            ? "กำลังเช็กความถูกต้อง…"
             : status === "done"
-              ? "AI เช็ก · ผ่าน"
-              : "AI เช็ก · ไม่ผ่าน"}
+              ? "ระบบช่วยเช็คความถูกต้อง · ผ่าน"
+              : "ระบบช่วยเช็คความถูกต้อง · ไม่ผ่าน"}
         </span>
-        {docLabel && <span className="text-sm text-muted-foreground ml-auto">{docLabel}</span>}
       </div>
 
       {result?.checks?.length ? (

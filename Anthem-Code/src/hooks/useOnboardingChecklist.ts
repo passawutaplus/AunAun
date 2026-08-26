@@ -19,7 +19,7 @@ import {
   type OnboardingSignals,
   type OnboardingTaskId,
 } from "@/lib/onboardingTasks";
-import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
+import { isAplus1LaunchMinimal, isAplus1PxEnabled } from "@/lib/aplus1Launch";
 
 export type OnboardingTaskItem = {
   id: OnboardingTaskId;
@@ -31,7 +31,7 @@ export type OnboardingTaskItem = {
 
 export function useOnboardingChecklist(userId: string | undefined) {
   const qc = useQueryClient();
-  const { data: welcomeCap = 100 } = useWelcomePxCap();
+  const { data: welcomeCap = 100 } = useWelcomePxCap({ enabled: isAplus1PxEnabled() });
   const [dismissed, setDismissed] = useState(false);
   const [celebrated, setCelebrated] = useState(false);
   const [visitTick, setVisitTick] = useState(0);
@@ -181,7 +181,7 @@ export function useOnboardingChecklist(userId: string | undefined) {
   const allMissionsClaimed =
     total > 0 && getVisibleOnboardingTasks().every((t) => claimedMissionIds.has(t.id));
   const signals = data;
-  const tourMode = isAplus1LaunchMinimal();
+  const tourMode = isAplus1LaunchMinimal() || !isAplus1PxEnabled();
   const checklistComplete = tourMode ? allDone : allMissionsClaimed;
 
   const dismiss = () => {

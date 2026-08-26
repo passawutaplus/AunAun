@@ -132,8 +132,9 @@ export default function InspireManagePanel({ userId, embedded }: Props) {
         </div>
         <Button
           size="sm"
+          variant="gradient"
           onClick={() => setFormOpen(true)}
-          className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
+          className="rounded-full shrink-0"
         >
           <Plus className="w-4 h-4 mr-1" /> สร้างบอร์ด
         </Button>

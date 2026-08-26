@@ -187,6 +187,14 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         statLabel: "ผู้ใช้ทั้งหมด",
       },
       {
+        to: "/admin/users?kyc=verified",
+        label: "KYC ผ่านแล้ว",
+        hint: "ผู้ใช้ที่ยืนยันตัวตนแล้ว",
+        icon: ShieldCheck,
+        statKey: "kycVerified",
+        statLabel: "KYC ผ่าน",
+      },
+      {
         to: "/admin/users",
         label: "สมัครใหม่ 24 ชม.",
         hint: "ผู้ใช้ที่เพิ่งเข้าระบบ",
@@ -422,7 +430,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       {
         to: "/admin/kyc",
         label: "ยืนยันตัวตน (KYC)",
-        hint: "คิวตรวจสอบตัวตน",
+        hint: "ผ่านแล้ว และคิวรอตรวจ",
         icon: ShieldCheck,
         badgeKey: "kyc",
         statKey: "pendingKyc",

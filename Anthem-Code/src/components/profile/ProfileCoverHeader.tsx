@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Camera, Crop, Eye, Loader2, Pencil, Plus, Settings, Share2, Upload } from "lucide-react";
+import { Camera, Crop, Eye, Loader2, Pencil, Plus, Rocket, Settings, Share2, Upload, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ProfileSharePopover from "@/components/profile/ProfileSharePopover";
@@ -12,12 +12,14 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import OpportunityTypeChips from "@/components/opportunity/OpportunityTypeChips";
 import UserAvatar from "@/components/UserAvatar";
+import VerifiedBadge from "@/components/profile/VerifiedBadge";
 
 type ProfileLike = {
   display_name: string | null;
   username: string | null;
   avatar_url: string | null;
   cover_url: string | null;
+  is_verified?: boolean | null;
   /** Uncropped source — re-crop always uses this, not cover_url. */
   cover_original_url?: string | null;
 };
@@ -33,6 +35,8 @@ type Props = {
   onShareInteract?: () => void;
   onPreview?: () => void;
   onPost?: () => void;
+  onBecomeCreator?: () => void;
+  onWallet?: () => void;
   onSettings?: () => void;
   onFollowersClick?: () => void;
   onFollowingClick?: () => void;
@@ -69,6 +73,8 @@ export default function ProfileCoverHeader({
   onShareInteract,
   onPreview,
   onPost,
+  onBecomeCreator,
+  onWallet,
   onSettings,
   onFollowersClick,
   onFollowingClick,
@@ -299,8 +305,9 @@ export default function ProfileCoverHeader({
 
           <div className="flex-1 min-w-0 pb-1 sm:pb-3 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-medium text-foreground leading-tight truncate">
-                {profile.display_name || "ยังไม่ได้ตั้งชื่อ"}
+              <h1 className="text-xl sm:text-2xl font-medium text-foreground leading-tight flex items-center gap-1.5 min-w-0">
+                <span className="truncate">{profile.display_name || "ยังไม่ได้ตั้งชื่อ"}</span>
+                <VerifiedBadge verified={!!profile.is_verified} />
               </h1>
               {profile.username && (
                 <p className="text-sm text-muted-foreground">@{profile.username}</p>
@@ -357,12 +364,34 @@ export default function ProfileCoverHeader({
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {onBecomeCreator ? (
+                <Button
+                  type="button"
+                  onClick={onBecomeCreator}
+                  variant="gradient"
+                  className="rounded-full h-10 px-3.5 sm:px-4 shrink-0"
+                >
+                  <Rocket className="w-4 h-4" />
+                  Become a Creator
+                </Button>
+              ) : onWallet ? (
+                <Button
+                  type="button"
+                  onClick={onWallet}
+                  variant="gradient"
+                  className="rounded-full h-10 px-3.5 sm:px-4 shrink-0"
+                >
+                  <Wallet className="w-4 h-4" />
+                  กระเป๋าเงิน
+                </Button>
+              ) : null}
               {onPost && (
                 <Button
                   onClick={onPost}
                   size="icon"
-                  className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
+                  variant="gradient"
+                  className="rounded-full shrink-0"
                   title="โพสต์ชุมชน"
                   aria-label="โพสต์ชุมชน"
                 >

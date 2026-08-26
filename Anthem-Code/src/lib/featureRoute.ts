@@ -27,7 +27,7 @@ export function featureFromRoute(pathname: string): string {
 }
 
 // Routes where the floating feedback button should be hidden.
-const HIDDEN_FEATURE_PREFIXES = ["/auth", "/admin", "/forum"];
+const HIDDEN_FEATURE_PREFIXES = ["/auth", "/admin", "/forum", "/verify"];
 export function shouldHideFeedbackFab(pathname: string): boolean {
   return HIDDEN_FEATURE_PREFIXES.some((p) => pathname.startsWith(p)) || pathname === "/";
 }

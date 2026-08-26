@@ -386,6 +386,46 @@ export function renderCashoutStatusEmail(data: {
   return { html, text, subject: copy.subject };
 }
 
+export function renderKycStatusEmail(data: {
+  recipientName: string;
+  status: "approved" | "rejected";
+  reason?: string;
+  actionUrl: string;
+}): { html: string; text: string; subject: string } {
+  const approved = data.status === "approved";
+  const copy = approved
+    ? {
+        badge: "ยืนยันตัวตนสำเร็จ",
+        title: "คำขอยืนยันตัวตนได้รับการอนุมัติแล้ว",
+        tone: "success" as BadgeTone,
+        body: "คุณพร้อมเปิดรับงานจ้างและรับค่าจ้างตามเงื่อนไขแพลตฟอร์ม — การยืนยันมีผล 2 ปี",
+        cta: "ดูสถานะการยืนยัน",
+        subject: "[Aplus1] ยืนยันตัวตนสำเร็จ",
+      }
+    : {
+        badge: "คำขอไม่ผ่าน",
+        title: "คำขอยืนยันตัวตนไม่ผ่าน",
+        tone: "brand" as BadgeTone,
+        body: "กรุณาตรวจสอบเหตุผลด้านล่าง แล้วส่งเอกสารใหม่ได้ที่หน้ายืนยันตัวตน",
+        cta: "ส่งคำขอใหม่",
+        subject: "[Aplus1] คำขอยืนยันตัวตนไม่ผ่าน",
+      };
+  const reason = !approved && data.reason ? cardRow("เหตุผล", data.reason) : "";
+  const bodyHtml = `<p style="font-size:15px;color:${brand.body};line-height:1.6;margin:0 0 20px">สวัสดี ${escapeHtml(data.recipientName)} — ${copy.body}</p>
+${reason ? `<div style="background:${brand.surface};border:1px solid ${brand.border};border-radius:8px;padding:20px 22px;margin:0 0 24px">${reason}</div>` : ""}`;
+  const { html, text } = layout({
+    preview: copy.title,
+    badge: copy.badge,
+    badgeTone: copy.tone,
+    icon: approved ? "check" : "warning",
+    title: copy.title,
+    bodyHtml,
+    ctaLabel: copy.cta,
+    ctaUrl: data.actionUrl,
+  });
+  return { html, text, subject: copy.subject };
+}
+
 export type AnthemEmailTemplate =
   | "hire-request"
   | "chat-message"
@@ -395,7 +435,8 @@ export type AnthemEmailTemplate =
   | "follow"
   | "job-application"
   | "topup-success"
-  | "cashout-status";
+  | "cashout-status"
+  | "kyc-status";
 
 export function renderAnthemEmail(
   template: AnthemEmailTemplate,
@@ -420,5 +461,7 @@ export function renderAnthemEmail(
       return renderTopupSuccessEmail(data as Parameters<typeof renderTopupSuccessEmail>[0]);
     case "cashout-status":
       return renderCashoutStatusEmail(data as Parameters<typeof renderCashoutStatusEmail>[0]);
+    case "kyc-status":
+      return renderKycStatusEmail(data as Parameters<typeof renderKycStatusEmail>[0]);
   }
 }

@@ -148,7 +148,8 @@ export default function PortfolioWorksManagePanel({ userId, showDesignDrill }: P
           จัดการงาน
         </Button>
         <Button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-11 px-6"
+          variant="gradient"
+          className="rounded-xl h-11 px-6"
           onClick={() => navigate("/portfolio/new")}
         >
           <Plus className="w-4 h-4 mr-2" /> Add Work

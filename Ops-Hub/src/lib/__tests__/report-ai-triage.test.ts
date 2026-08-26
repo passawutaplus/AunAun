@@ -18,9 +18,9 @@ describe("report-ai-triage", () => {
     expect(r.recommendation).toBe("routine");
   });
 
-  it("kycRiskTone thresholds", () => {
-    expect(kycRiskTone(10)).toBe("low");
-    expect(kycRiskTone(30)).toBe("medium");
-    expect(kycRiskTone(55)).toBe("high");
+  it("kycRiskTone thresholds (quality 100, then deduct)", () => {
+    expect(kycRiskTone(100)).toBe("low");
+    expect(kycRiskTone(80)).toBe("medium");
+    expect(kycRiskTone(50)).toBe("high");
   });
 });

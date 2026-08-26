@@ -74,12 +74,14 @@ export function triageReport(input: ReportTriageInput): ReportTriageResult {
   return { priority_score, summary, recommendation };
 }
 
-export const KYC_HIGH_RISK_THRESHOLD = 40;
+/** Quality 0–100 (start at 100, deduct). Below this → high-risk queue. */
+export const KYC_HIGH_RISK_THRESHOLD = 60;
+const KYC_QUALITY_LOW_RISK_MIN = 85;
 
 export function kycRiskTone(score: number | null | undefined): "low" | "medium" | "high" {
   if (score == null) return "medium";
-  if (score <= 15) return "low";
-  if (score <= KYC_HIGH_RISK_THRESHOLD) return "medium";
+  if (score >= KYC_QUALITY_LOW_RISK_MIN) return "low";
+  if (score >= KYC_HIGH_RISK_THRESHOLD) return "medium";
   return "high";
 }
 

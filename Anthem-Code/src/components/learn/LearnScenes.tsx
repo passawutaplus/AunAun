@@ -447,11 +447,7 @@ export function LearnCtaStill({ children }: { children: ReactNode }) {
   const reduced = useReducedMotion();
   return (
     <div className="relative overflow-hidden rounded-[1.75rem] bg-gradient-brand">
-      <div className="footer-cta-wave absolute inset-0 opacity-90" aria-hidden>
-        <div className="footer-cta-wave-mesh footer-cta-wave-mesh-a" />
-        <div className="footer-cta-wave-mesh footer-cta-wave-mesh-b" />
-        <div className="footer-cta-wave-noise" />
-      </div>
+      <div className="footer-cta-wave absolute inset-0 opacity-90" aria-hidden />
       {!reduced
         ? LEARN_FILM.tiles.slice(0, 5).map((src, i) => (
             <motion.img

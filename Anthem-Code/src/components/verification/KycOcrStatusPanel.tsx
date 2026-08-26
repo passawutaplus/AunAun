@@ -31,7 +31,9 @@ export function KycOcrStatusPanel({ status, progress = 0, fields, error, classNa
   if (status === "idle") return null;
 
   const found = fields
-    ? (Object.entries(fields) as [keyof KycOcrFields, string | undefined][]).filter(([, v]) => !!v)
+    ? (Object.entries(fields) as [keyof KycOcrFields, string | undefined][]).filter(
+        ([key, v]) => !!v && key !== "laserCode",
+      )
     : [];
 
   return (

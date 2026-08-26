@@ -127,7 +127,7 @@ export const isAplus1UpgradeEnabled = isSoloEcosystemEnabled;
 export const UPGRADE_PATH = "/upgrade";
 
 export const UPGRADE_COMING_SOON_TH =
-  "แพ็ก Pro บน Aplus1 กำลังจะเปิดให้สมัครเร็ว ๆ นี้ — ใช้งานฟรีและ Pixel ได้ตามปกติ";
+  "แพ็ก Pro บน Aplus1 กำลังจะเปิดให้สมัครเร็ว ๆ นี้ — ใช้งานฟรีได้ตามปกติ";
 
 export const SOLO_ECOSYSTEM_COMING_SOON_TH =
   "การเชื่อมต่อ So1o Freelancer กำลังจะเปิดเร็ว ๆ นี้ — ใช้ Aplus1 โพสต์ผลงาน แชท และรับงานได้ตามปกติ";
@@ -135,7 +135,7 @@ export const SOLO_ECOSYSTEM_COMING_SOON_TH =
 export const SOLO_ECOSYSTEM_COMING_SOON_SHORT = "So1o — เร็ว ๆ นี้";
 
 export const APLUS1_PAYMENTS_DISABLED_TH =
-  "กำลังเปิดรับชำระผ่าน Aplus1 — รับของขวัญและ daily px ใช้ได้ตามปกติ";
+  "กำลังเปิดรับชำระผ่าน Aplus1 — ใช้งานโพสต์ผลงาน แชท และรับงานได้ตามปกติ";
 
 /** Legacy Solo/Stripe fiat paths are cut — use Omise when enabled. */
 export const APLUS1_SOLO_PAYMENTS_CUTOVER_TH =
@@ -170,6 +170,16 @@ export function isLaunchCollabEnabled(): boolean {
   return true;
 }
 
+/**
+ * Pixel wallet, cashout, welcome PX, referral PX rewards.
+ * Off until explicitly re-enabled — hire THB stays on /earnings.
+ * Re-enable with VITE_APLUS1_PX_ENABLED=true and VITE_APLUS1_FULL_PRODUCT=true.
+ */
+export function isAplus1PxEnabled(): boolean {
+  if (isAplus1LaunchMinimal()) return false;
+  return import.meta.env.VITE_APLUS1_PX_ENABLED === "true";
+}
+
 /** Creator support / gifting CTA — disabled until gift economy is re-enabled. */
 export function isLaunchCreatorSupportEnabled(): boolean {
   return isAplus1GiftEconomyEnabled();
@@ -177,11 +187,11 @@ export function isLaunchCreatorSupportEnabled(): boolean {
 
 /**
  * PX gifts, daily free claim, gift catalog/missions, earn-readiness UI.
- * Off by default — re-enable with VITE_APLUS1_GIFT_ECONOMY_ENABLED=true
- * (and VITE_APLUS1_FULL_PRODUCT=true when launch-minimal).
+ * Requires Pixel to be on. Re-enable with VITE_APLUS1_GIFT_ECONOMY_ENABLED=true
+ * (and VITE_APLUS1_PX_ENABLED=true + VITE_APLUS1_FULL_PRODUCT=true).
  */
 export function isAplus1GiftEconomyEnabled(): boolean {
-  if (isAplus1LaunchMinimal()) return false;
+  if (!isAplus1PxEnabled()) return false;
   return import.meta.env.VITE_APLUS1_GIFT_ECONOMY_ENABLED === "true";
 }
 

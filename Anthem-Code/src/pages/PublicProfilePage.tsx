@@ -24,6 +24,7 @@ import CollabDialog from "@/components/CollabDialog";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import CatalogIcon from "@/components/icons/CatalogIcon";
 import UserAvatar from "@/components/UserAvatar";
+import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import ProfileServicesSection from "@/components/services/ProfileServicesSection";
 import { useCreatorServices } from "@/hooks/useCreatorServices";
 
@@ -614,8 +615,9 @@ const PublicProfilePage = () => {
 
               <div className="flex-1 min-w-0 pt-10 sm:pt-12 md:pt-14">
                 <div className="flex items-start justify-between gap-3">
-                  <h1 className="text-lg sm:text-2xl md:text-3xl font-semibold text-foreground leading-snug tracking-normal min-w-0">
-                    {highlight(profile.display_name, q)}
+                  <h1 className="text-lg sm:text-2xl md:text-3xl font-semibold text-foreground leading-snug tracking-normal min-w-0 flex items-center gap-1.5">
+                    <span className="min-w-0 truncate">{highlight(profile.display_name, q)}</span>
+                    <VerifiedBadge verified={!!(profile as { is_verified?: boolean }).is_verified} />
                   </h1>
                   {!isSelf ? (
                     <div className="shrink-0 flex flex-wrap items-center justify-end gap-1.5 pt-0.5 sm:pt-1">
