@@ -11,9 +11,6 @@ export const SITE_NAME = BRAND_NAME;
 export const SITE_TAGLINE = BRAND_TAGLINE;
 export const SITE_DESCRIPTION = BRAND_DESCRIPTION;
 
-export const DEFAULT_OG_IMAGE =
-  "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/19f990d1-3bf3-4ccc-9dce-de3649dc4fc6/id-preview-4b822f2c--d689aa9c-465b-4db9-bfc2-8597a23157e5.lovable.app-1777871436940.png";
-
 /** Query keys that should not be indexed as unique URLs. */
 export const NOINDEX_QUERY_KEYS = [
   "q",
@@ -44,6 +41,9 @@ export function absoluteUrl(path: string): string {
   const p = path.startsWith("/") ? path : `/${path}`;
   return `${base}${p}`;
 }
+
+/** Brand mark — replace with a dedicated 1200×630 OG asset when available. */
+export const DEFAULT_OG_IMAGE = `${APLUS1_PRODUCTION_URL}/icons/icon-512.png`;
 
 /** Strip query/hash — canonical paths must be clean. */
 export function canonicalPath(path: string): string {

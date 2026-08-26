@@ -1,11 +1,8 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL } from "@ffmpeg/util";
 
-/** Local (self-hosted) core first, public CDN as fallback if it 404s/blocked. */
-const CORE_SOURCES = [
-  `${import.meta.env.BASE_URL}ffmpeg`,
-  "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm",
-];
+/** Local (self-hosted) ffmpeg.wasm core — no third-party CDN (CSP blocks unpkg). */
+const CORE_SOURCES = [`${import.meta.env.BASE_URL}ffmpeg`];
 
 let ffmpeg: FFmpeg | null = null;
 let loadPromise: Promise<FFmpeg> | null = null;

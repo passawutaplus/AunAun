@@ -127,6 +127,20 @@ export function projectTextFontsStylesheetHref(): string {
   return `https://fonts.googleapis.com/css2?${query}&display=swap`;
 }
 
+let projectFontsStarted = false;
+
+/** Load editor font pack only when a rich-text / flex-grid editor mounts. */
+export function loadProjectTextFonts() {
+  if (projectFontsStarted || typeof document === "undefined") return;
+  projectFontsStarted = true;
+  if (document.querySelector(`link[data-project-text-fonts]`)) return;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = projectTextFontsStylesheetHref();
+  link.dataset.projectTextFonts = "1";
+  document.head.appendChild(link);
+}
+
 /** Whitelisted font sizes for project text modules (px). */
 export type ProjectTextSize = {
   id: string;

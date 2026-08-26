@@ -197,16 +197,18 @@ Lighthouse 10 ก.ค.: Performance 66 · Accessibility 91 · Best Practices 93 
 
 ### Top 10 ที่ต้องแก้
 
-1. ❌ LCP 4.3s — Google Fonts 12 ครอบครัวใน `index.html` + unused JS ~342 KiB
-2. ❌ Unknown URL คืน HTTP 200 (SPA rewrite = soft 404)
-3. ❌ Contrast ส้ม `#ff4f1a` บนขาว ≈ 3.28:1 (ต้อง 4.5:1)
-4. ❌ OG image ยังเป็นไฟล์ Lovable ใน `src/lib/seo.ts` (`DEFAULT_OG_IMAGE`)
-5. ❌ Overlay ซ้อนตอนแรกเข้า (cookie + onboarding) — บน **dev** บังคับโชว์ survey แม้ guest
-6. ❌ Onboarding ไม่พาไปลงงานแรก (ปุ่มหลักเคยเป็นข้าม / copy อังกฤษ)
-7. ❌ Session token ใน localStorage
-8. ❌ CSP อนุญาต `unpkg.com` + `unsafe-inline` ของ style
-9. ❌ Skip link มีในโค้ด แต่ Tab แรกอาจโดน overlay ชิง
-10. ❌ Search ไม่บอกจำนวนผลลัพธ์
+### Top 10 things to fix (อัปเดต Aug 2026)
+
+1. ✅ LCP — ตัด Google Fonts 12 ครอบครัวออกจาก `index.html`; brand/editor โหลด async
+2. ✅ Soft 404 (bots) — `seo-preview` คืน HTTP 404 เมื่อ path ไม่รู้จัก / โปรเจกต์หาย; SPA ใส่ `noindex` บน NotFound
+3. ✅ Contrast — `--primary` ลด lightness เป็น 42% (AA text-on-white)
+4. ✅ OG image — เปลี่ยนจาก Lovable เป็น `/icons/icon-512.png`
+5. ✅ Overlay ซ้อน — survey ไม่บังคับบน DEV ทุกครั้ง; รอ cookie ก่อน (เดิมมีแล้ว)
+6. ✅ Onboarding → ลงงานแรก — หลังบันทึกพาไป `/portfolio/new` + CTA toast
+7. 🟡 Session token ใน localStorage — SPA + PKCE; ปิด “จดจำฉัน” ใช้ sessionStorage; ยังไม่มี httpOnly BFF
+8. ✅ CSP — ตัด `unpkg.com`; ffmpeg ใช้ self-hosted เท่านั้น (`unsafe-inline` style ยังต้องมีสำหรับ Tailwind)
+9. ✅ Skip link — ย้ายเป็นลูกแรกของ shell + z-index เหนือ overlay
+10. ✅ Search แสดงจำนวนผลลัพธ์ — toolbar + grids
 
 ### ที่ผ่านแล้ว (อย่าทำให้พัง)
 

@@ -121,14 +121,14 @@ const FeedHero = ({ mode = "projects", className }: Props) => {
           >
             <h1 className="text-[2.15rem] sm:text-4xl md:text-[2.85rem] lg:text-[3.25rem] font-bold tracking-tight text-foreground leading-[0.98] sm:leading-[0.95]">
               <span className="block">1 Profile to</span>
-              <span className="block text-primary">
+              <span className="block text-[hsl(14_100%_55%)]">
                 <HeroHundredPlus /> <HeroRotatingWord cycle={heroCycle} lang="en" />
               </span>
             </h1>
             <p className="mt-4 max-w-md text-base sm:mt-5 sm:text-lg font-normal text-foreground">
               <span className="inline-flex flex-wrap items-baseline justify-center gap-x-1.5">
                 <span>ให้ผลงานพาคุณไปสู่</span>
-                <HeroRotatingWord cycle={heroCycle} lang="th" className="font-semibold text-primary" />
+                <HeroRotatingWord cycle={heroCycle} lang="th" className="font-semibold text-[hsl(14_100%_55%)]" />
                 <span>ใหม่ๆ</span>
               </span>
             </p>

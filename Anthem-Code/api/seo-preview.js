@@ -68,6 +68,26 @@ async function fetchJson(url, headers) {
   return res.json();
 }
 
+/** Paths we intentionally serve as public shells (bots get 200). */
+function isKnownPublicPath(pathname) {
+  if (pathname === "/") return true;
+  if (
+    /^\/(jobs|advertise|research|upgrade|learn|auth|forum|help|explore|collections|inspire|series|s|error)(\/|$)/i.test(
+      pathname,
+    )
+  ) {
+    return true;
+  }
+  if (/^\/legal(\/|$)/i.test(pathname)) return true;
+  if (/^\/project\/[0-9a-f-]{36}$/i.test(pathname)) return true;
+  if (/^\/jobs\/[0-9a-f-]{36}$/i.test(pathname)) return true;
+  if (/^\/@[a-z0-9_.]{2,}$/i.test(pathname)) return true;
+  if (/^\/u\/[0-9a-f-]{36}$/i.test(pathname)) return true;
+  if (/^\/series\/[0-9a-f-]{36}$/i.test(pathname)) return true;
+  if (/^\/service\/[0-9a-f-]{36}$/i.test(pathname)) return true;
+  return false;
+}
+
 async function resolveMeta(pathname, base) {
   const defaultMeta = {
     title: "Aplus1 — 1 โปรไฟล์ สู่ 100+ โอกาส",
@@ -78,7 +98,18 @@ async function resolveMeta(pathname, base) {
     noindex: false,
     jsonLd: null,
     type: "website",
+    status: 200,
   };
+
+  if (!isKnownPublicPath(pathname)) {
+    return {
+      ...defaultMeta,
+      title: "ไม่พบหน้า | Aplus1",
+      description: "หน้าที่คุณค้นหาไม่มีบน Aplus1",
+      noindex: true,
+      status: 404,
+    };
+  }
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
   const anonKey =
@@ -105,7 +136,14 @@ async function resolveMeta(pathname, base) {
       anthemHeaders,
     );
     const p = rows?.[0];
-    if (!p) return { ...defaultMeta, noindex: true, title: "ไม่พบผลงาน | Aplus1" };
+    if (!p) {
+      return {
+        ...defaultMeta,
+        noindex: true,
+        title: "ไม่พบผลงาน | Aplus1",
+        status: 404,
+      };
+    }
     const cover = p.cover_url
       ? p.cover_url.startsWith("http")
         ? p.cover_url
@@ -118,6 +156,7 @@ async function resolveMeta(pathname, base) {
       image: cover,
       noindex: false,
       type: "article",
+      status: 200,
       jsonLd: {
         "@context": "https://schema.org",
         "@type": "CreativeWork",
@@ -136,7 +175,14 @@ async function resolveMeta(pathname, base) {
       anthemHeaders,
     );
     const j = rows?.[0];
-    if (!j) return { ...defaultMeta, noindex: true, title: "ไม่พบงาน | Aplus1" };
+    if (!j) {
+      return {
+        ...defaultMeta,
+        noindex: true,
+        title: "ไม่พบงาน | Aplus1",
+        status: 404,
+      };
+    }
     const open = j.status === "open";
     return {
       title: `${j.title} | Aplus1`,
@@ -144,6 +190,7 @@ async function resolveMeta(pathname, base) {
       url: `${base}/jobs/${j.id}`,
       image: j.cover_image_url || defaultMeta.image,
       noindex: !open,
+      status: open ? 200 : 404,
       jsonLd: open
         ? {
             "@context": "https://schema.org",
@@ -168,7 +215,14 @@ async function resolveMeta(pathname, base) {
       headers,
     );
     const profile = rows?.[0];
-    if (!profile) return { ...defaultMeta, noindex: true, title: "ไม่พบโปรไฟล์ | Aplus1" };
+    if (!profile) {
+      return {
+        ...defaultMeta,
+        noindex: true,
+        title: "ไม่พบโปรไฟล์ | Aplus1",
+        status: 404,
+      };
+    }
     const name = profile.display_name || profile.username || "ครีเอเตอร์";
     const path = profile.username ? `/@${profile.username}` : `/u/${profile.user_id}`;
     const thin = !(profile.bio && profile.bio.trim().length >= 40);
@@ -178,6 +232,7 @@ async function resolveMeta(pathname, base) {
       url: `${base}${path}`,
       image: profile.avatar_url || defaultMeta.image,
       noindex: thin,
+      status: 200,
       jsonLd: {
         "@context": "https://schema.org",
         "@type": "Person",
@@ -213,10 +268,16 @@ export default async function handler(req, res) {
     const base = siteBase(req);
     const meta = await resolveMeta(pathname, base);
     const html = shell(meta);
+    const status = meta.status === 404 ? 404 : 200;
 
     res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.setHeader("Cache-Control", `public, s-maxage=${BOT_CACHE_SECONDS}, stale-while-revalidate=600`);
-    res.status(200).send(html);
+    res.setHeader(
+      "Cache-Control",
+      status === 404
+        ? "public, s-maxage=60, stale-while-revalidate=300"
+        : `public, s-maxage=${BOT_CACHE_SECONDS}, stale-while-revalidate=600`,
+    );
+    res.status(status).send(html);
   } catch (err) {
     console.error("seo-preview error", err);
     res.status(500).send("SEO preview error");

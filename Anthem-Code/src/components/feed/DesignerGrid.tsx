@@ -188,17 +188,24 @@ const DesignerGrid = ({
   }
 
   return (
-    <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-3 md:gap-x-4 gap-y-[22px] md:gap-y-[26px]">
-      {filtered.map((d) => (
-        <DesignerCard
-          key={designerUserId(d)}
-          data={d}
-          onHire={onHire}
-          onCollab={onCollab}
-          search={search}
-        />
-      ))}
-    </StaggerGrid>
+    <div className="space-y-3">
+      {search.trim() ? (
+        <p className="text-xs sm:text-sm text-muted-foreground tabular-nums" aria-live="polite">
+          พบ {filtered.length.toLocaleString("th-TH")} คน
+        </p>
+      ) : null}
+      <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-3 md:gap-x-4 gap-y-[22px] md:gap-y-[26px]">
+        {filtered.map((d) => (
+          <DesignerCard
+            key={designerUserId(d)}
+            data={d}
+            onHire={onHire}
+            onCollab={onCollab}
+            search={search}
+          />
+        ))}
+      </StaggerGrid>
+    </div>
   );
 };
 

@@ -215,11 +215,18 @@ const PackageGrid = ({
   }
 
   return (
-    <FeedProjectGrid itemClassName="h-full" columnsClass={PACKAGE_FEED_GRID}>
-      {filtered.map((d) => (
-        <PackageCard key={d.service.id} data={d} search={search} />
-      ))}
-    </FeedProjectGrid>
+    <div className="space-y-3">
+      {search.trim() ? (
+        <p className="text-xs sm:text-sm text-muted-foreground tabular-nums" aria-live="polite">
+          พบ {filtered.length.toLocaleString("th-TH")} แพ็กเกจ
+        </p>
+      ) : null}
+      <FeedProjectGrid itemClassName="h-full" columnsClass={PACKAGE_FEED_GRID}>
+        {filtered.map((d) => (
+          <PackageCard key={d.service.id} data={d} search={search} />
+        ))}
+      </FeedProjectGrid>
+    </div>
   );
 };
 

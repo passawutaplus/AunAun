@@ -82,7 +82,7 @@ import {
   type AlignCmd,
   type InlineCmd,
 } from "@/lib/projectRichTextFormat";
-import { PROJECT_TEXT_FONTS, PROJECT_TEXT_SIZES } from "@/lib/projectTextFonts";
+import { PROJECT_TEXT_FONTS, PROJECT_TEXT_SIZES, loadProjectTextFonts } from "@/lib/projectTextFonts";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -243,6 +243,10 @@ export function ProjectFlexGridEditor({
   inlineCropSaving,
   className,
 }: Props) {
+  useEffect(() => {
+    loadProjectTextFonts();
+  }, []);
+
   const selected = selection[selection.length - 1] ?? null;
 
   const selectModule = useCallback(

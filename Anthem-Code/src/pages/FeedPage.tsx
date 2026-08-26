@@ -554,6 +554,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           onHideAiChange={setHideAi}
           includeDesignDrillChip={isLaunchDesignDrillEnabled()}
           projectResultCount={filtered.length}
+          resultCount={mode === "projects" ? filtered.length : undefined}
           recentSearches={recentSearches}
           onRecentSearchSelect={setSearch}
           designerFeedSource={designerFeedSource}

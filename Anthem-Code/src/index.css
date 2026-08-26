@@ -24,8 +24,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 7% 9%;
 
-    /* Radiant Orange #FF4F18 */
-    --primary: 14 100% 55%;
+    /* Radiant Orange — darkened for WCAG AA text-on-white (~4.5:1); white-on-primary still passes */
+    --primary: 14 100% 42%;
     --primary-foreground: 0 0% 100%;
 
     /* Fog Gray — a step darker than the shell so chips/wells read as recessed */
@@ -46,7 +46,7 @@
 
     --border: 220 14% 88%;
     --input: 220 14% 88%;
-    --ring: 14 100% 55%;
+    --ring: 14 100% 42%;
 
     --radius: 0.875rem;
 
@@ -57,12 +57,12 @@
     --sidebar-accent: 220 18% 93%;
     --sidebar-accent-foreground: 210 7% 9%;
     --sidebar-border: 220 14% 88%;
-    --sidebar-ring: 14 100% 55%;
+    --sidebar-ring: 14 100% 42%;
 
     /* Chat persona tokens */
     --chat-hire: 215 88% 52%;
     --chat-hire-soft: 215 90% 96%;
-    --chat-collab: 14 100% 55%;
+    --chat-collab: 14 100% 42%;
     --chat-collab-soft: 14 100% 96%;
   }
 
@@ -74,7 +74,7 @@
     --card-foreground: 0 0% 97%;
     --popover: 210 8% 12%;
     --popover-foreground: 0 0% 97%;
-    --primary: 14 100% 60%;
+    --primary: 14 100% 52%;
     --primary-foreground: 0 0% 100%;
     --secondary: 210 8% 18%;
     --secondary-foreground: 0 0% 94%;
@@ -88,20 +88,20 @@
     --success-foreground: 0 0% 100%;
     --border: 210 8% 26%;
     --input: 210 8% 22%;
-    --ring: 14 100% 60%;
+    --ring: 14 100% 52%;
     --sidebar-background: 210 8% 9%;
     --sidebar-foreground: 0 0% 92%;
-    --sidebar-primary: 14 100% 60%;
+    --sidebar-primary: 14 100% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 8% 16%;
     --sidebar-accent-foreground: 0 0% 94%;
     --sidebar-border: 210 8% 26%;
-    --sidebar-ring: 14 100% 60%;
+    --sidebar-ring: 14 100% 52%;
 
     /* Chat persona tokens */
     --chat-hire: 215 88% 62%;
     --chat-hire-soft: 215 45% 18%;
-    --chat-collab: 14 100% 60%;
+    --chat-collab: 14 100% 52%;
     --chat-collab-soft: 14 55% 16%;
   }
 

@@ -16,7 +16,7 @@ const ROWS: Row[] = [
   { area: "robots.txt", status: "done", detail: "Disallow private + Sitemap links", href: "/robots.txt" },
   { area: "Indexing / noindex", status: "done", detail: "SeoHead noindex สำหรับ private, search, thin profile, closed jobs" },
   { area: "Canonical", status: "done", detail: "absolute + strip query ผ่าน SeoHead" },
-  { area: "Open Graph / Twitter", status: "partial", detail: "แท็กครบ — รูป DEFAULT_OG_IMAGE ยังเป็นไฟล์ Lovable ต้องเปลี่ยน" },
+  { area: "Open Graph / Twitter", status: "ok", detail: "DEFAULT_OG_IMAGE ใช้ /icons/icon-512.png — เปลี่ยนเป็น 1200×630 เมื่อมีอาร์ตพร้อม" },
   { area: "HTTP 404 (ไม่ใช่ SPA 200)", status: "partial", detail: "มีหน้า /error/404 — unknown URL ยัง rewrite เป็น index.html" },
   { area: "Structured data", status: "done", detail: "WebSite, Organization, Person, ProfilePage, CreativeWork, JobPosting, BreadcrumbList" },
   { area: "Breadcrumb UI + schema", status: "done", detail: "SeoBreadcrumb บนโปรเจกต์ / งาน / โปรไฟล์ / สำรวจ / สตูดิโอ" },

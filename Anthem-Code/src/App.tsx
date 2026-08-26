@@ -199,6 +199,7 @@ const App = () => (
           <ScrollToTop />
           <ProductEventTracker />
           <ErrorBoundary>
+          <SkipLink />
           <DemoModeBanner />
           <AvatarPoolBootstrap />
           <ReferralAttribution />
@@ -383,7 +384,6 @@ const App = () => (
               </Route>
             </Routes>
           </Suspense>
-          <SkipLink />
           <OfflineBanner />
           <CookieConsent />
           <GoogleAnalytics />

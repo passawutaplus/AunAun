@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Briefcase, Camera, Check, ImagePlus, Loader2, Search, Sparkles, User, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -29,10 +29,9 @@ import { OPPORTUNITY_TYPE_KEYS, labelOpportunityType } from "@/lib/opportunity";
 import { cn } from "@/lib/utils";
 import { displayInitials } from "@/lib/avatarPool";
 
-/** Dev / ?onboarding=1: force open for UI review. */
+/** Only force with ?onboarding=1 — never auto-open for every local guest (blocks skip link / first paint). */
 const FORCE_SHOW_INTEREST_SURVEY =
-  import.meta.env.DEV ||
-  (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("onboarding"));
+  typeof window !== "undefined" && new URLSearchParams(window.location.search).has("onboarding");
 
 /** Matches Tailwind `sm` — side-by-side layout starts here. */
 const DESKTOP_MIN = 640;
@@ -246,6 +245,7 @@ function ProfileIdentityPanel({
 
 export function InterestSurveyGate() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { tier } = useSubscription();
   const isNarrow = useIsNarrow();
@@ -392,12 +392,25 @@ export function InterestSurveyGate() {
           preferredCategories: disciplines,
           skills,
         });
-        toast.success("ตั้งค่าโปรไฟล์แล้ว — แก้ทีหลังได้ที่เกี่ยวกับฉัน");
+        toast.success("ตั้งค่าโปรไฟล์แล้ว — ลงผลงานแรกกันเลย", {
+          action: {
+            label: "ลงผลงาน",
+            onClick: () => navigate("/portfolio/new"),
+          },
+          duration: 8_000,
+        });
       } else {
         await save(Array.from(selected));
-        toast.success("บันทึกความสนใจแล้ว");
+        toast.success("บันทึกความสนใจแล้ว — ลงผลงานแรกเพื่อเริ่มรับโอกาส", {
+          action: {
+            label: "ลงผลงาน",
+            onClick: () => navigate("/portfolio/new"),
+          },
+          duration: 8_000,
+        });
       }
       setDismissed(true);
+      navigate("/portfolio/new");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
     }
@@ -469,17 +482,17 @@ export function InterestSurveyGate() {
     step === "identity"
       ? "ตั้งโปรไฟล์"
       : step === "interests"
-        ? "You're Interesting"
+        ? "คุณสนใจอะไร"
         : "ตั้งโปรไฟล์";
   const stepDesc =
     step === "identity"
       ? "ตั้งรูปและ Username — แก้ทีหลังได้ที่โปรไฟล์"
       : step === "interests"
-        ? "เลือกอย่างน้อย 1 หมวด — เลือกได้มากกว่า 1 เราจะโชว์ผลงานใน Explore ตามที่สนใจก่อน"
+        ? "เลือกอย่างน้อย 1 หมวด — เลือกได้มากกว่า 1 เราจะโชว์ผลงานตามที่สนใจก่อน"
         : "แก้ทีหลังได้ที่โปรไฟล์ › เกี่ยวกับฉัน";
 
   const primaryLabel =
-    isSaving ? null : step === "interests" ? (isNarrow ? "ถัดไป" : "เริ่มใช้งาน") : "เริ่มใช้งาน";
+    isSaving ? null : step === "interests" ? (isNarrow ? "ถัดไป" : "เริ่มใช้งาน") : "ลงผลงานแรก";
 
   return (
     <ResponsiveOverlay
@@ -535,7 +548,7 @@ export function InterestSurveyGate() {
                       กำลังบันทึก…
                     </>
                   ) : (
-                    "เริ่มใช้งาน"
+                    "ลงผลงานแรก"
                   )}
                 </Button>
               </div>

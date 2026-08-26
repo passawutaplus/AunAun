@@ -6,6 +6,11 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 import { BRAND_STORAGE_NO_PERSIST } from "@/lib/brandConfig";
 
+/**
+ * Auth persistence: PKCE SPA tokens live in localStorage when "จดจำฉัน" is on.
+ * Uncheck remember → sessionStorage only (cleared when the tab closes).
+ * Full httpOnly cookies need a BFF — not available on this Vite client.
+ */
 function authPersistenceStorage(): Pick<Storage, "getItem" | "setItem" | "removeItem"> {
   const useSession = () =>
     typeof sessionStorage !== "undefined" &&

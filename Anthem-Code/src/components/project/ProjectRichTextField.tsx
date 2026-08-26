@@ -28,7 +28,7 @@ import {
   type AlignCmd,
   type InlineCmd,
 } from "@/lib/projectRichTextFormat";
-import { PROJECT_TEXT_FONTS, PROJECT_TEXT_SIZES } from "@/lib/projectTextFonts";
+import { PROJECT_TEXT_FONTS, PROJECT_TEXT_SIZES, loadProjectTextFonts } from "@/lib/projectTextFonts";
 import type { TextVerticalAlign } from "@/lib/projectContentBlocks";
 import { cn } from "@/lib/utils";
 
@@ -98,6 +98,10 @@ export function ProjectRichTextField({
   const ref = useRef<HTMLDivElement>(null);
   const showVertical = typeof onVerticalAlignChange === "function";
   const vAlign = verticalAlign ?? "middle";
+
+  useEffect(() => {
+    loadProjectTextFonts();
+  }, []);
 
   const toEditorHtml = (raw: string) => {
     const trimmed = raw ?? "";

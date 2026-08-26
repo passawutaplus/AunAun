@@ -92,6 +92,8 @@ type Props = {
   onDrillSelect?: () => void;
   includeDesignDrillChip?: boolean;
   projectResultCount?: number;
+  /** Visible when search is non-empty — number of matching items in the active feed. */
+  resultCount?: number;
   recentSearches?: string[];
   onRecentSearchSelect?: (q: string) => void;
 };
@@ -138,6 +140,7 @@ const FeedToolbar = ({
   onDrillSelect,
   includeDesignDrillChip = false,
   projectResultCount,
+  resultCount,
   recentSearches = [],
   onRecentSearchSelect,
 }: Props) => {
@@ -608,6 +611,17 @@ const FeedToolbar = ({
             </button>
           ))}
         </div>
+      ) : null}
+
+      {search.trim() && typeof (resultCount ?? projectResultCount) === "number" ? (
+        <p
+          className="mt-2 text-xs sm:text-sm text-muted-foreground tabular-nums"
+          aria-live="polite"
+          data-feed-result-count
+        >
+          พบ {(resultCount ?? projectResultCount)!.toLocaleString("th-TH")}{" "}
+          {isDesigners ? "คน" : isPackages ? "แพ็กเกจ" : isStudios ? "สตูดิโอ" : isCommunity ? "โพสต์" : "ผลงาน"}
+        </p>
       ) : null}
 
       {isProjects ? (
