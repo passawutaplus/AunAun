@@ -598,6 +598,37 @@
       linear-gradient(145deg, hsl(26 100% 56%) 0%, hsl(16 98% 48%) 50%, hsl(8 88% 42%) 100%);
   }
 
+  /* Hire THB wallet — grainy orange mesh photo behind the balance */
+  .hire-wallet-mesh {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background-color: hsl(24 100% 72%);
+    background-image:
+      linear-gradient(
+        180deg,
+        transparent 0%,
+        hsl(30 80% 98% / 0.22) 100%
+      ),
+      url("./assets/hire-wallet-bg.jpg");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: 42% 78%;
+  }
+  .dark .hire-wallet-mesh {
+    background-color: hsl(18 90% 42%);
+    background-image:
+      linear-gradient(
+        180deg,
+        hsl(20 40% 12% / 0.12) 0%,
+        hsl(24 50% 96% / 0.28) 100%
+      ),
+      url("./assets/hire-wallet-bg.jpg");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: 42% 78%;
+  }
+
   /* Footer CTA — grainy orange mesh photo */
   .footer-cta-wave {
     position: relative;
@@ -612,45 +643,92 @@
   .dark .footer-cta-wave {
     background-color: hsl(14 100% 54%);
   }
+
+  /* My Studio page hero — grainy orange mesh */
+  .studio-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background-color: hsl(24 100% 72%);
+    background-image:
+      linear-gradient(
+        to bottom,
+        hsl(0 0% 100% / 0.14) 0%,
+        hsl(0 0% 100% / 0.06) 50%,
+        hsl(var(--background) / 0.62) 100%
+      ),
+      url("./assets/studio-hero-bg.jpg");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: 50% 42%;
+  }
+  .studio-hero h1 {
+    text-shadow: 0 1px 2px hsl(12 80% 18% / 0.28), 0 8px 24px hsl(12 80% 18% / 0.18);
+  }
+  /* Compact mobile chrome — same grain, no fade to page (stays orange when sticky). */
+  .studio-hero-compact {
+    background-image:
+      linear-gradient(
+        to bottom,
+        hsl(0 0% 100% / 0.14) 0%,
+        hsl(0 0% 100% / 0.08) 100%
+      ),
+      url("./assets/studio-hero-bg.jpg");
+    background-position: 50% 8%;
+  }
+  .dark .studio-hero {
+    background-image:
+      linear-gradient(
+        to bottom,
+        hsl(0 0% 0% / 0.28) 0%,
+        hsl(var(--background) / 0.78) 100%
+      ),
+      url("./assets/studio-hero-bg.jpg");
+  }
+  .dark .studio-hero-compact {
+    background-image:
+      linear-gradient(
+        to bottom,
+        hsl(0 0% 0% / 0.22) 0%,
+        hsl(0 0% 0% / 0.18) 100%
+      ),
+      url("./assets/studio-hero-bg.jpg");
+  }
+  .dark .studio-hero h1 {
+    text-shadow: 0 1px 14px hsl(12 80% 18% / 0.45);
+  }
   .footer-cta-wave h2 {
     text-shadow: 0 1px 16px hsl(12 100% 28% / 0.32);
   }
-  /* Photo lives on ::after so the top can mask away into the page background */
+  /* Fade the CTA photo into the page color — overlay, not a punch-through mask. */
   .footer-cta-wave--blend-top {
-    background-image: none;
-    background-color: transparent;
-    overflow: visible;
+    overflow: hidden;
   }
   .footer-cta-wave--blend-top::after {
     content: "";
     position: absolute;
-    inset: 0;
-    z-index: 0;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 8.5rem;
+    z-index: 1;
     pointer-events: none;
-    background-color: hsl(14 100% 52%);
-    background-image: url("./assets/footer-cta-bg.jpg");
+    background-color: transparent;
+    background-image: linear-gradient(
+      to bottom,
+      hsl(var(--background)) 0%,
+      hsl(var(--background) / 0.82) 28%,
+      hsl(var(--background) / 0.4) 58%,
+      transparent 100%
+    );
     background-repeat: no-repeat;
-    background-size: cover;
-    background-position: 50% 42%;
-    -webkit-mask-image: linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 1.25rem,
-      rgb(0 0 0 / 0.08) 2.75rem,
-      rgb(0 0 0 / 0.4) 5rem,
-      #000 8.5rem
-    );
-    mask-image: linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 1.25rem,
-      rgb(0 0 0 / 0.08) 2.75rem,
-      rgb(0 0 0 / 0.4) 5rem,
-      #000 8.5rem
-    );
+    background-size: 100% 100%;
+    background-position: 0 0;
+    -webkit-mask-image: none;
+    mask-image: none;
   }
   .dark .footer-cta-wave--blend-top::after {
-    background-color: hsl(14 100% 54%);
+    background-color: transparent;
   }
 
   .bg-gradient-brand-soft {

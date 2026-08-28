@@ -581,6 +581,8 @@ const CollabDialog = ({
           project_title: source === "project" ? title : null,
           message: finalMessage,
           collab_types: payload.collabTypes,
+          other_type_note: payload.otherTypeNote ?? null,
+          reference_links: payload.referenceLinks,
           timeline: null,
           sender_name: profile.display_name ?? null,
           sender_username: profile.username ?? null,
@@ -818,7 +820,7 @@ const CollabDialog = ({
 
           <div className="border-t border-border/60 pt-5">
             <Label htmlFor="collab-link-draft" className="text-sm font-semibold flex items-center gap-1.5">
-              <Link2 className="w-3.5 h-3.5 text-primary" /> ลิงก์อ้างอิง (ไดรฟ์ / เว็บ / พอร์ต)
+              <Link2 className="w-3.5 h-3.5 text-primary" /> ลิงก์ (ไดรฟ์ / เว็บ / พอร์ต)
               <span className="text-muted-foreground font-normal"> (ไม่บังคับ)</span>
             </Label>
             <div className="mt-2.5 flex gap-2">
@@ -886,7 +888,7 @@ const CollabDialog = ({
           <div className="border-t border-border/60 pt-5">
             <Label className="flex items-center gap-1.5 text-sm font-semibold">
               <ImagePlus className="h-3.5 w-3.5 text-primary" />
-              แนบภาพอ้างอิง
+              แนบภาพ
               <span className="text-muted-foreground font-normal"> (ไม่บังคับ)</span>
             </Label>
             <div className="mt-2.5 flex flex-wrap gap-2">

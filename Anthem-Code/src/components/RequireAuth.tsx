@@ -26,7 +26,8 @@ const RequireAuth = ({ children, allowUnverified = false }: Props) => {
   }
 
   if (!user) {
-    return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}`} replace />;
+    const dest = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to={`/auth?redirect=${encodeURIComponent(dest)}`} replace />;
   }
 
   // Email/password ต้องยืนยันอีเมล — OAuth (เช่น Google) ผ่านได้เลย

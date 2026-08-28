@@ -38,6 +38,8 @@ type BaseProps = {
   onDensityChange: (value: CollectionGridDensity) => void;
   resultCount?: number;
   className?: string;
+  /** Profile page grid: 1/2 columns on mobile, Small/Medium/Extra large/Details on PC. */
+  densityPreset?: "default" | "profile";
 };
 
 type CollectionsSortProps = BaseProps & {
@@ -64,6 +66,7 @@ export function CollectionBrowseToolbar(props: CollectionBrowseToolbarProps) {
     onDensityChange,
     resultCount,
     className,
+    densityPreset = "default",
   } = props;
 
   const options = props.mode === "collections" ? LIST_SORT_OPTIONS : ITEMS_SORT_OPTIONS;
@@ -83,6 +86,7 @@ export function CollectionBrowseToolbar(props: CollectionBrowseToolbarProps) {
           <InspireViewDensityMenu
             value={density as InspireGridDensity}
             onChange={(v) => onDensityChange(v as CollectionGridDensity)}
+            preset={densityPreset}
           />
           <Select
             value={props.sortMode}

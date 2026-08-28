@@ -18,6 +18,16 @@ describe("taxEstimate", () => {
     expect(r.expenseThb).toBe(50_000);
   });
 
+  it("gives a WHT credit when preview hire income is still under taxable net", () => {
+    const r = estimatePersonalIncomeTax({
+      grossIncomeThb: 43_000,
+      whtWithheldThb: 405,
+    });
+    expect(r.taxableThb).toBe(0);
+    expect(r.estimatedTaxThb).toBe(0);
+    expect(r.netTaxDueThb).toBe(-405);
+  });
+
   it("progressive tax applies above brackets", () => {
     expect(taxOnTaxableIncome(200_000)).toBeGreaterThan(0);
   });

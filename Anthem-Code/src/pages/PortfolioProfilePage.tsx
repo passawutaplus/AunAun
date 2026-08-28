@@ -1,13 +1,10 @@
 import { useMemo, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
-  Settings,
-  Eye,
   UserRound,
   Pencil,
-  Briefcase,
-  Handshake,
+  Wallet,
 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
@@ -17,25 +14,22 @@ import { useProfile } from "@/hooks/useProfile";
 import { useMyProjects } from "@/hooks/useProjects";
 import { useFollowState } from "@/hooks/useFollow";
 import { useCollections } from "@/hooks/useCollections";
-import { useMyProjectSeries } from "@/hooks/useProjectSeries";
 import { useInspireBoards, isDefaultInspireBoard } from "@/hooks/useInspire";
 import CollectionsManagePanel from "@/components/collections/CollectionsManagePanel";
-import PortfolioWorksManagePanel from "@/components/portfolio/PortfolioWorksManagePanel";
+import ProfileOverallWorksPanel from "@/components/profile/ProfileOverallWorksPanel";
 import InspireManagePanel from "@/components/inspire/InspireManagePanel";
-import CatalogManagePanel from "@/components/series/CatalogManagePanel";
-import PortfolioPackagesManagePanel from "@/components/portfolio/PortfolioPackagesManagePanel";
 import PortfolioBookingPanel from "@/components/portfolio/PortfolioBookingPanel";
-import { useCreatorServices } from "@/hooks/useCreatorServices";
 import { useSavedCreatorServiceIds } from "@/hooks/useCreatorServiceBookmarks";
 import type { ExperienceItem } from "@/lib/validators";
 import { normalizeExperienceItem } from "@/lib/validators";
 import { ProfileAboutReadOnly } from "@/components/profile/ProfileAboutReadOnly";
 import PageLoader from "@/components/ui/PageLoader";
-import ProfileMenuCard from "@/components/profile/ProfileMenuCard";
 import ProfileWalletCard from "@/components/profile/ProfileWalletCard";
 import ProfileAboutMeCard from "@/components/profile/ProfileAboutMeCard";
 import ProfileCoverHeader from "@/components/profile/ProfileCoverHeader";
+import ProfileOwnerActions from "@/components/profile/ProfileOwnerActions";
 import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
+import OpportunityStatusDialog from "@/components/opportunity/OpportunityStatusDialog";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
 import { markOnboardingVisit } from "@/lib/onboardingStorage";
@@ -51,6 +45,7 @@ import { isAplus1LaunchMinimal, isLaunchDesignDrillEnabled } from "@/lib/aplus1L
 import { parseSocialLinks } from "@/lib/parseSocialLinks";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { FEED_PAGE_GUTTER_X } from "@/components/feed/FeedHero";
+import Footer from "@/components/Footer";
 
 const PAGE_SHELL = cn("max-w-7xl mx-auto", FEED_PAGE_GUTTER_X);
 
@@ -62,13 +57,13 @@ const parseExperience = (raw: unknown): ExperienceItem[] =>
 const parseSkills = (raw: unknown): string[] =>
   Array.isArray(raw) ? raw.filter((s): s is string => typeof s === "string") : [];
 
-type ProfileTab = "work" | "services" | "about" | "catalog" | "collections" | "booking" | "inspire";
+type ProfileTab = "overall" | "about" | "collections" | "booking" | "inspire";
 
-const TAB_IDS: ProfileTab[] = ["work", "services", "catalog", "collections", "booking", "inspire", "about"];
+const TAB_IDS: ProfileTab[] = ["overall", "collections", "booking", "inspire", "about"];
 
 function resolveTab(raw: string | null): ProfileTab {
   if (raw && (TAB_IDS as string[]).includes(raw)) return raw as ProfileTab;
-  return "work";
+  return "overall";
 }
 
 const PortfolioProfilePage = () => {
@@ -79,11 +74,9 @@ const PortfolioProfilePage = () => {
   const { data: profile, isLoading } = useProfile(user?.id);
   const launchMinimal = isAplus1LaunchMinimal();
   const designDrillEnabled = isLaunchDesignDrillEnabled();
-  const { data: myProjects = [] } = useMyProjects(user?.id);
+  const { data: myProjects = [], isLoading: projectsLoading } = useMyProjects(user?.id);
   const { followers, following } = useFollowState(user?.id);
   const { data: collections = [] } = useCollections(user?.id);
-  const { data: seriesList = [] } = useMyProjectSeries(user?.id);
-  const { data: myServices = [] } = useCreatorServices(user?.id, { includeDrafts: true });
   const { data: savedPackageIds } = useSavedCreatorServiceIds();
   const { data: inspireBoardsRaw = [] } = useInspireBoards(user?.id);
   const inspireBoards = useMemo(
@@ -96,11 +89,10 @@ const PortfolioProfilePage = () => {
 
   const setTab = (tab: ProfileTab) => {
     const next = new URLSearchParams(searchParams);
-    if (tab === "work") next.delete("tab");
+    if (tab === "overall") next.delete("tab");
     else next.set("tab", tab);
     next.delete("focus");
     if (tab !== "inspire") next.delete("b");
-    if (tab !== "catalog") next.delete("s");
     if (tab !== "collections") next.delete("c");
     setSearchParams(next, { replace: true });
   };
@@ -109,12 +101,12 @@ const PortfolioProfilePage = () => {
     if (!authLoading && !user) navigate("/auth?redirect=/portfolio");
   }, [authLoading, user, navigate]);
 
-  // Legacy focus=hiring|collab|reviews → dedicated dashboard pages
+  // Legacy manage tabs + inbox focus → My Studio
   useEffect(() => {
     const focus = searchParams.get("focus");
     const tab = searchParams.get("tab");
     if (focus === "hiring") {
-      navigate("/dashboard", { replace: true });
+      navigate("/dashboard/hire", { replace: true });
       return;
     }
     if (focus === "collab") {
@@ -123,6 +115,21 @@ const PortfolioProfilePage = () => {
     }
     if (tab === "reviews" || focus === "reviews") {
       navigate("/dashboard/reviews", { replace: true });
+      return;
+    }
+    if (tab === "work") {
+      navigate("/dashboard/projects", { replace: true });
+      return;
+    }
+    if (tab === "services") {
+      navigate("/dashboard/packages", { replace: true });
+      return;
+    }
+    if (tab === "catalog") {
+      const s = searchParams.get("s");
+      navigate(s ? `/dashboard/catalogs?s=${encodeURIComponent(s)}` : "/dashboard/catalogs", {
+        replace: true,
+      });
     }
   }, [searchParams, navigate]);
 
@@ -130,67 +137,22 @@ const PortfolioProfilePage = () => {
     if (!profile || !designDrillEnabled) return;
     const drill = searchParams.get("drill");
     if (drill !== "daily" && window.location.hash !== `#${PORTFOLIO_DRILL_HASH}`) return;
-    setTab("work");
-    const timer = window.setTimeout(() => {
-      document.getElementById(PORTFOLIO_DRILL_HASH)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 200);
-    return () => window.clearTimeout(timer);
+    navigate(`/dashboard/projects#${PORTFOLIO_DRILL_HASH}`, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to drill deep-link
-  }, [profile, designDrillEnabled, searchParams]);
-
-  const { data: hireCount = 0 } = useQuery({
-    queryKey: ["hire-count", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { count } = await supabase
-        .from("hiring_requests")
-        .select("id", { count: "exact", head: true })
-        .eq("freelancer_id", user!.id);
-      return count ?? 0;
-    },
-  });
-
-  const { data: collabCount = 0 } = useQuery({
-    queryKey: ["collab-count", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { count } = await supabase
-        .from("collab_requests")
-        .select("id", { count: "exact", head: true })
-        .eq("recipient_id", user!.id);
-      return count ?? 0;
-    },
-  });
+  }, [profile, designDrillEnabled, searchParams, navigate]);
 
   const published = useMemo(() => myProjects.filter((p) => p.status === "Published"), [myProjects]);
-  const totalViews = useMemo(() => published.reduce((s, p) => s + (p.views ?? 0), 0), [published]);
   const projectIds = useMemo(() => myProjects.map((p) => p.id), [myProjects]);
 
   useEffect(() => {
     if (!user?.id) return;
 
-    const invalidateRequests = () => {
-      void queryClient.invalidateQueries({ queryKey: ["hire-count", user.id] });
-      void queryClient.invalidateQueries({ queryKey: ["collab-count", user.id] });
-      void queryClient.invalidateQueries({ queryKey: ["hiring_requests", user.id] });
-      void queryClient.invalidateQueries({ queryKey: ["collab-requests"] });
-    };
     const invalidateProjects = () => {
       void queryClient.invalidateQueries({ queryKey: ["my-projects", user.id] });
     };
     const projectIdSet = new Set(projectIds);
     const ch = supabase
       .channel(`portfolio-profile-stats-${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "anthem", table: "hiring_requests", filter: `freelancer_id=eq.${user.id}` },
-        invalidateRequests,
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "anthem", table: "collab_requests", filter: `recipient_id=eq.${user.id}` },
-        invalidateRequests,
-      )
       .on(
         "postgres_changes",
         { event: "*", schema: "anthem", table: "projects", filter: `owner_id=eq.${user.id}` },
@@ -220,9 +182,7 @@ const PortfolioProfilePage = () => {
   );
 
   const tabs: { id: ProfileTab; label: string; count?: number }[] = [
-    { id: "work", label: "Works", count: published.length },
-    { id: "services", label: "Packages", count: myServices.length },
-    { id: "catalog", label: "Catalogs", count: seriesList.length },
+    { id: "overall", label: "My Projects", count: published.length },
     { id: "collections", label: "Collections", count: collections.length },
     { id: "booking", label: "Booking", count: savedPackageIds?.size ?? 0 },
     { id: "inspire", label: "Inspiration", count: inspireBoards.length },
@@ -234,17 +194,45 @@ const PortfolioProfilePage = () => {
   }
 
   const isVerified = !!(profile as { is_verified?: boolean }).is_verified;
+  const shareUrl = profilePublicUrl({ user_id: user!.id, username: profile.username });
+  const shareTitle = profileShareTitle({
+    user_id: user!.id,
+    username: profile.username,
+    display_name: profile.display_name,
+  });
+  const shareMessage = profileShareMessage({
+    user_id: user!.id,
+    username: profile.username,
+    display_name: profile.display_name,
+    bio: profile.bio,
+    role: profile.role,
+  });
+  const sharePathLabel = profilePublicPathLabel({ user_id: user!.id, username: profile.username });
+  const coverUrl = profile.cover_url?.trim();
+  const shareImageUrl =
+    coverUrl && coverUrl.startsWith("http") ? coverUrl : profile.avatar_url ?? undefined;
 
   return (
     <div className={cn("min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
       <div className="sticky top-0 z-30 lg:hidden border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30">
-        <div className={cn(PAGE_SHELL, "py-3 flex items-center justify-between")}>
+        <div className={cn(PAGE_SHELL, "px-4 py-2 flex items-center justify-between gap-2")}>
           <BackButton to="/" label="กลับฟีด" />
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="rounded-full glass-chip border-0">
-              <Settings className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">ตั้งค่า</span>
-            </Button>
-          </div>
+          <ProfileOwnerActions
+            compact
+            onPost={() => navigate("/portfolio/new")}
+            onBecomeCreator={!isVerified ? () => navigate("/verify") : undefined}
+            onStudio={() => navigate("/dashboard")}
+            onPreview={() =>
+              navigate(profileVisitorPreviewPath({ user_id: user!.id, username: profile.username }))
+            }
+            onSettings={() => navigate("/settings")}
+            shareUrl={shareUrl}
+            shareTitle={shareTitle}
+            shareMessage={shareMessage}
+            sharePathLabel={sharePathLabel}
+            shareImageUrl={shareImageUrl}
+            onShareInteract={() => markOnboardingVisit(user!.id, "share_profile")}
+          />
         </div>
       </div>
 
@@ -259,55 +247,46 @@ const PortfolioProfilePage = () => {
           onOpportunityEdit={() => setOpportunityOpen(true)}
           onPost={() => navigate("/portfolio/new")}
           onBecomeCreator={!isVerified ? () => navigate("/verify") : undefined}
-          onWallet={isVerified ? () => navigate("/earnings") : undefined}
+          onStudio={() => navigate("/dashboard")}
           onPreview={() =>
             navigate(profileVisitorPreviewPath({ user_id: user!.id, username: profile.username }))
           }
-          shareUrl={profilePublicUrl({ user_id: user!.id, username: profile.username })}
-          shareTitle={profileShareTitle({
-            user_id: user!.id,
-            username: profile.username,
-            display_name: profile.display_name,
-          })}
-          shareMessage={profileShareMessage({
-            user_id: user!.id,
-            username: profile.username,
-            display_name: profile.display_name,
-            bio: profile.bio,
-            role: profile.role,
-          })}
-          sharePathLabel={profilePublicPathLabel({ user_id: user!.id, username: profile.username })}
+          shareUrl={shareUrl}
+          shareTitle={shareTitle}
+          shareMessage={shareMessage}
+          sharePathLabel={sharePathLabel}
           onShareInteract={() => markOnboardingVisit(user!.id, "share_profile")}
           onSettings={() => navigate("/settings")}
           onFollowersClick={() => navigate("/portfolio/followers")}
           onFollowingClick={() => navigate("/portfolio/followers?tab=following")}
+          showFollowStats={false}
         />
       </div>
 
-      <div className={cn(PAGE_SHELL, "pt-2 pb-16 grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6 md:gap-12 lg:gap-16")}>
+      <div className={cn(PAGE_SHELL, "pt-2 pb-8 grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6 md:gap-12 lg:gap-16")}>
         {/* SIDEBAR */}
         <aside className="md:sticky md:top-20 md:self-start space-y-0">
-          <div className="flex items-center justify-between gap-1 min-h-[2.75rem] border-b border-border/70 dark:border-border/50">
-            <MiniStat
-              icon={Briefcase}
-              label="จ้างงาน"
-              value={hireCount}
-              onClick={() => navigate("/dashboard")}
-              title="คำขอจ้างงานที่รอตอบ"
-            />
-            <MiniStat
-              icon={Handshake}
-              label="คอลแลป"
-              value={collabCount}
-              onClick={() => navigate("/dashboard/collab")}
-              title="คำขอคอลแลปที่รอตอบ"
-            />
-            <MiniStat
-              icon={Eye}
-              label="คนดู"
-              value={totalViews}
-              title="รวมยอดเข้าชมหน้ารายละเอียดผลงานที่เผยแพร่แล้ว (นับครั้งต่อเซสชันต่อชิ้น)"
-            />
+          <div className="flex items-center justify-between gap-1 min-h-[2.75rem] border-b border-border/70 dark:border-border/50 text-sm">
+            <span>
+              <strong className="text-foreground tabular-nums">{published.length}</strong>{" "}
+              <span className="text-muted-foreground">ผลงาน</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => navigate("/portfolio/followers")}
+              className="hover:text-primary transition-colors"
+            >
+              <strong className="text-foreground tabular-nums">{followers}</strong>{" "}
+              <span className="text-muted-foreground">ผู้ติดตาม</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/portfolio/followers?tab=following")}
+              className="hover:text-primary transition-colors"
+            >
+              <strong className="text-foreground tabular-nums">{following}</strong>{" "}
+              <span className="text-muted-foreground">ติดตาม</span>
+            </button>
           </div>
 
           <ProfileAboutMeCard
@@ -332,59 +311,65 @@ const PortfolioProfilePage = () => {
           )}
 
           <div className="pt-4 border-t border-border/70 dark:border-border/50 space-y-4">
-            <ProfileMenuCard opportunityOpen={opportunityOpen} onOpportunityOpenChange={setOpportunityOpen} />
             <OnboardingChecklist variant="full" />
           </div>
         </aside>
 
         {/* RIGHT: Tabs + one panel */}
         <main className="min-w-0 space-y-4">
-          <div className="flex items-end border-b border-border/70 min-h-[2.75rem]">
-            <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide self-stretch flex items-end">
-              <nav className="flex min-w-max items-center gap-1 h-full" aria-label="เมนูโปรไฟล์">
-                {tabs.map((tab) => {
-                  const active = activeTab === tab.id;
-                  return (
-                    <div key={tab.id} className="flex items-center gap-1 h-full">
-                      {tab.id === "collections" ? (
-                        <span
-                          aria-hidden
-                          className="mx-1 h-4 w-px shrink-0 bg-border/80"
-                        />
+          <div className="border-b border-border/70">
+            <nav
+              aria-label="เมนูโปรไฟล์"
+              className="grid grid-cols-3 lg:flex lg:items-center lg:gap-1"
+            >
+              {tabs.map((tab) => {
+                const active = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setTab(tab.id)}
+                    className={cn(
+                      "relative inline-flex h-11 min-w-0 items-center justify-center px-1 text-center text-[11px] leading-tight whitespace-nowrap transition-colors sm:text-[13px]",
+                      "lg:w-auto lg:justify-start lg:px-3.5 lg:text-sm",
+                      active
+                        ? "font-semibold text-foreground"
+                        : "font-medium text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <span className="min-w-0 truncate">
+                      {tab.label}
+                      {typeof tab.count === "number" && tab.count > 0 ? (
+                        <span className="ml-0.5 text-[10px] font-normal tabular-nums text-muted-foreground lg:ml-1 lg:text-xs">
+                          ({tab.count})
+                        </span>
                       ) : null}
-                      <button
-                        type="button"
-                        onClick={() => setTab(tab.id)}
-                        className={cn(
-                          "relative px-3.5 h-full inline-flex items-center text-sm whitespace-nowrap transition-colors",
-                          active
-                            ? "font-semibold text-foreground"
-                            : "font-medium text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        {tab.label}
-                        {typeof tab.count === "number" && tab.count > 0 ? (
-                          <span className="ml-1 text-xs text-muted-foreground font-normal tabular-nums">
-                            ({tab.count})
-                          </span>
-                        ) : null}
-                        {active ? (
-                          <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-foreground" />
-                        ) : null}
-                      </button>
-                    </div>
-                  );
-                })}
-              </nav>
-            </div>
+                    </span>
+                    {active ? (
+                      <span className="absolute inset-x-1 bottom-0 h-0.5 rounded-full bg-foreground lg:inset-x-2" />
+                    ) : null}
+                  </button>
+                );
+              })}
+              {isVerified ? (
+                <div className="flex h-11 min-w-0 items-center justify-center lg:ml-auto lg:justify-end lg:pr-0">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 max-w-full rounded-full px-2.5 text-[11px] lg:text-xs"
+                    onClick={() => navigate("/earnings")}
+                  >
+                    <Wallet className="mr-1 h-3.5 w-3.5 lg:mr-1.5" />
+                    My Wallet
+                  </Button>
+                </div>
+              ) : null}
+            </nav>
           </div>
 
-          {activeTab === "work" ? (
-            <PortfolioWorksManagePanel userId={user!.id} showDesignDrill />
-          ) : null}
-
-          {activeTab === "services" ? (
-            <PortfolioPackagesManagePanel ownerId={user!.id} />
+          {activeTab === "overall" ? (
+            <ProfileOverallWorksPanel projects={myProjects} isLoading={projectsLoading} />
           ) : null}
 
           {activeTab === "about" ? (
@@ -415,10 +400,6 @@ const PortfolioProfilePage = () => {
             </Section>
           ) : null}
 
-          {activeTab === "catalog" ? (
-            <CatalogManagePanel userId={user!.id} embedded />
-          ) : null}
-
           {activeTab === "collections" ? (
             <CollectionsManagePanel userId={user!.id} embedded />
           ) : null}
@@ -432,46 +413,8 @@ const PortfolioProfilePage = () => {
           ) : null}
         </main>
       </div>
-    </div>
-  );
-};
-
-const MiniStat = ({
-  icon: Icon,
-  label,
-  value,
-  onClick,
-  title,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: number;
-  onClick?: () => void;
-  title?: string;
-}) => {
-  const tip = title ?? label;
-  const body = (
-    <>
-      <Icon className="w-[18px] h-[18px] text-primary shrink-0" aria-hidden />
-      <span className="text-sm font-medium text-foreground tabular-nums leading-none">{value}</span>
-    </>
-  );
-  if (onClick) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        title={tip}
-        aria-label={`${label} ${value}`}
-        className="inline-flex items-center gap-1.5 rounded-lg hover:bg-muted/40 transition-colors px-1.5 py-1"
-      >
-        {body}
-      </button>
-    );
-  }
-  return (
-    <div className="inline-flex items-center gap-1.5 px-1.5 py-1" title={tip} aria-label={`${label} ${value}`}>
-      {body}
+      <Footer />
+      <OpportunityStatusDialog open={opportunityOpen} onOpenChange={setOpportunityOpen} />
     </div>
   );
 };

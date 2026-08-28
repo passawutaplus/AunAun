@@ -27,7 +27,7 @@ export default function PackageManagePage() {
     <div className={cn("min-h-[100dvh] bg-background", MOBILE_PAGE_BOTTOM_CLASS)}>
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-start gap-3 px-4 py-3 sm:px-6">
-          <BackButton fallbackTo="/portfolio?tab=services" className="mt-0.5" />
+          <BackButton fallbackTo="/dashboard/packages" className="mt-0.5" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-muted-foreground">
               <PackagesIcon className="h-3.5 w-3.5 shrink-0" />

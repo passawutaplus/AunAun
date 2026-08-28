@@ -36,6 +36,7 @@ export type HireOrderRow = {
   deposit_percent?: number | null;
   amount_paid_satang?: number;
   balance_due_satang?: number;
+  metadata?: Record<string, unknown> | null;
 };
 
 export type HireDeliveryRow = {
@@ -61,7 +62,7 @@ export type HireWhtDocRow = {
 };
 
 const HIRE_ORDER_SELECT =
-  "id,hiring_request_id,conversation_id,buyer_id,seller_id,status,job_price_satang,buyer_pays_satang,seller_net_satang,platform_fee_percent,platform_fee_satang,wht_satang,wht_status,auto_dispute_at,work_submitted_at,approved_at,quote_id,payment_method,deposit_percent,amount_paid_satang,balance_due_satang";
+  "id,hiring_request_id,conversation_id,buyer_id,seller_id,status,job_price_satang,buyer_pays_satang,seller_net_satang,platform_fee_percent,platform_fee_satang,wht_satang,wht_status,auto_dispute_at,work_submitted_at,approved_at,quote_id,payment_method,deposit_percent,amount_paid_satang,balance_due_satang,metadata";
 
 function missingTableMessage(err: unknown): string {
   if (isMissingResourceError(err as { message?: string; code?: string })) {
@@ -143,6 +144,17 @@ export function isHireOrderActive(status: HireOrderStatus | null | undefined): b
   return !!status && HIRE_ORDER_ACTIVE.includes(status);
 }
 
+/** Paid / in-progress — inbox must not treat this as a new request (no ไม่สนใจ, complete via delivery flow). */
+export function hireOrderWorkHasStarted(status: HireOrderStatus | null | undefined): boolean {
+  return (
+    status === "deposit_paid" ||
+    status === "paid_pending" ||
+    status === "in_progress" ||
+    status === "awaiting_approval" ||
+    status === "disputed"
+  );
+}
+
 export function useHireOrderByRequest(hiringRequestId: string | undefined) {
   return useQuery({
     queryKey: ["hire-order-by-request", hiringRequestId],
@@ -209,6 +221,76 @@ type ChatOfferPayloadLike = {
   depositDueDate?: string | null;
   items?: { id?: string; name?: string; quantity?: number; unitPrice?: number }[];
 };
+
+export function useLatestHireOrdersByRequests(requestIds: string[]) {
+  const key = [...requestIds].sort().join(",");
+  return useQuery({
+    queryKey: ["hire-orders-latest-by-requests", key],
+    enabled: requestIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await sharedDb
+        .from("hire_orders" as never)
+        .select(HIRE_ORDER_SELECT)
+        .in("hiring_request_id", requestIds)
+        .order("created_at", { ascending: false });
+      if (error) {
+        if (isBenignQueryError(error)) return {} as Record<string, HireOrderRow>;
+        throw error;
+      }
+      const map: Record<string, HireOrderRow> = {};
+      for (const row of (data ?? []) as HireOrderRow[]) {
+        const reqId = row.hiring_request_id;
+        if (reqId && !map[reqId]) map[reqId] = row;
+      }
+      return map;
+    },
+  });
+}
+
+export function useLatestHireQuotesByRequests(requestIds: string[]) {
+  const key = [...requestIds].sort().join(",");
+  return useQuery({
+    queryKey: ["hire-quotes-by-requests", key],
+    enabled: requestIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await sharedDb
+        .from("hire_quotes" as never)
+        .select("id,hiring_request_id,status,doc_number,payload,expires_at,amount_satang,deposit_percent,created_at")
+        .in("hiring_request_id", requestIds)
+        .order("created_at", { ascending: false });
+      if (error) {
+        if (isBenignQueryError(error)) return {} as Record<string, HireQuoteRow>;
+        throw error;
+      }
+      const map: Record<string, HireQuoteRow> = {};
+      for (const row of (data ?? []) as HireQuoteRow[]) {
+        if (!map[row.hiring_request_id]) map[row.hiring_request_id] = row;
+      }
+      return map;
+    },
+  });
+}
+
+export function useLatestHireQuoteByRequest(hiringRequestId: string | undefined) {
+  return useQuery({
+    queryKey: ["hire-quote-latest", hiringRequestId],
+    enabled: !!hiringRequestId,
+    queryFn: async () => {
+      const { data, error } = await sharedDb
+        .from("hire_quotes" as never)
+        .select("id,hiring_request_id,status,doc_number,payload,expires_at,amount_satang,deposit_percent")
+        .eq("hiring_request_id", hiringRequestId!)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) {
+        if (isBenignQueryError(error)) return null;
+        throw error;
+      }
+      return (data as HireQuoteRow | null) ?? null;
+    },
+  });
+}
 
 export function useHireQuoteById(quoteId: string | undefined | null) {
   return useQuery({
@@ -294,6 +376,38 @@ export function useHireOrderDocuments(orderId: string | undefined) {
         throw error;
       }
       return (data ?? []) as unknown as HireDocumentRow[];
+    },
+  });
+}
+
+export type HireDocumentLite = {
+  id: string;
+  hire_order_id: string;
+  kind: import("@/lib/payments/types").HireDocumentKind;
+  doc_number: string;
+};
+
+/** Batch-load issued documents for inbox rows (no snapshot payload). */
+export function useHireDocumentsByOrderIds(orderIds: string[]) {
+  const key = [...orderIds].sort().join(",");
+  return useQuery({
+    queryKey: ["hire-documents-by-orders", key],
+    enabled: orderIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await sharedDb
+        .from("hire_documents" as never)
+        .select("id,hire_order_id,kind,doc_number")
+        .in("hire_order_id", orderIds)
+        .order("issued_at", { ascending: true });
+      if (error) {
+        if (isBenignQueryError(error)) return {} as Record<string, HireDocumentLite[]>;
+        throw error;
+      }
+      const map: Record<string, HireDocumentLite[]> = {};
+      for (const row of (data ?? []) as HireDocumentLite[]) {
+        (map[row.hire_order_id] ??= []).push(row);
+      }
+      return map;
     },
   });
 }

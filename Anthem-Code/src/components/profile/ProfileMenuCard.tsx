@@ -5,14 +5,18 @@ import {
   MessagesSquare,
   Settings,
   LogOut,
+  MessageSquarePlus,
   Rocket,
 } from "lucide-react";
 import ManageWorkIcon from "@/components/icons/ManageWorkIcon";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import OpportunityStatusDialog from "@/components/opportunity/OpportunityStatusDialog";
-import { FORUM_PATH } from "@/lib/brandConfig";
+import { FORUM_PATH, openBrandLineContact } from "@/lib/brandConfig";
 import { signOutApp } from "@/lib/signOutApp";
+import { useOpenFeedbackTicket } from "@/hooks/useOpenFeedbackTicket";
+import LineMarkIcon from "@/components/icons/LineMarkIcon";
+import { toast } from "sonner";
 
 type ProfileMenuCardProps = {
   opportunityOpen?: boolean;
@@ -25,6 +29,7 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
   const isVerified = !!(profile as { is_verified?: boolean } | null | undefined)?.is_verified;
+  const openFeedback = useOpenFeedbackTicket();
   const opportunityDialogOpen = opportunityOpen ?? false;
   const setOpportunityDialogOpen = onOpportunityOpenChange ?? (() => undefined);
 
@@ -38,7 +43,7 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
         className="rounded-3xl glass-panel p-3 space-y-0.5"
       >
         <button type="button" onClick={() => navigate("/dashboard")} className={item}>
-          <ManageWorkIcon className="w-4 h-4 text-primary" /> จัดการงาน
+          <ManageWorkIcon className="w-4 h-4" /> My Studio
         </button>
         <button type="button" onClick={() => navigate("/chat")} className={item}>
           <MessageCircle className="w-4 h-4 text-primary" /> Chat
@@ -48,17 +53,30 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
             <Rocket className="w-4 h-4 text-primary" /> Become a Creator
           </button>
         ) : null}
+        <div className="my-2 border-t border-border" />
+        <button type="button" onClick={openFeedback} className={item}>
+          <MessageSquarePlus className="w-4 h-4 text-primary" /> ส่งฟีดแบ็ก
+        </button>
         <button
           type="button"
           onClick={() => window.open(FORUM_PATH, "_blank", "noopener,noreferrer")}
           className={item}
         >
-          <MessagesSquare className="w-4 h-4 text-primary" /> ชุมชน
+          <MessagesSquare className="w-4 h-4 text-primary" /> Community
         </button>
-
-        <div className="my-2 border-t border-border" />
+        <button
+          type="button"
+          onClick={() => {
+            if (!openBrandLineContact()) {
+              toast.message("กำลังเปิดช่องทางไลน์เร็วๆ นี้");
+            }
+          }}
+          className={item}
+        >
+          <LineMarkIcon className="w-4 h-4 text-primary" /> ติดต่อเรา Line
+        </button>
         <button type="button" onClick={() => navigate("/settings")} className={item}>
-          <Settings className="w-4 h-4 text-primary" /> ตั้งค่า
+          <Settings className="w-4 h-4 text-primary" /> Setting
         </button>
         <button
           type="button"
@@ -68,7 +86,7 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
           }}
           className={`${item} text-destructive hover:text-destructive`}
         >
-          <LogOut className="w-4 h-4" /> ออกจากระบบ
+          <LogOut className="w-4 h-4" /> Log Out
         </button>
       </nav>
       <OpportunityStatusDialog open={opportunityDialogOpen} onOpenChange={setOpportunityDialogOpen} />

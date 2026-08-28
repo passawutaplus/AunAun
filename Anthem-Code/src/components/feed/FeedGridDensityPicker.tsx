@@ -5,14 +5,13 @@ import { PreferenceSegmentRow, type SegmentOption } from "@/components/ui/IconSe
 import type { FeedGridDensity } from "@/lib/feedGridDensity";
 
 function GridDensityIcon({ cols }: { cols: number }) {
-  const visible = cols >= 7 ? 5 : cols >= 5 ? 4 : 3;
   return (
     <span
       className="inline-grid gap-px items-end justify-center"
-      style={{ gridTemplateColumns: `repeat(${visible}, 2px)` }}
+      style={{ gridTemplateColumns: `repeat(${cols}, 2px)` }}
       aria-hidden
     >
-      {Array.from({ length: visible }).map((_, i) => (
+      {Array.from({ length: cols }).map((_, i) => (
         <span key={i} className="w-[2px] h-2.5 rounded-[1px] bg-current opacity-90" />
       ))}
     </span>

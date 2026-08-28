@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
-import { Check, LayoutGrid, LayoutList, Rows3 } from "lucide-react";
+import { Check, Columns2, LayoutGrid, LayoutList, List, Rows3, Square } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useNarrowViewport } from "@/hooks/useNarrowViewport";
 import { cn } from "@/lib/utils";
 import type { SeriesWorksDensity } from "@/lib/seriesGridDensity";
 
@@ -10,7 +11,7 @@ type DensityOption = {
   icon: ReactNode;
 };
 
-const OPTIONS: DensityOption[] = [
+const DESKTOP_OPTIONS: DensityOption[] = [
   {
     value: "large",
     label: "ใหญ่",
@@ -40,6 +41,12 @@ const OPTIONS: DensityOption[] = [
   },
 ];
 
+const MOBILE_OPTIONS: DensityOption[] = [
+  { value: "large", label: "1 คอลัมน์", icon: <Square className="h-4 w-4" /> },
+  { value: "medium", label: "2 คอลัมน์", icon: <Columns2 className="h-4 w-4" /> },
+  { value: "list", label: "รายการ", icon: <List className="h-4 w-4" /> },
+];
+
 type Props = {
   value: SeriesWorksDensity;
   onChange: (value: SeriesWorksDensity) => void;
@@ -48,7 +55,10 @@ type Props = {
 
 export function SeriesDensitySelect({ value, onChange, className }: Props) {
   const [open, setOpen] = useState(false);
-  const current = OPTIONS.find((o) => o.value === value) ?? OPTIONS[0];
+  const narrow = useNarrowViewport();
+  const options = narrow ? MOBILE_OPTIONS : DESKTOP_OPTIONS;
+  const resolvedValue = narrow && value === "small" ? "medium" : value;
+  const current = options.find((o) => o.value === resolvedValue) ?? options[0];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -70,8 +80,8 @@ export function SeriesDensitySelect({ value, onChange, className }: Props) {
       <PopoverContent align="end" className="w-44 p-1.5" sideOffset={8}>
         <p className="px-2 py-1.5 text-[11px] font-medium text-muted-foreground">รูปแบบกริด</p>
         <div className="flex flex-col gap-0.5" role="listbox" aria-label="เลือกรูปแบบกริด">
-          {OPTIONS.map(({ value: optionValue, label, icon }) => {
-            const active = value === optionValue;
+          {options.map(({ value: optionValue, label, icon }) => {
+            const active = optionValue === resolvedValue;
             return (
               <button
                 key={optionValue}

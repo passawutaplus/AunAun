@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { passwordChangeFormError } from "@/lib/passwordChange";
 import { userHasEmailPassword, verifyUserPassword } from "@/lib/sensitiveActionAuth";
 import { buildEmailConfirmUrl, buildResetPasswordUrl } from "@/lib/oauthRedirect";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 function PasswordField({
   id,
@@ -113,12 +113,14 @@ export function ChangePasswordSection({ user }: { user: User }) {
   const submitPasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    if (next.length < 8) {
-      toast.error("รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร");
-      return;
-    }
-    if (next !== confirm) {
-      toast.error("รหัสผ่านยืนยันไม่ตรงกัน");
+    const formError = passwordChangeFormError({
+      current,
+      next,
+      confirm,
+      needsCurrent: true,
+    });
+    if (formError) {
+      toast.error(formError);
       return;
     }
     setSaveBusy(true);
@@ -141,11 +143,14 @@ export function ChangePasswordSection({ user }: { user: User }) {
   };
 
   return (
-    <section className="rounded-2xl glass-panel p-6 space-y-4">
+    <section id="settings-password" className="scroll-mt-24 rounded-2xl glass-panel p-6 space-y-4">
       <div className="flex items-center gap-2">
         <KeyRound className="w-5 h-5 text-primary" />
-        <h2 className="font-semibold text-foreground">รหัสผ่านและความปลอดภัย</h2>
+        <h2 className="font-semibold text-foreground">รหัสผ่านเข้าสู่ระบบ</h2>
       </div>
+      <p className="text-xs text-muted-foreground">
+        ใช้เข้าแอป — ไม่ใช่ PIN ถอนเงิน
+      </p>
 
       <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 space-y-2">
         <p className="text-sm text-foreground">
@@ -184,45 +189,35 @@ export function ChangePasswordSection({ user }: { user: User }) {
           {verified ? "ยืนยันตัวตนแล้ว" : "ส่งอีเมลยืนยันตัวตน"}
         </Button>
 
-        <Button
-          type="button"
-          variant={showPasswordForm ? "secondary" : "default"}
-          size="sm"
-          className="rounded-full"
-          disabled={!email || (!hasPassword && resetBusy)}
-          onClick={() => {
-            if (hasPassword) {
-              setShowPasswordForm((open) => !open);
-              return;
-            }
-            void sendPasswordResetEmail();
-          }}
-        >
-          {!hasPassword && resetBusy ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-          ) : (
-            <KeyRound className="h-4 w-4 mr-2" />
-          )}
-          {hasPassword && showPasswordForm ? "ปิดฟอร์มเปลี่ยนรหัส" : "เปลี่ยนรหัสผ่าน"}
-        </Button>
-
-        {!hasPassword && (
+        {hasPassword ? (
           <Button
             type="button"
-            variant="outline"
+            variant={showPasswordForm ? "secondary" : "default"}
             size="sm"
             className="rounded-full"
-            disabled={!email || resetBusy}
-            onClick={() => void sendPasswordResetEmail()}
+            disabled={!email}
+            onClick={() => setShowPasswordForm((open) => !open)}
           >
-            {resetBusy ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <MailCheck className="h-4 w-4 mr-2" />
-            )}
-            ตั้งรหัสผ่านผ่านอีเมล
+            <KeyRound className="h-4 w-4 mr-2" />
+            {showPasswordForm ? "ปิดฟอร์ม" : "ขอเปลี่ยนรหัสผ่าน"}
           </Button>
-        )}
+        ) : null}
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="rounded-full"
+          disabled={!email || resetBusy}
+          onClick={() => void sendPasswordResetEmail()}
+        >
+          {resetBusy ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <MailCheck className="h-4 w-4 mr-2" />
+          )}
+          {hasPassword ? "ลืมรหัสผ่าน" : "ตั้งรหัสผ่านผ่านอีเมล"}
+        </Button>
       </div>
 
       {!verified && (
@@ -259,24 +254,16 @@ export function ChangePasswordSection({ user }: { user: User }) {
               {saveBusy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               บันทึกรหัสผ่านใหม่
             </Button>
-            <button
-              type="button"
-              onClick={() => void sendPasswordResetEmail()}
-              disabled={resetBusy || !email}
-              className={cn(
-                "text-xs text-primary hover:underline disabled:opacity-50 disabled:no-underline",
-              )}
-            >
-              {resetBusy ? "กำลังส่งอีเมล…" : "หรือส่งลิงก์เปลี่ยนรหัสผ่านทางอีเมล"}
-            </button>
+            <p className="text-xs text-muted-foreground">
+              จำรหัสเดิมไม่ได้? กด <strong>ลืมรหัสผ่าน</strong> ด้านบน
+            </p>
           </div>
         </form>
       )}
 
       {!hasPassword && (
         <p className="text-xs text-muted-foreground">
-          ยังไม่มีรหัสผ่านในระบบ — กด <strong>เปลี่ยนรหัสผ่าน</strong> หรือ{" "}
-          <strong>ตั้งรหัสผ่านผ่านอีเมล</strong> แล้วเปิดลิงก์ในอีเมลเพื่อตั้งรหัสใหม่
+          ยังไม่มีรหัสผ่านในระบบ — กด <strong>ตั้งรหัสผ่านผ่านอีเมล</strong> แล้วเปิดลิงก์ที่ส่งไป
         </p>
       )}
     </section>

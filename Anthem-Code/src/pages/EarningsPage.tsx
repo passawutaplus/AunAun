@@ -1,9 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings, WalletCards } from "lucide-react";
-import { BackButton } from "@/components/ui/BackButton";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWallet, useAvailablePurchasedPx } from "@/hooks/useWallet";
@@ -30,12 +27,9 @@ import { EarningsGiftFeed } from "@/components/earnings/EarningsGiftFeed";
 import EarningsGiftCatalog from "@/components/earnings/EarningsGiftCatalog";
 import { EarningsCashoutHistory } from "@/components/earnings/EarningsCashoutHistory";
 import { EarningsClosedLoopNote } from "@/components/earnings/EarningsClosedLoopNote";
-import EarningsBalanceCards from "@/components/payments/EarningsBalanceCards";
-import DisplayCurrencyToggle from "@/components/payments/DisplayCurrencyToggle";
-import ManageModeNav from "@/components/dashboard/ManageModeNav";
-import { EarningsPlatformIncomeHistory } from "@/components/earnings/EarningsPlatformIncomeHistory";
+import StudioLayout from "@/components/dashboard/StudioLayout";
+import { EarningsHireWalletPanel } from "@/components/earnings/EarningsHireWalletPanel";
 import { computeGiftablePx } from "@/lib/walletDisplay";
-import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { isAplus1GiftEconomyEnabled, isAplus1PxEnabled } from "@/lib/aplus1Launch";
 
 const EarningsPage = () => {
@@ -50,9 +44,9 @@ const EarningsPage = () => {
   const { data: received = [] } = useReceivedGifts(giftEconomy ? user?.id : undefined);
   const { data: cashouts = [] } = useCashoutHistory({ enabled: pxOn });
   const { data: eligibility } = useCreatorEligibility(pxOn ? user?.id : undefined);
-  const { data: subData } = useSubscription();
-  const feeRate = getCashoutFeeRate(subData?.profileTier);
-  const feeLabel = formatCashoutFeeLabel(subData?.profileTier);
+  const subData = useSubscription();
+  const feeRate = getCashoutFeeRate(subData.tier);
+  const feeLabel = formatCashoutFeeLabel(subData.tier);
   const [cashoutOpen, setCashoutOpen] = useState(false);
   const [topupOpen, setTopupOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -125,92 +119,36 @@ const EarningsPage = () => {
         : `อีก ${Math.max(0, MIN_CASHOUT_PX - earnedPx).toLocaleString()} px ถึงขั้นต่ำถอน`;
 
   return (
-    <div className={`min-h-screen bg-app-ambient ${MOBILE_PAGE_BOTTOM_CLASS}`}>
-      <SeoHead title="กระเป๋า & รายได้" path="/earnings" noindex />
+    <StudioLayout>
+      <SeoHead title="My Studio — ธุรกรรม" path="/earnings" noindex />
 
-      <div className="bg-gradient-to-b from-primary/10 to-background">
-        <div className="mx-auto max-w-5xl px-4 pb-4 pt-6 lg:pt-8">
-          <BackButton
-            to="/portfolio"
-            label="กลับโปรไฟล์"
-            className="mb-4"
-          />
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <WalletCards className="h-6 w-6 text-primary" />
-              <div>
-                <h1 className="text-2xl font-medium text-foreground">กระเป๋า</h1>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  {pxOn
-                    ? giftEconomy
-                      ? "ดูรายได้ PX รายได้จ้างงาน และประวัติถอนเงิน"
-                      : "ดูรายได้ถอนได้ รายได้จ้างงาน และประวัติถอนเงิน"
-                    : "รายได้จากงานจ้าง — รอตรวจสอบ กำลังโอน และโอนแล้ว"}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/settings")}
-              className="rounded-full"
-            >
-              <Settings className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">ตั้งค่า</span>
-            </Button>
-          </div>
-          <ManageModeNav className="mt-4" />
-        </div>
-      </div>
+      {pxOn ? (
+        <EarningsHeroCard
+          netThb={netThb}
+          earnedPx={earnedPx}
+          giftablePx={giftablePx}
+          lifetimeEarned={lifetimeEarned}
+          feeLabel={feeLabel}
+          showGiftable={giftEconomy}
+          onCashout={() => setCashoutOpen(true)}
+          canCashout={canCashout}
+          cashoutHint={cashoutHint}
+        />
+      ) : null}
 
-      <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 pb-10">
-        {pxOn ? (
-          <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-            <EarningsHeroCard
-              netThb={netThb}
-              earnedPx={earnedPx}
-              giftablePx={giftablePx}
-              lifetimeEarned={lifetimeEarned}
-              feeLabel={feeLabel}
-              showGiftable={giftEconomy}
-              onCashout={() => setCashoutOpen(true)}
-              canCashout={canCashout}
-              cashoutHint={cashoutHint}
-            />
+      <EarningsHireWalletPanel
+        userId={user?.id}
+        forcePreview={searchParams.get("preview") === "wallet"}
+      />
 
-            <div className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-4 sm:p-5">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="text-sm font-semibold">รายได้จ้างงาน (THB)</h2>
-                <DisplayCurrencyToggle />
-              </div>
-              <EarningsBalanceCards
-                pendingSatang={0}
-                payoutReservedSatang={0}
-                paidOutSatang={0}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold">รายได้จ้างงาน (THB)</h2>
-              <DisplayCurrencyToggle />
-            </div>
-            <EarningsBalanceCards
-              pendingSatang={0}
-              payoutReservedSatang={0}
-              paidOutSatang={0}
-            />
-          </div>
-        )}
+      {pxOn ? (
+        <EarningsQuickActions
+          onTopUp={() => setTopupOpen(true)}
+          showTopUp={giftEconomy}
+        />
+      ) : null}
 
-        {pxOn ? (
-          <EarningsQuickActions
-            onTopUp={() => setTopupOpen(true)}
-            showTopUp={giftEconomy}
-          />
-        ) : null}
-
+      {giftEconomy || pxOn ? (
         <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
           {giftEconomy ? (
             <div className="space-y-5">
@@ -230,22 +168,21 @@ const EarningsPage = () => {
                 onGoPortfolio={() => navigate("/portfolio")}
               />
             ) : null}
-            <EarningsPlatformIncomeHistory userId={user?.id} />
             {pxOn ? <EarningsCashoutHistory items={cashouts} /> : null}
           </div>
         </div>
+      ) : null}
 
-        {giftEconomy ? (
-          <>
-            <WalletEarnMoreSection />
-            <EarningsClosedLoopNote />
-          </>
-        ) : null}
-      </div>
+      {giftEconomy ? (
+        <>
+          <WalletEarnMoreSection />
+          <EarningsClosedLoopNote />
+        </>
+      ) : null}
 
       {pxOn ? <CashoutDialog open={cashoutOpen} onOpenChange={setCashoutOpen} /> : null}
       {giftEconomy ? <TopUpDialog open={topupOpen} onOpenChange={setTopupOpen} /> : null}
-    </div>
+    </StudioLayout>
   );
 };
 

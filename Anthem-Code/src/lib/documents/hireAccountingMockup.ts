@@ -16,7 +16,7 @@ import {
   buildReceiptSnapshot,
   type HireOrderDocContext,
 } from "@/lib/documents/issueHireDocuments";
-import { makeProvisionalDocNumber } from "@/lib/documents/numbering";
+import { makeStableMockDocNumber } from "@/lib/documents/numbering";
 import { thbToSatang } from "@/lib/payments/fees";
 import type { HireDocumentKind } from "@/lib/payments/types";
 
@@ -158,7 +158,7 @@ export function buildHireAccountingMockup(input: {
   const seed = (input.orderCodeSeed || "MOCKORD1").replace(/-/g, "").slice(0, 8).toUpperCase();
   const orderId = `00000000-0000-4000-8000-${seed.padEnd(12, "0").slice(0, 12).toLowerCase()}`;
 
-  const quoteNumber = offer.number || makeProvisionalDocNumber("quotation");
+  const quoteNumber = offer.number || makeStableMockDocNumber("quotation", seed);
   const issuer = partyFromOffer("issuer", offer, input.partnerName);
   const client = partyFromOffer("client", offer, input.clientName);
   const lineItems = lineItemsFromOffer(offer);
@@ -207,7 +207,7 @@ export function buildHireAccountingMockup(input: {
     client,
     lineItems,
     whtRate,
-    docNumber: makeProvisionalDocNumber("invoice"),
+    docNumber: makeStableMockDocNumber("invoice", seed),
     issuedAt: now,
   });
   invoice.notes = isDeposit
@@ -243,7 +243,7 @@ export function buildHireAccountingMockup(input: {
     client,
     lineItems: depositItems,
     amountPaidSatang: paidSatang,
-    docNumber: makeProvisionalDocNumber("receipt"),
+    docNumber: makeStableMockDocNumber("receipt", seed),
     issuedAt: now,
     paymentMethodLabel: input.paymentMethod ?? "promptpay",
     providerChargeId: `mock_chrg_${seed.toLowerCase()}`,

@@ -31,13 +31,13 @@ export type HireInboxTab =
   | typeof HIRE_TAB_ALL;
 
 export const HIRE_TAB_ORDER: HireInboxTab[] = [
+  HIRE_TAB_ALL,
   HIRE_TAB_CONTACTED_NEW,
   HIRE_TAB_ACCEPTED,
   HIRE_TAB_DECLINED,
   HIRE_TAB_FORWARDED,
   HIRE_TAB_CANCELLED,
   HIRE_TAB_COMPLETED,
-  HIRE_TAB_ALL,
 ];
 
 /** Statuses shown under the 「ติดต่อใหม่」 inbox tab. */

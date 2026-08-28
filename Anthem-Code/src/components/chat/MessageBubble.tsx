@@ -43,7 +43,10 @@ import { ChatOfferCard } from "@/components/chat/ChatOfferCard";
 import { parseHireForwardMessage } from "@/lib/hireForwardChat";
 import HireForwardCard from "@/components/chat/HireForwardCard";
 import HireInviteCard, { type HireInviteActions } from "@/components/chat/HireInviteCard";
-import CollabInviteCard, { type CollabInviteActions } from "@/components/chat/CollabInviteCard";
+import CollabInviteCard, {
+  type CollabInviteActions,
+  type CollabInviteRef,
+} from "@/components/chat/CollabInviteCard";
 import HireRejectChoiceCard, {
   type HireRejectChoiceActions,
 } from "@/components/chat/HireRejectChoiceCard";
@@ -154,6 +157,7 @@ interface Props {
   hireInviteActions?: HireInviteActions | null;
   /** Recipient respond actions on auto collab-invite card. */
   collabInviteActions?: CollabInviteActions | null;
+  collabInviteRef?: CollabInviteRef | null;
   /** Client post-reject choice (close vs ask continue). */
   hireRejectChoiceActions?: HireRejectChoiceActions | null;
   /** Freelancer respond to client continue-ask. */
@@ -163,6 +167,7 @@ interface Props {
   /** Hire quote already paid / accepted — lock offer CTA. */
   hireQuoteSettled?: boolean;
   hireProjectTitle?: string | null;
+  hireProjectCoverUrl?: string | null;
   /** Opens the hire order-detail popup from a card's document icon. Pass orderId when known. */
   onOpenHireOrderDetail?: (orderId?: string | null) => void;
   onHireCancelEdit?: (row: HireCancelRequestRow) => void;
@@ -197,11 +202,13 @@ const MessageBubble = ({
   viewerIsClient = false,
   hireInviteActions = null,
   collabInviteActions = null,
+  collabInviteRef = null,
   hireRejectChoiceActions = null,
   hireContinueAskActions = null,
   hiringRequestId = null,
   hireQuoteSettled = false,
   hireProjectTitle = null,
+  hireProjectCoverUrl = null,
   onOpenHireOrderDetail,
   onHireCancelEdit,
   onHireCancelWithdraw,
@@ -948,6 +955,8 @@ const MessageBubble = ({
                   content={hireBrief}
                   mine={mine}
                   actions={hireInviteActions}
+                  projectTitle={hireProjectTitle}
+                  projectCoverUrl={hireProjectCoverUrl}
                 />
               </div>
             )}
@@ -958,6 +967,7 @@ const MessageBubble = ({
                   content={collabBrief}
                   mine={mine}
                   actions={collabInviteActions}
+                  inviteRef={collabInviteRef}
                 />
               </div>
             )}

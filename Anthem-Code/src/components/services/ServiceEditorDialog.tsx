@@ -449,7 +449,7 @@ export default function ServiceEditorDialog({
     }
     const slots = CREATOR_SERVICES_GALLERY_MAX - gallery.length;
     if (slots <= 0) {
-      toast.message(`อัปโหลดสไลด์ได้สูงสุด ${CREATOR_SERVICES_GALLERY_MAX} ไฟล์`);
+      toast.message(`อัปโหลดภาพพรีเซ้นได้สูงสุด ${CREATOR_SERVICES_GALLERY_MAX} ไฟล์`);
       return;
     }
     setUploading(true);
@@ -478,7 +478,7 @@ export default function ServiceEditorDialog({
         }));
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "อัปโหลดสไลด์ไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : "อัปโหลดภาพพรีเซ้นไม่สำเร็จ");
     } finally {
       setUploading(false);
       if (galleryInputRef.current) galleryInputRef.current.value = "";
@@ -610,7 +610,7 @@ export default function ServiceEditorDialog({
   const pageMediaBlock = (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <Label>พรีวิวสไลด์ ({gallery.length}/{CREATOR_SERVICES_GALLERY_MAX})</Label>
+        <Label>พรีวิวภาพพรีเซ้น ({gallery.length}/{CREATOR_SERVICES_GALLERY_MAX})</Label>
         <Button
           type="button"
           size="sm"
@@ -664,7 +664,7 @@ export default function ServiceEditorDialog({
                   className="absolute left-2 top-1/2 z-[1] -translate-y-1/2 rounded-full bg-black/55 p-2 text-white disabled:opacity-30"
                   disabled={gallerySlideIdx <= 0}
                   onClick={() => setGallerySlideIdx((i) => Math.max(0, i - 1))}
-                  aria-label="สไลด์ก่อนหน้า"
+                  aria-label="ภาพพรีเซ้นก่อนหน้า"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -675,7 +675,7 @@ export default function ServiceEditorDialog({
                   onClick={() =>
                     setGallerySlideIdx((i) => Math.min(gallery.length - 1, i + 1))
                   }
-                  aria-label="สไลด์ถัดไป"
+                  aria-label="ภาพพรีเซ้นถัดไป"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -693,7 +693,7 @@ export default function ServiceEditorDialog({
             className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground hover:bg-muted/40"
           >
             {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-6 w-6" />}
-            อัปโหลดสไลด์เพื่อพรีวิวแพ็กเกจ
+            อัปโหลดภาพพรีเซ้นเพื่อพรีวิวแพ็กเกจ
           </button>
         )}
       </div>
@@ -829,7 +829,7 @@ export default function ServiceEditorDialog({
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
         <Label>
-          สไลด์แกลเลอรี ({gallery.length}/{CREATOR_SERVICES_GALLERY_MAX})
+          แกลเลอรีภาพพรีเซ้น ({gallery.length}/{CREATOR_SERVICES_GALLERY_MAX})
         </Label>
         <Button
           type="button"
@@ -1328,7 +1328,7 @@ export default function ServiceEditorDialog({
         <div className="min-h-screen bg-background pb-10">
           <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
             <div className="mx-auto flex max-w-6xl items-center gap-3 px-3 py-3 sm:px-6">
-              <BackButton onClick={requestClose} fallbackTo="/portfolio?tab=services" />
+              <BackButton onClick={requestClose} fallbackTo="/dashboard/packages" />
               <div className="min-w-0 flex-1">
                 <p className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                   <PackagesIcon className="h-3.5 w-3.5 shrink-0" />

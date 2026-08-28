@@ -283,7 +283,7 @@ export default function CatalogManagePanel({ userId, embedded }: Props) {
     selection === "works"
       ? "ลากการ์ดไปวางบนโฟลเดอร์ Catalog ทางซ้ายเพื่อเพิ่มเข้า Catalog"
       : selection === "folders"
-        ? "เลือก Catalog เพื่อดูรายละเอียด หรือปรับขนาดการ์ดได้"
+        ? undefined
         : "ค้นหาและจัดเรียงผลงานภายใน Catalog นี้";
   const searchPlaceholder =
     selection === "folders" ? "ค้นหาชื่อ Catalog..." : "ค้นหาชื่องาน...";
@@ -432,7 +432,8 @@ export default function CatalogManagePanel({ userId, embedded }: Props) {
                     <div className="flex flex-wrap items-center justify-center gap-2">
                       <Button
                         onClick={openCreate}
-                        className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                        variant="gradient"
+                        className="rounded-full"
                       >
                         <Plus className="w-4 h-4 mr-1" /> สร้าง Catalog
                       </Button>

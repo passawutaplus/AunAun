@@ -2,7 +2,7 @@ import { createContext, useContext, type ReactNode } from "react";
 import { useSensitiveActionReauth } from "@/hooks/useSensitiveActionReauth";
 
 type Ctx = {
-  ensureVerified: (reason: string) => Promise<void>;
+  ensureVerified: (reason: string, opts?: { force?: boolean }) => Promise<void>;
 };
 
 const SensitiveActionReauthContext = createContext<Ctx | null>(null);

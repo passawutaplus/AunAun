@@ -12,8 +12,8 @@ import { useForwardHireRequest, type HiringRow } from "@/hooks/useHiringRequests
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/core/subscription/useSubscription";
 import { useStudioForConversation, useStudioMembers } from "@/hooks/useStudios";
-import { supabase, sharedDb } from "@/integrations/supabase/client";
-import { isHireOrderActive, type HireOrderRow } from "@/hooks/useHireOrderFlow";
+import { supabase } from "@/integrations/supabase/client";
+import { useHireQuoteCreateLock } from "@/hooks/useHireQuoteCreateLock";
 import {
   canOpenStudioCombinedQuote,
   canShowStudioQuoteUpsell,
@@ -84,53 +84,11 @@ export function ChatQuoteActions({ conversation }: Props) {
     },
   });
 
-  // Latest quote for this hire — lock re-creating while one is still active/accepted.
-  const { data: latestQuote = null } = useQuery({
-    queryKey: ["chat-hire-latest-quote", conversation.request_id],
-    enabled: !!conversation.request_id && isHire && isFreelancer,
-    queryFn: async () => {
-      const { data, error } = await sharedDb
-        .from("hire_quotes" as never)
-        .select("id,status,expires_at")
-        .eq("hiring_request_id", conversation.request_id!)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (error) return null;
-      return (data ?? null) as {
-        id: string;
-        status: string;
-        expires_at: string | null;
-      } | null;
-    },
+  const { quoteLocked, latestOrder } = useHireQuoteCreateLock({
+    conversationId: conversation.id,
+    hiringRequestId: conversation.request_id,
+    enabled: isHire && isFreelancer,
   });
-
-  const quoteStatus = latestQuote?.status ?? null;
-  // Active quote = pending offer not past expiry (accepted alone does not block if order is terminal).
-  const quotePending =
-    quoteStatus === "sent" &&
-    (!latestQuote?.expires_at ||
-      new Date(latestQuote.expires_at).getTime() > Date.now());
-
-  // Latest order — block new quote while money flow is still active.
-  const { data: latestOrder = null } = useQuery({
-    queryKey: ["hire-order-by-request", conversation.request_id],
-    enabled: !!conversation.request_id && isHire && isFreelancer,
-    queryFn: async () => {
-      const { data, error } = await sharedDb
-        .from("hire_orders" as never)
-        .select("id,status")
-        .eq("hiring_request_id", conversation.request_id!)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (error) return null;
-      return (data ?? null) as Pick<HireOrderRow, "id" | "status"> | null;
-    },
-  });
-
-  const orderBlocksNewQuote = isHireOrderActive(latestOrder?.status);
-  const quoteLocked = quotePending || orderBlocksNewQuote;
 
   const hireStatus = hireRow?.status ?? null;
   const hireAccepted = hireStatus === "ตอบรับ";
@@ -287,37 +245,23 @@ export function ChatQuoteActions({ conversation }: Props) {
           <p className="text-[11px] text-muted-foreground">ไม่สนใจคำขอนี้แล้ว</p>
         )}
 
-        {chatOffersOn &&
-          (quoteLocked ? (
-            <div className="rounded-xl border border-[hsl(var(--chat-hire)/0.3)] bg-[hsl(var(--chat-hire-soft))] px-3 py-2">
-              <p className="text-[11px] font-medium text-[hsl(var(--chat-hire))]">
-                {orderBlocksNewQuote
-                  ? "มีออเดอร์ที่ยังไม่จบ — รอจบหรือยกเลิกก่อน"
-                  : "ส่งใบเสนอราคาแล้ว — รอผู้จ้างตอบรับ"}
-              </p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                {orderBlocksNewQuote
-                  ? "เมื่อออเดอร์จบ/ยกเลิก/คืนเงินแล้ว จะเสนอราคาออเดอร์ใหม่ในแชทนี้ได้"
-                  : "ทำใบใหม่ได้เมื่อใบนี้ถูกปฏิเสธหรือหมดอายุ"}
-              </p>
-            </div>
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className={cn(
-                "quote-offer-btn w-full rounded-xl border-[hsl(var(--chat-hire)/0.7)] bg-transparent text-[hsl(var(--chat-hire))]",
-                "transition-colors duration-200",
-                "hover:bg-[hsl(var(--chat-hire))] hover:text-white hover:border-[hsl(var(--chat-hire))]",
-              )}
-              title="เสนอราคาออเดอร์ใหม่ในแชทนี้"
-              onClick={() => setOfferOpen(true)}
-            >
-              <Banknote className="w-3.5 h-3.5 mr-1.5" />
-              {latestOrder ? "เสนอราคาออเดอร์ใหม่" : "ทำใบเสนอราคา"}
-            </Button>
-          ))}
+        {chatOffersOn && !quoteLocked && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className={cn(
+              "quote-offer-btn w-full rounded-xl border-[hsl(var(--chat-hire)/0.7)] bg-transparent text-[hsl(var(--chat-hire))]",
+              "transition-colors duration-200",
+              "hover:bg-[hsl(var(--chat-hire))] hover:text-white hover:border-[hsl(var(--chat-hire))]",
+            )}
+            title="เสนอราคาออเดอร์ใหม่ในแชทนี้"
+            onClick={() => setOfferOpen(true)}
+          >
+            <Banknote className="w-3.5 h-3.5 mr-1.5" />
+            {latestOrder ? "เสนอราคาออเดอร์ใหม่" : "ทำใบเสนอราคา"}
+          </Button>
+        )}
       </div>
 
       <ChatOfferDialog
@@ -327,6 +271,9 @@ export function ChatQuoteActions({ conversation }: Props) {
           if (!v) {
             void qc.invalidateQueries({
               queryKey: ["chat-hire-latest-quote", conversation.request_id],
+            });
+            void qc.invalidateQueries({
+              queryKey: ["hire-accounting-chat-hint", conversation.id],
             });
           }
         }}

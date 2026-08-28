@@ -40,14 +40,14 @@ export default function PackageEditorPage() {
 
   if (isEdit) {
     if (isError || !service) {
-      return <Navigate to="/portfolio?tab=services" replace />;
+      return <Navigate to="/dashboard/packages" replace />;
     }
     if (service.owner_id !== user.id) {
       return <Navigate to={`/service/${service.id}`} replace />;
     }
   }
 
-  const goHub = () => navigate("/portfolio?tab=services");
+  const goHub = () => navigate("/dashboard/packages");
 
   const leaveEditor = () => {
     const idx = (window.history.state as { idx?: number } | null)?.idx;

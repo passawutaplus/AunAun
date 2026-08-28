@@ -247,7 +247,7 @@ export function WorkReviewDialog({
         serviceId: target.serviceId,
       });
 
-      const route = target.kind === "hire" ? "/dashboard" : "/dashboard/collab";
+      const route = target.kind === "hire" ? "/dashboard/hire" : "/dashboard/collab";
       const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
       const vp = typeof window !== "undefined" ? `${window.innerWidth}x${window.innerHeight}` : "";
       const platformMsg = PLATFORM_REVIEW_CATEGORIES.map(

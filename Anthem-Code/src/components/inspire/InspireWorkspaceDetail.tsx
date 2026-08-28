@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ExternalLink, UserCircle2, Trash2, Pencil, Lock, LayoutGrid, LayoutList, Rows3, Pin } from "lucide-react";
+import { ExternalLink, UserCircle2, Trash2, Pencil, Lock, Pin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -27,7 +27,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
-import { IconSegmentPill, type SegmentOption } from "@/components/ui/IconSegmentPill";
+import { InspireViewDensityMenu } from "@/components/inspire/InspireViewDensityMenu";
 import { AnimatedDensityGrid } from "@/components/ui/AnimatedDensityGrid";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import {
@@ -39,36 +39,6 @@ import {
 } from "@/lib/inspireGridDensity";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-const DENSITY_OPTIONS: SegmentOption<InspireGridDensity>[] = [
-  {
-    value: "large",
-    label: "ใหญ่",
-    icon: (
-      <span className="inline-grid grid-cols-2 gap-px" aria-hidden>
-        <span className="h-2 w-2 rounded-[1px] bg-current" />
-        <span className="h-2 w-2 rounded-[1px] bg-current" />
-        <span className="h-2 w-2 rounded-[1px] bg-current" />
-        <span className="h-2 w-2 rounded-[1px] bg-current" />
-      </span>
-    ),
-  },
-  {
-    value: "medium",
-    label: "กลาง",
-    icon: <LayoutGrid className="h-3.5 w-3.5" />,
-  },
-  {
-    value: "small",
-    label: "เล็ก",
-    icon: <Rows3 className="h-3.5 w-3.5" />,
-  },
-  {
-    value: "list",
-    label: "รายการ",
-    icon: <LayoutList className="h-3.5 w-3.5" />,
-  },
-];
 
 type Props = {
   boardId: string;
@@ -89,7 +59,7 @@ export function InspireWorkspaceDetail({ boardId, focusItemId, onDeleted }: Prop
   const [density, setDensity] = useState<InspireGridDensity>(() =>
     typeof window === "undefined"
       ? "medium"
-      : readInspireGridDensity(INSPIRE_ITEMS_GRID_STORAGE_KEY, "small"),
+      : readInspireGridDensity(INSPIRE_ITEMS_GRID_STORAGE_KEY, "medium"),
   );
   const isOwner = user?.id === board?.owner_id;
   const isLibraryBoard = isDefaultInspireBoard(board);
@@ -313,13 +283,10 @@ export function InspireWorkspaceDetail({ boardId, focusItemId, onDeleted }: Prop
 
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground tabular-nums">{items.length} ภาพในบอร์ด</p>
-            <IconSegmentPill
+            <InspireViewDensityMenu
               value={density}
-              options={DENSITY_OPTIONS}
               onChange={setDensity}
-              layoutGroupId="inspire-workspace-items-density"
-              variant="ghost"
-              className="justify-between sm:w-[9.5rem]"
+              preset="profile"
             />
           </div>
 

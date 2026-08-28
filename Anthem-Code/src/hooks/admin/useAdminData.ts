@@ -419,7 +419,7 @@ async function fetchPlatformActivityPolling(limit: number): Promise<ActivityEven
         supabase.from("follows").select("follower_id,following_id,created_at").order("created_at", { ascending: false }).limit(10),
         supabase.from("gift_transactions").select("id,sender_id,recipient_id,price_px,created_at").order("created_at", { ascending: false }).limit(10),
         supabase.from("user_reports" as never).select("id,reporter_id,target_type,target_id,reason,created_at").order("created_at", { ascending: false }).limit(10),
-        supabase.from("app_feedback" as never).select("id,user_id,feature,message,created_at").order("created_at", { ascending: false }).limit(10),
+        supabase.from("app_feedback" as never).select("id,user_id,feature,message,created_at,ticket_number,kind").order("created_at", { ascending: false }).limit(10),
         supabase.from("collections").select("id,name,user_id,created_at").order("created_at", { ascending: false }).limit(10),
         supabase.from("inspire_boards").select("id,title,created_at").order("created_at", { ascending: false }).limit(10),
         supabase.from("messages").select("id,conversation_id,sender_id,content,created_at").order("created_at", { ascending: false }).limit(15),
@@ -480,9 +480,9 @@ async function fetchPlatformActivityPolling(limit: number): Promise<ActivityEven
           subtitle: `${r.target_type}: ${r.reason}`, at: r.created_at,
           actorId: r.reporter_id, targetId: r.target_id, link: "/admin/reports",
         })),
-        ...pick(feedback.data as { id: string; user_id: string; feature: string; message: string; created_at: string }[], (r) => ({
-          id: `fb-${r.id}`, type: "feedback" as const, title: "ฟีดแบ็กใหม่",
-          subtitle: `[${r.feature}] ${r.message?.slice(0, 60) ?? ""}`, at: r.created_at,
+        ...pick(feedback.data as { id: string; user_id: string; feature: string; message: string; created_at: string; ticket_number?: string; kind?: string }[], (r) => ({
+          id: `fb-${r.id}`, type: "feedback" as const, title: r.ticket_number ? `ฟีดแบ็ก ${r.ticket_number}` : "ฟีดแบ็กใหม่",
+          subtitle: `${r.kind ? `[${r.kind}] ` : ""}[${r.feature}] ${r.message?.slice(0, 60) ?? ""}`, at: r.created_at,
           actorId: r.user_id, link: "/admin/feedback",
         })),
         ...pick(collections.data, (r) => ({

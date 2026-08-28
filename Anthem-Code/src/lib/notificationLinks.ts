@@ -9,8 +9,9 @@ export function resolveNotificationLink(link: string): string {
   const params = new URLSearchParams(search);
   const legacyMode = params.get("mode");
   params.delete("mode");
-  const rest = params.toString();
   const focus = params.get("focus") ?? hash;
+  params.delete("focus");
+  const rest = params.toString();
 
   if (pathname === "/dashboard" && (legacyMode === "collab" || focus === "collab")) {
     return rest ? `/dashboard/collab?${rest}` : "/dashboard/collab";
@@ -19,14 +20,14 @@ export function resolveNotificationLink(link: string): string {
     return rest ? `/earnings?${rest}` : "/earnings";
   }
   if (pathname === "/dashboard" && (legacyMode === "hire" || focus === "hiring" || focus === "hire")) {
-    return rest ? `/dashboard?${rest}` : "/dashboard";
+    return rest ? `/dashboard/hire?${rest}` : "/dashboard/hire";
   }
   if (pathname === "/dashboard/collab") {
     return rest ? `/dashboard/collab?${rest}` : "/dashboard/collab";
   }
 
   const legacy: Record<string, string> = {
-    "/hire-requests": "/dashboard",
+    "/hire-requests": "/dashboard/hire",
     "/collab-requests": "/dashboard/collab",
     "/followers": "/portfolio/followers",
   };

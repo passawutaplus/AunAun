@@ -16,7 +16,7 @@ import {
   insertHireDocument,
   type HireOrderDocContext,
 } from "@/lib/documents/issueHireDocuments";
-import { makeProvisionalDocNumber } from "@/lib/documents/numbering";
+import { allocateDocNumber } from "@/lib/documents/numbering";
 import {
   DEFAULT_FEE_CONFIG,
   planInstallmentSatang,
@@ -105,11 +105,12 @@ function buildQuotationSnapshot(input: {
   issuer: OfferPartyInfo;
   client: OfferPartyInfo;
   whtSatang: number;
+  docNumber: string;
 }): BusinessDocument {
   const subtotal = input.lineItems.reduce((s, it) => s + Math.round(it.amount * 100), 0);
   return {
     kind: "quotation",
-    docNumber: input.offer.number || makeProvisionalDocNumber("quotation"),
+    docNumber: input.docNumber,
     issuedAt: new Date().toISOString(),
     title: input.offer.title || "งานจ้าง Aplus1",
     issuer: input.issuer,
@@ -222,6 +223,9 @@ export async function createHireOrderAfterPayment(
     // Client may only create awaiting/draft — paid status is webhook/RPC only.
     const status = "awaiting_payment";
     const now = new Date().toISOString();
+    const quoteNumber =
+      input.offer.number?.trim() || (await allocateDocNumber("quotation"));
+    const orderCode = await allocateDocNumber("hire_order");
 
     const orderPayload = {
       hiring_request_id: hiringRequestId,
@@ -249,7 +253,8 @@ export async function createHireOrderAfterPayment(
       metadata: {
         charge_id: input.chargeId ?? null,
         offer_title: input.offer.title,
-        offer_number: input.offer.number ?? null,
+        offer_number: quoteNumber,
+        order_code: orderCode,
       },
     };
 
@@ -331,6 +336,7 @@ export async function createHireOrderAfterPayment(
         issuer,
         client,
         whtSatang,
+        docNumber: quoteNumber,
       });
       await insertHireDocument(sharedDb, {
         hireOrderId: orderId,
@@ -351,6 +357,7 @@ export async function createHireOrderAfterPayment(
         client,
         lineItems,
         whtRate,
+        docNumber: await allocateDocNumber("invoice"),
       });
       await insertHireDocument(sharedDb, {
         hireOrderId: orderId,
@@ -394,6 +401,7 @@ export async function createHireOrderAfterPayment(
         amountPaidSatang: input.paidAmountSatang,
         paymentMethodLabel: input.method,
         providerChargeId: input.chargeId ?? null,
+        docNumber: await allocateDocNumber("receipt"),
       });
       if (isDeposit) {
         rcp.notes = `ใบเสร็จรับเงินมัดจำ ${depositPct}% — ยอดคงเหลือชำระตามเงื่อนไขในใบเสนอราคา`;

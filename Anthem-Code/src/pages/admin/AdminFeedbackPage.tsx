@@ -11,13 +11,16 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { toCsv, downloadCsv } from "@/lib/csv";
+import FeedbackKindBadge from "@/components/feedback/FeedbackKindBadge";
+import FeedbackScreenshotThumb from "@/components/feedback/FeedbackScreenshotThumb";
+import { FEEDBACK_KINDS, feedbackKindLabel } from "@/lib/feedbackTicket";
 
 type FeedbackRow = {
   id: string;
   user_id: string;
   feature: string;
   route: string;
-  rating: number;
+  rating: number | null;
   message: string;
   status: string;
   admin_note: string;
@@ -25,6 +28,10 @@ type FeedbackRow = {
   user_agent: string;
   viewport: string;
   created_at: string;
+  kind: string | null;
+  ticket_number: string | null;
+  screenshot_path: string;
+  annotation_json?: unknown;
 };
 
 type UxResearchRow = {
@@ -47,6 +54,13 @@ const RANGES = [
 ];
 
 const STATUSES = ["all", "new", "reviewing", "resolved", "dismissed"] as const;
+const STATUS_LABEL: Record<string, string> = {
+  all: "ทุกสถานะ",
+  new: "ใหม่",
+  reviewing: "กำลังดู",
+  resolved: "แก้แล้ว",
+  dismissed: "ปิด",
+};
 
 export default function AdminFeedbackPage() {
   const qc = useQueryClient();
@@ -54,6 +68,7 @@ export default function AdminFeedbackPage() {
   const [rangeKey, setRangeKey] = useState("30d");
   const [status, setStatus] = useState<(typeof STATUSES)[number]>("all");
   const [feature, setFeature] = useState<string>("all");
+  const [kind, setKind] = useState<string>("all");
 
   const days = RANGES.find((r) => r.key === rangeKey)?.days ?? 30;
 
@@ -75,8 +90,8 @@ export default function AdminFeedbackPage() {
 
   const uxCols: Column<UxResearchRow>[] = [
     { key: "created_at", header: "วันที่", render: (r) => r.created_at.slice(0, 16).replace("T", " ") },
-    { key: "reviewer_name", header: "ชื่อ" },
-    { key: "persona", header: "Persona" },
+    { key: "reviewer_name", header: "ชื่อ", render: (r) => r.reviewer_name },
+    { key: "persona", header: "Persona", render: (r) => r.persona },
     {
       key: "overall",
       header: "Overall",
@@ -111,36 +126,57 @@ export default function AdminFeedbackPage() {
 
   const filtered = useMemo(() => {
     return rows.filter(
-      (r) => (status === "all" || r.status === status) && (feature === "all" || r.feature === feature)
+      (r) =>
+        (status === "all" || r.status === status) &&
+        (feature === "all" || r.feature === feature) &&
+        (kind === "all" || (kind === "rating" ? !r.kind : r.kind === kind)),
     );
-  }, [rows, status, feature]);
+  }, [rows, status, feature, kind]);
 
   const features = useMemo(() => Array.from(new Set(rows.map((r) => r.feature))).sort(), [rows]);
 
   const dailySeries = useMemo(() => {
-    const byDay = new Map<string, { day: string; count: number; sum: number }>();
+    const byDay = new Map<string, { day: string; count: number; sum: number; rated: number }>();
     filtered.forEach((r) => {
       const d = r.created_at.slice(0, 10);
-      const cur = byDay.get(d) ?? { day: d, count: 0, sum: 0 };
+      const cur = byDay.get(d) ?? { day: d, count: 0, sum: 0, rated: 0 };
       cur.count += 1;
-      cur.sum += r.rating;
+      if (r.rating != null) {
+        cur.sum += r.rating;
+        cur.rated += 1;
+      }
       byDay.set(d, cur);
     });
     return Array.from(byDay.values())
       .sort((a, b) => a.day.localeCompare(b.day))
-      .map((d) => ({ day: d.day.slice(5), count: d.count, avg: +(d.sum / d.count).toFixed(2) }));
+      .map((d) => ({ day: d.day.slice(5), count: d.count, avg: d.rated ? +(d.sum / d.rated).toFixed(2) : 0 }));
+  }, [filtered]);
+
+  const byKindSeries = useMemo(() => {
+    const map = new Map<string, number>();
+    filtered.forEach((r) => {
+      const key = r.kind || "rating";
+      map.set(key, (map.get(key) ?? 0) + 1);
+    });
+    return Array.from(map.entries()).map(([k, count]) => ({
+      kind: k === "rating" ? "คะแนน" : feedbackKindLabel(k),
+      count,
+    }));
   }, [filtered]);
 
   const byFeatureSeries = useMemo(() => {
-    const map = new Map<string, { feature: string; count: number; sum: number }>();
+    const map = new Map<string, { feature: string; count: number; sum: number; rated: number }>();
     filtered.forEach((r) => {
-      const cur = map.get(r.feature) ?? { feature: r.feature, count: 0, sum: 0 };
+      const cur = map.get(r.feature) ?? { feature: r.feature, count: 0, sum: 0, rated: 0 };
       cur.count += 1;
-      cur.sum += r.rating;
+      if (r.rating != null) {
+        cur.sum += r.rating;
+        cur.rated += 1;
+      }
       map.set(r.feature, cur);
     });
     return Array.from(map.values())
-      .map((v) => ({ feature: v.feature, count: v.count, avg: +(v.sum / v.count).toFixed(2) }))
+      .map((v) => ({ feature: v.feature, count: v.count, avg: v.rated ? +(v.sum / v.rated).toFixed(2) : 0 }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
   }, [filtered]);
@@ -159,10 +195,15 @@ export default function AdminFeedbackPage() {
   }, [filtered]);
 
   const stats = useMemo(() => {
-    if (filtered.length === 0) return { avg: 0, responded: 0 };
-    const sum = filtered.reduce((s, r) => s + r.rating, 0);
+    if (filtered.length === 0) return { avg: 0, responded: 0, tickets: 0 };
+    const rated = filtered.filter((r) => r.rating != null);
+    const sum = rated.reduce((s, r) => s + (r.rating ?? 0), 0);
     const responded = filtered.filter((r) => r.admin_note || r.status === "resolved").length;
-    return { avg: sum / filtered.length, responded: (responded / filtered.length) * 100 };
+    return {
+      avg: rated.length ? sum / rated.length : 0,
+      responded: (responded / filtered.length) * 100,
+      tickets: filtered.filter((r) => r.kind).length,
+    };
   }, [filtered]);
 
   const update = useMutation({
@@ -190,12 +231,15 @@ export default function AdminFeedbackPage() {
   const exportCsv = () => {
     const csv = toCsv(
       filtered.map((r) => ({
+        ticket_number: r.ticket_number ?? "",
+        kind: r.kind ?? "",
         created_at: r.created_at,
-        rating: r.rating,
+        rating: r.rating ?? "",
         feature: r.feature,
         route: r.route,
         status: r.status,
         message: r.message,
+        screenshot_path: r.screenshot_path ?? "",
         admin_note: r.admin_note,
         project_id: r.project_id ?? "",
         user_id: r.user_id,
@@ -206,6 +250,16 @@ export default function AdminFeedbackPage() {
 
   const cols: Column<FeedbackRow>[] = [
     {
+      key: "ticket",
+      header: "ตั๋ว",
+      render: (r) => <span className="font-mono text-xs font-semibold">{r.ticket_number || "—"}</span>,
+    },
+    {
+      key: "kind",
+      header: "แท็ก",
+      render: (r) => <FeedbackKindBadge kind={r.kind} />,
+    },
+    {
       key: "at",
       header: "เวลา",
       render: (r) => <span className="font-mono text-xs">{r.created_at.slice(0, 16).replace("T", " ")}</span>,
@@ -213,15 +267,25 @@ export default function AdminFeedbackPage() {
     {
       key: "rating",
       header: "★",
-      render: (r) => (
-        <span className="flex items-center gap-1 font-semibold">
-          {r.rating}<Star className="w-3 h-3 fill-primary text-primary" />
-        </span>
-      ),
+      render: (r) =>
+        r.rating != null ? (
+          <span className="flex items-center gap-1 font-semibold">
+            {r.rating}<Star className="w-3 h-3 fill-primary text-primary" />
+          </span>
+        ) : (
+          <span className="text-xs text-admin-muted">—</span>
+        ),
     },
     { key: "feature", header: "ฟีเจอร์", render: (r) => <span className="text-xs">{r.feature}</span> },
     { key: "route", header: "Route", render: (r) => <span className="font-mono text-[10px]">{r.route}</span> },
     { key: "msg", header: "ข้อความ", render: (r) => <span className="text-xs line-clamp-2 max-w-sm">{r.message || "—"}</span> },
+    {
+      key: "shot",
+      header: "แคป",
+      render: (r) => (
+        <FeedbackScreenshotThumb stored={r.screenshot_path} annotationJson={r.annotation_json} />
+      ),
+    },
     {
       key: "status",
       header: "สถานะ",
@@ -232,7 +296,7 @@ export default function AdminFeedbackPage() {
           className="text-xs bg-background border border-border rounded px-1.5 py-0.5"
         >
           {["new", "reviewing", "resolved", "dismissed"].map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>{STATUS_LABEL[s] ?? s}</option>
           ))}
         </select>
       ),
@@ -253,7 +317,7 @@ export default function AdminFeedbackPage() {
       <SectionHeader
         eyebrow="voice of user"
         title="ฟีดแบ็กผู้ใช้"
-        description="คะแนนและความคิดเห็นจากผู้ใช้ พร้อมแนวโน้มรายวันและส่งออก CSV"
+        description="ตั๋วจากเมนูโปรไฟล์ คะแนนในแอป และแนวโน้มรายวัน — ส่งออก CSV ได้"
       />
 
       <Tabs value={mainTab} onValueChange={setMainTab}>
@@ -274,7 +338,18 @@ export default function AdminFeedbackPage() {
           onChange={(e) => setStatus(e.target.value as typeof status)}
           className="text-xs bg-background border border-border rounded px-2 py-1.5"
         >
-          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+        </select>
+        <select
+          value={kind}
+          onChange={(e) => setKind(e.target.value)}
+          className="text-xs bg-background border border-border rounded px-2 py-1.5"
+        >
+          <option value="all">ทุกแท็ก</option>
+          {FEEDBACK_KINDS.map((k) => (
+            <option key={k} value={k}>{feedbackKindLabel(k)}</option>
+          ))}
+          <option value="rating">คะแนนอย่างเดียว</option>
         </select>
         <select
           value={feature}
@@ -295,6 +370,10 @@ export default function AdminFeedbackPage() {
           <p className="text-2xl font-medium mt-1">{filtered.length}</p>
         </div>
         <div className="rounded-lg border border-admin-border bg-admin-surface p-3">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-admin-muted">ตั๋ว</p>
+          <p className="text-2xl font-medium mt-1">{stats.tickets}</p>
+        </div>
+        <div className="rounded-lg border border-admin-border bg-admin-surface p-3">
           <p className="text-[10px] font-mono uppercase tracking-wider text-admin-muted">เฉลี่ย</p>
           <p className="text-2xl font-medium mt-1 flex items-center gap-1">
             {stats.avg.toFixed(2)}<Star className="w-4 h-4 fill-primary text-primary" />
@@ -303,10 +382,6 @@ export default function AdminFeedbackPage() {
         <div className="rounded-lg border border-admin-border bg-admin-surface p-3">
           <p className="text-[10px] font-mono uppercase tracking-wider text-admin-muted">ตอบกลับ</p>
           <p className="text-2xl font-medium mt-1">{stats.responded.toFixed(0)}%</p>
-        </div>
-        <div className="rounded-lg border border-admin-border bg-admin-surface p-3">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-admin-muted">ช่วง</p>
-          <p className="text-2xl font-medium mt-1">{days}d</p>
         </div>
       </div>
 
@@ -325,17 +400,30 @@ export default function AdminFeedbackPage() {
           </ResponsiveContainer>
         </div>
         <div className="rounded-lg border border-admin-border bg-admin-surface p-3 h-64">
-          <p className="text-xs font-mono uppercase tracking-wider text-admin-muted mb-2">ตามฟีเจอร์ (top 10)</p>
+          <p className="text-xs font-mono uppercase tracking-wider text-admin-muted mb-2">ตามแท็ก</p>
           <ResponsiveContainer width="100%" height="90%">
-            <BarChart data={byFeatureSeries}>
+            <BarChart data={byKindSeries}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="feature" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} />
+              <XAxis dataKey="kind" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} />
               <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} />
               <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))" }} />
               <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
+      </div>
+
+      <div className="rounded-lg border border-admin-border bg-admin-surface p-3 h-64 mb-4">
+        <p className="text-xs font-mono uppercase tracking-wider text-admin-muted mb-2">ตามฟีเจอร์ (top 10)</p>
+        <ResponsiveContainer width="100%" height="90%">
+          <BarChart data={byFeatureSeries}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="feature" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} />
+            <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} />
+            <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))" }} />
+            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       {byProjectSeries.length > 0 && (
@@ -378,7 +466,7 @@ export default function AdminFeedbackPage() {
                     answers: JSON.stringify(r.answers),
                   })),
                 );
-                downloadCsv(csv, `ux-research-${rangeKey}.csv`);
+                downloadCsv(`ux-research-${rangeKey}.csv`, csv);
               }}
             >
               <Download className="w-3.5 h-3.5 mr-1" /> Export CSV

@@ -9,9 +9,9 @@ export const FEED_GRID_DENSITY_META: Record<
   FeedGridDensity,
   { label: string; cols: number; ariaLabel: string }
 > = {
-  large: { label: "ใหญ่", cols: 3, ariaLabel: "ขนาดใหญ่ 3 คอลัมน์" },
-  medium: { label: "กลาง", cols: 5, ariaLabel: "ขนาดกลาง 5 คอลัมน์" },
-  small: { label: "เล็ก", cols: 7, ariaLabel: "ขนาดเล็ก 7 คอลัมน์" },
+  large: { label: "ใหญ่", cols: 2, ariaLabel: "ขนาดใหญ่ 2 คอลัมน์" },
+  medium: { label: "กลาง", cols: 4, ariaLabel: "ขนาดกลาง 4 คอลัมน์" },
+  small: { label: "เล็ก", cols: 6, ariaLabel: "ขนาดเล็ก 6 คอลัมน์" },
 };
 
 export const FEED_GRID_DENSITY_STORAGE_KEY = BRAND_STORAGE_FEED_GRID;
@@ -36,9 +36,9 @@ export function writeFeedGridDensity(density: FeedGridDensity) {
 export function getFeedProjectGridClass(density: FeedGridDensity): string {
   switch (density) {
     case "large":
-      return "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-3";
+      return "grid grid-cols-2";
     case "small":
-      return "grid grid-cols-2 md:grid-cols-5 lg:grid-cols-6 2xl:grid-cols-7";
+      return "grid grid-cols-6";
     case "medium":
     default:
       return FEED_PROJECT_GRID;

@@ -45,10 +45,16 @@ type Props = {
   userId: string;
   /** Show Design Drill block above overview (owner profile). */
   showDesignDrill?: boolean;
+  /** Hide the My Studio shortcut when already inside My Studio. */
+  showStudioLink?: boolean;
 };
 
 /** Works manage UI: overview, stats, catalog strip, editable project grid. */
-export default function PortfolioWorksManagePanel({ userId, showDesignDrill }: Props) {
+export default function PortfolioWorksManagePanel({
+  userId,
+  showDesignDrill,
+  showStudioLink = true,
+}: Props) {
   const navigate = useNavigate();
   const reducedMotion = useReducedMotion();
   const designDrillEnabled = showDesignDrill && isLaunchDesignDrillEnabled();
@@ -138,21 +144,24 @@ export default function PortfolioWorksManagePanel({ userId, showDesignDrill }: P
       ) : null}
 
       <div className="flex flex-wrap justify-end gap-2">
+        {showStudioLink ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-xl h-11 px-4 gap-1.5 text-primary border-primary/40 hover:bg-primary/5 hover:text-primary"
+            onClick={() => navigate("/dashboard")}
+          >
+            <ManageWorkIcon className="w-4 h-4" />
+            My Studio
+          </Button>
+        ) : null}
         <Button
-          type="button"
-          variant="outline"
-          className="rounded-xl h-11 px-4 gap-1.5 text-primary border-primary/40 hover:bg-primary/5 hover:text-primary"
-          onClick={() => navigate("/dashboard")}
-        >
-          <ManageWorkIcon className="w-4 h-4" />
-          จัดการงาน
-        </Button>
-        <Button
+          size="sm"
           variant="gradient"
-          className="rounded-xl h-11 px-6"
+          className="rounded-full"
           onClick={() => navigate("/portfolio/new")}
         >
-          <Plus className="w-4 h-4 mr-2" /> Add Work
+          <Plus className="w-4 h-4 mr-1" /> Add Project
         </Button>
       </div>
 

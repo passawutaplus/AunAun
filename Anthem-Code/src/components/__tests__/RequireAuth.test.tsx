@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RequireAuth from "../RequireAuth";
 
@@ -19,13 +19,23 @@ vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
+function AuthLanding() {
+  const location = useLocation();
+  return (
+    <div>
+      AUTH PAGE
+      <span data-testid="auth-search">{location.search}</span>
+    </div>
+  );
+}
+
 const renderAt = (path = "/protected") => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
-          <Route path="/auth" element={<div>AUTH PAGE</div>} />
+          <Route path="/auth" element={<AuthLanding />} />
           <Route
             path="/protected"
             element={
@@ -62,6 +72,14 @@ describe("RequireAuth", () => {
     mockUseAuth.mockReturnValue({ user: null, loading: false });
     renderAt();
     expect(screen.getByText("AUTH PAGE")).toBeInTheDocument();
+  });
+
+  it("keeps search and hash on the post-login redirect", () => {
+    mockUseAuth.mockReturnValue({ user: null, loading: false });
+    renderAt("/protected?recover=pin#account");
+    expect(screen.getByTestId("auth-search").textContent).toContain(
+      encodeURIComponent("/protected?recover=pin#account"),
+    );
   });
 
   it("blocks unverified email/password users with verify-email gate", () => {

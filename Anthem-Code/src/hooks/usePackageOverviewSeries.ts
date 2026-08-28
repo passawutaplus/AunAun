@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fromCreatorServices, fromCreatorServiceViews } from "@/lib/creatorServicesDb";
 import { isBenignQueryError } from "@/lib/supabaseErrors";
@@ -11,12 +11,6 @@ export type PackageOverviewPayload = {
     hires: number;
     packages: number;
   };
-};
-
-const EMPTY_TIMESTAMPS: PackageOverviewTimestamps = {
-  views: [],
-  hires: [],
-  packages: [],
 };
 
 function swallowRows<T>(res: { data: T | null; error: unknown }): T {
@@ -118,10 +112,7 @@ export function usePackageOverviewSeries(
     enabled: enabled && !!ownerId && !!fromIso && !!toIso,
     staleTime: 30_000,
     queryFn: () => fetchPackageOverviewPayload(ownerId!, serviceIds, fromIso!, toIso!),
-    placeholderData: {
-      current: EMPTY_TIMESTAMPS,
-      previousTotals: { views: 0, hires: 0, packages: 0 },
-    },
+    placeholderData: keepPreviousData,
   });
 }
 

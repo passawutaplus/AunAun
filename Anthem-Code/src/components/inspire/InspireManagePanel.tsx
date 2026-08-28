@@ -132,11 +132,11 @@ export default function InspireManagePanel({ userId, embedded }: Props) {
         </div>
         <Button
           size="sm"
-          variant="gradient"
           onClick={() => setFormOpen(true)}
+          variant="gradient"
           className="rounded-full shrink-0"
         >
-          <Plus className="w-4 h-4 mr-1" /> สร้างบอร์ด
+          <Plus className="w-4 h-4 mr-1" /> Add Mood Board
         </Button>
       </div>
 
@@ -156,6 +156,7 @@ export default function InspireManagePanel({ userId, embedded }: Props) {
               boards={boards}
               items={recent}
               loading={recentLoading}
+              densityPreset="profile"
               onOpenBoard={(boardId) => openBoard(boardId)}
               onDropToBoard={(boardId, payload) => {
                 void handleDropToBoard(boardId, payload);

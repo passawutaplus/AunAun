@@ -11,7 +11,7 @@ import {
   parseAttachmentUrlsFromMessage,
   stripAttachmentBlock,
 } from "@/lib/hireBrief";
-import { formatCollabBriefChatText } from "@/lib/collabBrief";
+import { collectCollabReferenceLinks, formatCollabBriefChatText } from "@/lib/collabBrief";
 import { profilesPublicFrom } from "@/lib/profileAccess";
 import {
   SYSTEM_MESSAGE_PREFIX,
@@ -714,7 +714,7 @@ async function seedHireBriefIfPresent(conversationId: string, requestId: string)
   const { data: hire } = await supabase
     .from("hiring_requests")
     .select(
-      "client_id, project_title, client_name, email, phone, message, deadline, budget_amount, attachment_urls",
+      "client_id, project_id, project_title, client_name, email, phone, message, deadline, budget_amount, budget_min, budget_max, attachment_urls",
     )
     .eq("id", requestId)
     .maybeSingle();
@@ -725,19 +725,36 @@ async function seedHireBriefIfPresent(conversationId: string, requestId: string)
     client_id: string;
     message?: string | null;
     attachment_urls?: string[] | null;
+    project_id?: string | null;
     project_title?: string | null;
     client_name?: string | null;
     email?: string | null;
     phone?: string | null;
     deadline?: string | null;
     budget_amount?: number | null;
+    budget_min?: number | null;
+    budget_max?: number | null;
   };
+
+  let projectCoverUrl: string | null = null;
+  if (row.project_id) {
+    const { data: proj } = await supabase
+      .from("projects")
+      .select("cover_url, gallery_urls")
+      .eq("id", row.project_id)
+      .maybeSingle();
+    projectCoverUrl =
+      (proj?.cover_url as string | null)?.trim() ||
+      (Array.isArray(proj?.gallery_urls) ? String(proj.gallery_urls[0] ?? "").trim() : "") ||
+      null;
+  }
 
   const attachmentUrls =
     row.attachment_urls?.length ? row.attachment_urls : parseAttachmentUrlsFromMessage(row.message);
 
   const text = formatHireBriefChatText({
     ...row,
+    project_cover_url: projectCoverUrl,
     message: stripAttachmentBlock(row.message),
   });
 
@@ -766,7 +783,9 @@ async function seedHireBriefIfPresent(conversationId: string, requestId: string)
 async function seedCollabMessages(conversationId: string, requestId: string): Promise<void> {
   const { data: collab } = await supabase
     .from("collab_requests")
-    .select("sender_id, message, timeline, collab_types, attached_project_ids, project_id")
+    .select(
+      "sender_id, message, timeline, collab_types, other_type_note, attached_project_ids, project_id, external_drive_url, website_url",
+    )
     .eq("id", requestId)
     .maybeSingle();
 
@@ -780,14 +799,19 @@ async function seedCollabMessages(conversationId: string, requestId: string): Pr
       : null;
 
   let projectTitle: string | null = null;
+  let projectCoverUrl: string | null = null;
   const titleId = projectIds[0] || mainProjectId;
   if (titleId) {
     const { data: first } = await supabase
       .from("projects")
-      .select("title")
+      .select("title, cover_url, gallery_urls")
       .eq("id", titleId)
       .maybeSingle();
     projectTitle = first?.title ?? null;
+    projectCoverUrl =
+      (first?.cover_url as string | null)?.trim() ||
+      (Array.isArray(first?.gallery_urls) ? String(first.gallery_urls[0] ?? "").trim() : "") ||
+      null;
   }
 
   const { data: senderProfile } = await profilesPublicFrom()
@@ -797,9 +821,16 @@ async function seedCollabMessages(conversationId: string, requestId: string): Pr
 
   const brief = formatCollabBriefChatText({
     project_title: projectTitle,
+    project_cover_url: projectCoverUrl,
+    project_id: titleId,
     message: collab.message as string | null,
     timeline: collab.timeline as string | null,
     collab_types: collab.collab_types as string[] | null,
+    other_type_note: (collab as { other_type_note?: string | null }).other_type_note ?? null,
+    reference_links: collectCollabReferenceLinks({
+      external_drive_url: (collab as { external_drive_url?: string | null }).external_drive_url,
+      website_url: (collab as { website_url?: string | null }).website_url,
+    }),
     sender_name: (senderProfile as { display_name?: string | null } | null)?.display_name ?? null,
     sender_username: (senderProfile as { username?: string | null } | null)?.username ?? null,
   });
@@ -810,24 +841,6 @@ async function seedCollabMessages(conversationId: string, requestId: string): Pr
       sender_id: senderId,
       content: brief,
       message_type: "text",
-    } as never);
-    if (error) throw error;
-  }
-
-  if (projectIds.length === 0) return;
-
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("id, title")
-    .in("id", projectIds);
-
-  for (const p of projects ?? []) {
-    const { error } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: senderId,
-      content: p.title,
-      message_type: "project",
-      project_id: p.id,
     } as never);
     if (error) throw error;
   }

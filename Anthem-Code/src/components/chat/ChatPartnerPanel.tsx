@@ -54,7 +54,11 @@ type MemberOption = {
 
 const RESIZE_HANDLE_H = 16;
 const WORKS_MIN_H = 140;
-const META_BAR_H = 40;
+const META_BAR_H = 36;
+const META_BAR_CLASS =
+  "flex shrink-0 items-center justify-between w-full px-3 py-2 text-xs font-medium text-foreground bg-background hover:bg-muted/40 transition-colors";
+const META_EXPAND_BTN_CLASS =
+  "inline-flex h-7 min-w-8 items-center justify-center rounded-md bg-gradient-to-r from-primary-bright to-primary text-white";
 
 const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapseLabel }: Props) => {
   const navigate = useNavigate();
@@ -260,7 +264,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
         className="shrink-0 overflow-y-auto bg-background"
         style={{ height: profileH ?? undefined, maxHeight: profileH ? undefined : "42%" }}
       >
-        <div ref={profileInnerRef} className="relative p-4 pt-3 text-center">
+        <div ref={profileInnerRef} className="relative px-3 pt-2.5 pb-3 text-center">
           {isGroup && (
             <div className="mb-3 text-left space-y-1.5">
               <p className="text-[11px] font-medium text-muted-foreground">ดูโปรไฟล์สมาชิก</p>
@@ -328,21 +332,21 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
                 <img
                   src={profile.avatar_url}
                   alt=""
-                  className="w-20 h-20 rounded-full object-cover mx-auto border-2 border-border"
+                  className="w-16 h-16 rounded-full object-cover mx-auto border-2 border-border"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center text-2xl font-medium text-muted-foreground mx-auto">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-xl font-medium text-muted-foreground mx-auto">
                   {displayName[0]}
                 </div>
               )}
-              <div className="mt-3 flex items-center justify-center gap-1.5">
-                <h2 className="font-semibold text-foreground">{displayName}</h2>
+              <div className="mt-2 flex items-center justify-center gap-1.5">
+                <h2 className="font-semibold text-sm text-foreground">{displayName}</h2>
                 <VerifiedBadge verified={!!profile?.is_verified} />
               </div>
               {profile?.username && (
-                <p className="text-sm text-muted-foreground mt-0.5">@{profile.username}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">@{profile.username}</p>
               )}
-              {profile?.role && <p className="text-xs text-muted-foreground mt-1">{profile.role}</p>}
+              {profile?.role && <p className="text-[11px] text-muted-foreground mt-0.5">{profile.role}</p>}
               {(() => {
                 const place = displayProfileAddress(
                   (profile as { profile_address?: unknown } | null | undefined)?.profile_address,
@@ -353,7 +357,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
                   <p className="text-xs text-muted-foreground mt-0.5">{place}</p>
                 ) : null;
               })()}
-              <div ref={profileStatsRef} className="flex justify-center gap-4 mt-3 text-sm">
+              <div ref={profileStatsRef} className="flex justify-center gap-3 mt-2 text-xs">
                 <span>
                   <span className="font-semibold text-foreground">{followers}</span>{" "}
                   <span className="text-muted-foreground">ผู้ติดตาม</span>
@@ -365,16 +369,16 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
               </div>
               <div ref={profileEndRef}>
                 {profile?.bio && (
-                  <p className="text-base text-foreground mt-3 line-clamp-4 text-left leading-relaxed">
+                  <p className="text-xs text-foreground/90 mt-2 line-clamp-3 text-left leading-relaxed">
                     {profile.bio}
                   </p>
                 )}
                 {disciplines.length > 0 && (
-                  <div className="mt-3 text-left">
-                    <p className="text-[11px] font-medium text-muted-foreground mb-1.5">สายงาน</p>
-                    <div className="flex flex-wrap gap-1.5 justify-start">
+                  <div className="mt-2 text-left">
+                    <p className="text-[10px] font-medium text-muted-foreground mb-1">สายงาน</p>
+                    <div className="flex flex-wrap gap-1 justify-start">
                       {disciplines.slice(0, 6).map((d) => (
-                        <Badge key={d} variant="secondary" className="text-xs font-normal">
+                        <Badge key={d} variant="secondary" className="text-[10px] font-normal px-1.5 py-0">
                           {WORK_DISCIPLINE_LABELS[d as WorkDisciplineId] ?? d}
                         </Badge>
                       ))}
@@ -382,11 +386,11 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
                   </div>
                 )}
                 {lookingFor.length > 0 && (
-                  <div className="mt-3 text-left">
-                    <p className="text-[11px] font-medium text-muted-foreground mb-1.5">กำลังมองหา</p>
-                    <div className="flex flex-wrap gap-1.5 justify-start">
+                  <div className="mt-2 text-left">
+                    <p className="text-[10px] font-medium text-muted-foreground mb-1">กำลังมองหา</p>
+                    <div className="flex flex-wrap gap-1 justify-start">
                       {lookingFor.slice(0, 4).map((t) => (
-                        <Badge key={t} className="text-xs font-normal bg-primary/10 text-primary border-0">
+                        <Badge key={t} className="text-[10px] font-normal px-1.5 py-0 bg-primary/10 text-primary border-0">
                           {labelOpportunityType(t)}
                         </Badge>
                       ))}
@@ -394,8 +398,8 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
                   </div>
                 )}
                 {skills.length > 0 && (
-                  <div className="mt-3 text-left">
-                    <p className="text-[11px] font-medium text-muted-foreground mb-1.5">ความชำนาญ</p>
+                  <div className="mt-2 text-left">
+                    <p className="text-[10px] font-medium text-muted-foreground mb-1">ความชำนาญ</p>
                     <ProfileSkillChips skills={skills.slice(0, 8)} />
                   </div>
                 )}
@@ -443,20 +447,20 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
             <TabsList className="sticky top-0 z-10 w-full rounded-none border-b border-border bg-background h-auto p-0 shadow-[0_1px_0_0_hsl(var(--border))]">
               <TabsTrigger
                 value="mine"
-                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:shadow-none py-2.5 text-xs"
+                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:shadow-none py-2 text-[11px]"
               >
                 ผลงานของฉัน
               </TabsTrigger>
               {showPartnerWorks && (
                 <TabsTrigger
                   value="partner"
-                  className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:shadow-none py-2.5 text-xs"
+                  className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:shadow-none py-2 text-[11px]"
                 >
                   ผลงานคู่แชท
                 </TabsTrigger>
               )}
             </TabsList>
-            <TabsContent value="mine" className="mt-0 p-3">
+            <TabsContent value="mine" className="mt-0 p-2.5">
               {user?.id && (
                 <ChatPortfolioSection
                   userId={user.id}
@@ -466,7 +470,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
               )}
             </TabsContent>
             {showPartnerWorks && viewUserId && (
-              <TabsContent value="partner" className="mt-0 p-3">
+              <TabsContent value="partner" className="mt-0 p-2.5">
                 <ChatPortfolioSection
                   userId={viewUserId}
                   dialogTitle={`ผลงานและแพ็กเกจ — ${displayName}`}
@@ -488,19 +492,21 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
             type="button"
             aria-expanded={metaOpen}
             onClick={() => setMetaOpen(false)}
-            className="flex shrink-0 items-center justify-between w-full px-4 py-2.5 text-xs font-medium text-foreground bg-background border-b border-border hover:bg-muted/40 transition-colors"
+            className={cn(META_BAR_CLASS, "border-b border-border")}
           >
             {showHireMeta
               ? conversation.kind === "hire"
                 ? "รายละเอียดออเดอร์ / มีเดีย"
                 : "ข้อมูลแผนงานร่วมกัน"
               : "มีเดียในแชท"}
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-muted-foreground rotate-180",
-                !reducedMotion && "transition-transform duration-300",
-              )}
-            />
+            <span className={META_EXPAND_BTN_CLASS} aria-hidden>
+              <ChevronDown
+                className={cn(
+                  "w-4 h-4 rotate-180",
+                  !reducedMotion && "transition-transform duration-300",
+                )}
+              />
+            </span>
           </button>
 
           <div className="flex-1 min-h-0 overflow-y-auto bg-background">
@@ -547,14 +553,16 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
           type="button"
           aria-expanded={false}
           onClick={() => setMetaOpen(true)}
-          className="flex shrink-0 items-center justify-between w-full px-4 py-2.5 text-xs font-medium text-foreground bg-background border-t border-border hover:bg-muted/40 transition-colors"
+          className={cn(META_BAR_CLASS, "border-t border-border")}
         >
           {showHireMeta
             ? conversation.kind === "hire"
               ? "รายละเอียดออเดอร์ / มีเดีย"
               : "ข้อมูลแผนงานร่วมกัน"
             : "มีเดียในแชท"}
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          <span className={META_EXPAND_BTN_CLASS} aria-hidden>
+            <ChevronDown className="w-4 h-4" />
+          </span>
         </button>
       )}
     </aside>

@@ -1,5 +1,11 @@
 import { DEFAULT_COLLAB_MESSAGE } from "@/lib/chatContext";
-import { formatHireDeadlineLabel } from "@/lib/hireBrief";
+import {
+  appendAttachmentsToMessage,
+  formatHireDeadlineLabel,
+  parseAttachmentUrlsFromMessage,
+  stripAttachmentBlock,
+} from "@/lib/hireBrief";
+import { isUuid } from "@/lib/uuid";
 
 const COLLAB_TYPE_LABELS: Record<string, string> = {
   chat: "พูดคุย",
@@ -78,13 +84,30 @@ export function buildCollabDeclineChatMessage(opts: {
 
 export type CollabBriefSource = {
   project_title?: string | null;
+  project_cover_url?: string | null;
+  project_id?: string | null;
   message?: string | null;
   timeline?: string | null;
   collab_types?: string[] | null;
+  other_type_note?: string | null;
+  reference_links?: string[] | null;
   sender_name?: string | null;
   sender_username?: string | null;
   sender_email?: string | null;
 };
+
+export function formatCollabTypesLabel(
+  types: string[] | null | undefined,
+  otherNote?: string | null,
+): string | null {
+  const labels = (types ?? [])
+    .map((t) => {
+      const name = COLLAB_TYPE_LABELS[t] ?? t;
+      return t === "other" && otherNote?.trim() ? `${name}: ${otherNote.trim()}` : name;
+    })
+    .filter(Boolean);
+  return labels.length ? labels.join(" · ") : null;
+}
 
 export function formatCollabTimelineLabel(timeline: string | null | undefined): string | null {
   return formatHireDeadlineLabel(timeline);
@@ -101,23 +124,27 @@ function formatCollabContactLine(collab: CollabBriefSource): string | null {
 }
 
 export function formatCollabBriefChatText(collab: CollabBriefSource): string {
-  const body = collab.message?.trim() || DEFAULT_COLLAB_MESSAGE;
-  const types = (collab.collab_types ?? [])
-    .map((t) => COLLAB_TYPE_LABELS[t] ?? t)
-    .filter(Boolean);
+  const body = stripAttachmentBlock(collab.message)?.trim() || DEFAULT_COLLAB_MESSAGE;
+  const types = formatCollabTypesLabel(collab.collab_types, collab.other_type_note);
   const timeline = formatCollabTimelineLabel(collab.timeline);
   const contact = formatCollabContactLine(collab);
+  const links = (collab.reference_links ?? []).map((u) => u.trim()).filter(Boolean);
 
   const lines = [
     "🤝 คำชวนคอลแลป",
     collab.project_title ? `อ้างอิง: ${collab.project_title}` : null,
+    collab.project_cover_url ? `ปกอ้างอิง: ${collab.project_cover_url}` : null,
+    collab.project_id && isUuid(collab.project_id) ? `ผลงานอ้างอิง: ${collab.project_id}` : null,
     timeline ? `ช่วงเวลา: ${timeline}` : null,
-    types.length ? `ประเภท: ${types.join(" · ")}` : null,
-    body ? `\n${body}` : null,
+    types ? `อยากร่วมงานแบบไหน: ${types}` : null,
+    links.length ? `ลิงก์อ้างอิง:\n${links.map((u) => `- ${u}`).join("\n")}` : null,
+    body ? `\nข้อความถึง:\n${body}` : null,
     contact ? `\nติดต่อ: ${contact}` : null,
   ].filter((line) => line !== null && line !== "");
 
-  return lines.join("\n");
+  const text = lines.join("\n");
+  const attachments = parseAttachmentUrlsFromMessage(collab.message);
+  return attachments.length ? appendAttachmentsToMessage(text, attachments) : text;
 }
 
 /** Invite card seed text for opening a collab chat. */
@@ -163,4 +190,108 @@ export function collectCollabReferenceLinks(opts: {
   return parseCollabReferenceLinks(
     [opts.external_drive_url, opts.website_url].filter(Boolean).join("\n"),
   );
+}
+
+function matchLabeledLine(raw: string, label: string): string | null {
+  const re = new RegExp(`^${label}:\\s*(.+)$`, "m");
+  const value = raw.match(re)?.[1]?.trim();
+  return value || null;
+}
+
+export type CollabInviteDisplay = {
+  projectTitle: string | null;
+  projectCoverUrl: string | null;
+  projectId: string | null;
+  collabTypesLabel: string | null;
+  links: string[];
+  attachments: string[];
+  personalMessage: string | null;
+};
+
+/** Strip the auto-seeded chat wrapper around a collab invite body. */
+export function stripCollabChatWrapper(message: string | null | undefined): string {
+  return stripAttachmentBlock(message)
+    .replace(/^🤝?\s*คำชวนคอลแลป\s*$/m, "")
+    .replace(/^อ้างอิง:\s*.*$/m, "")
+    .replace(/^ปกอ้างอิง:\s*.*$/m, "")
+    .replace(/^ผลงานอ้างอิง:\s*.*$/m, "")
+    .replace(/^ช่วงเวลา:\s*.*$/m, "")
+    .replace(/^ประเภท:\s*.*$/m, "")
+    .replace(/^อยากร่วมงานแบบไหน:\s*.*$/m, "")
+    .replace(/ลิงก์อ้างอิง:[\s\S]*?(?=\nข้อความถึง:|\nติดต่อ:|$)/, "")
+    .replace(/^ข้อความถึง:\s*$/m, "")
+    .replace(/^ติดต่อ:\s*.*$/m, "")
+    .trim();
+}
+
+/** Parse fields seeded around the collab invite body in chat. */
+export function parseCollabChatEnvelope(message: string | null | undefined): CollabInviteDisplay {
+  const raw = stripAttachmentBlock(message);
+  const projectIdRaw = matchLabeledLine(raw, "ผลงานอ้างอิง");
+  const links: string[] = [];
+  const linkSplit = raw.split(/ลิงก์อ้างอิง:\s*\n/);
+  if (linkSplit[1]) {
+    for (const line of linkSplit[1].split("\n")) {
+      const t = line.trim().replace(/^[-•*]\s*/, "");
+      if (!t) continue;
+      if (/^https?:\/\//i.test(t)) {
+        links.push(t);
+        continue;
+      }
+      break;
+    }
+  }
+
+  let personalMessage: string | null = null;
+  const msgSplit = raw.split(/ข้อความถึง:\s*\n/);
+  if (msgSplit[1]) {
+    personalMessage = msgSplit[1].split(/\n\s*\nติดต่อ:/)[0]?.trim() || null;
+  } else {
+    personalMessage = stripCollabChatWrapper(raw) || null;
+  }
+
+  return {
+    projectTitle: matchLabeledLine(raw, "อ้างอิง"),
+    projectCoverUrl: matchLabeledLine(raw, "ปกอ้างอิง"),
+    projectId: projectIdRaw && isUuid(projectIdRaw) ? projectIdRaw : null,
+    collabTypesLabel:
+      matchLabeledLine(raw, "อยากร่วมงานแบบไหน") || matchLabeledLine(raw, "ประเภท"),
+    links,
+    attachments: parseAttachmentUrlsFromMessage(message),
+    personalMessage,
+  };
+}
+
+export function collabInviteDisplay(opts: {
+  message?: string | null;
+  collab_types?: string[] | null;
+  other_type_note?: string | null;
+  external_drive_url?: string | null;
+  website_url?: string | null;
+  project_title?: string | null;
+  project_cover_url?: string | null;
+  project_id?: string | null;
+  attachment_urls?: string[] | null;
+}): CollabInviteDisplay {
+  const parsed = parseCollabChatEnvelope(opts.message);
+  const fromColumn = formatCollabTypesLabel(opts.collab_types, opts.other_type_note);
+  const fromCols = collectCollabReferenceLinks({
+    external_drive_url: opts.external_drive_url,
+    website_url: opts.website_url,
+  });
+  const overlayAtt =
+    opts.attachment_urls?.filter((u) => typeof u === "string" && u.trim()) ?? [];
+  const rawBody = stripAttachmentBlock(opts.message);
+  const personalFromRow =
+    rawBody && !rawBody.includes("คำชวนคอลแลป") ? rawBody : parsed.personalMessage;
+
+  return {
+    projectTitle: opts.project_title?.trim() || parsed.projectTitle,
+    projectCoverUrl: opts.project_cover_url?.trim() || parsed.projectCoverUrl,
+    projectId: opts.project_id && isUuid(opts.project_id) ? opts.project_id : parsed.projectId,
+    collabTypesLabel: fromColumn || parsed.collabTypesLabel,
+    links: fromCols.length ? fromCols : parsed.links,
+    attachments: overlayAtt.length ? overlayAtt : parsed.attachments,
+    personalMessage: personalFromRow,
+  };
 }

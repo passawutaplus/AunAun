@@ -23,7 +23,7 @@ const FOLDER_VISIBILITY_TABS: { value: SeriesVisibilityFilter; label: string }[]
 
 type BaseProps = {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   searchPlaceholder: string;
   query: string;
   onQueryChange: (value: string) => void;
@@ -67,7 +67,7 @@ export function SeriesWorkspaceToolbar(props: SeriesWorkspaceToolbarProps) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
+          {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
         </div>
         <div className="flex shrink-0 items-center justify-end gap-0.5 self-start">
           <SeriesDensitySelect value={density} onChange={onDensityChange} />

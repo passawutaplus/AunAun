@@ -1,5 +1,8 @@
 /** Settings page panels — click switches content (not scroll-spy). */
 
+import type { LucideIcon } from "lucide-react";
+import { LayoutDashboard, Settings2, Shield, UserRound } from "lucide-react";
+
 export type SettingsPanelId =
   | "profile"
   | "billing"
@@ -18,6 +21,7 @@ export type SettingsNavItem = {
 export type SettingsNavGroup = {
   id: string;
   label: string;
+  icon: LucideIcon;
   items: SettingsNavItem[];
 };
 
@@ -25,6 +29,7 @@ export const SETTINGS_NAV_GROUPS: SettingsNavGroup[] = [
   {
     id: "group-profile",
     label: "โปรไฟล์",
+    icon: UserRound,
     items: [
       { id: "profile", label: "แก้ไขโปรไฟล์" },
       { id: "billing", label: "เอกสาร & Billing" },
@@ -33,6 +38,7 @@ export const SETTINGS_NAV_GROUPS: SettingsNavGroup[] = [
   {
     id: "group-settings",
     label: "การตั้งค่า",
+    icon: Settings2,
     items: [
       { id: "notifications", label: "การแจ้งเตือน" },
       { id: "chat", label: "แชท" },
@@ -41,7 +47,8 @@ export const SETTINGS_NAV_GROUPS: SettingsNavGroup[] = [
   },
   {
     id: "group-privacy",
-    label: "Privacy & Security",
+    label: "ความเป็นส่วนตัว",
+    icon: Shield,
     items: [
       { id: "privacy", label: "ความเป็นส่วนตัว & ความปลอดภัย" },
       { id: "account", label: "บัญชี" },
@@ -73,14 +80,18 @@ const HASH_TO_PANEL: Record<string, SettingsPanelId> = {
   "settings-preferences": "preferences",
   privacy: "privacy",
   "settings-privacy": "privacy",
-  "settings-password": "privacy",
   account: "account",
   "settings-account": "account",
+  "settings-password": "account",
+  "settings-pin": "account",
   admin: "admin",
   "settings-admin": "admin",
 };
 
 export const DEFAULT_SETTINGS_PANEL: SettingsPanelId = "profile";
+
+export const SETTINGS_ACCOUNT_HREF = "/settings#account";
+export const SETTINGS_PIN_RECOVER_HREF = "/settings?recover=pin#account";
 
 export function resolveSettingsPanel(
   hash: string | null | undefined,
@@ -117,6 +128,7 @@ export function buildSettingsNavGroups(isAdmin?: boolean): SettingsNavGroup[] {
     {
       id: "group-admin",
       label: "ระบบ",
+      icon: LayoutDashboard,
       items: [{ id: "admin", label: "ผู้ดูแลระบบ" }],
     },
   ];

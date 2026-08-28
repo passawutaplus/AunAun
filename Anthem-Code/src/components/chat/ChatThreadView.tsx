@@ -8,6 +8,7 @@ import {
   Handshake,
   Info,
   Megaphone,
+  MoreVertical,
   PanelRightOpen,
   Settings2,
   Share2,
@@ -31,6 +32,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { profilesPublicFrom } from "@/lib/profileAccess";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { loadHideReadReceipts } from "@/lib/chatReadReceipts";
 import {
@@ -60,7 +67,7 @@ import {
 import HireCancelRequestDialog from "@/components/hiring/HireCancelRequestDialog";
 import HireOrderDetailDialog from "@/components/hire/HireOrderDetailDialog";
 import { encodeHireForwardMessage } from "@/lib/hireForwardChat";
-import { hireForwardClientNotice, hireRejectReasonLabel } from "@/lib/hireBrief";
+import { hireForwardClientNotice, hireRejectReasonLabel, parseAttachmentUrlsFromMessage, stripAttachmentBlock } from "@/lib/hireBrief";
 import {
   isHireCancelledStatus,
   isHireCompletedStatus,
@@ -74,7 +81,12 @@ import {
   isCollabDeclinedStatus,
   labelCollabStatus,
 } from "@/lib/collabInbox";
-import { collabRejectReasonLabel, buildCollabDeclineChatMessage } from "@/lib/collabBrief";
+import {
+  collabRejectReasonLabel,
+  buildCollabDeclineChatMessage,
+  collectCollabReferenceLinks,
+  formatCollabTypesLabel,
+} from "@/lib/collabBrief";
 import {
   buildCollabPlanDocumentMessage,
   emptyCollabPlanState,
@@ -138,6 +150,7 @@ import {
   isHireWorkStartMessage,
 } from "@/lib/hireWorkStartChat";
 import HireRejectDialog from "@/components/hiring/HireRejectDialog";
+import { useHireQuoteCreateLock } from "@/hooks/useHireQuoteCreateLock";
 import CollabRejectDialog from "@/components/collab/CollabRejectDialog";
 import ReportTrigger from "@/components/report/ReportTrigger";
 import { tierLabel } from "@/lib/tierMembership";
@@ -148,7 +161,7 @@ import { toast } from "sonner";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import BriefcaseIcon from "../icons/BriefcaseIcon";
 import type { HireInviteActions } from "@/components/chat/HireInviteCard";
-import type { CollabInviteActions } from "@/components/chat/CollabInviteCard";
+import type { CollabInviteActions, CollabInviteRef } from "@/components/chat/CollabInviteCard";
 import type { HireRejectChoiceActions } from "@/components/chat/HireRejectChoiceCard";
 import type { HireContinueAskActions } from "@/components/chat/HireContinueAskCard";
 
@@ -332,7 +345,11 @@ const ChatThreadView = ({
         message?: string | null;
         timeline?: string | null;
         collab_types?: string[] | null;
+        other_type_note?: string | null;
+        attached_project_ids?: string[] | null;
         project_id?: string | null;
+        external_drive_url?: string | null;
+        website_url?: string | null;
         reject_reason?: string | null;
         reject_note?: string | null;
         keep_chat?: boolean | null;
@@ -343,6 +360,61 @@ const ChatThreadView = ({
   });
   const collabStatus = collabRequestRow?.status ?? null;
   const collabRejectReason = collabRequestRow?.reject_reason ?? null;
+
+  const collabAttachedIds = useMemo(() => {
+    const attached = collabRequestRow?.attached_project_ids ?? [];
+    if (attached.length) return Array.from(new Set(attached.filter(Boolean)));
+    return collabRequestRow?.project_id ? [collabRequestRow.project_id] : [];
+  }, [collabRequestRow?.attached_project_ids, collabRequestRow?.project_id]);
+
+  const { data: collabRefProjects = [] } = useQuery({
+    queryKey: ["chat-collab-ref-projects", collabAttachedIds],
+    enabled: isCollab && collabAttachedIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("projects")
+        .select("id, title, cover_url, gallery_urls")
+        .in("id", collabAttachedIds);
+      const byId = new Map((data ?? []).map((p) => [p.id as string, p]));
+      return collabAttachedIds.map((id) => {
+        const p = byId.get(id);
+        const cover =
+          (p?.cover_url as string | null)?.trim() ||
+          (Array.isArray(p?.gallery_urls) ? String(p.gallery_urls[0] ?? "").trim() : "") ||
+          null;
+        return {
+          id,
+          title: (p?.title as string | null)?.trim() || "ผลงาน",
+          coverUrl: cover,
+        };
+      });
+    },
+  });
+
+  const collabInviteRef: CollabInviteRef | null = useMemo(() => {
+    if (!isCollab || !collabRequestRow) return null;
+    const [first, ...rest] = collabRefProjects;
+    return {
+      projectTitle: first?.title ?? null,
+      projectCoverUrl: first?.coverUrl ?? null,
+      projectId: first?.id ?? null,
+      extraProjects: rest,
+      collabTypes: collabRequestRow.collab_types,
+      otherTypeNote: collabRequestRow.other_type_note,
+      collabTypesLabel: formatCollabTypesLabel(
+        collabRequestRow.collab_types,
+        collabRequestRow.other_type_note,
+      ),
+      links: collectCollabReferenceLinks({
+        external_drive_url: collabRequestRow.external_drive_url,
+        website_url: collabRequestRow.website_url,
+      }),
+      attachments: parseAttachmentUrlsFromMessage(collabRequestRow.message),
+      personalMessage: stripAttachmentBlock(collabRequestRow.message) || null,
+      externalDriveUrl: collabRequestRow.external_drive_url,
+      websiteUrl: collabRequestRow.website_url,
+    };
+  }, [isCollab, collabRequestRow, collabRefProjects]);
 
   useEffect(() => {
     if (!conv.request_id || !isCollab) return;
@@ -945,6 +1017,16 @@ const ChatThreadView = ({
   const { data: studioMembers = [] } = useStudioMembers(studioForQuote?.id);
   const myStudioRole = studioMembers.find((m) => m.user_id === user?.id)?.role;
   const chatOffersOn = isAplus1ChatOffersEnabled();
+  const messageContents = useMemo(
+    () => messages.map((m) => m.content),
+    [messages],
+  );
+  const { quoteLocked } = useHireQuoteCreateLock({
+    conversationId: conv.id,
+    hiringRequestId: conv.request_id,
+    enabled: chatOffersOn && isHire && isFreelancer,
+    messageContents,
+  });
   const canStudioCombinedQuote =
     chatOffersOn &&
     hasStudioQuoteContext &&
@@ -972,6 +1054,23 @@ const ChatThreadView = ({
         .eq("id", conv.request_id!)
         .maybeSingle();
       return data;
+    },
+  });
+
+  const { data: hireProjectCoverUrl } = useQuery({
+    queryKey: ["chat-hire-ref-cover", conv.project_id],
+    enabled: isHire && !!conv.project_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("projects")
+        .select("cover_url, gallery_urls")
+        .eq("id", conv.project_id!)
+        .maybeSingle();
+      return (
+        (data?.cover_url as string | null)?.trim() ||
+        (Array.isArray(data?.gallery_urls) ? String(data.gallery_urls[0] ?? "").trim() : "") ||
+        null
+      );
     },
   });
 
@@ -1248,7 +1347,7 @@ const ChatThreadView = ({
 
   return (
     <div className="flex flex-col h-full min-w-0 bg-background">
-      <header className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-background/90 backdrop-blur-md shrink-0">
+      <header className="flex items-center gap-2 px-3 py-2 border-b border-border bg-background/90 backdrop-blur-md shrink-0">
         {showBack && (
           <BackButton
             onClick={onBack ?? (() => navigate("/chat"))}
@@ -1265,26 +1364,26 @@ const ChatThreadView = ({
             }
             if (other?.user_id) onOpenPartnerPanel?.();
           }}
-          className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
+          className="flex items-center gap-2 min-w-0 flex-1 text-left"
         >
           {isGroup ? (
-            <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
               <Users className="w-4 h-4 text-primary" />
             </div>
           ) : other?.avatar_url ? (
-            <img src={other.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+            <img src={other.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
           ) : (
-            <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center font-medium text-muted-foreground">
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-medium text-muted-foreground text-sm">
               {displayName[0]}
             </div>
           )}
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1.5 min-w-0">
               <span className="font-semibold text-foreground truncate text-sm">{displayName}</span>
               {!isGroup && (
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0",
+                    "inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0",
                     badgeBg,
                     accent,
                   )}
@@ -1294,19 +1393,19 @@ const ChatThreadView = ({
                 </span>
               )}
               {showTierBadge && (
-                <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5 shrink-0">
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 shrink-0">
                   {tierLabel(partnerTier)}
                 </Badge>
               )}
               {isStudio && (
-                <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5 shrink-0">
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 shrink-0">
                   สตูดิโอ
                 </Badge>
               )}
               {isGroup && !isStudio && (
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0",
+                    "inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0",
                     groupTag === "hire"
                       ? "bg-[hsl(var(--chat-hire-soft))] text-[hsl(var(--chat-hire))]"
                       : groupTag === "collab"
@@ -1337,148 +1436,96 @@ const ChatThreadView = ({
           </div>
         </button>
 
-        <div className="flex items-center gap-1 shrink-0">
-          {!isGroup && otherId && (
-            <ReportTrigger targetType="user" targetId={otherId} targetOwnerId={otherId} />
-          )}
+        <div className="flex items-center gap-0.5 shrink-0">
           {requestStatusLabel &&
             (isHireCompletedStatus(hireStatus) ||
               isHireCancelledStatus(hireStatus) ||
               isCollabCompletedStatus(collabStatus) ||
               isCollabCancelledStatus(collabStatus)) && (
-              <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5 shrink-0">
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 shrink-0 mr-0.5">
                 {requestStatusLabel}
               </Badge>
             )}
-          {(canCreateCollabProject || canCreateGroupCollabProject) && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() =>
-                navigate(
-                  canCreateGroupCollabProject
-                    ? `/portfolio/new?collab_conversation_id=${encodeURIComponent(conv.id)}`
-                    : `/portfolio/new?collab_request_id=${encodeURIComponent(conv.request_id!)}`,
-                )
-              }
-              className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full text-[hsl(var(--chat-collab))]"
-              aria-label="ลงผลงานร่วมกัน"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">ลงผลงานร่วมกัน</span>
-            </Button>
-          )}
-          {canCancelRequest && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                if (isHire) {
-                  setHireCancelEditRow(null);
-                  setHireCancelDialogOpen(true);
-                } else if (canRequestCollabEnd) {
-                  setCollabEndEditRow(null);
-                  setCollabEndDialogOpen(true);
-                } else {
-                  setCancelOpen(true);
-                }
-              }}
-              disabled={outcomeBusy}
-              className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full text-muted-foreground hover:text-destructive"
-              aria-label={isHire ? "ขอยกเลิกงาน" : canRequestCollabEnd ? "ถอนตัวจากคอลแลป" : "ยกเลิกคำขอ"}
-            >
-              <Ban className="w-3.5 h-3.5 shrink-0" />
-              <span className="hidden sm:inline">
-                {isHire ? "ขอยกเลิกงาน" : canRequestCollabEnd ? "ถอนตัว" : "ยกเลิกคำขอ"}
-              </span>
-            </Button>
-          )}
           {isHire && isHireCancelOpenStatus(activeHireCancel?.status) && (
-            <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5 shrink-0">
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 shrink-0">
               รอพิจารณายกเลิก
             </Badge>
           )}
           {isCollab && isCollabEndOpenStatus(activeCollabEnd?.status) && (
-            <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5 shrink-0">
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 shrink-0">
               รอตอบคำขอเก่า
             </Badge>
           )}
           {isCollab && isCollabGroupExpandOpenStatus(activeCollabGroupExpand?.status) && (
-            <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5 shrink-0">
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 shrink-0">
               รออนุมัติสร้างกลุ่ม
             </Badge>
+          )}
+          {isHire && isFreelancer && alreadyForwarded && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 shrink-0">
+              ส่งต่อแล้ว
+            </Badge>
+          )}
+          {!isGroup && otherId && (
+            <ReportTrigger
+              targetType="user"
+              targetId={otherId}
+              targetOwnerId={otherId}
+              className="p-0 min-h-8 min-w-8 h-8 w-8 rounded-full"
+            />
           )}
           {canForwardHire && (
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setForwardOpen(true)}
-              className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full text-[hsl(var(--chat-hire))]"
+              className="h-8 w-8 rounded-full text-muted-foreground"
               aria-label="ส่งต่อ"
+              title="ส่งต่อ"
             >
-              <Share2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">ส่งต่อ</span>
+              <Share2 className="w-4 h-4" />
             </Button>
           )}
           {!isGroup && otherId && (
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={openCreateGroupDialog}
-              className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full"
+              className="h-8 w-8 rounded-full text-muted-foreground"
               aria-label="สร้างกลุ่ม"
+              title="สร้างกลุ่ม"
             >
-              <Users className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">สร้างกลุ่ม</span>
+              <Users className="w-4 h-4" />
             </Button>
-          )}
-          {isGroup && !isStudio && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setGroupSettingsOpen(true)}
-              className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full"
-              aria-label="ตั้งค่ากลุ่ม"
-            >
-              <Settings2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">ตั้งค่ากลุ่ม</span>
-            </Button>
-          )}
-          {isHire && isFreelancer && alreadyForwarded && (
-            <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5 shrink-0">
-              ส่งต่อแล้ว
-            </Badge>
           )}
           {canStudioCombinedQuote ? (
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={openStudioQuote}
-              className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full"
+              className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full ml-0.5"
               aria-label="สร้างใบเสนอราคารวม Studio ใน So1o"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">ใบเสนอราคารวม Studio</span>
+              <span className="hidden sm:inline">ใบเสนอราคา</span>
             </Button>
           ) : showStudioQuoteUpsell ? (
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => setUpsellOpen(true)}
-              className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full"
+              className="inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full ml-0.5"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">ใบเสนอราคารวม Studio</span>
+              <span className="hidden sm:inline">ใบเสนอราคา</span>
             </Button>
           ) : (
             chatOffersOn &&
+            !quoteLocked &&
             !isGroup &&
             otherId &&
             isHire &&
@@ -1487,32 +1534,20 @@ const ChatThreadView = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                title="ทำใบเสนอราคา — เปิดได้ตลอด (ยอมรับงานอัตโนมัติเมื่อผู้จ้างชำระเงิน)"
+                title="ทำใบเสนอราคา"
                 onClick={() => setOfferOpen(true)}
                 className={cn(
-                  "quote-offer-btn inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full",
+                  "quote-offer-btn inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full ml-0.5",
                   "border-[hsl(var(--chat-hire)/0.7)] bg-transparent text-[hsl(var(--chat-hire))]",
                   "hover:bg-[hsl(var(--chat-hire))] hover:text-white hover:border-[hsl(var(--chat-hire))]",
                   "transition-colors duration-200",
                 )}
-                aria-label="เสนอราคาในแชท"
+                aria-label="ทำใบเสนอราคา"
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">เสนอราคา</span>
+                <span className="hidden sm:inline">ใบเสนอราคา</span>
               </Button>
             )
-          )}
-          {!isAplus1LaunchMinimal() && !isGroup && otherId && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="rounded-full h-8 w-8 hidden sm:inline-flex"
-              aria-label="ชวนสร้างสตูดิโอ"
-              onClick={() => navigate(`/studio/new?invite=${otherId}`)}
-            >
-              <Building2 className="w-4 h-4" />
-            </Button>
           )}
           {(isCollab || (!!isGroup && !isStudio && groupTag === "collab")) && (
             <Button
@@ -1521,7 +1556,7 @@ const ChatThreadView = ({
               size="sm"
               onClick={() => collabPlanUi.openFor(conv.id)}
               className={cn(
-                "collab-plan-btn inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full",
+                "collab-plan-btn inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full ml-0.5",
                 "border-[hsl(var(--chat-collab)/0.7)] bg-transparent text-[hsl(var(--chat-collab))]",
                 "hover:bg-[hsl(var(--chat-collab))] hover:text-white hover:border-[hsl(var(--chat-collab))]",
                 "transition-colors duration-200",
@@ -1531,6 +1566,73 @@ const ChatThreadView = ({
               <Handshake className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">วางแผนงาน</span>
             </Button>
+          )}
+          {(canCreateCollabProject ||
+            canCreateGroupCollabProject ||
+            canCancelRequest ||
+            (isGroup && !isStudio) ||
+            (!isAplus1LaunchMinimal() && !isGroup && !!otherId)) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-full text-muted-foreground"
+                  aria-label="เมนูเพิ่มเติม"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {(canCreateCollabProject || canCreateGroupCollabProject) && (
+                  <DropdownMenuItem
+                    onClick={() =>
+                      navigate(
+                        canCreateGroupCollabProject
+                          ? `/portfolio/new?collab_conversation_id=${encodeURIComponent(conv.id)}`
+                          : `/portfolio/new?collab_request_id=${encodeURIComponent(conv.request_id!)}`,
+                      )
+                    }
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    ลงผลงานร่วมกัน
+                  </DropdownMenuItem>
+                )}
+                {canCancelRequest && (
+                  <DropdownMenuItem
+                    disabled={outcomeBusy}
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => {
+                      if (isHire) {
+                        setHireCancelEditRow(null);
+                        setHireCancelDialogOpen(true);
+                      } else if (canRequestCollabEnd) {
+                        setCollabEndEditRow(null);
+                        setCollabEndDialogOpen(true);
+                      } else {
+                        setCancelOpen(true);
+                      }
+                    }}
+                  >
+                    <Ban className="w-4 h-4 mr-2" />
+                    {isHire ? "ขอยกเลิกงาน" : canRequestCollabEnd ? "ถอนตัว" : "ยกเลิกคำขอ"}
+                  </DropdownMenuItem>
+                )}
+                {isGroup && !isStudio && (
+                  <DropdownMenuItem onClick={() => setGroupSettingsOpen(true)}>
+                    <Settings2 className="w-4 h-4 mr-2" />
+                    ตั้งค่ากลุ่ม
+                  </DropdownMenuItem>
+                )}
+                {!isAplus1LaunchMinimal() && !isGroup && otherId && (
+                  <DropdownMenuItem onClick={() => navigate(`/studio/new?invite=${otherId}`)}>
+                    <Building2 className="w-4 h-4 mr-2" />
+                    ชวนสร้างสตูดิโอ
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           {showPartnerToggle && (
             <>
@@ -1542,7 +1644,7 @@ const ChatThreadView = ({
                 aria-label="ข้อมูลโปรไฟล์คู่แชท"
                 title="ข้อมูลคู่แชท"
               >
-                <Info className="w-5 h-5" />
+                <Info className="w-4 h-4" />
               </Button>
               {!partnerPanelOpen ? (
                 <Button
@@ -1553,7 +1655,7 @@ const ChatThreadView = ({
                   aria-label="กางแผงคู่แชท"
                   title="กางแผง"
                 >
-                  <PanelRightOpen className="w-5 h-5" />
+                  <PanelRightOpen className="w-4 h-4" />
                 </Button>
               ) : null}
             </>
@@ -1635,11 +1737,13 @@ const ChatThreadView = ({
                 viewerIsClient={isClient}
                 hireInviteActions={hireInviteActions}
                 collabInviteActions={collabInviteActions}
+                collabInviteRef={collabInviteRef}
                 hireRejectChoiceActions={hireRejectChoiceActions}
                 hireContinueAskActions={hireContinueAskActions}
                 hiringRequestId={isHire ? conv.request_id : null}
                 hireQuoteSettled={isHire && hireWorkStarted}
                 hireProjectTitle={conv.project_title ?? null}
+                hireProjectCoverUrl={hireProjectCoverUrl ?? null}
                 onOpenHireOrderDetail={
                   isHire && conv.request_id
                     ? (oid) => {
@@ -1793,7 +1897,13 @@ const ChatThreadView = ({
       />
       <ChatOfferDialog
         open={chatOffersOn && offerOpen}
-        onOpenChange={setOfferOpen}
+        onOpenChange={(v) => {
+          setOfferOpen(v);
+          if (!v) {
+            void qc.invalidateQueries({ queryKey: ["chat-hire-latest-quote", conv.request_id] });
+            void qc.invalidateQueries({ queryKey: ["hire-accounting-chat-hint", conv.id] });
+          }
+        }}
         conversationId={conv.id}
         hiringRequestId={conv.request_id ?? null}
         defaultTitle={hireMeta?.project_title ?? conv.project_title ?? ""}

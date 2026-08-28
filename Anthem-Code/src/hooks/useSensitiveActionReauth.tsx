@@ -14,9 +14,9 @@ export function useSensitiveActionReauth() {
   const [request, setRequest] = useState<ReauthRequest | null>(null);
 
   const ensureVerified = useCallback(
-    (reason: string): Promise<void> => {
+    (reason: string, opts?: { force?: boolean }): Promise<void> => {
       if (!user) return Promise.resolve();
-      if (isSensitiveActionVerified()) return Promise.resolve();
+      if (!opts?.force && isSensitiveActionVerified()) return Promise.resolve();
 
       return new Promise<void>((resolve, reject) => {
         setRequest({ reason, resolve, reject });

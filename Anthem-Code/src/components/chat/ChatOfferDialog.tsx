@@ -36,6 +36,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { billingToParty, type BillingProfileFields } from "@/lib/billingProfile";
 import { mergeBillingWithKyc } from "@/lib/billingFromKyc";
 import { isKycExpired, resolveKycExpiresAt } from "@/lib/kycIdentity";
+import { allocateDocNumber } from "@/lib/documents/numbering";
 import {
   DEPOSIT_PRESETS,
   defaultOfferMilestones,
@@ -44,7 +45,6 @@ import {
   encodeChatOffer,
   formatOfferAmount,
   isValidThaiTaxId,
-  makeOfferNumber,
   offerDepositAmount,
   offerItemSubtotal,
   offerItemsSubtotal,
@@ -294,7 +294,7 @@ export function ChatOfferDialog({
   const [discountInput, setDiscountInput] = useState("");
   const [clientNotes, setClientNotes] = useState("");
   const [internalNotes, setInternalNotes] = useState("");
-  const [docNumber] = useState(() => makeOfferNumber());
+  const [allocatingNumber, setAllocatingNumber] = useState(false);
   const [milestones, setMilestones] = useState<ChatOfferMilestone[]>(() =>
     defaultOfferMilestones(),
   );
@@ -551,7 +551,6 @@ export function ChatOfferDialog({
       startDate: effectiveStartDate,
       endDate: endDate || null,
       dueDate: endDate || null,
-      number: docNumber,
       clientName: flatClientName || null,
       clientEmail: clientParty.email || null,
       clientPhone: clientParty.phone || null,
@@ -581,7 +580,6 @@ export function ChatOfferDialog({
     discountPercent,
     effectiveStartDate,
     endDate,
-    docNumber,
     clientType,
     clientParty,
     issuerParty,
@@ -724,6 +722,15 @@ export function ChatOfferDialog({
       milestones: syncedMilestones,
     };
 
+    setAllocatingNumber(true);
+    let issuedNumber: string;
+    try {
+      issuedNumber = await allocateDocNumber("quotation");
+    } finally {
+      setAllocatingNumber(false);
+    }
+    payload.number = issuedNumber;
+
     let quoteId: string | null = null;
 
     if (hiringRequestId && user?.id) {
@@ -741,7 +748,7 @@ export function ChatOfferDialog({
             wht_enabled: whtApplicable,
             amount_satang: netTotal * 100,
             currency: "THB",
-            doc_number: docNumber,
+            doc_number: issuedNumber,
             expires_at: expiresAt,
             created_by: user.id,
           } as never)
@@ -1074,7 +1081,12 @@ export function ChatOfferDialog({
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="offer-number">เลขที่ใบเสนอราคา</Label>
-                  <Input id="offer-number" value={docNumber} readOnly className="bg-muted/50" />
+                  <Input
+                    id="offer-number"
+                    value="ออกอัตโนมัติเมื่อส่ง"
+                    readOnly
+                    className="bg-muted/50"
+                  />
                 </div>
               </div>
 
@@ -1721,8 +1733,12 @@ export function ChatOfferDialog({
                 >
                   กลับไปแก้
                 </Button>
-                <Button type="button" onClick={() => void confirmSend()} disabled={send.isPending}>
-                  {send.isPending ? "กำลังส่ง..." : "ยืนยันส่ง"}
+                <Button
+                  type="button"
+                  onClick={() => void confirmSend()}
+                  disabled={send.isPending || allocatingNumber}
+                >
+                  {send.isPending || allocatingNumber ? "กำลังส่ง..." : "ยืนยันส่ง"}
                 </Button>
               </>
             ) : (

@@ -75,7 +75,7 @@ function SortableSlideThumb({
         )}
         {...attributes}
         {...listeners}
-        aria-label={`สไลด์ที่ ${index + 1} — ลากเพื่อเรียงลำดับ`}
+        aria-label={`ภาพพรีเซ้นที่ ${index + 1} — ลากเพื่อเรียงลำดับ`}
       >
         {isVideoUrl(url) ? (
           <div className="grid h-full place-items-center bg-black/40">
@@ -99,7 +99,7 @@ function SortableSlideThumb({
           onRemove();
         }}
         onPointerDown={(e) => e.stopPropagation()}
-        aria-label="ลบสไลด์"
+        aria-label="ลบภาพพรีเซ้น"
       >
         <Trash2 className="h-3 w-3" />
       </button>
@@ -177,7 +177,7 @@ export default function PackageGallerySortableStrip({
           className="absolute -right-1 -top-1 rounded-full bg-black/75 p-0.5 text-white"
           disabled={disabled}
           onClick={() => onRemove(item.index)}
-          aria-label="ลบสไลด์"
+          aria-label="ลบภาพพรีเซ้น"
         >
           <Trash2 className="h-3 w-3" />
         </button>

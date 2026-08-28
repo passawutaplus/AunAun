@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
-import { Camera, Crop, Eye, Loader2, Pencil, Plus, Rocket, Settings, Share2, Upload, Wallet } from "lucide-react";
+import { Camera, Crop, Loader2, Pencil, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import ProfileSharePopover from "@/components/profile/ProfileSharePopover";
+import ProfileOwnerActions from "@/components/profile/ProfileOwnerActions";
 import DisciplineChips from "@/components/profile/DisciplineChips";
 import { CommunityImageCropDialog } from "@/components/community/CommunityImageCropDialog";
 import { useUpdateProfileMedia } from "@/hooks/useProfile";
@@ -36,10 +36,12 @@ type Props = {
   onPreview?: () => void;
   onPost?: () => void;
   onBecomeCreator?: () => void;
-  onWallet?: () => void;
+  onStudio?: () => void;
   onSettings?: () => void;
   onFollowersClick?: () => void;
   onFollowingClick?: () => void;
+  /** Hide works/followers/following under the name (moved to sidebar). */
+  showFollowStats?: boolean;
   opportunityStatus?: string | null;
   opportunityTypes?: string[] | null;
   disciplines?: string[] | null;
@@ -74,10 +76,11 @@ export default function ProfileCoverHeader({
   onPreview,
   onPost,
   onBecomeCreator,
-  onWallet,
+  onStudio,
   onSettings,
   onFollowersClick,
   onFollowingClick,
+  showFollowStats = true,
   opportunityStatus,
   opportunityTypes,
   disciplines,
@@ -195,16 +198,16 @@ export default function ProfileCoverHeader({
             <button
               type="button"
               disabled={coverBusy}
+              title="แก้ไขภาพปก"
+              aria-label="แก้ไขภาพปก"
               className={cn(
-                "absolute bottom-3 right-3 md:bottom-4 md:right-4 z-10",
-                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium",
-                "bg-background/90 text-foreground shadow-md border border-border/60",
-                "hover:bg-background/95",
+                "absolute bottom-3 right-3 z-10 md:bottom-4 md:right-4",
+                "inline-flex h-9 w-9 items-center justify-center rounded-full",
+                "border border-border/60 bg-background/90 text-foreground shadow-md",
                 "hover:bg-background disabled:opacity-60",
               )}
             >
-              {coverBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-              แก้ไขภาพปก
+              {coverBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" side="top" className="w-48 p-1.5 rounded-xl">
@@ -264,14 +267,14 @@ export default function ProfileCoverHeader({
         />
       </div>
 
-      <div className="relative -mt-12 sm:-mt-14 md:-mt-16">
-        <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
-          <div className="relative shrink-0 group/avatar self-start">
+      <div className="relative -mt-12 md:mt-8">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
+          <div className="relative z-10 shrink-0 group/avatar self-start">
             <UserAvatar
               src={profile.avatar_url}
               name={profile.display_name}
               username={profile.username}
-              className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 ring-4 ring-background shadow-lg"
+              className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 ring-4 ring-background shadow-md"
               fallbackClassName="text-3xl md:text-4xl"
             />
             <button
@@ -303,7 +306,7 @@ export default function ProfileCoverHeader({
             />
           </div>
 
-          <div className="flex-1 min-w-0 pb-1 sm:pb-3 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+          <div className="flex-1 min-w-0 pb-1 sm:pb-3 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl font-medium text-foreground leading-tight flex items-center gap-1.5 min-w-0">
                 <span className="truncate">{profile.display_name || "ยังไม่ได้ตั้งชื่อ"}</span>
@@ -338,116 +341,52 @@ export default function ProfileCoverHeader({
                 </div>
               </div>
 
-              <div className="mt-3 flex items-center gap-4 text-sm">
-                <span>
-                  <strong className="text-foreground">{stats.works}</strong>{" "}
-                  <span className="text-muted-foreground">ผลงาน</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={onFollowersClick}
-                  className={cn(onFollowersClick && "hover:text-primary transition-colors")}
-                  disabled={!onFollowersClick}
-                >
-                  <strong className="text-foreground">{stats.followers}</strong>{" "}
-                  <span className="text-muted-foreground">ผู้ติดตาม</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={onFollowingClick}
-                  className={cn(onFollowingClick && "hover:text-primary transition-colors")}
-                  disabled={!onFollowingClick}
-                >
-                  <strong className="text-foreground">{stats.following}</strong>{" "}
-                  <span className="text-muted-foreground">ติดตาม</span>
-                </button>
-              </div>
+              {showFollowStats ? (
+                <div className="mt-3 flex items-center gap-4 text-sm">
+                  <span>
+                    <strong className="text-foreground">{stats.works}</strong>{" "}
+                    <span className="text-muted-foreground">ผลงาน</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={onFollowersClick}
+                    className={cn(onFollowersClick && "hover:text-primary transition-colors")}
+                    disabled={!onFollowersClick}
+                  >
+                    <strong className="text-foreground">{stats.followers}</strong>{" "}
+                    <span className="text-muted-foreground">ผู้ติดตาม</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onFollowingClick}
+                    className={cn(onFollowingClick && "hover:text-primary transition-colors")}
+                    disabled={!onFollowingClick}
+                  >
+                    <strong className="text-foreground">{stats.following}</strong>{" "}
+                    <span className="text-muted-foreground">ติดตาม</span>
+                  </button>
+                </div>
+              ) : null}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
-              {onBecomeCreator ? (
-                <Button
-                  type="button"
-                  onClick={onBecomeCreator}
-                  variant="gradient"
-                  className="rounded-full h-10 px-3.5 sm:px-4 shrink-0"
-                >
-                  <Rocket className="w-4 h-4" />
-                  Become a Creator
-                </Button>
-              ) : onWallet ? (
-                <Button
-                  type="button"
-                  onClick={onWallet}
-                  variant="gradient"
-                  className="rounded-full h-10 px-3.5 sm:px-4 shrink-0"
-                >
-                  <Wallet className="w-4 h-4" />
-                  กระเป๋าเงิน
-                </Button>
-              ) : null}
-              {onPost && (
-                <Button
-                  onClick={onPost}
-                  size="icon"
-                  variant="gradient"
-                  className="rounded-full shrink-0"
-                  title="โพสต์ชุมชน"
-                  aria-label="โพสต์ชุมชน"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              )}
-              {onPreview && (
-                <Button
-                  onClick={onPreview}
-                  variant="outline"
-                  size="icon"
-                  className="rounded-full shrink-0"
-                  title="ดูตัวอย่างก่อนแชร์ — ยังไม่ใช่ลิงก์ที่ส่งให้ลูกค้า"
-                  aria-label="พรีวิว"
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
-              )}
-              <ProfileSharePopover
-                url={shareUrl}
-                title={shareTitle}
-                message={shareMessage}
-                pathLabel={sharePathLabel}
-                imageUrl={
-                  coverUrl && coverUrl.startsWith("http")
-                    ? coverUrl
-                    : profile.avatar_url ?? undefined
-                }
-                align="end"
-                onShared={onShareInteract}
-              >
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="rounded-full shrink-0"
-                  title="แชร์ลิงก์พอร์ตโฟล์สาธารณะให้ลูกค้า"
-                  aria-label="แชร์พอร์ตโฟล์"
-                >
-                  <Share2 className="w-4 h-4" />
-                </Button>
-              </ProfileSharePopover>
-              {onSettings && (
-                <Button
-                  type="button"
-                  onClick={onSettings}
-                  variant="outline"
-                  size="icon"
-                  className="rounded-full shrink-0"
-                  title="ตั้งค่าโปรไฟล์"
-                  aria-label="ตั้งค่าโปรไฟล์"
-                >
-                  <Settings className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
+            <ProfileOwnerActions
+              className="hidden lg:flex lg:self-start"
+              onBecomeCreator={onBecomeCreator}
+              onStudio={onStudio}
+              onPost={onPost}
+              onPreview={onPreview}
+              onSettings={onSettings}
+              shareUrl={shareUrl}
+              shareTitle={shareTitle}
+              shareMessage={shareMessage}
+              sharePathLabel={sharePathLabel}
+              shareImageUrl={
+                coverUrl && coverUrl.startsWith("http")
+                  ? coverUrl
+                  : profile.avatar_url ?? undefined
+              }
+              onShareInteract={onShareInteract}
+            />
           </div>
         </div>
       </div>

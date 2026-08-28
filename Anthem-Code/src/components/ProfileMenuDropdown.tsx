@@ -3,19 +3,15 @@ import {
   User,
   LogOut,
   Settings,
-  Layers3,
   Wallet,
-  FolderKanban,
-  Sparkles,
+  MessageSquarePlus,
   MessagesSquare,
   Shield,
   BookOpen,
   ArrowLeft,
-  Briefcase,
-  Handshake,
   Rocket,
 } from "lucide-react";
-import CatalogIcon from "@/components/icons/CatalogIcon";
+import ManageWorkIcon from "@/components/icons/ManageWorkIcon";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { signOutApp } from "@/lib/signOutApp";
@@ -30,8 +26,12 @@ import { ThemeModePicker } from "@/components/settings/ThemeModePicker";
 import { FeedGridDensityPicker } from "@/components/feed/FeedGridDensityPicker";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useOpenFeedbackTicket } from "@/hooks/useOpenFeedbackTicket";
 import { useProfile } from "@/hooks/useProfile";
 import { cn } from "@/lib/utils";
+import { openBrandLineContact } from "@/lib/brandConfig";
+import LineMarkIcon from "@/components/icons/LineMarkIcon";
+import { toast } from "sonner";
 
 function preventClose(e: PointerEvent) {
   e.preventDefault();
@@ -50,6 +50,7 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
   const { data: isAdmin } = useIsAdmin();
+  const openFeedback = useOpenFeedbackTicket();
   const isVerified = !!(profile as { is_verified?: boolean } | null)?.is_verified;
 
   const go = (path: string) => {
@@ -74,26 +75,11 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
       </DropdownMenuItem>
       {variant !== "forum" ? (
         <>
-          <DropdownMenuItem onClick={() => go("/portfolio")} className="rounded-lg">
-            <FolderKanban className="w-4 h-4 mr-2" /> Works
-          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => go("/dashboard")} className="rounded-lg">
-            <Briefcase className="w-4 h-4 mr-2" /> คำขอจ้างงาน
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => go("/dashboard/collab")} className="rounded-lg">
-            <Handshake className="w-4 h-4 mr-2" /> คำขอคอลแลป
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => go("/portfolio?tab=catalog")} className="rounded-lg">
-            <CatalogIcon className="w-4 h-4 mr-2" /> Catalogs
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => go("/portfolio?tab=collections")} className="rounded-lg">
-            <Layers3 className="w-4 h-4 mr-2" /> Collections
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => go("/portfolio?tab=inspire")} className="rounded-lg">
-            <Sparkles className="w-4 h-4 mr-2" /> Inspiration
+            <ManageWorkIcon className="w-4 h-4 mr-2" /> My Studio
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => go("/earnings")} className="rounded-lg">
-            <Wallet className="w-4 h-4 mr-2 text-primary" /> กระเป๋า
+            <Wallet className="w-4 h-4 mr-2" /> My Wallet
           </DropdownMenuItem>
         </>
       ) : (
@@ -109,41 +95,59 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
           </DropdownMenuItem>
         </>
       )}
+      {variant !== "forum" && !isVerified ? (
+        <DropdownMenuItem onClick={() => go("/verify")} className="rounded-lg">
+          <Rocket className="w-4 h-4 mr-2" /> Become a Creator
+        </DropdownMenuItem>
+      ) : null}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        onClick={() => {
+          onNavigate?.();
+          openFeedback();
+        }}
+        className="rounded-lg"
+      >
+        <MessageSquarePlus className="w-4 h-4 mr-2" /> ส่งฟีดแบ็ก
+      </DropdownMenuItem>
+      {variant !== "forum" ? (
+        <DropdownMenuItem
+          onClick={() => {
+            window.open("/forum", "_blank", "noopener,noreferrer");
+            onNavigate?.();
+          }}
+          className="rounded-lg"
+        >
+          <MessagesSquare className="w-4 h-4 mr-2" /> Community
+        </DropdownMenuItem>
+      ) : null}
+      <DropdownMenuItem
+        onClick={() => {
+          onNavigate?.();
+          if (!openBrandLineContact()) {
+            toast.message("กำลังเปิดช่องทางไลน์เร็วๆ นี้");
+          }
+        }}
+        className="rounded-lg"
+      >
+        <LineMarkIcon className="w-4 h-4 mr-2" /> ติดต่อเรา Line
+      </DropdownMenuItem>
+      {variant === "forum" && isAdmin ? (
+        <DropdownMenuItem onClick={() => go("/forum/admin")} className="rounded-lg">
+          <Shield className="w-4 h-4 mr-2" /> แอดมินฟอรัม
+        </DropdownMenuItem>
+      ) : null}
       <DropdownMenuSeparator />
       <div className="px-2 py-1.5 space-y-1" onPointerDown={preventClose}>
         <ThemeModePicker label="Theme" />
         {variant !== "forum" ? <FeedGridDensityPicker label="Grid Feed" /> : null}
       </div>
       <DropdownMenuSeparator />
-      {variant !== "forum" ? (
-        <>
-          {!isVerified ? (
-            <DropdownMenuItem onClick={() => go("/verify")} className="rounded-lg">
-              <Rocket className="w-4 h-4 mr-2 text-primary" /> Become a Creator
-            </DropdownMenuItem>
-          ) : null}
-          <DropdownMenuItem
-            onClick={() => {
-              window.open("/forum", "_blank", "noopener,noreferrer");
-              onNavigate?.();
-            }}
-            className="rounded-lg"
-          >
-            <MessagesSquare className="w-4 h-4 mr-2" /> กระทู้ชุมชน
-          </DropdownMenuItem>
-        </>
-      ) : null}
       <DropdownMenuItem onClick={() => go("/settings")} className="rounded-lg">
-        <Settings className="w-4 h-4 mr-2" /> ตั้งค่า
+        <Settings className="w-4 h-4 mr-2" /> Setting
       </DropdownMenuItem>
-      {variant === "forum" && isAdmin ? (
-        <DropdownMenuItem onClick={() => go("/forum/admin")} className="rounded-lg">
-          <Shield className="w-4 h-4 mr-2 text-primary" /> แอดมินฟอรัม
-        </DropdownMenuItem>
-      ) : null}
-      <DropdownMenuSeparator />
       <DropdownMenuItem onClick={() => void signOut()} className="rounded-lg text-destructive focus:text-destructive">
-        <LogOut className="w-4 h-4 mr-2" /> ออกจากระบบ
+        <LogOut className="w-4 h-4 mr-2" /> Log Out
       </DropdownMenuItem>
     </>
   );

@@ -217,7 +217,7 @@ const AUTH_SHOTS = [
     height: 800,
     optional: true,
     beforeCapture: async (page) => {
-      await page.getByRole("heading", { name: "ข้อความ" }).waitFor({ state: "visible", timeout: 15_000 });
+      await page.getByRole("heading", { name: "Chat" }).waitFor({ state: "visible", timeout: 15_000 });
       const thread = page.locator("aside ul li button").first();
       if (await thread.isVisible().catch(() => false)) {
         await thread.click();

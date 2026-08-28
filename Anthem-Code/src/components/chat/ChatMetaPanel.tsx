@@ -20,6 +20,8 @@ import {
   normalizeStepProgressEntries,
   summarizeProgressEntries,
 } from "@/lib/collabToolkit";
+import { formatHireBudgetLabel, hireInviteDisplay } from "@/lib/hireBrief";
+import InboxRequestBrief from "@/components/inbox/InboxRequestBrief";
 import { cn } from "@/lib/utils";
 
 function formatPlanDate(value: string | null | undefined): string | null {
@@ -133,7 +135,7 @@ const ChatMetaPanel = ({
       if (isHire) {
         const { data } = await supabase
           .from("hiring_requests")
-          .select("budget, budget_amount, deadline, project_title, client_name, email, phone, message")
+          .select("budget, budget_amount, deadline, project_title, client_name, email, phone, message, job_type, attachment_urls")
           .eq("id", conversation.request_id)
           .maybeSingle();
         return { hire: data, collab: null };
@@ -171,21 +173,49 @@ const ChatMetaPanel = ({
         </div>
       )}
 
-      <div className="p-4 space-y-3 text-sm">
+      <div className="p-3 space-y-2.5 text-sm">
         {isHire && meta?.hire && (
           <>
-            <Row icon={<Coins className="w-4 h-4" />} label="งบประมาณ" value={meta.hire.budget_amount ? `฿${meta.hire.budget_amount.toLocaleString()}` : meta.hire.budget ?? "—"} />
-            <Row icon={<Calendar className="w-4 h-4" />} label="กำหนดส่ง" value={meta.hire.deadline ?? "ยังไม่ระบุ"} />
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">รายละเอียดงาน</p>
-              <p className="text-base leading-6 text-foreground whitespace-pre-wrap">{meta.hire.message ?? "—"}</p>
-            </div>
+            <Row
+              icon={<Coins className="w-3.5 h-3.5" />}
+              label="งบประมาณ"
+              value={
+                formatHireBudgetLabel({
+                  budget_amount: meta.hire.budget_amount,
+                  budget: meta.hire.budget,
+                }) ?? "—"
+              }
+            />
+            <Row icon={<Calendar className="w-3.5 h-3.5" />} label="กำหนดส่ง" value={meta.hire.deadline ?? "ยังไม่ระบุ"} />
+            {(() => {
+              const brief = hireInviteDisplay({
+                message: meta.hire.message,
+                job_type: (meta.hire as { job_type?: string | null }).job_type,
+                attachment_urls: (meta.hire as { attachment_urls?: string[] | null }).attachment_urls,
+              });
+              return (
+                <InboxRequestBrief
+                  className="mt-0"
+                  typeLabel={brief.jobTypesLabel}
+                  details={brief.details}
+                  links={brief.links}
+                  attachments={brief.attachments}
+                  clamp={false}
+                />
+              );
+            })()}
             <div className="pt-2 border-t border-border">
-              <p className="text-xs text-muted-foreground mb-1.5">ติดต่อลูกค้า</p>
-              <div className="space-y-1 text-sm">
+              <p className="text-[11px] text-muted-foreground mb-1">ติดต่อลูกค้า</p>
+              <div className="space-y-0.5 text-sm">
                 <div className="text-foreground">{meta.hire.client_name}</div>
-                <a href={`mailto:${meta.hire.email}`} className="block text-[hsl(var(--chat-hire))] hover:underline">{meta.hire.email}</a>
-                {meta.hire.phone && <a href={`tel:${meta.hire.phone}`} className="block text-[hsl(var(--chat-hire))] hover:underline">{meta.hire.phone}</a>}
+                <a href={`mailto:${meta.hire.email}`} className="block text-[hsl(var(--chat-hire))] hover:underline">
+                  {meta.hire.email}
+                </a>
+                {meta.hire.phone && (
+                  <a href={`tel:${meta.hire.phone}`} className="block text-[hsl(var(--chat-hire))] hover:underline">
+                    {meta.hire.phone}
+                  </a>
+                )}
               </div>
             </div>
           </>

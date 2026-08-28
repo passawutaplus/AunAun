@@ -14,10 +14,12 @@ type Props = {
   message: string;
   pathLabel: string;
   imageUrl?: string;
-  children: ReactNode;
+  children?: ReactNode;
   /** Kept for callers; dialog is centered so alignment is unused. */
   align?: "start" | "center" | "end";
   onShared?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 const ProfileSharePopover = ({
@@ -28,8 +30,15 @@ const ProfileSharePopover = ({
   imageUrl,
   children,
   onShared,
+  open: openProp,
+  onOpenChange,
 }: Props) => {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = openProp ?? uncontrolledOpen;
+  const setOpen = (next: boolean) => {
+    if (openProp === undefined) setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  };
   const displayPath = pathLabel.startsWith("/") ? pathLabel : `/${pathLabel}`;
 
   const handleOpenPublic = () => {
@@ -40,7 +49,7 @@ const ProfileSharePopover = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children ? <DialogTrigger asChild>{children}</DialogTrigger> : null}
       <DialogContent
         overlayClassName="bg-black/50"
         className="max-w-[min(28rem,calc(100vw-1.5rem))] gap-0 overflow-hidden rounded-2xl p-0 sm:rounded-2xl"

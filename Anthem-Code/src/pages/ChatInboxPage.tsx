@@ -9,6 +9,7 @@ import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatThreadView from "@/components/chat/ChatThreadView";
 import ChatPartnerPanel from "@/components/chat/ChatPartnerPanel";
 import { ChatErrorBoundary } from "@/components/chat/ChatErrorBoundary";
+import { ChatInboxTopBar } from "@/components/chat/ChatInboxTopBar";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -166,10 +167,11 @@ const ChatInboxPage = () => {
   );
 
   return (
-    <main id="main-content" className="h-[100dvh] bg-background overflow-hidden">
+    <main id="main-content" className="flex h-[100dvh] flex-col overflow-hidden bg-background">
+      <ChatInboxTopBar />
       <div
         className={cn(
-          "h-full md:grid",
+          "flex min-h-0 flex-1 flex-col md:grid",
           "transition-[grid-template-columns] duration-[350ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
           partnerPanelOpen
             ? "md:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)]"
@@ -178,9 +180,9 @@ const ChatInboxPage = () => {
       >
         <div
           className={cn(
-            "h-full min-h-0",
-            showSidebarMobile ? "flex flex-col" : "hidden",
-            "md:flex md:flex-col",
+            "h-full min-h-0 min-w-0 flex-1 flex-col",
+            showSidebarMobile ? "flex" : "hidden",
+            "md:flex",
           )}
         >
           <ChatSidebar
@@ -195,9 +197,9 @@ const ChatInboxPage = () => {
 
         <div
           className={cn(
-            "h-full min-h-0 min-w-0 border-border md:border-x",
-            showThreadMobile ? "flex flex-col" : "hidden",
-            "md:flex md:flex-col",
+            "h-full min-h-0 min-w-0 flex-1 flex-col border-border md:border-x",
+            showThreadMobile ? "flex" : "hidden",
+            "md:flex",
           )}
         >
           <ChatErrorBoundary onBack={clearConversation}>{threadContent}</ChatErrorBoundary>
@@ -246,7 +248,7 @@ const ChatInboxPage = () => {
               key="chat-partner-backdrop"
               type="button"
               aria-label="ปิดข้อมูลคู่แชท"
-              className="md:hidden fixed inset-0 z-40 bg-background/75 backdrop-blur-sm"
+              className="md:hidden fixed inset-x-0 top-14 bottom-0 z-40 bg-background/75 backdrop-blur-sm"
               initial={reducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -255,7 +257,7 @@ const ChatInboxPage = () => {
             />
             <motion.div
               key="chat-partner-panel"
-              className="md:hidden fixed right-0 top-0 bottom-0 z-50 w-[92%] max-w-sm bg-background shadow-xl"
+              className="md:hidden fixed right-0 top-14 bottom-0 z-50 w-[92%] max-w-sm bg-background shadow-xl"
               initial={reducedMotion ? false : { x: "100%" }}
               animate={{ x: 0 }}
               exit={reducedMotion ? { opacity: 0 } : { x: "100%" }}

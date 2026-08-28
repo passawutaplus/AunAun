@@ -185,7 +185,7 @@ const PublicProfilePage = () => {
   const visitorPreview = isSelf && params.get("preview") === "1";
   const showAsVisitor = !isSelf || visitorPreview;
 
-  const { followers, following } = useFollowState(resolvedUserId);
+  const { followers } = useFollowState(resolvedUserId);
   const { data: blockedSet } = useUserBlocks(user?.id);
   const unblockUser = useUnblockUser();
   const iBlockedThem = !!(resolvedUserId && blockedSet?.has(resolvedUserId));
@@ -231,11 +231,6 @@ const PublicProfilePage = () => {
   const orderedProjects = useMemo(
     () => sortPortfolioProjects(projects as Parameters<typeof sortPortfolioProjects>[0]),
     [projects],
-  );
-
-  const totalLikes = useMemo(
-    () => orderedProjects.reduce((sum, p) => sum + ((p as { likes?: number }).likes ?? 0), 0),
-    [orderedProjects],
   );
 
   const portfolioProjects = useMemo(
@@ -458,12 +453,11 @@ const PublicProfilePage = () => {
     { name: displayName, path: profilePath },
   ];
 
+  const totalViews = projects.reduce((s: number, p: { views?: number }) => s + (p.views ?? 0), 0);
   const statItems = [
-    { label: "ผลงาน", value: projects.length },
-    { label: "ยอดดูรวม", value: projects.reduce((s: number, p: { views?: number }) => s + (p.views ?? 0), 0) },
-    { label: "ถูกใจรวม", value: totalLikes },
-    { label: "ผู้ติดตาม", value: followers, href: `/u/${resolvedUserId}/followers` },
-    { label: "กำลังติดตาม", value: following, href: `/u/${resolvedUserId}/followers?tab=following` },
+    { key: "works", label: "ผลงาน", value: projects.length },
+    { key: "views", label: "ยอดดู", value: totalViews },
+    { key: "followers", label: "ผู้ติดตาม", value: followers, href: `/u/${resolvedUserId}/followers` },
   ];
 
   return (
@@ -681,27 +675,40 @@ const PublicProfilePage = () => {
                 />
               )}
 
-              <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-3 sm:mt-4 sm:flex sm:flex-wrap sm:gap-3">
-                {statItems.map((s) => {
-                  const chip = (
-                    <div className="glass-chip rounded-xl sm:rounded-2xl px-2 py-2 sm:px-4 sm:py-2 w-full text-center sm:text-left">
-                      <div className="font-semibold text-foreground leading-tight text-base tabular-nums">{s.value}</div>
-                      <div className="text-xs text-muted-foreground leading-tight mt-0.5">{s.label}</div>
-                    </div>
+              <div className="mt-3 flex items-stretch sm:mt-4">
+                {statItems.map((s, i) => {
+                  const body = (
+                    <>
+                      <span className="text-base font-semibold tabular-nums leading-tight text-foreground">
+                        {s.value}
+                      </span>
+                      <span className="text-center text-[11px] leading-tight text-muted-foreground sm:text-xs">
+                        {s.label}
+                      </span>
+                    </>
+                  );
+                  const itemClass = cn(
+                    "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1.5 py-1 sm:px-3",
+                    i > 0 && "border-l border-border/70",
                   );
                   if (s.href) {
                     return (
                       <button
-                        key={s.label}
+                        key={s.key}
                         type="button"
-                        onClick={() => navigate(s.href!)}
-                        className="text-left hover:border-primary/30 transition-colors rounded-xl sm:rounded-2xl"
+                        onClick={() => navigate(s.href)}
+                        className={cn(itemClass, "hover:text-primary transition-colors")}
+                        aria-label={`${s.label} ${s.value}`}
                       >
-                        {chip}
+                        {body}
                       </button>
                     );
                   }
-                  return <div key={s.label}>{chip}</div>;
+                  return (
+                    <div key={s.key} className={itemClass} title={s.label} aria-label={`${s.label} ${s.value}`}>
+                      {body}
+                    </div>
+                  );
                 })}
               </div>
 
@@ -789,7 +796,7 @@ const PublicProfilePage = () => {
           value={activeTab}
           onValueChange={setProfileTab}
           tabs={[
-            { value: "works", label: `Works (${portfolioProjects.length})` },
+            { value: "works", label: `Project (${portfolioProjects.length})` },
             { value: "series", label: `Catalog (${seriesList.length})` },
             { value: "services", label: `Packages (${servicesTabCount})` },
             { value: "about", label: "About" },

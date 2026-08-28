@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isBenignQueryError } from "@/lib/supabaseErrors";
 import type { PortfolioOverviewTimestamps } from "@/lib/portfolioOverviewSeries";
@@ -12,14 +12,6 @@ export type PortfolioOverviewPayload = {
     collabs: number;
     works: number;
   };
-};
-
-const EMPTY_TIMESTAMPS: PortfolioOverviewTimestamps = {
-  views: [],
-  followers: [],
-  hires: [],
-  collabs: [],
-  works: [],
 };
 
 function swallowRows<T>(res: { data: T | null; error: unknown }): T {
@@ -147,9 +139,6 @@ export function usePortfolioOverviewSeries(
     enabled: enabled && !!ownerId && !!fromIso && !!toIso,
     staleTime: 30_000,
     queryFn: () => fetchPortfolioOverviewPayload(ownerId!, projectIds, fromIso!, toIso!),
-    placeholderData: {
-      current: EMPTY_TIMESTAMPS,
-      previousTotals: { views: 0, followers: 0, hires: 0, collabs: 0, works: 0 },
-    },
+    placeholderData: keepPreviousData,
   });
 }

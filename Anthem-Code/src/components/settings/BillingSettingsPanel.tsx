@@ -56,7 +56,7 @@ export default function BillingSettingsPanel({ userId, profile, onSaved }: Props
           >
             <span className="inline-flex items-center gap-2">
               <Wallet className="w-4 h-4 text-primary" />
-              กระเป๋า & รายได้
+              ธุรกรรม & รายได้
             </span>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </Link>

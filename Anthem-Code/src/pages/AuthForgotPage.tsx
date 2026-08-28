@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { buildResetPasswordUrl } from "@/lib/oauthRedirect";
 import { toast } from "sonner";
 import { readLoginEmailPrefill } from "@/lib/loginEmailPrefill";
+import { SETTINGS_PIN_RECOVER_HREF } from "@/lib/settingsNav";
 
 const AuthForgotPage = () => {
   const [email, setEmail] = useState("");
@@ -61,7 +62,7 @@ const AuthForgotPage = () => {
             ลืมรหัสผ่าน
           </h1>
           <p className="text-sm text-muted-foreground mb-6 thai-body text-center">
-            เราจะส่งลิงก์ตั้งรหัสผ่านใหม่ไปทางอีเมล
+            เราจะส่งลิงก์ไปทางอีเมล จากนั้นใส่รหัสผ่านเดิมเพื่อยืนยันว่าเป็นเจ้าของบัญชี
           </p>
 
           <div className="rounded-2xl glass-panel-strong p-6 sm:p-7">
@@ -104,6 +105,12 @@ const AuthForgotPage = () => {
                   {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   ส่งลิงก์รีเซ็ตรหัสผ่าน
                 </Button>
+                <p className="text-center text-xs text-muted-foreground">
+                  ลืม PIN ถอนเงินใช้คนละทาง —{" "}
+                  <Link to={SETTINGS_PIN_RECOVER_HREF} className="text-primary hover:underline">
+                    เข้าสู่ระบบแล้วกู้ PIN ที่ตั้งค่าบัญชี
+                  </Link>
+                </p>
               </form>
             )}
           </div>

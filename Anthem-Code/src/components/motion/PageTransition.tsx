@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { pageEnterTransition, pageEnterVariants } from "@/lib/motion";
@@ -22,6 +23,11 @@ export default function PageTransition() {
   const { pathname } = useLocation();
   const reduced = useReducedMotion();
   const key = pageTransitionKey(pathname);
+  const skipFirstEnter = useRef(true);
+
+  useEffect(() => {
+    skipFirstEnter.current = false;
+  }, []);
 
   if (reduced || key === null) {
     return <Outlet />;
@@ -30,7 +36,7 @@ export default function PageTransition() {
   return (
     <motion.div
       key={key}
-      initial="initial"
+      initial={skipFirstEnter.current ? false : "initial"}
       animate="animate"
       variants={pageEnterVariants}
       transition={pageEnterTransition}

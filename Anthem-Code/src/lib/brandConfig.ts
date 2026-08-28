@@ -50,9 +50,23 @@ export const BRAND_COMPANY = "Aplus1 Platform";
 export const BRAND_SUPPORT_EMAIL = "support@aplus1.app";
 export const BRAND_PRIVACY_EMAIL = "privacy@aplus1.app";
 
+/**
+ * Official LINE contact (OA / lin.ee).
+ * Empty until the account is ready — menu still shows, click explains it's coming.
+ */
+export const BRAND_LINE_CONTACT_URL = "";
+
+/** Opens LINE OA in a new tab. Returns false when the URL is not set yet. */
+export function openBrandLineContact(): boolean {
+  const url = BRAND_LINE_CONTACT_URL.trim();
+  if (!url) return false;
+  window.open(url, "_blank", "noopener,noreferrer");
+  return true;
+}
+
 /** คีย์ภายใน (คงเดิมเพื่อไม่รีเซ็ต localStorage / session ของผู้ใช้เดิม) */
 export const BRAND_STORAGE_THEME = "an1hem-theme";
-export const BRAND_STORAGE_FEED_GRID = "an1hem-feed-grid-density";
+export const BRAND_STORAGE_FEED_GRID = "an1hem-feed-grid-density-v2";
 export const BRAND_STORAGE_FEED_AREA = "an1hem-feed-area-layout";
 export const BRAND_STORAGE_FEED_GRID_MOBILE = "an1hem-feed-grid-mobile";
 export const BRAND_STORAGE_FEED_AREA_MOBILE = "an1hem-feed-area-mobile";

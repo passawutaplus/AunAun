@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { SignOutNavItem } from "@/components/SignOutNavItem";
 import { cn } from "@/lib/utils";
 import {
   buildSettingsNavGroups,
@@ -13,6 +14,9 @@ type Props = {
   onSelect: (panel: SettingsPanelId) => void;
   isAdmin?: boolean;
   className?: string;
+  /** Close a mobile sheet after picking a panel. */
+  onNavigate?: () => void;
+  variant?: "panel" | "plain";
 };
 
 /** Grouped settings nav — click switches the active panel (no page scroll). */
@@ -21,60 +25,49 @@ export default function SettingsSideNav({
   onSelect,
   isAdmin,
   className,
+  onNavigate,
+  variant = "panel",
 }: Props) {
   const groups = useMemo(() => buildSettingsNavGroups(isAdmin), [isAdmin]);
-  const flatItems = useMemo(() => groups.flatMap((g) => g.items), [groups]);
+
+  const pick = (id: SettingsPanelId) => {
+    onSelect(id);
+    onNavigate?.();
+  };
 
   return (
-    <>
-      <nav
-        aria-label="เมนูตั้งค่า"
-        className={cn("lg:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide", className)}
-      >
-        <div className="flex gap-1.5 min-w-max pb-1">
-          {flatItems.map((item) => {
-            const active = activePanel === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onSelect(item.id)}
-                className={cn(
-                  "rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors border",
-                  active
-                    ? "border-primary/40 bg-primary/15 text-primary"
-                    : "border-border/60 bg-secondary/60 text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-
-      <nav
-        aria-label="เมนูตั้งค่า"
+    <nav
+      aria-label="เมนูตั้งค่า"
+      className={cn(
+        variant === "panel" && "hidden lg:block sticky top-20 self-start w-52 xl:w-56 shrink-0",
+        className,
+      )}
+    >
+      <div
         className={cn(
-          "hidden lg:block sticky top-20 self-start w-52 xl:w-56 shrink-0",
-          className,
+          "py-1",
+          variant === "panel" && "overflow-hidden rounded-2xl glass-panel",
         )}
       >
-        <div className="rounded-2xl glass-panel overflow-hidden py-1">
-          {groups.map((group, index) => (
-            <NavGroup
-              key={group.id}
-              group={group}
-              activePanel={activePanel}
-              onSelect={onSelect}
-              showDivider={index > 0}
-            />
-          ))}
+        {groups.map((group, index) => (
+          <NavGroup
+            key={group.id}
+            group={group}
+            activePanel={activePanel}
+            onSelect={pick}
+            showDivider={index > 0}
+          />
+        ))}
+        <div className="border-t border-border/70">
+          <SignOutNavItem onSignedOut={onNavigate} />
         </div>
-      </nav>
-    </>
+      </div>
+    </nav>
   );
 }
+
+const itemBase =
+  "relative block w-full text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset";
 
 function NavGroup({
   group,
@@ -87,11 +80,13 @@ function NavGroup({
   onSelect: (panel: SettingsPanelId) => void;
   showDivider?: boolean;
 }) {
+  const Icon = group.icon;
   return (
     <div className={cn(showDivider && "border-t border-border/70")}>
-      <p className="px-3.5 pt-3 pb-1.5 text-[11px] font-bold uppercase tracking-wide text-foreground/70">
-        {group.label}
-      </p>
+      <div className="flex items-center gap-2 px-3.5 pb-1 pt-3">
+        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+        <p className="text-sm font-medium text-foreground">{group.label}</p>
+      </div>
       <ul className="flex flex-col pb-1.5">
         {group.items.map((item) => {
           const active = activePanel === item.id;
@@ -101,10 +96,11 @@ function NavGroup({
                 type="button"
                 onClick={() => onSelect(item.id)}
                 className={cn(
-                  "relative w-full text-left px-3.5 py-2.5 text-sm transition-colors",
+                  itemBase,
+                  "py-2.5 pl-9 pr-3.5",
                   active
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
+                    ? "bg-primary/10 font-medium text-primary"
+                    : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
                 )}
               >
                 {active ? (

@@ -90,7 +90,7 @@ export default function DashboardHireDocumentsPanel({ userId }: Props) {
         <div>
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <FileText className="h-4 w-4 text-primary" />
-            เอกสารจ้างงาน
+            เอกสารออกให้
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             ใบเสนอราคา ใบแจ้งหนี้ ใบเสร็จ ค่าธรรมเนียม และหนังสือรับรองหัก ณ ที่จ่าย (50 ทวิ) —

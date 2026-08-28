@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import {
@@ -7,9 +6,11 @@ import {
   Check,
   Copy,
   Download,
-  ExternalLink,
   FileText,
   Package,
+  Receipt,
+  Users,
+  type LucideIcon,
 } from "lucide-react";
 import {
   Dialog,
@@ -36,10 +37,14 @@ import {
   type HireDocumentRow,
   type HireOrderRow,
 } from "@/hooks/useHireOrderFlow";
-import type { Conversation } from "@/hooks/useChat";
+import {
+  isGroupConversation,
+  type Conversation,
+} from "@/hooks/useChat";
+import { profilesPublicFrom } from "@/lib/profileAccess";
 import type { HireOrderStatus } from "@/lib/payments/types";
 import { SafeHttpLinks } from "@/components/hire/SafeHttpLinks";
-import { docKindLabelTh } from "@/lib/documents/numbering";
+import { docKindLabelTh, displayOrderCode, orderCodeFromMetadata } from "@/lib/documents/numbering";
 import { buildHireAccountingMockup } from "@/lib/documents/hireAccountingMockup";
 import { formatOfferAmount, parseChatOffer, type ChatOfferPayload } from "@/lib/chatOffer";
 import { parseHirePaidMessage, parseLegacyHirePaidText } from "@/lib/hirePaymentChat";
@@ -55,6 +60,8 @@ type Partner = {
   avatarUrl?: string | null;
   role?: string | null;
 };
+
+type Workmate = Partner & { id: string };
 
 type Props = {
   open: boolean;
@@ -96,9 +103,14 @@ const DOC_ORDER: HireDocumentRow["kind"][] = [
   "platform_fee_receipt",
 ];
 
-function orderCodeFromId(id: string | null | undefined): string {
-  if (!id) return "—";
-  return id.replace(/-/g, "").slice(0, 8).toUpperCase();
+function orderCodeFromRow(
+  order: HireOrderRow | null | undefined,
+  fallbackId?: string | null,
+): string {
+  return displayOrderCode(
+    order?.id || fallbackId,
+    orderCodeFromMetadata(order?.metadata),
+  );
 }
 
 function paymentStatusLabel(order: HireOrderRow | null | undefined): {
@@ -151,6 +163,31 @@ function DetailRow({
       <span className="text-sm font-medium text-right min-w-0">{children}</span>
     </div>
   );
+}
+
+export function HireSectionHeading({
+  icon: Icon,
+  children,
+  extra,
+}: {
+  icon: LucideIcon;
+  children: React.ReactNode;
+  extra?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-1 flex items-center justify-between gap-2">
+      <h3 className="flex items-center gap-1.5 text-sm font-semibold">
+        <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        {children}
+      </h3>
+      {extra}
+    </div>
+  );
+}
+
+/** Bright orange rule between hire-request popup sections. */
+export function HireSectionRule() {
+  return <div className="h-0.5 w-full bg-primary-bright" role="presentation" />;
 }
 
 /** Order tracking sections — reused by the dialog and the chat meta panel. */
@@ -255,37 +292,76 @@ export function HireOrderDetailContent({
     partner?.name,
   ]);
 
-  const { data: sourceProject } = useQuery({
-    queryKey: ["hire-source-project", conversation.request_id],
-    enabled: !!conversation.request_id,
+  const { data: convMeta } = useQuery({
+    queryKey: ["hire-detail-conv-meta", conversation.id],
+    enabled: showPartner && !!conversation.id,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("hiring_requests")
-        .select("project_id, project_title")
-        .eq("id", conversation.request_id!)
+      const { data, error } = await supabase
+        .from("conversations")
+        .select("id, conversation_type, kind")
+        .eq("id", conversation.id)
         .maybeSingle();
-      if (!data?.project_id) {
-        return {
-          id: null as string | null,
-          title: (data?.project_title as string | null) ?? null,
-        };
-      }
-      const { data: proj } = await supabase
-        .from("projects")
-        .select("id, title, cover_url")
-        .eq("id", data.project_id as string)
-        .maybeSingle();
-      return {
-        id: (proj?.id as string) ?? (data.project_id as string),
-        title: (proj?.title as string) ?? (data.project_title as string) ?? null,
-        cover: (proj as { cover_url?: string | null } | null)?.cover_url ?? null,
-      };
+      if (error) throw error;
+      return data;
     },
   });
 
+  const isGroup = Boolean(
+    (convMeta &&
+      isGroupConversation({
+        ...conversation,
+        conversation_type: convMeta.conversation_type,
+        kind: (convMeta.kind as Conversation["kind"]) ?? conversation.kind,
+      })) ||
+      isGroupConversation(conversation),
+  );
+
+  const { data: groupWorkmates = [] } = useQuery({
+    queryKey: ["hire-detail-group-members", conversation.id],
+    enabled: showPartner && isGroup && !!conversation.id,
+    queryFn: async (): Promise<Workmate[]> => {
+      const { data: rows, error } = await supabase
+        .from("conversation_members")
+        .select("user_id")
+        .eq("conversation_id", conversation.id);
+      if (error) throw error;
+      const ids = Array.from(
+        new Set((rows ?? []).map((r) => r.user_id as string).filter(Boolean)),
+      );
+      if (ids.length === 0) return [];
+      const { data: profiles } = await profilesPublicFrom()
+        .select("user_id, display_name, username, avatar_url")
+        .in("user_id", ids);
+      const byId = new Map((profiles ?? []).map((p) => [p.user_id as string, p]));
+      return ids.map((id) => {
+        const p = byId.get(id);
+        return {
+          id,
+          name: id === user?.id ? "คุณ" : p?.display_name || p?.username || "ผู้ใช้",
+          avatarUrl: p?.avatar_url ?? null,
+        };
+      });
+    },
+  });
+
+  const workmates: Workmate[] =
+    isGroup && groupWorkmates.length > 0
+      ? groupWorkmates
+      : partner?.name
+        ? [
+            {
+              id: "partner",
+              name: partner.name,
+              avatarUrl: partner.avatarUrl,
+              role: partner.role,
+            },
+          ]
+        : [];
+
   const orderCode =
+    orderCodeFromMetadata(activeOrder?.metadata) ||
     accountingMock?.payment.orderCode ||
-    orderCodeFromId(activeOrder?.id || conversation.request_id);
+    displayOrderCode(activeOrder?.id || conversation.request_id);
   const livePay = paymentStatusLabel(activeOrder);
   const pay = accountingMock
     ? {
@@ -371,14 +447,18 @@ export function HireOrderDetailContent({
     <>
       <div className="space-y-4">
         <section className="space-y-0.5">
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <h3 className="text-sm font-semibold">รายละเอียดออเดอร์</h3>
-            {accountingMock ? (
-              <Badge variant="outline" className="text-[10px] font-normal text-amber-700 dark:text-amber-400 border-amber-500/40">
-                เอกสารตัวอย่าง
-              </Badge>
-            ) : null}
-          </div>
+          <HireSectionHeading
+            icon={Receipt}
+            extra={
+              accountingMock ? (
+                <Badge variant="outline" className="text-[10px] font-normal text-amber-700 dark:text-amber-400 border-amber-500/40">
+                  เอกสารตัวอย่าง
+                </Badge>
+              ) : null
+            }
+          >
+            รายละเอียดออเดอร์
+          </HireSectionHeading>
           <div className="divide-y divide-border/60">
             <DetailRow label="สถานะ">
               <Badge variant="secondary" className="text-[10px] font-normal">
@@ -467,37 +547,6 @@ export function HireOrderDetailContent({
           </div>
         </section>
 
-        {sourceProject?.title || sourceProject?.id ? (
-          <section className="space-y-1">
-            <h3 className="text-sm font-semibold mb-1">มาจากผลงาน</h3>
-            {sourceProject.id ? (
-              <Link
-                to={`/project/${sourceProject.id}`}
-                className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-2.5 hover:bg-muted/50 transition-colors"
-              >
-                {sourceProject.cover ? (
-                  <img
-                    src={sourceProject.cover}
-                    alt=""
-                    className="w-12 h-12 rounded-lg object-cover shrink-0"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <FileText className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{sourceProject.title || "ผลงาน"}</p>
-                  <p className="text-[11px] text-muted-foreground">กดจ้างจากผลงานนี้</p>
-                </div>
-                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              </Link>
-            ) : (
-              <p className="text-sm text-muted-foreground">{sourceProject.title}</p>
-            )}
-          </section>
-        ) : null}
-
         {timelineOffer &&
         (timelineOffer.showFullTimeline !== false ||
           timelineOffer.endDate ||
@@ -535,15 +584,20 @@ export function HireOrderDetailContent({
           </div>
         ) : null}
 
-        <section className="space-y-1">
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <h3 className="text-sm font-semibold">เอกสาร</h3>
-            {accountingMock && activeDocs.length === 0 ? (
-              <span className="text-[10px] text-amber-700 dark:text-amber-400">
-                ชุดบัญชีตัวอย่าง
-              </span>
-            ) : null}
-          </div>
+        <section className="space-y-3">
+          <HireSectionRule />
+          <HireSectionHeading
+            icon={FileText}
+            extra={
+              accountingMock && activeDocs.length === 0 ? (
+                <span className="text-[10px] text-amber-700 dark:text-amber-400">
+                  ชุดบัญชีตัวอย่าง
+                </span>
+              ) : null
+            }
+          >
+            เอกสาร
+          </HireSectionHeading>
           {sortedDocs.length > 0 ? (
             <ul>
               {sortedDocs.map((doc) => {
@@ -602,7 +656,7 @@ export function HireOrderDetailContent({
             <h3 className="text-sm font-semibold mb-1">ประวัติออเดอร์ในแชทนี้</h3>
             <ul className="space-y-1">
               {orders.map((o) => {
-                const code = orderCodeFromId(o.id);
+                const code = orderCodeFromRow(o);
                 const active = (selectedHistoryId || order?.id) === o.id;
                 return (
                   <li key={o.id}>
@@ -628,21 +682,28 @@ export function HireOrderDetailContent({
           </section>
         ) : null}
 
-        {showPartner && partner?.name ? (
-          <section className="space-y-1">
-            <h3 className="text-sm font-semibold mb-1">กำลังทำงานกับ</h3>
-            <div className="flex items-center gap-3">
-              <UserAvatar
-                src={partner.avatarUrl}
-                name={partner.name}
-                className="w-10 h-10 shrink-0"
-              />
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{partner.name}</p>
-                {partner.role ? (
-                  <p className="text-xs text-muted-foreground truncate">{partner.role}</p>
-                ) : null}
-              </div>
+        {showPartner && workmates.length > 0 ? (
+          <section className="space-y-3">
+            <HireSectionRule />
+            <div className="space-y-2 rounded-xl bg-muted p-3">
+              <HireSectionHeading icon={Users}>กำลังทำงานกับ</HireSectionHeading>
+              <ul className="space-y-2">
+                {workmates.map((mate) => (
+                  <li key={mate.id} className="flex items-center gap-3">
+                    <UserAvatar
+                      src={mate.avatarUrl}
+                      name={mate.name}
+                      className="w-10 h-10 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{mate.name}</p>
+                      {mate.role ? (
+                        <p className="text-xs text-muted-foreground truncate">{mate.role}</p>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           </section>
         ) : null}
@@ -723,7 +784,7 @@ export default function HireOrderDetailDialog({
   onCancelOrder,
 }: Props) {
   const { data: order } = useHireOrderById(orderId ?? undefined);
-  const code = orderCodeFromId(order?.id || orderId || conversation.request_id);
+  const code = orderCodeFromRow(order, orderId || conversation.request_id);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

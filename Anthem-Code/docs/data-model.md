@@ -54,8 +54,11 @@ profiles (1) ─< wallets (1) ─< wallet_topups / cashout_requests (N)
   - คอลัมน์: `target_type`, `target_id`, `target_owner_id`, `reporter_id`, `reason`, `details`, `evidence_url`, `evidence_files` (jsonb: `[{url,type,name,size}]`), `status` (`open|reviewing|resolved|dismissed`), `admin_note`, `resolved_by`, `resolved_at`
   - Index: `idx_user_reports_status_created`, unique partial เพื่อกัน report ซ้ำที่ยังเปิดอยู่ของคู่ reporter+target
   - RLS: เจ้าของอ่านของตัวเอง / admin อ่าน-เขียนทั้งหมด
-- **`app_feedback`** — ฟีดแบ็กให้คะแนน 1-5 ดาว + ข้อความ + ฟีเจอร์ + `project_id`
-  - คอลัมน์: `user_id`, `rating`, `message`, `feature`, `project_id`, `status`, `admin_note`, `resolved_by`, `resolved_at`
+- **`app_feedback`** — ตั๋วฟีดแบ็ก Aplus1 + คะแนน 1-5 (ถ้ามี)
+  - คอลัมน์: `user_id`, `rating` (nullable), `message`, `feature`, `project_id`, `kind` (`bug|idea|error`), `ticket_number` (`AP-xxxx`), `screenshot_path` (private `feedback-screenshots:{path}`), `status`, `admin_note`, `resolved_by`, `resolved_at`
+  - ส่งผ่าน RPC `submit_feedback` (รองรับ `_kind`, `_screenshot_path`)
+  - Rate limit: 1/1min, 10/1hr
 - **Storage bucket `report-evidence`** (private): ผู้ใช้อัปโหลดเข้า path ของตัวเอง, อ่านได้เฉพาะเจ้าของ + admin
+- **Storage bucket `feedback-screenshots`** (private): ภาพแคปจากตั๋วฟีดแบ็ก path `{user_id}/{uuid}.webp`
 - **Rate limit RPCs**: `create_report` (5/10min ต่อ user, 1/1hr ต่อ target), `submit_feedback` (1/1min, 10/1hr)
 - ทั้งสองตารางอยู่ใน `supabase_realtime` publication เพื่อให้แอดมินเห็น real-time

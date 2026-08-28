@@ -173,17 +173,13 @@ const FloatingNav = () => {
                   type="button"
                   aria-label="Profile"
                   aria-haspopup="menu"
-                  className={cn(
-                    "flex items-center justify-center rounded-full transition-colors h-11 w-11 min-h-11",
-                    PROFILE_MATCH(pathname)
-                      ? "bg-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent",
-                  )}
+                  aria-current={PROFILE_MATCH(pathname) ? "page" : undefined}
+                  className="flex h-11 w-11 min-h-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
                   <UserAvatar
                     src={myProfile?.avatar_url}
                     name={myProfile?.display_name ?? user.email ?? "U"}
-                    className="h-7 w-7 shrink-0 ring-2 ring-background"
+                    className="h-7 w-7 shrink-0"
                     fallbackClassName="text-xs"
                   />
                 </button>

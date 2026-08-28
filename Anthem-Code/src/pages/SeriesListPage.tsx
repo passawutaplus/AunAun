@@ -4,7 +4,7 @@ import PageLoader from "@/components/ui/PageLoader";
 import { useAuth } from "@/hooks/useAuth";
 
 /**
- * Legacy /series manage — My Catalog now lives on /portfolio?tab=catalog
+ * Legacy /series manage — My Catalog now lives in My Studio.
  * Public series detail remains at /series/:id
  */
 export default function SeriesListPage() {
@@ -13,15 +13,13 @@ export default function SeriesListPage() {
   const [params] = useSearchParams();
 
   useEffect(() => {
-    if (!loading && !user) navigate("/auth?redirect=/portfolio?tab=catalog");
+    if (!loading && !user) navigate("/auth?redirect=/dashboard/catalogs");
   }, [loading, user, navigate]);
 
   if (loading) return <PageLoader />;
-  if (!user) return <Navigate to="/auth?redirect=/portfolio?tab=catalog" replace />;
+  if (!user) return <Navigate to="/auth?redirect=/dashboard/catalogs" replace />;
 
-  const next = new URLSearchParams();
-  next.set("tab", "catalog");
   const s = params.get("s");
-  if (s) next.set("s", s);
-  return <Navigate to={`/portfolio?${next.toString()}`} replace />;
+  const to = s ? `/dashboard/catalogs?s=${encodeURIComponent(s)}` : "/dashboard/catalogs";
+  return <Navigate to={to} replace />;
 }

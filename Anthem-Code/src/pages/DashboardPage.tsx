@@ -1,24 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, Handshake, Loader2, Settings } from "lucide-react";
-import { BackButton } from "@/components/ui/BackButton";
-import { Button } from "@/components/ui/button";
+import { Briefcase, Handshake, Loader2 } from "lucide-react";
 import StatsCard from "@/components/StatsCard";
 import SeoHead from "@/components/SeoHead";
 import { useAuth } from "@/hooks/useAuth";
 import { useHiringRequests, type HiringRow } from "@/hooks/useHiringRequests";
 import { useReceivedCollabRequests } from "@/hooks/useCollabRequests";
 import { ProfileHiringRequestsSection } from "@/components/profile/ProfileHiringRequestsSection";
-import CollabRequestsSection from "@/components/CollabRequestsSection";
 import LinkWorkDialog, { type LinkWorkKind } from "@/components/dashboard/LinkWorkDialog";
-import {
-  DashboardDocumentStrip,
-  DashboardLinkedWorkStrip,
-} from "@/components/dashboard/DashboardRequestStrips";
-import ManageModeNav from "@/components/dashboard/ManageModeNav";
-import DashboardHireDocumentsPanel from "@/components/dashboard/DashboardHireDocumentsPanel";
-import EarningsBalanceCards from "@/components/payments/EarningsBalanceCards";
+import { DashboardLinkedWorkStrip } from "@/components/dashboard/DashboardRequestStrips";
+import StudioLayout from "@/components/dashboard/StudioLayout";
+import InboxOverviewChart from "@/components/dashboard/InboxOverviewChart";
 import { supabase } from "@/integrations/supabase/client";
 import {
   HIRE_TAB_ACCEPTED,
@@ -32,7 +25,8 @@ import {
   isCollabCompletedStatus,
   isCollabContactedNewStatus,
 } from "@/lib/collabInbox";
-import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
+
+const CollabRequestsSection = lazy(() => import("@/components/CollabRequestsSection"));
 
 export type DashboardMode = "hire" | "collab";
 
@@ -66,21 +60,22 @@ export default function DashboardPage({ mode: modeProp }: Props) {
   // Legacy ?mode= / hash → dedicated paths
   useEffect(() => {
     const legacy = searchParams.get("mode");
+    const focus = searchParams.get("focus");
     const hash = location.hash.replace(/^#/, "");
-    if (legacy === "collab" || hash === "collab") {
+    if (legacy === "collab" || hash === "collab" || focus === "collab") {
       navigate("/dashboard/collab", { replace: true });
       return;
     }
-    if (legacy === "wallet" || hash === "wallet" || hash === "earnings") {
+    if (legacy === "wallet" || hash === "wallet" || hash === "earnings" || focus === "wallet" || focus === "earnings") {
       navigate("/earnings", { replace: true });
       return;
     }
-    if (legacy === "reviews" || hash === "reviews") {
+    if (legacy === "reviews" || hash === "reviews" || focus === "reviews") {
       navigate("/dashboard/reviews", { replace: true });
       return;
     }
-    if (legacy === "hire" || hash === "hiring" || hash === "hire") {
-      navigate("/dashboard", { replace: true });
+    if (legacy === "hire" || hash === "hiring" || hash === "hire" || focus === "hiring" || focus === "hire") {
+      navigate("/dashboard/hire", { replace: true });
     }
   }, [searchParams, location.hash, navigate]);
 
@@ -90,14 +85,14 @@ export default function DashboardPage({ mode: modeProp }: Props) {
   const { data: collabRequests = [], isLoading: collabLoading } = useReceivedCollabRequests();
 
   const linkedProjectIds = useMemo(() => {
+    if (mode !== "hire") return [] as string[];
     const ids = new Set<string>();
-    const rows = mode === "hire" ? hireRequests : collabRequests;
-    for (const r of rows) {
+    for (const r of hireRequests) {
       const id = readLinkedProjectId(r as Record<string, unknown>);
       if (id) ids.add(id);
     }
     return [...ids];
-  }, [mode, hireRequests, collabRequests]);
+  }, [mode, hireRequests]);
 
   const { data: linkedProjectTitles = {} } = useQuery({
     queryKey: ["dashboard-linked-projects", linkedProjectIds.join(",")],
@@ -152,35 +147,23 @@ export default function DashboardPage({ mode: modeProp }: Props) {
   const renderHireExtras = useCallback(
     (req: HiringRow) => {
       const linkedId = readLinkedProjectId(req as Record<string, unknown>);
-      return (
-        <>
-          <DashboardLinkedWorkStrip
-            kind="hire"
-            requestId={req.id}
-            linkedProjectId={linkedId}
-            linkedProjectTitle={linkedId ? linkedProjectTitles[linkedId] : null}
-            onLinkClick={() => openLinkDialog("hire", req.id, linkedId)}
-          />
-          <DashboardDocumentStrip requestId={req.id} kind="hire" />
-        </>
+      const hasIncomingRef = !!(
+        req.project_id ||
+        (typeof (req as { service_id?: string | null }).service_id === "string" &&
+          (req as { service_id?: string | null }).service_id) ||
+        req.project_title?.trim()
       );
-    },
-    [linkedProjectTitles, openLinkDialog],
-  );
-
-  const renderCollabExtras = useCallback(
-    (req: { id: string; linked_project_id?: string | null }) => {
-      const linkedId = readLinkedProjectId(req as Record<string, unknown>);
       return (
         <>
-          <DashboardLinkedWorkStrip
-            kind="collab"
-            requestId={req.id}
-            linkedProjectId={linkedId}
-            linkedProjectTitle={linkedId ? linkedProjectTitles[linkedId] : null}
-            onLinkClick={() => openLinkDialog("collab", req.id, linkedId)}
-          />
-          <DashboardDocumentStrip requestId={req.id} kind="collab" />
+          {hasIncomingRef ? null : (
+            <DashboardLinkedWorkStrip
+              kind="hire"
+              requestId={req.id}
+              linkedProjectId={linkedId}
+              linkedProjectTitle={linkedId ? linkedProjectTitles[linkedId] : null}
+              onLinkClick={() => openLinkDialog("hire", req.id, linkedId)}
+            />
+          )}
         </>
       );
     },
@@ -190,109 +173,86 @@ export default function DashboardPage({ mode: modeProp }: Props) {
   const listLoading = mode === "hire" ? hireLoading : collabLoading;
   const stats = mode === "hire" ? hireStats : collabStats;
   const pageTitle = mode === "hire" ? "จ้างงาน" : "คอลแลป";
-  const pagePath = mode === "hire" ? "/dashboard" : "/dashboard/collab";
-  const pageHint =
-    mode === "hire"
-      ? "ดูคำขอจ้างงาน ลิงก์ผลงาน และเอกสาร"
-      : "ดูคำขอคอลแลป ตอบรับ/ปฏิเสธ และลิงก์ผลงานร่วม";
+  const pagePath = mode === "hire" ? "/dashboard/hire" : "/dashboard/collab";
 
   return (
-    <div className={`min-h-screen bg-app-ambient ${MOBILE_PAGE_BOTTOM_CLASS}`}>
-      <SeoHead title={`แดชบอร์ด & จัดการ — ${pageTitle}`} path={pagePath} noindex />
+    <StudioLayout>
+      <SeoHead title={`My Studio — ${pageTitle}`} path={pagePath} noindex />
 
-      <div className="bg-gradient-to-b from-primary/10 to-background">
-        <div className="mx-auto max-w-5xl px-4 pb-4 pt-6 lg:pt-8">
-          <BackButton
-            to="/portfolio"
-            label="กลับโปรไฟล์"
-            className="mb-4"
-          />
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              {mode === "hire" ? (
-                <Briefcase className="h-6 w-6 text-primary" />
-              ) : (
-                <Handshake className="h-6 w-6 text-primary" />
-              )}
-              <div>
-                <h1 className="text-2xl font-medium text-foreground">{pageTitle}</h1>
-                <p className="mt-0.5 text-sm text-muted-foreground">{pageHint}</p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/settings")}
-              className="rounded-full border-primary-bright text-primary hover:bg-primary-bright/10"
-            >
-              <Settings className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">ตั้งค่า</span>
-            </Button>
-          </div>
-          <ManageModeNav className="mt-4" />
+      {authLoading || !user ? (
+        <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          กำลังโหลด…
         </div>
-      </div>
+      ) : (
+        <>
+          {mode === "hire" ? (
+            <InboxOverviewChart variant="hire" rows={hireRequests} loading={hireLoading} />
+          ) : (
+            <InboxOverviewChart variant="collab" rows={collabRequests} loading={collabLoading} />
+          )}
 
-      <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 pb-10">
-        {authLoading || !user ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            กำลังโหลด…
-          </div>
-        ) : (
-          <>
-            {mode === "hire" ? (
-              <>
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start">
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
-                    <StatsCard
-                      label={HIRE_TAB_CONTACTED_NEW}
-                      value={stats.contactedNew}
-                      icon={Briefcase}
-                      accent={stats.contactedNew > 0}
-                    />
-                    <StatsCard label={HIRE_TAB_ACCEPTED} value={stats.accepted} icon={Briefcase} />
-                    <StatsCard label={HIRE_TAB_COMPLETED} value={stats.completed} icon={Briefcase} />
-                    <StatsCard label="ทั้งหมด" value={stats.total} icon={Briefcase} />
-                  </div>
-                  <div className="space-y-2 rounded-2xl border border-border/70 bg-card/50 p-4">
-                    <h2 className="text-sm font-semibold">รายได้จ้างงาน (THB)</h2>
-                    <EarningsBalanceCards
-                      pendingSatang={0}
-                      payoutReservedSatang={0}
-                      paidOutSatang={0}
-                    />
-                  </div>
+          {mode === "hire" ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatsCard
+                label={HIRE_TAB_CONTACTED_NEW}
+                value={stats.contactedNew}
+                icon={Briefcase}
+                accent={stats.contactedNew > 0}
+              />
+              <StatsCard label={HIRE_TAB_ACCEPTED} value={stats.accepted} icon={Briefcase} />
+              <StatsCard label={HIRE_TAB_COMPLETED} value={stats.completed} icon={Briefcase} />
+              <StatsCard label="ทั้งหมด" value={stats.total} icon={Briefcase} />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatsCard
+                label="ติดต่อใหม่"
+                value={stats.contactedNew}
+                icon={Handshake}
+                accent={stats.contactedNew > 0}
+              />
+              <StatsCard label="ตอบรับ" value={stats.accepted} icon={Handshake} />
+              <StatsCard label="จบงาน" value={stats.completed} icon={Handshake} />
+              <StatsCard label="ทั้งหมด" value={stats.total} icon={Handshake} />
+            </div>
+          )}
+
+          {mode === "hire" ? (
+            <p className="text-xs text-muted-foreground">
+              เอกสารใบเสร็จ 50 ทวิ และประมาณการภาษีอยู่ที่{" "}
+              <Link to="/dashboard/documents" className="font-medium text-primary hover:underline">
+                เอกสาร / ภาษี
+              </Link>
+              {" · "}
+              ยอดเงินอยู่ที่{" "}
+              <Link to="/earnings" className="font-medium text-primary hover:underline">
+                ธุรกรรม
+              </Link>
+            </p>
+          ) : null}
+
+          {listLoading ? (
+            <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              กำลังโหลดรายการ…
+            </div>
+          ) : mode === "hire" ? (
+            <ProfileHiringRequestsSection embed renderCardExtras={renderHireExtras} />
+          ) : (
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  กำลังโหลดรายการ…
                 </div>
-                <DashboardHireDocumentsPanel userId={user.id} />
-              </>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <StatsCard
-                  label="ติดต่อใหม่"
-                  value={stats.contactedNew}
-                  icon={Handshake}
-                  accent={stats.contactedNew > 0}
-                />
-                <StatsCard label="ตอบรับ" value={stats.accepted} icon={Handshake} />
-                <StatsCard label="จบงาน" value={stats.completed} icon={Handshake} />
-                <StatsCard label="ทั้งหมด" value={stats.total} icon={Handshake} />
-              </div>
-            )}
-
-            {listLoading ? (
-              <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                กำลังโหลดรายการ…
-              </div>
-            ) : mode === "hire" ? (
-              <ProfileHiringRequestsSection embed renderCardExtras={renderHireExtras} />
-            ) : (
-              <CollabRequestsSection embed renderCardExtras={renderCollabExtras} />
-            )}
-          </>
-        )}
-      </div>
+              }
+            >
+              <CollabRequestsSection embed />
+            </Suspense>
+          )}
+        </>
+      )}
 
       {linkTarget ? (
         <LinkWorkDialog
@@ -306,6 +266,6 @@ export default function DashboardPage({ mode: modeProp }: Props) {
           onLinked={() => setLinkTarget(null)}
         />
       ) : null}
-    </div>
+    </StudioLayout>
   );
 }

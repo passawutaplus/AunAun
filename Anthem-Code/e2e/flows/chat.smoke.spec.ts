@@ -20,7 +20,7 @@ test.describe("chat smoke @demo", () => {
   test("inbox lists conversations and opens a thread", async ({ page }) => {
     await signInDemo(page);
     await page.goto("/chat");
-    await expect(page.getByRole("heading", { name: "ข้อความ" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: "Chat" })).toBeVisible({ timeout: 15_000 });
     await expect(page.locator("aside ul li button").first()).toBeVisible({ timeout: 15_000 });
 
     await page.locator("aside ul li button").first().click();
@@ -40,10 +40,13 @@ test.describe("chat smoke @demo", () => {
     await expect(page.getByText("โหลดแชทไม่สำเร็จ")).toHaveCount(0);
   });
 
-  test("sidebar shows home and pin controls", async ({ page }) => {
+  test("top bar has home, Chat, My Studio, bell, and profile", async ({ page }) => {
     await signInDemo(page);
     await page.goto("/chat");
-    await expect(page.getByRole("button", { name: "กลับหน้าแรก" })).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole("button", { name: "สร้างกลุ่มแชท" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Chat" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("button", { name: "กลับหน้าแรก" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "My Studio" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /แจ้งเตือน/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: "โปรไฟล์" })).toBeVisible();
   });
 });

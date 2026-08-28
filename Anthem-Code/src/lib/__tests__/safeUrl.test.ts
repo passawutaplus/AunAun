@@ -27,6 +27,7 @@ describe("safeRelativePath", () => {
   it("accepts single-slash same-origin paths", () => {
     expect(safeRelativePath("/dashboard")).toBe("/dashboard");
     expect(safeRelativePath("/a/b?x=1")).toBe("/a/b?x=1");
+    expect(safeRelativePath("/settings?recover=pin#account")).toBe("/settings?recover=pin#account");
   });
 
   it("rejects protocol-relative and backslash tricks", () => {

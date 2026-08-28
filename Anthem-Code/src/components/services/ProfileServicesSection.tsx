@@ -76,7 +76,7 @@ export default function ProfileServicesSection({
         }
         action={
           canManage && !atLimit ? (
-            <Button className="rounded-full" onClick={openCreate}>
+            <Button variant="gradient" className="rounded-full" onClick={openCreate}>
               <Plus className="w-4 h-4 mr-1" />
               Add Package
             </Button>
@@ -95,7 +95,7 @@ export default function ProfileServicesSection({
             {atLimit ? " — ลบอันที่มีก่อนถึงจะเพิ่มใหม่ได้" : ""}
           </p>
           {!atLimit ? (
-            <Button size="sm" className="rounded-full" onClick={openCreate}>
+            <Button size="sm" variant="gradient" className="rounded-full" onClick={openCreate}>
               <Plus className="w-4 h-4 mr-1" />
               Add Package
             </Button>

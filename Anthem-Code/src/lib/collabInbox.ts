@@ -47,12 +47,12 @@ export type CollabInboxTab =
   | typeof COLLAB_TAB_ALL;
 
 export const COLLAB_TAB_ORDER: CollabInboxTab[] = [
+  COLLAB_TAB_ALL,
   COLLAB_TAB_CONTACTED_NEW,
   COLLAB_TAB_ACCEPTED,
   COLLAB_TAB_DECLINED,
   COLLAB_TAB_CANCELLED,
   COLLAB_TAB_COMPLETED,
-  COLLAB_TAB_ALL,
 ];
 
 export function getHiddenCollabIds(userId: string): Set<string> {

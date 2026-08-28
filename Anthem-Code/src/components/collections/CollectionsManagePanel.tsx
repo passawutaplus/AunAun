@@ -40,7 +40,7 @@ export default function CollectionsManagePanel({ userId, embedded }: Props) {
   const [query, setQuery] = useState("");
   const [sortMode, setSortMode] = useState<CollectionListSortMode>("newest");
   const [density, setDensity] = useState<CollectionGridDensity>(() =>
-    readCollectionGridDensity(COLLECTION_LIST_GRID_STORAGE_KEY),
+    readCollectionGridDensity(COLLECTION_LIST_GRID_STORAGE_KEY, "large"),
   );
 
   const collectionIds = useMemo(() => new Set(collections.map((c) => c.id)), [collections]);
@@ -144,7 +144,8 @@ export default function CollectionsManagePanel({ userId, embedded }: Props) {
         <Button
           size="sm"
           onClick={() => setFormOpen(true)}
-          className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
+          variant="gradient"
+          className="rounded-full shrink-0"
         >
           <Plus className="w-4 h-4 mr-1" /> คอลเลกชันใหม่
         </Button>
@@ -166,7 +167,8 @@ export default function CollectionsManagePanel({ userId, embedded }: Props) {
             </p>
             <Button
               onClick={() => setFormOpen(true)}
-              className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+              variant="gradient"
+              className="rounded-full"
             >
               <Plus className="w-4 h-4 mr-1" /> สร้างคอลเลกชัน
             </Button>
@@ -178,12 +180,13 @@ export default function CollectionsManagePanel({ userId, embedded }: Props) {
               searchPlaceholder="ค้นหาชื่อคอลเลกชัน..."
               query={query}
               onQueryChange={setQuery}
-              density={density}
-              onDensityChange={setDensity}
-              sortMode={sortMode}
-              onSortModeChange={setSortMode}
-              resultCount={filtered.length}
-            />
+            density={density}
+            onDensityChange={setDensity}
+            sortMode={sortMode}
+            onSortModeChange={setSortMode}
+            resultCount={filtered.length}
+            densityPreset="profile"
+          />
             {filtered.length === 0 ? (
               <div className="text-center py-12 glass-panel rounded-2xl">
                 <p className="text-foreground font-medium mb-1">ไม่พบคอลเลกชันที่ตรงเงื่อนไข</p>

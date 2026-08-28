@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import CashoutDialog from "@/components/gifting/CashoutDialog";
 import TopUpDialog from "@/components/gifting/TopUpDialog";
 import { EarningsHeroCard } from "@/components/earnings/EarningsHeroCard";
 import { EarningsQuickActions } from "@/components/earnings/EarningsQuickActions";
 import { EarningsCashoutHistory } from "@/components/earnings/EarningsCashoutHistory";
-import { EarningsPlatformIncomeHistory } from "@/components/earnings/EarningsPlatformIncomeHistory";
-import EarningsBalanceCards from "@/components/payments/EarningsBalanceCards";
-import DisplayCurrencyToggle from "@/components/payments/DisplayCurrencyToggle";
+import { EarningsHireWalletPanel } from "@/components/earnings/EarningsHireWalletPanel";
 import { useWallet, useAvailablePurchasedPx } from "@/hooks/useWallet";
 import {
   useCashoutHistory,
@@ -31,11 +30,12 @@ export default function DashboardWalletSection({ userId }: Props) {
   const { data: availablePurchased = 0 } = useAvailablePurchasedPx({ enabled: pxOn });
   const { data: cashouts = [] } = useCashoutHistory({ enabled: pxOn });
   const { data: eligibility } = useCreatorEligibility(pxOn ? userId : undefined);
-  const { data: subData } = useSubscription();
-  const feeRate = getCashoutFeeRate(subData?.profileTier);
-  const feeLabel = formatCashoutFeeLabel(subData?.profileTier);
+  const subData = useSubscription();
+  const feeRate = getCashoutFeeRate(subData.tier);
+  const feeLabel = formatCashoutFeeLabel(subData.tier);
   const [cashoutOpen, setCashoutOpen] = useState(false);
   const [topupOpen, setTopupOpen] = useState(false);
+  const [searchParams] = useSearchParams();
 
   const giftablePx = computeGiftablePx(wallet, availablePurchased);
   const lifetimeEarned = wallet?.lifetime_earned_px ?? 0;
@@ -53,40 +53,21 @@ export default function DashboardWalletSection({ userId }: Props) {
     return `อีก ${Math.max(0, MIN_CASHOUT_PX - earnedPx).toLocaleString()} px ถึงขั้นต่ำถอน`;
   }, [canCashout, eligibility, earnedPx, giftEconomy]);
 
-  const hireBlock = (
-    <div className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-4 sm:p-5">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">รายได้จ้างงาน (THB)</h3>
-        <DisplayCurrencyToggle />
-      </div>
-      <EarningsBalanceCards
-        pendingSatang={0}
-        payoutReservedSatang={0}
-        paidOutSatang={0}
-      />
-    </div>
-  );
-
   return (
     <>
       {pxOn ? (
-        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-          <EarningsHeroCard
-            netThb={netThb}
-            earnedPx={earnedPx}
-            giftablePx={giftablePx}
-            lifetimeEarned={lifetimeEarned}
-            feeLabel={feeLabel}
-            showGiftable={giftEconomy}
-            onCashout={() => setCashoutOpen(true)}
-            canCashout={canCashout}
-            cashoutHint={cashoutHint}
-          />
-          {hireBlock}
-        </div>
-      ) : (
-        hireBlock
-      )}
+        <EarningsHeroCard
+          netThb={netThb}
+          earnedPx={earnedPx}
+          giftablePx={giftablePx}
+          lifetimeEarned={lifetimeEarned}
+          feeLabel={feeLabel}
+          showGiftable={giftEconomy}
+          onCashout={() => setCashoutOpen(true)}
+          canCashout={canCashout}
+          cashoutHint={cashoutHint}
+        />
+      ) : null}
 
       {pxOn ? (
         <EarningsQuickActions
@@ -95,7 +76,10 @@ export default function DashboardWalletSection({ userId }: Props) {
         />
       ) : null}
 
-      <EarningsPlatformIncomeHistory userId={userId} />
+      <EarningsHireWalletPanel
+        userId={userId}
+        forcePreview={searchParams.get("preview") === "wallet"}
+      />
       {pxOn ? <EarningsCashoutHistory items={cashouts} /> : null}
 
       {pxOn ? <CashoutDialog open={cashoutOpen} onOpenChange={setCashoutOpen} /> : null}

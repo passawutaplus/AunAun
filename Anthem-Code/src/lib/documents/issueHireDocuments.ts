@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { OfferPartyInfo } from "@/lib/chatOffer";
 import type { BusinessDocument, DocumentLineItem } from "@/lib/documents/documentPayload";
-import { makeProvisionalDocNumber } from "@/lib/documents/numbering";
+import { allocateDocNumber, makeProvisionalDocNumber } from "@/lib/documents/numbering";
 import { LEGAL_COMPANY_NAME } from "@/lib/legalConfig";
 import type { HireDocumentKind } from "@/lib/payments/types";
 
@@ -166,6 +166,7 @@ export async function issuePlatformFeeReceiptForOrder(input: {
     order: input.order,
     projectTitle: input.projectTitle,
     buyer: input.buyer,
+    docNumber: await allocateDocNumber("platform_fee_receipt"),
   });
   const row = await insertHireDocument(input.db, {
     hireOrderId: input.order.id,

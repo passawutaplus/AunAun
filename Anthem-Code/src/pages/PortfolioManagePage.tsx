@@ -4,7 +4,7 @@ import PageLoader from "@/components/ui/PageLoader";
 import { useAuth } from "@/hooks/useAuth";
 
 /**
- * Legacy /portfolio/manage — works dashboard now lives on /portfolio (tab ผลงาน).
+ * Legacy /portfolio/manage — works dashboard now lives in My Studio.
  * Community posts manage: /portfolio?manage=posts (optional future) → for now profile works.
  */
 export default function PortfolioManagePage() {
@@ -26,5 +26,5 @@ export default function PortfolioManagePage() {
     return <Navigate to="/community" replace />;
   }
 
-  return <Navigate to="/portfolio" replace />;
+  return <Navigate to="/dashboard/projects" replace />;
 }

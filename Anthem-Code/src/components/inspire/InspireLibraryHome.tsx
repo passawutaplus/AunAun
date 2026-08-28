@@ -44,6 +44,7 @@ type Props = {
   loading?: boolean;
   onOpenBoard: (boardId: string) => void;
   onDropToBoard?: (boardId: string, payload: { imageUrl: string; projectId: string }) => void;
+  densityPreset?: "default" | "profile";
 };
 
 function BoardDropChip({
@@ -127,6 +128,7 @@ export function InspireLibraryHome({
   loading,
   onOpenBoard,
   onDropToBoard,
+  densityPreset = "default",
 }: Props) {
   const { user } = useAuth();
   const togglePin = useToggleInspireItemPin(user?.id);
@@ -265,7 +267,11 @@ export function InspireLibraryHome({
           />
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <InspireViewDensityMenu value={density} onChange={setDensity} />
+          <InspireViewDensityMenu
+            value={density}
+            onChange={setDensity}
+            preset={densityPreset}
+          />
           <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
             <SelectTrigger
               aria-label="เรียงตาม"

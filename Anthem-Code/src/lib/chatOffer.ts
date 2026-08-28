@@ -371,9 +371,10 @@ export function formatOfferDateLong(iso?: string | null): string {
   });
 }
 
+/** Fallback only — real quotes call `allocateDocNumber("quotation")` on send. */
 export function makeOfferNumber(): string {
   const y = new Date().getFullYear();
-  const n = String(Math.floor(Math.random() * 900) + 100);
+  const n = String(Math.floor(Math.random() * 9000) + 1000).padStart(4, "0");
   return `QT-${y}-${n}`;
 }
 

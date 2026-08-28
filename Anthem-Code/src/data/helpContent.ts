@@ -103,12 +103,14 @@ export const HELP_CATEGORIES: HelpCategory[] = [
         title: "เปลี่ยนรหัสผ่านและความปลอดภัยบัญชี",
         summary: "รีเซ็ตรหัสผ่านเมื่อเข้าไม่ได้ และดูแลบัญชีให้ปลอดภัย",
         body: [
-          "ถ้าลืมรหัสผ่าน ใช้ลิงก์ลืมรหัสผ่านบนหน้า Auth แล้วทำตามอีเมลที่ระบบส่งให้",
-          "อย่าแชร์รหัสผ่านหรือลิงก์รีเซ็ตกับผู้อื่น",
+          "ถ้ายังจำรหัสเดิมได้ เข้าสู่ระบบแล้วไปตั้งค่าบัญชี → ขอเปลี่ยนรหัสผ่าน — ต้องใส่รหัสเดิมก่อน",
+          "ลิงก์จากอีเมลก็ต้องใส่รหัสผ่านเดิมเพื่อยืนยันว่าเป็นเจ้าของบัญชี แล้วค่อยตั้งรหัสใหม่",
+          "PIN ถอนเงินคนละชุดกับรหัสผ่าน — ลืม PIN ให้เข้าสู่ระบบแล้วกดลืม PIN ที่ตั้งค่าบัญชี",
+          "อย่าแชร์รหัสผ่าน PIN หรือลิงก์รีเซ็ตกับผู้อื่น",
         ],
         links: [
           { label: "ลืมรหัสผ่าน", to: "/auth/forgot" },
-          { label: "ตั้งค่า", to: "/settings", auth: true },
+          { label: "ตั้งค่าบัญชี", to: "/settings#account", auth: true },
         ],
         related: ["signup-login", "data-rights"],
         keywords: ["รหัสผ่าน", "password", "ลืม"],
@@ -155,7 +157,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
         ],
         links: [
           { label: "ลงผลงาน", to: "/portfolio/new", auth: true },
-          { label: "จัดการผลงาน", to: "/portfolio", auth: true },
+          { label: "จัดการผลงาน", to: "/dashboard/projects", auth: true },
         ],
         related: ["project-context", "visibility", "categories-tags", "community-rules"],
         popular: true,
@@ -195,7 +197,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
           "จัดกลุ่มเมื่องานเริ่มมีหลายชิ้น — ไม่จำเป็นต้องทำตั้งแต่ชิ้นแรก",
         ],
         links: [
-          { label: "จัดการผลงาน", to: "/portfolio", auth: true },
+          { label: "จัด Catalog", to: "/dashboard/catalogs", auth: true },
         ],
         related: ["first-project", "visibility"],
         keywords: ["catalog", "series", "จัดกลุ่ม"],
@@ -209,7 +211,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
           "งานสาธารณะเท่านั้นที่คนอื่นค้นพบและคุยต่อจากผลงานนั้นได้",
         ],
         links: [
-          { label: "จัดการผลงาน", to: "/portfolio", auth: true },
+          { label: "จัดการผลงาน", to: "/dashboard/projects", auth: true },
         ],
         related: ["first-project", "why-not-on-explore"],
         popular: true,
@@ -224,7 +226,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
           "ถ้าเปลี่ยนหมวดหรือปก อาจใช้เวลาสักครู่กว่าการค้นพบจะสะท้อนตาม",
         ],
         links: [
-          { label: "จัดการผลงาน", to: "/portfolio", auth: true },
+          { label: "จัดการผลงาน", to: "/dashboard/projects", auth: true },
         ],
         related: ["visibility", "project-context"],
         keywords: ["แก้", "แก้ไข", "edit"],
@@ -305,7 +307,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
           "รอสักครู่แล้วค้นหาจากโปรไฟล์ตัวเองอีกครั้ง",
         ],
         links: [
-          { label: "จัดการผลงาน", to: "/portfolio", auth: true },
+          { label: "จัดการผลงาน", to: "/dashboard/projects", auth: true },
           { label: "Forum", to: FORUM_PATH },
         ],
         related: ["visibility", "categories-tags"],
@@ -372,7 +374,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
         ],
         links: [
           { label: "เปิดแชท", to: "/chat", auth: true },
-          { label: "แดชบอร์ดคำขอ", to: "/dashboard", auth: true },
+          { label: "แดชบอร์ดคำขอ", to: "/dashboard/hire", auth: true },
         ],
         related: ["chat-from-project", "chat-offers"],
         keywords: ["แชท", "ข้อความ", "chat"],
@@ -400,8 +402,10 @@ export const HELP_CATEGORIES: HelpCategory[] = [
           "ตั้งสถานะรับโอกาสให้ตรง เพื่อให้คำขอที่เข้ามาตรงกับที่คุณพร้อมรับ",
         ],
         links: [
-          { label: "แดชบอร์ดจ้างงาน", to: "/dashboard", auth: true },
+          { label: "แดชบอร์ดจ้างงาน", to: "/dashboard/hire", auth: true },
           { label: "แดชบอร์ดคอลแลป", to: "/dashboard/collab", auth: true },
+          { label: "ธุรกรรม", to: "/earnings", auth: true },
+          { label: "เอกสาร / ภาษี", to: "/dashboard/documents", auth: true },
         ],
         related: ["opportunity-status", "notifications"],
         keywords: ["คำขอ", "hire request", "collab"],

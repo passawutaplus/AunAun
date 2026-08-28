@@ -31,11 +31,11 @@ export function writeSeriesDensity(key: string, density: SeriesWorksDensity): vo
 export function seriesDensityGridClass(density: SeriesWorksDensity): string {
   switch (density) {
     case "large":
-      return "grid grid-cols-2 lg:grid-cols-3 gap-3";
+      return "grid grid-cols-1 lg:grid-cols-3 gap-3";
     case "medium":
-      return "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3";
+      return "grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3";
     case "small":
-      return "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2";
+      return "grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2";
     case "list":
       return "flex flex-col gap-2";
   }

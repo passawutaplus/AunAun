@@ -1,7 +1,8 @@
 import { Check, LayoutGrid, Grid2x2, Grid3x3, List, Square, Columns2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useNarrowViewport } from "@/hooks/useNarrowViewport";
+import { BOTTOM_NAV_MAX_WIDTH } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
 
 export type ProjectManageGridMode = "cols1" | "cols2" | "cols3" | "cols5" | "list";
@@ -105,13 +106,13 @@ function readForViewport(isMobile: boolean): ProjectManageGridMode {
 }
 
 export function useProjectManageGridMode() {
-  const isMobile = useIsMobile();
+  const isMobile = useNarrowViewport();
   const [mode, setModeState] = useState<ProjectManageGridMode>(() =>
-    typeof window === "undefined" ? "cols5" : readForViewport(window.innerWidth < 768),
+    typeof window === "undefined" ? "cols5" : readForViewport(window.innerWidth <= BOTTOM_NAV_MAX_WIDTH),
   );
 
   useEffect(() => {
-    setModeState(readForViewport(!!isMobile));
+    setModeState(readForViewport(isMobile));
   }, [isMobile]);
 
   const setMode = (next: ProjectManageGridMode) => {
@@ -130,7 +131,7 @@ type Props = {
 };
 
 export default function ProjectManageGridSelect({ value, onChange, className }: Props) {
-  const isMobile = useIsMobile();
+  const isMobile = useNarrowViewport();
   const [open, setOpen] = useState(false);
   const options = isMobile ? MOBILE_OPTIONS : DESKTOP_OPTIONS;
   const current = options.find((o) => o.value === value) ?? options[0];

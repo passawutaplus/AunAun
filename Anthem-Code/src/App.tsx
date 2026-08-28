@@ -22,6 +22,7 @@ import DesktopTopNav from "./components/DesktopTopNav.tsx";
 import RequireAuth from "./components/RequireAuth.tsx";
 import AdminGuard from "./components/admin/AdminGuard.tsx";
 import AuthDialog from "./components/AuthDialog.tsx";
+import FeedbackTicketHost from "./components/feedback/FeedbackTicketHost.tsx";
 import { InterestSurveyGate } from "./components/onboarding/InterestSurveyDialog.tsx";
 import { SkipLink } from "./components/a11y/SkipLink.tsx";
 import { OfflineBanner } from "./components/OfflineBanner.tsx";
@@ -42,7 +43,11 @@ const AuthPage = lazy(() => import("./pages/AuthPage.tsx"));
 const PortfolioProfilePage = lazy(() => import("./pages/PortfolioProfilePage.tsx"));
 const PortfolioManagePage = lazy(() => import("./pages/PortfolioManagePage.tsx"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage.tsx"));
+const DashboardHomePage = lazy(() => import("./pages/DashboardHomePage.tsx"));
+const DashboardPortfolioPage = lazy(() => import("./pages/DashboardPortfolioPage.tsx"));
 const DashboardReviewsPage = lazy(() => import("./pages/DashboardReviewsPage.tsx"));
+const DashboardDocumentsPage = lazy(() => import("./pages/DashboardDocumentsPage.tsx"));
+const DashboardPayoutPage = lazy(() => import("./pages/DashboardPayoutPage.tsx"));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage.tsx"));
 const ServiceDetailPage = lazy(() => import("./pages/ServiceDetailPage.tsx"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage.tsx"));
@@ -151,6 +156,8 @@ const AdminCopyrightReportsPage = lazy(() => import("./pages/admin/AdminCopyrigh
 const AdminPrivacyRequestsPage = lazy(() => import("./pages/admin/AdminPrivacyRequestsPage"));
 const ExploreProjectsPage = lazy(() => import("./pages/ExploreProjectsPage.tsx"));
 const EarningsPage = lazy(() => import("./pages/EarningsPage.tsx"));
+const WithdrawPage = lazy(() => import("./pages/WithdrawPage.tsx"));
+const WithdrawPinPage = lazy(() => import("./pages/WithdrawPinPage.tsx"));
 const ResearchPage = lazy(() => import("./pages/ResearchPage.tsx"));
 const UxResearchFeedbackPage = lazy(() => import("./pages/UxResearchFeedbackPage.tsx"));
 const AdvertisePage = lazy(() => import("./pages/AdvertisePage.tsx"));
@@ -236,14 +243,20 @@ const App = () => (
               <Route path="/portfolio" element={<RequireAuth><PortfolioProfilePage /></RequireAuth>} />
               <Route path="/portfolio/saved" element={<RequireAuth><SavedPostsPage /></RequireAuth>} />
               <Route path="/portfolio/manage" element={<RequireAuth><PortfolioManagePage /></RequireAuth>} />
-              <Route path="/dashboard" element={<RequireAuth><DashboardPage mode="hire" /></RequireAuth>} />
+              <Route path="/dashboard" element={<RequireAuth><DashboardHomePage /></RequireAuth>} />
+              <Route path="/dashboard/hire" element={<RequireAuth><DashboardPage mode="hire" /></RequireAuth>} />
               <Route path="/dashboard/collab" element={<RequireAuth><DashboardPage mode="collab" /></RequireAuth>} />
+              <Route path="/dashboard/projects" element={<RequireAuth><DashboardPortfolioPage mode="projects" /></RequireAuth>} />
+              <Route path="/dashboard/packages" element={<RequireAuth><DashboardPortfolioPage mode="packages" /></RequireAuth>} />
+              <Route path="/dashboard/catalogs" element={<RequireAuth><DashboardPortfolioPage mode="catalogs" /></RequireAuth>} />
               <Route path="/dashboard/reviews" element={<RequireAuth><DashboardReviewsPage /></RequireAuth>} />
+              <Route path="/dashboard/documents" element={<RequireAuth><DashboardDocumentsPage /></RequireAuth>} />
+              <Route path="/dashboard/payout" element={<RequireAuth><DashboardPayoutPage /></RequireAuth>} />
               <Route path="/portfolio/followers" element={<RequireAuth><FollowConnectionsPage /></RequireAuth>} />
               <Route path="/hire/start" element={<RequireAuth><RedirectTo to="/verify" /></RequireAuth>} />
-              <Route path="/hire-requests" element={<RequireAuth><RedirectTo to="/dashboard" /></RequireAuth>} />
+              <Route path="/hire-requests" element={<RequireAuth><RedirectTo to="/dashboard/hire" /></RequireAuth>} />
               <Route path="/collab-requests" element={<RequireAuth><RedirectTo to="/dashboard/collab" /></RequireAuth>} />
-              <Route path="/portfolio/packages" element={<Navigate to="/portfolio?tab=services" replace />} />
+              <Route path="/portfolio/packages" element={<Navigate to="/dashboard/packages" replace />} />
               <Route path="/portfolio/packages/new" element={<RequireAuth><PackageEditorPage /></RequireAuth>} />
               <Route path="/portfolio/packages/:id/edit" element={<RequireAuth><PackageEditorPage /></RequireAuth>} />
               <Route path="/portfolio/new" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
@@ -258,6 +271,8 @@ const App = () => (
               <Route path="/u/:userId" element={<PublicProfilePage />} />
               <Route path="/u/:userId/followers" element={<FollowConnectionsPage />} />
               <Route path="/earnings" element={<RequireAuth><EarningsPage /></RequireAuth>} />
+              <Route path="/earnings/withdraw/pin" element={<RequireAuth><WithdrawPinPage /></RequireAuth>} />
+              <Route path="/earnings/withdraw" element={<RequireAuth><WithdrawPage /></RequireAuth>} />
               <Route path="/referrals" element={<RequireAuth><ReferralPage /></RequireAuth>} />
 
               <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
@@ -389,6 +404,7 @@ const App = () => (
           <PolicyReconsentGate />
           <FloatingNav />
           <AuthDialog />
+          <FeedbackTicketHost />
           <InterestSurveyGate />
           </ErrorBoundary>
         </BrowserRouter>

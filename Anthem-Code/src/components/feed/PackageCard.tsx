@@ -181,8 +181,8 @@ const PackageCard = ({ data, search = "" }: Props) => {
           ) : null}
         </button>
 
-        <div className="mt-auto pt-3.5 flex items-end justify-between gap-2 min-w-0">
-          <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+        <div className="mt-auto flex min-w-0 flex-wrap items-end justify-between gap-x-2 gap-y-2 pt-3.5">
+          <div className="flex min-w-0 flex-col items-start gap-1">
             <button
               type="button"
               onClick={goProfile}

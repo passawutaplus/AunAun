@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Flag,
-  MessageCircle,
   Handshake,
+  MessageCircle,
   MoreVertical,
   Pin,
   PinOff,
@@ -12,10 +12,10 @@ import {
   Search,
   Trash2,
   Users,
-  ArrowLeft,
+  type LucideIcon,
 } from "lucide-react";
+import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { InlineLoader } from "@/components/ui/BanterLoader";
-import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,8 +62,8 @@ import { DEMO_RESEARCH_ACCOUNTS, isDemoMode } from "@/lib/demoMode";
 import { toast } from "sonner";
 import { useSubscription } from "@/core/subscription/useSubscription";
 
-const TABS: { key: "all" | ChatKind; label: string; icon: typeof BriefcaseIcon }[] = [
-  { key: "all", label: "ทั้งหมด", icon: MessageCircle },
+const TABS: { key: "all" | ChatKind; label: string; icon?: LucideIcon }[] = [
+  { key: "all", label: "ทั้งหมด" },
   { key: "hire", label: "งานจ้าง", icon: BriefcaseIcon },
   { key: "collab", label: "คอลแลป", icon: Handshake },
   { key: "group", label: "กลุ่ม", icon: Users },
@@ -283,70 +283,51 @@ const ChatSidebar = ({
     });
   };
 
-  const goProjectsHome = () => {
-    localStorage.setItem("feed-mode", "projects");
-    navigate("/", { state: { feedHomeReset: Date.now() } });
-  };
-
   return (
     <aside className={cn("flex flex-col h-full border-r border-border bg-background", className)}>
-      <div className="shrink-0 p-3 border-b border-border space-y-3">
-        <div className="flex items-center justify-between gap-2 px-1">
-          <div className="flex items-center gap-1 shrink-0">
+      <div className="shrink-0 px-3 pt-2.5 pb-2 border-b border-border space-y-2">
+        <div className="flex items-center gap-1.5">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="ค้นหาชื่อหรืองาน…"
+              className="h-8 rounded-full border-0 bg-muted pl-8 text-sm"
+            />
+          </div>
+          {isAplus1SubscriptionsEnabled() ? (
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full"
-              aria-label="กลับหน้าแรก"
-              title="กลับหน้าแรก"
-              onClick={goProjectsHome}
+              className="h-8 w-8 shrink-0 rounded-full"
+              aria-label="สร้างกลุ่มแชท"
+              onClick={handleCreateGroup}
             >
-              <ArrowLeft className="w-4 h-4" />
+              <Plus className="h-4 w-4" />
             </Button>
-            {isAplus1SubscriptionsEnabled() ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                aria-label="สร้างกลุ่มแชท"
-                onClick={handleCreateGroup}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            ) : null}
-          </div>
+          ) : null}
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-          <Input
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="ค้นหาชื่อหรืองาน…"
-            className="pl-9 rounded-full bg-muted border-0 h-9"
-          />
-        </div>
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-1 overflow-x-auto scrollbar-hide">
           {TABS.map(({ key, label, icon: Icon }) => {
             const active = tab === key;
             const accent =
               key === "hire"
                 ? active
-                  ? "bg-[hsl(var(--chat-hire))] text-white border-transparent"
-                  : "border-border text-foreground"
+                  ? "bg-[hsl(var(--chat-hire))] text-white"
+                  : "bg-muted/70 text-muted-foreground hover:text-foreground"
                 : key === "collab"
                   ? active
-                    ? "bg-[hsl(var(--chat-collab))] text-white border-transparent"
-                    : "border-border text-foreground"
+                    ? "bg-[hsl(var(--chat-collab))] text-white"
+                    : "bg-muted/70 text-muted-foreground hover:text-foreground"
                   : key === "group"
                     ? active
-                      ? "bg-primary text-primary-foreground border-transparent"
-                      : "border-border text-foreground"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/70 text-muted-foreground hover:text-foreground"
                     : active
-                      ? "bg-foreground text-background border-transparent"
-                      : "border-border text-foreground";
-            const iconOnly = key !== "all";
+                      ? "bg-foreground text-background"
+                      : "bg-muted/70 text-muted-foreground hover:text-foreground";
             return (
               <button
                 key={key}
@@ -355,20 +336,21 @@ const ChatSidebar = ({
                 aria-label={label}
                 title={label}
                 className={cn(
-                  "inline-flex items-center justify-center gap-1.5 py-2.5 min-h-11 text-xs font-medium rounded-full border transition-colors shrink-0",
-                  iconOnly ? "px-2.5" : "px-3",
+                  "inline-flex items-center justify-center rounded-full transition-colors shrink-0",
+                  Icon
+                    ? "h-8 w-8"
+                    : "min-h-7 px-2.5 py-1 text-[11px] font-medium",
                   accent,
                 )}
               >
-                <Icon className="w-3.5 h-3.5" />
-                {!iconOnly && label}
+                {Icon ? <Icon className="h-3.5 w-3.5" aria-hidden /> : label}
               </button>
             );
           })}
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto px-1.5 py-1">
         {isLoading && <InlineLoader />}
         {isError && (
           <div className="text-center py-12 text-destructive px-4 text-sm">
@@ -460,20 +442,20 @@ const ChatSidebar = ({
                   type="button"
                   onClick={() => selectConversation(c)}
                   className={cn(
-                    "w-full flex items-center gap-3 p-3 pr-10 rounded-xl transition-colors text-left border-l-4",
+                    "w-full flex items-center gap-2.5 px-2.5 py-2 pr-9 rounded-lg transition-colors text-left border-l-[3px]",
                     selected ? cn("bg-accent/80", accentBorder) : "border-transparent hover:bg-accent/50",
                     isPinned && !selected && "bg-muted/40",
                   )}
                 >
                   <div className="relative shrink-0">
                     {isGroup ? (
-                      <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center">
-                        <Users className="w-5 h-5 text-primary" />
+                      <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+                        <Users className="w-4 h-4 text-primary" />
                       </div>
                     ) : p?.avatar ? (
-                      <img src={p.avatar} alt="" className="w-12 h-12 rounded-full object-cover" />
+                      <img src={p.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
                     ) : (
-                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center font-medium text-muted-foreground">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-medium text-muted-foreground text-sm">
                         {(p?.name ?? "?")[0]}
                       </div>
                     )}
@@ -525,13 +507,13 @@ const ChatSidebar = ({
                       )}
                     </div>
                     {!isGroup && c.project_title && (
-                      <p className="text-[11px] text-muted-foreground/80 truncate mt-0.5 pr-1">
+                      <p className="text-[10px] text-muted-foreground/80 truncate mt-0.5 pr-1">
                         {c.project_title}
                       </p>
                     )}
                   </div>
                 </button>
-                <div className="absolute bottom-2 right-1.5 z-10 flex items-center gap-0.5">
+                <div className="absolute top-1/2 -translate-y-1/2 right-1 z-10 flex items-center gap-0.5">
                   {isPinned && (
                     <Pin className="w-3 h-3 text-primary shrink-0" aria-hidden />
                   )}

@@ -28,7 +28,13 @@ const EXPLORE_LINKS = [
   { to: "/advertise", label: "ลงโฆษณากับเรา" },
 ] as const;
 
-const Footer = () => {
+type Props = {
+  className?: string;
+  /** Fade the CTA photo into the page. Turn off when the last block is a colored card. */
+  blendTop?: boolean;
+};
+
+const Footer = ({ className, blendTop = true }: Props) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const openSignup = useAuthDialog((s) => s.openSignup);
@@ -44,12 +50,18 @@ const Footer = () => {
   };
 
   return (
-    <footer className="mt-16">
-      <div className="footer-cta-wave footer-cta-wave--blend-top text-primary-foreground">
+    <footer className={cn("mt-16", className)}>
+      <div
+        className={cn(
+          "footer-cta-wave text-primary-foreground",
+          blendTop && "footer-cta-wave--blend-top",
+        )}
+      >
         <div
           className={cn(
             SHELL,
-            "relative z-10 flex flex-col gap-6 pt-16 pb-10 sm:pt-20 sm:pb-12 md:flex-row md:items-center md:justify-between md:gap-10 md:pt-24 md:pb-14",
+            "relative z-10 flex flex-col items-start gap-6 pb-10 sm:pb-12 md:flex-row md:items-center md:justify-between md:gap-10 md:pb-14",
+            blendTop ? "pt-16 sm:pt-20 md:pt-24" : "pt-10 sm:pt-14 md:pt-16",
           )}
         >
           <h2 className="thai-display text-4xl font-medium leading-[1.05] tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
@@ -58,7 +70,7 @@ const Footer = () => {
           <button
             type="button"
             onClick={goPostProject}
-            className="inline-flex h-12 shrink-0 items-center gap-2.5 rounded-full bg-white py-0 pl-1.5 pr-5 text-base font-medium text-neutral-900 shadow-[0_10px_32px_hsl(14_100%_28%/0.4)] transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90"
+            className="inline-flex h-12 w-fit shrink-0 items-center gap-2.5 rounded-full bg-white py-0 pl-1.5 pr-5 text-base font-medium text-neutral-900 shadow-[0_10px_32px_hsl(14_100%_28%/0.4)] transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90"
           >
             <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-white">
               <Plus className="h-4 w-4" strokeWidth={2.5} />

@@ -207,25 +207,39 @@ export function mapFeatureSuggestion(row: Record<string, unknown>): WorkItem {
   };
 }
 
+function feedbackPriority(row: Record<string, unknown>): WorkItemPriority {
+  const kind = String(row.kind ?? "");
+  if (kind === "error" || kind === "bug") return "high";
+  if (kind === "idea") return "low";
+  const rating = row.rating == null ? null : Number(row.rating);
+  if (rating != null && rating <= 2) return "high";
+  return "medium";
+}
+
 export function mapAppFeedback(row: Record<string, unknown>): WorkItem {
   const id = String(row.id);
   const status = String(row.status ?? "new");
+  const kind = row.kind ? String(row.kind) : "";
+  const ticket = row.ticket_number ? String(row.ticket_number) : shortId("AP", id);
+  const feature = row.feature ? String(row.feature) : "app";
+  const kindTitle =
+    kind === "bug" ? "บั๊ก" : kind === "idea" ? "ไอเดีย" : kind === "error" ? "พังทั้งหน้า" : "Feedback";
   return {
     id: `app_feedback:${id}`,
     source: "app_feedback",
     sourceId: id,
     app: "an1hem",
-    key: shortId("FB", id),
-    title: row.feature ? `Feedback: ${row.feature}` : "App feedback",
+    key: ticket,
+    title: `${kindTitle}: ${feature}`,
     description: row.message ? String(row.message) : row.comment ? String(row.comment) : null,
     rawStatus: status,
     boardColumn: toBoardColumn("app_feedback", status),
-    priority: Number(row.rating) <= 2 ? "high" : "medium",
+    priority: feedbackPriority(row),
     adminNote: row.admin_note ? String(row.admin_note) : null,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at ?? row.created_at),
     deepLink: anthemAdmin("/feedback"),
-    category: row.feature ? String(row.feature) : null,
+    category: kind || (row.feature ? String(row.feature) : null),
   };
 }
 

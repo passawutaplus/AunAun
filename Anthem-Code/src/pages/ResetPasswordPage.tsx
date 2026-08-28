@@ -9,16 +9,22 @@ import { HttpErrorPage } from "@/components/HttpErrorPage";
 import { PasswordField } from "@/components/ui/PasswordField";
 import { supabase } from "@/integrations/supabase/client";
 import { establishSession } from "@/lib/authSession";
+import { passwordChangeFormError } from "@/lib/passwordChange";
+import { userHasEmailPassword, verifyUserPassword } from "@/lib/sensitiveActionAuth";
 import { toast } from "sonner";
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [needsCurrent, setNeedsCurrent] = useState(true);
+  const [current, setCurrent] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [touched, setTouched] = useState(false);
+  const [currentError, setCurrentError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +64,25 @@ const ResetPasswordPage = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!ready) return;
+    let cancelled = false;
+    void supabase.auth.getUser().then(({ data }) => {
+      if (cancelled) return;
+      setEmail(data.user?.email?.trim() ?? "");
+      setNeedsCurrent(userHasEmailPassword(data.user));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [ready]);
+
+  const formError = passwordChangeFormError({
+    current,
+    next: password,
+    confirm,
+    needsCurrent,
+  });
   const passError = touched && password.length > 0 && password.length < 8
     ? "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"
     : null;
@@ -67,9 +92,20 @@ const ResetPasswordPage = () => {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
-    if (password.length < 8 || password !== confirm) return;
+    setCurrentError(null);
+    if (formError) {
+      toast.error(formError);
+      return;
+    }
     setBusy(true);
     try {
+      if (needsCurrent) {
+        if (!email) {
+          toast.error("บัญชีนี้ไม่มีอีเมล");
+          return;
+        }
+        await verifyUserPassword(email, current);
+      }
       const { error } = await supabase.auth.updateUser({ password });
       if (error) toast.error(error.message);
       else {
@@ -77,6 +113,10 @@ const ResetPasswordPage = () => {
         await supabase.auth.signOut({ scope: "global" });
         setTimeout(() => navigate("/auth", { replace: true }), 600);
       }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "รหัสผ่านเดิมไม่ถูกต้อง";
+      setCurrentError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -119,11 +159,32 @@ const ResetPasswordPage = () => {
             ตั้งรหัสผ่านใหม่
           </h1>
           <p className="text-sm text-muted-foreground mb-6 thai-body text-center">
-            กรอกรหัสผ่านใหม่ที่คุณจะใช้เข้าสู่ระบบ
+            {needsCurrent
+              ? "ใส่รหัสผ่านเดิมเพื่อยืนยันว่าเป็นเจ้าของบัญชี แล้วตั้งรหัสใหม่"
+              : "กรอกรหัสผ่านใหม่ที่คุณจะใช้เข้าสู่ระบบ"}
           </p>
 
           <div className="rounded-2xl glass-panel-strong p-6 sm:p-7">
             <form onSubmit={submit} className="space-y-4">
+              {needsCurrent ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="reset-current" className="text-xs">รหัสผ่านเดิม</Label>
+                  <PasswordField
+                    id="reset-current"
+                    autoComplete="current-password"
+                    value={current}
+                    onChange={(e) => {
+                      setCurrent(e.target.value);
+                      setCurrentError(null);
+                    }}
+                    minLength={1}
+                    invalid={!!currentError}
+                    error={currentError}
+                    required
+                  />
+                </div>
+              ) : null}
+
               <div className="space-y-1.5">
                 <Label htmlFor="reset-pass" className="text-xs">รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)</Label>
                 <PasswordField

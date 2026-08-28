@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { User, Save, LogOut, Shield, Briefcase, Layers, Search, Monitor, Link2 } from "lucide-react";
+import { User, Save, LogOut, Shield, Briefcase, Layers, Search, Monitor, Link2, Menu } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -41,9 +41,18 @@ import { ProfileVisibilitySection } from "@/components/settings/ProfileVisibilit
 import BillingSettingsPanel from "@/components/settings/BillingSettingsPanel";
 import { PrivacySecuritySection } from "@/components/settings/PrivacySecuritySection";
 import { ChangePasswordSection } from "@/components/settings/ChangePasswordSection";
+import { AccountSecurityIntro } from "@/components/settings/AccountSecurityIntro";
+import { WithdrawPinSettingsSection } from "@/components/settings/WithdrawPinSettingsSection";
 import SettingsSideNav, { useSettingsPanelState } from "@/components/settings/SettingsSideNav";
 import { ChangeUsernameDialog } from "@/components/settings/ChangeUsernameDialog";
 import { ChangeDisplayNameDialog } from "@/components/settings/ChangeDisplayNameDialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { normalizeUsername } from "@/hooks/useUsernameAvailability";
 import { USERNAME_COOLDOWN_MS } from "@/lib/usernamePolicy";
 import { DISPLAY_NAME_COOLDOWN_MS } from "@/lib/displayNamePolicy";
@@ -112,6 +121,15 @@ const SettingsPage = () => {
   const updateMut = useUpdateProfile(user?.id);
   const { data: isAdmin } = useIsAdmin();
   const { panel, setPanel } = useSettingsPanelState(!!isAdmin);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("recover") === "pin" && panel !== "account") {
+      setPanel("account");
+    }
+  }, [panel, setPanel]);
 
   const handleSignOut = async () => {
     await signOutApp(qc);
@@ -139,7 +157,10 @@ const SettingsPage = () => {
   const normalizedUsername = normalizeUsername(form.username);
 
   useEffect(() => {
-    if (!authLoading && !user) navigate("/auth?redirect=/settings");
+    if (!authLoading && !user) {
+      const dest = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      navigate(`/auth?redirect=${encodeURIComponent(dest)}`);
+    }
   }, [authLoading, user, navigate]);
 
   useEffect(() => {
@@ -261,7 +282,17 @@ const SettingsPage = () => {
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <BackButton fallbackTo="/portfolio" label="ย้อนกลับ" />
           <span className="text-sm font-medium text-foreground">ตั้งค่าบัญชี</span>
-          <span className="w-12" />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            aria-label="เปิดเมนูตั้งค่า"
+            onClick={() => setMenuOpen(true)}
+          >
+            <Menu className="h-4 w-4" />
+            เมนู
+          </Button>
         </div>
       </div>
 
@@ -278,7 +309,7 @@ const SettingsPage = () => {
                 ตั้งค่า<span className="text-primary">บัญชี</span>ของคุณ
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                เลือกหมวดด้านซ้าย — โปรไฟล์ การแจ้งเตือน ความเป็นส่วนตัว และการใช้งาน
+                เลือกหมวดจากเมนู — โปรไฟล์ การแจ้งเตือน ความเป็นส่วนตัว และการใช้งาน
               </p>
             </div>
           </div>
@@ -287,7 +318,7 @@ const SettingsPage = () => {
 
       <form
         onSubmit={handleSave}
-        className="max-w-5xl mx-auto px-4 pb-24 grid grid-cols-1 lg:grid-cols-[14rem_1fr] xl:grid-cols-[15rem_1fr] gap-6 lg:gap-8"
+        className="mx-auto max-w-6xl px-4 pb-24 flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8"
       >
         <SettingsSideNav
           activePanel={panel}
@@ -529,7 +560,9 @@ const SettingsPage = () => {
 
         {panel === "account" ? (
           <div className="space-y-6">
+            <AccountSecurityIntro />
             {user ? <ChangePasswordSection user={user} /> : null}
+            {user ? <WithdrawPinSettingsSection user={user} /> : null}
             <section className="rounded-2xl glass-panel p-6 space-y-4">
               <SectionTitle icon={LogOut} title="บัญชี" />
               <p className="text-xs text-muted-foreground">
@@ -577,6 +610,24 @@ const SettingsPage = () => {
           />
         </>
       ) : null}
+
+      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+        <SheetContent side="left" className="w-[min(20rem,90vw)] p-0">
+          <SheetHeader className="border-b border-border/70 px-4 py-4 text-left">
+            <SheetTitle>ตั้งค่าบัญชี</SheetTitle>
+            <SheetDescription>เลือกหมวดที่ต้องการแก้ไข</SheetDescription>
+          </SheetHeader>
+          <div className="p-3">
+            <SettingsSideNav
+              variant="plain"
+              activePanel={panel}
+              onSelect={setPanel}
+              isAdmin={!!isAdmin}
+              onNavigate={() => setMenuOpen(false)}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </main>
   );
 };

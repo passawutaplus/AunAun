@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -131,6 +132,27 @@ export const useStudioHiringRequests = (studioId: string | undefined) => {
   }, [studioId, qc]);
 
   return query;
+};
+
+export const useUpdateHirePhone = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, phone }: { id: string; phone: string | null }) => {
+      const { error } = await supabase
+        .from("hiring_requests")
+        .update({ phone } as never)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["hiring_requests"] });
+      void qc.invalidateQueries({ queryKey: ["studio_hiring_requests"] });
+      toast.success("บันทึกเบอร์โทรแล้ว");
+    },
+    onError: (e: unknown) => {
+      toast.error(e instanceof Error ? e.message : "บันทึกเบอร์โทรไม่สำเร็จ");
+    },
+  });
 };
 
 export const useUpdateHireStatus = () => {

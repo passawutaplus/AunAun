@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import ModerationBanBanner from "@/components/moderation/ModerationBanBanner";
 import { maskProfanity, detectProfanity, PROFANITY_WARNING, COMMUNITY_GUIDELINES_PATH } from "@/lib/profanity";
-import { UploadFileHint } from "@/components/ui/UploadFileHint";
 
 const CHAT_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 const CHAT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
@@ -371,11 +370,6 @@ const ChatComposer = ({
           <Send className="w-4 h-4" />
         </Button>
       </div>
-      <UploadFileHint
-        formats="รูป JPG/PNG/WebP · ไฟล์ PDF/ZIP/เอกสาร · ลากวางได้"
-        maxMb={25}
-        className="pl-1 pt-1"
-      />
       {uploading && uploadProgress != null ? (
         <div className="flex items-center gap-2 pt-1.5 pl-1">
           <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">

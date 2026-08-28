@@ -1,12 +1,8 @@
 /** Projects feed — uniform 4:3 grid (Feed home + explore). */
-export const FEED_PROJECT_GRID =
-  "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 2xl:grid-cols-5";
+export const FEED_PROJECT_GRID = "grid grid-cols-4";
 
 /** Packages listing — always 4 columns from md up (density picker does not apply). */
 export const PACKAGE_FEED_GRID = "grid grid-cols-2 md:grid-cols-4";
-
-/** Profile Booking tab — 3 columns so cards fill the profile content column. */
-export const PACKAGE_BOOKING_GRID = "grid grid-cols-2 md:grid-cols-3";
 
 /** Slightly taller row gap than column gap for breathing room between rows. */
 export const FEED_PROJECT_GRID_GAP =

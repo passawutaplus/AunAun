@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Pencil, Trash2, Layers3, Lock, Globe2, X, Share2 } from "lucide-react";
+import { Pencil, Trash2, Layers3, Lock, Globe2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,12 +27,10 @@ import {
 } from "@/components/collections/CollectionBrowseToolbar";
 import SharePopover from "@/components/SharePopover";
 import { InlineLoader } from "@/components/ui/BanterLoader";
-import { AnimatedDensityGrid } from "@/components/ui/AnimatedDensityGrid";
+import { CollectionWorkItemsGrid } from "@/components/collections/CollectionWorkCard";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import {
   COLLECTION_ITEMS_GRID_STORAGE_KEY,
-  collectionGridClass,
   readCollectionGridDensity,
   writeCollectionGridDensity,
   type CollectionGridDensity,
@@ -47,6 +44,7 @@ type CollectionProject = {
   likes?: number | null;
   views?: number | null;
   created_at?: string | null;
+  owner_id?: string | null;
 };
 
 type Props = {
@@ -65,7 +63,7 @@ export function CollectionWorkspaceDetail({ collectionId, isOwner, onDeleted }: 
   const [query, setQuery] = useState("");
   const [sortMode, setSortMode] = useState<CollectionItemsSortMode>("newest");
   const [density, setDensity] = useState<CollectionGridDensity>(() =>
-    readCollectionGridDensity(COLLECTION_ITEMS_GRID_STORAGE_KEY),
+    readCollectionGridDensity(COLLECTION_ITEMS_GRID_STORAGE_KEY, "large"),
   );
 
   const projects = items as CollectionProject[];
@@ -255,6 +253,7 @@ export function CollectionWorkspaceDetail({ collectionId, isOwner, onDeleted }: 
             sortMode={sortMode}
             onSortModeChange={setSortMode}
             resultCount={filtered.length}
+            densityPreset="profile"
           />
 
           {filtered.length === 0 ? (
@@ -263,102 +262,23 @@ export function CollectionWorkspaceDetail({ collectionId, isOwner, onDeleted }: 
               <p className="text-sm text-muted-foreground">ลองเปลี่ยนคำค้น</p>
             </div>
           ) : (
-            <AnimatedDensityGrid
+            <CollectionWorkItemsGrid
+              projects={filtered}
               density={density}
-              gridClassName={collectionGridClass(density)}
               layoutGroupId="collection-workspace-items-layout"
-            >
-              {filtered.map((p) =>
-                density === "list" ? (
-                  <div key={p.id} className="group relative flex items-center gap-3 rounded-xl glass-panel px-3 py-2.5">
-                    <Link to={`/project/${p.id}`} className="flex min-w-0 flex-1 items-center gap-3">
-                      <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-md bg-muted">
-                        {p.cover_url ? (
-                          <img
-                            src={p.cover_url}
-                            alt={p.title ?? ""}
-                            className="absolute inset-0 h-full w-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : null}
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="font-medium text-sm text-foreground line-clamp-1">{p.title}</h3>
-                        {p.status ? (
-                          <p className="text-[11px] text-muted-foreground mt-0.5">{p.status}</p>
-                        ) : null}
-                      </div>
-                    </Link>
-                    {isOwner && (
-                      <button
-                        type="button"
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          await remove.mutateAsync({
-                            collectionId: collection.id,
-                            projectId: p.id,
-                            remove: true,
-                          });
-                          toast.success("เอาออกจากคอลเลกชันแล้ว");
-                        }}
-                        aria-label="เอาออก"
-                        className="p-1.5 rounded-full hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div key={p.id} className="group relative">
-                    <Link to={`/project/${p.id}`} className="block">
-                      <div
-                        className={cn(
-                          "relative w-full overflow-hidden rounded-md bg-muted",
-                          density === "large" ? "aspect-[16/10]" : "aspect-[4/3]",
-                        )}
-                      >
-                        {p.cover_url && (
-                          <img
-                            src={p.cover_url}
-                            alt={p.title ?? ""}
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                            loading="lazy"
-                          />
-                        )}
-                      </div>
-                      <h3
-                        className={cn(
-                          "font-medium text-foreground line-clamp-1 mt-2 px-0.5",
-                          density === "small" ? "text-xs" : "text-sm",
-                        )}
-                      >
-                        {p.title}
-                      </h3>
-                    </Link>
-                    {isOwner && (
-                      <button
-                        type="button"
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          await remove.mutateAsync({
-                            collectionId: collection.id,
-                            projectId: p.id,
-                            remove: true,
-                          });
-                          toast.success("เอาออกจากคอลเลกชันแล้ว");
-                        }}
-                        aria-label="เอาออก"
-                        className="absolute top-2 right-2 p-1.5 rounded-full bg-background/70 backdrop-blur-md border border-white/15 shadow-sm md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                ),
-              )}
-            </AnimatedDensityGrid>
+              onRemove={
+                isOwner
+                  ? async (projectId) => {
+                      await remove.mutateAsync({
+                        collectionId: collection.id,
+                        projectId,
+                        remove: true,
+                      });
+                      toast.success("เอาออกจากคอลเลกชันแล้ว");
+                    }
+                  : undefined
+              }
+            />
           )}
         </>
       )}
