@@ -29,6 +29,10 @@ type Props = {
   onCancel: () => void;
   title?: string;
   description?: string;
+  zoomLabel?: string;
+  cancelLabel?: string;
+  confirmLabel?: string;
+  confirmingLabel?: string;
 };
 
 const MAX_ZOOM = 3;
@@ -44,6 +48,10 @@ export function CommunityImageCropDialog({
   onCancel,
   title,
   description,
+  zoomLabel = "ซูม",
+  cancelLabel = "ยกเลิก",
+  confirmLabel = "ใช้รูปนี้",
+  confirmingLabel = "กำลังครอป...",
 }: Props) {
   const aspectKey = normalizeCommunityMediaAspect(aspectProp);
   const meta = communityMediaAspectMeta(aspectKey);
@@ -157,7 +165,7 @@ export function CommunityImageCropDialog({
         </div>
 
         <div className="px-4 py-3">
-          <label className="text-xs text-muted-foreground mb-1 block">ซูม</label>
+          <label className="text-xs text-muted-foreground mb-1 block">{zoomLabel}</label>
           <input
             type="range"
             min={minZoom}
@@ -171,10 +179,10 @@ export function CommunityImageCropDialog({
 
         <DialogFooter className="px-4 pb-4 gap-2 sm:gap-2">
           <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
-            ยกเลิก
+            {cancelLabel}
           </Button>
           <Button type="button" onClick={() => void handleConfirm()} disabled={saving || !croppedAreaPixels}>
-            {saving ? "กำลังครอป..." : "ใช้รูปนี้"}
+            {saving ? confirmingLabel : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -5,9 +5,10 @@ import type { SocialLinkItem } from "@/lib/validators";
 
 type Props = {
   links: SocialLinkItem[];
+  className?: string;
 };
 
-export default function ProfileLinksList({ links }: Props) {
+export default function ProfileLinksList({ links, className }: Props) {
   const items = links
     .map((l) => {
       const href = safeHttpUrl(l.url);
@@ -21,7 +22,7 @@ export default function ProfileLinksList({ links }: Props) {
   }
 
   return (
-    <div className="grid sm:grid-cols-2 gap-3">
+    <div className={className ?? "grid sm:grid-cols-2 gap-3"}>
       {items.map(({ id, title, href }) => {
         const platform = resolveContactSocialPlatform(title);
         return (

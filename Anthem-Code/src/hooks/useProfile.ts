@@ -79,6 +79,50 @@ export const useUpdateProfile = (userId: string | undefined) => {
       }
       if (p.skills !== undefined) payload.skills = p.skills;
       if (p.experience !== undefined) payload.experience = p.experience as unknown as Json;
+      if (p.cvPhotoUrl !== undefined) {
+        (payload as { cv_photo_url?: string | null }).cv_photo_url =
+          p.cvPhotoUrl.trim() || null;
+      }
+      if (
+        p.education !== undefined ||
+        p.cvTools !== undefined ||
+        p.workArrangement !== undefined ||
+        p.cvLanguages !== undefined ||
+        p.cvCertifications !== undefined ||
+        p.cvAwards !== undefined ||
+        p.portfolioUrl !== undefined ||
+        p.cvFullName !== undefined ||
+        p.cvFirstName !== undefined ||
+        p.cvLastName !== undefined ||
+        p.cvBirthDate !== undefined ||
+        p.cvDesiredRole !== undefined ||
+        p.cvContactEmail !== undefined ||
+        p.cvContactLine !== undefined ||
+        p.cvContactPhone !== undefined ||
+        p.cvContactPublic !== undefined
+      ) {
+        const firstName = (p.cvFirstName ?? "").trim();
+        const lastName = (p.cvLastName ?? "").trim();
+        const composed = `${firstName} ${lastName}`.replace(/\s+/g, " ").trim();
+        (payload as { cv?: Json }).cv = {
+          education: p.education ?? [],
+          certifications: p.cvCertifications ?? [],
+          awards: p.cvAwards ?? [],
+          tools: p.cvTools ?? [],
+          workArrangement: p.workArrangement ?? null,
+          languages: p.cvLanguages ?? [],
+          portfolioUrl: (p.portfolioUrl ?? "").trim(),
+          firstName,
+          lastName,
+          fullName: composed || (p.cvFullName ?? "").trim(),
+          birthDate: (p.cvBirthDate ?? "").trim(),
+          desiredRole: (p.cvDesiredRole ?? "").trim(),
+          contactEmail: (p.cvContactEmail ?? "").trim(),
+          contactLine: (p.cvContactLine ?? "").trim(),
+          contactPhone: (p.cvContactPhone ?? "").trim(),
+          contactPublic: p.cvContactPublic === true,
+        } as unknown as Json;
+      }
       if (Object.keys(payload).length === 0) return;
       const { error } = await supabase.from("profiles").update(payload).eq("user_id", userId);
       if (error) {
@@ -106,6 +150,7 @@ export const useUpdateProfileMedia = (userId: string | undefined) => {
       avatar_url?: string;
       cover_url?: string;
       cover_original_url?: string | null;
+      cv_photo_url?: string | null;
     }) => {
       if (!userId) throw new Error("ยังไม่ได้เข้าสู่ระบบ");
       const { error } = await supabase

@@ -36,7 +36,7 @@ export const PROJECT_MANAGE_SELECT = PROJECT_DETAIL_SELECT;
 
 /** Public profile card — unified DB uses user_id (= auth uid). */
 export const PUBLIC_PROFILE_SELECT =
-  "user_id, display_name, username, avatar_url, bio, role, skills, preferred_categories, experience, website, instagram, facebook, line_id, social_links, cover_url, is_verified, location, profile_address, opportunity_status, opportunity_types, opportunity_note, open_for_work, open_for_work_badge";
+  "user_id, display_name, username, avatar_url, bio, role, skills, preferred_categories, experience, website, instagram, facebook, line_id, social_links, cover_url, is_verified, location, profile_address, opportunity_status, opportunity_types, opportunity_note, open_for_work, open_for_work_badge, cv_photo_url, cv";
 
 /** Own settings / hire-readiness profile — avoid select("*") (column grants drift). */
 export const OWN_PROFILE_SELECT = [

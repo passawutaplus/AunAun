@@ -16,6 +16,7 @@ type Props = {
   experience?: ExperienceItem[];
   socialLinks?: SocialLinkItem[];
   onEdit?: () => void;
+  onViewCv?: () => void;
   className?: string;
 };
 
@@ -141,6 +142,7 @@ export default function ProfileAboutMeCard({
   experience = [],
   socialLinks = [],
   onEdit,
+  onViewCv,
   className,
 }: Props) {
   const trimmedBio = bio?.trim() || "";
@@ -160,17 +162,28 @@ export default function ProfileAboutMeCard({
     >
       <div className="flex items-center justify-between gap-2 mb-1">
         <h2 className="text-sm font-semibold text-foreground">About me</h2>
-        {onEdit ? (
-          <button
-            type="button"
-            onClick={onEdit}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
-            title="แก้ไข About me"
-            aria-label="แก้ไข About me"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-          </button>
-        ) : null}
+        <div className="flex items-center gap-0.5">
+          {onViewCv ? (
+            <button
+              type="button"
+              onClick={onViewCv}
+              className="inline-flex h-8 items-center rounded-full px-2.5 text-[11px] font-medium text-primary hover:bg-primary/10"
+            >
+              ดู CV
+            </button>
+          ) : null}
+          {onEdit ? (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
+              title="แก้ไข About me"
+              aria-label="แก้ไข About me"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <Row icon={TextQuote} empty={!trimmedBio}>

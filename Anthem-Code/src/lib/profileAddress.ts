@@ -110,3 +110,67 @@ export function displayProfileAddress(
   }
   return (location ?? "").trim();
 }
+
+/** Fill province/district dropdowns from a legacy “เขต, จังหวัด” location string. */
+export function hydrateAddressFromLocation(location: string | null | undefined): ProfileAddress {
+  const raw = (location ?? "").trim();
+  if (!raw) return { ...EMPTY_PROFILE_ADDRESS };
+  const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    const provinceRaw = parts[parts.length - 1] ?? "";
+    const province = normalizeThaiProvince(provinceRaw) || provinceRaw;
+    const district = parts.slice(0, -1).join(" ");
+    return { ...EMPTY_PROFILE_ADDRESS, district, province };
+  }
+  const province = normalizeThaiProvince(raw);
+  if (province) return { ...EMPTY_PROFILE_ADDRESS, province };
+  return { ...EMPTY_PROFILE_ADDRESS };
+}
+
+/** Structured address wins; otherwise hydrate from the legacy location chip. */
+export function parseProfileAddressOrLocation(
+  profileAddress: unknown,
+  location?: string | null,
+): ProfileAddress {
+  const parsed = parseProfileAddress(profileAddress);
+  if (hasProfileAddress(parsed)) return parsed;
+  return hydrateAddressFromLocation(location);
+}
+
+export type ProfileAddressEditorCopy = {
+  title: string;
+  hint: string;
+  line1: string;
+  line1Ph: string;
+  province: string;
+  district: string;
+  subdistrict: string;
+  postalCode: string;
+  selectProvince: string;
+  selectDistrict: string;
+  selectDistrictFirst: string;
+  selectSubdistrict: string;
+  selectSubdistrictFirst: string;
+  selectPostal: string;
+  selectPostalFirst: string;
+  unspecified: string;
+};
+
+export const PROFILE_ADDRESS_EDITOR_COPY_TH: ProfileAddressEditorCopy = {
+  title: "ที่อยู่",
+  hint: "เลือกจังหวัด → อำเภอ/เขต → ตำบล/แขวง แล้วระบบใส่รหัสไปรษณีย์ให้",
+  line1: "บ้านเลขที่ / หมู่ / ซอย / ถนน",
+  line1Ph: "เช่น 123/4 หมู่ 5 ซอยสุขุมวิท 21",
+  province: "จังหวัด",
+  district: "อำเภอ / เขต",
+  subdistrict: "ตำบล / แขวง",
+  postalCode: "รหัสไปรษณีย์",
+  selectProvince: "เลือกจังหวัด",
+  selectDistrict: "เลือกอำเภอ / เขต",
+  selectDistrictFirst: "เลือกจังหวัดก่อน",
+  selectSubdistrict: "เลือกตำบล / แขวง",
+  selectSubdistrictFirst: "เลือกอำเภอ / เขตก่อน",
+  selectPostal: "เลือกรหัสไปรษณีย์",
+  selectPostalFirst: "เลือกตำบล / แขวงก่อน",
+  unspecified: "ไม่ระบุ",
+};

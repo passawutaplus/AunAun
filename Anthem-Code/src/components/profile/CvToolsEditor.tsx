@@ -1,19 +1,24 @@
 import { useMemo, useState, type KeyboardEvent } from "react";
 import { Plus, Search, X } from "lucide-react";
-import { SKILL_CHIP_CATALOG, SKILL_CHIP_SUGGESTIONS_EN, canonicalizeSkillChip, isCatalogSkillSelected } from "@/data/skillChipOptions";
-import { normalizeToolKey } from "@/hooks/useToolSuggestions";
+import ToolIcon from "@/components/ToolIcon";
+import { CATALOG_TOOL_LABELS, COMMON_TOOLS } from "@/lib/toolIcons";
+import { isAudioTool, normalizeToolKey } from "@/hooks/useToolSuggestions";
 import { cn } from "@/lib/utils";
 import { useAboutEditLocale } from "@/components/profile/AboutEditLocale";
 
-interface Props {
+type Props = {
   value: string[];
   onChange: (v: string[]) => void;
-  /** When false, show freeform only (languages). Default true. */
-  withSuggestions?: boolean;
   max?: number;
+};
+
+function findCatalogLabel(raw: string): string | undefined {
+  const key = normalizeToolKey(raw);
+  if (!key) return undefined;
+  return CATALOG_TOOL_LABELS.find((label) => normalizeToolKey(label) === key);
 }
 
-function SkillChip({
+function SoftwareChip({
   label,
   selected,
   onClick,
@@ -27,7 +32,8 @@ function SkillChip({
   const { t } = useAboutEditLocale();
   const content = (
     <>
-      <span className="truncate max-w-[10rem]">{label}</span>
+      <ToolIcon name={label} size="xs" />
+      <span className="truncate max-w-[9rem]">{label}</span>
       {onRemove ? (
         <span
           role="button"
@@ -70,44 +76,45 @@ function SkillChip({
   return <span className={className}>{content}</span>;
 }
 
-const SkillsEditor = ({ value, onChange, withSuggestions = true, max = 30 }: Props) => {
+export default function CvToolsEditor({ value, onChange, max = 12 }: Props) {
   const { t } = useAboutEditLocale();
   const [query, setQuery] = useState("");
+  const selectedKeys = useMemo(() => new Set(value.map(normalizeToolKey)), [value]);
 
   const add = (raw: string) => {
-    const label = raw.trim();
-    if (!label || value.length >= max) return;
-    if (isCatalogSkillSelected(value, label)) {
+    const preset = findCatalogLabel(raw);
+    if (!preset || value.length >= max) {
+      return;
+    }
+    if (selectedKeys.has(normalizeToolKey(preset))) {
       setQuery("");
       return;
     }
-    onChange([...value, canonicalizeSkillChip(label)]);
+    onChange([...value, preset]);
     setQuery("");
   };
 
-  const remove = (skill: string) => onChange(value.filter((s) => s !== skill));
+  const remove = (label: string) => onChange(value.filter((s) => s !== label));
 
-  const toggle = (skill: string) => {
-    if (isCatalogSkillSelected(value, skill)) {
-      const want = canonicalizeSkillChip(skill).toLowerCase();
-      onChange(value.filter((s) => canonicalizeSkillChip(s).toLowerCase() !== want));
+  const toggle = (label: string) => {
+    const key = normalizeToolKey(label);
+    if (selectedKeys.has(key)) {
+      onChange(value.filter((s) => normalizeToolKey(s) !== key));
       return;
     }
-    add(skill);
+    add(label);
   };
 
-  const filteredPresets = useMemo(() => {
+  const filteredCatalog = useMemo(() => {
     const q = normalizeToolKey(query);
-    const pool = SKILL_CHIP_SUGGESTIONS_EN.filter((s) => !isCatalogSkillSelected(value, s));
-    if (!q) return pool;
-    return pool
-      .filter((s) => {
-        const th = SKILL_CHIP_CATALOG.find((item) => item.en === s)?.th ?? "";
-        const hay = normalizeToolKey(`${s} ${th}`);
-        return hay.includes(q) || q.includes(normalizeToolKey(s));
-      })
+    const unused = CATALOG_TOOL_LABELS.filter((s) => !selectedKeys.has(normalizeToolKey(s)));
+    if (!q) {
+      return COMMON_TOOLS.filter((s) => !selectedKeys.has(normalizeToolKey(s)) && !isAudioTool(s));
+    }
+    return unused
+      .filter((s) => normalizeToolKey(s).includes(q) || q.includes(normalizeToolKey(s)))
       .slice(0, 24);
-  }, [query, value]);
+  }, [query, selectedKeys]);
 
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === ",") {
@@ -118,12 +125,14 @@ const SkillsEditor = ({ value, onChange, withSuggestions = true, max = 30 }: Pro
     }
   };
 
+  const unmatchedQuery = query.trim() && !findCatalogLabel(query) && filteredCatalog.length === 0;
+
   return (
     <div className="space-y-3">
       {value.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {value.map((s) => (
-            <SkillChip key={s} label={canonicalizeSkillChip(s)} selected onRemove={() => remove(s)} />
+            <SoftwareChip key={s} label={s} selected onRemove={() => remove(s)} />
           ))}
         </div>
       )}
@@ -134,19 +143,15 @@ const SkillsEditor = ({ value, onChange, withSuggestions = true, max = 30 }: Pro
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKey}
-          placeholder={
-            withSuggestions
-              ? t.skillsSearch
-              : t.skillsSearch
-          }
+          placeholder={t.softwareSearch}
           disabled={value.length >= max}
           className="flex-1 bg-transparent py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none disabled:cursor-not-allowed"
-          aria-label={t.skillsSearchAria}
+          aria-label={t.softwareSearchAria}
         />
         <button
           type="button"
           onClick={() => add(query)}
-          disabled={!query.trim() || value.length >= max}
+          disabled={!findCatalogLabel(query) || value.length >= max}
           className="text-primary disabled:opacity-40"
           aria-label={t.add}
         >
@@ -154,29 +159,22 @@ const SkillsEditor = ({ value, onChange, withSuggestions = true, max = 30 }: Pro
         </button>
       </div>
 
-      {withSuggestions && filteredPresets.length > 0 && (
+      {filteredCatalog.length > 0 && (
         <div className="space-y-2">
           <p className="text-[11px] text-muted-foreground">
-            {query.trim() ? t.searchResults : t.pickList}
+            {query.trim() ? t.searchResults : t.pickCatalog}
           </p>
           <div className="flex flex-wrap gap-2">
-            {filteredPresets.map((s) => (
-              <SkillChip key={s} label={s} onClick={() => toggle(s)} />
+            {filteredCatalog.map((s) => (
+              <SoftwareChip key={s} label={s} onClick={() => toggle(s)} />
             ))}
           </div>
         </div>
       )}
 
-      {withSuggestions &&
-        query.trim() &&
-        filteredPresets.length === 0 &&
-        !isCatalogSkillSelected(value, query) && (
-          <p className="text-xs text-muted-foreground">
-            {t.notInList(query.trim())}
-          </p>
-        )}
+      {unmatchedQuery ? (
+        <p className="text-xs text-muted-foreground">{t.notInCatalog}</p>
+      ) : null}
     </div>
   );
-};
-
-export default SkillsEditor;
+}

@@ -41,7 +41,7 @@ export function isAllowedPortfolioImage(file: File): boolean {
 
 /** Still images only (cover crop / poster) — no GIF. */
 export function isAllowedPortfolioStillImage(file: File): boolean {
-  if (/^image\/(jpeg|png)$/i.test(file.type)) return true;
+  if (/^image\/(jpeg|jpg|png)$/i.test(file.type)) return true;
   if (!file.type && /\.(jpe?g|png)$/i.test(file.name)) return true;
   return false;
 }

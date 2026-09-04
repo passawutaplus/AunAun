@@ -1,32 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { User, Save, LogOut, Shield, Briefcase, Layers, Search, Monitor, Link2, Menu } from "lucide-react";
+import { ArrowRight, User, Save, LogOut, Shield, Menu } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
-import { profileSchema, experienceItemSchema, formatExperiencePeriod, normalizeExperienceItem } from "@/lib/validators";
-import type { ExperienceItem } from "@/lib/validators";
-import { parseSocialLinks } from "@/lib/parseSocialLinks";
-import ExperienceEditor from "@/components/profile/ExperienceEditor";
-import SkillsEditor from "@/components/profile/SkillsEditor";
-import WorkDisciplineEditor from "@/components/profile/WorkDisciplineEditor";
-import ContactEditor from "@/components/profile/ContactEditor";
-import ProfileLinksEditor from "@/components/profile/ProfileLinksEditor";
+import { profileSchema } from "@/lib/validators";
 import ProfileAddressEditor from "@/components/profile/ProfileAddressEditor";
-import { ChipMultiSelectWithOther } from "@/components/ui/ChipMultiSelectWithOther";
 import {
   EMPTY_PROFILE_ADDRESS,
   formatProfileAddressShort,
   parseProfileAddress,
   profileAddressToJson,
 } from "@/lib/profileAddress";
-import {
-  OPPORTUNITY_TYPE_KEYS,
-  labelOpportunityType,
-} from "@/lib/opportunity";
+import { ABOUT_ME_EDIT_HREF, isAboutMeSettingsHash } from "@/lib/settingsNav";
 import { z } from "zod";
 import PageLoader from "@/components/ui/PageLoader";
 import { HttpErrorPage } from "@/components/HttpErrorPage";
@@ -60,20 +49,8 @@ import { DISPLAY_NAME_COOLDOWN_MS } from "@/lib/displayNamePolicy";
 const settingsFormSchema = profileSchema.pick({
   displayName: true,
   username: true,
-  bio: true,
-  role: true,
   location: true,
   profileAddress: true,
-  email: true,
-  website: true,
-  lineId: true,
-  facebook: true,
-  instagram: true,
-  socialLinks: true,
-  skills: true,
-  experience: true,
-  preferredCategories: true,
-  opportunityTypes: true,
   notifyEmail: true,
   notifyHire: true,
   notifyCollab: true,
@@ -82,31 +59,11 @@ const settingsFormSchema = profileSchema.pick({
 
 type SettingsFormInput = z.infer<typeof settingsFormSchema>;
 
-const parseExperience = (raw: unknown): ExperienceItem[] =>
-  Array.isArray(raw)
-    ? raw.map(normalizeExperienceItem).filter((x): x is ExperienceItem => !!x)
-    : [];
-
-const parseSkills = (raw: unknown): string[] =>
-  Array.isArray(raw) ? raw.filter((s): s is string => typeof s === "string") : [];
-
 const empty: SettingsFormInput = {
   displayName: "",
   username: "",
-  bio: "",
-  role: "",
   location: "",
   profileAddress: { ...EMPTY_PROFILE_ADDRESS },
-  email: "",
-  website: "",
-  lineId: "",
-  facebook: "",
-  instagram: "",
-  socialLinks: [],
-  skills: [],
-  experience: [],
-  preferredCategories: [],
-  opportunityTypes: [],
   notifyEmail: true,
   notifyHire: true,
   notifyCollab: true,
@@ -130,6 +87,17 @@ const SettingsPage = () => {
       setPanel("account");
     }
   }, [panel, setPanel]);
+
+  useEffect(() => {
+    const redirectAbout = () => {
+      if (isAboutMeSettingsHash(window.location.hash)) {
+        navigate(ABOUT_ME_EDIT_HREF, { replace: true });
+      }
+    };
+    redirectAbout();
+    window.addEventListener("hashchange", redirectAbout);
+    return () => window.removeEventListener("hashchange", redirectAbout);
+  }, [navigate]);
 
   const handleSignOut = async () => {
     await signOutApp(qc);
@@ -168,25 +136,9 @@ const SettingsPage = () => {
       setForm({
         displayName: profile.display_name ?? "",
         username: profile.username ?? "",
-        bio: profile.bio ?? "",
-        role: profile.role ?? "",
         location: profile.location ?? "",
         profileAddress: parseProfileAddress(
           (profile as { profile_address?: unknown }).profile_address,
-        ),
-        email: profile.email ?? user?.email ?? "",
-        website: profile.website ?? "",
-        lineId: profile.line_id ?? "",
-        facebook: profile.facebook ?? "",
-        instagram: profile.instagram ?? "",
-        socialLinks: parseSocialLinks((profile as { social_links?: unknown }).social_links),
-        skills: parseSkills(profile.skills),
-        experience: parseExperience(profile.experience),
-        preferredCategories: parseSkills(
-          (profile as { preferred_categories?: unknown }).preferred_categories,
-        ),
-        opportunityTypes: parseSkills(
-          (profile as { opportunity_types?: unknown }).opportunity_types,
         ),
         notifyEmail: profile.notify_email ?? true,
         notifyHire: profile.notify_hire ?? true,
@@ -194,7 +146,7 @@ const SettingsPage = () => {
         notifyJobMatch: (profile as { notify_job_match?: boolean }).notify_job_match ?? true,
       });
     }
-  }, [profile, user]);
+  }, [profile]);
 
   const update = <K extends keyof SettingsFormInput>(k: K, v: SettingsFormInput[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -202,10 +154,11 @@ const SettingsPage = () => {
   const persistProfile = async (payload: SettingsFormInput) => {
     try {
       // ชื่อที่แสดง / username เปลี่ยนผ่าน dialog เท่านั้น (มี cooldown)
+      // ไม่ส่งฟิลด์ About Me — แก้ที่แท็บ About Me บนโปรไฟล์
       const { displayName: _dn, username: _un, ...rest } = payload;
       await updateMut.mutateAsync(rest);
       toast.success("บันทึกสำเร็จ", {
-        description: "ข้อมูลโปรไฟล์ของคุณถูกอัปเดตแล้ว",
+        description: "ข้อมูลบัญชีของคุณถูกอัปเดตแล้ว",
       });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "บันทึกไม่สำเร็จ");
@@ -214,33 +167,9 @@ const SettingsPage = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanedExperience = form.experience
-      .map((it) => {
-        const isCurrent = !!it.isCurrent;
-        const composed = formatExperiencePeriod(it);
-        return {
-          title: it.title.trim(),
-          company: (it.company ?? "").trim(),
-          periodStart: (it.periodStart ?? "").trim(),
-          periodEnd: isCurrent ? "" : (it.periodEnd ?? "").trim(),
-          isCurrent,
-          employmentType: it.employmentType ?? null,
-          period: composed || (it.period ?? "").trim(),
-          description: (it.description ?? "").trim(),
-        };
-      })
-      .filter((it) => it.title);
-    for (const item of cleanedExperience) {
-      const parsedItem = experienceItemSchema.safeParse(item);
-      if (!parsedItem.success) {
-        toast.error(parsedItem.error.issues[0]?.message ?? "ข้อมูลประสบการณ์ไม่ถูกต้อง");
-        return;
-      }
-    }
     const address = profileAddressToJson(form.profileAddress);
     const payload = {
       ...form,
-      experience: cleanedExperience,
       profileAddress: address,
       location: formatProfileAddressShort(address) || form.location.trim(),
     };
@@ -389,27 +318,19 @@ const SettingsPage = () => {
               <span className="text-primary font-medium">/@{normalizedUsername}</span>
             </p>
           )}
-          <div>
-            <div className="flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-primary" aria-hidden />
-              <label htmlFor="settings-role" className="text-sm font-medium text-foreground">
-                ตำแหน่งงาน
-              </label>
-            </div>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              ตำแหน่งหรือบทบาทที่แสดงบนโปรไฟล์ — ไม่ใช่สายงาน (เลือกสายงานด้านล่าง)
-            </p>
-            <div className="mt-1 flex items-center rounded-xl bg-secondary border border-border focus-within:ring-2 focus-within:ring-primary/40">
-              <input
-                id="settings-role"
-                type="text"
-                value={form.role}
-                onChange={(e) => update("role", e.target.value)}
-                placeholder="เช่น Senior UX/UI, Brand Communication, Project Manager"
-                className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none"
-              />
-            </div>
-          </div>
+        </section>
+
+        <section id="settings-about-me" className="rounded-2xl glass-panel p-6 space-y-3">
+          <SectionTitle icon={User} title="About Me" />
+          <p className="text-sm text-muted-foreground">
+            แนะนำตัว ประสบการณ์ ทักษะ และลิงก์ติดต่อ แก้ได้ที่แท็บ About Me บนโปรไฟล์
+          </p>
+          <Button asChild variant="outline" className="rounded-full">
+            <Link to={ABOUT_ME_EDIT_HREF}>
+              ไปแก้ไข About Me
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
         </section>
 
         <section id="settings-address" className="rounded-2xl glass-panel p-6 space-y-5">
@@ -418,85 +339,6 @@ const SettingsPage = () => {
             onChange={(profileAddress) => update("profileAddress", profileAddress)}
             idPrefix="settings-address"
           />
-        </section>
-
-        <section id="settings-bio" className="rounded-2xl glass-panel p-6 space-y-3">
-          <SectionTitle icon={User} title="แนะนำตัว" />
-          <textarea
-            id="settings-bio"
-            value={form.bio ?? ""}
-            onChange={(e) => update("bio", e.target.value)}
-            rows={4}
-            maxLength={500}
-            className="w-full px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40"
-            placeholder="เล่าสั้น ๆ เกี่ยวกับตัวคุณและงานที่ทำ"
-          />
-          <p className="text-xs text-muted-foreground text-right">{(form.bio ?? "").length}/500 ตัวอักษร</p>
-        </section>
-
-        <section id="settings-disciplines" className="rounded-2xl glass-panel p-6 space-y-3">
-          <SectionTitle icon={Layers} title="สายงาน" />
-          <p className="text-xs text-muted-foreground -mt-1">หมวดงานที่คุณทำ — แสดงบนโปรไฟล์และแชท</p>
-          <WorkDisciplineEditor
-            value={form.preferredCategories}
-            onChange={(preferredCategories) => update("preferredCategories", preferredCategories)}
-          />
-        </section>
-
-        <section id="settings-opportunity" className="rounded-2xl glass-panel p-6 space-y-3">
-          <SectionTitle icon={Search} title="กำลังมองหา" />
-          <p className="text-xs text-muted-foreground -mt-1">เลือกอย่างน้อย 1 — แสดงบนโปรไฟล์และแชท</p>
-          <ChipMultiSelectWithOther
-            options={OPPORTUNITY_TYPE_KEYS.map((id) => ({
-              id,
-              label: labelOpportunityType(id),
-            }))}
-            selected={form.opportunityTypes}
-            onChange={(opportunityTypes) => update("opportunityTypes", opportunityTypes)}
-            knownIds={OPPORTUNITY_TYPE_KEYS}
-            otherPlaceholder="พิมพ์สิ่งที่มองหาแล้วกด Enter"
-          />
-        </section>
-
-        <section id="settings-experience" className="rounded-2xl glass-panel p-6 space-y-4">
-          <div>
-            <SectionTitle icon={Briefcase} title="ประสบการณ์ทำงาน" />
-            <p className="text-xs text-muted-foreground mt-0.5">
-              กรอกแล้วกดยืนยันเพิ่ม — แก้/ลบรายการได้ แล้วกดบันทึกการเปลี่ยนแปลงด้านล่าง
-            </p>
-          </div>
-          <ExperienceEditor
-            value={form.experience}
-            onChange={(experience) => update("experience", experience)}
-          />
-        </section>
-
-        <section id="settings-skills" className="rounded-2xl glass-panel p-6 space-y-3">
-          <SectionTitle icon={Monitor} title="ความชำนาญ" />
-          <p className="text-xs text-muted-foreground -mt-1">เครื่องมือและสไตล์ที่ถนัด</p>
-          <SkillsEditor value={form.skills} onChange={(skills) => update("skills", skills)} />
-        </section>
-
-        <section id="settings-contact" className="rounded-2xl glass-panel p-6 space-y-5">
-          <div className="space-y-3">
-            <SectionTitle icon={Link2} title="ลิงก์โซเชียล / ติดต่อ" />
-            <p className="text-xs text-muted-foreground -mt-1">
-              อีเมล · เว็บไซต์ · Facebook · Instagram · X · TikTok · Lemon8 และช่องทางอื่น
-            </p>
-            <ContactEditor
-              value={{
-                email: form.email,
-                website: form.website,
-              }}
-              onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
-            />
-          </div>
-          <div id="settings-links" className="space-y-3 pt-1 border-t border-border/60">
-            <ProfileLinksEditor
-              value={form.socialLinks}
-              onChange={(socialLinks) => update("socialLinks", socialLinks)}
-            />
-          </div>
         </section>
         <ProfileVisibilitySection />
           </>
@@ -635,26 +477,5 @@ const SettingsPage = () => {
 const SectionTitle = ({ icon: Icon, title }: { icon: React.ComponentType<{ className?: string }>; title: string }) => (
   <div className="flex items-center gap-2"><Icon className="w-5 h-5 text-primary" /><h2 className="font-semibold text-foreground">{title}</h2></div>
 );
-
-interface FieldProps {
-  label: string; value: string; onChange: (v: string) => void;
-  type?: string; prefix?: string; placeholder?: string; hint?: string;
-  icon?: React.ComponentType<{ className?: string }>; id?: string;
-}
-const Field = ({ label, value, onChange, type = "text", prefix, icon: Icon, placeholder, hint, id }: FieldProps) => {
-  const fieldId = id ?? `settings-${label.replace(/\s+/g, "-").toLowerCase()}`;
-  return (
-  <div>
-    <label htmlFor={fieldId} className="text-sm font-medium text-foreground">{label}</label>
-    {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
-    <div className="mt-1 flex items-center rounded-xl bg-secondary border border-border focus-within:ring-2 focus-within:ring-primary/40">
-      {Icon && <Icon className="w-4 h-4 text-muted-foreground ml-3" />}
-      {prefix && <span className="pl-3 text-muted-foreground text-sm">{prefix}</span>}
-      <input id={fieldId} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none" />
-    </div>
-  </div>
-  );
-};
 
 export default SettingsPage;

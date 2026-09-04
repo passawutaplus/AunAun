@@ -39,7 +39,7 @@ import PortfolioGrid from "@/components/profile/PortfolioGrid";
 import { ProfileBrowseToolbar } from "@/components/profile/ProfileBrowseToolbar";
 import { SeriesCard } from "@/components/series/SeriesCard";
 import { SeriesAnimatedGrid } from "@/components/series/SeriesAnimatedGrid";
-import { ProfileAboutReadOnly } from "@/components/profile/ProfileAboutReadOnly";
+import ProfileAboutPanel from "@/components/profile/ProfileAboutPanel";
 import { ProfileReviewsSection } from "@/components/reviews/ProfileReviewsSection";
 import type { ExperienceItem } from "@/lib/validators";
 import { normalizeExperienceItem } from "@/lib/validators";
@@ -799,7 +799,7 @@ const PublicProfilePage = () => {
             { value: "works", label: `Project (${portfolioProjects.length})` },
             { value: "series", label: `Catalog (${seriesList.length})` },
             { value: "services", label: `Packages (${servicesTabCount})` },
-            { value: "about", label: "About" },
+            { value: "about", label: "About Me" },
             { value: "reviews", label: "Review" },
           ]}
         >
@@ -914,11 +914,13 @@ const PublicProfilePage = () => {
             ))}
 
           {activeTab === "about" && (
-            <div className="rounded-2xl glass-panel p-5 md:p-6">
-              <ProfileAboutReadOnly
+            <ProfileAboutPanel
                 profile={{
                   display_name: profile.display_name ?? null,
                   username: profile.username ?? null,
+                  avatar_url: profile.avatar_url ?? null,
+                  cv_photo_url: (profile as { cv_photo_url?: string | null }).cv_photo_url ?? null,
+                  cv: (profile as { cv?: unknown }).cv,
                   role: profile.role ?? null,
                   location: profile.location ?? null,
                   profile_address: (profile as { profile_address?: unknown }).profile_address,
@@ -931,18 +933,15 @@ const PublicProfilePage = () => {
                 }}
                 experience={parseExperience((profile as { experience?: unknown }).experience)}
                 skills={parseSkills(profile.skills)}
-                disciplines={parseSkills(
-                  (profile as { preferred_categories?: unknown }).preferred_categories,
-                )}
-                opportunityTypes={parseSkills(
-                  (profile as { opportunity_types?: unknown }).opportunity_types,
-                )}
                 socialLinks={parseSocialLinks(
                   (profile as { social_links?: unknown }).social_links,
                 )}
                 mode="public"
+                profileUrl={profilePublicUrl({
+                  user_id: resolvedUserId!,
+                  username: profile.username,
+                })}
               />
-            </div>
           )}
 
           {activeTab === "reviews" && resolvedUserId ? (

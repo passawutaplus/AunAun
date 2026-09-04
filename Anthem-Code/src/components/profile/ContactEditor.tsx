@@ -1,4 +1,5 @@
 import { Mail, Link2 } from "lucide-react";
+import { useAboutEditLocale } from "@/components/profile/AboutEditLocale";
 
 export type ContactFormValues = {
   email: string;
@@ -8,27 +9,33 @@ export type ContactFormValues = {
 type Props = {
   value: ContactFormValues;
   onChange: (patch: Partial<ContactFormValues>) => void;
+  hideEmail?: boolean;
 };
 
-const ContactEditor = ({ value, onChange }: Props) => (
+const ContactEditor = ({ value, onChange, hideEmail = false }: Props) => {
+  const { t } = useAboutEditLocale();
+  return (
   <div className="space-y-3">
+    {hideEmail ? null : (
+      <Field
+        label={t.email}
+        value={value.email}
+        type="email"
+        icon={Mail}
+        readOnly
+        hint="Tied to your login account — cannot be changed here"
+      />
+    )}
     <Field
-      label="อีเมล"
-      value={value.email}
-      type="email"
-      icon={Mail}
-      readOnly
-      hint="ผูกกับบัญชีเข้าสู่ระบบ — ไม่สามารถแก้จากหน้านี้"
-    />
-    <Field
-      label="เว็บไซต์ / Portfolio"
+      label={t.website}
       value={value.website}
       onChange={(v) => onChange({ website: v })}
       icon={Link2}
       placeholder="https://..."
     />
   </div>
-);
+  );
+};
 
 const Field = ({
   label,

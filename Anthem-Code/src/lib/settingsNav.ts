@@ -66,6 +66,11 @@ const HASH_TO_PANEL: Record<string, SettingsPanelId> = {
   "settings-disciplines": "profile",
   "settings-opportunity": "profile",
   "settings-experience": "profile",
+  "settings-education": "profile",
+  "settings-cv-photo": "profile",
+  "settings-cv-tools": "profile",
+  "settings-languages": "profile",
+  "settings-work-arrangement": "profile",
   "settings-skills": "profile",
   "settings-contact": "profile",
   "settings-links": "profile",
@@ -92,6 +97,28 @@ export const DEFAULT_SETTINGS_PANEL: SettingsPanelId = "profile";
 
 export const SETTINGS_ACCOUNT_HREF = "/settings#account";
 export const SETTINGS_PIN_RECOVER_HREF = "/settings?recover=pin#account";
+export const ABOUT_ME_EDIT_HREF = "/portfolio?tab=about";
+
+const ABOUT_ME_SETTINGS_HASHES = new Set([
+  "profile-about",
+  "settings-bio",
+  "settings-disciplines",
+  "settings-opportunity",
+  "settings-experience",
+  "settings-education",
+  "settings-cv-photo",
+  "settings-cv-tools",
+  "settings-languages",
+  "settings-work-arrangement",
+  "settings-skills",
+  "settings-contact",
+  "settings-links",
+]);
+
+export function isAboutMeSettingsHash(hash: string | null | undefined): boolean {
+  const raw = (hash ?? "").replace(/^#/, "").trim();
+  return ABOUT_ME_SETTINGS_HASHES.has(raw);
+}
 
 export function resolveSettingsPanel(
   hash: string | null | undefined,

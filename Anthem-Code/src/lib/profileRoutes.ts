@@ -27,6 +27,18 @@ export function profilePublicUrl(
   return `${origin}${profilePublicPath(profile)}`;
 }
 
+/** Public About tab — live CV that hirers and share links should open. */
+export function profileAboutPath(profile: ProfileLinkInput): string {
+  return `${profilePublicPath(profile)}?tab=about`;
+}
+
+export function profileAboutUrl(
+  profile: ProfileLinkInput,
+  origin = typeof window !== "undefined" ? window.location.origin : "",
+): string {
+  return `${origin}${profileAboutPath(profile)}`;
+}
+
 export type ProfileShareInput = ProfileLinkInput & {
   display_name?: string | null;
   bio?: string | null;

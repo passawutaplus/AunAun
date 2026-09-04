@@ -10,6 +10,7 @@ import {
   resolveContactSocialPlatform,
 } from "@/lib/contactSocialPlatforms";
 import { cn } from "@/lib/utils";
+import { useAboutEditLocale } from "@/components/profile/AboutEditLocale";
 
 const MAX_LINKS = 12;
 
@@ -71,8 +72,9 @@ function splitLinks(value: SocialLinkItem[]) {
   return { presets: byPlatform, customs: rest };
 }
 
-/** Contact social rows (FB / IG / X / TikTok / Lemon8) + custom “อื่นๆ”. */
+/** Contact social rows (FB / IG / X / TikTok / Lemon8) + custom “Other”. */
 export default function ProfileLinksEditor({ value, onChange }: Props) {
+  const { t } = useAboutEditLocale();
   const { presets, customs } = useMemo(() => splitLinks(value), [value]);
 
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -110,7 +112,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
     }
     const href = toStoredUrl(trimmed, platformId);
     if (!href) {
-      toast.error("ใส่ลิงก์ให้ถูกต้อง หรือใช้ @username");
+      toast.error(t.invalidLink);
       return;
     }
     onChange([...without, { id: platformId, title: platform.label, url: href.slice(0, 255) }]);
@@ -120,19 +122,19 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
     const t = otherTitle.trim();
     const href = toStoredUrl(otherUrl);
     if (!t) {
-      toast.error("กรอกชื่อช่องทางก่อน");
+      toast.error(t.enterChannel);
       return;
     }
     if (!href) {
-      toast.error("ใส่ลิงก์ http:// หรือ https:// หรือ @username");
+      toast.error(t.enterLink);
       return;
     }
     if (resolveContactSocialPlatform(t)) {
-      toast.error("ช่องทางนี้มีแถวด้านบนแล้ว — กรอกในแถวนั้นได้เลย");
+      toast.error(t.channelExists);
       return;
     }
     if (value.length >= MAX_LINKS) {
-      toast.error(`เพิ่มได้สูงสุด ${MAX_LINKS} ลิงก์`);
+      toast.error(t.maxLinks(MAX_LINKS));
       return;
     }
     onChange([...value, { id: newId(), title: t.slice(0, 60), url: href }]);
@@ -145,7 +147,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
   return (
     <div className="space-y-4">
       <p className="text-xs text-muted-foreground">
-        ช่องทางติดต่อโซเชียล — กรอกลิงก์หรือ @username ได้เลย
+        {t.socialHint}
       </p>
 
       <div className="rounded-xl border border-border bg-background/50 divide-y divide-border/60">
@@ -198,12 +200,12 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
       </div>
 
       <div className="space-y-2">
-        <p className="text-sm font-medium text-foreground">อื่นๆ</p>
+        <p className="text-sm font-medium text-foreground">{t.other}</p>
         <div className="rounded-xl border border-border bg-background/50 p-3 sm:p-4 space-y-3">
           <div className="grid gap-3 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)_auto] sm:items-end">
             <div>
               <label htmlFor="profile-link-other-title" className="text-xs font-medium text-muted-foreground">
-                ชื่อช่องทาง
+                {t.channelName}
               </label>
               <input
                 id="profile-link-other-title"
@@ -211,7 +213,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
                 value={otherTitle}
                 onChange={(e) => setOtherTitle(e.target.value)}
                 maxLength={60}
-                placeholder="เช่น LINE OA, Threads"
+                placeholder={t.channelPh}
                 className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -223,7 +225,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
             </div>
             <div>
               <label htmlFor="profile-link-other-url" className="text-xs font-medium text-muted-foreground">
-                ลิงก์
+                {t.link}
               </label>
               <input
                 id="profile-link-other-url"
@@ -231,7 +233,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
                 value={otherUrl}
                 onChange={(e) => setOtherUrl(e.target.value)}
                 maxLength={255}
-                placeholder="https://… หรือ @username"
+                placeholder={t.linkPh}
                 className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -246,7 +248,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
               onClick={addOther}
               className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 sm:mb-0.5"
             >
-              <Plus className="w-4 h-4 mr-1" /> เพิ่ม
+              <Plus className="w-4 h-4 mr-1" /> {t.add}
             </Button>
           </div>
         </div>
@@ -273,7 +275,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
                   variant="ghost"
                   className="shrink-0 rounded-full text-muted-foreground hover:text-destructive"
                   onClick={() => removeCustom(link.id)}
-                  aria-label={`ลบลิงก์ ${link.title}`}
+                  aria-label={`${t.remove} ${link.title}`}
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>

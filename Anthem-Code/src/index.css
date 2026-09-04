@@ -1062,3 +1062,138 @@
     background: hsl(0 70% 50% / 0.06);
   }
 }
+
+.about-cv-copy {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--cv-muted);
+}
+
+.about-cv-a4-frame {
+  width: min(210mm, calc(100vw - 1.75rem), calc((100dvh - 6.25rem) * 210 / 297));
+  aspect-ratio: 210 / 297;
+  height: auto;
+  overflow: hidden;
+  border-radius: 0.55rem;
+  box-shadow: 0 12px 40px rgba(30, 40, 60, 0.16);
+}
+
+.about-cv-sheet {
+  --cv-ink: #3d2418;
+  --cv-muted: #8a5d45;
+  --cv-accent: #e85d04;
+  --cv-side: #fff1e6;
+  --cv-main: #ffffff;
+  --cv-rule: rgba(232, 93, 4, 0.22);
+  --cv-photo: #ffd4b8;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 0.55rem;
+  container-type: size;
+  container-name: about-cv;
+  color: var(--cv-ink);
+}
+
+.about-cv-sheet[data-cv-theme="mono"] {
+  --cv-ink: #171717;
+  --cv-muted: #6b6b6b;
+  --cv-accent: #111111;
+  --cv-side: #f2f2f2;
+  --cv-main: #ffffff;
+  --cv-rule: rgba(17, 17, 17, 0.14);
+  --cv-photo: #e4e4e4;
+}
+
+.about-cv-sheet[data-cv-theme="slate"] {
+  --cv-ink: #2f3338;
+  --cv-muted: #6d737b;
+  --cv-accent: #5b6168;
+  --cv-side: #eef0f2;
+  --cv-main: #ffffff;
+  --cv-rule: rgba(91, 97, 104, 0.2);
+  --cv-photo: #d9dde2;
+}
+
+.about-cv-sheet-side {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--cv-side);
+}
+
+.about-cv-sheet-main {
+  grid-column: 2;
+  grid-row: 1;
+  background: var(--cv-main);
+}
+
+.about-cv-sheet-contact {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  background: var(--cv-main);
+  border-top: 1px solid var(--cv-rule);
+}
+
+.about-cv-print-root {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 210mm;
+  height: 297mm;
+  pointer-events: none;
+}
+
+.about-cv-print-root .about-cv-sheet {
+  height: 297mm;
+  border-radius: 0;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #about-cv-print,
+  #about-cv-print * {
+    visibility: visible;
+  }
+
+  .about-cv-print-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 210mm;
+    height: 297mm;
+  }
+
+  .about-cv-print-root .about-cv-sheet {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    width: 210mm;
+    height: 297mm;
+    overflow: hidden !important;
+  }
+
+  .about-cv-sheet-side,
+  .about-cv-sheet-main {
+    overflow: hidden !important;
+  }
+}

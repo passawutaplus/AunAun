@@ -109,7 +109,7 @@ export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
     id: "jobs",
     title: "ดูบอร์ดงาน",
     description: "สำรวจประกาศงานและโอกาสรับจ้าง",
-    href: "/jobs",
+    href: "/hiring",
     icon: Briefcase,
     rewardPx: 8,
     difficulty: "easy",
@@ -119,7 +119,7 @@ export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
     id: "skills",
     title: "ใส่ทักษะ",
     description: "บอกว่าคุณถนัดอะไร — ช่วยให้ลูกค้าจับคู่ได้ตรง",
-    href: "/settings#profile-about",
+    href: "/portfolio?tab=about",
     icon: Wrench,
     rewardPx: 8,
     difficulty: "medium",
@@ -138,7 +138,7 @@ export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
     id: "profile",
     title: "ตั้งโปรไฟล์ให้พร้อม",
     description: "ใส่รูปโปรไฟล์ username และแนะนำตัวอย่างน้อย 20 ตัวอักษร",
-    href: "/portfolio",
+    href: "/portfolio?tab=about",
     icon: User,
     rewardPx: 12,
     difficulty: "medium",
@@ -163,12 +163,13 @@ export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
   },
 ];
 
-const LAUNCH_HIDDEN_TASK_IDS: OnboardingTaskId[] = [
+const RETIRED_TASK_IDS: OnboardingTaskId[] = [
   "explore_community",
   "explore_studios",
   "post_community",
-  "jobs",
 ];
+
+const LAUNCH_HIDDEN_TASK_IDS: OnboardingTaskId[] = [...RETIRED_TASK_IDS, "jobs"];
 
 const LAUNCH_TASK_COPY: Partial<Record<OnboardingTaskId, Pick<OnboardingTaskDef, "title" | "description">>> = {
   like: {
@@ -206,8 +207,8 @@ const LAUNCH_TASK_COPY: Partial<Record<OnboardingTaskId, Pick<OnboardingTaskDef,
 };
 
 export function getVisibleOnboardingTasks(): OnboardingTaskDef[] {
-  if (!isAplus1LaunchMinimal()) return ONBOARDING_TASKS;
-  return ONBOARDING_TASKS.filter((task) => !LAUNCH_HIDDEN_TASK_IDS.includes(task.id)).map((task) => {
+  const hidden = isAplus1LaunchMinimal() ? LAUNCH_HIDDEN_TASK_IDS : RETIRED_TASK_IDS;
+  return ONBOARDING_TASKS.filter((task) => !hidden.includes(task.id)).map((task) => {
     const copy = LAUNCH_TASK_COPY[task.id];
     return copy ? { ...task, ...copy } : task;
   });
@@ -247,8 +248,7 @@ export function isTaskDone(id: OnboardingTaskId, s: OnboardingSignals): boolean 
     case "follow":
       return s.followCount >= 1;
     case "like":
-      if (isAplus1LaunchMinimal()) return s.likeCount >= 1;
-      return s.likeCount >= 1 && s.communityLikeCount >= 1;
+      return s.likeCount >= 1;
     case "jobs":
       return !!s.visits.jobs;
     case "share_profile":
@@ -260,14 +260,5 @@ export function isTaskDone(id: OnboardingTaskId, s: OnboardingSignals): boolean 
 
 /** Short progress hint for dual-heart mission. */
 export function likeMissionHint(s: OnboardingSignals): string | null {
-  const projectDone = s.likeCount >= 1;
-  const postDone = s.communityLikeCount >= 1;
-  if (isAplus1LaunchMinimal()) {
-    return projectDone ? null : "ยังไม่กดหัวใจผลงาน";
-  }
-  if (projectDone && postDone) return null;
-  const parts: string[] = [];
-  if (!projectDone) parts.push("ยังไม่กดหัวใจผลงาน");
-  if (!postDone) parts.push("ยังไม่กดหัวใจโพสต์ Area");
-  return parts.join(" · ");
+  return s.likeCount >= 1 ? null : "ยังไม่กดหัวใจผลงาน";
 }

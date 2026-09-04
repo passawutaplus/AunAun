@@ -18,6 +18,7 @@ interface Props {
   lineId?: string | null;
   facebook?: string | null;
   instagram?: string | null;
+  className?: string;
 }
 
 async function copyText(label: string, value: string) {
@@ -29,7 +30,7 @@ async function copyText(label: string, value: string) {
   }
 }
 
-const ContactCards = ({ email, website, lineId, facebook, instagram }: Props) => {
+const ContactCards = ({ email, website, lineId, facebook, instagram, className }: Props) => {
   const items: Contact[] = [];
   if (email?.trim()) {
     items.push({
@@ -77,7 +78,7 @@ const ContactCards = ({ email, website, lineId, facebook, instagram }: Props) =>
   }
 
   return (
-    <div className="grid sm:grid-cols-2 gap-3">
+    <div className={className ?? "grid sm:grid-cols-2 gap-3"}>
       {items.map(({ icon: Icon, label, value, href, copyText: copyValue }) => {
         const content = (
           <div className="flex items-center gap-3 rounded-xl border border-border bg-background/60 hover:border-primary/40 hover:bg-primary/5 transition-colors px-4 py-3">

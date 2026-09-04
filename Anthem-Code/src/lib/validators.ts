@@ -12,6 +12,7 @@ import {
   PROJECT_CONTENT_BLOCKS_MAX,
 } from "@/lib/projectContentBlocks";
 import { profileAddressSchema } from "@/lib/profileAddress";
+import { educationItemSchema, WORK_ARRANGEMENTS, certificationItemSchema, awardItemSchema, cvLanguageItemSchema } from "@/lib/profileCv";
 
 export const communityMediaAspectSchema = z.enum([
   "square",
@@ -146,16 +147,16 @@ export const experienceEmploymentTypes = [
 export type ExperienceEmploymentType = (typeof experienceEmploymentTypes)[number];
 
 export const EXPERIENCE_EMPLOYMENT_LABELS: Record<ExperienceEmploymentType, string> = {
-  full_time: "พนักงานเต็มเวลา",
-  part_time: "พาร์ทไทม์",
-  freelance: "ฟรีแลนซ์",
-  contract: "สัญญาจ้าง",
-  owner: "เจ้าของ",
-  consultant: "ที่ปรึกษา",
+  full_time: "Full-time",
+  part_time: "Part-time",
+  freelance: "Freelance",
+  contract: "Contract",
+  owner: "Owner",
+  consultant: "Consultant",
 };
 
 export const experienceItemSchema = z.object({
-  title: z.string().trim().min(1, "กรอกตำแหน่ง").max(80),
+  title: z.string().trim().min(1, "Enter a job title").max(80),
   company: z.string().trim().max(80).optional().default(""),
   /** ข้อความช่วงเวลาที่โชว์บนโปรไฟล์ เช่น "2566 - ปัจจุบัน" */
   period: z.string().trim().max(60).optional().default(""),
@@ -164,21 +165,25 @@ export const experienceItemSchema = z.object({
   isCurrent: z.boolean().optional().default(false),
   employmentType: z.enum(experienceEmploymentTypes).optional().nullable().default(null),
   description: z.string().trim().max(400).optional().default(""),
+  highlights: z.array(z.string().trim().min(1).max(200)).max(4).optional().default([]),
 });
 export type ExperienceItem = z.infer<typeof experienceItemSchema>;
 
 /** สร้างข้อความช่วงเวลาจากฟิลด์ย่อย — รองรับข้อมูลเก่าที่มีแค่ period */
-export function formatExperiencePeriod(item: {
-  period?: string | null;
-  periodStart?: string | null;
-  periodEnd?: string | null;
-  isCurrent?: boolean | null;
-}): string {
+export function formatExperiencePeriod(
+  item: {
+    period?: string | null;
+    periodStart?: string | null;
+    periodEnd?: string | null;
+    isCurrent?: boolean | null;
+  },
+  presentLabel = "Present",
+): string {
   const start = (item.periodStart ?? "").trim();
   const end = (item.periodEnd ?? "").trim();
   const current = !!item.isCurrent;
   if (start) {
-    if (current) return `${start} - ปัจจุบัน`;
+    if (current) return `${start} - ${presentLabel}`;
     if (end) return `${start} - ${end}`;
     return start;
   }
@@ -216,6 +221,19 @@ export function normalizeExperienceItem(raw: unknown): ExperienceItem | null {
     : null;
   const company = typeof r.company === "string" ? r.company.trim() : "";
   const description = typeof r.description === "string" ? r.description.trim() : "";
+  const highlights = Array.isArray(r.highlights)
+    ? r.highlights
+        .filter((s): s is string => typeof s === "string")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 4)
+    : description
+      ? description
+          .split(/\n+/)
+          .map((s) => s.trim().replace(/^[-•*]\s*/, ""))
+          .filter(Boolean)
+          .slice(0, 4)
+      : [];
   const composed = formatExperiencePeriod({ period, periodStart, periodEnd, isCurrent });
   return {
     title,
@@ -226,6 +244,7 @@ export function normalizeExperienceItem(raw: unknown): ExperienceItem | null {
     isCurrent,
     employmentType,
     description,
+    highlights,
   };
 }
 
@@ -380,6 +399,23 @@ export const profileSchema = z.object({
   opportunityNote: z.string().trim().max(120).optional().default(""),
   skills: z.array(z.string().trim().min(1).max(40)).max(30).default([]),
   experience: z.array(experienceItemSchema).max(20).default([]),
+  cvPhotoUrl: z.string().trim().max(800).optional().default(""),
+  education: z.array(educationItemSchema).max(10).default([]),
+  cvTools: z.array(z.string().trim().min(1).max(40)).max(12).default([]),
+  workArrangement: z.enum(WORK_ARRANGEMENTS).nullable().optional().default(null),
+  cvLanguages: z.array(cvLanguageItemSchema).max(8).default([]),
+  cvCertifications: z.array(certificationItemSchema).max(8).default([]),
+  cvAwards: z.array(awardItemSchema).max(8).default([]),
+  portfolioUrl: z.string().trim().max(255).optional().default(""),
+  cvFullName: z.string().trim().max(80).optional().default(""),
+  cvFirstName: z.string().trim().max(40).optional().default(""),
+  cvLastName: z.string().trim().max(40).optional().default(""),
+  cvBirthDate: z.string().trim().max(10).optional().default(""),
+  cvDesiredRole: z.string().trim().max(60).optional().default(""),
+  cvContactEmail: z.string().trim().max(120).optional().default(""),
+  cvContactLine: z.string().trim().max(50).optional().default(""),
+  cvContactPhone: z.string().trim().max(16).optional().default(""),
+  cvContactPublic: z.boolean().optional().default(false),
 });
 
 export type ProfileInput = z.infer<typeof profileSchema>;
