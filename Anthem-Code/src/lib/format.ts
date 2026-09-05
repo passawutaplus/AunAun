@@ -25,6 +25,21 @@ export const formatThaiDate = (iso: string) => {
   }
 };
 
+export const formatThaiDateTime = (iso: string) => {
+  try {
+    const d = new Date(iso);
+    return new Intl.DateTimeFormat("th-TH", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d);
+  } catch {
+    return iso;
+  }
+};
+
 export const timeAgoTH = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diff / 60000);

@@ -14,6 +14,7 @@ import {
   useDeleteAdCampaign,
   useRejectAdApplication,
   useUpdateAdCampaign,
+  adPackageLabel,
   type AdApplication,
   type AdCampaign,
 } from "@/hooks/useAds";
@@ -191,7 +192,11 @@ export default function AdminAdsPage() {
       header: "คำขอ",
       render: (a) => (
         <div className="flex items-center gap-3 min-w-0">
-          <img src={a.image_url} alt="" className="w-12 h-12 rounded object-cover shrink-0 border border-admin-border" />
+          {a.image_url ? (
+            <img src={a.image_url} alt="" className="w-12 h-12 rounded object-cover shrink-0 border border-admin-border" />
+          ) : (
+            <div className="w-12 h-12 rounded shrink-0 border border-admin-border bg-admin-surface flex items-center justify-center text-[10px] text-admin-muted">คุย</div>
+          )}
           <div className="min-w-0">
             <p className="text-admin-fg font-medium truncate">{a.ad_title}</p>
             <p className="text-xs text-admin-muted truncate">{a.contact_name} · {a.company || a.email}</p>
@@ -199,7 +204,7 @@ export default function AdminAdsPage() {
         </div>
       ),
     },
-    { key: "pkg", header: "แพ็กเกจ", render: (a) => <Badge variant="secondary" className="uppercase text-[10px]">{a.package}</Badge> },
+    { key: "pkg", header: "แพ็กเกจ", render: (a) => <Badge variant="secondary" className="text-[10px]">{adPackageLabel(a.package)}</Badge> },
     { key: "dur", header: "ระยะเวลา", render: (a) => <span>{a.duration_days} วัน</span> },
     { key: "budget", header: "งบ (Px)", render: (a) => <span className="tabular-nums">{a.budget_px.toLocaleString()}</span> },
     { key: "status", header: "สถานะ", render: (a) => <StatusPill s={a.status} /> },
@@ -214,6 +219,16 @@ export default function AdminAdsPage() {
               <Button size="sm" variant="default" onClick={() => handleApprove(a)} className="bg-emerald-600 hover:bg-emerald-700">
                 <CheckCircle2 className="w-4 h-4 mr-1" /> อนุมัติ
               </Button>
+              <Button size="sm" variant="ghost" onClick={() => handleReject(a)} className="text-red-600 hover:text-red-700">
+                <XCircle className="w-4 h-4" />
+              </Button>
+            </div>
+          );
+        }
+        if (a.package === "inquiry" && a.status === "pending") {
+          return (
+            <div className="flex items-center justify-end gap-1">
+              <span className="text-xs text-admin-muted mr-2">ลีด · ติดต่อกลับ</span>
               <Button size="sm" variant="ghost" onClick={() => handleReject(a)} className="text-red-600 hover:text-red-700">
                 <XCircle className="w-4 h-4" />
               </Button>
@@ -280,7 +295,7 @@ export default function AdminAdsPage() {
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-admin-muted" />
               <Input value={searchA} onChange={(e) => setSearchA(e.target.value)} placeholder="ค้นหาชื่อ / บริษัท / อีเมล" className="pl-9" />
             </div>
-            {["all", "pending_payment", "paid", "approved", "rejected"].map((s) => (
+            {["all", "pending", "pending_payment", "paid", "approved", "rejected"].map((s) => (
               <Button key={s} variant={statusA === s ? "default" : "outline"} size="sm" onClick={() => setStatusA(s)}>
                 {s === "all" ? "ทั้งหมด" : s}
               </Button>

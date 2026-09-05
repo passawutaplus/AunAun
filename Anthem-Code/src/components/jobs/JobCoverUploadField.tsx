@@ -34,7 +34,7 @@ export default function JobCoverUploadField({ userId, value, onChange, className
 
   return (
     <div className={className}>
-      <Label className="text-xs">ภาพปกประกาศ (ไม่บังคับ)</Label>
+      <Label className="text-xs">โปสเตอร์ประกาศ — ใช้เป็นปกการ์ดบนบอร์ด</Label>
       <div
         className={cn(
           "relative mt-1 rounded-xl overflow-hidden border border-dashed border-border/60 bg-muted/30",
@@ -76,7 +76,7 @@ export default function JobCoverUploadField({ userId, value, onChange, className
             ) : (
               <>
                 <Camera className="w-5 h-5" />
-                <span className="text-[11px]">คลิกเพื่ออัปโหลดภาพปก</span>
+                <span className="text-[11px]">อัปโหลดโปสเตอร์ 4:3</span>
               </>
             )}
           </button>

@@ -1,11 +1,7 @@
-import { Link } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { useMyStudios } from "@/hooks/useStudios";
 import type { PosterEntityType } from "@/components/jobs/jobCardUtils";
 import { posterEntityLabel } from "@/components/jobs/jobCardUtils";
 
@@ -21,15 +17,9 @@ interface Props {
 }
 
 const PostAsEntitySelect = ({ value, onChange, mode }: Props) => {
-  const { data: studios = [] } = useMyStudios();
-
-  const entityKey = value.studioId ? `studio:${value.studioId}` : value.entityType;
+  const entityKey = value.studioId ? "personal" : value.entityType;
 
   const handleChange = (key: string) => {
-    if (key.startsWith("studio:")) {
-      onChange({ entityType: "studio", studioId: key.replace("studio:", "") });
-      return;
-    }
     onChange({ entityType: key as PosterEntityType, studioId: null });
   };
 
@@ -40,11 +30,6 @@ const PostAsEntitySelect = ({ value, onChange, mode }: Props) => {
         <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
         <SelectContent>
           <SelectItem value="personal">{posterEntityLabel.personal}</SelectItem>
-          {studios.map((s) => (
-            <SelectItem key={s.id} value={`studio:${s.id}`}>
-              Studio: {s.name}
-            </SelectItem>
-          ))}
           {mode === "hiring" && (
             <>
               <SelectItem value="brand">{posterEntityLabel.brand}</SelectItem>
@@ -53,13 +38,6 @@ const PostAsEntitySelect = ({ value, onChange, mode }: Props) => {
           )}
         </SelectContent>
       </Select>
-      {studios.length === 0 && mode === "hiring" && (
-        <Button variant="outline" size="sm" className="rounded-xl w-full" asChild>
-          <Link to="/studio/new">
-            <Plus className="w-4 h-4 mr-1" /> สร้าง Studio Profile
-          </Link>
-        </Button>
-      )}
     </div>
   );
 };

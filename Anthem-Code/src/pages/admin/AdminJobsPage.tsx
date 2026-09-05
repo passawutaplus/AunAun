@@ -35,7 +35,7 @@ export default function AdminJobsPage() {
       render: (r) => (
         <AdminRowActions
           actions={[
-            { label: "ดูงาน", href: `/jobs/${r.id}` },
+            { label: "ดูงาน", href: `/hiring/${r.id}` },
             ...(r.status !== "closed"
               ? [
                   {

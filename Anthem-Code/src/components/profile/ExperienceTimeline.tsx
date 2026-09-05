@@ -27,9 +27,19 @@ const ExperienceTimeline = ({ items }: { items: ExperienceItem[] }) => {
               {period || "—"}
             </p>
             <div className="min-w-0 border-l border-primary/35 pl-4">
-              <h4 className="font-semibold text-foreground leading-snug">{it.title}</h4>
               {it.company ? (
-                <p className="text-xs text-muted-foreground italic mt-0.5">{it.company}</p>
+                <h4 className="font-semibold text-foreground leading-snug">{it.company}</h4>
+              ) : null}
+              {it.title ? (
+                <p
+                  className={
+                    it.company
+                      ? "text-xs text-muted-foreground italic mt-0.5"
+                      : "font-semibold text-foreground leading-snug"
+                  }
+                >
+                  {it.title}
+                </p>
               ) : null}
               {typeLabel ? (
                 <p className="text-[11px] text-muted-foreground mt-0.5">{typeLabel}</p>

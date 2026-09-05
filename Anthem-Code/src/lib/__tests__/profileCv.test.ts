@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   ageFromBirthDate,
   composeFullName,
+  cvAboutText,
+  parseCvAddressDetail,
+  parseCvVisibility,
   cvPortraitUrl,
   cvReadiness,
   educationDetailLine,
+  educationDetailLines,
   educationNeedsFaculty,
   educationNeedsField,
   experienceBullets,
@@ -13,6 +17,7 @@ import {
   normalizeEducationItem,
   parseProfileCv,
   partitionSkillsAndSoftware,
+  profileIntroText,
   splitFullName,
   isSimpleThaiPhone,
 } from "@/lib/profileCv";
@@ -45,6 +50,7 @@ describe("parseProfileCv", () => {
       { name: "English", level: "" },
     ]);
     expect(cv.portfolioUrl).toBe("https://behance.net/momo");
+    expect(cv.about).toBe("");
     expect(cv.fullName).toBe("ภัสวุฒิ ศรีวงศ์");
     expect(cv.firstName).toBe("ภัสวุฒิ");
     expect(cv.lastName).toBe("ศรีวงศ์");
@@ -121,6 +127,20 @@ describe("normalizeEducationItem", () => {
         field: "Product Design",
       }),
     ).toBe("Bachelor's · Architecture · Product Design");
+    expect(
+      educationDetailLines({
+        degree: "bachelor",
+        faculty: "สถาปัตยกรรมศาสตร์",
+        field: "ออกแบบผลิตภัณฑ์",
+      }),
+    ).toEqual({
+      lead: "Bachelor's · สถาปัตยกรรมศาสตร์",
+      tail: "ออกแบบผลิตภัณฑ์",
+    });
+    expect(educationDetailLines({ degree: "high_school", field: "วิทย์-คณิต" })).toEqual({
+      lead: "High School",
+      tail: "วิทย์-คณิต",
+    });
     expect(
       normalizeEducationItem({
         school: "Triam Udom",
@@ -205,6 +225,46 @@ describe("formatCvBirthDate", () => {
   it("formats a birth date with an English month and Buddhist year", () => {
     expect(formatCvBirthDate("1997-05-29")).toBe("29 May 2540");
     expect(formatCvBirthDate("not-a-date")).toBe("");
+  });
+});
+
+describe("CV visibility", () => {
+  it("hides application contact until each field is ticked", () => {
+    const cv = parseProfileCv({ contactEmail: "a@b.co", contactPublic: false });
+    expect(cv.visibility.contactEmail).toBe(false);
+    expect(cv.visibility.location).toBe(true);
+    expect(cv.addressDetail).toBe("short");
+  });
+
+  it("maps the old contactPublic flag onto email, LINE, and phone", () => {
+    const vis = parseCvVisibility(undefined, true);
+    expect(vis.contactEmail).toBe(true);
+    expect(vis.contactLine).toBe(true);
+    expect(vis.contactPhone).toBe(true);
+  });
+
+  it("keeps a per-field contact tick and full address", () => {
+    const cv = parseProfileCv({
+      visibility: { contactEmail: true, contactPhone: false, location: false },
+      addressDetail: "full",
+    });
+    expect(cv.visibility.contactEmail).toBe(true);
+    expect(cv.visibility.contactPhone).toBe(false);
+    expect(cv.visibility.location).toBe(false);
+    expect(parseCvAddressDetail(cv.addressDetail)).toBe("full");
+  });
+});
+
+describe("cvAboutText and profileIntroText", () => {
+  it("prefers cv.about and falls back to legacy bio", () => {
+    expect(parseProfileCv({ about: "CV about me" }).about).toBe("CV about me");
+    expect(cvAboutText(parseProfileCv({ about: "CV" }), "legacy")).toBe("CV");
+    expect(cvAboutText(parseProfileCv({}), "legacy bio")).toBe("legacy bio");
+  });
+
+  it("keeps the community intro to 100 characters", () => {
+    expect(profileIntroText("  hello  ")).toBe("hello");
+    expect(profileIntroText("x".repeat(200))).toHaveLength(100);
   });
 });
 

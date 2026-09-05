@@ -125,9 +125,6 @@ export default function ReferralPage() {
                 {data.my_referral_status !== "qualified" && (
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Button type="button" onClick={() => navigate("/portfolio/new")}>ลงผลงานครั้งแรก</Button>
-                    <Button type="button" variant="outline" onClick={() => navigate("/community/new")}>
-                      เขียนโพสต์ Community
-                    </Button>
                   </div>
                 )}
               </section>

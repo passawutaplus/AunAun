@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Building2,
   Ban,
   FileText,
   Handshake,
@@ -17,7 +16,7 @@ import {
 } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { BackButton } from "@/components/ui/BackButton";
-import { isAplus1ChatOffersEnabled, isAplus1LaunchMinimal, isAplus1SubscriptionsEnabled } from "@/lib/aplus1Launch";
+import { isAplus1ChatOffersEnabled, isAplus1SubscriptionsEnabled } from "@/lib/aplus1Launch";
 import { useStudioForConversation, useStudioMembers } from "@/hooks/useStudios";
 import { useSubscription } from "@/core/subscription/useSubscription";
 import { canOpenStudioCombinedQuote, canShowStudioQuoteUpsell, openStudioQuotation } from "@/lib/studioQuotationHandoff";
@@ -1570,8 +1569,7 @@ const ChatThreadView = ({
           {(canCreateCollabProject ||
             canCreateGroupCollabProject ||
             canCancelRequest ||
-            (isGroup && !isStudio) ||
-            (!isAplus1LaunchMinimal() && !isGroup && !!otherId)) && (
+            (isGroup && !isStudio)) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -1623,12 +1621,6 @@ const ChatThreadView = ({
                   <DropdownMenuItem onClick={() => setGroupSettingsOpen(true)}>
                     <Settings2 className="w-4 h-4 mr-2" />
                     ตั้งค่ากลุ่ม
-                  </DropdownMenuItem>
-                )}
-                {!isAplus1LaunchMinimal() && !isGroup && otherId && (
-                  <DropdownMenuItem onClick={() => navigate(`/studio/new?invite=${otherId}`)}>
-                    <Building2 className="w-4 h-4 mr-2" />
-                    ชวนสร้างสตูดิโอ
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>

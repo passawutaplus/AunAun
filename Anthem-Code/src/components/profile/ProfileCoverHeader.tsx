@@ -11,6 +11,7 @@ import { useSubscription } from "@/core/subscription";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import OpportunityTypeChips from "@/components/opportunity/OpportunityTypeChips";
+import ProfileIntroLine from "@/components/profile/ProfileIntroLine";
 import UserAvatar from "@/components/UserAvatar";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
 
@@ -19,6 +20,7 @@ type ProfileLike = {
   username: string | null;
   avatar_url: string | null;
   cover_url: string | null;
+  bio?: string | null;
   is_verified?: boolean | null;
   /** Uncropped source — re-crop always uses this, not cover_url. */
   cover_original_url?: string | null;
@@ -339,6 +341,7 @@ export default function ProfileCoverHeader({
                     </Button>
                   ) : null}
                 </div>
+                <ProfileIntroLine userId={userId} bio={profile.bio} canEdit />
               </div>
 
               {showFollowStats ? (

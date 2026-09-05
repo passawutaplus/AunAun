@@ -17,7 +17,6 @@ export const LAUNCH_FEED_MODES = ["projects", "designers", "packages"] as const;
 export type LaunchFeedMode = (typeof LAUNCH_FEED_MODES)[number];
 
 export function isLaunchFeedMode(mode: FeedMode): mode is LaunchFeedMode {
-  if (!isAplus1LaunchMinimal()) return true;
   return (LAUNCH_FEED_MODES as readonly string[]).includes(mode);
 }
 
@@ -57,12 +56,24 @@ export const LAUNCH_ALLOWED_ROUTE_PATTERNS: readonly RegExp[] = [
   /^\/similar\/[^/]+$/,
   /^\/inspire(\/|$)/,
   /^\/forum(\/|$)/,
+  /^\/jobs(\/|$)/,
+  /^\/hiring(\/|$)/,
+  /^\/org(\/|$)/,
   /^\/legal(\/|$)/,
   /^\/admin(\/|$)/,
   /^\/error(\/|$)/,
   /^\/me\/(reports|feedback)$/,
   /^\/@[^/]+$/,
 ];
+
+/** Public Area + Studio discovery — retired even when full product is on. */
+export const RETIRED_PUBLIC_PATH_PREFIXES = ["/community", "/studio", "/s"] as const;
+
+export function isRetiredPublicPath(pathname: string): boolean {
+  return RETIRED_PUBLIC_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
 
 /** @deprecated Use LAUNCH_ALLOWED_ROUTE_PATTERNS — denylist kept for docs/tests only. */
 export const LAUNCH_HIDDEN_PATH_PREFIXES = [
@@ -96,6 +107,7 @@ export function isLaunchAllowedPath(pathname: string): boolean {
  * Unknown URLs must fall through to the real 404 page — not “ยังไม่เปิดในเวอร์ชันนี้”.
  */
 export function isLaunchHiddenPath(pathname: string): boolean {
+  if (isRetiredPublicPath(pathname)) return true;
   if (!isAplus1LaunchMinimal()) return false;
   if (isLaunchAllowedPath(pathname)) return false;
   return LAUNCH_HIDDEN_PATH_PREFIXES.some(

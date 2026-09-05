@@ -29,7 +29,7 @@ const targetLink = (t: string, id: string) => {
     case "user":
       return `/u/${id}`;
     case "job":
-      return `/jobs/${id}`;
+      return `/hiring/${id}`;
     case "community_post":
       return `/community/${id}`;
     case "forum_topic":

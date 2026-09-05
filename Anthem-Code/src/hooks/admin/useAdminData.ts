@@ -382,7 +382,7 @@ function mapPlatformEventRow(r: {
     r.event_type;
   let link: string | undefined;
   if (r.target_type === "project" && r.target_id) link = `/project/${r.target_id}`;
-  else if (r.target_type === "job" && r.target_id) link = `/jobs/${r.target_id}`;
+  else if (r.target_type === "job" && r.target_id) link = `/hiring/${r.target_id}`;
   else if (r.target_type === "user" && r.target_id) link = `/u/${r.target_id}`;
   else if (r.event_type === "report.created") link = "/admin/reports";
   else if (r.event_type === "cashout.requested") link = "/admin/wallet";
@@ -441,7 +441,7 @@ async function fetchPlatformActivityPolling(limit: number): Promise<ActivityEven
         })),
         ...pick(jobs.data, (r) => ({
           id: `j-${r.id}`, type: "job" as const, title: "ประกาศงานใหม่",
-          subtitle: r.title, at: r.created_at, targetId: r.id, link: `/jobs/${r.id}`,
+          subtitle: r.title, at: r.created_at, targetId: r.id, link: `/hiring/${r.id}`,
         })),
         ...pick(hires.data, (r) => ({
           id: `h-${r.id}`, type: "hire" as const, title: "คำขอจ้างงาน",

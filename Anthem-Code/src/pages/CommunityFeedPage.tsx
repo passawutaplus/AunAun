@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 
-/** Legacy route — Designer Area lives on home feed (?mode=community). */
-const CommunityFeedPage = () => <Navigate to="/?mode=community" replace />;
+/** Legacy Area feed — retired; send home. */
+const CommunityFeedPage = () => <Navigate to="/" replace />;
 
 export default CommunityFeedPage;

@@ -13,10 +13,12 @@ import {
 } from "@/integrations/supabase/sharedStorageClient";
 import { useAuth } from "@/hooks/useAuth";
 import { scoreJobMatch } from "@/lib/jobMatchScore";
+import { profileAboutUrl } from "@/lib/profileRoutes";
 import { useProfile } from "@/hooks/useProfile";
 import { useMyProjects } from "@/hooks/useProjects";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { normalizeApplyMethods } from "@/lib/jobBrief";
 
 interface Props {
   job: JobPost;
@@ -36,6 +38,11 @@ const JobApplyDialog = ({ job, open, onOpenChange, matchScore: matchProp }: Prop
   const [rateMax, setRateMax] = useState("");
   const [readyDate, setReadyDate] = useState("");
   const [cvFile, setCvFile] = useState<File | null>(null);
+
+  const methods = normalizeApplyMethods(job.application_methods);
+  const wantResume = methods.includes("resume");
+  const wantRate = methods.includes("rate");
+  const perPiece = methods.includes("per_piece");
 
   const matchScore = useMemo(() => {
     if (matchProp != null) return matchProp;
@@ -61,10 +68,15 @@ const JobApplyDialog = ({ job, open, onOpenChange, matchScore: matchProp }: Prop
       if (upErr) throw upErr;
       cvUrl = path;
     }
+    const aboutUrl = profile
+      ? profileAboutUrl({ user_id: user.id, username: profile.username })
+      : "";
     apply.mutate(
       {
         job_id: job.id,
-        cover_letter: coverLetter.trim(),
+        cover_letter: [coverLetter.trim(), aboutUrl ? `About Me: ${aboutUrl}` : ""]
+          .filter(Boolean)
+          .join("\n\n"),
         portfolio_project_ids: portfolioIds,
         proposed_rate_min: rateMin ? parseInt(rateMin) : null,
         proposed_rate_max: rateMax ? parseInt(rateMax) : null,
@@ -93,7 +105,10 @@ const JobApplyDialog = ({ job, open, onOpenChange, matchScore: matchProp }: Prop
           {matchScore != null && <Badge className="bg-emerald-500/15 text-emerald-700 border-0">Match {matchScore}%</Badge>}
         </DialogTitle>
         <DialogDescription className="thai-body">
-          แนบ Portfolio จากโปรไฟล์ — จุดขายสำคัญของ Aplus1
+          {wantResume
+            ? "ผู้จ้างขอเรซูเม่ — ส่ง About Me จากโปรไฟล์ และแนบ PDF ได้"
+            : "ส่งผลงานจากโปรไฟล์พร้อมลิงก์ About Me — แนบ PDF เพิ่มได้ถ้าต้องการ"}
+          {wantRate ? (perPiece ? " · ระบุเรทต่อชิ้นให้ครบ" : " · ระบุเรทที่เสนอให้ครบ") : ""}
         </DialogDescription>
 
         <div className="space-y-3">
@@ -105,22 +120,39 @@ const JobApplyDialog = ({ job, open, onOpenChange, matchScore: matchProp }: Prop
             <Label className="text-xs">ข้อความถึงผู้จ้าง</Label>
             <Textarea value={coverLetter} onChange={(e) => setCoverLetter(e.target.value)} rows={4} className="rounded-xl" placeholder="สวัสดีครับ/ค่ะ..." />
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label className="text-xs">เรทเสนอ ต่ำสุด (฿)</Label>
-              <Input type="number" value={rateMin} onChange={(e) => setRateMin(e.target.value)} className="rounded-xl" />
+          {wantRate || perPiece ? (
+            <div className="grid grid-cols-2 gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3">
+              <div>
+                <Label className="text-xs">{perPiece ? "เรทต่อชิ้น ต่ำสุด (฿)" : "เรทเสนอ ต่ำสุด (฿)"}</Label>
+                <Input type="number" value={rateMin} onChange={(e) => setRateMin(e.target.value)} className="rounded-xl" required />
+              </div>
+              <div>
+                <Label className="text-xs">สูงสุด (฿)</Label>
+                <Input type="number" value={rateMax} onChange={(e) => setRateMax(e.target.value)} className="rounded-xl" />
+              </div>
             </div>
-            <div>
-              <Label className="text-xs">สูงสุด (฿)</Label>
-              <Input type="number" value={rateMax} onChange={(e) => setRateMax(e.target.value)} className="rounded-xl" />
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs">เรทเสนอ ต่ำสุด (฿)</Label>
+                <Input type="number" value={rateMin} onChange={(e) => setRateMin(e.target.value)} className="rounded-xl" />
+              </div>
+              <div>
+                <Label className="text-xs">สูงสุด (฿)</Label>
+                <Input type="number" value={rateMax} onChange={(e) => setRateMax(e.target.value)} className="rounded-xl" />
+              </div>
             </div>
-          </div>
+          )}
           <div>
             <Label className="text-xs">พร้อมเริ่มงาน</Label>
             <Input type="date" value={readyDate} onChange={(e) => setReadyDate(e.target.value)} className="rounded-xl" />
           </div>
           <div>
-            <Label className="text-xs">แนบ CV (optional)</Label>
+            <Label className="text-xs">
+              {wantResume
+                ? "แนบเรซูเม่ PDF (แนะนำ — มี About Me บนโปรไฟล์แล้วก็ยังแนบเพิ่มได้)"
+                : "แนบไฟล์ PDF (ไม่บังคับ — มี About Me บนโปรไฟล์แล้ว)"}
+            </Label>
             <Input type="file" accept="application/pdf" onChange={(e) => setCvFile(e.target.files?.[0] ?? null)} className="rounded-xl" />
           </div>
         </div>
@@ -129,7 +161,7 @@ const JobApplyDialog = ({ job, open, onOpenChange, matchScore: matchProp }: Prop
           <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">ยกเลิก</Button>
           <Button
             onClick={submit}
-            disabled={apply.isPending || !coverLetter.trim() || portfolioIds.length === 0}
+            disabled={apply.isPending || !coverLetter.trim() || portfolioIds.length === 0 || (wantRate && !rateMin.trim())}
             className="rounded-xl bg-gradient-brand text-white border-0"
           >
             {apply.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />} ส่ง Portfolio

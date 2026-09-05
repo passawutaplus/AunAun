@@ -46,6 +46,7 @@ describe("adminNavigation launch minimal", () => {
     expect(paths).toContain("/admin/chats");
     expect(paths).toContain("/admin/compliance");
     expect(paths).toContain("/admin/kyc");
+    expect(paths).toContain("/admin/employer-orgs");
     expect(paths).toContain("/admin/aml");
     expect(paths).toContain("/admin/storage");
   });

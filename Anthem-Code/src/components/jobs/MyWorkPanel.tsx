@@ -88,7 +88,7 @@ const MyWorkPanel = ({ subTab, onSubTabChange }: Props) => {
               {applied.map((a) => (
                 <Link
                   key={a.id}
-                  to={a.job ? `/jobs/${a.job_id}` : "#"}
+                  to={a.job ? `/hiring/${a.job_id}` : "#"}
                   className="block glass-panel rounded-xl p-4 hover:border-primary/30 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -114,7 +114,7 @@ const MyWorkPanel = ({ subTab, onSubTabChange }: Props) => {
               {invited.map((inv: { id: string; project_title: string; job_post_id: string | null; job_post?: { title?: string }; created_at: string; status: string }) => (
                 <Link
                   key={inv.id}
-                  to={inv.job_post_id ? `/jobs/${inv.job_post_id}` : "#"}
+                  to={inv.job_post_id ? `/hiring/${inv.job_post_id}` : "#"}
                   className="block glass-panel rounded-xl p-4 hover:border-primary/30 transition-colors"
                 >
                   <p className="font-medium text-sm">{inv.job_post?.title ?? inv.project_title}</p>

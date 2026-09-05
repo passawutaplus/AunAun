@@ -57,7 +57,7 @@ export const jobApplicationTemplate = {
     applicantName: 'น้องมิ้นท์',
     jobTitle: 'UI Designer — SaaS Dashboard',
     coverPreview: 'สนใจงานนี้มากครับ มี portfolio ด้าน dashboard หลายชิ้น',
-    actionUrl: 'https://aplus1-demo.vercel.app/jobs/example',
+    actionUrl: 'https://aplus1-demo.vercel.app/hiring/example',
   },
 }
 

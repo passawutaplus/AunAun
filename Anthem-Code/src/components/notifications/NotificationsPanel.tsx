@@ -329,7 +329,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
             icon={BriefcaseIcon}
             text="ยังไม่มีคำขอจ้างงาน"
             actionLabel="ไปดู Jobs"
-            onAction={() => go("/jobs")}
+            onAction={() => go("/hiring")}
           />
         ) : (
           hires.map((h) => (

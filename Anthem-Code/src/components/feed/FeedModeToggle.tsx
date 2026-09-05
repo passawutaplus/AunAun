@@ -1,10 +1,10 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { LayoutGrid, Users, Building2, Orbit, Target } from "lucide-react";
+import { LayoutGrid, Users, Target } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import PackagesIcon from "@/components/icons/PackagesIcon";
-import { isAplus1LaunchMinimal, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
+import { isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 
 export type FeedMode = "projects" | "designers" | "packages" | "studios" | "community";
 
@@ -28,16 +28,10 @@ interface Props {
 
 const items: ToggleItem[] = [
   { id: "projects", label: "Projects", icon: LayoutGrid },
-  { id: "community", label: "Area", icon: Orbit, desktopOnly: true },
   { id: "drill", label: "Design Drill", icon: Target, mobileOnly: true },
   { id: "designers", label: "Designers", icon: Users },
   { id: "packages", label: "Packages", icon: PackagesIcon },
-  { id: "studios", label: "Studios", icon: Building2 },
 ];
-
-const launchItems = items.filter(
-  (item) => item.id === "projects" || item.id === "designers" || item.id === "packages",
-);
 
 /** Smooth horizontal slide — spring tuned for a short pill travel. */
 const slideTransition = {
@@ -62,7 +56,7 @@ const FeedModeToggle = ({
   const btnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [indicator, setIndicator] = useState<IndicatorBox | null>(null);
 
-  const visible = (isAplus1LaunchMinimal() ? launchItems : items).filter(
+  const visible = items.filter(
     (item) => item.id !== "drill" || isLaunchDesignDrillEnabled(),
   );
 

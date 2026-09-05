@@ -164,7 +164,7 @@ const PostOpportunityForm = ({ onSuccess }: Props) => {
               <SelectItem value="project">Project</SelectItem>
               <SelectItem value="freelance">Freelance</SelectItem>
               <SelectItem value="fulltime">Full-time</SelectItem>
-              <SelectItem value="parttime">Part-time</SelectItem>
+              <SelectItem value="parttime">Contract</SelectItem>
               <SelectItem value="internship">Internship</SelectItem>
             </SelectContent>
           </Select>

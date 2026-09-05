@@ -177,6 +177,15 @@ describe("aplus1Launch flags (fail-closed)", () => {
     expect(isAplus1PaymentsEnabled()).toBe(false);
   });
 
+  it("restricts feed modes even when full product", () => {
+    vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
+    expect(isLaunchFeedMode("projects")).toBe(true);
+    expect(isLaunchFeedMode("community")).toBe(false);
+    expect(isLaunchFeedMode("studios")).toBe(false);
+    expect(coerceLaunchFeedMode("community")).toBe("projects");
+    expect(coerceLaunchFeedMode("studios")).toBe("projects");
+  });
+
   it("restricts feed modes when launch minimal", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "");
     expect(isLaunchFeedMode("projects")).toBe(true);
@@ -240,11 +249,17 @@ describe("launch route allowlist", () => {
     "/dashboard/reviews",
     "/dashboard/documents",
     "/dashboard/payout",
+    "/jobs",
+    "/jobs/abc",
+    "/jobs/new",
+    "/hiring",
+    "/hiring/abc",
+    "/hiring/new",
+    "/org/register",
+    "/org/status",
   ];
 
   const blocked = [
-    "/jobs",
-    "/jobs/abc",
     "/community",
     "/community/abc",
     "/advertise",
@@ -268,10 +283,12 @@ describe("launch route allowlist", () => {
     expect(isLaunchHiddenPath(path)).toBe(true);
   });
 
-  it("allows all paths when full product", () => {
+  it("allows remaining full-product paths but keeps Area and Studio retired", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
     expect(isLaunchHiddenPath("/jobs")).toBe(false);
-    expect(isLaunchHiddenPath("/community/x")).toBe(false);
+    expect(isLaunchHiddenPath("/community/x")).toBe(true);
+    expect(isLaunchHiddenPath("/studio/new")).toBe(true);
+    expect(isLaunchHiddenPath("/s/studio-slug")).toBe(true);
   });
 
   it("does not treat unknown URLs as coming-soon (real 404)", () => {

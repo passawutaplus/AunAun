@@ -1,6 +1,6 @@
 import BriefcaseIcon from "./icons/BriefcaseIcon";
 
-import { Home, MessageCircle, Orbit, Plus, User } from "lucide-react";
+import { Home, MessageCircle, Plus, User } from "lucide-react";
 
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
@@ -33,19 +33,13 @@ const NAV_ITEMS: NavItem[] = [
     to: "/",
     label: "Home",
     icon: Home,
-    match: (p, mode) => p === "/" && mode !== "community",
+    match: (p) => p === "/",
   },
-  {
-    to: "/?mode=community",
-    label: "Area",
-    icon: Orbit,
-    match: (p, mode) => p === "/" && mode === "community",
-  },
-  { to: "/jobs", label: "Jobs", icon: BriefcaseIcon, match: (p) => p.startsWith("/jobs") },
+  { to: "/hiring", label: "งาน", icon: BriefcaseIcon, match: (p) => p.startsWith("/hiring") },
   { to: "/chat", label: "Chat", icon: MessageCircle, match: (p) => p.startsWith("/chat"), requiresAuth: true },
 ];
 
-const launchNavItems = NAV_ITEMS.filter((item) => item.to === "/" || item.to === "/chat");
+const launchNavItems = NAV_ITEMS.filter((item) => item.to === "/" || item.to === "/hiring" || item.to === "/chat");
 
 const PROFILE_MATCH = (p: string) =>
   p.startsWith("/portfolio") || p.startsWith("/settings") || p.startsWith("/collections");
@@ -110,7 +104,7 @@ const FloatingNav = () => {
             const active = match(pathname, feedMode);
             const showChatBadge = to === "/chat" && user && chatBadgeCount > 0;
             const isHome = to === "/";
-            const homeActive = isHome && pathname === "/" && feedMode !== "community";
+            const homeActive = isHome && pathname === "/";
 
             if (isHome) {
               return (
@@ -137,9 +131,6 @@ const FloatingNav = () => {
                 key={to}
                 to={to}
                 onClick={(e) => {
-                  if (to === "/?mode=community") {
-                    localStorage.setItem("feed-mode", "community");
-                  }
                   guardAuth(e, requiresAuth, to);
                 }}
                 aria-label={showChatBadge ? `${label} (${chatBadgeCount} รายการใหม่)` : label}

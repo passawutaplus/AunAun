@@ -9,6 +9,7 @@ import {
   Rocket,
 } from "lucide-react";
 import ManageWorkIcon from "@/components/icons/ManageWorkIcon";
+import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import OpportunityStatusDialog from "@/components/opportunity/OpportunityStatusDialog";
@@ -44,6 +45,9 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
       >
         <button type="button" onClick={() => navigate("/dashboard")} className={item}>
           <ManageWorkIcon className="w-4 h-4" /> My Studio
+        </button>
+        <button type="button" onClick={() => navigate("/hiring")} className={item}>
+          <BriefcaseIcon className="w-4 h-4 text-primary" /> งาน
         </button>
         <button type="button" onClick={() => navigate("/chat")} className={item}>
           <MessageCircle className="w-4 h-4 text-primary" /> Chat

@@ -40,6 +40,7 @@ import { ProfileBrowseToolbar } from "@/components/profile/ProfileBrowseToolbar"
 import { SeriesCard } from "@/components/series/SeriesCard";
 import { SeriesAnimatedGrid } from "@/components/series/SeriesAnimatedGrid";
 import ProfileAboutPanel from "@/components/profile/ProfileAboutPanel";
+import ProfileIntroLine from "@/components/profile/ProfileIntroLine";
 import { ProfileReviewsSection } from "@/components/reviews/ProfileReviewsSection";
 import type { ExperienceItem } from "@/lib/validators";
 import { normalizeExperienceItem } from "@/lib/validators";
@@ -656,11 +657,15 @@ const PublicProfilePage = () => {
                   {(profile as { open_for_work_badge?: string }).open_for_work_badge || "Open for Work"}
                 </Badge>
               )}
-              {vis.bio && profile.bio && (
-                <p className="text-base text-foreground mt-2 sm:mt-3 max-w-xl leading-relaxed">
-                  {highlight(profile.bio, q)}
-                </p>
-              )}
+              {(isSelf && !visitorPreview) || vis.bio ? (
+                <ProfileIntroLine
+                  userId={resolvedUserId}
+                  bio={profile.bio}
+                  canEdit={isSelf && !visitorPreview}
+                  highlightQuery={q}
+                  className="mt-2 sm:mt-3"
+                />
+              ) : null}
               {vis.joined && joinedAt ? (
                 <p className="text-xs text-muted-foreground mt-2">
                   เข้าร่วม {formatThaiDate(joinedAt)}

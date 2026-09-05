@@ -26,7 +26,7 @@ import FeedbackTicketHost from "./components/feedback/FeedbackTicketHost.tsx";
 import { InterestSurveyGate } from "./components/onboarding/InterestSurveyDialog.tsx";
 import { SkipLink } from "./components/a11y/SkipLink.tsx";
 import { OfflineBanner } from "./components/OfflineBanner.tsx";
-import RedirectTo from "./components/RedirectTo.tsx";
+import RedirectTo, { JobsToHiringRedirect } from "./components/RedirectTo.tsx";
 import VanityProfileRoute from "./components/profile/VanityProfileRoute.tsx";
 import RouteFallback from "./components/RouteFallback.tsx";
 import DemoModeBanner from "./components/DemoModeBanner.tsx";
@@ -63,7 +63,11 @@ const SeriesListPage = lazy(() =>
 );
 const SeriesDetailPage = lazy(() => import("./pages/SeriesDetailPage.tsx"));
 const JobsPage = lazy(() => import("./pages/JobsPage.tsx"));
+const JobsSeekingPage = lazy(() => import("./pages/JobsSeekingPage.tsx"));
 const JobDetailPage = lazy(() => import("./pages/JobDetailPage.tsx"));
+const JobNewPage = lazy(() => import("./pages/JobNewPage.tsx"));
+const HiringOrgRegisterPage = lazy(() => import("./pages/HiringOrgRegisterPage.tsx"));
+const HiringOrgStatusPage = lazy(() => import("./pages/HiringOrgStatusPage.tsx"));
 const StudioProfilePage = lazy(() => import("./pages/StudioProfilePage.tsx"));
 const StudioCreatePage = lazy(() => import("./pages/StudioCreatePage.tsx"));
 const StudioInvitesPage = lazy(() => import("./pages/StudioInvitesPage.tsx"));
@@ -80,6 +84,7 @@ const AdminUsersPage = lazy(() => import("./pages/admin/AdminUsersPage"));
 const AdminStudiosPage = lazy(() => import("./pages/admin/AdminStudiosPage"));
 const AdminProjectsPage = lazy(() => import("./pages/admin/AdminProjectsPage"));
 const AdminJobsPage = lazy(() => import("./pages/admin/AdminJobsPage"));
+const AdminHiringOrgsPage = lazy(() => import("./pages/admin/AdminHiringOrgsPage"));
 const AdminHiringPage = lazy(() => import("./pages/admin/AdminHiringPage"));
 const AdminCollabsPage = lazy(() => import("./pages/admin/AdminCollabsPage"));
 const AdminChatsPage = lazy(() => import("./pages/admin/AdminChatsPage"));
@@ -335,6 +340,7 @@ const App = () => (
                 <Route path="studios" element={<AdminStudiosPage />} />
                 <Route path="projects" element={<AdminProjectsPage />} />
                 <Route path="jobs" element={<AdminJobsPage />} />
+                <Route path="employer-orgs" element={<AdminHiringOrgsPage />} />
                 <Route path="hiring" element={<AdminHiringPage />} />
                 <Route path="collabs" element={<AdminCollabsPage />} />
                 <Route path="chats" element={<AdminChatsPage />} />
@@ -360,11 +366,17 @@ const App = () => (
                 <Route path="system" element={<AdminSystemPage />} />
                 <Route path="ai" element={<AdminAiMonitorPage />} />
               </Route>
-              <Route path="/jobs" element={<JobsPage />} />
+              <Route path="/hiring" element={<JobsPage />} />
+              <Route path="/hiring/new" element={<JobNewPage />} />
+              <Route path="/hiring/:id" element={<JobDetailPage />} />
+              <Route path="/jobs" element={<JobsSeekingPage />} />
+              <Route path="/jobs/new" element={<RedirectTo to="/hiring/new" />} />
+              <Route path="/jobs/:id" element={<JobsToHiringRedirect />} />
+              <Route path="/org/register" element={<HiringOrgRegisterPage />} />
+              <Route path="/org/status" element={<HiringOrgStatusPage />} />
               <Route path="/advertise" element={<AdvertisePage />} />
               <Route path="/upgrade" element={<UpgradePage />} />
               <Route path="/ads/:id" element={<AdDetailPage />} />
-              <Route path="/jobs/:id" element={<JobDetailPage />} />
               <Route path="/contracts" element={<ContractsListPage />} />
               <Route path="/contracts/new" element={<ContractEditorPage />} />
               <Route path="/s/:slug" element={<StudioProfilePage />} />

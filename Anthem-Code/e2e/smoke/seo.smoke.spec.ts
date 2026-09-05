@@ -30,10 +30,10 @@ test.describe("SEO @public", () => {
     await expect(page.locator('link[rel="canonical"]').first()).toHaveAttribute("href", /^https:\/\//);
   });
 
-  test("jobs page updates title and robots after navigation", async ({ page }) => {
-    await page.goto("/jobs");
-    await expect(page).toHaveTitle(/งาน|Aplus1/i);
+  test("hiring page updates title and robots after navigation", async ({ page }) => {
+    await page.goto("/hiring");
+    await expect(page).toHaveTitle(/หางาน|HIRING|Aplus1/i);
     await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute("content", "index, follow");
-    await expect(page.locator('meta[property="og:url"]').first()).toHaveAttribute("content", /\/jobs$/);
+    await expect(page.locator('meta[property="og:url"]').first()).toHaveAttribute("content", /\/hiring$/);
   });
 });

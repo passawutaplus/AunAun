@@ -33,12 +33,6 @@ export const communityNewPath = (_kind?: CommunityPostKind) => COMMUNITY_NEW_PAT
 
 export const CREATE_ACTIONS: CreateAction[] = [
   { label: "ลงผลงาน", desc: "เผยแพร่ผลงานใหม่ลงพอร์ตโฟลิโอ", icon: ImagePlus, to: "/portfolio/new" },
-  {
-    label: "โพสชุมชน",
-    desc: "แชร์เรื่องราว รูป หรือคำถามกับชุมชน",
-    icon: ImagePlus,
-    to: COMMUNITY_NEW_PATH,
-  },
 ];
 
 export const parseCommunityKind = (value: string | null): CommunityPostKind | null =>

@@ -438,6 +438,13 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         accent: true,
       },
       {
+        to: "/admin/employer-orgs",
+        label: "องค์กรจ้างงาน",
+        hint: "ตรวจนิติบุคคลก่อนลงประกาศ",
+        icon: Building2,
+        accent: true,
+      },
+      {
         to: "/admin/aml",
         label: "AML / ฟอกเงิน",
         hint: "ธงความเสี่ยงทางการเงิน",
@@ -555,6 +562,7 @@ const SIDEBAR_PATHS_ORDERED: { sectionId: string; to: string }[] = [
   { sectionId: "trust", to: "/admin/reports" },
   { sectionId: "trust", to: "/admin/moderation" },
   { sectionId: "trust", to: "/admin/kyc" },
+  { sectionId: "trust", to: "/admin/employer-orgs" },
   { sectionId: "trust", to: "/admin/aml" },
   { sectionId: "trust", to: "/admin/feedback" },
   { sectionId: "ops", to: "/admin/ai" },

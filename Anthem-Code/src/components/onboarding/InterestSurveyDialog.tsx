@@ -636,7 +636,7 @@ export function InterestSurveyGate() {
 
                     <FieldBlock
                       title="ความชำนาญ"
-                      hint="เครื่องมือ / สไตล์ · บังคับอย่างน้อย 1"
+                      hint="งานที่ทำเป็น เช่น ออกแบบแพ็กเกจ ทำแบรนดิ้ง · อย่างน้อย 1"
                       icon={Sparkles}
                       divided
                     >
@@ -645,7 +645,7 @@ export function InterestSurveyGate() {
                         selected={skills}
                         onChange={setSkills}
                         knownIds={[...SKILL_CHIP_SUGGESTIONS]}
-                        otherPlaceholder="พิมพ์ทักษะแล้วกด Enter"
+                        otherPlaceholder="พิมพ์งานที่ทำเป็นแล้วกด Enter"
                       />
                     </FieldBlock>
                   </div>

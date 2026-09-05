@@ -33,7 +33,10 @@ import {
   isSimpleThaiPhone,
   type AwardItem,
   type CertificationItem,
+  type CvAddressDetail,
   type CvLanguageItem,
+  type CvVisibility,
+  type CvVisibilityKey,
   type EducationItem,
 } from "@/lib/profileCv";
 import {
@@ -50,7 +53,6 @@ import AwardEditor from "@/components/profile/AwardEditor";
 import CvPhotoEditor from "@/components/profile/CvPhotoEditor";
 import SkillsEditor from "@/components/profile/SkillsEditor";
 import CvToolsEditor from "@/components/profile/CvToolsEditor";
-import ContactEditor from "@/components/profile/ContactEditor";
 import ProfileLinksEditor from "@/components/profile/ProfileLinksEditor";
 import ProfileAddressEditor from "@/components/profile/ProfileAddressEditor";
 import { AboutEditLangToggle, AboutEditLocaleProvider, useAboutEditLocale } from "@/components/profile/AboutEditLocale";
@@ -83,8 +85,9 @@ type FormState = {
   contactEmail: string;
   contactLine: string;
   contactPhone: string;
-  contactPublic: boolean;
-  bio: string;
+  visibility: CvVisibility;
+  addressDetail: CvAddressDetail;
+  about: string;
   website: string;
   socialLinks: SocialLinkItem[];
   skills: string[];
@@ -144,6 +147,14 @@ const ABOUT_EDIT_GROUPS: {
 
 const ABOUT_EDIT_ITEMS = ABOUT_EDIT_GROUPS.flatMap((group) => group.items);
 
+const SECTION_CV_KEY: Partial<Record<SectionId, CvVisibilityKey>> = {
+  experience: "experience",
+  education: "education",
+  certification: "certification",
+  awards: "awards",
+  languages: "languages",
+};
+
 const parseSkills = (raw: unknown): string[] =>
   Array.isArray(raw) ? raw.filter((s): s is string => typeof s === "string") : [];
 
@@ -163,8 +174,9 @@ function formFromProfile(profile: ProfileLike): FormState {
     contactEmail: cv.contactEmail,
     contactLine: cv.contactLine || (profile.line_id ?? "").trim(),
     contactPhone: cv.contactPhone || (profile.phone ?? "").trim(),
-    contactPublic: cv.contactPublic,
-    bio: profile.bio ?? "",
+    visibility: cv.visibility,
+    addressDetail: cv.addressDetail,
+    about: cv.about.trim() || (profile.bio ?? "").trim(),
     website: profile.website ?? "",
     socialLinks: parseSocialLinks(profile.social_links),
     skills: craftSkills,
@@ -221,9 +233,13 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
   const update = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  const setVis = (key: CvVisibilityKey, value: boolean) =>
+    setForm((f) => ({ ...f, visibility: { ...f.visibility, [key]: value } }));
+
+  const sectionVisKey = SECTION_CV_KEY[section];
+
   const goSection = (id: SectionId) => {
     setSection(id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSave = async (exitAfter: boolean) => {
@@ -271,7 +287,11 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
       contactEmail: form.contactEmail,
       contactLine: form.contactLine,
       contactPhone: form.contactPhone,
-      contactPublic: form.contactPublic,
+      contactPublic:
+        form.visibility.contactEmail || form.visibility.contactLine || form.visibility.contactPhone,
+      about: form.about,
+      addressDetail: form.addressDetail,
+      visibility: form.visibility,
     });
     if (form.contactEmail.trim() && !isSimpleEmail(form.contactEmail)) {
       goSection("contact");
@@ -286,7 +306,7 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
     const address = profileAddressToJson(form.profileAddress);
     try {
       await updateMut.mutateAsync({
-        bio: form.bio.trim(),
+        cvAbout: cv.about,
         website: form.website.trim(),
         socialLinks: form.socialLinks,
         skills: form.skills,
@@ -308,6 +328,8 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
         cvContactLine: cv.contactLine,
         cvContactPhone: cv.contactPhone,
         cvContactPublic: cv.contactPublic,
+        cvAddressDetail: cv.addressDetail,
+        cvVisibility: cv.visibility,
         profileAddress: address,
         location: formatProfileAddressShort(address),
       });
@@ -433,9 +455,18 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
         </nav>
 
         <div className="min-w-0 space-y-6">
-          <h3 className="flex items-center gap-2 text-sm font-medium text-foreground">
-            {SectionIcon ? <SectionIcon className="h-4 w-4 text-primary shrink-0" aria-hidden /> : null}
-            {t[section]}
+          <h3 className="flex items-center justify-between gap-3 text-sm font-medium text-foreground">
+            <span className="flex min-w-0 items-center gap-2">
+              {SectionIcon ? <SectionIcon className="h-4 w-4 text-primary shrink-0" aria-hidden /> : null}
+              {t[section]}
+            </span>
+            {sectionVisKey ? (
+              <ShowOnCvTick
+                checked={form.visibility[sectionVisKey]}
+                label={t.showOnCv}
+                onChange={(v) => setVis(sectionVisKey, v)}
+              />
+            ) : null}
           </h3>
 
           <SectionPanel id="identity" current={section}>
@@ -479,7 +510,12 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                   className={ABOUT_INPUT_CLASS}
                 />
               </EditorBlock>
-              <EditorBlock title={t.addressUi.title}>
+              <EditorBlock
+                title={t.addressUi.title}
+                showOnCv={form.visibility.location}
+                showOnCvLabel={t.showOnCv}
+                onShowOnCvChange={(v) => setVis("location", v)}
+              >
                 <p className="text-xs text-muted-foreground -mt-1">{t.addressUi.hint}</p>
                 <ProfileAddressEditor
                   hideHeader
@@ -488,22 +524,47 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                   onChange={(profileAddress) => update("profileAddress", profileAddress)}
                   copy={t.addressUi}
                 />
+                <label className="flex items-start gap-2.5 text-sm text-foreground cursor-pointer select-none">
+                  <Checkbox
+                    checked={form.addressDetail === "full"}
+                    onCheckedChange={(v) => update("addressDetail", v === true ? "full" : "short")}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    {t.addressFull}
+                    <span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">
+                      {t.addressFullHint}
+                    </span>
+                  </span>
+                </label>
               </EditorBlock>
-              <EditorBlock title={t.aboutMe} hint={`${form.bio.length}/500`}>
+              <EditorBlock
+                title={t.aboutMe}
+                hint={`${form.about.length}/500`}
+                showOnCv={form.visibility.about}
+                showOnCvLabel={t.showOnCv}
+                onShowOnCvChange={(v) => setVis("about", v)}
+              >
                 <textarea
-                  value={form.bio}
-                  onChange={(e) => update("bio", e.target.value)}
+                  value={form.about}
+                  onChange={(e) => update("about", e.target.value)}
                   rows={4}
                   maxLength={500}
                   placeholder={t.aboutMePh}
                   className="w-full px-3 py-2 rounded-xl bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40"
                 />
+                <p className="text-[11px] text-muted-foreground">{t.aboutMeHint}</p>
               </EditorBlock>
           </SectionPanel>
 
           <SectionPanel id="contact" current={section}>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <EditorBlock title={t.email}>
+                <EditorBlock
+                  title={t.email}
+                  showOnCv={form.visibility.contactEmail}
+                  showOnCvLabel={t.showOnCv}
+                  onShowOnCvChange={(v) => setVis("contactEmail", v)}
+                >
                   <input
                     type="text"
                     inputMode="email"
@@ -514,7 +575,12 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                     className={ABOUT_INPUT_CLASS}
                   />
                 </EditorBlock>
-                <EditorBlock title={t.line}>
+                <EditorBlock
+                  title={t.line}
+                  showOnCv={form.visibility.contactLine}
+                  showOnCvLabel={t.showOnCv}
+                  onShowOnCvChange={(v) => setVis("contactLine", v)}
+                >
                   <input
                     type="text"
                     value={form.contactLine}
@@ -524,7 +590,12 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                     className={ABOUT_INPUT_CLASS}
                   />
                 </EditorBlock>
-                <EditorBlock title={t.phone}>
+                <EditorBlock
+                  title={t.phone}
+                  showOnCv={form.visibility.contactPhone}
+                  showOnCvLabel={t.showOnCv}
+                  onShowOnCvChange={(v) => setVis("contactPhone", v)}
+                >
                   <input
                     type="tel"
                     inputMode="tel"
@@ -539,15 +610,12 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
               <p className="text-xs text-muted-foreground -mt-2">
                 {t.contactHint}
               </p>
-              <label className="flex items-start gap-2.5 text-sm text-foreground cursor-pointer select-none">
-                <Checkbox
-                  checked={form.contactPublic}
-                  onCheckedChange={(v) => update("contactPublic", v === true)}
-                  className="mt-0.5"
-                />
-                <span>{t.contactPublic}</span>
-              </label>
-              <EditorBlock title={t.portfolio}>
+              <EditorBlock
+                title={t.portfolio}
+                showOnCv={form.visibility.portfolio}
+                showOnCvLabel={t.showOnCv}
+                onShowOnCvChange={(v) => setVis("portfolio", v)}
+              >
                 <input
                   id="about-portfolio-url"
                   value={form.portfolioUrl}
@@ -559,29 +627,55 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                   {t.portfolioHint}
                 </p>
               </EditorBlock>
-              <ContactEditor
-                hideEmail
-                value={{ email: "", website: form.website }}
-                onChange={(patch) => {
-                  if (patch.website !== undefined) update("website", patch.website);
-                }}
-              />
-              <div className="pt-1 border-t border-border/60">
-                <ProfileLinksEditor
-                  value={form.socialLinks}
-                  onChange={(socialLinks) => update("socialLinks", socialLinks)}
+              <EditorBlock
+                title={t.website}
+                showOnCv={form.visibility.website}
+                showOnCvLabel={t.showOnCv}
+                onShowOnCvChange={(v) => setVis("website", v)}
+              >
+                <input
+                  type="url"
+                  value={form.website}
+                  onChange={(e) => update("website", e.target.value)}
+                  placeholder="https://..."
+                  className={ABOUT_INPUT_CLASS}
                 />
-              </div>
+              </EditorBlock>
+              <EditorBlock
+                title={t.socials}
+                showOnCv={form.visibility.socials}
+                showOnCvLabel={t.showOnCv}
+                onShowOnCvChange={(v) => setVis("socials", v)}
+              >
+                <div className="pt-1 border-t border-border/60">
+                  <ProfileLinksEditor
+                    value={form.socialLinks}
+                    onChange={(socialLinks) => update("socialLinks", socialLinks)}
+                  />
+                </div>
+              </EditorBlock>
           </SectionPanel>
 
           <SectionPanel id="skills" current={section}>
-              <EditorBlock icon={Sparkles} title={t.skills}>
+              <EditorBlock
+                icon={Sparkles}
+                title={t.skills}
+                showOnCv={form.visibility.skills}
+                showOnCvLabel={t.showOnCv}
+                onShowOnCvChange={(v) => setVis("skills", v)}
+              >
                 <p className="text-xs text-muted-foreground -mt-1">
                   {t.skillsHint}
                 </p>
                 <SkillsEditor value={form.skills} onChange={(skills) => update("skills", skills)} />
               </EditorBlock>
-              <EditorBlock icon={Monitor} title={t.software}>
+              <EditorBlock
+                icon={Monitor}
+                title={t.software}
+                showOnCv={form.visibility.software}
+                showOnCvLabel={t.showOnCv}
+                onShowOnCvChange={(v) => setVis("software", v)}
+              >
                 <p className="text-xs text-muted-foreground -mt-1">
                   {t.softwareHint}
                 </p>
@@ -655,15 +749,38 @@ function SectionPanel({
   );
 }
 
+function ShowOnCvTick({
+  checked,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  label: string;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <label className="flex shrink-0 items-center gap-1.5 text-xs font-normal text-foreground cursor-pointer select-none">
+      <Checkbox checked={checked} onCheckedChange={(v) => onChange(v === true)} />
+      {label}
+    </label>
+  );
+}
+
 function EditorBlock({
   icon: Icon,
   title,
   hint,
+  showOnCv,
+  showOnCvLabel,
+  onShowOnCvChange,
   children,
 }: {
   icon?: ComponentType<{ className?: string }>;
   title: string;
   hint?: string;
+  showOnCv?: boolean;
+  showOnCvLabel?: string;
+  onShowOnCvChange?: (next: boolean) => void;
   children: ReactNode;
 }) {
   return (
@@ -673,7 +790,12 @@ function EditorBlock({
           {Icon ? <Icon className="w-4 h-4 text-primary shrink-0" aria-hidden /> : null}
           {title}
         </h4>
-        {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
+        <div className="flex items-center gap-2 shrink-0">
+          {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
+          {showOnCv != null && showOnCvLabel && onShowOnCvChange ? (
+            <ShowOnCvTick checked={showOnCv} label={showOnCvLabel} onChange={onShowOnCvChange} />
+          ) : null}
+        </div>
       </div>
       {children}
     </section>

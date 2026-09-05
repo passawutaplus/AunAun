@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, Plus, User } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import ChatNavButton from "@/components/chat/ChatNavButton";
+import JobsNavButton from "@/components/jobs/JobsNavButton";
 import { CommunityNavDropdown } from "@/components/CommunityNavDropdown";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { ProfileMenuDropdown } from "@/components/ProfileMenuDropdown";
@@ -189,6 +190,7 @@ const DesktopTopNav = () => {
               <span className="whitespace-nowrap">Share your Project</span>
             </span>
           </button>
+          <JobsNavButton />
           {user && (
             <>
               <ChatNavButton />

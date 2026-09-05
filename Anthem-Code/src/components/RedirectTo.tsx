@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { mergeRedirectTarget } from "@/lib/mergeRedirectTarget";
 
 /** Client-side redirect for legacy notification URLs. */
@@ -20,6 +20,11 @@ const RedirectTo = ({ to }: { to: string }) => {
       กำลังเปลี่ยนหน้า...
     </div>
   );
+};
+
+export const JobsToHiringRedirect = () => {
+  const { id } = useParams<{ id: string }>();
+  return <RedirectTo to={`/hiring/${id ?? ""}`} />;
 };
 
 export default RedirectTo;

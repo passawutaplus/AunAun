@@ -13,6 +13,8 @@ export const FEED_MOBILE_COLUMNS_META: Record<
   two: { label: "2 คอลัมน์", cols: 2, ariaLabel: "2 คอลัมน์" },
 };
 
+export const FEED_GRID_MOBILE_COLUMNS_META = FEED_MOBILE_COLUMNS_META;
+
 export const FEED_GRID_MOBILE_STORAGE_KEY = BRAND_STORAGE_FEED_GRID_MOBILE;
 export const FEED_AREA_MOBILE_STORAGE_KEY = BRAND_STORAGE_FEED_AREA_MOBILE;
 

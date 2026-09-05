@@ -49,10 +49,10 @@ export default function SavedPostsPage() {
         ) : (
           <div className="text-center py-16">
             <p className="text-sm text-muted-foreground mb-4">
-              ยังไม่มีโพสต์ที่บันทึก — กดไอคอนบุ๊กมาร์กข้างปุ่มแชร์ในโพสต์เพื่อเก็บไว้อ่านทีหลัง
+              ยังไม่มีโพสต์ที่บันทึก
             </p>
-            <Button variant="outline" onClick={() => navigate("/?mode=community")} className="rounded-full">
-              ไปดูฟีดชุมชน
+            <Button variant="outline" onClick={() => navigate("/")} className="rounded-full">
+              กลับหน้าแรก
             </Button>
           </div>
         )}

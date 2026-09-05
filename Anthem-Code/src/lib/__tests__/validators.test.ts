@@ -61,6 +61,33 @@ describe("profileSchema", () => {
     });
     expect(r.success).toBe(true);
   });
+  it("keeps community bio to 100 and CV about to 500", () => {
+    expect(
+      profileSchema.safeParse({
+        displayName: "A",
+        username: "good_name.1",
+        email: "a@b.co",
+        bio: "x".repeat(101),
+      }).success,
+    ).toBe(false);
+    expect(
+      profileSchema.safeParse({
+        displayName: "A",
+        username: "good_name.1",
+        email: "a@b.co",
+        bio: "x".repeat(100),
+        cvAbout: "y".repeat(500),
+      }).success,
+    ).toBe(true);
+    expect(
+      profileSchema.safeParse({
+        displayName: "A",
+        username: "good_name.1",
+        email: "a@b.co",
+        cvAbout: "y".repeat(501),
+      }).success,
+    ).toBe(false);
+  });
 });
 
 describe("commentSchema", () => {

@@ -101,7 +101,7 @@ export default function ProfileOwnerActions({
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-[11.5rem] rounded-xl p-1.5">
+        <DropdownMenuContent align="end" className="min-w-[13rem] rounded-xl p-1.5">
           {onPreview ? (
             <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onSelect={onPreview}>
               <Eye className="h-3.5 w-3.5" />

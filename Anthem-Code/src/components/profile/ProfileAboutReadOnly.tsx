@@ -25,14 +25,15 @@ import ToolIcon from "@/components/ToolIcon";
 import LineMarkIcon from "@/components/icons/LineMarkIcon";
 import type { ExperienceItem, SocialLinkItem } from "@/lib/validators";
 import { displayProfileAddress } from "@/lib/profileAddress";
-import { safeHttpUrl } from "@/lib/safeUrl";
+import { safeHttpUrl, socialDisplayId } from "@/lib/safeUrl";
 import { displayInitials } from "@/lib/avatarPool";
 import { cn } from "@/lib/utils";
 import {
   cvPortraitUrl,
   CV_LANGUAGE_LEVEL_LABELS,
-  educationDetailLine,
+  educationDetailLines,
   formatEducationPeriod,
+  cvAboutText,
   parseProfileCv,
   partitionSkillsAndSoftware,
   type EducationItem,
@@ -74,10 +75,12 @@ function PeriodEntry({
   period,
   title,
   subtitle,
+  extra,
 }: {
   period: string;
   title: string;
   subtitle?: string;
+  extra?: string;
 }) {
   return (
     <li className="grid grid-cols-[5.25rem_minmax(0,1fr)] gap-3 sm:grid-cols-[6.75rem_minmax(0,1fr)]">
@@ -86,7 +89,12 @@ function PeriodEntry({
       </p>
       <div className="min-w-0 border-l border-primary/35 pl-4">
         <h4 className="font-semibold text-foreground leading-snug">{title}</h4>
-        {subtitle ? <p className="text-xs text-muted-foreground italic mt-0.5">{subtitle}</p> : null}
+        {subtitle ? (
+          <p className="mt-0.5 pr-1 text-xs italic leading-snug break-words text-muted-foreground">{subtitle}</p>
+        ) : null}
+        {extra ? (
+          <p className="mt-0.5 pr-1 text-xs italic leading-snug break-words text-muted-foreground">{extra}</p>
+        ) : null}
       </div>
     </li>
   );
@@ -95,14 +103,18 @@ function PeriodEntry({
 function EducationList({ items }: { items: EducationItem[] }) {
   return (
     <ol className="space-y-6">
-      {items.map((it, i) => (
-        <PeriodEntry
-          key={`${it.school}-${i}`}
-          period={formatEducationPeriod(it) || it.period}
-          title={it.school}
-          subtitle={educationDetailLine(it)}
-        />
-      ))}
+      {items.map((it, i) => {
+        const { lead, tail } = educationDetailLines(it);
+        return (
+          <PeriodEntry
+            key={`${it.school}-${i}`}
+            period={formatEducationPeriod(it) || it.period}
+            title={it.school}
+            subtitle={lead}
+            extra={tail}
+          />
+        );
+      })}
     </ol>
   );
 }
@@ -135,7 +147,7 @@ export function ProfileAboutReadOnly({
   const contactEmail = showAppContact ? cv.contactEmail.trim() : "";
   const contactLine = showAppContact ? cv.contactLine.trim() || profile.line_id?.trim() || "" : "";
   const contactPhone = showAppContact ? cv.contactPhone.trim() : "";
-  const bio = profile.bio?.trim() || "";
+  const bio = cvAboutText(cv, profile.bio);
   const websiteHref = safeHttpUrl(profile.website);
   const hasWebsite = !!websiteHref;
   const instagramHandle = (profile.instagram?.trim() ?? "")
@@ -193,7 +205,7 @@ export function ProfileAboutReadOnly({
   const sidebar = (
     <div className="flex h-full min-h-0 flex-col">
       {showPortrait || showIdentity ? (
-        <div className={cn("flex flex-col items-start gap-3", showScanFields && "border-b border-border/80 pb-5")}>
+        <div className={cn("flex flex-col items-start gap-3", showScanFields && "pb-5")}>
           {showPortrait ? (
             <div className="h-40 w-40 overflow-hidden rounded-2xl bg-secondary ring-1 ring-border/80 sm:h-44 sm:w-44">
               {portrait ? (
@@ -306,7 +318,8 @@ export function ProfileAboutReadOnly({
   );
 
   const main = (
-    <div className="space-y-8 min-w-0">
+    <div className="flex min-h-0 min-w-0 flex-col lg:h-full">
+      <div className="space-y-8 min-w-0 lg:mt-auto">
       {showBio ? (
         <div>
           <MainHeading icon={User} title="About me" />
@@ -393,6 +406,7 @@ export function ProfileAboutReadOnly({
           )}
         </div>
       ) : null}
+      </div>
     </div>
   );
 
@@ -470,7 +484,7 @@ export function ProfileAboutReadOnly({
                         rel="noopener noreferrer"
                         className="hover:underline break-all"
                       >
-                        instagram.com/{instagramHandle}
+                        {socialDisplayId(instagramHandle)}
                       </a>
                     </ContactField>
                   ) : null}
@@ -482,7 +496,7 @@ export function ProfileAboutReadOnly({
                         rel="noopener noreferrer"
                         className="hover:underline break-all"
                       >
-                        {hrefLabel(facebookHref)}
+                        {socialDisplayId(facebookHref)}
                       </a>
                     </ContactField>
                   ) : null}
@@ -509,7 +523,7 @@ export function ProfileAboutReadOnly({
                           rel="noopener noreferrer"
                           className="hover:underline break-all"
                         >
-                          {hrefLabel(href)}
+                          {socialDisplayId(href)}
                         </a>
                       </ContactField>
                     );
@@ -545,7 +559,7 @@ export function ProfileAboutToolbar({
           <button
             type="button"
             onClick={onPreview}
-            className="inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10"
+            className="inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-xs text-foreground hover:bg-black/5"
           >
             <Eye className="h-3.5 w-3.5" />
             Preview
@@ -555,7 +569,7 @@ export function ProfileAboutToolbar({
           <button
             type="button"
             onClick={onPrint}
-            className="inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10"
+            className="inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-xs text-foreground hover:bg-black/5"
           >
             <Printer className="h-3.5 w-3.5" />
             Print
@@ -565,7 +579,7 @@ export function ProfileAboutToolbar({
           <button
             type="button"
             onClick={onEdit}
-            className="inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10"
+            className="inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-xs text-foreground hover:bg-black/5"
           >
             <Pencil className="h-3.5 w-3.5" />
             Edit

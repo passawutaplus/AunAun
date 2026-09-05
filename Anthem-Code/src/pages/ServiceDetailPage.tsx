@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCreatorService } from "@/hooks/useCreatorServices";
 import { useProfile } from "@/hooks/useProfile";
 import { recordCreatorServiceView } from "@/hooks/usePackageOverviewSeries";
+import { HeaderAccountActions } from "@/components/HeaderAccountActions";
 import { navigateToAuth } from "@/lib/authRedirect";
 import { absoluteUrl, truncateDescription } from "@/lib/seo";
 import { BRAND_NAME } from "@/lib/brandConfig";
@@ -130,11 +131,14 @@ export default function ServiceDetailPage() {
               </span>
             ) : null}
           </div>
-          <SharePopover url={shareUrl} title={service.title}>
-            <Button type="button" variant="ghost" size="icon" className="shrink-0" aria-label="แชร์">
-              <Share2 className="h-4 w-4" />
-            </Button>
-          </SharePopover>
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+            <SharePopover url={shareUrl} title={service.title}>
+              <Button type="button" variant="ghost" size="icon" className="shrink-0" aria-label="แชร์">
+                <Share2 className="h-4 w-4" />
+              </Button>
+            </SharePopover>
+            <HeaderAccountActions />
+          </div>
         </div>
       </header>
 

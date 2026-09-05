@@ -2,12 +2,13 @@
 
 /**
  * Public static routes that are indexable under launch-minimal.
- * Do not list launch-hidden paths (/jobs, /advertise, /community, /s/*, …).
+ * Do not list launch-hidden paths (/advertise, /community, /s/*, …).
  */
 export const FORUM_CATEGORY_SLUGS = ["announcements", "help", "bug", "idea", "feedback"];
 
 export const STATIC_PATHS = [
   { loc: "/", priority: "1.0", changefreq: "daily", group: "static" },
+  { loc: "/hiring", priority: "0.9", changefreq: "daily", group: "static" },
   { loc: "/forum", priority: "0.85", changefreq: "daily", group: "static" },
   ...FORUM_CATEGORY_SLUGS.map((slug) => ({
     loc: `/forum/c/${slug}`,
@@ -111,7 +112,6 @@ export function buildSitemapUrls(opts = {}) {
     staticPaths.splice(
       1,
       0,
-      { loc: "/jobs", priority: "0.9", changefreq: "daily", group: "static" },
       { loc: "/advertise", priority: "0.7", changefreq: "weekly", group: "static" },
       { loc: "/community", priority: "0.8", changefreq: "daily", group: "static" },
       { loc: "/research", priority: "0.5", changefreq: "weekly", group: "static" },
@@ -151,7 +151,7 @@ export function buildSitemapUrls(opts = {}) {
       group: "explore",
     })),
     ...jobIds.map((id) => ({
-      loc: `/jobs/${id}`,
+      loc: `/hiring/${id}`,
       priority: "0.7",
       changefreq: "daily",
       group: "jobs",

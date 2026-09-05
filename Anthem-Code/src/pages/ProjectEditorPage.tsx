@@ -41,7 +41,6 @@ import PageLoader from "@/components/ui/PageLoader";
 import { FieldError } from "@/components/ui/FieldError";
 import { toast } from "sonner";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
-import StudioCreditPicker from "@/components/profile/StudioCreditPicker";
 import LicensePicker from "@/components/license/LicensePicker";
 import TagPicker from "@/components/tags/TagPicker";
 import ToolPicker from "@/components/tools/ToolPicker";
@@ -3521,15 +3520,7 @@ const ProjectEditorPage = () => {
             </div>
           </div>
 
-          {user && (
-            <StudioCreditPicker
-              studioId={studioId}
-              setStudioId={setStudioId}
-              creditedIds={creditedIds}
-              setCreditedIds={setCreditedIds}
-              ownerId={user.id}
-            />
-          )}
+          </div>
         </ProjectEditorMetaSidebar>
       </div>
 

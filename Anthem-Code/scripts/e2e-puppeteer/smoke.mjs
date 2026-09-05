@@ -64,6 +64,7 @@ export async function runSmoke() {
       "/legal/rights",
       "/legal/ip",
       "/jobs",
+      "/hiring",
       "/advertise",
       "/research",
       "/upgrade",

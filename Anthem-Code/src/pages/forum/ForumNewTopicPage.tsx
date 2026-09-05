@@ -213,7 +213,7 @@ export default function ForumNewTopicPage() {
               <p className="text-xs text-rose-900 dark:text-rose-200 leading-relaxed">{FORUM_JOB_WARNING}</p>
               <div className="flex flex-wrap gap-2">
                 <Button type="button" size="sm" asChild>
-                  <Link to="/jobs">ไปลงประกาศโอกาส</Link>
+                  <Link to="/hiring">ไปลงประกาศโอกาส</Link>
                 </Button>
                 <label className="inline-flex items-center gap-2 text-xs text-rose-900/90 dark:text-rose-200">
                   <input

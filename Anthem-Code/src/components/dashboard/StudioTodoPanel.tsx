@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   DndContext,
@@ -17,7 +17,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Briefcase, GripVertical, Handshake, ListTodo, MessageSquareQuote, Plus, Trash2, type LucideIcon } from "lucide-react";
+import { Briefcase, GripVertical, Handshake, ListTodo, MessageSquareQuote, Pencil, Plus, Trash2, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -89,16 +89,52 @@ function SortableTodoRow({
   item,
   onToggle,
   onPriority,
+  onRename,
   onRemove,
 }: {
   item: StudioTodo;
   onToggle: (done: boolean) => void;
   onPriority: (priority: StudioTodo["priority"]) => void;
+  onRename: (title: string) => void;
   onRemove: () => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(item.title);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
+    disabled: editing,
   });
+
+  useEffect(() => {
+    if (!editing) setDraft(item.title);
+  }, [editing, item.title]);
+
+  useEffect(() => {
+    if (!editing) return;
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, [editing]);
+
+  const startEdit = () => {
+    setDraft(item.title);
+    setEditing(true);
+  };
+
+  const commitEdit = () => {
+    const next = draft.trim();
+    setEditing(false);
+    if (!next || next === item.title) {
+      setDraft(item.title);
+      return;
+    }
+    onRename(next);
+  };
+
+  const cancelEdit = () => {
+    setDraft(item.title);
+    setEditing(false);
+  };
 
   return (
     <div
@@ -123,27 +159,65 @@ function SortableTodoRow({
         onCheckedChange={(value) => onToggle(value === true)}
         aria-label={item.done ? `ยกเลิกเสร็จ ${item.title}` : `ทำเสร็จ ${item.title}`}
       />
-      <span
-        className={cn(
-          "min-w-0 flex-1 text-sm",
-          item.done ? "text-muted-foreground line-through" : "text-foreground",
-        )}
+      {editing ? (
+        <Input
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commitEdit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commitEdit();
+            }
+            if (e.key === "Escape") {
+              e.preventDefault();
+              cancelEdit();
+            }
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          aria-label={`แก้ไขชื่อ ${item.title}`}
+          className="h-8 min-w-0 flex-1 rounded-lg px-2 py-1 text-sm"
+        />
+      ) : (
+        <span
+          className={cn(
+            "min-w-0 flex-1 text-sm",
+            item.done ? "text-muted-foreground line-through" : "text-foreground",
+          )}
+        >
+          {item.title}
+        </span>
+      )}
+      <div
+        className="ml-auto flex shrink-0 items-center gap-0.5 sm:ml-0"
+        onPointerDown={(e) => e.stopPropagation()}
       >
-        {item.title}
-      </span>
-      <div className="shrink-0" onPointerDown={(e) => e.stopPropagation()}>
         <InboxPrioritySelect value={item.priority} onChange={onPriority} />
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+          onMouseDown={(e) => {
+            if (editing) e.preventDefault();
+          }}
+          onClick={editing ? commitEdit : startEdit}
+          aria-label={editing ? `บันทึกชื่อ ${item.title}` : `แก้ไขชื่อ ${item.title}`}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+          onClick={onRemove}
+          aria-label={`ลบ ${item.title}`}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
       </div>
-      <Button
-        type="button"
-        size="icon"
-        variant="ghost"
-        className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
-        onClick={onRemove}
-        aria-label={`ลบ ${item.title}`}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
     </div>
   );
 }
@@ -284,6 +358,7 @@ export default function StudioTodoPanel({ userId, queue }: Props) {
                   item={item}
                   onToggle={(done) => update(item.id, { done })}
                   onPriority={(priority) => update(item.id, { priority })}
+                  onRename={(title) => update(item.id, { title })}
                   onRemove={() => remove(item.id)}
                 />
               ))}

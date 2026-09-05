@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -19,10 +19,13 @@ import { shouldNoindexSearchParams } from "@/lib/seo";
 import DrillFeedPanel from "@/components/drill/DrillFeedPanel";
 import ProjectCard from "@/components/ProjectCard";
 import AdCard from "@/components/feed/AdCard";
+import HouseAdCard from "@/components/feed/HouseAdCard";
 import { useActiveAds } from "@/hooks/useAds";
 import { useActiveBoosts, buildBoostedIdSet, buildBoostTargetMaps } from "@/hooks/useBoost";
 import { sortByBoostedIds } from "@/lib/boostFeedSort";
 import { interleaveAds } from "@/lib/interleaveAds";
+import { insertHouseAd } from "@/lib/insertHouseAd";
+import { useFeedGridDensity } from "@/hooks/useFeedGridDensity";
 import HireDialog from "@/components/HireDialog";
 import CollabDialog from "@/components/CollabDialog";
 import { FeedProjectGrid } from "@/components/feed/FeedProjectGrid";
@@ -56,6 +59,7 @@ import { useShowFirstPostLabel } from "@/hooks/useHasPublishedProject";
 import { consumePendingHire, navigateToAuth, stashPendingHire } from "@/lib/authRedirect";
 import {
   coerceLaunchFeedMode,
+  isAplus1FullProduct,
   isAplus1LaunchMinimal,
   isLaunchDesignDrillEnabled,
 } from "@/lib/aplus1Launch";
@@ -93,6 +97,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const { columns } = useFeedGridDensity();
+  const houseColumnOffset = useRef(Math.floor(Math.random() * 12));
   const { user } = useAuth();
   const { queries: recentSearches, record: recordSearch } = useSearchHistory(user?.id);
   const showFirstPostLabel = useShowFirstPostLabel(user?.id);
@@ -216,18 +222,15 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   useEffect(() => {
     const view = searchParams.get("mode");
     const feed = searchParams.get("feed");
-    const tag = searchParams.get("tag");
-    if (tag && !isAplus1LaunchMinimal()) {
-      setMode("community");
-      if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "community");
-    } else if (view === "designers" || view === "packages" || view === "studios" || view === "projects" || view === "community") {
+    if (view === "designers" || view === "packages" || view === "studios" || view === "projects" || view === "community") {
       const coerced = coerceLaunchFeedMode(view);
       setMode(coerced);
       if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", coerced);
-      if (isAplus1LaunchMinimal() && view !== coerced) {
+      if (view !== coerced) {
         const params = new URLSearchParams(searchParams);
         if (coerced === "projects") params.delete("mode");
         else params.set("mode", coerced);
+        params.delete("tag");
         const q = params.toString();
         navigate(q ? `/?${q}` : "/", { replace: true });
       }
@@ -489,10 +492,15 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const needsLogin = requiresAuth(feedMode) && !user;
   const feedPanelKey = needsLogin ? "login" : isDrillView ? "drill" : mode;
   const { data: ads = [] } = useActiveAds(12);
-  const feedItems = useMemo(
-    () => interleaveAds(sortedFiltered, ads, { minGap: 8, maxGap: 14 }),
-    [sortedFiltered, ads],
-  );
+  const feedItems = useMemo(() => {
+    const mixed = interleaveAds(sortedFiltered, ads, { minGap: 8, maxGap: 14 });
+    if (!isAplus1FullProduct() || search.trim()) return mixed;
+    return insertHouseAd(mixed, {
+      columns,
+      afterRows: 4,
+      columnOffset: houseColumnOffset.current,
+    });
+  }, [sortedFiltered, ads, columns, search]);
 
   const searchSuggestions = useMemo(
     () => (search.trim() && filtered.length === 0 ? similarSearchSuggestions(search, recentSearches) : []),
@@ -676,6 +684,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                 {feedItems.map((item) =>
                   item.kind === "ad" ? (
                     <AdCard key={item.key} ad={item.data} />
+                  ) : item.kind === "house" ? (
+                    <HouseAdCard key={item.key} />
                   ) : (
                     <ProjectCard
                       key={item.key}

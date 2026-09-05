@@ -331,7 +331,7 @@ const CommunityFeedSidebar = ({ filter, onFilterChange, className }: Props) => {
                   .join(" · ");
                 return (
                   <li key={job.id} className="flex items-start gap-2">
-                    <Link to={`/jobs/${job.id}`} className="min-w-0 flex-1 group">
+                    <Link to={`/hiring/${job.id}`} className="min-w-0 flex-1 group">
                       <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors thai-body">
                         {job.title}
                       </p>
@@ -360,7 +360,7 @@ const CommunityFeedSidebar = ({ filter, onFilterChange, className }: Props) => {
           ) : (
             <p className="text-xs text-muted-foreground thai-body">ยังไม่มีงานเปิดรับตอนนี้</p>
           )}
-          <ViewAllLink to="/jobs" label="ดูงานทั้งหมด" />
+          <ViewAllLink to="/hiring" label="ดูงานทั้งหมด" />
         </SidebarSection>
 
         <SidebarSection>

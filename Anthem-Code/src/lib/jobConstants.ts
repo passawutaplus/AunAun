@@ -21,7 +21,7 @@ export type JobRoleCategory = (typeof JOB_ROLE_CATEGORIES)[number];
 export const PREFERRED_EMPLOYMENT_OPTIONS = [
   { value: "project", label: "โปรเจกต์" },
   { value: "fulltime", label: "Full-time" },
-  { value: "parttime", label: "Part-time" },
+  { value: "parttime", label: "Contract" },
   { value: "internship", label: "ฝึกงาน" },
   { value: "freelance", label: "Freelance" },
 ] as const;

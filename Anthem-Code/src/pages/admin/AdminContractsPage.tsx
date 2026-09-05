@@ -42,7 +42,7 @@ export default function AdminContractsPage() {
       header: "งาน",
       render: (r) =>
         r.job_id ? (
-          <Link to={`/jobs/${r.job_id}`} className="text-xs text-admin-accent hover:underline">
+          <Link to={`/hiring/${r.job_id}`} className="text-xs text-admin-accent hover:underline">
             {r.job_id.slice(0, 8)}…
           </Link>
         ) : (

@@ -158,7 +158,7 @@ const HireInviteForm = ({
           {myJobs.length === 0 ? (
             <p className="text-xs text-muted-foreground mt-1.5">
               ยังไม่มีประกาศ —{" "}
-              <Link to="/jobs?post=1" className="text-primary hover:underline">
+              <Link to="/hiring/new" className="text-primary hover:underline">
                 สร้างประกาศใหม่
               </Link>
             </p>

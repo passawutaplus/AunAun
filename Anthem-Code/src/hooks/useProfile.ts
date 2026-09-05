@@ -99,7 +99,10 @@ export const useUpdateProfile = (userId: string | undefined) => {
         p.cvContactEmail !== undefined ||
         p.cvContactLine !== undefined ||
         p.cvContactPhone !== undefined ||
-        p.cvContactPublic !== undefined
+        p.cvContactPublic !== undefined ||
+        p.cvAbout !== undefined ||
+        p.cvAddressDetail !== undefined ||
+        p.cvVisibility !== undefined
       ) {
         const firstName = (p.cvFirstName ?? "").trim();
         const lastName = (p.cvLastName ?? "").trim();
@@ -121,6 +124,9 @@ export const useUpdateProfile = (userId: string | undefined) => {
           contactLine: (p.cvContactLine ?? "").trim(),
           contactPhone: (p.cvContactPhone ?? "").trim(),
           contactPublic: p.cvContactPublic === true,
+          about: (p.cvAbout ?? "").trim().slice(0, 500),
+          addressDetail: p.cvAddressDetail === "full" ? "full" : "short",
+          visibility: p.cvVisibility ?? {},
         } as unknown as Json;
       }
       if (Object.keys(payload).length === 0) return;

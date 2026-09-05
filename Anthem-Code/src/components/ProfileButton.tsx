@@ -45,7 +45,7 @@ const ProfileButton = ({ className, fillRail = false }: Props) => {
     return (
       <div className={cn("flex items-center gap-1.5", fillRail && "min-w-0 flex-1", className)}>
         <div className={cn("hidden lg:flex items-center gap-1.5", fillRail && "min-w-0 flex-1")}>
-          {!isAplus1LaunchMinimal() && <JobsNavButton />}
+          <JobsNavButton />
         </div>
         <Button
           onClick={() => navigate("/auth")}
@@ -61,7 +61,7 @@ const ProfileButton = ({ className, fillRail = false }: Props) => {
   return (
     <div className={cn("flex items-center gap-1.5", fillRail && "min-w-0 flex-1", className)}>
       <div className={cn("hidden lg:flex items-center gap-1.5", fillRail && "min-w-0 flex-1")}>
-        {!isAplus1LaunchMinimal() && <JobsNavButton />}
+        <JobsNavButton />
         <div
           className={cn(
             "flex items-center rounded-full glass-chip py-1 hover:shadow-md hover:shadow-primary/20 transition-all",

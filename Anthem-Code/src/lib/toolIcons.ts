@@ -135,6 +135,9 @@ for (const entry of TOOL_CATALOG) {
   }
 }
 
+/** Canonical labels for every catalogued program (logo map). */
+export const CATALOG_TOOL_LABELS: readonly string[] = TOOL_CATALOG.map((e) => e.label);
+
 /** Quick-pick tools — ภาพ/วิดีโอ/ดีไซน์ก่อน (ไม่รวม DAW) */
 export const COMMON_TOOLS = [
   "Figma",

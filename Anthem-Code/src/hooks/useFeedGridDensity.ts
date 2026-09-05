@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useNarrowViewport } from "@/hooks/useNarrowViewport";
 import {
   FEED_GRID_DENSITY_EVENT,
+  FEED_GRID_DENSITY_META,
   getFeedProjectGridClass,
   readFeedGridDensity,
   writeFeedGridDensity,
   type FeedGridDensity,
 } from "@/lib/feedGridDensity";
 import {
+  FEED_GRID_MOBILE_COLUMNS_META,
   FEED_GRID_MOBILE_EVENT,
   getFeedProjectGridClassMobile,
   readFeedGridMobileColumns,
@@ -46,11 +48,15 @@ export function useFeedGridDensity() {
   const gridClass = narrow
     ? getFeedProjectGridClassMobile(mobileColumns)
     : getFeedProjectGridClass(density);
+  const columns = narrow
+    ? FEED_GRID_MOBILE_COLUMNS_META[mobileColumns].cols
+    : FEED_GRID_DENSITY_META[density].cols;
 
   return {
     narrow,
     density,
     mobileColumns,
+    columns,
     setDensity,
     setMobileColumns,
     gridClass,

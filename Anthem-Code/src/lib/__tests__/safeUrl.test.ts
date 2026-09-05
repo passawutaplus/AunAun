@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { safeHttpUrl, safeRelativePath } from "../safeUrl";
+import { safeHttpUrl, safeRelativePath, socialDisplayId } from "../safeUrl";
 
 describe("safeHttpUrl", () => {
   it("accepts http and https", () => {
@@ -42,5 +42,23 @@ describe("safeRelativePath", () => {
   it("uses fallback on empty", () => {
     expect(safeRelativePath("", "/home")).toBe("/home");
     expect(safeRelativePath(null)).toBe("/");
+  });
+});
+
+describe("socialDisplayId", () => {
+  it("keeps a bare handle", () => {
+    expect(socialDisplayId("passawut123")).toBe("passawut123");
+    expect(socialDisplayId("@passawut123")).toBe("passawut123");
+  });
+
+  it("strips host from Instagram and Facebook URLs", () => {
+    expect(socialDisplayId("instagram.com/passawut123")).toBe("passawut123");
+    expect(socialDisplayId("https://www.instagram.com/passawut123/")).toBe("passawut123");
+    expect(socialDisplayId("www.facebook.com/so.good.12720")).toBe("so.good.12720");
+    expect(socialDisplayId("https://www.facebook.com/so.good.12720")).toBe("so.good.12720");
+  });
+
+  it("uses Facebook profile id when there is no vanity path", () => {
+    expect(socialDisplayId("https://www.facebook.com/profile.php?id=100012345")).toBe("100012345");
   });
 });

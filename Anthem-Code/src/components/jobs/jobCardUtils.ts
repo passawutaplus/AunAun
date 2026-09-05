@@ -2,8 +2,19 @@ import { formatDistanceToNowStrict, differenceInDays } from "date-fns";
 import { th } from "date-fns/locale";
 import type { JobPost } from "@/hooks/useJobs";
 
-export const fmtBudget = (j: Pick<JobPost, "budget_min" | "budget_max" | "budget_type">) => {
-  const unit = j.budget_type === "hourly" ? "/ชม." : j.budget_type === "monthly" ? "/เดือน" : "";
+export const fmtBudget = (
+  j: Pick<JobPost, "budget_min" | "budget_max" | "budget_type"> & {
+    application_methods?: string[] | null;
+  },
+) => {
+  const perPiece = (j.application_methods ?? []).includes("per_piece");
+  const unit = perPiece
+    ? "/ชิ้น"
+    : j.budget_type === "hourly"
+      ? "/ชม."
+      : j.budget_type === "monthly"
+        ? "/เดือน"
+        : "";
   if (j.budget_min && j.budget_max) return `฿${j.budget_min.toLocaleString()} - ${j.budget_max.toLocaleString()}${unit}`;
   if (j.budget_min) return `฿${j.budget_min.toLocaleString()}+${unit}`;
   if (j.budget_max) return `ถึง ฿${j.budget_max.toLocaleString()}${unit}`;
@@ -11,15 +22,21 @@ export const fmtBudget = (j: Pick<JobPost, "budget_min" | "budget_max" | "budget
 };
 
 export const locTypeLabel: Record<JobPost["location_type"], string> = {
-  remote: "Remote",
+  remote: "WFH 100%",
   onsite: "Onsite",
   hybrid: "Hybrid",
+};
+
+/** Card-only: keep the role name, drop the "— project blurb" suffix. */
+export const jobRoleTitle = (title: string) => {
+  const cut = title.split(/\s+[—–-]\s+/)[0]?.trim();
+  return cut || title.trim();
 };
 
 export const empLabel: Record<JobPost["employment_type"], string> = {
   project: "Project",
   fulltime: "Full-time",
-  parttime: "Part-time",
+  parttime: "Contract",
   internship: "Internship",
   freelance: "Freelance",
 };
@@ -70,12 +87,28 @@ export const jobStatusLabel: Record<JobPost["status"], string> = {
 };
 
 export const applicationStatusLabel: Record<string, string> = {
-  pending: "ส่งแล้ว",
-  shortlisted: "Shortlist",
+  pending: "รอพิจารณา",
+  shortlisted: "สนใจ",
   rejected: "ไม่ผ่าน",
-  accepted: "รับแล้ว",
+  accepted: "ตอบรับแล้ว",
   hired: "รับแล้ว",
-  contacted: "ติดต่อแล้ว",
+  contacted: "คุยแล้ว",
+};
+
+export const applicationBadgeClass = (status: string) => {
+  switch (status) {
+    case "shortlisted":
+      return "bg-amber-500 text-white";
+    case "contacted":
+      return "bg-sky-600 text-white";
+    case "accepted":
+    case "hired":
+      return "bg-emerald-600 text-white";
+    case "rejected":
+      return "bg-zinc-700 text-white";
+    default:
+      return "bg-primary text-primary-foreground";
+  }
 };
 
 export const availabilityLabel: Record<string, string> = {
@@ -109,9 +142,9 @@ export const roleCategoryGradient = (roleCategory: string) =>
   CATEGORY_GRADIENTS[roleCategory] ??
   "from-lime-200/70 via-green-100/50 to-white dark:from-lime-950 dark:via-emerald-900/90 dark:to-card";
 
-export const getPosterInfo = (job: Pick<JobPost, "studio" | "poster">) => {
-  const name = job.studio?.name ?? job.poster?.display_name ?? "ผู้ใช้";
-  const avatar = job.studio?.avatar_url ?? job.poster?.avatar_url ?? undefined;
-  const verified = job.studio?.verified ?? false;
+export const getPosterInfo = (job: Pick<JobPost, "studio" | "poster" | "hiring_org">) => {
+  const name = job.hiring_org?.display_name ?? job.studio?.name ?? job.poster?.display_name ?? "ผู้จ้างงาน";
+  const avatar = job.hiring_org?.logo_url ?? job.studio?.avatar_url ?? job.poster?.avatar_url ?? undefined;
+  const verified = job.hiring_org?.status === "approved" || job.studio?.verified || false;
   return { name, avatar, verified };
 };

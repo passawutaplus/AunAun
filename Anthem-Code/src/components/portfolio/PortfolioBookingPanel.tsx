@@ -119,7 +119,7 @@ export default function PortfolioBookingPanel({ userId }: Props) {
         <div className="min-w-0">
           <h2 className="flex min-w-0 items-center gap-2 text-base font-semibold text-foreground">
             <Bookmark className="h-4 w-4 shrink-0 text-primary" />
-            <span className="truncate">Booking</span>
+            <span className="truncate">Packages</span>
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             แพ็กเกจที่คุณกดบุ๊กมาร์กไว้ — กลับมาดูหรือคุยต่อเมื่อพร้อม

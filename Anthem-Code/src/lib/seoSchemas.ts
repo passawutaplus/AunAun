@@ -106,7 +106,7 @@ export function jobPostingJsonLd(job: {
   poster?: { display_name?: string | null; username?: string | null } | null;
   studio?: { name?: string | null; slug?: string | null } | null;
 }) {
-  const url = absoluteUrl(`/jobs/${job.id}`);
+  const url = absoluteUrl(`/hiring/${job.id}`);
   const orgName =
     job.studio?.name ||
     job.poster?.display_name ||

@@ -219,16 +219,25 @@ export function educationDetailLine(
   },
   degreeLabels: Record<EducationDegree, string> = EDUCATION_DEGREE_LABELS,
 ): string {
+  const { lead, tail } = educationDetailLines(item, degreeLabels);
+  return [lead, tail].filter(Boolean).join(" · ");
+}
+
+/** Last education detail (field) moves to its own line when degree/faculty already fill the first. */
+export function educationDetailLines(
+  item: {
+    degree?: EducationDegree | null;
+    faculty?: string | null;
+    field?: string | null;
+  },
+  degreeLabels: Record<EducationDegree, string> = EDUCATION_DEGREE_LABELS,
+): { lead: string; tail: string } {
   const degree = item.degree ?? null;
   const faculty = educationNeedsFaculty(degree) ? (item.faculty ?? "").trim() : "";
   const field = (item.field ?? "").trim();
-  return [
-    degree ? degreeLabels[degree] : "",
-    faculty,
-    field,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const lead = [degree ? degreeLabels[degree] : "", faculty].filter(Boolean).join(" · ");
+  if (field && lead) return { lead, tail: field };
+  return { lead: lead || field, tail: "" };
 }
 
 export function splitFullName(fullName: string): { firstName: string; lastName: string } {
@@ -294,8 +303,85 @@ export const profileCvSchema = z.object({
   contactLine: z.string().trim().max(50).optional().default(""),
   contactPhone: z.string().trim().max(16).optional().default(""),
   contactPublic: z.boolean().optional().default(false),
+  about: z.string().trim().max(500).optional().default(""),
+  addressDetail: z.enum(["short", "full"]).optional().default("short"),
+  visibility: z
+    .object({
+      about: z.boolean().optional().default(true),
+      location: z.boolean().optional().default(true),
+      languages: z.boolean().optional().default(true),
+      skills: z.boolean().optional().default(true),
+      software: z.boolean().optional().default(true),
+      education: z.boolean().optional().default(true),
+      experience: z.boolean().optional().default(true),
+      certification: z.boolean().optional().default(true),
+      awards: z.boolean().optional().default(true),
+      contactEmail: z.boolean().optional().default(false),
+      contactLine: z.boolean().optional().default(false),
+      contactPhone: z.boolean().optional().default(false),
+      portfolio: z.boolean().optional().default(true),
+      website: z.boolean().optional().default(true),
+      socials: z.boolean().optional().default(true),
+    })
+    .optional()
+    .default({}),
 });
 export type ProfileCv = z.infer<typeof profileCvSchema>;
+export type CvVisibility = ProfileCv["visibility"];
+export type CvVisibilityKey = keyof CvVisibility;
+export type CvAddressDetail = ProfileCv["addressDetail"];
+
+export const CV_VISIBILITY_KEYS = [
+  "about",
+  "location",
+  "languages",
+  "skills",
+  "software",
+  "education",
+  "experience",
+  "certification",
+  "awards",
+  "contactEmail",
+  "contactLine",
+  "contactPhone",
+  "portfolio",
+  "website",
+  "socials",
+] as const;
+
+export function defaultCvVisibility(contactPublic = false): CvVisibility {
+  return {
+    about: true,
+    location: true,
+    languages: true,
+    skills: true,
+    software: true,
+    education: true,
+    experience: true,
+    certification: true,
+    awards: true,
+    contactEmail: contactPublic,
+    contactLine: contactPublic,
+    contactPhone: contactPublic,
+    portfolio: true,
+    website: true,
+    socials: true,
+  };
+}
+
+export function parseCvVisibility(raw: unknown, contactPublic = false): CvVisibility {
+  const base = defaultCvVisibility(contactPublic);
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return base;
+  const o = raw as Record<string, unknown>;
+  for (const key of CV_VISIBILITY_KEYS) {
+    if (typeof o[key] === "boolean") base[key] = o[key];
+  }
+  return base;
+}
+
+export function parseCvAddressDetail(raw: unknown): CvAddressDetail {
+  return raw === "full" ? "full" : "short";
+}
 
 export const EMPTY_PROFILE_CV: ProfileCv = {
   education: [],
@@ -314,6 +400,9 @@ export const EMPTY_PROFILE_CV: ProfileCv = {
   contactLine: "",
   contactPhone: "",
   contactPublic: false,
+  about: "",
+  addressDetail: "short",
+  visibility: defaultCvVisibility(false),
 };
 
 export function normalizePortfolioUrl(raw: string): string {
@@ -515,6 +604,9 @@ export function parseProfileCv(raw: unknown): ProfileCv {
   const contactPhoneRaw = typeof o.contactPhone === "string" ? o.contactPhone : "";
   const contactPhone = normalizeContactPhone(contactPhoneRaw);
   const contactPublic = o.contactPublic === true;
+  const about = typeof o.about === "string" ? o.about.trim().slice(0, 500) : "";
+  const addressDetail = parseCvAddressDetail(o.addressDetail);
+  const visibility = parseCvVisibility(o.visibility, contactPublic);
   const birthDate = normalizeBirthDate(typeof o.birthDate === "string" ? o.birthDate : "");
   const languages = parseCvLanguages(o.languages);
   return {
@@ -534,6 +626,9 @@ export function parseProfileCv(raw: unknown): ProfileCv {
     contactLine,
     contactPhone,
     contactPublic,
+    about,
+    addressDetail,
+    visibility,
   };
 }
 
@@ -557,7 +652,11 @@ export function profileCvToJson(cv: ProfileCv): ProfileCv {
     contactEmail: normalizeContactEmail(cv.contactEmail ?? ""),
     contactLine: (cv.contactLine ?? "").trim().slice(0, 50),
     contactPhone: normalizeContactPhone(cv.contactPhone ?? ""),
-    contactPublic: cv.contactPublic === true,
+    contactPublic:
+      cv.visibility.contactEmail || cv.visibility.contactLine || cv.visibility.contactPhone,
+    about: (cv.about ?? "").trim().slice(0, 500),
+    addressDetail: parseCvAddressDetail(cv.addressDetail),
+    visibility: parseCvVisibility(cv.visibility, cv.contactPublic === true),
   };
 }
 
@@ -622,6 +721,18 @@ export function partitionSkillsAndSoftware(
 
 export function cvPortraitUrl(cvPhotoUrl?: string | null, avatarUrl?: string | null): string | null {
   return cvPhotoUrl?.trim() || avatarUrl?.trim() || null;
+}
+
+export const PROFILE_INTRO_MAX = 100;
+export const CV_ABOUT_MAX = 500;
+
+/** CV About Me — prefers `cv.about`, falls back to legacy `profiles.bio`. */
+export function cvAboutText(cv: ProfileCv, legacyBio?: string | null): string {
+  return cv.about.trim() || (legacyBio ?? "").trim();
+}
+
+export function profileIntroText(bio?: string | null): string {
+  return (bio ?? "").trim().slice(0, PROFILE_INTRO_MAX);
 }
 
 export function cvReadiness(input: {

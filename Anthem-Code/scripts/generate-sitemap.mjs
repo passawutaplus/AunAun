@@ -6,7 +6,7 @@
  * Optional live enrichment (recommended for production):
  *   VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY
  *
- * Full-product extras (/jobs, /community, studios):
+ * Full-product extras (/community, studios):
  *   VITE_APLUS1_FULL_PRODUCT=true
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
@@ -66,12 +66,10 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
       `${rest}/project_series?select=id&is_public=eq.true&order=updated_at.desc&limit=40`,
       { headers: anthemHeaders },
     ),
-    fullProduct
-      ? fetch(
-          `${rest}/job_posts?select=id&status=eq.open&order=created_at.desc&limit=60`,
-          { headers: anthemHeaders },
-        )
-      : Promise.resolve({ ok: false, status: 0 }),
+    fetch(
+      `${rest}/job_posts?select=id&status=eq.open&post_type=eq.hiring&hiring_org_id=not.is.null&order=created_at.desc&limit=60`,
+      { headers: anthemHeaders },
+    ),
   ]);
 
   if (!projectsRes.ok) {

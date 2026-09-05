@@ -18,7 +18,7 @@ import { groupByNotificationDate } from "@/lib/notificationDateGroups";
 const kindIcon = (kind: string) => {
   if (kind.includes("gift")) return Gift;
   if (kind.includes("follow")) return UserPlus;
-  if (kind.includes("hire")) return Briefcase;
+  if (kind.includes("hire") || kind.includes("job")) return Briefcase;
   if (kind.includes("collab") || kind.includes("project_collab")) return Handshake;
   if (kind.includes("message") || kind.includes("chat")) return MessageCircle;
   if (kind.includes("cashout")) return Banknote;

@@ -43,7 +43,7 @@ const targetLink = (r: ReportRow) => {
     case "user":
       return `/u/${r.target_id}`;
     case "job":
-      return `/jobs/${r.target_id}`;
+      return `/hiring/${r.target_id}`;
     case "studio":
       return `/admin/studios`;
     case "comment":

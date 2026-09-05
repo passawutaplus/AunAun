@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Orbit } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import PageLoader from "@/components/ui/PageLoader";
@@ -42,6 +41,7 @@ import { formatCategoryBreadcrumb } from "@/data/categoryTaxonomy";
 import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import BoostButton from "@/components/boost/BoostButton";
+import { HeaderAccountActions } from "@/components/HeaderAccountActions";
 import { useAdCampaign, logAdEvent } from "@/hooks/useAds";
 import { Megaphone, ExternalLink } from "lucide-react";
 import { absoluteUrl, truncateDescription } from "@/lib/seo";
@@ -49,7 +49,6 @@ import { breadcrumbJsonLd, creativeWorkJsonLd } from "@/lib/seoSchemas";
 import { openSafeExternalUrl } from "@/lib/safeUrl";
 import { FadeUp } from "@/components/motion/FadeUp";
 import { ProjectLinkedPostsBlock } from "@/components/project/ProjectLinkedPostsBlock";
-import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 import {
   fetchLinkedPostSummaries,
   fetchPostsMentioningProject,
@@ -361,7 +360,7 @@ const ProjectDetailPage = () => {
             <BackButton />
             <SeoBreadcrumb items={crumbs} className="mb-0 hidden md:flex min-w-0" />
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {dbProject ? (
               <BoostButton
                 targetType="project"
@@ -371,13 +370,7 @@ const ProjectDetailPage = () => {
                 size="sm"
               />
             ) : null}
-            {dbProject?.status === "Published" && user?.id === dbProject.owner_id && !isAplus1LaunchMinimal() ? (
-              <Button variant="ghost" size="icon" asChild title="แชร์ไป Area Post">
-                <Link to={`/community/new?fromProject=${dbProject.id}`}>
-                  <Orbit className="w-5 h-5" />
-                </Link>
-              </Button>
-            ) : null}
+            <HeaderAccountActions />
           </div>
         </div>
         {fromPackageId ? <PackageReturnBanner serviceId={fromPackageId} /> : null}

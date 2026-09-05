@@ -78,14 +78,14 @@ const AD_PACKAGE_PRICE: Record<string, string> = {
   premium: "ad_premium",
 };
 
-export function adPriceIdForPackage(pkg: "basic" | "standard" | "premium"): string {
-  return AD_PACKAGE_PRICE[pkg];
+export function adPriceIdForPackage(pkg: string): string {
+  return AD_PACKAGE_PRICE[pkg] ?? "ad_custom";
 }
 
 /** @deprecated Cut — no Solo ad checkout. */
 export async function startAdCheckout(_opts: {
   applicationId: string;
-  package: "basic" | "standard" | "premium";
+  package: string;
   successPath: string;
   cancelPath?: string;
 }): Promise<void> {

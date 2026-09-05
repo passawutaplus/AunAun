@@ -21,9 +21,9 @@ export default function PortfolioManagePage() {
   if (loading) return <PageLoader />;
   if (!user) return <Navigate to="/auth?redirect=/portfolio" replace />;
 
-  // Posts tab used to live on manage — send to community for now if requested
+  // Posts tab used to live on manage — Area is retired.
   if (posts) {
-    return <Navigate to="/community" replace />;
+    return <Navigate to="/dashboard/projects" replace />;
   }
 
   return <Navigate to="/dashboard/projects" replace />;

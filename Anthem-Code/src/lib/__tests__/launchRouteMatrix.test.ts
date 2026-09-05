@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * Route samples mirrored from App.tsx — when adding routes, update allowlist + this matrix.
@@ -57,8 +57,11 @@ const APP_ROUTE_SAMPLES: { path: string; launchEnabled: boolean }[] = [
   { path: "/research", launchEnabled: false },
   { path: "/community", launchEnabled: false },
   { path: "/community/:id", launchEnabled: false },
-  { path: "/jobs", launchEnabled: false },
-  { path: "/jobs/:id", launchEnabled: false },
+  { path: "/jobs", launchEnabled: true },
+  { path: "/jobs/:id", launchEnabled: true },
+  { path: "/hiring", launchEnabled: true },
+  { path: "/hiring/:id", launchEnabled: true },
+  { path: "/hiring/new", launchEnabled: true },
   { path: "/advertise", launchEnabled: false },
   { path: "/upgrade", launchEnabled: false },
   { path: "/ads/:id", launchEnabled: false },
@@ -72,6 +75,9 @@ const APP_ROUTE_SAMPLES: { path: string; launchEnabled: boolean }[] = [
   { path: "/inspire/:boardId", launchEnabled: true },
   { path: "/hire-requests", launchEnabled: true },
   { path: "/collab-requests", launchEnabled: true },
+  { path: "/jobs/new", launchEnabled: true },
+  { path: "/org/register", launchEnabled: true },
+  { path: "/org/status", launchEnabled: true },
 ];
 
 function resolveSample(path: string): string {
@@ -84,6 +90,14 @@ function resolveSample(path: string): string {
 }
 
 describe("App route matrix vs launch allowlist", () => {
+  beforeEach(() => {
+    vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it.each(APP_ROUTE_SAMPLES)(
     "$path launchEnabled=$launchEnabled",
     ({ path, launchEnabled }) => {

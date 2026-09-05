@@ -221,7 +221,7 @@ const PackageCard = ({ data, search = "" }: Props) => {
             <button
               type="button"
               onClick={goPackage}
-              className="shrink-0 inline-flex items-center gap-1 rounded-full bg-foreground text-white text-[11px] sm:text-xs font-medium py-1.5 sm:py-2 pl-2.5 sm:pl-3 pr-1.5 sm:pr-2 whitespace-nowrap transition-colors duration-100 ease-out hover:bg-primary group-hover:bg-primary"
+              className="shrink-0 inline-flex items-center gap-1 rounded-full bg-foreground text-background text-[11px] sm:text-xs font-medium py-1.5 sm:py-2 pl-2.5 sm:pl-3 pr-1.5 sm:pr-2 whitespace-nowrap transition-colors duration-100 ease-out hover:bg-primary hover:text-primary-foreground group-hover:bg-primary group-hover:text-primary-foreground"
             >
               ดูแพ็กเกจ
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-background/15">

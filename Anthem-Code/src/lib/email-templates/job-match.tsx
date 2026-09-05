@@ -69,7 +69,7 @@ export const jobMatchTemplate = {
     roleCategory: 'UI/UX Design',
     matchScore: 80,
     matchReasons: ['หมวด UI/UX Design', 'สกิลตรง 3 อย่าง', 'Remote'],
-    actionUrl: 'https://aplus1-demo.vercel.app/jobs/example',
+    actionUrl: 'https://aplus1-demo.vercel.app/hiring/example',
   },
 }
 

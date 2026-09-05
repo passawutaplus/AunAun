@@ -30,13 +30,14 @@ import {
 } from "@/lib/validators";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { displayInitials } from "@/lib/avatarPool";
-import { safeHttpUrl } from "@/lib/safeUrl";
+import { safeHttpUrl, socialDisplayId } from "@/lib/safeUrl";
 import {
   cvPortraitUrl,
   CV_LANGUAGE_LEVEL_LABELS,
-  educationDetailLine,
+  educationDetailLines,
   experienceBullets,
   formatEducationPeriod,
+  cvAboutText,
   parseProfileCv,
   partitionSkillsAndSoftware,
 } from "@/lib/profileCv";
@@ -85,39 +86,50 @@ export function AboutDocumentSheet({
   skills,
   socialLinks = [],
   theme = "orange",
-  forceShowApplicationContact = false,
+  forceShowApplicationContact: _forceShowApplicationContact = false,
 }: DocProps) {
   const cv = parseProfileCv(profile.cv);
+  const vis = cv.visibility;
   const portrait = cvPortraitUrl(profile.cv_photo_url, profile.avatar_url);
   const name = cv.fullName.trim();
   const desiredRole = cv.desiredRole.trim();
-  const showAppContact = forceShowApplicationContact || cv.contactPublic;
-  const contactEmail = showAppContact ? cv.contactEmail.trim() : "";
-  const contactPhone = showAppContact ? cv.contactPhone.trim() : "";
+  const contactEmail = vis.contactEmail ? cv.contactEmail.trim() : "";
+  const contactPhone = vis.contactPhone ? cv.contactPhone.trim() : "";
   const initials = displayInitials(name || profile.username || profile.display_name, 2);
-  const bio = profile.bio?.trim() || "";
-  const place = displayProfileAddress(profile.profile_address, profile.location, "short");
-  const website = safeHttpUrl(profile.website);
-  const lineId = showAppContact ? cv.contactLine.trim() || profile.line_id?.trim() || "" : "";
-  const instagramHandle = (profile.instagram?.trim() ?? "")
-    .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
-    .replace(/^@/, "")
-    .replace(/\/.*$/, "");
-  const facebookHref = profile.facebook?.trim()
-    ? safeHttpUrl(profile.facebook) ??
-      (/^[a-zA-Z0-9.\-_]+$/.test(profile.facebook.trim())
-        ? `https://facebook.com/${encodeURIComponent(profile.facebook.trim())}`
-        : undefined)
+  const bio = vis.about ? cvAboutText(cv, profile.bio) : "";
+  const place = vis.location
+    ? displayProfileAddress(profile.profile_address, profile.location, cv.addressDetail)
+    : "";
+  const website = vis.website ? safeHttpUrl(profile.website) : undefined;
+  const lineId = vis.contactLine ? cv.contactLine.trim() || profile.line_id?.trim() || "" : "";
+  const instagramHandle = vis.socials
+    ? (profile.instagram?.trim() ?? "")
+        .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
+        .replace(/^@/, "")
+        .replace(/\/.*$/, "")
+    : "";
+  const facebookHref = vis.socials
+    ? profile.facebook?.trim()
+      ? safeHttpUrl(profile.facebook) ??
+        (/^[a-zA-Z0-9.\-_]+$/.test(profile.facebook.trim())
+          ? `https://facebook.com/${encodeURIComponent(profile.facebook.trim())}`
+          : undefined)
+      : undefined
     : undefined;
-  const extraSocials = socialLinks
-    .map((l) => {
-      const href = safeHttpUrl(l.url);
-      if (!href || !l.title.trim()) return null;
-      return { title: l.title.trim(), href };
-    })
-    .filter((x): x is { title: string; href: string } => !!x);
-  const portfolio = safeHttpUrl(cv.portfolioUrl);
-  const { craftSkills, software } = partitionSkillsAndSoftware(skills, cv.tools);
+  const extraSocials = vis.socials
+    ? socialLinks
+        .map((l) => {
+          const href = safeHttpUrl(l.url);
+          if (!href || !l.title.trim()) return null;
+          return { title: l.title.trim(), href };
+        })
+        .filter((x): x is { title: string; href: string } => !!x)
+    : [];
+  const portfolio = vis.portfolio ? safeHttpUrl(cv.portfolioUrl) : undefined;
+  const { craftSkills, software } = partitionSkillsAndSoftware(
+    vis.skills ? skills : [],
+    vis.software ? cv.tools : [],
+  );
   const hasSocialRow = !!(instagramHandle || facebookHref || (website && website !== portfolio) || extraSocials.length);
   const hasContact = !!(
     website ||
@@ -134,7 +146,7 @@ export function AboutDocumentSheet({
         <p className="about-cv-copy">{place}</p>
       </DocBlock>
     ) : null,
-    cv.languages.length > 0 ? (
+    vis.languages && cv.languages.length > 0 ? (
       <DocBlock key="languages" icon={Languages} title="Languages">
         <ul className="space-y-1">
           {cv.languages.map((item) => (
@@ -162,7 +174,9 @@ export function AboutDocumentSheet({
         <ul className="space-y-1.5">
           {software.map((s) => (
             <li key={s} className="flex items-center gap-2 min-w-0">
-              <ToolIcon name={s} size="sm" className="shrink-0" />
+              <span className="about-cv-tool-icon">
+                <ToolIcon name={s} size="sm" className="shrink-0" />
+              </span>
               <span className="about-cv-copy truncate">{s}</span>
             </li>
           ))}
@@ -171,28 +185,29 @@ export function AboutDocumentSheet({
     ) : null,
   ].filter(Boolean);
 
+  const hasHero = !!(portrait || name || desiredRole || bio);
+
   const mainBlocks = [
-    bio ? (
-      <div key="about">
-        <p className="about-cv-copy whitespace-pre-wrap">{bio}</p>
-      </div>
-    ) : null,
-    cv.education.length > 0 ? (
+    vis.education && cv.education.length > 0 ? (
       <div key="education">
         <PrintHeading icon={GraduationCap} title="Education" />
         <ol className="space-y-3">
-          {cv.education.map((it, i) => (
-            <PrintPeriodRow
-              key={`${it.school}-${i}`}
-              period={formatEducationPeriod(it) || it.period}
-              title={it.school}
-              subtitle={educationDetailLine(it)}
-            />
-          ))}
+          {cv.education.map((it, i) => {
+            const { lead, tail } = educationDetailLines(it);
+            return (
+              <PrintPeriodRow
+                key={`${it.school}-${i}`}
+                period={formatEducationPeriod(it) || it.period}
+                title={it.school}
+                subtitle={lead}
+                extra={tail}
+              />
+            );
+          })}
         </ol>
       </div>
     ) : null,
-    experience.length > 0 ? (
+    vis.experience && experience.length > 0 ? (
       <div key="experience">
         <PrintHeading icon={Briefcase} title="Experience" />
         <ol className="space-y-3.5">
@@ -204,16 +219,26 @@ export function AboutDocumentSheet({
             const bullets = experienceBullets(it);
             return (
               <li key={`${it.title}-${i}`} className="grid grid-cols-[minmax(4.4rem,22%)_minmax(0,1fr)] gap-2.5">
-                <p className="pt-0.5 text-[0.62rem] tabular-nums leading-snug text-[var(--cv-muted)]">
+                <p className="pt-0.5 text-[0.62rem] tabular-nums leading-snug text-[var(--cv-ink)]">
                   {period || "—"}
                 </p>
                 <div className="min-w-0 border-l-2 border-[var(--cv-accent)] pl-2.5">
-                  <p className="text-[0.8rem] font-bold leading-snug">{it.title}</p>
                   {it.company ? (
-                    <p className="mt-0.5 text-[0.72rem] italic text-[var(--cv-muted)]">{it.company}</p>
+                    <p className="text-[0.8rem] font-bold leading-snug">{it.company}</p>
+                  ) : null}
+                  {it.title ? (
+                    <p
+                      className={
+                        it.company
+                          ? "mt-0.5 pr-1 text-[0.72rem] italic leading-snug break-words text-[var(--cv-ink)]"
+                          : "text-[0.8rem] font-bold leading-snug"
+                      }
+                    >
+                      {it.title}
+                    </p>
                   ) : null}
                   {typeLabel ? (
-                    <p className="mt-0.5 text-[0.62rem] text-[var(--cv-muted)]">{typeLabel}</p>
+                    <p className="mt-0.5 text-[0.62rem] text-[var(--cv-ink)]">{typeLabel}</p>
                   ) : null}
                   {bullets.length ? (
                     <ul className="mt-1.5 space-y-1">
@@ -232,7 +257,7 @@ export function AboutDocumentSheet({
         </ol>
       </div>
     ) : null,
-    cv.certifications.length > 0 ? (
+    vis.certification && cv.certifications.length > 0 ? (
       <div key="certs">
         <PrintHeading icon={BadgeCheck} title="Certification" />
         <ol className="space-y-3">
@@ -247,7 +272,7 @@ export function AboutDocumentSheet({
         </ol>
       </div>
     ) : null,
-    cv.awards.length > 0 ? (
+    vis.awards && cv.awards.length > 0 ? (
       <div key="awards">
         <PrintHeading icon={Award} title="Awards" />
         <ol className="space-y-3">
@@ -266,32 +291,33 @@ export function AboutDocumentSheet({
 
   return (
     <div className="about-cv-sheet" data-cv-theme={theme}>
-      <aside className="about-cv-sheet-side min-h-0 overflow-y-auto p-[clamp(0.65rem,2%,1rem)]">
-        <div className={cn("flex flex-col items-start gap-2", sideBlocks.length > 0 && "pb-2.5")}>
-          <div className="w-[min(100%,5.4rem)] overflow-hidden rounded-xl aspect-square bg-[var(--cv-photo)]">
-            {portrait ? (
-              <img src={portrait} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-[var(--cv-muted)]">
-                {initials}
-              </div>
-            )}
+      {hasHero ? (
+        <>
+          <div className="about-cv-sheet-hero-photo">
+            <div className="about-cv-hero-photo">
+              {portrait ? (
+                <img src={portrait} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-[clamp(1.1rem,4cqi,1.6rem)] font-semibold text-[var(--cv-ink)]">
+                  {initials}
+                </div>
+              )}
+            </div>
           </div>
-          {name ? (
-            <p className="text-[clamp(0.95rem,3.6cqi,1.2rem)] font-bold leading-[1.15] tracking-tight">
-              {name}
-            </p>
-          ) : null}
-          {desiredRole ? (
-            <p className="text-[clamp(0.62rem,2.2cqi,0.75rem)] font-light leading-snug text-[var(--cv-muted)]">
-              {desiredRole}
-            </p>
-          ) : null}
-        </div>
+          <div className="about-cv-sheet-hero-copy">
+            {name ? <p className="about-cv-hero-name">{name}</p> : null}
+            {desiredRole ? <p className="about-cv-hero-role">{desiredRole}</p> : null}
+            {name || desiredRole ? <span className="about-cv-hero-rule" aria-hidden /> : null}
+            {bio ? <p className="about-cv-copy whitespace-pre-wrap">{bio}</p> : null}
+          </div>
+        </>
+      ) : null}
+
+      <aside className="about-cv-sheet-side min-h-0 overflow-y-auto p-[clamp(0.65rem,2%,1rem)]">
         {sideBlocks.length > 0 ? (
-          <div className="mt-auto divide-y divide-[var(--cv-rule)] border-t border-[var(--cv-rule)]">
+          <div className="mt-auto divide-y divide-[var(--cv-rule)]">
             {sideBlocks.map((block, i) => (
-              <div key={i} className="py-2.5">
+              <div key={i} className="py-2.5 first:pt-0 last:pb-0">
                 {block}
               </div>
             ))}
@@ -299,10 +325,10 @@ export function AboutDocumentSheet({
         ) : null}
       </aside>
 
-      <div className="about-cv-sheet-main min-h-0 overflow-y-auto p-[clamp(0.75rem,3%,1.45rem)]">
+      <div className="about-cv-sheet-main min-h-0 overflow-y-auto">
         <div className="divide-y divide-[var(--cv-rule)]">
           {mainBlocks.map((block, i) => (
-            <div key={i} className={i === 0 ? "pb-3.5" : "py-3.5"}>
+            <div key={i} className={cn(i === 0 ? "pb-3.5 pt-0" : "py-3.5", "last:pb-0")}>
               {block}
             </div>
           ))}
@@ -334,7 +360,7 @@ export function AboutDocumentSheet({
                   href={portfolio}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline decoration-[var(--cv-accent)]/35 underline-offset-2"
+                  className="underline decoration-[var(--cv-ink)]/35 underline-offset-2"
                 >
                   {hrefLabel(portfolio)}
                 </a>
@@ -345,12 +371,12 @@ export function AboutDocumentSheet({
             <div className="mt-1.5 flex flex-wrap gap-x-6 gap-y-1">
               {instagramHandle ? (
                 <PrintContactItem icon={Instagram} label="Instagram">
-                  instagram.com/{instagramHandle}
+                  {socialDisplayId(instagramHandle)}
                 </PrintContactItem>
               ) : null}
               {facebookHref ? (
                 <PrintContactItem icon={Facebook} label="Facebook">
-                  {hrefLabel(facebookHref)}
+                  {socialDisplayId(facebookHref)}
                 </PrintContactItem>
               ) : null}
               {website && website !== portfolio ? (
@@ -360,7 +386,7 @@ export function AboutDocumentSheet({
               ) : null}
               {extraSocials.map((item) => (
                 <PrintContactItem key={item.href} icon={Link2} label={item.title}>
-                  {hrefLabel(item.href)}
+                  {socialDisplayId(item.href)}
                 </PrintContactItem>
               ))}
             </div>
@@ -375,17 +401,28 @@ function PrintPeriodRow({
   period,
   title,
   subtitle,
+  extra,
 }: {
   period?: string;
   title: string;
   subtitle?: string;
+  extra?: string;
 }) {
   return (
     <li className="grid grid-cols-[minmax(4.4rem,22%)_minmax(0,1fr)] gap-2.5">
-      <p className="pt-0.5 text-[0.62rem] tabular-nums leading-snug text-[var(--cv-muted)]">{period || "—"}</p>
+      <p className="pt-0.5 text-[0.62rem] tabular-nums leading-snug text-[var(--cv-ink)]">{period || "—"}</p>
       <div className="min-w-0 border-l-2 border-[var(--cv-accent)] pl-2.5">
         <p className="text-[0.8rem] font-bold leading-snug">{title}</p>
-        {subtitle ? <p className="mt-0.5 text-[0.72rem] italic text-[var(--cv-muted)]">{subtitle}</p> : null}
+        {subtitle ? (
+          <p className="mt-0.5 pr-1 text-[0.72rem] italic leading-snug break-words text-[var(--cv-ink)]">
+            {subtitle}
+          </p>
+        ) : null}
+        {extra ? (
+          <p className="mt-0.5 pr-1 text-[0.72rem] italic leading-snug break-words text-[var(--cv-ink)]">
+            {extra}
+          </p>
+        ) : null}
       </div>
     </li>
   );
@@ -403,7 +440,7 @@ function PrintContactItem({
   return (
     <p className="about-cv-copy min-w-0">
       <span className="mb-0.5 flex items-center gap-1 text-[0.58rem] font-bold uppercase tracking-[0.12em]">
-        <Icon className="h-2.5 w-2.5 shrink-0 text-[var(--cv-accent)]" aria-hidden />
+        <Icon className="h-2.5 w-2.5 shrink-0 text-[var(--cv-icon)]" aria-hidden />
         {label}
       </span>
       <span className="break-all">{children}</span>
@@ -420,7 +457,7 @@ function PrintHeading({
 }) {
   return (
     <p className="mb-2.5 flex items-center gap-1.5 text-[0.62rem] font-bold uppercase tracking-[0.14em]">
-      <Icon className="h-3 w-3 shrink-0 text-[var(--cv-accent)]" aria-hidden />
+      <Icon className="h-3 w-3 shrink-0 text-[var(--cv-icon)]" aria-hidden />
       {title}
     </p>
   );
@@ -438,7 +475,7 @@ function DocBlock({
   return (
     <section>
       <p className="mb-1.5 flex items-center gap-1.5 text-[0.62rem] font-bold uppercase tracking-[0.14em]">
-        <Icon className="h-3 w-3 shrink-0 text-[var(--cv-accent)]" aria-hidden />
+        <Icon className="h-3 w-3 shrink-0 text-[var(--cv-icon)]" aria-hidden />
         {title}
       </p>
       {children}
@@ -500,7 +537,7 @@ export default function AboutDocumentPreviewDialog({
         </DialogDescription>
         <div className="flex flex-wrap items-center justify-between gap-2 pr-8">
           <div className="flex items-center gap-1.5" role="radiogroup" aria-label="ธีมพรีวิว">
-            {ABOUT_CV_THEMES.map((item) => (
+            {ABOUT_CV_THEMES.filter((item) => item.id !== "slate").map((item) => (
               <button
                 key={item.id}
                 type="button"
@@ -508,16 +545,11 @@ export default function AboutDocumentPreviewDialog({
                 aria-checked={activeTheme === item.id}
                 onClick={() => setTheme(item.id)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] border bg-white/80 transition-colors",
+                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] border bg-white transition-colors",
                   activeTheme === item.id
-                    ? "font-medium shadow-sm"
-                    : "border-black/10 text-muted-foreground hover:text-foreground",
+                    ? "border-black font-medium text-foreground"
+                    : "border-black/20 text-foreground hover:border-black",
                 )}
-                style={
-                  activeTheme === item.id
-                    ? { borderColor: item.swatch, color: item.swatch }
-                    : undefined
-                }
               >
                 <span
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -533,8 +565,8 @@ export default function AboutDocumentPreviewDialog({
               type="button"
               size="sm"
               variant="outline"
-              className="rounded-full bg-white/80"
-              style={{ borderColor: themeMeta.swatch, color: themeMeta.swatch }}
+              className="rounded-full bg-white text-foreground"
+              style={{ borderColor: "#111111", color: "#111111" }}
               disabled={downloading}
               onClick={() => void handleDownloadPdf()}
             >
@@ -546,8 +578,8 @@ export default function AboutDocumentPreviewDialog({
                 type="button"
                 size="sm"
                 variant="outline"
-                className="rounded-full bg-white/80"
-                style={{ borderColor: themeMeta.swatch, color: themeMeta.swatch }}
+                className="rounded-full bg-white text-foreground"
+                style={{ borderColor: "#111111", color: "#111111" }}
                 onClick={onPrint}
               >
                 <Printer className="h-3.5 w-3.5" />

@@ -35,7 +35,8 @@ values ('<auth.users.id>', 'admin');
 | `/project/:id` (Published)  |  ✅   |  ✅  |   ✅  |  |
 | `/project/:id` (Draft)      |  ❌   |  owner only | ✅  | RLS check |
 | `/studio/:slug`             |  ✅   |  ✅  |   ✅  |  |
-| `/jobs`                     |  ✅   |  ✅  |   ✅  | open jobs เท่านั้น |
+| `/hiring`                   |  ✅   |  ✅  |   ✅  | บอร์ดประกาศจ้างบริษัท |
+| `/jobs`                     |  ✅   |  ✅  |   ✅  | จองไว้โพสต์หางานของครีเอเตอร์ |
 | `/advertise`                |  ✅   |  ✅  |   ✅  |  |
 | `/legal/*`                  |  ✅   |  ✅  |   ✅  |  |
 | `/auth`                     |  ✅   |  ✅ (redirect) | ✅ (redirect) | |

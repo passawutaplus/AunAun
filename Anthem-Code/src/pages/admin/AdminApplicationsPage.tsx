@@ -51,7 +51,7 @@ export default function AdminApplicationsPage() {
       key: "job",
       header: "งาน",
       render: (r) => (
-        <Link to={`/jobs/${r.job_id}`} className="font-medium hover:text-admin-accent">
+        <Link to={`/hiring/${r.job_id}`} className="font-medium hover:text-admin-accent">
           {r.job_title}
         </Link>
       ),

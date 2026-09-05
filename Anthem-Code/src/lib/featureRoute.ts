@@ -9,6 +9,7 @@ export function featureFromRoute(pathname: string): string {
   if (pathname.startsWith("/u/")) return "public_profile";
   if (pathname.startsWith("/s/")) return "studio_profile";
   if (pathname.startsWith("/studio")) return "studio";
+  if (pathname.startsWith("/hiring")) return "hiring";
   if (pathname.startsWith("/jobs")) return "jobs";
   if (pathname.startsWith("/chat")) return "chat";
   if (pathname.startsWith("/collections")) return "collections";

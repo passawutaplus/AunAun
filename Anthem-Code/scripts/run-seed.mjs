@@ -94,7 +94,7 @@ const names = DEMO_CATALOG.map((c) => c.displayName);
 const usernames = DEMO_CATALOG.map((c) => c.username);
 const roles = DEMO_CATALOG.map((c) => c.role);
 const studioNames = [
-  "Doi Studio", "Lotus Lab", "Mango Pixel", "Inkwell Co.", "Frame & Field",
+  "LENY", "Lotus Lab", "Mango Pixel", "Inkwell Co.", "Frame & Field",
   "Sundaze Crafts", "Soundwave Bangkok", "Pixel Garden", "Yim Studio", "Talay Creative",
 ];
 const studioSlugs = [
@@ -102,18 +102,12 @@ const studioSlugs = [
   "sundaze-crafts", "soundwave-bkk", "pixel-garden", "yim-studio", "talay-creative",
 ];
 const jobTitles = [
-  "หา UI Designer ทำแอป Wellness",
-  "Graphic Designer ทำ Packaging ขนมไทย",
-  "Brand Designer สำหรับสตาร์ทอัป Fintech",
-  "Illustrator วาดภาพประกอบหนังสือเด็ก",
-  "Motion Designer ทำคลิปสินค้า 30 วินาที",
-  "Photographer ถ่าย Lookbook คอลเลกชันใหม่",
-  "Webflow Developer สร้าง Landing Page",
-  "Content Creator สาย TikTok อาหาร",
-  "Logo Designer สำหรับคลินิกใหม่",
-  "Wedding Photographer พรีเวดดิ้ง",
-  "Music Producer เพลง Jingle 10s",
-  "Senior Designer เข้าทำงานประจำ Studio",
+  "Brand Designer — ระบบอัตลักษณ์ LENY",
+  "UI/UX Designer — แอปสมาชิก LENY",
+  "Photographer — Lookbook คอลเลกชันแรก",
+  "Packaging Designer — กล่องของขวัญ LENY",
+  "Motion Designer — คลิปเปิดตัวแบรนด์",
+  "Content Creator — เรื่องราวร้านธง LENY",
 ];
 
 /** Auth Admin — service_role JWT uses Bearer; sb_secret_* uses apikey-only. */
@@ -275,10 +269,10 @@ async function main() {
   if (memErr) console.warn("studio_members:", memErr.message);
   else console.log("Studio members upserted:", members.length);
 
-  const jobs = Array.from({ length: 12 }, (_, i) => ({
+  const jobs = Array.from({ length: 6 }, (_, i) => ({
     id: catalogJobId(i),
-    studio_id: catalogStudioId(i % 10),
-    posted_by: catalogUid(i % 10),
+    studio_id: catalogStudioId(0),
+    posted_by: catalogUid(0),
     title: jobTitles[i],
     role_category: "Design",
     description: "ประกาศงานจากสตูดิโอในชุมชน an1hem",
@@ -291,8 +285,8 @@ async function main() {
     status: "open",
     post_type: "hiring",
     poster_role: "studio",
-    employment_type: "project",
-    cover_image_url: unsplashArt(i, 1200, 720),
+    employment_type: i % 4 === 2 ? "parttime" : "fulltime",
+    cover_image_url: `/job-covers/${["leny-brand-identity", "leny-wellness", "leny-lookbook", "leny-packaging", "leny-motion", "leny-store"][i]}.png`,
   }));
   const { error: jobErr } = await anthemDb.from("job_posts").upsert(jobs, { onConflict: "id" });
   if (jobErr) console.warn("job_posts:", jobErr.message);

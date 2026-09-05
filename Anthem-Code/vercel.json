@@ -5,6 +5,16 @@
   "outputDirectory": "dist",
   "redirects": [
     {
+      "source": "/jobs/new",
+      "destination": "/hiring/new",
+      "permanent": true
+    },
+    {
+      "source": "/jobs/:id",
+      "destination": "/hiring/:id",
+      "permanent": true
+    },
+    {
       "source": "/",
       "has": [{ "type": "host", "value": "forum.aplus1.app" }],
       "destination": "https://aplus1.app/forum",

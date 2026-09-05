@@ -316,7 +316,7 @@ export const profileSchema = z.object({
     .min(2, "อย่างน้อย 2 ตัวอักษร")
     .max(30)
     .regex(/^[a-zA-Z0-9_.]+$/, "ใช้ได้เฉพาะ a-z, 0-9, _ และ ."),
-  bio: z.string().trim().max(500).optional().default(""),
+  bio: z.string().trim().max(100).optional().default(""),
   role: z.string().trim().max(60).optional().default(""),
   /** ISO date YYYY-MM-DD or empty */
   dateOfBirth: z
@@ -416,6 +416,27 @@ export const profileSchema = z.object({
   cvContactLine: z.string().trim().max(50).optional().default(""),
   cvContactPhone: z.string().trim().max(16).optional().default(""),
   cvContactPublic: z.boolean().optional().default(false),
+  cvAbout: z.string().trim().max(500).optional().default(""),
+  cvAddressDetail: z.enum(["short", "full"]).optional().default("short"),
+  cvVisibility: z
+    .object({
+      about: z.boolean().optional(),
+      location: z.boolean().optional(),
+      languages: z.boolean().optional(),
+      skills: z.boolean().optional(),
+      software: z.boolean().optional(),
+      education: z.boolean().optional(),
+      experience: z.boolean().optional(),
+      certification: z.boolean().optional(),
+      awards: z.boolean().optional(),
+      contactEmail: z.boolean().optional(),
+      contactLine: z.boolean().optional(),
+      contactPhone: z.boolean().optional(),
+      portfolio: z.boolean().optional(),
+      website: z.boolean().optional(),
+      socials: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export type ProfileInput = z.infer<typeof profileSchema>;

@@ -12,6 +12,7 @@ PATHS=(
   "/auth/forgot"
   "/reset-password"
   "/jobs"
+  "/hiring"
   "/advertise"
   "/research"
   "/research/feedback"

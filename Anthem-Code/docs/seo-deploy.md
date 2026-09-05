@@ -31,7 +31,9 @@ Checklist สำหรับ **aplus1.app** (Aplus1 community)
 - โปรไฟล์ `/u/*` และ `/@username` (ข้ามโปรไฟล์ว่างเมื่อดึง live)
 - ชุดงานสาธารณะ `/series/:id`
 - Explore paths (ถ้าใส่ใน generator)
-- Full-product: `/jobs`, `/jobs/:id` (open), `/community`, `/s/*`
+- Launch: `/hiring`, `/hiring/:id` (open)
+- Reserved: `/jobs` is creator looking-for-work (noindex until built)
+- Full-product extras: `/community`, `/s/*`
 
 ### หน้าที่ **ไม่** index (robots + noindex)
 

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { readAboutCvTheme, type AboutCvTheme } from "@/lib/aboutCvTheme";
 import { aboutCvPdfFilename, downloadAboutCvPdf } from "@/lib/aboutCvPdf";
 import { parseProfileCv } from "@/lib/profileCv";
-import ProfileAboutReadOnly, { ProfileAboutToolbar } from "@/components/profile/ProfileAboutReadOnly";
+import { ProfileAboutToolbar } from "@/components/profile/ProfileAboutReadOnly";
 import ProfileAboutEditor from "@/components/profile/ProfileAboutEditor";
 import { cn } from "@/lib/utils";
 import AboutDocumentPreviewDialog, {
@@ -60,14 +60,14 @@ export default function ProfileAboutPanel({
   const [cvTheme, setCvTheme] = useState<AboutCvTheme>(readAboutCvTheme);
   const [downloading, setDownloading] = useState(false);
   const canEdit = mode === "owner" && !!userId;
-  const publicTheme: AboutCvTheme = "orange";
+  const liveTheme: AboutCvTheme = "orange";
   const sheetProps = {
     profile,
     experience,
     skills,
     socialLinks,
     profileUrl,
-    theme: mode === "public" ? publicTheme : cvTheme,
+    theme: liveTheme,
     forceShowApplicationContact: mode === "owner",
   };
   const frameClass = cn(
@@ -75,6 +75,8 @@ export default function ProfileAboutPanel({
     mode === "owner" ? "rounded-3xl" : "rounded-2xl",
     sectionClassName,
   );
+  const aboutActionClass =
+    "inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-xs text-foreground hover:bg-black/5 disabled:opacity-60";
   const pdfName = aboutCvPdfFilename(parseProfileCv(profile.cv).fullName.trim());
 
   const handleDownloadPdf = async () => {
@@ -97,50 +99,35 @@ export default function ProfileAboutPanel({
           onSaved={() => setEditing(false)}
           sectionClassName={frameClass}
         />
-      ) : mode === "public" ? (
+      ) : (
         <>
-          <div className="flex items-center justify-end gap-1">
-            <button
-              type="button"
-              disabled={downloading}
-              onClick={() => void handleDownloadPdf()}
-              className="inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-60"
-            >
-              <Download className="h-3.5 w-3.5" />
-              {downloading ? "กำลังสร้าง PDF..." : "Download PDF"}
-            </button>
-            <button
-              type="button"
-              onClick={printAboutCv}
-              className="inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10"
-            >
-              <Printer className="h-3.5 w-3.5" />
-              Print
-            </button>
-          </div>
+          {mode === "public" ? (
+            <div className="flex items-center justify-end gap-1">
+              <button
+                type="button"
+                disabled={downloading}
+                onClick={() => void handleDownloadPdf()}
+                className={aboutActionClass}
+              >
+                <Download className="h-3.5 w-3.5" />
+                {downloading ? "กำลังสร้าง PDF..." : "Download PDF"}
+              </button>
+              <button type="button" onClick={printAboutCv} className={aboutActionClass}>
+                <Printer className="h-3.5 w-3.5" />
+                Print
+              </button>
+            </div>
+          ) : (
+            <ProfileAboutToolbar
+              onEdit={canEdit ? () => setEditing(true) : undefined}
+              onPreview={() => setPreviewOpen(true)}
+              onPrint={printAboutCv}
+            />
+          )}
           <div className="flex justify-center">
             <div className="about-cv-a4-frame">
               <AboutDocumentSheet {...sheetProps} />
             </div>
-          </div>
-        </>
-      ) : (
-        <>
-          <ProfileAboutToolbar
-            onEdit={canEdit ? () => setEditing(true) : undefined}
-            onPreview={() => setPreviewOpen(true)}
-            onPrint={printAboutCv}
-          />
-          <div className={frameClass}>
-            <ProfileAboutReadOnly
-              profile={profile}
-              experience={experience}
-              skills={skills}
-              socialLinks={socialLinks}
-              mode={mode}
-              profileUrl={profileUrl}
-              showToolbar={false}
-            />
           </div>
         </>
       )}
@@ -151,6 +138,7 @@ export default function ProfileAboutPanel({
           onPrint={printAboutCv}
           onThemeChange={setCvTheme}
           {...sheetProps}
+          theme={cvTheme}
         />
       ) : null}
       <div id="about-cv-print" className="about-cv-print-root" aria-hidden="true">

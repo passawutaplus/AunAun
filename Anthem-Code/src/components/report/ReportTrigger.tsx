@@ -33,7 +33,7 @@ const ReportTrigger = ({
       )}
     >
       <Flag className={variant === "icon" ? "w-4 h-4" : "w-3.5 h-3.5"} />
-      {variant === "text" && <span>{label}</span>}
+      {variant === "text" && <span className="max-sm:hidden">{label}</span>}
     </button>
   </ReportDialog>
 );

@@ -462,7 +462,7 @@ const FeedToolbar = ({
               >
                 <BrandLogo size="sm" />
               </button>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1 max-w-[min(28rem,38vw)] xl:max-w-[32rem]">
                 <SearchBar
                   value={search}
                   onChange={onSearchChange}
@@ -473,17 +473,12 @@ const FeedToolbar = ({
                   {...(!isProjects ? { filterContent } : {})}
                 />
               </div>
-              <div className="relative z-20 flex shrink-0 items-center gap-1.5 overflow-visible">
+              <div className="relative z-20 ml-auto flex shrink-0 items-center gap-2 overflow-visible">
                 {rightAction ? (
                   <div className="relative z-30 shrink-0 overflow-visible">{rightAction}</div>
                 ) : null}
-                <div
-                  className={cn(
-                    "min-w-0 shrink-0",
-                    rightAction ? "w-[11.6rem]" : "w-[14.5rem]",
-                  )}
-                >
-                  <ProfileButton fillRail />
+                <div className="shrink-0">
+                  <ProfileButton />
                 </div>
               </div>
             </div>

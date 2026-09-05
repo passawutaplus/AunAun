@@ -20,6 +20,36 @@ export const safeHttpUrl = (raw?: string | null): string | undefined => {
   return undefined;
 };
 
+/**
+ * Social label for About/CV — show the handle only.
+ * `instagram.com/passawut123` → `passawut123`
+ */
+export function socialDisplayId(raw?: string | null): string {
+  const v = (raw ?? "").trim();
+  if (!v) return "";
+  const stripped = v
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .replace(/\/+$/, "");
+  if (!stripped.includes("/")) return stripped.replace(/^@/, "");
+  try {
+    const u = new URL(/^[a-z][a-z0-9+.-]*:/i.test(v) ? v : `https://${v}`);
+    const segs = u.pathname.split("/").filter(Boolean);
+    const first = segs[0] ?? "";
+    if (first && !/^profile\.php$/i.test(first) && first.toLowerCase() !== "people") {
+      return decodeURIComponent(first.replace(/^@/, ""));
+    }
+    const id = u.searchParams.get("id");
+    if (id) return id;
+    if (segs.length) return decodeURIComponent(segs[segs.length - 1]!.replace(/^@/, ""));
+  } catch {
+    const afterHost = stripped.replace(/^[^/]+\//, "");
+    const first = afterHost.split(/[/?#]/)[0] ?? "";
+    if (first) return first.replace(/^@/, "");
+  }
+  return stripped.replace(/^@/, "");
+}
+
 /** Open external URL in a new tab only when http(s). */
 export function openSafeExternalUrl(raw?: string | null): boolean {
   const url = safeHttpUrl(raw);

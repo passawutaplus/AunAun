@@ -4,6 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { toast } from "sonner";
 import { notifyAnthem } from "@/lib/notifyAnthem";
+import { isOptionalQueryError } from "@/lib/supabaseErrors";
+import type { JobRejectReason } from "@/lib/jobApplicationReview";
 import type { PosterEntityType } from "@/components/jobs/jobCardUtils";
 
 export type ApplicationStatus =
@@ -47,8 +49,28 @@ export interface JobPost {
   application_methods?: string[];
   ready_to_start?: string | null;
   show_profile_badge?: boolean;
+  hiring_org_id?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  workplace_address?: string | null;
+  meeting_location?: string | null;
+  social_links?: unknown;
+  requirements_must?: string[];
+  requirements_nice?: string[];
+  perks?: string[];
+  exclusions_note?: string | null;
+  gallery_urls?: string[];
+  is_urgent?: boolean;
   studio?: { name: string; slug: string; avatar_url: string; verified: boolean };
   poster?: { display_name: string; avatar_url: string | null; username: string | null };
+  hiring_org?: {
+    id: string;
+    display_name: string;
+    logo_url: string | null;
+    status: string;
+    province?: string | null;
+    category?: string | null;
+  };
 }
 
 export interface JobApplication {
@@ -65,6 +87,10 @@ export interface JobApplication {
   viewed_at?: string | null;
   contacted_at?: string | null;
   attached_cv_url?: string | null;
+  conversation_id?: string | null;
+  reject_reason?: string | null;
+  reject_note?: string | null;
+  decided_at?: string | null;
   applicant?: { display_name: string; avatar_url: string | null; username: string | null };
   job?: JobPost;
 }
@@ -107,18 +133,41 @@ const attachPosters = async (jobs: JobPost[]): Promise<JobPost[]> => {
   return jobs.map((j) => (!j.studio_id && map.get(j.posted_by) ? { ...j, poster: map.get(j.posted_by) as JobPost["poster"] } : j));
 };
 
+const attachHiringOrgs = async (jobs: JobPost[]): Promise<JobPost[]> => {
+  const ids = Array.from(new Set(jobs.map((j) => j.hiring_org_id).filter(Boolean))) as string[];
+  if (ids.length === 0) return jobs;
+  const { data } = await supabase
+    .from("hiring_organizations")
+    .select("id, display_name, logo_url, status, province, category")
+    .in("id", ids);
+  const map = new Map((data ?? []).map((o: { id: string }) => [o.id, o]));
+  return jobs.map((j) =>
+    j.hiring_org_id && map.get(j.hiring_org_id)
+      ? { ...j, hiring_org: map.get(j.hiring_org_id) as JobPost["hiring_org"] }
+      : j,
+  );
+};
+
+const hydrateJobs = async (jobs: JobPost[]): Promise<JobPost[]> =>
+  attachHiringOrgs(await attachPosters(await attachStudios(jobs)));
+
 export const useOpenJobs = (opts?: { limit?: number; postType?: "hiring" | "seeking"; offset?: number }) =>
   useQuery({
     queryKey: ["jobs-open", opts?.limit ?? "all", opts?.postType ?? "any", opts?.offset ?? 0],
     queryFn: async (): Promise<JobPost[]> => {
       let q = supabase.from("job_posts").select("*").eq("status", "open").order("created_at", { ascending: false });
       if (opts?.postType) q = q.eq("post_type", opts.postType);
+      if (opts?.postType === "hiring") q = q.not("hiring_org_id", "is", null);
       if (opts?.offset) q = q.range(opts.offset, opts.offset + (opts.limit ?? 50) - 1);
       else if (opts?.limit) q = q.limit(opts.limit);
       const { data, error } = await q;
       if (error) throw error;
       const real = (data ?? []) as JobPost[];
-      return attachPosters(await attachStudios(real));
+      const hydrated = await hydrateJobs(real);
+      if (opts?.postType === "hiring") {
+        return hydrated.filter((job) => job.hiring_org?.status === "approved");
+      }
+      return hydrated;
     },
   });
 
@@ -128,13 +177,18 @@ export const useMyJobPosts = () => {
     queryKey: ["my-job-posts", user?.id],
     enabled: !!user,
     queryFn: async (): Promise<JobPost[]> => {
-      const { data, error } = await supabase
-        .from("job_posts")
-        .select("*")
-        .eq("posted_by", user!.id)
-        .order("created_at", { ascending: false });
+      const { data: memberships } = await supabase
+        .from("hiring_org_members")
+        .select("org_id")
+        .eq("user_id", user!.id);
+      const orgIds = Array.from(new Set((memberships ?? []).map((row: { org_id: string }) => row.org_id)));
+      let q = supabase.from("job_posts").select("*").order("created_at", { ascending: false });
+      q = orgIds.length > 0
+        ? q.or(`posted_by.eq.${user!.id},hiring_org_id.in.(${orgIds.join(",")})`)
+        : q.eq("posted_by", user!.id);
+      const { data, error } = await q;
       if (error) throw error;
-      return attachPosters(await attachStudios((data ?? []) as JobPost[]));
+      return hydrateJobs((data ?? []) as JobPost[]);
     },
   });
 };
@@ -167,7 +221,7 @@ export const useStudioJobs = (studioId?: string) =>
         .eq("studio_id", studioId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return attachStudios((data ?? []) as JobPost[]);
+      return hydrateJobs((data ?? []) as JobPost[]);
     },
   });
 
@@ -179,8 +233,7 @@ export const useJobById = (id?: string) =>
       const { data, error } = await supabase.from("job_posts").select("*").eq("id", id!).maybeSingle();
       if (error) throw error;
       if (!data) return null;
-      const [withStudio] = await attachStudios([data as JobPost]);
-      const [out] = await attachPosters([withStudio]);
+      const [out] = await hydrateJobs([data as JobPost]);
       return out;
     },
   });
@@ -215,12 +268,21 @@ export const useUpdateJobStatus = () => {
     mutationFn: async (input: { id: string; status: JobPost["status"] }) => {
       const { error } = await supabase.from("job_posts").update({ status: input.status }).eq("id", input.id);
       if (error) throw error;
+      if (input.status === "closed" || input.status === "filled") {
+        const { error: rejectErr } = await supabase.rpc("reject_pending_job_applications_for_job", {
+          p_job_id: input.id,
+          p_reason: input.status === "filled" ? "filled" : "cancelled",
+        });
+        if (rejectErr && !isOptionalQueryError(rejectErr)) throw rejectErr;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["jobs-open"] });
       qc.invalidateQueries({ queryKey: ["jobs-studio"] });
       qc.invalidateQueries({ queryKey: ["job"] });
       qc.invalidateQueries({ queryKey: ["my-job-posts"] });
+      qc.invalidateQueries({ queryKey: ["job-applications"] });
+      qc.invalidateQueries({ queryKey: ["my-applications"] });
     },
   });
 };
@@ -252,14 +314,15 @@ export const useApplyToJob = () => {
         attached_cv_url: input.attached_cv_url ?? null,
       } as never).select("id").single();
       if (error) throw error;
-      return data as { id: string };
+      return { id: (data as { id: string }).id };
     },
     onSuccess: (data) => {
       notifyAnthem({ event: "job_application", application_id: data.id });
       qc.invalidateQueries({ queryKey: ["my-applications"] });
+      qc.invalidateQueries({ queryKey: ["my-application-for-job"] });
       qc.invalidateQueries({ queryKey: ["job-applications"] });
       qc.invalidateQueries({ queryKey: ["job"] });
-      toast.success("ส่งใบสมัครเรียบร้อย");
+      toast.success("ส่งโปรไฟล์ให้บริษัทแล้ว");
     },
     onError: (e: Error) => {
       if (e.message?.includes("duplicate")) toast.error("คุณสมัครงานนี้ไปแล้ว");
@@ -268,19 +331,71 @@ export const useApplyToJob = () => {
   });
 };
 
+async function expirePendingJobApplicationsQuietly() {
+  const { error } = await supabase.rpc("expire_pending_job_applications");
+  if (error && !isOptionalQueryError(error)) {
+    console.warn("expire_pending_job_applications", error.message);
+  }
+}
+
+export const useMyApplicationForJob = (jobId?: string) => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["my-application-for-job", user?.id, jobId],
+    enabled: !!user && !!jobId,
+    queryFn: async (): Promise<JobApplication | null> => {
+      await expirePendingJobApplicationsQuietly();
+      const { data, error } = await supabase
+        .from("job_applications")
+        .select("*")
+        .eq("job_id", jobId!)
+        .eq("applicant_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as JobApplication | null) ?? null;
+    },
+  });
+};
+
+export const useRelatedHiringJobs = (job?: JobPost | null) =>
+  useQuery({
+    queryKey: ["related-hiring-jobs", job?.id, job?.hiring_org_id, job?.posted_by],
+    enabled: !!job?.id,
+    queryFn: async (): Promise<JobPost[]> => {
+      let q = supabase
+        .from("job_posts")
+        .select("*")
+        .eq("status", "open")
+        .eq("post_type", "hiring")
+        .neq("id", job!.id)
+        .order("created_at", { ascending: false })
+        .limit(6);
+      if (job?.hiring_org_id) q = q.eq("hiring_org_id", job.hiring_org_id);
+      else q = q.eq("posted_by", job!.posted_by);
+      const { data, error } = await q;
+      if (error) throw error;
+      return hydrateJobs((data ?? []) as JobPost[]);
+    },
+  });
+
 export const useMyApplications = () => {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["my-applications", user?.id],
     enabled: !!user,
     queryFn: async (): Promise<JobApplication[]> => {
+      await expirePendingJobApplicationsQuietly();
       const { data, error } = await supabase
         .from("job_applications")
         .select("*, job:job_posts(*)")
         .eq("applicant_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as JobApplication[];
+      const rows = (data ?? []) as JobApplication[];
+      const jobs = rows.map((r) => r.job).filter((j): j is JobPost => !!j);
+      const hydrated = await hydrateJobs(jobs);
+      const byId = new Map(hydrated.map((j) => [j.id, j]));
+      return rows.map((r) => (r.job ? { ...r, job: byId.get(r.job.id) ?? r.job } : r));
     },
   });
 };
@@ -290,6 +405,7 @@ export const useJobApplications = (jobId?: string) =>
     queryKey: ["job-applications", jobId],
     enabled: !!jobId,
     queryFn: async (): Promise<JobApplication[]> => {
+      await expirePendingJobApplicationsQuietly();
       const { data, error } = await supabase
         .from("job_applications")
         .select("*")
@@ -323,6 +439,98 @@ export const useUpdateApplicationStatus = () => {
       toast.success("อัปเดตสถานะแล้ว");
     },
     onError: (e: Error) => toast.error(e.message),
+  });
+};
+
+export const useMyPostedApplications = (jobIds: string[]) =>
+  useQuery({
+    queryKey: ["job-applications-posted", [...jobIds].sort().join(",")],
+    enabled: jobIds.length > 0,
+    queryFn: async (): Promise<JobApplication[]> => {
+      await expirePendingJobApplicationsQuietly();
+      const { data, error } = await supabase
+        .from("job_applications")
+        .select("*")
+        .in("job_id", jobIds)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const rows = (data ?? []) as JobApplication[];
+      const ids = Array.from(new Set(rows.map((r) => r.applicant_id)));
+      if (ids.length === 0) return rows;
+      const { data: profiles } = await supabase
+        .from("profiles_public")
+        .select("user_id, display_name, avatar_url, username")
+        .in("user_id", ids);
+      const map = new Map((profiles ?? []).map((p: { user_id: string }) => [p.user_id, p]));
+      return rows.map((r) => ({ ...r, applicant: map.get(r.applicant_id) as JobApplication["applicant"] }));
+    },
+  });
+
+export const useToggleApplicationInterest = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; interested: boolean }) => {
+      const { error } = await supabase
+        .from("job_applications")
+        .update({ status: input.interested ? "shortlisted" : "pending" } as never)
+        .eq("id", input.id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, input) => {
+      qc.invalidateQueries({ queryKey: ["job-applications"] });
+      qc.invalidateQueries({ queryKey: ["job-applications-posted"] });
+      qc.invalidateQueries({ queryKey: ["my-applications"] });
+      toast.success(input.interested ? "ปักหมุดสนใจแล้ว" : "เอาหมุดออกแล้ว");
+    },
+    onError: (e: Error) => toast.error(e.message || "ปักหมุดไม่สำเร็จ"),
+  });
+};
+
+export const useMarkJobApplicationsViewed = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (jobId: string) => {
+      const { error } = await supabase
+        .from("job_applications")
+        .update({ viewed_at: new Date().toISOString() } as never)
+        .eq("job_id", jobId)
+        .is("viewed_at", null);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job-applications"] });
+      qc.invalidateQueries({ queryKey: ["job-applications-posted"] });
+    },
+  });
+};
+
+export const useDecideJobApplication = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      decision: "accept" | "reject";
+      reason?: Exclude<JobRejectReason, "expired">;
+      note?: string;
+    }) => {
+      const { data, error } = await supabase.rpc("decide_job_application", {
+        p_application_id: input.id,
+        p_decision: input.decision,
+        p_reason: input.reason ?? null,
+        p_note: input.note ?? null,
+      });
+      if (error) throw error;
+      return (data as string | null) ?? null;
+    },
+    onSuccess: (_convId, input) => {
+      qc.invalidateQueries({ queryKey: ["job-applications"] });
+      qc.invalidateQueries({ queryKey: ["job-applications-posted"] });
+      qc.invalidateQueries({ queryKey: ["my-applications"] });
+      qc.invalidateQueries({ queryKey: ["my-application-for-job"] });
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+      toast.success(input.decision === "accept" ? "ตอบรับแล้ว — ทักแชทไปหาผู้สมัครได้" : "ส่งการปฏิเสธแล้ว");
+    },
+    onError: (e: Error) => toast.error(e.message || "อัปเดตใบสมัครไม่สำเร็จ"),
   });
 };
 
@@ -370,6 +578,7 @@ export const useToggleSaveJob = () => {
     },
     onSuccess: (_, { saved }) => {
       qc.invalidateQueries({ queryKey: ["saved-jobs"] });
+      qc.invalidateQueries({ queryKey: ["my-saved-jobs"] });
       toast.success(saved ? "ลบออกจากที่บันทึกแล้ว" : "บันทึกประกาศแล้ว");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -392,7 +601,7 @@ export const useMySavedJobs = () => {
       if (ids.length === 0) return [];
       const { data: jobs, error: jErr } = await supabase.from("job_posts").select("*").in("id", ids);
       if (jErr) throw jErr;
-      return attachPosters(await attachStudios((jobs ?? []) as JobPost[]));
+      return hydrateJobs((jobs ?? []) as JobPost[]);
     },
   });
 };
@@ -411,7 +620,7 @@ export const useMyOpenJobPosts = () => {
         .eq("post_type", "hiring")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return attachPosters(await attachStudios((data ?? []) as JobPost[]));
+      return hydrateJobs((data ?? []) as JobPost[]);
     },
   });
 };
@@ -437,9 +646,11 @@ export const canManageJob = (
   job: JobPost | undefined,
   userId: string | undefined,
   studioRoles: Map<string, string>,
+  hiringOrgIds?: Set<string>,
 ) => {
   if (!job || !userId) return false;
   if (job.posted_by === userId) return true;
+  if (job.hiring_org_id && hiringOrgIds?.has(job.hiring_org_id)) return true;
   if (job.studio_id) {
     const role = studioRoles.get(job.studio_id);
     return role === "owner" || role === "admin" || role === "hiring_manager";

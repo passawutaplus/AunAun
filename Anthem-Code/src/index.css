@@ -293,6 +293,19 @@
 @keyframes first-post-aura-spin {
   to { transform: rotate(360deg); }
 }
+@keyframes apply-check-pop {
+  0% { transform: scale(0.35); opacity: 0; }
+  55% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes apply-check-ring {
+  0% { transform: scale(0.65); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes apply-check-draw {
+  from { stroke-dashoffset: 36; }
+  to { stroke-dashoffset: 0; }
+}
 
 @property --first-post-beam-angle {
   syntax: "<angle>";
@@ -352,11 +365,24 @@
     .animate-hero-grid-drift,
     .animate-hero-grid-drift-alt,
     .animate-hero-grid-bg,
-    .animate-hero-grid-bg-alt {
+    .animate-hero-grid-bg-alt,
+    .animate-apply-check-pop,
+    .animate-apply-check-ring,
+    .animate-apply-check-draw {
       animation: none !important;
+    }
+    .animate-apply-check-draw {
+      stroke-dashoffset: 0;
     }
   }
   .animate-input-shake { animation: input-shake 0.4s ease-in-out; }
+  .animate-apply-check-pop { animation: apply-check-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .animate-apply-check-ring { animation: apply-check-ring 0.45s ease-out both; }
+  .animate-apply-check-draw {
+    stroke-dasharray: 36;
+    stroke-dashoffset: 36;
+    animation: apply-check-draw 0.45s 0.2s ease-out forwards;
+  }
   .animate-community-heart-burst { animation: community-heart-burst 0.75s ease-out forwards; }
   .animate-plus-one-burst { animation: plus-one-burst 0.75s ease-out forwards; }
   .animate-first-post-aura-spin { animation: first-post-aura-spin 2.2s linear infinite; }
@@ -1066,7 +1092,17 @@
 .about-cv-copy {
   font-size: 0.72rem;
   line-height: 1.45;
-  color: var(--cv-muted);
+  color: var(--cv-ink);
+}
+
+.about-cv-sheet .about-cv-tool-icon {
+  display: inline-flex;
+  filter: grayscale(1) contrast(1.15);
+}
+
+.about-cv-sheet .about-cv-tool-icon > div {
+  background: transparent;
+  color: var(--cv-ink);
 }
 
 .about-cv-a4-frame {
@@ -1079,16 +1115,18 @@
 }
 
 .about-cv-sheet {
-  --cv-ink: #3d2418;
-  --cv-muted: #8a5d45;
-  --cv-accent: #e85d04;
-  --cv-side: #fff1e6;
+  --cv-ink: #111111;
+  --cv-muted: #111111;
+  --cv-accent: #111111;
+  --cv-icon: #e85d04;
+  --cv-side: #ffffff;
   --cv-main: #ffffff;
-  --cv-rule: rgba(232, 93, 4, 0.22);
-  --cv-photo: #ffd4b8;
+  --cv-rule: rgba(17, 17, 17, 0.16);
+  --cv-photo: #ffffff;
+  --cv-main-pad: clamp(0.75rem, 3%, 1.45rem);
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -1099,28 +1137,81 @@
 }
 
 .about-cv-sheet[data-cv-theme="mono"] {
-  --cv-ink: #171717;
-  --cv-muted: #6b6b6b;
+  --cv-ink: #111111;
+  --cv-muted: #111111;
   --cv-accent: #111111;
-  --cv-side: #f2f2f2;
+  --cv-icon: #111111;
+  --cv-side: #ffffff;
   --cv-main: #ffffff;
-  --cv-rule: rgba(17, 17, 17, 0.14);
-  --cv-photo: #e4e4e4;
+  --cv-rule: rgba(17, 17, 17, 0.16);
+  --cv-photo: #ffffff;
 }
 
 .about-cv-sheet[data-cv-theme="slate"] {
-  --cv-ink: #2f3338;
-  --cv-muted: #6d737b;
-  --cv-accent: #5b6168;
-  --cv-side: #eef0f2;
+  --cv-ink: #111111;
+  --cv-muted: #111111;
+  --cv-accent: #111111;
+  --cv-icon: #111111;
+  --cv-side: #ffffff;
   --cv-main: #ffffff;
-  --cv-rule: rgba(91, 97, 104, 0.2);
-  --cv-photo: #d9dde2;
+  --cv-rule: rgba(17, 17, 17, 0.16);
+  --cv-photo: #ffffff;
+}
+
+.about-cv-sheet-hero-photo {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: stretch;
+  background: var(--cv-side);
+}
+
+.about-cv-hero-photo {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0;
+  background: var(--cv-photo);
+  box-shadow: inset 0 0 0 1px var(--cv-rule);
+}
+
+.about-cv-sheet-hero-copy {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--cv-main-pad);
+  padding-bottom: clamp(0.45rem, 1.6%, 0.7rem);
+  background: var(--cv-main);
+}
+
+.about-cv-hero-name {
+  font-size: clamp(1.12rem, 4.6cqi, 1.62rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+.about-cv-hero-role {
+  margin-top: 0.18rem;
+  font-size: clamp(0.7rem, 2.3cqi, 0.86rem);
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--cv-ink);
+}
+
+.about-cv-hero-rule {
+  display: block;
+  width: 2.05rem;
+  height: 0.18rem;
+  margin: 0.5rem 0 0.55rem;
+  background: var(--cv-accent);
 }
 
 .about-cv-sheet-side {
   grid-column: 1;
-  grid-row: 1;
+  grid-row: 2;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -1129,13 +1220,21 @@
 
 .about-cv-sheet-main {
   grid-column: 2;
-  grid-row: 1;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--cv-main-pad);
   background: var(--cv-main);
+}
+
+.about-cv-sheet:has(.about-cv-sheet-hero-copy) .about-cv-sheet-main {
+  padding-top: 0;
 }
 
 .about-cv-sheet-contact {
   grid-column: 1 / -1;
-  grid-row: 2;
+  grid-row: 3;
   background: var(--cv-main);
   border-top: 1px solid var(--cv-rule);
 }
@@ -1192,6 +1291,8 @@
     overflow: hidden !important;
   }
 
+  .about-cv-sheet-hero-photo,
+  .about-cv-sheet-hero-copy,
   .about-cv-sheet-side,
   .about-cv-sheet-main {
     overflow: hidden !important;

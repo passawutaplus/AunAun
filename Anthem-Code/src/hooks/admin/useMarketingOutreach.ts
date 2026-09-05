@@ -18,7 +18,7 @@ export const OUTREACH_TEMPLATES: Record<
     labelTh: "Hirer — โพสต์งาน",
     title: "โพสต์งานเพื่อหาครีเอทีฟบน Aplus1",
     body: "ประกาศจ้างงานฟรี — รับสมัครจากพอร์ตโฟลิโอจริงในชุมชน",
-    link: "/jobs",
+    link: "/hiring",
   },
   referral: {
     labelTh: "Referral — ชวนเพื่อน",

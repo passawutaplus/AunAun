@@ -12,6 +12,17 @@ export type AdApplicationStatus =
 
 export type AdEventType = "impression" | "click" | "interest";
 
+export type AdPackage = "basic" | "standard" | "premium" | "custom" | "inquiry";
+
+export function adPackageLabel(pkg: AdPackage): string {
+  if (pkg === "custom") return "กำหนดเอง";
+  if (pkg === "inquiry") return "ติดต่อ";
+  if (pkg === "basic") return "Basic";
+  if (pkg === "standard") return "Standard";
+  if (pkg === "premium") return "Premium";
+  return pkg;
+}
+
 export interface AdCampaign {
   id: string;
   advertiser_user_id: string;
@@ -20,7 +31,7 @@ export interface AdCampaign {
   image_url: string;
   target_url: string;
   cta_label: string;
-  package: "basic" | "standard" | "premium";
+  package: AdPackage;
   price_px: number;
   status: "draft" | "pending" | "approved" | "active" | "paused" | "rejected" | "expired";
   start_at: string;
@@ -49,7 +60,7 @@ export interface AdApplication {
   image_url: string;
   target_url: string;
   cta_label: string;
-  package: "basic" | "standard" | "premium";
+  package: AdPackage;
   duration_days: number;
   budget_px: number;
   amount_thb: number;
@@ -234,19 +245,22 @@ export const useSubmitAdApplication = () => {
         AdApplication,
         | "id"
         | "user_id"
-        | "status"
         | "admin_note"
         | "reviewed_at"
         | "reviewed_by"
         | "created_at"
         | "updated_at"
         | "paid_at"
-      >
+      > & { status?: AdApplicationStatus }
     ) => {
       if (!user?.id) throw new Error("ต้องเข้าสู่ระบบก่อน");
+      const status: AdApplicationStatus =
+        vars.status ?? (vars.package === "inquiry" ? "pending" : "pending_payment");
+      const row = { ...vars };
+      delete row.status;
       const { data, error } = await supabase
         .from("ad_applications")
-        .insert({ ...vars, user_id: user.id, status: "pending_payment" as AdApplicationStatus })
+        .insert({ ...row, user_id: user.id, status })
         .select()
         .single();
       if (error) throw error;
