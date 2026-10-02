@@ -1,4 +1,5 @@
 import { esc, escA } from "./utils.js";
+import { hasThai, thaiConcepts } from "./thai-search.js";
 import {
   COLOR_MATCH_MIN, DISCOVER_FACET_KEYS, DISCOVER_SHAPES, DISCOVER_TONES, MAX_SEARCH_COLORS,
   hsvToHex, materialsFrom, matchesShape, normalizeHex, paletteTones, rankSimilar, scoreColorSet,
@@ -82,7 +83,7 @@ export function safeHttpsUrl(value) {
 }
 
 function searchTerms(q) {
-  return String(q || "").toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, 60)
+  return String(q || "").toLowerCase().replace(/[^\p{L}\p{M}\p{N}\s-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, 60)
     .split(" ").filter(Boolean).slice(0, MAX_TERMS);
 }
 
@@ -110,6 +111,15 @@ export function discoverQueryString({ category = "all", q = "", facets = [], aft
   if (category && category !== "all") params.set("category", `eq.${category}`);
   const conditions = [];
   searchTerms(q).forEach(term => {
+    // Thai words search their English variants; the library is tagged in English.
+    const groups = hasThai(term) ? thaiConcepts(term) : [];
+    if (groups.length) {
+      groups.slice(0, MAX_TERMS).forEach(variants => {
+        const likes = variants.map(v => `search_text.ilike.${quoted(`*${v}*`)}`).join(",");
+        conditions.push(`or(${likes},tags.ov.{${variants.map(quoted).join(",")}})`);
+      });
+      return;
+    }
     const like = quoted(`*${term}*`);
     conditions.push(`or(search_text.ilike.${like},tags.cs.{${quoted(term)}})`);
   });
@@ -389,13 +399,28 @@ export function discoverActiveFiltersMarkup(ds) {
   return `<div class='discover-active' aria-label='Active filters'>${chips.join("")}<button type='button' class='discover-active-clear' data-discover-clear-all>Clear all</button>${count}</div>`;
 }
 
+let keepTargetLabel = "My Vault";
+
+/** Label of the collection that the card "+ Keep" button saves into. */
+export function setDiscoverKeepTargetLabel(label) {
+  keepTargetLabel = String(label || "My Vault").slice(0, 40);
+}
+
+export function discoverKeepTargetMenuMarkup(options, currentId, creating) {
+  const row = (id, name, depth) => `<button type='button' role='option' class='discover-target-option${id === currentId ? " is-current" : ""}' data-discover-target='${escA(id)}' style='--depth:${depth ? 1 : 0}' aria-selected='${id === currentId}'><span>${esc(name)}</span>${id === currentId ? "<i aria-hidden='true'>✓</i>" : ""}</button>`;
+  const foot = creating
+    ? `<form class='discover-target-new-form' data-discover-target-new-form><input name='name' type='text' placeholder='Collection name' maxlength='60' autocomplete='off' required aria-label='New collection name'><button type='submit'>Create</button></form>`
+    : `<button type='button' class='discover-target-new' data-discover-target-new>+ New collection</button>`;
+  return `<div class='discover-target-menu' role='listbox' aria-label='Save to'><p>Save to</p>${row("", "My Vault", 0)}${options.map(o => row(o.id, o.name, o.depth)).join("")}${foot}</div>`;
+}
+
 export function discoverCardMarkup(item, config, kept) {
   const info = attributionInfo(item);
   const sm = discoverMediaUrl(config, item.image_sm_path);
   const md = discoverMediaUrl(config, item.image_md_path);
   const blur = blurhashDataUrl(item.blurhash);
   const style = `aspect-ratio:${aspect(item)};${blur ? `background-image:url(${blur})` : ""}`;
-  return `<article class='discover-card' style='${escA(style)}'><button type='button' class='discover-card-open' data-discover-open='${escA(item.id)}' aria-label='${escA("Open " + (item.title || "artwork"))}'><img src='${escA(md)}' srcset='${escA(sm)} 400w, ${escA(md)} 800w' sizes='(max-width: 560px) 50vw, (max-width: 1100px) 33vw, 20vw' alt='${escA(item.title || "")}' loading='lazy' decoding='async'><span class='discover-card-caption'><span class='discover-card-title'>${esc(item.title || "Untitled")}</span><span class='discover-card-credit'>${esc(info.institution || info.artist)}</span></span></button><button type='button' class='discover-keep${kept ? " is-kept" : ""}' data-discover-keep='${escA(item.id)}' title='${kept ? "In your Vault. Add to a collection" : "Keep in your Vault"}'>${kept ? "Kept" : "+ Keep"}</button></article>`;
+  return `<article class='discover-card' style='${escA(style)}'><button type='button' class='discover-card-open' data-discover-open='${escA(item.id)}' aria-label='${escA("Open " + (item.title || "artwork"))}'><img src='${escA(md)}' srcset='${escA(sm)} 400w, ${escA(md)} 800w' sizes='(max-width: 560px) 50vw, (max-width: 1100px) 33vw, 20vw' alt='${escA(item.title || "")}' loading='lazy' decoding='async'><span class='discover-card-caption'><span class='discover-card-title'>${esc(item.title || "Untitled")}</span><span class='discover-card-credit'>${esc(info.institution || info.artist)}</span></span></button><button type='button' class='discover-target' data-discover-target-toggle aria-haspopup='listbox' title='Choose where + Keep saves'><span class='discover-target-label'>${esc(keepTargetLabel)}</span><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='m6 9 6 6 6-6'/></svg></button><button type='button' class='discover-keep${kept ? " is-kept" : ""}' data-discover-keep='${escA(item.id)}' title='${kept ? "In your Vault. Add to a collection" : "Keep in your Vault"}'>${kept ? "Kept" : "+ Keep"}</button></article>`;
 }
 
 function emptyMessage(ds) {
@@ -432,6 +457,10 @@ function metaText(meta, key) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function sameText(a, b) {
+  return Boolean(a) && a.toLowerCase() === String(b || "").toLowerCase();
+}
+
 export function discoverObjectRows(item) {
   const info = attributionInfo(item);
   const meta = item && typeof item.source_meta === "object" && item.source_meta ? item.source_meta : {};
@@ -439,20 +468,15 @@ export function discoverObjectRows(item) {
   const maker = info.artist || metaText(meta, "artist_display");
   const era = [metaText(meta, "period"), metaText(meta, "dynasty"), metaText(meta, "reign")].filter(Boolean).join(" · ");
   return [
-    ["Title", item?.title || ""],
     [role || "Artist / maker", maker, info.artist ? "artist" : ""],
     ["Artist details", info.artist ? metaText(meta, "artist_bio") : ""],
-    ["Date", info.date],
     ["Culture", metaText(meta, "culture"), "culture"],
     ["Period", era, era && era === metaText(meta, "period") ? "period" : ""],
     ["Place", metaText(meta, "geography"), "geography"],
     ["Object type", metaText(meta, "object_name"), "object_name"],
-    ["Classification", metaText(meta, "classification"), "classification"],
+    ["Classification", sameText(metaText(meta, "classification"), metaText(meta, "object_name")) ? "" : metaText(meta, "classification"), "classification"],
     ["Medium", metaText(meta, "medium"), "medium"],
     ["Dimensions", metaText(meta, "dimensions")],
-    ["Department", metaText(meta, "department")],
-    ["Credit line", info.creditLine],
-    ["Object number", metaText(meta, "accession_number")],
   ].filter(([, value]) => value);
 }
 
@@ -476,7 +500,8 @@ export function discoverDetailMarkup(item, config, kept, nav) {
     let dd = esc(value);
     if (facet === "medium") {
       const materials = materialsFrom(value);
-      if (materials.length) dd += `<span class='discover-materials'>${materials.map(m => facetButton("medium", m, m)).join("")}</span>`;
+      if (materials.length === 1 && sameText(materials[0], value)) dd = facetButton("medium", materials[0], value);
+      else if (materials.length) dd += `<span class='discover-materials'>${materials.map(m => facetButton("medium", m, m)).join("")}</span>`;
     } else if (facet) dd = facetButton(facet, value, value);
     return `<div><dt>${esc(label)}</dt><dd>${dd}</dd></div>`;
   }).join("");
@@ -488,17 +513,16 @@ export function discoverDetailMarkup(item, config, kept, nav) {
   const byline = [info.artist, info.date].filter(Boolean).join(" · ");
   const tags = (item.tags || []).slice(0, 10).map(t => `<button type='button' class='tag discover-tag' data-discover-tag='${escA(t)}' title='${escA("Search “" + t + "”")}'>${esc(t)}</button>`).join("");
   const colors = (item.colors || []).slice(0, 6).map(normalizeHex).filter(Boolean).map(c => `<button type='button' class='discover-swatch' data-discover-swatch='${escA(c)}' style='background:${escA(c)}' title='${escA("Search color " + c)}' aria-label='${escA("Search color " + c)}'></button>`).join("");
-  const reportHref = `./legal.html#copyright`;
   const licenseLabel = discoverLicenseLabel(item.license);
   const meta = item && typeof item.source_meta === "object" && item.source_meta ? item.source_meta : {};
-  const objectHint = [metaText(meta, "object_name"), info.date].filter(Boolean).join(" · ");
-  const credit = foldMarkup("discover-credit", "Credit &amp; license", licenseLabel, `<p>${esc(discoverCreditText(item))}</p>${info.institution ? `<p class='discover-credit-source'>Courtesy of ${info.institutionUrl ? `<a href='${escA(info.institutionUrl)}' target='_blank' rel='noopener noreferrer'>${esc(info.institution)}</a>` : esc(info.institution)}</p>` : ""}<p class='discover-license'><span class='discover-license-badge'>${licenseUrl ? `<a href='${escA(licenseUrl)}' target='_blank' rel='noopener noreferrer license'>${esc(licenseLabel)}</a>` : esc(licenseLabel)}</span><span>Free to use. Please credit the institution.</span></p>`);
-  return `<div class='discover-detail-backdrop' data-discover-close role='presentation'><div class='discover-detail-frame' style='--ar:${escA(String(aspectRatio(item)))}'>${detailNavMarkup(nav)}<section class='discover-detail' role='dialog' aria-modal='true' aria-label='${escA(item.title || "Artwork")}' data-discover-dialog><button type='button' class='discover-detail-close' data-discover-close aria-label='Close'>&times;</button><div class='discover-detail-media' style='aspect-ratio:${escA(aspect(item))};${blur ? escA(`background-image:url(${blur})`) : ""}'><img src='${escA(md)}' srcset='${escA(md)} 800w, ${escA(lg)} 1600w' sizes='(max-width: 860px) 100vw, 60vw' alt='${escA(item.title || "")}' decoding='async'></div><div class='discover-detail-info'><h2>${esc(item.title || "Untitled")}</h2>${byline ? `<p class='discover-detail-byline'>${esc(byline)}</p>` : ""}${tags ? `<div class='tag-row discover-tags'>${tags}</div>` : ""}${colors ? `<div class='discover-swatches' aria-label='Colors'>${colors}</div>` : ""}<div class='discover-detail-actions'><button type='button' class='primary-button' data-discover-keep='${escA(item.id)}'>${kept ? "Kept · Add to collection" : "+ Keep in Vault"}</button>${sourceUrl ? `<a class='ghost-button' href='${escA(sourceUrl)}' target='_blank' rel='noopener noreferrer'>View at source</a>` : ""}</div><section class='discover-similar' aria-label='Similar images'><div class='discover-similar-head'><span class='section-label'>Similar images</span><button type='button' class='discover-similar-all' data-discover-similar='${escA(item.id)}'>See all</button></div><div class='discover-similar-grid' data-discover-similar-host><span class='discover-similar-loading'>Finding similar images…</span></div></section>${objectRows ? foldMarkup("discover-object", "About this object", objectHint, `<dl>${objectRows}</dl>`) : ""}${credit}<p class='discover-report'><a href='${escA(reportHref)}' target='_blank' rel='noopener'>Report an issue with this image</a></p></div></section></div></div>`;
+  const institution = info.institution ? (info.institutionUrl ? `<a href='${escA(info.institutionUrl)}' target='_blank' rel='noopener noreferrer'>${esc(info.institution)}</a>` : esc(info.institution)) : 'the institution';
+  const details = foldMarkup('discover-info', 'Details &amp; credit', [metaText(meta, 'object_name'), licenseLabel].filter(Boolean).join(' · '), `${objectRows ? `<dl>${objectRows}</dl>` : ''}<div class='discover-credit'><p class='discover-license'><span class='discover-license-badge'>${licenseUrl ? `<a href='${escA(licenseUrl)}' target='_blank' rel='noopener noreferrer license'>${esc(licenseLabel)}</a>` : esc(licenseLabel)}</span><span>Free to use. Please credit ${institution}.</span></p><p class='discover-credit-text'>${esc(discoverCreditText(item))}</p></div>`);
+  return `<div class='discover-detail-backdrop' data-discover-close role='presentation'><div class='discover-detail-frame' style='--ar:${escA(String(aspectRatio(item)))}'>${detailNavMarkup(nav)}<section class='discover-detail' role='dialog' aria-modal='true' aria-label='${escA(item.title || "Artwork")}' data-discover-dialog><button type='button' class='discover-detail-close' data-discover-close aria-label='Close'>&times;</button><div class='discover-detail-media' style='aspect-ratio:${escA(aspect(item))};${blur ? escA(`background-image:url(${blur})`) : ""}'><img src='${escA(md)}' srcset='${escA(md)} 800w, ${escA(lg)} 1600w' sizes='(max-width: 860px) 100vw, 60vw' alt='${escA(item.title || "")}' decoding='async'></div><div class='discover-detail-info'><h2>${esc(item.title || "Untitled")}</h2>${byline ? `<p class='discover-detail-byline'>${esc(byline)}</p>` : ""}${tags ? `<div class='tag-row discover-tags'>${tags}</div>` : ""}${colors ? `<div class='discover-swatches' aria-label='Colors'>${colors}</div>` : ""}<div class='discover-detail-actions'><button type='button' class='primary-button' data-discover-keep='${escA(item.id)}'>${kept ? "Kept · Add to collection" : "+ Keep in Vault"}</button>${sourceUrl ? `<a class='ghost-button discover-source-btn' href='${escA(sourceUrl)}' target='_blank' rel='noopener noreferrer' title='View at source' aria-label='View at source (opens in new tab)'><svg viewBox='0 0 24 24' width='18' height='18' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1'/><path d='M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1'/></svg></a>` : ""}${discoverReportButtonMarkup(item.id)}</div><div class='discover-detail-bottom'><section class='discover-similar' aria-label='Similar images'><div class='discover-similar-head'><span class='section-label'>Similar images</span><button type='button' class='discover-similar-all' data-discover-similar='${escA(item.id)}'>See all</button></div><div class='discover-similar-grid' data-discover-similar-host><span class='discover-similar-loading'>Finding similar images…</span></div></section>${details}</div></div></section></div></div>`;
 }
 
 export function discoverSimilarStripMarkup(items, config) {
   if (!items.length) return `<span class='discover-similar-loading'>No close matches yet.</span>`;
-  return items.map(item => {
+  return items.slice(0, 4).map(item => {
     const blur = blurhashDataUrl(item.blurhash);
     return `<button type='button' class='discover-similar-item' data-discover-open='${escA(item.id)}' title='${escA(item.title || "Untitled")}' style='${escA(blur ? `background-image:url(${blur})` : "")}'><img src='${escA(discoverMediaUrl(config, item.image_sm_path))}' alt='${escA(item.title || "")}' loading='lazy' decoding='async'></button>`;
   }).join("");
@@ -571,4 +595,43 @@ export function writePendingAction(action) {
     if (action) sessionStorage.setItem(DISCOVER_PENDING_KEY, JSON.stringify(action));
     else sessionStorage.removeItem(DISCOVER_PENDING_KEY);
   } catch (e) {}
+}
+
+const FLAG_ICON = `<svg viewBox='0 0 24 24' width='18' height='18' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M5 21V4'/><path d='M5 4h11l-2 4 2 4H5'/></svg>`;
+
+export const DISCOVER_REPORT_REASONS = [
+  { id: "copyright", label: "I own the rights to this work", hint: "Request removal of your copyrighted image" },
+  { id: "credit", label: "Wrong credit or information", hint: "Title, artist, date or source is incorrect" },
+  { id: "offensive", label: "Offensive or sensitive content", hint: "Nudity, violence, hate or harmful imagery" },
+  { id: "broken", label: "Broken or low-quality image", hint: "Doesn't load, cropped, blurry or wrong image" },
+  { id: "duplicate", label: "Duplicate", hint: "Same image appears more than once" },
+  { id: "other", label: "Something else", hint: "Tell us below" },
+];
+
+export function discoverReportButtonMarkup(id) {
+  return `<button type='button' class='ghost-button discover-report-btn' data-discover-report='${escA(id)}' title='Report this image' aria-label='Report this image'>${FLAG_ICON}</button>`;
+}
+
+export function discoverReportDialogMarkup(item, config, opts = {}) {
+  const thumb = discoverMediaUrl(config, item.image_sm_path);
+  const reasons = DISCOVER_REPORT_REASONS.map((r, i) => `<label class='discover-report-reason'><input type='radio' name='reason' value='${escA(r.id)}'${i ? "" : " required"}><span><strong>${esc(r.label)}</strong><small>${esc(r.hint)}</small></span></label>`).join("");
+  const body = opts.sent
+    ? `<div class='discover-report-done'><span class='discover-report-done-icon'>${FLAG_ICON}</span><h3>Thanks for letting us know</h3><p>We'll review this image. Anything that breaks our rules or infringes copyright is removed.</p><button type='button' class='primary-button' data-discover-report-dismiss>Done</button></div>`
+    : `<form class='discover-report-form' data-discover-report-form data-item='${escA(item.id)}'><fieldset><legend>What's the issue?</legend>${reasons}</fieldset><label class='discover-report-field'><span>Details <small>(optional)</small></span><textarea name='details' rows='3' maxlength='2000' placeholder='Add anything that helps us review, e.g. the correct credit or a link to your original work'></textarea></label><label class='discover-report-field'><span>Email <small data-discover-report-email-hint>(optional, so we can follow up)</small></span><input type='email' name='email' maxlength='200' autocomplete='email' value='${escA(opts.email || "")}' placeholder='you@example.com'></label>${opts.error ? `<p class='discover-report-error' role='alert'>${esc(opts.error)}</p>` : ""}<p class='discover-report-note'>Copyright owners: see our <a href='./legal.html#copyright' target='_blank' rel='noopener'>copyright policy</a>.</p><div class='discover-report-actions'><button type='button' class='ghost-button' data-discover-report-dismiss>Cancel</button><button type='submit' class='primary-button'${opts.busy ? " disabled" : ""}>${opts.busy ? "Sending…" : "Send report"}</button></div></form>`;
+  return `<div class='discover-report-backdrop' data-discover-report-dismiss role='presentation'><section class='discover-report' role='dialog' aria-modal='true' aria-labelledby='discover-report-title' data-discover-report-dialog><header class='discover-report-head'>${thumb ? `<img src='${escA(thumb)}' alt='' decoding='async'>` : ""}<div><h2 id='discover-report-title'>Report this image</h2><p>${esc(item.title || "Untitled")}</p></div><button type='button' class='discover-save-close' data-discover-report-dismiss aria-label='Close'>&times;</button></header>${body}</section></div>`;
+}
+
+/** Inserts into `discover_reports` (anon insert-only RLS). Throws a user-facing message on failure. */
+export async function submitDiscoverReport(config, { itemId, reason, details, email, accessToken }) {
+  const key = String(config.supabasePublishableKey || "");
+  if (!key || !itemId || !DISCOVER_REPORT_REASONS.some(r => r.id === reason)) throw new Error("Choose what's wrong with this image.");
+  const mail = String(email || "").trim();
+  if (reason === "copyright" && !mail) throw new Error("Add your email so we can follow up on a copyright claim.");
+  if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) throw new Error("That email doesn't look right.");
+  const response = await fetch(`${restBase(config)}/rest/v1/discover_reports`, {
+    method: "POST",
+    headers: { apikey: key, authorization: `Bearer ${accessToken || key}`, "content-type": "application/json", prefer: "return=minimal" },
+    body: JSON.stringify({ item_id: itemId, reason, details: String(details || "").trim().slice(0, 2000), email: mail || null }),
+  });
+  if (!response.ok) throw new Error("Couldn't send the report. Please try again.");
 }

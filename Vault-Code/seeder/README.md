@@ -14,7 +14,7 @@ Met / AIC  →  adapter.fetchBatch  →  license gate (cc0)  →  download  → 
 | ที่ | หน้าที่ |
 |---|---|
 | `../outputs/a-plus-vault/supabase-discover-seeder.sql` | ตาราง `discover_items`, `seed_targets`, `seeder_control`, RLS, bucket, seed หมวดเริ่มต้น |
-| `src/seeder/adapters/` | `met.ts`, `aic.ts` — `SourceAdapter.fetchBatch(query, cursor, size)` |
+| `src/seeder/adapters/` | `met.ts`, `aic.ts`, `cma.ts` (Cleveland), `si.ts` (Smithsonian, ต้องมี `SMITHSONIAN_API_KEY`) — `SourceAdapter.fetchBatch(query, cursor, size)` |
 | `src/seeder/pipeline.ts` | ขั้นตอนต่อ 1 ภาพ (reject พร้อมเหตุผลเสมอ) |
 | `src/inngest/batch.ts` | 1 function ต่อ 1 batch — throttle/concurrency ต่อ source, retry 4 ครั้ง |
 | `src/inngest/scheduler.ts` | cron 03:00 Asia/Bangkok + ปุ่ม Run now |

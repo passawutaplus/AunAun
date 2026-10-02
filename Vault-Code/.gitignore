@@ -4,3 +4,5 @@ outputs/a-plus-vault/data/
 *.log
 .vercel
 .env*
+
+.claude/settings.local.json

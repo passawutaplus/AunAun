@@ -100,10 +100,10 @@ export function createVaultRemote(config = {}) {
     location.href = target;
   }
 
-  async function signOut() {
+  async function signOut({ everywhere = false } = {}) {
     const current = session();
     if (current?.access_token) {
-      await fetch(url + "/auth/v1/logout", {
+      await fetch(url + "/auth/v1/logout" + (everywhere ? "?scope=global" : ""), {
         method: "POST",
         headers: headers(),
       }).catch(() => {});

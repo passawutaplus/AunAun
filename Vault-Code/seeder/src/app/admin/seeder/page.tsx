@@ -1,5 +1,6 @@
 import { checkAdmin } from "@/lib/admin";
 import { publicMediaUrl, SupabaseSeederRepo, type AdminItem } from "@/seeder/repo";
+import { ThemeToggle } from "../../theme-toggle";
 import { signOut } from "../login/actions";
 import { runNow, setItemVisibility, setPaused, updateTarget } from "./actions";
 
@@ -86,19 +87,43 @@ export default async function SeederAdminPage() {
   return (
     <main className="page">
       <header className="top">
-        <div>
-          <h1>Discover Seeder</h1>
-          <p className="muted">
-            {admin.email} · เผยแพร่แล้ว {totalPublished.toLocaleString()} / {totalTarget.toLocaleString()} · ถูกปัด{" "}
-            {totalRejected.toLocaleString()} · ข้ามก่อนเข้า pipeline (ไม่ใช่ public domain / ไม่มีรูป) {totalSkipped.toLocaleString()}
-          </p>
+        <div className="brand">
+          <span className="brand-mark">A+</span>
+          <div>
+            <h1>Discover Seeder</h1>
+            <p className="muted small">{admin.email}</p>
+          </div>
         </div>
-        <form action={signOut}>
-          <button type="submit" className="small">
-            ออกจากระบบ
-          </button>
-        </form>
+        <div className="top-actions">
+          <ThemeToggle />
+          <form action={signOut}>
+            <button type="submit" className="small">
+              ออกจากระบบ
+            </button>
+          </form>
+        </div>
       </header>
+
+      <section className="stats">
+        <div className="stat accent">
+          <span>เผยแพร่แล้ว</span>
+          <strong>
+            {totalPublished.toLocaleString()} <small>/ {totalTarget.toLocaleString()}</small>
+          </strong>
+        </div>
+        <div className="stat">
+          <span>ถูกปัด</span>
+          <strong>{totalRejected.toLocaleString()}</strong>
+        </div>
+        <div className="stat">
+          <span>ข้ามก่อนเข้า pipeline</span>
+          <strong>{totalSkipped.toLocaleString()}</strong>
+        </div>
+        <div className="stat">
+          <span>แหล่งที่เปิดอยู่</span>
+          <strong>{new Set(targets.filter((t) => t.enabled).map((t) => t.source)).size}</strong>
+        </div>
+      </section>
 
       <section className="panel controls">
         <div>
@@ -120,7 +145,7 @@ export default async function SeederAdminPage() {
               </option>
             ))}
           </select>
-          <button type="submit" disabled={paused} title={paused ? "Resume ก่อนจึงสั่งรันได้" : undefined}>
+          <button type="submit" className="primary" disabled={paused} title={paused ? "Resume ก่อนจึงสั่งรันได้" : undefined}>
             Run now
           </button>
         </form>
@@ -178,7 +203,7 @@ export default async function SeederAdminPage() {
               {rejects.map((r) => (
                 <tr key={`${r.reject_reason}-${r.source}`}>
                   <td>{REASON_LABELS[r.reject_reason] ?? r.reject_reason}</td>
-                  <td>{r.source.toUpperCase()}</td>
+                  <td><span className="source">{r.source.toUpperCase()}</span></td>
                   <td className="num">{r.total}</td>
                 </tr>
               ))}
@@ -210,7 +235,7 @@ export default async function SeederAdminPage() {
             {targets.map((t) => (
               <tr key={`${t.category}-${t.source}`} className={t.enabled ? "" : "disabled"}>
                 <td>{t.category}</td>
-                <td>{t.source.toUpperCase()}</td>
+                <td><span className="source">{t.source.toUpperCase()}</span></td>
                 <td>{t.query}</td>
                 <td className="num">{t.cursor}</td>
                 <td className="num">

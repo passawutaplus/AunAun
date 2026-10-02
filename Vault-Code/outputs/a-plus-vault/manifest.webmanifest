@@ -1,0 +1,19 @@
+{
+  "name": "A+ Vault",
+  "short_name": "Vault",
+  "description": "Keep creative references from anywhere.",
+  "start_url": "/vault",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101113",
+  "theme_color": "#101113",
+  "icons": [
+    { "src": "/assets/vault-logo-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "/assets/vault-logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ],
+  "share_target": {
+    "action": "/vault",
+    "method": "GET",
+    "params": { "title": "share_title", "text": "share_text", "url": "share_url" }
+  }
+}

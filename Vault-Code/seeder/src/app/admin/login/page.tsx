@@ -1,3 +1,4 @@
+import { ThemeToggle } from "../../theme-toggle";
 import { signInWithGoogle, signInWithPassword } from "./actions";
 
 const ERRORS: Record<string, string> = {
@@ -10,15 +11,23 @@ const ERRORS: Record<string, string> = {
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
   return (
-    <main className="login">
-      <h1>Vault Seeder</h1>
-      <p className="muted">สำหรับผู้ดูแลระบบเท่านั้น</p>
+    <main className="login-wrap">
+      <div className="login">
+      <ThemeToggle />
+      <div className="brand">
+        <span className="brand-mark">A+</span>
+        <div>
+          <h1>Vault Seeder</h1>
+          <p className="muted small">สำหรับผู้ดูแลระบบเท่านั้น</p>
+        </div>
+      </div>
       {error && <p className="error">{ERRORS[error] ?? "เข้าสู่ระบบไม่สำเร็จ"}</p>}
       <form action={signInWithGoogle}>
         <button type="submit" className="primary wide">
           เข้าสู่ระบบด้วย Google
         </button>
       </form>
+      <div className="divider">หรือ</div>
       <form action={signInWithPassword} className="stack">
         <label>
           อีเมล
@@ -32,6 +41,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           เข้าสู่ระบบด้วยอีเมล
         </button>
       </form>
+      </div>
     </main>
   );
 }

@@ -1,4 +1,4 @@
-export type SourceKey = "met" | "aic";
+export type SourceKey = "met" | "aic" | "cma" | "si" | "chndm";
 
 export type AttributionJson = {
   artist: string;
