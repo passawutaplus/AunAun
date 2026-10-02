@@ -120,7 +120,7 @@ async function runStaticProductGuards() {
 
   assert(!/Keep current page/i.test(popupHtml), "Popup must not show the removed Keep current page action.");
   assert(!/Review this object before keeping/i.test(popupHtml), "Popup must not show the removed review helper copy.");
-  assert(/<option value="all">Vault Library<\/option>/.test(popupHtml), "Popup collection default option must be Vault Library.");
+  assert(/<option value="all">My Vault<\/option>/.test(popupHtml), "Popup collection default option must be My Vault.");
   assert(!/id="quickKeywordsInput"/.test(popupHtml), "Popup must not collect manual quick keywords.");
   assert(!/id="visualCategoryInput"/.test(popupHtml), "Popup must not collect manual visual categories.");
   assert(!/Upload to Vault/i.test(popupHtml), "Popup upload must stay in the web app, not the extension panel.");
@@ -132,7 +132,7 @@ async function runStaticProductGuards() {
   assert(/\+ New collection/.test(popupJs), "Popup collection picker must expose + New collection.");
   assert(/syncCollectionsFromServer/.test(popupJs), "Popup must pull collections from Vault API.");
   assert(/pushCollectionToServer/.test(popupJs), "Popup must push new collections to Vault API.");
-  assert(/renderCollectionOptions\(capture\.collectionId \|\| "all"\)/.test(popupJs), "Pending captures must default to Vault Library.");
+  assert(/renderCollectionOptions\(capture\.collectionId \|\| "all"\)/.test(popupJs), "Pending captures must default to My Vault.");
   assert(/VAULT_SYNC_COLLECTIONS/.test(backgroundJs), "Extension background must accept collection sync messages.");
   assert(/VAULT_EXTENSION_COLLECTIONS/.test(contentJs), "Extension content script must bridge Vault collection updates.");
   assert(/syncExtensionCollections/.test(appJs) && /broadcastExtensionCollections/.test(appJs), "Vault app must sync collections with the extension.");
@@ -209,7 +209,9 @@ async function runStaticProductGuards() {
   assert(/signUpWithPassword/.test(supabaseAdapterJs), "Supabase adapter must support email/password signup.");
   assert(/vault_collection_items/.test(supabaseAdapterJs), "Supabase adapter must sync item collection memberships.");
   assert(/saveProjects/.test(await readFile("outputs/a-plus-vault/modules/supabase-adapter.js", "utf8")), "Supabase adapter must sync projects to remote.");
-  assert(/vault-user-/.test(await readFile("outputs/a-plus-vault/app.js", "utf8")), "App must bind extension token to signed-in user.");
+  assert(/refreshSignedVaultToken/.test(appJs) && /\/api\/vault\/token/.test(appJs), "App must bind extension token to signed-in user via a server-signed token.");
+  assert(!/"vault-user-"\+/.test(appJs), "App must not mint guessable vault-user-<id> tokens.");
+  await access("api/vault/token.js");
   assert(/data-auth-action='signup'/.test(appJs), "Login screen must expose a create account action.");
   assert(/Quick keywords/.test(appJs) && /Visual category/.test(appJs), "Save modal must include quick metadata fields.");
   assert(/findDuplicateItem/.test(appJs), "Web save flow must warn about duplicate exact sources.");
@@ -289,7 +291,7 @@ async function runLocalServerSmoke() {
     assert(saved.body.item.sourceUrl === imageUrl, "Image capture must preserve source URL.");
     assert(saved.body.item.assetUrl === imageUrl, "Image capture must preserve asset URL.");
     assert(saved.body.item.previewUrl === imageUrl, "Image capture must preserve preview URL.");
-    assert(saved.body.item.collectionIds.includes("all"), "Capture without a collection must default to Vault Library.");
+    assert(saved.body.item.collectionIds.includes("all"), "Capture without a collection must default to My Vault.");
     assert(saved.body.item.analysis.tags.includes("qa"), "Capture analysis must include quick keywords.");
     assert(saved.body.item.analysis.category === "product", "Capture analysis must include visual category.");
 

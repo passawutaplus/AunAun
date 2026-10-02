@@ -292,8 +292,9 @@ Manual smoke:
 
 ## Must-Not-Break Rules
 
-- Private by default.
-- No public discovery feed.
+- Private by default. User items, collections, and moodboards are never shown in Discover.
+- Discover (`/`) is a curated feed of CC0 museum works only (Met, AIC), written by the seeder in `seeder/` with service role. No user-generated or "all rights reserved" content in Discover. Every item keeps license + attribution + source_url and shows credit in the detail view.
+- Guests may browse Discover; any action (Keep, open Vault/Moodboards/Projects) must go through the login popup.
 - No service-role or secret keys in client or extension.
 - Extension captures only after explicit user action.
 - Preserve source URL and capture context when possible.

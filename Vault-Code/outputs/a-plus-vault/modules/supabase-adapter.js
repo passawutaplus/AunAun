@@ -1,4 +1,10 @@
 const SESSION_KEY = "aplus-vault-supabase-session";
+const PAGE_SIZE = 1000;
+const SIGN_BATCH = 100;
+
+function cleanStoragePath(path) {
+  return String(path || "").replace(/^\/+/, "");
+}
 
 export function createVaultRemote(config = {}) {
   const url = String(config.supabaseUrl || "").replace(/\/$/, "");
@@ -109,14 +115,32 @@ export function createVaultRemote(config = {}) {
     return request(path, { headers: headers({ accept: "application/json" }) });
   }
 
+  // PostgREST caps responses (1000 rows by default); page so large libraries load completely.
+  async function fetchAll(path, pageSize = PAGE_SIZE) {
+    const rows = [];
+    for (let offset = 0; ; offset += pageSize) {
+      const page = await fetchTable(`${path}${path.includes("?") ? "&" : "?"}limit=${pageSize}&offset=${offset}`);
+      if (!Array.isArray(page)) return rows;
+      rows.push(...page);
+      if (page.length < pageSize) return rows;
+    }
+  }
+
   async function loadVault() {
-    const [items, collections, collectionLinks, projects, boards] = await Promise.all([
-      fetchTable("/rest/v1/vault_items?select=*,vault_item_analysis(*)&order=pinned_at.desc.nullslast,created_at.desc"),
-      fetchTable("/rest/v1/vault_collections?select=*&order=created_at.asc"),
-      fetchTable("/rest/v1/vault_collection_items?select=item_id,collection_id&order=created_at.asc"),
-      fetchTable("/rest/v1/vault_projects?select=*,vault_boards(*,vault_board_objects(*))&order=created_at.asc"),
-      fetchTable("/rest/v1/vault_boards?select=*,vault_board_objects(*)&order=updated_at.desc").catch(() => []),
+    const [items, collections, collectionLinks, projectRows, boards] = await Promise.all([
+      fetchAll("/rest/v1/vault_items?select=*,vault_item_analysis(*)&order=pinned_at.desc.nullslast,created_at.desc,id.desc"),
+      fetchAll("/rest/v1/vault_collections?select=*&order=created_at.asc,id.asc"),
+      fetchAll("/rest/v1/vault_collection_items?select=item_id,collection_id&order=created_at.asc,item_id.asc"),
+      fetchAll("/rest/v1/vault_projects?select=*&order=created_at.asc,id.asc"),
+      fetchAll("/rest/v1/vault_boards?select=*,vault_board_objects(*)&order=updated_at.desc,id.desc").catch(() => []),
     ]);
+    const boardsByProject = new Map();
+    (boards || []).forEach(board => {
+      if (!board.project_id) return;
+      if (!boardsByProject.has(board.project_id)) boardsByProject.set(board.project_id, []);
+      boardsByProject.get(board.project_id).push(board);
+    });
+    const projects = projectRows.map(row => Object.assign({}, row, { vault_boards: boardsByProject.get(row.id) || [] }));
     collectionKeyToRemoteId.clear();
     collections.forEach(row => {
       collectionKeyToRemoteId.set(row.id, row.id);
@@ -130,11 +154,15 @@ export function createVaultRemote(config = {}) {
       if (!linkMap.has(link.item_id)) linkMap.set(link.item_id, []);
       linkMap.get(link.item_id).push(localId);
     });
-    const localItems = await Promise.all(items.map(async row => {
-      if (row.asset_path && !row.asset_url) row.signed_asset_url = await signedUrl(row.asset_path);
-      if (row.thumbnail_path && !row.thumbnail_url) row.signed_thumbnail_url = await signedUrl(row.thumbnail_path);
+    const signed = await signedUrls(items.flatMap(row => [
+      row.asset_path && !row.asset_url ? row.asset_path : "",
+      row.thumbnail_path && !row.thumbnail_url ? row.thumbnail_path : "",
+    ]));
+    const localItems = items.map(row => {
+      if (row.asset_path && !row.asset_url) row.signed_asset_url = signed.get(cleanStoragePath(row.asset_path)) || "";
+      if (row.thumbnail_path && !row.thumbnail_url) row.signed_thumbnail_url = signed.get(cleanStoragePath(row.thumbnail_path)) || "";
       return remoteItemToLocal(row, linkMap.get(row.id));
-    }));
+    });
     const projectIdByRemote = new Map(projects.map(row => [row.id, row.client_key || row.id]));
     const moodboardsFromTable = (boards || []).map(row => remoteMoodboardToLocal(row, projectIdByRemote));
     return {
@@ -150,16 +178,19 @@ export function createVaultRemote(config = {}) {
     const userId = current?.user?.id;
     if (!userId) throw new Error("Sign in before syncing to Supabase.");
     const uploaded = await maybeUploadAsset(item, userId);
+    // Extension uploads arrive with a short-lived signed URL; keep the path so loads re-sign it.
+    const ownedPath = typeof item.assetPath === "string" && item.assetPath.startsWith(`${userId}/`) ? item.assetPath : "";
     const row = {
       user_id: userId,
       type: item.type,
       title: item.title || "Untitled reference",
       note: item.note || null,
       source_url: item.sourceUrl || null,
-      asset_url: uploaded.assetUrl || externalAssetUrl(item),
-      asset_path: uploaded.assetPath || null,
-      thumbnail_url: item.thumbnailUrl || item.previewUrl || null,
-      preview_url: item.previewUrl || item.thumbnailUrl || null,
+      asset_url: ownedPath ? null : uploaded.assetUrl || externalAssetUrl(item),
+      asset_path: uploaded.assetPath || ownedPath || null,
+      thumbnail_url: ownedPath ? null : item.thumbnailUrl || item.previewUrl || null,
+      thumbnail_path: ownedPath || null,
+      preview_url: ownedPath ? null : item.previewUrl || item.thumbnailUrl || null,
       status: item.status || "ready",
       pinned_at: item.pinnedAt ? new Date(Number(item.pinnedAt)).toISOString() : null,
       capture_context: item.captureContext || {},
@@ -193,6 +224,11 @@ export function createVaultRemote(config = {}) {
       capture_context: item.captureContext || {},
       client_payload: stripLocalPayload(item),
     };
+    if (typeof item.assetPath === "string" && item.assetPath) {
+      delete row.asset_url;
+      delete row.thumbnail_url;
+      delete row.preview_url;
+    }
     const rows = await request(`/rest/v1/vault_items?id=eq.${encodeURIComponent(remoteId)}`, {
       method: "PATCH",
       headers: headers({
@@ -355,19 +391,23 @@ export function createVaultRemote(config = {}) {
     return { assetPath };
   }
 
-  async function signedUrl(path) {
-    const cleanPath = String(path || "").replace(/^\/+/, "");
-    if (!cleanPath) return "";
-    try {
-      const data = await request(`/storage/v1/object/sign/${bucket}/${cleanPath}`, {
-        method: "POST",
-        headers: headers({ "content-type": "application/json" }),
-        body: JSON.stringify({ expiresIn: 3600 }),
-      });
-      return data?.signedURL ? `${url}/storage/v1${data.signedURL}` : "";
-    } catch (e) {
-      return "";
+  /** One storage request per 100 paths instead of one per file. */
+  async function signedUrls(paths) {
+    const unique = Array.from(new Set(paths.map(cleanStoragePath).filter(Boolean)));
+    const out = new Map();
+    for (let i = 0; i < unique.length; i += SIGN_BATCH) {
+      try {
+        const data = await request(`/storage/v1/object/sign/${bucket}`, {
+          method: "POST",
+          headers: headers({ "content-type": "application/json" }),
+          body: JSON.stringify({ expiresIn: 3600, paths: unique.slice(i, i + SIGN_BATCH) }),
+        });
+        (Array.isArray(data) ? data : []).forEach(entry => {
+          if (entry?.path && entry.signedURL && !entry.error) out.set(entry.path, `${url}/storage/v1${entry.signedURL}`);
+        });
+      } catch (e) {}
     }
+    return out;
   }
 
   async function saveProjects(projects) {

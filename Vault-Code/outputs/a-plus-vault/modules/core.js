@@ -1,6 +1,6 @@
 export const S={user:"aplus-vault-user",items:"aplus-vault-items",cols:"aplus-vault-collections",projects:"aplus-vault-projects",moodboards:"aplus-vault-moodboards",rightWidth:"aplus-vault-right-width",moodboardSourceWidth:"aplus-vault-mb-source-w",moodboardInspectorWidth:"aplus-vault-mb-inspector-w",theme:"aplus-vault-theme",libraryView:"aplus-vault-library-view",captures:"aplus-vault-imported-captures",apiToken:"aplus-vault-api-token"};
 export const L={image:"Image",video:"Video",link:"Link",note:"Note"};
-export const DEFAULT_COLS=[{id:"all",name:"Vault Library",system:true},{id:"brand",name:"Aplus1 Branding",system:false},{id:"web",name:"WP Catalog",system:false},{id:"campaign",name:"Blacksmith Ads",system:false}];
+export const DEFAULT_COLS=[{id:"all",name:"My Vault",system:true},{id:"brand",name:"Aplus1 Branding",system:false},{id:"web",name:"WP Catalog",system:false},{id:"campaign",name:"Blacksmith Ads",system:false}];
 export function id(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
 export function svg(w,h,b){let raw="<svg xmlns='http://www.w3.org/2000/svg' width='"+w+"' height='"+h+"' viewBox='0 0 "+w+" "+h+"'>"+b+"</svg>";return "data:image/svg+xml;charset=UTF-8,"+encodeURIComponent(raw).replace(/'/g,"%27")}
 export const SEED=[

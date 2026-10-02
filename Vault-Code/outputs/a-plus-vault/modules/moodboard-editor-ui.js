@@ -112,7 +112,7 @@ export function smartGridEditorMarkup(ctx) {
       <div class="smart-grid-canvas moodboard-dot-grid" data-smart-grid-canvas style="--board-gap:${board.gap || 16}px;--board-pad:${board.padding || 24}px;min-width:${Math.max(board.width || 1200, canvasExtent(nodes, "w"))}px;min-height:${Math.max(board.height || 900, canvasExtent(nodes, "h"))}px">
         <svg class="moodboard-connectors" data-moodboard-connectors aria-hidden="true">${connectorSvg}</svg>
         ${gridItems || `<div class="smart-grid-empty"><p>Use tools on the left, or drop images from your computer onto the canvas.</p></div>`}
-        <div class="moodboard-drop-hint" data-moodboard-drop-hint hidden><strong>Drop to upload</strong><span>Saves to Vault Library + adds to this board</span></div>
+        <div class="moodboard-drop-hint" data-moodboard-drop-hint hidden><strong>Drop to upload</strong><span>Saves to My Vault + adds to this board</span></div>
       </div>
     </main>
     <button type="button" class="moodboard-resize-handle inspector-resize" data-resize-moodboard-inspector title="Drag to resize inspector" aria-label="Resize inspector"><span></span></button>
@@ -308,7 +308,7 @@ function smartGridCard(obj, item, esc, escA, media, host, selectedObjectId, isSe
   if (!item) {
     return `<article class="smart-grid-item missing-item${selected}${grouped}" data-board-obj="${escA(obj.id)}"${groupAttr} data-sort="${obj.sortOrder}" style="left:${obj.x}px;top:${obj.y}px;width:${obj.w}px;height:${obj.h}px;z-index:${obj.zIndex || 1}" tabindex="0">
       <strong>Reference unavailable</strong>
-      <p>Removed from Vault Library. Board layout kept.</p>
+      <p>Removed from My Vault. Board layout kept.</p>
       ${chrome}
     </article>`;
   }
@@ -329,7 +329,7 @@ function inspectorMarkup(board, selectedObjectId, vaultById, esc, escA) {
   if (!obj) {
     return `<div class="drawer-inner"><h2>Board</h2>
       <p class="inspector-empty">Private board · ${moodboardItemCountSafe(board)} references</p>
-      <p class="settings-field-hint">Select an item to edit. Removing an item keeps it in Vault Library.</p>
+      <p class="settings-field-hint">Select an item to edit. Removing an item keeps it in My Vault.</p>
     </div>`;
   }
   if (obj.kind === "connector") {
@@ -467,7 +467,7 @@ function inspectorMarkup(board, selectedObjectId, vaultById, esc, escA) {
     </div>`
     : "";
   return `<div class="drawer-inner"><h2>${esc(item?.title || "Reference")}</h2>
-    <p class="detail-subline">${esc(item ? "Stored in Vault Library" : "Reference unavailable")}</p>
+    <p class="detail-subline">${esc(item ? "Stored in My Vault" : "Reference unavailable")}</p>
     ${item?.sourceUrl && !String(item.sourceUrl).startsWith("upload://") ? `<p><a href="${escA(item.sourceUrl)}" target="_blank" rel="noreferrer">Open source</a></p>` : ""}
     ${colorSection}
     ${layerActions(obj.id, escA)}

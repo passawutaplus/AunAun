@@ -1,18 +1,25 @@
+(() => {
 let snapshotState = null;
 let latestVaultContext = null;
 
-const VAULT_SYNC_HOSTS = /^(localhost|127\.0\.0\.1|aplus-vault\.vercel\.app|aplus-vault-demo\.vercel\.app)$/i;
+const VAULT_SYNC_ORIGINS = [
+  "https://aplus-vault.vercel.app",
+  "https://aplus-vault-demo.vercel.app",
+  "http://127.0.0.1:5177",
+  "http://localhost:5177"
+];
 
 window.addEventListener("message", event => {
-  if (event.source !== window) return;
+  if (event.source !== window || event.origin !== location.origin) return;
   const data = event.data;
   if (!data || data.type !== "VAULT_EXTENSION_COLLECTIONS") return;
-  if (!VAULT_SYNC_HOSTS.test(location.hostname)) return;
+  if (!VAULT_SYNC_ORIGINS.includes(location.origin)) return;
+  const collections = (Array.isArray(data.collections) ? data.collections : [])
+    .slice(0, 200)
+    .filter(col => col && typeof col === "object")
+    .map(col => ({ id: String(col.id || "").slice(0, 80), name: String(col.name || "").slice(0, 80) }));
   try {
-    chrome.runtime.sendMessage({
-      type: "VAULT_SYNC_COLLECTIONS",
-      collections: Array.isArray(data.collections) ? data.collections : []
-    });
+    chrome.runtime.sendMessage({ type: "VAULT_SYNC_COLLECTIONS", collections });
   } catch (_) {}
 }, false);
 
@@ -413,21 +420,87 @@ function rectForElement(element) {
   };
 }
 
-function startSnapshotOverlay() {
-  cleanupSnapshotOverlay();
+const VAULT_UI_CSS = `
+  :host { all: initial; }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    cursor: crosshair;
+    user-select: none;
+    font-family: "Agrandir Wide", "Agrandir", "IBM Plex Sans Thai", "IBM Plex Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .dim {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 12, 14, .36);
+  }
+  .overlay.dragging .dim { background: transparent; }
+  .helper {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 9px 13px;
+    border-radius: 999px;
+    color: #fff;
+    background: rgba(17, 19, 21, .86);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .18);
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0;
+    pointer-events: none;
+  }
+  .rect {
+    position: absolute;
+    border: 2px solid #ff4f43;
+    background: rgba(255, 79, 67, .08);
+    box-shadow: 0 0 0 9999px rgba(10, 12, 14, .48);
+    border-radius: 8px;
+    pointer-events: none;
+  }
+  .rect[hidden] { display: none; }
+  .rect span {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    padding: 4px 7px;
+    border-radius: 999px;
+    color: #fff;
+    background: rgba(17, 19, 21, .86);
+    font-size: 11px;
+    font-weight: 400;
+  }
+  .toast {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 2147483647;
+    max-width: min(320px, calc(100vw - 36px));
+    padding: 12px 14px;
+    border-radius: 14px;
+    color: #fff;
+    background: #17191b;
+    box-shadow: 0 16px 42px rgba(0, 0, 0, .22);
+    font: 400 13px/1.35 "Agrandir Wide", "Agrandir", "IBM Plex Sans Thai", "IBM Plex Sans", Inter, ui-sans-serif, system-ui, sans-serif;
+    animation: toastIn .18s ease-out;
+  }
+  .toast.success { background: #2c8f68; }
+  .toast.error { background: #cc3931; }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+`;
 
-  const overlay = document.createElement("div");
-  overlay.className = "aplus-vault-snapshot-overlay";
-  overlay.innerHTML = `
-    <div class="aplus-vault-snapshot-dim"></div>
-    <div class="aplus-vault-snapshot-helper">Drag to capture - Esc to cancel</div>
-    <div class="aplus-vault-snapshot-rect" hidden>
-      <span></span>
-    </div>
-  `;
+let toastHost = null;
+let toastTimer = 0;
 
+/** @font-face is ignored inside shadow roots, so the face is declared once on the page. */
+function ensureVaultFontFace() {
+  if (document.querySelector("style[data-aplus-vault-font]")) return;
   const style = document.createElement("style");
-  style.className = "aplus-vault-snapshot-style";
+  style.setAttribute("data-aplus-vault-font", "");
   const vaultFontUrl = chrome.runtime.getURL("fonts/Agrandir-Wide-Light.woff2");
   style.textContent = `
     @font-face {
@@ -435,92 +508,45 @@ function startSnapshotOverlay() {
       src:
         url("${vaultFontUrl}") format("woff2"),
         local("Agrandir Wide Light"),
-        local("Agrandir Wide"),
-        local("Agrandir Wide Regular"),
-        local("AgrandirWide-Regular"),
-        local("Agrandir-Wide");
+        local("Agrandir Wide");
       font-weight: 300;
       font-style: normal;
       font-display: swap;
     }
-    .aplus-vault-snapshot-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 2147483647;
-      cursor: crosshair;
-      user-select: none;
-      font-family: "Agrandir Wide", "Agrandir", "IBM Plex Sans Thai", "IBM Plex Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    .aplus-vault-snapshot-dim {
-      position: absolute;
-      inset: 0;
-      background: rgba(10, 12, 14, .36);
-    }
-    .aplus-vault-snapshot-helper {
-      position: absolute;
-      top: 18px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 9px 13px;
-      border-radius: 999px;
-      color: #fff;
-      background: rgba(17, 19, 21, .86);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, .18);
-      font-size: 13px;
-      font-weight: 400;
-      letter-spacing: 0;
-      pointer-events: none;
-    }
-    .aplus-vault-snapshot-rect {
-      position: absolute;
-      border: 2px solid #ff4f43;
-      background: rgba(255, 79, 67, .08);
-      box-shadow: 0 0 0 9999px rgba(10, 12, 14, .48);
-      border-radius: 8px;
-      pointer-events: none;
-    }
-    .aplus-vault-snapshot-rect span {
-      position: absolute;
-      right: 8px;
-      bottom: 8px;
-      padding: 4px 7px;
-      border-radius: 999px;
-      color: #fff;
-      background: rgba(17, 19, 21, .86);
-      font-size: 11px;
-      font-weight: 400;
-    }
-    .aplus-vault-toast {
-      position: fixed;
-      right: 18px;
-      bottom: 18px;
-      z-index: 2147483647;
-      max-width: min(320px, calc(100vw - 36px));
-      padding: 12px 14px;
-      border-radius: 14px;
-      color: #fff;
-      background: #17191b;
-      box-shadow: 0 16px 42px rgba(0, 0, 0, .22);
-      font: 400 13px/1.35 "Agrandir Wide", "Agrandir", "IBM Plex Sans Thai", "IBM Plex Sans", Inter, ui-sans-serif, system-ui, sans-serif;
-      animation: aplusVaultToastIn .18s ease-out;
-    }
-    .aplus-vault-toast.success { background: #2c8f68; }
-    .aplus-vault-toast.error { background: #cc3931; }
-    @keyframes aplusVaultToastIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
   `;
+  (document.head || document.documentElement).appendChild(style);
+}
 
-  document.documentElement.appendChild(style);
-  document.documentElement.appendChild(overlay);
+function createVaultUiHost() {
+  ensureVaultFontFace();
+  const host = document.createElement("aplus-vault-ui");
+  const root = host.attachShadow({ mode: "closed" });
+  const style = document.createElement("style");
+  style.textContent = VAULT_UI_CSS;
+  root.appendChild(style);
+  document.documentElement.appendChild(host);
+  return { host, root };
+}
 
-  const rectEl = overlay.querySelector(".aplus-vault-snapshot-rect");
+function startSnapshotOverlay() {
+  cleanupSnapshotOverlay();
+
+  const { host, root } = createVaultUiHost();
+  const overlay = document.createElement("div");
+  overlay.className = "overlay";
+  overlay.innerHTML = `
+    <div class="dim"></div>
+    <div class="helper">Drag to capture - Esc to cancel</div>
+    <div class="rect" hidden><span></span></div>
+  `;
+  root.appendChild(overlay);
+
+  const rectEl = overlay.querySelector(".rect");
   const sizeEl = rectEl.querySelector("span");
 
   snapshotState = {
+    host,
     overlay,
-    style,
     rectEl,
     sizeEl,
     dragging: false,
@@ -535,22 +561,23 @@ function startSnapshotOverlay() {
 }
 
 function onSnapshotMouseDown(event) {
-  if (!snapshotState) return;
+  if (!snapshotState || !event.isTrusted) return;
   event.preventDefault();
   snapshotState.dragging = true;
+  snapshotState.overlay.classList.add("dragging");
   snapshotState.startX = event.clientX;
   snapshotState.startY = event.clientY;
   updateSnapshotRect(event.clientX, event.clientY);
 }
 
 function onSnapshotMouseMove(event) {
-  if (!snapshotState?.dragging) return;
+  if (!snapshotState?.dragging || !event.isTrusted) return;
   event.preventDefault();
   updateSnapshotRect(event.clientX, event.clientY);
 }
 
 function onSnapshotMouseUp(event) {
-  if (!snapshotState?.dragging) return;
+  if (!snapshotState?.dragging || !event.isTrusted) return;
   event.preventDefault();
   const rect = getSnapshotRect(event.clientX, event.clientY);
   cleanupSnapshotOverlay();
@@ -560,13 +587,20 @@ function onSnapshotMouseUp(event) {
     return;
   }
 
-  chrome.runtime.sendMessage({
-    type: "VAULT_SNAPSHOT_RECT",
-    rect,
-    devicePixelRatio: window.devicePixelRatio || 1,
-    pageTitle: document.title || null,
-    pageUrl: location.href
-  });
+  // Let the browser repaint without the overlay before the tab is captured.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    setTimeout(() => {
+      try {
+        chrome.runtime.sendMessage({
+          type: "VAULT_SNAPSHOT_RECT",
+          rect,
+          devicePixelRatio: window.devicePixelRatio || 1,
+          pageTitle: document.title || null,
+          pageUrl: location.href
+        });
+      } catch (_) {}
+    }, 40);
+  }));
 }
 
 function onSnapshotKeyDown(event) {
@@ -600,8 +634,7 @@ function getSnapshotRect(currentX, currentY) {
 
 function cleanupSnapshotOverlay() {
   if (!snapshotState) return;
-  snapshotState.overlay.remove();
-  snapshotState.style.remove();
+  snapshotState.host.remove();
   window.removeEventListener("keydown", onSnapshotKeyDown, true);
   snapshotState = null;
 }
@@ -632,11 +665,18 @@ function loadImage(src) {
 }
 
 function showVaultToast(message, kind = "default") {
-  const existing = document.querySelector(".aplus-vault-toast");
-  if (existing) existing.remove();
+  if (toastHost) toastHost.host.remove();
+  clearTimeout(toastTimer);
+  toastHost = createVaultUiHost();
   const toast = document.createElement("div");
-  toast.className = `aplus-vault-toast ${kind || ""}`;
-  toast.textContent = message || "Saved to Vault Library";
-  document.documentElement.appendChild(toast);
-  setTimeout(() => toast.remove(), 2600);
+  toast.className = `toast ${["success", "error"].includes(kind) ? kind : ""}`;
+  toast.setAttribute("role", "status");
+  toast.textContent = String(message || "Saved to My Vault").slice(0, 240);
+  toastHost.root.appendChild(toast);
+  const current = toastHost;
+  toastTimer = setTimeout(() => {
+    current.host.remove();
+    if (toastHost === current) toastHost = null;
+  }, 2600);
 }
+})();

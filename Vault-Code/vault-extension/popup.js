@@ -1,8 +1,14 @@
 const DEFAULT_API_BASE = "https://aplus-vault.vercel.app";
+const ALLOWED_API_BASES = [
+  "https://aplus-vault.vercel.app",
+  "https://aplus-vault-demo.vercel.app",
+  "http://127.0.0.1:5177",
+  "http://localhost:5177"
+];
 const NEW_COLLECTION_VALUE = "__new__";
 const DEFAULT_COLLECTIONS = [
-  { id: "all", name: "Vault Library", system: true },
-  { id: "brand", name: "Aplus1 Branding", system: false },
+  { id: "all", name: "My Vault", system: true },
+  { id: "brand", name: "SAMECOR Branding", system: false },
   { id: "web", name: "WP Catalog", system: false },
   { id: "campaign", name: "Blacksmith Ads", system: false }
 ];
@@ -27,6 +33,7 @@ const openVaultBtn = document.getElementById("openVaultBtn");
 const tokenInput = document.getElementById("tokenInput");
 const apiBaseInput = document.getElementById("apiBaseInput");
 const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+const uploadZone = document.getElementById("uploadZone");
 let pendingCapture = null;
 let recentCapturesCache = [];
 let collectionsCache = [];
@@ -44,7 +51,7 @@ async function init() {
   ]);
 
   tokenInput.value = data.vaultToken || "";
-  apiBaseInput.value = data.apiBase || DEFAULT_API_BASE;
+  apiBaseInput.value = normalizeApiBase(data.apiBase);
   stayOnPageInput.checked = typeof data.stayOnPageAfterSave === "boolean" ? data.stayOnPageAfterSave : true;
   const statusFromStorage = Boolean(data.lastVaultStatus?.message);
 
@@ -95,7 +102,7 @@ keepPendingBtn.addEventListener("click", async () => {
   if (response?.ok) {
     pendingCapture = null;
     captureCard.hidden = true;
-    setStatus("Saved to Vault Library", "success");
+    setStatus("Saved to My Vault", "success");
     await refreshRecent();
     return;
   }
@@ -127,15 +134,33 @@ stayOnPageInput.addEventListener("change", async () => {
 
 saveSettingsBtn.addEventListener("click", async () => {
   const vaultToken = tokenInput.value.trim();
-  const apiBase = normalizeApiBase(apiBaseInput.value);
+  const rawBase = apiBaseInput.value.trim().replace(/\/+$/, "") || DEFAULT_API_BASE;
+  const apiBase = normalizeApiBase(rawBase);
 
   if (!vaultToken) {
-    setStatus("Please paste your alpha token.", "error");
+    setStatus("Please paste your Vault token.", "error");
+    return;
+  }
+  if (/\s/.test(vaultToken) || vaultToken.length > 4096) {
+    setStatus("That doesn't look like a Vault token. Copy it again from Vault → Profile → Settings.", "error");
+    return;
+  }
+  if (apiBase !== rawBase) {
+    apiBaseInput.value = apiBase;
+    setStatus(`Only A+ Vault addresses are allowed. Using ${apiBase}.`, "error");
     return;
   }
 
   await chrome.storage.local.set({ vaultToken, apiBase });
   setStatus("Settings saved.", "success");
+  await checkServerHealth(apiBase, true);
+  await syncCollectionsFromServer();
+  renderCollectionOptions(collectionInput.value || "all");
+});
+
+uploadZone?.addEventListener("click", async () => {
+  const { apiBase } = await getSettings();
+  chrome.tabs.create({ url: `${apiBase}/vault` });
 });
 
 clearRecentBtn.addEventListener("click", async () => {
@@ -181,7 +206,7 @@ recentList.addEventListener("click", async event => {
   const { recentCaptures = [] } = await chrome.storage.local.get(["recentCaptures"]);
   const item = recentCaptures.find(row => row.objectId === button.dataset.openRecent);
   const { apiBase } = await getSettings();
-  chrome.tabs.create({ url: item?.objectUrl || `${apiBase}/vault` });
+  chrome.tabs.create({ url: sameOriginUrl(item?.objectUrl, apiBase) || `${apiBase}/vault` });
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
@@ -344,12 +369,28 @@ async function checkServerHealth(apiBase, preserveExistingStatus = false) {
     if (!response.ok) throw new Error(`Health check failed: ${response.status}`);
     if (!preserveExistingStatus) hideStatus();
   } catch (_) {
-    setStatus(`Vault server offline. Start ${base} before saving.`, "error");
+    const local = /^http:\/\/(127\.0\.0\.1|localhost):/.test(base);
+    setStatus(local ? `Local Vault server offline. Start ${base} before saving.` : "Can't reach Vault right now. Check your connection.", "error");
   }
 }
 
 function normalizeApiBase(value) {
-  return (value || DEFAULT_API_BASE).trim().replace(/\/+$/, "");
+  const base = String(value || DEFAULT_API_BASE).trim().replace(/\/+$/, "");
+  try {
+    const origin = new URL(base).origin;
+    return ALLOWED_API_BASES.includes(origin) ? origin : DEFAULT_API_BASE;
+  } catch (_) {
+    return DEFAULT_API_BASE;
+  }
+}
+
+function sameOriginUrl(value, apiBase) {
+  try {
+    const url = new URL(value);
+    return url.origin === new URL(apiBase).origin ? url.href : "";
+  } catch (_) {
+    return "";
+  }
 }
 
 function labelForType(type) {
@@ -476,7 +517,7 @@ function makeCollectionId() {
 function renderCollectionOptions(selectedId) {
   const custom = collectionsCache.filter(col => !col.system);
   collectionInput.innerHTML = [
-    `<option value="all">Vault Library</option>`,
+    `<option value="all">My Vault</option>`,
     ...custom.map(col => `<option value="${escapeAttr(col.id)}">${escapeHtml(col.name)}</option>`),
     `<option value="${NEW_COLLECTION_VALUE}">+ New collection</option>`
   ].join("");

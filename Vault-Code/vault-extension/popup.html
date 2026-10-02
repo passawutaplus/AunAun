@@ -34,7 +34,7 @@
         <label for="collectionInput">Collection</label>
         <div class="collection-field">
           <select id="collectionInput" aria-label="Collection">
-            <option value="all">Vault Library</option>
+            <option value="all">My Vault</option>
           </select>
           <input id="newCollectionInput" type="text" placeholder="Type collection name…" hidden aria-label="New collection name">
         </div>
@@ -51,12 +51,11 @@
       </section>
 
       <section class="quick-actions" aria-label="Quick actions">
-        <button id="uploadZone" class="upload-zone secondary" type="button" aria-label="Upload or drop files">
-          <input id="uploadInput" type="file" hidden multiple accept="image/*,video/*,audio/*,.pdf,.zip,.ai,.psd,.fig,.sketch,.csv,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+        <button id="uploadZone" class="upload-zone secondary" type="button" aria-label="Upload files in the Vault web app">
           <span class="mini-icon" aria-hidden="true">↑</span>
           <span class="upload-zone-copy">
             <strong>Upload file</strong>
-            <small>or drop files here</small>
+            <small>opens Vault</small>
           </span>
         </button>
 

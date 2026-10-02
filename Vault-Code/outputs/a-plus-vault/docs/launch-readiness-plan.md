@@ -31,7 +31,7 @@ Build now:
 Delay:
 
 - full design editor
-- public discovery feed
+- user-generated public discovery feed (Discover today is CC0 museum works only)
 - advanced collaboration
 - native mobile apps
 - complex canvas tools

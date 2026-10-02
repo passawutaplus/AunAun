@@ -89,7 +89,9 @@ Do not duplicate objects when they are used in collections, moodboards, or proje
 - Milanote = board-first
 - Vault = library-first, board later
 
-Vault must not become a generic bookmark manager, generic cloud drive, password manager, second brain for everything, full design editor, or public discovery feed.
+Vault must not become a generic bookmark manager, generic cloud drive, password manager, second brain for everything, full design editor, or a user-generated public feed.
+
+Discover (home page `/`) is the one exception and stays narrow: a curated CC0 museum feed (Met, AIC) whose job is to feed the Keep loop. Guests can browse; Keep and every Vault page require login. User content never appears in Discover.
 
 ## Current Priority
 

@@ -1,7 +1,36 @@
 const DEFAULT_API_BASE = "https://aplus-vault.vercel.app";
+const ALLOWED_API_BASES = [
+  "https://aplus-vault.vercel.app",
+  "https://aplus-vault-demo.vercel.app",
+  "http://127.0.0.1:5177",
+  "http://localhost:5177"
+];
 const DEFAULT_STAY_ON_PAGE = true;
 const RECENT_LIMIT = 10;
+const MAX_COLLECTIONS = 200;
+const MAX_UPLOAD_DATA_URL = 28 * 1024 * 1024;
+const PRIVILEGED_MESSAGES = new Set([
+  "VAULT_SAVE_CURRENT_PAGE",
+  "VAULT_START_SNAPSHOT_ACTIVE",
+  "VAULT_UPLOAD_FILE_DATA",
+  "VAULT_SAVE_CAPTURE_PAYLOAD",
+  "VAULT_DISMISS_PENDING_CAPTURE"
+]);
 const latestContextByTab = new Map();
+
+chrome.tabs.onRemoved.addListener(tabId => latestContextByTab.delete(tabId));
+
+function isExtensionPage(sender) {
+  return sender?.id === chrome.runtime.id && String(sender?.url || "").startsWith(chrome.runtime.getURL(""));
+}
+
+function isVaultAppSender(sender) {
+  try {
+    return sender?.id === chrome.runtime.id && ALLOWED_API_BASES.includes(new URL(sender.url || sender.tab?.url || "").origin);
+  } catch (_) {
+    return false;
+  }
+}
 
 chrome.runtime.onInstalled.addListener(async () => {
   await chrome.contextMenus.removeAll();
@@ -36,13 +65,27 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   (async () => {
+    if (sender?.id !== chrome.runtime.id) {
+      sendResponse({ ok: false, error: "Unknown sender." });
+      return;
+    }
+
+    if (PRIVILEGED_MESSAGES.has(message?.type) && !isExtensionPage(sender)) {
+      sendResponse({ ok: false, error: "Not allowed from web pages." });
+      return;
+    }
+
     if (message?.type === "VAULT_CONTEXT_CAPTURED") {
-      if (sender.tab?.id) latestContextByTab.set(sender.tab.id, message.context);
+      if (sender.tab?.id && message.context && typeof message.context === "object") latestContextByTab.set(sender.tab.id, message.context);
       sendResponse({ ok: true });
       return;
     }
 
     if (message?.type === "VAULT_SNAPSHOT_RECT") {
+      if (!sender.tab?.id || sender.frameId !== 0) {
+        sendResponse({ ok: false });
+        return;
+      }
       await handleSnapshotRect(message, sender.tab);
       sendResponse({ ok: true });
       return;
@@ -103,7 +146,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message?.type === "VAULT_SYNC_COLLECTIONS") {
-      await mergeVaultCollections(message.collections || []);
+      if (!isVaultAppSender(sender)) {
+        sendResponse({ ok: false });
+        return;
+      }
+      await mergeVaultCollections(Array.isArray(message.collections) ? message.collections : []);
       sendResponse({ ok: true });
       return;
     }
@@ -481,13 +528,15 @@ async function getSettings() {
 }
 
 async function mergeVaultCollections(collections) {
-  const incoming = (collections || []).filter(col => col?.id && col?.name && col.id !== "all");
+  const incoming = (collections || []).slice(0, MAX_COLLECTIONS).filter(col => col?.id && col?.name && col.id !== "all");
   const { vaultCollections = [] } = await chrome.storage.local.get(["vaultCollections"]);
   const map = new Map();
-  [...vaultCollections, ...incoming].forEach(col => {
-    map.set(String(col.id), { id: String(col.id), name: String(col.name), system: false });
+  [...(Array.isArray(vaultCollections) ? vaultCollections : []), ...incoming].forEach(col => {
+    const id = String(col.id).slice(0, 80);
+    const name = String(col.name).replace(/\s+/g, " ").trim().slice(0, 80);
+    if (id && name) map.set(id, { id, name, system: false });
   });
-  await chrome.storage.local.set({ vaultCollections: Array.from(map.values()) });
+  await chrome.storage.local.set({ vaultCollections: Array.from(map.values()).slice(-MAX_COLLECTIONS) });
 }
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
@@ -533,7 +582,7 @@ async function saveCapture(payload, options = {}) {
     if (!response.ok) throw httpError(response);
     const data = await response.json();
     const result = await handleSuccessfulSave(data, payload, apiBase, stayOnPageAfterSave);
-    await toastTab(options.tabId, "Saved to Vault Library", "success");
+    await toastTab(options.tabId, "Saved to My Vault", "success");
     return result;
   } catch (error) {
     if (canUseWebHandoff(apiBase, payload, error)) {
@@ -605,6 +654,11 @@ async function saveUploadFile(file) {
       linkUrl: null
     }
   };
+  if (typeof file.dataUrl !== "string" || !/^data:/i.test(file.dataUrl) || file.dataUrl.length > MAX_UPLOAD_DATA_URL) {
+    await setStatus("error", "This file is too large for the current Vault alpha.");
+    await setBadge("ERR", "#cc3931");
+    return null;
+  }
   return saveFileDataUrl(file.dataUrl, payload, file.name || "vault-upload", fileInfo.recentType);
 }
 
@@ -633,7 +687,7 @@ async function saveFileDataUrl(dataUrl, payload, fileName, forcedRecentType, opt
     if (!response.ok) throw httpError(response);
     const data = await response.json();
     const result = await handleSuccessfulSave(data, payload, apiBase, stayOnPageAfterSave, forcedRecentType);
-    if (options.tabId) await toastTab(options.tabId, "Saved to Vault Library", "success");
+    if (options.tabId) await toastTab(options.tabId, "Saved to My Vault", "success");
     return result;
   } catch (error) {
     const inlinePayload = isTinyPreviewUrl(dataUrl)
@@ -663,7 +717,7 @@ async function saveFileDataUrl(dataUrl, payload, fileName, forcedRecentType, opt
 async function handleSuccessfulSave(data, payload, apiBase, stayOnPageAfterSave, forcedRecentType) {
   const result = normalizeSaveResult(data, payload, apiBase, forcedRecentType);
   await addRecentCapture(result);
-  await setStatus("success", "Saved to Vault Library", result.objectId || null);
+  await setStatus("success", "Saved to My Vault", result.objectId || null);
   await setBadge("OK", "#2c8f68");
   await maybeOpenVaultAfterSave(result, apiBase, stayOnPageAfterSave);
   return result;
@@ -674,6 +728,7 @@ function normalizeVaultObjectUrl(url, apiBase, objectId) {
   if (!url) return fallback;
   try {
     const parsed = new URL(url, apiBase);
+    if (parsed.origin !== new URL(apiBase).origin) return fallback;
     const fromQuery = parsed.searchParams.get("object");
     const id = fromQuery || objectId;
     if (fromQuery) parsed.searchParams.delete("object");
@@ -696,7 +751,8 @@ function normalizeSaveResult(data, payload, apiBase, forcedRecentType) {
   objectUrl = normalizeVaultObjectUrl(objectUrl, apiBase, objectId);
   const sourceUrl = data?.sourceUrl || item.sourceUrl || payload.sourceUrl || payload.captureContext?.pageUrl || null;
   const title = data?.title || item.title || payload.title || fallbackTitle(payload);
-  const previewUrl = data?.previewUrl || (isTinyPreviewUrl(item.assetUrl || payload.assetUrl) ? (item.assetUrl || payload.assetUrl) : null);
+  const rawPreviewUrl = data?.previewUrl || (isTinyPreviewUrl(item.assetUrl || payload.assetUrl) ? (item.assetUrl || payload.assetUrl) : null);
+  const previewUrl = isTinyPreviewUrl(rawPreviewUrl) ? rawPreviewUrl : null;
 
   return {
     objectId,
@@ -747,10 +803,10 @@ async function saveViaWebHandoff(payload, apiBase, stayOnPageAfterSave, options 
   };
 
   await addRecentCapture(result);
-  await setStatus("success", "Sent to Vault Library", result.objectId);
+  await setStatus("success", "Sent to My Vault", result.objectId);
   await setBadge("OK", "#2c8f68");
   await openVaultHandoffTab(objectUrl, apiBase);
-  await toastTab(options.tabId, "Sent to Vault Library — check the Vault tab", "success");
+  await toastTab(options.tabId, "Sent to My Vault — check the Vault tab", "success");
   return result;
 }
 
@@ -860,10 +916,12 @@ function friendlySaveError(error, apiBase) {
     return "Save timed out. Check your Vault token / API Base, then try again.";
   }
   if (message.includes("Failed to fetch") || message.includes("NetworkError") || message.includes("Load failed")) {
-    return `Vault server offline. Start ${apiBase} and try again.`;
+    return isLocalApiBase(apiBase)
+      ? `Local Vault server offline. Start ${apiBase} and try again.`
+      : "Can't reach Vault right now. Check your connection and try again.";
   }
-  if (message.includes("401")) {
-    return "Missing or invalid Vault token. Open Vault → Profile → Settings → Copy extension token.";
+  if (message.includes("401") || message.includes("403")) {
+    return "Vault token expired or invalid. Open Vault → Profile → Settings → Copy extension token, then paste it here.";
   }
   if (message.includes("413") || message.toLowerCase().includes("too large")) {
     return "This file is too large for the current Vault alpha.";
@@ -952,8 +1010,15 @@ function detectFileTypeFromFile(file) {
   });
 }
 
+/** The token is only ever sent to known Vault deployments. */
 function normalizeApiBase(value) {
-  return (value || DEFAULT_API_BASE).trim().replace(/\/+$/, "");
+  const base = String(value || DEFAULT_API_BASE).trim().replace(/\/+$/, "");
+  try {
+    const origin = new URL(base).origin;
+    return ALLOWED_API_BASES.includes(origin) ? origin : DEFAULT_API_BASE;
+  } catch (_) {
+    return DEFAULT_API_BASE;
+  }
 }
 
 function fallbackTitle(payload) {
@@ -977,6 +1042,6 @@ function isCaptureableUrl(url) {
 
 function isTinyPreviewUrl(value) {
   if (!value) return false;
-  if (/^data:/i.test(value)) return value.length < 120000;
+  if (/^data:/i.test(value)) return /^data:image\/(png|jpe?g|webp|gif|avif);/i.test(value) && value.length < 120000;
   return /^https?:\/\//i.test(value);
 }

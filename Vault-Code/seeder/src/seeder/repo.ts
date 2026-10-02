@@ -1,0 +1,264 @@
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Candidate, SourceKey } from "./adapters/types";
+import { PHASH_MAX_DISTANCE, STORAGE_BUCKET } from "./config";
+import type { RejectReason } from "./license";
+
+export type SeedTarget = {
+  category: string;
+  source: SourceKey;
+  query: string;
+  target_count: number;
+  cursor: number;
+  exhausted: boolean;
+  enabled: boolean;
+  scanned_count: number;
+  skipped_count: number;
+  last_run_at: string | null;
+};
+
+export type CategoryProgress = {
+  category: string;
+  target_count: number;
+  published: number;
+  pending: number;
+  rejected: number;
+};
+
+export type AdminItem = {
+  id: string;
+  source: SourceKey;
+  source_id: string;
+  source_url: string;
+  original_image_url: string;
+  title: string;
+  category: string;
+  ai_category: string | null;
+  reject_reason: string | null;
+  image_sm_path: string | null;
+  attribution: string;
+  source_meta: Record<string, unknown>;
+  updated_at: string;
+};
+
+export function publicMediaUrl(path: string): string {
+  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
+  return `${base}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`;
+}
+
+export type RejectExtra = {
+  phash?: string;
+  width?: number;
+  height?: number;
+  duplicateOf?: string;
+  note?: string;
+};
+
+export type PublishRow = {
+  candidate: Candidate;
+  category: string;
+  phash: string;
+  width: number;
+  height: number;
+  blurhash: string;
+  paths: { sm: string; md: string; lg: string };
+  ai: { category: string; tags: string[]; style: string; colors: string[] };
+};
+
+export interface SeederRepo {
+  existingSourceIds(source: SourceKey, ids: string[]): Promise<Set<string>>;
+  recordRejected(c: Candidate, category: string, reason: RejectReason, extra?: RejectExtra): Promise<void>;
+  findSimilar(phash: string): Promise<string | null>;
+  uploadRendition(path: string, data: Buffer): Promise<void>;
+  publish(row: PublishRow): Promise<void>;
+  categories(): Promise<string[]>;
+}
+
+let cached: SupabaseClient | null = null;
+
+export function serviceClient(): SupabaseClient {
+  if (cached) return cached;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required");
+  cached = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  return cached;
+}
+
+function baseRow(c: Candidate, category: string) {
+  return {
+    source: c.source,
+    source_id: c.sourceId,
+    source_url: c.sourceUrl,
+    original_image_url: c.originalImageUrl,
+    title: c.title,
+    license: c.license,
+    license_url: c.licenseUrl,
+    attribution: c.attribution,
+    attribution_json: c.attributionJson,
+    delivery_mode: "rehosted",
+    category,
+    source_meta: c.sourceMeta,
+  };
+}
+
+function fail(context: string, error: { message: string } | null): void {
+  if (error) throw new Error(`${context}: ${error.message}`);
+}
+
+export class SupabaseSeederRepo implements SeederRepo {
+  constructor(private readonly db: SupabaseClient = serviceClient()) {}
+
+  async existingSourceIds(source: SourceKey, ids: string[]): Promise<Set<string>> {
+    if (ids.length === 0) return new Set();
+    const { data, error } = await this.db.from("discover_items").select("source_id").eq("source", source).in("source_id", ids);
+    fail("existingSourceIds", error);
+    return new Set((data ?? []).map((r) => r.source_id as string));
+  }
+
+  async recordRejected(c: Candidate, category: string, reason: RejectReason, extra: RejectExtra = {}): Promise<void> {
+    const { error } = await this.db.from("discover_items").upsert(
+      {
+        ...baseRow(c, category),
+        status: "rejected",
+        reject_reason: reason,
+        phash: extra.phash ?? null,
+        width: extra.width ?? null,
+        height: extra.height ?? null,
+        duplicate_of: extra.duplicateOf ?? null,
+        source_meta: extra.note ? { ...c.sourceMeta, reject_note: extra.note.slice(0, 300) } : c.sourceMeta,
+      },
+      { onConflict: "source,source_id" },
+    );
+    fail("recordRejected", error);
+  }
+
+  async findSimilar(phash: string): Promise<string | null> {
+    const { data, error } = await this.db.rpc("discover_find_similar", { p_phash: phash, p_max_distance: PHASH_MAX_DISTANCE });
+    fail("findSimilar", error);
+    const rows = (data ?? []) as { id: string; distance: number }[];
+    return rows[0]?.id ?? null;
+  }
+
+  async uploadRendition(path: string, data: Buffer): Promise<void> {
+    const { error } = await this.db.storage.from(STORAGE_BUCKET).upload(path, data, {
+      contentType: "image/webp",
+      cacheControl: "31536000",
+      upsert: true,
+    });
+    fail(`uploadRendition ${path}`, error);
+  }
+
+  async publish(row: PublishRow): Promise<void> {
+    const { error } = await this.db.from("discover_items").upsert(
+      {
+        ...baseRow(row.candidate, row.category),
+        status: "published",
+        reject_reason: null,
+        phash: row.phash,
+        width: row.width,
+        height: row.height,
+        blurhash: row.blurhash,
+        image_sm_path: row.paths.sm,
+        image_md_path: row.paths.md,
+        image_lg_path: row.paths.lg,
+        ai_category: row.ai.category,
+        tags: row.ai.tags,
+        style: row.ai.style,
+        colors: row.ai.colors,
+        published_at: new Date().toISOString(),
+      },
+      { onConflict: "source,source_id" },
+    );
+    fail("publish", error);
+  }
+
+  async categories(): Promise<string[]> {
+    const { data, error } = await this.db.from("seed_targets").select("category").eq("enabled", true);
+    fail("categories", error);
+    return [...new Set((data ?? []).map((r) => r.category as string))].sort();
+  }
+
+  async isPaused(): Promise<boolean> {
+    const { data, error } = await this.db.from("seeder_control").select("paused").eq("id", true).maybeSingle();
+    fail("isPaused", error);
+    return data?.paused ?? true;
+  }
+
+  async setPaused(paused: boolean): Promise<void> {
+    const { error } = await this.db.from("seeder_control").upsert({ id: true, paused }, { onConflict: "id" });
+    fail("setPaused", error);
+  }
+
+  async progress(): Promise<CategoryProgress[]> {
+    const { data, error } = await this.db.rpc("discover_category_progress");
+    fail("progress", error);
+    return (data ?? []) as CategoryProgress[];
+  }
+
+  async targets(): Promise<SeedTarget[]> {
+    const { data, error } = await this.db.from("seed_targets").select("*").order("category").order("source");
+    fail("targets", error);
+    return (data ?? []) as SeedTarget[];
+  }
+
+  async target(category: string, source: SourceKey): Promise<SeedTarget | null> {
+    const { data, error } = await this.db
+      .from("seed_targets")
+      .select("*")
+      .eq("category", category)
+      .eq("source", source)
+      .maybeSingle();
+    fail("target", error);
+    return (data as SeedTarget | null) ?? null;
+  }
+
+  async rejectSummary(): Promise<{ reject_reason: string; source: string; total: number }[]> {
+    const { data, error } = await this.db.rpc("discover_reject_summary");
+    fail("rejectSummary", error);
+    return (data ?? []) as { reject_reason: string; source: string; total: number }[];
+  }
+
+  async recentItems(status: "published" | "rejected" | "hidden", limit: number): Promise<AdminItem[]> {
+    const { data, error } = await this.db
+      .from("discover_items")
+      .select("id, source, source_id, source_url, original_image_url, title, category, ai_category, reject_reason, image_sm_path, attribution, source_meta, updated_at")
+      .eq("status", status)
+      .order("updated_at", { ascending: false })
+      .limit(limit);
+    fail("recentItems", error);
+    return (data ?? []) as AdminItem[];
+  }
+
+  async setItemStatus(id: string, status: "published" | "hidden"): Promise<void> {
+    const { error } = await this.db
+      .from("discover_items")
+      .update({ status })
+      .eq("id", id)
+      .in("status", status === "hidden" ? ["published"] : ["hidden"]);
+    fail("setItemStatus", error);
+  }
+
+  async updateTarget(category: string, source: SourceKey, patch: { target_count?: number; enabled?: boolean; exhausted?: boolean }): Promise<void> {
+    const { error } = await this.db.from("seed_targets").update(patch).eq("category", category).eq("source", source);
+    fail("updateTarget", error);
+  }
+
+  /** Callers are serialized per source (Inngest concurrency), so read-modify-write is safe here. */
+  async recordBatch(
+    category: string,
+    source: SourceKey,
+    batch: { fromCursor: number; nextCursor: number | null; scanned: number; skipped: number },
+  ): Promise<void> {
+    const current = await this.target(category, source);
+    if (!current) return;
+    const patch: Partial<SeedTarget> = {
+      scanned_count: current.scanned_count + batch.scanned,
+      skipped_count: current.skipped_count + batch.skipped,
+      last_run_at: new Date().toISOString(),
+    };
+    if (batch.nextCursor === null) patch.exhausted = true;
+    else if (batch.nextCursor > current.cursor) patch.cursor = batch.nextCursor;
+    const { error } = await this.db.from("seed_targets").update(patch).eq("category", category).eq("source", source);
+    fail("recordBatch", error);
+  }
+}

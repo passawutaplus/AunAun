@@ -6,11 +6,6 @@
   "cleanUrls": true,
   "redirects": [
     {
-      "source": "/",
-      "destination": "/vault",
-      "permanent": false
-    },
-    {
       "source": "/demo",
       "destination": "/vault",
       "permanent": true
@@ -22,6 +17,10 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/discover",
+      "destination": "/vault.html"
+    },
     {
       "source": "/vault",
       "destination": "/vault.html"

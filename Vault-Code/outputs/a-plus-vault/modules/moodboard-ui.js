@@ -58,7 +58,7 @@ ${
         <h2>Turn saved references into a clear direction.</h2>
         <p>Select references from your Vault and arrange them into a board for yourself, your team, or your client.</p>
         <div class="empty-actions">
-          <button class="primary-button" type="button" data-view="vault">${emptyPrimary || "Open Vault Library"}</button>
+          <button class="primary-button" type="button" data-view="vault">${emptyPrimary || "Open My Vault"}</button>
           <button class="primary-button" type="button" data-open-create-moodboard>${icon("plus")}<span>Create Moodboard</span></button>
         </div>
       </div></section>`
@@ -119,7 +119,7 @@ export function createMoodboardDialogMarkup(ctx) {
     <div class="create-moodboard-meta">
       <p><strong>Create from:</strong> ${fromSelection ? esc(count + " selected references") : "Blank board"}</p>
       <p><strong>Visibility:</strong> Private</p>
-      <p class="settings-field-hint">Max ${MOODBOARD_SOFT_LIMIT} references per board. Objects stay in Vault Library—board only stores layout relations.</p>
+      <p class="settings-field-hint">Max ${MOODBOARD_SOFT_LIMIT} references per board. Objects stay in My Vault—board only stores layout relations.</p>
     </div>
     <input type="hidden" name="preset" value="${DEFAULT_GRID_PRESET}">
     <div class="app-dialog-actions">
@@ -150,7 +150,7 @@ export function moodboardVaultPickerMarkup(ctx) {
   const activeCol = collectionId || "all";
   const activeType = typeFilter || "all";
   const q = String(query || "").trim().toLowerCase();
-  const colOptions = [`<option value="all"${activeCol === "all" ? " selected" : ""}>All Vault Library</option>`]
+  const colOptions = [`<option value="all"${activeCol === "all" ? " selected" : ""}>All of My Vault</option>`]
     .concat(
       (cols || [])
         .filter((c) => c && !c.system)
@@ -190,7 +190,7 @@ export function moodboardVaultPickerMarkup(ctx) {
   return `<div class="app-dialog-backdrop"><section class="app-dialog moodboard-vault-picker" role="dialog" aria-modal="true" aria-labelledby="moodboard-picker-title">
     <div class="app-dialog-head">
       <div>
-        <span class="section-label">Vault Library</span>
+        <span class="section-label">My Vault</span>
         <h2 id="moodboard-picker-title">Add to board</h2>
       </div>
       <button class="icon-button" type="button" data-dialog-cancel>${icon("close")}</button>

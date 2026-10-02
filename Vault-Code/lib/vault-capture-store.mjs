@@ -1,152 +1,83 @@
-import { hashBearer, scopeHashFromAuth } from "./vault-api-auth.mjs";
+import { scopeHashFromAuth } from "./vault-api-auth.mjs";
+import { dedupeKeys } from "./vault-capture-core.mjs";
+import { eq, supabaseRest, supabaseUrl } from "./supabase-rest.mjs";
 
-const DEFAULT_SUPABASE_URL = "https://zkflkpbmbozrchqncpzi.supabase.co";
 const STORAGE_BUCKET = "vault-assets";
+const FEATURE = "Capture API storage";
+export const CAPTURES_DEFAULT_LIMIT = 100;
+export const CAPTURES_MAX_LIMIT = 500;
 
-function supabaseConfig() {
-  const url = (process.env.SUPABASE_URL || process.env.VAULT_SUPABASE_URL || DEFAULT_SUPABASE_URL).replace(/\/$/, "");
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VAULT_SUPABASE_SERVICE_ROLE_KEY || "";
-  if (!key) throw new Error("Capture API storage is not configured on the server.");
-  return { url, key };
+function requireScope(auth) {
+  const scope = scopeHashFromAuth(auth);
+  if (!scope) throw new Error("Missing capture scope.");
+  return scope;
 }
 
-function restHeaders(key, extra = {}) {
-  return {
-    apikey: key,
-    Authorization: `Bearer ${key}`,
-    ...extra
-  };
-}
-
-function mapRow(row) {
-  return {
-    objectId: row.object_id,
-    item: row.item,
-    payload: row.payload,
-    createdAt: row.created_at
-  };
-}
-
-export async function readCaptures(auth) {
-  const { url, key } = supabaseConfig();
+/** Newest captures for one scope; only `item` is returned (the raw payload stays server-side). */
+export async function readCaptures(auth, { limit = CAPTURES_DEFAULT_LIMIT } = {}) {
   const scope = scopeHashFromAuth(auth);
   if (!scope) return [];
-
-  const response = await fetch(
-    `${url}/rest/v1/vault_extension_captures?select=object_id,item,payload,created_at&bearer_hash=eq.${encodeURIComponent(scope)}&order=created_at.desc&limit=500`,
-    { headers: restHeaders(key, { accept: "application/json" }) }
+  const safeLimit = Math.max(1, Math.min(CAPTURES_MAX_LIMIT, Number(limit) || CAPTURES_DEFAULT_LIMIT));
+  const rows = await supabaseRest(
+    `/rest/v1/vault_extension_captures?select=object_id,item,created_at&bearer_hash=${eq(scope)}&order=created_at.desc&limit=${safeLimit}`,
+    { feature: FEATURE, errorMessage: "Could not load extension captures." }
   );
-  const text = await response.text();
-  const rows = text ? JSON.parse(text) : [];
-  if (!response.ok) {
-    throw new Error(rows?.message || rows?.error || "Could not load extension captures.");
-  }
-  return (Array.isArray(rows) ? rows : []).map(mapRow);
+  return (Array.isArray(rows) ? rows : []).map(row => ({ objectId: row.object_id, item: row.item, createdAt: row.created_at }));
+}
+
+function postgrestArray(values) {
+  return `{${values.map(v => `"${String(v).replace(/["\\]/g, m => `\\${m}`)}"`).join(",")}}`;
+}
+
+/** Uses the GIN index on `dedupe_keys` instead of scanning recent captures. */
+export async function findDuplicateCapture(item, auth) {
+  const keys = dedupeKeys(item);
+  const scope = scopeHashFromAuth(auth);
+  if (!keys.length || !scope) return null;
+  const rows = await supabaseRest(
+    `/rest/v1/vault_extension_captures?select=object_id&bearer_hash=${eq(scope)}&dedupe_keys=ov.${encodeURIComponent(postgrestArray(keys))}&order=created_at.desc&limit=1`,
+    { feature: FEATURE, errorMessage: "Could not check for duplicates." }
+  );
+  return Array.isArray(rows) && rows[0] ? { objectId: rows[0].object_id } : null;
 }
 
 export async function writeCapture(record, auth) {
-  const { url, key } = supabaseConfig();
-  const scope = scopeHashFromAuth(auth);
-  if (!scope) throw new Error("Missing capture scope.");
-
-  const response = await fetch(`${url}/rest/v1/vault_extension_captures`, {
+  await supabaseRest("/rest/v1/vault_extension_captures", {
     method: "POST",
-    headers: restHeaders(key, {
-      "content-type": "application/json",
-      prefer: "resolution=merge-duplicates,return=representation"
-    }),
-    body: JSON.stringify({
+    prefer: "resolution=merge-duplicates,return=minimal",
+    feature: FEATURE,
+    errorMessage: "Could not save extension capture.",
+    body: {
       object_id: record.objectId,
-      bearer_hash: scope,
+      bearer_hash: requireScope(auth),
       user_id: auth?.userId || null,
       item: record.item,
-      payload: record.payload || null
-    })
+      payload: record.payload || null,
+      dedupe_keys: dedupeKeys(record.item)
+    }
   });
-  const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
-  if (!response.ok) {
-    throw new Error(data?.message || data?.error || "Could not save extension capture.");
-  }
-  return data;
 }
 
-export async function findDuplicateCaptureRemote(item, auth) {
-  const rows = await readCaptures(auth);
-  const keys = duplicateKeys(item);
-  if (!keys.length) return null;
-  return rows.find(row => {
-    const existing = row?.item || row;
-    return duplicateKeys(existing).some(key => keys.includes(key));
-  }) || null;
-}
+/** Stored under the user's folder so the web app can re-sign it with the user's own session. */
+export async function uploadCaptureFile(buffer, contentType, objectId, extension, userId) {
+  if (!/^[0-9a-f-]{36}$/i.test(String(userId || ""))) throw new Error("Missing capture owner.");
+  const safeExt = String(extension || "").replace(/[^a-z0-9]/gi, "").toLowerCase() || "bin";
+  const safeId = String(objectId || "").replace(/[^a-z0-9]/gi, "") || Date.now().toString(36);
+  const path = `${String(userId).toLowerCase()}/extension-captures/${safeId}.${safeExt}`;
 
-function duplicateKeys(item) {
-  const context = item?.captureContext || {};
-  return [
-    item?.sourceUrl,
-    item?.assetUrl,
-    item?.previewUrl,
-    item?.thumbnailUrl,
-    context.imageUrl,
-    context.linkUrl,
-    context.pageUrl,
-    context.videoUrl
-  ].map(canonicalRef).filter(Boolean);
-}
-
-function canonicalRef(value) {
-  const raw = typeof value === "string" ? value.trim() : "";
-  if (!raw) return "";
-  try {
-    const parsed = new URL(raw);
-    parsed.hash = "";
-    return parsed.href;
-  } catch {
-    return raw;
-  }
-}
-
-export async function uploadCaptureFile(buffer, contentType, objectId, extension = "png") {
-  const { url, key } = supabaseConfig();
-  const safeExt = extension.replace(/[^a-z0-9]/gi, "").toLowerCase() || "png";
-  const path = `extension-captures/${objectId}.${safeExt}`;
-  const upload = await fetch(`${url}/storage/v1/object/${STORAGE_BUCKET}/${path}`, {
+  await supabaseRest(`/storage/v1/object/${STORAGE_BUCKET}/${path}`, {
     method: "POST",
-    headers: restHeaders(key, {
-      "content-type": contentType || "image/png",
-      "x-upsert": "true"
-    }),
-    body: buffer
+    body: buffer,
+    headers: { "content-type": contentType || "application/octet-stream", "x-upsert": "true" },
+    feature: FEATURE,
+    errorMessage: "Could not upload capture file."
   });
-  if (!upload.ok) {
-    const err = await upload.text();
-    let message = "Could not upload capture file.";
-    try {
-      message = JSON.parse(err)?.message || message;
-    } catch {}
-    throw new Error(message);
-  }
-
-  const signed = await fetch(`${url}/storage/v1/object/sign/${STORAGE_BUCKET}/${path}`, {
+  const signed = await supabaseRest(`/storage/v1/object/sign/${STORAGE_BUCKET}/${path}`, {
     method: "POST",
-    headers: restHeaders(key, { "content-type": "application/json" }),
-    body: JSON.stringify({ expiresIn: 60 * 60 * 24 * 7 })
+    body: { expiresIn: 60 * 60 * 24 * 7 },
+    feature: FEATURE,
+    errorMessage: "Could not create signed URL for capture file."
   });
-  const signedData = await signed.json();
-  if (!signed.ok || !signedData?.signedURL) {
-    throw new Error("Could not create signed URL for capture file.");
-  }
-  return `${url}/storage/v1${signedData.signedURL}`;
+  if (!signed?.signedURL) throw new Error("Could not create signed URL for capture file.");
+  return { path, signedUrl: `${supabaseUrl()}/storage/v1${signed.signedURL}` };
 }
-
-export function storageConfigured() {
-  try {
-    supabaseConfig();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export { hashBearer };

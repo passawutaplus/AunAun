@@ -56,10 +56,20 @@ function hashBearer(token) {
   return crypto.createHash('sha256').update(String(token || '')).digest('hex');
 }
 
+// Local dev only: tokens are not signature-checked here; production verifies in lib/vault-api-auth.mjs.
 function scopeFromToken(token) {
-  const userMatch = /^vault-user-([0-9a-f-]{36})$/i.exec(token || '');
-  if (userMatch) return hashBearer(userMatch[1]);
+  const userMatch = /^(?:vault-user-|vxt1\.)([0-9a-f-]{36})(?:\.|$)/i.exec(token || '');
+  if (userMatch) return hashBearer(userMatch[1].toLowerCase());
   return hashBearer(token);
+}
+
+function userIdFromJwt(token) {
+  try {
+    const payload = JSON.parse(Buffer.from(String(token).split('.')[1] || '', 'base64url').toString('utf8'));
+    return /^[0-9a-f-]{36}$/i.test(payload?.sub || '') ? payload.sub.toLowerCase() : '';
+  } catch {
+    return '';
+  }
 }
 
 function readAllCollections() {
@@ -368,6 +378,16 @@ async function handleApi(req, res, url) {
     return true;
   }
 
+  if (url.pathname === '/api/vault/token' && req.method === 'POST') {
+    const userId = userIdFromJwt(bearerFromRequest(req));
+    if (!userId) {
+      sendJson(res, 401, { success: false, message: 'Log in to Vault first.' });
+      return true;
+    }
+    sendJson(res, 200, { success: true, token: `vxt1.${userId}.local-dev-token-not-signed-0000000000000` });
+    return true;
+  }
+
   if (url.pathname === '/api/vault/captures' && req.method === 'GET') {
     sendJson(res, 200, { success: true, items: readCaptures() });
     return true;
@@ -413,7 +433,7 @@ async function handleApi(req, res, url) {
         thumbnailUrl: item.thumbnailUrl || item.previewUrl || null,
         objectUrl: `/vault#object=${encodeURIComponent(item.id)}`,
         createdAt: new Date(item.createdAt).toISOString(),
-        message: 'Saved to Vault Library',
+        message: 'Saved to My Vault',
         item
       });
     } catch (error) {
@@ -466,7 +486,7 @@ async function handleApi(req, res, url) {
         previewUrl: assetUrl.length < 120000 ? assetUrl : null,
         objectUrl: `/vault#object=${encodeURIComponent(item.id)}`,
         createdAt: new Date(item.createdAt).toISOString(),
-        message: 'Saved to Vault Library',
+        message: 'Saved to My Vault',
         item
       });
     } catch (error) {
@@ -529,6 +549,7 @@ const server = http.createServer(async (req, res) => {
   // Do NOT use startsWith('/vault') — that incorrectly maps /vault-runtime.js → index.html
   if (
     file === '/' ||
+    file === '/discover' ||
     file === '/vault' ||
     file === '/vault/' ||
     file.startsWith('/vault/') ||

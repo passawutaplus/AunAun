@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "A+ Vault Capture",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "Keep creative references in your private A+ Vault library.",
   "homepage_url": "https://aplus-vault-demo.vercel.app/demo",
   "permissions": [
@@ -15,8 +15,7 @@
     "http://127.0.0.1:5177/*",
     "http://localhost:5177/*",
     "https://aplus-vault.vercel.app/*",
-    "https://aplus-vault-demo.vercel.app/*",
-    "https://*.supabase.co/*"
+    "https://aplus-vault-demo.vercel.app/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -41,7 +40,8 @@
       "matches": [
         "http://*/*",
         "https://*/*"
-      ]
+      ],
+      "use_dynamic_url": true
     }
   ],
   "action": {

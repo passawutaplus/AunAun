@@ -11,11 +11,28 @@ function cleanUrl(value) {
   if (!raw) return "";
   try {
     const url = new URL(raw);
-    if (!["http:", "https:", "data:", "blob:"].includes(url.protocol)) return "";
+    if (url.protocol === "data:") return /^data:image\/(png|jpe?g|webp|gif|avif);/i.test(raw) ? raw : "";
+    if (!["http:", "https:", "blob:"].includes(url.protocol)) return "";
     return raw;
   } catch {
     return raw.startsWith("upload://") ? raw : "";
   }
+}
+
+const UPLOAD_TYPES = {
+  "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif", "image/avif": "avif",
+  "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov",
+  "audio/mpeg": "mp3", "audio/wav": "wav", "audio/mp4": "m4a",
+  "application/pdf": "pdf", "application/zip": "zip",
+};
+const SAFE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp", "gif", "avif", "mp4", "webm", "mov", "mp3", "wav", "m4a", "pdf", "zip", "psd", "ai", "fig", "sketch", "txt", "md", "csv", "glb", "gltf", "obj", "stl"]);
+
+/** Never let the client choose an executable/renderable type (HTML, SVG, JS) for stored files. */
+export function safeUploadType(contentType, filename) {
+  const mime = text(contentType).toLowerCase().split(";")[0];
+  if (UPLOAD_TYPES[mime]) return { contentType: mime, extension: UPLOAD_TYPES[mime] };
+  const ext = (text(filename).toLowerCase().match(/\.([a-z0-9]{1,8})$/) || [])[1] || "";
+  return { contentType: "application/octet-stream", extension: SAFE_EXTENSIONS.has(ext) ? ext : "bin" };
 }
 
 function host(value) {
@@ -146,7 +163,7 @@ export function buildVaultItem(payload) {
 
 function canonicalRef(value) {
   const raw = text(value);
-  if (!raw) return "";
+  if (!raw || /^data:/i.test(raw) || raw.length > 2048) return "";
   try {
     const parsed = new URL(raw);
     parsed.hash = "";
@@ -156,9 +173,10 @@ function canonicalRef(value) {
   }
 }
 
-function duplicateKeys(item) {
+/** URLs that identify the same reference; stored in `dedupe_keys` (GIN-indexed). */
+export function dedupeKeys(item) {
   const context = item?.captureContext || {};
-  return [
+  const keys = [
     item?.sourceUrl,
     item?.assetUrl,
     item?.previewUrl,
@@ -168,54 +186,52 @@ function duplicateKeys(item) {
     context.pageUrl,
     context.videoUrl
   ].map(canonicalRef).filter(Boolean);
+  return Array.from(new Set(keys)).slice(0, 12);
 }
 
 export function findDuplicateCapture(item, rows) {
-  const keys = duplicateKeys(item);
+  const keys = dedupeKeys(item);
   if (!keys.length) return null;
   return (rows || []).find(row => {
     const existing = row?.item || row;
-    return duplicateKeys(existing).some(key => keys.includes(key));
+    return dedupeKeys(existing).some(key => keys.includes(key));
   }) || null;
 }
 
+const CRLF2 = Buffer.from("\r\n\r\n");
+
+/** Splits multipart/form-data on Buffers so file bytes are never copied into strings. */
 export function parseMultipart(buffer, contentType) {
-  const match = /boundary=([^;]+)/i.exec(contentType || "");
+  const match = /boundary=(?:"([^"]+)"|([^;]+))/i.exec(contentType || "");
   if (!match) throw new Error("Missing multipart boundary.");
-  const boundary = `--${match[1].replace(/^"|"$/g, "")}`;
-  const textBody = buffer.toString("latin1");
-  const parts = textBody.split(boundary).slice(1, -1);
+  const delimiter = Buffer.from(`--${(match[1] || match[2]).trim()}`);
   const result = {};
-
-  parts.forEach(part => {
-    const trimmed = part.replace(/^\r\n/, "").replace(/\r\n$/, "");
-    const splitIndex = trimmed.indexOf("\r\n\r\n");
-    if (splitIndex < 0) return;
-    const headerBlock = trimmed.slice(0, splitIndex);
-    const body = trimmed.slice(splitIndex + 4).replace(/\r\n$/, "");
-    const nameMatch = /name="([^"]+)"/.exec(headerBlock);
-    if (!nameMatch) return;
-    const name = nameMatch[1];
-    const filenameMatch = /filename="([^"]*)"/.exec(headerBlock);
-    const typeMatch = /Content-Type:\s*([^\r\n]+)/i.exec(headerBlock);
-    const valueBuffer = Buffer.from(body, "latin1");
-
-    if (filenameMatch) {
-      result[name] = {
-        filename: filenameMatch[1],
-        contentType: typeMatch ? typeMatch[1].trim() : "application/octet-stream",
-        buffer: valueBuffer
-      };
-      return;
+  let start = buffer.indexOf(delimiter);
+  while (start !== -1) {
+    const partStart = start + delimiter.length;
+    if (buffer[partStart] === 0x2d && buffer[partStart + 1] === 0x2d) break;
+    const next = buffer.indexOf(delimiter, partStart);
+    if (next === -1) break;
+    const part = buffer.subarray(partStart + 2, next - 2);
+    const split = part.indexOf(CRLF2);
+    if (split > -1) {
+      const headerBlock = part.subarray(0, split).toString("utf8");
+      const body = part.subarray(split + 4);
+      const nameMatch = /name="([^"]+)"/.exec(headerBlock);
+      if (nameMatch) {
+        const filenameMatch = /filename="([^"]*)"/.exec(headerBlock);
+        const typeMatch = /Content-Type:\s*([^\r\n]+)/i.exec(headerBlock);
+        result[nameMatch[1]] = filenameMatch
+          ? { filename: filenameMatch[1], contentType: typeMatch ? typeMatch[1].trim() : "application/octet-stream", buffer: body }
+          : body.toString("utf8");
+      }
     }
-
-    result[name] = valueBuffer.toString("utf8");
-  });
-
+    start = next;
+  }
   return result;
 }
 
-export function buildCaptureResponse(item, duplicate, payloadOverride) {
+export function buildCaptureResponse(item, duplicate) {
   const previewUrl = item.previewUrl || item.assetUrl || null;
   return {
     success: true,
@@ -228,8 +244,7 @@ export function buildCaptureResponse(item, duplicate, payloadOverride) {
     thumbnailUrl: item.thumbnailUrl || previewUrl,
     objectUrl: `/vault#object=${encodeURIComponent(item.id)}`,
     createdAt: new Date(item.createdAt).toISOString(),
-    message: "Saved to Vault Library",
-    item,
-    payload: payloadOverride
+    message: "Saved to My Vault",
+    item
   };
 }

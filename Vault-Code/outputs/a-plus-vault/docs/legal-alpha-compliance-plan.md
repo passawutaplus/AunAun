@@ -20,7 +20,8 @@ This is a product compliance plan for the alpha demo. It is not legal advice and
 | Area | Current state | Next action |
 |---|---|---|
 | Public legal notice | `legal.html` contains alpha Privacy, Terms, Copyright, AUP, AI, Security, Data Rights, and Subprocessor sections. | Counsel review before public beta. |
-| Private by default | Main app has no public discovery and index page has `noindex,nofollow`. | Add explicit share scopes before public collection features. |
+| Private by default | User vaults stay private. The only public surface is Discover: CC0 museum works (Met/AIC) seeded by `seeder/`, readable by anon only when `status='published'`. Index page keeps `noindex,nofollow`. | Add explicit share scopes before public collection features. Re-review before adding any non-CC0 source (Unsplash/Pexels). |
+| Discover credit | Every `discover_items` row stores `license`, `license_url`, `attribution`, `source_url`; DB check blocks publishing without them. Detail view and kept items show credit and "View at source". | Keep the report link (`legal.html#copyright`) and the admin hide action at `/admin/seeder`. |
 | Source and credit | Detail panel stores and displays source URL, captured date, and private reference note. | Add creator/author capture when available. |
 | Extension privacy | Extension is user-action based with `activeTab`, `contextMenus`, `storage`, `scripting`, and targeted host permissions. | Publish a Chrome Web Store privacy disclosure before listing. |
 | Copyright process | Legal center includes report and takedown workflow draft. | Add report forms, case log, repeat-infringer policy, and counter-notice tracking. |
@@ -30,7 +31,7 @@ This is a product compliance plan for the alpha demo. It is not legal advice and
 
 ## P0 - Before Alpha Tester Expansion
 
-- Keep public discovery disabled.
+- Keep Discover limited to the CC0 allowlist (no user-generated content, no non-CC0 sources).
 - Keep `noindex,nofollow` for app demo pages.
 - Add visible Privacy, Terms, Copyright, AI, Security, and Data Rights links.
 - Make extension save only from explicit user action.
