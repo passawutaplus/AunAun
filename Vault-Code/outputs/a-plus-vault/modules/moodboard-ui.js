@@ -48,11 +48,8 @@ export function moodboardListMarkup(ctx) {
   <div>
     <h1>Moodboards</h1>
   </div>
-  <div class="page-head-actions">
-    <button class="primary-button" type="button" data-open-create-moodboard>${icon("plus")}<span>Create Moodboard</span></button>
-  </div>
 </section>
-${empty ? "" : `${ctx.searchMarkup || ""}<p class="studio-search-note" data-studio-note="moodboards">${esc(ctx.note || "")}</p>`}
+${empty ? "" : `<div class="studio-toolbar">${ctx.searchMarkup || ""}<button class="primary-button" type="button" data-open-create-moodboard>${icon("plus")}<span>Create Moodboard</span></button></div><p class="studio-search-note" data-studio-note="moodboards">${esc(ctx.note || "")}</p>`}
 ${
   empty
     ? `<section class="empty-state moodboard-empty"><div>

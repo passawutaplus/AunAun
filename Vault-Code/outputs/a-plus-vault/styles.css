@@ -5963,3 +5963,11 @@ html.mb-present .moodboard-editor-body>.moodboard-canvas-wrap{grid-column:1!impo
 .mb-conn-handle:hover{transform:translate(-50%,-50%) scale(1.3);background:var(--accent,#ff4f43)}
 .smart-grid-item.is-conn-target{outline:3px solid var(--accent,#ff4f43);outline-offset:3px}
 html.mb-present .mb-conn-handle{display:none!important}
+
+/* action button sits on the search row; more air under the page title */
+.studio-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:30px 0 6px}
+.studio-toolbar .studio-search{flex:1 1 auto;max-width:440px;margin:0}
+.studio-toolbar .primary-button{flex:0 0 auto;height:42px}
+.project-browser-bar{justify-content:space-between!important;margin-top:30px!important}
+.project-browser-bar .project-browser-search{flex:1 1 auto}
+.project-browser-bar .primary-button{flex:0 0 auto;height:42px;margin-left:auto}
