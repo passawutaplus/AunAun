@@ -146,7 +146,8 @@
     .rcard h3{margin-top:14px;font-size:20px}
     .rcard p{margin:6px 0 0;color:var(--ink-2);font-size:14px}
     /* 5. discover marquee */
-    #discover{padding:140px 0;background:var(--paper-2);overflow:hidden}
+    #discover{padding:140px 0;background:var(--night);color:#fff;overflow:hidden}
+    #discover .eyebrow{color:#9aa0a6}#discover .lede{color:#c8ccd0}
     .discover-head{display:flex;justify-content:space-between;align-items:flex-end;gap:32px;flex-wrap:wrap}
     .marquee{display:flex;gap:16px;width:max-content;margin-top:64px;animation:slide 60s linear infinite}
     .marquee.rev{margin-top:16px;animation-direction:reverse;animation-duration:70s}
@@ -177,8 +178,9 @@
     #start{padding:170px 0 120px;text-align:center}
     #start h2{font-size:clamp(44px,8vw,120px)}
     .final-ctas{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:40px}
-    footer{padding:40px 0 56px;color:var(--muted);font-size:13px}
-    footer .wrap{display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;border-top:1px solid var(--line);padding-top:28px}
+    footer{position:relative;overflow:hidden;padding:56px 0 0;background:var(--night);color:#9aa0a6;font-size:13px}
+    footer .wrap{display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;border-top:1px solid rgba(255,255,255,.12);padding-top:28px}
+    .foot-mark{margin-top:36px;text-align:center;white-space:nowrap;user-select:none;font:300 clamp(80px,21vw,340px)/.8 var(--display);letter-spacing:-.045em;color:#f4f1ea;transform:translateY(.12em)}
     footer nav{display:flex;gap:18px}
     footer a{text-decoration:none}
     footer a:hover{color:var(--coral)}
@@ -270,7 +272,7 @@
     </section>
 
     <!-- CAPTURE -->
-    <section class="story" id="capture" data-story="capture">
+    <section class="story dark-grain" id="capture" data-story="capture">
       <div class="stage">
         <div>
           <span class="eyebrow">Capture</span>
@@ -335,7 +337,7 @@
     </section>
 
     <!-- DISCOVER -->
-    <section id="discover">
+    <section id="discover" class="dark-grain">
       <div class="wrap discover-head">
         <div class="reveal">
           <span class="eyebrow">Discover</span>
@@ -361,7 +363,7 @@
     </section>
 
     <!-- PROMISE -->
-    <section id="promise">
+    <section id="promise" class="dark-grain">
       <div class="wrap">
         <span class="eyebrow" style="color:#7d838a">Our promise</span>
         <div class="promise-list" data-promise>
@@ -386,11 +388,12 @@
     </section>
   </main>
 
-  <footer>
+  <footer class="dark-grain">
     <div class="wrap">
       <span>Photos via Unsplash: Rasheed Kemy, Zulfugar Karimov, Theme Photos, Burst, Swello · © <span data-year></span> A+ Vault · Part of the Aplus ecosystem</span>
       <nav aria-label="Footer"><a href="/">Discover</a><a href="/vault">My Vault</a><a href="/legal">Privacy &amp; legal</a><a href="/legal#copyright">Copyright</a></nav>
     </div>
+    <div class="foot-mark" aria-hidden="true">A+ Vault</div>
   </footer>
 
   <script src="/supabase-config.js"></script>
