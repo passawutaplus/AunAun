@@ -249,26 +249,38 @@ function objectChrome(objId, selected, escA) {
   return `${remove}${bar}<div class="moodboard-resize-frame" aria-hidden="true"></div>${grips}<span class="moodboard-size-badge" data-size-badge="${escA(objId)}" hidden></span>`;
 }
 
+const mbSvg = (inner, fill) =>
+  `<svg viewBox="0 0 24 24" width="18" height="18" fill="${fill ? "currentColor" : "none"}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+
+const ARRANGE_ICONS = {
+  front: mbSvg(`<rect x="4" y="4" width="11" height="11" rx="2" opacity=".45"/><rect x="9" y="9" width="11" height="11" rx="2" fill="currentColor"/>`),
+  forward: mbSvg(`<path d="M12 19V6m-5 5 5-5 5 5"/>`),
+  backward: mbSvg(`<path d="M12 5v13m-5-5 5 5 5-5"/>`),
+  back: mbSvg(`<rect x="4" y="4" width="11" height="11" rx="2" fill="currentColor"/><rect x="9" y="9" width="11" height="11" rx="2" opacity=".6"/>`),
+  left: mbSvg(`<path d="M4 3v18"/><rect x="7" y="6" width="13" height="4" rx="1"/><rect x="7" y="14" width="8" height="4" rx="1"/>`),
+  center: mbSvg(`<path d="M12 3v18"/><rect x="5" y="6" width="14" height="4" rx="1"/><rect x="8" y="14" width="8" height="4" rx="1"/>`),
+  right: mbSvg(`<path d="M20 3v18"/><rect x="4" y="6" width="13" height="4" rx="1"/><rect x="9" y="14" width="8" height="4" rx="1"/>`),
+  top: mbSvg(`<path d="M3 4h18"/><rect x="6" y="7" width="4" height="13" rx="1"/><rect x="14" y="7" width="4" height="8" rx="1"/>`),
+  middle: mbSvg(`<path d="M3 12h18"/><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="8" width="4" height="8" rx="1"/>`),
+  bottom: mbSvg(`<path d="M3 20h18"/><rect x="6" y="5" width="4" height="12" rx="1"/><rect x="14" y="9" width="4" height="8" rx="1"/>`)
+};
+
 function layerActions(objId, escA, opts) {
   const options = opts || {};
   if (options.layersOnly === false && options.align === false) return "";
+  const layerBtn = (action, label) =>
+    `<button type="button" class="mb-ico-btn" data-layer-board-obj="${escA(objId)}" data-layer-action="${action}" title="${label}" aria-label="${label}">${ARRANGE_ICONS[action]}</button>`;
+  const alignBtn = (action, label) =>
+    `<button type="button" class="mb-ico-btn" data-align-board-obj="${escA(objId)}" data-align-action="${action}" title="${label}" aria-label="${label}">${ARRANGE_ICONS[action]}</button>`;
   const layers = options.layers === false
     ? ""
-    : `<div class="moodboard-layer-actions">
-      <button type="button" class="ghost-button" data-layer-board-obj="${escA(objId)}" data-layer-action="front" title="Bring to front">Bring to front</button>
-      <button type="button" class="ghost-button" data-layer-board-obj="${escA(objId)}" data-layer-action="forward" title="Bring forward">Bring forward</button>
-      <button type="button" class="ghost-button" data-layer-board-obj="${escA(objId)}" data-layer-action="backward" title="Send backward">Send backward</button>
-      <button type="button" class="ghost-button" data-layer-board-obj="${escA(objId)}" data-layer-action="back" title="Send to back">Send to back</button>
+    : `<div class="mb-ico-group" role="group" aria-label="Layer order">
+      ${layerBtn("front", "Bring to front")}${layerBtn("forward", "Bring forward")}${layerBtn("backward", "Send backward")}${layerBtn("back", "Send to back")}
     </div>`;
   const align = options.align === false
     ? ""
-    : `<div class="moodboard-align-actions" role="group" aria-label="Align on board">
-      <button type="button" class="ghost-button" data-align-board-obj="${escA(objId)}" data-align-action="left" title="Align left">◁ Left</button>
-      <button type="button" class="ghost-button" data-align-board-obj="${escA(objId)}" data-align-action="center" title="Align horizontal center">⬌ Center</button>
-      <button type="button" class="ghost-button" data-align-board-obj="${escA(objId)}" data-align-action="right" title="Align right">Right ▷</button>
-      <button type="button" class="ghost-button" data-align-board-obj="${escA(objId)}" data-align-action="top" title="Align top">△ Top</button>
-      <button type="button" class="ghost-button" data-align-board-obj="${escA(objId)}" data-align-action="middle" title="Align vertical middle">⬍ Middle</button>
-      <button type="button" class="ghost-button" data-align-board-obj="${escA(objId)}" data-align-action="bottom" title="Align bottom">Bottom ▽</button>
+    : `<div class="mb-ico-group" role="group" aria-label="Align on board">
+      ${alignBtn("left", "Align left")}${alignBtn("center", "Align center")}${alignBtn("right", "Align right")}${alignBtn("top", "Align top")}${alignBtn("middle", "Align middle")}${alignBtn("bottom", "Align bottom")}
     </div>`;
   return `<div class="moodboard-arrange">
     <p class="side-kicker">Arrange</p>

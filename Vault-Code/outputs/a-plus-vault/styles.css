@@ -5895,3 +5895,29 @@ html.mb-present .moodboard-editor-body{height:100vh!important;grid-template-colu
 html.mb-present .moodboard-editor-body>.moodboard-canvas-wrap{grid-column:1!important}
 .mb-present-exit{position:fixed;top:14px;right:14px;z-index:300;padding:8px 14px;border:0;border-radius:999px;background:rgba(24,26,29,.8);color:#fff;font:inherit;font-size:13px;cursor:pointer;opacity:.35;transition:opacity .2s}
 .mb-present-exit:hover{opacity:1}
+
+/* moodboard "Add to board" picker: image tiles, name underneath, round tick when selected */
+.mp-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px}
+.mp-row .moodboard-picker-types,.mp-row .moodboard-picker-bulk{margin:0}
+.moodboard-vault-picker .moodboard-picker-grid{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:18px 14px;column-width:auto;overflow-x:hidden;overflow-y:auto;padding:2px}
+.moodboard-picker-card{display:grid!important;gap:8px;width:auto;margin:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;cursor:pointer}
+.moodboard-picker-card:hover:not(.on-board){border:0!important;box-shadow:none!important}
+.moodboard-picker-media{border-radius:12px;overflow:hidden;aspect-ratio:1;transition:transform .18s ease,box-shadow .18s ease}
+.moodboard-picker-card:hover:not(.on-board) .moodboard-picker-media{transform:translateY(-2px)}
+.moodboard-picker-card.is-checked .moodboard-picker-media{box-shadow:0 0 0 3px var(--accent,#ff4f43)}
+.moodboard-picker-card input[type="checkbox"]{appearance:none;-webkit-appearance:none;position:absolute;top:8px;left:8px;z-index:3;width:24px;height:24px;margin:0;border-radius:50%;border:2px solid rgba(255,255,255,.9);background:rgba(0,0,0,.35);cursor:pointer;transition:background .15s,border-color .15s}
+.moodboard-picker-card input[type="checkbox"]:checked{background:var(--accent,#ff4f43) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'><path d='m5 12.5 4.5 4.5L19 7.5'/></svg>") center/14px no-repeat;border-color:var(--accent,#ff4f43)}
+.moodboard-picker-card input[type="checkbox"]:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.moodboard-picker-card input[type="checkbox"]:disabled{display:none}
+.moodboard-picker-meta{display:grid;gap:2px;padding:0 2px}
+.moodboard-picker-meta strong{font-weight:400;font-size:13px;line-height:1.35;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.moodboard-picker-meta small{color:var(--muted);font-size:11px}
+.moodboard-picker-card.on-board{opacity:.45}
+
+/* inspector "Arrange": Canva-style icon buttons */
+.moodboard-arrange{display:grid;gap:10px}
+.mb-ico-group{display:flex;gap:4px;padding:4px;border-radius:12px;background:var(--surface-soft,rgba(255,255,255,.05))}
+.mb-ico-btn{flex:1 1 0;display:grid;place-items:center;height:36px;min-width:0;padding:0;border:0;border-radius:9px;background:transparent;color:var(--ink);cursor:pointer;transition:background .15s,color .15s}
+.mb-ico-btn:hover{background:rgba(127,127,127,.2)}
+.mb-ico-btn:active{background:var(--accent,#ff4f43);color:#fff}
+.mb-ico-btn:focus-visible{outline:2px solid var(--accent,#ff4f43);outline-offset:1px}

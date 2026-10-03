@@ -211,7 +211,7 @@ export function moodboardVaultPickerMarkup(ctx) {
     return `<label class="moodboard-picker-card ${used ? "on-board" : ""} ${checked ? "is-checked" : ""}" title="${escA(tip)}">
         <input type="checkbox" data-picker-check="${escA(item.id)}" ${checked ? "checked" : ""} ${used ? "disabled" : ""} aria-label="Select ${escA(item.title)}">
         <span class="moodboard-picker-media">${media(item)}</span>
-        <span class="moodboard-picker-meta"><strong>${esc(item.title)}</strong></span>
+        <span class="moodboard-picker-meta"><strong>${esc(item.title)}</strong>${used ? "<small>On board</small>" : ""}</span>
       </label>`;
   }).join("");
   const emptyHint = q || activeType !== "all" || activeCol !== "all"
@@ -226,7 +226,6 @@ export function moodboardVaultPickerMarkup(ctx) {
       </div>
       <button class="icon-button" type="button" data-dialog-cancel>${icon("close")}</button>
     </div>
-    <p class="app-dialog-message">เลือกได้หลายอันด้วย checkbox แล้วกด Add to board — วางบน canvas ลากอิสระได้</p>
     <div class="moodboard-picker-toolbar">
       <label class="moodboard-picker-search">
         <span class="visually-hidden">Search</span>
@@ -237,10 +236,12 @@ export function moodboardVaultPickerMarkup(ctx) {
         <select data-picker-collection aria-label="Filter by collection">${colOptions}</select>
       </label>
     </div>
-    <div class="moodboard-picker-types" role="group" aria-label="Filter by type">${typeChips}</div>
-    <div class="moodboard-picker-bulk">
-      <button type="button" class="ghost-button" data-picker-select-visible ${available.length ? "" : "disabled"}>Select visible</button>
-      <button type="button" class="ghost-button" data-picker-clear-selection ${pickCount ? "" : "disabled"}>Clear</button>
+    <div class="mp-row">
+      <div class="moodboard-picker-types" role="group" aria-label="Filter by type">${typeChips}</div>
+      <div class="moodboard-picker-bulk">
+        <button type="button" class="ghost-button" data-picker-select-visible ${available.length ? "" : "disabled"}>Select all</button>
+        <button type="button" class="ghost-button" data-picker-clear-selection ${pickCount ? "" : "disabled"}>Clear</button>
+      </div>
     </div>
     <div class="moodboard-picker-grid">${cards || `<p class="settings-field-hint">${emptyHint}</p>`}</div>
     <div class="app-dialog-actions">
