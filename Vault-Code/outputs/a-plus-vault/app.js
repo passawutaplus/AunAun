@@ -250,6 +250,7 @@ function profileMenuGridControl(){let i=gridStopIndex();return "<div class='grid
 function profileMenuMarkup(){let aplus="https://aplus1.app";return "<div class='profile-menu' data-profile-menu role='menu' aria-label='Account menu'>"+
   "<button type='button' class='profile-menu-item' role='menuitem' data-view='profile'><span>View Profile</span><span class='profile-menu-face profile-avatar' aria-hidden='true'>"+esc(profileInitials(profileLabel()))+"</span></button>"+
   "<button type='button' class='profile-menu-item' role='menuitem' data-view='projects'><span>Projects</span>"+icon("project")+"</button>"+
+  "<button type='button' class='profile-menu-item' role='menuitem' data-view='moodboards'><span>Moodboards</span>"+icon("board")+"</button>"+
   "<div class='profile-menu-divider' role='separator'></div>"+
   "<div class='profile-menu-item is-control' role='none'><span>Theme</span>"+profileMenuThemeControl()+"</div>"+
   profileMenuGridControl()+
