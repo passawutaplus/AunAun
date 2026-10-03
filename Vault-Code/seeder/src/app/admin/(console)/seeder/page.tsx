@@ -1,7 +1,5 @@
-import { checkAdmin } from "@/lib/admin";
-import { publicMediaUrl, SupabaseSeederRepo, type AdminItem } from "@/seeder/repo";
-import { ThemeToggle } from "../../theme-toggle";
-import { signOut } from "../login/actions";
+import { monthlyBudgetUsd } from "@/seeder/config";
+import { publicMediaUrl, SupabaseSeederRepo, type AdminItem, type AiSpend } from "@/seeder/repo";
 import { runNow, setItemVisibility, setPaused, updateTarget } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +14,69 @@ const REASON_LABELS: Record<string, string> = {
   moderation_blocked: "ไม่ผ่าน moderation",
   ai_invalid_output: "AI ตอบผิดรูปแบบ",
 };
+
+const SOURCE_NAMES: Record<string, string> = {
+  met: "The Met",
+  aic: "Art Institute of Chicago",
+  cma: "Cleveland Museum",
+  si: "Smithsonian",
+  chndm: "Cooper Hewitt",
+  ov: "Openverse",
+};
+
+const usd = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: n < 1 ? 3 : 2 })}`;
+
+function SpendPanel({ spend }: { spend: AiSpend | null }) {
+  const budget = monthlyBudgetUsd();
+  if (!spend) {
+    return (
+      <section className="panel spend">
+        <h2>ค่าใช้จ่าย AI</h2>
+        <p className="muted">อ่านข้อมูลค่าใช้จ่ายไม่ได้ในตอนนี้</p>
+      </section>
+    );
+  }
+  const month = spend.monthUsd;
+  const pct = Math.min(100, Math.round((month / budget) * 100));
+  const level = pct >= 100 ? "over" : pct >= 80 ? "warn" : "ok";
+  const total = spend.totalUsd + spend.estimatedLegacyUsd;
+  return (
+    <section className={`panel spend ${level}`}>
+      <div className="spend-main">
+        <div>
+          <span className="muted">ใช้ไปเดือนนี้ (Claude vision)</span>
+          <strong className="spend-big">{usd(month)}</strong>
+          <span className="muted">
+            จากงบ {usd(budget)} · เหลือ {usd(Math.max(0, budget - month))}
+          </span>
+        </div>
+        <div className="spend-side">
+          <div>
+            <span className="muted">รวมทั้งหมด</span>
+            <b>{usd(total)}</b>
+          </div>
+          <div>
+            <span className="muted">เฉลี่ยต่อภาพ</span>
+            <b>{usd(spend.avgUsd)}</b>
+          </div>
+          <div>
+            <span className="muted">ภาพที่ตรวจด้วย AI</span>
+            <b>{(spend.tracked + spend.untracked).toLocaleString()}</b>
+          </div>
+        </div>
+      </div>
+      <div className="bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="งบประมาณเดือนนี้">
+        <span style={{ width: `${pct}%` }} />
+      </div>
+      <p className="muted small">
+        {pct >= 100 ? "เกินงบแล้ว — แนะนำกด Pause · " : pct >= 80 ? "ใกล้ถึงงบ · " : ""}
+        นับจริง {spend.tracked.toLocaleString()} ภาพ
+        {spend.untracked > 0 ? ` + ประเมิน ${spend.untracked.toLocaleString()} ภาพเก่า (≈ ${usd(spend.estimatedLegacyUsd)}) ที่ยังไม่เคยบันทึก token` : ""}
+        {" · "}ตั้งงบด้วย <code>SEEDER_BUDGET_USD</code> (ไม่ได้บังคับ แค่แจ้งเตือน)
+      </p>
+    </section>
+  );
+}
 
 function ItemCard({ item, action }: { item: AdminItem; action?: "hide" | "restore" }) {
   const note = typeof item.source_meta?.reject_note === "string" ? item.source_meta.reject_note : null;
@@ -53,29 +114,32 @@ function ItemCard({ item, action }: { item: AdminItem; action?: "hide" | "restor
 }
 
 export default async function SeederAdminPage() {
-  const admin = await checkAdmin();
-  if (admin.status === "forbidden") {
+  let data;
+  try {
+    const repo = new SupabaseSeederRepo();
+    data = await Promise.all([
+      repo.isPaused(),
+      repo.progress(),
+      repo.targets(),
+      repo.rejectSummary(),
+      repo.recentItems("published", 12),
+      repo.recentItems("rejected", 12),
+      repo.recentItems("hidden", 6),
+      repo.aiSpend().catch(() => null),
+    ]);
+  } catch (e) {
     return (
-      <main className="page">
-        <h1>ไม่มีสิทธิ์</h1>
-        <p>บัญชี {admin.email} ไม่ใช่ผู้ดูแล Vault</p>
-        <form action={signOut}>
-          <button type="submit">ออกจากระบบ</button>
-        </form>
-      </main>
+      <>
+        <header className="page-head">
+          <h1>Discover Seeder</h1>
+        </header>
+        <p className="notice">
+          เชื่อมฐานข้อมูลของ seeder ไม่ได้: {e instanceof Error ? e.message : "unknown"}. ตั้ง <code>SUPABASE_SERVICE_ROLE_KEY</code> ใน <code>seeder/.env.local</code> แล้วรีสตาร์ท dev server
+        </p>
+      </>
     );
   }
-
-  const repo = new SupabaseSeederRepo();
-  const [paused, progress, targets, rejects, published, rejected, hidden] = await Promise.all([
-    repo.isPaused(),
-    repo.progress(),
-    repo.targets(),
-    repo.rejectSummary(),
-    repo.recentItems("published", 12),
-    repo.recentItems("rejected", 12),
-    repo.recentItems("hidden", 6),
-  ]);
+  const [paused, progress, targets, rejects, published, rejected, hidden, spend] = data;
 
   const totalPublished = progress.reduce((s, p) => s + p.published, 0);
   const totalTarget = progress.reduce((s, p) => s + p.target_count, 0);
@@ -85,24 +149,13 @@ export default async function SeederAdminPage() {
   for (const r of rejects) reasonTotals.set(r.reject_reason, (reasonTotals.get(r.reject_reason) ?? 0) + r.total);
 
   return (
-    <main className="page">
-      <header className="top">
-        <div className="brand">
-          <span className="brand-mark">A+</span>
-          <div>
-            <h1>Discover Seeder</h1>
-            <p className="muted small">{admin.email}</p>
-          </div>
-        </div>
-        <div className="top-actions">
-          <ThemeToggle />
-          <form action={signOut}>
-            <button type="submit" className="small">
-              ออกจากระบบ
-            </button>
-          </form>
-        </div>
+    <>
+      <header className="page-head">
+        <h1>Discover Seeder</h1>
+        <p className="muted">บอทดึงภาพจากแหล่งที่เปิดสิทธิ์ใช้งาน เข้าตรวจ AI แล้วเผยแพร่ใน Discover · ดูสุขภาพแต่ละแหล่งที่ <a href="/admin/sources">บอท &amp; ลิขสิทธิ์</a></p>
       </header>
+
+      <SpendPanel spend={spend} />
 
       <section className="stats">
         <div className="stat accent">
@@ -149,6 +202,25 @@ export default async function SeederAdminPage() {
             Run now
           </button>
         </form>
+      </section>
+
+      <section className="panel">
+        <h2>แหล่งที่เปิดอยู่</h2>
+        <div className="source-cards">
+          {[...new Set(targets.map((t) => t.source))].map((src) => {
+            const rows = targets.filter((t) => t.source === src);
+            const on = rows.filter((t) => t.enabled).length;
+            return (
+              <div key={src} className={on ? "source-card" : "source-card off"}>
+                <strong>{SOURCE_NAMES[src] ?? src}</strong>
+                <span className="muted small">
+                  {on}/{rows.length} หมวดเปิด · สแกน {rows.reduce((n, t) => n + t.scanned_count, 0).toLocaleString()}
+                </span>
+                {spend?.bySource[src] != null && <span className="small">AI {usd(spend.bySource[src])}</span>}
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       <section className="panel">
@@ -294,6 +366,6 @@ export default async function SeederAdminPage() {
           </ul>
         </section>
       )}
-    </main>
+    </>
   );
 }
