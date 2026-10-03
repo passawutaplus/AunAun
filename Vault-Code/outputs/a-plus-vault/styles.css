@@ -5871,3 +5871,27 @@ html:not([data-theme="dark"]) .mb-toolbar{background:rgba(255,255,255,.86);box-s
 .moodboard-editor-body.mb2>.moodboard-canvas-wrap{grid-column:3;grid-row:1}
 .moodboard-editor-body.mb2>.inspector-resize{grid-column:4;grid-row:1}
 .moodboard-editor-body.mb2>.moodboard-inspector{grid-column:5;grid-row:1}
+
+/* editor v2 phase 2/3: layer thumbs, selection bar, export menu, present mode */
+.mb-layer-thumb{flex:0 0 auto;display:inline-grid;place-items:center;width:28px;height:28px;margin-right:8px;border-radius:6px;background:#2c2f33 center/cover no-repeat;color:var(--muted);font-size:12px;vertical-align:middle}
+.moodboard-layer-list li button{display:flex;align-items:center}
+.mb-selbar{position:absolute;left:50%;top:-46px;transform:translateX(-50%);display:none;gap:2px;padding:4px;border-radius:999px;background:rgba(24,26,29,.92);box-shadow:0 8px 22px rgba(0,0,0,.4);z-index:30;white-space:nowrap}
+.smart-grid-item.selected .mb-selbar{display:flex}
+.mb-selbar button{display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:transparent;color:#fff;font-size:15px;cursor:pointer}
+.mb-selbar button:hover{background:rgba(255,255,255,.16)}
+.mb-selbar .is-danger:hover{background:#c0392b}
+.smart-grid-item>.icon-button.mini[data-remove-board-obj]{opacity:0;transition:opacity .15s}
+.smart-grid-item:hover>.icon-button.mini[data-remove-board-obj]{opacity:1}
+.smart-grid-item.selected>.icon-button.mini[data-remove-board-obj]{display:none}
+.mb-export{position:relative}
+.mb-export>summary{list-style:none;cursor:pointer}
+.mb-export>summary::-webkit-details-marker{display:none}
+.mb-export-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:40;display:grid;min-width:150px;padding:6px;border-radius:12px;background:var(--surface,#16181b);box-shadow:0 14px 34px rgba(0,0,0,.4),inset 0 0 0 1px var(--line)}
+.mb-export-menu button{padding:9px 12px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:inherit;font-size:14px;text-align:left;cursor:pointer}
+.mb-export-menu button:hover{background:var(--surface-soft,rgba(255,255,255,.08))}
+html.mb-present .topbar,html.mb-present .mb-topbar,html.mb-present .mb-toolbar,html.mb-present .moodboard-source-panel,html.mb-present .moodboard-inspector,html.mb-present .moodboard-resize-handle,html.mb-present .mb-selbar,html.mb-present .moodboard-resize-grip,html.mb-present .moodboard-resize-frame,html.mb-present .quick-note,html.mb-present [data-remove-board-obj],html.mb-present .scroll-blur{display:none!important}
+html.mb-present .moodboard-editor{min-height:100vh}
+html.mb-present .moodboard-editor-body{height:100vh!important;grid-template-columns:minmax(0,1fr)!important}
+html.mb-present .moodboard-editor-body>.moodboard-canvas-wrap{grid-column:1!important}
+.mb-present-exit{position:fixed;top:14px;right:14px;z-index:300;padding:8px 14px;border:0;border-radius:999px;background:rgba(24,26,29,.8);color:#fff;font:inherit;font-size:13px;cursor:pointer;opacity:.35;transition:opacity .2s}
+.mb-present-exit:hover{opacity:1}

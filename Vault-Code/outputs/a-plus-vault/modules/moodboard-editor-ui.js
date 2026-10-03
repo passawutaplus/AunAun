@@ -77,6 +77,8 @@ export function smartGridEditorMarkup(ctx) {
         <button type="button" class="ghost-button mini" data-mb-zoom="fit" title="Fit all objects">Fit</button>
       </div>
       <button type="button" class="ghost-button mb-layers-toggle${sourceCollapsed ? "" : " is-on"}" data-toggle-moodboard-source title="Layers" aria-pressed="${sourceCollapsed ? "false" : "true"}">Layers</button>
+      <button type="button" class="ghost-button" data-mb-present title="Present full screen">Present</button>
+      <details class="mb-export"><summary class="ghost-button">Export</summary><div class="mb-export-menu"><button type="button" data-mb-export-png>PNG image</button><button type="button" data-export-moodboard="${escA(board.id)}">PDF (print)</button></div></details>
       <button type="button" class="ghost-button" data-link-moodboard-project="${escA(board.id)}">Add to Project</button>
       <span class="status-pill">Private</span>
       <button type="button" class="icon-button mb-inspector-toggle${inspectorCollapsed ? "" : " is-on"}" data-toggle-moodboard-inspector title="${inspectorCollapsed ? "Show inspector" : "Hide inspector"}" aria-label="Toggle inspector">${uiIcon ? uiIcon("panel") || "☰" : "☰"}</button>
@@ -135,6 +137,20 @@ export function smartGridEditorMarkup(ctx) {
 </div>`;
 }
 
+function layerThumb(o, vaultById, escA) {
+  if (o.kind === "palette") {
+    const c = (o.colors && o.colors[0]) || o.color || "#888";
+    return `<span class="mb-layer-thumb" style="background:${escA(c)}"></span>`;
+  }
+  if (o.kind === "item") {
+    const it = vaultById.get(o.itemId);
+    const src = it && (it.thumbnailUrl || it.previewUrl || (it.type === "image" ? it.assetUrl : ""));
+    return src ? `<span class="mb-layer-thumb" style="background-image:url('${escA(src)}')"></span>` : `<span class="mb-layer-thumb is-blank"></span>`;
+  }
+  const glyph = o.kind === "text" || o.kind === "note" ? "T" : o.kind === "todo" ? "☑" : o.kind === "frame" ? "▢" : "·";
+  return `<span class="mb-layer-thumb is-glyph">${glyph}</span>`;
+}
+
 function objectLayerLabel(o, vaultById) {
   const item = vaultById.get(o.itemId);
   if (o.kind === "text" || o.kind === "note") return "Text";
@@ -174,7 +190,7 @@ function buildLayerList(nodes, vaultById, selectedSet, esc, escA) {
               const lab = objectLayerLabel(m, vaultById);
               return `<li class="${selectedSet.has(m.id) ? "is-selected" : ""}">
                 <button type="button" data-select-board-obj="${escA(m.id)}" title="${escA(lab)}">
-                  <span class="moodboard-layer-label">${esc(lab)}</span>
+                  ${layerThumb(m, vaultById, escA)}<span class="moodboard-layer-label">${esc(lab)}</span>
                 </button>
               </li>`;
             })
@@ -187,7 +203,7 @@ function buildLayerList(nodes, vaultById, selectedSet, esc, escA) {
     const label = objectLayerLabel(o, vaultById);
     rows.push(`<li class="${selectedSet.has(o.id) ? "is-selected" : ""}">
       <button type="button" data-select-board-obj="${escA(o.id)}" title="${escA(label)}">
-        <span class="moodboard-layer-index">${index}.</span>
+        ${layerThumb(o, vaultById, escA)}
         <span class="moodboard-layer-label">${esc(label)}</span>
       </button>
     </li>`);
@@ -224,7 +240,13 @@ function objectChrome(objId, selected, escA) {
         `<button type="button" class="moodboard-resize-grip corner-${c}" data-resize-board-obj="${escA(objId)}" data-resize-corner="${c}" title="Resize" aria-label="Resize ${c}"></button>`
     )
     .join("");
-  return `${remove}<div class="moodboard-resize-frame" aria-hidden="true"></div>${grips}<span class="moodboard-size-badge" data-size-badge="${escA(objId)}" hidden></span>`;
+  const bar = `<div class="mb-selbar" role="toolbar" aria-label="Object actions">
+    <button type="button" data-mb-duplicate="${escA(objId)}" title="Duplicate" aria-label="Duplicate">⧉</button>
+    <button type="button" data-layer-board-obj="${escA(objId)}" data-layer-action="front" title="Bring to front" aria-label="Bring to front">⤒</button>
+    <button type="button" data-layer-board-obj="${escA(objId)}" data-layer-action="back" title="Send to back" aria-label="Send to back">⤓</button>
+    <button type="button" class="is-danger" data-remove-board-obj="${escA(objId)}" title="Remove from board" aria-label="Remove from board">✕</button>
+  </div>`;
+  return `${remove}${bar}<div class="moodboard-resize-frame" aria-hidden="true"></div>${grips}<span class="moodboard-size-badge" data-size-badge="${escA(objId)}" hidden></span>`;
 }
 
 function layerActions(objId, escA, opts) {
