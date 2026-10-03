@@ -20,7 +20,8 @@ export function smartGridEditorMarkup(ctx) {
     sourceCollapsed = false,
     inspectorCollapsed = false,
     sourceWidth = 220,
-    inspectorWidth = 260
+    inspectorWidth = 260,
+    zoom = 1
   } = ctx;
   const vaultById = new Map((items || []).map((i) => [i.id, i]));
   const status = saveStatusLabel(saveStatus || "idle");
@@ -44,77 +45,82 @@ export function smartGridEditorMarkup(ctx) {
     .join("");
   const connectorSvg = connectorsMarkup(connectors, nodes, escA, selectedObjectId);
   const bodyCls = [
-    "moodboard-editor-body",
+    "moodboard-editor-body", "mb2",
     sourceCollapsed ? "source-collapsed" : "",
     inspectorCollapsed ? "inspector-collapsed" : ""
   ]
     .filter(Boolean)
     .join(" ");
-  const toolBtn = (id, label, glyph) =>
-    `<button type="button" class="moodboard-tool-btn ${tool === id ? "active" : ""}" data-moodboard-tool="${id}" title="${label}" aria-label="${label}">
-      <span class="moodboard-tool-glyph" aria-hidden="true">${glyph}</span>
-      <span>${label}</span>
+  const toolBtn = (id, label, glyph, key) =>
+    `<button type="button" class="mb-tool ${tool === id ? "active" : ""}" data-moodboard-tool="${id}" title="${label}${key ? " (" + key + ")" : ""}" aria-label="${label}">
+      <span class="mb-tool-glyph" aria-hidden="true">${glyph}</span><span class="mb-tool-label">${label}</span>
     </button>`;
+  const zoomPct = Math.round((Number(zoom) || 1) * 100);
 
   return `
 <div class="moodboard-editor smart-grid-editor" data-moodboard-editor="${escA(board.id)}" data-moodboard-active-tool="${escA(tool)}" style="--mb-source-w:${Number(sourceWidth) || 220}px;--mb-inspector-w:${Number(inspectorWidth) || 260}px">
-  <header class="moodboard-topbar">
+  <header class="moodboard-topbar mb-topbar">
     <div class="moodboard-topbar-left">
-      <button type="button" class="ghost-button" data-view="moodboards">${icon("close")}<span>Moodboards</span></button>
+      <button type="button" class="ghost-button mb-back" data-view="moodboards" title="Back to Moodboards" aria-label="Back to Moodboards">${icon("close")}<span>Moodboards</span></button>
       <input class="moodboard-title-input" data-moodboard-title value="${escA(board.name)}" maxlength="120" aria-label="Board title">
       <span class="moodboard-save-status" data-moodboard-save-status data-status="${escA(saveStatus || "idle")}">${esc(status)}</span>
     </div>
+    <div class="mb-topbar-center">
+      <button type="button" class="icon-button" data-moodboard-undo title="Undo (Ctrl+Z)" aria-label="Undo" ${canUndo ? "" : "disabled"}>${uiIcon ? uiIcon("undo") || "↶" : "↶"}</button>
+      <button type="button" class="icon-button" data-moodboard-redo title="Redo (Ctrl+Shift+Z)" aria-label="Redo" ${canRedo ? "" : "disabled"}>${uiIcon ? uiIcon("redo") || "↷" : "↷"}</button>
+    </div>
     <div class="moodboard-topbar-right">
-      <button type="button" class="icon-button" data-toggle-moodboard-source title="${sourceCollapsed ? "Expand tools" : "Collapse tools"}" aria-label="${sourceCollapsed ? "Expand tools" : "Collapse tools"}">${icon(sourceCollapsed ? "expand" : "collapse")}</button>
-      <button type="button" class="icon-button" data-moodboard-undo title="Undo" ${canUndo ? "" : "disabled"}>${uiIcon ? uiIcon("undo") || "↶" : "↶"}</button>
-      <button type="button" class="icon-button" data-moodboard-redo title="Redo" ${canRedo ? "" : "disabled"}>${uiIcon ? uiIcon("redo") || "↷" : "↷"}</button>
+      <div class="mb-zoom" role="group" aria-label="Zoom">
+        <button type="button" class="icon-button mini" data-mb-zoom="out" title="Zoom out" aria-label="Zoom out">&minus;</button>
+        <button type="button" class="mb-zoom-pct" data-mb-zoom="reset" title="Reset to 100%" data-mb-zoom-label>${zoomPct}%</button>
+        <button type="button" class="icon-button mini" data-mb-zoom="in" title="Zoom in" aria-label="Zoom in">+</button>
+        <button type="button" class="ghost-button mini" data-mb-zoom="fit" title="Fit all objects">Fit</button>
+      </div>
+      <button type="button" class="ghost-button mb-layers-toggle${sourceCollapsed ? "" : " is-on"}" data-toggle-moodboard-source title="Layers" aria-pressed="${sourceCollapsed ? "false" : "true"}">Layers</button>
       <button type="button" class="ghost-button" data-link-moodboard-project="${escA(board.id)}">Add to Project</button>
       <span class="status-pill">Private</span>
-      <button type="button" class="icon-button" data-toggle-moodboard-inspector title="${inspectorCollapsed ? "Expand inspector" : "Collapse inspector"}" aria-label="${inspectorCollapsed ? "Expand inspector" : "Collapse inspector"}">${icon(inspectorCollapsed ? "collapse" : "expand")}</button>
+      <button type="button" class="icon-button mb-inspector-toggle${inspectorCollapsed ? "" : " is-on"}" data-toggle-moodboard-inspector title="${inspectorCollapsed ? "Show inspector" : "Hide inspector"}" aria-label="Toggle inspector">${uiIcon ? uiIcon("panel") || "☰" : "☰"}</button>
     </div>
   </header>
   <div class="${bodyCls}" data-moodboard-editor-body>
-    <aside class="moodboard-source-panel moodboard-tools-panel" data-moodboard-source-panel>
+    <aside class="moodboard-source-panel moodboard-tools-panel mb-layers-panel" data-moodboard-source-panel>
       <div class="moodboard-panel-head">
-        <div>
-          <p class="side-kicker">Tools</p>
-          <p class="settings-field-hint">Add objects, then drag freely on the canvas.</p>
-        </div>
-        <button type="button" class="icon-button mini" data-toggle-moodboard-source title="${sourceCollapsed ? "Expand tools" : "Collapse to icons"}" aria-label="${sourceCollapsed ? "Expand tools" : "Collapse to icons"}">${icon(sourceCollapsed ? "expand" : "collapse")}</button>
+        <p class="side-kicker">Layers</p>
+        <button type="button" class="icon-button mini" data-toggle-moodboard-source title="Hide layers" aria-label="Hide layers">${icon("close")}</button>
       </div>
       <div class="moodboard-panel-scroll">
-        <div class="moodboard-tool-list" role="toolbar" aria-label="Moodboard tools">
-          ${toolBtn("select", "Select", "⌖")}
-          ${toolBtn("image", "Add image", "▣")}
-          ${toolBtn("upload", "Upload", "⇪")}
-          ${toolBtn("text", "Text", "T")}
-          ${toolBtn("todo", "To-do", "☑")}
-          ${toolBtn("color", "Color", "◐")}
-          ${toolBtn("connector", "Connect", "⟷")}
-          ${toolBtn("frame", "Frame", "▢")}
-        </div>
-        <input type="file" class="moodboard-upload-input" data-moodboard-upload accept="image/jpeg,image/png,image/webp" multiple hidden>
         <div class="moodboard-a11y-list" aria-label="Layers">
           <div class="moodboard-layer-head">
-            <p class="side-kicker">Layer</p>
             <div class="moodboard-layer-tools">
               <button type="button" class="ghost-button mini" data-moodboard-group ${canGroup ? "" : "disabled"} title="Group selected">Group</button>
               <button type="button" class="ghost-button mini" data-moodboard-ungroup ${canUngroup ? "" : "disabled"} title="Ungroup">Ungroup</button>
             </div>
           </div>
-          <p class="settings-field-hint moodboard-layer-hint">Shift/Ctrl คลิกเพื่อเลือกหลายชั้น แล้ว Group</p>
+          <p class="settings-field-hint moodboard-layer-hint">Shift / Ctrl + click to select several, then Group.</p>
           <ol class="moodboard-layer-list">${layerRows}</ol>
         </div>
       </div>
     </aside>
     <button type="button" class="moodboard-resize-handle source-resize" data-resize-moodboard-source title="Drag to resize tools" aria-label="Resize tools panel"><span></span></button>
-    <main class="moodboard-canvas-wrap">
-      <div class="smart-grid-canvas moodboard-dot-grid" data-smart-grid-canvas style="--board-gap:${board.gap || 16}px;--board-pad:${board.padding || 24}px;min-width:${Math.max(board.width || 1200, canvasExtent(nodes, "w"))}px;min-height:${Math.max(board.height || 900, canvasExtent(nodes, "h"))}px">
+    <main class="moodboard-canvas-wrap" data-mb-canvas-wrap>
+      <div class="smart-grid-canvas moodboard-dot-grid" data-smart-grid-canvas style="zoom:${Number(zoom) || 1};--board-gap:${board.gap || 16}px;--board-pad:${board.padding || 24}px;min-width:${Math.max(board.width || 1200, canvasExtent(nodes, "w"))}px;min-height:${Math.max(board.height || 900, canvasExtent(nodes, "h"))}px">
         <svg class="moodboard-connectors" data-moodboard-connectors aria-hidden="true">${connectorSvg}</svg>
         ${gridItems || `<div class="smart-grid-empty"><p>Use tools on the left, or drop images from your computer onto the canvas.</p></div>`}
         <div class="moodboard-drop-hint" data-moodboard-drop-hint hidden><strong>Drop to upload</strong><span>Saves to My Vault + adds to this board</span></div>
       </div>
     </main>
+    <div class="mb-toolbar" role="toolbar" aria-label="Moodboard tools">
+      ${toolBtn("select", "Select", "⌖", "V")}
+      ${toolBtn("image", "Add from Vault", "▣", "I")}
+      ${toolBtn("upload", "Upload", "⇪", "U")}
+      <span class="mb-toolbar-sep" aria-hidden="true"></span>
+      ${toolBtn("text", "Text", "T", "T")}
+      ${toolBtn("color", "Color", "◐", "C")}
+      ${toolBtn("todo", "To-do", "☑")}
+      ${toolBtn("frame", "Frame", "▢", "F")}
+      ${toolBtn("connector", "Connect", "⟷")}
+      <input type="file" class="moodboard-upload-input" data-moodboard-upload accept="image/jpeg,image/png,image/webp" multiple hidden>
+    </div>
     <button type="button" class="moodboard-resize-handle inspector-resize" data-resize-moodboard-inspector title="Drag to resize inspector" aria-label="Resize inspector"><span></span></button>
     <aside class="moodboard-inspector" data-moodboard-inspector-panel>
       <div class="moodboard-panel-head">
@@ -504,4 +510,4 @@ function canvasExtent(nodes, axis) {
     if (edge + pad > max) max = edge + pad;
   });
   return Math.round(max);
-}
+}

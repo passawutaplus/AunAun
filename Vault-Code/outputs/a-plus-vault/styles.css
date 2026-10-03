@@ -5821,3 +5821,53 @@ html:not([data-theme="dark"]) .moodboard-canvas-thumb{background:#f1eee8!importa
 .project-detail-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
 .project-detail-section-head h2{margin:0;font-size:20px;font-weight:300}
 .project-detail-section-meta{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+
+/* A+ Vault moodboard editor v2: canvas first - floating toolbar, optional layers, inspector only when something is selected */
+.moodboard-editor-body.mb2{position:relative;grid-template-columns:var(--mb-source-w,240px) 6px minmax(0,1fr) 6px var(--mb-inspector-w,280px)}
+.moodboard-editor-body.mb2.source-collapsed{grid-template-columns:0 0 minmax(0,1fr) 6px var(--mb-inspector-w,280px)}
+.moodboard-editor-body.mb2.inspector-collapsed{grid-template-columns:var(--mb-source-w,240px) 6px minmax(0,1fr) 0 0}
+.moodboard-editor-body.mb2.source-collapsed.inspector-collapsed{grid-template-columns:0 0 minmax(0,1fr) 0 0}
+.moodboard-editor-body.mb2.source-collapsed .moodboard-source-panel,.moodboard-editor-body.mb2.inspector-collapsed .moodboard-inspector{display:none}
+.moodboard-editor-body.mb2.source-collapsed .source-resize,.moodboard-editor-body.mb2.inspector-collapsed .inspector-resize{display:none}
+.mb-topbar{display:grid!important;grid-template-columns:1fr auto 1fr;gap:12px}
+.mb-topbar .moodboard-topbar-right{justify-content:flex-end;flex-wrap:nowrap}
+.mb-topbar-center{display:flex;align-items:center;gap:6px}
+.mb-back span{display:inline}
+.mb-zoom{display:flex;align-items:center;gap:2px;padding:2px;border-radius:999px;background:var(--surface-soft,rgba(255,255,255,.05))}
+.mb-zoom .icon-button.mini{width:28px;height:28px}
+.mb-zoom-pct{min-width:48px;height:28px;border:0;border-radius:999px;background:transparent;color:var(--ink);font:inherit;font-size:12px;cursor:pointer}
+.mb-zoom .ghost-button.mini{height:28px;padding:0 10px;border:0}
+.mb-layers-toggle.is-on,.mb-inspector-toggle.is-on{background:var(--ink-strong);color:var(--surface,#fff)}
+html[data-theme="dark"] .mb-layers-toggle.is-on,html[data-theme="dark"] .mb-inspector-toggle.is-on{background:#f2f3f4;color:#151719}
+.mb-toolbar{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:2px;padding:6px;border-radius:999px;background:rgba(24,26,29,.82);-webkit-backdrop-filter:blur(16px) saturate(1.4);backdrop-filter:blur(16px) saturate(1.4);box-shadow:0 14px 34px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.08)}
+html:not([data-theme="dark"]) .mb-toolbar{background:rgba(255,255,255,.86);box-shadow:0 14px 34px rgba(20,22,26,.18),inset 0 0 0 1px rgba(21,23,25,.08)}
+.mb-tool{display:grid;place-items:center;width:42px;height:42px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ink);cursor:pointer;transition:background .15s,color .15s,transform .15s}
+.mb-tool:hover{background:rgba(127,127,127,.18)}
+.mb-tool.active{background:var(--accent,#ff4f43);color:#fff}
+.mb-tool:active{transform:scale(.92)}
+.mb-tool-glyph{font-size:18px;line-height:1}
+.mb-tool-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.mb-toolbar-sep{width:1px;height:22px;margin:0 6px;background:var(--line)}
+.mb-layers-panel .moodboard-panel-head{padding-bottom:6px}
+.moodboard-canvas-wrap.is-panning,.mb-space .moodboard-canvas-wrap{cursor:grab}
+.moodboard-canvas-wrap.is-panning{cursor:grabbing;user-select:none}
+@media(max-width:900px){
+  .mb-topbar{grid-template-columns:1fr auto;grid-template-areas:"l r" "c c"}
+  .mb-topbar .moodboard-topbar-left{grid-area:l}.mb-topbar .moodboard-topbar-right{grid-area:r}.mb-topbar-center{grid-area:c;justify-content:center}
+  .mb-zoom .ghost-button.mini,.mb-back span{display:none}
+  .mb-toolbar{bottom:calc(14px + env(safe-area-inset-bottom));max-width:calc(100% - 20px);overflow-x:auto}
+}
+
+/* no project explorer sidebar; collection card text + actions centered */
+.project-explorer{display:none!important}
+.project-browser-body{grid-template-columns:minmax(0,1fr)!important}
+.collection-overview-grid .collection-card-head{display:grid!important;justify-items:center;text-align:center;gap:2px}
+.collection-overview-grid .collection-card-head strong{max-width:100%}
+.collection-overview-grid .collection-card-body{justify-items:center;text-align:center}
+.collection-overview-grid .collection-card-footer{justify-content:center!important;gap:4px}
+.collection-overview-grid .collection-card-spacer{display:none}
+.moodboard-editor-body.mb2>.moodboard-source-panel{grid-column:1;grid-row:1}
+.moodboard-editor-body.mb2>.source-resize{grid-column:2;grid-row:1}
+.moodboard-editor-body.mb2>.moodboard-canvas-wrap{grid-column:3;grid-row:1}
+.moodboard-editor-body.mb2>.inspector-resize{grid-column:4;grid-row:1}
+.moodboard-editor-body.mb2>.moodboard-inspector{grid-column:5;grid-row:1}
