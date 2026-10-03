@@ -342,14 +342,15 @@ function folderGraphicMarkup(opts){
   return "<div class='folder-graphic' aria-hidden='true'><div class='folder-body'>"+sheetHtml+"<span class='folder-tab'></span></div></div>";
 }
 function projectFolderMosaic(p){
-  let items=projectItems(p).filter(i=>i&&(i.type==="image"||i.previewUrl||i.assetUrl||i.thumbnailUrl)).slice(0,4);
-  if(!items.length){
-    return "<div class='project-set-mosaic is-empty'>"+folderGraphicMarkup({count:0})+"</div>";
-  }
-  return "<div class='project-set-mosaic count-"+Math.min(items.length,4)+"'>"+items.map(function(i){
-    let src=escA(i.thumbnailUrl||i.previewUrl||i.assetUrl||"");
-    return src?"<span class='project-set-tile'><img src='"+src+"' alt='' loading='lazy'></span>":"<span class='project-set-tile is-blank'></span>";
-  }).join("")+"</div>";
+  let items=projectItems(p).filter(i=>i&&(i.thumbnailUrl||i.previewUrl||i.type==="image"&&i.assetUrl)).slice(0,3),
+    colors=["#CB5037","#4568A7","#386451","#8a6d3b","#6b4f8f"],
+    h=0;
+  String(p.id||p.name).split("").forEach(ch=>{h=(h*31+ch.charCodeAt(0))>>>0});
+  let papers=[0,1,2].map(function(k){
+    let it=items[k],src=it?(it.thumbnailUrl||it.previewUrl||it.assetUrl||""):"";
+    return "<span class='pf-paper pf-paper-"+k+"'>"+(src?"<img src='"+escA(src)+"' alt='' loading='lazy' decoding='async' draggable='false'>":"<i></i><i></i><i></i>")+"</span>";
+  }).join("");
+  return "<div class='pfolder' style='--fc:"+colors[h%colors.length]+"' aria-hidden='true'><span class='pf-back'></span>"+papers+"<span class='pf-front'></span></div>";
 }
 function projectFolderCard(p){
   let boards=projectLinkedMoodboards(p),
