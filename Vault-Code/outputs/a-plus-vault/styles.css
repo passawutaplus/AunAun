@@ -5766,3 +5766,13 @@ html:not([data-theme="dark"]) .moodboard-canvas-thumb{background:#f1eee8!importa
 @media(hover:none){.project-set-card .folder-card-actions{opacity:1}}
 .project-set-card:hover,.project-set-card.active{background:transparent!important}
 .project-explorer-head{display:none}
+
+/* collection card: highlight star lives in the action row (bottom-left) instead of on the cover */
+.collection-overview-grid .collection-card-highlight-badge{display:none!important}
+.collection-overview-grid .collection-card-footer{justify-content:flex-start}
+.collection-overview-grid .collection-card-spacer{flex:1 1 auto}
+.collection-overview-grid .collection-card-star.is-on{color:#ffcb3d;background:rgba(255,203,61,.14)}
+.collection-overview-grid .collection-detail-card.is-highlighted .collection-card-footer{opacity:1}
+.collection-overview-grid .collection-card-footer .collection-card-action:not(.collection-card-star){opacity:0;transition:opacity .15s ease}
+.collection-overview-grid .collection-detail-card:hover .collection-card-footer .collection-card-action,.collection-overview-grid .collection-detail-card:focus-within .collection-card-footer .collection-card-action{opacity:1}
+@media(hover:none){.collection-overview-grid .collection-card-footer .collection-card-action{opacity:1!important}}
