@@ -23,6 +23,24 @@ window.addEventListener("message", event => {
   } catch (_) {}
 }, false);
 
+/* Auto-pair: when you are logged in to A+ Vault in this browser, the web app hands its sync token to the extension. */
+if (VAULT_SYNC_ORIGINS.includes(location.origin)) {
+  document.documentElement.dataset.vaultExtension = "1";
+  window.addEventListener("message", event => {
+    if (event.source !== window || event.origin !== location.origin) return;
+    const data = event.data;
+    if (!data || data.type !== "VAULT_EXTENSION_PAIR") return;
+    const token = String(data.token || "").trim();
+    if (!token || /\s/.test(token) || token.length > 4096) return;
+    try {
+      chrome.runtime.sendMessage({ type: "VAULT_PAIR", token }, response => {
+        if (chrome.runtime.lastError || !response || !response.ok) return;
+        window.postMessage({ type: "VAULT_EXTENSION_PAIRED", changed: !!response.changed }, location.origin);
+      });
+    } catch (_) {}
+  }, false);
+}
+
 window.addEventListener("contextmenu", event => {
   latestVaultContext = buildVaultContextFromPoint(event.clientX, event.clientY);
   try {

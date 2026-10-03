@@ -32,8 +32,12 @@ function isVaultAppSender(sender) {
   }
 }
 
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(async details => {
   await chrome.contextMenus.removeAll();
+  // First install: open the Vault so a logged-in session pairs itself with the extension.
+  if (details && details.reason === "install") {
+    chrome.tabs.create({ url: `${DEFAULT_API_BASE}/vault?ext=installed` }).catch(() => {});
+  }
 
   [
     ["keep-image", "image", "+ Keep in Vault"],
@@ -142,6 +146,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       await chrome.storage.local.remove(["pendingCapture"]);
       await setBadge("", "#747a80");
       sendResponse({ ok: true });
+      return;
+    }
+
+    if (message?.type === "VAULT_PAIR") {
+      const token = String(message.token || "").trim();
+      if (!isVaultAppSender(sender) || !token || /\s/.test(token) || token.length > 4096) {
+        sendResponse({ ok: false });
+        return;
+      }
+      const current = await chrome.storage.local.get(["vaultToken"]);
+      const changed = current.vaultToken !== token;
+      if (changed) {
+        const update = { vaultToken: token, vaultPairedAt: Date.now() };
+        const origin = new URL(sender.url || sender.tab?.url || "").origin;
+        if (origin.startsWith("https://")) update.apiBase = origin;
+        await chrome.storage.local.set(update);
+        await setBadge("", "#747a80");
+      }
+      sendResponse({ ok: true, changed });
       return;
     }
 
@@ -560,7 +583,7 @@ async function saveCapture(payload, options = {}) {
   const { vaultToken, apiBase, stayOnPageAfterSave } = await getSettings();
 
   if (!vaultToken) {
-    await setStatus("error", "Missing Vault token. Open Vault → Profile → Settings → Copy extension token, then paste it here.");
+    await setStatus("error", "Not connected yet. Open A+ Vault and log in once — the extension connects itself. (Or paste a token in the popup.)");
     await setBadge("ERR", "#cc3931");
     await toastTab(options.tabId, "Missing Vault token.", "error");
     return null;

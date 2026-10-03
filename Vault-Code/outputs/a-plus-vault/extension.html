@@ -133,6 +133,7 @@
     .tl-step.in .switch i{background:var(--coral)}.tl-step.in .switch i::after{transform:translateX(15px)}
     .pin{display:flex;align-items:center;gap:10px}.pin span{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--paper);font-size:16px}.pin span.on{background:var(--coral);color:#fff}
     .copybtn{margin-top:12px;height:40px;padding:0 16px;font-size:13px}
+    .connected{display:flex;align-items:center;gap:14px}.connected i{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:rgba(31,138,76,.14);color:#1f8a4c;font-style:normal;font-weight:700}
     .token{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:var(--paper);font:500 12px ui-monospace,Consolas,monospace;color:var(--ink-2)}
     .token em{font-style:normal;color:var(--coral)}
 
@@ -208,7 +209,8 @@
           <a class="btn btn-coral" href="/downloads/aplus-vault-extension.zip" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>Download for Chrome (alpha)</a>
           <a class="btn btn-light" href="#install">How to install</a>
         </div>
-        <p class="hero-note">v<span data-version>0.1.4</span> · Chrome Web Store listing coming soon · Free during alpha</p>
+        <p class="hero-note" data-detected hidden style="color:#1f8a4c;font-weight:600">✓ Extension detected in this browser</p>
+        <p class="hero-note">v<span data-version>0.1.5</span> · Chrome Web Store listing coming soon · Free during alpha</p>
       </div>
       <div data-floats aria-hidden="true"></div>
       <span class="keepchip" style="left:19%;top:34%" aria-hidden="true">+ Keep</span>
@@ -259,23 +261,20 @@
       <div class="wrap">
         <div class="install-head reveal">
           <span class="eyebrow">Install</span>
-          <h2 style="margin-top:18px">Ready in<br />two minutes.</h2>
-          <p class="lede">The extension is in private alpha, so you load it yourself for now. Four steps, once.<span class="th">ติดตั้งครั้งเดียว 4 ขั้นตอน</span></p>
+          <h2 style="margin-top:18px">Three steps.<br />Once.</h2>
+          <p class="lede">The extension is in private alpha, so you add it to Chrome yourself for now. Three steps, once — and no token to copy.<span class="th">ติดตั้งครั้งเดียว 3 ขั้นตอน ไม่ต้องคัดลอก token</span></p>
         </div>
         <div class="timeline" data-timeline>
           <div class="tl-fill" data-fill></div>
           <article class="tl-step reveal"><span class="tl-num">1</span>
             <div><h3>Download and unzip</h3><p>Get the extension folder and unzip it somewhere you won’t delete — Chrome reads it from there.</p><a class="btn btn-dark copybtn" href="/downloads/aplus-vault-extension.zip" download>Download .zip</a></div>
-            <div class="tl-art"><div class="file"><b>.zip</b><div><strong>aplus-vault-extension</strong><br><small>v<span data-version>0.1.4</span> · about 100 KB</small></div></div></div></article>
+            <div class="tl-art"><div class="file"><b>.zip</b><div><strong>aplus-vault-extension</strong><br><small>v<span data-version>0.1.5</span> · about 100 KB</small></div></div></div></article>
           <article class="tl-step reveal"><span class="tl-num">2</span>
             <div><h3>Load it in Chrome</h3><p>Open <code>chrome://extensions</code>, switch on <strong>Developer mode</strong>, click <strong>Load unpacked</strong>, and choose the unzipped folder.</p><button type="button" class="btn btn-light copybtn" data-copy="chrome://extensions">Copy chrome://extensions</button></div>
             <div class="tl-art"><code>chrome://extensions</code><div class="switch"><span>Developer mode</span><i></i></div><div class="switch"><span>Load unpacked</span><span>→ pick folder</span></div></div></article>
           <article class="tl-step reveal"><span class="tl-num">3</span>
-            <div><h3>Pin it</h3><p>Click the puzzle icon in Chrome’s toolbar and pin <strong>A+ Vault Capture</strong> so the Mini Vault panel is one click away.</p></div>
-            <div class="tl-art"><div class="pin"><span>⋯</span><span>⛶</span><span class="on">V</span></div></div></article>
-          <article class="tl-step reveal"><span class="tl-num">4</span>
-            <div><h3>Pair with your Vault</h3><p>In A+ Vault open <strong>Settings → Chrome extension</strong>, copy your token, and paste it into the extension popup. That’s it — right-click anything.</p><a class="btn btn-coral copybtn" href="/vault">Open Settings</a></div>
-            <div class="tl-art"><div class="token">vault-<em>••••••••••</em>g2<span style="margin-left:auto">Copy</span></div><p style="margin:10px 0 0;color:var(--muted);font-size:12px">Anyone with this token can save into your Vault. Refresh it any time.</p></div></article>
+            <div><h3>Open A+ Vault — done</h3><p>The extension opens your Vault right after it’s added. Log in once and it connects itself — no token, no settings. Then right-click anything.</p><a class="btn btn-coral copybtn" href="/vault">Open A+ Vault</a><p style="margin-top:12px;font-size:13px;color:var(--muted)">Tip: pin <strong>A+ Vault Capture</strong> from Chrome’s puzzle-piece menu to keep the Mini Vault panel one click away.</p></div>
+            <div class="tl-art"><div class="connected"><i>✓</i><div><strong>Extension connected</strong><br><small>Signed in · ready to keep</small></div></div></div></article>
         </div>
       </div>
     </section>
@@ -312,8 +311,10 @@
         <div class="faq reveal">
           <details><summary>Why isn’t it on the Chrome Web Store yet?</summary><p>We’re finishing the alpha first. Once it’s listed, this page will link straight to the store and you’ll get automatic updates. Until then, loading it yourself takes about two minutes.</p></details>
           <details><summary>Will it work in Edge, Brave, or Arc?</summary><p>It’s built as a standard Chrome (Manifest V3) extension, so other Chromium browsers can usually load it the same way. We test on Chrome first.</p></details>
+          <details><summary>Why can’t I just click “Add to Chrome”?</summary><p>Chrome only offers one-click installs for extensions listed on the Chrome Web Store. We’re preparing that listing — until then, the three steps above are the way in. After that, updating is the only manual part.</p></details>
           <details><summary>How do I update it?</summary><p>Download the newest .zip, replace the folder you loaded, and press the reload icon on the extension in <code>chrome://extensions</code>.</p></details>
-          <details><summary>Can anyone see what I keep?</summary><p>No. Your Vault is private by default. The token only lets the extension save into your account — refresh it from Settings if you ever share it by mistake.</p></details>
+          <details><summary>How does it connect without a token?</summary><p>When you’re logged in to A+ Vault in the same browser, the web app hands a private sync key straight to the extension on that page — nothing to copy or paste. You can still paste a token manually in the popup if you prefer.</p></details>
+          <details><summary>Can anyone see what I keep?</summary><p>No. Your Vault is private by default. The sync key only lets the extension save into your own account, and you can refresh it from Settings any time.</p></details>
           <details><summary>What can I keep?</summary><p>Images, videos, links, selected text or URLs, whole pages, and region snapshots. Each keeps its source so you can find it — and credit it — later.</p></details>
         </div>
       </div>
@@ -408,6 +409,7 @@
       toast.classList.add("show"); clearTimeout(t); t = setTimeout(() => toast.classList.remove("show"), 2600);
     }));
 
+    setTimeout(() => { if (document.documentElement.dataset.vaultExtension === "1") { const d = $("[data-detected]"); if (d) d.hidden = false; } }, 700);
     build();
     onScroll();
     loadPool().then(() => { if (pool.length) build(); });
