@@ -5981,3 +5981,20 @@ html:not([data-theme="dark"]) .mb-line-styles{background:rgba(255,255,255,.94);b
 html.mb-present .mb-line-styles{display:none!important}
 .mb-selbar-sep{width:1px;height:18px;margin:0 4px;align-self:center;background:rgba(255,255,255,.18)}
 .mb-selbar button svg{width:17px;height:17px}
+
+/* inspector: color actions with a small picture of what they create */
+.mb-color-options{display:grid;gap:8px;margin-top:10px}
+.mb-color-option{display:grid;gap:10px;width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-soft,rgba(255,255,255,.04));color:var(--ink);text-align:left;cursor:pointer;transition:border-color .15s,background .15s}
+.mb-color-option:hover{border-color:var(--accent,#ff4f43);background:rgba(255,79,67,.06)}
+.mb-opt-copy{display:grid;gap:1px}
+.mb-opt-copy strong{font-weight:500;font-size:14px}
+.mb-opt-copy small{color:var(--muted);font-size:12px}
+.mb-opt-art{display:flex;align-items:center;height:44px}
+.mb-opt-strip{overflow:hidden;border-radius:8px;box-shadow:0 0 0 1px rgba(255,255,255,.08)}
+.mb-opt-strip i{flex:1;height:100%}
+.mb-opt-chips{gap:6px}
+.mb-opt-chip{position:relative;flex:1;height:100%;overflow:hidden;border-radius:6px;background:#1c1e22;box-shadow:0 0 0 1px rgba(255,255,255,.08)}
+.mb-opt-chip i{position:absolute;inset:0 0 34% 0;display:block}
+.mb-opt-chip b{position:absolute;left:18%;right:18%;bottom:14%;height:3px;border-radius:2px;background:rgba(255,255,255,.35)}
+.mb-opt-tip{display:flex;align-items:flex-start;gap:6px;margin:2px 2px 0;color:var(--muted);font-size:12px;line-height:1.4}
+.mb-opt-tip svg{flex:0 0 auto;margin-top:1px}
