@@ -61,7 +61,7 @@ export function smartGridEditorMarkup(ctx) {
 <div class="moodboard-editor smart-grid-editor" data-moodboard-editor="${escA(board.id)}" data-moodboard-active-tool="${escA(tool)}" style="--mb-source-w:${Number(sourceWidth) || 220}px;--mb-inspector-w:${Number(inspectorWidth) || 260}px">
   <header class="moodboard-topbar mb-topbar">
     <div class="moodboard-topbar-left">
-      <button type="button" class="ghost-button mb-back" data-view="moodboards" title="Back to Moodboards" aria-label="Back to Moodboards">${icon("close")}<span>Moodboards</span></button>
+      <button type="button" class="mb-back" data-view="moodboards" title="Back to Moodboards" aria-label="Back to Moodboards"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg><span>Moodboards</span></button>
       <input class="moodboard-title-input" data-moodboard-title value="${escA(board.name)}" maxlength="120" aria-label="Board title">
       <span class="moodboard-save-status" data-moodboard-save-status data-status="${escA(saveStatus || "idle")}">${esc(status)}</span>
     </div>
@@ -179,7 +179,7 @@ function buildLayerList(nodes, vaultById, selectedSet, esc, escA) {
       const members = ordered.filter((x) => objectGroupId(x) === gid);
       const anySelected = members.some((m) => selectedSet.has(m.id));
       index += 1;
-      rows.push(`<li class="moodboard-layer-group ${anySelected ? "is-selected" : ""}" data-layer-group="${escA(gid)}">
+      rows.push(`<li class="moodboard-layer-group ${anySelected ? "is-selected" : ""}" data-layer-group="${escA(gid)}" data-layer-unit="g:${escA(gid)}" draggable="true">
         <button type="button" class="moodboard-layer-group-toggle" data-select-board-group="${escA(gid)}" title="Select group">
           <span class="moodboard-layer-index">${index}.</span>
           <span class="moodboard-layer-label">Group · ${members.length}</span>
@@ -201,7 +201,7 @@ function buildLayerList(nodes, vaultById, selectedSet, esc, escA) {
     }
     index += 1;
     const label = objectLayerLabel(o, vaultById);
-    rows.push(`<li class="${selectedSet.has(o.id) ? "is-selected" : ""}">
+    rows.push(`<li class="${selectedSet.has(o.id) ? "is-selected" : ""}" data-layer-unit="o:${escA(o.id)}" draggable="true">
       <button type="button" data-select-board-obj="${escA(o.id)}" title="${escA(label)}">
         ${layerThumb(o, vaultById, escA)}
         <span class="moodboard-layer-label">${esc(label)}</span>

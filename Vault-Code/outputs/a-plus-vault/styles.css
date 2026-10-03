@@ -5921,3 +5921,24 @@ html.mb-present .moodboard-editor-body>.moodboard-canvas-wrap{grid-column:1!impo
 .mb-ico-btn:hover{background:rgba(127,127,127,.2)}
 .mb-ico-btn:active{background:var(--accent,#ff4f43);color:#fff}
 .mb-ico-btn:focus-visible{outline:2px solid var(--accent,#ff4f43);outline-offset:1px}
+
+/* editor top bar: text back link, tidy right side; layers panel like Canva */
+.mb-back{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 10px 0 6px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
+.mb-back:hover{background:var(--surface-soft,rgba(255,255,255,.08))}
+.mb-back .flat-icon,.mb-back svg{width:18px;height:18px}
+.mb-topbar .moodboard-topbar-right>*{flex:0 0 auto;white-space:nowrap}
+.mb-topbar .moodboard-topbar-right .ghost-button,.mb-export>summary{height:36px;padding:0 14px;display:inline-flex;align-items:center}
+.mb-layers-panel .moodboard-layer-list{display:grid;gap:2px;margin:0;padding:0;list-style:none}
+.mb-layers-panel .moodboard-layer-list li{position:relative;border-radius:10px;list-style:none}
+.mb-layers-panel .moodboard-layer-list li>button,.mb-layers-panel .moodboard-layer-group-toggle{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;padding:6px 8px 6px 22px;border:0;border-radius:10px;background:transparent;color:var(--ink);text-align:left;cursor:pointer}
+.mb-layers-panel .moodboard-layer-list li:hover{background:var(--surface-soft,rgba(255,255,255,.06))}
+.mb-layers-panel .moodboard-layer-list li.is-selected>button{background:rgba(255,79,67,.14)}
+.mb-layers-panel .moodboard-layer-list li[data-layer-unit]::before{content:"⋮⋮";position:absolute;left:5px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px;letter-spacing:-2px;opacity:0;cursor:grab}
+.mb-layers-panel .moodboard-layer-list li[data-layer-unit]:hover::before{opacity:.8}
+.mb-layers-panel .mb-layer-thumb{width:36px;height:36px;margin:0;border-radius:8px}
+.mb-layers-panel .moodboard-layer-label{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;text-align:left}
+.mb-layers-panel .moodboard-layer-children{margin:2px 0 4px 18px;padding:0;list-style:none}
+.mb-layers-panel .moodboard-layer-list li.is-drag{opacity:.4}
+.mb-layers-panel .moodboard-layer-list li.drop-before{box-shadow:0 -2px 0 var(--accent,#ff4f43)}
+.mb-layers-panel .moodboard-layer-list li.drop-after{box-shadow:0 2px 0 var(--accent,#ff4f43)}
+.mb-layers-panel .moodboard-panel-scroll{overflow-x:hidden}
