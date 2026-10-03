@@ -5521,3 +5521,9 @@ html[data-standalone] .install-app-row{display:none!important}
   .object-grid.size-small,.object-grid.size-medium{columns:2;column-width:auto!important}
   .object-grid.size-large{columns:1;column-width:auto!important}
 }
+
+/* A+ Vault guest end-of-feed wordmark */
+.discover-gate-wordmark{position:absolute;left:0;right:0;bottom:-.14em;text-align:center;white-space:nowrap;pointer-events:none;user-select:none;font:300 clamp(72px,19vw,320px)/.9 "Agrandir Wide","IBM Plex Sans Thai",sans-serif;letter-spacing:-.04em;color:var(--text-strong,var(--ink-strong));opacity:.92;background:linear-gradient(to bottom,var(--text-strong,#fff) 15%,transparent 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.discover-grid-wrap:has(.discover-gate){min-height:clamp(560px,80vh,860px)}
+.discover-gate{padding-bottom:calc(clamp(72px,17vw,300px)*.75)}
+.discover-gate-wordmark{font-size:clamp(72px,17vw,300px)}
