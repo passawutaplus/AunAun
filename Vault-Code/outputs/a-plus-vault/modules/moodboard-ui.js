@@ -46,7 +46,6 @@ export function moodboardListMarkup(ctx) {
 <section class="page-head moodboard-page-head">
   <div>
     <h1>Moodboards</h1>
-    <p>Turn saved references into a clear creative direction—without uploading again.</p>
   </div>
   <div class="page-head-actions">
     <button class="primary-button" type="button" data-open-create-moodboard>${icon("plus")}<span>Create Moodboard</span></button>
@@ -78,13 +77,11 @@ function moodboardIndexCard(board, projects, esc, escA, icon, thumbFor) {
   <button type="button" class="moodboard-card-open" data-open-moodboard="${escA(board.id)}">
     ${moodboardCover(board, esc, escA, thumbFor)}
     <span class="moodboard-card-copy">
-      <strong>${esc(board.name)}</strong>
-      <small>${count} ref${count === 1 ? "" : "s"} · ${esc(updated)}</small>
+      <span class="moodboard-card-line"><strong>${esc(board.name)}</strong><small>${count} ref${count === 1 ? "" : "s"}</small></span>
       ${project ? `<em class="moodboard-card-project">${esc(project.name)}</em>` : ""}
     </span>
   </button>
   <div class="moodboard-card-actions">
-    <button type="button" class="moodboard-card-open-btn" data-open-moodboard="${escA(board.id)}">Open</button>
     <button type="button" data-rename-moodboard="${escA(board.id)}" title="Rename" aria-label="Rename moodboard">${icon("edit")}</button>
     <button type="button" data-link-moodboard-project="${escA(board.id)}" title="Add to Project" aria-label="Add to project">${icon("project")}</button>
     <button type="button" class="danger-link" data-delete-moodboard="${escA(board.id)}" title="Delete" aria-label="Delete moodboard">${icon("trash")}</button>

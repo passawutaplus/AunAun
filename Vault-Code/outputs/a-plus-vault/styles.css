@@ -5694,3 +5694,16 @@ html[data-theme="dark"] .studio-tab.is-active{background:#f2f3f4;color:#151719}
 .collection-note-box textarea{width:100%;min-height:64px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-soft,rgba(255,255,255,.04));color:var(--ink);font:inherit;font-size:14px;line-height:1.5;resize:vertical;outline:none}
 .collection-note-box textarea:focus{border-color:var(--accent,#ff4f43)}
 .collection-in-projects{display:flex;flex-wrap:wrap;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+
+/* A+ Vault moodboard cards match collection cards */
+.moodboard-index-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))!important;gap:22px 20px}
+.moodboard-cover{aspect-ratio:1/1}
+.moodboard-card-copy{padding:10px 2px 0}
+.moodboard-card-line{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.moodboard-card-line small{margin:0!important;color:var(--muted);font-size:12px;font-weight:300;white-space:nowrap}
+.moodboard-card-actions{justify-content:flex-end;opacity:0;transition:opacity .15s ease;padding-top:4px}
+.moodboard-index-card:hover .moodboard-card-actions,.moodboard-index-card:focus-within .moodboard-card-actions{opacity:1}
+@media(hover:none){.moodboard-card-actions{opacity:1}}
+.moodboard-card-open{width:100%;justify-items:stretch}.moodboard-cover{width:100%}
+.moodboard-cover{height:auto!important;aspect-ratio:1/1!important}
+.moodboard-card-open{grid-template-columns:minmax(0,1fr)!important;justify-content:stretch!important;align-content:start}
