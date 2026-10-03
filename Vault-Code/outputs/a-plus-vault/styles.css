@@ -5652,3 +5652,19 @@ html[data-theme="dark"] .project-set-card .folder-card-actions .folder-open-btn{
 .studio-nav-item.active .side-desc{color:inherit;opacity:.8}
 .studio-count{padding:10px;border-radius:10px;background:var(--surface-soft,var(--panel));color:var(--muted);font-size:12px;line-height:1.5}
 .left-collapsed .studio-nav-item .side-desc,.left-collapsed .studio-title{display:none}
+
+/* A+ Vault collection cards: image first, name + count, quiet icon actions */
+.collection-overview-grid .collection-detail-card{padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;gap:10px}
+.collection-overview-grid .collection-card-visual{border-radius:16px;overflow:hidden}
+.collection-overview-grid .collection-card-body{display:grid;gap:2px;padding:10px 2px 0}
+.collection-overview-grid .collection-card-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.collection-overview-grid .collection-card-head strong{font-weight:500;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.collection-overview-grid .collection-card-count{color:var(--muted);font-size:12px;font-weight:300;white-space:nowrap}
+.collection-overview-grid .collection-card-updated,.collection-overview-grid .collection-card-badges,.collection-overview-grid .collection-card-type-row,.collection-overview-grid .collection-card-empty-note{display:none}
+.collection-overview-grid .collection-card-footer{display:flex!important;gap:4px;padding:6px 0 0;opacity:0;transition:opacity .15s ease}
+.collection-overview-grid .collection-detail-card:hover .collection-card-footer,.collection-overview-grid .collection-detail-card:focus-within .collection-card-footer{opacity:1}
+@media(hover:none){.collection-overview-grid .collection-card-footer{opacity:1}}
+.collection-overview-grid .collection-card-action{flex:0 0 auto;width:34px;height:34px;min-height:34px;padding:0;display:grid;place-items:center;border-radius:10px;background:var(--surface-soft,rgba(255,255,255,.06));border:0}
+.collection-overview-grid .collection-card-action span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.collection-overview-grid .collection-card-action .flat-icon,.collection-overview-grid .collection-card-action svg{width:16px;height:16px}
+.collection-overview-grid .collection-detail-card.is-highlighted .collection-card-visual{box-shadow:0 0 0 2px var(--accent,#ff4f43)}
