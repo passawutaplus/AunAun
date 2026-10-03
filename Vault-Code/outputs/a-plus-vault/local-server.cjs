@@ -14,6 +14,7 @@ const collectionsFile = path.join(dataDir, 'vault-extension-collections.json');
 
 const mime = {
   '.html': 'text/html; charset=utf-8',
+  '.zip': 'application/zip',
   '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.png': 'image/png',
@@ -541,6 +542,7 @@ const server = http.createServer(async (req, res) => {
 
   let file = decodeURIComponent(url.pathname || '/');
   if (file === '/welcome') file = '/welcome.html';
+  if (file === '/extension') file = '/extension.html';
   if (file === '/demo' || file === '/demo.html') {
     res.writeHead(301, { Location: '/' });
     res.end();

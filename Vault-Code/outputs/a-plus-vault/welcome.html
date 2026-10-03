@@ -206,16 +206,6 @@
     footer a{text-decoration:none}
     footer a:hover{color:var(--coral)}
 
-    /* extension modal */
-    .modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:20px;background:rgba(16,17,19,.55);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .25s ease}
-    .modal.open{opacity:1;pointer-events:auto}
-    .modal-card{width:min(460px,100%);padding:28px;border-radius:22px;background:#fff;box-shadow:0 40px 80px rgba(0,0,0,.3);transform:translateY(16px);transition:transform .35s var(--ease)}
-    .modal.open .modal-card{transform:none}
-    .modal-card h3{font-size:24px}
-    .modal-card ol{margin:16px 0 0;padding-left:20px;color:var(--ink-2);font-size:15px}
-    .modal-card li{margin-bottom:6px}
-    .modal-card .row{display:flex;gap:10px;margin-top:22px}
-    .modal-card .btn{height:46px}
 
     .progress{position:fixed;inset:0 0 auto;z-index:60;height:2px;background:var(--coral);transform-origin:left;transform:scaleX(0)}
 
@@ -264,7 +254,7 @@
         <p class="lede">Save references from any site in one click, find them again by color, image, or a few words in Thai — and never lose who made them.<span class="th">เก็บแรงบันดาลใจจากทุกที่ แล้วหาเจอเมื่อถึงเวลาทำงานจริง</span></p>
         <div class="hero-ctas">
           <a class="btn btn-coral" href="/">Explore Discover <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-          <button type="button" class="btn btn-light" data-extension><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>Get the Chrome extension</button>
+          <a class="btn btn-light" href="/extension"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>Get the Chrome extension</a>
         </div>
         <p class="hero-note">Free while in alpha · Private by default</p>
       </div>
@@ -395,7 +385,7 @@
         <p class="lede reveal" data-delay="1" style="margin-left:auto;margin-right:auto">Browse Discover as a guest, or sign in to build your own private Vault.<span class="th">เริ่มจากดูภาพใน Discover ได้เลย ไม่ต้องสมัคร</span></p>
         <div class="final-ctas reveal" data-delay="2">
           <a class="btn btn-coral" href="/">Explore Discover</a>
-          <button type="button" class="btn btn-light" data-extension>Get the Chrome extension</button>
+          <a class="btn btn-light" href="/extension">Get the Chrome extension</a>
         </div>
       </div>
     </section>
@@ -408,24 +398,9 @@
     </div>
   </footer>
 
-  <div class="modal" data-modal role="dialog" aria-modal="true" aria-labelledby="ext-title">
-    <div class="modal-card">
-      <h3 id="ext-title">Get + Keep in Vault</h3>
-      <p class="lede" style="margin-top:10px;font-size:15px">The Chrome extension is in private alpha. Until it’s on the Chrome Web Store:</p>
-      <ol>
-        <li>Sign in to A+ Vault and open <strong>Settings → Chrome extension</strong>.</li>
-        <li>Copy your extension token.</li>
-        <li>Install the alpha build and paste the token in its popup.</li>
-      </ol>
-      <div class="row"><a class="btn btn-dark" href="/vault">Open Settings</a><button type="button" class="btn btn-light" data-modal-close>Close</button></div>
-    </div>
-  </div>
-
   <script src="/supabase-config.js"></script>
   <script>
   (() => {
-    /* Set this once the extension is on the Chrome Web Store; the buttons then link straight to it. */
-    const EXTENSION_URL = "";
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const $ = (s, el = document) => el.querySelector(s);
     const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -598,16 +573,6 @@
     $$("[data-promise] p").forEach(el => pio.observe(el));
     let typingStarted = false;
     new IntersectionObserver((entries, obs) => entries.forEach(e => { if (e.isIntersecting && !typingStarted) { typingStarted = true; startTyping(); obs.disconnect(); } }), { threshold: .3 }).observe($("#find"));
-
-    /* ---------- extension CTA ---------- */
-    const modal = $("[data-modal]");
-    $$("[data-extension]").forEach(b => b.addEventListener("click", () => {
-      if (EXTENSION_URL) { window.open(EXTENSION_URL, "_blank", "noopener"); return; }
-      modal.classList.add("open");
-      $("[data-modal-close]").focus();
-    }));
-    modal.addEventListener("click", e => { if (e.target === modal || e.target.closest("[data-modal-close]")) modal.classList.remove("open"); });
-    addEventListener("keydown", e => { if (e.key === "Escape") modal.classList.remove("open"); });
 
     /* ---------- boot ---------- */
     function buildAll() {
