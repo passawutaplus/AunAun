@@ -5707,3 +5707,14 @@ html[data-theme="dark"] .studio-tab.is-active{background:#f2f3f4;color:#151719}
 .moodboard-card-open{width:100%;justify-items:stretch}.moodboard-cover{width:100%}
 .moodboard-cover{height:auto!important;aspect-ratio:1/1!important}
 .moodboard-card-open{grid-template-columns:minmax(0,1fr)!important;justify-content:stretch!important;align-content:start}
+
+/* A+ Vault moodboard card cover = real mini canvas of the board */
+.moodboard-canvas-thumb{display:block!important;position:relative;container-type:size;aspect-ratio:4/3!important;background:#1b1d20!important;border-radius:14px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+html:not([data-theme="dark"]) .moodboard-canvas-thumb{background:#f1eee8!important;box-shadow:inset 0 0 0 1px rgba(21,23,25,.08)}
+.moodboard-canvas-thumb>i{position:absolute;display:block;overflow:hidden;box-sizing:border-box;transform-origin:center}
+.moodboard-canvas-thumb .mc-item{background:#2c2f33 center/cover no-repeat;border-radius:2px;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.moodboard-canvas-thumb .mc-palette{display:flex;border-radius:2px}
+.moodboard-canvas-thumb .mc-palette u{flex:1;text-decoration:none}
+.moodboard-canvas-thumb .mc-text{font-family:"Agrandir Wide","IBM Plex Sans Thai",sans-serif;line-height:1.1;white-space:pre-wrap}
+.moodboard-canvas-thumb .mc-note{background:#fff3a6;border-radius:2px}
+.moodboard-canvas-thumb .mc-box{border:1px solid rgba(255,255,255,.35);border-radius:2px}

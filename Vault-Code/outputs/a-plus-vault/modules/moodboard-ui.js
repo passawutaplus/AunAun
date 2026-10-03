@@ -89,14 +89,43 @@ function moodboardIndexCard(board, projects, esc, escA, icon, thumbFor) {
 </article>`;
 }
 
+/** Mini canvas: the real layout of the board (positions, sizes, rotation), scaled to a 4:3 card cover. */
 function moodboardCover(board, esc, escA, thumbFor) {
-  const items = (board.objects || []).filter((o) => o.kind === "item").slice(0, 4);
-  if (!items.length) return `<div class="moodboard-cover empty-cover"><span>Empty board</span></div>`;
-  const tiles = items.map((o) => {
-    const src = thumbFor ? thumbFor(o.itemId) : "";
-    return src ? `<i style="background-image:url('${escA(src)}')"></i>` : `<i></i>`;
+  const objs = (board.objects || []).filter((o) => o && o.kind !== "connector" && Number(o.w) > 0 && Number(o.h) > 0);
+  if (!objs.length) return `<div class="moodboard-cover empty-cover"><span>Empty board</span></div>`;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  objs.forEach((o) => {
+    minX = Math.min(minX, o.x); minY = Math.min(minY, o.y);
+    maxX = Math.max(maxX, o.x + o.w); maxY = Math.max(maxY, o.y + o.h);
   });
-  return `<div class="moodboard-cover count-${tiles.length}">${tiles.join("")}</div>`;
+  const pad = Math.max(24, (maxX - minX) * 0.04);
+  minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+  let W = maxX - minX, H = maxY - minY;
+  const ratio = 4 / 3;
+  if (W / H > ratio) { const nh = W / ratio; minY -= (nh - H) / 2; H = nh; }
+  else { const nw = H * ratio; minX -= (nw - W) / 2; W = nw; }
+  const pct = (v, total) => `${((v / total) * 100).toFixed(2)}%`;
+  const layers = objs
+    .slice()
+    .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
+    .slice(0, 60)
+    .map((o) => {
+      const box = `left:${pct(o.x - minX, W)};top:${pct(o.y - minY, H)};width:${pct(o.w, W)};height:${pct(o.h, H)};${o.rotation ? `transform:rotate(${Number(o.rotation).toFixed(1)}deg);` : ""}`;
+      if (o.kind === "item") {
+        const src = thumbFor ? thumbFor(o.itemId) : "";
+        return `<i class="mc-item" style="${box}${src ? `background-image:url('${escA(src)}')` : ""}"></i>`;
+      }
+      if (o.kind === "palette") {
+        const cs = (o.colors || []).slice(0, 6);
+        return `<i class="mc-palette" style="${box}">${cs.map((c) => `<u style="background:${escA(c)}"></u>`).join("")}</i>`;
+      }
+      if (o.kind === "text") {
+        const fs = ((Number(o.size) || 28) / W) * 100;
+        return `<i class="mc-text" style="${box}font-size:${fs.toFixed(2)}cqw;color:${escA(o.color || "#fff")}">${esc(String(o.text || "").slice(0, 60))}</i>`;
+      }
+      return `<i class="mc-${o.kind === "note" ? "note" : "box"}" style="${box}"></i>`;
+    });
+  return `<div class="moodboard-cover moodboard-canvas-thumb" aria-hidden="true">${layers.join("")}</div>`;
 }
 
 export function createMoodboardDialogMarkup(ctx) {
