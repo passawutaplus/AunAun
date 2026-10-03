@@ -174,7 +174,7 @@ async function runStaticProductGuards() {
   assert(/dist\/vault\.html/.test(buildMjs) && /writeErrorPages/.test(buildMjs) && /dist\/vault\/index\.html/.test(buildMjs), "Build must emit Vault fallbacks and art error pages.");
   assert(/404 Not Found/.test(await readFile("dist/404.html", "utf8")) && /500 Server Error/.test(await readFile("dist/500.html", "utf8")) && /400 Bad Request/.test(await readFile("dist/400.html", "utf8")), "Dist must include art error pages for 400/404/500.");
   assert(/theme-veil/.test(appCss) && /to-dark/.test(appCss) && /applyTheme\(/.test(appJs), "Theme switch must fade smoothly with a dimming veil.");
-  assert(/"source": "\/vault"/.test(vercelJson) && /"destination": "\/vault\.html"/.test(vercelJson), "Vercel must route /vault to the static Vault fallback.");
+  assert(/"source": "\/discover"/.test(vercelJson) && /"destination": "\/vault"/.test(vercelJson) && !/"destination": "\/vault\.html"/.test(vercelJson), "Vercel must route /discover and /moodboards to /vault (dist/vault/index.html).");
   assert(/"source": "\/400"/.test(vercelJson) && /"source": "\/500"/.test(vercelJson), "Vercel must route explicit 400/500 pages.");
   assert(/Legal Center/.test(legalHtml) && /Privacy Notice/.test(legalHtml) && /Copyright & Takedown Policy/.test(legalHtml), "Legal center must include alpha privacy and copyright notices.");
   assert(/Acceptable Use Policy/.test(legalHtml) && /AI Processing Notice/.test(legalHtml) && /Subprocessor List/.test(legalHtml), "Legal center must include AUP, AI, and subprocessors.");
