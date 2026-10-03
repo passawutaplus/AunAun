@@ -5942,3 +5942,10 @@ html.mb-present .moodboard-editor-body>.moodboard-canvas-wrap{grid-column:1!impo
 .mb-layers-panel .moodboard-layer-list li.drop-before{box-shadow:0 -2px 0 var(--accent,#ff4f43)}
 .mb-layers-panel .moodboard-layer-list li.drop-after{box-shadow:0 2px 0 var(--accent,#ff4f43)}
 .mb-layers-panel .moodboard-panel-scroll{overflow-x:hidden}
+.mb-topbar .moodboard-topbar-right .icon-button,.mb-export>summary.icon-button{display:inline-grid;place-items:center;width:38px;height:38px;padding:0;border-radius:10px}
+.mb-private{display:inline-grid;place-items:center;width:38px;height:38px;color:var(--accent,#ff4f43)}
+.mb-export>summary.icon-button{cursor:pointer;background:var(--surface-soft,rgba(255,255,255,.06))}
+.mb-back{width:38px;height:38px;padding:0!important;justify-content:center;border-radius:10px}
+.mb-back span{display:none!important}
+.mb-crumb{margin:0 4px 0 2px;font-family:var(--font-display,"Agrandir Wide","IBM Plex Sans Thai",sans-serif);font-size:20px;font-weight:300;letter-spacing:.01em;color:var(--muted);user-select:none}
+@media(max-width:900px){.mb-crumb{display:none}}

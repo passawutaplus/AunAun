@@ -61,7 +61,7 @@ export function smartGridEditorMarkup(ctx) {
 <div class="moodboard-editor smart-grid-editor" data-moodboard-editor="${escA(board.id)}" data-moodboard-active-tool="${escA(tool)}" style="--mb-source-w:${Number(sourceWidth) || 220}px;--mb-inspector-w:${Number(inspectorWidth) || 260}px">
   <header class="moodboard-topbar mb-topbar">
     <div class="moodboard-topbar-left">
-      <button type="button" class="mb-back" data-view="moodboards" title="Back to Moodboards" aria-label="Back to Moodboards"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg><span>Moodboards</span></button>
+      <button type="button" class="mb-back" data-view="moodboards" title="Back to Moodboards" aria-label="Back to Moodboards"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg></button><span class="mb-crumb">Moodboards</span>
       <input class="moodboard-title-input" data-moodboard-title value="${escA(board.name)}" maxlength="120" aria-label="Board title">
       <span class="moodboard-save-status" data-moodboard-save-status data-status="${escA(saveStatus || "idle")}">${esc(status)}</span>
     </div>
@@ -74,14 +74,14 @@ export function smartGridEditorMarkup(ctx) {
         <button type="button" class="icon-button mini" data-mb-zoom="out" title="Zoom out" aria-label="Zoom out">&minus;</button>
         <button type="button" class="mb-zoom-pct" data-mb-zoom="reset" title="Reset to 100%" data-mb-zoom-label>${zoomPct}%</button>
         <button type="button" class="icon-button mini" data-mb-zoom="in" title="Zoom in" aria-label="Zoom in">+</button>
-        <button type="button" class="ghost-button mini" data-mb-zoom="fit" title="Fit all objects">Fit</button>
+        <button type="button" class="icon-button mini" data-mb-zoom="fit" title="Fit all objects" aria-label="Fit all objects"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/></svg></button>
       </div>
-      <button type="button" class="ghost-button mb-layers-toggle${sourceCollapsed ? "" : " is-on"}" data-toggle-moodboard-source title="Layers" aria-pressed="${sourceCollapsed ? "false" : "true"}">Layers</button>
-      <button type="button" class="ghost-button" data-mb-present title="Present full screen">Present</button>
-      <details class="mb-export"><summary class="ghost-button">Export</summary><div class="mb-export-menu"><button type="button" data-mb-export-png>PNG image</button><button type="button" data-export-moodboard="${escA(board.id)}">PDF (print)</button></div></details>
-      <button type="button" class="ghost-button" data-link-moodboard-project="${escA(board.id)}">Add to Project</button>
-      <span class="status-pill">Private</span>
-      <button type="button" class="icon-button mb-inspector-toggle${inspectorCollapsed ? "" : " is-on"}" data-toggle-moodboard-inspector title="${inspectorCollapsed ? "Show inspector" : "Hide inspector"}" aria-label="Toggle inspector">${uiIcon ? uiIcon("panel") || "☰" : "☰"}</button>
+      <button type="button" class="icon-button mb-layers-toggle${sourceCollapsed ? "" : " is-on"}" data-toggle-moodboard-source title="Layers" aria-label="Layers" aria-pressed="${sourceCollapsed ? "false" : "true"}"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 16.5 9 5 9-5"/></svg></button>
+      <button type="button" class="icon-button" data-mb-present title="Present full screen" aria-label="Present full screen"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="m10 8 5 2-5 2z" fill="currentColor"/><path d="M8 20h8M12 16v4"/></svg></button>
+      <details class="mb-export"><summary class="icon-button" title="Export" aria-label="Export"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m-4-4 4 4 4-4"/><path d="M5 19h14"/></svg></summary><div class="mb-export-menu"><button type="button" data-mb-export-png>PNG image</button><button type="button" data-export-moodboard="${escA(board.id)}">PDF (print)</button></div></details>
+      <button type="button" class="icon-button" data-link-moodboard-project="${escA(board.id)}" title="Add to Project" aria-label="Add to Project"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h6l2 2h10v10H3z"/><path d="M12 12v4m-2-2h4"/></svg></button>
+      <span class="mb-private" title="Private board" aria-label="Private board"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+      <button type="button" class="icon-button mb-inspector-toggle${inspectorCollapsed ? "" : " is-on"}" data-toggle-moodboard-inspector title="${inspectorCollapsed ? "Show inspector" : "Hide inspector"}" aria-label="Toggle inspector"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg></button>
     </div>
   </header>
   <div class="${bodyCls}" data-moodboard-editor-body>
