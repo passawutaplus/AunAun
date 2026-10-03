@@ -5790,3 +5790,34 @@ html:not([data-theme="dark"]) .moodboard-canvas-thumb{background:#f1eee8!importa
 .folder-swatch input:focus-visible+i{outline:2px solid var(--accent,#ff4f43);outline-offset:3px}
 .folder-glass-toggle{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:14px;cursor:pointer}
 .pf-stage>.pf-paper{position:absolute;display:block}
+
+/* studio search (collections + moodboards) */
+.studio-search{display:flex;align-items:center;gap:10px;width:100%;max-width:440px;height:42px;margin:0 0 6px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface,transparent);color:var(--muted)}
+.studio-search .flat-icon{width:17px;height:17px;flex:0 0 auto}
+.studio-search input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;font-size:14px;outline:none}
+.studio-search:focus-within{border-color:var(--accent,#ff4f43)}
+.studio-search-note{min-height:20px;margin:0 0 14px 4px;color:var(--muted);font-size:13px}
+.studio-empty{color:var(--muted)}
+
+/* more air between the studio tabs and the page title */
+.studio-tabs{margin-bottom:40px}
+
+/* project detail: same visual language as collections / moodboards */
+.project-detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:26px 20px}
+.pd-card{position:relative;display:grid;gap:8px;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+.pd-open{display:grid;gap:10px;width:100%;padding:0;background:transparent;border:0;color:inherit;text-align:left;cursor:pointer}
+.pd-visual{position:relative;aspect-ratio:4/3;overflow:visible}
+.pd-open .moodboard-cover{aspect-ratio:4/3!important}
+.pd-line{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 2px}
+.pd-line strong{font-weight:500;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pd-line small{color:var(--muted);font-size:12px;white-space:nowrap}
+.pd-actions{position:absolute;top:8px;right:8px;opacity:0;transition:opacity .15s ease}
+.pd-card:hover .pd-actions,.pd-card:focus-within .pd-actions{opacity:1}
+.pd-actions button{display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:rgba(16,17,19,.7);color:#fff;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.pd-actions .flat-icon{width:15px;height:15px}
+@media(hover:none){.pd-actions{opacity:1}}
+.pd-card:hover .cstack-card,.pd-card:focus-within .cstack-card{transform:translateX(calc(var(--o)*(105% / max(var(--n) - 1, 1)))) rotate(calc(var(--o)*2.5deg)) translateY(calc(var(--o)*var(--o)*1.2%))}
+.project-detail-section{margin-bottom:44px}
+.project-detail-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.project-detail-section-head h2{margin:0;font-size:20px;font-weight:300}
+.project-detail-section-meta{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}

@@ -3,7 +3,7 @@ import { boardsUsingItem, createBlankMoodboard, createMoodboardFromSelection, ex
 import { packSmartGrid, reflowBoardObjects } from "./modules/smart-grid.js";
 import { createMoodboardHistory, snapshotBoard } from "./modules/moodboard-history.js";
 import { createMoodboardAutosave, saveStatusLabel } from "./modules/moodboard-autosave.js";
-import { createMoodboardDialogMarkup, linkProjectDialogMarkup, moodboardListMarkup, moodboardVaultPickerMarkup, moodboardColorChooserMarkup } from "./modules/moodboard-ui.js";
+import { moodboardCardsMarkup as moodboardCardsMarkupMod, moodboardCover as moodboardCoverMod, createMoodboardDialogMarkup, linkProjectDialogMarkup, moodboardListMarkup, moodboardVaultPickerMarkup, moodboardColorChooserMarkup } from "./modules/moodboard-ui.js";
 import { createVaultRemote } from "./modules/supabase-adapter.js";
 import { createDiscoverState, discoverDetailMarkup, discoverEnabled, discoverGridMarkup, discoverMediaUrl, discoverSaveDialogMarkup, discoverReportDialogMarkup, submitDiscoverReport, discoverSearchMarkup, discoverSimilarStripMarkup, discoverToVaultItem, fetchDiscoverItem, fetchDiscoverPage, fetchDiscoverPool, hexToHsv, hsvToHex, normalizeFacet, normalizeHex as normalizeDiscoverHex, readPendingAction, writePendingAction } from "./modules/discover.js";
 import { MAX_SEARCH_COLORS, analyzeImageFile, rankSimilar, similarRef, similarityScore } from "./modules/discover-search.js";
@@ -292,6 +292,20 @@ initPwa({toast});initScrollBlur({enabled:()=>["discover","vault","collections"].
 function navKeepButton(){return "<button type='button' class='rail-keep' data-open title='Keep something' aria-label='Keep something'>"+icon("plus")+"</button>"}
 function navPhoneButtons(){return "<button type='button' class='side-nav-button nav-extra' data-phone-search title='Search' aria-label='Search'><span class='side-icon'>"+icon("search")+"</span><span class='side-label'>Search</span></button>"+(state.user?"<button type='button' class='side-nav-button nav-extra nav-profile' data-profile-menu-toggle title='Account' aria-label='Open account menu' aria-haspopup='menu'><span class='side-icon'>"+profileAvatarMarkup("nav-avatar")+"</span><span class='side-label'>Account</span></button>":"<button type='button' class='side-nav-button nav-extra nav-profile' data-auth-open title='Log in' aria-label='Log in'><span class='side-icon'>"+icon("users")+"</span><span class='side-label'>Log in</span></button>")}
 function collectionNoteMarkup(colId){let c=state.cols.find(x=>x.id===colId);if(!c||c.system)return"";let ps=state.projects.filter(p=>projectCollectionIds(p).includes(colId));return "<section class='collection-note-box'><div class='collection-in-projects'><span>"+(ps.length?"In "+ps.length+" project"+(ps.length===1?"":"s"):"Not in any project yet")+"</span>"+ps.map(p=>"<button type='button' class='object-glance-chip' data-project='"+escA(p.id)+"'>"+esc(p.name)+"</button>").join("")+"</div></section>"}
+/* Studio search: rank collections / moodboards by name, image titles, tags, colors; fall back to the closest names */
+function studioDice(a,b){a=String(a||"").toLowerCase();b=String(b||"").toLowerCase();if(!a||!b)return 0;let bg=t=>{let m=new Map();for(let i=0;i<t.length-1;i++){let k=t.slice(i,i+2);m.set(k,(m.get(k)||0)+1)}return m},x=bg(a),y=bg(b),hit=0,n=0;x.forEach((v,k)=>{n+=v;if(y.has(k))hit+=Math.min(v,y.get(k))});y.forEach(v=>{n+=v});return n?2*hit/n:0}
+function studioScore(name,items,q){let parsed=parseSearchQuery(q),tokens=parsed.tokens;if(!tokens.length)return{score:1,exact:true};let nm=String(name||"").toLowerCase(),score=0,hits=0;tokens.forEach(tok=>{let t=expandSearchToken(tok),inName=nm.includes(tok)||nm.includes(t),n=items.length?items.filter(i=>itemMatchesSearch(i,{tokens:[tok],since:0})).length:0;if(inName){score+=10;hits++}if(n){score+=Math.min(n,4)*2+3*n/items.length;hits++}});return{score,exact:hits>0&&tokens.every(tok=>{let t=expandSearchToken(tok);return nm.includes(tok)||nm.includes(t)||items.some(i=>itemMatchesSearch(i,{tokens:[tok],since:0}))})}}
+function studioRank(entries,q){let tokens=parseSearchQuery(q).tokens;if(!tokens.length)return{list:entries.map(e=>e.ref),note:""};let scored=entries.map(e=>Object.assign({e},studioScore(e.name,e.items,q))),hits=scored.filter(x=>x.score>0).sort((a,b)=>b.score-a.score);if(hits.length)return{list:hits.map(x=>x.e.ref),note:hits.length+" result"+(hits.length===1?"":"s")+" for “"+String(q).trim()+"”"};let near=entries.map(e=>({e,d:Math.max(studioDice(e.name,q),...e.items.slice(0,40).map(i=>studioDice(i.title,q)))})).sort((a,b)=>b.d-a.d).slice(0,3).map(x=>x.e.ref);return{list:near,note:"No exact match for “"+String(q).trim()+"”. Closest:"}}
+function studioSearchMarkup(kind,value,placeholder){return "<label class='studio-search'>"+icon("search")+"<input type='search' data-studio-search='"+kind+"' value='"+escA(value||"")+"' placeholder='"+escA(placeholder)+"' autocomplete='off'></label>"}
+function collectionsFiltered(){let all=customCols(),q=state.collectionsQ||"";if(!String(q).trim()){return{list:rootCustomCols().flatMap(c=>[c].concat(childCols(c.id))),note:""}}return studioRank(all.map(c=>({name:c.name,items:itemsForCollection(c.id),ref:c})),q)}
+function moodboardItemsOf(b){return (b.objects||[]).filter(o=>o&&o.kind==="item"&&o.itemId).map(o=>state.items.find(i=>i.id===o.itemId)).filter(Boolean)}
+function moodboardsFiltered(){let list=(state.moodboards||[]).slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)),q=state.moodboardsQ||"";if(!String(q).trim())return{list,note:""};return studioRank(list.map(b=>({name:b.name,items:moodboardItemsOf(b).concat((b.objects||[]).filter(o=>o&&o.kind==="text").map(o=>({title:o.text,note:"",analysis:{}}))),ref:b})),q)}
+let studioSearchTimer=null;
+document.addEventListener("input",e=>{let t=e.target&&e.target.matches&&e.target.matches("[data-studio-search]")?e.target:null;if(!t)return;clearTimeout(studioSearchTimer);studioSearchTimer=setTimeout(()=>{let kind=t.dataset.studioSearch;if(kind==="collections"){state.collectionsQ=t.value;let r=collectionsFiltered(),g=document.querySelector(".collection-overview-grid"),n=document.querySelector("[data-studio-note='collections']");if(g)g.innerHTML=r.list.map(collectionCard).join("")||"<p class='studio-empty'>Nothing here yet.</p>";if(n)n.textContent=r.note}else{state.moodboardsQ=t.value;let r=moodboardsFiltered(),g=document.querySelector(".moodboard-index-grid"),n=document.querySelector("[data-studio-note='moodboards']");if(g)g.innerHTML=moodboardCardsMarkup(r.list);if(n)n.textContent=r.note}},180)});
+function moodboardThumbFor(id){let i=state.items.find(x=>x.id===id);return i&&(i.thumbnailUrl||i.previewUrl||(i.type==="image"?i.assetUrl:""))||""}
+function moodboardCardsMarkup(list){return moodboardCardsMarkupMod(list,state.projects,esc,escA,icon,moodboardThumbFor)}
+function moodboardListCtx(){let r=moodboardsFiltered();return{moodboards:r.list,keepOrder:true,total:(state.moodboards||[]).length,projects:state.projects,esc,escA,icon,emptyPrimary:"Open My Vault",thumbFor:moodboardThumbFor,searchMarkup:studioSearchMarkup("moodboards",state.moodboardsQ,"Search moodboards, images or colors…"),note:r.note}}
+document.addEventListener("click",e=>{let b=e.target&&e.target.closest?e.target.closest("[data-project-scope]"):null;if(!b)return;e.preventDefault();e.stopPropagation();state.projectExplorerScope="all";state.activeProject=null;state.view="projects";render()},true);
 function studioTabsMarkup(){let onCol=state.view==="vault"&&state.col&&state.col!=="all",cur=onCol?STUDIO_NAV[1]:STUDIO_NAV.find(v=>isWorkspaceViewActive(v[0]));return "<nav class='studio-tabs' aria-label='Studio'><div class='studio-tabs-row' role='tablist'>"+STUDIO_NAV.map(v=>"<button type='button' role='tab' class='studio-tab"+(v===cur?" is-active":"")+"' data-view='"+v[0]+"' aria-selected='"+(v===cur?"true":"false")+"'>"+icon(v[1])+"<span>"+v[2]+"</span></button>").join("")+"</div>"+""+"</nav>"}
 function insertStudioTabs(){if(!STUDIO_VIEWS.includes(state.view)||state.view==="moodboard-edit"||state.view==="board"||!state.user)return;let main=document.querySelector(".workspace > .main");if(main&&!main.querySelector(".studio-tabs"))main.insertAdjacentHTML("afterbegin",studioTabsMarkup())}
 function sideNav(statsHtml){let views=WORKSPACE_VIEWS,collapse=railCollapseButton(),header=state.leftCollapsed?"<div class='side-shell-header is-collapsed-header' aria-hidden='true'></div>":"<div class='side-shell-header is-expanded-header'>"+collapse+"</div>";return header+(statsHtml||"")+"<div class='side-section sidebar-workspace'><p class='side-kicker'>Workspace</p><nav class='side-nav vault-bottom-nav' aria-label='Workspace'>"+views.map(v=>{let active=isWorkspaceViewActive(v[0]);return "<button class='side-nav-button "+(active?"active":"")+"' data-view='"+v[0]+"' title='"+v[2]+"' aria-label='"+v[2]+"'><span class='side-icon'>"+icon(v[1])+"</span><span class='side-label'>"+v[2]+"</span></button>"}).join("")+navPhoneButtons()+"</nav></div>"+navKeepButton()+sidebarUploadZone()+(state.leftCollapsed?"<div class='sidebar-rail-footer'>"+collapse+"</div>":"")}
@@ -416,32 +430,24 @@ function mosaicFromItems(items,emptyIcon){
   }).join("")+"</div>";
 }
 function projectCollectionCard(p,c){
-  let items=collectionThumbItems(c),n=state.items.filter(i=>(i.collectionIds||[]).includes(c.id)).length;
-  return "<article class='project-detail-card'>"+
-    "<button type='button' class='project-detail-card-open' data-col='"+c.id+"' title='Open "+escA(c.name)+"'>"+
-      mosaicFromItems(items,"collection")+
-      "<span class='project-detail-card-copy'><strong>"+esc(c.name)+"</strong><small>"+n+" object"+(n===1?"":"s")+"</small></span>"+
+  let n=state.items.filter(i=>(i.collectionIds||[]).includes(c.id)).length;
+  return "<article class='project-detail-card pd-card'>"+
+    "<button type='button' class='pd-open' data-col='"+c.id+"' title='Open "+escA(c.name)+"'>"+
+      "<div class='collection-card-visual pd-visual'>"+collectionStackMarkup(c.id)+"</div>"+
+      "<span class='pd-line'><strong>"+esc(c.name)+"</strong><small>"+n+" object"+(n===1?"":"s")+"</small></span>"+
     "</button>"+
-    "<div class='project-detail-card-actions'>"+
-      "<button type='button' data-col='"+c.id+"'>Open</button>"+
-      "<button type='button' class='danger-link' data-unlink-proj-col='"+p.id+":"+c.id+"'>Remove</button>"+
-    "</div>"+
+    "<div class='pd-actions'><button type='button' class='danger-link' data-unlink-proj-col='"+p.id+":"+c.id+"' title='Remove from project' aria-label='Remove from project'>"+icon("close")+"</button></div>"+
   "</article>";
 }
 function projectMoodboardCard(p,b){
-  let n=(b.objects||[]).length,
-    open=b._source==="standalone"||b.layoutMode==="smart_grid"?"data-open-moodboard='"+b.id+"'":"data-openboard='"+p.id+":"+b.id+"'",
-    itemIds=(b.objects||[]).map(o=>o.itemId).filter(Boolean),
-    thumbs=state.items.filter(i=>itemIds.includes(i.id)).slice(0,4);
-  return "<article class='project-detail-card'>"+
-    "<button type='button' class='project-detail-card-open' "+open+" title='Open "+escA(b.name)+"'>"+
-      mosaicFromItems(thumbs,"board")+
-      "<span class='project-detail-card-copy'><strong>"+esc(b.name)+"</strong><small>"+n+" object"+(n===1?"":"s")+"</small></span>"+
+  let n=(b.objects||[]).filter(o=>o&&o.kind==="item").length,
+    open=b._source==="standalone"||b.layoutMode==="smart_grid"?"data-open-moodboard='"+b.id+"'":"data-openboard='"+p.id+":"+b.id+"'";
+  return "<article class='project-detail-card pd-card'>"+
+    "<button type='button' class='pd-open' "+open+" title='Open "+escA(b.name)+"'>"+
+      moodboardCoverMod(b,esc,escA,moodboardThumbFor)+
+      "<span class='pd-line'><strong>"+esc(b.name)+"</strong><small>"+n+" ref"+(n===1?"":"s")+"</small></span>"+
     "</button>"+
-    "<div class='project-detail-card-actions'>"+
-      "<button type='button' "+open+">Open</button>"+
-      "<button type='button' class='danger-link' data-unlink-proj-board='"+p.id+":"+b.id+"'>Remove</button>"+
-    "</div>"+
+    "<div class='pd-actions'><button type='button' class='danger-link' data-unlink-proj-board='"+p.id+":"+b.id+"' title='Remove from project' aria-label='Remove from project'>"+icon("close")+"</button></div>"+
   "</article>";
 }
 function projectObjectCard(item){
@@ -480,7 +486,7 @@ function projectView(){
               "<span class='folder-crumb-current'>"+esc(p.name)+"</span>"+
             "</nav>"+
             "<h1>"+esc(p.name)+"</h1>"+
-            "<p>"+(p.description?esc(p.description):"Collections, moodboards และ objects ที่ใช้ในโปรเจกต์นี้")+"</p>"+
+            (p.description?"<p>"+esc(p.description)+"</p>":"")+
           "</div>"+
         "</div>"+
         "<div class='project-folder-head-actions'>"+
@@ -494,7 +500,7 @@ function projectView(){
         "<div class='project-browser-pane project-detail-pane'>"+
           "<section class='project-detail-section'>"+
             "<div class='project-detail-section-head'>"+
-              "<div><h2>Collections</h2><p>ชุดอ้างอิงที่ลิงก์กับโปรเจกต์นี้</p></div>"+
+              "<div><h2>Collections</h2></div>"+
               "<div class='project-detail-section-meta'>"+
                 "<span>"+cols.length+"</span>"+
                 "<button type='button' class='ghost-button mini-add' data-addprojectcol='"+p.id+"'>"+icon("plus")+"<span>Add</span></button>"+
@@ -506,7 +512,7 @@ function projectView(){
           "</section>"+
           "<section class='project-detail-section'>"+
             "<div class='project-detail-section-head'>"+
-              "<div><h2>Moodboards</h2><p>บอร์ดทิศทางภาพของโปรเจกต์</p></div>"+
+              "<div><h2>Moodboards</h2></div>"+
               "<div class='project-detail-section-meta'>"+
                 "<span>"+boards.length+"</span>"+
                 "<button type='button' class='ghost-button mini-add' data-addprojectboard='"+p.id+"'>"+icon("plus")+"<span>Add</span></button>"+
@@ -518,7 +524,7 @@ function projectView(){
           "</section>"+
           "<section class='project-detail-section'>"+
             "<div class='project-detail-section-head'>"+
-              "<div><h2>Objects</h2><p>ไฟล์ทั้งหมดที่ใช้ในโปรเจกต์นี้</p></div>"+
+              "<div><h2>Objects</h2></div>"+
               "<div class='project-detail-section-meta'><span>"+items.length+"</span></div>"+
             "</div>"+
             (objectCards
@@ -689,7 +695,7 @@ function projectsView(){
       "</div>"+
     "</main></div>");
 }
-function moodboardsView(){let stats=count(),realCols=state.cols.filter(c=>!c.system),cls="workspace overview-workspace detail-closed"+(state.leftCollapsed?" left-collapsed":"")+pageEnterCls();return shell("<div class='"+cls+"'><aside class='rail'>"+sideNav(vaultStatsBlock(stats,realCols))+sidebarMain()+"</aside><main class='main overview-main'>"+moodboardListMarkup({moodboards:state.moodboards,projects:state.projects,esc,escA,icon,emptyPrimary:"Open My Vault",thumbFor:id=>{let i=state.items.find(x=>x.id===id);return i&&(i.thumbnailUrl||i.previewUrl||(i.type==="image"?i.assetUrl:""))||""}})+"</main></div>")}
+function moodboardsView(){let stats=count(),realCols=state.cols.filter(c=>!c.system),cls="workspace overview-workspace detail-closed"+(state.leftCollapsed?" left-collapsed":"")+pageEnterCls();return shell("<div class='"+cls+"'><aside class='rail'>"+sideNav(vaultStatsBlock(stats,realCols))+sidebarMain()+"</aside><main class='main overview-main'>"+moodboardListMarkup(moodboardListCtx())+"</main></div>")}
 function moodboardEditView(){let board=activeMoodboard();if(!board){state.view="moodboards";return moodboardsView()}if(!moodboardEditorUi){if(!state.moodboardEditorLoading){state.moodboardEditorLoading=true;ensureMoodboardEditorUi().then(()=>{state.moodboardEditorLoading=false;render()}).catch(()=>{state.moodboardEditorLoading=false;toast("Could not load moodboard editor.");state.view="moodboards";render()})}return shell("<div class='moodboard-editor-loading boot-skeleton' aria-busy='true' aria-label='Loading moodboard editor'><div class='boot-topbar'><span class='skeleton-box mark'></span><span class='skeleton-line title'></span></div><div class='boot-grid'><aside><span class='skeleton-pill'></span><span class='skeleton-pill'></span></aside><main><span class='skeleton-line wide'></span><div class='boot-cards'><span></span><span></span><span></span></div></main></div></div>")}ensureMoodboardAutosave();let html=moodboardEditorUi.smartGridEditorMarkup({board,items:state.items,esc,escA,icon,uiIcon,media,host,saveStatus:state.moodboardSaveStatus,canUndo:moodboardHistory.canUndo(),canRedo:moodboardHistory.canRedo(),selectedObjectId:state.selectedObject,selectedObjectIds:state.selectedObjectIds||[],tool:state.moodboardTool||"select",sourceCollapsed:!!state.moodboardSourceCollapsed,inspectorCollapsed:!!state.moodboardInspectorCollapsed,sourceWidth:state.moodboardSourceWidth,inspectorWidth:state.moodboardInspectorWidth});if(state.pageEnter)html=html.replace('class="moodboard-editor','class="moodboard-editor page-enter');return shell(html)}
 
 function projectCollectionRow(p,c){let items=projectItems(p).filter(i=>(i.collectionIds||[]).includes(c.id)),fallback=itemsForCollection(c.id).length;return "<article class='list-card collection-list-card'><button class='list-card-main' data-col='"+c.id+"'>"+icon("collection")+"<span><strong>"+esc(c.name)+"</strong><small>"+(items.length||fallback)+" objects</small></span></button><div class='list-card-actions'><button data-editcol='"+c.id+"' title='Rename'>"+icon("edit")+"</button><button class='danger-link' data-unlink-proj-col='"+p.id+":"+c.id+"' title='Remove from project'>"+icon("trash")+"</button></div></article>"}
@@ -697,7 +703,7 @@ function projectMoodboardRow(p,b){let openAttr=b._source==="standalone"||b.layou
 function moodboardCard(pair){let p=pair.project,b=pair.board;return "<article class='moodboard-index-card'><button class='moodboard-card-open' data-openboard='"+p.id+":"+b.id+"'>"+moodboardPreview(b)+"<span><strong>"+esc(b.name)+"</strong><small>"+esc(p.name)+" · "+((b.objects||[]).length)+" objects</small></span></button><div class='moodboard-card-actions'><button data-openboard='"+p.id+":"+b.id+"'>Open</button><button data-editboard='"+p.id+":"+b.id+"'>Edit</button><button class='danger-link' data-delboard='"+p.id+":"+b.id+"'>Delete</button></div></article>"}
 function moodboardPreview(b){let objs=(b.objects||[]).slice(0,6);return "<div class='moodboard-preview'>"+(objs.length?objs.map((o,idx)=>"<i class='preview-obj p"+(idx%6)+"' style='background:"+previewColor(o)+"'></i>").join(""):"<i class='preview-empty'></i><i class='preview-empty two'></i><i class='preview-empty three'></i>")+"</div>"}
 function boardView(){let p=project(),b=board(),obj=selectedObj(),items=filtered(),cls="board-workspace"+(state.leftCollapsed?" left-collapsed":"")+(state.rightCollapsed?" right-collapsed":"")+pageEnterCls(),right=state.rightCollapsed?rightCollapsedPanel("Inspector"):("<div class='detail-header'><span class='status-pill'>Moodboard</span><button class='icon-button drawer-close' data-toggle-right title='Close inspector'>"+icon("close")+"</button></div><h2>Selected Object</h2>"+(obj?objectInspector(obj):"<p class='inspector-empty'>Select an object, drag from the vault, or add a text object.</p>")+"<button class='primary-button wide' data-board-save>Save Board</button><button class='ghost-button wide' data-share>Share Link</button>");return shell("<div class='"+cls+"' style='--right-width:"+state.rightWidth+"px'><aside class='project-rail'>"+sideNav()+sidebarMain()+"</aside><aside class='library-rail'><div class='rail-heading'><h2>My Vault</h2><button class='mini-button' data-board-save>Save</button></div><div class='board-filter'><select data-lib-filter><option value='all'>All Items</option><option value='image'>Images</option><option value='video'>Videos</option><option value='link'>Links</option><option value='note'>Notes</option></select></div><div class='library-grid'>"+items.map(libraryCard).join("")+"</div><p class='library-hint'>Drag items to canvas to add</p></aside><main class='board-main'>"+projectContextPanel(p)+"<section class='board-title-row'><div><input class='board-title' data-board-title value='"+escA(b.name)+"'><p>Project: "+esc(p.name)+"</p></div><div class='board-toolbar'><button class='ghost-button' data-addtext>Add Text</button><button class='ghost-button' data-addfromvault>Add From Vault</button><button class='ghost-button' data-export>Export</button><button class='ghost-button' data-grid>Grid</button></div></section><section class='canvas-wrap'><div class='mood-canvas' data-canvas>"+b.objects.map(boardObject).join("")+"</div></section></main><aside class='inspector "+(state.rightCollapsed?"mini":"")+"'>"+(state.rightCollapsed?right:resizeHandle()+right)+"</aside></div>")}
-function collectionsView(){let stats=count(),realCols=state.cols.filter(c=>!c.system),cls="workspace overview-workspace detail-closed"+(state.leftCollapsed?" left-collapsed":"")+pageEnterCls(),cards=rootCustomCols().map(c=>collectionCard(c)+childCols(c.id).map(collectionCard).join("")).join("");return shell("<div class='"+cls+"'><aside class='rail'>"+sideNav(vaultStatsBlock(stats,realCols))+sidebarMain()+"</aside><main class='main overview-main'><section class='page-head'><div class='page-head-title'><h1>Collections</h1>"+howtoInfoButton("collections")+"</div><button class='primary-button' data-newcol>"+icon("plus")+"<span>New Collection</span></button></section><section class='collection-overview-grid'>"+cards+"</section></main></div>")}
+function collectionsView(){let stats=count(),realCols=state.cols.filter(c=>!c.system),cls="workspace overview-workspace detail-closed"+(state.leftCollapsed?" left-collapsed":"")+pageEnterCls(),found=collectionsFiltered(),cards=found.list.map(collectionCard).join("");return shell("<div class='"+cls+"'><aside class='rail'>"+sideNav(vaultStatsBlock(stats,realCols))+sidebarMain()+"</aside><main class='main overview-main'><section class='page-head'><div class='page-head-title'><h1>Collections</h1>"+howtoInfoButton("collections")+"</div><button class='primary-button' data-newcol>"+icon("plus")+"<span>New Collection</span></button></section>"+studioSearchMarkup("collections",state.collectionsQ,"Search collections, images or colors…")+"<p class='studio-search-note' data-studio-note='collections'>"+esc(found.note)+"</p><section class='collection-overview-grid'>"+cards+"</section></main></div>")}
 function collectionStackMarkup(colId){let items=itemsForCollection(colId).slice().sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0)).slice(0,5),n=Math.max(items.length,1),mid=(n-1)/2,order=items.length?items:[null],spatial=[],k=0;order.forEach((it,idx)=>{if(idx%2===0)spatial.push(it);else spatial.unshift(it)});return "<div class='cstack' style='--n:"+n+"' aria-hidden='true'>"+spatial.map((it,i)=>{let src=it?(it.thumbnailUrl||it.previewUrl||(it.type==="image"?it.assetUrl:"")||""):"",z=n-Math.round(Math.abs(i-mid)*2)/2;return "<span class='cstack-card"+(src?"":" is-empty")+"' style='--i:"+i+";--z:"+Math.round(z*2)+"'>"+(src?"<img src='"+escA(src)+"' alt='' loading='lazy' decoding='async' draggable='false'>":(it?icon(it.type==="video"?"video":it.type==="link"?"link":"note"):""))+"</span>"}).join("")+"</div>"}
 function collectionMosaicMarkup(colId){let previews=collectionHighlightPreviews(colId);return"<div class='collection-highlight-mosaic collection-card-mosaic' aria-hidden='true'>"+collectionHighlightThumb(previews[0],"main")+collectionHighlightThumb(previews[1],"tr")+collectionHighlightThumb(previews[2],"br")+"</div>"}
 function collectionTypeChipsMarkup(items){let t=typeCounts(items),parts=[];[["image","image"],["video","video"],["link","link"],["note","note"]].forEach(pair=>{if(t[pair[0]])parts.push("<span>"+t[pair[0]]+" "+pair[1]+(t[pair[0]]===1?"":"s")+"</span>")});return parts.length?"<div class='collection-card-type-row'>"+parts.join("")+"":"<p class='collection-card-empty-note'>No objects yet</p>"}

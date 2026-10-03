@@ -34,14 +34,15 @@ export function moodboardColorChooserMarkup(ctx) {
   </section></div>`;
 }
 
+export function moodboardCardsMarkup(boards, projects, esc, escA, icon, thumbFor) {
+  return (boards || []).map((board) => moodboardIndexCard(board, projects, esc, escA, icon, thumbFor)).join("");
+}
+
 export function moodboardListMarkup(ctx) {
   const { moodboards, projects, esc, escA, icon, emptyPrimary, thumbFor } = ctx;
-  const cards = (moodboards || [])
-    .slice()
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .map((board) => moodboardIndexCard(board, projects, esc, escA, icon, thumbFor))
-    .join("");
-  const empty = !moodboards || !moodboards.length;
+  const ordered = ctx.keepOrder ? (moodboards || []) : (moodboards || []).slice().sort((a, b) => b.updatedAt - a.updatedAt);
+  const cards = moodboardCardsMarkup(ordered, projects, esc, escA, icon, thumbFor);
+  const empty = ctx.total === undefined ? !moodboards || !moodboards.length : !ctx.total;
   return `
 <section class="page-head moodboard-page-head">
   <div>
@@ -51,6 +52,7 @@ export function moodboardListMarkup(ctx) {
     <button class="primary-button" type="button" data-open-create-moodboard>${icon("plus")}<span>Create Moodboard</span></button>
   </div>
 </section>
+${empty ? "" : `${ctx.searchMarkup || ""}<p class="studio-search-note" data-studio-note="moodboards">${esc(ctx.note || "")}</p>`}
 ${
   empty
     ? `<section class="empty-state moodboard-empty"><div>
@@ -90,7 +92,7 @@ function moodboardIndexCard(board, projects, esc, escA, icon, thumbFor) {
 }
 
 /** Mini canvas: the real layout of the board (positions, sizes, rotation), scaled to a 4:3 card cover. */
-function moodboardCover(board, esc, escA, thumbFor) {
+export function moodboardCover(board, esc, escA, thumbFor) {
   const objs = (board.objects || []).filter((o) => o && o.kind !== "connector" && Number(o.w) > 0 && Number(o.h) > 0);
   if (!objs.length) return `<div class="moodboard-cover empty-cover"><span>Empty board</span></div>`;
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
