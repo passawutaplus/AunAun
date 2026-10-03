@@ -5356,3 +5356,34 @@ html.howto-open{overflow:hidden}
 @media(prefers-reduced-motion:reduce){.howto-step,.ht-scene{transition:none}.ht-ctx,.ht-toast,.ht-new,.ht-type,.ht-menu,.ht-pill,.ht-node,.ht-grid .ht-tile{animation:none!important}.ht-pill,.ht-node{opacity:1;transform:none}.ht-ctx,.ht-toast,.ht-menu{opacity:1;transform:none}.ht-type{max-width:16em}}
 .workspace.guest-workspace{overflow:visible;height:auto;min-height:calc(100vh - 72px)}
 .guest-workspace .main.guest-main{overflow:visible;height:auto}
+/* A+ Vault Keep popup: animated demo + scroll-to-reveal log in */
+.auth-gate-dialog:has(.auth-reveal){max-height:min(88vh,780px);overflow-y:auto;overscroll-behavior:contain;scroll-behavior:smooth}
+.keep-demo{position:relative;height:176px;margin:4px 0 18px}
+.kd-card{position:absolute;left:0;top:6px;width:112px;height:152px;border-radius:14px;overflow:hidden;background:var(--surface-soft);box-shadow:0 14px 30px rgba(0,0,0,.35)}
+.kd-img,.kd-fly{display:block;overflow:hidden;background:var(--surface-soft)}
+.kd-img{width:100%;height:100%}
+.kd-img img,.kd-fly img,.kd-new img{width:100%;height:100%;object-fit:cover}
+.kd-ph{display:block;width:100%;height:100%;background:linear-gradient(135deg,#d9c7a7,#3e5c76)}
+.kd-chip{position:absolute;right:7px;top:7px;padding:6px 10px;border-radius:999px;background:var(--accent,#ff4f43);color:#fff;font:400 11px/1 "Agrandir Wide",sans-serif;animation:kd-chip 5.2s ease infinite}
+.kd-cursor{position:absolute;left:84px;top:132px;z-index:4;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4));animation:kd-cursor 5.2s ease infinite}
+.kd-fly{position:absolute;left:0;top:6px;z-index:3;width:112px;height:152px;border-radius:14px;opacity:0;transform-origin:center;animation:kd-fly 5.2s cubic-bezier(.5,.1,.3,1) infinite}
+.kd-vault{position:absolute;right:0;top:6px;width:min(190px,52%);height:152px;padding:12px;border-radius:16px;background:var(--surface-soft);box-shadow:inset 0 0 0 1px var(--border,rgba(255,255,255,.08));display:grid;grid-template-rows:auto 1fr auto;gap:8px}
+.kd-vault strong{font:400 13px "Agrandir Wide",sans-serif;color:var(--text-strong,#fff)}
+.kd-slots{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.kd-slots i,.kd-new{display:block;border-radius:7px;background:var(--surface,rgba(255,255,255,.06));overflow:hidden}
+.kd-new{opacity:0;transform:scale(.7);animation:kd-new 5.2s ease infinite}
+.kd-credit{color:var(--text-muted,#9aa0a6);font-size:11px;opacity:0;animation:kd-credit 5.2s ease infinite}
+@keyframes kd-cursor{0%,8%{transform:translate(0,0);opacity:0}16%{opacity:1}30%{transform:translate(-10px,-118px)}36%{transform:translate(-10px,-118px) scale(.82)}42%{transform:translate(-10px,-118px)}80%{opacity:1}92%,100%{transform:translate(-10px,-118px);opacity:0}}
+@keyframes kd-chip{0%,32%{transform:none}36%{transform:scale(.88)}42%{transform:scale(1.06)}48%,100%{transform:none}}
+@keyframes kd-fly{0%,40%{opacity:0;transform:none}42%{opacity:1;transform:none}70%{opacity:1;transform:translate(190px,18px) scale(.3)}74%,100%{opacity:0;transform:translate(190px,18px) scale(.3)}}
+@keyframes kd-new{0%,70%{opacity:0;transform:scale(.7)}78%{opacity:1;transform:scale(1.06)}84%,94%{opacity:1;transform:none}100%{opacity:0;transform:scale(.7)}}
+@keyframes kd-credit{0%,76%{opacity:0}84%,94%{opacity:1}100%{opacity:0}}
+.auth-scroll-hint{display:flex;align-items:center;justify-content:center;gap:6px;margin:6px 0 18px;color:var(--text-muted,#9aa0a6);font-size:12px;letter-spacing:.06em;transition:opacity .3s ease}
+.auth-scroll-hint svg{animation:kd-bounce 1.6s ease-in-out infinite}
+.auth-scroll-hint.is-hidden{opacity:0;pointer-events:none}
+@keyframes kd-bounce{50%{transform:translateY(4px)}}
+.auth-reveal{opacity:0;transform:translateY(26px);pointer-events:none;transition:opacity .5s ease,transform .6s cubic-bezier(.2,.7,.2,1)}
+.auth-reveal.is-revealed{opacity:1;transform:none;pointer-events:auto}
+@media(prefers-reduced-motion:reduce){.kd-chip,.kd-cursor,.kd-fly,.kd-new,.kd-credit,.auth-scroll-hint svg{animation:none}.kd-new,.kd-credit{opacity:1;transform:none}.auth-reveal{transition:none}}
+.kd-slots{align-content:start}
+.kd-slots i,.kd-new{aspect-ratio:1;min-height:0}
