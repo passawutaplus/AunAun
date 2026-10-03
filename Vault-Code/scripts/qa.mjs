@@ -3,6 +3,7 @@ import { spawn, spawnSync } from "node:child_process";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
+import { runSecurityGuards } from "./qa-security.mjs";
 
 const requiredFiles = [
   "outputs/a-plus-vault/index.html",
@@ -69,6 +70,7 @@ for (const file of syntaxFiles) {
 }
 
 await runStaticProductGuards();
+await runSecurityGuards();
 await runLocalServerSmoke();
 
 const grep = spawnSync(

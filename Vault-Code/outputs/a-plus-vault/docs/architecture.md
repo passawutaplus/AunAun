@@ -51,3 +51,16 @@ Move from local-first to Supabase in this order:
 3. Postgres stores objects, analysis, collections, projects, boards, and board objects.
 4. API routes perform validation, metadata extraction, OCR, color extraction, and AI tags.
 5. Extension sends captures to authenticated API routes instead of local server endpoints.
+
+## App shell, PWA and security layout (current)
+
+| Concern | Where |
+| --- | --- |
+| Security headers + CSP, rewrites, cache rules | `vercel.json` (`local-server.cjs` mirrors the global headers so CSP breaks show up locally) |
+| CSP rule of thumb | `script-src 'self'`: no inline `<script>` or `on*=`; new code goes in a `.js` file. Guarded by `scripts/qa-security.mjs` |
+| Installable app | `manifest.webmanifest`, `sw.js` (same-origin static only, `BUILD` stamped by `build.mjs`), `offline.html`/`offline.js`, `modules/pwa.js` (register + install prompt) |
+| Marketing pages | `welcome.html` / `extension.html` share `marketing.css` + `marketing.js`; page logic in `welcome.js` / `extension.js` |
+| Error pages | `error-page.template.html` + `scripts/generate-error-pages.mjs` → 400/401/403/404/429/500/503 (`error.js` for reload/back) |
+| Phone layout (≤560px) | no top bar or top blur; bottom pill (Discover, Vault, Collections, Search, Account) + separate round Keep (+); feeds are 2 columns. CSS blocks at the end of `styles.css` |
+| Server hygiene | `lib/supabase-rest.mjs` and `api/discover.js` log upstream errors and return generic messages; `lib/rate-limit.mjs` trusts Vercel's forwarded-IP header |
+| Dev checks | `npm run check` (syntax, product guards, security/PWA guards), `npm run test:gate` (adds unit tests, API smoke, build) |

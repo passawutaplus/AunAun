@@ -536,7 +536,19 @@ async function handleApi(req, res, url) {
   return false;
 }
 
+// Mirror vercel.json's global headers (CSP etc.) so violations show up locally, not only in production.
+const globalHeaders = (() => {
+  try {
+    const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'vercel.json'), 'utf8'));
+    const rule = (cfg.headers || []).find(h => h.source === '/(.*)');
+    return Object.fromEntries((rule ? rule.headers : []).map(h => [h.key, h.value]));
+  } catch (e) {
+    return {};
+  }
+})();
+
 const server = http.createServer(async (req, res) => {
+  for (const [key, value] of Object.entries(globalHeaders)) res.setHeader(key, value);
   const url = new URL(req.url, `http://${serverHost}:${serverPort}`);
   if (await handleApi(req, res, url)) return;
 

@@ -5,110 +5,90 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>400 Bad Request · A+ Vault</title>
   <meta name="robots" content="noindex,nofollow" />
+  <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#101113" media="(prefers-color-scheme: dark)" />
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="preload" href="/assets/fonts/Agrandir-Wide-Light.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="stylesheet" href="./styles.css" />
   <style>
-    .vault-error-page{
-      --error-bg:#f6f7f9;
-      --error-ink:#151719;
-      --error-muted:#747a80;
-      --error-line:#e5e8eb;
-      --error-surface:#fff;
-      min-height:100vh;margin:0;display:grid;grid-template-rows:auto 1fr auto;
-      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      color:var(--error-ink);background:var(--error-bg);position:relative;overflow:hidden;
+    @font-face{font-family:"Agrandir Wide";src:url("/assets/fonts/Agrandir-Wide-Light.woff2") format("woff2");font-weight:300 400;font-display:swap}
+    :root{
+      --paper:#f4f1ea;--paper-2:#ebe6db;--ink:#151719;--ink-2:#3a3d41;--muted:#7a7d80;--line:rgba(21,23,25,.12);
+      --coral:#ff4f43;--coral-dark:#e33f34;--chip:#fff;--chip-ink:#151719;
+      --display:"Agrandir Wide","IBM Plex Sans Thai",system-ui,sans-serif;--body:"IBM Plex Sans Thai",system-ui,-apple-system,sans-serif;
+      --ease:cubic-bezier(.2,.7,.2,1);
+      color-scheme:light;
     }
-    .vault-error-blobs{
-      position:absolute;inset:0;pointer-events:none;z-index:0;
-      background:
-        radial-gradient(ellipse 55% 42% at 12% 8%, rgba(186,210,255,.42), transparent 68%),
-        radial-gradient(ellipse 48% 40% at 88% 14%, rgba(214,196,255,.34), transparent 66%),
-        radial-gradient(ellipse 50% 38% at 72% 92%, rgba(255,79,67,.12), transparent 70%),
-        linear-gradient(180deg, #fff 0%, var(--error-bg) 42%, #f3f4f7 100%);
+    @media(prefers-color-scheme:dark){
+      :root{--paper:#101113;--paper-2:#1a1c1f;--ink:#f2f3f4;--ink-2:#c3c6ca;--muted:#8a8f95;--line:rgba(255,255,255,.12);--chip:#f2f3f4;--chip-ink:#151719;color-scheme:dark}
     }
-    .vault-error-topbar{
-      position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:16px;
-      width:min(1120px,calc(100% - 32px));margin:18px auto 0;padding:12px 18px;
-      border:1px solid rgba(229,232,235,.9);border-radius:16px;background:rgba(255,255,255,.82);
-      box-shadow:0 10px 30px rgba(18,22,26,.06);backdrop-filter:blur(16px);
+    *{box-sizing:border-box}
+    html{-webkit-text-size-adjust:100%}
+    body{margin:0;min-height:100vh;min-height:100dvh;display:grid;grid-template-rows:auto 1fr auto;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    a{color:inherit}
+    .bar{display:flex;align-items:center;justify-content:space-between;gap:16px;width:min(1200px,calc(100% - 40px));margin:0 auto;padding:max(18px,env(safe-area-inset-top)) 0 0}
+    .brand{display:flex;align-items:center;gap:10px;font:400 17px/1 var(--display);text-decoration:none}
+    .brand img{width:30px;height:30px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 24px;border:0;border-radius:999px;font:400 14px/1 var(--display);text-decoration:none;cursor:pointer;transition:transform .25s var(--ease),background .2s}
+    .btn:hover{transform:translateY(-2px)}
+    .btn:focus-visible{outline:2px solid var(--coral);outline-offset:3px}
+    .btn-dark{background:var(--ink);color:var(--paper)}
+    .btn-coral{background:var(--coral);color:#fff;box-shadow:0 10px 30px rgba(255,79,67,.28)}
+    .btn-coral:hover{background:var(--coral-dark)}
+    .btn-ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+    .bar .btn{height:40px;padding:0 18px;font-size:13px}
+    main{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:clamp(32px,6vw,96px);align-items:center;width:min(1200px,calc(100% - 40px));margin:0 auto;padding:clamp(28px,6vw,72px) 0}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+    .eyebrow::before{content:"";width:18px;height:1px;background:currentColor}
+    .code{margin:18px 0 0;font:300 clamp(96px,17vw,216px)/.86 var(--display);letter-spacing:-.04em}
+    .code span:nth-child(2){color:var(--coral)}
+    h1{margin:22px 0 0;font:300 clamp(26px,3.4vw,44px)/1.1 var(--display);letter-spacing:-.01em}
+    .copy{max-width:480px;margin:16px 0 0;color:var(--ink-2)}
+    .copy .th{display:block;margin-top:6px;color:var(--muted);font-size:.9em}
+    .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+    .ph{position:relative;margin:0;justify-self:center;width:min(100%,460px);transform:rotate(1.6deg);transition:transform .6s var(--ease)}
+    .ph:hover{transform:rotate(0) translateY(-6px)}
+    .frame{position:relative;overflow:hidden;border-radius:22px;aspect-ratio:4/5;background:var(--paper-2);box-shadow:0 40px 70px -40px rgba(20,21,22,.55)}
+    .frame img{display:block;width:100%;height:100%;object-fit:cover}
+    .stk{position:absolute;left:-14px;bottom:28px;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:var(--chip);color:var(--chip-ink);font:500 12px/1 var(--body);box-shadow:0 14px 30px -6px rgba(0,0,0,.35);animation:bob 5s ease-in-out infinite}
+    .stk i{width:8px;height:8px;border-radius:50%;background:var(--coral)}
+    @keyframes bob{50%{transform:translateY(-8px)}}
+    footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;width:min(1200px,calc(100% - 40px));margin:0 auto;padding:20px 0 max(24px,env(safe-area-inset-bottom));border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+    footer a{text-decoration:none}
+    footer a:hover{color:var(--coral)}
+    @media(max-width:860px){
+      main{grid-template-columns:1fr;gap:36px;text-align:left}
+      .ph{width:min(100%,340px);justify-self:start;margin-left:14px}
     }
-    .vault-error-brand{
-      display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:inherit;
-      font-family:"Agrandir Wide",Inter,ui-sans-serif,system-ui,sans-serif;font-size:18px;font-weight:300;
-      letter-spacing:.01em;
+    @media(max-width:480px){
+      .actions .btn{flex:1 1 100%}
+      footer{justify-content:center;text-align:center}
     }
-    .vault-error-brand img{width:36px;height:36px;object-fit:contain}
-    .vault-error-topbar-cta{
-      display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 16px;
-      border-radius:8px;background:#151719;color:#fff;text-decoration:none;font-size:14px;font-weight:500;
-    }
-    .vault-error-topbar-cta:hover{background:#2a2927}
-    .vault-error-main{
-      position:relative;z-index:1;display:grid;place-content:center;justify-items:center;text-align:center;
-      gap:14px;padding:48px 20px 64px;width:min(720px,100%);margin:0 auto;
-    }
-    .vault-error-code{
-      margin:0;font-family:"Agrandir Wide",Inter,ui-sans-serif,system-ui,sans-serif;
-      font-size:clamp(88px,18vw,152px);font-weight:300;line-height:.9;letter-spacing:-.02em;color:var(--error-ink);
-    }
-    .vault-error-title{
-      margin:0;font-size:clamp(24px,4vw,34px);font-weight:600;letter-spacing:-.01em;
-    }
-    .vault-error-copy{
-      margin:0;max-width:46ch;font-size:16px;line-height:1.6;color:var(--error-muted);
-    }
-    .vault-error-actions{
-      display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px;
-    }
-    .vault-error-actions a{
-      display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 20px;
-      border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;
-    }
-    .vault-error-actions .primary{background:#ff4f43;color:#fff;box-shadow:none}
-    .vault-error-actions .primary:hover{background:#e33f34}
-    .vault-error-actions .ghost{
-      background:var(--error-surface);color:var(--error-ink);border:1px solid var(--error-line);
-    }
-    .vault-error-actions .ghost:hover{border-color:#d6dbe0;background:#f7f8fa}
-    .vault-error-footer{
-      position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;
-      flex-wrap:wrap;padding:18px clamp(16px,4vw,42px) 24px;border-top:1px solid var(--error-line);
-      color:var(--error-muted);font-size:13px;background:rgba(255,255,255,.72);
-    }
-    .vault-error-footer a{color:var(--error-ink);text-decoration:none;font-weight:500}
-    .vault-error-footer a:hover{color:#ff4f43}
-    @media(max-width:560px){
-      .vault-error-topbar{width:calc(100% - 24px);margin-top:12px;padding:10px 12px}
-      .vault-error-brand{font-size:16px}
-      .vault-error-actions{display:grid;width:min(280px,100%)}
-      .vault-error-actions a{width:100%}
-      .vault-error-footer{justify-content:center;text-align:center}
-    }
+    @media(prefers-reduced-motion:reduce){.stk{animation:none}.ph,.btn{transition:none}}
   </style>
 </head>
-<body class="vault-error-page" data-error="400">
-  <div class="vault-error-blobs" aria-hidden="true"></div>
-  <header class="vault-error-topbar">
-    <a class="vault-error-brand" href="./index.html" aria-label="A+ Vault">
-      <img src="/assets/vault-logo.png" width="36" height="36" alt="" />
-      <span>A+ Vault</span>
-    </a>
-    <a class="vault-error-topbar-cta" href="./index.html">Open Vault</a>
+<body data-error="400">
+  <header class="bar">
+    <a class="brand" href="./index.html" aria-label="A+ Vault home"><img src="/assets/vault-logo.png" width="30" height="30" alt="" /><span>A+ Vault</span></a>
+    <a class="btn btn-dark" href="./index.html">Open Vault</a>
   </header>
-  <main class="vault-error-main">
-    <p class="vault-error-code">400</p>
-    <h1 class="vault-error-title">Bad request.</h1>
-    <p class="vault-error-copy">Something about that link or action was not valid. Head back to Vault and try again.</p>
-    <div class="vault-error-actions">
-      <a class="primary" href="./index.html">Back to Vault</a>
-      <a class="ghost" href="./index.html">Go back home</a>
-    </div>
+  <main>
+    <section>
+      <span class="eyebrow">Bad request</span>
+      <p class="code" aria-label="Error 400"><span>4</span><span>0</span><span>0</span></p>
+      <h1>That didn't look right.</h1>
+      <p class="copy">Something about that link or action wasn't valid. Head back to Vault and try again.<span class="th">ลิงก์หรือคำสั่งนี้ไม่ถูกต้อง กลับไปที่ Vault แล้วลองใหม่อีกครั้ง</span></p>
+      <div class="actions"><a class="btn btn-coral" href="./index.html">Back to Vault</a><a class="btn btn-ghost" href="./index.html" data-back>Go back</a></div>
+    </section>
+    <figure class="ph" aria-hidden="true">
+      <div class="frame"><img src="/assets/people/phone-coffee.webp" alt="" width="933" height="1166" decoding="async" /></div>
+      <span class="stk"><i></i>Bad request</span>
+    </figure>
   </main>
-  <footer class="vault-error-footer">
-    <span>© A+ Vault</span>
-    <a href="./legal.html">Legal</a>
+  <footer>
+    <span>© A+ Vault · Photo via Unsplash</span>
+    <span><a href="./legal.html">Legal</a> · <a href="/discover">Discover</a></span>
   </footer>
+  <script src="/error.js"></script>
 </body>
 </html>

@@ -45,7 +45,7 @@ export default createHandler({
       headers: { apikey: key, authorization: `Bearer ${key}`, accept: "application/json" },
     });
     const rows = await upstream.json().catch(() => null);
-    if (!upstream.ok) throw badRequest(rows?.message || "Discover query failed.");
+    if (!upstream.ok) { console.error("[discover] upstream", upstream.status, rows?.message || ""); throw badRequest("Discover query failed."); }
     res.setHeader("Cache-Control", "public, max-age=30, s-maxage=60, stale-while-revalidate=600");
     return Array.isArray(rows) ? rows : [];
   }

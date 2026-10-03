@@ -91,6 +91,5 @@ a{color:#e33f34;text-decoration:none}
 </style></head><body>
 <section class='page'><header><h1>${esc(board.name || "Moodboard")}</h1><span>${esc(date)} · ${esc(ctx.siteName || "A+ Vault")}</span></header><div class='board'>${boardMarkup}</div></section>
 <section class='page'><h2>Image credits &amp; usage rights</h2>${creditRows ? `<table><thead><tr><th>#</th><th>Reference</th><th>Source</th><th>Usage</th></tr></thead><tbody>${creditRows}</tbody></table>` : "<p>No images on this board.</p>"}<p class='note-foot'>Usage labels are guidance, not legal advice. “Reference only” images are for inspiration — license them before using in final work.</p></section>
-<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),300))</script>
 </body></html>`;
 }

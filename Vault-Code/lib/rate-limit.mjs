@@ -24,8 +24,13 @@ export function rateLimit(key, { limit, windowMs }) {
 }
 
 export function clientIp(req) {
-  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
-  return forwarded || req.headers["x-real-ip"] || req.socket?.remoteAddress || "unknown";
+  // Vercel sets these at the edge and overwrites client-supplied values; a raw x-forwarded-for
+  // can be spoofed from the left, so it is only the last fallback.
+  const h = req.headers;
+  const trusted = String(h["x-vercel-forwarded-for"] || h["x-real-ip"] || "").split(",")[0].trim();
+  if (trusted) return trusted;
+  const forwarded = String(h["x-forwarded-for"] || "").split(",").pop().trim();
+  return forwarded || req.socket?.remoteAddress || "unknown";
 }
 
 export function resetRateLimits() {

@@ -3735,8 +3735,8 @@ html[data-theme="dark"]{
   .board-workspace.left-collapsed .project-rail > *{
     pointer-events:auto;
   }
-  .workspace.left-collapsed .rail > :not(.sidebar-workspace):not(.sidebar-rail-footer),
-  .board-workspace.left-collapsed .project-rail > :not(.sidebar-workspace):not(.sidebar-rail-footer){
+  .workspace.left-collapsed .rail > :not(.sidebar-workspace):not(.sidebar-rail-footer):not(.rail-keep),
+  .board-workspace.left-collapsed .project-rail > :not(.sidebar-workspace):not(.sidebar-rail-footer):not(.rail-keep){
     display:none!important;
   }
   .workspace.left-collapsed .sidebar-workspace,
@@ -5435,3 +5435,89 @@ html.howto-open{overflow:hidden}
 .topbar-nav-link::after{content:attr(data-label);grid-area:1/1;visibility:hidden;height:0;overflow:hidden;font-weight:700;pointer-events:none}
 .topbar-nav-link:hover{background:transparent!important;color:var(--accent,var(--coral))}
 .topbar-nav-link.is-active{background:transparent!important;color:var(--text-strong,var(--ink-strong));font-weight:700;-webkit-text-stroke:.3px currentColor}
+
+/* A+ Vault app shell (PWA install row) */
+.install-app-row{display:none;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;padding:14px 16px;border-radius:12px;background:var(--surface-soft,var(--panel));box-shadow:inset 0 0 0 1px var(--border,var(--line))}
+.install-app-row>div{display:grid;gap:2px;min-width:0}
+.install-app-row span{color:var(--muted);font-size:13px}
+.install-app-row [data-install-hint-ios]{display:none}
+html[data-can-install] .install-app-row,html[data-ios-install] .install-app-row{display:flex}
+html[data-ios-install]:not([data-can-install]) .install-app-row button,html[data-ios-install]:not([data-can-install]) [data-install-hint]{display:none}
+html[data-ios-install]:not([data-can-install]) .install-app-row [data-install-hint-ios]{display:block}
+html[data-standalone] .install-app-row{display:none!important}
+
+/* A+ Vault bottom nav (Cosmos-style): pill + separate Keep (+) button; phones also get Search + Account in the pill */
+.rail-keep,.side-nav-button.nav-extra{display:none}
+@media(max-width:1024px){
+  .workspace.left-collapsed .rail,.board-workspace.left-collapsed .project-rail{
+    left:14px!important;right:14px!important;transform:none!important;width:auto!important;max-width:none!important;
+    padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important;
+    justify-content:center!important;gap:10px!important;
+  }
+  .workspace.left-collapsed .sidebar-workspace,.board-workspace.left-collapsed .sidebar-workspace{
+    flex:0 1 auto!important;padding:8px 10px!important;border:1px solid var(--vault-nav-glass-border)!important;border-radius:9999px!important;
+    background:var(--vault-nav-glass-bg)!important;-webkit-backdrop-filter:blur(20px) saturate(1.35);backdrop-filter:blur(20px) saturate(1.35);
+    box-shadow:var(--vault-nav-glass-shadow)!important;
+  }
+  .workspace.left-collapsed .side-nav,.board-workspace.left-collapsed .side-nav{display:flex!important;gap:2px!important;width:auto}
+  .workspace.left-collapsed .rail>.rail-keep,.board-workspace.left-collapsed .project-rail>.rail-keep{
+    display:grid!important;place-items:center;flex:0 0 auto;width:52px;height:52px;padding:0;border:0;border-radius:50%;
+    background:var(--ink-strong,#151719);color:#fff;box-shadow:0 8px 22px rgba(16,17,19,.34);cursor:pointer;transition:transform .2s var(--ease,ease);
+  }
+  .workspace.left-collapsed .rail>.rail-keep:active,.board-workspace.left-collapsed .project-rail>.rail-keep:active{transform:scale(.92)}
+  .rail-keep .flat-icon{width:24px;height:24px;stroke-width:2.2}
+  html[data-theme="dark"] .workspace.left-collapsed .rail>.rail-keep,html[data-theme="dark"] .board-workspace.left-collapsed .project-rail>.rail-keep{background:#f2f3f4;color:#151719;box-shadow:0 8px 22px rgba(0,0,0,.45)}
+}
+@media(max-width:560px){
+  .workspace.left-collapsed .rail,.board-workspace.left-collapsed .project-rail{justify-content:space-between!important}
+  .workspace.left-collapsed .side-nav-button.nav-extra,.board-workspace.left-collapsed .side-nav-button.nav-extra{display:grid!important}
+  .nav-avatar{width:26px;height:26px;font-size:10px;display:grid;place-items:center;border-radius:50%;background-size:cover;background-position:center}
+  .nav-avatar.has-photo{color:transparent}
+  .workspace.left-collapsed .side-nav-button.nav-profile .side-icon,.board-workspace.left-collapsed .side-nav-button.nav-profile .side-icon{width:26px!important;height:26px!important}
+  html[data-profile-open] .workspace.left-collapsed .nav-profile{background:var(--accent)!important}
+
+  /* top bar is gone on phones: no sticky header, no top blur. Search opens it as an overlay; the account sheet stays hosted in it. */
+  .app-shell{padding-top:env(safe-area-inset-top)}
+  .app-shell>.topbar{position:fixed;top:0;left:0;right:0;height:0;min-height:0;padding:0;border:0;background:transparent;box-shadow:none;overflow:visible;visibility:hidden;z-index:95}
+  .app-shell>.topbar .header-profile-group.open::before,.app-shell>.topbar .profile-menu{visibility:visible}
+  .app-shell>.topbar .header-actions{display:none}
+  .app-shell>.topbar .header-profile-group{display:block;width:0;height:0}
+  html[data-m-search] .app-shell{padding-top:calc(68px + env(safe-area-inset-top))}
+  html[data-m-search] .app-shell>.topbar{height:auto;min-height:60px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:var(--vault-nav-glass-bg,rgba(16,17,19,.9));-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);visibility:visible;box-shadow:0 1px 0 var(--line)}
+  html[data-m-search] .topbar-logo,html[data-m-search] .topbar-nav,html[data-m-search] .header-profile-group,html[data-m-search] .header-login-button,html[data-m-search] .topbar-upload{display:none!important}
+  html[data-m-search] .topbar-spacer{flex:1 1 auto;min-width:0}
+  html[data-m-search] .topbar-spacer:not(.has-discover-search){display:none}
+  html[data-m-search] .app-shell>.topbar .header-actions{display:flex;flex:1 1 auto;min-width:0}
+  html[data-m-search] .header-search-group{flex:1 1 auto;width:100%}
+  html[data-m-search] .header-search-group .search-toggle{display:none}
+  html[data-m-search] .header-search-group .search-popup{position:static;width:100%;max-width:none;transform:none;opacity:1;visibility:visible;pointer-events:auto;box-shadow:none}
+}
+
+/* A+ Vault responsive foundation: single grid track must be allowed to shrink below its content */
+.app-shell{grid-template-columns:minmax(0,1fr)}
+
+/* A+ Vault phone feed: 2 columns like Cosmos (Discover, Vault, Collections) */
+@media(max-width:1024px){
+  .collection-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px}
+}
+@media(max-width:560px){
+  html[data-grid-size="small"] .discover-grid,html[data-grid-size="medium"] .discover-grid,.object-grid.size-small,.object-grid.size-medium{columns:2}
+  html[data-grid-size] .discover-grid{column-gap:10px}
+  html[data-grid-size] .discover-card{margin-bottom:10px}
+  .object-grid{column-gap:10px}
+  .collection-overview-grid{gap:10px}
+  .install-app-row{flex-wrap:wrap}
+  html:has([data-profile-menu]) .quick-note{display:none}
+}
+@media(max-width:560px){
+  .collection-overview-grid .collection-card-head{display:grid;gap:2px;justify-items:start}
+  .collection-overview-grid .collection-card-head strong{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .collection-overview-grid .collection-card-footer{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px}
+  .collection-overview-grid .collection-card-action{justify-content:center;padding:0}
+  .collection-overview-grid .collection-card-action span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+}
+@media(max-width:560px){
+  .object-grid.size-small,.object-grid.size-medium{columns:2;column-width:auto!important}
+  .object-grid.size-large{columns:1;column-width:auto!important}
+}

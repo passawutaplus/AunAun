@@ -1,15 +1,27 @@
 {
+  "id": "/vault",
   "name": "A+ Vault",
   "short_name": "Vault",
-  "description": "Keep creative references from anywhere.",
-  "start_url": "/vault",
+  "description": "Keep creative references from anywhere. Organize them into moodboards and projects.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "/vault?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
   "background_color": "#101113",
   "theme_color": "#101113",
+  "categories": ["design", "productivity", "photo"],
   "icons": [
-    { "src": "/assets/vault-logo-128.png", "sizes": "128x128", "type": "image/png" },
-    { "src": "/assets/vault-logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Discover", "short_name": "Discover", "url": "/discover?source=shortcut", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "My Vault", "short_name": "Vault", "url": "/vault?source=shortcut", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Moodboards", "short_name": "Boards", "url": "/moodboards?source=shortcut", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
   ],
   "share_target": {
     "action": "/vault",
