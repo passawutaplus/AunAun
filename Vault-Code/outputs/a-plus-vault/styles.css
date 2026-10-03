@@ -5589,3 +5589,14 @@ html[data-standalone] .install-app-row{display:none!important}
 .quick-note.qn-swap .quick-note-paper>:not(header){animation:qn-fade .22s ease both}
 @keyframes qn-fade{from{opacity:.25}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.quick-note.qn-swap .quick-note-paper>:not(header){animation:none}}
+
+/* A+ Vault: breathing room left/right on every page except Discover and the moodboard editor */
+@media(min-width:861px){
+  .workspace:not(.discover-workspace) .main{padding-left:clamp(28px,4.5vw,72px)!important;padding-right:clamp(28px,4.5vw,72px)!important}
+}
+@media(min-width:561px) and (max-width:860px){
+  .workspace:not(.discover-workspace) .main{padding-left:28px!important;padding-right:28px!important}
+}
+@media(min-width:861px){
+  .app-shell:has(.workspace:not(.discover-workspace)) .topbar{padding-left:clamp(28px,4.5vw,72px)!important;padding-right:clamp(28px,4.5vw,72px)!important}
+}
