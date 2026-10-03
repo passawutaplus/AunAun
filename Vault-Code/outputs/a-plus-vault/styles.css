@@ -5529,3 +5529,12 @@ html[data-standalone] .install-app-row{display:none!important}
 .discover-gate-wordmark{font-size:clamp(72px,17vw,300px)}
 
 .quick-note[hidden]{display:none!important}
+
+/* A+ Vault guest gate: images stay sharp; a progressive blur band (blur grows toward the bottom) covers the end of the feed */
+.discover-card.is-gated img{filter:none;transform:none}
+.discover-gate{background:linear-gradient(to bottom,transparent 0,transparent 35%,color-mix(in srgb,var(--app-bg,#101113) 55%,transparent) 75%,var(--app-bg,#101113) 100%)}
+.discover-gate::before,.discover-gate::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0}
+.discover-gate::before{-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 30%);mask-image:linear-gradient(to bottom,transparent 0%,#000 30%)}
+.discover-gate::after{-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);-webkit-mask-image:linear-gradient(to bottom,transparent 18%,#000 55%);mask-image:linear-gradient(to bottom,transparent 18%,#000 55%)}
+.discover-gate-card,.discover-gate-wordmark{z-index:1;position:relative}
+.discover-gate-wordmark{position:absolute}
