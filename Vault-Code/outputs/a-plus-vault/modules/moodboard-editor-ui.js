@@ -21,7 +21,8 @@ export function smartGridEditorMarkup(ctx) {
     inspectorCollapsed = false,
     sourceWidth = 220,
     inspectorWidth = 260,
-    zoom = 1
+    zoom = 1,
+    connStyle = "elbow"
   } = ctx;
   const vaultById = new Map((items || []).map((i) => [i.id, i]));
   const status = saveStatusLabel(saveStatus || "idle");
@@ -56,6 +57,13 @@ export function smartGridEditorMarkup(ctx) {
       <span class="mb-tool-glyph" aria-hidden="true">${glyph}</span><span class="mb-tool-label">${label}</span>
     </button>`;
   const zoomPct = Math.round((Number(zoom) || 1) * 100);
+  const selConn = (board.objects || []).find((o) => o.kind === "connector" && o.id === selectedObjectId);
+  const activeLine = (selConn && selConn.style && selConn.style.line) || (selConn ? "elbow" : connStyle || "elbow");
+  const lineBtn = (id, label, inner) =>
+    `<button type="button" class="mb-line-btn${activeLine === id ? " active" : ""}" data-mb-conn-style="${id}" title="${label}" aria-label="${label}" aria-pressed="${activeLine === id}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg></button>`;
+  const stylePicker = tool === "connector" || selConn
+    ? `<div class="mb-line-styles" role="group" aria-label="Connector style">${lineBtn("elbow", "Elbow arrow", `<path d="M5 19v-7a3 3 0 0 1 3-3h10"/><path d="m15 6 4 3-4 3"/>`)}${lineBtn("curve", "Curved arrow", `<path d="M5 19c0-6 4-10 13-10"/><path d="m15 6 3.5 3L15 12"/>`)}${lineBtn("straight", "Straight arrow", `<path d="M5 19 19 5"/><path d="M10 5h9v9"/>`)}${lineBtn("line", "Line", `<path d="M5 19 19 5"/>`)}</div>`
+    : "";
 
   return `
 <div class="moodboard-editor smart-grid-editor" data-moodboard-editor="${escA(board.id)}" data-moodboard-active-tool="${escA(tool)}" style="--mb-source-w:${Number(sourceWidth) || 220}px;--mb-inspector-w:${Number(inspectorWidth) || 260}px">
@@ -122,6 +130,7 @@ export function smartGridEditorMarkup(ctx) {
       ${toolBtn("connector", "Connect", `<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-7a3 3 0 0 1 3-3h11"/><path d="m15 6 4 4-4 4"/></svg>`)}
       <input type="file" class="moodboard-upload-input" data-moodboard-upload accept="image/jpeg,image/png,image/webp" multiple hidden>
     </div>
+    ${stylePicker}
     <button type="button" class="moodboard-resize-handle inspector-resize" data-resize-moodboard-inspector title="Drag to resize inspector" aria-label="Resize inspector"><span></span></button>
     <aside class="moodboard-inspector" data-moodboard-inspector-panel>
       <div class="moodboard-panel-head">
@@ -217,14 +226,16 @@ function connectorsMarkup(connectors, nodes, escA, selectedObjectId) {
       const from = byId.get(c.fromId);
       const to = byId.get(c.toId);
       if (!from || !to) return "";
-      const { d } = connectorPath(from, to);
+      const mode = (c.style && c.style.line) || "elbow";
+      const { d } = connectorPath(from, to, mode);
+      const arrow = mode !== "line";
       const color = escA(c.color || "#ff4f43");
       const selected = selectedObjectId === c.id ? " selected" : "";
       const mid = `mba-${escA(c.id)}`;
       return `<g class="moodboard-connector${selected}" data-board-obj="${escA(c.id)}" data-connector-id="${escA(c.id)}">
-        <defs><marker id="${mid}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 9 5 1 9z" fill="${color}"/></marker></defs>
+        ${arrow ? `<defs><marker id="${mid}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 9 5 1 9z" fill="${color}"/></marker></defs>` : ""}
         <path class="connector-hit" d="${d}" fill="none" />
-        <path class="connector-line" d="${d}" fill="none" stroke="${color}" marker-end="url(#${mid})" />
+        <path class="connector-line" d="${d}" fill="none" stroke="${color}"${arrow ? ` marker-end="url(#${mid})"` : ""} />
       </g>`;
     })
     .join("");

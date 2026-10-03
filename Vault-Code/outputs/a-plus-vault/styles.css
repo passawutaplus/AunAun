@@ -5971,3 +5971,11 @@ html.mb-present .mb-conn-handle{display:none!important}
 .project-browser-bar{justify-content:space-between!important;margin-top:30px!important}
 .project-browser-bar .project-browser-search{flex:1 1 auto}
 .project-browser-bar .primary-button{flex:0 0 auto;height:42px;margin-left:auto}
+
+/* connector style picker (elbow / curved / straight arrow / line) */
+.mb-line-styles{position:absolute;left:50%;bottom:86px;transform:translateX(-50%);z-index:21;display:flex;gap:2px;padding:5px;border-radius:12px;background:rgba(24,26,29,.92);box-shadow:0 12px 30px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.08)}
+html:not([data-theme="dark"]) .mb-line-styles{background:rgba(255,255,255,.94);box-shadow:0 12px 30px rgba(20,22,26,.18),inset 0 0 0 1px rgba(21,23,25,.08)}
+.mb-line-btn{display:grid;place-items:center;width:38px;height:38px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--ink);cursor:pointer}
+.mb-line-btn:hover{background:rgba(127,127,127,.18)}
+.mb-line-btn.active{background:rgba(255,79,67,.18);color:var(--accent,#ff4f43);box-shadow:inset 0 0 0 1.5px var(--accent,#ff4f43)}
+html.mb-present .mb-line-styles{display:none!important}

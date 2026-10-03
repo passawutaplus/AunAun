@@ -347,11 +347,35 @@ export function trackMoodboardEvent(name, payload) {
   } catch (_) {}
 }
 
-/** Edge-to-edge curved connector between two boxes: returns { d, x1, y1, x2, y2 }. */
-export function connectorPath(from, to) {
+/** Connector geometry between two boxes. mode: elbow | curve | straight | line. Returns { d, x1, y1, x2, y2 }. */
+export function connectorPath(from, to, mode = "elbow") {
+  const f = (n) => Number(n).toFixed(1);
   const c1x = from.x + from.w / 2, c1y = from.y + from.h / 2;
   const c2x = to.x + to.w / 2, c2y = to.y + to.h / 2;
   const dx = c2x - c1x, dy = c2y - c1y;
+  const horizontal = Math.abs(dx) >= Math.abs(dy);
+  if (mode === "elbow") {
+    const gap = 4;
+    let x1, y1, x2, y2, d;
+    if (horizontal) {
+      x1 = dx >= 0 ? from.x + from.w + gap : from.x - gap; y1 = c1y;
+      x2 = dx >= 0 ? to.x - gap : to.x + to.w + gap; y2 = c2y;
+      const mx = (x1 + x2) / 2, r = Math.min(14, Math.abs(y2 - y1) / 2, Math.abs(mx - x1));
+      const sx = Math.sign(x2 - x1) || 1, sy = Math.sign(y2 - y1) || 1;
+      d = Math.abs(y2 - y1) < 1
+        ? `M${f(x1)} ${f(y1)} L${f(x2)} ${f(y2)}`
+        : `M${f(x1)} ${f(y1)} H${f(mx - sx * r)} Q${f(mx)} ${f(y1)} ${f(mx)} ${f(y1 + sy * r)} V${f(y2 - sy * r)} Q${f(mx)} ${f(y2)} ${f(mx + sx * r)} ${f(y2)} H${f(x2)}`;
+    } else {
+      x1 = c1x; y1 = dy >= 0 ? from.y + from.h + gap : from.y - gap;
+      x2 = c2x; y2 = dy >= 0 ? to.y - gap : to.y + to.h + gap;
+      const my = (y1 + y2) / 2, r = Math.min(14, Math.abs(x2 - x1) / 2, Math.abs(my - y1));
+      const sx = Math.sign(x2 - x1) || 1, sy = Math.sign(y2 - y1) || 1;
+      d = Math.abs(x2 - x1) < 1
+        ? `M${f(x1)} ${f(y1)} L${f(x2)} ${f(y2)}`
+        : `M${f(x1)} ${f(y1)} V${f(my - sy * r)} Q${f(x1)} ${f(my)} ${f(x1 + sx * r)} ${f(my)} H${f(x2 - sx * r)} Q${f(x2)} ${f(my)} ${f(x2)} ${f(my + sy * r)} V${f(y2)}`;
+    }
+    return { d, x1, y1, x2, y2 };
+  }
   const edge = (box, ux, uy) => {
     const hw = box.w / 2, hh = box.h / 2;
     const t = Math.min(ux ? hw / Math.abs(ux) : Infinity, uy ? hh / Math.abs(uy) : Infinity);
@@ -364,10 +388,11 @@ export function connectorPath(from, to) {
   const t2 = edge(to, dx, dy) * len + gap;
   const x1 = c1x + ux * Math.min(t1, len / 2), y1 = c1y + uy * Math.min(t1, len / 2);
   const x2 = c2x - ux * Math.min(t2, len / 2), y2 = c2y - uy * Math.min(t2, len / 2);
-  const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
+  if (mode === "straight" || mode === "line") return { d: `M${f(x1)} ${f(y1)} L${f(x2)} ${f(y2)}`, x1, y1, x2, y2 };
+  const hz = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
   const k = 0.5;
-  const d = horizontal
-    ? `M${x1.toFixed(1)} ${y1.toFixed(1)} C${(x1 + (x2 - x1) * k).toFixed(1)} ${y1.toFixed(1)} ${(x2 - (x2 - x1) * k).toFixed(1)} ${y2.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`
-    : `M${x1.toFixed(1)} ${y1.toFixed(1)} C${x1.toFixed(1)} ${(y1 + (y2 - y1) * k).toFixed(1)} ${x2.toFixed(1)} ${(y2 - (y2 - y1) * k).toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+  const d = hz
+    ? `M${f(x1)} ${f(y1)} C${f(x1 + (x2 - x1) * k)} ${f(y1)} ${f(x2 - (x2 - x1) * k)} ${f(y2)} ${f(x2)} ${f(y2)}`
+    : `M${f(x1)} ${f(y1)} C${f(x1)} ${f(y1 + (y2 - y1) * k)} ${f(x2)} ${f(y2 - (y2 - y1) * k)} ${f(x2)} ${f(y2)}`;
   return { d, x1, y1, x2, y2 };
 }
