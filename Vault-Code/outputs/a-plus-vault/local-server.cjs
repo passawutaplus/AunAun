@@ -540,6 +540,7 @@ const server = http.createServer(async (req, res) => {
   if (await handleApi(req, res, url)) return;
 
   let file = decodeURIComponent(url.pathname || '/');
+  if (file === '/welcome') file = '/welcome.html';
   if (file === '/demo' || file === '/demo.html') {
     res.writeHead(301, { Location: '/' });
     res.end();
