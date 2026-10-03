@@ -6025,3 +6025,6 @@ html.mb-present .mb-line-styles{display:none!important}
 .mb2 .mb-opt-copy strong{font-size:14px}
 .smart-grid-item.vault-item .smart-grid-media{position:absolute;inset:0;overflow:hidden;border-radius:inherit}
 .smart-grid-item.vault-item .smart-grid-media img,.smart-grid-item.vault-item .smart-grid-media video{width:100%;height:100%;object-fit:cover;display:block}
+.mb2 .moodboard-extract-swatches{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
+.mb2 .moodboard-extract-swatch-face{height:40px!important}
+.mb2 .moodboard-extract-swatch-hex{display:block;padding:6px 4px 8px!important;font-size:11px!important;letter-spacing:0!important;text-align:center;white-space:nowrap;overflow:visible!important;text-overflow:clip!important}
