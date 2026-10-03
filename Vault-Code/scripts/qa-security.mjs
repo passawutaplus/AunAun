@@ -27,6 +27,9 @@ async function guardHeaders() {
   assert(get("X-Content-Type-Options").toLowerCase() === "nosniff", "X-Content-Type-Options: nosniff missing.");
   assert(get("Referrer-Policy"), "Referrer-Policy missing.");
   assert(get("Permissions-Policy"), "Permissions-Policy missing.");
+  // With cleanUrls a rewrite to /vault.html 404s on Vercel (it clashes with dist/vault/index.html); target /vault instead.
+  const shell = (config.rewrites || []).filter(r => /^\/(discover|moodboards)/.test(r.source));
+  assert(shell.length && shell.every(r => r.destination === "/vault"), "App-shell rewrites (/discover, /moodboards) must point to /vault.");
   const sw = (config.headers || []).find(h => h.source === "/sw.js");
   assert(sw && /max-age=0/.test(sw.headers.map(h => h.value).join(" ")), "/sw.js must be served with Cache-Control max-age=0.");
 }

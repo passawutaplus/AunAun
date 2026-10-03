@@ -19,23 +19,15 @@
   "rewrites": [
     {
       "source": "/discover",
-      "destination": "/vault.html"
-    },
-    {
-      "source": "/vault",
-      "destination": "/vault.html"
-    },
-    {
-      "source": "/vault/",
-      "destination": "/vault.html"
+      "destination": "/vault"
     },
     {
       "source": "/moodboards",
-      "destination": "/vault.html"
+      "destination": "/vault"
     },
     {
       "source": "/moodboards/(.*)",
-      "destination": "/vault.html"
+      "destination": "/vault"
     },
     {
       "source": "/400",

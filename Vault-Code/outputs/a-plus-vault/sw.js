@@ -5,7 +5,7 @@
 const BUILD = "dev";
 const STATIC = `vault-static-${BUILD}`;
 const PAGES = `vault-pages-${BUILD}`;
-const OFFLINE_URL = "/offline.html";
+const OFFLINE_URL = "/offline"; // clean URL: /offline.html 308-redirects, and a redirected response cannot answer a navigation
 const SHELL_KEY = "/__shell";
 const PRECACHE = [OFFLINE_URL, "/assets/icon-192.png"];
 const SPA_ROUTE = /^\/(vault|discover|moodboards)(\/|$)/;
