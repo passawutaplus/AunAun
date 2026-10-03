@@ -2167,7 +2167,7 @@ let quickNoteTimer=null,quickNoteUser=null;
 function quickNoteUserId(){return state.user&&(state.user.id||state.user.email)||"guest"}
 function mountQuickNote(){let uid=quickNoteUserId(),host=document.querySelector("[data-quick-note]");if(host&&quickNoteUser===uid){host.hidden=quickNoteHidden();return}quickNoteUser=uid;let store=readNoteStore(uid),note=activeNote(store),html=quickNoteMarkup(store,quickNoteOpen(),note.updatedAt?"Saved":"",quickNoteThumbs(note));if(host)host.outerHTML=html;else document.body.insertAdjacentHTML("beforeend",html);let el=document.querySelector("[data-quick-note]");if(el)el.hidden=quickNoteHidden()}
 function quickNoteThumbs(note){return (note.pins||[]).map(pid=>{let i=state.items.find(x=>x.id===pid);let src=i&&(i.thumbnailUrl||i.previewUrl||(i.type==="image"?i.assetUrl:""));return src?{id:pid,src}:null}).filter(Boolean)}
-function remountQuickNote(){quickNoteUser=null;mountQuickNote()}
+function remountQuickNote(){quickNoteUser=null;mountQuickNote();let el=document.querySelector("[data-quick-note]");if(el)el.classList.add("qn-swap")}
 function saveQuickNoteNow(){clearTimeout(quickNoteTimer);if(document.querySelector("[data-quick-note-field]"))writeQuickNote(quickNoteUserId(),quickNoteValues())}
 function notePinItem(itemId){if(!state.user||!quickNoteEnabled()||!quickNoteOpen())return;saveQuickNoteNow();let r=pinToActiveNote(quickNoteUserId(),itemId);if(r.added){remountQuickNote();toast("Saved and pinned to your note.")}}
 function quickNoteEnabled(){try{return localStorage.getItem("aplus-vault-quick-note-on")==="1"}catch(e){return false}}

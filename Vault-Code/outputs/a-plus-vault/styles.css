@@ -5584,3 +5584,8 @@ html[data-standalone] .install-app-row{display:none!important}
 .quick-note-paper .qn-foot2 button{padding:2px 4px;background:transparent}
 .quick-note-paper .qn-foot2 button:hover{color:#151719;text-decoration:underline;background:transparent}
 .qn-pins[hidden],.qn-hint[hidden]{display:none}
+/* switching notes: no re-entry animation, just a soft fade of the contents */
+.quick-note.qn-swap .quick-note-paper{animation:none}
+.quick-note.qn-swap .quick-note-paper>:not(header){animation:qn-fade .22s ease both}
+@keyframes qn-fade{from{opacity:.25}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.quick-note.qn-swap .quick-note-paper>:not(header){animation:none}}
