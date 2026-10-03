@@ -35,11 +35,11 @@ export function moodboardColorChooserMarkup(ctx) {
 }
 
 export function moodboardListMarkup(ctx) {
-  const { moodboards, projects, esc, escA, icon, emptyPrimary } = ctx;
+  const { moodboards, projects, esc, escA, icon, emptyPrimary, thumbFor } = ctx;
   const cards = (moodboards || [])
     .slice()
     .sort((a, b) => b.updatedAt - a.updatedAt)
-    .map((board) => moodboardIndexCard(board, projects, esc, escA, icon))
+    .map((board) => moodboardIndexCard(board, projects, esc, escA, icon, thumbFor))
     .join("");
   const empty = !moodboards || !moodboards.length;
   return `
@@ -66,7 +66,7 @@ ${
 }`;
 }
 
-function moodboardIndexCard(board, projects, esc, escA, icon) {
+function moodboardIndexCard(board, projects, esc, escA, icon, thumbFor) {
   const project = (projects || []).find((p) => p.id === board.projectId);
   const count = moodboardItemCount(board);
   const updated = new Date(board.updatedAt || Date.now()).toLocaleDateString("en-US", {
@@ -76,27 +76,30 @@ function moodboardIndexCard(board, projects, esc, escA, icon) {
   });
   return `<article class="moodboard-index-card" data-moodboard-id="${escA(board.id)}">
   <button type="button" class="moodboard-card-open" data-open-moodboard="${escA(board.id)}">
-    ${moodboardCover(board, esc)}
-    <span>
+    ${moodboardCover(board, esc, escA, thumbFor)}
+    <span class="moodboard-card-copy">
       <strong>${esc(board.name)}</strong>
-      <small>${count} refs · Private · ${esc(updated)}${project ? " · " + esc(project.name) : ""}</small>
+      <small>${count} ref${count === 1 ? "" : "s"} · ${esc(updated)}</small>
+      ${project ? `<em class="moodboard-card-project">${esc(project.name)}</em>` : ""}
     </span>
   </button>
   <div class="moodboard-card-actions">
     <button type="button" class="moodboard-card-open-btn" data-open-moodboard="${escA(board.id)}">Open</button>
-    <div class="moodboard-card-secondary">
-      <button type="button" data-rename-moodboard="${escA(board.id)}">Rename</button>
-      <button type="button" data-link-moodboard-project="${escA(board.id)}" title="Add to Project">Link</button>
-      <button type="button" class="danger-link" data-delete-moodboard="${escA(board.id)}">Delete</button>
-    </div>
+    <button type="button" data-rename-moodboard="${escA(board.id)}" title="Rename" aria-label="Rename moodboard">${icon("edit")}</button>
+    <button type="button" data-link-moodboard-project="${escA(board.id)}" title="Add to Project" aria-label="Add to project">${icon("project")}</button>
+    <button type="button" class="danger-link" data-delete-moodboard="${escA(board.id)}" title="Delete" aria-label="Delete moodboard">${icon("trash")}</button>
   </div>
 </article>`;
 }
 
-function moodboardCover(board, esc) {
+function moodboardCover(board, esc, escA, thumbFor) {
   const items = (board.objects || []).filter((o) => o.kind === "item").slice(0, 4);
   if (!items.length) return `<div class="moodboard-cover empty-cover"><span>Empty board</span></div>`;
-  return `<div class="moodboard-cover">${items.map(() => `<i></i>`).join("")}</div>`;
+  const tiles = items.map((o) => {
+    const src = thumbFor ? thumbFor(o.itemId) : "";
+    return src ? `<i style="background-image:url('${escA(src)}')"></i>` : `<i></i>`;
+  });
+  return `<div class="moodboard-cover count-${tiles.length}">${tiles.join("")}</div>`;
 }
 
 export function createMoodboardDialogMarkup(ctx) {

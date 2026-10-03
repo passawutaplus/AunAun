@@ -203,6 +203,11 @@
     .people-grid .ph:nth-child(2){margin-top:64px}
     .people-grid .frame{aspect-ratio:4/5}
     @media(max-width:900px){.people-grid{grid-template-columns:1fr;gap:44px}.people-grid .ph:nth-child(2){margin-top:0}}
+    .pocket{padding:clamp(70px,10vw,140px) 0}
+    .pocket-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(32px,6vw,90px);align-items:center}
+    .pocket-ph{position:relative;margin:0;border-radius:22px;overflow:hidden;aspect-ratio:4/5;background:var(--paper-2)}
+    .pocket-ph img{width:100%;height:100%;object-fit:cover;display:block}
+    @media(max-width:900px){.pocket-grid{grid-template-columns:1fr}.pocket-ph{order:2}}
   </style>
 </head>
 <body>
@@ -256,6 +261,18 @@
           <figure class="ph reveal" data-delay="1"><div class="frame"><img src="/assets/people/desk-laptop.webp" alt="A woman working at her desk on a laptop" width="1400" height="933" loading="lazy" style="object-position:70% 50%"><span class="stk menu" style="left:6%;bottom:8%;animation-delay:-1.5s"><span>Copy image address</span><span class="k">+ Keep in Vault</span></span></div><figcaption><span class="time">14:15</span><b>At the desk</b><p>Right-click, + Keep in Vault, back to work. Your tab never moves.</p></figcaption></figure>
           <figure class="ph reveal" data-delay="2"><div class="frame"><img src="/assets/people/swatches-tablet.webp" alt="A designer at a laptop with colour swatches and a pen tablet" width="1400" height="933" loading="lazy" style="object-position:24% 50%"><span class="stk pal" style="right:7%;bottom:9%;animation-delay:-3s"><s style="background:#d9c7a7"></s><s style="background:#b9774f"></s><s style="background:#3e5c76"></s><s style="background:#2f3133"></s><s style="background:#ff4f43"></s></span></div><figcaption><span class="time">21:30</span><b>Into a board</b><p>Pull the best ones into a moodboard — each with its source and credit.</p></figcaption></figure>
         </div>
+      </div>
+    </section>
+
+    <!-- POCKET -->
+    <section class="pocket" id="pocket">
+      <div class="wrap pocket-grid">
+        <div class="pocket-copy reveal">
+          <span class="eyebrow">Keep it all</span>
+          <h2 style="margin-top:18px">Everything you've seen.<br />Kept in <span style="color:var(--coral)">one Vault.</span></h2>
+          <p class="lede">Every reference that ever caught your eye — press + Keep in Vault and it lands in one place. Always in your pocket, ready to show a client.<span class="th">แรงบันดาลใจที่เคยผ่านตา กด + Keep ไว้ แล้วรวมอยู่ที่เดียวใน Vault พกติดตัว เปิดคุยงานกับลูกค้าได้ทันที</span></p>
+        </div>
+        <figure class="pocket-ph reveal" data-delay="1"><img src="/assets/people/pocket-phone.webp" alt="A hand sliding a phone showing a grid of saved design references into a jeans pocket" width="928" height="1152" loading="lazy"><span class="stk ok" style="left:6%;bottom:10%"><i></i>+ Keep in Vault</span></figure>
       </div>
     </section>
 

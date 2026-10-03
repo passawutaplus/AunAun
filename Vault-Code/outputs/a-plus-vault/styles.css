@@ -5645,3 +5645,44 @@ html[data-theme="dark"] .project-set-card .folder-card-actions .folder-open-btn{
 .studio-tab.is-active{background:var(--ink-strong);color:var(--surface,#fff)}
 html[data-theme="dark"] .studio-tab.is-active{background:#f2f3f4;color:#151719}
 .studio-tabs-desc{margin:0;color:var(--muted);font-size:13px}
+
+/* A+ Vault collection cards: image first, name + count, quiet icon actions */
+.collection-overview-grid .collection-detail-card{padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;gap:10px}
+.collection-overview-grid .collection-card-visual{border-radius:16px;overflow:hidden}
+.collection-overview-grid .collection-card-body{display:grid;gap:2px;padding:10px 2px 0}
+.collection-overview-grid .collection-card-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.collection-overview-grid .collection-card-head strong{font-weight:500;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.collection-overview-grid .collection-card-count{color:var(--muted);font-size:12px;font-weight:300;white-space:nowrap}
+.collection-overview-grid .collection-card-updated,.collection-overview-grid .collection-card-badges,.collection-overview-grid .collection-card-type-row,.collection-overview-grid .collection-card-empty-note{display:none}
+.collection-overview-grid .collection-card-footer{display:flex!important;gap:4px;padding:6px 0 0;opacity:0;transition:opacity .15s ease}
+.collection-overview-grid .collection-detail-card:hover .collection-card-footer,.collection-overview-grid .collection-detail-card:focus-within .collection-card-footer{opacity:1}
+@media(hover:none){.collection-overview-grid .collection-card-footer{opacity:1}}
+.collection-overview-grid .collection-card-action{flex:0 0 auto;width:34px;height:34px;min-height:34px;padding:0;display:grid;place-items:center;border-radius:10px;background:var(--surface-soft,rgba(255,255,255,.06));border:0}
+.collection-overview-grid .collection-card-action span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.collection-overview-grid .collection-card-action .flat-icon,.collection-overview-grid .collection-card-action svg{width:16px;height:16px}
+.collection-overview-grid .collection-detail-card.is-highlighted .collection-card-visual{box-shadow:0 0 0 2px var(--accent,#ff4f43)}
+
+/* A+ Vault moodboard + project cards: cover first, quiet text, one primary action + icon buttons */
+.moodboard-index-grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+.moodboard-index-card{padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;gap:12px;overflow:visible!important}
+.moodboard-cover{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:4px;aspect-ratio:4/3;padding:0!important;border-radius:16px;overflow:hidden;background:var(--surface-soft,rgba(255,255,255,.05))}
+.moodboard-cover.count-1{grid-template-columns:1fr}
+.moodboard-cover.count-3 i:first-child{grid-row:span 2}
+.moodboard-cover i{display:block;min-height:0;border-radius:0;background:var(--panel,rgba(255,255,255,.07)) center/cover no-repeat}
+.moodboard-cover.empty-cover{place-items:center;color:var(--muted);font-size:13px;border:1px dashed var(--line)}
+.moodboard-card-copy{display:grid;gap:2px;padding:0 2px}
+.moodboard-card-open .moodboard-card-copy strong{font-weight:500;font-size:15px}
+.moodboard-card-open .moodboard-card-copy small{margin:0;-webkit-line-clamp:1}
+.moodboard-card-project{justify-self:start;margin-top:4px;padding:2px 8px;border-radius:999px;background:var(--surface-soft,rgba(255,255,255,.07));color:var(--muted);font-size:11px;font-style:normal}
+.moodboard-card-actions{display:flex!important;gap:6px!important;align-items:center}
+.moodboard-card-actions button:not(.moodboard-card-open-btn){flex:0 0 auto;width:34px;height:34px;min-height:34px;padding:0;display:grid;place-items:center;border:0;border-radius:10px;background:var(--surface-soft,rgba(255,255,255,.06))}
+.moodboard-card-actions .flat-icon{width:16px;height:16px}
+.moodboard-card-actions .moodboard-card-open-btn{flex:1 1 auto;width:auto;height:34px;min-height:34px;font-size:13px}
+.project-set-card{border:0!important;background:transparent!important;border-radius:16px!important}
+.project-set-mosaic{border-radius:16px;overflow:hidden;padding:0!important;gap:4px}
+.project-set-card .folder-card-copy{padding:12px 2px 6px!important}
+.project-set-card .folder-card-actions{padding:0 0 4px}
+.project-folder-page{grid-template-rows:none!important;grid-auto-rows:auto;align-content:start}
+.collection-overview-grid .collection-detail-card,.collection-overview-grid .collection-detail-card.active,.collection-overview-grid .collection-detail-card.is-highlighted{border:0!important;outline:0!important;box-shadow:none!important}
+.collection-overview-grid .collection-detail-card .collection-card-visual{box-shadow:none!important}
+.collection-overview-grid .collection-card-footer{justify-content:flex-end}
