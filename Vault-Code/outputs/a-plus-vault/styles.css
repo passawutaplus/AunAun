@@ -5998,3 +5998,28 @@ html.mb-present .mb-line-styles{display:none!important}
 .mb-opt-chip b{position:absolute;left:18%;right:18%;bottom:14%;height:3px;border-radius:2px;background:rgba(255,255,255,.35)}
 .mb-opt-tip{display:flex;align-items:flex-start;gap:6px;margin:2px 2px 0;color:var(--muted);font-size:12px;line-height:1.4}
 .mb-opt-tip svg{flex:0 0 auto;margin-top:1px}
+
+/* inspector (editor v2): tidy rhythm - compact header, consistent sections, 4-up swatches, row-style option cards */
+.mb2 .moodboard-inspector .moodboard-panel-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px}
+.mb2 .moodboard-inspector .moodboard-panel-head .icon-button.mini{width:30px;height:30px}
+.mb2 .moodboard-inspector .moodboard-panel-scroll{padding:4px 16px 24px;display:block;overflow-y:auto}
+.mb2 .moodboard-inspector .side-kicker,.mb2 .moodboard-inspector .section-label,.mb2 .moodboard-inspector .analysis-section>span:first-child{display:block;margin:0 0 8px;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.mb2 .moodboard-inspector .analysis-section{margin:0;padding:16px 0;border-top:1px solid var(--line)}
+.mb2 .moodboard-inspector .analysis-section:first-of-type{border-top:0;padding-top:4px}
+.mb2 .moodboard-inspector h2{margin:6px 0 4px;font-size:22px;line-height:1.2}
+.mb2 .moodboard-extract-swatches{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.mb2 .moodboard-extract-swatch{border-radius:8px}
+.mb2 .moodboard-extract-swatch-face{height:34px}
+.mb2 .moodboard-extract-swatch-hex{padding:4px 2px 6px;font-size:9.5px;text-align:center;letter-spacing:-.2px}
+.mb2 .mb-color-options{gap:8px;margin-top:14px}
+.mb2 .mb-color-option{grid-template-columns:96px minmax(0,1fr);align-items:center;gap:12px;padding:10px 12px}
+.mb2 .mb-opt-art{height:36px}
+.mb2 .mb-opt-copy strong{font-size:13px}
+.mb2 .mb-opt-copy small{font-size:11.5px;line-height:1.3}
+.mb2 .mb-opt-tip{margin:4px 0 0;font-size:11.5px}
+.mb2 .moodboard-arrange{padding:16px 0 4px;border-top:1px solid var(--line)}
+.mb2 .moodboard-arrange .side-kicker{margin-bottom:10px}
+.mb2 .moodboard-inspector [data-remove-board-obj].danger-button,.mb2 .moodboard-inspector .danger-button.wide{width:100%;margin-top:18px;height:40px;border-radius:10px}
+.mb2 .mb-color-option{grid-template-columns:1fr;gap:10px}
+.mb2 .mb-opt-art{height:40px}
+.mb2 .mb-opt-copy strong{font-size:14px}

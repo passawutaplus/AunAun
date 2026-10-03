@@ -512,13 +512,13 @@ function inspectorMarkup(board, selectedObjectId, vaultById, esc, escA) {
       <div class="mb-color-options">
         <button type="button" class="mb-color-option" data-add-color-from-item="${escA(obj.id)}" data-color-mode="palette">
           <span class="mb-opt-art mb-opt-strip" aria-hidden="true">${itemColors.slice(0, 5).map((c) => `<i style="background:${escA(c)}"></i>`).join("")}</span>
-          <span class="mb-opt-copy"><strong>Add palette</strong><small>All colors in one strip</small></span>
+          <span class="mb-opt-copy"><strong>+ Add palette</strong></span>
         </button>
         <button type="button" class="mb-color-option" data-add-color-from-item="${escA(obj.id)}" data-color-mode="swatches">
           <span class="mb-opt-art mb-opt-chips" aria-hidden="true">${itemColors.slice(0, 4).map((c) => `<span class="mb-opt-chip"><i style="background:${escA(c)}"></i><b></b></span>`).join("")}</span>
-          <span class="mb-opt-copy"><strong>Add as chips</strong><small>One Pantone chip per color</small></span>
+          <span class="mb-opt-copy"><strong>+ Add as chips</strong></span>
         </button>
-        <p class="mb-opt-tip"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 3 14 7-6 2-2 6z"/></svg>Click a color above to add just that one as a chip.</p>
+
       </div>`
           : `<p class="settings-field-hint">ยังไม่มีสีจากภาพ — เพิ่มเองได้</p>
       <div class="moodboard-extract-actions">
