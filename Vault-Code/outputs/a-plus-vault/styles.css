@@ -5718,3 +5718,15 @@ html:not([data-theme="dark"]) .moodboard-canvas-thumb{background:#f1eee8!importa
 .moodboard-canvas-thumb .mc-text{font-family:"Agrandir Wide","IBM Plex Sans Thai",sans-serif;line-height:1.1;white-space:pre-wrap}
 .moodboard-canvas-thumb .mc-note{background:#fff3a6;border-radius:2px}
 .moodboard-canvas-thumb .mc-box{border:1px solid rgba(255,255,255,.35);border-radius:2px}
+
+/* A+ Vault collection cards: a stack of photo cards that fans out on hover */
+.collection-overview-grid .collection-card-visual{position:relative;aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:var(--surface-soft,rgba(255,255,255,.04));display:block}
+.cstack{position:absolute;inset:0;display:block}
+.cstack-card{--o:calc(var(--i) - (var(--n) - 1) / 2);position:absolute;left:27%;top:9%;width:46%;height:82%;z-index:var(--z);border-radius:8px;overflow:hidden;background:var(--panel,#26292d);box-shadow:0 6px 18px rgba(0,0,0,.4);display:grid;place-items:center;color:var(--muted);
+  transform:translateX(calc(var(--o)*9%)) rotate(calc(var(--o)*4deg));transition:transform .55s cubic-bezier(.2,.8,.2,1) calc(var(--i)*25ms);will-change:transform}
+.cstack-card img{width:100%;height:100%;object-fit:cover;display:block}
+.cstack-card.is-empty{background:linear-gradient(135deg,#2a2d31,#1c1e22)}
+.collection-detail-card:hover .cstack-card,.collection-detail-card:focus-within .cstack-card{transform:translateX(calc(var(--o)*(105% / max(var(--n) - 1, 1)))) rotate(calc(var(--o)*2.5deg)) translateY(calc(var(--o)*var(--o)*1.2%))}
+.cstack-card.is-empty svg{width:22px;height:22px}
+@media(prefers-reduced-motion:reduce){.cstack-card{transition:none}}
+@media(hover:none){.cstack-card{transform:translateX(calc(var(--o)*14%)) rotate(calc(var(--o)*3deg))}}
