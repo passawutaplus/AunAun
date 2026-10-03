@@ -435,13 +435,32 @@ export function discoverGridMarkup(ds, config, keptIds) {
   return discoverActiveFiltersMarkup(ds) + discoverResultsMarkup(ds, config, keptIds);
 }
 
+let guestMode = false;
+const GUEST_FREE_ITEMS = 20;
+
+/** Guests see the first screens of results; the rest is blurred behind a log-in prompt. */
+export function setDiscoverGuest(value) {
+  guestMode = !!value;
+}
+
+function gateMarkup() {
+  return `<div class='discover-gate'><div class='discover-gate-card'><span class='discover-gate-eyebrow'>Keep exploring</span><h2>There’s so much more.</h2><p>Log in to see everything in Discover — and keep what moves you in your own private Vault.</p><button type='button' class='discover-gate-cta' data-auth-open>Log in or sign up</button><small>Free while in alpha · เข้าสู่ระบบเพื่อดูต่อ</small></div></div>`;
+}
+
 function discoverResultsMarkup(ds, config, keptIds) {
   if (!ds.items.length) {
     if (ds.loading || !ds.loaded) return `<div class='discover-empty'><p>${ds.similar ? "Finding similar images…" : "Loading Discover…"}</p></div>`;
     if (ds.error) return `<div class='discover-empty'><p>${esc(ds.error)}</p><button type='button' class='ghost-button' data-discover-retry>Try again</button></div>`;
     return `<div class='discover-empty'><p>${emptyMessage(ds)}</p>${discoverHasFilters(ds) ? `<button type='button' class='ghost-button' data-discover-clear-all>Clear all filters</button>` : ""}</div>`;
   }
-  const cards = ds.items.map(item => discoverCardMarkup(item, config, keptIds.has(item.id))).join("");
+  const gated = guestMode && ds.items.length > GUEST_FREE_ITEMS;
+  const cardHtml = item => discoverCardMarkup(item, config, keptIds.has(item.id));
+  if (gated) {
+    const free = ds.items.slice(0, GUEST_FREE_ITEMS).map(cardHtml).join("");
+    const locked = ds.items.slice(GUEST_FREE_ITEMS).map(item => cardHtml(item).replace("<article class='discover-card'", "<article class='discover-card is-gated' inert aria-hidden='true'")).join("");
+    return `<div class='discover-grid'>${free}</div><div class='discover-grid-wrap'><div class='discover-grid'>${locked}</div>${gateMarkup()}</div>`;
+  }
+  const cards = ds.items.map(cardHtml).join("");
   const footer = ds.done
     ? `<p class='discover-end'>You've reached the end.</p>`
     : `<div class='discover-more' data-discover-sentinel><button type='button' class='ghost-button' data-discover-more${ds.loading ? " disabled" : ""}>${ds.loading ? "Loading…" : "Load more"}</button></div>`;
