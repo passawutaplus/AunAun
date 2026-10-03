@@ -6023,3 +6023,5 @@ html.mb-present .mb-line-styles{display:none!important}
 .mb2 .mb-color-option{grid-template-columns:1fr;gap:10px}
 .mb2 .mb-opt-art{height:40px}
 .mb2 .mb-opt-copy strong{font-size:14px}
+.smart-grid-item.vault-item .smart-grid-media{position:absolute;inset:0;overflow:hidden;border-radius:inherit}
+.smart-grid-item.vault-item .smart-grid-media img,.smart-grid-item.vault-item .smart-grid-media video{width:100%;height:100%;object-fit:cover;display:block}

@@ -368,14 +368,8 @@ function smartGridCard(obj, item, esc, escA, media, host, selectedObjectId, isSe
       ${chrome}
     </article>`;
   }
-  const domain = host(item.sourceUrl) || item.type;
   return `<article class="smart-grid-item vault-item${selected}${grouped}" data-board-obj="${escA(obj.id)}"${groupAttr} data-vault-item="${escA(item.id)}" data-sort="${obj.sortOrder}" style="left:${obj.x}px;top:${obj.y}px;width:${obj.w}px;height:${obj.h}px;z-index:${obj.zIndex || 1}" tabindex="0">
     <div class="smart-grid-media">${media(item)}</div>
-    <div class="smart-grid-meta">
-      <strong>${esc(item.title)}</strong>
-      <small class="source-badge">${esc(domain)}</small>
-      ${item.sourceUrl && !String(item.sourceUrl).startsWith("upload://") ? `<a href="${escA(item.sourceUrl)}" target="_blank" rel="noreferrer">Open source</a>` : ""}
-    </div>
     ${chrome}
   </article>`;
 }
