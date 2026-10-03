@@ -637,8 +637,26 @@ export function createVaultRemote(config = {}) {
     return rpc("vault_admin_purge_captures", { p_older_than_days: olderThanDays });
   }
 
+  /** Title + thumbnail for a pasted link. Never throws: no session, offline or a blocked site just means no preview. */
+  async function linkPreview(linkUrl) {
+    const token = session()?.access_token;
+    if (!enabled || !token) return null;
+    try {
+      const response = await fetch(`/api/vault/preview?url=${encodeURIComponent(linkUrl)}`, {
+        headers: { authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data && data.success ? data.preview : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   return {
     enabled,
+    linkPreview,
     hasSession: () => !!session()?.access_token,
     consumeAuthCallback,
     getSession,
