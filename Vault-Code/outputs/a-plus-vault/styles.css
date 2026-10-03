@@ -5686,3 +5686,11 @@ html[data-theme="dark"] .studio-tab.is-active{background:#f2f3f4;color:#151719}
 .collection-overview-grid .collection-detail-card,.collection-overview-grid .collection-detail-card.active,.collection-overview-grid .collection-detail-card.is-highlighted{border:0!important;outline:0!important;box-shadow:none!important}
 .collection-overview-grid .collection-detail-card .collection-card-visual{box-shadow:none!important}
 .collection-overview-grid .collection-card-footer{justify-content:flex-end}
+
+/* A+ Vault collection page: note + which projects use it */
+.collection-note-box{display:grid;gap:12px;margin:4px 0 18px;max-width:760px}
+.collection-note-box label{display:grid;gap:6px}
+.collection-note-box label span{color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.collection-note-box textarea{width:100%;min-height:64px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-soft,rgba(255,255,255,.04));color:var(--ink);font:inherit;font-size:14px;line-height:1.5;resize:vertical;outline:none}
+.collection-note-box textarea:focus{border-color:var(--accent,#ff4f43)}
+.collection-in-projects{display:flex;flex-wrap:wrap;align-items:center;gap:8px;color:var(--muted);font-size:13px}
