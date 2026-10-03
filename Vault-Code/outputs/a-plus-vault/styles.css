@@ -5600,3 +5600,21 @@ html[data-standalone] .install-app-row{display:none!important}
 @media(min-width:861px){
   .app-shell:has(.workspace:not(.discover-workspace)) .topbar{padding-left:clamp(28px,4.5vw,72px)!important;padding-right:clamp(28px,4.5vw,72px)!important}
 }
+
+/* A+ Vault detail panel: one quiet column - rights/credit, tags, colors, boards, meta last */
+.analysis-card{display:grid;gap:0}
+.analysis-card>.analysis-section,.analysis-card>.object-credit{margin:0;padding:14px 0;border-top:1px solid var(--line)}
+.analysis-card>:first-child{border-top:0;padding-top:4px}
+.analysis-card>.analysis-section>span,.analysis-card .object-credit .section-label,.object-extract-section>summary{display:block;margin-bottom:8px;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.object-extract-section>summary{cursor:pointer;margin-bottom:0;list-style:none}
+.object-extract-section>summary::-webkit-details-marker{display:none}
+.object-extract-section[open]>summary{margin-bottom:8px}
+.analysis-card>.object-provenance{margin:0;padding:14px 0 2px;border-top:1px solid var(--line)}
+.analysis-card .rights-section .rights-row{flex-wrap:wrap;gap:8px}
+.analysis-card .vault-similar-button{width:100%;justify-content:center;margin-top:10px}
+.analysis-card .object-glance-section{padding-top:10px}
+@media(max-width:860px){
+  .drawer-inner{padding-left:16px;padding-right:16px;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+  .detail-primary-actions{flex-wrap:wrap}
+  .detail-primary-actions .primary-button{flex:1 1 100%}
+}
