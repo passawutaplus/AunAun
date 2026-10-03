@@ -5382,16 +5382,7 @@ html.howto-open{overflow:hidden}
 .ap-mark{display:grid;place-items:center;width:52px;height:52px;margin-bottom:18px}
 .ap-mark .brand-mark,.ap-mark .header-logo{width:46px;height:46px}
 .auth-pop .ap-title{margin:0;font:300 clamp(30px,6vw,40px)/1.04 "Agrandir Wide","IBM Plex Sans Thai",sans-serif;letter-spacing:-.01em;color:var(--text-strong,#151719)}
-.auth-pop .ap-sub{max-width:330px;margin:14px 0 0;color:var(--text-muted,#747a80);font-size:14.5px;line-height:1.6}
 
-/* drifting image strip — centre sharp, edges soften (like a camera focusing) */
-.ap-strip{position:relative;width:100%;height:170px;margin:26px 0 8px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent)}
-.ap-tile{position:absolute;left:50%;top:50%;width:96px;height:var(--h,130px);margin-top:calc(var(--h,130px) / -2);border-radius:12px;overflow:hidden;background:var(--surface-soft,#eee);box-shadow:0 14px 30px rgba(0,0,0,.28);will-change:transform,filter}
-.ap-tile img{width:100%;height:100%;object-fit:cover;pointer-events:none}
-.ap-ph{display:block;width:100%;height:100%;background:linear-gradient(135deg,hsl(calc(var(--i) * 41 + 20),42%,64%),hsl(calc(var(--i) * 41 + 80),36%,38%))}
-.ap-chip{position:absolute;right:6px;top:6px;padding:5px 9px;border-radius:999px;background:var(--accent,#ff4f43);color:#fff;font:400 10px/1 "Agrandir Wide",sans-serif;font-style:normal;opacity:0;transform:scale(.8);transition:opacity .3s ease,transform .4s cubic-bezier(.2,.7,.2,1)}
-.ap-tile.is-focus .ap-chip{opacity:1;transform:none;animation:ap-chip 2.4s ease-in-out infinite}
-@keyframes ap-chip{0%,60%,100%{transform:none}70%{transform:scale(.88)}80%{transform:scale(1.08)}}
 .ap-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:0 0 22px}
 .ap-chips span{padding:5px 12px;border-radius:999px;background:var(--surface-soft,#f3f5f7);color:var(--text,#2f3133);font-size:12px;font-weight:500}
 
@@ -5419,6 +5410,28 @@ html.howto-open{overflow:hidden}
 .ap-back:hover{color:var(--text-strong,#151719)}
 .ap-note{margin:2px 0 0;color:var(--text-muted,#747a80);font-size:12px;line-height:1.5}
 .ap-foot{margin:18px 0 0;color:var(--text-muted,#8a9097);font-size:12px;letter-spacing:.02em}
-@media(prefers-reduced-motion:reduce){.auth-gate-dialog.auth-pop,.auth-pop.show-email .ap-email{animation:none}.ap-tile.is-focus .ap-chip{animation:none}}
+@media(prefers-reduced-motion:reduce){.auth-gate-dialog.auth-pop,.auth-pop.show-email .ap-email{animation:none}}
 @media(max-width:480px){.auth-gate-dialog.auth-pop{padding:34px 22px 22px;border-radius:28px}}
-.auth-pop.show-email .ap-strip{height:108px;margin:16px 0 14px}.ap-strip{transition:height .4s cubic-bezier(.2,.7,.2,1),margin .4s ease}
+.auth-pop.show-email .ap-cols{display:none}
+/* log-in popup: three zig-zag columns that drift up / down; hover pauses and enlarges */
+.ap-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:calc(100% + 48px);height:200px;margin:20px -24px 10px;padding:0 24px;overflow:clip;-webkit-mask-image:linear-gradient(180deg,transparent,#000 16%,#000 84%,transparent);mask-image:linear-gradient(180deg,transparent,#000 16%,#000 84%,transparent)}
+.apc{position:relative;overflow:visible;min-width:0}
+.apc-track{display:flex;flex-direction:column;gap:10px;will-change:transform;animation:apc-up var(--dur,36s) linear infinite;animation-delay:var(--off,0s)}
+.apc.down .apc-track{animation-name:apc-down}
+@keyframes apc-up{to{transform:translateY(calc(-50% - 5px))}}
+@keyframes apc-down{from{transform:translateY(calc(-50% - 5px))}to{transform:none}}
+.apc-tile{position:relative;display:block;flex:0 0 auto;height:var(--h,120px);border-radius:12px;overflow:hidden;background:var(--surface-soft,#222);box-shadow:0 10px 22px rgba(0,0,0,.25);transition:transform .45s cubic-bezier(.2,.7,.2,1),opacity .35s ease,box-shadow .35s ease;cursor:zoom-in}
+.apc-tile img{width:100%;height:100%;object-fit:cover;pointer-events:none}
+.apc-tile .ap-ph{display:block;width:100%;height:100%;background:linear-gradient(135deg,hsl(calc(var(--i,1) * 41 + 20),42%,64%),hsl(calc(var(--i,1) * 41 + 80),36%,38%))}
+.ap-cols:hover .apc-track{animation-play-state:paused}
+.ap-cols:hover .apc-tile{opacity:.5}
+.ap-cols .apc-tile:hover{opacity:1;transform:scale(1.32);z-index:6;box-shadow:0 24px 44px rgba(0,0,0,.5)}
+.apc:hover{z-index:5}
+@media(prefers-reduced-motion:reduce){.apc-track{animation:none!important}}
+@media(hover:none){.ap-cols .apc-tile:hover{transform:none}}
+/* A+ Vault top nav: text only — regular, bold when active */
+.topbar-nav-link{display:inline-grid;place-items:center;text-decoration:none;background:transparent!important;color:var(--text,var(--ink));font-weight:400;transition:color .15s ease}
+.topbar-nav-link>span{grid-area:1/1}
+.topbar-nav-link::after{content:attr(data-label);grid-area:1/1;visibility:hidden;height:0;overflow:hidden;font-weight:700;pointer-events:none}
+.topbar-nav-link:hover{background:transparent!important;color:var(--accent,var(--coral))}
+.topbar-nav-link.is-active{background:transparent!important;color:var(--text-strong,var(--ink-strong));font-weight:700;-webkit-text-stroke:.3px currentColor}
