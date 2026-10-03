@@ -5566,3 +5566,21 @@ html[data-standalone] .install-app-row{display:none!important}
 .quick-note-paper input::placeholder,.quick-note-paper textarea::placeholder{color:rgba(21,23,25,.4)}
 .quick-note-paper textarea{background:repeating-linear-gradient(transparent 0 20px,rgba(21,23,25,.07) 20px 21px)}
 .quick-note-paper footer button{background:rgba(21,23,25,.07);color:#151719}.quick-note-paper footer button:hover{background:rgba(21,23,25,.14)}
+
+/* A+ Vault quick note: several notes, pinned references */
+.qn-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.qn-tabs::-webkit-scrollbar{display:none}
+.qn-tab{flex:0 0 auto;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:5px 10px;border:0;border-radius:999px;background:rgba(21,23,25,.06);color:rgba(21,23,25,.65);font:inherit;font-size:12px;cursor:pointer}
+.qn-tab.is-active{background:#151719;color:#fff}
+.qn-add{padding:5px 9px;font-weight:600}
+.qn-pins{display:flex;gap:6px;flex-wrap:wrap}
+.qn-pin{position:relative;width:48px;height:48px;border-radius:8px;overflow:hidden;background:rgba(21,23,25,.08)}
+.qn-pin img{width:100%;height:100%;object-fit:cover}
+.qn-pin button{position:absolute;top:2px;right:2px;width:16px;height:16px;padding:0;border:0;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:11px;line-height:16px;cursor:pointer;opacity:0}
+.qn-pin:hover button,.qn-pin button:focus-visible{opacity:1}
+.qn-hint{margin:0;color:rgba(21,23,25,.5);font-size:11px;line-height:1.4}
+.quick-note-paper footer{flex-wrap:wrap}
+.quick-note-paper .qn-foot2{margin-top:0;justify-content:space-between}
+.quick-note-paper .qn-foot2 button{padding:2px 4px;background:transparent}
+.quick-note-paper .qn-foot2 button:hover{color:#151719;text-decoration:underline;background:transparent}
+.qn-pins[hidden],.qn-hint[hidden]{display:none}
