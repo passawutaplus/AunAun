@@ -5949,3 +5949,17 @@ html.mb-present .moodboard-editor-body>.moodboard-canvas-wrap{grid-column:1!impo
 .mb-back span{display:none!important}
 .mb-crumb{margin:0 4px 0 2px;font-family:var(--font-display,"Agrandir Wide","IBM Plex Sans Thai",sans-serif);font-size:20px;font-weight:300;letter-spacing:.01em;color:var(--muted);user-select:none}
 @media(max-width:900px){.mb-crumb{display:none}}
+
+/* editor: clearer toolbar icons + FigJam-style connectors */
+.mb-tool-glyph svg{width:21px;height:21px;display:block}
+.moodboard-connector .connector-line{stroke-width:2.5;stroke-linecap:round;fill:none}
+.moodboard-connector.selected .connector-line{stroke-width:3.5}
+.moodboard-connector .connector-hit{stroke:transparent;stroke-width:16;fill:none;cursor:pointer}
+.mb-conn-draft{stroke:var(--accent,#ff4f43);stroke-width:2.5;stroke-dasharray:6 5;pointer-events:none}
+.mb-conn-handle{position:absolute;z-index:6;width:14px;height:14px;padding:0;border:2px solid var(--accent,#ff4f43);border-radius:50%;background:#fff;opacity:0;cursor:crosshair;transform:translate(-50%,-50%);transition:opacity .12s,transform .12s}
+.mb-conn-handle.side-n{left:50%;top:-12px}.mb-conn-handle.side-s{left:50%;top:calc(100% + 12px)}
+.mb-conn-handle.side-w{left:-12px;top:50%}.mb-conn-handle.side-e{left:calc(100% + 12px);top:50%}
+.smart-grid-item:hover>.mb-conn-handle,.smart-grid-item.selected>.mb-conn-handle{opacity:1}
+.mb-conn-handle:hover{transform:translate(-50%,-50%) scale(1.3);background:var(--accent,#ff4f43)}
+.smart-grid-item.is-conn-target{outline:3px solid var(--accent,#ff4f43);outline-offset:3px}
+html.mb-present .mb-conn-handle{display:none!important}

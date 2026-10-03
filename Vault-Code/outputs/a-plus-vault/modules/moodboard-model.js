@@ -346,3 +346,28 @@ export function trackMoodboardEvent(name, payload) {
     }
   } catch (_) {}
 }
+
+/** Edge-to-edge curved connector between two boxes: returns { d, x1, y1, x2, y2 }. */
+export function connectorPath(from, to) {
+  const c1x = from.x + from.w / 2, c1y = from.y + from.h / 2;
+  const c2x = to.x + to.w / 2, c2y = to.y + to.h / 2;
+  const dx = c2x - c1x, dy = c2y - c1y;
+  const edge = (box, ux, uy) => {
+    const hw = box.w / 2, hh = box.h / 2;
+    const t = Math.min(ux ? hw / Math.abs(ux) : Infinity, uy ? hh / Math.abs(uy) : Infinity);
+    return t === Infinity ? 0 : t;
+  };
+  const gap = 5;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len, uy = dy / len;
+  const t1 = edge(from, dx, dy) * len + gap;
+  const t2 = edge(to, dx, dy) * len + gap;
+  const x1 = c1x + ux * Math.min(t1, len / 2), y1 = c1y + uy * Math.min(t1, len / 2);
+  const x2 = c2x - ux * Math.min(t2, len / 2), y2 = c2y - uy * Math.min(t2, len / 2);
+  const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
+  const k = 0.5;
+  const d = horizontal
+    ? `M${x1.toFixed(1)} ${y1.toFixed(1)} C${(x1 + (x2 - x1) * k).toFixed(1)} ${y1.toFixed(1)} ${(x2 - (x2 - x1) * k).toFixed(1)} ${y2.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`
+    : `M${x1.toFixed(1)} ${y1.toFixed(1)} C${x1.toFixed(1)} ${(y1 + (y2 - y1) * k).toFixed(1)} ${x2.toFixed(1)} ${(y2 - (y2 - y1) * k).toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+  return { d, x1, y1, x2, y2 };
+}

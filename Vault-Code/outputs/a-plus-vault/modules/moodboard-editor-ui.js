@@ -1,4 +1,4 @@
-import { paletteMode, pantoneChipLabel, normalizeHex, colorFormatRows, objectGroupId } from "./moodboard-model.js";
+import { connectorPath, paletteMode, pantoneChipLabel, normalizeHex, colorFormatRows, objectGroupId } from "./moodboard-model.js";
 import { saveStatusLabel } from "./moodboard-autosave.js";
 
 export function smartGridEditorMarkup(ctx) {
@@ -112,15 +112,15 @@ export function smartGridEditorMarkup(ctx) {
       </div>
     </main>
     <div class="mb-toolbar" role="toolbar" aria-label="Moodboard tools">
-      ${toolBtn("select", "Select", "⌖", "V")}
-      ${toolBtn("image", "Add from Vault", "▣", "I")}
-      ${toolBtn("upload", "Upload", "⇪", "U")}
+      ${toolBtn("select", "Select", `<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 3 14 7-6 2-2 6z"/></svg>`, "V")}
+      ${toolBtn("image", "Add from Vault", `<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/></svg>`, "I")}
+      ${toolBtn("upload", "Upload", `<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>`, "U")}
       <span class="mb-toolbar-sep" aria-hidden="true"></span>
-      ${toolBtn("text", "Text", "T", "T")}
-      ${toolBtn("color", "Color", "◐", "C")}
-      ${toolBtn("todo", "To-do", "☑")}
-      ${toolBtn("frame", "Frame", "▢", "F")}
-      ${toolBtn("connector", "Connect", "⟷")}
+      ${toolBtn("text", "Text", `<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7V4h14v3M12 4v16m-3 0h6"/></svg>`, "T")}
+      ${toolBtn("color", "Color", `<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>`, "C")}
+      ${toolBtn("todo", "To-do", `<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="m8 12 3 3 5-6"/></svg>`)}
+      ${toolBtn("frame", "Frame", `<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v18M17 3v18M3 7h18M3 17h18"/></svg>`, "F")}
+      ${toolBtn("connector", "Connect", `<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c0-8 5-13 13-13"/><path d="m14 3 4 3-3 4"/></svg>`)}
       <input type="file" class="moodboard-upload-input" data-moodboard-upload accept="image/jpeg,image/png,image/webp" multiple hidden>
     </div>
     <button type="button" class="moodboard-resize-handle inspector-resize" data-resize-moodboard-inspector title="Drag to resize inspector" aria-label="Resize inspector"><span></span></button>
@@ -218,14 +218,14 @@ function connectorsMarkup(connectors, nodes, escA, selectedObjectId) {
       const from = byId.get(c.fromId);
       const to = byId.get(c.toId);
       if (!from || !to) return "";
-      const x1 = from.x + from.w / 2;
-      const y1 = from.y + from.h / 2;
-      const x2 = to.x + to.w / 2;
-      const y2 = to.y + to.h / 2;
+      const { d } = connectorPath(from, to);
+      const color = escA(c.color || "#ff4f43");
       const selected = selectedObjectId === c.id ? " selected" : "";
+      const mid = `mba-${escA(c.id)}`;
       return `<g class="moodboard-connector${selected}" data-board-obj="${escA(c.id)}" data-connector-id="${escA(c.id)}">
-        <line class="connector-hit" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />
-        <line class="connector-line" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${escA(c.color || "#ff4f43")}" />
+        <defs><marker id="${mid}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 9 5 1 9z" fill="${color}"/></marker></defs>
+        <path class="connector-hit" d="${d}" fill="none" />
+        <path class="connector-line" d="${d}" fill="none" stroke="${color}" marker-end="url(#${mid})" />
       </g>`;
     })
     .join("");
@@ -233,7 +233,10 @@ function connectorsMarkup(connectors, nodes, escA, selectedObjectId) {
 
 function objectChrome(objId, selected, escA) {
   const remove = `<button type="button" class="icon-button mini" data-remove-board-obj="${escA(objId)}" title="Remove from board">×</button>`;
-  if (!selected) return remove;
+  const handles = ["n", "e", "s", "w"]
+    .map((side) => `<button type="button" class="mb-conn-handle side-${side}" data-mb-conn="${escA(objId)}" data-mb-side="${side}" title="Drag to connect" aria-label="Drag to connect to another object"></button>`)
+    .join("");
+  if (!selected) return remove + handles;
   const grips = ["nw", "n", "ne", "e", "se", "s", "sw", "w"]
     .map(
       (c) =>
@@ -246,7 +249,10 @@ function objectChrome(objId, selected, escA) {
     <button type="button" data-layer-board-obj="${escA(objId)}" data-layer-action="back" title="Send to back" aria-label="Send to back">⤓</button>
     <button type="button" class="is-danger" data-remove-board-obj="${escA(objId)}" title="Remove from board" aria-label="Remove from board">✕</button>
   </div>`;
-  return `${remove}${bar}<div class="moodboard-resize-frame" aria-hidden="true"></div>${grips}<span class="moodboard-size-badge" data-size-badge="${escA(objId)}" hidden></span>`;
+  const dots = ["n", "e", "s", "w"]
+    .map((side) => `<button type="button" class="mb-conn-handle side-${side}" data-mb-conn="${escA(objId)}" data-mb-side="${side}" title="Drag to connect" aria-label="Drag to connect to another object"></button>`)
+    .join("");
+  return `${remove}${bar}${dots}<div class="moodboard-resize-frame" aria-hidden="true"></div>${grips}<span class="moodboard-size-badge" data-size-badge="${escA(objId)}" hidden></span>`;
 }
 
 const mbSvg = (inner, fill) =>
