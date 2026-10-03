@@ -5753,3 +5753,16 @@ html:not([data-theme="dark"]) .moodboard-canvas-thumb{background:#f1eee8!importa
 /* no panel behind the stacked cards / folder: the photos themselves are the card */
 .collection-overview-grid .collection-card-visual,.collection-overview-grid .collection-card-visual::before,.pfolder{background:transparent!important;box-shadow:none!important}
 .collection-overview-grid .collection-card-visual{border-radius:0}
+
+/* projects page: no panel, bigger folder, name left / icons right */
+.project-set-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))!important;gap:26px 22px!important}
+.project-set-card{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 8px;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+.project-set-card .project-set-open{display:contents!important}
+.project-set-card .pfolder{grid-column:1/-1;width:100%;aspect-ratio:1/0.82}
+.project-set-card .folder-card-copy{grid-column:1;padding:6px 2px 0!important;display:grid;gap:2px;text-align:left;justify-items:start}
+.project-set-card .folder-card-copy strong{font-weight:500;font-size:15px}
+.project-set-card .folder-card-actions{grid-column:2;padding:6px 0 0!important;opacity:0;display:flex!important;gap:4px!important;transition:opacity .15s ease}
+.project-set-card:hover .folder-card-actions,.project-set-card:focus-within .folder-card-actions{opacity:1}
+@media(hover:none){.project-set-card .folder-card-actions{opacity:1}}
+.project-set-card:hover,.project-set-card.active{background:transparent!important}
+.project-explorer-head{display:none}

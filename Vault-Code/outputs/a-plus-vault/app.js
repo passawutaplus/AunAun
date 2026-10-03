@@ -365,7 +365,6 @@ function projectFolderCard(p){
       "<span class='folder-card-copy'><strong>"+esc(p.name)+"</strong><small>"+esc(sub)+"</small></span>"+
     "</button>"+
     "<div class='folder-card-actions'>"+
-      "<button type='button' class='folder-open-btn' data-project='"+p.id+"'>Open</button>"+
       "<button type='button' data-newboard='"+p.id+"' title='New moodboard' aria-label='New moodboard'>"+icon("board")+"</button>"+
       "<button type='button' data-rename-project='"+p.id+"' title='Rename' aria-label='Rename project'>"+icon("edit")+"</button>"+
       "<button type='button' class='danger-link' data-delproject='"+p.id+"' title='Delete' aria-label='Delete project'>"+icon("trash")+"</button>"+
@@ -475,7 +474,6 @@ function projectView(){
     "<main class='main overview-main project-folder-page project-detail-page'>"+
       "<section class='page-head project-folder-head'>"+
         "<div class='project-folder-title'>"+
-          "<span class='project-folder-title-icon' aria-hidden='true'>"+icon("project")+"</span>"+
           "<div>"+
             "<nav class='folder-breadcrumb' aria-label='Breadcrumb'>"+
               "<button type='button' class='folder-crumb' data-view='projects'>Projects</button>"+
@@ -634,12 +632,6 @@ function projectExplorerMarkup(){
     fileCount=state.items.length,
     body=projectExplorerTreeRows();
   return "<aside class='project-explorer' aria-label='Projects explorer'>"+
-    "<div class='project-explorer-head'>"+
-      "<div class='project-explorer-head-copy'>"+
-        "<strong>Projects</strong>"+
-        "<small>"+list.length+" project"+(list.length===1?"":"s")+" · "+fileCount+" file"+(fileCount===1?"":"s")+"</small>"+
-      "</div>"+
-    "</div>"+
     "<label class='project-explorer-search'>"+icon("search")+
       "<input type='search' data-project-explorer-q placeholder='Search projects…' value='"+q+"' autocomplete='off'>"+
     "</label>"+
@@ -675,7 +667,6 @@ function projectsView(){
     "<main class='main overview-main project-folder-page'>"+
       "<section class='page-head project-folder-head'>"+
         "<div class='project-folder-title'>"+
-          "<span class='project-folder-title-icon' aria-hidden='true'>"+icon("project")+"</span>"+
           "<div>"+
             "<h1>Projects</h1>"+
           "</div>"+
@@ -691,16 +682,7 @@ function projectsView(){
           "<label class='project-browser-search'>"+icon("search")+
             "<input type='search' data-project-browser-q placeholder='Search project name…' value='"+escA(state.projectBrowserQ||"")+"' autocomplete='off'>"+
           "</label>"+
-          "<div class='project-browser-filters' role='tablist'>"+
-            [["all","All"],["boards","Boards"],["collections","Collections"]].map(function(pair){
-              let id=pair[0],label=pair[1],n=list.filter(p=>{
-                if(id==="boards")return projectLinkedMoodboards(p).length>0;
-                if(id==="collections")return projectCollectionIds(p).length>0;
-                return true;
-              }).length;
-              return "<button type='button' role='tab' class='project-browser-filter "+(filter===id?"active":"")+"' data-project-browser-filter='"+id+"' aria-selected='"+(filter===id?"true":"false")+"'>"+label+" <span>"+n+"</span></button>";
-            }).join("")+
-          "</div></div>"+
+          "</div>"+
           (filtered.length
             ?"<section class='folder-section'><div class='folder-card-grid project-set-grid'>"+filtered.map(projectFolderCard).join("")+"</div></section>"
             :"<section class='empty-state'><div><h2>"+(list.length?"No matching projects.":"No projects yet.")+"</h2><p>"+(list.length?"Try another filter or search.":"Create a project folder to gather collections and moodboards.")+"</p>"+(list.length?"":"<button class='primary-button' data-newproject>Create Project</button>")+"</div></section>")+
