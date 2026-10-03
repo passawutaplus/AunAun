@@ -255,8 +255,12 @@ function objectChrome(objId, selected, escA) {
     .join("");
   const bar = `<div class="mb-selbar" role="toolbar" aria-label="Object actions">
     <button type="button" data-mb-duplicate="${escA(objId)}" title="Duplicate" aria-label="Duplicate">⧉</button>
-    <button type="button" data-layer-board-obj="${escA(objId)}" data-layer-action="front" title="Bring to front" aria-label="Bring to front">⤒</button>
-    <button type="button" data-layer-board-obj="${escA(objId)}" data-layer-action="back" title="Send to back" aria-label="Send to back">⤓</button>
+    <span class="mb-selbar-sep" aria-hidden="true"></span>
+    <button type="button" data-layer-board-obj="${escA(objId)}" data-layer-action="front" title="Bring to front" aria-label="Bring to front">${ARRANGE_ICONS.front}</button>
+    <button type="button" data-layer-board-obj="${escA(objId)}" data-layer-action="forward" title="Bring forward" aria-label="Bring forward">${ARRANGE_ICONS.forward}</button>
+    <button type="button" data-layer-board-obj="${escA(objId)}" data-layer-action="backward" title="Send backward" aria-label="Send backward">${ARRANGE_ICONS.backward}</button>
+    <button type="button" data-layer-board-obj="${escA(objId)}" data-layer-action="back" title="Send to back" aria-label="Send to back">${ARRANGE_ICONS.back}</button>
+    <span class="mb-selbar-sep" aria-hidden="true"></span>
     <button type="button" class="is-danger" data-remove-board-obj="${escA(objId)}" title="Remove from board" aria-label="Remove from board">✕</button>
   </div>`;
   const dots = ["n", "e", "s", "w"]
@@ -288,11 +292,7 @@ function layerActions(objId, escA, opts) {
     `<button type="button" class="mb-ico-btn" data-layer-board-obj="${escA(objId)}" data-layer-action="${action}" title="${label}" aria-label="${label}">${ARRANGE_ICONS[action]}</button>`;
   const alignBtn = (action, label) =>
     `<button type="button" class="mb-ico-btn" data-align-board-obj="${escA(objId)}" data-align-action="${action}" title="${label}" aria-label="${label}">${ARRANGE_ICONS[action]}</button>`;
-  const layers = options.layers === false
-    ? ""
-    : `<div class="mb-ico-group" role="group" aria-label="Layer order">
-      ${layerBtn("front", "Bring to front")}${layerBtn("forward", "Bring forward")}${layerBtn("backward", "Send backward")}${layerBtn("back", "Send to back")}
-    </div>`;
+  const layers = "";
   const align = options.align === false
     ? ""
     : `<div class="mb-ico-group" role="group" aria-label="Align on board">

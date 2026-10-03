@@ -5979,3 +5979,5 @@ html:not([data-theme="dark"]) .mb-line-styles{background:rgba(255,255,255,.94);b
 .mb-line-btn:hover{background:rgba(127,127,127,.18)}
 .mb-line-btn.active{background:rgba(255,79,67,.18);color:var(--accent,#ff4f43);box-shadow:inset 0 0 0 1.5px var(--accent,#ff4f43)}
 html.mb-present .mb-line-styles{display:none!important}
+.mb-selbar-sep{width:1px;height:18px;margin:0 4px;align-self:center;background:rgba(255,255,255,.18)}
+.mb-selbar button svg{width:17px;height:17px}
