@@ -5527,3 +5527,5 @@ html[data-standalone] .install-app-row{display:none!important}
 .discover-grid-wrap:has(.discover-gate){min-height:clamp(560px,80vh,860px)}
 .discover-gate{padding-bottom:calc(clamp(72px,17vw,300px)*.75)}
 .discover-gate-wordmark{font-size:clamp(72px,17vw,300px)}
+
+.quick-note[hidden]{display:none!important}
