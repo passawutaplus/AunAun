@@ -6,12 +6,15 @@ import { runRequested } from "@/inngest/events";
 import { isSourceKey } from "@/seeder/adapters";
 import { SupabaseSeederRepo } from "@/seeder/repo";
 import { assertAdmin } from "@/lib/admin";
+import { audit } from "@/lib/admin-rpc";
 
 const PATH = "/admin/seeder";
 
 export async function setPaused(formData: FormData) {
   await assertAdmin();
-  await new SupabaseSeederRepo().setPaused(formData.get("paused") === "true");
+  const paused = formData.get("paused") === "true";
+  await new SupabaseSeederRepo().setPaused(paused);
+  await audit(paused ? "seeder.pause" : "seeder.resume", "seeder", "");
   revalidatePath(PATH);
 }
 
@@ -21,6 +24,7 @@ export async function runNow(formData: FormData) {
   if (await repo.isPaused()) throw new Error("Seeder is paused. Resume before running.");
   const category = String(formData.get("category") ?? "").trim() || undefined;
   await inngest.send(runRequested.create({ category, requestedBy: email }));
+  await audit("seeder.run", "seeder", category ?? "all");
   revalidatePath(PATH);
 }
 
@@ -38,6 +42,7 @@ export async function updateTarget(formData: FormData) {
   if (formData.get("reset_exhausted") === "on") patch.exhausted = false;
 
   await new SupabaseSeederRepo().updateTarget(category, source, patch);
+  await audit("seeder.target", "seed_target", `${category}/${source}`, patch);
   revalidatePath(PATH);
 }
 
@@ -47,5 +52,6 @@ export async function setItemVisibility(formData: FormData) {
   const status = formData.get("status") === "published" ? "published" : "hidden";
   if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("invalid id");
   await new SupabaseSeederRepo().setItemStatus(id, status);
+  await audit(`discover.${status}`, "discover_item", id);
   revalidatePath(PATH);
 }
