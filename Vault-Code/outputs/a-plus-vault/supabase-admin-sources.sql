@@ -34,7 +34,7 @@ begin
       from (select license, count(*)::int as n from public.discover_items where status = 'published' group by license) x
     ), '[]'::jsonb),
     'violations', jsonb_build_object(
-      'published_not_cc0', (select count(*)::int from public.discover_items where status = 'published' and license <> 'cc0'),
+      'published_not_allowed', (select count(*)::int from public.discover_items where status = 'published' and license not in ('cc0', 'pdm', 'cc-by', 'cc-by-sa')),
       'published_no_attribution', (select count(*)::int from public.discover_items where status = 'published' and btrim(attribution) = ''),
       'published_no_source_url', (select count(*)::int from public.discover_items where status = 'published' and source_url !~ '^https://')
     ),

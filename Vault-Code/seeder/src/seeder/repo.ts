@@ -1,7 +1,19 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Candidate, SourceKey } from "./adapters/types";
-import { PHASH_MAX_DISTANCE, STORAGE_BUCKET } from "./config";
+import { PHASH_MAX_DISTANCE, STORAGE_BUCKET, visionPricing } from "./config";
 import type { RejectReason } from "./license";
+
+export type AiSpend = {
+  totalUsd: number;
+  monthUsd: number;
+  /** Images with recorded token usage. */
+  tracked: number;
+  /** Analyzed images from before tracking existed (cost estimated from the average). */
+  untracked: number;
+  avgUsd: number;
+  estimatedLegacyUsd: number;
+  bySource: Record<string, number>;
+};
 
 export type SeedTarget = {
   category: string;
@@ -216,6 +228,48 @@ export class SupabaseSeederRepo implements SeederRepo {
     const { data, error } = await this.db.rpc("discover_reject_summary");
     fail("rejectSummary", error);
     return (data ?? []) as { reject_reason: string; source: string; total: number }[];
+  }
+
+  /** Vision API spend, summed from the token usage the pipeline stores in source_meta.ai_usage. */
+  async aiSpend(): Promise<AiSpend> {
+    const { inPerM, outPerM } = visionPricing();
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const cost = (i: number, o: number) => (i * inPerM + o * outPerM) / 1_000_000;
+
+    let totalUsd = 0;
+    let monthUsd = 0;
+    let tracked = 0;
+    const bySource: Record<string, number> = {};
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await this.db
+        .from("discover_items")
+        .select("source, created_at, ai_usage:source_meta->ai_usage")
+        .not("source_meta->ai_usage", "is", null)
+        .order("created_at", { ascending: true })
+        .range(from, from + 999);
+      fail("aiSpend", error);
+      const rows = (data ?? []) as unknown as { source: string; created_at: string; ai_usage: { input_tokens?: number; output_tokens?: number } | null }[];
+      for (const r of rows) {
+        const usd = cost(Number(r.ai_usage?.input_tokens ?? 0), Number(r.ai_usage?.output_tokens ?? 0));
+        tracked++;
+        totalUsd += usd;
+        bySource[r.source] = (bySource[r.source] ?? 0) + usd;
+        if (new Date(r.created_at) >= monthStart) monthUsd += usd;
+      }
+      if (rows.length < 1000) break;
+    }
+
+    // Rows analyzed before usage tracking existed: published + AI-stage rejects without ai_usage.
+    const { count: analyzed, error: e2 } = await this.db
+      .from("discover_items")
+      .select("id", { count: "exact", head: true })
+      .or("status.eq.published,reject_reason.in.(moderation_blocked,ai_invalid_output)");
+    fail("aiSpend.analyzed", e2);
+    const untracked = Math.max(0, (analyzed ?? 0) - tracked);
+    const avg = tracked > 0 ? totalUsd / tracked : cost(1600, 250);
+    return { totalUsd, monthUsd, tracked, untracked, avgUsd: avg, estimatedLegacyUsd: untracked * avg, bySource };
   }
 
   async recentItems(status: "published" | "rejected" | "hidden", limit: number): Promise<AdminItem[]> {

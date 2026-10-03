@@ -9,6 +9,8 @@ export type VisionResult = {
   tags: string[];
   style: string;
   colors: string[];
+  /** Token usage of the API call that produced this result (absent in tests / fakes). */
+  usage?: { input_tokens: number; output_tokens: number };
 };
 
 export class VisionOutputError extends Error {
@@ -119,5 +121,8 @@ export async function analyzeImage(input: VisionInput, client = new Anthropic())
 
   const block = response.content.find((b) => b.type === "tool_use");
   if (!block || block.type !== "tool_use") throw new VisionOutputError("Model did not call record_analysis");
-  return parseVisionOutput(block.input, input.categories);
+  return {
+    ...parseVisionOutput(block.input, input.categories),
+    usage: { input_tokens: response.usage?.input_tokens ?? 0, output_tokens: response.usage?.output_tokens ?? 0 },
+  };
 }

@@ -25,7 +25,7 @@ export const DISCOVER_CATEGORIES = [
   ["pattern", "Pattern"],
 ];
 
-const LICENSE_LABELS = { cc0: "CC0 Public Domain" };
+const LICENSE_LABELS = { cc0: "CC0 Public Domain", pdm: "Public Domain Mark", "cc-by": "CC BY", "cc-by-sa": "CC BY-SA" };
 
 const DISCOVER_COLUMNS = [
   "id", "source", "source_url", "title", "license", "license_url", "attribution", "attribution_json",
@@ -310,6 +310,14 @@ function attributionInfo(item) {
   };
 }
 
+/** One-line terms shown next to the license badge. CC BY / BY-SA make the credit a condition, not a courtesy. */
+export function discoverLicenseNote(license) {
+  const key = String(license || "").toLowerCase();
+  if (key === "cc-by") return "Free to use with credit (required).";
+  if (key === "cc-by-sa") return "Free to use with credit (required); adaptations must use the same license.";
+  return "Free to use.";
+}
+
 export function discoverLicenseLabel(license) {
   return LICENSE_LABELS[String(license || "").toLowerCase()] || String(license || "").toUpperCase();
 }
@@ -535,7 +543,7 @@ export function discoverDetailMarkup(item, config, kept, nav) {
   const licenseLabel = discoverLicenseLabel(item.license);
   const meta = item && typeof item.source_meta === "object" && item.source_meta ? item.source_meta : {};
   const institution = info.institution ? (info.institutionUrl ? `<a href='${escA(info.institutionUrl)}' target='_blank' rel='noopener noreferrer'>${esc(info.institution)}</a>` : esc(info.institution)) : 'the institution';
-  const details = foldMarkup('discover-info', 'Details &amp; credit', [metaText(meta, 'object_name'), licenseLabel].filter(Boolean).join(' · '), `${objectRows ? `<dl>${objectRows}</dl>` : ''}<div class='discover-credit'><p class='discover-license'><span class='discover-license-badge'>${licenseUrl ? `<a href='${escA(licenseUrl)}' target='_blank' rel='noopener noreferrer license'>${esc(licenseLabel)}</a>` : esc(licenseLabel)}</span><span>Free to use. Please credit ${institution}.</span></p><p class='discover-credit-text'>${esc(discoverCreditText(item))}</p></div>`);
+  const details = foldMarkup('discover-info', 'Details &amp; credit', [metaText(meta, 'object_name'), licenseLabel].filter(Boolean).join(' · '), `${objectRows ? `<dl>${objectRows}</dl>` : ''}<div class='discover-credit'><p class='discover-license'><span class='discover-license-badge'>${licenseUrl ? `<a href='${escA(licenseUrl)}' target='_blank' rel='noopener noreferrer license'>${esc(licenseLabel)}</a>` : esc(licenseLabel)}</span><span>${esc(discoverLicenseNote(item.license))} Please credit ${institution}.</span></p><p class='discover-credit-text'>${esc(discoverCreditText(item))}</p></div>`);
   return `<div class='discover-detail-backdrop' data-discover-close role='presentation'><div class='discover-detail-frame' style='--ar:${escA(String(aspectRatio(item)))}'>${detailNavMarkup(nav)}<section class='discover-detail' role='dialog' aria-modal='true' aria-label='${escA(item.title || "Artwork")}' data-discover-dialog><button type='button' class='discover-detail-close' data-discover-close aria-label='Close'>&times;</button><div class='discover-detail-media' style='aspect-ratio:${escA(aspect(item))};${blur ? escA(`background-image:url(${blur})`) : ""}'><img src='${escA(md)}' srcset='${escA(md)} 800w, ${escA(lg)} 1600w' sizes='(max-width: 860px) 100vw, 60vw' alt='${escA(item.title || "")}' decoding='async'></div><div class='discover-detail-info'><h2>${esc(item.title || "Untitled")}</h2>${byline ? `<p class='discover-detail-byline'>${esc(byline)}</p>` : ""}${tags ? `<div class='tag-row discover-tags'>${tags}</div>` : ""}${colors ? `<div class='discover-swatches' aria-label='Colors'>${colors}</div>` : ""}<div class='discover-detail-actions'><button type='button' class='primary-button' data-discover-keep='${escA(item.id)}'>${kept ? "Kept · Add to collection" : "+ Keep in Vault"}</button>${sourceUrl ? `<a class='ghost-button discover-source-btn' href='${escA(sourceUrl)}' target='_blank' rel='noopener noreferrer' title='View at source' aria-label='View at source (opens in new tab)'><svg viewBox='0 0 24 24' width='18' height='18' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1'/><path d='M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1'/></svg></a>` : ""}${discoverReportButtonMarkup(item.id)}</div><div class='discover-detail-bottom'><section class='discover-similar' aria-label='Similar images'><div class='discover-similar-head'><span class='section-label'>Similar images</span><button type='button' class='discover-similar-all' data-discover-similar='${escA(item.id)}'>See all</button></div><div class='discover-similar-grid' data-discover-similar-host><span class='discover-similar-loading'>Finding similar images…</span></div></section>${details}</div></div></section></div></div>`;
 }
 

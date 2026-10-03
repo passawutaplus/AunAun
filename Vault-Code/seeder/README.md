@@ -47,7 +47,8 @@ npm run seeder:dry -- met poster   # ดึง metadata จริงจาก AP
 
 ## นโยบายเนื้อหา
 
-- Allowlist license = `cc0` เท่านั้น (`src/seeder/config.ts`) และ DB check บังคับซ้ำตอน `status = 'published'`
+- Allowlist license = `cc0`, `pdm`, `cc-by`, `cc-by-sa` (`src/seeder/config.ts`) ไม่รับ NC/ND และ DB check (`supabase-discover-open-licenses.sql`) บังคับซ้ำตอน `status = 'published'`; CC BY/BY-SA ต้องมีชื่อผู้สร้าง + license URL ไม่งั้น reject `missing_attribution`
+- Openverse (`ov`): ปรับ license ด้วย `OPENVERSE_LICENSES`, แหล่งด้วย `OPENVERSE_SOURCES` (ไม่ใส่ `flickr` เป็นค่าเริ่มต้น เพราะเป็นภาพที่ผู้ใช้ตั้งไลเซนส์เอง แยกเฉพาะ Flickr Commons ไม่ได้)
 - ทุกแถวต้องมี `license`, `license_url`, `attribution`, `source_url` (https) — หน้า Discover แสดงเครดิตใน detail และติดไปกับ item ที่ Keep
 - Moderation บล็อก nudity รวมถึงงานศิลปะ (`BLOCK_ARTISTIC_NUDITY = true`) เพราะ Discover เปิดให้ guest
 - AI ตอบผิด schema → reject `ai_invalid_output` (ไม่ค้าง pending) ลองใหม่ได้ด้วยการลบแถวแล้วรันหมวดนั้นอีกครั้ง

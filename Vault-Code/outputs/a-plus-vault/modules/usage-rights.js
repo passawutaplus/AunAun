@@ -40,7 +40,7 @@ function matches(key, list) {
 export function guessUsageRights(item) {
   const ctx = (item && item.captureContext) || {};
   const license = String(ctx.license || "").toLowerCase();
-  if (license === "cc0" || license === "public-domain") return "free";
+  if (license === "cc0" || license === "pdm" || license === "public-domain") return "free";
   if (/^cc-by/.test(license)) return "credit";
   const key = sourceKey(item && item.sourceUrl);
   if (!key) return "reference";

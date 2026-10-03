@@ -16,7 +16,7 @@ type Source = {
 type Health = {
   sources: Source[];
   licenses: { license: string; n: number }[];
-  violations: { published_not_cc0: number; published_no_attribution: number; published_no_source_url: number };
+  violations: { published_not_allowed: number; published_no_attribution: number; published_no_source_url: number };
   copyright_open: number;
   copyright_oldest_open: string | null;
 };
@@ -32,7 +32,7 @@ const NAMES: Record<string, string> = {
 const EMPTY: Health = {
   sources: [],
   licenses: [],
-  violations: { published_not_cc0: 0, published_no_attribution: 0, published_no_source_url: 0 },
+  violations: { published_not_allowed: 0, published_no_attribution: 0, published_no_source_url: 0 },
   copyright_open: 0,
   copyright_oldest_open: null,
 };
@@ -46,7 +46,7 @@ function stale(s: Source): boolean {
 export default async function SourcesPage() {
   const { data, error } = await safeRpc<Health>("vault_admin_source_health", {}, EMPTY);
   const v = data.violations;
-  const violations = v.published_not_cc0 + v.published_no_attribution + v.published_no_source_url;
+  const violations = v.published_not_allowed + v.published_no_attribution + v.published_no_source_url;
   const total = data.sources.reduce((s, r) => s + r.published, 0);
 
   return (
@@ -54,7 +54,7 @@ export default async function SourcesPage() {
       <header className="page-head">
         <h1>บอท &amp; ลิขสิทธิ์</h1>
         <p className="muted">
-          สุขภาพของแต่ละแหล่งที่บอทดึง และเช็กว่าทุกภาพที่เผยแพร่ยัง CC0 + มีเครดิตครบ ตั้งค่า/สั่งรันที่ <Link href="/admin/seeder">Discover Seeder</Link>
+          สุขภาพของแต่ละแหล่งที่บอทดึง และเช็กว่าทุกภาพที่เผยแพร่ยังอยู่ในไลเซนส์ที่อนุญาต + มีเครดิตครบ ตั้งค่า/สั่งรันที่ <Link href="/admin/seeder">Discover Seeder</Link>
         </p>
       </header>
       {error && (
@@ -70,7 +70,7 @@ export default async function SourcesPage() {
         </Link>
         <div className={violations > 0 ? "todo-card hot" : "todo-card"}>
           <strong>{violations}</strong>
-          <span>ภาพเผยแพร่ที่ผิดกติกา (ไม่ใช่ CC0 / ไม่มีเครดิต / ไม่มีลิงก์ต้นทาง)</span>
+          <span>ภาพเผยแพร่ที่ผิดกติกา (ไลเซนส์นอก allowlist / ไม่มีเครดิต / ไม่มีลิงก์ต้นทาง)</span>
         </div>
         <div className="todo-card">
           <strong>{total.toLocaleString()}</strong>
@@ -130,7 +130,7 @@ export default async function SourcesPage() {
           ))}
           {data.licenses.length === 0 && <span className="muted">—</span>}
         </p>
-        <p className="muted small">นโยบาย: เผยแพร่ได้เฉพาะ CC0 ที่มีเครดิตและลิงก์ต้นทาง ภาพที่ผู้ใช้เซฟเองเป็นส่วนตัว ไม่ขึ้น Discover</p>
+        <p className="muted small">นโยบาย: เผยแพร่ได้เฉพาะไลเซนส์เปิด (CC0, Public Domain Mark, CC BY, CC BY-SA) ที่มีเครดิตและลิงก์ต้นทาง ไม่รับ NC/ND ภาพที่ผู้ใช้เซฟเองเป็นส่วนตัว ไม่ขึ้น Discover</p>
       </div>
     </>
   );

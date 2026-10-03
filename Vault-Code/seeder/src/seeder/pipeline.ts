@@ -79,6 +79,7 @@ export async function processCandidate(c: Candidate, ctx: PipelineContext, deps:
     if (err instanceof VisionOutputError) return reject("ai_invalid_output", { phash, width: info.width, height: info.height, note: err.message });
     throw err;
   }
+  if (ai.usage) c.sourceMeta = { ...c.sourceMeta, ai_usage: ai.usage };
   if (!ai.safe) {
     return reject("moderation_blocked", { phash, width: info.width, height: info.height, note: ai.unsafe_reason ?? "unsafe" });
   }
