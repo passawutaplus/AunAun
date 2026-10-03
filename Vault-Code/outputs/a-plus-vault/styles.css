@@ -5553,3 +5553,16 @@ html[data-standalone] .install-app-row{display:none!important}
   .modal-backdrop{align-items:flex-end!important;padding:0!important}
   .modal{width:100%!important;max-width:100%!important;max-height:92vh;border-radius:20px 20px 0 0!important}
 }
+
+/* A+ Vault quick note: white paper */
+.quick-note-fab{background:#fff;color:#151719;box-shadow:0 8px 22px rgba(0,0,0,.28),inset 0 0 0 1px rgba(21,23,25,.08)}
+.quick-note-paper,html[data-theme="dark"] .quick-note-paper{background:linear-gradient(180deg,#fff 0,#f7f6f3 100%);color:#151719;box-shadow:0 18px 40px rgba(0,0,0,.3),inset 0 0 0 1px rgba(21,23,25,.06)}
+.quick-note-paper::before{background:rgba(21,23,25,.07)}
+.quick-note-saved,.quick-note-paper footer .quick-note-clear{color:rgba(21,23,25,.55)}
+.quick-note-min{background:rgba(21,23,25,.07);color:#151719}.quick-note-min:hover{background:rgba(21,23,25,.14)}
+.quick-note-paper label span{color:rgba(21,23,25,.55)}
+.quick-note-paper input,.quick-note-paper textarea{border-bottom-color:rgba(21,23,25,.2);color:#151719}
+.quick-note-paper input:focus,.quick-note-paper textarea:focus{border-bottom-color:#151719}
+.quick-note-paper input::placeholder,.quick-note-paper textarea::placeholder{color:rgba(21,23,25,.4)}
+.quick-note-paper textarea{background:repeating-linear-gradient(transparent 0 20px,rgba(21,23,25,.07) 20px 21px)}
+.quick-note-paper footer button{background:rgba(21,23,25,.07);color:#151719}.quick-note-paper footer button:hover{background:rgba(21,23,25,.14)}
