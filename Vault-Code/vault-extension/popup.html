@@ -20,6 +20,35 @@
 
       <section class="status" id="status" data-type="default" hidden></section>
 
+      <section class="home-actions" id="homeActions" aria-label="Keep">
+        <button id="keepPageBtn" class="primary keep-button" type="button"><span>Keep this page</span></button>
+        <button id="keepAllBtn" class="secondary" type="button"><span id="keepAllLabel">Keep all images</span></button>
+      </section>
+      <label class="toggle-row" for="quickKeepInput">
+        <input id="quickKeepInput" type="checkbox">
+        <span>Quick keep — skip this form next time</span>
+      </label>
+
+      <section class="quick-card" id="quickCard" hidden aria-live="polite">
+        <div class="quick-thumb" id="quickThumb"></div>
+        <div class="quick-body">
+          <strong id="quickTitle">Kept</strong>
+          <span id="quickWhere">Kept in My Vault</span>
+          <div class="quick-actions-row">
+            <button id="quickUndoBtn" class="secondary" type="button">Undo</button>
+            <button id="quickEditBtn" class="secondary" type="button">Edit details</button>
+            <button id="quickOffBtn" class="ghost" type="button">Turn off quick keep</button>
+          </div>
+          <div class="quick-bar" aria-hidden="true"><i id="quickBar"></i></div>
+        </div>
+      </section>
+
+      <section class="queue-row" id="queueRow" hidden>
+        <span id="queueText">Waiting to send</span>
+        <button id="queueRetryBtn" class="secondary" type="button">Retry now</button>
+        <button id="queueClearBtn" class="ghost" type="button">Remove</button>
+      </section>
+
       <section class="capture-card" id="captureCard" hidden>
         <div class="capture-preview" id="capturePreview"></div>
         <div class="capture-meta">
@@ -84,8 +113,20 @@
       </section>
 
       <section class="settings">
+        <section class="connect-row" id="connectRow">
+          <span id="connectText">Not connected</span>
+          <button id="disconnectBtn" class="ghost" type="button" hidden>Disconnect</button>
+        </section>
+        <label class="toggle-row" for="smartDetectInput">
+          <input id="smartDetectInput" type="checkbox">
+          <span>Smart image detection on all sites <small>(asks permission once)</small></span>
+        </label>
+        <label class="toggle-row" for="hoverKeepInput">
+          <input id="hoverKeepInput" type="checkbox">
+          <span>Show Keep buttons when hovering images</span>
+        </label>
         <details>
-          <summary>Alpha token setting</summary>
+          <summary>Advanced: paste a token</summary>
           <label for="tokenInput">Alpha API Token</label>
           <input id="tokenInput" type="password" placeholder="Copy from Vault Settings → Extension sync">
           <p class="settings-hint">Paste the sync token from your Vault Profile after logging in.</p>
@@ -98,6 +139,6 @@
       </section>
     </main>
 
-    <script src="popup.js"></script>
+    <script type="module" src="popup.js"></script>
   </body>
 </html>

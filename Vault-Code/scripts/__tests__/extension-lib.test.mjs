@@ -1,4 +1,6 @@
 import { describe, it } from "node:test";
+import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { collectionNameFor, defaultSelection, imageKey, isJunkUrl, rankCandidates } from "../../vault-extension/lib/keep-all.js";
 import { MAX_ATTEMPTS, QUEUE_CAP, backoffMs, isRetryable, prepareForQueue, queueAdd, queueAfterFailure, queueDue, queueRemove, queueSummary } from "../../vault-extension/lib/queue.js";
@@ -125,5 +127,35 @@ describe("keep helpers", () => {
     assert.match(textFragmentUrl("https://a.com/p", long), /#:~:text=[^,]+,[^,]+$/);
     assert.equal(textFragmentUrl("not a url", "x"), "not a url");
     assert.deepEqual(parseTagsAndNote("great layout #poster #สีส้ม note"), { tags: ["poster", "สีส้ม"], note: "great layout note" });
+  });
+});
+
+describe("extension package", () => {
+  const dir = new URL("../../vault-extension/", import.meta.url);
+  const syntax = (file, module) => {
+    const src = readFileSync(new URL(file, dir), "utf8");
+    const r = spawnSync(process.execPath, module ? ["--input-type=module", "--check"] : ["--check", "-"], { input: src, encoding: "utf8" });
+    // `node --check -` is not supported for stdin on every version; fall back to --input-type=commonjs
+    if (!module && r.status !== 0) return spawnSync(process.execPath, ["--input-type=commonjs", "--check"], { input: src, encoding: "utf8" });
+    return r;
+  };
+  it("background, popup and the lib files are valid ES modules; content scripts parse", () => {
+    for (const f of ["background.js", "popup.js", "lib/keep.js", "lib/queue.js", "lib/keep-all.js", "lib/credit.js"]) assert.equal(syntax(f, true).status, 0, f);
+    for (const f of ["content.js", "content-keep.js"]) assert.equal(syntax(f, false).status, 0, f);
+  });
+  it("manifest: no tabs permission, module worker, content script only on Vault origins, optional all-sites", () => {
+    const m = JSON.parse(readFileSync(new URL("manifest.json", dir), "utf8"));
+    assert.ok(!m.permissions.includes("tabs"));
+    assert.equal(m.background.type, "module");
+    assert.ok(m.content_scripts.every(c => c.matches.every(x => /aplus-vault|localhost|127\.0\.0\.1/.test(x))));
+    assert.deepEqual(m.optional_host_permissions.sort(), ["http://*/*", "https://*/*"]);
+    assert.ok(m.web_accessible_resources[0].resources.includes("lib/keep-all.js"));
+    assert.ok(m.commands["quick-keep-page"]);
+  });
+  it("PRIVACY.md lists exactly the manifest permissions", () => {
+    const m = JSON.parse(readFileSync(new URL("manifest.json", dir), "utf8"));
+    const privacy = readFileSync(new URL("PRIVACY.md", dir), "utf8");
+    for (const p of m.permissions) assert.ok(privacy.includes("`" + p + "`"), p);
+    assert.ok(/does not request the `tabs` permission/.test(privacy));
   });
 });

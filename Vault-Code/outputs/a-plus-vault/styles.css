@@ -6127,3 +6127,6 @@ img.img-broken{visibility:hidden}
 .trash-list li{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
 .trash-list .trash-title{grid-column:1/-1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .trash-list small{color:var(--muted)}
+
+.note-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.note-chips .viewer-picked{min-height:32px;padding:0 10px 0 8px}

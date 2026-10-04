@@ -1,3 +1,7 @@
+import { chunk, buildBatchItems, decideKeep, pickCollection, summarizeBatches } from "./lib/keep.js";
+import { KEEP_ALL_MAX } from "./lib/keep-all.js";
+import { isRetryable, prepareForQueue, queueAdd, queueAfterFailure, queueDue, queueRemove, queueSummary } from "./lib/queue.js";
+
 const DEFAULT_API_BASE = "https://aplus-vault.vercel.app";
 const ALLOWED_API_BASES = [
   "https://aplus-vault.vercel.app",
@@ -10,6 +14,13 @@ const RECENT_LIMIT = 10;
 const MAX_COLLECTIONS = 200;
 const MAX_UPLOAD_DATA_URL = 28 * 1024 * 1024;
 const PRIVILEGED_MESSAGES = new Set([
+  "VAULT_KEEP_ALL_START",
+  "VAULT_KEEP_THIS_PAGE",
+  "VAULT_KEEP_PING_ACTIVE",
+  "VAULT_QUEUE_RETRY",
+  "VAULT_QUEUE_REMOVE",
+  "VAULT_DISCONNECT",
+  "VAULT_UNDO_LAST",
   "VAULT_SAVE_CURRENT_PAGE",
   "VAULT_START_SNAPSHOT_ACTIVE",
   "VAULT_UPLOAD_FILE_DATA",
@@ -45,12 +56,14 @@ chrome.runtime.onInstalled.addListener(async details => {
     ["keep-link", "link", "+ Keep in Vault"],
     ["keep-selection", "selection", "+ Keep in Vault"],
     ["keep-page", "page", "+ Keep in Vault"],
+    ["keep-all", "page", "+ Keep all images on page"],
     ["snapshot-to-vault", "page", "[  ] Snapshot to Vault"]
   ].forEach(([id, context, title]) => {
     chrome.contextMenus.create({ id, title, contexts: [context] });
   });
 
   const { stayOnPageAfterSave } = await chrome.storage.local.get(["stayOnPageAfterSave"]);
+  chrome.alarms.create("vault-queue", { delayInMinutes: 1, periodInMinutes: 5 });
   if (typeof stayOnPageAfterSave !== "boolean") {
     await chrome.storage.local.set({ stayOnPageAfterSave: DEFAULT_STAY_ON_PAGE });
   }
@@ -62,9 +75,33 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     return;
   }
 
+  if (info.menuItemId === "keep-all") {
+    try {
+      await ensureKeepScript(tab.id);
+      await chrome.tabs.sendMessage(tab.id, { type: "VAULT_KEEP_ALL_OPEN" });
+    } catch (_) {
+      await setStatus("error", "This page cannot be scanned for images.");
+    }
+    return;
+  }
+
   const capture = await buildSmartCapturePayload(info, tab);
+  const { quickKeep: quickKeepOn } = await chrome.storage.local.get(["quickKeep"]);
+  if (decideKeep({ quickKeep: quickKeepOn === true, hasTarget: Boolean(capture?.sourceUrl || capture?.assetUrl || capture?.title) }) === "save-now") {
+    await quickKeep(capture, tab);
+    return;
+  }
   await setPendingCapture(capture);
   await openCapturePopup();
+});
+
+
+chrome.commands?.onCommand.addListener(async command => {
+  if (command !== "quick-keep-page") return;
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab) return;
+  const payload = await buildSmartCapturePayload({ menuItemId: "keep-page", pageUrl: tab.url }, tab);
+  await quickKeep(payload, tab);
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -76,6 +113,95 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (PRIVILEGED_MESSAGES.has(message?.type) && !isExtensionPage(sender)) {
       sendResponse({ ok: false, error: "Not allowed from web pages." });
+      return;
+    }
+
+    if (message?.type === "VAULT_KEEP_ALL_SAVE") {
+      sendResponse(await keepAllSave(message, sender.tab));
+      return;
+    }
+
+    if (message?.type === "VAULT_KEEP_IMAGE") {
+      const { hoverKeep } = await chrome.storage.local.get(["hoverKeep"]);
+      if (hoverKeep !== true || !sender.tab) { sendResponse({ ok: false }); return; }
+      const payload = await buildSmartCapturePayload({ menuItemId: "keep-image", srcUrl: String(message.url || ""), pageUrl: String(message.pageUrl || "") }, sender.tab);
+      const result = await quickKeep(payload, sender.tab);
+      sendResponse({ ok: Boolean(result), objectId: result?.objectId || null });
+      return;
+    }
+
+    if (message?.type === "VAULT_UNDO") {
+      sendResponse({ ok: await undoCapture(String(message.objectId || "")) });
+      return;
+    }
+
+    if (message?.type === "VAULT_UNDO_MANY") {
+      const ids = (Array.isArray(message.ids) ? message.ids : []).slice(0, 400);
+      let ok = true;
+      for (const id of ids) ok = (await undoCapture(String(id))) && ok;
+      sendResponse({ ok });
+      return;
+    }
+
+    if (message?.type === "VAULT_UNDO_LAST") {
+      const { lastQuickKeep } = await chrome.storage.local.get(["lastQuickKeep"]);
+      sendResponse({ ok: lastQuickKeep ? await undoCapture(lastQuickKeep.objectId) : false });
+      return;
+    }
+
+    if (message?.type === "VAULT_KEEP_PING_ACTIVE") {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id && isCaptureableUrl(tab.url)) { try { await ensureKeepScript(tab.id); } catch (_) {} }
+      sendResponse({ ok: true });
+      return;
+    }
+
+    if (message?.type === "VAULT_KEEP_THIS_PAGE") {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const payload = await buildSmartCapturePayload({ menuItemId: "keep-page", pageUrl: tab?.url }, tab);
+      const { quickKeep: quickKeepOn } = await chrome.storage.local.get(["quickKeep"]);
+      if (decideKeep({ quickKeep: quickKeepOn === true }) === "save-now") {
+        const result = await quickKeep(payload, tab);
+        const { lastQuickKeep } = await chrome.storage.local.get(["lastQuickKeep"]);
+        const { lastVaultStatus } = await chrome.storage.local.get(["lastVaultStatus"]);
+        sendResponse({ mode: "quick", ok: Boolean(result), last: lastQuickKeep || null, error: result ? null : lastVaultStatus?.message || "Couldn't save this page." });
+        return;
+      }
+      await attachCredit(payload, tab);
+      await setPendingCapture(payload);
+      sendResponse({ mode: "panel", ok: true });
+      return;
+    }
+
+    if (message?.type === "VAULT_KEEP_ALL_START") {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      try {
+        await ensureKeepScript(tab.id);
+        await chrome.tabs.sendMessage(tab.id, { type: "VAULT_KEEP_ALL_OPEN" });
+        sendResponse({ ok: true });
+      } catch (_) {
+        sendResponse({ ok: false, error: "This page cannot be scanned for images." });
+      }
+      return;
+    }
+
+    if (message?.type === "VAULT_QUEUE_RETRY") {
+      await processQueue({ force: true });
+      const { vaultQueue = [] } = await chrome.storage.local.get(["vaultQueue"]);
+      sendResponse({ ok: true, remaining: vaultQueue.length });
+      return;
+    }
+
+    if (message?.type === "VAULT_QUEUE_REMOVE") {
+      const { vaultQueue = [] } = await chrome.storage.local.get(["vaultQueue"]);
+      await chrome.storage.local.set({ vaultQueue: queueRemove(vaultQueue, String(message.id || "")) });
+      sendResponse({ ok: true });
+      return;
+    }
+
+    if (message?.type === "VAULT_DISCONNECT") {
+      await chrome.storage.local.remove(["vaultToken", "vaultPairedAt"]);
+      sendResponse({ ok: true });
       return;
     }
 
@@ -187,6 +313,161 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
+
+// ---------------------------------------------------------------- Phase 11: quick keep, undo, offline queue, Keep All
+const KEEP_ALL_BATCH = 20;
+
+async function recordKeptKeys(keys) {
+  const { keptImageKeys = [] } = await chrome.storage.local.get(["keptImageKeys"]);
+  const next = Array.from(new Set([...(keys || []), ...keptImageKeys])).slice(0, 1500);
+  await chrome.storage.local.set({ keptImageKeys: next });
+}
+
+async function lastCollection() {
+  const s = await chrome.storage.local.get(["lastCollectionId", "vaultCollections"]);
+  const id = pickCollection(s.lastCollectionId, s.vaultCollections);
+  const name = id === "all" ? "My Vault" : (s.vaultCollections || []).find(c => c.id === id)?.name || "My Vault";
+  return { id, name };
+}
+
+async function attachCredit(payload, tab) {
+  if (!tab?.id || !isCaptureableUrl(tab.url)) return payload;
+  try {
+    await ensureKeepScript(tab.id);
+    const res = await chrome.tabs.sendMessage(tab.id, { type: "VAULT_GET_CREDIT", imageUrl: payload.assetUrl || payload.previewUrl || "" });
+    if (res?.credit) payload.captureContext = Object.assign({}, payload.captureContext || {}, { credit: res.credit });
+  } catch (_) {}
+  return payload;
+}
+
+async function ensureKeepScript(tabId) {
+  try {
+    await chrome.tabs.sendMessage(tabId, { type: "VAULT_KEEP_PING" });
+  } catch (_) {
+    await chrome.scripting.executeScript({ target: { tabId }, files: ["content-keep.js"] });
+  }
+}
+
+/** Quick keep: save into the last-used collection right away, then show the compact result with Undo. */
+async function quickKeep(payload, tab) {
+  const col = await lastCollection();
+  payload.collectionId = col.id;
+  payload.captureContext = Object.assign({}, payload.captureContext || {}, { collectionName: col.name });
+  await attachCredit(payload, tab);
+  const result = await saveCapture(payload, { tabId: tab?.id, silent: true });
+  if (result && tab?.id) {
+    await chrome.storage.local.set({ lastQuickKeep: { objectId: result.objectId, title: result.title, previewUrl: result.previewUrl, collectionName: col.name, at: Date.now(), payload } });
+    try {
+      await ensureKeepScript(tab.id);
+      await chrome.tabs.sendMessage(tab.id, { type: "VAULT_TOAST_UNDO", message: `Kept in ${col.name}`, objectId: result.objectId && !result.handoff && !result.queued ? result.objectId : null });
+    } catch (_) {}
+  }
+  return result;
+}
+
+/** Undo = delete by object id (owner only on the server). Only ids this extension just kept can be undone from a page. */
+async function undoCapture(objectId) {
+  const { vaultToken, apiBase } = await getSettings();
+  const { recentCaptures = [], lastQuickKeep } = await chrome.storage.local.get(["recentCaptures", "lastQuickKeep"]);
+  const known = recentCaptures.some(r => r.objectId === objectId) || lastQuickKeep?.objectId === objectId || (await keptBatchIds()).includes(objectId);
+  if (!vaultToken || !known || !/^[a-z0-9]{6,64}$/i.test(String(objectId || ""))) return false;
+  try {
+    const res = await fetchWithTimeout(`${apiBase}/api/vault/captures/${encodeURIComponent(objectId)}`, { method: "DELETE", headers: { Authorization: `Bearer ${vaultToken}` } });
+    if (!res.ok && res.status !== 404) return false;
+    await chrome.storage.local.set({ recentCaptures: recentCaptures.filter(r => r.objectId !== objectId) });
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+async function keptBatchIds() {
+  const { keptBatchIds = [] } = await chrome.storage.local.get(["keptBatchIds"]);
+  return keptBatchIds;
+}
+
+// ---- offline queue
+async function enqueueCapture(payload, status) {
+  const prep = prepareForQueue(payload);
+  if (!prep.ok) return { queued: false, reason: prep.reason };
+  const { vaultQueue = [] } = await chrome.storage.local.get(["vaultQueue"]);
+  const { queue, added, id, reason } = queueAdd(vaultQueue, prep.payload);
+  await chrome.storage.local.set({ vaultQueue: queue });
+  chrome.alarms.create("vault-queue", { delayInMinutes: 0.5, periodInMinutes: 1 });
+  if (added) await setStatus("pending", queueSummary(queue));
+  return { queued: added, id, reason: reason || (added ? "" : "duplicate") };
+}
+
+let processingQueue = false;
+async function processQueue({ force = false } = {}) {
+  if (processingQueue) return;
+  processingQueue = true;
+  try {
+    const { vaultToken, apiBase } = await getSettings();
+    if (!vaultToken) return;
+    let { vaultQueue = [] } = await chrome.storage.local.get(["vaultQueue"]);
+    const due = force ? vaultQueue : queueDue(vaultQueue);
+    for (const entry of due) {
+      try {
+        const res = await fetchWithTimeout(`${apiBase}/api/vault/capture`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${vaultToken}` }, body: JSON.stringify(entry.payload) });
+        if (res.ok) {
+          const data = await res.json();
+          await handleSuccessfulSave(data, entry.payload, apiBase, true);
+          vaultQueue = queueRemove(vaultQueue, entry.id);
+        } else {
+          vaultQueue = queueAfterFailure(vaultQueue, entry.id, res.status);
+        }
+      } catch (_) {
+        vaultQueue = queueAfterFailure(vaultQueue, entry.id, 0);
+      }
+    }
+    await chrome.storage.local.set({ vaultQueue });
+    if (!vaultQueue.length) { chrome.alarms.clear("vault-queue"); await setBadge("", "#747a80"); }
+  } finally {
+    processingQueue = false;
+  }
+}
+
+chrome.alarms.onAlarm.addListener(alarm => { if (alarm.name === "vault-queue") processQueue(); });
+processQueue();
+
+// ---- Keep All (batch)
+async function ensureCollectionOnServer(name) {
+  const { vaultToken, apiBase } = await getSettings();
+  const id = `col-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  try {
+    await fetchWithTimeout(`${apiBase}/api/vault/collections`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${vaultToken}` }, body: JSON.stringify({ id, name }) });
+  } catch (_) {}
+  await mergeVaultCollections([{ id, name }]);
+  return id;
+}
+
+async function keepAllSave(message, tab) {
+  const { vaultToken, apiBase } = await getSettings();
+  if (!vaultToken) return { ok: false, error: "Not connected yet. Open A+ Vault and log in once." };
+  const picked = (Array.isArray(message.items) ? message.items : []).slice(0, KEEP_ALL_MAX);
+  if (!picked.length) return { ok: false, error: "Nothing selected." };
+  const name = String(message.collectionName || "Kept images").slice(0, 60);
+  const collectionId = await ensureCollectionOnServer(name);
+  const items = buildBatchItems(picked, { pageUrl: String(message.pageUrl || ""), title: String(message.title || ""), credit: message.credit || null });
+  const responses = [];
+  for (const group of chunk(items, KEEP_ALL_BATCH)) {
+    try {
+      const res = await fetchWithTimeout(`${apiBase}/api/vault/capture-batch`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${vaultToken}` }, body: JSON.stringify({ items: group, collectionId, collectionName: name, skipDuplicates: true }) }, 30000);
+      if (!res.ok) throw httpError(res);
+      responses.push(await res.json());
+    } catch (error) {
+      responses.push({ kept: 0, duplicates: 0, failed: group.length, results: [] });
+      if (isRetryable(error?.status)) break;
+    }
+  }
+  const summary = summarizeBatches(responses);
+  await recordKeptKeys(picked.map(p => p.key).filter(Boolean));
+  const { keptBatchIds = [] } = await chrome.storage.local.get(["keptBatchIds"]);
+  await chrome.storage.local.set({ keptBatchIds: [...summary.ids, ...keptBatchIds].slice(0, 400), lastCollectionId: collectionId });
+  await setStatus(summary.kept ? "success" : "error", summary.text);
+  return { ok: summary.kept > 0 || summary.duplicates > 0, summary, openUrl: `${apiBase}/vault`, collectionId, error: summary.kept || summary.duplicates ? null : "Nothing could be saved." };
+}
+
 async function buildSmartCapturePayload(info, tab) {
   const fallbackPayload = buildCapturePayload(info, tab);
   if (info.menuItemId === "keep-selection") return fallbackPayload;
@@ -292,7 +573,8 @@ function candidateToPayload(candidate, fallbackPayload, domContext) {
       linkUrl: candidate.captureContext?.linkUrl || (kind === "link" ? sourceUrl : fallbackPayload.captureContext?.linkUrl || null),
       ogImage: candidate.captureContext?.ogImage || domContext?.pageMeta?.ogImage || null,
       twitterImage: candidate.captureContext?.twitterImage || domContext?.pageMeta?.twitterImage || null,
-      canonicalUrl: candidate.captureContext?.canonicalUrl || domContext?.pageMeta?.sourceUrl || null
+      canonicalUrl: candidate.captureContext?.canonicalUrl || domContext?.pageMeta?.sourceUrl || null,
+      credit: candidate.captureContext?.credit || domContext?.credit || null
     }
   );
 
@@ -605,9 +887,18 @@ async function saveCapture(payload, options = {}) {
     if (!response.ok) throw httpError(response);
     const data = await response.json();
     const result = await handleSuccessfulSave(data, payload, apiBase, stayOnPageAfterSave);
-    await toastTab(options.tabId, "Saved to My Vault", "success");
+    if (!options.silent) await toastTab(options.tabId, "Saved to My Vault", "success");
     return result;
   } catch (error) {
+    if (isRetryable(error?.status) && !canUseWebHandoff(apiBase, payload, error)) {
+      const queued = await enqueueCapture(payload, error?.status);
+      if (queued.queued) {
+        const message = "Waiting to send. We will retry when you are back online.";
+        await setStatus("pending", message);
+        await toastTab(options.tabId, message, "default");
+        return { objectId: queued.id, queued: true, type: payload.type || "page", title: payload.title || fallbackTitle(payload), previewUrl: null, objectUrl: `${apiBase}/vault`, createdAt: new Date().toISOString(), captureMethod: payload.captureContext?.method || "extension_capture" };
+      }
+    }
     if (canUseWebHandoff(apiBase, payload, error)) {
       try {
         const result = await saveViaWebHandoff(payload, apiBase, stayOnPageAfterSave, options);

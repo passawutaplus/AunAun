@@ -59,3 +59,14 @@
     addEventListener("scroll", onScroll, { passive: true });
     addEventListener("resize", onScroll);
 })();
+
+/* Browser-aware install hint: same package, different extensions page. */
+(() => {
+  const ua = navigator.userAgent;
+  const brave = typeof navigator.brave !== "undefined";
+  const name = /Edg\//.test(ua) ? ["Edge", "edge://extensions"] : /OPR\//.test(ua) ? ["Opera", "opera://extensions"] : brave ? ["Brave", "brave://extensions"] : ["Chrome", "chrome://extensions"];
+  document.querySelectorAll(".step h3").forEach(h => { if (/Add it to Chrome/i.test(h.textContent)) h.textContent = `Add it to ${name[0]}`; });
+  document.querySelectorAll("[data-copy]").forEach(b => {
+    if (b.dataset.copy === "chrome://extensions") { b.dataset.copy = name[1]; b.textContent = `Copy ${name[1]}`; }
+  });
+})();
