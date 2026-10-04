@@ -25,7 +25,7 @@ const fakeRes = () => {
 };
 const fakeReq = (url, { method = "GET", body, query } = {}) => {
   const req = Readable.from(body === undefined ? [] : [Buffer.from(body)]);
-  return Object.assign(req, { method, url, query, headers: {}, socket: { remoteAddress: "10.0.0.9" } });
+  return Object.assign(req, { method, url, query, headers: { "user-agent": "Mozilla/5.0 Chrome" }, socket: { remoteAddress: "10.0.0.9" } });
 };
 
 describe("search API", () => {

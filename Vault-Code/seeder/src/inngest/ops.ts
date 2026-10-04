@@ -12,7 +12,13 @@ export const opsDailyReport = inngest.createFunction(
     const ops = new OpsRepo();
     // The report covers the day that just ended (yesterday in Bangkok).
     const day = await step.run("pick-day", () => new Date(Date.now() + 7 * 3600_000 - 86400000).toISOString().slice(0, 10));
-    const stats = await step.run("gather", () => ops.gatherDailyStats(day));
+    const stats = await step.run("gather", async () => {
+      const s = await ops.gatherDailyStats(day);
+      // Mondays (Bangkok): add the weekly learning digest. Needs LEARN_CAPTURE and the kill switch off; it is plain SQL, no AI.
+      const monday = new Date(`${day}T12:00:00Z`).getUTCDay() === 0; // the report covers the day that just ended, so a Sunday report is sent Monday
+      if (monday && !s.killSwitch) s.learning = (await ops.learningDigest(7)) ?? undefined;
+      return s;
+    });
     const alerts = alertsFor(stats);
     const text = formatReportText(stats, alerts);
     const urgent = alerts.some((a) => a.severity === "urgent");

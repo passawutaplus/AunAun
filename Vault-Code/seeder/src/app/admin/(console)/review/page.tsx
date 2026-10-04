@@ -79,7 +79,10 @@ export default async function ReviewPage() {
           <tbody>
             {unknown.map((u) => (
               <tr key={`${u.term}-${u.lang}`}>
-                <td>{u.term}</td>
+                <td>
+                  {u.term}
+                  {u.example_queries && u.example_queries.length > 0 && <div className="muted small">เช่น: {u.example_queries.join(" | ")}</div>}
+                </td>
                 <td>{u.lang}</td>
                 <td>{u.count}</td>
                 <td className="small">{fmtDate(u.last_seen)}</td>
@@ -87,8 +90,8 @@ export default async function ReviewPage() {
                   <form action={proposeSynonym} className="inline">
                     <input type="hidden" name="term" value={u.term} />
                     <input type="hidden" name="lang" value={u.lang} />
-                    <input name="term_id" placeholder="id ของคำ" className="narrow" aria-label={`id ของคำสำหรับ ${u.term}`} />
-                    <button type="submit" className="small">เสนอ</button>
+                    <input name="term_id" placeholder="id ของคำ" defaultValue={u.suggested_term_id ?? ""} className="narrow" aria-label={`id ของคำสำหรับ ${u.term}`} />
+                    <button type="submit" className="small">{u.suggested_term_id ? `ตั้งเป็น alias ของ ${u.suggested_term_id}` : "เสนอ"}</button>
                   </form>
                   <form action={ignoreTerm} className="inline">
                     <input type="hidden" name="term" value={u.term} />

@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { bangkokDayStartIso, capLimits } from "../seeder/caps";
 import { publicMediaUrl, serviceClient, SupabaseSeederRepo } from "../seeder/repo";
 import { visionPricing } from "../seeder/config";
-import { failingSources, healthDecision, HEALTH_HIDE_AFTER, type DailyStats } from "./logic";
+import { failingSources, healthDecision, HEALTH_HIDE_AFTER, type DailyStats, type LearningDigest } from "./logic";
 
 type Row = Record<string, unknown>;
 
@@ -98,8 +98,8 @@ export class OpsRepo {
     if (error) throw new Error(`rejectReview: ${error.message}`);
   }
 
-  async topUnknown(limit = 20): Promise<{ term: string; lang: string; count: number; last_seen: string }[]> {
-    const { data, error } = await this.db.from("unknown_terms").select("term, lang, count, last_seen").eq("status", "new").order("count", { ascending: false }).limit(limit);
+  async topUnknown(limit = 20): Promise<{ term: string; lang: string; count: number; last_seen: string; example_queries?: string[]; suggested_term_id?: string | null }[]> {
+    const { data, error } = await this.db.from("unknown_terms").select("term, lang, count, last_seen, example_queries, suggested_term_id").eq("status", "new").order("count", { ascending: false }).limit(limit);
     if (error) throw new Error(`topUnknown: ${error.message}`);
     return (data ?? []) as never;
   }
@@ -193,6 +193,12 @@ export class OpsRepo {
       monthlyBudgetUsd: capLimits(process.env.SEEDER_BUDGET_USD).monthlyAiUsd, capsReached, killSwitch: flags.killSwitch,
       failingSources: failingSources(enabled, lastPublished), topUnknownTerms, dsarDue, reviewQueue, openReports: openReports ?? 0, userAiUsage,
     };
+  }
+
+  /** Plain-SQL weekly digest (phase 10). Null when the function is missing or capture is off. */
+  async learningDigest(days = 7): Promise<LearningDigest | null> {
+    const { data, error } = await this.db.rpc("learning_digest", { p_days: days });
+    return error ? null : (data as LearningDigest);
   }
 
   async saveReport(day: string, body: unknown, emailed: boolean): Promise<void> {

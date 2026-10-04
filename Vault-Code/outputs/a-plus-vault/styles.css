@@ -6137,3 +6137,14 @@ img.img-broken{visibility:hidden}
 .consent-toggle input{margin-top:3px;flex:0 0 auto}
 .consent-toggle small{display:block;color:var(--muted);font-size:12.5px}
 .app-dialog-note{margin:0 0 10px;color:var(--muted);font-size:13px;line-height:1.5}
+/* viewer mobile fix: image fills the top, the sheet sits under it */
+@media(max-width:640px){
+  .discover-detail-backdrop{padding:0;place-items:start center;overflow:auto}
+  .discover-detail-frame{width:100%}
+  .discover-detail{display:block;min-height:100vh;max-height:none;border-radius:0;padding:56px 0 340px;background:transparent;box-shadow:none}
+  .discover-detail-media{aspect-ratio:auto!important;height:calc(100vh - 400px);min-height:220px;background-size:cover}
+  .discover-detail-media img{width:100%;height:100%;object-fit:contain}
+  .discover-detail-close{position:fixed;top:12px;right:12px;z-index:8}
+  .viewer-trail{top:14px;left:14px;position:fixed}
+  .discover-detail-nav{display:none}
+}

@@ -192,6 +192,51 @@ export async function fetchDiscoverPool(config) {
   return restGet(config, discoverQueryString({ limit: SCAN_LIMIT }));
 }
 
+// ---------------------------------------------------------------- phase 10: anonymous learning signals (Discover only)
+const SID_KEY = "aplus-vault-sid";
+let lastSearchEventId = null;
+
+/** Random per-TAB id in sessionStorage: not a cookie, not the user id, rotates with the tab. */
+export function discoverSessionId() {
+  try {
+    let sid = sessionStorage.getItem(SID_KEY);
+    if (!sid) {
+      const alphabet = "abcdefghijkmnpqrstuvwxyz23456789";
+      const bytes = crypto.getRandomValues(new Uint8Array(16));
+      sid = "s-" + Array.from(bytes, b => alphabet[b % alphabet.length]).join("");
+      sessionStorage.setItem(SID_KEY, sid);
+    }
+    return sid;
+  } catch {
+    return null;
+  }
+}
+
+const optedOutOfSignals = () => navigator.doNotTrack === "1" || navigator.globalPrivacyControl === true;
+
+export async function sendDiscoverSignal(payload, { fetchImpl = globalThis.fetch } = {}) {
+  try {
+    if (optedOutOfSignals() || !fetchImpl) return null;
+    const sid = discoverSessionId();
+    if (!sid) return null;
+    const res = await fetchImpl("/api/signal", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sid, ...payload }), keepalive: true });
+    return res.status === 200 ? await res.json().catch(() => null) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Open / save of a Discover image, tied to the search that showed it (position = index in the results). */
+export function signalItem(type, itemId, position = null, tagIds = null) {
+  return sendDiscoverSignal({ type, itemId, tagIds, position, searchEventId: lastSearchEventId });
+}
+
+async function reportSearch(q, rows, body) {
+  const res = await sendDiscoverSignal({ type: "search", q, count: body.total ?? rows.length, relaxed: body.relaxed === true });
+  lastSearchEventId = res && Number.isInteger(res.id) ? res.id : null;
+  sendDiscoverSignal({ type: "views", ids: rows.slice(0, 30).map(r => r.id), searchEventId: lastSearchEventId });
+}
+
 /** Engine search (phase 06): sentence parser + ranking on the server. Null on any problem so the caller falls back to keywords. */
 export async function fetchEngineSearch(q, { fetchImpl = globalThis.fetch } = {}) {
   try {
@@ -199,6 +244,7 @@ export async function fetchEngineSearch(q, { fetchImpl = globalThis.fetch } = {}
     if (!res.ok) return null;
     const body = await res.json();
     if (!body || !body.success || !Array.isArray(body.items)) return null;
+    reportSearch(String(q), body.items, body);
     return { rows: body.items, chips: Array.isArray(body.chips) ? body.chips : [] };
   } catch {
     return null;

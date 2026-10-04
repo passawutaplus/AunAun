@@ -58,6 +58,19 @@ export async function fetchFeedPool({ category = "", limit = 600, fetchImpl } = 
   return get(params.toString(), fetchImpl);
 }
 
+/** Per-item behaviour counts (phase 10). Empty map on any problem, so ranking silently falls back to phase-06 results. */
+export async function fetchBehavior({ fetchImpl = fetch } = {}) {
+  try {
+    const key = serviceRoleKey();
+    if (!key) return new Map();
+    const res = await fetchImpl(`${supabaseUrl()}/rest/v1/rpc/item_behavior`, { method: "POST", headers: { apikey: key, authorization: `Bearer ${key}`, "content-type": "application/json" }, body: JSON.stringify({ p_days: 180 }) });
+    const rows = res.ok ? await res.json() : [];
+    return new Map(rows.map(r => [r.item_id, { impressions: r.impressions, saves: r.saves, opens: r.opens, last_at: r.last_at }]));
+  } catch {
+    return new Map();
+  }
+}
+
 /** Response shape: never leaks ranking-only fields. */
 export function publicItem(item) {
   const { quality_score, tags_json, ...rest } = item;

@@ -3,7 +3,8 @@ import { engineConfig } from "../lib/engine/config.mjs";
 import { defaultTaxonomy } from "../lib/engine/enrich.mjs";
 import { parseQuery } from "../lib/engine/parser.mjs";
 import { rankItems } from "../lib/engine/ranking.mjs";
-import { fetchCandidates, publicItem, rpcQuiet } from "../lib/engine/discover-read.mjs";
+import { fetchCandidates, fetchBehavior, publicItem, rpcQuiet } from "../lib/engine/discover-read.mjs";
+import { captureQuery, suggestTerm } from "../lib/engine/learning.mjs";
 
 const MAX_QUERY = 600;
 
@@ -27,14 +28,19 @@ export default createHandler({
       return { success: true, chips, context: parsed.context, items: [], total: 0, nextOffset: null };
     }
     const candidates = await fetchCandidates(parsed);
-    const ranked = rankItems(parsed, candidates, tax, engineConfig, { limit, offset });
-    if (engineConfig.LEARN_CAPTURE && parsed.unknown.length && offset === 0) await rpcQuiet("log_unknown_terms", { p_terms: parsed.unknown.slice(0, 8) });
+    const behavior = engineConfig.LEARN_RANK_TUNING ? await fetchBehavior() : null;
+    const ranked = rankItems(parsed, candidates, tax, engineConfig, { limit, offset, behavior });
+    if (engineConfig.LEARN_CAPTURE && parsed.unknown.length && offset === 0 && captureQuery(q) !== null) {
+      const terms = parsed.unknown.slice(0, 8).map(u => ({ ...u, example: q.slice(0, 120), suggested: suggestTerm(u.term, tax)?.id || null }));
+      await rpcQuiet("log_unknown_terms", { p_terms: terms });
+    }
     res.setHeader("Cache-Control", "public, max-age=30, s-maxage=60, stale-while-revalidate=300");
     return {
       success: true,
       chips,
       context: parsed.context,
       total: ranked.total,
+      relaxed: ranked.relaxed > 0,
       nextOffset: ranked.nextOffset,
       items: ranked.items.map(r => ({ ...publicItem(r.item), score: r.score, matchedTags: r.matchedTags, missingTags: r.missingTags })),
     };

@@ -25,6 +25,7 @@ Categories: **N** = strictly necessary / user-requested (no consent), **P** = pr
 | `aplus-vault-resurface-hidden` | localStorage | us | "From your past" hidden for today | P | 1 day |
 | `aplus-vault-opened` | localStorage | us | which items you opened (local only; "From your past") | N | rolling 500 items |
 | `aplus-vault-discover-seen` | localStorage | us | Discover images you already saw (local only; shows new ones first) | P | 14 days |
+| `aplus-vault-sid` | sessionStorage | us | random per-tab id for anonymous Discover search statistics (never in a cookie, never the user id; dropped when Do-Not-Track / Global Privacy Control is on) | N | tab session |
 | `aplus-vault-keep-target` | localStorage | us | collection chosen for "+ Keep" | P | until changed |
 | `aplus-vault-pending-action` | sessionStorage | us | resumes a Keep after login | N | tab session |
 | `aplus-vault-shared` | sessionStorage | us | link shared into the app, waiting for login | N | tab session |
@@ -32,6 +33,5 @@ Categories: **N** = strictly necessary / user-requested (no consent), **P** = pr
 | `aplus_consent_v1` | localStorage | us | your privacy choices | N | until changed |
 | Cache Storage (service worker) | browser cache | us | offline page + app icons only | N | until a new version |
 | Extension `chrome.storage.local` | extension | us | token, settings, recent captures, retry queue, kept-image keys | N | until Disconnect / uninstall |
-| `search_events.session_id` (phase 10) | sessionStorage (planned) | us | random per tab, aggregate only, never in a cookie | N (if aggregate and unlinkable) | tab session |
 
 Third parties contacted by the page: **none for scripts, fonts or analytics.** Images of links you save load from the source site with `referrerpolicy="no-referrer"` (viewing them contacts that site). Supabase (data), Vercel (hosting) and the AI provider are processors, listed in `legal.html#subprocessors`.

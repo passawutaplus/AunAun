@@ -3,6 +3,7 @@
  * item = { id, tags_ids: [id], tags_json?: [{id,conf}], palette?: [{hex,pct}], quality_score?, tags?: [keywords], era? }
  */
 import { deltaE, hexToRgb, rgbToLab } from "./palette.js";
+import { applyBoost } from "./learning.js";
 
 const CROSS = new Set(["sty", "mat", "mood", "sub"]);
 const dom = (tax, id) => tax.termById.get(id)?.domain;
@@ -111,7 +112,7 @@ function runOnce(query, items, tax, cfg, include) {
  * Main entry. Precision-first: below MIN_SCORE is dropped even when the page is short. If fewer than MIN_RESULTS
  * remain, the lowest-weight constraint is dropped and the query re-run, silently (never required/exclude or the discipline).
  */
-export function rankItems(query, items, tax, cfg, { limit = 30, offset = 0 } = {}) {
+export function rankItems(query, items, tax, cfg, { limit = 30, offset = 0, behavior = null, now = Date.now() } = {}) {
   const pinned = query.include.some(t => t.required) || query.pinned.length > 0;
   let include = [...query.include];
   let scored = runOnce(query, items, tax, cfg, include);
@@ -122,6 +123,8 @@ export function rankItems(query, items, tax, cfg, { limit = 30, offset = 0 } = {
     include = include.filter(t => t !== drop);
     scored = runOnce(query, items, tax, cfg, include);
   }
+  // Bounded behaviour boost (phase 10, flag LEARN_RANK_TUNING): changes order only, never membership (MIN_SCORE, required, excluded were applied above).
+  if (behavior) scored = scored.map(e => ({ ...e, score: applyBoost(e.score, behavior.get(e.item.id), now) }));
   const ordered = pinned ? [...scored].sort((a, b) => b.score - a.score) : interleaveByCoverage(scored);
   const n = ordered.length;
   const withRel = ordered.map((e, i) => ({ ...e, rel: 0.5 * e.score + 0.5 * (1 - i / Math.max(1, n)) }));

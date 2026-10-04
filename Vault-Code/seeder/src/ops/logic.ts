@@ -36,6 +36,21 @@ export type DailyStats = {
   reviewQueue: number;
   openReports: number;
   userAiUsage?: { users: number; calls: number };
+  /** Weekly learning digest (phase 10), present on Mondays when LEARN_CAPTURE is on. */
+  learning?: LearningDigest;
+};
+
+export type LearningDigest = {
+  searches: number;
+  top_queries: { query_text: string; n: number }[];
+  zero_result_queries: { query_text: string; n: number }[];
+  relaxed_queries: { query_text: string; n: number }[];
+  reformulations: { first_query: string; then_query: string; n: number }[];
+  unknown_words: { lang: string; term: string; count: number }[];
+  sources: { source: string; views: number; saves: number; opens: number; reports: number }[];
+  saved_but_thin: { id: string; title: string; saves: number; tags: number }[];
+  relax_rate: number | null;
+  zero_rate: number | null;
 };
 
 export type Alert = { severity: "urgent" | "warn"; text: string };
@@ -69,6 +84,15 @@ export function formatReportText(s: DailyStats, alerts: Alert[]): string {
   ];
   if (s.failures.length) lines.push("", "งานที่พลาด:", ...s.failures.slice(0, 5).map(f => `- ${f.job}: ${f.error.slice(0, 100)}`));
   if (s.topUnknownTerms.length) lines.push("", "คำค้นที่ระบบยังไม่รู้จัก:", ...s.topUnknownTerms.slice(0, 8).map(t => `- ${t.term} (${t.lang}) x${t.count}`));
+  if (s.learning) {
+    const l = s.learning;
+    lines.push("", `สรุปการเรียนรู้รายสัปดาห์ (${l.searches} การค้นหา, ไม่ผูกกับตัวผู้ใช้):`);
+    if (l.top_queries.length) lines.push("คำค้นยอดนิยม: " + l.top_queries.slice(0, 5).map(q => `${q.query_text} x${q.n}`).join(" | "));
+    if (l.zero_result_queries.length) lines.push("ไม่เจอผลลัพธ์: " + l.zero_result_queries.slice(0, 5).map(q => `${q.query_text} x${q.n}`).join(" | "));
+    if (l.reformulations.length) lines.push("ค้นซ้ำใน 60 วินาที (น่าจะพลาด): " + l.reformulations.slice(0, 3).map(r => `${r.first_query} -> ${r.then_query}`).join(" | "));
+    if (l.sources.length) lines.push("แหล่ง (ดู/เซฟ/รายงาน): " + l.sources.map(x => `${x.source} ${x.views}/${x.saves}/${x.reports}`).join(" · "));
+    if (l.saved_but_thin.length) lines.push("เซฟบ่อยแต่แท็กน้อย: " + l.saved_but_thin.slice(0, 3).map(t => t.title).join(" | "));
+  }
   if (s.dsarDue.length) lines.push("", "คำขอข้อมูลส่วนบุคคลที่ใกล้ครบกำหนด:", ...s.dsarDue.slice(0, 5).map(d => `- ${d.id} ครบ ${d.due_at.slice(0, 10)}`));
   return lines.join("\n");
 }
