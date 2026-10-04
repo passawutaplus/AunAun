@@ -5,7 +5,7 @@
 - [x] 03 taxonomy-passport (2026-10-04) - migration vault_engine_passport APPLIED; 58 published rows marked legacy_published; discover.js allowlist extended
 - [x] 04 seeder-audit (2026-10-04) - caps + single kill switch + vision repair + SOURCES.md; owner to run: disable chndm/si (see SOURCES.md)
 - [x] 05 tagging+publish (2026-10-04) - lib/engine (palette, tags, publish, prompts, budget, enrich, golden); seeder cascade C1+C2; migration vault_engine_cascade APPLIED; T3 (private AI) NOT wired: needs phase 12 opt-in
-- [ ] 06 search
+- [x] 06 search (2026-10-04) - parser, ranking, similar, /api/search, /api/similar/[id], /api/signal, eval 20/20, own-vault #tag + Smart Collections, Discover chips; migration vault_engine_search APPLIED; NOT built: brief-mode UI/loading motion, similar button UI, OCR (flag only)
 - [ ] 07 image-viewer
 - [ ] 08 feed-digest
 - [ ] 09 ops

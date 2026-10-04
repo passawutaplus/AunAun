@@ -58,4 +58,11 @@ describe("taxonomy build + load", () => {
     assert.equal(layers["mood.hue"], "A");
     assert.equal(layers["sty.era"], "B");
   });
+
+  it("the browser data file matches the canonical taxonomy and config", () => {
+    const data = read("outputs/a-plus-vault/engine-data.json");
+    assert.equal(JSON.stringify(data.taxonomy), JSON.stringify(built), "run: node scripts/build-taxonomy.mjs");
+    assert.deepEqual(data.config, read("config/engine.json"));
+  });
 });
+

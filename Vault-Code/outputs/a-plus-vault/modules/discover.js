@@ -191,15 +191,37 @@ export async function fetchDiscoverPool(config) {
   return restGet(config, discoverQueryString({ limit: SCAN_LIMIT }));
 }
 
+/** Engine search (phase 06): sentence parser + ranking on the server. Null on any problem so the caller falls back to keywords. */
+export async function fetchEngineSearch(q, { fetchImpl = globalThis.fetch } = {}) {
+  try {
+    const res = await fetchImpl(`/api/search?q=${encodeURIComponent(String(q).slice(0, 600))}&limit=60`, { headers: { accept: "application/json" } });
+    if (!res.ok) return null;
+    const body = await res.json();
+    if (!body || !body.success || !Array.isArray(body.items)) return null;
+    return { rows: body.items, chips: Array.isArray(body.chips) ? body.chips : [] };
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchDiscoverPage(config, opts = {}) {
   if (!discoverEnabled(config)) throw new Error("Discover is not configured.");
+  if (opts.q && String(opts.q).trim().length >= 2 && !opts.similar && !opts.after) {
+    const eng = await fetchEngineSearch(opts.q);
+    if (eng && eng.rows.length) {
+      let rows = eng.rows;
+      if (opts.category && opts.category !== "all") rows = rows.filter(r => r.category === opts.category);
+      if (discoverHasClientFilters(opts)) rows = applyClientFilters(rows, opts);
+      return { rows, done: true, chips: eng.chips };
+    }
+  }
   if (discoverHasClientFilters(opts)) {
     const rows = await restGet(config, discoverQueryString(Object.assign({}, opts, { after: null, limit: SCAN_LIMIT })));
-    return { rows: applyClientFilters(rows, opts), done: true };
+    return { rows: applyClientFilters(rows, opts), done: true, chips: [] };
   }
   const limit = opts.limit || DISCOVER_PAGE_SIZE;
   const rows = await restGet(config, discoverQueryString(Object.assign({}, opts, { limit })));
-  return { rows, done: rows.length < limit };
+  return { rows, done: rows.length < limit, chips: [] };
 }
 
 export async function fetchDiscoverItem(config, id) {
@@ -398,6 +420,8 @@ export function discoverActiveFiltersMarkup(ds) {
   const chips = [];
   if (ds.similar) chips.push(chip("similar", `${ds.similar.thumb ? `<img src='${escA(ds.similar.thumb)}' alt=''>` : ""}<span>Similar to <strong>${esc(ds.similar.title || "image")}</strong></span>`, "similar search"));
   if (ds.q) chips.push(chip("q", `<span>“${esc(ds.q)}”</span>`, "search text"));
+  // Understanding chips: display-only, what the engine read from the sentence (no labels, no feedback buttons).
+  (ds.chips || []).forEach(c => chips.push(`<span class='discover-understood kind-${escA(c.kind)}'>${c.kind === "color" ? `<i style='background:${escA(c.label)}'></i>` : ""}${c.kind === "exclude" ? "<s>" : ""}${esc(c.label)}${c.kind === "exclude" ? "</s>" : ""}</span>`));
   if (ds.category && ds.category !== "all") chips.push(chip("category", `<span>${esc(categoryLabel(ds.category))}</span>`, "category"));
   (ds.facets || []).forEach((f, i) => chips.push(chip(`facet:${i}`, `<span>${esc(DISCOVER_FACET_KEYS[f.key] || f.key)}: <strong>${esc(f.value)}</strong></span>`, f.value)));
   (ds.colors || []).forEach((hex, i) => chips.push(chip(`color:${i}`, `<i style='background:${escA(hex)}'></i><span>${esc(hex)}</span>`, "color " + hex)));

@@ -14,5 +14,7 @@ if (errors.length) {
 mkdirSync(new URL("../taxonomy/", import.meta.url), { recursive: true });
 const json = JSON.stringify(taxonomy);
 writeFileSync(new URL("../taxonomy/taxonomy.json", import.meta.url), json);
+// Browser copy: taxonomy + engine constants in one file (lazy-loaded by modules/engine/client.js).
+writeFileSync(new URL("../outputs/a-plus-vault/engine-data.json", import.meta.url), JSON.stringify({ taxonomy, config: read("config/engine.json") }));
 console.log(`taxonomy ok: ${taxonomy.groups.length} groups, ${taxonomy.terms.length} terms, ${Object.keys(taxonomy.synonyms).length} synonyms, ${taxonomy.phrases.length} phrases`);
 console.log(`size: ${(json.length / 1024).toFixed(0)} KB raw, ${(gzipSync(json).length / 1024).toFixed(0)} KB gzip`);

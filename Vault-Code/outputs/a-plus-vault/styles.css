@@ -6045,3 +6045,11 @@ html.mb-present .mb-line-styles{display:none!important}
 .link-import-thumb[hidden]{display:none}
 img.img-broken{visibility:hidden}
 @media (prefers-reduced-motion:reduce){.link-import img{transition:none}}
+
+/* A+ Vault engine search chips + smart collection button */
+.discover-understood{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--panel);color:var(--ink);font-size:12.5px;line-height:1.4;box-shadow:inset 0 0 0 1px var(--line)}
+.discover-understood i{width:10px;height:10px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.discover-understood.kind-required{box-shadow:inset 0 0 0 1.5px var(--coral)}
+.discover-understood.kind-exclude{color:var(--muted)}
+.search-understood{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px}
+.smart-save{margin-top:8px;font-size:13px}

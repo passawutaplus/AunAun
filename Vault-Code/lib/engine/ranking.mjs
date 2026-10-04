@@ -1,2 +1,2 @@
 // Single source lives with the web app (the browser cannot import from lib/).
-export * from "../../outputs/a-plus-vault/modules/engine/palette.js";
+export * from "../../outputs/a-plus-vault/modules/engine/ranking.js";
