@@ -1,3 +1,4 @@
+import { capLimits } from "./caps";
 import engine from "../../../config/engine.json";
 
 // One source of truth: config/engine.json (repo root of Vault-Code).
@@ -52,8 +53,7 @@ export function visionPricing(): { inPerM: number; outPerM: number } {
   return { inPerM: num("SEEDER_PRICE_IN_PER_M", 1), outPerM: num("SEEDER_PRICE_OUT_PER_M", 5) };
 }
 
-/** Monthly budget shown on the admin page (USD). Display only, nothing is enforced. */
+/** Monthly AI budget (USD): enforced by caps.ts (config/engine.json SEEDER_MONTHLY_AI_USD, env SEEDER_BUDGET_USD overrides). */
 export function monthlyBudgetUsd(): number {
-  const v = Number.parseFloat(process.env.SEEDER_BUDGET_USD ?? "");
-  return Number.isFinite(v) && v > 0 ? v : 5;
+  return capLimits(process.env.SEEDER_BUDGET_USD).monthlyAiUsd;
 }

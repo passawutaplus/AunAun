@@ -1,6 +1,7 @@
+import { capLimits } from "@/seeder/caps";
 import { monthlyBudgetUsd } from "@/seeder/config";
 import { publicMediaUrl, SupabaseSeederRepo, type AdminItem, type AiSpend } from "@/seeder/repo";
-import { runNow, setItemVisibility, setPaused, updateTarget } from "./actions";
+import { runNow, setItemVisibility, setKillSwitch, setPaused, updateTarget } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -126,6 +127,7 @@ export default async function SeederAdminPage() {
       repo.recentItems("rejected", 12),
       repo.recentItems("hidden", 6),
       repo.aiSpend().catch(() => null),
+      repo.stopReason().catch(() => null),
     ]);
   } catch (e) {
     return (
@@ -139,7 +141,9 @@ export default async function SeederAdminPage() {
       </>
     );
   }
-  const [paused, progress, targets, rejects, published, rejected, hidden, spend] = data;
+  const [paused, progress, targets, rejects, published, rejected, hidden, spend, gate] = data;
+  const limits = capLimits(process.env.SEEDER_BUDGET_USD);
+  const killed = gate?.reason === "kill_switch";
 
   const totalPublished = progress.reduce((s, p) => s + p.published, 0);
   const totalTarget = progress.reduce((s, p) => s + p.target_count, 0);
@@ -189,6 +193,12 @@ export default async function SeederAdminPage() {
             {paused ? "Resume" : "Pause"}
           </button>
         </form>
+        <form action={setKillSwitch}>
+          <input type="hidden" name="kill" value={killed ? "false" : "true"} />
+          <button type="submit" className={killed ? "primary" : "danger"} title="Stops seeding, AI image analysis and email in one go">
+            {killed ? "Kill switch: ON (ปิดสวิตช์)" : "Kill switch"}
+          </button>
+        </form>
         <form action={runNow} className="inline">
           <select name="category" defaultValue="" disabled={paused}>
             <option value="">ทุกหมวดที่ยังไม่ถึงเป้า</option>
@@ -202,6 +212,14 @@ export default async function SeederAdminPage() {
             Run now
           </button>
         </form>
+      </section>
+
+      <section className="panel">
+        <h2>เพดานการทำงาน</h2>
+        <p className="muted">
+          {gate?.reason ? `หยุดเพราะ: ${gate.reason}` : "ยังทำงานได้"} · วันนี้ {gate?.usage.itemsToday ?? "?"}/{limits.maxItemsPerDay} รายการ ·
+          AI {gate?.usage.aiCallsToday ?? "?"}/{limits.maxAiCallsPerDay} ครั้ง · เดือนนี้ ${gate ? gate.usage.monthUsd.toFixed(2) : "?"}/${limits.monthlyAiUsd} · ต่อรอบสูงสุด {limits.maxItemsPerRun} รายการ
+        </p>
       </section>
 
       <section className="panel">

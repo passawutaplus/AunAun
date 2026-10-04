@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Candidate, SourceKey } from "./adapters/types";
 import { PHASH_MAX_DISTANCE, STORAGE_BUCKET, visionPricing } from "./config";
+import { bangkokDayStartIso, capLimits, stopReason, type CapUsage, type StopReason } from "./caps";
 import type { RejectReason } from "./license";
 
 export type AiSpend = {
@@ -178,6 +179,8 @@ export class SupabaseSeederRepo implements SeederRepo {
         style: row.ai.style,
         colors: row.ai.colors,
         published_at: new Date().toISOString(),
+        // Old-style tags/colors until phase 05 fills the passport (tags_ids + quality_score); then drop this flag.
+        legacy_published: true,
       },
       { onConflict: "source,source_id" },
     );
@@ -188,6 +191,54 @@ export class SupabaseSeederRepo implements SeederRepo {
     const { data, error } = await this.db.from("seed_targets").select("category").eq("enabled", true);
     fail("categories", error);
     return [...new Set((data ?? []).map((r) => r.category as string))].sort();
+  }
+
+  async flags(): Promise<{ paused: boolean; killSwitch: boolean }> {
+    const { data, error } = await this.db.from("seeder_control").select("paused, kill_switch").eq("id", true).maybeSingle();
+    fail("flags", error);
+    return { paused: data?.paused ?? true, killSwitch: data?.kill_switch ?? false };
+  }
+
+  async setKillSwitch(on: boolean): Promise<void> {
+    const { error } = await this.db.from("seeder_control").upsert({ id: true, kill_switch: on }, { onConflict: "id" });
+    fail("setKillSwitch", error);
+  }
+
+  /** Counters for the daily/monthly caps. AI calls = rows with recorded vision usage. */
+  async capUsage(): Promise<CapUsage> {
+    const dayStart = bangkokDayStartIso();
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const { inPerM, outPerM } = visionPricing();
+    const { count: itemsToday, error: e1 } = await this.db.from("discover_items").select("id", { count: "exact", head: true }).gte("created_at", dayStart);
+    fail("capUsage.items", e1);
+    const { count: aiCallsToday, error: e2 } = await this.db
+      .from("discover_items")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", dayStart)
+      .not("source_meta->ai_usage", "is", null);
+    fail("capUsage.ai", e2);
+    let monthUsd = 0;
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await this.db
+        .from("discover_items")
+        .select("ai_usage:source_meta->ai_usage")
+        .gte("created_at", monthStart.toISOString())
+        .not("source_meta->ai_usage", "is", null)
+        .range(from, from + 999);
+      fail("capUsage.month", error);
+      const rows = (data ?? []) as unknown as { ai_usage: { input_tokens?: number; output_tokens?: number } | null }[];
+      for (const r of rows) monthUsd += (Number(r.ai_usage?.input_tokens ?? 0) * inPerM + Number(r.ai_usage?.output_tokens ?? 0) * outPerM) / 1_000_000;
+      if (rows.length < 1000) break;
+    }
+    return { itemsToday: itemsToday ?? 0, aiCallsToday: aiCallsToday ?? 0, monthUsd };
+  }
+
+  /** Why seeding must stop right now (kill switch, pause, or a cap), or null. Reported by the job and the admin page. */
+  async stopReason(): Promise<{ reason: StopReason; usage: CapUsage }> {
+    const [flags, usage] = await Promise.all([this.flags(), this.capUsage()]);
+    return { reason: stopReason(flags, usage, capLimits(process.env.SEEDER_BUDGET_USD)), usage };
   }
 
   async isPaused(): Promise<boolean> {

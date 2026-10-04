@@ -18,10 +18,19 @@ export async function setPaused(formData: FormData) {
   revalidatePath(PATH);
 }
 
+export async function setKillSwitch(formData: FormData) {
+  await assertAdmin();
+  const on = formData.get("kill") === "true";
+  await new SupabaseSeederRepo().setKillSwitch(on);
+  await audit(on ? "seeder.kill_on" : "seeder.kill_off", "seeder", "");
+  revalidatePath(PATH);
+}
+
 export async function runNow(formData: FormData) {
   const email = await assertAdmin();
   const repo = new SupabaseSeederRepo();
-  if (await repo.isPaused()) throw new Error("Seeder is paused. Resume before running.");
+  const gate = await repo.stopReason();
+  if (gate.reason) throw new Error(`Seeder is stopped (${gate.reason}). Fix that before running.`);
   const category = String(formData.get("category") ?? "").trim() || undefined;
   await inngest.send(runRequested.create({ category, requestedBy: email }));
   await audit("seeder.run", "seeder", category ?? "all");

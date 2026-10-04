@@ -3,7 +3,7 @@
 - [x] 01 url-importer (2026-10-04) - api/import-url.js + lib/import/*; cache table NOT created (needs approval)
 - [x] 02 save-path (2026-10-04) - web keeps local-first path (guests); see notes
 - [x] 03 taxonomy-passport (2026-10-04) - migration vault_engine_passport APPLIED; 58 published rows marked legacy_published; discover.js allowlist extended
-- [ ] 04 seeder-audit
+- [x] 04 seeder-audit (2026-10-04) - caps + single kill switch + vision repair + SOURCES.md; owner to run: disable chndm/si (see SOURCES.md)
 - [ ] 05 tagging+publish
 - [ ] 06 search
 - [ ] 07 image-viewer
