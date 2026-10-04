@@ -1,5 +1,8 @@
-export const MIN_LONG_EDGE_PX = 1000;
-export const PHASH_MAX_DISTANCE = 6;
+import engine from "../../../config/engine.json";
+
+// One source of truth: config/engine.json (repo root of Vault-Code).
+export const MIN_LONG_EDGE_PX: number = engine.MIN_LONG_EDGE_PX;
+export const PHASH_MAX_DISTANCE: number = engine.PHASH_NEAR_DIST;
 export const MAX_DOWNLOAD_BYTES = 40 * 1024 * 1024;
 export const DOWNLOAD_TIMEOUT_MS = 45_000;
 export const API_TIMEOUT_MS = 20_000;
@@ -9,7 +12,7 @@ export type RenditionSize = keyof typeof RENDITION_WIDTHS;
 
 export const STORAGE_BUCKET = "discover-media";
 /** Open licenses we may rehost and show publicly. NC/ND are excluded (commercial use + resized renditions). */
-export const LICENSE_ALLOWLIST = ["cc0", "pdm", "cc-by", "cc-by-sa"] as const;
+export const LICENSE_ALLOWLIST = engine.LICENSE_ALLOWLIST as readonly ("cc0" | "pdm" | "cc-by" | "cc-by-sa")[];
 /** Licenses that legally require crediting the author with a license link. */
 export const CREDIT_REQUIRED_LICENSES = ["cc-by", "cc-by-sa"] as const;
 export const CC0_URL = "https://creativecommons.org/publicdomain/zero/1.0/";
