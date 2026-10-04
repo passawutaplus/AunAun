@@ -673,10 +673,29 @@ export function createVaultRemote(config = {}) {
     }
   }
 
+  /** Server-side enrichment for a local-first item (real palette + taxonomy tags). Resolves analysis or null; never throws. */
+  async function enrichItem(payload) {
+    const token = session()?.access_token;
+    if (!enabled || !token) return null;
+    try {
+      const response = await fetch("/api/vault/enrich", {
+        method: "POST",
+        headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(15000),
+      });
+      const body = await response.json().catch(() => null);
+      return body && body.success ? body.analysis : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   return {
     enabled,
     linkPreview,
     importUrl,
+    enrichItem,
     hasSession: () => !!session()?.access_token,
     consumeAuthCallback,
     getSession,

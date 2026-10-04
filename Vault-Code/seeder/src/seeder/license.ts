@@ -9,7 +9,9 @@ export type RejectReason =
   | "moderation_blocked"
   | "missing_image"
   | "download_failed"
-  | "ai_invalid_output";
+  | "ai_invalid_output"
+  | "blank_or_blurry"
+  | "low_quality";
 
 export type GateResult = { ok: true } | { ok: false; reason: RejectReason };
 

@@ -51,3 +51,14 @@ export async function computeBlurhash(image: Buffer): Promise<string> {
   const yComponents = info.width >= info.height ? 3 : 4;
   return encode(new Uint8ClampedArray(data), info.width, info.height, xComponents, yComponents);
 }
+
+/** ~128 px RGBA copy for layer-A colour/metric analysis (free: no AI). */
+export async function pixelSample(image: Buffer, edge = 128): Promise<{ data: Uint8ClampedArray; width: number; height: number }> {
+  const { data, info } = await sharp(image)
+    .rotate()
+    .resize(edge, edge, { fit: "inside", withoutEnlargement: true })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  return { data: new Uint8ClampedArray(data), width: info.width, height: info.height };
+}

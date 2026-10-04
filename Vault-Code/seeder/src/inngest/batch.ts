@@ -4,6 +4,7 @@ import { getAdapter } from "@/seeder/adapters";
 import type { Candidate } from "@/seeder/adapters/types";
 import { RateLimitedError } from "@/seeder/http";
 import { capLimits } from "@/seeder/caps";
+import { AnthropicAi } from "@/seeder/ai";
 import { processCandidate, type ItemOutcome } from "@/seeder/pipeline";
 import { SupabaseSeederRepo } from "@/seeder/repo";
 import { inngest } from "./client";
@@ -32,6 +33,7 @@ export const seederBatch = inngest.createFunction(
   async ({ event, step, logger }) => {
     const { category, source, query, cursor, size } = event.data;
     const repo = new SupabaseSeederRepo();
+    const ai = new AnthropicAi();
 
     const gate = await step.run("check-stop", () => repo.stopReason());
     if (gate.reason) {
@@ -78,7 +80,7 @@ export const seederBatch = inngest.createFunction(
             // Re-check the kill switch before every item so flipping it stops spending immediately.
             const live = await repo.flags();
             if (live.killSwitch || live.paused) return { status: "halted" as const, reason: live.killSwitch ? "kill_switch" : "paused" };
-            return await processCandidate(candidate, { category, categories }, { repo });
+            return await processCandidate(candidate, { category, categories }, { repo, ai });
           } catch (err) {
             throw toInngestError(err);
           }
@@ -107,6 +109,7 @@ export const seederBatch = inngest.createFunction(
     );
 
     const published = outcomes.filter((o) => o.status === "published").length;
+    const review = outcomes.filter((o) => o.status === "review").length;
     const rejected: Record<string, number> = {};
     for (const o of outcomes) if (o.status === "rejected") rejected[o.reason] = (rejected[o.reason] ?? 0) + 1;
 
@@ -120,6 +123,7 @@ export const seederBatch = inngest.createFunction(
       processed: outcomes.length,
       haltedBy,
       published,
+      review,
       rejected,
     };
   },

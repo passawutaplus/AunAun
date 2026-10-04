@@ -74,7 +74,24 @@ export type PublishRow = {
   height: number;
   blurhash: string;
   paths: { sm: string; md: string; lg: string };
-  ai: { category: string; tags: string[]; style: string; colors: string[] };
+  /** "review" rows keep their renditions so a human can approve them later. */
+  status: "published" | "review";
+  passport: {
+    tagsJson: unknown[];
+    tagsIds: string[];
+    palette: unknown[];
+    metrics: unknown;
+    quality: number;
+    enrichLevel: number;
+    statusReason: string;
+    layerB: { era: string | null; culture_region: string | null; medium: string | null; institution: string | null; year: number | null };
+    altText: { alt_text_th: string | null; alt_text_en: string | null };
+    /** Open keywords for the current Discover keyword UI: English labels of confident tags + AI keywords. */
+    openKeywords: string[];
+    style: string;
+    /** Palette hexes for the current Discover colour UI (now computed from pixels). */
+    colors: string[];
+  };
 };
 
 export interface SeederRepo {
@@ -165,7 +182,7 @@ export class SupabaseSeederRepo implements SeederRepo {
     const { error } = await this.db.from("discover_items").upsert(
       {
         ...baseRow(row.candidate, row.category),
-        status: "published",
+        status: row.status,
         reject_reason: null,
         phash: row.phash,
         width: row.width,
@@ -174,13 +191,23 @@ export class SupabaseSeederRepo implements SeederRepo {
         image_sm_path: row.paths.sm,
         image_md_path: row.paths.md,
         image_lg_path: row.paths.lg,
-        ai_category: row.ai.category,
-        tags: row.ai.tags,
-        style: row.ai.style,
-        colors: row.ai.colors,
-        published_at: new Date().toISOString(),
-        // Old-style tags/colors until phase 05 fills the passport (tags_ids + quality_score); then drop this flag.
-        legacy_published: true,
+        ai_category: row.category,
+        tags: row.passport.openKeywords,
+        style: row.passport.style,
+        colors: row.passport.colors,
+        tags_json: row.passport.tagsJson,
+        tags_ids: row.passport.tagsIds,
+        palette: row.passport.palette,
+        metrics: row.passport.metrics,
+        quality_score: row.passport.quality,
+        enrich_level: row.passport.enrichLevel,
+        status_reason: row.passport.statusReason,
+        alt_text_th: row.passport.altText.alt_text_th,
+        alt_text_en: row.passport.altText.alt_text_en,
+        ...row.passport.layerB,
+        last_checked_at: new Date().toISOString(),
+        published_at: row.status === "published" ? new Date().toISOString() : null,
+        legacy_published: false,
       },
       { onConflict: "source,source_id" },
     );

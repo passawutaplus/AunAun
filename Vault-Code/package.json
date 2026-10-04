@@ -28,5 +28,9 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@vercel/functions": "^3.9.11",
+    "sharp": "^0.35.5"
+  }
 }

@@ -79,8 +79,10 @@ describe("buildVaultItem (single save path)", () => {
 });
 
 describe("enrich seam", () => {
-  it("is a no-op stub that never throws", async () => {
-    assert.equal((await enrichItem("abc", { userId: "u" })).status, "skipped");
-    assert.doesNotThrow(() => fireEnrich("abc", null));
+  it("never throws, even when storage is not configured", async () => {
+    const r = await enrichItem("abc", { userId: "u" }, { loadItem: async () => null, saveItem: async () => {} });
+    assert.equal(r.status, "skipped");
+    assert.equal((await enrichItem("abc", null, { loadItem: async () => { throw new Error("db down"); } })).status, "failed");
+    await assert.doesNotReject(fireEnrich("abc", null));
   });
 });

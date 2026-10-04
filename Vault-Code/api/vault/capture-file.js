@@ -59,7 +59,7 @@ export default createHandler({
     const item = Object.assign(buildVaultItem(payload), { id, assetPath: path, mimeType: contentType });
     const duplicate = await findDuplicateCapture(item, auth);
     await writeCapture({ objectId: id, item, payload }, auth);
-    fireEnrich(id, auth);
+    await fireEnrich(id, auth);
     return buildCaptureResponse(item, duplicate);
   }
 });

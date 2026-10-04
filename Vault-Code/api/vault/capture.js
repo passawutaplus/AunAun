@@ -14,7 +14,7 @@ export default createHandler({
     const item = buildVaultItem(payload);
     const duplicate = await findDuplicateCapture(item, auth);
     await writeCapture({ objectId: item.id, item, payload }, auth);
-    fireEnrich(item.id, auth);
+    await fireEnrich(item.id, auth);
     return buildCaptureResponse(item, duplicate);
   }
 });
