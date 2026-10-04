@@ -205,8 +205,58 @@ export async function fetchEngineSearch(q, { fetchImpl = globalThis.fetch } = {}
   }
 }
 
+const SEEN_KEY = "aplus-vault-discover-seen";
+const SEEN_DAYS = 14;
+
+function readSeen() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SEEN_KEY) || "{}");
+    const cutoff = Date.now() - SEEN_DAYS * 86400000;
+    return Object.fromEntries(Object.entries(raw).filter(([, ts]) => Number(ts) > cutoff));
+  } catch {
+    return {};
+  }
+}
+
+/** Remember what this visitor already saw (local only) so the daily feed shows other things first next time. */
+export function markDiscoverSeen(ids) {
+  try {
+    const seen = readSeen();
+    const now = Date.now();
+    for (const id of ids || []) if (/^[0-9a-f-]{36}$/i.test(String(id))) seen[String(id).slice(0, 8)] = now;
+    const keys = Object.keys(seen);
+    if (keys.length > 300) keys.sort((a, b) => seen[a] - seen[b]).slice(0, keys.length - 300).forEach(k => delete seen[k]);
+    localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
+  } catch { /* private mode: no demotion, nothing breaks */ }
+}
+
+/** Daily rotated feed from the server. Null on any problem so the caller falls back to newest-first. */
+export async function fetchFeed({ category = "all", offset = 0, limit = DISCOVER_PAGE_SIZE, fetchImpl = globalThis.fetch } = {}) {
+  try {
+    const seen = offset === 0 ? Object.keys(readSeen()).slice(0, 120) : [];
+    const params = new URLSearchParams({ offset: String(offset), limit: String(limit) });
+    if (category && category !== "all") params.set("category", category);
+    if (seen.length) params.set("s", seen.join(","));
+    const res = await fetchImpl(`/api/feed?${params}`, { headers: { accept: "application/json" } });
+    if (!res.ok) return null;
+    const body = await res.json();
+    if (!body || !body.success || !Array.isArray(body.items)) return null;
+    return { rows: body.items, nextOffset: body.nextOffset, seenPrefixes: seen };
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchDiscoverPage(config, opts = {}) {
   if (!discoverEnabled(config)) throw new Error("Discover is not configured.");
+  if (!opts.q && !opts.similar && !discoverHasClientFilters(opts) && !(opts.facets || []).length) {
+    const offset = Number(opts.loaded) || 0;
+    const feed = await fetchFeed({ category: opts.category, offset });
+    if (feed && feed.rows.length) {
+      if (offset === 0) markDiscoverSeen(feed.rows.slice(0, 24).map(r => r.id));
+      return { rows: feed.rows, done: feed.nextOffset == null, chips: [] };
+    }
+  }
   if (opts.q && String(opts.q).trim().length >= 2 && !opts.similar && !opts.after) {
     const eng = await fetchEngineSearch(opts.q);
     if (eng && eng.rows.length) {

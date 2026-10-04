@@ -51,6 +51,13 @@ export async function fetchSimilarCandidates(target, { limit = 300, fetchImpl } 
   return get(params.toString(), fetchImpl);
 }
 
+/** Pool for the daily feed rotation: newest published items (bounded), optionally one category. */
+export async function fetchFeedPool({ category = "", limit = 600, fetchImpl } = {}) {
+  const params = baseParams(limit);
+  if (category && category !== "all") params.set("category", `eq.${category}`);
+  return get(params.toString(), fetchImpl);
+}
+
 /** Response shape: never leaks ranking-only fields. */
 export function publicItem(item) {
   const { quality_score, tags_json, ...rest } = item;
