@@ -1,10 +1,10 @@
-import { buildCaptureResponse, buildVaultItem, parseMultipart, safeUploadType } from "../../lib/vault-capture-core.mjs";
-import { findDuplicateCapture, uploadCaptureFile, writeCapture } from "../../lib/vault-capture-store.mjs";
-import { createHandler, readRawBody } from "../../lib/vault-api-shared.mjs";
-import { authError, resolveAuthContext } from "../../lib/vault-api-auth.mjs";
-import { fireEnrich } from "../../lib/engine/enrich.mjs";
-import { probeImageSize } from "../../lib/import/image-probe.mjs";
-import { stripImageMetadata } from "../../lib/image-sanitize.mjs";
+import { buildCaptureResponse, buildVaultItem, parseMultipart, safeUploadType } from "../vault-capture-core.mjs";
+import { findDuplicateCapture, uploadCaptureFile, writeCapture } from "../vault-capture-store.mjs";
+import { createHandler, readRawBody } from "../vault-api-shared.mjs";
+import { authError, resolveAuthContext } from "../vault-api-auth.mjs";
+import { fireEnrich } from "../engine/enrich.mjs";
+import { probeImageSize } from "../import/image-probe.mjs";
+import { stripImageMetadata } from "../image-sanitize.mjs";
 
 export const config = {
   api: {

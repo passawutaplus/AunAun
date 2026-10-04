@@ -1,10 +1,10 @@
-import { createHandler } from "../lib/vault-api-shared.mjs";
-import { engineConfig } from "../lib/engine/config.mjs";
-import { defaultTaxonomy } from "../lib/engine/enrich.mjs";
-import { parseQuery } from "../lib/engine/parser.mjs";
-import { rankItems } from "../lib/engine/ranking.mjs";
-import { fetchCandidates, fetchBehavior, publicItem, rpcQuiet } from "../lib/engine/discover-read.mjs";
-import { captureQuery, suggestTerm } from "../lib/engine/learning.mjs";
+import { createHandler } from "../vault-api-shared.mjs";
+import { engineConfig } from "../engine/config.mjs";
+import { defaultTaxonomy } from "../engine/enrich.mjs";
+import { parseQuery } from "../engine/parser.mjs";
+import { rankItems } from "../engine/ranking.mjs";
+import { fetchCandidates, fetchBehavior, publicItem, rpcQuiet } from "../engine/discover-read.mjs";
+import { captureQuery, suggestTerm } from "../engine/learning.mjs";
 
 const MAX_QUERY = 600;
 

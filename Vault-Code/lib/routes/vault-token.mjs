@@ -1,5 +1,5 @@
-import { createHandler } from "../../lib/vault-api-shared.mjs";
-import { authError, signVaultToken, supabaseUserFromJwt } from "../../lib/vault-api-auth.mjs";
+import { createHandler } from "../vault-api-shared.mjs";
+import { authError, signVaultToken, supabaseUserFromJwt } from "../vault-api-auth.mjs";
 
 // Exchanges a signed-in Supabase session for a long-lived extension token.
 export default createHandler({

@@ -1,5 +1,5 @@
-import { createHandler } from "../lib/vault-api-shared.mjs";
-import { publishableKey, supabaseUrl } from "../lib/supabase-rest.mjs";
+import { createHandler } from "../vault-api-shared.mjs";
+import { publishableKey, supabaseUrl } from "../supabase-rest.mjs";
 
 const ALLOWED_PARAMS = new Set(["select", "category", "and", "order", "limit", "id"]);
 const ALLOWED_COLUMNS = new Set([

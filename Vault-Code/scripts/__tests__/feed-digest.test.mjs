@@ -7,8 +7,8 @@ import { buildDigest, profileFromItems, scoreForProfile, signUnsubscribe, verify
 import { engineConfig as cfg } from "../../lib/engine/config.mjs";
 import { defaultTaxonomy } from "../../lib/engine/enrich.mjs";
 import { resetRateLimits } from "../../lib/rate-limit.mjs";
-import feed from "../../api/feed.js";
-import unsubscribe from "../../api/unsubscribe.js";
+import feed from "../../lib/routes/feed.mjs";
+import unsubscribe from "../../lib/routes/unsubscribe.mjs";
 
 const tax = defaultTaxonomy();
 const uid = n => `${String(n).padStart(8, "0")}-0000-4000-8000-000000000000`;

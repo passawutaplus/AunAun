@@ -1,6 +1,6 @@
-import { createHandler } from "../../lib/vault-api-shared.mjs";
-import { authError, resolveAuthContext } from "../../lib/vault-api-auth.mjs";
-import { buildExport, storeExport } from "../../lib/account.mjs";
+import { createHandler } from "../vault-api-shared.mjs";
+import { authError, resolveAuthContext } from "../vault-api-auth.mjs";
+import { buildExport, storeExport } from "../account.mjs";
 
 export const config = { maxDuration: 60 };
 

@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { Readable } from "node:stream";
 import { resetRateLimits } from "../../lib/rate-limit.mjs";
-import search from "../../api/search.js";
-import similar from "../../api/similar/[id].js";
-import signal from "../../api/signal.js";
+import search from "../../lib/routes/search.mjs";
+import similar from "../../lib/routes/similar.mjs";
+import signal from "../../lib/routes/signal.mjs";
 
 const realFetch = globalThis.fetch;
 let calls;

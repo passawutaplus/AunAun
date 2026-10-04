@@ -1,8 +1,8 @@
-import { createHandler } from "../../lib/vault-api-shared.mjs";
-import { engineConfig } from "../../lib/engine/config.mjs";
-import { defaultTaxonomy } from "../../lib/engine/enrich.mjs";
-import { findSimilar } from "../../lib/engine/ranking.mjs";
-import { fetchById, fetchSimilarCandidates, publicItem } from "../../lib/engine/discover-read.mjs";
+import { createHandler } from "../vault-api-shared.mjs";
+import { engineConfig } from "../engine/config.mjs";
+import { defaultTaxonomy } from "../engine/enrich.mjs";
+import { findSimilar } from "../engine/ranking.mjs";
+import { fetchById, fetchSimilarCandidates, publicItem } from "../engine/discover-read.mjs";
 
 /** "More like this" / "Opposite" for one published Discover image. No AI, published-only, cacheable. */
 export default createHandler({

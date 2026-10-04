@@ -1,6 +1,6 @@
-import { deleteCapture } from "../../../lib/vault-capture-store.mjs";
-import { createHandler } from "../../../lib/vault-api-shared.mjs";
-import { resolveAuthContext } from "../../../lib/vault-api-auth.mjs";
+import { deleteCapture } from "../vault-capture-store.mjs";
+import { createHandler } from "../vault-api-shared.mjs";
+import { resolveAuthContext } from "../vault-api-auth.mjs";
 
 /** Undo from the extension: delete one capture, owner only (scope = the caller's own token). */
 export default createHandler({

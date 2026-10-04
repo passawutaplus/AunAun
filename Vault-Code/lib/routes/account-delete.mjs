@@ -1,7 +1,7 @@
-import { createHandler, readJsonBody } from "../../lib/vault-api-shared.mjs";
-import { authError, resolveAuthContext } from "../../lib/vault-api-auth.mjs";
-import { deleteVaultData } from "../../lib/account.mjs";
-import { supabaseRest } from "../../lib/supabase-rest.mjs";
+import { createHandler, readJsonBody } from "../vault-api-shared.mjs";
+import { authError, resolveAuthContext } from "../vault-api-auth.mjs";
+import { deleteVaultData } from "../account.mjs";
+import { supabaseRest } from "../supabase-rest.mjs";
 
 export const config = { maxDuration: 60 };
 export const CONFIRM_TEXT = "DELETE MY VAULT DATA";

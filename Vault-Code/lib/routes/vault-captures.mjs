@@ -1,6 +1,6 @@
-import { readCaptures } from "../../lib/vault-capture-store.mjs";
-import { createHandler } from "../../lib/vault-api-shared.mjs";
-import { resolveAuthContext } from "../../lib/vault-api-auth.mjs";
+import { readCaptures } from "../vault-capture-store.mjs";
+import { createHandler } from "../vault-api-shared.mjs";
+import { resolveAuthContext } from "../vault-api-auth.mjs";
 
 export default createHandler({
   methods: ["GET"],

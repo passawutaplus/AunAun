@@ -6,9 +6,9 @@ import { createZip, listZipNames } from "../../lib/zip.mjs";
 
 process.env.VAULT_EXTENSION_TOKEN_SECRET = "test-secret-for-signed-extension-tokens";
 const { signVaultToken } = await import("../../lib/vault-api-auth.mjs");
-const exportApi = (await import("../../api/account/export.js")).default;
-const deleteApi = (await import("../../api/account/delete.js")).default;
-const privacyApi = (await import("../../api/privacy-request.js")).default;
+const exportApi = (await import("../../lib/routes/account-export.mjs")).default;
+const deleteApi = (await import("../../lib/routes/account-delete.mjs")).default;
+const privacyApi = (await import("../../lib/routes/privacy-request.mjs")).default;
 
 const userId = "22222222-2222-4222-8222-222222222222";
 // A 3-part string is treated as a Supabase JWT: the auth server mock below accepts it.

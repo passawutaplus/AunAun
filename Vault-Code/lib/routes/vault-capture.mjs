@@ -1,8 +1,8 @@
-import { buildCaptureResponse, buildVaultItem } from "../../lib/vault-capture-core.mjs";
-import { findDuplicateCapture, writeCapture } from "../../lib/vault-capture-store.mjs";
-import { createHandler, readJsonBody } from "../../lib/vault-api-shared.mjs";
-import { resolveAuthContext } from "../../lib/vault-api-auth.mjs";
-import { fireEnrich } from "../../lib/engine/enrich.mjs";
+import { buildCaptureResponse, buildVaultItem } from "../vault-capture-core.mjs";
+import { findDuplicateCapture, writeCapture } from "../vault-capture-store.mjs";
+import { createHandler, readJsonBody } from "../vault-api-shared.mjs";
+import { resolveAuthContext } from "../vault-api-auth.mjs";
+import { fireEnrich } from "../engine/enrich.mjs";
 
 export default createHandler({
   methods: ["POST"],

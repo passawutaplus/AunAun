@@ -1,11 +1,11 @@
-import { createHandler, readJsonBody } from "../lib/vault-api-shared.mjs";
-import { engineConfig } from "../lib/engine/config.mjs";
-import { rpcQuiet } from "../lib/engine/discover-read.mjs";
-import { isKillSwitchOn } from "../lib/engine/kill-switch.mjs";
-import { defaultTaxonomy } from "../lib/engine/enrich.mjs";
-import { parseQuery } from "../lib/engine/parser.mjs";
-import { captureQuery, isBot, langMix, optedOut } from "../lib/engine/learning.mjs";
-import { publishableKey, serviceRoleKey, supabaseUrl } from "../lib/supabase-rest.mjs";
+import { createHandler, readJsonBody } from "../vault-api-shared.mjs";
+import { engineConfig } from "../engine/config.mjs";
+import { rpcQuiet } from "../engine/discover-read.mjs";
+import { isKillSwitchOn } from "../engine/kill-switch.mjs";
+import { defaultTaxonomy } from "../engine/enrich.mjs";
+import { parseQuery } from "../engine/parser.mjs";
+import { captureQuery, isBot, langMix, optedOut } from "../engine/learning.mjs";
+import { publishableKey, serviceRoleKey, supabaseUrl } from "../supabase-rest.mjs";
 
 const TYPES = new Set(["view", "save", "skip", "open"]);
 const UUID = /^[0-9a-f-]{36}$/i;

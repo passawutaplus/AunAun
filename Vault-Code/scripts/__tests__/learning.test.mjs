@@ -8,7 +8,7 @@ import { parseQuery } from "../../lib/engine/parser.mjs";
 import { rankItems } from "../../lib/engine/ranking.mjs";
 import { BOOST_DEFAULTS, aliasLine, applyBoost, behaviorRate, boostRanked, captureQuery, isBot, langMix, learnedFile, looksPersonal, newSessionId, optedOut, suggestTerm, tuningReport } from "../../lib/engine/learning.mjs";
 import { loadTaxonomy } from "../../lib/engine/taxonomy.mjs";
-import signal from "../../api/signal.js";
+import signal from "../../lib/routes/signal.mjs";
 import { resetRateLimits } from "../../lib/rate-limit.mjs";
 import { resetKillSwitchCache } from "../../lib/engine/kill-switch.mjs";
 

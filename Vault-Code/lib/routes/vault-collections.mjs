@@ -1,6 +1,6 @@
-import { readExtensionCollections, upsertExtensionCollection } from "../../lib/vault-collection-sync.mjs";
-import { createHandler, readJsonBody } from "../../lib/vault-api-shared.mjs";
-import { resolveAuthContext } from "../../lib/vault-api-auth.mjs";
+import { readExtensionCollections, upsertExtensionCollection } from "../vault-collection-sync.mjs";
+import { createHandler, readJsonBody } from "../vault-api-shared.mjs";
+import { resolveAuthContext } from "../vault-api-auth.mjs";
 
 export default createHandler({
   methods: ["GET", "POST"],

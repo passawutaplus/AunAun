@@ -6,8 +6,8 @@ import { buildVaultItem, sanitizeCredit } from "../../lib/vault-capture-core.mjs
 
 process.env.VAULT_EXTENSION_TOKEN_SECRET = "test-secret-for-signed-extension-tokens";
 const { signVaultToken } = await import("../../lib/vault-api-auth.mjs");
-const batch = (await import("../../api/vault/capture-batch.js")).default;
-const del = (await import("../../api/vault/captures/[id].js")).default;
+const batch = (await import("../../lib/routes/vault-capture-batch.mjs")).default;
+const del = (await import("../../lib/routes/vault-captures-id.mjs")).default;
 
 const userId = "11111111-1111-4111-8111-111111111111";
 const token = signVaultToken(userId);

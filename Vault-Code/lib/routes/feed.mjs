@@ -1,6 +1,6 @@
-import { createHandler } from "../lib/vault-api-shared.mjs";
-import { bangkokDateKey, rotateFeed } from "../lib/engine/feed.mjs";
-import { fetchFeedPool, publicItem } from "../lib/engine/discover-read.mjs";
+import { createHandler } from "../vault-api-shared.mjs";
+import { bangkokDateKey, rotateFeed } from "../engine/feed.mjs";
+import { fetchFeedPool, publicItem } from "../engine/discover-read.mjs";
 
 /** Discover default feed, rotated daily (variety across category/source; recently seen items go last). Published-only. */
 export default createHandler({

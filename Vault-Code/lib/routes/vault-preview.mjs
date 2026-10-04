@@ -1,6 +1,6 @@
-import { createHandler } from "../../lib/vault-api-shared.mjs";
-import { resolveAuthContext } from "../../lib/vault-api-auth.mjs";
-import { fetchLinkPreview } from "../../lib/vault-link-preview.mjs";
+import { createHandler } from "../vault-api-shared.mjs";
+import { resolveAuthContext } from "../vault-api-auth.mjs";
+import { fetchLinkPreview } from "../vault-link-preview.mjs";
 
 // Signed-in users only: an open fetch-a-URL endpoint would be an abuse and SSRF target.
 export default createHandler({

@@ -1,6 +1,6 @@
-import { createHandler, readJsonBody } from "../lib/vault-api-shared.mjs";
-import { resolveAuthContext } from "../lib/vault-api-auth.mjs";
-import { supabaseRest } from "../lib/supabase-rest.mjs";
+import { createHandler, readJsonBody } from "../vault-api-shared.mjs";
+import { resolveAuthContext } from "../vault-api-auth.mjs";
+import { supabaseRest } from "../supabase-rest.mjs";
 
 const TYPES = new Set(["access", "delete", "rectify", "object", "restrict", "withdraw", "complaint"]);
 

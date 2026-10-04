@@ -1,7 +1,7 @@
-import { createHandler, readJsonBody } from "../lib/vault-api-shared.mjs";
-import { resolveAuthContext } from "../lib/vault-api-auth.mjs";
-import { importUrl } from "../lib/import/index.mjs";
-import { importError } from "../lib/import/errors.mjs";
+import { createHandler, readJsonBody } from "../vault-api-shared.mjs";
+import { resolveAuthContext } from "../vault-api-auth.mjs";
+import { importUrl } from "../import/index.mjs";
+import { importError } from "../import/errors.mjs";
 
 // Signed-in users only: fetching arbitrary URLs is an abuse and SSRF target. The limiter in
 // lib/rate-limit.mjs is per serverless instance; a global cap belongs in the Vercel WAF.

@@ -1,6 +1,6 @@
-import { createHandler, readJsonBody } from "../../lib/vault-api-shared.mjs";
-import { resolveAuthContext } from "../../lib/vault-api-auth.mjs";
-import { enrichPreview } from "../../lib/engine/enrich.mjs";
+import { createHandler, readJsonBody } from "../vault-api-shared.mjs";
+import { resolveAuthContext } from "../vault-api-auth.mjs";
+import { enrichPreview } from "../engine/enrich.mjs";
 
 const clip = (v, n) => (typeof v === "string" ? v.slice(0, n) : "");
 

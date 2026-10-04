@@ -193,10 +193,12 @@ async function runStaticProductGuards() {
   assert(/project-collection-picker/.test(appJs) && /project-moodboard-picker/.test(appJs), "Project add dialogs must support picker forms.");
   assert(/data-dropproject/.test(appJs) && /modules\/sidebar-dnd\.js/.test(appJs), "Sidebar must support dragging collections onto projects.");
   assert(/metadata\.collectionIds/.test(supabaseAdapterJs), "Supabase adapter must sync project collection links in metadata.");
-  await access("api/vault/health.js");
-  await access("api/vault/capture.js");
-  await access("api/vault/capture-file.js");
-  await access("api/vault/captures.js");
+  await access("api/vault/[...path].js");
+  await access("api/[...path].js");
+  await access("lib/routes/vault-health.mjs");
+  await access("lib/routes/vault-capture.mjs");
+  await access("lib/routes/vault-capture-file.mjs");
+  await access("lib/routes/vault-captures.mjs");
   assert(/data-copy-extension-token/.test(appJs) && /getVaultApiToken/.test(appJs), "Profile must expose extension sync token controls.");
   assert(/data-feedback-form/.test(appJs) && /submitFeedback/.test(supabaseAdapterJs), "Settings must expose Give Feedback form.");
   assert(/isVaultSuperAdmin/.test(appJs) && /vault_admin_overview/.test(supabaseAdapterJs), "Settings must gate Vault Admin to super admin.");
@@ -213,7 +215,7 @@ async function runStaticProductGuards() {
   assert(/saveProjects/.test(await readFile("outputs/a-plus-vault/modules/supabase-adapter.js", "utf8")), "Supabase adapter must sync projects to remote.");
   assert(/refreshSignedVaultToken/.test(appJs) && /\/api\/vault\/token/.test(appJs), "App must bind extension token to signed-in user via a server-signed token.");
   assert(!/"vault-user-"\+/.test(appJs), "App must not mint guessable vault-user-<id> tokens.");
-  await access("api/vault/token.js");
+  await access("lib/routes/vault-token.mjs");
   assert(/data-auth-action='signup'/.test(appJs), "Login screen must expose a create account action.");
   assert(/Quick keywords/.test(appJs) && /Visual category/.test(appJs), "Save modal must include quick metadata fields.");
   assert(/findDuplicateItem/.test(appJs), "Web save flow must warn about duplicate exact sources.");
