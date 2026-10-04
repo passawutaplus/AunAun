@@ -104,3 +104,21 @@ export async function writeCaptureItem(objectId, item, auth) {
     body: { item }
   });
 }
+
+/** Undo: delete one capture owned by this scope. Returns true when a row was removed. Stored file is removed best-effort. */
+export async function deleteCapture(objectId, auth) {
+  const scope = requireScope(auth);
+  if (!objectId) return false;
+  const rows = await supabaseRest(
+    `/rest/v1/vault_extension_captures?object_id=${eq(objectId)}&bearer_hash=${eq(scope)}`,
+    { method: "DELETE", prefer: "return=representation", feature: FEATURE, errorMessage: "Could not delete this capture." }
+  );
+  const row = Array.isArray(rows) ? rows[0] : null;
+  const assetPath = row?.item?.assetPath;
+  if (assetPath && typeof assetPath === "string" && !assetPath.includes("..")) {
+    try {
+      await supabaseRest(`/storage/v1/object/${STORAGE_BUCKET}/${assetPath}`, { method: "DELETE", feature: FEATURE, errorMessage: "storage cleanup failed" });
+    } catch { /* best effort */ }
+  }
+  return Boolean(row);
+}

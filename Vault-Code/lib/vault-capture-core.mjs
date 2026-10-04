@@ -51,6 +51,33 @@ function quickTagsFrom(value) {
     .slice(0, 6);
 }
 
+/** Credit/licence hints gathered on the page. Stored as DATA only: never treated as a granted licence. */
+export function sanitizeCredit(value) {
+  if (!value || typeof value !== "object") return null;
+  const clip = (v, n) => text(v).slice(0, n);
+  const url = v => {
+    const raw = text(v);
+    try { return /^https?:$/.test(new URL(raw).protocol) ? raw.slice(0, 500) : ""; } catch { return ""; }
+  };
+  const creators = (Array.isArray(value.creators) ? value.creators : []).map(c => clip(c, 120)).filter(Boolean).slice(0, 4);
+  const out = {
+    creators,
+    siteName: clip(value.siteName, 120),
+    licenseUrl: url(value.licenseUrl),
+    licenseText: clip(value.licenseText, 160),
+    copyrightHolder: clip(value.copyrightHolder, 120),
+    pageUrl: url(value.pageUrl),
+    imageUrl: url(value.imageUrl),
+  };
+  const any = out.creators.length || out.siteName || out.licenseUrl || out.licenseText || out.copyrightHolder;
+  return any ? out : null;
+}
+
+function creditLine(credit) {
+  if (!credit) return "";
+  return [credit.creators.length ? `by ${credit.creators.join(", ")}` : "", credit.copyrightHolder, credit.siteName].filter(Boolean).join(" · ").slice(0, 300);
+}
+
 function positiveInt(value) {
   const n = Math.round(Number(value));
   return Number.isFinite(n) && n > 0 && n < 100000 ? n : null;
@@ -140,7 +167,7 @@ export function buildVaultItem(payload) {
     importStatus: ["ok", "partial", "failed"].includes(text(payload.importStatus)) ? text(payload.importStatus) : (type === "link" && !previewUrl ? "partial" : "ok"),
     licenseStatus: "unknown",
     visibility: "private",
-    creditText: text(payload.creditText).slice(0, 300),
+    creditText: text(payload.creditText).slice(0, 300) || creditLine(sanitizeCredit(context.credit)),
     rightsConfirmedAt: payload.rightsConfirmed === true ? Date.now() : null,
     captureContext: {
       method: text(context.method) || `extension_${rawType || type}`,
@@ -160,6 +187,7 @@ export function buildVaultItem(payload) {
       quickTags,
       visualCategory: visualCategory || null,
       usageNote: text(context.usageNote) || "Private reference only",
+      credit: sanitizeCredit(context.credit),
       collectionName: text(context.collectionName) || text(payload.collectionName) || null
     }
   };
