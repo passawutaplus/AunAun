@@ -1,0 +1,129 @@
+@domain pho | ภาพถ่าย | Photography
+@group genre | แนวภาพถ่าย | Genres | 2
+portrait_photo | ภาพพอร์ตเทรต,ภาพบุคคล | portrait photography
+street_photo | สตรีท,ภาพถ่ายริมถนน | street photography
+documentary | สารคดี,ภาพสารคดี | documentary photography
+landscape_photo | ภาพวิว,ภาพทิวทัศน์ | landscape photography
+architectural_photo | ภาพถ่ายสถาปัตยกรรม | architectural photography
+interior_photo | ภาพถ่ายอินทีเรีย | interior photography
+product_photo | ภาพสินค้า,โปรดักต์โฟโต้ | product photography
+food_photo | ภาพอาหาร | food photography
+fashion_photo | ภาพแฟชั่น | fashion photography
+editorial_photo | ภาพบรรณาธิการ | editorial photography
+fine_art_photo | ภาพศิลปะ | fine art photography
+conceptual_photo | ภาพคอนเซ็ปต์ | conceptual photography
+still_life | สติลไลฟ์,ภาพวัตถุนิ่ง | still life
+wildlife | สัตว์ป่า | wildlife photography
+macro | มาโคร,ภาพถ่ายระยะใกล้มาก | macro photography
+aerial_photo | ภาพถ่ายทางอากาศ,โดรน | aerial photography,drone
+astro | ดาราศาสตร์,ภาพดวงดาว | astrophotography
+underwater | ใต้น้ำ | underwater photography
+sports_photo | ภาพกีฬา | sports photography
+event_photo | ภาพงานอีเวนต์ | event photography
+wedding_photo | ภาพแต่งงาน | wedding photography
+travel_photo | ภาพท่องเที่ยว | travel photography
+night_photo | ภาพกลางคืน | night photography
+long_exposure | ภาพเปิดรับแสงนาน | long exposure
+abstract_photo | ภาพนามธรรม | abstract photography
+minimal_photo | ภาพมินิมอล | minimalist photography
+black_white_photo | ภาพขาวดำ | black and white photography
+self_portrait | ภาพเซลฟ์พอร์เทรต | self portrait
+
+@group shot | ขนาดภาพและมุมกล้อง | Shot size & camera angle | 1
+extreme_closeup | ใกล้มาก | extreme close-up
+close_up | ใกล้,โคลสอัป | close-up
+medium_shot | ครึ่งตัว | medium shot
+full_shot | เต็มตัว | full shot
+wide_shot | มุมกว้าง,ไวด์ | wide shot
+establishing | ภาพเปิดฉาก | establishing shot
+eye_level | ระดับสายตา | eye level
+low_angle | มุมต่ำ,มุมเงย | low angle
+high_angle | มุมสูง,มุมก้ม | high angle
+birds_eye | มุมนก,มุมมองจากบน | bird's eye view,top-down
+worms_eye | มุมหนอน | worm's eye view
+dutch_angle | มุมเอียง | dutch angle
+over_shoulder | มองข้ามไหล่ | over the shoulder
+pov | มุมมองบุคคลที่หนึ่ง | pov
+symmetrical_frame | เฟรมสมมาตร | symmetrical frame
+one_point_perspective | วันพอยต์เพอร์สเปกทีฟ | one-point perspective
+leading_lines | เส้นนำสายตา | leading lines
+frame_within_frame | กรอบซ้อนในกรอบ | frame within frame
+
+@group lighting | แสง | Lighting | 4
+golden_hour | โกลเด้นอาวร์,แสงทอง | golden hour
+blue_hour | บลูอาวร์ | blue hour
+overcast | ฟ้าปิด,แสงเมฆ | overcast light
+hard_light | แสงแข็ง | hard light
+soft_light | แสงนุ่ม | soft light
+diffused_light | แสงกระจาย | diffused light
+backlight | ย้อนแสง | backlighting
+rim_light | ไลท์ขอบ | rim light
+side_light | แสงข้าง | side lighting
+window_light | แสงจากหน้าต่าง | window light
+studio_light | แสงสตูดิโอ | studio lighting
+flash | แฟลช | on-camera flash
+neon_light | แสงนีออน | neon light
+low_key_light | แสงโลว์คีย์ | low-key lighting
+high_key_light | แสงไฮคีย์ | high-key lighting
+chiaroscuro | เคียโรสคูโร | chiaroscuro
+silhouette | ซิลลูเอต,เงาดำ | silhouette
+dappled_light | แสงลอดใบไม้ | dappled light
+volumetric_light | แสงเป็นลำ | god rays,volumetric light
+lens_flare | เลนส์แฟลร์ | lens flare
+shadow_play | เงาเล่นลาย | shadow play
+
+@group time_weather | เวลาและสภาพอากาศ | Time & weather | 2
+sunrise | พระอาทิตย์ขึ้น | sunrise
+sunset | พระอาทิตย์ตก | sunset
+midday | เที่ยงวัน | midday
+dusk | ย่ำค่ำ,พลบค่ำ | dusk
+night | กลางคืน | night
+fog | หมอก | fog,mist
+rain | ฝน | rain
+snow | หิมะ | snow
+storm | พายุ | storm
+clear_sky | ฟ้าใส | clear sky
+cloudy | เมฆมาก | cloudy
+
+@group look | ลุคภาพและเทคนิค | Looks & processing | 3
+film_photo | ภาพฟิล์ม | film photography
+analog_look | อนาล็อก | analog look
+polaroid | โพลารอยด์ | polaroid,instant film
+film_grain | เกรนฟิล์ม | film grain
+vignette | วิกเนตต์,มุมมืด | vignette
+bokeh | โบเก้,ฉากหลังเบลอ | bokeh
+shallow_dof | ชัดตื้น | shallow depth of field
+deep_focus | ชัดลึก | deep focus
+motion_blur | ภาพเบลอตามการเคลื่อนไหว | motion blur
+double_exposure | ซ้อนภาพ | double exposure
+cross_process | ครอสโพรเซส | cross processing
+cinematic_look | โทนหนัง,ซีเนมาติก | cinematic look
+matte_look | โทนแมตต์ | matte look
+faded_look | โทนซีด | faded look
+hdr_look | เอชดีอาร์ | hdr
+tilt_shift | ทิลต์ชิฟต์ | tilt-shift
+infrared | อินฟราเรด | infrared photography
+cyanotype | ไซยาโนไทป์ | cyanotype
+wet_plate | เวตเพลต,ทินไทป์ | wet plate,tintype
+lomography | โลโมกราฟี | lomography
+fisheye | ฟิชอาย | fisheye
+telephoto_compression | บีบระยะเทเลโฟโต้ | telephoto compression
+wide_angle_distortion | บิดเบี้ยวมุมกว้าง | wide-angle distortion
+overexposed | โอเวอร์เอกซ์โพส | overexposed
+underexposed | อันเดอร์เอกซ์โพส | underexposed
+
+@group moment | ฉากและโมเมนต์ | Scenes & moments | 3
+candid | เก็บโมเมนต์,แคนดิด | candid
+posed | ถ่ายแบบโพส | posed
+crowd | ฝูงชน | crowd
+reflections | เงาสะท้อน | reflections
+puddle_reflection | เงาสะท้อนในแอ่งน้ำ | puddle reflection | reflections
+window_reflection | สะท้อนกระจก | window reflection | reflections
+hands | มือ | hands
+texture_closeup | ใกล้พื้นผิว | texture close-up
+detail_shot | ภาพรายละเอียด | detail shot
+flat_lay | แฟลตเลย์,ถ่ายมุมบน | flat lay
+levitation | ลอยตัว | levitation
+long_shadows | เงายาว | long shadows
+urban_geometry | เรขาคณิตเมือง | urban geometry
+liminal | ลิมินัล,พื้นที่เปลี่ยว | liminal space,empty space

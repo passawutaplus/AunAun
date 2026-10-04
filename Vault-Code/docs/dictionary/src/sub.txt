@@ -1,0 +1,77 @@
+@domain sub | หัวข้อภาพ | Subjects (cross-cutting)
+@group people | ผู้คน | People | 3
+people | คน,ผู้คน | people
+portrait_subject | ภาพเหมือนคน | portrait
+group_people | กลุ่มคน | group of people
+child | เด็ก | child
+couple | คู่รัก | couple
+face | ใบหน้า | face
+body | ร่างกาย | body,figure
+dance | เต้นรำ | dance
+
+@group nature | ธรรมชาติ | Nature | 4
+nature | ธรรมชาติ | nature
+mountain | ภูเขา | mountains
+sea | ทะเล | sea,ocean
+beach | ชายหาด | beach
+river | แม่น้ำ,ลำธาร | river,stream
+waterfall | น้ำตก | waterfall
+lake | ทะเลสาบ | lake
+forest | ป่า | forest
+jungle | ป่าดิบ,จังเกิล | jungle
+desert | ทะเลทราย | desert
+meadow | ทุ่ง | field,meadow
+rice_field | นาข้าว | rice field
+flowers | ดอกไม้ | flowers
+tree | ต้นไม้ | tree
+leaves | ใบไม้ | leaves
+cactus | กระบองเพชร | cactus
+sky | ท้องฟ้า | sky
+clouds | เมฆ | clouds
+stars | ดวงดาว | stars
+moon | พระจันทร์ | moon
+sun | พระอาทิตย์ | sun
+
+@group animal | สัตว์ | Animals | 3
+animals | สัตว์ | animals
+dog | สุนัข,หมา | dog
+cat | แมว | cat
+bird | นก | bird
+fish | ปลา | fish
+butterfly | ผีเสื้อ | butterfly
+horse | ม้า | horse
+
+@group food | อาหารและเครื่องดื่ม | Food & drink | 3
+food | อาหาร | food
+dessert | ของหวาน | dessert
+coffee | กาแฟ | coffee
+drink | เครื่องดื่ม | drinks
+fruit | ผลไม้ | fruit
+vegetables | ผัก | vegetables
+bread | ขนมปัง | bread
+
+@group scene | ฉากและสิ่งรอบตัว | Scenes & things | 4
+street | ถนน | street
+city | เมือง | city
+vehicle | ยานพาหนะ | vehicles
+train | รถไฟ | train
+big_ship | เรือใหญ่ | ship
+airplane | เครื่องบิน | airplane
+space | อวกาศ | outer space
+planet | ดาวเคราะห์ | planet
+technology | เทคโนโลยี | technology
+computer | คอมพิวเตอร์ | computer
+music | ดนตรี | music
+books | หนังสือ | books
+art_supplies | อุปกรณ์ศิลปะ | art supplies
+shadows | เงา | shadows
+abstract | นามธรรม | abstract
+geometric | เรขาคณิต | geometric,geometry
+objects | วัตถุ,สิ่งของ | objects
+cultural_scene | วัฒนธรรม | cultural scene
+festival | เทศกาล | festival
+market_scene | บรรยากาศตลาด | market scene
+religion | ศาสนา | religious scene
+sport | กีฬา | sports
+workspace | พื้นที่ทำงาน,เวิร์กสเปซ | workspace
+home_life | ชีวิตในบ้าน | domestic life

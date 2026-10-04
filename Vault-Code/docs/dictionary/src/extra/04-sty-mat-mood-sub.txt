@@ -1,0 +1,155 @@
+@dom sty
+art_nouveau | jugendstil,nouveau | อาร์ตนูโว
+art_deco | deco,1920s deco,gatsby style | อาร์ตเดโค,อาร์ตเดโก้
+bauhaus | bauhaus style | เบาเฮาส์
+pop_art | pop,warhol style | ป๊อปอาร์ต
+surrealism | surreal,dreamlike art | เซอร์เรียล
+minimal | minimalism,minimalistic,less is more,simple,clean minimal | มินิมอล,มินิมัล,มินิมอลลิสต์,เรียบง่าย
+japandi | japanese scandi,japan scandi | แจแปนดี้,เจแปนดี
+wabi_sabi | wabisabi,imperfect beauty | วาบิซาบิ
+scandinavian | scandi,nordic style,hygge | สแกนดิเนเวียน,นอร์ดิก,สแกนดิ
+mid_century | mcm,midcentury,mid century,midcentury modern | มิดเซนจูรี,มิดเซนจูรี่
+modern | modernist,modern style | โมเดิร์น
+contemporary | contemporary style,current style | ร่วมสมัย,คอนเทมโพรารี่
+industrial | industrial chic,factory style,raw industrial | อินดัสเทรียล,อินดัสเตรียล
+loft | new york loft,loft look | ลอฟท์,ลอฟต์
+bohemian | boho,boho chic,bohemian style | โบฮีเมียน,โบโฮ
+rustic | rustic style,country rustic | รัสติก
+farmhouse | modern farmhouse,farm house | ฟาร์มเฮาส์
+coastal_style | beach house style,hamptons,nautical | โคสตอล,สไตล์ทะเล
+tropical_modern | tropical style,resort style,bali style | ทรอปิคอลโมเดิร์น,บาหลี
+classic | classical,timeless,traditional style | คลาสสิก,คลาสสิค
+luxury | luxurious,high end,high-end,premium,lux,opulent | หรูหรา,ลักชัวรี่,พรีเมียม,ไฮเอนด์,หรู
+quiet_luxury | old money,stealth wealth,understated luxury | ควายอัตลักชัวรี่,โอลด์มันนี่,หรูแบบเงียบ
+glam | glamour,glamorous | แกลม,แกลมอร์
+maximalist | maximalism,more is more,loud | แม็กซิมัลลิสต์,แม็กซิมอล
+eclectic | mix and match,mixed styles | อิเคล็กติก
+brutalist | brutalism,brutal,raw concrete style | บรูทัลลิสต์,บรูทัลลิสม์
+memphis | memphis design,memphis group | เมมฟิส
+swiss_style | international style,swiss design,swiss typographic | สวิสสไตล์
+y2k | y2k aesthetic,2000s,early 2000s,millennium style | วายทูเค
+retro | retro style,throwback,old school | เรโทร,โอลด์สคูล
+vintage | antique look,old time,vintage style,aged | วินเทจ,วินเทจๆ
+futuristic | future,sci-fi style,scifi,high tech | ฟิวเจอริสติก,ล้ำสมัย,ล้ำๆ
+space_age | atomic age,retro future | สเปซเอจ
+organic_modern | organic,soft modern,natural modern | ออร์แกนิคโมเดิร์น
+biophilic | biophilia,nature integrated | ไบโอฟิลิก
+sustainable_design | eco design,eco-friendly,green design | ดีไซน์ยั่งยืน,อีโค่
+handcrafted_style | artisan,handmade look,craft style | งานคราฟต์,แฮนด์คราฟต์
+kitsch | tacky cute,kitschy | คิทช์
+camp | campy | แคมป์
+grunge | grungy,distressed punk | กรันจ์
+punk | punk rock,diy punk | พังก์
+gothic | goth,dark gothic | กอธิค,กอธ
+dark_academia | academia,dark academic | ดาร์กอะคาเดเมีย
+cottagecore | cottage core,countryside cozy | คอทเทจคอร์
+kawaii | cute japanese,pastel cute | คาวาอี้,น่ารักแบบญี่ปุ่น
+current_trend | trendy,trending,on trend,latest trend,contemporary trend | เทรนด์,เทรนด์ใหม่,กำลังมาแรง
+thai | thai style,thai look | ไทยๆ,สไตล์ไทย
+traditional_thai | thai heritage,lanna,thai classic | ไทยโบราณ,ล้านนา
+@dom mat
+wood | timber,wooden | ไม้,วู้ด
+oak | oak wood | ไม้โอ๊ค
+walnut | walnut wood | ไม้วอลนัท
+teak | teak wood | ไม้สัก
+concrete | cement,raw concrete,exposed concrete finish | คอนกรีต,ปูนเปลือย,ปูนเปลือยๆ
+marble | marble stone,carrara | หินอ่อน,มาร์เบิล
+stone | natural stone,rock | หินธรรมชาติ
+brick | brickwork,red brick | อิฐ,อิฐแดง
+glass | glazing material,clear glass | กระจก,กลาส
+metal | metallic material,sheet metal | โลหะ,เมทัล
+steel | stainless steel,stainless | สแตนเลส,เหล็ก
+brass | brass finish,gold metal | ทองเหลือง,บราส
+gold_leaf | gold foil,gilded | ทองคำเปลว
+plastic | pvc,polycarbonate | พลาสติก
+paper | paper stock,kraft | กระดาษ
+fabric | textile,cloth | ผ้า
+glossy | shiny,high gloss,gloss | มันเงา,กลอสซี่
+matte | flat finish,mat finish,non-glossy | ด้าน,แมท,แมต,เนียนด้าน
+rough | coarse,raw texture | ขรุขระ,หยาบ
+grainy | grain texture,gritty texture | เกรนๆ,เม็ดทราย
+translucent | see-through,semi transparent | กึ่งโปร่งแสง,โปร่งแสง
+iridescent | pearlescent,holo shimmer,oil slick | ไอริเดสเซนต์,สีรุ้งเหลือบ
+metallic | chrome finish,metal sheen | เมทัลลิก
+weathered | aged texture,time worn | ผุพัง,ผ่านกาลเวลา
+distressed | worn,faded texture,aged paint | ลอกๆ,ผิวเก่า
+stripes | striped,pinstripe | ลายทาง,สไตรป์
+checkered | checker,checkerboard,chequered | ลายหมากรุก,เช็คเกอร์
+plaid | tartan check,flannel | ลายสก็อต,เพลด
+polka_dots | polka dot,dotted | ลายจุด,โพลก้าดอท
+floral | flower pattern,flowery | ลายดอกไม้,ฟลอรัล
+geometric_pattern | geo pattern,geometry pattern | ลายเรขาคณิต,จีโอเมตริก
+abstract_pattern | abstract print | ลายนามธรรม
+seamless_pattern | tileable pattern,repeating pattern | แพทเทิร์นต่อเนื่อง
+repeat_pattern | surface pattern,pattern repeat | แพทเทิร์น,ลายซ้ำ
+@dom mood
+calm | calming,serene,tranquil,zen | สงบ,ผ่อนคลายสงบ,ซอฟต์สงบ
+cozy | comfy,homey,snug,warm and cozy | อบอุ่น,โคซี่,คอสซี่,น่านอน
+elegant | classy,graceful,refined look | หรูหราเรียบ,เอเลแกนต์,สง่า
+dreamy | ethereal,soft dream,whimsical dreamy | ดรีมมี่,ฝันๆ,เหมือนฝัน
+playful | fun,cheerful fun,lively | สนุกสนาน,เพลย์ฟูล,ขี้เล่น
+energetic | dynamic,lively energy,high energy | พลังงานสูง,เอนเนอร์ยี่,สดใสมีพลัง
+bold | striking,strong,loud look,punchy | บอลด์,เด่นๆ,จัดจ้าน,เท่ๆ,ดุ
+dramatic | high drama,theatrical | ดราม่า,ดราม่าติก
+nostalgic | nostalgia,throwback feel | โหยหาอดีต,นอสตัลเจีย,คิดถึงอดีต
+moody | dark and moody,brooding | มู้ดดี้,อารมณ์ดาร์ก
+mysterious | enigmatic,secretive | ลึกลับ,มิสทีเรียส
+gritty | raw and gritty,urban gritty | ดิบๆ,กริตตี้
+quirky | offbeat,weird cute,oddball | ควิร์กี้,แปลกๆ,ตลกๆ
+edgy | cutting edge,edgy style | เอดจี้,แหวกแนว
+clean | tidy,uncluttered,crisp | สะอาดตา,คลีน,เนี๊ยบ
+fresh | refreshing,crisp fresh | สดชื่น,เฟรช
+airy | light and airy,breezy feel | โปร่งโล่ง,แอรี่
+spacious | roomy,open feel | กว้างขวาง
+upscale | classy feel,expensive look,pricey look | ดูเป็นเงิน
+monochrome | one color,single hue,mono color | โมโนโครม,สีเดียว
+black_and_white | b&w look,black white,bw | ขาวดำ,ขาว-ดำ
+neutral_palette | neutrals,neutral tones,neutral colors | สีนิวทรัล,โทนกลาง,โทนเทาครีม
+neutral_with_accent | pop of color,color pop,accent color,splash of color | สีเด่นนิดหน่อย,พอปสี,มีสีสัน
+earth_tone | earthy tones,earthy palette,natural tones | เอิร์ธโทน,โทนดิน,โทนธรรมชาติ
+warm_palette | warm tones,warm colors,warm colour | โทนร้อน,โทนอุ่น,โทนสีอุ่น
+cool_palette | cool tones,cool colors,cold tones | โทนเย็น,โทนสีเย็น
+pastel_palette | pastels,soft pastel colors,pastel tone | พาสเทล,สีพาสเทล,โทนพาสเทล
+muted_palette | muted tones,desaturated,dusty colors,dusty tone | สีหม่น,โทนหม่น,สีดัสตี้,มัวๆ
+vivid_palette | saturated,colorful,bright colors,vibrant,vibrant colors | สีสด,สีจัด,สีสันสดใส,วิบแรนท์
+neon_palette | neon,neon tones,fluorescent | สีนีออน,สีสะท้อนแสง
+jewel_tones | rich jewel colors,gem tones | จิวเวลโทน
+dark_palette | dark tones,deep colors,dark colors | โทนเข้ม,โทนมืด,สีเข้ม
+light_palette | light tones,bright palette,soft light colors | โทนสว่าง,โทนอ่อน,สีอ่อน
+high_contrast | strong contrast,contrasty | คอนทราสต์สูง,ตัดกัน
+low_contrast | soft contrast,flat contrast | คอนทราสต์ต่ำ
+tonal | tone on tone,tone-on-tone,monotone | โทนออนโทน,โทนเดียวกัน
+gradient | color gradient,ombre,fade | กราเดียนต์,ไล่สี,ไล่เฉด
+beige | cream,sand tone,oatmeal,greige | เบจ,ครีม
+off_white | ivory,eggshell,bone white | ออฟไวท์,ขาวนวล,ขาวงาช้าง
+grey | gray,ash,slate | เทา,เกรย์
+terracotta_color | clay color,brick orange | สีเทอราคอตต้า,ส้มอิฐ
+sage | sage,sage green,olive green light | เขียวเซจ,เขียวหม่น
+mustard | mustard yellow,ochre | เหลืองมัสตาร์ด,เหลืองเข้ม
+blush | blush,dusty pink,powder pink | ชมพูบลัช,ชมพูโอลด์โรส
+negative_space | white space,breathing room,whitespace | พื้นที่ว่าง,ช่องไฟ,ที่ว่าง
+symmetry | symmetrical,mirrored | สมมาตร,ซิมเมทรี
+asymmetry | asymmetrical,off balance | ไม่สมมาตร
+rule_of_thirds | thirds,third grid | กฎสามส่วน
+focal_point | focus point,point of interest,hero element | จุดโฟกัส,จุดเด่น
+layered | layering depth,multi layer | ซ้อนชั้น
+tight_crop | close crop,cropped tight | ครอปชิด
+@dom sub
+people | person,human,humans | คน,ผู้คน
+portrait_subject | face portrait,headshot subject | คนในภาพ
+nature | natural,outdoors,greenery landscape | ธรรมชาติ,เนเจอร์
+mountain | mountains,hill,peak | ภูเขา,เขา
+sea | ocean,seaside,marine | ทะเล,ท้องทะเล
+flowers | florals,blossom,bloom | ดอกไม้,ดอกไม้ๆ
+tree | trees | ต้นไม้
+sky | skies,skyscape | ท้องฟ้า
+food | cuisine,dish,meal | อาหาร,ฟู้ด
+dessert | sweets,cake,pastry | ขนม,ของหวาน,เค้ก
+coffee | latte,espresso,cafe drink | กาแฟ,ลาเต้
+street | road,alleyway scene | ถนน
+city | urban,cityscape scene,downtown | เมือง,ในเมือง,เมืองใหญ่
+technology | tech,gadgets scene | เทคโนโลยี,เทค
+abstract | abstraction,non-representational | นามธรรม,แอ็บสแตรกต์
+geometric | shapes,geometry | เรขาคณิต,เจโอเมตริก
+workspace | desk setup,work setup,studio desk | เวิร์คสเปซ
+festival | event scene,fair | เทศกาล,เฟสติวัล

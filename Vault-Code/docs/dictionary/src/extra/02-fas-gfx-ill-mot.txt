@@ -1,0 +1,110 @@
+@dom fas
+dress | frock,midi dress,maxi dress | เดรส,เดรสยาว
+suit | two-piece suit,power suit | สูท
+blazer | sport coat | เบลเซอร์
+puffer | down jacket,padded jacket | แจ็คเก็ตกันหนาว
+tshirt | tee,t shirt | เสื้อยืด,ทีเชิ้ต
+sweater | jumper,pullover,knit top | สเวตเตอร์,ไหมพรม
+hoodie | hooded sweatshirt | ฮู้ดดี้
+trousers | pants,slacks | กางเกงขายาว
+streetwear | street fashion,urban wear | สตรีทแวร์
+sportswear | activewear,athleisure | แอคทีฟแวร์
+oversized | baggy,loose fit,boxy | โอเวอร์ไซส์,ทรงหลวม
+tailored | slim fit,fitted | ทรงเข้ารูป
+flowy | fluid,breezy | พริ้วๆ,ผ้าพริ้ว
+cropped | crop top,crop | เสื้อครอป
+layering | layered look | การเลเยอร์,ซ้อนเลเยอร์
+sneakers | kicks,trainers | สนีกเกอร์,รองเท้าผ้าใบ
+handbag | purse,tote bag,tote | กระเป๋าถือ,โทตแบ็ก
+statement_jewelry | chunky jewelry | จิวเวลรี่ชิ้นใหญ่
+denim | jeans fabric | ยีนส์
+runway | catwalk,fashion show | แคทวอล์ค,รันเวย์
+lookbook | look book | ลุคบุ๊ค
+street_style | ootd,outfit of the day | สตรีทสไตล์
+mood_board | moodboard,inspiration board,vision board | มู้ดบอร์ด
+@dom gfx
+logo | logo design,brand mark | โลโก้
+wordmark | text logo,type logo | เวิร์ดมาร์ก
+brand_identity | ci,corporate identity,visual identity,vi | แบรนด์ดิ้ง,ซีไอ
+brand_guidelines | brand book,brand manual,style guide | แบรนด์ไกด์ไลน์
+business_card | namecard,name card | นามบัตร
+poster | key visual,kv | โปสเตอร์,คีย์วิชวล
+flyer | handout,handbill | ใบปลิว,แฟลเยอร์
+billboard | ooh,outdoor ad | ป้ายโฆษณา,บิลบอร์ด
+sticker | decal,die cut sticker | สติกเกอร์
+zine | fanzine,indie zine | ซีน
+magazine_cover | mag cover | ปกนิตยสาร
+magazine_spread | editorial spread,double page spread | หน้าคู่นิตยสาร
+book_cover | cover art,book jacket | ปกหนังสือ
+album_cover | album art,record sleeve | ปกอัลบั้ม
+infographic | info graphic,info viz | อินโฟกราฟิก
+data_visualization | data viz,dataviz | ดาต้าวิซ
+icon_set | icon pack,iconography | ไอคอนเซ็ต
+packaging | pack design,package design | แพ็คเกจจิ้ง,แพ็กเกจ
+unboxing | unbox | อันบ็อกซิ่ง
+dieline | die line,packaging template | ไดไลน์
+risograph | riso | ริโซกราฟ,ริโซ
+screen_print | silkscreen,serigraph | สกรีน,ซิลค์สกรีน
+foil_stamping | hot foil,gold foil print | ฟอยล์ปั๊ม,ปั๊มฟอยล์
+spot_uv | uv spot,spot varnish | สปอตยูวี
+die_cut | diecut | ไดคัท
+halftone | half tone,dot screen | ฮาล์ฟโทน
+grid_layout | grid system,column grid | กริด
+swiss_grid | international grid | กริดสวิส
+broken_grid | grid breaking,break the grid | กริดแตก
+collage_layout | cut and paste layout | เลย์เอาต์คอลลาจ
+bento_grid | bento layout,bento box layout | เบนโตะกริด
+full_bleed | edge to edge,bleed | เต็มขอบ,ฟูลบลีด
+overlay_text | text overlay,type over image | ตัวอักษรทับภาพ
+@dom ill
+watercolor | watercolour,water color | สีน้ำ
+oil_paint | oil on canvas | สีน้ำมัน
+acrylic | acrylic paint | สีอะคริลิก
+pencil | graphite,pencil sketch | ดินสอ
+line_art | lineart,line drawing,outline art | ไลน์อาร์ต
+digital_painting | digital art,procreate | ดิจิทัลเพนท์,ดิจิทัลอาร์ต
+vector_art | vector,flat illustration | เวกเตอร์
+pixel_art | 8-bit,8 bit,pixelart | พิกเซลอาร์ต
+collage_art | paper collage,cut collage | งานคอลลาจ
+paper_cut | papercut,paper cutout | ตัดกระดาษ
+editorial_illustration | editorial art | ภาพประกอบบทความ
+childrens_book | picture book,kids book illustration | หนังสือภาพเด็ก
+concept_art | concept design,key art | คอนเซ็ปต์อาร์ต
+character_design | char design,character sheet | ออกแบบตัวละคร,แคแรคเตอร์ดีไซน์
+anime | japanese animation | อนิเมะ
+manga | japanese comic | มังงะ
+comic | comic book,comics | การ์ตูนช่อง,คอมมิค
+webtoon | web comic,vertical comic | เว็บตูน
+storyboard | story board | สตอรี่บอร์ด
+urban_sketch | urban sketching,usk | สเก็ตช์เมือง
+mural | wall painting | ภาพจิตรกรรมฝาผนัง,มูรัล
+cute_character | chibi,kawaii mascot | ตัวละครน่ารัก,ชิบิ
+monoline | mono line,single weight line | โมโนไลน์
+bold_outline | thick outline,heavy outline | เส้นขอบหนา
+no_outline | flat shapes,flat style | ไร้เส้นขอบ
+@dom mot
+render_3d | 3d,cgi,3d visual | ทรีดี,งานทรีดี
+isometric | iso,isometric view | ไอโซเมตริก
+low_poly | lowpoly | โลว์โพลี
+clay_render | claymorphism 3d,clay 3d | เคลย์เรนเดอร์
+archviz | arch viz,architectural rendering | อาร์ควิซ
+motion_graphics | motion design,mograph,motion graphic | โมชั่นกราฟิก
+kinetic_typography | kinetic type,moving type | ตัวอักษรเคลื่อนไหว
+loop | seamless loop,looping gif | ลูป
+glitch | glitch art,datamosh | กลิทช์
+vhs | vhs look,camcorder look | วีเอชเอส
+stop_motion | stopmotion | สต็อปโมชั่น
+cyberpunk | cyber punk,neon noir | ไซเบอร์พังก์
+vaporwave | vapor wave | เวเปอร์เวฟ
+synthwave | retrowave,outrun | ซินธ์เวฟ
+film_still | movie still,cinematic still | ภาพนิ่งจากหนัง
+cinematography | cinematic shot | ซีเนมาโตกราฟี
+color_graded | color grading,color grade | คัลเลอร์เกรด
+game_art | game design art | เกมอาร์ต
+cozy_game | cozy gaming | เกมน่ารักสบายๆ
+sprite | sprites,sprite sheet | สไปรท์
+generative_art | gen art,algorithmic art | เจนเนอเรทีฟอาร์ต
+creative_coding | code art | ครีเอทีฟโค้ดดิ้ง
+grainy_gradient | noisy gradient,grain gradient | กราเดียนต์มีเกรน
+mesh_gradient | aurora gradient | เมชกราเดียนต์
+holographic | holo,hologram look | โฮโลกราฟิก

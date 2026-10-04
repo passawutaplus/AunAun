@@ -1,0 +1,95 @@
+@domain mot | โมชัน 3 มิติ ภาพยนตร์ เกม | Motion, 3D, Film & Games
+@group render3d | งาน 3 มิติ | 3D & render | 2
+render_3d | เรนเดอร์สามมิติ | 3d render
+isometric | ไอโซเมตริก | isometric
+low_poly | โลว์โพลี | low poly
+voxel | โวเซล | voxel art
+clay_render | เรนเดอร์ดินน้ำมัน | clay render
+glossy_3d | สามมิติเงา | glossy 3d
+plastic_3d | สามมิติพลาสติก | plastic 3d
+inflated_3d | สามมิติบวม | inflated 3d
+chrome_3d | สามมิติโครเมียม | chrome 3d
+glass_3d | สามมิติแก้ว | glass 3d
+toon_shader | ตูนเชดเดอร์ | toon shading
+photoreal_3d | ภาพ 3 มิติสมจริง | photorealistic 3d
+archviz | อาร์ชวิซ,เรนเดอร์สถาปัตย์ | archviz,architectural visualization
+character_3d | ตัวละคร 3 มิติ | 3d character
+sculpt_3d | ปั้นสามมิติ | digital sculpt
+abstract_3d | นามธรรมสามมิติ | abstract 3d
+particles | พาร์ติเคิล | particles
+fluid_sim | จำลองของไหล | fluid simulation
+procedural | โปรซีเจอรัล | procedural
+photogrammetry | โฟโตแกรมเมทรี | photogrammetry
+
+@group motion_tech | โมชันกราฟิก | Motion graphics | 3
+motion_graphics | โมชันกราฟิก | motion graphics
+kinetic_typography | ตัวอักษรเคลื่อนไหว | kinetic typography
+logo_animation | แอนิเมชันโลโก้ | logo animation
+explainer | วิดีโออธิบาย | explainer video
+loop | ลูป,แอนิเมชันวน | looping animation
+gif_art | จิฟ | gif art
+glitch | กลิตช์ | glitch
+vhs | วีเอชเอส,ภาพเทปวิดีโอ | vhs aesthetic
+shape_animation | แอนิเมชันรูปทรง | shape animation
+liquid_motion | ของเหลวเคลื่อนไหว | liquid motion
+title_sequence | ไตเติลหนัง | title sequence
+lyric_video | ลิริกวิดีโอ | lyric video
+
+@group animation | แอนิเมชัน | Animation styles | 3
+animation_2d | แอนิเมชัน 2 มิติ | 2d animation
+animation_3d | แอนิเมชัน 3 มิติ | 3d animation
+stop_motion | สต็อปโมชัน | stop motion
+claymation | ดินน้ำมันแอนิเมชัน | claymation | stop_motion
+cel_animation | เซลแอนิเมชัน | cel animation
+rotoscope | โรโตสโคป | rotoscope
+cutout_animation | แอนิเมชันกระดาษตัด | cut-out animation
+frame_by_frame | วาดทีละเฟรม | frame by frame
+hand_drawn_animation | แอนิเมชันวาดมือ | hand-drawn animation
+puppet | หุ่นเชิด | puppetry
+
+@group film | ภาพยนตร์ | Film & cinematography | 3
+film_still | ภาพนิ่งจากหนัง | film still
+cinematography | ซีเนมาโตกราฟี | cinematography
+widescreen | จอกว้าง | widescreen,anamorphic
+letterbox | แถบดำบนล่าง | letterbox
+color_graded | ปรับโทนสีหนัง | color graded
+noir | ฟิล์มนัวร์ | film noir
+cyberpunk | ไซเบอร์พังก์ | cyberpunk
+vaporwave | เวเปอร์เวฟ | vaporwave
+synthwave | ซินธ์เวฟ | synthwave
+cinematic_wide | วิวกว้างแบบหนัง | cinematic wide shot
+title_card | ไตเติลการ์ด | title card
+behind_the_scenes | เบื้องหลังกองถ่าย | behind the scenes
+music_video | มิวสิกวิดีโอ | music video
+film_set_design | ออกแบบฉากหนัง | film set design
+film_costume | เครื่องแต่งกายหนัง | film costume
+
+@group game | เกมและอินเทอร์แอคทีฟ | Games & interactive | 3
+game_art | อาร์ตเกม | game art
+game_character | ตัวละครเกม | game character
+game_environment | ฉากเกม | game environment
+isometric_game | เกมไอโซเมตริก | isometric game
+pixel_game | เกมพิกเซล | pixel game
+retro_game | เกมย้อนยุค | retro game
+cozy_game | เกมอบอุ่น | cozy game
+horror_game | เกมสยองขวัญ | horror game
+game_hud | หน้าจอเกม | game hud
+sprite | สไปรต์ | sprite sheet
+tileset | ไทล์เซ็ต | tileset
+
+@group generative | เจเนอเรทีฟและดิจิทัลอาร์ต | Generative & digital art | 3
+generative_art | เจเนอเรทีฟอาร์ต | generative art
+creative_coding | ครีเอทีฟโค้ดดิ้ง | creative coding
+data_art | ศิลปะข้อมูล | data art
+algorithmic_pattern | แพตเทิร์นอัลกอริทึม | algorithmic pattern
+fractal | แฟร็กทัล | fractal
+noise_gradient | ไล่สีนอยซ์ | noise gradient
+grainy_gradient | ไล่สีมีเกรน | grainy gradient
+mesh_gradient | เมชเกรเดียนต์ | mesh gradient
+ascii_art | แอสกี้อาร์ต | ascii art
+ar_vr | เออาร์ วีอาร์ | ar vr,immersive
+projection_mapping | โปรเจกชันแมปปิ้ง | projection mapping
+interactive_installation | อินเตอร์แอคทีฟอินสตอลเลชัน | interactive installation
+light_art | ศิลปะแสง | light art
+led_wall | จอ LED | led wall
+holographic | โฮโลแกรม | holographic

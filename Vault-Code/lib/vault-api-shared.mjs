@@ -102,6 +102,7 @@ export function createHandler({ methods, requireToken = true, limit, fallbackSta
       if (error?.retryAfter) res.setHeader("Retry-After", String(error.retryAfter));
       return sendJson(res, errorStatus(error, fallbackStatus), {
         success: false,
+        ...(error?.code ? { code: error.code } : error?.status === 429 ? { code: "RATE_LIMITED" } : {}),
         message: error?.message || fallbackMessage,
       });
     }

@@ -1,0 +1,147 @@
+@domain arc | สถาปัตยกรรมและภูมิทัศน์ | Architecture & Landscape
+@group typology | ประเภทอาคาร | Building types | 1
+house | บ้าน,บ้านเดี่ยว | house,single-family home
+townhouse | ทาวน์เฮาส์,ทาวน์โฮม | townhouse
+shophouse | ตึกแถว,ห้องแถว,ช็อปเฮาส์ | shophouse,row house
+villa | วิลล่า,พูลวิลล่า | villa
+condo | คอนโด,อาคารชุด | condominium,apartment building
+high_rise | ตึกสูง,อาคารสูง,ตึกระฟ้า | high-rise,skyscraper,tower
+low_rise | อาคารเตี้ย,โลว์ไรส์ | low-rise
+cabin | กระท่อม,บ้านไม้เล็ก,แคบิน | cabin,hut
+tiny_house | ทินีเฮาส์,บ้านหลังเล็ก | tiny house
+resort | รีสอร์ท | resort
+hotel | โรงแรม | hotel
+museum | พิพิธภัณฑ์ | museum
+art_gallery_building | อาคารหอศิลป์ | art gallery building
+library | หอสมุด,อาคารห้องสมุด | library building
+school_building | อาคารเรียน,โรงเรียน | school building
+university | มหาวิทยาลัย,อาคารมหาวิทยาลัย | university campus
+hospital | โรงพยาบาล | hospital
+office_building | อาคารสำนักงาน | office building
+mall | ห้างสรรพสินค้า,ศูนย์การค้า | shopping mall
+market | ตลาด,อาคารตลาด | market hall
+factory | โรงงาน | factory,industrial building
+warehouse | โกดัง,คลังสินค้า | warehouse
+church | โบสถ์ | church
+mosque | มัสยิด | mosque
+temple | วัด,เทวสถาน | temple,shrine
+pagoda | เจดีย์,เจดีย์ทรงระฆัง | pagoda,stupa
+pavilion | ศาลา,พาวิลเลียน | pavilion,gazebo
+stadium | สนามกีฬา | stadium,arena
+theater_building | โรงละคร,โรงภาพยนตร์ | theater,cinema,concert hall
+airport_terminal | อาคารสนามบิน | airport terminal
+train_station | สถานีรถไฟ | train station
+bridge | สะพาน | bridge
+monument | อนุสาวรีย์ | monument
+ruins | ซากปรักหักพัง,โบราณสถาน | ruins
+barn | ยุ้งข้าว,โรงนา | barn
+greenhouse | เรือนกระจก,เรือนเพาะชำ | greenhouse
+
+@group facade | ผนังภายนอก | Facade & envelope | 3
+glass_facade | ผนังกระจกอาคาร,เคอร์เทนวอลล์ | glass facade,curtain wall
+brick_facade | ผนังอิฐภายนอก | brick facade
+concrete_facade | ผนังคอนกรีตเปลือยภายนอก | exposed concrete facade
+stone_facade | ผนังหินภายนอก | stone facade
+timber_facade | ผนังไม้ภายนอก | timber facade,wood cladding
+metal_cladding | ผนังโลหะ,แผ่นเมทัล | metal cladding
+perforated_screen | ผนังฉลุ,แผ่นเจาะรู | perforated screen,perforated facade
+brise_soleil | ครีบบังแดด,ระแนงกันแดด | brise-soleil,sun shading
+louver_facade | ระแนงอาคาร | louvres,slats
+green_facade | ผนังต้นไม้,กำแพงเขียว | green wall,living facade
+double_skin | ผนังสองชั้น | double-skin facade
+parametric_facade | ผนังพาราเมตริก | parametric facade
+curved_facade | ผนังโค้งอาคาร | curved facade
+grid_facade | ผนังตาราง | grid facade
+
+@group roof | หลังคา | Roofs | 1
+gable_roof | หลังคาจั่ว | gable roof
+hip_roof | หลังคาปั้นหยา | hip roof
+flat_roof | หลังคาแบน | flat roof
+mono_pitch | หลังคาเพิงหมาแหงน,หลังคาเอียง | mono-pitch roof,shed roof
+butterfly_roof | หลังคาผีเสื้อ | butterfly roof
+curved_roof | หลังคาโค้ง | curved roof,vaulted roof
+green_roof | หลังคาเขียว | green roof
+thai_roof | หลังคาทรงไทย | traditional thai roof
+sawtooth_roof | หลังคาฟันเลื่อย | sawtooth roof
+dome | โดม,โดมครึ่งวงกลม | dome
+tensile_roof | หลังคาผ้าใบ,เมมเบรน | tensile roof,membrane roof
+
+@group element | องค์ประกอบอาคาร | Building elements | 5
+columns | เสา,เสาอาคาร | columns,pillars
+colonnade | แถวเสา | colonnade
+arch | ซุ้มโค้ง,อาร์ช | arch
+cantilever | ส่วนยื่น,แคนติลีเวอร์ | cantilever
+pilotis | เสาลอย,พิโลติส | pilotis
+courtyard | ลานกลาง,คอร์ตยาร์ด | courtyard
+veranda | ระเบียงยาว,เฉลียง | veranda,porch
+canopy | หลังคาคลุมทางเดิน,แคโนปี | canopy
+overhang | ชายคายื่น | roof overhang,eaves
+external_staircase | บันไดภายนอก | external staircase
+ramp | ทางลาด,แรมป์ | ramp
+skybridge | สะพานลอยเชื่อมอาคาร | skybridge
+rooftop | ดาดฟ้า,รูฟท็อป | rooftop terrace
+entrance_gate | ประตูทางเข้า,ซุ้มประตู | entrance gate
+fence | รั้ว | fence
+
+@group structure | โครงสร้างและระบบก่อสร้าง | Structure & construction | 3
+exposed_concrete | คอนกรีตเปลือย,เบตองบรูต | exposed concrete,béton brut
+steel_frame | โครงเหล็ก | steel frame
+timber_frame | โครงไม้,โครงสร้างไม้ | timber frame,post and beam
+clt | ไม้ CLT | cross laminated timber,clt
+rammed_earth | ดินอัด | rammed earth
+bamboo_structure | โครงสร้างไม้ไผ่ | bamboo structure
+precast | พรีแคสต์,คอนกรีตสำเร็จรูป | precast concrete
+shipping_container | ตู้คอนเทนเนอร์ | shipping container architecture
+modular_prefab | บ้านสำเร็จรูป,อาคารโมดูลาร์ | modular building,prefab
+space_frame | โครงข้อแข็ง,สเปซเฟรม | space frame
+truss | โครงถัก,ทรัส | truss
+geodesic | จีโอเดสิค | geodesic dome
+gridshell | กริดเชลล์ | gridshell
+adaptive_reuse | ปรับปรุงอาคารเก่า,รีโนเวท | adaptive reuse,renovation
+
+@group urban | พื้นที่เมืองและสาธารณะ | Urban & public space | 4
+street_view | วิวถนน,ฉากถนน | street scene
+alley | ซอย,ตรอก | alley,lane
+plaza | ลานกว้าง,พลาซ่า | plaza,square
+urban_park | สวนสาธารณะ,สวนสาธารณะในเมือง | public park,urban park
+waterfront | ริมน้ำ | waterfront
+pedestrian_street | ถนนคนเดิน | pedestrian street
+skyline | สกายไลน์,เส้นขอบฟ้าเมือง | city skyline
+night_city | เมืองยามค่ำคืน | city at night
+aerial_city | เมืองมุมสูง | aerial city view
+transit | ระบบขนส่ง,สถานีรถไฟฟ้า | transit,metro station
+playground | สนามเด็กเล่น | playground
+public_seating | ที่นั่งสาธารณะ | public seating
+street_furniture | เฟอร์นิเจอร์ถนน | street furniture
+
+@group landscape | สวนและภูมิทัศน์ | Garden & landscape | 4
+garden | สวน,สวนบ้าน | garden
+japanese_garden | สวนญี่ปุ่น | japanese garden
+zen_garden | สวนเซน,สวนกรวด | zen garden,rock garden
+tropical_garden | สวนทรอปิคอล,สวนเขตร้อน | tropical garden
+courtyard_garden | สวนลานกลาง | courtyard garden
+rooftop_garden | สวนดาดฟ้า | rooftop garden
+swimming_pool | สระว่ายน้ำ | swimming pool
+infinity_pool | สระอินฟินิตี้ | infinity pool | swimming_pool
+reflecting_pool | บ่อสะท้อนน้ำ | reflecting pool
+pond | บ่อน้ำ,บ่อปลา | pond
+fountain | น้ำพุ | fountain
+pergola | ซุ้มไม้เลื้อย,พาร์โกลา | pergola
+garden_path | ทางเดินในสวน | garden path
+stepping_stones | แผ่นหินปูทาง | stepping stones
+terraced_landscape | ภูมิทัศน์ขั้นบันได | terraced landscape
+lawn | สนามหญ้า | lawn
+planting_bed | แปลงปลูกต้นไม้ | planting bed
+hedge | แนวต้นไม้,ไม้พุ่ม | hedge
+tree_canopy | ร่มไม้,เรือนยอดไม้ | tree canopy
+outdoor_dining | โต๊ะอาหารกลางแจ้ง | outdoor dining
+fire_pit | หลุมไฟ | fire pit
+
+@group context | บริบทและสภาพแวดล้อม | Context & setting | 2
+coastal | ชายทะเล,ริมชายหาด | coastal setting
+mountain_setting | บนภูเขา | mountain setting
+forest_setting | ในป่า | forest setting
+desert_setting | ในทะเลทราย | desert setting
+rural | ชนบท | rural setting
+urban_dense | เมืองหนาแน่น | dense urban
+historic_district | ย่านเก่า,ย่านประวัติศาสตร์ | historic district

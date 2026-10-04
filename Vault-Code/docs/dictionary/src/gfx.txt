@@ -1,0 +1,108 @@
+@domain gfx | กราฟิกดีไซน์ | Graphic Design
+@group branding | แบรนด์ดิ้ง | Branding & identity | 3
+logo | โลโก้ | logo
+wordmark | โลโก้ตัวอักษร,เวิร์ดมาร์ก | wordmark,logotype | logo
+monogram | โมโนแกรม | monogram | logo
+emblem | เอมเบลม,ตราสัญลักษณ์ | emblem,crest | logo
+symbol_mark | สัญลักษณ์,ไอคอนโลโก้ | symbol mark,logomark | logo
+mascot | มาสคอต | mascot
+brand_identity | อัตลักษณ์แบรนด์ | brand identity
+brand_guidelines | แบรนด์ไกด์ไลน์ | brand guidelines
+brand_pattern | แพทเทิร์นแบรนด์ | brand pattern
+stationery | เครื่องเขียนแบรนด์,สเตชันเนอรี | stationery
+business_card | นามบัตร | business card
+letterhead | หัวจดหมาย | letterhead
+brand_merch | สินค้าแบรนด์,เมิร์ช | branded merchandise
+rebrand | รีแบรนด์ | rebrand
+signage_system | ระบบป้าย,ไซน์เนจ | signage system,wayfinding
+label_tag | ฉลากสินค้า,ป้ายแท็ก | label,tag
+
+@group poster | โปสเตอร์และสิ่งพิมพ์ | Posters & print | 3
+poster | โปสเตอร์ | poster
+event_poster | โปสเตอร์อีเวนต์ | event poster | poster
+film_poster | โปสเตอร์หนัง | film poster | poster
+gig_poster | โปสเตอร์คอนเสิร์ต | gig poster,music poster | poster
+exhibition_poster | โปสเตอร์นิทรรศการ | exhibition poster | poster
+typographic_poster | โปสเตอร์ตัวอักษร | typographic poster | poster
+swiss_poster | โปสเตอร์สไตล์สวิส | swiss style poster | poster
+flyer | ใบปลิว,แฟลเยอร์ | flyer
+brochure | โบรชัวร์ | brochure
+leaflet | ใบพับ | leaflet,fold-out
+billboard | ป้ายบิลบอร์ด | billboard
+out_of_home | สื่อนอกบ้าน | out-of-home advertising
+postcard | โปสการ์ด | postcard
+invitation | การ์ดเชิญ | invitation
+ticket | ตั๋ว | ticket
+menu_design | เมนูร้านอาหาร,ออกแบบเมนู | menu design
+calendar_design | ปฏิทิน | calendar design
+sticker | สติกเกอร์ | sticker
+zine | ซีน,ซีนทำมือ | zine
+
+@group editorial | งานบรรณาธิการ | Editorial & information design | 3
+magazine_cover | ปกนิตยสาร | magazine cover
+magazine_spread | หน้าคู่นิตยสาร | magazine spread
+book_cover | ปกหนังสือ | book cover
+book_layout | จัดหน้าหนังสือ | book layout
+album_cover | ปกอัลบั้ม | album cover
+newspaper | หนังสือพิมพ์ | newspaper
+catalog | แคตตาล็อก | catalog
+annual_report | รายงานประจำปี | annual report
+editorial_layout | เลย์เอาต์บรรณาธิการ | editorial layout
+photobook | โฟโต้บุ๊ก,หนังสือภาพถ่าย | photo book
+art_book | อาร์ตบุ๊ก | art book
+infographic | อินโฟกราฟิก | infographic
+data_visualization | ภาพข้อมูล,ดาต้าวิซ | data visualization
+chart_design | ชาร์ต,แผนภูมิ | chart design,diagram
+map_design | ออกแบบแผนที่ | map design,cartography
+timeline | ไทม์ไลน์ | timeline
+pictogram | พิกโตแกรม,ภาพสัญลักษณ์ | pictogram
+icon_set | ชุดไอคอน | icon set
+
+@group packaging | บรรจุภัณฑ์ | Packaging | 3
+packaging | แพ็กเกจจิ้ง,บรรจุภัณฑ์ | packaging
+box_packaging | กล่องแพ็กเกจ | box packaging
+bottle_label | ฉลากขวด | bottle label
+bottle_package | ขวดบรรจุภัณฑ์ | bottle packaging
+can_package | กระป๋อง | can packaging
+pouch | ซอง,ถุงซอง | pouch,sachet
+paper_bag | ถุงกระดาษ | paper bag
+tube_package | หลอดบรรจุภัณฑ์ | tube packaging
+jar_package | ขวดโหล,โหล | jar packaging
+food_packaging | บรรจุภัณฑ์อาหาร | food packaging
+cosmetic_packaging | แพ็กเกจเครื่องสำอาง | cosmetic packaging
+beverage_packaging | แพ็กเกจเครื่องดื่ม | beverage packaging
+wine_label | ฉลากไวน์ | wine label
+gift_packaging | กล่องของขวัญ | gift packaging
+eco_packaging | บรรจุภัณฑ์รักษ์โลก | sustainable packaging,eco packaging
+unboxing | อันบ็อกซิ่ง | unboxing
+dieline | ไดไลน์,แบบคลี่กล่อง | dieline,structural packaging
+shipping_box | กล่องส่งของ | shipping box
+
+@group print_finish | งานพิมพ์และเทคนิค | Print & finishing | 4
+risograph | ริโซกราฟ | risograph
+screen_print | ซิลค์สกรีน | screen print
+offset_print | ออฟเซ็ต | offset print
+letterpress | เล็ตเตอร์เพรส | letterpress
+foil_stamping | ปั๊มฟอยล์,ฟอยล์ | foil stamping
+embossing | ปั๊มนูน | embossing
+debossing | ปั๊มจม | debossing
+spot_uv | สปอตยูวี | spot uv
+die_cut | ไดคัท | die cut
+duotone | ดูโอโทน | duotone print
+halftone | ฮาล์ฟโทน,ลายจุดเม็ดสกรีน | halftone
+overprint | โอเวอร์พรินต์ | overprint
+misregistration | พิมพ์เหลื่อม | misregistration
+photocopy | ถ่ายเอกสาร,ซีร็อกซ์ | photocopy,xerox
+
+@group layout | โครงสร้างงานกราฟิก | Layout devices | 3
+grid_layout | เลย์เอาต์กริด | grid layout
+swiss_grid | กริดสวิส | swiss grid | grid_layout
+asymmetric_layout | เลย์เอาต์อสมมาตร | asymmetric layout
+modular_layout | เลย์เอาต์โมดูลาร์ | modular layout
+broken_grid | กริดแตก,ทำลายกริด | broken grid
+collage_layout | เลย์เอาต์คอลลาจ | collage layout
+bento_grid | เบนโตกริด | bento grid
+split_layout | แบ่งครึ่ง,สปลิต | split layout
+full_bleed | เต็มขอบ,ฟูลเบลด | full bleed
+framed_layout | ขอบขาว,กรอบ | framed layout,border
+overlay_text | ตัวอักษรทับภาพ | text over image

@@ -1,0 +1,200 @@
+# int = Interior. Format: id | th, th | en, en | parent(optional)
+@domain int | อินทีเรีย | Interior
+@group room | ห้องพักอาศัย | Residential rooms | 1
+living_room | ห้องนั่งเล่น,ห้องรับแขก,ลิฟวิ่งรูม | living room,lounge,sitting room
+bedroom | ห้องนอน | bedroom
+master_bedroom | ห้องนอนมาสเตอร์,ห้องนอนใหญ่ | master bedroom | bedroom
+kids_room | ห้องเด็ก,ห้องนอนเด็ก | kids room,nursery | bedroom
+guest_room | ห้องนอนแขก | guest bedroom | bedroom
+dining_room | ห้องทานข้าว,ห้องอาหาร | dining room
+kitchen | ห้องครัว,ครัว | kitchen
+open_kitchen | ครัวเปิด,ครัวโอเพน | open kitchen | kitchen
+pantry | ห้องเก็บของครัว,แพนทรี | pantry | kitchen
+bathroom | ห้องน้ำ | bathroom
+powder_room | ห้องน้ำแขก | powder room,half bath | bathroom
+walk_in_closet | ห้องแต่งตัว,วอล์กอินโคลเซ็ต | walk-in closet,dressing room
+home_office | ห้องทำงาน,โฮมออฟฟิศ | home office,study
+library_room | ห้องสมุดในบ้าน,ห้องหนังสือ | home library,reading room
+home_theater | ห้องดูหนัง,โฮมเธียเตอร์ | home theater,media room
+laundry | ห้องซักรีด,ห้องซักผ้า | laundry room
+entryway | โถงทางเข้า,ทางเข้าบ้าน,ฟอเยอร์ | entryway,foyer
+hallway | ทางเดิน,โถงทางเดิน | hallway,corridor
+balcony | ระเบียง,บาลโคนี | balcony
+terrace | เทอเรซ,ลานนั่งเล่นกลางแจ้ง | terrace,patio
+sunroom | ห้องกระจก,ซันรูม | sunroom,conservatory
+loft_space | พื้นที่ลอฟต์,ห้องลอฟต์ | loft space
+studio_apartment | ห้องสตูดิโอ,คอนโดสตูดิโอ | studio apartment
+
+@group venue | พื้นที่เชิงพาณิชย์และสาธารณะ | Commercial & public venues | 1
+hotel_room | ห้องพักโรงแรม | hotel room,guest suite
+hotel_lobby | ล็อบบี้,ล็อบบี้โรงแรม | lobby,hotel lobby
+restaurant | ร้านอาหาร,ห้องอาหารร้าน | restaurant interior
+cafe | คาเฟ่,ร้านกาแฟ | cafe,coffee shop
+bar | บาร์,ผับ | bar,lounge bar
+retail_store | ร้านค้า,ร้านค้าปลีก,บูทีค | retail store,boutique
+showroom | โชว์รูม | showroom
+office | ออฟฟิศ,สำนักงาน | office,workplace
+coworking | โคเวิร์กกิ้ง | coworking space
+meeting_room | ห้องประชุม | meeting room,boardroom
+salon | ร้านทำผม,ซาลอน | hair salon,beauty salon
+spa | สปา | spa,wellness
+clinic | คลินิก | clinic,healthcare interior
+gym | ฟิตเนส,ยิม | gym,fitness studio
+gallery | แกลเลอรี,หอศิลป์ภายใน | gallery,exhibition space
+public_library | ห้องสมุดสาธารณะ | public library
+classroom | ห้องเรียน | classroom,school interior
+airport_interior | สนามบินภายใน | airport interior
+event_space | พื้นที่จัดอีเวนต์,ห้องจัดเลี้ยง | event space,ballroom
+
+@group furniture | เฟอร์นิเจอร์ | Furniture | 4
+sofa | โซฟา | sofa,couch
+sectional | โซฟาตัวแอล,โซฟาเข้ามุม | sectional sofa,l-shaped sofa | sofa
+armchair | เก้าอี้พักผ่อน,อาร์มแชร์ | armchair,lounge chair
+accent_chair | เก้าอี้สร้างจุดเด่น | accent chair | armchair
+dining_chair | เก้าอี้ทานข้าว | dining chair
+stool | สตูล,เก้าอี้สตูล | stool,bar stool
+bench | ม้านั่ง,เบนช์ | bench
+bed | เตียง | bed
+platform_bed | เตียงแพลตฟอร์ม | platform bed | bed
+canopy_bed | เตียงมีม่าน | canopy bed | bed
+headboard | หัวเตียง | headboard
+nightstand | โต๊ะข้างเตียง | nightstand,bedside table
+coffee_table | โต๊ะกลาง,โต๊ะกาแฟ | coffee table
+side_table | โต๊ะข้าง | side table,end table
+dining_table | โต๊ะอาหาร | dining table
+desk | โต๊ะทำงาน | desk,work desk
+console_table | โต๊ะคอนโซล | console table
+dresser | ตู้ลิ้นชัก,ดรอเวอร์ | dresser,chest of drawers
+wardrobe | ตู้เสื้อผ้า | wardrobe,closet
+bookshelf | ชั้นหนังสือ | bookshelf,bookcase
+shelving | ชั้นวางของ | shelving,open shelves
+sideboard | ตู้เก็บของ,ไซด์บอร์ด | sideboard,credenza
+tv_unit | ชั้นวางทีวี,ตู้ทีวี | tv unit,media console
+vanity | โต๊ะเครื่องแป้ง | vanity,dressing table
+ottoman | สตูลวางเท้า,ออตโตมัน | ottoman,pouf
+daybed | เดย์เบด | daybed
+built_in | บิลต์อิน,เฟอร์นิเจอร์บิลต์อิน | built-in furniture,custom joinery
+modular_furniture | เฟอร์นิเจอร์โมดูลาร์ | modular furniture
+outdoor_furniture | เฟอร์นิเจอร์กลางแจ้ง | outdoor furniture
+kitchen_island | ไอแลนด์ครัว,เกาะกลางครัว | kitchen island
+
+@group lighting | แสงและโคมไฟ | Lighting fixtures | 4
+natural_light | แสงธรรมชาติ | natural light,daylight
+pendant_lamp | โคมไฟแขวน,โคมไฟห้อย | pendant lamp,pendant light
+chandelier | โคมระย้า,แชนเดอเลียร์ | chandelier
+floor_lamp | โคมไฟตั้งพื้น | floor lamp
+table_lamp | โคมไฟตั้งโต๊ะ | table lamp
+wall_sconce | โคมไฟติดผนัง | wall sconce,wall light
+recessed_lighting | ไฟดาวน์ไลท์,ไฟฝังฝ้า | recessed lighting,downlight
+track_lighting | ไฟรางแทรค | track lighting
+cove_lighting | ไฟหลืบ,ไฟซ่อน | cove lighting,indirect lighting
+led_strip | ไฟเส้น,แอลอีดีสตริป | led strip,strip light
+neon_sign | ป้ายไฟนีออน,นีออน | neon sign,neon decor
+warm_lighting | แสงวอร์ม,แสงสีส้ม | warm lighting
+skylight | สกายไลท์,ช่องแสงหลังคา | skylight
+candlelight | แสงเทียน | candlelight
+accent_lighting | ไฟเน้น,ไฟส่องจุด | accent lighting,spotlight
+
+@group floor | พื้น | Flooring | 1
+wood_floor | พื้นไม้ | wood floor,hardwood
+parquet | พื้นไม้ปาร์เกต์,ปาร์เกต์ | parquet | wood_floor
+herringbone | พื้นลายก้างปลา,เฮอร์ริงโบน | herringbone floor | parquet
+polished_concrete | พื้นปูนขัดมัน,พื้นปูนเปลือย | polished concrete floor,concrete floor
+terrazzo_floor | พื้นเทอราซโซ | terrazzo floor
+marble_floor | พื้นหินอ่อน | marble floor
+stone_tile | พื้นกระเบื้องหิน,พื้นหิน | stone floor,stone tile
+ceramic_tile | กระเบื้องเซรามิก | ceramic tile floor
+checkered_floor | พื้นหมากรุก | checkerboard floor
+vinyl_floor | พื้นไวนิล,พื้นลามิเนต | vinyl floor,laminate floor
+carpet | พรมปูเต็มห้อง | wall-to-wall carpet
+rug | พรม,พรมปูพื้น | rug,area rug
+epoxy_floor | พื้นอีพ็อกซี่ | epoxy floor
+
+@group wall | ผนัง | Wall treatments | 2
+painted_wall | ผนังทาสี | painted wall
+feature_wall | ผนังเน้น,ผนังแอคเซนต์ | feature wall,accent wall
+wallpaper | วอลเปเปอร์ | wallpaper
+wood_paneling | ผนังไม้ระแนง,ไม้บุผนัง | wood paneling,slat wall
+fluted_panel | ผนังริ้ว,แผ่นริ้ว | fluted panel,ribbed wall
+wainscoting | บัวผนัง,ผนังบัว | wainscoting,molding
+brick_wall | ผนังอิฐ | brick wall
+concrete_wall | ผนังปูนเปลือย | concrete wall,raw concrete wall
+plaster_wall | ผนังปูนฉาบ,ผนังฉาบ | plaster wall,limewash
+stone_cladding | ผนังหิน | stone cladding
+tile_wall | ผนังกระเบื้อง | tiled wall
+glass_partition | ผนังกระจก,ฉากกระจก | glass partition
+mirror_wall | ผนังกระจกเงา | mirror wall
+gallery_wall | ผนังแกลเลอรี,ผนังภาพ | gallery wall
+wall_niche | ช่องโชว์,ช่องเว้าผนัง | wall niche,alcove
+
+@group ceiling_open | เพดานและช่องเปิด | Ceilings & openings | 3
+high_ceiling | เพดานสูง,ฝ้าสูง | high ceiling
+double_height | ห้องสองชั้น,สองชั้นโปร่ง | double-height space | high_ceiling
+exposed_beams | คานเปลือย,คานไม้ | exposed beams
+coffered_ceiling | เพดานคอฟเฟอร์ | coffered ceiling
+vaulted_ceiling | เพดานโค้ง | vaulted ceiling
+false_ceiling | ฝ้าเพดาน,ฝ้าฉาบเรียบ | false ceiling,drop ceiling
+large_window | หน้าต่างบานใหญ่ | large window,picture window
+floor_to_ceiling_window | กระจกสูงจรดพื้น | floor-to-ceiling window
+arched_window | หน้าต่างโค้ง | arched window
+arched_doorway | ประตูโค้ง,ทางเดินโค้ง | arched doorway,archway
+sliding_door | ประตูบานเลื่อน | sliding door
+pivot_door | ประตูบานหมุน | pivot door
+shoji_screen | ฉากโชจิ,ประตูโชจิ | shoji screen
+curtain | ผ้าม่าน | curtains,drapes
+sheer_curtain | ผ้าม่านโปร่ง,ม่านบาง | sheer curtain | curtain
+blinds | มู่ลี่,บลายด์ | blinds
+louver_shutter | บานเกล็ด | louvers,shutters
+fireplace | เตาผิง | fireplace
+
+@group decor | ของตกแต่ง | Decor items | 5
+wall_art | ภาพติดผนัง,งานศิลปะติดผนัง | wall art,framed art
+mirror | กระจกเงา | mirror
+round_mirror | กระจกกลม | round mirror | mirror
+vase | แจกัน | vase
+flower_arrangement | ช่อดอกไม้,จัดดอกไม้ | flower arrangement,bouquet
+indoor_plants | ต้นไม้ในร่ม,ต้นไม้ประดับ | indoor plants,houseplants
+potted_plant | กระถางต้นไม้ | potted plant
+hanging_plants | ต้นไม้แขวน | hanging plants
+dried_flowers | ดอกไม้แห้ง | dried flowers
+styled_books | หนังสือตกแต่ง | styled books
+candles | เทียน,เชิงเทียน | candles
+decor_sculpture | ประติมากรรมตกแต่ง | decorative sculpture
+cushions | หมอนอิง | throw pillows,cushions
+throw_blanket | ผ้าห่มคลุมโซฟา | throw blanket
+table_setting | ชุดจานชาม,จัดโต๊ะ | table setting
+decor_ceramics | เซรามิกตกแต่ง | ceramic decor,decorative pottery
+tapestry | ผ้าแขวนผนัง | tapestry,wall hanging
+wall_clock | นาฬิกาติดผนัง | wall clock
+
+@group feature | องค์ประกอบพื้นที่ | Spatial features | 4
+open_plan | แปลนเปิด,พื้นที่เปิดโล่ง | open plan
+split_level | ห้องต่างระดับ,สเปลิตเลเวล | split level
+sunken_lounge | ห้องนั่งเล่นยุบระดับ,คอนเวอร์เซชันพิต | sunken living room,conversation pit | split_level
+mezzanine | ชั้นลอย | mezzanine
+staircase | บันได | staircase,stairs
+spiral_staircase | บันไดเวียน | spiral staircase | staircase
+floating_stairs | บันไดลอย | floating stairs | staircase
+indoor_courtyard | คอร์ตยาร์ดในร่ม,ลานกลางบ้าน | indoor courtyard
+atrium | ห้องโถงสูง,แอทเรียม | atrium
+indoor_garden | สวนในบ้าน | indoor garden
+indoor_water_feature | น้ำตกในบ้าน,น้ำพุในบ้าน | indoor water feature
+partition | ฉากกั้นห้อง,พาร์ทิชัน | room divider,partition
+window_seat | ที่นั่งริมหน้าต่าง | window seat,bay window seat
+reading_nook | มุมอ่านหนังสือ | reading nook
+built_in_seating | ที่นั่งบิลต์อิน | built-in seating,banquette
+
+@group kitchen_bath | ครัวและห้องน้ำ | Kitchen & bath details | 4
+kitchen_cabinets | ตู้ครัว | kitchen cabinets
+handleless_cabinet | ตู้ไร้มือจับ | handleless cabinets
+countertop | ท็อปครัว,เคาน์เตอร์ | countertop
+marble_countertop | ท็อปหินอ่อน | marble countertop | countertop
+backsplash | ผนังกันเปื้อน,แบ็คสแปลช | backsplash
+range_hood | เครื่องดูดควัน | range hood
+bathtub | อ่างอาบน้ำ | bathtub
+freestanding_tub | อ่างอาบน้ำอิสระ | freestanding bathtub | bathtub
+rain_shower | ฝักบัวเรนชาวเวอร์ | rain shower
+walk_in_shower | ห้องอาบน้ำเปิด,วอล์กอินชาวเวอร์ | walk-in shower
+vessel_sink | อ่างล้างหน้าวางบนเคาน์เตอร์ | vessel sink
+double_vanity | เคาน์เตอร์อ่างล้างหน้าคู่ | double vanity
+bar_counter | เคาน์เตอร์บาร์ | bar counter

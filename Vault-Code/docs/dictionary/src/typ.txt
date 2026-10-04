@@ -1,0 +1,70 @@
+@domain typ | ตัวอักษร | Typography & Lettering
+@group class | ประเภทตัวอักษร | Typeface classes | 2
+serif | เซอริฟ,ตัวมีเชิง | serif
+old_style | โอลด์สไตล์ | old style serif | serif
+transitional | ทรานสิชันนัล | transitional serif | serif
+didone | โดดอน,ไดโดน | didone,modern serif | serif
+slab_serif | สแลบเซอริฟ | slab serif | serif
+sans | ซานส์เซอริฟ,ตัวไม่มีเชิง | sans serif,sans
+grotesque | กรอทเทสก์ | grotesque | sans
+neo_grotesque | นีโอกรอทเทสก์ | neo-grotesque | grotesque
+geometric_sans | จีโอเมทริกซานส์ | geometric sans | sans
+humanist_sans | ฮิวแมนิสต์ซานส์ | humanist sans | sans
+script | สคริปต์,ลายมือเขียน | script
+brush_script | บรัชสคริปต์,ตัวพู่กัน | brush script | script
+calligraphic | คัดลายมือ,แคลลิกราฟี | calligraphy
+blackletter | แบล็กเลตเตอร์,ตัวอักษรโกธิค | blackletter
+display | ดิสเพลย์,ตัวอักษรตกแต่ง | display type
+monospace | โมโนสเปซ | monospace
+handwritten | ลายมือ | handwritten
+stencil | สเตนซิล | stencil
+decorative | ตัวอักษรประดิษฐ์ | decorative type
+pixel_type | ตัวพิกเซล | pixel font,bitmap type
+thai_loopless | ฟอนต์ไทยไร้หัว,ตัวหัวเรียบ | loopless thai typeface
+thai_looped | ฟอนต์ไทยมีหัว,ตัวมีหัว | looped thai typeface
+
+@group treatment | การจัดตัวอักษร | Type treatments | 4
+oversized_type | ตัวอักษรขนาดใหญ่ | oversized type
+stacked_type | ตัวอักษรซ้อนบรรทัด | stacked type
+outline_type | ตัวอักษรเส้นขอบ | outline type
+variable_font | ฟอนต์ตัวแปร,วาริเอเบิล | variable font
+condensed | ตัวบีบ,คอนเดนส์ | condensed type
+extended | ตัวกว้าง,เอกซ์เทนเดด | extended type
+all_caps | ตัวพิมพ์ใหญ่ทั้งหมด | all caps
+lowercase_only | ตัวพิมพ์เล็กล้วน | lowercase only
+tight_tracking | ตัวชิด | tight tracking
+wide_tracking | ตัวห่าง | wide letterspacing
+distorted_type | ตัวอักษรบิดเบี้ยว | distorted type
+type_on_path | ตัวอักษรตามเส้น | text on a path
+type_as_image | ตัวอักษรเป็นภาพ | type as image,typographic image
+gradient_type | ตัวอักษรไล่สี | gradient type
+chrome_type | ตัวอักษรโครเมียม | chrome type
+type_3d | ตัวอักษรสามมิติ | 3d type
+layered_type | ตัวอักษรซ้อนทับ | overlapping type
+drop_cap | ตัวอักษรขึ้นต้นใหญ่ | drop cap
+hierarchy | ลำดับชั้นข้อความ | typographic hierarchy
+pull_quote | ข้อความคัดเด่น | pull quote
+ligature | ลิเกเจอร์ | ligature
+heavy_weight | ตัวหนา,ตัวอ้วน,เฮฟวี่ | heavy weight,bold weight,black weight,extra bold
+light_weight | ตัวบาง,ไลท์เวท | light weight,thin type,hairline weight
+italic | ตัวเอียง,อิตาลิก | italic,oblique,slanted type
+rounded_type | ตัวมน,ฟอนต์ตัวมน | rounded font,rounded type
+
+@group lettering | เลตเตอริงและงานมือ | Lettering & hand-made type | 3
+hand_lettering | เลตเตอริงมือ | hand lettering
+sign_painting | งานเขียนป้าย | sign painting
+vintage_signage | ป้ายวินเทจ | vintage signage
+neon_lettering | ตัวอักษรนีออน | neon lettering
+graffiti_lettering | ตัวกราฟฟิตี้ | graffiti lettering
+chalk_lettering | ตัวชอล์ก | chalk lettering
+embroidered_type | ตัวอักษรปัก | embroidered lettering
+carved_type | ตัวอักษรแกะสลัก | carved lettering
+wood_type | ตัวอักษรไม้ | wood type
+thai_calligraphy | อักษรวิจิตรไทย,ตัวอักษรประดิษฐ์ไทย | thai calligraphy
+arabic_calligraphy | ตัวอักษรอาหรับ | arabic calligraphy
+chinese_calligraphy | พู่กันจีน,อักษรจีน | chinese calligraphy
+japanese_type | ตัวอักษรญี่ปุ่น | japanese typography
+korean_type | ตัวอักษรเกาหลี | hangul typography
+multiscript | หลายภาษา,มัลติสคริปต์ | multi-script typography
+experimental_type | ตัวอักษรทดลอง | experimental typography
+type_specimen | ใบตัวอย่างฟอนต์ | type specimen

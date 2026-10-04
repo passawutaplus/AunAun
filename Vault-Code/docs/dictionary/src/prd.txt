@@ -1,0 +1,79 @@
+@domain prd | ผลิตภัณฑ์และเฟอร์นิเจอร์ | Product & Industrial Design
+@group category | ประเภทผลิตภัณฑ์ | Product categories | 2
+furniture_design | เฟอร์นิเจอร์ดีไซน์ | furniture design
+lighting_design | โคมไฟดีไซน์ | lighting design
+tableware | เครื่องใช้บนโต๊ะอาหาร | tableware
+cookware | เครื่องครัว | cookware
+glassware | แก้วน้ำ,เครื่องแก้ว | glassware
+home_decor_product | ของแต่งบ้าน | home decor product
+consumer_electronics | เครื่องใช้ไฟฟ้า | consumer electronics
+audio_device | อุปกรณ์เสียง,ลำโพง | audio device,speaker
+headphones | หูฟัง | headphones
+smartphone | สมาร์ทโฟน | smartphone
+laptop | แล็ปท็อป | laptop
+camera_device | กล้องถ่ายภาพ | camera device
+wearable | เวียร์เรเบิล,อุปกรณ์สวมใส่ | wearable device
+appliance | เครื่องใช้ในบ้าน | home appliance
+hand_tool | เครื่องมือช่าง | hand tool
+power_tool | เครื่องมือไฟฟ้า | power tool
+toy | ของเล่น | toy
+board_game | บอร์ดเกม | board game
+stationery_product | เครื่องเขียน | stationery product
+bicycle | จักรยาน | bicycle
+motorcycle | มอเตอร์ไซค์ | motorcycle
+car | รถยนต์ | car design
+ev | รถไฟฟ้า | electric vehicle
+boat | เรือ | boat
+aircraft | เครื่องบินออกแบบ | aircraft design
+medical_device | อุปกรณ์การแพทย์ | medical device
+pet_product | ของใช้สัตว์เลี้ยง | pet product
+baby_product | ของใช้เด็กอ่อน | baby product
+sports_equipment | อุปกรณ์กีฬา | sports equipment
+musical_instrument | เครื่องดนตรี | musical instrument
+luggage | กระเป๋าเดินทาง | luggage
+water_bottle | กระบอกน้ำ | water bottle
+
+@group form | ภาษาการออกแบบ | Form language | 3
+rounded_form | ทรงมน | rounded form
+sharp_edges | มุมคม | sharp edges
+sculptural_form | ทรงประติมากรรม | sculptural form
+geometric_form | ทรงเรขาคณิต | geometric form
+organic_form | ทรงออร์แกนิก | organic form
+modular_design | โมดูลาร์ | modular design
+stackable | ซ้อนได้ | stackable
+foldable | พับได้ | foldable
+transformable | แปลงร่างได้ | transformable
+minimal_form | ทรงมินิมอล | minimal form
+retro_futuristic_form | ทรงล้ำยุคย้อนยุค | retro-futuristic form
+chunky | ทรงอวบ | chunky form
+slim_profile | ทรงบาง | slim profile
+transparent_product | ผลิตภัณฑ์ใส,ผลิตภัณฑ์โปร่งแสง | transparent product
+
+@group mechanism | กลไกและรายละเอียด | Details & mechanisms | 4
+joinery | เข้าไม้,งานเดือย | joinery
+exposed_fasteners | น็อตเปลือย | exposed fasteners
+hinge | บานพับ | hinge
+handle | มือจับ | handle
+switch_dial | สวิตช์,ปุ่มหมุน | switch,dial
+physical_buttons | ปุ่มกด | physical buttons
+display_screen | หน้าจอแสดงผล | display
+cable_management | จัดสายไฟ | cable management
+seam | รอยต่อ | seam
+parting_line | รอยแยก | parting line
+perforation | รูพรุน | perforation
+textured_grip | ผิวจับ | textured grip
+
+@group presentation | การนำเสนอผลิตภัณฑ์ | Product presentation | 2
+white_background | พื้นขาว | white background
+studio_backdrop | ฉากสตูดิโอ | studio backdrop
+lifestyle_scene | ฉากไลฟ์สไตล์ | lifestyle scene
+exploded_view | ภาพแตกชิ้น | exploded view
+technical_drawing | แบบเทคนิค | technical drawing
+cmf | สีวัสดุผิว,ซีเอ็มเอฟ | cmf design
+prototype_model | โมเดลต้นแบบ | prototype model
+sketch_ideation | สเก็ตช์ไอเดีย | ideation sketch
+product_render | เรนเดอร์สินค้า | product render
+packshot | แพ็กช็อต | packshot
+hero_shot | ฮีโร่ช็อต | hero shot
+in_use | ภาพการใช้งาน | in-use shot
+collection_lineup | เรียงชุดคอลเลกชัน | product lineup

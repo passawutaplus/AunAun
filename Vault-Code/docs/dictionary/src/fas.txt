@@ -1,0 +1,131 @@
+@domain fas | แฟชั่นและสิ่งทอ | Fashion & Textile
+@group garment | เสื้อผ้า | Garments | 4
+dress | ชุดเดรส | dress
+gown | ชุดราตรี | evening gown
+suit | สูท | suit
+blazer | เบลเซอร์ | blazer
+coat | โค้ท | coat
+trench_coat | เทรนช์โค้ท | trench coat | coat
+puffer | แจ็กเก็ตพอง | puffer jacket
+jacket | แจ็กเก็ต | jacket
+denim_jacket | แจ็กเก็ตยีนส์ | denim jacket | jacket
+leather_jacket | แจ็กเก็ตหนัง | leather jacket | jacket
+shirt | เชิ้ต | shirt
+tshirt | เสื้อยืด | t-shirt
+sweater | สเวตเตอร์,ไหมพรม | sweater,knitwear
+hoodie | ฮู้ดดี้,เสื้อฮู้ด | hoodie
+vest | เสื้อกั๊ก | vest
+trousers | กางเกงขายาว | trousers
+jeans | ยีนส์ | jeans
+shorts | กางเกงขาสั้น | shorts
+skirt | กระโปรง | skirt
+pleated_skirt | กระโปรงพลีท | pleated skirt | skirt
+jumpsuit | จัมพ์สูท | jumpsuit
+swimwear | ชุดว่ายน้ำ | swimwear
+lingerie | ชุดชั้นใน | lingerie
+sportswear | ชุดกีฬา | sportswear
+streetwear | สตรีทแวร์ | streetwear
+uniform | ยูนิฟอร์ม | uniform
+traditional_dress | ชุดพื้นเมือง,ชุดไทย | traditional dress,thai dress
+kimono | กิโมโน | kimono
+hanbok | ฮันบก | hanbok
+cheongsam | ฉีผาว,กี่เพ้า | cheongsam,qipao
+sari | ส่าหรี | sari
+wedding_dress | ชุดแต่งงาน | wedding dress
+
+@group silhouette | ทรงและรายละเอียด | Silhouettes & details | 4
+oversized | ทรงโอเวอร์ไซส์ | oversized
+tailored | ตัดเข้ารูป,เทเลอร์ | tailored fit
+a_line | ทรงเอ | a-line
+flowy | พลิ้ว | flowy
+structured | ทรงแข็ง,ทรงโครงสร้าง | structured silhouette
+draped | ผ้าดราป | draped
+pleats | จีบ | pleats
+ruffles | ระบาย | ruffles
+asymmetric_hem | ชายไม่เท่ากัน | asymmetric hem
+cutout | เว้า,คัตเอาท์ | cutout
+puff_sleeve | แขนพอง | puff sleeves
+off_shoulder | เปิดไหล่ | off-shoulder
+high_waist | เอวสูง | high waist
+wide_leg | ขากว้าง | wide-leg
+cropped | ครอป | cropped
+layering | เลเยอร์ | layering
+embellished | ตกแต่งประดับ | embellished
+sequins | เลื่อม | sequins
+beading | ลูกปัด | beading
+embroidery | ปัก | embroidery
+applique | แอพพลิเก | applique
+lace | ลูกไม้ | lace
+fringe | ครุย,ฟริงจ์ | fringe
+
+@group accessory | เครื่องแต่งกายและของใช้ | Accessories & footwear | 5
+handbag | กระเป๋า | handbag
+backpack | เป้ | backpack
+clutch | คลัตช์ | clutch
+sneakers | สนีกเกอร์,รองเท้าผ้าใบ | sneakers
+heels | ส้นสูง | high heels
+boots | บู๊ต | boots
+loafers | โลฟเฟอร์ | loafers
+sandals | รองเท้าแตะ,รองเท้าแตะสาน | sandals
+hat | หมวก | hat
+cap | หมวกแก๊ป | baseball cap
+beanie | หมวกไหมพรม | beanie
+sunglasses | แว่นกันแดด | sunglasses
+eyeglasses | แว่นตา | eyeglasses
+scarf | ผ้าพันคอ | scarf
+belt | เข็มขัด | belt
+tie | เนคไท | necktie
+watch | นาฬิกาข้อมือ | wristwatch
+gloves | ถุงมือ | gloves
+umbrella | ร่ม | umbrella
+
+@group jewelry | เครื่องประดับ | Jewelry | 4
+necklace | สร้อยคอ | necklace
+earrings | ต่างหู | earrings
+ring | แหวน | ring
+bracelet | สร้อยข้อมือ,กำไล | bracelet,bangle
+brooch | เข็มกลัด | brooch
+pearl | ไข่มุก | pearls
+gemstone | อัญมณี | gemstones
+gold_jewelry | เครื่องประดับทอง | gold jewelry
+silver_jewelry | เครื่องประดับเงิน | silver jewelry
+statement_jewelry | เครื่องประดับชิ้นใหญ่ | statement jewelry
+minimal_jewelry | เครื่องประดับมินิมอล | minimal jewelry
+
+@group textile | สิ่งทอและเทคนิค | Textile & techniques | 3
+knit | ถักนิต | knit
+crochet | โครเชต์,ถักโครเชต์ | crochet
+woven | ผ้าทอ | woven fabric
+batik | บาติก | batik
+tie_dye | มัดย้อม | tie-dye
+ikat | อิกัต,ผ้ามัดหมี่ | ikat
+shibori | ชิโบริ | shibori
+jacquard | แจ็กการ์ด | jacquard
+denim | ผ้ายีนส์ | denim
+silk | ผ้าไหม | silk
+linen | ผ้าลินิน | linen
+cotton | ผ้าฝ้าย | cotton
+wool | ขนสัตว์,ผ้าขนสัตว์ | wool
+velvet | กำมะหยี่ | velvet
+satin | ซาติน | satin
+leather | หนัง | leather
+tulle | ทูลเล | tulle
+quilting | ควิลท์ | quilting
+printed_fabric | ผ้าพิมพ์ลาย | printed fabric
+digital_print_fabric | ผ้าพิมพ์ดิจิทัล | digital print fabric
+sustainable_fashion | แฟชั่นยั่งยืน | sustainable fashion
+upcycled | อัพไซเคิล | upcycled fashion
+
+@group context | บริบทแฟชั่น | Fashion contexts | 2
+runway | รันเวย์ | runway
+lookbook | ลุคบุ๊ก | lookbook
+campaign | แคมเปญแฟชั่น | fashion campaign
+street_style | สตรีทสไตล์ | street style
+backstage | แบ็กสเตจ | backstage
+fashion_sketch | สเก็ตช์แฟชั่น | fashion sketch
+mood_board | มู้ดบอร์ด | mood board
+mannequin | หุ่นโชว์ | mannequin
+hair_styling | ทรงผม | hairstyle
+makeup_look | เมคอัพ | makeup look
+nail_art | เนลอาร์ต | nail art
+tattoo | รอยสัก | tattoo
