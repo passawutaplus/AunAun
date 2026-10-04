@@ -6116,3 +6116,14 @@ img.img-broken{visibility:hidden}
 .tags-clamped.tags-open{max-height:none}
 .tags-toggle{margin:6px 0 2px;padding:4px 10px;border:0;border-radius:999px;background:transparent;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline}
 .tags-toggle:hover{color:var(--ink)}
+
+/* A+ Vault trash */
+.trash-backdrop{position:fixed;inset:0;z-index:140;display:grid;place-items:center;padding:16px;background:rgba(15,17,20,.55)}
+.trash-dialog{width:min(520px,100%);max-height:80vh;overflow:auto;padding:20px;border-radius:14px;background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.trash-dialog header{display:flex;justify-content:space-between;align-items:center}
+.trash-dialog h2{margin:0;font-size:20px}
+.trash-note,.trash-empty{color:var(--muted);font-size:13px}
+.trash-list{display:grid;gap:8px;margin:12px 0;padding:0;list-style:none}
+.trash-list li{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.trash-list .trash-title{grid-column:1/-1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trash-list small{color:var(--muted)}

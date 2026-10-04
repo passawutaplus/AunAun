@@ -8,7 +8,7 @@
 - [x] 06 search (2026-10-04) - parser, ranking, similar, /api/search, /api/similar/[id], /api/signal, eval 20/20, own-vault #tag + Smart Collections, Discover chips; migration vault_engine_search APPLIED; NOT built: brief-mode UI/loading motion, similar button UI, OCR (flag only)
 - [x] 07 image-viewer (2026-10-04) - palette strip+copy, tag pin/exclude, ambient, B&W+peek+B key, thirds, continue tabs (API), breadcrumb, mobile sheet+swipe, Top of Mind (5), add image to link-only; NOT built: per-itemType card layouts, hex chips in notes
 - [x] 08 feed-digest (2026-10-04) - /api/feed daily rotation, From your past, digest builder DRY-RUN + unsubscribe (token + endpoint), digest_prefs migration APPLIED; email NOT sent (needs provider + opt-in UI/consent in 12)
-- [ ] 09 ops
+- [x] 09 ops (2026-10-04) - link health, dead letters, caps/kill events, daily report (+email when env set), review queue, takedown (immediate hide trigger, restore, delete), retention, Trash 30d, RUNBOOK; migration vault_engine_ops APPLIED; NOT done: terms/privacy links (phase 12)
 - [ ] 11 extension (design boards: https://claude.ai/artifact/BbSh3gPPWdjqp7fZ9oK8tP, 01-13)
 - [ ] 12 legal-privacy-cookies
 - [ ] 10 learning-loop (after launch)
