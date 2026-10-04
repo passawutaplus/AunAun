@@ -67,7 +67,7 @@ export function paletteStripMarkup(list, { find = true } = {}) {
 }
 
 export function viewerToolsMarkup({ bw = false, grid = false } = {}) {
-  return `<div class='viewer-tools'><button type='button' class='viewer-tool' data-viewer-bw aria-pressed='${bw ? "true" : "false"}' title='Black and white (B)'>B&amp;W</button><button type='button' class='viewer-tool' data-viewer-grid aria-pressed='${grid ? "true" : "false"}' title='Composition grid'>Thirds</button><span class='viewer-hint'>Hold the image to see its color</span></div>`;
+  return `<div class='viewer-tools'><button type='button' class='viewer-tool' data-viewer-bw aria-pressed='${bw ? "true" : "false"}' title='Black and white (B)'>B&amp;W</button><button type='button' class='viewer-tool' data-viewer-grid aria-pressed='${grid ? "true" : "false"}' title='Composition grid'>Thirds</button><button type='button' class='viewer-tool viewer-pick' data-viewer-pick aria-pressed='false' title='Pick a color from the image'><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='m14 6 4 4M4 20l1-4 9.5-9.5a2 2 0 0 1 2.8 0l.2.2a2 2 0 0 1 0 2.8L8 19l-4 1Z'/><path d='m16 4 4 4'/></svg><span>Eyedropper</span></button><span class='viewer-hint'>Hold the image to see its color</span></div>`;
 }
 
 /** Taxonomy chips: tap = pin (aria-pressed), long-press = exclude. `labelOf` is null until the taxonomy has loaded. */
@@ -93,6 +93,56 @@ export function selectedTagsQuery(pinned, excluded, termById) {
   const plus = pinned.map(id => word(id)).filter(Boolean).map(w => "#" + w);
   const minus = excluded.map(id => word(id)).filter(Boolean).map(w => "no " + w);
   return [...plus, ...minus].join(" ").trim();
+}
+
+export const rgbToHex = (r, g, b) => "#" + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+
+/**
+ * Colour under a click on an <img>. Prefers the native EyeDropper (any pixel on screen, works on cross-origin images);
+ * otherwise re-loads the same image with CORS and samples it on a canvas. Resolves a #hex or null (never throws).
+ */
+const corsCache = new Map();
+export async function pickColorAt(img, clientX, clientY) {
+  try {
+    const src = img.currentSrc || img.src;
+    let bitmap = corsCache.get(src);
+    if (!bitmap) {
+      bitmap = await new Promise((res, rej) => {
+        const im = new Image();
+        im.crossOrigin = "anonymous";
+        im.onload = () => res(im);
+        im.onerror = () => rej(new Error("image blocked"));
+        im.src = src;
+      });
+      corsCache.set(src, bitmap);
+    }
+    const rect = img.getBoundingClientRect();
+    const nw = bitmap.naturalWidth, nh = bitmap.naturalHeight;
+    // Map the click through object-fit (cover or contain) back to image pixels.
+    const fit = getComputedStyle(img).objectFit;
+    const scale = fit === "cover" ? Math.max(rect.width / nw, rect.height / nh) : Math.min(rect.width / nw, rect.height / nh);
+    const x = Math.floor((clientX - rect.left - (rect.width - nw * scale) / 2) / scale);
+    const y = Math.floor((clientY - rect.top - (rect.height - nh * scale) / 2) / scale);
+    if (x < 0 || y < 0 || x >= nw || y >= nh) return null;
+    const c = document.createElement("canvas");
+    c.width = c.height = 1;
+    const g = c.getContext("2d", { willReadFrequently: true });
+    g.drawImage(bitmap, x, y, 1, 1, 0, 0, 1, 1);
+    const d = g.getImageData(0, 0, 1, 1).data; // throws if the canvas is tainted
+    return rgbToHex(d[0], d[1], d[2]);
+  } catch {
+    return null;
+  }
+}
+
+export async function pickColorNative() {
+  try {
+    if (!("EyeDropper" in window)) return undefined;
+    const r = await new window.EyeDropper().open();
+    return /^#[0-9a-f]{6}$/i.test(r.sRGBHex) ? r.sRGBHex.toLowerCase() : null;
+  } catch {
+    return null; // user cancelled
+  }
 }
 
 export function readBw() {

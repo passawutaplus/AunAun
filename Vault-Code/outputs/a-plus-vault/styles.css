@@ -6099,3 +6099,8 @@ img.img-broken{visibility:hidden}
 @media (prefers-reduced-motion:reduce){.discover-detail-backdrop,.viewer-bw .discover-detail-media img,.viewer-bw .detail-preview img,.viewer-thirds,.discover-detail-info{transition:none}}
 /* viewer: pressed states readable in both themes */
 .viewer-tool[aria-pressed="true"],.viewer-tag[aria-pressed="true"]{background:var(--coral);border-color:var(--coral);color:#fff}
+
+/* viewer eyedropper */
+.viewer-pick{display:inline-flex;align-items:center;gap:6px}
+.viewer-picking .discover-detail-media img,.viewer-picking .detail-preview img{cursor:crosshair}
+.viewer-picked-dot{display:inline-block;width:12px;height:12px;margin-right:6px;border-radius:50%;vertical-align:-1px;box-shadow:inset 0 0 0 1px rgba(127,127,127,.5)}
