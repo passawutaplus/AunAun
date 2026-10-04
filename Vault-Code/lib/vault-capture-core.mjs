@@ -43,14 +43,6 @@ function host(value) {
   }
 }
 
-function inferColors(seed) {
-  const value = seed.toLowerCase();
-  if (value.includes("coral") || value.includes("red")) return ["#ff4f43", "#2f3133", "#ffffff"];
-  if (value.includes("interior") || value.includes("material")) return ["#d6c7b7", "#f8f6f2", "#9aa5a7", "#c56b4e"];
-  if (value.includes("black") || value.includes("dark")) return ["#17191b", "#2f3133", "#ffffff"];
-  return ["#ffffff", "#2f3133", "#ff4f43", "#e7e9ec"];
-}
-
 function quickTagsFrom(value) {
   return text(value)
     .split(/[,\n]/)
@@ -59,11 +51,24 @@ function quickTagsFrom(value) {
     .slice(0, 6);
 }
 
+function positiveInt(value) {
+  const n = Math.round(Number(value));
+  return Number.isFinite(n) && n > 0 && n < 100000 ? n : null;
+}
+
+function itemTypeOf(rawType, type, payload) {
+  if (rawType === "text") return "highlight";
+  if (type === "link") return "webpage";
+  if (type === "image" && /^(web_upload|upload)/.test(text(payload.captureContext?.method))) return "upload";
+  return type;
+}
+
 function analyzeLite(item, rawType) {
+  // Keyword rules only: low-confidence "rule" tags. Real colors/tags arrive from enrichment (phase 05).
   const sourceHost = host(item.sourceUrl);
   const context = item.captureContext || {};
   const quickTags = Array.isArray(context.quickTags) ? context.quickTags : [];
-  const tags = new Set([item.type === "note" ? "thought" : item.type, "extension capture"]);
+  const tags = new Set([item.type === "note" ? "thought" : item.type]);
   if (rawType === "page") tags.add("saved page");
   if (rawType === "text") tags.add("selected text");
   if (rawType === "video") tags.add("motion reference");
@@ -72,22 +77,12 @@ function analyzeLite(item, rawType) {
   if (context.visualCategory) tags.add(context.visualCategory);
   return {
     tags: Array.from(tags).slice(0, 8),
+    tagSource: "rule",
     category: context.visualCategory || "",
-    colors: inferColors(`${item.title} ${item.note} ${item.sourceUrl}`).slice(0, 5),
-    ocrText: item.type === "note"
-      ? item.note
-      : rawType === "image"
-        ? "Image captured from browser extension."
-        : rawType === "video"
-          ? "Video metadata captured from browser extension."
-          : "Metadata captured from browser extension.",
-    summary: item.type === "image"
-      ? "Image reference kept from the browser extension."
-      : item.type === "video"
-        ? "Video reference kept from the browser extension for motion and mood direction."
-        : item.type === "link"
-          ? `Saved source${sourceHost ? ` from ${sourceHost}` : ""} via browser extension.`
-          : "Selected text kept from the browser extension."
+    colors: [],
+    enrichLevel: 0,
+    ocrText: item.type === "note" ? item.note : "",
+    summary: item.type === "note" ? item.note.slice(0, 200) : ""
   };
 }
 
@@ -136,6 +131,17 @@ export function buildVaultItem(payload) {
     projectIds: text(payload.projectId) ? [text(payload.projectId)] : [],
     status: "ready",
     createdAt: Date.now(),
+    canonicalUrl: cleanUrl(payload.canonicalUrl) || sourceUrl || "",
+    sourceDomain: host(sourceUrl),
+    faviconUrl: cleanUrl(payload.faviconUrl) || "",
+    imageWidth: positiveInt(payload.imageWidth),
+    imageHeight: positiveInt(payload.imageHeight),
+    itemType: itemTypeOf(rawType, type, payload),
+    importStatus: ["ok", "partial", "failed"].includes(text(payload.importStatus)) ? text(payload.importStatus) : (type === "link" && !previewUrl ? "partial" : "ok"),
+    licenseStatus: "unknown",
+    visibility: "private",
+    creditText: text(payload.creditText).slice(0, 300),
+    rightsConfirmedAt: payload.rightsConfirmed === true ? Date.now() : null,
     captureContext: {
       method: text(context.method) || `extension_${rawType || type}`,
       pageTitle: pageTitle || null,

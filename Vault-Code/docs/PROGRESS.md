@@ -1,7 +1,7 @@
 # Vault Engine progress (v6 pack)
 - [x] 00 verify-map (2026-10-04) - map mostly true; see differences in chat summary
 - [x] 01 url-importer (2026-10-04) - api/import-url.js + lib/import/*; cache table NOT created (needs approval)
-- [ ] 02 save-path
+- [x] 02 save-path (2026-10-04) - web keeps local-first path (guests); see notes
 - [ ] 03 taxonomy-passport  (needs migration approval)
 - [ ] 04 seeder-audit
 - [ ] 05 tagging+publish

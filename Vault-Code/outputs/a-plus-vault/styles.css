@@ -6028,3 +6028,20 @@ html.mb-present .mb-line-styles{display:none!important}
 .mb2 .moodboard-extract-swatches{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
 .mb2 .moodboard-extract-swatch-face{height:40px!important}
 .mb2 .moodboard-extract-swatch-hex{display:block;padding:6px 4px 8px!important;font-size:11px!important;letter-spacing:0!important;text-align:center;white-space:nowrap;overflow:visible!important;text-overflow:clip!important}
+
+/* A+ Vault link import + rights check */
+.rights-check{display:flex;gap:10px;align-items:flex-start;margin:4px 0;font-size:13px;line-height:1.45;color:var(--ink)}
+.rights-check input{margin-top:3px;flex:0 0 auto}
+.rights-check a{color:var(--coral);text-decoration:underline}
+.link-import:empty{display:none}
+.link-import{display:flex;gap:12px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.link-import img{width:88px;height:66px;object-fit:cover;border-radius:6px;flex:0 0 auto;background:var(--line)}
+.link-import-meta{display:grid;gap:3px;min-width:0;font-size:13px}
+.link-import-meta strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link-import-meta span,.link-import-status{color:var(--muted);font-size:12.5px}
+.link-import-meta a{color:var(--coral)}
+.link-import-status.error{color:var(--coral-dark)}
+.link-import-thumb{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.link-import-thumb[hidden]{display:none}
+img.img-broken{visibility:hidden}
+@media (prefers-reduced-motion:reduce){.link-import img{transition:none}}

@@ -2,6 +2,7 @@ import { buildCaptureResponse, buildVaultItem } from "../../lib/vault-capture-co
 import { findDuplicateCapture, writeCapture } from "../../lib/vault-capture-store.mjs";
 import { createHandler, readJsonBody } from "../../lib/vault-api-shared.mjs";
 import { resolveAuthContext } from "../../lib/vault-api-auth.mjs";
+import { fireEnrich } from "../../lib/engine/enrich.mjs";
 
 export default createHandler({
   methods: ["POST"],
@@ -13,6 +14,7 @@ export default createHandler({
     const item = buildVaultItem(payload);
     const duplicate = await findDuplicateCapture(item, auth);
     await writeCapture({ objectId: item.id, item, payload }, auth);
+    fireEnrich(item.id, auth);
     return buildCaptureResponse(item, duplicate);
   }
 });

@@ -654,9 +654,29 @@ export function createVaultRemote(config = {}) {
     }
   }
 
+  /** Safe link import (phase 01). Resolves { ok, data } or { ok:false, code, message }; null when offline/guest. Never throws. */
+  async function importUrl(linkUrl) {
+    const token = session()?.access_token;
+    if (!enabled || !token) return null;
+    try {
+      const response = await fetch("/api/import-url", {
+        method: "POST",
+        headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+        body: JSON.stringify({ url: linkUrl }),
+        signal: AbortSignal.timeout(12000),
+      });
+      const body = await response.json().catch(() => null);
+      if (body && body.success) return { ok: true, data: body.data };
+      return { ok: false, code: (body && body.code) || "FETCH_FAILED", message: (body && body.message) || "" };
+    } catch (e) {
+      return null;
+    }
+  }
+
   return {
     enabled,
     linkPreview,
+    importUrl,
     hasSession: () => !!session()?.access_token,
     consumeAuthCallback,
     getSession,
