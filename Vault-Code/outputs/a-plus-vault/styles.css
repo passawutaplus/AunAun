@@ -6104,3 +6104,15 @@ img.img-broken{visibility:hidden}
 .viewer-pick{display:inline-flex;align-items:center;gap:6px}
 .viewer-picking .discover-detail-media img,.viewer-picking .detail-preview img{cursor:crosshair}
 .viewer-picked-dot{display:inline-block;width:12px;height:12px;margin-right:6px;border-radius:50%;vertical-align:-1px;box-shadow:inset 0 0 0 1px rgba(127,127,127,.5)}
+
+/* viewer: icon-only tools + picked colour chip */
+.viewer-tool-icon{display:inline-grid;place-items:center;width:44px;height:44px;padding:0;border-radius:50%}
+.viewer-picked{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px 0 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+.viewer-picked[hidden]{display:none}
+.viewer-picked i{width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(127,127,127,.5)}
+
+/* tags: at most 2 lines, toggle for the rest */
+.tags-clamped{--tag-line:36px;max-height:calc(var(--tag-line) * 2 + 8px);overflow:hidden}
+.tags-clamped.tags-open{max-height:none}
+.tags-toggle{margin:6px 0 2px;padding:4px 10px;border:0;border-radius:999px;background:transparent;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline}
+.tags-toggle:hover{color:var(--ink)}

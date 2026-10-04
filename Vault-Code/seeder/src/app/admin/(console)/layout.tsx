@@ -42,6 +42,7 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
             { href: "/admin/shares", label: "บอร์ดที่แชร์" },
             { href: "/admin/feedback", label: "Feedback", badge: att.new_feedback },
             { href: "/admin/seeder", label: "Discover Seeder" },
+            { href: "/admin/review", label: "คิวตรวจ & รายงานประจำวัน" },
             { href: "/admin/sources", label: "บอท & ลิขสิทธิ์" },
             { href: "/admin/plans", label: "แพ็กเกจ & โควตา" },
             { href: "/admin/ops", label: "ระบบ & Captures" },

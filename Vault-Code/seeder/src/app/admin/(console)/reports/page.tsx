@@ -3,6 +3,7 @@ import { fmtDate, safeRpc } from "@/lib/admin-rpc";
 import { publicMediaUrl } from "@/seeder/repo";
 import { ConfirmButton } from "../confirm-button";
 import { resolveReport } from "../actions";
+import { deleteItemPermanently, restoreItem } from "../review/actions";
 
 type Report = {
   id: string;
@@ -80,6 +81,18 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
               <div className="row">
                 {r.status === "open" ? (
                   <>
+                    {r.item_status === "hidden" && (
+                      <>
+                        <form action={restoreItem}>
+                          <input type="hidden" name="id" value={r.item_id} />
+                          <ConfirmButton message="คืนรูปนี้กลับขึ้น Discover?" className="small">คืนรูป</ConfirmButton>
+                        </form>
+                        <form action={deleteItemPermanently}>
+                          <input type="hidden" name="id" value={r.item_id} />
+                          <ConfirmButton message="ลบถาวร? ไฟล์รูปจะถูกลบจาก Storage และไม่นำกลับมาอีก" className="danger small">ลบถาวร</ConfirmButton>
+                        </form>
+                      </>
+                    )}
                     {r.item_status !== "hidden" && (
                       <form action={resolveReport}>
                         <input type="hidden" name="id" value={r.id} />

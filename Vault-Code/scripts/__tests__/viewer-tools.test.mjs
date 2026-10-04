@@ -57,6 +57,12 @@ describe("tags, tools, trail", () => {
   it("builds a search in the parser's own syntax", () => {
     assert.equal(selectedTagsQuery(["sty.minimal"], ["mood.neon_palette"], tax.termById), "#minimal no neonpalette".replace("neonpalette", tax.termById.get("mood.neon_palette").en[0].toLowerCase().replace(/\s+/g, "")));
   });
+  it("tools are icon-only (no visible text) with accessible names, and a picked-colour chip beside them", () => {
+    const html = viewerToolsMarkup({});
+    assert.match(html, /aria-label='Pick a color from the image'/);
+    assert.match(html, /data-viewer-picked/);
+    assert.ok(!/>(B&amp;W|Thirds|Eyedropper)</.test(html));
+  });
   it("B&W and thirds are toggle buttons reflecting state", () => {
     assert.match(viewerToolsMarkup({ bw: true, grid: false }), /data-viewer-bw aria-pressed='true'/);
     assert.match(viewerToolsMarkup({ bw: true, grid: false }), /data-viewer-grid aria-pressed='false'/);

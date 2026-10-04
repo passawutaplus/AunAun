@@ -3,6 +3,7 @@ import { NonRetriableError, RetryAfterError } from "inngest";
 import { getAdapter } from "@/seeder/adapters";
 import type { Candidate } from "@/seeder/adapters/types";
 import { RateLimitedError } from "@/seeder/http";
+import { OpsRepo } from "@/ops/repo";
 import { capLimits } from "@/seeder/caps";
 import { AnthropicAi } from "@/seeder/ai";
 import { processCandidate, type ItemOutcome } from "@/seeder/pipeline";
@@ -26,6 +27,10 @@ export const seederBatch = inngest.createFunction(
     name: "Discover seeder: process batch",
     triggers: [batchRequested],
     retries: 4,
+    // Retries are bounded: after the last attempt the batch goes to the dead-letter table, never retried forever.
+    onFailure: async ({ event, error }: { event: { data?: { event?: { data?: unknown } } }; error: Error }) => {
+      await new OpsRepo().deadLetter("seeder-batch", event?.data?.event?.data ?? null, error?.message ?? "failed", 5).catch(() => undefined);
+    },
     // One batch per source at a time keeps cursor updates ordered and API load predictable.
     concurrency: [{ key: "event.data.source", limit: 1 }],
     throttle: { key: "event.data.source", limit: 4, period: "1m" },
@@ -38,6 +43,11 @@ export const seederBatch = inngest.createFunction(
     const gate = await step.run("check-stop", () => repo.stopReason());
     if (gate.reason) {
       logger.warn(`seeder batch stopped: ${gate.reason}`);
+      if (gate.reason !== "paused") {
+        // Caps and the kill switch are reported (daily report + urgent alert), once per 12 h.
+        const kind = gate.reason === "kill_switch" ? "kill_switch" : "cap";
+        await step.run("log-stop", () => new OpsRepo().logEventOnce(kind, gate.reason as string, "urgent", { reason: gate.reason }).catch(() => undefined));
+      }
       return { skipped: gate.reason };
     }
     const limits = capLimits(process.env.SEEDER_BUDGET_USD);

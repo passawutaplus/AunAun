@@ -66,8 +66,15 @@ export function paletteStripMarkup(list, { find = true } = {}) {
   return `<div class='viewer-palette' aria-label='Color palette'><div class='viewer-palette-strip' role='group'>${swatches}</div><div class='viewer-palette-status' aria-live='polite' data-viewer-palette-status></div>${action}</div>`;
 }
 
+const toolIcon = inner => `<svg viewBox='0 0 24 24' width='20' height='20' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'>${inner}</svg>`;
+const ICON_BW = toolIcon("<circle cx='12' cy='12' r='8'/><path d='M12 4a8 8 0 0 1 0 16Z' fill='currentColor'/>");
+const ICON_THIRDS = toolIcon("<rect x='4' y='4' width='16' height='16' rx='2'/><path d='M9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16'/>");
+const ICON_PICK = toolIcon("<path d='m14 6 4 4M4 20l1-4 9.5-9.5a2 2 0 0 1 2.8 0l.2.2a2 2 0 0 1 0 2.8L8 19l-4 1Z'/><path d='m16 4 4 4'/>");
+
+/** Icon-only tools (labels live in title/aria-label). A picked colour appears right beside the eyedropper. */
 export function viewerToolsMarkup({ bw = false, grid = false } = {}) {
-  return `<div class='viewer-tools'><button type='button' class='viewer-tool' data-viewer-bw aria-pressed='${bw ? "true" : "false"}' title='Black and white (B)'>B&amp;W</button><button type='button' class='viewer-tool' data-viewer-grid aria-pressed='${grid ? "true" : "false"}' title='Composition grid'>Thirds</button><button type='button' class='viewer-tool viewer-pick' data-viewer-pick aria-pressed='false' title='Pick a color from the image'><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='m14 6 4 4M4 20l1-4 9.5-9.5a2 2 0 0 1 2.8 0l.2.2a2 2 0 0 1 0 2.8L8 19l-4 1Z'/><path d='m16 4 4 4'/></svg><span>Eyedropper</span></button><span class='viewer-hint'>Hold the image to see its color</span></div>`;
+  const tool = (attr, pressed, label, icon) => `<button type='button' class='viewer-tool viewer-tool-icon' ${attr} aria-pressed='${pressed ? "true" : "false"}' title='${label}' aria-label='${label}'>${icon}</button>`;
+  return `<div class='viewer-tools'>${tool("data-viewer-bw", bw, "Black and white (B)", ICON_BW)}${tool("data-viewer-grid", grid, "Composition grid", ICON_THIRDS)}${tool("data-viewer-pick", false, "Pick a color from the image", ICON_PICK)}<button type='button' class='viewer-picked' data-viewer-picked data-viewer-copy='' hidden aria-label='Copy picked color'><i aria-hidden='true'></i><span></span></button></div>`;
 }
 
 /** Taxonomy chips: tap = pin (aria-pressed), long-press = exclude. `labelOf` is null until the taxonomy has loaded. */
@@ -132,16 +139,6 @@ export async function pickColorAt(img, clientX, clientY) {
     return rgbToHex(d[0], d[1], d[2]);
   } catch {
     return null;
-  }
-}
-
-export async function pickColorNative() {
-  try {
-    if (!("EyeDropper" in window)) return undefined;
-    const r = await new window.EyeDropper().open();
-    return /^#[0-9a-f]{6}$/i.test(r.sRGBHex) ? r.sRGBHex.toLowerCase() : null;
-  } catch {
-    return null; // user cancelled
   }
 }
 
