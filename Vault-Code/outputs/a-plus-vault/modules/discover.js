@@ -1,3 +1,4 @@
+import { ambientColor, continueTabsMarkup, dominantSwatch, paletteList, paletteStripMarkup, tagChipsMarkup, trailMarkup, viewerToolsMarkup } from "./viewer-tools.js";
 import { esc, escA } from "./utils.js";
 import { hasThai, thaiConcepts } from "./thai-search.js";
 import {
@@ -30,7 +31,7 @@ const LICENSE_LABELS = { cc0: "CC0 Public Domain", pdm: "Public Domain Mark", "c
 const DISCOVER_COLUMNS = [
   "id", "source", "source_url", "title", "license", "license_url", "attribution", "attribution_json",
   "image_sm_path", "image_md_path", "image_lg_path", "blurhash", "width", "height", "phash",
-  "category", "tags", "style", "colors", "source_meta", "published_at",
+  "category", "tags", "style", "colors", "source_meta", "published_at", "palette", "tags_ids",
 ].join(",");
 
 // Client-side ranking scans the newest N rows; move to an RPC once the catalog outgrows this.
@@ -543,7 +544,7 @@ function detailNavMarkup(nav) {
   return arrow("prev", "Previous image", "m15 6-6 6 6 6", nav.hasPrev) + arrow("next", "Next image", "m9 6 6 6-6 6", nav.hasNext);
 }
 
-export function discoverDetailMarkup(item, config, kept, nav) {
+export function discoverDetailMarkup(item, config, kept, nav, view = {}) {
   if (!item) return "";
   const info = attributionInfo(item);
   const facetButton = (key, value, text) => `<button type='button' class='discover-facet-link' data-discover-facet='${escA(key)}' data-value='${escA(value)}' title='${escA("Find more: " + value)}'>${esc(text)}</button>`;
@@ -564,16 +565,20 @@ export function discoverDetailMarkup(item, config, kept, nav) {
   const byline = [info.artist, info.date].filter(Boolean).join(" · ");
   const tags = (item.tags || []).slice(0, 10).map(t => `<button type='button' class='tag discover-tag' data-discover-tag='${escA(t)}' title='${escA("Search “" + t + "”")}'>${esc(t)}</button>`).join("");
   const colors = (item.colors || []).slice(0, 6).map(normalizeHex).filter(Boolean).map(c => `<button type='button' class='discover-swatch' data-discover-swatch='${escA(c)}' style='background:${escA(c)}' title='${escA("Search color " + c)}' aria-label='${escA("Search color " + c)}'></button>`).join("");
+  const palette = paletteList(item);
+  const dominant = dominantSwatch(palette);
+  const ambient = dominant ? ambientColor(dominant.hex) : "";
+  const keyTags = tagChipsMarkup(item.tags_ids, view.labelOf, { pinned: view.pinned || [], excluded: view.excluded || [], limit: 6 });
   const licenseLabel = discoverLicenseLabel(item.license);
   const meta = item && typeof item.source_meta === "object" && item.source_meta ? item.source_meta : {};
   const institution = info.institution ? (info.institutionUrl ? `<a href='${escA(info.institutionUrl)}' target='_blank' rel='noopener noreferrer'>${esc(info.institution)}</a>` : esc(info.institution)) : 'the institution';
   const details = foldMarkup('discover-info', 'Details &amp; credit', [metaText(meta, 'object_name'), licenseLabel].filter(Boolean).join(' · '), `${objectRows ? `<dl>${objectRows}</dl>` : ''}<div class='discover-credit'><p class='discover-license'><span class='discover-license-badge'>${licenseUrl ? `<a href='${escA(licenseUrl)}' target='_blank' rel='noopener noreferrer license'>${esc(licenseLabel)}</a>` : esc(licenseLabel)}</span><span>${esc(discoverLicenseNote(item.license))} Please credit ${institution}.</span></p><p class='discover-credit-text'>${esc(discoverCreditText(item))}</p></div>`);
-  return `<div class='discover-detail-backdrop' data-discover-close role='presentation'><div class='discover-detail-frame' style='--ar:${escA(String(aspectRatio(item)))}'>${detailNavMarkup(nav)}<section class='discover-detail' role='dialog' aria-modal='true' aria-label='${escA(item.title || "Artwork")}' data-discover-dialog><button type='button' class='discover-detail-close' data-discover-close aria-label='Close'>&times;</button><div class='discover-detail-media' style='aspect-ratio:${escA(aspect(item))};${blur ? escA(`background-image:url(${blur})`) : ""}'><img src='${escA(md)}' srcset='${escA(md)} 800w, ${escA(lg)} 1600w' sizes='(max-width: 860px) 100vw, 60vw' alt='${escA(item.title || "")}' decoding='async'></div><div class='discover-detail-info'><h2>${esc(item.title || "Untitled")}</h2>${byline ? `<p class='discover-detail-byline'>${esc(byline)}</p>` : ""}${tags ? `<div class='tag-row discover-tags'>${tags}</div>` : ""}${colors ? `<div class='discover-swatches' aria-label='Colors'>${colors}</div>` : ""}<div class='discover-detail-actions'><button type='button' class='primary-button' data-discover-keep='${escA(item.id)}'>${kept ? "Kept · Add to collection" : "+ Keep in Vault"}</button>${sourceUrl ? `<a class='ghost-button discover-source-btn' href='${escA(sourceUrl)}' target='_blank' rel='noopener noreferrer' title='View at source' aria-label='View at source (opens in new tab)'><svg viewBox='0 0 24 24' width='18' height='18' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1'/><path d='M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1'/></svg></a>` : ""}${discoverReportButtonMarkup(item.id)}</div><div class='discover-detail-bottom'><section class='discover-similar' aria-label='Similar images'><div class='discover-similar-head'><span class='section-label'>Similar images</span><button type='button' class='discover-similar-all' data-discover-similar='${escA(item.id)}'>See all</button></div><div class='discover-similar-grid' data-discover-similar-host><span class='discover-similar-loading'>Finding similar images…</span></div></section>${details}</div></div></section></div></div>`;
+  return `<div class='discover-detail-backdrop' data-discover-close role='presentation'${ambient ? ` style='--ambient:${escA(ambient)}'` : ""}><div class='discover-detail-frame' style='--ar:${escA(String(aspectRatio(item)))}'>${trailMarkup(view.trail)}${detailNavMarkup(nav)}<section class='discover-detail${view.bw ? " viewer-bw" : ""}${view.grid ? " viewer-grid" : ""}' role='dialog' aria-modal='true' aria-label='${escA(item.title || "Artwork")}' data-discover-dialog><button type='button' class='discover-detail-close' data-discover-close aria-label='Close'>&times;</button><div class='discover-detail-media' style='aspect-ratio:${escA(aspect(item))};${blur ? escA(`background-image:url(${blur})`) : ""}'><img src='${escA(md)}' srcset='${escA(md)} 800w, ${escA(lg)} 1600w' sizes='(max-width: 860px) 100vw, 60vw' alt='${escA(item.title || "")}' decoding='async'><span class='viewer-thirds' aria-hidden='true'></span></div><div class='discover-detail-info'><button type='button' class='viewer-sheet-handle' data-viewer-sheet aria-expanded='false' aria-label='Show more details'><span aria-hidden='true'></span></button><h2>${esc(item.title || "Untitled")}</h2>${byline ? `<p class='discover-detail-byline'>${esc(byline)}</p>` : ""}${tags ? `<div class='tag-row discover-tags'>${tags}</div>` : ""}${paletteStripMarkup(palette)}${palette.length ? viewerToolsMarkup({ bw: view.bw, grid: view.grid }) : ""}${keyTags}<div class='discover-detail-actions'><button type='button' class='primary-button' data-discover-keep='${escA(item.id)}'>${kept ? "Kept · Add to collection" : "+ Keep in Vault"}</button>${sourceUrl ? `<a class='ghost-button discover-source-btn' href='${escA(sourceUrl)}' target='_blank' rel='noopener noreferrer' title='View at source' aria-label='View at source (opens in new tab)'><svg viewBox='0 0 24 24' width='18' height='18' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1'/><path d='M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1'/></svg></a>` : ""}${discoverReportButtonMarkup(item.id)}</div><div class='discover-detail-bottom'><section class='discover-similar' aria-label='Similar images'><div class='discover-similar-head'>${continueTabsMarkup(view.mode || "similar")}<button type='button' class='discover-similar-all' data-discover-similar='${escA(item.id)}'>See all</button></div><div class='discover-similar-grid' data-discover-similar-host><span class='discover-similar-loading'>Finding similar images…</span></div></section>${details}</div></div></section></div></div>`;
 }
 
 export function discoverSimilarStripMarkup(items, config) {
   if (!items.length) return `<span class='discover-similar-loading'>No close matches yet.</span>`;
-  return items.slice(0, 4).map(item => {
+  return items.slice(0, 24).map(item => {
     const blur = blurhashDataUrl(item.blurhash);
     return `<button type='button' class='discover-similar-item' data-discover-open='${escA(item.id)}' title='${escA(item.title || "Untitled")}' style='${escA(blur ? `background-image:url(${blur})` : "")}'><img src='${escA(discoverMediaUrl(config, item.image_sm_path))}' alt='${escA(item.title || "")}' loading='lazy' decoding='async'></button>`;
   }).join("");
