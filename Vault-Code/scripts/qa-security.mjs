@@ -84,11 +84,25 @@ async function guardSecrets() {
   }
 }
 
+/** Privacy rule (phase 12): fonts are self-hosted, no font/analytics CDN in pages or the CSP. */
+async function guardNoThirdParties() {
+  const config = JSON.parse(await readFile("vercel.json", "utf8"));
+  const rule = (config.headers || []).find(h => h.source === "/(.*)");
+  const csp = ((rule?.headers || []).find(h => h.key.toLowerCase() === "content-security-policy") || {}).value || "";
+  assert(!/fonts\.googleapis|fonts\.gstatic|google-analytics|googletagmanager/.test(csp), "CSP must not allow font or analytics CDNs (self-host fonts).");
+  const { readdir } = await import("node:fs/promises");
+  for (const name of (await readdir(APP)).filter(n => n.endsWith(".html"))) {
+    const html = await readFile(`${APP}/${name}`, "utf8");
+    assert(!/fonts\.googleapis|fonts\.gstatic|google-analytics|googletagmanager|connect\.facebook|hotjar|clarity\.ms/.test(html), `${name} loads a third-party font/analytics host.`);
+  }
+}
+
 export async function runSecurityGuards() {
   await guardHeaders();
   await guardNoInlineCode();
   await guardPwa();
   await guardSecrets();
+  await guardNoThirdParties();
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

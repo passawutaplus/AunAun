@@ -45,8 +45,8 @@ No background browsing history, no hidden page scraping, no bulk image downloadi
 ## Your controls
 
 You choose what to save, you can undo a save right away, disconnect at any time, and export or delete your data in the web app Profile.
-Privacy policy: https://aplus-vault.vercel.app/legal.html#privacy
+Privacy policy: https://aplus-vault.vercel.app/legal.html#extension-privacy
 
 ## Contact
 
-privacy@aplusvault.app (to be confirmed by the owner in phase 12: legal.html and this file must use the same address).
+privacy@aplus1.app (the same address as `legal.html`; the owner confirms it before launch).

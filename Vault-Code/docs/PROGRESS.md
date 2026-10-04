@@ -10,6 +10,6 @@
 - [x] 08 feed-digest (2026-10-04) - /api/feed daily rotation, From your past, digest builder DRY-RUN + unsubscribe (token + endpoint), digest_prefs migration APPLIED; email NOT sent (needs provider + opt-in UI/consent in 12)
 - [x] 09 ops (2026-10-04) - link health, dead letters, caps/kill events, daily report (+email when env set), review queue, takedown (immediate hide trigger, restore, delete), retention, Trash 30d, RUNBOOK; migration vault_engine_ops APPLIED; NOT done: terms/privacy links (phase 12)
 - [x] 11 extension v0.2.0 (2026-10-04) - quick keep+undo, Keep All picker+batch API, credit, offline queue, connected state, perms diet (no tabs; opt-in all sites), hover opt-in, shortcut, install hint, hex chips; NOT done: token_version revocation (format change), real-Chrome test pending (load unpacked)
-- [ ] 12 legal-privacy-cookies
+- [x] 12 legal-privacy-cookies (2026-10-04) - fonts self-hosted + CSP + guard; cookie inventory (no cookies, no banner needed) + test; consent log+settings toggles (off by default); export/delete Vault data APIs (login kept: shared with other Aplus apps); dsar_requests + form; legal.html TH/EN drafts w/ placeholders; ROPA, launch checklist, incident; migration vault_engine_privacy APPLIED; OWNER+LAWYER must fill [PLACEHOLDERS]; T3 AI must call consent_granted
 - [ ] 10 learning-loop (after launch)
 Diffs vs CODEBASE.md: HEAD f0ddbda (+60 commits since 754a812); extension v0.1.5; app.js ~2500 lines; vercel.json has no crons/maxDuration; docs/ now holds the v6 pack.

@@ -20,3 +20,10 @@ Emergency without the UI: `update public.seeder_control set kill_switch = true;`
 **Retention (automatic, 03:30):** trash 30 days is local to each device; server purges `item_signals` > 90 days, old ops rows, resolved dead letters.
 
 **Jobs:** Inngest functions `seeder-batch`, `seeder-scheduler` (03:00), `ops-daily-report` (08:00), `ops-link-health` (Sun 04:00), `ops-retention` (03:30). Register `https://<seeder-domain>/api/inngest` in Inngest Cloud after each deploy.
+
+## Incident (data exposed or lost)
+1. **Detect:** unexpected reports, Supabase/Vercel alerts, a key pasted somewhere public.
+2. **Contain:** flip the kill switch (`/admin/seeder`); rotate the exposed secret (service role, `VAULT_EXTENSION_TOKEN_SECRET`, `ANTHROPIC_API_KEY`, `DIGEST_UNSUB_SECRET`) in Vercel and redeploy; revoke sessions if needed.
+3. **Assess:** what data, how many people, was it readable (private vs public)? Write it down with times.
+4. **Notify:** if personal data was breached and there is a risk to people, tell the Thai authority (PDPC) **within 72 hours of becoming aware**, and tell affected users without delay when the risk is high (counsel confirms the exact rules). Templates: `docs/legal/INCIDENT_TEMPLATES.md`.
+5. **Record:** what happened, what was done, what changes (add a line here).

@@ -691,11 +691,34 @@ export function createVaultRemote(config = {}) {
     }
   }
 
+  async function authedPost(path, body) {
+    const token = session()?.access_token;
+    if (!enabled || !token) throw new Error("Sign in with a real account first.");
+    const response = await fetch(path, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify(body || {}), signal: AbortSignal.timeout(90000) });
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data || data.success === false) throw new Error((data && data.message) || "Request failed. Try again in a moment.");
+    return data;
+  }
+  const exportAccountData = () => authedPost("/api/account/export");
+  const deleteAccountData = confirm => authedPost("/api/account/delete", { confirm });
+  /** Records a consent choice (append-only log) for the signed-in user. Never throws. */
+  async function logConsent(purpose, granted, policyVersion) {
+    try {
+      await rpc("log_consent", { p_purpose: purpose, p_granted: Boolean(granted), p_policy_version: policyVersion });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   return {
     enabled,
     linkPreview,
     importUrl,
     enrichItem,
+    exportAccountData,
+    deleteAccountData,
+    logConsent,
     hasSession: () => !!session()?.access_token,
     consumeAuthCallback,
     getSession,

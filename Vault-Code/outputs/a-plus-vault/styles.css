@@ -6130,3 +6130,10 @@ img.img-broken{visibility:hidden}
 
 .note-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .note-chips .viewer-picked{min-height:32px;padding:0 10px 0 8px}
+
+/* privacy choices */
+.consent-choices{display:grid;gap:10px;margin-bottom:12px}
+.consent-toggle{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.4}
+.consent-toggle input{margin-top:3px;flex:0 0 auto}
+.consent-toggle small{display:block;color:var(--muted);font-size:12.5px}
+.app-dialog-note{margin:0 0 10px;color:var(--muted);font-size:13px;line-height:1.5}

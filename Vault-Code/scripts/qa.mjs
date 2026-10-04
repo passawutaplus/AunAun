@@ -176,8 +176,8 @@ async function runStaticProductGuards() {
   assert(/theme-veil/.test(appCss) && /to-dark/.test(appCss) && /applyTheme\(/.test(appJs), "Theme switch must fade smoothly with a dimming veil.");
   assert(/"source": "\/discover"/.test(vercelJson) && /"destination": "\/vault"/.test(vercelJson) && !/"destination": "\/vault\.html"/.test(vercelJson), "Vercel must route /discover and /moodboards to /vault (dist/vault/index.html).");
   assert(/"source": "\/400"/.test(vercelJson) && /"source": "\/500"/.test(vercelJson), "Vercel must route explicit 400/500 pages.");
-  assert(/Legal Center/.test(legalHtml) && /Privacy Notice/.test(legalHtml) && /Copyright & Takedown Policy/.test(legalHtml), "Legal center must include alpha privacy and copyright notices.");
-  assert(/Acceptable Use Policy/.test(legalHtml) && /AI Processing Notice/.test(legalHtml) && /Subprocessor List/.test(legalHtml), "Legal center must include AUP, AI, and subprocessors.");
+  assert(/Legal Center/.test(legalHtml) && /Privacy Notice/.test(legalHtml) && /Copyright and takedown/.test(legalHtml) && /Cookies and browser storage/.test(legalHtml), "Legal center must include alpha privacy and copyright notices.");
+  assert(/Acceptable use/.test(legalHtml) && /AI processing/.test(legalHtml) && /Sub-processors/.test(legalHtml), "Legal center must include AUP, AI, and subprocessors.");
   assert(/legalFooter/.test(appJs) && /legal\.html#privacy/.test(appJs), "Public app must link to legal/privacy pages.");
   assert(/Privacy & Legal/.test(appJs) && /legal\.html#data-rights/.test(appJs), "Profile must link to legal and data rights pages.");
   assert(/data-export-vault/.test(appJs) && /exportVaultData/.test(appJs), "Profile must expose export my data.");

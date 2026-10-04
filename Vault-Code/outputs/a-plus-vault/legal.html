@@ -36,6 +36,13 @@
     .legal-table th,.legal-table td{padding:10px;border-bottom:1px solid #eee7df;text-align:left;vertical-align:top}
     .legal-table th{color:#17191b}
     @media(max-width:820px){.legal-grid{grid-template-columns:1fr}.legal-nav{position:static}.legal-top{align-items:flex-start}.legal-back{display:grid;place-items:center}}
+  
+    .privacy-form{display:grid;gap:10px;margin:12px 0}
+    .privacy-form label{display:grid;gap:4px;font-size:14px}
+    .privacy-form input,.privacy-form select,.privacy-form textarea{padding:9px 12px;border:1px solid #e5e8eb;border-radius:8px;font:inherit;background:#fff;color:#151719}
+    .privacy-submit{justify-self:start;padding:10px 16px;border:0;border-radius:8px;background:#d9362a;color:#fff;font:inherit;font-weight:600;cursor:pointer}
+    .privacy-status{min-height:20px;margin:0;font-size:13px;color:#747a80}
+    [lang="th"]+[lang="en"]{margin-top:12px;padding-top:12px;border-top:1px dashed #e5e8eb}
   </style>
 </head>
 <body>
@@ -43,148 +50,224 @@
     <header class="legal-top">
       <a class="legal-brand" href="./">
         <img class="legal-mark" src="./assets/vault-logo.png" alt="" aria-hidden="true">
-        <span><strong>A+ Vault</strong><br><small>Legal Center</small></span>
+        <span><strong>A+ Vault</strong><br><small>Legal Center · ศูนย์ข้อกำหนดและความเป็นส่วนตัว</small></span>
       </a>
       <a class="legal-back" href="./">Back to Vault</a>
     </header>
 
     <section class="legal-hero">
-      <span class="legal-pill">Alpha draft - not final legal advice</span>
-      <h1>Trust is a product feature.</h1>
-      <p>This page explains the current alpha rules for privacy, source credit, copyright, AI processing, extension capture, security, export, and deletion. It is a product-facing draft for private alpha testers and should be reviewed by counsel before public launch, paid plans, public collections, or team workspaces.</p>
+      <span class="legal-pill">ฉบับร่าง รอทนายตรวจ · Draft, pending legal review</span>
+      <h1>ความเชื่อใจคือฟีเจอร์ · Trust is a product feature.</h1>
+      <p lang="th">หน้านี้อธิบายกติกาปัจจุบันเรื่องข้อมูลส่วนบุคคล เครดิตต้นทาง ลิขสิทธิ์ AI คุกกี้ ส่วนขยายเบราว์เซอร์ การส่งออกและลบข้อมูล เป็นเอกสารร่างเพื่อใช้ภายในผลิตภัณฑ์ ต้องผ่านการตรวจโดยทนายความก่อนเปิดสาธารณะ ข้อความในวงเล็บเหลี่ยม [ ] คือสิ่งที่เจ้าของระบบต้องกรอก</p>
+      <p lang="en">This page explains the current rules for privacy, source credit, copyright, AI, cookies, the browser extension, export and deletion. It is a product draft, not legal advice, and must be reviewed by counsel before public launch. Text in [square brackets] is for the owner to fill in. Last updated: 2026-10-04 · policy version 2026-10-draft1.</p>
     </section>
 
     <div class="legal-grid">
       <nav class="legal-nav" aria-label="Legal sections">
-        <a href="#privacy">Privacy Notice</a>
-        <a href="#terms">Alpha Terms</a>
-        <a href="#copyright">Copyright & Takedown</a>
-        <a href="#acceptable-use">Acceptable Use</a>
-        <a href="#ai">AI Processing</a>
-        <a href="#security">Security Overview</a>
-        <a href="#data-rights">Export & Deletion</a>
-        <a href="#extension-privacy">Extension Privacy</a>
-        <a href="#subprocessors">Subprocessors</a>
+        <a href="#privacy">Privacy · ความเป็นส่วนตัว</a>
+        <a href="#cookies">Cookies · คุกกี้</a>
+        <a href="#terms">Terms · ข้อกำหนด</a>
+        <a href="#copyright">Copyright & Takedown · ลิขสิทธิ์</a>
+        <a href="#acceptable-use">Acceptable Use · การใช้งาน</a>
+        <a href="#ai">AI · การใช้ AI</a>
+        <a href="#security">Security · ความปลอดภัย</a>
+        <a href="#data-rights">Your rights · สิทธิของคุณ</a>
+        <a href="#extension-privacy">Extension · ส่วนขยาย</a>
+        <a href="#subprocessors">Sub-processors · ผู้ประมวลผล</a>
       </nav>
 
       <section class="legal-docs">
         <article class="legal-card" id="privacy">
-          <h2>Privacy Notice</h2>
-          <p>A+ Vault is private by default. We collect only what is needed for the user-selected action: account details, saved Vault objects, source/context metadata, notes, collections, projects, moodboards, basic security logs, and settings.</p>
-          <h3>Data we process</h3>
-          <ul>
-            <li>Account data: email, login method, profile settings, storage usage.</li>
-            <li>User content: images, screenshots, links, notes, videos, titles, keywords, and moodboard objects.</li>
-            <li>Source context: source URL, domain, page title, capture method, saved date, preview URL where available.</li>
-            <li>Extension data: only the item the user chooses to save, plus local recent captures and settings.</li>
-          </ul>
-          <h3>Purpose and user control</h3>
-          <p>We use data to store private references, search, organize, preview, sync, secure the account, and provide user-requested sharing. Users can delete objects, clear local data, export alpha data where available, and request access or deletion at privacy@aplus1.app.</p>
-          <p class="legal-note">We do not claim ownership of user content. Saving a reference does not grant copyright, trademark, publicity, or usage rights.</p>
+          <h2>ประกาศความเป็นส่วนตัว · Privacy Notice</h2>
+          <div lang="th">
+            <p><strong>ผู้ควบคุมข้อมูล:</strong> [ชื่อนิติบุคคล/บุคคล] [ที่อยู่] ติดต่อ <a href="mailto:privacy@aplus1.app">privacy@aplus1.app</a> (เจ้าหน้าที่คุ้มครองข้อมูล: [ถ้ามี])</p>
+            <p>A+ Vault เป็นส่วนตัวโดยค่าเริ่มต้น เรารวบรวมเท่าที่จำเป็นต่อสิ่งที่คุณเลือกทำ ภาพส่วนใหญ่ที่คุณบันทึกเป็นของผู้อื่น เราไม่มีสิทธิ์อนุญาตให้ใช้ภาพเหล่านั้น การเก็บไว้เป็นส่วนตัวไม่ใช่ใบอนุญาตให้นำไปเผยแพร่หรือขายต่อ</p>
+            <table class="legal-table">
+              <tr><th>วัตถุประสงค์</th><th>ข้อมูล</th><th>ฐานทางกฎหมาย*</th><th>เก็บนานแค่ไหน</th><th>จำเป็น?</th></tr>
+              <tr><td>ให้บริการ Vault (บันทึก จัดระเบียบ ค้นหา ซิงก์)</td><td>อีเมล โปรไฟล์ รายการที่บันทึก โน้ต ไฟล์ คอลเลกชัน โปรเจกต์ มู้ดบอร์ด</td><td>สัญญา</td><td>จนกว่าคุณลบ ถังขยะ 30 วัน คำขอลบข้อมูล ดำเนินการภายใน 30 วัน</td><td>จำเป็น</td></tr>
+              <tr><td>วิเคราะห์ภาพที่บันทึก (พาเลตต์สี แท็ก)</td><td>สำเนาภาพ ชื่อ โน้ต (ฝั่งเซิร์ฟเวอร์)</td><td>สัญญา / ประโยชน์โดยชอบ</td><td>เท่าอายุของรายการ</td><td>จำเป็น</td></tr>
+              <tr><td>ให้ AI ช่วยแท็กภาพส่วนตัว</td><td>ภาพย่อและชื่อ</td><td><strong>ความยินยอม</strong> (ปิดไว้ก่อน)</td><td>เราไม่เก็บสำเนา ผู้ให้บริการ AI [ตามเงื่อนไขล่าสุด]</td><td>ไม่จำเป็น</td></tr>
+              <tr><td>อีเมลสรุปรายสัปดาห์</td><td>อีเมล โปรไฟล์แท็กที่คุณเก็บ</td><td><strong>ความยินยอม</strong></td><td>จนกว่ายกเลิก</td><td>ไม่จำเป็น</td></tr>
+              <tr><td>จัดการรายงานละเมิด</td><td>อีเมลผู้รายงาน ข้อความ รหัสภาพ</td><td>หน้าที่ตามกฎหมาย / ประโยชน์โดยชอบ</td><td>[3 ปี]</td><td>จำเป็น</td></tr>
+              <tr><td>สถิติการใช้ Discover (ไม่ผูกกับตัวคุณ)</td><td>รหัสภาพ รหัสแท็ก ไม่มีรหัสผู้ใช้</td><td>ประโยชน์โดยชอบ</td><td>90 วัน</td><td>ไม่จำเป็น</td></tr>
+            </table>
+            <p class="legal-note">*ฐานทางกฎหมายเป็นข้อเสนอ ทนายต้องยืนยัน</p>
+            <h3>ส่งข้อมูลไปต่างประเทศ</h3>
+            <p>ฐานข้อมูล ไฟล์ และเว็บโฮสติ้งอยู่กับผู้ให้บริการนอกประเทศไทย (ดู <a href="#subprocessors">ผู้ประมวลผล</a> ระบุภูมิภาคและมาตรการคุ้มครอง: [ยืนยัน])</p>
+            <h3>สิทธิของคุณ</h3>
+            <p>ขอเข้าถึง/รับสำเนา ขอย้ายข้อมูล คัดค้าน ลบ ระงับ แก้ไข ถอนความยินยอมได้ทุกเมื่อ (เมนูตั้งค่า &gt; ความเป็นส่วนตัว) และร้องเรียนต่อสำนักงานคณะกรรมการคุ้มครองข้อมูลส่วนบุคคลได้ ดู <a href="#data-rights">สิทธิของคุณ</a></p>
+            <h3>ผู้เยาว์</h3>
+            <p>อายุขั้นต่ำในการสมัคร: [อายุ] ปี หากอายุต่ำกว่าเกณฑ์ที่กฎหมายกำหนดต้องได้รับความยินยอมจากผู้ปกครอง: [ทนายกำหนดข้อความ]</p>
+          </div>
+          <div lang="en">
+            <p><strong>Controller:</strong> [LEGAL NAME] [ADDRESS], contact <a href="mailto:privacy@aplus1.app">privacy@aplus1.app</a> (DPO: [if required]).</p>
+            <p>A+ Vault is private by default. We collect only what is needed for what you choose to do. Most images you save belong to other people and we cannot license them to you; private storage is not a licence to republish or sell them. You keep ownership of your own content; we hold a limited licence only to run the service for you.</p>
+            <p>The table above lists, for each purpose: the data, the legal basis (proposed, counsel to confirm), retention, and whether it is required or optional. Optional processing (AI tagging of private images, digest email) needs your consent, is off by default, and can be withdrawn in Settings.</p>
+            <h3>Transfers outside Thailand</h3>
+            <p>Database, file storage and hosting are with processors outside Thailand: see <a href="#subprocessors">sub-processors</a> (regions and safeguards: [CONFIRM]).</p>
+            <h3>Your rights</h3>
+            <p>Access/copy, portability, object, delete, restrict, rectify, withdraw consent at any time, and complain to the Thai Personal Data Protection Committee. See <a href="#data-rights">Your rights</a>.</p>
+            <h3>Minors</h3>
+            <p>Minimum age: [AGE]. Under the legal age, a parent or guardian must consent: [counsel to word].</p>
+          </div>
+        </article>
+
+        <article class="legal-card" id="cookies">
+          <h2>คุกกี้และการเก็บข้อมูลในเบราว์เซอร์ · Cookies and browser storage</h2>
+          <div lang="th">
+            <p><strong>เราไม่ตั้งคุกกี้เลย</strong> แอปใช้ localStorage/sessionStorage เฉพาะเรื่องที่คุณสั่ง เช่น การเข้าสู่ระบบ รายการที่บันทึก ธีม ไม่มีคุกกี้โฆษณา ไม่มีตัวติดตามบุคคลที่สาม ฟอนต์โฮสต์เอง ภาพจากลิงก์ที่คุณบันทึกโหลดจากเว็บต้นทางโดยไม่ส่ง referrer (การดูภาพนั้นย่อมติดต่อเว็บต้นทาง) ภาพใน Discover เก็บสำเนาไว้เองจึงไม่ติดต่อเว็บอื่น</p>
+            <p>เพราะไม่มีรายการที่ต้องขอความยินยอม จึง<strong>ไม่แสดงแบนเนอร์คุกกี้</strong> หากในอนาคตเพิ่มสถิติหรือสิ่งที่ต้องขอความยินยอม จะแสดงตัวเลือก "ยอมรับทั้งหมด / ปฏิเสธที่ไม่จำเป็น / เลือกเอง" โดยไม่โหลดอะไรก่อนคุณเลือก และเคารพสัญญาณ Global Privacy Control</p>
+          </div>
+          <div lang="en">
+            <p><strong>We set no cookies.</strong> The app uses localStorage/sessionStorage only for what you asked for (login, saved items, theme). No advertising cookies, no third-party trackers, self-hosted fonts. Images of links you save load from the source site without a referrer (viewing them contacts that site); Discover images are re-hosted by us.</p>
+            <p>Because nothing requires consent, <strong>no cookie banner is shown</strong>. If analytics or anything consent-requiring is ever added, you will get Accept all / Reject non-essential / Choose, nothing loads before your choice, and Global Privacy Control is respected. Change choices any time in Settings &gt; Privacy.</p>
+          </div>
+          <h3>Inventory · รายการที่เก็บ</h3>
+          <table class="legal-table">
+            <tr><th>Name</th><th>Purpose · วัตถุประสงค์</th><th>Type</th><th>Duration</th></tr>
+            <tr><td><code>aplus-vault-supabase-session</code></td><td>Login session · การเข้าสู่ระบบ</td><td>Necessary</td><td>Until sign out</td></tr>
+            <tr><td><code>aplus-vault-items</code>, <code>-collections</code>, <code>-projects</code>, <code>-moodboards</code>, <code>-trash</code></td><td>Your saved data (local copy) · ข้อมูลที่คุณบันทึก</td><td>Necessary</td><td>Until you delete (trash 30 days)</td></tr>
+            <tr><td><code>aplus-vault-theme</code>, <code>-library-view</code>, <code>-viewer-bw</code>, panel widths</td><td>Your display choices · ตัวเลือกการแสดงผล</td><td>Preference</td><td>Until changed</td></tr>
+            <tr><td><code>aplus-vault-opened</code>, <code>-discover-seen</code></td><td>Local only: "From your past", show new Discover images first</td><td>Preference</td><td>Rolling / 14 days</td></tr>
+            <tr><td><code>aplus_consent_v1</code></td><td>Your privacy choices · ตัวเลือกความเป็นส่วนตัว</td><td>Necessary</td><td>Until changed</td></tr>
+            <tr><td>Cache Storage</td><td>Offline page and icons · หน้าออฟไลน์</td><td>Necessary</td><td>Until next version</td></tr>
+          </table>
+          <p class="legal-note">Full list: <code>docs/legal/COOKIE_INVENTORY.md</code>. Extension storage is described in <a href="#extension-privacy">Extension</a>.</p>
         </article>
 
         <article class="legal-card" id="terms">
-          <h2>Alpha Terms</h2>
-          <p>A+ Vault is an alpha product for creative reference management. Features may change, fail, or lose prototype-only local data. The service may not capture every website, file, or preview perfectly.</p>
-          <h3>User content license</h3>
-          <p>Users retain ownership of their user content. A+ Vault receives a limited, non-exclusive license only to operate the service: store, back up, resize, create thumbnails, process for search, display to the user, and display to people the user explicitly shares with.</p>
-          <h3>User responsibility</h3>
-          <p>Users are responsible for having the rights needed to upload, save, share, publish, or reuse references. Private reference storage is not a license to copy, publish, sell, or commercially exploit third-party work.</p>
+          <h2>ข้อกำหนดการใช้งาน · Terms of use</h2>
+          <div lang="th">
+            <p>บัญชีเป็นของบุคคลเดียว อายุขั้นต่ำ [อายุ] ปี คุณเป็นเจ้าของเนื้อหาของคุณ เราได้รับสิทธิจำกัดเฉพาะเพื่อให้บริการ (จัดเก็บ ปรับขนาด สร้างภาพย่อ ประมวลผลเพื่อค้นหา แสดงให้คุณ และให้คนที่คุณเลือกแชร์) คุณรับรองว่ามีสิทธิ์ในสิ่งที่อัปโหลดหรือแชร์ ภาพของผู้อื่นที่บันทึกไว้ไม่ใช่การได้รับอนุญาตให้ใช้ซ้ำ</p>
+            <p>เราอาจระงับบัญชีหรือการแชร์ที่ละเมิดข้อกำหนด โดยแจ้งเหตุผลและให้โอกาสอุทธรณ์ ยกเว้นกรณีเร่งด่วนหรือผิดกฎหมายร้ายแรง กฎหมายที่ใช้บังคับและศาล: [ทนายกำหนด] ข้อจำกัดความรับผิด: [ทนายกำหนด]</p>
+          </div>
+          <div lang="en">
+            <p>One person per account, minimum age [AGE]. You own your content; we hold a limited licence only to operate the service (store, resize, thumbnail, process for search, show to you and to people you explicitly share with). You warrant you have the rights to what you upload or share. Saving someone else's image is not permission to reuse it.</p>
+            <p>We may suspend an account or sharing that breaks these terms, with notice, reasons and a way to appeal, except in urgent or seriously unlawful cases. Governing law and venue: [counsel]. Liability limits: [counsel].</p>
+          </div>
         </article>
 
         <article class="legal-card" id="copyright">
-          <h2>Copyright & Takedown Policy</h2>
-          <p>A+ Vault preserves source and context to support responsible reference use. Public sharing is explicit and should include source attribution where available. Source credit alone does not make copying or public display lawful.</p>
-          <h3>Report copyright infringement</h3>
-          <p>Send reports to copyright@aplus1.app with: your name/contact, the original work, the A+ Vault URL/object, a description of the issue, a good-faith statement, an accuracy statement, and your electronic signature.</p>
-          <h3>Process</h3>
-          <ul>
-            <li>Review complaint completeness and log timestamps.</li>
-            <li>Disable public access where appropriate.</li>
-            <li>Notify the account owner when required.</li>
-            <li>Allow counter-notice where applicable.</li>
-            <li>Apply repeat-infringer restrictions to sharing or accounts.</li>
-          </ul>
+          <h2>ลิขสิทธิ์และการแจ้งลบ · Copyright and takedown</h2>
+          <div lang="th">
+            <p>เครดิตต้นทางไม่ได้ทำให้การคัดลอกหรือเผยแพร่ถูกกฎหมาย หากคุณเป็นเจ้าของงาน กด "รายงานภาพนี้" ใต้ภาพใน Discover หรือส่งอีเมลถึง <a href="mailto:copyright@aplus1.app">copyright@aplus1.app</a> พร้อม: ชื่อและช่องทางติดต่อ งานต้นฉบับ ลิงก์/รหัสภาพใน A+ Vault คำอธิบาย คำยืนยันโดยสุจริตว่าถูกต้อง และลายมือชื่ออิเล็กทรอนิกส์ ภาพที่ถูกรายงานเรื่องลิขสิทธิ์หรือไม่เหมาะสม<strong>ถูกซ่อนทันที</strong>ระหว่างตรวจสอบ</p>
+            <ul>
+              <li>เราบันทึกเวลาและตรวจความครบถ้วนของคำร้อง แจ้งเจ้าของบัญชีเมื่อเกี่ยวข้อง</li>
+              <li>เจ้าของเนื้อหาโต้แย้งได้ (counter-notice) เราแจ้งผลต่อผู้ร้อง</li>
+              <li>ผู้ละเมิดซ้ำจะถูกจำกัดการแชร์หรือระงับบัญชี</li>
+              <li>ช่องทางตามพระราชบัญญัติลิขสิทธิ์ (มาตรา 32/3 และที่เกี่ยวข้อง): [ทนายเพิ่ม]</li>
+            </ul>
+          </div>
+          <div lang="en">
+            <p>Source credit does not make copying or republishing lawful. If you own a work: use "Report this image" under any Discover image, or email <a href="mailto:copyright@aplus1.app">copyright@aplus1.app</a> with your name and contact, the original work, the A+ Vault link or item id, a description, a good-faith and accuracy statement, and an electronic signature. Images reported for copyright or as offensive are <strong>hidden immediately</strong> while we review.</p>
+            <ul>
+              <li>We log timestamps, check the notice is complete, and notify the account owner where relevant.</li>
+              <li>The owner may send a counter-notice; we tell the reporter the outcome.</li>
+              <li>Repeat infringers lose sharing or their account.</li>
+              <li>Thai Copyright Act route (ss. 32/3 and related): [counsel to add].</li>
+            </ul>
+          </div>
         </article>
 
         <article class="legal-card" id="acceptable-use">
-          <h2>Acceptable Use Policy</h2>
-          <p>Do not use A+ Vault to infringe copyright, bypass paywalls or DRM, collect private data without rights, publish confidential client materials, upload malware, harass, stalk, impersonate, scrape at scale, or interfere with systems.</p>
-          <p>The browser extension must be used only through explicit user action. It must not track browsing history, read unrelated form fields, or collect unrelated page content in the background.</p>
+          <h2>การใช้งานที่ยอมรับได้ · Acceptable use</h2>
+          <div lang="th"><p>ห้ามละเมิดลิขสิทธิ์ หลบเลี่ยง paywall/DRM เก็บข้อมูลส่วนตัวโดยไม่มีสิทธิ์ เผยแพร่เอกสารลับของลูกค้า อัปโหลดมัลแวร์ คุกคาม ปลอมตัว เก็บข้อมูลจำนวนมากอัตโนมัติ หรือรบกวนระบบ เนื้อหาล่วงละเมิดเด็กไม่ยอมรับโดยเด็ดขาดและจะถูกรายงานต่อเจ้าหน้าที่ ส่วนขยายต้องทำงานเมื่อคุณสั่งเท่านั้น</p></div>
+          <div lang="en"><p>Do not infringe copyright, bypass paywalls or DRM, collect private data without rights, publish confidential client material, upload malware, harass, impersonate, scrape at scale, or interfere with the system. Child sexual abuse material is never tolerated and is reported to the authorities. The extension may act only on your explicit action.</p></div>
         </article>
 
         <article class="legal-card" id="ai">
-          <h2>AI Processing Notice</h2>
-          <p>AI Lite in the alpha may generate keywords, colors, OCR placeholders, and summaries to make references searchable. Production AI processing must disclose provider, data sent, retention, training policy, and user controls before third-party AI processing is enabled.</p>
-          <ul>
-            <li>Default: private objects stay private.</li>
-            <li>User control needed: disable AI per item/project before external AI is used.</li>
-            <li>No training promise should be made until vendor contracts confirm it.</li>
-          </ul>
+          <h2>การใช้ AI · AI processing</h2>
+          <div lang="th">
+            <ul>
+              <li><strong>ฟีดสาธารณะ (Discover):</strong> ภาพที่ใช้ใบอนุญาตเปิด ถูกส่งให้ผู้ให้บริการ AI [ชื่อผู้ให้บริการ] เพื่อคัดกรองความเหมาะสมและแท็ก ครั้งเดียวต่อภาพ</li>
+              <li><strong>ภาพส่วนตัวของคุณ:</strong> ไม่ส่งให้ AI เว้นแต่คุณเปิด "ให้ AI ช่วยแท็กภาพส่วนตัว" ในตั้งค่า (ปิดไว้ก่อน) ส่งเฉพาะภาพย่อและชื่อ มีโควตาต่อเดือน ปิดได้ทุกเมื่อ</li>
+              <li>ค้นหาไม่ใช้ AI การแท็กสีและคุณสมบัติภาพทำในเซิร์ฟเวอร์เราเอง</li>
+              <li>การเก็บรักษาและการนำไปฝึกโมเดลเป็นไปตามเงื่อนไขล่าสุดของผู้ให้บริการ: [ตรวจและกรอก ห้ามสัญญาว่า "ไม่ฝึก" หากสัญญาไม่ระบุ]</li>
+            </ul>
+          </div>
+          <div lang="en">
+            <ul>
+              <li><strong>Public feed (Discover):</strong> open-licence images are sent to the AI provider [PROVIDER] for safety screening and tagging, once per image.</li>
+              <li><strong>Your private images:</strong> not sent to AI unless you turn on "AI tagging of my private images" in Settings (off by default). Only a downscaled copy and the title are sent, there is a monthly quota, and you can turn it off any time.</li>
+              <li>Search does not use AI. Colour and image-property tags are computed on our own server.</li>
+              <li>Retention and training follow the provider's CURRENT terms: [check and fill in; do not promise "no training" unless the contract says so].</li>
+            </ul>
+          </div>
         </article>
 
         <article class="legal-card" id="security">
-          <h2>Security & Data Protection Overview</h2>
-          <p>The alpha design uses private-by-default storage, Supabase RLS for authenticated data, no service-role key in the extension, source preservation, file type/size checks, and minimal extension permissions.</p>
-          <table class="legal-table">
-            <tr><th>Area</th><th>Current alpha control</th><th>Before public launch</th></tr>
-            <tr><td>Storage</td><td>Private user scope, local demo storage, RLS schema draft</td><td>Private buckets, signed URLs, backup/restore test</td></tr>
-            <tr><td>Uploads</td><td>Image/video type and size checks</td><td>Malware scanning and quarantine for public content</td></tr>
-            <tr><td>Admin access</td><td>No admin review workflow in alpha</td><td>Role-based access, reason logging, emergency process</td></tr>
-          </table>
+          <h2>ความปลอดภัย · Security overview</h2>
+          <p lang="th">เนื้อหาเป็นส่วนตัวโดยค่าเริ่มต้น ใช้ Row Level Security บนฐานข้อมูล ไม่มีคีย์ฝั่งเซิร์ฟเวอร์ในส่วนขยายหรือเว็บ ตรวจชนิดและขนาดไฟล์ ลบข้อมูลตำแหน่ง (EXIF GPS) จากรูปที่อัปโหลด ใช้ HTTPS/HSTS และ Content-Security-Policy</p>
+          <p lang="en">Content is private by default, database Row Level Security, no server keys in the extension or web app, file type and size checks, location metadata (EXIF GPS) stripped from uploads, HTTPS/HSTS and a strict Content-Security-Policy. Report a vulnerability: <a href="mailto:security@aplus1.app">security@aplus1.app</a> (see <code>/.well-known/security.txt</code>).</p>
         </article>
 
         <article class="legal-card" id="data-rights">
-          <h2>Export, Deletion & Privacy Requests</h2>
-          <p>Users should be able to access, correct, export, and delete their data. In the alpha, deletion removes local objects from the workspace. Production deletion must also remove database rows, storage files, thumbnails, share links, and queued AI processing.</p>
-          <h3>Target retention schedule</h3>
-          <ul>
-            <li>Vault objects: until user deletes or closes account.</li>
-            <li>Trash: 30 days when trash is implemented.</li>
-            <li>Backups: disclose actual backup deletion window before production.</li>
-            <li>Security logs: short, purpose-limited retention.</li>
-          </ul>
-          <p>Privacy requests: privacy@aplus1.app</p>
+          <h2>สิทธิของคุณ · Your rights, export and deletion</h2>
+          <div lang="th">
+            <ul>
+              <li><strong>ส่งออกข้อมูล:</strong> ตั้งค่า &gt; ความเป็นส่วนตัว &gt; "Export my data" ได้ไฟล์ zip (JSON + ไฟล์ที่คุณอัปโหลด) ผ่านลิงก์ที่หมดอายุใน 1 ชั่วโมง</li>
+              <li><strong>ลบข้อมูล Vault:</strong> "Delete my Vault data" ลบรายการ คอลเลกชัน โปรเจกต์ มู้ดบอร์ด ลิงก์แชร์ ไฟล์ และข้อมูลจากส่วนขยาย บัญชีเข้าสู่ระบบ A+ ใช้ร่วมกับแอป Aplus อื่น จึงไม่ถูกลบในขั้นตอนนี้ หากต้องการลบบัญชีทั้งหมดให้ส่งคำขอด้านล่าง</li>
+              <li><strong>ถังขยะ:</strong> รายการที่ลบเก็บ 30 วันแล้วลบถาวร</li>
+              <li><strong>สำรองข้อมูล:</strong> ลบออกจากสำเนาสำรองภายใน [จำนวน] วัน</li>
+            </ul>
+          </div>
+          <div lang="en">
+            <ul>
+              <li><strong>Export:</strong> Settings &gt; Privacy &gt; "Export my data" gives a zip (JSON + your uploaded files) behind a link that expires in one hour.</li>
+              <li><strong>Delete Vault data:</strong> "Delete my Vault data" removes items, collections, projects, moodboards, share links, files and extension captures. Your A+ login is shared with other Aplus apps, so this step does not delete it; send the request below for full account erasure.</li>
+              <li><strong>Trash:</strong> deleted items wait 30 days, then are removed.</li>
+              <li><strong>Backups:</strong> removed from backups within [NUMBER] days.</li>
+            </ul>
+          </div>
+          <h3>ส่งคำขอ · Send a request</h3>
+          <form class="privacy-form" data-privacy-form>
+            <label>ประเภท · Type
+              <select name="type" required>
+                <option value="access">เข้าถึง/รับสำเนา · Access / copy</option>
+                <option value="delete">ลบ · Delete</option>
+                <option value="rectify">แก้ไข · Rectify</option>
+                <option value="object">คัดค้าน · Object</option>
+                <option value="restrict">ระงับ · Restrict</option>
+                <option value="withdraw">ถอนความยินยอม · Withdraw consent</option>
+                <option value="complaint">ร้องเรียน · Complaint</option>
+              </select>
+            </label>
+            <label>อีเมลสำหรับตอบกลับ · Email <input name="email" type="email" autocomplete="email" placeholder="you@example.com"></label>
+            <label>รายละเอียด · Details <textarea name="details" rows="3" maxlength="4000"></textarea></label>
+            <button type="submit" class="privacy-submit">Send request · ส่งคำขอ</button>
+            <p class="privacy-status" data-privacy-status role="status" aria-live="polite"></p>
+          </form>
+          <p>เป้าหมายตอบภายใน 30 วัน (ทนายยืนยันกำหนดเวลาตามกฎหมาย) · We aim to answer within 30 days (counsel confirms the legal deadline). <a href="mailto:privacy@aplus1.app">privacy@aplus1.app</a></p>
         </article>
 
-        
         <article class="legal-card" id="extension-privacy">
-          <h2>Chrome Extension Privacy</h2>
-          <p>The A+ Vault Capture extension saves creative references only when you explicitly choose an action: right-click <strong>+ Keep in Vault</strong>, <strong>+ Snapshot to Vault</strong>, or the popup capture buttons.</p>
-          <h3>Data sent per capture</h3>
-          <ul>
-            <li>Page URL and title</li>
-            <li>Selected image, video, or link URL</li>
-            <li>Optional title, note, and collection choice</li>
-            <li>Cropped snapshot image for snapshot capture</li>
-          </ul>
-          <h3>Where data goes</h3>
-          <ul>
-            <li>Production demo: <code>https://aplus-vault.vercel.app/api/vault/*</code></li>
-            <li>Local development: <code>http://127.0.0.1:5177/api/vault/*</code></li>
-          </ul>
-          <p>Your extension sync token and recent capture previews stay in Chrome local storage on your device. The extension never stores database secrets or service-role keys.</p>
-          <h3>What we do not do</h3>
-          <ul>
-            <li>No background browsing history collection</li>
-            <li>No hidden page scraping</li>
-            <li>No automatic publishing of saved references</li>
-          </ul>
-          <p>Contact: <a href="mailto:privacy@aplusvault.app">privacy@aplusvault.app</a></p>
+          <h2>ส่วนขยาย Chrome · Chrome extension privacy (v0.2.0)</h2>
+          <div lang="th">
+            <p>ทำงานเมื่อคุณสั่งเท่านั้น: คลิกขวา "+ Keep in Vault", "Keep all images", Snapshot, ปุ่มในป๊อปอัป, ทางลัด Alt+Shift+K ข้อมูลที่ส่ง: URL และชื่อหน้า URL ของภาพ/วิดีโอ/ลิงก์ที่เลือก ชื่อ โน้ต #แท็ก คอลเลกชัน ข้อมูลเครดิต/ต้นทางที่พบในหน้า (ผู้สร้าง ชื่อเว็บ ลิงก์ใบอนุญาต เก็บเป็นข้อมูล ไม่ใช่การได้รับอนุญาต) และภาพครอปเมื่อใช้ Snapshot "Keep all" ส่งเฉพาะ URL ไม่ใช่ไฟล์ภาพ</p>
+            <p>เก็บในเครื่อง: โทเค็นเชื่อมต่อ การตั้งค่า รายการล่าสุด คิวส่งซ้ำ (สูงสุด 50) กดตัดการเชื่อมต่อเพื่อล้าง ส่วนขยายไม่ตั้งคุกกี้ ไม่โหลดโค้ดหรือฟอนต์ภายนอก ไม่ขอสิทธิ์ tabs สิทธิ์ที่ใช้: contextMenus, activeTab, storage, scripting, alarms และสิทธิ์เข้าถึงเฉพาะโดเมน A+ Vault หากเปิด "ตรวจจับรูปภาพอัจฉริยะบนทุกเว็บ" จะขอสิทธิ์ทุกเว็บครั้งเดียว ปิดได้ทุกเมื่อ</p>
+          </div>
+          <div lang="en">
+            <p>It acts only when you choose: right-click "+ Keep in Vault" or "Keep all images", Snapshot, popup buttons, Alt+Shift+K. Data sent: page URL and title, the image/video/link URL you chose, title, note, #tags, collection, credit/source data found on the page (creator, site name, licence link: stored as information, never as a granted licence), and the cropped image for Snapshot. "Keep all" sends URLs, not image files.</p>
+            <p>Stored on your device: connection token, settings, recent captures, retry queue (max 50); Disconnect clears it. The extension sets no cookies, loads no remote code or fonts and does not request the tabs permission. Permissions: contextMenus, activeTab, storage, scripting, alarms, and access to A+ Vault domains only. If you turn on "Smart image detection on all sites" it asks for all-sites access once; you can turn it off any time.</p>
+            <p>Contact: <a href="mailto:privacy@aplus1.app">privacy@aplus1.app</a></p>
+          </div>
         </article>
-<article class="legal-card" id="subprocessors">
-          <h2>Subprocessor List</h2>
-          <p>This alpha may use these service categories depending on configuration. Confirm the actual vendors, region, DPA, retention, and AI training terms before public launch.</p>
+
+        <article class="legal-card" id="subprocessors">
+          <h2>ผู้ประมวลผลข้อมูล · Sub-processors</h2>
+          <p>Confirm vendors, regions, DPAs and retention before launch · ยืนยันก่อนเปิดสาธารณะ</p>
           <table class="legal-table">
-            <tr><th>Provider</th><th>Purpose</th><th>Status</th></tr>
-            <tr><td>Vercel</td><td>Web hosting and deployment</td><td>Demo hosting</td></tr>
-            <tr><td>Supabase</td><td>Auth, database, storage when live sync is enabled</td><td>Alpha integration</td></tr>
-            <tr><td>Google Chrome Web Store</td><td>Extension distribution in future</td><td>Not public yet</td></tr>
-            <tr><td>AI provider</td><td>Tags, OCR, visual search in future</td><td>Not selected for production</td></tr>
+            <tr><th>Provider</th><th>Purpose · วัตถุประสงค์</th><th>Data · ข้อมูล</th><th>Region · ภูมิภาค</th></tr>
+            <tr><td>Supabase</td><td>Login, database, file storage · ล็อกอิน ฐานข้อมูล ไฟล์</td><td>Account, items, files</td><td>[CONFIRM]</td></tr>
+            <tr><td>Vercel</td><td>Hosting and serverless functions · โฮสติ้ง</td><td>Requests, logs</td><td>[CONFIRM]</td></tr>
+            <tr><td>Anthropic (AI provider)</td><td>Safety screening and tagging · คัดกรองและแท็ก</td><td>Public feed images; private images only with your consent</td><td>[CONFIRM]</td></tr>
+            <tr><td>Email provider [NOT CHOSEN]</td><td>Weekly digest and owner report · อีเมล</td><td>Email address</td><td>[CONFIRM]</td></tr>
+            <tr><td>Inngest</td><td>Background jobs for the Discover seeder · งานเบื้องหลัง</td><td>Public image metadata, no user data</td><td>[CONFIRM]</td></tr>
           </table>
         </article>
       </section>
     </div>
   </main>
+  <script src="./legal.js"></script>
 </body>
 </html>
