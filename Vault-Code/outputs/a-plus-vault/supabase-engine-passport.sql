@@ -1,5 +1,5 @@
 -- A+ Vault Engine, phase 03: Image Passport on top of public.discover_items + engine tables.
--- NOT APPLIED. Review, then apply once (Supabase SQL editor). Idempotent. Apply after supabase-discover-open-licenses.sql.
+-- Applied 2026-10-04 as migration vault_engine_passport. Idempotent. Apply after supabase-discover-open-licenses.sql.
 -- Passport names map to existing columns (not duplicated): license_status = license, credit_text = attribution,
 -- image url = image_*_path, source_url/title/width/height/blurhash/phash/published_at already exist.
 -- Thresholds below mirror config/engine.json (MIN_CONFIDENT_TAGS 4, QUALITY_PUBLISH 75); change both together.
@@ -71,8 +71,8 @@ alter table public.discover_items validate constraint discover_items_published_o
 
 -- ---------------------------------------------------------------- indexes
 create index if not exists discover_items_tags_ids_gin on public.discover_items using gin (tags_ids);
-create index if not exists discover_items_text_gin on public.discover_items
-  using gin (to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(array_to_string(tags, ' '), '')));
+create index if not exists discover_items_title_fts on public.discover_items using gin (to_tsvector('simple', coalesce(title, '')));
+create index if not exists discover_items_tags_gin on public.discover_items using gin (tags);  -- open keywords (array_to_string is not immutable, so no combined tsvector)
 
 -- ---------------------------------------------------------------- engine tables (server-written; RLS on, no client policies)
 create table if not exists public.unknown_terms (

@@ -6,6 +6,8 @@ const ALLOWED_COLUMNS = new Set([
   "id", "source", "source_url", "title", "license", "license_url", "attribution", "attribution_json",
   "image_sm_path", "image_md_path", "image_lg_path", "blurhash", "width", "height", "phash",
   "category", "tags", "style", "colors", "source_meta", "published_at",
+  // Image Passport read columns (phase 03). Internal ones (quality_score, status_reason, check_*) stay private.
+  "tags_ids", "tags_json", "palette", "metrics", "alt_text_th", "alt_text_en", "era", "culture_region", "medium", "institution", "year",
 ]);
 const MAX_LIMIT = 300;
 
