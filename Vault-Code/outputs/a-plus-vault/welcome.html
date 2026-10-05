@@ -76,6 +76,9 @@
     .app-card p{margin:0;color:var(--ink-2);font-size:15px;line-height:1.55;flex:1}
     .app-card .btn{height:46px;justify-content:center;margin-top:6px}
     .app-hint{color:var(--muted);font-size:13px;line-height:1.45}
+    .apps-wl{margin-top:44px;padding:30px;border-radius:22px;background:var(--paper);box-shadow:inset 0 0 0 1px var(--line);text-align:center}
+    .apps-wl h3{font-size:clamp(22px,2.6vw,32px)}
+    .apps-wl p{margin:10px auto 0;max-width:520px;color:var(--ink-2)}
     @media(max-width:980px){.app-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:560px){.app-grid{grid-template-columns:1fr}.wl-row{flex-direction:column;border-radius:22px;padding:8px}.wl-row input{height:48px}.wl-row .btn{width:100%;justify-content:center}}
     /* faq */
@@ -259,7 +262,7 @@
         <a href="#promise">Privacy</a>
       </nav>
       <a class="nav-login" href="/discover?login=1">Log in</a>
-      <a class="btn btn-dark" href="#start">Join waitlist</a>
+      <a class="btn btn-dark" href="#apps">Get the apps</a>
     </div>
   </header>
 
@@ -275,16 +278,12 @@
           <span class="word"><span class="accent" style="animation-delay:.35s">you.</span></span>
         </h1>
         <p class="lede">Save references from any site in one click, find them again by color, image, or a few words in Thai — and never lose who made them.<span class="th">เก็บแรงบันดาลใจจากทุกที่ แล้วหาเจอเมื่อถึงเวลาทำงานจริง</span></p>
-        <form class="wl" data-waitlist data-source="welcome-hero" novalidate>
-          <div class="wl-row"><input type="email" name="email" placeholder="you@studio.com" autocomplete="email" required aria-label="Email address" /><button class="btn btn-coral" type="submit">Join waitlist</button></div>
-          <label class="wl-consent"><input type="checkbox" name="consent" /> <span>I agree to get an email about the launch. <a href="/legal">Privacy</a></span></label>
-          <p class="wl-msg" role="status" aria-live="polite"></p>
-        </form>
+        
         <div class="hero-ctas">
           <a class="btn btn-coral" href="/discover">Explore Discover <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           <a class="btn btn-light" href="/extension"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>Get the Chrome extension</a>
         </div>
-        <p class="hero-note">Opening soon · Free while in alpha · Private by default</p>
+        <p class="hero-note">Free while in alpha · Private by default</p>
       </div>
       <div data-floats aria-hidden="true"></div>
       <div class="scroll-cue" aria-hidden="true">Scroll<i></i></div>
@@ -452,13 +451,13 @@
             <span class="app-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9h10v8a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2zM8 6l1.5 2M16 6l-1.5 2M9 5.5a3.5 3.5 0 0 1 6 0"/></svg></span>
             <h3>Android app</h3>
             <p>A dedicated Android app with share-to-Vault from any other app. Early access goes out by email.</p>
-            <a class="btn btn-light" href="#start">Get early access</a>
+            <a class="btn btn-light" href="#apps-wl">Get early access</a>
           </article>
           <article class="app-card reveal" data-delay="2">
             <span class="app-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
             <h3>Desktop app</h3>
             <p>Your Vault in its own window for Windows and macOS: drag in files, search fast, keep it beside your design tools.</p>
-            <a class="btn btn-light" href="#start">Get early access</a>
+            <a class="btn btn-light" href="#apps-wl">Get early access</a>
           </article>
           <article class="app-card reveal" data-delay="3">
             <span class="app-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></span>
@@ -466,6 +465,15 @@
             <p>Right-click any image and keep it. The source and credit travel with it, and your tab never moves.</p>
             <a class="btn btn-coral" href="/extension">See how it works</a>
           </article>
+        </div>
+        <div class="apps-wl reveal" id="apps-wl">
+          <h3>Android &amp; desktop apps: get early access</h3>
+          <p>Leave your email and we will send the download link when they are ready. One email, nothing else.</p>
+          <form class="wl wl-center" data-waitlist data-source="welcome-apps" novalidate>
+            <div class="wl-row"><input type="email" name="email" placeholder="you@studio.com" autocomplete="email" required aria-label="Email address" /><button class="btn btn-coral" type="submit">Notify me</button></div>
+            <label class="wl-consent"><input type="checkbox" name="consent" /> <span>I agree to get an email about the Android and desktop apps. <a href="/legal">Privacy</a></span></label>
+            <p class="wl-msg" role="status" aria-live="polite"></p>
+          </form>
         </div>
       </div>
     </section>
@@ -479,7 +487,7 @@
           <p class="lede reveal" data-delay="2">Short answers before launch. Anything missing? Use the privacy contact on the legal page.</p>
         </div>
         <div class="faq-list reveal" data-delay="1">
-          <details><summary>When does A+ Vault open?</summary><p>We are finishing the alpha. Join the waitlist and we will email you once when it opens, nothing else.</p></details>
+          <details><summary>Can I use it today?</summary><p>Yes. A+ Vault is open in alpha: log in and start keeping. The Android and desktop apps are coming; leave your email in the apps section to get the download link first.</p></details>
           <details><summary>Is it free?</summary><p>It is free while in alpha. If paid plans arrive later, you will be told well before anything changes.</p></details>
           <details><summary>Is my Vault private?</summary><p>Yes. Everything you keep is private by default. Sharing is always your choice and can be turned off again.</p></details>
           <details><summary>Where do the Discover images come from?</summary><p>Only open-licence sources such as CC0 and public-domain collections, each with its credit. Images with unknown rights never appear in Discover.</p></details>
@@ -492,16 +500,10 @@
     <!-- START -->
     <section id="start">
       <div class="wrap">
-        <h2 class="reveal">Be first in.</h2>
-        <p class="lede reveal" data-delay="1" style="margin-left:auto;margin-right:auto">Join the waitlist for launch day and early access to the Android and desktop apps. Or look around Discover while you wait.<span class="th">ลงชื่อรอวันเปิดตัว และรับสิทธิ์ทดลองแอป Android กับเดสก์ท็อปก่อนใคร</span></p>
-        <div class="reveal" data-delay="2">
-        <form class="wl wl-center" data-waitlist data-source="welcome-footer" novalidate>
-          <div class="wl-row"><input type="email" name="email" placeholder="you@studio.com" autocomplete="email" required aria-label="Email address" /><button class="btn btn-coral" type="submit">Join waitlist</button></div>
-          <label class="wl-consent"><input type="checkbox" name="consent" /> <span>I agree to get an email about the launch. <a href="/legal">Privacy</a></span></label>
-          <p class="wl-msg" role="status" aria-live="polite"></p>
-        </form>
-        </div>
-        <div class="final-ctas reveal" data-delay="3">
+        <h2 class="reveal">Start keeping.</h2>
+        <p class="lede reveal" data-delay="1" style="margin-left:auto;margin-right:auto">Browse Discover as a guest, or log in to build your own private Vault.<span class="th">เริ่มจากดูภาพใน Discover หรือเข้าสู่ระบบเพื่อสร้าง Vault ส่วนตัวของคุณ</span></p>
+        <div class="final-ctas reveal" data-delay="2">
+          <a class="btn btn-coral" href="/discover?login=1">Log in</a>
           <a class="btn btn-light" href="/discover">Explore Discover</a>
           <a class="btn btn-light" href="/extension">Get the Chrome extension</a>
         </div>
