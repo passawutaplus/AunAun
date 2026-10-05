@@ -3,6 +3,8 @@ import { fmtDate, safeRpc } from "@/lib/admin-rpc";
 import { publicMediaUrl } from "@/seeder/repo";
 import { ConfirmButton } from "../confirm-button";
 import { resolveReport } from "../actions";
+import { takedownAndReply } from "./actions";
+import { takedownReplyText } from "@/ops/email";
 import { deleteItemPermanently, restoreItem } from "../review/actions";
 
 type Report = {
@@ -18,6 +20,8 @@ type Report = {
   source: string;
   source_url: string;
   image_sm_path: string | null;
+  replied_at: string | null;
+  resolution_note: string | null;
 };
 
 const REASONS: Record<string, string> = {
@@ -46,6 +50,19 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <p className="muted">ผู้ใช้กด “รายงานรูปนี้” จะมาอยู่ที่นี่ รายงานลิขสิทธิ์ควรจัดการเร็วที่สุด</p>
       </header>
       {res.error && <p className="notice">โหลดไม่ได้: {res.error}</p>}
+      <section className="panel">
+        <h2>ได้รับอีเมลแจ้งลบ?</h2>
+        <p className="muted small">
+          วางลิงก์หรือ ID ของรูปบน Discover ระบบจะลบไฟล์ถาวร กันไม่ให้นำกลับมาอีก ปิดรายงานที่เกี่ยวข้อง และส่งเมลตอบกลับว่าลบแล้ว
+          (ถ้ายังไม่ได้ตั้ง RESEND_API_KEY จะไม่ส่งอัตโนมัติ ให้กดลิงก์ตอบกลับที่รายงานแทน)
+        </p>
+        <form action={takedownAndReply} className="row">
+          <input name="item" placeholder="ลิงก์หรือ ID ของรูป" required />
+          <input name="email" type="email" placeholder="อีเมลผู้แจ้ง (ถ้ามี)" />
+          <input name="note" placeholder="หมายเหตุถึงผู้แจ้ง (ไม่บังคับ)" />
+          <ConfirmButton message="ลบรูปนี้ถาวรและตอบกลับผู้แจ้ง?" className="danger small">ลบ + ตอบกลับ</ConfirmButton>
+        </form>
+      </section>
       <div className="tabs">
         {TABS.map(([k, label]) => (
           <Link key={k} href={`/admin/reports?status=${k}`} className={status === k ? "active" : undefined}>
@@ -93,6 +110,16 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                         </form>
                       </>
                     )}
+                    {r.reason === "copyright" && r.item_status !== "rejected" && (
+                      <form action={takedownAndReply}>
+                        <input type="hidden" name="report_id" value={r.id} />
+                        <input type="hidden" name="item" value={r.item_id} />
+                        <input type="hidden" name="email" value={r.email ?? ""} />
+                        <ConfirmButton message="ลบถาวร กันกลับมา และตอบกลับผู้แจ้งว่าลบแล้ว?" className="danger small">
+                          ลบถาวร + ตอบกลับเมล
+                        </ConfirmButton>
+                      </form>
+                    )}
                     {r.item_status !== "hidden" && (
                       <form action={resolveReport}>
                         <input type="hidden" name="id" value={r.id} />
@@ -119,6 +146,16 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                     </form>
                   </>
                 ) : (
+                  <>
+                    {r.email && r.replied_at && <span className="muted small">ส่งเมลตอบกลับแล้ว {fmtDate(r.replied_at)}</span>}
+                    {r.email && !r.replied_at && r.item_status === "rejected" && (
+                      <a
+                        className="small"
+                        href={`mailto:${r.email}?subject=${encodeURIComponent(takedownReplyText(r.item_title).subject)}&body=${encodeURIComponent(takedownReplyText(r.item_title).text)}`}
+                      >
+                        เปิดเมลตอบกลับ (ยังไม่ได้ส่ง)
+                      </a>
+                    )}
                   <form action={resolveReport}>
                     <input type="hidden" name="id" value={r.id} />
                     <input type="hidden" name="status" value="open" />
@@ -126,6 +163,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                       เปิดใหม่ ({r.status === "resolved" ? "จัดการแล้ว" : "ปัดตก"})
                     </button>
                   </form>
+                  </>
                 )}
               </div>
             </div>

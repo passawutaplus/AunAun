@@ -60,6 +60,7 @@ export function publicMediaUrl(path: string): string {
 
 export type RejectExtra = {
   phash?: string;
+  sha256?: string;
   width?: number;
   height?: number;
   duplicateOf?: string;
@@ -70,6 +71,7 @@ export type PublishRow = {
   candidate: Candidate;
   category: string;
   phash: string;
+  sha256?: string;
   width: number;
   height: number;
   blurhash: string;
@@ -98,6 +100,8 @@ export interface SeederRepo {
   existingSourceIds(source: SourceKey, ids: string[]): Promise<Set<string>>;
   recordRejected(c: Candidate, category: string, reason: RejectReason, extra?: RejectExtra): Promise<void>;
   findSimilar(phash: string): Promise<string | null>;
+  /** True when the image (identical bytes or a near-identical perceptual hash) was taken down before. Optional so test doubles stay small. */
+  isBlocked?(sha256: string, phash: string): Promise<boolean>;
   uploadRendition(path: string, data: Buffer): Promise<void>;
   publish(row: PublishRow): Promise<void>;
   categories(): Promise<string[]>;
@@ -152,6 +156,7 @@ export class SupabaseSeederRepo implements SeederRepo {
         status: "rejected",
         reject_reason: reason,
         phash: extra.phash ?? null,
+        sha256: extra.sha256 ?? null,
         width: extra.width ?? null,
         height: extra.height ?? null,
         duplicate_of: extra.duplicateOf ?? null,
@@ -160,6 +165,12 @@ export class SupabaseSeederRepo implements SeederRepo {
       { onConflict: "source,source_id" },
     );
     fail("recordRejected", error);
+  }
+
+  async isBlocked(sha256: string, phash: string): Promise<boolean> {
+    const { data, error } = await this.db.rpc("image_is_blocked", { p_sha: sha256, p_phash: phash, p_max: PHASH_MAX_DISTANCE });
+    fail("isBlocked", error);
+    return data === true;
   }
 
   async findSimilar(phash: string): Promise<string | null> {
@@ -185,6 +196,7 @@ export class SupabaseSeederRepo implements SeederRepo {
         status: row.status,
         reject_reason: null,
         phash: row.phash,
+        sha256: row.sha256 ?? null,
         width: row.width,
         height: row.height,
         blurhash: row.blurhash,

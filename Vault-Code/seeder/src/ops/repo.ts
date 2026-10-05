@@ -116,8 +116,8 @@ export class OpsRepo {
   }
 
   /** Permanent takedown: renditions removed from storage, the row stays as a tombstone so the seeder never re-imports it. */
-  async deleteTakedown(id: string, by: string): Promise<void> {
-    const { data, error } = await this.db.from("discover_items").select("image_sm_path, image_md_path, image_lg_path").eq("id", id).maybeSingle();
+  async deleteTakedown(id: string, by: string): Promise<{ title: string }> {
+    const { data, error } = await this.db.from("discover_items").select("title, phash, sha256, image_sm_path, image_md_path, image_lg_path").eq("id", id).maybeSingle();
     if (error) throw new Error(`deleteTakedown: ${error.message}`);
     const paths = [data?.image_sm_path, data?.image_md_path, data?.image_lg_path].filter((p): p is string => typeof p === "string");
     if (paths.length) await this.db.storage.from("discover-media").remove(paths);
@@ -126,6 +126,14 @@ export class OpsRepo {
       .update({ status: "rejected", reject_reason: "license_not_allowed", status_reason: `takedown deleted by ${by}`, image_sm_path: null, image_md_path: null, image_lg_path: null, published_at: null })
       .eq("id", id);
     if (e2) throw new Error(`deleteTakedown: ${e2.message}`);
+    // Block the image for good: identical bytes and near-identical look can never be imported again (any source, any id).
+    const sha256 = typeof data?.sha256 === "string" ? data.sha256 : null;
+    const phash = typeof data?.phash === "string" ? data.phash : null;
+    if (sha256 || phash) {
+      const { error: e3 } = await this.db.from("image_blocks").insert({ sha256, phash, item_id: id, reason: "takedown" });
+      if (e3 && e3.code !== "23505") throw new Error(`deleteTakedown block: ${e3.message}`);
+    }
+    return { title: String(data?.title ?? "") };
   }
 
   // ---------------------------------------------------------------- daily report

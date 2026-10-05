@@ -11,7 +11,8 @@ export type RejectReason =
   | "download_failed"
   | "ai_invalid_output"
   | "blank_or_blurry"
-  | "low_quality";
+  | "low_quality"
+  | "blocked_image";
 
 export type GateResult = { ok: true } | { ok: false; reason: RejectReason };
 

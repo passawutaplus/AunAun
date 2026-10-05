@@ -44,3 +44,23 @@ alter table public.discover_items
 
 alter table public.discover_reports add column if not exists resolution_note text;
 alter table public.discover_reports add column if not exists replied_at timestamptz;
+
+-- The reports list also shows whether the reporter was told the image was removed.
+create or replace function public.vault_admin_list_reports(p_status text default 'open', p_limit int default 50)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare lim int := greatest(1, least(coalesce(p_limit, 50), 200));
+begin
+  if not public.is_vault_super_admin() then raise exception 'not authorized'; end if;
+  return coalesce((
+    select jsonb_agg(row_to_json(t)::jsonb order by t.created_at desc)
+    from (
+      select r.id, r.item_id, r.reason, r.details, r.email, r.status, r.created_at, r.replied_at, r.resolution_note,
+        d.title as item_title, d.status as item_status, d.source, d.source_url, d.image_sm_path
+      from public.discover_reports r
+      join public.discover_items d on d.id = r.item_id
+      where p_status = 'all' or r.status = p_status
+      order by r.created_at desc
+      limit lim
+    ) t
+  ), '[]'::jsonb);
+end $$;
