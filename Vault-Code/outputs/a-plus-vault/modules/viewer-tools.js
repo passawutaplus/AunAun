@@ -187,7 +187,6 @@ export function continueStripMarkup(items, mediaUrl) {
     .join("");
 }
 
-export function continueTabsMarkup(mode) {
-  const tab = (m, label) => `<button type='button' class='viewer-continue-tab' role='tab' data-viewer-continue='${m}' aria-selected='${mode === m ? "true" : "false"}'>${label}</button>`;
-  return `<div class='viewer-continue-tabs' role='tablist' aria-label='Continue from this image'>${tab("similar", "Similar")}${tab("opposite", "Opposite")}</div>`;
+export function continueTabsMarkup() {
+  return `<h3 class='viewer-continue-title'>More like this</h3>`;
 }

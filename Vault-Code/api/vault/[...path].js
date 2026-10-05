@@ -7,6 +7,7 @@ const ROUTES = {
   "capture-batch": "vault-capture-batch",
   "capture-file": "vault-capture-file",
   "captures": "vault-captures",
+  "captures-id": "vault-captures-id",
   "collections": "vault-collections",
   "enrich": "vault-enrich",
   "health": "vault-health",
@@ -54,7 +55,7 @@ export default async function handler(req, res) {
     return;
   }
   if (file === "similar" || file === "vault-captures-id") {
-    const id = decodeURIComponent(new URL(req.url, "http://localhost").pathname.split("/").filter(Boolean).pop() || "");
+    const u = new URL(req.url, "http://localhost"), id = u.searchParams.get("id") || decodeURIComponent(u.pathname.split("/").filter(Boolean).pop() || "");
     req.query = { ...(req.query || {}), id };
   }
   return (await load(file))(req, res);

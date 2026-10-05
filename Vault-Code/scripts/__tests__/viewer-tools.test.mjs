@@ -74,8 +74,8 @@ describe("tags, tools, trail", () => {
     assert.match(html, /data-viewer-trail='1'/);
     assert.match(html, /aria-current='page'>this image/);
   });
-  it("continue tabs mark the active mode", () => {
-    assert.match(continueTabsMarkup("opposite"), /data-viewer-continue='opposite' aria-selected='true'/);
-    assert.match(continueTabsMarkup("opposite"), /data-viewer-continue='similar' aria-selected='false'/);
+  it("continue header is a plain 'More like this' title (no Opposite mode)", () => {
+    assert.match(continueTabsMarkup(), /More like this/);
+    assert.doesNotMatch(continueTabsMarkup(), /opposite/i);
   });
 });

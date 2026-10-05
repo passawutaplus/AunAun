@@ -17,6 +17,10 @@
     }
   ],
   "rewrites": [
+    { "source": "/api/similar/:id", "destination": "/api/similar?id=:id" },
+    { "source": "/api/account/export", "destination": "/api/account-export" },
+    { "source": "/api/account/delete", "destination": "/api/account-delete" },
+    { "source": "/api/vault/captures/:id", "destination": "/api/vault/captures-id?id=:id" },
     {
       "source": "/discover",
       "destination": "/vault"

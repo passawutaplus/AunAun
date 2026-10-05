@@ -5,6 +5,9 @@ export const config = { maxDuration: 60 };
 const ROUTES = {
   "account/delete": "account-delete",
   "account/export": "account-export",
+  "account-delete": "account-delete",
+  "account-export": "account-export",
+  "similar": "similar",
   "discover": "discover",
   "feed": "feed",
   "import-url": "import-url",
@@ -54,7 +57,7 @@ export default async function handler(req, res) {
     return;
   }
   if (file === "similar" || file === "vault-captures-id") {
-    const id = decodeURIComponent(new URL(req.url, "http://localhost").pathname.split("/").filter(Boolean).pop() || "");
+    const u = new URL(req.url, "http://localhost"), id = u.searchParams.get("id") || decodeURIComponent(u.pathname.split("/").filter(Boolean).pop() || "");
     req.query = { ...(req.query || {}), id };
   }
   return (await load(file))(req, res);
