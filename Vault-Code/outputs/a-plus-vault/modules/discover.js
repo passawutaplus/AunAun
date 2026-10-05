@@ -573,7 +573,8 @@ export function setDiscoverGuest(value) {
 }
 
 function gateMarkup() {
-  return `<div class='discover-gate'><div class='discover-gate-card'><span class='discover-gate-eyebrow'>Keep exploring</span><h2>There’s so much more.</h2><p>Log in to see everything in Discover — and keep what moves you in your own private Vault.</p><button type='button' class='discover-gate-cta' data-auth-open>Log in or sign up</button><small>Free while in alpha · เข้าสู่ระบบเพื่อดูต่อ</small></div><span class='discover-gate-wordmark' aria-hidden='true'>A+ Vault</span></div>`;
+  const th = /^th/i.test(navigator.language || "");
+  return `<div class='discover-gate'><div class='discover-gate-card'>${th ? "<span class='discover-gate-eyebrow'>ดูต่อ</span><h2>ยังมีอีกเยอะ</h2><p>เข้าสู่ระบบเพื่อดูภาพทั้งหมดใน Discover และเก็บสิ่งที่ถูกใจไว้ใน Vault ส่วนตัวของคุณ</p><button type='button' class='discover-gate-cta' data-auth-open>เข้าสู่ระบบ / สมัคร</button><small>ใช้ฟรีช่วง alpha</small>" : `<span class='discover-gate-eyebrow'>Keep exploring</span><h2>There’s so much more.</h2><p>Log in to see everything in Discover — and keep what moves you in your own private Vault.</p><button type='button' class='discover-gate-cta' data-auth-open>Log in or sign up</button><small>Free while in alpha · เข้าสู่ระบบเพื่อดูต่อ</small>`}</div><span class='discover-gate-wordmark' aria-hidden='true'>A+ Vault</span></div>`;
 }
 
 function discoverResultsMarkup(ds, config, keptIds) {

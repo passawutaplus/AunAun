@@ -6177,3 +6177,16 @@ img.img-broken{visibility:hidden}
   .workspace.left-collapsed .rail,.board-workspace.left-collapsed .project-rail{justify-content:center!important;gap:8px!important}
   .workspace.left-collapsed .side-nav-button[data-view="collections"],.board-workspace.left-collapsed .side-nav-button[data-view="collections"]{display:none!important}
 }
+
+/* A+ Vault guest welcome (phone/tablet) */
+.guest-hero{display:none}
+@media(max-width:1024px){
+  .guest-hero{display:grid;align-content:center;justify-items:start;gap:14px;min-height:62vh;padding:56px 6px 36px}
+  .guest-hero-brand{font:400 13px/1 "Agrandir Wide","IBM Plex Sans Thai",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--text-muted,var(--muted))}
+  .guest-hero h2{margin:0;font:300 clamp(34px,9vw,56px)/1.05 "Agrandir Wide","IBM Plex Sans Thai",sans-serif;color:var(--text-strong,var(--ink-strong))}
+  .guest-hero p{margin:0;max-width:520px;font-size:16px;line-height:1.55;color:var(--text,var(--ink))}
+  .guest-hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+  .guest-hero-login,.guest-hero-browse{height:48px;padding:0 24px;border-radius:999px;font:400 15px/1 "Agrandir Wide","IBM Plex Sans Thai",sans-serif;cursor:pointer}
+  .guest-hero-login{border:0;background:var(--text-strong,#151719);color:var(--app-bg,#fff)}
+  .guest-hero-browse{background:transparent;color:var(--text-strong,var(--ink-strong));border:1px solid var(--border,var(--line))}
+}
