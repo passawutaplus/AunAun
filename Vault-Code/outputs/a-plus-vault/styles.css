@@ -6340,3 +6340,16 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 .brand-mark-img{object-fit:contain}
 .vault-loader{display:block;width:48px;height:auto;margin:0 auto 14px}
 .discover-empty{text-align:center}
+
+/* A+ Vault My Vault detail drawer: calmer, one place per job */
+.drawer-inner .detail-header{justify-content:flex-end;margin-bottom:6px}
+.detail-fold{margin:14px 0 4px;border-top:1px solid var(--line,var(--border));padding-top:6px}
+.detail-fold>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.detail-fold>summary::-webkit-details-marker{display:none}
+.detail-fold>summary::after{content:"+";font-size:18px;font-weight:400;letter-spacing:0}
+.detail-fold[open]>summary::after{content:"–"}
+.detail-delete{margin:6px 0 0}
+.danger-button.quiet{background:transparent!important;color:var(--muted)!important;box-shadow:none!important;padding:8px 0;font-weight:500}
+.danger-button.quiet:hover{color:#cc3931!important;text-decoration:underline}
+.drawer-inner .detail-primary-actions{position:sticky;bottom:0;z-index:5;margin:14px -4px 0;padding:12px 4px 14px;background:linear-gradient(to top,var(--drawer-fade,var(--surface,#fff)) 70%,transparent)}
+@media(min-width:1181px){.workspace:not(.detail-closed) .drawer{position:sticky;top:88px;align-self:start;height:calc(100vh - 160px);max-height:calc(100vh - 160px)}}
