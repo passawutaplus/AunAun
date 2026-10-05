@@ -178,18 +178,6 @@
       }
     });
   });
-
-  let deferred = null;
-  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; });
-  $$("[data-install]").forEach(btn => {
-    const hint = btn.parentElement.querySelector("[data-install-hint]");
-    btn.addEventListener("click", async () => {
-      if (deferred) { deferred.prompt(); try { await deferred.userChoice; } catch {} deferred = null; return; }
-      const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-      hint.textContent = ios ? "On iPhone: tap Share, then Add to Home Screen." : "In your browser menu choose Install app (or Add to Home screen).";
-      hint.hidden = false;
-    });
-  });
 })();
 
 
