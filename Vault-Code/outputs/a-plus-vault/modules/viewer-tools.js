@@ -72,9 +72,19 @@ const ICON_THIRDS = toolIcon("<rect x='4' y='4' width='16' height='16' rx='2'/><
 const ICON_PICK = toolIcon("<path d='m14 6 4 4M4 20l1-4 9.5-9.5a2 2 0 0 1 2.8 0l.2.2a2 2 0 0 1 0 2.8L8 19l-4 1Z'/><path d='m16 4 4 4'/>");
 
 /** Icon-only tools (labels live in title/aria-label). A picked colour appears right beside the eyedropper. */
-export function viewerToolsMarkup({ bw = false, grid = false } = {}) {
+const ICON_FLIP = toolIcon("<path d='M12 4v16'/><path d='M8.5 7.5 3.5 17h5Z'/><path d='m15.5 7.5 5 9.5h-5Z'/>");
+const ICON_ACTUAL = toolIcon("<circle cx='11' cy='11' r='6.5'/><path d='m20 20-4.2-4.2'/><path d='M9.5 9.6 11 8.6v5.2'/>");
+const ICON_CROP = toolIcon("<path d='M7 3v14h14'/><path d='M3 7h14v14'/>");
+
+/** Crop guides for the viewer: [w, h, label]. Index 0 = off. */
+export const CROP_RATIOS = [null, [1, 1, "1:1"], [4, 5, "4:5"], [9, 16, "9:16"], [210, 297, "A4"]];
+
+export function viewerToolsMarkup({ bw = false, grid = false, extended = false, flip = false, actual = false, crop = 0 } = {}) {
   const tool = (attr, pressed, label, icon) => `<button type='button' class='viewer-tool viewer-tool-icon' ${attr} aria-pressed='${pressed ? "true" : "false"}' title='${label}' aria-label='${label}'>${icon}</button>`;
-  return `<div class='viewer-tools'>${tool("data-viewer-bw", bw, "Black and white (B)", ICON_BW)}${tool("data-viewer-grid", grid, "Composition grid", ICON_THIRDS)}${tool("data-viewer-pick", false, "Pick a color from the image", ICON_PICK)}<button type='button' class='viewer-picked' data-viewer-picked data-viewer-copy='' hidden aria-label='Copy picked color'><i aria-hidden='true'></i><span></span></button></div>`;
+  const more = extended
+    ? `${tool("data-viewer-flip", flip, "Flip left-right", ICON_FLIP)}${tool("data-viewer-actual", actual, "Actual size (100%)", ICON_ACTUAL)}<button type='button' class='viewer-tool viewer-tool-icon viewer-tool-crop' data-viewer-crop aria-pressed='${crop ? "true" : "false"}' title='Crop guide: 1:1, 4:5, 9:16, A4' aria-label='Crop guide'>${ICON_CROP}<i class='lb-crop-tag'>${crop ? CROP_RATIOS[crop][2] : ""}</i></button>`
+    : "";
+  return `<div class='viewer-tools'>${tool("data-viewer-bw", bw, "Black and white (B)", ICON_BW)}${tool("data-viewer-grid", grid, "Composition grid", ICON_THIRDS)}${more}${tool("data-viewer-pick", false, "Pick a color from the image", ICON_PICK)}<button type='button' class='viewer-picked' data-viewer-picked data-viewer-copy='' hidden aria-label='Copy picked color'><i aria-hidden='true'></i><span></span></button></div>`;
 }
 
 /** Taxonomy chips: tap = pin (aria-pressed), long-press = exclude. `labelOf` is null until the taxonomy has loaded. */
@@ -217,4 +227,12 @@ export function continueStripMarkup(items, mediaUrl) {
 
 export function continueTabsMarkup() {
   return `<h3 class='viewer-continue-title'>More like this</h3>`;
+}
+
+/** Palette as text for design tools: css custom properties, a Tailwind colors block, or one hex per line. */
+export function paletteExport(list, format) {
+  const hexes = list.map(p => String(p.hex).toLowerCase());
+  if (format === "css") return `:root {\n${hexes.map((h, i) => `  --palette-${i + 1}: ${h};`).join("\n")}\n}`;
+  if (format === "tailwind") return `// tailwind.config.js -> theme.extend.colors\npalette: {\n${hexes.map((h, i) => `  ${i + 1}: "${h}",`).join("\n")}\n},`;
+  return hexes.join("\n");
 }

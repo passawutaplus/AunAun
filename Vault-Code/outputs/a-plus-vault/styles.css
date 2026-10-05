@@ -6530,3 +6530,23 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 .detail-find-link{display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:0 10px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none;font-size:12px}
 .detail-find-link .flat-icon{width:13px;height:13px}
 .detail-find-link:hover{border-color:rgba(240,80,64,.55);color:var(--accent,#f05040)}
+
+/* A+ Vault lightbox: flip, actual size, crop guide, copy palette */
+.media-lightbox.viewer-flip .lb-media img{transform:scaleX(-1)}
+.media-lightbox.viewer-actual .media-lightbox-stage{overflow:auto;place-items:start center;max-height:calc(100vh - 230px);scrollbar-width:thin}
+.media-lightbox.viewer-actual .lb-media{max-width:none;max-height:none}
+.media-lightbox.viewer-actual .lb-media img,.media-lightbox.viewer-actual .media-lightbox-stage img{max-width:none;max-height:none;width:auto;height:auto}
+.lb-crop{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;border:1.5px dashed rgba(255,255,255,.9);box-shadow:0 0 0 9999px rgba(0,0,0,.5);z-index:2}
+.lb-crop[hidden]{display:none}
+.lb-crop::after{content:attr(data-label);position:absolute;left:8px;top:6px;padding:2px 7px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;line-height:1.4}
+.viewer-tool-crop{position:relative}
+.lb-crop-tag{position:absolute;right:1px;bottom:0;font-style:normal;font-size:9px;line-height:1;padding:1px 3px;border-radius:6px;background:var(--accent,#f05040);color:#fff}
+.lb-crop-tag:empty{display:none}
+.lb-copy{position:relative}
+.lb-copy summary{list-style:none;display:inline-grid;place-items:center;width:38px;height:38px;border-radius:50%;background:rgba(20,22,26,.72);border:1px solid rgba(255,255,255,.14);color:#fff;cursor:pointer}
+.lb-copy summary::-webkit-details-marker{display:none}
+.lb-copy[open] summary{background:#fff;color:#151719}
+.lb-copy-menu{position:absolute;bottom:calc(100% + 8px);left:0;min-width:150px;padding:6px;border-radius:12px;background:rgba(20,22,26,.96);border:1px solid rgba(255,255,255,.14);display:grid;gap:2px;z-index:5}
+.lb-copy-menu button{padding:8px 10px;border:0;border-radius:8px;background:transparent;color:#fff;font:inherit;font-size:13px;text-align:left;cursor:pointer}
+.lb-copy-menu button:hover{background:rgba(255,255,255,.14)}
+.lb-actions .viewer-tool{width:36px;height:36px;min-height:36px}
