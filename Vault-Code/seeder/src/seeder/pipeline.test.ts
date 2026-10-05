@@ -168,6 +168,15 @@ test("unsafe image is blocked at C1 and nothing is uploaded or deep-analyzed", a
   assert.equal(ai.deepCalls, 0);
 });
 
+test("non-design or political material (offScope) is rejected at C1 and never deep-analyzed", async () => {
+  const repo = new FakeRepo();
+  const ai = new FakeAi({ domains: ["fas"], quality: 90, safetyFlag: false, offScope: true });
+  const out = await processCandidate(candidate, ctx, { repo, ai, download: async () => image(1200, 900) });
+  assert.equal(out.status === "rejected" && out.reason, "low_quality");
+  assert.equal(repo.uploads.length, 0);
+  assert.equal(ai.deepCalls, 0);
+});
+
 test("low quality never reaches pass 2", async () => {
   const repo = new FakeRepo();
   const ai = new FakeAi({ domains: ["fas"], quality: 30, safetyFlag: false });

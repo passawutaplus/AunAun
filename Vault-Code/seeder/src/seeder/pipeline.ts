@@ -140,6 +140,10 @@ export async function processCandidate(c: Candidate, ctx: PipelineContext, deps:
   if (triage.safetyFlag) {
     return reject("moderation_blocked", { phash, width: info.width, height: info.height, note: "safety flag" });
   }
+  // Discover is design and art only: documentary, political and other non-design material never goes public.
+  if (triage.offScope) {
+    return reject("low_quality", { phash, width: info.width, height: info.height, note: "off_scope" });
+  }
   if (triage.quality < cfg.QUALITY_REJECT) {
     return reject("low_quality", { phash, width: info.width, height: info.height, note: `quality ${triage.quality}` });
   }

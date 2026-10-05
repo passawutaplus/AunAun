@@ -12,8 +12,19 @@ import { processCandidate } from "../src/seeder/pipeline";
 import { SupabaseSeederRepo } from "../src/seeder/repo";
 
 const BATCH = 20;
-const SOURCE = "ov";
-const QUERIES: Record<string, string[]> = {
+const SOURCE = (process.env.FILL_SOURCE || "ov") as "ov" | "chndm";
+// Cooper Hewitt (CC0 design museum): strong in wallcoverings, textiles, prints and drawings; it holds almost no posters or typefaces.
+const CHNDM_QUERIES: Record<string, string[]> = {
+  pattern: ["sidewall", "wallpaper", "pattern"],
+  print: ["print", "trade card", "label", "book cover"],
+  illustration: ["drawing", "sketchbook folio"],
+  typography: ["alphabet", "lettering", "calligraphy"],
+  poster: ["advertisement"],
+  textile: ["textile", "embroidery", "lace"],
+  ceramic: ["ceramic"],
+  furniture: ["chair"],
+};
+const OV_QUERIES: Record<string, string[]> = {
   poster: ["poster design", "event poster", "typographic poster", "concert poster", "film poster", "minimalist poster", "festival poster", "exhibition poster"],
   typography: ["typography", "lettering", "calligraphy", "type specimen", "signage lettering", "hand lettering", "font design", "logotype"],
   illustration: ["illustration", "digital art", "vector illustration", "editorial illustration", "character illustration", "concept art", "children's book illustration", "abstract art"],
@@ -24,9 +35,9 @@ const QUERIES: Record<string, string[]> = {
 async function main() {
   const category = process.argv[2];
   const concurrency = Math.max(1, Number(process.argv[3] ?? 3));
-  const queries = QUERIES[category];
+  const queries = (SOURCE === "chndm" ? CHNDM_QUERIES : OV_QUERIES)[category];
   if (!queries) throw new Error(`Unknown category: ${category}`);
-  process.env.OPENVERSE_SOURCES ||= "wikimedia,stocksnap";
+  if (SOURCE === "ov") process.env.OPENVERSE_SOURCES ||= "wikimedia,stocksnap";
   const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
   const repo = new SupabaseSeederRepo();
   const ai = new AnthropicAi();
