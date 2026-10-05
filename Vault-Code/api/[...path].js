@@ -15,6 +15,7 @@ const ROUTES = {
   "search": "search",
   "signal": "signal",
   "unsubscribe": "unsubscribe",
+  "waitlist": "waitlist",
   "__prefix": {
     "similar/": "similar"
   }
@@ -31,6 +32,7 @@ const LOADERS = {
   "signal": () => import("../lib/routes/signal.mjs"),
   "similar": () => import("../lib/routes/similar.mjs"),
   "unsubscribe": () => import("../lib/routes/unsubscribe.mjs"),
+  "waitlist": () => import("../lib/routes/waitlist.mjs"),
 };
 
 const cache = new Map();

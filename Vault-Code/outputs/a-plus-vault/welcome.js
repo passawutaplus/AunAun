@@ -149,3 +149,44 @@
     addEventListener("scroll", onScroll, { passive: true });
     addEventListener("resize", onScroll);
 })();
+
+
+/* waitlist form + app install (kept separate from the scroll scenes above) */
+(() => {
+  const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+  $$("[data-waitlist]").forEach(form => {
+    const msg = form.querySelector(".wl-msg");
+    const say = (text, kind) => { msg.textContent = text; msg.className = "wl-msg" + (kind ? " is-" + kind : ""); };
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const email = form.elements.email.value.trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) return say("Enter a valid email address.", "error");
+      if (!form.elements.consent.checked) return say("Please tick the box so we may email you about the launch.", "error");
+      const btn = form.querySelector("button[type=submit]");
+      btn.disabled = true;
+      say("Joining…");
+      try {
+        const res = await fetch("/api/waitlist", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, consent: true, source: form.dataset.source }) });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.message || "Something went wrong. Please try again.");
+        form.classList.add("is-done");
+        say(body.message || "You're on the list.", "ok");
+      } catch (err) {
+        say(err.message || "Something went wrong. Please try again.", "error");
+        btn.disabled = false;
+      }
+    });
+  });
+
+  let deferred = null;
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; });
+  $$("[data-install]").forEach(btn => {
+    const hint = btn.parentElement.querySelector("[data-install-hint]");
+    btn.addEventListener("click", async () => {
+      if (deferred) { deferred.prompt(); try { await deferred.userChoice; } catch {} deferred = null; return; }
+      const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      hint.textContent = ios ? "On iPhone: tap Share, then Add to Home Screen." : "In your browser menu choose Install app (or Add to Home screen).";
+      hint.hidden = false;
+    });
+  });
+})();

@@ -6326,3 +6326,14 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 .discover-detail-backdrop:has(.viewer-picking) .viewer-trail{filter:blur(12px);opacity:.45;pointer-events:none;transition:filter .25s,opacity .25s}
 .discover-detail-backdrop:has(.viewer-picking) .viewer-tools{filter:none;opacity:1;pointer-events:auto}
 .discover-detail-backdrop:has(.viewer-picking) .discover-detail-close{z-index:5}
+
+/* A+ Vault eyedropper v2: the image grows to the centre of the screen; × leaves the picker, not the page */
+.discover-detail-backdrop:has(.viewer-picking){overflow:hidden}
+.discover-detail-backdrop .discover-detail.viewer-picking{position:fixed!important;inset:3vh 3vw!important;width:auto!important;height:auto!important;max-height:none!important;min-height:0!important;padding:0!important;display:block!important;border-radius:14px;z-index:5;background:transparent}
+.viewer-picking .discover-detail-media{width:100%!important;height:100%!important;max-height:none!important;min-height:0!important;aspect-ratio:auto!important;display:grid;place-items:center}
+.viewer-picking .discover-detail-media img{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain}
+.viewer-picking .discover-detail-info,.viewer-picking .viewer-sheet-handle{display:none!important}
+.viewer-picking .discover-detail-close{position:absolute!important;top:12px!important;right:12px!important;z-index:6}
+.discover-detail-backdrop:has(.viewer-picking) .discover-detail-close{display:grid!important}
+.viewer-picking .discover-detail-media{display:flex!important;align-items:center;justify-content:center;height:94vh!important;overflow:hidden}
+.viewer-picking .discover-detail-media img{width:auto!important;height:auto!important;max-width:100%;max-height:94vh}
