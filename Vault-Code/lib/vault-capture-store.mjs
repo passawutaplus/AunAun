@@ -81,3 +81,44 @@ export async function uploadCaptureFile(buffer, contentType, objectId, extension
   if (!signed?.signedURL) throw new Error("Could not create signed URL for capture file.");
   return { path, signedUrl: `${supabaseUrl()}/storage/v1${signed.signedURL}` };
 }
+
+/** One capture's `item` for this scope (used by enrichment). */
+export async function readCaptureItem(objectId, auth) {
+  const scope = scopeHashFromAuth(auth);
+  if (!scope || !objectId) return null;
+  const rows = await supabaseRest(
+    `/rest/v1/vault_extension_captures?select=item&object_id=${eq(objectId)}&bearer_hash=${eq(scope)}&limit=1`,
+    { feature: FEATURE, errorMessage: "Could not load this capture." }
+  );
+  return Array.isArray(rows) && rows[0] ? rows[0].item : null;
+}
+
+/** Replaces the stored `item` (enrichment writes `item.analysis`; everything else is passed through unchanged). */
+export async function writeCaptureItem(objectId, item, auth) {
+  const scope = requireScope(auth);
+  await supabaseRest(`/rest/v1/vault_extension_captures?object_id=${eq(objectId)}&bearer_hash=${eq(scope)}`, {
+    method: "PATCH",
+    prefer: "return=minimal",
+    feature: FEATURE,
+    errorMessage: "Could not save enrichment.",
+    body: { item }
+  });
+}
+
+/** Undo: delete one capture owned by this scope. Returns true when a row was removed. Stored file is removed best-effort. */
+export async function deleteCapture(objectId, auth) {
+  const scope = requireScope(auth);
+  if (!objectId) return false;
+  const rows = await supabaseRest(
+    `/rest/v1/vault_extension_captures?object_id=${eq(objectId)}&bearer_hash=${eq(scope)}`,
+    { method: "DELETE", prefer: "return=representation", feature: FEATURE, errorMessage: "Could not delete this capture." }
+  );
+  const row = Array.isArray(rows) ? rows[0] : null;
+  const assetPath = row?.item?.assetPath;
+  if (assetPath && typeof assetPath === "string" && !assetPath.includes("..")) {
+    try {
+      await supabaseRest(`/storage/v1/object/${STORAGE_BUCKET}/${assetPath}`, { method: "DELETE", feature: FEATURE, errorMessage: "storage cleanup failed" });
+    } catch { /* best effort */ }
+  }
+  return Boolean(row);
+}

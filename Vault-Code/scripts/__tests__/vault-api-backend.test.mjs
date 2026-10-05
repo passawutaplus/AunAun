@@ -6,7 +6,7 @@ import { findDuplicateCapture as findDuplicateRemote, readCaptures, writeCapture
 import { readExtensionCollections, upsertExtensionCollection } from "../../lib/vault-collection-sync.mjs";
 import { createHandler } from "../../lib/vault-api-shared.mjs";
 import { rateLimit, resetRateLimits } from "../../lib/rate-limit.mjs";
-import { discoverUpstreamQuery } from "../../api/discover.js";
+import { discoverUpstreamQuery } from "../../lib/routes/discover.mjs";
 
 const userId = "11111111-1111-4111-8111-111111111111";
 const realFetch = globalThis.fetch;

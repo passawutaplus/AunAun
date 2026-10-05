@@ -1,0 +1,107 @@
+@domain mat | วัสดุ พื้นผิว ลวดลาย | Materials, Textures & Patterns (cross-cutting)
+@group material | วัสดุ | Materials | 3
+wood | ไม้ | wood
+oak | ไม้โอ๊ค | oak | wood
+walnut | ไม้วอลนัท | walnut | wood
+teak | ไม้สัก | teak | wood
+bamboo | ไม้ไผ่ | bamboo
+plywood | ไม้อัด | plywood
+concrete | คอนกรีต,ปูนเปลือย | concrete
+terrazzo | เทอราซโซ | terrazzo
+marble | หินอ่อน | marble
+granite | หินแกรนิต | granite
+travertine | ทราเวอร์ทีน | travertine
+stone | หิน | stone
+brick | อิฐ | brick
+clay | ดินเหนียว | clay
+glass | กระจก,แก้ว | glass
+frosted_glass | กระจกฝ้า | frosted glass
+metal | โลหะ | metal
+steel | เหล็ก,สเตนเลส | steel
+brass | ทองเหลือง | brass
+copper | ทองแดง | copper
+gold_leaf | ทองคำเปลว,ฟอยล์ทอง | gold leaf,gold foil
+aluminum | อลูมิเนียม | aluminum
+chrome | โครเมียม | chrome
+rusted | สนิม,ผิวเก่าโลหะ | rusted metal,patina
+plastic | พลาสติก | plastic
+acrylic_material | อะคริลิกแผ่น | acrylic sheet
+resin | เรซิน | resin
+rubber | ยาง | rubber
+silicone | ซิลิโคน | silicone
+foam | โฟม | foam
+paper | กระดาษ | paper
+cardboard | กระดาษลัง,คราฟท์ | cardboard,kraft paper
+fabric | ผ้า | fabric
+fur | ขนสัตว์เทียม,ขน | fur
+felt | สักหลาด | felt
+cork | ไม้ก๊อก | cork
+sand | ทราย | sand
+water | น้ำ | water
+ice | น้ำแข็ง | ice
+smoke | ควัน | smoke
+fire | ไฟ | fire
+
+@group texture | พื้นผิว | Surface texture | 3
+smooth | เรียบเนียน | smooth
+glossy | มันเงา | glossy
+matte | ด้าน | matte
+satin_finish | กึ่งมัน | satin finish
+rough | หยาบ | rough
+grainy | เม็ดหยาบ,เกรน | grainy
+speckled | จุดกระ | speckled
+textured_plaster | ปูนฉาบมีลาย | textured plaster
+ribbed | ริ้ว | ribbed
+fluted | ร่อง | fluted
+woven_texture | ลายถัก | woven texture
+embossed_texture | ลายนูน | embossed texture
+crinkled | ยับ | crinkled
+cracked | แตกร้าว | cracked
+weathered | เก่าตามเวลา | weathered
+distressed | ผิวเก่า | distressed
+translucent | โปร่งแสง | translucent
+transparent | ใส | transparent
+iridescent | รุ้ง,เหลือบสี | iridescent
+metallic | เมทัลลิก | metallic finish
+wet | เปียก | wet look
+dusty | ฝุ่น | dusty
+
+@group pattern | ลวดลาย | Patterns | 3
+stripes | ลายทาง | stripes
+checkered | ลายตาราง | checkered
+plaid | ลายสก็อต | plaid,tartan
+polka_dots | ลายจุด | polka dots
+herringbone_pattern | ลายก้างปลา | herringbone pattern
+chevron | ลายซิกแซก,เชฟรอน | chevron
+zigzag | ซิกแซก | zigzag
+houndstooth | ลายฟันหนู | houndstooth
+gingham | ลายกิงแฮม | gingham
+floral | ลายดอกไม้ | floral pattern
+botanical_pattern | ลายใบไม้ | botanical pattern
+paisley | เพสลีย์ | paisley
+damask | ดามัสก์ | damask
+toile | ตัวน์ | toile
+animal_print | ลายสัตว์ | animal print
+leopard | ลายเสือดาว | leopard print | animal_print
+zebra | ลายม้าลาย | zebra print | animal_print
+camouflage | ลายพราง | camouflage
+geometric_pattern | ลายเรขาคณิต | geometric pattern
+tessellation | เทสเซลเลชัน | tessellation
+mosaic_pattern | ลายโมเสก | mosaic pattern
+arabesque | ลายอาหรับ | arabesque
+mandala | แมนดาลา | mandala
+moire | ลายมัวเร | moire
+wave_pattern | ลายคลื่น | wave pattern
+seigaiha | เซไกฮะ | seigaiha
+thai_pattern | ลายไทย | thai pattern
+kranok | ลายกนก | kranok
+batik_pattern | ลายบาติก | batik pattern
+tribal | ลายชนเผ่า | tribal pattern
+abstract_pattern | ลายนามธรรม | abstract pattern
+memphis_pattern | ลายเมมฟิส | memphis pattern
+terrazzo_pattern | ลายเทอราซโซ | terrazzo pattern
+marble_pattern | ลายหินอ่อน | marble pattern
+wood_grain | ลายไม้ | wood grain
+repeat_pattern | ลายซ้ำ | repeat pattern
+seamless_pattern | ลายต่อเนื่อง | seamless pattern
+grid_pattern | ลายกริด | grid pattern

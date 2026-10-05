@@ -1,0 +1,440 @@
+{
+ "version": 6,
+ "_note": "Engine config only. Vocabulary lives in docs/dictionary (build.py). Phrase tags use dictionary ids.",
+ "group_layers": {
+  "mood.tone": "A",
+  "mood.hue": "A",
+  "sty.era": "B",
+  "sty.culture": "B",
+  "sty.movement": "B"
+ },
+ "_group_layers_note": "A = computed by code (never asked from AI), B = from source metadata first, all other groups = C (AI pass 2, only for detected domains + cross-cutting).",
+ "phrases": [
+  {
+   "match": [
+    "มีสีสันหน่อย",
+    "มีสีสันนิดๆ",
+    "ไม่จืดเกินไป",
+    "pop of color",
+    "color pop",
+    "not boring"
+   ],
+   "tags": [
+    [
+     "mood.neutral_with_accent",
+     1.0
+    ]
+   ]
+  },
+  {
+   "match": [
+    "ดูแพงๆ",
+    "ดูแพง",
+    "ดูหรู",
+    "looks expensive",
+    "expensive look",
+    "high end look"
+   ],
+   "tags": [
+    [
+     "sty.quiet_luxury",
+     1.0
+    ],
+    [
+     "mood.muted_palette",
+     0.6
+    ],
+    [
+     "mat.glossy",
+     0.3
+    ]
+   ]
+  },
+  {
+   "match": [
+    "ดูอบอุ่น",
+    "อบอุ่นๆ",
+    "warm feel",
+    "cozy vibe",
+    "warm vibe"
+   ],
+   "tags": [
+    [
+     "mood.cozy",
+     1.0
+    ],
+    [
+     "mood.warm_palette",
+     0.7
+    ]
+   ]
+  },
+  {
+   "match": [
+    "ดูสะอาด",
+    "สะอาดตา",
+    "clean look",
+    "clean vibe",
+    "airy and clean"
+   ],
+   "tags": [
+    [
+     "sty.minimal",
+     0.9
+    ],
+    [
+     "mood.negative_space",
+     0.7
+    ],
+    [
+     "mood.light_palette",
+     0.5
+    ]
+   ]
+  },
+  {
+   "match": [
+    "ดูเท่",
+    "ดูดุ",
+    "edgy look",
+    "badass look"
+   ],
+   "tags": [
+    [
+     "mood.bold",
+     0.9
+    ],
+    [
+     "mood.dark_palette",
+     0.5
+    ]
+   ]
+  },
+  {
+   "match": [
+    "เหมือนอยู่โรงแรม",
+    "โฮเทลสไตล์",
+    "hotel vibe",
+    "hotel style",
+    "boutique hotel feel"
+   ],
+   "tags": [
+    [
+     "sty.quiet_luxury",
+     0.8
+    ],
+    [
+     "mood.calm",
+     0.7
+    ]
+   ]
+  },
+  {
+   "match": [
+    "ทำงานที่บ้านสบายๆ",
+    "wfh corner",
+    "cozy workspace"
+   ],
+   "tags": [
+    [
+     "int.home_office",
+     1.0
+    ],
+    [
+     "mood.cozy",
+     0.7
+    ]
+   ]
+  }
+ ],
+ "must_words": [
+  "ต้อง",
+  "ต้องมี",
+  "ห้าม",
+  "ไม่เอา",
+  "ห้ามมี",
+  "must",
+  "required"
+ ],
+ "soft_words": [
+  "อยากได้",
+  "ประมาณ",
+  "แนวๆ",
+  "คล้ายๆ",
+  "หน่อย",
+  "นิดหน่อย",
+  "a bit",
+  "slightly",
+  "kind of"
+ ],
+ "negation_words": [
+  "ไม่เอา",
+  "ไม่",
+  "ห้าม",
+  "no",
+  "without",
+  "not"
+ ],
+ "ignore_words": [
+  "brief",
+  "budget",
+  "client",
+  "deadline",
+  "deck",
+  "file",
+  "logo size",
+  "pdf",
+  "pitch",
+  "ppt",
+  "presentation",
+  "price",
+  "project",
+  "revision",
+  "งบ",
+  "บรีฟ",
+  "บาท",
+  "ราคา",
+  "รีวิวงาน",
+  "ลูกค้า",
+  "ล้าน",
+  "เดดไลน์",
+  "แก้",
+  "โปรเจกต์",
+  "ไฟล์"
+ ],
+ "connector_words": [
+  "แนว",
+  "แนวๆ",
+  "สไตล์",
+  "style",
+  "ฟีล",
+  "ฟีลลิ่ง",
+  "feel",
+  "feeling",
+  "ลุค",
+  "look",
+  "vibe",
+  "vibes",
+  "โทน",
+  "tone",
+  "แบบ",
+  "ประเภท",
+  "type",
+  "theme",
+  "ธีม",
+  "ลาย",
+  "ทรง",
+  "เซ็ต",
+  "ชุด",
+  "ประมาณ",
+  "like",
+  "kind of",
+  "sort of"
+ ],
+ "filler_words": [
+  "the",
+  "a",
+  "an",
+  "of",
+  "for",
+  "with",
+  "and",
+  "or",
+  "in",
+  "on",
+  "to",
+  "that",
+  "this",
+  "i",
+  "want",
+  "need",
+  "looking",
+  "find",
+  "show",
+  "me",
+  "please",
+  "ขอ",
+  "อยากได้",
+  "อยากหา",
+  "หาให้",
+  "ช่วยหา",
+  "หน่อย",
+  "ด้วย",
+  "นะ",
+  "ครับ",
+  "ค่ะ",
+  "คะ",
+  "หา",
+  "ที่",
+  "ซึ่ง",
+  "ของ",
+  "และ",
+  "กับ",
+  "เป็น",
+  "มี"
+ ],
+ "domain_cues": {
+  "int": [
+   "ออกแบบห้อง",
+   "ตกแต่งห้อง",
+   "ตกแต่งบ้าน",
+   "รีโนเวทห้อง",
+   "อินทีเรีย",
+   "interior",
+   "room design"
+  ],
+  "arc": [
+   "ออกแบบบ้าน",
+   "ออกแบบอาคาร",
+   "สถาปัตย์",
+   "ภูมิสถาปัตย์",
+   "architecture",
+   "building design"
+  ],
+  "gfx": [
+   "งานกราฟิก",
+   "ออกแบบโลโก้",
+   "แบรนด์",
+   "อัตลักษณ์",
+   "branding",
+   "graphic design"
+  ],
+  "typ": [
+   "ฟอนต์",
+   "ตัวอักษร",
+   "เลตเตอริง",
+   "typeface",
+   "font"
+  ],
+  "ui": [
+   "เว็บไซต์",
+   "ออกแบบเว็บ",
+   "แอป",
+   "หน้าจอ",
+   "ยูไอ",
+   "website",
+   "app design"
+  ],
+  "pho": [
+   "ถ่ายภาพ",
+   "ถ่ายรูป",
+   "ช่างภาพ",
+   "photography",
+   "photoshoot"
+  ],
+  "ill": [
+   "วาดภาพ",
+   "ภาพประกอบ",
+   "วาดรูป",
+   "illustration",
+   "drawing"
+  ],
+  "fas": [
+   "แฟชั่น",
+   "ออกแบบเสื้อผ้า",
+   "คอลเลกชันเสื้อผ้า",
+   "fashion",
+   "garment"
+  ],
+  "prd": [
+   "ออกแบบผลิตภัณฑ์",
+   "โปรดักต์ดีไซน์",
+   "product design",
+   "industrial design"
+  ],
+  "mot": [
+   "โมชัน",
+   "แอนิเมชัน",
+   "เกม",
+   "ภาพยนตร์",
+   "motion",
+   "animation",
+   "film"
+  ],
+  "crf": [
+   "งานฝีมือ",
+   "ประติมากรรม",
+   "เซรามิก",
+   "งานปั้น",
+   "craft",
+   "sculpture",
+   "ceramics"
+  ]
+ },
+ "intent_cues": {
+  "color_reference": [
+   "อ้างอิงสี",
+   "โทนสี",
+   "พาเลต",
+   "พาเลตต์",
+   "ชุดสี",
+   "color palette",
+   "color reference"
+  ],
+  "layout_reference": [
+   "อ้างอิงเลย์เอาต์",
+   "เลย์เอาต์",
+   "การจัดวาง",
+   "layout reference"
+  ],
+  "material_reference": [
+   "อ้างอิงวัสดุ",
+   "วัสดุ",
+   "พื้นผิว",
+   "material reference"
+  ],
+  "mood_reference": [
+   "อ้างอิงบรรยากาศ",
+   "บรรยากาศ",
+   "มู้ด",
+   "mood reference",
+   "vibe"
+  ],
+  "similar_to": [
+   "คล้ายภาพนี้",
+   "เหมือนภาพนี้",
+   "แนวเดียวกับ",
+   "similar to",
+   "more like"
+  ]
+ },
+ "language_rules": {
+  "script_split": true,
+  "latin_normalize": [
+   "lowercase",
+   "strip_diacritics",
+   "hyphen_space_join",
+   "plural_s_es",
+   "possessive"
+  ],
+  "thai_normalize": [
+   "strip_tone_marks_for_match",
+   "expand_maiyamok",
+   "unify_loanword_final_k_c"
+  ],
+  "fuzzy": {
+   "latin_min_len": 6,
+   "max_edit": 1,
+   "require_unique": true,
+   "conf": 0.7
+  },
+  "multiword_window": 4,
+  "abbrev_expand": {
+   "bw": "black and white",
+   "b&w": "black and white",
+   "bg": "background",
+   "kv": "key visual",
+   "ci": "corporate identity",
+   "vi": "visual identity",
+   "ds": "design system",
+   "cta": "cta button",
+   "ux": "ui",
+   "wfh": "home office",
+   "moodboard": "mood board",
+   "mockup": "prototype"
+  },
+  "tag_prefix": "#",
+  "hex_color_regex": "^#([0-9a-f]{3}|[0-9a-f]{6})$",
+  "hex_color_note": "hex wins over tag unless a tag with that name exists"
+ }
+}

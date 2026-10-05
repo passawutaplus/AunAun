@@ -1,0 +1,130 @@
+@domain ui | ยูไอ/ยูเอ็กซ์และดิจิทัล | UI/UX & Digital Product
+@group screen | ประเภทหน้าจอ | Screen types | 2
+landing_page | แลนดิ้งเพจ,หน้าแรก | landing page,homepage
+hero_section | เฮโร่,ส่วนหัวหน้าเว็บ | hero section
+pricing_page | หน้าราคา | pricing page
+about_page | หน้าเกี่ยวกับเรา | about page
+portfolio_site | เว็บพอร์ตโฟลิโอ | portfolio website
+blog_layout | หน้าบทความ,บล็อก | blog layout
+product_page | หน้าสินค้า | product page
+checkout | เช็กเอาต์,หน้าชำระเงิน | checkout
+cart | ตะกร้าสินค้า | cart
+dashboard | แดชบอร์ด | dashboard
+admin_panel | หลังบ้าน,แอดมิน | admin panel
+analytics_screen | หน้าวิเคราะห์ข้อมูล | analytics screen
+login_screen | หน้าเข้าสู่ระบบ | login screen,sign in
+signup_screen | หน้าสมัครสมาชิก | sign up screen
+onboarding | ออนบอร์ดดิ้ง | onboarding
+settings_screen | หน้าตั้งค่า | settings screen
+profile_screen | หน้าโปรไฟล์ | profile screen
+feed | ฟีด,หน้าฟีด | feed
+search_screen | หน้าค้นหา | search screen
+empty_state | หน้าว่าง,เอมตี้สเตท | empty state
+error_page | หน้า 404,หน้าผิดพลาด | error page,404
+chat_screen | หน้าแชท | chat screen
+map_screen | หน้าแผนที่ | map screen
+calendar_screen | ปฏิทินในแอป | calendar ui
+player_screen | หน้าเล่นเพลง,หน้าเล่นวิดีโอ | media player ui
+
+@group component | ส่วนประกอบ UI | UI components | 5
+button | ปุ่ม | button
+card | การ์ด | card ui
+modal | โมดัล,หน้าต่างป๊อปอัป | modal,dialog
+dropdown | ดรอปดาวน์ | dropdown
+form_field | ช่องกรอกข้อมูล,ฟอร์ม | form field,input
+toggle_switch | สวิตช์เปิดปิด,ทอกเกิล | toggle switch
+slider_ui | สไลเดอร์ | slider
+tabs | แท็บ | tabs
+navbar | แถบเมนู,เนวบาร์ | navbar,navigation bar
+sidebar | ไซด์บาร์ | sidebar
+bottom_nav | เมนูล่าง | bottom navigation
+breadcrumbs | เบรดครัมบ์ | breadcrumbs
+pagination | เลขหน้า | pagination
+table_ui | ตาราง | data table
+list_ui | ลิสต์ | list view
+avatar | อวาตาร์,รูปโปรไฟล์ | avatar
+chip_badge | แบดจ์,ป้ายเล็ก,ชิป | badge,chip
+tooltip | ทูลทิป | tooltip
+toast | ทอสต์,แจ้งเตือนสั้น | toast,snackbar
+progress_bar | แถบความคืบหน้า | progress bar
+stepper | สเต็ปเปอร์,ขั้นตอน | stepper
+search_bar | แถบค้นหา | search bar
+carousel | แคโรเซล,สไลด์ภาพ | carousel
+accordion | แอคคอร์เดียน | accordion
+skeleton_loading | สเกเลตัน | skeleton loading
+loading_animation | แอนิเมชันโหลด | loading animation
+icon_system | ระบบไอคอน | icon system
+
+@group ui_pattern | รูปแบบการใช้งาน | UX patterns | 4
+card_grid | กริดการ์ด | card grid
+masonry | แมสันรี,กริดก่ออิฐ | masonry layout
+infinite_scroll | เลื่อนไม่รู้จบ | infinite scroll
+sticky_header | เฮดเดอร์ติด | sticky header
+split_screen | จอแบ่งสอง | split screen
+sidebar_layout | เลย์เอาต์ไซด์บาร์ | sidebar layout
+command_palette | คอมมานด์พาเล็ต | command palette
+drag_and_drop | ลากแล้ววาง | drag and drop
+gesture_nav | ท่าทางสัมผัส | gesture navigation
+pull_to_refresh | ดึงเพื่อรีเฟรช | pull to refresh
+micro_interaction | ไมโครอินเทอร์แอคชัน | micro-interaction
+hover_effect | เอฟเฟกต์โฮเวอร์ | hover effect
+scroll_animation | แอนิเมชันเลื่อน | scroll animation
+parallax | พาราแลกซ์ | parallax
+page_transition | ทรานสิชันหน้า | page transition
+data_dense | ข้อมูลเยอะ | data-dense ui
+progressive_disclosure | เปิดข้อมูลทีละชั้น | progressive disclosure
+
+@group platform | แพลตฟอร์มและงานเสริม | Platforms & deliverables | 2
+mobile_app | แอปมือถือ | mobile app
+ios_app | แอป iOS | ios app
+android_app | แอป Android | android app
+web_app | เว็บแอป | web app
+desktop_app | แอปเดสก์ท็อป | desktop app
+tablet_ui | แท็บเล็ต | tablet ui
+smartwatch_ui | สมาร์ตวอทช์ | smartwatch ui
+tv_ui | หน้าจอทีวี | tv ui
+car_ui | หน้าจอรถยนต์ | automotive ui
+kiosk | ตู้คีออสก์ | kiosk ui
+game_ui | ยูไอเกม | game ui,hud
+vr_ui | ยูไอ VR,ยูไอ AR | vr ui,ar interface
+voice_ui | ยูไอเสียง | voice ui
+email_template | อีเมลแคมเปญ | email design
+presentation_slide | สไลด์พรีเซนต์ | presentation slide
+design_system | ดีไซน์ซิสเต็ม | design system
+wireframe | ไวร์เฟรม | wireframe
+prototype | โปรโตไทป์ | prototype
+
+@group app_category | ประเภทผลิตภัณฑ์ดิจิทัล | App categories | 3
+fintech | แอปการเงิน,ฟินเทค | fintech app
+ecommerce | อีคอมเมิร์ซ,ร้านค้าออนไลน์ | e-commerce
+saas | ซาส,ซอฟต์แวร์เซอร์วิส | saas
+social_app | แอปโซเชียล | social app
+health_app | แอปสุขภาพ | health app
+fitness_app | แอปออกกำลังกาย | fitness app
+travel_app | แอปท่องเที่ยว | travel app
+food_delivery | แอปสั่งอาหาร | food delivery app
+education_app | แอปเรียน | education app
+music_app | แอปเพลง | music app
+streaming | สตรีมมิ่ง | streaming app
+banking | แอปธนาคาร | banking app
+real_estate_app | แอปอสังหา | real estate app
+news_app | แอปข่าว | news app
+creative_tool | แอปงานสร้างสรรค์ | creative tool ui
+ai_chat_ui | ยูไอแชต AI | ai chat interface
+crypto | แอปคริปโต | crypto app
+
+@group ui_visual | ลักษณะภาพ UI | Visual approaches in UI | 3
+glassmorphism | กลาสมอร์ฟิซึม | glassmorphism
+neumorphism | นิวมอร์ฟิซึม | neumorphism
+claymorphism | เคลย์มอร์ฟิซึม | claymorphism
+brutalist_web | เว็บบรูทัลลิสต์ | brutalist web design
+dark_mode | ดาร์กโหมด | dark mode
+light_mode | ไลท์โหมด | light mode
+gradient_ui | ไล่สีใน UI | gradient ui
+flat_ui | แฟลตดีไซน์ | flat design
+skeuomorphic | สกิวมอร์ฟิก | skeuomorphism
+outline_icons | ไอคอนเส้น | outline icons
+filled_icons | ไอคอนทึบ | filled icons
+illustrated_ui | ยูไอภาพประกอบ | illustrated ui
+ui_3d | ยูไอสามมิติ | 3d ui
+big_type_ui | ยูไอตัวใหญ่ | big typography ui

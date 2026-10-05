@@ -1,0 +1,171 @@
+@dom pho
+portrait_photo | portraiture,headshot,portrait shot | พอร์เทรต,โพรเทรต
+street_photo | street shot,candid street | สตรีทโฟโต้
+documentary | docu photo,photojournalism | สารคดี,ภาพข่าว
+landscape_photo | scenery photo,nature photography | แลนด์สเคป
+architectural_photo | arch photo,building photography | ถ่ายสถาปัตย์
+interior_photo | interior shot,room photography | ถ่ายอินทีเรีย
+product_photo | product shot,commercial product | โปรดักต์โฟโต้,ถ่ายสินค้า
+food_photo | food styling,food shot | ฟู้ดโฟโต้,ถ่ายอาหาร
+fashion_photo | fashion shoot,lookbook photo | แฟชั่นโฟโต้
+editorial_photo | editorial shoot,magazine photo | อีดิทอเรียล
+fine_art_photo | art photography | ไฟน์อาร์ตโฟโต้
+macro | macro shot,extreme detail | แมโคร
+aerial_photo | drone shot,drone photo,aerial view | โดรน,ภาพมุมสูง
+long_exposure | slow shutter,light trail | ลองเอ็กซ์โพชเชอร์,สโลว์ชัตเตอร์
+minimal_photo | minimal photo,clean photo | มินิมอลโฟโต้
+black_white_photo | b&w,b/w,monochrome photo | ภาพขาวดำ
+close_up | closeup,tight shot | โคลสอัพ,โคลสอัป
+medium_shot | mid shot | มีเดียมช็อต
+wide_shot | wide angle shot,ws | ไวด์ช็อต
+establishing | establishing wide | เอสตาบลิชชิ่ง
+low_angle | low angle shot,from below | โลว์แองเกิล,มุมต่ำ
+high_angle | high angle shot,from above | ไฮแองเกิล,มุมสูง
+birds_eye | overhead,top view,top down | มุมนก,ท็อปวิว
+dutch_angle | tilted angle,canted angle | มุมเอียง
+pov | point of view,first person view | พีโอวี
+leading_lines | leading line | เส้นนำสายตา
+golden_hour | magic hour,golden light | โกลเด้นอาวร์,แสงทอง
+blue_hour | twilight blue | บลูอาวร์
+hard_light | harsh light,direct sun | แสงแข็ง
+soft_light | gentle light,soft box light | แสงนุ่ม
+backlight | back light,contre-jour | ย้อนแสง,แบคไลท์
+rim_light | edge light | ริมไลท์
+window_light | natural window light | แสงจากหน้าต่าง
+studio_light | strobe,studio strobe | สตูดิโอไลท์
+flash | direct flash,paparazzi flash | แฟลช
+low_key_light | low key,dark moody lighting | โลว์คีย์
+high_key_light | high key,bright airy lighting | ไฮคีย์
+chiaroscuro | strong contrast lighting | เคียโรสคูโร
+silhouette | backlit silhouette | ซิลูเอท,เงาดำ
+lens_flare | flare,sun flare | เลนส์แฟลร์
+film_photo | analog photo,35mm,35 mm,medium format | ฟิล์ม,กล้องฟิล์ม
+analog_look | analogue look,analog vibe | อนาล็อก
+film_grain | noise grain | เกรนฟิล์ม
+bokeh | blurry background,blurred background | โบเก้,หน้าชัดหลังเบลอ
+shallow_dof | shallow dof,low dof,f1.8 | ชัดตื้น
+cinematic_look | cinematic tone,movie look | ซีนีมาติก,โทนหนัง
+faded_look | washed out,lifted blacks | โทนซีด,เฟด
+tilt_shift | miniature effect | ทิลต์ชิฟต์
+fisheye | fish eye lens | ฟิชอาย
+overexposed | blown out,bright exposure | โอเวอร์เอ็กซ์โพส
+underexposed | too dark,dark exposure | อันเดอร์เอ็กซ์โพส
+candid | unposed,natural moment | แคนดิด
+flat_lay | flatlay,overhead layout,knolling | แฟลตเลย์
+liminal | liminal,eerie empty | ลิมินอล
+@dom prd
+furniture_design | furniture piece | ออกแบบเฟอร์นิเจอร์
+lighting_design | lamp design,luminaire | ออกแบบโคมไฟ
+consumer_electronics | gadget,electronics | แกดเจ็ต,อุปกรณ์อิเล็กทรอนิกส์
+headphones | headset,earbuds,earphones | หูฟัง
+smartphone | phone,mobile phone | สมาร์ทโฟน
+wearable | smartwatch,fitness tracker | แวร์เอเบิล
+appliance | kitchen appliance,household appliance | เครื่องใช้ในบ้าน
+ev | electric car,tesla style | รถไฟฟ้า,อีวี
+musical_instrument | instrument,synth | เครื่องดนตรี
+water_bottle | tumbler,flask | กระบอกน้ำ,แก้วเก็บอุณหภูมิ
+rounded_form | soft edges,pill shape | ทรงมน,ขอบมน
+sharp_edges | angular,hard edges | ทรงเหลี่ยม,ขอบคม
+modular_design | modular system,configurable | โมดูลาร์
+minimal_form | minimalist product,clean product | โปรดักต์มินิมอล
+chunky | thick form,bulky | ทรงอวบ,ชังกี้
+white_background | white bg,plain white,seamless white | พื้นหลังขาว
+studio_backdrop | seamless backdrop,paper backdrop | ฉากสตูดิโอ
+lifestyle_scene | lifestyle shot,in context | ไลฟ์สไตล์,ภาพไลฟ์สไตล์
+exploded_view | exploded diagram,expanded view | เอ็กซ์พโลเดดวิว
+technical_drawing | blueprint,tech drawing,orthographic | แบบเทคนิค,พิมพ์เขียว
+cmf | color material finish | ซีเอ็มเอฟ
+product_render | product viz,3d product | โปรดักต์เรนเดอร์
+packshot | pack shot | แพ็คช็อต
+hero_shot | hero image,hero product | ฮีโร่ช็อต
+collection_lineup | product family,lineup | ไลน์อัพ
+@dom typ
+serif | serif font,serifs | เซอริฟ,ตัวอักษรมีหัว
+old_style | garalde,oldstyle | โอลด์สไตล์
+didone | modern serif,high contrast serif | ไดโดน
+slab_serif | slab,egyptian | สแลบเซอริฟ
+sans | sans-serif,sans serif,sansserif | ซานส์,ซานเซอริฟ,ตัวอักษรไม่มีหัว
+grotesque | grot,grotesk | กร็อตเทสก์
+neo_grotesque | helvetica style,swiss sans | นีโอกร็อตเทสก์
+geometric_sans | futura style,circle sans | จีโอเมตริกซานส์
+humanist_sans | humanist | ฮิวแมนิสต์
+script | script font,cursive,cursive font | สคริปต์,ตัวเขียน
+calligraphic | calligraphy,calligraphic | แคลลิกราฟี
+blackletter | gothic type,old english | แบล็กเลตเตอร์
+display | display font,headline font,title font | ดิสเพลย์,ฟอนต์หัวข้อ
+monospace | mono,mono font,code font,typewriter | โมโนสเปซ,ฟอนต์โค้ด
+handwritten | handwriting,hand drawn type | ลายมือ,ฟอนต์ลายมือ
+stencil | stencil font | สเตนซิล
+pixel_type | bitmap font,8-bit font | พิกเซลฟอนต์
+thai_loopless | loopless,no loop thai,modern thai font | ฟอนต์ไม่มีหัว,ไทยไม่มีหัว
+thai_looped | looped,traditional thai font | ฟอนต์มีหัว,ไทยมีหัว
+oversized_type | big type,huge type | ตัวอักษรใหญ่ๆ,ตัวใหญ่ยักษ์
+stacked_type | stacked text | ตัวอักษรซ้อนบรรทัด
+outline_type | stroke text,outlined text | ตัวอักษรเส้นขอบ,เอาท์ไลน์
+variable_font | variable type | วาริเอเบิลฟอนต์
+condensed | narrow type,tall type | คอนเดนส์,ตัวแคบ
+extended | wide type,wide font | เอ็กซ์เทนด์,ตัวกว้าง
+all_caps | uppercase,caps,upper case | ตัวพิมพ์ใหญ่,ออลแคป
+tight_tracking | tight kerning,negative tracking | ตัวชิด,ตัวอักษรชิดกัน
+wide_tracking | letter spacing,spaced out | ตัวห่าง,ตัวอักษรห่าง
+type_on_path | curved text,circle text | ตัวอักษรตามเส้น
+hierarchy | type hierarchy,type scale | ลำดับตัวอักษร
+hand_lettering | custom lettering,lettering | เลตเตอริ่ง,เลตเตอริง
+neon_lettering | neon type | ตัวอักษรนีออน
+thai_calligraphy | thai lettering | อักษรไทยประดิษฐ์,ตัวอักษรไทยประดิษฐ์
+type_specimen | specimen sheet,font specimen | สเปซิเมน
+@dom ui
+landing_page | landing,lp,home page,homepage | แลนดิ้งเพจ,หน้าแรก
+hero_section | hero,hero banner,above the fold | ฮีโร่,ฮีโร่เซกชั่น
+portfolio_site | portfolio,personal site | พอร์ตโฟลิโอเว็บ
+blog_layout | blog,article page | บล็อก
+product_page | pdp,product detail | หน้าสินค้า
+dashboard | admin dashboard,analytics dashboard | แดชบอร์ด
+login_screen | log in,sign in page | หน้าล็อกอิน
+signup_screen | register,registration page | หน้าสมัคร
+onboarding | welcome screens,intro screens | ออนบอร์ดดิ้ง
+empty_state | blank state,no results | เอ็มตี้สเตท
+error_page | 404,404 page | หน้าเออเร่อ
+button | cta,cta button,call to action | ปุ่ม,ซีทีเอ
+card | cards,card component | การ์ด
+modal | dialog box,lightbox | โมดัล
+dropdown | select menu,drop down,dropdown menu | ดรอปดาวน์
+form_field | input field,text field,text input | ช่องกรอก,ฟอร์ม
+toggle_switch | toggle | ทอกเกิล
+navbar | nav,nav bar,navigation,header nav,top bar | แถบเมนู,เมนูบน,เนวบาร์
+sidebar | side nav,side menu,left menu | ไซด์บาร์
+bottom_nav | tab bar,bottom bar | แถบเมนูล่าง
+table_ui | data grid,spreadsheet ui | ตาราง
+chip_badge | pill,label chip | แท็กชิป,ป้ายเล็ก
+toast | notification toast,snackbar | ทูสต์
+search_bar | search box,search field,searchbar | ช่องค้นหา,เสิร์ชบาร์
+carousel | slider carousel,image slider | แคโรเซล,สไลเดอร์ภาพ
+skeleton_loading | skeleton screen,shimmer | สเกเลตัน
+icon_system | icon library,icon family | ไอคอนซิสเต็ม
+card_grid | grid of cards,cards grid | การ์ดกริด
+masonry | pinterest layout,waterfall layout | แมสันรี
+sticky_header | fixed header,pinned header | แฮดเดอร์ติดบน
+command_palette | command bar,cmd k,spotlight search | คอมมานด์พาเลต
+micro_interaction | microinteraction,micro animation | ไมโครอินเทอแร็คชั่น
+hover_effect | hover state,hover animation,rollover | เอฟเฟกต์โฮเวอร์
+scroll_animation | scrollytelling,scroll effect | สกรอลล์แอนิเมชั่น
+parallax | parallax scroll | พาราแลกซ์
+mobile_app | mobile ui,app ui,app screen | แอปมือถือ,โมบายแอป
+ios_app | iphone app,ios ui | แอปไอโอเอส
+android_app | material design,android ui | แอปแอนดรอยด์
+web_app | webapp,web platform | เว็บแอป
+design_system | ds,component library,ui kit | ดีไซน์ซิสเต็ม,ยูไอคิท
+wireframe | lofi,low fidelity,wire frame | ไวร์เฟรม
+prototype | mockup,mock up,hi-fi,high fidelity,figma prototype | โปรโตไทป์,ม็อคอัพ,มอคอัพ
+ecommerce | online store,shop ui,webshop | อีคอมเมิร์ซ,ร้านค้าออนไลน์
+saas | b2b software,software ui | ซาส
+ai_chat_ui | chatbot ui,chat ui,llm interface | หน้าแชทเอไอ
+glassmorphism | glass ui,frosted glass ui,blur card | กลาสมอร์ฟิซึม
+neumorphism | soft ui,neumorphic | นิวมอร์ฟิซึม
+brutalist_web | neo brutalism,neubrutalism,raw web | บรูทัลลิสต์เว็บ,นีโอบรูทัลลิสม์
+dark_mode | dark ui,dark theme | ดาร์กโหมด,ธีมมืด
+light_mode | light ui,light theme | ไลท์โหมด
+gradient_ui | aurora ui,gradient background | ยูไอไล่สี
+flat_ui | flat ui,flat web | แฟลตดีไซน์
+skeuomorphic | skeuo,realistic ui | สกิวมอร์ฟิก
+big_type_ui | oversized type web,giant type | เว็บตัวใหญ่

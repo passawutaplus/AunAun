@@ -1,4 +1,6 @@
+import { ambientColor, continueTabsMarkup, dominantSwatch, paletteList, paletteStripMarkup, tagChipsMarkup, trailMarkup, viewerToolsMarkup } from "./viewer-tools.js";
 import { esc, escA } from "./utils.js";
+import { hasThai, thaiConcepts } from "./thai-search.js";
 import {
   COLOR_MATCH_MIN, DISCOVER_FACET_KEYS, DISCOVER_SHAPES, DISCOVER_TONES, MAX_SEARCH_COLORS,
   hsvToHex, materialsFrom, matchesShape, normalizeHex, paletteTones, rankSimilar, scoreColorSet,
@@ -24,12 +26,12 @@ export const DISCOVER_CATEGORIES = [
   ["pattern", "Pattern"],
 ];
 
-const LICENSE_LABELS = { cc0: "CC0 Public Domain" };
+const LICENSE_LABELS = { cc0: "CC0 Public Domain", pdm: "Public Domain Mark", "cc-by": "CC BY", "cc-by-sa": "CC BY-SA" };
 
 const DISCOVER_COLUMNS = [
   "id", "source", "source_url", "title", "license", "license_url", "attribution", "attribution_json",
   "image_sm_path", "image_md_path", "image_lg_path", "blurhash", "width", "height", "phash",
-  "category", "tags", "style", "colors", "source_meta", "published_at",
+  "category", "tags", "style", "colors", "source_meta", "published_at", "palette", "tags_ids",
 ].join(",");
 
 // Client-side ranking scans the newest N rows; move to an RPC once the catalog outgrows this.
@@ -82,7 +84,7 @@ export function safeHttpsUrl(value) {
 }
 
 function searchTerms(q) {
-  return String(q || "").toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, 60)
+  return String(q || "").toLowerCase().replace(/[^\p{L}\p{M}\p{N}\s-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, 60)
     .split(" ").filter(Boolean).slice(0, MAX_TERMS);
 }
 
@@ -110,6 +112,15 @@ export function discoverQueryString({ category = "all", q = "", facets = [], aft
   if (category && category !== "all") params.set("category", `eq.${category}`);
   const conditions = [];
   searchTerms(q).forEach(term => {
+    // Thai words search their English variants; the library is tagged in English.
+    const groups = hasThai(term) ? thaiConcepts(term) : [];
+    if (groups.length) {
+      groups.slice(0, MAX_TERMS).forEach(variants => {
+        const likes = variants.map(v => `search_text.ilike.${quoted(`*${v}*`)}`).join(",");
+        conditions.push(`or(${likes},tags.ov.{${variants.map(quoted).join(",")}})`);
+      });
+      return;
+    }
     const like = quoted(`*${term}*`);
     conditions.push(`or(search_text.ilike.${like},tags.cs.{${quoted(term)}})`);
   });
@@ -181,15 +192,133 @@ export async function fetchDiscoverPool(config) {
   return restGet(config, discoverQueryString({ limit: SCAN_LIMIT }));
 }
 
+// ---------------------------------------------------------------- phase 10: anonymous learning signals (Discover only)
+const SID_KEY = "aplus-vault-sid";
+let lastSearchEventId = null;
+
+/** Random per-TAB id in sessionStorage: not a cookie, not the user id, rotates with the tab. */
+export function discoverSessionId() {
+  try {
+    let sid = sessionStorage.getItem(SID_KEY);
+    if (!sid) {
+      const alphabet = "abcdefghijkmnpqrstuvwxyz23456789";
+      const bytes = crypto.getRandomValues(new Uint8Array(16));
+      sid = "s-" + Array.from(bytes, b => alphabet[b % alphabet.length]).join("");
+      sessionStorage.setItem(SID_KEY, sid);
+    }
+    return sid;
+  } catch {
+    return null;
+  }
+}
+
+const optedOutOfSignals = () => navigator.doNotTrack === "1" || navigator.globalPrivacyControl === true;
+
+export async function sendDiscoverSignal(payload, { fetchImpl = globalThis.fetch } = {}) {
+  try {
+    if (optedOutOfSignals() || !fetchImpl) return null;
+    const sid = discoverSessionId();
+    if (!sid) return null;
+    const res = await fetchImpl("/api/signal", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sid, ...payload }), keepalive: true });
+    return res.status === 200 ? await res.json().catch(() => null) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Open / save of a Discover image, tied to the search that showed it (position = index in the results). */
+export function signalItem(type, itemId, position = null, tagIds = null) {
+  return sendDiscoverSignal({ type, itemId, tagIds, position, searchEventId: lastSearchEventId });
+}
+
+async function reportSearch(q, rows, body) {
+  const res = await sendDiscoverSignal({ type: "search", q, count: body.total ?? rows.length, relaxed: body.relaxed === true });
+  lastSearchEventId = res && Number.isInteger(res.id) ? res.id : null;
+  sendDiscoverSignal({ type: "views", ids: rows.slice(0, 30).map(r => r.id), searchEventId: lastSearchEventId });
+}
+
+/** Engine search (phase 06): sentence parser + ranking on the server. Null on any problem so the caller falls back to keywords. */
+export async function fetchEngineSearch(q, { fetchImpl = globalThis.fetch } = {}) {
+  try {
+    const res = await fetchImpl(`/api/search?q=${encodeURIComponent(String(q).slice(0, 600))}&limit=60`, { headers: { accept: "application/json" } });
+    if (!res.ok) return null;
+    const body = await res.json();
+    if (!body || !body.success || !Array.isArray(body.items)) return null;
+    reportSearch(String(q), body.items, body);
+    return { rows: body.items, chips: Array.isArray(body.chips) ? body.chips : [] };
+  } catch {
+    return null;
+  }
+}
+
+const SEEN_KEY = "aplus-vault-discover-seen";
+const SEEN_DAYS = 14;
+
+function readSeen() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SEEN_KEY) || "{}");
+    const cutoff = Date.now() - SEEN_DAYS * 86400000;
+    return Object.fromEntries(Object.entries(raw).filter(([, ts]) => Number(ts) > cutoff));
+  } catch {
+    return {};
+  }
+}
+
+/** Remember what this visitor already saw (local only) so the daily feed shows other things first next time. */
+export function markDiscoverSeen(ids) {
+  try {
+    const seen = readSeen();
+    const now = Date.now();
+    for (const id of ids || []) if (/^[0-9a-f-]{36}$/i.test(String(id))) seen[String(id).slice(0, 8)] = now;
+    const keys = Object.keys(seen);
+    if (keys.length > 300) keys.sort((a, b) => seen[a] - seen[b]).slice(0, keys.length - 300).forEach(k => delete seen[k]);
+    localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
+  } catch { /* private mode: no demotion, nothing breaks */ }
+}
+
+/** Daily rotated feed from the server. Null on any problem so the caller falls back to newest-first. */
+export async function fetchFeed({ category = "all", offset = 0, limit = DISCOVER_PAGE_SIZE, fetchImpl = globalThis.fetch } = {}) {
+  try {
+    const seen = offset === 0 ? Object.keys(readSeen()).slice(0, 120) : [];
+    const params = new URLSearchParams({ offset: String(offset), limit: String(limit) });
+    if (category && category !== "all") params.set("category", category);
+    if (seen.length) params.set("s", seen.join(","));
+    const res = await fetchImpl(`/api/feed?${params}`, { headers: { accept: "application/json" } });
+    if (!res.ok) return null;
+    const body = await res.json();
+    if (!body || !body.success || !Array.isArray(body.items)) return null;
+    return { rows: body.items, nextOffset: body.nextOffset, seenPrefixes: seen };
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchDiscoverPage(config, opts = {}) {
   if (!discoverEnabled(config)) throw new Error("Discover is not configured.");
+  if (!opts.q && !opts.similar && !discoverHasClientFilters(opts) && !(opts.facets || []).length) {
+    const offset = Number(opts.loaded) || 0;
+    const feed = await fetchFeed({ category: opts.category, offset });
+    if (feed && feed.rows.length) {
+      if (offset === 0) markDiscoverSeen(feed.rows.slice(0, 24).map(r => r.id));
+      return { rows: feed.rows, done: feed.nextOffset == null, chips: [] };
+    }
+  }
+  if (opts.q && String(opts.q).trim().length >= 2 && !opts.similar && !opts.after) {
+    const eng = await fetchEngineSearch(opts.q);
+    if (eng && eng.rows.length) {
+      let rows = eng.rows;
+      if (opts.category && opts.category !== "all") rows = rows.filter(r => r.category === opts.category);
+      if (discoverHasClientFilters(opts)) rows = applyClientFilters(rows, opts);
+      return { rows, done: true, chips: eng.chips };
+    }
+  }
   if (discoverHasClientFilters(opts)) {
     const rows = await restGet(config, discoverQueryString(Object.assign({}, opts, { after: null, limit: SCAN_LIMIT })));
-    return { rows: applyClientFilters(rows, opts), done: true };
+    return { rows: applyClientFilters(rows, opts), done: true, chips: [] };
   }
   const limit = opts.limit || DISCOVER_PAGE_SIZE;
   const rows = await restGet(config, discoverQueryString(Object.assign({}, opts, { limit })));
-  return { rows, done: rows.length < limit };
+  return { rows, done: rows.length < limit, chips: [] };
 }
 
 export async function fetchDiscoverItem(config, id) {
@@ -300,6 +429,14 @@ function attributionInfo(item) {
   };
 }
 
+/** One-line terms shown next to the license badge. CC BY / BY-SA make the credit a condition, not a courtesy. */
+export function discoverLicenseNote(license) {
+  const key = String(license || "").toLowerCase();
+  if (key === "cc-by") return "Free to use with credit (required).";
+  if (key === "cc-by-sa") return "Free to use with credit (required); adaptations must use the same license.";
+  return "Free to use.";
+}
+
 export function discoverLicenseLabel(license) {
   return LICENSE_LABELS[String(license || "").toLowerCase()] || String(license || "").toUpperCase();
 }
@@ -380,6 +517,8 @@ export function discoverActiveFiltersMarkup(ds) {
   const chips = [];
   if (ds.similar) chips.push(chip("similar", `${ds.similar.thumb ? `<img src='${escA(ds.similar.thumb)}' alt=''>` : ""}<span>Similar to <strong>${esc(ds.similar.title || "image")}</strong></span>`, "similar search"));
   if (ds.q) chips.push(chip("q", `<span>“${esc(ds.q)}”</span>`, "search text"));
+  // Understanding chips: display-only, what the engine read from the sentence (no labels, no feedback buttons).
+  (ds.chips || []).forEach(c => chips.push(`<span class='discover-understood kind-${escA(c.kind)}'>${c.kind === "color" ? `<i style='background:${escA(c.label)}'></i>` : ""}${c.kind === "exclude" ? "<s>" : ""}${esc(c.label)}${c.kind === "exclude" ? "</s>" : ""}</span>`));
   if (ds.category && ds.category !== "all") chips.push(chip("category", `<span>${esc(categoryLabel(ds.category))}</span>`, "category"));
   (ds.facets || []).forEach((f, i) => chips.push(chip(`facet:${i}`, `<span>${esc(DISCOVER_FACET_KEYS[f.key] || f.key)}: <strong>${esc(f.value)}</strong></span>`, f.value)));
   (ds.colors || []).forEach((hex, i) => chips.push(chip(`color:${i}`, `<i style='background:${escA(hex)}'></i><span>${esc(hex)}</span>`, "color " + hex)));
@@ -389,13 +528,28 @@ export function discoverActiveFiltersMarkup(ds) {
   return `<div class='discover-active' aria-label='Active filters'>${chips.join("")}<button type='button' class='discover-active-clear' data-discover-clear-all>Clear all</button>${count}</div>`;
 }
 
+let keepTargetLabel = "My Vault";
+
+/** Label of the collection that the card "+ Keep" button saves into. */
+export function setDiscoverKeepTargetLabel(label) {
+  keepTargetLabel = String(label || "My Vault").slice(0, 40);
+}
+
+export function discoverKeepTargetMenuMarkup(options, currentId, creating) {
+  const row = (id, name, depth) => `<button type='button' role='option' class='discover-target-option${id === currentId ? " is-current" : ""}' data-discover-target='${escA(id)}' style='--depth:${depth ? 1 : 0}' aria-selected='${id === currentId}'><span>${esc(name)}</span>${id === currentId ? "<i aria-hidden='true'>✓</i>" : ""}</button>`;
+  const foot = creating
+    ? `<form class='discover-target-new-form' data-discover-target-new-form><input name='name' type='text' placeholder='Collection name' maxlength='60' autocomplete='off' required aria-label='New collection name'><button type='submit'>Create</button></form>`
+    : `<button type='button' class='discover-target-new' data-discover-target-new>+ New collection</button>`;
+  return `<div class='discover-target-menu' role='listbox' aria-label='Save to'><p>Save to</p>${row("", "My Vault", 0)}${options.map(o => row(o.id, o.name, o.depth)).join("")}${foot}</div>`;
+}
+
 export function discoverCardMarkup(item, config, kept) {
   const info = attributionInfo(item);
   const sm = discoverMediaUrl(config, item.image_sm_path);
   const md = discoverMediaUrl(config, item.image_md_path);
   const blur = blurhashDataUrl(item.blurhash);
   const style = `aspect-ratio:${aspect(item)};${blur ? `background-image:url(${blur})` : ""}`;
-  return `<article class='discover-card' style='${escA(style)}'><button type='button' class='discover-card-open' data-discover-open='${escA(item.id)}' aria-label='${escA("Open " + (item.title || "artwork"))}'><img src='${escA(md)}' srcset='${escA(sm)} 400w, ${escA(md)} 800w' sizes='(max-width: 560px) 50vw, (max-width: 1100px) 33vw, 20vw' alt='${escA(item.title || "")}' loading='lazy' decoding='async'><span class='discover-card-caption'><span class='discover-card-title'>${esc(item.title || "Untitled")}</span><span class='discover-card-credit'>${esc(info.institution || info.artist)}</span></span></button><button type='button' class='discover-keep${kept ? " is-kept" : ""}' data-discover-keep='${escA(item.id)}' title='${kept ? "In your Vault. Add to a collection" : "Keep in your Vault"}'>${kept ? "Kept" : "+ Keep"}</button></article>`;
+  return `<article class='discover-card' style='${escA(style)}'><button type='button' class='discover-card-open' data-discover-open='${escA(item.id)}' aria-label='${escA("Open " + (item.title || "artwork"))}'><img src='${escA(md)}' srcset='${escA(sm)} 400w, ${escA(md)} 800w' sizes='(max-width: 560px) 50vw, (max-width: 1100px) 33vw, 20vw' alt='${escA(item.title || "")}' loading='lazy' decoding='async'><span class='discover-card-caption'><span class='discover-card-title'>${esc(item.title || "Untitled")}</span><span class='discover-card-credit'>${esc(info.institution || info.artist)}</span></span></button><button type='button' class='discover-target' data-discover-target-toggle aria-haspopup='listbox' title='Choose where + Keep saves'><span class='discover-target-label'>${esc(keepTargetLabel)}</span><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='m6 9 6 6 6-6'/></svg></button><button type='button' class='discover-keep${kept ? " is-kept" : ""}' data-discover-keep='${escA(item.id)}' title='${kept ? "In your Vault. Add to a collection" : "Keep in your Vault"}'>${kept ? "Kept" : "+ Keep"}</button></article>`;
 }
 
 function emptyMessage(ds) {
@@ -410,13 +564,32 @@ export function discoverGridMarkup(ds, config, keptIds) {
   return discoverActiveFiltersMarkup(ds) + discoverResultsMarkup(ds, config, keptIds);
 }
 
+let guestMode = false;
+const GUEST_FREE_ITEMS = 20;
+
+/** Guests see the first screens of results; the rest is blurred behind a log-in prompt. */
+export function setDiscoverGuest(value) {
+  guestMode = !!value;
+}
+
+function gateMarkup() {
+  return `<div class='discover-gate'><div class='discover-gate-card'><span class='discover-gate-eyebrow'>Keep exploring</span><h2>There’s so much more.</h2><p>Log in to see everything in Discover — and keep what moves you in your own private Vault.</p><button type='button' class='discover-gate-cta' data-auth-open>Log in or sign up</button><small>Free while in alpha · เข้าสู่ระบบเพื่อดูต่อ</small></div><span class='discover-gate-wordmark' aria-hidden='true'>A+ Vault</span></div>`;
+}
+
 function discoverResultsMarkup(ds, config, keptIds) {
   if (!ds.items.length) {
     if (ds.loading || !ds.loaded) return `<div class='discover-empty'><p>${ds.similar ? "Finding similar images…" : "Loading Discover…"}</p></div>`;
     if (ds.error) return `<div class='discover-empty'><p>${esc(ds.error)}</p><button type='button' class='ghost-button' data-discover-retry>Try again</button></div>`;
     return `<div class='discover-empty'><p>${emptyMessage(ds)}</p>${discoverHasFilters(ds) ? `<button type='button' class='ghost-button' data-discover-clear-all>Clear all filters</button>` : ""}</div>`;
   }
-  const cards = ds.items.map(item => discoverCardMarkup(item, config, keptIds.has(item.id))).join("");
+  const gated = guestMode && ds.items.length > GUEST_FREE_ITEMS;
+  const cardHtml = item => discoverCardMarkup(item, config, keptIds.has(item.id));
+  if (gated) {
+    const free = ds.items.slice(0, GUEST_FREE_ITEMS).map(cardHtml).join("");
+    const locked = ds.items.slice(GUEST_FREE_ITEMS).map(item => cardHtml(item).replace("<article class='discover-card'", "<article class='discover-card is-gated' inert aria-hidden='true'")).join("");
+    return `<div class='discover-grid'>${free}</div><div class='discover-grid-wrap'><div class='discover-grid'>${locked}</div>${gateMarkup()}</div>`;
+  }
+  const cards = ds.items.map(cardHtml).join("");
   const footer = ds.done
     ? `<p class='discover-end'>You've reached the end.</p>`
     : `<div class='discover-more' data-discover-sentinel><button type='button' class='ghost-button' data-discover-more${ds.loading ? " disabled" : ""}>${ds.loading ? "Loading…" : "Load more"}</button></div>`;
@@ -432,6 +605,10 @@ function metaText(meta, key) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function sameText(a, b) {
+  return Boolean(a) && a.toLowerCase() === String(b || "").toLowerCase();
+}
+
 export function discoverObjectRows(item) {
   const info = attributionInfo(item);
   const meta = item && typeof item.source_meta === "object" && item.source_meta ? item.source_meta : {};
@@ -439,20 +616,15 @@ export function discoverObjectRows(item) {
   const maker = info.artist || metaText(meta, "artist_display");
   const era = [metaText(meta, "period"), metaText(meta, "dynasty"), metaText(meta, "reign")].filter(Boolean).join(" · ");
   return [
-    ["Title", item?.title || ""],
     [role || "Artist / maker", maker, info.artist ? "artist" : ""],
     ["Artist details", info.artist ? metaText(meta, "artist_bio") : ""],
-    ["Date", info.date],
     ["Culture", metaText(meta, "culture"), "culture"],
     ["Period", era, era && era === metaText(meta, "period") ? "period" : ""],
     ["Place", metaText(meta, "geography"), "geography"],
     ["Object type", metaText(meta, "object_name"), "object_name"],
-    ["Classification", metaText(meta, "classification"), "classification"],
+    ["Classification", sameText(metaText(meta, "classification"), metaText(meta, "object_name")) ? "" : metaText(meta, "classification"), "classification"],
     ["Medium", metaText(meta, "medium"), "medium"],
     ["Dimensions", metaText(meta, "dimensions")],
-    ["Department", metaText(meta, "department")],
-    ["Credit line", info.creditLine],
-    ["Object number", metaText(meta, "accession_number")],
   ].filter(([, value]) => value);
 }
 
@@ -468,7 +640,7 @@ function detailNavMarkup(nav) {
   return arrow("prev", "Previous image", "m15 6-6 6 6 6", nav.hasPrev) + arrow("next", "Next image", "m9 6 6 6-6 6", nav.hasNext);
 }
 
-export function discoverDetailMarkup(item, config, kept, nav) {
+export function discoverDetailMarkup(item, config, kept, nav, view = {}) {
   if (!item) return "";
   const info = attributionInfo(item);
   const facetButton = (key, value, text) => `<button type='button' class='discover-facet-link' data-discover-facet='${escA(key)}' data-value='${escA(value)}' title='${escA("Find more: " + value)}'>${esc(text)}</button>`;
@@ -476,7 +648,8 @@ export function discoverDetailMarkup(item, config, kept, nav) {
     let dd = esc(value);
     if (facet === "medium") {
       const materials = materialsFrom(value);
-      if (materials.length) dd += `<span class='discover-materials'>${materials.map(m => facetButton("medium", m, m)).join("")}</span>`;
+      if (materials.length === 1 && sameText(materials[0], value)) dd = facetButton("medium", materials[0], value);
+      else if (materials.length) dd += `<span class='discover-materials'>${materials.map(m => facetButton("medium", m, m)).join("")}</span>`;
     } else if (facet) dd = facetButton(facet, value, value);
     return `<div><dt>${esc(label)}</dt><dd>${dd}</dd></div>`;
   }).join("");
@@ -488,17 +661,20 @@ export function discoverDetailMarkup(item, config, kept, nav) {
   const byline = [info.artist, info.date].filter(Boolean).join(" · ");
   const tags = (item.tags || []).slice(0, 10).map(t => `<button type='button' class='tag discover-tag' data-discover-tag='${escA(t)}' title='${escA("Search “" + t + "”")}'>${esc(t)}</button>`).join("");
   const colors = (item.colors || []).slice(0, 6).map(normalizeHex).filter(Boolean).map(c => `<button type='button' class='discover-swatch' data-discover-swatch='${escA(c)}' style='background:${escA(c)}' title='${escA("Search color " + c)}' aria-label='${escA("Search color " + c)}'></button>`).join("");
-  const reportHref = `./legal.html#copyright`;
+  const palette = paletteList(item);
+  const dominant = dominantSwatch(palette);
+  const ambient = dominant ? ambientColor(dominant.hex) : "";
+  const keyTags = tagChipsMarkup(item.tags_ids, view.labelOf, { pinned: view.pinned || [], excluded: view.excluded || [], limit: 6 });
   const licenseLabel = discoverLicenseLabel(item.license);
   const meta = item && typeof item.source_meta === "object" && item.source_meta ? item.source_meta : {};
-  const objectHint = [metaText(meta, "object_name"), info.date].filter(Boolean).join(" · ");
-  const credit = foldMarkup("discover-credit", "Credit &amp; license", licenseLabel, `<p>${esc(discoverCreditText(item))}</p>${info.institution ? `<p class='discover-credit-source'>Courtesy of ${info.institutionUrl ? `<a href='${escA(info.institutionUrl)}' target='_blank' rel='noopener noreferrer'>${esc(info.institution)}</a>` : esc(info.institution)}</p>` : ""}<p class='discover-license'><span class='discover-license-badge'>${licenseUrl ? `<a href='${escA(licenseUrl)}' target='_blank' rel='noopener noreferrer license'>${esc(licenseLabel)}</a>` : esc(licenseLabel)}</span><span>Free to use. Please credit the institution.</span></p>`);
-  return `<div class='discover-detail-backdrop' data-discover-close role='presentation'><div class='discover-detail-frame' style='--ar:${escA(String(aspectRatio(item)))}'>${detailNavMarkup(nav)}<section class='discover-detail' role='dialog' aria-modal='true' aria-label='${escA(item.title || "Artwork")}' data-discover-dialog><button type='button' class='discover-detail-close' data-discover-close aria-label='Close'>&times;</button><div class='discover-detail-media' style='aspect-ratio:${escA(aspect(item))};${blur ? escA(`background-image:url(${blur})`) : ""}'><img src='${escA(md)}' srcset='${escA(md)} 800w, ${escA(lg)} 1600w' sizes='(max-width: 860px) 100vw, 60vw' alt='${escA(item.title || "")}' decoding='async'></div><div class='discover-detail-info'><h2>${esc(item.title || "Untitled")}</h2>${byline ? `<p class='discover-detail-byline'>${esc(byline)}</p>` : ""}${tags ? `<div class='tag-row discover-tags'>${tags}</div>` : ""}${colors ? `<div class='discover-swatches' aria-label='Colors'>${colors}</div>` : ""}<div class='discover-detail-actions'><button type='button' class='primary-button' data-discover-keep='${escA(item.id)}'>${kept ? "Kept · Add to collection" : "+ Keep in Vault"}</button>${sourceUrl ? `<a class='ghost-button' href='${escA(sourceUrl)}' target='_blank' rel='noopener noreferrer'>View at source</a>` : ""}</div><section class='discover-similar' aria-label='Similar images'><div class='discover-similar-head'><span class='section-label'>Similar images</span><button type='button' class='discover-similar-all' data-discover-similar='${escA(item.id)}'>See all</button></div><div class='discover-similar-grid' data-discover-similar-host><span class='discover-similar-loading'>Finding similar images…</span></div></section>${objectRows ? foldMarkup("discover-object", "About this object", objectHint, `<dl>${objectRows}</dl>`) : ""}${credit}<p class='discover-report'><a href='${escA(reportHref)}' target='_blank' rel='noopener'>Report an issue with this image</a></p></div></section></div></div>`;
+  const institution = info.institution ? (info.institutionUrl ? `<a href='${escA(info.institutionUrl)}' target='_blank' rel='noopener noreferrer'>${esc(info.institution)}</a>` : esc(info.institution)) : 'the institution';
+  const details = foldMarkup('discover-info', 'Details &amp; credit', [metaText(meta, 'object_name'), licenseLabel].filter(Boolean).join(' · '), `${objectRows ? `<dl>${objectRows}</dl>` : ''}<div class='discover-credit'><p class='discover-license'><span class='discover-license-badge'>${licenseUrl ? `<a href='${escA(licenseUrl)}' target='_blank' rel='noopener noreferrer license'>${esc(licenseLabel)}</a>` : esc(licenseLabel)}</span><span>${esc(discoverLicenseNote(item.license))} Please credit ${institution}.</span></p><p class='discover-credit-text'>${esc(discoverCreditText(item))}</p></div>`);
+  return `<div class='discover-detail-backdrop' data-discover-close role='presentation'${ambient ? ` style='--ambient:${escA(ambient)}'` : ""}><div class='discover-detail-frame' style='--ar:${escA(String(aspectRatio(item)))}'>${trailMarkup(view.trail)}${detailNavMarkup(nav)}<section class='discover-detail${view.bw ? " viewer-bw" : ""}${view.grid ? " viewer-grid" : ""}' role='dialog' aria-modal='true' aria-label='${escA(item.title || "Artwork")}' data-discover-dialog><button type='button' class='discover-detail-close' data-discover-close aria-label='Close'>&times;</button><div class='discover-detail-media' style='aspect-ratio:${escA(aspect(item))};${blur ? escA(`background-image:url(${blur})`) : ""}'><img src='${escA(md)}' srcset='${escA(md)} 800w, ${escA(lg)} 1600w' sizes='(max-width: 860px) 100vw, 60vw' alt='${escA(item.title || "")}' decoding='async'><span class='viewer-thirds' aria-hidden='true'></span></div><div class='discover-detail-info'><button type='button' class='viewer-sheet-handle' data-viewer-sheet aria-expanded='false' aria-label='Show more details'><span aria-hidden='true'></span></button><h2>${esc(item.title || "Untitled")}</h2>${byline ? `<p class='discover-detail-byline'>${esc(byline)}</p>` : ""}${tags ? `<div class='tag-row discover-tags'>${tags}</div>` : ""}${paletteStripMarkup(palette)}${palette.length ? viewerToolsMarkup({ bw: view.bw, grid: view.grid }) : ""}${keyTags}<div class='discover-detail-actions'><button type='button' class='primary-button' data-discover-keep='${escA(item.id)}'>${kept ? "Kept · Add to collection" : "+ Keep in Vault"}</button>${sourceUrl ? `<a class='ghost-button discover-source-btn' href='${escA(sourceUrl)}' target='_blank' rel='noopener noreferrer' title='View at source' aria-label='View at source (opens in new tab)'><svg viewBox='0 0 24 24' width='18' height='18' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1'/><path d='M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1'/></svg></a>` : ""}${discoverReportButtonMarkup(item.id)}</div><div class='discover-detail-bottom'><section class='discover-similar' aria-label='Similar images'><div class='discover-similar-head'>${continueTabsMarkup(view.mode || "similar")}<button type='button' class='discover-similar-all' data-discover-similar='${escA(item.id)}'>See all</button></div><div class='discover-similar-grid' data-discover-similar-host><span class='discover-similar-loading'>Finding similar images…</span></div></section>${details}</div></div></section></div></div>`;
 }
 
 export function discoverSimilarStripMarkup(items, config) {
   if (!items.length) return `<span class='discover-similar-loading'>No close matches yet.</span>`;
-  return items.map(item => {
+  return items.slice(0, 24).map(item => {
     const blur = blurhashDataUrl(item.blurhash);
     return `<button type='button' class='discover-similar-item' data-discover-open='${escA(item.id)}' title='${escA(item.title || "Untitled")}' style='${escA(blur ? `background-image:url(${blur})` : "")}'><img src='${escA(discoverMediaUrl(config, item.image_sm_path))}' alt='${escA(item.title || "")}' loading='lazy' decoding='async'></button>`;
   }).join("");
@@ -571,4 +747,43 @@ export function writePendingAction(action) {
     if (action) sessionStorage.setItem(DISCOVER_PENDING_KEY, JSON.stringify(action));
     else sessionStorage.removeItem(DISCOVER_PENDING_KEY);
   } catch (e) {}
+}
+
+const FLAG_ICON = `<svg viewBox='0 0 24 24' width='18' height='18' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M5 21V4'/><path d='M5 4h11l-2 4 2 4H5'/></svg>`;
+
+export const DISCOVER_REPORT_REASONS = [
+  { id: "copyright", label: "I own the rights to this work", hint: "Request removal of your copyrighted image" },
+  { id: "credit", label: "Wrong credit or information", hint: "Title, artist, date or source is incorrect" },
+  { id: "offensive", label: "Offensive or sensitive content", hint: "Nudity, violence, hate or harmful imagery" },
+  { id: "broken", label: "Broken or low-quality image", hint: "Doesn't load, cropped, blurry or wrong image" },
+  { id: "duplicate", label: "Duplicate", hint: "Same image appears more than once" },
+  { id: "other", label: "Something else", hint: "Tell us below" },
+];
+
+export function discoverReportButtonMarkup(id) {
+  return `<button type='button' class='ghost-button discover-report-btn' data-discover-report='${escA(id)}' title='Report this image' aria-label='Report this image'>${FLAG_ICON}</button>`;
+}
+
+export function discoverReportDialogMarkup(item, config, opts = {}) {
+  const thumb = discoverMediaUrl(config, item.image_sm_path);
+  const reasons = DISCOVER_REPORT_REASONS.map((r, i) => `<label class='discover-report-reason'><input type='radio' name='reason' value='${escA(r.id)}'${i ? "" : " required"}><span><strong>${esc(r.label)}</strong><small>${esc(r.hint)}</small></span></label>`).join("");
+  const body = opts.sent
+    ? `<div class='discover-report-done'><span class='discover-report-done-icon'>${FLAG_ICON}</span><h3>Thanks for letting us know</h3><p>We'll review this image. Anything that breaks our rules or infringes copyright is removed.</p><button type='button' class='primary-button' data-discover-report-dismiss>Done</button></div>`
+    : `<form class='discover-report-form' data-discover-report-form data-item='${escA(item.id)}'><fieldset><legend>What's the issue?</legend>${reasons}</fieldset><label class='discover-report-field'><span>Details <small>(optional)</small></span><textarea name='details' rows='3' maxlength='2000' placeholder='Add anything that helps us review, e.g. the correct credit or a link to your original work'></textarea></label><label class='discover-report-field'><span>Email <small data-discover-report-email-hint>(optional, so we can follow up)</small></span><input type='email' name='email' maxlength='200' autocomplete='email' value='${escA(opts.email || "")}' placeholder='you@example.com'></label>${opts.error ? `<p class='discover-report-error' role='alert'>${esc(opts.error)}</p>` : ""}<p class='discover-report-note'>Copyright owners: see our <a href='./legal.html#copyright' target='_blank' rel='noopener'>copyright policy</a>.</p><div class='discover-report-actions'><button type='button' class='ghost-button' data-discover-report-dismiss>Cancel</button><button type='submit' class='primary-button'${opts.busy ? " disabled" : ""}>${opts.busy ? "Sending…" : "Send report"}</button></div></form>`;
+  return `<div class='discover-report-backdrop' data-discover-report-dismiss role='presentation'><section class='discover-report' role='dialog' aria-modal='true' aria-labelledby='discover-report-title' data-discover-report-dialog><header class='discover-report-head'>${thumb ? `<img src='${escA(thumb)}' alt='' decoding='async'>` : ""}<div><h2 id='discover-report-title'>Report this image</h2><p>${esc(item.title || "Untitled")}</p></div><button type='button' class='discover-save-close' data-discover-report-dismiss aria-label='Close'>&times;</button></header>${body}</section></div>`;
+}
+
+/** Inserts into `discover_reports` (anon insert-only RLS). Throws a user-facing message on failure. */
+export async function submitDiscoverReport(config, { itemId, reason, details, email, accessToken }) {
+  const key = String(config.supabasePublishableKey || "");
+  if (!key || !itemId || !DISCOVER_REPORT_REASONS.some(r => r.id === reason)) throw new Error("Choose what's wrong with this image.");
+  const mail = String(email || "").trim();
+  if (reason === "copyright" && !mail) throw new Error("Add your email so we can follow up on a copyright claim.");
+  if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) throw new Error("That email doesn't look right.");
+  const response = await fetch(`${restBase(config)}/rest/v1/discover_reports`, {
+    method: "POST",
+    headers: { apikey: key, authorization: `Bearer ${accessToken || key}`, "content-type": "application/json", prefer: "return=minimal" },
+    body: JSON.stringify({ item_id: itemId, reason, details: String(details || "").trim().slice(0, 2000), email: mail || null }),
+  });
+  if (!response.ok) throw new Error("Couldn't send the report. Please try again.");
 }

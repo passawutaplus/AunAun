@@ -4,6 +4,7 @@ This folder is a local Manifest V3 Chrome Extension for the A+ Vault alpha.
 
 ## Core Flow
 
+- **Auto-pair:** log in to A+ Vault in the same browser and the web app hands its sync token to the extension (`VAULT_EXTENSION_PAIR` → `VAULT_PAIR`, only from allowed Vault origins). On first install the extension opens `/vault?ext=installed`. Pasting a token in the popup still works.
 - Right-click image, video, link, selected URL/text, or page -> `+ Keep in Vault`.
 - Right-click page -> `[  ] Snapshot to Vault` to drag-select part of the visible viewport.
 - Click the extension icon to open the Mini Vault Panel.

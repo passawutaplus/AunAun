@@ -1,5 +1,9 @@
-export const MIN_LONG_EDGE_PX = 1000;
-export const PHASH_MAX_DISTANCE = 6;
+import { capLimits } from "./caps";
+import engine from "../../../config/engine.json";
+
+// One source of truth: config/engine.json (repo root of Vault-Code).
+export const MIN_LONG_EDGE_PX: number = engine.MIN_LONG_EDGE_PX;
+export const PHASH_MAX_DISTANCE: number = engine.PHASH_NEAR_DIST;
 export const MAX_DOWNLOAD_BYTES = 40 * 1024 * 1024;
 export const DOWNLOAD_TIMEOUT_MS = 45_000;
 export const API_TIMEOUT_MS = 20_000;
@@ -8,7 +12,10 @@ export const RENDITION_WIDTHS = { sm: 400, md: 800, lg: 1600 } as const;
 export type RenditionSize = keyof typeof RENDITION_WIDTHS;
 
 export const STORAGE_BUCKET = "discover-media";
-export const LICENSE_ALLOWLIST = ["cc0"] as const;
+/** Open licenses we may rehost and show publicly. NC/ND are excluded (commercial use + resized renditions). */
+export const LICENSE_ALLOWLIST = engine.LICENSE_ALLOWLIST as readonly ("cc0" | "pdm" | "cc-by" | "cc-by-sa")[];
+/** Licenses that legally require crediting the author with a license link. */
+export const CREDIT_REQUIRED_LICENSES = ["cc-by", "cc-by-sa"] as const;
 export const CC0_URL = "https://creativecommons.org/publicdomain/zero/1.0/";
 
 /** Discover is guest-visible on the Vault home page, so artistic nudity is blocked too. */
@@ -35,4 +42,18 @@ export function visionModel(): string {
 export function userAgent(): string {
   const contact = process.env.SEEDER_CONTACT || "passawut.a.plus@gmail.com";
   return `AplusVaultDiscoverSeeder/0.1 (${contact})`;
+}
+
+/** USD per million tokens. Defaults are Claude Haiku 4.5 list price; override when SEEDER_VISION_MODEL changes. */
+export function visionPricing(): { inPerM: number; outPerM: number } {
+  const num = (name: string, fallback: number) => {
+    const v = Number.parseFloat(process.env[name] ?? "");
+    return Number.isFinite(v) && v >= 0 ? v : fallback;
+  };
+  return { inPerM: num("SEEDER_PRICE_IN_PER_M", 1), outPerM: num("SEEDER_PRICE_OUT_PER_M", 5) };
+}
+
+/** Monthly AI budget (USD): enforced by caps.ts (config/engine.json SEEDER_MONTHLY_AI_USD, env SEEDER_BUDGET_USD overrides). */
+export function monthlyBudgetUsd(): number {
+  return capLimits(process.env.SEEDER_BUDGET_USD).monthlyAiUsd;
 }

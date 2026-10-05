@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A+ Vault — Keep what moves you</title>
+  <meta name="description" content="A private vault for creative references. Save from anywhere, find it by color, image, or Thai keywords, and always keep the credit." />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="theme-color" content="#f4f1ea" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <link rel="preload" href="/assets/fonts/Agrandir-Wide-Light.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/marketing.css" />
+  <style>
+    :root{
+      --paper:#f4f1ea;--paper-2:#ebe6db;--ink:#151719;--ink-2:#3a3d41;--muted:#7a7d80;--line:rgba(21,23,25,.12);
+      --coral:#ff4f43;--coral-dark:#e33f34;--night:#101113;--night-2:#1a1c1f;
+      --display:"Agrandir Wide","IBM Plex Sans Thai",system-ui,sans-serif;--body:"IBM Plex Sans Thai",system-ui,-apple-system,sans-serif;
+      --ease:cubic-bezier(.2,.7,.2,1);
+    }
+    .wrap{width:min(1200px,calc(100% - 48px));margin:0 auto}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+    .eyebrow::before{content:"";width:18px;height:1px;background:currentColor}
+    h1,h2,h3{margin:0;font-family:var(--display);font-weight:300;letter-spacing:-.01em}
+    h2{font-size:clamp(34px,5.2vw,72px);line-height:1.02}
+    .lede{max-width:560px;margin:20px 0 0;color:var(--ink-2);font-size:clamp(16px,1.4vw,19px)}
+    .btn{display:inline-flex;align-items:center;gap:10px;height:52px;padding:0 24px;border:0;border-radius:999px;font:400 15px/1 var(--display);text-decoration:none;cursor:pointer;transition:transform .25s var(--ease),background .2s ease,color .2s ease,box-shadow .25s ease}
+    .btn:active{transform:translateY(0)}
+    .btn-dark{background:var(--ink);color:#fff;box-shadow:0 10px 30px rgba(21,23,25,.18)}
+    .btn-dark:hover{background:#2c2f33}
+    .btn-light{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+    .btn-coral{background:var(--coral);color:#fff;box-shadow:0 10px 30px rgba(255,79,67,.3)}
+    .btn-coral:hover{background:var(--coral-dark)}
+    .btn svg{width:18px;height:18px}
+    .btn:focus-visible{outline:2px solid var(--coral);outline-offset:3px}
+    .nav{position:fixed;inset:0 0 auto;z-index:50;transition:background .3s ease,backdrop-filter .3s ease,box-shadow .3s ease}
+    .nav.scrolled{background:rgba(244,241,234,.78);backdrop-filter:blur(14px);box-shadow:0 1px 0 var(--line)}
+    .nav .wrap{display:flex;align-items:center;gap:28px;height:72px}
+    .brand{display:flex;align-items:center;gap:10px;font:400 17px/1 var(--display);text-decoration:none}
+    .brand img{width:30px;height:30px}
+    .nav-links{display:flex;gap:24px;margin-left:auto;font-size:14px}
+    .nav-links a{color:var(--ink-2);text-decoration:none;transition:color .2s}
+    .nav .btn{height:42px;padding:0 18px;font-size:13px}
+    .hero{position:relative;min-height:100vh;display:grid;place-items:center;overflow:hidden;padding:120px 0 80px}
+    .hero-copy{position:relative;z-index:3;text-align:center;max-width:860px;padding:0 24px}
+    .hero h1{font-size:clamp(48px,9vw,132px);line-height:.95}
+    .hero h1 .word{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:.06em}
+    .hero h1 .word>span{display:inline-block;transform:translateY(105%);animation:rise 1.1s var(--ease) forwards}
+    .hero h1 .accent{color:var(--coral)}
+    .hero .lede{margin:28px auto 0;text-align:center;opacity:0;animation:fade 1s .7s var(--ease) forwards}
+    .hero-ctas{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:36px;opacity:0;animation:fade 1s .9s var(--ease) forwards}
+    .hero-note{margin-top:18px;color:var(--muted);font-size:13px;opacity:0;animation:fade 1s 1.1s var(--ease) forwards}
+    @keyframes rise{to{transform:translateY(0)}}
+    @keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+    .float{position:absolute;z-index:1;border-radius:14px;overflow:hidden;background:var(--paper-2);box-shadow:0 30px 60px rgba(21,23,25,.16);opacity:0;animation:pop 1.2s var(--ease) forwards;will-change:transform}
+    .float img{width:100%;height:100%;object-fit:cover}
+    @keyframes pop{from{opacity:0;scale:.9}to{opacity:1;scale:1}}
+    .scroll-cue{position:absolute;bottom:28px;left:50%;z-index:3;display:grid;justify-items:center;gap:8px;color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase;transform:translateX(-50%)}
+    .scroll-cue i{width:1px;height:42px;background:linear-gradient(var(--ink),transparent);animation:cue 1.8s ease-in-out infinite;transform-origin:top}
+    @keyframes cue{0%{transform:scaleY(0)}50%{transform:scaleY(1)}100%{transform:scaleY(1);opacity:0}}
+    /* reveal */
+    .reveal{opacity:0;transform:translateY(40px);transition:opacity 1s var(--ease),transform 1s var(--ease)}
+    .reveal.in{opacity:1;transform:none}
+    .reveal[data-delay="1"]{transition-delay:.12s}.reveal[data-delay="2"]{transition-delay:.24s}.reveal[data-delay="3"]{transition-delay:.36s}
+    /* sticky story sections */
+    .story{position:relative}
+    .story .stage{position:sticky;top:0;height:100vh;display:grid;place-items:center;overflow:hidden}
+    /* 1. scattered → one vault */
+    #scatter{height:260vh}
+    .scatter-copy{position:absolute;inset:0;display:grid;place-items:center;text-align:center;z-index:2;pointer-events:none}
+    .scatter-copy h2{transition:opacity .4s ease,transform .6s var(--ease)}
+    .scatter-copy .after{position:absolute;left:0;right:0;top:64%;margin:0;opacity:0;transform:translateY(30px)}
+    .shard{position:absolute;left:50%;top:50%;width:180px;padding:10px;border-radius:14px;background:#fff;box-shadow:0 18px 40px rgba(21,23,25,.12);will-change:transform}
+    .shard .ph{height:120px;border-radius:9px;background:var(--paper-2);overflow:hidden}
+    .shard .ph img{width:100%;height:100%;object-fit:cover}
+    .shard b{display:flex;align-items:center;gap:6px;margin-top:8px;font:500 12px/1.2 var(--body);color:var(--ink-2)}
+    .shard b i{width:8px;height:8px;border-radius:50%;background:var(--c,#999)}
+    .vault-box{position:absolute;left:50%;top:50%;z-index:1;width:300px;height:220px;margin:-110px 0 0 -150px;border-radius:26px;background:var(--ink);box-shadow:0 40px 80px rgba(21,23,25,.28);display:grid;place-items:center;color:#fff;font:300 22px var(--display);opacity:0;scale:.8;will-change:transform,opacity}
+    .vault-box span{display:flex;align-items:center;gap:12px}
+    .vault-box img{width:40px;height:40px}
+    /* 2. capture demo */
+    #capture{height:280vh;background:var(--night);color:#fff}
+    #capture .stage{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:64px;width:min(1200px,calc(100% - 48px));margin:0 auto;place-items:center start}
+    #capture .eyebrow{color:#9aa0a6}
+    #capture .lede{color:#c8ccd0}
+    .steps{list-style:none;margin:32px 0 0;padding:0;display:grid;gap:14px}
+    .steps li{display:flex;gap:14px;align-items:flex-start;color:#7d838a;transition:color .4s ease}
+    .steps li b{display:grid;place-items:center;flex:0 0 28px;height:28px;border-radius:50%;border:1px solid #3a3f45;font:500 12px var(--body);transition:background .4s,border-color .4s,color .4s}
+    .steps li.on{color:#fff}
+    .steps li.on b{background:var(--coral);border-color:var(--coral);color:#fff}
+    .browser{position:relative;width:100%;max-width:620px;aspect-ratio:4/3;border-radius:18px;background:var(--night-2);box-shadow:0 40px 90px rgba(0,0,0,.5),inset 0 0 0 1px #2a2e33;overflow:hidden}
+    .browser-bar{display:flex;align-items:center;gap:7px;height:42px;padding:0 16px;border-bottom:1px solid #2a2e33}
+    .browser-bar i{width:11px;height:11px;border-radius:50%;background:#3a3f45}
+    .browser-bar span{margin-left:14px;flex:1;height:24px;border-radius:7px;background:#25282c;color:#8a9097;font-size:12px;line-height:24px;padding:0 12px;overflow:hidden;white-space:nowrap}
+    .browser-page{position:absolute;inset:42px 0 0;padding:22px;display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
+    .browser-page .img{border-radius:12px;overflow:hidden;background:#2a2e33}
+    .browser-page .img img{width:100%;height:100%;object-fit:cover}
+    .browser-page .lines{display:grid;align-content:start;gap:10px;padding-top:6px}
+    .browser-page .lines i{height:10px;border-radius:5px;background:#2a2e33}
+    .cursor{position:absolute;left:70%;top:80%;z-index:4;width:22px;height:22px;transition:left 1s var(--ease),top 1s var(--ease)}
+    .ctx{position:absolute;left:38%;top:44%;z-index:3;width:210px;padding:6px;border-radius:12px;background:#fff;color:var(--ink);font-size:13px;box-shadow:0 20px 40px rgba(0,0,0,.4);opacity:0;transform:scale(.92);transform-origin:top left;transition:opacity .3s ease,transform .3s var(--ease)}
+    .ctx div{padding:7px 10px;border-radius:7px;color:#5b6066}
+    .ctx .keep{display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:600}
+    .ctx .keep.hl{background:#ffece9;color:var(--coral-dark)}
+    .ctx .keep img{width:16px;height:16px}
+    .toast{position:absolute;right:18px;bottom:18px;z-index:5;display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;background:#fff;color:var(--ink);box-shadow:0 20px 40px rgba(0,0,0,.35);opacity:0;transform:translateY(20px);transition:opacity .4s ease,transform .5s var(--ease)}
+    .toast .thumb{width:42px;height:42px;border-radius:9px;overflow:hidden;background:var(--paper-2)}
+    .toast .thumb img{width:100%;height:100%;object-fit:cover}
+    .toast small{display:block;color:var(--muted);font-size:12px}
+    .browser.s1 .cursor{left:44%;top:46%}
+    .browser.s2 .ctx{opacity:1;transform:none}
+    .browser.s2 .cursor{left:48%;top:56%}
+    .browser.s3 .ctx{opacity:1;transform:none}
+    .browser.s3 .ctx .keep{background:#ffece9;color:var(--coral-dark)}
+    .browser.s3 .cursor{left:48%;top:56%}
+    .browser.s4 .toast{opacity:1;transform:none}
+    .browser.s4 .cursor{left:80%;top:30%}
+    /* 3. find */
+    #find{padding:160px 0}
+    .find-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:64px;align-items:center}
+    .searchbox{display:flex;align-items:center;gap:12px;height:64px;padding:0 22px;border-radius:999px;background:#fff;box-shadow:0 20px 50px rgba(21,23,25,.1),inset 0 0 0 1px var(--line);font-size:18px}
+    .searchbox svg{flex:0 0 auto;width:20px;height:20px;color:var(--muted)}
+    .searchbox .typed{white-space:nowrap;overflow:hidden}
+    .searchbox .caret{width:2px;height:24px;background:var(--coral);animation:blink 1s steps(1) infinite}
+    @keyframes blink{50%{opacity:0}}
+    .search-results{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:22px}
+    .search-results figure{margin:0;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:var(--paper-2);transition:opacity .45s ease,transform .45s var(--ease),filter .45s ease}
+    .search-results figure img{width:100%;height:100%;object-fit:cover}
+    .search-results figure.dim{opacity:.18;transform:scale(.94);filter:grayscale(1)}
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px}
+    .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:#fff;box-shadow:inset 0 0 0 1px var(--line);font-size:14px}
+    .chip i{width:12px;height:12px;border-radius:50%}
+    /* 4. rights */
+    #rights{padding:40px 0 160px}
+    .rights-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:56px}
+    .rcard{position:relative;padding:22px;border-radius:22px;background:#fff;box-shadow:0 1px 0 var(--line),0 20px 40px rgba(21,23,25,.06);transition:transform .5s var(--ease)}
+    .rcard:hover{transform:translateY(-6px) rotate(-.4deg)}
+    .rcard .ph{aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:var(--paper-2);margin-bottom:18px}
+    .rcard .ph img{width:100%;height:100%;object-fit:cover}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-size:12px;font-weight:600}
+    .badge.free{background:#e3f4ea;color:#1f8a4c}.badge.lic{background:#fff4dc;color:#a15c00}.badge.ref{background:var(--paper);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+    .rcard h3{margin-top:14px;font-size:20px}
+    .rcard p{margin:6px 0 0;color:var(--ink-2);font-size:14px}
+    /* 5. discover marquee */
+    #discover{padding:140px 0;background:var(--night);color:#fff;overflow:hidden}
+    #discover .eyebrow{color:#9aa0a6}#discover .lede{color:#c8ccd0}
+    .discover-head{display:flex;justify-content:space-between;align-items:flex-end;gap:32px;flex-wrap:wrap}
+    .marquee{display:flex;gap:16px;width:max-content;margin-top:64px;animation:slide 60s linear infinite}
+    .marquee.rev{margin-top:16px;animation-direction:reverse;animation-duration:70s}
+    .marquee:hover{animation-play-state:paused}
+    .marquee figure{position:relative;flex:0 0 auto;height:260px;margin:0;border-radius:16px;overflow:hidden;background:var(--paper)}
+    .marquee figure img{height:100%;width:auto;min-width:180px;object-fit:cover}
+    .marquee figcaption{position:absolute;inset:auto 0 0;padding:28px 14px 12px;background:linear-gradient(transparent,rgba(0,0,0,.6));color:#fff;font-size:12px;opacity:0;transition:opacity .3s}
+    .marquee figure:hover figcaption{opacity:1}
+    @keyframes slide{to{transform:translateX(-50%)}}
+    /* 6. moodboard assemble */
+    #board{height:240vh}
+    #board .stage{grid-template-rows:auto 1fr;padding:110px 0 40px;place-items:start center}
+    .board-copy{text-align:center;max-width:720px;padding:0 24px}
+    .board-canvas{position:relative;width:min(900px,calc(100% - 48px));height:min(52vh,460px);margin-top:36px;border-radius:24px;background:#fff;box-shadow:0 30px 70px rgba(21,23,25,.12)}
+    .tile{position:absolute;border-radius:12px;overflow:hidden;background:var(--paper-2);box-shadow:0 12px 30px rgba(21,23,25,.14);will-change:transform}
+    .tile img{width:100%;height:100%;object-fit:cover}
+    .tile.palette{display:flex;padding:0}
+    .tile.palette span{flex:1}
+    .tile.note{padding:14px;background:#fff3a6;color:#3d3418;font-size:13px;line-height:1.45}
+    .tile.title{display:flex;align-items:center;padding:0 18px;background:transparent;box-shadow:none;font:300 clamp(18px,2.4vw,28px)/1.1 var(--display)}
+    /* 7. promise */
+    #promise{padding:170px 0;background:var(--night);color:#fff}
+    .promise-list{display:grid;gap:8px;margin-top:20px}
+    .promise-list p{margin:0;font:300 clamp(30px,5vw,68px)/1.08 var(--display);color:#3a3f45;transition:color .8s ease}
+    .promise-list p.in{color:#fff}
+    .promise-list p em{font-style:normal;color:var(--coral)}
+    /* 8. final */
+    #start{padding:170px 0 120px;text-align:center}
+    #start h2{font-size:clamp(44px,8vw,120px)}
+    .final-ctas{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:40px}
+    footer{position:relative;overflow:hidden;padding:56px 0 0;background:var(--night);color:#9aa0a6;font-size:13px}
+    footer .wrap{display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;border-top:1px solid rgba(255,255,255,.12);padding-top:28px}
+    .foot-mark{margin-top:36px;text-align:center;white-space:nowrap;user-select:none;font:300 clamp(80px,21vw,340px)/.8 var(--display);letter-spacing:-.045em;color:#f4f1ea;transform:translateY(.12em)}
+    footer nav{display:flex;gap:18px}
+    footer a{text-decoration:none}
+    footer a:hover{color:var(--coral)}
+    @media(max-width:900px){
+      .nav-links{display:none}.nav .btn{margin-left:auto}
+      #capture{height:auto}
+      #capture .stage{position:relative;height:auto;grid-template-columns:1fr;gap:40px;padding:120px 0}
+      .find-grid,.rights-cards{grid-template-columns:1fr}
+      .shard{width:130px}.shard .ph{height:86px}
+      .marquee figure{height:190px}
+    }
+    @media(max-width:700px){.float{filter:opacity(.38)}.hero h1{font-size:clamp(44px,15vw,64px)}}
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+      .reveal{opacity:1;transform:none}
+    }
+    #people{padding:150px 0 130px;background:var(--paper)}
+    .people-head{max-width:760px}
+    .people-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:70px;align-items:start}
+    .people-grid .ph:nth-child(2){margin-top:64px}
+    .people-grid .frame{aspect-ratio:4/5}
+    @media(max-width:900px){.people-grid{grid-template-columns:1fr;gap:44px}.people-grid .ph:nth-child(2){margin-top:0}}
+    .pocket{padding:clamp(70px,10vw,140px) 0}
+    .pocket-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(32px,6vw,90px);align-items:center}
+    .pocket-ph{position:relative;margin:0;border-radius:22px;overflow:hidden;aspect-ratio:4/5;background:var(--paper-2)}
+    .pocket-ph img{width:100%;height:100%;object-fit:cover;display:block}
+    @media(max-width:900px){.pocket-grid{grid-template-columns:1fr}.pocket-ph{order:2}}
+  </style>
+</head>
+<body>
+  <div class="progress" aria-hidden="true"></div>
+
+  <header class="nav" data-nav>
+    <div class="wrap">
+      <a class="brand" href="/welcome" aria-label="A+ Vault home"><img src="/assets/vault-logo-128.png" alt="" />A+ Vault</a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#capture">Capture</a>
+        <a href="#find">Search</a>
+        <a href="#discover">Discover</a>
+        <a href="#promise">Privacy</a>
+      </nav>
+      <a class="btn btn-dark" href="/">Explore Discover</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero" data-hero>
+      <div class="hero-copy">
+        <span class="eyebrow">A creative reference vault</span>
+        <h1 aria-label="Keep what moves you.">
+          <span class="word"><span style="animation-delay:.05s">Keep</span></span>
+          <span class="word"><span style="animation-delay:.15s">what</span></span><br />
+          <span class="word"><span style="animation-delay:.25s">moves</span></span>
+          <span class="word"><span class="accent" style="animation-delay:.35s">you.</span></span>
+        </h1>
+        <p class="lede">Save references from any site in one click, find them again by color, image, or a few words in Thai — and never lose who made them.<span class="th">เก็บแรงบันดาลใจจากทุกที่ แล้วหาเจอเมื่อถึงเวลาทำงานจริง</span></p>
+        <div class="hero-ctas">
+          <a class="btn btn-coral" href="/">Explore Discover <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn btn-light" href="/extension"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>Get the Chrome extension</a>
+        </div>
+        <p class="hero-note">Free while in alpha · Private by default</p>
+      </div>
+      <div data-floats aria-hidden="true"></div>
+      <div class="scroll-cue" aria-hidden="true">Scroll<i></i></div>
+    </section>
+
+    <!-- PEOPLE -->
+    <section id="people">
+      <div class="wrap">
+        <div class="people-head reveal">
+          <span class="eyebrow">Made for real days</span>
+          <h2 style="margin-top:18px">Wherever you find it,<br />you can keep it.</h2>
+          <p class="lede">On the train, at your desk, late at night with the lamp on. References show up whenever they like — A+ Vault is there for all of it.<span class="th">เจอตอนไหนก็เก็บได้ ไม่ว่าจะบนรถไฟ ที่โต๊ะทำงาน หรือดึกๆ</span></p>
+        </div>
+        <div class="people-grid">
+          <figure class="ph reveal"><div class="frame"><img src="/assets/people/train-phone.webp" alt="A man standing on a train, scrolling his phone" width="1050" height="1400" loading="lazy" style="object-position:50% 40%"><span class="stk ok" style="right:6%;top:24%"><i></i>Saved to Inbox</span></div><figcaption><span class="time">08:40</span><b>On the way</b><p>Share a link from your phone. It lands in your Inbox, ready to sort later.</p></figcaption></figure>
+          <figure class="ph reveal" data-delay="1"><div class="frame"><img src="/assets/people/desk-laptop.webp" alt="A woman working at her desk on a laptop" width="1400" height="933" loading="lazy" style="object-position:70% 50%"><span class="stk menu" style="left:6%;bottom:8%;animation-delay:-1.5s"><span>Copy image address</span><span class="k">+ Keep in Vault</span></span></div><figcaption><span class="time">14:15</span><b>At the desk</b><p>Right-click, + Keep in Vault, back to work. Your tab never moves.</p></figcaption></figure>
+          <figure class="ph reveal" data-delay="2"><div class="frame"><img src="/assets/people/swatches-tablet.webp" alt="A designer at a laptop with colour swatches and a pen tablet" width="1400" height="933" loading="lazy" style="object-position:24% 50%"><span class="stk pal" style="right:7%;bottom:9%;animation-delay:-3s"><s style="background:#d9c7a7"></s><s style="background:#b9774f"></s><s style="background:#3e5c76"></s><s style="background:#2f3133"></s><s style="background:#ff4f43"></s></span></div><figcaption><span class="time">21:30</span><b>Into a board</b><p>Pull the best ones into a moodboard — each with its source and credit.</p></figcaption></figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- POCKET -->
+    <section class="pocket" id="pocket">
+      <div class="wrap pocket-grid">
+        <div class="pocket-copy reveal">
+          <span class="eyebrow">Keep it all</span>
+          <h2 style="margin-top:18px">Everything you've seen.<br />Kept in <span style="color:var(--coral)">one Vault.</span></h2>
+          <p class="lede">Every reference that ever caught your eye — press + Keep in Vault and it lands in one place. Always in your pocket, ready to show a client.<span class="th">แรงบันดาลใจที่เคยผ่านตา กด + Keep ไว้ แล้วรวมอยู่ที่เดียวใน Vault พกติดตัว เปิดคุยงานกับลูกค้าได้ทันที</span></p>
+        </div>
+        <figure class="pocket-ph reveal" data-delay="1"><img src="/assets/people/pocket-phone.webp" alt="A hand sliding a phone showing a grid of saved design references into a jeans pocket" width="928" height="1152" loading="lazy"><span class="stk ok" style="left:6%;bottom:10%"><i></i>+ Keep in Vault</span></figure>
+      </div>
+    </section>
+
+    <!-- SCATTERED → ONE VAULT -->
+    <section class="story" id="scatter" data-story="scatter">
+      <div class="stage">
+        <div class="scatter-copy">
+          <h2 class="before">Your references live<br />in twelve places.</h2>
+          <h2 class="after">Now they live<br />in <span style="color:var(--coral)">one.</span></h2>
+        </div>
+        <div class="vault-box" data-vault-box><span><img src="/assets/vault-logo-on-dark-128.png" alt="" />Your Vault</span></div>
+        <div data-shards aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <!-- CAPTURE -->
+    <section class="story dark-grain" id="capture" data-story="capture">
+      <div class="stage">
+        <div>
+          <span class="eyebrow">Capture</span>
+          <h2 style="margin-top:18px">One click.<br />Keep browsing.</h2>
+          <p class="lede">Right-click any image, video, or page and choose <strong>+ Keep in Vault</strong>. It saves with the source, the page, and the date — and your tab never moves.</p>
+          <ol class="steps" data-steps>
+            <li><b>1</b><span>Find something worth keeping</span></li>
+            <li><b>2</b><span>Right-click it</span></li>
+            <li><b>3</b><span>Choose + Keep in Vault</span></li>
+            <li><b>4</b><span>Saved with source &amp; credit — sort it later</span></li>
+          </ol>
+        </div>
+        <div class="browser" data-browser aria-hidden="true">
+          <div class="browser-bar"><i></i><i></i><i></i><span>pinterest.com/pin/brutalist-poster-studies</span></div>
+          <div class="browser-page">
+            <div class="img" data-capture-img></div>
+            <div class="lines"><i style="width:80%"></i><i style="width:64%"></i><i style="width:72%"></i><i style="width:40%"></i></div>
+          </div>
+          <div class="ctx"><div>Open image in new tab</div><div>Copy image address</div><div class="keep"><img src="/assets/vault-save-icon-128.png" alt="" />+ Keep in Vault</div><div>Inspect</div></div>
+          <svg class="cursor" viewBox="0 0 24 24"><path d="M4 2l16 10-7 1.6L9.6 21z" fill="#fff" stroke="#151719" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          <div class="toast"><div class="thumb" data-toast-thumb></div><div><strong>Saved to Vault</strong><small>Inbox · source &amp; credit kept</small></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FIND -->
+    <section id="find">
+      <div class="wrap find-grid">
+        <div class="reveal">
+          <span class="eyebrow">Search</span>
+          <h2 style="margin-top:18px">Search the way<br />you remember.</h2>
+          <p class="lede">You remember the feeling, not the filename. Type it in Thai or English, pick a color, drop in a similar image, or narrow by source and date.</p>
+          <div class="chips">
+            <span class="chip">เก้าอี้วินเทจ</span>
+            <span class="chip"><i style="background:#ff4f43"></i>#ff4f43</span>
+            <span class="chip">type:image</span>
+            <span class="chip">site:pinterest.com</span>
+            <span class="chip">rights:free</span>
+          </div>
+        </div>
+        <div class="reveal" data-delay="1">
+          <div class="searchbox" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="typed" data-typed></span><span class="caret"></span></div>
+          <div class="search-results" data-results aria-hidden="true"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHTS -->
+    <section id="rights">
+      <div class="wrap">
+        <div class="reveal" style="max-width:760px">
+          <span class="eyebrow">Credit &amp; rights</span>
+          <h2 style="margin-top:18px">Know what you can<br />actually use.</h2>
+          <p class="lede">Every reference keeps its source and credit. A clear label tells you whether it can go into client work — or stays as inspiration.</p>
+        </div>
+        <div class="rights-cards" data-rights>
+          <article class="rcard reveal"><div class="ph"></div><span class="badge free">✓ Free to use</span><h3>Public domain</h3><p>CC0 museum works. Use them in final client work; a credit is a kind gesture.</p></article>
+          <article class="rcard reveal" data-delay="1"><div class="ph"></div><span class="badge lic">◐ Free license</span><h3>Stock with terms</h3><p>Free under the site’s own license. Check the terms, keep the credit.</p></article>
+          <article class="rcard reveal" data-delay="2"><div class="ph"></div><span class="badge ref">○ Reference only</span><h3>Inspiration</h3><p>Rights unknown. Great for direction — license it before it ships.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- DISCOVER -->
+    <section id="discover" class="dark-grain">
+      <div class="wrap discover-head">
+        <div class="reveal">
+          <span class="eyebrow">Discover</span>
+          <h2 style="margin-top:18px">Never start<br />from an empty board.</h2>
+          <p class="lede">Thousands of open-access works from The Met, Cleveland Museum of Art, and the Smithsonian — tagged, searchable by color and shape, credited, and free to keep.</p>
+        </div>
+        <a class="btn btn-dark reveal" data-delay="1" href="/">Open Discover <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <div class="marquee" data-marquee="0" aria-hidden="true"></div>
+      <div class="marquee rev" data-marquee="1" aria-hidden="true"></div>
+    </section>
+
+    <!-- MOODBOARD -->
+    <section class="story" id="board" data-story="board">
+      <div class="stage">
+        <div class="board-copy">
+          <span class="eyebrow">Moodboards &amp; projects</span>
+          <h2 style="margin-top:18px">From pile to direction.</h2>
+          <p class="lede" style="margin-left:auto;margin-right:auto">Pull references into a board, add palette and notes, and share a clear direction with your client — without copying a single file.</p>
+        </div>
+        <div class="board-canvas" data-canvas aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <!-- PROMISE -->
+    <section id="promise" class="dark-grain">
+      <div class="wrap">
+        <span class="eyebrow" style="color:#7d838a">Our promise</span>
+        <div class="promise-list" data-promise>
+          <p>Private <em>by default.</em></p>
+          <p>No ads. No feed deciding for you.</p>
+          <p>Credit travels with every image.</p>
+          <p>Export or delete <em>anytime.</em></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- START -->
+    <section id="start">
+      <div class="wrap">
+        <h2 class="reveal">Start keeping.</h2>
+        <p class="lede reveal" data-delay="1" style="margin-left:auto;margin-right:auto">Browse Discover as a guest, or sign in to build your own private Vault.<span class="th">เริ่มจากดูภาพใน Discover ได้เลย ไม่ต้องสมัคร</span></p>
+        <div class="final-ctas reveal" data-delay="2">
+          <a class="btn btn-coral" href="/">Explore Discover</a>
+          <a class="btn btn-light" href="/extension">Get the Chrome extension</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="dark-grain">
+    <div class="wrap">
+      <span>Photos via Unsplash: Rasheed Kemy, Zulfugar Karimov, Theme Photos, Burst, Swello · © <span data-year></span> A+ Vault · Part of the Aplus ecosystem</span>
+      <nav aria-label="Footer"><a href="/">Discover</a><a href="/vault">My Vault</a><a href="/legal">Privacy &amp; legal</a><a href="/legal#copyright">Copyright</a></nav>
+    </div>
+    <div class="foot-mark" aria-hidden="true">A+ Vault</div>
+  </footer>
+
+  <script src="/supabase-config.js"></script>
+  <script src="/marketing.js"></script>
+  <script src="/welcome.js"></script>
+</body>
+</html>

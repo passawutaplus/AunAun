@@ -100,10 +100,10 @@ export function createVaultRemote(config = {}) {
     location.href = target;
   }
 
-  async function signOut() {
+  async function signOut({ everywhere = false } = {}) {
     const current = session();
     if (current?.access_token) {
-      await fetch(url + "/auth/v1/logout", {
+      await fetch(url + "/auth/v1/logout" + (everywhere ? "?scope=global" : ""), {
         method: "POST",
         headers: headers(),
       }).catch(() => {});
@@ -637,8 +637,88 @@ export function createVaultRemote(config = {}) {
     return rpc("vault_admin_purge_captures", { p_older_than_days: olderThanDays });
   }
 
+  /** Title + thumbnail for a pasted link. Never throws: no session, offline or a blocked site just means no preview. */
+  async function linkPreview(linkUrl) {
+    const token = session()?.access_token;
+    if (!enabled || !token) return null;
+    try {
+      const response = await fetch(`/api/vault/preview?url=${encodeURIComponent(linkUrl)}`, {
+        headers: { authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data && data.success ? data.preview : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /** Safe link import (phase 01). Resolves { ok, data } or { ok:false, code, message }; null when offline/guest. Never throws. */
+  async function importUrl(linkUrl) {
+    const token = session()?.access_token;
+    if (!enabled || !token) return null;
+    try {
+      const response = await fetch("/api/import-url", {
+        method: "POST",
+        headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+        body: JSON.stringify({ url: linkUrl }),
+        signal: AbortSignal.timeout(12000),
+      });
+      const body = await response.json().catch(() => null);
+      if (body && body.success) return { ok: true, data: body.data };
+      return { ok: false, code: (body && body.code) || "FETCH_FAILED", message: (body && body.message) || "" };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /** Server-side enrichment for a local-first item (real palette + taxonomy tags). Resolves analysis or null; never throws. */
+  async function enrichItem(payload) {
+    const token = session()?.access_token;
+    if (!enabled || !token) return null;
+    try {
+      const response = await fetch("/api/vault/enrich", {
+        method: "POST",
+        headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(15000),
+      });
+      const body = await response.json().catch(() => null);
+      return body && body.success ? body.analysis : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function authedPost(path, body) {
+    const token = session()?.access_token;
+    if (!enabled || !token) throw new Error("Sign in with a real account first.");
+    const response = await fetch(path, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify(body || {}), signal: AbortSignal.timeout(90000) });
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data || data.success === false) throw new Error((data && data.message) || "Request failed. Try again in a moment.");
+    return data;
+  }
+  const exportAccountData = () => authedPost("/api/account/export");
+  const deleteAccountData = confirm => authedPost("/api/account/delete", { confirm });
+  /** Records a consent choice (append-only log) for the signed-in user. Never throws. */
+  async function logConsent(purpose, granted, policyVersion) {
+    try {
+      await rpc("log_consent", { p_purpose: purpose, p_granted: Boolean(granted), p_policy_version: policyVersion });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   return {
     enabled,
+    linkPreview,
+    importUrl,
+    enrichItem,
+    exportAccountData,
+    deleteAccountData,
+    logConsent,
     hasSession: () => !!session()?.access_token,
     consumeAuthCallback,
     getSession,

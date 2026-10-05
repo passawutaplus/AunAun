@@ -9,6 +9,8 @@ export type VisionResult = {
   tags: string[];
   style: string;
   colors: string[];
+  /** Token usage of the API call that produced this result (absent in tests / fakes). */
+  usage?: { input_tokens: number; output_tokens: number };
 };
 
 export class VisionOutputError extends Error {
@@ -37,8 +39,37 @@ export function visionSchema(categories: readonly string[]) {
   });
 }
 
+/**
+ * The model sometimes returns `tags` as one string ("a, b, c" or a JSON array in text) or with an over-long
+ * entry; 85 of 86 production rejects were this. Repair that shape before validating; everything else stays strict.
+ */
+const SPLIT_TAGS = new RegExp("[,\n;]");
+
+export function repairVisionOutput(raw: unknown): unknown {
+  if (!raw || typeof raw !== "object") return raw;
+  const out: Record<string, unknown> = { ...(raw as Record<string, unknown>) };
+  let tags: unknown = out.tags;
+  if (typeof tags === "string") {
+    const text = tags.trim();
+    try {
+      const json = JSON.parse(text);
+      tags = Array.isArray(json) ? json : text.split(SPLIT_TAGS);
+    } catch {
+      tags = text.split(SPLIT_TAGS);
+    }
+  }
+  if (Array.isArray(tags)) {
+    out.tags = tags
+      .filter((t): t is string => typeof t === "string")
+      .map((t) => t.trim())
+      .filter((t) => t.length >= 2 && t.length <= 40)
+      .slice(0, 12);
+  }
+  return out;
+}
+
 export function parseVisionOutput(raw: unknown, categories: readonly string[]): VisionResult {
-  const parsed = visionSchema(categories).safeParse(raw);
+  const parsed = visionSchema(categories).safeParse(repairVisionOutput(raw));
   if (!parsed.success) throw new VisionOutputError(parsed.error.message);
   return parsed.data;
 }
@@ -119,5 +150,8 @@ export async function analyzeImage(input: VisionInput, client = new Anthropic())
 
   const block = response.content.find((b) => b.type === "tool_use");
   if (!block || block.type !== "tool_use") throw new VisionOutputError("Model did not call record_analysis");
-  return parseVisionOutput(block.input, input.categories);
+  return {
+    ...parseVisionOutput(block.input, input.categories),
+    usage: { input_tokens: response.usage?.input_tokens ?? 0, output_tokens: response.usage?.output_tokens ?? 0 },
+  };
 }

@@ -1,7 +1,20 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Candidate, SourceKey } from "./adapters/types";
-import { PHASH_MAX_DISTANCE, STORAGE_BUCKET } from "./config";
+import { PHASH_MAX_DISTANCE, STORAGE_BUCKET, visionPricing } from "./config";
+import { bangkokDayStartIso, capLimits, stopReason, type CapUsage, type StopReason } from "./caps";
 import type { RejectReason } from "./license";
+
+export type AiSpend = {
+  totalUsd: number;
+  monthUsd: number;
+  /** Images with recorded token usage. */
+  tracked: number;
+  /** Analyzed images from before tracking existed (cost estimated from the average). */
+  untracked: number;
+  avgUsd: number;
+  estimatedLegacyUsd: number;
+  bySource: Record<string, number>;
+};
 
 export type SeedTarget = {
   category: string;
@@ -61,7 +74,24 @@ export type PublishRow = {
   height: number;
   blurhash: string;
   paths: { sm: string; md: string; lg: string };
-  ai: { category: string; tags: string[]; style: string; colors: string[] };
+  /** "review" rows keep their renditions so a human can approve them later. */
+  status: "published" | "review";
+  passport: {
+    tagsJson: unknown[];
+    tagsIds: string[];
+    palette: unknown[];
+    metrics: unknown;
+    quality: number;
+    enrichLevel: number;
+    statusReason: string;
+    layerB: { era: string | null; culture_region: string | null; medium: string | null; institution: string | null; year: number | null };
+    altText: { alt_text_th: string | null; alt_text_en: string | null };
+    /** Open keywords for the current Discover keyword UI: English labels of confident tags + AI keywords. */
+    openKeywords: string[];
+    style: string;
+    /** Palette hexes for the current Discover colour UI (now computed from pixels). */
+    colors: string[];
+  };
 };
 
 export interface SeederRepo {
@@ -152,7 +182,7 @@ export class SupabaseSeederRepo implements SeederRepo {
     const { error } = await this.db.from("discover_items").upsert(
       {
         ...baseRow(row.candidate, row.category),
-        status: "published",
+        status: row.status,
         reject_reason: null,
         phash: row.phash,
         width: row.width,
@@ -161,11 +191,23 @@ export class SupabaseSeederRepo implements SeederRepo {
         image_sm_path: row.paths.sm,
         image_md_path: row.paths.md,
         image_lg_path: row.paths.lg,
-        ai_category: row.ai.category,
-        tags: row.ai.tags,
-        style: row.ai.style,
-        colors: row.ai.colors,
-        published_at: new Date().toISOString(),
+        ai_category: row.category,
+        tags: row.passport.openKeywords,
+        style: row.passport.style,
+        colors: row.passport.colors,
+        tags_json: row.passport.tagsJson,
+        tags_ids: row.passport.tagsIds,
+        palette: row.passport.palette,
+        metrics: row.passport.metrics,
+        quality_score: row.passport.quality,
+        enrich_level: row.passport.enrichLevel,
+        status_reason: row.passport.statusReason,
+        alt_text_th: row.passport.altText.alt_text_th,
+        alt_text_en: row.passport.altText.alt_text_en,
+        ...row.passport.layerB,
+        last_checked_at: new Date().toISOString(),
+        published_at: row.status === "published" ? new Date().toISOString() : null,
+        legacy_published: false,
       },
       { onConflict: "source,source_id" },
     );
@@ -176,6 +218,54 @@ export class SupabaseSeederRepo implements SeederRepo {
     const { data, error } = await this.db.from("seed_targets").select("category").eq("enabled", true);
     fail("categories", error);
     return [...new Set((data ?? []).map((r) => r.category as string))].sort();
+  }
+
+  async flags(): Promise<{ paused: boolean; killSwitch: boolean }> {
+    const { data, error } = await this.db.from("seeder_control").select("paused, kill_switch").eq("id", true).maybeSingle();
+    fail("flags", error);
+    return { paused: data?.paused ?? true, killSwitch: data?.kill_switch ?? false };
+  }
+
+  async setKillSwitch(on: boolean): Promise<void> {
+    const { error } = await this.db.from("seeder_control").upsert({ id: true, kill_switch: on }, { onConflict: "id" });
+    fail("setKillSwitch", error);
+  }
+
+  /** Counters for the daily/monthly caps. AI calls = rows with recorded vision usage. */
+  async capUsage(): Promise<CapUsage> {
+    const dayStart = bangkokDayStartIso();
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const { inPerM, outPerM } = visionPricing();
+    const { count: itemsToday, error: e1 } = await this.db.from("discover_items").select("id", { count: "exact", head: true }).gte("created_at", dayStart);
+    fail("capUsage.items", e1);
+    const { count: aiCallsToday, error: e2 } = await this.db
+      .from("discover_items")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", dayStart)
+      .not("source_meta->ai_usage", "is", null);
+    fail("capUsage.ai", e2);
+    let monthUsd = 0;
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await this.db
+        .from("discover_items")
+        .select("ai_usage:source_meta->ai_usage")
+        .gte("created_at", monthStart.toISOString())
+        .not("source_meta->ai_usage", "is", null)
+        .range(from, from + 999);
+      fail("capUsage.month", error);
+      const rows = (data ?? []) as unknown as { ai_usage: { input_tokens?: number; output_tokens?: number } | null }[];
+      for (const r of rows) monthUsd += (Number(r.ai_usage?.input_tokens ?? 0) * inPerM + Number(r.ai_usage?.output_tokens ?? 0) * outPerM) / 1_000_000;
+      if (rows.length < 1000) break;
+    }
+    return { itemsToday: itemsToday ?? 0, aiCallsToday: aiCallsToday ?? 0, monthUsd };
+  }
+
+  /** Why seeding must stop right now (kill switch, pause, or a cap), or null. Reported by the job and the admin page. */
+  async stopReason(): Promise<{ reason: StopReason; usage: CapUsage }> {
+    const [flags, usage] = await Promise.all([this.flags(), this.capUsage()]);
+    return { reason: stopReason(flags, usage, capLimits(process.env.SEEDER_BUDGET_USD)), usage };
   }
 
   async isPaused(): Promise<boolean> {
@@ -216,6 +306,48 @@ export class SupabaseSeederRepo implements SeederRepo {
     const { data, error } = await this.db.rpc("discover_reject_summary");
     fail("rejectSummary", error);
     return (data ?? []) as { reject_reason: string; source: string; total: number }[];
+  }
+
+  /** Vision API spend, summed from the token usage the pipeline stores in source_meta.ai_usage. */
+  async aiSpend(): Promise<AiSpend> {
+    const { inPerM, outPerM } = visionPricing();
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const cost = (i: number, o: number) => (i * inPerM + o * outPerM) / 1_000_000;
+
+    let totalUsd = 0;
+    let monthUsd = 0;
+    let tracked = 0;
+    const bySource: Record<string, number> = {};
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await this.db
+        .from("discover_items")
+        .select("source, created_at, ai_usage:source_meta->ai_usage")
+        .not("source_meta->ai_usage", "is", null)
+        .order("created_at", { ascending: true })
+        .range(from, from + 999);
+      fail("aiSpend", error);
+      const rows = (data ?? []) as unknown as { source: string; created_at: string; ai_usage: { input_tokens?: number; output_tokens?: number } | null }[];
+      for (const r of rows) {
+        const usd = cost(Number(r.ai_usage?.input_tokens ?? 0), Number(r.ai_usage?.output_tokens ?? 0));
+        tracked++;
+        totalUsd += usd;
+        bySource[r.source] = (bySource[r.source] ?? 0) + usd;
+        if (new Date(r.created_at) >= monthStart) monthUsd += usd;
+      }
+      if (rows.length < 1000) break;
+    }
+
+    // Rows analyzed before usage tracking existed: published + AI-stage rejects without ai_usage.
+    const { count: analyzed, error: e2 } = await this.db
+      .from("discover_items")
+      .select("id", { count: "exact", head: true })
+      .or("status.eq.published,reject_reason.in.(moderation_blocked,ai_invalid_output)");
+    fail("aiSpend.analyzed", e2);
+    const untracked = Math.max(0, (analyzed ?? 0) - tracked);
+    const avg = tracked > 0 ? totalUsd / tracked : cost(1600, 250);
+    return { totalUsd, monthUsd, tracked, untracked, avgUsd: avg, estimatedLegacyUsd: untracked * avg, bySource };
   }
 
   async recentItems(status: "published" | "rejected" | "hidden", limit: number): Promise<AdminItem[]> {

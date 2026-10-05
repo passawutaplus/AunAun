@@ -1,0 +1,11 @@
+{
+  "user": { "id": "00000000-0000-4000-8000-000000000001", "name": "ทดสอบ" },
+  "items": [
+    { "analysis": { "tagIds": ["sty.minimal", "gfx.poster", "mood.calm"], "colors": ["#ff3b30"] } },
+    { "analysis": { "tagIds": ["sty.minimal", "gfx.poster"], "colors": ["#ff3b30", "#ffffff"] } }
+  ],
+  "candidates": [
+    { "id": "00000000-0000-4000-8000-000000000011", "title": "Minimal poster", "category": "poster", "source": "met", "license": "cc0", "status": "published", "attribution": "The Metropolitan Museum of Art", "image_md_path": "met/1/md.webp", "tags_ids": ["sty.minimal", "gfx.poster"] },
+    { "id": "00000000-0000-4000-8000-000000000012", "title": "Calm interior", "category": "interior", "source": "cma", "license": "cc0", "status": "published", "attribution": "Cleveland Museum of Art", "image_md_path": "cma/2/md.webp", "tags_ids": ["mood.calm", "sty.minimal"] }
+  ]
+}

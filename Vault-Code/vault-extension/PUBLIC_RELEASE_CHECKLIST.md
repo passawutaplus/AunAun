@@ -23,6 +23,13 @@ Share with testers:
 
 Tester flow: log in → Profile → copy Extension sync token → paste in extension popup → capture.
 
+## v0.2.0 release notes (2026-10-04)
+
+New: Quick keep (+ Undo, Edit details), Keep all images (picker + batch API), credit/source saved at capture, offline retry queue, automatic pairing shown as "Connected" with Disconnect, optional smart detection + hover buttons, Alt+Shift+K shortcut.
+Permissions: dropped `tabs`; added `alarms`; content script runs only on Vault origins unless the user opts in to all sites (`optional_host_permissions`).
+New API: `POST /api/vault/capture-batch` (<= 20 items), `DELETE /api/vault/captures/:id` (Undo).
+Before the Web Store: finish the legal/privacy pages (phase 12), update screenshots to the new popup, test in real Chrome (load unpacked) on 3 sites: a blog with lazy images, a gallery, a login-walled page; check Undo, offline retry (disable network), Keep all with 40+ images.
+
 ## Before Chrome Web Store (public / unlisted)
 
 1. Confirm production API on all routes:

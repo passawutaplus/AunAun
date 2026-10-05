@@ -1,0 +1,48 @@
+import { createHandler } from "../vault-api-shared.mjs";
+import { engineConfig } from "../engine/config.mjs";
+import { defaultTaxonomy } from "../engine/enrich.mjs";
+import { parseQuery } from "../engine/parser.mjs";
+import { rankItems } from "../engine/ranking.mjs";
+import { fetchCandidates, fetchBehavior, publicItem, rpcQuiet } from "../engine/discover-read.mjs";
+import { captureQuery, suggestTerm } from "../engine/learning.mjs";
+
+const MAX_QUERY = 600;
+
+/** Discover search: parse (no AI) -> candidates via the GIN index -> rank in code. Published-only, cacheable, read-only. */
+export default createHandler({
+  methods: ["GET"],
+  requireToken: false,
+  limit: { name: "search", limit: 120, windowMs: 60_000 },
+  fallbackStatus: 502,
+  fallbackMessage: "Search is unavailable right now.",
+  async handle(req, res) {
+    const url = new URL(req.url || "/", "http://localhost");
+    const q = (url.searchParams.get("q") || "").slice(0, MAX_QUERY);
+    const offset = Math.max(0, Number(url.searchParams.get("offset")) || 0);
+    const limit = Math.max(1, Math.min(60, Number(url.searchParams.get("limit")) || 30));
+    const tax = defaultTaxonomy();
+    const parsed = parseQuery(q, tax, engineConfig);
+    const chips = parsed.chips;
+    if (!parsed.include.length && !parsed.colorIntent.hex.length && !parsed.pinnedKeywords.length) {
+      res.setHeader("Cache-Control", "public, max-age=30, s-maxage=60");
+      return { success: true, chips, context: parsed.context, items: [], total: 0, nextOffset: null };
+    }
+    const candidates = await fetchCandidates(parsed);
+    const behavior = engineConfig.LEARN_RANK_TUNING ? await fetchBehavior() : null;
+    const ranked = rankItems(parsed, candidates, tax, engineConfig, { limit, offset, behavior });
+    if (engineConfig.LEARN_CAPTURE && parsed.unknown.length && offset === 0 && captureQuery(q) !== null) {
+      const terms = parsed.unknown.slice(0, 8).map(u => ({ ...u, example: q.slice(0, 120), suggested: suggestTerm(u.term, tax)?.id || null }));
+      await rpcQuiet("log_unknown_terms", { p_terms: terms });
+    }
+    res.setHeader("Cache-Control", "public, max-age=30, s-maxage=60, stale-while-revalidate=300");
+    return {
+      success: true,
+      chips,
+      context: parsed.context,
+      total: ranked.total,
+      relaxed: ranked.relaxed > 0,
+      nextOffset: ranked.nextOffset,
+      items: ranked.items.map(r => ({ ...publicItem(r.item), score: r.score, matchedTags: r.matchedTags, missingTags: r.missingTags })),
+    };
+  },
+});

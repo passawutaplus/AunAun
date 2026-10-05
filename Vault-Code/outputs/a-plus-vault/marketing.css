@@ -1,0 +1,42 @@
+/* A+ Vault marketing pages (/welcome, /extension): shared base */
+@font-face{font-family:"Agrandir Wide";src:url("/assets/fonts/Agrandir-Wide-Light.woff2") format("woff2");font-weight:300 400;font-display:swap}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{display:block;max-width:100%}
+a{color:inherit}
+.th{display:block;margin-top:8px;color:var(--muted);font-size:.86em}
+/* buttons */
+.btn:hover{transform:translateY(-2px)}
+/* nav */
+.nav-links a:hover{color:var(--coral)}
+/* hero */
+.progress{position:fixed;inset:0 0 auto;z-index:60;height:2px;background:var(--coral);transform-origin:left;transform:scaleX(0)}
+/* people */
+.ph{position:relative;margin:0;transition:transform .6s var(--ease)}
+.ph:hover{transform:translateY(-8px)}
+.ph .frame{position:relative;overflow:hidden;border-radius:22px;background:var(--paper-2);box-shadow:0 40px 70px -40px rgba(20,21,22,.5)}
+.ph img{display:block;width:100%;height:100%;object-fit:cover;transition:transform 1.4s var(--ease)}
+.ph:hover img{transform:scale(1.04)}
+.ph figcaption{display:grid;gap:6px;padding:22px 4px 0}
+.ph .time{font:500 11px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;color:var(--coral)}
+.ph b{font:300 clamp(22px,2.2vw,30px)/1.1 var(--display);letter-spacing:-.01em}
+.ph p{margin:0;max-width:420px;color:var(--ink-2);font-size:15px}
+.stk{position:absolute;z-index:2;display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:#fff;color:#141516;font:500 12px/1 var(--body);box-shadow:0 14px 30px -6px rgba(0,0,0,.35);animation:stk 5s ease-in-out infinite}
+.stk i{width:8px;height:8px;border-radius:50%;background:var(--coral)}
+.stk.ok i{background:#1f8a4c}
+.stk.menu{flex-direction:column;align-items:stretch;gap:2px;padding:6px;border-radius:12px;min-width:170px}
+.stk.menu span{padding:7px 10px;border-radius:7px;color:#6a6c70;font-weight:400}
+.stk.menu span.k{background:#ffe9e6;color:#e33f34;font-weight:600}
+.stk.pal{gap:6px;padding:8px 10px}.stk.pal s{display:block;width:20px;height:20px;border-radius:50%;text-decoration:none}
+@keyframes stk{50%{transform:translateY(-8px)}}
+@media(prefers-reduced-motion:reduce){.stk{animation:none}.ph img{transition:none}}
+
+/* film grain over the whole page (SVG noise, no network request) */
+body::after{content:"";position:fixed;inset:-50%;z-index:90;pointer-events:none;opacity:.09;mix-blend-mode:multiply;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");animation:grain 1.2s steps(6) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-1%)}80%{transform:translate(3%,3%)}100%{transform:translate(0,0)}}
+@media(prefers-reduced-motion:reduce){body::after{animation:none}}
+@media(max-width:700px){body::after{opacity:.07;animation:none}}
+/* lighter grain on the dark bands so it shows on black too */
+.dark-grain{position:relative}
+.dark-grain::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.12;mix-blend-mode:screen;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 .7 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}

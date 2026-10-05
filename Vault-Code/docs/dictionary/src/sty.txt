@@ -1,0 +1,112 @@
+@domain sty | สไตล์ กระแส ยุคสมัย | Styles, Movements & Eras (cross-cutting)
+@group movement | กระแสศิลปะ | Art movements | 3
+renaissance | เรอเนสซองส์ | renaissance
+baroque | บาโรก | baroque
+rococo | โรโกโก | rococo
+neoclassical | นีโอคลาสสิก | neoclassical
+romanticism | โรแมนติซิสม์ | romanticism
+realism | สัจนิยม,เรียลลิสม์ | realism
+impressionism | อิมเพรสชันนิสม์ | impressionism
+post_impressionism | โพสต์อิมเพรสชันนิสม์ | post-impressionism
+art_nouveau | อาร์ตนูโว | art nouveau
+arts_and_crafts | อาร์ตแอนด์คราฟต์ | arts and crafts
+symbolism | สัญลักษณ์นิยม | symbolism
+expressionism | เอกซ์เพรสชันนิสม์ | expressionism
+fauvism | ฟอวิสม์ | fauvism
+cubism | คิวบิสม์ | cubism
+futurism | ฟิวเจอริสม์ | futurism art movement
+dada | ดาดา | dada
+surrealism | เซอร์เรียลลิสม์,เหนือจริง | surrealism
+constructivism | คอนสตรัคติวิสม์ | constructivism
+de_stijl | เดอ สติล | de stijl
+bauhaus | เบาเฮาส์ | bauhaus
+art_deco | อาร์ตเดโค | art deco
+abstract_expressionism | แอบสแตรกต์เอกซ์เพรสชันนิสม์ | abstract expressionism
+pop_art | ป๊อปอาร์ต | pop art
+op_art | ออปอาร์ต | op art
+conceptual_art | ศิลปะเชิงความคิด | conceptual art
+postmodernism | โพสต์โมเดิร์น | postmodernism
+neo_expressionism | นีโอเอกซ์เพรสชันนิสม์ | neo-expressionism
+superflat | ซูเปอร์แฟลต | superflat
+
+@group design_style | สไตล์การออกแบบ | Design styles | 4
+minimal | มินิมอล,เรียบง่าย | minimal,minimalist
+japandi | จาปานดี้ | japandi
+wabi_sabi | วาบิซาบิ | wabi-sabi
+scandinavian | สแกนดิเนเวียน,นอร์ดิก | scandinavian,nordic
+mid_century | มิดเซนจูรี | mid-century modern
+modern | โมเดิร์น | modern
+contemporary | คอนเทมโพรารี,ร่วมสมัย | contemporary
+industrial | อินดัสเทรียล | industrial style
+loft | ลอฟต์ | loft style
+bohemian | โบฮีเมียน,โบโฮ | bohemian,boho
+rustic | รัสติก | rustic
+farmhouse | ฟาร์มเฮาส์ | farmhouse
+coastal_style | โคสตัล,สไตล์ชายทะเล | coastal style
+mediterranean | เมดิเตอร์เรเนียน | mediterranean
+tropical_modern | ทรอปิคอลโมเดิร์น | tropical modern
+thai_contemporary | ไทยประยุกต์,ไทยร่วมสมัย | thai contemporary
+traditional_thai | ไทยดั้งเดิม | traditional thai
+chinese_style | สไตล์จีน | chinese style
+japanese_style | สไตล์ญี่ปุ่น | japanese style
+korean_style | สไตล์เกาหลี | korean style
+moroccan | โมร็อกโก | moroccan
+classic | คลาสสิก | classic
+french_classic | ฝรั่งเศสคลาสสิก | french classic
+english_country | อังกฤษคันทรี | english country
+victorian | วิกตอเรียน | victorian
+hollywood_regency | ฮอลลีวูดรีเจนซี | hollywood regency
+luxury | หรูหรา,ลักชัวรี,ดูแพง | luxury,luxurious
+quiet_luxury | หรูแบบเงียบ,ควายเอ็ทลักชัวรี | quiet luxury | luxury
+glam | แกลม | glam
+maximalist | แม็กซิมอล,จัดเต็ม | maximalist
+eclectic | อีเคล็กติก,ผสมผสาน | eclectic
+brutalist | บรูทัลลิสต์,บรูทัล | brutalist
+memphis | เมมฟิส | memphis style
+swiss_style | สวิสสไตล์ | swiss style,international typographic style
+y2k | วายทูเค | y2k
+retro | เรโทร,ย้อนยุค | retro
+vintage | วินเทจ | vintage
+style_70s | สไตล์ 70s | 1970s style
+style_80s | สไตล์ 80s | 1980s style
+style_90s | สไตล์ 90s | 1990s style
+futuristic | ล้ำสมัย,ฟิวเจอริสติก | futuristic
+space_age | สเปซเอจ | space age
+organic_modern | ออร์แกนิกโมเดิร์น | organic modern
+biophilic | ไบโอฟิลิก,ใกล้ชิดธรรมชาติ | biophilic
+sustainable_design | ดีไซน์ยั่งยืน | sustainable design
+handcrafted_style | งานทำมือ,แฮนด์เมด | handcrafted style
+folk | โฟล์ค,พื้นบ้าน | folk style
+kitsch | คิทช์ | kitsch
+camp | แคมป์ | camp
+grunge | กรันจ์ | grunge
+punk | พังก์ | punk
+gothic | โกธิค | gothic
+dark_academia | ดาร์กอะคาเดเมีย | dark academia
+cottagecore | คอตเทจคอร์ | cottagecore
+kawaii | คาวาอี้,น่ารักแบบญี่ปุ่น | kawaii
+
+@group era | ยุคสมัย | Eras & periods | 1
+ancient | โบราณ | ancient
+medieval | ยุคกลาง | medieval
+early_modern | ยุคต้นสมัยใหม่ | early modern
+c19 | ศตวรรษที่ 19 | 19th century
+early_20c | ต้นศตวรรษที่ 20 | early 20th century
+mid_20c | กลางศตวรรษที่ 20 | mid 20th century
+late_20c | ปลายศตวรรษที่ 20 | late 20th century
+c21 | ศตวรรษที่ 21 | 21st century
+current_trend | เทรนด์ปัจจุบัน | current trend
+
+@group culture | วัฒนธรรมและภูมิภาค | Culture & region | 2
+thai | วัฒนธรรมไทย,ไทย | thai culture
+southeast_asian | เอเชียตะวันออกเฉียงใต้ | southeast asian
+japanese | วัฒนธรรมญี่ปุ่น | japanese culture
+chinese | วัฒนธรรมจีน | chinese culture
+korean | วัฒนธรรมเกาหลี | korean culture
+indian | อินเดีย | indian
+middle_eastern | ตะวันออกกลาง | middle eastern
+african | แอฟริกา | african
+european | ยุโรป | european
+latin_american | ละตินอเมริกา | latin american
+north_american | อเมริกาเหนือ | north american
+indigenous | ชนเผ่าพื้นเมือง | indigenous

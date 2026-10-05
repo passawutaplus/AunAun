@@ -4,7 +4,7 @@ import { z } from "zod";
 export const batchRequested = eventType("seeder/batch.requested", {
   schema: z.object({
     category: z.string().min(1),
-    source: z.enum(["met", "aic"]),
+    source: z.enum(["met", "aic", "cma", "si", "chndm", "ov"]),
     query: z.string().min(1),
     cursor: z.number().int().min(0),
     size: z.number().int().min(1).max(50),

@@ -1,0 +1,88 @@
+@domain crf | งานฝีมือ ประติมากรรม อินสตอลเลชัน | Craft, Sculpture & Installation
+@group sculpture | ประติมากรรม | Sculpture | 3
+sculpture | ประติมากรรม | sculpture
+bronze_sculpture | ประติมากรรมสัมฤทธิ์ | bronze sculpture
+marble_sculpture | ประติมากรรมหินอ่อน | marble sculpture
+wood_sculpture | ประติมากรรมไม้ | wood sculpture
+metal_sculpture | ประติมากรรมโลหะ | metal sculpture
+stone_carving | แกะสลักหิน | stone carving
+wood_carving | แกะสลักไม้ | wood carving
+kinetic_sculpture | ประติมากรรมเคลื่อนไหว | kinetic sculpture
+mobile_sculpture | โมบายล์ | mobile
+assemblage | แอสเซมเบลจ | assemblage
+found_object | ของเก็บมา | found object art
+soft_sculpture | ประติมากรรมนิ่ม | soft sculpture
+bust | รูปหล่อครึ่งตัว | bust
+relief | ภาพนูนต่ำ | relief sculpture
+public_sculpture | ประติมากรรมสาธารณะ | public sculpture
+monumental | ประติมากรรมใหญ่ | monumental sculpture
+abstract_sculpture | ประติมากรรมนามธรรม | abstract sculpture
+figurative_sculpture | ประติมากรรมรูปคน | figurative sculpture
+paper_sculpture | ประติมากรรมกระดาษ | paper sculpture
+
+@group installation | อินสตอลเลชันและนิทรรศการ | Installation & exhibition | 3
+installation_art | อินสตอลเลชันอาร์ต | installation art
+immersive_installation | อินสตอลเลชันอินเมอร์ซีฟ | immersive installation
+light_installation | อินสตอลเลชันแสง | light installation
+site_specific | ศิลปะเฉพาะสถานที่ | site-specific art
+land_art | แลนด์อาร์ต | land art
+public_art | ศิลปะสาธารณะ | public art
+street_art | สตรีทอาร์ต | street art
+graffiti | กราฟฟิตี้ | graffiti
+exhibition_view | บรรยากาศนิทรรศการ | exhibition view
+gallery_display | การจัดแสดงแกลเลอรี | gallery display
+museum_display | จัดแสดงพิพิธภัณฑ์ | museum display
+pop_up | ป๊อปอัป | pop-up
+booth | บูธ | exhibition booth
+stage_design | ออกแบบเวที | stage design
+set_design | ออกแบบฉาก | set design
+scenography | ซีโนกราฟี | scenography
+window_display | ตู้โชว์หน้าร้าน | window display
+scale_model | โมเดลจำลอง | scale model
+performance | ศิลปะการแสดง | performance art
+
+@group ceramics | เซรามิกและแก้ว | Ceramics & glass | 3
+ceramic | เซรามิก | ceramics
+pottery | เครื่องปั้นดินเผา | pottery
+porcelain | เครื่องลายคราม,พอร์ซเลน | porcelain
+stoneware | สโตนแวร์ | stoneware
+terracotta | เทอราคอตต้า | terracotta
+raku | ราคุ | raku
+celadon | เซลาดอน,ศิลาดล | celadon
+wheel_thrown | ปั้นแป้นหมุน | wheel-thrown
+hand_built | ปั้นมือ | hand-built
+glaze | เคลือบ | glaze
+drip_glaze | เคลือบไหล | drip glaze
+crackle_glaze | เคลือบแตกราน | crackle glaze
+kintsugi | คินสึงิ | kintsugi
+tile_art | กระเบื้องลวดลาย | decorative tile
+mosaic | โมเสก | mosaic
+stained_glass | กระจกสี | stained glass
+blown_glass | แก้วเป่า | blown glass
+glass_art | งานแก้ว | glass art
+enamel | อีนาเมล | enamel
+
+@group handcraft | งานฝีมือ | Handcraft techniques | 3
+weaving | ทอผ้า,สานเส้น | weaving
+basketry | จักสาน | basketry
+macrame | มาคราเม่ | macrame
+embroidery_craft | งานปัก | embroidery craft
+knitting_craft | ถักไหมพรม | knitting craft
+sewing | เย็บผ้า | sewing
+leatherwork | งานหนัง | leatherwork
+woodworking | งานไม้ | woodworking
+metalwork | งานโลหะ | metalwork
+blacksmith | งานตีเหล็ก | blacksmithing
+paper_craft | งานกระดาษ | paper craft
+origami | โอริงามิ | origami
+kirigami | คิริงามิ | kirigami
+paper_marbling | ลายหินอ่อนกระดาษ | paper marbling
+bookbinding | เย็บเล่มหนังสือ | bookbinding
+candle_making | ทำเทียน | candle making
+lacquerware | เครื่องเขิน,งานลงรัก | lacquerware
+bamboo_craft | งานไม้ไผ่ | bamboo craft
+rattan | หวาย,หวายสาน | rattan
+thai_craft | งานหัตถกรรมไทย | thai handicraft
+gilding | ปิดทอง | gilding
+inlay | ฝังมุก,งานประดับ | inlay,marquetry
+diy | ดีไอวาย,ทำเอง | diy

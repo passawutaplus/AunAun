@@ -55,7 +55,9 @@ export async function supabaseRest(path, { method = "GET", body, headers = {}, p
   });
   const data = parseBody(await response.text());
   if (!response.ok) {
-    const error = new Error(data?.message || data?.error || errorMessage);
+    // Upstream text can name tables/columns; log it server-side and send callers a generic message.
+    console.error(`[supabase] ${method} ${path.split("?")[0]} -> ${response.status}`, data?.message || data?.error || "");
+    const error = new Error(errorMessage);
     error.status = response.status >= 500 ? 502 : 400;
     throw error;
   }

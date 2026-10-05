@@ -12,7 +12,7 @@ export async function signInWithPassword(formData: FormData) {
   const supabase = await createUserClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) redirect("/admin/login?error=invalid");
-  redirect("/admin/seeder");
+  redirect("/admin");
 }
 
 export async function signInWithGoogle() {

@@ -22,7 +22,8 @@ test("cc0 with credit and image passes", () => {
 
 test("non-allowlisted license is rejected", () => {
   assert.deepEqual(licenseGate({ ...base, license: "restricted" }), { ok: false, reason: "license_not_allowed" });
-  assert.deepEqual(licenseGate({ ...base, license: "cc-by" }), { ok: false, reason: "license_not_allowed" });
+  assert.deepEqual(licenseGate({ ...base, license: "cc-by-nc" }), { ok: false, reason: "license_not_allowed" });
+  assert.deepEqual(licenseGate({ ...base, license: "cc-by-nd" }), { ok: false, reason: "license_not_allowed" });
 });
 
 test("missing attribution or non-https source is rejected", () => {
@@ -32,4 +33,22 @@ test("missing attribution or non-https source is rejected", () => {
 
 test("missing image is rejected", () => {
   assert.deepEqual(licenseGate({ ...base, originalImageUrl: "" }), { ok: false, reason: "missing_image" });
+});
+
+const by: Candidate = {
+  ...base,
+  license: "cc-by",
+  licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
+  attributionJson: { ...base.attributionJson, artist: "Jane Doe" },
+};
+
+test("cc-by passes only with author and license link", () => {
+  assert.deepEqual(licenseGate(by), { ok: true });
+  assert.deepEqual(licenseGate({ ...by, license: "cc-by-sa" }), { ok: true });
+  assert.deepEqual(licenseGate({ ...by, attributionJson: { ...by.attributionJson, artist: " " } }), { ok: false, reason: "missing_attribution" });
+  assert.deepEqual(licenseGate({ ...by, licenseUrl: null }), { ok: false, reason: "missing_attribution" });
+});
+
+test("public domain mark passes without an author", () => {
+  assert.deepEqual(licenseGate({ ...base, license: "pdm" }), { ok: true });
 });

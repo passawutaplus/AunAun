@@ -1,0 +1,143 @@
+@domain mood | อารมณ์ สี องค์ประกอบ | Mood, Color & Composition (cross-cutting)
+@group mood | อารมณ์และบรรยากาศ | Mood & atmosphere | 3
+calm | สงบ,นิ่ง | calm,serene
+peaceful | สงบสุข | peaceful
+relaxing | ผ่อนคลาย | relaxing
+cozy | อบอุ่น,โฮมมี่ | cozy,homey
+inviting | อบอุ่นใจ,เป็นกันเอง | warm,inviting
+intimate | ใกล้ชิด,เป็นส่วนตัว | intimate
+romantic | โรแมนติก | romantic
+dreamy | ฝัน,ล่องลอย | dreamy,ethereal
+whimsical | ขี้เล่นแฟนตาซี | whimsical
+playful | ขี้เล่น,สนุก | playful,fun
+joyful | สดใส,ร่าเริง | joyful,cheerful
+energetic | มีพลัง,คึกคัก | energetic,vibrant
+bold | กล้า,จัดจ้าน | bold,striking
+dramatic | ดราม่า,ตื่นตา | dramatic
+powerful | ทรงพลัง | powerful
+confident | มั่นใจ | confident
+upscale | ให้ความรู้สึกหรู,ดูมีระดับ | upscale feel
+elegant | สง่างาม,สุภาพ | elegant,refined
+sophisticated | ซับซ้อนลึกซึ้ง | sophisticated
+clean | สะอาดตา | clean
+fresh | สดชื่น | fresh
+airy | โปร่ง,โปร่งโล่ง | airy
+light_feel | เบาสบาย | light and bright
+spacious | กว้างขวาง | spacious
+nostalgic | คิดถึง,โหยหาอดีต | nostalgic
+melancholic | เศร้า,เหงา | melancholic,lonely
+moody | มู้ดดี้,อึมครึม | moody
+mysterious | ลึกลับ | mysterious
+eerie | น่าขนลุก | eerie
+somber | มืดหม่น | dark,somber
+gritty | ดิบ,หยาบกร้าน | gritty,raw
+tense | ตึงเครียด | tense
+chaotic | วุ่นวาย | chaotic
+quirky | แปลกตา | quirky
+edgy | จี๊ดเท่,เอจจี้ | edgy
+rebellious | ขบถ | rebellious
+cool_feel | เท่,ดูเย็น | cool
+futuristic_feel | ล้ำ | futuristic feel
+sensual | เซ็กซี่แบบนุ่ม | sensual
+serious | จริงจัง | serious
+sparse_feel | ว่างโล่ง | minimal feel
+meditative | เป็นสมาธิ | meditative
+contemplative | ครุ่นคิด | contemplative
+solitude | เปลี่ยว,โดดเดี่ยว | solitude
+festive | เฉลิมฉลอง | festive
+magical | วิเศษ | magical
+natural_feel | ให้ความรู้สึกธรรมชาติ | natural feel
+earthy_feel | ติดดิน | earthy
+
+@group tone | โทนสีและชุดสี | Color tone & palette | 3
+monochrome | โมโนโครม,สีเดียว | monochrome
+black_and_white | ขาวดำ | black and white
+neutral_palette | สีนิวทรัล,สีกลาง | neutral palette
+neutral_with_accent | สีกลางมีสีเสริม,มีสีสันหน่อย | neutral with accent,pop of color
+earth_tone | เอิร์ธโทน,โทนดิน | earth tone
+warm_palette | โทนอุ่น | warm palette
+cool_palette | โทนเย็น | cool palette
+pastel_palette | พาสเทล | pastel
+muted_palette | สีหม่น,สีนุ่ม | muted
+vivid_palette | สีสด,สีจัด | vivid,saturated
+neon_palette | สีนีออน | neon colors
+jewel_tones | โทนอัญมณี | jewel tones
+candy_colors | สีลูกกวาด | candy colors
+dark_palette | โทนมืด | dark palette
+light_palette | โทนสว่าง | light palette
+high_contrast | คอนทราสต์สูง,ตัดกัน | high contrast
+low_contrast | คอนทราสต์ต่ำ | low contrast
+tonal | โทนเดียวกัน | tonal,tone-on-tone
+analogous | สีข้างเคียง | analogous colors
+complementary | สีตรงข้าม | complementary colors
+triadic | สามสี | triadic colors
+gradient | ไล่สี,เกรเดียนต์ | gradient
+rainbow | สายรุ้ง | rainbow
+sunset_palette | โทนพระอาทิตย์ตก | sunset palette
+ocean_palette | โทนทะเล | ocean palette
+forest_palette | โทนป่า | forest palette
+autumn_palette | โทนใบไม้ร่วง | autumn palette
+spring_palette | โทนวสันต์ | spring palette
+
+@group hue | ชื่อสี | Hue names | 6
+red | แดง,สีแดง | red
+orange | ส้ม,สีส้ม | orange
+yellow | เหลือง,สีเหลือง | yellow
+green | เขียว,สีเขียว | green
+teal | เขียวน้ำทะเล,เทล | teal,turquoise
+blue | น้ำเงิน,ฟ้า,สีน้ำเงิน | blue
+navy | กรมท่า,น้ำเงินเข้ม | navy
+purple | ม่วง,สีม่วง | purple
+pink | ชมพู,สีชมพู | pink
+brown | น้ำตาล,สีน้ำตาล | brown
+beige | เบจ,ครีม | beige,cream
+white | ขาว,สีขาว | white
+off_white | ขาวนวล,ออฟไวท์ | off-white,ivory
+grey | เทา,สีเทา | grey,gray
+black | ดำ,สีดำ | black
+gold | ทอง,สีทอง | gold
+silver | เงิน,สีเงิน | silver
+terracotta_color | สีอิฐ | terracotta color
+burgundy | เลือดหมู,เบอร์กันดี | burgundy
+olive | เขียวมะกอก | olive
+sage | เขียวเซจ | sage green
+mint | เขียวมิ้นต์ | mint
+lavender | ม่วงลาเวนเดอร์ | lavender
+peach | พีช,ส้มพีช | peach
+coral | ปะการัง,สีคอรัล | coral
+mustard | เหลืองมัสตาร์ด | mustard
+sky_blue | ฟ้าสด,สีฟ้าใส | sky blue
+cobalt | โคบอลต์ | cobalt blue
+emerald | มรกต | emerald
+charcoal_color | เทาชาร์โคล,เทาเข้ม | charcoal color
+rose | ชมพูกุหลาบ | rose
+sand_color | สีทราย | sand color
+blush | ชมพูอ่อน | blush pink
+
+@group composition | องค์ประกอบภาพ | Composition & visual qualities | 4
+symmetry | สมมาตร | symmetry
+asymmetry | อสมมาตร | asymmetry
+centered | จัดกลาง | centered composition
+rule_of_thirds | กฎสามส่วน | rule of thirds
+golden_ratio | อัตราส่วนทอง | golden ratio
+negative_space | พื้นที่ว่าง | negative space,whitespace
+sparse_composition | องค์ประกอบเรียบ | sparse composition
+dense_composition | องค์ประกอบแน่น | dense composition
+balance | สมดุล | balanced composition
+repetition | การซ้ำ | repetition
+rhythm | จังหวะ | visual rhythm
+diagonal | แนวทแยง | diagonal composition
+vertical | แนวตั้ง | vertical emphasis
+horizontal | แนวนอน | horizontal emphasis
+layered | ซ้อนชั้น | layered composition
+overlap | ซ้อนทับ | overlapping elements
+depth | ความลึก | depth,foreground midground background
+flat_composition | แบนไม่มีมิติ | flat composition
+perspective | เพอร์สเปกทีฟ | perspective
+scale_contrast | ขนาดเปรียบต่าง | scale contrast
+focal_point | จุดโฟกัส | focal point
+tight_crop | ครอปชิด | tight crop
+grid_based | จัดตามกริด | grid based
+radial | วงกลมกระจาย | radial composition
+spiral | เกลียว | spiral
+tilted | เอียง | tilted

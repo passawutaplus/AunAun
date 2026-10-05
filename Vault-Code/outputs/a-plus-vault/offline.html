@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#101113" />
+  <title>Offline · A+ Vault</title>
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <style>
+    :root{color-scheme:dark}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:max(24px,env(safe-area-inset-top)) 24px max(24px,env(safe-area-inset-bottom));background:#101113;color:#f2f3f4;font:16px/1.6 "IBM Plex Sans Thai",system-ui,-apple-system,sans-serif;text-align:center}
+    main{max-width:420px}
+    img{width:72px;height:72px;border-radius:18px}
+    h1{margin:22px 0 8px;font:300 clamp(26px,6vw,34px)/1.15 system-ui,sans-serif;letter-spacing:-.01em}
+    p{margin:0 0 26px;color:#9a9fa5}
+    button{height:46px;padding:0 26px;border:0;border-radius:999px;background:#ff4f43;color:#fff;font:500 15px/1 inherit;cursor:pointer}
+    button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+  </style>
+</head>
+<body>
+  <main>
+    <img src="/assets/icon-192.png" alt="" width="72" height="72" />
+    <h1>You're offline</h1>
+    <p>A+ Vault needs a connection to load your references. Your saved items are safe — reconnect and try again.<br />ตอนนี้ออฟไลน์อยู่ เชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่</p>
+    <button type="button" id="retry">Try again</button>
+  </main>
+  <script src="/offline.js"></script>
+</body>
+</html>

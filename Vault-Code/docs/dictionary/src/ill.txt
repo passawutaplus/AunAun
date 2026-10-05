@@ -1,0 +1,106 @@
+@domain ill | ภาพประกอบและจิตรกรรม | Illustration, Painting & Drawing
+@group technique | เทคนิคและสื่อ | Techniques & media | 3
+watercolor | สีน้ำ | watercolor
+gouache | กวอช,สีโปสเตอร์ | gouache
+oil_paint | สีน้ำมัน | oil painting
+acrylic | สีอะคริลิก | acrylic painting
+ink_wash | หมึกจีน,ภาพหมึก | ink wash,sumi-e
+pencil | ดินสอ | pencil drawing
+charcoal | ถ่านชาร์โคล | charcoal drawing
+soft_pastel | สีชอล์กพาสเทล | soft pastel
+colored_pencil | สีไม้ | colored pencil
+marker | มาร์กเกอร์ | marker illustration
+pen_ink | ปากกาหมึก | pen and ink
+line_art | ลายเส้น | line art
+crosshatch | แรเงาลายเส้นขวาง | crosshatching
+stippling | จุดประ | stippling
+brush_stroke | ฝีแปรง | brush strokes
+impasto | อิมพาสโต,สีหนา | impasto
+digital_painting | วาดดิจิทัล | digital painting
+vector_art | เวกเตอร์ | vector illustration
+pixel_art | พิกเซลอาร์ต | pixel art
+mixed_media | มิกซ์มีเดีย | mixed media
+collage_art | คอลลาจ | collage
+paper_cut | ตัดกระดาษ | paper cut
+airbrush | แอร์บรัช | airbrush
+spray_paint | สีสเปรย์ | spray paint
+
+@group printmaking | ภาพพิมพ์ | Printmaking | 2
+woodcut | ภาพพิมพ์แกะไม้ | woodcut
+linocut | ลิโนคัต | linocut
+etching | อีทชิ่ง,ภาพพิมพ์กัดกรด | etching
+lithograph | ลิโธกราฟ,หินพิมพ์ | lithograph
+silkscreen_art | ซิลค์สกรีนศิลปะ | silkscreen art
+ukiyoe | อุกิโยะเอะ | ukiyo-e
+monotype | โมโนไทป์ | monotype
+engraving | แกะสลักลายเส้น | engraving
+
+@group genre | แนวภาพประกอบ | Illustration genres | 3
+editorial_illustration | ภาพประกอบบทความ | editorial illustration
+childrens_book | ภาพประกอบหนังสือเด็ก | children's book illustration
+fashion_illustration | ภาพประกอบแฟชั่น | fashion illustration
+botanical | พฤกษศาสตร์,ภาพพืช | botanical illustration
+scientific_illustration | ภาพวิทยาศาสตร์ | scientific illustration
+technical_illustration | ภาพเทคนิค | technical illustration
+architectural_drawing | แบบสถาปัตย์,สเก็ตช์สถาปัตย์ | architectural drawing
+concept_art | คอนเซ็ปต์อาร์ต | concept art
+character_design | ออกแบบตัวละคร | character design
+creature_design | ออกแบบสิ่งมีชีวิต | creature design
+environment_design | ออกแบบฉากภาพ,ออกแบบสภาพแวดล้อม | environment design
+fantasy_art | แฟนตาซี | fantasy art
+scifi_art | ไซไฟ | sci-fi art
+anime | อนิเมะ | anime
+manga | มังงะ | manga
+comic | คอมิก,การ์ตูนช่อง | comic
+webtoon | เว็บตูน | webtoon
+cartoon | การ์ตูน | cartoon
+storyboard | สตอรี่บอร์ด | storyboard
+sketchbook | สมุดสเก็ตช์ | sketchbook
+life_drawing | วาดคนจากแบบ | life drawing
+urban_sketch | สเก็ตช์เมือง | urban sketching
+pattern_illustration | ภาพประกอบแพตเทิร์น | pattern illustration
+spot_illustration | ภาพประกอบเล็ก | spot illustration
+tattoo_flash | แฟลชรอยสัก | tattoo flash
+folk_illustration | ภาพประกอบพื้นบ้าน | folk art illustration
+thai_traditional_art | ศิลปะไทยประเพณี,จิตรกรรมไทย | thai traditional painting
+
+@group painting_genre | แนวจิตรกรรม | Painting genres | 3
+portrait_painting | ภาพเหมือน | portrait painting
+landscape_painting | ภาพวาดทิวทัศน์ | landscape painting
+seascape | ภาพทะเล | seascape
+still_life_painting | ภาพนิ่ง | still life painting
+figurative | เหมือนจริงรูปคน | figurative painting
+abstract_painting | จิตรกรรมนามธรรม | abstract painting
+history_painting | ภาพประวัติศาสตร์ | history painting
+religious_art | ศิลปะศาสนา | religious art
+mural | ภาพจิตรกรรมฝาผนัง,มูรัล | mural
+street_mural | ภาพวาดข้างทาง | street mural
+fresco | ปูนเปียก,ฟรีสโก | fresco
+miniature | จิตรกรรมจิ๋ว | miniature painting
+
+@group character | ตัวละครและสิ่งมีชีวิต | Character & creature types | 4
+human_figure | รูปคน | human figure
+robot | หุ่นยนต์ | robot
+monster | มอนสเตอร์ | monster
+dragon | มังกร | dragon
+animal_character | ตัวละครสัตว์ | animal character
+anthropomorphic | สัตว์เหมือนคน | anthropomorphic
+cute_character | ตัวละครน่ารัก | kawaii character
+fairy | นางฟ้า | fairy
+astronaut | นักบินอวกาศ | astronaut
+skeleton | โครงกระดูก | skeleton
+ghost | ผี | ghost
+mythical | เทพนิยาย,สัตว์ในตำนาน | mythical creature
+
+@group line_quality | ลักษณะเส้นและรูปทรง | Line & shape quality | 3
+thin_line | เส้นบาง | thin line
+bold_outline | เส้นขอบหนา | bold outline
+monoline | เส้นเดียวต่อเนื่อง | monoline
+continuous_line | เส้นต่อเนื่อง | continuous line drawing
+sketchy | ลายเส้นหยาบ | sketchy
+scratchy | ลายเส้นขีดข่วน | scratchy
+clean_line | เส้นสะอาด | clean line
+wobbly | เส้นสั่น | wobbly line
+no_outline | ไร้เส้นขอบ | no outline,flat shapes
+geometric_shapes | รูปทรงเรขาคณิต | geometric shapes
+organic_shapes | รูปทรงอิสระ | organic shapes

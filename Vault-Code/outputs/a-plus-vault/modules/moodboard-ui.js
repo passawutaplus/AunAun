@@ -34,24 +34,22 @@ export function moodboardColorChooserMarkup(ctx) {
   </section></div>`;
 }
 
+export function moodboardCardsMarkup(boards, projects, esc, escA, icon, thumbFor) {
+  return (boards || []).map((board) => moodboardIndexCard(board, projects, esc, escA, icon, thumbFor)).join("");
+}
+
 export function moodboardListMarkup(ctx) {
-  const { moodboards, projects, esc, escA, icon, emptyPrimary } = ctx;
-  const cards = (moodboards || [])
-    .slice()
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .map((board) => moodboardIndexCard(board, projects, esc, escA, icon))
-    .join("");
-  const empty = !moodboards || !moodboards.length;
+  const { moodboards, projects, esc, escA, icon, emptyPrimary, thumbFor } = ctx;
+  const ordered = ctx.keepOrder ? (moodboards || []) : (moodboards || []).slice().sort((a, b) => b.updatedAt - a.updatedAt);
+  const cards = moodboardCardsMarkup(ordered, projects, esc, escA, icon, thumbFor);
+  const empty = ctx.total === undefined ? !moodboards || !moodboards.length : !ctx.total;
   return `
 <section class="page-head moodboard-page-head">
   <div>
     <h1>Moodboards</h1>
-    <p>Turn saved references into a clear creative direction—without uploading again.</p>
-  </div>
-  <div class="page-head-actions">
-    <button class="primary-button" type="button" data-open-create-moodboard>${icon("plus")}<span>Create Moodboard</span></button>
   </div>
 </section>
+${empty ? "" : `<div class="studio-toolbar">${ctx.searchMarkup || ""}<button class="primary-button" type="button" data-open-create-moodboard>${icon("plus")}<span>Create Moodboard</span></button></div><p class="studio-search-note" data-studio-note="moodboards">${esc(ctx.note || "")}</p>`}
 ${
   empty
     ? `<section class="empty-state moodboard-empty"><div>
@@ -66,7 +64,7 @@ ${
 }`;
 }
 
-function moodboardIndexCard(board, projects, esc, escA, icon) {
+function moodboardIndexCard(board, projects, esc, escA, icon, thumbFor) {
   const project = (projects || []).find((p) => p.id === board.projectId);
   const count = moodboardItemCount(board);
   const updated = new Date(board.updatedAt || Date.now()).toLocaleDateString("en-US", {
@@ -76,27 +74,57 @@ function moodboardIndexCard(board, projects, esc, escA, icon) {
   });
   return `<article class="moodboard-index-card" data-moodboard-id="${escA(board.id)}">
   <button type="button" class="moodboard-card-open" data-open-moodboard="${escA(board.id)}">
-    ${moodboardCover(board, esc)}
-    <span>
-      <strong>${esc(board.name)}</strong>
-      <small>${count} refs · Private · ${esc(updated)}${project ? " · " + esc(project.name) : ""}</small>
+    ${moodboardCover(board, esc, escA, thumbFor)}
+    <span class="moodboard-card-copy">
+      <span class="moodboard-card-line"><strong>${esc(board.name)}</strong><small>${count} ref${count === 1 ? "" : "s"}</small></span>
+      ${project ? `<em class="moodboard-card-project">${esc(project.name)}</em>` : ""}
     </span>
   </button>
   <div class="moodboard-card-actions">
-    <button type="button" class="moodboard-card-open-btn" data-open-moodboard="${escA(board.id)}">Open</button>
-    <div class="moodboard-card-secondary">
-      <button type="button" data-rename-moodboard="${escA(board.id)}">Rename</button>
-      <button type="button" data-link-moodboard-project="${escA(board.id)}" title="Add to Project">Link</button>
-      <button type="button" class="danger-link" data-delete-moodboard="${escA(board.id)}">Delete</button>
-    </div>
+    <button type="button" data-rename-moodboard="${escA(board.id)}" title="Rename" aria-label="Rename moodboard">${icon("edit")}</button>
+    <button type="button" data-link-moodboard-project="${escA(board.id)}" title="Add to Project" aria-label="Add to project">${icon("project")}</button>
+    <button type="button" class="danger-link" data-delete-moodboard="${escA(board.id)}" title="Delete" aria-label="Delete moodboard">${icon("trash")}</button>
   </div>
 </article>`;
 }
 
-function moodboardCover(board, esc) {
-  const items = (board.objects || []).filter((o) => o.kind === "item").slice(0, 4);
-  if (!items.length) return `<div class="moodboard-cover empty-cover"><span>Empty board</span></div>`;
-  return `<div class="moodboard-cover">${items.map(() => `<i></i>`).join("")}</div>`;
+/** Mini canvas: the real layout of the board (positions, sizes, rotation), scaled to a 4:3 card cover. */
+export function moodboardCover(board, esc, escA, thumbFor) {
+  const objs = (board.objects || []).filter((o) => o && o.kind !== "connector" && Number(o.w) > 0 && Number(o.h) > 0);
+  if (!objs.length) return `<div class="moodboard-cover empty-cover"><span>Empty board</span></div>`;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  objs.forEach((o) => {
+    minX = Math.min(minX, o.x); minY = Math.min(minY, o.y);
+    maxX = Math.max(maxX, o.x + o.w); maxY = Math.max(maxY, o.y + o.h);
+  });
+  const pad = Math.max(24, (maxX - minX) * 0.04);
+  minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+  let W = maxX - minX, H = maxY - minY;
+  const ratio = 4 / 3;
+  if (W / H > ratio) { const nh = W / ratio; minY -= (nh - H) / 2; H = nh; }
+  else { const nw = H * ratio; minX -= (nw - W) / 2; W = nw; }
+  const pct = (v, total) => `${((v / total) * 100).toFixed(2)}%`;
+  const layers = objs
+    .slice()
+    .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
+    .slice(0, 60)
+    .map((o) => {
+      const box = `left:${pct(o.x - minX, W)};top:${pct(o.y - minY, H)};width:${pct(o.w, W)};height:${pct(o.h, H)};${o.rotation ? `transform:rotate(${Number(o.rotation).toFixed(1)}deg);` : ""}`;
+      if (o.kind === "item") {
+        const src = thumbFor ? thumbFor(o.itemId) : "";
+        return `<i class="mc-item" style="${box}${src ? `background-image:url('${escA(src)}')` : ""}"></i>`;
+      }
+      if (o.kind === "palette") {
+        const cs = (o.colors || []).slice(0, 6);
+        return `<i class="mc-palette" style="${box}">${cs.map((c) => `<u style="background:${escA(c)}"></u>`).join("")}</i>`;
+      }
+      if (o.kind === "text") {
+        const fs = ((Number(o.size) || 28) / W) * 100;
+        return `<i class="mc-text" style="${box}font-size:${fs.toFixed(2)}cqw;color:${escA(o.color || "#fff")}">${esc(String(o.text || "").slice(0, 60))}</i>`;
+      }
+      return `<i class="mc-${o.kind === "note" ? "note" : "box"}" style="${box}"></i>`;
+    });
+  return `<div class="moodboard-cover moodboard-canvas-thumb" aria-hidden="true">${layers.join("")}</div>`;
 }
 
 export function createMoodboardDialogMarkup(ctx) {
@@ -180,7 +208,7 @@ export function moodboardVaultPickerMarkup(ctx) {
     return `<label class="moodboard-picker-card ${used ? "on-board" : ""} ${checked ? "is-checked" : ""}" title="${escA(tip)}">
         <input type="checkbox" data-picker-check="${escA(item.id)}" ${checked ? "checked" : ""} ${used ? "disabled" : ""} aria-label="Select ${escA(item.title)}">
         <span class="moodboard-picker-media">${media(item)}</span>
-        <span class="moodboard-picker-meta"><strong>${esc(item.title)}</strong></span>
+        <span class="moodboard-picker-meta"><strong>${esc(item.title)}</strong>${used ? "<small>On board</small>" : ""}</span>
       </label>`;
   }).join("");
   const emptyHint = q || activeType !== "all" || activeCol !== "all"
@@ -195,7 +223,6 @@ export function moodboardVaultPickerMarkup(ctx) {
       </div>
       <button class="icon-button" type="button" data-dialog-cancel>${icon("close")}</button>
     </div>
-    <p class="app-dialog-message">เลือกได้หลายอันด้วย checkbox แล้วกด Add to board — วางบน canvas ลากอิสระได้</p>
     <div class="moodboard-picker-toolbar">
       <label class="moodboard-picker-search">
         <span class="visually-hidden">Search</span>
@@ -206,10 +233,12 @@ export function moodboardVaultPickerMarkup(ctx) {
         <select data-picker-collection aria-label="Filter by collection">${colOptions}</select>
       </label>
     </div>
-    <div class="moodboard-picker-types" role="group" aria-label="Filter by type">${typeChips}</div>
-    <div class="moodboard-picker-bulk">
-      <button type="button" class="ghost-button" data-picker-select-visible ${available.length ? "" : "disabled"}>Select visible</button>
-      <button type="button" class="ghost-button" data-picker-clear-selection ${pickCount ? "" : "disabled"}>Clear</button>
+    <div class="mp-row">
+      <div class="moodboard-picker-types" role="group" aria-label="Filter by type">${typeChips}</div>
+      <div class="moodboard-picker-bulk">
+        <button type="button" class="ghost-button" data-picker-select-visible ${available.length ? "" : "disabled"}>Select all</button>
+        <button type="button" class="ghost-button" data-picker-clear-selection ${pickCount ? "" : "disabled"}>Clear</button>
+      </div>
     </div>
     <div class="moodboard-picker-grid">${cards || `<p class="settings-field-hint">${emptyHint}</p>`}</div>
     <div class="app-dialog-actions">

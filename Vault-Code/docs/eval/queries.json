@@ -1,0 +1,22 @@
+[
+  { "q": "ห้องนอน ราคา 30 ล้าน มินิมอลแต่มีสีสันหน่อย", "include": ["int.bedroom", "sty.minimal", "mood.neutral_with_accent"], "exclude": [], "notes": "price is a soft luxury hint only" },
+  { "q": "ห้องนอน minimal แต่ใส่ pop of color", "include": ["int.bedroom", "sty.minimal", "mood.neutral_with_accent"], "exclude": [], "notes": "mixed; แต่ halves the weight after it" },
+  { "q": "hero section แนว brutalism ใช้ sans serif หนาๆ สี pastel", "include": ["ui.hero_section", "sty.brutalist", "typ.sans", "mood.pastel_palette"], "exclude": [], "notes": "mixed" },
+  { "q": "moodboard ห้องนอน japandi warm tone ไม่เอา neon", "include": ["int.bedroom", "sty.japandi"], "exclude": ["mood.neon_palette"], "notes": "negation" },
+  { "q": "โลโก้ ร้านกาแฟ แนววินเทจ", "include": ["gfx.logo", "int.cafe", "sty.vintage"], "exclude": [], "notes": "connector word แนว" },
+  { "q": "landing page dark mode สีน้ำเงิน", "include": ["ui.landing_page", "ui.dark_mode", "mood.blue"], "exclude": [], "notes": "mixed" },
+  { "q": "poster สไตล์ retro สีส้ม", "include": ["gfx.poster", "sty.retro", "mood.orange"], "exclude": [], "notes": "mixed" },
+  { "q": "แพ็กเกจจิ้ง ขวด minimal ขาว", "include": ["gfx.packaging", "sty.minimal", "mood.white"], "exclude": [], "notes": "mixed" },
+  { "q": "ภาพถ่ายอาหาร โทนอบอุ่น", "include": ["sub.food", "mood.cozy"], "exclude": [], "notes": "โทน is a connector; unknown words are logged" },
+  { "q": "อยากได้ ฟอนต์ serif หรูๆ", "include": ["typ.serif", "sty.luxury"], "exclude": [], "notes": "soft word + ๆ" },
+  { "q": "illustration ลายเส้น สีพาสเทล ไม่เอาตัวการ์ตูน", "include": ["ill.line_art", "mood.pastel_palette"], "exclude": ["ill.cartoon"], "notes": "negation across a classifier word" },
+  { "q": "typography poster bold sans ห้ามมี gradient", "include": ["gfx.poster", "mood.bold", "typ.sans"], "exclude": ["mood.gradient"], "notes": "ห้ามมี prohibits" },
+  { "q": "ร้านอาหารญี่ปุ่น interior wood", "include": ["int.restaurant", "mat.wood"], "exclude": [], "notes": "mixed" },
+  { "q": "dashboard ui dark ต้องมี chart", "include": ["ui.dashboard"], "exclude": [], "notes": "English-only run inside Thai" },
+  { "q": "business card ดูแพงๆ", "include": ["gfx.business_card", "sty.quiet_luxury"], "exclude": [], "notes": "idiom" },
+  { "q": "brutalst web design", "include": ["sty.brutalist"], "exclude": [], "notes": "typo, fuzzy Latin" },
+  { "q": "mid century modern เก้าอี้", "include": ["sty.mid_century"], "exclude": [], "notes": "multi-word unit" },
+  { "q": "เซรามิค ถ้วย สีขาว", "include": ["crf.ceramic", "mood.white"], "exclude": [], "notes": "loanword spelling ค/ก" },
+  { "q": "#ff8b8b poster", "include": ["gfx.poster"], "exclude": [], "hex": ["#ff8b8b"], "notes": "hex colour syntax" },
+  { "q": "#minimal poster", "include": ["gfx.poster", "sty.minimal"], "exclude": [], "notes": "#tag syntax" }
+]

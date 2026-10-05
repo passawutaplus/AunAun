@@ -1,0 +1,78 @@
+# EN jargon / abbreviations / Thai loanword spellings for existing terms. Format: short_id | extra en | extra th
+@dom arc
+house | home,residence,detached house | บ้านเดี่ยว,โฮม
+condo | condo,apartment,flat | คอนโด,อพาร์ตเมนต์
+villa | pool villa,luxury villa | พูลวิลล่า
+tiny_house | micro home,small house | ทินี่เฮ้าส์
+pavilion | sala,gazebo hut | ศาลา
+glass_facade | glazed facade,glazing | กระจกม่านผนัง
+perforated_screen | perforated metal,screen wall | ผนังเจาะรู
+louver_facade | fins,slat screen | ระแนง,ลูฟเวอร์
+parametric_facade | parametric design,computational facade | พาราเมตริก
+gable_roof | pitched roof | หลังคาจั่ว
+flat_roof | roof deck | ดาดฟ้า
+veranda | porch,verandah | ระเบียงหน้าบ้าน
+rooftop | roof terrace,roof deck,rooftop bar | รูฟท็อป,รูฟท็อปบาร์
+cantilever | cantilevered,floating volume | คานยื่น
+pilotis | stilts,raised on columns | ใต้ถุนโล่ง
+adaptive_reuse | refurbishment,retrofit,conversion | รีโนเวท,รีโนเวชั่น,ปรับปรุงอาคารเก่า
+shipping_container | container home | บ้านตู้คอนเทนเนอร์
+modular_prefab | prefabricated,modular home | พรีแฟบ
+skyline | cityscape | วิวเมือง
+swimming_pool | pool,plunge pool,lap pool | สระว่ายน้ำ,พูล
+garden | yard,backyard | สวนหลังบ้าน
+tropical_garden | tropical landscape | สวนทรอปิคอล
+@dom int
+living_room | living area,lounge area,family room | ลิฟวิ่ง,ห้องนั่งเล่น
+bedroom | bed room,sleeping room | เบดรูม
+kitchen | cooking area | คิทเช่น
+bathroom | washroom,wet room | บาธรูม
+walk_in_closet | wic,dressing room | วอล์คอินคลอเซท
+home_office | wfh space,work from home | ห้องทำงานที่บ้าน
+cafe | coffeehouse,café | คอฟฟี่ช็อป
+retail_store | shop,store,concept store | คอนเซ็ปต์สโตร์
+coworking | co-working,shared office | โคเวิร์คกิ้งสเปซ
+sofa | settee,loveseat | โซฟา
+armchair | easy chair,lounge chair | อาร์มแชร์
+dining_table | dinner table | โต๊ะอาหาร
+desk | workstation,work table | เวิร์คสเตชั่น
+bookshelf | book shelf,library shelf | ชั้นหนังสือ
+shelving | floating shelf,open shelf | ชั้นลอย
+sideboard | buffet,buffet cabinet | ไซด์บอร์ด
+vanity | makeup table | โต๊ะเครื่องแป้ง
+built_in | custom furniture,bespoke joinery | บิลท์อิน,บิวท์อิน
+pendant_lamp | hanging lamp,drop light | โคมไฟแขวน
+recessed_lighting | spotlight downlight,can light | ดาวน์ไลท์
+cove_lighting | hidden light,indirect light | ไฟหลืบ,ไฟซ่อน
+led_strip | led tape,light strip | ไฟเส้น,แอลอีดี
+wood_floor | timber floor,laminate wood | พื้นไม้
+polished_concrete | microcement,cement floor | ปูนขัดมัน
+terrazzo_floor | terrazzo flooring | พื้นเทอราซโซ
+feature_wall | statement wall,focal wall | ผนังไฮไลท์
+wood_paneling | wood slats,slat panel,wood cladding wall | ไม้ระแนง,ผนังไม้
+fluted_panel | reeded panel,fluted wall | ผนังลอนคลื่น
+wainscoting | wall molding,picture molding | บัวผนัง
+plaster_wall | lime wash,limewash,venetian plaster | ปูนฉาบ,ผนังปูน
+glass_partition | glass divider | ฉากกั้นกระจก
+false_ceiling | drop ceiling,suspended ceiling | ฝ้าเพดาน,ฝ้าฉาบเรียบ
+large_window | big window,picture window | หน้าต่างบานใหญ่
+curtain | drapes,window treatment | ผ้าม่าน
+sheer_curtain | voile,net curtain | ม่านโปร่ง
+blinds | roller blind,venetian blind | มู่ลี่
+indoor_plants | houseplants,greenery | ต้นไม้ในบ้าน,ต้นไม้ประดับ
+wall_art | art print,framed print,wall decor | ภาพติดผนัง,แกลเลอรี่วอลล์
+open_plan | open concept,open layout | โอเพ่นแพลน
+mezzanine | loft floor,half floor | ชั้นลอย,เมซานีน
+reading_nook | cozy corner | มุมอ่านหนังสือ
+countertop | worktop,counter | เคาน์เตอร์
+backsplash | kitchen splashback | แบคสแปลช
+@dom crf
+ceramic | ceramic ware | เซรามิค
+pottery | clay pot | ปั้นดิน,งานปั้น
+macrame | macramé | มาคราเม่
+weaving | handwoven,loom | ทอผ้า
+diy | do it yourself | ทำเอง,ดีไอวาย
+installation_art | art installation | อินสตอลเลชั่น,งานติดตั้งศิลปะ
+set_design | set build | เซ็ตดีไซน์,ออกแบบฉาก
+pop_up | pop up store,popup | ป็อปอัพ
+booth | exhibition stand,trade show booth | บูธ

@@ -1,5 +1,5 @@
 import type { Candidate } from "./adapters/types";
-import { LICENSE_ALLOWLIST } from "./config";
+import { CREDIT_REQUIRED_LICENSES, LICENSE_ALLOWLIST } from "./config";
 
 export type RejectReason =
   | "license_not_allowed"
@@ -9,7 +9,9 @@ export type RejectReason =
   | "moderation_blocked"
   | "missing_image"
   | "download_failed"
-  | "ai_invalid_output";
+  | "ai_invalid_output"
+  | "blank_or_blurry"
+  | "low_quality";
 
 export type GateResult = { ok: true } | { ok: false; reason: RejectReason };
 
@@ -19,6 +21,12 @@ export function licenseGate(c: Candidate): GateResult {
   }
   if (!c.attribution.trim() || !/^https:\/\//.test(c.sourceUrl)) {
     return { ok: false, reason: "missing_attribution" };
+  }
+  if ((CREDIT_REQUIRED_LICENSES as readonly string[]).includes(c.license)) {
+    // CC BY / BY-SA: author + license link are legal conditions, not nice-to-haves.
+    if (!c.attributionJson.artist.trim() || !/^https:\/\//.test(c.licenseUrl ?? "")) {
+      return { ok: false, reason: "missing_attribution" };
+    }
   }
   if (!/^https:\/\//.test(c.originalImageUrl)) {
     return { ok: false, reason: "missing_image" };
