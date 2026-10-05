@@ -6148,3 +6148,24 @@ img.img-broken{visibility:hidden}
   .viewer-trail{top:14px;left:14px;position:fixed}
   .discover-detail-nav{display:none}
 }
+/* Phone + tablet: the image opens as a full page (feed hidden behind), details below, similar images as a feed under it */
+@media(max-width:1024px){
+  html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
+  .discover-detail-backdrop{position:fixed;inset:0;display:block;padding:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--surface,#16181b)!important}
+  .discover-detail-frame{width:100%;max-width:none}
+  .discover-detail{display:block;width:100%;max-height:none;min-height:100vh;overflow:visible;border-radius:0;padding:56px 0 24px;background:var(--surface,#16181b);box-shadow:none}
+  .discover-detail-media{aspect-ratio:auto!important;height:auto;max-height:78vh;min-height:0;background-size:cover}
+  .discover-detail-media img{width:100%;height:auto;max-height:78vh;object-fit:contain;display:block;margin:0 auto}
+  .discover-detail-info{position:static;max-height:none;overflow:visible;padding:0 16px 8px;border-radius:0;box-shadow:none}
+  .viewer-sheet-handle{display:none}
+  .discover-detail-close{position:fixed;top:12px;right:12px;z-index:8}
+  .viewer-trail{position:fixed;top:16px;left:16px;z-index:8;max-width:calc(100% - 80px)}
+  .discover-detail-nav{display:none}
+  .discover-detail-bottom{padding:0 12px 40px}
+  .discover-similar-grid{display:block;columns:2;column-gap:8px;overflow:visible;scroll-snap-type:none;padding-bottom:0}
+  .discover-similar-grid .discover-similar-item{display:block;width:100%;height:auto;margin:0 0 8px;break-inside:avoid;padding:0;border-radius:10px;overflow:hidden;background-size:cover}
+  .discover-similar-grid .discover-similar-item img{display:block;width:100%;height:auto}
+  .discover-similar-all{display:none}
+  /* feed cards: no +Keep / collection picker on touch layouts (keep from the image page) */
+  .discover-card .discover-keep,.discover-card .discover-target{display:none!important}
+}
