@@ -21,6 +21,7 @@
       --ease:cubic-bezier(.2,.7,.2,1);
     }
     .wrap{width:min(1200px,calc(100% - 48px));margin:0 auto}
+    .beta-tag{display:inline-block;margin-left:8px;padding:3px 8px;border-radius:999px;background:var(--coral);color:#fff;font:600 10px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;vertical-align:middle}
     .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
     .eyebrow::before{content:"";width:18px;height:1px;background:currentColor}
     h1,h2,h3{margin:0;font-family:var(--display);font-weight:300;letter-spacing:-.01em}
@@ -254,7 +255,7 @@
 
   <header class="nav" data-nav>
     <div class="wrap">
-      <a class="brand" href="/welcome" aria-label="A+ Vault home"><img src="/assets/vault-logo-128.png" alt="" />A+ Vault</a>
+      <a class="brand" href="/welcome" aria-label="A+ Vault home"><img src="/assets/vault-logo-128.png" alt="" />A+ Vault<span class="beta-tag">Beta</span></a>
       <nav class="nav-links" aria-label="Sections">
         <a href="#capture">Capture</a>
         <a href="#find">Search</a>
@@ -270,7 +271,7 @@
     <!-- HERO -->
     <section class="hero" data-hero>
       <div class="hero-copy">
-        <span class="eyebrow">A creative reference vault</span>
+        <span class="eyebrow">A creative reference vault · Beta</span>
         <h1 aria-label="Keep what moves you.">
           <span class="word"><span style="animation-delay:.05s">Keep</span></span>
           <span class="word"><span style="animation-delay:.15s">what</span></span><br />
@@ -283,7 +284,7 @@
           <a class="btn btn-coral" href="/discover">Explore Discover <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           <a class="btn btn-light" href="/extension"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>Get the Chrome extension</a>
         </div>
-        <p class="hero-note">Free while in alpha · Private by default</p>
+        <p class="hero-note">Open beta · Free to try · Private by default</p>
       </div>
       <div data-floats aria-hidden="true"></div>
       <div class="scroll-cue" aria-hidden="true">Scroll<i></i></div>
@@ -436,7 +437,7 @@
     <!-- APPS -->
     <section id="apps">
       <div class="wrap">
-        <span class="eyebrow reveal">Get the apps</span>
+        <span class="eyebrow reveal">Get the apps · Beta</span>
         <h2 class="reveal" data-delay="1" style="margin-top:18px">Keep it on every<br />screen you use.</h2>
         <p class="lede reveal" data-delay="2">Capture from the browser, carry it on your phone, open it big on your desk. One Vault, everywhere.<span class="th">เก็บจากเบราว์เซอร์ พกไว้ในมือถือ เปิดดูบนเดสก์ท็อป — Vault เดียวทุกที่</span></p>
         <div class="app-grid">
@@ -450,14 +451,14 @@
           <article class="app-card reveal" data-delay="1">
             <span class="app-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9h10v8a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2zM8 6l1.5 2M16 6l-1.5 2M9 5.5a3.5 3.5 0 0 1 6 0"/></svg></span>
             <h3>Android app</h3>
-            <p>A dedicated Android app with share-to-Vault from any other app. Early access goes out by email.</p>
-            <a class="btn btn-light" href="#apps-wl">Get early access</a>
+            <p>An early Android build with share-to-Vault from any other app. We send it to beta testers by email.</p>
+            <a class="btn btn-light" href="#apps-wl">Join the testers</a>
           </article>
           <article class="app-card reveal" data-delay="2">
             <span class="app-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
             <h3>Desktop app</h3>
-            <p>Your Vault in its own window for Windows and macOS: drag in files, search fast, keep it beside your design tools.</p>
-            <a class="btn btn-light" href="#apps-wl">Get early access</a>
+            <p>An early desktop build: your Vault in its own window, beside your design tools. We send it to beta testers by email.</p>
+            <a class="btn btn-light" href="#apps-wl">Join the testers</a>
           </article>
           <article class="app-card reveal" data-delay="3">
             <span class="app-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></span>
@@ -467,11 +468,11 @@
           </article>
         </div>
         <div class="apps-wl reveal" id="apps-wl">
-          <h3>Android &amp; desktop apps: get early access</h3>
-          <p>Leave your email and we will send the download link when they are ready. One email, nothing else.</p>
+          <h3>Android &amp; desktop apps: join the beta testers</h3>
+          <p>These builds are still in development. Leave your email and we will send you the test build and ask for your feedback. The web app and Chrome extension need no waiting: log in and try them now.</p>
           <form class="wl wl-center" data-waitlist data-source="welcome-apps" novalidate>
-            <div class="wl-row"><input type="email" name="email" placeholder="you@studio.com" autocomplete="email" required aria-label="Email address" /><button class="btn btn-coral" type="submit">Notify me</button></div>
-            <label class="wl-consent"><input type="checkbox" name="consent" /> <span>I agree to get an email about the Android and desktop apps. <a href="/legal">Privacy</a></span></label>
+            <div class="wl-row"><input type="email" name="email" placeholder="you@studio.com" autocomplete="email" required aria-label="Email address" /><button class="btn btn-coral" type="submit">Join the testers</button></div>
+            <label class="wl-consent"><input type="checkbox" name="consent" /> <span>I agree to get an email about the Android and desktop test builds. <a href="/legal">Privacy</a></span></label>
             <p class="wl-msg" role="status" aria-live="polite"></p>
           </form>
         </div>
@@ -487,8 +488,8 @@
           <p class="lede reveal" data-delay="2">Short answers before launch. Anything missing? Use the privacy contact on the legal page.</p>
         </div>
         <div class="faq-list reveal" data-delay="1">
-          <details><summary>Can I use it today?</summary><p>Yes. A+ Vault is open in alpha: log in and start keeping. The Android and desktop apps are coming; leave your email in the apps section to get the download link first.</p></details>
-          <details><summary>Is it free?</summary><p>It is free while in alpha. If paid plans arrive later, you will be told well before anything changes.</p></details>
+          <details><summary>Can I use it today?</summary><p>Yes, in beta. The web app (on your computer or phone) and the Chrome extension are ready to try: log in and start keeping. Some things are still rough, so tell us what you find. The Android and desktop apps are earlier builds that we send to a small group of testers.</p></details>
+          <details><summary>Is it free?</summary><p>It is free during the beta. If paid plans arrive later, you will be told well before anything changes.</p></details>
           <details><summary>Is my Vault private?</summary><p>Yes. Everything you keep is private by default. Sharing is always your choice and can be turned off again.</p></details>
           <details><summary>Where do the Discover images come from?</summary><p>Only open-licence sources such as CC0 and public-domain collections, each with its credit. Images with unknown rights never appear in Discover.</p></details>
           <details><summary>Can I search in Thai?</summary><p>Yes. Search by a few Thai or English words, by colour, or by a similar image.</p></details>

@@ -6337,3 +6337,6 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 .discover-detail-backdrop:has(.viewer-picking) .discover-detail-close{display:grid!important}
 .viewer-picking .discover-detail-media{display:flex!important;align-items:center;justify-content:center;height:94vh!important;overflow:hidden}
 .viewer-picking .discover-detail-media img{width:auto!important;height:auto!important;max-width:100%;max-height:94vh}
+
+/* A+ Vault beta tag next to the logo */
+.beta-tag{display:inline-block;margin-left:8px;padding:3px 8px;border-radius:999px;background:var(--coral,#ff4f43);color:#fff;font:600 10px/1.2 "IBM Plex Sans Thai",system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;vertical-align:middle;align-self:center}
