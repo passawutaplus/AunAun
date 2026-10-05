@@ -6169,3 +6169,11 @@ img.img-broken{visibility:hidden}
   /* feed cards: no +Keep / collection picker on touch layouts (keep from the image page) */
   .discover-card .discover-keep,.discover-card .discover-target{display:none!important}
 }
+
+/* A+ Vault phone/tablet feed + nav tidy */
+@media(max-width:1024px){
+  .discover-card .discover-card-caption{display:none!important}
+  .discover-card::after,.discover-card .discover-card-open::after{background:none!important}
+  .workspace.left-collapsed .rail,.board-workspace.left-collapsed .project-rail{justify-content:center!important;gap:8px!important}
+  .workspace.left-collapsed .side-nav-button[data-view="collections"],.board-workspace.left-collapsed .side-nav-button[data-view="collections"]{display:none!important}
+}
