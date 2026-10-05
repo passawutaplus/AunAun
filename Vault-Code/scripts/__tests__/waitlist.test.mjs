@@ -35,4 +35,13 @@ describe("POST /api/waitlist", () => {
     await waitlist(fakeReq({ email: "a@b.co", consent: true, source: "<script>" }), res);
     assert.equal(calls.find(x => x.url.includes("vault_waitlist")).body.source, "welcome");
   });
+
+  it("GET returns only the headcount from the database function", async () => {
+    globalThis.fetch = async url => { calls.push({ url: String(url) }); return new Response("42", { status: 200 }); };
+    const res = fakeRes();
+    await waitlist(Object.assign(Readable.from([]), { method: "GET", url: "/api/waitlist", headers: {}, socket: { remoteAddress: "10.0.0.9" } }), res);
+    assert.deepEqual(JSON.parse(res.body), { success: true, count: 42 });
+    assert.match(res.headers["cache-control"], /s-maxage/);
+    assert.ok(calls[0].url.includes("/rpc/vault_waitlist_count"));
+  });
 });

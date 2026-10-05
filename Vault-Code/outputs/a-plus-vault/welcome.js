@@ -170,6 +170,7 @@
         const body = await res.json().catch(() => ({}));
         if (!res.ok || body.success === false) throw new Error(body.message || "Something went wrong. Please try again.");
         form.classList.add("is-done");
+        document.dispatchEvent(new CustomEvent("waitlist:joined"));
         say(body.message || "You're on the list.", "ok");
       } catch (err) {
         say(err.message || "Something went wrong. Please try again.", "error");
@@ -189,4 +190,40 @@
       hint.hidden = false;
     });
   });
+})();
+
+
+/* story chapters: fill placeholder tiles from the live catalog, play each stage once when it scrolls in */
+(() => {
+  const { pool, imgEl, loadPool, reduce } = VaultMarketing;
+  const stages = [...document.querySelectorAll("[data-stage]")];
+  const fill = () => document.querySelectorAll("[data-img]").forEach((el, i) => {
+    el.style.setProperty("--i", String(i % 6));
+    el.innerHTML = imgEl(Number(el.dataset.img) + 3);
+  });
+  fill();
+  loadPool().then(() => { if (pool.length) fill(); });
+  if (reduce || !("IntersectionObserver" in window)) { stages.forEach(el => el.classList.add("in")); return; }
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .35 });
+  stages.forEach(el => io.observe(el));
+})();
+
+/* waitlist headcount */
+(() => {
+  const box = document.querySelector("[data-wl-counter]");
+  if (!box) return;
+  const num = box.querySelector("[data-wl-count]"), label = box.querySelector("[data-wl-count-label]");
+  const show = n => {
+    box.hidden = false;
+    if (n < 1) { num.textContent = ""; label.textContent = "Be the first on the list"; return; }
+    label.textContent = n === 1 ? "person is on the list" : "people are already on the list";
+    const start = performance.now(), dur = 900;
+    const tick = now => { const t = Math.min(1, (now - start) / dur); num.textContent = String(Math.round(n * (1 - Math.pow(1 - t, 3)))); if (t < 1) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  };
+  const load = async () => {
+    try { const r = await fetch("/api/waitlist"); const b = await r.json(); if (b && b.success) show(Number(b.count) || 0); } catch (e) { /* counter is optional */ }
+  };
+  load();
+  document.addEventListener("waitlist:joined", () => setTimeout(load, 600));
 })();

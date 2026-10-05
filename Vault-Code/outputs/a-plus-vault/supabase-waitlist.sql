@@ -10,3 +10,13 @@ create unique index if not exists vault_waitlist_email_key on public.vault_waitl
 alter table public.vault_waitlist enable row level security;
 revoke all on public.vault_waitlist from anon, authenticated;
 comment on table public.vault_waitlist is 'Pre-launch waitlist emails (consent given at sign-up). Delete on request via the privacy form.';
+
+-- Public headcount for the welcome page (no emails leave the database).
+create or replace function public.vault_waitlist_count()
+returns bigint
+language sql
+stable
+security definer
+set search_path = public
+as $$ select count(*) from public.vault_waitlist $$;
+revoke all on function public.vault_waitlist_count() from public, anon, authenticated;
