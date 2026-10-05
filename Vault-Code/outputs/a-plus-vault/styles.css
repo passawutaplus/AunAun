@@ -6311,3 +6311,18 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
   .similar-locked .discover-similar-item{display:block;width:100%;height:auto;margin:0 0 10px;break-inside:avoid}
   .similar-gate-wrap .discover-gate{align-content:start;place-items:start center;padding-top:64px}
 }
+.discover-detail-stage{position:relative}
+
+/* A+ Vault eyedropper: pixel loupe + blur everything except the opened image */
+.viewer-picking .discover-detail-media img{cursor:none!important}
+.viewer-loupe{position:fixed;z-index:400;width:132px;height:132px;margin:-66px 0 0 -66px;border-radius:50%;overflow:visible;pointer-events:none;box-shadow:0 0 0 3px #fff,0 8px 28px rgba(0,0,0,.5)}
+.viewer-loupe canvas{display:block;width:132px;height:132px;border-radius:50%;image-rendering:pixelated;image-rendering:crisp-edges}
+.viewer-loupe i{position:absolute;left:50%;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border:2px solid #fff;box-shadow:0 0 0 1px #000,inset 0 0 0 1px #000}
+.viewer-loupe b{position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-50%);padding:4px 9px;border-radius:999px;background:#111;color:#fff;font:600 12px/1 ui-monospace,monospace;letter-spacing:.04em;white-space:nowrap}
+.discover-detail-backdrop:has(.viewer-picking){backdrop-filter:blur(26px) brightness(.55);-webkit-backdrop-filter:blur(26px) brightness(.55)}
+.discover-detail-backdrop:has(.viewer-picking) .discover-detail-info,
+.discover-detail-backdrop:has(.viewer-picking) .discover-similar,
+.discover-detail-backdrop:has(.viewer-picking) .discover-detail-nav,
+.discover-detail-backdrop:has(.viewer-picking) .viewer-trail{filter:blur(12px);opacity:.45;pointer-events:none;transition:filter .25s,opacity .25s}
+.discover-detail-backdrop:has(.viewer-picking) .viewer-tools{filter:none;opacity:1;pointer-events:auto}
+.discover-detail-backdrop:has(.viewer-picking) .discover-detail-close{z-index:5}

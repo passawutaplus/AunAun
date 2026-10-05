@@ -109,20 +109,48 @@ export const rgbToHex = (r, g, b) => "#" + [r, g, b].map(v => Math.max(0, Math.m
  * otherwise re-loads the same image with CORS and samples it on a canvas. Resolves a #hex or null (never throws).
  */
 const corsCache = new Map();
+export async function getPickBitmap(img) {
+  const src = img.currentSrc || img.src;
+  let bitmap = corsCache.get(src);
+  if (!bitmap) {
+    bitmap = await new Promise((res, rej) => {
+      const im = new Image();
+      im.crossOrigin = "anonymous";
+      im.onload = () => res(im);
+      im.onerror = () => rej(new Error("image blocked"));
+      im.src = src;
+    });
+    corsCache.set(src, bitmap);
+  }
+  return bitmap;
+}
+
+/** Magnifier: paints the (2r+1)² pixels around the pointer onto `canvas` and returns the centre pixel's #hex (null off the image). */
+export function drawLoupe(canvas, img, bitmap, clientX, clientY, r = 5) {
+  try {
+    const rect = img.getBoundingClientRect();
+    const nw = bitmap.naturalWidth, nh = bitmap.naturalHeight;
+    const fit = getComputedStyle(img).objectFit;
+    const scale = fit === "cover" ? Math.max(rect.width / nw, rect.height / nh) : Math.min(rect.width / nw, rect.height / nh);
+    const x = Math.floor((clientX - rect.left - (rect.width - nw * scale) / 2) / scale);
+    const y = Math.floor((clientY - rect.top - (rect.height - nh * scale) / 2) / scale);
+    const g = canvas.getContext("2d", { willReadFrequently: true });
+    const n = r * 2 + 1;
+    canvas.width = canvas.height = n;
+    g.imageSmoothingEnabled = false;
+    g.clearRect(0, 0, n, n);
+    if (x < 0 || y < 0 || x >= nw || y >= nh) return null;
+    g.drawImage(bitmap, x - r, y - r, n, n, 0, 0, n, n);
+    const d = g.getImageData(r, r, 1, 1).data;
+    return rgbToHex(d[0], d[1], d[2]);
+  } catch {
+    return null;
+  }
+}
+
 export async function pickColorAt(img, clientX, clientY) {
   try {
-    const src = img.currentSrc || img.src;
-    let bitmap = corsCache.get(src);
-    if (!bitmap) {
-      bitmap = await new Promise((res, rej) => {
-        const im = new Image();
-        im.crossOrigin = "anonymous";
-        im.onload = () => res(im);
-        im.onerror = () => rej(new Error("image blocked"));
-        im.src = src;
-      });
-      corsCache.set(src, bitmap);
-    }
+    const bitmap = await getPickBitmap(img);
     const rect = img.getBoundingClientRect();
     const nw = bitmap.naturalWidth, nh = bitmap.naturalHeight;
     // Map the click through object-fit (cover or contain) back to image pixels.
