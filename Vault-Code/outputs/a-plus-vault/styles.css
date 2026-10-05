@@ -6112,7 +6112,7 @@ img.img-broken{visibility:hidden}
 .viewer-picked i{width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(127,127,127,.5)}
 
 /* tags: at most 2 lines, toggle for the rest */
-.tags-clamped{--tag-line:36px;max-height:calc(var(--tag-line) * 2 + 8px);overflow:hidden}
+.tags-clamped{--tag-line:36px;max-height:var(--tag-max,calc(var(--tag-line) * 2 + 8px));overflow:hidden}
 .tags-clamped.tags-open{max-height:none}
 .tags-toggle{margin:6px 0 2px;padding:4px 10px;border:0;border-radius:999px;background:transparent;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline}
 .tags-toggle:hover{color:var(--ink)}
@@ -6220,3 +6220,6 @@ img.img-broken{visibility:hidden}
 /* A+ Vault Cosmos-style tight corners on feed cards */
 .discover-card,.discover-card-open,.discover-card img,.discover-similar-item,.discover-similar-item img{border-radius:3px!important}
 @media(max-width:1024px){.discover-grid{column-gap:8px}.discover-card{margin-bottom:8px}}
+
+/* A+ Vault detail: breathing room under the image */
+@media(max-width:1024px){.discover-detail-info{padding-top:22px!important}.discover-detail-info h2{margin-top:0}}
