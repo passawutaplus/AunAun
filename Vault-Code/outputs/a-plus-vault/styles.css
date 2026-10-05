@@ -6223,3 +6223,13 @@ img.img-broken{visibility:hidden}
 
 /* A+ Vault detail: breathing room under the image */
 @media(max-width:1024px){.discover-detail-info{padding-top:22px!important}.discover-detail-info h2{margin-top:0}}
+
+/* A+ Vault detail: center every row (phone/tablet) */
+@media(max-width:1024px){
+  .discover-detail-info{text-align:center}
+  .discover-detail-info .tag-row,.discover-detail-info .discover-tags{justify-content:center}
+  .discover-detail-info .viewer-tools,.discover-detail-info .discover-detail-actions,.discover-detail-info .viewer-palette-actions{justify-content:center}
+  .discover-detail-info .discover-detail-actions,.discover-detail-info .viewer-tools{display:flex;flex-wrap:wrap;justify-items:center}
+  .discover-detail-info .discover-detail-byline{text-align:center}
+  .discover-similar-head{justify-content:center;text-align:center}
+}
