@@ -271,6 +271,9 @@ export class SupabaseSeederRepo implements SeederRepo {
       for (const r of rows) monthUsd += (Number(r.ai_usage?.input_tokens ?? 0) * inPerM + Number(r.ai_usage?.output_tokens ?? 0) * outPerM) / 1_000_000;
       if (rows.length < 1000) break;
     }
+    // Calls that were billed but never stored on an item (errors, early test runs) are invisible here; add the gap seen on the provider's Cost page.
+    const adjust = Number.parseFloat(process.env.SEEDER_SPEND_ADJUST_USD ?? "");
+    if (Number.isFinite(adjust) && adjust > 0) monthUsd += adjust;
     return { itemsToday: itemsToday ?? 0, aiCallsToday: aiCallsToday ?? 0, monthUsd };
   }
 
