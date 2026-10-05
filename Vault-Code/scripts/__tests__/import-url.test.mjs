@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { Readable } from "node:stream";
 import { isBlockedIp, parsePublicUrl, validateUrl } from "../../lib/import/ssrf.mjs";
 import { safeFetch } from "../../lib/import/safe-fetch.mjs";
-import { extractMetadata } from "../../lib/import/extract.mjs";
+import { extractMetadata, hasNoPin } from "../../lib/import/extract.mjs";
 import { probeImageSize } from "../../lib/import/image-probe.mjs";
 import { importUrl } from "../../lib/import/index.mjs";
 
@@ -143,5 +143,20 @@ describe("importUrl", () => {
     await assert.rejects(importUrl("http://169.254.169.254/", opts({})), e => e.code === "UNSAFE_URL");
     await assert.rejects(importUrl("javascript:alert(1)", opts({})), e => e.code === "INVALID_URL");
     await assert.rejects(importUrl("https://x.example/", { lookup: async () => [{ address: "10.0.0.1" }], requestImpl: fakeTransport({}) }), e => e.code === "UNSAFE_URL");
+  });
+});
+
+describe("nopin (site owner asks not to save images)", () => {
+  it("detects the Pinterest nopin meta in either attribute order", () => {
+    assert.equal(hasNoPin('<meta name="pinterest" content="nopin">'), true);
+    assert.equal(hasNoPin("<meta content='nopin' name='pinterest'/>"), true);
+    assert.equal(hasNoPin('<meta name="pinterest" content="notranslate">'), false);
+    assert.equal(hasNoPin('<meta name="description" content="nopin">'), false);
+  });
+  it("drops every image but keeps title and link metadata", () => {
+    const m = extractMetadata('<head><title>T</title><meta name="pinterest" content="nopin"><meta property="og:title" content="Hello"><meta property="og:image" content="https://x.test/a.jpg"></head><body><img src="https://x.test/b.jpg" width="800" height="600"></body>', "https://x.test/");
+    assert.equal(m.image, null);
+    assert.equal(m.noPin, true);
+    assert.equal(m.title, "Hello");
   });
 });

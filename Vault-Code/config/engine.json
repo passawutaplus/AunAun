@@ -1,9 +1,9 @@
 {
   "_note": "ONE source of truth for Vault Engine constants (phase 03). Read by lib/engine/config.mjs and the seeder. Tune after real use.",
-  "QUALITY_PUBLISH": 75,
+  "QUALITY_PUBLISH": 70,
   "QUALITY_REJECT": 50,
   "TAG_MIN_CONF": 0.6,
-  "MIN_CONFIDENT_TAGS": 4,
+  "MIN_CONFIDENT_TAGS": 3,
   "MIN_SCORE": 0.5,
   "MIN_RESULTS": 12,
   "MMR_LAMBDA": 0.7,

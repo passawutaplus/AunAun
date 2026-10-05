@@ -124,6 +124,11 @@ const imgFallbackExtractor = ({ html, baseUrl }) => {
 
 export const EXTRACTORS = [genericMeta, jsonLdExtractor, linkImageExtractor, imgFallbackExtractor];
 
+/** <meta name="pinterest" content="nopin"> in either attribute order. */
+export function hasNoPin(html) {
+  return /<meta\b[^>]*\bname\s*=\s*["']?pinterest["']?[^>]*\bcontent\s*=\s*["']?nopin\b/i.test(html) || /<meta\b[^>]*\bcontent\s*=\s*["']?nopin["']?[^>]*\bname\s*=\s*["']?pinterest\b/i.test(html);
+}
+
 /** Runs the extractor pipeline; the first non-empty value per field wins. */
 export function extractMetadata(html, baseUrl, extractors = EXTRACTORS) {
   const text = String(html || "");
@@ -133,6 +138,13 @@ export function extractMetadata(html, baseUrl, extractors = EXTRACTORS) {
     for (const [key, value] of Object.entries(part)) {
       if (merged[key] === undefined || merged[key] === "" || merged[key] === null) merged[key] = value;
     }
+  }
+  // The site owner asked not to save its images (Pinterest-style nopin): keep the link, drop every image.
+  if (hasNoPin(text)) {
+    merged.image = null;
+    merged.imageWidth = null;
+    merged.imageHeight = null;
+    merged.noPin = true;
   }
   // A dimension is only valid together with the og:image it describes.
   if (merged.image && !metaMap(text).get("og:image") && !metaMap(text).get("og:image:url") && !metaMap(text).get("og:image:secure_url")) {

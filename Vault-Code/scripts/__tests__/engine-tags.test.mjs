@@ -66,7 +66,7 @@ describe("publishDecision", () => {
   it("review for borderline quality, safety flag, too few tags, incomplete passport", () => {
     assert.equal(publishDecision({ quality: 60, tagsJson: confident(5) }, cfg).status, "review");
     assert.equal(publishDecision({ quality: 90, safetyFlag: true, tagsJson: confident(5) }, cfg).status, "review");
-    assert.equal(publishDecision({ quality: 90, tagsJson: confident(3) }, cfg).status, "review");
+    assert.equal(publishDecision({ quality: 90, tagsJson: confident(2) }, cfg).status, "review");
     assert.equal(publishDecision({ quality: 90, tagsJson: confident(5), passportComplete: false }, cfg).status, "review");
   });
   it("rejected below QUALITY_REJECT or for a disallowed licence; always has a reason", () => {
