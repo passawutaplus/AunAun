@@ -6216,3 +6216,7 @@ img.img-broken{visibility:hidden}
   .discover-detail-bottom .discover-info{order:1}
   .discover-detail-bottom .discover-similar{order:2}
 }
+
+/* A+ Vault Cosmos-style tight corners on feed cards */
+.discover-card,.discover-card-open,.discover-card img,.discover-similar-item,.discover-similar-item img{border-radius:3px!important}
+@media(max-width:1024px){.discover-grid{column-gap:8px}.discover-card{margin-bottom:8px}}
