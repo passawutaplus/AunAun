@@ -33,6 +33,7 @@
     .btn-light{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
     .btn-coral{background:var(--coral);color:#fff;box-shadow:0 10px 30px rgba(255,79,67,.3)}
     .btn-coral:hover{background:var(--coral-dark)}
+    .nav-login{margin-left:auto;margin-right:12px;font-size:14px;color:inherit;text-decoration:none;padding:10px 6px}
     .btn svg{width:18px;height:18px}
     .btn:focus-visible{outline:2px solid var(--coral);outline-offset:3px}
     .nav{position:fixed;inset:0 0 auto;z-index:50;transition:background .3s ease,backdrop-filter .3s ease,box-shadow .3s ease}
@@ -220,7 +221,8 @@
         <a href="#discover">Discover</a>
         <a href="#promise">Privacy</a>
       </nav>
-      <a class="btn btn-dark" href="/">Explore Discover</a>
+      <a class="nav-login" href="/discover?login=1">Log in</a>
+      <a class="btn btn-dark" href="/discover">Explore Discover</a>
     </div>
   </header>
 
@@ -237,7 +239,7 @@
         </h1>
         <p class="lede">Save references from any site in one click, find them again by color, image, or a few words in Thai — and never lose who made them.<span class="th">เก็บแรงบันดาลใจจากทุกที่ แล้วหาเจอเมื่อถึงเวลาทำงานจริง</span></p>
         <div class="hero-ctas">
-          <a class="btn btn-coral" href="/">Explore Discover <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn btn-coral" href="/discover">Explore Discover <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           <a class="btn btn-light" href="/extension"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>Get the Chrome extension</a>
         </div>
         <p class="hero-note">Free while in alpha · Private by default</p>
@@ -359,7 +361,7 @@
           <h2 style="margin-top:18px">Never start<br />from an empty board.</h2>
           <p class="lede">Thousands of open-access works from The Met, Cleveland Museum of Art, and the Smithsonian — tagged, searchable by color and shape, credited, and free to keep.</p>
         </div>
-        <a class="btn btn-dark reveal" data-delay="1" href="/">Open Discover <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn btn-dark reveal" data-delay="1" href="/discover">Open Discover <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
       <div class="marquee" data-marquee="0" aria-hidden="true"></div>
       <div class="marquee rev" data-marquee="1" aria-hidden="true"></div>
@@ -396,7 +398,7 @@
         <h2 class="reveal">Start keeping.</h2>
         <p class="lede reveal" data-delay="1" style="margin-left:auto;margin-right:auto">Browse Discover as a guest, or sign in to build your own private Vault.<span class="th">เริ่มจากดูภาพใน Discover ได้เลย ไม่ต้องสมัคร</span></p>
         <div class="final-ctas reveal" data-delay="2">
-          <a class="btn btn-coral" href="/">Explore Discover</a>
+          <a class="btn btn-coral" href="/discover">Explore Discover</a>
           <a class="btn btn-light" href="/extension">Get the Chrome extension</a>
         </div>
       </div>
@@ -406,7 +408,7 @@
   <footer class="dark-grain">
     <div class="wrap">
       <span>Photos via Unsplash: Rasheed Kemy, Zulfugar Karimov, Theme Photos, Burst, Swello · © <span data-year></span> A+ Vault · Part of the Aplus ecosystem</span>
-      <nav aria-label="Footer"><a href="/">Discover</a><a href="/vault">My Vault</a><a href="/legal">Privacy &amp; legal</a><a href="/legal#copyright">Copyright</a></nav>
+      <nav aria-label="Footer"><a href="/discover">Discover</a><a href="/vault">My Vault</a><a href="/legal">Privacy &amp; legal</a><a href="/legal#copyright">Copyright</a></nav>
     </div>
     <div class="foot-mark" aria-hidden="true">A+ Vault</div>
   </footer>

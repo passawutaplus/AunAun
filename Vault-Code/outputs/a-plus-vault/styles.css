@@ -6288,3 +6288,26 @@ img.img-broken{visibility:hidden}
 /* sticky how-it-works stage needs .app-shell to stop being a scroll container on phones */
 @media(max-width:860px){body,.app-shell{overflow-x:clip;overflow-y:visible}}
 @media(max-width:1024px){.gh-how .howto-stage{background:var(--app-bg,#101113);box-shadow:0 0 0 12px var(--app-bg,#101113);z-index:3}}
+
+/* A+ Vault detail: "More like this" lives below the opened image as an endless masonry feed */
+.discover-detail-backdrop{overflow-y:auto;overscroll-behavior:contain}
+html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
+.discover-similar-all{display:none!important}
+@media(min-width:1025px){
+  .discover-detail-backdrop{display:block;padding:24px 80px 80px}
+  .discover-detail-frame{margin:0 auto}
+  .discover-detail-bottom{margin-top:0}
+  .discover-similar{margin-top:28px;gap:14px}
+  .viewer-continue-title{font-size:17px}
+  .discover-similar-grid{display:block;columns:4;column-gap:10px;overflow:visible;padding:0}
+  .discover-similar-grid .discover-similar-item{display:block;width:100%;height:auto;aspect-ratio:auto;margin:0 0 10px;break-inside:avoid;border-radius:3px}
+  .discover-similar-grid .discover-similar-item img{display:block;width:100%;height:auto}
+  .discover-similar .similar-gate-wrap{column-span:all}
+}
+@media(max-width:1024px){.discover-similar{padding:0 12px 40px}}
+@media(min-width:1025px){
+  .similar-gate-wrap{column-span:all;position:relative;max-height:520px;overflow:hidden;margin-top:8px}
+  .similar-locked{columns:4;column-gap:10px;filter:blur(8px);opacity:.75;pointer-events:none}
+  .similar-locked .discover-similar-item{display:block;width:100%;height:auto;margin:0 0 10px;break-inside:avoid}
+  .similar-gate-wrap .discover-gate{align-content:start;place-items:start center;padding-top:64px}
+}
