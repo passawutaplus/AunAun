@@ -674,7 +674,7 @@ export function discoverDetailMarkup(item, config, kept, nav, view = {}) {
 
 export function discoverSimilarStripMarkup(items, config) {
   if (!items.length) return `<span class='discover-similar-loading'>No close matches yet.</span>`;
-  return items.slice(0, 24).map(item => {
+  return items.slice(0, 60).map(item => {
     const blur = blurhashDataUrl(item.blurhash);
     return `<button type='button' class='discover-similar-item' data-discover-open='${escA(item.id)}' title='${escA(item.title || "Untitled")}' style='${escA(blur ? `background-image:url(${blur})` : "")}'><img src='${escA(discoverMediaUrl(config, item.image_sm_path))}' alt='${escA(item.title || "")}' loading='lazy' decoding='async'></button>`;
   }).join("");
