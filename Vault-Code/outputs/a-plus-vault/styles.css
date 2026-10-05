@@ -32,8 +32,8 @@
 /* A+ Vault Aplus1 minimal UI */
 :root{
   color-scheme:light;
-  --accent:#d9362a;
-  --accent-hover:#b72b20;
+  --accent:#f05040;
+  --accent-hover:#dc4030;
   --accent-soft:#fff0ee;
   --brand-coral:#f05040;
   --coral-text:#c42f24;
@@ -6336,10 +6336,7 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 /* A+ Vault beta tag next to the logo */
 .beta-tag{display:inline-block;margin-left:8px;padding:3px 8px;border-radius:999px;background:var(--coral,#f05040);color:#fff;font:600 10px/1.2 "IBM Plex Sans Thai",system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;vertical-align:middle;align-self:center}
 
-/* A+ Vault brand book v1.0: coral #F05040 for graphics, #D9362A for any fill that carries white text */
-html[data-theme="dark"] .primary-button,html[data-theme="dark"] .save-button,html[data-theme="dark"] .discover-keep,html[data-theme="dark"] .topbar-upload,html[data-theme="dark"] .pin-save,html[data-theme="dark"] .rail-keep.is-coral{background:#d9362a;color:#fff}
-html[data-theme="dark"] .primary-button:hover,html[data-theme="dark"] .save-button:hover,html[data-theme="dark"] .discover-keep:hover,html[data-theme="dark"] .topbar-upload:hover{background:#b72b20}
-.beta-tag{background:#d9362a!important}
+
 .brand-mark-img{object-fit:contain}
 .vault-loader{display:block;width:48px;height:auto;margin:0 auto 14px}
 .discover-empty{text-align:center}

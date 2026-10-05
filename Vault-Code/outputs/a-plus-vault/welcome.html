@@ -17,12 +17,12 @@
   <style>
     :root{
       --paper:#f4f1ea;--paper-2:#ebe6db;--ink:#151719;--ink-2:#3a3d41;--muted:#7a7d80;--line:rgba(21,23,25,.12);
-      --coral:#f05040;--coral-fill:#d9362a;--coral-dark:#b72b20;--night:#101113;--night-2:#1a1c1f;
+      --coral:#f05040;--coral-fill:#f05040;--coral-dark:#dc4030;--night:#101113;--night-2:#1a1c1f;
       --display:"Agrandir Wide","IBM Plex Sans Thai",system-ui,sans-serif;--body:"IBM Plex Sans Thai",system-ui,-apple-system,sans-serif;
       --ease:cubic-bezier(.2,.7,.2,1);
     }
     .wrap{width:min(1200px,calc(100% - 48px));margin:0 auto}
-    .beta-tag{display:inline-block;margin-left:8px;padding:3px 8px;border-radius:999px;background:#d9362a;color:#fff;font:600 10px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;vertical-align:middle}
+    .beta-tag{display:inline-block;margin-left:8px;padding:3px 8px;border-radius:999px;background:var(--coral);color:#fff;font:600 10px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;vertical-align:middle}
     @media(max-width:560px){.hide-s{display:none}.nav .btn{height:42px;padding:0 16px;font-size:13px}.nav-login{margin-right:4px;font-size:13px}.nav .wrap{gap:12px}}
     .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
     .eyebrow::before{content:"";width:18px;height:1px;background:currentColor}
@@ -34,7 +34,7 @@
     .btn-dark{background:var(--ink);color:#fff;box-shadow:0 10px 30px rgba(21,23,25,.18)}
     .btn-dark:hover{background:#2c2f33}
     .btn-light{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
-    .btn-coral{background:var(--coral-fill,#d9362a);color:#fff;box-shadow:0 10px 30px rgba(240,80,64,.3)}
+    .btn-coral{background:var(--coral-fill,#f05040);color:#fff;box-shadow:0 10px 30px rgba(240,80,64,.3)}
     .btn-coral:hover{background:var(--coral-dark)}
     .nav-login{margin-left:auto;margin-right:12px;font-size:14px;color:inherit;text-decoration:none;padding:10px 6px}
     .btn svg{width:18px;height:18px}
