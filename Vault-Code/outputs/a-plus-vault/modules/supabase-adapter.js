@@ -266,7 +266,7 @@ export function createVaultRemote(config = {}) {
         name: collection.name,
         system: false,
         client_key: collection.id,
-        metadata: { localId: collection.id, parentId: collection.parentId || null, sortOrder: Number(collection.sortOrder) || 0, pinnedAt: Number(collection.pinnedAt) || 0 },
+        metadata: { localId: collection.id, parentId: collection.parentId || null, sortOrder: Number(collection.sortOrder) || 0, pinnedAt: Number(collection.pinnedAt) || 0, smart: collection.smart || null },
       }),
     });
     const saved = rows[0] || null;
@@ -295,6 +295,7 @@ export function createVaultRemote(config = {}) {
           parentId: collection.parentId || null,
           sortOrder: Number(collection.sortOrder) || 0,
           pinnedAt: Number(collection.pinnedAt) || 0,
+          smart: collection.smart || null,
         },
       }),
     });
@@ -824,6 +825,7 @@ function remoteCollectionToLocal(row) {
     parentId: metadata.parentId ? String(metadata.parentId) : "",
     sortOrder: Number(metadata.sortOrder) || 0,
     pinnedAt: Number(metadata.pinnedAt) || 0,
+    smart: metadata.smart && typeof metadata.smart === "object" ? metadata.smart : null,
   };
 }
 

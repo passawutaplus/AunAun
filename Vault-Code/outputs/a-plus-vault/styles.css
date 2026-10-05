@@ -6566,3 +6566,7 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 .search-color-mode{display:inline-flex;margin-left:auto;padding:2px;border:1px solid var(--line);border-radius:999px}
 .search-color-mode button{min-height:26px;padding:0 10px;border:0;border-radius:999px;background:transparent;color:var(--muted);font:inherit;font-size:12px;cursor:pointer}
 .search-color-mode button[aria-pressed="true"]{background:rgba(240,80,64,.16);color:var(--accent,#f05040)}
+
+/* A+ Vault: smart collections (synced search criteria) */
+.col-smart-badge{display:inline-grid;place-items:center;margin-left:4px;color:var(--accent,#f05040);vertical-align:-2px}
+.col-smart-badge .flat-icon{width:12px;height:12px}
