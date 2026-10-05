@@ -19,6 +19,7 @@ import { initScrollBlur } from "./modules/scroll-blur.js";
 import { hasThai, thaiConcepts } from "./modules/thai-search.js";
 import { moodboardExportHtml } from "./modules/moodboard-export.js";
 import { HOWTO, bindHowto, howtoMarkup } from "./modules/howto.js";
+import { connectionsSectionMarkup } from "./modules/connections.js";
 import { activeNote, addNote, clearQuickNote, pinToActiveNote, quickNoteHasContent, quickNoteMarkup, quickNoteOpen, readNoteStore, removeActiveNote, setActiveNote, setQuickNoteOpen, unpinFromActiveNote, writeQuickNote } from "./modules/quick-note.js";
 import { gateMarkup as discoverGateMarkup, discoverKeepTargetMenuMarkup, markDiscoverSeen, signalItem, setDiscoverGuest, setDiscoverKeepTargetLabel } from "./modules/discover.js";
 import { isTypingTarget, shortcutsDialogMarkup, shortcutsListMarkup } from "./modules/shortcuts.js";
@@ -910,6 +911,7 @@ function profileView(){
               "</article>"+
             "</section>"+
           "</div>"+
+          connectionsSectionMarkup({esc,escA})+
         "</section>"+
       "</main>"+
     "</div>"
@@ -2441,3 +2443,4 @@ if((a=t.closest("[data-discover-share-open]"))){e.preventDefault();e.stopPropaga
 if((a=t.closest("[data-discover-withdraw]"))){e.preventDefault();e.stopPropagation();let sid=a.dataset.discoverWithdraw,item=state.items.find(x=>x.discoverShare&&x.discoverShare.id===sid);try{await vaultRemote.withdrawSubmission(sid);if(item)patch(item.id,{discoverShare:null});toast("Taken off Discover.");if(!refreshOpenDrawer())render()}catch(err){toast(err.message||"Could not update Discover.")}return}
 },true);
 document.addEventListener("submit",async e=>{let f=e.target&&e.target.closest?e.target.closest("[data-discover-share-form]"):null;if(!f)return;e.preventDefault();e.stopPropagation();let item=state.items.find(x=>x.id===f.dataset.discoverShareForm);if(!item)return;let fd=new FormData(f),btn=f.querySelector("[type=submit]");if(btn)btn.disabled=true;try{if(!fd.get("owner"))throw new Error("Please confirm this is your own work.");let link=String(fd.get("link")||"").trim();if(link&&!/^https:\/\/\S+\.\S+/i.test(link))throw new Error("The link must start with https://");let row=await vaultRemote.shareToDiscover(item,{title:(item.title||"Untitled").slice(0,200),creditName:String(fd.get("creditName")||"").trim().slice(0,120),license:String(fd.get("license")||"cc-by"),linkUrl:link});patch(item.id,{discoverShare:{id:row.id,status:"pending",license:row.license,reason:"",checkedAt:Date.now()}});state.dialog=null;toast("Sent. It appears on Discover after the automatic checks.");render()}catch(err){toast(err.message||"Could not share this image.");if(btn)btn.disabled=false}},true);
+document.addEventListener("click",e=>{let b=e.target&&e.target.closest?e.target.closest("[data-conn-filter]"):null;if(!b)return;e.preventDefault();let g=b.dataset.connFilter,sec=b.closest(".conn-section");if(!sec)return;sec.querySelectorAll("[data-conn-filter]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));sec.querySelectorAll(".conn-card").forEach(c=>{c.hidden=g!=="all"&&c.dataset.connGroup!==g})},true);
