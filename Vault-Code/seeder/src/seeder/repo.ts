@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Candidate, SourceKey } from "./adapters/types";
+import type { AdapterKey, Candidate, SourceKey } from "./adapters/types";
 import { PHASH_MAX_DISTANCE, STORAGE_BUCKET, visionPricing } from "./config";
 import { bangkokDayStartIso, capLimits, stopReason, type CapUsage, type StopReason } from "./caps";
 import type { RejectReason } from "./license";
@@ -18,7 +18,7 @@ export type AiSpend = {
 
 export type SeedTarget = {
   category: string;
-  source: SourceKey;
+  source: AdapterKey;
   query: string;
   target_count: number;
   cursor: number;
@@ -303,7 +303,7 @@ export class SupabaseSeederRepo implements SeederRepo {
     return (data ?? []) as SeedTarget[];
   }
 
-  async target(category: string, source: SourceKey): Promise<SeedTarget | null> {
+  async target(category: string, source: AdapterKey): Promise<SeedTarget | null> {
     const { data, error } = await this.db
       .from("seed_targets")
       .select("*")
@@ -382,7 +382,7 @@ export class SupabaseSeederRepo implements SeederRepo {
     fail("setItemStatus", error);
   }
 
-  async updateTarget(category: string, source: SourceKey, patch: { target_count?: number; enabled?: boolean; exhausted?: boolean }): Promise<void> {
+  async updateTarget(category: string, source: AdapterKey, patch: { target_count?: number; enabled?: boolean; exhausted?: boolean }): Promise<void> {
     const { error } = await this.db.from("seed_targets").update(patch).eq("category", category).eq("source", source);
     fail("updateTarget", error);
   }
@@ -390,7 +390,7 @@ export class SupabaseSeederRepo implements SeederRepo {
   /** Callers are serialized per source (Inngest concurrency), so read-modify-write is safe here. */
   async recordBatch(
     category: string,
-    source: SourceKey,
+    source: AdapterKey,
     batch: { fromCursor: number; nextCursor: number | null; scanned: number; skipped: number },
   ): Promise<void> {
     const current = await this.target(category, source);

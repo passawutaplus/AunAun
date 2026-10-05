@@ -124,6 +124,37 @@ const imgFallbackExtractor = ({ html, baseUrl }) => {
 
 export const EXTRACTORS = [genericMeta, jsonLdExtractor, linkImageExtractor, imgFallbackExtractor];
 
+export const MAX_PAGE_IMAGES = 24;
+
+/**
+ * Candidate images on a page, best first: social image, then <img> tags (largest srcset entry). Skips icons, svg/gif,
+ * tiny images that declare their size, and anything the site marked nopin. Returns [{ url, width, height }].
+ */
+export function collectPageImages(html, baseUrl, primary = "") {
+  const text = String(html || "");
+  const out = [];
+  const seen = new Set();
+  const push = (url, width = null, height = null) => {
+    const u = resolveHttpUrl(url, baseUrl);
+    if (!u || seen.has(u) || out.length >= MAX_PAGE_IMAGES) return;
+    seen.add(u);
+    out.push({ url: u, width, height });
+  };
+  if (hasNoPin(text)) return out;
+  if (primary) push(primary);
+  for (const tag of text.match(/<img\b[^>]*>/gi) || []) {
+    if (/\b(data-pin-nopin|nopin)\b/i.test(tag)) continue;
+    const raw = bestSrcset(attr(tag, "srcset") || attr(tag, "data-srcset")) || attr(tag, "data-src") || attr(tag, "data-lazy-src") || attr(tag, "data-original") || attr(tag, "src");
+    const u = resolveHttpUrl(raw, baseUrl);
+    if (!u || ICON_HINT.test(u) || /\.(svg|gif)(\?|$)/i.test(u)) continue;
+    const w = Number(attr(tag, "width")) || null;
+    const h = Number(attr(tag, "height")) || null;
+    if ((w && w < 200) || (h && h < 200)) continue;
+    push(u, w, h);
+  }
+  return out;
+}
+
 /** <meta name="pinterest" content="nopin"> in either attribute order. */
 export function hasNoPin(html) {
   return /<meta\b[^>]*\bname\s*=\s*["']?pinterest["']?[^>]*\bcontent\s*=\s*["']?nopin\b/i.test(html) || /<meta\b[^>]*\bcontent\s*=\s*["']?nopin["']?[^>]*\bname\s*=\s*["']?pinterest\b/i.test(html);
@@ -146,6 +177,7 @@ export function extractMetadata(html, baseUrl, extractors = EXTRACTORS) {
     merged.imageHeight = null;
     merged.noPin = true;
   }
+  merged.images = collectPageImages(text, baseUrl, merged.image || "");
   // A dimension is only valid together with the og:image it describes.
   if (merged.image && !metaMap(text).get("og:image") && !metaMap(text).get("og:image:url") && !metaMap(text).get("og:image:secure_url")) {
     merged.imageWidth = null;

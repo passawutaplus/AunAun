@@ -1,4 +1,4 @@
-import type { SourceKey } from "./adapters/types";
+import type { AdapterKey as SourceKey } from "./adapters/types";
 import type { CategoryProgress, SeedTarget } from "./repo";
 
 export type BatchRequest = {

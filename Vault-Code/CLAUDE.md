@@ -10,6 +10,7 @@ This folder is a subfolder of the AunAun-fresh monorepo. Work only inside `Vault
 - `outputs/a-plus-vault/docs/next-implementation-order.md` - roadmap
 - `outputs/a-plus-vault/docs/data-model.md` - tables
 - `seeder/README.md` - only for Discover seeding work
+- `docs/image-sourcing-rules.md` - READ FIRST before touching image import, Save, feed, or takedown code (rules R1-R8, legal reasons, decision log)
 - Ignore `docs/CURSOR_*`, `.tmp-*`, `dist/`, `node_modules/` unless asked.
 
 ## Map (edit source in `outputs/a-plus-vault/`; `dist/` is generated, never edit)

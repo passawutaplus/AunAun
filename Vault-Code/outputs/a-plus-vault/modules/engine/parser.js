@@ -158,7 +158,7 @@ export function parseQuery(text, tax, cfg = {}) {
   const words = tax.words;
   const set = arr => new Set((arr || []).map(w => matchForm(w, rules)));
   // "ห้ามมี"/"ไม่เอา" appear in must_words too, but they PROHIBIT: they belong with negation, not "required".
-  const prohibit = w => /^(ห้าม|ไม่)/.test(w) || /^(no|without|not)/.test(w);
+  const prohibit = w => /^(ห้าม|ไม่)/.test(w) || /^(no|without|not)\b/.test(w);
   const must = set((words.must || []).filter(w => !prohibit(w))), soft = set(words.soft);
   const neg = set([...(words.negation || []), ...(words.must || []).filter(prohibit)]);
   const connector = set(words.connector), filler = set(words.filler), ignore = set(words.ignore);

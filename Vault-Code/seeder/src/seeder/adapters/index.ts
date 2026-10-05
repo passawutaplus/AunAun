@@ -4,9 +4,9 @@ import { ClevelandArtAdapter } from "./cma";
 import { MetMuseumAdapter } from "./met";
 import { OpenverseAdapter } from "./ov";
 import { SmithsonianAdapter } from "./si";
-import type { SourceAdapter, SourceKey } from "./types";
+import type { AdapterKey, SourceAdapter, SourceKey } from "./types";
 
-const adapters: Record<SourceKey, () => SourceAdapter> = {
+const adapters: Record<AdapterKey, () => SourceAdapter> = {
   met: () => new MetMuseumAdapter(),
   aic: () => new ArtInstituteAdapter(),
   cma: () => new ClevelandArtAdapter(),
@@ -16,11 +16,11 @@ const adapters: Record<SourceKey, () => SourceAdapter> = {
 };
 
 export function getAdapter(source: SourceKey): SourceAdapter {
-  const make = adapters[source];
+  const make = (adapters as Partial<Record<SourceKey, () => SourceAdapter>>)[source];
   if (!make) throw new Error(`No adapter for source "${source}"`);
   return make();
 }
 
-export function isSourceKey(value: string): value is SourceKey {
+export function isSourceKey(value: string): value is AdapterKey {
   return value in adapters;
 }

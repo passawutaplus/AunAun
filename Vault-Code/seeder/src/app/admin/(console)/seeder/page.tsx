@@ -24,6 +24,7 @@ const SOURCE_NAMES: Record<string, string> = {
   si: "Smithsonian",
   chndm: "Cooper Hewitt",
   ov: "Openverse",
+  creator: "Creators (own work)",
 };
 
 const usd = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: n < 1 ? 3 : 2 })}`;

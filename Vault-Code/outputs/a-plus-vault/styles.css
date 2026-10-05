@@ -6353,3 +6353,68 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 .danger-button.quiet:hover{color:#cc3931!important;text-decoration:underline}
 .drawer-inner .detail-primary-actions{position:sticky;bottom:0;z-index:5;margin:14px -4px 0;padding:12px 4px 14px;background:linear-gradient(to top,var(--drawer-fade,var(--surface,#fff)) 70%,transparent)}
 @media(min-width:1181px){.workspace:not(.detail-closed) .drawer{position:sticky;top:88px;align-self:start;height:calc(100vh - 160px);max-height:calc(100vh - 160px)}}
+
+/* A+ Vault phone: an opened My Vault item is its own full page (like Discover), the grid behind does not scroll */
+@media(max-width:860px){
+  html:has(.drawer .drawer-inner),html:has(.drawer .drawer-inner) body{overflow:hidden}
+  body:has(.drawer .drawer-inner) .rail,body:has(.drawer .drawer-inner) .rail-keep{display:none!important}
+  .workspace .drawer{position:fixed!important;inset:0;z-index:130;width:100%!important;height:100dvh!important;max-height:none!important;border:0!important;border-radius:0!important;background:var(--surface,#fff);animation:vaultPageUp .26s cubic-bezier(.2,.7,.2,1)}
+  .workspace .drawer .drawer-inner{height:100dvh;overflow-y:auto;overscroll-behavior:contain;padding:0 16px calc(120px + env(safe-area-inset-bottom))}
+  .drawer-inner .detail-header{position:sticky;top:0;z-index:8;margin:0 -16px 4px;padding:calc(10px + env(safe-area-inset-top)) 14px 8px;background:linear-gradient(to bottom,var(--surface,#fff) 62%,transparent)}
+  .drawer-inner .detail-preview{margin-inline:-16px;border-radius:0;max-height:78vh;width:calc(100% + 32px)}
+  .drawer-inner .detail-primary-actions{bottom:0;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+  @keyframes vaultPageUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+}
+
+/* A+ Vault detail drawer v2: browse, credit, collections, palette actions, similar */
+.drawer-inner .detail-header{justify-content:space-between;align-items:center}
+.detail-nav{display:inline-flex;align-items:center;gap:2px;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.detail-nav .icon-button{width:30px;height:30px;font-size:22px;line-height:1}
+.drawer-inner .detail-subline{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:0 0 4px;font-size:13px;color:var(--ink)}
+.detail-credit-dot{color:var(--muted)}
+.detail-credit-owner{font-weight:500}
+.detail-visibility{display:flex;align-items:center;gap:6px;margin:0 0 14px;font-size:12px;color:var(--muted)}
+.detail-visibility svg{width:13px;height:13px}
+.detail-palette-actions{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 14px}
+.detail-palette-actions .small{min-height:32px;padding:0 12px;font-size:12px}
+.detail-cols{display:flex;flex-wrap:wrap;gap:8px}
+.detail-col-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 6px 5px 12px;border-radius:999px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);font-size:13px}
+.detail-col-chip button{display:grid;place-items:center;width:20px;height:20px;border:0;border-radius:50%;background:transparent;color:var(--muted);font-size:15px;cursor:pointer}
+.detail-col-chip button:hover{background:var(--line);color:var(--ink-strong)}
+.detail-col-add{padding:5px 12px;border:1px dashed var(--line);border-radius:999px;background:transparent;color:var(--muted);font-size:13px;cursor:pointer}
+.detail-col-add:hover{color:var(--ink-strong);border-color:var(--muted)}
+.detail-similar-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.detail-similar-item{flex:0 0 auto;width:76px;height:76px;padding:0;border:0;border-radius:8px;overflow:hidden;background:var(--panel);cursor:pointer;scroll-snap-align:start}
+.detail-similar-item img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .2s}
+.detail-similar-item:hover img{transform:scale(1.06)}
+.selection-select{height:36px;max-width:170px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--ink);font:inherit;font-size:13px}
+@media(max-width:860px){.detail-nav .icon-button{width:36px;height:36px}.detail-similar-item{width:88px;height:88px}}
+
+/* A+ Vault link import: tick the images to keep (no select-all) */
+.link-picker{margin-top:10px}
+.link-picker p{margin:0 0 8px;font-size:12px;color:var(--muted)}
+.link-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;max-height:210px;overflow:auto}
+.link-pick{position:relative;aspect-ratio:1;padding:0;border:0;border-radius:8px;overflow:hidden;background:var(--panel);cursor:pointer;opacity:.55;transition:opacity .15s,box-shadow .15s}
+.link-pick img{width:100%;height:100%;object-fit:cover;display:block}
+.link-pick[aria-pressed="true"]{opacity:1;box-shadow:0 0 0 2px var(--accent)}
+.link-pick[aria-pressed="true"]::after{content:"¹3";position:absolute;top:4px;right:4px;display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px}
+
+.bookmarklet-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;padding:14px 16px;border-radius:12px;background:var(--surface-soft,var(--panel));box-shadow:inset 0 0 0 1px var(--border,var(--line))}
+.bookmarklet-row>div{display:grid;gap:2px;min-width:0}
+.bookmarklet-row span{color:var(--muted);font-size:13px}
+.bookmarklet-link{white-space:nowrap;cursor:grab}
+
+/* A+ Vault: share your own upload to Discover */
+.detail-share{display:grid;gap:10px;padding:14px;border-radius:12px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line)}
+.detail-share p{margin:0;font-size:13px;color:var(--muted);line-height:1.5}
+.detail-share-status b{color:var(--ink-strong)}
+.detail-share-status.ok b{color:#2c8f68}
+.detail-share .small{justify-self:start;min-height:32px;padding:0 12px;font-size:12px}
+.discover-share-dialog form{display:grid;gap:14px}
+.discover-share-dialog .share-object-preview{max-height:200px;overflow:hidden;border-radius:10px;margin-bottom:10px}
+.discover-share-dialog .check-row{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45}
+.discover-share-dialog .check-row input{margin-top:3px;accent-color:var(--accent)}
+.discover-share-dialog .field-block{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.discover-share-dialog .field-block input,.discover-share-dialog .field-block select{height:42px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:inherit;font-size:14px}
+.discover-share-dialog .dialog-note{margin:0;font-size:12px;color:var(--muted);line-height:1.5}
+.discover-share-dialog .app-dialog-actions{display:flex;justify-content:flex-end;gap:10px}
