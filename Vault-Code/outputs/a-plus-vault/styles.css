@@ -6524,3 +6524,9 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 .vault-searchbar .search-suggest-host{margin-top:6px}
 .vault-search-panel{top:calc(100% + 6px);right:0;left:auto;width:min(460px,100%)}
 @media(max-width:860px){.vault-search-panel{width:100%}}
+
+/* A+ Vault: find original (reverse image search links) */
+.detail-find-original{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:2px 0 8px;font-size:12px;color:var(--muted)}
+.detail-find-link{display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:0 10px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none;font-size:12px}
+.detail-find-link .flat-icon{width:13px;height:13px}
+.detail-find-link:hover{border-color:rgba(240,80,64,.55);color:var(--accent,#f05040)}
