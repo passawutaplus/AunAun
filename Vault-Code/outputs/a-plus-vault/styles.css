@@ -6468,3 +6468,27 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 .media-lightbox-palette .viewer-find-color{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff}
 .media-lightbox.viewer-picking .media-lightbox-caption,.media-lightbox.viewer-picking .media-lightbox-palette{opacity:.35;pointer-events:none}
 @media(max-width:640px){.media-lightbox-tools{top:14px;left:14px}.media-lightbox .lb-media,.media-lightbox .lb-media img{max-height:calc(100vh - 230px)}}
+
+/* A+ Vault selection dock v2: never overlaps, collapses labels by its own width */
+.vault-selection-dock{width:min(940px,calc(100vw - 28px));flex-wrap:wrap;justify-content:center;gap:8px 12px;padding:10px 14px;border-radius:22px;container-type:inline-size}
+.vault-selection-count{flex:0 0 auto;min-width:86px;width:auto;text-align:left;padding-right:2px}
+.vault-selection-actions{flex:1 1 auto;min-width:0;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+.vault-selection-dock .selection-action-button{width:auto;min-width:36px;padding:0 12px;flex:0 0 auto}
+.vault-selection-dock .selection-action-button span{display:inline}
+.vault-selection-dock .selection-action-button.icon-only{width:36px;padding:0}
+.vault-selection-dock .selection-select{flex:0 1 170px;min-width:0}
+@container (max-width:820px){
+  .vault-selection-dock .selection-action-button:not([data-open-create-moodboard]):not([data-clear-selection]):not(.icon-only){width:36px;padding:0;justify-content:center}
+  .vault-selection-dock .selection-action-button:not([data-open-create-moodboard]):not([data-clear-selection]) span{display:none}
+}
+@container (max-width:560px){
+  .vault-selection-dock .selection-action-button span{display:none}
+  .vault-selection-dock .selection-action-button[data-clear-selection] span,.vault-selection-dock .selection-action-button[data-open-create-moodboard] span{display:inline}
+  .vault-selection-dock .selection-action-button[data-open-create-moodboard]{padding:0 12px}
+}
+@media(max-width:860px){
+  .vault-selection-dock{width:min(680px,calc(100vw - 20px));padding:10px 12px}
+  .vault-selection-count{width:100%;text-align:center}
+  .vault-selection-actions{justify-content:center;width:100%}
+  .vault-selection-dock .selection-action-button[data-clear-selection]{width:auto;padding:0 12px}
+}
