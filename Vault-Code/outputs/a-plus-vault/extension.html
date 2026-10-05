@@ -7,6 +7,7 @@
   <meta name="description" content="Right-click anything on the web and keep it in your private A+ Vault, with its source and credit. Download the Chrome extension." />
   <meta name="robots" content="noindex,nofollow" />
   <meta name="theme-color" content="#f1ede4" />
+  <link rel="icon" type="image/svg+xml" href="/assets/brand/vault-icon-solid.svg" />
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -16,7 +17,7 @@
   <style>
     :root{
       --paper:#f1ede4;--paper-2:#e8e2d5;--ink:#141516;--ink-2:#3c3f43;--muted:#80827f;--rule:rgba(20,21,22,.16);--rule-soft:rgba(20,21,22,.08);
-      --coral:#ff4f43;--coral-dark:#e33f34;--night:#0f1011;--night-2:#18191b;
+      --coral:#f05040;--coral-fill:#d9362a;--coral-dark:#b72b20;--night:#0f1011;--night-2:#18191b;
       --display:"Agrandir Wide","IBM Plex Sans Thai",system-ui,sans-serif;--body:"IBM Plex Sans Thai",system-ui,-apple-system,sans-serif;
       --ease:cubic-bezier(.2,.7,.2,1);--max:1280px
     }
@@ -31,14 +32,14 @@
     .btn{display:inline-flex;align-items:center;gap:10px;height:54px;padding:0 26px;border:0;border-radius:999px;font:400 15px/1 var(--display);text-decoration:none;cursor:pointer;transition:transform .25s var(--ease),background .2s,color .2s}
     .btn-ink{background:var(--ink);color:var(--paper)}.btn-ink:hover{background:#2c2e31}
     .btn-line{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}.btn-line:hover{background:var(--ink);color:var(--paper)}
-    .btn-coral{background:var(--coral);color:#fff}.btn-coral:hover{background:var(--coral-dark)}
+    .btn-coral{background:var(--coral-fill,#d9362a);color:#fff}.btn-coral:hover{background:var(--coral-dark)}
     .btn svg{width:17px;height:17px}
     .btn:focus-visible,a:focus-visible,summary:focus-visible,button:focus-visible{outline:2px solid var(--coral);outline-offset:3px}
     .btn.sm{height:42px;padding:0 20px;font-size:13px}
     .nav{position:fixed;inset:0 0 auto;z-index:50;transition:background .3s,backdrop-filter .3s,border-color .3s;border-bottom:1px solid transparent}
     .nav.scrolled{background:rgba(241,237,228,.82);backdrop-filter:blur(14px);border-color:var(--rule)}
     .nav .wrap{display:flex;align-items:center;gap:36px;height:68px}
-    .brand{display:flex;align-items:center;gap:10px;font:400 16px/1 var(--display);text-decoration:none}.brand img{width:28px;height:28px}
+    .brand{display:flex;align-items:center;gap:10px;font:400 16px/1 var(--display);text-decoration:none}.brand img{width:auto;height:34px}
     .nav-links{display:flex;gap:28px;margin-left:auto}
     .nav-links a{font:500 11px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);text-decoration:none;transition:color .2s}
     /* reveals */
@@ -257,7 +258,7 @@
 
   <header class="nav" data-nav>
     <div class="wrap">
-      <a class="brand" href="/welcome" aria-label="A+ Vault"><img src="/assets/vault-logo-128.png" alt="" />A+ Vault</a>
+      <a class="brand" href="/welcome" aria-label="A+ Vault"><img src="/assets/brand/vault-mark-solid.svg" alt="" width="28" height="32" />A+ Vault</a>
       <nav class="nav-links" aria-label="Sections"><a href="#ways">How</a><a href="#install">Install</a><a href="#anatomy">Panel</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a></nav>
       <a class="btn btn-ink sm" href="/downloads/aplus-vault-extension.zip" download>Download</a>
     </div>

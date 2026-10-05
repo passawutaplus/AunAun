@@ -14,14 +14,14 @@ export function moodboardColorChooserMarkup(ctx) {
     <div class="moodboard-color-type-grid">
       <button type="button" class="moodboard-color-type-card" data-add-color-type="palette">
         <span class="moodboard-color-type-preview is-palette" aria-hidden="true">
-          <i style="background:#ff4f43"></i><i style="background:#2f3133"></i><i style="background:#f8f6f2"></i><i style="background:#c56b4e"></i>
+          <i style="background:#f05040"></i><i style="background:#2f3133"></i><i style="background:#f8f6f2"></i><i style="background:#c56b4e"></i>
         </span>
         <strong>Palette</strong>
         <small>หลายสีเรียงแถว — ชุดสีบนบอร์ด</small>
       </button>
       <button type="button" class="moodboard-color-type-card" data-add-color-type="swatch">
         <span class="moodboard-color-type-preview is-swatch" aria-hidden="true">
-          <i style="background:#ff4f43"></i>
+          <i style="background:#f05040"></i>
           <em>PANTONE FF4-F43 C</em>
         </span>
         <strong>Pantone chip</strong>

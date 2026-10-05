@@ -549,14 +549,14 @@ export function createVaultRemote(config = {}) {
       if (o.kind === "connector") {
         style.fromId = o.fromId || "";
         style.toId = o.toId || "";
-        style.color = o.color || "#ff4f43";
+        style.color = o.color || "#f05040";
       } else if (o.kind === "todo") {
         style.tasks = Array.isArray(o.style?.tasks) ? o.style.tasks : [];
       } else if (o.kind === "palette") {
         style.mode = o.style?.mode === "swatch" ? "swatch" : "palette";
         if (o.text) style.label = o.text;
       } else if (o.kind === "frame") {
-        style.color = o.color || "#ff4f43";
+        style.color = o.color || "#f05040";
         if (o.text) style.label = o.text;
       } else if (o.kind === "note" || o.kind === "text") {
         if (o.color) style.color = o.color;

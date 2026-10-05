@@ -924,7 +924,7 @@ async function setPendingCapture(payload) {
     pendingCapture: payload,
     lastVaultStatus: null
   });
-  await setBadge("NEW", "#ff4f43");
+  await setBadge("NEW", "#f05040");
 }
 
 function pendingSnapshotDataUrl(payload) {

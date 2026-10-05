@@ -7,6 +7,7 @@
   <meta name="description" content="A private vault for creative references. Save from anywhere, find it by color, image, or Thai keywords, and always keep the credit." />
   <meta name="robots" content="noindex,nofollow" />
   <meta name="theme-color" content="#f4f1ea" />
+  <link rel="icon" type="image/svg+xml" href="/assets/brand/vault-icon-solid.svg" />
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -16,12 +17,12 @@
   <style>
     :root{
       --paper:#f4f1ea;--paper-2:#ebe6db;--ink:#151719;--ink-2:#3a3d41;--muted:#7a7d80;--line:rgba(21,23,25,.12);
-      --coral:#ff4f43;--coral-dark:#e33f34;--night:#101113;--night-2:#1a1c1f;
+      --coral:#f05040;--coral-fill:#d9362a;--coral-dark:#b72b20;--night:#101113;--night-2:#1a1c1f;
       --display:"Agrandir Wide","IBM Plex Sans Thai",system-ui,sans-serif;--body:"IBM Plex Sans Thai",system-ui,-apple-system,sans-serif;
       --ease:cubic-bezier(.2,.7,.2,1);
     }
     .wrap{width:min(1200px,calc(100% - 48px));margin:0 auto}
-    .beta-tag{display:inline-block;margin-left:8px;padding:3px 8px;border-radius:999px;background:var(--coral);color:#fff;font:600 10px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;vertical-align:middle}
+    .beta-tag{display:inline-block;margin-left:8px;padding:3px 8px;border-radius:999px;background:#d9362a;color:#fff;font:600 10px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;vertical-align:middle}
     @media(max-width:560px){.hide-s{display:none}.nav .btn{height:42px;padding:0 16px;font-size:13px}.nav-login{margin-right:4px;font-size:13px}.nav .wrap{gap:12px}}
     .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
     .eyebrow::before{content:"";width:18px;height:1px;background:currentColor}
@@ -33,7 +34,7 @@
     .btn-dark{background:var(--ink);color:#fff;box-shadow:0 10px 30px rgba(21,23,25,.18)}
     .btn-dark:hover{background:#2c2f33}
     .btn-light{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
-    .btn-coral{background:var(--coral);color:#fff;box-shadow:0 10px 30px rgba(255,79,67,.3)}
+    .btn-coral{background:var(--coral-fill,#d9362a);color:#fff;box-shadow:0 10px 30px rgba(240,80,64,.3)}
     .btn-coral:hover{background:var(--coral-dark)}
     .nav-login{margin-left:auto;margin-right:12px;font-size:14px;color:inherit;text-decoration:none;padding:10px 6px}
     .btn svg{width:18px;height:18px}
@@ -42,7 +43,7 @@
     .nav.scrolled{background:rgba(244,241,234,.78);backdrop-filter:blur(14px);box-shadow:0 1px 0 var(--line)}
     .nav .wrap{display:flex;align-items:center;gap:28px;height:72px}
     .brand{display:flex;align-items:center;gap:10px;font:400 17px/1 var(--display);text-decoration:none}
-    .brand img{width:30px;height:30px}
+    .brand img{width:auto;height:34px}
     .nav-links{display:flex;gap:24px;margin-left:auto;font-size:14px}
     .nav-links a{color:var(--ink-2);text-decoration:none;transition:color .2s}
     .nav .btn{height:42px;padding:0 18px;font-size:13px}
@@ -198,7 +199,7 @@
     .app-grid{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))!important}
     .app-pill{align-self:flex-start;padding:4px 10px;border-radius:999px;font:600 11px/1.2 var(--body);letter-spacing:.08em;text-transform:uppercase}
     .app-pill.ok{background:rgba(29,122,70,.12);color:#1d7a46}
-    .app-pill.test{background:rgba(255,79,67,.12);color:var(--coral-dark)}
+    .app-pill.test{background:rgba(240,80,64,.12);color:var(--coral-dark)}
     .app-card a{color:var(--ink);text-underline-offset:3px}
     #waitlist{padding:clamp(80px,11vw,140px) 0;text-align:center}
     .wl-count{display:inline-flex;align-items:baseline;gap:10px;margin:22px 0 0;padding:10px 18px;border-radius:999px;background:var(--paper-2);box-shadow:inset 0 0 0 1px var(--line);font-size:14px;color:var(--ink-2)}
@@ -366,7 +367,7 @@
 
   <header class="nav" data-nav>
     <div class="wrap">
-      <a class="brand" href="/welcome" aria-label="A+ Vault home"><img src="/assets/vault-logo-128.png" alt="" />A+ Vault<span class="beta-tag">Beta</span></a>
+      <a class="brand" href="/welcome" aria-label="A+ Vault home"><img src="/assets/brand/vault-mark-solid.svg" alt="" width="28" height="32" />A+ Vault<span class="beta-tag">Beta</span></a>
       <nav class="nav-links" aria-label="Sections">
         <a href="#capture">Capture</a>
         <a href="#find">Search</a>
@@ -412,7 +413,7 @@
         <div class="people-grid">
           <figure class="ph reveal"><div class="frame"><img src="/assets/people/train-phone.webp" alt="A man standing on a train, scrolling his phone" width="1050" height="1400" loading="lazy" style="object-position:50% 40%"><span class="stk ok" style="right:6%;top:24%"><i></i>Saved to Inbox</span></div><figcaption><span class="time">08:40</span><b>On the way</b><p>Share a link from your phone. It lands in your Inbox, ready to sort later.</p></figcaption></figure>
           <figure class="ph reveal" data-delay="1"><div class="frame"><img src="/assets/people/desk-laptop.webp" alt="A woman working at her desk on a laptop" width="1400" height="933" loading="lazy" style="object-position:70% 50%"><span class="stk menu" style="left:6%;bottom:8%;animation-delay:-1.5s"><span>Copy image address</span><span class="k">+ Keep in Vault</span></span></div><figcaption><span class="time">14:15</span><b>At the desk</b><p>Right-click, + Keep in Vault, back to work. Your tab never moves.</p></figcaption></figure>
-          <figure class="ph reveal" data-delay="2"><div class="frame"><img src="/assets/people/swatches-tablet.webp" alt="A designer at a laptop with colour swatches and a pen tablet" width="1400" height="933" loading="lazy" style="object-position:24% 50%"><span class="stk pal" style="right:7%;bottom:9%;animation-delay:-3s"><s style="background:#d9c7a7"></s><s style="background:#b9774f"></s><s style="background:#3e5c76"></s><s style="background:#2f3133"></s><s style="background:#ff4f43"></s></span></div><figcaption><span class="time">21:30</span><b>Into a board</b><p>Pull the best ones into a moodboard — each with its source and credit.</p></figcaption></figure>
+          <figure class="ph reveal" data-delay="2"><div class="frame"><img src="/assets/people/swatches-tablet.webp" alt="A designer at a laptop with colour swatches and a pen tablet" width="1400" height="933" loading="lazy" style="object-position:24% 50%"><span class="stk pal" style="right:7%;bottom:9%;animation-delay:-3s"><s style="background:#d9c7a7"></s><s style="background:#b9774f"></s><s style="background:#3e5c76"></s><s style="background:#2f3133"></s><s style="background:#f05040"></s></span></div><figcaption><span class="time">21:30</span><b>Into a board</b><p>Pull the best ones into a moodboard — each with its source and credit.</p></figcaption></figure>
         </div>
       </div>
     </section>
@@ -504,7 +505,7 @@
           <p class="lede">You remember the feeling, not the filename. Type it in Thai or English, pick a color, drop in a similar image, or narrow by source and date.</p>
           <div class="chips">
             <span class="chip">เก้าอี้วินเทจ</span>
-            <span class="chip"><i style="background:#ff4f43"></i>#ff4f43</span>
+            <span class="chip"><i style="background:#f05040"></i>#f05040</span>
             <span class="chip">type:image</span>
             <span class="chip">site:pinterest.com</span>
             <span class="chip">rights:free</span>
@@ -546,12 +547,12 @@
       <div class="wrap">
         <div class="reveal" style="max-width:760px">
           <span class="eyebrow">Credit &amp; rights</span>
-          <h2 style="margin-top:18px">Know what you can<br />actually use.</h2>
-          <p class="lede">Every reference keeps its source and credit. A clear label tells you whether it can go into client work — or stays as inspiration.</p>
+          <h2 style="margin-top:18px">Know where it<br />came from.</h2>
+          <p class="lede">Every reference keeps its owner, its source and a link back. A clear label shows what the source says about reuse. Always check it before client work.</p>
         </div>
         <div class="rights-cards" data-rights>
-          <article class="rcard reveal"><div class="ph"></div><span class="badge free">✓ Free to use</span><h3>Public domain</h3><p>CC0 museum works. Use them in final client work; a credit is a kind gesture.</p></article>
-          <article class="rcard reveal" data-delay="1"><div class="ph"></div><span class="badge lic">◐ Free license</span><h3>Stock with terms</h3><p>Free under the site’s own license. Check the terms, keep the credit.</p></article>
+          <article class="rcard reveal"><div class="ph"></div><span class="badge free">✓ Public domain</span><h3>CC0 museum works</h3><p>No copyright restrictions at the source. The image still belongs to its owner, so follow the link and keep the credit.</p></article>
+          <article class="rcard reveal" data-delay="1"><div class="ph"></div><span class="badge lic">◐ Licensed</span><h3>Stock with terms</h3><p>Shared under the site’s own license. Read the terms at the source and keep the credit.</p></article>
           <article class="rcard reveal" data-delay="2"><div class="ph"></div><span class="badge ref">○ Reference only</span><h3>Inspiration</h3><p>Rights unknown. Great for direction — license it before it ships.</p></article>
         </div>
       </div>
@@ -614,7 +615,7 @@
         <div class="chap-copy">
           <span class="eyebrow reveal">Rediscover</span>
           <h2 class="reveal" data-delay="1" style="margin-top:18px">Your own taste,<br />served back.</h2>
-          <p class="lede reveal" data-delay="2">The best reference is often one you forgot you kept. A+ Vault brings old finds back and, if you want it, sends a short weekly note.<span class="th">หยิบของที่เคยเก็บกลับมาให้ และสรุปรายสัปดาห์ (ถ้าเปิด)</span></p>
+          <p class="lede reveal" data-delay="2">Often the reference you need is one you forgot you kept. A+ Vault brings old finds back and, if you want it, sends a short weekly note.<span class="th">หยิบของที่เคยเก็บกลับมาให้ และสรุปรายสัปดาห์ (ถ้าเปิด)</span></p>
           <ul class="chap-points reveal" data-delay="3">
             <li><b>From your past:</b> three saves from months ago, fresh each day.</li>
             <li><b>Weekly digest</b> is optional. It says why each image was picked.</li>
@@ -636,7 +637,7 @@
         <span class="eyebrow" style="color:#7d838a">Our promise</span>
         <div class="promise-list" data-promise>
           <p>Private <em>by default.</em></p>
-          <p>No ads. No feed deciding for you.</p>
+          <p>Your private Vault is <em>never used to target ads.</em></p>
           <p>Credit travels with every image.</p>
           <p>Export or delete <em>anytime.</em></p>
         </div>

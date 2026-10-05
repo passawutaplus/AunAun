@@ -432,9 +432,9 @@ function attributionInfo(item) {
 /** One-line terms shown next to the license badge. CC BY / BY-SA make the credit a condition, not a courtesy. */
 export function discoverLicenseNote(license) {
   const key = String(license || "").toLowerCase();
-  if (key === "cc-by") return "Free to use with credit (required).";
-  if (key === "cc-by-sa") return "Free to use with credit (required); adaptations must use the same license.";
-  return "Free to use.";
+  if (key === "cc-by") return "CC BY: credit the owner (required). Check the source for the full terms.";
+  if (key === "cc-by-sa") return "CC BY-SA: credit the owner (required); adaptations share alike. Check the source.";
+  return "Public domain or CC0 at the source. The image still belongs to its owner: check the source and credit them.";
 }
 
 export function discoverLicenseLabel(license) {
@@ -553,10 +553,10 @@ export function discoverCardMarkup(item, config, kept) {
 }
 
 function emptyMessage(ds) {
-  if (ds.similar) return "No similar images yet. Try another image.";
+  if (ds.similar) return "Nothing close to this one yet. Try a mood, a material or a color.";
   if ((ds.colors || []).length > 1) return "No image has all of these colors. Remove one to widen the search.";
   if ((ds.colors || []).length) return "No images close to this color yet. Try another shade.";
-  if (discoverHasFilters(ds)) return "No matches yet. Remove a filter or try another word.";
+  if (discoverHasFilters(ds)) return "Still a blank canvas. Try a mood, a material or a color.";
   return "Discover is being curated. Check back soon.";
 }
 
@@ -578,7 +578,7 @@ export function gateMarkup() {
 
 function discoverResultsMarkup(ds, config, keptIds) {
   if (!ds.items.length) {
-    if (ds.loading || !ds.loaded) return `<div class='discover-empty'><p>${ds.similar ? "Finding similar images…" : "Loading Discover…"}</p></div>`;
+    if (ds.loading || !ds.loaded) return `<div class='discover-empty'><picture><source media='(prefers-reduced-motion: reduce)' srcset='/assets/brand/vault-mark-solid.svg'><img class='vault-loader' src='/assets/brand/vault-loader.svg' alt='' width='48' height='54'></picture><p>${ds.similar ? "Finding similar images…" : "Loading Discover…"}</p></div>`;
     if (ds.error) return `<div class='discover-empty'><p>${esc(ds.error)}</p><button type='button' class='ghost-button' data-discover-retry>Try again</button></div>`;
     return `<div class='discover-empty'><p>${emptyMessage(ds)}</p>${discoverHasFilters(ds) ? `<button type='button' class='ghost-button' data-discover-clear-all>Clear all filters</button>` : ""}</div>`;
   }

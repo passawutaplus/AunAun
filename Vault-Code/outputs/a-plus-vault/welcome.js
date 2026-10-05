@@ -50,7 +50,7 @@
     }
 
     /* ---------- find: typing demo ---------- */
-    const QUERIES = ["เก้าอี้วินเทจ", "#ff4f43", "warm minimal packaging", "ลายดอกไม้สีแดง", "poster type:image"];
+    const QUERIES = ["เก้าอี้วินเทจ", "#f05040", "warm minimal packaging", "ลายดอกไม้สีแดง", "poster type:image"];
     function buildResults() {
       $("[data-results]").innerHTML = Array.from({ length: 8 }, (_, i) => `<figure>${imgEl(i + 16)}</figure>`).join("");
     }
@@ -94,7 +94,7 @@
       const c = $("[data-canvas]");
       c.innerHTML = TILES.map((t, i) => {
         const [x, y, w, h] = t.f;
-        const inner = t.k === "img" ? imgEl(i + 30) : t.k === "palette" ? ["#d9c7a7", "#b9774f", "#3e5c76", "#2f3133", "#ff4f43"].map(c => `<span style="background:${c}"></span>`).join("") : t.k === "note" ? "Client wants warm, honest, a little vintage. Avoid glossy. Keep type quiet." : "Warm heritage";
+        const inner = t.k === "img" ? imgEl(i + 30) : t.k === "palette" ? ["#d9c7a7", "#b9774f", "#3e5c76", "#2f3133", "#f05040"].map(c => `<span style="background:${c}"></span>`).join("") : t.k === "note" ? "Client wants warm, honest, a little vintage. Avoid glossy. Keep type quiet." : "Warm heritage";
         return `<div class="tile ${t.k === "img" ? "" : t.k}" data-t="${i}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%">${inner}</div>`;
       }).join("");
     }
