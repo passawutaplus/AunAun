@@ -7,6 +7,7 @@ Categories: **N** = strictly necessary / user-requested (no consent), **P** = pr
 | Key / item | Where | Set by | Purpose | Category | Duration |
 |---|---|---|---|---|---|
 | `aplus-vault-supabase-session` | localStorage | us (Supabase Auth client) | keeps you logged in | N | until sign out / token expiry |
+| `aplus-vault-explore` | sessionStorage | us | remembers that a guest chose to browse Discover so the entry page does not redirect to /welcome again in this tab | N | until the tab closes |
 | `aplus-vault-user` | localStorage | us | local profile (display name, provider) | N | until sign out |
 | `aplus-vault-items` | localStorage | us | your saved items (local-first copy) | N | until you delete / clear |
 | `aplus-vault-collections` | localStorage | us | your collections | N | same |
