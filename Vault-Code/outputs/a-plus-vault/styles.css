@@ -6492,3 +6492,21 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
   .vault-selection-actions{justify-content:center;width:100%}
   .vault-selection-dock .selection-action-button[data-clear-selection]{width:auto;padding:0 12px}
 }
+
+/* A+ Vault lightbox v2: tools + find buttons share one row under the palette */
+.media-lightbox-tools{display:none}
+.media-lightbox-palette{width:min(620px,90vw)}
+.lb-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap}
+.lb-actions .viewer-tools{margin:0;padding:4px;border-radius:999px;background:rgba(20,22,26,.72);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px);gap:2px}
+.lb-actions .viewer-tool{background:transparent;border-color:transparent;color:#fff;width:38px;height:38px;min-height:38px}
+.lb-actions .viewer-tool:hover{background:rgba(255,255,255,.14)}
+.lb-actions .viewer-tool[aria-pressed="true"]{background:#fff;color:#151719}
+.lb-actions .viewer-picked{color:#fff;background:rgba(255,255,255,.12);border-color:transparent}
+.lb-find-group{display:inline-flex;gap:8px;margin-left:auto}
+.lb-find-group .lb-find{display:inline-flex;align-items:center;gap:6px;margin:0;padding:0 12px;height:38px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:13px}
+.lb-find-group .lb-find[hidden]{display:none}
+.lb-find-group .lb-find:hover{background:rgba(255,255,255,.22)}
+.media-lightbox .lb-media,.media-lightbox .lb-media img{max-height:calc(100vh - 230px)}
+.media-lightbox.viewer-picking .media-lightbox-palette .viewer-palette-strip,.media-lightbox.viewer-picking .media-lightbox-palette .lb-find-group{opacity:.35;pointer-events:none}
+.media-lightbox.viewer-picking .media-lightbox-palette{opacity:1;pointer-events:auto}
+@media(max-width:640px){.lb-actions{justify-content:center}.lb-find-group{margin-left:0}.media-lightbox .lb-media,.media-lightbox .lb-media img{max-height:calc(100vh - 260px)}}
