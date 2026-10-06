@@ -27,7 +27,7 @@ a{color:inherit}
 .stk.ok i{background:#1f8a4c}
 .stk.menu{flex-direction:column;align-items:stretch;gap:2px;padding:6px;border-radius:12px;min-width:170px}
 .stk.menu span{padding:7px 10px;border-radius:7px;color:#6a6c70;font-weight:400}
-.stk.menu span.k{background:#ffe9e6;color:#e33f34;font-weight:600}
+.stk.menu span.k{background:#ffe9e6;color:#b72b20;font-weight:600}
 .stk.pal{gap:6px;padding:8px 10px}.stk.pal s{display:block;width:20px;height:20px;border-radius:50%;text-decoration:none}
 @keyframes stk{50%{transform:translateY(-8px)}}
 @media(prefers-reduced-motion:reduce){.stk{animation:none}.ph img{transition:none}}

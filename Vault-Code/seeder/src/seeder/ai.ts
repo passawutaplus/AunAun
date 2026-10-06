@@ -4,7 +4,7 @@ import { C1_SYSTEM, C2_SYSTEM, c1Tool, c1UserText, c2Tool, dictionaryBlock, fenc
 
 export type Usage = { input_tokens: number; output_tokens: number };
 export type Tag = { id: string; conf: number; src: string; facet?: string };
-export type TriageResult = { domains: string[]; quality: number; safetyFlag: boolean; usage?: Usage };
+export type TriageResult = { domains: string[]; quality: number; safetyFlag: boolean; offScope?: boolean; usage?: Usage };
 export type DeepResult = { tags: Tag[]; keywords: string[]; usage?: Usage };
 export type Group = { id: string; en: string; maxPerImage: number | null };
 

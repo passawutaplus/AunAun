@@ -1,12 +1,14 @@
 # Cookie and storage inventory (A+ Vault web app + extension)
 
-Updated 2026-10-04. **Cookies set by us: none.** The app uses browser storage (localStorage / sessionStorage / Cache Storage) only for what the user asked for. No analytics, no advertising pixels, no third-party fonts or embeds (fonts are self-hosted, enforced by `scripts/qa-security.mjs`). A test (`scripts/__tests__/legal.test.mjs`) fails when a new `aplus-vault-*` key appears in the code but not in this table.
+Updated 2026-10-06. **Cookies set by us: none.** The app uses browser storage (localStorage / sessionStorage / Cache Storage) only for what the user asked for. No analytics, no advertising pixels, no third-party fonts or embeds (fonts are self-hosted, enforced by `scripts/qa-security.mjs`). A test (`scripts/__tests__/legal.test.mjs`) fails when a new `aplus-vault-*` key appears in the code but not in this table.
 
 Categories: **N** = strictly necessary / user-requested (no consent), **P** = preference the user set (necessary because the user chose it), **C** = consent required (none today).
 
 | Key / item | Where | Set by | Purpose | Category | Duration |
 |---|---|---|---|---|---|
 | `aplus-vault-supabase-session` | localStorage | us (Supabase Auth client) | keeps you logged in | N | until sign out / token expiry |
+| `aplus-vault-splash` | sessionStorage | us | remembers the brand splash already played in this tab so it shows once per session | N | until the tab closes |
+| `aplus-vault-explore` | sessionStorage | us | remembers that a guest chose to browse Discover so the entry page does not redirect to /welcome again in this tab | N | until the tab closes |
 | `aplus-vault-user` | localStorage | us | local profile (display name, provider) | N | until sign out |
 | `aplus-vault-items` | localStorage | us | your saved items (local-first copy) | N | until you delete / clear |
 | `aplus-vault-collections` | localStorage | us | your collections | N | same |
@@ -20,6 +22,8 @@ Categories: **N** = strictly necessary / user-requested (no consent), **P** = pr
 | `aplus-vault-library-view` | localStorage | us | grid size/view choice | P | until changed |
 | `aplus-vault-right-width`, `aplus-vault-mb-source-w`, `aplus-vault-mb-inspector-w` | localStorage | us | panel widths you dragged | P | until changed |
 | `aplus-vault-viewer-bw` | localStorage | us | black-and-white viewer toggle | P | until changed |
+| `aplus-vault-foryou-hidden`, `aplus-vault-tab` | localStorage | us | which For You cards you hid for 7 days, and whether My Vault opens on For You or Library | P | until you clear it |
+| `aplus-vault-share` | IndexedDB | us (service worker) | images you shared into the installed app wait here until you press Keep; removed as soon as they are kept or dismissed. Nothing is uploaded before you confirm | N | until kept / cleared |
 | `aplus-vault-quick-note`, `aplus-vault-quick-note-on`, `aplus-vault-quick-note-open` | localStorage | us | your quick notes and panel state | N | until you delete |
 | `aplus-vault-saved-searches` | localStorage | us | searches you saved | N | until you delete |
 | `aplus-vault-resurface-hidden` | localStorage | us | "From your past" hidden for today | P | 1 day |

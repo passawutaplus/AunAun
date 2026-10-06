@@ -266,7 +266,7 @@ export function createVaultRemote(config = {}) {
         name: collection.name,
         system: false,
         client_key: collection.id,
-        metadata: { localId: collection.id, parentId: collection.parentId || null, sortOrder: Number(collection.sortOrder) || 0, pinnedAt: Number(collection.pinnedAt) || 0 },
+        metadata: { localId: collection.id, parentId: collection.parentId || null, sortOrder: Number(collection.sortOrder) || 0, pinnedAt: Number(collection.pinnedAt) || 0, smart: collection.smart || null },
       }),
     });
     const saved = rows[0] || null;
@@ -295,6 +295,7 @@ export function createVaultRemote(config = {}) {
           parentId: collection.parentId || null,
           sortOrder: Number(collection.sortOrder) || 0,
           pinnedAt: Number(collection.pinnedAt) || 0,
+          smart: collection.smart || null,
         },
       }),
     });
@@ -426,6 +427,7 @@ export function createVaultRemote(config = {}) {
           localId: project.id,
           collectionIds: Array.isArray(project.collectionIds) ? project.collectionIds.filter(Boolean) : [],
           pinnedAt: Number(project.pinnedAt) || 0,
+          palette: Array.isArray(project.palette) ? project.palette.filter(h => /^#[0-9a-f]{6}$/i.test(h)).slice(0, 8) : [],
         },
         updated_at: new Date().toISOString(),
       };
@@ -549,14 +551,14 @@ export function createVaultRemote(config = {}) {
       if (o.kind === "connector") {
         style.fromId = o.fromId || "";
         style.toId = o.toId || "";
-        style.color = o.color || "#ff4f43";
+        style.color = o.color || "#f05040";
       } else if (o.kind === "todo") {
         style.tasks = Array.isArray(o.style?.tasks) ? o.style.tasks : [];
       } else if (o.kind === "palette") {
         style.mode = o.style?.mode === "swatch" ? "swatch" : "palette";
         if (o.text) style.label = o.text;
       } else if (o.kind === "frame") {
-        style.color = o.color || "#ff4f43";
+        style.color = o.color || "#f05040";
         if (o.text) style.label = o.text;
       } else if (o.kind === "note" || o.kind === "text") {
         if (o.color) style.color = o.color;
@@ -711,10 +713,50 @@ export function createVaultRemote(config = {}) {
     }
   }
 
+  /** A creator shares their OWN uploaded image to Discover. Checks run automatically afterwards (creator_submissions). */
+  async function shareToDiscover(item, { title, creditName, license, linkUrl }) {
+    const current = await getSession();
+    const userId = current?.user?.id;
+    if (!userId) throw new Error("Log in to share your work.");
+    const ownedPath = typeof item.assetPath === "string" && item.assetPath.startsWith(`${userId}/`) ? item.assetPath : "";
+    const uploaded = ownedPath ? { assetPath: ownedPath } : await maybeUploadAsset(item, userId);
+    if (!uploaded.assetPath) throw new Error("Could not prepare the image for sharing. Try again in a moment.");
+    try {
+      const rows = await request("/rest/v1/creator_submissions", {
+        method: "POST",
+        headers: headers({ "content-type": "application/json", prefer: "return=representation" }),
+        body: JSON.stringify({ user_id: userId, asset_path: uploaded.assetPath, title, credit_name: creditName, license, link_url: linkUrl || null, owner_confirmed: true }),
+      });
+      return Array.isArray(rows) ? rows[0] : rows;
+    } catch (e) {
+      if (/duplicate key|creator_submissions_asset_key/i.test(String(e.message))) throw new Error("This image is already shared or waiting to be checked.");
+      if (/daily submission limit/i.test(String(e.message))) throw new Error("You reached today's sharing limit. Try again tomorrow.");
+      throw e;
+    }
+  }
+
+  async function listSubmissions() {
+    if (!enabled || !session()?.access_token) return [];
+    try {
+      const rows = await request("/rest/v1/creator_submissions?select=id,asset_path,title,status,reject_reason,license,created_at&order=created_at.desc&limit=200", { headers: headers() });
+      return Array.isArray(rows) ? rows : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async function withdrawSubmission(id) {
+    await rpc("creator_withdraw", { p_id: id });
+    return true;
+  }
+
   return {
     enabled,
     linkPreview,
     importUrl,
+    shareToDiscover,
+    listSubmissions,
+    withdrawSubmission,
     enrichItem,
     exportAccountData,
     deleteAccountData,
@@ -784,6 +826,7 @@ function remoteCollectionToLocal(row) {
     parentId: metadata.parentId ? String(metadata.parentId) : "",
     sortOrder: Number(metadata.sortOrder) || 0,
     pinnedAt: Number(metadata.pinnedAt) || 0,
+    smart: metadata.smart && typeof metadata.smart === "object" ? metadata.smart : null,
   };
 }
 
@@ -804,6 +847,7 @@ function remoteProjectToLocal(row) {
     description: row.description || "",
     collectionIds: Array.isArray(metadata.collectionIds) ? metadata.collectionIds.filter(Boolean).map(String) : [],
     pinnedAt: Number(metadata.pinnedAt) || 0,
+    palette: Array.isArray(metadata.palette) ? metadata.palette.filter(h => /^#[0-9a-f]{6}$/i.test(h)).slice(0, 8) : [],
     boards: (row.vault_boards || []).map(board => ({
       id: board.client_key || board.id,
       remoteId: board.id,

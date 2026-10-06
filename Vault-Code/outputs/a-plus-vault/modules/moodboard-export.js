@@ -86,7 +86,7 @@ table{width:100%;border-collapse:collapse}
 th,td{padding:7px 8px;border-bottom:1px solid #e5e8eb;text-align:left;vertical-align:top}
 th{color:#747a80;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
 td small{display:block;color:#747a80;font-size:11px}
-a{color:#e33f34;text-decoration:none}
+a{color:#b72b20;text-decoration:none}
 .note-foot{margin-top:12px;color:#747a80;font-size:11px}
 </style></head><body>
 <section class='page'><header><h1>${esc(board.name || "Moodboard")}</h1><span>${esc(date)} · ${esc(ctx.siteName || "A+ Vault")}</span></header><div class='board'>${boardMarkup}</div></section>

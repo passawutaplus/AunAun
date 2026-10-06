@@ -1,4 +1,4 @@
-import { access, mkdtemp, readFile, rm } from "node:fs/promises";
+import { access, mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { spawn, spawnSync } from "node:child_process";
 import http from "node:http";
 import os from "node:os";
@@ -73,24 +73,30 @@ await runStaticProductGuards();
 await runSecurityGuards();
 await runLocalServerSmoke();
 
-const grep = spawnSync(
-  process.platform === "win32" ? "powershell.exe" : "sh",
-  process.platform === "win32"
-    ? ["-NoProfile", "-Command", "rg -n \"\\b(prompt|confirm|alert)\\s*\\(\" outputs\\a-plus-vault vault-extension"]
-    : ["-lc", "rg -n \"\\b(prompt|confirm|alert)\\s*\\(\" outputs/a-plus-vault vault-extension"],
-  { encoding: "utf8" }
-);
-
-if (grep.status === 0) {
-  process.stdout.write(grep.stdout);
+// Native popups are banned (use the app dialogs). Pure Node scan so it runs the same on CI, macOS and Windows: no ripgrep needed.
+const POPUP_CALL = /(?<![.\w])(?:window\.)?(?:prompt|confirm|alert)\s*\(/;
+const SCAN_ROOTS = ["outputs/a-plus-vault", "vault-extension"];
+const SCAN_EXT = /\.(?:js|mjs|html)$/;
+const SKIP_DIR = /^(?:node_modules|dist|docs|\.git)$/;
+const popupHits = [];
+async function scanForPopups(dir) {
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const full = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) {
+      if (!SKIP_DIR.test(entry.name)) await scanForPopups(full);
+    } else if (SCAN_EXT.test(entry.name)) {
+      const lines = (await readFile(full, "utf8")).split(/\r?\n/);
+      lines.forEach((line, i) => {
+        if (POPUP_CALL.test(line)) popupHits.push(`${full}:${i + 1}: ${line.trim().slice(0, 140)}`);
+      });
+    }
+  }
+}
+for (const root of SCAN_ROOTS) await scanForPopups(root);
+if (popupHits.length) {
+  process.stdout.write(`${popupHits.join("\n")}\n`);
   process.stderr.write("Native browser popup API found. Use app dialogs instead.\n");
   process.exit(1);
-}
-
-if (grep.status && grep.status > 1) {
-  process.stdout.write(grep.stdout || "");
-  process.stderr.write(grep.stderr || "Native popup scan failed.\n");
-  process.exit(grep.status);
 }
 
 console.log("A+ Vault QA checks passed.");

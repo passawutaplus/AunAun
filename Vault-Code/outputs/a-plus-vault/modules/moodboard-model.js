@@ -49,7 +49,7 @@ export function normalizeMoodboardObject(o) {
   };
 }
 
-export function normalizeHex(value, fallback = "#ff4f43") {
+export function normalizeHex(value, fallback = "#f05040") {
   const raw = String(value || "").trim();
   const m = raw.match(/^#?([0-9a-fA-F]{6})$/);
   if (m) return `#${m[1].toLowerCase()}`;
@@ -73,8 +73,8 @@ function normalizePaletteColors(colors, mode) {
   const list = (Array.isArray(colors) ? colors : [])
     .map((c) => normalizeHex(c, ""))
     .filter(Boolean);
-  if (mode === "swatch") return [list[0] || "#ff4f43"];
-  if (!list.length) return ["#ff4f43", "#2f3133", "#f8f6f2"];
+  if (mode === "swatch") return [list[0] || "#f05040"];
+  if (!list.length) return ["#f05040", "#2f3133", "#f8f6f2"];
   return list.slice(0, 8);
 }
 
@@ -149,13 +149,13 @@ function normalizeTodoTasks(list) {
 
 function kindDefaults(kind, mode) {
   if (kind === "note") return { w: 180, h: 180, zIndex: 1, text: "Sticky note", color: "#ffe08a" };
-  if (kind === "connector") return { w: 0, h: 0, zIndex: 0, text: "", color: "#ff4f43" };
-  if (kind === "frame") return { w: 420, h: 320, zIndex: 0, text: "Section", color: "#ff4f43" };
+  if (kind === "connector") return { w: 0, h: 0, zIndex: 0, text: "", color: "#f05040" };
+  if (kind === "frame") return { w: 420, h: 320, zIndex: 0, text: "Section", color: "#f05040" };
   if (kind === "todo") return { w: 260, h: 200, zIndex: 1, text: "To-do", color: "#1a1e24" };
   if (kind === "text") return { w: 220, h: 120, zIndex: 1, text: "", color: "#17191b" };
   if (kind === "palette") {
-    if (mode === "swatch") return { w: 148, h: 188, zIndex: 1, text: "", color: "#ff4f43" };
-    return { w: 260, h: 88, zIndex: 1, text: "", color: "#ff4f43" };
+    if (mode === "swatch") return { w: 148, h: 188, zIndex: 1, text: "", color: "#f05040" };
+    return { w: 260, h: 88, zIndex: 1, text: "", color: "#f05040" };
   }
   return { w: 180, h: 140, zIndex: 1, text: "", color: "#17191b" };
 }

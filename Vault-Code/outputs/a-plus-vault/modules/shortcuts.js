@@ -4,13 +4,13 @@ import { esc } from "./utils.js";
 export const SHORTCUTS = [
   { keys: ["/"], label: "Search", scope: "Everywhere" },
   { keys: ["N"], label: "Keep something new", scope: "Everywhere" },
-  { keys: ["G", "D"], label: "Go to Discover", scope: "Everywhere" },
+  { keys: ["G", "D"], label: "Go to Museum", scope: "Everywhere" },
   { keys: ["G", "V"], label: "Go to My Vault", scope: "Everywhere" },
   { keys: ["G", "C"], label: "Go to Collections", scope: "Everywhere" },
   { keys: ["Space"], label: "Preview the selected reference", scope: "My Vault" },
   { keys: ["P"], label: "Pin / unpin the selected reference", scope: "My Vault" },
   { keys: ["C"], label: "Add the selected reference to a collection", scope: "My Vault" },
-  { keys: ["←", "→"], label: "Previous / next image", scope: "Discover detail" },
+  { keys: ["←", "→"], label: "Previous / next image", scope: "Museum detail" },
   { keys: ["Esc"], label: "Close", scope: "Everywhere" },
   { keys: ["?"], label: "Show these shortcuts", scope: "Everywhere" },
 ];

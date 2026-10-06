@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { AiOutputError, type AiClient, type Tag, type Usage } from "./ai";
 import type { Candidate } from "./adapters/types";
 import { DOWNLOAD_TIMEOUT_MS, MAX_DOWNLOAD_BYTES, type RenditionSize } from "./config";
@@ -110,6 +111,12 @@ export async function processCandidate(c: Candidate, ctx: PipelineContext, deps:
     return reject("download_failed", { note: `decode: ${(err as Error).message}` });
   }
 
+  const sha256 = createHash("sha256").update(image).digest("hex");
+  // Taken-down images (same bytes, or a near-identical perceptual hash) never come back, whatever the source or id.
+  if (repo.isBlocked && (await repo.isBlocked(sha256, phash))) {
+    return reject("blocked_image", { phash, sha256, width: info.width, height: info.height });
+  }
+
   const duplicateOf = await repo.findSimilar(phash);
   if (duplicateOf) return reject("duplicate_phash", { phash, duplicateOf, width: info.width, height: info.height });
   if (!passesQuality(info)) return reject("below_min_resolution", { phash, width: info.width, height: info.height });
@@ -132,6 +139,10 @@ export async function processCandidate(c: Candidate, ctx: PipelineContext, deps:
   let usage = triage.usage;
   if (triage.safetyFlag) {
     return reject("moderation_blocked", { phash, width: info.width, height: info.height, note: "safety flag" });
+  }
+  // Discover is design and art only: documentary, political and other non-design material never goes public.
+  if (triage.offScope) {
+    return reject("low_quality", { phash, width: info.width, height: info.height, note: "off_scope" });
   }
   if (triage.quality < cfg.QUALITY_REJECT) {
     return reject("low_quality", { phash, width: info.width, height: info.height, note: `quality ${triage.quality}` });
@@ -200,6 +211,7 @@ export async function processCandidate(c: Candidate, ctx: PipelineContext, deps:
       colors: pix.palette.map((p: { hex: string }) => p.hex),
     },
   };
+  row.sha256 = sha256;
   await repo.publish(row);
   return decision.status === "published"
     ? { status: "published", sourceId: c.sourceId }

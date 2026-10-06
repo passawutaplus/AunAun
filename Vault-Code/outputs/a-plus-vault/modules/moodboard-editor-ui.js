@@ -229,7 +229,7 @@ function connectorsMarkup(connectors, nodes, escA, selectedObjectId) {
       const mode = (c.style && c.style.line) || "elbow";
       const { d } = connectorPath(from, to, mode);
       const arrow = mode !== "line";
-      const color = escA(c.color || "#ff4f43");
+      const color = escA(c.color || "#f05040");
       const selected = selectedObjectId === c.id ? " selected" : "";
       const mid = `mba-${escA(c.id)}`;
       return `<g class="moodboard-connector${selected}" data-board-obj="${escA(c.id)}" data-connector-id="${escA(c.id)}">
@@ -311,7 +311,7 @@ function smartGridCard(obj, item, esc, escA, media, host, selectedObjectId, isSe
   const chrome = objectChrome(obj.id, !!(isSelected || selectedObjectId === obj.id), escA);
   const groupAttr = groupId ? ` data-board-group="${escA(groupId)}"` : "";
   if (obj.kind === "frame") {
-    return `<article class="smart-grid-item frame-item${selected}${grouped}" data-board-obj="${escA(obj.id)}"${groupAttr} data-sort="${obj.sortOrder}" style="left:${obj.x}px;top:${obj.y}px;width:${obj.w}px;height:${obj.h}px;z-index:${obj.zIndex || 0};--frame-color:${escA(obj.color || "#ff4f43")}" tabindex="0">
+    return `<article class="smart-grid-item frame-item${selected}${grouped}" data-board-obj="${escA(obj.id)}"${groupAttr} data-sort="${obj.sortOrder}" style="left:${obj.x}px;top:${obj.y}px;width:${obj.w}px;height:${obj.h}px;z-index:${obj.zIndex || 0};--frame-color:${escA(obj.color || "#f05040")}" tabindex="0">
       <header class="frame-label"><span>${esc(obj.text || "Section")}</span></header>
       ${chrome}
     </article>`;
@@ -345,7 +345,7 @@ function smartGridCard(obj, item, esc, escA, media, host, selectedObjectId, isSe
     const colors = obj.colors || [];
     const mode = paletteMode(obj);
     if (mode === "swatch") {
-      const hex = normalizeHex(colors[0] || obj.color || "#ff4f43");
+      const hex = normalizeHex(colors[0] || obj.color || "#f05040");
       const label = pantoneChipLabel(hex, obj.text);
       return `<article class="smart-grid-item color-item pantone-chip${selected}${grouped}" data-board-obj="${escA(obj.id)}"${groupAttr} data-sort="${obj.sortOrder}" style="left:${obj.x}px;top:${obj.y}px;width:${obj.w}px;height:${obj.h}px;z-index:${obj.zIndex || 1};--swatch:${escA(hex)}" tabindex="0">
         <div class="pantone-chip-face" aria-hidden="true"></div>
@@ -392,7 +392,7 @@ function inspectorMarkup(board, selectedObjectId, vaultById, esc, escA) {
     return `<div class="drawer-inner"><h2>Frame</h2>
       <label class="app-dialog-field"><span>Label</span><input data-board-frame-label="${escA(obj.id)}" value="${escA(obj.text || "Section")}" maxlength="80"></label>
       <label class="app-dialog-field"><span>Accent</span>
-        <input type="color" data-board-frame-color="${escA(obj.id)}" value="${escA(obj.color || "#ff4f43")}" aria-label="Frame accent color">
+        <input type="color" data-board-frame-color="${escA(obj.id)}" value="${escA(obj.color || "#f05040")}" aria-label="Frame accent color">
       </label>
       <p class="settings-field-hint">Use frames to group refs like Logo, Palette, or Do / Don’t.</p>
       ${layerActions(obj.id, escA)}
@@ -433,7 +433,7 @@ function inspectorMarkup(board, selectedObjectId, vaultById, esc, escA) {
     const mode = paletteMode(obj);
     const colors = obj.colors || [];
     if (mode === "swatch") {
-      const hex = normalizeHex(colors[0] || obj.color || "#ff4f43");
+      const hex = normalizeHex(colors[0] || obj.color || "#f05040");
       const label = pantoneChipLabel(hex, obj.text);
       const codes = colorFormatRows(hex);
       return `<div class="drawer-inner"><h2>Pantone chip</h2>

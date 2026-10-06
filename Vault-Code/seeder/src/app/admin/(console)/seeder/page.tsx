@@ -14,6 +14,7 @@ const REASON_LABELS: Record<string, string> = {
   below_min_resolution: "ความละเอียดต่ำกว่า 1000px",
   moderation_blocked: "ไม่ผ่าน moderation",
   ai_invalid_output: "AI ตอบผิดรูปแบบ",
+  blocked_image: "รูปที่เคยถูกแจ้งลบ (บล็อกไว้)",
 };
 
 const SOURCE_NAMES: Record<string, string> = {
@@ -23,6 +24,7 @@ const SOURCE_NAMES: Record<string, string> = {
   si: "Smithsonian",
   chndm: "Cooper Hewitt",
   ov: "Openverse",
+  creator: "Creators (own work)",
 };
 
 const usd = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: n < 1 ? 3 : 2 })}`;

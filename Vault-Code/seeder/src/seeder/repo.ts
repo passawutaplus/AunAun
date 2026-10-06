@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Candidate, SourceKey } from "./adapters/types";
+import type { AdapterKey, Candidate, SourceKey } from "./adapters/types";
 import { PHASH_MAX_DISTANCE, STORAGE_BUCKET, visionPricing } from "./config";
 import { bangkokDayStartIso, capLimits, stopReason, type CapUsage, type StopReason } from "./caps";
 import type { RejectReason } from "./license";
@@ -18,7 +18,7 @@ export type AiSpend = {
 
 export type SeedTarget = {
   category: string;
-  source: SourceKey;
+  source: AdapterKey;
   query: string;
   target_count: number;
   cursor: number;
@@ -60,6 +60,7 @@ export function publicMediaUrl(path: string): string {
 
 export type RejectExtra = {
   phash?: string;
+  sha256?: string;
   width?: number;
   height?: number;
   duplicateOf?: string;
@@ -70,6 +71,7 @@ export type PublishRow = {
   candidate: Candidate;
   category: string;
   phash: string;
+  sha256?: string;
   width: number;
   height: number;
   blurhash: string;
@@ -98,6 +100,8 @@ export interface SeederRepo {
   existingSourceIds(source: SourceKey, ids: string[]): Promise<Set<string>>;
   recordRejected(c: Candidate, category: string, reason: RejectReason, extra?: RejectExtra): Promise<void>;
   findSimilar(phash: string): Promise<string | null>;
+  /** True when the image (identical bytes or a near-identical perceptual hash) was taken down before. Optional so test doubles stay small. */
+  isBlocked?(sha256: string, phash: string): Promise<boolean>;
   uploadRendition(path: string, data: Buffer): Promise<void>;
   publish(row: PublishRow): Promise<void>;
   categories(): Promise<string[]>;
@@ -152,6 +156,7 @@ export class SupabaseSeederRepo implements SeederRepo {
         status: "rejected",
         reject_reason: reason,
         phash: extra.phash ?? null,
+        sha256: extra.sha256 ?? null,
         width: extra.width ?? null,
         height: extra.height ?? null,
         duplicate_of: extra.duplicateOf ?? null,
@@ -160,6 +165,12 @@ export class SupabaseSeederRepo implements SeederRepo {
       { onConflict: "source,source_id" },
     );
     fail("recordRejected", error);
+  }
+
+  async isBlocked(sha256: string, phash: string): Promise<boolean> {
+    const { data, error } = await this.db.rpc("image_is_blocked", { p_sha: sha256, p_phash: phash, p_max: PHASH_MAX_DISTANCE });
+    fail("isBlocked", error);
+    return data === true;
   }
 
   async findSimilar(phash: string): Promise<string | null> {
@@ -185,6 +196,7 @@ export class SupabaseSeederRepo implements SeederRepo {
         status: row.status,
         reject_reason: null,
         phash: row.phash,
+        sha256: row.sha256 ?? null,
         width: row.width,
         height: row.height,
         blurhash: row.blurhash,
@@ -259,6 +271,9 @@ export class SupabaseSeederRepo implements SeederRepo {
       for (const r of rows) monthUsd += (Number(r.ai_usage?.input_tokens ?? 0) * inPerM + Number(r.ai_usage?.output_tokens ?? 0) * outPerM) / 1_000_000;
       if (rows.length < 1000) break;
     }
+    // Calls that were billed but never stored on an item (errors, early test runs) are invisible here; add the gap seen on the provider's Cost page.
+    const adjust = Number.parseFloat(process.env.SEEDER_SPEND_ADJUST_USD ?? "");
+    if (Number.isFinite(adjust) && adjust > 0) monthUsd += adjust;
     return { itemsToday: itemsToday ?? 0, aiCallsToday: aiCallsToday ?? 0, monthUsd };
   }
 
@@ -291,7 +306,7 @@ export class SupabaseSeederRepo implements SeederRepo {
     return (data ?? []) as SeedTarget[];
   }
 
-  async target(category: string, source: SourceKey): Promise<SeedTarget | null> {
+  async target(category: string, source: AdapterKey): Promise<SeedTarget | null> {
     const { data, error } = await this.db
       .from("seed_targets")
       .select("*")
@@ -370,7 +385,7 @@ export class SupabaseSeederRepo implements SeederRepo {
     fail("setItemStatus", error);
   }
 
-  async updateTarget(category: string, source: SourceKey, patch: { target_count?: number; enabled?: boolean; exhausted?: boolean }): Promise<void> {
+  async updateTarget(category: string, source: AdapterKey, patch: { target_count?: number; enabled?: boolean; exhausted?: boolean }): Promise<void> {
     const { error } = await this.db.from("seed_targets").update(patch).eq("category", category).eq("source", source);
     fail("updateTarget", error);
   }
@@ -378,7 +393,7 @@ export class SupabaseSeederRepo implements SeederRepo {
   /** Callers are serialized per source (Inngest concurrency), so read-modify-write is safe here. */
   async recordBatch(
     category: string,
-    source: SourceKey,
+    source: AdapterKey,
     batch: { fromCursor: number; nextCursor: number | null; scanned: number; skipped: number },
   ): Promise<void> {
     const current = await this.target(category, source);

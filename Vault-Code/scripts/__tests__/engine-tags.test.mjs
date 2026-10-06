@@ -66,7 +66,7 @@ describe("publishDecision", () => {
   it("review for borderline quality, safety flag, too few tags, incomplete passport", () => {
     assert.equal(publishDecision({ quality: 60, tagsJson: confident(5) }, cfg).status, "review");
     assert.equal(publishDecision({ quality: 90, safetyFlag: true, tagsJson: confident(5) }, cfg).status, "review");
-    assert.equal(publishDecision({ quality: 90, tagsJson: confident(3) }, cfg).status, "review");
+    assert.equal(publishDecision({ quality: 90, tagsJson: confident(2) }, cfg).status, "review");
     assert.equal(publishDecision({ quality: 90, tagsJson: confident(5), passportComplete: false }, cfg).status, "review");
   });
   it("rejected below QUALITY_REJECT or for a disallowed licence; always has a reason", () => {
@@ -88,7 +88,8 @@ describe("prompts", () => {
     assert.match(fenceData("x".repeat(1000)), /^<data>x{300}<\/data>$/);
   });
   it("parseC1 accepts only valid discipline codes and a boolean safety flag", () => {
-    assert.deepEqual(parseC1({ d: ["gfx", "nope"], q: 82.4, s: false }, tax), { domains: ["gfx"], quality: 82, safetyFlag: false });
+    assert.deepEqual(parseC1({ d: ["gfx", "nope"], q: 82.4, s: false }, tax), { domains: ["gfx"], quality: 82, safetyFlag: false, offScope: false });
+    assert.equal(parseC1({ d: ["gfx"], q: 80, s: false, o: true }, tax).offScope, true);
     assert.equal(parseC1({ d: ["mood"], q: 80, s: false }, tax), null);
     assert.equal(parseC1({ d: ["gfx"], q: "x", s: false }, tax), null);
     assert.equal(parseC1(null, tax), null);

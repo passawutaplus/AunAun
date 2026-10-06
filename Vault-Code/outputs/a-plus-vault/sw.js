@@ -56,8 +56,59 @@ async function navigate(req, url) {
   }
 }
 
+/* Web Share Target: Android "Share > A+ Vault". Images wait in IndexedDB (nothing is uploaded) until the person confirms in the app. */
+const SHARE_PATH = "/share-target";
+const SHARE_DB = "aplus-vault-share";
+const SHARE_STORE = "pending";
+const SHARE_MAX_FILES = 10;
+
+function putPendingShare(row) {
+  return new Promise((resolve, reject) => {
+    const open = indexedDB.open(SHARE_DB, 1);
+    open.onupgradeneeded = () => open.result.createObjectStore(SHARE_STORE, { keyPath: "id" });
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+      const db = open.result;
+      const tx = db.transaction(SHARE_STORE, "readwrite");
+      tx.objectStore(SHARE_STORE).put(row);
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+    };
+  });
+}
+
+async function handleShare(req) {
+  try {
+    const form = await req.formData();
+    const files = form.getAll("files").filter(f => f && typeof f === "object" && f.size > 0 && /^image\/(jpeg|png|webp)$/.test(f.type)).slice(0, SHARE_MAX_FILES);
+    const title = String(form.get("title") || "").slice(0, 200);
+    const text = String(form.get("text") || "").slice(0, 1000);
+    let url = String(form.get("url") || "").slice(0, 1500);
+    if (!url) {
+      const found = text.match(/https?:\/\/\S+/);
+      if (found) url = found[0].slice(0, 1500);
+    }
+    if (!files.length) {
+      const q = new URLSearchParams();
+      if (url) q.set("share_url", url);
+      if (title) q.set("share_title", title);
+      if (text) q.set("share_text", text);
+      return Response.redirect("/vault" + (q.toString() ? "?" + q.toString() : ""), 303);
+    }
+    await putPendingShare({ id: (self.crypto && self.crypto.randomUUID ? self.crypto.randomUUID() : String(Date.now()) + Math.random()), at: Date.now(), files, title, text, url });
+    return Response.redirect("/vault?share=pending", 303);
+  } catch (error) {
+    return Response.redirect("/vault", 303);
+  }
+}
+
 self.addEventListener("fetch", event => {
   const req = event.request;
+  if (req.method === "POST") {
+    const postUrl = new URL(req.url);
+    if (postUrl.origin === self.location.origin && postUrl.pathname === SHARE_PATH) event.respondWith(handleShare(req));
+    return;
+  }
   if (req.method !== "GET" || req.headers.has("authorization") || req.headers.has("range")) return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;

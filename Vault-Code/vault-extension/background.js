@@ -85,6 +85,17 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     return;
   }
 
+  if (info.srcUrl && tab?.id && isCaptureableUrl(tab.url)) {
+    // The site owner asked not to save its images (nopin): leave the image alone and say so.
+    try {
+      await ensureKeepScript(tab.id);
+      const check = await chrome.tabs.sendMessage(tab.id, { type: "VAULT_NOPIN_CHECK" });
+      if (check?.blocked) {
+        await chrome.tabs.sendMessage(tab.id, { type: "VAULT_TOAST_UNDO", message: "This site asks not to save its images. Keep the page link instead.", objectId: "" });
+        return;
+      }
+    } catch (_) { /* page cannot be checked: carry on */ }
+  }
   const capture = await buildSmartCapturePayload(info, tab);
   const { quickKeep: quickKeepOn } = await chrome.storage.local.get(["quickKeep"]);
   if (decideKeep({ quickKeep: quickKeepOn === true, hasTarget: Boolean(capture?.sourceUrl || capture?.assetUrl || capture?.title) }) === "save-now") {
@@ -924,7 +935,7 @@ async function setPendingCapture(payload) {
     pendingCapture: payload,
     lastVaultStatus: null
   });
-  await setBadge("NEW", "#ff4f43");
+  await setBadge("NEW", "#f05040");
 }
 
 function pendingSnapshotDataUrl(payload) {

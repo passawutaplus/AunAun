@@ -471,8 +471,8 @@ const VAULT_UI_CSS = `
   }
   .rect {
     position: absolute;
-    border: 2px solid #ff4f43;
-    background: rgba(255, 79, 67, .08);
+    border: 2px solid #f05040;
+    background: rgba(240, 80, 64, .08);
     box-shadow: 0 0 0 9999px rgba(10, 12, 14, .48);
     border-radius: 8px;
     pointer-events: none;

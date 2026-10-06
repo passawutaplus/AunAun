@@ -8,6 +8,7 @@ Controller: **[LEGAL NAME] [ADDRESS] [CONTACT]**. Retention numbers below are wh
 | Enrichment of saved images (palette, tags) | image copy, title, note (server-side) | contract / legitimate interest | with the item | Supabase, Vercel | as above |
 | AI tagging of private images (optional) | downscaled image + title | **consent** (off by default) | not stored by us beyond the tags; provider retention per its current terms [CONFIRM] | AI provider [CONFIRM] | provider region [CONFIRM] |
 | Weekly digest email (optional) | email, saved-tag profile | **consent** | until you unsubscribe | email provider [CONFIRM] | [CONFIRM] |
+| Pre-launch waitlist (one launch email) | email, sign-up source, consent flag, timestamp | **consent** (tick box on /welcome) | until launch email is sent, then deleted or converted to an account; deleted on request | Supabase | as above |
 | Discover (public feed) | open-licence images, no personal data | legitimate interest | until removed | Supabase, Vercel | as above |
 | Abuse and takedown handling | reporter email, report text, item id | legal obligation / legitimate interest | 3 years [CONFIRM] | admins | none |
 | Security logs | IP and request metadata at the host | legitimate interest | host default (short) | Vercel | [CONFIRM] |

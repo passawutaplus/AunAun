@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { Readable } from "node:stream";
 import { isBlockedIp, parsePublicUrl, validateUrl } from "../../lib/import/ssrf.mjs";
 import { safeFetch } from "../../lib/import/safe-fetch.mjs";
-import { extractMetadata } from "../../lib/import/extract.mjs";
+import { collectPageImages, extractMetadata, hasNoPin } from "../../lib/import/extract.mjs";
 import { probeImageSize } from "../../lib/import/image-probe.mjs";
 import { importUrl } from "../../lib/import/index.mjs";
 
@@ -143,5 +143,46 @@ describe("importUrl", () => {
     await assert.rejects(importUrl("http://169.254.169.254/", opts({})), e => e.code === "UNSAFE_URL");
     await assert.rejects(importUrl("javascript:alert(1)", opts({})), e => e.code === "INVALID_URL");
     await assert.rejects(importUrl("https://x.example/", { lookup: async () => [{ address: "10.0.0.1" }], requestImpl: fakeTransport({}) }), e => e.code === "UNSAFE_URL");
+  });
+});
+
+describe("nopin (site owner asks not to save images)", () => {
+  it("detects the Pinterest nopin meta in either attribute order", () => {
+    assert.equal(hasNoPin('<meta name="pinterest" content="nopin">'), true);
+    assert.equal(hasNoPin("<meta content='nopin' name='pinterest'/>"), true);
+    assert.equal(hasNoPin('<meta name="pinterest" content="notranslate">'), false);
+    assert.equal(hasNoPin('<meta name="description" content="nopin">'), false);
+  });
+  it("drops every image but keeps title and link metadata", () => {
+    const m = extractMetadata('<head><title>T</title><meta name="pinterest" content="nopin"><meta property="og:title" content="Hello"><meta property="og:image" content="https://x.test/a.jpg"></head><body><img src="https://x.test/b.jpg" width="800" height="600"></body>', "https://x.test/");
+    assert.equal(m.image, null);
+    assert.equal(m.noPin, true);
+    assert.equal(m.title, "Hello");
+  });
+});
+
+describe("collectPageImages (several images from one page)", () => {
+  const page = `<head><meta property="og:image" content="/hero.jpg"></head><body>
+    <img src="/hero.jpg" width="1200" height="800">
+    <img src="/a.jpg" srcset="/a-480.jpg 480w, /a-1600.jpg 1600w" width="900" height="600">
+    <img src="/logo.png" width="900" height="600">
+    <img src="/tiny.jpg" width="50" height="50">
+    <img src="/anim.gif"><img src="/vec.svg">
+    <img src="/b.jpg" nopin="nopin" width="800" height="600">
+    <img data-src="/lazy.jpg" width="640" height="480">
+  </body>`;
+  it("lists the social image first, then usable images, largest srcset entry, no duplicates, junk or nopin", () => {
+    const urls = collectPageImages(page, "https://x.test/post/", "https://x.test/hero.jpg").map(i => i.url);
+    assert.deepEqual(urls, ["https://x.test/hero.jpg", "https://x.test/a-1600.jpg", "https://x.test/lazy.jpg"]);
+  });
+  it("returns nothing when the page says nopin, and is capped", () => {
+    assert.deepEqual(collectPageImages('<meta name="pinterest" content="nopin"><img src="/a.jpg" width="900" height="900">', "https://x.test/", ""), []);
+    const many = Array.from({ length: 60 }, (_, i) => `<img src="/p${i}.jpg" width="900" height="900">`).join("");
+    assert.equal(collectPageImages(many, "https://x.test/", "").length, 24);
+  });
+  it("extractMetadata carries the list", () => {
+    const m = extractMetadata(page, "https://x.test/post/");
+    assert.ok(m.images.length >= 2);
+    assert.equal(m.images[0].url, "https://x.test/hero.jpg");
   });
 });

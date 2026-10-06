@@ -13,7 +13,7 @@
 }
 
 :root {
-  --coral: #ff4f43;
+  --coral: #f05040;
   --ink: #151719;
   --text: #2f3133;
   --muted: #747a80;
@@ -138,7 +138,7 @@ h1 {
 .status[data-type="pending"] {
   color: var(--text);
   background: #fff7f6;
-  border-color: rgba(255, 79, 67, .22);
+  border-color: rgba(240, 80, 64, .22);
 }
 
 button {
@@ -347,8 +347,8 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: rgba(255, 79, 67, .56);
-  box-shadow: 0 0 0 3px rgba(255, 79, 67, .12);
+  border-color: rgba(240, 80, 64, .56);
+  box-shadow: 0 0 0 3px rgba(240, 80, 64, .12);
 }
 
 .collection-field {
@@ -407,7 +407,7 @@ textarea:focus {
 .keep-button {
   width: 100%;
   justify-content: center;
-  box-shadow: 0 14px 28px rgba(255, 79, 67, .22);
+  box-shadow: 0 14px 28px rgba(240, 80, 64, .22);
 }
 
 .dismiss-button {
@@ -471,7 +471,7 @@ textarea:focus {
 .duplicate-hint {
   margin: 0 0 10px;
   padding: 9px 10px;
-  border: 1px solid rgba(255, 79, 67, .24);
+  border: 1px solid rgba(240, 80, 64, .24);
   border-radius: 11px;
   color: var(--danger);
   background: #fff0ee;
@@ -500,3 +500,8 @@ textarea:focus {
 .queue-row span{flex:1}
 .connect-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:12.5px}
 @media (prefers-reduced-motion:reduce){.quick-bar i{transition:none!important}}
+
+.kept-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 10px; }
+.kept-chip { min-height: 28px; padding: 0 10px; border: 1px solid var(--line, #e5e8eb); border-radius: 999px; background: transparent; color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
+.kept-chip[aria-pressed="true"] { background: rgba(240, 80, 64, 0.16); border-color: rgba(240, 80, 64, 0.6); color: #f05040; }
+#keptForLabel .optional { font-weight: 400; opacity: 0.6; }

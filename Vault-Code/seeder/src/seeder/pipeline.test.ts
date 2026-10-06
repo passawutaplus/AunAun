@@ -12,6 +12,8 @@ class FakeRepo implements SeederRepo {
   published: PublishRow[] = [];
   uploads: string[] = [];
   similar: string | null = null;
+  blocked = false;
+  blockChecks: { sha256: string; phash: string }[] = [];
 
   async existingSourceIds() {
     return new Set<string>();
@@ -21,6 +23,10 @@ class FakeRepo implements SeederRepo {
   }
   async findSimilar() {
     return this.similar;
+  }
+  async isBlocked(sha256: string, phash: string) {
+    this.blockChecks.push({ sha256, phash });
+    return this.blocked;
   }
   async uploadRendition(path: string) {
     this.uploads.push(path);
@@ -162,6 +168,15 @@ test("unsafe image is blocked at C1 and nothing is uploaded or deep-analyzed", a
   assert.equal(ai.deepCalls, 0);
 });
 
+test("non-design or political material (offScope) is rejected at C1 and never deep-analyzed", async () => {
+  const repo = new FakeRepo();
+  const ai = new FakeAi({ domains: ["fas"], quality: 90, safetyFlag: false, offScope: true });
+  const out = await processCandidate(candidate, ctx, { repo, ai, download: async () => image(1200, 900) });
+  assert.equal(out.status === "rejected" && out.reason, "low_quality");
+  assert.equal(repo.uploads.length, 0);
+  assert.equal(ai.deepCalls, 0);
+});
+
 test("low quality never reaches pass 2", async () => {
   const repo = new FakeRepo();
   const ai = new FakeAi({ domains: ["fas"], quality: 30, safetyFlag: false });
@@ -221,4 +236,23 @@ test("404 download is a rejection, 503 is retried by throwing", async () => {
     }),
     HttpError,
   );
+});
+
+test("a taken-down image is rejected as blocked_image before any AI cost, whatever its source id", async () => {
+  const repo = new FakeRepo();
+  const ai = new FakeAi();
+  repo.blocked = true;
+  const out = await processCandidate(candidate, ctx, { repo, ai, download: async () => image(1200, 900) });
+  assert.deepEqual(out, { status: "rejected", sourceId: "450741", reason: "blocked_image" });
+  assert.equal(ai.triageCalls, 0);
+  assert.match(repo.rejected[0].extra?.sha256 ?? "", /^[0-9a-f]{64}$/);
+  assert.equal(repo.blockChecks.length, 1);
+});
+
+test("published rows carry the sha256 of the downloaded bytes", async () => {
+  const repo = new FakeRepo();
+  const ai = new FakeAi();
+  const out = await processCandidate(candidate, ctx, { repo, ai, download: async () => image(1200, 900) });
+  assert.ok(out.status === "published" || out.status === "review");
+  assert.match(repo.published[0].sha256 ?? "", /^[0-9a-f]{64}$/);
 });

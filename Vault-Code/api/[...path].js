@@ -5,6 +5,9 @@ export const config = { maxDuration: 60 };
 const ROUTES = {
   "account/delete": "account-delete",
   "account/export": "account-export",
+  "account-delete": "account-delete",
+  "account-export": "account-export",
+  "similar": "similar",
   "discover": "discover",
   "feed": "feed",
   "import-url": "import-url",
@@ -12,6 +15,7 @@ const ROUTES = {
   "search": "search",
   "signal": "signal",
   "unsubscribe": "unsubscribe",
+  "waitlist": "waitlist",
   "__prefix": {
     "similar/": "similar"
   }
@@ -28,6 +32,7 @@ const LOADERS = {
   "signal": () => import("../lib/routes/signal.mjs"),
   "similar": () => import("../lib/routes/similar.mjs"),
   "unsubscribe": () => import("../lib/routes/unsubscribe.mjs"),
+  "waitlist": () => import("../lib/routes/waitlist.mjs"),
 };
 
 const cache = new Map();
@@ -54,7 +59,7 @@ export default async function handler(req, res) {
     return;
   }
   if (file === "similar" || file === "vault-captures-id") {
-    const id = decodeURIComponent(new URL(req.url, "http://localhost").pathname.split("/").filter(Boolean).pop() || "");
+    const u = new URL(req.url, "http://localhost"), id = u.searchParams.get("id") || decodeURIComponent(u.pathname.split("/").filter(Boolean).pop() || "");
     req.query = { ...(req.query || {}), id };
   }
   return (await load(file))(req, res);

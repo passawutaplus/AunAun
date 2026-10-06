@@ -50,7 +50,7 @@
     }
 
     /* ---------- find: typing demo ---------- */
-    const QUERIES = ["เก้าอี้วินเทจ", "#ff4f43", "warm minimal packaging", "ลายดอกไม้สีแดง", "poster type:image"];
+    const QUERIES = ["เก้าอี้วินเทจ", "#f05040", "warm minimal packaging", "ลายดอกไม้สีแดง", "poster type:image"];
     function buildResults() {
       $("[data-results]").innerHTML = Array.from({ length: 8 }, (_, i) => `<figure>${imgEl(i + 16)}</figure>`).join("");
     }
@@ -94,7 +94,7 @@
       const c = $("[data-canvas]");
       c.innerHTML = TILES.map((t, i) => {
         const [x, y, w, h] = t.f;
-        const inner = t.k === "img" ? imgEl(i + 30) : t.k === "palette" ? ["#d9c7a7", "#b9774f", "#3e5c76", "#2f3133", "#ff4f43"].map(c => `<span style="background:${c}"></span>`).join("") : t.k === "note" ? "Client wants warm, honest, a little vintage. Avoid glossy. Keep type quiet." : "Warm heritage";
+        const inner = t.k === "img" ? imgEl(i + 30) : t.k === "palette" ? ["#d9c7a7", "#b9774f", "#3e5c76", "#2f3133", "#f05040"].map(c => `<span style="background:${c}"></span>`).join("") : t.k === "note" ? "Client wants warm, honest, a little vintage. Avoid glossy. Keep type quiet." : "Warm heritage";
         return `<div class="tile ${t.k === "img" ? "" : t.k}" data-t="${i}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%">${inner}</div>`;
       }).join("");
     }
@@ -148,4 +148,70 @@
     loadPool().then(() => { if (pool.length) buildAll(); });
     addEventListener("scroll", onScroll, { passive: true });
     addEventListener("resize", onScroll);
+})();
+
+
+/* waitlist form + app install (kept separate from the scroll scenes above) */
+(() => {
+  const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+  $$("[data-waitlist]").forEach(form => {
+    const msg = form.querySelector(".wl-msg");
+    const say = (text, kind) => { msg.textContent = text; msg.className = "wl-msg" + (kind ? " is-" + kind : ""); };
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const email = form.elements.email.value.trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) return say("Enter a valid email address.", "error");
+      if (!form.elements.consent.checked) return say("Please tick the box so we may email you about the launch.", "error");
+      const btn = form.querySelector("button[type=submit]");
+      btn.disabled = true;
+      say("Joining…");
+      try {
+        const res = await fetch("/api/waitlist", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, consent: true, source: form.dataset.source }) });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.message || "Something went wrong. Please try again.");
+        form.classList.add("is-done");
+        document.dispatchEvent(new CustomEvent("waitlist:joined"));
+        say(body.message || "You're on the list.", "ok");
+      } catch (err) {
+        say(err.message || "Something went wrong. Please try again.", "error");
+        btn.disabled = false;
+      }
+    });
+  });
+})();
+
+
+/* story chapters: fill placeholder tiles from the live catalog, play each stage once when it scrolls in */
+(() => {
+  const { pool, imgEl, loadPool, reduce } = VaultMarketing;
+  const stages = [...document.querySelectorAll("[data-stage]")];
+  const fill = () => document.querySelectorAll("[data-img]").forEach((el, i) => {
+    el.style.setProperty("--i", String(i % 6));
+    el.innerHTML = imgEl(Number(el.dataset.img) + 3);
+  });
+  fill();
+  loadPool().then(() => { if (pool.length) fill(); });
+  if (reduce || !("IntersectionObserver" in window)) { stages.forEach(el => el.classList.add("in")); return; }
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .35 });
+  stages.forEach(el => io.observe(el));
+})();
+
+/* waitlist headcount */
+(() => {
+  const box = document.querySelector("[data-wl-counter]");
+  if (!box) return;
+  const num = box.querySelector("[data-wl-count]"), label = box.querySelector("[data-wl-count-label]");
+  const show = n => {
+    box.hidden = false;
+    if (n < 1) { num.textContent = ""; label.textContent = "Be the first on the list"; return; }
+    label.textContent = n === 1 ? "person is on the list" : "people are already on the list";
+    const start = performance.now(), dur = 900;
+    const tick = now => { const t = Math.min(1, (now - start) / dur); num.textContent = String(Math.round(n * (1 - Math.pow(1 - t, 3)))); if (t < 1) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  };
+  const load = async () => {
+    try { const r = await fetch("/api/waitlist"); const b = await r.json(); if (b && b.success) show(Number(b.count) || 0); } catch (e) { /* counter is optional */ }
+  };
+  load();
+  document.addEventListener("waitlist:joined", () => setTimeout(load, 600));
 })();

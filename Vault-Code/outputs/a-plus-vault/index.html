@@ -7,8 +7,11 @@
   <meta name="description" content="A private creative reference vault for Aplus." />
   <meta name="robots" content="noindex,nofollow" />
   <base href="/" />
+  <link rel="icon" type="image/svg+xml" href="/assets/brand/vault-icon-solid.svg" />
   <link rel="icon" type="image/png" href="/favicon.png" />
   <meta name="theme-color" content="#101113" />
+  <style>#vault-splash{display:none;position:fixed;inset:0;z-index:99999;place-items:center;background:#f05040;cursor:pointer;transition:opacity .45s ease}html[data-splash] #vault-splash{display:grid}#vault-splash.is-out{opacity:0;pointer-events:none}#vault-splash img{width:min(44vw,220px);height:auto}</style>
+  <script src="/splash.js"></script>
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="A+ Vault" />
@@ -23,6 +26,7 @@
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
+  <div id="vault-splash" aria-hidden="true"><img src="/assets/brand/vault-splash.svg" alt="" /></div>
   <div id="app">
     <div class="boot-skeleton" aria-label="Loading A+ Vault">
       <div class="boot-topbar">
@@ -46,6 +50,7 @@
       </div>
     </div>
   </div>
+  <script src="/entry-gate.js"></script>
   <script src="/vault-runtime.js"></script>
   <script src="/supabase-config.js"></script>
   <script type="module" src="/app.js"></script>

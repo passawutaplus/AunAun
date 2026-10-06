@@ -14,7 +14,7 @@
     @font-face{font-family:"Agrandir Wide";src:url("/assets/fonts/Agrandir-Wide-Light.woff2") format("woff2");font-weight:300 400;font-display:swap}
     :root{
       --paper:#f4f1ea;--paper-2:#ebe6db;--ink:#151719;--ink-2:#3a3d41;--muted:#7a7d80;--line:rgba(21,23,25,.12);
-      --coral:#ff4f43;--coral-dark:#e33f34;--chip:#fff;--chip-ink:#151719;
+      --coral:#f05040;--coral-dark:#b72b20;--chip:#fff;--chip-ink:#151719;
       --display:"Agrandir Wide","IBM Plex Sans Thai",system-ui,sans-serif;--body:"IBM Plex Sans Thai",system-ui,-apple-system,sans-serif;
       --ease:cubic-bezier(.2,.7,.2,1);
       color-scheme:light;
@@ -33,16 +33,14 @@
     .btn:hover{transform:translateY(-2px)}
     .btn:focus-visible{outline:2px solid var(--coral);outline-offset:3px}
     .btn-dark{background:var(--ink);color:var(--paper)}
-    .btn-coral{background:var(--coral);color:#fff;box-shadow:0 10px 30px rgba(255,79,67,.28)}
+    .btn-coral{background:var(--coral);color:#fff;box-shadow:0 10px 30px rgba(240,80,64,.28)}
     .btn-coral:hover{background:var(--coral-dark)}
     .btn-ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
     .bar .btn{height:40px;padding:0 18px;font-size:13px}
     main{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:clamp(32px,6vw,96px);align-items:center;width:min(1200px,calc(100% - 40px));margin:0 auto;padding:clamp(28px,6vw,72px) 0}
     .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
     .eyebrow::before{content:"";width:18px;height:1px;background:currentColor}
-    .code{margin:18px 0 0;font:300 clamp(96px,17vw,216px)/.86 var(--display);letter-spacing:-.04em}
-    .code span:nth-child(2){color:var(--coral)}
-    h1{margin:22px 0 0;font:300 clamp(26px,3.4vw,44px)/1.1 var(--display);letter-spacing:-.01em}
+    h1{margin:22px 0 0;font:300 clamp(40px,6.4vw,88px)/1.02 var(--display);letter-spacing:-.015em}
     .copy{max-width:480px;margin:16px 0 0;color:var(--ink-2)}
     .copy .th{display:block;margin-top:6px;color:var(--muted);font-size:.9em}
     .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
@@ -69,15 +67,14 @@
 </head>
 <body data-error="404">
   <header class="bar">
-    <a class="brand" href="./index.html" aria-label="A+ Vault home"><img src="/assets/vault-logo.png" width="30" height="30" alt="" /><span>A+ Vault</span></a>
+    <a class="brand" href="./index.html" aria-label="A+ Vault home"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/brand/vault-mark-line-white.svg" /><img src="/assets/brand/vault-mark-solid.svg" width="30" height="34" alt="" /></picture><span>A+ Vault</span></a>
     <a class="btn btn-dark" href="./index.html">Open Vault</a>
   </header>
   <main>
     <section>
-      <span class="eyebrow">Page not found</span>
-      <p class="code" aria-label="Error 404"><span>4</span><span>0</span><span>4</span></p>
+      <span class="eyebrow">Page not found &middot; 404</span>
       <h1>This page wandered off.</h1>
-      <p class="copy">It may have moved, expired, or never existed in your vault. Your saved references are safe.<span class="th">หน้านี้อาจถูกย้าย หมดอายุ หรือไม่เคยมีอยู่ ของที่เก็บไว้ยังอยู่ครบ</span></p>
+      <p class="copy">It may have moved or expired. Try Discover, or head back to My Vault.<span class="th">หน้านี้อาจถูกย้ายหรือหมดอายุ ลองไปดู Discover หรือกลับไปที่ My Vault นะ</span></p>
       <div class="actions"><a class="btn btn-coral" href="./index.html">Back to Vault</a><a class="btn btn-ghost" href="/discover">Browse Discover</a></div>
     </section>
     <figure class="ph" aria-hidden="true">

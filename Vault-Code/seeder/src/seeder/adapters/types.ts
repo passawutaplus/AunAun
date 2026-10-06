@@ -1,4 +1,6 @@
-export type SourceKey = "met" | "aic" | "cma" | "si" | "chndm" | "ov";
+/** "creator" rows come from creator_submissions (no adapter): the creator's own uploads. */
+export type SourceKey = "met" | "aic" | "cma" | "si" | "chndm" | "ov" | "creator";
+export type AdapterKey = Exclude<SourceKey, "creator">;
 
 export type AttributionJson = {
   artist: string;

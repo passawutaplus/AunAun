@@ -45,9 +45,17 @@
     });
     return best;
   }
+  // Respect the site owner's "do not save" signals (Pinterest-style nopin): page meta, or nopin / data-pin-nopin on the image or an ancestor.
+  const NOPIN_META = 'meta[name="pinterest" i][content="nopin" i]';
+  const noPinPage = () => Boolean(document.querySelector(NOPIN_META));
+  const noPinElement = el => Boolean(el && el.closest && el.closest("[data-pin-nopin],[nopin]"));
+  let lastContextTarget = null;
+  document.addEventListener("contextmenu", e => { lastContextTarget = e.target; }, true);
   function collectRawCandidates() {
     const out = [];
+    if (noPinPage()) return out;
     document.querySelectorAll("img").forEach(img => {
+      if (noPinElement(img)) return;
       const srcset = img.getAttribute("srcset") || (img.closest("picture") ? [...img.closest("picture").querySelectorAll("source")].map(s => s.getAttribute("srcset")).filter(Boolean).join(",") : "");
       const big = bestFromSrcset(srcset);
       const url = abs(big || img.currentSrc || img.src || img.getAttribute("data-src") || img.getAttribute("data-lazy-src") || "");
@@ -71,7 +79,7 @@
     const { rankCandidates, defaultSelection } = await lib("keep-all");
     const { keptImageKeys = [] } = await chrome.storage.local.get(["keptImageKeys"]);
     const ranked = rankCandidates(collectRawCandidates(), { keptKeys: new Set(keptImageKeys) });
-    return { ...ranked, selection: defaultSelection(ranked.items) };
+    return { ...ranked, selection: defaultSelection(ranked.items), noPin: noPinPage() };
   }
 
   // ------------------------------------------------------------------ shadow UI host
@@ -179,7 +187,7 @@
     const keepBtn = root.querySelector("[data-keep]");
     const nameInput = root.querySelector(".name");
     nameInput.value = collectionNameFor(document.title, location.hostname);
-    sub.textContent = `${items.length} found${hiddenJunk + hiddenDup ? ` · ${hiddenJunk + hiddenDup} icons/duplicates hidden` : ""}${capped ? ` · ${capped} more not shown` : ""}`;
+    sub.textContent = noPinPage() ? "This site asks not to save its images, so none are listed." : `${items.length} found${hiddenJunk + hiddenDup ? ` · ${hiddenJunk + hiddenDup} icons/duplicates hidden` : ""}${capped ? ` · ${capped} more not shown` : ""}`;
     const refresh = () => {
       keepBtn.textContent = selected.size ? `Keep ${selected.size} image${selected.size === 1 ? "" : "s"}` : "Choose images";
       keepBtn.disabled = !selected.size;
@@ -258,7 +266,7 @@
     if (hoverKeep !== true) return;
     document.addEventListener("mouseover", e => {
       const img = e.target instanceof HTMLImageElement ? e.target : null;
-      if (!img || img.naturalWidth < 300 || img.naturalHeight < 200) return;
+      if (!img || img.naturalWidth < 300 || img.naturalHeight < 200 || noPinPage() || noPinElement(img)) return;
       hoverImg = img;
       clearTimeout(hoverTimer);
       showHover(img);
@@ -294,6 +302,7 @@
   // ------------------------------------------------------------------ messages from the background / popup
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type === "VAULT_KEEP_PING") { sendResponse({ ok: true }); return true; }
+    if (message?.type === "VAULT_NOPIN_CHECK") { sendResponse({ ok: true, blocked: noPinPage() || noPinElement(lastContextTarget) }); return true; }
     if (message?.type === "VAULT_GET_CREDIT") { computeCredit(message.imageUrl).then(credit => sendResponse({ ok: true, credit })); return true; }
     if (message?.type === "VAULT_KEEP_ALL_COUNT") { loadCandidates().then(r => sendResponse({ ok: true, count: r.selection.length, total: r.items.length })).catch(() => sendResponse({ ok: false })); return true; }
     if (message?.type === "VAULT_KEEP_ALL_OPEN") { openPicker().then(() => sendResponse({ ok: true })).catch(() => sendResponse({ ok: false })); return true; }

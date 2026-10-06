@@ -10,8 +10,8 @@ const built = read("taxonomy/taxonomy.json");
 describe("engine config", () => {
   it("is valid and has the agreed defaults", () => {
     assert.deepEqual(validateEngineConfig(engineConfig), []);
-    assert.equal(engineConfig.QUALITY_PUBLISH, 75);
-    assert.equal(engineConfig.MIN_CONFIDENT_TAGS, 4);
+    assert.equal(engineConfig.QUALITY_PUBLISH, 70);
+    assert.equal(engineConfig.MIN_CONFIDENT_TAGS, 3);
     assert.equal(engineConfig.OCR_ENABLED, false);
   });
   it("rejects NC/ND licenses and inverted quality thresholds", () => {

@@ -64,6 +64,7 @@ export async function importUrl(rawUrl, opts = {}) {
     imageUrl,
     imageWidth: imageUrl ? imageWidth || null : null,
     imageHeight: imageUrl ? imageHeight || null : null,
+    images: Array.isArray(meta.images) ? meta.images.slice(0, 24) : [],
     faviconUrl: favicon,
   };
 }
