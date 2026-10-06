@@ -28,7 +28,7 @@ Legend: done = in code and tested here · partial = some of it · todo = not sta
 | Onboarding + empty state (B5.8) | partial | My Vault empty state shows the three ways in. There is no separate one-page onboarding, and the Museum header line is unchanged. |
 | "Kept for" chips + `why:` search (B2.1-F2) | partial | Drawer, Quick Keep sheet and extension popup have chips (plus project chips and a one-line note in the first two). Keeping from the Museum and drag-and-drop uploads do not ask. `why:color` works. |
 | Share to Vault on Android (B2.1-F1) | partial | Share target is POST with images, the service worker parks them in IndexedDB, Quick Keep sheet confirms, Kept + Undo. Link-only shares keep the old path. Tested in unit tests and in the browser by seeding IndexedDB; not on a real phone. Missing: install hint for Android users who have not installed the app, an explicit "waiting to send" list. |
-| For You / Library (B2.1-F3) | done | Inbox, Top of Mind, From your past, project gaps (4 rules), week palette; hide 7 days; works offline. Optional Museum card not built. Opens on Library by default (owner to decide). |
+| For You / Library (B2.1-F3) | done | Inbox, Top of Mind, From your past, project gaps (4 rules), week palette; hide 7 days; works offline. Optional Museum card not built. Opens on Library (owner decision 2026-10-06). It is a dashboard: stat tiles, needs-you cards, keep heatmap, collections, projects and recent. |
 
 ## Later phases
 | Phase | Status |
