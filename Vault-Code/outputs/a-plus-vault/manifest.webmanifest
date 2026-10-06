@@ -19,7 +19,7 @@
     { "src": "/assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Discover", "short_name": "Discover", "url": "/discover?source=shortcut", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Museum", "short_name": "Museum", "url": "/discover?source=shortcut", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
     { "name": "My Vault", "short_name": "Vault", "url": "/vault?source=shortcut", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
     { "name": "Moodboards", "short_name": "Boards", "url": "/moodboards?source=shortcut", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
   ],

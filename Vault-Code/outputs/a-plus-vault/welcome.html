@@ -356,6 +356,15 @@
     .pocket-ph{position:relative;margin:0;border-radius:22px;overflow:hidden;aspect-ratio:4/5;background:var(--paper-2)}
     .pocket-ph img{width:100%;height:100%;object-fit:cover;display:block}
     @media(max-width:900px){.pocket-grid{grid-template-columns:1fr}.pocket-ph{order:2}}
+
+    .ways{padding:clamp(70px,9vw,120px) 0;background:var(--soft,#f7f8fa)}
+    .ways-head{max-width:640px}
+    .ways-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:44px}
+    .way{padding:26px 24px;border:1px solid var(--line,#e5e8eb);border-radius:16px;background:#fff}
+    .way b{display:block;font-size:13px;letter-spacing:.12em;color:var(--coral)}
+    .way h3{margin:14px 0 8px;font-size:21px;line-height:1.2}
+    .way p{margin:0;font-size:15px;line-height:1.55;color:var(--muted,#747a80)}
+    @media(max-width:900px){.ways-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -367,10 +376,10 @@
       <nav class="nav-links" aria-label="Sections">
         <a href="#capture">Capture</a>
         <a href="#find">Search</a>
-        <a href="#discover">Discover</a>
+        <a href="#museum">Museum</a>
         <a href="#promise">Privacy</a>
       </nav>
-      <a class="nav-login" href="/discover?login=1">Log in</a>
+      <a class="nav-login" href="/vault?login=1">Log in</a>
       <a class="btn btn-dark" href="#waitlist">Join<span class="hide-s">&nbsp;app</span>&nbsp;waitlist</a>
     </div>
   </header>
@@ -383,13 +392,13 @@
         <h1 aria-label="Keep what inspires you.">
           <span class="word"><span style="animation-delay:.05s">Keep</span></span>
           <span class="word"><span style="animation-delay:.15s">what</span></span><br />
-          <span class="word"><span style="animation-delay:.25s">moves</span></span>
+          <span class="word"><span style="animation-delay:.25s">inspires</span></span>
           <span class="word"><span class="accent" style="animation-delay:.35s">you.</span></span>
         </h1>
-        <p class="lede">Save references from any site in one click, find them again by color, image, or a few words in Thai — and never lose who made them.<span class="th">เก็บแรงบันดาลใจจากทุกที่ แล้วหาเจอเมื่อถึงเวลาทำงานจริง</span></p>
+        <p class="lede">Keep what inspires you from the web, from your own files, or from the Museum — then find it again by color, by image, or by a few words in Thai. And never lose who made it.<span class="th">เก็บแรงบันดาลใจจากเว็บ จากไฟล์ของคุณ หรือจาก Museum แล้วหาเจอด้วยสี ภาพ หรือคำไม่กี่คำ</span></p>
         
         <div class="hero-ctas">
-          <a class="btn btn-coral" href="/discover">Explore Discover <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn btn-coral" href="/vault?login=1">Start keeping <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           <a class="btn btn-light" href="/extension"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>Get the Chrome extension</a>
         </div>
         <p class="hero-note">Open beta · Free to try · Private by default</p>
@@ -423,6 +432,23 @@
           <p class="lede">Every reference that ever caught your eye — press + Keep in Vault and it lands in one place. Always in your pocket, ready to show a client.<span class="th">แรงบันดาลใจที่เคยผ่านตา กด + Keep ไว้ แล้วรวมอยู่ที่เดียวใน Vault พกติดตัว เปิดคุยงานกับลูกค้าได้ทันที</span></p>
         </div>
         <figure class="pocket-ph reveal" data-delay="1"><img src="/assets/people/pocket-phone.webp" alt="A hand sliding a phone showing a grid of saved design references into a jeans pocket" width="928" height="1152" loading="lazy"><span class="stk ok" style="left:6%;bottom:10%"><i></i>+ Keep in Vault</span></figure>
+      </div>
+    </section>
+
+
+    <!-- THREE WAYS IN -->
+    <section class="ways" id="ways">
+      <div class="wrap">
+        <div class="reveal ways-head">
+          <span class="eyebrow">Three ways in</span>
+          <h2 style="margin-top:18px">Keep. Find.<br /><span style="color:var(--coral)">Museum.</span></h2>
+          <p class="lede">Everything you keep lands in one Inbox, with its source and credit. Sort it when you are ready.<span class="th">ทุกอย่างที่เก็บมาจะเข้า Inbox พร้อมที่มาและเครดิต แล้วค่อยจัดทีหลัง</span></p>
+        </div>
+        <div class="ways-grid">
+          <article class="way reveal"><b>01</b><h3>From the web</h3><p>Right-click any image or page and choose + Keep in Vault. Your tab never moves.</p></article>
+          <article class="way reveal" data-delay="1"><b>02</b><h3>From your files</h3><p>Drag images onto My Vault, or paste a link. Your own work stays private.</p></article>
+          <article class="way reveal" data-delay="2"><b>03</b><h3>From the Museum</h3><p>Open collections from the world’s museums, with the credit attached. Keep a piece in one tap.</p></article>
+        </div>
       </div>
     </section>
 
@@ -554,15 +580,15 @@
       </div>
     </section>
 
-    <!-- DISCOVER -->
-    <section id="discover" class="dark-grain">
+    <!-- MUSEUM -->
+    <section id="museum" class="dark-grain">
       <div class="wrap discover-head">
         <div class="reveal">
-          <span class="eyebrow">Discover</span>
-          <h2 style="margin-top:18px">Never start<br />from an empty board.</h2>
-          <p class="lede">Thousands of open-access works from The Met, Cleveland Museum of Art, and the Smithsonian — tagged, searchable by color and shape, credited, and free to keep.</p>
+          <span class="eyebrow">Museum</span>
+          <h2 style="margin-top:18px">The world’s open collections,<br />seen through a designer’s eye.</h2>
+          <p class="lede">Museums keep the world’s treasures. Vault keeps yours. Browse open-access works from museums around the world — tagged, searchable by color and shape, credited, and free to keep.<span class="th">งานศิลป์จากพิพิธภัณฑ์ทั่วโลก ดูผ่านสายตานักออกแบบ เก็บเข้า Vault ได้ทันที</span></p>
         </div>
-        <a class="btn btn-dark reveal" data-delay="1" href="/discover">Open Discover <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn btn-dark reveal" data-delay="1" href="/discover">Open the Museum <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
       <div class="marquee" data-marquee="0" aria-hidden="true"></div>
       <div class="marquee rev" data-marquee="1" aria-hidden="true"></div>
@@ -710,7 +736,8 @@
           <details><summary>Can I use it today?</summary><p>Yes, in beta. The web app (on your computer or phone) and the Chrome extension are ready to try: log in and start keeping. Some things are still rough, so tell us what you find. The Android and desktop apps are earlier builds that we send to a small group of testers.</p></details>
           <details><summary>Is it free?</summary><p>It is free during the beta. If paid plans arrive later, you will be told well before anything changes.</p></details>
           <details><summary>Is my Vault private?</summary><p>Yes. Everything you keep is private by default. Sharing is always your choice and can be turned off again.</p></details>
-          <details><summary>Where do the Discover images come from?</summary><p>Only open-licence sources such as CC0 and public-domain collections, each with its credit. Images with unknown rights never appear in Discover.</p></details>
+          <details><summary>What is the Museum?</summary><p>A browsable collection of open-access works from museums, shown the way a designer reads them: colors, composition, pattern. You can keep any piece into your Vault in one tap. The Museum is where you look around; My Vault is where your own references live.</p></details>
+          <details><summary>Where do the Museum images come from?</summary><p>Only open-licence sources such as CC0 and public-domain collections, each with its credit. Images with unknown rights never appear in the Museum.</p></details>
           <details><summary>Can I search in Thai?</summary><p>Yes. Search by a few Thai or English words, by colour, or by a similar image.</p></details>
           <details><summary>Which devices does it work on?</summary><p>Any browser today. You can install it on your phone, and the Android and desktop apps go to the waitlist first.</p></details>
         </div>
@@ -721,10 +748,10 @@
     <section id="start">
       <div class="wrap">
         <h2 class="reveal">Start keeping.</h2>
-        <p class="lede reveal" data-delay="1" style="margin-left:auto;margin-right:auto">Browse Discover as a guest, or log in to build your own private Vault.<span class="th">เริ่มจากดูภาพใน Discover หรือเข้าสู่ระบบเพื่อสร้าง Vault ส่วนตัวของคุณ</span></p>
+        <p class="lede reveal" data-delay="1" style="margin-left:auto;margin-right:auto">Log in to build your own private Vault, or look around the Museum first.<span class="th">เข้าสู่ระบบเพื่อสร้าง Vault ส่วนตัวของคุณ หรือเริ่มจากเดินดู Museum</span></p>
         <div class="final-ctas reveal" data-delay="2">
-          <a class="btn btn-coral" href="/discover?login=1">Log in</a>
-          <a class="btn btn-light" href="/discover">Explore Discover</a>
+          <a class="btn btn-coral" href="/vault?login=1">Log in</a>
+          <a class="btn btn-light" href="/discover">Visit the Museum</a>
           <a class="btn btn-light" href="/extension">Get the Chrome extension</a>
         </div>
       </div>
@@ -734,7 +761,7 @@
   <footer class="dark-grain">
     <div class="wrap">
       <span>Photos via Unsplash: Rasheed Kemy, Zulfugar Karimov, Theme Photos, Burst, Swello · © <span data-year></span> A+ Vault · Part of the Aplus ecosystem</span>
-      <nav aria-label="Footer"><a href="/discover">Discover</a><a href="/vault">My Vault</a><a href="/legal">Privacy &amp; legal</a><a href="/legal#copyright">Copyright</a></nav>
+      <nav aria-label="Footer"><a href="/vault">My Vault</a><a href="/discover">Museum</a><a href="/legal">Privacy &amp; legal</a><a href="/legal#copyright">Copyright</a></nav>
     </div>
     <div class="foot-mark" aria-hidden="true">A+ Vault</div>
   </footer>

@@ -14,7 +14,7 @@ export const HOWTO = {
   ],
   collections: [
     { n: "01", title: "Name a collection.", th: "ตั้งชื่อคอลเลกชันตามงาน", body: "Make one per theme, client, or campaign. Keep the name short — you’ll see it everywhere." },
-    { n: "02", title: "Choose where + Keep saves.", th: "เลือกว่าจะเก็บเข้าที่ไหน", body: "On any Discover card, pick a collection from the dropdown beside + Keep. From then on, one click saves straight into it." },
+    { n: "02", title: "Choose where + Keep saves.", th: "เลือกว่าจะเก็บเข้าที่ไหน", body: "On any Museum card, pick a collection from the dropdown beside + Keep. From then on, one click saves straight into it." },
     { n: "03", title: "Nest as you grow.", th: "จัดซ้อนกันเมื่องานเยอะขึ้น", body: "Put campaigns inside clients, moods inside campaigns. Pin and highlight what matters right now." },
     { n: "04", title: "Lives once. Shows in many.", th: "เก็บครั้งเดียว ใช้ได้หลายที่", body: "A reference sits once in your Vault and can belong to many collections — so nothing is duplicated and nothing is lost." },
   ],
