@@ -11,7 +11,7 @@
     "smoke:api": "node scripts/prod-api-smoke.mjs",
     "sitemap:gen": "node scripts/generate-seo.mjs",
     "test": "node --test scripts/__tests__/*.test.mjs",
-    "test:gate": "npm run check && npm run test && npm run alpha:smoke && npm run build",
+    "test:gate": "npm run build && npm run check && npm run test && npm run alpha:smoke",
     "deploy:demo": "bash scripts/deploy-demo-vercel.sh",
     "deploy:production": "bash scripts/deploy-production-vercel.sh",
     "pack:extension": "node scripts/pack-extension.mjs",
