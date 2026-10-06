@@ -24,8 +24,14 @@
     { "name": "Moodboards", "short_name": "Boards", "url": "/moodboards?source=shortcut", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
   ],
   "share_target": {
-    "action": "/vault",
-    "method": "GET",
-    "params": { "title": "share_title", "text": "share_text", "url": "share_url" }
+    "action": "/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [{ "name": "files", "accept": ["image/jpeg", "image/png", "image/webp"] }]
+    }
   }
 }

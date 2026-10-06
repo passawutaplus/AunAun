@@ -6585,3 +6585,46 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 .kept-text{width:100%;height:38px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:inherit;font-size:13px}
 
 .search-place-filter{display:grid;gap:8px}
+
+/* A+ Vault: Quick Keep sheet (shared images) */
+.qk-backdrop{position:fixed;inset:0;z-index:300;display:grid;place-items:end center;background:rgba(6,8,10,.6);backdrop-filter:blur(6px)}
+.qk-sheet{width:min(520px,100%);max-height:92vh;overflow:auto;padding:18px 18px calc(18px + env(safe-area-inset-bottom));border-radius:20px 20px 0 0;background:var(--surface);color:var(--ink);box-shadow:0 -12px 40px rgba(0,0,0,.35);display:grid;gap:12px}
+.qk-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.qk-head h2{margin:2px 0 0;font-size:20px}
+.qk-head small{font-size:13px;font-weight:400;color:var(--muted)}
+.qk-thumbs{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.qk-thumbs img{flex:0 0 auto;width:84px;height:84px;object-fit:cover;border-radius:10px;box-shadow:inset 0 0 0 1px var(--line)}
+.qk-more{flex:0 0 auto;display:grid;place-items:center;width:84px;height:84px;border-radius:10px;background:var(--panel);color:var(--muted);font-size:14px}
+.qk-label{margin:0;font-size:13px;font-weight:600;color:var(--ink)}
+.qk-label span{font-weight:400;color:var(--muted)}
+.qk-select{height:42px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:inherit;font-size:14px}
+.qk-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px}
+.qk-snack{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:310;display:flex;align-items:center;gap:14px;padding:10px 12px 10px 16px;border-radius:999px;background:var(--ink-strong);color:var(--surface);font-size:13.5px;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+.qk-snack button{border:0;background:transparent;color:var(--accent,#f05040);font:inherit;font-weight:700;cursor:pointer;padding:4px 8px}
+@media(min-width:700px){.qk-backdrop{place-items:center}.qk-sheet{border-radius:20px}}
+
+/* A+ Vault: For You / Library */
+.vault-tabs{display:inline-flex;gap:4px;margin:2px 0 16px;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--surface-soft)}
+.vault-tab{min-height:34px;padding:0 16px;border:0;border-radius:999px;background:transparent;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+.vault-tab.active{background:var(--ink-strong);color:var(--surface)}
+.fy-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-bottom:22px}
+.fy-card{display:grid;gap:14px;align-content:space-between;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--surface-soft)}
+.fy-card h3{margin:0 0 6px;font-size:16px;line-height:1.3;color:var(--ink-strong)}
+.fy-card p{margin:0;font-size:13.5px;line-height:1.5;color:var(--muted)}
+.fy-thumbs{display:flex;gap:6px;margin-top:12px}
+.fy-thumb{width:52px;height:52px;border-radius:8px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line);background:var(--panel)}
+.fy-thumb img{width:100%;height:100%;object-fit:cover}
+.fy-palette{display:flex;height:40px;margin-top:12px;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(127,127,127,.25)}
+.fy-swatch{flex:1 1 0;border:0;cursor:pointer}
+.fy-actions{display:flex;flex-wrap:wrap;gap:8px}
+.fy-actions .small{min-height:34px;padding:0 14px;font-size:13px}
+.fy-empty{margin-top:8px}
+
+/* A+ Vault: first run */
+.first-run-ways{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px;text-align:left}
+.first-run-ways article{display:grid;gap:8px;align-content:start;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--surface-soft)}
+.first-run-ways b{font-size:12px;letter-spacing:.12em;color:var(--accent,#f05040)}
+.first-run-ways strong{font-size:16px;color:var(--ink-strong)}
+.first-run-ways span{font-size:13.5px;line-height:1.5;color:var(--muted)}
+.first-run-ways .primary-button,.first-run-ways .ghost-button{justify-self:start;margin-top:6px;min-height:36px;padding:0 14px;font-size:13px;text-decoration:none}
+@media(max-width:760px){.first-run-ways{grid-template-columns:1fr}}

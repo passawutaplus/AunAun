@@ -427,6 +427,7 @@ export function createVaultRemote(config = {}) {
           localId: project.id,
           collectionIds: Array.isArray(project.collectionIds) ? project.collectionIds.filter(Boolean) : [],
           pinnedAt: Number(project.pinnedAt) || 0,
+          palette: Array.isArray(project.palette) ? project.palette.filter(h => /^#[0-9a-f]{6}$/i.test(h)).slice(0, 8) : [],
         },
         updated_at: new Date().toISOString(),
       };
@@ -846,6 +847,7 @@ function remoteProjectToLocal(row) {
     description: row.description || "",
     collectionIds: Array.isArray(metadata.collectionIds) ? metadata.collectionIds.filter(Boolean).map(String) : [],
     pinnedAt: Number(metadata.pinnedAt) || 0,
+    palette: Array.isArray(metadata.palette) ? metadata.palette.filter(h => /^#[0-9a-f]{6}$/i.test(h)).slice(0, 8) : [],
     boards: (row.vault_boards || []).map(board => ({
       id: board.client_key || board.id,
       remoteId: board.id,
