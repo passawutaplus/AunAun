@@ -6662,3 +6662,10 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 .vault-filter-picker{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
 label.vault-filter-button input[type=file]{display:none}
 @media(max-width:900px){.vault-filter-button .vault-filter-text{display:none}.vault-filter-button{padding:0 12px}}
+
+/* A+ Vault: round icon-only Color and Image buttons (same wheel as the Museum colour search) */
+.vault-round-button{flex:0 0 auto;display:inline-grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface-soft);color:var(--ink);cursor:pointer}
+.vault-round-button:hover,.vault-round-button.active{border-color:rgba(240,80,64,.6);color:var(--accent,#f05040)}
+.vault-color-wheel{display:block;width:24px;height:24px;border-radius:50%;background:conic-gradient(from 0deg,#ff4d4d,#ffb84d,#f6ee4d,#4dff7a,#4dd2ff,#6b6bff,#c34dff,#ff4d9e,#ff4d4d);box-shadow:0 0 0 1.5px rgba(255,255,255,.18)}
+.vault-round-count{position:absolute;right:-3px;top:-3px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--accent,#f05040);color:#fff;font-size:10px;font-weight:700;line-height:16px;text-align:center}
+@media(max-width:900px){.vault-round-button{padding:0}}
