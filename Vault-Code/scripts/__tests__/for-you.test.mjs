@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { activeHidden, buildForYouCards, hideUntil, projectGapCard, weeklyPalette } from "../../outputs/a-plus-vault/modules/for-you.js";
+import { activeHidden, buildForYouCards, hideUntil, projectGapCard, UNSORTED_DAYS, weeklyPalette } from "../../outputs/a-plus-vault/modules/for-you.js";
+import { isUnsorted } from "../../outputs/a-plus-vault/modules/origin.js";
 
 const NOW = Date.UTC(2026, 9, 10, 12);
 const DAY = 86400000;
@@ -10,7 +11,6 @@ const dist = (a, b) => {
   return Math.sqrt(x.reduce((s, v, i) => s + (v - y[i]) ** 2, 0));
 };
 const img = (id, extra = {}) => ({ id, type: "image", thumbnailUrl: `https://img.test/${id}.jpg`, createdAt: NOW - DAY, projectIds: [], collectionIds: ["all"], analysis: { colors: ["#ff0000", "#00ff00", "#0000ff"] }, captureContext: {}, ...extra });
-const inboxOnly = i => (i.collectionIds || []).every(c => c === "all");
 
 describe("For You cards", () => {
   it("asks for a palette when a project has 5+ images and none saved", () => {
@@ -52,12 +52,16 @@ describe("For You cards", () => {
     assert.equal(weeklyPalette(week.slice(0, 2), NOW, dist), null);
   });
 
-  it("orders Inbox, project and palette cards, caps at five, and honours hidden cards", () => {
+  it("orders unsorted, project and palette cards, caps at five, and honours hidden cards", () => {
     const items = Array.from({ length: 5 }, (_, i) => img("n" + i, { projectIds: ["p1"] }));
-    const ctx = { items, projects: [{ id: "p1", name: "Cafe" }], hidden: {}, now: NOW, isInbox: inboxOnly, distance: dist };
+    const ctx = { items, projects: [{ id: "p1", name: "Cafe" }], hidden: {}, now: NOW, isUnsorted, distance: dist };
     const cards = buildForYouCards(ctx);
-    assert.deepEqual(cards.map(c => c.kind), ["inbox", "project", "palette"]);
-    const hidden = buildForYouCards({ ...ctx, hidden: { inbox: hideUntil(NOW) } });
+    assert.deepEqual(cards.map(c => c.kind), ["unsorted", "project", "palette"]);
+    assert.equal(cards[0].title, "5 things still unsorted");
+    assert.equal(cards[0].th, "ยังไม่จัด 5 ชิ้น");
+    assert.equal(cards[0].action.type, "unsorted");
+    assert.equal(cards[0].hideLabel, "Skip for now");
+    const hidden = buildForYouCards({ ...ctx, hidden: { unsorted: hideUntil(NOW) } });
     assert.deepEqual(hidden.map(c => c.kind), ["project", "palette"]);
     const manyProjects = Array.from({ length: 9 }, (_, i) => ({ id: "q" + i, name: "P" + i }));
     const lots = manyProjects.flatMap(p => Array.from({ length: 5 }, (_, i) => img(p.id + i, { projectIds: [p.id] })));
@@ -67,5 +71,23 @@ describe("For You cards", () => {
   it("drops hidden entries that have expired", () => {
     assert.deepEqual(activeHidden({ a: NOW + DAY, b: NOW - 1 }, NOW), { a: NOW + DAY });
     assert.equal(hideUntil(NOW), NOW + 7 * DAY);
+  });
+
+  it("counts only unsorted items kept in the last 14 days", () => {
+    assert.equal(UNSORTED_DAYS, 14);
+    const items = [img("fresh", { createdAt: NOW - 3 * DAY }), img("edge", { createdAt: NOW - 14 * DAY }), img("old", { createdAt: NOW - 15 * DAY }), img("sorted", { createdAt: NOW - DAY, collectionIds: ["c1"] })];
+    const card = buildForYouCards({ items, projects: [], hidden: {}, now: NOW, isUnsorted, distance: dist }).find(c => c.kind === "unsorted");
+    assert.equal(card.title, "2 things still unsorted");
+    const none = buildForYouCards({ items: [img("old", { createdAt: NOW - 30 * DAY })], projects: [], hidden: {}, now: NOW, isUnsorted, distance: dist });
+    assert.equal(none.some(c => c.kind === "unsorted"), false);
+  });
+
+  it("skipping the card only hides it: the items are untouched and it returns after 7 days", () => {
+    const items = [img("a")];
+    const ctx = { items, projects: [], now: NOW, isUnsorted, distance: dist };
+    assert.equal(buildForYouCards({ ...ctx, hidden: {} }).some(c => c.id === "unsorted"), true);
+    assert.equal(buildForYouCards({ ...ctx, hidden: { unsorted: hideUntil(NOW) } }).some(c => c.id === "unsorted"), false);
+    assert.equal(buildForYouCards({ ...ctx, now: NOW + 8 * DAY, items: [img("a", { createdAt: NOW + 7 * DAY })], hidden: { unsorted: hideUntil(NOW) } }).some(c => c.id === "unsorted"), true);
+    assert.equal(items[0].collectionIds.length, 1);
   });
 });

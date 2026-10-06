@@ -58,7 +58,7 @@ If the extension is unreliable, the product becomes a generic storage website. E
 ## Product Model
 
 - Vault Library is the central source of truth. Every object is saved here first.
-- Inbox is the default unsorted state.
+- Library is the one room. An item that is in no collection is "Unsorted" (a filter, not a place).
 - Collections are custom groupings by theme, material, client, campaign, or research topic.
 - Moodboards are canvas workspaces that reuse existing Vault objects.
 - Projects gather selected collections, moodboards, and object relations for one job.

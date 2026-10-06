@@ -6564,20 +6564,20 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 .col-smart-badge{display:inline-grid;place-items:center;margin-left:4px;color:var(--accent,#f05040);vertical-align:-2px}
 .col-smart-badge .flat-icon{width:12px;height:12px}
 
-/* A+ Vault: Inbox, Kept from, Kept for */
-.sidebar-inbox{margin-bottom:6px}
-.inbox-open{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-soft);color:var(--ink);font:inherit;font-size:14px;cursor:pointer;text-align:left}
-.inbox-open .inbox-name{flex:1}
-.inbox-open .count{font-size:12px;color:var(--muted)}
-.inbox-open:hover,.inbox-open.active{border-color:rgba(240,80,64,.55);color:var(--accent,#f05040)}
+/* A+ Vault: Unsorted, Kept from, Kept for */
+.sidebar-unsorted{margin-bottom:6px}
+.unsorted-open{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-soft);color:var(--ink);font:inherit;font-size:14px;cursor:pointer;text-align:left}
+.unsorted-open .unsorted-name{flex:1}
+.unsorted-open .count{font-size:12px;color:var(--muted)}
+.unsorted-open:hover,.unsorted-open.active{border-color:rgba(240,80,64,.55);color:var(--accent,#f05040)}
 .sidebar-origin{margin-bottom:6px}
 .origin-list{display:flex;flex-wrap:wrap;gap:6px}
 .origin-chip{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer}
 .origin-chip .count{color:var(--muted);font-size:11.5px}
 .origin-chip.active{background:rgba(240,80,64,.14);border-color:rgba(240,80,64,.55);color:var(--accent,#f05040)}
-.inbox-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:10px 14px;border:1px dashed var(--line);border-radius:12px;font-size:13.5px;color:var(--muted)}
-.inbox-strip p{margin:0}
-.inbox-strip strong{color:var(--ink-strong)}
+.unsorted-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:10px 14px;border:1px dashed var(--line);border-radius:12px;font-size:13.5px;color:var(--muted)}
+.unsorted-strip p{margin:0}
+.unsorted-strip strong{color:var(--ink-strong)}
 .detail-origin-tag{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;background:var(--surface-soft);box-shadow:inset 0 0 0 1px var(--line);font-size:11px;color:var(--muted)}
 .detail-kept .kept-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .kept-chip{min-height:30px;padding:0 11px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer}
@@ -6629,5 +6629,43 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 .first-run-ways .primary-button,.first-run-ways .ghost-button{justify-self:start;margin-top:6px;min-height:36px;padding:0 14px;font-size:13px;text-decoration:none}
 @media(max-width:760px){.first-run-ways{grid-template-columns:1fr}}
 
-.vault-tab-count{display:inline-grid;place-items:center;min-width:18px;height:18px;margin-left:6px;padding:0 5px;border-radius:999px;background:var(--accent,#f05040);color:#fff;font-size:11px;font-weight:700;line-height:1}
-.vault-tab.active .vault-tab-count{background:var(--surface);color:var(--ink-strong)}
+
+/* A+ Vault: For You as a dashboard */
+.fy-dash{--profile-radius:16px;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:18px;align-items:start}
+.fy-dash-main,.fy-dash-side{display:grid;gap:14px;min-width:0}
+.fy-dash .fy-grid{grid-template-columns:1fr;margin-bottom:0}
+.fy-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.fy-stat{display:grid;gap:2px;padding:14px 14px 12px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.fy-stat strong{font-size:26px;line-height:1.1;font-weight:500;color:var(--ink-strong)}
+.fy-stat span{font-size:12.5px;color:var(--muted)}
+.fy-stat:hover{border-color:rgba(240,80,64,.55)}
+@media(max-width:1100px){.fy-dash{grid-template-columns:1fr}}
+@media(max-width:640px){.fy-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.fy-stats .fy-stat:first-child{grid-column:1 / -1}}
+
+/* A+ Vault: Unsorted filter chip + select mode */
+.vault-select-mode .object-select-check{opacity:1;pointer-events:auto}
+.fy-th{display:block;margin:-2px 0 6px;font-size:12.5px;color:var(--muted)}
+
+/* A+ Vault: New badge (kept in the last 7 days and not opened yet) */
+.new-badge{position:absolute;right:10px;top:10px;z-index:6;display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:999px;background:var(--accent,#f05040);color:#fff;font-size:11px;font-weight:700;letter-spacing:.04em;line-height:1;box-shadow:0 6px 16px rgba(240,80,64,.35);pointer-events:none;transition:opacity .15s}
+.pin-card:hover .new-badge,.pin-card.pinned .new-badge,.pin-card.menu-open .new-badge{opacity:0}
+
+/* A+ Vault: Unsorted button beside the search tools */
+.vault-unsorted-button{flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-soft);color:var(--ink);font:inherit;font-size:13.5px;cursor:pointer;white-space:nowrap}
+.vault-unsorted-count{font-size:12px;color:var(--muted)}
+.vault-unsorted-button:hover,.vault-unsorted-button.active{background:rgba(240,80,64,.14);border-color:rgba(240,80,64,.6);color:var(--accent,#f05040)}
+.vault-unsorted-button.active .vault-unsorted-count{color:inherit}
+@media(max-width:520px){.vault-unsorted-button{padding:0 10px;gap:5px}.vault-unsorted-text{display:none}}
+
+/* A+ Vault: Color and Image buttons beside Unsorted */
+.vault-filter-button{position:relative}
+.vault-filter-picker{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+label.vault-filter-button input[type=file]{display:none}
+@media(max-width:900px){.vault-filter-button .vault-filter-text{display:none}.vault-filter-button{padding:0 12px}}
+
+/* A+ Vault: round icon-only Color and Image buttons (same wheel as the Museum colour search) */
+.vault-round-button{flex:0 0 auto;display:inline-grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface-soft);color:var(--ink);cursor:pointer}
+.vault-round-button:hover,.vault-round-button.active{border-color:rgba(240,80,64,.6);color:var(--accent,#f05040)}
+.vault-color-wheel{display:block;width:24px;height:24px;border-radius:50%;background:conic-gradient(from 0deg,#ff4d4d,#ffb84d,#f6ee4d,#4dff7a,#4dd2ff,#6b6bff,#c34dff,#ff4d9e,#ff4d4d);box-shadow:0 0 0 1.5px rgba(255,255,255,.18)}
+.vault-round-count{position:absolute;right:-3px;top:-3px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--accent,#f05040);color:#fff;font-size:10px;font-weight:700;line-height:16px;text-align:center}
+@media(max-width:900px){.vault-round-button{padding:0}}

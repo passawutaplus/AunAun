@@ -20,7 +20,7 @@ Legend: done = in code and tested here · partial = some of it · todo = not sta
 | Item | Status | Note |
 |---|---|---|
 | `origin` (web / my files / museum) + filter | done | Derived from how the item was kept (a stored `captureContext.origin` wins). Sidebar "Kept from", search tools (phone), `origin:` operator, saved in smart collections. |
-| Inbox takes all three ways, drop anywhere | done | Inbox = kept since 2026-10-06, not in a collection, not marked sorted. Select all, Keep, Delete, file, tag. Drop zone covers the whole page. |
+| Everything lands in the Library; "Unsorted" filter (B1) | done | One room (Library) and one filter. Unsorted = in no collection (projects and tags do not count; old triage marks are ignored; legacy `inbox` id counts as no collection). Chip with count in the Library filters, `is:unsorted` operator, savable in smart collections. Select mode on Unsorted: add to collection, tag, delete. The Inbox tab and page are gone. |
 | Smart collections as full smart folders (B2-1) | done | Criteria (color, rights, site, origin, keyword, operators) fill themselves and sync through collection metadata. |
 | Copy palette as tokens (B2-2) | done | CSS variables, Tailwind, Figma tokens (JSON), hex list. |
 | Cross-origin duplicate check (B2-4) | partial | Exact same file or URL is caught. Near-duplicates by image hash across web / upload / Museum are not. |
@@ -28,7 +28,8 @@ Legend: done = in code and tested here · partial = some of it · todo = not sta
 | Onboarding + empty state (B5.8) | partial | My Vault empty state shows the three ways in. There is no separate one-page onboarding, and the Museum header line is unchanged. |
 | "Kept for" chips + `why:` search (B2.1-F2) | partial | Drawer, Quick Keep sheet and extension popup have chips (plus project chips and a one-line note in the first two). Keeping from the Museum and drag-and-drop uploads do not ask. `why:color` works. |
 | Share to Vault on Android (B2.1-F1) | partial | Share target is POST with images, the service worker parks them in IndexedDB, Quick Keep sheet confirms, Kept + Undo. Link-only shares keep the old path. Tested in unit tests and in the browser by seeding IndexedDB; not on a real phone. Missing: install hint for Android users who have not installed the app, an explicit "waiting to send" list. |
-| For You / Library (B2.1-F3) | done | Inbox, Top of Mind, From your past, project gaps (4 rules), week palette; hide 7 days; works offline. Optional Museum card not built. Opens on Library by default (owner to decide). |
+| "New" badge on cards | done | Kept in the last 7 days and not opened yet. Opening the item (drawer or phone page) stores `captureContext.seenAt` and the badge goes; after 7 days it disappears on its own. The badge hides while the pin button shows. |
+| For You / Library (B2.1-F3) | done | "N things still unsorted" (kept in the last 14 days; Sort now opens Library on Unsorted in select mode; Skip for now hides it 7 days), Top of Mind, From your past, project gaps (4 rules), week palette; hide 7 days; works offline. Optional Museum card not built. Tabs are Library then For You; My Vault always opens on Library (owner decision 2026-10-06). It is a dashboard: stat tiles (Unsorted, References, This week, Collections, Projects), needs-you cards, keep heatmap, collections, projects and recent. |
 
 ## Later phases
 | Phase | Status |

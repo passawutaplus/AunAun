@@ -7,6 +7,8 @@ import { esc, escA } from "./utils.js";
 export const HIDE_DAYS = 7;
 const DAY = 86400000;
 const MAX_CARDS = 5;
+/** The unsorted card only counts things kept recently. */
+export const UNSORTED_DAYS = 14;
 
 /** { cardId: untilTimestamp } -> only entries still hidden. */
 export function activeHidden(raw, now = Date.now()) {
@@ -77,15 +79,15 @@ export function weeklyPalette(items, now = Date.now(), distance) {
 }
 
 /**
- * Cards in order: Inbox, projects, weekly palette. (Top of Mind and "From your past" are drawn by the app itself.)
- * ctx: { items, projects, hidden, now, isInbox, distance }
+ * Cards in order: unsorted (kept in the last 14 days), projects, weekly palette. (Top of Mind and "From your past" are drawn by the app itself.)
+ * ctx: { items, projects, hidden, now, isUnsorted, distance }
  */
 export function buildForYouCards(ctx) {
   const now = ctx.now || Date.now();
   const hidden = activeHidden(ctx.hidden, now);
   const cards = [];
-  const waiting = ctx.items.filter(ctx.isInbox);
-  if (waiting.length) cards.push({ id: "inbox", kind: "inbox", title: `${waiting.length} waiting in your Inbox`, body: "Keep, file or drop them while you still remember why.", action: { type: "inbox", label: "Sort now" }, previews: waiting.filter(hasImage).slice(0, 6) });
+  const waiting = ctx.items.filter(i => ctx.isUnsorted(i) && now - (Number(i.createdAt) || 0) <= UNSORTED_DAYS * DAY);
+  if (waiting.length) cards.push({ id: "unsorted", kind: "unsorted", title: `${waiting.length} thing${waiting.length === 1 ? "" : "s"} still unsorted`, th: `ยังไม่จัด ${waiting.length} ชิ้น`, body: "File them while you still remember why.", action: { type: "unsorted", label: "Sort now" }, hideLabel: "Skip for now", previews: waiting.filter(hasImage).slice(0, 6) });
   for (const project of ctx.projects || []) {
     const card = projectGapCard(project, ctx.items, now);
     if (card) cards.push(card);
@@ -100,7 +102,7 @@ const mediaOf = i => i.thumbnailUrl || i.previewUrl || i.assetUrl || "";
 export function forYouCardMarkup(card) {
   const previews = (card.previews || []).map(i => `<span class='fy-thumb'><img src='${escA(mediaOf(i))}' alt='' loading='lazy' referrerpolicy='no-referrer'></span>`).join("");
   const swatches = card.palette ? `<div class='fy-palette'>${card.palette.map(h => `<button type='button' class='fy-swatch' style='background:${escA(h)}' data-fy-copy='${escA(h)}' title='${escA(h)}' aria-label='Copy ${escA(h)}'></button>`).join("")}</div>` : "";
-  return `<article class='fy-card is-${escA(card.kind)}' data-fy-card='${escA(card.id)}'><div class='fy-main'><h3>${esc(card.title)}</h3><p>${esc(card.body)}</p>${swatches}${previews ? `<div class='fy-thumbs'>${previews}</div>` : ""}</div><div class='fy-actions'><button type='button' class='primary-button small' data-fy-action='${escA(card.action.type)}' data-fy-card-id='${escA(card.id)}'>${esc(card.action.label)}</button><button type='button' class='ghost-button small' data-fy-hide='${escA(card.id)}' title='Hide for ${HIDE_DAYS} days'>Hide ${HIDE_DAYS} days</button></div></article>`;
+  return `<article class='fy-card is-${escA(card.kind)}' data-fy-card='${escA(card.id)}'><div class='fy-main'><h3>${esc(card.title)}</h3>${card.th ? `<small class='fy-th'>${esc(card.th)}</small>` : ""}<p>${esc(card.body)}</p>${swatches}${previews ? `<div class='fy-thumbs'>${previews}</div>` : ""}</div><div class='fy-actions'><button type='button' class='primary-button small' data-fy-action='${escA(card.action.type)}' data-fy-card-id='${escA(card.id)}'>${esc(card.action.label)}</button><button type='button' class='ghost-button small' data-fy-hide='${escA(card.id)}' title='Hide for ${HIDE_DAYS} days. Nothing is changed.'>${esc(card.hideLabel || `Hide ${HIDE_DAYS} days`)}</button></div></article>`;
 }
 
 export function forYouEmptyMarkup() {

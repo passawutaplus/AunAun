@@ -22,7 +22,7 @@ Categories: **N** = strictly necessary / user-requested (no consent), **P** = pr
 | `aplus-vault-library-view` | localStorage | us | grid size/view choice | P | until changed |
 | `aplus-vault-right-width`, `aplus-vault-mb-source-w`, `aplus-vault-mb-inspector-w` | localStorage | us | panel widths you dragged | P | until changed |
 | `aplus-vault-viewer-bw` | localStorage | us | black-and-white viewer toggle | P | until changed |
-| `aplus-vault-foryou-hidden`, `aplus-vault-tab` | localStorage | us | which For You cards you hid for 7 days, and whether My Vault opens on For You or Library | P | until you clear it |
+| `aplus-vault-foryou-hidden`, `aplus-vault-tab` | localStorage | us | which For You cards you hid for 7 days, and which My Vault tab (For You or Library) you used during this visit; My Vault always opens on Library | P | until you clear it |
 | `aplus-vault-share` | IndexedDB | us (service worker) | images you shared into the installed app wait here until you press Keep; removed as soon as they are kept or dismissed. Nothing is uploaded before you confirm | N | until kept / cleared |
 | `aplus-vault-quick-note`, `aplus-vault-quick-note-on`, `aplus-vault-quick-note-open` | localStorage | us | your quick notes and panel state | N | until you delete |
 | `aplus-vault-saved-searches` | localStorage | us | searches you saved | N | until you delete |

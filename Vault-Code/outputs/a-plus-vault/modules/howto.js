@@ -8,7 +8,7 @@ import { esc } from "./utils.js";
 export const HOWTO = {
   vault: [
     { n: "01", title: "See it. Keep it.", th: "เจออะไรน่าสนใจ กดเก็บทันที", body: "Right-click any image, video, or page and choose + Keep in Vault. It saves with the source and the date — and your tab never moves." },
-    { n: "02", title: "Save now, sort later.", th: "เก็บก่อน จัดทีหลัง", body: "Everything lands in your Inbox first. No folders to pick while you’re in the flow — organize when you have a calm minute." },
+    { n: "02", title: "Save now, sort later.", th: "เก็บก่อน จัดทีหลัง", body: "Everything lands in your Library; anything without a collection shows under Unsorted. No folders to pick while you’re in the flow — organize when you have a calm minute." },
     { n: "03", title: "Find it by how you remember.", th: "ค้นหาแบบที่คุณจำได้", body: "Search by color, by a similar image, or a few words in Thai or English. Narrow by source, date, or usage rights." },
     { n: "04", title: "Put it to work.", th: "เอาไปใช้กับงานจริง", body: "Pull references onto a moodboard or into a project. Nothing is copied — it’s the same reference, with its credit attached." },
   ],
@@ -28,7 +28,7 @@ function scenesMarkup(view, thumb) {
   if (view === "vault") {
     return [
       `<div class='ht-scene' data-scene='0'><div class='ht-browser'><div class='ht-bar'><i></i><i></i><i></i><b>pinterest.com/pin/poster-studies</b></div><div class='ht-page'><span class='ht-img'>${thumb(3)}</span><div class='ht-lines'><i></i><i></i><i></i></div><div class='ht-ctx'><span>Open image in new tab</span><span>Copy image address</span><span class='ht-keep'>+ Keep in Vault</span></div><div class='ht-toast'><span class='ht-thumb'>${thumb(3)}</span><div><strong>Saved to Vault</strong><small>source &amp; credit kept</small></div></div></div></div></div>`,
-      `<div class='ht-scene' data-scene='1'><div class='ht-panel'><div class='ht-panel-head'><strong>Inbox</strong><small>sort later</small></div><div class='ht-grid'>${tile(thumb, 1)}${tile(thumb, 5)}<span class='ht-tile ht-new'>${thumb(3)}</span>${tile(thumb, 7)}${tile(thumb, 2)}${tile(thumb, 6)}</div></div></div>`,
+      `<div class='ht-scene' data-scene='1'><div class='ht-panel'><div class='ht-panel-head'><strong>Unsorted</strong><small>sort later</small></div><div class='ht-grid'>${tile(thumb, 1)}${tile(thumb, 5)}<span class='ht-tile ht-new'>${thumb(3)}</span>${tile(thumb, 7)}${tile(thumb, 2)}${tile(thumb, 6)}</div></div></div>`,
       `<div class='ht-scene' data-scene='2'><div class='ht-panel'><div class='ht-search'><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><circle cx='11' cy='11' r='7'/><path d='m20 20-3.5-3.5'/></svg><span class='ht-type'>เก้าอี้วินเทจ</span></div><div class='ht-chips'><span>rights:free</span><span><i style='background:#f05040'></i>#f05040</span><span>site:pinterest</span></div><div class='ht-grid'>${tile(thumb, 1)}<span class='ht-tile ht-hit'>${thumb(4)}</span>${tile(thumb, 5)}<span class='ht-tile ht-hit'>${thumb(0)}</span>${tile(thumb, 2)}${tile(thumb, 6)}</div></div></div>`,
       `<div class='ht-scene' data-scene='3'><div class='ht-use'><span class='ht-tile ht-hero'>${thumb(3)}</span><span class='ht-pill p1'>Moodboard · Warm heritage</span><span class='ht-pill p2'>Project · Tea rebrand</span><span class='ht-pill p3'>Collection · Packaging</span></div></div>`,
     ].join("");
