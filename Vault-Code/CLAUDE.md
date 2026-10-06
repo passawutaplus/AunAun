@@ -17,7 +17,7 @@ This folder is a subfolder of the AunAun-fresh monorepo. Work only inside `Vault
 ## Map (edit source in `outputs/a-plus-vault/`; `dist/` is generated, never edit)
 - `app.js` (~2100 lines, VERY long dense lines) - views, state, dialogs, share, board bindings
 - `styles.css` (~4950 lines, minified-style) - all styles; sections appended with `/* A+ Vault <name> */` comments
-- `modules/` - moodboard-model/-ui/-editor-ui/-autosave/-history, smart-grid, origin (origin/Inbox/kept-for), for-you, quick-keep (Android share), search-tools, viewer-tools, sidebar-dnd, project-workspace, user-dashboard, settings-ops, supabase-adapter, discover, discover-search, scroll-blur, core, utils
+- `modules/` - moodboard-model/-ui/-editor-ui/-autosave/-history, smart-grid, origin (origin/unsorted/kept-for), for-you, quick-keep (Android share), search-tools, viewer-tools, sidebar-dnd, project-workspace, user-dashboard, settings-ops, supabase-adapter, discover, discover-search, scroll-blur, core, utils
 - `supabase-*.sql` - migrations (schema, moodboard-phase1, extension-*, alpha-hardening, scale-hardening, feedback-admin, discover-seeder)
 - `api/vault/*` + `lib/*.mjs` - Vercel serverless capture API (Bearer token)
 - `vault-extension/` - Chrome extension MV3 (v0.2.1): popup, content, background

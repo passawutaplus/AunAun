@@ -66,7 +66,7 @@ export function quickKeepMarkup({ thumbs, total, host, reasons, collections, pro
     ${projects.length ? `<div class='kept-chips' role='group' aria-label='For which project'>${projects.map(p => `<button type='button' class='kept-chip kept-project' data-qk-project='${escA(p.id)}' aria-pressed='false'>${esc(p.name)}</button>`).join("")}</div>` : ""}
     <input class='kept-text' data-qk-text maxlength='80' placeholder='One line, e.g. background color for the coffee shop'>
     <label class='qk-label' for='qk-collection'>Put it in</label>
-    <select id='qk-collection' class='qk-select' data-qk-collection><option value=''>Inbox: sort it later</option>${collections.map(c => `<option value='${escA(c.id)}'>${esc(c.name)}</option>`).join("")}</select>
+    <select id='qk-collection' class='qk-select' data-qk-collection><option value=''>No collection (Unsorted)</option>${collections.map(c => `<option value='${escA(c.id)}'>${esc(c.name)}</option>`).join("")}</select>
     <div class='qk-actions'><button type='button' class='ghost-button' data-qk-close>Not now</button><button type='button' class='primary-button' data-qk-keep>Keep</button></div>
   </section></div>`;
 }

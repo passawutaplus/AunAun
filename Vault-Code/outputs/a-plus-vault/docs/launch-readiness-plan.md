@@ -21,7 +21,7 @@ Build now:
 - reliable extension capture
 - Supabase Auth and private storage
 - central Vault Library
-- Inbox default
+- Library default (items without a collection show under Unsorted)
 - search, filters, collections
 - object detail with source/context
 - basic moodboard reuse
@@ -64,7 +64,7 @@ Tasks:
 - Keep the app loading without blank-screen regressions.
 - Keep sidebar, detail drawer, object grid, collection pages, project pages, and moodboard pages stable.
 - Keep newest saved objects sorted below pinned objects and above older objects.
-- Keep collection default as Vault Library / Inbox for quick capture.
+- Keep collection default as Vault Library (Unsorted until filed) for quick capture.
 - Keep extension preview popup before saving.
 - Keep local server capture endpoints working.
 - Keep `/api/vault/health` working so the extension can warn when the local API is offline.

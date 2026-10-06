@@ -1,13 +1,13 @@
 import { esc, escA } from "./utils.js";
 import { hasThai, thaiConcepts } from "./thai-search.js";
-import { matchesWhy, normalizeOrigin, originOf } from "./origin.js";
+import { isUnsorted, matchesWhy, normalizeOrigin, originOf } from "./origin.js";
 
 /**
- * Search operators for My Vault, e.g. `type:video site:pinterest.com in:"Client A" rights:free tag:poster origin:museum why:color`.
+ * Search operators for My Vault, e.g. `type:video site:pinterest.com in:"Client A" rights:free tag:poster origin:museum why:color is:unsorted`.
  * Values may be quoted. Unknown keys are left in the free-text part.
  */
-const OPERATOR_KEYS = ["type", "site", "in", "rights", "tag", "color", "origin", "why"];
-const OPERATOR_RE = /\b(type|site|in|rights|tag|color|origin|why):(?:"([^"]*)"|(\S+))/gi;
+const OPERATOR_KEYS = ["type", "site", "in", "rights", "tag", "color", "origin", "why", "is"];
+const OPERATOR_RE = /\b(type|site|in|rights|tag|color|origin|why|is):(?:"([^"]*)"|(\S+))/gi;
 
 const TYPE_ALIASES = { image: "image", images: "image", img: "image", photo: "image", video: "video", videos: "video", link: "link", links: "link", url: "link", note: "note", notes: "note", text: "note" };
 const RIGHTS_ALIASES = { free: "free", cc0: "free", pd: "free", license: "credit", credit: "credit", stock: "credit", reference: "reference", ref: "reference" };
@@ -47,6 +47,7 @@ export function itemMatchesOperators(item, ops, ctx) {
     tag: v => tags.some(t => t === v || t.includes(v)),
     origin: v => originOf(item) === normalizeOrigin(v),
     why: v => matchesWhy(item, v),
+    is: v => v === "unsorted" && isUnsorted(item),
     color: v => ctx.colorFamilyOf(item) === v || ((item.analysis && item.analysis.colors) || []).some(c => String(c).toLowerCase() === (v.startsWith("#") ? v : "#" + v)),
   };
   return OPERATOR_KEYS.every(k => !ops[k] || ops[k].some(checks[k]));

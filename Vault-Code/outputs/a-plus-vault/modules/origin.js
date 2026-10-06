@@ -1,5 +1,5 @@
 /**
- * Where a Vault item came from, whether it still waits in the Inbox, and why the owner kept it.
+ * Where a Vault item came from, whether it is still unsorted, and why the owner kept it.
  * All three are derived from / stored in `captureContext`, so they sync with the item and need no migration.
  */
 
@@ -26,14 +26,9 @@ export function originOf(item) {
   return "upload";
 }
 
-/** Inbox = kept after this date, not yet put in a collection, not yet marked sorted. Older items are never in the Inbox. */
-export const INBOX_EPOCH = Date.UTC(2026, 9, 6);
-
-export function isInbox(item) {
-  if (!item || (Number(item.createdAt) || 0) < INBOX_EPOCH) return false;
-  const cc = item.captureContext || {};
-  if (cc.triagedAt) return false;
-  return !(item.collectionIds || []).some(id => id && id !== "all" && id !== "inbox");
+/** Unsorted = in no collection. That is all: projects and tags do not count as sorted, and old triage marks are ignored. The legacy "inbox" id counts as no collection. */
+export function isUnsorted(item) {
+  return !!item && !(item.collectionIds || []).some(id => id && id !== "all" && id !== "inbox");
 }
 
 /** "Why I kept it" chips. `cue` ties a reason to the engine's intent cues where one exists. */
