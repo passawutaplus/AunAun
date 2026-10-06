@@ -573,7 +573,7 @@ export function setDiscoverGuest(value) {
 }
 
 export function gateMarkup() {
-  return `<div class='discover-gate'><div class='discover-gate-card'><span class='discover-gate-eyebrow'>Keep exploring</span><h2>There’s so much more.</h2><p>Log in to see everything in Discover — and keep what moves you in your own private Vault.</p><button type='button' class='discover-gate-cta' data-auth-open>Log in or sign up</button><small>Free during beta</small></div><span class='discover-gate-wordmark' aria-hidden='true'>A+ Vault</span></div>`;
+  return `<div class='discover-gate'><div class='discover-gate-card'><span class='discover-gate-eyebrow'>Keep exploring</span><h2>There’s so much more.</h2><p>Log in to see everything in Discover — and keep what inspires you in your own private Vault.</p><button type='button' class='discover-gate-cta' data-auth-open>Log in or sign up</button><small>Free during beta</small></div><span class='discover-gate-wordmark' aria-hidden='true'>A+ Vault</span></div>`;
 }
 
 function discoverResultsMarkup(ds, config, keptIds) {

@@ -42,7 +42,7 @@ This folder is a subfolder of the AunAun-fresh monorepo. Work only inside `Vault
 User sends screenshots with red boxes/arrows + a short note. Red box/arrow = target element; note = desired change. Several numbered items = do all in one pass.
 
 ## Design tokens (light theme, coral accent)
-`--coral:#ff4f43` `--coral-dark:#e33f34` `--ink:#2f3133` `--ink-strong:#151719` `--muted:#747a80` `--line:#e5e8eb` `--panel:#f7f8fa`; radius 8px; fonts IBM Plex Sans Thai + Agrandir Wide (brand). Reuse tokens/classes (.ghost-button .primary-button .chip .tag .modal ...).
+`--coral:#f05040` `--coral-dark:#d9362a` (brand book v1.0) `--ink:#2f3133` `--ink-strong:#151719` `--muted:#747a80` `--line:#e5e8eb` `--panel:#f7f8fa`; radius 8px; fonts IBM Plex Sans Thai + Agrandir Wide (brand). Reuse tokens/classes (.ghost-button .primary-button .chip .tag .modal ...).
 
 ## Product guardrails
 - User content private by default; public sharing must be explicit and revocable.
