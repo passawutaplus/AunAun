@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { buildVaultItem } from "../../lib/vault-capture-core.mjs";
+import { buildVaultItem, sanitizeKeptFor } from "../../lib/vault-capture-core.mjs";
 import { enrichItem, fireEnrich } from "../../lib/engine/enrich.mjs";
 import { hasGpsExif, stripImageMetadata } from "../../lib/image-sanitize.mjs";
 import { probeImageSize } from "../../lib/import/image-probe.mjs";
@@ -84,5 +84,23 @@ describe("enrich seam", () => {
     assert.equal(r.status, "skipped");
     assert.equal((await enrichItem("abc", null, { loadItem: async () => { throw new Error("db down"); } })).status, "failed");
     await assert.doesNotReject(fireEnrich("abc", null));
+  });
+});
+
+describe("keptFor on captures", () => {
+  it("keeps known reasons, one short line and a project id; drops everything else", () => {
+    const raw = { reasons: ["Color", "color", "bogus", "mood"], text: "x".repeat(200), projectId: "p1", extra: "no" };
+    const out = sanitizeKeptFor(raw);
+    assert.deepEqual(out.reasons, ["color", "mood"]);
+    assert.equal(out.text.length, 80);
+    assert.equal(out.projectId, "p1");
+    assert.equal("extra" in out, false);
+    assert.equal(sanitizeKeptFor({ reasons: ["bogus"] }), null);
+    assert.equal(sanitizeKeptFor("nope"), null);
+  });
+
+  it("is stored on the item's capture context", () => {
+    const item = buildVaultItem({ type: "image", assetUrl: "https://x.example/a.jpg", captureContext: { keptFor: { reasons: ["layout"], text: "hero grid" } } });
+    assert.deepEqual(item.captureContext.keptFor, { reasons: ["layout"], text: "hero grid", projectId: "" });
   });
 });

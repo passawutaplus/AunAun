@@ -25,6 +25,22 @@ const titleInput = document.getElementById("titleInput");
 const collectionInput = document.getElementById("collectionInput");
 const newCollectionInput = document.getElementById("newCollectionInput");
 const noteInput = document.getElementById("noteInput");
+const keptChips = document.getElementById("keptChips");
+
+function selectedReasons() {
+  return [...keptChips.querySelectorAll("[data-reason][aria-pressed=true]")].map(b => b.dataset.reason);
+}
+
+keptChips.addEventListener("click", event => {
+  const chip = event.target.closest("[data-reason]");
+  if (chip) chip.setAttribute("aria-pressed", chip.getAttribute("aria-pressed") === "true" ? "false" : "true");
+});
+
+// Remember the last chips used so the next keep is one tap fewer.
+chrome.storage.local.get("lastKeptReasons", ({ lastKeptReasons }) => {
+  const last = Array.isArray(lastKeptReasons) ? lastKeptReasons : [];
+  keptChips.querySelectorAll("[data-reason]").forEach(b => b.setAttribute("aria-pressed", last.includes(b.dataset.reason) ? "true" : "false"));
+});
 const keepPendingBtn = document.getElementById("keepPendingBtn");
 const clearPendingBtn = document.getElementById("clearPendingBtn");
 const snapshotBtn = document.getElementById("snapshotBtn");
@@ -93,10 +109,11 @@ keepPendingBtn.addEventListener("click", async () => {
     captureContext: {
       ...(pendingCapture.captureContext || {}),
       usageNote: "Private reference only",
+      ...(selectedReasons().length ? { keptFor: { reasons: selectedReasons(), text: "" } } : {}),
       ...collectionMeta
     }
   };
-  chrome.storage.local.set({ lastCollectionId: collectionId });
+  chrome.storage.local.set({ lastCollectionId: collectionId, lastKeptReasons: selectedReasons() });
 
   setStatus("Saving to Vault...", "loading");
   const response = await chrome.runtime.sendMessage({

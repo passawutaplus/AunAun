@@ -52,6 +52,17 @@ function quickTagsFrom(value) {
 }
 
 /** Credit/licence hints gathered on the page. Stored as DATA only: never treated as a granted licence. */
+const KEPT_REASON_IDS = ["color", "layout", "type", "illustration", "material", "mood", "similar"];
+
+/** "Why I kept it": known reason ids only, one short line, an optional project id. Anything else is dropped. */
+export function sanitizeKeptFor(value) {
+  if (!value || typeof value !== "object") return null;
+  const reasons = (Array.isArray(value.reasons) ? value.reasons : []).map(r => text(r).toLowerCase()).filter((r, i, all) => KEPT_REASON_IDS.includes(r) && all.indexOf(r) === i);
+  const note = text(value.text).slice(0, 80);
+  const projectId = text(value.projectId).slice(0, 80);
+  return reasons.length || note || projectId ? { reasons, text: note, projectId } : null;
+}
+
 export function sanitizeCredit(value) {
   if (!value || typeof value !== "object") return null;
   const clip = (v, n) => text(v).slice(0, n);
@@ -188,6 +199,7 @@ export function buildVaultItem(payload) {
       visualCategory: visualCategory || null,
       usageNote: text(context.usageNote) || "Private reference only",
       credit: sanitizeCredit(context.credit),
+      keptFor: sanitizeKeptFor(context.keptFor),
       collectionName: text(context.collectionName) || text(payload.collectionName) || null
     }
   };

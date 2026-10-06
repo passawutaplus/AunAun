@@ -500,3 +500,8 @@ textarea:focus {
 .queue-row span{flex:1}
 .connect-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:12.5px}
 @media (prefers-reduced-motion:reduce){.quick-bar i{transition:none!important}}
+
+.kept-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 10px; }
+.kept-chip { min-height: 28px; padding: 0 10px; border: 1px solid var(--line, #e5e8eb); border-radius: 999px; background: transparent; color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
+.kept-chip[aria-pressed="true"] { background: rgba(240, 80, 64, 0.16); border-color: rgba(240, 80, 64, 0.6); color: #f05040; }
+#keptForLabel .optional { font-weight: 400; opacity: 0.6; }

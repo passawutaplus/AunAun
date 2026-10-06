@@ -68,6 +68,17 @@
           <input id="newCollectionInput" type="text" placeholder="Type collection name…" hidden aria-label="New collection name">
         </div>
 
+        <label id="keptForLabel">Why keep it? <span class="optional">(optional)</span></label>
+        <div id="keptChips" class="kept-chips" role="group" aria-labelledby="keptForLabel">
+          <button type="button" class="kept-chip" data-reason="color" aria-pressed="false">Color</button>
+          <button type="button" class="kept-chip" data-reason="layout" aria-pressed="false">Layout</button>
+          <button type="button" class="kept-chip" data-reason="type" aria-pressed="false">Lettering</button>
+          <button type="button" class="kept-chip" data-reason="illustration" aria-pressed="false">Illustration</button>
+          <button type="button" class="kept-chip" data-reason="material" aria-pressed="false">Material</button>
+          <button type="button" class="kept-chip" data-reason="mood" aria-pressed="false">Mood</button>
+          <button type="button" class="kept-chip" data-reason="similar" aria-pressed="false">Like my work</button>
+        </div>
+
         <label for="noteInput">Note</label>
         <textarea id="noteInput" placeholder="Add context..."></textarea>
 
