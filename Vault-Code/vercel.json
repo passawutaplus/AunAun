@@ -22,6 +22,10 @@
     { "source": "/api/account/delete", "destination": "/api/account-delete" },
     { "source": "/api/vault/captures/:id", "destination": "/api/vault/captures-id?id=:id" },
     {
+      "source": "/share-target",
+      "destination": "/vault"
+    },
+    {
       "source": "/discover",
       "destination": "/vault"
     },
