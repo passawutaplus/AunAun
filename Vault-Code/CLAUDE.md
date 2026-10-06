@@ -10,16 +10,17 @@ This folder is a subfolder of the AunAun-fresh monorepo. Work only inside `Vault
 - `outputs/a-plus-vault/docs/next-implementation-order.md` - roadmap
 - `outputs/a-plus-vault/docs/data-model.md` - tables
 - `seeder/README.md` - only for Discover seeding work
+- `docs/plan-v7-status.md` - what is done / partial / todo against the v7 feature plan (My Vault first, Museum second)
 - `docs/image-sourcing-rules.md` - READ FIRST before touching image import, Save, feed, or takedown code (rules R1-R8, legal reasons, decision log)
 - Ignore `docs/CURSOR_*`, `.tmp-*`, `dist/`, `node_modules/` unless asked.
 
 ## Map (edit source in `outputs/a-plus-vault/`; `dist/` is generated, never edit)
 - `app.js` (~2100 lines, VERY long dense lines) - views, state, dialogs, share, board bindings
 - `styles.css` (~4950 lines, minified-style) - all styles; sections appended with `/* A+ Vault <name> */` comments
-- `modules/` - moodboard-model/-ui/-editor-ui/-autosave/-history, smart-grid, sidebar-dnd, project-workspace, user-dashboard, settings-ops, supabase-adapter, discover, discover-search, scroll-blur, core, utils
+- `modules/` - moodboard-model/-ui/-editor-ui/-autosave/-history, smart-grid, origin (origin/Inbox/kept-for), for-you, quick-keep (Android share), search-tools, viewer-tools, sidebar-dnd, project-workspace, user-dashboard, settings-ops, supabase-adapter, discover, discover-search, scroll-blur, core, utils
 - `supabase-*.sql` - migrations (schema, moodboard-phase1, extension-*, alpha-hardening, scale-hardening, feedback-admin, discover-seeder)
 - `api/vault/*` + `lib/*.mjs` - Vercel serverless capture API (Bearer token)
-- `vault-extension/` - Chrome extension MV3 (v0.1.4): popup, content, background
+- `vault-extension/` - Chrome extension MV3 (v0.2.1): popup, content, background
 - `seeder/` - SEPARATE Next.js app (port 3010, own package.json): fills `discover_items` from Met/AIC (CC0)
 - `scripts/` - qa.mjs + qa-security.mjs (guards), smoke tests, deploy scripts
 - PWA/security: `sw.js`, `manifest.webmanifest`, `modules/pwa.js`, CSP in `vercel.json` (no inline scripts), `SECURITY.md`; landing pages use `marketing.css/js`; error pages generated from `error-page.template.html`
