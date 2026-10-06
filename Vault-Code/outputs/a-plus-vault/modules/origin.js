@@ -63,7 +63,7 @@ export const KEPT_TEXT_MAX = 80;
 export function keptForOf(item) {
   const raw = (item && item.captureContext && item.captureContext.keptFor) || {};
   const reasons = (Array.isArray(raw.reasons) ? raw.reasons : []).map(String).filter(id => KEPT_REASONS.some(r => r.id === id));
-  return { reasons: [...new Set(reasons)], text: String(raw.text || "").slice(0, KEPT_TEXT_MAX) };
+  return { reasons: [...new Set(reasons)], text: String(raw.text || "").slice(0, KEPT_TEXT_MAX), projectId: String(raw.projectId || "").slice(0, 80) };
 }
 
 /** `why:color` matches the chip; any other word matches the one-line note. */

@@ -56,13 +56,14 @@ export async function clearPendingShare(ids) {
 const MAX_THUMBS = 6;
 
 /** The sheet. `thumbs` are object URLs made by the caller (and revoked by it). */
-export function quickKeepMarkup({ thumbs, total, host, reasons, collections }) {
+export function quickKeepMarkup({ thumbs, total, host, reasons, collections, projects = [] }) {
   const more = total > thumbs.length ? `<span class='qk-more'>+${total - thumbs.length}</span>` : "";
   return `<div class='qk-backdrop' data-qk-close role='presentation'><section class='qk-sheet' role='dialog' aria-modal='true' aria-label='Keep in Vault'>
     <header class='qk-head'><div><span class='section-label'>Keep in Vault</span><h2>${total} image${total === 1 ? "" : "s"}${host ? ` <small>from ${esc(host)}</small>` : ""}</h2></div><button type='button' class='icon-button' data-qk-close aria-label='Close'>&times;</button></header>
     <div class='qk-thumbs'>${thumbs.slice(0, MAX_THUMBS).map(u => `<img src='${escA(u)}' alt='' />`).join("")}${more}</div>
     <p class='qk-label'>Why are you keeping this? <span>(optional)</span></p>
     <div class='kept-chips' role='group' aria-label='Why you are keeping this'>${reasons.map(r => `<button type='button' class='kept-chip' data-qk-reason='${escA(r.id)}' aria-pressed='false'>${esc(r.label)}</button>`).join("")}</div>
+    ${projects.length ? `<div class='kept-chips' role='group' aria-label='For which project'>${projects.map(p => `<button type='button' class='kept-chip kept-project' data-qk-project='${escA(p.id)}' aria-pressed='false'>${esc(p.name)}</button>`).join("")}</div>` : ""}
     <input class='kept-text' data-qk-text maxlength='80' placeholder='One line, e.g. background color for the coffee shop'>
     <label class='qk-label' for='qk-collection'>Put it in</label>
     <select id='qk-collection' class='qk-select' data-qk-collection><option value=''>Inbox: sort it later</option>${collections.map(c => `<option value='${escA(c.id)}'>${esc(c.name)}</option>`).join("")}</select>

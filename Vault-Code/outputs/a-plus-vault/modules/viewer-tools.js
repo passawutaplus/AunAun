@@ -234,5 +234,6 @@ export function paletteExport(list, format) {
   const hexes = list.map(p => String(p.hex).toLowerCase());
   if (format === "css") return `:root {\n${hexes.map((h, i) => `  --palette-${i + 1}: ${h};`).join("\n")}\n}`;
   if (format === "tailwind") return `// tailwind.config.js -> theme.extend.colors\npalette: {\n${hexes.map((h, i) => `  ${i + 1}: "${h}",`).join("\n")}\n},`;
+  if (format === "figma") return JSON.stringify({ palette: Object.fromEntries(hexes.map((h, i) => [String(i + 1), { value: h, type: "color" }])) }, null, 2);
   return hexes.join("\n");
 }
