@@ -6628,3 +6628,6 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 .first-run-ways span{font-size:13.5px;line-height:1.5;color:var(--muted)}
 .first-run-ways .primary-button,.first-run-ways .ghost-button{justify-self:start;margin-top:6px;min-height:36px;padding:0 14px;font-size:13px;text-decoration:none}
 @media(max-width:760px){.first-run-ways{grid-template-columns:1fr}}
+
+.vault-tab-count{display:inline-grid;place-items:center;min-width:18px;height:18px;margin-left:6px;padding:0 5px;border-radius:999px;background:var(--accent,#f05040);color:#fff;font-size:11px;font-weight:700;line-height:1}
+.vault-tab.active .vault-tab-count{background:var(--surface);color:var(--ink-strong)}
