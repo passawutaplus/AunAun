@@ -219,7 +219,7 @@ export const useCollabNotifications = () => {
     queryFn: async (): Promise<CollabNotif[]> => {
       const { data } = await supabase
         .from("collab_requests")
-        .select("id, created_at, sender_id, recipient_id, project_id, collab_types, message, timeline, status")
+        .select("id, created_at, sender_id, recipient_id, project_id, collab_types, message, status")
         .eq("recipient_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -237,7 +237,7 @@ export const useCollabNotifications = () => {
         senderAvatar: profMap[r.sender_id]?.avatar ?? "",
         collabTypes: r.collab_types ?? [],
         message: r.message,
-        timeline: r.timeline,
+        timeline: null, // collab_requests has no timeline column
         status: r.status,
         recipientId: r.recipient_id,
         projectId: r.project_id,

@@ -142,7 +142,7 @@ const ChatMetaPanel = ({
       }
       const { data } = await supabase
         .from("collab_requests")
-        .select("collab_types, timeline, message, attached_project_ids")
+        .select("collab_types, message, attached_project_ids")
         .eq("id", conversation.request_id)
         .maybeSingle();
       return { hire: null, collab: data };
@@ -397,9 +397,6 @@ const ChatMetaPanel = ({
                       </span>
                     ))}
                   </div>
-                ) : null}
-                {meta.collab.timeline ? (
-                  <Row icon={<Calendar className="w-4 h-4" />} label="ช่วงเวลา" value={meta.collab.timeline} />
                 ) : null}
                 {meta.collab.message ? (
                   <div>
