@@ -206,7 +206,8 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        {/* startTransition: keep the current page on screen while a lazy route chunk loads (no full-screen loader flash). */}
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <ScrollToTop />
           <ProductEventTracker />
           <ErrorBoundary>

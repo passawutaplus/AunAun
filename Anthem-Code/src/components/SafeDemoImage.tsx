@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { demoImageUrl, demoImageUrlNatural } from "@/lib/demoImages";
 import { imageRevealTransition } from "@/lib/motion";
@@ -24,16 +24,21 @@ const SafeDemoImage = ({
   const fallback = naturalFallback ? demoImageUrlNatural(index) : demoImageUrl(index);
   const [current, setCurrent] = useState(src || fallback);
   const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     setCurrent(src || fallback);
-    setLoaded(false);
+    // A cached image can finish before React attaches onLoad → it would stay invisible.
+    setLoaded(!!imgRef.current?.complete && (imgRef.current?.naturalWidth ?? 0) > 0);
   }, [src, fallback]);
 
   const showReveal = reveal && !reduced;
 
   return (
     <motion.img
+      ref={(el: HTMLImageElement | null) => {
+        imgRef.current = el;
+      }}
       decoding="async"
       loading="lazy"
       {...props}
