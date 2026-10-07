@@ -4,7 +4,7 @@ import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import { notifyCommunityEvent } from "@/lib/communityNotify";
-import { type CommunityPost } from "@/hooks/useCommunityPosts";
+import { enrichCommunityPosts, type CommunityPost } from "@/hooks/useCommunityPosts";
 
 const promptAuth = () => {
   toast.info("กรุณาเข้าสู่ระบบก่อน");

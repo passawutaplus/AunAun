@@ -57,6 +57,7 @@ import {
 import { profilesPublicFrom, PUBLIC_PROFILE_READ_SELECT } from "@/lib/profileAccess";
 import PackageReturnBanner from "@/components/services/PackageReturnBanner";
 import { cn } from "@/lib/utils";
+import { isVideoUrl } from "@/lib/videoAccept";
 
 const ProjectDetailPage = () => {
   const { id } = useParams();

@@ -935,9 +935,11 @@ export function normalizeCollabPlanState(raw: unknown): CollabPlanState {
   return base;
 }
 
+export type CollabToolKind = "plan" | "roles" | "refs" | "checkin";
+
 export function detectCollabToolKind(
   content: string | null | undefined,
-): "plan" | "roles" | "refs" | "checkin" | null {
+): CollabToolKind | null {
   if (!content) return null;
   const t = content.trim();
   if (isCollabPlanDocumentMessage(t)) return null;

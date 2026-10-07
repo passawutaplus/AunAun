@@ -86,11 +86,9 @@ async function restRequest(cfg, { schema, table, method, query, body, prefer }) 
 }
 
 function isPaidChargeEvent(eventType, charge) {
-  const key = String(eventType || "").toLowerCase();
-  if (key.includes("charge.complete") || key.includes("charge.capture")) return true;
-  if (key.includes("charge.create") && charge?.paid === true) return true;
+  // charge.complete also fires for FAILED / expired charges — never trust the event name alone.
   const status = String(charge?.status || "").toLowerCase();
-  return status === "successful" || status === "paid";
+  return charge?.paid === true && status === "successful";
 }
 
 function extractCharge(payload) {

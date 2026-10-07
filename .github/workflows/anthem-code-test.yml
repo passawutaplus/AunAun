@@ -40,6 +40,17 @@ jobs:
         run: npm run typecheck
         continue-on-error: true
 
+      # Full typecheck is still noisy (stale generated Supabase types), but these
+      # classes of error are always real runtime crashes: syntax errors and
+      # undefined names (missing imports). Block merges on them.
+      - name: Typecheck guard (syntax + undefined names)
+        run: |
+          npx tsc -b 2>&1 | tee /tmp/tsc.log >/dev/null || true
+          if grep -E "error TS(1[0-9]{3}|2304|2552|2305|2459):" /tmp/tsc.log; then
+            echo "FAIL: syntax errors or undefined names (will crash at runtime)"
+            exit 1
+          fi
+
       - name: Production build env guard
         run: DEPLOY_TARGET=production VITE_DEMO_MODE=false node scripts/check-build-env.mjs
 

@@ -36,7 +36,7 @@ import { getProjectLimits } from "@/lib/projectLimits";
 import { supabase } from "@/integrations/supabase/client";
 import { projectSchema, validateProjectBasics, validateProjectPublish } from "@/lib/validators";
 import { portfolioEditorHasContent } from "@/lib/portfolioEditorStorage";
-import { categories, DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory } from "@/data/projectTypes";
+import { categories, DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory, type Category } from "@/data/projectTypes";
 import PageLoader from "@/components/ui/PageLoader";
 import { FieldError } from "@/components/ui/FieldError";
 import { toast } from "sonner";
@@ -3520,7 +3520,6 @@ const ProjectEditorPage = () => {
             </div>
           </div>
 
-          </div>
         </ProjectEditorMetaSidebar>
       </div>
 

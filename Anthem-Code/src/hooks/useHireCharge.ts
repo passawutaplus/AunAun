@@ -92,7 +92,7 @@ export function useHireCharge() {
       }
       return {
         chargeId: data.chargeId ?? `srv_${Date.now()}`,
-        reference: data.reference ?? makeReference(),
+        reference: data.reference ?? makeHireReference(),
         qrCodeUri: data.qrCodeUri ?? null,
         authorizeUri: data.authorizeUri ?? null,
         amountSatang: data.amountSatang ?? input.amountSatang,

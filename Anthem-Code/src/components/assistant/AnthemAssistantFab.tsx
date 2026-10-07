@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAiUsage } from "@/hooks/useAiUsage";
 import { useSubscription } from "@/core/subscription";
 import { BRAND_NAME } from "@/lib/brandConfig";
+import { panelTransition, panelVariants } from "@/lib/motion";
 import { mobileFabBottom } from "@/lib/mobileLayout";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
