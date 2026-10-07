@@ -13,7 +13,8 @@ export function isOwnProfile(viewerId: string | undefined, targetUserId: string)
   return !!viewerId && viewerId === targetUserId;
 }
 
-type ProfileQuery = ReturnType<typeof supabase.from>;
+const profilesQueryShape = () => supabase.from("profiles");
+type ProfileQuery = ReturnType<typeof profilesQueryShape>;
 
 /** Pick profiles vs profiles_public for read queries. */
 export function profileReadFrom(viewerId: string | undefined, targetUserId: string): ProfileQuery {
