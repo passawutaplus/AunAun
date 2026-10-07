@@ -5,7 +5,7 @@
 | ไฟล์ / โฟลเดอร์ | หน้าที่ |
 |-----------------|--------|
 | `config.toml` | project ref + JWT policy ต่อ Edge Function |
-| `migrations/` | schema ทั้งหมด (**136 ไฟล์**) — อย่าแก้ไฟล์เก่าที่รันแล้ว |
+| `migrations/` | schema ทั้งหมด (**235 ไฟล์**) — อย่าแก้ไฟล์เก่าที่รันแล้ว |
 | `functions/` | Edge Functions (AI, notify, LINE, ecosystem) |
 | `manual/` | SQL bundle สำหรับ SQL Editor (fallback) |
 | `SCHEMA.md` | แผนที่ตารางตาม business domain |
