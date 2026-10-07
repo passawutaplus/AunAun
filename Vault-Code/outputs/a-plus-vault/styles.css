@@ -6849,3 +6849,6 @@ html[data-theme="dark"] .detail-next{color:var(--accent-hover)}
 .card-source:hover{background:var(--accent,#f05040)}
 @media(hover:none){.card-source{opacity:.9;transform:none}}
 .pin-frame{position:relative}
+
+/* A+ Vault: popup shows the whole image, never cropped */
+@media(min-width:1181px){.dm-left .detail-preview{max-height:none;background:transparent}.dm-left .detail-preview img,.dm-left .detail-preview video{width:100%;height:auto;max-height:min(68vh,720px);object-fit:contain;background:var(--panel)}}
