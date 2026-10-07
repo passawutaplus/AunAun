@@ -120,7 +120,7 @@ async function fetchInternalSignals(): Promise<MarketingInternalSignal[]> {
   const { data: collabs } = await supabase
     .from("collab_requests")
     .select("id, message, created_at")
-    .eq("status", "ใหม่")
+    .eq("status", "pending")
     .order("created_at", { ascending: false })
     .limit(40);
 

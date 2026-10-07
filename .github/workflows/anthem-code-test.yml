@@ -36,9 +36,9 @@ jobs:
         run: npm run lint
         continue-on-error: true
 
-      - name: Typecheck
-        run: npm run typecheck
-        continue-on-error: true
+      # Ratchet: error count must not exceed typecheck-baseline.json (fix errors, then lower it).
+      - name: Typecheck (ratchet)
+        run: node scripts/typecheck-ratchet.mjs
 
       # Full typecheck is still noisy (stale generated Supabase types), but these
       # classes of error are always real runtime crashes: syntax errors and

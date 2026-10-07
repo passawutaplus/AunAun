@@ -35,7 +35,7 @@ const SORT_OPTIONS: { value: CatalogAddSortMode; label: string }[] = [
 ];
 
 function projectTime(p: DBProject): number {
-  const raw = p.published_at || p.created_at || p.updated_at || "";
+  const raw = p.created_at || p.updated_at || "";
   const t = Date.parse(raw);
   return Number.isNaN(t) ? 0 : t;
 }

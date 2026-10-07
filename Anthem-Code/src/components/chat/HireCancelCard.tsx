@@ -286,7 +286,7 @@ export function HireCancelCard({
           </AlertDialogHeader>
           <div className="space-y-2">
             <Label>เหตุผล</Label>
-            <Select value={rejectReason} onValueChange={setRejectReason}>
+            <Select value={rejectReason} onValueChange={(v) => setRejectReason(v as typeof rejectReason)}>
               <SelectTrigger className="rounded-xl">
                 <SelectValue />
               </SelectTrigger>

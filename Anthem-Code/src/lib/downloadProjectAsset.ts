@@ -11,8 +11,8 @@ export type ProjectAssetDownloadResult = {
 };
 
 export type ProjectAssetResolveResult =
-  | { ok: true; url: string }
-  | { ok: false; reason: string };
+  | { ok: true; url: string; reason?: undefined }
+  | { ok: false; reason: string; url?: undefined };
 
 function edgeErrorCode(data: unknown): string | null {
   if (!data || typeof data !== "object") return null;

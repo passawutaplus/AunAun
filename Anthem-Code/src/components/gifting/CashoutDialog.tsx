@@ -21,9 +21,9 @@ const CashoutDialog = ({ open, onOpenChange }: Props) => {
   const { data: wallet } = useWallet();
   const { data: connectProfile, refetch: refetchConnect } = useConnectProfile();
   const { data: payoutProfile } = usePayoutProfile();
-  const { data: subData } = useSubscription();
-  const feeRate = getCashoutFeeRate(subData?.profileTier);
-  const feeLabel = formatCashoutFeeLabel(subData?.profileTier);
+  const { tier: subTier } = useSubscription();
+  const feeRate = getCashoutFeeRate(subTier);
+  const feeLabel = formatCashoutFeeLabel(subTier);
   const cashout = useRequestCashout();
   const earnedBalance = wallet?.earned_px ?? 0;
   const [amount, setAmount] = useState<string>("");

@@ -125,7 +125,7 @@ export default function HireCheckoutDialog({
     });
     const display = buildCheckoutDisplay({
       buyerPaysSatang: money.buyerPaysSatang,
-      displayCurrency: offer.displayCurrency ?? "THB",
+      displayCurrency: (offer.displayCurrency ?? "THB") as "THB" | "USD",
       fx:
         offer.fxRateSnapshot && offer.displayCurrency === "USD"
           ? {
