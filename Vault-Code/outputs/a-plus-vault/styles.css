@@ -6747,3 +6747,55 @@ html[data-theme="dark"] .fy-link{color:var(--accent-hover)}
 @media(max-width:720px){.museum-tagline{margin:6px 0 18px;font-size:clamp(24px,7.4vw,32px)}.museum-tagline .th{margin-top:8px;font-size:14px}}
 /* Museum popup: the wheel over the info panel must scroll the page behind it when the panel has nothing to scroll */
 .discover-detail-info{overscroll-behavior:auto}
+
+/* A+ Vault: detail drawer v3 - header menu, meta line, colour card, organize card, museum nearby */
+.detail-meta{display:grid;gap:8px;margin:2px 0 10px}
+.detail-meta .detail-subline{margin:0}
+.detail-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.detail-saved,.detail-private{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:999px;font-size:11.5px;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+.detail-private .flat-icon{width:11px;height:11px}
+.detail-meta .detail-find-original{margin:0}
+.detail-card{display:flex;flex-direction:column;gap:12px;margin:14px 0;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface-soft)}
+.detail-card .viewer-tools{margin:0}
+.detail-color .viewer-palette{margin:0}
+.detail-color .detail-palette-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0}
+.detail-find{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.detail-find .lb-find-group{margin:0}
+.detail-find .lb-find{background:var(--surface);border:1px solid var(--line);color:var(--ink);height:34px;font-size:12.5px}
+.detail-find .lb-find:hover{border-color:rgba(240,80,64,.55);color:var(--accent,#f05040)}
+.detail-organize .field{margin:0}
+.detail-unsorted{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(240,80,64,.1);font-size:12.5px;color:var(--ink)}
+.detail-unsorted b{color:var(--accent,#f05040);font-weight:600;margin-right:6px}
+.detail-next{border:0;background:none;color:var(--accent-fill,#d9362a);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+html[data-theme="dark"] .detail-next{color:var(--accent-hover)}
+.detail-more,.detail-copy{position:relative}
+.detail-more>summary,.detail-copy>summary{list-style:none;cursor:pointer}
+.detail-more>summary::-webkit-details-marker,.detail-copy>summary::-webkit-details-marker{display:none}
+.detail-more-menu{position:absolute;z-index:20;top:calc(100% + 6px);right:0;min-width:190px;padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow);display:grid;gap:2px}
+.detail-copy .detail-more-menu{right:auto;left:0}
+.detail-more-menu button{display:flex;align-items:center;gap:8px;min-height:38px;padding:0 10px;border:0;border-radius:8px;background:none;color:var(--ink);font:inherit;font-size:13.5px;text-align:left;cursor:pointer}
+.detail-more-menu button:hover{background:var(--surface-soft)}
+.detail-more-menu button.danger{color:var(--danger,#cc3931)}
+.detail-more-menu .flat-icon{width:15px;height:15px}
+.detail-primary-actions{display:flex;gap:8px;align-items:center}
+.detail-primary-actions .primary-button{flex:1 1 auto}
+.detail-project-pick{position:relative;display:inline-flex;align-items:center;gap:6px;flex:0 1 190px;min-width:0;height:40px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-soft);color:var(--ink)}
+.detail-project-pick .flat-icon{width:15px;height:15px;flex:none}
+.detail-project-pick select{width:100%;min-width:0;border:0;background:transparent;color:inherit;font:inherit;font-size:13px;outline:none;text-overflow:ellipsis;cursor:pointer}
+.detail-museum-row{display:flex;gap:8px}
+.detail-museum-row .detail-similar-item{width:84px;height:84px}
+.detail-museum[hidden]{display:none}
+/* detail action bar: one row */
+.drawer-inner .detail-primary-actions{flex-wrap:nowrap}
+.drawer-inner .detail-primary-actions .primary-button{flex:1 1 0;min-width:0}
+.drawer-inner .detail-primary-actions .detail-project-pick{flex:0 1 160px}
+
+/* A+ Vault: Vault colour picker panel (pick, Select, repeat, Done) */
+.vault-color-wrap{position:relative;flex:0 0 auto}
+.vault-color-panel{right:auto;left:50%;transform:translateX(-50%);top:calc(100% + 10px)}
+.vault-color-panel .discover-color-tip{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
+.vault-color-panel .discover-color-apply{min-height:40px;min-width:84px}
+.vc-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+.vc-done{width:100%;min-height:44px;margin-top:12px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
+.vc-done:hover{background:var(--surface-soft)}
+@media(max-width:560px){.vault-color-panel{position:fixed;left:12px;right:12px;top:auto;bottom:12px;transform:none;width:auto;max-height:80vh}}
