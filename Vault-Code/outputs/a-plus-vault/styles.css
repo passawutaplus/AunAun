@@ -6852,3 +6852,9 @@ html[data-theme="dark"] .detail-next{color:var(--accent-hover)}
 
 /* A+ Vault: popup shows the whole image, never cropped */
 @media(min-width:1181px){.dm-left .detail-preview{max-height:none;background:transparent}.dm-left .detail-preview img,.dm-left .detail-preview video{width:100%;height:auto;max-height:min(68vh,720px);object-fit:contain;background:var(--panel)}}
+
+/* A+ Vault: colour card, find beside the picked colour, copy palette at the right */
+.detail-color{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px}
+.detail-color>.viewer-palette,.detail-color>.viewer-palette-wrap{flex:0 0 100%}
+.detail-color .detail-find{margin:0}
+.detail-color .detail-palette-actions{margin:0 0 0 auto}
