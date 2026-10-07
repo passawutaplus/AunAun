@@ -122,7 +122,7 @@ npm run e2e:smoke    # Playwright (ยังไม่ได้รันในก
 
 ### 3.4 Migration history ผิดพลาด (แก้บางส่วนแล้ว)
 - `20260713180000_aplus1_forum_attachments.sql`: ใช้ `''image''` (quote ซ้อน) นอก string → **syntax error ถ้ารันบน DB ใหม่/branch** (หมายเหตุในไฟล์บอกว่า "applied remotely" จึงเป็นสำเนาที่ escape ผิด) **แก้ quote แล้ว** แต่ไฟล์ยังขาด `ENABLE ROW LEVEL SECURITY`, policies และ index ที่ remote น่าจะมี → ควร dump จาก remote มาเติมให้ repo ทำซ้ำได้ (ใช้ `supabase db dump` / `list_tables`)
-- `qa_fix_admin_list_profiles_safe.sql`, `qa_fix_job_trackers_insert_rls.sql` อยู่ใน `migrations/` แต่ชื่อไม่ขึ้นต้น timestamp → Supabase CLI จะข้าม/เตือน ควรย้ายไป `supabase/manual/` หรือตั้งชื่อใหม่ (ตรวจก่อนว่ารันบน remote แล้วหรือยัง)
+- `qa_fix_* (เปลี่ยนชื่อแล้วเป็น 20260702044228/20260702044230 ตรงกับ version บน remote) → Supabase CLI จะข้าม/เตือน ควรย้ายไป `supabase/manual/` หรือตั้งชื่อใหม่ (ตรวจก่อนว่ารันบน remote แล้วหรือยัง)
 - `20260620100000_payment_policy_2026.sql`: mock payment RPC ถูกคุมด้วย `payment_settings.mock_topup_enabled` — ตรวจค่านี้บน production ว่าเป็น false
 
 ### 3.5 Dependency vulnerabilities (ที่เหลือ 16 high / 9 moderate / 2 low)
