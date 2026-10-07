@@ -12,17 +12,17 @@ import { BRAND_STORAGE_NO_PERSIST } from "@/lib/brandConfig";
  * Full httpOnly cookies need a BFF — not available on this Vite client.
  */
 function authPersistenceStorage(): Pick<Storage, "getItem" | "setItem" | "removeItem"> {
-  const useSession = () =>
+  const sessionOnly = () =>
     typeof sessionStorage !== "undefined" &&
     sessionStorage.getItem(BRAND_STORAGE_NO_PERSIST) === "1";
 
   return {
     getItem(key: string) {
-      const store = useSession() ? sessionStorage : localStorage;
+      const store = sessionOnly() ? sessionStorage : localStorage;
       return store.getItem(key);
     },
     setItem(key: string, value: string) {
-      if (useSession()) {
+      if (sessionOnly()) {
         localStorage.removeItem(key);
         sessionStorage.setItem(key, value);
       } else {

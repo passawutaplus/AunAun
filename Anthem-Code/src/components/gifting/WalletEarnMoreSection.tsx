@@ -33,9 +33,9 @@ const WalletEarnMoreSection = ({ onClose, hideReferral = false }: Props) => {
   );
   const { data: rewardById } = useWelcomeMissionCatalog();
 
-  if (!giftEconomy) return null;
-  const { data: welcomeCap = 100 } = useWelcomePxCap();
+  const { data: welcomeCap = 100 } = useWelcomePxCap({ enabled: giftEconomy });
   const [claimingId, setClaimingId] = useState<OnboardingTaskId | null>(null);
+  if (!giftEconomy) return null;
 
   const rewardPx = (id: OnboardingTaskId, fallback: number) => rewardById?.get(id) ?? fallback;
 

@@ -25,12 +25,15 @@ interface Props {
   visitorPreview?: boolean;
 }
 
-const SupportButton = ({
+const SupportButton = (props: Props) => {
+  if (!isLaunchCreatorSupportEnabled()) return null;
+  return <SupportButtonInner {...props} />;
+};
+
+const SupportButtonInner = ({
   recipientId, recipientName, recipientAvatar, projectId, variant = "outline", hideSubtext = false, className,
   visitorPreview = false,
 }: Props) => {
-  if (!isLaunchCreatorSupportEnabled()) return null;
-
   const { user } = useAuth();
   const openAuth = useAuthDialog((s) => s.openLogin);
   const [open, setOpen] = useState(false);

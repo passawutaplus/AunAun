@@ -234,7 +234,11 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
   if (import.meta.env.VITE_DEMO_MODE === "true") {
     return <DemoSignupBlocked onSwitchToLogin={onSwitch} />;
   }
+  return <SignupFormFields onSwitch={onSwitch} />;
+};
 
+/** Hooks live here so they always run in the same order (rules of hooks). */
+const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
