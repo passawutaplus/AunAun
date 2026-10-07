@@ -95,7 +95,7 @@ const StudioProfilePage = () => {
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-12">
       <SeoHead
         title={studio.name}
-        description={truncateDescription(studio.description || `สตูดิโอ ${studio.name} บน ${BRAND_NAME}`)}
+        description={truncateDescription(studio.bio || `สตูดิโอ ${studio.name} บน ${BRAND_NAME}`)}
         path={studioPath}
         image={studio.cover_url ?? studio.avatar_url ?? undefined}
         jsonLd={[
@@ -103,7 +103,7 @@ const StudioProfilePage = () => {
             "@context": "https://schema.org",
             "@type": "Organization",
             name: studio.name,
-            description: studio.description || undefined,
+            description: studio.bio || undefined,
             url: absoluteUrl(studioPath),
             logo: studio.avatar_url || undefined,
             image: studio.cover_url || undefined,
