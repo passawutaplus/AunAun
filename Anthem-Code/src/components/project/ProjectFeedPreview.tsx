@@ -48,7 +48,7 @@ export function ProjectFeedPreview({
       <div className="relative w-full overflow-hidden rounded-sm bg-muted">
         {hasCover ? (
           <>
-            <img
+            <img loading="lazy" decoding="async"
               src={coverSrc}
               alt=""
               className="w-full h-auto block transition-transform duration-500"

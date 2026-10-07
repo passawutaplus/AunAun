@@ -51,7 +51,7 @@ const PortfolioPicker = ({ value, onChange, min = 0, max = 6 }: Props) => {
               )}
             >
               {cover ? (
-                <img src={cover} alt="" className="w-full h-full object-cover" />
+                <img loading="lazy" decoding="async" src={cover} alt="" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-muted grid place-items-center text-[10px] p-1">{p.title}</div>
               )}

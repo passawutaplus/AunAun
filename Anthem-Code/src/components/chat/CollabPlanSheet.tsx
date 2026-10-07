@@ -2918,7 +2918,7 @@ function CreateProgressSummary({
                       className="block aspect-square rounded-md border border-border overflow-hidden bg-muted"
                       title={a.name}
                     >
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={storageMediaPublicUrl(a.path)}
                         alt={a.name}
                         className="w-full h-full object-cover"
@@ -2975,7 +2975,7 @@ function CreateProgressSummary({
                     className="block aspect-square rounded-lg border border-border overflow-hidden bg-muted hover:opacity-90"
                     title={a.name}
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={storageMediaPublicUrl(a.path)}
                       alt={a.name}
                       className="w-full h-full object-cover"
@@ -3130,7 +3130,7 @@ function PortfolioThumb({
   return (
     <>
       {src ? (
-        <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
+        <img loading="lazy" decoding="async" src={src} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
       ) : (
         <div className="absolute inset-0 bg-muted" />
       )}

@@ -307,7 +307,7 @@ function DocUploadTile({
     >
       {preview && previewKind === "image" ? (
         <div className="relative bg-muted/40">
-          <img src={preview} alt={label} className="w-full h-44 object-contain" />
+          <img loading="lazy" decoding="async" src={preview} alt={label} className="w-full h-44 object-contain" />
           {uploading && (
             <div className="absolute inset-0 grid place-items-center bg-background/55">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -784,7 +784,7 @@ const VerificationWizard = () => {
   if (isVerified) {
     return (
       <div className="relative overflow-hidden rounded-2xl">
-        <img
+        <img loading="lazy" decoding="async"
           src={kycVerifiedBg}
           alt=""
           className="pointer-events-none absolute inset-0 h-full w-full object-cover"
@@ -815,7 +815,7 @@ const VerificationWizard = () => {
   if (submitted || pending) {
     return (
       <div className="relative overflow-hidden rounded-2xl">
-        <img
+        <img loading="lazy" decoding="async"
           src={kycSubmittedBg}
           alt=""
           className="pointer-events-none absolute inset-0 h-full w-full object-cover"
@@ -873,7 +873,7 @@ const VerificationWizard = () => {
       <div className="relative">
       {step === 0 && (
         <div className="relative overflow-hidden rounded-2xl px-4 pt-5 pb-20 text-white">
-          <img
+          <img loading="lazy" decoding="async"
             src={kycCreatorVerifyBg}
             alt=""
             className="pointer-events-none absolute inset-0 h-full w-full object-cover brightness-110 contrast-[0.98] saturate-105"

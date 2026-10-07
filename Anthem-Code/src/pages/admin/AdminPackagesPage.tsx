@@ -44,7 +44,7 @@ export default function AdminPackagesPage() {
       className: "w-14",
       render: (r) =>
         r.cover_url ? (
-          <img src={r.cover_url} alt="" className="h-10 w-14 rounded object-cover border border-admin-border" />
+          <img loading="lazy" decoding="async" src={r.cover_url} alt="" className="h-10 w-14 rounded object-cover border border-admin-border" />
         ) : (
           <div className="h-10 w-14 rounded border border-admin-border bg-admin-surface flex items-center justify-center">
             <PackagesIcon className="w-3.5 h-3.5 text-admin-muted" />

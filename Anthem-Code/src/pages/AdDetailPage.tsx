@@ -78,7 +78,7 @@ const AdDetailPage = () => {
 
         {/* Hero */}
         <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-muted">
-          <img src={ad.image_url} alt={ad.title} className="w-full h-full object-cover" />
+          <img loading="lazy" decoding="async" src={ad.image_url} alt={ad.title} className="w-full h-full object-cover" />
           <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-foreground/85 text-background backdrop-blur-md">
             <Megaphone className="w-3 h-3 inline mr-1" /> Sponsored
           </span>
@@ -137,7 +137,7 @@ const AdDetailPage = () => {
                   className="flex items-center gap-3 hover:opacity-80"
                 >
                   {advertiser.avatar_url ? (
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={advertiser.avatar_url}
                       alt=""
                       className="w-12 h-12 rounded-full object-cover"

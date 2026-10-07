@@ -47,7 +47,7 @@ const ProjectListItem = ({ project, onHireClick, onCollabClick }: ProjectListIte
           className="flex items-center gap-2 mt-1 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition"
         >
           {project.ownerAvatar ? (
-            <img src={project.ownerAvatar} alt={project.owner} className="w-5 h-5 rounded-full object-cover" />
+            <img loading="lazy" decoding="async" src={project.ownerAvatar} alt={project.owner} className="w-5 h-5 rounded-full object-cover" />
           ) : (
             <div className="w-5 h-5 rounded-full bg-gradient-brand" />
           )}

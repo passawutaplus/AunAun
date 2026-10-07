@@ -81,7 +81,7 @@ export function ExpandAttachments({
             onClick={() => onPreview(i, safe)}
             className="shrink-0"
           >
-            <img
+            <img loading="lazy" decoding="async"
               src={url}
               alt=""
               className="h-16 w-16 rounded-lg border border-border/70 object-cover"
@@ -89,7 +89,7 @@ export function ExpandAttachments({
           </button>
         ) : (
           <a key={url} href={url} target="_blank" rel="noopener noreferrer" title="ภาพอ้างอิง">
-            <img
+            <img loading="lazy" decoding="async"
               src={url}
               alt=""
               className="h-16 w-16 rounded-lg border border-border/70 object-cover"

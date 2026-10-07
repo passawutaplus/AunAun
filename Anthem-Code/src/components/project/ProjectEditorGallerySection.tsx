@@ -169,7 +169,7 @@ export function ProjectEditorGallerySection({
     <div className="space-y-3">
       {hero ? (
         <div className="relative overflow-hidden group">
-          <img
+          <img loading="lazy" decoding="async"
             src={hero.url}
             alt={title.trim() || "ภาพผลงาน"}
             className="w-full max-h-[480px] object-contain bg-muted/20"

@@ -131,7 +131,7 @@ const ReceivedGiftsSummary = ({ userId }: Props) => {
             const inner = (
               <div className="flex items-center gap-3 p-2.5 rounded-xl border border-border hover:border-primary/40 hover:bg-primary/5 transition">
                 {p.coverUrl ? (
-                  <img src={p.coverUrl} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                  <img loading="lazy" decoding="async" src={p.coverUrl} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
                 ) : (
                   <div className="w-12 h-12 rounded-lg bg-muted text-muted-foreground flex items-center justify-center shrink-0">
                     <FolderKanban className="w-5 h-5" />

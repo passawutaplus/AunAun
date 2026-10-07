@@ -242,7 +242,7 @@ export default function FeedbackComposer() {
                         key={shot.id}
                         className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-2 py-2"
                       >
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={shot.dataUrl}
                           alt=""
                           className="h-14 w-[4.5rem] shrink-0 rounded object-cover"

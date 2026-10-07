@@ -93,7 +93,7 @@ export function SelfieCapture({ previewUrl, uploading, onCapture, className, inv
 
       {previewUrl && !cameraOn ? (
         <div className="relative">
-          <img
+          <img loading="lazy" decoding="async"
             src={previewUrl}
             alt="เซลฟี่ถือบัตร"
             className={cn("w-full object-cover bg-black", compact ? "h-28" : "max-h-[320px]")}

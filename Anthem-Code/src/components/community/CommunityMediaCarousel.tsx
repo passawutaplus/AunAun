@@ -43,7 +43,7 @@ export function CommunityMediaCarousel({ items, className }: Props) {
                 <Play className="w-10 h-10 text-muted-foreground" />
               </div>
             ) : (
-              <img src={item.url} alt="" className="w-full h-full object-cover" draggable={false} />
+              <img loading="lazy" decoding="async" src={item.url} alt="" className="w-full h-full object-cover" draggable={false} />
             )}
           </div>
         ))}

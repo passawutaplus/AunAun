@@ -113,7 +113,7 @@ const StudioProfilePage = () => {
       />
       <div className="relative h-48 lg:h-64 bg-gradient-to-br from-primary/20 to-primary/5">
         {studio.cover_url && (
-          <img
+          <img loading="lazy" decoding="async"
             src={studio.cover_url}
             alt={`ปกสตูดิโอ ${studio.name}`}
             className="w-full h-full object-cover"

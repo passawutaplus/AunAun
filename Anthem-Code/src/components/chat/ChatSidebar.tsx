@@ -453,7 +453,7 @@ const ChatSidebar = ({
                         <Users className="w-4 h-4 text-primary" />
                       </div>
                     ) : p?.avatar ? (
-                      <img src={p.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+                      <img loading="lazy" decoding="async" src={p.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-medium text-muted-foreground text-sm">
                         {(p?.name ?? "?")[0]}

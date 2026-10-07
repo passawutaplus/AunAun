@@ -90,7 +90,7 @@ function PortfolioRow({
   return (
     <div className="flex items-center gap-2 p-2 rounded-xl border border-border bg-card/50 hover:bg-accent/30 transition-colors">
       {project.cover_url ? (
-        <img src={project.cover_url} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+        <img loading="lazy" decoding="async" src={project.cover_url} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
       ) : (
         <div className="w-12 h-12 rounded-lg bg-muted shrink-0" />
       )}
@@ -133,7 +133,7 @@ function PackageRow({
   return (
     <div className="flex items-center gap-2 p-2 rounded-xl border border-border bg-card/50 hover:bg-accent/30 transition-colors">
       {cover ? (
-        <img src={cover} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+        <img loading="lazy" decoding="async" src={cover} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
       ) : (
         <div className="w-12 h-12 rounded-lg bg-muted shrink-0 flex items-center justify-center text-muted-foreground">
           <PackagesIcon className="w-5 h-5 opacity-50" />
@@ -179,7 +179,7 @@ function PortfolioGridCard({
     <div className="flex flex-col rounded-xl border border-border bg-card overflow-hidden">
       <Link to={`/project/${project.id}`} className="block aspect-square bg-muted overflow-hidden relative group">
         {project.cover_url ? (
-          <img
+          <img loading="lazy" decoding="async"
             src={project.cover_url}
             alt=""
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -250,7 +250,7 @@ function PackageGridCard({
         className="block aspect-square bg-muted overflow-hidden relative group text-left"
       >
         {cover ? (
-          <img
+          <img loading="lazy" decoding="async"
             src={cover}
             alt=""
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

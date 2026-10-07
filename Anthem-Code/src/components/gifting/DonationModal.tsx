@@ -124,7 +124,7 @@ const DonationModal = ({ open, onOpenChange, recipientId, recipientName, recipie
           <DialogHeader>
             <div className="flex items-center gap-3">
               {recipientAvatar ? (
-                <img src={recipientAvatar} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/30" />
+                <img loading="lazy" decoding="async" src={recipientAvatar} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/30" />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-primary/15 text-primary flex items-center justify-center font-medium">
                   {recipientName[0]}
@@ -161,7 +161,7 @@ const DonationModal = ({ open, onOpenChange, recipientId, recipientName, recipie
           {projectId && projectInfo && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/15">
               {projectInfo.cover_url ? (
-                <img src={projectInfo.cover_url} alt="" className="w-8 h-8 rounded-md object-cover" />
+                <img loading="lazy" decoding="async" src={projectInfo.cover_url} alt="" className="w-8 h-8 rounded-md object-cover" />
               ) : (
                 <div className="w-8 h-8 rounded-md bg-primary/15 text-primary flex items-center justify-center">
                   <FolderKanban className="w-4 h-4" />

@@ -44,7 +44,7 @@ function FeedbackScreenshotViewer({
           <p className="mb-2 text-xs text-muted-foreground">กดจุดตัวเลขเพื่อดูคอมเมนต์</p>
         ) : null}
         <div className="relative inline-block max-w-full">
-          <img src={src} alt="ภาพแคปฟีดแบ็ก" className="block max-h-[78dvh] max-w-full rounded-md" />
+          <img loading="lazy" decoding="async" src={src} alt="ภาพแคปฟีดแบ็ก" className="block max-h-[78dvh] max-w-full rounded-md" />
           {comments.map((c) => {
             const open = openId === c.number;
             return (
@@ -114,7 +114,7 @@ export default function FeedbackScreenshotThumb({
   return (
     <>
       <button type="button" className={cn("relative block", className)} onClick={() => setOpen(true)}>
-        <img src={src} alt="ภาพแคปฟีดแบ็ก" className="h-12 w-16 rounded border border-border object-cover" />
+        <img loading="lazy" decoding="async" src={src} alt="ภาพแคปฟีดแบ็ก" className="h-12 w-16 rounded border border-border object-cover" />
         {comments.length ? (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
             {comments.length}

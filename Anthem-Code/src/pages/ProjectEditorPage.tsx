@@ -3939,7 +3939,7 @@ const CoverDrop = ({
           invalid && "border-destructive ring-1 ring-destructive/40",
         )}
       >
-        <img src={url} alt="cover" className="absolute inset-0 h-full w-full object-cover" />
+        <img loading="lazy" decoding="async" src={url} alt="cover" className="absolute inset-0 h-full w-full object-cover" />
         <div
           className={cn(
             "absolute right-2 top-2 flex gap-1.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100",

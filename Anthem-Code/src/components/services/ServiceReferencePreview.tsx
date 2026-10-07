@@ -26,7 +26,7 @@ export default function ServiceReferencePreview({
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/30 p-3">
       {coverUrl?.trim() ? (
-        <img src={coverUrl} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+        <img loading="lazy" decoding="async" src={coverUrl} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
       ) : (
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <PackagesIcon className="h-6 w-6" />

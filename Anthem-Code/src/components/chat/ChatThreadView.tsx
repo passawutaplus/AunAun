@@ -1370,7 +1370,7 @@ const ChatThreadView = ({
               <Users className="w-4 h-4 text-primary" />
             </div>
           ) : other?.avatar_url ? (
-            <img src={other.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+            <img loading="lazy" decoding="async" src={other.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
           ) : (
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-medium text-muted-foreground text-sm">
               {displayName[0]}

@@ -199,7 +199,7 @@ export function SeriesAddProjectsDialog({
                 >
                   <div className="w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0">
                     {thumb ? (
-                      <img src={thumb} alt="" className="w-full h-full object-cover" />
+                      <img loading="lazy" decoding="async" src={thumb} alt="" className="w-full h-full object-cover" />
                     ) : null}
                   </div>
                   <div className="min-w-0 flex-1">

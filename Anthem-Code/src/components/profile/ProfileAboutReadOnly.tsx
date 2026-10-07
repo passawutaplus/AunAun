@@ -209,7 +209,7 @@ export function ProfileAboutReadOnly({
           {showPortrait ? (
             <div className="h-40 w-40 overflow-hidden rounded-2xl bg-secondary ring-1 ring-border/80 sm:h-44 sm:w-44">
               {portrait ? (
-                <img
+                <img loading="lazy" decoding="async"
                   src={portrait}
                   alt={fullName ? `About Me photo of ${fullName}` : "About Me photo"}
                   className="h-full w-full object-cover"

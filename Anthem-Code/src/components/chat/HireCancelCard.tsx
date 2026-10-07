@@ -269,7 +269,7 @@ export function HireCancelCard({
                   rel="noreferrer"
                   className="w-10 h-10 rounded-md overflow-hidden border border-border/50 bg-muted"
                 >
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
                 </a>
               ))}
             </div>

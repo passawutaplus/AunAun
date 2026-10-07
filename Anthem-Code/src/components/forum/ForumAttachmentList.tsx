@@ -31,7 +31,7 @@ export function ForumAttachmentList({ attachments, className, layout = "full" }:
                 rel="noreferrer"
                 className="block overflow-hidden rounded-lg border border-border bg-muted/40 aspect-video"
               >
-                <img src={a.public_url!} alt={a.file_name} className="h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src={a.public_url!} alt={a.file_name} className="h-full w-full object-cover" />
               </a>
             ))}
           </div>
@@ -45,7 +45,7 @@ export function ForumAttachmentList({ attachments, className, layout = "full" }:
                 rel="noreferrer"
                 className="block overflow-hidden rounded-xl border border-border bg-muted/30"
               >
-                <img
+                <img loading="lazy" decoding="async"
                   src={a.public_url!}
                   alt={a.file_name}
                   className="w-full h-auto max-h-[min(85vh,960px)] object-contain"

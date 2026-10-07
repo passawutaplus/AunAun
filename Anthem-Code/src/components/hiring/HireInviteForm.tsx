@@ -328,7 +328,7 @@ const HireInviteForm = ({
         <div className="flex flex-wrap gap-2 mt-2">
           {form.attachmentUrls.map((url) => (
             <div key={url} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border">
-              <img src={url} alt="" className="w-full h-full object-cover" />
+              <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
               <button
                 type="button"
                 aria-label="ลบรูป"

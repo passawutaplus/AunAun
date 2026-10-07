@@ -157,6 +157,26 @@ export default async function handler(req, res) {
     const body = parseJsonBody(req);
     if (!body) return json(res, 400, { error: "invalid_json" });
 
+    if (body.action === "status") {
+      // Poll a charge the caller created (PromptPay auto-detect). Read-only.
+      const chargeId = String(body.chargeId || "");
+      if (!/^chrg_[A-Za-z0-9_]+$/.test(chargeId)) return json(res, 400, { error: "invalid_charge_id" });
+      const r = await fetch(`https://api.omise.co/charges/${encodeURIComponent(chargeId)}`, {
+        headers: { Authorization: basicAuth(secretKey), "Omise-Version": "2019-05-29" },
+      });
+      const c = await r.json().catch(() => null);
+      if (!r.ok || !c || c.object === "error") return json(res, 404, { error: "charge_not_found" });
+      if (String(c.metadata?.buyer_user_id || "") !== String(user.id)) {
+        return json(res, 403, { error: "not_charge_owner" });
+      }
+      return json(res, 200, {
+        chargeId: c.id,
+        status: c.status,
+        paid: c.paid === true && c.status === "successful",
+        failed: c.status === "failed" || c.status === "expired" || c.status === "reversed",
+      });
+    }
+
     if (body.action === "mark_paid") {
       if (mode !== "test") return json(res, 403, { error: "mark_paid_test_only" });
       const chargeId = String(body.chargeId || "");

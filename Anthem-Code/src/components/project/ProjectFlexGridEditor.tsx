@@ -1768,7 +1768,7 @@ function PlacedModule({
                 data-flex-move-handle={locked || disabled ? undefined : true}
                 onPointerDown={locked || disabled ? undefined : onMovePointerDown}
               >
-                <img
+                <img loading="lazy" decoding="async"
                   src={module.url}
                   alt=""
                   className="pointer-events-none h-full w-full object-cover"
@@ -1873,7 +1873,7 @@ function PlacedModule({
                     preload="metadata"
                   />
                 ) : (
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={module.url}
                     alt=""
                     className="pointer-events-none h-full w-full object-cover"
@@ -1945,7 +1945,7 @@ function PlacedModule({
                 onPointerDown={locked || disabled ? undefined : onMovePointerDown}
               >
                 {module.posterUrl ? (
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={module.posterUrl}
                     alt=""
                     className="pointer-events-none h-full w-full object-cover"

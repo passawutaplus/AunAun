@@ -51,7 +51,7 @@ const KpiCard = ({ label, value, sub, icon: Icon, accent }: {
 );
 
 const Avatar = ({ url, name }: { url?: string | null; name?: string | null }) => (
-  url ? <img src={url} alt="" className="w-7 h-7 rounded-full object-cover" />
+  url ? <img loading="lazy" decoding="async" src={url} alt="" className="w-7 h-7 rounded-full object-cover" />
       : <div className="w-7 h-7 rounded-full bg-admin-hover text-admin-muted flex items-center justify-center text-xs font-medium">{(name ?? "?")[0]}</div>
 );
 
@@ -313,7 +313,7 @@ export default function AdminGiftsPage() {
       render: (r) => (
         <Link to={`/project/${r.project_id}`} target="_blank" className="flex items-center gap-2 hover:text-admin-accent">
           {r.cover_url
-            ? <img src={r.cover_url} alt="" className="w-10 h-10 rounded-sm object-cover" />
+            ? <img loading="lazy" decoding="async" src={r.cover_url} alt="" className="w-10 h-10 rounded-sm object-cover" />
             : <div className="w-10 h-10 rounded-sm bg-admin-hover" />}
           <div>
             <p className="text-sm truncate max-w-[260px]">{r.title}</p>

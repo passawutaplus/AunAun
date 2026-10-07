@@ -82,7 +82,7 @@ function SortableSlideThumb({
             <Video className="h-4 w-4 text-white" />
           </div>
         ) : (
-          <img
+          <img loading="lazy" decoding="async"
             src={url}
             alt=""
             className="h-full w-full object-cover pointer-events-none"
@@ -169,7 +169,7 @@ export default function PackageGallerySortableStrip({
               <Video className="h-4 w-4 text-white" />
             </div>
           ) : (
-            <img src={item.url} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={item.url} alt="" className="h-full w-full object-cover" />
           )}
         </button>
         <button

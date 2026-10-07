@@ -80,7 +80,7 @@ export function PortfolioLinkedPostPicker({
               className="inline-flex items-center gap-2 rounded-xl border border-border bg-muted/40 pl-1.5 pr-2 py-1"
             >
               {postThumb(p) ? (
-                <img src={postThumb(p)!} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                <img loading="lazy" decoding="async" src={postThumb(p)!} alt="" className="w-8 h-8 rounded-lg object-cover" />
               ) : (
                 <span className="w-8 h-8 rounded-lg bg-muted grid place-items-center">
                   <MessageSquare className="w-4 h-4 text-muted-foreground" />
@@ -98,7 +98,7 @@ export function PortfolioLinkedPostPicker({
               className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 pl-1.5 pr-1 py-1"
             >
               {postThumb(p) ? (
-                <img src={postThumb(p)!} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                <img loading="lazy" decoding="async" src={postThumb(p)!} alt="" className="w-8 h-8 rounded-lg object-cover" />
               ) : (
                 <span className="w-8 h-8 rounded-lg bg-muted grid place-items-center">
                   <MessageSquare className="w-4 h-4 text-muted-foreground" />
@@ -182,7 +182,7 @@ export function PortfolioLinkedPostPicker({
                   )}
                 >
                   {postThumb(p) ? (
-                    <img src={postThumb(p)!} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                    <img loading="lazy" decoding="async" src={postThumb(p)!} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
                   ) : (
                     <span className="w-10 h-10 rounded-lg bg-muted shrink-0 grid place-items-center">
                       <MessageSquare className="w-4 h-4 text-muted-foreground" />

@@ -83,7 +83,7 @@ export function ModuleImageWithCrop({
         if (from) onSlotDrop?.(from);
       }}
     >
-      <img src={src} alt={alt} className={cn("w-full object-contain pointer-events-none", imgClassName)} draggable={false} />
+      <img loading="lazy" decoding="async" src={src} alt={alt} className={cn("w-full object-contain pointer-events-none", imgClassName)} draggable={false} />
       {showToolbar ? (
         <div className="absolute right-2 top-2 z-10 flex gap-1 opacity-100 sm:opacity-0 sm:group-hover/crop:opacity-100">
           {onReplace ? (

@@ -111,7 +111,7 @@ export function ForumAttachmentComposer({
               className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-2.5 py-2 text-sm"
             >
               {a.kind === "image" && a.public_url ? (
-                <img src={a.public_url} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+                <img loading="lazy" decoding="async" src={a.public_url} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
               ) : a.kind === "video" ? (
                 <Video className="h-5 w-5 text-violet-500 shrink-0" />
               ) : a.kind === "image" ? (

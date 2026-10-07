@@ -100,7 +100,7 @@ const SimilarImagesPage = () => {
           <div className="lg:sticky lg:top-28 lg:self-start space-y-4">
             {sourceImage ? (
               <div className="rounded-[5px] overflow-hidden border border-border bg-card shadow-sm">
-                <img src={sourceImage} alt={project?.title ?? ""} className="w-full object-cover" />
+                <img loading="lazy" decoding="async" src={sourceImage} alt={project?.title ?? ""} className="w-full object-cover" />
               </div>
             ) : (
               <InlineLoader className="py-16 aspect-square rounded-[5px] border border-border bg-card" />

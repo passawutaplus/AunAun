@@ -23,7 +23,7 @@ const CommunityHeroShowcase = () => {
       aria-label={`ดูโพสต์: ${post.title}`}
       className="absolute inset-0 z-0 bg-muted cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
     >
-      <img
+      <img loading="lazy" decoding="async"
         src={cover}
         alt=""
         className="absolute inset-0 h-full w-full object-cover object-[center_30%] md:object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"

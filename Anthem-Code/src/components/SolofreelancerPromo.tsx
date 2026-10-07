@@ -26,7 +26,7 @@ const SolofreelancerPromo = () => {
         <div className="md:col-span-3 flex flex-col gap-4">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-background border border-border flex items-center justify-center overflow-hidden shadow-sm">
-              <img src={logoMark} alt="So1o" className="w-7 h-7 object-contain" />
+              <img loading="lazy" decoding="async" src={logoMark} alt="So1o" className="w-7 h-7 object-contain" />
             </div>
             <div>
               <p className="text-[11px] font-semibold tracking-widest text-primary uppercase">Solo Freelancer</p>

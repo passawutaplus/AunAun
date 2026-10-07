@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CreditCard,
   Landmark,
@@ -104,7 +104,8 @@ export default function HireCheckoutDialog({
   const qc = useQueryClient();
   const markOfferAccepted = useMarkHireOfferAccepted();
   const send = useSendMessage();
-  const { createCharge, markTestPaid, pending } = useHireCharge();
+  const { createCharge, markTestPaid, fetchChargeStatus, pending } = useHireCharge();
+  const announcedRef = useRef<string | null>(null);
   const [method, setMethod] = useState<PaymentMethod>("promptpay");
   const [step, setStep] = useState<Step>("method");
   const [charge, setCharge] = useState<HireChargeResult | null>(null);
@@ -300,9 +301,41 @@ export default function HireCheckoutDialog({
         return;
       }
     }
+    if (announcedRef.current === charge.chargeId) return;
+    announcedRef.current = charge.chargeId;
     await announcePaid(charge);
     setStep("success");
   };
+
+  // PromptPay: detect the payment automatically instead of making the buyer refresh.
+  const pollChargeId = step === "qr" && charge?.live ? charge.chargeId : null;
+  useEffect(() => {
+    if (!pollChargeId || !charge) return;
+    let stopped = false;
+    const tick = async () => {
+      const st = await fetchChargeStatus(pollChargeId);
+      if (stopped || !st) return;
+      if (st.failed) {
+        stopped = true;
+        toast.error("การชำระเงินไม่สำเร็จหรือ QR หมดอายุ — เริ่มชำระใหม่อีกครั้ง");
+        setStep("method");
+        setCharge(null);
+        return;
+      }
+      if (st.paid && announcedRef.current !== pollChargeId) {
+        stopped = true;
+        announcedRef.current = pollChargeId;
+        await announcePaid(charge);
+        setStep("success");
+      }
+    };
+    const id = window.setInterval(() => void tick(), 4000);
+    return () => {
+      stopped = true;
+      window.clearInterval(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pollChargeId]);
 
   const buyerBaht = formatOfferAmount(satangToThb(checkout.money.buyerPaysSatang));
 

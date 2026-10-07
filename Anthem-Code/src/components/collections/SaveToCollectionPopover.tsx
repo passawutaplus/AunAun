@@ -137,7 +137,7 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
                       >
                         <div className="w-10 h-10 rounded-md bg-muted overflow-hidden grid grid-cols-2 grid-rows-2 gap-px shrink-0">
                           {c.covers.slice(0, 4).map((u, i) => (
-                            <img key={i} src={u} alt="" className="w-full h-full object-cover" />
+                            <img loading="lazy" decoding="async" key={i} src={u} alt="" className="w-full h-full object-cover" />
                           ))}
                           {c.covers.length === 0 && (
                             <div className="col-span-2 row-span-2 flex items-center justify-center">

@@ -39,7 +39,7 @@ export default function AdminHiringOrgsPage() {
                 <p className="text-xs text-admin-muted">{org.contact_email} · {org.contact_phone}</p>
                 <p className="text-xs text-admin-muted">{formatThaiDate(org.created_at)} · {HIRING_ORG_STATUS_LABEL[org.status]}</p>
               </div>
-              {org.logo_url ? <img src={org.logo_url} alt="" className="h-10 w-10 rounded-lg object-cover" /> : null}
+              {org.logo_url ? <img loading="lazy" decoding="async" src={org.logo_url} alt="" className="h-10 w-10 rounded-lg object-cover" /> : null}
             </div>
             {org.created_by === user?.id ? (
               <p className="text-xs text-muted-foreground">องค์กรของคุณ — อนุมัติได้เพราะคุณเป็นแอดมิน</p>

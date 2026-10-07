@@ -360,7 +360,7 @@ const HireCancelRequestDialog = ({
                     className="relative w-14 h-14 rounded-lg border border-border overflow-hidden bg-muted"
                   >
                     <a href={url} target="_blank" rel="noreferrer" className="block w-full h-full">
-                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
                     </a>
                     <button
                       type="button"

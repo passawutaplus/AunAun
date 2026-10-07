@@ -41,7 +41,7 @@ type Status = "pending" | "approved" | "rejected";
 
 const Avatar = ({ url, name }: { url?: string | null; name?: string | null }) =>
   url ? (
-    <img src={url} alt="" className="w-7 h-7 rounded-full object-cover" />
+    <img loading="lazy" decoding="async" src={url} alt="" className="w-7 h-7 rounded-full object-cover" />
   ) : (
     <div className="w-7 h-7 rounded-full bg-admin-hover text-admin-muted flex items-center justify-center text-xs font-medium">
       {(name ?? "?")[0]}
@@ -118,7 +118,7 @@ function KycDocumentGrid({ requestId }: { requestId: string }) {
           className="block rounded-lg border border-admin-border overflow-hidden bg-admin-hover/30 hover:ring-2 hover:ring-admin-accent/40"
         >
           {urls[d.doc_type] && !isPdf ? (
-            <img src={urls[d.doc_type]} alt={d.doc_type} className="w-full h-28 object-cover" />
+            <img loading="lazy" decoding="async" src={urls[d.doc_type]} alt={d.doc_type} className="w-full h-28 object-cover" />
           ) : (
             <div className="h-28 flex flex-col items-center justify-center gap-1 text-admin-muted">
               {isPdf ? <FileText className="w-6 h-6" /> : <ImageIcon className="w-6 h-6" />}

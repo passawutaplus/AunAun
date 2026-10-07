@@ -544,7 +544,7 @@ const PublicProfilePage = () => {
         <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl glass-panel">
           <div className="relative aspect-[32/9] w-full bg-muted">
             {hasCover ? (
-              <img src={coverUrl} alt="" className="w-full h-full object-cover" />
+              <img loading="lazy" decoding="async" src={coverUrl} alt="" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-brand opacity-75" />
             )}

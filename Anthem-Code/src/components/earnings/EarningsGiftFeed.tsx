@@ -60,7 +60,7 @@ export function EarningsGiftFeed({ items, giftById, senderById, onGoPortfolio }:
               >
                 <Link to={`/u/${tx.sender_id}`} className="shrink-0">
                   {sender?.avatar_url ? (
-                    <img src={sender.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    <img loading="lazy" decoding="async" src={sender.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-primary/15 text-primary flex items-center justify-center text-sm font-medium">
                       {(sender?.display_name ?? "?")[0]}

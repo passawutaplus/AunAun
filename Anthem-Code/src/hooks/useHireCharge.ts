@@ -140,5 +140,23 @@ export function useHireCharge() {
     return data.paid === true;
   }
 
-  return { createCharge, markTestPaid, pending };
+  /** Poll Omise (via our API) for a charge's state. Returns null on transient errors. */
+  async function fetchChargeStatus(
+    chargeId: string,
+  ): Promise<{ paid: boolean; failed: boolean } | null> {
+    try {
+      const res = await fetch("/api/hire-charge", {
+        method: "POST",
+        headers: await authHeaders(),
+        body: JSON.stringify({ action: "status", chargeId }),
+      });
+      if (!res.ok) return null;
+      const data = (await res.json()) as { paid?: boolean; failed?: boolean };
+      return { paid: data.paid === true, failed: data.failed === true };
+    } catch {
+      return null;
+    }
+  }
+
+  return { createCharge, markTestPaid, fetchChargeStatus, pending };
 }

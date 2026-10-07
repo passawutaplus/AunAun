@@ -313,7 +313,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                   <p className="text-[11px] text-muted-foreground mt-1">{timeAgo(n.createdAt)}</p>
                 </div>
                 {n.projectCover && (
-                  <img src={n.projectCover} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                  <img loading="lazy" decoding="async" src={n.projectCover} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
                 )}
               </button>
             );
