@@ -11,7 +11,7 @@ SECURITY DEFINER
 SET search_path = public, anthem
 AS $$
 BEGIN
-  IF current_setting('request.jwt.claim.role', true) = 'service_role'
+  IF coalesce(auth.role(), '') = 'service_role'
      OR public.has_role(auth.uid(), 'admin'::public.app_role) THEN
     RETURN NEW;
   END IF;
@@ -42,7 +42,7 @@ LANGUAGE plpgsql
 SET search_path = public, anthem
 AS $$
 BEGIN
-  IF coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role' THEN
+  IF coalesce(auth.role(), '') <> 'service_role' THEN
     NEW.scan_status := 'pending';
     NEW.scan_reason := NULL;
     NEW.scanned_at := NULL;
@@ -57,14 +57,16 @@ CREATE TRIGGER trg_force_forum_attachment_pending
   FOR EACH ROW EXECUTE FUNCTION anthem.force_forum_attachment_pending();
 
 -- Project counters are maintained by server-side functions only.
+-- SECURITY INVOKER on purpose: current_user must be the caller's role
+-- ('authenticated' for direct REST writes, the owner inside SECURITY DEFINER counter RPCs).
 CREATE OR REPLACE FUNCTION anthem.guard_project_counters()
 RETURNS trigger
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = public, anthem
 AS $$
 BEGIN
-  IF current_setting('request.jwt.claim.role', true) = 'service_role'
+  IF coalesce(auth.role(), '') = 'service_role'
      OR public.has_role(auth.uid(), 'admin'::public.app_role) THEN
     RETURN NEW;
   END IF;

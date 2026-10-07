@@ -43,6 +43,25 @@ export type HireChargeResult = {
 
 const MOCK_TTL_MS = 15 * 60 * 1000;
 
+/** Thai messages for /api/hire-charge error codes. */
+const CHARGE_ERROR_TH: Record<string, string> = {
+  quote_or_order_required: "ใบเสนอราคานี้ยังไม่ได้บันทึกในระบบ — ขอให้ผู้รับงานส่งใบเสนอราคาใหม่",
+  quote_not_found: "ไม่พบใบเสนอราคานี้",
+  quote_not_payable: "ใบเสนอราคานี้ถูกยกเลิกหรือปฏิเสธแล้ว",
+  quote_expired: "ใบเสนอราคาหมดอายุแล้ว — ขอให้ผู้รับงานส่งใหม่",
+  not_quote_buyer: "บัญชีนี้ไม่ใช่ผู้จ้างของใบเสนอราคานี้",
+  cannot_pay_own_quote: "ชำระใบเสนอราคาของตัวเองไม่ได้",
+  not_order_buyer: "บัญชีนี้ไม่ใช่ผู้จ้างของออเดอร์นี้",
+  order_not_payable: "ออเดอร์นี้ชำระแล้วหรือปิดไปแล้ว",
+  invalid_amount: "ยอดชำระขั้นต่ำคือ ฿20",
+  auth_required: "กรุณาเข้าสู่ระบบก่อนชำระเงิน",
+};
+
+function chargeErrorMessage(code: string | undefined, status: number): string {
+  if (code && CHARGE_ERROR_TH[code]) return CHARGE_ERROR_TH[code];
+  return code || `charge_failed_${status}`;
+}
+
 function mockCharge(input: HireChargeInput): HireChargeResult {
   return {
     chargeId: `mock_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -88,10 +107,13 @@ export function useHireCharge() {
         error?: string;
       };
       if (!res.ok) {
-        throw new Error(data.error || `charge_failed_${res.status}`);
+        throw new Error(chargeErrorMessage(data.error, res.status));
+      }
+      if (!data.chargeId) {
+        throw new Error("ระบบชำระเงินไม่ตอบรหัสรายการ — ลองใหม่อีกครั้ง");
       }
       return {
-        chargeId: data.chargeId ?? `srv_${Date.now()}`,
+        chargeId: data.chargeId,
         reference: data.reference ?? makeHireReference(),
         qrCodeUri: data.qrCodeUri ?? null,
         authorizeUri: data.authorizeUri ?? null,
