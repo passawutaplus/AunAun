@@ -1,8 +1,5 @@
+import { bangkokYmd } from "@/lib/format";
 const BANGKOK = "Asia/Bangkok";
-
-function bangkokYmd(date: Date): string {
-  return date.toLocaleDateString("en-CA", { timeZone: BANGKOK });
-}
 
 /** Inclusive calendar days on the platform in Asia/Bangkok (day 1 = joined today). */
 export function studioDaysOnPlatform(joinedIso: string, now = new Date()): number {

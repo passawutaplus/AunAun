@@ -1,3 +1,4 @@
+import { clampStr } from "@/lib/format";
 /** Structured hire receipt card in chat (deposit / payment receipt). */
 
 export const HIRE_RECEIPT_PREFIX = "__APLUS1_HIRE_RECEIPT__:";
@@ -18,10 +19,6 @@ export type HireReceiptChatPayload = {
   quoteId?: string | null;
   paymentMethod?: string | null;
 };
-
-function clampStr(v: unknown, max: number): string {
-  return String(v ?? "").slice(0, max);
-}
 
 export function encodeHireReceiptMessage(payload: HireReceiptChatPayload): string {
   return `${HIRE_RECEIPT_PREFIX}${JSON.stringify({

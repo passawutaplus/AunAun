@@ -1,3 +1,4 @@
+import { clampStr } from "@/lib/format";
 /** Lightweight chat offer — Solo-inspired quotation payload in message content. */
 
 export const CHAT_OFFER_PREFIX = "__APLUS1_OFFER__:";
@@ -132,10 +133,6 @@ export function isChatOfferContent(content: string | null | undefined): boolean 
 
 export function encodeChatOffer(payload: ChatOfferPayload): string {
   return `${CHAT_OFFER_PREFIX}${JSON.stringify(payload)}`;
-}
-
-function clampStr(v: unknown, max: number): string {
-  return String(v ?? "").slice(0, max);
 }
 
 function clampDate(v: unknown): string | null {

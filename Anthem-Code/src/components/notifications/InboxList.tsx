@@ -14,6 +14,7 @@ import { useMemo } from "react";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import EmptyState from "@/components/ui/EmptyState";
 import { groupByNotificationDate } from "@/lib/notificationDateGroups";
+import { timeAgo } from "@/lib/format";
 
 const kindIcon = (kind: string) => {
   if (kind.includes("gift")) return Gift;
@@ -25,19 +26,6 @@ const kindIcon = (kind: string) => {
   if (kind.includes("ad")) return Megaphone;
   if (kind.includes("project_collab")) return Users;
   return Bell;
-};
-
-const timeAgo = (iso: string) => {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "เมื่อสักครู่";
-  if (m < 60) return `${m} นาทีที่แล้ว`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} ชม.ที่แล้ว`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d} วันที่แล้ว`;
-  const dt = new Date(iso);
-  return `${dt.toLocaleDateString("th-TH")} ${dt.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}`;
 };
 
 function extractFollowerId(n: Notification): string | null {
@@ -177,7 +165,7 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
                     </p>
                   ) : null}
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="text-[11px] text-muted-foreground">{timeAgo(n.created_at)}</p>
+                    <p className="text-[11px] text-muted-foreground">{timeAgo(n.created_at, { withTime: true })}</p>
                     {n.is_read ? (
                       <span className="text-[10px] text-muted-foreground/80">อ่านแล้ว</span>
                     ) : null}

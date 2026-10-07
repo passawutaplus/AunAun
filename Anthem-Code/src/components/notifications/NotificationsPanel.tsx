@@ -25,18 +25,7 @@ import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { isWorkLikePrefEnabled } from "@/lib/inAppNotifyPrefs";
 import EmptyState from "@/components/ui/EmptyState";
-
-const timeAgo = (iso: string) => {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "เมื่อสักครู่";
-  if (m < 60) return `${m} นาทีที่แล้ว`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} ชม.ที่แล้ว`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d} วันที่แล้ว`;
-  return new Date(iso).toLocaleDateString("th-TH");
-};
+import { timeAgo } from "@/lib/format";
 
 const ActorAvatar = ({ name, avatar }: { name: string; avatar: string }) => (
   <UserAvatar src={avatar} name={name} className="w-11 h-11 shrink-0" />

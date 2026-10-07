@@ -98,3 +98,31 @@ export const clockTimeTH = (iso: string | null | undefined) => {
     return "";
   }
 };
+
+/** Relative Thai time ("5 นาทีที่แล้ว"); older than a week falls back to a date (optionally with time). */
+export const timeAgo = (iso: string, opts: { withTime?: boolean } = {}) => {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "เมื่อสักครู่";
+  if (m < 60) return `${m} นาทีที่แล้ว`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} ชม.ที่แล้ว`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d} วันที่แล้ว`;
+  const dt = new Date(iso);
+  return opts.withTime
+    ? `${dt.toLocaleDateString("th-TH")} ${dt.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}`
+    : dt.toLocaleDateString("th-TH");
+};
+
+/** Calendar date (YYYY-MM-DD) in Asia/Bangkok. */
+export const bangkokYmd = (date: Date): string =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+
+/** Coerce to string and cap the length (chat payload fields). */
+export const clampStr = (v: unknown, max: number): string => String(v ?? "").slice(0, max);
