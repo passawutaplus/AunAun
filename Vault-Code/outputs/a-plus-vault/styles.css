@@ -6741,6 +6741,9 @@ html[data-theme="dark"] .fy-link{color:var(--accent-hover)}
 }
 
 /* A+ Vault: Museum tagline */
-.museum-tagline{margin:4px 0 18px;font-size:15px;line-height:1.5;color:var(--ink)}
-.museum-tagline .th{display:block;font-size:13px;color:var(--muted)}
-@media(max-width:720px){.museum-tagline{margin:2px 0 14px;font-size:14px}}
+.museum-tagline{margin:6px 0 22px;font-family:"Agrandir Wide","IBM Plex Sans Thai",sans-serif;font-size:clamp(17px,2.1vw,24px);font-weight:300;line-height:1.3;letter-spacing:-.005em;color:var(--ink-strong)}
+.museum-tagline b{font-weight:300;color:var(--accent,#f05040)}
+.museum-tagline .th{display:block;margin-top:6px;font-family:"IBM Plex Sans Thai",sans-serif;font-size:14px;font-weight:400;letter-spacing:0;color:var(--muted)}
+@media(max-width:720px){.museum-tagline{margin:4px 0 16px;font-size:17px}.museum-tagline .th{font-size:13px}}
+/* Museum popup: the wheel over the info panel must scroll the page behind it when the panel has nothing to scroll */
+.discover-detail-info{overscroll-behavior:auto}
