@@ -9,11 +9,8 @@
     <main class="popup">
       <header class="popup-header">
         <div class="popup-brand">
-          <img class="mark mark-icon" src="icons/icon-48.png" alt="" aria-hidden="true">
-          <div>
-            <h1>Vault</h1>
-            <p>by Aplus</p>
-          </div>
+          <img class="mark mark-icon" src="art/mark-solid.svg" alt="" aria-hidden="true">
+          <h1>Vault</h1>
         </div>
         <button id="openVaultBtn" class="header-vault-button" type="button">Open Vault</button>
       </header>
@@ -21,12 +18,16 @@
       <section class="status" id="status" data-type="default" hidden></section>
 
       <section class="login-gate" id="loginGate" hidden>
-        <div class="lg-art" aria-hidden="true"><i class="lg-card c1"></i><i class="lg-card c2"></i><i class="lg-card c3"></i><span class="lg-plus">+</span></div>
-        <h2>Keep what inspires you</h2>
-        <p>Log in once on the Vault website. This extension connects by itself.</p>
-        <ul class="lg-points"><li>Private to you</li><li>Source &amp; credit kept</li><li>One click, any site</li></ul>
-        <button id="loginBtn" class="primary keep-button" type="button"><span>Log in to Vault</span></button>
-        <small>Opens aplus-vault.vercel.app</small>
+        <img class="lg-mark" src="art/mark.svg" alt="" width="40" height="46">
+        <h2>Keep what<br>inspires you.</h2>
+        <div class="lg-mosaic" aria-hidden="true">
+          <div class="lg-col"><img src="art/a.webp" alt=""><img src="art/c.webp" alt=""><img src="art/a.webp" alt=""></div>
+          <div class="lg-col lg-col-b"><img src="art/b.webp" alt=""><img src="art/d.webp" alt=""><img src="art/b.webp" alt=""></div>
+          <div class="lg-col"><img src="art/d.webp" alt=""><img src="art/a.webp" alt=""><img src="art/d.webp" alt=""></div>
+        </div>
+        <div class="lg-chips"><span>Private</span><span>Source &amp; credit</span><span>Keep anywhere</span></div>
+        <button id="loginBtn" class="lg-btn" type="button">Log in to Vault</button>
+        <small>Log in once on the website. This extension connects by itself.</small>
       </section>
 
       <section class="home-actions" id="homeActions" aria-label="Keep">

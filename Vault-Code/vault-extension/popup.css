@@ -559,18 +559,25 @@ html,body{scrollbar-width:thin;scrollbar-color:rgba(47,49,51,.28) transparent}
 .login-gate p{margin:0 0 16px;font-size:13px;line-height:1.55;color:var(--muted,#747a80)}
 .popup.is-guest #homeActions,.popup.is-guest #captureCard,.popup.is-guest #quickCard,.popup.is-guest .quick-actions,.popup.is-guest .recent-section{display:none!important}
 
-/* Login gate v2 */
-.login-gate{padding:8px 6px 4px}
-.lg-art{position:relative;height:110px;margin:4px 0 14px}
-.lg-card{position:absolute;top:12px;width:84px;height:84px;border-radius:14px;box-shadow:0 10px 24px rgba(18,22,26,.14)}
-.lg-card.c1{left:calc(50% - 112px);background:linear-gradient(135deg,#e7c9a0,#c98b5a);transform:rotate(-9deg);animation:lgFloat 5s ease-in-out infinite}
-.lg-card.c2{left:calc(50% + 28px);background:linear-gradient(135deg,#b6d6b0,#5f9a63);transform:rotate(8deg);animation:lgFloat 5s ease-in-out -2s infinite}
-.lg-card.c3{left:calc(50% - 42px);top:4px;background:linear-gradient(135deg,#9fc4d6,#4e8aa6);animation:lgFloat 5s ease-in-out -1s infinite}
-.lg-plus{position:absolute;left:50%;top:44px;width:38px;height:38px;margin-left:-19px;border-radius:12px;background:var(--coral);color:#fff;font-size:26px;line-height:37px;text-align:center;box-shadow:0 8px 20px rgba(240,80,64,.4)}
-.login-gate h2{font-size:17px;text-transform:none;letter-spacing:0;margin:0 0 6px}
-.lg-points{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
-.lg-points li{padding:4px 10px;border-radius:999px;background:rgba(240,80,64,.1);color:var(--coral);font-size:11.5px}
-.login-gate small{display:block;margin-top:8px;font-size:11px;color:var(--muted,#747a80)}
-@keyframes lgFloat{50%{translate:0 -6px}}
-@media(prefers-reduced-motion:reduce){.lg-card{animation:none}}
+/* Login gate v3: dark card like the web login dialog, one button */
+.popup.is-guest{background:#17191c;color:#f4f5f6}
+.popup.is-guest .popup-header,.popup.is-guest .connect-row{display:none!important}
+.popup.is-guest .settings{margin-top:6px;border-color:rgba(255,255,255,.08)}
+.popup.is-guest .settings summary{color:#8a9097}
+.login-gate{padding:14px 6px 4px;text-align:center}
+.lg-mark{display:block;margin:0 auto 10px}
+.login-gate h2{margin:0 0 14px;font-size:26px;line-height:1.1;text-transform:none;letter-spacing:0;font-weight:300;color:#fff}
+.lg-mosaic{display:flex;gap:8px;height:190px;overflow:hidden;margin:0 -2px 14px;-webkit-mask-image:linear-gradient(transparent,#000 16%,#000 84%,transparent);mask-image:linear-gradient(transparent,#000 16%,#000 84%,transparent)}
+.lg-col{flex:1;display:flex;flex-direction:column;gap:8px;animation:lgDrift 16s linear infinite}
+.lg-col-b{animation-direction:reverse}
+.lg-col img{width:100%;border-radius:10px;display:block;object-fit:cover}
+.lg-chips{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.lg-chips span{padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.08);color:#d7dadd;font-size:11.5px}
+.lg-btn{width:100%;min-height:50px;border:0;border-radius:999px;background:#f7f8fa;color:#151719;font:inherit;font-size:15px;cursor:pointer}
+.lg-btn:hover{background:#fff}
+.login-gate small{display:block;margin:10px 0 0;font-size:11px;color:#8a9097}
+@keyframes lgDrift{from{transform:translateY(0)}to{transform:translateY(-33.3%)}}
+@media(prefers-reduced-motion:reduce){.lg-col{animation:none}}
 #titleInput{margin:10px 0 0}
+
+.mark.mark-icon{width:34px;height:38px;object-fit:contain}
