@@ -839,7 +839,7 @@ async function getSettings() {
   return {
     vaultToken: (settings.vaultToken || "").trim(),
     apiBase: normalizeApiBase(settings.apiBase || DEFAULT_API_BASE),
-    stayOnPageAfterSave: typeof settings.stayOnPageAfterSave === "boolean" ? settings.stayOnPageAfterSave : DEFAULT_STAY_ON_PAGE
+    stayOnPageAfterSave: true
   };
 }
 

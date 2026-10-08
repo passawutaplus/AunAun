@@ -505,3 +505,17 @@ textarea:focus {
 .kept-chip { min-height: 28px; padding: 0 10px; border: 1px solid var(--line, #e5e8eb); border-radius: 999px; background: transparent; color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
 .kept-chip[aria-pressed="true"] { background: rgba(240, 80, 64, 0.16); border-color: rgba(240, 80, 64, 0.6); color: #f05040; }
 #keptForLabel .optional { font-weight: 400; opacity: 0.6; }
+
+/* A+ Vault popup: slimmer layout */
+.quick-actions{grid-template-columns:1fr 1fr}
+.quick-actions button{justify-content:center}
+.capture-card .capture-actions{margin:10px 0 12px}
+.capture-card .toggle-row{margin:8px 0 0}
+
+/* A+ Vault popup: borderless, slim scrollbar without arrows or black track */
+.popup{border:0;border-radius:0;box-shadow:none;background:#f7f8fa;backdrop-filter:none;-webkit-backdrop-filter:none}
+html,body{scrollbar-width:thin;scrollbar-color:rgba(47,49,51,.28) transparent}
+::-webkit-scrollbar{width:6px;height:6px;background:transparent}
+::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(47,49,51,.28);border-radius:6px}
+::-webkit-scrollbar-button{display:none;width:0;height:0}

@@ -25,26 +25,11 @@ const titleInput = document.getElementById("titleInput");
 const collectionInput = document.getElementById("collectionInput");
 const newCollectionInput = document.getElementById("newCollectionInput");
 const noteInput = document.getElementById("noteInput");
-const keptChips = document.getElementById("keptChips");
 
-function selectedReasons() {
-  return [...keptChips.querySelectorAll("[data-reason][aria-pressed=true]")].map(b => b.dataset.reason);
-}
-
-keptChips.addEventListener("click", event => {
-  const chip = event.target.closest("[data-reason]");
-  if (chip) chip.setAttribute("aria-pressed", chip.getAttribute("aria-pressed") === "true" ? "false" : "true");
-});
-
-// Remember the last chips used so the next keep is one tap fewer.
-chrome.storage.local.get("lastKeptReasons", ({ lastKeptReasons }) => {
-  const last = Array.isArray(lastKeptReasons) ? lastKeptReasons : [];
-  keptChips.querySelectorAll("[data-reason]").forEach(b => b.setAttribute("aria-pressed", last.includes(b.dataset.reason) ? "true" : "false"));
-});
+function selectedReasons() { return []; }
 const keepPendingBtn = document.getElementById("keepPendingBtn");
 const clearPendingBtn = document.getElementById("clearPendingBtn");
 const snapshotBtn = document.getElementById("snapshotBtn");
-const stayOnPageInput = document.getElementById("stayOnPageInput");
 const recentList = document.getElementById("recentList");
 const clearRecentBtn = document.getElementById("clearRecentBtn");
 const openVaultBtn = document.getElementById("openVaultBtn");
@@ -70,7 +55,6 @@ async function init() {
 
   tokenInput.value = data.vaultToken || "";
   apiBaseInput.value = normalizeApiBase(data.apiBase);
-  stayOnPageInput.checked = typeof data.stayOnPageAfterSave === "boolean" ? data.stayOnPageAfterSave : true;
   const statusFromStorage = Boolean(data.lastVaultStatus?.message);
 
   if (data.lastVaultStatus?.message) {
@@ -132,7 +116,7 @@ keepPendingBtn.addEventListener("click", async () => {
   setStatus(response?.error || "Couldn't save this object.", "error");
 });
 
-clearPendingBtn.addEventListener("click", async () => {
+clearPendingBtn?.addEventListener("click", async () => {
   pendingCapture = null;
   captureCard.hidden = true;
   await chrome.runtime.sendMessage({ type: "VAULT_DISMISS_PENDING_CAPTURE" });
@@ -147,11 +131,6 @@ snapshotBtn.addEventListener("click", async () => {
   } else {
     window.close();
   }
-});
-
-stayOnPageInput.addEventListener("change", async () => {
-  await chrome.storage.local.set({ stayOnPageAfterSave: stayOnPageInput.checked });
-  setStatus(stayOnPageInput.checked ? "Saving will keep you on the page." : "Saving will open the saved object in a new tab.", "success");
 });
 
 saveSettingsBtn.addEventListener("click", async () => {
@@ -604,7 +583,6 @@ function collectionMetaForSave(collectionId) {
 
 // ---------------------------------------------------------------- Phase 11: quick keep, undo, queue, Keep All, connect
 const quickKeepInput = document.getElementById("quickKeepInput");
-const keepPageBtn = document.getElementById("keepPageBtn");
 const keepAllBtn = document.getElementById("keepAllBtn");
 const keepAllLabel = document.getElementById("keepAllLabel");
 const quickCard = document.getElementById("quickCard");
@@ -650,19 +628,6 @@ async function refreshKeepAllCount() {
 quickKeepInput.addEventListener("change", async () => {
   await chrome.storage.local.set({ quickKeep: quickKeepInput.checked });
   setStatus(quickKeepInput.checked ? "Quick keep is on: one click saves to your last collection." : "Quick keep is off: you will see the form.", "success");
-});
-
-keepPageBtn.addEventListener("click", async () => {
-  setStatus("Saving to Vault...", "loading");
-  const response = await chrome.runtime.sendMessage({ type: "VAULT_KEEP_THIS_PAGE" });
-  if (response?.mode === "quick" && response.ok) {
-    hideStatus();
-    showQuickCard(response.last);
-  } else if (response?.mode === "panel") {
-    hideStatus();
-  } else {
-    setStatus(response?.error || "Couldn't save this page.", "error");
-  }
 });
 
 keepAllBtn.addEventListener("click", async () => {

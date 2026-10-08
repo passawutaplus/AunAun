@@ -21,13 +21,8 @@
       <section class="status" id="status" data-type="default" hidden></section>
 
       <section class="home-actions" id="homeActions" aria-label="Keep">
-        <button id="keepPageBtn" class="primary keep-button" type="button"><span>Keep this page</span></button>
-        <button id="keepAllBtn" class="secondary" type="button"><span id="keepAllLabel">Keep all images</span></button>
+        <button id="keepAllBtn" class="primary keep-button" type="button"><span id="keepAllLabel">Keep all images</span></button>
       </section>
-      <label class="toggle-row" for="quickKeepInput">
-        <input id="quickKeepInput" type="checkbox">
-        <span>Quick keep — skip this form next time</span>
-      </label>
 
       <section class="quick-card" id="quickCard" hidden aria-live="polite">
         <div class="quick-thumb" id="quickThumb"></div>
@@ -57,6 +52,13 @@
         </div>
         <div class="duplicate-hint" id="duplicateHint" hidden></div>
 
+        <div class="capture-actions">
+          <button id="keepPendingBtn" class="primary keep-button">
+            <img class="button-icon" src="icons/icon-keep-white-32.png?v=2" alt="" aria-hidden="true" width="16" height="16">
+            <span>Keep in Vault</span>
+          </button>
+        </div>
+
         <label for="titleInput">Title</label>
         <input id="titleInput" type="text" placeholder="Object title">
 
@@ -68,50 +70,25 @@
           <input id="newCollectionInput" type="text" placeholder="Type collection name…" hidden aria-label="New collection name">
         </div>
 
-        <label id="keptForLabel">Why keep it? <span class="optional">(optional)</span></label>
-        <div id="keptChips" class="kept-chips" role="group" aria-labelledby="keptForLabel">
-          <button type="button" class="kept-chip" data-reason="color" aria-pressed="false">Color</button>
-          <button type="button" class="kept-chip" data-reason="layout" aria-pressed="false">Layout</button>
-          <button type="button" class="kept-chip" data-reason="type" aria-pressed="false">Lettering</button>
-          <button type="button" class="kept-chip" data-reason="illustration" aria-pressed="false">Illustration</button>
-          <button type="button" class="kept-chip" data-reason="material" aria-pressed="false">Material</button>
-          <button type="button" class="kept-chip" data-reason="mood" aria-pressed="false">Mood</button>
-          <button type="button" class="kept-chip" data-reason="similar" aria-pressed="false">Like my work</button>
-        </div>
-
-        <label for="noteInput">Note</label>
+Note</label>
         <textarea id="noteInput" placeholder="Add context..."></textarea>
 
-        <div class="capture-actions">
-          <button id="keepPendingBtn" class="primary keep-button">
-            <img class="button-icon" src="icons/icon-keep-white-32.png?v=2" alt="" aria-hidden="true" width="16" height="16">
-            <span>Keep in Vault</span>
-          </button>
-        </div>
+        <label class="toggle-row" for="quickKeepInput">
+          <input id="quickKeepInput" type="checkbox">
+          <span>Quick keep — skip this form next time</span>
+        </label>
+
       </section>
 
       <section class="quick-actions" aria-label="Quick actions">
         <button id="uploadZone" class="upload-zone secondary" type="button" aria-label="Upload files in the Vault web app">
-          <span class="mini-icon" aria-hidden="true">↑</span>
-          <span class="upload-zone-copy">
-            <strong>Upload file</strong>
-            <small>opens Vault</small>
-          </span>
+          <span>Upload file</span>
         </button>
 
         <button id="snapshotBtn" class="snapshot-zone secondary" type="button">
-          <span class="mini-icon" aria-hidden="true">[  ]</span>
-          <span class="upload-zone-copy">
-            <strong>Snapshot</strong>
-            <small>current view</small>
-          </span>
+          <span>Snapshot</span>
         </button>
       </section>
-
-      <label class="toggle-row" for="stayOnPageInput">
-        <input id="stayOnPageInput" type="checkbox">
-        <span>Stay on this page after saving</span>
-      </label>
 
       <section class="recent-section">
         <div class="section-head">
