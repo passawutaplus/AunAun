@@ -559,25 +559,41 @@ html,body{scrollbar-width:thin;scrollbar-color:rgba(47,49,51,.28) transparent}
 .login-gate p{margin:0 0 16px;font-size:13px;line-height:1.55;color:var(--muted,#747a80)}
 .popup.is-guest #homeActions,.popup.is-guest #captureCard,.popup.is-guest #quickCard,.popup.is-guest .quick-actions,.popup.is-guest .recent-section{display:none!important}
 
-/* Login gate v3: dark card like the web login dialog, one button */
-.popup.is-guest{background:#17191c;color:#f4f5f6}
+/* Login gate: follows the system theme; one button */
 .popup.is-guest .popup-header,.popup.is-guest .connect-row{display:none!important}
-.popup.is-guest .settings{margin-top:6px;border-color:rgba(255,255,255,.08)}
-.popup.is-guest .settings summary{color:#8a9097}
 .login-gate{padding:14px 6px 4px;text-align:center}
 .lg-mark{display:block;margin:0 auto 10px}
-.login-gate h2{margin:0 0 14px;font-size:26px;line-height:1.1;text-transform:none;letter-spacing:0;font-weight:300;color:#fff}
+.lg-mark-dark{display:none}
+.login-gate h2{margin:0 0 14px;font-size:26px;line-height:1.1;text-transform:none;letter-spacing:0;font-weight:300;color:var(--ink)}
 .lg-mosaic{display:flex;gap:8px;height:190px;overflow:hidden;margin:0 -2px 14px;-webkit-mask-image:linear-gradient(transparent,#000 16%,#000 84%,transparent);mask-image:linear-gradient(transparent,#000 16%,#000 84%,transparent)}
 .lg-col{flex:1;display:flex;flex-direction:column;gap:8px;animation:lgDrift 16s linear infinite}
 .lg-col-b{animation-direction:reverse}
 .lg-col img{width:100%;border-radius:10px;display:block;object-fit:cover}
 .lg-chips{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:16px}
-.lg-chips span{padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.08);color:#d7dadd;font-size:11.5px}
-.lg-btn{width:100%;min-height:50px;border:0;border-radius:999px;background:#f7f8fa;color:#151719;font:inherit;font-size:15px;cursor:pointer}
-.lg-btn:hover{background:#fff}
-.login-gate small{display:block;margin:10px 0 0;font-size:11px;color:#8a9097}
+.lg-chips span{padding:6px 11px;border-radius:999px;background:rgba(47,49,51,.07);color:var(--text);font-size:11.5px}
+.lg-btn{width:100%;min-height:50px;border:0;border-radius:999px;background:var(--ink);color:#fff;font:inherit;font-size:15px;cursor:pointer}
+.lg-btn:hover{background:#000}
+.login-gate small{display:block;margin:10px 0 0;font-size:11px;color:var(--muted)}
 @keyframes lgDrift{from{transform:translateY(0)}to{transform:translateY(-33.3%)}}
 @media(prefers-reduced-motion:reduce){.lg-col{animation:none}}
+
+/* Dark mode (system) */
+@media (prefers-color-scheme: dark){
+  :root{--ink:#f4f5f6;--text:#e1e4e7;--muted:#9aa0a6;--line:#2c3035;--soft:#1f2226}
+  .popup{background:#17191c;color:var(--text)}
+  .popup input,.popup select,.popup textarea{background:#22252a;border-color:#30353b;color:var(--text)}
+  .popup input::placeholder,.popup textarea::placeholder{color:#7d838a}
+  .popup .secondary,.popup .toggle-row,.popup .capture-card,.popup .quick-card,.popup .empty-state,.popup .recent-item,.popup .info-panel,.popup .upload-zone,.popup .snapshot-zone{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);box-shadow:none;color:var(--text)}
+  .popup .settings,.popup .recent-section,.popup .section-head{border-color:rgba(255,255,255,.08)}
+  .popup .header-vault-button{background:transparent;color:var(--text)}
+  .popup .keep-all-icon{background:rgba(255,255,255,.06)}
+  .popup .toggle-row small,.popup label:not(.toggle-row){color:#9aa0a6}
+  .logout-btn:hover{background:rgba(240,80,64,.18)}
+  .lg-mark-light{display:none}.lg-mark-dark{display:block}
+  .lg-chips span{background:rgba(255,255,255,.08);color:#d7dadd}
+  .lg-btn{background:#f7f8fa;color:#151719}
+  .lg-btn:hover{background:#fff}
+}
 #titleInput{margin:10px 0 0}
 
 .mark.mark-icon{width:34px;height:38px;object-fit:contain}
