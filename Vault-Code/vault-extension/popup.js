@@ -53,6 +53,8 @@ async function init() {
     "pendingCapture"
   ]);
 
+  // Dev only: run chrome.storage.local.set({ devMode: true }) in the popup console to show the Advanced box.
+  chrome.storage.local.get("devMode").then(({ devMode }) => { document.getElementById("devAdvanced").hidden = devMode !== true; });
   tokenInput.value = data.vaultToken || "";
   apiBaseInput.value = normalizeApiBase(data.apiBase);
   const statusFromStorage = Boolean(data.lastVaultStatus?.message);
