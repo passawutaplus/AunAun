@@ -60,6 +60,11 @@
           <button id="keepAllIconBtn" class="secondary keep-all-icon" type="button" title="Keep all images on this page" aria-label="Keep all images on this page"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="13" height="13" rx="2"/><path d="M8 4h11a2 2 0 0 1 2 2v11"/><circle cx="7.5" cy="11.5" r="1.2"/><path d="m3 17 4-3.5 3 2.5 3-3 3 3.5"/></svg></button>
         </div>
 
+        <label class="toggle-row" for="quickKeepInput">
+          <input id="quickKeepInput" type="checkbox">
+          <span>Quick keep</span>
+        </label>
+
         <label for="titleInput">Title</label>
         <input id="titleInput" type="text" placeholder="Object title">
 
@@ -70,15 +75,8 @@
           </select>
           <input id="newCollectionInput" type="text" placeholder="Type collection name…" hidden aria-label="New collection name">
         </div>
-
-Note</label>
+        <label for="noteInput">Note</label>
         <textarea id="noteInput" placeholder="Add context..."></textarea>
-
-        <label class="toggle-row" for="quickKeepInput">
-          <input id="quickKeepInput" type="checkbox">
-          <span>Quick keep — skip this form next time</span>
-        </label>
-
       </section>
 
       <section class="quick-actions" aria-label="Quick actions">
