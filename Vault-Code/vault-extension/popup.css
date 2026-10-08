@@ -526,3 +526,28 @@ html,body{scrollbar-width:thin;scrollbar-color:rgba(47,49,51,.28) transparent}
 /* keep-all as an icon beside Keep in Vault while a capture is open */
 .popup:has(#captureCard:not([hidden])) #homeActions{display:none}
 .capture-actions .keep-all-icon{display:grid;place-items:center;width:56px;min-height:52px;padding:0;border-radius:14px;color:var(--coral);cursor:pointer}
+
+/* Advanced options + info motion graphics */
+.opt-row{display:flex;align-items:center;gap:8px}
+.opt-row .toggle-row{flex:1;margin:0}
+.info-btn{flex:0 0 auto;width:24px;height:24px;border:1px solid rgba(47,49,51,.25);border-radius:50%;background:transparent;color:var(--muted,#747a80);font:italic 600 13px/1 serif;cursor:pointer}
+.info-btn:hover,.info-btn[aria-expanded="true"]{color:var(--coral);border-color:var(--coral)}
+.info-panel{margin:6px 0 10px;padding:10px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid rgba(47,49,51,.08)}
+.info-panel p{margin:8px 0 0;font-size:12px;line-height:1.5;color:var(--muted,#747a80)}
+.adv-title{margin:12px 0 4px;font-size:12px;color:var(--muted,#747a80)}
+.mo{position:relative;height:96px;border-radius:10px;background:#eef0f3;overflow:hidden}
+.mo-img{position:absolute;border-radius:6px;background:linear-gradient(135deg,#9fc4d6,#4e8aa6)}
+.mo-smart .a{left:10px;top:10px;width:70px;height:46px;background:linear-gradient(135deg,#e7c9a0,#c98b5a)}
+.mo-smart .b{left:92px;top:10px;width:96px;height:68px;animation:moPick 4s infinite}
+.mo-smart .c{right:10px;top:10px;width:70px;height:46px;background:linear-gradient(135deg,#b6d6b0,#5f9a63)}
+.mo-scan{position:absolute;top:0;bottom:0;width:2px;left:0;background:var(--coral);box-shadow:0 0 12px var(--coral);animation:moScan 4s infinite}
+.mo-tag{position:absolute;left:96px;bottom:8px;padding:3px 8px;border-radius:999px;background:var(--coral);color:#fff;font-style:normal;font-size:11px;opacity:0;animation:moTag 4s infinite}
+.mo-hover .a{left:50%;top:10px;width:150px;height:76px;margin-left:-75px}
+.mo-keep{position:absolute;left:50%;margin-left:20px;top:18px;padding:4px 9px;border-radius:999px;background:var(--coral);color:#fff;font-style:normal;font-size:11px;opacity:0;animation:moKeep 3.2s infinite}
+.mo-cursor{position:absolute;width:14px;height:14px;left:10%;top:70%;border-left:2px solid #2f3133;border-top:2px solid #2f3133;transform:rotate(-20deg);animation:moCursor 3.2s infinite}
+@keyframes moScan{0%{left:0}70%,100%{left:100%}}
+@keyframes moPick{0%,30%{outline:0 solid transparent}45%,100%{outline:2px solid var(--coral);outline-offset:3px}}
+@keyframes moTag{0%,55%{opacity:0;transform:translateY(6px)}70%,100%{opacity:1;transform:none}}
+@keyframes moCursor{0%{left:10%;top:70%}40%,100%{left:58%;top:38%}}
+@keyframes moKeep{0%,35%{opacity:0;transform:scale(.8)}50%,100%{opacity:1;transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){.mo *{animation:none!important}.mo-tag,.mo-keep{opacity:1}}

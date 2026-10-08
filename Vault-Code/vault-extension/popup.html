@@ -106,16 +106,25 @@ Note</label>
           <span id="connectText">Not connected</span>
           <button id="disconnectBtn" class="ghost" type="button" hidden>Disconnect</button>
         </section>
-        <label class="toggle-row" for="smartDetectInput">
-          <input id="smartDetectInput" type="checkbox">
-          <span>Smart image detection on all sites <small>(asks permission once)</small></span>
-        </label>
-        <label class="toggle-row" for="hoverKeepInput">
-          <input id="hoverKeepInput" type="checkbox">
-          <span>Show Keep buttons when hovering images</span>
-        </label>
         <details>
-          <summary>Advanced: paste a token</summary>
+          <summary>Advanced</summary>
+          <div class="opt-row"><label class="toggle-row" for="smartDetectInput">
+            <input id="smartDetectInput" type="checkbox">
+            <span>Smart image detection on all sites</span>
+          </label><button type="button" class="info-btn" data-info="smart" aria-label="What is this?" aria-expanded="false">i</button></div>
+          <div class="info-panel" data-info-panel="smart" hidden>
+            <div class="mo mo-smart" aria-hidden="true"><i class="mo-img a"></i><i class="mo-img b"></i><i class="mo-img c"></i><i class="mo-scan"></i><i class="mo-tag">credit ✓</i></div>
+            <p>Looks at the page for the best image, its author and licence, so Keep saves them for you. Chrome asks permission once.</p>
+          </div>
+          <div class="opt-row"><label class="toggle-row" for="hoverKeepInput">
+            <input id="hoverKeepInput" type="checkbox">
+            <span>Show Keep buttons when hovering images</span>
+          </label><button type="button" class="info-btn" data-info="hover" aria-label="What is this?" aria-expanded="false">i</button></div>
+          <div class="info-panel" data-info-panel="hover" hidden>
+            <div class="mo mo-hover" aria-hidden="true"><i class="mo-img a"></i><i class="mo-keep">+ Keep</i><i class="mo-cursor"></i></div>
+            <p>Point at any image on a website and a small Keep button appears on it. Needs smart detection.</p>
+          </div>
+          <p class="adv-title">Paste a token</p>
           <label for="tokenInput">Alpha API Token</label>
           <input id="tokenInput" type="password" placeholder="Copy from Vault Settings → Extension sync">
           <p class="settings-hint">Paste the sync token from your Vault Profile after logging in.</p>

@@ -725,3 +725,15 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 initPhase11();
+
+document.addEventListener("click", event => {
+  const btn = event.target.closest("[data-info]");
+  if (!btn) return;
+  const panel = document.querySelector(`[data-info-panel="${btn.dataset.info}"]`);
+  if (!panel) return;
+  const open = panel.hidden;
+  document.querySelectorAll("[data-info-panel]").forEach(p => { p.hidden = true; });
+  document.querySelectorAll("[data-info]").forEach(b => b.setAttribute("aria-expanded", "false"));
+  panel.hidden = !open;
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+});
