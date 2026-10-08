@@ -120,7 +120,11 @@
     .kc-form label{font-size:11.5px;color:#747a80}
     .kc-form input,.kc-form select,.kc-form textarea{width:100%;padding:8px 10px;border:1px solid rgba(127,127,127,.3);border-radius:8px;background:transparent;color:inherit;font:inherit;font-size:13.5px}
     .kc-form textarea{min-height:64px;resize:vertical}
-    .kc-save{padding:10px 14px;border:0;border-radius:10px;background:#f05040;color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+    .kc-save{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 14px;border:0;border-radius:14px;background:#f05040;color:#fff;font:inherit;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 10px 22px rgba(240,80,64,.28)}
+    .kc-prev{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:12px;background:#e9ecef;display:block}
+    .kc-meta{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;margin-top:-2px}
+    .kc-type{color:#f05040}
+    .kc-host{color:#747a80;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .kc-save:disabled{opacity:.6;cursor:default}
     .kc-msg{font-size:12px;color:#cc3931}
     @media (prefers-reduced-motion:reduce){.kc,.kc-form,.kc-chev{animation:none;transition:none}.kc .bar i{animation:none;width:100%}.kc-spin{animation-duration:2s}}
@@ -243,9 +247,13 @@
     const form = document.createElement("div");
     form.className = "kc-form";
     const cols = Array.isArray(opts.collections) ? opts.collections.filter(x => x && x.id && x.name).slice(0, 60) : [];
-    form.innerHTML = "<div><div class='kc-form-in'><label>Title</label><input class='f-title' maxlength='160'><label>Collection</label><select class='f-col'><option value='all'>My Vault</option></select><label>Tags (comma separated)</label><input class='f-tags' placeholder='poster, warm, retro'><label>Note</label><textarea class='f-note' placeholder='Add context...'></textarea><div class='kc-msg'></div><button type='button' class='kc-save'>Save details</button></div></div>";
+    const prev = safeImg(opts.previewUrl);
+    form.innerHTML = "<div><div class='kc-form-in'>" + (prev ? "<img class='kc-prev' alt='' referrerpolicy='no-referrer'>" : "") + "<input class='f-title' maxlength='160' placeholder='Title' aria-label='Title'><div class='kc-meta'><span class='kc-type'></span><span class='kc-host'></span></div><button type='button' class='kc-save'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M20 6 9 17l-5-5'/></svg><span>Save</span></button><div class='kc-msg'></div><label>Collection</label><select class='f-col'><option value='all'>My Vault</option></select><label>Tags (comma separated)</label><input class='f-tags' placeholder='poster, warm, retro'><label>Note</label><textarea class='f-note' placeholder='Add context...'></textarea></div></div>";
     const q = s => form.querySelector(s);
     q(".f-title").value = opts.title || "";
+    if (prev) q(".kc-prev").src = prev;
+    q(".kc-type").textContent = opts.typeLabel || "Image object";
+    q(".kc-host").textContent = opts.sourceHost || "";
     for (const col of cols) { const o = document.createElement("option"); o.value = col.id; o.textContent = col.name; q(".f-col").appendChild(o); }
     more.addEventListener("click", () => {
       const open = !ui.el.classList.contains("open");
@@ -258,6 +266,7 @@
     q(".kc-save").addEventListener("click", async () => {
       const btn = q(".kc-save");
       btn.disabled = true;
+      btn.querySelector("span").textContent = "Saving\u2026";
       q(".kc-msg").textContent = "";
       const colSel = q(".f-col");
       const tags = q(".f-tags").value.split(/[,\n]/).map(t => t.trim()).filter(Boolean).slice(0, 6);
@@ -270,6 +279,7 @@
         armClose(ui, 1800);
       } else {
         btn.disabled = false;
+        btn.querySelector("span").textContent = "Save";
         q(".kc-msg").textContent = r?.error || "Couldn't save the details.";
       }
     });
@@ -421,7 +431,7 @@
     if (message?.type === "VAULT_KEEP_ALL_COUNT") { loadCandidates().then(r => sendResponse({ ok: true, count: r.selection.length, total: r.items.length })).catch(() => sendResponse({ ok: false })); return true; }
     if (message?.type === "VAULT_KEEP_ALL_OPEN") { openPicker().then(() => sendResponse({ ok: true })).catch(() => sendResponse({ ok: false })); return true; }
     if (message?.type === "VAULT_TOAST_SAVING") { showSavingCard(message.previewUrl); sendResponse({ ok: true }); return true; }
-    if (message?.type === "VAULT_TOAST_UNDO") { showUndoToast(String(message.message || "Kept in your Vault").slice(0, 160), message.objectId, { previewUrl: message.previewUrl, title: message.title, collections: message.collections, ok: message.ok }); sendResponse({ ok: true }); return true; }
+    if (message?.type === "VAULT_TOAST_UNDO") { showUndoToast(String(message.message || "Kept in your Vault").slice(0, 160), message.objectId, { previewUrl: message.previewUrl, title: message.title, collections: message.collections, ok: message.ok, typeLabel: message.typeLabel, sourceHost: message.sourceHost }); sendResponse({ ok: true }); return true; }
     return false;
   });
   initHover();

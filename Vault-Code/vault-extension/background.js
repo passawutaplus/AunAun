@@ -403,6 +403,8 @@ async function quickKeep(payload, tab) {
         objectId: live ? result.objectId : null,
         previewUrl: result.previewUrl || preview,
         title: result.title || payload.title || "",
+        typeLabel: payload.type === "image" ? "Image object" : payload.type === "video" ? "Video object" : payload.type === "link" ? "Link object" : "Object",
+        sourceHost: (() => { try { return new URL(payload.sourceUrl || tab?.url || "").hostname.replace(/^www\./, ""); } catch (_) { return ""; } })(),
         collections: vaultCollections.filter(c => c && c.id && c.id !== "all" && !c.system).map(c => ({ id: c.id, name: c.name })).slice(0, 60)
       });
     } catch (_) {}
