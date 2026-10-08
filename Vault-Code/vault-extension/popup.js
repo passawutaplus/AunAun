@@ -630,6 +630,7 @@ quickKeepInput.addEventListener("change", async () => {
   setStatus(quickKeepInput.checked ? "Quick keep is on: one click saves to your last collection." : "Quick keep is off: you will see the form.", "success");
 });
 
+document.getElementById("keepAllIconBtn")?.addEventListener("click", () => keepAllBtn.click());
 keepAllBtn.addEventListener("click", async () => {
   const response = await chrome.runtime.sendMessage({ type: "VAULT_KEEP_ALL_START" });
   if (response?.ok) window.close();

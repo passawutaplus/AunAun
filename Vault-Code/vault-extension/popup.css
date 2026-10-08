@@ -522,3 +522,7 @@ html,body{scrollbar-width:thin;scrollbar-color:rgba(47,49,51,.28) transparent}
 
 .quick-actions button{display:inline-flex;align-items:center;gap:8px}
 .quick-actions .mini-icon{display:inline-flex;color:var(--coral)}
+
+/* keep-all as an icon beside Keep in Vault while a capture is open */
+.popup:has(#captureCard:not([hidden])) #homeActions{display:none}
+.capture-actions .keep-all-icon{display:grid;place-items:center;width:56px;min-height:52px;padding:0;border-radius:14px;color:var(--coral);cursor:pointer}
