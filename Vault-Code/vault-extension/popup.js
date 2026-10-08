@@ -38,6 +38,7 @@ const apiBaseInput = document.getElementById("apiBaseInput");
 const saveSettingsBtn = document.getElementById("saveSettingsBtn");
 const uploadZone = document.getElementById("uploadZone");
 let pendingCapture = null;
+const EMBED = new URLSearchParams(location.search).get("embed") === "1";
 let recentCapturesCache = [];
 let collectionsCache = [];
 
@@ -50,7 +51,8 @@ async function init() {
     "lastVaultStatus",
     "stayOnPageAfterSave",
     "recentCaptures",
-    "pendingCapture"
+    "pendingCapture",
+    "embedEdit"
   ]);
 
   // Dev only: run chrome.storage.local.set({ devMode: true }) in the popup console to show the Advanced box.
@@ -65,8 +67,12 @@ async function init() {
 
   renderRecent(data.recentCaptures || []);
   await loadCollections();
-  if (data.pendingCapture) renderPendingCapture(data.pendingCapture);
-  if (!data.pendingCapture) {
+  if (EMBED) {
+    document.documentElement.classList.add("embed");
+    if (data.embedEdit) renderPendingCapture(data.embedEdit);
+    try { parent.postMessage({ type: "VAULT_EMBED_READY" }, "*"); } catch (_) {}
+  } else if (data.pendingCapture) renderPendingCapture(data.pendingCapture);
+  if (!data.pendingCapture && !EMBED) {
     await checkServerHealth(apiBaseInput.value, statusFromStorage);
   }
 }
@@ -98,7 +104,12 @@ keepPendingBtn.addEventListener("click", async () => {
     if (edit?.ok) {
       pendingCapture = null;
       captureCard.hidden = true;
-      await chrome.runtime.sendMessage({ type: "VAULT_DISMISS_PENDING_CAPTURE" });
+      if (EMBED) {
+        await chrome.storage.local.remove(["embedEdit"]);
+        try { parent.postMessage({ type: "VAULT_DETAILS_SAVED" }, "*"); } catch (_) {}
+      } else {
+        await chrome.runtime.sendMessage({ type: "VAULT_DISMISS_PENDING_CAPTURE" });
+      }
       setStatus("Details saved", "success");
       return;
     }
@@ -277,7 +288,7 @@ function renderPendingCapture(capture) {
   capturePreview.innerHTML = previewMarkup(capture);
   renderDuplicateHint(capture);
   const editing = Boolean(capture.editObjectId);
-  keepPendingBtn.querySelector("span").textContent = editing ? "Save details" : "Keep in Vault";
+  keepPendingBtn.querySelector("span").textContent = editing ? "Save" : "Keep in Vault";
   document.getElementById("keepAllIconBtn").hidden = editing;
   if (editing) { duplicateHint.hidden = true; captureType.textContent = "Kept — add details"; }
 }

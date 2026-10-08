@@ -87,7 +87,7 @@
     :host{all:initial}
     *{box-sizing:border-box}
     .fx{font-family:"IBM Plex Sans Thai","IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#151719}
-    .kc{position:fixed;top:16px;right:16px;z-index:2147483647;width:340px;max-width:calc(100vw - 24px);overflow:hidden;border-radius:16px;background:#fff;color:#151719;box-shadow:0 18px 50px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.06);animation:kcIn .22s ease-out}
+    .kc{position:fixed;top:16px;right:16px;z-index:2147483647;width:352px;max-width:calc(100vw - 24px);overflow:hidden;border-radius:16px;background:#fff;color:#151719;box-shadow:0 18px 50px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.06);animation:kcIn .22s ease-out}
     @media (prefers-color-scheme:dark){.kc{background:#1c1f23;color:#f4f5f6;box-shadow:0 18px 50px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08)}}
     @keyframes kcIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
     .kc .bar{position:absolute;left:0;right:0;top:0;height:2px;background:transparent}
@@ -116,6 +116,10 @@
     .kc-form{display:grid;grid-template-rows:0fr;transition:grid-template-rows .26s ease}
     .kc.open .kc-form{grid-template-rows:1fr}
     .kc-form>div{overflow:hidden;min-height:0}
+    .kc-form-in.hidden>:not(.kc-frame){display:none}
+    .kc-form-in.hidden{padding:0}
+    .kc-frame{display:none;width:100%;height:min(640px,calc(100vh - 150px));border:0;background:transparent;color-scheme:normal}
+    .kc-frame.on{display:block}
     .kc-form-in{display:flex;flex-direction:column;gap:8px;padding:4px 14px 14px}
     .kc-form label{font-size:11.5px;color:#747a80}
     .kc-form input,.kc-form select,.kc-form textarea{width:100%;padding:8px 10px;border:1px solid rgba(127,127,127,.3);border-radius:8px;background:transparent;color:inherit;font:inherit;font-size:13.5px}
@@ -255,13 +259,42 @@
     q(".kc-type").textContent = opts.typeLabel || "Image object";
     q(".kc-host").textContent = opts.sourceHost || "";
     for (const col of cols) { const o = document.createElement("option"); o.value = col.id; o.textContent = col.name; q(".f-col").appendChild(o); }
+    let frameState = "idle";
+    const mountFrame = async () => {
+      frameState = "loading";
+      const prep = await send({ type: "VAULT_PREPARE_DETAILS", objectId });
+      const holder = form.querySelector(".kc-form-in");
+      const useFallback = () => { frameState = "fallback"; holder.querySelectorAll(".kc-frame").forEach(n => n.remove()); holder.classList.remove("hidden"); q(".f-title").focus({ preventScroll: true }); };
+      if (!prep?.ok) return useFallback();
+      const frame = document.createElement("iframe");
+      frame.className = "kc-frame";
+      frame.title = "Add details";
+      frame.src = chrome.runtime.getURL("popup.html?embed=1");
+      let ready = false;
+      const onMsg = ev => {
+        if (ev.source !== frame.contentWindow) return;
+        if (ev.data?.type === "VAULT_EMBED_READY") { ready = true; frameState = "ready"; holder.classList.add("hidden"); frame.classList.add("on"); }
+        if (ev.data?.type === "VAULT_DETAILS_SAVED") {
+          window.removeEventListener("message", onMsg);
+          ui.el.classList.remove("open");
+          ui.el.querySelector(".kc-title").textContent = "Details saved";
+          ui.el.querySelector(".kc-extra").textContent = "";
+          ui.el.querySelector(".kc-actions").textContent = "";
+          armClose(ui, 1800);
+        }
+      };
+      window.addEventListener("message", onMsg);
+      holder.appendChild(frame);
+      setTimeout(() => { if (!ready) { window.removeEventListener("message", onMsg); useFallback(); } }, 1800);
+    };
     more.addEventListener("click", () => {
       const open = !ui.el.classList.contains("open");
       ui.el.classList.toggle("open", open);
       more.setAttribute("aria-expanded", open ? "true" : "false");
       clearTimeout(ui.timer);
-      if (open) setTimeout(() => q(".f-title").focus({ preventScroll: true }), 280);
-      else armClose(ui, 3000);
+      if (open && frameState === "idle") mountFrame();
+      else if (open && frameState === "fallback") setTimeout(() => q(".f-title").focus({ preventScroll: true }), 280);
+      if (!open) armClose(ui, 3000);
     });
     q(".kc-save").addEventListener("click", async () => {
       const btn = q(".kc-save");

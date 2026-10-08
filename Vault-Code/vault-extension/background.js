@@ -154,6 +154,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return;
     }
 
+    if (message?.type === "VAULT_PREPARE_DETAILS") {
+      const { lastQuickKeep } = await chrome.storage.local.get(["lastQuickKeep"]);
+      const id = String(message.objectId || "");
+      if (!lastQuickKeep || lastQuickKeep.objectId !== id || !/^[a-z0-9]{6,64}$/i.test(id)) { sendResponse({ ok: false }); return; }
+      await chrome.storage.local.set({ embedEdit: { ...(lastQuickKeep.payload || {}), title: lastQuickKeep.title || lastQuickKeep.payload?.title || "", note: "", collectionId: "all", editObjectId: id } });
+      sendResponse({ ok: true });
+      return;
+    }
+
     if (message?.type === "VAULT_ADD_DETAILS") {
       const { lastQuickKeep } = await chrome.storage.local.get(["lastQuickKeep"]);
       const id = String(message.objectId || lastQuickKeep?.objectId || "");
