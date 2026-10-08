@@ -4,6 +4,24 @@ import { ArrowRight, BookOpen } from "lucide-react";
 import { listPublishedArticles } from "@/server/articles.functions";
 import { ArticleCard, type ArticleCardData } from "@/components/blog/ArticleCard";
 
+const ARTICLE_GRID_CLASS = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6";
+
+function ArticleCardSkeleton() {
+  return (
+    <div
+      aria-hidden="true"
+      className="flex flex-col rounded-2xl border border-border bg-card overflow-hidden animate-pulse"
+    >
+      <div className="aspect-[16/9] bg-muted" />
+      <div className="flex flex-col gap-2 p-4 min-h-[140px]">
+        <div className="h-4 w-4/5 rounded bg-muted" />
+        <div className="h-3 w-full rounded bg-muted" />
+        <div className="h-3 w-2/3 rounded bg-muted" />
+      </div>
+    </div>
+  );
+}
+
 export function HomeInsightsSection() {
   const sectionRef = React.useRef<HTMLElement | null>(null);
   const [inView, setInView] = React.useState(false);
@@ -25,7 +43,10 @@ export function HomeInsightsSection() {
           io.disconnect();
         }
       },
-      { rootMargin: "400px 0px" },
+      // Start early so the cards (or the "no articles" collapse) settle well
+      // before the section scrolls into view — otherwise the page height jumps
+      // under the reader's thumb.
+      { rootMargin: "1200px 0px" },
     );
     io.observe(sectionRef.current);
     return () => io.disconnect();
@@ -69,22 +90,13 @@ export function HomeInsightsSection() {
         </Link>
       </div>
 
-      {!inView || loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="rounded-2xl border border-border bg-card aspect-[4/5] animate-pulse"
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {articles.map((a) => (
-            <ArticleCard key={a.slug} a={a} />
-          ))}
-        </div>
-      )}
+      {/* Skeleton and loaded state share the same grid + card proportions
+          (16:9 cover + text body) so swapping them does not move the page. */}
+      <div className={ARTICLE_GRID_CLASS}>
+        {!inView || loading
+          ? [0, 1, 2].map((i) => <ArticleCardSkeleton key={i} />)
+          : articles.map((a) => <ArticleCard key={a.slug} a={a} />)}
+      </div>
     </section>
   );
 }

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -58,24 +58,60 @@ function EscrowPayPage() {
   const [paying, setPaying] = useState(false);
   const [acting, setActing] = useState(false);
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await escrowRpc("get_escrow_by_portal_token", {
-        _portal_token: token,
-      });
-      if (error) throw error;
-      setEscrow(data as EscrowRow | null);
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Latest-request-wins: a slow earlier response must not overwrite a newer one.
+  const requestId = useRef(0);
+  const statusRef = useRef<string | null>(null);
+  /** Back from Stripe (?paid=1) but the webhook has not marked the escrow funded yet. */
+  const [confirming, setConfirming] = useState(false);
+
+  /**
+   * `silent` refreshes the data in place. Only the very first load shows the
+   * full-page spinner — otherwise approving/disputing swaps the whole card for
+   * a spinner and back, which reads as the page flashing.
+   */
+  const load = useCallback(
+    async ({ silent = false }: { silent?: boolean } = {}) => {
+      const myRequest = ++requestId.current;
+      if (!silent) setLoading(true);
+      try {
+        const { data, error } = await escrowRpc("get_escrow_by_portal_token", {
+          _portal_token: token,
+        });
+        if (error) throw error;
+        if (myRequest !== requestId.current) return;
+        const row = data as EscrowRow | null;
+        statusRef.current = row?.status ?? null;
+        setEscrow(row);
+      } catch (e) {
+        if (myRequest === requestId.current) toast.error((e as Error).message);
+      } finally {
+        if (!silent && myRequest === requestId.current) setLoading(false);
+      }
+    },
+    [token],
+  );
 
   useEffect(() => {
     void load();
-  }, [token]);
+  }, [load]);
+
+  // Stripe redirects back with ?paid=1 before our webhook has necessarily run.
+  // Poll briefly so the pay button doesn't reappear and invite a double payment.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("paid") !== "1") return;
+    setConfirming(true);
+    let tries = 0;
+    const id = window.setInterval(async () => {
+      tries += 1;
+      await load({ silent: true });
+      if (statusRef.current !== "pending_payment" || tries >= 8) {
+        window.clearInterval(id);
+        setConfirming(false);
+      }
+    }, 2500);
+    return () => window.clearInterval(id);
+  }, [load]);
 
   const startPay = async () => {
     setPaying(true);
@@ -106,7 +142,7 @@ function EscrowPayPage() {
       const { error } = await escrowRpc("client_approve_escrow", { _portal_token: token });
       if (error) throw error;
       toast.success("อนุมัติงานแล้ว — ระบบจะปล่อยเงินให้ฟรีแลนซ์");
-      await load();
+      await load({ silent: true });
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -124,7 +160,7 @@ function EscrowPayPage() {
       });
       if (error) throw error;
       toast.success("แจ้งข้อพิพาทแล้ว — ทีมงานจะติดต่อกลับ");
-      await load();
+      await load({ silent: true });
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -177,9 +213,13 @@ function EscrowPayPage() {
             </p>
 
             {escrow.status === "pending_payment" ? (
-              <Button className="w-full" onClick={startPay} disabled={paying}>
-                {paying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CreditCard className="h-4 w-4 mr-2" />}
-                ชำระเงิน
+              <Button className="w-full" onClick={startPay} disabled={paying || confirming}>
+                {paying || confirming ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <CreditCard className="h-4 w-4 mr-2" />
+                )}
+                {confirming ? "กำลังยืนยันการชำระเงิน…" : "ชำระเงิน"}
               </Button>
             ) : null}
 

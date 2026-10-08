@@ -4,7 +4,12 @@ type Theme = "light" | "dark";
 const KEY = "app-theme";
 
 function getStoredTheme(): Theme {
-  const saved = localStorage.getItem(KEY) as Theme | null;
+  let saved: Theme | null = null;
+  try {
+    saved = localStorage.getItem(KEY) as Theme | null;
+  } catch {
+    // storage blocked (private mode etc.) — fall through to the system preference
+  }
   if (saved === "light" || saved === "dark") return saved;
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }

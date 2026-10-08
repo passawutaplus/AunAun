@@ -14,7 +14,9 @@ export function useFinanceDeductions(userId: string | undefined) {
       return data ?? [];
     },
   });
-  const deductionsRows = deductionsQuery.data ?? [];
+  // useMemo keeps the identity stable while data is still undefined; a bare
+  // `?? []` is a new array every render and re-runs every memo below.
+  const deductionsRows = React.useMemo(() => deductionsQuery.data ?? [], [deductionsQuery.data]);
 
   const deductions = React.useMemo<Record<string, boolean>>(() => {
     const out: Record<string, boolean> = {};

@@ -215,7 +215,6 @@
   .animate-fade-up { animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
   .animate-fade-in { animation: fade-in 0.3s ease-out both; }
   .animate-scale-in { animation: scale-in 0.25s ease-out both; }
-  .animate-blob { animation: blob-float 14s ease-in-out infinite; }
   .animate-overdue-shake { animation: overdue-shake 0.9s ease-in-out infinite; }
   .animate-input-shake { animation: input-shake 0.4s ease-in-out; }
 
@@ -265,26 +264,25 @@
     pointer-events: none;
     z-index: 0;
   }
+  /* The radial gradients already fade to transparent, so no filter: blur() is
+     needed. A 90px blur on a 500px layer is re-rasterised while scrolling and
+     dropped /auth and the landing hero to ~17fps in profiling. */
   .ambient-blobs::before,
   .ambient-blobs::after {
     content: "";
     position: absolute;
     border-radius: 9999px;
-    filter: blur(90px);
     opacity: 0.7;
-    will-change: transform;
   }
   .ambient-blobs::before {
     width: 520px; height: 520px;
     background: radial-gradient(circle, oklch(0.78 0.18 55 / 0.85), transparent 70%);
     top: -160px; right: -140px;
-    animation: blob-float 16s ease-in-out infinite;
   }
   .ambient-blobs::after {
     width: 420px; height: 420px;
     background: radial-gradient(circle, oklch(0.62 0.22 35 / 0.6), transparent 70%);
     bottom: -120px; left: -100px;
-    animation: blob-float 22s ease-in-out infinite reverse;
   }
 }
 

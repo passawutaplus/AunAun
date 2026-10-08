@@ -66,20 +66,25 @@ function PublicSignPage() {
   const [docDataUrl, setDocDataUrl] = React.useState<string | null>(null);
   const [method, setMethod] = React.useState<"draw" | "full_document">("draw");
 
-  const load = React.useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetchPayload({ data: { token } });
-      const p = res.payload;
-      setPayload(p);
-      if (p?.client_name) setName(p.client_name);
-    } catch {
-      setPayload(null);
-      toast.error("ไม่พบเอกสาร หรือลิงก์ไม่ถูกต้อง");
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchPayload, token]);
+  // `silent` re-fetches in place (e.g. right after signing) instead of swapping
+  // the whole page for the loading screen and back.
+  const load = React.useCallback(
+    async ({ silent = false }: { silent?: boolean } = {}) => {
+      if (!silent) setLoading(true);
+      try {
+        const res = await fetchPayload({ data: { token } });
+        const p = res.payload;
+        setPayload(p);
+        if (p?.client_name) setName(p.client_name);
+      } catch {
+        setPayload(null);
+        toast.error("ไม่พบเอกสาร หรือลิงก์ไม่ถูกต้อง");
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [fetchPayload, token],
+  );
 
   React.useEffect(() => {
     void load();
@@ -151,7 +156,7 @@ function PublicSignPage() {
       });
       celebrateFromEdges();
       toast.success("ลงนามเรียบร้อย — ขอบคุณครับ/ค่ะ");
-      await load();
+      await load({ silent: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "ส่งไม่สำเร็จ");
     } finally {
@@ -170,8 +175,9 @@ function PublicSignPage() {
 
   if (!payload) {
     return (
-      <div className="max-w-md mx-auto py-16 px-4 text-center">
-        <p className="text-sm text-muted-foreground">ไม่พบเอกสารสำหรับลิงก์นี้</p>
+      // Same min-height as the loading state so "loading → not found" doesn't jump.
+      <div className="min-h-[60vh] grid place-items-center px-4 text-center">
+        <p className="text-sm text-muted-foreground max-w-md">ไม่พบเอกสารสำหรับลิงก์นี้</p>
       </div>
     );
   }

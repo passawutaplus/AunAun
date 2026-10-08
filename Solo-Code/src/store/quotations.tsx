@@ -438,7 +438,7 @@ export function useQuotations() {
     },
   });
 
-  const list = query.data ?? [];
+  const list = React.useMemo(() => query.data ?? [], [query.data]);
 
   const get = React.useCallback((id: string) => list.find((q) => q.id === id), [list]);
 

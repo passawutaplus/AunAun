@@ -19,7 +19,7 @@ export function useFinanceIncomes(userId: string | undefined) {
       return (data ?? []).map((r) => rowToIncome(r as unknown as IncomeRow));
     },
   });
-  const incomes = incomesQuery.data ?? [];
+  const incomes = React.useMemo(() => incomesQuery.data ?? [], [incomesQuery.data]);
 
   const upsertIncomeMutation = useMutation({
     mutationFn: async (rec: IncomeRecord) => {

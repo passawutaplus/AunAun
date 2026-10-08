@@ -33,6 +33,14 @@ function RootErrorComponent({ error }: { error: Error }) {
   );
 }
 
+/**
+ * Runs in <head> before first paint so dark-mode users never see a flash of the
+ * light theme while React hydrates. Mirrors `getStoredTheme()` in useTheme.tsx
+ * (key "app-theme", falls back to prefers-color-scheme). Wrapped in try/catch
+ * because localStorage can throw (private mode, blocked storage).
+ */
+const THEME_BOOTSTRAP = `(function(){try{var t=null;try{t=localStorage.getItem("app-theme")}catch(e){}if(t!=="light"&&t!=="dark"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}if(t==="dark")document.documentElement.classList.add("dark")}catch(e){}})();`;
+
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
     meta: [
@@ -65,6 +73,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       { name: "msapplication-TileColor", content: "#E8740C" },
     ],
     scripts: [
+      { children: THEME_BOOTSTRAP },
       {
         type: "application/ld+json",
         children: JSON.stringify({
@@ -121,7 +130,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="th">
+    <html lang="th" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

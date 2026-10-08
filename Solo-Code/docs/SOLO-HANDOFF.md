@@ -188,6 +188,29 @@ npm run e2e:smoke    # Playwright (ยังไม่ได้รันในก
 
 ---
 
+## 5.5 รอบจัดระเบียบ + UX (อาการกระตุก/กะพริบ)
+
+วัดด้วย Playwright + Chromium (CPU throttle 4x สำหรับมือถือ, PerformanceObserver: layout-shift/longtask, rAF frame time)
+
+| จุด | ก่อน | หลัง | สาเหตุ → วิธีแก้ |
+|---|---|---|---|
+| Home (มือถือ) CLS | 0.58–0.94 | ~0 | skeleton บทความสูงไม่เท่าการ์ดจริง → skeleton ใช้ grid/สัดส่วนเดียวกับ `ArticleCard` (`HomeInsightsSection`) |
+| `/auth` เลื่อนหน้า | ~17 fps | 60 fps | `filter: blur(90px)` บน `.ambient-blobs` (+ keyframes ที่ไม่เคยมีอยู่) → ลบออกใน `styles.css` |
+| Dark mode กะพริบขาว | class `dark` ใส่หลัง hydrate | ใส่ก่อน paint | inline `THEME_BOOTSTRAP` ใน `__root.tsx` + `suppressHydrationWarning` |
+| `/sign/$token` CLS | 0.195 | 0 | not-found state ใช้ `min-h-[60vh]`; โหลดซ้ำแบบ silent |
+| `/pay/$token` | spinner เต็มหน้าตอน refresh, เสี่ยงจ่ายซ้ำหลัง `?paid=1` | refresh แบบ silent, poll รอ webhook, ปุ่มถูก disable | latest-wins guard + polling สูงสุด 8 ครั้ง |
+| QuickNote | พิมพ์หาย/ไม่ save ตอน unmount | save debounce 600ms, flush ตอน unmount, ไม่เขียนทับตอน dirty | refs + cleanup (มีเทสต์ 4 ตัว) |
+
+**ลดโค้ดซ้ำ:** `AuthBannerSection` + `DashboardBannerSection` → `BannerSlidesManager` ที่ config ได้ (ลดเกือบเท่าตัว, เทสต์ 6 ตัว); ลบ `ScratchpadWidget` ที่ไม่มีใครใช้; `?? []` ที่ไม่เสถียรใน deps ของ useMemo (finance hooks, quotations) → useMemo; เทสต์กัน drift ของไฟล์ที่ copy ไป edge functions (`edgeSharedParity.test.ts`). jscpd: ซ้ำ ~0.49%.
+
+**ข้อควรระวัง:** inline theme script ต้องการ CSP ที่อนุญาต inline script (ถ้า nginx ตั้ง `script-src 'self'` ล้วนจะถูกบล็อก → เพิ่ม nonce/hash หรือย้ายเป็นไฟล์ static). `scripts/docker-serve.mjs` ไม่เสิร์ฟ `dist/client` จึงวัด perf ผ่านมันตรงๆ ไม่ได้.
+
+**ยังไม่ได้ทำ:** วัดหน้า dashboard หลังล็อกอิน; น้ำหนัก JS ของหน้า Home (long tasks มือถือ ~2.4s ที่ 4x throttle, LCP ~1.6s desktop); รูป 6 รูปบน Home ไม่มี width/height.
+
+Verify หลังรอบนี้: tsc สะอาด, vitest 142/142 ผ่าน.
+
+---
+
 ## 6. ข้อเสนอสำหรับ `CLAUDE.md` ของ Solo-Code (วางไว้ที่ root ของ repo ได้เลย)
 
 ```md

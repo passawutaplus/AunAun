@@ -20,7 +20,7 @@ export function useFinanceExpenses(userId: string | undefined) {
       return (data ?? []).map((r) => rowToExp(r as unknown as ExpRow));
     },
   });
-  const allExpenses = expensesQuery.data ?? [];
+  const allExpenses = React.useMemo(() => expensesQuery.data ?? [], [expensesQuery.data]);
   const workExpenses = React.useMemo(
     () => allExpenses.filter((e) => e.category === "work"),
     [allExpenses],
