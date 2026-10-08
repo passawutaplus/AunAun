@@ -25,6 +25,11 @@ describe("Add details after a quick keep (PATCH)", () => {
     assert.equal(applyCaptureEdits(base, { title: "   " }).title, "Saved image");
     assert.deepEqual(applyCaptureEdits(base, { collectionId: "../../x" }).collectionIds, ["all"]);
   });
+  it("stores up to 6 clean tags in quickTags", () => {
+    const out = applyCaptureEdits(base, { tags: [" poster ", "warm", "", "retro", "a", "b", "c", "d", "e"] });
+    assert.deepEqual(out.captureContext.quickTags, ["poster", "warm", "retro", "a", "b", "c"]);
+    assert.equal(applyCaptureEdits(base, {}).captureContext.quickTags, undefined);
+  });
   it("moving back to My Vault clears the collection name", () => {
     const filed = applyCaptureEdits(base, { collectionId: "col_1", collectionName: "A" });
     const back = applyCaptureEdits(filed, { collectionId: "all" });

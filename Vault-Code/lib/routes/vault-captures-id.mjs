@@ -13,6 +13,7 @@ export function applyCaptureEdits(item, body) {
     next.collectionIds = [body.collectionId];
     next.captureContext.collectionName = body.collectionId === "all" ? null : clip(body.collectionName, 80) || next.captureContext.collectionName || null;
   }
+  if (Array.isArray(body?.tags)) next.captureContext.quickTags = body.tags.map(t => clip(t, 40)).filter(Boolean).slice(0, 6);
   next.editedAt = Date.now();
   return next;
 }
@@ -40,7 +41,7 @@ export default createHandler({
       }
       const next = applyCaptureEdits(item, body);
       await writeCaptureItem(id, next, auth);
-      return { success: true, objectId: id, item: { title: next.title, note: next.note, collectionIds: next.collectionIds, editedAt: next.editedAt } };
+      return { success: true, objectId: id, item: { title: next.title, note: next.note, collectionIds: next.collectionIds, quickTags: next.captureContext.quickTags || [], editedAt: next.editedAt } };
     }
     const removed = await deleteCapture(id, auth);
     if (!removed) {

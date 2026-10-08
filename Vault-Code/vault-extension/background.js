@@ -25,8 +25,7 @@ const PRIVILEGED_MESSAGES = new Set([
   "VAULT_START_SNAPSHOT_ACTIVE",
   "VAULT_UPLOAD_FILE_DATA",
   "VAULT_SAVE_CAPTURE_PAYLOAD",
-  "VAULT_DISMISS_PENDING_CAPTURE",
-  "VAULT_UPDATE_DETAILS"
+  "VAULT_DISMISS_PENDING_CAPTURE"
 ]);
 const latestContextByTab = new Map();
 
@@ -382,14 +381,33 @@ async function quickKeep(payload, tab) {
   const col = { id: "all", name: "My Vault" }; // quick keep always lands unsorted; "Add details" files it later
   payload.collectionId = col.id;
   payload.captureContext = Object.assign({}, payload.captureContext || {}, { collectionName: col.name });
+  const pageCanShow = Boolean(tab?.id) && isCaptureableUrl(tab.url);
+  const preview = payload.previewUrl || payload.thumbnailUrl || payload.assetUrl || "";
+  if (pageCanShow) {
+    try {
+      await ensureKeepScript(tab.id);
+      await chrome.tabs.sendMessage(tab.id, { type: "VAULT_TOAST_SAVING", previewUrl: preview });
+    } catch (_) {}
+  }
   await attachCredit(payload, tab);
   const result = await saveCapture(payload, { tabId: tab?.id, silent: true });
   if (result && tab?.id) {
+    const { vaultCollections = [] } = await chrome.storage.local.get(["vaultCollections"]);
     await chrome.storage.local.set({ lastQuickKeep: { objectId: result.objectId, title: result.title, previewUrl: result.previewUrl, collectionName: col.name, at: Date.now(), payload } });
     try {
       await ensureKeepScript(tab.id);
-      await chrome.tabs.sendMessage(tab.id, { type: "VAULT_TOAST_UNDO", message: `Kept in ${col.name}`, objectId: result.objectId && !result.handoff && !result.queued ? result.objectId : null });
+      const live = result.objectId && !result.handoff && !result.queued;
+      await chrome.tabs.sendMessage(tab.id, {
+        type: "VAULT_TOAST_UNDO",
+        message: live ? `Kept in ${col.name}` : "Saved offline \u2014 will send soon",
+        objectId: live ? result.objectId : null,
+        previewUrl: result.previewUrl || preview,
+        title: result.title || payload.title || "",
+        collections: vaultCollections.filter(c => c && c.id && c.id !== "all" && !c.system).map(c => ({ id: c.id, name: c.name })).slice(0, 60)
+      });
     } catch (_) {}
+  } else if (!result && pageCanShow) {
+    try { await chrome.tabs.sendMessage(tab.id, { type: "VAULT_TOAST_UNDO", message: "Couldn't save. Try again.", objectId: null, previewUrl: preview, ok: false }); } catch (_) {}
   }
   return result;
 }
@@ -400,7 +418,7 @@ async function updateDetails(message) {
   const { vaultToken, apiBase } = await getSettings();
   const { lastQuickKeep } = await chrome.storage.local.get(["lastQuickKeep"]);
   if (!vaultToken || !/^[a-z0-9]{6,64}$/i.test(objectId) || lastQuickKeep?.objectId !== objectId) return { ok: false, error: "This save can no longer be edited." };
-  const body = { title: String(message.title || "").slice(0, 160), note: String(message.note || "").slice(0, 4000), collectionId: String(message.collectionId || "all"), collectionName: String(message.collectionName || "").slice(0, 80) };
+  const body = { title: String(message.title || "").slice(0, 160), note: String(message.note || "").slice(0, 4000), collectionId: String(message.collectionId || "all"), collectionName: String(message.collectionName || "").slice(0, 80), tags: (Array.isArray(message.tags) ? message.tags : []).map(t => String(t).trim().slice(0, 40)).filter(Boolean).slice(0, 6) };
   try {
     const res = await fetchWithTimeout(`${apiBase}/api/vault/captures/${encodeURIComponent(objectId)}`, { method: "PATCH", headers: { Authorization: `Bearer ${vaultToken}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (!res.ok) return { ok: false, error: "Couldn't save the details. Try again." };
