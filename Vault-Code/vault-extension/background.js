@@ -211,7 +211,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message?.type === "VAULT_DISCONNECT") {
-      await chrome.storage.local.remove(["vaultToken", "vaultPairedAt"]);
+      await chrome.storage.local.remove(["vaultToken", "vaultPairedAt", "vaultUserName"]);
       sendResponse({ ok: true });
       return;
     }
@@ -294,8 +294,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
       const current = await chrome.storage.local.get(["vaultToken"]);
       const changed = current.vaultToken !== token;
+      const pairedName = String(message.name || "").slice(0, 120);
+      if (!changed && pairedName) await chrome.storage.local.set({ vaultUserName: pairedName });
       if (changed) {
-        const update = { vaultToken: token, vaultPairedAt: Date.now() };
+        const update = { vaultToken: token, vaultPairedAt: Date.now(), vaultUserName: pairedName };
         const origin = new URL(sender.url || sender.tab?.url || "").origin;
         if (origin.startsWith("https://")) update.apiBase = origin;
         await chrome.storage.local.set(update);

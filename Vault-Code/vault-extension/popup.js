@@ -594,16 +594,19 @@ const disconnectBtn = document.getElementById("disconnectBtn");
 let quickTimer = 0;
 
 async function initPhase11() {
-  const s = await chrome.storage.local.get(["quickKeep", "vaultToken", "smartDetect", "hoverKeep", "vaultQueue"]);
+  const s = await chrome.storage.local.get(["quickKeep", "vaultToken", "vaultUserName", "smartDetect", "hoverKeep", "vaultQueue"]);
   quickKeepInput.checked = s.quickKeep === true;
-  renderConnect(Boolean(s.vaultToken));
+  renderConnect(Boolean(s.vaultToken), s.vaultUserName || "");
   renderQueue(s.vaultQueue || []);
   chrome.runtime.sendMessage({ type: "VAULT_QUEUE_RETRY" }).catch(() => {});
   refreshKeepAllCount();
 }
 
-function renderConnect(connected) {
-  connectText.textContent = connected ? "Connected to your Vault" : "Not connected \u2014 open A+ Vault and log in once";
+let connectedName = "";
+function renderConnect(connected, name) {
+  if (typeof name === "string") connectedName = name;
+  connectText.textContent = connected ? (connectedName || "Connected to your Vault") : "Not connected";
+  connectText.title = connected ? "Connected to your Vault" : "";
   disconnectBtn.hidden = !connected;
   document.querySelector(".popup")?.classList.toggle("is-guest", !connected);
   const gate = document.getElementById("loginGate");
@@ -692,13 +695,14 @@ disconnectBtn.addEventListener("click", async () => {
   await chrome.runtime.sendMessage({ type: "VAULT_DISCONNECT" });
   tokenInput.value = "";
   renderConnect(false);
-  setStatus("Disconnected. Open A+ Vault and log in to connect again.", "success");
+  
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   if (changes.vaultQueue) renderQueue(changes.vaultQueue.newValue || []);
   if (changes.vaultToken) renderConnect(Boolean(changes.vaultToken.newValue));
+  if (changes.vaultUserName) renderConnect(true, changes.vaultUserName.newValue || "");
 });
 
 initPhase11();

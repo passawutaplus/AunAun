@@ -33,7 +33,7 @@ if (VAULT_SYNC_ORIGINS.includes(location.origin)) {
     const token = String(data.token || "").trim();
     if (!token || /\s/.test(token) || token.length > 4096) return;
     try {
-      chrome.runtime.sendMessage({ type: "VAULT_PAIR", token }, response => {
+      chrome.runtime.sendMessage({ type: "VAULT_PAIR", token, name: String(data.name || "").slice(0, 120) }, response => {
         if (chrome.runtime.lastError || !response || !response.ok) return;
         window.postMessage({ type: "VAULT_EXTENSION_PAIRED", changed: !!response.changed }, location.origin);
       });
