@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { collectionNameFor, defaultSelection, imageKey, isJunkUrl, rankCandidates } from "../../vault-extension/lib/keep-all.js";
 import { MAX_ATTEMPTS, QUEUE_CAP, backoffMs, isRetryable, prepareForQueue, queueAdd, queueAfterFailure, queueDue, queueRemove, queueSummary } from "../../vault-extension/lib/queue.js";
 import { extractCredit } from "../../vault-extension/lib/credit.js";
-import { buildBatchItems, chunk, decideKeep, parseTagsAndNote, pickCollection, summarizeBatches, textFragmentUrl } from "../../vault-extension/lib/keep.js";
+import { buildBatchItems, chunk, decideKeep, quickKeepEnabled, parseTagsAndNote, pickCollection, summarizeBatches, textFragmentUrl } from "../../vault-extension/lib/keep.js";
 
 describe("Keep All candidates", () => {
   it("normalises rendition URLs to the same key", () => {
@@ -105,6 +105,10 @@ describe("keep helpers", () => {
     assert.equal(decideKeep({ quickKeep: true, hasTarget: false }), "open-panel");
     assert.equal(decideKeep({ quickKeep: false }), "open-panel");
     assert.equal(decideKeep({}), "open-panel");
+    // new installs save instantly; only an explicit "ask me first" turns it off
+    assert.equal(quickKeepEnabled(undefined), true);
+    assert.equal(quickKeepEnabled(true), true);
+    assert.equal(quickKeepEnabled(false), false);
     assert.equal(pickCollection("c1", [{ id: "c1" }]), "c1");
     assert.equal(pickCollection("gone", [{ id: "c1" }]), "all");
   });

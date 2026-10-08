@@ -155,6 +155,15 @@
         setTimeout(() => ui.host.remove(), 1800);
       });
       el.appendChild(undo);
+      const more = document.createElement("button");
+      more.type = "button";
+      more.textContent = "Add details";
+      more.addEventListener("click", async () => {
+        more.disabled = true;
+        await send({ type: "VAULT_ADD_DETAILS", objectId });
+        ui.host.remove();
+      });
+      el.appendChild(more);
     }
     const bar = document.createElement("div");
     bar.className = "bar";

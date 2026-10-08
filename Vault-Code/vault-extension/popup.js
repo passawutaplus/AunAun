@@ -1,4 +1,4 @@
-import { parseTagsAndNote } from "./lib/keep.js";
+import { parseTagsAndNote, quickKeepEnabled } from "./lib/keep.js";
 
 const DEFAULT_API_BASE = "https://aplus-vault.vercel.app";
 const ALLOWED_API_BASES = [
@@ -85,6 +85,26 @@ keepPendingBtn.addEventListener("click", async () => {
 
   const collectionId = collectionInput.value || "all";
   const collectionMeta = collectionMetaForSave(collectionId);
+  if (pendingCapture.editObjectId) {
+    setStatus("Saving details...", "loading");
+    const edit = await chrome.runtime.sendMessage({
+      type: "VAULT_UPDATE_DETAILS",
+      objectId: pendingCapture.editObjectId,
+      title: titleInput.value.trim(),
+      note: parseTagsAndNote(noteInput.value).note,
+      collectionId,
+      collectionName: collectionMeta.collectionName || ""
+    });
+    if (edit?.ok) {
+      pendingCapture = null;
+      captureCard.hidden = true;
+      await chrome.runtime.sendMessage({ type: "VAULT_DISMISS_PENDING_CAPTURE" });
+      setStatus("Details saved", "success");
+      return;
+    }
+    setStatus(edit?.error || "Couldn't save the details.", "error");
+    return;
+  }
   const typed = parseTagsAndNote(noteInput.value);
   const payload = {
     ...pendingCapture,
@@ -256,6 +276,10 @@ function renderPendingCapture(capture) {
   captureSource.textContent = host(capture.sourceUrl || capture.captureContext?.linkUrl || capture.captureContext?.pageUrl || "") || "Browser capture";
   capturePreview.innerHTML = previewMarkup(capture);
   renderDuplicateHint(capture);
+  const editing = Boolean(capture.editObjectId);
+  keepPendingBtn.querySelector("span").textContent = editing ? "Save details" : "Keep in Vault";
+  document.getElementById("keepAllIconBtn").hidden = editing;
+  if (editing) { duplicateHint.hidden = true; captureType.textContent = "Kept — add details"; }
 }
 
 function renderDuplicateHint(capture) {
@@ -595,7 +619,7 @@ let quickTimer = 0;
 
 async function initPhase11() {
   const s = await chrome.storage.local.get(["quickKeep", "vaultToken", "vaultUserName", "smartDetect", "hoverKeep", "vaultQueue"]);
-  quickKeepInput.checked = s.quickKeep === true;
+  quickKeepInput.checked = quickKeepEnabled(s.quickKeep);
   renderConnect(Boolean(s.vaultToken), s.vaultUserName || "");
   renderQueue(s.vaultQueue || []);
   chrome.runtime.sendMessage({ type: "VAULT_QUEUE_RETRY" }).catch(() => {});
@@ -630,7 +654,7 @@ async function refreshKeepAllCount() {
 
 quickKeepInput.addEventListener("change", async () => {
   await chrome.storage.local.set({ quickKeep: quickKeepInput.checked });
-  setStatus(quickKeepInput.checked ? "Quick keep is on: one click saves to your last collection." : "Quick keep is off: you will see the form.", "success");
+  setStatus(quickKeepInput.checked ? "Saving instantly: add details afterwards." : "You will see the form before saving.", "success");
 });
 
 document.getElementById("keepAllIconBtn")?.addEventListener("click", () => keepAllBtn.click());
@@ -666,17 +690,16 @@ document.getElementById("quickUndoBtn").addEventListener("click", async () => {
 document.getElementById("quickEditBtn").addEventListener("click", async () => {
   clearTimeout(quickTimer);
   const { lastQuickKeep } = await chrome.storage.local.get(["lastQuickKeep"]);
-  if (!lastQuickKeep?.payload) return;
-  await chrome.runtime.sendMessage({ type: "VAULT_UNDO_LAST" }); // the full panel saves a fresh copy, so nothing is duplicated
+  if (!lastQuickKeep?.objectId) return;
   quickCard.hidden = true;
-  renderPendingCapture({ ...lastQuickKeep.payload, collectionId: lastQuickKeep.payload.collectionId || "all" });
+  renderPendingCapture({ ...(lastQuickKeep.payload || {}), title: lastQuickKeep.title || lastQuickKeep.payload?.title || "", note: "", collectionId: "all", editObjectId: lastQuickKeep.objectId });
 });
 
 document.getElementById("quickOffBtn").addEventListener("click", async () => {
   quickKeepInput.checked = false;
   await chrome.storage.local.set({ quickKeep: false });
   quickCard.hidden = true;
-  setStatus("Quick keep is off.", "success");
+  setStatus("You will see the form before saving.", "success");
 });
 
 document.getElementById("queueRetryBtn").addEventListener("click", async () => {
