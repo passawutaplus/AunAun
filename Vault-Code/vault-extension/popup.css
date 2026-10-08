@@ -551,3 +551,10 @@ html,body{scrollbar-width:thin;scrollbar-color:rgba(47,49,51,.28) transparent}
 @keyframes moCursor{0%{left:10%;top:70%}40%,100%{left:58%;top:38%}}
 @keyframes moKeep{0%,35%{opacity:0;transform:scale(.8)}50%,100%{opacity:1;transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.mo *{animation:none!important}.mo-tag,.mo-keep{opacity:1}}
+
+/* Logged-out popup: one Log in button, nothing else */
+[hidden]{display:none!important}
+.login-gate{padding:18px 4px 6px;text-align:center}
+.login-gate h2{margin:0 0 6px;font-size:17px}
+.login-gate p{margin:0 0 16px;font-size:13px;line-height:1.55;color:var(--muted,#747a80)}
+.popup.is-guest #homeActions,.popup.is-guest #captureCard,.popup.is-guest #quickCard,.popup.is-guest .quick-actions,.popup.is-guest .recent-section{display:none!important}

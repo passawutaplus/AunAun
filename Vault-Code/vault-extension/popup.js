@@ -603,6 +603,9 @@ async function initPhase11() {
 function renderConnect(connected) {
   connectText.textContent = connected ? "Connected to your Vault" : "Not connected \u2014 open A+ Vault and log in once";
   disconnectBtn.hidden = !connected;
+  document.querySelector(".popup")?.classList.toggle("is-guest", !connected);
+  const gate = document.getElementById("loginGate");
+  if (gate) gate.hidden = connected;
 }
 
 function renderQueue(queue) {
@@ -708,4 +711,10 @@ document.addEventListener("click", event => {
   document.querySelectorAll("[data-info]").forEach(b => b.setAttribute("aria-expanded", "false"));
   panel.hidden = !open;
   btn.setAttribute("aria-expanded", open ? "true" : "false");
+});
+
+document.getElementById("loginBtn")?.addEventListener("click", async () => {
+  const { apiBase } = await chrome.storage.local.get(["apiBase"]);
+  await chrome.tabs.create({ url: `${normalizeApiBase(apiBase || apiBaseInput.value)}/vault?login=1` });
+  window.close();
 });
