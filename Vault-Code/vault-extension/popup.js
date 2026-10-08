@@ -589,16 +589,11 @@ const quickCard = document.getElementById("quickCard");
 const queueRow = document.getElementById("queueRow");
 const connectText = document.getElementById("connectText");
 const disconnectBtn = document.getElementById("disconnectBtn");
-const smartDetectInput = document.getElementById("smartDetectInput");
-const hoverKeepInput = document.getElementById("hoverKeepInput");
 let quickTimer = 0;
 
 async function initPhase11() {
   const s = await chrome.storage.local.get(["quickKeep", "vaultToken", "smartDetect", "hoverKeep", "vaultQueue"]);
   quickKeepInput.checked = s.quickKeep === true;
-  smartDetectInput.checked = s.smartDetect === true;
-  hoverKeepInput.checked = s.hoverKeep === true;
-  hoverKeepInput.disabled = !smartDetectInput.checked;
   renderConnect(Boolean(s.vaultToken));
   renderQueue(s.vaultQueue || []);
   chrome.runtime.sendMessage({ type: "VAULT_QUEUE_RETRY" }).catch(() => {});
@@ -693,29 +688,6 @@ disconnectBtn.addEventListener("click", async () => {
   tokenInput.value = "";
   renderConnect(false);
   setStatus("Disconnected. Open A+ Vault and log in to connect again.", "success");
-});
-
-smartDetectInput.addEventListener("change", async () => {
-  const origins = ["https://*/*", "http://*/*"];
-  if (smartDetectInput.checked) {
-    const granted = await chrome.permissions.request({ origins });
-    if (!granted) { smartDetectInput.checked = false; return; }
-    try {
-      await chrome.scripting.registerContentScripts([{ id: "vault-smart-detect", matches: origins, js: ["content.js", "content-keep.js"], runAt: "document_idle", persistAcrossSessions: true }]);
-    } catch (_) {}
-    await chrome.storage.local.set({ smartDetect: true });
-    hoverKeepInput.disabled = false;
-  } else {
-    try { await chrome.scripting.unregisterContentScripts({ ids: ["vault-smart-detect"] }); } catch (_) {}
-    try { await chrome.permissions.remove({ origins }); } catch (_) {}
-    await chrome.storage.local.set({ smartDetect: false, hoverKeep: false });
-    hoverKeepInput.checked = false;
-    hoverKeepInput.disabled = true;
-  }
-});
-
-hoverKeepInput.addEventListener("change", async () => {
-  await chrome.storage.local.set({ hoverKeep: hoverKeepInput.checked });
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
