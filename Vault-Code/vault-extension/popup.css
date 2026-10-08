@@ -581,3 +581,10 @@ html,body{scrollbar-width:thin;scrollbar-color:rgba(47,49,51,.28) transparent}
 #titleInput{margin:10px 0 0}
 
 .mark.mark-icon{width:34px;height:38px;object-fit:contain}
+
+/* My Vault link: no background, arrow nudges up-right on hover */
+.header-vault-button{display:inline-flex;align-items:center;gap:5px;padding:0 2px;border:0;background:transparent;box-shadow:none;color:var(--ink);font-size:14px;cursor:pointer}
+.header-vault-button svg{transition:transform .18s ease}
+.header-vault-button:hover svg,.header-vault-button:focus-visible svg{transform:translate(3px,-3px)}
+.header-vault-button:hover{color:var(--coral);background:transparent}
+@media(prefers-reduced-motion:reduce){.header-vault-button svg{transition:none}}
