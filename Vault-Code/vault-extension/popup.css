@@ -558,3 +558,19 @@ html,body{scrollbar-width:thin;scrollbar-color:rgba(47,49,51,.28) transparent}
 .login-gate h2{margin:0 0 6px;font-size:17px}
 .login-gate p{margin:0 0 16px;font-size:13px;line-height:1.55;color:var(--muted,#747a80)}
 .popup.is-guest #homeActions,.popup.is-guest #captureCard,.popup.is-guest #quickCard,.popup.is-guest .quick-actions,.popup.is-guest .recent-section{display:none!important}
+
+/* Login gate v2 */
+.login-gate{padding:8px 6px 4px}
+.lg-art{position:relative;height:110px;margin:4px 0 14px}
+.lg-card{position:absolute;top:12px;width:84px;height:84px;border-radius:14px;box-shadow:0 10px 24px rgba(18,22,26,.14)}
+.lg-card.c1{left:calc(50% - 112px);background:linear-gradient(135deg,#e7c9a0,#c98b5a);transform:rotate(-9deg);animation:lgFloat 5s ease-in-out infinite}
+.lg-card.c2{left:calc(50% + 28px);background:linear-gradient(135deg,#b6d6b0,#5f9a63);transform:rotate(8deg);animation:lgFloat 5s ease-in-out -2s infinite}
+.lg-card.c3{left:calc(50% - 42px);top:4px;background:linear-gradient(135deg,#9fc4d6,#4e8aa6);animation:lgFloat 5s ease-in-out -1s infinite}
+.lg-plus{position:absolute;left:50%;top:44px;width:38px;height:38px;margin-left:-19px;border-radius:12px;background:var(--coral);color:#fff;font-size:26px;line-height:37px;text-align:center;box-shadow:0 8px 20px rgba(240,80,64,.4)}
+.login-gate h2{font-size:17px;text-transform:none;letter-spacing:0;margin:0 0 6px}
+.lg-points{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.lg-points li{padding:4px 10px;border-radius:999px;background:rgba(240,80,64,.1);color:var(--coral);font-size:11.5px}
+.login-gate small{display:block;margin-top:8px;font-size:11px;color:var(--muted,#747a80)}
+@keyframes lgFloat{50%{translate:0 -6px}}
+@media(prefers-reduced-motion:reduce){.lg-card{animation:none}}
+#titleInput{margin:10px 0 0}

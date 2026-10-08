@@ -21,9 +21,12 @@
       <section class="status" id="status" data-type="default" hidden></section>
 
       <section class="login-gate" id="loginGate" hidden>
-        <h2>Log in to keep things</h2>
-        <p>Your references are private to your Vault. Log in once on the Vault website and this extension connects by itself.</p>
+        <div class="lg-art" aria-hidden="true"><i class="lg-card c1"></i><i class="lg-card c2"></i><i class="lg-card c3"></i><span class="lg-plus">+</span></div>
+        <h2>Keep what inspires you</h2>
+        <p>Log in once on the Vault website. This extension connects by itself.</p>
+        <ul class="lg-points"><li>Private to you</li><li>Source &amp; credit kept</li><li>One click, any site</li></ul>
         <button id="loginBtn" class="primary keep-button" type="button"><span>Log in to Vault</span></button>
+        <small>Opens aplus-vault.vercel.app</small>
       </section>
 
       <section class="home-actions" id="homeActions" aria-label="Keep">
@@ -52,6 +55,7 @@
 
       <section class="capture-card" id="captureCard" hidden>
         <div class="capture-preview" id="capturePreview"></div>
+        <input id="titleInput" type="text" placeholder="Title" aria-label="Title">
         <div class="capture-meta">
           <span id="captureType">Object</span>
           <strong id="captureSource">Ready to keep</strong>
@@ -70,9 +74,6 @@
           <input id="quickKeepInput" type="checkbox">
           <span>Quick keep</span>
         </label>
-
-        <label for="titleInput">Title</label>
-        <input id="titleInput" type="text" placeholder="Object title">
 
         <label for="collectionInput">Collection</label>
         <div class="collection-field">

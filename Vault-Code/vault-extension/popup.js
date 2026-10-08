@@ -715,6 +715,6 @@ document.addEventListener("click", event => {
 
 document.getElementById("loginBtn")?.addEventListener("click", async () => {
   const { apiBase } = await chrome.storage.local.get(["apiBase"]);
-  await chrome.tabs.create({ url: `${normalizeApiBase(apiBase || apiBaseInput.value)}/vault?login=1` });
+  await chrome.tabs.create({ url: `${normalizeApiBase(apiBase || apiBaseInput.value)}/vault?login=1&from=ext` });
   window.close();
 });
