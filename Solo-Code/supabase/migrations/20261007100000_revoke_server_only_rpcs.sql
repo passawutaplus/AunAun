@@ -15,6 +15,7 @@
 --   public.recommend_from_likes (Anthem feed). See Solo-Code/docs/SOLO-HANDOFF.md.
 --
 -- Apply BEFORE deploying app changes (see README "Production safety").
+-- APPLIED to project zkflkpbmbozrchqncpzi on 2026-10-08 (owner approved); verified anon/authenticated have no EXECUTE.
 
 BEGIN;
 
