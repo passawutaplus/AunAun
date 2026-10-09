@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { exploreProjectsUrl } from "@/lib/exploreRoutes";
-import { Layers3, Eye, MessageCircle, Sparkles, Calendar, Handshake, AlignLeft, Palette, Hash, Share2 } from "lucide-react";
+import { Bookmark, Eye, MessageCircle, Sparkles, Calendar, Handshake, AlignLeft, Palette, Hash, Share2 } from "lucide-react";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,9 @@ import LicenseDetailBlock from "@/components/license/LicenseDetailBlock";
 import { ProjectSeriesBlock } from "@/components/series/ProjectSeriesBlock";
 import { PriceCurrencyAmount } from "@/components/payments/PriceCurrencySelect";
 import { formatCategoryBreadcrumb, stripCategorySubTags } from "@/data/categoryTaxonomy";
+import { useAuth } from "@/hooks/useAuth";
+import { useSavedProjectIds } from "@/hooks/useCollections";
+import { cn } from "@/lib/utils";
 
 interface Props {
   projectId?: string;
@@ -66,6 +69,9 @@ interface Props {
 
 const ProjectSidePanel = (p: Props) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: savedProjectIds = [] } = useSavedProjectIds(user?.id);
+  const savedInCollection = !!p.projectId && savedProjectIds.includes(p.projectId);
   const showHire = p.allowHire ?? true;
   const showCollab = p.allowCollab ?? true;
   const ownerView = !!p.isOwner;
@@ -215,9 +221,18 @@ const ProjectSidePanel = (p: Props) => {
             className="inline-flex items-center justify-center rounded-full border border-input bg-background h-9 px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground w-full"
           />
           <SaveToCollectionPopover projectId={p.projectId}>
-            <Button variant="outline" className="rounded-full w-full" size="sm">
-              <Layers3 className="w-4 h-4 mr-1" />
-              Keep Collection
+            <Button
+              variant="outline"
+              className="rounded-full w-full"
+              size="sm"
+              aria-pressed={savedInCollection}
+              aria-label={savedInCollection ? "เก็บใน Keep Collection แล้ว" : "Keep Collection"}
+              title="Keep Collection"
+            >
+              <Bookmark
+                className={cn("w-4 h-4", savedInCollection && "fill-primary text-primary")}
+                strokeWidth={savedInCollection ? 0 : 1.8}
+              />
             </Button>
           </SaveToCollectionPopover>
         </div>

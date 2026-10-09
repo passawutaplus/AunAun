@@ -30,10 +30,8 @@ test.describe("SEO @public", () => {
     await expect(page.locator('link[rel="canonical"]').first()).toHaveAttribute("href", /^https:\/\//);
   });
 
-  test("hiring page updates title and robots after navigation", async ({ page }) => {
+  test("hiring board is deferred at launch", async ({ page }) => {
     await page.goto("/hiring");
-    await expect(page).toHaveTitle(/หางาน|HIRING|Aplus1/i);
-    await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute("content", "index, follow");
-    await expect(page.locator('meta[property="og:url"]').first()).toHaveAttribute("content", /\/hiring$/);
+    await expect(page.getByRole("heading", { name: "ยังไม่เปิดในเวอร์ชันนี้" })).toBeVisible();
   });
 });

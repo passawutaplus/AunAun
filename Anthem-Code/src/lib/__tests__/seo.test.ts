@@ -23,8 +23,8 @@ describe("seo helpers", () => {
     });
 
     it("appends site name for page titles", () => {
-      expect(buildTitle("งานจ้างดีไซน์")).toBe("งานจ้างดีไซน์ | Aplus1");
-      expect(buildTitle("Jobs")).toBe("Jobs | Aplus1");
+      expect(buildTitle("งานจ้างดีไซน์")).toBe("งานจ้างดีไซน์ | SAMECOR");
+      expect(buildTitle("Jobs")).toBe("Jobs | SAMECOR");
     });
   });
 
@@ -66,6 +66,7 @@ describe("seo helpers", () => {
     it("flags filter/search params", () => {
       expect(shouldNoindexSearchParams("q=logo")).toBe(true);
       expect(shouldNoindexSearchParams("with=Figma")).toBe(true);
+      expect(shouldNoindexSearchParams("color=%23ff0000")).toBe(true);
       expect(shouldNoindexSearchParams("mode=designers")).toBe(false);
     });
   });

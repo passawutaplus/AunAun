@@ -89,7 +89,7 @@ const CopyrightReportPage = () => {
         <div className="space-y-1 text-sm">
           <p className="font-medium text-foreground">สำหรับเจ้าของสิทธิ์หรือผู้ได้รับมอบอำนาจ</p>
           <p className="text-muted-foreground leading-relaxed">
-            กรอกแบบฟอร์มนี้ถ้าพบผลงานบน Aplus1 ที่อาจละเมิดลิขสิทธิ์ของคุณ
+            กรอกแบบฟอร์มนี้ถ้าพบผลงานบน SAMECOR ที่อาจละเมิดลิขสิทธิ์ของคุณ
             หรือกด <strong>รายงาน</strong> บนหน้าผลงานแล้วเลือก &quot;ละเมิดลิขสิทธิ์&quot; ก็ได้
           </p>
         </div>
@@ -148,12 +148,12 @@ const CopyrightReportPage = () => {
             <Input id="cr-work-url" value={workUrl} onChange={(e) => setWorkUrl(e.target.value)} placeholder="https://..." />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="cr-bad">ลิงก์ผลงานที่ละเมิดบน Aplus1</Label>
+            <Label htmlFor="cr-bad">ลิงก์ผลงานที่ละเมิดบน SAMECOR</Label>
             <Input
               id="cr-bad"
               value={infringeUrl}
               onChange={(e) => setInfringeUrl(e.target.value)}
-              placeholder="https://aplus1.app/project/..."
+              placeholder="https://samecor.com/project/..."
               required
             />
             <p className="text-[11px] text-muted-foreground">คัดลอก URL จากแถบที่อยู่เบราว์เซอร์</p>

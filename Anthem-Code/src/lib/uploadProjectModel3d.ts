@@ -20,7 +20,7 @@ const CONTENT_TYPE: Record<Model3dFormat, string> = {
   obj: "model/obj",
 };
 
-/** Upload an STL/OBJ model to shared `project-media` (Aplus1 namespace). Returns the public URL. */
+/** Upload an STL/OBJ model to shared `project-media` (SAMECOR namespace). Returns the public URL. */
 export async function uploadProjectModel3d(
   file: File,
   userId: string,

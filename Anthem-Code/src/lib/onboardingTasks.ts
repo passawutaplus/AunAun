@@ -14,7 +14,7 @@ import {
   Wrench,
 } from "lucide-react";
 import type { OnboardingVisitId } from "@/lib/onboardingStorage";
-import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
+import { isAplus1HiringBoardEnabled, isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 
 export type OnboardingTaskId =
   | "profile"
@@ -207,8 +207,11 @@ const LAUNCH_TASK_COPY: Partial<Record<OnboardingTaskId, Pick<OnboardingTaskDef,
 };
 
 export function getVisibleOnboardingTasks(): OnboardingTaskDef[] {
-  const hidden = isAplus1LaunchMinimal() ? LAUNCH_HIDDEN_TASK_IDS : RETIRED_TASK_IDS;
-  return ONBOARDING_TASKS.filter((task) => !hidden.includes(task.id)).map((task) => {
+  const hidden = new Set<OnboardingTaskId>(
+    isAplus1LaunchMinimal() ? LAUNCH_HIDDEN_TASK_IDS : RETIRED_TASK_IDS,
+  );
+  if (!isAplus1HiringBoardEnabled()) hidden.add("jobs");
+  return ONBOARDING_TASKS.filter((task) => !hidden.has(task.id)).map((task) => {
     const copy = LAUNCH_TASK_COPY[task.id];
     return copy ? { ...task, ...copy } : task;
   });

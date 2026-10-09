@@ -1,11 +1,13 @@
 ---
-description: Aplus1 product north star — อ่านก่อนแก้ feature/UX/copy ของ Anthem (aplus1.app). Thesis ผลงานจริง -> โอกาส
+description: SAMECOR product north star — อ่านก่อนแก้ feature/UX/copy ของ Anthem (โฮสต์ samecor.com). แท็กไลน์ You Create. We Connect.
 globs:
   - Anthem-Code/**
 alwaysApply: false
 ---
 
-# Aplus1 Product Foundation
+# SAMECOR Product Foundation
+
+ชื่อที่ผู้ใช้เห็นคือ **SAMECOR** แท็กไลน์ **You Create. We Connect.** คำสัญญา **1 Profile. 100+ Opportunities.** โฟลเดอร์ยังชื่อ `Anthem-Code/` โดเมนหลักคือ `samecor.com`
 
 ก่อนแก้ product UX, copy, discovery, portfolio, jobs, chat, หรือ onboarding ใน `Anthem-Code/` — **อ่านไฟล์นี้ก่อน**:
 
@@ -15,7 +17,7 @@ alwaysApply: false
 
 > **ผลงานจริง → โอกาส**
 
-- Positioning: **ผลงานจริง พาไปเจอโอกาสใหม่**
+- Positioning: **You Create. We Connect.** คำสัญญา **1 Profile. 100+ Opportunities.**
 - ใช้คำ **「โอกาส」** เป็นแกน; **「งาน」** เฉพาะบริบทจ้างงาน/ประกาศจ้าง
 - North Star: **project-qualified opportunity conversations / week**
 - MVP loop: publish project (มีบริบท) → discovery → save/contact → conversation จากผลงานนั้น

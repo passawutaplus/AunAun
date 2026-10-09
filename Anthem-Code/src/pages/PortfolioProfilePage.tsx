@@ -37,7 +37,7 @@ import {
   profileShareTitle,
   profileVisitorPreviewPath,
 } from "@/lib/profileRoutes";
-import { isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
+import { isAplus1HiringBoardEnabled, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 import { parseSocialLinks } from "@/lib/parseSocialLinks";
 import { FEED_PAGE_GUTTER_X } from "@/components/feed/FeedHero";
 import Footer from "@/components/Footer";
@@ -56,7 +56,8 @@ type ProfileTab = "overall" | "about" | "collections" | "booking" | "hiring" | "
 
 const TAB_IDS: ProfileTab[] = ["overall", "collections", "booking", "hiring", "inspire", "about"];
 
-function resolveTab(raw: string | null): ProfileTab {
+function resolveTab(raw: string | null, hiringEnabled: boolean): ProfileTab {
+  if (raw === "hiring" && !hiringEnabled) return "overall";
   if (raw && (TAB_IDS as string[]).includes(raw)) return raw as ProfileTab;
   return "overall";
 }
@@ -68,6 +69,7 @@ const PortfolioProfilePage = () => {
   const { user, loading: authLoading } = useAuth();
   const { data: profile, isLoading } = useProfile(user?.id);
   const designDrillEnabled = isLaunchDesignDrillEnabled();
+  const hiringBoardEnabled = isAplus1HiringBoardEnabled();
   const { data: myProjects = [], isLoading: projectsLoading } = useMyProjects(user?.id);
   const { followers, following } = useFollowState(user?.id);
   const { data: collections = [] } = useCollections(user?.id);
@@ -81,7 +83,7 @@ const PortfolioProfilePage = () => {
   );
 
   const [opportunityOpen, setOpportunityOpen] = useState(false);
-  const activeTab = resolveTab(searchParams.get("tab"));
+  const activeTab = resolveTab(searchParams.get("tab"), hiringBoardEnabled);
 
   const setTab = (tab: ProfileTab) => {
     const next = new URLSearchParams(searchParams);
@@ -181,7 +183,9 @@ const PortfolioProfilePage = () => {
     { id: "overall", label: "My Projects", count: published.length },
     { id: "collections", label: "Collections", count: collections.length },
     { id: "booking", label: "Packages", count: savedPackageIds?.size ?? 0 },
-    { id: "hiring", label: "Hiring", count: myApplications.length + mySavedJobs.length },
+    ...(hiringBoardEnabled
+      ? [{ id: "hiring" as const, label: "Hiring", count: myApplications.length + mySavedJobs.length }]
+      : []),
     { id: "inspire", label: "Inspiration", count: inspireBoards.length },
     { id: "about", label: "About Me" },
   ];

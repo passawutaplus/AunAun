@@ -15,6 +15,9 @@ interface Props {
   showFollowerCount?: boolean;
   className?: string;
   visitorPreview?: boolean;
+  followLabel?: string;
+  followingLabel?: string;
+  unfollowLabel?: string;
 }
 
 const FollowButton = ({
@@ -26,6 +29,9 @@ const FollowButton = ({
   showFollowerCount = true,
   className,
   visitorPreview = false,
+  followLabel = "ติดตาม",
+  followingLabel = "กำลังติดตาม",
+  unfollowLabel = "เลิกติดตาม",
 }: Props) => {
   const { user } = useAuth();
   const openAuth = useAuthDialog((s) => s.openSignup);
@@ -55,8 +61,8 @@ const FollowButton = ({
       disabled={isPending}
       size={hideLabel ? "icon" : size}
       variant={tone === "muted" ? "ghost" : isFollowing ? "outline" : "default"}
-      aria-label={isFollowing ? "เลิกติดตาม" : "ติดตาม"}
-      title={isFollowing ? "เลิกติดตาม" : "ติดตาม"}
+      aria-label={isFollowing ? unfollowLabel : followLabel}
+      title={isFollowing ? unfollowLabel : followLabel}
       className={cn(
         "rounded-full shrink-0",
         tone === "muted" &&
@@ -74,7 +80,7 @@ const FollowButton = ({
       ) : (
         <UserPlus className={cn("w-4 h-4", !hideLabel && "mr-1")} />
       )}
-      {!hideLabel && (isFollowing ? "กำลังติดตาม" : "ติดตาม")}
+      {!hideLabel && (isFollowing ? followingLabel : followLabel)}
       {!hideLabel && showFollowerCount && variant === "full" && (
         <span className="ml-1 opacity-70">· {followers}</span>
       )}

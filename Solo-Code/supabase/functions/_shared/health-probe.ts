@@ -8,7 +8,7 @@ export type HealthProbeResult = {
 
 const DEFAULT_TARGETS: Array<{ name: string; url: string }> = [
   { name: "So1o", url: "https://www.solofreelancer.com" },
-  { name: "Aplus1", url: "https://aplus1.app" },
+  { name: "SAMECOR", url: "https://samecor.com" },
   { name: "Ops Hub", url: "https://so1o-ops-hub.vercel.app" },
 ];
 

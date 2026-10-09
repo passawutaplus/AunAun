@@ -1,6 +1,7 @@
 export type AuthEmailBrand = "solo" | "anthem";
 
 const ANTHEM_HOST_PATTERNS = [
+  "samecor.com",
   "aplus1.app",
   "pixel100.com",
   "1px.app",
@@ -11,7 +12,7 @@ const ANTHEM_HOST_PATTERNS = [
 ];
 
 const ANTHEM_TEXT_HINT =
-  /aplus1\.app|pixel100\.com|1px\.app|1px\.net|px1\.app|an1hem\.app|\/anthem\b/i;
+  /samecor\.com|aplus1\.app|pixel100\.com|1px\.app|1px\.net|px1\.app|an1hem\.app|\/anthem\b/i;
 
 function anthemEnvOrigins(): string[] {
   const values = [

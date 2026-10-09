@@ -306,7 +306,7 @@ export function buildCollabPlanPdfHtml(
         <div class="header-brand">
           <p class="doc-en">COLLABORATION PLAN</p>
           <h1 class="doc-title">สรุปรายละเอียดงานร่วม</h1>
-          <p class="doc-kicker">Aplus1 · เอกสารแผนคอลแลป</p>
+          <p class="doc-kicker">SAMECOR · เอกสารแผนคอลแลป</p>
         </div>
         <div class="header-meta">
           <div class="meta-row">
@@ -350,7 +350,7 @@ export function buildCollabPlanPdfHtml(
 
     <footer class="doc-footer">
       <div class="footer-rule"></div>
-      <p class="footer-main">เอกสารนี้สร้างจากแผนคอลแลปใน Aplus1 · เก็บเป็นหลักฐานงานร่วมและเครดิต</p>
+      <p class="footer-main">เอกสารนี้สร้างจากแผนคอลแลปใน SAMECOR · เก็บเป็นหลักฐานงานร่วมและเครดิต</p>
       ${
         meta.conversationId
           ? `<p class="footer-ref mono">ref ${escapeHtml(meta.conversationId.slice(0, 8))}… · พิมพ์ ${escapeHtml(generatedAt.toLocaleString("th-TH"))}</p>`
@@ -857,7 +857,7 @@ export function buildCollabPlanHtmlDocument(
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${meta.preview ? "พรีวิว" : "สรุป"}แผนคอลแลป — Aplus1</title>
+  <title>${meta.preview ? "พรีวิว" : "สรุป"}แผนคอลแลป — SAMECOR</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>${PDF_STYLES}</style>

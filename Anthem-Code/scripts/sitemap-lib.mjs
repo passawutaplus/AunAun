@@ -8,7 +8,6 @@ export const FORUM_CATEGORY_SLUGS = ["announcements", "help", "bug", "idea", "fe
 
 export const STATIC_PATHS = [
   { loc: "/", priority: "1.0", changefreq: "daily", group: "static" },
-  { loc: "/hiring", priority: "0.9", changefreq: "daily", group: "static" },
   { loc: "/forum", priority: "0.85", changefreq: "daily", group: "static" },
   ...FORUM_CATEGORY_SLUGS.map((slug) => ({
     loc: `/forum/c/${slug}`,
@@ -83,6 +82,7 @@ export function catalogProjectId(i) {
 /**
  * @param {{
  *   fullProduct?: boolean,
+ *   hiringBoard?: boolean,
  *   projectIds?: string[],
  *   profileUserIds?: string[],
  *   vanityHandles?: string[],
@@ -94,6 +94,7 @@ export function catalogProjectId(i) {
  */
 export function buildSitemapUrls(opts = {}) {
   const fullProduct = opts.fullProduct === true;
+  const hiringBoard = opts.hiringBoard === true;
   const projectIds =
     opts.projectIds?.length > 0
       ? opts.projectIds
@@ -104,13 +105,16 @@ export function buildSitemapUrls(opts = {}) {
       : Array.from({ length: CATALOG_PROFILE_COUNT }, (_, i) => catalogUid(i));
   const vanityHandles = (opts.vanityHandles || []).filter(Boolean);
   const seriesIds = opts.seriesIds || [];
-  const jobIds = opts.jobIds || [];
+  const jobIds = hiringBoard ? opts.jobIds || [] : [];
   const explorePaths = opts.explorePaths || [];
 
   const staticPaths = STATIC_PATHS.map((p) => ({ ...p }));
+  if (hiringBoard) {
+    staticPaths.splice(1, 0, { loc: "/hiring", priority: "0.9", changefreq: "daily", group: "static" });
+  }
   if (fullProduct) {
     staticPaths.splice(
-      1,
+      hiringBoard ? 2 : 1,
       0,
       { loc: "/advertise", priority: "0.7", changefreq: "weekly", group: "static" },
       { loc: "/community", priority: "0.8", changefreq: "daily", group: "static" },

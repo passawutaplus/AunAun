@@ -23,7 +23,7 @@ const STATUS_COPY = {
     tone: "success" as const,
     body: "คุณพร้อมเปิดรับงานจ้างและรับค่าจ้างตามเงื่อนไขแพลตฟอร์ม — การยืนยันมีผล 2 ปี",
     cta: "ดูสถานะการยืนยัน",
-    subject: "[Aplus1] ยืนยันตัวตนสำเร็จ",
+    subject: "[SAMECOR] ยืนยันตัวตนสำเร็จ",
   },
   rejected: {
     badge: "คำขอไม่ผ่าน",
@@ -31,7 +31,7 @@ const STATUS_COPY = {
     tone: "brand" as const,
     body: "กรุณาตรวจสอบเหตุผลด้านล่าง แล้วส่งเอกสารใหม่ได้ที่หน้ายืนยันตัวตน",
     cta: "ส่งคำขอใหม่",
-    subject: "[Aplus1] คำขอยืนยันตัวตนไม่ผ่าน",
+    subject: "[SAMECOR] คำขอยืนยันตัวตนไม่ผ่าน",
   },
 };
 
@@ -39,7 +39,7 @@ export const KycStatusEmail = ({
   recipientName = "คุณ",
   status = "approved",
   reason = "",
-  actionUrl = "https://aplus1.app/verify",
+  actionUrl = "https://samecor.com/verify",
 }: KycStatusEmailProps) => {
   const copy = STATUS_COPY[status];
   return (
@@ -75,7 +75,7 @@ export const kycStatusTemplate = {
   previewData: {
     recipientName: "คุณ",
     status: "approved",
-    actionUrl: "https://aplus1.app/verify",
+    actionUrl: "https://samecor.com/verify",
   },
 };
 

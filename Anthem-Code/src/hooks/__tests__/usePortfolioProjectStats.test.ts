@@ -52,6 +52,7 @@ describe("EMPTY_PROJECT_STATS_IN_RANGE", () => {
   it("has zero defaults for ranged counters", () => {
     expect(EMPTY_PROJECT_STATS_IN_RANGE).toEqual({
       viewCount: 0,
+      likeCount: 0,
       hireCount: 0,
       collabCount: 0,
       bookmarkCount: 0,

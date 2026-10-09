@@ -328,11 +328,11 @@ export default function HireCheckoutDialog({
             <div className="space-y-4 py-1">
               <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-400">
                 <ShieldCheck className="h-4 w-4" />
-                ชำระเงินปลอดภัย 100% ผ่านตัวกลาง Aplus1
+                ชำระเงินปลอดภัย 100% ผ่านตัวกลาง SAMECOR
               </div>
 
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Aplus1 เป็นตัวกลาง — รับชำระจากผู้จ้างและโอนให้ผู้รับงานหลังอนุมัติงานตามเงื่อนไขแพลตฟอร์ม
+                SAMECOR เป็นตัวกลาง — รับชำระจากผู้จ้างและโอนให้ผู้รับงานหลังอนุมัติงานตามเงื่อนไขแพลตฟอร์ม
               </p>
 
               <div className="space-y-2">

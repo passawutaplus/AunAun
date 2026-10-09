@@ -1,6 +1,6 @@
 /**
- * @deprecated Solo Stripe hub for Aplus1 — CUT OVER.
- * Do not call Solo `/api/payments/*` for new Aplus1 flows.
+ * @deprecated Solo Stripe hub for SAMECOR — CUT OVER.
+ * Do not call Solo `/api/payments/*` for new SAMECOR flows.
  * Use `src/lib/payments/*` + Omise (see docs/payments-omise.md).
  *
  * Exports kept so existing UI can show a controlled coming-soon error.

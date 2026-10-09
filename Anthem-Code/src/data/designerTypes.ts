@@ -8,6 +8,8 @@ export type DesignerCardData = {
   projectCount: number;
   /** Published creator packages (0 if none). */
   packageCount: number;
+  /** Published creator objects (0 if none). */
+  objectCount: number;
   /** Has at least one published creator package. */
   hasService: boolean;
 };

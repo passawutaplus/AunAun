@@ -7,6 +7,7 @@ import {
   PROJECT_FEED_SELECT,
 } from "@/lib/dbSelects";
 import { fromCreatorServices } from "@/lib/creatorServicesDb";
+import { fromCreatorObjects, isObjectsTableMissing } from "@/lib/objects/db";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { profilesPublicFrom } from "@/lib/profileAccess";
 import { isOptionalQueryError, isSchemaMismatchError } from "@/lib/supabaseErrors";
@@ -23,7 +24,7 @@ function profileUserId(p: { user_id?: string; id?: string }) {
 
 export const useDesigners = () =>
   useQuery({
-    queryKey: ["designers-feed", "v11"],
+    queryKey: ["designers-feed", "v12"],
     queryFn: async (): Promise<DesignerCardData[]> => {
       let { data: profiles, error } = await profilesPublicFrom()
         .select(PROFILE_DESIGNER_SELECT)
@@ -44,7 +45,7 @@ export const useDesigners = () =>
 
       // Hard cap so one prolific owner cannot pull unbounded rows for this feed.
       const projectCap = Math.min(ids.length * PROJECTS_PER_DESIGNER, DESIGNERS_PAGE * PROJECTS_PER_DESIGNER);
-      const [projectsRes, countRes, servicesRes] = await Promise.all([
+      const [projectsRes, countRes, servicesRes, objectsRes] = await Promise.all([
         supabase
           .from("projects")
           .select(PROJECT_FEED_SELECT)
@@ -54,6 +55,7 @@ export const useDesigners = () =>
           .limit(projectCap),
         supabase.from("projects").select("owner_id").in("owner_id", ids).eq("status", "Published"),
         fromCreatorServices().select("owner_id").in("owner_id", ids).eq("status", "Published"),
+        fromCreatorObjects().select("owner_id").in("owner_id", ids).eq("status", "Published"),
       ]);
 
       const grouped = new Map<string, Tables<"projects">[]>();
@@ -75,6 +77,19 @@ export const useDesigners = () =>
           const oid = (row as { owner_id?: string }).owner_id;
           if (!oid) continue;
           packageCountByOwner.set(oid, (packageCountByOwner.get(oid) ?? 0) + 1);
+        }
+      }
+
+      const objectCountByOwner = new Map<string, number>();
+      if (
+        !isOptionalQueryError(objectsRes.error) &&
+        !isSchemaMismatchError(objectsRes.error) &&
+        !isObjectsTableMissing(objectsRes.error)
+      ) {
+        for (const row of objectsRes.data ?? []) {
+          const oid = (row as { owner_id?: string }).owner_id;
+          if (!oid) continue;
+          objectCountByOwner.set(oid, (objectCountByOwner.get(oid) ?? 0) + 1);
         }
       }
 
@@ -105,6 +120,7 @@ export const useDesigners = () =>
             searchHaystack: parts.join(" ").toLowerCase(),
             projectCount: projectCountByOwner.get(pid) ?? ownerProjects.length,
             packageCount: packageCountByOwner.get(pid) ?? 0,
+            objectCount: objectCountByOwner.get(pid) ?? 0,
             hasService: (packageCountByOwner.get(pid) ?? 0) > 0,
           };
         })

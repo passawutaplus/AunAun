@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 export function LearnProductFrame({
   children,
   className,
-  title = "aplus1.app",
+  title = "samecor.com",
 }: {
   children: ReactNode;
   className?: string;
@@ -14,11 +14,11 @@ export function LearnProductFrame({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border border-border/60 bg-card/80 shadow-[0_24px_80px_-28px_rgba(0,0,0,0.55)] ring-1 ring-white/5",
+        "overflow-hidden rounded-2xl border border-[#e4e1db] bg-white shadow-[0_24px_60px_-36px_rgba(47,46,44,0.35)]",
         className,
       )}
     >
-      <div className="flex items-center gap-2 border-b border-border/50 bg-muted/40 px-3 py-2.5">
+      <div className="flex items-center gap-2 border-b border-[#e4e1db] bg-[#f5f5f5] px-3 py-2.5">
         <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/35" aria-hidden />
         <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/25" aria-hidden />
         <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/20" aria-hidden />

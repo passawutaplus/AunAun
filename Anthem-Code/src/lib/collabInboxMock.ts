@@ -96,7 +96,7 @@ const DEFS: MockDef[] = [
     message:
       "อยากนัดคุยไอเดียจัดโต๊ะ+ถ่ายสไตล์เซรามิกโทนดิน ยังไม่ต้องลงมือ — แค่จูนทิศทางก่อน ดูชุดโต๊ะ Earth ได้ในพอร์ต",
     attachIndexes: [4],
-    site: "https://aplus1.app/@thanya",
+    site: "https://samecor.com/@thanya",
     daysAgo: 2,
   },
   {

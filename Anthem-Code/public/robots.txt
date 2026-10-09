@@ -38,7 +38,7 @@ Disallow: /forum/search
 Disallow: /forum/me
 
 # Prefer clean URLs — parameterized discovery stays noindex via SeoHead
-Sitemap: https://aplus1.app/sitemap.xml
-Sitemap: https://aplus1.app/sitemap-index.xml
+Sitemap: https://samecor.com/sitemap.xml
+Sitemap: https://samecor.com/sitemap-index.xml
 
-# AI / agent context: https://aplus1.app/llms.txt
+# AI / agent context: https://samecor.com/llms.txt

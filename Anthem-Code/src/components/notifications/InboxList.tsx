@@ -27,17 +27,27 @@ const kindIcon = (kind: string) => {
   return Bell;
 };
 
-const timeAgo = (iso: string) => {
+const timeAgo = (iso: string, english = false) => {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return "เมื่อสักครู่";
-  if (m < 60) return `${m} นาทีที่แล้ว`;
+  if (!english) {
+    if (m < 1) return "เมื่อสักครู่";
+    if (m < 60) return `${m} นาทีที่แล้ว`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h} ชม.ที่แล้ว`;
+    const d = Math.floor(h / 24);
+    if (d < 7) return `${d} วันที่แล้ว`;
+    const dt = new Date(iso);
+    return `${dt.toLocaleDateString("th-TH")} ${dt.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}`;
+  }
+  if (m < 1) return "Just now";
+  if (m < 60) return m === 1 ? "1 minute ago" : `${m} minutes ago`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h} ชม.ที่แล้ว`;
+  if (h < 24) return h === 1 ? "1 hour ago" : `${h} hours ago`;
   const d = Math.floor(h / 24);
-  if (d < 7) return `${d} วันที่แล้ว`;
+  if (d < 7) return d === 1 ? "1 day ago" : `${d} days ago`;
   const dt = new Date(iso);
-  return `${dt.toLocaleDateString("th-TH")} ${dt.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}`;
+  return `${dt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} ${dt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
 };
 
 function extractFollowerId(n: Notification): string | null {
@@ -68,9 +78,18 @@ interface Props {
   onOpen: (n: Notification) => void;
   onDismiss: (id: string) => void;
   onBeforeNavigate?: () => void;
+  /** Popup chrome uses English headings and buttons. */
+  english?: boolean;
 }
 
-const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Props) => {
+const GROUP_LABEL_EN: Record<string, string> = {
+  today: "Today",
+  yesterday: "Yesterday",
+  week: "This week",
+  older: "Earlier",
+};
+
+const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate, english = false }: Props) => {
   const navigate = useNavigate();
   const respondCollab = useRespondProjectCollabInvite();
 
@@ -92,8 +111,12 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
     return (
       <EmptyState
         icon={Bell}
-        title="ยังไม่มีการแจ้งเตือน"
-        description="เมื่อมีคนติดตาม จ้างงาน หรือส่งข้อความ จะขึ้นที่นี่"
+        title={english ? "No notifications yet" : "ยังไม่มีการแจ้งเตือน"}
+        description={
+          english
+            ? "Follows, hire requests, and messages will show up here"
+            : "เมื่อมีคนติดตาม จ้างงาน หรือส่งข้อความ จะขึ้นที่นี่"
+        }
         action={
           <Button
             variant="outline"
@@ -103,7 +126,7 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
               navigate("/");
             }}
           >
-            ไปสำรวจผลงาน
+            {english ? "Explore work" : "ไปสำรวจผลงาน"}
           </Button>
         }
         className="border-0 shadow-none bg-transparent"
@@ -117,8 +140,8 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
     <div className="space-y-4">
       {groups.map((group) => (
         <section key={group.key} className="space-y-2">
-          <h3 className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground px-1">
-            {group.label}
+          <h3 className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            {english ? GROUP_LABEL_EN[group.key] ?? group.label : group.label}
           </h3>
           {group.items.map((n) => {
         const Icon = kindIcon(n.kind);
@@ -165,7 +188,7 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
                     {isFollow && followerId ? (
                       <>
                         <span>{followerName}</span>{" "}
-                        <span className="font-normal text-muted-foreground">เริ่มติดตามคุณ</span>
+                        <span className="font-normal text-muted-foreground">{english ? "started following you" : "เริ่มติดตามคุณ"}</span>
                       </>
                     ) : (
                       n.title
@@ -177,9 +200,9 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
                     </p>
                   ) : null}
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="text-[11px] text-muted-foreground">{timeAgo(n.created_at)}</p>
+                    <p className="text-[11px] text-muted-foreground">{timeAgo(n.created_at, english)}</p>
                     {n.is_read ? (
-                      <span className="text-[10px] text-muted-foreground/80">อ่านแล้ว</span>
+                      <span className="text-[10px] text-muted-foreground/80">{english ? "Read" : "อ่านแล้ว"}</span>
                     ) : null}
                   </div>
                 </div>
@@ -191,9 +214,9 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
                 type="button"
                 onClick={() => onDismiss(n.id)}
                 className="text-[10px] text-muted-foreground hover:text-foreground px-2 py-1 shrink-0"
-                title="ซ่อน"
+                title={english ? "Hide" : "ซ่อน"}
               >
-                ซ่อน
+                {english ? "Hide" : "ซ่อน"}
               </button>
             </div>
             {collabInvite && inviteId && (
@@ -208,7 +231,7 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
                     onDismiss(n.id);
                   }}
                 >
-                  ยอมรับ
+                  {english ? "Accept" : "ยอมรับ"}
                 </Button>
                 <Button
                   type="button"
@@ -221,7 +244,7 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate }: Prop
                     onDismiss(n.id);
                   }}
                 >
-                  {CHAT_CARD_DECLINE_LABEL}
+                  {english ? "Decline" : CHAT_CARD_DECLINE_LABEL}
                 </Button>
               </div>
             )}

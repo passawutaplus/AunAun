@@ -18,18 +18,18 @@ const brand = {
 
 const LINE_URL = "https://lin.ee/q3W9Qds";
 const LINE_ID = "@solofreelancer";
-const FOOTER_NOTE = "ปิดการแจ้งเตือนได้ที่ Aplus1 → Settings → การแจ้งเตือน";
+const FOOTER_NOTE = "ปิดการแจ้งเตือนได้ที่ SAMECOR → Settings → การแจ้งเตือน";
 
 export function anthemSiteUrl(): string {
   return (
     Deno.env.get("APLUS1_APP_URL") ??
     Deno.env.get("ANTHEM_APP_URL") ??
-    "https://aplus1.app"
+    "https://samecor.com"
   ).replace(/\/$/, "");
 }
 
 export function anthemEmailFrom(): { from: string; senderDomain: string } {
-  const from = Deno.env.get("APLUS1_EMAIL_FROM") ?? Deno.env.get("ANTHEM_EMAIL_FROM") ?? "Aplus1 <noreply@aplus1.app>";
+  const from = Deno.env.get("APLUS1_EMAIL_FROM") ?? Deno.env.get("ANTHEM_EMAIL_FROM") ?? "SAMECOR <noreply@aplus1.app>";
   const senderDomain = Deno.env.get("APLUS1_EMAIL_SENDER_DOMAIN") ?? Deno.env.get("ANTHEM_EMAIL_SENDER_DOMAIN") ?? "notify.aplus1.app";
   return { from, senderDomain };
 }
@@ -86,7 +86,7 @@ function layout(opts: {
 <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;width:100%;border:1px solid ${brand.border};border-radius:12px;overflow:hidden;background:${brand.white}">
 <tr><td style="background:linear-gradient(180deg,${brand.orangeFade} 0%,${brand.white} 100%);padding:28px 32px 24px;border-bottom:2px solid ${brand.orange}">
 <table role="presentation" cellspacing="0" cellpadding="0"><tr>
-<td style="vertical-align:middle;padding-right:10px"><img src="${logoUrl}" alt="Aplus1" width="32" height="32" style="border-radius:8px;display:block"/></td>
+<td style="vertical-align:middle;padding-right:10px"><img src="${logoUrl}" alt="SAMECOR" width="32" height="32" style="border-radius:8px;display:block"/></td>
 <td style="vertical-align:middle"><p style="margin:0;font-size:17px;font-weight:600;letter-spacing:-0.02em;color:${brand.ink};line-height:1.2"><span style="color:${brand.orange}">Aplus</span>1</p>
 <p style="margin:2px 0 0;font-size:12px;color:${brand.mute}">ชุมชนครีเอทีฟ — ทุกคนคือ 1 PX</p></td>
 </tr></table></td></tr>
@@ -400,7 +400,7 @@ export function renderKycStatusEmail(data: {
         tone: "success" as BadgeTone,
         body: "คุณพร้อมเปิดรับงานจ้างและรับค่าจ้างตามเงื่อนไขแพลตฟอร์ม — การยืนยันมีผล 2 ปี",
         cta: "ดูสถานะการยืนยัน",
-        subject: "[Aplus1] ยืนยันตัวตนสำเร็จ",
+        subject: "[SAMECOR] ยืนยันตัวตนสำเร็จ",
       }
     : {
         badge: "คำขอไม่ผ่าน",
@@ -408,7 +408,7 @@ export function renderKycStatusEmail(data: {
         tone: "brand" as BadgeTone,
         body: "กรุณาตรวจสอบเหตุผลด้านล่าง แล้วส่งเอกสารใหม่ได้ที่หน้ายืนยันตัวตน",
         cta: "ส่งคำขอใหม่",
-        subject: "[Aplus1] คำขอยืนยันตัวตนไม่ผ่าน",
+        subject: "[SAMECOR] คำขอยืนยันตัวตนไม่ผ่าน",
       };
   const reason = !approved && data.reason ? cardRow("เหตุผล", data.reason) : "";
   const bodyHtml = `<p style="font-size:15px;color:${brand.body};line-height:1.6;margin:0 0 20px">สวัสดี ${escapeHtml(data.recipientName)} — ${copy.body}</p>

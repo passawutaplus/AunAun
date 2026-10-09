@@ -1,0 +1,22 @@
+{
+  "name": "a-plus-vault-android",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capacitor Android shell for A+ Vault (personal sideload build; loads https://aplus-vault.vercel.app).",
+  "scripts": {
+    "sync": "cap sync android",
+    "open": "cap open android",
+    "assets": "capacitor-assets generate --android --assetPath assets",
+    "build:debug": "cap sync android && cd android && gradlew.bat assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/browser": "^8.0.0",
+    "@capacitor/core": "^8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.2"
+  }
+}

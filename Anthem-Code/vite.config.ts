@@ -28,6 +28,9 @@ export default defineConfig({
     hmr: {
       overlay: false,
     },
+    watch: {
+      ignored: ["**/*.mp4"],
+    },
     // Local Omise APIs: run `npm run dev:api` (port 8787) alongside `npm run dev`
     proxy: {
       "/api/hire-charge": {

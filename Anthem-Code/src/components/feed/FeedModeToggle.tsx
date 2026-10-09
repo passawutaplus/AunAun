@@ -1,12 +1,12 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { LayoutGrid, Users, Target } from "lucide-react";
+import { Box, LayoutGrid, Target, Users } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import PackagesIcon from "@/components/icons/PackagesIcon";
 import { isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 
-export type FeedMode = "projects" | "designers" | "packages" | "studios" | "community";
+export type FeedMode = "projects" | "designers" | "packages" | "objects" | "studios" | "community";
 
 type ToggleItem = {
   id: FeedMode | "drill";
@@ -31,6 +31,7 @@ const items: ToggleItem[] = [
   { id: "drill", label: "Design Drill", icon: Target, mobileOnly: true },
   { id: "designers", label: "Designers", icon: Users },
   { id: "packages", label: "Packages", icon: PackagesIcon },
+  { id: "objects", label: "Objects", icon: Box },
 ];
 
 /** Smooth horizontal slide — spring tuned for a short pill travel. */
@@ -62,6 +63,7 @@ const FeedModeToggle = ({
 
   /** Equal-width segments → pill mostly translates X (feels like a clean L/R slide). */
   const equalSplit = visible.every((item) => !item.mobileOnly && !item.desktopOnly);
+  const packed = equalSplit && !compact && visible.length <= 3;
 
   const activeId = drillActive ? "drill" : value;
   const visibleKey = visible.map((v) => v.id).join("|");
@@ -109,10 +111,10 @@ const FeedModeToggle = ({
     <div
       ref={trackRef}
       className={cn(
-        "relative shrink-0 flex items-center rounded-full glass-panel p-0.5 transition-[width,box-shadow] duration-200",
-        "hover:shadow-md hover:shadow-primary/20",
-        equalSplit && !compact && visible.length === 2 && "w-[14.5rem]",
-        equalSplit && !compact && visible.length === 3 && "w-[21.75rem]",
+        "relative shrink-0 flex items-center rounded-full border border-border bg-white p-0.5 shadow-none transition-[width] duration-200",
+        packed && visible.length === 2 && "w-[14.5rem]",
+        packed && visible.length === 3 && "w-[21.75rem]",
+        !compact && visible.length >= 4 && "w-max",
         className,
       )}
       role="group"
@@ -159,7 +161,7 @@ const FeedModeToggle = ({
               "relative z-10 items-center justify-center rounded-full text-xs font-medium transition-[padding,gap,colors] duration-200",
               compact ? "gap-0 px-2.5 py-1.5" : "gap-1.5 px-3 py-1.5",
               visibility,
-              equalSplit && !compact && "flex-1",
+              packed && "flex-1",
               active
                 ? "text-white"
                 : "text-foreground/75 hover:text-foreground",

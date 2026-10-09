@@ -37,6 +37,8 @@ import { isSystemFallbackContent, stripSystemFallbackPrefix } from "@/lib/chatCo
 import { replyPreviewText } from "@/lib/chatReply";
 import { parseChatOffer } from "@/lib/chatOffer";
 import { formatServicePrice } from "@/hooks/useCreatorServices";
+import { parseObjectChatCard } from "@/lib/objects/chatCard";
+import { formatBaht } from "@/lib/objects/taxonomy";
 import PackagesIcon from "@/components/icons/PackagesIcon";
 import { fromCreatorServices } from "@/lib/creatorServicesDb";
 import { ChatOfferCard } from "@/components/chat/ChatOfferCard";
@@ -368,6 +370,7 @@ const MessageBubble = ({
         message.message_type !== "service" &&
         !isImageAttachmentPath(message.attachment_url)));
 
+  const objectCard = !deleted ? parseObjectChatCard(message.content) : null;
   const offer = !deleted ? parseChatOffer(message.content) : null;
   const hireForward = !deleted ? parseHireForwardMessage(message.content) : null;
   const hireRejectChoice = !deleted ? parseHireRejectChoiceMessage(message.content) : null;
@@ -401,7 +404,8 @@ const MessageBubble = ({
     isAlignDiscussionTemplateMessage(rawForDisplay) ||
     isCollabDeclineChatMessage(rawForDisplay) ||
     !!collabEnd ||
-    !!collabGroupExpand
+    !!collabGroupExpand ||
+    !!objectCard
       ? ""
       : rawForDisplay;
 
@@ -781,6 +785,28 @@ const MessageBubble = ({
                       )}
                     </div>
                     <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                  </div>
+                </Link>
+              </div>
+            )}
+            {objectCard && (
+              <div className={cn("rounded-2xl overflow-hidden shadow-sm", message.reply_to_id && replyTo ? cn("p-2", mine ? mineBg : theirBg) : "")}>
+                {replyQuote}
+                <Link
+                  to={`/object/${objectCard.id}`}
+                  className={cn("block overflow-hidden border hover:opacity-95 transition-opacity rounded-xl", mine ? "border-white/20" : "border-border")}
+                >
+                  {objectCard.cover_url ? (
+                    <img src={objectCard.cover_url} alt="" className="h-36 w-full object-cover" />
+                  ) : (
+                    <div className="flex h-16 items-center justify-center bg-muted text-xs text-muted-foreground">สินค้า</div>
+                  )}
+                  <div className={cn("space-y-0.5 px-3 py-2", mine ? "bg-black/10" : "bg-card")}>
+                    <p className={cn("text-[10px]", mine ? "text-white/75" : "text-muted-foreground")}>สินค้า</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-medium">{objectCard.title}</span>
+                      <span className="shrink-0 text-sm">{formatBaht(objectCard.price_thb)}</span>
+                    </div>
                   </div>
                 </Link>
               </div>

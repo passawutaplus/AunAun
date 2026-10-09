@@ -233,7 +233,7 @@ export function computeHireMoneyOutcome(input: HireMoneyOutcomeInput): HireMoney
     });
     timeline.push({
       step: "อนุมัติงาน",
-      detail: `ครีเอเตอร์ได้ ${satangToThb(sellerNetIfCompleted).toLocaleString("th-TH")} · Aplus1 fee ${satangToThb(platformFeeSatang).toLocaleString("th-TH")}`,
+      detail: `ครีเอเตอร์ได้ ${satangToThb(sellerNetIfCompleted).toLocaleString("th-TH")} · SAMECOR fee ${satangToThb(platformFeeSatang).toLocaleString("th-TH")}`,
     });
     timeline.push({
       step: "ต้นทุน Payso",
@@ -255,7 +255,7 @@ export function computeHireMoneyOutcome(input: HireMoneyOutcomeInput): HireMoney
       receivedSatang: platformFeeTaken,
       feesSatang: pspCostSatang + settlementFee,
       netSatang: platformFeeTaken - pspCostSatang - settlementFee,
-      label: "Aplus1 — platform fee หักต้นทุน PSP",
+      label: "SAMECOR — platform fee หักต้นทุน PSP",
     });
     payso = party({
       receivedSatang: pspCostSatang,
@@ -309,7 +309,7 @@ export function computeHireMoneyOutcome(input: HireMoneyOutcomeInput): HireMoney
       receivedSatang: 0,
       feesSatang: pspCostSatang + settlementFee,
       netSatang: -pspCostSatang - settlementFee,
-      label: "Aplus1 — ไม่ได้ fee 10% · แบกต้นทุน PSP/ค่าคืนช้า",
+      label: "SAMECOR — ไม่ได้ fee 10% · แบกต้นทุน PSP/ค่าคืนช้า",
     });
     payso = party({
       receivedSatang: pspCostSatang,

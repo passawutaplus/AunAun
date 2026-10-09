@@ -156,7 +156,7 @@ export function needsSanctionsEdd(status: KycSanctionsStatus | ""): boolean {
 }
 
 export const KYC_EDD_NOTICE =
-  "คุณยังสามารถใช้งาน Aplus1 ได้ อย่างไรก็ตาม ระบบอาจต้องขอข้อมูลเพิ่มเติมและใช้เวลาตรวจสอบนานกว่าปกติ";
+  "คุณยังสามารถใช้งาน SAMECOR ได้ อย่างไรก็ตาม ระบบอาจต้องขอข้อมูลเพิ่มเติมและใช้เวลาตรวจสอบนานกว่าปกติ";
 
 export const KYC_DOC_QUALITY_CHECKS = [
   "เอกสารชัด อ่านตัวอักษรได้ ไม่เบลอ",

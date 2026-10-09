@@ -12,13 +12,13 @@ const brand = {
   success: "#059669",
 } as const;
 
-const FOOTER_NOTE = "ปิดการแจ้งเตือนได้ที่ Aplus1 → Settings → การแจ้งเตือน";
+const FOOTER_NOTE = "ปิดการแจ้งเตือนได้ที่ SAMECOR → Settings → การแจ้งเตือน";
 
 export function anthemSiteUrl(): string {
   return (
     Deno.env.get("APLUS1_APP_URL") ??
     Deno.env.get("ANTHEM_APP_URL") ??
-    "https://aplus1.app"
+    "https://samecor.com"
   ).replace(/\/$/, "");
 }
 
@@ -26,7 +26,7 @@ export function anthemEmailFrom(): { from: string } {
   const from =
     Deno.env.get("APLUS1_EMAIL_FROM") ??
     Deno.env.get("ANTHEM_EMAIL_FROM") ??
-    "Aplus1 <noreply@aplus1.app>";
+    "SAMECOR <noreply@aplus1.app>";
   return { from };
 }
 
@@ -52,7 +52,7 @@ export function renderKycStatusEmail(data: {
         title: "คำขอยืนยันตัวตนได้รับการอนุมัติแล้ว",
         body: "คุณพร้อมเปิดรับงานจ้างและรับค่าจ้างตามเงื่อนไขแพลตฟอร์ม — การยืนยันมีผล 2 ปี",
         cta: "ดูสถานะการยืนยัน",
-        subject: "[Aplus1] ยืนยันตัวตนสำเร็จ",
+        subject: "[SAMECOR] ยืนยันตัวตนสำเร็จ",
         badgeColor: brand.success,
         badgeBg: "#ECFDF5",
         badgeBorder: "#A7F3D0",
@@ -62,7 +62,7 @@ export function renderKycStatusEmail(data: {
         title: "คำขอยืนยันตัวตนไม่ผ่าน",
         body: "กรุณาตรวจสอบเหตุผลด้านล่าง แล้วส่งเอกสารใหม่ได้ที่หน้ายืนยันตัวตน",
         cta: "ส่งคำขอใหม่",
-        subject: "[Aplus1] คำขอยืนยันตัวตนไม่ผ่าน",
+        subject: "[SAMECOR] คำขอยืนยันตัวตนไม่ผ่าน",
         badgeColor: brand.orange,
         badgeBg: brand.orangeFade,
         badgeBorder: brand.orangeMuted,

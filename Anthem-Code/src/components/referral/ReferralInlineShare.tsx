@@ -18,7 +18,7 @@ export function ReferralInlineShare({ enabled = true }: Props) {
     [data?.code],
   );
 
-  const shareText = `มาสร้างผลงานบน Aplus1 — สมัครผ่านลิงก์นี้รับ ${data?.signup_reward_px ?? 20} px เริ่มต้น`;
+  const shareText = `มาสร้างผลงานบน SAMECOR — สมัครผ่านลิงก์นี้รับ ${data?.signup_reward_px ?? 20} px เริ่มต้น`;
 
   const copyLink = async () => {
     if (!referralLink) return;
@@ -38,7 +38,7 @@ export function ReferralInlineShare({ enabled = true }: Props) {
     }
     try {
       await navigator.share({
-        title: "ชวนเพื่อนมา Aplus1",
+        title: "ชวนเพื่อนมา SAMECOR",
         text: shareText,
         url: referralLink,
       });

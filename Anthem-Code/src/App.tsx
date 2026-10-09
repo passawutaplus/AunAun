@@ -50,6 +50,7 @@ const DashboardDocumentsPage = lazy(() => import("./pages/DashboardDocumentsPage
 const DashboardPayoutPage = lazy(() => import("./pages/DashboardPayoutPage.tsx"));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage.tsx"));
 const ServiceDetailPage = lazy(() => import("./pages/ServiceDetailPage.tsx"));
+const ObjectDetailPage = lazy(() => import("./pages/ObjectDetailPage.tsx"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage.tsx"));
 const ProjectEditorPage = lazy(() => import("./pages/ProjectEditorPage.tsx"));
 const PackageEditorPage = lazy(() => import("./pages/PackageEditorPage.tsx"));
@@ -91,6 +92,7 @@ const AdminChatsPage = lazy(() => import("./pages/admin/AdminChatsPage"));
 const AdminCommentsPage = lazy(() => import("./pages/admin/AdminCommentsPage"));
 const AdminCollectionsPage = lazy(() => import("./pages/admin/AdminCollectionsPage"));
 const AdminPackagesPage = lazy(() => import("./pages/admin/AdminPackagesPage"));
+const AdminObjectsPage = lazy(() => import("./pages/admin/AdminObjectsPage"));
 const AdminGiftsPage = lazy(() => import("./pages/admin/AdminGiftsPage"));
 const AdminNotificationsPage = lazy(() => import("./pages/admin/AdminNotificationsPage"));
 const AdminStoragePage = lazy(() => import("./pages/admin/AdminStoragePage"));
@@ -253,6 +255,7 @@ const App = () => (
               <Route path="/dashboard/collab" element={<RequireAuth><DashboardPage mode="collab" /></RequireAuth>} />
               <Route path="/dashboard/projects" element={<RequireAuth><DashboardPortfolioPage mode="projects" /></RequireAuth>} />
               <Route path="/dashboard/packages" element={<RequireAuth><DashboardPortfolioPage mode="packages" /></RequireAuth>} />
+              <Route path="/dashboard/objects" element={<RequireAuth><DashboardPortfolioPage mode="objects" /></RequireAuth>} />
               <Route path="/dashboard/catalogs" element={<RequireAuth><DashboardPortfolioPage mode="catalogs" /></RequireAuth>} />
               <Route path="/dashboard/reviews" element={<RequireAuth><DashboardReviewsPage /></RequireAuth>} />
               <Route path="/dashboard/documents" element={<RequireAuth><DashboardDocumentsPage /></RequireAuth>} />
@@ -268,6 +271,7 @@ const App = () => (
               <Route path="/portfolio/:id/edit" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
               <Route path="/project/:id" element={<ProjectDetailPage />} />
               <Route path="/service/:id" element={<ServiceDetailPage />} />
+              <Route path="/object/:id" element={<ObjectDetailPage />} />
               <Route path="/drill" element={<DrillGalleryPage />} />
               <Route path="/explore/:kind/:value" element={<ExploreProjectsPage />} />
               <Route path="/similar/:projectId" element={<SimilarImagesPage />} />
@@ -347,6 +351,7 @@ const App = () => (
                 <Route path="comments" element={<AdminCommentsPage />} />
                 <Route path="collections" element={<AdminCollectionsPage />} />
                 <Route path="packages" element={<AdminPackagesPage />} />
+                <Route path="objects" element={<AdminObjectsPage />} />
                 <Route path="inspire" element={<AdminInspirePage />} />
                 <Route path="gifts" element={<AdminGiftsPage />} />
                 <Route path="aml" element={<AdminAmlPage />} />
@@ -396,9 +401,12 @@ const App = () => (
               <Route path="/legal/packages" element={<PackagesPolicyPage />} />
               <Route path="/legal/kyc-aml" element={<KycAmlPage />} />
               <Route path="/error" element={<ErrorPage />} />
+              <Route path="/error/400" element={<ErrorPage defaultKind="400" />} />
+              <Route path="/error/403" element={<ErrorPage defaultKind="403" />} />
               <Route path="/error/404" element={<ErrorPage defaultKind="404" />} />
               <Route path="/error/405" element={<ErrorPage defaultKind="405" />} />
               <Route path="/error/500" element={<ErrorPage defaultKind="500" />} />
+              <Route path="/error/502" element={<ErrorPage defaultKind="502" />} />
               <Route path="/error/503" element={<ErrorPage defaultKind="503" />} />
               {/*
                 react-router v6 cannot match `/@:username` (literal @ before param).

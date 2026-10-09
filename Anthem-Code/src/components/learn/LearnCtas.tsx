@@ -23,22 +23,22 @@ export function LearnPrimaryCtas({
           : "flex flex-wrap items-center justify-center gap-3"
       }
     >
-      <Button asChild className="rounded-full bg-gradient-brand px-6 text-white hover:opacity-90">
+      <Button asChild className="rounded-full bg-[#2f2e2c] px-6 text-[#f5f5f5] hover:bg-[#2f2e2c]/90">
         <Link to="/">สำรวจผลงาน</Link>
       </Button>
       {secondaryToForum ? (
-        <Button asChild variant="outline" className="rounded-full px-6">
+        <Button asChild variant="outline" className="rounded-full border-[#e4e1db] bg-white px-6 text-[#2f2e2c] hover:bg-[#f5f5f5]">
           <Link to={FORUM_PATH}>เข้า Forum</Link>
         </Button>
       ) : user ? (
-        <Button asChild variant="outline" className="rounded-full px-6">
+        <Button asChild variant="outline" className="rounded-full border-[#e4e1db] bg-white px-6 text-[#2f2e2c] hover:bg-[#f5f5f5]">
           <Link to="/portfolio/new">ลงผลงาน</Link>
         </Button>
       ) : (
         <Button
           type="button"
           variant="outline"
-          className="rounded-full px-6"
+          className="rounded-full border-[#e4e1db] bg-white px-6 text-[#2f2e2c] hover:bg-[#f5f5f5]"
           onClick={() => openSignup("/portfolio/new")}
         >
           สมัครแล้วลงผลงาน

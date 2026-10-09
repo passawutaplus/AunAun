@@ -48,7 +48,7 @@ export default function HireCheckoutSummary({
       </div>
       <p className="text-xs text-muted-foreground">วิธีจ่าย: {methodLabel}</p>
       <p className="text-xs text-muted-foreground">
-        เงินจะโอนให้ผู้รับงานหลังคุณอนุมัติงาน (หรือครบเวลาอนุมัติอัตโนมัติ) — Aplus1 คุ้มครองตามเงื่อนไขแพลตฟอร์ม
+        เงินจะโอนให้ผู้รับงานหลังคุณอนุมัติงาน (หรือครบเวลาอนุมัติอัตโนมัติ) — SAMECOR คุ้มครองตามเงื่อนไขแพลตฟอร์ม
       </p>
     </div>
   );

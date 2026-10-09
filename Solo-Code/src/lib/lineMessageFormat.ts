@@ -26,7 +26,7 @@ const APLUS1_BASE =
   (
     (import.meta.env.VITE_APLUS1_APP_URL as string | undefined) ??
     (import.meta.env.VITE_ANTHEM_APP_URL as string | undefined)
-  )?.replace(/\/$/, "") ?? "https://aplus1.app";
+  )?.replace(/\/$/, "") ?? "https://samecor.com";
 
 /** @deprecated internal — use APLUS1_BASE */
 const ANTHEM_BASE = APLUS1_BASE;

@@ -85,7 +85,7 @@ export const PLAN_COMPARISON_ROWS: PlanComparisonRow[] = [
     },
   },
   {
-    label: "Aplus1 Storage",
+    label: "SAMECOR Storage",
     values: {
       free: ANTHEM_STORAGE_LABEL.free,
       pro: ANTHEM_STORAGE_LABEL.pro,
@@ -94,7 +94,7 @@ export const PLAN_COMPARISON_ROWS: PlanComparisonRow[] = [
     },
   },
   {
-    label: "โพสต์ผลงาน Aplus1",
+    label: "โพสต์ผลงาน SAMECOR",
     values: {
       free: formatPublished(PROJECT_LIMITS.free.published),
       pro: formatPublished(PROJECT_LIMITS.pro.published),
@@ -103,7 +103,7 @@ export const PLAN_COMPARISON_ROWS: PlanComparisonRow[] = [
     },
   },
   {
-    label: "แบบร่าง Aplus1",
+    label: "แบบร่าง SAMECOR",
     values: {
       free: String(PROJECT_LIMITS.free.draft),
       pro: String(PROJECT_LIMITS.pro.draft),
@@ -130,7 +130,7 @@ export const PLAN_COMPARISON_ROWS: PlanComparisonRow[] = [
     },
   },
   {
-    label: "So1o + Aplus1 บัญชีเดียว",
+    label: "So1o + SAMECOR บัญชีเดียว",
     values: {
       free: false,
       pro: true,

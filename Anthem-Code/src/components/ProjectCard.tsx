@@ -1,12 +1,13 @@
 import BriefcaseIcon from "./icons/BriefcaseIcon";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Eye, MoreHorizontal, Layers3, Share2, Handshake } from "lucide-react";
+import { Bookmark, Eye, MoreHorizontal, Handshake } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Project } from "@/data/projectTypes";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
+import { useAuth } from "@/hooks/useAuth";
+import { useSavedProjectIds } from "@/hooks/useCollections";
 import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPopover";
-import SharePopover from "@/components/SharePopover";
 import { cn } from "@/lib/utils";
 import SafeDemoImage from "@/components/SafeDemoImage";
 import { naturalFeedCoverUrl, optimizedFeedImageUrl } from "@/lib/feedProjectCover";
@@ -30,6 +31,8 @@ interface ProjectCardProps {
   boostId?: string;
   /** Feed masonry — preserve original cover aspect (no CDN crop). */
   naturalCover?: boolean;
+  /** Homepage gallery — image only, original proportions, no name or counts. */
+  gallery?: boolean;
   /** Optional search query for title highlight. */
   searchQuery?: string;
 }
@@ -47,13 +50,18 @@ const ProjectCard = ({
   boosted,
   boostId,
   naturalCover = false,
+  gallery = false,
   searchQuery = "",
 }: ProjectCardProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: savedProjectIds = [] } = useSavedProjectIds(user?.id);
   const isDbProject = /^[0-9a-f]{8}-/.test(project.id);
+  const savedInCollection = isDbProject && savedProjectIds.includes(project.id);
   const { likes, isLiked, toggle: toggleLike } = useProjectLike(isDbProject ? project.id : undefined);
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collectionOpen, setCollectionOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const boostImpLogged = useRef(false);
 
@@ -100,9 +108,9 @@ const ProjectCard = ({
     fn();
   };
 
-  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/project/${project.id}`;
   const imageIndex = project.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const coverSrc = naturalCover
+  const showNatural = naturalCover || gallery;
+  const coverSrc = showNatural
     ? naturalFeedCoverUrl(project.image)
     : optimizedFeedImageUrl(project.image, { width: 480, quality: 70, natural: false });
 
@@ -120,6 +128,10 @@ const ProjectCard = ({
     },
     ...(project.collaborators ?? []),
   ];
+  const showHire = project.allowHire ?? true;
+  const showCollab = project.allowCollab ?? true;
+  const hasCardActions = showHire || showCollab;
+  const showCornerBadges = projectHasDrillTag(project.tags) || project.aiAssisted;
 
   return (
     <motion.div
@@ -128,29 +140,30 @@ const ProjectCard = ({
         if (boostId) void logBoostEvent(boostId, "click");
         navigate(`/project/${project.id}`);
       }}
-      whileHover={{ y: -2 }}
+      whileHover={gallery ? undefined : { y: -2 }}
       whileTap={{ scale: 0.985 }}
       transition={{ duration: 0.22, ease: smoothEase }}
     >
       <div
         ref={wrapRef}
         className={cn(
-          "relative w-full overflow-hidden rounded-[6px] bg-muted",
-          !naturalCover && "aspect-[4/3]",
+          "relative w-full overflow-hidden bg-[#e5e4e2]",
+          "rounded-none",
+          !showNatural && "aspect-[4/3]",
         )}
       >
         <SafeDemoImage
           src={coverSrc}
           index={imageIndex}
-          naturalFallback={naturalCover}
+          naturalFallback={showNatural}
           alt={project.title}
-          width={naturalCover ? 640 : 480}
-          {...(naturalCover ? {} : { height: 360 })}
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
+          width={showNatural ? 960 : 480}
+          {...(showNatural ? {} : { height: 360 })}
+          sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 20vw"
           className={cn(
-            "transition-transform duration-500 group-hover:scale-[1.04]",
-            naturalCover
-              ? "w-full h-auto block"
+            "transition-transform duration-500 group-hover:scale-[1.03]",
+            showNatural
+              ? "block h-auto w-full"
               : "absolute inset-0 w-full h-full object-cover",
           )}
           loading="lazy"
@@ -162,15 +175,40 @@ const ProjectCard = ({
           </div>
         ) : null}
 
-        {projectHasDrillTag(project.tags) || project.aiAssisted ? (
-          <div className="absolute top-2 right-2 z-10 flex flex-col items-end gap-1 pointer-events-auto">
-            {projectHasDrillTag(project.tags) ? <DrillProjectBadge tags={project.tags} /> : null}
-            <AiDisclosureBadge
-              assisted={project.aiAssisted}
-              note={project.aiDisclosureNote}
-            />
-          </div>
-        ) : null}
+        <div className="absolute top-2 right-2 z-20 flex items-start gap-1.5 pointer-events-none">
+          {showCornerBadges ? (
+            <div className="flex flex-col items-end gap-1 pointer-events-auto">
+              {projectHasDrillTag(project.tags) ? <DrillProjectBadge tags={project.tags} /> : null}
+              <AiDisclosureBadge
+                assisted={project.aiAssisted}
+                note={project.aiDisclosureNote}
+              />
+            </div>
+          ) : null}
+          <SaveToCollectionPopover
+            projectId={isDbProject ? project.id : undefined}
+            align="end"
+            onOpenChange={setCollectionOpen}
+          >
+            <button
+              type="button"
+              aria-label={savedInCollection ? "เก็บในคอลเลกชันแล้ว" : "เก็บเข้าคอลเลกชัน"}
+              aria-pressed={savedInCollection}
+              title="Keep Collection"
+              className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/90 text-foreground shadow-sm backdrop-blur-sm hover:bg-background transition-opacity duration-200",
+                menuOpen || collectionOpen || savedInCollection
+                  ? "opacity-100 pointer-events-auto"
+                  : "opacity-0 pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto md:group-focus-within:opacity-100 md:group-focus-within:pointer-events-auto",
+              )}
+            >
+              <Bookmark
+                className={cn("h-4 w-4", savedInCollection && "fill-current")}
+                strokeWidth={savedInCollection ? 0 : 1.8}
+              />
+            </button>
+          </SaveToCollectionPopover>
+        </div>
 
         {/* Hover glass overlay (desktop) — gradient blur from bottom */}
         <div
@@ -184,89 +222,61 @@ const ProjectCard = ({
           )}
         />
 
-        {/* Project title — bottom-left, visible on hover or when menu open */}
+        {/* Title on the left, hire / collab on the right. Share lives on the project page. */}
         <div
           className={cn(
-            "absolute bottom-2 left-3 right-12 md:right-3 pointer-events-none transition-opacity duration-300",
-            menuOpen ? "opacity-100" : "opacity-0 md:group-hover:opacity-100"
-          )}
-        >
-          <p className="text-white text-sm font-medium line-clamp-1 thai-leading-tight drop-shadow">
-            {searchQuery.trim() ? highlight(project.title, searchQuery) : project.title}
-          </p>
-          {searchQuery.trim()
-            ? (() => {
-                const fromDesc = extractSearchSnippet(project.description, searchQuery);
-                const fromTags = extractSearchSnippet((project.tags ?? []).join(" · "), searchQuery);
-                const fromTools = extractSearchSnippet((project.tools ?? []).join(" · "), searchQuery);
-                const snippet = fromDesc || fromTags || fromTools;
-                return snippet ? (
-                  <p className="mt-0.5 text-[11px] text-white/80 line-clamp-2 drop-shadow">
-                    {highlight(snippet, searchQuery)}
-                  </p>
-                ) : null;
-              })()
-            : null}
-        </div>
-
-        {/* Action icons — hover on desktop, menu open, or tap ⋯ on mobile */}
-        <div
-          className={cn(
-            "absolute bottom-9 left-2 right-2 flex items-center gap-0.5 transition-all duration-200",
+            "absolute bottom-2 left-2 flex items-center gap-1 transition-all duration-200",
+            hasCardActions ? "right-10 md:right-2" : "right-2",
             menuOpen
               ? "opacity-100 translate-y-0 pointer-events-auto"
               : "opacity-0 translate-y-1 pointer-events-none md:group-hover:opacity-100 md:group-hover:translate-y-0 md:group-hover:pointer-events-auto",
           )}
-          onClick={(e) => e.stopPropagation()}
         >
-          {(project.allowHire ?? true) && (
-            <button
-              onClick={stop(() => onHireClick?.(project.id))}
-              aria-label="สนใจจ้างงาน"
-              title="สนใจจ้างงาน"
-              className="p-1.5 rounded-full text-white hover:bg-white/15 transition-colors"
-            >
-              <BriefcaseIcon className="w-4 h-4" />
-            </button>
-          )}
-          {(project.allowCollab ?? true) && (
-            <button
-              onClick={stop(() => onCollabClick?.(project.id))}
-              aria-label="สนใจคอลแลป"
-              title="สนใจคอลแลป"
-              className="p-1.5 rounded-full text-white hover:bg-white/15 transition-colors"
-            >
-              <Handshake className="w-4 h-4" />
-            </button>
-          )}
-          <SaveToCollectionPopover projectId={isDbProject ? project.id : undefined}>
-            <button
-              aria-label="เก็บเข้าคอลเลกชัน"
-              title="เก็บเข้าคอลเลกชัน"
-              className="p-1.5 rounded-full text-white hover:bg-white/15 transition-colors"
-            >
-              <Layers3 className="w-4 h-4" />
-            </button>
-          </SaveToCollectionPopover>
-          <SharePopover
-            url={shareUrl}
-            title={project.title}
-            label="แชร์"
-            imageUrl={coverSrc}
-          >
-            <button
-              type="button"
-              onClick={(e) => e.stopPropagation()}
-              aria-label="แชร์"
-              title="แชร์"
-              className="p-1.5 rounded-full text-white hover:bg-white/15 transition-colors"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
-          </SharePopover>
+          <div className="min-w-0 flex-1 pointer-events-none">
+            <p className="text-white text-sm font-medium line-clamp-1 thai-leading-tight drop-shadow">
+              {searchQuery.trim() ? highlight(project.title, searchQuery) : project.title}
+            </p>
+            {searchQuery.trim()
+              ? (() => {
+                  const fromDesc = extractSearchSnippet(project.description, searchQuery);
+                  const fromTags = extractSearchSnippet((project.tags ?? []).join(" · "), searchQuery);
+                  const fromTools = extractSearchSnippet((project.tools ?? []).join(" · "), searchQuery);
+                  const snippet = fromDesc || fromTags || fromTools;
+                  return snippet ? (
+                    <p className="mt-0.5 text-[11px] text-white/80 line-clamp-2 drop-shadow">
+                      {highlight(snippet, searchQuery)}
+                    </p>
+                  ) : null;
+                })()
+              : null}
+          </div>
+          {hasCardActions ? (
+            <div className="flex shrink-0 items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+              {showHire && (
+                <button
+                  onClick={stop(() => onHireClick?.(project.id))}
+                  aria-label="สนใจจ้างงาน"
+                  title="สนใจจ้างงาน"
+                  className="p-1.5 rounded-full text-white hover:bg-white/15 transition-colors"
+                >
+                  <BriefcaseIcon className="w-4 h-4" />
+                </button>
+              )}
+              {showCollab && (
+                <button
+                  onClick={stop(() => onCollabClick?.(project.id))}
+                  aria-label="สนใจคอลแลป"
+                  title="สนใจคอลแลป"
+                  className="p-1.5 rounded-full text-white hover:bg-white/15 transition-colors"
+                >
+                  <Handshake className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          ) : null}
         </div>
 
-        {/* 3-dot trigger — bottom-right, hover-reveal on desktop, always-on mobile */}
+        {hasCardActions ? (
         <button
           onClick={stop(() => setMenuOpen((v) => !v))}
           aria-label="ตัวเลือก"
@@ -280,9 +290,10 @@ const ProjectCard = ({
         >
           <MoreHorizontal className="w-4 h-4" />
         </button>
+        ) : null}
       </div>
 
-      {/* Creator row — owner/collaborators on the left, view/like on the right */}
+      {gallery ? null : (
       <div className="pt-2 px-0.5 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <div className="flex shrink-0 -space-x-1.5 isolate" aria-label="เจ้าของผลงานและผู้ร่วมคอลแลป">
@@ -352,6 +363,7 @@ const ProjectCard = ({
           />
         </div>
       </div>
+      )}
     </motion.div>
   );
 };

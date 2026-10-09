@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, type CSSProperties } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ import FeedToolbar from "@/components/feed/FeedToolbar";
 import HomeHeroWash from "@/components/feed/HomeHeroWash";
 import SeoHead from "@/components/SeoHead";
 import { shouldNoindexSearchParams } from "@/lib/seo";
+import { COLOR_MATCH_MIN, normalizeColorQuery } from "@/lib/colorSearch";
+import { useCoverColorScores } from "@/hooks/useCoverColorScores";
 import DrillFeedPanel from "@/components/drill/DrillFeedPanel";
 import ProjectCard from "@/components/ProjectCard";
 import AdCard from "@/components/feed/AdCard";
@@ -26,10 +28,12 @@ import { sortByBoostedIds } from "@/lib/boostFeedSort";
 import { interleaveAds } from "@/lib/interleaveAds";
 import { insertHouseAd } from "@/lib/insertHouseAd";
 import { useFeedGridDensity } from "@/hooks/useFeedGridDensity";
+import { useFeedHomeNavStore } from "@/stores/feedHomeNavStore";
 import HireDialog from "@/components/HireDialog";
 import CollabDialog from "@/components/CollabDialog";
 import { FeedProjectGrid } from "@/components/feed/FeedProjectGrid";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
+import ObjectCatalog from "@/components/objects/ObjectCatalog";
 import { type FeedMode } from "@/components/feed/FeedModeToggle";
 import DesignerGrid from "@/components/feed/DesignerGrid";
 import PackageGrid from "@/components/feed/PackageGrid";
@@ -77,7 +81,7 @@ import { trackProductEvent } from "@/lib/productEvents";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { DESIGN_DRILL_CHIP } from "@/lib/drillProject";
 import { markOnboardingVisit, type OnboardingVisitId } from "@/lib/onboardingStorage";
-import { similarSearchSuggestions } from "@/lib/searchSuggestions";
+import { rankProjectsForSearch } from "@/lib/projectSearchRank";
 
 type FeedMode2 = "Explore" | SpecialFilter;
 const requiresAuth = (m: FeedMode2) => m === "Following";
@@ -103,6 +107,11 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const { queries: recentSearches, record: recordSearch } = useSearchHistory(user?.id);
   const showFirstPostLabel = useShowFirstPostLabel(user?.id);
   const [search, setSearch] = useState("");
+  const [colorQuery, setColorQuery] = useState<string | null>(() =>
+    normalizeColorQuery(searchParams.get("color")),
+  );
+  /** Hero field searches the full project catalog and falls back to nearest matches. */
+  const [heroProjectSearch, setHeroProjectSearch] = useState(false);
   const [feedMode, setFeedModeRaw] = useState<FeedMode2>("Explore");
   const [category, setCategory] = useState<FeedCategoryChip>("All");
   const [projectLeaves, setProjectLeaves] = useState<ProjectCategory[]>([]);
@@ -112,7 +121,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     if (typeof window === "undefined") return "projects";
     if (!isCategoryAllowed("functional")) return "projects";
     const urlMode = new URLSearchParams(window.location.search).get("mode");
-    if (urlMode === "designers" || urlMode === "packages" || urlMode === "studios" || urlMode === "projects" || urlMode === "community") {
+    if (urlMode === "designers" || urlMode === "packages" || urlMode === "objects" || urlMode === "studios" || urlMode === "projects" || urlMode === "community") {
       return coerceLaunchFeedMode(urlMode);
     }
     const stored = localStorage.getItem("feed-mode") as FeedMode | null;
@@ -137,6 +146,90 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const [designerTools, setDesignerTools] = useState<string[]>([]);
   const [studioFeedSource, setStudioFeedSource] = useState<StudioFeedSource>("all");
   const { filter: communityFilter, setFilter: setCommunityFilter, clearTag } = useCommunityFeedFilter();
+  const studioHome = mode === "projects" || mode === "designers" || mode === "packages" || mode === "objects";
+
+  useEffect(() => {
+    if (!studioHome) return;
+    const { body, documentElement } = document;
+    const prevBody = body.style.backgroundColor;
+    const prevHtml = documentElement.style.backgroundColor;
+    body.style.backgroundColor = "#f5f5f5";
+    documentElement.style.backgroundColor = "#f5f5f5";
+    return () => {
+      body.style.backgroundColor = prevBody;
+      documentElement.style.backgroundColor = prevHtml;
+    };
+  }, [studioHome]);
+
+  useEffect(() => {
+    if (!studioHome) return;
+    let lastY = window.scrollY;
+    let locking = false;
+    let releaseTimer = 0;
+    let slideFrame = 0;
+
+    const release = () => {
+      locking = false;
+      lastY = window.scrollY;
+      window.cancelAnimationFrame(slideFrame);
+    };
+
+    const markFlush = (sheet: HTMLElement, top: number) => {
+      const flush = top <= 1;
+      sheet.toggleAttribute("data-flush", flush);
+      document.documentElement.toggleAttribute("data-feed-flush", flush);
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const span = Math.min(200, window.innerHeight * 0.24);
+      const travel = Math.min(1, Math.max(0, (span - top) / span));
+      const eased = travel * travel * (3 - 2 * travel);
+      const progress = reduce ? (flush ? 1 : 0) : eased;
+      document.documentElement.style.setProperty("--feed-flush-p", progress.toFixed(4));
+    };
+
+    const trackSlide = () => {
+      const sheet = document.querySelector<HTMLElement>("[data-feed-sheet]");
+      if (sheet) markFlush(sheet, sheet.getBoundingClientRect().top);
+      if (locking) slideFrame = window.requestAnimationFrame(trackSlide);
+    };
+
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - lastY;
+      lastY = y;
+      const sheet = document.querySelector<HTMLElement>("[data-feed-sheet]");
+      if (sheet) markFlush(sheet, sheet.getBoundingClientRect().top);
+      if (locking) {
+        if (delta < -2) {
+          window.clearTimeout(releaseTimer);
+          window.scrollTo({ top: y, behavior: "auto" });
+          release();
+        }
+        return;
+      }
+      if (delta <= 0.5) return;
+      if (!sheet) return;
+      const top = sheet.getBoundingClientRect().top;
+      const zone = Math.min(180, window.innerHeight * 0.2);
+      if (top <= 1 || top > zone) return;
+      locking = true;
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top: y + top, behavior: reduce ? "auto" : "smooth" });
+      window.cancelAnimationFrame(slideFrame);
+      slideFrame = window.requestAnimationFrame(trackSlide);
+      window.clearTimeout(releaseTimer);
+      releaseTimer = window.setTimeout(release, reduce ? 40 : 700);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => {
+      document.documentElement.removeAttribute("data-feed-flush");
+      document.documentElement.style.removeProperty("--feed-flush-p");
+      window.removeEventListener("scroll", onScroll);
+      window.cancelAnimationFrame(slideFrame);
+      window.clearTimeout(releaseTimer);
+    };
+  }, [studioHome]);
 
   const openNewPortfolio = () => {
     if (!user) {
@@ -144,6 +237,14 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       return;
     }
     navigate("/portfolio/new");
+  };
+
+  const openObjectsStudio = () => {
+    if (!user) {
+      useAuthDialog.getState().openSignup("/dashboard/objects");
+      return;
+    }
+    navigate("/dashboard/objects");
   };
 
   const openNewCommunityPost = () => {
@@ -193,7 +294,53 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     else params.set("mode", next);
     const q = params.toString();
     navigate(q ? `/?${q}` : "/", { replace: true });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    useFeedHomeNavStore.getState().setScrolled(false);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.querySelector("[data-feed-sheet]")?.scrollIntoView({
+      behavior: reduce ? "auto" : "smooth",
+      block: "start",
+    });
+  };
+
+  const applyToolbarSearch = (value: string) => {
+    setHeroProjectSearch(false);
+    setSearch(value);
+  };
+
+  const applyColorQuery = (hex: string | null) => {
+    const next = normalizeColorQuery(hex);
+    setColorQuery(next);
+    const params = new URLSearchParams(searchParams);
+    if (next) params.set("color", next);
+    else params.delete("color");
+    if (next) {
+      params.delete("mode");
+      params.delete("drill");
+      params.delete("feed");
+      setMode("projects");
+      setCategory((current) => (current === DESIGN_DRILL_CHIP ? "All" : current));
+      setHeroProjectSearch(false);
+    }
+    const q = params.toString();
+    navigate(q ? `/?${q}` : "/", { replace: true });
+  };
+
+  /** Hero search stays on Projects and looks through the published catalog. */
+  const applyHeroSearch = (value: string) => {
+    setSearch(value);
+    const query = value.trim();
+    setHeroProjectSearch(query.length > 0);
+    if (!query) return;
+    setMode("projects");
+    setCategory("All");
+    setProjectLeaves([]);
+    setProjectStyles([]);
+    setFeedModeRaw("Explore");
+    if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "projects");
+    setHideAi(false);
+    if (searchParams.get("mode") || searchParams.get("drill") || searchParams.get("feed")) {
+      navigate("/", { replace: true });
+    }
   };
 
   const openDrill = () => {
@@ -222,7 +369,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   useEffect(() => {
     const view = searchParams.get("mode");
     const feed = searchParams.get("feed");
-    if (view === "designers" || view === "packages" || view === "studios" || view === "projects" || view === "community") {
+    if (view === "designers" || view === "packages" || view === "objects" || view === "studios" || view === "projects" || view === "community") {
       const coerced = coerceLaunchFeedMode(view);
       setMode(coerced);
       if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", coerced);
@@ -287,6 +434,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     setProjectStyles([]);
     setHideAi(false);
     setSearch("");
+    setColorQuery(null);
+    setHeroProjectSearch(false);
     setFeedModeRaw("Explore");
     setDesignerSort("newest");
     setDesignerCategory("All");
@@ -323,6 +472,14 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   }, [searchParams]);
 
   useEffect(() => {
+    const next = normalizeColorQuery(searchParams.get("color"));
+    setColorQuery(next);
+    if (!next) return;
+    const view = searchParams.get("mode");
+    if (!view || view === "projects") setMode("projects");
+  }, [searchParams]);
+
+  useEffect(() => {
     const t = window.setTimeout(() => {
       recordSearch(search);
       if (user?.id) {
@@ -342,14 +499,15 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           ? explorePersonalized
           : published;
 
-  const projectsLoading = activeProjectsQuery.isLoading;
-  const projectsError = activeProjectsQuery.isError;
+  const projectsLoading = (heroProjectSearch ? published : activeProjectsQuery).isLoading;
+  const projectsError = (heroProjectSearch ? published : activeProjectsQuery).isError;
   const projectsSlow = useSlowLoadFallback(projectsLoading);
   const refetchProjects = () => {
     void activeProjectsQuery.refetch();
   };
 
   const sourceData: DBProject[] = useMemo(() => {
+    if (heroProjectSearch) return (published.data ?? []) as DBProject[];
     let rows: DBProject[];
     switch (feedMode) {
       case "Top 1":
@@ -374,7 +532,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       return sortByViewAffinity(rows);
     }
     return rows;
-  }, [feedMode, published.data, top.data, following.data, explorePersonalized.data, user]);
+  }, [heroProjectSearch, feedMode, published.data, top.data, following.data, explorePersonalized.data, user]);
 
   const creatorIds = useMemo(
     () =>
@@ -462,7 +620,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const activeParent =
     category !== "All" && category !== DESIGN_DRILL_CHIP ? getCategoryParent(category) : null;
 
-  const filtered = projects.filter((p) => {
+  const catalog = projects.filter((p) => {
     if (isDrillView) return false;
     let matchCat = true;
     if (activeParent) {
@@ -470,23 +628,54 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     }
     const matchSub = projectMatchesSubs(p.category, p.tags, projectStyles, activeParent);
     if (hideAi && projectHasAiTag(p)) return false;
-    const q = search.trim().toLowerCase();
-    const matchSearch =
-      !q ||
-      p.title.toLowerCase().includes(q) ||
-      p.owner.toLowerCase().includes(q) ||
-      (p.description ?? "").toLowerCase().includes(q) ||
-      (p.tags ?? []).some((t) => t.toLowerCase().includes(q)) ||
-      (p.tools ?? []).some((t) => t.toLowerCase().includes(q));
-    return matchCat && matchSub && matchSearch;
+    return matchCat && matchSub;
   });
+
+  const heroRank =
+    heroProjectSearch && search.trim() ? rankProjectsForSearch(catalog, search) : null;
+
+  const textMatched = heroRank
+    ? heroRank.items
+    : catalog.filter((p) => {
+        const q = search.trim().toLowerCase();
+        return (
+          !q ||
+          p.title.toLowerCase().includes(q) ||
+          p.owner.toLowerCase().includes(q) ||
+          (p.description ?? "").toLowerCase().includes(q) ||
+          (p.tags ?? []).some((t) => t.toLowerCase().includes(q)) ||
+          (p.tools ?? []).some((t) => t.toLowerCase().includes(q))
+        );
+      });
+
+  const colorMatch = useCoverColorScores(
+    mode === "projects" && colorQuery
+      ? textMatched.map((p) => ({ id: p.id, image: p.image || "" }))
+      : [],
+    mode === "projects" ? colorQuery : null,
+  );
+
+  const filtered =
+    mode === "projects" && colorQuery
+      ? textMatched
+          .flatMap((project) => {
+            const score = colorMatch.scores.get(project.id);
+            if (score == null || score < COLOR_MATCH_MIN) return [];
+            return [{ project, score }];
+          })
+          .sort((a, b) => b.score - a.score)
+          .map((row) => row.project)
+      : textMatched;
 
   const { data: activeBoosts = [] } = useActiveBoosts(80);
   const boostedSets = useMemo(() => buildBoostedIdSet(activeBoosts), [activeBoosts]);
   const boostMaps = useMemo(() => buildBoostTargetMaps(activeBoosts), [activeBoosts]);
   const sortedFiltered = useMemo(
-    () => sortByBoostedIds(filtered, boostedSets.projects),
-    [filtered, boostedSets.projects],
+    () =>
+      colorQuery && mode === "projects"
+        ? filtered
+        : sortByBoostedIds(filtered, boostedSets.projects),
+    [filtered, boostedSets.projects, colorQuery, mode],
   );
 
   const needsLogin = requiresAuth(feedMode) && !user;
@@ -494,13 +683,13 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const { data: ads = [] } = useActiveAds(12);
   const feedItems = useMemo(() => {
     const mixed = interleaveAds(sortedFiltered, ads, { minGap: 8, maxGap: 14 });
-    if (!isAplus1FullProduct() || search.trim()) return mixed;
+    if (!isAplus1FullProduct() || search.trim() || colorQuery) return mixed;
     return insertHouseAd(mixed, {
       columns,
       afterRows: 4,
       columnOffset: houseColumnOffset.current,
     });
-  }, [sortedFiltered, ads, columns, search]);
+  }, [sortedFiltered, ads, columns, search, colorQuery]);
 
   const searchSuggestions = useMemo(
     () => (search.trim() && filtered.length === 0 ? similarSearchSuggestions(search, recentSearches) : []),
@@ -535,26 +724,63 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   };
 
   return (
-    <main id="main-content" className={cn("relative min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
-      {(shouldNoindexSearchParams(searchParams) || search.trim().length > 0) && (
-        <SeoHead path="/" noindex title="ค้นหาผลงาน" description="ผลการค้นหาบน Aplus1" />
+    <main
+      id="main-content"
+      data-studio-home={studioHome ? "" : undefined}
+      style={
+        studioHome
+          ? ({
+              "--background": "0 0% 96%",
+              "--foreground": "40 3% 18%",
+              "--muted-foreground": "30 4% 41%",
+              "--card": "0 0% 100%",
+              "--card-foreground": "40 3% 18%",
+              "--popover": "0 0% 100%",
+              "--popover-foreground": "40 3% 18%",
+              "--border": "40 5% 86%",
+              "--input": "40 5% 86%",
+              "--muted": "40 6% 92%",
+              "--secondary": "40 6% 92%",
+              "--secondary-foreground": "40 3% 18%",
+              "--accent": "40 6% 92%",
+              "--accent-foreground": "40 3% 18%",
+              "--primary": "40 3% 18%",
+              "--primary-bright": "40 3% 18%",
+              "--ring": "40 3% 18%",
+              color: "#2f2e2c",
+              backgroundColor: "#f5f5f5",
+            } as CSSProperties)
+          : undefined
+      }
+      className={cn("relative min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}
+    >
+      {(shouldNoindexSearchParams(searchParams) || search.trim().length > 0 || Boolean(colorQuery)) && (
+        <SeoHead path="/" noindex title="ค้นหาผลงาน" description="ผลการค้นหาบน SAMECOR" />
       )}
-      {(mode === "projects" || mode === "designers" || mode === "packages") && <HomeHeroWash />}
+      {studioHome && <HomeHeroWash hideBottomBlur={mode === "projects"} />}
       <div
         className={cn(
           "relative z-[1] max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-4",
-          mode === "projects" || mode === "designers" || mode === "packages" ? "pt-0 space-y-0" : "pt-4 space-y-4",
+          studioHome ? "pt-0 space-y-0" : "pt-4 space-y-4",
         )}
       >
-        <FeedHero mode={mode} />
+        <FeedHero mode={mode} onModeChange={changeMode} search={search} onSearchChange={applyHeroSearch} />
 
+        <div
+          data-feed-sheet={studioHome ? "" : undefined}
+          className={
+            studioHome
+              ? "relative z-10 min-h-[100dvh] !-mt-[calc(100dvh-8px)] -mx-3 rounded-t-[2.75rem] bg-[#f5f5f5] px-3 pt-6 shadow-[0_-32px_70px_-40px_rgba(47,46,44,0.55)] sm:-mx-[calc(1rem+25px)] sm:px-[calc(1rem+25px)] lg:-mx-[calc(1.5rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:-mx-[calc(2.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]"
+              : undefined
+          }
+        >
         <FeedToolbar
           mode={mode}
           onModeChange={changeMode}
           feedMode={feedMode}
           onFeedModeChange={setFeedMode}
           search={search}
-          onSearchChange={setSearch}
+          onSearchChange={applyToolbarSearch}
           category={category}
           onCategoryChange={setFeedCategory}
           projectLeaves={projectLeaves}
@@ -567,7 +793,10 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           projectResultCount={filtered.length}
           resultCount={mode === "projects" ? filtered.length : undefined}
           recentSearches={recentSearches}
-          onRecentSearchSelect={setSearch}
+          onRecentSearchSelect={applyToolbarSearch}
+          colorQuery={mode === "projects" ? colorQuery : null}
+          onColorQueryChange={applyColorQuery}
+          colorSearchPending={mode === "projects" && Boolean(colorQuery) && colorMatch.pending}
           designerFeedSource={designerFeedSource}
           onDesignerFeedSourceChange={setDesignerFeedSource}
           designerSort={designerSort}
@@ -588,10 +817,12 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             setProjectLeaves([]);
             setProjectStyles([]);
             setHideAi(false);
+            setHeroProjectSearch(false);
             setSearch("");
+            applyColorQuery(null);
             setFeedModeRaw("Explore");
           }}
-          onCreateClick={openNewPortfolio}
+          onCreateClick={mode === "objects" ? openObjectsStudio : openNewPortfolio}
           showCreate={mode !== "community"}
           showFirstPostLabel={showFirstPostLabel}
           communityFeedSource={communityFilter.feedSource}
@@ -613,7 +844,9 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
 
         <FeedModeTransition
           modeKey={feedPanelKey}
-          className={mode === "projects" ? "mt-8 sm:mt-10" : undefined}
+          className={
+            studioHome ? "mt-8 sm:mt-10" : undefined
+          }
         >
           {needsLogin ? (
             <div className="text-center py-16 glass-panel rounded-2xl">
@@ -634,6 +867,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               categories={designerCategory !== "All" ? [designerCategory] : []}
               tools={designerTools}
             />
+          ) : mode === "objects" ? (
+            <ObjectCatalog search={search} onClearSearch={() => setSearch("")} />
           ) : mode === "packages" ? (
             <PackageGrid
               search={search}
@@ -680,7 +915,17 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             />
           ) : (
             <>
-              <FeedProjectGrid>
+              {heroRank?.relaxed ? (
+                <p className="mb-4 text-center text-sm text-muted-foreground thai-body">
+                  ผลงานที่ใกล้เคียงกับที่ค้น
+                </p>
+              ) : null}
+              {colorQuery && colorMatch.pending && filtered.length === 0 ? (
+                <p className="py-16 text-center text-sm text-muted-foreground" aria-live="polite">
+                  กำลังเทียบสีจากปกผลงาน
+                </p>
+              ) : null}
+              <FeedProjectGrid masonry>
                 {feedItems.map((item) =>
                   item.kind === "ad" ? (
                     <AdCard key={item.key} ad={item.data} />
@@ -689,6 +934,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                   ) : (
                     <ProjectCard
                       key={item.key}
+                      gallery
                       project={item.data}
                       searchQuery={search}
                       boosted={boostedSets.projects.has(item.data.id)}
@@ -716,15 +962,21 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                 )}
               </FeedProjectGrid>
 
-              {filtered.length === 0 && (
+              {!colorMatch.pending && filtered.length === 0 && (
                 <FilterEmptyState
-                  title="ไม่พบผลงานที่ตรงกับตัวกรอง"
+                  title={colorQuery && !search.trim() ? "ไม่พบผลงานที่สีใกล้เคียง" : "ไม่พบผลงานที่ตรงกับตัวกรอง"}
                   description={
                     feedMode === "Following"
                       ? "ติดตามดีไซเนอร์ที่ชอบ แล้วกลับมาดูผลงานล่าสุดของพวกเขาที่นี่"
-                      : search
-                        ? "ลองเปลี่ยนคำค้นหรือหมวดหมู่ หรือเลือกคำใกล้เคียงด้านล่าง"
-                        : "ลองเปลี่ยนหมวดหมู่หรือโหมดฟีด (เช่น Top 1 / Newest)"
+                      : colorQuery &&
+                          colorMatch.measured > 0 &&
+                          colorMatch.unreadable === colorMatch.measured
+                        ? "อ่านสีจากปกผลงานไม่ได้ในตอนนี้ ลองค้นด้วยคำแทน"
+                        : colorQuery
+                          ? "ลองเลือกสีอื่น หรือล้างสีแล้วค้นด้วยคำ"
+                          : search
+                            ? "ลองเปลี่ยนคำค้นหรือหมวดหมู่ หรือเลือกคำใกล้เคียงด้านล่าง"
+                            : "ลองเปลี่ยนหมวดหมู่หรือโหมดฟีด (เช่น Top 1 / Newest)"
                   }
                   suggestions={searchSuggestions.map((label) => ({
                     label,
@@ -732,12 +984,14 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                   }))}
                   onClear={
                     search ||
+                    colorQuery ||
                     category !== "All" ||
                     projectLeaves.length > 0 ||
                     projectStyles.length > 0 ||
                     hideAi
                       ? () => {
-                          setSearch("");
+                          applyToolbarSearch("");
+                          applyColorQuery(null);
                           setCategory("All");
                           setProjectLeaves([]);
                           setProjectStyles([]);
@@ -750,6 +1004,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             </>
           )}
         </FeedModeTransition>
+        </div>
       </div>
 
       <Footer />

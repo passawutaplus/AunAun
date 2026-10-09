@@ -20,7 +20,7 @@ export function HelpShell() {
             Help
           </NavLink>
           <NavLink to="/learn" className={navClass}>
-            Learn more
+            About
           </NavLink>
         </div>
       </div>

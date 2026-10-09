@@ -1,4 +1,4 @@
-/** Soft detect job-hunting / hiring posts in Aplus1 forum (client warning). */
+/** Soft detect job-hunting / hiring posts in SAMECOR forum (client warning). */
 
 const JOB_SPAM_PATTERNS: RegExp[] = [
   /รับสมัคร/i,

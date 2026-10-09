@@ -19,7 +19,7 @@ export type UploadedProjectVideo = {
   posterUrl: string | null;
 };
 
-/** Upload a short community video to shared `project-media` (Aplus1 namespace). */
+/** Upload a short community video to shared `project-media` (SAMECOR namespace). */
 export async function uploadProjectVideo(
   file: File,
   userId: string,

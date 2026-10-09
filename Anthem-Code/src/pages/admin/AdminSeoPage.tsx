@@ -53,7 +53,7 @@ const AdminSeoPage = () => {
     <div className="space-y-6">
       <SectionHeader
         title="SEO"
-        description="สถานะ SEO ของ Aplus1 — checklist สำหรับ ops / ก่อน deploy"
+        description="สถานะ SEO ของ SAMECOR — checklist สำหรับ ops / ก่อน deploy"
       />
 
       <div className="grid grid-cols-3 gap-3 max-w-lg">

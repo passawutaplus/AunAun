@@ -357,7 +357,7 @@ export function ChatOfferPreview({ offer, issuerName, issuerEmail, className }: 
         ) : null}
 
         <p className="text-[9px] text-neutral-400 text-center pt-1 border-t border-neutral-100">
-          สรุปในแชท Aplus1 — เอกสารบัญชีเต็มใช้ So1o ได้
+          สรุปในแชท SAMECOR — เอกสารบัญชีเต็มใช้ So1o ได้
         </p>
       </div>
     </div>

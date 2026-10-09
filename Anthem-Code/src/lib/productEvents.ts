@@ -1,5 +1,5 @@
 /**
- * First-party product analytics for Aplus1.
+ * First-party product analytics for SAMECOR.
  * Requires analytics cookie consent. Never throws into UX.
  */
 

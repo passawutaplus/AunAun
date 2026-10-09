@@ -1,6 +1,7 @@
-# Aplus1 Product Docs
+# SAMECOR Product Docs
 
-Updated: 2026-07-31
+Updated: 2026-10-02  
+Public name: **SAMECOR**. Filenames below still say `aplus1` so existing links keep working.
 
 Use this folder as the build-ready product layer that converts the research pack into implementation guidance.
 
@@ -37,7 +38,7 @@ These product docs are derived from:
 
 ## Product Thesis
 
-> Aplus1 should help creators turn real work into new opportunities.
+> SAMECOR connects what you create to people, projects, and what comes next. Tagline: You Create. We Connect. Promise: 1 Profile. 100+ Opportunities.
 
 The first product loop to prove is:
 

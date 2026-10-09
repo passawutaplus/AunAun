@@ -23,9 +23,11 @@ const GoogleIcon = () => (
 
 export function SocialButtons({
   className,
+  buttonClassName,
   redirectTo,
 }: {
   className?: string;
+  buttonClassName?: string;
   redirectTo?: string;
 }) {
   const [busy, setBusy] = useState(false);
@@ -47,7 +49,7 @@ export function SocialButtons({
             setBusy(false);
           }
         }}
-        className="h-11 w-full gap-2 rounded-xl bg-background/60 backdrop-blur"
+        className={cn("h-11 w-full gap-2 rounded-xl bg-background/60 backdrop-blur", buttonClassName)}
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
         <span className="text-sm">เข้าสู่ระบบด้วย Google</span>

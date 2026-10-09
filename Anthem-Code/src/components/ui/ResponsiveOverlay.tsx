@@ -36,6 +36,8 @@ type Props = {
   hideCloseButton?: boolean;
   /** Paint above another overlay (nested picker / second popup). */
   stacked?: boolean;
+  /** Paper + ink surface (hire / collab request). Stays light in dark mode. */
+  tone?: "default" | "paper";
 };
 
 /**
@@ -56,11 +58,17 @@ export function ResponsiveOverlay({
   preventDismiss = false,
   hideCloseButton = false,
   stacked = false,
+  tone = "default",
 }: Props) {
   const isMobile = useIsMobile();
   const srTitle = accessibleTitle?.trim() || undefined;
   const stackOverlayClass = stacked ? "z-[70]" : undefined;
   const stackContentClass = stacked ? "z-[71]" : undefined;
+  const paper = tone === "paper";
+  const overlayClassName = cn(paper && "bg-[#2f2e2c]/40", stackOverlayClass);
+  const paperSurface = paper
+    ? "paper-popup border-[#e4e1db] bg-[#f5f5f5] text-[#2f2e2c] shadow-[0_28px_80px_-36px_rgba(47,46,44,0.55)] [&>button]:text-[#2f2e2c]"
+    : undefined;
   const blockDismiss = preventDismiss
     ? {
         onPointerDownOutside: (e: Event) => e.preventDefault(),
@@ -74,7 +82,7 @@ export function ResponsiveOverlay({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="bottom"
-          overlayClassName={stackOverlayClass}
+          overlayClassName={overlayClassName}
           className={cn(
             "flex flex-col gap-0 p-0 h-[min(88dvh,720px)] rounded-t-[1.35rem]",
             "border-x-0 border-b-0 border-t border-border/50",
@@ -82,6 +90,8 @@ export function ResponsiveOverlay({
             hideCloseButton && "[&>button]:hidden",
             stackContentClass,
             sheetClassName,
+            paper && "rounded-t-[1.75rem] border-0",
+            paperSurface,
           )}
           aria-describedby={undefined}
           {...blockDismiss}
@@ -123,13 +133,15 @@ export function ResponsiveOverlay({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        overlayClassName={stackOverlayClass}
+        overlayClassName={overlayClassName}
         className={cn(
           "flex flex-col gap-0 p-0 w-[calc(100%-2rem)] max-w-2xl",
           "max-h-[min(85vh,680px)] overflow-hidden rounded-2xl border-border/60 shadow-2xl",
           hideCloseButton && "[&>button]:hidden",
           stackContentClass,
           desktopClassName,
+          paper && "rounded-[1.75rem] sm:rounded-[1.75rem]",
+          paperSurface,
         )}
         aria-describedby={undefined}
         {...blockDismiss}

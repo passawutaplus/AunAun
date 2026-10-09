@@ -32,7 +32,7 @@ const json = (req: Request, body: unknown, status = 200) =>
 const COMPLIANCE_NOTE =
   "ข้อมูลช่วยตัดสินใจ ไม่ใช่ข้อเท็จจริง 100% — ตรวจสอบ source URL และสิทธิ์ข้อมูลก่อนใช้งาน";
 
-const SYSTEM = `You are an admin marketing analyst for Aplus1 (Thai creative platform).
+const SYSTEM = `You are an admin marketing analyst for SAMECOR (Thai creative platform).
 Return ONLY valid JSON matching this shape:
 {"summary":"...","keyFindings":["..."],"recommendedAction":"...","confidenceScore":0.0-1.0,"riskComplianceNote":"..."}
 Rules:

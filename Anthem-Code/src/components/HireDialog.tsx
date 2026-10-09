@@ -545,10 +545,11 @@ const HireDialog = ({
       desktopClassName="max-w-lg max-h-[min(90dvh,90vh)]"
       bodyClassName="gap-4 pt-2"
       showGrabHandle
+      tone="paper"
     >
         <DialogHeader className="space-y-2 text-left">
-          <Briefcase className="h-8 w-8 text-primary" aria-hidden />
-          <DialogTitle className="text-2xl leading-tight tracking-tight sm:text-[1.75rem]">
+          <Briefcase className="h-8 w-8 text-[#2f2e2c]" aria-hidden />
+          <DialogTitle className="paper-title text-[1.85rem] font-medium leading-tight tracking-tight text-[#2f2e2c]">
             Hire Request
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -578,30 +579,24 @@ const HireDialog = ({
             ref={hireTabTrackRef}
             role="tablist"
             aria-label="โหมดคำขอจ้าง"
-            className="relative flex w-full rounded-full bg-muted/60 p-1 shadow-[0_0_0_1px_hsl(var(--border)/0.35)]"
+            className="relative flex w-full rounded-full bg-[#2f2e2c]/8 p-1"
           >
             {hireTabIndicator ? (
               reducedMotion ? (
                 <span
-                  className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-background shadow-md shadow-primary/35 ring-1 ring-primary/30"
+                  className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-[#2f2e2c]"
                   style={{
                     transform: `translateX(${hireTabIndicator.x}px)`,
                     width: hireTabIndicator.width,
-                    boxShadow:
-                      "0 0 16px 4px hsl(var(--primary) / 0.35), 0 4px 12px hsl(var(--primary) / 0.2)",
                   }}
                   aria-hidden
                 />
               ) : (
                 <motion.span
-                  className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-background ring-1 ring-primary/30 will-change-transform"
+                  className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-[#2f2e2c] will-change-transform"
                   initial={false}
                   animate={{ x: hireTabIndicator.x, width: hireTabIndicator.width }}
                   transition={hireTabSlideTransition}
-                  style={{
-                    boxShadow:
-                      "0 0 18px 5px hsl(var(--primary) / 0.4), 0 4px 14px hsl(var(--primary) / 0.22)",
-                  }}
                   aria-hidden
                 />
               )
@@ -623,10 +618,9 @@ const HireDialog = ({
                     "relative z-10 flex-1 inline-flex items-center justify-center gap-1.5 rounded-full py-2 text-sm font-medium transition-colors",
                     active
                       ? hireTabIndicator
-                        ? "text-foreground"
-                        : // Raised pill before slide indicator measures (open on Brief).
-                          "bg-background text-foreground shadow-[0_0_18px_5px_hsl(var(--primary)/0.4),0_4px_14px_hsl(var(--primary)/0.22)] ring-1 ring-primary/30"
-                      : "text-muted-foreground hover:text-foreground",
+                        ? "text-[#f5f5f5]"
+                        : "bg-[#2f2e2c] text-[#f5f5f5]"
+                      : "text-[#6b6862] hover:text-[#2f2e2c]",
                   )}
                   onClick={() => setPanel(tab.id)}
                 >
@@ -679,7 +673,7 @@ const HireDialog = ({
                 <Button
                   type="button"
                   disabled={busy}
-                  className="rounded-full gap-1.5"
+                  className="rounded-full gap-1.5 shadow-none hover:bg-[#1c1b19]"
                   onClick={() => void submitHire()}
                 >
                   {busy && !serviceBusyId ? (
@@ -795,7 +789,7 @@ const HireDialog = ({
               <Button
                 type="button"
                 disabled={busy}
-                className="rounded-full gap-1.5"
+                className="rounded-full gap-1.5 shadow-none hover:bg-[#1c1b19]"
                 onClick={() => void submitHire()}
               >
                 {busy && !serviceBusyId ? (

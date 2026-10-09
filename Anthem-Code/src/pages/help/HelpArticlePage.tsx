@@ -121,7 +121,7 @@ export default function HelpArticlePage() {
               Forum
             </Link>
             <Link to="/learn" className="text-primary hover:underline">
-              Learn more
+              About
             </Link>
             <Link to="/help" className="text-primary hover:underline">
               Help Center

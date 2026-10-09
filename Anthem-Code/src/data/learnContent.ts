@@ -7,13 +7,148 @@ export type LearnNavItem = {
 
 /** In-page sections on /learn (single page). */
 export const LEARN_NAV: LearnNavItem[] = [
-  { id: "who", label: "เราคือใคร" },
-  { id: "start", label: "เริ่มใช้" },
-  { id: "creators", label: "ลงผลงาน" },
-  { id: "hirers", label: "จ้างงาน" },
-  { id: "opportunity-loop", label: "ลูปโอกาส" },
-  { id: "trust", label: "น่าเชื่อถือ" },
+  { id: "works", label: "Work" },
+  { id: "start", label: "How it works" },
+  { id: "who", label: "About" },
+  { id: "creators", label: "Publish" },
+  { id: "hirers", label: "Hire" },
+  { id: "trust", label: "FAQ" },
 ];
+
+export type LearnHeroFace = "serif" | "sans" | "soft";
+
+/** One word in the learn hero blurb. Size, weight, and face change from word to word. */
+export type LearnHeroWord = {
+  text: string;
+  face: LearnHeroFace;
+  /** Desktop size in rem. Mobile scales down from this. */
+  rem: number;
+  weight: 300 | 400 | 500 | 600 | 700;
+  italic?: boolean;
+};
+
+export const LEARN_HERO_LOCKUP: readonly (readonly LearnHeroWord[])[] = [
+  [
+    { text: "Create", face: "serif", rem: 1.45, weight: 400, italic: true },
+    { text: "your", face: "soft", rem: 0.95, weight: 700 },
+    { text: "profile.", face: "sans", rem: 2.15, weight: 300 },
+  ],
+  [
+    { text: "Connect", face: "sans", rem: 1.12, weight: 300 },
+    { text: "through", face: "serif", rem: 1.28, weight: 400, italic: true },
+    { text: "your", face: "soft", rem: 0.9, weight: 700 },
+    { text: "work.", face: "sans", rem: 1.65, weight: 600 },
+  ],
+  [
+    { text: "Discover", face: "sans", rem: 1.35, weight: 500 },
+    { text: "new", face: "soft", rem: 0.9, weight: 400 },
+    { text: "opportunities.", face: "serif", rem: 1.85, weight: 500, italic: true },
+  ],
+];
+
+export const LEARN_MANIFESTO =
+  "You Create. We Connect. SAMECOR starts from a project, then a conversation, a hire, or a collab. One profile opens what comes next.";
+
+export const LEARN_STATEMENT =
+  "This is not a gallery and not a job board. Opportunity starts after someone has seen the real work.";
+
+export const LEARN_WAYS = [
+  {
+    n: "001",
+    title: "Show the real work",
+    body: "Publish the role, the process, and the result. People can see what you can do, not just a pretty picture.",
+    tags: ["Project", "Process", "Result"],
+    image: "/learn/learn-way-show.jpg",
+  },
+  {
+    n: "002",
+    title: "Get found by style",
+    body: "Hirers scroll Explore, see the work first, then open the profile. You do not need an ad to start.",
+    tags: ["Explore", "Category", "Saved"],
+    image: "/learn/learn-way-discover.jpg",
+  },
+  {
+    n: "003",
+    title: "Talk from that piece",
+    body: "The chat already has the work in it. You do not retell the whole portfolio from scratch.",
+    tags: ["Chat", "This piece", "Clear brief"],
+    image: "/learn/learn-way-talk.jpg",
+  },
+  {
+    n: "004",
+    title: "Opportunity follows",
+    body: "A hire, a collab, or an invite onto a team comes after the real work is seen — not from the lowest price.",
+    tags: ["Hire", "Collab", "Join a team"],
+    image: "/learn/learn-way-opportunity.jpg",
+  },
+] as const;
+
+export const LEARN_MODES = [
+  {
+    id: "mode-projects",
+    label: "Projects",
+    n: "01",
+    title: "Start from a piece of work",
+    body: "Projects is the home of the feed. You see the role, the process, and the result before a name, a price, or a job post.",
+    points: [
+      "Each project carries context, not only a cover image.",
+      "Save a piece, or write from that piece.",
+      "A hire, a collab, or a team invite comes after the work is seen.",
+    ],
+    image: "/learn/learn-way-show.jpg",
+  },
+  {
+    id: "mode-designers",
+    label: "Designers",
+    n: "02",
+    title: "Find the person behind the work",
+    body: "Designers collects profiles. You already know the style from their projects, then you see what they are open to.",
+    points: [
+      "A profile is a person, not a bid.",
+      "Opportunity status says hire, collab, a team, or just a conversation.",
+      "You still start from a project you liked, not from a blank application.",
+    ],
+    image: "/learn/learn-way-discover.jpg",
+  },
+  {
+    id: "mode-packages",
+    label: "Packages",
+    n: "03",
+    title: "A scoped offer, not a contract",
+    body: "A package shows what is included, a rough price, a rough timeline, and sample work, so someone can ask with a clear brief.",
+    points: [
+      "Scope, price range, time, and deliverables sit in one place.",
+      "Sample work stays attached, so the offer is not only a number.",
+      "Publishing a package does not start a hire by itself.",
+    ],
+    image: "/learn/learn-shortlist.png",
+  },
+  {
+    id: "mode-objects",
+    label: "Objects",
+    n: "04",
+    title: "Things a creator sells",
+    body: "Objects are prints, small made things, and art toys. You are looking at the object, not hiring someone for a job.",
+    points: [
+      "Separate from Projects, Designers, and Packages.",
+      "Prints, objects, and art toys live in this mode.",
+      "Look and keep what you want, without turning the feed into a job board.",
+    ],
+    image: "/learn/learn-film-box.png",
+  },
+] as const;
+
+export const LEARN_ABOUT = {
+  image: "/learn/learn-about-portrait.jpg",
+  body: "Creative people should be found for what they actually make, not for who priced lowest or wrote the longest application. SAMECOR starts with the work. People see the style, the role, and the context, then talk from the piece they like — a hire, a collab, or a team invite follows.",
+  facts: [
+    { k: "Starts with", v: "Real work" },
+    { k: "Not", v: "A job board or a price bid" },
+    { k: "Based in", v: "Bangkok" },
+  ],
+} as const;
+
+export const LEARN_LOOP_LINE = ["Real work", "See the style", "Get the context", "Talk from the piece", "Opportunity"] as const;
 
 export const LEARN_IMAGES = {
   hero: "/learn/learn-hero-wall.png",
@@ -95,28 +230,28 @@ export const LEARN_FIRST_VISIT = [
 
 export const LEARN_GLOSSARY = [
   {
-    term: "โอกาส",
-    meaning: "ช่องทางต่อเนื่องจากผลงาน — ไม่จำกัดแค่จ้างงาน",
+    term: "Opportunity",
+    meaning: "What can follow the work — not limited to a hire",
   },
   {
-    term: "จ้างงาน",
-    meaning: "มีโจทย์ ขอบเขต และงบชัดเจน",
+    term: "Hire",
+    meaning: "A brief, a scope, and a budget that are clear",
   },
   {
-    term: "คอลแลป",
-    meaning: "ร่วมงาน / แลกสกิล ไม่จำเป็นต้องเป็นจ้างเต็มรูปแบบ",
+    term: "Collab",
+    meaning: "Working together or trading skills — not always a full hire",
   },
   {
-    term: "สนับสนุน",
-    meaning: "ส่ง PX หรือของขวัญให้ครีเอเตอร์ — ไม่ใช่การจ้าง",
+    term: "Support",
+    meaning: "Sending PX or a gift to a creator — not a hire",
   },
   {
     term: "Catalog",
-    meaning: "ชุดผลงานที่จัดกลุ่มไว้บนโปรไฟล์",
+    meaning: "A grouped set of work on a profile",
   },
   {
     term: "Explore",
-    meaning: "ฟีดค้นพบผลงานจริงตามสไตล์และหมวด",
+    meaning: "The feed of real work, by style and category",
   },
 ] as const;
 
@@ -140,71 +275,71 @@ export const LEARN_STEPS = [
 
 export const LEARN_FEATURES = [
   {
-    title: "Explore ผลงาน",
-    body: "ค้นหาและเลื่อนดูผลงานจริงของครีเอเตอร์ เห็นสไตล์ก่อนตัดสินใจคุย",
+    title: "Explore work",
+    body: "Search and scroll real creator work. See the style before you start a conversation.",
     to: "/",
-    cta: "ไป Explore",
+    cta: "Open Explore",
   },
   {
-    title: "ลงผลงาน / พอร์ตโฟลิโอ",
-    body: "รวบผลงานไว้โปรไฟล์เดียว เปิดรับโอกาสโดยไม่ต้องยิงแอดเอง",
+    title: "Publish a portfolio",
+    body: "Keep the work on one profile and stay open to opportunity without running ads.",
     to: "/portfolio/new",
-    cta: "ลงผลงาน",
+    cta: "Publish",
     auth: true,
   },
   {
-    title: "ค้นหาดีไซเนอร์",
-    body: "ดูคนจากผลงานและโปรไฟล์ ไม่เริ่มจากแพ็กเกจราคา",
+    title: "Find a designer",
+    body: "Judge people from the work and the profile, not from a price package.",
     to: "/",
-    cta: "ดูใน Explore",
+    cta: "Browse Explore",
   },
   {
-    title: "แชทจากบริบทงาน",
-    body: "คุยจ้างงานหรือคอลแลปพร้อมอ้างอิงผลงานที่สนใจจริง",
+    title: "Chat from the work",
+    body: "Talk about a hire or a collab with the piece you actually liked attached.",
     to: "/chat",
-    cta: "เปิดแชท",
+    cta: "Open chat",
     auth: true,
   },
   {
-    title: "บันทึก / คอลเลกชัน",
-    body: "เก็บงานที่ชอบไว้ shortlist ก่อนติดต่อทีหลัง",
+    title: "Save a collection",
+    body: "Keep a shortlist of work you like, then reach out when you are ready.",
     to: "/collections",
-    cta: "ดูคอลเลกชัน",
+    cta: "View collections",
     auth: true,
   },
   {
-    title: "สถานะรับโอกาส",
-    body: "บอกได้ว่างานแบบไหนที่เปิดรับ เพื่อให้คนที่ใช่เข้ามาหา",
+    title: "Opportunity status",
+    body: "Say which kinds of work you are open to, so the right people can find you.",
     to: "/settings",
-    cta: "ตั้งค่าโปรไฟล์",
+    cta: "Edit profile",
     auth: true,
   },
 ] as const;
 
 export const LEARN_CREATOR_JOURNEY = [
   {
-    title: "ตั้งโปรไฟล์สั้นๆ",
-    body: "ชื่อ รูป และแนะนำตัวสั้นๆ ให้คนที่ทักรู้ว่าคุยกับใคร",
+    title: "Set a short profile",
+    body: "A name, a photo, and a short intro so people know who they are talking to.",
   },
   {
-    title: "ตั้งสถานะรับโอกาส",
-    body: "บอกว่าเปิดรับจ้างงาน คอลแลป ฝึกงาน เข้าทีม หรือแค่คุย — แก้ทีหลังได้",
+    title: "Set your opportunity status",
+    body: "Say if you are open to hire, collab, an internship, a team, or just a conversation. You can change it later.",
   },
   {
-    title: "ลงผลงานชิ้นแรก",
-    body: "เริ่ม 1–3 ชิ้นที่อธิบายบทบาทได้ชัด ดีกว่ารายการยาวที่ว่าง",
+    title: "Publish the first pieces",
+    body: "Start with 1–3 pieces that explain your role. Better than a long empty list.",
   },
   {
-    title: "ใส่บริบท ไม่ใช่แค่รูป",
-    body: "บทบาท เครื่องมือ กระบวนการ ผลลัพธ์ — คนจ้างเข้าใจศักยภาพเร็วขึ้น",
+    title: "Add context, not just a picture",
+    body: "Role, tools, process, result — hirers understand what you can do faster.",
   },
   {
-    title: "เผยแพร่สาธารณะ",
-    body: "งานขึ้นบน Explore ตามหมวด — ไม่ต้องยิงแอดเองเพื่อเริ่มต้น",
+    title: "Make it public",
+    body: "The work shows up on Explore by category. You do not need an ad to begin.",
   },
   {
-    title: "ตอบเมื่อมีคนทัก",
-    body: "แชทผูกกับชิ้นงานที่เขาเห็น ไม่ต้องเล่าพอร์ตทั้งก้อนใหม่",
+    title: "Reply when someone writes",
+    body: "The chat is tied to the piece they saw. You do not retell the whole portfolio.",
   },
 ] as const;
 
@@ -220,24 +355,24 @@ export const LEARN_CREATOR_CHECKLIST = [
 
 export const LEARN_HIRER_JOURNEY = [
   {
-    title: "เลื่อนดูงานก่อน คน",
-    body: "เริ่มจากสไตล์และคุณภาพงาน แล้วค่อยเปิดโปรไฟล์ — ไม่เริ่มจากแพ็กเกจราคา",
+    title: "Look at the work first",
+    body: "Start from style and quality, then open the profile — not from a price package.",
   },
   {
-    title: "กรองหมวด / สไตล์",
-    body: "ใช้ Explore เพื่อเจองานที่ใกล้โจทย์เร็วขึ้น",
+    title: "Filter by category",
+    body: "Use Explore to reach work that is close to the brief.",
   },
   {
-    title: "บันทึกไว้ก่อนคุย",
-    body: "เก็บหลายชิ้นในคอลเลกชัน เปรียบเทียบสไตล์ แล้วค่อยทักเมื่อพร้อม",
+    title: "Save before you write",
+    body: "Keep a few pieces in a collection, compare the style, then message when you are ready.",
   },
   {
-    title: "กดคุยต่อจากผลงานนี้",
-    body: "เลือกจ้างงานหรือคอลแลป แล้วสรุปโจทย์สั้นๆ — ครีเอเตอร์รู้ทันทีว่าคุณเห็นชิ้นไหน",
+    title: "Continue from this piece",
+    body: "Choose hire or collab and write a short brief. The creator knows which piece you saw.",
   },
   {
-    title: "คุยในแชทที่มีบริบทงาน",
-    body: "ขอบเขต ไทม์ไลน์ และรายละเอียดต่อจากชิ้นที่อ้างอิง ไม่ต้องเริ่มจากศูนย์",
+    title: "Talk in a chat that has the work",
+    body: "Scope, timeline, and detail continue from the piece you referenced.",
   },
 ] as const;
 
@@ -247,7 +382,7 @@ export const LEARN_HIRER_TIPS = [
   "สรุปโจทย์สั้นๆ 1–3 ประโยค",
   "ช่วงงบหรือขอบเขตคร่าวๆ (ถ้ามี)",
   "ไทม์ไลน์ที่คาดหวัง",
-  "อ้างอิงผลงานบน Aplus1 ที่ชอบ",
+  "อ้างอิงผลงานบน SAMECOR ที่ชอบ",
 ] as const;
 
 export const LEARN_LOOP_WORDS = ["จ้างงาน", "คอลแลป", "สนับสนุน"] as const;
@@ -276,49 +411,49 @@ export const LEARN_PX_POINTS = [
 ] as const;
 
 export const LEARN_TRUST_LINKS = [
-  { to: "/legal", label: "กฎหมายและนโยบาย", body: "ดัชนีเอกสารทั้งหมด แยกตามหมวด" },
-  { to: "/legal/community", label: "กฎชุมชน", body: "สิ่งที่ทำได้ / ไม่ได้บน Aplus1" },
-  { to: "/legal/ip", label: "ทรัพย์สินทางปัญญา", body: "สิทธิ์งานและความรับผิดชอบตอนลงผลงาน" },
-  { to: "/legal/privacy", label: "ความเป็นส่วนตัว", body: "ข้อมูลที่เก็บและใช้" },
-  { to: "/legal/terms", label: "ข้อกำหนดการใช้", body: "เงื่อนไขการใช้บริการ" },
-  { to: FORUM_PATH, label: "Forum", body: "ถามตอบและแจ้งปัญหากับชุมชน" },
-  { to: "/help", label: "Help Center", body: "คำถามที่พบบ่อยและวิธีใช้" },
+  { to: "/legal", label: "Legal and policies", body: "The full document index, by section" },
+  { to: "/legal/community", label: "Community rules", body: "What is allowed on SAMECOR" },
+  { to: "/legal/ip", label: "Intellectual property", body: "Rights and responsibility when you publish work" },
+  { to: "/legal/privacy", label: "Privacy", body: "What we collect and how it is used" },
+  { to: "/legal/terms", label: "Terms of use", body: "The conditions of the service" },
+  { to: FORUM_PATH, label: "Forum", body: "Ask questions and report issues with the community" },
+  { to: "/help", label: "Help Center", body: "Common questions and how to use the product" },
 ] as const;
 
 export const LEARN_FAQ = [
   {
     id: "what-is",
-    q: "Aplus1 ต่างจากพอร์ตโฟลิโอทั่วไปหรือจ็อบบอร์ดยังไง?",
-    a: "โฟกัสผลงานจริงเป็นประตูสู่โอกาส — คนเห็นสไตล์และบริบทก่อน แล้วค่อยคุยจากงานนั้น ไม่เริ่มจากแพ็กเกจราคาหรือใบสมัครยาว",
+    q: "How is SAMECOR different from a portfolio site or a job board?",
+    a: "Real work is the door to opportunity. People see the style and context first, then talk from that piece — not from a price package or a long application.",
   },
   {
     id: "free",
-    q: "ใช้ฟรีไหม?",
-    a: "เริ่มสำรวจ ลงผลงาน และคุยโอกาสได้จากบัญชีทั่วไป ฟีเจอร์พรีเมียมถ้ามีจะบอกชัดในหน้าอัปเกรด",
+    q: "Is it free?",
+    a: "You can explore, publish, and talk about opportunity on a regular account. If a premium feature exists, the upgrade page says so plainly.",
   },
   {
     id: "first-work",
-    q: "ยังมีผลงานน้อย เริ่มยังไง?",
-    a: "ลงชิ้นที่มีบริบทชัด 1–3 ชิ้นก่อน ตั้งสถานะรับโอกาส แล้วค่อยเติม Catalog — คุณภาพและบริบทสำคัญกว่ารายการยาว",
+    q: "I do not have much work yet. How do I start?",
+    a: "Publish 1–3 pieces with clear context, set your opportunity status, then fill the catalog. Quality and context matter more than a long list.",
   },
   {
     id: "hirer-see",
-    q: "คนจ้างเห็นอะไรจากโปรไฟล์?",
-    a: "ผลงานสาธารณะ สถานะรับโอกาส ทักษะ/หมวด และจุดเข้าคุยจากชิ้นงานที่เขาเปิดอยู่",
+    q: "What does a hirer see on a profile?",
+    a: "Public work, opportunity status, skills and categories, and a way to continue from the piece they opened.",
   },
   {
     id: "px-money",
-    q: "PX คือเงินไหม ถอนได้ไหม?",
-    a: "PX เป็นหน่วยในแพลตฟอร์ม Welcome/ภารกิจบางส่วนถอนไม่ได้ ส่วน earned ที่เข้าเงื่อนไขจึงถอนได้ — ดูรายละเอียดในกระเป๋า PX หรือ Help Center",
+    q: "Is PX money? Can I cash it out?",
+    a: "PX is a unit inside the platform. Some welcome and mission PX cannot be cashed out. Earned PX that meets the rules can. See the PX wallet or Help Center for the detail.",
   },
   {
     id: "hide",
-    q: "ซ่อนหรือลบผลงานได้ไหม?",
-    a: "จัดการได้จากหน้าจัดการผลงาน — เลือกการมองเห็นหรือถอดออกเมื่อไม่ต้องการโชว์",
+    q: "Can I hide or delete a piece?",
+    a: "Yes, from the work manager. Change visibility or remove a piece when you do not want it shown.",
   },
   {
     id: "community",
-    q: "Help Center กับ Learn more ต่างกันยังไง?",
-    a: "Help Center คือที่หาคำตอบและวิธีใช้เมื่อมีคำถาม Learn more คือเรื่องราวภาพรวมของ Aplus1 ส่วน Forum เป็นที่คุยกับชุมชน",
+    q: "How is this page different from the Help Center?",
+    a: "This page is the overview of how SAMECOR works. The Help Center is the step-by-step when you have a question. The Forum is where you talk with the community.",
   },
 ] as const;

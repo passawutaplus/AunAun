@@ -16,7 +16,7 @@ function money(thb: number) {
   return formatMoneyLabel(thb, "THB");
 }
 
-/** Estimate PIT from hire income recorded on Aplus1 — not tax advice. */
+/** Estimate PIT from hire income recorded on SAMECOR — not tax advice. */
 export function HireTaxOverview({ income, year = new Date().getFullYear(), isPreview }: Props) {
   const sums = hireIncomeYearSatang(income, year);
   const estimate = estimatePersonalIncomeTax({
@@ -34,7 +34,7 @@ export function HireTaxOverview({ income, year = new Date().getFullYear(), isPre
       <div>
         <h2 className="text-sm font-semibold">ประมาณการภาษี ปี {buddhistYear}</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          คิดจากราคางานบน Aplus1 ปีนี้ — ค่าใช้จ่ายเหมา 50% (สูงสุด ฿100,000) และลดหย่อนส่วนตัว ฿60,000
+          คิดจากราคางานบน SAMECOR ปีนี้ — ค่าใช้จ่ายเหมา 50% (สูงสุด ฿100,000) และลดหย่อนส่วนตัว ฿60,000
         </p>
       </div>
 
@@ -104,7 +104,7 @@ export function HireTaxOverview({ income, year = new Date().getFullYear(), isPre
       )}
 
       <p className="text-[11px] leading-relaxed text-muted-foreground">
-        ตัวเลขจากรายได้บนแพลตฟอร์มเท่านั้น ไม่รวมงานนอก Aplus1 และไม่ใช่คำแนะนำทางภาษี —
+        ตัวเลขจากรายได้บนแพลตฟอร์มเท่านั้น ไม่รวมงานนอก SAMECOR และไม่ใช่คำแนะนำทางภาษี —
         ควรตรวจกับนักบัญชีก่อนยื่นแบบ
         {isPreview ? " · ข้อมูลตัวอย่าง" : ""}{" "}
         <Link

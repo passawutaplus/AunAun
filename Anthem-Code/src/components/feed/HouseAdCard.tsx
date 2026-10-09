@@ -17,22 +17,13 @@ const HouseAdCard = () => {
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           loading="lazy"
         />
-      </button>
-      <div className="mt-2 flex items-center gap-2 px-0.5">
-        <button
-          type="button"
-          onClick={() => navigate("/advertise")}
-          className="min-w-0 flex-1 truncate text-left text-base text-foreground thai-leading-tight hover:underline"
-        >
-          ลงโฆษณากับ Aplus1
-        </button>
         <span
-          className="shrink-0 rounded-full border border-foreground/15 bg-muted px-2 py-0.5 text-[10px] font-semibold tracking-wider text-muted-foreground"
+          className="absolute right-2 top-2 rounded-full border border-black/10 bg-[#f5f5f5]/95 px-2 py-0.5 text-[10px] tracking-wider text-[#6b6762]"
           aria-label="Sponsored"
         >
           Sponsored
         </span>
-      </div>
+      </button>
     </div>
   );
 };

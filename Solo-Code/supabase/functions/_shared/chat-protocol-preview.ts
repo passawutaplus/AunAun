@@ -1,4 +1,4 @@
-/** Human-readable preview for Aplus1 chat protocol blobs (notifications / email). */
+/** Human-readable preview for SAMECOR chat protocol blobs (notifications / email). */
 
 function extractJsonStringField(content: string, key: string): string | null {
   const m = content.match(new RegExp(`"${key}"\\s*:\\s*"((?:\\\\.|[^"\\\\])*)"`));

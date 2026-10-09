@@ -24,7 +24,7 @@ export function EmailNotificationSection({ value, onChange }: Props) {
         <h2 className="font-semibold text-foreground">แจ้งเตือนทางอีเมล</h2>
       </div>
       <p className="text-xs text-muted-foreground leading-relaxed">
-        ควบคุมอีเมลจาก Aplus1 — แจ้งเตือนกระดิ่งในเว็บตั้งค่าแยกด้านบน · ดูกล่องรวมที่{" "}
+        ควบคุมอีเมลจาก SAMECOR — แจ้งเตือนกระดิ่งในเว็บตั้งค่าแยกด้านบน · ดูกล่องรวมที่{" "}
         <Link to="/notifications" className="text-primary hover:underline inline-flex items-center gap-0.5">
           การแจ้งเตือน
           <ChevronRight className="w-3 h-3" />
@@ -32,7 +32,7 @@ export function EmailNotificationSection({ value, onChange }: Props) {
       </p>
 
       <Toggle
-        label="เปิดอีเมลจาก Aplus1"
+        label="เปิดอีเมลจาก SAMECOR"
         description="ปิดแล้วจะไม่ได้รับอีเมลทุกประเภท (แชท ของขวัญ การติดตาม ชุมชน การเงิน ฯลฯ)"
         checked={value.notifyEmail}
         onChange={(v) => onChange("notifyEmail", v)}

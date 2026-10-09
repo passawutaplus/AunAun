@@ -48,7 +48,7 @@ export type ProfileShareInput = ProfileLinkInput & {
 /** Social share title — public portfolio, not owner preview. */
 export function profileShareTitle(profile: ProfileShareInput): string {
   const name = profile.display_name?.trim() || profile.username?.trim() || "ครีเอเตอร์";
-  return `${name} — พอร์ตโฟล์บน Aplus1`;
+  return `${name} — พอร์ตโฟล์บน SAMECOR`;
 }
 
 /** Companion text for LINE / device share (no preview URL). */
@@ -56,8 +56,8 @@ export function profileShareMessage(profile: ProfileShareInput): string {
   const name = profile.display_name?.trim() || profile.username?.trim() || "ครีเอเตอร์";
   const role = profile.role?.trim();
   const lead = role
-    ? `ดูผลงานของ ${name} (${role}) บน Aplus1`
-    : `ดูผลงานของ ${name} บน Aplus1`;
+    ? `ดูผลงานของ ${name} (${role}) บน SAMECOR`
+    : `ดูผลงานของ ${name} บน SAMECOR`;
   const bio = profile.bio?.trim();
   if (bio && bio.length >= 12) {
     const snippet = bio.length > 96 ? `${bio.slice(0, 96)}…` : bio;

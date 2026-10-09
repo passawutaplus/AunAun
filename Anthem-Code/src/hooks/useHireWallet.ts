@@ -122,7 +122,7 @@ export function useHireWallet(
         const income: HireIncomeItem[] = rows
           .map((r) => ({
             id: r.id,
-            title: "งานจ้างบน Aplus1",
+            title: "งานจ้างบน SAMECOR",
             buyerName: nameById.get(r.buyer_id) || "ผู้จ้าง",
             status: r.status,
             jobPriceSatang: r.job_price_satang || 0,

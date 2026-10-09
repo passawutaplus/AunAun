@@ -2,20 +2,23 @@ import { Loader2 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
 import StudioLayout from "@/components/dashboard/StudioLayout";
 import CatalogManagePanel from "@/components/series/CatalogManagePanel";
+import PortfolioObjectsManagePanel from "@/components/portfolio/PortfolioObjectsManagePanel";
 import PortfolioPackagesManagePanel from "@/components/portfolio/PortfolioPackagesManagePanel";
 import PortfolioWorksManagePanel from "@/components/portfolio/PortfolioWorksManagePanel";
 import { useAuth } from "@/hooks/useAuth";
 import {
   STUDIO_CATALOGS_PATH,
+  STUDIO_OBJECTS_PATH,
   STUDIO_PACKAGES_PATH,
   STUDIO_PROJECTS_PATH,
 } from "@/lib/studioNav";
 
-export type DashboardPortfolioMode = "projects" | "packages" | "catalogs";
+export type DashboardPortfolioMode = "projects" | "packages" | "objects" | "catalogs";
 
 const META: Record<DashboardPortfolioMode, { title: string; path: string }> = {
   projects: { title: "Projects", path: STUDIO_PROJECTS_PATH },
   packages: { title: "Packages", path: STUDIO_PACKAGES_PATH },
+  objects: { title: "Objects", path: STUDIO_OBJECTS_PATH },
   catalogs: { title: "Catalogs", path: STUDIO_CATALOGS_PATH },
 };
 
@@ -40,6 +43,8 @@ export default function DashboardPortfolioPage({ mode }: Props) {
         <PortfolioWorksManagePanel userId={user.id} showDesignDrill showStudioLink={false} />
       ) : mode === "packages" ? (
         <PortfolioPackagesManagePanel ownerId={user.id} />
+      ) : mode === "objects" ? (
+        <PortfolioObjectsManagePanel />
       ) : (
         <CatalogManagePanel userId={user.id} />
       )}

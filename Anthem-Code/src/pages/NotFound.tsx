@@ -16,7 +16,7 @@ const NotFound = () => {
         path={location.pathname}
         noindex
         title="ไม่พบหน้า"
-        description="หน้าที่คุณค้นหาไม่มีบน Aplus1"
+        description="หน้าที่คุณค้นหาไม่มีบน SAMECOR"
       />
       <HttpErrorPage kind="404" />
     </>

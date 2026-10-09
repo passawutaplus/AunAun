@@ -35,8 +35,8 @@ values ('<auth.users.id>', 'admin');
 | `/project/:id` (Published)  |  ✅   |  ✅  |   ✅  |  |
 | `/project/:id` (Draft)      |  ❌   |  owner only | ✅  | RLS check |
 | `/studio/:slug`             |  ✅   |  ✅  |   ✅  |  |
-| `/hiring`                   |  ✅   |  ✅  |   ✅  | บอร์ดประกาศจ้างบริษัท |
-| `/jobs`                     |  ✅   |  ✅  |   ✅  | จองไว้โพสต์หางานของครีเอเตอร์ |
+| `/hiring`                   |  ⏳   |  ⏳  |  ⏳  | บอร์ดจ้าง — ปิดตอนเปิดเว็บ (`VITE_APLUS1_HIRING_BOARD_ENABLED`) |
+| `/jobs`                     |  ⏳   |  ⏳  |  ⏳  | โพสต์หางานครีเอเตอร์ — ปิดพร้อมบอร์ด |
 | `/advertise`                |  ✅   |  ✅  |   ✅  |  |
 | `/legal/*`                  |  ✅   |  ✅  |   ✅  |  |
 | `/auth`                     |  ✅   |  ✅ (redirect) | ✅ (redirect) | |

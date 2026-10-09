@@ -16,6 +16,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel, { FilterEmptyState } from "@/components/ui/QueryStatusPanel";
 import { useSlowLoadFallback } from "@/hooks/useSlowLoadFallback";
 import { useSavedCreatorServiceIds } from "@/hooks/useCreatorServiceBookmarks";
+import { usePackageFeedStats } from "@/hooks/usePackageFeedStats";
 import { useFeedInterestSurvey } from "@/hooks/useFeedInterests";
 import { getViewAffinityWeights } from "@/lib/viewAffinity";
 import { getFeedSearchCategoryWeights } from "@/lib/feedSearchSignals";
@@ -132,7 +133,7 @@ const PackageGrid = ({
     return (
       <div className={cn(PACKAGE_FEED_GRID, FEED_PROJECT_GRID_GAP)} aria-hidden>
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="overflow-hidden rounded-3xl border border-border/70 bg-card">
+          <div key={i} className="overflow-hidden rounded-none border border-border/70 bg-card">
             <div className="aspect-[4/3] bg-muted animate-pulse" />
             <div className="p-3 space-y-2">
               <div className="h-4 w-4/5 rounded bg-muted animate-pulse" />
@@ -215,6 +216,21 @@ const PackageGrid = ({
   }
 
   return (
+    <PackageGridCards filtered={filtered} search={search} />
+  );
+};
+
+function PackageGridCards({
+  filtered,
+  search,
+}: {
+  filtered: PackageFeedCard[];
+  search: string;
+}) {
+  const serviceIds = useMemo(() => filtered.map((d) => d.service.id), [filtered]);
+  const { data: statsById = {} } = usePackageFeedStats(serviceIds);
+
+  return (
     <div className="space-y-3">
       {search.trim() ? (
         <p className="text-xs sm:text-sm text-muted-foreground tabular-nums" aria-live="polite">
@@ -223,11 +239,16 @@ const PackageGrid = ({
       ) : null}
       <FeedProjectGrid itemClassName="h-full" columnsClass={PACKAGE_FEED_GRID}>
         {filtered.map((d) => (
-          <PackageCard key={d.service.id} data={d} search={search} />
+          <PackageCard
+            key={d.service.id}
+            data={d}
+            search={search}
+            stats={statsById[d.service.id]}
+          />
         ))}
       </FeedProjectGrid>
     </div>
   );
-};
+}
 
 export default PackageGrid;

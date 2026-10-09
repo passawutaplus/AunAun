@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Generate public/sitemap.xml (+ type sitemaps + sitemap-index.xml).
- * Set VITE_SITE_URL or SITE_URL (default https://aplus1.app)
+ * Set VITE_SITE_URL or SITE_URL (default https://samecor.com)
  *
  * Optional live enrichment (recommended for production):
  *   VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY
@@ -15,12 +15,14 @@ import { fileURLToPath } from "url";
 import { buildSitemapBundles, buildSitemapUrls } from "./sitemap-lib.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const base = (process.env.VITE_SITE_URL || process.env.SITE_URL || "https://aplus1.app").replace(
+const base = (process.env.VITE_SITE_URL || process.env.SITE_URL || "https://samecor.com").replace(
   /\/$/,
   "",
 );
 const fullProduct =
   (process.env.VITE_APLUS1_FULL_PRODUCT || "").toLowerCase() === "true";
+const hiringBoard =
+  (process.env.VITE_APLUS1_HIRING_BOARD_ENABLED || "").toLowerCase() === "true";
 
 function loadDotEnv() {
   const envPath = join(root, ".env");
@@ -66,10 +68,12 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
       `${rest}/project_series?select=id&is_public=eq.true&order=updated_at.desc&limit=40`,
       { headers: anthemHeaders },
     ),
-    fetch(
-      `${rest}/job_posts?select=id&status=eq.open&post_type=eq.hiring&hiring_org_id=not.is.null&order=created_at.desc&limit=60`,
-      { headers: anthemHeaders },
-    ),
+    hiringBoard
+      ? fetch(
+          `${rest}/job_posts?select=id&status=eq.open&post_type=eq.hiring&hiring_org_id=not.is.null&order=created_at.desc&limit=60`,
+          { headers: anthemHeaders },
+        )
+      : Promise.resolve({ ok: true, json: async () => [] }),
   ]);
 
   if (!projectsRes.ok) {
@@ -143,6 +147,7 @@ if (supabaseUrl && anonKey) {
 
 const opts = {
   fullProduct,
+  hiringBoard,
   ...(live || {}),
 };
 

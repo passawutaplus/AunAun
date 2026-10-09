@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ChevronDown, MessageCircle } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ManageWorkIcon from "@/components/icons/ManageWorkIcon";
 import NotificationBell from "@/components/notifications/NotificationBell";
@@ -32,33 +32,14 @@ export function ChatInboxTopBar() {
       .then(({ data }) => setProfile(data ?? null));
   }, [user]);
 
-  const goProjectsHome = () => {
-    localStorage.setItem("feed-mode", "projects");
-    navigate("/", { state: { feedHomeReset: Date.now() } });
-  };
-
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-3 sm:px-4">
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 rounded-full"
-        aria-label="กลับหน้าแรก"
-        title="กลับหน้าแรก"
-        onClick={goProjectsHome}
-      >
-        <ArrowLeft className="h-4 w-4" />
-      </Button>
-      <h1 className="flex items-center gap-1.5 text-sm font-semibold tracking-tight text-foreground">
-        <MessageCircle className="h-4 w-4" aria-hidden />
-        Chat
-      </h1>
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-3 sm:px-4">
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground">Chating</h1>
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
         <Button
           type="button"
           variant="outline"
-          className="h-8 shrink-0 gap-1 rounded-full border-primary/40 px-2.5 text-xs text-primary hover:bg-primary/5 hover:text-primary"
+          className="h-8 shrink-0 gap-1 rounded-full border-foreground/15 bg-background px-2.5 text-xs text-foreground hover:bg-muted hover:text-foreground"
           onClick={() => navigate("/dashboard")}
           aria-label="My Studio"
         >
