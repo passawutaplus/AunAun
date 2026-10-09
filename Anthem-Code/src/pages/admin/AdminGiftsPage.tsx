@@ -378,7 +378,7 @@ export default function AdminGiftsPage() {
               size="sm"
               variant="secondary"
               disabled
-              title="ตัดเส้น Solo Stripe แล้ว — ใช้ Omise payout หรือ manual"
+              title="ตัดเส้น Solo Stripe แล้ว — ใช้ payout ผ่าน Payso หรือ manual"
             >
               Solo โอน (ปิด)
             </Button>

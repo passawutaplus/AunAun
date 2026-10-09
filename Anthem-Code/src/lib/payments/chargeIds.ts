@@ -5,11 +5,11 @@ export function makeHireReference(): string {
 }
 
 /**
- * Live Omise charges (`chrg_*`) must be confirmed by webhook/service role only.
+ * Live provider charges must be confirmed by webhook/service role only.
  * Mock / local ids may call `confirm_hire_order_payment` from the buyer session.
  */
 export function canClientConfirmHireCharge(chargeId: string): boolean {
   if (!chargeId) return false;
-  if (chargeId.startsWith("chrg_")) return false;
-  return chargeId.startsWith("mock_") || chargeId.length > 0;
+  // Allowlist: only ids we mint ourselves. Every provider (Payso) charge goes through the webhook.
+  return chargeId.startsWith("mock_") || chargeId.startsWith("local_");
 }

@@ -3,7 +3,7 @@
 Status: **audit started, pack not built yet.** Everything below was read from code, docs or the live database (read-only).
 
 ## Facts confirmed
-- Commercial PSP is Payso (บริษัท เพย์ โซลูชั่น จำกัด), quotation `Q-202607000297` (valid to 31 Oct 2026). Code still uses `OMISE_*` names. Source: `docs/payments-omise.md`.
+- Commercial PSP is Payso (บริษัท เพย์ โซลูชั่น จำกัด), quotation `Q-202607000297` (valid to 31 Oct 2026). Code still uses `OMISE_*` names. Source: `docs/payments-payso.md`.
 - Payso limits for an **individual** merchant: ≤ 50,000 THB per month, ≤ 20,000 THB per transaction. Settlement weekly (T+7). Rates (excl. VAT): PromptPay 1.35% (min 5 THB), card 3% (AMEX 4%).
 - Money model: Aplus1 is a payment intermediary; hire money is held for the seller; Aplus1 revenue is the 10% platform fee only. Fee is a snapshot at order creation; money math is integer satang.
 - Lifecycle: quote (48 h expiry) → buyer accepts policies → checkout (PromptPay / card, full or deposit) → webhook marks paid → seller submits work → buyer approves (7-day dispute window) → pending becomes available → payout (min 1,000 THB, 1 free per month, then 25 THB, KYC and verified bank account required).

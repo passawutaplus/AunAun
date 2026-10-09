@@ -1,5 +1,6 @@
 /**
- * Mark an object order paid from a verified Omise charge.
+ * Mark an object order paid from a verified provider charge (Payso, once wired).
+ * `charge` is the provider charge normalised to { id, paid, status, amount (satang), metadata }.
  * Amount and buyer must match the order row. Service role only.
  */
 

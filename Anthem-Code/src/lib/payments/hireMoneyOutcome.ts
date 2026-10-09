@@ -181,7 +181,7 @@ export function computeHireMoneyOutcome(input: HireMoneyOutcomeInput): HireMoney
   const platformFeeSatang = percentOfSatang(job, feePct);
   const sellerNetIfCompleted = job - platformFeeSatang - wht;
 
-  let pspCharges = input.pspCharges?.length
+  const pspCharges = input.pspCharges?.length
     ? [...input.pspCharges]
     : buildEstimatedPaymentFees(input);
 

@@ -218,6 +218,7 @@ describe("hire order status + cron + misc", () => {
     expect(canClientConfirmHireCharge("mock_abc")).toBe(true);
     expect(canClientConfirmHireCharge("local_demo")).toBe(true);
     expect(canClientConfirmHireCharge("chrg_test_xxx")).toBe(false);
+    expect(canClientConfirmHireCharge("payso_123")).toBe(false);
     expect(canClientConfirmHireCharge("")).toBe(false);
   });
 });

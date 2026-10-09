@@ -143,7 +143,7 @@ describe("admin search", () => {
     expect(hit("ถอนเงิน")).not.toContain("/admin/wallet"); // PX wallet is out of the product for now
     expect(hit("ลิขสิทธิ์")).toContain("/admin/compliance");
     expect(hit("pdpa")).toContain("/admin/compliance");
-    expect(hit("omise")).toContain("/admin/finance");
+    expect(hit("payso")).toContain("/admin/finance");
     expect(hit("แบน")).toContain("/admin/moderation");
   });
 });

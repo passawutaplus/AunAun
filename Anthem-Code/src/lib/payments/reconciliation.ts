@@ -1,4 +1,4 @@
-/** Compare Omise totals vs internal ledger — never auto-adjust balances. */
+/** Compare provider (Payso) totals vs internal ledger — never auto-adjust balances. */
 
 export type ReconciliationSide = {
   label: string;
@@ -7,20 +7,20 @@ export type ReconciliationSide = {
 
 export type ReconciliationDiff = {
   key: string;
-  omiseSatang: number;
+  providerSatang: number;
   ledgerSatang: number;
   deltaSatang: number;
 };
 
 export function diffReconciliation(
-  omise: ReconciliationSide[],
+  provider: ReconciliationSide[],
   ledger: ReconciliationSide[],
 ): ReconciliationDiff[] {
   const map = new Map<string, ReconciliationDiff>();
-  for (const row of omise) {
+  for (const row of provider) {
     map.set(row.label, {
       key: row.label,
-      omiseSatang: row.amountSatang,
+      providerSatang: row.amountSatang,
       ledgerSatang: 0,
       deltaSatang: row.amountSatang,
     });
@@ -29,11 +29,11 @@ export function diffReconciliation(
     const existing = map.get(row.label);
     if (existing) {
       existing.ledgerSatang = row.amountSatang;
-      existing.deltaSatang = existing.omiseSatang - row.amountSatang;
+      existing.deltaSatang = existing.providerSatang - row.amountSatang;
     } else {
       map.set(row.label, {
         key: row.label,
-        omiseSatang: 0,
+        providerSatang: 0,
         ledgerSatang: row.amountSatang,
         deltaSatang: -row.amountSatang,
       });
@@ -43,11 +43,11 @@ export function diffReconciliation(
 }
 
 export function formatReconciliationAlert(diffs: ReconciliationDiff[]): string {
-  if (diffs.length === 0) return "ledger matches omise";
+  if (diffs.length === 0) return "ledger matches provider";
   return diffs
     .map(
       (d) =>
-        `${d.key}: omise=${d.omiseSatang} ledger=${d.ledgerSatang} delta=${d.deltaSatang}`,
+        `${d.key}: provider=${d.providerSatang} ledger=${d.ledgerSatang} delta=${d.deltaSatang}`,
     )
     .join("; ");
 }
