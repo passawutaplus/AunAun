@@ -1,13 +1,13 @@
 # ชุด SQL ที่ต้องรันบน DB จริง (2026-10-09)
 
-ไฟล์ทั้ง 7 ทดสอบบน Postgres ในเครื่องแล้ว (92 assertions, ดู `../../tests/local-pg/`) **แต่ยังไม่เคยรันบน Supabase จริง**
+ไฟล์ 01–07 ทดสอบบน Postgres ในเครื่องแล้ว (92 assertions, ดู `../../tests/local-pg/`) ส่วนไฟล์ 08 เป็น UPDATE + REVOKE/GRANT ธรรมดา ยังไม่ได้ทดสอบบน harness **ทั้งชุดยังไม่เคยรันบน Supabase จริง**
 ทุกไฟล์รันซ้ำได้ (idempotent) ไม่เป็นอันตราย ส่วน `20261009080000_aplus1_close_public_rpc_holes.sql` รันเองไปแล้ว ไม่ต้องรันอีก
 
 ## วิธีรัน
 1. Supabase Dashboard → **SQL Editor** → New query
 2. เปิด `apply-all.sql` คัดลอกทั้งไฟล์ แล้วกด **Run** (ถ้าอยากระวังเป็นขั้น ๆ ให้รันทีละไฟล์ 01 → 07 ตามเลข)
 3. ถ้า Dashboard ถามยืนยันคำสั่งที่ "destructive" (DROP POLICY / REVOKE) ให้กดยืนยัน นั่นคือเจตนา
-4. รัน `verify.sql` ต้องขึ้น `pass = true` ทุกแถว (15 แถว) แล้วส่งผลให้ผมดู
+4. รัน `verify.sql` ต้องขึ้น `pass = true` ทุกแถว (17 แถว) แล้วส่งผลให้ผมดู
 
 ## แต่ละไฟล์ทำอะไร
 | ไฟล์ | ผล |
@@ -19,6 +19,7 @@
 | 05 | ผู้ร่วมแชทแก้ข้อความของอีกฝ่ายไม่ได้ และผู้ส่งย้ายข้อความข้ามห้องไม่ได้ |
 | 06 | ซ่อมปุ่มหลังบ้าน 9 อย่างที่พัง (ตั้งสิทธิ์ผู้ใช้ ถอนเงิน gift ฯลฯ) และปิดสิทธิ์ที่เกินจำเป็นของฟังก์ชัน `admin_*` |
 | 07 | สร้าง bucket ส่วนตัว `kyc-documents` สำหรับเอกสารยืนยันตัวตน |
+| 08 | **ปิดการจ่ายเงินปลอม** (`mock_topup_enabled=false`) และล็อกฟังก์ชัน PX/ของขวัญฝั่ง client (เอาออกไปก่อน) เปิดกลับด้วย GRANT |
 
 ## ลำดับที่ปลอดภัย
 - **02 (เรื่องเงิน)**: หลังรัน ออเดอร์ใหม่จะถูกคำนวณยอดใหม่ที่ DB ตอนนี้ตาราง `hire_orders` ยังไม่มีข้อมูลจริง (0 แถว) จึงไม่กระทบรายการเก่า
@@ -38,7 +39,8 @@ insert into supabase_migrations.schema_migrations (version, name) values
   ('20261009080000', 'aplus1_close_public_rpc_holes'),
   ('20261009100000', 'aplus1_messages_lock_update'),
   ('20261009110000', 'aplus1_kyc_private_bucket'),
-  ('20261009120000', 'aplus1_admin_helpers_and_grants')
+  ('20261009120000', 'aplus1_admin_helpers_and_grants'),
+  ('20261009130000', 'aplus1_px_gifts_off_mock_pay_off')
 on conflict do nothing;
 ```
 ถ้า insert ไม่ผ่านเพราะคอลัมน์ไม่ตรง ข้ามขั้นนี้ได้ ไม่กระทบการทำงาน

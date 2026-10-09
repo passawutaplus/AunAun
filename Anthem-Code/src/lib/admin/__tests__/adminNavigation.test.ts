@@ -68,9 +68,27 @@ describe("admin menu — launch minimal vs full product", () => {
   it("shows the pages whose public features are live (jobs, hiring, forum, inspire, wallet…) even in launch minimal", () => {
     MINIMAL();
     const paths = flatPaths();
-    for (const p of ["/admin/jobs", "/admin/hiring", "/admin/collabs", "/admin/forum", "/admin/inspire", "/admin/collections", "/admin/wallet", "/admin/finance", "/admin/kyc", "/admin/aml", "/admin/compliance", "/admin/audit", "/admin/data", "/admin/projects", "/admin/chats"]) {
+    for (const p of ["/admin/jobs", "/admin/hiring", "/admin/collabs", "/admin/forum", "/admin/inspire", "/admin/collections", "/admin/finance", "/admin/kyc", "/admin/aml", "/admin/compliance", "/admin/audit", "/admin/data", "/admin/projects", "/admin/chats"]) {
       expect(paths, p).toContain(p);
     }
+  });
+
+  it("hides the PX wallet and gifts until the PX switch is on (they are out of the product for now)", () => {
+    FULL();
+    expect(isAdminLaunchHiddenPath("/admin/wallet")).toBe(true);
+    expect(isAdminLaunchHiddenPath("/admin/gifts")).toBe(true);
+    expect(flatPaths()).not.toContain("/admin/wallet");
+    expect(flatPaths()).not.toContain("/admin/gifts");
+    // the PX cash-out queue disappears with its page
+    expect(adminQueueEntries({ ...zeroCounts(), cashouts: 3 })).toEqual([]);
+    // THB finance is separate and stays
+    expect(flatPaths()).toContain("/admin/finance");
+    vi.unstubAllEnvs();
+    FULL();
+    vi.stubEnv("VITE_APLUS1_PX_ENABLED", "true");
+    expect(isAdminLaunchHiddenPath("/admin/wallet")).toBe(false);
+    expect(flatPaths()).toEqual(expect.arrayContaining(["/admin/wallet", "/admin/gifts"]));
+    expect(adminQueueEntries({ ...zeroCounts(), cashouts: 3 }).map((e) => e.key)).toEqual(["cashouts"]);
   });
 
   it("hides only what the public app has switched off: contracts and ads", () => {
@@ -121,7 +139,8 @@ describe("admin search", () => {
         .filter((e) => adminSearchHaystack(e).includes(q.toLowerCase()))
         .map((e) => e.to);
     expect(hit("kyc")).toContain("/admin/kyc");
-    expect(hit("ถอนเงิน")).toContain("/admin/wallet");
+    expect(hit("ถอนเงิน")).toContain("/admin/finance");
+    expect(hit("ถอนเงิน")).not.toContain("/admin/wallet"); // PX wallet is out of the product for now
     expect(hit("ลิขสิทธิ์")).toContain("/admin/compliance");
     expect(hit("pdpa")).toContain("/admin/compliance");
     expect(hit("omise")).toContain("/admin/finance");
@@ -166,6 +185,7 @@ describe("work queue", () => {
 
   it("links each queue entry to its page", () => {
     FULL();
+    vi.stubEnv("VITE_APLUS1_PX_ENABLED", "true");
     const byKey = Object.fromEntries(adminQueueEntries({ ...zeroCounts(), kyc: 1, reports: 1, cashouts: 1, finance: 1, aml: 1, hiring: 1, collabs: 1, feedback: 1 }).map((e) => [e.key, e.item.to]));
     expect(byKey).toEqual({ kyc: "/admin/kyc", reports: "/admin/reports", cashouts: "/admin/wallet", finance: "/admin/finance", aml: "/admin/aml", hiring: "/admin/hiring", collabs: "/admin/collabs", feedback: "/admin/feedback" });
   });

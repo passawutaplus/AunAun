@@ -45,7 +45,7 @@ import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import PackagesIcon from "@/components/icons/PackagesIcon";
 import type { AdminAlertCounts } from "@/hooks/admin/useAdminAlerts";
 import type { AdminStats } from "@/hooks/admin/useAdminData";
-import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
+import { isAplus1LaunchMinimal, isAplus1PxEnabled } from "@/lib/aplus1Launch";
 import { adminDbGapForPath } from "@/lib/admin/adminDbGaps";
 import type { AdminTone } from "@/lib/admin/adminTone";
 
@@ -144,12 +144,12 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     id: "money",
     title: "การเงิน",
-    description: "ออเดอร์จ้าง การจ่ายเงิน กระเป๋า และของขวัญ",
+    description: "ออเดอร์จ้าง การจ่ายเงิน และการโอนให้ครีเอเตอร์",
     icon: Wallet,
     tone: "amber",
     items: [
-      { to: "/admin/finance", label: "การเงิน (Omise)", hint: "เงินบาท: payout, webhook, ข้อพิพาท, ค่าธรรมเนียม", icon: Banknote, badgeKey: "finance", keywords: ["omise", "payout", "จ่ายเงิน", "promptpay", "dispute", "fee"] },
-      { to: "/admin/wallet", label: "กระเป๋า & ถอนเงิน", hint: "ยอด PX และคำขอถอนเงิน", icon: Wallet, badgeKey: "cashouts", statKey: "pendingCashouts", statLabel: "ถอนรออนุมัติ", keywords: ["wallet", "cashout", "ถอน", "px", "ledger"] },
+      { to: "/admin/finance", label: "การเงิน (Omise)", hint: "เงินบาท: payout, webhook, ข้อพิพาท, ค่าธรรมเนียม", icon: Banknote, badgeKey: "finance", keywords: ["omise", "payso", "payout", "จ่ายเงิน", "ถอนเงิน", "โอนเงิน", "promptpay", "dispute", "ข้อพิพาท", "fee", "ค่าธรรมเนียม", "refund", "คืนเงิน"] },
+      { to: "/admin/wallet", label: "กระเป๋า PX & ถอนเงิน", hint: "ยอด PX และคำขอถอนเงิน (ปิดอยู่)", icon: Wallet, badgeKey: "cashouts", statKey: "pendingCashouts", statLabel: "ถอนรออนุมัติ", keywords: ["wallet", "cashout", "ถอน", "px", "ledger"] },
       { to: "/admin/gifts", label: "ของขวัญ", hint: "การสนับสนุนครีเอเตอร์ และเพดาน", icon: Gift, statKey: "gifts24h", statLabel: "24 ชม.", keywords: ["gift", "tip"] },
       { to: "/admin/ads", label: "โฆษณา", hint: "แคมเปญและพื้นที่โปรโมต", icon: Megaphone, keywords: ["ads", "ad", "โปรโมต", "boost"] },
     ],
@@ -214,9 +214,13 @@ function matchesPrefix(pathname: string, prefixes: readonly string[]): boolean {
   return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
+/** PX wallet and gifts: out of the product for now. Hidden until VITE_APLUS1_PX_ENABLED is on (same switch as the public app). */
+export const ADMIN_PX_ADMIN_PATHS = ["/admin/wallet", "/admin/gifts"] as const;
+
 export function isAdminLaunchHiddenPath(pathname: string): boolean {
-  if (!isAplus1LaunchMinimal()) return false;
   if (pathname === "/admin" || pathname === "/admin/") return false;
+  if (!isAplus1PxEnabled() && matchesPrefix(pathname, ADMIN_PX_ADMIN_PATHS)) return true;
+  if (!isAplus1LaunchMinimal()) return false;
   return matchesPrefix(pathname, ADMIN_LAUNCH_HIDDEN_ADMIN_PATHS);
 }
 

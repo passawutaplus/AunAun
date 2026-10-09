@@ -33,6 +33,7 @@ import {
 } from "@/hooks/admin/useAdminData";
 import { useAdminAlertCounts } from "@/hooks/admin/useAdminAlerts";
 import { useAdminQueue } from "@/hooks/admin/useAdminQueue";
+import { isAplus1PxEnabled } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
 const typeIcon = {
@@ -109,7 +110,7 @@ export default function OverviewPage() {
     { label: "คอมเมนต์", value: stats?.comments24h ?? "—", icon: MessageCircle },
     { label: "+1 ผลงาน", value: stats?.likes24h ?? "—", icon: Heart },
     { label: "ยอดวิว", value: stats?.views24h ?? "—", icon: Eye },
-    { label: "ของขวัญ", value: stats?.gifts24h ?? "—", icon: Gift },
+    ...(isAplus1PxEnabled() ? [{ label: "ของขวัญ", value: stats?.gifts24h ?? "—", icon: Gift, accent: false }] : []),
   ];
   const totals = [
     { label: "ผู้ใช้ทั้งหมด", value: stats?.totalUsers ?? "—", icon: Users },
@@ -193,7 +194,7 @@ export default function OverviewPage() {
         <h2 id="today-title" className="mb-3 text-base font-medium text-admin-fg">
           ตัวเลข 24 ชั่วโมงล่าสุด
         </h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
           {today.map((k) => (
             <KpiCard key={k.label} label={k.label} value={k.value} icon={k.icon} accent={k.accent} />
           ))}

@@ -1,4 +1,4 @@
--- verify.sql — read-only. Run AFTER apply-all.sql (or after each file). Every row should say PASS.
+-- verify.sql — read-only. Run AFTER apply-all.sql (or after each file). Every row should say pass = true (17 rows).
 select * from (
   select 1 as n, '01 forum attachment scan guard trigger' as check,
          exists (select 1 from pg_trigger where tgname = 'trg_guard_forum_attachment_scan' and not tgisinternal) as pass
@@ -45,5 +45,11 @@ select * from (
          (select not bool_or(has_function_privilege('anon', p.oid, 'EXECUTE') or has_function_privilege('authenticated', p.oid, 'EXECUTE'))
             from pg_proc p join pg_namespace n on n.oid = p.pronamespace
            where n.nspname = 'public' and p.proname in ('enqueue_email', 'read_email_batch', 'move_to_dlq'))
+  union all select 16, '08 mock hire payments are OFF (mock_topup_enabled = false)',
+         coalesce((select not mock_topup_enabled and not stripe_px_enabled from public.payment_settings where id = 1), false)
+  union all select 17, '08 PX / gift mutating RPCs are not callable by signed-in users or anon',
+         (select not bool_or(has_function_privilege('authenticated', p.oid, 'EXECUTE') or has_function_privilege('anon', p.oid, 'EXECUTE'))
+            from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where (n.nspname, p.proname) in (('public','send_gift'), ('public','claim_daily_px'), ('public','claim_welcome_mission'), ('anthem','request_cashout')))
 ) t
 order by n;
