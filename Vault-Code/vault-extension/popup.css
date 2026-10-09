@@ -619,20 +619,49 @@ html,body{scrollbar-width:thin;scrollbar-color:rgba(47,49,51,.28) transparent}
 .keepall-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:9px;min-height:46px;border-radius:14px;color:var(--coral);cursor:pointer}
 .keepall-btn span{color:var(--text)}
 .keepall-btn:disabled{opacity:.5;cursor:default}
-.mo-keepall .a{left:10px;top:10px;width:62px;height:34px;background:linear-gradient(135deg,#e7c9a0,#c98b5a)}
-.mo-keepall .b{left:80px;top:10px;width:62px;height:34px}
-.mo-keepall .c{left:150px;top:10px;width:62px;height:34px;background:linear-gradient(135deg,#b6d6b0,#5f9a63)}
-.mo-keepall .d{left:10px;top:52px;width:62px;height:34px;background:linear-gradient(135deg,#d9b6d6,#8a5f9a)}
-.mo-keepall .mo-scan{animation:moScanAll 4.5s infinite}
-.mo-tick{position:absolute;top:14px;width:16px;height:16px;border-radius:50%;background:var(--coral);color:#fff;font-style:normal;font-size:10px;line-height:16px;text-align:center;opacity:0;animation:moTickIn 4.5s infinite}
-.mo-tick.t1{left:54px;animation-delay:.2s}
-.mo-tick.t2{left:124px;animation-delay:.5s}
-.mo-tick.t3{left:194px;animation-delay:.8s}
-.mo-keepall .mo-tag{left:auto;right:10px;bottom:10px;animation:moTagAll 4.5s infinite}
-@keyframes moScanAll{0%{left:0}55%,100%{left:100%}}
 @keyframes moTickIn{0%,18%{opacity:0;transform:scale(.4)}30%,100%{opacity:1;transform:scale(1)}}
 @keyframes moTagAll{0%,50%{opacity:0;transform:translateY(6px)}65%,100%{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.mo-tick,.mo-keepall .mo-tag{animation:none;opacity:1}}
 .popup.is-guest .keepall-row{display:none!important}
 .capture-actions{grid-template-columns:minmax(0,1fr)}
 @media (prefers-color-scheme: dark){.mo{background:#262a30}}
+
+/* Keep-all explainer: a website wireframe is scanned, then a picker pops up with ticked images */
+.mo-keepall{height:150px;background:#e9ecef}
+@media (prefers-color-scheme: dark){.mo-keepall{background:#1f2328}}
+.ka-page{position:absolute;left:10px;right:10px;top:10px;bottom:10px;border-radius:8px;background:#fff;box-shadow:0 0 0 1px rgba(127,127,127,.25);overflow:hidden}
+@media (prefers-color-scheme: dark){.ka-page{background:#2b3036}}
+.ka-bar{display:flex;align-items:center;gap:4px;height:14px;padding:0 6px;background:rgba(127,127,127,.18)}
+.ka-bar i{width:5px;height:5px;border-radius:50%;background:rgba(127,127,127,.6)}
+.ka-bar b{flex:1;height:6px;margin-left:6px;border-radius:3px;background:rgba(127,127,127,.28)}
+.ka-body{padding:7px 8px;display:flex;flex-direction:column;gap:5px}
+.ka-line{display:block;height:5px;border-radius:3px;background:rgba(127,127,127,.3)}
+.w60{width:60%}.w40{width:40%}.w80{width:80%}
+.ka-imgs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:2px 0}
+.ka-imgs i,.ka-grid i{display:block;aspect-ratio:4/3;border-radius:4px;position:relative}
+.g1{background:linear-gradient(135deg,#e7c9a0,#c98b5a)}
+.g2{background:linear-gradient(135deg,#9fc4d6,#4e8aa6)}
+.g3{background:linear-gradient(135deg,#b6d6b0,#5f9a63)}
+.g4{background:linear-gradient(135deg,#d9b6d6,#8a5f9a)}
+.ka-scan{position:absolute;left:0;right:0;top:14px;height:2px;background:var(--coral);box-shadow:0 0 14px var(--coral);animation:kaScan 6s infinite}
+.ka-imgs i{animation:kaFound 6s infinite}
+.ka-imgs i:nth-child(2){animation-delay:.12s}.ka-imgs i:nth-child(3){animation-delay:.24s}.ka-imgs i:nth-child(4){animation-delay:.36s}
+.ka-pop{position:absolute;left:50%;top:50%;width:150px;margin:-52px 0 0 -75px;padding:8px;border-radius:12px;background:#fff;color:#151719;box-shadow:0 10px 30px rgba(0,0,0,.35);opacity:0;transform:translateY(10px) scale(.92);animation:kaPop 6s infinite}
+@media (prefers-color-scheme: dark){.ka-pop{background:#1c1f23;color:#f4f5f6;box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.1)}}
+.ka-pop-head{display:flex;justify-content:space-between;align-items:center;font-size:10px;margin-bottom:6px}
+.ka-pop-head em{font-style:normal;padding:1px 6px;border-radius:999px;background:rgba(240,80,64,.15);color:var(--coral)}
+.ka-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.ka-grid u{position:absolute;right:2px;top:2px;width:11px;height:11px;border-radius:50%;background:var(--coral);color:#fff;font-size:8px;line-height:11px;text-align:center;text-decoration:none;opacity:0;animation:kaTick 6s infinite}
+.ka-grid i:nth-child(2) u{animation-delay:.25s}.ka-grid i:nth-child(3) u{animation-delay:.5s}
+.ka-keep{margin-top:7px;padding:5px 0;border-radius:8px;background:var(--coral);color:#fff;font-size:10px;text-align:center;animation:kaBtn 6s infinite}
+@keyframes kaScan{0%{top:14px;opacity:1}38%{top:calc(100% - 4px);opacity:1}42%,100%{top:calc(100% - 4px);opacity:0}}
+@keyframes kaFound{0%,12%{transform:none;box-shadow:none}24%,38%{transform:scale(1.07);box-shadow:0 0 0 2px var(--coral)}46%,100%{transform:none;box-shadow:none}}
+@keyframes kaPop{0%,40%{opacity:0;transform:translateY(10px) scale(.92)}50%,86%{opacity:1;transform:none}94%,100%{opacity:0;transform:translateY(6px) scale(.96)}}
+@keyframes kaTick{0%,52%{opacity:0;transform:scale(.3)}60%,100%{opacity:1;transform:scale(1)}}
+@keyframes kaBtn{0%,70%{transform:none}76%{transform:scale(1.07)}82%,100%{transform:none}}
+@media(prefers-reduced-motion:reduce){.ka-scan{display:none}.ka-pop{animation:none;opacity:1;transform:none}.ka-grid u{animation:none;opacity:1}.ka-imgs i,.ka-keep{animation:none}}
+
+/* Title: no box, just an underline */
+#titleInput{border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;box-shadow:none;padding-left:0;padding-right:0;font-size:15px}
+#titleInput:focus{outline:none;border-bottom-color:var(--coral)}
+@media (prefers-color-scheme: dark){.popup #titleInput{background:transparent;border:0;border-bottom:1px solid #3a4047;border-radius:0}.popup #titleInput:focus{border-bottom-color:var(--coral)}}
