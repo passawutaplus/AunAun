@@ -34,7 +34,14 @@ export const Route = createFileRoute("/api/public/payments/client-checkout")({
         }
 
         const paymentType = parsed.paymentType ?? "deposit";
-        const environment = parsed.environment === "live" ? "live" : "sandbox";
+        // Server-pinned environment wins; the client value is only a fallback when STRIPE_ENVIRONMENT is unset.
+        const pinned = process.env.STRIPE_ENVIRONMENT;
+        const environment =
+          pinned === "live" || pinned === "sandbox"
+            ? pinned
+            : parsed.environment === "live"
+              ? "live"
+              : "sandbox";
 
         if (paymentType === "escrow") {
           const result = await createEscrowCheckoutSession({

@@ -1,27 +1,25 @@
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return mismatch === 0;
-}
+import { createHash, timingSafeEqual } from "node:crypto";
 
-function matchesAnySecret(token: string, secrets: string[]): boolean {
-  for (const secret of secrets) {
-    if (secret && timingSafeEqual(token, secret)) return true;
-  }
-  return false;
+/** Constant-time compare that does not leak length (both sides hashed to 32 bytes). */
+function safeEqual(a: string, b: string): boolean {
+  const ha = createHash("sha256").update(a).digest();
+  const hb = createHash("sha256").update(b).digest();
+  return timingSafeEqual(ha, hb);
 }
 
 /**
  * Authorize internal cron routes with CRON_SECRET (preferred).
- * Falls back to SUPABASE_SERVICE_ROLE_KEY during migration only.
+ *
+ * SUPABASE_SERVICE_ROLE_KEY is still accepted as a legacy fallback so existing callers keep
+ * working, but it logs a warning. Set CRON_DISALLOW_SERVICE_KEY=true once every cron caller
+ * sends CRON_SECRET to remove the fallback.
  */
 export function authorizeCronBearer(request: Request): Response | null {
   const cronSecret = process.env.CRON_SECRET?.trim();
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const allowServiceKey = process.env.CRON_DISALLOW_SERVICE_KEY !== "true";
 
-  const acceptedSecrets = [cronSecret, serviceKey].filter(Boolean) as string[];
-  if (acceptedSecrets.length === 0) {
+  if (!cronSecret && !(allowServiceKey && serviceKey)) {
     return Response.json({ error: "Server configuration error" }, { status: 500 });
   }
 
@@ -31,9 +29,12 @@ export function authorizeCronBearer(request: Request): Response | null {
   }
 
   const token = authHeader.slice("Bearer ".length).trim();
-  if (!matchesAnySecret(token, acceptedSecrets)) {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (cronSecret && safeEqual(token, cronSecret)) return null;
+
+  if (allowServiceKey && serviceKey && safeEqual(token, serviceKey)) {
+    console.warn("[cronAuth] request authorized with legacy service-role key; migrate caller to CRON_SECRET");
+    return null;
   }
 
-  return null;
+  return Response.json({ error: "Forbidden" }, { status: 403 });
 }

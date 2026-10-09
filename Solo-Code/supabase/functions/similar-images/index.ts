@@ -70,7 +70,7 @@ function metaTokens(p: ProjectRow): Set<string> {
   ]
     .join(" ")
     .toLowerCase()
-    .split(/[\s,./|#()[\]{}:;'"!?+\-]+/)
+    .split(/[\s,./|#()[\]{}:;'"!?+-]+/)
     .filter((t) => t.length >= 2);
   return new Set(parts);
 }

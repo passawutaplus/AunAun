@@ -46,7 +46,8 @@ export function SignaturePadField({ onChange, disabled }: Props) {
 
   React.useEffect(() => {
     if (padRef.current) {
-      disabled ? padRef.current.off() : padRef.current.on();
+      if (disabled) padRef.current.off();
+      else padRef.current.on();
     }
   }, [disabled]);
 

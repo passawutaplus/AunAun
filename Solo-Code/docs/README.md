@@ -34,14 +34,14 @@
 | [`test-accounts.md`](./test-accounts.md) | QA | Role matrix |
 | [`e2e-guide.md`](../../docs/e2e-guide.md) | QA | Playwright + Puppeteer |
 | [`meeting-capture.md`](./meeting-capture.md) | Dev | Smart Brief / Meeting Capture (launched) |
-| [`../supabase/README.md`](../supabase/README.md) | Dev / Ops | 136 migrations, 19 edge functions |
+| [`../supabase/README.md`](../supabase/README.md) | Dev / Ops | 235 migrations, 30 edge functions |
 
 ## Quick start (dev)
 
 ```bash
 npm install
 npm run dev              # → http://localhost:5173
-npm run test             # vitest (60 tests)
+npm run test             # vitest (129 tests, 25 files)
 npm run test:gate          # unit + smoke
 npm run smoke:public
 npm run stripe:sync        # Stripe sandbox catalog
