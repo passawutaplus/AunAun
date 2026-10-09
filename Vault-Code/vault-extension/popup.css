@@ -665,3 +665,28 @@ html,body{scrollbar-width:thin;scrollbar-color:rgba(47,49,51,.28) transparent}
 #titleInput{border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;box-shadow:none;padding-left:0;padding-right:0;font-size:15px}
 #titleInput:focus{outline:none;border-bottom-color:var(--coral)}
 @media (prefers-color-scheme: dark){.popup #titleInput{background:transparent;border:0;border-bottom:1px solid #3a4047;border-radius:0}.popup #titleInput:focus{border-bottom-color:var(--coral)}}
+
+/* Layout grid: one 16px gutter, 12px between sections, 8px inside a section */
+.popup{display:flex;flex-direction:column;gap:12px;padding:16px}
+.popup>*{margin:0!important;width:100%;min-width:0}
+.popup-header{margin:0;padding:0}
+.capture-card{display:flex;flex-direction:column;gap:8px;padding:12px}
+.capture-card>*{margin:0}
+.capture-card label:not(.toggle-row){margin:4px 0 -4px}
+.capture-card .capture-actions{margin:4px 0 0}
+.capture-card .duplicate-hint{margin:0}
+.capture-meta{margin:-2px 0 0}
+.keepall-row .opt-row{gap:8px}
+.keepall-row .info-panel{margin:8px 0 0}
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.quick-actions button{min-height:46px;width:100%}
+.recent-section{padding:0;border:0}
+.recent-section .section-head{margin:0 0 8px}
+.recent-list{min-height:0;gap:8px}
+.settings{display:flex;flex-direction:column;gap:8px;margin:0;padding-top:12px;border-top:1px solid var(--line)}
+.settings>*{margin:0}
+.settings .toggle-row{margin:0;padding:12px}
+.settings .connect-row{margin:0;padding:2px 2px 0}
+.quick-card,.queue-row,.status{margin:0}
+
+.info-btn{width:28px;height:28px;min-height:0;flex:0 0 28px;padding:0;display:grid;place-items:center;align-self:center}
