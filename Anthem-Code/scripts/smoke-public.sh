@@ -41,8 +41,8 @@ check_robots_txt() {
     fail=1
     return
   fi
-  if ! grep -qF 'Sitemap: https://aplus1.app/sitemap.xml' "$body_file"; then
-    echo "FAIL /robots.txt missing Sitemap aplus1.app"
+  if ! grep -qF 'Sitemap: https://samecor.com/sitemap.xml' "$body_file"; then
+    echo "FAIL /robots.txt missing Sitemap samecor.com"
     seo_fail=1
   fi
   if ! grep -qF 'Disallow: /portfolio/saved' "$body_file"; then
@@ -78,7 +78,7 @@ check_sitemap_xml() {
     echo "FAIL /sitemap.xml missing /legal/community"
     seo_fail=1
   fi
-  if ! grep -q '/forum</loc>' "$body_file" && ! grep -q 'aplus1.app/forum</loc>' "$body_file"; then
+  if ! grep -q '/forum</loc>' "$body_file" && ! grep -q 'samecor.com/forum</loc>' "$body_file"; then
     echo "FAIL /sitemap.xml missing /forum"
     seo_fail=1
   fi
