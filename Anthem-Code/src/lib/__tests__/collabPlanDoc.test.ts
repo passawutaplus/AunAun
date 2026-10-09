@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  collabStallDays,
   countCollabPlanProgress,
   emptyAlignPayload,
   emptyCollabPlanDocument,
@@ -44,5 +45,16 @@ describe("quick mode", () => {
     doc.currentStep = "publish";
     doc.status = "step_locked";
     expect(countCollabPlanProgress(doc)).toEqual({ done: 3, total: 3 });
+  });
+});
+
+describe("collabStallDays", () => {
+  const now = Date.parse("2026-10-20T00:00:00Z");
+  it("counts whole days since the last update", () => {
+    expect(collabStallDays("2026-10-12T00:00:00Z", now)).toBe(8);
+    expect(collabStallDays("2026-10-19T12:00:00Z", now)).toBe(0);
+  });
+  it("is 0 for invalid dates", () => {
+    expect(collabStallDays("nope", now)).toBe(0);
   });
 });

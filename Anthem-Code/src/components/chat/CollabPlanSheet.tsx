@@ -47,6 +47,8 @@ import {
   nextStepId,
   prevStepId,
   isStepSkipped,
+  collabStallDays,
+  COLLAB_STALL_DAYS,
   validateAlignRequired,
   type AlignRequiredField,
   type CollabAlignPayload,
@@ -580,6 +582,21 @@ export function CollabPlanSheet({
       }
     } catch (e: unknown) {
       toast.error(getSupabaseErrorMessage(e, "อัปเดตไม่สำเร็จ"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onNudge = async () => {
+    setBusy(true);
+    try {
+      await send.mutateAsync({
+        conversationId,
+        content: `⏰ ช่วยเข้ามายืนยันแผนคอลแลปขั้น「${stage.title}」หน่อยนะ — ค้างอยู่ ${collabStallDays(doc.updatedAt)} วันแล้ว`,
+      });
+      toast.success("ส่งข้อความเตือนในแชทแล้ว");
+    } catch (e: unknown) {
+      toast.error(getSupabaseErrorMessage(e, "ส่งไม่สำเร็จ"));
     } finally {
       setBusy(false);
     }
@@ -2345,6 +2362,26 @@ export function CollabPlanSheet({
                   </>
                 ) : null}
               </p>
+            ) : null}
+            {awaitingAllAcks && !isViewingHistory && !collabEnded &&
+            collabStallDays(doc.updatedAt) >= COLLAB_STALL_DAYS &&
+            pendingAckMembers.some((m) => m.id !== user?.id) ? (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-900 dark:text-amber-200 space-y-1.5">
+                <p>
+                  ขั้นนี้ค้างมา {collabStallDays(doc.updatedAt)} วันแล้ว — ลองเตือนอีกฝ่ายในแชท
+                  ถ้ายังเงียบอยู่ ขอจบคอลแลปได้จากเมนูของแชท
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full h-7 text-[11px]"
+                  disabled={busy}
+                  onClick={() => void onNudge()}
+                >
+                  เตือนในแชท
+                </Button>
+              </div>
             ) : null}
             {awaitingAllAcks && demoShortcuts && !isViewingHistory ? (
               <p className="text-[11px] text-amber-800 dark:text-amber-300 text-center leading-relaxed rounded-xl bg-amber-500/10 px-3 py-2">

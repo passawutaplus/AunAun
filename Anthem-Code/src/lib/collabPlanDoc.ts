@@ -726,6 +726,15 @@ export function isStepSkipped(step: CollabPipelineStageId, quick?: boolean): boo
   return !!quick && QUICK_SKIPPED.includes(step);
 }
 
+/** Days the plan has sat unchanged while still waiting on confirmations (0 if recently active). */
+export const COLLAB_STALL_DAYS = 7;
+
+export function collabStallDays(updatedAt: string, now: number = Date.now()): number {
+  const t = Date.parse(updatedAt);
+  if (!Number.isFinite(t)) return 0;
+  return Math.max(0, Math.floor((now - t) / 86_400_000));
+}
+
 export function nextStepId(
   step: CollabPipelineStageId,
   quick?: boolean,
