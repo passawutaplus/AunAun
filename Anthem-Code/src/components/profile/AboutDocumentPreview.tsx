@@ -30,7 +30,8 @@ import {
 } from "@/lib/validators";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { displayInitials } from "@/lib/avatarPool";
-import { safeHttpUrl, socialDisplayId } from "@/lib/safeUrl";
+import { safeHttpUrl } from "@/lib/safeUrl";
+import { socialDisplayId } from "@/lib/externalUrl";
 import {
   cvPortraitUrl,
   CV_LANGUAGE_LEVEL_LABELS,

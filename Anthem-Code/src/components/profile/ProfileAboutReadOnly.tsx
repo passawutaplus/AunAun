@@ -25,7 +25,8 @@ import ToolIcon from "@/components/ToolIcon";
 import LineMarkIcon from "@/components/icons/LineMarkIcon";
 import type { ExperienceItem, SocialLinkItem } from "@/lib/validators";
 import { displayProfileAddress } from "@/lib/profileAddress";
-import { safeHttpUrl, socialDisplayId } from "@/lib/safeUrl";
+import { safeHttpUrl } from "@/lib/safeUrl";
+import { socialDisplayId } from "@/lib/externalUrl";
 import { displayInitials } from "@/lib/avatarPool";
 import { cn } from "@/lib/utils";
 import {
