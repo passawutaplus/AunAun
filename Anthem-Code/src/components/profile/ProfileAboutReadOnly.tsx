@@ -25,7 +25,8 @@ import ToolIcon from "@/components/ToolIcon";
 import LineMarkIcon from "@/components/icons/LineMarkIcon";
 import type { ExperienceItem, SocialLinkItem } from "@/lib/validators";
 import { displayProfileAddress } from "@/lib/profileAddress";
-import { safeHttpUrl, socialDisplayId } from "@/lib/safeUrl";
+import { safeHttpUrl } from "@/lib/safeUrl";
+import { socialDisplayId } from "@/lib/externalUrl";
 import { displayInitials } from "@/lib/avatarPool";
 import { cn } from "@/lib/utils";
 import {
@@ -209,7 +210,7 @@ export function ProfileAboutReadOnly({
           {showPortrait ? (
             <div className="h-40 w-40 overflow-hidden rounded-2xl bg-secondary ring-1 ring-border/80 sm:h-44 sm:w-44">
               {portrait ? (
-                <img
+                <img loading="lazy" decoding="async"
                   src={portrait}
                   alt={fullName ? `About Me photo of ${fullName}` : "About Me photo"}
                   className="h-full w-full object-cover"

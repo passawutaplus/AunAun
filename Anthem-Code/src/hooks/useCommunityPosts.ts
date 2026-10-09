@@ -29,6 +29,7 @@ import {
   type ProjectCategory,
 } from "@/data/projectTypes";
 import { tagsMatchFilter } from "@/lib/communityRoutes";
+import { moderateCommunityComment, moderateCommunityPost } from "@/lib/communityModeration";
 import {
   useModerationState,
   useRecordProfanityStrike,

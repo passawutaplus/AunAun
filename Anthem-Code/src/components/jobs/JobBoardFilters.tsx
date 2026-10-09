@@ -117,7 +117,7 @@ export default function JobBoardFilters({
 export function JobBoardHero({ onPost }: { onPost: () => void }) {
   return (
     <section className="relative overflow-hidden rounded-3xl border border-border/50 bg-zinc-950 text-white h-[50svh] min-h-[280px] max-h-[560px]">
-      <img
+      <img loading="lazy" decoding="async"
         src="/job-covers/hiring-hero-designers.png"
         alt=""
         className="absolute inset-0 h-full w-full object-cover"

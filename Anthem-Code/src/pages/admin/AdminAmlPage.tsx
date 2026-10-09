@@ -27,7 +27,7 @@ const KpiCard = ({ label, value, icon: Icon, accent }: {
 );
 
 const Avatar = ({ url, name }: { url?: string | null; name?: string | null }) => (
-  url ? <img src={url} alt="" className="w-7 h-7 rounded-full object-cover" />
+  url ? <img loading="lazy" decoding="async" src={url} alt="" className="w-7 h-7 rounded-full object-cover" />
       : <div className="w-7 h-7 rounded-full bg-admin-hover text-admin-muted flex items-center justify-center text-xs font-medium">{(name ?? "?")[0]}</div>
 );
 

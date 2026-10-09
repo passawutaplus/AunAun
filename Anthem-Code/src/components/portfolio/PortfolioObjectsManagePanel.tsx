@@ -127,7 +127,7 @@ export default function PortfolioObjectsManagePanel() {
             placeholder="ค้นชื่อสินค้า"
             aria-label="ค้นชื่อสินค้า"
           />
-          <FilterChips options={PRODUCT_FILTERS} value={productFilter} onChange={setProductFilter} />
+          <FilterChips<"all" | ObjectStatus> options={PRODUCT_FILTERS} value={productFilter} onChange={setProductFilter} />
           {objects.isLoading ? (
             <p className="text-sm text-muted-foreground">กำลังโหลด…</p>
           ) : objects.isError ? (

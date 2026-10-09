@@ -66,7 +66,7 @@ const ProjectGallery = ({
               current === i ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
             }`}
           >
-            <img src={src} alt="" className="h-full w-full object-contain" />
+            <img loading="lazy" decoding="async" src={src} alt="" className="h-full w-full object-contain" />
           </button>
         ))}
       </div>

@@ -68,6 +68,12 @@ import {
 import { CanvasImageSlotDropDialog } from "@/components/project/CanvasImageSlotDropDialog";
 import { ModuleImageWithCrop } from "@/components/project/ModuleImageWithCrop";
 import { isVideoFile, PROJECT_VIDEO_ACCEPT } from "@/lib/videoAccept";
+import {
+  isAllowedPortfolioImage,
+  isAllowedPortfolioStillImage,
+  PORTFOLIO_IMAGE_ACCEPT,
+  PORTFOLIO_STILL_IMAGE_ACCEPT,
+} from "@/lib/normalizeImageUpload";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -637,6 +643,7 @@ function SortableCanvasBlock({
   canDuplicate,
   uploadStageLabel,
   uploadStagePercent,
+  onCancelUpload,
   onSelect,
   onPatch,
   onRemove,
@@ -658,6 +665,7 @@ function SortableCanvasBlock({
   uploading?: boolean;
   uploadStageLabel?: string | null;
   uploadStagePercent?: number | null;
+  onCancelUpload?: () => void;
   selected?: boolean;
   insertHint?: InsertEdge | null;
   canDuplicate?: boolean;
@@ -1527,6 +1535,7 @@ export function ProjectCanvasEditor({
                   uploading={uploadingBlockId === block.id || blockHasLocalPreview(block)}
                   uploadStageLabel={uploadStageLabel}
                   uploadStagePercent={uploadStagePercent}
+                  onCancelUpload={onCancelUpload}
                   selected={selectedId === block.id}
                   insertHint={insertHint?.blockId === block.id ? insertHint.edge : null}
                   onSelect={() => setSelectedId(block.id)}

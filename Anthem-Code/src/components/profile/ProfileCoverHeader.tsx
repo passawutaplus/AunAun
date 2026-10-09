@@ -190,7 +190,7 @@ export default function ProfileCoverHeader({
     <section className="mb-4 md:mb-6">
       <div className="relative aspect-[32/9] w-full bg-muted overflow-hidden rounded-b-2xl md:rounded-b-3xl group/cover">
         {hasCover ? (
-          <img src={coverUrl} alt="" className="w-full h-full object-cover" />
+          <img loading="lazy" decoding="async" src={coverUrl} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-gradient-brand opacity-75" />
         )}

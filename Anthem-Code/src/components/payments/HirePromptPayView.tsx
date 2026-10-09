@@ -74,7 +74,7 @@ export default function HirePromptPayView({
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-4">
         <div className="flex h-52 w-52 items-center justify-center rounded-xl border border-border bg-white">
           {charge.qrCodeUri ? (
-            <img
+            <img loading="lazy" decoding="async"
               src={charge.qrCodeUri}
               alt="PromptPay QR"
               className="h-full w-full rounded-xl object-contain"

@@ -110,7 +110,7 @@ import type { CollabGroupExpandRequestRow } from "@/lib/collabGroupExpand";
 function ChatAttachmentImage({ refUrl }: { refUrl: string }) {
   const src = useSignedStorageUrl(refUrl);
   if (!src) return <div className="rounded-2xl mb-1 h-32 bg-muted animate-pulse" />;
-  return <img src={src} alt="" className="rounded-2xl mb-1 max-h-72 object-cover" />;
+  return <img loading="lazy" decoding="async" src={src} alt="" className="rounded-2xl mb-1 max-h-72 object-cover" />;
 }
 
 function isImageAttachmentPath(refUrl: string): boolean {
@@ -725,7 +725,7 @@ const MessageBubble = ({
                   )}
                 >
                   {project.cover_url ? (
-                    <img src={project.cover_url} alt="" className="w-full max-h-40 object-cover" />
+                    <img loading="lazy" decoding="async" src={project.cover_url} alt="" className="w-full max-h-40 object-cover" />
                   ) : (
                     <div className="h-24 bg-muted flex items-center justify-center text-xs text-muted-foreground">
                       ไม่มีรูปปก
@@ -767,7 +767,7 @@ const MessageBubble = ({
                 >
                   <div className={cn("p-3 flex items-center gap-3", mine ? "bg-black/10" : "bg-card")}>
                     {profileCard.avatar_url ? (
-                      <img src={profileCard.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
+                      <img loading="lazy" decoding="async" src={profileCard.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
                     ) : (
                       <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-sm font-medium shrink-0">
                         {(profileCard.display_name ?? "?")[0]}
@@ -827,7 +827,7 @@ const MessageBubble = ({
                   )}
                 >
                   {(serviceCard.cover_url || serviceCard.gallery_urls?.[0]) ? (
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={serviceCard.cover_url || serviceCard.gallery_urls![0]}
                       alt=""
                       className="w-full max-h-40 object-cover"

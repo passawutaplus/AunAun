@@ -1,5 +1,6 @@
 import type { HireIncomeItem } from "@/lib/payments/hireWallet";
 import { satangToThb } from "@/lib/payments/fees";
+import { bangkokYmd } from "@/lib/format";
 
 export type HireIncomeWeekPoint = {
   weekStart: string;
@@ -9,15 +10,6 @@ export type HireIncomeWeekPoint = {
   netSatang: number;
   count: number;
 };
-
-function bangkokYmd(date: Date): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Bangkok",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
 
 function addDaysYmd(ymd: string, days: number): string {
   const [y, m, d] = ymd.split("-").map(Number);

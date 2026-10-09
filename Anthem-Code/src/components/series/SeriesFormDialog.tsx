@@ -149,7 +149,7 @@ export function SeriesFormDialog({ open, onOpenChange, initial, onCreated }: Pro
               />
               {coverUrl ? (
                 <div className="relative overflow-hidden rounded-xl border border-border/60">
-                  <img src={coverUrl} alt="" className="aspect-[4/3] w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={coverUrl} alt="" className="aspect-[4/3] w-full object-cover" />
                   <div className="absolute inset-x-0 bottom-0 flex gap-2 p-2 bg-gradient-to-t from-black/60 to-transparent">
                     <Button
                       type="button"

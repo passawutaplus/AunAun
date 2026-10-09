@@ -17,6 +17,7 @@ import HomeHeroWash from "@/components/feed/HomeHeroWash";
 import SeoHead from "@/components/SeoHead";
 import { shouldNoindexSearchParams } from "@/lib/seo";
 import { COLOR_MATCH_MIN, normalizeColorQuery } from "@/lib/colorSearch";
+import { similarSearchSuggestions } from "@/lib/searchSuggestions";
 import { useCoverColorScores } from "@/hooks/useCoverColorScores";
 import DrillFeedPanel from "@/components/drill/DrillFeedPanel";
 import ProjectCard from "@/components/ProjectCard";

@@ -635,7 +635,7 @@ const AdvertisePage = () => {
                   </Label>
                   <div className="mt-2 flex items-center gap-3">
                     {previewImage ? (
-                      <img src={previewImage} alt="" className="h-24 w-32 rounded-lg border object-cover" />
+                      <img loading="lazy" decoding="async" src={previewImage} alt="" className="h-24 w-32 rounded-lg border object-cover" />
                     ) : (
                       <div
                         className={cn(
@@ -751,7 +751,7 @@ const AdvertisePage = () => {
                       <div className="mt-2 flex flex-wrap items-center gap-3">
                         {sampleImages.map((url) => (
                           <div key={url} className="relative">
-                            <img src={url} alt="" className="h-24 w-32 rounded-lg border object-cover" />
+                            <img loading="lazy" decoding="async" src={url} alt="" className="h-24 w-32 rounded-lg border object-cover" />
                             <button
                               type="button"
                               onClick={() => setSampleImages((prev) => prev.filter((item) => item !== url))}
@@ -993,7 +993,7 @@ const AdvertisePage = () => {
                   aria-label="ติดต่อไลน์"
                   className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border bg-background hover:bg-accent"
                 >
-                  <img src="/brand-icons/line.svg" alt="" className="h-5 w-5" />
+                  <img loading="lazy" decoding="async" src="/brand-icons/line.svg" alt="" className="h-5 w-5" />
                 </a>
               </div>
             </div>
@@ -1013,7 +1013,7 @@ const AdvertisePage = () => {
                   <Card key={a.id} className="flex flex-col gap-3 p-4">
                     <div className="flex items-start gap-3">
                       {a.image_url ? (
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={a.image_url}
                           alt=""
                           className="h-16 w-16 shrink-0 rounded object-cover"

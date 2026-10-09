@@ -53,7 +53,7 @@ export function useUsernameAvailability(username: string, excludeUserId?: string
 }
 
 export type UsernameCheckResult =
-  | { ok: true; username: string }
+  | { ok: true; username: string; reason?: undefined; message?: undefined }
   | { ok: false; username: string; reason: "short" | "format" | "reserved" | "taken" | "error"; message: string };
 
 /** Imperative availability check (for click-to-verify UX). */

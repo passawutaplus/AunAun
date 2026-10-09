@@ -4,6 +4,31 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { KYC_HIGH_RISK_THRESHOLD } from "@/lib/reportAiTriage";
 
+/** Sources the database does not have yet (undefined table / function). Remembered per page load so we stop calling them. */
+const unavailableSources = new Set<string>();
+
+function isMissingObject(error: { code?: string; message?: string } | null | undefined): boolean {
+  if (!error) return false;
+  return (
+    ["42P01", "42883", "PGRST200", "PGRST202", "PGRST205"].includes(error.code ?? "") ||
+    /does not exist|could not find the (table|function)/i.test(error.message ?? "")
+  );
+}
+
+/** Run one counter; a missing table/function marks the source unavailable instead of hitting it every 30 s. */
+export async function countSource(
+  source: string,
+  run: () => PromiseLike<{ count: number | null; error: { code?: string; message?: string } | null }>,
+): Promise<number> {
+  if (unavailableSources.has(source)) return 0;
+  const res = await run();
+  if (isMissingObject(res.error)) {
+    unavailableSources.add(source);
+    return 0;
+  }
+  return res.count ?? 0;
+}
+
 export interface AdminAlertCounts {
   openReports: number;
   pendingCashouts: number;
@@ -16,34 +41,48 @@ export interface AdminAlertCounts {
   /** Unprocessed / errored provider webhooks */
   financeWebhookIssues: number;
   openFinanceDisputes: number;
+  /** Counter sources that are not in the database yet (see lib/admin/adminDbGaps.ts). */
+  unavailable: string[];
 }
 
 export function useAdminAlertCounts() {
   return useQuery<AdminAlertCounts>({
     queryKey: ["admin-alert-counts"],
     refetchInterval: 30_000,
+    retry: 1,
     queryFn: async () => {
       const [reports, cashouts, kyc, aml, kycHigh, urgent, financeOv] = await Promise.all([
-        supabase.from("user_reports" as never).select("*", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
-        supabase.from("cashout_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("aml_flags").select("*", { count: "exact", head: true }).eq("status", "open"),
-        supabase
-          .from("kyc_requests")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "pending")
-          .lt("ai_risk_score", KYC_HIGH_RISK_THRESHOLD),
-        supabase
-          .from("user_reports" as never)
-          .select("*", { count: "exact", head: true })
-          .in("status", ["open", "reviewing"])
-          .or("ai_priority.gte.70,ai_recommendation.eq.urgent"),
-        supabase.rpc("admin_finance_overview" as never),
+        countSource("reports", () =>
+          supabase.from("user_reports" as never).select("*", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
+        ),
+        countSource("cashouts", () =>
+          supabase.from("cashout_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        ),
+        countSource("kyc", () => supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "pending")),
+        countSource("aml", () => supabase.from("aml_flags").select("*", { count: "exact", head: true }).eq("status", "open")),
+        countSource("kyc-high-risk", () =>
+          supabase
+            .from("kyc_requests")
+            .select("*", { count: "exact", head: true })
+            .eq("status", "pending")
+            .lt("ai_risk_score", KYC_HIGH_RISK_THRESHOLD),
+        ),
+        countSource("reports-urgent", () =>
+          supabase
+            .from("user_reports" as never)
+            .select("*", { count: "exact", head: true })
+            .in("status", ["open", "reviewing"])
+            .or("ai_priority.gte.70,ai_recommendation.eq.urgent"),
+        ),
+        unavailableSources.has("finance")
+          ? Promise.resolve({ data: null, error: null })
+          : supabase.rpc("admin_finance_overview" as never),
       ]);
 
       let financePayoutQueue = 0;
       let financeWebhookIssues = 0;
       let openFinanceDisputes = 0;
+      if (isMissingObject(financeOv.error)) unavailableSources.add("finance");
       if (!financeOv.error && financeOv.data && typeof financeOv.data === "object") {
         const o = financeOv.data as {
           payout_queued_count?: number;
@@ -57,15 +96,16 @@ export function useAdminAlertCounts() {
       }
 
       return {
-        openReports: reports.count ?? 0,
-        pendingCashouts: cashouts.count ?? 0,
-        pendingKyc: kyc.count ?? 0,
-        openAml: aml.count ?? 0,
-        highRiskKyc: kycHigh.count ?? 0,
-        urgentReports: urgent.count ?? 0,
+        openReports: reports,
+        pendingCashouts: cashouts,
+        pendingKyc: kyc,
+        openAml: aml,
+        highRiskKyc: kycHigh,
+        urgentReports: urgent,
         financePayoutQueue,
         financeWebhookIssues,
         openFinanceDisputes,
+        unavailable: [...unavailableSources],
       };
     },
   });

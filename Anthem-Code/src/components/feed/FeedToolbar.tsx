@@ -525,7 +525,7 @@ const FeedToolbar = ({
             animate={{ y: homeScrolled ? "0%" : "-100%" }}
             transition={barSlide}
             aria-hidden={!homeScrolled || undefined}
-            inert={!homeScrolled ? true : undefined}
+            inert={!homeScrolled ? "" : undefined}
             style={{ pointerEvents: homeScrolled ? "auto" : "none" }}
           >
             <div className="border-b border-[#e4e1db] bg-[#f5f5f5]/95 backdrop-blur-md">

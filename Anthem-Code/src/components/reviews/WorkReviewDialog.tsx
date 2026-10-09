@@ -329,7 +329,7 @@ export function WorkReviewDialog({
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted ring-2 ring-border/50">
                   {subjectAvatar ? (
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={subjectAvatar}
                       alt=""
                       className="h-full w-full object-cover"

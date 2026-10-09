@@ -1,9 +1,38 @@
+import crypto from "node:crypto";
+
 /**
  * Tiny shared helpers for Anthem Vercel API routes (CommonJS-friendly ESM).
  */
 
 export function readEnv(name) {
   return process.env[name] || "";
+}
+
+/**
+ * Constant-time check of `Authorization: Bearer <secret>` (cron endpoints).
+ * Hashing first makes both buffers the same length, so timingSafeEqual never throws
+ * and the secret's length is not leaked either.
+ */
+export function safeBearerMatches(req, secret) {
+  if (!secret) return false;
+  const header = String(req.headers?.authorization || req.headers?.Authorization || "");
+  const sha = (s) => crypto.createHash("sha256").update(s).digest();
+  return crypto.timingSafeEqual(sha(header), sha(`Bearer ${secret}`));
+}
+
+/**
+ * Omise mode comes from the secret key itself (skey_test_* / skey_live_*), never from a flag alone.
+ * OMISE_MODE, when set, must agree with the key; a mismatch is a misconfiguration and fails closed.
+ * Returns { mode: "test" | "live" } or { error }.
+ */
+export function omiseModeFromKey(secretKey, flag) {
+  const key = String(secretKey || "");
+  const keyMode = key.startsWith("skey_live_") ? "live" : key.startsWith("skey_test_") ? "test" : "";
+  if (!keyMode) return { error: "omise_key_unrecognized" };
+  const declared = String(flag || "").trim().toLowerCase();
+  if (declared && declared !== keyMode) return { error: "omise_mode_mismatch" };
+  if (keyMode === "live" && declared !== "live") return { error: "omise_mode_mismatch" };
+  return { mode: keyMode };
 }
 
 export function json(res, status, body, { cache = "no-store" } = {}) {
@@ -65,6 +94,73 @@ export async function sharedRestGet(cfg, table, query) {
   if (!r.ok) return null;
   const rows = await r.json();
   return Array.isArray(rows) ? rows[0] ?? null : null;
+}
+
+/** GET rows from any exposed schema with the service key. Throws on HTTP error (fail-closed). */
+export async function restRows(cfg, schema, table, query) {
+  const r = await fetch(`${cfg.url}/rest/v1/${table}?${query}`, {
+    headers: {
+      apikey: cfg.key,
+      Authorization: `Bearer ${cfg.key}`,
+      "Accept-Profile": schema,
+    },
+  });
+  if (!r.ok) {
+    const err = new Error(`db_read_failed_${table}_${r.status}`);
+    err.status = 503;
+    throw err;
+  }
+  const rows = await r.json();
+  return Array.isArray(rows) ? rows : [];
+}
+
+/** Call a Postgres function with the service key. Throws on HTTP error. */
+export async function restRpc(cfg, schema, fn, args) {
+  const r = await fetch(`${cfg.url}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: {
+      apikey: cfg.key,
+      Authorization: `Bearer ${cfg.key}`,
+      "Content-Type": "application/json",
+      "Content-Profile": schema,
+      "Accept-Profile": schema,
+    },
+    body: JSON.stringify(args ?? {}),
+  });
+  const text = await r.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+  if (!r.ok) {
+    const msg = data && typeof data === "object" && data.message ? data.message : `rpc_${fn}_${r.status}`;
+    const err = new Error(String(msg));
+    err.status = r.status;
+    throw err;
+  }
+  return data;
+}
+
+/** Strict UUID check — ids go into PostgREST filters. */
+export function isUuid(v) {
+  return typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+}
+
+/**
+ * Amount the buyer must pay for a quote, mirroring src/lib/payments/fees.ts
+ * (PromptPay: (job − WHT) × deposit%). WHT rate is clamped to Thai rates 1–5%.
+ */
+export function expectedQuoteChargeSatang(quote) {
+  const job = Math.round(Number(quote?.amount_satang) || 0);
+  if (job <= 0) return 0;
+  const dep = Math.min(100, Math.max(1, Math.round(Number(quote?.deposit_percent) || 100)));
+  const payload = quote?.payload && typeof quote.payload === "object" ? quote.payload : {};
+  const rateRaw = Number(payload.whtRate ?? payload.wht_rate ?? 3);
+  const rate = Math.min(5, Math.max(1, Number.isFinite(rateRaw) ? rateRaw : 3));
+  const wht = quote?.wht_enabled === false ? 0 : Math.round((job * rate) / 100);
+  return Math.round(((job - wht) * dep) / 100);
 }
 
 export function makeHireReference() {

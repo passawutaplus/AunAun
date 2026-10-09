@@ -346,7 +346,6 @@ export function FlexGridToolsSidebar({
                         type="button"
                         draggable
                         onDragStart={(e) => {
-                          setActiveFlexPhotoGridPreset(null);
                           setActiveFlexGridDragType(card.type);
                           e.dataTransfer.setData(FLEX_GRID_TOOL_MIME, card.type);
                           e.dataTransfer.setData("text/plain", card.type);

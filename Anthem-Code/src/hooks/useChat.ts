@@ -784,7 +784,7 @@ async function seedCollabMessages(conversationId: string, requestId: string): Pr
   const { data: collab } = await supabase
     .from("collab_requests")
     .select(
-      "sender_id, message, timeline, collab_types, other_type_note, attached_project_ids, project_id, external_drive_url, website_url",
+      "sender_id, message, collab_types, other_type_note, attached_project_ids, project_id, external_drive_url, website_url",
     )
     .eq("id", requestId)
     .maybeSingle();
@@ -824,7 +824,7 @@ async function seedCollabMessages(conversationId: string, requestId: string): Pr
     project_cover_url: projectCoverUrl,
     project_id: titleId,
     message: collab.message as string | null,
-    timeline: collab.timeline as string | null,
+    timeline: null, // collab_requests has no timeline column
     collab_types: collab.collab_types as string[] | null,
     other_type_note: (collab as { other_type_note?: string | null }).other_type_note ?? null,
     reference_links: collectCollabReferenceLinks({

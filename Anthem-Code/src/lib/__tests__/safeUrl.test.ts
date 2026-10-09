@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { safeHttpUrl, safeRelativePath, socialDisplayId } from "../safeUrl";
+import { safeHttpUrl, safeRelativePath } from "../safeUrl";
+import { socialDisplayId } from "../externalUrl";
 
 describe("safeHttpUrl", () => {
   it("accepts http and https", () => {

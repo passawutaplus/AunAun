@@ -36,7 +36,7 @@ function LogoRow({
         style={!reduced ? { animationDuration: direction === "left" ? "38s" : "46s" } : undefined}
       >
         {loop.map((client, i) => (
-          <img
+          <img loading="lazy" decoding="async"
             key={`${client.name}-${direction}-${i}`}
             src={client.src}
             alt=""

@@ -107,7 +107,7 @@ function UploadedFileRow({ item }: { item: KycReviewUpload }) {
   return (
     <div className="flex items-center gap-2.5 min-w-0">
       {showImage ? (
-        <img
+        <img loading="lazy" decoding="async"
           src={item.preview}
           alt=""
           className="w-11 h-11 rounded-lg object-cover border border-border/70 bg-muted/40 shrink-0"

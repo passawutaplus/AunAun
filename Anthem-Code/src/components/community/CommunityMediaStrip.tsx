@@ -73,7 +73,7 @@ function SortableMediaThumb({
           <Play className="w-6 h-6 text-muted-foreground" />
         </div>
       ) : (
-        <img src={item.url} alt="" className="w-full h-full object-cover pointer-events-none" draggable={false} />
+        <img loading="lazy" decoding="async" src={item.url} alt="" className="w-full h-full object-cover pointer-events-none" draggable={false} />
       )}
       <button
         type="button"
@@ -144,7 +144,7 @@ export function CommunityMediaStrip({
             <Play className="w-6 h-6 text-muted-foreground" />
           </div>
         ) : (
-          <img src={item.url} alt="" className="w-full h-full object-cover" />
+          <img loading="lazy" decoding="async" src={item.url} alt="" className="w-full h-full object-cover" />
         )}
         <button
           type="button"

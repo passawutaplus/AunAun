@@ -220,7 +220,7 @@ const HiringOrgRegisterInner = () => {
                 <Label>โลโก้</Label>
                 <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={(e) => void uploadLogo(e.target.files?.[0])} />
                 <button type="button" className="mt-1 h-24 w-24 rounded-2xl border border-dashed grid place-items-center overflow-hidden" onClick={() => logoRef.current?.click()}>
-                  {logoBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : logoUrl ? <img src={logoUrl} alt="" className="h-full w-full object-cover" /> : <span className="text-xs text-muted-foreground">อัปโหลด</span>}
+                  {logoBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : logoUrl ? <img loading="lazy" decoding="async" src={logoUrl} alt="" className="h-full w-full object-cover" /> : <span className="text-xs text-muted-foreground">อัปโหลด</span>}
                 </button>
               </div>
               <div>
@@ -293,7 +293,7 @@ const HiringOrgRegisterInner = () => {
                 <PreviewRow label="ที่อยู่" value={dash(officeLine)} />
               </PreviewBlock>
               <PreviewBlock title="ตัวตนบนบอร์ด">
-                {logoUrl ? <img src={logoUrl} alt="" className="h-14 w-14 rounded-xl object-cover border border-border/60" /> : null}
+                {logoUrl ? <img loading="lazy" decoding="async" src={logoUrl} alt="" className="h-14 w-14 rounded-xl object-cover border border-border/60" /> : null}
                 <PreviewRow label="หมวดธุรกิจ" value={dash(category)} />
                 <PreviewRow label="คำอธิบาย" value={dash(description)} />
                 <PreviewRow label="ผู้ติดต่อ" value={dash(contactName)} />

@@ -1,6 +1,41 @@
 import crypto from "node:crypto";
-import { json, readEnv, supabaseServiceConfig } from "./_helpers.js";
+import {
+  expectedQuoteChargeSatang,
+  isUuid,
+  json,
+  readEnv,
+  restRows,
+  restRpc,
+  supabaseServiceConfig,
+} from "./_helpers.js";
 import { markObjectOrderPaidFromCharge } from "./object-order-paid.js";
+
+/** Keep the exact bytes Omise signed — HMAC breaks if we re-serialize parsed JSON. */
+export const config = { api: { bodyParser: false } };
+
+async function readRawBody(req) {
+  if (typeof req.on !== "function" || req.readableEnded) return null;
+  return await new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on("data", (c) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
+    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    req.on("error", reject);
+  });
+}
+
+/** Re-read the charge from Omise so we never act on a forged or stale payload. */
+async function fetchOmiseCharge(chargeId) {
+  const secret = readEnv("OMISE_SECRET_KEY");
+  if (!secret || !/^chrg_[A-Za-z0-9_]+$/.test(chargeId)) return null;
+  const r = await fetch(`https://api.omise.co/charges/${encodeURIComponent(chargeId)}`, {
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${secret}:`).toString("base64")}`,
+      "Omise-Version": "2019-05-29",
+    },
+  });
+  if (!r.ok) throw new Error(`omise_charge_fetch_${r.status}`);
+  return await r.json();
+}
 
 /**
  * Omise webhook receiver (Vercel serverless).
@@ -87,11 +122,9 @@ async function restRequest(cfg, { schema, table, method, query, body, prefer }) 
 }
 
 function isPaidChargeEvent(eventType, charge) {
-  const key = String(eventType || "").toLowerCase();
-  if (key.includes("charge.complete") || key.includes("charge.capture")) return true;
-  if (key.includes("charge.create") && charge?.paid === true) return true;
+  // charge.complete also fires for FAILED / expired charges — never trust the event name alone.
   const status = String(charge?.status || "").toLowerCase();
-  return status === "successful" || status === "paid";
+  return charge?.paid === true && status === "successful";
 }
 
 function extractCharge(payload) {
@@ -108,170 +141,133 @@ function metaValue(meta, key) {
   return v != null && String(v).trim() ? String(v).trim() : null;
 }
 
-async function processPaidCharge(cfg, charge, eventType) {
-  if (!charge?.id) return { skipped: "no_charge" };
-  if (!isPaidChargeEvent(eventType, charge)) return { skipped: "not_paid_event" };
+/** Find the hire order this charge pays for (metadata first, then order.metadata.charge_id). */
+async function findOrderForCharge(cfg, chargeId, meta) {
+  const cols =
+    "id,status,buyer_id,conversation_id,hiring_request_id,quote_id,buyer_pays_satang,balance_due_satang,deposit_percent";
+  const metaOrder = metaValue(meta, "hire_order_id");
+  if (metaOrder && isUuid(metaOrder)) {
+    const [row] = await restRows(cfg, "shared", "hire_orders", `id=eq.${metaOrder}&select=${cols}&limit=1`);
+    if (row) return row;
+  }
+  const [row] = await restRows(
+    cfg,
+    "shared",
+    "hire_orders",
+    `metadata->>charge_id=eq.${encodeURIComponent(chargeId)}&select=${cols}&limit=1`,
+  );
+  return row ?? null;
+}
+
+async function processPaidCharge(cfg, payloadCharge, eventType) {
+  if (!payloadCharge?.id) return { skipped: "no_charge" };
+  const chargeId = String(payloadCharge.id);
+
+  // Source of truth = Omise API, not the webhook body.
+  const charge = (await fetchOmiseCharge(chargeId)) ?? payloadCharge;
+  if (!isPaidChargeEvent(eventType, charge)) return { skipped: "not_paid", status: charge.status ?? null };
 
   const meta = charge.metadata || {};
-  const hireOrderId = metaValue(meta, "hire_order_id");
-  const hiringRequestId = metaValue(meta, "hiring_request_id");
-  const providerChargeId = String(charge.id);
-  const now = new Date().toISOString();
-
-  const result = { hireOrderId, hiringRequestId, paymentUpdated: false, orderUpdated: false, hireUpdated: false, messageInserted: false, objectOrderUpdated: false };
-
-  if (hireOrderId) {
-    const orderGet = await restRequest(cfg, {
-      schema: "shared",
-      table: "hire_orders",
-      method: "GET",
-      query: `id=eq.${encodeURIComponent(hireOrderId)}&select=buyer_pays_satang,buyer_id`,
-    });
-    const order = orderGet.ok && Array.isArray(orderGet.data) ? orderGet.data[0] : null;
-    if (!order) return { ...result, skipped: "hire_order_missing" };
-    if (Number(charge.amount) !== Number(order.buyer_pays_satang)) {
-      return { ...result, skipped: "amount_mismatch" };
-    }
-    const buyerMeta = metaValue(meta, "buyer_user_id");
-    if (buyerMeta && order.buyer_id && String(order.buyer_id) !== buyerMeta) {
-      return { ...result, skipped: "buyer_mismatch" };
-    }
-  }
-
   if (metaValue(meta, "object_order_id")) {
-    try {
-      const objectPaid = await markObjectOrderPaidFromCharge(cfg, charge);
-      result.objectOrder = objectPaid;
-      if (objectPaid?.objectOrderUpdated) result.objectOrderUpdated = true;
-    } catch (error) {
-      result.objectOrderError = error instanceof Error ? error.message : "object_order_failed";
+    const objectOrder = await markObjectOrderPaidFromCharge(cfg, charge);
+    return { chargeId, objectOrder, objectOrderUpdated: !!objectOrder?.objectOrderUpdated };
+  }
+  const paidSatang = Number(charge.amount);
+  const now = new Date().toISOString();
+  const result = { chargeId, amountSatang: paidSatang, orderConfirmed: false, hireUpdated: false, messageInserted: false };
+
+  const order = await findOrderForCharge(cfg, chargeId, meta);
+
+  // What should this charge have been?
+  let expected = null;
+  if (order) {
+    expected =
+      order.status === "deposit_paid" ? Number(order.balance_due_satang) : Number(order.buyer_pays_satang);
+  } else {
+    const quoteId = metaValue(meta, "quote_id");
+    if (quoteId && isUuid(quoteId)) {
+      const [quote] = await restRows(
+        cfg,
+        "shared",
+        "hire_quotes",
+        `id=eq.${quoteId}&select=amount_satang,deposit_percent,wht_enabled,payload&limit=1`,
+      );
+      if (quote) expected = expectedQuoteChargeSatang(quote);
     }
   }
+  if (expected == null || !Number.isFinite(expected) || expected <= 0) {
+    // Paid, but we cannot tie it to anything yet (order not created) — keep the event for retry/reconcile.
+    throw new Error("unlinked_paid_charge");
+  }
+  if (!Number.isFinite(paidSatang) || paidSatang < expected) {
+    throw new Error(`amount_mismatch paid=${paidSatang} expected=${expected}`);
+  }
 
-  // Payment row — by provider_charge_id or hire_order_id metadata
-  try {
-    let paymentQuery = `provider_charge_id=eq.${encodeURIComponent(providerChargeId)}`;
-    if (hireOrderId) {
-      paymentQuery = `or=(provider_charge_id.eq.${encodeURIComponent(providerChargeId)},hire_order_id.eq.${encodeURIComponent(hireOrderId)})`;
-    }
-    const payPatch = await restRequest(cfg, {
-      schema: "shared",
-      table: "payments",
-      method: "PATCH",
-      query: `${paymentQuery}&status=neq.paid`,
-      body: { status: "paid", paid_at: now, updated_at: now },
-      prefer: "return=representation",
+  // Payment row (if the app created one).
+  await restRequest(cfg, {
+    schema: "shared",
+    table: "payments",
+    method: "PATCH",
+    query: `provider_charge_id=eq.${encodeURIComponent(chargeId)}&status=neq.paid`,
+    body: { status: "paid", paid_at: now, updated_at: now },
+    prefer: "return=minimal",
+  });
+
+  let hiringRequestId = metaValue(meta, "hiring_request_id");
+  const wasPayable = !order || ["draft", "awaiting_payment", "deposit_paid"].includes(String(order.status));
+  if (order && !wasPayable) {
+    return { ...result, skipped: "already_confirmed", orderId: order.id };
+  }
+  if (order) {
+    const paidStatus =
+      order.status === "deposit_paid"
+        ? "paid_pending"
+        : Number(order.deposit_percent) < 100
+          ? "deposit_paid"
+          : "paid_pending";
+    await restRpc(cfg, "public", "confirm_hire_order_payment", {
+      _order_id: order.id,
+      _charge_id: chargeId,
+      _paid_status: paidStatus,
     });
-    if (payPatch.ok && Array.isArray(payPatch.data) && payPatch.data.length) {
-      result.paymentUpdated = true;
-      if (!hireOrderId && payPatch.data[0]?.hire_order_id) {
-        result.hireOrderId = payPatch.data[0].hire_order_id;
-      }
-    }
-  } catch {
-    /* columns/table may be missing */
+    result.orderConfirmed = true;
+    result.orderId = order.id;
+    hiringRequestId = order.hiring_request_id || hiringRequestId;
   }
 
-  const orderId = result.hireOrderId || hireOrderId;
-  if (orderId) {
-    try {
-      const orderPatch = await restRequest(cfg, {
-        schema: "shared",
-        table: "hire_orders",
-        method: "PATCH",
-        query: `id=eq.${encodeURIComponent(orderId)}&status=in.(awaiting_payment,draft,deposit_paid)`,
-        body: {
-          status: "paid_pending",
-          paid_at: now,
-          updated_at: now,
-        },
-        prefer: "return=representation",
-      });
-      if (orderPatch.ok && Array.isArray(orderPatch.data) && orderPatch.data.length) {
-        result.orderUpdated = true;
-        const row = orderPatch.data[0];
-        if (!result.hiringRequestId && row.hiring_request_id) {
-          result.hiringRequestId = row.hiring_request_id;
-        }
-        if (row.conversation_id) result.conversationId = row.conversation_id;
-        if (row.buyer_id) result.buyerId = row.buyer_id;
-      } else if (!result.conversationId) {
-        const orderGet = await restRequest(cfg, {
-          schema: "shared",
-          table: "hire_orders",
-          method: "GET",
-          query: `id=eq.${encodeURIComponent(orderId)}&select=conversation_id,buyer_id,hiring_request_id`,
-        });
-        if (orderGet.ok && Array.isArray(orderGet.data) && orderGet.data[0]) {
-          result.conversationId = orderGet.data[0].conversation_id;
-          result.buyerId = orderGet.data[0].buyer_id;
-          if (!result.hiringRequestId) result.hiringRequestId = orderGet.data[0].hiring_request_id;
-        }
-      }
-    } catch {
-      /* ignore */
-    }
+  if (hiringRequestId && isUuid(hiringRequestId)) {
+    const hirePatch = await restRequest(cfg, {
+      schema: "anthem",
+      table: "hiring_requests",
+      method: "PATCH",
+      query: `id=eq.${hiringRequestId}&status=neq.ปิดแล้ว`,
+      body: { status: "ตอบรับ", updated_at: now },
+      prefer: "return=minimal",
+    });
+    result.hireUpdated = hirePatch.ok;
   }
 
-  const hrId = result.hiringRequestId || hiringRequestId;
-  if (hrId) {
-    try {
-      const hirePatch = await restRequest(cfg, {
-        schema: "anthem",
-        table: "hiring_requests",
-        method: "PATCH",
-        query: `id=eq.${encodeURIComponent(hrId)}&status=neq.ปิดแล้ว`,
-        body: { status: "ตอบรับ", updated_at: now },
-        prefer: "return=minimal",
-      });
-      if (hirePatch.ok) result.hireUpdated = true;
-    } catch {
-      /* ignore */
-    }
-  }
-
-  if (result.conversationId) {
-    try {
-      const amount = charge.amount != null ? Number(charge.amount) / 100 : null;
-      const amountLabel = amount != null ? `฿${amount.toLocaleString("th-TH")}` : "ยอดชำระ";
-      const content = `ชำระเงิน ${amountLabel} สำเร็จ — Aplus1 รับเงินค่ำประกันแล้ว ผู้รับงานส่งผลงานได้เมื่อพร้อม`;
-      const senderId = result.buyerId || metaValue(meta, "buyer_id") || metaValue(meta, "user_id");
-      if (senderId) {
-        const msgRes = await restRequest(cfg, {
-          schema: "shared",
-          table: "messages",
-          method: "POST",
-          body: {
-            conversation_id: result.conversationId,
-            sender_id: senderId,
-            content,
-            message_type: "system",
-          },
-          prefer: "return=minimal",
-        });
-        if (msgRes.ok) result.messageInserted = true;
-      }
-    } catch {
-      /* ignore */
-    }
+  // System message in the chat (sender = buyer is required by the messages schema).
+  const conversationId = order?.conversation_id || null;
+  const senderId = order?.buyer_id || null;
+  if (conversationId && senderId) {
+    const amountLabel = `฿${(paidSatang / 100).toLocaleString("th-TH")}`;
+    const msgRes = await restRequest(cfg, {
+      schema: "shared",
+      table: "messages",
+      method: "POST",
+      body: {
+        conversation_id: conversationId,
+        sender_id: senderId,
+        content: `ชำระเงิน ${amountLabel} สำเร็จ — ระบบรับเงินค้ำประกันแล้ว ผู้รับงานส่งผลงานได้เมื่อพร้อม`,
+        message_type: "system",
+      },
+      prefer: "return=minimal",
+    });
+    result.messageInserted = msgRes.ok;
   }
 
   return result;
-}
-
-// HMAC must be computed over the exact bytes Omise sent, so the runtime must not parse the body.
-export const config = { api: { bodyParser: false } };
-
-async function readRawBody(req) {
-  if (req.readableEnded === false) {
-    const chunks = [];
-    for await (const chunk of req) chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
-    if (chunks.length) return Buffer.concat(chunks).toString("utf8");
-  }
-  const body = req.body;
-  if (Buffer.isBuffer(body)) return body.toString("utf8");
-  if (typeof body === "string") return body;
-  return body && typeof body === "object" ? JSON.stringify(body) : "";
 }
 
 export default async function handler(req, res) {
@@ -290,11 +286,18 @@ export default async function handler(req, res) {
       return json(res, 503, { error: "live_blocked_until_marketplace_approved" });
     }
 
-    const rawBody = await readRawBody(req);
-    if (!rawBody) return json(res, 400, { error: "empty_body" });
+    let rawBody = await readRawBody(req);
     let payload;
+    if (rawBody == null) {
+      // Fallback for runtimes that pre-parse: signature will only match if bytes are identical.
+      const b = req.body;
+      if (Buffer.isBuffer(b)) rawBody = b.toString("utf8");
+      else if (typeof b === "string") rawBody = b;
+      else if (b && typeof b === "object") rawBody = JSON.stringify(b);
+      else return json(res, 400, { error: "empty_body" });
+    }
     try {
-      payload = JSON.parse(rawBody);
+      payload = JSON.parse(rawBody || "");
     } catch {
       return json(res, 400, { error: "invalid_json" });
     }
@@ -335,17 +338,7 @@ export default async function handler(req, res) {
         if (charge) {
           processResult = await processPaidCharge(cfg, charge, eventType);
         }
-        if (processResult?.skipped === "amount_mismatch" || processResult?.skipped === "buyer_mismatch") {
-          console.error("omise-webhook rejected charge", String(eventId), processResult.skipped);
-          await restRequest(cfg, {
-            schema: "shared",
-            table: "provider_events",
-            method: "PATCH",
-            query: `provider=eq.omise&provider_event_id=eq.${encodeURIComponent(String(eventId))}`,
-            body: { process_error: processResult.skipped },
-            prefer: "return=minimal",
-          });
-        } else if (processResult && processResult.skipped === undefined) {
+        if (processResult && processResult.skipped === undefined) {
           await restRequest(cfg, {
             schema: "shared",
             table: "provider_events",
@@ -375,14 +368,19 @@ export default async function handler(req, res) {
       }
     }
 
-    return json(res, 200, {
-      ok: true,
+    // Paid but not linkable yet (order row created after payment) or DB hiccup → non-2xx so Omise retries.
+    const retryable =
+      processError && (processError.startsWith("unlinked_paid_charge") || processError.startsWith("db_read_failed") || processError.startsWith("omise_charge_fetch"));
+    if (!cfg) return json(res, 503, { ok: false, error: "db_not_configured" });
+
+    return json(res, retryable ? 503 : 200, {
+      ok: !processError,
       eventId: String(eventId),
       processed: processResult,
       processError,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    return json(res, 200, { ok: false, error: message });
+    return json(res, 500, { ok: false, error: message });
   }
 }

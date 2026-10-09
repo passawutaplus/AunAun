@@ -121,7 +121,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
         style={{ transformStyle: "preserve-3d" }}
       >
     <article
-      inert={flipped ? true : undefined}
+      inert={flipped ? "" : undefined}
       className="relative overflow-hidden rounded-none glass-panel p-4 flex flex-col gap-3.5 min-w-0 !shadow-none [backface-visibility:hidden]"
     >
       <div className="flex items-start gap-3">
@@ -328,7 +328,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
 
         {active ? (
           <div
-            inert={!flipped ? true : undefined}
+            inert={!flipped ? "" : undefined}
             className="absolute inset-0 overflow-hidden bg-muted [backface-visibility:hidden] [transform:rotateY(180deg)]"
           >
             <AnimatePresence mode="wait" custom={slideDir} initial={false}>

@@ -91,7 +91,9 @@ const getSessionId = () => {
 export const useActiveAds = (limit = 12) =>
   useQuery({
     queryKey: ["active-ads", limit],
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    retry: false,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_active_ads", { _limit: limit });
       if (error) {

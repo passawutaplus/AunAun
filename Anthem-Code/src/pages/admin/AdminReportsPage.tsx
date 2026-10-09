@@ -194,7 +194,7 @@ export default function AdminReportsPage() {
                 {r.evidence_files.map((f, i) => (
                   <a key={i} href={f.url} target="_blank" rel="noreferrer" className="block">
                     {f.type.startsWith("image/") ? (
-                      <img src={f.url} alt="" className="w-10 h-10 object-cover rounded border border-border" />
+                      <img loading="lazy" decoding="async" src={f.url} alt="" className="w-10 h-10 object-cover rounded border border-border" />
                     ) : (
                       <span className="text-[10px] underline">{f.name}</span>
                     )}

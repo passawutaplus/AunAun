@@ -3,7 +3,6 @@ import UserAvatar from "@/components/UserAvatar";
 import FollowButton from "@/components/FollowButton";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import type { FollowUser } from "@/hooks/useFollowLists";
-
 type Props = {
   user: FollowUser;
   showFollowedAt?: boolean;

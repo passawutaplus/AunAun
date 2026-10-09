@@ -66,7 +66,7 @@ export function ChatCollabActions({ conversation }: Props) {
       const { data, error } = await supabase
         .from("collab_requests")
         .select(
-          "id, sender_id, recipient_id, status, message, timeline, collab_types, project_id, reject_reason, reject_note, keep_chat",
+          "id, sender_id, recipient_id, status, message, collab_types, project_id, reject_reason, reject_note, keep_chat",
         )
         .eq("id", conversation.request_id!)
         .maybeSingle();
@@ -217,7 +217,7 @@ export function ChatCollabActions({ conversation }: Props) {
           id: row.id,
           sender_name: senderName,
           message: row.message,
-          timeline: row.timeline,
+          timeline: null,
           collab_types: row.collab_types,
           project_id: row.project_id,
         }}

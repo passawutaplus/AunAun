@@ -393,7 +393,7 @@ export function CollabProgressFeed({
                       rel="noreferrer"
                       className="block max-h-36 rounded-lg border border-border/60 overflow-hidden"
                     >
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={storageMediaPublicUrl(a.path)}
                         alt={a.name}
                         className="max-h-36 object-cover"
@@ -704,7 +704,7 @@ export function CollabProgressFeed({
                                   rel="noreferrer"
                                   className="block w-full h-full"
                                 >
-                                  <img
+                                  <img loading="lazy" decoding="async"
                                     src={storageMediaPublicUrl(img.path)}
                                     alt={img.name}
                                     className="w-full h-full object-cover"

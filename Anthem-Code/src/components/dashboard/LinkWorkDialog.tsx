@@ -151,7 +151,7 @@ export default function LinkWorkDialog({
                 >
                   <div className="w-12 h-12 rounded-lg overflow-hidden border border-border shrink-0 bg-muted">
                     {p.cover_url ? (
-                      <img src={p.cover_url} alt="" className="w-full h-full object-cover" />
+                      <img loading="lazy" decoding="async" src={p.cover_url} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground px-1 text-center">
                         {p.title.slice(0, 12)}

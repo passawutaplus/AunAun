@@ -11,7 +11,7 @@ type Props = {
 
 function ProjectThumb({ title, cover_url }: Pick<MentionedProjectSummary, "title" | "cover_url">) {
   if (cover_url) {
-    return <img src={cover_url} alt="" className="w-7 h-7 rounded-md object-cover shrink-0" />;
+    return <img loading="lazy" decoding="async" src={cover_url} alt="" className="w-7 h-7 rounded-md object-cover shrink-0" />;
   }
   return (
     <div className="w-7 h-7 rounded-md bg-muted shrink-0 grid place-items-center">

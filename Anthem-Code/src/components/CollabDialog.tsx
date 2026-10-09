@@ -93,7 +93,7 @@ function CollabWorkCard({
       )}
     >
       {thumb ? (
-        <img src={thumb} alt="" className="w-full h-full object-cover" />
+        <img loading="lazy" decoding="async" src={thumb} alt="" className="w-full h-full object-cover" />
       ) : (
         <div className="w-full h-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground p-1 text-center">
           {project.title}
@@ -147,11 +147,11 @@ function CollabCatalogThumb({
         )}
       >
         {thumb ? (
-          <img src={thumb} alt="" className="h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={thumb} alt="" className="h-full w-full object-cover" />
         ) : collage ? (
           <div className="grid h-full grid-cols-2 grid-rows-2 gap-px">
             {collage.map((url, i) => (
-              <img key={i} src={url} alt="" className="h-full w-full object-cover" />
+              <img loading="lazy" decoding="async" key={i} src={url} alt="" className="h-full w-full object-cover" />
             ))}
           </div>
         ) : (
@@ -196,7 +196,7 @@ function CollabWorkRow({
     >
       <div className="w-12 h-12 shrink-0 rounded-md overflow-hidden bg-muted">
         {thumb ? (
-          <img src={thumb} alt="" className="w-full h-full object-cover" />
+          <img loading="lazy" decoding="async" src={thumb} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-[9px] text-muted-foreground p-1 text-center">
             {project.title}
@@ -659,7 +659,7 @@ const CollabDialog = ({
               </div>
               <div className="flex items-center gap-3">
                 {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover" />
+                  <img loading="lazy" decoding="async" src={profile.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover" />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center text-primary">
                     <UserCircle2 className="w-7 h-7" />
@@ -898,7 +898,7 @@ const CollabDialog = ({
                   key={url}
                   className="relative h-16 w-16 overflow-hidden rounded-lg border border-border"
                 >
-                  <img src={url} alt="" className="h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={url} alt="" className="h-full w-full object-cover" />
                   <button
                     type="button"
                     aria-label="ลบรูป"

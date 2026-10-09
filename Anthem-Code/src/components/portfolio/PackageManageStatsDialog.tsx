@@ -353,7 +353,7 @@ export default function PackageManageStatsDialog({
                       className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/50 p-2.5 hover:bg-accent/40 transition-colors"
                     >
                       {r.coverUrl ? (
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={r.coverUrl}
                           alt=""
                           className="h-12 w-12 rounded-lg object-cover shrink-0"

@@ -29,7 +29,7 @@ const StudioCard = ({ data }: Props) => {
           aria-label={studio.name}
         >
           {studio.avatar_url ? (
-            <img src={studio.avatar_url} alt={studio.name} className="w-full h-full object-cover" />
+            <img loading="lazy" decoding="async" src={studio.avatar_url} alt={studio.name} className="w-full h-full object-cover" />
           ) : (
             <Building2 className="w-5 h-5" />
           )}
@@ -93,7 +93,7 @@ const StudioCard = ({ data }: Props) => {
                     title={m.display_name}
                   >
                     {m.avatar_url ? (
-                      <img src={m.avatar_url} alt="" className="w-full h-full object-cover" />
+                      <img loading="lazy" decoding="async" src={m.avatar_url} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-gradient-brand" />
                     )}

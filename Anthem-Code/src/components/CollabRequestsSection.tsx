@@ -567,7 +567,7 @@ const CollabRequestsSection = ({
                         <div className="flex flex-wrap gap-2">
                           {extraThumbs.map((thumb) => {
                             const body = thumb.cover ? (
-                              <img
+                              <img loading="lazy" decoding="async"
                                 src={thumb.cover}
                                 alt={thumb.title}
                                 className="h-16 w-16 rounded-lg border border-border/70 object-cover"

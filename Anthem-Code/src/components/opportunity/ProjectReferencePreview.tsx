@@ -30,7 +30,7 @@ const ProjectReferencePreview = ({
   const body = (
     <>
       {coverUrl?.trim() ? (
-        <img src={coverUrl} alt="" className={cn("shrink-0 object-cover", thumb)} />
+        <img loading="lazy" decoding="async" src={coverUrl} alt="" className={cn("shrink-0 object-cover", thumb)} />
       ) : (
         <div
           className={cn(

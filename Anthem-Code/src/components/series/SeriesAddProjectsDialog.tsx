@@ -35,7 +35,7 @@ const SORT_OPTIONS: { value: CatalogAddSortMode; label: string }[] = [
 ];
 
 function projectTime(p: DBProject): number {
-  const raw = p.published_at || p.created_at || p.updated_at || "";
+  const raw = p.created_at || p.updated_at || "";
   const t = Date.parse(raw);
   return Number.isNaN(t) ? 0 : t;
 }
@@ -199,7 +199,7 @@ export function SeriesAddProjectsDialog({
                 >
                   <div className="w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0">
                     {thumb ? (
-                      <img src={thumb} alt="" className="w-full h-full object-cover" />
+                      <img loading="lazy" decoding="async" src={thumb} alt="" className="w-full h-full object-cover" />
                     ) : null}
                   </div>
                   <div className="min-w-0 flex-1">

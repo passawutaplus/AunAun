@@ -36,7 +36,7 @@ import { getProjectLimits } from "@/lib/projectLimits";
 import { supabase } from "@/integrations/supabase/client";
 import { projectSchema, validateProjectBasics, validateProjectPublish } from "@/lib/validators";
 import { portfolioEditorHasContent } from "@/lib/portfolioEditorStorage";
-import { categories, DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory } from "@/data/projectTypes";
+import { categories, DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory, type Category } from "@/data/projectTypes";
 import PageLoader from "@/components/ui/PageLoader";
 import { FieldError } from "@/components/ui/FieldError";
 import { toast } from "sonner";
@@ -97,7 +97,8 @@ import {
   type CategoryParentId,
 } from "@/data/categoryTaxonomy";
 import { SeriesFormDialog } from "@/components/series/SeriesFormDialog";
-import { isAplus1SubscriptionsEnabled, isLaunchDesignDrillEnabled, isLaunchFullGridEditorEnabled } from "@/lib/aplus1Launch";
+import { PortfolioLinkedPostPicker } from "@/components/project/PortfolioLinkedPostPicker";
+import { isAplus1LaunchMinimal, isAplus1SubscriptionsEnabled, isLaunchDesignDrillEnabled, isLaunchFullGridEditorEnabled } from "@/lib/aplus1Launch";
 import { PortfolioCollabUserPicker } from "@/components/project/PortfolioCollabUserPicker";
 import {
   Dialog,
@@ -2754,11 +2755,7 @@ const ProjectEditorPage = () => {
   }
 
   if (editing && (authLoading || projectLoading)) {
-    return (
-      <div className="min-h-screen bg-app-ambient">
-        <PageLoader className="bg-transparent" />
-      </div>
-    );
+    return <PageLoader className="bg-app-ambient" />;
   }
 
   if (editing && projectError) {
@@ -2804,13 +2801,13 @@ const ProjectEditorPage = () => {
   return (
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-0">
       {/* Sticky header — full-bleed to align with Module / Work Details sidebars */}
-      <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-md">
+      <div className="sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border">
         <div className="flex w-full items-center gap-3 px-3 py-3 sm:px-4">
           <BackButton onClick={handleBackClick} />
           <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-1">
             <div className="min-w-0">
               <h1 className="text-base font-semibold text-foreground truncate">
-                {editing ? "แก้ไขผลงาน" : "ลงผลงาน"}
+                {editing ? "แก้ไขผลงาน" : "Share your Project"}
               </h1>
             </div>
             {isLaunchFullGridEditorEnabled() ? (
@@ -3330,6 +3327,16 @@ const ProjectEditorPage = () => {
             </div>
           ) : null}
 
+          {!isAplus1LaunchMinimal() ? (
+            <section className="space-y-4 rounded-2xl border border-border bg-card/40 p-4">
+              <PortfolioLinkedPostPicker
+                userId={user?.id ?? ""}
+                selected={linkedOwnPosts}
+                onChange={setLinkedOwnPosts}
+                readOnlyPosts={linkedCollabPosts}
+              />
+            </section>
+          ) : null}
           </div>
           </div>
         </div>
@@ -3512,6 +3519,7 @@ const ProjectEditorPage = () => {
               </div>
             </div>
           </div>
+
         </ProjectEditorMetaSidebar>
       </div>
 
@@ -3931,7 +3939,7 @@ const CoverDrop = ({
           invalid && "border-destructive ring-1 ring-destructive/40",
         )}
       >
-        <img src={url} alt="cover" className="absolute inset-0 h-full w-full object-cover" />
+        <img loading="lazy" decoding="async" src={url} alt="cover" className="absolute inset-0 h-full w-full object-cover" />
         <div
           className={cn(
             "absolute right-2 top-2 flex gap-1.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100",

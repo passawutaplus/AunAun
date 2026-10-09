@@ -216,7 +216,7 @@ export default function JobDetailView({
                   className="group relative block h-full w-full cursor-zoom-in"
                   aria-label="ดูภาพเต็ม"
                 >
-                  <img src={active} alt="" className="h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={active} alt="" className="h-full w-full object-cover" />
                   <span className="pointer-events-none absolute bottom-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white">
                     <Expand className="h-3.5 w-3.5" />
                   </span>
@@ -244,7 +244,7 @@ export default function JobDetailView({
                     )}
                     aria-label={`ดูภาพเพิ่ม ${i + 1}`}
                   >
-                    <img src={url} alt="" className="h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={url} alt="" className="h-full w-full object-cover" />
                   </button>
                 );
               })}

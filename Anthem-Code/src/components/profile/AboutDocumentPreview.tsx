@@ -30,7 +30,8 @@ import {
 } from "@/lib/validators";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { displayInitials } from "@/lib/avatarPool";
-import { safeHttpUrl, socialDisplayId } from "@/lib/safeUrl";
+import { safeHttpUrl } from "@/lib/safeUrl";
+import { socialDisplayId } from "@/lib/externalUrl";
 import {
   cvPortraitUrl,
   CV_LANGUAGE_LEVEL_LABELS,
@@ -296,7 +297,7 @@ export function AboutDocumentSheet({
           <div className="about-cv-sheet-hero-photo">
             <div className="about-cv-hero-photo">
               {portrait ? (
-                <img src={portrait} alt="" className="h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src={portrait} alt="" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[clamp(1.1rem,4cqi,1.6rem)] font-semibold text-[var(--cv-ink)]">
                   {initials}

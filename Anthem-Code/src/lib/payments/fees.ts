@@ -3,6 +3,13 @@ import type { FeeSnapshot, MoneyBreakdown, PaymentMethod } from "./types";
 export const DEFAULT_PLATFORM_FEE_PERCENT = 10;
 export const DEFAULT_FEE_VERSION = "aplus1-v1";
 export const DEFAULT_WHT_RATE = 3;
+/** Upper bound for withholding tax, as a percent of the job price. Must equal the cap in shared.enforce_hire_order_money_guard (5%). */
+export const MAX_WHT_RATE = 5;
+
+function clampWhtSatang(jobPriceSatang: number, whtSatang: number | undefined): number {
+  const max = Math.round((jobPriceSatang * MAX_WHT_RATE) / 100);
+  return Math.max(0, Math.min(max, Math.round(whtSatang ?? 0)));
+}
 
 export type FeeConfig = {
   platformFeePercent: number;
@@ -50,7 +57,7 @@ export function snapshotFees(
   if (!Number.isInteger(jobPriceSatang) || jobPriceSatang < 0) {
     throw new Error("jobPriceSatang must be a non-negative integer");
   }
-  const whtSatang = Math.max(0, Math.min(jobPriceSatang, Math.round(options.whtSatang ?? 0)));
+  const whtSatang = clampWhtSatang(jobPriceSatang, options.whtSatang);
   const chargePercent = Math.min(100, Math.max(1, Math.round(options.chargePercent ?? 100)));
 
   const platformFeeSatang = percentOfSatang(jobPriceSatang, config.platformFeePercent);
@@ -93,7 +100,7 @@ export function planInstallmentSatang(
   depositPercent: number,
   whtSatang = 0,
 ): { depositSatang: number; balanceSatang: number; afterWhtSatang: number } {
-  const wht = Math.max(0, Math.min(jobPriceSatang, Math.round(whtSatang)));
+  const wht = clampWhtSatang(jobPriceSatang, whtSatang);
   const afterWhtSatang = jobPriceSatang - wht;
   const pct = Math.min(100, Math.max(1, Math.round(depositPercent)));
   const depositSatang = Math.round((afterWhtSatang * pct) / 100);

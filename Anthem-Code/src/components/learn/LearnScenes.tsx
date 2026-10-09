@@ -137,7 +137,7 @@ export function LearnWhoFan({ progress, reduced }: { progress: MotionValue<numbe
             "origin-bottom",
           )}
         >
-          <img src={covers[i]} alt="" className="aspect-[16/10] w-full object-cover" />
+          <img loading="lazy" decoding="async" src={covers[i]} alt="" className="aspect-[16/10] w-full object-cover" />
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-4 py-3">
             <p className="text-sm font-semibold text-white">{LEARN_WHO_NOT[i].title}</p>
           </div>
@@ -180,7 +180,7 @@ export function LearnFirstVisitPlay({
                     transition={{ delay: i * 0.05, duration: 0.4 }}
                     className="overflow-hidden rounded-lg"
                   >
-                    <img src={src} alt="" className="h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={src} alt="" className="h-full w-full object-cover" />
                   </motion.div>
                 ))}
                 {!reduced ? (
@@ -200,7 +200,7 @@ export function LearnFirstVisitPlay({
                 exit={{ opacity: 0 }}
                 className="absolute inset-0"
               >
-                <img src={featured} alt="" className="h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src={featured} alt="" className="h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
               </motion.div>
             )}
@@ -217,15 +217,15 @@ export function LearnFirstVisitPlay({
                 className="absolute inset-y-2 right-2 z-10 w-[42%] overflow-hidden rounded-xl border border-white/10 bg-zinc-900/95 p-3 shadow-2xl"
               >
                 <div className="flex items-center gap-2">
-                  <img src={LEARN_FILM.avatar} alt="" className="h-9 w-9 rounded-full object-cover" />
+                  <img loading="lazy" decoding="async" src={LEARN_FILM.avatar} alt="" className="h-9 w-9 rounded-full object-cover" />
                   <div className="min-w-0">
                     <p className="truncate text-xs font-semibold text-white">Mokka Studio</p>
                     <p className="text-[10px] text-emerald-400">เปิดรับโอกาส</p>
                   </div>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-1.5">
-                  <img src={LEARN_FILM.cover} alt="" className="aspect-[4/3] rounded-md object-cover" />
-                  <img src={LEARN_FILM.poster} alt="" className="aspect-[4/3] rounded-md object-cover" />
+                  <img loading="lazy" decoding="async" src={LEARN_FILM.cover} alt="" className="aspect-[4/3] rounded-md object-cover" />
+                  <img loading="lazy" decoding="async" src={LEARN_FILM.poster} alt="" className="aspect-[4/3] rounded-md object-cover" />
                 </div>
               </motion.aside>
             ) : null}
@@ -271,7 +271,7 @@ export function LearnAssembleProject({
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden rounded-xl"
           >
-            <img src={LEARN_FILM.cover} alt="" className="aspect-[16/9] w-full object-cover" />
+            <img loading="lazy" decoding="async" src={LEARN_FILM.cover} alt="" className="aspect-[16/9] w-full object-cover" />
           </motion.div>
           <AnimatePresence>
             {stage >= 1 ? (
@@ -351,7 +351,7 @@ export function LearnMagnetSave({ stage }: { stage: number }) {
                   transition={{ duration: 0.5, delay: magnet ? i * 0.06 : 0, ease: [0.22, 1, 0.36, 1] }}
                   className="overflow-hidden rounded-lg"
                 >
-                  <img src={src} alt="" className="h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={src} alt="" className="h-full w-full object-cover" />
                 </motion.div>
               );
             })}
@@ -364,7 +364,7 @@ export function LearnMagnetSave({ stage }: { stage: number }) {
             <p className="px-2 pt-3 text-[10px] font-medium tracking-wide text-white/60">คอลเลกชัน</p>
             <div className="space-y-1.5 p-2">
               {LEARN_FILM.tiles.slice(0, 3).map((src) => (
-                <img key={src} src={src} alt="" className="aspect-[16/10] w-full rounded-md object-cover" />
+                <img loading="lazy" decoding="async" key={src} src={src} alt="" className="aspect-[16/10] w-full rounded-md object-cover" />
               ))}
             </div>
           </motion.aside>

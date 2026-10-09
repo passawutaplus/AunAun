@@ -10,6 +10,7 @@ Entry point สำหรับ dev ใหม่:
 5. [`adding-a-feature.md`](./adding-a-feature.md) — step-by-step + `notifyAnthem()`
 6. [`performance.md`](./performance.md) — performance rules
 7. [`schema-reorganize.md`](./schema-reorganize.md) — schema migration plan
+8. [`review-2026-10-07.md`](./review-2026-10-07.md) — review rules + [`db-drift-2026-10-07.md`](./db-drift-2026-10-07.md) — tables/functions the DB lacks
 
 ## Product foundation (2026-07)
 

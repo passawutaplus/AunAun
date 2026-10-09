@@ -21,11 +21,11 @@ export const OBJECT_ORDERS_SELECT =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnthemTableClient = { from: (table: string) => any };
 
-export function fromCreatorObjects(): any {
+export function fromCreatorObjects() {
   return (supabase as unknown as AnthemTableClient).from("creator_objects");
 }
 
-export function fromObjectOrders(): any {
+export function fromObjectOrders() {
   return (supabase as unknown as AnthemTableClient).from("object_orders");
 }
 

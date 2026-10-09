@@ -29,10 +29,10 @@ export type WithdrawPinRecord = {
 const memory = new Map<string, WithdrawPinRecord>();
 
 export type VerifyWithdrawPinResult =
-  | { ok: true }
-  | { ok: false; reason: "mismatch"; remaining: number }
-  | { ok: false; reason: "locked"; retryAt: number }
-  | { ok: false; reason: "missing" };
+  | { ok: true; reason?: undefined; remaining?: undefined; retryAt?: undefined }
+  | { ok: false; reason: "mismatch"; remaining: number; retryAt?: undefined }
+  | { ok: false; reason: "locked"; retryAt: number; remaining?: undefined }
+  | { ok: false; reason: "missing"; remaining?: undefined; retryAt?: undefined };
 
 export function withdrawPinOwnerKey(userId: string | undefined): string {
   return userId?.trim() || "";

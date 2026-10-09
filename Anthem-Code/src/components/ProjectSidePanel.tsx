@@ -120,7 +120,7 @@ const ProjectSidePanel = (p: Props) => {
           {p.ownerId ? (
             <Link to={`/u/${p.ownerId}`} className="flex items-center gap-3 group flex-1 min-w-0">
               {p.ownerAvatar ? (
-                <img src={p.ownerAvatar} alt="" className="w-11 h-11 rounded-full object-cover" />
+                <img loading="lazy" decoding="async" src={p.ownerAvatar} alt="" className="w-11 h-11 rounded-full object-cover" />
               ) : (
                 <div className="w-11 h-11 rounded-full bg-primary/15 flex items-center justify-center text-sm font-medium text-primary shrink-0">
                   {p.ownerName[0]}

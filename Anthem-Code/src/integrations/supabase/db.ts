@@ -4,6 +4,12 @@
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import {
+  ANTHEM_RPC_NAMES,
+  PUBLIC_TABLE_NAMES,
+  SHARED_RPC_NAMES,
+  SHARED_TABLE_NAMES,
+} from "./tableRouting";
 import { BRAND_STORAGE_NO_PERSIST } from "@/lib/brandConfig";
 
 /**
@@ -11,18 +17,21 @@ import { BRAND_STORAGE_NO_PERSIST } from "@/lib/brandConfig";
  * Uncheck remember → sessionStorage only (cleared when the tab closes).
  * Full httpOnly cookies need a BFF — not available on this Vite client.
  */
-function authPersistenceStorage(): Pick<Storage, "getItem" | "setItem" | "removeItem"> {
-  const useSession = () =>
+function authPersistenceStorage(): Pick<
+  Storage,
+  "getItem" | "setItem" | "removeItem"
+> {
+  const sessionOnly = () =>
     typeof sessionStorage !== "undefined" &&
     sessionStorage.getItem(BRAND_STORAGE_NO_PERSIST) === "1";
 
   return {
     getItem(key: string) {
-      const store = useSession() ? sessionStorage : localStorage;
+      const store = sessionOnly() ? sessionStorage : localStorage;
       return store.getItem(key);
     },
     setItem(key: string, value: string) {
-      if (useSession()) {
+      if (sessionOnly()) {
         localStorage.removeItem(key);
         sessionStorage.setItem(key, value);
       } else {
@@ -48,7 +57,8 @@ const authOpts = {
 function requireSupabaseEnv() {
   const demoMode = import.meta.env.VITE_DEMO_MODE === "true";
   const url = demoMode
-    ? import.meta.env.VITE_DEMO_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL
+    ? import.meta.env.VITE_DEMO_SUPABASE_URL ||
+      import.meta.env.VITE_SUPABASE_URL
     : import.meta.env.VITE_SUPABASE_URL;
   const key = demoMode
     ? import.meta.env.VITE_DEMO_SUPABASE_PUBLISHABLE_KEY ||
@@ -83,93 +93,38 @@ function getRootDb() {
 }
 
 function getPublicDb() {
-  publicDb ??= getRootDb().schema("public");
+  // Typed as the routed client for call-site compatibility; queries use `as never` table names.
+  publicDb ??= getRootDb().schema("public") as unknown as SupabaseClient<Database>;
   return publicDb;
 }
 
 function getAnthemDb() {
-  anthemDb ??= getRootDb().schema("anthem");
+  anthemDb ??= getRootDb().schema("anthem" as "public") as unknown as SupabaseClient<Database>;
   return anthemDb;
 }
 
 function getSharedDb() {
-  sharedDb ??= getRootDb().schema("shared");
+  sharedDb ??= getRootDb().schema("shared" as "public") as unknown as SupabaseClient<Database>;
   return sharedDb;
 }
 
 function getOpsDb() {
-  opsDb ??= getRootDb().schema("ops");
+  opsDb ??= getRootDb().schema("ops" as "public") as unknown as SupabaseClient<Database>;
   return opsDb;
 }
 
-function lazyClient(get: () => SupabaseClient<Database>): SupabaseClient<Database> {
+function lazyClient(
+  get: () => SupabaseClient<Database>,
+): SupabaseClient<Database> {
   return new Proxy({} as SupabaseClient<Database>, {
     get(_, prop, receiver) {
       return Reflect.get(get(), prop, receiver);
     },
   });
 }
-const PUBLIC_TABLES = new Set([
-  "profiles",
-  "profiles_public",
-  "user_roles",
-  "subscriptions",
-  "user_credits",
-  "ecosystem_notifications",
-  "so1o_notifications",
-  "platform_events",
-  "product_events",
-  "welcome_mission_claims",
-  "welcome_mission_catalog",
-]);
+const PUBLIC_TABLES: ReadonlySet<string> = new Set(PUBLIC_TABLE_NAMES);
 
-/** Cross-app wallet / chat / compliance. */
-const SHARED_TABLES = new Set([
-  "wallets",
-  "wallet_topups",
-  "cashout_requests",
-  "gifts",
-  "gift_transactions",
-  "gift_limits_config",
-  "contracts",
-  "admin_audit_log",
-  "conversations",
-  "conversation_members",
-  "conversation_pins",
-  "conversation_hides",
-  "messages",
-  "collab_plans",
-  "collab_plan_change_requests",
-  "collab_plan_activity_log",
-  "collab_plan_versions",
-  "collab_end_requests",
-  "collab_end_request_events",
-  "collab_group_expand_requests",
-  "aml_flags",
-  "kyc_requests",
-  "kyc_documents",
-  "payout_profiles",
-  "notifications",
-  "user_moderation_state",
-  "moderation_actions",
-  "marketplace_escrows",
-  "referral_program_config",
-  "referral_codes",
-  "referrals",
-  "referral_reward_ledger",
-  "daily_px_claims",
-  "kuy_businesses",
-  "kuy_keywords",
-  "kuy_leads",
-  "kuy_competitors",
-  "kuy_content_items",
-  "kuy_insights",
-  "kuy_campaigns",
-  "kuy_outreach_messages",
-  "kuy_reports",
-  "kuy_settings",
-  "kuy_export_audit_log",
-]);
+const SHARED_TABLES: ReadonlySet<string> = new Set(SHARED_TABLE_NAMES);
 
 export function schemaForTable(table: string): "public" | "anthem" | "shared" {
   if (PUBLIC_TABLES.has(table)) return "public";
@@ -184,6 +139,23 @@ export function fromTable(table: string) {
   return getAnthemDb().from(table as never);
 }
 
+const ANTHEM_RPCS: ReadonlySet<string> = new Set(ANTHEM_RPC_NAMES);
+const SHARED_RPCS: ReadonlySet<string> = new Set(SHARED_RPC_NAMES);
+
+/** RPCs are looked up in one schema only — send each to the schema that owns it. */
+export function schemaForRpc(fn: string): "public" | "anthem" | "shared" {
+  if (ANTHEM_RPCS.has(fn)) return "anthem";
+  if (SHARED_RPCS.has(fn)) return "shared";
+  return "public";
+}
+
+function rpcClientFor(fn: string) {
+  const schema = schemaForRpc(fn);
+  if (schema === "anthem") return getAnthemDb();
+  if (schema === "shared") return getSharedDb();
+  return getRootDb();
+}
+
 /** Canonical auth user id column on unified profiles (So1o uses user_id, not id). */
 export const PROFILE_USER_COLUMN = "user_id" as const;
 
@@ -191,6 +163,10 @@ export const supabase = new Proxy({} as SupabaseClient<Database>, {
   get(_, prop, receiver) {
     if (prop === "from") {
       return (table: string) => fromTable(table);
+    }
+    if (prop === "rpc") {
+      return (fn: string, args?: unknown, options?: unknown) =>
+        rpcClientFor(fn).rpc(fn as never, args as never, options as never);
     }
     // auth, rpc, storage, realtime — root client only (schema clients omit these).
     return Reflect.get(getRootDb(), prop, receiver);

@@ -260,7 +260,7 @@ export default function ServiceDetailView({
                     className="group relative block h-full w-full cursor-zoom-in"
                     aria-label="ดูภาพเต็ม"
                   >
-                    <img src={active} alt="" className="h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={active} alt="" className="h-full w-full object-cover" />
                     <span className="pointer-events-none absolute bottom-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white opacity-90 transition group-hover:bg-black/70">
                       <Expand className="h-3.5 w-3.5" aria-hidden />
                     </span>
@@ -291,7 +291,7 @@ export default function ServiceDetailView({
                   {isVideoUrl(url) ? (
                     <video src={url} muted playsInline className="h-full w-full object-cover" />
                   ) : (
-                    <img src={url} alt="" className="h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={url} alt="" className="h-full w-full object-cover" />
                   )}
                 </button>
               ))}

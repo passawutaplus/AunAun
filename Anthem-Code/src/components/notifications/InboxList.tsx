@@ -14,6 +14,7 @@ import { useMemo } from "react";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import EmptyState from "@/components/ui/EmptyState";
 import { groupByNotificationDate } from "@/lib/notificationDateGroups";
+import { timeAgo } from "@/lib/format";
 
 const kindIcon = (kind: string) => {
   if (kind.includes("gift")) return Gift;
@@ -25,29 +26,6 @@ const kindIcon = (kind: string) => {
   if (kind.includes("ad")) return Megaphone;
   if (kind.includes("project_collab")) return Users;
   return Bell;
-};
-
-const timeAgo = (iso: string, english = false) => {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (!english) {
-    if (m < 1) return "เมื่อสักครู่";
-    if (m < 60) return `${m} นาทีที่แล้ว`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h} ชม.ที่แล้ว`;
-    const d = Math.floor(h / 24);
-    if (d < 7) return `${d} วันที่แล้ว`;
-    const dt = new Date(iso);
-    return `${dt.toLocaleDateString("th-TH")} ${dt.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}`;
-  }
-  if (m < 1) return "Just now";
-  if (m < 60) return m === 1 ? "1 minute ago" : `${m} minutes ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return h === 1 ? "1 hour ago" : `${h} hours ago`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return d === 1 ? "1 day ago" : `${d} days ago`;
-  const dt = new Date(iso);
-  return `${dt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} ${dt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
 };
 
 function extractFollowerId(n: Notification): string | null {
@@ -200,7 +178,7 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate, englis
                     </p>
                   ) : null}
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="text-[11px] text-muted-foreground">{timeAgo(n.created_at, english)}</p>
+                    <p className="text-[11px] text-muted-foreground">{timeAgo(n.created_at, { withTime: true, english })}</p>
                     {n.is_read ? (
                       <span className="text-[10px] text-muted-foreground/80">{english ? "Read" : "อ่านแล้ว"}</span>
                     ) : null}

@@ -171,13 +171,24 @@ const DesktopTopNav = () => {
       useFeedHomeNavStore.getState().setScrolled(window.scrollY > 8);
     };
 
+    // One layout read per frame instead of one per scroll event.
+    let raf = 0;
+    const schedule = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        update();
+      });
+    };
+
     update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
     return () => {
       document.querySelector<HTMLElement>("[data-desktop-top-nav]")?.style.removeProperty("top");
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
     };
   }, [isHome]);
 
@@ -220,7 +231,7 @@ const DesktopTopNav = () => {
     <header
       data-desktop-top-nav
       data-scrolled={glass ? "true" : "false"}
-      inert={coveredByFeedBar ? true : undefined}
+      inert={coveredByFeedBar ? "" : undefined}
       aria-hidden={coveredByFeedBar || undefined}
       className={cn(
         "z-40 hidden lg:block sticky top-0 transition-opacity duration-300 motion-reduce:transition-none",

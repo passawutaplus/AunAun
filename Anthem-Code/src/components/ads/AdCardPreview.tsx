@@ -15,7 +15,7 @@ const AdCardPreview = ({ title, imageUrl }: Props) => {
       <div className="select-none">
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-sm bg-muted">
           {imageUrl ? (
-            <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-xs text-muted-foreground">
               อัปโหลดภาพหรือเลือกผลงานเพื่อดูพรีวิว

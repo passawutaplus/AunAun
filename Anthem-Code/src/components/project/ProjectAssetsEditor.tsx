@@ -27,7 +27,8 @@ import {
   looksLikeCompleteExternalUrl,
 } from "@/lib/projectAssetScan";
 import { uploadProjectAssetFile } from "@/lib/uploadProjectAsset";
-import { openSafeExternalUrl, safeHttpUrl } from "@/lib/safeUrl";
+import { safeHttpUrl } from "@/lib/safeUrl";
+import { openSafeExternalUrl } from "@/lib/externalUrl";
 import type { Tier } from "@/core/subscription/useSubscription";
 import { toast } from "sonner";
 import { resolveProjectAssetForOpen } from "@/lib/downloadProjectAsset";

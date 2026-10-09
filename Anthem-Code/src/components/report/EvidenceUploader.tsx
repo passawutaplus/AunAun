@@ -39,7 +39,7 @@ function EvidencePreview({ file }: { file: EvidenceFile }) {
   }, [file.url]);
 
   if (file.type.startsWith("image/") && previewUrl) {
-    return <img src={previewUrl} alt={file.name} className="w-full h-full object-cover" />;
+    return <img loading="lazy" decoding="async" src={previewUrl} alt={file.name} className="w-full h-full object-cover" />;
   }
 
   return (

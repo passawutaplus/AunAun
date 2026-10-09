@@ -1,35 +1,60 @@
 import { describe, expect, it } from "vitest";
 import {
+  collabStallDays,
+  countCollabPlanProgress,
   emptyAlignPayload,
+  emptyCollabPlanDocument,
+  nextStepId,
+  prevStepId,
   validateAlignRequired,
 } from "@/lib/collabPlanDoc";
 
 describe("validateAlignRequired", () => {
-  it("requires idea, due date, deliverables, and rights", () => {
-    const align = emptyAlignPayload();
-    const result = validateAlignRequired(align);
+  it("requires only the idea and rights/credit", () => {
+    const result = validateAlignRequired(emptyAlignPayload());
     expect(result.ok).toBe(false);
-    expect(result.missing).toEqual(["idea", "dueAt", "deliverables", "rights"]);
+    expect(result.missing).toEqual(["idea", "rights"]);
   });
 
-  it("passes when all required fields are filled", () => {
+  it("passes without due date or deliverables", () => {
     const align = emptyAlignPayload();
     align.idea = "ทำคอลแลปร่วมกัน";
-    align.dueAt = "2026-08-15";
-    align.deliverableItems = ["โปสเตอร์", "", ""];
     align.rights = "เครดิตทั้งคู่";
-    const result = validateAlignRequired(align);
-    expect(result.ok).toBe(true);
-    expect(result.missing).toEqual([]);
-  });
-
-  it("does not require optional release date", () => {
-    const align = emptyAlignPayload();
-    align.idea = "ทำคอลแลปร่วมกัน";
-    align.dueAt = "2026-08-15";
-    align.deliverableItems = ["โปสเตอร์", "", ""];
-    align.rights = "เครดิตทั้งคู่";
-    align.releaseAt = null;
     expect(validateAlignRequired(align).ok).toBe(true);
+  });
+});
+
+describe("quick mode", () => {
+  it("walks all four steps by default", () => {
+    expect(nextStepId("align")).toBe("create");
+    expect(nextStepId("create")).toBe("review");
+    expect(prevStepId("review")).toBe("create");
+  });
+
+  it("skips the create step in both directions", () => {
+    expect(nextStepId("align", true)).toBe("review");
+    expect(prevStepId("review", true)).toBe("align");
+    expect(nextStepId("publish", true)).toBeNull();
+  });
+
+  it("counts progress out of three steps", () => {
+    const doc = emptyCollabPlanDocument("c1");
+    doc.payload.quick = true;
+    doc.currentStep = "review";
+    expect(countCollabPlanProgress(doc)).toEqual({ done: 1, total: 3 });
+    doc.currentStep = "publish";
+    doc.status = "step_locked";
+    expect(countCollabPlanProgress(doc)).toEqual({ done: 3, total: 3 });
+  });
+});
+
+describe("collabStallDays", () => {
+  const now = Date.parse("2026-10-20T00:00:00Z");
+  it("counts whole days since the last update", () => {
+    expect(collabStallDays("2026-10-12T00:00:00Z", now)).toBe(8);
+    expect(collabStallDays("2026-10-19T12:00:00Z", now)).toBe(0);
+  });
+  it("is 0 for invalid dates", () => {
+    expect(collabStallDays("nope", now)).toBe(0);
   });
 });

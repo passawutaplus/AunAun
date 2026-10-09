@@ -43,7 +43,7 @@ export default function JobGalleryUploadField({ userId, value, onChange }: Props
       <div className="mt-1 grid grid-cols-3 sm:grid-cols-6 gap-2">
         {value.map((url, i) => (
           <div key={`${url}-${i}`} className="relative aspect-[4/3] overflow-hidden rounded-lg border border-border/60">
-            <img src={url} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={url} alt="" className="h-full w-full object-cover" />
             <button
               type="button"
               className="absolute top-1 right-1 h-6 w-6 rounded-full bg-background/90 border border-border/60 grid place-items-center"

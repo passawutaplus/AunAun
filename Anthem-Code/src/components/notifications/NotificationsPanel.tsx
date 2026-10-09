@@ -26,27 +26,7 @@ import { toast } from "sonner";
 import { isWorkLikePrefEnabled } from "@/lib/inAppNotifyPrefs";
 import EmptyState from "@/components/ui/EmptyState";
 import { isAplus1HiringBoardEnabled } from "@/lib/aplus1Launch";
-
-const timeAgo = (iso: string, english = false) => {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (!english) {
-    if (m < 1) return "เมื่อสักครู่";
-    if (m < 60) return `${m} นาทีที่แล้ว`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h} ชม.ที่แล้ว`;
-    const d = Math.floor(h / 24);
-    if (d < 7) return `${d} วันที่แล้ว`;
-    return new Date(iso).toLocaleDateString("th-TH");
-  }
-  if (m < 1) return "Just now";
-  if (m < 60) return m === 1 ? "1 minute ago" : `${m} minutes ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return h === 1 ? "1 hour ago" : `${h} hours ago`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return d === 1 ? "1 day ago" : `${d} days ago`;
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-};
+import { timeAgo } from "@/lib/format";
 
 const ActorAvatar = ({ name, avatar }: { name: string; avatar: string }) => (
   <UserAvatar src={avatar} name={name} className="w-11 h-11 shrink-0" />
@@ -289,7 +269,7 @@ const NotificationsPanel = ({
     }
   };
 
-  const ago = (iso: string) => timeAgo(iso, en);
+  const ago = (iso: string) => timeAgo(iso, { english: en });
   const emptyHint = en ? "New updates will show up here" : undefined;
 
   const tabs: TabDef[] = [
@@ -426,7 +406,7 @@ const NotificationsPanel = ({
                   <p className="text-[11px] text-muted-foreground mt-1">{ago(n.createdAt)}</p>
                 </div>
                 {n.projectCover && (
-                  <img src={n.projectCover} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                  <img loading="lazy" decoding="async" src={n.projectCover} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
                 )}
               </button>
             );

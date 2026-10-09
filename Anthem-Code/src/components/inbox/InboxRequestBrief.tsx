@@ -78,7 +78,7 @@ export default function InboxRequestBrief({
         <div className="flex gap-2 flex-wrap">
           {thumbs.map((thumb) => {
             const img = (
-              <img
+              <img loading="lazy" decoding="async"
                 src={thumb.cover}
                 alt=""
                 className="w-14 h-14 rounded-lg object-cover border border-border/70"

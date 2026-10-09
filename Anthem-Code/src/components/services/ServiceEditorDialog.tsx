@@ -651,7 +651,7 @@ export default function ServiceEditorDialog({
                 playsInline
               />
             ) : (
-              <img
+              <img loading="lazy" decoding="async"
                 src={activeSlide}
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover"
@@ -728,7 +728,7 @@ export default function ServiceEditorDialog({
         <div className="flex items-end gap-3">
           {form.cover_url ? (
             <div className="relative h-20 w-[6.5rem] overflow-hidden rounded-xl border border-border/60 bg-muted shrink-0">
-              <img src={form.cover_url} alt="" className="h-full w-full object-cover" />
+              <img loading="lazy" decoding="async" src={form.cover_url} alt="" className="h-full w-full object-cover" />
               <button
                 type="button"
                 className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white"
@@ -787,7 +787,7 @@ export default function ServiceEditorDialog({
       />
       {form.cover_url ? (
         <div className="relative overflow-hidden rounded-xl border border-border/60">
-          <img src={form.cover_url} alt="" className="aspect-[4/3] w-full object-cover" />
+          <img loading="lazy" decoding="async" src={form.cover_url} alt="" className="aspect-[4/3] w-full object-cover" />
           <div className="absolute inset-x-0 bottom-0 flex gap-2 p-2 bg-gradient-to-t from-black/60 to-transparent">
             <Button
               type="button"
@@ -875,7 +875,7 @@ export default function ServiceEditorDialog({
                   />
                 </div>
               ) : (
-                <img src={url} alt="" className="h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src={url} alt="" className="h-full w-full object-cover" />
               )}
               <div className="absolute inset-x-0 top-0 flex items-center justify-between p-1">
                 <div className="flex gap-0.5">

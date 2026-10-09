@@ -329,7 +329,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
                 </Button>
               )}
               {profile?.avatar_url ? (
-                <img
+                <img loading="lazy" decoding="async"
                   src={profile.avatar_url}
                   alt=""
                   className="w-16 h-16 rounded-full object-cover mx-auto border-2 border-border"
@@ -537,7 +537,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
                         rel="noopener noreferrer"
                         className="aspect-square rounded-lg overflow-hidden bg-muted hover:opacity-90 transition-opacity"
                       >
-                        <img src={href} alt="" className="w-full h-full object-cover" />
+                        <img loading="lazy" decoding="async" src={href} alt="" className="w-full h-full object-cover" />
                       </a>
                     );
                   })}

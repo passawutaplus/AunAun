@@ -102,11 +102,11 @@ function BoardDropChip({
             <Sparkles className="h-5 w-5 text-primary" />
           </div>
         ) : covers.length === 1 ? (
-          <img src={covers[0]} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={covers[0]} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
           <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-px bg-border/40">
             {covers.slice(0, 4).map((url, i) => (
-              <img key={`${board.id}-f-${i}`} src={url} alt="" className="h-full w-full object-cover" />
+              <img loading="lazy" decoding="async" key={`${board.id}-f-${i}`} src={url} alt="" className="h-full w-full object-cover" />
             ))}
           </div>
         )}

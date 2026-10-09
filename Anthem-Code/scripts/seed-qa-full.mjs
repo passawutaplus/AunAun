@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Full QA dataset: schema gaps + 50 users + activity (profiles, projects, social, jobs, chat, wallet).
- * Requires SUPABASE_ACCESS_TOKEN or SUPABASE_DB_PASSWORD (see apply-anthem-remote.mjs).
+ * Requires SUPABASE_ACCESS_TOKEN or SUPABASE_DB_PASSWORD.
  */
 import { readFileSync, existsSync } from "fs";
 import { dirname, join } from "path";

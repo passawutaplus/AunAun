@@ -222,8 +222,8 @@ export function looksLikeCompleteExternalUrl(raw: string): boolean {
 }
 
 export type ProjectAssetAccessResult =
-  | { ok: true; url?: string }
-  | { ok: false; reason: string };
+  | { ok: true; url?: string; reason?: undefined }
+  | { ok: false; reason: string; url?: undefined };
 
 /**
  * Click-time gate before open/download.

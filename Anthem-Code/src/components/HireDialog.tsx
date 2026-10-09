@@ -646,7 +646,7 @@ const HireDialog = ({
               )}
               aria-hidden={panel !== "message"}
               // Prevent tabbing into the hidden Brief form while on Packages.
-              inert={panel !== "message" ? true : undefined}
+              inert={panel !== "message" ? "" : undefined}
             >
               {source === "project" && projectTitle ? (
                 <ProjectReferencePreview title={projectTitle} coverUrl={projectCoverUrl} />
@@ -692,7 +692,7 @@ const HireDialog = ({
                 panel !== "services" && "invisible pointer-events-none",
               )}
               aria-hidden={panel !== "services"}
-              inert={panel !== "services" ? true : undefined}
+              inert={panel !== "services" ? "" : undefined}
             >
               {servicesLoading ? (
                 <div className="flex items-center justify-center py-10 text-muted-foreground text-sm">

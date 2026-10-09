@@ -1,3 +1,4 @@
+import { sanitizeProjectRichText } from "@/lib/projectRichText";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Film, Loader2 } from "lucide-react";
 import {
@@ -235,7 +236,7 @@ function ModuleView({
       {module.type === "text" ? (
         <div
           className="h-full w-full overflow-auto bg-transparent p-1 text-sm leading-relaxed text-foreground [&_b]:font-bold [&_strong]:font-bold"
-          dangerouslySetInnerHTML={{ __html: module.text || "" }}
+          dangerouslySetInnerHTML={{ __html: sanitizeProjectRichText(module.text || "") }}
         />
       ) : null}
     </div>

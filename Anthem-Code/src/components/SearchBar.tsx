@@ -182,7 +182,7 @@ const SearchBar = ({
         />
         <div
           aria-hidden={!isOpen}
-          inert={!isOpen ? true : undefined}
+          inert={!isOpen ? "" : undefined}
           className={cn(
             "absolute right-9 top-1/2 z-10 flex -translate-y-1/2 items-center gap-0.5 transition-opacity duration-200",
             isOpen ? "opacity-100" : "pointer-events-none opacity-0",

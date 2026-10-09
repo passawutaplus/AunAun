@@ -53,7 +53,7 @@ export function InboxPersonCell({
   return (
     <div className="flex min-w-0 items-center gap-2.5">
       {avatarUrl ? (
-        <img src={avatarUrl} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
+        <img loading="lazy" decoding="async" src={avatarUrl} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
       ) : (
         <div
           className={cn(
