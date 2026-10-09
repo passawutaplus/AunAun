@@ -555,7 +555,7 @@ const AdvertisePage = () => {
                       )}
                     >
                       <FolderOpen className="mb-1 h-4 w-4 text-primary" />
-                      <p className="font-medium">ผูกกับผลงานใน Aplus1</p>
+                      <p className="font-medium">ผูกกับผลงานใน SAMECOR</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">ใช้ผลงานที่เผยแพร่แล้ว</p>
                     </button>
                   </div>

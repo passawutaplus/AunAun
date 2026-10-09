@@ -251,7 +251,7 @@ const ChatComposer = ({
   return (
     <div
       className={cn(
-        "border-t border-border bg-background/80 backdrop-blur-md px-3 py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] shrink-0",
+        "border-t border-border bg-card px-3 py-2.5 pb-[max(env(safe-area-inset-bottom),0.5rem)] shrink-0",
         dragOver && "ring-2 ring-inset ring-primary/50 bg-primary/5",
       )}
       onDragEnter={(e) => {

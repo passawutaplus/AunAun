@@ -1166,10 +1166,14 @@ export const useChatInboxBadgeCount = () => {
   const query = useQuery({
     queryKey: ["chat-inbox-badge", user?.id],
     enabled: !!user?.id,
-    refetchInterval: 15_000,
+    refetchInterval: 30_000,
     refetchOnWindowFocus: true,
     queryFn: async (): Promise<number> => {
       const uid = user!.id;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fast = await (supabase.rpc as any)("chat_unread_count");
+      if (!fast.error && typeof fast.data === "number") return fast.data;
 
       const [{ data: direct }, { data: memberships }] = await Promise.all([
         supabase.from("conversations").select("id").or(`client_id.eq.${uid},freelancer_id.eq.${uid}`),

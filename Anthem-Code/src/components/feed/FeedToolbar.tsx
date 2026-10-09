@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Plus, X } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, Plus, X } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
+import { ScrollBlur } from "@/components/ScrollBlur";
 import SearchBar from "@/components/SearchBar";
 import FilterChips from "@/components/FilterChips";
 import FeedModeDropdown from "@/components/feed/FeedModeDropdown";
@@ -17,6 +19,7 @@ import DesignerFeedDropdown, {
   type DesignerFeedSource,
 } from "@/components/feed/DesignerFeedDropdown";
 import DesignerFilterPanel from "@/components/feed/DesignerFilterPanel";
+import ObjectFilterFields from "@/components/objects/ObjectFilterFields";
 import StudioFilterPanel, { type StudioFeedSource } from "@/components/studio/StudioFilterPanel";
 import {
   FilterPanel,
@@ -39,7 +42,26 @@ import { DESIGN_DRILL_CHIP, type ProjectChipFilter } from "@/lib/drillProject";
 import { FEED_MODE_LABELS, FEED_MODE_ORDER } from "@/lib/feedModeLabels";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { useFeedHomeNavStore } from "@/stores/feedHomeNavStore";
+import { smoothEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+
+function ObjectsStudioLink({ className }: { className?: string }) {
+  return (
+    <p className={cn("text-sm text-muted-foreground", className)}>
+      เริ่มขายงานของตัวเองได้ที่{" "}
+      <Link
+        to="/dashboard/objects"
+        className="group inline-flex items-center text-foreground"
+      >
+        Objects
+        <ArrowRight
+          aria-hidden
+          className="ml-1 h-3.5 w-3.5 transition-transform duration-200 ease-out group-hover:translate-x-1.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
+        />
+      </Link>
+    </p>
+  );
+}
 
 const FEED_MODE_OPTIONS = FEED_MODE_ORDER.map((value) => ({
   value,
@@ -96,6 +118,10 @@ type Props = {
   resultCount?: number;
   recentSearches?: string[];
   onRecentSearchSelect?: (q: string) => void;
+  /** Projects feed: picked cover color, #rrggbb. */
+  colorQuery?: string | null;
+  onColorQueryChange?: (hex: string | null) => void;
+  colorSearchPending?: boolean;
 };
 
 const FeedToolbar = ({
@@ -143,6 +169,9 @@ const FeedToolbar = ({
   resultCount,
   recentSearches = [],
   onRecentSearchSelect,
+  colorQuery = null,
+  onColorQueryChange,
+  colorSearchPending = false,
 }: Props) => {
   const navigate = useNavigate();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(search.length > 0);
@@ -150,8 +179,16 @@ const FeedToolbar = ({
   const isProjects = mode === "projects";
   const isDesigners = mode === "designers";
   const isPackages = mode === "packages";
+  const isObjects = mode === "objects";
   const isStudios = mode === "studios";
   const isCommunity = mode === "community";
+  const isCatalog = isProjects || isDesigners || isPackages || isObjects;
+  const catalogTitle = isDesigners ? "Designers" : isPackages ? "Packages" : isObjects ? "Objects" : "Projects";
+  const reducedMotion = useReducedMotion();
+  const barSlide = {
+    duration: reducedMotion ? 0 : 0.46,
+    ease: smoothEase,
+  };
 
   const parentChips = useParentChipOptions(includeDesignDrillChip);
 
@@ -202,7 +239,7 @@ const FeedToolbar = ({
       feedSource={studioFeedSource}
       onFeedSourceChange={onStudioFeedSourceChange ?? (() => {})}
     />
-  ) : isDesigners || isPackages ? (
+  ) : isObjects ? null : isDesigners || isPackages ? (
     <DesignerFilterPanel
       feedSource={designerFeedSource}
       onFeedSourceChange={onDesignerFeedSourceChange ?? (() => {})}
@@ -296,7 +333,9 @@ const FeedToolbar = ({
       ? "ค้นหาดีไซเนอร์"
       : isPackages
         ? "ค้นหาแพ็กเกจ"
-        : isStudios
+        : isObjects
+          ? "ค้นหา Objects"
+          : isStudios
           ? "ค้นหาสตูดิโอ"
           : "ค้นหาผลงาน";
 
@@ -311,6 +350,8 @@ const FeedToolbar = ({
         filterContent: undefined as undefined,
         hideAi,
         onHideAiToggle: () => onHideAiChange?.(!hideAi),
+        colorQuery,
+        onColorQueryChange,
       }
     : {
         filterContent,
@@ -369,12 +410,22 @@ const FeedToolbar = ({
       className={cn(
         "z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 overflow-visible",
         homeScrolled
-          ? "sticky top-0 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65 shadow-[0_-24px_48px_-8px_hsl(var(--background))]"
+          ? cn(
+              "sticky top-0",
+              isCatalog
+                ? "z-40 bg-transparent shadow-none lg:static"
+                : "bg-background/80 backdrop-blur-md shadow-[0_-24px_48px_-8px_hsl(var(--background))] supports-[backdrop-filter]:bg-background/65",
+            )
           : "relative bg-transparent shadow-none",
       )}
     >
+      {homeScrolled && isCatalog ? (
+        <div className="pointer-events-none absolute inset-0 z-0 lg:hidden" aria-hidden>
+          <ScrollBlur direction="top" blur={12} layers={4} />
+        </div>
+      ) : null}
       {/* Mobile / tablet */}
-      <div className="flex items-center gap-2 lg:hidden">
+      <div className="relative z-10 flex items-center gap-2 lg:hidden">
         <div className={cn(mobileSearchOpen && !isProjects ? "flex-1 min-w-0" : "shrink-0")}>
           <SearchBar
             value={search}
@@ -391,20 +442,189 @@ const FeedToolbar = ({
                   onFilterClick: openProjectSheet,
                   hideAi,
                   onHideAiToggle: () => onHideAiChange?.(!hideAi),
+                  colorQuery,
+                  onColorQueryChange,
                 }
               : { filterContent })}
           />
         </div>
-        <FeedModeToggle
-          {...toggleProps}
-          compact={mobileSearchOpen && !isProjects}
-          className="ml-auto"
-        />
+        <div className="ml-auto min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <FeedModeToggle
+            {...toggleProps}
+            compact={mobileSearchOpen && !isProjects}
+          />
+        </div>
       </div>
+      {isObjects ? <ObjectsStudioLink className="mt-2 text-right lg:hidden" /> : null}
 
       {/* Desktop */}
-      <div className="hidden lg:block space-y-3">
-        {!homeScrolled ? (
+      <div className="relative z-10 hidden space-y-3 lg:block">
+        {isCatalog ? (
+          <>
+            <div data-feed-catalog-head="" className="grid grid-cols-[auto_minmax(0,1fr)] items-end gap-x-6 gap-y-1 pb-8 xl:gap-x-8">
+              <h2
+                data-feed-mode-title=""
+                className="col-start-1 row-start-1 row-span-2 self-end translate-y-7 text-[5.25rem] font-semibold leading-[0.8] tracking-tight text-foreground xl:text-[6.5rem]"
+              >
+                {catalogTitle}
+              </h2>
+              <div data-feed-mode-cluster="" className="col-start-2 row-start-1 flex min-w-0 items-center justify-end gap-3">
+                <div className="shrink-0">
+                  <SearchBar
+                    value={search}
+                    onChange={onSearchChange}
+                    placeholder={searchPlaceholder}
+                    filterCount={filterCount}
+                    expandable
+                    expandAnchor="end"
+                    {...searchBarShared}
+                    {...projectSearchBarProps}
+                    {...(!isProjects ? { filterContent } : {})}
+                  />
+                </div>
+                <div className="flex min-w-0 max-w-[min(36rem,calc(100vw-2rem))] shrink items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <FeedModeToggle {...toggleProps} />
+                </div>
+              </div>
+              <FeedModeTransition modeKey={mode} className="col-start-2 row-start-2 min-w-0">
+                <div className="w-full min-w-0">
+                  {isProjects ? (
+                    <FilterChips
+                      align="end"
+                      rows={4}
+                      options={parentChips}
+                      selected={String(category)}
+                      onSelect={(id) => {
+                        if (id === DESIGN_DRILL_CHIP) {
+                          onDrillSelect?.();
+                          onCategoryChange(DESIGN_DRILL_CHIP);
+                        } else {
+                          onCategoryChange(id as CategoryParentId | "All");
+                        }
+                        onProjectLeavesChange?.([]);
+                        onProjectStylesChange?.([]);
+                      }}
+                    />
+                  ) : isObjects ? (
+                    <ObjectsStudioLink className="pt-1 text-right" />
+                  ) : (
+                    <DesignerCategoryChips
+                      align="end"
+                      rows={4}
+                      selected={designerCategory}
+                      onSelect={onDesignerCategoryChange}
+                      chips={designerCategoryChips}
+                    />
+                  )}
+                </div>
+              </FeedModeTransition>
+            </div>
+          <motion.div
+            className="fixed inset-x-0 top-0 z-40 !mt-0 hidden lg:block"
+            initial={false}
+            animate={{ y: homeScrolled ? "0%" : "-100%" }}
+            transition={barSlide}
+            aria-hidden={!homeScrolled || undefined}
+            inert={!homeScrolled ? true : undefined}
+            style={{ pointerEvents: homeScrolled ? "auto" : "none" }}
+          >
+            <div className="border-b border-[#e4e1db] bg-[#f5f5f5]/95 backdrop-blur-md">
+              <div className="mx-auto flex max-w-[1920px] flex-col px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]">
+                <div className="relative flex h-14 items-center gap-3 border-b border-[#e4e1db]/80">
+                  <button
+                    type="button"
+                    className="relative z-10 shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label={`${BRAND_NAME} หน้าแรก`}
+                    onClick={() => {
+                      navigate("/");
+                      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+                      useFeedHomeNavStore.getState().setScrolled(false);
+                    }}
+                  >
+                    <BrandLogo size="sm" tone="ink" />
+                  </button>
+                  <div className="pointer-events-none absolute inset-x-0 top-0 flex h-14 items-center justify-center">
+                    <div className="pointer-events-auto flex items-center gap-3">
+                      <SearchBar
+                        value={search}
+                        onChange={onSearchChange}
+                        placeholder={searchPlaceholder}
+                        filterCount={filterCount}
+                        expandable
+                        expandAnchor="end"
+                        compact
+                        {...searchBarShared}
+                        {...projectSearchBarProps}
+                      />
+                      <div className="flex min-w-0 max-w-[min(36rem,calc(100vw-28rem))] shrink items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        <FeedModeToggle {...toggleProps} />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={onCreateClick}
+                        aria-label="สร้างโปรเจกต์"
+                        title="สร้างโปรเจกต์"
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-foreground text-background transition-opacity hover:opacity-90"
+                      >
+                        <Plus className="h-4 w-4" strokeWidth={2.5} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="relative z-10 ml-auto">
+                    <ProfileButton accountOnly />
+                  </div>
+                </div>
+                <div className="flex min-h-11 w-full items-center justify-center py-2">
+                  <FeedModeTransition modeKey={mode} className="flex min-w-0 w-full justify-center">
+                    <div className="flex min-h-9 w-max max-w-full min-w-0 items-center justify-center gap-5 sm:gap-6">
+                      {isProjects ? (
+                        <>
+                          <FeedModeDropdown value={feedMode} onChange={onFeedModeChange} />
+                          <div className="min-w-0">
+                            <FilterChips
+                              align="center"
+                              options={parentChips}
+                              selected={String(category)}
+                              onSelect={(id) => {
+                                if (id === DESIGN_DRILL_CHIP) {
+                                  onDrillSelect?.();
+                                  onCategoryChange(DESIGN_DRILL_CHIP);
+                                } else {
+                                  onCategoryChange(id as CategoryParentId | "All");
+                                }
+                                onProjectLeavesChange?.([]);
+                                onProjectStylesChange?.([]);
+                              }}
+                            />
+                          </div>
+                        </>
+                      ) : isObjects ? (
+                        <ObjectFilterFields compact />
+                      ) : (
+                        <>
+                          <DesignerFeedDropdown
+                            value={designerFeedSource}
+                            onChange={onDesignerFeedSourceChange ?? (() => {})}
+                            sources={isPackages ? PACKAGE_FEED_ORDER : undefined}
+                          />
+                          <div className="min-w-0">
+                            <DesignerCategoryChips
+                              align="center"
+                              selected={designerCategory}
+                              onSelect={onDesignerCategoryChange}
+                              chips={designerCategoryChips}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </FeedModeTransition>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+          </>
+        ) : !homeScrolled ? (
           <>
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
@@ -418,34 +638,10 @@ const FeedToolbar = ({
                   {...(!isProjects ? { filterContent } : {})}
                 />
               </div>
-              <div className="flex w-[21.75rem] max-w-[min(21.75rem,calc(100vw-2rem))] shrink-0 items-center">
-                <FeedModeToggle {...toggleProps} className="w-full" />
+              <div className="flex min-w-0 max-w-[min(36rem,calc(100vw-2rem))] shrink items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <FeedModeToggle {...toggleProps} />
               </div>
             </div>
-            <FeedModeTransition modeKey={mode} className="min-w-0">
-              {isProjects ? (
-                <FilterChips
-                  options={parentChips}
-                  selected={String(category)}
-                  onSelect={(id) => {
-                    if (id === DESIGN_DRILL_CHIP) {
-                      onDrillSelect?.();
-                      onCategoryChange(DESIGN_DRILL_CHIP);
-                    } else {
-                      onCategoryChange(id as CategoryParentId | "All");
-                    }
-                    onProjectLeavesChange?.([]);
-                    onProjectStylesChange?.([]);
-                  }}
-                />
-              ) : isDesigners || isPackages ? (
-                <DesignerCategoryChips
-                  selected={designerCategory}
-                  onSelect={onDesignerCategoryChange}
-                  chips={designerCategoryChips}
-                />
-              ) : null}
-            </FeedModeTransition>
           </>
         ) : (
           <>
@@ -554,8 +750,8 @@ const FeedToolbar = ({
                 </div>
               </FeedModeTransition>
 
-              <div className="flex w-[21.75rem] max-w-[min(21.75rem,calc(100vw-2rem))] shrink-0 items-center">
-                <FeedModeToggle {...toggleProps} className="w-full" />
+              <div className="flex min-w-0 max-w-[min(36rem,calc(100vw-2rem))] shrink items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <FeedModeToggle {...toggleProps} />
               </div>
             </div>
           </>
@@ -608,7 +804,34 @@ const FeedToolbar = ({
         </div>
       ) : null}
 
-      {search.trim() && typeof (resultCount ?? projectResultCount) === "number" ? (
+      {isProjects && colorQuery ? (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => onColorQueryChange?.(null)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-1 text-[11px] text-foreground"
+          >
+            <span
+              aria-hidden
+              className="h-3 w-3 rounded-full border border-black/10"
+              style={{ backgroundColor: colorQuery }}
+            />
+            สี {colorQuery}
+            <X className="h-3 w-3 text-muted-foreground" />
+            <span className="sr-only">ล้างสี</span>
+          </button>
+          {colorSearchPending ? (
+            <p className="text-xs text-muted-foreground" aria-live="polite">
+              กำลังเทียบสีจากปกผลงาน
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {!isObjects &&
+      (search.trim() || colorQuery) &&
+      !colorSearchPending &&
+      typeof (resultCount ?? projectResultCount) === "number" ? (
         <p
           className="mt-2 text-xs sm:text-sm text-muted-foreground tabular-nums"
           aria-live="polite"

@@ -578,7 +578,7 @@ export function useApproveHireWork() {
         await issuePlatformFeeReceiptForOrder({
           db: sharedDb,
           order: ctx,
-          projectTitle: input.projectTitle ?? "งานจ้าง Aplus1",
+          projectTitle: input.projectTitle ?? "งานจ้าง SAMECOR",
           buyer,
           createdBy: input.userId,
         });

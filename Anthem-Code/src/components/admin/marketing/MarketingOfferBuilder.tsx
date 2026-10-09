@@ -7,9 +7,9 @@ import { MarketingCard } from "./MarketingShell";
 
 const REFERRAL_COPY = {
   th: {
-    headline: "แคมเปญ Referral — ชวนเพื่อนมา Aplus1",
+    headline: "แคมเปญ Referral — ชวนเพื่อนมา SAMECOR",
     bullets: [
-      "ลิงก์: https://aplus1.app/?ref=YOUR_CODE",
+      "ลิงก์: https://samecor.com/?ref=YOUR_CODE",
       "เพื่อนใหม่สมัครผ่านลิงก์: +20px welcome",
       "เพื่อน publish/post งานแรก: +100px welcome",
       "ผู้ชวนได้ +50px earned เมื่อเพื่อนทำ first meaningful action",
@@ -18,9 +18,9 @@ const REFERRAL_COPY = {
     cta: "แชร์ใน IG Story / LINE / อีเมล — ไม่แก้ reward logic แค่ marketing copy",
   },
   en: {
-    headline: "Referral campaign — invite friends to Aplus1",
+    headline: "Referral campaign — invite friends to SAMECOR",
     bullets: [
-      "Link: https://aplus1.app/?ref=YOUR_CODE",
+      "Link: https://samecor.com/?ref=YOUR_CODE",
       "New signup via link: +20px welcome",
       "First publish/post: +100px welcome",
       "Referrer: +50px earned on friend's first meaningful action",
@@ -33,7 +33,7 @@ const REFERRAL_COPY = {
 export default function MarketingOfferBuilder() {
   const { activeBusiness, activeBusinessId } = useMarketingBusinesses();
   const { runInsight, isRunning } = useMarketingInsights(activeBusinessId);
-  const [offer, setOffer] = useState("สมัคร Aplus1 ฟรี + โปรไฟล์พร้อม publish 3 ผลงาน");
+  const [offer, setOffer] = useState("สมัคร SAMECOR ฟรี + โปรไฟล์พร้อม publish 3 ผลงาน");
   const [lang, setLang] = useState<"th" | "en">("th");
 
   const referral = REFERRAL_COPY[lang];

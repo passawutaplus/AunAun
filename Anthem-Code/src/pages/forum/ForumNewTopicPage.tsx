@@ -19,6 +19,7 @@ import { FORUM_JOB_WARNING, looksLikeForumJobPost } from "@/lib/forumJobSpam";
 import { parseTagsInput } from "@/lib/forum";
 import type { ForumAttachment } from "@/lib/forumAttachments";
 import { cn } from "@/lib/utils";
+import { isAplus1HiringBoardEnabled } from "@/lib/aplus1Launch";
 
 const CAT_ICONS: Record<ForumCategorySlug, LucideIcon> = {
   help: LifeBuoy,
@@ -212,9 +213,11 @@ export default function ForumNewTopicPage() {
             <div className="rounded-xl border border-rose-200 bg-rose-50/70 dark:bg-rose-950/30 p-3 space-y-3">
               <p className="text-xs text-rose-900 dark:text-rose-200 leading-relaxed">{FORUM_JOB_WARNING}</p>
               <div className="flex flex-wrap gap-2">
-                <Button type="button" size="sm" asChild>
-                  <Link to="/hiring">ไปลงประกาศโอกาส</Link>
-                </Button>
+                {isAplus1HiringBoardEnabled() ? (
+                  <Button type="button" size="sm" asChild>
+                    <Link to="/hiring">ไปลงประกาศโอกาส</Link>
+                  </Button>
+                ) : null}
                 <label className="inline-flex items-center gap-2 text-xs text-rose-900/90 dark:text-rose-200">
                   <input
                     type="checkbox"

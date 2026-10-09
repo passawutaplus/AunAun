@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type CSSProperties } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,6 @@ import { User as UserIcon, Loader2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import AuthWorkWall from "@/components/auth/AuthWorkWall";
-import HeroGridSpotlight from "@/components/feed/HeroGridSpotlight";
 import HeroRotatingWord, { HeroHundredPlus, useHeroRotatingCycle } from "@/components/feed/HeroRotatingWord";
 import { DemoLoginHint, DemoSignupBlocked } from "@/components/DemoAuthHints";
 import { ReferralSignupHint } from "@/components/referral/ReferralSignupHint";
@@ -38,6 +37,40 @@ import {
   loginEmailFormatError,
   loginPasswordEmptyError,
 } from "@/lib/loginEmailPrefill";
+
+const PAPER_SERIF = '"Iowan Old Style", Palatino, Georgia, serif';
+
+/** Same paper field as the studio home, so login doesn't sit on the old glass theme. */
+const paperVars = {
+  "--background": "0 0% 96%",
+  "--foreground": "40 3% 18%",
+  "--muted-foreground": "30 4% 41%",
+  "--card": "0 0% 100%",
+  "--card-foreground": "40 3% 18%",
+  "--popover": "0 0% 100%",
+  "--popover-foreground": "40 3% 18%",
+  "--border": "40 5% 86%",
+  "--input": "40 5% 86%",
+  "--muted": "40 6% 92%",
+  "--secondary": "40 6% 92%",
+  "--secondary-foreground": "40 3% 18%",
+  "--accent": "40 6% 92%",
+  "--accent-foreground": "40 3% 18%",
+  "--primary": "40 3% 18%",
+  "--primary-foreground": "0 0% 96%",
+  "--ring": "40 3% 18%",
+  color: "#2f2e2c",
+  backgroundColor: "#f5f5f5",
+} as CSSProperties;
+
+const paperInput =
+  "h-11 rounded-full border-[#e4e1db] bg-white text-[#2f2e2c] shadow-none backdrop-blur-none placeholder:text-[#6b6862] focus-visible:ring-[#2f2e2c]/25";
+
+const paperSubmit =
+  "h-11 w-full rounded-full border-0 bg-[#2f2e2c] text-base font-medium text-[#f5f5f5] shadow-none hover:bg-[#2f2e2c]/90";
+
+const paperGoogle =
+  "rounded-full border-[#e4e1db] bg-white text-[#2f2e2c] shadow-none backdrop-blur-none hover:bg-[#f5f5f5]";
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -84,16 +117,19 @@ const AuthPage = () => {
   return (
     <div
       ref={authHeroRef}
+      style={paperVars}
       className={cn(
-      "relative min-h-screen overflow-x-hidden bg-background transition-opacity duration-300",
+      "relative min-h-screen overflow-x-hidden bg-[#f5f5f5] text-[#2f2e2c] transition-opacity duration-300",
       "lg:overflow-hidden",
       fadeOut && "opacity-0"
     )}>
       <SeoHead title="เข้าสู่ระบบ" path="/auth" noindex />
       <main id="main-content" className="contents">
-      <HeroGridSpotlight trackRef={authHeroRef} className="z-0" />
-
-      <BackButton to="/" label="กลับหน้าแรก" className="absolute top-4 left-4 z-30" />
+      <BackButton
+        to="/"
+        label="กลับหน้าแรก"
+        className="absolute top-4 left-4 z-30 border-[#e4e1db] bg-white/90 text-[#2f2e2c] hover:bg-white"
+      />
 
       <div className="relative z-10 min-h-screen grid lg:grid-cols-2">
         {/* LEFT: Full-bleed work wall. Hidden on mobile. */}
@@ -107,17 +143,20 @@ const AuthPage = () => {
             className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-16 bg-gradient-to-b from-background/50 to-transparent"
             aria-hidden
           />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-background from-[18%] via-background/75 via-[55%] to-transparent px-8 pb-8 pt-24">
-            <p className="text-left text-3xl font-bold tracking-tight leading-[0.95] text-foreground xl:text-4xl">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-[#f5f5f5] from-[18%] via-[#f5f5f5]/80 via-[55%] to-transparent px-8 pb-8 pt-24">
+            <p
+              className="text-left text-[clamp(2.6rem,4vw,3.75rem)] font-normal leading-[0.92] tracking-tight text-[#2f2e2c]"
+              style={{ fontFamily: PAPER_SERIF }}
+            >
               <span className="block">1 Profile to</span>
-              <span className="block text-primary">
+              <span className="block">
                 <HeroHundredPlus /> <HeroRotatingWord cycle={heroCycle} lang="en" />
               </span>
             </p>
-            <p className="mt-1.5 max-w-md text-sm font-normal leading-relaxed text-muted-foreground xl:text-base">
+            <p className="mt-3 max-w-md text-sm font-normal leading-relaxed text-[#6b6862]">
               <span className="inline-flex flex-wrap items-baseline gap-x-1.5">
                 <span>ให้ผลงานพาคุณไปสู่</span>
-                <HeroRotatingWord cycle={heroCycle} lang="th" className="font-semibold text-primary" />
+                <HeroRotatingWord cycle={heroCycle} lang="th" className="font-medium text-[#2f2e2c]" />
                 <span>ใหม่ๆ</span>
               </span>
             </p>
@@ -128,14 +167,14 @@ const AuthPage = () => {
         <div className="flex items-center justify-center p-4 sm:p-6 lg:p-8">
             <div className="w-full max-w-md pb-6 lg:pb-24">
             <div className="flex justify-center mb-6 lg:hidden">
-              <BrandLogo />
+              <BrandLogo tone="ink" />
             </div>
             <div className="hidden lg:flex mb-8">
-              <BrandLogo size="sm" />
+              <BrandLogo size="sm" tone="ink" />
             </div>
 
-            <h1 className="text-2xl font-medium tracking-tight mb-6 thai-display">
-              {tab === "login" ? "ยินดีต้อนรับกลับมา 👋" : "สร้างบัญชีใหม่"}
+            <h1 className="mb-6 font-display text-[2.15rem] font-medium leading-tight tracking-tight text-[#2f2e2c]">
+              {tab === "login" ? "ยินดีต้อนรับกลับมา" : "สร้างบัญชีใหม่"}
             </h1>
             {tab === "signup" ? (
               <p className="text-sm text-muted-foreground -mt-4 mb-6 thai-body">
@@ -144,15 +183,25 @@ const AuthPage = () => {
             ) : null}
 
             <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-5 rounded-xl bg-muted/60 p-1 h-11">
-                <TabsTrigger value="login" className="rounded-lg">เข้าสู่ระบบ</TabsTrigger>
-                <TabsTrigger value="signup" className="rounded-lg">สมัครสมาชิก</TabsTrigger>
+              <TabsList className="mb-6 grid h-11 w-full grid-cols-2 rounded-full bg-[#2f2e2c]/8 p-1">
+                <TabsTrigger
+                  value="login"
+                  className="rounded-full text-[#6b6862] data-[state=active]:!bg-[#2f2e2c] data-[state=active]:!text-[#f5f5f5] data-[state=active]:shadow-none"
+                >
+                  เข้าสู่ระบบ
+                </TabsTrigger>
+                <TabsTrigger
+                  value="signup"
+                  className="rounded-full text-[#6b6862] data-[state=active]:!bg-[#2f2e2c] data-[state=active]:!text-[#f5f5f5] data-[state=active]:shadow-none"
+                >
+                  สมัครสมาชิก
+                </TabsTrigger>
               </TabsList>
 
               <FeedModeTransition modeKey={tab}>
                 {tab === "login" ? (
                   <div className="space-y-4">
-                    <SocialButtons redirectTo={redirect} />
+                    <SocialButtons redirectTo={redirect} buttonClassName={paperGoogle} />
                     <AuthEmailSeparator />
                     <LoginForm redirect={redirect} onSwitch={() => setTab("signup")} />
                   </div>
@@ -161,7 +210,7 @@ const AuthPage = () => {
                     {/* Demo: no Google on signup — email signup blocked; avoid accidental OAuth account create */}
                     {import.meta.env.VITE_DEMO_MODE === "true" ? null : (
                       <>
-                        <SocialButtons redirectTo={redirect} />
+                        <SocialButtons redirectTo={redirect} buttonClassName={paperGoogle} />
                         <AuthEmailSeparator />
                       </>
                     )}
@@ -263,10 +312,7 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
           onFocus={() => setEmailError(null)}
           aria-invalid={!!emailError || undefined}
           aria-describedby={emailError ? "login-email-error" : undefined}
-          className={cn(
-            "h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40",
-            emailError && "border-destructive",
-          )}
+          className={cn(paperInput, emailError && "border-destructive")}
           required
         />
         <FieldError id="login-email-error" message={emailError} />
@@ -283,6 +329,7 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
           onFocus={() => setPasswordError(null)}
           invalid={!!passwordError}
           error={passwordError}
+          inputClassName={paperInput}
           required
         />
       </div>
@@ -292,7 +339,7 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
           <Checkbox checked={remember} onCheckedChange={(v) => setRemember(v === true)} />
           จดจำฉันไว้
         </label>
-        <Link to="/auth/forgot" className="text-xs text-primary hover:underline">
+        <Link to="/auth/forgot" className="text-xs text-[#2f2e2c] underline underline-offset-2">
           ลืมรหัสผ่าน?
         </Link>
       </div>
@@ -300,15 +347,15 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
       <Button
         type="submit"
         disabled={busy}
-        className="w-full h-11 rounded-xl text-base font-semibold bg-gradient-brand text-white hover:opacity-95 border-0 shadow-md shadow-primary/20"
+        className={paperSubmit}
       >
         {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
         เข้าสู่ระบบ
       </Button>
 
-      <p className="text-center text-xs text-muted-foreground">
+      <p className="text-center text-xs text-[#6b6862]">
         ยังไม่มีบัญชี?{" "}
-        <button type="button" onClick={onSwitch} className="text-primary hover:underline font-medium">
+        <button type="button" onClick={onSwitch} className="font-medium text-[#2f2e2c] underline underline-offset-2">
           สมัครสมาชิกที่นี่
         </button>
       </p>
@@ -385,7 +432,7 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
             placeholder="ภัสวุฒิ"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="pl-9 h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40"
+            className={cn("pl-9", paperInput)}
             maxLength={80}
           />
         </div>
@@ -404,10 +451,7 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
           onFocus={() => setEmailTouched(false)}
           aria-invalid={!!emailError || undefined}
           aria-describedby={emailError ? "su-email-error" : undefined}
-          className={cn(
-            "h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40",
-            emailError && "border-destructive"
-          )}
+          className={cn(paperInput, emailError && "border-destructive")}
           required
         />
         <FieldError id="su-email-error" message={emailError} />
@@ -426,6 +470,7 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
           showStrength
           invalid={!!passError}
           error={passError}
+          inputClassName={paperInput}
           required
         />
       </div>
@@ -441,6 +486,7 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
           onBlur={() => setConfirmTouched(true)}
           onFocus={() => setConfirmTouched(false)}
           error={confirmError}
+          inputClassName={paperInput}
           required
         />
       </div>
@@ -451,15 +497,15 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
       <Button
         type="submit"
         disabled={busy || !consents.terms || !consents.privacy}
-        className="w-full h-11 rounded-xl text-base font-semibold bg-gradient-brand text-white hover:opacity-95 border-0 shadow-md shadow-primary/20"
+        className={paperSubmit}
       >
         {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
         สมัครสมาชิก
       </Button>
 
-      <p className="text-center text-xs text-muted-foreground">
+      <p className="text-center text-xs text-[#6b6862]">
         มีบัญชีอยู่แล้ว?{" "}
-        <button type="button" onClick={onSwitch} className="text-primary hover:underline font-medium">
+        <button type="button" onClick={onSwitch} className="font-medium text-[#2f2e2c] underline underline-offset-2">
           เข้าสู่ระบบ
         </button>
       </p>

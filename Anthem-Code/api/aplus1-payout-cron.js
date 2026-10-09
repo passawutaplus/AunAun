@@ -17,7 +17,7 @@ function json(res, status, body) {
 export default async function handler(req, res) {
   const secret = readEnv("CRON_SECRET");
   const auth = req.headers.authorization || "";
-  if (secret && auth !== `Bearer ${secret}`) {
+  if (!secret || auth !== `Bearer ${secret}`) {
     return json(res, 401, { error: "unauthorized" });
   }
 

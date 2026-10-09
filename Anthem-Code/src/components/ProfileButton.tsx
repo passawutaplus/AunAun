@@ -17,9 +17,11 @@ type Props = {
   className?: string;
   /** Stretch chip to fill remaining feed right-rail width. */
   fillRail?: boolean;
+  /** Chat, bell, and profile only — for the scrolled feed bar. */
+  accountOnly?: boolean;
 };
 
-const ProfileButton = ({ className, fillRail = false }: Props) => {
+const ProfileButton = ({ className, fillRail = false, accountOnly = false }: Props) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<{
@@ -40,6 +42,50 @@ const ProfileButton = ({ className, fillRail = false }: Props) => {
       .maybeSingle()
       .then(({ data }) => setProfile(data ?? null));
   }, [user]);
+
+  const accountMenu = (
+    <ProfileMenuDropdown
+      trigger={
+        <button
+          type="button"
+          aria-label="โปรไฟล์"
+          className="flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-1 transition-colors hover:bg-accent/60"
+        >
+          <UserAvatar
+            src={profile?.avatar_url}
+            name={profile?.display_name}
+            username={profile?.username}
+            className="h-8 w-8"
+            fallbackClassName="text-xs"
+          />
+          <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
+        </button>
+      }
+    />
+  );
+
+  if (accountOnly) {
+    if (!user) {
+      return (
+        <Button
+          type="button"
+          onClick={() => navigate("/auth")}
+          size="sm"
+          className={cn("rounded-full bg-gradient-brand text-white hover:opacity-90", className)}
+        >
+          <User className="mr-1.5 h-4 w-4" />
+          เข้าสู่ระบบ
+        </Button>
+      );
+    }
+    return (
+      <div className={cn("flex shrink-0 items-center gap-0.5", className)}>
+        <ChatNavButton />
+        <NotificationBell />
+        {accountMenu}
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -70,23 +116,7 @@ const ProfileButton = ({ className, fillRail = false }: Props) => {
         >
           <ChatNavButton />
           <NotificationBell />
-          <ProfileMenuDropdown
-            trigger={
-              <button
-                aria-label="โปรไฟล์"
-                className="flex items-center gap-1.5 pl-0.5 pr-1 py-0.5 rounded-full hover:bg-accent/60 transition-colors"
-              >
-                <UserAvatar
-                  src={profile?.avatar_url}
-                  name={profile?.display_name}
-                  username={profile?.username}
-                  className="w-8 h-8"
-                  fallbackClassName="text-xs"
-                />
-                <ChevronDown className="w-4 h-4 text-muted-foreground hidden sm:block" />
-              </button>
-            }
-          />
+          {accountMenu}
         </div>
         {isAplus1GiftEconomyEnabled() && !isAplus1LaunchMinimal() && <WalletBadge />}
       </div>

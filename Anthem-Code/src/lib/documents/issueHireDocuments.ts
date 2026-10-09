@@ -21,7 +21,7 @@ function feeLineItems(feeSatang: number): DocumentLineItem[] {
   return [
     {
       id: "platform-fee",
-      name: "ค่าธรรมเนียมแพลตฟอร์ม Aplus1",
+      name: "ค่าธรรมเนียมแพลตฟอร์ม SAMECOR",
       description: "บริการตัวกลางรับชำระและคุ้มครองธุรกรรม",
       quantity: 1,
       unitPrice: feeSatang / 100,
@@ -44,7 +44,7 @@ export function buildPlatformFeeReceiptSnapshot(input: {
     kind: "platform_fee_receipt",
     docNumber,
     issuedAt,
-    title: input.projectTitle || "งานจ้าง Aplus1",
+    title: input.projectTitle || "งานจ้าง SAMECOR",
     issuer: {
       type: "corporate",
       name: LEGAL_COMPANY_NAME,
@@ -79,7 +79,7 @@ export function buildInvoiceSnapshot(input: {
     kind: "invoice",
     docNumber: input.docNumber ?? makeProvisionalDocNumber("invoice"),
     issuedAt: input.issuedAt ?? new Date().toISOString(),
-    title: input.projectTitle || "งานจ้าง Aplus1",
+    title: input.projectTitle || "งานจ้าง SAMECOR",
     issuer: input.issuer,
     client: input.client,
     items: input.lineItems,
@@ -109,7 +109,7 @@ export function buildReceiptSnapshot(input: {
     kind: "receipt",
     docNumber: input.docNumber ?? makeProvisionalDocNumber("receipt"),
     issuedAt: input.issuedAt ?? new Date().toISOString(),
-    title: input.projectTitle || "งานจ้าง Aplus1",
+    title: input.projectTitle || "งานจ้าง SAMECOR",
     issuer: input.issuer,
     client: input.client,
     items: input.lineItems,

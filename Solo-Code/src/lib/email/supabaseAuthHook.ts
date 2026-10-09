@@ -72,12 +72,13 @@ function resolveAppOrigin(brandUrl?: string | null): string {
     process.env.VITE_ANTHEM_APP_URL,
     import.meta.env.VITE_APLUS1_APP_URL as string | undefined,
     import.meta.env.VITE_ANTHEM_APP_URL as string | undefined,
-    "https://aplus1.app",
+    "https://samecor.com",
   ];
   if (brandUrl) {
     try {
       return new URL(brandUrl).origin;
     } catch {
+      if (/samecor\.com/i.test(brandUrl)) return "https://samecor.com";
       if (/aplus1\.app/i.test(brandUrl)) return "https://aplus1.app";
     }
   }
@@ -89,7 +90,7 @@ function resolveAppOrigin(brandUrl?: string | null): string {
       continue;
     }
   }
-  return "https://aplus1.app";
+  return "https://samecor.com";
 }
 
 /** Direct app link — avoids PKCE ?code= exchange that breaks from email clients. */

@@ -33,19 +33,26 @@ Anthem และ Solo ไม่ใช่เว็บเดียวกัน แ
 - Solo = หลังบ้านธุรกิจ / payment / workflow / operations / client delivery
 - AunAun = กล่องรวม source และแนวคิดเพื่อ sync ecosystem
 
-## Anthem Positioning
+## SAMECOR (โฟลเดอร์ `Anthem-Code/`)
 
-Anthem คือ community สำหรับ creator/designer ไทย:
+ชื่อที่ผู้ใช้เห็นคือ **SAMECOR** โฟลเดอร์โค้ดยังชื่อ `Anthem-Code` โดเมนหลักคือ `samecor.com` (`aplus1.app` redirect มาที่นี่)
 
-- โชว์ผลงาน
-- สร้าง profile/portfolio
-- หาโอกาสจ้างงานหรือ collab
-- ทำ community activity เช่น like, comment, follow, collection, chat
-- มี PX, mission, referral, reward เพื่อกระตุ้น activation
+SAMECOR = SAME + CORE คนละสายงาน แต่มีแกนร่วมกัน ผลงานคือตัวตน แพลตฟอร์มเชื่อมผลงานนั้นเข้ากับคน โปรเจกต์ และโอกาส
+
+- แท็กไลน์: **You Create. We Connect.**
+- การเดินทาง: **Create your profile. Connect through your work. Discover new opportunities.**
+- คำสัญญา: **1 Profile. 100+ Opportunities.**
+- อธิบายแบรนด์: **Your work says who you are. SAMECOR connects it to what’s next.**
+
+สิ่งที่ผลิตภัณฑ์ทำ:
+
+- สร้างโปรไฟล์จากผลงานจริง
+- เชื่อมผ่านงานนั้น เป็นบทสนทนา จ้างงาน คอลแลป เข้าทีม หรือโอกาสอื่น
+- ค้นพบคนจากทำเนียบ และรูปแบบอื่นของงานเดียวกัน เช่น Packages และ Objects
 
 คำอธิบายสั้น:
 
-> Anthem คือพื้นที่ให้ครีเอเตอร์ไทยโชว์งาน หาโอกาส และเติบโตผ่าน community activity จริง
+> SAMECOR คือที่ที่ผลงานของคุณเชื่อมคุณกับคน โปรเจกต์ และโอกาสถัดไป
 
 ## Solo Positioning
 

@@ -1,4 +1,4 @@
-/** Aplus1 payout policy — amounts in satang. */
+/** SAMECOR payout policy — amounts in satang. */
 
 export const PAYOUT_MIN_SATANG = 100_000; // 1,000 THB
 export const PAYOUT_FEE_SATANG = 2_500; // 25 THB

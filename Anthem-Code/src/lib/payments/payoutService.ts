@@ -62,7 +62,7 @@ export async function executeOmiseTransfer(input: {
   return input.provider.createTransfer({
     amountSatang: input.amountSatang,
     recipientId: input.recipientProviderId,
-    description: `Aplus1 payout ${input.payoutRequestId}`,
+    description: `SAMECOR payout ${input.payoutRequestId}`,
     metadata: { payout_request_id: input.payoutRequestId },
     idempotencyKey: `payout:${input.payoutRequestId}`,
   });

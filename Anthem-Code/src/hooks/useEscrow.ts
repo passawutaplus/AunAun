@@ -15,8 +15,8 @@ export type MarketplaceEscrow = {
 };
 
 /**
- * @deprecated Solo `/pay/:token` escrow URLs are cut for Aplus1.
- * Hire money uses Omise + Aplus1 ledger (docs/payments-omise.md).
+ * @deprecated Solo `/pay/:token` escrow URLs are cut for SAMECOR.
+ * Hire money uses Omise + SAMECOR ledger (docs/payments-omise.md).
  */
 export function escrowPayUrl(_portalToken: string): string {
   return "";

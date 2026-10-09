@@ -18,6 +18,7 @@ import { signOutApp } from "@/lib/signOutApp";
 import { useOpenFeedbackTicket } from "@/hooks/useOpenFeedbackTicket";
 import LineMarkIcon from "@/components/icons/LineMarkIcon";
 import { toast } from "sonner";
+import { isAplus1HiringBoardEnabled } from "@/lib/aplus1Launch";
 
 type ProfileMenuCardProps = {
   opportunityOpen?: boolean;
@@ -46,9 +47,11 @@ const ProfileMenuCard = ({ opportunityOpen, onOpportunityOpenChange }: ProfileMe
         <button type="button" onClick={() => navigate("/dashboard")} className={item}>
           <ManageWorkIcon className="w-4 h-4" /> My Studio
         </button>
-        <button type="button" onClick={() => navigate("/hiring")} className={item}>
-          <BriefcaseIcon className="w-4 h-4 text-primary" /> งาน
-        </button>
+        {isAplus1HiringBoardEnabled() ? (
+          <button type="button" onClick={() => navigate("/hiring")} className={item}>
+            <BriefcaseIcon className="w-4 h-4 text-primary" /> งาน
+          </button>
+        ) : null}
         <button type="button" onClick={() => navigate("/chat")} className={item}>
           <MessageCircle className="w-4 h-4 text-primary" /> Chat
         </button>

@@ -42,40 +42,67 @@ async function omisePost(secretKey, path, body, idempotencyKey) {
   return data;
 }
 
-/** Prefer DB amount for quote/order; verify buyer owns the order. */
-async function resolveAmountSatang({ userId, amountFromClient, quoteId, hireOrderId }) {
-  let amountSatang = amountFromClient;
+const UUID_RE = /^[0-9a-f-]{36}$/i;
+const CLOSED_QUOTE_STATUSES = new Set(["expired", "declined", "cancelled", "canceled", "superseded"]);
+
+/**
+ * Amount and links always come from the DB order/quote row — never from the client.
+ * @returns {Promise<{ amountSatang?: number, conversationId?: string, hiringRequestId?: string, error?: string, status?: number }>}
+ */
+async function resolveCharge({ userId, quoteId, hireOrderId }) {
   const cfg = supabaseServiceConfig();
-  if (!cfg || (!quoteId && !hireOrderId)) return { amountSatang, error: null };
+  if (!cfg) return { error: "service_not_configured", status: 503 };
 
-  try {
-    if (hireOrderId) {
-      const row = await sharedRestGet(
-        cfg,
-        "hire_orders",
-        `id=eq.${encodeURIComponent(hireOrderId)}&select=buyer_pays_satang,buyer_id,status&limit=1`,
-      );
-      if (row?.buyer_id && String(row.buyer_id) !== String(userId)) {
-        return { amountSatang, error: "not_order_buyer" };
-      }
-      if (row?.buyer_pays_satang != null) amountSatang = Number(row.buyer_pays_satang);
-      return { amountSatang, error: null };
-    }
-
+  if (hireOrderId) {
+    if (!UUID_RE.test(hireOrderId)) return { error: "invalid_order", status: 400 };
     const row = await sharedRestGet(
       cfg,
-      "hire_quotes",
-      `id=eq.${encodeURIComponent(quoteId)}&select=amount_satang,deposit_percent&limit=1`,
+      "hire_orders",
+      `id=eq.${encodeURIComponent(hireOrderId)}&select=buyer_pays_satang,buyer_id,conversation_id,hiring_request_id&limit=1`,
     );
-    if (row?.amount_satang != null) {
-      const job = Number(row.amount_satang);
-      const dep = Math.min(100, Math.max(1, Math.round(Number(row.deposit_percent) || 100)));
-      amountSatang = dep < 100 ? Math.round((job * dep) / 100) : job;
-    }
-  } catch {
-    /* fall back to client amount */
+    if (!row) return { error: "order_missing", status: 404 };
+    if (String(row.buyer_id) !== String(userId)) return { error: "not_order_buyer", status: 403 };
+    return {
+      amountSatang: Number(row.buyer_pays_satang),
+      conversationId: row.conversation_id ? String(row.conversation_id) : "",
+      hiringRequestId: row.hiring_request_id ? String(row.hiring_request_id) : "",
+    };
   }
-  return { amountSatang, error: null };
+
+  if (!quoteId || !UUID_RE.test(quoteId)) return { error: "quote_required", status: 400 };
+  const quote = await sharedRestGet(
+    cfg,
+    "hire_quotes",
+    `id=eq.${encodeURIComponent(quoteId)}&select=amount_satang,deposit_percent,wht_enabled,wht_rate:payload->>whtRate,status,expires_at,conversation_id,hiring_request_id,created_by&limit=1`,
+  );
+  if (!quote || quote.amount_satang == null) return { error: "quote_missing", status: 404 };
+  if (CLOSED_QUOTE_STATUSES.has(String(quote.status || "").toLowerCase())) {
+    return { error: "quote_closed", status: 409 };
+  }
+  if (quote.expires_at && Date.parse(quote.expires_at) < Date.now()) return { error: "quote_expired", status: 409 };
+  if (quote.created_by && String(quote.created_by) === String(userId)) return { error: "not_quote_buyer", status: 403 };
+
+  if (quote.conversation_id) {
+    const conv = await sharedRestGet(
+      cfg,
+      "conversations",
+      `id=eq.${encodeURIComponent(quote.conversation_id)}&select=client_id&limit=1`,
+    );
+    if (conv?.client_id && String(conv.client_id) !== String(userId)) {
+      return { error: "not_quote_buyer", status: 403 };
+    }
+  }
+
+  // Mirrors snapshotFees() in src/lib/payments/fees.ts: charge = (job − WHT) × deposit%.
+  const job = Number(quote.amount_satang);
+  const whtRate = Number(quote.wht_rate) > 0 ? Number(quote.wht_rate) : 3;
+  const wht = quote.wht_enabled === false ? 0 : Math.min(job, Math.round((job * whtRate) / 100));
+  const dep = Math.min(100, Math.max(1, Math.round(Number(quote.deposit_percent) || 100)));
+  return {
+    amountSatang: Math.round(((job - wht) * dep) / 100),
+    conversationId: quote.conversation_id ? String(quote.conversation_id) : "",
+    hiringRequestId: quote.hiring_request_id ? String(quote.hiring_request_id) : "",
+  };
 }
 
 export default async function handler(req, res) {
@@ -125,13 +152,9 @@ export default async function handler(req, res) {
 
     const quoteId = body.quoteId != null ? String(body.quoteId) : "";
     const hireOrderId = body.hireOrderId != null ? String(body.hireOrderId) : "";
-    const { amountSatang, error: amountErr } = await resolveAmountSatang({
-      userId: user.id,
-      amountFromClient: Number(body.amountSatang),
-      quoteId,
-      hireOrderId,
-    });
-    if (amountErr) return json(res, 403, { error: amountErr });
+    const resolved = await resolveCharge({ userId: user.id, quoteId, hireOrderId });
+    if (resolved.error) return json(res, resolved.status || 400, { error: resolved.error });
+    const { amountSatang } = resolved;
 
     if (!Number.isInteger(amountSatang) || amountSatang < 2000) {
       return json(res, 400, { error: "invalid_amount" });
@@ -158,9 +181,9 @@ export default async function handler(req, res) {
     }
 
     const meta = {
-      conversation_id: body.conversationId != null ? String(body.conversationId) : "",
+      conversation_id: resolved.conversationId || "",
       quote_id: quoteId,
-      hiring_request_id: body.hiringRequestId != null ? String(body.hiringRequestId) : "",
+      hiring_request_id: resolved.hiringRequestId || "",
       hire_order_id: hireOrderId,
       buyer_user_id: String(user.id),
       app: "aplus1",

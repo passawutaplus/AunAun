@@ -42,11 +42,23 @@ export async function runChat() {
     try {
       await signInDemo(page);
       await goto(page, "/chat");
-      const hasHome = await page.evaluate(() =>
-        [...document.querySelectorAll("button")].some((b) => b.textContent?.includes("กลับหน้าแรก")),
+      const railOk = await page.evaluate(() => {
+        const rail = document.querySelector("nav[aria-label='ตัวกรองแชท']");
+        if (!rail) return false;
+        const labels = [...rail.querySelectorAll("button")].map((b) => b.getAttribute("aria-label"));
+        return (
+          labels.includes("กลับหน้าก่อนหน้า") &&
+          ["ทั้งหมด", "งานจ้าง", "คอลแลป", "กลุ่ม"].every((label) => labels.includes(label))
+        );
+      });
+      const hasBar = await page.evaluate(
+        () =>
+          document.body?.innerText?.includes("Chating") &&
+          ![...document.querySelectorAll("button")].some((b) => b.getAttribute("aria-label") === "กลับหน้าแรก") &&
+          [...document.querySelectorAll("button")].some((b) => b.getAttribute("aria-label") === "My Studio"),
       );
-      assert.ok(hasHome);
-      console.log("OK   chat sidebar home button");
+      assert.ok(railOk && hasBar);
+      console.log("OK   chat filter rail and top bar");
     } catch (err) {
       failures.push(err);
       console.log(`FAIL chat sidebar: ${err.message}`);

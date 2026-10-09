@@ -35,6 +35,7 @@ export const STUDIO_HOME_PATH = "/dashboard";
 export const STUDIO_HIRE_PATH = "/dashboard/hire";
 export const STUDIO_PROJECTS_PATH = "/dashboard/projects";
 export const STUDIO_PACKAGES_PATH = "/dashboard/packages";
+export const STUDIO_OBJECTS_PATH = "/dashboard/objects";
 export const STUDIO_CATALOGS_PATH = "/dashboard/catalogs";
 
 export const STUDIO_NAV_GROUPS: StudioNavGroup[] = [
@@ -75,6 +76,14 @@ export const STUDIO_NAV_GROUPS: StudioNavGroup[] = [
         label: "Packages",
         heroTitle: "Packages",
         hint: "จัดการแพ็กเกจบริการที่เปิดรับงาน",
+        end: true,
+      },
+      {
+        id: "objects",
+        to: STUDIO_OBJECTS_PATH,
+        label: "Objects",
+        heroTitle: "Objects",
+        hint: "ขายวัตถุ อาร์ตทอย ภาพพิมพ์ และไฟล์ของตัวเอง",
         end: true,
       },
     ],

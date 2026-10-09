@@ -620,13 +620,14 @@ const CollabDialog = ({
         onOpenChange(o);
       }}
       accessibleTitle="Collaboration Request"
-      desktopClassName="max-w-xl max-h-[90vh] rounded-3xl border-primary/20"
+      desktopClassName="max-w-xl max-h-[90vh]"
       bodyClassName="gap-4 pt-2"
       showGrabHandle
+      tone="paper"
     >
         <DialogHeader className="space-y-2 text-left">
-          <Handshake className="h-8 w-8 text-primary" aria-hidden />
-          <DialogTitle className="text-2xl leading-tight tracking-tight sm:text-[1.75rem]">
+          <Handshake className="h-8 w-8 text-[#2f2e2c]" aria-hidden />
+          <DialogTitle className="paper-title text-[1.85rem] font-medium leading-tight tracking-tight text-[#2f2e2c]">
             Collaboration Request
           </DialogTitle>
           {source === "profile" ? (
@@ -843,7 +844,7 @@ const CollabDialog = ({
                 type="button"
                 size="icon"
                 variant="outline"
-                className="rounded-xl shrink-0 h-10 w-10"
+                className="h-10 w-10 shrink-0 rounded-full border-[#e4e1db] bg-white text-[#2f2e2c] shadow-none hover:bg-[#f5f5f5]"
                 onClick={addReferenceLink}
                 aria-label="เพิ่มลิงก์"
               >
@@ -976,7 +977,7 @@ const CollabDialog = ({
             <Button
               type="submit"
               disabled={busy}
-              className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+              className="rounded-full bg-primary text-primary-foreground shadow-none hover:bg-[#1c1b19] gap-2"
             >
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
               {!user
@@ -1005,10 +1006,11 @@ const CollabDialog = ({
         </span>
       }
       accessibleTitle="เลือกผลงานจาก Catalog"
-      desktopClassName="max-w-lg max-h-[85vh] rounded-3xl"
+      desktopClassName="max-w-lg max-h-[85vh]"
       bodyClassName="gap-0 pt-3"
       showGrabHandle
       stacked
+      tone="paper"
     >
       <div className="sticky top-0 z-10 bg-background pb-3">
         <div className="relative">
@@ -1083,7 +1085,7 @@ const CollabDialog = ({
       <div className="sticky bottom-0 bg-background pt-2">
         <Button
           type="button"
-          className="w-full rounded-full"
+          className="w-full rounded-full shadow-none hover:bg-[#1c1b19]"
           onClick={() => {
             setWorkCatalogOpen(false);
             setWorkQuery("");

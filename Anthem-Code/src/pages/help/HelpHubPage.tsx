@@ -25,7 +25,7 @@ export default function HelpHubPage() {
       <SeoHead
         path="/help"
         title={`Help Center · ${BRAND_NAME}`}
-        description="คำถามที่พบบ่อยและวิธีใช้ Aplus1 — ลงผลงาน ค้นพบ แชทจากผลงาน และบัญชี"
+        description="คำถามที่พบบ่อยและวิธีใช้ SAMECOR — ลงผลงาน ค้นพบ แชทจากผลงาน และบัญชี"
       />
 
       <section className="mx-auto max-w-5xl px-4 pt-10 pb-6 sm:px-6 sm:pt-14">
@@ -34,7 +34,7 @@ export default function HelpHubPage() {
             ช่วยเหลืออะไรดี?
           </h1>
           <p className="mt-2 max-w-xl text-muted-foreground thai-body">
-            ค้นหาคำตอบหรือเลือกหมวด — ถ้าอยากเข้าใจภาพรวมของ {BRAND_NAME} ไปที่ Learn more
+            ค้นหาคำตอบหรือเลือกหมวด — ถ้าอยากเข้าใจภาพรวมของ {BRAND_NAME} ไปที่ About
           </p>
 
           <label className="relative mt-8 block max-w-2xl">
@@ -169,7 +169,7 @@ export default function HelpHubPage() {
                   Forum
                 </Link>
                 <Link to="/learn" className="text-primary hover:underline">
-                  Learn more
+                  About
                 </Link>
               </div>
             </div>

@@ -184,7 +184,7 @@ export function buildHireAccountingMockup(input: {
     kind: "quotation",
     docNumber: quoteNumber,
     issuedAt: now,
-    title: offer.title || "งานจ้าง Aplus1",
+    title: offer.title || "งานจ้าง SAMECOR",
     issuer,
     client,
     items: lineItems,
@@ -202,7 +202,7 @@ export function buildHireAccountingMockup(input: {
 
   const invoice = buildInvoiceSnapshot({
     order: ctx,
-    projectTitle: offer.title || "งานจ้าง Aplus1",
+    projectTitle: offer.title || "งานจ้าง SAMECOR",
     issuer,
     client,
     lineItems,
@@ -238,7 +238,7 @@ export function buildHireAccountingMockup(input: {
     },
     projectTitle: isDeposit
       ? `มัดจำ — ${offer.title || "งานจ้าง"}`
-      : offer.title || "งานจ้าง Aplus1",
+      : offer.title || "งานจ้าง SAMECOR",
     issuer,
     client,
     lineItems: depositItems,

@@ -161,7 +161,7 @@ export function LearnFirstVisitPlay({
 
   return (
     <div>
-      <LearnProductFrame title="aplus1.app · Explore">
+      <LearnProductFrame title="samecor.com · Explore">
         <div className="relative aspect-[16/10] overflow-hidden bg-zinc-950">
           <AnimatePresence mode="wait">
             {stage === 0 ? (

@@ -101,6 +101,9 @@ export function chatProtocolPreviewText(content: string): string | null {
 
 export function replyPreviewText(msg: ReplyPreviewSource): string {
   if (msg.deleted_at) return "ข้อความถูกยกเลิก";
+  if (msg.message_type === "object" || msg.content?.trim().startsWith("[[object]]")) {
+    return "สินค้า";
+  }
   if (msg.message_type === "project") return msg.content?.trim() || "ผลงาน";
   if (msg.message_type === "profile") return "โปรไฟล์";
   if (msg.message_type === "file") return msg.content?.trim() || "ไฟล์แนบ";

@@ -9,7 +9,7 @@ const BOT_CACHE_SECONDS = 300;
 function siteBase(req) {
   const env = process.env.VITE_SITE_URL || process.env.SITE_URL || "";
   if (env) return env.replace(/\/$/, "");
-  const host = req.headers["x-forwarded-host"] || req.headers.host || "aplus1.app";
+  const host = req.headers["x-forwarded-host"] || req.headers.host || "samecor.com";
   const proto = req.headers["x-forwarded-proto"] || "https";
   return `${proto}://${host}`.replace(/\/$/, "");
 }

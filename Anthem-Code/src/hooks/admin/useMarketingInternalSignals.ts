@@ -22,7 +22,7 @@ export type MarketingInternalSignal = {
   detectedAt: string;
 };
 
-const SITE = "https://aplus1.app";
+const SITE = "https://samecor.com";
 const threeDaysAgo = () => new Date(Date.now() - 3 * 86_400_000).toISOString();
 const sevenDaysAgo = () => new Date(Date.now() - 7 * 86_400_000).toISOString();
 const thirtyDaysAgo = () => new Date(Date.now() - 30 * 86_400_000).toISOString();

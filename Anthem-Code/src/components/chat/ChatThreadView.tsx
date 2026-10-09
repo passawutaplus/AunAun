@@ -1346,7 +1346,7 @@ const ChatThreadView = ({
 
   return (
     <div className="flex flex-col h-full min-w-0 bg-background">
-      <header className="flex items-center gap-2 px-3 py-2 border-b border-border bg-background/90 backdrop-blur-md shrink-0">
+      <header className="flex items-center gap-2 px-3 py-2 border-b border-border bg-card shrink-0">
         {showBack && (
           <BackButton
             onClick={onBack ?? (() => navigate("/chat"))}

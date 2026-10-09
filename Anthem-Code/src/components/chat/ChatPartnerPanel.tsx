@@ -58,7 +58,7 @@ const META_BAR_H = 36;
 const META_BAR_CLASS =
   "flex shrink-0 items-center justify-between w-full px-3 py-2 text-xs font-medium text-foreground bg-background hover:bg-muted/40 transition-colors";
 const META_EXPAND_BTN_CLASS =
-  "inline-flex h-7 min-w-8 items-center justify-center rounded-md bg-gradient-to-r from-primary-bright to-primary text-white";
+  "inline-flex h-7 min-w-8 items-center justify-center rounded-md bg-primary text-primary-foreground";
 
 const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapseLabel }: Props) => {
   const navigate = useNavigate();
@@ -240,7 +240,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
     <aside
       ref={rootRef}
       className={cn(
-        "relative flex flex-col h-full border-l border-border bg-background overflow-hidden",
+        "relative flex flex-col h-full border-l border-border bg-card overflow-hidden",
         className,
       )}
     >

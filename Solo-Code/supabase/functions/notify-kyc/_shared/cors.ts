@@ -1,11 +1,13 @@
 /**
- * Shared CORS allowlist for Supabase Edge Functions invoked from So1o / Aplus1 browsers.
+ * Shared CORS allowlist for Supabase Edge Functions invoked from So1o / SAMECOR browsers.
  */
 
 const STATIC_ORIGINS = [
   "https://solofreelancer.com",
   "https://www.solofreelancer.com",
   "https://so1o-freelancer-managment.lovable.app",
+  "https://samecor.com",
+  "https://www.samecor.com",
   "https://aplus1.app",
   "https://www.aplus1.app",
   "https://aplus1-demo.vercel.app",
@@ -29,7 +31,7 @@ const LOVABLE_PREVIEW_ORIGIN_RE = /^https:\/\/([a-z0-9-]+\.)*lovable\.app$/i;
 /** Vercel production + preview deploys for so1o-ops-hub */
 const VERCEL_OPS_HUB_ORIGIN_RE = /^https:\/\/so1o-ops[-a-z0-9.]*\.vercel\.app$/i;
 
-/** Vercel preview deployments for Aplus1 (aplus1-demo / an1hem / aplus1-prod). */
+/** Vercel preview deployments for SAMECOR (aplus1-demo / an1hem / aplus1-prod). */
 const VERCEL_ANTHEM_ORIGIN_RE = /^https:\/\/(aplus1-demo|an1hem|aplus1-prod)[a-z0-9-]*\.vercel\.app$/i;
 
 function extraOriginsFromEnv(): string[] {

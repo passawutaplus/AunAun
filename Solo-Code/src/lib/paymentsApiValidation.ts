@@ -78,6 +78,8 @@ const STATIC_ALLOWED_ORIGINS = [
   "https://solofreelancer.com",
   "https://www.solofreelancer.com",
   "https://so1o-freelancer-managment.lovable.app",
+  "https://samecor.com",
+  "https://www.samecor.com",
   "https://aplus1.app",
   "https://www.aplus1.app",
   "https://an1hem.app",

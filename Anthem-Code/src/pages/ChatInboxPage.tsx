@@ -9,6 +9,7 @@ import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatThreadView from "@/components/chat/ChatThreadView";
 import ChatPartnerPanel from "@/components/chat/ChatPartnerPanel";
 import { ChatErrorBoundary } from "@/components/chat/ChatErrorBoundary";
+import { ChatFilterRail } from "@/components/chat/ChatFilterRail";
 import { ChatInboxTopBar } from "@/components/chat/ChatInboxTopBar";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { cn } from "@/lib/utils";
@@ -167,11 +168,15 @@ const ChatInboxPage = () => {
   );
 
   return (
-    <main id="main-content" className="flex h-[100dvh] flex-col overflow-hidden bg-background">
+    <main id="main-content" className="chat-paper flex h-[100dvh] flex-col overflow-hidden bg-background">
       <ChatInboxTopBar />
+      <div className="flex min-h-0 flex-1">
+      <div className={cn("h-full shrink-0", showSidebarMobile ? "flex" : "hidden", "md:flex")}>
+        <ChatFilterRail tab={tab} onTabChange={setTab} />
+      </div>
       <div
         className={cn(
-          "flex min-h-0 flex-1 flex-col md:grid",
+          "flex min-h-0 min-w-0 flex-1 flex-col md:grid",
           "transition-[grid-template-columns] duration-[350ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
           partnerPanelOpen
             ? "md:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)]"
@@ -188,7 +193,6 @@ const ChatInboxPage = () => {
           <ChatSidebar
             selectedId={id}
             tab={tab}
-            onTabChange={setTab}
             search={search}
             onSearchChange={setSearch}
             onSelectConversation={selectConversation}
@@ -239,6 +243,7 @@ const ChatInboxPage = () => {
             </ChatErrorBoundary>
           </motion.div>
         </div>
+      </div>
       </div>
 
       <AnimatePresence>

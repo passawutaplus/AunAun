@@ -35,7 +35,7 @@ export function readOmiseServerEnv(
     mode,
     marketplaceApproved: env.OMISE_MARKETPLACE_APPROVED === "true",
     webhookSecret: env.OMISE_WEBHOOK_SECRET ?? "",
-    merchantName: env.OMISE_MERCHANT_NAME ?? "Aplus1",
+    merchantName: env.OMISE_MERCHANT_NAME ?? "SAMECOR",
   };
 }
 

@@ -153,7 +153,7 @@ export default function FeedbackComposer() {
           </button>
               <h2 className="text-xl font-bold tracking-tight">Customer Review</h2>
               <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-                บอกประสบการณ์ที่ใช้ Aplus1 — บั๊ก ไอเดีย หรือหน้าพัง แล้วแคปหน้าจอชี้จุดได้
+                บอกประสบการณ์ที่ใช้ SAMECOR — บั๊ก ไอเดีย หรือหน้าพัง แล้วแคปหน้าจอชี้จุดได้
               </p>
         </div>
 

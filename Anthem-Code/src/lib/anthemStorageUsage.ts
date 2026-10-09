@@ -130,7 +130,7 @@ function throwIfOverQuota(used: number, tier: Tier, additionalBytes: number): vo
   }
 }
 
-/** Block upload/publish when Aplus1 pool would exceed tier cap. */
+/** Block upload/publish when SAMECOR pool would exceed tier cap. */
 export async function assertAnthemStorageAvailable(
   userId: string,
   tier: Tier,

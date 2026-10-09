@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { normalizePlanId } from "@/lib/tierMembership";
 import { isAplus1SubscriptionsEnabled } from "@/lib/aplus1Launch";
+import { retainSharedChannel } from "@/lib/sharedRealtimeChannel";
 
 export interface SubscriptionRow {
   id: string;
@@ -75,30 +76,25 @@ export function useSubscription() {
 
   useEffect(() => {
     if (!userId || !subscriptionsEnabled) return;
-    const invalidate = () =>
-      queryClient.invalidateQueries({ queryKey: ["subscription", userId, env] });
-    const topic = `subs-${userId}-${Math.random().toString(36).slice(2, 10)}`;
-    const ch = supabase
-      .channel(topic)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${userId}` },
-        invalidate,
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "user_credits", filter: `user_id=eq.${userId}` },
-        invalidate,
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${userId}` },
-        invalidate,
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
+    const invalidate = () => queryClient.invalidateQueries({ queryKey: ["subscription", userId, env] });
+    return retainSharedChannel(`subs-${userId}-${env}`, (ch) =>
+      ch
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${userId}` },
+          invalidate,
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "user_credits", filter: `user_id=eq.${userId}` },
+          invalidate,
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${userId}` },
+          invalidate,
+        ),
+    );
   }, [userId, env, queryClient, subscriptionsEnabled]);
 
   if (!subscriptionsEnabled) {

@@ -156,7 +156,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
           <div className="flex items-start justify-between gap-2">
             <div>
               <h2 className="text-base font-semibold text-foreground">
-                {tourMode ? "ทัวร์รู้จัก Aplus1" : "Welcome Bonus"}
+                {tourMode ? "ทัวร์รู้จัก SAMECOR" : "Welcome Bonus"}
               </h2>
               <p className="mt-0.5 text-sm text-muted-foreground">
                 {tourMode ? (

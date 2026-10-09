@@ -1,7 +1,8 @@
 import type { FeedMode } from "@/components/feed/FeedModeToggle";
 
 /**
- * Launch scope: Projects + Designers + project-qualified hire/chat + save/collections.
+ * Launch scope: Projects + Designers + packages + hire/collab/chat + save/collections.
+ * Job board (They are HIRING) is deferred — opt-in with VITE_APLUS1_HIRING_BOARD_ENABLED.
  * Fail-closed: minimal unless VITE_APLUS1_FULL_PRODUCT=true.
  */
 export function isAplus1FullProduct(): boolean {
@@ -13,7 +14,7 @@ export function isAplus1LaunchMinimal(): boolean {
   return !isAplus1FullProduct();
 }
 
-export const LAUNCH_FEED_MODES = ["projects", "designers", "packages"] as const;
+export const LAUNCH_FEED_MODES = ["projects", "designers", "packages", "objects"] as const;
 export type LaunchFeedMode = (typeof LAUNCH_FEED_MODES)[number];
 
 export function isLaunchFeedMode(mode: FeedMode): mode is LaunchFeedMode {
@@ -45,6 +46,7 @@ export const LAUNCH_ALLOWED_ROUTE_PATTERNS: readonly RegExp[] = [
   /^\/collab-requests$/,
   /^\/project\/[^/]+$/,
   /^\/service\/[^/]+$/,
+  /^\/object\/[^/]+$/,
   /^\/u\/[^/]+(\/followers)?$/,
   /^\/explore\/[^/]+\/[^/]+$/,
   /^\/chat(\/|$)/,
@@ -56,9 +58,6 @@ export const LAUNCH_ALLOWED_ROUTE_PATTERNS: readonly RegExp[] = [
   /^\/similar\/[^/]+$/,
   /^\/inspire(\/|$)/,
   /^\/forum(\/|$)/,
-  /^\/jobs(\/|$)/,
-  /^\/hiring(\/|$)/,
-  /^\/org(\/|$)/,
   /^\/legal(\/|$)/,
   /^\/admin(\/|$)/,
   /^\/error(\/|$)/,
@@ -75,9 +74,30 @@ export function isRetiredPublicPath(pathname: string): boolean {
   );
 }
 
+/** Job board + org register — kept in code, off until explicitly enabled. */
+export const HIRING_BOARD_ROUTE_PATTERNS: readonly RegExp[] = [
+  /^\/jobs(\/|$)/,
+  /^\/hiring(\/|$)/,
+  /^\/org(\/|$)/,
+];
+
+export function isHiringBoardPath(pathname: string): boolean {
+  return HIRING_BOARD_ROUTE_PATTERNS.some((re) => re.test(pathname));
+}
+
+/**
+ * They are HIRING / org posting — fail-closed.
+ * Re-enable with VITE_APLUS1_HIRING_BOARD_ENABLED=true after the board review is done.
+ */
+export function isAplus1HiringBoardEnabled(): boolean {
+  return import.meta.env.VITE_APLUS1_HIRING_BOARD_ENABLED === "true";
+}
+
 /** @deprecated Use LAUNCH_ALLOWED_ROUTE_PATTERNS — denylist kept for docs/tests only. */
 export const LAUNCH_HIDDEN_PATH_PREFIXES = [
   "/jobs",
+  "/hiring",
+  "/org",
   "/community",
   "/advertise",
   "/ads",
@@ -98,6 +118,7 @@ export const LAUNCH_HIDDEN_PATH_PREFIXES = [
 ] as const;
 
 export function isLaunchAllowedPath(pathname: string): boolean {
+  if (isHiringBoardPath(pathname)) return isAplus1HiringBoardEnabled();
   if (!isAplus1LaunchMinimal()) return true;
   return LAUNCH_ALLOWED_ROUTE_PATTERNS.some((re) => re.test(pathname));
 }
@@ -108,6 +129,7 @@ export function isLaunchAllowedPath(pathname: string): boolean {
  */
 export function isLaunchHiddenPath(pathname: string): boolean {
   if (isRetiredPublicPath(pathname)) return true;
+  if (isHiringBoardPath(pathname)) return !isAplus1HiringBoardEnabled();
   if (!isAplus1LaunchMinimal()) return false;
   if (isLaunchAllowedPath(pathname)) return false;
   return LAUNCH_HIDDEN_PATH_PREFIXES.some(
@@ -124,7 +146,7 @@ export function isAplus1SubscriptionsEnabled(): boolean {
   return import.meta.env.VITE_APLUS1_SUBSCRIPTIONS_ENABLED === "true";
 }
 
-/** Aplus1 ↔ So1o ecosystem — disabled at launch unless env enables it. */
+/** SAMECOR ↔ So1o ecosystem — disabled at launch unless env enables it. */
 export function isSoloEcosystemEnabled(): boolean {
   if (isAplus1LaunchMinimal()) return false;
   return (
@@ -139,19 +161,19 @@ export const isAplus1UpgradeEnabled = isSoloEcosystemEnabled;
 export const UPGRADE_PATH = "/upgrade";
 
 export const UPGRADE_COMING_SOON_TH =
-  "แพ็ก Pro บน Aplus1 กำลังจะเปิดให้สมัครเร็ว ๆ นี้ — ใช้งานฟรีได้ตามปกติ";
+  "แพ็ก Pro บน SAMECOR กำลังจะเปิดให้สมัครเร็ว ๆ นี้ — ใช้งานฟรีได้ตามปกติ";
 
 export const SOLO_ECOSYSTEM_COMING_SOON_TH =
-  "การเชื่อมต่อ So1o Freelancer กำลังจะเปิดเร็ว ๆ นี้ — ใช้ Aplus1 โพสต์ผลงาน แชท และรับงานได้ตามปกติ";
+  "การเชื่อมต่อ So1o Freelancer กำลังจะเปิดเร็ว ๆ นี้ — ใช้ SAMECOR โพสต์ผลงาน แชท และรับงานได้ตามปกติ";
 
 export const SOLO_ECOSYSTEM_COMING_SOON_SHORT = "So1o — เร็ว ๆ นี้";
 
 export const APLUS1_PAYMENTS_DISABLED_TH =
-  "กำลังเปิดรับชำระผ่าน Aplus1 — ใช้งานโพสต์ผลงาน แชท และรับงานได้ตามปกติ";
+  "กำลังเปิดรับชำระผ่าน SAMECOR — ใช้งานโพสต์ผลงาน แชท และรับงานได้ตามปกติ";
 
 /** Legacy Solo/Stripe fiat paths are cut — use Omise when enabled. */
 export const APLUS1_SOLO_PAYMENTS_CUTOVER_TH =
-  "Aplus1 ไม่รับชำระผ่าน So1o อีกต่อไป — ระบบชำระเงินใหม่กำลังเปิดเร็ว ๆ นี้";
+  "SAMECOR ไม่รับชำระผ่าน So1o อีกต่อไป — ระบบชำระเงินใหม่กำลังเปิดเร็ว ๆ นี้";
 
 /** Omise hire/checkout UI — explicit opt-in (still blocked live without marketplace approval). */
 export function isAplus1PaymentsEnabled(): boolean {

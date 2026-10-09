@@ -35,8 +35,8 @@ cd Solo-Code && ./scripts/supabase-push-via-api.sh
 
 | App | Production | Demo |
 |-----|------------|------|
-| Aplus1 | https://aplus1.app | https://aplus1-demo.vercel.app |
+| SAMECOR | https://samecor.com | https://aplus1-demo.vercel.app |
 | So1o | https://solofreelancer.com | https://solo-demo-liart.vercel.app |
 | Ops Hub | https://hq.solofreelancer.com | — |
 
-Legacy domain `an1hem.app` redirect ไป `aplus1.app` — ใช้ `aplus1.app` ใน docs/code ใหม่ทั้งหมด
+โดเมนหลักคือ `samecor.com` โดเมนเก่า `aplus1.app` และ `an1hem.app` redirect มาที่นี่

@@ -22,7 +22,7 @@ export const TopupSuccessEmail = ({
     footerNote={EMAIL_FOOTER_NOTIFICATION}
   >
     <EmailText>
-      สวัสดี {recipientName} — การเติม Pixel ของคุณบน Aplus1 สำเร็จแล้ว
+      สวัสดี {recipientName} — การเติม Pixel ของคุณบน SAMECOR สำเร็จแล้ว
     </EmailText>
     <EmailCard>
       <EmailCardLabel>จำนวนที่เติม</EmailCardLabel>
@@ -37,7 +37,7 @@ export const TopupSuccessEmail = ({
 export const topupSuccessTemplate = {
   component: TopupSuccessEmail,
   subject: (data: Record<string, unknown>) =>
-    `[Aplus1] เติม Pixel สำเร็จ +${Number(data.amountPx ?? 0).toLocaleString('th-TH')} px`,
+    `[SAMECOR] เติม Pixel สำเร็จ +${Number(data.amountPx ?? 0).toLocaleString('th-TH')} px`,
   displayName: 'Top-up success',
   previewData: {
     recipientName: 'พี่บอส',

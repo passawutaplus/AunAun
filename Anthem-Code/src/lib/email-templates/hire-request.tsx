@@ -33,7 +33,7 @@ export const HireRequestEmail = ({
   >
     <EmailText>
       สวัสดี {recipientName} — <strong style={{ color: brand.ink }}>{clientName}</strong>{' '}
-      ส่งคำขอจ้างผ่าน Aplus1 สำหรับ{' '}
+      ส่งคำขอจ้างผ่าน SAMECOR สำหรับ{' '}
       <strong style={{ color: brand.ink }}>{projectTitle}</strong>
     </EmailText>
     <EmailCard>
@@ -67,7 +67,7 @@ export const HireRequestEmail = ({
 export const hireRequestTemplate = {
   component: HireRequestEmail,
   subject: (data: Record<string, unknown>) =>
-    `[Aplus1] คำขอจ้างใหม่ — ${(data.projectTitle as string) ?? 'งานจ้างใหม่'}`,
+    `[SAMECOR] คำขอจ้างใหม่ — ${(data.projectTitle as string) ?? 'งานจ้างใหม่'}`,
   displayName: 'Hire request',
   previewData: {
     recipientName: 'พี่บอส',

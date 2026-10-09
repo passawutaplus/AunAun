@@ -53,7 +53,7 @@ export type PageMapGroup = {
 };
 
 export const RESEARCH_INTRO = {
-  productionUrl: "https://aplus1.app",
+  productionUrl: "https://samecor.com",
   demoUrl: "https://aplus1-demo.vercel.app",
   feedbackPath: "/research/feedback",
   inAppPath: "/research",
@@ -158,7 +158,7 @@ export const DESIGN_CHECKLIST: ChecklistItem[] = [
   { id: "d-display", text: "Display prefs — ธีม + grid density + Area layout persist และใช้ได้ทุกหน้า" },
   { id: "d-trust", text: "Trust & legal — cookie banner, footer legal, /legal/ip, /legal/community อ่านง่าย" },
   { id: "d-a11y", text: "Accessibility — focus ring, alt รูป, contrast ปุ่มสำคัญ (รวม dark mode)" },
-  { id: "d-1px-vs-solo", text: "Aplus1 (หน้าร้านโชว์งาน) vs So1o (หลังบ้านจัดการงาน) — handoff ใบเสนอราคาเข้าใจไหม" },
+  { id: "d-1px-vs-solo", text: "SAMECOR (หน้าร้านโชว์งาน) vs So1o (หลังบ้านจัดการงาน) — handoff ใบเสนอราคาเข้าใจไหม" },
 ];
 
 export const FEATURE_SECTIONS: FeatureSection[] = [
@@ -1049,7 +1049,7 @@ export const FEEDBACK_TEMPLATE = {
     "แชทใหม่ (3-panel, reply, partner panel) ใช้ลื่นไหม",
     "ธีม + grid prefs มีประโยชน์/สับสนไหม",
     "Mobile vs Desktop — จุดที่ใช้ยากที่สุด",
-    "ความต่าง Aplus1 vs So1o — เข้าใจไหม",
+    "ความต่าง SAMECOR vs So1o — เข้าใจไหม",
   ],
 };
 

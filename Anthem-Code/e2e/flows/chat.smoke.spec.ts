@@ -20,7 +20,7 @@ test.describe("chat smoke @demo", () => {
   test("inbox lists conversations and opens a thread", async ({ page }) => {
     await signInDemo(page);
     await page.goto("/chat");
-    await expect(page.getByRole("heading", { name: "Chat" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("navigation", { name: "ตัวกรองแชท" })).toBeVisible({ timeout: 15_000 });
     await expect(page.locator("aside ul li button").first()).toBeVisible({ timeout: 15_000 });
 
     await page.locator("aside ul li button").first().click();
@@ -40,11 +40,18 @@ test.describe("chat smoke @demo", () => {
     await expect(page.getByText("โหลดแชทไม่สำเร็จ")).toHaveCount(0);
   });
 
-  test("top bar has home, Chat, My Studio, bell, and profile", async ({ page }) => {
+  test("left rail has back and conversation filters", async ({ page }) => {
     await signInDemo(page);
     await page.goto("/chat");
-    await expect(page.getByRole("heading", { name: "Chat" })).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole("button", { name: "กลับหน้าแรก" })).toBeVisible();
+    const rail = page.getByRole("navigation", { name: "ตัวกรองแชท" });
+    await expect(rail).toBeVisible({ timeout: 15_000 });
+    await expect(rail.getByRole("button", { name: "กลับหน้าก่อนหน้า" })).toBeVisible();
+    await expect(rail.getByRole("button", { name: "ทั้งหมด" })).toBeVisible();
+    await expect(rail.getByRole("button", { name: "งานจ้าง" })).toBeVisible();
+    await expect(rail.getByRole("button", { name: "คอลแลป" })).toBeVisible();
+    await expect(rail.getByRole("button", { name: "กลุ่ม" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Chating" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "กลับหน้าแรก" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "My Studio" })).toBeVisible();
     await expect(page.getByRole("button", { name: /แจ้งเตือน/ })).toBeVisible();
     await expect(page.getByRole("button", { name: "โปรไฟล์" })).toBeVisible();

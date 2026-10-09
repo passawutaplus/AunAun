@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { json, readEnv, supabaseServiceConfig } from "./_helpers.js";
+import { markObjectOrderPaidFromCharge } from "./object-order-paid.js";
 
 /**
  * Omise webhook receiver (Vercel serverless).
@@ -117,7 +118,35 @@ async function processPaidCharge(cfg, charge, eventType) {
   const providerChargeId = String(charge.id);
   const now = new Date().toISOString();
 
-  const result = { hireOrderId, hiringRequestId, paymentUpdated: false, orderUpdated: false, hireUpdated: false, messageInserted: false };
+  const result = { hireOrderId, hiringRequestId, paymentUpdated: false, orderUpdated: false, hireUpdated: false, messageInserted: false, objectOrderUpdated: false };
+
+  if (hireOrderId) {
+    const orderGet = await restRequest(cfg, {
+      schema: "shared",
+      table: "hire_orders",
+      method: "GET",
+      query: `id=eq.${encodeURIComponent(hireOrderId)}&select=buyer_pays_satang,buyer_id`,
+    });
+    const order = orderGet.ok && Array.isArray(orderGet.data) ? orderGet.data[0] : null;
+    if (!order) return { ...result, skipped: "hire_order_missing" };
+    if (Number(charge.amount) !== Number(order.buyer_pays_satang)) {
+      return { ...result, skipped: "amount_mismatch" };
+    }
+    const buyerMeta = metaValue(meta, "buyer_user_id");
+    if (buyerMeta && order.buyer_id && String(order.buyer_id) !== buyerMeta) {
+      return { ...result, skipped: "buyer_mismatch" };
+    }
+  }
+
+  if (metaValue(meta, "object_order_id")) {
+    try {
+      const objectPaid = await markObjectOrderPaidFromCharge(cfg, charge);
+      result.objectOrder = objectPaid;
+      if (objectPaid?.objectOrderUpdated) result.objectOrderUpdated = true;
+    } catch (error) {
+      result.objectOrderError = error instanceof Error ? error.message : "object_order_failed";
+    }
+  }
 
   // Payment row — by provider_charge_id or hire_order_id metadata
   try {
@@ -230,6 +259,21 @@ async function processPaidCharge(cfg, charge, eventType) {
   return result;
 }
 
+// HMAC must be computed over the exact bytes Omise sent, so the runtime must not parse the body.
+export const config = { api: { bodyParser: false } };
+
+async function readRawBody(req) {
+  if (req.readableEnded === false) {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+    if (chunks.length) return Buffer.concat(chunks).toString("utf8");
+  }
+  const body = req.body;
+  if (Buffer.isBuffer(body)) return body.toString("utf8");
+  if (typeof body === "string") return body;
+  return body && typeof body === "object" ? JSON.stringify(body) : "";
+}
+
 export default async function handler(req, res) {
   try {
     if (req.method !== "POST") {
@@ -246,27 +290,13 @@ export default async function handler(req, res) {
       return json(res, 503, { error: "live_blocked_until_marketplace_approved" });
     }
 
-    let rawBody = "";
-    let payload = req.body;
-    if (Buffer.isBuffer(payload)) {
-      rawBody = payload.toString("utf8");
-      try {
-        payload = JSON.parse(rawBody);
-      } catch {
-        return json(res, 400, { error: "invalid_json" });
-      }
-    } else if (typeof payload === "string") {
-      rawBody = payload;
-      try {
-        payload = JSON.parse(payload);
-      } catch {
-        return json(res, 400, { error: "invalid_json" });
-      }
-    } else if (payload && typeof payload === "object") {
-      // Runtime already parsed JSON — HMAC may fail if secret is set; prefer raw when available.
-      rawBody = JSON.stringify(payload);
-    } else {
-      return json(res, 400, { error: "empty_body" });
+    const rawBody = await readRawBody(req);
+    if (!rawBody) return json(res, 400, { error: "empty_body" });
+    let payload;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch {
+      return json(res, 400, { error: "invalid_json" });
     }
 
     const verified = verifyOmiseSignature(req, rawBody);
@@ -305,7 +335,17 @@ export default async function handler(req, res) {
         if (charge) {
           processResult = await processPaidCharge(cfg, charge, eventType);
         }
-        if (processResult && processResult.skipped === undefined) {
+        if (processResult?.skipped === "amount_mismatch" || processResult?.skipped === "buyer_mismatch") {
+          console.error("omise-webhook rejected charge", String(eventId), processResult.skipped);
+          await restRequest(cfg, {
+            schema: "shared",
+            table: "provider_events",
+            method: "PATCH",
+            query: `provider=eq.omise&provider_event_id=eq.${encodeURIComponent(String(eventId))}`,
+            body: { process_error: processResult.skipped },
+            prefer: "return=minimal",
+          });
+        } else if (processResult && processResult.skipped === undefined) {
           await restRequest(cfg, {
             schema: "shared",
             table: "provider_events",

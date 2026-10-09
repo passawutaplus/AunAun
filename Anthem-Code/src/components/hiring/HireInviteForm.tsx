@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
+import { isAplus1HiringBoardEnabled } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { jobTypeLabel } from "@/lib/hireBrief";
@@ -149,7 +149,7 @@ const HireInviteForm = ({
 
   return (
     <div className="space-y-5">
-      {!isAplus1LaunchMinimal() ? (
+      {isAplus1HiringBoardEnabled() ? (
         <div>
           <Label className="flex items-center gap-1.5 text-xs">
             <ClipboardList className="h-3.5 w-3.5 text-primary" />
@@ -180,10 +180,10 @@ const HireInviteForm = ({
         </div>
       ) : null}
 
-      <div id="hire-job-types" className={!isAplus1LaunchMinimal() ? "border-t border-border/60 pt-5" : undefined}>
+      <div id="hire-job-types" className={isAplus1HiringBoardEnabled() ? "border-t border-border/60 pt-5" : undefined}>
         <Label className="flex items-center gap-1.5">
           <Tags className="h-3.5 w-3.5 text-primary" />
-          ประเภทงาน <span className="text-orange-500">*</span>
+          ประเภทงาน <span className="text-primary">*</span>
           <span className="text-muted-foreground font-normal"> (เลือกได้มากกว่า 1)</span>
         </Label>
         <div
@@ -203,8 +203,8 @@ const HireInviteForm = ({
                 className={cn(
                   "px-3 py-1.5 rounded-full text-xs border transition-colors",
                   selected
-                    ? "border-orange-500 bg-transparent text-orange-500"
-                    : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/40",
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-foreground hover:border-foreground/30",
                 )}
               >
                 {j.label}
@@ -273,7 +273,7 @@ const HireInviteForm = ({
             type="button"
             size="icon"
             variant="outline"
-            className="h-10 w-10 shrink-0 rounded-xl"
+            className="h-10 w-10 shrink-0 rounded-full border-[#e4e1db] bg-white text-[#2f2e2c] shadow-none hover:bg-[#f5f5f5]"
             onClick={addReferenceLink}
             aria-label="เพิ่มลิงก์"
           >
@@ -413,7 +413,7 @@ const HireInviteForm = ({
         <div className="space-y-1.5">
           <Label htmlFor="hire-deadline" className="flex items-center gap-1.5">
             <CalendarDays className="h-3.5 w-3.5 text-primary" />
-            กำหนดส่งงาน <span className="text-orange-500">*</span>
+            กำหนดส่งงาน <span className="text-primary">*</span>
           </Label>
           <Input
             id="hire-deadline"

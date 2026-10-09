@@ -35,7 +35,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-/** Recommend Aplus1 — icon scale (default: recommend). */
+/** Recommend SAMECOR — icon scale (default: recommend). */
 type RecommendLevel = "no" | "neutral" | "yes" | "strong";
 
 const RECOMMEND_OPTIONS: {

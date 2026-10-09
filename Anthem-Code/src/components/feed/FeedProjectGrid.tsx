@@ -15,11 +15,13 @@ type Props = {
   itemClassName?: string;
   /** Override density picker, e.g. locked 4-column package grid. */
   columnsClass?: string;
+  /** Pinterest columns — each image keeps its own height. */
+  masonry?: boolean;
   children: ReactNode;
 };
 
 /** Project feed grid with smooth layout animation when density changes. */
-export function FeedProjectGrid({ className, itemClassName, columnsClass, children }: Props) {
+export function FeedProjectGrid({ className, itemClassName, columnsClass, masonry = false, children }: Props) {
   const { density, mobileColumns, narrow, gridClass } = useFeedGridDensity();
   const reduced = useReducedMotion();
   const items = Children.toArray(children);
@@ -36,9 +38,29 @@ export function FeedProjectGrid({ className, itemClassName, columnsClass, childr
     return () => window.clearTimeout(timer);
   }, [layoutKey]);
 
+  if (masonry) {
+    return (
+      <div
+        className={cn("columns-2 gap-2 sm:columns-3 sm:gap-2.5 lg:columns-4 xl:columns-5", className)}
+        data-feed-results=""
+        data-feed-density="masonry"
+      >
+        {items.map((child, i) =>
+          isValidElement(child) ? (
+            <div key={child.key ?? `feed-item-${i}`} className={cn("mb-2 break-inside-avoid sm:mb-2.5", itemClassName)}>
+              {child}
+            </div>
+          ) : (
+            child
+          ),
+        )}
+      </div>
+    );
+  }
+
   if (reduced) {
     return (
-      <div className={cn(resolvedGrid, FEED_PROJECT_GRID_GAP, className)} data-feed-density={layoutKey}>
+      <div className={cn(resolvedGrid, FEED_PROJECT_GRID_GAP, className)} data-feed-results="" data-feed-density={layoutKey}>
         {itemClassName
           ? items.map((child, i) =>
               isValidElement(child) ? (
@@ -58,6 +80,7 @@ export function FeedProjectGrid({ className, itemClassName, columnsClass, childr
     <LayoutGroup id="feed-project-grid">
       <motion.div
         layout
+        data-feed-results=""
         data-feed-density={layoutKey}
         className={cn(resolvedGrid, FEED_PROJECT_GRID_GAP, className)}
         animate={{ opacity: shifting ? 0.94 : 1 }}

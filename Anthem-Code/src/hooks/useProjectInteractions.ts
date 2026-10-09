@@ -3,11 +3,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 import { useAuthDialog } from "@/stores/authDialogStore";
+import { createBatchLoader } from "@/lib/batchLoader";
 
 const promptAuth = () => {
   toast.info("กรุณาเข้าสู่ระบบก่อน");
   useAuthDialog.getState().openSignup();
 };
+
+const likeSummaryLoader = createBatchLoader<{ likes: number; liked: boolean }>(async (ids) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("project_like_summary", { ids });
+  if (error || !Array.isArray(data)) return null;
+  return new Map(
+    (data as { project_id: string; likes: number; liked: boolean }[]).map((r) => [
+      r.project_id,
+      { likes: r.likes, liked: r.liked },
+    ]),
+  );
+});
 
 export const useProjectLike = (projectId: string | undefined) => {
   const { user } = useAuth();
@@ -17,6 +30,8 @@ export const useProjectLike = (projectId: string | undefined) => {
     queryKey: ["project-like-count", projectId],
     enabled: !!projectId,
     queryFn: async () => {
+      const batched = await likeSummaryLoader.load(projectId!);
+      if (batched) return batched.likes;
       const { count } = await supabase
         .from("project_likes")
         .select("project_id", { count: "exact", head: true })
@@ -29,6 +44,8 @@ export const useProjectLike = (projectId: string | undefined) => {
     queryKey: ["project-liked", projectId, user?.id],
     enabled: !!projectId && !!user?.id,
     queryFn: async () => {
+      const batched = await likeSummaryLoader.load(projectId!);
+      if (batched) return batched.liked;
       const { data } = await supabase
         .from("project_likes")
         .select("project_id")

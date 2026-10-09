@@ -1,0 +1,15 @@
+# Root uploads (aplus1-prod, Root Directory = Anthem-Code) only need Anthem-Code (+ Solo-Code for vendored modules).
+/micro-asana-sticky
+/Vault-Code
+/Monolith-Site
+/Ops-Hub
+/backups
+/deploy
+/assets
+/.tmp-*
+/.vite-cache
+**/playwright-report
+**/test-results
+**/*.exe
+**/*.mp4
+**/*.zip

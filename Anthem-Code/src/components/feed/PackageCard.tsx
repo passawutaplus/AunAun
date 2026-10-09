@@ -1,7 +1,7 @@
 import { useState, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowUpRight, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowUpRight, Bookmark, Briefcase, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import PackagesIcon from "@/components/icons/PackagesIcon";
@@ -11,9 +11,14 @@ import {
   useSavedCreatorServiceIds,
   useToggleCreatorServiceBookmark,
 } from "@/hooks/useCreatorServiceBookmarks";
+import {
+  EMPTY_PACKAGE_FEED_STATS,
+  type PackageFeedListingStats,
+} from "@/hooks/usePackageFeedStats";
 import { useAuth } from "@/hooks/useAuth";
 import { requireAuth } from "@/lib/requireAuth";
 import { highlight } from "@/lib/highlight";
+import { formatCompact } from "@/lib/format";
 import { thumbFeedCoverUrl } from "@/lib/feedProjectCover";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import { slideStepTransition, slideStepVariants } from "@/lib/motion";
@@ -22,9 +27,10 @@ import { cn } from "@/lib/utils";
 interface Props {
   data: PackageFeedCard;
   search?: string;
+  stats?: PackageFeedListingStats;
 }
 
-const PackageCard = ({ data, search = "" }: Props) => {
+const PackageCard = ({ data, search = "", stats = EMPTY_PACKAGE_FEED_STATS }: Props) => {
   const navigate = useNavigate();
   const reduced = useReducedMotion();
   const { user } = useAuth();
@@ -81,7 +87,7 @@ const PackageCard = ({ data, search = "" }: Props) => {
     <motion.article
       initial="rest"
       whileHover={reduced ? undefined : "hover"}
-      className="group flex h-full min-w-0 w-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card"
+      className="group flex h-full min-w-0 w-full flex-col overflow-hidden rounded-none border border-border/70 bg-card"
     >
       <div className="relative aspect-[4/3] shrink-0 bg-card">
         <button
@@ -104,7 +110,7 @@ const PackageCard = ({ data, search = "" }: Props) => {
                 transition={slideStepTransition}
                 loading="lazy"
                 decoding="async"
-                className="absolute inset-0 w-full h-full object-cover [mask-image:linear-gradient(to_top,transparent_0%,black_28%)] [-webkit-mask-image:linear-gradient(to_top,transparent_0%,black_28%)]"
+                className="absolute inset-0 w-full h-full object-cover"
               />
             ) : (
               <motion.div
@@ -130,13 +136,6 @@ const PackageCard = ({ data, search = "" }: Props) => {
           <Bookmark className={cn("h-4 w-4", isSaved && "fill-current text-foreground")} strokeWidth={1.8} />
         </button>
 
-        {src ? (
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-[30%] bg-gradient-to-t from-card from-[18%] via-card/70 via-[55%] to-transparent"
-          />
-        ) : null}
-
         {canSlide ? (
           <>
             <button
@@ -155,7 +154,7 @@ const PackageCard = ({ data, search = "" }: Props) => {
             >
               <ChevronRight className="h-4 w-4" strokeWidth={2.2} />
             </button>
-            <div className="pointer-events-none absolute bottom-8 inset-x-0 z-10 flex justify-center gap-1">
+            <div className="pointer-events-none absolute bottom-3 inset-x-0 z-10 flex justify-center gap-1">
               {images.map((url, i) => (
                 <span
                   key={`${url}-${i}`}
@@ -169,17 +168,32 @@ const PackageCard = ({ data, search = "" }: Props) => {
         ) : null}
       </div>
 
-      <div className="relative z-[6] -mt-5 px-4 pb-4 pt-1 flex flex-col gap-1.5 flex-1 min-h-0">
-        <button type="button" onClick={goPackage} className="text-left min-w-0 space-y-0.5">
-          <h3 className="text-[15px] font-semibold text-foreground leading-snug line-clamp-2">
-            {highlight(service.title, search)}
-          </h3>
-          {service.summary?.trim() ? (
-            <p className="text-xs text-muted-foreground leading-snug line-clamp-2">
-              {highlight(service.summary, search)}
+      <div className="relative z-[6] px-4 pb-4 pt-3 flex flex-col gap-1.5 flex-1 min-h-0">
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <button type="button" onClick={goPackage} className="min-w-0 flex-1 text-left">
+            <h3 className="text-[15px] font-semibold text-foreground leading-snug line-clamp-2">
+              {highlight(service.title, search)}
+            </h3>
+          </button>
+          <div
+            className="shrink-0 space-y-0.5 pt-0.5 text-right text-[11px] leading-tight text-muted-foreground"
+            aria-label={`จ้าง ${stats.hireCount} ครั้ง · รีวิว ${stats.reviewCount} รายการ`}
+          >
+            <p className="inline-flex items-center justify-end gap-0.5 tabular-nums text-foreground">
+              <Star className="h-3 w-3 fill-primary text-primary" aria-hidden />
+              <span className="font-semibold">
+                {stats.ratingAvg != null ? stats.ratingAvg.toFixed(1) : "–"}
+              </span>
+              {stats.reviewCount > 0 ? (
+                <span className="text-muted-foreground">({formatCompact(stats.reviewCount)})</span>
+              ) : null}
             </p>
-          ) : null}
-        </button>
+            <p className="inline-flex items-center justify-end gap-0.5 tabular-nums">
+              <Briefcase className="h-3 w-3" aria-hidden />
+              <span>จ้าง {formatCompact(stats.hireCount)}</span>
+            </p>
+          </div>
+        </div>
 
         <div className="mt-auto flex min-w-0 flex-wrap items-end justify-between gap-x-2 gap-y-2 pt-3.5">
           <div className="flex min-w-0 flex-col items-start gap-1">
@@ -221,21 +235,20 @@ const PackageCard = ({ data, search = "" }: Props) => {
             <button
               type="button"
               onClick={goPackage}
-              className="shrink-0 inline-flex items-center gap-1 rounded-full bg-foreground text-background text-[11px] sm:text-xs font-medium py-1.5 sm:py-2 pl-2.5 sm:pl-3 pr-1.5 sm:pr-2 whitespace-nowrap transition-colors duration-100 ease-out hover:bg-primary hover:text-primary-foreground group-hover:bg-primary group-hover:text-primary-foreground"
+              aria-label={`ดูแพ็กเกจ: ${service.title}`}
+              title="ดูแพ็กเกจ"
+              className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background transition-colors duration-100 ease-out hover:bg-primary hover:text-primary-foreground group-hover:bg-primary group-hover:text-primary-foreground"
             >
-              ดูแพ็กเกจ
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-background/15">
-                <motion.span
-                  className="inline-flex"
-                  variants={{
-                    rest: { x: 0, y: 0 },
-                    hover: { x: 4, y: -4 },
-                  }}
-                  transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <ArrowUpRight className="h-3 w-3" strokeWidth={2.4} />
-                </motion.span>
-              </span>
+              <motion.span
+                className="inline-flex"
+                variants={{
+                  rest: { x: 0, y: 0 },
+                  hover: { x: 3, y: -3 },
+                }}
+                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <ArrowUpRight className="h-4 w-4" strokeWidth={2.4} />
+              </motion.span>
             </button>
           </div>
         </div>

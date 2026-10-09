@@ -13,15 +13,15 @@ const sectionsTh = [
   },
   {
     title: "คู่แข่งแพลตฟอร์ม",
-    body: "ติดตาม Behance, Fastwork และ marketplace อื่น — หาช่องว่าง portfolio + jobs + community ของ Aplus1",
+    body: "ติดตาม Behance, Fastwork และ marketplace อื่น — หาช่องว่าง portfolio + jobs + community ของ SAMECOR",
   },
   {
     title: "AI Insight",
-    body: "รันงาน AI เฉพาะ growth Aplus1 — ผลลัพธ์ช่วยตัดสินใจ ไม่ใช่ข้อเท็จจริง 100%",
+    body: "รันงาน AI เฉพาะ growth SAMECOR — ผลลัพธ์ช่วยตัดสินใจ ไม่ใช่ข้อเท็จจริง 100%",
   },
   {
     title: "Export",
-    body: "ยืนยัน compliance ก่อน CSV/XLSX/PDF ทุกครั้ง — ใช้เพื่อ growth Aplus1 เท่านั้น",
+    body: "ยืนยัน compliance ก่อน CSV/XLSX/PDF ทุกครั้ง — ใช้เพื่อ growth SAMECOR เท่านั้น",
   },
 ];
 
@@ -36,15 +36,15 @@ const sectionsEn = [
   },
   {
     title: "Platform competitors",
-    body: "Track Behance, Fastwork, etc. — find gaps for Aplus1 portfolio + jobs + community",
+    body: "Track Behance, Fastwork, etc. — find gaps for SAMECOR portfolio + jobs + community",
   },
   {
     title: "AI Insight",
-    body: "Run Aplus1-only growth tasks — decision support, not guaranteed fact",
+    body: "Run SAMECOR-only growth tasks — decision support, not guaranteed fact",
   },
   {
     title: "Export",
-    body: "Confirm compliance before any export — Aplus1 growth use only",
+    body: "Confirm compliance before any export — SAMECOR growth use only",
   },
 ];
 

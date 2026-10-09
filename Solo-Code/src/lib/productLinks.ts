@@ -8,7 +8,7 @@ function readAplus1AppUrl(): string | undefined {
 }
 
 export const APLUS1_SHOWCASE_URL =
-  readAplus1AppUrl() ?? (import.meta.env.DEV ? "http://localhost:8081/" : "https://aplus1.app/");
+  readAplus1AppUrl() ?? (import.meta.env.DEV ? "http://localhost:8081/" : "https://samecor.com/");
 
 /** @deprecated use APLUS1_SHOWCASE_URL */
 export const ANTHEM_SHOWCASE_URL = APLUS1_SHOWCASE_URL;

@@ -1,0 +1,13 @@
+{
+  "appId": "app.aplus.vault",
+  "appName": "A+ Vault",
+  "webDir": "www",
+  "server": {
+    "url": "https://aplus-vault.vercel.app/vault?source=app",
+    "androidScheme": "https",
+    "allowNavigation": ["aplus-vault.vercel.app", "*.supabase.co"]
+  },
+  "android": {
+    "backgroundColor": "#101113"
+  }
+}

@@ -26,6 +26,7 @@ import { communityTagFeedUrl } from "@/lib/communityRoutes";
 import type { CommunityFeedQueryFilter } from "@/hooks/useCommunityFeedFilter";
 import { cn } from "@/lib/utils";
 import { requireAuth } from "@/lib/requireAuth";
+import { isAplus1HiringBoardEnabled } from "@/lib/aplus1Launch";
 import { useStickyViewportCenter } from "@/hooks/useStickyViewportCenter";
 import { formatCompact } from "@/lib/format";
 
@@ -209,7 +210,8 @@ const CommunityFeedSidebar = ({ filter, onFilterChange, className }: Props) => {
   const { data: profile } = useProfile(user?.id);
   const { data: profileStats } = useCommunityProfileStats(user?.id);
   const { data: trending = [] } = useCommunityTrendingTags(5);
-  const { jobs = [] } = useFeedSidebarJobs(3);
+  const hiringBoardEnabled = isAplus1HiringBoardEnabled();
+  const { jobs = [] } = useFeedSidebarJobs(hiringBoardEnabled ? 3 : 0);
   const { designers = [] } = useSuggestedFeedDesigners(3);
   const { data: savedJobIds } = useSavedJobIds();
   const toggleSaveJob = useToggleSaveJob();
@@ -320,7 +322,7 @@ const CommunityFeedSidebar = ({ filter, onFilterChange, className }: Props) => {
           )}
         </SidebarSection>
 
-        <SidebarSection>
+        {hiringBoardEnabled ? <SidebarSection>
           <SectionHeader icon={Briefcase} title="งานที่น่าสนใจ" />
           {jobs.length > 0 ? (
             <ul className="space-y-2.5">
@@ -361,7 +363,7 @@ const CommunityFeedSidebar = ({ filter, onFilterChange, className }: Props) => {
             <p className="text-xs text-muted-foreground thai-body">ยังไม่มีงานเปิดรับตอนนี้</p>
           )}
           <ViewAllLink to="/hiring" label="ดูงานทั้งหมด" />
-        </SidebarSection>
+        </SidebarSection> : null}
 
         <SidebarSection>
           <SectionHeader icon={Users} title="Suggested Creators" />

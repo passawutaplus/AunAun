@@ -14,6 +14,7 @@ import { useCreatorService } from "@/hooks/useCreatorServices";
 import { useProfile } from "@/hooks/useProfile";
 import { recordCreatorServiceView } from "@/hooks/usePackageOverviewSeries";
 import { HeaderAccountActions } from "@/components/HeaderAccountActions";
+import Footer from "@/components/Footer";
 import { navigateToAuth } from "@/lib/authRedirect";
 import { absoluteUrl, truncateDescription } from "@/lib/seo";
 import { BRAND_NAME } from "@/lib/brandConfig";
@@ -169,6 +170,8 @@ export default function ServiceDetailPage() {
           </p>
         </div>
       </main>
+
+      <Footer />
 
       <HireDialog
         open={hireOpen}

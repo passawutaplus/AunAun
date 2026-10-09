@@ -10,6 +10,7 @@ describe("studio nav", () => {
   it("matches work and finance routes exactly", () => {
     expect(matchStudioItem("/dashboard/projects")?.id).toBe("projects");
     expect(matchStudioItem("/dashboard/packages")?.id).toBe("packages");
+    expect(matchStudioItem("/dashboard/objects")?.id).toBe("objects");
     expect(matchStudioItem("/dashboard/catalogs")?.id).toBe("catalogs");
     expect(matchStudioItem("/dashboard")?.id).toBe("home");
     expect(matchStudioItem("/dashboard")?.label).toBe("Dashboard");

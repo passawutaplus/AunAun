@@ -1,4 +1,4 @@
-/** Opportunity availability + type labels for Aplus1 product loop. */
+/** Opportunity availability + type labels for SAMECOR product loop. */
 
 export const OPPORTUNITY_NOTE_MAX = 120;
 

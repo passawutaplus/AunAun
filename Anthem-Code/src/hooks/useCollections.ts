@@ -158,6 +158,36 @@ export const useCollectionItems = (collectionId: string | undefined) =>
     },
   });
 
+/** Project ids the user has in any collection. One shared query for cards and the work page. */
+export const useSavedProjectIds = (ownerId: string | undefined) =>
+  useQuery({
+    queryKey: ["saved-project-ids", ownerId],
+    enabled: !!ownerId,
+    staleTime: 60_000,
+    queryFn: async (): Promise<string[]> => {
+      const { data: collections, error } = await supabase
+        .from("collections")
+        .select("id")
+        .eq("owner_id", ownerId!);
+      if (error) throw error;
+      const collectionIds = (collections ?? []).map((c: { id: string }) => c.id);
+      if (!collectionIds.length) return [];
+      const { data: items, error: itemError } = await supabase
+        .from("collection_items")
+        .select("project_id")
+        .in("collection_id", collectionIds)
+        .not("project_id", "is", null);
+      if (itemError) throw itemError;
+      return [
+        ...new Set(
+          (items ?? [])
+            .map((r: { project_id: string | null }) => r.project_id)
+            .filter((id): id is string => !!id),
+        ),
+      ];
+    },
+  });
+
 export const useProjectCollectionIds = (projectId: string | undefined, ownerId: string | undefined) =>
   useQuery({
     queryKey: ["project-in-collections", projectId, ownerId],
@@ -281,12 +311,29 @@ export const useToggleCollectionItem = () => {
     onMutate: async (vars) => {
       if (!vars.projectId) return {};
       await qc.cancelQueries({ queryKey: ["project-in-collections", vars.projectId] });
+      await qc.cancelQueries({ queryKey: ["saved-project-ids"] });
       const previous = qc.getQueriesData<string[]>({ queryKey: ["project-in-collections", vars.projectId] });
+      const previousSaved = qc.getQueriesData<string[]>({ queryKey: ["saved-project-ids"] });
       qc.setQueriesData<string[]>({ queryKey: ["project-in-collections", vars.projectId] }, (old) => {
         const list = old ?? [];
         if (vars.remove) return list.filter((id) => id !== vars.collectionId);
         return list.includes(vars.collectionId) ? list : [...list, vars.collectionId];
       });
+      if (vars.projectId) {
+        qc.setQueriesData<string[]>({ queryKey: ["saved-project-ids"] }, (old) => {
+          if (!old) return old;
+          if (!vars.remove) {
+            return old.includes(vars.projectId!) ? old : [...old, vars.projectId!];
+          }
+          const lists = qc.getQueriesData<string[]>({
+            queryKey: ["project-in-collections", vars.projectId],
+          });
+          const known = lists.filter((entry): entry is [(typeof entry)[0], string[]] => Array.isArray(entry[1]));
+          const stillIn = known.some(([, ids]) => ids.length > 0);
+          if (known.length > 0 && !stillIn) return old.filter((id) => id !== vars.projectId);
+          return old;
+        });
+      }
       qc.setQueriesData<CollectionWithCovers[]>({ queryKey: ["collections"] }, (old) => {
         if (!old) return old;
         return old.map((c) => {
@@ -295,11 +342,14 @@ export const useToggleCollectionItem = () => {
           return { ...c, item_count: nextCount };
         });
       });
-      return { previous };
+      return { previous, previousSaved };
     },
     onError: (_err, vars, ctx) => {
-      if (!vars.projectId || !ctx?.previous) return;
-      for (const [key, data] of ctx.previous) {
+      if (!vars.projectId) return;
+      for (const [key, data] of ctx?.previous ?? []) {
+        qc.setQueryData(key, data);
+      }
+      for (const [key, data] of ctx?.previousSaved ?? []) {
         qc.setQueryData(key, data);
       }
     },
@@ -310,6 +360,7 @@ export const useToggleCollectionItem = () => {
       qc.invalidateQueries({ queryKey: ["collection-items", vars.collectionId] });
       if (vars.projectId) {
         qc.invalidateQueries({ queryKey: ["project-in-collections", vars.projectId] });
+        qc.invalidateQueries({ queryKey: ["saved-project-ids"] });
       }
       if (vars.communityPostId) {
         qc.invalidateQueries({ queryKey: ["community-post-in-collections", vars.communityPostId] });

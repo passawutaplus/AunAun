@@ -44,28 +44,27 @@ const AuthForgotPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-32 -left-24 w-[420px] h-[420px] rounded-full blur-3xl opacity-30 bg-gradient-brand" />
-        <div className="absolute top-1/3 -right-24 w-[380px] h-[380px] rounded-full blur-3xl opacity-25 bg-gradient-brand" />
-      </div>
-
-      <BackButton to="/auth" label="กลับไปเข้าสู่ระบบ" className="absolute top-4 left-4 z-30" />
+    <div className="relative min-h-screen overflow-hidden bg-[#f5f5f5] text-[#2f2e2c]">
+      <BackButton
+        to="/auth"
+        label="กลับไปเข้าสู่ระบบ"
+        className="absolute top-4 left-4 z-30 border-[#e4e1db] bg-white/90 text-[#2f2e2c] hover:bg-white"
+      />
 
       <div className="relative flex min-h-screen items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-md">
           <div className="mb-6 flex justify-center">
-            <BrandLogo />
+            <BrandLogo tone="ink" />
           </div>
 
-          <h1 className="text-2xl font-medium tracking-tight mb-1.5 thai-display text-center">
+          <h1 className="mb-2 text-center font-display text-[2.15rem] font-medium leading-tight tracking-tight text-[#2f2e2c]">
             ลืมรหัสผ่าน
           </h1>
           <p className="text-sm text-muted-foreground mb-6 thai-body text-center">
             เราจะส่งลิงก์ไปทางอีเมล จากนั้นใส่รหัสผ่านเดิมเพื่อยืนยันว่าเป็นเจ้าของบัญชี
           </p>
 
-          <div className="rounded-2xl glass-panel-strong p-6 sm:p-7">
+          <div className="rounded-[1.75rem] border border-[#e4e1db] bg-white p-6 sm:p-7">
             {sent ? (
               <div className="space-y-3 text-center">
                 <p className="text-sm thai-body">
@@ -92,7 +91,7 @@ const AuthForgotPage = () => {
                       placeholder="you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-9 h-11 rounded-xl bg-background/60 backdrop-blur border-border/60"
+                      className="h-11 rounded-full border-[#e4e1db] bg-[#f5f5f5] pl-9 text-[#2f2e2c] shadow-none"
                       required
                     />
                   </div>
@@ -100,14 +99,14 @@ const AuthForgotPage = () => {
                 <Button
                   type="submit"
                   disabled={busy}
-                  className="w-full h-11 rounded-xl text-base font-semibold bg-gradient-brand text-white hover:opacity-95 border-0 shadow-md shadow-primary/20"
+                  className="h-11 w-full rounded-full border-0 bg-[#2f2e2c] text-base font-medium text-[#f5f5f5] shadow-none hover:bg-[#2f2e2c]/90"
                 >
                   {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   ส่งลิงก์รีเซ็ตรหัสผ่าน
                 </Button>
                 <p className="text-center text-xs text-muted-foreground">
                   ลืม PIN ถอนเงินใช้คนละทาง —{" "}
-                  <Link to={SETTINGS_PIN_RECOVER_HREF} className="text-primary hover:underline">
+                  <Link to={SETTINGS_PIN_RECOVER_HREF} className="text-[#2f2e2c] underline underline-offset-2">
                     เข้าสู่ระบบแล้วกู้ PIN ที่ตั้งค่าบัญชี
                   </Link>
                 </p>

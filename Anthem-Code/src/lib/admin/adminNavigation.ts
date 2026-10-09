@@ -6,6 +6,7 @@ import {
   Bell,
   Bookmark,
   Bot,
+  Box,
   Building2,
   ClipboardList,
   Database,
@@ -132,7 +133,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       {
         to: "/admin/marketing",
         label: "Marketing",
-        hint: "Growth intelligence เฉพาะ Aplus1",
+        hint: "Growth intelligence เฉพาะ SAMECOR",
         icon: Megaphone,
       },
       {
@@ -233,6 +234,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         icon: PackagesIcon,
         statKey: "totalPackages",
         statLabel: "แพ็กเกจ",
+      },
+      {
+        to: "/admin/objects",
+        label: "Objects",
+        hint: "ของที่ศิลปินและดีไซเนอร์ขายเอง",
+        icon: Box,
       },
       {
         to: "/admin/collections",
@@ -542,6 +549,7 @@ const SIDEBAR_PATHS_ORDERED: { sectionId: string; to: string }[] = [
   { sectionId: "people", to: "/admin/studios" },
   { sectionId: "content", to: "/admin/projects" },
   { sectionId: "content", to: "/admin/packages" },
+  { sectionId: "content", to: "/admin/objects" },
   { sectionId: "content", to: "/admin/collections" },
   { sectionId: "content", to: "/admin/inspire" },
   { sectionId: "content", to: "/admin/community" },

@@ -331,7 +331,14 @@ export const useApplyToJob = () => {
   });
 };
 
+// Global FOR UPDATE scan server-side; pg_cron is not installed in prod, so clients trigger it — at most every 10 min per tab.
+const EXPIRE_APPLICATIONS_EVERY_MS = 10 * 60_000;
+let lastExpireApplicationsAt = 0;
+
 async function expirePendingJobApplicationsQuietly() {
+  const now = Date.now();
+  if (now - lastExpireApplicationsAt < EXPIRE_APPLICATIONS_EVERY_MS) return;
+  lastExpireApplicationsAt = now;
   const { error } = await supabase.rpc("expire_pending_job_applications");
   if (error && !isOptionalQueryError(error)) {
     console.warn("expire_pending_job_applications", error.message);

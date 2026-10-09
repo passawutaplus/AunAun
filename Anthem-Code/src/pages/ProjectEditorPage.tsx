@@ -97,8 +97,7 @@ import {
   type CategoryParentId,
 } from "@/data/categoryTaxonomy";
 import { SeriesFormDialog } from "@/components/series/SeriesFormDialog";
-import { PortfolioLinkedPostPicker } from "@/components/project/PortfolioLinkedPostPicker";
-import { isAplus1LaunchMinimal, isAplus1SubscriptionsEnabled, isLaunchDesignDrillEnabled, isLaunchFullGridEditorEnabled } from "@/lib/aplus1Launch";
+import { isAplus1SubscriptionsEnabled, isLaunchDesignDrillEnabled, isLaunchFullGridEditorEnabled } from "@/lib/aplus1Launch";
 import { PortfolioCollabUserPicker } from "@/components/project/PortfolioCollabUserPicker";
 import {
   Dialog,
@@ -2755,7 +2754,11 @@ const ProjectEditorPage = () => {
   }
 
   if (editing && (authLoading || projectLoading)) {
-    return <PageLoader className="bg-app-ambient" />;
+    return (
+      <div className="min-h-screen bg-app-ambient">
+        <PageLoader className="bg-transparent" />
+      </div>
+    );
   }
 
   if (editing && projectError) {
@@ -2801,13 +2804,13 @@ const ProjectEditorPage = () => {
   return (
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-0">
       {/* Sticky header — full-bleed to align with Module / Work Details sidebars */}
-      <div className="sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border">
+      <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-md">
         <div className="flex w-full items-center gap-3 px-3 py-3 sm:px-4">
           <BackButton onClick={handleBackClick} />
           <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-1">
             <div className="min-w-0">
               <h1 className="text-base font-semibold text-foreground truncate">
-                {editing ? "แก้ไขผลงาน" : "Share your Project"}
+                {editing ? "แก้ไขผลงาน" : "ลงผลงาน"}
               </h1>
             </div>
             {isLaunchFullGridEditorEnabled() ? (
@@ -3327,16 +3330,6 @@ const ProjectEditorPage = () => {
             </div>
           ) : null}
 
-          {!isAplus1LaunchMinimal() ? (
-            <section className="space-y-4 rounded-2xl border border-border bg-card/40 p-4">
-              <PortfolioLinkedPostPicker
-                userId={user?.id ?? ""}
-                selected={linkedOwnPosts}
-                onChange={setLinkedOwnPosts}
-                readOnlyPosts={linkedCollabPosts}
-              />
-            </section>
-          ) : null}
           </div>
           </div>
         </div>
@@ -3518,8 +3511,6 @@ const ProjectEditorPage = () => {
                 />
               </div>
             </div>
-          </div>
-
           </div>
         </ProjectEditorMetaSidebar>
       </div>

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { retainSharedChannel } from "@/lib/sharedRealtimeChannel";
 
 export type HiringRow = Database["public"]["Tables"]["hiring_requests"]["Row"];
 export type HiringStatusDB = Database["public"]["Enums"]["hire_status"];
@@ -26,19 +27,13 @@ export const useHiringRequests = (freelancerId: string | undefined) => {
 
   useEffect(() => {
     if (!freelancerId) return;
-    // Unique channel per mount — shared name "hiring-rt" crashes when Dashboard +
-    // ProfileHiringRequestsSection both subscribe (cannot add postgres_changes after subscribe).
-    const ch = supabase
-      .channel(`hiring-rt-${freelancerId}-${crypto.randomUUID()}`)
-      .on(
+    return retainSharedChannel(`hiring-rt-${freelancerId}`, (ch) =>
+      ch.on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "hiring_requests", filter: `freelancer_id=eq.${freelancerId}` },
+        { event: "*", schema: "anthem", table: "hiring_requests", filter: `freelancer_id=eq.${freelancerId}` },
         () => qc.invalidateQueries({ queryKey: ["hiring_requests", freelancerId] }),
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(ch);
-    };
+      ),
+    );
   }, [freelancerId, qc]);
 
   return query;
@@ -113,22 +108,13 @@ export const useStudioHiringRequests = (studioId: string | undefined) => {
 
   useEffect(() => {
     if (!studioId) return;
-    const ch = supabase
-      .channel(`studio-hire-${studioId}`)
-      .on(
+    return retainSharedChannel(`studio-hire-${studioId}`, (ch) =>
+      ch.on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "anthem",
-          table: "hiring_requests",
-          filter: `studio_id=eq.${studioId}`,
-        },
+        { event: "*", schema: "anthem", table: "hiring_requests", filter: `studio_id=eq.${studioId}` },
         () => qc.invalidateQueries({ queryKey: ["studio_hiring_requests", studioId] }),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
+      ),
+    );
   }, [studioId, qc]);
 
   return query;

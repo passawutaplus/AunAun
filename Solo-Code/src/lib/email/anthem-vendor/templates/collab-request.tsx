@@ -19,7 +19,7 @@ export const CollabRequestEmail = ({
   projectTitle = 'ผลงานในฟีด',
   collabTypes = '',
   message = '',
-  actionUrl = 'https://aplus1.app/portfolio?focus=collab',
+  actionUrl = 'https://samecor.com/portfolio?focus=collab',
 }: CollabRequestEmailProps) => (
   <EmailLayout
     preview={`${senderName} อยากร่วมงาน — ${projectTitle}`}

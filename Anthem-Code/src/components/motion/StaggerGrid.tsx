@@ -10,19 +10,26 @@ type Props = {
   dense?: boolean;
   /** Wrap each child for CSS column masonry (break-inside-avoid). */
   masonry?: boolean;
+  /** Marks this grid as the feed result list used to time the top bar. */
+  feedResults?: boolean;
 };
 
 /** Scroll-reveal grid wrapper — caps stagger so long lists stay smooth. */
-export function StaggerGrid({ className, children, dense, masonry }: Props) {
+export function StaggerGrid({ className, children, dense, masonry, feedResults }: Props) {
   const reduced = useReducedMotion();
   const items = Children.toArray(children);
+  const resultsAttr = feedResults ? { "data-feed-results": "" } : {};
 
   if (reduced) {
-    return <div className={className}>{children}</div>;
+    return (
+      <div className={className} {...resultsAttr}>
+        {children}
+      </div>
+    );
   }
 
   return (
-    <div className={cn(className)}>
+    <div className={cn(className)} {...resultsAttr}>
       {items.map((child, i) => {
         if (!isValidElement(child)) return child;
         return (

@@ -68,7 +68,7 @@ type SlideProps = {
   align?: "start" | "center";
 };
 
-/** Slide/fade right — shared by EN + TH slots. */
+/** Rise through the line, same motion as the home poster word. */
 export function HeroRotatingSlide({
   word,
   sizer,
@@ -80,7 +80,7 @@ export function HeroRotatingSlide({
   return (
     <span
       className={cn(
-        "relative inline-grid align-baseline",
+        "relative inline-grid overflow-hidden align-baseline leading-[0.92]",
         centered ? "justify-items-center text-center" : "justify-items-start text-left",
         className,
       )}
@@ -90,17 +90,17 @@ export function HeroRotatingSlide({
       <span className="invisible col-start-1 row-start-1 whitespace-nowrap" aria-hidden>
         {sizer}
       </span>
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence initial={false}>
         <motion.span
           key={word}
           className={cn(
             "col-start-1 row-start-1 w-full whitespace-nowrap",
             centered ? "text-center" : "text-left",
           )}
-          initial={reduced ? false : { opacity: 0, x: -24 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={reduced ? undefined : { opacity: 0, x: 28 }}
-          transition={{ duration: 0.34, ease: smoothEase }}
+          initial={reduced ? false : { y: "100%" }}
+          animate={{ y: "0%" }}
+          exit={reduced ? undefined : { y: "-100%" }}
+          transition={{ duration: 0.55, ease: smoothEase }}
         >
           {word}
         </motion.span>
@@ -116,7 +116,7 @@ type RotatingProps = {
   cycle: ReturnType<typeof useHeroRotatingCycle>;
 };
 
-/** Slide/fade right through hero nouns — pass one shared `cycle` for EN + TH. */
+/** Rise through hero nouns — pass one shared `cycle` for EN + TH. */
 export default function HeroRotatingWord({ className, lang = "en", cycle }: RotatingProps) {
   const word = lang === "th" ? cycle.th : cycle.en;
   const sizer = lang === "th" ? cycle.thSizer : cycle.enSizer;

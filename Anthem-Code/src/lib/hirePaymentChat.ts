@@ -57,7 +57,7 @@ export function parseLegacyHirePaidText(content: string | null | undefined): Hir
   if (!content) return null;
   const text = content.replace(/^\[context\]\s*/, "").trim();
   const m = text.match(
-    /^ชำระเงิน\s*฿?\s*([\d,]+(?:\.\d+)?)\s*สำเร็จ(?:แล้ว)?\s*[—\-–]\s*Aplus1\s*พักเงิน/,
+    /^ชำระเงิน\s*฿?\s*([\d,]+(?:\.\d+)?)\s*สำเร็จ(?:แล้ว)?\s*[—\-–]\s*SAMECOR\s*พักเงิน/,
   );
   if (!m) return null;
   const paid = Number(m[1].replace(/,/g, ""));

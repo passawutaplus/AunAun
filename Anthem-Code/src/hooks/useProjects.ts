@@ -36,6 +36,23 @@ async function fetchPublishedFeedCards(
   return fetchFeedCardRows(build, PROJECT_FEED_CARD_SELECT_WITH_AI, PROJECT_FEED_CARD_SELECT) as Promise<DBProject[]>;
 }
 
+/**
+ * Edge-cached public feed (`api/public-feed`) for signed-out visitors only — signed-in users
+ * must see their own just-published work immediately. Null when unavailable (local dev, outage).
+ */
+async function fetchCachedPublicFeed(kind: "recent" | "top"): Promise<DBProject[] | null> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (data.session) return null;
+    const res = await fetch(`/api/public-feed?kind=${kind}`, { signal: AbortSignal.timeout(4000) });
+    if (!res.ok || !res.headers.get("content-type")?.includes("application/json")) return null;
+    const rows: unknown = await res.json();
+    return Array.isArray(rows) ? (rows as DBProject[]) : null;
+  } catch {
+    return null;
+  }
+}
+
 async function writeProjectRow(
   mode: "insert" | "update",
   args: { row?: TablesInsert<"projects">; id?: string; patch?: TablesUpdate<"projects"> },
@@ -137,6 +154,7 @@ export const usePublishedProjects = () =>
   useQuery({
     queryKey: ["published-projects"],
     queryFn: async () =>
+      (await fetchCachedPublicFeed("recent")) ??
       fetchPublishedFeedCards((select) =>
         supabase
           .from("projects")
@@ -151,6 +169,7 @@ export const useTopProjects = () =>
   useQuery({
     queryKey: ["top-projects"],
     queryFn: async () =>
+      (await fetchCachedPublicFeed("top")) ??
       fetchPublishedFeedCards((select) =>
         supabase
           .from("projects")

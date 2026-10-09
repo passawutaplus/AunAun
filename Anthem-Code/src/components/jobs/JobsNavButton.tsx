@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { isAplus1HiringBoardEnabled } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -7,6 +8,7 @@ type Props = {
 
 const JobsNavButton = ({ className }: Props) => {
   const navigate = useNavigate();
+  if (!isAplus1HiringBoardEnabled()) return null;
 
   return (
     <button

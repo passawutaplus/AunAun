@@ -77,7 +77,7 @@ export default function MarketingBusinessSetup() {
     try {
       if (activeBusiness) await updateBusiness({ id: activeBusiness.id, patch: payload });
       else await createBusiness(payload);
-      toast.success(uiLanguage === "th" ? "บันทึก scope growth Aplus1 แล้ว" : "Aplus1 growth scope saved");
+      toast.success(uiLanguage === "th" ? "บันทึก scope growth SAMECOR แล้ว" : "SAMECOR growth scope saved");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Save failed");
     }
@@ -88,7 +88,7 @@ export default function MarketingBusinessSetup() {
   return (
     <MarketingCard className="p-5">
       <h2 className="text-lg font-semibold text-admin-fg">
-        {uiLanguage === "th" ? "ตั้งค่า growth Aplus1" : "Aplus1 growth scope"}
+        {uiLanguage === "th" ? "ตั้งค่า growth SAMECOR" : "SAMECOR growth scope"}
       </h2>
       <p className="mt-1 text-sm text-admin-muted">
         {uiLanguage === "th"

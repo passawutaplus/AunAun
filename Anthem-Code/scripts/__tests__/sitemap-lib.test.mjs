@@ -24,7 +24,7 @@ describe("sitemap-lib", () => {
     expect(paths).toContain("/legal/copyright-report");
     expect(paths).toContain("/legal/payment-refund");
     expect(paths).toContain("/legal/service-agreement");
-    expect(paths).toContain("/hiring");
+    expect(paths).not.toContain("/hiring");
     expect(paths).not.toContain("/jobs");
     expect(paths).not.toContain("/advertise");
     expect(paths).not.toContain("/admin");
@@ -44,7 +44,7 @@ describe("sitemap-lib", () => {
       expect(paths, `must not list ${excluded}`).not.toContain(excluded);
     }
     expect(paths.some((p) => p.startsWith("/s/"))).toBe(false);
-    expect(paths).toContain("/hiring");
+    expect(paths).not.toContain("/hiring");
     expect(paths).not.toContain("/jobs");
     expect(paths).toContain("/forum");
     expect(paths).not.toContain("/forum/admin");
@@ -58,9 +58,19 @@ describe("sitemap-lib", () => {
     expect(paths).toContain(`/project/${catalogProjectId(0x45)}`);
   });
 
+  it("adds hiring board routes when enabled", () => {
+    const paths = buildSitemapUrls({
+      hiringBoard: true,
+      jobIds: ["job-1"],
+    }).map((u) => u.loc);
+    expect(paths).toContain("/hiring");
+    expect(paths).toContain("/hiring/job-1");
+    expect(paths).not.toContain("/jobs");
+  });
+
   it("adds full-product routes when enabled", () => {
     const paths = buildSitemapUrls({ fullProduct: true }).map((u) => u.loc);
-    expect(paths).toContain("/hiring");
+    expect(paths).not.toContain("/hiring");
     expect(paths).not.toContain("/jobs");
     expect(paths).toContain("/community");
     expect(paths.some((p) => p.startsWith("/s/"))).toBe(true);

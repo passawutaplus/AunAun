@@ -84,6 +84,8 @@ const urls = [
   "http://127.0.0.1:3090/**",
   "https://solofreelancer.com/**",
   "https://www.solofreelancer.com/**",
+  "https://samecor.com/**",
+  "https://www.samecor.com/**",
   "https://aplus1.app/**",
   "https://www.aplus1.app/**",
   "https://an1hem.app/**",

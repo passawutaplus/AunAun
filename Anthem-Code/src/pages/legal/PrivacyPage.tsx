@@ -42,7 +42,7 @@ const PrivacyPage = () => (
     <ul>
       <li>
         นโยบายการชำระเงินจ้างงาน (THB/Omise) — ดู{" "}
-        <a href="/legal/payment-refund">นโยบายการชำระเงินและการคืนเงิน Aplus1</a>
+        <a href="/legal/payment-refund">นโยบายการชำระเงินและการคืนเงิน SAMECOR</a>
       </li>
       <li>
         นโยบายการชำระเงิน subscription และการคืนเงิน — ดูที่{" "}

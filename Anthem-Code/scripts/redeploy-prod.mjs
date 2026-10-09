@@ -28,7 +28,7 @@ const buildEnvs = [
   "--build-env",
   `VITE_SUPABASE_PUBLISHABLE_KEY=${env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
   "--build-env",
-  "VITE_SITE_URL=https://aplus1.app",
+  "VITE_SITE_URL=https://samecor.com",
   "--build-env",
   `VITE_SO1O_APP_URL=${env.VITE_SO1O_APP_URL || "https://solofreelancer.com"}`,
   "--build-env",

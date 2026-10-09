@@ -83,7 +83,7 @@ const JobDetailPage = () => {
     <div className="min-h-screen bg-app-ambient pb-28 md:pb-8">
       <SeoHead
         title={displayJob.title}
-        description={truncateDescription(displayJob.description || `${displayJob.title} — ประกาศจ้างงานบน Aplus1`)}
+        description={truncateDescription(displayJob.description || `${displayJob.title} — ประกาศจ้างงานบน SAMECOR`)}
         path={`/hiring/${displayJob.id}`}
         image={displayJob.cover_image_url || undefined}
         noindex={displayJob.status !== "open"}

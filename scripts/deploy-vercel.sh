@@ -105,6 +105,7 @@ deploy_production() {
     BUILD_ENVS+=(--build-env "VITE_SO1O_APP_URL=${VITE_SO1O_APP_URL:-https://solofreelancer.com}")
     BUILD_ENVS+=(--build-env "VITE_OPS_HUB_URL=${VITE_OPS_HUB_URL:-https://so1o-ops-hub.vercel.app}")
     BUILD_ENVS+=(--build-env "VITE_APLUS1_LAUNCH_MINIMAL=true")
+    BUILD_ENVS+=(--build-env "VITE_APLUS1_FULL_PRODUCT=false")
     BUILD_ENVS+=(--build-env "VITE_APLUS1_PAYMENTS_ENABLED=false")
     BUILD_ENVS+=(--build-env "VITE_SOLO_ECOSYSTEM_ENABLED=false")
     BUILD_ENVS+=(--build-env "VITE_STRIPE_MODE=sandbox")
@@ -131,7 +132,7 @@ case "$APP_KEY" in
     if [[ "$MODE" == "demo" ]]; then
       deploy_demo Anthem-Code
     else
-      deploy_production Anthem-Code "https://aplus1.app" "aplus1-prod"
+      deploy_production Anthem-Code "https://samecor.com" "aplus1-prod"
     fi
     ;;
   solo)

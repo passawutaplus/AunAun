@@ -4,12 +4,12 @@
 
 ## Site
 
-- Home / feed: https://aplus1.app/
-- Sign in: https://aplus1.app/auth
-- Privacy: https://aplus1.app/legal/privacy
-- Terms: https://aplus1.app/legal/terms
-- Community guidelines: https://aplus1.app/legal/community
-- Copyright report: https://aplus1.app/legal/copyright-report
+- Home / feed: https://samecor.com/
+- Sign in: https://samecor.com/auth
+- Privacy: https://samecor.com/legal/privacy
+- Terms: https://samecor.com/legal/terms
+- Community guidelines: https://samecor.com/legal/community
+- Copyright report: https://samecor.com/legal/copyright-report
 
 ## Product
 
@@ -17,5 +17,5 @@ Aplus1 (1px / Anthem) lets creatives publish a portfolio, browse projects and de
 
 ## Contact
 
-- Product site: https://aplus1.app
+- Product site: https://samecor.com
 - Prefer public pages and documented APIs; do not scrape authenticated or private user data.

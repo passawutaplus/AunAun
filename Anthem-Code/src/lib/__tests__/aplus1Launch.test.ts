@@ -14,6 +14,7 @@ import {
   isLaunchAllowedPath,
   isLaunchFeedMode,
   isLaunchHiddenPath,
+  isAplus1HiringBoardEnabled,
   isSoloEcosystemEnabled,
 } from "@/lib/aplus1Launch";
 
@@ -37,6 +38,7 @@ describe("aplus1Launch flags (fail-closed)", () => {
     expect(isAplus1GiftEconomyEnabled()).toBe(false);
     expect(isLaunchDesignDrillEnabled()).toBe(false);
     expect(isLaunchBoostEnabled()).toBe(false);
+    expect(isAplus1HiringBoardEnabled()).toBe(false);
     expect(isSoloEcosystemEnabled()).toBe(false);
   });
 
@@ -163,6 +165,21 @@ describe("aplus1Launch flags (fail-closed)", () => {
     expect(isLaunchBoostEnabled()).toBe(false);
   });
 
+  it("enables hiring board only with VITE_APLUS1_HIRING_BOARD_ENABLED=true", () => {
+    vi.stubEnv("VITE_APLUS1_HIRING_BOARD_ENABLED", "true");
+    expect(isAplus1HiringBoardEnabled()).toBe(true);
+    expect(isLaunchAllowedPath("/hiring")).toBe(true);
+    expect(isLaunchHiddenPath("/hiring/new")).toBe(false);
+    expect(isLaunchHiddenPath("/org/register")).toBe(false);
+  });
+
+  it("keeps hiring board off when flag unset even in full product", () => {
+    vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
+    vi.stubEnv("VITE_APLUS1_HIRING_BOARD_ENABLED", "");
+    expect(isAplus1HiringBoardEnabled()).toBe(false);
+    expect(isLaunchHiddenPath("/hiring")).toBe(true);
+  });
+
   it("launch minimal always disables payments", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "");
     vi.stubEnv("VITE_APLUS1_PAYMENTS_ENABLED", "true");
@@ -180,6 +197,7 @@ describe("aplus1Launch flags (fail-closed)", () => {
   it("restricts feed modes even when full product", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
     expect(isLaunchFeedMode("projects")).toBe(true);
+    expect(isLaunchFeedMode("objects")).toBe(true);
     expect(isLaunchFeedMode("community")).toBe(false);
     expect(isLaunchFeedMode("studios")).toBe(false);
     expect(coerceLaunchFeedMode("community")).toBe("projects");
@@ -191,6 +209,7 @@ describe("aplus1Launch flags (fail-closed)", () => {
     expect(isLaunchFeedMode("projects")).toBe(true);
     expect(isLaunchFeedMode("designers")).toBe(true);
     expect(isLaunchFeedMode("packages")).toBe(true);
+    expect(isLaunchFeedMode("objects")).toBe(true);
     expect(isLaunchFeedMode("community")).toBe(false);
     expect(coerceLaunchFeedMode("studios")).toBe("projects");
   });
@@ -214,6 +233,7 @@ describe("launch route allowlist", () => {
     "/portfolio/saved",
     "/project/abc-123",
     "/service/svc-123",
+    "/object/sample-print",
     "/u/user-id",
     "/u/user-id/followers",
     "/explore/tool/Figma",
@@ -245,10 +265,14 @@ describe("launch route allowlist", () => {
     "/dashboard/collab",
     "/dashboard/projects",
     "/dashboard/packages",
+    "/dashboard/objects",
     "/dashboard/catalogs",
     "/dashboard/reviews",
     "/dashboard/documents",
     "/dashboard/payout",
+  ];
+
+  const blocked = [
     "/jobs",
     "/jobs/abc",
     "/jobs/new",
@@ -257,9 +281,6 @@ describe("launch route allowlist", () => {
     "/hiring/new",
     "/org/register",
     "/org/status",
-  ];
-
-  const blocked = [
     "/community",
     "/community/abc",
     "/advertise",
@@ -285,7 +306,9 @@ describe("launch route allowlist", () => {
 
   it("allows remaining full-product paths but keeps Area and Studio retired", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
-    expect(isLaunchHiddenPath("/jobs")).toBe(false);
+    expect(isLaunchHiddenPath("/jobs")).toBe(true);
+    expect(isLaunchHiddenPath("/hiring")).toBe(true);
+    expect(isLaunchHiddenPath("/org/register")).toBe(true);
     expect(isLaunchHiddenPath("/community/x")).toBe(true);
     expect(isLaunchHiddenPath("/studio/new")).toBe(true);
     expect(isLaunchHiddenPath("/s/studio-slug")).toBe(true);
