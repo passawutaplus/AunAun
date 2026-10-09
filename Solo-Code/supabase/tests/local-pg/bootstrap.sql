@@ -276,3 +276,35 @@ $function$;
 -- a public admin_* RPC that production lets `anon` execute (default PUBLIC grant)
 create function public.admin_probe() returns int language sql security definer set search_path = public as $$ select 1 $$;
 grant execute on function public.admin_probe() to public;
+
+-- ---- added 2026-10-09: public RPC holes (bodies copied from production) ----
+create table public.secret_table (id int primary key, note text);
+insert into public.secret_table values (1, 'top secret');
+
+create function public._user_rows_bytes(_user_id uuid, _sql text) returns bigint language plpgsql security definer
+  set search_path = public as $function$
+DECLARE v_bytes bigint;
+BEGIN
+  EXECUTE _sql INTO v_bytes USING _user_id;
+  RETURN COALESCE(v_bytes, 0);
+END;
+$function$;
+grant execute on function public._user_rows_bytes(uuid, text) to public;
+
+create table public.email_queue_stub (id bigserial primary key, queue text, payload jsonb);
+create function public.enqueue_email(queue_name text, payload jsonb) returns bigint language plpgsql security definer
+  set search_path = public as $function$
+DECLARE i bigint;
+BEGIN
+  INSERT INTO public.email_queue_stub(queue, payload) VALUES (queue_name, payload) RETURNING id INTO i;
+  RETURN i;
+END;
+$function$;
+create function public.read_email_batch(queue_name text, batch_size integer, vt integer)
+  returns table(msg_id bigint, message jsonb) language sql security definer set search_path = public as
+  $$ select id, payload from public.email_queue_stub where queue = queue_name limit batch_size $$;
+create function public.move_to_dlq(source_queue text, dlq_name text, message_id bigint, payload jsonb) returns bigint
+  language sql security definer set search_path = public as
+  $$ insert into public.email_queue_stub(queue, payload) values (dlq_name, payload) returning id $$;
+grant execute on function public.enqueue_email(text, jsonb), public.read_email_batch(text, integer, integer),
+  public.move_to_dlq(text, text, bigint, jsonb) to public;

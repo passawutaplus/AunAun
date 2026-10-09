@@ -66,3 +66,20 @@ select set_config('request.jwt.claim.sub', :B, false) \gset
 select t.runs('BEFORE: any signed-in user can write the admin audit log (vulnerable)',
   $q$ select anthem._admin_audit('forged.action', 'user', gen_random_uuid(), '{}'::jsonb) $q$);
 reset role;
+
+-- 8) arbitrary SQL for anyone holding the anon key, and an open email queue
+set role anon;
+select set_config('request.jwt.claim.sub', '', false), set_config('request.jwt.claim.role', 'anon', false) \gset
+select public._user_rows_bytes(null, 'select length(note)::bigint from public.secret_table where id = 1') as leaked_len \gset
+reset role;
+select t.ok('BEFORE: anon can read any table through _user_rows_bytes (vulnerable)', :leaked_len = 10);
+set role anon;
+select public._user_rows_bytes(null, $q$ with i as (insert into public.secret_table values (2, 'planted by anon') returning 1) select count(*)::bigint from i $q$);
+reset role;
+select t.ok('BEFORE: anon can WRITE any table through _user_rows_bytes (vulnerable)', (select count(*) = 1 from public.secret_table where id = 2));
+delete from public.secret_table where id = 2;
+set role anon;
+select public.enqueue_email('auth_emails', '{"to":"victim@example.com","subject":"phish"}'::jsonb) as qid \gset
+reset role;
+select t.ok('BEFORE: anon can enqueue emails (vulnerable)', (select count(*) = 1 from public.email_queue_stub where queue = 'auth_emails'));
+delete from public.email_queue_stub;

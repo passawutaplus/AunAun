@@ -421,3 +421,25 @@ select set_config('request.jwt.claim.sub', '', false), set_config('request.jwt.c
 select t.throws('AFTER: anon is refused on admin RPCs',
   $q$ select public.admin_probe() $q$, 'permission denied');
 reset role;
+
+-- ============ CLOSE PUBLIC RPC HOLES (20261009080000) ============
+select t.ok('AFTER: _user_rows_bytes no longer exists', not exists (select 1 from pg_proc where proname = '_user_rows_bytes'));
+set role anon;
+select set_config('request.jwt.claim.sub', '', false), set_config('request.jwt.claim.role', 'anon', false) \gset
+select t.throws('AFTER: anon cannot call _user_rows_bytes (gone)',
+  $q$ select public._user_rows_bytes(null, 'select 1') $q$, '_user_rows_bytes');
+select t.throws('AFTER: anon cannot enqueue email', $q$ select public.enqueue_email('auth_emails', '{}'::jsonb) $q$, 'permission denied');
+select t.throws('AFTER: anon cannot read the email queue', $q$ select * from public.read_email_batch('auth_emails', 10, 30) $q$, 'permission denied');
+select t.throws('AFTER: anon cannot move to DLQ', $q$ select public.move_to_dlq('a', 'b', 1, '{}'::jsonb) $q$, 'permission denied');
+reset role;
+set role authenticated;
+select set_config('request.jwt.claim.sub', :A, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+select t.throws('AFTER: signed-in users cannot enqueue email either', $q$ select public.enqueue_email('auth_emails', '{}'::jsonb) $q$, 'permission denied');
+select t.throws('AFTER: signed-in users cannot read the email queue', $q$ select * from public.read_email_batch('auth_emails', 10, 30) $q$, 'permission denied');
+reset role;
+set role service_role;
+select set_config('request.jwt.claim.sub', '', false), set_config('request.jwt.claim.role', 'service_role', false) \gset
+select t.runs('AFTER: service_role still enqueues / reads / moves',
+  $q$ select public.enqueue_email('auth_emails', '{"ok":true}'::jsonb); select * from public.read_email_batch('auth_emails', 10, 30); select public.move_to_dlq('auth_emails', 'auth_emails_dlq', 1, '{}'::jsonb) $q$);
+reset role;
+select t.ok('AFTER: the secret table is untouched', (select count(*) = 1 from public.secret_table));
