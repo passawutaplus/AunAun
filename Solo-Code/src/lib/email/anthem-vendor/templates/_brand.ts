@@ -1,4 +1,4 @@
-// Aplus1 brand styles for emails — clean white + subtle orange fade.
+// SAMECOR brand styles for emails — clean white + subtle orange fade.
 
 export const brand = {
   orange: '#FF4F18',

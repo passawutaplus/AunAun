@@ -8,6 +8,7 @@ import { followTemplate } from './follow'
 import { jobApplicationTemplate } from './job-application'
 import { topupSuccessTemplate } from './topup-success'
 import { cashoutStatusTemplate } from './cashout-status'
+import { kycStatusTemplate } from './kyc-status'
 
 export interface NotificationTemplateEntry {
   component: ComponentType<Record<string, unknown>>
@@ -26,6 +27,7 @@ export const NOTIFICATION_TEMPLATES: Record<string, NotificationTemplateEntry> =
   'job-application': jobApplicationTemplate,
   'topup-success': topupSuccessTemplate,
   'cashout-status': cashoutStatusTemplate,
+  'kyc-status': kycStatusTemplate,
 }
 
 export const ANTHEM_NOTIFICATION_SUBJECTS = Object.fromEntries(

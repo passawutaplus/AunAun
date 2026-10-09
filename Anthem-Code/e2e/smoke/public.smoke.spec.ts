@@ -9,7 +9,7 @@ import { test, expect } from "@playwright/test";
 test.describe("smoke @public", () => {
   test("home renders and has H1 + main landmark", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/aplus1/i);
+    await expect(page).toHaveTitle(/samecor/i);
     await expect(page.locator("main, [role=main]").first()).toBeVisible();
   });
 

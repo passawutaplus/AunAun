@@ -26,7 +26,7 @@ for (const file of readdirSync(templatesDest)) {
   const path = join(templatesDest, file);
   let content = readFileSync(path, "utf8");
   content = content
-    .replace(/from '@\/lib\/copyConstants'/g, "from '../copyConstants'")
+    .replace(/from (["'])@\/lib\/copyConstants\1/g, "from '../copyConstants'")
     .replace(/from '\.\.\/brandConfig'/g, "from '../brandConfig'");
   writeFileSync(path, content);
 }
