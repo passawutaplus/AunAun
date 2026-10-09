@@ -330,3 +330,94 @@ select t.runs('AFTER: admin can still moderate message content',
   $q$ update shared.messages set content = '[removed]' where id = 'e0000000-0000-4000-8000-000000000002' $q$);
 select t.ok('AFTER: admin edit applied', (select content = '[removed]' from shared.messages where id = 'e0000000-0000-4000-8000-000000000002'));
 reset role;
+
+-- ============ KYC PRIVATE BUCKET (20261009110000) ============
+select t.ok('AFTER: kyc-documents bucket is private, 10 MB, jpeg/pdf only',
+  (select not public and file_size_limit = 10485760 and allowed_mime_types = array['image/jpeg','application/pdf']
+     from storage.buckets where id = 'kyc-documents'));
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', :A, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+select t.runs('AFTER: owner can upload into own folder',
+  format($q$ insert into storage.objects(bucket_id, name, owner) values ('kyc-documents', %L, %L) $q$, :A || '/id_front/a1.jpg', :A));
+select t.throws('AFTER: cannot upload into someone else''s folder',
+  format($q$ insert into storage.objects(bucket_id, name, owner) values ('kyc-documents', %L, %L) $q$, :B || '/id_front/evil.jpg', :A),
+  'row-level security');
+select t.throws('AFTER: cannot upload to the bucket root / without a user folder',
+  $q$ insert into storage.objects(bucket_id, name, owner) values ('kyc-documents', 'loose.jpg', null) $q$, 'row-level security');
+select t.ok('AFTER: owner reads own document', (select count(*) = 1 from storage.objects where bucket_id = 'kyc-documents'));
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', :B, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+select t.ok('AFTER: another user sees none of A''s KYC documents', (select count(*) = 0 from storage.objects where bucket_id = 'kyc-documents'));
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', :ADMIN, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+select t.ok('AFTER: admin can read KYC documents (needed to create signed URLs)', (select count(*) = 1 from storage.objects where bucket_id = 'kyc-documents'));
+reset role;
+
+set role anon;
+select set_config('request.jwt.claim.sub', '', false), set_config('request.jwt.claim.role', 'anon', false) \gset
+select t.throws('AFTER: anon has no access to storage objects', $q$ select * from storage.objects $q$, 'permission denied');
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', :A, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+do $$
+declare n int;
+begin
+  update storage.objects set name = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/id_front/replaced.jpg' where bucket_id = 'kyc-documents';
+  get diagnostics n = row_count;
+  perform t.ok('AFTER: nobody can UPDATE/overwrite a KYC object (no upsert)', n = 0, 'rows=' || n);
+  delete from storage.objects where bucket_id = 'kyc-documents';
+  get diagnostics n = row_count;
+  perform t.ok('AFTER: owner can delete own document while no KYC request is open', n = 1, 'rows=' || n);
+end $$;
+select t.runs('AFTER: re-upload after delete',
+  format($q$ insert into storage.objects(bucket_id, name, owner) values ('kyc-documents', %L, %L) $q$, :A || '/selfie/s1.jpg', :A));
+reset role;
+insert into shared.kyc_requests(user_id, status) values (:A, 'pending');
+set role authenticated;
+select set_config('request.jwt.claim.sub', :A, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+do $$
+declare n int;
+begin
+  delete from storage.objects where bucket_id = 'kyc-documents';
+  get diagnostics n = row_count;
+  perform t.ok('AFTER: owner cannot delete documents once the KYC request is pending/approved', n = 0, 'rows=' || n);
+end $$;
+reset role;
+
+-- ============ ADMIN HELPERS + GRANTS (20261009120000) ============
+set role authenticated;
+select set_config('request.jwt.claim.sub', :ADMIN, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+select t.runs('AFTER: admin can grant a role (helpers now resolve)',
+  format($q$ select anthem.admin_set_user_role(%L, 'admin', true) $q$, :B));
+reset role;
+select t.ok('AFTER: role row created', (select count(*) = 1 from public.user_roles where user_id = :B::uuid and role = 'admin'));
+select t.ok('AFTER: audit row written with the admin as actor',
+  (select count(*) >= 1 from shared.admin_audit_log where action = 'user.grant_role' and actor_id = :ADMIN::uuid));
+delete from public.user_roles where user_id = :B::uuid;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', :A, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+select t.throws('AFTER: non-admin is refused (FORBIDDEN)',
+  format($q$ select anthem.admin_set_user_role(%L, 'admin', true) $q$, :A), 'FORBIDDEN');
+select t.ok('AFTER: non-admin got no role', (select count(*) = 0 from public.user_roles where user_id = :A::uuid and role = 'admin'));
+select t.throws('AFTER: users cannot forge audit rows via anthem._admin_audit',
+  $q$ select anthem._admin_audit('forged.action', 'user', gen_random_uuid(), '{}'::jsonb) $q$, 'permission denied');
+select t.throws('AFTER: users cannot call public._admin_audit either',
+  $q$ select public._admin_audit('forged.action', 'user', gen_random_uuid(), '{}'::jsonb) $q$, 'permission denied');
+select t.throws('AFTER: users cannot call the actor helper',
+  $q$ select public._admin_actor() $q$, 'permission denied');
+reset role;
+select t.ok('AFTER: no forged audit rows exist', (select count(*) = 0 from shared.admin_audit_log where action = 'forged.action'));
+select t.ok('AFTER: anon can no longer execute public.admin_probe', not has_function_privilege('anon', 'public.admin_probe()', 'EXECUTE'));
+select t.ok('AFTER: authenticated still can (admin UI keeps working)', has_function_privilege('authenticated', 'public.admin_probe()', 'EXECUTE'));
+set role anon;
+select set_config('request.jwt.claim.sub', '', false), set_config('request.jwt.claim.role', 'anon', false) \gset
+select t.throws('AFTER: anon is refused on admin RPCs',
+  $q$ select public.admin_probe() $q$, 'permission denied');
+reset role;

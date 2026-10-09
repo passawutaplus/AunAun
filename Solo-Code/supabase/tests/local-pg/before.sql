@@ -48,3 +48,21 @@ update shared.messages set content = 'edited by B', sender_id = :B where id = 'e
 select t.ok('BEFORE: participant B can rewrite A''s message and take over sender_id (vulnerable)',
   (select content = 'edited by B' and sender_id = :B::uuid from shared.messages where id = 'e0000000-0000-4000-8000-000000000001'));
 reset role;
+
+-- 6) KYC documents are stored in a public bucket
+insert into storage.objects(bucket_id, name, owner) values ('project-media', 'anthem/kyc/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/id_front/x.jpg', :A);
+select t.ok('BEFORE: KYC document sits in a PUBLIC bucket (served by URL without RLS) (vulnerable)',
+  (select b.public from storage.objects o join storage.buckets b on b.id = o.bucket_id where o.name like 'anthem/kyc/%'));
+
+-- 7) admin back-office: anthem.admin_* call a helper that does not exist in public
+set role authenticated;
+select set_config('request.jwt.claim.sub', :ADMIN, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+select t.throws('BEFORE: admin cannot set a role (public._admin_actor() missing)',
+  format($q$ select anthem.admin_set_user_role(%L, 'admin', true) $q$, :B), '_admin_actor');
+reset role;
+select t.ok('BEFORE: anon may execute public.admin_probe (default PUBLIC grant)', has_function_privilege('anon', 'public.admin_probe()', 'EXECUTE'));
+set role authenticated;
+select set_config('request.jwt.claim.sub', :B, false) \gset
+select t.runs('BEFORE: any signed-in user can write the admin audit log (vulnerable)',
+  $q$ select anthem._admin_audit('forged.action', 'user', gen_random_uuid(), '{}'::jsonb) $q$);
+reset role;

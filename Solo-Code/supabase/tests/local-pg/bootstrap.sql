@@ -213,3 +213,66 @@ BEGIN
 END;
 $function$;
 grant execute on function public.mark_conversation_read(uuid) to authenticated;
+
+-- ---- added 2026-10-09: storage (KYC bucket) ----
+create schema storage;
+create table storage.buckets (id text primary key, name text, public boolean not null default false,
+  file_size_limit bigint, allowed_mime_types text[]);
+create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets(id),
+  name text not null, owner uuid, created_at timestamptz not null default now());
+create function storage.foldername(name text) returns text[] language plpgsql immutable as $$
+declare _parts text[];
+begin
+  select string_to_array(name, '/') into _parts;
+  return _parts[1:array_length(_parts, 1) - 1];
+end $$;
+grant usage on schema storage to anon, authenticated, service_role;
+grant select, insert, update, delete on storage.objects to authenticated, service_role;
+grant select on storage.buckets to authenticated, service_role;
+alter table storage.objects enable row level security;
+create table shared.kyc_requests (id uuid primary key default gen_random_uuid(), user_id uuid not null, status text not null default 'draft');
+grant select, insert, delete on shared.kyc_requests to authenticated, service_role;
+-- production state before the fix: KYC files sit in the PUBLIC project-media bucket
+insert into storage.buckets values ('project-media', 'project-media', true, 62914560, null);
+
+-- ---- added 2026-10-09: admin helpers (bodies copied from production) ----
+create table shared.admin_audit_log (id uuid primary key default gen_random_uuid(), actor_id uuid, action text,
+  target_type text, target_id uuid, metadata jsonb, created_at timestamptz not null default now());
+
+create function anthem._admin_actor() returns uuid language plpgsql stable security definer
+  set search_path to 'anthem', 'shared', 'public' as $function$
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'AUTH: ต้องเข้าสู่ระบบ'; END IF;
+  IF NOT public.has_role(auth.uid(), 'admin'::app_role) THEN RAISE EXCEPTION 'FORBIDDEN: ต้องเป็น admin'; END IF;
+  RETURN auth.uid();
+END;
+$function$;
+create function anthem._admin_audit(_action text, _target_type text, _target_id uuid, _metadata jsonb default '{}'::jsonb)
+  returns void language plpgsql security definer set search_path to 'anthem', 'shared', 'public' as $function$
+BEGIN
+  INSERT INTO shared.admin_audit_log(actor_id, action, target_type, target_id, metadata)
+  VALUES (auth.uid(), _action, _target_type, _target_id, COALESCE(_metadata, '{}'::jsonb));
+END;
+$function$;
+-- production: PUBLIC default execute (authenticated could call both helpers)
+grant execute on all functions in schema anthem to authenticated, service_role;
+
+-- the production function that calls the helpers through the (missing) public variant
+create function anthem.admin_set_user_role(_user_id uuid, _role text, _grant boolean) returns void language plpgsql
+  security definer set search_path to 'anthem', 'shared', 'public' as $function$
+BEGIN
+  PERFORM public._admin_actor();
+  IF _role NOT IN ('admin', 'user') THEN RAISE EXCEPTION 'INVALID role'; END IF;
+  IF _grant THEN
+    INSERT INTO public.user_roles(user_id, role) VALUES (_user_id, _role::public.app_role) ON CONFLICT (user_id, role) DO NOTHING;
+    PERFORM public._admin_audit('user.grant_role', 'user', _user_id, jsonb_build_object('role', _role));
+  ELSE
+    DELETE FROM public.user_roles WHERE user_id = _user_id AND role = _role::public.app_role;
+    PERFORM public._admin_audit('user.revoke_role', 'user', _user_id, jsonb_build_object('role', _role));
+  END IF;
+END;
+$function$;
+
+-- a public admin_* RPC that production lets `anon` execute (default PUBLIC grant)
+create function public.admin_probe() returns int language sql security definer set search_path = public as $$ select 1 $$;
+grant execute on function public.admin_probe() to public;
