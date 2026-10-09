@@ -3106,7 +3106,7 @@ function AgreedPlanSummary({
       : []
   )
     .map((t, i) => {
-      const clean = t.replace(/^\s*\d+[\.\)\-]\s*/, "").trim();
+      const clean = t.replace(/^\s*\d+[.)-]\s*/, "").trim();
       return clean ? `${i + 1}. ${clean}` : null;
     })
     .filter(Boolean)
