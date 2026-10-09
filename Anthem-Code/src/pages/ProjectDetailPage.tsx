@@ -46,7 +46,7 @@ import { useAdCampaign, logAdEvent } from "@/hooks/useAds";
 import { Megaphone, ExternalLink } from "lucide-react";
 import { absoluteUrl, truncateDescription } from "@/lib/seo";
 import { breadcrumbJsonLd, creativeWorkJsonLd } from "@/lib/seoSchemas";
-import { openSafeExternalUrl } from "@/lib/safeUrl";
+import { openSafeExternalUrl } from "@/lib/externalUrl";
 import { FadeUp } from "@/components/motion/FadeUp";
 import { ProjectLinkedPostsBlock } from "@/components/project/ProjectLinkedPostsBlock";
 import {

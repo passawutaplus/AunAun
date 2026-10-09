@@ -19,7 +19,7 @@ import {
   Heart,
 } from "lucide-react";
 import { toast } from "sonner";
-import { openSafeExternalUrl } from "@/lib/safeUrl";
+import { openSafeExternalUrl } from "@/lib/externalUrl";
 import PageLoader from "@/components/ui/PageLoader";
 import { profilesPublicFrom } from "@/lib/profileAccess";
 

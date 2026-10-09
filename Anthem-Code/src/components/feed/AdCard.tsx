@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { logAdEvent, type AdCampaign } from "@/hooks/useAds";
-import { openSafeExternalUrl } from "@/lib/safeUrl";
+import { openSafeExternalUrl } from "@/lib/externalUrl";
 
 interface Props {
   ad: AdCampaign;
