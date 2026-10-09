@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { collectionNameFor, defaultSelection, imageKey, isJunkUrl, rankCandidates } from "../../vault-extension/lib/keep-all.js";
 import { MAX_ATTEMPTS, QUEUE_CAP, backoffMs, isRetryable, prepareForQueue, queueAdd, queueAfterFailure, queueDue, queueRemove, queueSummary } from "../../vault-extension/lib/queue.js";
 import { extractCredit } from "../../vault-extension/lib/credit.js";
-import { buildBatchItems, chunk, decideKeep, parseTagsAndNote, pickCollection, summarizeBatches, textFragmentUrl } from "../../vault-extension/lib/keep.js";
+import { buildBatchItems, chunk, decideKeep, quickKeepEnabled, parseTagsAndNote, pickCollection, summarizeBatches, textFragmentUrl } from "../../vault-extension/lib/keep.js";
 
 describe("Keep All candidates", () => {
   it("normalises rendition URLs to the same key", () => {
@@ -105,6 +105,10 @@ describe("keep helpers", () => {
     assert.equal(decideKeep({ quickKeep: true, hasTarget: false }), "open-panel");
     assert.equal(decideKeep({ quickKeep: false }), "open-panel");
     assert.equal(decideKeep({}), "open-panel");
+    // new installs save instantly; only an explicit "ask me first" turns it off
+    assert.equal(quickKeepEnabled(undefined), true);
+    assert.equal(quickKeepEnabled(true), true);
+    assert.equal(quickKeepEnabled(false), false);
     assert.equal(pickCollection("c1", [{ id: "c1" }]), "c1");
     assert.equal(pickCollection("gone", [{ id: "c1" }]), "all");
   });
@@ -143,12 +147,12 @@ describe("extension package", () => {
     for (const f of ["background.js", "popup.js", "lib/keep.js", "lib/queue.js", "lib/keep-all.js", "lib/credit.js"]) assert.equal(syntax(f, true).status, 0, f);
     for (const f of ["content.js", "content-keep.js"]) assert.equal(syntax(f, false).status, 0, f);
   });
-  it("manifest: no tabs permission, module worker, content script only on Vault origins, optional all-sites", () => {
+  it("manifest: no tabs permission, module worker, content script only on Vault origins, no all-sites permission", () => {
     const m = JSON.parse(readFileSync(new URL("manifest.json", dir), "utf8"));
     assert.ok(!m.permissions.includes("tabs"));
     assert.equal(m.background.type, "module");
     assert.ok(m.content_scripts.every(c => c.matches.every(x => /aplus-vault|localhost|127\.0\.0\.1/.test(x))));
-    assert.deepEqual(m.optional_host_permissions.sort(), ["http://*/*", "https://*/*"]);
+    assert.equal(m.optional_host_permissions, undefined, "the extension must not ask for all-sites access");
     assert.ok(m.web_accessible_resources[0].resources.includes("lib/keep-all.js"));
     assert.ok(m.commands["quick-keep-page"]);
   });

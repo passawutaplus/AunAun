@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vault",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["outputs/a-plus-vault/local-server.cjs"],
+      "env": { "VAULT_PORT": "5177" },
+      "port": 5177
+    },
+    {
+      "name": "seeder-admin",
+      "runtimeExecutable": "npm.cmd",
+      "runtimeArgs": ["run", "dev", "--prefix", "seeder"],
+      "port": 3010
+    }
+  ]
+}

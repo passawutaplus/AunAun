@@ -87,12 +87,51 @@
     :host{all:initial}
     *{box-sizing:border-box}
     .fx{font-family:"IBM Plex Sans Thai","IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#151719}
-    .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2147483647;display:flex;gap:12px;align-items:center;padding:10px 14px;border-radius:999px;background:#151719;color:#fff;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-    .toast button{padding:6px 12px;border:0;border-radius:999px;background:#fff;color:#151719;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
-    .toast .bar{position:absolute;left:14px;right:14px;bottom:3px;height:2px;border-radius:2px;background:#ffffff40;overflow:hidden}
-    .toast .bar i{display:block;height:100%;background:#fff;animation:bar 6s linear forwards}
+    .kc{position:fixed;top:16px;right:16px;z-index:2147483647;width:352px;max-width:calc(100vw - 24px);overflow:hidden;border-radius:16px;background:#fff;color:#151719;box-shadow:0 18px 50px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.06);animation:kcIn .22s ease-out}
+    @media (prefers-color-scheme:dark){.kc{background:#1c1f23;color:#f4f5f6;box-shadow:0 18px 50px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08)}}
+    @keyframes kcIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+    .kc .bar{position:absolute;left:0;right:0;top:0;height:2px;background:transparent}
+    .kc .bar i{display:block;height:100%;background:#f05040;animation:bar 6s linear forwards}
+    .kc.paused .bar i,.kc.open .bar i{animation-play-state:paused}
+    .kc.open .bar{display:none}
     @keyframes bar{from{width:100%}to{width:0}}
-    @media (prefers-reduced-motion:reduce){.toast .bar i{animation:none;width:100%}}
+    .kc-row{display:flex;align-items:center;gap:12px;padding:12px 14px}
+    .kc-thumb{flex:0 0 46px;width:46px;height:46px;border-radius:10px;background:#e9ecef center/cover no-repeat;position:relative}
+    @media (prefers-color-scheme:dark){.kc-thumb{background-color:#2a2e33}}
+    .kc-state{position:absolute;right:-4px;bottom:-4px;width:20px;height:20px;border-radius:50%;background:#fff;display:grid;place-items:center}
+    @media (prefers-color-scheme:dark){.kc-state{background:#1c1f23}}
+    .kc-spin{width:12px;height:12px;border-radius:50%;border:2px solid #c9ced3;border-top-color:#f05040;animation:spin .8s linear infinite}
+    .kc-tick{width:14px;height:14px;border-radius:50%;background:#2c8f68;color:#fff;font-style:normal;font-size:10px;line-height:14px;text-align:center}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .kc-main{flex:1;min-width:0}
+    .kc-title{font-size:14px;font-weight:600;line-height:1.3}
+    .kc-sub{margin-top:2px;font-size:12px;color:#747a80;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .kc-link{padding:4px 8px;border:0;border-radius:8px;background:transparent;color:#747a80;font:inherit;font-size:12.5px;cursor:pointer}
+    .kc-link:hover{color:#f05040}
+    .kc-more{display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 14px;border:0;border-top:1px solid rgba(127,127,127,.18);background:transparent;color:inherit;font:inherit;font-size:13px;cursor:pointer}
+    .kc-more:hover{background:rgba(127,127,127,.08)}
+    .kc-more b{font-weight:600}
+    .kc-chev{transition:transform .2s}
+    .kc.open .kc-chev{transform:rotate(180deg)}
+    .kc-form{display:grid;grid-template-rows:0fr;transition:grid-template-rows .26s ease}
+    .kc.open .kc-form{grid-template-rows:1fr}
+    .kc-form>div{overflow:hidden;min-height:0}
+    .kc-form-in.hidden>:not(.kc-frame){display:none}
+    .kc-form-in.hidden{padding:0}
+    .kc-frame{display:none;width:100%;height:min(640px,calc(100vh - 150px));border:0;background:transparent;color-scheme:normal}
+    .kc-frame.on{display:block}
+    .kc-form-in{display:flex;flex-direction:column;gap:8px;padding:4px 14px 14px}
+    .kc-form label{font-size:11.5px;color:#747a80}
+    .kc-form input,.kc-form select,.kc-form textarea{width:100%;padding:8px 10px;border:1px solid rgba(127,127,127,.3);border-radius:8px;background:transparent;color:inherit;font:inherit;font-size:13.5px}
+    .kc-form textarea{min-height:64px;resize:vertical}
+    .kc-save{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 14px;border:0;border-radius:14px;background:#f05040;color:#fff;font:inherit;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 10px 22px rgba(240,80,64,.28)}
+    .kc-prev{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:12px;background:#e9ecef;display:block}
+    .kc-meta{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;margin-top:-2px}
+    .kc-type{color:#f05040}
+    .kc-host{color:#747a80;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .kc-save:disabled{opacity:.6;cursor:default}
+    .kc-msg{font-size:12px;color:#cc3931}
+    @media (prefers-reduced-motion:reduce){.kc,.kc-form,.kc-chev{animation:none;transition:none}.kc .bar i{animation:none;width:100%}.kc-spin{animation-duration:2s}}
     .picker{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:rgba(10,12,14,.5)}
     .panel{width:min(880px,calc(100vw - 32px));max-height:calc(100vh - 48px);display:flex;flex-direction:column;border-radius:16px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.4);overflow:hidden}
     .panel header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid #e5e8eb}
@@ -131,37 +170,155 @@
     return { host, wrap };
   }
 
-  // ------------------------------------------------------------------ undo toast (compact result card)
+  // ------------------------------------------------------------------ result card (top right): Saving... -> Kept -> optional details
   let toast = null;
-  function showUndoToast(message, objectId) {
-    toast?.host.remove();
-    const ui = makeHost();
-    toast = ui;
-    const el = document.createElement("div");
-    el.className = "toast";
-    el.setAttribute("role", "status");
-    const text = document.createElement("span");
-    text.textContent = message;
-    el.appendChild(text);
+  const safeImg = u => (/^https?:\/\//i.test(String(u || "")) ? String(u) : "");
+  function closeToast() { if (toast) { clearTimeout(toast.timer); toast.host.remove(); toast = null; } }
+  function armClose(ui, ms) { clearTimeout(ui.timer); ui.timer = setTimeout(() => { if (toast === ui) closeToast(); }, ms); }
+
+  /** One card for every phase, so the thumbnail and position stay put while the text changes. */
+  function ensureCard(previewUrl) {
+    if (!toast) {
+      const ui = makeHost();
+      const el = document.createElement("div");
+      el.className = "kc";
+      el.setAttribute("role", "status");
+      el.innerHTML = "<div class='bar'><i></i></div><div class='kc-row'><div class='kc-thumb'><span class='kc-state'></span></div><div class='kc-main'><div class='kc-title'></div><div class='kc-sub'></div></div><span class='kc-actions'></span></div><div class='kc-extra'></div>";
+      ui.wrap.appendChild(el);
+      toast = Object.assign(ui, { el, thumbSet: false, timer: 0 });
+      el.addEventListener("mouseenter", () => { el.classList.add("paused"); clearTimeout(toast?.timer); });
+      el.addEventListener("mouseleave", () => { el.classList.remove("paused"); if (toast && !el.classList.contains("open")) armClose(toast, 2500); });
+    }
+    const u = safeImg(previewUrl);
+    if (u && !toast.thumbSet) {
+      toast.el.querySelector(".kc-thumb").style.backgroundImage = 'url("' + u.replace(/"/g, "%22") + '")';
+      toast.thumbSet = true;
+    }
+    return toast;
+  }
+
+  function showSavingCard(previewUrl) {
+    closeToast();
+    const ui = ensureCard(previewUrl);
+    ui.el.querySelector(".kc-title").textContent = "Saving\u2026";
+    ui.el.querySelector(".kc-state").innerHTML = "<i class='kc-spin'></i>";
+    ui.el.querySelector(".bar").style.visibility = "hidden";
+  }
+
+  function showUndoToast(message, objectId, opts = {}) {
+    const ui = ensureCard(opts.previewUrl);
+    const el = ui.el;
+    clearTimeout(ui.timer);
+    el.classList.remove("open");
+    el.querySelector(".kc-title").textContent = message;
+    el.querySelector(".kc-sub").textContent = opts.title ? String(opts.title).slice(0, 80) : "";
+    el.querySelector(".kc-state").innerHTML = opts.ok === false ? "" : "<i class='kc-tick'>\u2713</i>";
+    const bar = el.querySelector(".bar");
+    bar.style.visibility = "visible";
+    bar.innerHTML = "<i></i>";
+    const actions = el.querySelector(".kc-actions");
+    const extra = el.querySelector(".kc-extra");
+    actions.textContent = "";
+    extra.textContent = "";
     if (objectId) {
       const undo = document.createElement("button");
       undo.type = "button";
+      undo.className = "kc-link";
       undo.textContent = "Undo";
       undo.addEventListener("click", async () => {
         undo.disabled = true;
         const r = await send({ type: "VAULT_UNDO", objectId });
-        text.textContent = r?.ok ? "Removed from your Vault" : "Could not undo";
-        undo.remove();
-        setTimeout(() => ui.host.remove(), 1800);
+        el.querySelector(".kc-title").textContent = r?.ok ? "Removed from your Vault" : "Could not undo";
+        el.querySelector(".kc-sub").textContent = "";
+        actions.textContent = "";
+        extra.textContent = "";
+        el.classList.remove("open");
+        armClose(ui, 1800);
       });
-      el.appendChild(undo);
+      actions.appendChild(undo);
+      extra.appendChild(detailsForm(ui, objectId, opts));
     }
-    const bar = document.createElement("div");
-    bar.className = "bar";
-    bar.innerHTML = "<i></i>";
-    el.appendChild(bar);
-    ui.wrap.appendChild(el);
-    setTimeout(() => { if (toast === ui) { ui.host.remove(); toast = null; } }, 6200);
+    armClose(ui, 6200);
+  }
+
+  function detailsForm(ui, objectId, opts) {
+    const wrap = document.createElement("div");
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "kc-more";
+    more.innerHTML = "<span><b>Add more details?</b></span><svg class='kc-chev' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>";
+    more.setAttribute("aria-expanded", "false");
+    const form = document.createElement("div");
+    form.className = "kc-form";
+    const cols = Array.isArray(opts.collections) ? opts.collections.filter(x => x && x.id && x.name).slice(0, 60) : [];
+    const prev = safeImg(opts.previewUrl);
+    form.innerHTML = "<div><div class='kc-form-in'>" + (prev ? "<img class='kc-prev' alt='' referrerpolicy='no-referrer'>" : "") + "<input class='f-title' maxlength='160' placeholder='Title' aria-label='Title'><div class='kc-meta'><span class='kc-type'></span><span class='kc-host'></span></div><button type='button' class='kc-save'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M20 6 9 17l-5-5'/></svg><span>Save</span></button><div class='kc-msg'></div><label>Collection</label><select class='f-col'><option value='all'>My Vault</option></select><label>Tags (comma separated)</label><input class='f-tags' placeholder='poster, warm, retro'><label>Note</label><textarea class='f-note' placeholder='Add context...'></textarea></div></div>";
+    const q = s => form.querySelector(s);
+    q(".f-title").value = opts.title || "";
+    if (prev) q(".kc-prev").src = prev;
+    q(".kc-type").textContent = opts.typeLabel || "Image object";
+    q(".kc-host").textContent = opts.sourceHost || "";
+    for (const col of cols) { const o = document.createElement("option"); o.value = col.id; o.textContent = col.name; q(".f-col").appendChild(o); }
+    let frameState = "idle";
+    const mountFrame = async () => {
+      frameState = "loading";
+      const prep = await send({ type: "VAULT_PREPARE_DETAILS", objectId });
+      const holder = form.querySelector(".kc-form-in");
+      const useFallback = () => { frameState = "fallback"; holder.querySelectorAll(".kc-frame").forEach(n => n.remove()); holder.classList.remove("hidden"); q(".f-title").focus({ preventScroll: true }); };
+      if (!prep?.ok) return useFallback();
+      const frame = document.createElement("iframe");
+      frame.className = "kc-frame";
+      frame.title = "Add details";
+      frame.src = chrome.runtime.getURL("popup.html?embed=1");
+      let ready = false;
+      const onMsg = ev => {
+        if (ev.source !== frame.contentWindow) return;
+        if (ev.data?.type === "VAULT_EMBED_READY") { ready = true; frameState = "ready"; holder.classList.add("hidden"); frame.classList.add("on"); }
+        if (ev.data?.type === "VAULT_DETAILS_SAVED") {
+          window.removeEventListener("message", onMsg);
+          ui.el.classList.remove("open");
+          ui.el.querySelector(".kc-title").textContent = "Details saved";
+          ui.el.querySelector(".kc-extra").textContent = "";
+          ui.el.querySelector(".kc-actions").textContent = "";
+          armClose(ui, 1800);
+        }
+      };
+      window.addEventListener("message", onMsg);
+      holder.appendChild(frame);
+      setTimeout(() => { if (!ready) { window.removeEventListener("message", onMsg); useFallback(); } }, 1800);
+    };
+    more.addEventListener("click", () => {
+      const open = !ui.el.classList.contains("open");
+      ui.el.classList.toggle("open", open);
+      more.setAttribute("aria-expanded", open ? "true" : "false");
+      clearTimeout(ui.timer);
+      if (open && frameState === "idle") mountFrame();
+      else if (open && frameState === "fallback") setTimeout(() => q(".f-title").focus({ preventScroll: true }), 280);
+      if (!open) armClose(ui, 3000);
+    });
+    q(".kc-save").addEventListener("click", async () => {
+      const btn = q(".kc-save");
+      btn.disabled = true;
+      btn.querySelector("span").textContent = "Saving\u2026";
+      q(".kc-msg").textContent = "";
+      const colSel = q(".f-col");
+      const tags = q(".f-tags").value.split(/[,\n]/).map(t => t.trim()).filter(Boolean).slice(0, 6);
+      const r = await send({ type: "VAULT_UPDATE_DETAILS", objectId, title: q(".f-title").value.trim(), note: q(".f-note").value.trim(), collectionId: colSel.value, collectionName: colSel.value === "all" ? "" : colSel.options[colSel.selectedIndex].textContent, tags });
+      if (r?.ok) {
+        ui.el.classList.remove("open");
+        ui.el.querySelector(".kc-title").textContent = "Details saved";
+        ui.el.querySelector(".kc-extra").textContent = "";
+        ui.el.querySelector(".kc-actions").textContent = "";
+        armClose(ui, 1800);
+      } else {
+        btn.disabled = false;
+        btn.querySelector("span").textContent = "Save";
+        q(".kc-msg").textContent = r?.error || "Couldn't save the details.";
+      }
+    });
+    wrap.appendChild(more);
+    wrap.appendChild(form);
+    return wrap;
   }
 
   // ------------------------------------------------------------------ Keep All picker
@@ -306,7 +463,8 @@
     if (message?.type === "VAULT_GET_CREDIT") { computeCredit(message.imageUrl).then(credit => sendResponse({ ok: true, credit })); return true; }
     if (message?.type === "VAULT_KEEP_ALL_COUNT") { loadCandidates().then(r => sendResponse({ ok: true, count: r.selection.length, total: r.items.length })).catch(() => sendResponse({ ok: false })); return true; }
     if (message?.type === "VAULT_KEEP_ALL_OPEN") { openPicker().then(() => sendResponse({ ok: true })).catch(() => sendResponse({ ok: false })); return true; }
-    if (message?.type === "VAULT_TOAST_UNDO") { showUndoToast(String(message.message || "Kept in your Vault").slice(0, 160), message.objectId); sendResponse({ ok: true }); return true; }
+    if (message?.type === "VAULT_TOAST_SAVING") { showSavingCard(message.previewUrl); sendResponse({ ok: true }); return true; }
+    if (message?.type === "VAULT_TOAST_UNDO") { showUndoToast(String(message.message || "Kept in your Vault").slice(0, 160), message.objectId, { previewUrl: message.previewUrl, title: message.title, collections: message.collections, ok: message.ok, typeLabel: message.typeLabel, sourceHost: message.sourceHost }); sendResponse({ ok: true }); return true; }
     return false;
   });
   initHover();

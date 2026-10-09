@@ -9,25 +9,26 @@
     <main class="popup">
       <header class="popup-header">
         <div class="popup-brand">
-          <img class="mark mark-icon" src="icons/icon-48.png" alt="" aria-hidden="true">
-          <div>
-            <h1>Vault</h1>
-            <p>by Aplus</p>
-          </div>
+          <img class="mark mark-icon" src="art/mark-solid.svg" alt="" aria-hidden="true">
+          <h1>Vault</h1>
         </div>
-        <button id="openVaultBtn" class="header-vault-button" type="button">Open Vault</button>
+        <button id="openVaultBtn" class="header-vault-button" type="button" aria-label="Open My Vault"><span>My Vault</span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></button>
       </header>
 
       <section class="status" id="status" data-type="default" hidden></section>
 
-      <section class="home-actions" id="homeActions" aria-label="Keep">
-        <button id="keepPageBtn" class="primary keep-button" type="button"><span>Keep this page</span></button>
-        <button id="keepAllBtn" class="secondary" type="button"><span id="keepAllLabel">Keep all images</span></button>
+      <section class="login-gate" id="loginGate" hidden>
+        <img class="lg-mark lg-mark-light" src="art/mark-solid.svg" alt="" width="40" height="46"><img class="lg-mark lg-mark-dark" src="art/mark.svg" alt="" width="40" height="46">
+        <h2>Keep what<br>inspires you.</h2>
+        <div class="lg-mosaic" aria-hidden="true">
+          <div class="lg-col"><img src="art/a.webp" alt=""><img src="art/c.webp" alt=""><img src="art/a.webp" alt=""></div>
+          <div class="lg-col lg-col-b"><img src="art/b.webp" alt=""><img src="art/d.webp" alt=""><img src="art/b.webp" alt=""></div>
+          <div class="lg-col"><img src="art/d.webp" alt=""><img src="art/a.webp" alt=""><img src="art/d.webp" alt=""></div>
+        </div>
+        <div class="lg-chips"><span>Private</span><span>Source &amp; credit</span><span>Keep anywhere</span></div>
+        <button id="loginBtn" class="lg-btn" type="button">Log in to Vault</button>
+        <small>Log in once on the website. This extension connects by itself.</small>
       </section>
-      <label class="toggle-row" for="quickKeepInput">
-        <input id="quickKeepInput" type="checkbox">
-        <span>Quick keep — skip this form next time</span>
-      </label>
 
       <section class="quick-card" id="quickCard" hidden aria-live="polite">
         <div class="quick-thumb" id="quickThumb"></div>
@@ -36,8 +37,8 @@
           <span id="quickWhere">Kept in My Vault</span>
           <div class="quick-actions-row">
             <button id="quickUndoBtn" class="secondary" type="button">Undo</button>
-            <button id="quickEditBtn" class="secondary" type="button">Edit details</button>
-            <button id="quickOffBtn" class="ghost" type="button">Turn off quick keep</button>
+            <button id="quickEditBtn" class="secondary" type="button">Add details</button>
+            <button id="quickOffBtn" class="ghost" type="button">Ask me first next time</button>
           </div>
           <div class="quick-bar" aria-hidden="true"><i id="quickBar"></i></div>
         </div>
@@ -51,14 +52,19 @@
 
       <section class="capture-card" id="captureCard" hidden>
         <div class="capture-preview" id="capturePreview"></div>
+        <input id="titleInput" type="text" placeholder="Title" aria-label="Title">
         <div class="capture-meta">
           <span id="captureType">Object</span>
           <strong id="captureSource">Ready to keep</strong>
         </div>
         <div class="duplicate-hint" id="duplicateHint" hidden></div>
 
-        <label for="titleInput">Title</label>
-        <input id="titleInput" type="text" placeholder="Object title">
+        <div class="capture-actions">
+          <button id="keepPendingBtn" class="primary keep-button">
+            <img class="button-icon" src="icons/icon-keep-white-32.png?v=2" alt="" aria-hidden="true" width="16" height="16">
+            <span>Keep in Vault</span>
+          </button>
+        </div>
 
         <label for="collectionInput">Collection</label>
         <div class="collection-field">
@@ -67,51 +73,45 @@
           </select>
           <input id="newCollectionInput" type="text" placeholder="Type collection name…" hidden aria-label="New collection name">
         </div>
-
-        <label id="keptForLabel">Why keep it? <span class="optional">(optional)</span></label>
-        <div id="keptChips" class="kept-chips" role="group" aria-labelledby="keptForLabel">
-          <button type="button" class="kept-chip" data-reason="color" aria-pressed="false">Color</button>
-          <button type="button" class="kept-chip" data-reason="layout" aria-pressed="false">Layout</button>
-          <button type="button" class="kept-chip" data-reason="type" aria-pressed="false">Lettering</button>
-          <button type="button" class="kept-chip" data-reason="illustration" aria-pressed="false">Illustration</button>
-          <button type="button" class="kept-chip" data-reason="material" aria-pressed="false">Material</button>
-          <button type="button" class="kept-chip" data-reason="mood" aria-pressed="false">Mood</button>
-          <button type="button" class="kept-chip" data-reason="similar" aria-pressed="false">Like my work</button>
-        </div>
-
         <label for="noteInput">Note</label>
         <textarea id="noteInput" placeholder="Add context..."></textarea>
+      </section>
 
-        <div class="capture-actions">
-          <button id="keepPendingBtn" class="primary keep-button">
-            <img class="button-icon" src="icons/icon-keep-white-32.png?v=2" alt="" aria-hidden="true" width="16" height="16">
-            <span>Keep in Vault</span>
-          </button>
+      <section class="keepall-row" id="keepAllRow" aria-label="Keep images from this page">
+        <div class="opt-row">
+          <button id="keepAllBtn" class="secondary keepall-btn" type="button"><svg viewBox="0 0 1200 1200" width="20" height="20" fill="none" stroke="currentColor" stroke-width="76" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M187 362V287a100 100 0 0 1 100-100h75"/><path d="M837 187h75a100 100 0 0 1 100 100v75"/><path d="M1012 837v75a100 100 0 0 1-100 100h-75"/><path d="M362 1012h-75a100 100 0 0 1-100-100v-75"/><circle cx="600" cy="600" r="75" fill="currentColor" stroke="none"/></svg><span id="keepAllLabel">Keep all images</span></button>
+          <button type="button" class="info-btn" data-info="keepall" aria-label="What does this do?" aria-expanded="false">i</button>
+        </div>
+        <div class="info-panel" data-info-panel="keepall" hidden>
+          <div class="mo mo-keepall" aria-hidden="true">
+            <div class="ka-page">
+              <div class="ka-bar"><i></i><i></i><i></i><b></b></div>
+              <div class="ka-body">
+                <span class="ka-line w60"></span><span class="ka-line w40"></span>
+                <div class="ka-imgs"><i class="g1"></i><i class="g2"></i><i class="g3"></i><i class="g4"></i></div>
+                <span class="ka-line w80"></span>
+              </div>
+              <i class="ka-scan"></i>
+            </div>
+            <div class="ka-pop">
+              <div class="ka-pop-head"><b>Pick images</b><em>3</em></div>
+              <div class="ka-grid"><i class="g1"><u>✓</u></i><i class="g2"><u>✓</u></i><i class="g3"><u>✓</u></i><i class="g4"></i></div>
+              <div class="ka-keep">Keep 3</div>
+            </div>
+          </div>
+          <p>Scans the page you are on and lets you tick the images you want. Then keep them all in one go.</p>
         </div>
       </section>
 
       <section class="quick-actions" aria-label="Quick actions">
         <button id="uploadZone" class="upload-zone secondary" type="button" aria-label="Upload files in the Vault web app">
-          <span class="mini-icon" aria-hidden="true">↑</span>
-          <span class="upload-zone-copy">
-            <strong>Upload file</strong>
-            <small>opens Vault</small>
-          </span>
+          <span class="mini-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg></span><span>Upload file</span>
         </button>
 
         <button id="snapshotBtn" class="snapshot-zone secondary" type="button">
-          <span class="mini-icon" aria-hidden="true">[  ]</span>
-          <span class="upload-zone-copy">
-            <strong>Snapshot</strong>
-            <small>current view</small>
-          </span>
+          <span class="mini-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V5a1 1 0 0 1 1-1h4"/><path d="M15 4h4a1 1 0 0 1 1 1v4"/><path d="M20 15v4a1 1 0 0 1-1 1h-4"/><path d="M9 20H5a1 1 0 0 1-1-1v-4"/></svg></span><span>Snapshot</span>
         </button>
       </section>
-
-      <label class="toggle-row" for="stayOnPageInput">
-        <input id="stayOnPageInput" type="checkbox">
-        <span>Stay on this page after saving</span>
-      </label>
 
       <section class="recent-section">
         <div class="section-head">
@@ -124,20 +124,16 @@
       </section>
 
       <section class="settings">
+        <label class="toggle-row" for="quickKeepInput">
+          <input id="quickKeepInput" type="checkbox">
+          <span>Save instantly <small>(add details afterwards)</small></span>
+        </label>
         <section class="connect-row" id="connectRow">
           <span id="connectText">Not connected</span>
-          <button id="disconnectBtn" class="ghost" type="button" hidden>Disconnect</button>
+          <button id="disconnectBtn" class="logout-btn" type="button" title="Log out of this extension" aria-label="Log out of this extension" hidden><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M16 8l4 4-4 4"/><path d="M20 12H9"/></svg></button>
         </section>
-        <label class="toggle-row" for="smartDetectInput">
-          <input id="smartDetectInput" type="checkbox">
-          <span>Smart image detection on all sites <small>(asks permission once)</small></span>
-        </label>
-        <label class="toggle-row" for="hoverKeepInput">
-          <input id="hoverKeepInput" type="checkbox">
-          <span>Show Keep buttons when hovering images</span>
-        </label>
-        <details>
-          <summary>Advanced: paste a token</summary>
+        <details id="devAdvanced" hidden>
+          <summary>Advanced</summary>
           <label for="tokenInput">Alpha API Token</label>
           <input id="tokenInput" type="password" placeholder="Copy from Vault Settings → Extension sync">
           <p class="settings-hint">Paste the sync token from your Vault Profile after logging in.</p>
