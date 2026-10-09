@@ -612,3 +612,27 @@ html,body{scrollbar-width:thin;scrollbar-color:rgba(47,49,51,.28) transparent}
 .logout-btn:hover{color:var(--coral);background:rgba(240,80,64,.1)}
 
 .capture-actions:has(.keep-all-icon[hidden]){grid-template-columns:minmax(0,1fr)}
+
+/* Keep all images: labeled button above Upload / Snapshot, with an info motion graphic */
+.keepall-row{margin:0 0 8px}
+.keepall-row .opt-row{display:flex;align-items:center;gap:8px}
+.keepall-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:9px;min-height:46px;border-radius:14px;color:var(--coral);cursor:pointer}
+.keepall-btn span{color:var(--text)}
+.keepall-btn:disabled{opacity:.5;cursor:default}
+.mo-keepall .a{left:10px;top:10px;width:62px;height:34px;background:linear-gradient(135deg,#e7c9a0,#c98b5a)}
+.mo-keepall .b{left:80px;top:10px;width:62px;height:34px}
+.mo-keepall .c{left:150px;top:10px;width:62px;height:34px;background:linear-gradient(135deg,#b6d6b0,#5f9a63)}
+.mo-keepall .d{left:10px;top:52px;width:62px;height:34px;background:linear-gradient(135deg,#d9b6d6,#8a5f9a)}
+.mo-keepall .mo-scan{animation:moScanAll 4.5s infinite}
+.mo-tick{position:absolute;top:14px;width:16px;height:16px;border-radius:50%;background:var(--coral);color:#fff;font-style:normal;font-size:10px;line-height:16px;text-align:center;opacity:0;animation:moTickIn 4.5s infinite}
+.mo-tick.t1{left:54px;animation-delay:.2s}
+.mo-tick.t2{left:124px;animation-delay:.5s}
+.mo-tick.t3{left:194px;animation-delay:.8s}
+.mo-keepall .mo-tag{left:auto;right:10px;bottom:10px;animation:moTagAll 4.5s infinite}
+@keyframes moScanAll{0%{left:0}55%,100%{left:100%}}
+@keyframes moTickIn{0%,18%{opacity:0;transform:scale(.4)}30%,100%{opacity:1;transform:scale(1)}}
+@keyframes moTagAll{0%,50%{opacity:0;transform:translateY(6px)}65%,100%{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.mo-tick,.mo-keepall .mo-tag{animation:none;opacity:1}}
+.popup.is-guest .keepall-row{display:none!important}
+.capture-actions{grid-template-columns:minmax(0,1fr)}
+@media (prefers-color-scheme: dark){.mo{background:#262a30}}

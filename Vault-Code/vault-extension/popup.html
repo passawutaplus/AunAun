@@ -30,10 +30,6 @@
         <small>Log in once on the website. This extension connects by itself.</small>
       </section>
 
-      <section class="home-actions" id="homeActions" aria-label="Keep">
-        <button id="keepAllBtn" class="primary keep-button" type="button"><span id="keepAllLabel">Keep all images</span></button>
-      </section>
-
       <section class="quick-card" id="quickCard" hidden aria-live="polite">
         <div class="quick-thumb" id="quickThumb"></div>
         <div class="quick-body">
@@ -68,7 +64,6 @@
             <img class="button-icon" src="icons/icon-keep-white-32.png?v=2" alt="" aria-hidden="true" width="16" height="16">
             <span>Keep in Vault</span>
           </button>
-          <button id="keepAllIconBtn" class="secondary keep-all-icon" type="button" title="Keep all images on this page" aria-label="Keep all images on this page"><svg viewBox="0 0 1200 1200" width="22" height="22" fill="none" stroke="currentColor" stroke-width="76" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M187 362V287a100 100 0 0 1 100-100h75"/><path d="M837 187h75a100 100 0 0 1 100 100v75"/><path d="M1012 837v75a100 100 0 0 1-100 100h-75"/><path d="M362 1012h-75a100 100 0 0 1-100-100v-75"/><circle cx="600" cy="600" r="75" fill="currentColor" stroke="none"/></svg></button>
         </div>
 
         <label for="collectionInput">Collection</label>
@@ -80,6 +75,17 @@
         </div>
         <label for="noteInput">Note</label>
         <textarea id="noteInput" placeholder="Add context..."></textarea>
+      </section>
+
+      <section class="keepall-row" id="keepAllRow" aria-label="Keep images from this page">
+        <div class="opt-row">
+          <button id="keepAllBtn" class="secondary keepall-btn" type="button"><svg viewBox="0 0 1200 1200" width="20" height="20" fill="none" stroke="currentColor" stroke-width="76" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M187 362V287a100 100 0 0 1 100-100h75"/><path d="M837 187h75a100 100 0 0 1 100 100v75"/><path d="M1012 837v75a100 100 0 0 1-100 100h-75"/><path d="M362 1012h-75a100 100 0 0 1-100-100v-75"/><circle cx="600" cy="600" r="75" fill="currentColor" stroke="none"/></svg><span id="keepAllLabel">Keep all images</span></button>
+          <button type="button" class="info-btn" data-info="keepall" aria-label="What does this do?" aria-expanded="false">i</button>
+        </div>
+        <div class="info-panel" data-info-panel="keepall" hidden>
+          <div class="mo mo-keepall" aria-hidden="true"><i class="mo-img a"></i><i class="mo-img b"></i><i class="mo-img c"></i><i class="mo-img d"></i><i class="mo-scan"></i><i class="mo-tick t1">✓</i><i class="mo-tick t2">✓</i><i class="mo-tick t3">✓</i><i class="mo-tag">Keep 3</i></div>
+          <p>Scans the page you are on and lets you tick the images you want. Then keep them all in one go.</p>
+        </div>
       </section>
 
       <section class="quick-actions" aria-label="Quick actions">

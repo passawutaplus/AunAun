@@ -289,7 +289,7 @@ function renderPendingCapture(capture) {
   renderDuplicateHint(capture);
   const editing = Boolean(capture.editObjectId);
   keepPendingBtn.querySelector("span").textContent = editing ? "Save" : "Keep in Vault";
-  document.getElementById("keepAllIconBtn").hidden = editing;
+  document.getElementById("keepAllRow").hidden = editing;
   if (editing) { duplicateHint.hidden = true; captureType.textContent = "Kept — add details"; }
 }
 
@@ -668,7 +668,6 @@ quickKeepInput.addEventListener("change", async () => {
   setStatus(quickKeepInput.checked ? "Saving instantly: add details afterwards." : "You will see the form before saving.", "success");
 });
 
-document.getElementById("keepAllIconBtn")?.addEventListener("click", () => keepAllBtn.click());
 keepAllBtn.addEventListener("click", async () => {
   const response = await chrome.runtime.sendMessage({ type: "VAULT_KEEP_ALL_START" });
   if (response?.ok) window.close();
