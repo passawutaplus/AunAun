@@ -1,20 +1,29 @@
 import { Link } from "react-router-dom";
-import { Activity, Building2, Eye, FolderKanban, HandshakeIcon, Layers3, MessageSquare, ShieldCheck, UserPlus } from "lucide-react";
+import {
+  ArrowUpRight,
+  Building2,
+  CheckCircle2,
+  Eye,
+  FolderKanban,
+  Gift,
+  HandshakeIcon,
+  Heart,
+  Layers3,
+  MessageCircle,
+  MessageSquare,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
 import BriefcaseIcon from "../../components/icons/BriefcaseIcon";
 import SectionHeader from "@/components/admin/SectionHeader";
 import KpiCard from "@/components/admin/KpiCard";
-import { BRAND_NAME, BRAND_TAGLINE } from "@/lib/brandConfig";
-import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
-import {
-  adminNavSectionsForBuild,
-  adminPendingQueue,
-  adminStatValue,
-  type AdminNavItem,
-  type AdminNavSection,
-} from "@/lib/admin/adminNavigation";
+import { BRAND_NAME } from "@/lib/brandConfig";
+import { ADMIN_TONE } from "@/lib/admin/adminTone";
+import { adminDbGapForPath } from "@/lib/admin/adminDbGaps";
+import { adminNavGroups, adminStatValue, type AdminNavGroup, type AdminNavItem } from "@/lib/admin/adminNavigation";
 import {
   useAdminPresenceStats,
   useAdminProductLoopStats,
@@ -23,6 +32,8 @@ import {
   useLiveActivity,
 } from "@/hooks/admin/useAdminData";
 import { useAdminAlertCounts } from "@/hooks/admin/useAdminAlerts";
+import { useAdminQueue } from "@/hooks/admin/useAdminQueue";
+import { cn } from "@/lib/utils";
 
 const typeIcon = {
   user: UserPlus,
@@ -33,59 +44,45 @@ const typeIcon = {
   studio: Building2,
 };
 
-function OverviewNavCard({
-  item,
-  stat,
-}: {
-  item: AdminNavItem;
-  stat?: number;
-}) {
-  const Icon = item.icon;
+function ShortcutGroup({ group, stats }: { group: AdminNavGroup; stats: ReturnType<typeof useAdminStats>["data"] }) {
+  const tone = ADMIN_TONE[group.tone];
+  const Icon = group.icon;
   return (
-    <Link
-      to={item.to}
-      className="group flex flex-col gap-2 rounded-sm border border-admin-border bg-admin-surface p-3 transition hover:border-admin-accent/50 hover:bg-admin-hover/40"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <Icon className="h-4 w-4 shrink-0 text-admin-muted group-hover:text-admin-accent" />
-          <span className="truncate text-sm font-medium text-admin-fg">{item.label}</span>
+    <section className="rounded-lg border border-admin-border bg-admin-surface p-4">
+      <header className="mb-3 flex items-center gap-3">
+        <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", tone.chip)}>
+          <Icon className="h-[18px] w-[18px]" />
+        </span>
+        <div className="min-w-0">
+          <h3 className="truncate text-sm font-medium text-admin-fg">{group.title}</h3>
+          <p className="truncate text-[11px] text-admin-muted">{group.description}</p>
         </div>
-        {stat !== undefined ? (
-          <span
-            className={`shrink-0 font-mono text-lg tabular-nums ${item.accent && stat > 0 ? "text-admin-accent" : "text-admin-fg"}`}
-          >
-            {stat}
-          </span>
-        ) : null}
-      </div>
-      <p className="text-[11px] leading-snug text-admin-muted line-clamp-2">{item.hint}</p>
-    </Link>
-  );
-}
-
-function OverviewSection({
-  section,
-  stats,
-}: {
-  section: AdminNavSection;
-  stats: ReturnType<typeof useAdminStats>["data"];
-}) {
-  return (
-    <section className="mt-8">
-      <div className="mb-3 border-b border-admin-border pb-3">
-        <h2 className="text-base font-medium text-admin-fg">{section.title}</h2>
-        <p className="mt-0.5 text-xs text-admin-muted">{section.description}</p>
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {section.items.map((item) => (
-          <OverviewNavCard
-            key={`${section.id}-${item.label}-${item.to}`}
-            item={item}
-            stat={adminStatValue(stats, item.statKey)}
-          />
-        ))}
-      </div>
+      </header>
+      <ul className="space-y-0.5">
+        {group.items.map((item: AdminNavItem) => {
+          const stat = adminStatValue(stats, item.statKey);
+          const gap = adminDbGapForPath(item.to.split("?")[0]);
+          return (
+            <li key={item.to + item.label}>
+              <Link
+                to={item.to}
+                title={item.hint}
+                className="group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] text-admin-muted transition-colors hover:bg-admin-hover hover:text-admin-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent"
+              >
+                <item.icon className="h-4 w-4 shrink-0" />
+                <span className="flex-1 truncate">{item.label}</span>
+                {gap ? (
+                  <span className="rounded border border-admin-border px-1 font-mono text-[9px] uppercase">รอ DB</span>
+                ) : stat !== undefined ? (
+                  <span className="font-mono text-xs tabular-nums text-admin-fg" title={item.statLabel}>
+                    {stat}
+                  </span>
+                ) : null}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }
@@ -97,38 +94,38 @@ export default function OverviewPage() {
   const { data: loopStats } = useAdminProductLoopStats();
   const events = useLiveActivity();
   const { data: alerts } = useAdminAlertCounts();
-  const queue = adminPendingQueue(stats);
-  const launchMinimal = isAplus1LaunchMinimal();
-  // Overview hub: skip command/ops shortcut grids (still in sidebar)
-  const navSections = adminNavSectionsForBuild().filter(
-    (s) => s.id !== "command" && s.id !== "ops",
-  );
+  const { entries, total, loading } = useAdminQueue();
+  const shortcutGroups = adminNavGroups().filter((g) => g.id !== "home");
 
-  const headline = launchMinimal
-    ? [
-        { label: "ผู้ใช้ทั้งหมด", value: stats?.totalUsers ?? "—", icon: UserPlus },
-        { label: "ผลงานเผยแพร่", value: stats?.publishedProjects ?? "—", icon: FolderKanban },
-        { label: "ข้อความ 24 ชม.", value: stats?.messages24h ?? "—", icon: MessageSquare },
-        { label: "สมัครใหม่ 24 ชม.", value: stats?.newUsers24h ?? "—", accent: true },
-      ]
-    : [
-        { label: "ผู้ใช้ทั้งหมด", value: stats?.totalUsers ?? "—", icon: UserPlus },
-        { label: "ผลงานเผยแพร่", value: stats?.publishedProjects ?? "—", icon: FolderKanban },
-        { label: "งานเปิดรับ", value: stats?.openJobs ?? "—", icon: BriefcaseIcon },
-        { label: "สมัครใหม่ 24 ชม.", value: stats?.newUsers24h ?? "—", accent: true },
-      ];
+  const extraNote = (key: string): string | null => {
+    if (key === "reports" && alerts && alerts.urgentReports > 0) return `${alerts.urgentReports} เรื่องด่วน (AI triage)`;
+    if (key === "kyc" && alerts && alerts.highRiskKyc > 0) return `${alerts.highRiskKyc} รายความเสี่ยงสูง`;
+    return null;
+  };
+
+  const today = [
+    { label: "สมัครใหม่", value: stats?.newUsers24h ?? "—", icon: UserPlus, accent: true },
+    { label: "ข้อความ", value: stats?.messages24h ?? "—", icon: MessageSquare },
+    { label: "คอมเมนต์", value: stats?.comments24h ?? "—", icon: MessageCircle },
+    { label: "+1 ผลงาน", value: stats?.likes24h ?? "—", icon: Heart },
+    { label: "ยอดวิว", value: stats?.views24h ?? "—", icon: Eye },
+    { label: "ของขวัญ", value: stats?.gifts24h ?? "—", icon: Gift },
+  ];
+  const totals = [
+    { label: "ผู้ใช้ทั้งหมด", value: stats?.totalUsers ?? "—", icon: Users },
+    { label: "ผลงานเผยแพร่", value: stats?.publishedProjects ?? "—", icon: FolderKanban },
+    { label: "แพ็กเกจบริการ", value: stats?.totalPackages ?? "—", icon: Layers3 },
+    { label: "งานเปิดรับ", value: stats?.openJobs ?? "—", icon: BriefcaseIcon },
+  ];
 
   return (
     <div>
       <SectionHeader
-        eyebrow={`${BRAND_NAME} admin / live`}
-        title="ภาพรวมแพลตฟอร์ม"
-        description={`${BRAND_TAGLINE} — จัดกลุ่มตามเมนูด้านซ้าย อัปเดตทุก ~30 วินาที`}
+        eyebrow={`${BRAND_NAME} admin`}
+        title="ภาพรวมวันนี้"
+        description="เริ่มจากงานที่รอคุณ แล้วค่อยดูตัวเลขและกิจกรรม · อัปเดตอัตโนมัติทุก ~30 วินาที"
         actions={
-          <div
-            className="flex items-stretch gap-3 rounded-sm border border-admin-border bg-admin-surface px-3 py-2"
-            title="ออนไลน์ = มีกิจกรรมภายใน 5 นาทีล่าสุด"
-          >
+          <div className="flex items-stretch gap-3 rounded-md border border-admin-border bg-admin-surface px-3 py-2" title="ออนไลน์ = มีกิจกรรมภายใน 5 นาทีล่าสุด">
             <div className="min-w-[4.5rem] text-right">
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-admin-muted">ออนไลน์</p>
               <p className="mt-0.5 flex items-center justify-end gap-1.5 font-mono text-xl tabular-nums text-admin-fg">
@@ -139,49 +136,77 @@ export default function OverviewPage() {
             <div className="w-px self-stretch bg-admin-border" aria-hidden />
             <div className="min-w-[4.5rem] text-right">
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-admin-muted">ออฟไลน์</p>
-              <p className="mt-0.5 font-mono text-xl tabular-nums text-admin-muted">
-                {presence?.offline ?? "—"}
-              </p>
+              <p className="mt-0.5 font-mono text-xl tabular-nums text-admin-muted">{presence?.offline ?? "—"}</p>
             </div>
           </div>
         }
       />
 
-      <section className="mt-6">
-        <div className="mb-3 border-b border-admin-border pb-3">
-          <h2 className="text-base font-medium text-admin-fg">ลูปโอกาส (product events)</h2>
-          <p className="mt-0.5 text-xs text-admin-muted">
-            ดูผลงาน → เปิดคุยจากผลงาน → เซฟคอลเลกชัน
-            {loopStats && !loopStats.fromProductEvents
-              ? " · ใช้ตัวเลขสำรองจากตารางหลัก (product_events อ่านไม่ได้)"
-              : " · 24 ชม. / 7 วัน"}
-          </p>
+      <section aria-labelledby="queue-title">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 id="queue-title" className="text-base font-medium text-admin-fg">
+            ต้องทำตอนนี้
+            {total > 0 ? <span className="ml-2 font-mono text-sm text-admin-accent">{total}</span> : null}
+          </h2>
+          <p className="text-xs text-admin-muted">เรียงจากเรื่องที่ไวต่อความเสี่ยงที่สุด</p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <KpiCard
-            label="project_view 24ชม."
-            value={loopStats?.projectViews24h ?? "—"}
-            delta={loopStats ? `7 วัน: ${loopStats.projectViews7d}` : undefined}
-            icon={Eye}
-          />
-          <KpiCard
-            label="hire_open 24ชม."
-            value={loopStats?.hireOpens24h ?? "—"}
-            delta={loopStats ? `7 วัน: ${loopStats.hireOpens7d}` : undefined}
-            icon={HandshakeIcon}
-            accent
-          />
-          <KpiCard
-            label="collection_save 24ชม."
-            value={loopStats?.collectionSaves24h ?? "—"}
-            delta={loopStats ? `7 วัน: ${loopStats.collectionSaves7d}` : undefined}
-            icon={Layers3}
-          />
+
+        {entries.length === 0 ? (
+          <div className="flex items-center gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-4">
+            <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <div>
+              <p className="text-sm font-medium text-admin-fg">{loading ? "กำลังตรวจงานค้าง…" : "เคลียร์หมดแล้ว — ไม่มีงานค้าง"}</p>
+              {!loading ? <p className="text-xs text-admin-muted">KYC, รายงานเนื้อหา, ถอนเงิน, AML, คำขอจ้าง และฟีดแบ็กไม่มีรายการรอ</p> : null}
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {entries.map((e) => {
+              const tone = ADMIN_TONE[e.group.tone];
+              const note = extraNote(e.key);
+              return (
+                <Link
+                  key={e.key}
+                  to={e.item.to}
+                  className="group relative flex flex-col gap-3 rounded-lg border border-admin-accent/30 bg-admin-surface p-4 transition hover:border-admin-accent hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent"
+                >
+                  <div className="flex items-start justify-between">
+                    <span className={cn("flex h-10 w-10 items-center justify-center rounded-lg", tone.chip)}>
+                      <e.item.icon className="h-5 w-5" />
+                    </span>
+                    <ArrowUpRight className="h-4 w-4 text-admin-muted transition group-hover:text-admin-accent" aria-hidden />
+                  </div>
+                  <div>
+                    <p className="font-mono text-3xl tabular-nums text-admin-accent">{e.count}</p>
+                    <p className="mt-0.5 text-sm font-medium text-admin-fg">{e.item.label}</p>
+                    <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-admin-muted">{e.item.hint}</p>
+                    {note ? <p className="mt-1 text-[11px] font-medium text-destructive">{note}</p> : null}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="mt-8" aria-labelledby="today-title">
+        <h2 id="today-title" className="mb-3 text-base font-medium text-admin-fg">
+          ตัวเลข 24 ชั่วโมงล่าสุด
+        </h2>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+          {today.map((k) => (
+            <KpiCard key={k.label} label={k.label} value={k.value} icon={k.icon} accent={k.accent} />
+          ))}
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {totals.map((k) => (
+            <KpiCard key={k.label} label={k.label} value={k.value} icon={k.icon} />
+          ))}
         </div>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-3 mt-6">
-        <div className="md:col-span-2 rounded-sm border border-admin-border bg-admin-surface p-4">
+      <section className="mt-8 grid gap-3 md:grid-cols-3">
+        <div className="rounded-lg border border-admin-border bg-admin-surface p-4 md:col-span-2">
           <div className="mb-3 flex items-center justify-between">
             <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-admin-muted">กิจกรรม 14 วัน</p>
             <div className="flex gap-3 font-mono text-[10px] uppercase text-admin-muted">
@@ -193,12 +218,10 @@ export default function OverviewPage() {
                 <i className="inline-block h-2 w-2 bg-admin-accent" />
                 ผลงาน
               </span>
-              {!launchMinimal ? (
-                <span className="flex items-center gap-1">
-                  <i className="inline-block h-2 w-2 bg-admin-muted" />
-                  งาน
-                </span>
-              ) : null}
+              <span className="flex items-center gap-1">
+                <i className="inline-block h-2 w-2 bg-admin-muted" />
+                งาน
+              </span>
             </div>
           </div>
           <div className="h-56">
@@ -217,16 +240,19 @@ export default function OverviewPage() {
                 />
                 <Line type="monotone" dataKey="users" stroke="hsl(var(--admin-fg))" strokeWidth={1.5} dot={false} />
                 <Line type="monotone" dataKey="projects" stroke="hsl(var(--admin-accent))" strokeWidth={1.5} dot={false} />
-                {!launchMinimal ? (
-                  <Line type="monotone" dataKey="jobs" stroke="hsl(var(--admin-muted))" strokeWidth={1.5} dot={false} />
-                ) : null}
+                <Line type="monotone" dataKey="jobs" stroke="hsl(var(--admin-muted))" strokeWidth={1.5} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="flex max-h-[400px] flex-col rounded-sm border border-admin-border bg-admin-surface p-4">
-          <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-admin-muted">ฟีดสด</p>
+        <div className="flex max-h-[400px] flex-col rounded-lg border border-admin-border bg-admin-surface p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-admin-muted">ฟีดสด</p>
+            <Link to="/admin/activity" className="text-xs text-admin-accent hover:underline">
+              ดูทั้งหมด →
+            </Link>
+          </div>
           <div className="flex-1 space-y-2 overflow-y-auto px-1">
             {events.length === 0 ? (
               <p className="py-8 text-center text-xs text-admin-muted">ยังไม่มีเหตุการณ์</p>
@@ -234,10 +260,7 @@ export default function OverviewPage() {
               events.map((e) => {
                 const Icon = typeIcon[e.type];
                 return (
-                  <div
-                    key={e.id}
-                    className="flex items-start gap-2.5 border-b border-admin-border pb-2 text-xs last:border-0 last:pb-0"
-                  >
+                  <div key={e.id} className="flex items-start gap-2.5 border-b border-admin-border pb-2 text-xs last:border-0 last:pb-0">
                     <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-admin-muted" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium text-admin-fg">{e.title}</p>
@@ -254,76 +277,34 @@ export default function OverviewPage() {
         </div>
       </section>
 
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-        {headline.map((kpi) => (
-          <KpiCard key={kpi.label} label={kpi.label} value={kpi.value} icon={kpi.icon} accent={kpi.accent} delta="live" />
-        ))}
-      </div>
-
-      <section className="mt-4">
-        <div className="mb-3 flex items-end justify-between border-b border-admin-border pb-3">
-          <div>
-            <h2 className="text-base font-medium text-admin-fg">ยืนยันตัวตน (KYC)</h2>
-            <p className="mt-0.5 text-xs text-admin-muted">ใครผ่านแล้ว และคิวที่ยังต้องตรวจ</p>
-          </div>
-          <Link to="/admin/kyc" className="text-xs text-admin-accent hover:underline">
-            เปิดหน้า KYC →
-          </Link>
+      <section className="mt-8">
+        <div className="mb-3">
+          <h2 className="text-base font-medium text-admin-fg">ลูปโอกาส</h2>
+          <p className="mt-0.5 text-xs text-admin-muted">
+            ดูผลงาน → เปิดคุยจากผลงาน → เซฟคอลเลกชัน
+            {loopStats && !loopStats.fromProductEvents ? " · ใช้ตัวเลขสำรองจากตารางหลัก (product_events อ่านไม่ได้)" : " · 24 ชม. / 7 วัน"}
+          </p>
         </div>
-        <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
-          <Link to="/admin/users?kyc=verified" className="block">
-            <KpiCard
-              label="ผ่านแล้ว"
-              value={stats?.kycVerified ?? "—"}
-              icon={ShieldCheck}
-              accent
-              delta="โปรไฟล์ที่ยืนยันแล้ว"
-            />
-          </Link>
-          <Link to="/admin/kyc" className="block">
-            <KpiCard
-              label="รอตรวจสอบ"
-              value={stats?.pendingKyc ?? "—"}
-              delta="คิวแอดมิน"
-            />
-          </Link>
-          <Link to="/admin/kyc" className="block">
-            <KpiCard
-              label="ถูกปฏิเสธ"
-              value={stats?.kycRejected ?? "—"}
-            />
-          </Link>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <KpiCard label="ดูผลงาน 24 ชม." value={loopStats?.projectViews24h ?? "—"} delta={loopStats ? `7 วัน: ${loopStats.projectViews7d}` : undefined} icon={Eye} />
+          <KpiCard label="เปิดคุยจ้าง 24 ชม." value={loopStats?.hireOpens24h ?? "—"} delta={loopStats ? `7 วัน: ${loopStats.hireOpens7d}` : undefined} icon={HandshakeIcon} accent />
+          <KpiCard label="เซฟคอลเลกชัน 24 ชม." value={loopStats?.collectionSaves24h ?? "—"} delta={loopStats ? `7 วัน: ${loopStats.collectionSaves7d}` : undefined} icon={Layers3} />
         </div>
       </section>
 
-      {queue.length > 0 ? (
-        <div className="mt-4 rounded-sm border border-admin-accent/30 bg-admin-accent/5 p-4">
-          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-admin-accent">คิวที่ต้องดูแล</p>
-          <div className="flex flex-wrap gap-3 text-sm">
-            {queue.map((q) => (
-              <Link key={q.to} to={q.to} className="text-admin-fg hover:text-admin-accent">
-                {q.label} <span className="font-mono text-admin-accent">{q.count}</span>
-              </Link>
-            ))}
-            <Link to="/admin/activity" className="inline-flex items-center gap-1 font-medium text-admin-accent hover:underline">
-              <Activity className="h-3.5 w-3.5" />
-              ดูกิจกรรมทั้งหมด →
-            </Link>
-          </div>
+      <section className="mt-8" aria-labelledby="shortcut-title">
+        <div className="mb-3">
+          <h2 id="shortcut-title" className="text-base font-medium text-admin-fg">
+            ทางลัดตามหมวด
+          </h2>
+          <p className="mt-0.5 text-xs text-admin-muted">กด Ctrl K เพื่อค้นหาเมนูได้จากทุกหน้า</p>
         </div>
-      ) : null}
-
-      {alerts && (alerts.urgentReports > 0 || alerts.highRiskKyc > 0) ? (
-        <p className="mt-3 text-xs text-admin-muted">
-          AI triage:{" "}
-          {alerts.urgentReports > 0 ? `รายงานด่วน ${alerts.urgentReports} ` : ""}
-          {alerts.highRiskKyc > 0 ? `KYC ความเสี่ยงสูง ${alerts.highRiskKyc}` : ""}
-        </p>
-      ) : null}
-
-      {navSections.map((section) => (
-        <OverviewSection key={section.id} section={section} stats={stats} />
-      ))}
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {shortcutGroups.map((g) => (
+            <ShortcutGroup key={g.id} group={g} stats={stats} />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
