@@ -489,7 +489,7 @@ const ChatPortfolioSection = ({
   const { data: services = [], isLoading: servicesLoading } = useCreatorServices(userId);
 
   const ordered = useMemo(
-    () => sortPortfolioProjects(projects as Parameters<typeof sortPortfolioProjects>[0]),
+    () => sortPortfolioProjects(projects),
     [projects],
   );
   const publishedPackages = useMemo(

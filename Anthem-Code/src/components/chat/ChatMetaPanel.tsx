@@ -86,7 +86,7 @@ const ChatMetaPanel = ({
         ["publish", "ลงผลงานร่วมกัน", planDoc.payload.publish],
       ] as const
     )
-      .map(([id, label, step]) => {
+      .map(([id, label, step]): { id: string; label: string; note: string } | null => {
         if (id === "publish") {
           const note = step.note.trim();
           return note ? { id, label, note } : null;
