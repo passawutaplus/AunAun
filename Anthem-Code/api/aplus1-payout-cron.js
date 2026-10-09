@@ -23,17 +23,18 @@ export default async function handler(req, res) {
     });
   }
 
-  if (readEnv("OMISE_MODE") === "live" && readEnv("OMISE_MARKETPLACE_APPROVED") !== "true") {
-    return json(res, 503, { error: "live_blocked", kind });
+  // Paying creators out of collected money needs Payso's written OK for marketplace use first.
+  if (readEnv("PAYSO_MARKETPLACE_APPROVED") !== "true") {
+    return json(res, 503, { error: "payouts_blocked_until_payso_marketplace_approved", kind });
   }
 
-  // Stub plan — worker should load available balances + call Omise transfers.
+  // Stub plan — worker should load available balances and queue creator payouts.
   return json(res, 200, {
     ok: true,
     kind,
     message:
       kind === "reconcile"
-        ? "compare Omise vs ledger and alert admin — do not auto-adjust"
+        ? "compare Payso settlements vs ledger and alert admin — do not auto-adjust"
         : "enqueue payout candidates per Aplus1 payout policy",
   });
 }

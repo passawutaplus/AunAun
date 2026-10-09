@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { makeHireReference } from "@/lib/payments/chargeIds";
-import { canChargeOmiseClient, DEFAULT_PAYMENT_FEATURE_FLAGS } from "@/lib/payments/flags";
+import { canChargeOnlineClient, DEFAULT_PAYMENT_FEATURE_FLAGS } from "@/lib/payments/flags";
 import type { PaymentMethod } from "@/lib/payments/types";
 
 async function authHeaders(): Promise<Record<string, string>> {
@@ -36,7 +36,7 @@ export type HireChargeResult = {
   method: PaymentMethod;
   /** ISO expiry — QR/charge validity window. */
   expiresAt: string;
-  /** true = real Omise charge, false = local mock for demo/preview. */
+  /** true = real Payso charge, false = local mock for demo/preview. */
   live: boolean;
   paid?: boolean;
 };
@@ -76,7 +76,7 @@ function mockCharge(input: HireChargeInput): HireChargeResult {
 }
 
 /**
- * Create a hire charge. When Omise test/live charges are enabled, calls /api/hire-charge.
+ * Create a hire charge. When Payso test/live charges are enabled, calls /api/hire-charge.
  * Otherwise returns a local mock so checkout UX stays demoable.
  */
 export function useHireCharge() {
@@ -85,7 +85,7 @@ export function useHireCharge() {
   async function createCharge(input: HireChargeInput): Promise<HireChargeResult> {
     setPending(true);
     try {
-      if (!canChargeOmiseClient(DEFAULT_PAYMENT_FEATURE_FLAGS, input.method)) {
+      if (!canChargeOnlineClient(DEFAULT_PAYMENT_FEATURE_FLAGS, input.method)) {
         await new Promise((r) => setTimeout(r, 400));
         return mockCharge(input);
       }
@@ -128,19 +128,7 @@ export function useHireCharge() {
     }
   }
 
-  /** Test-mode only: mark PromptPay charge paid via Omise (triggers webhook). */
-  async function markTestPaid(chargeId: string): Promise<boolean> {
-    const res = await fetch("/api/hire-charge", {
-      method: "POST",
-      headers: await authHeaders(),
-      body: JSON.stringify({ action: "mark_paid", chargeId }),
-    });
-    if (!res.ok) return false;
-    const data = (await res.json()) as { paid?: boolean };
-    return data.paid === true;
-  }
-
-  /** Poll Omise (via our API) for a charge's state. Returns null on transient errors. */
+  /** Poll Payso (via our API) for a charge's state. Returns null on transient errors. */
   async function fetchChargeStatus(
     chargeId: string,
   ): Promise<{ paid: boolean; failed: boolean } | null> {
@@ -158,5 +146,5 @@ export function useHireCharge() {
     }
   }
 
-  return { createCharge, markTestPaid, fetchChargeStatus, pending };
+  return { createCharge, fetchChargeStatus, pending };
 }

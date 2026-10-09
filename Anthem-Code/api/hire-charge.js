@@ -1,50 +1,24 @@
 /**
- * Create Omise hire charge (PromptPay / card token).
+ * Hire charge (PromptPay) — provider: Payso.
  * POST /api/hire-charge
  *
- * Body: { method, title, quoteId | hireOrderId, hiringRequestId?, conversationId, cardToken? }
+ * Body: { method, title, quoteId | hireOrderId, hiringRequestId?, conversationId }
  * The amount is always computed server-side from the order/quote; any client amount is ignored.
- * Test-only: { action: "mark_paid", chargeId } when OMISE_MODE=test
+ *
+ * The Payso API is not wired yet: after the caller and amount are validated this returns
+ * 503 payso_not_integrated, so nothing can be charged until the Payso integration lands.
  */
 
 import {
   expectedQuoteChargeSatang,
   isUuid,
   json,
-  makeHireReference,
-  omiseModeFromKey,
   parseJsonBody,
   readEnv,
   requireSupabaseUser,
   restRows,
   supabaseServiceConfig,
 } from "./_helpers.js";
-
-function basicAuth(secretKey) {
-  return `Basic ${Buffer.from(`${secretKey}:`).toString("base64")}`;
-}
-
-async function omisePost(secretKey, path, body, idempotencyKey) {
-  const res = await fetch(`https://api.omise.co${path}`, {
-    method: "POST",
-    headers: {
-      Authorization: basicAuth(secretKey),
-      "Content-Type": "application/x-www-form-urlencoded",
-      "Omise-Version": "2019-05-29",
-      "Idempotency-Key": idempotencyKey,
-    },
-    body,
-  });
-  const data = await res.json();
-  if (!res.ok || data.object === "error") {
-    const msg = typeof data.message === "string" ? data.message : "omise_request_failed";
-    const err = new Error(msg);
-    err.status = res.status;
-    err.payload = data;
-    throw err;
-  }
-  return data;
-}
 
 /**
  * Server-side amount + ownership. The client amount is NEVER used:
@@ -137,21 +111,8 @@ export default async function handler(req, res) {
     if (req.method !== "POST") {
       return json(res, 405, { error: "method_not_allowed" });
     }
-
-    if (readEnv("PAYMENT_PROVIDER") && readEnv("PAYMENT_PROVIDER") !== "omise") {
+    if (readEnv("PAYMENT_PROVIDER") !== "payso") {
       return json(res, 503, { error: "provider_disabled" });
-    }
-
-    const secretKey = readEnv("OMISE_SECRET_KEY");
-    if (!secretKey) {
-      return json(res, 503, { error: "omise_not_configured" });
-    }
-
-    const modeInfo = omiseModeFromKey(secretKey, readEnv("OMISE_MODE"));
-    if (modeInfo.error) return json(res, 503, { error: modeInfo.error });
-    const mode = modeInfo.mode;
-    if (mode === "live" && readEnv("OMISE_MARKETPLACE_APPROVED") !== "true") {
-      return json(res, 503, { error: "live_blocked_until_marketplace_approved" });
     }
 
     const user = await requireSupabaseUser(req);
@@ -159,54 +120,6 @@ export default async function handler(req, res) {
 
     const body = parseJsonBody(req);
     if (!body) return json(res, 400, { error: "invalid_json" });
-
-    if (body.action === "status") {
-      // Poll a charge the caller created (PromptPay auto-detect). Read-only.
-      const chargeId = String(body.chargeId || "");
-      if (!/^chrg_[A-Za-z0-9_]+$/.test(chargeId)) return json(res, 400, { error: "invalid_charge_id" });
-      const r = await fetch(`https://api.omise.co/charges/${encodeURIComponent(chargeId)}`, {
-        headers: { Authorization: basicAuth(secretKey), "Omise-Version": "2019-05-29" },
-      });
-      const c = await r.json().catch(() => null);
-      if (!r.ok || !c || c.object === "error") return json(res, 404, { error: "charge_not_found" });
-      if (String(c.metadata?.buyer_user_id || "") !== String(user.id)) {
-        return json(res, 403, { error: "not_charge_owner" });
-      }
-      return json(res, 200, {
-        chargeId: c.id,
-        status: c.status,
-        paid: c.paid === true && c.status === "successful",
-        failed: c.status === "failed" || c.status === "expired" || c.status === "reversed",
-      });
-    }
-
-    if (body.action === "mark_paid") {
-      if (mode !== "test") return json(res, 403, { error: "mark_paid_test_only" });
-      const chargeId = String(body.chargeId || "");
-      if (!/^chrg_[A-Za-z0-9_]+$/.test(chargeId)) {
-        return json(res, 400, { error: "invalid_charge_id" });
-      }
-      // Same ownership rule as action=status: only the buyer who created the charge may mark it paid.
-      const own = await fetch(`https://api.omise.co/charges/${encodeURIComponent(chargeId)}`, {
-        headers: { Authorization: basicAuth(secretKey), "Omise-Version": "2019-05-29" },
-      });
-      const ownCharge = await own.json().catch(() => null);
-      if (!own.ok || !ownCharge || ownCharge.object === "error") return json(res, 404, { error: "charge_not_found" });
-      if (String(ownCharge.metadata?.buyer_user_id || "") !== String(user.id)) {
-        return json(res, 403, { error: "not_charge_owner" });
-      }
-      const paid = await omisePost(
-        secretKey,
-        `/charges/${encodeURIComponent(chargeId)}/mark_as_paid`,
-        new URLSearchParams(),
-        `mark-paid-${chargeId}`,
-      );
-      return json(res, 200, {
-        chargeId: paid.id,
-        status: paid.status,
-        paid: paid.paid === true,
-      });
-    }
 
     const cfg = supabaseServiceConfig();
     if (!cfg) return json(res, 503, { error: "db_not_configured" });
@@ -219,71 +132,18 @@ export default async function handler(req, res) {
       hiringRequestId: body.hiringRequestId != null ? String(body.hiringRequestId) : "",
     });
     if (resolved.error) return json(res, resolved.status || 400, { error: resolved.error });
-    const { amountSatang, quoteId, hireOrderId } = resolved;
 
-    if (!Number.isInteger(amountSatang) || amountSatang < 2000) {
+    if (!Number.isInteger(resolved.amountSatang) || resolved.amountSatang < 2000) {
       return json(res, 400, { error: "invalid_amount" });
     }
-
-    const method = String(body.method || "");
-    if (method !== "promptpay" && method !== "card") {
+    if (String(body.method || "") !== "promptpay") {
       return json(res, 400, { error: "unsupported_method" });
     }
 
-    const params = new URLSearchParams();
-    params.set("amount", String(amountSatang));
-    params.set("currency", "thb");
-    params.set("description", String(body.title || "Aplus1 hire").slice(0, 240));
-
-    if (method === "promptpay") {
-      params.set("source[type]", "promptpay");
-    } else {
-      const token = String(body.cardToken || "");
-      if (!token.startsWith("tokn_")) {
-        return json(res, 400, { error: "card_token_required" });
-      }
-      params.set("card", token);
-    }
-
-    const meta = {
-      conversation_id: body.conversationId != null ? String(body.conversationId) : "",
-      quote_id: quoteId,
-      hiring_request_id: resolved.hiringRequestId || "",
-      hire_order_id: hireOrderId,
-      buyer_user_id: String(user.id),
-      app: "aplus1",
-    };
-    for (const [k, v] of Object.entries(meta)) {
-      if (v) params.set(`metadata[${k}]`, v);
-    }
-
-    const idem =
-      String(body.idempotencyKey || "").trim() ||
-      `hire-${method}-${hireOrderId || quoteId}-${amountSatang}-${Date.now()}`;
-
-    const charge = await omisePost(secretKey, "/charges", params, idem.slice(0, 64));
-    const source = charge.source || {};
-    const qr = source?.scannable_code?.image?.download_uri || null;
-
-    return json(res, 200, {
-      chargeId: String(charge.id),
-      reference: makeHireReference(),
-      qrCodeUri: qr,
-      authorizeUri: typeof charge.authorize_uri === "string" ? charge.authorize_uri : null,
-      amountSatang,
-      method,
-      expiresAt:
-        typeof charge.expires_at === "string"
-          ? charge.expires_at
-          : new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-      live: true,
-      status: charge.status,
-      paid: charge.paid === true,
-    });
+    // Payso charge creation goes here once Payso shares its API and webhook verification.
+    return json(res, 503, { error: "payso_not_integrated" });
   } catch (e) {
     const message = e instanceof Error ? e.message : "charge_failed";
-    const code = typeof e?.status === "number" ? e.status : 0;
-    const status = code && code < 500 ? code : code ? 502 : 500;
-    return json(res, status, { error: message });
+    return json(res, 500, { error: message });
   }
 }

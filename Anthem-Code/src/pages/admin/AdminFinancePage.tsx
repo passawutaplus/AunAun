@@ -374,7 +374,7 @@ export default function AdminFinancePage() {
     { key: "terms", header: "เงื่อนไข", render: (r) => r.money_terms ?? "—" },
     {
       key: "rid",
-      header: "Omise refund",
+      header: "Payso refund",
       render: (r) => (
         <span className="font-mono text-[11px]">{r.provider_refund_id ?? "—"}</span>
       ),
@@ -487,7 +487,7 @@ export default function AdminFinancePage() {
   return (
     <div className="space-y-6">
       <SectionHeader
-        title="การเงิน Omise + Ledger"
+        title="การเงิน Payso + Ledger"
         description="ตรวจสอบ hire money THB (แยกจากกระเป๋า PX) · ไม่เรียก Omise จากเบราว์เซอร์"
         actions={
           <Button
@@ -601,7 +601,7 @@ export default function AdminFinancePage() {
             rows={orderSearch.filtered}
             empty="ยังไม่มี hire order"
           />
-          <h3 className="text-sm font-medium pt-2">Payments (Omise charges)</h3>
+          <h3 className="text-sm font-medium pt-2">Payments (Payso charges)</h3>
           <DataTable
             columns={paymentCols}
             rows={paymentsQ.data ?? []}
@@ -750,7 +750,7 @@ export default function AdminFinancePage() {
         <TabsContent value="webhooks" className="space-y-4 mt-4">
           <p className="text-xs text-admin-muted flex items-center gap-2">
             <Webhook className="w-3.5 h-3.5" />
-            แสดงเฉพาะ event ที่ยังไม่ประมวลผลหรือมี error — กระทบยอด Omise vs ledger ให้แจ้งทีม
+            แสดงเฉพาะ event ที่ยังไม่ประมวลผลหรือมี error — กระทบยอด Payso vs ledger ให้แจ้งทีม
             ห้าม auto-adjust
           </p>
           <DataTable
@@ -833,13 +833,13 @@ export default function AdminFinancePage() {
             <h3 className="font-medium">Feature flags (DB)</h3>
             <p className="text-xs text-admin-muted">
               Live charge/transfer ยังถูกบล็อกที่ server จนกว่า{" "}
-              <code className="text-[10px]">OMISE_MARKETPLACE_APPROVED=true</code> (env — อ่านอย่างเดียวจาก
+              <code className="text-[10px]">PAYSO_MARKETPLACE_APPROVED=true</code> (env — อ่านอย่างเดียวจาก
               deploy)
             </p>
             <div className="grid sm:grid-cols-2 gap-2 text-sm">
               {(
                 [
-                  ["omise_payments_enabled", "เปิด Omise payments"],
+                  ["omise_payments_enabled", "เปิดรับชำระเงินออนไลน์ (Payso)"],
                   ["omise_promptpay_enabled", "PromptPay"],
                   ["omise_card_enabled", "บัตร"],
                   ["manual_payout_enabled", "ถอนมือ"],

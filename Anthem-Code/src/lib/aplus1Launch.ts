@@ -171,11 +171,11 @@ export const SOLO_ECOSYSTEM_COMING_SOON_SHORT = "So1o — เร็ว ๆ น�
 export const APLUS1_PAYMENTS_DISABLED_TH =
   "กำลังเปิดรับชำระผ่าน SAMECOR — ใช้งานโพสต์ผลงาน แชท และรับงานได้ตามปกติ";
 
-/** Legacy Solo/Stripe fiat paths are cut — use Omise when enabled. */
+/** Legacy Solo/Stripe fiat paths are cut — use Payso when enabled. */
 export const APLUS1_SOLO_PAYMENTS_CUTOVER_TH =
   "SAMECOR ไม่รับชำระผ่าน So1o อีกต่อไป — ระบบชำระเงินใหม่กำลังเปิดเร็ว ๆ นี้";
 
-/** Omise hire/checkout UI — explicit opt-in (still blocked live without marketplace approval). */
+/** Payso hire/checkout UI — explicit opt-in (still blocked live without marketplace approval). */
 export function isAplus1PaymentsEnabled(): boolean {
   if (isAplus1LaunchMinimal()) return false;
   return import.meta.env.VITE_APLUS1_PAYMENTS_ENABLED === "true";

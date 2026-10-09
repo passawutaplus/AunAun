@@ -1,10 +1,10 @@
-# Aplus1 Payments (Payso commercial · Omise/Opn code paths)
+# Aplus1 Payments (Payso)
 
 Canonical payment architecture for **Aplus1 (Anthem)**.  
 Aplus1 owns money flows. **Do not** route Aplus1 payments through So1o/Solo Stripe APIs.
 
 **Commercial PSP (merchant):** [Payso](https://payso.co/th) — บริษัท เพย์ โซลูชั่น จำกัด · Quotation `Q-202607000297` (27/07/2026 → valid until 31/10/2026)  
-**Code / env (historical names):** many modules still use `Omise` / `OMISE_*` identifiers — treat as the fiat provider integration layer until renamed; commercial rates & SLAs below follow **Payso**.
+**Code:** Payso only. Omise code paths were removed on 2026-10-10.
 
 Related: [aml-compliance.md](./aml-compliance.md) (PX closed-loop) · hire cancel flow in `src/lib/hireCancelRequest.ts` · user policy `/legal/payment-refund`
 
@@ -13,7 +13,6 @@ Related: [aml-compliance.md](./aml-compliance.md) (PX closed-loop) · hire cance
 | Topic | Rule |
 |-------|------|
 | PSP (commercial) | **Payso** for Aplus1 fiat merchant terms |
-| PSP (code) | Existing `omise*` / `OMISE_*` paths until cutover rename |
 | Solo | Not a billing hub for Aplus1. Shared auth/email OK. |
 | Stripe in Anthem | Deprecated — do not call Solo `/api/payments/*` |
 | PX | In-app unit (gifts/rewards). **Not** FX. |
@@ -21,7 +20,7 @@ Related: [aml-compliance.md](./aml-compliance.md) (PX closed-loop) · hire cance
 | Settlement | THB satang in internal ledger + PSP charges; Payso settles to merchant **weekly (T+7)** |
 | Role | Aplus1 is a **payment intermediary / collection agent** — hire money is held for the seller; Aplus1 revenue is **platform fee only** |
 | Docs | Quotation → Invoice → Receipt (seller↔buyer) + platform fee receipt (Aplus1→seller); optional WHT 50 ทวิ |
-| Live | Blocked until marketplace/live flags approved (`OMISE_MARKETPLACE_APPROVED` / successor) |
+| Live | Blocked until Payso approves marketplace use (`PAYSO_MARKETPLACE_APPROVED`) |
 
 ```mermaid
 flowchart LR
@@ -34,28 +33,27 @@ flowchart LR
 
 ## Environment
 
+The Payso API is **not wired yet**. `/api/hire-charge` and `/api/object-charge` validate the caller and the amount, then answer `503 payso_not_integrated`. Omise was removed on 2026-10-10 (code, env, webhook).
+
 | Variable | Role |
 |----------|------|
-| `OMISE_PUBLIC_KEY` | Client tokenization only (legacy name) |
-| `OMISE_SECRET_KEY` | Server only — never Vite |
-| `OMISE_WEBHOOK_SECRET` | Base64 webhook HMAC secret (dashboard Roll secret) |
-| `OMISE_MODE` | `test` \| `live` |
-| `OMISE_MARKETPLACE_APPROVED` | `true` only after marketplace/PayFac approval |
-| `OMISE_MERCHANT_NAME` | Statement / merchant display |
-| `PAYMENT_PROVIDER` | `omise` for Aplus1 (rename when Payso SDK lands) |
-| `VITE_OMISE_CHARGES_ENABLED` | `true` → checkout calls `/api/hire-charge` (test OK without marketplace) |
-| `VITE_OMISE_MODE` | Client mirror of test/live gate |
-| `VITE_OMISE_PUBLIC_KEY` | Public key for future card tokenization |
+| `PAYMENT_PROVIDER` | Must be `payso`; anything else answers `503 provider_disabled` |
+| `PAYSO_MARKETPLACE_APPROVED` | `true` only after Payso confirms in writing that collecting for creators is allowed; payout cron is blocked until then |
+| `VITE_PAYSO_CHARGES_ENABLED` | `true` → checkout calls `/api/hire-charge` |
+| `VITE_PAYSO_MODE` | Client mirror of test/live gate |
 | `VITE_APLUS1_PAYMENTS_ENABLED` | Product gate for payment UI |
 | `VITE_LEGAL_VAT_REGISTERED` | `true` when Aplus1 issues VAT tax invoices on fee receipts |
 | `VITE_LEGAL_COMPANY_TAX_ID` | Company tax ID on fee receipts / ETDA disclosure |
 | `VITE_HIRE_POLICY_VERSION` / `VITE_PAYMENT_POLICY_VERSION` | Consent versions stored on quote accept |
 | `VITE_APLUS1_DISPLAY_CURRENCY_ENABLED` | FX display switcher |
 
-Feature flags (config / admin):  
-`omisePaymentsEnabled`, `omisePromptPayEnabled`, `omiseCardEnabled`, `manualPayoutEnabled`, `autoPayoutEnabled`, `endOfMonthSweepEnabled`, `liveMarketplacePaymentsEnabled`, `cardFeePassedToBuyer`, `displayCurrencyEnabled`, `bankTransferEnabled`
+Payso API keys and the webhook verification secret get their names when Payso shares its API documentation.
 
-When `OMISE_MARKETPLACE_APPROVED=false` or `liveMarketplacePaymentsEnabled=false`: no live charge/transfer.
+Feature flags (config / admin):  
+`onlinePaymentsEnabled`, `promptPayEnabled`, `cardEnabled`, `manualPayoutEnabled`, `autoPayoutEnabled`, `endOfMonthSweepEnabled`, `liveMarketplacePaymentsEnabled`, `cardFeePassedToBuyer`, `displayCurrencyEnabled`, `bankTransferEnabled`  
+(The database columns behind the first three are still named `payment_settings.omise_*`.)
+
+When `PAYSO_MARKETPLACE_APPROVED` is not `true` or `liveMarketplacePaymentsEnabled=false`: no live charge/transfer.
 
 ## Fees
 
@@ -174,7 +172,7 @@ Hire cancel (`hire_cancel_requests` money terms) must eventually drive real refu
 | FX display | `src/lib/payments/fxDisplay.ts` |
 | Fees | `src/lib/payments/fees.ts` |
 | Ledger helpers | `src/lib/payments/ledger.ts` |
-| Provider (legacy Omise name) | `src/lib/payments/omiseProvider.ts` |
+| Provider interface | `src/lib/payments/provider.ts` (Payso adapter not written yet) |
 | Payout policy | `src/lib/payments/payoutPolicy.ts` |
 | SQL | `scripts/ecosystem/aplus1-omise-payments.sql` |
 | Admin RPCs | `scripts/ecosystem/aplus1-admin-finance.sql` |
@@ -206,7 +204,7 @@ Marketplace/PayFac, holding funds for third parties, recipients + KYC, delayed p
 
 1. Anthem stops calling Solo payment APIs (Phase 1) — `stripePaymentsApi.ts` refuses Solo hub calls
 2. New fiat flows use PSP + Aplus1 ledger (`src/lib/payments/*`, `scripts/ecosystem/aplus1-omise-payments.sql`)
-3. Charge API: `Anthem-Code/api/hire-charge.js` · Webhooks: `api/omise-webhook.js` · cron stub: `api/aplus1-payout-cron.js`
+3. Charge API: `Anthem-Code/api/hire-charge.js` (Payso pending) · Webhook: Payso receiver not written yet · cron stub: `api/aplus1-payout-cron.js`
 4. Legacy Stripe/escrow rows: ops complete manually — no new Aplus1 volume on Solo hub
 5. Solo keeps its own Stripe for Solo product only (`Solo-Code/docs/stripe.md`)
 6. Admin: `/admin/finance` · Earnings THB buckets on `/earnings`
@@ -216,8 +214,8 @@ Marketplace/PayFac, holding funds for third parties, recipients + KYC, delayed p
 Physical and file goods use `anthem.object_orders`, not `hire_orders`.
 
 1. Buyer places an order. A database trigger snapshots `price_thb × qty` into satang and a **10%** platform fee. The client cannot set the amount.
-2. `POST /api/object-charge` creates a Payso/Omise PromptPay charge from that row. Metadata includes `object_order_id`.
-3. Only the webhook (`api/omise-webhook.js`) or a server-side charge sync marks `payment_status = paid` and status `confirmed`. Seller funds stay `pending`.
+2. `POST /api/object-charge` will create a Payso PromptPay charge from that row (answers 503 until Payso is wired). Metadata includes `object_order_id`.
+3. Only the Payso webhook (via `markObjectOrderPaidFromCharge` in `api/object-order-paid.js`) or a server-side charge sync marks `payment_status = paid` and status `confirmed`. Seller funds stay `pending`.
 4. The seller ships on their own and enters a tracking number. Status becomes `shipped`.
 5. The buyer confirms receipt. `seller_release` becomes `available`. Bank payout still follows Payso **T+7**.
 

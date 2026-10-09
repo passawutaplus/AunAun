@@ -36,7 +36,7 @@ export interface AdminAlertCounts {
   openAml: number;
   highRiskKyc: number;
   urgentReports: number;
-  /** Omise payout queue + failed */
+  /** Payout queue + failed */
   financePayoutQueue: number;
   /** Unprocessed / errored provider webhooks */
   financeWebhookIssues: number;

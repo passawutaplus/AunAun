@@ -150,7 +150,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     icon: Wallet,
     tone: "amber",
     items: [
-      { to: "/admin/finance", label: "การเงิน (Omise)", hint: "เงินบาท: payout, webhook, ข้อพิพาท, ค่าธรรมเนียม", icon: Banknote, badgeKey: "finance", keywords: ["omise", "payso", "payout", "จ่ายเงิน", "ถอนเงิน", "โอนเงิน", "promptpay", "dispute", "ข้อพิพาท", "fee", "ค่าธรรมเนียม", "refund", "คืนเงิน"] },
+      { to: "/admin/finance", label: "การเงิน (Payso)", hint: "เงินบาท: payout, webhook, ข้อพิพาท, ค่าธรรมเนียม", icon: Banknote, badgeKey: "finance", keywords: ["payso", "payout", "จ่ายเงิน", "ถอนเงิน", "โอนเงิน", "promptpay", "dispute", "ข้อพิพาท", "fee", "ค่าธรรมเนียม", "refund", "คืนเงิน"] },
       { to: "/admin/wallet", label: "กระเป๋า PX & ถอนเงิน", hint: "ยอด PX และคำขอถอนเงิน (ปิดอยู่)", icon: Wallet, badgeKey: "cashouts", statKey: "pendingCashouts", statLabel: "ถอนรออนุมัติ", keywords: ["wallet", "cashout", "ถอน", "px", "ledger"] },
       { to: "/admin/gifts", label: "ของขวัญ", hint: "การสนับสนุนครีเอเตอร์ และเพดาน", icon: Gift, statKey: "gifts24h", statLabel: "24 ชม.", keywords: ["gift", "tip"] },
       { to: "/admin/ads", label: "โฆษณา", hint: "แคมเปญและพื้นที่โปรโมต", icon: Megaphone, keywords: ["ads", "ad", "โปรโมต", "boost"] },

@@ -129,7 +129,7 @@ export default function HirePromptPayView({
           className="w-full rounded-full border-dashed"
           onClick={onSimulatePaid}
         >
-          {charge.live ? "ยืนยันชำระทดสอบ (Omise test)" : "จำลองชำระสำเร็จ (โหมดทดสอบ)"}
+          {charge.live ? "ยืนยันชำระทดสอบ (Payso test)" : "จำลองชำระสำเร็จ (โหมดทดสอบ)"}
         </Button>
       ) : null}
 
