@@ -36,7 +36,7 @@ const HeroSpotlightCorner = ({
         {variant === "studio" ? (
           <span className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center bg-gradient-brand text-white">
             {avatarUrl ? (
-              <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+              <img loading="lazy" decoding="async" src={avatarUrl} alt="" className="h-full w-full object-cover" />
             ) : (
               <Building2 className="h-6 w-6" aria-hidden />
             )}

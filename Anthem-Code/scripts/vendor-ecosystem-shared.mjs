@@ -73,38 +73,14 @@ const safeRelativeFn = readFileSync(
   join(soloRoot, "scripts", "ecosystem-shared", "safeRelativePath.ts"),
   "utf8",
 );
-const anthemSafeUrl = `/**
- * Safe URL helpers for an1hem.
- * safeRelativePath body is vendored from Solo-Code/scripts/ecosystem-shared/.
- */
-
-/**
- * Returns the URL only if it is an http(s) absolute URL.
- * Otherwise returns undefined to prevent javascript:, data:, etc. XSS via href.
- */
-export const safeHttpUrl = (raw?: string | null): string | undefined => {
-  if (!raw) return undefined;
-  const v = raw.trim();
-  if (!v) return undefined;
-  try {
-    const u = new URL(v);
-    if (u.protocol === "http:" || u.protocol === "https:") return u.toString();
-  } catch {
-    /* not a valid absolute URL */
-  }
-  return undefined;
-};
-
-/** Open external URL in a new tab only when http(s). */
-export function openSafeExternalUrl(raw?: string | null): boolean {
-  const url = safeHttpUrl(raw);
-  if (!url) return false;
-  window.open(url, "_blank", "noopener,noreferrer");
-  return true;
+// Only the trailing safeRelativePath block is vendored; Anthem-only helpers above it are kept.
+const safeUrlPath = join(anthemRoot, "src", "lib", "safeUrl.ts");
+const currentSafeUrl = readFileSync(safeUrlPath, "utf8");
+const relativeStart = currentSafeUrl.search(/(\/\*\*[^*]*\*\/\s*)?export function safeRelativePath/);
+if (relativeStart < 0) {
+  console.error("[vendor-ecosystem] safeRelativePath not found in", safeUrlPath);
+  process.exit(1);
 }
-
-${safeRelativeFn}
-`;
-writeFileSync(join(anthemRoot, "src", "lib", "safeUrl.ts"), anthemSafeUrl);
+writeFileSync(safeUrlPath, `${currentSafeUrl.slice(0, relativeStart)}${safeRelativeFn}\n`);
 
 console.log("[vendor-ecosystem] synced → Anthem-Code (lineNotificationKinds, plans, designDrill, safeUrl)");

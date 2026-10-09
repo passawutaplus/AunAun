@@ -1,11 +1,11 @@
 import * as React from "react";
 import { Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Headphones, Home, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import logoUrl from "@/assets/solo-freelancer-logo.webp";
 import { HTTP_ERROR_COPY, resolveErrorKind, type HttpErrorKind } from "@/lib/httpErrorCopy";
+import { startStatusCodeWave } from "@/lib/statusCodeWave";
 import { ErrorReportDialog } from "@/components/ErrorReportDialog";
 import { cn } from "@/lib/utils";
+
+const LANG_KEY = "solo-status-lang";
 
 type ActionLink = {
   labelTh: string;
@@ -24,6 +24,29 @@ type Props = {
   className?: string;
 };
 
+function Arrow() {
+  return (
+    <svg viewBox="0 0 12 12" aria-hidden="true">
+      <path
+        d="M2.5 9.5 L9.5 2.5 M5.5 2.5 H9.5 V6.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.2"
+      />
+    </svg>
+  );
+}
+
+function showsRetry(kind: HttpErrorKind, showRetry: boolean) {
+  if (!showRetry) return false;
+  return kind === "500" || kind === "502" || kind === "503" || kind === "generic";
+}
+
+function showsContact(kind: HttpErrorKind, showSupport: boolean) {
+  if (!showSupport) return false;
+  return kind === "500" || kind === "502" || kind === "generic";
+}
+
 export function HttpErrorPage({
   kind,
   code,
@@ -35,139 +58,121 @@ export function HttpErrorPage({
   className,
 }: Props) {
   const router = useRouter();
-  const [supportOpen, setSupportOpen] = React.useState(false);
-
   const resolvedKind = resolveErrorKind(code, kind);
   const copy = HTTP_ERROR_COPY[resolvedKind];
   const displayCode = code ?? copy.code;
+  const heroRef = React.useRef<HTMLElement>(null);
+  const codeRef = React.useRef<HTMLParagraphElement>(null);
+  const waveRef = React.useRef<HTMLCanvasElement>(null);
+  const [supportOpen, setSupportOpen] = React.useState(false);
+  const [ui, setUi] = React.useState<"en" | "th">("en");
+  const homeLabel = ui === "th" ? "หน้าแรก" : "Home";
+  const retryLabel = ui === "th" ? "ลองใหม่" : "Retry";
+  const contactLabel = ui === "th" ? "ติดต่อ" : "Contact";
+
+  React.useEffect(() => {
+    const stored = localStorage.getItem(LANG_KEY);
+    if (stored === "th" || stored === "en") setUi(stored);
+  }, []);
+
+  React.useEffect(() => {
+    const mine = heroRef.current;
+    if (!mine) return;
+    const hidden: HTMLElement[] = [];
+    const mark = (el: Element) => {
+      if (!(el instanceof HTMLElement)) return;
+      if (el === mine || el.contains(mine)) {
+        for (const child of el.children) mark(child);
+        return;
+      }
+      el.setAttribute("inert", "");
+      hidden.push(el);
+    };
+    for (const child of document.body.children) mark(child);
+    return () => hidden.forEach((el) => el.removeAttribute("inert"));
+  }, []);
+
+  React.useEffect(() => {
+    const root = heroRef.current;
+    const label = codeRef.current;
+    const canvas = waveRef.current;
+    if (!root || !label || !canvas || !displayCode) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    return startStatusCodeWave(root, label, canvas);
+  }, [displayCode]);
 
   return (
-    <div className={cn("relative min-h-screen overflow-hidden bg-background", className)}>
-      <div className="ambient-blobs" aria-hidden="true" />
-
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12">
-        <div className="w-full max-w-lg text-center">
-          <img
-            src={logoUrl}
-            alt="So1o"
-            className="mx-auto h-10 w-auto opacity-90 mb-8"
-            width={120}
-            height={40}
-          />
-
-          <p
-            className="text-[5.5rem] sm:text-[7rem] font-bold leading-none tracking-tighter bg-gradient-primary bg-clip-text text-transparent select-none"
-            aria-hidden="true"
-          >
-            {displayCode || "!"}
+    <main ref={heroRef} className={cn("status-screen", className)}>
+      {displayCode ? (
+        <>
+          <p ref={codeRef} className="status-screen-code" aria-hidden="true">
+            {displayCode}
           </p>
+          <canvas ref={waveRef} className="status-screen-code-wave" aria-hidden="true" />
+        </>
+      ) : null}
 
-          <h1 className="mt-6 text-xl sm:text-2xl font-semibold text-foreground" lang="th">
-            {copy.titleTh}
-          </h1>
-          <p className="sr-only" lang="en">
-            {copy.titleEn}
-          </p>
-
-          <p
-            className="mt-4 text-sm text-muted-foreground leading-relaxed max-w-md mx-auto"
-            lang="th"
-          >
-            {copy.descTh}
-          </p>
-          <p
-            className="mt-1 text-xs text-muted-foreground/60 max-w-md mx-auto"
-            lang="en"
-            aria-hidden
-          >
-            {copy.descEn}
-          </p>
-
-          {errorMessage &&
-            resolvedKind !== "404" &&
-            resolvedKind !== "article" &&
-            resolvedKind !== "token" && (
-              <p className="mt-3 text-xs text-muted-foreground/60 break-words max-w-sm mx-auto font-mono bg-muted/50 rounded-md px-3 py-2 border border-border/50">
-                {errorMessage}
-              </p>
-            )}
-
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-2.5">
-            <Button asChild className="gap-1.5 shadow-sm">
-              <Link to={homeTo}>
-                <Home className="h-4 w-4" />
-                <span>
-                  กลับหน้าแรก
-                  <span className="hidden sm:inline text-primary-foreground/80 font-normal">
-                    {" "}
-                    · Home
-                  </span>
-                </span>
-              </Link>
-            </Button>
-
-            {showRetry && (
-              <Button variant="outline" className="gap-1.5" onClick={() => router.invalidate()}>
-                <RefreshCw className="h-4 w-4" />
-                <span>
-                  ลองใหม่
-                  <span className="hidden sm:inline text-muted-foreground font-normal">
-                    {" "}
-                    · Retry
-                  </span>
-                </span>
-              </Button>
-            )}
-
-            {extraAction && (
-              <Button variant="outline" asChild className="gap-1.5">
-                <Link to={extraAction.to}>
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>
-                    {extraAction.labelTh}
-                    <span className="hidden sm:inline text-muted-foreground font-normal">
-                      {" "}
-                      · {extraAction.labelEn}
-                    </span>
-                  </span>
-                </Link>
-              </Button>
-            )}
-
-            {showSupport && (
-              <Button
-                variant="outline"
-                className="gap-1.5 border-primary/30 text-primary hover:bg-primary/5"
-                onClick={() => setSupportOpen(true)}
-              >
-                <Headphones className="h-4 w-4" />
-                <span>
-                  ติดต่อทีมงาน
-                  <span className="hidden sm:inline font-normal opacity-80"> · Support</span>
-                </span>
-              </Button>
-            )}
-          </div>
-
-          {showSupport && copy.hintTh && (
-            <p
-              className="mt-8 text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed"
-              lang="th"
-            >
-              {copy.hintTh}
-            </p>
-          )}
+      <div className="status-screen-panel">
+        <Link to={homeTo} className="status-screen-logo" aria-label="So1o">
+          So1o
+        </Link>
+        <h1>{copy.titleEn}</h1>
+        {errorMessage && errorMessage.length < 180 && !errorMessage.includes("\n") ? (
+          <p className="sr-only">{errorMessage}</p>
+        ) : null}
+        <div className="status-screen-actions">
+          <Link className="status-screen-link" to={homeTo}>
+            {homeLabel}
+            <Arrow />
+          </Link>
+          {showsRetry(resolvedKind, showRetry) ? (
+            <button type="button" className="status-screen-link" onClick={() => router.invalidate()}>
+              {retryLabel}
+              <Arrow />
+            </button>
+          ) : null}
+          {extraAction ? (
+            <Link className="status-screen-link" to={extraAction.to}>
+              {ui === "th" ? extraAction.labelTh : extraAction.labelEn}
+              <Arrow />
+            </Link>
+          ) : null}
+          {showsContact(resolvedKind, showSupport) ? (
+            <button type="button" className="status-screen-link" onClick={() => setSupportOpen(true)}>
+              {contactLabel}
+              <Arrow />
+            </button>
+          ) : null}
         </div>
       </div>
 
-      {showSupport && (
+      <footer className="status-screen-foot">
+        <div className="status-screen-lang" role="group" aria-label="Language">
+          {(["en", "th"] as const).map((code) => (
+            <button
+              key={code}
+              type="button"
+              aria-pressed={ui === code}
+              className={ui === code ? "is-on" : undefined}
+              onClick={() => {
+                setUi(code);
+                localStorage.setItem(LANG_KEY, code);
+              }}
+            >
+              {code.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </footer>
+
+      {showSupport ? (
         <ErrorReportDialog
           open={supportOpen}
           onOpenChange={setSupportOpen}
           errorCode={displayCode}
           errorMessage={errorMessage}
         />
-      )}
-    </div>
+      ) : null}
+    </main>
   );
 }

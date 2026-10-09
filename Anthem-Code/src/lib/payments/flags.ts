@@ -1,4 +1,4 @@
-/** Client/server feature flags for Aplus1 Omise payments. */
+/** Client/server feature flags for SAMECOR Omise payments. */
 
 export type PaymentFeatureFlags = {
   omisePaymentsEnabled: boolean;

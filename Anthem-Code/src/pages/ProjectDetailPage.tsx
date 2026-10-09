@@ -46,7 +46,7 @@ import { useAdCampaign, logAdEvent } from "@/hooks/useAds";
 import { Megaphone, ExternalLink } from "lucide-react";
 import { absoluteUrl, truncateDescription } from "@/lib/seo";
 import { breadcrumbJsonLd, creativeWorkJsonLd } from "@/lib/seoSchemas";
-import { openSafeExternalUrl } from "@/lib/safeUrl";
+import { openSafeExternalUrl } from "@/lib/externalUrl";
 import { FadeUp } from "@/components/motion/FadeUp";
 import { ProjectLinkedPostsBlock } from "@/components/project/ProjectLinkedPostsBlock";
 import {
@@ -57,6 +57,7 @@ import {
 import { profilesPublicFrom, PUBLIC_PROFILE_READ_SELECT } from "@/lib/profileAccess";
 import PackageReturnBanner from "@/components/services/PackageReturnBanner";
 import { cn } from "@/lib/utils";
+import { isVideoUrl } from "@/lib/videoAccept";
 
 const ProjectDetailPage = () => {
   const { id } = useParams();

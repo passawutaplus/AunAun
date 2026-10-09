@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { countSource } from "@/hooks/admin/useAdminAlerts";
 import { fromCreatorServices } from "@/lib/creatorServicesDb";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 
@@ -158,24 +159,24 @@ export function useAdminStats() {
         supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
         launch ? Promise.resolve(zeroCount) : supabase.from("studios").select("*", { count: "exact", head: true }),
         supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "Published"),
-        launch ? Promise.resolve(zeroCount) : supabase.from("job_posts").select("*", { count: "exact", head: true }).eq("status", "open"),
-        launch ? Promise.resolve(zeroCount) : supabase.from("hiring_requests").select("*", { count: "exact", head: true }).eq("status", "ใหม่"),
-        launch ? Promise.resolve(zeroCount) : supabase.from("collab_requests").select("*", { count: "exact", head: true }).eq("status", "ใหม่"),
+        supabase.from("job_posts").select("*", { count: "exact", head: true }).eq("status", "open"),
+        supabase.from("hiring_requests").select("*", { count: "exact", head: true }).eq("status", "ใหม่"),
+        supabase.from("collab_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("messages").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
-        launch ? Promise.resolve(zeroCount) : supabase.from("collections").select("*", { count: "exact", head: true }),
+        supabase.from("collections").select("*", { count: "exact", head: true }),
         fromCreatorServices().select("*", { count: "exact", head: true }),
         supabase.from("project_likes").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
         supabase.from("project_comments").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
         supabase.from("follows").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
-        launch ? Promise.resolve(zeroCount) : supabase.from("gift_transactions").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
+        supabase.from("gift_transactions").select("*", { count: "exact", head: true }).gte("created_at", since(24)),
         supabase.from("project_views").select("*", { count: "exact", head: true }).gte("viewed_at", since(24)),
         supabase.from("user_reports" as never).select("*", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
-        launch ? Promise.resolve(zeroCount) : supabase.from("cashout_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("cashout_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("app_feedback" as never).select("*", { count: "exact", head: true }).eq("status", "new"),
         supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_verified", true),
         supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status", "rejected"),
-        supabase.from("aml_flags").select("*", { count: "exact", head: true }).eq("status", "open"),
+        countSource("aml", () => supabase.from("aml_flags").select("*", { count: "exact", head: true }).eq("status", "open")).then((count) => ({ count })),
       ]);
       return {
         totalUsers: users.count ?? 0,
@@ -269,7 +270,7 @@ export function useLiveActivity() {
         ...(h.data ?? []).map((r): ActivityEvent => ({ id: `h-${r.id}`, type: "hire", title: "คำขอจ้างงาน", subtitle: `${r.client_name} → ${r.project_title}`, at: r.created_at })),
         ...(c.data ?? []).map((r): ActivityEvent => ({ id: `c-${r.id}`, type: "collab", title: "คำขอคอลแลป", subtitle: r.message?.slice(0, 60) ?? "", at: r.created_at })),
         ...(s.data ?? []).map((r): ActivityEvent => ({ id: `s-${r.id}`, type: "studio", title: "สตูดิโอใหม่", subtitle: r.name, at: r.created_at })),
-        ...(u.data ?? []).map((r): ActivityEvent => ({ id: `u-${r.id}`, type: "user", title: "สมาชิกใหม่", subtitle: r.display_name || "ไม่ระบุชื่อ", at: r.created_at })),
+        ...(u.data ?? []).map((r): ActivityEvent => ({ id: `u-${r.user_id}`, type: "user", title: "สมาชิกใหม่", subtitle: r.display_name || "ไม่ระบุชื่อ", at: r.created_at })),
       ].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 30);
       setEvents(evs);
     })();
@@ -420,8 +421,8 @@ async function fetchPlatformActivityPolling(limit: number): Promise<ActivityEven
         supabase.from("gift_transactions").select("id,sender_id,recipient_id,price_px,created_at").order("created_at", { ascending: false }).limit(10),
         supabase.from("user_reports" as never).select("id,reporter_id,target_type,target_id,reason,created_at").order("created_at", { ascending: false }).limit(10),
         supabase.from("app_feedback" as never).select("id,user_id,feature,message,created_at,ticket_number,kind").order("created_at", { ascending: false }).limit(10),
-        supabase.from("collections").select("id,name,user_id,created_at").order("created_at", { ascending: false }).limit(10),
-        supabase.from("inspire_boards").select("id,title,created_at").order("created_at", { ascending: false }).limit(10),
+        supabase.from("collections").select("id,name,owner_id,created_at").order("created_at", { ascending: false }).limit(10),
+        supabase.from("inspire_boards").select("id,name,created_at").order("created_at", { ascending: false }).limit(10),
         supabase.from("messages").select("id,conversation_id,sender_id,content,created_at").order("created_at", { ascending: false }).limit(15),
         supabase.from("cashout_requests").select("id,user_id,gross_px,status,created_at").order("created_at", { ascending: false }).limit(10),
         supabase.from("kyc_requests").select("id,user_id,status,submitted_at").order("submitted_at", { ascending: false }).limit(10),
@@ -487,11 +488,11 @@ async function fetchPlatformActivityPolling(limit: number): Promise<ActivityEven
         })),
         ...pick(collections.data, (r) => ({
           id: `col-${r.id}`, type: "collection" as const, title: "คอลเลกชันใหม่",
-          subtitle: r.name, at: r.created_at, actorId: r.user_id, link: "/admin/collections",
+          subtitle: r.name, at: r.created_at, actorId: r.owner_id, link: "/admin/collections",
         })),
         ...pick(inspire.data, (r) => ({
           id: `in-${r.id}`, type: "inspire" as const, title: "Inspire board ใหม่",
-          subtitle: r.title, at: r.created_at, link: "/admin/inspire",
+          subtitle: r.name, at: r.created_at, link: "/admin/inspire",
         })),
         ...pick(msgs.data, (r) => ({
           id: `msg-${r.id}`, type: "message" as const, title: "ข้อความแชต",

@@ -1,4 +1,4 @@
-/** Forum status / helpers for Aplus1 Community webboard */
+/** Forum status / helpers for SAMECOR Community webboard */
 
 export type ForumTopicStatus =
   | "open"

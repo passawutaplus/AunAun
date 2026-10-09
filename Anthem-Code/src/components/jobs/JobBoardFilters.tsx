@@ -117,7 +117,7 @@ export default function JobBoardFilters({
 export function JobBoardHero({ onPost }: { onPost: () => void }) {
   return (
     <section className="relative overflow-hidden rounded-3xl border border-border/50 bg-zinc-950 text-white h-[50svh] min-h-[280px] max-h-[560px]">
-      <img
+      <img loading="lazy" decoding="async"
         src="/job-covers/hiring-hero-designers.png"
         alt=""
         className="absolute inset-0 h-full w-full object-cover"
@@ -125,7 +125,7 @@ export function JobBoardHero({ onPost }: { onPost: () => void }) {
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/15" />
       <div className="relative h-full px-5 py-8 sm:px-8 sm:py-10 flex flex-col justify-end sm:flex-row sm:items-end sm:justify-between gap-4">
         <div className="space-y-2 max-w-xl">
-          <p className="text-xs uppercase tracking-[0.2em] text-white/70">Aplus1</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-white/70">SAMECOR</p>
           <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight">
             They are <span className="font-bold">HIRING</span>
           </h1>

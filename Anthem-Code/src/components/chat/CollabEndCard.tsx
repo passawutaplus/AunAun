@@ -346,7 +346,7 @@ export function CollabEndCard({
           <div className="space-y-3 py-1">
             <div className="space-y-1.5">
               <Label>เหตุผล</Label>
-              <Select value={rejectReason} onValueChange={setRejectReason}>
+              <Select value={rejectReason} onValueChange={(v) => setRejectReason(v as typeof rejectReason)}>
                 <SelectTrigger className="rounded-xl">
                   <SelectValue />
                 </SelectTrigger>

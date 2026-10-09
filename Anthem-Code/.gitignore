@@ -36,3 +36,7 @@ playwright-report
 *.sln
 *.sw?
 .env*
+
+# payso screenshot bot: saved login sessions and debug shots must never be committed
+scripts/payso-capture/.auth/
+scripts/payso-capture/.debug/

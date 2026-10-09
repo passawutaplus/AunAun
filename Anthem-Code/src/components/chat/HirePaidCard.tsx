@@ -52,7 +52,7 @@ export default function HirePaidCard({ payload, onOpenOrderDetail }: Props) {
       <div className="flex gap-2 rounded-xl px-2.5 py-2 text-[11px] leading-relaxed bg-muted/60 text-muted-foreground">
         <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
         <p>
-          Aplus1 พักเงินไว้ในฐานะตัวกลาง และจะโอนให้ผู้รับงานหลังอนุมัติงานตามเงื่อนไขแพลตฟอร์ม
+          SAMECOR พักเงินไว้ในฐานะตัวกลาง และจะโอนให้ผู้รับงานหลังอนุมัติงานตามเงื่อนไขแพลตฟอร์ม
         </p>
       </div>
     </ChatCardShell>

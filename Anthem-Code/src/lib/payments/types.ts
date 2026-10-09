@@ -1,4 +1,4 @@
-/** Aplus1 payment domain types — amounts are integer satang (THB). */
+/** SAMECOR payment domain types — amounts are integer satang (THB). */
 
 export type PaymentProviderId = "omise";
 

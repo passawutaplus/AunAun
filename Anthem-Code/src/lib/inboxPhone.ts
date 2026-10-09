@@ -11,7 +11,7 @@ export function normalizeInboxPhone(raw: string): string {
 
 export function parseInboxPhone(
   raw: string,
-): { ok: true; value: string | null } | { ok: false; error: string } {
+): { ok: true; value: string | null; error?: undefined } | { ok: false; error: string; value?: undefined } {
   if (!raw.trim()) return { ok: true, value: null };
   const value = normalizeInboxPhone(raw);
   if (!thaiPhoneRegex.test(value)) {

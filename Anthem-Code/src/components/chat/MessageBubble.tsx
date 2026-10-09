@@ -37,6 +37,8 @@ import { isSystemFallbackContent, stripSystemFallbackPrefix } from "@/lib/chatCo
 import { replyPreviewText } from "@/lib/chatReply";
 import { parseChatOffer } from "@/lib/chatOffer";
 import { formatServicePrice } from "@/hooks/useCreatorServices";
+import { parseObjectChatCard } from "@/lib/objects/chatCard";
+import { formatBaht } from "@/lib/objects/taxonomy";
 import PackagesIcon from "@/components/icons/PackagesIcon";
 import { fromCreatorServices } from "@/lib/creatorServicesDb";
 import { ChatOfferCard } from "@/components/chat/ChatOfferCard";
@@ -108,7 +110,7 @@ import type { CollabGroupExpandRequestRow } from "@/lib/collabGroupExpand";
 function ChatAttachmentImage({ refUrl }: { refUrl: string }) {
   const src = useSignedStorageUrl(refUrl);
   if (!src) return <div className="rounded-2xl mb-1 h-32 bg-muted animate-pulse" />;
-  return <img src={src} alt="" className="rounded-2xl mb-1 max-h-72 object-cover" />;
+  return <img loading="lazy" decoding="async" src={src} alt="" className="rounded-2xl mb-1 max-h-72 object-cover" />;
 }
 
 function isImageAttachmentPath(refUrl: string): boolean {
@@ -368,6 +370,7 @@ const MessageBubble = ({
         message.message_type !== "service" &&
         !isImageAttachmentPath(message.attachment_url)));
 
+  const objectCard = !deleted ? parseObjectChatCard(message.content) : null;
   const offer = !deleted ? parseChatOffer(message.content) : null;
   const hireForward = !deleted ? parseHireForwardMessage(message.content) : null;
   const hireRejectChoice = !deleted ? parseHireRejectChoiceMessage(message.content) : null;
@@ -401,7 +404,8 @@ const MessageBubble = ({
     isAlignDiscussionTemplateMessage(rawForDisplay) ||
     isCollabDeclineChatMessage(rawForDisplay) ||
     !!collabEnd ||
-    !!collabGroupExpand
+    !!collabGroupExpand ||
+    !!objectCard
       ? ""
       : rawForDisplay;
 
@@ -721,7 +725,7 @@ const MessageBubble = ({
                   )}
                 >
                   {project.cover_url ? (
-                    <img src={project.cover_url} alt="" className="w-full max-h-40 object-cover" />
+                    <img loading="lazy" decoding="async" src={project.cover_url} alt="" className="w-full max-h-40 object-cover" />
                   ) : (
                     <div className="h-24 bg-muted flex items-center justify-center text-xs text-muted-foreground">
                       ไม่มีรูปปก
@@ -763,7 +767,7 @@ const MessageBubble = ({
                 >
                   <div className={cn("p-3 flex items-center gap-3", mine ? "bg-black/10" : "bg-card")}>
                     {profileCard.avatar_url ? (
-                      <img src={profileCard.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
+                      <img loading="lazy" decoding="async" src={profileCard.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
                     ) : (
                       <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-sm font-medium shrink-0">
                         {(profileCard.display_name ?? "?")[0]}
@@ -785,6 +789,28 @@ const MessageBubble = ({
                 </Link>
               </div>
             )}
+            {objectCard && (
+              <div className={cn("rounded-2xl overflow-hidden shadow-sm", message.reply_to_id && replyTo ? cn("p-2", mine ? mineBg : theirBg) : "")}>
+                {replyQuote}
+                <Link
+                  to={`/object/${objectCard.id}`}
+                  className={cn("block overflow-hidden border hover:opacity-95 transition-opacity rounded-xl", mine ? "border-white/20" : "border-border")}
+                >
+                  {objectCard.cover_url ? (
+                    <img src={objectCard.cover_url} alt="" className="h-36 w-full object-cover" />
+                  ) : (
+                    <div className="flex h-16 items-center justify-center bg-muted text-xs text-muted-foreground">สินค้า</div>
+                  )}
+                  <div className={cn("space-y-0.5 px-3 py-2", mine ? "bg-black/10" : "bg-card")}>
+                    <p className={cn("text-[10px]", mine ? "text-white/75" : "text-muted-foreground")}>สินค้า</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-medium">{objectCard.title}</span>
+                      <span className="shrink-0 text-sm">{formatBaht(objectCard.price_thb)}</span>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            )}
             {message.message_type === "service" && serviceCard && (
               <div
                 className={cn(
@@ -801,7 +827,7 @@ const MessageBubble = ({
                   )}
                 >
                   {(serviceCard.cover_url || serviceCard.gallery_urls?.[0]) ? (
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={serviceCard.cover_url || serviceCard.gallery_urls![0]}
                       alt=""
                       className="w-full max-h-40 object-cover"

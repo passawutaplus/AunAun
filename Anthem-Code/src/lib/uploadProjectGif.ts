@@ -21,7 +21,7 @@ export function isGifFile(file: File): boolean {
 }
 
 /**
- * Upload an animated GIF to shared `project-media` (Aplus1 namespace).
+ * Upload an animated GIF to shared `project-media` (SAMECOR namespace).
  * Large GIFs are transcoded to a looping muted mp4 (much smaller); small ones
  * upload as-is. Returns the public URL and whether the result is a video.
  */

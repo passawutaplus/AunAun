@@ -66,7 +66,7 @@ export default function PackageOverviewChart({ ownerId, serviceIds }: Props) {
   );
 
   const granularityOptions = useMemo(
-    () => (bounds ? availableViewGranularities(bounds.from, bounds.to, dateRange.preset) : ["day"]),
+    () => (bounds ? availableViewGranularities(bounds.from, bounds.to, dateRange.preset) : (["day"] as ViewSeriesGranularity[])),
     [bounds, dateRange.preset],
   );
 

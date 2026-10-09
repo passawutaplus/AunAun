@@ -1,6 +1,22 @@
-# Aplus1 Copy And Language System
+# SAMECOR Copy And Language System
 
-Purpose: make Aplus1 feel like an opportunity platform, not just a job board or portfolio host.
+Purpose: make SAMECOR feel like the place where work connects people, not a job board or a portfolio host.
+
+## Locked brand lines (2026-10-02)
+
+Use these. Older headline candidates below are historical and do not override this table.
+
+| Layer | Copy | Role |
+|---|---|---|
+| Name | SAMECOR | The wordmark. SAME + CORE. |
+| Tagline | You Create. We Connect. | The line people remember. |
+| Journey | Create your profile. Connect through your work. Discover new opportunities. | What a person does here. |
+| Promise | 1 Profile. 100+ Opportunities. | What they get. Not the tagline. |
+| Line | Your work says who you are. SAMECOR connects it to what’s next. | The emotional explanation. |
+
+Do not write "Your Create". Do not put the COR mnemonic (Creator / Opportunity / Relationship) on screen.
+
+Learn-page story, in order: start from a project, then a conversation / hire / collab, then the directory of people, then Packages, then Objects, then the promise.
 
 ## Core Language Decision
 
@@ -279,7 +295,7 @@ Expected:
 
 ## Final Recommendation
 
-Use a two-sided language system:
+Brand lines are locked at the top of this file. Use a two-sided language system under that:
 
 For creators:
 

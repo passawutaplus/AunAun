@@ -27,6 +27,7 @@ export const NOINDEX_QUERY_KEYS = [
   "apply",
   "tab",
   "preview",
+  "color",
 ] as const;
 
 export function siteUrl(): string {

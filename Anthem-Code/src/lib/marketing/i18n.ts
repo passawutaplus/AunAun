@@ -6,7 +6,7 @@ export type MarketingUiLanguage = "th" | "en";
 const dict = {
   th: {
     overview: "ภาพรวม",
-    setup: "ตั้งค่า Aplus1",
+    setup: "ตั้งค่า SAMECOR",
     signals: "สัญญาณในแอป",
     leads: "Lead ครีเอทีฟ & จ้างงาน",
     competitors: "คู่แข่งแพลตฟอร์ม",
@@ -28,7 +28,7 @@ const dict = {
     complianceBanner: `PDPA: ใช้เฉพาะข้อมูลที่มีสิทธิ์สำหรับ growth ${BRAND_NAME} และอย่า spam outreach`,
     aiDisclaimer: "AI ช่วยตัดสินใจ growth — ไม่ใช่ข้อเท็จจริง 100%",
     exportConfirm:
-      "ยืนยันว่า export นี้ใช้เพื่อ growth Aplus1 เท่านั้น ไม่มีข้อมูลส่วนบุคคลอ่อนไหว และไม่ spam",
+      "ยืนยันว่า export นี้ใช้เพื่อ growth SAMECOR เท่านั้น ไม่มีข้อมูลส่วนบุคคลอ่อนไหว และไม่ spam",
     status: {
       new: "ใหม่",
       reviewed: "ตรวจแล้ว",
@@ -42,7 +42,7 @@ const dict = {
   },
   en: {
     overview: "Overview",
-    setup: "Aplus1 Setup",
+    setup: "SAMECOR Setup",
     signals: "In-app signals",
     leads: "Creator & hire leads",
     competitors: "Platform competitors",
@@ -64,7 +64,7 @@ const dict = {
     complianceBanner: `PDPA: permitted data for ${BRAND_NAME} growth only; no spam outreach`,
     aiDisclaimer: "AI supports growth decisions — not guaranteed fact",
     exportConfirm:
-      "I confirm this export is for Aplus1 growth only, avoids sensitive PII, and will not be used for spam",
+      "I confirm this export is for SAMECOR growth only, avoids sensitive PII, and will not be used for spam",
     status: {
       new: "New",
       reviewed: "Reviewed",

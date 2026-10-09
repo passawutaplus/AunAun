@@ -23,6 +23,12 @@ VERCEL_PROJECT="${VERCEL_ANTHEM_DEMO_PROJECT:-aplus1-demo}"
 # shellcheck disable=SC1091
 set -a && source .env && set +a
 export VITE_DEMO_MODE=true
+# Match production launch scope. Local .env may enable the full product for dev;
+# demo deploys stay fail-closed unless a non-launch pipeline sets this explicitly.
+export VITE_APLUS1_FULL_PRODUCT=false
+export VITE_APLUS1_LAUNCH_MINIMAL=true
+export VITE_APLUS1_PAYMENTS_ENABLED=false
+export VITE_SOLO_ECOSYSTEM_ENABLED=false
 
 # Phase A (pre-launch): shared prod DB — see docs/ecosystem-deploy-policy.md
 # Phase B: dedicated VITE_DEMO_SUPABASE_* (must differ from production URL)
@@ -76,6 +82,7 @@ fi
 BUILD_ENVS=(
   --build-env "DEPLOY_TARGET=demo"
   --build-env "VITE_DEMO_MODE=true"
+  --build-env "VITE_APLUS1_FULL_PRODUCT=false"
   --build-env "VITE_APLUS1_LAUNCH_MINIMAL=true"
   --build-env "VITE_APLUS1_PAYMENTS_ENABLED=false"
   --build-env "VITE_OMISE_CHARGES_ENABLED=true"

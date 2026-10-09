@@ -9,7 +9,7 @@ import { test, expect } from "@playwright/test";
 test.describe("smoke @public", () => {
   test("home renders and has H1 + main landmark", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/aplus1/i);
+    await expect(page).toHaveTitle(/samecor/i);
     await expect(page.locator("main, [role=main]").first()).toBeVisible();
   });
 
@@ -43,16 +43,16 @@ test.describe("smoke @public", () => {
 
   test("404 and 500 error pages render", async ({ page }) => {
     await page.goto("/error/404");
-    await expect(page.getByRole("heading", { name: "หาไม่เจอหน้านี้" })).toBeVisible();
-    await expect(page.getByRole("link", { name: /กลับหน้าแรก/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Page not found." })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Home" })).toBeVisible();
 
     await page.goto("/error/500");
-    await expect(page.getByRole("heading", { name: "มีบางอย่างขัดข้อง" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Could not finish." })).toBeVisible();
   });
 
   test("unknown route shows 404 page", async ({ page }) => {
     await page.goto("/this-page-does-not-exist-smoke");
-    await expect(page.getByRole("heading", { name: "หาไม่เจอหน้านี้" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Page not found." })).toBeVisible();
   });
 
   test("security headers present", async ({ page }) => {

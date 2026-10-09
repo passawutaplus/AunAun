@@ -112,7 +112,7 @@ function buildQuotationSnapshot(input: {
     kind: "quotation",
     docNumber: input.docNumber,
     issuedAt: new Date().toISOString(),
-    title: input.offer.title || "งานจ้าง Aplus1",
+    title: input.offer.title || "งานจ้าง SAMECOR",
     issuer: input.issuer,
     client: input.client,
     items: input.lineItems,

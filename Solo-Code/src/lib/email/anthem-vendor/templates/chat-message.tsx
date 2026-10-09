@@ -44,7 +44,7 @@ export const ChatMessageEmail = ({
 export const chatMessageTemplate = {
   component: ChatMessageEmail,
   subject: (data: Record<string, unknown>) =>
-    `[Aplus1] ข้อความใหม่จาก ${(data.senderName as string) ?? 'แชท'}`,
+    `[SAMECOR] ข้อความใหม่จาก ${(data.senderName as string) ?? 'แชท'}`,
   displayName: 'Chat message',
   previewData: {
     recipientName: 'พี่บอส',

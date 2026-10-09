@@ -12,17 +12,17 @@ import { SITE_NAME } from "@/lib/seo";
 import { LEGAL_APP_NAME } from "@/lib/legalConfig";
 
 describe("brandConfig", () => {
-  it("exposes consistent Aplus1 identity across SEO and legal", () => {
-    expect(BRAND_NAME).toBe("Aplus1");
+  it("exposes consistent SAMECOR identity across SEO and legal", () => {
+    expect(BRAND_NAME).toBe("SAMECOR");
     expect(SITE_NAME).toBe(BRAND_NAME);
     expect(LEGAL_APP_NAME).toBe(BRAND_NAME);
-    expect(BRAND_DOMAIN).toBe("aplus1.app");
+    expect(BRAND_DOMAIN).toBe("samecor.com");
     expect(APLUS1_DEMO_URL).toBe("https://aplus1-demo.vercel.app");
     expect(defaultSiteUrl()).toBe(APLUS1_DEMO_URL);
   });
 
   it("uses brand mark in the logo box", () => {
-    expect(BRAND_MARK).toBe("1");
+    expect(BRAND_MARK).toBe("S");
   });
 
   it("keeps legacy storage keys for backward compatibility", () => {

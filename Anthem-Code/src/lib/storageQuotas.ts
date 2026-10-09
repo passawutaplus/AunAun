@@ -1,6 +1,6 @@
 import type { Tier } from "@/core/subscription/useSubscription";
 
-/** Aplus1 portfolio / chat / studio media pool (`project-media/anthem/`). */
+/** SAMECOR portfolio / chat / studio media pool (`project-media/anthem/`). */
 export const ANTHEM_STORAGE_QUOTA_BYTES: Record<Tier, number> = {
   free: 300 * 1024 * 1024,
   pro: Math.round(1.5 * 1024 * 1024 * 1024),

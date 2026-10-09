@@ -118,7 +118,7 @@ export const FORUM_CATEGORY_META: Record<
 
 export const FORUM_ANNOUNCEMENTS_META = {
   nameTh: "ประกาศจากทีม",
-  description: "ข่าวอัปเดต โรดแมป และการบำรุงรักษาจากทีม Aplus1",
+  description: "ข่าวอัปเดต โรดแมป และการบำรุงรักษาจากทีม SAMECOR",
 } as const;
 
 export function isForumCategorySlug(v: string): v is ForumCategorySlug {

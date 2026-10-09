@@ -22,7 +22,7 @@ export function ProjectEditorMetaSidebar({
           <button
             type="button"
             onClick={() => onExpandedChange(true)}
-            className="fixed right-0 top-1/2 z-[60] hidden h-14 w-7 -translate-y-1/2 items-center justify-center rounded-l-full bg-orange-500 text-white shadow-md shadow-orange-500/30 transition hover:bg-orange-400 hover:shadow-lg hover:shadow-orange-500/40 lg:flex"
+            className="fixed right-0 top-1/2 z-[60] hidden h-14 w-7 -translate-y-1/2 items-center justify-center rounded-l-full bg-primary text-primary-foreground shadow-md shadow-primary/20 transition hover:bg-primary/90 lg:flex"
             aria-label="ขยายแถบรายละเอียด"
           >
             <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
@@ -42,14 +42,14 @@ export function ProjectEditorMetaSidebar({
             : "w-full border-b border-border/80 bg-card/95 lg:w-0 lg:overflow-hidden lg:border-0 lg:bg-transparent",
           className,
         )}
-        aria-label="Work Details"
+        aria-label="รายละเอียดงาน"
       >
         {expanded ? (
           <div className="flex flex-col lg:h-[calc(100dvh-4rem)]">
             <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-4 lg:pt-5">
               <p className="inline-flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
                 <FileText className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
-                Work Details
+                รายละเอียดงาน
               </p>
               <button
                 type="button"
@@ -70,7 +70,7 @@ export function ProjectEditorMetaSidebar({
           >
             <span className="inline-flex items-center gap-2 text-base font-semibold text-foreground">
               <PanelRight className="h-5 w-5 text-foreground" strokeWidth={2.25} />
-              Work Details
+              รายละเอียดงาน
             </span>
             <ChevronLeft className="h-4 w-4 text-muted-foreground" />
           </button>

@@ -40,7 +40,7 @@ export default function DrillFeedPanel() {
               โจทย์ร่วมประจำวัน · {date}
             </p>
           </div>
-          <h2 className="text-lg sm:text-xl font-bold">Aplus1 — Daily Brief</h2>
+          <h2 className="text-lg sm:text-xl font-bold">SAMECOR — Daily Brief</h2>
           <p className="text-sm text-muted-foreground max-w-2xl">
             ทุกคนเริ่มจากโจทย์เดียวกัน แล้วตีความออกมาในสไตล์ของตัวเอง
           </p>

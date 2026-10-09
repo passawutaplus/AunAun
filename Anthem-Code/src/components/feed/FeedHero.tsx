@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 import { useRef } from "react";
-import { Link } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Rocket } from "lucide-react";
 import { useStudioHeroSlides } from "@/hooks/useHeroSlides";
 import { BRAND_CONCEPT } from "@/lib/brandConfig";
 import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
@@ -11,17 +9,12 @@ import { FadeUp } from "@/components/motion/FadeUp";
 import type { FeedMode } from "@/components/feed/FeedModeToggle";
 import HeroSpotlightShowcase from "./HeroSpotlightShowcase";
 import CommunityHeroShowcase from "./CommunityHeroShowcase";
-import WorkWallMarquee from "./WorkWallMarquee";
-import HeroGridSpotlight from "./HeroGridSpotlight";
-import HeroRotatingWord, { HeroHundredPlus, useHeroRotatingCycle } from "./HeroRotatingWord";
-import { Button } from "@/components/ui/button";
+import StudioHomeHero from "./StudioHomeHero";
 import { cn } from "@/lib/utils";
 
 /** Match FeedPage / DesktopTopNav horizontal gutters so hero copy lines up with the logo. */
 export const FEED_PAGE_GUTTER_X =
   "px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]";
-
-const HERO_GUTTER = FEED_PAGE_GUTTER_X;
 
 const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
   projects: {
@@ -58,6 +51,16 @@ const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
       </>
     ),
   },
+  objects: {
+    badge: "ของที่ถือได้ และไฟล์ที่เอาไปใช้ได้",
+    title: (
+      <>
+        ค้นพบ Objects
+        <br />
+        <span className="bg-gradient-brand bg-clip-text text-transparent">จากคนที่ทำงานจริง</span>
+      </>
+    ),
+  },
   studios: {
     badge: "ทีมดีไซน์เต็มรูปแบบ",
     title: (
@@ -82,77 +85,29 @@ const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
 
 type Props = {
   mode?: FeedMode;
+  onModeChange?: (mode: FeedMode, source?: "hero") => void;
   className?: string;
+  search?: string;
+  onSearchChange?: (value: string) => void;
 };
 
-/** Projects + Designers: ambient work wall. Other modes: spotlight showcase. */
-const FeedHero = ({ mode = "projects", className }: Props) => {
+/** Projects, designers, and packages: editorial paper hero. Other modes: spotlight. */
+const FeedHero = ({ mode = "projects", onModeChange, className, search, onSearchChange }: Props) => {
   const reduced = useReducedMotion();
   const heroRef = useRef<HTMLElement>(null);
   const { data: studioSlides = [] } = useStudioHeroSlides();
   const copy = HERO_COPY[mode];
-  const useHomeHero = mode === "projects" || mode === "designers" || mode === "packages";
-  const heroCycle = useHeroRotatingCycle();
+  const useHomeHero = mode === "projects" || mode === "designers" || mode === "packages" || mode === "objects";
 
   if (useHomeHero) {
     return (
-      <section
-        ref={heroRef}
-        data-feed-hero
-        className={cn(
-          "relative overflow-hidden bg-transparent",
-          "-mx-3 sm:-mx-[calc(1rem+25px)] lg:-mx-[calc(1.5rem+25px)] 2xl:-mx-[calc(2.5rem+25px)]",
-          // Mobile: leave room for FloatingNav (same 5.5rem + safe-area as mobileFabBottom).
-          // Desktop (lg+): fill the viewport under the sticky site header (h-14).
-          "h-[calc(100dvh-env(safe-area-inset-bottom,0px)-5.5rem)] min-h-[36rem]",
-          "pt-[env(safe-area-inset-top)] lg:h-[calc(100dvh-3.5rem)] lg:min-h-[40rem]",
-          className,
-        )}
-      >
-        <HeroGridSpotlight trackRef={heroRef} className="z-0" />
-
-        <div className="relative z-10 flex h-full min-h-0 flex-col">
-          <FadeUp
-            className={cn(
-              "relative z-10 mx-auto flex w-full max-w-3xl shrink-0 flex-col items-center text-center",
-              HERO_GUTTER,
-              "pt-4 pb-3 sm:pt-6 sm:pb-4 lg:pt-5 lg:pb-5",
-            )}
-          >
-            <h1 className="text-[2.15rem] sm:text-4xl md:text-[2.85rem] lg:text-[3.25rem] font-bold tracking-tight text-foreground leading-[0.98] sm:leading-[0.95]">
-              <span className="block">1 Profile to</span>
-              <span className="block text-[hsl(14_100%_55%)]">
-                <HeroHundredPlus /> <HeroRotatingWord cycle={heroCycle} lang="en" />
-              </span>
-            </h1>
-            <p className="mt-4 max-w-md text-base sm:mt-5 sm:text-lg font-normal text-foreground">
-              <span className="inline-flex flex-wrap items-baseline justify-center gap-x-1.5">
-                <span>ให้ผลงานพาคุณไปสู่</span>
-                <HeroRotatingWord cycle={heroCycle} lang="th" className="font-semibold text-[hsl(14_100%_55%)]" />
-                <span>ใหม่ๆ</span>
-              </span>
-            </p>
-            <Button
-              asChild
-              size="lg"
-              className="mt-5 h-11 gap-2 rounded-full bg-gradient-brand px-7 text-sm font-medium text-white hover:opacity-90 sm:mt-6"
-            >
-              <Link to="/learn">
-                <Rocket className="h-4 w-4" aria-hidden />
-                Let's start
-              </Link>
-            </Button>
-          </FadeUp>
-
-          <div className="relative z-10 min-h-0 w-full flex-1 overflow-hidden pb-4 sm:pb-6">
-            <WorkWallMarquee embed />
-          </div>
-        </div>
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-[12] h-16 sm:h-20 bg-gradient-to-t from-background via-background/70 to-transparent"
-          aria-hidden
-        />
-      </section>
+      <StudioHomeHero
+        className={className}
+        search={search}
+        onSearchChange={onSearchChange}
+        mode={mode}
+        onModeChange={onModeChange}
+      />
     );
   }
 

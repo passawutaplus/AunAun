@@ -30,7 +30,7 @@ const COPY: Record<PaymentNotifyEvent, { titleTh: string; bodyTh: string }> = {
   },
   funds_available: {
     titleTh: "เงินพร้อมถอน",
-    bodyTh: "ลูกค้าอนุมัติงานแล้ว ยอดเข้าพร้อมถอนตามนโยบาย Aplus1",
+    bodyTh: "ลูกค้าอนุมัติงานแล้ว ยอดเข้าพร้อมถอนตามนโยบาย SAMECOR",
   },
   payout_succeeded: {
     titleTh: "โอนเงินสำเร็จ",

@@ -43,7 +43,7 @@ export default function HirePaySuccessView({
       <div>
         <p className="text-lg font-semibold text-foreground">ชำระเงินสำเร็จ!</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          เงินถูกพักไว้กับ Aplus1 ในฐานะตัวกลาง และจะโอนให้ผู้รับงานหลังคุณอนุมัติงาน
+          เงินถูกพักไว้กับ SAMECOR ในฐานะตัวกลาง และจะโอนให้ผู้รับงานหลังคุณอนุมัติงาน
         </p>
       </div>
 

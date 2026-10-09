@@ -142,7 +142,7 @@ export default function AdminAdsPage() {
       header: "โฆษณา",
       render: (c) => (
         <div className="flex items-center gap-3 min-w-0">
-          <img src={c.image_url} alt="" className="w-12 h-12 rounded object-cover shrink-0 border border-admin-border" />
+          <img loading="lazy" decoding="async" src={c.image_url} alt="" className="w-12 h-12 rounded object-cover shrink-0 border border-admin-border" />
           <div className="min-w-0">
             <p className="text-admin-fg font-medium truncate">{c.title}</p>
             <a href={c.target_url} target="_blank" rel="noreferrer" className="text-xs text-admin-muted hover:text-admin-accent inline-flex items-center gap-1 truncate max-w-[260px]">
@@ -193,7 +193,7 @@ export default function AdminAdsPage() {
       render: (a) => (
         <div className="flex items-center gap-3 min-w-0">
           {a.image_url ? (
-            <img src={a.image_url} alt="" className="w-12 h-12 rounded object-cover shrink-0 border border-admin-border" />
+            <img loading="lazy" decoding="async" src={a.image_url} alt="" className="w-12 h-12 rounded object-cover shrink-0 border border-admin-border" />
           ) : (
             <div className="w-12 h-12 rounded shrink-0 border border-admin-border bg-admin-surface flex items-center justify-center text-[10px] text-admin-muted">คุย</div>
           )}

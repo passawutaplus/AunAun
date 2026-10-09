@@ -1,4 +1,4 @@
-import { parseTagsAndNote } from "./lib/keep.js";
+import { parseTagsAndNote, quickKeepEnabled } from "./lib/keep.js";
 
 const DEFAULT_API_BASE = "https://aplus-vault.vercel.app";
 const ALLOWED_API_BASES = [
@@ -25,26 +25,11 @@ const titleInput = document.getElementById("titleInput");
 const collectionInput = document.getElementById("collectionInput");
 const newCollectionInput = document.getElementById("newCollectionInput");
 const noteInput = document.getElementById("noteInput");
-const keptChips = document.getElementById("keptChips");
 
-function selectedReasons() {
-  return [...keptChips.querySelectorAll("[data-reason][aria-pressed=true]")].map(b => b.dataset.reason);
-}
-
-keptChips.addEventListener("click", event => {
-  const chip = event.target.closest("[data-reason]");
-  if (chip) chip.setAttribute("aria-pressed", chip.getAttribute("aria-pressed") === "true" ? "false" : "true");
-});
-
-// Remember the last chips used so the next keep is one tap fewer.
-chrome.storage.local.get("lastKeptReasons", ({ lastKeptReasons }) => {
-  const last = Array.isArray(lastKeptReasons) ? lastKeptReasons : [];
-  keptChips.querySelectorAll("[data-reason]").forEach(b => b.setAttribute("aria-pressed", last.includes(b.dataset.reason) ? "true" : "false"));
-});
+function selectedReasons() { return []; }
 const keepPendingBtn = document.getElementById("keepPendingBtn");
 const clearPendingBtn = document.getElementById("clearPendingBtn");
 const snapshotBtn = document.getElementById("snapshotBtn");
-const stayOnPageInput = document.getElementById("stayOnPageInput");
 const recentList = document.getElementById("recentList");
 const clearRecentBtn = document.getElementById("clearRecentBtn");
 const openVaultBtn = document.getElementById("openVaultBtn");
@@ -53,6 +38,7 @@ const apiBaseInput = document.getElementById("apiBaseInput");
 const saveSettingsBtn = document.getElementById("saveSettingsBtn");
 const uploadZone = document.getElementById("uploadZone");
 let pendingCapture = null;
+const EMBED = new URLSearchParams(location.search).get("embed") === "1";
 let recentCapturesCache = [];
 let collectionsCache = [];
 
@@ -65,12 +51,14 @@ async function init() {
     "lastVaultStatus",
     "stayOnPageAfterSave",
     "recentCaptures",
-    "pendingCapture"
+    "pendingCapture",
+    "embedEdit"
   ]);
 
+  // Dev only: run chrome.storage.local.set({ devMode: true }) in the popup console to show the Advanced box.
+  chrome.storage.local.get("devMode").then(({ devMode }) => { document.getElementById("devAdvanced").hidden = devMode !== true; });
   tokenInput.value = data.vaultToken || "";
   apiBaseInput.value = normalizeApiBase(data.apiBase);
-  stayOnPageInput.checked = typeof data.stayOnPageAfterSave === "boolean" ? data.stayOnPageAfterSave : true;
   const statusFromStorage = Boolean(data.lastVaultStatus?.message);
 
   if (data.lastVaultStatus?.message) {
@@ -79,8 +67,12 @@ async function init() {
 
   renderRecent(data.recentCaptures || []);
   await loadCollections();
-  if (data.pendingCapture) renderPendingCapture(data.pendingCapture);
-  if (!data.pendingCapture) {
+  if (EMBED) {
+    document.documentElement.classList.add("embed");
+    if (data.embedEdit) renderPendingCapture(data.embedEdit);
+    try { parent.postMessage({ type: "VAULT_EMBED_READY" }, "*"); } catch (_) {}
+  } else if (data.pendingCapture) renderPendingCapture(data.pendingCapture);
+  if (!data.pendingCapture && !EMBED) {
     await checkServerHealth(apiBaseInput.value, statusFromStorage);
   }
 }
@@ -99,6 +91,31 @@ keepPendingBtn.addEventListener("click", async () => {
 
   const collectionId = collectionInput.value || "all";
   const collectionMeta = collectionMetaForSave(collectionId);
+  if (pendingCapture.editObjectId) {
+    setStatus("Saving details...", "loading");
+    const edit = await chrome.runtime.sendMessage({
+      type: "VAULT_UPDATE_DETAILS",
+      objectId: pendingCapture.editObjectId,
+      title: titleInput.value.trim(),
+      note: parseTagsAndNote(noteInput.value).note,
+      collectionId,
+      collectionName: collectionMeta.collectionName || ""
+    });
+    if (edit?.ok) {
+      pendingCapture = null;
+      captureCard.hidden = true;
+      if (EMBED) {
+        await chrome.storage.local.remove(["embedEdit"]);
+        try { parent.postMessage({ type: "VAULT_DETAILS_SAVED" }, "*"); } catch (_) {}
+      } else {
+        await chrome.runtime.sendMessage({ type: "VAULT_DISMISS_PENDING_CAPTURE" });
+      }
+      setStatus("Details saved", "success");
+      return;
+    }
+    setStatus(edit?.error || "Couldn't save the details.", "error");
+    return;
+  }
   const typed = parseTagsAndNote(noteInput.value);
   const payload = {
     ...pendingCapture,
@@ -132,7 +149,7 @@ keepPendingBtn.addEventListener("click", async () => {
   setStatus(response?.error || "Couldn't save this object.", "error");
 });
 
-clearPendingBtn.addEventListener("click", async () => {
+clearPendingBtn?.addEventListener("click", async () => {
   pendingCapture = null;
   captureCard.hidden = true;
   await chrome.runtime.sendMessage({ type: "VAULT_DISMISS_PENDING_CAPTURE" });
@@ -147,11 +164,6 @@ snapshotBtn.addEventListener("click", async () => {
   } else {
     window.close();
   }
-});
-
-stayOnPageInput.addEventListener("change", async () => {
-  await chrome.storage.local.set({ stayOnPageAfterSave: stayOnPageInput.checked });
-  setStatus(stayOnPageInput.checked ? "Saving will keep you on the page." : "Saving will open the saved object in a new tab.", "success");
 });
 
 saveSettingsBtn.addEventListener("click", async () => {
@@ -275,6 +287,10 @@ function renderPendingCapture(capture) {
   captureSource.textContent = host(capture.sourceUrl || capture.captureContext?.linkUrl || capture.captureContext?.pageUrl || "") || "Browser capture";
   capturePreview.innerHTML = previewMarkup(capture);
   renderDuplicateHint(capture);
+  const editing = Boolean(capture.editObjectId);
+  keepPendingBtn.querySelector("span").textContent = editing ? "Save" : "Keep in Vault";
+  document.getElementById("keepAllRow").hidden = editing;
+  if (editing) { duplicateHint.hidden = true; captureType.textContent = "Kept — add details"; }
 }
 
 function renderDuplicateHint(capture) {
@@ -604,32 +620,32 @@ function collectionMetaForSave(collectionId) {
 
 // ---------------------------------------------------------------- Phase 11: quick keep, undo, queue, Keep All, connect
 const quickKeepInput = document.getElementById("quickKeepInput");
-const keepPageBtn = document.getElementById("keepPageBtn");
 const keepAllBtn = document.getElementById("keepAllBtn");
 const keepAllLabel = document.getElementById("keepAllLabel");
 const quickCard = document.getElementById("quickCard");
 const queueRow = document.getElementById("queueRow");
 const connectText = document.getElementById("connectText");
 const disconnectBtn = document.getElementById("disconnectBtn");
-const smartDetectInput = document.getElementById("smartDetectInput");
-const hoverKeepInput = document.getElementById("hoverKeepInput");
 let quickTimer = 0;
 
 async function initPhase11() {
-  const s = await chrome.storage.local.get(["quickKeep", "vaultToken", "smartDetect", "hoverKeep", "vaultQueue"]);
-  quickKeepInput.checked = s.quickKeep === true;
-  smartDetectInput.checked = s.smartDetect === true;
-  hoverKeepInput.checked = s.hoverKeep === true;
-  hoverKeepInput.disabled = !smartDetectInput.checked;
-  renderConnect(Boolean(s.vaultToken));
+  const s = await chrome.storage.local.get(["quickKeep", "vaultToken", "vaultUserName", "smartDetect", "hoverKeep", "vaultQueue"]);
+  quickKeepInput.checked = quickKeepEnabled(s.quickKeep);
+  renderConnect(Boolean(s.vaultToken), s.vaultUserName || "");
   renderQueue(s.vaultQueue || []);
   chrome.runtime.sendMessage({ type: "VAULT_QUEUE_RETRY" }).catch(() => {});
   refreshKeepAllCount();
 }
 
-function renderConnect(connected) {
-  connectText.textContent = connected ? "Connected to your Vault" : "Not connected \u2014 open A+ Vault and log in once";
+let connectedName = "";
+function renderConnect(connected, name) {
+  if (typeof name === "string") connectedName = name;
+  connectText.textContent = connected ? (connectedName || "Connected to your Vault") : "Not connected";
+  connectText.title = connected ? "Connected to your Vault" : "";
   disconnectBtn.hidden = !connected;
+  document.querySelector(".popup")?.classList.toggle("is-guest", !connected);
+  const gate = document.getElementById("loginGate");
+  if (gate) gate.hidden = connected;
 }
 
 function renderQueue(queue) {
@@ -649,20 +665,7 @@ async function refreshKeepAllCount() {
 
 quickKeepInput.addEventListener("change", async () => {
   await chrome.storage.local.set({ quickKeep: quickKeepInput.checked });
-  setStatus(quickKeepInput.checked ? "Quick keep is on: one click saves to your last collection." : "Quick keep is off: you will see the form.", "success");
-});
-
-keepPageBtn.addEventListener("click", async () => {
-  setStatus("Saving to Vault...", "loading");
-  const response = await chrome.runtime.sendMessage({ type: "VAULT_KEEP_THIS_PAGE" });
-  if (response?.mode === "quick" && response.ok) {
-    hideStatus();
-    showQuickCard(response.last);
-  } else if (response?.mode === "panel") {
-    hideStatus();
-  } else {
-    setStatus(response?.error || "Couldn't save this page.", "error");
-  }
+  setStatus(quickKeepInput.checked ? "Saving instantly: add details afterwards." : "You will see the form before saving.", "success");
 });
 
 keepAllBtn.addEventListener("click", async () => {
@@ -697,17 +700,16 @@ document.getElementById("quickUndoBtn").addEventListener("click", async () => {
 document.getElementById("quickEditBtn").addEventListener("click", async () => {
   clearTimeout(quickTimer);
   const { lastQuickKeep } = await chrome.storage.local.get(["lastQuickKeep"]);
-  if (!lastQuickKeep?.payload) return;
-  await chrome.runtime.sendMessage({ type: "VAULT_UNDO_LAST" }); // the full panel saves a fresh copy, so nothing is duplicated
+  if (!lastQuickKeep?.objectId) return;
   quickCard.hidden = true;
-  renderPendingCapture({ ...lastQuickKeep.payload, collectionId: lastQuickKeep.payload.collectionId || "all" });
+  renderPendingCapture({ ...(lastQuickKeep.payload || {}), title: lastQuickKeep.title || lastQuickKeep.payload?.title || "", note: "", collectionId: "all", editObjectId: lastQuickKeep.objectId });
 });
 
 document.getElementById("quickOffBtn").addEventListener("click", async () => {
   quickKeepInput.checked = false;
   await chrome.storage.local.set({ quickKeep: false });
   quickCard.hidden = true;
-  setStatus("Quick keep is off.", "success");
+  setStatus("You will see the form before saving.", "success");
 });
 
 document.getElementById("queueRetryBtn").addEventListener("click", async () => {
@@ -726,36 +728,32 @@ disconnectBtn.addEventListener("click", async () => {
   await chrome.runtime.sendMessage({ type: "VAULT_DISCONNECT" });
   tokenInput.value = "";
   renderConnect(false);
-  setStatus("Disconnected. Open A+ Vault and log in to connect again.", "success");
-});
-
-smartDetectInput.addEventListener("change", async () => {
-  const origins = ["https://*/*", "http://*/*"];
-  if (smartDetectInput.checked) {
-    const granted = await chrome.permissions.request({ origins });
-    if (!granted) { smartDetectInput.checked = false; return; }
-    try {
-      await chrome.scripting.registerContentScripts([{ id: "vault-smart-detect", matches: origins, js: ["content.js", "content-keep.js"], runAt: "document_idle", persistAcrossSessions: true }]);
-    } catch (_) {}
-    await chrome.storage.local.set({ smartDetect: true });
-    hoverKeepInput.disabled = false;
-  } else {
-    try { await chrome.scripting.unregisterContentScripts({ ids: ["vault-smart-detect"] }); } catch (_) {}
-    try { await chrome.permissions.remove({ origins }); } catch (_) {}
-    await chrome.storage.local.set({ smartDetect: false, hoverKeep: false });
-    hoverKeepInput.checked = false;
-    hoverKeepInput.disabled = true;
-  }
-});
-
-hoverKeepInput.addEventListener("change", async () => {
-  await chrome.storage.local.set({ hoverKeep: hoverKeepInput.checked });
+  
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   if (changes.vaultQueue) renderQueue(changes.vaultQueue.newValue || []);
   if (changes.vaultToken) renderConnect(Boolean(changes.vaultToken.newValue));
+  if (changes.vaultUserName) renderConnect(true, changes.vaultUserName.newValue || "");
 });
 
 initPhase11();
+
+document.addEventListener("click", event => {
+  const btn = event.target.closest("[data-info]");
+  if (!btn) return;
+  const panel = document.querySelector(`[data-info-panel="${btn.dataset.info}"]`);
+  if (!panel) return;
+  const open = panel.hidden;
+  document.querySelectorAll("[data-info-panel]").forEach(p => { p.hidden = true; });
+  document.querySelectorAll("[data-info]").forEach(b => b.setAttribute("aria-expanded", "false"));
+  panel.hidden = !open;
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+});
+
+document.getElementById("loginBtn")?.addEventListener("click", async () => {
+  const { apiBase } = await chrome.storage.local.get(["apiBase"]);
+  await chrome.tabs.create({ url: `${normalizeApiBase(apiBase || apiBaseInput.value)}/vault?login=1&from=ext` });
+  window.close();
+});

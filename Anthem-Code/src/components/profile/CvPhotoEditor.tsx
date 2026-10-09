@@ -93,7 +93,7 @@ export default function CvPhotoEditor({
         )}
       >
         {preview ? (
-          <img src={preview} alt="" className="h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={preview} alt="" className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-brand text-white text-2xl font-semibold">
             {initials}

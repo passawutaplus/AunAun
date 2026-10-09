@@ -98,7 +98,7 @@ export function HireInviteFieldList({
           <div className="mt-1 flex gap-2 flex-wrap">
             {safeAttachments.map((url) => (
               <a key={url} href={url} target="_blank" rel="noopener noreferrer" title="ภาพอ้างอิง">
-                <img
+                <img loading="lazy" decoding="async"
                   src={url}
                   alt=""
                   className={cn(thumb, "rounded-lg object-cover border border-border/70")}

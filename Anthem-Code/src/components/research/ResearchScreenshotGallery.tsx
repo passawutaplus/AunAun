@@ -76,7 +76,7 @@ const ResearchScreenshotGallery = ({ screenshots }: Props) => {
                 </DialogDescription>
               ) : null}
               <div className="overflow-hidden rounded-lg border border-border bg-muted/20">
-                <img
+                <img loading="lazy" decoding="async"
                   src={active.src}
                   alt={active.alt}
                   className="max-h-[75vh] w-full object-contain"

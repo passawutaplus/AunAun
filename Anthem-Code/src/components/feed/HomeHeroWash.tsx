@@ -1,24 +1,77 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
+import { ScrollBlur } from "@/components/ScrollBlur";
 import { cn } from "@/lib/utils";
 
 const NAV_H = 56;
 
+const GRAIN =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.55'/></svg>\")";
+
 /**
- * Soft brand wash behind the home hero: expands while scrolling the hero,
- * then fades out as the project toolbar / cards reach the sticky header.
+ * Paper wash and film grain for the home feed, plus a progressive blur
+ * at the top and bottom edges (Scroll Blur by Aki). The wash fades as the feed arrives.
  */
-const HomeHeroWash = ({ className }: { className?: string }) => {
+const BOTTOM_BLUR_FADE_MS = 1100;
+
+const HomeHeroWash = ({
+  className,
+  hideBottomBlur = false,
+}: {
+  className?: string;
+  /** Projects feed has no bottom scroll blur. */
+  hideBottomBlur?: boolean;
+}) => {
   const reduced = useReducedMotion();
   const [scale, setScale] = useState(1);
   const [opacity, setOpacity] = useState(1);
+  const bottomBlurRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let raf = 0;
+    let lastY = window.scrollY;
+    let idleTimer = 0;
+    let blurOn = false;
+    const el = bottomBlurRef.current;
+
+    const showBottomBlur = () => {
+      if (!el) return;
+      window.clearTimeout(idleTimer);
+      if (!blurOn) {
+        blurOn = true;
+        const opacityNow = getComputedStyle(el).opacity;
+        el.getAnimations().forEach((anim) => anim.cancel());
+        el.animate(
+          [
+            { transform: "translateY(100%)", opacity: opacityNow },
+            { transform: "translateY(0)", opacity: 1 },
+          ],
+          { duration: 360, easing: "ease-out", fill: "forwards" },
+        );
+      }
+      idleTimer = window.setTimeout(hideBottomBlur, 200);
+    };
+
+    const hideBottomBlur = () => {
+      if (!el || !blurOn) return;
+      blurOn = false;
+      const opacityNow = getComputedStyle(el).opacity;
+      el.getAnimations().forEach((anim) => anim.cancel());
+      el.animate(
+        [
+          { transform: "translateY(0)", opacity: opacityNow },
+          { transform: "translateY(0)", opacity: 0 },
+        ],
+        { duration: BOTTOM_BLUR_FADE_MS, easing: "linear", fill: "forwards" },
+      );
+    };
+
     const update = () => {
       const hero = document.querySelector<HTMLElement>("[data-feed-hero]");
       const toolbar = document.querySelector<HTMLElement>("[data-feed-toolbar]");
       const y = window.scrollY;
+      const delta = y - lastY;
+      lastY = y;
       const heroH = hero?.offsetHeight ?? window.innerHeight;
       const nextScale = reduced ? 1 : 1 + Math.min(1, y / Math.max(heroH * 0.62, 1)) * 0.85;
 
@@ -29,6 +82,12 @@ const HomeHeroWash = ({ className }: { className?: string }) => {
         const end = (desktop ? NAV_H : 0) + 28;
         const start = Math.max(end + 80, window.innerHeight * 0.42);
         nextOpacity = Math.max(0, Math.min(1, (top - end) / (start - end)));
+      }
+
+      if (!reduced && delta > 2) showBottomBlur();
+      else if (delta < -24) {
+        window.clearTimeout(idleTimer);
+        hideBottomBlur();
       }
 
       setScale(nextScale);
@@ -45,40 +104,58 @@ const HomeHeroWash = ({ className }: { className?: string }) => {
     window.addEventListener("resize", onScroll);
     return () => {
       cancelAnimationFrame(raf);
+      window.clearTimeout(idleTimer);
+      bottomBlurRef.current?.getAnimations().forEach((anim) => anim.cancel());
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
   }, [reduced]);
 
-  if (opacity <= 0.01) return null;
-
   return (
-    <div
-      className={cn(
-        "pointer-events-none fixed inset-x-0 top-0 z-0 h-[92vh] overflow-hidden",
-        className,
+    <>
+      <div
+        className={cn("pointer-events-none fixed inset-0 z-[6]", className)}
+        aria-hidden
+        style={{
+          backgroundImage: GRAIN,
+          backgroundSize: "180px 180px",
+          opacity: 0.16,
+          mixBlendMode: "multiply",
+        }}
+      />
+
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-24" aria-hidden>
+        <ScrollBlur direction="top" blur={12} layers={4} />
+      </div>
+
+      {hideBottomBlur ? null : (
+        <div
+          ref={bottomBlurRef}
+          className="pointer-events-none fixed inset-x-0 bottom-0 z-20 h-24"
+          style={{ opacity: 0, transform: "translateY(100%)" }}
+          aria-hidden
+        >
+          <ScrollBlur direction="bottom" blur={12} layers={4} />
+        </div>
       )}
-      aria-hidden
-    >
-      <div
-        className="absolute left-1/2 top-[-22%] h-[78vw] w-[110vw] max-h-[46rem] max-w-[72rem] origin-top"
-        style={{
-          opacity,
-          transform: `translateX(-46%) scale(${scale})`,
-          background:
-            "radial-gradient(ellipse at 58% 32%, hsl(18 100% 72% / 0.42) 0%, hsl(14 100% 55% / 0.16) 36%, transparent 68%)",
-        }}
-      />
-      <div
-        className="absolute left-1/2 top-[-18%] h-[62vw] w-[86vw] max-h-[38rem] max-w-[54rem] origin-top"
-        style={{
-          opacity: opacity * 0.85,
-          transform: `translateX(-62%) scale(${1 + (scale - 1) * 0.7})`,
-          background:
-            "radial-gradient(ellipse at 40% 28%, hsl(36 100% 78% / 0.28) 0%, hsl(22 100% 70% / 0.1) 42%, transparent 70%)",
-        }}
-      />
-    </div>
+
+      {opacity > 0.01 ? (
+        <div
+          className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[70vh] overflow-hidden"
+          aria-hidden
+        >
+          <div
+            className="absolute left-1/2 top-[-18%] h-[70vw] w-[100vw] max-h-[40rem] max-w-[68rem] origin-top"
+            style={{
+              opacity: opacity * 0.9,
+              transform: `translateX(-50%) scale(${scale})`,
+              background:
+                "radial-gradient(ellipse at 50% 28%, rgba(229,228,226,0.95) 0%, rgba(188,186,180,0.28) 42%, transparent 70%)",
+            }}
+          />
+        </div>
+      ) : null}
+    </>
   );
 };
 

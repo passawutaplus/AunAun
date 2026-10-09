@@ -2,6 +2,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { notifyAnthem } from "@/lib/notifyAnthem";
+import { createBatchLoader } from "@/lib/batchLoader";
+
+type FollowSummary = { followers: number; following: number; isFollowing: boolean };
+
+const followSummaryLoader = createBatchLoader<FollowSummary>(async (ids) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("follow_summary", { ids });
+  if (error || !Array.isArray(data)) return null;
+  return new Map(
+    (data as { user_id: string; followers: number; following: number; is_following: boolean }[]).map((r) => [
+      r.user_id,
+      { followers: r.followers, following: r.following, isFollowing: r.is_following },
+    ]),
+  );
+});
 
 export const useFollowState = (followingId: string | undefined) => {
   const { user } = useAuth();
@@ -11,6 +26,8 @@ export const useFollowState = (followingId: string | undefined) => {
     queryKey: ["follow-counts", followingId],
     enabled: !!followingId,
     queryFn: async () => {
+      const batched = await followSummaryLoader.load(followingId!);
+      if (batched) return { followers: batched.followers, following: batched.following };
       const [followers, following] = await Promise.all([
         supabase.from("follows").select("follower_id", { count: "exact", head: true }).eq("following_id", followingId!),
         supabase.from("follows").select("following_id", { count: "exact", head: true }).eq("follower_id", followingId!),
@@ -23,6 +40,8 @@ export const useFollowState = (followingId: string | undefined) => {
     queryKey: ["is-following", followingId, user?.id],
     enabled: !!followingId && !!user?.id,
     queryFn: async () => {
+      const batched = await followSummaryLoader.load(followingId!);
+      if (batched) return batched.isFollowing;
       const { data, error } = await supabase
         .from("follows")
         .select("follower_id")

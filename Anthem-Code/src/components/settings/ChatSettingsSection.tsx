@@ -48,7 +48,7 @@ function AutoReplyPreviewImage({ path }: { path: string | null }) {
     return <div className="mt-2 h-24 w-full max-w-[200px] rounded-xl bg-muted animate-pulse" />;
   }
   return (
-    <img
+    <img loading="lazy" decoding="async"
       src={src}
       alt=""
       className="mt-2 h-24 w-full max-w-[200px] rounded-xl object-cover border border-border"

@@ -100,9 +100,13 @@ export const fadeUpTransition = (delay = 0): Transition => ({
 });
 
 /** Route enter — short fade/slide; skip exit to keep navigations snappy on mobile. */
+/**
+ * Opacity only: a transform on the page wrapper becomes the containing block for every
+ * `position: fixed` child (hero wash, sticky bars) and makes them jump when it is removed.
+ */
 export const pageEnterVariants: Variants = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0 },
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
 };
 
 export const pageEnterTransition: Transition = {

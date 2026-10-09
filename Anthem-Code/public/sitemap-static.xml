@@ -3,82 +3,82 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
-    <loc>https://aplus1.app/</loc>
+    <loc>https://samecor.com/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/forum</loc>
+    <loc>https://samecor.com/forum</loc>
     <changefreq>daily</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/forum/c/announcements</loc>
+    <loc>https://samecor.com/forum/c/announcements</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/forum/c/help</loc>
+    <loc>https://samecor.com/forum/c/help</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/forum/c/bug</loc>
+    <loc>https://samecor.com/forum/c/bug</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/forum/c/idea</loc>
+    <loc>https://samecor.com/forum/c/idea</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/forum/c/feedback</loc>
+    <loc>https://samecor.com/forum/c/feedback</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/legal/privacy</loc>
+    <loc>https://samecor.com/legal/privacy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/legal/terms</loc>
+    <loc>https://samecor.com/legal/terms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/legal/payment-refund</loc>
+    <loc>https://samecor.com/legal/payment-refund</loc>
     <changefreq>monthly</changefreq>
     <priority>0.35</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/legal/service-agreement</loc>
+    <loc>https://samecor.com/legal/service-agreement</loc>
     <changefreq>monthly</changefreq>
     <priority>0.35</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/legal/cookies</loc>
+    <loc>https://samecor.com/legal/cookies</loc>
     <changefreq>monthly</changefreq>
     <priority>0.2</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/legal/rights</loc>
+    <loc>https://samecor.com/legal/rights</loc>
     <changefreq>monthly</changefreq>
     <priority>0.2</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/legal/ip</loc>
+    <loc>https://samecor.com/legal/ip</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/legal/community</loc>
+    <loc>https://samecor.com/legal/community</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://aplus1.app/legal/copyright-report</loc>
+    <loc>https://samecor.com/legal/copyright-report</loc>
     <changefreq>monthly</changefreq>
     <priority>0.2</priority>
   </url>

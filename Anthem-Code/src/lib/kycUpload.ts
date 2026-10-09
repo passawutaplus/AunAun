@@ -10,6 +10,23 @@ const COMPRESS_MAX_EDGE = 2200;
 
 export type KycDocType = "id_front" | "id_back" | "selfie" | "bank_book";
 
+/**
+ * KYC documents (ID card, selfie, bank book) live in a PRIVATE bucket and are only ever read through
+ * short-lived signed URLs. Path: `<userId>/<docType>/<uuid>.<ext>`.
+ * Documents uploaded before 2026-10-09 are in the public `project-media` bucket under `anthem/kyc/…`
+ * until scripts/migrate-kyc-to-private-bucket.mjs has moved them; reads keep working for both.
+ */
+export const KYC_BUCKET = "kyc-documents" as const;
+const LEGACY_KYC_PREFIX = "anthem/kyc/";
+
+export function kycStoragePath(userId: string, docType: KycDocType, ext: "jpg" | "pdf", id: string = crypto.randomUUID()): string {
+  return `${userId}/${docType}/${id}.${ext}`;
+}
+
+export function kycBucketForPath(storagePath: string): string {
+  return storagePath.startsWith(LEGACY_KYC_PREFIX) ? SHARED_MEDIA_BUCKET : KYC_BUCKET;
+}
+
 export const KYC_ALLOWED_MIME = [
   "image/jpeg",
   "image/jpg",
@@ -89,10 +106,10 @@ export async function uploadKycDocument(
   const mime = normalizeMime(file);
 
   if (mime === "application/pdf") {
-    const path = `anthem/kyc/${userId}/${docType}/${crypto.randomUUID()}.pdf`;
+    const path = kycStoragePath(userId, docType, "pdf");
     const { error } = await sharedStorage.storage
-      .from(SHARED_MEDIA_BUCKET)
-      .upload(path, file, { contentType: "application/pdf", upsert: true });
+      .from(KYC_BUCKET)
+      .upload(path, file, { contentType: "application/pdf", upsert: false });
     if (error) throw error;
     return path;
   }
@@ -106,17 +123,17 @@ export async function uploadKycDocument(
     initialQuality: 0.88,
   });
 
-  const path = `anthem/kyc/${userId}/${docType}/${crypto.randomUUID()}.jpg`;
+  const path = kycStoragePath(userId, docType, "jpg");
   const { error } = await sharedStorage.storage
-    .from(SHARED_MEDIA_BUCKET)
-    .upload(path, compressed, { contentType: "image/jpeg", upsert: true });
+    .from(KYC_BUCKET)
+    .upload(path, compressed, { contentType: "image/jpeg", upsert: false });
   if (error) throw error;
   return path;
 }
 
 export async function getKycSignedUrl(storagePath: string, expiresIn = 3600): Promise<string | null> {
   const { data, error } = await sharedStorage.storage
-    .from(SHARED_MEDIA_BUCKET)
+    .from(kycBucketForPath(storagePath))
     .createSignedUrl(storagePath, expiresIn);
   if (error) return null;
   return data.signedUrl;

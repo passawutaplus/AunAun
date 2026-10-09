@@ -8,6 +8,7 @@ import {
 import { snapshotFees, satangToThb, thbToSatang } from "@/lib/payments/fees";
 import { evaluateManualPayout, PAYOUT_MIN_SATANG, bangkokMonthKey } from "@/lib/payments/payoutPolicy";
 import type { HireOrderStatus } from "@/lib/payments/types";
+import { bangkokYmd } from "@/lib/format";
 
 export type HireWalletReceipt = {
   kind: "receipt" | "platform_fee_receipt";
@@ -204,15 +205,6 @@ export function buildHireLedgerRows(
     return tb - ta;
   });
   return rows;
-}
-
-function bangkokYmd(date: Date): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Bangkok",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
 }
 
 function addCalendarDays(ymd: string, days: number): string {

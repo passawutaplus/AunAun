@@ -212,7 +212,7 @@ export const MARKETING_PLATFORMS: MarketingPlatform[] = [
 ];
 
 export const MARKETING_BUSINESS_PRESETS = [
-  "Aplus1 Platform Growth",
+  "SAMECOR Platform Growth",
   "Creator Acquisition",
   "Brand / Hiring Lead Gen",
   "Studio & Collab Growth",

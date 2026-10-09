@@ -119,9 +119,9 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
   };
 
   const addOther = () => {
-    const t = otherTitle.trim();
+    const title = otherTitle.trim();
     const href = toStoredUrl(otherUrl);
-    if (!t) {
+    if (!title) {
       toast.error(t.enterChannel);
       return;
     }
@@ -129,7 +129,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
       toast.error(t.enterLink);
       return;
     }
-    if (resolveContactSocialPlatform(t)) {
+    if (resolveContactSocialPlatform(title)) {
       toast.error(t.channelExists);
       return;
     }
@@ -137,7 +137,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
       toast.error(t.maxLinks(MAX_LINKS));
       return;
     }
-    onChange([...value, { id: newId(), title: t.slice(0, 60), url: href }]);
+    onChange([...value, { id: newId(), title: title.slice(0, 60), url: href }]);
     setOtherTitle("");
     setOtherUrl("");
   };

@@ -1,7 +1,22 @@
-# Aplus1 Research + Product Handoff For Cursor
+# SAMECOR Research + Product Handoff For Cursor
 
-Updated: 2026-07-03  
-Purpose: Give Cursor one compact package to understand Aplus1's research, positioning, UX direction, and implementation priorities.
+Updated: 2026-10-02  
+Public name: **SAMECOR** (code folder remains `Anthem-Code/`; production host is `samecor.com`, with `aplus1.app` redirecting there).  
+Purpose: Give Cursor one compact package to understand SAMECOR's research, positioning, UX direction, and implementation priorities.
+
+## Brand (locked)
+
+SAMECOR = SAME + CORE. Different people, one shared core. The work is the identity. The platform connects that work to people, projects, and what comes next.
+
+| Layer | Copy |
+|---|---|
+| Name | SAMECOR |
+| Tagline | You Create. We Connect. |
+| Journey | Create your profile. Connect through your work. Discover new opportunities. |
+| Promise | 1 Profile. 100+ Opportunities. |
+| Line | Your work says who you are. SAMECOR connects it to what’s next. |
+
+Do not use "Your Create". Do not treat "1 Profile. 100+ Opportunities." as the tagline. The COR expansion (Creator / Opportunity / Relationship) stays internal and does not appear as on-screen copy.
 
 ## Start Here
 
@@ -19,7 +34,7 @@ Use the remaining research files in `Anthem-Code/docs/research/` as references w
 
 ## Product Thesis
 
-Aplus1 should not be treated as another freelance marketplace or job board.
+SAMECOR should not be treated as another freelance marketplace or job board.
 
 The core thesis is:
 
@@ -33,7 +48,7 @@ Use "โอกาส" as the top-level product concept. Use "งาน" only whe
 
 Primary positioning:
 
-> ผลงานจริง พาไปเจอโอกาสใหม่
+> You Create. We Connect.
 
 Primary MVP loop:
 

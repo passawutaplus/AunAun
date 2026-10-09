@@ -1,5 +1,10 @@
 /** Small pure helpers for Quick/Full keep, batches and text-fragment links (phase 11.A/D/H). */
 
+/** Saving instantly is the default: only an explicit `false` (the user chose "ask me first") turns it off. */
+export function quickKeepEnabled(stored) {
+  return stored !== false;
+}
+
 /** Quick keep ON saves immediately; OFF opens the full panel. A page with no usable target always opens the panel. */
 export function decideKeep({ quickKeep = false, hasTarget = true } = {}) {
   return quickKeep === true && hasTarget ? "save-now" : "open-panel";

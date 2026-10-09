@@ -153,7 +153,7 @@ export default function FeedbackComposer() {
           </button>
               <h2 className="text-xl font-bold tracking-tight">Customer Review</h2>
               <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-                บอกประสบการณ์ที่ใช้ Aplus1 — บั๊ก ไอเดีย หรือหน้าพัง แล้วแคปหน้าจอชี้จุดได้
+                บอกประสบการณ์ที่ใช้ SAMECOR — บั๊ก ไอเดีย หรือหน้าพัง แล้วแคปหน้าจอชี้จุดได้
               </p>
         </div>
 
@@ -242,7 +242,7 @@ export default function FeedbackComposer() {
                         key={shot.id}
                         className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-2 py-2"
                       >
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={shot.dataUrl}
                           alt=""
                           className="h-14 w-[4.5rem] shrink-0 rounded object-cover"

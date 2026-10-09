@@ -46,7 +46,7 @@ export default function BillingSettingsPanel({ userId, profile, onSaved }: Props
           <h2 className="font-semibold text-foreground">เอกสาร & Billing</h2>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          ข้อมูลชุดนี้ใช้กับงานจ้างบน Aplus1 — ใบเสนอราคา · ใบแจ้งหนี้ · ใบเสร็จ / ใบกำกับภาษี
+          ข้อมูลชุดนี้ใช้กับงานจ้างบน SAMECOR — ใบเสนอราคา · ใบแจ้งหนี้ · ใบเสร็จ / ใบกำกับภาษี
           และการรับเงินค่าจ้าง (บัญชีธนาคารจาก KYC)
         </p>
         <div className="grid sm:grid-cols-2 gap-2">

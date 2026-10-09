@@ -19,7 +19,7 @@ export const CollabRequestEmail = ({
   projectTitle = 'ผลงานในฟีด',
   collabTypes = '',
   message = '',
-  actionUrl = 'https://aplus1.app/portfolio?focus=collab',
+  actionUrl = 'https://samecor.com/portfolio?focus=collab',
 }: CollabRequestEmailProps) => (
   <EmailLayout
     preview={`${senderName} อยากร่วมงาน — ${projectTitle}`}
@@ -31,7 +31,7 @@ export const CollabRequestEmail = ({
   >
     <EmailText>
       สวัสดี {recipientName} — <strong style={{ color: brand.ink }}>{senderName}</strong>{' '}
-      ส่งคำขอร่วมงานผ่าน Aplus1
+      ส่งคำขอร่วมงานผ่าน SAMECOR
     </EmailText>
     <EmailCard>
       <EmailCardLabel>จาก</EmailCardLabel>
@@ -62,7 +62,7 @@ export const CollabRequestEmail = ({
 export const collabRequestTemplate = {
   component: CollabRequestEmail,
   subject: (data: Record<string, unknown>) =>
-    `[Aplus1] คำขอคอลแลปจาก ${(data.senderName as string) ?? 'ครีเอเตอร์'}`,
+    `[SAMECOR] คำขอคอลแลปจาก ${(data.senderName as string) ?? 'ครีเอเตอร์'}`,
   displayName: 'Collab request',
   previewData: {
     recipientName: 'พี่บอส',

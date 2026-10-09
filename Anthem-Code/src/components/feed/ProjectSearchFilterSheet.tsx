@@ -1,20 +1,17 @@
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 import {
   CATEGORY_PARENTS,
   getCategoryParent,
@@ -49,6 +46,8 @@ type Props = {
   onRecentSelect?: (query: string) => void;
 };
 
+const PAPER = '"Iowan Old Style", Palatino, Georgia, serif';
+
 function Chip({
   label,
   active,
@@ -63,10 +62,10 @@ function Chip({
       type="button"
       onClick={onClick}
       className={cn(
-        "px-3 py-1.5 rounded-full text-xs border transition-colors",
+        "rounded-full border px-3 py-1.5 text-xs transition-colors",
         active
-          ? "border-primary bg-primary/10 text-primary"
-          : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
+          ? "border-[#2f2e2c] bg-[#2f2e2c] text-[#f5f5f5]"
+          : "border-[#2f2e2c]/15 bg-white text-[#5c5954] hover:border-[#2f2e2c]/40 hover:text-[#2f2e2c]",
       )}
     >
       {label}
@@ -135,7 +134,7 @@ function FilterBody({
   return (
     <div className="flex flex-col min-h-0 flex-1">
       <div className="relative shrink-0">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b6862]" />
         <input
           ref={inputRef}
           type="search"
@@ -145,35 +144,35 @@ function FilterBody({
             if (e.key === "Enter") onApply();
           }}
           placeholder="ค้นหาชื่อผลงาน เครื่องมือ สไตล์…"
-          className="w-full rounded-2xl bg-secondary border border-border pl-10 pr-10 py-3 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+          className="w-full rounded-full border border-[#2f2e2c]/12 bg-white py-3 pl-10 pr-10 text-sm text-[#2f2e2c] placeholder:text-xs placeholder:font-light placeholder:text-[#2f2e2c]/35 focus:outline-none focus:ring-2 focus:ring-[#2f2e2c]/15"
         />
         {draft.search ? (
           <button
             type="button"
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-background/80"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[#6b6862] hover:bg-[#2f2e2c]/8"
             aria-label="ล้างคำค้น"
             onClick={() => setDraft((p) => ({ ...p, search: "" }))}
           >
-            <X className="w-3.5 h-3.5 text-muted-foreground" />
+            <X className="h-3.5 w-3.5" />
           </button>
         ) : null}
       </div>
 
       {!draft.search.trim() && recentSearches.length > 0 ? (
         <div className="mt-3 shrink-0">
-          <p className="text-[11px] text-muted-foreground mb-1.5">ค้นหาล่าสุด</p>
+          <p className="mb-1.5 text-[11px] text-[#6b6862]">ค้นหาล่าสุด</p>
           <div className="flex flex-wrap gap-1.5">
             {recentSearches.map((q) => (
               <button
                 key={q}
                 type="button"
-                className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs text-foreground hover:bg-secondary/80"
+                className="inline-flex items-center gap-1 rounded-full border border-[#2f2e2c]/10 bg-white px-2.5 py-1 text-xs text-[#2f2e2c] hover:border-[#2f2e2c]/30"
                 onClick={() => {
                   setDraft((p) => ({ ...p, search: q }));
                   onRecentSelect?.(q);
                 }}
               >
-                <Search className="w-3 h-3 text-muted-foreground" aria-hidden />
+                <Search className="h-3 w-3 text-[#6b6862]" aria-hidden />
                 {q}
               </button>
             ))}
@@ -183,7 +182,7 @@ function FilterBody({
 
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain mt-4 space-y-5 pb-2">
         <section>
-          <p className="text-xs font-medium text-muted-foreground mb-2">หมวดใหญ่</p>
+          <p className="mb-2 text-xs font-medium text-[#6b6862]">หมวดใหญ่</p>
           <div className="flex flex-wrap gap-1.5">
             <Chip label="All" active={draft.parentId === "All"} onClick={() => selectParent("All")} />
             {CATEGORY_PARENTS.map((p) => (
@@ -198,7 +197,7 @@ function FilterBody({
         </section>
 
         <section>
-          <p className="text-xs font-medium text-muted-foreground mb-2">หมวดย่อย</p>
+          <p className="mb-2 text-xs font-medium text-[#6b6862]">หมวดย่อย</p>
           {hasParent && subs.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {subs.map((s) => (
@@ -211,7 +210,7 @@ function FilterBody({
               ))}
             </div>
           ) : (
-            <p className="text-[11px] text-muted-foreground/80 min-h-[2rem] flex items-center">
+            <p className="flex min-h-[2rem] items-center text-[11px] text-[#6b6862]/80">
               {hasParent
                 ? "หมวดนี้ยังไม่มีหมวดย่อย"
                 : "เลือกหมวดใหญ่ก่อน เพื่อดูหมวดย่อย"}
@@ -220,23 +219,23 @@ function FilterBody({
         </section>
       </div>
 
-      <div className="shrink-0 pt-3 mt-auto border-t border-border/60 flex items-center gap-2">
+      <div className="mt-auto flex shrink-0 items-center gap-2 border-t border-[#2f2e2c]/10 pt-3">
         {activeExtra > 0 || draft.parentId !== "All" ? (
-          <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={clearAll}>
+          <button type="button" className="rounded-full px-3 py-2 text-sm text-[#5c5954] hover:text-[#2f2e2c]" onClick={clearAll}>
             ล้างทั้งหมด
-          </Button>
+          </button>
         ) : (
-          <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={onClose}>
+          <button type="button" className="rounded-full px-3 py-2 text-sm text-[#5c5954] hover:text-[#2f2e2c]" onClick={onClose}>
             ปิด
-          </Button>
+          </button>
         )}
-        <Button
+        <button
           type="button"
-          className="flex-1 rounded-full bg-gradient-brand text-white hover:opacity-90"
+          className="flex-1 rounded-full bg-[#2f2e2c] py-2.5 text-sm text-[#f5f5f5] hover:bg-[#1c1b19]"
           onClick={onApply}
         >
           {typeof resultCount === "number" ? `ดูผลงาน (${resultCount})` : "ดูผลงาน"}
-        </Button>
+        </button>
       </div>
     </div>
   );
@@ -267,8 +266,9 @@ const ProjectSearchFilterSheet = ({
     onOpenChange(false);
   };
 
-  const title = "ค้นหาและกรองผลงาน";
-  const description = "หมวดใหญ่บนฟีด · เลือกรายละเอียด design & art ที่นี่";
+  const title = "Search and filter projects";
+  const paper =
+    "border-[#e4e1db] bg-[#f5f5f5] text-[#2f2e2c] shadow-[0_28px_80px_-36px_rgba(47,46,44,0.55)] [&>button]:text-[#2f2e2c]";
   const toggleHideAi = () => {
     setDraft((p) => {
       const hideAi = !p.hideAi;
@@ -278,11 +278,8 @@ const ProjectSearchFilterSheet = ({
   };
 
   const titleRow = (
-    <span className="inline-flex items-center gap-2">
-      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-        <SlidersHorizontal className="h-4 w-4" aria-hidden />
-      </span>
-      <span>{title}</span>
+    <span style={{ fontFamily: PAPER }} className="text-[1.65rem] font-medium leading-none tracking-tight text-[#2f2e2c]">
+      {title}
     </span>
   );
 
@@ -291,15 +288,16 @@ const ProjectSearchFilterSheet = ({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="bottom"
-          className="h-[92dvh] rounded-t-2xl p-4 flex flex-col gap-0"
+          overlayClassName="bg-[#2f2e2c]/40"
+          aria-describedby={undefined}
+          className={cn(paper, "flex h-[92dvh] flex-col gap-0 rounded-t-[1.75rem] border-0 p-4")}
         >
-          <SheetHeader className="text-left pb-3 shrink-0">
-            <div className="flex items-start justify-between gap-3">
+          <SheetHeader className="shrink-0 pb-3 text-left">
+            <div className="flex items-start justify-between gap-3 pr-8">
               <div className="min-w-0">
-                <SheetTitle className="text-base">{titleRow}</SheetTitle>
-                <SheetDescription className="text-xs pl-10">{description}</SheetDescription>
+                <SheetTitle className="text-base font-normal">{titleRow}</SheetTitle>
               </div>
-              <HideAiToggle active={draft.hideAi} onToggle={toggleHideAi} className="h-10 w-10 mt-0.5 [&_svg]:h-6 [&_svg]:w-6" />
+              <HideAiToggle active={draft.hideAi} onToggle={toggleHideAi} className="mt-0.5 h-10 w-10 !text-[#2f2e2c] hover:!bg-[#2f2e2c]/8 [&_svg]:h-6 [&_svg]:w-6" />
             </div>
           </SheetHeader>
           <FilterBody
@@ -320,14 +318,17 @@ const ProjectSearchFilterSheet = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-5 sm:rounded-2xl">
-        <DialogHeader className="pb-3 shrink-0 pr-12">
+      <DialogContent
+        overlayClassName="bg-[#2f2e2c]/40"
+        aria-describedby={undefined}
+        className={cn(paper, "flex max-h-[85vh] flex-col gap-0 p-6 sm:max-w-lg sm:rounded-[1.75rem]")}
+      >
+        <DialogHeader className="shrink-0 pb-3 pr-8">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <DialogTitle className="text-base">{titleRow}</DialogTitle>
-              <DialogDescription className="text-xs pl-10">{description}</DialogDescription>
+              <DialogTitle className="text-base font-normal">{titleRow}</DialogTitle>
             </div>
-            <HideAiToggle active={draft.hideAi} onToggle={toggleHideAi} className="h-10 w-10 mt-0.5 [&_svg]:h-6 [&_svg]:w-6" />
+            <HideAiToggle active={draft.hideAi} onToggle={toggleHideAi} className="mt-0.5 h-10 w-10 !text-[#2f2e2c] hover:!bg-[#2f2e2c]/8 [&_svg]:h-6 [&_svg]:w-6" />
           </div>
         </DialogHeader>
         <FilterBody

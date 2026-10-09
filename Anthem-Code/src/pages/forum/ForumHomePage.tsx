@@ -75,7 +75,7 @@ export default function ForumHomePage() {
     <>
       <ForumPageHeader
         title="ชุมชนคนสร้างสรรค์"
-        subtitle="คุยเรื่องแพลตฟอร์ม แจ้งปัญหา เสนอไอเดีย — ช่วยกันพัฒนา Aplus1"
+        subtitle="คุยเรื่องแพลตฟอร์ม แจ้งปัญหา เสนอไอเดีย — ช่วยกันพัฒนา SAMECOR"
       />
 
       {announcements.length > 0 ? (

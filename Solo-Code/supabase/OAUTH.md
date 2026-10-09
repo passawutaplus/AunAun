@@ -14,6 +14,8 @@
 3. **Authorized JavaScript origins** — ต้องมีทุกโดเมนที่ผู้ใช้กดปุ่ม Google:
    - `https://www.solofreelancer.com`
    - `https://solofreelancer.com`
+   - `https://samecor.com`
+   - `https://www.samecor.com`
    - `https://aplus1.app`
    - `https://www.aplus1.app`
    - `https://an1hem.app` (legacy redirect — เก็บชั่วคราว)
@@ -58,6 +60,8 @@ export SUPABASE_ACCESS_TOKEN=sbp_...
 **Production:**
 - `https://solofreelancer.com/**`
 - `https://www.solofreelancer.com/**`
+- `https://samecor.com/**`
+- `https://www.samecor.com/**`
 - `https://aplus1.app/**`
 - `https://www.aplus1.app/**`
 - `https://an1hem.app/**` (legacy)

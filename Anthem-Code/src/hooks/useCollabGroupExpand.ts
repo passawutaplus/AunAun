@@ -8,9 +8,8 @@ import {
   prepareMigratedPlanForGroup,
   type CollabGroupExpandPlanMode,
   type CollabGroupExpandRequestRow,
-  type CollabPlanDocument,
 } from "@/lib/collabGroupExpand";
-import type { CollabPlanDocument as Doc } from "@/lib/collabPlanDoc";
+import type { CollabPlanDocument, CollabPlanDocument as Doc } from "@/lib/collabPlanDoc";
 
 async function notifyMember(input: {
   toUserId: string;

@@ -132,7 +132,7 @@ function ProfileIdentityPanel({
         aria-label="อัปโหลดภาพพื้นหลัง"
       >
         {coverUrl ? (
-          <img src={coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
           <div className="absolute inset-0 bg-gradient-brand opacity-80" />
         )}
@@ -154,7 +154,7 @@ function ProfileIdentityPanel({
           aria-label="อัปโหลดรูปโปรไฟล์"
         >
           {avatarUrl ? (
-            <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={avatarUrl} alt="" className="h-full w-full object-cover" />
           ) : (
             <span className="flex h-full w-full items-center justify-center bg-gradient-brand text-2xl font-semibold tracking-tight text-white">
               {initialsSource.length >= 1 ? (

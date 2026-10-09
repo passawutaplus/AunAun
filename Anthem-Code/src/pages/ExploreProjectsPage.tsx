@@ -235,8 +235,8 @@ const ExploreProjectsPage = () => {
   const seoNoindex = extraTools.length > 0 || shouldNoindexSearchParams(searchParams);
   const seoDesc =
     exploreKind === "tool"
-      ? `ค้นพบผลงานครีเอเตอร์ที่ใช้ ${value} บน Aplus1`
-      : `ค้นพบผลงานแท็ก #${value.replace(/^#+/, "")} บน Aplus1`;
+      ? `ค้นพบผลงานครีเอเตอร์ที่ใช้ ${value} บน SAMECOR`
+      : `ค้นพบผลงานแท็ก #${value.replace(/^#+/, "")} บน SAMECOR`;
 
   return (
     <div className="min-h-screen bg-app-ambient pb-24">

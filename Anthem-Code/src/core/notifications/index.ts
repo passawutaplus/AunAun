@@ -1,5 +1,5 @@
 /**
- * Cross-app notification feed (Aplus1 + So1o).
+ * Cross-app notification feed (SAMECOR + So1o).
  * Backed by shared.notifications, exposed via public.notifications view.
  */
 import { useEffect, useState, useCallback, useMemo } from "react";

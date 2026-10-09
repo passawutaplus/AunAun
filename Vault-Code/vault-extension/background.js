@@ -1,4 +1,4 @@
-import { chunk, buildBatchItems, decideKeep, pickCollection, summarizeBatches } from "./lib/keep.js";
+import { chunk, buildBatchItems, decideKeep, quickKeepEnabled, pickCollection, summarizeBatches } from "./lib/keep.js";
 import { KEEP_ALL_MAX } from "./lib/keep-all.js";
 import { isRetryable, prepareForQueue, queueAdd, queueAfterFailure, queueDue, queueRemove, queueSummary } from "./lib/queue.js";
 
@@ -98,7 +98,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   }
   const capture = await buildSmartCapturePayload(info, tab);
   const { quickKeep: quickKeepOn } = await chrome.storage.local.get(["quickKeep"]);
-  if (decideKeep({ quickKeep: quickKeepOn === true, hasTarget: Boolean(capture?.sourceUrl || capture?.assetUrl || capture?.title) }) === "save-now") {
+  if (decideKeep({ quickKeep: quickKeepEnabled(quickKeepOn), hasTarget: Boolean(capture?.sourceUrl || capture?.assetUrl || capture?.title) }) === "save-now") {
     await quickKeep(capture, tab);
     return;
   }
@@ -154,6 +154,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return;
     }
 
+    if (message?.type === "VAULT_PREPARE_DETAILS") {
+      const { lastQuickKeep } = await chrome.storage.local.get(["lastQuickKeep"]);
+      const id = String(message.objectId || "");
+      if (!lastQuickKeep || lastQuickKeep.objectId !== id || !/^[a-z0-9]{6,64}$/i.test(id)) { sendResponse({ ok: false }); return; }
+      await chrome.storage.local.set({ embedEdit: { ...(lastQuickKeep.payload || {}), title: lastQuickKeep.title || lastQuickKeep.payload?.title || "", note: "", collectionId: "all", editObjectId: id } });
+      sendResponse({ ok: true });
+      return;
+    }
+
+    if (message?.type === "VAULT_ADD_DETAILS") {
+      const { lastQuickKeep } = await chrome.storage.local.get(["lastQuickKeep"]);
+      const id = String(message.objectId || lastQuickKeep?.objectId || "");
+      if (!lastQuickKeep || lastQuickKeep.objectId !== id || !/^[a-z0-9]{6,64}$/i.test(id)) { sendResponse({ ok: false }); return; }
+      await setPendingCapture({ ...(lastQuickKeep.payload || {}), title: lastQuickKeep.title || lastQuickKeep.payload?.title || "", note: "", collectionId: "all", editObjectId: id });
+      await openCapturePopup();
+      sendResponse({ ok: true });
+      return;
+    }
+
+    if (message?.type === "VAULT_UPDATE_DETAILS") {
+      sendResponse(await updateDetails(message));
+      return;
+    }
+
     if (message?.type === "VAULT_UNDO_LAST") {
       const { lastQuickKeep } = await chrome.storage.local.get(["lastQuickKeep"]);
       sendResponse({ ok: lastQuickKeep ? await undoCapture(lastQuickKeep.objectId) : false });
@@ -171,7 +195,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       const payload = await buildSmartCapturePayload({ menuItemId: "keep-page", pageUrl: tab?.url }, tab);
       const { quickKeep: quickKeepOn } = await chrome.storage.local.get(["quickKeep"]);
-      if (decideKeep({ quickKeep: quickKeepOn === true }) === "save-now") {
+      if (decideKeep({ quickKeep: quickKeepEnabled(quickKeepOn) }) === "save-now") {
         const result = await quickKeep(payload, tab);
         const { lastQuickKeep } = await chrome.storage.local.get(["lastQuickKeep"]);
         const { lastVaultStatus } = await chrome.storage.local.get(["lastVaultStatus"]);
@@ -211,7 +235,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message?.type === "VAULT_DISCONNECT") {
-      await chrome.storage.local.remove(["vaultToken", "vaultPairedAt"]);
+      await chrome.storage.local.remove(["vaultToken", "vaultPairedAt", "vaultUserName"]);
       sendResponse({ ok: true });
       return;
     }
@@ -294,8 +318,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
       const current = await chrome.storage.local.get(["vaultToken"]);
       const changed = current.vaultToken !== token;
+      const pairedName = String(message.name || "").slice(0, 120);
+      if (!changed && pairedName) await chrome.storage.local.set({ vaultUserName: pairedName });
       if (changed) {
-        const update = { vaultToken: token, vaultPairedAt: Date.now() };
+        const update = { vaultToken: token, vaultPairedAt: Date.now(), vaultUserName: pairedName };
         const origin = new URL(sender.url || sender.tab?.url || "").origin;
         if (origin.startsWith("https://")) update.apiBase = origin;
         await chrome.storage.local.set(update);
@@ -361,19 +387,57 @@ async function ensureKeepScript(tabId) {
 
 /** Quick keep: save into the last-used collection right away, then show the compact result with Undo. */
 async function quickKeep(payload, tab) {
-  const col = await lastCollection();
+  const col = { id: "all", name: "My Vault" }; // quick keep always lands unsorted; "Add details" files it later
   payload.collectionId = col.id;
   payload.captureContext = Object.assign({}, payload.captureContext || {}, { collectionName: col.name });
+  const pageCanShow = Boolean(tab?.id) && isCaptureableUrl(tab.url);
+  const preview = payload.previewUrl || payload.thumbnailUrl || payload.assetUrl || "";
+  if (pageCanShow) {
+    try {
+      await ensureKeepScript(tab.id);
+      await chrome.tabs.sendMessage(tab.id, { type: "VAULT_TOAST_SAVING", previewUrl: preview });
+    } catch (_) {}
+  }
   await attachCredit(payload, tab);
   const result = await saveCapture(payload, { tabId: tab?.id, silent: true });
   if (result && tab?.id) {
+    const { vaultCollections = [] } = await chrome.storage.local.get(["vaultCollections"]);
     await chrome.storage.local.set({ lastQuickKeep: { objectId: result.objectId, title: result.title, previewUrl: result.previewUrl, collectionName: col.name, at: Date.now(), payload } });
     try {
       await ensureKeepScript(tab.id);
-      await chrome.tabs.sendMessage(tab.id, { type: "VAULT_TOAST_UNDO", message: `Kept in ${col.name}`, objectId: result.objectId && !result.handoff && !result.queued ? result.objectId : null });
+      const live = result.objectId && !result.handoff && !result.queued;
+      await chrome.tabs.sendMessage(tab.id, {
+        type: "VAULT_TOAST_UNDO",
+        message: live ? `Kept in ${col.name}` : "Saved offline \u2014 will send soon",
+        objectId: live ? result.objectId : null,
+        previewUrl: result.previewUrl || preview,
+        title: result.title || payload.title || "",
+        typeLabel: payload.type === "image" ? "Image object" : payload.type === "video" ? "Video object" : payload.type === "link" ? "Link object" : "Object",
+        sourceHost: (() => { try { return new URL(payload.sourceUrl || tab?.url || "").hostname.replace(/^www\./, ""); } catch (_) { return ""; } })(),
+        collections: vaultCollections.filter(c => c && c.id && c.id !== "all" && !c.system).map(c => ({ id: c.id, name: c.name })).slice(0, 60)
+      });
     } catch (_) {}
+  } else if (!result && pageCanShow) {
+    try { await chrome.tabs.sendMessage(tab.id, { type: "VAULT_TOAST_UNDO", message: "Couldn't save. Try again.", objectId: null, previewUrl: preview, ok: false }); } catch (_) {}
   }
   return result;
+}
+
+/** "Add details": change title / note / collection of an item that was just kept (PATCH, owner only on the server). */
+async function updateDetails(message) {
+  const objectId = String(message.objectId || "");
+  const { vaultToken, apiBase } = await getSettings();
+  const { lastQuickKeep } = await chrome.storage.local.get(["lastQuickKeep"]);
+  if (!vaultToken || !/^[a-z0-9]{6,64}$/i.test(objectId) || lastQuickKeep?.objectId !== objectId) return { ok: false, error: "This save can no longer be edited." };
+  const body = { title: String(message.title || "").slice(0, 160), note: String(message.note || "").slice(0, 4000), collectionId: String(message.collectionId || "all"), collectionName: String(message.collectionName || "").slice(0, 80), tags: (Array.isArray(message.tags) ? message.tags : []).map(t => String(t).trim().slice(0, 40)).filter(Boolean).slice(0, 6) };
+  try {
+    const res = await fetchWithTimeout(`${apiBase}/api/vault/captures/${encodeURIComponent(objectId)}`, { method: "PATCH", headers: { Authorization: `Bearer ${vaultToken}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!res.ok) return { ok: false, error: "Couldn't save the details. Try again." };
+    await chrome.storage.local.set({ lastQuickKeep: { ...lastQuickKeep, title: body.title || lastQuickKeep.title, collectionName: body.collectionId === "all" ? "My Vault" : body.collectionName || lastQuickKeep.collectionName } });
+    return { ok: true };
+  } catch (_) {
+    return { ok: false, error: "Couldn't reach Vault. Try again." };
+  }
 }
 
 /** Undo = delete by object id (owner only on the server). Only ids this extension just kept can be undone from a page. */
@@ -839,7 +903,7 @@ async function getSettings() {
   return {
     vaultToken: (settings.vaultToken || "").trim(),
     apiBase: normalizeApiBase(settings.apiBase || DEFAULT_API_BASE),
-    stayOnPageAfterSave: typeof settings.stayOnPageAfterSave === "boolean" ? settings.stayOnPageAfterSave : DEFAULT_STAY_ON_PAGE
+    stayOnPageAfterSave: true
   };
 }
 

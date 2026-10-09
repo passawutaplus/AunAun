@@ -78,7 +78,7 @@ export default function InboxOverviewChart({ variant, rows, loading = false }: P
     variant === "hire" ? hireInboxMetricConfig(hireMetric) : collabInboxMetricConfig(collabMetric);
 
   const granularityOptions = useMemo(
-    () => (bounds ? availableViewGranularities(bounds.from, bounds.to, dateRange.preset) : ["day"]),
+    () => (bounds ? availableViewGranularities(bounds.from, bounds.to, dateRange.preset) : (["day"] as ViewSeriesGranularity[])),
     [bounds, dateRange.preset],
   );
 

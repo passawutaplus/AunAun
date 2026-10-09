@@ -10,19 +10,19 @@ export const OUTREACH_TEMPLATES: Record<
 > = {
   creator_publish: {
     labelTh: "Creator — publish ผลงานแรก",
-    title: "ลอง publish ผลงานแรกบน Aplus1",
+    title: "ลอง publish ผลงานแรกบน SAMECOR",
     body: "โปรไฟล์พร้อมแล้ว — อัปผลงานแรกเพื่อให้แบรนด์และทีมเห็นคุณในฟีด",
     link: "/projects/new",
   },
   hirer_post_job: {
     labelTh: "Hirer — โพสต์งาน",
-    title: "โพสต์งานเพื่อหาครีเอทีฟบน Aplus1",
+    title: "โพสต์งานเพื่อหาครีเอทีฟบน SAMECOR",
     body: "ประกาศจ้างงานฟรี — รับสมัครจากพอร์ตโฟลิโอจริงในชุมชน",
     link: "/hiring",
   },
   referral: {
     labelTh: "Referral — ชวนเพื่อน",
-    title: "ชวนเพื่อนมา Aplus1 รับ PX",
+    title: "ชวนเพื่อนมา SAMECOR รับ PX",
     body: "แชร์ลิงก์ชวนเพื่อน: สมัคร 20px · โพสต์แรก 100px · ผู้ชวนได้ 50px เมื่อเพื่อนทำ first action",
     link: "/?ref=YOUR_CODE",
   },

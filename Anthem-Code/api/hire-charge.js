@@ -2,17 +2,21 @@
  * Create Omise hire charge (PromptPay / card token).
  * POST /api/hire-charge
  *
- * Body: { amountSatang, method, title, quoteId?, hiringRequestId?, conversationId, cardToken? }
+ * Body: { method, title, quoteId | hireOrderId, hiringRequestId?, conversationId, cardToken? }
+ * The amount is always computed server-side from the order/quote; any client amount is ignored.
  * Test-only: { action: "mark_paid", chargeId } when OMISE_MODE=test
  */
 
 import {
+  expectedQuoteChargeSatang,
+  isUuid,
   json,
   makeHireReference,
+  omiseModeFromKey,
   parseJsonBody,
   readEnv,
   requireSupabaseUser,
-  sharedRestGet,
+  restRows,
   supabaseServiceConfig,
 } from "./_helpers.js";
 
@@ -42,40 +46,90 @@ async function omisePost(secretKey, path, body, idempotencyKey) {
   return data;
 }
 
-/** Prefer DB amount for quote/order; verify buyer owns the order. */
-async function resolveAmountSatang({ userId, amountFromClient, quoteId, hireOrderId }) {
-  let amountSatang = amountFromClient;
-  const cfg = supabaseServiceConfig();
-  if (!cfg || (!quoteId && !hireOrderId)) return { amountSatang, error: null };
-
-  try {
-    if (hireOrderId) {
-      const row = await sharedRestGet(
-        cfg,
-        "hire_orders",
-        `id=eq.${encodeURIComponent(hireOrderId)}&select=buyer_pays_satang,buyer_id,status&limit=1`,
-      );
-      if (row?.buyer_id && String(row.buyer_id) !== String(userId)) {
-        return { amountSatang, error: "not_order_buyer" };
-      }
-      if (row?.buyer_pays_satang != null) amountSatang = Number(row.buyer_pays_satang);
-      return { amountSatang, error: null };
-    }
-
-    const row = await sharedRestGet(
+/**
+ * Server-side amount + ownership. The client amount is NEVER used:
+ * every charge must reference a hire order or a quote the caller is the buyer of.
+ * Any DB failure → error (fail-closed).
+ */
+async function resolveCharge({ cfg, userId, quoteId, hireOrderId, hiringRequestId }) {
+  if (hireOrderId) {
+    if (!isUuid(hireOrderId)) return { error: "invalid_hire_order_id", status: 400 };
+    const [order] = await restRows(
       cfg,
-      "hire_quotes",
-      `id=eq.${encodeURIComponent(quoteId)}&select=amount_satang,deposit_percent&limit=1`,
+      "shared",
+      "hire_orders",
+      `id=eq.${hireOrderId}&select=id,buyer_id,status,buyer_pays_satang,balance_due_satang,hiring_request_id,quote_id&limit=1`,
     );
-    if (row?.amount_satang != null) {
-      const job = Number(row.amount_satang);
-      const dep = Math.min(100, Math.max(1, Math.round(Number(row.deposit_percent) || 100)));
-      amountSatang = dep < 100 ? Math.round((job * dep) / 100) : job;
+    if (!order) return { error: "order_not_found", status: 404 };
+    if (String(order.buyer_id) !== String(userId)) return { error: "not_order_buyer", status: 403 };
+
+    let amountSatang;
+    if (order.status === "draft" || order.status === "awaiting_payment") {
+      amountSatang = Number(order.buyer_pays_satang);
+    } else if (order.status === "deposit_paid") {
+      amountSatang = Number(order.balance_due_satang);
+    } else {
+      return { error: "order_not_payable", status: 409 };
     }
-  } catch {
-    /* fall back to client amount */
+    return {
+      amountSatang,
+      hireOrderId: order.id,
+      quoteId: order.quote_id ?? "",
+      hiringRequestId: order.hiring_request_id ?? "",
+    };
   }
-  return { amountSatang, error: null };
+
+  if (!quoteId) return { error: "quote_or_order_required", status: 400 };
+  if (!isUuid(quoteId)) return { error: "invalid_quote_id", status: 400 };
+
+  const [quote] = await restRows(
+    cfg,
+    "shared",
+    "hire_quotes",
+    `id=eq.${quoteId}&select=id,status,expires_at,amount_satang,deposit_percent,wht_enabled,payload,hiring_request_id,conversation_id,created_by&limit=1`,
+  );
+  if (!quote) return { error: "quote_not_found", status: 404 };
+  if (["declined", "expired", "cancelled", "superseded"].includes(String(quote.status))) {
+    return { error: "quote_not_payable", status: 409 };
+  }
+  if (quote.expires_at && Date.parse(quote.expires_at) < Date.now()) {
+    return { error: "quote_expired", status: 409 };
+  }
+  if (String(quote.created_by) === String(userId)) return { error: "cannot_pay_own_quote", status: 403 };
+
+  // Caller must be the client side of the hire.
+  let buyerOk = false;
+  if (quote.hiring_request_id) {
+    const [hr] = await restRows(
+      cfg,
+      "anthem",
+      "hiring_requests",
+      `id=eq.${quote.hiring_request_id}&select=client_id&limit=1`,
+    );
+    buyerOk = !!hr && String(hr.client_id) === String(userId);
+  } else if (quote.conversation_id) {
+    const [conv] = await restRows(
+      cfg,
+      "shared",
+      "conversations",
+      `id=eq.${quote.conversation_id}&select=client_id&limit=1`,
+    );
+    buyerOk = !!conv && String(conv.client_id) === String(userId);
+  }
+  if (!buyerOk) return { error: "not_quote_buyer", status: 403 };
+
+  // A hiringRequestId from the client is only kept when it matches the quote.
+  const hr = quote.hiring_request_id ? String(quote.hiring_request_id) : "";
+  if (hiringRequestId && hr && hiringRequestId !== hr) {
+    return { error: "hiring_request_mismatch", status: 400 };
+  }
+
+  return {
+    amountSatang: expectedQuoteChargeSatang(quote),
+    hireOrderId: "",
+    quoteId: quote.id,
+    hiringRequestId: hr,
+  };
 }
 
 export default async function handler(req, res) {
@@ -93,7 +147,9 @@ export default async function handler(req, res) {
       return json(res, 503, { error: "omise_not_configured" });
     }
 
-    const mode = readEnv("OMISE_MODE") === "live" ? "live" : "test";
+    const modeInfo = omiseModeFromKey(secretKey, readEnv("OMISE_MODE"));
+    if (modeInfo.error) return json(res, 503, { error: modeInfo.error });
+    const mode = modeInfo.mode;
     if (mode === "live" && readEnv("OMISE_MARKETPLACE_APPROVED") !== "true") {
       return json(res, 503, { error: "live_blocked_until_marketplace_approved" });
     }
@@ -104,11 +160,40 @@ export default async function handler(req, res) {
     const body = parseJsonBody(req);
     if (!body) return json(res, 400, { error: "invalid_json" });
 
+    if (body.action === "status") {
+      // Poll a charge the caller created (PromptPay auto-detect). Read-only.
+      const chargeId = String(body.chargeId || "");
+      if (!/^chrg_[A-Za-z0-9_]+$/.test(chargeId)) return json(res, 400, { error: "invalid_charge_id" });
+      const r = await fetch(`https://api.omise.co/charges/${encodeURIComponent(chargeId)}`, {
+        headers: { Authorization: basicAuth(secretKey), "Omise-Version": "2019-05-29" },
+      });
+      const c = await r.json().catch(() => null);
+      if (!r.ok || !c || c.object === "error") return json(res, 404, { error: "charge_not_found" });
+      if (String(c.metadata?.buyer_user_id || "") !== String(user.id)) {
+        return json(res, 403, { error: "not_charge_owner" });
+      }
+      return json(res, 200, {
+        chargeId: c.id,
+        status: c.status,
+        paid: c.paid === true && c.status === "successful",
+        failed: c.status === "failed" || c.status === "expired" || c.status === "reversed",
+      });
+    }
+
     if (body.action === "mark_paid") {
       if (mode !== "test") return json(res, 403, { error: "mark_paid_test_only" });
       const chargeId = String(body.chargeId || "");
-      if (!chargeId.startsWith("chrg_")) {
+      if (!/^chrg_[A-Za-z0-9_]+$/.test(chargeId)) {
         return json(res, 400, { error: "invalid_charge_id" });
+      }
+      // Same ownership rule as action=status: only the buyer who created the charge may mark it paid.
+      const own = await fetch(`https://api.omise.co/charges/${encodeURIComponent(chargeId)}`, {
+        headers: { Authorization: basicAuth(secretKey), "Omise-Version": "2019-05-29" },
+      });
+      const ownCharge = await own.json().catch(() => null);
+      if (!own.ok || !ownCharge || ownCharge.object === "error") return json(res, 404, { error: "charge_not_found" });
+      if (String(ownCharge.metadata?.buyer_user_id || "") !== String(user.id)) {
+        return json(res, 403, { error: "not_charge_owner" });
       }
       const paid = await omisePost(
         secretKey,
@@ -123,15 +208,18 @@ export default async function handler(req, res) {
       });
     }
 
-    const quoteId = body.quoteId != null ? String(body.quoteId) : "";
-    const hireOrderId = body.hireOrderId != null ? String(body.hireOrderId) : "";
-    const { amountSatang, error: amountErr } = await resolveAmountSatang({
+    const cfg = supabaseServiceConfig();
+    if (!cfg) return json(res, 503, { error: "db_not_configured" });
+
+    const resolved = await resolveCharge({
+      cfg,
       userId: user.id,
-      amountFromClient: Number(body.amountSatang),
-      quoteId,
-      hireOrderId,
+      quoteId: body.quoteId != null ? String(body.quoteId) : "",
+      hireOrderId: body.hireOrderId != null ? String(body.hireOrderId) : "",
+      hiringRequestId: body.hiringRequestId != null ? String(body.hiringRequestId) : "",
     });
-    if (amountErr) return json(res, 403, { error: amountErr });
+    if (resolved.error) return json(res, resolved.status || 400, { error: resolved.error });
+    const { amountSatang, quoteId, hireOrderId } = resolved;
 
     if (!Number.isInteger(amountSatang) || amountSatang < 2000) {
       return json(res, 400, { error: "invalid_amount" });
@@ -160,7 +248,7 @@ export default async function handler(req, res) {
     const meta = {
       conversation_id: body.conversationId != null ? String(body.conversationId) : "",
       quote_id: quoteId,
-      hiring_request_id: body.hiringRequestId != null ? String(body.hiringRequestId) : "",
+      hiring_request_id: resolved.hiringRequestId || "",
       hire_order_id: hireOrderId,
       buyer_user_id: String(user.id),
       app: "aplus1",
@@ -171,7 +259,7 @@ export default async function handler(req, res) {
 
     const idem =
       String(body.idempotencyKey || "").trim() ||
-      `hire-${method}-${amountSatang}-${meta.conversation_id || "x"}-${Date.now()}`;
+      `hire-${method}-${hireOrderId || quoteId}-${amountSatang}-${Date.now()}`;
 
     const charge = await omisePost(secretKey, "/charges", params, idem.slice(0, 64));
     const source = charge.source || {};

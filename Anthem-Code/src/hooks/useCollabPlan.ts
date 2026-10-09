@@ -431,7 +431,7 @@ export function useCollabPlan(target: PlanTarget, enabled = true) {
     if (doc.status !== "step_locked" || !stepAcksComplete(doc.acks, doc.currentStep, memberIds)) {
       throw new Error("ต้องให้สมาชิกทุกคนติ๊กยืนยันก่อน");
     }
-    const next = nextStepId(doc.currentStep);
+    const next = nextStepId(doc.currentStep, (draft ?? doc.payload).quick);
     if (!next) return;
     const { error } = await sharedDb.from("collab_plans" as never).upsert(
       {
@@ -465,7 +465,7 @@ export function useCollabPlan(target: PlanTarget, enabled = true) {
     if (doc.status === "change_pending") {
       throw new Error("มีคำขอแก้ไขค้างอยู่ — อนุมัติหรือยกเลิกก่อน");
     }
-    const next = nextStepId(doc.currentStep);
+    const next = nextStepId(doc.currentStep, (draft ?? doc.payload).quick);
     if (!next) return;
     const payloadToSave = draft ?? doc.payload;
     const { error } = await sharedDb.from("collab_plans" as never).upsert(
@@ -501,7 +501,7 @@ export function useCollabPlan(target: PlanTarget, enabled = true) {
     if (doc.status === "change_pending") {
       throw new Error("มีคำขอแก้ไขค้างอยู่ — อนุมัติหรือยกเลิกก่อน");
     }
-    const prev = prevStepId(doc.currentStep);
+    const prev = prevStepId(doc.currentStep, (draft ?? doc.payload).quick);
     if (!prev) return;
     const payloadToSave = draft ?? doc.payload;
     const { error } = await sharedDb.from("collab_plans" as never).upsert(

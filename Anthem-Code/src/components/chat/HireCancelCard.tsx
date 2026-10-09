@@ -269,7 +269,7 @@ export function HireCancelCard({
                   rel="noreferrer"
                   className="w-10 h-10 rounded-md overflow-hidden border border-border/50 bg-muted"
                 >
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
                 </a>
               ))}
             </div>
@@ -286,7 +286,7 @@ export function HireCancelCard({
           </AlertDialogHeader>
           <div className="space-y-2">
             <Label>เหตุผล</Label>
-            <Select value={rejectReason} onValueChange={setRejectReason}>
+            <Select value={rejectReason} onValueChange={(v) => setRejectReason(v as typeof rejectReason)}>
               <SelectTrigger className="rounded-xl">
                 <SelectValue />
               </SelectTrigger>

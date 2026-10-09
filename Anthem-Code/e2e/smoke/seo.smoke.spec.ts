@@ -7,9 +7,9 @@ import { test, expect } from "@playwright/test";
 test.describe("SEO @public", () => {
   test("home has description and OG meta after hydration", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/aplus1/i);
+    await expect(page).toHaveTitle(/samecor/i);
     await expect(page.locator('meta[name="description"]').first()).toHaveAttribute("content", /.+/);
-    await expect(page.locator('meta[property="og:title"]').first()).toHaveAttribute("content", /Aplus1/i);
+    await expect(page.locator('meta[property="og:title"]').first()).toHaveAttribute("content", /SAMECOR/i);
     await expect(page.locator('meta[name="twitter:card"]').first()).toHaveAttribute(
       "content",
       "summary_large_image",
@@ -22,7 +22,7 @@ test.describe("SEO @public", () => {
     await expect(jsonLd).toHaveCount(1);
     const text = await jsonLd.textContent();
     expect(text).toContain('"@type":"WebSite"');
-    expect(text).toContain("Aplus1");
+    expect(text).toContain("SAMECOR");
   });
 
   test("home has absolute canonical in static HTML", async ({ page }) => {
@@ -30,10 +30,8 @@ test.describe("SEO @public", () => {
     await expect(page.locator('link[rel="canonical"]').first()).toHaveAttribute("href", /^https:\/\//);
   });
 
-  test("hiring page updates title and robots after navigation", async ({ page }) => {
+  test("hiring board is deferred at launch", async ({ page }) => {
     await page.goto("/hiring");
-    await expect(page).toHaveTitle(/หางาน|HIRING|Aplus1/i);
-    await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute("content", "index, follow");
-    await expect(page.locator('meta[property="og:url"]').first()).toHaveAttribute("content", /\/hiring$/);
+    await expect(page.getByRole("heading", { name: "ยังไม่เปิดในเวอร์ชันนี้" })).toBeVisible();
   });
 });

@@ -169,7 +169,7 @@ const Row = ({
             <div className="mt-2 flex flex-wrap gap-2">
               {c.image_urls!.map((url) => (
                 <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block">
-                  <img src={url} alt="" className="max-h-40 rounded-lg border border-border/60 object-cover" />
+                  <img loading="lazy" decoding="async" src={url} alt="" className="max-h-40 rounded-lg border border-border/60 object-cover" />
                 </a>
               ))}
             </div>
@@ -322,7 +322,7 @@ const CommunityCommentSection = ({ postId }: Props) => {
             </div>
             {imageUrls.length > 0 && (
               <div className="relative inline-block">
-                <img src={imageUrls[0]} alt="" className="max-h-32 rounded-lg border border-border/60" />
+                <img loading="lazy" decoding="async" src={imageUrls[0]} alt="" className="max-h-32 rounded-lg border border-border/60" />
                 <button
                   type="button"
                   onClick={() => setImageUrls([])}

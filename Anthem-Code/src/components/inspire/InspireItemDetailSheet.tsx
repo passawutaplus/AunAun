@@ -145,7 +145,7 @@ export function InspireItemDetailSheet({
         {item ? (
           <>
             <div className="relative aspect-[16/11] shrink-0 overflow-hidden bg-muted border-b border-border/50">
-              <img
+              <img loading="lazy" decoding="async"
                 src={item.image_url}
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover"

@@ -118,7 +118,7 @@ export default function StudioLayout({
       {showFooter ? (
         <>
           <div className="h-14 lg:h-6" aria-hidden="true" />
-          <Footer blendTop className="mt-0" />
+          <Footer className="mt-0" />
         </>
       ) : null}
 

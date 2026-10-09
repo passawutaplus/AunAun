@@ -87,7 +87,7 @@ export function CollabInviteFieldList({
           <div className="mt-1 flex flex-wrap gap-2">
             {safeAttachments.map((url) => (
               <a key={url} href={url} target="_blank" rel="noopener noreferrer" title="ภาพแนบ">
-                <img
+                <img loading="lazy" decoding="async"
                   src={url}
                   alt=""
                   className="h-14 w-14 rounded-lg border border-border/70 object-cover"

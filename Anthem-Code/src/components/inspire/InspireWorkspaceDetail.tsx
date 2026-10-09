@@ -205,7 +205,7 @@ export function InspireWorkspaceDetail({ boardId, focusItemId, onDeleted }: Prop
             <div className="relative rounded-2xl overflow-hidden border border-border bg-card">
               {current && (
                 <>
-                  <img src={current.image_url} alt="" className="w-full object-contain max-h-[65vh]" />
+                  <img loading="lazy" decoding="async" src={current.image_url} alt="" className="w-full object-contain max-h-[65vh]" />
                   {isOwner ? (
                     <button
                       type="button"
@@ -241,7 +241,7 @@ export function InspireWorkspaceDetail({ boardId, focusItemId, onDeleted }: Prop
                       className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/50 transition"
                     >
                       {owner.avatar_url ? (
-                        <img src={owner.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                        <img loading="lazy" decoding="async" src={owner.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-muted grid place-items-center">
                           <UserCircle2 className="w-6 h-6 text-muted-foreground" />

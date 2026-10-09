@@ -207,7 +207,7 @@ export function AccountPrivacySection({ embedded = false }: { embedded?: boolean
       )}
 
       <p className={`text-[11px] text-muted-foreground leading-relaxed ${embedded ? "pt-1" : "border-t border-border/40 pt-3"}`}>
-        บัญชี Aplus1 ใช้ร่วมกับ So1o Freelancer — ลบถาวรอาจทำที่{" "}
+        บัญชี SAMECOR ใช้ร่วมกับ So1o Freelancer — ลบถาวรอาจทำที่{" "}
         {isSoloEcosystemEnabled() ? (
           <SoloExternalLink
             href={`${LEGAL_SOLO_URL.replace(/\/$/, "")}/settings`}

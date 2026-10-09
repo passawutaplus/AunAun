@@ -11,7 +11,6 @@ A+ Vault Capture helps you save creative references from websites into your priv
 - right-click **+ Keep in Vault**, **+ Keep all images on page**, **Snapshot to Vault**
 - popup **Keep this page**, **Keep in Vault**, **Keep all images**, **Snapshot**
 - the keyboard shortcut **Alt+Shift+K** (quick keep)
-- optional hover **Keep** buttons (off by default)
 
 For each capture the extension may send: page URL and title, the image/video/link URL you chose, your optional title, note, #tags and collection, **source and credit data found on the page** (author, site name, licence link: saved as information, never as a licence grant), and, for Snapshot only, the cropped image. **Keep all** sends image URLs, not the image files.
 Saved items are private to you by default. Images belong to their owners.
@@ -22,7 +21,7 @@ Saved items are private to you by default. Images belong to their owners.
 
 ## Stored on your device (Chrome local storage)
 
-Your connection token, settings (quick keep, hover keep, smart detection), recent captures (previews), the offline retry queue (up to 50 items; large snapshots are stored as thumbnails only or skipped), your last collection, and a list of image keys you already kept. Use **Disconnect** or remove the extension to clear it.
+Your connection token, settings (quick keep), recent captures (previews), the offline retry queue (up to 50 items; large snapshots are stored as thumbnails only or skipped), your last collection, and a list of image keys you already kept. Use **Disconnect** or remove the extension to clear it.
 
 ## Permissions
 
@@ -34,7 +33,6 @@ Your connection token, settings (quick keep, hover keep, smart detection), recen
 | `scripting` | Inject the picker, snapshot overlay and credit reader on demand |
 | `alarms` | Retry the offline queue every few minutes |
 | Host access: Vault origins only | Talk to the A+ Vault API and pair your login automatically |
-| Optional: all sites | Only if you turn on **Smart image detection on all sites** (asked once, removable any time). Needed for hover buttons and right-click probing without a click first |
 
 The extension does not request the `tabs` permission.
 

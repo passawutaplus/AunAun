@@ -211,6 +211,18 @@ Marketplace/PayFac, holding funds for third parties, recipients + KYC, delayed p
 5. Solo keeps its own Stripe for Solo product only (`Solo-Code/docs/stripe.md`)
 6. Admin: `/admin/finance` · Earnings THB buckets on `/earnings`
 
+## Object shop orders
+
+Physical and file goods use `anthem.object_orders`, not `hire_orders`.
+
+1. Buyer places an order. A database trigger snapshots `price_thb × qty` into satang and a **10%** platform fee. The client cannot set the amount.
+2. `POST /api/object-charge` creates a Payso/Omise PromptPay charge from that row. Metadata includes `object_order_id`.
+3. Only the webhook (`api/omise-webhook.js`) or a server-side charge sync marks `payment_status = paid` and status `confirmed`. Seller funds stay `pending`.
+4. The seller ships on their own and enters a tracking number. Status becomes `shipped`.
+5. The buyer confirms receipt. `seller_release` becomes `available`. Bank payout still follows Payso **T+7**.
+
+SQL: `scripts/ecosystem/aplus1-creator-objects.sql`, then `aplus1-object-shop.sql`. Chat about an item uses conversation kind `object` (`aplus1-object-chat.sql`).
+
 ## Security
 
 - Never expose PSP secret to client

@@ -25,18 +25,8 @@ import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { isWorkLikePrefEnabled } from "@/lib/inAppNotifyPrefs";
 import EmptyState from "@/components/ui/EmptyState";
-
-const timeAgo = (iso: string) => {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "เมื่อสักครู่";
-  if (m < 60) return `${m} นาทีที่แล้ว`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} ชม.ที่แล้ว`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d} วันที่แล้ว`;
-  return new Date(iso).toLocaleDateString("th-TH");
-};
+import { isAplus1HiringBoardEnabled } from "@/lib/aplus1Launch";
+import { timeAgo } from "@/lib/format";
 
 const ActorAvatar = ({ name, avatar }: { name: string; avatar: string }) => (
   <UserAvatar src={avatar} name={name} className="w-11 h-11 shrink-0" />
@@ -45,18 +35,20 @@ const ActorAvatar = ({ name, avatar }: { name: string; avatar: string }) => (
 const Empty = ({
   icon: Icon,
   text,
+  description = "เมื่อมีอัปเดตใหม่จะแสดงที่นี่",
   actionLabel,
   onAction,
 }: {
   icon: typeof Bell;
   text: string;
+  description?: string;
   actionLabel?: string;
   onAction?: () => void;
 }) => (
   <EmptyState
     icon={Icon}
     title={text}
-    description="เมื่อมีอัปเดตใหม่จะแสดงที่นี่"
+    description={description}
     action={
       actionLabel && onAction ? (
         <Button variant="outline" className="rounded-full" onClick={onAction}>
@@ -70,9 +62,13 @@ const Empty = ({
 
 interface NotificationsPanelProps {
   onBeforeNavigate?: () => void;
-  /** Sheet / dialog — tabs stay fixed, list scrolls inside. */
+  /** Sheet / dialog — category rail stays fixed, list scrolls inside. */
   embedded?: boolean;
+  /** Icon-only rail for the narrow mobile sheet. */
+  compactNav?: boolean;
 }
+
+const TAB_ORDER = ["inbox", "follows", "activity", "hire", "collab"] as const;
 
 type TabDef = {
   value: string;
@@ -111,22 +107,74 @@ const NotificationTabTrigger = ({ tab }: { tab: TabDef }) => {
   );
 };
 
-const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: NotificationsPanelProps) => {
+const SidebarTabTrigger = ({ tab, compact }: { tab: TabDef; compact?: boolean }) => {
+  const Icon = tab.icon;
+  const count = tab.count ?? 0;
+  return (
+    <TabsTrigger
+      value={tab.value}
+      aria-label={tab.label}
+      className={cn(
+        "group bg-transparent shadow-none rounded-lg",
+        "text-muted-foreground hover:bg-transparent hover:text-foreground",
+        "data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground",
+        "focus-visible:ring-offset-0",
+        compact
+          ? "h-auto w-12 flex-col gap-0.5 px-0 py-1.5"
+          : "h-auto w-full justify-start gap-2.5 px-2 py-2 text-sm font-normal data-[state=active]:font-medium",
+      )}
+    >
+      <Icon
+        className="w-4 h-4 shrink-0 text-muted-foreground group-data-[state=active]:text-primary"
+        aria-hidden
+      />
+      <span className={cn("min-w-0 flex-1 truncate text-left", compact && "sr-only")}>{tab.label}</span>
+      {count > 0 && (
+        <span
+          className={cn(
+            "shrink-0 font-semibold leading-none text-primary tabular-nums",
+            compact ? "text-[10px]" : "text-[11px]",
+          )}
+        >
+          {count > 99 ? "99+" : compact && count > 9 ? "9+" : count}
+        </span>
+      )}
+    </TabsTrigger>
+  );
+};
+
+const NotificationsPanel = ({
+  onBeforeNavigate,
+  embedded = false,
+  compactNav = false,
+}: NotificationsPanelProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [tab, setTab] = useState("inbox");
+  const [slideDir, setSlideDir] = useState<1 | -1>(1);
+  const [slideGen, setSlideGen] = useState(0);
   const inbox = useInbox(user?.id);
   const { data: activityRaw = [], isLoading: la } = useActivityNotifications();
   const { data: hires = [], isLoading: lh } = useHireNotifications();
   const { data: collabs = [], isLoading: lc } = useCollabNotifications();
   const { data: followNotifs = [] } = useFollowNotifications();
   const [prefsTick, setPrefsTick] = useState(0);
+  const en = embedded;
 
   useEffect(() => {
     const onPrefs = () => setPrefsTick((n) => n + 1);
     window.addEventListener("aplus1:in-app-notify-prefs", onPrefs);
     return () => window.removeEventListener("aplus1:in-app-notify-prefs", onPrefs);
   }, []);
+
+  const selectTab = (next: string) => {
+    if (next === tab) return;
+    const from = TAB_ORDER.indexOf(tab as (typeof TAB_ORDER)[number]);
+    const to = TAB_ORDER.indexOf(next as (typeof TAB_ORDER)[number]);
+    if (from >= 0 && to >= 0) setSlideDir(to > from ? 1 : -1);
+    setSlideGen((n) => n + 1);
+    setTab(next);
+  };
 
   const activity = useMemo(() => {
     void prefsTick;
@@ -176,9 +224,9 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
         }
       }
       if (convId) go(`/chat/${convId}`);
-      else toast.error("ไม่พบห้องสนทนา");
+      else toast.error(en ? "Chat not found" : "ไม่พบห้องสนทนา");
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "เปิดแชทไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : en ? "Couldn't open chat" : "เปิดแชทไม่สำเร็จ");
     }
   };
 
@@ -200,7 +248,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
       }
       go(`/chat/${convId}`);
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "เปิดแชทไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : en ? "Couldn't open chat" : "เปิดแชทไม่สำเร็จ");
     }
   };
 
@@ -214,18 +262,21 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
         projectId: c.projectId,
         projectTitle: "คอลแลปไอเดียใหม่",
       });
-      toast.success("ตอบรับร่วมงานแล้ว");
+      toast.success(en ? "Collab accepted" : "ตอบรับร่วมงานแล้ว");
       go(`/chat/${convId}`);
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "ตอบรับไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : en ? "Couldn't accept" : "ตอบรับไม่สำเร็จ");
     }
   };
 
+  const ago = (iso: string) => timeAgo(iso, { english: en });
+  const emptyHint = en ? "New updates will show up here" : undefined;
+
   const tabs: TabDef[] = [
-    { value: "inbox", label: "แชท", icon: MessageCircle, count: inbox.unreadCount },
-    { value: "follows", label: "ติดตาม", icon: UserPlus, count: followNotifs.length },
-    { value: "activity", label: "กิจกรรม", icon: Bell, count: activity.length },
-    { value: "hire", label: "จ้างงาน", icon: BriefcaseIcon, count: hires.length },
+    { value: "inbox", label: en ? "Chat" : "แชท", icon: MessageCircle, count: inbox.unreadCount },
+    { value: "follows", label: en ? "Following" : "ติดตาม", icon: UserPlus, count: followNotifs.length },
+    { value: "activity", label: en ? "Activity" : "กิจกรรม", icon: Bell, count: activity.length },
+    { value: "hire", label: en ? "Hiring" : "จ้างงาน", icon: BriefcaseIcon, count: hires.length },
     { value: "collab", label: "Collab", icon: Handshake, count: collabs.length },
   ];
 
@@ -244,19 +295,50 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
     </TabsList>
   );
 
-  const contentMt = embedded ? "mt-0" : "mt-4";
+  const panelClass = (extra?: string) =>
+    cn(embedded ? "mt-0 focus-visible:ring-0 focus-visible:ring-offset-0" : "mt-4", extra);
 
   return (
     <Tabs
       value={tab}
-      onValueChange={setTab}
-      className={cn("w-full", embedded && "flex flex-col min-h-0 flex-1")}
+      onValueChange={selectTab}
+      orientation={embedded ? "vertical" : "horizontal"}
+      className={cn("w-full", embedded && "flex min-h-0 flex-1 flex-row items-stretch gap-5")}
     >
-      <div className={cn("shrink-0", embedded && "pb-3 border-b border-border/40")}>{tabBar}</div>
+      {embedded ? (
+        <TabsList
+          aria-label={en ? "Notification categories" : "หมวดการแจ้งเตือน"}
+          className={cn(
+            "flex h-auto shrink-0 flex-col items-stretch justify-start gap-0.5 self-start",
+            "rounded-none border-0 bg-transparent p-0 shadow-none",
+            compactNav ? "w-12" : "w-44",
+          )}
+        >
+          {tabs.map((t) => (
+            <SidebarTabTrigger key={t.value} tab={t} compact={compactNav} />
+          ))}
+        </TabsList>
+      ) : (
+        <div className="shrink-0">{tabBar}</div>
+      )}
 
-      <div className={cn(embedded && "flex-1 min-h-0 overflow-y-auto overscroll-contain pt-3 -mx-1 px-1")}>
-      <TabsContent value="inbox" className={contentMt}>
+      <div className={cn(embedded ? "min-h-0 min-w-0 flex-1 overflow-hidden" : undefined)}>
+      <div
+        key={embedded ? `${tab}-${slideGen}` : "page"}
+        className={cn(
+          embedded && "h-full overflow-y-auto overscroll-contain",
+          embedded &&
+            slideGen > 0 &&
+            "motion-safe:animate-in motion-safe:fade-in motion-safe:fill-mode-backwards motion-safe:duration-300 motion-safe:ease-out",
+          embedded &&
+            slideGen > 0 &&
+            (slideDir > 0 ? "motion-safe:slide-in-from-right" : "motion-safe:slide-in-from-left"),
+          "motion-reduce:animate-none",
+        )}
+      >
+      <TabsContent value="inbox" className={panelClass()}>
         <InboxList
+          english={en}
           items={inbox.items}
           loading={inbox.loading}
           onOpen={(n) => {
@@ -267,23 +349,34 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
         />
       </TabsContent>
 
-      <TabsContent value="follows" className={contentMt}>
-        <FollowNotificationsList onBeforeNavigate={onBeforeNavigate} />
+      <TabsContent value="follows" className={panelClass()}>
+        <FollowNotificationsList english={en} onBeforeNavigate={onBeforeNavigate} />
       </TabsContent>
 
-      <TabsContent value="activity" className={cn(contentMt, "space-y-2")}>
+      <TabsContent value="activity" className={panelClass("space-y-2")}>
         {la ? (
           <InlineLoader />
         ) : activity.length === 0 ? (
           <Empty
             icon={Bookmark}
-            text="ยังไม่มีกิจกรรมบนผลงานของคุณ"
-            actionLabel="ไปสำรวจผลงาน"
+            text={en ? "No activity on your work yet" : "ยังไม่มีกิจกรรมบนผลงานของคุณ"}
+            description={emptyHint}
+            actionLabel={en ? "Explore work" : "ไปสำรวจผลงาน"}
             onAction={() => go("/")}
           />
         ) : (
           activity.map((n) => {
-            const verb = n.kind === "like" ? "ถูกใจผลงาน" : n.kind === "bookmark" ? "บันทึกผลงาน" : "คอมเมนต์ผลงาน";
+            const verb = en
+              ? n.kind === "like"
+                ? "liked"
+                : n.kind === "bookmark"
+                  ? "saved"
+                  : "commented on"
+              : n.kind === "like"
+                ? "ถูกใจผลงาน"
+                : n.kind === "bookmark"
+                  ? "บันทึกผลงาน"
+                  : "คอมเมนต์ผลงาน";
             const color = n.kind === "like" ? "text-destructive" : n.kind === "bookmark" ? "text-primary" : "text-foreground";
             return (
               <button
@@ -310,10 +403,10 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                     <span className="font-medium">"{n.projectTitle}"</span>
                   </p>
                   {n.content && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">"{n.content}"</p>}
-                  <p className="text-[11px] text-muted-foreground mt-1">{timeAgo(n.createdAt)}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">{ago(n.createdAt)}</p>
                 </div>
                 {n.projectCover && (
-                  <img src={n.projectCover} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                  <img loading="lazy" decoding="async" src={n.projectCover} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
                 )}
               </button>
             );
@@ -321,15 +414,24 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
         )}
       </TabsContent>
 
-      <TabsContent value="hire" className={cn(contentMt, "space-y-2")}>
+      <TabsContent value="hire" className={panelClass("space-y-2")}>
         {lh ? (
           <InlineLoader />
         ) : hires.length === 0 ? (
           <Empty
             icon={BriefcaseIcon}
-            text="ยังไม่มีคำขอจ้างงาน"
-            actionLabel="ไปดู Jobs"
-            onAction={() => go("/hiring")}
+            text={en ? "No hire requests yet" : "ยังไม่มีคำขอจ้างงาน"}
+            description={emptyHint}
+            actionLabel={
+              en
+                ? isAplus1HiringBoardEnabled()
+                  ? "Browse jobs"
+                  : "Explore work"
+                : isAplus1HiringBoardEnabled()
+                  ? "ไปดู Jobs"
+                  : "ไปดูผลงาน"
+            }
+            onAction={() => go(isAplus1HiringBoardEnabled() ? "/hiring" : "/")}
           />
         ) : (
           hires.map((h) => (
@@ -348,17 +450,17 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
               </div>
               {h.forwardedFromRequestId ? (
                 <p className="text-xs font-medium text-[hsl(var(--chat-hire))] mb-1">
-                  เพื่อนส่งต่องานมาให้คุณ
+                  {en ? "A friend forwarded this job" : "เพื่อนส่งต่องานมาให้คุณ"}
                 </p>
               ) : null}
-              <p className="text-sm text-foreground mb-1">สนใจจ้าง <span className="font-medium">"{h.projectTitle}"</span></p>
+              <p className="text-sm text-foreground mb-1">{en ? "Wants to hire" : "สนใจจ้าง"} <span className="font-medium">"{h.projectTitle}"</span></p>
               {h.forwardNote?.trim() ? (
-                <p className="text-xs text-muted-foreground line-clamp-3 mb-1">โน้ตจากเพื่อน: {h.forwardNote.trim()}</p>
+                <p className="text-xs text-muted-foreground line-clamp-3 mb-1">{en ? "Note:" : "โน้ตจากเพื่อน:"} {h.forwardNote.trim()}</p>
               ) : null}
               {h.message && <p className="text-xs text-muted-foreground line-clamp-3">{h.message}</p>}
               <div className="flex items-center gap-2 mt-2">
                 <span className="flex-1 min-w-0 truncate text-[11px] text-muted-foreground">
-                  {timeAgo(h.createdAt)}
+                  {ago(h.createdAt)}
                 </span>
                 {h.budgetAmount ? (
                   <span className="text-[11px] text-primary font-medium shrink-0">
@@ -373,12 +475,14 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                   onClick={() => void openHireChat(h)}
                 >
                   <MessageCircle className="w-3.5 h-3.5 mr-1" />
-                  เปิดแชท
+                  {en ? "Open chat" : "เปิดแชท"}
                 </Button>
               </div>
               {h.budgetAmount ? (
                 <p className="text-[10px] text-muted-foreground mt-2 text-right">
-                  ชำระผ่าน Aplus1 กำลังเปิดเร็ว ๆ นี้ — คุยรายละเอียดในแชทได้ตามปกติ
+                  {en
+                    ? "Paying through SAMECOR is opening soon — keep the details in chat."
+                    : "ชำระผ่าน SAMECOR กำลังเปิดเร็ว ๆ นี้ — คุยรายละเอียดในแชทได้ตามปกติ"}
                 </p>
               ) : null}
             </div>
@@ -386,14 +490,15 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
         )}
       </TabsContent>
 
-      <TabsContent value="collab" className={cn(contentMt, "space-y-2")}>
+      <TabsContent value="collab" className={panelClass("space-y-2")}>
         {lc ? (
           <InlineLoader />
         ) : collabs.length === 0 ? (
           <Empty
             icon={Handshake}
-            text="ยังไม่มีคำขอร่วมงาน"
-            actionLabel="ไปสำรวจผลงาน"
+            text={en ? "No collab requests yet" : "ยังไม่มีคำขอร่วมงาน"}
+            description={emptyHint}
+            actionLabel={en ? "Explore work" : "ไปสำรวจผลงาน"}
             onAction={() => go("/")}
           />
         ) : (
@@ -408,7 +513,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                     </button>
                     <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-secondary text-foreground/80">{c.status}</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground">{timeAgo(c.createdAt)}</p>
+                  <p className="text-[11px] text-muted-foreground">{ago(c.createdAt)}</p>
                 </div>
               </div>
               {c.collabTypes.length > 0 && (
@@ -419,7 +524,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                 </div>
               )}
               <p className="text-base text-foreground whitespace-pre-wrap line-clamp-4">{c.message}</p>
-              {c.timeline && <p className="text-xs text-muted-foreground mt-1">ช่วงเวลา: {c.timeline}</p>}
+              {c.timeline && <p className="text-xs text-muted-foreground mt-1">{en ? "Timeline:" : "ช่วงเวลา:"} {c.timeline}</p>}
               {isCollabContactedNewStatus(c.status) ? (
                 <div className="flex flex-col gap-2 mt-3">
                   <div className="flex items-center justify-end gap-2">
@@ -432,7 +537,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                       onClick={() => void openCollabChat(c)}
                     >
                       <MessageCircle className="w-3.5 h-3.5 mr-1" />
-                      เปิดแชท
+                      {en ? "Open chat" : "เปิดแชท"}
                     </Button>
                     <Button
                       type="button"
@@ -443,7 +548,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                       onClick={() => setCollabRejectTarget(c)}
                     >
                       <X className="w-3.5 h-3.5 mr-1" />
-                      ยังไม่พร้อม
+                      {en ? "Not now" : "ยังไม่พร้อม"}
                     </Button>
                   </div>
                   <Button
@@ -454,7 +559,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                     onClick={() => void acceptCollab(c)}
                   >
                     <Check className="w-3.5 h-3.5 mr-1" />
-                    ตอบรับร่วมงาน
+                    {en ? "Accept collab" : "ตอบรับร่วมงาน"}
                   </Button>
                 </div>
               ) : isCollabAcceptedStatus(c.status) || isCollabDeclinedStatus(c.status) ? (
@@ -469,7 +574,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
                     onClick={() => void openCollabChat(c)}
                   >
                     <MessageCircle className="w-3.5 h-3.5 mr-1" />
-                    เปิดแชท
+                    {en ? "Open chat" : "เปิดแชท"}
                   </Button>
                 </div>
               ) : (
@@ -479,6 +584,7 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
           ))
         )}
       </TabsContent>
+      </div>
 
       <CollabRejectDialog
         open={!!collabRejectTarget}
@@ -511,11 +617,15 @@ const NotificationsPanel = ({ onBeforeNavigate, embedded = false }: Notification
             setCollabRejectTarget(null);
             toast.success(
               action === "busy_chat"
-                ? "แจ้งแล้ว — ยังคุยไอเดียต่อได้"
-                : "แจ้งแล้วว่ายังไม่พร้อมร่วมงาน",
+                ? en
+                  ? "Noted — you can keep talking through the idea"
+                  : "แจ้งแล้ว — ยังคุยไอเดียต่อได้"
+                : en
+                  ? "Noted that you're not ready to collab"
+                  : "แจ้งแล้วว่ายังไม่พร้อมร่วมงาน",
             );
           } catch (e: unknown) {
-            toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
+            toast.error(e instanceof Error ? e.message : en ? "Couldn't save" : "บันทึกไม่สำเร็จ");
           }
         }}
       />

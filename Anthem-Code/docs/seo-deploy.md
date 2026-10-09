@@ -31,7 +31,7 @@ Checklist สำหรับ **aplus1.app** (Aplus1 community)
 - โปรไฟล์ `/u/*` และ `/@username` (ข้ามโปรไฟล์ว่างเมื่อดึง live)
 - ชุดงานสาธารณะ `/series/:id`
 - Explore paths (ถ้าใส่ใน generator)
-- Launch: `/hiring`, `/hiring/:id` (open)
+- Hiring board `/hiring`, `/jobs`, `/org` — deferred (coming soon until `VITE_APLUS1_HIRING_BOARD_ENABLED`)
 - Reserved: `/jobs` is creator looking-for-work (noindex until built)
 - Full-product extras: `/community`, `/s/*`
 

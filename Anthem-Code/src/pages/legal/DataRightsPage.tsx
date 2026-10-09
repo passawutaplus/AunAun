@@ -137,16 +137,7 @@ const DataRightsPage = () => {
         </li>
       </ul>
       <div className="not-prose my-3">
-        <Button type="button" size="sm" variant="outline" onClick={async () => {
-          if (user) {
-            try {
-              await ensureVerified("เปลี่ยนการตั้งค่าความยินยอมคุกกี้");
-            } catch {
-              return;
-            }
-          }
-          requestOpenCookiePreferences();
-        }}>
+        <Button type="button" size="sm" variant="outline" onClick={() => requestOpenCookiePreferences()}>
           จัดการความยินยอมคุกกี้
         </Button>
       </div>

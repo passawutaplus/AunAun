@@ -1,10 +1,11 @@
 # AunAun Ecosystem
 
-Monorepo for three related applications:
+Monorepo for four related applications:
 
 - `Solo-Code` — freelancer operations, billing, client portals, and back-office tools
 - `Anthem-Code` — **Aplus1** creative community and portfolio (`https://aplus1.app`)
 - `Ops-Hub` — administration and ecosystem monitoring
+- `Vault-Code` — A+ Vault, inspiration vault with browser extension and Museum/Discover feed (see `Vault-Code/README.md`)
 
 Documentation index: [docs/README.md](docs/README.md)
 

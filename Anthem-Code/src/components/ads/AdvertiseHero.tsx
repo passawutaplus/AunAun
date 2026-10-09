@@ -52,7 +52,7 @@ const AdvertiseHero = ({ formMode, onSelectMode }: Props) => {
   return (
     <section ref={ref} className="relative isolate flex h-dvh flex-col overflow-hidden">
       <motion.div className="absolute inset-0" style={{ y: bgY }}>
-        <img
+        <img loading="lazy" decoding="async"
           src="/ads/advertise-hero.png"
           alt=""
           className="h-[120%] w-full object-cover object-[center_30%]"

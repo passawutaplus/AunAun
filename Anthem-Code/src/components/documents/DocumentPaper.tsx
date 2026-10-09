@@ -207,7 +207,7 @@ export function DocumentPaper({ doc, className }: Props) {
             ) : null}
             {doc.platformFeePercent != null ? (
               <p className="text-[10px] text-neutral-500 px-1">
-                ค่าธรรมเนียมแพลตฟอร์ม {doc.platformFeePercent}% — Aplus1 เป็นตัวกลางรับชำระ
+                ค่าธรรมเนียมแพลตฟอร์ม {doc.platformFeePercent}% — SAMECOR เป็นตัวกลางรับชำระ
                 ไม่ใช่ผู้ขายงาน
               </p>
             ) : null}
@@ -236,7 +236,7 @@ export function DocumentPaper({ doc, className }: Props) {
         ) : null}
 
         <p className="text-[9px] text-neutral-400 text-center pt-1 border-t border-neutral-100">
-          เอกสารออกผ่าน Aplus1 — แพลตฟอร์มตัวกลาง · เงินค่าจ้างเป็นของผู้รับงาน ·
+          เอกสารออกผ่าน SAMECOR — แพลตฟอร์มตัวกลาง · เงินค่าจ้างเป็นของผู้รับงาน ·
           รายได้แพลตฟอร์มคือค่าธรรมเนียมเท่านั้น
         </p>
       </div>

@@ -13,6 +13,7 @@ export { FollowEmail } from './follow'
 export { JobApplicationEmail } from './job-application'
 export { TopupSuccessEmail } from './topup-success'
 export { CashoutStatusEmail } from './cashout-status'
+export { KycStatusEmail } from './kyc-status'
 export {
   NOTIFICATION_TEMPLATES,
   ANTHEM_NOTIFICATION_SUBJECTS,

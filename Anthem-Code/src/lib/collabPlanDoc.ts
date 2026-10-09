@@ -90,6 +90,8 @@ export type CollabProgressEntry = {
 };
 
 export type CollabPlanPayload = {
+  /** งานเล็ก: ข้ามขั้น "สร้างงาน" (ไปจัดแนวทาง → ยืนยันสุดท้าย → ลงผลงาน) */
+  quick?: boolean;
   align: CollabAlignPayload;
   create: CollabStepNotePayload;
   review: CollabStepNotePayload;
@@ -229,13 +231,10 @@ export type AlignValidationResult = {
   missing: AlignRequiredField[];
 };
 
-/** Required before ack on the align step. */
+/** Required before ack on the align step: the idea and who gets credit. Due date and deliverables are optional. */
 export function validateAlignRequired(align: CollabAlignPayload): AlignValidationResult {
   const missing: AlignRequiredField[] = [];
   if (!getAlignOverview(align).trim()) missing.push("idea");
-  if (!align.dueAt?.trim()) missing.push("dueAt");
-  const hasDeliverable = (align.deliverableItems ?? []).some((d) => d.trim());
-  if (!hasDeliverable) missing.push("deliverables");
   if (!align.rights.trim()) missing.push("rights");
   return { ok: missing.length === 0, missing };
 }
@@ -573,6 +572,7 @@ export function normalizeCollabPlanDocument(
       unknown
     >;
     base.payload = {
+      quick: p.quick === true,
       align: {
         idea: asString(alignRaw.idea),
         brief: asString(alignRaw.brief),
@@ -719,20 +719,42 @@ export function canAdvanceStep(
   );
 }
 
+/** Steps skipped in quick mode. */
+const QUICK_SKIPPED: CollabPipelineStageId[] = ["create"];
+
+export function isStepSkipped(step: CollabPipelineStageId, quick?: boolean): boolean {
+  return !!quick && QUICK_SKIPPED.includes(step);
+}
+
+/** Days the plan has sat unchanged while still waiting on confirmations (0 if recently active). */
+export const COLLAB_STALL_DAYS = 7;
+
+export function collabStallDays(updatedAt: string, now: number = Date.now()): number {
+  const t = Date.parse(updatedAt);
+  if (!Number.isFinite(t)) return 0;
+  return Math.max(0, Math.floor((now - t) / 86_400_000));
+}
+
 export function nextStepId(
   step: CollabPipelineStageId,
+  quick?: boolean,
 ): CollabPipelineStageId | null {
-  const idx = COLLAB_PIPELINE.findIndex((s) => s.id === step);
-  if (idx < 0 || idx >= COLLAB_PIPELINE.length - 1) return null;
-  return COLLAB_PIPELINE[idx + 1]!.id;
+  let idx = COLLAB_PIPELINE.findIndex((s) => s.id === step);
+  if (idx < 0) return null;
+  do idx += 1;
+  while (idx < COLLAB_PIPELINE.length && isStepSkipped(COLLAB_PIPELINE[idx]!.id, quick));
+  return idx < COLLAB_PIPELINE.length ? COLLAB_PIPELINE[idx]!.id : null;
 }
 
 export function prevStepId(
   step: CollabPipelineStageId,
+  quick?: boolean,
 ): CollabPipelineStageId | null {
-  const idx = COLLAB_PIPELINE.findIndex((s) => s.id === step);
+  let idx = COLLAB_PIPELINE.findIndex((s) => s.id === step);
   if (idx <= 0) return null;
-  return COLLAB_PIPELINE[idx - 1]!.id;
+  do idx -= 1;
+  while (idx >= 0 && isStepSkipped(COLLAB_PIPELINE[idx]!.id, quick));
+  return idx >= 0 ? COLLAB_PIPELINE[idx]!.id : null;
 }
 
 export function countCollabPlanProgress(
@@ -744,13 +766,18 @@ export function countCollabPlanProgress(
     return { done, total };
   }
   const doc = docOrState as CollabPlanDocument;
+  const quick = !!doc.payload?.quick;
+  const stepsTotal = quick ? total - QUICK_SKIPPED.length : total;
   if (doc.currentStep === "publish" && doc.status === "step_locked") {
-    return { done: total, total };
+    return { done: stepsTotal, total: stepsTotal };
   }
   const idx = COLLAB_PIPELINE.findIndex((x) => x.id === doc.currentStep);
-  const completedBefore = Math.max(0, idx);
+  const skippedBefore = quick
+    ? COLLAB_PIPELINE.slice(0, Math.max(0, idx)).filter((x) => isStepSkipped(x.id, true)).length
+    : 0;
+  const completedBefore = Math.max(0, idx) - skippedBefore;
   const currentDone = doc.status === "step_locked" ? 1 : 0;
-  return { done: completedBefore + currentDone, total };
+  return { done: completedBefore + currentDone, total: stepsTotal };
 }
 
 export function buildCollabPlanDocumentMessage(opts?: {
@@ -935,9 +962,11 @@ export function normalizeCollabPlanState(raw: unknown): CollabPlanState {
   return base;
 }
 
+export type CollabToolKind = "plan" | "roles" | "refs" | "checkin";
+
 export function detectCollabToolKind(
   content: string | null | undefined,
-): "plan" | "roles" | "refs" | "checkin" | null {
+): CollabToolKind | null {
   if (!content) return null;
   const t = content.trim();
   if (isCollabPlanDocumentMessage(t)) return null;

@@ -9,7 +9,8 @@ import {
   encodeReportEvidenceRef,
   parseReportEvidenceRef,
 } from "@/lib/reportEvidenceStorage";
-import { openSafeExternalUrl, safeHttpUrl } from "@/lib/safeUrl";
+import { safeHttpUrl } from "@/lib/safeUrl";
+import { openSafeExternalUrl } from "@/lib/externalUrl";
 
 describe("profileAccess", () => {
   it("uses private table for own profile", () => {

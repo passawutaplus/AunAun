@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Flag,
-  Handshake,
   MessageCircle,
   MoreVertical,
   Pin,
@@ -12,9 +11,7 @@ import {
   Search,
   Trash2,
   Users,
-  type LucideIcon,
 } from "lucide-react";
-import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -62,27 +59,28 @@ import { DEMO_RESEARCH_ACCOUNTS, isDemoMode } from "@/lib/demoMode";
 import { toast } from "sonner";
 import { useSubscription } from "@/core/subscription/useSubscription";
 
-const TABS: { key: "all" | ChatKind; label: string; icon?: LucideIcon }[] = [
-  { key: "all", label: "ทั้งหมด" },
-  { key: "hire", label: "งานจ้าง", icon: BriefcaseIcon },
-  { key: "collab", label: "คอลแลป", icon: Handshake },
-  { key: "group", label: "กลุ่ม", icon: Users },
-];
-
 interface Props {
   selectedId?: string;
   tab: "all" | ChatKind;
-  onTabChange: (tab: "all" | ChatKind) => void;
   search: string;
   onSearchChange: (value: string) => void;
   onSelectConversation?: (conversationId: string) => void;
   className?: string;
 }
 
+type LastMessageRow = {
+  conversation_id: string;
+  content: string | null;
+  attachment_url: string | null;
+  sender_id: string;
+  created_at: string;
+  message_type?: string | null;
+  deleted_at?: string | null;
+};
+
 const ChatSidebar = ({
   selectedId,
   tab,
-  onTabChange,
   search,
   onSearchChange,
   onSelectConversation,
@@ -138,21 +136,20 @@ const ChatSidebar = ({
     queryKey: ["chat-last-msgs", convIds],
     enabled: convIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("messages")
-        .select("conversation_id, content, attachment_url, sender_id, created_at, message_type, deleted_at")
-        .in("conversation_id", convIds)
-        .order("created_at", { ascending: false });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rpc = await (supabase.rpc as any)("chat_last_messages", { conv_ids: convIds });
+      let data = rpc.data as LastMessageRow[] | null;
+      if (rpc.error) {
+        // RPC not deployed yet — legacy path (fetches whole threads).
+        const legacy = await supabase
+          .from("messages")
+          .select("conversation_id, content, attachment_url, sender_id, created_at, message_type, deleted_at")
+          .in("conversation_id", convIds)
+          .order("created_at", { ascending: false });
+        data = legacy.data as unknown as LastMessageRow[] | null;
+      }
       const map: Record<string, { preview: string; mine: boolean; created_at: string }> = {};
-      (data ?? []).forEach((m: {
-        conversation_id: string;
-        content: string | null;
-        attachment_url: string | null;
-        sender_id: string;
-        created_at: string;
-        message_type?: string | null;
-        deleted_at?: string | null;
-      }) => {
+      (data ?? []).forEach((m) => {
         if (map[m.conversation_id]) return;
         if (m.deleted_at) {
           map[m.conversation_id] = {
@@ -284,8 +281,8 @@ const ChatSidebar = ({
   };
 
   return (
-    <aside className={cn("flex flex-col h-full border-r border-border bg-background", className)}>
-      <div className="shrink-0 px-3 pt-2.5 pb-2 border-b border-border space-y-2">
+    <aside className={cn("flex flex-col h-full border-r border-border bg-card", className)}>
+      <div className="shrink-0 border-b border-border px-3 pb-2 pt-2.5">
         <div className="flex items-center gap-1.5">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -293,7 +290,7 @@ const ChatSidebar = ({
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="ค้นหาชื่อหรืองาน…"
-              className="h-8 rounded-full border-0 bg-muted pl-8 text-sm"
+              className="h-9 rounded-full border border-border bg-background pl-8 text-sm shadow-none"
             />
           </div>
           {isAplus1SubscriptionsEnabled() ? (
@@ -308,45 +305,6 @@ const ChatSidebar = ({
               <Plus className="h-4 w-4" />
             </Button>
           ) : null}
-        </div>
-        <div className="flex gap-1 overflow-x-auto scrollbar-hide">
-          {TABS.map(({ key, label, icon: Icon }) => {
-            const active = tab === key;
-            const accent =
-              key === "hire"
-                ? active
-                  ? "bg-[hsl(var(--chat-hire))] text-white"
-                  : "bg-muted/70 text-muted-foreground hover:text-foreground"
-                : key === "collab"
-                  ? active
-                    ? "bg-[hsl(var(--chat-collab))] text-white"
-                    : "bg-muted/70 text-muted-foreground hover:text-foreground"
-                  : key === "group"
-                    ? active
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted/70 text-muted-foreground hover:text-foreground"
-                    : active
-                      ? "bg-foreground text-background"
-                      : "bg-muted/70 text-muted-foreground hover:text-foreground";
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => onTabChange(key)}
-                aria-label={label}
-                title={label}
-                className={cn(
-                  "inline-flex items-center justify-center rounded-full transition-colors shrink-0",
-                  Icon
-                    ? "h-8 w-8"
-                    : "min-h-7 px-2.5 py-1 text-[11px] font-medium",
-                  accent,
-                )}
-              >
-                {Icon ? <Icon className="h-3.5 w-3.5" aria-hidden /> : label}
-              </button>
-            );
-          })}
         </div>
       </div>
 
@@ -453,7 +411,7 @@ const ChatSidebar = ({
                         <Users className="w-4 h-4 text-primary" />
                       </div>
                     ) : p?.avatar ? (
-                      <img src={p.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+                      <img loading="lazy" decoding="async" src={p.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-medium text-muted-foreground text-sm">
                         {(p?.name ?? "?")[0]}

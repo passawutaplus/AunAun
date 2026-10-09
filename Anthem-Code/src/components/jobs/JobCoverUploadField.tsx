@@ -43,7 +43,7 @@ export default function JobCoverUploadField({ userId, value, onChange, className
       >
         {value ? (
           <>
-            <img src={value} alt="ภาพปกประกาศ" className="w-full h-full object-cover" />
+            <img loading="lazy" decoding="async" src={value} alt="ภาพปกประกาศ" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
             <button
               type="button"

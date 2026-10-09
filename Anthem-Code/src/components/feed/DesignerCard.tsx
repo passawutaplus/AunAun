@@ -1,7 +1,7 @@
 import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight, Handshake, MapPin } from "lucide-react";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import UserAvatar from "@/components/UserAvatar";
@@ -18,6 +18,7 @@ import {
   imageRevealTransition,
   slideStepTransition,
   slideStepVariants,
+  smoothEase,
 } from "@/lib/motion";
 import { displayProfileAddress } from "@/lib/profileAddress";
 
@@ -30,13 +31,23 @@ interface Props {
 
 const PREVIEW = 3;
 
+const arrowButtonClass =
+  "absolute top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-sm ring-1 ring-border/70 hover:bg-background";
+
 const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
   const navigate = useNavigate();
   const { profile, projects } = data;
   const profileUserId =
     (profile as { user_id?: string; id?: string }).user_id ?? profile.id;
   const featured = projects[0];
-  const like = useProjectLike(featured?.id);
+  const reducedMotion = useReducedMotion();
+  const [flipped, setFlipped] = useState(false);
+  const [index, setIndex] = useState(0);
+  const [slideDir, setSlideDir] = useState(1);
+  const canFlip = projects.length > PREVIEW;
+  const safeIndex = Math.min(index, Math.max(0, projects.length - 1));
+  const active = projects[safeIndex] ?? featured;
+  const like = useProjectLike(flipped ? active?.id : featured?.id);
   const { followers } = useFollowState(profileUserId);
 
   const totalLikes = useMemo(
@@ -44,17 +55,25 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
     [projects],
   );
 
-  const maxStart = Math.max(0, projects.length - PREVIEW);
-  const [start, setStart] = useState(0);
-  const [slideDir, setSlideDir] = useState(1);
-  const windowProjects = projects.slice(start, start + PREVIEW);
-  const canSlide = projects.length > PREVIEW;
-  const canPrev = canSlide && start > 0;
-  const canNext = canSlide && start < maxStart;
+  const openGallery = () => {
+    setSlideDir(1);
+    setIndex(Math.min(PREVIEW, Math.max(0, projects.length - 1)));
+    setFlipped(true);
+  };
 
-  const slide = (delta: -1 | 1) => {
-    setSlideDir(delta);
-    setStart((s) => Math.min(maxStart, Math.max(0, s + delta * PREVIEW)));
+  const showPrevWork = () => {
+    if (safeIndex <= 0) {
+      setFlipped(false);
+      return;
+    }
+    setSlideDir(-1);
+    setIndex(safeIndex - 1);
+  };
+
+  const showNextWork = () => {
+    if (safeIndex >= projects.length - 1) return;
+    setSlideDir(1);
+    setIndex(safeIndex + 1);
   };
 
   const name = profile.display_name || profile.username || "ฟรีแลนซ์";
@@ -69,30 +88,50 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
   );
   const workCount = data.projectCount || projects.length;
   const packageCount = data.packageCount ?? 0;
+  const objectCount = data.objectCount ?? 0;
+  const previewSlots = Array.from({ length: PREVIEW }, (_, i) => projects[i] ?? null);
 
   const goto = (id: string) => navigate(`/project/${id}`);
   const profilePath = `/u/${profileUserId}`;
-  const gotoProfile = (tab?: "works" | "services") => {
+  const gotoProfile = (tab?: "works" | "services" | "objects") => {
     const qs = new URLSearchParams();
     if (search) qs.set("q", search);
     if (tab === "services") qs.set("tab", "services");
+    else if (tab === "objects") qs.set("tab", "objects");
     else if (tab === "works") qs.set("tab", "works");
     const suffix = qs.toString();
     navigate(suffix ? `${profilePath}?${suffix}` : profilePath);
   };
 
-  const previewSlots = Array.from({ length: PREVIEW }, (_, i) => windowProjects[i] ?? null);
+  const flipTransition = reducedMotion
+    ? { duration: 0 }
+    : { duration: 0.42, ease: smoothEase };
+
+  const coverOf = (proj: (typeof projects)[number] | undefined) => {
+    if (!proj) return "";
+    return thumbFeedCoverUrl(proj.cover_url || proj.gallery_urls?.[0] || "");
+  };
 
   return (
-    <article className="relative overflow-hidden rounded-3xl glass-panel p-4 flex flex-col gap-3.5 min-w-0">
+    <div className="min-w-0 [perspective:1200px]">
+      <motion.div
+        className="relative"
+        animate={{ rotateY: flipped ? 180 : 0 }}
+        transition={flipTransition}
+        style={{ transformStyle: "preserve-3d" }}
+      >
+    <article
+      inert={flipped ? "" : undefined}
+      className="relative overflow-hidden rounded-none glass-panel p-4 flex flex-col gap-3.5 min-w-0 !shadow-none [backface-visibility:hidden]"
+    >
       <div className="flex items-start gap-3">
         <div className="shrink-0">
           <UserAvatar
             src={profile.avatar_url}
             name={name}
             username={profile.username}
-            className="h-[5.5rem] w-[5.5rem] rounded-2xl"
-            fallbackClassName="text-lg rounded-2xl"
+            className="h-[5.5rem] w-[5.5rem] rounded-none"
+            fallbackClassName="text-lg rounded-none"
           />
         </div>
 
@@ -192,88 +231,80 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
               </button>
             </>
           ) : null}
+          {objectCount > 0 ? (
+            <>
+              <span aria-hidden>·</span>
+              <button
+                type="button"
+                onClick={() => gotoProfile("objects")}
+                className="group inline-flex items-center gap-0.5 transition-colors hover:text-primary"
+                aria-label="Open objects on profile"
+              >
+                {objectCount.toLocaleString("th-TH")} Objects
+                <ArrowRight
+                  className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-1"
+                  strokeWidth={2.2}
+                  aria-hidden
+                />
+              </button>
+            </>
+          ) : null}
         </div>
       </div>
 
-      <div className="relative">
-        {canPrev ? (
-          <button
-            type="button"
-            aria-label="ผลงานก่อนหน้า"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              slide(-1);
-            }}
-            className="absolute left-0.5 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-sm ring-1 ring-border/70 hover:bg-background"
-          >
-            <ChevronLeft className="h-4 w-4" strokeWidth={2.2} />
-          </button>
-        ) : null}
-        {canNext ? (
-          <button
-            type="button"
-            aria-label="ผลงานถัดไป"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              slide(1);
-            }}
-            className="absolute right-0.5 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-sm ring-1 ring-border/70 hover:bg-background"
-          >
-            <ChevronRight className="h-4 w-4" strokeWidth={2.2} />
-          </button>
-        ) : null}
-        <div className="overflow-hidden">
-          <AnimatePresence mode="wait" custom={slideDir}>
-            <motion.div
-              key={start}
-              custom={slideDir}
-              variants={slideStepVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={slideStepTransition}
-              className="grid grid-cols-3 gap-2"
+      {featured ? (
+        <div className="relative">
+          <div className="grid grid-cols-3 gap-2">
+            {previewSlots.map((proj, i) => {
+              if (!proj) {
+                return <div key={`empty-${i}`} className="aspect-[4/3] rounded-none bg-muted/70" />;
+              }
+              const src = coverOf(proj);
+              return (
+                <button
+                  key={proj.id}
+                  type="button"
+                  onClick={() => goto(proj.id)}
+                  className="group relative aspect-[4/3] overflow-hidden rounded-none bg-muted"
+                  aria-label={`ดูผลงาน: ${proj.title}`}
+                  title={proj.title}
+                >
+                  {src ? (
+                    <motion.img
+                      src={src}
+                      alt={proj.title}
+                      width={360}
+                      height={270}
+                      loading="lazy"
+                      decoding="async"
+                      sizes="120px"
+                      variants={imageCrossfadeVariants}
+                      initial="initial"
+                      animate="animate"
+                      transition={imageRevealTransition}
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+          {canFlip ? (
+            <button
+              type="button"
+              aria-label={`ดูผลงานอื่นของ ${name}`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openGallery();
+              }}
+              className={`${arrowButtonClass} right-0.5`}
             >
-              {previewSlots.map((proj, i) => {
-                if (!proj) {
-                  return <div key={`empty-${i}`} className="aspect-[4/3] rounded-2xl bg-muted/70" />;
-                }
-                const raw = proj.cover_url || proj.gallery_urls?.[0] || "";
-                const src = thumbFeedCoverUrl(raw);
-                return (
-                  <button
-                    key={proj.id}
-                    type="button"
-                    onClick={() => goto(proj.id)}
-                    className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted group"
-                    aria-label={`ดูผลงาน: ${proj.title}`}
-                    title={proj.title}
-                  >
-                    {src ? (
-                      <motion.img
-                        src={src}
-                        alt={proj.title}
-                        width={360}
-                        height={270}
-                        loading="lazy"
-                        decoding="async"
-                        sizes="120px"
-                        variants={imageCrossfadeVariants}
-                        initial="initial"
-                        animate="animate"
-                        transition={imageRevealTransition}
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : null}
-                  </button>
-                );
-              })}
-            </motion.div>
-          </AnimatePresence>
+              <ChevronRight className="h-4 w-4" strokeWidth={2.2} />
+            </button>
+          ) : null}
         </div>
-      </div>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-2 mt-auto">
         <button
@@ -294,6 +325,106 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
         </button>
       </div>
     </article>
+
+        {active ? (
+          <div
+            inert={!flipped ? "" : undefined}
+            className="absolute inset-0 overflow-hidden bg-muted [backface-visibility:hidden] [transform:rotateY(180deg)]"
+          >
+            <AnimatePresence mode="wait" custom={slideDir} initial={false}>
+              <motion.button
+                key={active.id}
+                type="button"
+                custom={slideDir}
+                variants={reducedMotion ? undefined : slideStepVariants}
+                initial={reducedMotion ? false : "enter"}
+                animate={reducedMotion ? { opacity: 1, x: 0 } : "center"}
+                exit={reducedMotion ? { opacity: 1, x: 0 } : "exit"}
+                transition={reducedMotion ? { duration: 0 } : slideStepTransition}
+                onClick={() => goto(active.id)}
+                className="group absolute inset-0"
+                aria-label={`ดูผลงาน: ${active.title}`}
+                title={active.title}
+              >
+                {coverOf(active) ? (
+                  <img
+                    src={coverOf(active)}
+                    alt={active.title}
+                    width={640}
+                    height={800}
+                    loading="lazy"
+                    decoding="async"
+                    sizes="(min-width: 1280px) 30vw, (min-width: 768px) 45vw, 100vw"
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                ) : null}
+              </motion.button>
+            </AnimatePresence>
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-black/55 to-transparent" />
+            <div className="absolute left-3 top-3 z-20 flex min-w-0 max-w-[70%] items-center gap-2">
+              <UserAvatar
+                src={profile.avatar_url}
+                name={name}
+                username={profile.username}
+                className="h-10 w-10 rounded-none ring-2 ring-white/80"
+                fallbackClassName="text-xs rounded-none"
+              />
+              <button
+                type="button"
+                onClick={() => gotoProfile()}
+                className="min-w-0 truncate text-left text-sm font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]"
+              >
+                {highlight(name, search)}
+              </button>
+              <VerifiedBadge verified={!!(profile as { is_verified?: boolean }).is_verified} />
+            </div>
+            <div className="absolute right-3 top-3 z-20 flex items-center gap-1">
+              <FollowButton
+                freelancerId={profileUserId}
+                iconOnly
+                tone="muted"
+                className="bg-background/95 text-foreground"
+              />
+              <motion.div whileTap={{ scale: 0.92 }}>
+                <PlusOneControl
+                  active={like.isLiked}
+                  showCount={false}
+                  ariaLabel={like.isLiked ? "เลิกถูกใจ" : "ถูกใจ"}
+                  onClick={() => like.toggle()}
+                  className="h-9 w-9 justify-center rounded-full bg-background/95 text-foreground shadow-sm hover:bg-background"
+                />
+              </motion.div>
+            </div>
+            <button
+              type="button"
+              aria-label={safeIndex <= 0 ? "กลับไปการ์ดโปรไฟล์" : "ผลงานก่อนหน้า"}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                showPrevWork();
+              }}
+              className={`${arrowButtonClass} left-2`}
+            >
+              <ChevronLeft className="h-4 w-4" strokeWidth={2.2} />
+            </button>
+            {safeIndex < projects.length - 1 ? (
+              <button
+                type="button"
+                aria-label="ผลงานถัดไป"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  showNextWork();
+                }}
+                className={`${arrowButtonClass} right-2`}
+              >
+                <ChevronRight className="h-4 w-4" strokeWidth={2.2} />
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </motion.div>
+    </div>
   );
 };
 

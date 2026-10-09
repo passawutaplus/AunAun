@@ -253,7 +253,7 @@ const StudioCreateInner = () => {
               {logoBusy ? (
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               ) : logoUrl ? (
-                <img src={logoUrl} alt="logo" className="w-full h-full object-cover" />
+                <img loading="lazy" decoding="async" src={logoUrl} alt="logo" className="w-full h-full object-cover" />
               ) : name ? (
                 <span className="text-2xl font-semibold text-foreground/70">{initial}</span>
               ) : (
@@ -310,7 +310,7 @@ const StudioCreateInner = () => {
           <div className="space-y-1.5">
             <Label className="text-xs">Slug (สำหรับ URL)</Label>
             <div className="flex items-center gap-1.5 text-sm">
-              <span className="text-muted-foreground">aplus1.app/s/</span>
+              <span className="text-muted-foreground">samecor.com/s/</span>
               <Input
                 value={finalSlug}
                 onChange={(e) => setSlug(slugify(e.target.value))}
@@ -460,7 +460,7 @@ const StudioCreateInner = () => {
                 {coverBusy ? (
                   <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                 ) : coverUrl ? (
-                  <img src={coverUrl} alt="cover" className="w-full h-full object-cover" />
+                  <img loading="lazy" decoding="async" src={coverUrl} alt="cover" className="w-full h-full object-cover" />
                 ) : (
                   <div className="text-center text-muted-foreground text-sm">
                     <Upload className="w-5 h-5 mx-auto mb-1" />

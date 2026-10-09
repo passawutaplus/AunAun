@@ -63,7 +63,7 @@ function MetricCard({
 }
 
 const moduleCards = [
-  { title: "Aplus1 Setup", to: "setup", icon: Target },
+  { title: "SAMECOR Setup", to: "setup", icon: Target },
   { title: "In-app signals", to: "signals", icon: Radio },
   { title: "Creator & hire leads", to: "leads", icon: Users },
   { title: "Platform competitors", to: "competitors", icon: Radar },
@@ -196,7 +196,7 @@ export default function MarketingOverviewPage() {
     const base = `aplus1-marketing-leads-${activeBusinessId ?? "export"}`;
     if (format === "csv") exportRowsToCsv(`${base}.csv`, headers, rows);
     else if (format === "xlsx") await exportRowsToXlsx(`${base}.xlsx`, "Leads", headers, rows);
-    else exportHtmlToPdf("Aplus1 Marketing Leads", rowsToHtmlTable(headers, rows));
+    else exportHtmlToPdf("SAMECOR Marketing Leads", rowsToHtmlTable(headers, rows));
     if (activeBusinessId) {
       await logExport({
         export_format: format,
@@ -245,7 +245,7 @@ export default function MarketingOverviewPage() {
         <MarketingCard className="p-5">
           <p className="marketing-section-label text-xs font-semibold uppercase tracking-wide">Prompt Engine</p>
           <h2 className="mt-1 text-lg font-semibold text-admin-fg">
-            {uiLanguage === "th" ? "งาน AI สำหรับ growth Aplus1" : "AI tasks for Aplus1 growth"}
+            {uiLanguage === "th" ? "งาน AI สำหรับ growth SAMECOR" : "AI tasks for SAMECOR growth"}
           </h2>
           <div className="mt-4 grid gap-2">
             {PROMPT_TASK_LABELS.map((task) => (
@@ -273,7 +273,7 @@ export default function MarketingOverviewPage() {
 
       <MarketingCard className="p-5">
         <h2 className="text-lg font-semibold text-admin-fg">
-          {uiLanguage === "th" ? "โมดูล growth Aplus1" : "Aplus1 growth modules"}
+          {uiLanguage === "th" ? "โมดูล growth SAMECOR" : "SAMECOR growth modules"}
         </h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {moduleCards.map((m) => {

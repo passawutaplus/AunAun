@@ -36,7 +36,7 @@ export function getStripeSetupError(env: StripeEnv): string | null {
   }
 }
 
-function useDirectStripe(): boolean {
+function shouldUseDirectStripe(): boolean {
   const flag = process.env.STRIPE_USE_DIRECT;
   if (flag === "true" || flag === "1") return true;
   if (flag === "false" || flag === "0") return false;
@@ -47,7 +47,7 @@ export function createStripeClient(env: StripeEnv): Stripe {
   const secretKey = getConnectionApiKey(env);
   const apiVersion = "2026-03-25.dahlia";
 
-  if (useDirectStripe()) {
+  if (shouldUseDirectStripe()) {
     return new Stripe(secretKey, { apiVersion });
   }
 

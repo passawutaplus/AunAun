@@ -50,14 +50,14 @@ export const JobApplicationEmail = ({
 export const jobApplicationTemplate = {
   component: JobApplicationEmail,
   subject: (data: Record<string, unknown>) =>
-    `[Aplus1] ผู้สมัครใหม่ — ${(data.jobTitle as string) ?? 'งาน'}`,
+    `[SAMECOR] ผู้สมัครใหม่ — ${(data.jobTitle as string) ?? 'งาน'}`,
   displayName: 'Job application',
   previewData: {
     recipientName: 'พี่บอส',
     applicantName: 'น้องมิ้นท์',
     jobTitle: 'UI Designer — SaaS Dashboard',
     coverPreview: 'สนใจงานนี้มากครับ มี portfolio ด้าน dashboard หลายชิ้น',
-    actionUrl: 'https://aplus1-demo.vercel.app/jobs/example',
+    actionUrl: 'https://aplus1-demo.vercel.app/hiring/example',
   },
 }
 

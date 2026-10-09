@@ -10,6 +10,7 @@ import {
 } from "@/components/collections/CollectionBrowseToolbar";
 import { formatServicePrice } from "@/hooks/useCreatorServices";
 import { useBookmarkedPackages } from "@/hooks/useCreatorServiceBookmarks";
+import { usePackageFeedStats } from "@/hooks/usePackageFeedStats";
 import type { PackageFeedCard } from "@/hooks/usePackageFeed";
 import {
   collectionMasonryClass,
@@ -86,6 +87,9 @@ export default function PortfolioBookingPanel({ userId }: Props) {
     }
     return sorted;
   }, [data, query, sortMode]);
+
+  const serviceIds = useMemo(() => visible.map((c) => c.service.id), [visible]);
+  const { data: statsById = {} } = usePackageFeedStats(serviceIds);
 
   if (isLoading) {
     return (
@@ -174,7 +178,7 @@ export default function PortfolioBookingPanel({ userId }: Props) {
                   {density === "list" ? (
                     <BookingListRow card={card} />
                   ) : (
-                    <PackageCard data={card} />
+                    <PackageCard data={card} stats={statsById[card.service.id]} />
                   )}
                 </div>
               ))}

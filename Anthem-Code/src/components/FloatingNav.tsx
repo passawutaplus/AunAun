@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import { isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
+import { isAplus1HiringBoardEnabled, isAplus1LaunchMinimal } from "@/lib/aplus1Launch";
 
 import { useAuthDialog } from "@/stores/authDialogStore";
 
@@ -39,7 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/chat", label: "Chat", icon: MessageCircle, match: (p) => p.startsWith("/chat"), requiresAuth: true },
 ];
 
-const launchNavItems = NAV_ITEMS.filter((item) => item.to === "/" || item.to === "/hiring" || item.to === "/chat");
+const launchNavItems = NAV_ITEMS.filter((item) => item.to === "/" || item.to === "/chat");
 
 const PROFILE_MATCH = (p: string) =>
   p.startsWith("/portfolio") || p.startsWith("/settings") || p.startsWith("/collections");
@@ -81,7 +81,9 @@ const FloatingNav = () => {
 
   const notificationsActive = pathname.startsWith("/notifications");
   const navItems = (isAplus1LaunchMinimal() ? launchNavItems : NAV_ITEMS).filter(
-    (item) => !(item.requiresAuth && !user),
+    (item) =>
+      !(item.requiresAuth && !user) &&
+      (item.to !== "/hiring" || isAplus1HiringBoardEnabled()),
   );
 
   return (
@@ -192,7 +194,10 @@ const FloatingNav = () => {
           type="button"
           onClick={openCreate}
           aria-label="ลงผลงาน"
-          className="pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-white shadow-lg shadow-black/20 transition-all duration-200 ease-out hover:opacity-90 active:scale-95"
+          className={cn(
+            "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white shadow-lg shadow-black/20 transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
+            pathname === "/" || pathname.startsWith("/learn") ? "bg-[#2f2e2c]" : "bg-gradient-brand",
+          )}
         >
           <Plus className="h-6 w-6" strokeWidth={2.5} />
         </button>

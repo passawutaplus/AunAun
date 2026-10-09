@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Layers3, Plus, Check, Lock } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CompactLoader } from "@/components/ui/BanterLoader";
@@ -25,13 +25,18 @@ interface Props {
   triggerClassName?: string;
   align?: "start" | "center" | "end";
   side?: "top" | "right" | "bottom" | "left";
+  onOpenChange?: (open: boolean) => void;
 }
 
-const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align = "end", side = "bottom" }: Props) => {
+const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align = "end", side = "bottom", onOpenChange }: Props) => {
   const { user } = useAuth();
   const openAuth = useAuthDialog((s) => s.openSignup);
   const [open, setOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+
+  useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
 
   const enabled = open && !!user?.id && !!projectId;
   const {
@@ -79,7 +84,7 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
   };
 
   const trigger = children ? (
-    <span onClick={handleTriggerClick}>{children}</span>
+    <span className="flex min-w-0" onClick={handleTriggerClick}>{children}</span>
   ) : (
     <button
       onClick={handleTriggerClick}
@@ -137,7 +142,7 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
                       >
                         <div className="w-10 h-10 rounded-md bg-muted overflow-hidden grid grid-cols-2 grid-rows-2 gap-px shrink-0">
                           {c.covers.slice(0, 4).map((u, i) => (
-                            <img key={i} src={u} alt="" className="w-full h-full object-cover" />
+                            <img loading="lazy" decoding="async" key={i} src={u} alt="" className="w-full h-full object-cover" />
                           ))}
                           {c.covers.length === 0 && (
                             <div className="col-span-2 row-span-2 flex items-center justify-center">

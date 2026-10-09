@@ -1,6 +1,7 @@
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import ColorSearchButton from "@/components/feed/ColorSearchButton";
 import { HideAiToggle } from "@/components/icons/NoAiIcon";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,8 @@ interface SearchBarProps {
   compact?: boolean;
   /** Mobile: show search icon only until tapped */
   expandable?: boolean;
+  /** Grow the field out of the icon instead of sliding the icon sideways. */
+  expandAnchor?: "start" | "end";
   onExpandedChange?: (expanded: boolean) => void;
   /**
    * When set, filter button opens this callback instead of the popover.
@@ -30,6 +33,9 @@ interface SearchBarProps {
   /** Hide AI-assisted works — shown left of the filter button. */
   hideAi?: boolean;
   onHideAiToggle?: () => void;
+  /** Picked cover color (#rrggbb). Shown only when onColorQueryChange is set. */
+  colorQuery?: string | null;
+  onColorQueryChange?: (hex: string | null) => void;
 }
 
 const SearchBar = ({
@@ -40,6 +46,7 @@ const SearchBar = ({
   filterCount = 0,
   compact = false,
   expandable = false,
+  expandAnchor = "start",
   onExpandedChange,
   onFilterClick,
   onExpandClick,
@@ -47,6 +54,8 @@ const SearchBar = ({
   onRecentSelect,
   hideAi = false,
   onHideAiToggle,
+  colorQuery = null,
+  onColorQueryChange,
 }: SearchBarProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(() => value.length > 0);
@@ -117,10 +126,136 @@ const SearchBar = ({
     <HideAiToggle active={hideAi} onToggle={onHideAiToggle} className="h-8 w-8" />
   ) : null;
 
+  const colorControl = onColorQueryChange ? (
+    <ColorSearchButton value={colorQuery} onChange={onColorQueryChange} />
+  ) : null;
+
+  const withColor = (field: ReactNode, end = false) => {
+    if (!colorControl) return field;
+    return (
+      <div
+        className={cn(
+          "flex items-center gap-1.5",
+          end ? "ml-auto w-max max-w-full" : "w-full",
+        )}
+        data-search-bar
+      >
+        {colorControl}
+        <div className={cn("relative min-w-0", end ? "" : "flex-1")}>{field}</div>
+      </div>
+    );
+  };
+
   const hasTrailing = Boolean(hideAiButton || filterButton);
+  const anchored = expandable && expandAnchor === "end" && !sheetMode;
+
+  if (anchored) {
+    return withColor(
+      <div className={cn("relative", !colorControl && "ml-auto w-max max-w-full")}>
+        <div
+          data-search-bar
+          className={cn(
+            "relative h-9 overflow-hidden rounded-full border border-border bg-secondary transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+            isOpen ? "w-56 xl:w-72" : "w-9",
+          )}
+        >
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={(e) => {
+            const next = e.relatedTarget as HTMLElement | null;
+            if (next?.closest("[data-search-bar]")) return;
+            setFocused(false);
+            collapse();
+          }}
+          tabIndex={isOpen ? 0 : -1}
+          aria-hidden={!isOpen}
+          className={cn(
+            "h-full w-full bg-transparent text-sm text-foreground outline-none placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40",
+            isOpen ? "pl-4 opacity-100" : "pointer-events-none pl-3 opacity-0",
+            isOpen && hideAiButton && filterButton ? "pr-[8.75rem]" : isOpen ? "pr-16" : "pr-9",
+          )}
+        />
+        <div
+          aria-hidden={!isOpen}
+          inert={!isOpen ? "" : undefined}
+          className={cn(
+            "absolute right-9 top-1/2 z-10 flex -translate-y-1/2 items-center gap-0.5 transition-opacity duration-200",
+            isOpen ? "opacity-100" : "pointer-events-none opacity-0",
+          )}
+        >
+          {value.length === 0 ? (
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setExpanded(false)}
+              className="rounded-lg p-1.5 hover:bg-background/60"
+              aria-label="ปิดค้นหา"
+              tabIndex={isOpen ? 0 : -1}
+            >
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          ) : null}
+          {hideAiButton}
+          {filterButton}
+        </div>
+        <button
+          type="button"
+          aria-label={isOpen && value.length === 0 ? "ปิดค้นหา" : placeholder}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            if (!isOpen) {
+              setExpanded(true);
+              return;
+            }
+            if (value.length === 0) setExpanded(false);
+            else inputRef.current?.focus();
+          }}
+          className="absolute right-0 top-0 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground"
+        >
+          <Search className="h-4 w-4" aria-hidden />
+          {!isOpen && filterCount > 0 ? (
+            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary" aria-hidden />
+          ) : null}
+        </button>
+        </div>
+        {showRecent ? (
+          <div
+            className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-40 rounded-2xl border border-border/60 bg-card/95 p-2 shadow-lg backdrop-blur-md"
+            data-search-bar
+          >
+            <p className="px-2 py-1 text-[11px] text-muted-foreground">ค้นหาล่าสุด</p>
+            <div className="flex flex-wrap gap-1.5 px-1 pb-1">
+              {recentSearches.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs text-foreground hover:bg-secondary/80"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    onRecentSelect?.(q);
+                    onChange(q);
+                    setFocused(false);
+                  }}
+                >
+                  <Search className="h-3 w-3 text-muted-foreground" aria-hidden />
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>,
+      true,
+    );
+  }
 
   if (expandable && !isOpen) {
-    return (
+    const collapsed = (
       <button
         type="button"
         onClick={() => {
@@ -139,9 +274,17 @@ const SearchBar = ({
         )}
       </button>
     );
+    return colorControl ? (
+      <div className="flex w-max items-center gap-1.5" data-search-bar>
+        {colorControl}
+        {collapsed}
+      </div>
+    ) : (
+      collapsed
+    );
   }
 
-  return (
+  return withColor(
     <div className="relative" data-search-bar>
       <Search
         className={cn(

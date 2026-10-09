@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { resolveProjectAssetForOpen } from "@/lib/downloadProjectAsset";
 import { assertProjectAssetSafeToOpen } from "@/lib/projectAssetScan";
 import type { ProjectAsset } from "@/lib/projectAssets";
-import { openSafeExternalUrl } from "@/lib/safeUrl";
+import { openSafeExternalUrl } from "@/lib/externalUrl";
 import { cn } from "@/lib/utils";
 
 type Props = {

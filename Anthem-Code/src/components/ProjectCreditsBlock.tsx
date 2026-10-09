@@ -48,7 +48,7 @@ const ProjectCreditsBlock = ({ studioId, creditedUserIds = [], ownerId }: Props)
         >
           <div className="w-10 h-10 rounded-xl bg-gradient-brand grid place-items-center overflow-hidden shrink-0">
             {studio.avatar_url ? (
-              <img src={studio.avatar_url} alt="" className="w-full h-full object-cover" />
+              <img loading="lazy" decoding="async" src={studio.avatar_url} alt="" className="w-full h-full object-cover" />
             ) : (
               <Building2 className="w-4 h-4 text-white" />
             )}
@@ -76,7 +76,7 @@ const ProjectCreditsBlock = ({ studioId, creditedUserIds = [], ownerId }: Props)
               >
                 <span className="w-6 h-6 rounded-full overflow-hidden bg-muted shrink-0">
                   {c.avatar_url ? (
-                    <img src={c.avatar_url} alt="" className="w-full h-full object-cover" />
+                    <img loading="lazy" decoding="async" src={c.avatar_url} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <span className="w-full h-full bg-gradient-brand block" />
                   )}

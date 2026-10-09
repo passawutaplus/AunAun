@@ -5,7 +5,7 @@ import {
   BRAND_TAGLINE_EN,
 } from "@/lib/brandConfig";
 
-/** Marketing scope — intelligence สำหรับ growth ของ Aplus1 เท่านั้น */
+/** Marketing scope — intelligence สำหรับ growth ของ SAMECOR เท่านั้น */
 export const MARKETING_PRODUCT_NAME = "Marketing";
 export const MARKETING_SCOPE_LABEL_TH = `${BRAND_NAME} Growth Intelligence`;
 export const MARKETING_SCOPE_LABEL_EN = `${BRAND_NAME} Growth Intelligence`;
@@ -33,9 +33,9 @@ export const MARKETING_APLUS1_DEFAULT_BUSINESS = {
   preferred_platforms: ["TikTok", "Instagram", "Facebook", "LinkedIn", "YouTube"],
 } as const;
 
-/** กลุ่ม use case ที่เกี่ยวกับ Aplus1 โดยตรง — ไม่ใช่เทมเพลตธุรกิจทั่วไป */
+/** กลุ่ม use case ที่เกี่ยวกับ SAMECOR โดยตรง — ไม่ใช่เทมเพลตธุรกิจทั่วไป */
 export const MARKETING_APLUS1_PRESETS = [
-  "Aplus1 Platform Growth",
+  "SAMECOR Platform Growth",
   "Creator Acquisition",
   "Brand / Hiring Lead Gen",
   "Studio & Collab Growth",
@@ -48,7 +48,7 @@ export const MARKETING_APLUS1_PROMPT_TASKS = [
   "Analyze creator signup intent",
   "Score brand hiring lead quality",
   "Summarize competitor platform strategy",
-  "Generate Aplus1 marketing insight",
+  "Generate SAMECOR marketing insight",
   "Plan ads for creator vs hirer funnel",
   "Draft compliant outreach to creators",
 ] as const;

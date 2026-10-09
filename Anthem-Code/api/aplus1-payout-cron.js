@@ -4,20 +4,10 @@
  * Protect with CRON_SECRET.
  */
 
-function readEnv(name) {
-  return process.env[name] || "";
-}
-
-function json(res, status, body) {
-  res.statusCode = status;
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(body));
-}
+import { json, readEnv, safeBearerMatches } from "./_helpers.js";
 
 export default async function handler(req, res) {
-  const secret = readEnv("CRON_SECRET");
-  const auth = req.headers.authorization || "";
-  if (secret && auth !== `Bearer ${secret}`) {
+  if (!safeBearerMatches(req, readEnv("CRON_SECRET"))) {
     return json(res, 401, { error: "unauthorized" });
   }
 

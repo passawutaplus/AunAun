@@ -95,7 +95,7 @@ const ShareDialogPanel = ({
         <div className="overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm">
           <div className="relative aspect-[1.91/1] bg-neutral-950">
             {imageUrl ? (
-              <img
+              <img loading="lazy" decoding="async"
                 src={imageUrl}
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover object-center"
@@ -163,7 +163,7 @@ const ShareDialogPanel = ({
                 {item.icon === "mail" ? (
                   <Mail className="h-5 w-5" aria-hidden />
                 ) : (
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={BRAND_ICON_SRC[item.icon]}
                     alt=""
                     className={item.imgClass}

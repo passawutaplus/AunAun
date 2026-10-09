@@ -91,7 +91,7 @@ function SortableThumb({
       {...attributes}
       {...listeners}
     >
-      <img src={src} alt="" className="pointer-events-none h-full w-full object-cover" draggable={false} />
+      <img loading="lazy" decoding="async" src={src} alt="" className="pointer-events-none h-full w-full object-cover" draggable={false} />
     </button>
   );
 }
@@ -243,7 +243,7 @@ export function GallerySlideBlockEditor({
                 current === i ? "border-primary" : "border-transparent opacity-60 hover:opacity-100",
               )}
             >
-              <img src={src} alt="" className="h-full w-full object-cover" draggable={false} />
+              <img loading="lazy" decoding="async" src={src} alt="" className="h-full w-full object-cover" draggable={false} />
             </button>
           ))
         )}

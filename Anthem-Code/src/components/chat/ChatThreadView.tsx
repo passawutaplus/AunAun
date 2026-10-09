@@ -1346,7 +1346,7 @@ const ChatThreadView = ({
 
   return (
     <div className="flex flex-col h-full min-w-0 bg-background">
-      <header className="flex items-center gap-2 px-3 py-2 border-b border-border bg-background/90 backdrop-blur-md shrink-0">
+      <header className="flex items-center gap-2 px-3 py-2 border-b border-border bg-card shrink-0">
         {showBack && (
           <BackButton
             onClick={onBack ?? (() => navigate("/chat"))}
@@ -1370,7 +1370,7 @@ const ChatThreadView = ({
               <Users className="w-4 h-4 text-primary" />
             </div>
           ) : other?.avatar_url ? (
-            <img src={other.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+            <img loading="lazy" decoding="async" src={other.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
           ) : (
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-medium text-muted-foreground text-sm">
               {displayName[0]}

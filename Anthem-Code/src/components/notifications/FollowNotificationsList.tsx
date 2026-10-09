@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 
 type Props = {
   onBeforeNavigate?: () => void;
+  english?: boolean;
 };
 
-const FollowNotificationsList = ({ onBeforeNavigate }: Props) => {
+const FollowNotificationsList = ({ onBeforeNavigate, english = false }: Props) => {
   const navigate = useNavigate();
   const { data: followers = [], isLoading } = useFollowNotifications();
 
@@ -22,8 +23,12 @@ const FollowNotificationsList = ({ onBeforeNavigate }: Props) => {
     return (
       <EmptyState
         icon={UserPlus}
-        title="ยังไม่มีคนติดตามใหม่"
-        description="เมื่อมีคนติดตามคุณ จะแสดงที่นี่และในกล่องแจ้งเตือน"
+        title={english ? "No new followers" : "ยังไม่มีคนติดตามใหม่"}
+        description={
+          english
+            ? "When someone follows you, they will show up here"
+            : "เมื่อมีคนติดตามคุณ จะแสดงที่นี่และในกล่องแจ้งเตือน"
+        }
       />
     );
   }
@@ -31,7 +36,9 @@ const FollowNotificationsList = ({ onBeforeNavigate }: Props) => {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2 px-1">
-        <p className="text-xs text-muted-foreground">ผู้ติดตามล่าสุด · กดติดตามกลับได้ทันที</p>
+        <p className="text-xs text-muted-foreground">
+          {english ? "Latest followers · follow back anytime" : "ผู้ติดตามล่าสุด · กดติดตามกลับได้ทันที"}
+        </p>
         <Button
           type="button"
           variant="ghost"
@@ -42,12 +49,12 @@ const FollowNotificationsList = ({ onBeforeNavigate }: Props) => {
             navigate("/portfolio/followers");
           }}
         >
-          ดูทั้งหมด
+          {english ? "View all" : "ดูทั้งหมด"}
         </Button>
       </div>
       <div className="space-y-2">
         {followers.slice(0, 30).map((u) => (
-          <FollowUserRow key={u.userId} user={u} showFollowedAt showFollowBack />
+          <FollowUserRow key={u.userId} user={u} showFollowedAt showFollowBack english={english} />
         ))}
       </div>
     </div>

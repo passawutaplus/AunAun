@@ -20,7 +20,7 @@ export function HireMoneyOutcomePanel({ outcome, variant = "admin", className }:
   const rows = [
     { key: "buyer", title: "ผู้จ้าง", party: outcome.parties.buyer },
     { key: "seller", title: "ครีเอเตอร์", party: outcome.parties.seller },
-    { key: "aplus1", title: "Aplus1", party: outcome.parties.aplus1 },
+    { key: "aplus1", title: "SAMECOR", party: outcome.parties.aplus1 },
     { key: "payso", title: "Payso", party: outcome.parties.payso },
   ] as const;
 

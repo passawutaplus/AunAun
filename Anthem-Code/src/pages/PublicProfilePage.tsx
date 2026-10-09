@@ -26,7 +26,9 @@ import CatalogIcon from "@/components/icons/CatalogIcon";
 import UserAvatar from "@/components/UserAvatar";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import ProfileServicesSection from "@/components/services/ProfileServicesSection";
+import ProfileObjectsSection from "@/components/objects/ProfileObjectsSection";
 import { useCreatorServices } from "@/hooks/useCreatorServices";
+import { useOwnerPublishedObjects } from "@/hooks/useCreatorObjects";
 
 import { useFollowState } from "@/hooks/useFollow";
 import { useAuth } from "@/hooks/useAuth";
@@ -122,7 +124,7 @@ const PublicProfilePage = () => {
       ? "medium"
       : readSeriesDensity("aplus1.profile.public.catalog.density", "medium"),
   );
-  const PROFILE_TABS = ["works", "series", "services", "about", "reviews"] as const;
+  const PROFILE_TABS = ["works", "series", "services", "objects", "about", "reviews"] as const;
   type ProfileTab = (typeof PROFILE_TABS)[number];
   const tabFromUrl = params.get("tab");
   const [activeTab, setActiveTab] = useState<ProfileTab>(() =>
@@ -202,6 +204,7 @@ const PublicProfilePage = () => {
     isSelf && !visitorPreview
       ? creatorServices.length
       : creatorServices.filter((s) => s.status === "Published").length;
+  const { data: profileObjects = [] } = useOwnerPublishedObjects(resolvedUserId);
 
   const {
     data: projects = [],
@@ -544,7 +547,7 @@ const PublicProfilePage = () => {
         <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl glass-panel">
           <div className="relative aspect-[32/9] w-full bg-muted">
             {hasCover ? (
-              <img src={coverUrl} alt="" className="w-full h-full object-cover" />
+              <img loading="lazy" decoding="async" src={coverUrl} alt="" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-brand opacity-75" />
             )}
@@ -804,6 +807,7 @@ const PublicProfilePage = () => {
             { value: "works", label: `Project (${portfolioProjects.length})` },
             { value: "series", label: `Catalog (${seriesList.length})` },
             { value: "services", label: `Packages (${servicesTabCount})` },
+            { value: "objects", label: `Objects (${profileObjects.length})` },
             { value: "about", label: "About Me" },
             { value: "reviews", label: "Review" },
           ]}
@@ -855,6 +859,10 @@ const PublicProfilePage = () => {
                 )}
               </div>
             ))}
+
+          {activeTab === "objects" && resolvedUserId ? (
+            <ProfileObjectsSection ownerId={resolvedUserId} />
+          ) : null}
 
           {activeTab === "services" && resolvedUserId ? (
             <ProfileServicesSection

@@ -1,6 +1,10 @@
-# Aplus1 PRD: ผลงานจริง -> โอกาส
+# SAMECOR PRD: ผลงานจริง -> โอกาส
 
-Updated: 2026-07-03  
+Updated: 2026-10-02  
+Public name: **SAMECOR** = SAME + CORE  
+Tagline: **You Create. We Connect.**  
+Journey: **Create your profile. Connect through your work. Discover new opportunities.**  
+Promise: **1 Profile. 100+ Opportunities.**  
 Audience: Founder, product, design, engineering, Cursor  
 Source research:
 
@@ -12,11 +16,11 @@ Source research:
 
 ## 1. Product Summary
 
-Aplus1 คือแพลตฟอร์มที่ช่วยให้ครีเอเตอร์ไทยใช้ "ผลงานจริง" เป็นหลักฐานของศักยภาพ แล้วเปลี่ยนการถูกค้นพบให้กลายเป็น "โอกาส" ที่เหมาะสม เช่น งานจ้าง, collaboration, ฝึกงาน, เข้าทีม, feedback, mentor, studio roster หรือโอกาสในอนาคต
+SAMECOR คือแพลตฟอร์มที่ให้ครีเอเตอร์ใช้ผลงานจริงเป็นตัวตน แล้วเชื่อมผลงานนั้นกับคน โปรเจกต์ และโอกาสที่เหมาะสม เช่น งานจ้าง, collaboration, ฝึกงาน, เข้าทีม, feedback, mentor, studio roster หรือโอกาสในอนาคต
 
 Positioning หลัก:
 
-> ผลงานจริง พาไปเจอโอกาสใหม่
+> You Create. We Connect.
 
 Product loop ที่ต้องพิสูจน์:
 

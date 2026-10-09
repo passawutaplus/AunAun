@@ -2,7 +2,7 @@ import { useSearchParams } from 'react-router-dom'
 import { HttpErrorPage } from '@/components/HttpErrorPage'
 import type { HttpErrorKind } from '@/lib/httpErrorCopy'
 
-const ALLOWED: HttpErrorKind[] = ['404', '405', '500', '503', 'generic', 'token']
+const ALLOWED: HttpErrorKind[] = ['400', '403', '404', '405', '500', '502', '503', 'generic', 'token']
 
 type Props = { defaultKind?: HttpErrorKind }
 

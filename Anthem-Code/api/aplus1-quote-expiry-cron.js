@@ -6,15 +6,7 @@
  * Marks shared.hire_quotes with status=sent and expires_at < now() as expired.
  */
 
-function readEnv(name) {
-  return process.env[name] || "";
-}
-
-function json(res, status, body) {
-  res.statusCode = status;
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(body));
-}
+import { json, readEnv, safeBearerMatches } from "./_helpers.js";
 
 async function expireQuotes() {
   const supabaseUrl = readEnv("SUPABASE_URL") || readEnv("VITE_SUPABASE_URL");
@@ -54,9 +46,7 @@ async function expireQuotes() {
 }
 
 export default async function handler(req, res) {
-  const secret = readEnv("CRON_SECRET");
-  const auth = req.headers.authorization || "";
-  if (secret && auth !== `Bearer ${secret}`) {
+  if (!safeBearerMatches(req, readEnv("CRON_SECRET"))) {
     return json(res, 401, { error: "unauthorized" });
   }
 

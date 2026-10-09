@@ -3,6 +3,9 @@
   "framework": "vite",
   "buildCommand": "npm run sitemap:gen && npm run build",
   "outputDirectory": "dist",
+  "crons": [
+    { "path": "/api/aplus1-quote-expiry-cron?kind=expire-quotes", "schedule": "0 18 * * *" }
+  ],
   "redirects": [
     {
       "source": "/jobs/new",
@@ -17,13 +20,25 @@
     {
       "source": "/",
       "has": [{ "type": "host", "value": "forum.aplus1.app" }],
-      "destination": "https://aplus1.app/forum",
+      "destination": "https://samecor.com/forum",
       "permanent": false
     },
     {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "forum.aplus1.app" }],
-      "destination": "https://aplus1.app/forum/:path*",
+      "destination": "https://samecor.com/forum/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "forum.samecor.com" }],
+      "destination": "https://samecor.com/forum",
+      "permanent": false
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "forum.samecor.com" }],
+      "destination": "https://samecor.com/forum/:path*",
       "permanent": false
     }
   ],

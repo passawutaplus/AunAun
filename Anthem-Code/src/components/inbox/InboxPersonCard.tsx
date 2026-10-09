@@ -21,7 +21,7 @@ export function InboxPersonCard({
   const body = (
     <>
       {avatarUrl?.trim() ? (
-        <img src={avatarUrl} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+        <img loading="lazy" decoding="async" src={avatarUrl} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
       ) : (
         <div
           className={cn(

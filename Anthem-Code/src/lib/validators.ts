@@ -90,16 +90,14 @@ export const hireInviteBriefSchema = z
     budgetAmount: z.number().int().positive().max(10_000_000).optional(),
     budgetMin: z
       .number({
-        required_error: "กรุณาระบุงบประมาณต่ำสุด",
-        invalid_type_error: "กรุณาระบุงบประมาณต่ำสุด",
+        error: "กรุณาระบุงบประมาณต่ำสุด", // zod 4: replaces required_error / invalid_type_error
       })
       .int()
       .nonnegative()
       .max(10_000_000),
     budgetMax: z
       .number({
-        required_error: "กรุณาระบุงบประมาณสูงสุด",
-        invalid_type_error: "กรุณาระบุงบประมาณสูงสุด",
+        error: "กรุณาระบุงบประมาณสูงสุด", // zod 4: replaces required_error / invalid_type_error
       })
       .int()
       .nonnegative()

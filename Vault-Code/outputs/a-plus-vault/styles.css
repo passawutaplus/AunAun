@@ -6352,7 +6352,7 @@ html.discover-detail-open,html.discover-detail-open body{overflow:hidden}
 .danger-button.quiet{background:transparent!important;color:var(--muted)!important;box-shadow:none!important;padding:8px 0;font-weight:500}
 .danger-button.quiet:hover{color:#cc3931!important;text-decoration:underline}
 .drawer-inner .detail-primary-actions{position:sticky;bottom:0;z-index:5;margin:14px -4px 0;padding:12px 4px 14px;background:linear-gradient(to top,var(--drawer-fade,var(--surface,#fff)) 70%,transparent)}
-@media(min-width:1181px){.workspace:not(.detail-closed) .drawer{position:sticky;top:88px;align-self:start;height:calc(100vh - 160px);max-height:calc(100vh - 160px)}}
+
 
 /* A+ Vault phone: an opened My Vault item is its own full page (like Discover), the grid behind does not scroll */
 @media(max-width:860px){
@@ -6739,3 +6739,122 @@ html[data-theme="dark"] .fy-link{color:var(--accent-hover)}
   .vault-tabs-row .vault-tabs{width:100%}
   .vault-tabs-row .vault-tab{flex:1 1 0}
 }
+
+/* A+ Vault: Museum tagline */
+.museum-tagline{margin:10px 0 28px;font-family:"Agrandir Wide","IBM Plex Sans Thai",sans-serif;font-size:clamp(26px,4.2vw,52px);font-weight:300;line-height:1.12;letter-spacing:-.01em;color:var(--ink-strong)}
+.museum-tagline b{font-weight:300;color:var(--accent,#f05040)}
+.museum-tagline .th{display:block;margin-top:12px;font-family:"IBM Plex Sans Thai",sans-serif;font-size:16px;font-weight:400;letter-spacing:0;color:var(--muted)}
+@media(max-width:720px){.museum-tagline{margin:6px 0 18px;font-size:clamp(24px,7.4vw,32px)}.museum-tagline .th{margin-top:8px;font-size:14px}}
+/* Museum popup: the wheel over the info panel must scroll the page behind it when the panel has nothing to scroll */
+.discover-detail-info{overscroll-behavior:auto}
+
+/* A+ Vault: detail drawer v3 - header menu, meta line, colour card, organize card, museum nearby */
+.detail-meta{display:grid;gap:8px;margin:2px 0 10px}
+.detail-meta .detail-subline{margin:0}
+.detail-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.detail-saved,.detail-private{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:999px;font-size:11.5px;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+.detail-private .flat-icon{width:11px;height:11px}
+.detail-meta .detail-find-original{margin:0}
+.detail-card{display:flex;flex-direction:column;gap:12px;margin:14px 0;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface-soft)}
+.detail-card .viewer-tools{margin:0}
+.detail-color .viewer-palette{margin:0}
+.detail-color .detail-palette-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0}
+.detail-find{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.detail-find .lb-find-group{margin:0}
+.detail-find .lb-find{background:var(--surface);border:1px solid var(--line);color:var(--ink);height:34px;font-size:12.5px}
+.detail-find .lb-find:hover{border-color:rgba(240,80,64,.55);color:var(--accent,#f05040)}
+.detail-organize .field{margin:0}
+.detail-unsorted{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(240,80,64,.1);font-size:12.5px;color:var(--ink)}
+.detail-unsorted b{color:var(--accent,#f05040);font-weight:600;margin-right:6px}
+.detail-next{border:0;background:none;color:var(--accent-fill,#d9362a);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+html[data-theme="dark"] .detail-next{color:var(--accent-hover)}
+.detail-more,.detail-copy{position:relative}
+.detail-more>summary,.detail-copy>summary{list-style:none;cursor:pointer}
+.detail-more>summary::-webkit-details-marker,.detail-copy>summary::-webkit-details-marker{display:none}
+.detail-more-menu{position:absolute;z-index:20;top:calc(100% + 6px);right:0;min-width:190px;padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow);display:grid;gap:2px}
+.detail-copy .detail-more-menu{right:auto;left:0}
+.detail-more-menu button{display:flex;align-items:center;gap:8px;min-height:38px;padding:0 10px;border:0;border-radius:8px;background:none;color:var(--ink);font:inherit;font-size:13.5px;text-align:left;cursor:pointer}
+.detail-more-menu button:hover{background:var(--surface-soft)}
+.detail-more-menu button.danger{color:var(--danger,#cc3931)}
+.detail-more-menu .flat-icon{width:15px;height:15px}
+.detail-primary-actions{display:flex;gap:8px;align-items:center}
+.detail-primary-actions .primary-button{flex:1 1 auto}
+.detail-project-pick{position:relative;display:inline-flex;align-items:center;gap:6px;flex:0 1 190px;min-width:0;height:40px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-soft);color:var(--ink)}
+.detail-project-pick .flat-icon{width:15px;height:15px;flex:none}
+.detail-project-pick select{width:100%;min-width:0;border:0;background:transparent;color:inherit;font:inherit;font-size:13px;outline:none;text-overflow:ellipsis;cursor:pointer}
+/* detail action bar: one row */
+.drawer-inner .detail-primary-actions{flex-wrap:nowrap}
+.drawer-inner .detail-primary-actions .primary-button{flex:1 1 0;min-width:0}
+.drawer-inner .detail-primary-actions .detail-project-pick{flex:0 1 160px}
+
+/* A+ Vault: Vault colour picker panel (pick, Select, repeat, Done) */
+.vault-color-wrap{position:relative;flex:0 0 auto}
+.vault-color-panel{right:auto;left:50%;transform:translateX(-50%);top:calc(100% + 10px)}
+.vault-color-panel .discover-color-tip{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
+.vault-color-panel .discover-color-apply{min-height:40px;min-width:84px}
+.vc-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+.vc-done{width:100%;min-height:44px;margin-top:12px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
+.vc-done:hover{background:var(--surface-soft)}
+@media(max-width:560px){.vault-color-panel{position:fixed;left:12px;right:12px;top:auto;bottom:12px;transform:none;width:auto;max-height:80vh}}
+
+/* colour panel: heading in Agrandir Wide, Main/Any + Clear beside it */
+.vault-color-panel .discover-filter-label{font-family:"Agrandir Wide","IBM Plex Sans Thai",sans-serif;font-size:13px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-strong)}
+.vc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.vc-head .vc-foot{margin:0}
+.vc-head .discover-color-clear{margin:0;padding:0 4px;white-space:nowrap}
+
+/* A+ Vault: My Vault detail as a centred popup (desktop). Below 1181px the same content stays a side panel / full page. */
+.drawer-inner{display:flex;flex-direction:column}
+.dm-grid,.dm-left,.dm-right,.dm-below{display:contents}
+.drawer-inner .detail-header{order:0}
+.drawer-inner .detail-title{order:1}
+.drawer-inner .detail-meta{order:2}
+.drawer-inner .detail-preview,.drawer-inner .replace-image{order:3}
+.drawer-inner .detail-color{order:4}
+.drawer-inner .detail-organize{order:5}
+.drawer-inner .detail-share-field{order:6}
+.drawer-inner .detail-same{order:7}
+.drawer-inner .detail-similar{order:8}
+.drawer-inner .detail-fold{order:9}
+.drawer-inner .detail-primary-actions{order:10}
+.drawer-inner > *,.dm-left > *,.dm-right > *,.dm-below > *{flex-shrink:0}
+.drawer-scrim{display:none}
+@media(min-width:1181px){
+  .workspace:not(.detail-closed){grid-template-columns:232px minmax(0,1fr)!important}
+  .workspace.left-collapsed:not(.detail-closed){grid-template-columns:66px minmax(0,1fr)!important}
+  .workspace:not(.detail-closed) .drawer-scrim{display:block;position:fixed;inset:0;z-index:139;background:rgba(6,8,10,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+  .workspace:not(.detail-closed) .drawer{position:fixed!important;inset:0;margin:auto!important;top:0!important;align-self:auto;z-index:140;width:min(1180px,calc(100vw - 96px))!important;max-width:none!important;height:min(860px,calc(100vh - 64px))!important;max-height:calc(100vh - 64px)!important;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:0 30px 90px rgba(0,0,0,.45);overflow:hidden}
+  .workspace:not(.detail-closed) .drawer .resize-handle{display:none}
+  .workspace:not(.detail-closed) .drawer>.drawer-inner{position:static;top:auto;height:100%;max-height:100%;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;padding:0 28px}
+  .drawer-inner .detail-header{position:sticky;top:0;z-index:12;margin:0 -28px;padding:14px 28px 10px;background:linear-gradient(to bottom,var(--surface) 70%,transparent)}
+  .dm-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(320px,1fr);gap:28px;align-items:start}
+  .dm-left,.dm-right{display:flex;flex-direction:column;min-width:0}
+  .dm-below{display:flex;flex-direction:column;gap:6px;margin-top:22px}
+  .dm-left .detail-preview{max-height:64vh}
+  .dm-right .detail-title{font-size:26px;margin:0 0 4px}
+  .dm-below .detail-similar-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;overflow:visible}
+  .dm-below .detail-similar-item{width:auto;height:auto;aspect-ratio:1/1}
+  .dm-below .detail-similar-item img{width:100%;height:100%;object-fit:cover}
+  .drawer-inner > .detail-primary-actions{position:sticky;bottom:0;margin:22px -28px 0;padding:14px 28px 18px;justify-content:flex-end;background:linear-gradient(to top,var(--surface) 72%,transparent)}
+  .drawer-inner > .detail-primary-actions .primary-button{flex:0 0 240px}
+  .drawer-inner > .detail-primary-actions .detail-project-pick{flex:0 0 200px}
+}
+.detail-find:not(:has(.lb-find:not([hidden]))){display:none}
+.detail-color .detail-palette-actions .ghost-button.small{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border:1px solid var(--line);background:var(--surface);font-size:13px;cursor:pointer}
+.detail-color .detail-palette-actions .ghost-button.small:hover{border-color:rgba(240,80,64,.55)}
+
+/* A+ Vault: source link on cards */
+.card-source{position:absolute;right:10px;bottom:10px;z-index:7;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:rgba(21,23,25,.72);color:#fff;border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(6px);opacity:0;transform:translateY(4px);transition:opacity .16s,transform .16s,background .16s;text-decoration:none}
+.pin-card:hover .card-source,.card-source:focus-visible{opacity:1;transform:none}
+.card-source:hover{background:var(--accent,#f05040)}
+@media(hover:none){.card-source{opacity:.9;transform:none}}
+.pin-frame{position:relative}
+
+/* A+ Vault: popup shows the whole image, never cropped */
+@media(min-width:1181px){.dm-left .detail-preview{max-height:none;background:transparent}.dm-left .detail-preview img,.dm-left .detail-preview video{width:100%;height:auto;max-height:min(68vh,720px);object-fit:contain;background:var(--panel)}}
+
+/* A+ Vault: colour card, find beside the picked colour, copy palette at the right */
+.detail-color{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px}
+.detail-color>.viewer-palette,.detail-color>.viewer-palette-wrap{flex:0 0 100%}
+.detail-color .detail-find{margin:0}
+.detail-color .detail-palette-actions{margin:0 0 0 auto}

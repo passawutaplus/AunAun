@@ -1,6 +1,7 @@
 /** Structured “เริ่มทำงาน” card posted after hire payment succeeds. */
 
 import type { ChatOfferLineItem, ChatOfferMilestone, ChatOfferPayload } from "@/lib/chatOffer";
+import { clampStr } from "@/lib/format";
 
 export const HIRE_WORK_START_PREFIX = "__APLUS1_HIRE_WORK_START__:";
 
@@ -25,10 +26,6 @@ export type HireWorkStartChatPayload = {
   /** Persisted hire_orders.id when available — scopes order-detail popup. */
   orderId?: string | null;
 };
-
-function clampStr(v: unknown, max: number): string {
-  return String(v ?? "").slice(0, max);
-}
 
 export function buildHireWorkStartPayload(
   offer: ChatOfferPayload,
