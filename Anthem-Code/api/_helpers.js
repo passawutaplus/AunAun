@@ -1,9 +1,38 @@
+import crypto from "node:crypto";
+
 /**
  * Tiny shared helpers for Anthem Vercel API routes (CommonJS-friendly ESM).
  */
 
 export function readEnv(name) {
   return process.env[name] || "";
+}
+
+/**
+ * Constant-time check of `Authorization: Bearer <secret>` (cron endpoints).
+ * Hashing first makes both buffers the same length, so timingSafeEqual never throws
+ * and the secret's length is not leaked either.
+ */
+export function safeBearerMatches(req, secret) {
+  if (!secret) return false;
+  const header = String(req.headers?.authorization || req.headers?.Authorization || "");
+  const sha = (s) => crypto.createHash("sha256").update(s).digest();
+  return crypto.timingSafeEqual(sha(header), sha(`Bearer ${secret}`));
+}
+
+/**
+ * Omise mode comes from the secret key itself (skey_test_* / skey_live_*), never from a flag alone.
+ * OMISE_MODE, when set, must agree with the key; a mismatch is a misconfiguration and fails closed.
+ * Returns { mode: "test" | "live" } or { error }.
+ */
+export function omiseModeFromKey(secretKey, flag) {
+  const key = String(secretKey || "");
+  const keyMode = key.startsWith("skey_live_") ? "live" : key.startsWith("skey_test_") ? "test" : "";
+  if (!keyMode) return { error: "omise_key_unrecognized" };
+  const declared = String(flag || "").trim().toLowerCase();
+  if (declared && declared !== keyMode) return { error: "omise_mode_mismatch" };
+  if (keyMode === "live" && declared !== "live") return { error: "omise_mode_mismatch" };
+  return { mode: keyMode };
 }
 
 export function json(res, status, body, { cache = "no-store" } = {}) {

@@ -12,6 +12,7 @@ import {
   isUuid,
   json,
   makeHireReference,
+  omiseModeFromKey,
   parseJsonBody,
   readEnv,
   requireSupabaseUser,
@@ -146,7 +147,9 @@ export default async function handler(req, res) {
       return json(res, 503, { error: "omise_not_configured" });
     }
 
-    const mode = readEnv("OMISE_MODE") === "live" ? "live" : "test";
+    const modeInfo = omiseModeFromKey(secretKey, readEnv("OMISE_MODE"));
+    if (modeInfo.error) return json(res, 503, { error: modeInfo.error });
+    const mode = modeInfo.mode;
     if (mode === "live" && readEnv("OMISE_MARKETPLACE_APPROVED") !== "true") {
       return json(res, 503, { error: "live_blocked_until_marketplace_approved" });
     }
@@ -180,8 +183,17 @@ export default async function handler(req, res) {
     if (body.action === "mark_paid") {
       if (mode !== "test") return json(res, 403, { error: "mark_paid_test_only" });
       const chargeId = String(body.chargeId || "");
-      if (!chargeId.startsWith("chrg_")) {
+      if (!/^chrg_[A-Za-z0-9_]+$/.test(chargeId)) {
         return json(res, 400, { error: "invalid_charge_id" });
+      }
+      // Same ownership rule as action=status: only the buyer who created the charge may mark it paid.
+      const own = await fetch(`https://api.omise.co/charges/${encodeURIComponent(chargeId)}`, {
+        headers: { Authorization: basicAuth(secretKey), "Omise-Version": "2019-05-29" },
+      });
+      const ownCharge = await own.json().catch(() => null);
+      if (!own.ok || !ownCharge || ownCharge.object === "error") return json(res, 404, { error: "charge_not_found" });
+      if (String(ownCharge.metadata?.buyer_user_id || "") !== String(user.id)) {
+        return json(res, 403, { error: "not_charge_owner" });
       }
       const paid = await omisePost(
         secretKey,

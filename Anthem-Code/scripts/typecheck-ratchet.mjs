@@ -19,8 +19,18 @@ const r = spawnSync("npx", ["tsc", "--noEmit", "-p", "tsconfig.app.json"], {
   cwd: root,
   encoding: "utf8",
   maxBuffer: 256 * 1024 * 1024,
+  shell: process.platform === "win32", // npx is npx.cmd on Windows; without a shell spawn fails and the count would read 0
 });
+if (r.error || r.status === null) {
+  console.error(`FAIL: could not run tsc (${r.error?.message ?? "no exit status"}). Refusing to report 0 errors.`);
+  process.exit(2);
+}
 const out = `${r.stdout ?? ""}${r.stderr ?? ""}`;
+if (r.status !== 0 && !/error TS\d+:/.test(out)) {
+  console.error(`FAIL: tsc exited ${r.status} without any TS errors; output follows.
+${out.slice(0, 2000)}`);
+  process.exit(2);
+}
 const count = (out.match(/error TS\d+:/g) ?? []).length;
 
 let baseline = Infinity;
