@@ -46,6 +46,7 @@ import {
   getAlignOverview,
   nextStepId,
   prevStepId,
+  isStepSkipped,
   validateAlignRequired,
   type AlignRequiredField,
   type CollabAlignPayload,
@@ -72,6 +73,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -412,8 +414,9 @@ export function CollabPlanSheet({
     collabEnded || doc.status === "step_locked" || doc.status === "change_pending";
   const planReadOnly = collabEnded;
   const demoShortcuts = collabPlanDemoShortcutsEnabled();
+  const quick = !!payload.quick;
   const canGoNext = canAdvanceStep(doc, memberIds) && !isFinalSummary;
-  const hasNextStep = !!nextStepId(doc.currentStep);
+  const hasNextStep = !!nextStepId(doc.currentStep, quick);
   const awaitingAllAcks =
     hasNextStep && !canGoNext && !isFinalSummary && doc.status !== "change_pending";
 
@@ -597,7 +600,7 @@ export function CollabPlanSheet({
   const onAdvanceDemo = async () => {
     setBusy(true);
     try {
-      const next = nextStepId(doc.currentStep);
+      const next = nextStepId(doc.currentStep, quick);
       const nextTitle = COLLAB_PIPELINE.find((s) => s.id === next)?.title ?? "ขั้นถัดไป";
       if (dirty && editable) await save();
       await advanceStepDemo();
@@ -612,7 +615,7 @@ export function CollabPlanSheet({
   const onRetreatDemo = async () => {
     setBusy(true);
     try {
-      const prev = prevStepId(doc.currentStep);
+      const prev = prevStepId(doc.currentStep, quick);
       const prevTitle = COLLAB_PIPELINE.find((s) => s.id === prev)?.title ?? "ขั้นก่อนหน้า";
       if (dirty && editable && !isFinalSummary) await save();
       await retreatStepDemo();
@@ -1393,6 +1396,7 @@ export function CollabPlanSheet({
                     const active = i === formStepIndex;
                     const doneHere = active && formStatus === "step_locked";
                     const reached = past || active || doneHere;
+                    const skipped = isStepSkipped(s.id, formPayload.quick);
                     const shortTitle =
                       s.id === "align"
                         ? "จัดแนวทาง"
@@ -1402,7 +1406,10 @@ export function CollabPlanSheet({
                             ? "ยืนยันสุดท้าย"
                             : "ลงผลงาน";
                     return (
-                      <li key={s.id} className="flex flex-col items-center gap-1 min-w-0">
+                      <li
+                        key={s.id}
+                        className={cn("flex flex-col items-center gap-1 min-w-0", skipped && "opacity-40")}
+                      >
                         <span
                           className={cn(
                             "relative z-[1] flex h-[22px] w-[22px] items-center justify-center rounded-full text-[10px] font-semibold tabular-nums border",
@@ -1423,7 +1430,7 @@ export function CollabPlanSheet({
                           )}
                           title={s.title}
                         >
-                          {shortTitle}
+                          {skipped ? `${shortTitle} (ข้าม)` : shortTitle}
                         </span>
                       </li>
                     );
@@ -1611,6 +1618,22 @@ export function CollabPlanSheet({
 
                 {formStage.id === "align" ? (
                   <div className="space-y-5">
+                    <label className="flex items-start gap-3 rounded-2xl border border-border bg-card/40 p-3.5 cursor-pointer">
+                      <Switch
+                        checked={!!formPayload.quick}
+                        disabled={!formEditable}
+                        onCheckedChange={(v) =>
+                          updatePayload((prev) => ({ ...prev, quick: v }))
+                        }
+                        className="mt-0.5"
+                      />
+                      <span className="space-y-0.5">
+                        <span className="block text-sm font-medium">งานเล็ก — ข้ามขั้น「สร้างงาน」</span>
+                        <span className="block text-xs text-muted-foreground leading-snug">
+                          เหมาะกับงานที่ทำเสร็จเร็ว ตกลงสิทธิ์/เครดิตกันก่อน แล้วไปยืนยันผลงานสุดท้ายได้เลย
+                        </span>
+                      </span>
+                    </label>
                     <section className="rounded-2xl border border-border bg-card/40 p-3.5 space-y-3">
                       <AlignSectionHeading
                         icon={Lightbulb}
@@ -1914,7 +1937,6 @@ export function CollabPlanSheet({
                             <div className="space-y-1.5">
                               <span className="text-[11px] font-medium text-muted-foreground block">
                                 กำหนดส่ง
-                                <RequiredMark />
                               </span>
                               <Input
                                 ref={dueAtFieldRef}
@@ -1971,7 +1993,7 @@ export function CollabPlanSheet({
                             : "border-border",
                         )}
                       >
-                        <AlignSectionHeading icon={ListChecks} title="ชิ้นงานที่ต้องทำ" required />
+                        <AlignSectionHeading icon={ListChecks} title="ชิ้นงานที่ต้องทำ" hint="ไม่บังคับ — ใส่ถ้ามีรายการชัดเจน" />
                         <ul className="space-y-2">
                           {(formPayload.align.deliverableItems?.length
                             ? formPayload.align.deliverableItems
@@ -2435,7 +2457,7 @@ export function CollabPlanSheet({
                 </Button>
               ) : null}
 
-              {demoShortcuts && prevStepId(doc.currentStep) ? (
+              {demoShortcuts && prevStepId(doc.currentStep, quick) ? (
                 <Button
                   type="button"
                   variant="outline"
