@@ -37,3 +37,14 @@ select t.throws('BEFORE: unsend_message does not exist',
   $q$ select public.unsend_message(gen_random_uuid()) $q$, 'unsend_message');
 
 reset role;
+
+-- 5) any chat participant can rewrite / re-attribute the OTHER side's messages
+insert into shared.conversation_members values ('d0000000-0000-4000-8000-000000000001', :A), ('d0000000-0000-4000-8000-000000000001', :B);
+insert into shared.messages(id, conversation_id, sender_id, content) values
+  ('e0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', :A, 'original from A');
+set role authenticated;
+select set_config('request.jwt.claim.sub', :B, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+update shared.messages set content = 'edited by B', sender_id = :B where id = 'e0000000-0000-4000-8000-000000000001';
+select t.ok('BEFORE: participant B can rewrite A''s message and take over sender_id (vulnerable)',
+  (select content = 'edited by B' and sender_id = :B::uuid from shared.messages where id = 'e0000000-0000-4000-8000-000000000001'));
+reset role;

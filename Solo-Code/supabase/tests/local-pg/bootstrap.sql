@@ -179,3 +179,37 @@ exception when others then
   insert into t.results values (n, false, sqlstate||': '||sqlerrm);
 end $$;
 grant execute on all functions in schema t to authenticated, anon, service_role;
+
+-- ---- added 2026-10-09: fee config + messages RLS (policies/function copied from production) ----
+create table shared.aplus1_fee_configs (
+  id uuid primary key default gen_random_uuid(), version text not null, created_at timestamptz not null default now(),
+  effective_from timestamptz not null default now(), effective_to timestamptz,
+  platform_fee_percent numeric not null, card_surcharge_percent numeric not null default 0,
+  card_fee_passed_to_buyer boolean not null default true, promptpay_buyer_pays_job_only boolean not null default true);
+insert into shared.aplus1_fee_configs(version, effective_from, platform_fee_percent) values ('aplus1-v1', '2026-07-18', 10);
+
+create table shared.conversation_members (conversation_id uuid not null, user_id uuid not null);
+create function shared.user_in_conversation(c uuid, u uuid) returns boolean language sql stable security definer
+  set search_path = shared as $$ select exists (select 1 from shared.conversation_members where conversation_id = c and user_id = u) $$;
+grant execute on function shared.user_in_conversation(uuid, uuid) to authenticated;
+
+alter table shared.messages enable row level security;
+create policy "Participants can view messages" on shared.messages for select to authenticated
+  using (shared.user_in_conversation(conversation_id, auth.uid()) or public.has_role(auth.uid(), 'admin'));
+create policy "Participants can update messages" on shared.messages for update to authenticated
+  using (shared.user_in_conversation(conversation_id, auth.uid()) or public.has_role(auth.uid(), 'admin'))
+  with check (shared.user_in_conversation(conversation_id, auth.uid()) or public.has_role(auth.uid(), 'admin'));
+create policy "Sender can unsend own messages" on shared.messages for update to authenticated
+  using (auth.uid() = sender_id and created_at > now() - interval '24 hours') with check (auth.uid() = sender_id);
+-- prod grants: authenticated has table-wide UPDATE (matches the blanket grant above); anon only SELECT.
+
+create function public.mark_conversation_read(p_conversation_id uuid) returns void language plpgsql security definer
+  set search_path to 'shared', 'public' as $function$
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'UNAUTHENTICATED'; END IF;
+  IF NOT shared.user_in_conversation(p_conversation_id, auth.uid()) THEN RAISE EXCEPTION 'FORBIDDEN'; END IF;
+  UPDATE shared.messages SET read_at = now()
+   WHERE conversation_id = p_conversation_id AND sender_id <> auth.uid() AND read_at IS NULL AND deleted_at IS NULL;
+END;
+$function$;
+grant execute on function public.mark_conversation_read(uuid) to authenticated;

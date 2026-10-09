@@ -112,6 +112,27 @@ begin
 end $$;
 reset role;
 
+-- fee % + version come from shared.aplus1_fee_configs
+reset role;
+update shared.aplus1_fee_configs set platform_fee_percent = 12, version = 'aplus1-v2';
+set role authenticated;
+select set_config('request.jwt.claim.sub', :A, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+insert into shared.hire_orders(buyer_id, seller_id, status, job_price_satang, buyer_pays_satang, seller_net_satang,
+  platform_fee_percent, platform_fee_satang, fee_version) values (:A, :B, 'draft', 123400, 1, 1, 10, 1, 'client-says-v1');
+select t.ok('AFTER: config fee 12% / aplus1-v2 is applied (fee 14808, net 108592)',
+  (select platform_fee_percent = 12 and fee_version = 'aplus1-v2' and platform_fee_satang = 14808 and seller_net_satang = 108592
+     from shared.hire_orders where job_price_satang = 123400));
+reset role;
+update shared.aplus1_fee_configs set effective_to = now() - interval '1 day';
+set role authenticated;
+select set_config('request.jwt.claim.sub', :A, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+insert into shared.hire_orders(buyer_id, seller_id, status, job_price_satang, buyer_pays_satang, seller_net_satang,
+  platform_fee_percent, platform_fee_satang, fee_version) values (:A, :B, 'draft', 234500, 1, 1, 99, 1, 'client-v9');
+select t.ok('AFTER: no active config row -> falls back to 10%, keeps client fee_version',
+  (select platform_fee_percent = 10 and fee_version = 'client-v9' and platform_fee_satang = 23450 from shared.hire_orders where job_price_satang = 234500));
+reset role;
+update shared.aplus1_fee_configs set platform_fee_percent = 10, version = 'aplus1-v1', effective_to = null;
+
 -- ============ SCAN STATUS + COUNTERS (200000) ============
 set role authenticated;
 select set_config('request.jwt.claim.sub', :A, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
@@ -237,8 +258,12 @@ update shared.messages set deleted_at = now() where id = 'a0000000-0000-4000-800
 set role authenticated;
 select set_config('request.jwt.claim.sub', :A, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
 select t.runs('AFTER: unsend own recent message', $q$ select public.unsend_message('a0000000-0000-4000-8000-000000000001') $q$);
+reset role;
 select t.ok('AFTER: deleted_at set on unsent message',
   (select deleted_at is not null from shared.messages where id = 'a0000000-0000-4000-8000-000000000001'));
+set role authenticated;
+select set_config('request.jwt.claim.sub', :A, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+
 select t.runs('AFTER: unsend at 23h59m still allowed', $q$ select public.unsend_message('a0000000-0000-4000-8000-000000000006') $q$);
 select t.throws('AFTER: cannot unsend someone else''s message',
   $q$ select public.unsend_message('a0000000-0000-4000-8000-000000000002') $q$, 'UNSEND_NOT_ALLOWED');
@@ -250,7 +275,11 @@ select t.throws('AFTER: cannot unsend twice',
   $q$ select public.unsend_message('a0000000-0000-4000-8000-000000000005') $q$, 'UNSEND_NOT_ALLOWED');
 select t.throws('AFTER: unknown message id',
   $q$ select public.unsend_message(gen_random_uuid()) $q$, 'UNSEND_NOT_ALLOWED');
+reset role;
 select t.ok('AFTER: their message untouched', (select deleted_at is null from shared.messages where id = 'a0000000-0000-4000-8000-000000000002'));
+set role authenticated;
+select set_config('request.jwt.claim.sub', :A, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+
 reset role;
 set role authenticated;
 select set_config('request.jwt.claim.sub', '', false) \gset
@@ -259,4 +288,45 @@ reset role;
 set role anon;
 select set_config('request.jwt.claim.role', 'anon', false) \gset
 select t.throws('AFTER: anon cannot execute unsend_message', $q$ select public.unsend_message(gen_random_uuid()) $q$, 'permission denied');
+reset role;
+
+-- ============ MESSAGES (20261009100000) ============
+insert into shared.messages(id, conversation_id, sender_id, content) values
+  ('e0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', :A, 'original from A'),
+  ('e0000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000001', :B, 'from B');
+insert into shared.conversation_members values ('d0000000-0000-4000-8000-000000000001', :A), ('d0000000-0000-4000-8000-000000000001', :B);
+set role authenticated;
+select set_config('request.jwt.claim.sub', :B, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+do $$
+declare n int;
+begin
+  update shared.messages set content = 'edited by B' where id = 'e0000000-0000-4000-8000-000000000001';
+  get diagnostics n = row_count;
+  perform t.ok('AFTER: participant B cannot edit A''s message (RLS -> 0 rows)', n = 0, 'rows=' || n);
+  update shared.messages set deleted_at = now() where id = 'e0000000-0000-4000-8000-000000000001';
+  get diagnostics n = row_count;
+  perform t.ok('AFTER: participant B cannot soft-delete A''s message (0 rows)', n = 0, 'rows=' || n);
+end $$;
+select t.throws('AFTER: nobody can take over sender_id (column privilege)',
+  $q$ update shared.messages set sender_id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' where id = 'e0000000-0000-4000-8000-000000000001' $q$, 'permission denied');
+select t.ok('AFTER: A''s message content unchanged',
+  (select content = 'original from A' and sender_id = :A::uuid from shared.messages where id = 'e0000000-0000-4000-8000-000000000001'));
+select public.mark_conversation_read('d0000000-0000-4000-8000-000000000001');
+reset role;
+select t.ok('AFTER: mark_conversation_read (SECURITY DEFINER) still sets read_at on A''s message',
+  (select read_at is not null from shared.messages where id = 'e0000000-0000-4000-8000-000000000001'));
+set role authenticated;
+select set_config('request.jwt.claim.sub', :A, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+select t.runs('AFTER: sender can still edit own message content (within 24h)',
+  $q$ update shared.messages set content = 'A edited' where id = 'e0000000-0000-4000-8000-000000000001' $q$);
+select t.throws('AFTER: sender cannot move own message to another conversation',
+  $q$ update shared.messages set conversation_id = gen_random_uuid() where id = 'e0000000-0000-4000-8000-000000000001' $q$, 'permission denied');
+select t.throws('AFTER: sender cannot rewrite created_at',
+  $q$ update shared.messages set created_at = now() where id = 'e0000000-0000-4000-8000-000000000001' $q$, 'permission denied');
+reset role;
+set role authenticated;
+select set_config('request.jwt.claim.sub', :ADMIN, false), set_config('request.jwt.claim.role', 'authenticated', false) \gset
+select t.runs('AFTER: admin can still moderate message content',
+  $q$ update shared.messages set content = '[removed]' where id = 'e0000000-0000-4000-8000-000000000002' $q$);
+select t.ok('AFTER: admin edit applied', (select content = '[removed]' from shared.messages where id = 'e0000000-0000-4000-8000-000000000002'));
 reset role;
