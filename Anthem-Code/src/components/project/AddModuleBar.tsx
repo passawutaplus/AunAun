@@ -124,7 +124,6 @@ export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates,
             เริ่มง่าย ๆ ด้วย Template
           </button>
         ) : null}
-        <span className="shrink-0 pl-2 pr-1 text-xs text-muted-foreground">เพิ่ม</span>
         <button
           type="button"
           disabled={disabled}
