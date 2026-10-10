@@ -2979,7 +2979,7 @@ const ProjectEditorPage = () => {
 
   const renderDetailsExtras = (stacked: boolean, part: "all" | "context" | "rights" | "files" = "all") => (
     <>
-          {part === "rights" ? null : (
+          {part === "rights" || part === "files" ? null : (
           <ProjectContextEditorFields
             value={projectContext}
             onChange={patchProjectContext}
