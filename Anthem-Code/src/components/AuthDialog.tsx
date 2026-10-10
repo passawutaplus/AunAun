@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { User as UserIcon, Loader2, ChevronLeft, Mail } from "lucide-react";
+import { User as UserIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { SocialButtons, AuthEmailSeparator } from "@/components/auth/SocialButtons";
@@ -39,12 +39,8 @@ const AuthDialog = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  // First screen is just two choices (Google / e-mail); the forms open only after "e-mail".
-  const [step, setStep] = useState<"choose" | "email">("choose");
-  useEffect(() => {
-    if (open) setStep("choose");
-  }, [open]);
-
+  const covers = useAuthWallCovers(9, open);
+  const googleBtn = "h-12 rounded-full border-border bg-background text-foreground hover:bg-muted";
   // Auto-close on successful login — send first-time users home for interest survey
   useEffect(() => {
     if (!user || !open) return;
@@ -79,51 +75,37 @@ const AuthDialog = () => {
       bodyClassName="px-6 sm:px-7 pt-6 pb-6"
       showGrabHandle
     >
-      {step === "choose" ? (
-        <ChooseStep
-          open={open}
-          redirectPath={redirectPath}
-          onLoginEmail={() => {
-            setMode("login");
-            setStep("email");
-          }}
-          onSignupEmail={() => {
-            setMode("signup");
-            setStep("email");
-          }}
-        />
-      ) : (
-        <>
-          <button
-            type="button"
-            onClick={() => setStep("choose")}
-            className="mb-3 -ml-1 inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
-            กลับ
-          </button>
+      <div className="flex flex-col items-center text-center">
+        <BrandLogo size="sm" />
+        <DialogTitle className="mt-4 text-[1.55rem] font-semibold leading-tight tracking-tight thai-display text-balance">
+          รวมผลงานและโอกาสไว้ในที่เดียว
+        </DialogTitle>
+        <DialogDescription className="sr-only">เข้าสู่ระบบหรือสมัครสมาชิกด้วย Google หรืออีเมล</DialogDescription>
+        <CoverWall covers={covers} />
+      </div>
 
-          <DialogTitle className="text-xl font-medium tracking-tight thai-display">
-            {mode === "signup" ? "สมัครด้วยอีเมล" : "เข้าสู่ระบบด้วยอีเมล"}
-          </DialogTitle>
-          <DialogDescription className="sr-only">กรอกอีเมลและรหัสผ่านเพื่อดำเนินการต่อ</DialogDescription>
+      <Tabs value={mode} onValueChange={(v) => setMode(v as "signup" | "login")} className="mt-5 w-full">
+        <TabsList className="mb-4 grid h-11 w-full grid-cols-2 rounded-full bg-muted/60 p-1">
+          <TabsTrigger value="login" className="rounded-full">เข้าสู่ระบบ</TabsTrigger>
+          <TabsTrigger value="signup" className="rounded-full">สมัครสมาชิก</TabsTrigger>
+        </TabsList>
 
-          <Tabs value={mode} onValueChange={(v) => setMode(v as "signup" | "login")} className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-2 mb-4 rounded-xl bg-muted/60 p-1 h-11">
-              <TabsTrigger value="signup" className="rounded-lg">สมัครสมาชิก</TabsTrigger>
-              <TabsTrigger value="login" className="rounded-lg">เข้าสู่ระบบ</TabsTrigger>
-            </TabsList>
+        <TabsContent value="login" className="mt-0 space-y-3.5">
+          <SocialButtons redirectTo={redirectPath} buttonClassName={googleBtn} />
+          <AuthEmailSeparator />
+          <LoginForm onSwitch={() => setMode("signup")} />
+        </TabsContent>
 
-            <TabsContent value="signup" className="space-y-3.5 mt-0">
-              <SignupForm onSwitch={() => setMode("login")} />
-            </TabsContent>
-
-            <TabsContent value="login" className="space-y-3.5 mt-0">
-              <LoginForm onSwitch={() => setMode("signup")} />
-            </TabsContent>
-          </Tabs>
-        </>
-      )}
+        <TabsContent value="signup" className="mt-0 space-y-3.5">
+          {isDemoMode() ? null : (
+            <>
+              <SocialButtons redirectTo={redirectPath} label="สมัครด้วย Google" buttonClassName={googleBtn} />
+              <AuthEmailSeparator />
+            </>
+          )}
+          <SignupForm onSwitch={() => setMode("login")} />
+        </TabsContent>
+      </Tabs>
 
       <p className="mt-6 text-center text-[11px] leading-relaxed text-muted-foreground">
         ดำเนินการต่อเท่ากับยอมรับ{" "}
@@ -152,7 +134,7 @@ const CoverWall = ({ covers }: { covers: string[] }) => {
   return (
     <div
       aria-hidden
-      className="relative mt-5 h-[13.5rem] w-full overflow-hidden rounded-2xl"
+      className="relative mt-4 h-[10.5rem] w-full overflow-hidden rounded-2xl"
       style={{
         WebkitMaskImage: "linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent)",
         maskImage: "linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent)",
@@ -177,56 +159,6 @@ const CoverWall = ({ covers }: { covers: string[] }) => {
           </div>
         ))}
       </div>
-    </div>
-  );
-};
-
-const ChooseStep = ({
-  open,
-  redirectPath,
-  onLoginEmail,
-  onSignupEmail,
-}: {
-  open: boolean;
-  redirectPath?: string;
-  onLoginEmail: () => void;
-  onSignupEmail: () => void;
-}) => {
-  const covers = useAuthWallCovers(9, open);
-  return (
-    <div className="flex flex-col items-center text-center">
-      <BrandLogo size="sm" />
-      <DialogTitle className="mt-5 text-[1.7rem] font-semibold leading-tight tracking-tight thai-display text-balance">
-        รวมผลงานและโอกาสไว้ในที่เดียว
-      </DialogTitle>
-      <DialogDescription className="sr-only">เข้าสู่ระบบหรือสมัครด้วย Google หรืออีเมล</DialogDescription>
-
-      <CoverWall covers={covers} />
-
-      <div className="mt-5 w-full space-y-2.5">
-        <SocialButtons
-          redirectTo={redirectPath}
-          label="ต่อด้วย Google"
-          buttonClassName="h-12 border-0 bg-foreground text-background hover:bg-foreground/90 hover:text-background"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onLoginEmail}
-          className="h-12 w-full gap-2 rounded-xl border-border bg-transparent text-sm text-foreground hover:bg-muted hover:text-foreground"
-        >
-          <Mail className="h-4 w-4" aria-hidden />
-          เข้าสู่ระบบด้วยอีเมล
-        </Button>
-      </div>
-
-      <button
-        type="button"
-        onClick={onSignupEmail}
-        className="mt-4 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-      >
-        สมัครด้วยอีเมลอื่น
-      </button>
     </div>
   );
 };
@@ -298,7 +230,7 @@ const LoginForm = ({ onSwitch }: { onSwitch: () => void }) => {
           aria-invalid={!!emailError || undefined}
           aria-describedby={emailError ? "ad-li-email-error" : undefined}
           className={cn(
-            "h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40",
+            "h-12 rounded-full bg-background/60 backdrop-blur border-border/60 px-4 focus-visible:ring-primary/40",
             emailError && "border-destructive",
           )}
           required />
@@ -327,7 +259,7 @@ const LoginForm = ({ onSwitch }: { onSwitch: () => void }) => {
         </button>
       </div>
       <Button type="submit" disabled={busy}
-        className="w-full h-11 rounded-xl text-base font-medium bg-gradient-brand text-white hover:opacity-95 border-0 shadow-md shadow-primary/20">
+        className="w-full h-12 rounded-full text-base font-medium bg-foreground text-background hover:bg-foreground/90 border-0">
         {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />} เข้าสู่ระบบ
       </Button>
       <p className="text-center text-xs text-muted-foreground">
@@ -407,7 +339,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
           <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input id="ad-su-name" placeholder="ชื่อของคุณ" value={displayName}
             onChange={(e) => setDisplayName(e.target.value)} maxLength={80}
-            className="pl-9 h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40" />
+            className="pl-9 h-12 rounded-full bg-background/60 backdrop-blur border-border/60 px-4 focus-visible:ring-primary/40" />
         </div>
       </div>
       <div className="space-y-1.5">
@@ -418,7 +350,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
           aria-invalid={!!emailError || undefined}
           aria-describedby={emailError ? "ad-su-email-error" : undefined}
           className={cn(
-            "h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40",
+            "h-12 rounded-full bg-background/60 backdrop-blur border-border/60 px-4 focus-visible:ring-primary/40",
             emailError && "border-destructive"
           )} />
         <FieldError id="ad-su-email-error" message={emailError} />
@@ -442,7 +374,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
       <FieldError message={consentError} />
 
       <Button type="submit" disabled={busy || !consents.terms || !consents.privacy}
-        className="w-full h-11 rounded-xl text-base font-medium bg-gradient-brand text-white hover:opacity-95 border-0 shadow-md shadow-primary/20">
+        className="w-full h-12 rounded-full text-base font-medium bg-foreground text-background hover:bg-foreground/90 border-0">
         {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />} สมัครสมาชิก
       </Button>
       <p className="text-center text-xs text-muted-foreground">

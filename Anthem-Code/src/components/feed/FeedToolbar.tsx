@@ -474,10 +474,13 @@ const FeedToolbar = ({
                   <button
                     type="button"
                     onClick={onCreateClick}
-                    className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-foreground px-4 text-sm font-medium text-background transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    aria-label={isObjects ? "ลงสินค้าใหม่" : "ลงผลงานใหม่"}
+                    className="group inline-flex h-9 shrink-0 items-center overflow-hidden rounded-full bg-foreground px-[0.6rem] text-sm font-medium text-background transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:px-4 focus-visible:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
                   >
-                    <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-                    {isObjects ? "ลงสินค้าใหม่" : "ลงผลงานใหม่"}
+                    <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
+                    <span className="ml-0 max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[9rem] group-hover:opacity-100 group-focus-visible:ml-1.5 group-focus-visible:max-w-[9rem] group-focus-visible:opacity-100 motion-reduce:transition-none">
+                      {isObjects ? "ลงสินค้าใหม่" : "ลงผลงานใหม่"}
+                    </span>
                   </button>
                 ) : null}
                 <div className="shrink-0">
