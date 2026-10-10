@@ -15,6 +15,30 @@ interface Props {
   onSelect?: (collection: CollectionWithCovers) => void;
 }
 
+/** Fills the whole frame for 1–4 covers (no empty quadrants). */
+function CoverMosaic({ covers, gap, zoom = false }: { covers: string[]; gap: string; zoom?: boolean }) {
+  const shown = covers.slice(0, 4);
+  const layout =
+    shown.length === 1 ? "grid-cols-1" : shown.length === 2 ? "grid-cols-2" : "grid-cols-2 grid-rows-2";
+  return (
+    <div className={cn("grid absolute inset-0", layout, gap)}>
+      {shown.map((url, i) => (
+        <img
+          key={i}
+          src={url}
+          alt=""
+          className={cn(
+            "w-full h-full object-cover",
+            shown.length === 3 && i === 0 && "row-span-2",
+            zoom && "transition-transform duration-500 group-hover:scale-[1.04]",
+          )}
+          loading="lazy"
+        />
+      ))}
+    </div>
+  );
+}
+
 const CollectionCard = ({
   collection,
   to,
@@ -25,7 +49,6 @@ const CollectionCard = ({
 }: Props) => {
   const href = to ?? `/collections/${collection.id}`;
   const covers = collection.covers ?? [];
-  const placeholders = Array.from({ length: 4 - covers.length });
 
   const shellClass = cn(
     list
@@ -42,11 +65,7 @@ const CollectionCard = ({
             <Layers3 className="w-5 h-5" strokeWidth={2.25} />
           </div>
         ) : (
-          <div className="grid grid-cols-2 grid-rows-2 gap-px absolute inset-0">
-            {covers.slice(0, 4).map((url, i) => (
-              <img key={i} src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
-            ))}
-          </div>
+          <CoverMosaic covers={covers} gap="gap-px" />
         )}
       </div>
       <div className="min-w-0 flex-1">
@@ -68,20 +87,7 @@ const CollectionCard = ({
             <Layers3 className="w-10 h-10" strokeWidth={2.25} />
           </div>
         ) : (
-          <div className="grid grid-cols-2 grid-rows-2 gap-0.5 absolute inset-0">
-            {covers.map((url, i) => (
-              <img
-                key={i}
-                src={url}
-                alt=""
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                loading="lazy"
-              />
-            ))}
-            {placeholders.map((_, i) => (
-              <div key={`p-${i}`} className="bg-muted" />
-            ))}
-          </div>
+          <CoverMosaic covers={covers} gap="gap-0.5" zoom />
         )}
         {!collection.is_public && (
           <span className="absolute top-2 left-2 inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-background/70 backdrop-blur-md text-foreground/80">

@@ -6,6 +6,7 @@ import { aboutCvPdfFilename } from "@/lib/aboutCvPdf";
 import { downloadAboutCvDocument } from "@/lib/aboutCvDownload";
 import { parseProfileCv } from "@/lib/profileCv";
 import { ProfileAboutToolbar } from "@/components/profile/ProfileAboutReadOnly";
+import ProfileTabHeading from "@/components/profile/ProfileTabHeading";
 import ProfileAboutEditor from "@/components/profile/ProfileAboutEditor";
 import { cn } from "@/lib/utils";
 import AboutDocumentPreviewDialog, {
@@ -114,21 +115,26 @@ export default function ProfileAboutPanel({
       ) : (
         <>
           {mode === "public" ? (
-            <div className="flex items-center justify-end gap-1">
-              <button
-                type="button"
-                disabled={downloading}
-                onClick={() => void handleDownloadPdf()}
-                className={aboutActionClass}
-              >
-                <Download className="h-3.5 w-3.5" />
-                {downloading ? "กำลังสร้าง PDF..." : "Download PDF"}
-              </button>
-              <button type="button" onClick={printAboutCv} className={aboutActionClass}>
-                <Printer className="h-3.5 w-3.5" />
-                Print
-              </button>
-            </div>
+            <ProfileTabHeading
+              title="About Me"
+              actions={
+                <>
+                  <button
+                    type="button"
+                    disabled={downloading}
+                    onClick={() => void handleDownloadPdf()}
+                    className={aboutActionClass}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    {downloading ? "กำลังสร้าง PDF..." : "Download PDF"}
+                  </button>
+                  <button type="button" onClick={printAboutCv} className={aboutActionClass}>
+                    <Printer className="h-3.5 w-3.5" />
+                    Print
+                  </button>
+                </>
+              }
+            />
           ) : (
             <ProfileAboutToolbar
               onEdit={canEdit ? () => setEditing(true) : undefined}
@@ -142,7 +148,7 @@ export default function ProfileAboutPanel({
             </p>
           ) : null}
           <div className="flex justify-center">
-            <div className="about-cv-a4-frame">
+            <div className="about-cv-a4-frame about-cv-a4-frame--page">
               <AboutDocumentSheet {...sheetProps} theme={liveTheme} />
             </div>
           </div>

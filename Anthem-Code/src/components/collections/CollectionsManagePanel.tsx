@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { ArrowLeft, Layers3, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
+import ProfileTabHeading from "@/components/profile/ProfileTabHeading";
 import { useCollections } from "@/hooks/useCollections";
 import CollectionCard from "@/components/collections/CollectionCard";
 import {
@@ -117,10 +118,21 @@ export default function CollectionsManagePanel({ userId, embedded }: Props) {
     );
   }
 
+  const newCollectionButton = (
+    <Button
+      size="sm"
+      onClick={() => setFormOpen(true)}
+      variant="gradient"
+      className="rounded-full shrink-0"
+    >
+      <Plus className="w-4 h-4 mr-1" /> คอลเลกชันใหม่
+    </Button>
+  );
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        {selection !== "folders" ? (
+      {selection !== "folders" ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <Button
             type="button"
             size="sm"
@@ -130,26 +142,16 @@ export default function CollectionsManagePanel({ userId, embedded }: Props) {
           >
             <ArrowLeft className="w-4 h-4 mr-1" /> คอลเลกชันทั้งหมด
           </Button>
-        ) : (
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <Layers3 className="w-5 h-5 text-primary shrink-0" />
-              <h2 className="text-lg font-semibold text-foreground">คอลเลกชันทั้งหมด</h2>
-            </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              เลือกคอลเลกชันเพื่อดูรายละเอียด หรือปรับขนาดการ์ดได้
-            </p>
-          </div>
-        )}
-        <Button
-          size="sm"
-          onClick={() => setFormOpen(true)}
-          variant="gradient"
-          className="rounded-full shrink-0"
-        >
-          <Plus className="w-4 h-4 mr-1" /> คอลเลกชันใหม่
-        </Button>
-      </div>
+          {newCollectionButton}
+        </div>
+      ) : (
+        <ProfileTabHeading
+          title="Collections"
+          count={collections.length}
+          description="เลือกคอลเลกชันเพื่อดูรายละเอียด หรือปรับขนาดการ์ดได้"
+          actions={newCollectionButton}
+        />
+      )}
 
       <FeedModeTransition modeKey={selection}>
         {selection !== "folders" ? (

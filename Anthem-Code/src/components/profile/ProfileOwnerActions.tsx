@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, MoreHorizontal, Plus, Rocket, Settings, Share2 } from "lucide-react";
+import { Eye, MoreHorizontal, Plus, Rocket, Settings, Share2, Wallet } from "lucide-react";
 import ManageWorkIcon from "@/components/icons/ManageWorkIcon";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +23,8 @@ type Props = {
   onBecomeCreator?: () => void;
   onStudio?: () => void;
   onSettings?: () => void;
+  /** Creator earnings page (verified creators only). */
+  onWallet?: () => void;
   /** Tighter buttons for the sticky mobile header. */
   compact?: boolean;
   className?: string;
@@ -40,6 +42,7 @@ export default function ProfileOwnerActions({
   onBecomeCreator,
   onStudio,
   onSettings,
+  onWallet,
   compact = false,
   className,
 }: Props) {
@@ -117,6 +120,12 @@ export default function ProfileOwnerActions({
             <Share2 className="h-3.5 w-3.5" />
             แชร์
           </DropdownMenuItem>
+          {onWallet ? (
+            <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onSelect={onWallet}>
+              <Wallet className="h-3.5 w-3.5" />
+              My Wallet
+            </DropdownMenuItem>
+          ) : null}
           {onSettings ? (
             <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onSelect={onSettings}>
               <Settings className="h-3.5 w-3.5" />

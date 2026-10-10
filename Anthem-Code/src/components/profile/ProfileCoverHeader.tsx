@@ -40,6 +40,7 @@ type Props = {
   onBecomeCreator?: () => void;
   onStudio?: () => void;
   onSettings?: () => void;
+  onWallet?: () => void;
   onFollowersClick?: () => void;
   onFollowingClick?: () => void;
   /** Hide works/followers/following under the name (moved to sidebar). */
@@ -80,6 +81,7 @@ export default function ProfileCoverHeader({
   onBecomeCreator,
   onStudio,
   onSettings,
+  onWallet,
   onFollowersClick,
   onFollowingClick,
   showFollowStats = true,
@@ -314,9 +316,10 @@ export default function ProfileCoverHeader({
                 <span className="truncate">{profile.display_name || "ยังไม่ได้ตั้งชื่อ"}</span>
                 <VerifiedBadge verified={!!profile.is_verified} />
               </h1>
-              {profile.username && (
-                <p className="text-sm text-muted-foreground">@{profile.username}</p>
-              )}
+              {profile.username &&
+                profile.username.trim().toLowerCase() !== (profile.display_name ?? "").trim().toLowerCase() && (
+                  <p className="text-sm text-muted-foreground">@{profile.username}</p>
+                )}
 
               <div className="mt-2.5 space-y-2">
                 <DisciplineChips disciplines={disciplines} size="md" />
@@ -379,6 +382,7 @@ export default function ProfileCoverHeader({
               onPost={onPost}
               onPreview={onPreview}
               onSettings={onSettings}
+              onWallet={onWallet}
               shareUrl={shareUrl}
               shareTitle={shareTitle}
               shareMessage={shareMessage}

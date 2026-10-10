@@ -804,12 +804,12 @@ const PublicProfilePage = () => {
           value={activeTab}
           onValueChange={setProfileTab}
           tabs={[
-            { value: "works", label: `Project (${portfolioProjects.length})` },
-            { value: "series", label: `Catalog (${seriesList.length})` },
-            { value: "services", label: `Packages (${servicesTabCount})` },
-            { value: "objects", label: `Objects (${profileObjects.length})` },
-            { value: "about", label: "About Me" },
-            { value: "reviews", label: "Review" },
+            { value: "works", label: "Projects", count: portfolioProjects.length },
+            { value: "series", label: "Catalog", count: seriesList.length },
+            { value: "services", label: "Packages", count: servicesTabCount },
+            { value: "objects", label: "Objects", count: profileObjects.length },
+            { value: "about", label: "About Me", ownHeading: true },
+            { value: "reviews", label: "Reviews" },
           ]}
         >
           {activeTab === "works" &&

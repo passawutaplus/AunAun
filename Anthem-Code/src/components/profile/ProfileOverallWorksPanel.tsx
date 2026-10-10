@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, Heart, LayoutGrid, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/EmptyState";
+import MasonryColumns from "@/components/ui/MasonryColumns";
+import ProfileTabHeading from "@/components/profile/ProfileTabHeading";
 import {
   CollectionBrowseToolbar,
   type CollectionItemsSortMode,
@@ -10,7 +12,6 @@ import {
 import type { DBProject } from "@/hooks/useProjects";
 import {
   collectionMasonryClass,
-  collectionMasonryItemClass,
   readCollectionGridDensity,
   writeCollectionGridDensity,
   type CollectionGridDensity,
@@ -24,6 +25,8 @@ const OVERALL_GRID_STORAGE_KEY = "aplus1.profile.overall.grid.density.v2";
 type Props = {
   projects: DBProject[];
   isLoading?: boolean;
+  /** Rendered between the heading and the works (e.g. onboarding checklist). */
+  afterHeading?: ReactNode;
 };
 
 function OverallWorkCard({
@@ -99,12 +102,12 @@ function OverallWorkCard({
 }
 
 /** Owner profile first tab: own works as simple cards — title, views, likes only. */
-export default function ProfileOverallWorksPanel({ projects, isLoading }: Props) {
+export default function ProfileOverallWorksPanel({ projects, isLoading, afterHeading }: Props) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [sortMode, setSortMode] = useState<CollectionItemsSortMode>("newest");
   const [density, setDensity] = useState<CollectionGridDensity>(() =>
-    readCollectionGridDensity(OVERALL_GRID_STORAGE_KEY, "large"),
+    readCollectionGridDensity(OVERALL_GRID_STORAGE_KEY, "medium"),
   );
 
   useEffect(() => {
@@ -144,19 +147,24 @@ export default function ProfileOverallWorksPanel({ projects, isLoading }: Props)
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="min-w-0 text-base font-semibold text-foreground">ผลงานทั้งหมด</h2>
-        {published.length > 0 ? (
-          <Button
-            size="sm"
-            variant="gradient"
-            className="shrink-0 rounded-full"
-            onClick={() => navigate("/portfolio/new")}
-          >
-            <Plus className="mr-1 h-4 w-4" /> ลงผลงาน
-          </Button>
-        ) : null}
-      </div>
+      <ProfileTabHeading
+        title="My Projects"
+        count={published.length}
+        description="ผลงานที่เผยแพร่แล้วของคุณ"
+        actions={
+          published.length > 0 ? (
+            <Button
+              size="sm"
+              variant="gradient"
+              className="rounded-full"
+              onClick={() => navigate("/portfolio/new")}
+            >
+              <Plus className="mr-1 h-4 w-4" /> ลงผลงาน
+            </Button>
+          ) : null
+        }
+      />
+      {afterHeading}
 
       {published.length === 0 ? (
         <EmptyState
@@ -188,17 +196,18 @@ export default function ProfileOverallWorksPanel({ projects, isLoading }: Props)
               <p className="text-sm text-muted-foreground">ลองเปลี่ยนคำค้น</p>
             </div>
           ) : (
-            <div className={collectionMasonryClass(density)}>
-              {visible.map((project) => (
-                <div key={project.id} className={collectionMasonryItemClass(density)}>
-                  <OverallWorkCard
-                    project={project}
-                    list={density === "list"}
-                    allProjects={projects}
-                  />
-                </div>
-              ))}
-            </div>
+            <MasonryColumns
+              items={visible}
+              density={density}
+              getKey={(project) => project.id}
+              renderItem={(project) => (
+                <OverallWorkCard
+                  project={project}
+                  list={density === "list"}
+                  allProjects={projects}
+                />
+              )}
+            />
           )}
         </div>
       )}

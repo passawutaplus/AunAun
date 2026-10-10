@@ -1274,6 +1274,11 @@
   box-shadow: 0 12px 40px rgba(30, 40, 60, 0.16);
 }
 
+/* In the page (not the dialog) the sheet is only width-limited, so it prints 1:1 on PC. */
+.about-cv-a4-frame.about-cv-a4-frame--page {
+  width: min(210mm, calc(100vw - 1.75rem));
+}
+
 .about-cv-sheet {
   --cv-ink: #111111;
   --cv-muted: #111111;

@@ -553,9 +553,11 @@ export function ProfileAboutToolbar({
   onEdit?: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <h2 className="text-sm font-semibold text-foreground min-w-0">{title}</h2>
-      <div className="flex items-center gap-1 shrink-0">
+    <div className="flex items-end justify-between gap-3">
+      <h2 className="min-w-0 truncate font-display text-2xl font-normal uppercase leading-tight tracking-tight text-foreground sm:text-3xl">
+        {title}
+      </h2>
+      <div className="flex items-center gap-1 shrink-0 pb-1">
         {onPreview ? (
           <button
             type="button"

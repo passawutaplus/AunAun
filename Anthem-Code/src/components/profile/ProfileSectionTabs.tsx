@@ -1,11 +1,16 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
+import ProfileTabHeading from "@/components/profile/ProfileTabHeading";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import { cn } from "@/lib/utils";
 
 export type ProfileSectionTab = {
   value: string;
   label: ReactNode;
+  /** Shown as a small number after the label; hidden at 0. */
+  count?: number;
+  /** The panel renders its own big heading (e.g. About Me has actions beside it). */
+  ownHeading?: boolean;
 };
 
 type ProfileSectionTabsProps = {
@@ -22,6 +27,9 @@ const indicatorTransition = {
   damping: 32,
 } as const;
 
+const tabId = (value: string) => `profile-tab-${value}`;
+const panelId = (value: string) => `profile-panel-${value}`;
+
 function TabTrigger({
   tab,
   active,
@@ -37,11 +45,14 @@ function TabTrigger({
     <button
       type="button"
       role="tab"
+      id={tabId(tab.value)}
       aria-selected={active}
+      aria-controls={panelId(tab.value)}
+      tabIndex={active ? 0 : -1}
       onClick={onSelect}
       className={cn(
-        "relative rounded-full text-sm px-2.5 sm:px-4 py-2 font-normal transition-colors",
-        active ? "text-white font-medium" : "text-muted-foreground hover:text-foreground",
+        "relative shrink-0 whitespace-nowrap rounded-full px-3.5 py-2 text-[13px] uppercase tracking-wide transition-colors sm:px-4",
+        active ? "font-medium text-primary-foreground" : "font-normal text-muted-foreground hover:text-foreground",
       )}
     >
       {active &&
@@ -55,7 +66,14 @@ function TabTrigger({
             aria-hidden
           />
         ))}
-      <span className="relative z-10">{tab.label}</span>
+      <span className="relative z-10">
+        {tab.label}
+        {typeof tab.count === "number" && tab.count > 0 ? (
+          <span className="ml-1.5 text-[11px] font-normal tabular-nums tracking-normal opacity-70">
+            {tab.count}
+          </span>
+        ) : null}
+      </span>
     </button>
   );
 }
@@ -69,48 +87,65 @@ export function ProfileSectionTabs({
   className,
 }: ProfileSectionTabsProps) {
   const reduced = useReducedMotion();
-  const row1 = tabs.slice(0, 2);
-  const row2 = tabs.slice(2);
+  const listRef = useRef<HTMLDivElement>(null);
+  const active = tabs.find((t) => t.value === value);
+
+  // On phones the row scrolls sideways: keep the selected tab in view.
+  useEffect(() => {
+    listRef.current
+      ?.querySelector<HTMLElement>("[aria-selected='true']")
+      ?.scrollIntoView({ block: "nearest", inline: "center", behavior: reduced ? "auto" : "smooth" });
+  }, [value, reduced]);
+
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    const keys = ["ArrowRight", "ArrowLeft", "Home", "End"];
+    if (!keys.includes(e.key)) return;
+    e.preventDefault();
+    const index = Math.max(
+      0,
+      tabs.findIndex((t) => t.value === value),
+    );
+    const next =
+      e.key === "Home"
+        ? 0
+        : e.key === "End"
+          ? tabs.length - 1
+          : (index + (e.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    onValueChange(tabs[next].value);
+    listRef.current?.querySelector<HTMLElement>(`#${tabId(tabs[next].value)}`)?.focus();
+  };
 
   return (
     <div className={className}>
-      <div className="px-3 sm:px-4 flex justify-center">
+      <div className="flex justify-center px-3 sm:px-4">
         <LayoutGroup id="profile-section-tabs">
           <div
+            ref={listRef}
             role="tablist"
             aria-label="หมวดเนื้อหาโปรไฟล์"
-            className="glass-chip rounded-2xl sm:rounded-full p-1.5 h-auto gap-1 flex flex-col w-full sm:inline-flex sm:flex-row sm:flex-nowrap sm:w-max"
+            onKeyDown={onKeyDown}
+            className="glass-chip flex w-full gap-1 overflow-x-auto rounded-full p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:w-max sm:max-w-full [&::-webkit-scrollbar]:hidden"
           >
-            <div className="grid grid-cols-2 gap-1 w-full sm:contents">
-              {row1.map((tab) => (
-                <TabTrigger
-                  key={tab.value}
-                  tab={tab}
-                  active={value === tab.value}
-                  reduced={!!reduced}
-                  onSelect={() => onValueChange(tab.value)}
-                />
-              ))}
-            </div>
-            {row2.length > 0 && (
-              <div className="grid grid-cols-3 gap-1 w-full sm:contents">
-                {row2.map((tab) => (
-                  <TabTrigger
-                    key={tab.value}
-                    tab={tab}
-                    active={value === tab.value}
-                    reduced={!!reduced}
-                    onSelect={() => onValueChange(tab.value)}
-                  />
-                ))}
-              </div>
-            )}
+            {tabs.map((tab) => (
+              <TabTrigger
+                key={tab.value}
+                tab={tab}
+                active={value === tab.value}
+                reduced={!!reduced}
+                onSelect={() => onValueChange(tab.value)}
+              />
+            ))}
           </div>
         </LayoutGroup>
       </div>
 
-      <FeedModeTransition modeKey={value} className="mt-6">
-        <div role="tabpanel">{children}</div>
+      <FeedModeTransition modeKey={value} className="mt-8">
+        <div role="tabpanel" id={panelId(value)} aria-labelledby={tabId(value)}>
+          {active && !active.ownHeading && typeof active.label === "string" ? (
+            <ProfileTabHeading title={active.label} count={active.count} className="mb-4" />
+          ) : null}
+          {children}
+        </div>
       </FeedModeTransition>
     </div>
   );

@@ -3,6 +3,8 @@ import { ArrowRight, Bookmark } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/EmptyState";
+import MasonryColumns from "@/components/ui/MasonryColumns";
+import ProfileTabHeading from "@/components/profile/ProfileTabHeading";
 import PackageCard from "@/components/feed/PackageCard";
 import {
   CollectionBrowseToolbar,
@@ -14,7 +16,6 @@ import { usePackageFeedStats } from "@/hooks/usePackageFeedStats";
 import type { PackageFeedCard } from "@/hooks/usePackageFeed";
 import {
   collectionMasonryClass,
-  collectionMasonryItemClass,
   readCollectionGridDensity,
   writeCollectionGridDensity,
   type CollectionGridDensity,
@@ -119,28 +120,24 @@ export default function PortfolioBookingPanel({ userId }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="flex min-w-0 items-center gap-2 text-base font-semibold text-foreground">
-            <Bookmark className="h-4 w-4 shrink-0 text-primary" />
-            <span className="truncate">Packages</span>
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            แพ็กเกจที่คุณกดบุ๊กมาร์กไว้ — กลับมาดูหรือคุยต่อเมื่อพร้อม
-          </p>
-        </div>
-        {data.length > 0 ? (
-          <Button asChild size="sm" variant="gradient" className="group w-fit shrink-0 rounded-full">
-            <Link to="/?mode=packages">
-              หน้ารวม Packages
-              <span className="relative ml-0.5 inline-flex h-4 w-4 overflow-hidden" aria-hidden>
-                <ArrowRight className="absolute inset-0 h-4 w-4 transition-transform duration-300 ease-out motion-reduce:transition-none group-hover:translate-x-[120%]" />
-                <ArrowRight className="absolute inset-0 h-4 w-4 -translate-x-[120%] transition-transform duration-300 ease-out motion-reduce:transition-none group-hover:translate-x-0" />
-              </span>
-            </Link>
-          </Button>
-        ) : null}
-      </div>
+      <ProfileTabHeading
+        title="Packages"
+        count={data.length}
+        description="แพ็กเกจของครีเอเตอร์คนอื่นที่คุณกดบุ๊กมาร์กไว้ — กลับมาดูหรือคุยต่อเมื่อพร้อม"
+        actions={
+          data.length > 0 ? (
+            <Button asChild size="sm" variant="gradient" className="group w-fit rounded-full">
+              <Link to="/?mode=packages">
+                หน้ารวม Packages
+                <span className="relative ml-0.5 inline-flex h-4 w-4 overflow-hidden" aria-hidden>
+                  <ArrowRight className="absolute inset-0 h-4 w-4 transition-transform duration-300 ease-out motion-reduce:transition-none group-hover:translate-x-[120%]" />
+                  <ArrowRight className="absolute inset-0 h-4 w-4 -translate-x-[120%] transition-transform duration-300 ease-out motion-reduce:transition-none group-hover:translate-x-0" />
+                </span>
+              </Link>
+            </Button>
+          ) : null
+        }
+      />
 
       {data.length === 0 ? (
         <EmptyState
@@ -172,17 +169,18 @@ export default function PortfolioBookingPanel({ userId }: Props) {
               <p className="text-sm text-muted-foreground">ลองเปลี่ยนคำค้น</p>
             </div>
           ) : (
-            <div className={collectionMasonryClass(density)}>
-              {visible.map((card) => (
-                <div key={card.service.id} className={collectionMasonryItemClass(density)}>
-                  {density === "list" ? (
-                    <BookingListRow card={card} />
-                  ) : (
-                    <PackageCard data={card} stats={statsById[card.service.id]} />
-                  )}
-                </div>
-              ))}
-            </div>
+            <MasonryColumns
+              items={visible}
+              density={density}
+              getKey={(card) => card.service.id}
+              renderItem={(card) =>
+                density === "list" ? (
+                  <BookingListRow card={card} />
+                ) : (
+                  <PackageCard data={card} stats={statsById[card.service.id]} />
+                )
+              }
+            />
           )}
         </div>
       )}
