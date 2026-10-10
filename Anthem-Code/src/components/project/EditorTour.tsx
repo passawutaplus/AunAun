@@ -319,7 +319,7 @@ function LibraryScenes() {
         {scaled(<ModulesScene />)}
         <p className="mt-1 text-[11px] text-muted-foreground">ลากชิ้นส่วนไปวางบนผลงาน หรือกดเพื่อต่อท้าย</p>
       </div>
-      <div>
+      <div className="border-t border-border pt-3">
         <p className="mb-1 font-display text-xs text-foreground">Template</p>
         {scaled(<TemplatesScene />)}
         <p className="mt-1 text-[11px] text-muted-foreground">เลือกโครงสำเร็จรูป แล้วใส่รูปของคุณแทนช่องตัวอย่าง</p>
