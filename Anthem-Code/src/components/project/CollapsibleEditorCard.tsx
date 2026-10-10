@@ -9,33 +9,25 @@ type Props = {
   icon: LucideIcon;
   hint?: string;
   defaultOpen?: boolean;
-  /** Always open, no border or toggle — a plain labelled section. */
-  flat?: boolean;
+  /** Still collapsible, but drawn without the card border/background. */
+  borderless?: boolean;
   children: ReactNode;
 };
 
-export function CollapsibleEditorCard({ title, icon: Icon, hint, defaultOpen = true, flat = false, children }: Props) {
+export function CollapsibleEditorCard({ title, icon: Icon, hint, defaultOpen = true, borderless = false, children }: Props) {
   const [open, setOpen] = useState(defaultOpen);
 
-  if (flat) {
-    return (
-      <section className="space-y-3">
-        <h3 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-          <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          {title}
-        </h3>
-        <div className="space-y-4">{children}</div>
-      </section>
-    );
-  }
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className={cn(!borderless && "rounded-2xl border border-border bg-card overflow-hidden")}>
         <CollapsibleTrigger asChild>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-muted/30 transition-colors"
+            className={cn(
+              "flex w-full items-center gap-2 py-3 text-left transition-colors",
+              borderless ? "px-0" : "px-4 hover:bg-muted/30",
+            )}
             aria-expanded={open}
           >
             <span className="flex min-w-0 items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
@@ -57,7 +49,7 @@ export function CollapsibleEditorCard({ title, icon: Icon, hint, defaultOpen = t
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="space-y-4 px-4 pb-4">{children}</div>
+          <div className={cn("space-y-4", borderless ? "pb-2" : "px-4 pb-4")}>{children}</div>
         </CollapsibleContent>
       </div>
     </Collapsible>

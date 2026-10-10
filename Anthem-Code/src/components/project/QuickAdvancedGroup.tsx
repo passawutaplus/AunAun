@@ -6,7 +6,7 @@ import { CollapsibleEditorCard } from "@/components/project/CollapsibleEditorCar
 export function QuickAdvancedGroup({ quick, children }: { quick: boolean; children: ReactNode }) {
   if (!quick) return <>{children}</>;
   return (
-    <CollapsibleEditorCard title="Advanced" icon={SlidersHorizontal} defaultOpen={false}>
+    <CollapsibleEditorCard title="Advanced" icon={SlidersHorizontal} defaultOpen={false} borderless>
       <div className="space-y-4">{children}</div>
     </CollapsibleEditorCard>
   );
@@ -15,7 +15,7 @@ export function QuickAdvancedGroup({ quick, children }: { quick: boolean; childr
 /** People and works this piece connects to (credits, linked posts — products later). */
 export function QuickConnectGroup({ children }: { children: ReactNode }) {
   return (
-    <CollapsibleEditorCard title="Connect" icon={Link2} defaultOpen={false}>
+    <CollapsibleEditorCard title="Connect" icon={Link2} defaultOpen={false} borderless>
       <div className="space-y-4">{children}</div>
     </CollapsibleEditorCard>
   );

@@ -3524,7 +3524,7 @@ const ProjectEditorPage = () => {
 
             <CollapsibleEditorCard
               title="การรับงาน"
-              flat={uploadMode === "quick"}
+              borderless={uploadMode === "quick"}
               icon={Handshake}
               defaultOpen={false}
               hint={
@@ -3587,7 +3587,7 @@ const ProjectEditorPage = () => {
 
             <CollapsibleEditorCard
               title="รายละเอียดเพิ่มเติม"
-              flat={uploadMode === "quick"}
+              borderless={uploadMode === "quick"}
               icon={Tags}
               defaultOpen={false}
               hint={`${tags.length} แท็ก · ${tools.length} เครื่องมือ`}
