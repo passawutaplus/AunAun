@@ -8,8 +8,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  GalleryScene,
+  ModulesScene,
+  SCENES_CSS,
+  SingleImageScene,
+  TemplatesScene,
+  VideoScene,
+} from "@/components/project/EditorInfoScenes";
 
-export type EditorInfoTopic = "cover" | "hire";
+export type EditorInfoTopic = "cover" | "hire" | "modules" | "templates" | "single" | "gallery" | "video";
 
 /** Sample artwork shown in the explainer animations (public/editor-help). */
 const SAMPLE = {
@@ -143,7 +151,7 @@ const STEPS = [
 ];
 
 const CONTENT: Record<
-  EditorInfoTopic,
+  "cover" | "hire",
   { title: string; label: string; body: JSX.Element; scene: JSX.Element }
 > = {
   cover: {
@@ -191,12 +199,124 @@ const CONTENT: Record<
   },
 };
 
+
+const Steps = ({ items }: { items: string[] }) => (
+  <ol className="space-y-1.5 text-sm">
+    {items.map((text, i) => (
+      <li key={text} className="flex items-start gap-2.5">
+        <b className="mt-0.5 inline-flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full bg-muted text-xs text-foreground">
+          {i + 1}
+        </b>
+        <span className="leading-relaxed text-muted-foreground">{text}</span>
+      </li>
+    ))}
+  </ol>
+);
+
+const MORE_CONTENT: Partial<Record<EditorInfoTopic, { title: string; label: string; body: JSX.Element; scene: JSX.Element }>> = {
+  modules: {
+    title: "Module คืออะไร",
+    label: "Module คืออะไร",
+    scene: <ModulesScene />,
+    body: (
+      <>
+        <Steps
+          items={[
+            "เลือกโมดูลจากแถบซ้าย เช่น หัวข้อ ภาพ แกลเลอรี วิดีโอ",
+            "ลากไปวาง หรือกดเพื่อต่อท้ายผลงาน",
+            "เรียงต่อกันเป็นเรื่องราว ลากสลับลำดับหรือลบได้ทุกเมื่อ",
+          ]}
+        />
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          โมดูลคือ <b className="text-foreground">ชิ้นส่วนของหน้าผลงาน</b> วางช่องไว้ก่อน อัปโหลดทีหลังได้
+        </p>
+      </>
+    ),
+  },
+  templates: {
+    title: "Template คืออะไร",
+    label: "Template คืออะไร",
+    scene: <TemplatesScene />,
+    body: (
+      <>
+        <Steps
+          items={[
+            "เลือกเทมเพลตที่ตรงกับงาน เช่น ลงเร็ว เน้นภาพ เล่าเรื่องครบ",
+            "ระบบวางโมดูลให้ครบทั้งชุดในทีเดียว",
+            "ใส่รูปและข้อความของคุณแทนช่องตัวอย่าง",
+          ]}
+        />
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          เทมเพลตคือ <b className="text-foreground">ชุดโมดูลที่จัดไว้แล้ว</b> เหมาะกับคนที่ไม่อยากเริ่มจากหน้าว่าง
+          และบันทึกโครงที่ชอบเป็นเทมเพลตของตัวเองได้
+        </p>
+      </>
+    ),
+  },
+  single: {
+    title: "ภาพเดี่ยว",
+    label: "ภาพเดี่ยวคืออะไร",
+    scene: <SingleImageScene />,
+    body: (
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        ใส่ <b className="text-foreground">หนึ่งรูปเต็มความกว้าง</b> ของหน้าผลงาน เหมาะกับภาพหลักหรือภาพที่อยากให้เห็นรายละเอียด
+        ลากหรือกดเพื่อวางช่องภาพ แล้วอัปโหลดทีหลังได้
+      </p>
+    ),
+  },
+  gallery: {
+    title: "แกลเลอรีสไลด์",
+    label: "แกลเลอรีสไลด์คืออะไร",
+    scene: <GalleryScene />,
+    body: (
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        รวม <b className="text-foreground">หลายรูปไว้ในช่องเดียว</b> ให้คนดูเลื่อนซ้าย-ขวา เหมาะกับงานชุดเดียวกัน
+        ที่ไม่อยากให้หน้ายาวเกินไป วางช่องภาพเพิ่มได้เรื่อย ๆ
+      </p>
+    ),
+  },
+  video: {
+    title: "วิดีโอ",
+    label: "วิดีโอคืออะไร",
+    scene: <VideoScene />,
+    body: (
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        วางช่องวิดีโอก่อน แล้วค่อย <b className="text-foreground">อัปโหลดคลิป</b> ระบบสร้างภาพตัวอย่างให้
+        คนดูกดเล่นได้ในหน้าผลงานเลย
+      </p>
+    ),
+  },
+};
+
 /** Small ⓘ button that opens an animated explainer for one editor field. */
-export function EditorInfoButton({ topic }: { topic: EditorInfoTopic }) {
+export function EditorInfoButton({ topic, inline = false }: { topic: EditorInfoTopic; inline?: boolean }) {
   const [open, setOpen] = useState(false);
-  const c = CONTENT[topic];
+  const c = (MORE_CONTENT[topic] ?? CONTENT[topic as "cover" | "hire"])!;
+  const trigger = inline ? (
+    <span
+      role="button"
+      tabIndex={0}
+      aria-label={c.label}
+      title={c.label}
+      onClick={(e) => {
+        e.stopPropagation();
+        setOpen(true);
+      }}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setOpen(true);
+        }
+      }}
+      className="inline-flex h-[18px] w-[18px] shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      <Info className="h-3.5 w-3.5" aria-hidden />
+    </span>
+  ) : null;
   return (
     <>
+      {trigger ?? (
       <button
         type="button"
         aria-label={c.label}
@@ -206,9 +326,10 @@ export function EditorInfoButton({ topic }: { topic: EditorInfoTopic }) {
       >
         <Info className="h-3.5 w-3.5" aria-hidden />
       </button>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[34rem]">
-          <style>{CSS}</style>
+        <DialogContent className="max-w-[34rem]" onClick={(e) => e.stopPropagation()}>
+          <style>{CSS + SCENES_CSS}</style>
           <DialogHeader>
             <DialogTitle>{c.title}</DialogTitle>
             <DialogDescription className="sr-only">คำอธิบายพร้อมภาพเคลื่อนไหว</DialogDescription>
