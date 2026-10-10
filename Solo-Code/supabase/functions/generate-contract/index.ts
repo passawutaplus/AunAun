@@ -1,4 +1,5 @@
 // Generate contract draft (Thai) via Google Gemini.
+import { supabasePublishableKey } from "../_shared/supabase-keys.ts";
 import { z } from "npm:zod@3";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
@@ -14,7 +15,7 @@ import { corsHeadersForRequest } from "../_shared/cors.ts";
 const CONTRACT_FEATURE = "generate_contract";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_ANON_KEY = supabasePublishableKey();
 
 const PayloadSchema = z.object({
   type: z.enum(["project", "fulltime"]),

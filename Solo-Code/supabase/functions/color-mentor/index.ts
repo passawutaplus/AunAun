@@ -1,6 +1,7 @@
 // Color Mentor — analyzes a hex color and returns complementary colors + mood
 // Uses Google Gemini directly.
 
+import { supabasePublishableKey } from "../_shared/supabase-keys.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { debitAiQuota } from "../_shared/ai-quota.ts";
@@ -31,7 +32,7 @@ serve(async (req) => {
       });
     }
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+    const ANON_KEY = supabasePublishableKey();
     if (!SUPABASE_URL || !ANON_KEY) {
       console.error("color-mentor: missing SUPABASE_URL or SUPABASE_ANON_KEY");
       return new Response(JSON.stringify({ error: "server_misconfiguration" }), {

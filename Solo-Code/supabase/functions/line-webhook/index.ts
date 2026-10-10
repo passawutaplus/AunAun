@@ -1,3 +1,4 @@
+import { supabaseSecretKey } from "../_shared/supabase-keys.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   createLineSupportTicket,
@@ -17,7 +18,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 function adminClient() {
-  return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  return createClient(Deno.env.get("SUPABASE_URL")!, supabaseSecretKey());
 }
 
 async function resolveLinkedProfile(lineUserId: string) {
