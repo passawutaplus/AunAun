@@ -9,11 +9,25 @@ type Props = {
   icon: LucideIcon;
   hint?: string;
   defaultOpen?: boolean;
+  /** Always open, no border or toggle — a plain labelled section. */
+  flat?: boolean;
   children: ReactNode;
 };
 
-export function CollapsibleEditorCard({ title, icon: Icon, hint, defaultOpen = true, children }: Props) {
+export function CollapsibleEditorCard({ title, icon: Icon, hint, defaultOpen = true, flat = false, children }: Props) {
   const [open, setOpen] = useState(defaultOpen);
+
+  if (flat) {
+    return (
+      <section className="space-y-3">
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+          <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          {title}
+        </h3>
+        <div className="space-y-4">{children}</div>
+      </section>
+    );
+  }
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>

@@ -97,7 +97,7 @@ const ProjectContextEditorFields = ({
     <section className="space-y-3">
       <div className="space-y-1.5" id="project-short-description">
         <Label className={fieldLabel}>
-          รายละเอียดแบบย่อ <span className="font-normal text-muted-foreground">ไม่บังคับ</span>
+          รายละเอียดแบบย่อ <span className="text-primary">*</span>
         </Label>
         <Textarea
           value={shortDescription}

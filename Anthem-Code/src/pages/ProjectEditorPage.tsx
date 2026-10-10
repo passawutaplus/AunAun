@@ -1461,6 +1461,10 @@ const ProjectEditorPage = () => {
       errors.category = "เลือกหมวดใหญ่";
       checklist.push("เลือกหมวดใหญ่");
     }
+    if (!shortDescription.trim()) {
+      errors.shortDescription = "เขียนรายละเอียดสั้น ๆ";
+      checklist.push("เขียนรายละเอียดสั้น ๆ");
+    }
     const canvasImages =
       editorMode === "flex_grid"
         ? countMediaByKind(flexGridMediaItems(flexGridLayout), "image")
@@ -1610,7 +1614,7 @@ const ProjectEditorPage = () => {
       setPublishPopupOpaque(true);
       setPublishFieldHighlightOpaque(true);
       setPublishChecklistTick((n) => n + 1);
-      if (errors.title || errors.cover || errors.category) setMetaExpanded(true);
+      if (errors.title || errors.cover || errors.category || errors.shortDescription) setMetaExpanded(true);
       const firstKey = Object.keys(errors)[0];
       window.setTimeout(() => {
         if (firstKey === "title") titleInputRef.current?.focus();
@@ -3520,6 +3524,7 @@ const ProjectEditorPage = () => {
 
             <CollapsibleEditorCard
               title="การรับงาน"
+              flat={uploadMode === "quick"}
               icon={Handshake}
               defaultOpen={false}
               hint={
@@ -3582,6 +3587,7 @@ const ProjectEditorPage = () => {
 
             <CollapsibleEditorCard
               title="รายละเอียดเพิ่มเติม"
+              flat={uploadMode === "quick"}
               icon={Tags}
               defaultOpen={false}
               hint={`${tags.length} แท็ก · ${tools.length} เครื่องมือ`}
