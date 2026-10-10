@@ -18,7 +18,8 @@ import {
   parseProfileCv,
   partitionSkillsAndSoftware,
   type CvDocLang,
-  type CvLayout,
+  type CvTemplate,
+  type CvHeadingFont,
 } from "@/lib/profileCv";
 
 export type AboutCvProfile = {
@@ -96,7 +97,8 @@ export type CvSectionModel = { key: CvSectionKey; title: string; entries: CvEntr
 export type CvPersonalItem = { key: "birthDate" | "nationality" | "military"; label: string; value: string };
 
 export type AboutCvModel = {
-  layout: CvLayout;
+  template: CvTemplate;
+  headingFont: CvHeadingFont;
   lang: CvDocLang;
   labels: CvDocCopy;
   name: string;
@@ -363,7 +365,8 @@ export function buildAboutCvModel({
   }
 
   return {
-    layout: cv.layout,
+    template: cv.template,
+    headingFont: cv.headingFont,
     lang,
     labels: copy,
     name,

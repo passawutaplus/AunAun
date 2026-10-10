@@ -287,6 +287,22 @@ export const cvLanguageItemSchema = z.object({
   level: z.enum(CV_LANGUAGE_LEVELS).or(z.literal("")).optional().default(""),
 });
 
+/** Same data in three arrangements: A editorial split, B bold index, C wide grid. */
+export const CV_TEMPLATES = ["editorial", "index", "grid"] as const;
+export type CvTemplate = (typeof CV_TEMPLATES)[number];
+
+export function parseCvTemplate(raw: unknown): CvTemplate {
+  return CV_TEMPLATES.includes(raw as CvTemplate) ? (raw as CvTemplate) : "editorial";
+}
+
+/** Latin heading face: neutral standard, IBM Plex Sans, or the brand display face. Thai is always IBM Plex Sans Thai. */
+export const CV_HEADING_FONTS = ["standard", "ibm", "agrandir"] as const;
+export type CvHeadingFont = (typeof CV_HEADING_FONTS)[number];
+
+export function parseCvHeadingFont(raw: unknown): CvHeadingFont {
+  return CV_HEADING_FONTS.includes(raw as CvHeadingFont) ? (raw as CvHeadingFont) : "agrandir";
+}
+
 export const CV_DOC_LANGS = ["en", "th"] as const;
 export type CvDocLang = (typeof CV_DOC_LANGS)[number];
 
@@ -365,7 +381,8 @@ export const profileCvSchema = z.object({
   contactPublic: z.boolean().optional().default(false),
   about: z.string().trim().max(500).optional().default(""),
   addressDetail: z.enum(["short", "full"]).optional().default("short"),
-  layout: z.enum(["two", "one"]).optional().default("two"),
+  template: z.enum(CV_TEMPLATES).optional().default("editorial"),
+  headingFont: z.enum(CV_HEADING_FONTS).optional().default("agrandir"),
   /** null = never chosen (legacy CVs keep showing the photo). */
   showPhoto: z.boolean().nullable().optional().default(null),
   visibility: z
@@ -399,11 +416,6 @@ export type ProfileCv = z.infer<typeof profileCvSchema>;
 export type CvVisibility = ProfileCv["visibility"];
 export type CvVisibilityKey = keyof CvVisibility;
 export type CvAddressDetail = ProfileCv["addressDetail"];
-export type CvLayout = ProfileCv["layout"];
-
-export function parseCvLayout(raw: unknown): CvLayout {
-  return raw === "one" ? "one" : "two";
-}
 
 /** Photo is shown unless the owner switched it off (legacy CVs: shown). */
 export function cvPhotoVisible(cv: Pick<ProfileCv, "showPhoto">): boolean {
@@ -508,7 +520,8 @@ export const EMPTY_PROFILE_CV: ProfileCv = {
   contactPublic: false,
   about: "",
   addressDetail: "short",
-  layout: "two",
+  template: "editorial",
+  headingFont: "agrandir",
   showPhoto: null,
   visibility: defaultCvVisibility(false),
 };
@@ -735,7 +748,8 @@ export function parseProfileCv(raw: unknown): ProfileCv {
     contactPublic,
     about,
     addressDetail,
-    layout: parseCvLayout(o.layout),
+    template: parseCvTemplate(o.template),
+    headingFont: parseCvHeadingFont(o.headingFont),
     showPhoto: typeof o.showPhoto === "boolean" ? o.showPhoto : null,
     visibility,
   };
@@ -771,7 +785,8 @@ export function profileCvToJson(cv: ProfileCv): ProfileCv {
       cv.visibility.contactEmail || cv.visibility.contactLine || cv.visibility.contactPhone,
     about: (cv.about ?? "").trim().slice(0, 500),
     addressDetail: parseCvAddressDetail(cv.addressDetail),
-    layout: parseCvLayout(cv.layout),
+    template: parseCvTemplate(cv.template),
+    headingFont: parseCvHeadingFont(cv.headingFont),
     showPhoto: typeof cv.showPhoto === "boolean" ? cv.showPhoto : null,
     visibility: parseCvVisibility(cv.visibility, cv.contactPublic === true),
   };

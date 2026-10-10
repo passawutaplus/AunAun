@@ -9,6 +9,7 @@ import { ProfileAboutToolbar } from "@/components/profile/ProfileAboutReadOnly";
 import type { CvProjectInput } from "@/lib/aboutCvModel";
 import ProfileTabHeading from "@/components/profile/ProfileTabHeading";
 import ProfileAboutEditor from "@/components/profile/ProfileAboutEditor";
+import CvSheetScaler from "@/components/profile/CvSheetScaler";
 import { cn } from "@/lib/utils";
 import AboutDocumentPreviewDialog, {
   AboutDocumentSheet,
@@ -81,7 +82,7 @@ export default function ProfileAboutPanel({
   const [fit, setFit] = useState<CvFit>({ density: "normal", overflow: false });
   const canEdit = mode === "owner" && !!userId;
   // Owners see (and print) the theme they picked; visitors always get the default look.
-  const liveTheme: AboutCvTheme = mode === "owner" ? cvTheme : "orange";
+  const liveTheme: AboutCvTheme = mode === "owner" ? cvTheme : "mono";
   const sheetProps = {
     profile,
     experience,
@@ -186,7 +187,9 @@ export default function ProfileAboutPanel({
           ) : null}
           <div className="flex justify-center">
             <div className="about-cv-a4-frame about-cv-a4-frame--page">
-              <AboutDocumentSheet {...sheetProps} theme={liveTheme} />
+              <CvSheetScaler>
+                <AboutDocumentSheet {...sheetProps} theme={liveTheme} />
+              </CvSheetScaler>
             </div>
           </div>
         </>

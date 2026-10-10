@@ -9,7 +9,7 @@ import {
   cvPhotoVisible,
   cvReadiness,
   defaultCvShowPhoto,
-  parseCvLayout,
+  parseCvTemplate,
   profileCvToJson,
   educationDetailLine,
   educationDetailLines,
@@ -306,21 +306,21 @@ describe("profileAboutUrl", () => {
 describe("cv layout and photo", () => {
   it("defaults to two columns and keeps the photo for legacy CVs", () => {
     const cv = parseProfileCv({ fullName: "Momo" });
-    expect(cv.layout).toBe("two");
+    expect(cv.template).toBe("editorial");
     expect(cv.showPhoto).toBeNull();
     expect(cvPhotoVisible(cv)).toBe(true);
   });
 
   it("round-trips layout and showPhoto through parse and profileCvToJson", () => {
-    const cv = parseProfileCv({ layout: "one", showPhoto: false });
-    expect(cv).toMatchObject({ layout: "one", showPhoto: false });
+    const cv = parseProfileCv({ template: "grid", showPhoto: false });
+    expect(cv).toMatchObject({ template: "grid", showPhoto: false });
     expect(cvPhotoVisible(cv)).toBe(false);
-    expect(profileCvToJson(cv)).toMatchObject({ layout: "one", showPhoto: false });
+    expect(profileCvToJson(cv)).toMatchObject({ template: "grid", showPhoto: false });
   });
 
   it("rejects unknown layouts", () => {
-    expect(parseCvLayout("three")).toBe("two");
-    expect(parseCvLayout(undefined)).toBe("two");
+    expect(parseCvTemplate("three")).toBe("editorial");
+    expect(parseCvTemplate(undefined)).toBe("editorial");
   });
 
   it("photo default: on for Thai, off for English, existing CVs keep their photo", () => {

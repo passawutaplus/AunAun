@@ -427,7 +427,8 @@ export const profileSchema = z.object({
   cvContactPublic: z.boolean().optional().default(false),
   cvAbout: z.string().trim().max(500).optional().default(""),
   cvAddressDetail: z.enum(["short", "full"]).optional().default("short"),
-  cvLayout: z.enum(["two", "one"]).optional().default("two"),
+  cvTemplate: z.enum(["editorial", "index", "grid"]).optional().default("editorial"),
+  cvHeadingFont: z.enum(["standard", "ibm", "agrandir"]).optional().default("agrandir"),
   cvShowPhoto: z.boolean().nullable().optional().default(null),
   cvVisibility: z
     .object({

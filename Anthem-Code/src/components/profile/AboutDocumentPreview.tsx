@@ -1,26 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
-import {
-  Award,
-  BadgeCheck,
-  Briefcase,
-  Download,
-  Facebook,
-  GraduationCap,
-  Instagram,
-  Languages,
-  LayoutGrid,
-  Link2,
-  Mail,
-  MapPin,
-  Monitor,
-  Phone,
-  Printer,
-  Sparkles,
-  UserRound,
-  Users,
-} from "lucide-react";
-import LineMarkIcon from "@/components/icons/LineMarkIcon";
+import { Download, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { aboutCvPdfFilename } from "@/lib/aboutCvPdf";
 import { downloadAboutCvDocument } from "@/lib/aboutCvDownload";
@@ -29,43 +8,18 @@ import { Button } from "@/components/ui/button";
 import type { ExperienceItem, SocialLinkItem } from "@/lib/validators";
 import { displayInitials } from "@/lib/avatarPool";
 import { parseProfileCv } from "@/lib/profileCv";
-import {
-  buildAboutCvModel,
-  type AboutCvProfile,
-  type CvContactKind,
-  type CvProjectInput,
-  type CvSectionKey,
-} from "@/lib/aboutCvModel";
+import { buildAboutCvModel, type AboutCvProfile, type CvProjectInput } from "@/lib/aboutCvModel";
 import {
   ABOUT_CV_THEMES,
   type AboutCvTheme,
   readAboutCvTheme,
   writeAboutCvTheme,
 } from "@/lib/aboutCvTheme";
+import { CvTemplateBody } from "@/components/profile/CvTemplates";
+import CvSheetScaler from "@/components/profile/CvSheetScaler";
 import { cn } from "@/lib/utils";
 
 type ProfileAbout = AboutCvProfile;
-
-const CONTACT_ICONS: Record<CvContactKind, React.ComponentType<{ className?: string }>> = {
-  profile: Link2,
-  portfolio: Briefcase,
-  email: Mail,
-  phone: Phone,
-  line: LineMarkIcon,
-  website: Link2,
-  instagram: Instagram,
-  facebook: Facebook,
-  social: Link2,
-};
-
-const SECTION_ICONS: Record<CvSectionKey, React.ComponentType<{ className?: string }>> = {
-  experience: Briefcase,
-  education: GraduationCap,
-  projects: LayoutGrid,
-  certification: BadgeCheck,
-  awards: Award,
-  references: Users,
-};
 
 export type CvDensity = "normal" | "compact";
 export type CvFit = { density: CvDensity; overflow: boolean };
@@ -87,8 +41,6 @@ type DocProps = {
   onFit?: (fit: CvFit) => void;
 };
 
-const sameText = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
-
 export function AboutDocumentSheet({
   profile,
   experience,
@@ -96,7 +48,7 @@ export function AboutDocumentSheet({
   socialLinks = [],
   profileUrl,
   projects,
-  theme = "orange",
+  theme = "mono",
   forceShowApplicationContact = false,
   density = "normal",
   onFit,
@@ -112,111 +64,16 @@ export function AboutDocumentSheet({
     projects,
     forceShowApplicationContact,
   });
-  const { layout, name, desiredRole, bio, place, qrTarget, showPhoto } = model;
-  const portrait = model.portraitUrl;
-  const initials = displayInitials(name || profile.username || profile.display_name, 2);
+  const initials = displayInitials(model.name || profile.username || profile.display_name, 2);
 
-  const contactLines = model.contacts.map((c) => (
-    <CvContactLine key={c.key} icon={CONTACT_ICONS[c.kind]} label={c.label}>
-      {c.value}
-    </CvContactLine>
-  ));
-
-  const contactBlock =
-    contactLines.length > 0 || qrTarget ? (
-      <DocBlock key="contact" icon={Link2} title={model.labels.blocks.contact}>
-        <div className="about-cv-contact-body">
-          <div className="about-cv-contact-lines">{contactLines}</div>
-          {qrTarget ? (
-            <div className="about-cv-qr" aria-label="QR code">
-              <QRCodeSVG value={qrTarget} size={96} level="M" marginSize={0} bgColor="#ffffff" fgColor="#111111" />
-            </div>
-          ) : null}
-        </div>
-      </DocBlock>
-    ) : null;
-
-  const sideBlocks = [
-    place ? (
-      <DocBlock key="location" icon={MapPin} title={model.labels.blocks.location}>
-        <p className="about-cv-copy">{place}</p>
-      </DocBlock>
-    ) : null,
-    model.personal.length > 0 ? (
-      <DocBlock key="personal" icon={UserRound} title={model.labels.blocks.personal}>
-        <dl className="space-y-1">
-          {model.personal.map((item) => (
-            <div key={item.key} className="about-cv-copy">
-              <dt className="inline text-[var(--cv-muted)]">{item.label}: </dt>
-              <dd className="inline">{item.value}</dd>
-            </div>
-          ))}
-        </dl>
-      </DocBlock>
-    ) : null,
-    model.languages.length > 0 ? (
-      <DocBlock key="languages" icon={Languages} title={model.labels.blocks.languages}>
-        <ul className="space-y-1">
-          {model.languages.map((item) => (
-            <li key={item} className="about-cv-copy">
-              {item}
-            </li>
-          ))}
-        </ul>
-      </DocBlock>
-    ) : null,
-    model.craftSkills.length > 0 ? (
-      <DocBlock key="skills" icon={Sparkles} title={model.labels.blocks.skills}>
-        <ul className="space-y-1">
-          {model.craftSkills.map((s) => (
-            <li key={s} className="about-cv-copy">
-              {s}
-            </li>
-          ))}
-        </ul>
-      </DocBlock>
-    ) : null,
-    model.software.length > 0 ? (
-      <DocBlock key="software" icon={Monitor} title={model.labels.blocks.software}>
-        <p className="about-cv-copy">{model.software.join(" · ")}</p>
-      </DocBlock>
-    ) : null,
-  ].filter(Boolean);
-
-  const asideBlocks = layout === "one" ? sideBlocks : [contactBlock, ...sideBlocks].filter(Boolean);
-  const hasHero = !!(portrait || name || desiredRole || bio);
-  const renderPhoto = showPhoto && hasHero;
-
-  const mainBlocks = model.sections.map((section) => (
-    <div key={section.key}>
-      <PrintHeading icon={SECTION_ICONS[section.key]} title={section.title} />
-      <ol className="about-cv-entries">
-        {section.entries.map((it, i) => (
-          <CvEntry key={`${it.title}-${i}`} period={it.period} title={it.title} lines={it.lines} href={it.href}>
-            {it.bullets.length ? (
-              <ul className="about-cv-entry-bullets">
-                {it.bullets.map((b) => (
-                  <li key={b} className="flex gap-2 about-cv-copy leading-relaxed">
-                    <span className="mt-[0.4em] h-1 w-1 shrink-0 rounded-full bg-[var(--cv-accent)]" />
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </CvEntry>
-        ))}
-      </ol>
-    </div>
-  ));
-
-  // The print root (fixed 210mm) is the source of truth for fit: try the
-  // normal density, fall back to compact, and report whether it still overflows.
+  // The print root (fixed A4) is the source of truth for fit: try the normal
+  // density, fall back to compact, and report whether it still overflows.
   useLayoutEffect(() => {
     const el = sheetRef.current;
     if (!onFit || !el) return;
     const overflows = () =>
       el.scrollHeight > el.clientHeight + 1 ||
-      Array.from(el.querySelectorAll<HTMLElement>(".about-cv-sheet-main, .about-cv-sheet-side")).some(
+      Array.from(el.querySelectorAll<HTMLElement>(".cv-fit")).some(
         (part) => part.scrollHeight > part.clientHeight + 1,
       );
     const measure = () => {
@@ -243,157 +100,12 @@ export function AboutDocumentSheet({
       ref={sheetRef}
       className="about-cv-sheet"
       data-cv-theme={theme}
-      data-cv-layout={layout}
-      data-cv-photo={renderPhoto ? "on" : "off"}
+      data-cv-template={model.template}
+      data-cv-heading={model.headingFont}
       data-density={onFit ? undefined : density}
     >
-      {hasHero ? (
-        <>
-          {renderPhoto ? (
-            <div className="about-cv-sheet-hero-photo">
-              <div className="about-cv-hero-photo">
-                {portrait ? (
-                  <img loading="lazy" decoding="async" src={portrait} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[clamp(1.1rem,4cqi,1.6rem)] font-semibold text-[var(--cv-ink)]">
-                    {initials}
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : null}
-          <div className="about-cv-sheet-hero-copy">
-            {name ? <p className="about-cv-hero-name">{name}</p> : null}
-            {desiredRole ? <p className="about-cv-hero-role">{desiredRole}</p> : null}
-            {name || desiredRole ? <span className="about-cv-hero-rule" aria-hidden /> : null}
-            {bio ? <p className="about-cv-copy whitespace-pre-wrap">{bio}</p> : null}
-          </div>
-        </>
-      ) : null}
-
-      {layout === "one" && contactBlock ? (
-        <div className="about-cv-sheet-contact">{contactBlock}</div>
-      ) : null}
-
-      <aside className="about-cv-sheet-side">
-        {asideBlocks.length > 0 ? (
-          <div className={layout === "one" ? "about-cv-side-grid" : "about-cv-side-stack"}>
-            {asideBlocks.map((block, i) => (
-              <div key={i} className="about-cv-side-item">
-                {block}
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </aside>
-
-      <div className="about-cv-sheet-main">
-        <div className="divide-y divide-[var(--cv-rule)]">
-          {mainBlocks.map((block, i) => (
-            <div key={i} className={cn(i === 0 ? "pb-3.5 pt-0" : "py-3.5", "last:pb-0")}>
-              {block}
-            </div>
-          ))}
-        </div>
-      </div>
+      <CvTemplateBody model={model} initials={initials} />
     </div>
-  );
-}
-
-function CvEntry({
-  period,
-  title,
-  lines = [],
-  href,
-  children,
-}: {
-  period?: string;
-  title: string;
-  lines?: (string | undefined)[];
-  href?: string;
-  children?: React.ReactNode;
-}) {
-  // Drop detail lines that just repeat the title (e.g. issuer == certificate name).
-  const shown: string[] = [];
-  for (const raw of lines) {
-    const line = raw?.trim();
-    if (!line || sameText(line, title) || shown.some((s) => sameText(s, line))) continue;
-    shown.push(line);
-  }
-  return (
-    <li className="about-cv-entry">
-      <div className="about-cv-entry-head">
-        <p className="about-cv-entry-title">
-          {href ? (
-            <a href={href} target="_blank" rel="noopener noreferrer" className="hover:underline">
-              {title}
-            </a>
-          ) : (
-            title
-          )}
-        </p>
-        {period ? <p className="about-cv-entry-date">{period}</p> : null}
-      </div>
-      {shown.map((line) => (
-        <p key={line} className="about-cv-entry-sub">
-          {line}
-        </p>
-      ))}
-      {children}
-    </li>
-  );
-}
-
-function CvContactLine({
-  icon: Icon,
-  label,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <p className="about-cv-copy flex min-w-0 items-start gap-1.5">
-      <Icon className="mt-[0.28em] h-2.5 w-2.5 shrink-0 text-[var(--cv-icon)]" aria-hidden />
-      <span className="sr-only">{label}: </span>
-      <span className="min-w-0 break-all">{children}</span>
-    </p>
-  );
-}
-
-function PrintHeading({
-  icon: Icon,
-  title,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-}) {
-  return (
-    <p className="mb-2.5 flex items-center gap-1.5 text-[0.62rem] font-bold uppercase tracking-[0.14em]">
-      <Icon className="h-3 w-3 shrink-0 text-[var(--cv-icon)]" aria-hidden />
-      {title}
-    </p>
-  );
-}
-
-function DocBlock({
-  icon: Icon,
-  title,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section>
-      <p className="mb-1.5 flex items-center gap-1.5 text-[0.62rem] font-bold uppercase tracking-[0.14em]">
-        <Icon className="h-3 w-3 shrink-0 text-[var(--cv-icon)]" aria-hidden />
-        {title}
-      </p>
-      {children}
-    </section>
   );
 }
 
@@ -512,11 +224,13 @@ export default function AboutDocumentPreviewDialog({
         </div>
         {fit?.overflow ? (
           <p role="status" className="rounded-lg bg-amber-100 px-2.5 py-1.5 text-[11px] text-amber-950">
-            เนื้อหายาวเกิน 1 หน้า A4 — ลดข้อความ ปิดบางหัวข้อ หรือเลือกคอลัมน์เดียว
+            เนื้อหายาวเกิน 1 หน้า A4 — ลดข้อความ ปิดบางหัวข้อ หรือเลือกเทมเพลตอื่น
           </p>
         ) : null}
         <div className="about-cv-a4-frame">
-          <AboutDocumentSheet {...doc} theme={activeTheme} />
+          <CvSheetScaler>
+            <AboutDocumentSheet {...doc} theme={activeTheme} />
+          </CvSheetScaler>
         </div>
       </DialogContent>
     </Dialog>

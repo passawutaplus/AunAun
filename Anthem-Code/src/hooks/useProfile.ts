@@ -108,7 +108,8 @@ export const useUpdateProfile = (userId: string | undefined) => {
         p.cvMilitary !== undefined ||
         p.cvReferences !== undefined ||
         p.cvFeaturedProjectIds !== undefined ||
-        p.cvLayout !== undefined ||
+        p.cvTemplate !== undefined ||
+        p.cvHeadingFont !== undefined ||
         p.cvShowPhoto !== undefined ||
         p.cvVisibility !== undefined
       ) {
@@ -140,7 +141,8 @@ export const useUpdateProfile = (userId: string | undefined) => {
           military: p.cvMilitary ?? null,
           references: p.cvReferences ?? [],
           featuredProjectIds: p.cvFeaturedProjectIds ?? [],
-          layout: p.cvLayout === "one" ? "one" : "two",
+          template: p.cvTemplate === "index" || p.cvTemplate === "grid" ? p.cvTemplate : "editorial",
+          headingFont: p.cvHeadingFont === "standard" || p.cvHeadingFont === "ibm" ? p.cvHeadingFont : "agrandir",
           showPhoto: typeof p.cvShowPhoto === "boolean" ? p.cvShowPhoto : null,
           visibility: p.cvVisibility ?? {},
         } as unknown as Json;

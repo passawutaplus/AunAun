@@ -38,7 +38,8 @@ import {
   type AwardItem,
   type CertificationItem,
   type CvAddressDetail,
-  type CvLayout,
+  type CvTemplate,
+  type CvHeadingFont,
   type CvDocLang,
   type CvMilitaryStatus,
   type ReferenceItem,
@@ -68,6 +69,8 @@ import ProfileAddressEditor from "@/components/profile/ProfileAddressEditor";
 import CvReferencesEditor from "@/components/profile/CvReferencesEditor";
 import CvFeaturedProjectsEditor from "@/components/profile/CvFeaturedProjectsEditor";
 import CvLivePreview from "@/components/profile/CvLivePreview";
+import CvTemplatePicker from "@/components/profile/CvTemplatePicker";
+import CvHeadingFontPicker from "@/components/profile/CvHeadingFontPicker";
 import { CV_DOC_COPY } from "@/lib/aboutCvCopy";
 import type { CvProjectInput } from "@/lib/aboutCvModel";
 import { AboutEditLangToggle, AboutEditLocaleProvider, useAboutEditLocale } from "@/components/profile/AboutEditLocale";
@@ -114,7 +117,8 @@ type FormState = {
   skills: string[];
   experience: ExperienceItem[];
   cvPhotoUrl: string;
-  cvLayout: CvLayout;
+  cvTemplate: CvTemplate;
+  cvHeadingFont: CvHeadingFont;
   cvShowPhoto: boolean;
   education: EducationItem[];
   cvTools: string[];
@@ -219,7 +223,8 @@ function formFromProfile(profile: ProfileLike): FormState {
     skills: craftSkills,
     experience: parseExperience(profile.experience),
     cvPhotoUrl: profile.cv_photo_url ?? "",
-    cvLayout: cv.layout,
+    cvTemplate: cv.template,
+    cvHeadingFont: cv.headingFont,
     cvShowPhoto: defaultCvShowPhoto(profile.cv, readAboutEditLang()),
     education: cv.education,
     cvTools: software,
@@ -284,7 +289,8 @@ function buildCvFromForm(form: FormState, existingWorkArrangement: ReturnType<ty
       form.visibility.contactEmail || form.visibility.contactLine || form.visibility.contactPhone,
     about: form.about,
     addressDetail: form.addressDetail,
-    layout: form.cvLayout,
+    template: form.cvTemplate,
+    headingFont: form.cvHeadingFont,
     showPhoto: form.cvShowPhoto,
     visibility: form.visibility,
   });
@@ -412,7 +418,8 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName, p
         cvContactPhone: cv.contactPhone,
         cvContactPublic: cv.contactPublic,
         cvAddressDetail: cv.addressDetail,
-        cvLayout: cv.layout,
+        cvTemplate: cv.template,
+        cvHeadingFont: cv.headingFont,
         cvShowPhoto: cv.showPhoto,
         cvVisibility: cv.visibility,
         profileAddress: address,
@@ -574,26 +581,12 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName, p
                 </div>
               </EditorBlock>
               <EditorBlock title={t.layoutTitle}>
-                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t.layoutTitle}>
-                  {(["two", "one"] as const).map((id) => (
-                    <button
-                      key={id}
-                      type="button"
-                      role="radio"
-                      aria-checked={form.cvLayout === id}
-                      onClick={() => update("cvLayout", id)}
-                      className={cn(
-                        "rounded-full border px-3 py-1 text-xs transition-colors",
-                        form.cvLayout === id
-                          ? "border-foreground font-medium text-foreground"
-                          : "border-black/20 text-foreground hover:border-foreground",
-                      )}
-                    >
-                      {id === "two" ? t.layoutTwo : t.layoutOne}
-                    </button>
-                  ))}
-                </div>
+                <CvTemplatePicker value={form.cvTemplate} onChange={(next) => update("cvTemplate", next)} />
                 <p className="text-xs text-muted-foreground">{t.layoutHint}</p>
+              </EditorBlock>
+              <EditorBlock title={t.headingFontTitle}>
+                <CvHeadingFontPicker value={form.cvHeadingFont} onChange={(next) => update("cvHeadingFont", next)} />
+                <p className="text-xs text-muted-foreground">{t.headingFontHint}</p>
               </EditorBlock>
               <EditorBlock title={t.name}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

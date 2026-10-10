@@ -15,6 +15,7 @@ export type CvDocCopy = {
     languages: string;
     skills: string;
     software: string;
+    links: string;
   };
   sections: Record<CvSectionKey, string>;
   contact: Record<CvContactKind, string>;
@@ -32,6 +33,7 @@ export const CV_DOC_COPY: Record<CvDocLang, CvDocCopy> = {
       languages: "Languages",
       skills: "Skills",
       software: "Design Software",
+      links: "Portfolio",
     },
     sections: {
       experience: "Experience",
@@ -73,6 +75,7 @@ export const CV_DOC_COPY: Record<CvDocLang, CvDocCopy> = {
       languages: "ภาษา",
       skills: "ทักษะ",
       software: "โปรแกรมที่ใช้",
+      links: "พอร์ตโฟลิโอ",
     },
     sections: {
       experience: "ประสบการณ์ทำงาน",
