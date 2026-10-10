@@ -37,7 +37,7 @@ const HireRejectChoiceCard = ({ payload, actions }: Props) => {
               type="button"
               size="sm"
               disabled={actions.busy}
-              className="w-full rounded-full h-auto py-2 whitespace-normal text-left justify-start bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+              className="w-full rounded-full h-auto py-2 whitespace-normal text-left justify-start bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90"
               onClick={actions.onAcceptClose}
             >
               {actions.busy ? (

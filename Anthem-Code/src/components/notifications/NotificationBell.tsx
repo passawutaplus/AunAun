@@ -40,7 +40,7 @@ const NotificationBell = ({ variant = "header", active = false }: Props) => {
         >
           <Bell className="h-5 w-5 shrink-0" strokeWidth={active ? 2.2 : 2} />
           {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 min-w-[14px] h-[14px] px-0.5 rounded-full bg-primary text-white text-[9px] font-semibold flex items-center justify-center leading-none">
+            <span className="absolute top-1 right-1 min-w-[14px] h-[14px] px-0.5 rounded-full bg-primary text-primary-foreground text-[9px] font-semibold flex items-center justify-center leading-none">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -60,7 +60,7 @@ const NotificationBell = ({ variant = "header", active = false }: Props) => {
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-white text-[10px] font-semibold flex items-center justify-center leading-none">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold flex items-center justify-center leading-none">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}

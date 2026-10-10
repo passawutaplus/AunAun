@@ -1538,7 +1538,7 @@ const ChatThreadView = ({
                 className={cn(
                   "quote-offer-btn inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full ml-0.5",
                   "border-[hsl(var(--chat-hire)/0.7)] bg-transparent text-[hsl(var(--chat-hire))]",
-                  "hover:bg-[hsl(var(--chat-hire))] hover:text-white hover:border-[hsl(var(--chat-hire))]",
+                  "hover:bg-[hsl(var(--chat-hire))] hover:text-[hsl(var(--chat-hire-foreground))] hover:border-[hsl(var(--chat-hire))]",
                   "transition-colors duration-200",
                 )}
                 aria-label="ทำใบเสนอราคา"
@@ -1557,7 +1557,7 @@ const ChatThreadView = ({
               className={cn(
                 "collab-plan-btn inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full ml-0.5",
                 "border-[hsl(var(--chat-collab)/0.7)] bg-transparent text-[hsl(var(--chat-collab))]",
-                "hover:bg-[hsl(var(--chat-collab))] hover:text-white hover:border-[hsl(var(--chat-collab))]",
+                "hover:bg-[hsl(var(--chat-collab))] hover:text-[hsl(var(--chat-collab-foreground))] hover:border-[hsl(var(--chat-collab))]",
                 "transition-colors duration-200",
               )}
               aria-label="วางแผนงาน"

@@ -223,7 +223,7 @@ export function CollabEndCard({
             type="button"
             size="sm"
             disabled={busy}
-            className="w-full rounded-full h-8 text-xs bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+            className="w-full rounded-full h-8 text-xs bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
             onClick={openAccept}
           >
             {busy ? (

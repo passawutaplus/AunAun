@@ -713,7 +713,7 @@ export function HireOrderDetailContent({
             {canSubmit ? (
               <Button
                 type="button"
-                className="w-full rounded-full bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+                className="w-full rounded-full bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90"
                 onClick={() => setSubmitOpen(true)}
               >
                 <Package className="w-4 h-4 mr-1.5" />

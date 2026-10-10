@@ -40,7 +40,7 @@ export function CollabChangeRequestCard({
             <Button
               type="button"
               size="sm"
-              className="w-full rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+              className="w-full rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
               disabled={busy}
               onClick={onApprove}
             >
@@ -109,7 +109,7 @@ export function CollabChangeDoneCard({
           <Button
             type="button"
             size="sm"
-            className="w-full rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+            className="w-full rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
             onClick={onOpenPlan}
           >
             เปิดดูแผนที่แก้
@@ -199,7 +199,7 @@ export function CollabDiscussionTemplateCard({
             <Button
               type="button"
               size="sm"
-              className="w-full rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+              className="w-full rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
               onClick={onOpenPlan}
             >
               เปิดเอกสารแผนงาน

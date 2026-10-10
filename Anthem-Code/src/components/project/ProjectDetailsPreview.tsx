@@ -63,7 +63,7 @@ export function ProjectDetailsPreview({
         {hiringOn || collabOn ? (
           <div className="flex gap-2 border-t border-border px-4 py-3">
             {hiringOn ? (
-              <span className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[hsl(var(--chat-hire))] px-3 py-1.5 text-xs font-medium text-white">
+              <span className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[hsl(var(--chat-hire))] px-3 py-1.5 text-xs font-medium text-[hsl(var(--chat-hire-foreground))]">
                 <Briefcase className="h-3.5 w-3.5" aria-hidden />
                 สนใจจ้าง
               </span>

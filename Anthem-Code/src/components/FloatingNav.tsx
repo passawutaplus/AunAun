@@ -146,7 +146,7 @@ const FloatingNav = () => {
               >
                 <Icon className="h-5 w-5 shrink-0" strokeWidth={active ? 2.2 : 2} />
                 {showChatBadge && (
-                  <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-primary text-white text-[9px] font-semibold flex items-center justify-center leading-none">
+                  <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-primary text-primary-foreground text-[9px] font-semibold flex items-center justify-center leading-none">
                     {chatBadgeCount > 99 ? "99+" : chatBadgeCount}
                   </span>
                 )}

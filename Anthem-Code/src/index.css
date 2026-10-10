@@ -76,8 +76,10 @@
 
     /* Chat persona tokens */
     --chat-hire: 215 88% 52%;
+    --chat-hire-foreground: 0 0% 100%;
     --chat-hire-soft: 215 90% 96%;
     --chat-collab: 40 3% 18%;
+    --chat-collab-foreground: 0 0% 96%;
     --chat-collab-soft: 40 6% 92%;
   }
 
@@ -141,8 +143,10 @@
 
     /* Chat persona tokens */
     --chat-hire: 215 88% 62%;
+    --chat-hire-foreground: 40 3% 10%;
     --chat-hire-soft: 215 45% 18%;
     --chat-collab: 0 0% 96%;
+    --chat-collab-foreground: 40 3% 12%;
     --chat-collab-soft: 40 3% 20%;
   }
 
