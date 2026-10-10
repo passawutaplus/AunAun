@@ -2818,6 +2818,7 @@ const ProjectEditorPage = () => {
             onEnabledChange={setContextEnabled}
             disabled={editorLocked}
             shortDescriptionInvalid={publishFieldHighlight(publishFieldErrors.shortDescription)}
+            hideBackstory={stacked}
           />
 
           {user ? (

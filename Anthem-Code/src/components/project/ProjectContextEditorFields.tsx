@@ -38,6 +38,8 @@ type Props = {
   onEnabledChange: (enabled: boolean) => void;
   disabled?: boolean;
   shortDescriptionInvalid?: boolean;
+  /** Quick drop: short description only, no background-story toggle/fields. */
+  hideBackstory?: boolean;
 };
 
 const fieldLabel = "text-xs font-semibold text-muted-foreground";
@@ -54,6 +56,7 @@ const ProjectContextEditorFields = ({
   onEnabledChange,
   disabled,
   shortDescriptionInvalid,
+  hideBackstory,
 }: Props) => {
   const [roleMode, setRoleMode] = useState<CreatorRoleMode | "">(() =>
     creatorRoleModeFromValue(value.creatorRole),
@@ -117,6 +120,8 @@ const ProjectContextEditorFields = ({
         </p>
       </div>
 
+      {hideBackstory ? null : (
+      <>
       <div
         id="project-context-toggle"
         className={cn(
@@ -319,6 +324,8 @@ const ProjectContextEditorFields = ({
           </div>
         </div>
       </div>
+      </>
+      )}
     </section>
   );
 };
