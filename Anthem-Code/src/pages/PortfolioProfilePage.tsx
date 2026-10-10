@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState } from "react";
+import { isInspireEnabled } from "@/lib/aplus1Launch";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Wallet } from "lucide-react";
@@ -58,6 +59,7 @@ const TAB_IDS: ProfileTab[] = ["overall", "collections", "booking", "hiring", "i
 
 function resolveTab(raw: string | null, hiringEnabled: boolean): ProfileTab {
   if (raw === "hiring" && !hiringEnabled) return "overall";
+  if (raw === "inspire" && !isInspireEnabled()) return "overall";
   if (raw && (TAB_IDS as string[]).includes(raw)) return raw as ProfileTab;
   return "overall";
 }
@@ -186,7 +188,9 @@ const PortfolioProfilePage = () => {
     ...(hiringBoardEnabled
       ? [{ id: "hiring" as const, label: "Hiring", count: myApplications.length + mySavedJobs.length }]
       : []),
-    { id: "inspire", label: "Inspiration", count: inspireBoards.length },
+    ...(isInspireEnabled()
+      ? [{ id: "inspire" as const, label: "Inspiration", count: inspireBoards.length }]
+      : []),
     { id: "about", label: "About Me" },
   ];
 
