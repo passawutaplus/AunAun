@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { setCanvasToolDragData, type CanvasToolPayload } from "@/lib/canvasToolDrag";
 import { PHOTO_GRID_LAYOUTS } from "@/lib/photoGridLayouts";
+import { ModuleThumb } from "@/components/project/ModuleThumb";
 
 type Props = {
   disabled?: boolean;
@@ -69,8 +70,18 @@ export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates 
           {label}
         </button>
       </PopoverTrigger>
-      <PopoverContent side="top" align="center" className={cn("p-1.5", wide ? "w-72" : "w-60")}>
-        <div className={cn("flex flex-col", wide && "max-h-72 overflow-y-auto")}>
+      <PopoverContent
+        side="top"
+        align="center"
+        collisionPadding={16}
+        className={cn("p-2", wide ? "w-[27rem]" : options.length > 2 ? "w-[21rem]" : "w-[17rem]")}
+      >
+        <div
+          className={cn(
+            "grid gap-2",
+            wide ? "max-h-[min(24rem,calc(var(--radix-popover-content-available-height)_-_1rem))] grid-cols-3 overflow-y-auto" : options.length > 2 ? "grid-cols-3" : "grid-cols-2",
+          )}
+        >
           {options.map((opt) => (
             <button
               key={opt.label}
@@ -79,10 +90,11 @@ export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates 
                 onPlace(opt.payload);
                 setOpenKey(null);
               }}
-              className="flex items-baseline justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-secondary"
+              className="group flex min-w-0 flex-col gap-1 rounded-xl border border-transparent p-1 text-left transition-colors hover:border-border hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <span>{opt.label}</span>
-              {opt.hint ? <span className="shrink-0 text-xs text-muted-foreground">{opt.hint}</span> : null}
+              <ModuleThumb payload={opt.payload} className="border border-border/60" />
+              <span className="truncate px-0.5 text-[11px] font-medium text-foreground">{opt.label}</span>
+              {opt.hint ? <span className="-mt-1 truncate px-0.5 text-[10px] text-muted-foreground">{opt.hint}</span> : null}
             </button>
           ))}
         </div>
