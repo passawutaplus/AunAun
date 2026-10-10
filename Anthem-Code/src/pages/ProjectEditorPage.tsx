@@ -1141,7 +1141,7 @@ const ProjectEditorPage = () => {
 
   const handleCoverPick = async (file: File) => {
     if (!isAllowedPortfolioStillImage(file)) {
-      toast.error("ภาพปกรองรับเฉพาะ JPG, PNG");
+      toast.error("ภาพปกรองรับ JPG, PNG, WebP, HEIC");
       return;
     }
     try {
@@ -1194,7 +1194,7 @@ const ProjectEditorPage = () => {
     if (!user) return;
     const arr = Array.from(files).filter(isAllowedPortfolioImage);
     if (!arr.length) {
-      toast.error("รองรับเฉพาะ JPG, PNG, GIF");
+      toast.error("รองรับ JPG, PNG, GIF, WebP, HEIC");
       return;
     }
     const maxImages = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
@@ -1228,36 +1228,44 @@ const ProjectEditorPage = () => {
     let ok = 0;
     let failed = false;
     try {
-      for (const item of batch) {
-        if (ac.signal.aborted) break;
-        setUploadingBlockId(item.block.id);
-        try {
-          const { url, asVideo } = await uploadRasterOrGif(item.file, ac.signal);
-          if (ac.signal.aborted) {
+      // Up to 3 images at a time: compression is CPU-bound and the upload is network-bound, so they overlap.
+      let nextIndex = 0;
+      const worker = async () => {
+        while (!ac.signal.aborted && !failed) {
+          const item = batch[nextIndex++];
+          if (!item) return;
+          setUploadingBlockId(item.block.id);
+          try {
+            const { url, asVideo } = await uploadRasterOrGif(item.file, ac.signal);
+            if (ac.signal.aborted) {
+              dropBatchPreviews(new Set([item.block.id]));
+              return;
+            }
+            setContentBlocks((prev) =>
+              prev.map((b) => {
+                if (b.id !== item.block.id) return b;
+                if (asVideo) return createMediaBlock("video", url, b.id);
+                return { ...b, url };
+              }),
+            );
+            revokeBlobUrl(item.previewUrl);
+            if (!asVideo) setCover((prev) => prev || url);
+            ok += 1;
+          } catch (e) {
             dropBatchPreviews(new Set([item.block.id]));
-            break;
+            if (e instanceof DOMException && e.name === "AbortError") return;
+            if (!failed) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+            failed = true;
+            return;
           }
-          setContentBlocks((prev) =>
-            prev.map((b) => {
-              if (b.id !== item.block.id) return b;
-              if (asVideo) return createMediaBlock("video", url, b.id);
-              return { ...b, url };
-            }),
-          );
-          revokeBlobUrl(item.previewUrl);
-          if (!asVideo) setCover((prev) => prev || url);
-          ok += 1;
-        } catch (e) {
-          const remaining = new Set(
-            batch.filter((b) => blobUrlsRef.current.has(b.previewUrl)).map((b) => b.block.id),
-          );
-          dropBatchPreviews(remaining);
-          if (e instanceof DOMException && e.name === "AbortError") break;
-          failed = true;
-          toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
-          break;
         }
-      }
+      };
+      await Promise.all(Array.from({ length: Math.min(3, batch.length) }, worker));
+      // Anything not started (or still showing a local preview) after a failure is dropped.
+      const leftover = new Set(
+        batch.filter((b) => blobUrlsRef.current.has(b.previewUrl)).map((b) => b.block.id),
+      );
+      if (leftover.size) dropBatchPreviews(leftover);
       if (ac.signal.aborted) {
         dropBatchPreviews(batchIds);
       } else if (ok > 0 && !failed) {
@@ -1847,7 +1855,7 @@ const ProjectEditorPage = () => {
 
       if (block.type === "image_text") {
         if (!isAllowedPortfolioImage(file)) {
-          toast.error("รองรับเฉพาะ JPG, PNG, GIF");
+          toast.error("รองรับ JPG, PNG, GIF, WebP, HEIC");
           return;
         }
         setUploadingBlockId(blockId);
@@ -1875,7 +1883,7 @@ const ProjectEditorPage = () => {
 
       if (block.type === "image") {
         if (!isAllowedPortfolioImage(file)) {
-          toast.error("รองรับเฉพาะ JPG, PNG, GIF");
+          toast.error("รองรับ JPG, PNG, GIF, WebP, HEIC");
           return;
         }
         setUploadingBlockId(blockId);
@@ -2124,7 +2132,7 @@ const ProjectEditorPage = () => {
 
       const images = files.filter(isAllowedPortfolioImage);
       if (!images.length) {
-        toast.error("รองรับเฉพาะ JPG, PNG, GIF");
+        toast.error("รองรับ JPG, PNG, GIF, WebP, HEIC");
         return;
       }
 

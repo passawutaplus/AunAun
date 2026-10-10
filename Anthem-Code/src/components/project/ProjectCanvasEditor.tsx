@@ -76,6 +76,7 @@ import {
 } from "@/lib/normalizeImageUpload";
 import { cn } from "@/lib/utils";
 import { MascotCharacter } from "@/components/project/TourMascot";
+import { UploadProgressCard } from "@/components/project/UploadProgressCard";
 import { toast } from "sonner";
 
 type Props = {
@@ -116,34 +117,7 @@ type Props = {
   onSelectedBlockIdChange?: (id: string | null) => void;
 };
 
-function CanvasUploadProgress({
-  label,
-  onCancel,
-  className,
-}: {
-  label?: string | null;
-  percent?: number | null;
-  onCancel?: () => void;
-  className?: string;
-}) {
-  return (
-    <div className={cn("flex flex-col items-center gap-2", className)}>
-      <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
-      <p className="max-w-[220px] text-center text-xs font-medium text-foreground">
-        {label ?? "กำลังอัปโหลด..."}
-      </p>
-      {onCancel ? (
-        <button
-          type="button"
-          onClick={onCancel}
-          className="pointer-events-auto text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
-        >
-          ยกเลิก
-        </button>
-      ) : null}
-    </div>
-  );
-}
+const CanvasUploadProgress = UploadProgressCard;
 
 type InsertEdge = "before" | "after";
 type InsertHint = { blockId: string; edge: InsertEdge };
@@ -343,7 +317,7 @@ function ModuleVideoWithReplace({
             const file = e.target.files?.[0];
             if (file) {
               if (!isAllowedPortfolioStillImage(file)) {
-                toast.error("รองรับเฉพาะ JPG, PNG");
+                toast.error("รองรับ JPG, PNG, WebP, HEIC");
               } else {
                 onSetPoster(file);
               }
@@ -478,7 +452,7 @@ function EmptyImageTile({
     if (!list || list.length === 0) return;
     const files = takeImageFiles(list);
     if (!files.length) {
-      toast.error("รองรับเฉพาะ JPG, PNG, GIF");
+      toast.error("รองรับ JPG, PNG, GIF, WebP, HEIC");
       return;
     }
     if (allowMany) onPickMany?.(files);

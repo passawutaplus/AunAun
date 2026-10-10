@@ -3,7 +3,7 @@ import {
   SHARED_MEDIA_BUCKET,
 } from "@/integrations/supabase/sharedStorageClient";
 import type { Tier } from "@/core/subscription/useSubscription";
-import { assertAnthemStorageAvailable } from "@/lib/anthemStorageUsage";
+import { assertAnthemStorageAvailable, bumpAnthemStorageCache } from "@/lib/anthemStorageUsage";
 import { compressCommunityVideo } from "@/lib/compressCommunityVideo";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { isVideoFile } from "@/lib/videoAccept";
@@ -42,6 +42,7 @@ export async function uploadProjectVideo(
 
   reporter?.onStage?.(UPLOAD_STAGE.uploadingVideo);
   await uploadToSharedMedia(path, prepared, "video/mp4");
+  bumpAnthemStorageCache(userId, prepared.size);
 
   const { data } = sharedStorage.storage.from(SHARED_MEDIA_BUCKET).getPublicUrl(path);
   return data.publicUrl;
@@ -55,14 +56,11 @@ export async function uploadProjectVideoWithPoster(
   tier: Tier = "free",
   reporter?: UploadStageReporter,
 ): Promise<UploadedProjectVideo> {
-  let posterFile: File | null = null;
-  try {
-    posterFile = await extractVideoPosterFile(file);
-  } catch {
-    posterFile = null;
-  }
+  // Grab the poster while the video is compressing/uploading instead of before it.
+  const posterPromise = extractVideoPosterFile(file).catch(() => null);
 
   const url = await uploadProjectVideo(file, userId, folder, tier, reporter);
+  const posterFile = await posterPromise;
 
   if (!posterFile) return { url, posterUrl: null };
 
