@@ -105,6 +105,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     /* Warm coal (the footer's #2f2e2c family); primary flips to paper so pills stay legible */
     --background: 40 3% 12%;
     --foreground: 0 0% 96%;
@@ -125,7 +126,7 @@
     --destructive: 0 72% 52%;
     --destructive-foreground: 0 0% 100%;
     --success: 142 62% 48%;
-    --success-foreground: 0 0% 100%;
+    --success-foreground: 40 3% 12%;
     --border: 40 3% 26%;
     --input: 40 3% 24%;
     --ring: 0 0% 96%;
