@@ -92,7 +92,7 @@ import { CanvasTemplatePreviewDialog } from "@/components/project/CanvasTemplate
 import { ProjectSeriesPicker } from "@/components/project/ProjectEditorSearchSelects";
 import { ProjectTaxonomyPicker } from "@/components/project/ProjectTaxonomyPicker";
 import { AddModuleBar } from "@/components/project/AddModuleBar";
-import { QuickAdvancedGroup } from "@/components/project/QuickAdvancedGroup";
+import { QuickAdvancedGroup, QuickConnectGroup } from "@/components/project/QuickAdvancedGroup";
 import { readUploadMode, writeUploadMode, type UploadMode } from "@/lib/uploadMode";
 import {
   inferTaxonomySelection,
@@ -2805,8 +2805,44 @@ const ProjectEditorPage = () => {
   const publishRemaining = collectPublishGaps().checklist.length;
   const publishLabel = publishRemaining > 0 ? `เผยแพร่ · เหลือ ${publishRemaining} อย่าง` : "เผยแพร่";
 
-  const renderDetailsExtras = (stacked: boolean) => (
+  const catalogField = (
+            <div className="space-y-2">
+              <Label className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                <CatalogIcon className="h-4 w-4 text-primary shrink-0" />
+                Catalog
+              </Label>
+              <ProjectSeriesPicker
+                value={seriesId}
+                options={mySeries}
+                onChange={setSeriesId}
+                onCreateNew={() => setSeriesCreateOpen(true)}
+                disabled={editorLocked}
+              />
+              {mySeries.length === 0 && (
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  ยังไม่มี Catalog — กดเปิดรายการแล้วเลือก「เพิ่ม Catalog ใหม่」ได้เลย
+                </p>
+              )}
+            </div>
+  );
+
+  const collabField = (
     <>
+            {user && (
+              <PortfolioCollabUserPicker
+                userId={user.id}
+                selected={collabSelected}
+                onChange={setCollabSelected}
+                acceptedUsers={collabAccepted}
+                pendingUsers={collabPending}
+              />
+            )}
+    </>
+  );
+
+  const renderDetailsExtras = (stacked: boolean, part: "all" | "context" | "rights" = "all") => (
+    <>
+          {part === "rights" ? null : (
           <ProjectContextEditorFields
             value={projectContext}
             onChange={patchProjectContext}
@@ -2821,8 +2857,9 @@ const ProjectEditorPage = () => {
             shortDescriptionInvalid={publishFieldHighlight(publishFieldErrors.shortDescription)}
             hideBackstory={stacked}
           />
+          )}
 
-          {user ? (
+          {part !== "context" && user ? (
             <div className={cn("grid grid-cols-1 gap-4", !stacked && "md:grid-cols-2")}>
               <CollapsibleEditorCard
                 title="สิทธิ์การใช้งาน"
@@ -3474,7 +3511,13 @@ const ProjectEditorPage = () => {
               />
             </div>
 
-            <QuickAdvancedGroup quick={uploadMode === "quick"}>
+            {uploadMode === "quick" ? (
+              <>
+                {catalogField}
+                {renderDetailsExtras(true, "context")}
+              </>
+            ) : null}
+
             <CollapsibleEditorCard
               title="การรับงาน"
               icon={Handshake}
@@ -3537,30 +3580,27 @@ const ProjectEditorPage = () => {
 
             </CollapsibleEditorCard>
 
+            {uploadMode === "quick" ? (
+              <QuickConnectGroup>
+                {collabField}
+                {!isAplus1LaunchMinimal() ? (
+                  <PortfolioLinkedPostPicker
+                    userId={user?.id ?? ""}
+                    selected={linkedOwnPosts}
+                    onChange={setLinkedOwnPosts}
+                    readOnlyPosts={linkedCollabPosts}
+                  />
+                ) : null}
+              </QuickConnectGroup>
+            ) : null}
+            <QuickAdvancedGroup quick={uploadMode === "quick"}>
             <CollapsibleEditorCard
               title="รายละเอียดเพิ่มเติม"
               icon={Tags}
               defaultOpen={false}
               hint={`${tags.length} แท็ก · ${tools.length} เครื่องมือ`}
             >
-            <div className="space-y-2">
-              <Label className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-                <CatalogIcon className="h-4 w-4 text-primary shrink-0" />
-                Catalog
-              </Label>
-              <ProjectSeriesPicker
-                value={seriesId}
-                options={mySeries}
-                onChange={setSeriesId}
-                onCreateNew={() => setSeriesCreateOpen(true)}
-                disabled={editorLocked}
-              />
-              {mySeries.length === 0 && (
-                <p className="text-[11px] text-muted-foreground leading-snug">
-                  ยังไม่มี Catalog — กดเปิดรายการแล้วเลือก「เพิ่ม Catalog ใหม่」ได้เลย
-                </p>
-              )}
-            </div>
+            {uploadMode === "quick" ? null : catalogField}
 
             <div>
               <ToolPicker
@@ -3584,18 +3624,10 @@ const ProjectEditorPage = () => {
                 />
               </div>
             </div>
-            {user && (
-              <PortfolioCollabUserPicker
-                userId={user.id}
-                selected={collabSelected}
-                onChange={setCollabSelected}
-                acceptedUsers={collabAccepted}
-                pendingUsers={collabPending}
-              />
-            )}
+            {uploadMode === "quick" ? null : collabField}
 
             </CollapsibleEditorCard>
-            {uploadMode === "quick" ? renderDetailsExtras(true) : null}
+            {uploadMode === "quick" ? renderDetailsExtras(true, "rights") : null}
             </QuickAdvancedGroup>
           </div>
 

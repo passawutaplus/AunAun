@@ -1375,8 +1375,9 @@ export function ProjectCanvasEditor({
           }}
         />
         {uploading ? <Loader2 className="h-8 w-8 animate-spin" /> : <ImagePlus className="h-8 w-8 text-muted-foreground" />}
-        <span className="text-base font-medium text-foreground">ลากรูปมาวาง หรือคลิกเพื่อเลือกรูป</span>
-        <span className="text-xs text-muted-foreground">รูปแรกจะเป็นภาพปก · เพิ่มโมดูลอื่นได้จากแถบด้านล่าง</span>
+        <span className="text-base font-medium text-foreground">วางรูปผลงานของคุณตรงนี้ได้เลย</span>
+        <span className="text-sm text-muted-foreground">หรือคลิกเพื่อเลือกรูป · รูปแรกจะเป็นภาพปกให้อัตโนมัติ</span>
+        <span className="text-xs text-muted-foreground">อยากใส่ข้อความ วิดีโอ หรือจัดเลย์เอาต์? เลือกจากแถบด้านล่างได้เลย</span>
         {uploading ? (
           <CanvasUploadProgress label={uploadStageLabel} percent={uploadStagePercent} onCancel={onCancelUpload} />
         ) : null}
