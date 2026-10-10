@@ -1,6 +1,7 @@
 // So1o Mentor Chat — supports authenticated users AND anonymous guests (5/day each)
 // Streams the AI response back as Server-Sent Events so the client can render
 // tokens progressively and abort instantly. Uses Google Gemini directly.
+import { supabaseSecretKey, supabasePublishableKey } from "../_shared/supabase-keys.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import {
   defaultFastModel,
@@ -48,8 +49,8 @@ Deno.serve(async (req) => {
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const SERVICE_KEY = supabaseSecretKey();
+    const ANON_KEY = supabasePublishableKey();
     let geminiKey: string;
     try {
       geminiKey = getGeminiApiKey();

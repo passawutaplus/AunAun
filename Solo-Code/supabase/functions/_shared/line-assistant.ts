@@ -1,3 +1,4 @@
+import { supabaseSecretKey } from "./supabase-keys.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { debitAiQuota, formatAiCreditSuffix, getAiUsageSummary } from "./ai-quota.ts";
 import {
@@ -28,7 +29,7 @@ type AssistantPreset = keyof typeof FEATURE_BY_PRESET;
 const HUMAN_RE = /^(ทีมงาน|แอดมิน|คุยกับคน|support|human)$/i;
 
 function adminClient(): SupabaseClient {
-  return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  return createClient(Deno.env.get("SUPABASE_URL")!, supabaseSecretKey());
 }
 
 function resolvePreset(message: string): AssistantPreset {
