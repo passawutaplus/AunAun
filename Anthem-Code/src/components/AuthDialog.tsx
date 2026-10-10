@@ -77,9 +77,7 @@ const AuthDialog = () => {
     >
       <div className="flex flex-col items-center text-center">
         <BrandLogo size="sm" />
-        <DialogTitle className="mt-4 text-[1.55rem] font-semibold leading-tight tracking-tight thai-display text-balance">
-          รวมผลงานและโอกาสไว้ในที่เดียว
-        </DialogTitle>
+        <DialogTitle className="sr-only">รวมผลงานและโอกาสไว้ในที่เดียว</DialogTitle>
         <DialogDescription className="sr-only">เข้าสู่ระบบหรือสมัครสมาชิกด้วย Google หรืออีเมล</DialogDescription>
         <CoverWall covers={covers} />
       </div>
@@ -93,7 +91,7 @@ const AuthDialog = () => {
         <TabsContent value="login" className="mt-0 space-y-3.5">
           <SocialButtons redirectTo={redirectPath} buttonClassName={googleBtn} />
           <AuthEmailSeparator />
-          <LoginForm onSwitch={() => setMode("signup")} />
+          <LoginForm />
         </TabsContent>
 
         <TabsContent value="signup" className="mt-0 space-y-3.5">
@@ -163,7 +161,7 @@ const CoverWall = ({ covers }: { covers: string[] }) => {
   );
 };
 
-const LoginForm = ({ onSwitch }: { onSwitch: () => void }) => {
+const LoginForm = () => {
   const navigate = useNavigate();
   const { close } = useAuthDialog();
   const [email, setEmail] = useState("");
@@ -262,12 +260,6 @@ const LoginForm = ({ onSwitch }: { onSwitch: () => void }) => {
         className="w-full h-12 rounded-full text-base font-medium bg-foreground text-background hover:bg-foreground/90 border-0">
         {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />} เข้าสู่ระบบ
       </Button>
-      <p className="text-center text-xs text-muted-foreground">
-        ยังไม่มีบัญชี?{" "}
-        <button type="button" onClick={onSwitch} className="text-primary hover:underline font-medium">
-          สมัครสมาชิกที่นี่
-        </button>
-      </p>
     </form>
   );
 };
@@ -276,11 +268,11 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
   if (import.meta.env.VITE_DEMO_MODE === "true") {
     return <DemoSignupBlocked onSwitchToLogin={onSwitch} />;
   }
-  return <SignupFormFields onSwitch={onSwitch} />;
+  return <SignupFormFields />;
 };
 
 /** Hooks live here so they always run in the same order (rules of hooks). */
-const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
+const SignupFormFields = () => {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -377,12 +369,6 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
         className="w-full h-12 rounded-full text-base font-medium bg-foreground text-background hover:bg-foreground/90 border-0">
         {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />} สมัครสมาชิก
       </Button>
-      <p className="text-center text-xs text-muted-foreground">
-        มีบัญชีอยู่แล้ว?{" "}
-        <button type="button" onClick={onSwitch} className="text-primary hover:underline font-medium">
-          เข้าสู่ระบบ
-        </button>
-      </p>
     </form>
   );
 };
