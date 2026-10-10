@@ -163,14 +163,23 @@ export function ProjectRichTextField({
   return (
     <div
       className={cn(
-        "rounded-md border border-input bg-background focus-within:ring-1 focus-within:ring-ring",
+        // Chrome (frame + toolbar) only shows while hovering or editing; otherwise the text reads as it will be published.
+        "group relative rounded-lg border border-transparent transition-colors",
+        "hover:border-border focus-within:border-border focus-within:bg-background",
+        "[&:has([role=textbox]:empty)]:border-dashed [&:has([role=textbox]:empty)]:border-border/60",
         disabled && "opacity-60",
         className,
       )}
       onClick={(e) => e.stopPropagation()}
     >
       <div
-        className="flex flex-wrap items-center gap-0.5 border-b border-border/60 px-1.5 py-1"
+        className={cn(
+          "invisible absolute inset-x-0 bottom-full z-30 pb-1.5 opacity-0 transition-opacity duration-150",
+          "group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100",
+        )}
+      >
+      <div
+        className="flex flex-wrap items-center gap-0.5 rounded-xl border border-border bg-card px-1.5 py-1"
         role="toolbar"
         aria-label="จัดรูปแบบข้อความ"
       >
@@ -257,6 +266,7 @@ export function ProjectRichTextField({
             </ToolbarButton>
           </>
         ) : null}
+      </div>
       </div>
 
       <div
