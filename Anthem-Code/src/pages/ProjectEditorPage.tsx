@@ -95,7 +95,6 @@ import { EditorTour, hasSeenEditorTour } from "@/components/project/EditorTour";
 import { TemplatePickerDialog } from "@/components/project/TemplatePickerDialog";
 import { HoverLabelButton } from "@/components/project/HoverLabelButton";
 import { DetailsListIcon } from "@/components/icons/DetailsListIcon";
-import { WorkspaceHeader } from "@/components/project/WorkspaceHeader";
 import { ProjectConnectProducts } from "@/components/project/ProjectConnectProducts";
 import { connectKey, syncProjectConnections, useProjectConnectItems } from "@/hooks/useProjectConnections";
 import { QuickConnectGroup } from "@/components/project/QuickAdvancedGroup";
@@ -3424,18 +3423,6 @@ const ProjectEditorPage = () => {
             )}
           >
           {/* Left: canvas — content max-w-4xl (match published detail); side rail uses the extra gutter */}
-          {(
-            <WorkspaceHeader
-              title={title}
-              onTitleChange={(value) => {
-                setTitle(value);
-                clearPublishFieldError("title");
-              }}
-              disabled={editorLocked}
-              invalid={!!publishFieldErrors.title}
-            />
-          )}
-
           <section
             id="project-canvas-editor"
             className={cn(
@@ -3560,7 +3547,7 @@ const ProjectEditorPage = () => {
         >
           <div className="space-y-4">
             <CollapsibleEditorCard title="Basics" icon={FileText} framed>
-            <div className="space-y-2">
+            <div className="space-y-2" data-tour="title">
               <Label className="text-xs font-semibold text-muted-foreground">
                 ชื่องาน <span className="text-primary">*</span>
               </Label>

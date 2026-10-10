@@ -74,15 +74,6 @@ const STEPS: Step[] = [
     actionHint: "ใส่รูปอย่างน้อย 1 รูปก่อน แล้วไปขั้นต่อไปให้เอง",
   },
   {
-    id: "title",
-    title: "Name your work",
-    body: "พิมพ์ชื่อตรงนี้ได้เลย สั้น ๆ ก็พอ",
-    target: "title",
-    waitsForAction: true,
-    actionHint: "พิมพ์เสร็จจะไปขั้นต่อไปให้เอง",
-    next: "ข้ามขั้นนี้",
-  },
-  {
     id: "addbar",
     title: "Add more",
     body: "กดปุ่มด้านล่างเพื่อเพิ่มรูป ข้อความ วิดีโอ หรือแกลเลอรี บางปุ่มมีหลายแบบให้เลือก",
@@ -110,6 +101,15 @@ const STEPS: Step[] = [
     target: "details",
     waitsForAction: true,
     actionHint: "กดปุ่มที่ไฮไลต์ไว้",
+  },
+  {
+    id: "title",
+    title: "Name your work",
+    body: "พิมพ์ชื่องานตรงนี้ สั้น ๆ ก็พอ",
+    target: "title",
+    inDialog: true,
+    waitsForAction: true,
+    actionHint: "พิมพ์เสร็จจะไปขั้นต่อไปให้เอง",
   },
   {
     id: "category",
