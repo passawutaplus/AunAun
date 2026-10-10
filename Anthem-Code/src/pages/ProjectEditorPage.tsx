@@ -81,7 +81,6 @@ import { LEGAL_ATTESTATION_VERSION } from "@/lib/legalConfig";
 import { parseAiUseLevel, serializeAiUseLevel, type AiUseLevel } from "@/lib/aiDisclosure";
 import { type LicenseType, isLicenseType, getLicenseMeta } from "@/lib/licenses";
 import { ProjectEditorToolsSidebar } from "@/components/project/ProjectEditorToolsSidebar";
-import { ProjectEditorMetaSidebar } from "@/components/project/ProjectEditorMetaSidebar";
 import { ProjectCanvasEditor } from "@/components/project/ProjectCanvasEditor";
 import { FlexGridToolsSidebar, type FlexGridLayerRef } from "@/components/project/FlexGridToolsSidebar";
 import {
@@ -96,7 +95,7 @@ import { WorkspaceHeader } from "@/components/project/WorkspaceHeader";
 import { ProjectConnectProducts } from "@/components/project/ProjectConnectProducts";
 import { connectKey, syncProjectConnections, useProjectConnectItems } from "@/hooks/useProjectConnections";
 import { QuickAdvancedGroup, QuickConnectGroup } from "@/components/project/QuickAdvancedGroup";
-import { readUploadMode, writeUploadMode, type UploadMode } from "@/lib/uploadMode";
+import { ProjectDetailsDialog } from "@/components/project/ProjectDetailsDialog";
 import {
   inferTaxonomySelection,
   mergeCategorySubTag,
@@ -258,11 +257,6 @@ const ProjectEditorPage = () => {
   const [galleryDisplayMode, setGalleryDisplayMode] = useState<GalleryDisplayMode>("gallery");
   const [gridLayout, setGridLayout] = useState<PhotoGridLayout>("three_split");
   const [editorMode, setEditorMode] = useState<ProjectEditorMode>("casual");
-  const [uploadMode, setUploadModeState] = useState<UploadMode>(readUploadMode);
-  const setUploadMode = (mode: UploadMode) => {
-    setUploadModeState(mode);
-    writeUploadMode(mode);
-  };
   const [flexGridLayout, setFlexGridLayout] = useState<FlexGridLayout>(() => defaultFlexGridLayout());
   const flexHistory = useFlexGridHistory(flexGridLayout, setFlexGridLayout);
   const flexGridLayoutRef = useRef(flexGridLayout);
@@ -385,7 +379,7 @@ const ProjectEditorPage = () => {
   const [toolsExpanded, setToolsExpanded] = useState(false);
   const [toolsTab, setToolsTab] = useState<"template" | "module">("module");
   const emptyStartImageInputRef = useRef<HTMLInputElement>(null);
-  const [metaExpanded, setMetaExpanded] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -680,7 +674,6 @@ const ProjectEditorPage = () => {
     const mq = window.matchMedia("(min-width: 1024px)");
     const sync = () => {
       setToolsExpanded(mq.matches);
-      setMetaExpanded(mq.matches);
     };
     sync();
     mq.addEventListener("change", sync);
@@ -1643,33 +1636,28 @@ const ProjectEditorPage = () => {
     }
   };
 
+  const focusFirstPublishError = (errors: typeof publishFieldErrors) => {
+    const firstKey = Object.keys(errors)[0];
+    window.setTimeout(() => {
+      if (firstKey === "title") titleInputRef.current?.focus();
+      else if (firstKey === "shortDescription") {
+        document.getElementById("project-short-description")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (firstKey === "canvasImage") {
+        setDetailsOpen(false);
+        document.getElementById("project-canvas-editor")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 120);
+  };
+
+  /** Publish = open the details dialog; it holds the last required fields and the final confirm. */
   const handlePublishClick = () => {
     if (warnIfMediaStillUploading("publish")) return;
-    const { errors, checklist } = collectPublishGaps();
+    const { errors } = collectPublishGaps();
     setPublishFieldErrors(errors);
-    if (checklist.length > 0) {
-      setPublishChecklist(checklist);
-      setPublishPopupOpaque(true);
-      setPublishFieldHighlightOpaque(true);
-      setPublishChecklistTick((n) => n + 1);
-      if (errors.title || errors.cover || errors.category || errors.shortDescription) setMetaExpanded(true);
-      const firstKey = Object.keys(errors)[0];
-      window.setTimeout(() => {
-        if (firstKey === "title") titleInputRef.current?.focus();
-        else if (firstKey === "shortDescription") {
-          document.getElementById("project-short-description")?.scrollIntoView({ behavior: "smooth", block: "center" });
-        } else if (firstKey === "cover" || firstKey === "category") {
-          document.getElementById("project-meta-sidebar")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        } else if (firstKey === "canvasImage") {
-          document.getElementById("project-canvas-editor")?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      }, 80);
-      return;
-    }
+    setPublishFieldHighlightOpaque(true);
     setPublishChecklist([]);
-    setPublishPopupOpaque(false);
-    setPublishAttestChecked(false);
-    setPublishConfirmOpen(true);
+    setDetailsOpen(true);
+    focusFirstPublishError(errors);
   };
 
   useEffect(() => {
@@ -2845,7 +2833,54 @@ const ProjectEditorPage = () => {
   }
 
   const publishRemaining = collectPublishGaps().checklist.length;
-  const publishLabel = publishRemaining > 0 ? `เผยแพร่ · เหลือ ${publishRemaining} อย่าง` : "เผยแพร่";
+  const publishLabel = "เผยแพร่";
+  const handleDialogPublish = async () => {
+    if (warnIfMediaStillUploading("publish")) return;
+    const { errors, checklist } = collectPublishGaps();
+    if (checklist.length > 0) {
+      setPublishFieldErrors(errors);
+      setPublishFieldHighlightOpaque(true);
+      toast.error("ยังขาด: " + checklist.join(" · "));
+      focusFirstPublishError(errors);
+      return;
+    }
+    if (!publishAttestChecked) {
+      toast.error("ติ๊กยืนยันสิทธิ์ในผลงานก่อนเผยแพร่");
+      return;
+    }
+    setDetailsOpen(false);
+    await handleConfirmPublish();
+  };
+
+  const detailsFooter = (
+    <div className="space-y-3">
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button type="button" variant="ghost" className="rounded-full" onClick={() => setDetailsOpen(false)}>
+          ปิด
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="rounded-full"
+          disabled={editorLocked}
+          onClick={() => void handleSaveDraft(true)}
+        >
+          บันทึกฉบับร่าง
+        </Button>
+        <Button
+          type="button"
+          className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+          disabled={editorLocked}
+          onClick={() => void handleDialogPublish()}
+        >
+          {publishing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+          เผยแพร่
+        </Button>
+      </div>
+    </div>
+  );
+
+  const detailsLabel = publishRemaining > 0 ? `รายละเอียดงาน · เหลือ ${publishRemaining}` : "รายละเอียดงาน";
 
   const catalogField = (
             <div className="space-y-2">
@@ -2973,35 +3008,6 @@ const ProjectEditorPage = () => {
                 {editing ? "แก้ไขผลงาน" : "ลงผลงานใหม่"}
               </h1>
             </div>
-            <div
-              role="tablist"
-              aria-label="โหมดลงผลงาน"
-              className="inline-flex shrink-0 items-center rounded-full border border-border/80 bg-card p-0.5"
-            >
-              {(
-                [
-                  { value: "quick" as const, label: "Quick drop" },
-                  { value: "studio" as const, label: "Studio" },
-                ] as const
-              ).map((m) => {
-                const active = uploadMode === m.value;
-                return (
-                  <button
-                    key={m.value}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setUploadMode(m.value)}
-                    className={cn(
-                      "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                      active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {m.label}
-                  </button>
-                );
-              })}
-            </div>
             {isLaunchFullGridEditorEnabled() ? (
               <LayoutGroup id="project-editor-mode">
                 <div
@@ -3069,6 +3075,15 @@ const ProjectEditorPage = () => {
           <div className="hidden lg:flex items-center gap-2 shrink-0">
             <Button
               variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={() => setDetailsOpen(true)}
+              disabled={editorLocked}
+            >
+              {detailsLabel}
+            </Button>
+            <Button
+              variant="outline"
               size="icon"
               className="rounded-full shrink-0"
               onClick={() => {
@@ -3122,7 +3137,7 @@ const ProjectEditorPage = () => {
 
       <div className="flex w-full flex-col lg:flex-row">
         <div className="flex min-w-0 flex-1">
-        {uploadMode === "quick" ? null : editorMode === "flex_grid" ? (
+        {editorMode === "flex_grid" ? (
           <FlexGridToolsSidebar
             layout={flexGridLayout}
             selected={flexGridSelected}
@@ -3364,11 +3379,10 @@ const ProjectEditorPage = () => {
               editorMode === "flex_grid"
                 ? "max-w-[min(100%,calc(52rem+3.5rem))]"
                 : "max-w-[min(100%,calc(56rem+3.5rem))]",
-              uploadMode === "quick" && "pl-3 sm:pl-4",
             )}
           >
           {/* Left: canvas — content max-w-4xl (match published detail); side rail uses the extra gutter */}
-          {uploadMode === "quick" ? (
+          {(
             <WorkspaceHeader
               title={title}
               onTitleChange={(value) => {
@@ -3382,7 +3396,7 @@ const ProjectEditorPage = () => {
               moduleCount={contentBlocks.length}
               imageCount={countMediaByKind(mediaItemsFromBlocks(contentBlocks), "image")}
             />
-          ) : null}
+          )}
 
           <section
             id="project-canvas-editor"
@@ -3445,7 +3459,7 @@ const ProjectEditorPage = () => {
               uploadStagePercent={uploadStage?.percent}
               onCancelUpload={uploadStage ? cancelActiveUpload : undefined}
               onEmptyDropImages={(files) => void handleCanvasDropFiles(files)}
-              emptyVariant={uploadMode === "quick" ? "upload" : "starter"}
+              emptyVariant="upload"
               starterTemplates={starterTemplates}
               onPickStarterTemplate={pickStarterTemplate}
               onStartFromVideo={() => handlePlaceTool({ tool: "video" })}
@@ -3475,36 +3489,19 @@ const ProjectEditorPage = () => {
             />
           </section>
 
-          {uploadMode === "quick" ? (
+          {(
             <AddModuleBar
               disabled={editorLocked}
               onPickImages={(files) => void handleCanvasDropFiles(files)}
               onPlace={(payload) => handlePlaceTool(payload)}
             />
-          ) : null}
-
-          {uploadMode === "quick" ? null : (
-          <div className="mx-auto w-full max-w-4xl space-y-6 border-t border-border/70 px-1 pt-6">
-          {renderDetailsExtras(false)}
-
-          {!isAplus1LaunchMinimal() ? (
-            <section className="space-y-4 rounded-2xl border border-border bg-card/40 p-4">
-              <PortfolioLinkedPostPicker
-                userId={user?.id ?? ""}
-                selected={linkedOwnPosts}
-                onChange={setLinkedOwnPosts}
-                readOnlyPosts={linkedCollabPosts}
-              />
-            </section>
-          ) : null}
-          </div>
           )}
+
           </div>
         </div>
         </div>
 
-        {/* Right: meta sidebar (docked, collapsible) */}
-        <ProjectEditorMetaSidebar expanded={metaExpanded} onExpandedChange={setMetaExpanded}>
+        <ProjectDetailsDialog open={detailsOpen} onOpenChange={setDetailsOpen} footer={detailsFooter}>
           <div className="rounded-2xl border border-border bg-card p-4 space-y-4 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
             <div className="space-y-2">
               <Label className="text-xs font-semibold text-muted-foreground">
@@ -3580,16 +3577,12 @@ const ProjectEditorPage = () => {
               />
             </div>
 
-            {uploadMode === "quick" ? (
-              <>
-                {catalogField}
-                {renderDetailsExtras(true, "context")}
-              </>
-            ) : null}
+            {catalogField}
+            {renderDetailsExtras(true, "context")}
 
             <CollapsibleEditorCard
               title="การรับงาน"
-              borderless={uploadMode === "quick"}
+              borderless
               icon={Handshake}
               defaultOpen={false}
               hint={
@@ -3652,13 +3645,11 @@ const ProjectEditorPage = () => {
 
             <CollapsibleEditorCard
               title="รายละเอียดเพิ่มเติม"
-              borderless={uploadMode === "quick"}
+              borderless
               icon={Tags}
               defaultOpen={false}
               hint={`${tags.length} แท็ก · ${tools.length} เครื่องมือ`}
             >
-            {uploadMode === "quick" ? null : catalogField}
-
             <div>
               <ToolPicker
                 userId={user?.id}
@@ -3681,15 +3672,9 @@ const ProjectEditorPage = () => {
                 />
               </div>
             </div>
-            {uploadMode === "quick" ? null : (
-              <>
-                {connectProducts}
-                {collabField}
-              </>
-            )}
 
             </CollapsibleEditorCard>
-            {uploadMode === "quick" ? (
+            {(
               <QuickConnectGroup>
                 {connectProducts}
                 {collabField}
@@ -3702,13 +3687,17 @@ const ProjectEditorPage = () => {
                   />
                 ) : null}
               </QuickConnectGroup>
-            ) : null}
-            <QuickAdvancedGroup quick={uploadMode === "quick"}>
-            {uploadMode === "quick" ? renderDetailsExtras(true, "rights") : null}
+            )}
+            <QuickAdvancedGroup quick>
+            {renderDetailsExtras(true, "rights")}
             </QuickAdvancedGroup>
+
+            <div className="border-t border-border/60 pt-4">
+              <OriginalWorkAttestation checked={publishAttestChecked} onCheckedChange={setPublishAttestChecked} />
+            </div>
           </div>
 
-        </ProjectEditorMetaSidebar>
+        </ProjectDetailsDialog>
       </div>
 
       {/* Mobile sticky actions */}
@@ -3717,7 +3706,16 @@ const ProjectEditorPage = () => {
           <Button
             type="button"
             variant="outline"
-            className="shrink-0 w-[28%] min-w-[6.5rem] rounded-xl px-2 text-sm"
+            className="shrink-0 rounded-xl px-3 text-sm"
+            onClick={() => setDetailsOpen(true)}
+            disabled={editorLocked}
+          >
+            {publishRemaining > 0 ? `รายละเอียด · ${publishRemaining}` : "รายละเอียด"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="shrink-0 rounded-xl px-3 text-sm"
             onClick={() => void handleSaveDraft()}
             disabled={editorLocked}
             aria-busy={savingDraft}
@@ -3830,71 +3828,6 @@ const ProjectEditorPage = () => {
             >
               {leavingBusy ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
               บันทึกฉบับร่างแล้วออก
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={publishConfirmOpen}
-        onOpenChange={(open) => {
-          if (publishing) return;
-          setPublishConfirmOpen(open);
-          if (!open) setPublishAttestChecked(false);
-        }}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>ยืนยันก่อนเผยแพร่</DialogTitle>
-            <DialogDescription>
-              ติ๊กยืนยันสิทธิ์ในผลงาน แล้วกดยืนยันเผยแพร่
-            </DialogDescription>
-          </DialogHeader>
-          <OriginalWorkAttestation
-            checked={publishAttestChecked}
-            onCheckedChange={setPublishAttestChecked}
-          />
-          <DialogFooter className="gap-2 sm:justify-end flex-col-reverse sm:flex-row">
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={publishing}
-              onClick={() => {
-                setPublishConfirmOpen(false);
-                setPublishAttestChecked(false);
-              }}
-            >
-              ยกเลิก
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={publishing}
-              className="rounded-full"
-              onClick={() => {
-                setPublishConfirmOpen(false);
-                setPublishAttestChecked(false);
-                setPreviewMode("pc");
-                setPreviewOpen(true);
-              }}
-            >
-              <Eye className="w-4 h-4 mr-1" />
-              ดูตัวอย่าง
-            </Button>
-            <Button
-              type="button"
-              disabled={publishing || !publishAttestChecked}
-              className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={() => void handleConfirmPublish()}
-            >
-              {publishing ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                  กำลังเผยแพร่…
-                </>
-              ) : (
-                "ยืนยันเผยแพร่"
-              )}
             </Button>
           </DialogFooter>
         </DialogContent>

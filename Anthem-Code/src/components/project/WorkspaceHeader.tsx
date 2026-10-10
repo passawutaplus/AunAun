@@ -28,8 +28,6 @@ export function WorkspaceHeader({
       <p className="flex items-center gap-2 text-xs text-muted-foreground">
         <span>workspace</span>
         <span aria-hidden>•</span>
-        <span>quick drop</span>
-        <span aria-hidden>•</span>
         <span>{statusLabel}</span>
       </p>
       <Input
