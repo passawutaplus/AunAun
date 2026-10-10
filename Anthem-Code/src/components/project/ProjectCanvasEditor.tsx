@@ -1361,6 +1361,11 @@ export function ProjectCanvasEditor({
           if (disabled) return;
           e.preventDefault();
           setToolDragOver(false);
+          const tool = readCanvasToolDragData(e.dataTransfer);
+          if (tool && onPlaceTool) {
+            onPlaceTool(tool);
+            return;
+          }
           if (onEmptyDropImages && e.dataTransfer.files?.length) onEmptyDropImages(e.dataTransfer.files);
         }}
       >

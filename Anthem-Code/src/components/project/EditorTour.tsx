@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TourMascot } from "@/components/project/TourMascot";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "samecor.uploadTour.v1";
@@ -59,13 +60,13 @@ type Step = {
 const STEPS: Step[] = [
   {
     id: "welcome",
-    title: "มาลงผลงานชิ้นแรกกัน",
-    body: "ใช้เวลาประมาณ 2 นาที เราจะพาไปทีละขั้น จนเกือบถึงปุ่มเผยแพร่",
+    title: "Welcome",
+    body: "มาลงผลงานชิ้นแรกกัน! ใช้เวลาประมาณ 2 นาที เราจะพาไปทีละขั้น จนเกือบถึงปุ่มเผยแพร่",
     next: "เริ่มเลย",
   },
   {
     id: "drop",
-    title: "เริ่มจากวางรูป",
+    title: "Drop a photo",
     body: "ลากรูปมาวางตรงนี้ หรือคลิกเพื่อเลือกรูปจากเครื่อง รูปแรกจะเป็นภาพปกให้อัตโนมัติ",
     target: "drop",
     waitsForAction: true,
@@ -73,7 +74,7 @@ const STEPS: Step[] = [
   },
   {
     id: "title",
-    title: "ตั้งชื่อผลงาน",
+    title: "Name your work",
     body: "พิมพ์ชื่อตรงนี้ได้เลย สั้น ๆ ก็พอ",
     target: "title",
     waitsForAction: true,
@@ -82,28 +83,28 @@ const STEPS: Step[] = [
   },
   {
     id: "addbar",
-    title: "อยากเพิ่มอะไรอีก",
+    title: "Add more",
     body: "กดปุ่มด้านล่างเพื่อเพิ่มรูป ข้อความ วิดีโอ หรือแกลเลอรี บางปุ่มมีหลายแบบให้เลือก",
     target: "addbar",
     next: "ถัดไป",
   },
   {
     id: "library",
-    title: "คลังโมดูลและเทมเพลต",
+    title: "Module & Template",
     body: "อยู่แถบซ้าย ลากมาวางได้ กด ⓘ เพื่อดูภาพเคลื่อนไหวอธิบายแต่ละแบบ",
     target: "library",
     next: "ถัดไป",
   },
   {
     id: "preview",
-    title: "ดูตัวอย่างผลงาน",
+    title: "Preview",
     body: "กดรูปตาเพื่อดูว่าคนอื่นจะเห็นหน้าผลงานแบบไหน",
     target: "preview",
     next: "ถัดไป",
   },
   {
     id: "details",
-    title: "ใส่รายละเอียดงาน",
+    title: "Work details",
     body: "กดปุ่มนี้เพื่อเลือกหมวดและเขียนรายละเอียดสั้น ๆ ที่ต้องมีก่อนเผยแพร่",
     target: "details",
     waitsForAction: true,
@@ -111,7 +112,7 @@ const STEPS: Step[] = [
   },
   {
     id: "category",
-    title: "เลือกหมวดงาน",
+    title: "Category",
     body: "เลือกหมวดใหญ่และหมวดย่อยที่ตรงกับงาน",
     target: "category",
     inDialog: true,
@@ -120,7 +121,7 @@ const STEPS: Step[] = [
   },
   {
     id: "shortdesc",
-    title: "เขียนรายละเอียดสั้น ๆ",
+    title: "Short description",
     body: "สรุปว่างานนี้คืออะไร ทำอะไร หรือจุดเด่นที่อยากให้จำ",
     target: "shortdesc",
     inDialog: true,
@@ -129,7 +130,7 @@ const STEPS: Step[] = [
   },
   {
     id: "final",
-    title: "เกือบเสร็จแล้ว",
+    title: "Almost there",
     body: "ช่องอื่นไว้ทีหลังได้ ถ้าพร้อมกด “เผยแพร่” ได้เลย หรือบันทึกฉบับร่างไว้ก่อนก็ได้",
     target: "publish-dialog",
     inDialog: true,
@@ -250,13 +251,15 @@ export function EditorTour({ open, facts, onClose, onOpenDetails }: Props) {
       role="dialog"
       aria-label="ทัวร์แนะนำการลงผลงาน"
       className={cn(
-        "w-[280px] rounded-2xl border border-border bg-card p-4 text-left",
+        "rounded-2xl border border-border bg-card p-4 text-left",
+        step.id === "welcome" ? "w-[320px]" : "w-[280px]",
         step.inDialog ? "mb-4 w-full" : "pointer-events-auto fixed z-[70]",
       )}
       style={step.inDialog ? undefined : cardPosition(rect)}
     >
+      {step.id === "welcome" ? <TourMascot /> : null}
       <div className="mb-1 flex items-start justify-between gap-2">
-        <p className="text-sm font-medium text-foreground">{step.title}</p>
+        <p className="font-display text-base font-normal tracking-tight text-foreground">{step.title}</p>
         <button
           type="button"
           onClick={close}

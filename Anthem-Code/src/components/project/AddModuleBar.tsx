@@ -1,14 +1,15 @@
 import { useRef, useState, type ReactNode } from "react";
-import { AlignLeft, Film, GalleryHorizontal, ImagePlus, PanelLeft } from "lucide-react";
+import { AlignLeft, Film, GalleryHorizontal, ImagePlus, LayoutTemplate, PanelLeft } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import type { CanvasToolPayload } from "@/lib/canvasToolDrag";
+import { setCanvasToolDragData, type CanvasToolPayload } from "@/lib/canvasToolDrag";
 import { PHOTO_GRID_LAYOUTS } from "@/lib/photoGridLayouts";
 
 type Props = {
   disabled?: boolean;
   onPickImages: (files: File[]) => void;
   onPlace: (payload: CanvasToolPayload) => void;
+  onOpenTemplates: () => void;
 };
 
 type Option = { label: string; hint?: string; payload: CanvasToolPayload };
@@ -40,14 +41,30 @@ const IMAGE_TEXT_OPTIONS: Option[] = [
 ];
 
 /** Quick drop's one-tap module bar. Modules with several layouts open a short picker. */
-export function AddModuleBar({ disabled, onPickImages, onPlace }: Props) {
+export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
 
-  const picker = (key: string, label: string, icon: ReactNode, options: Option[], wide = false) => (
+  /** Every button can also be dragged straight onto the artboard. */
+  const drag = (payload: CanvasToolPayload) => ({
+    draggable: !disabled,
+    onDragStart: (e: React.DragEvent) => {
+      if (disabled) return;
+      setCanvasToolDragData(e.dataTransfer, payload);
+    },
+  });
+
+  const picker = (
+    key: string,
+    label: string,
+    icon: ReactNode,
+    options: Option[],
+    dragPayload: CanvasToolPayload,
+    wide = false,
+  ) => (
     <Popover open={openKey === key} onOpenChange={(o) => setOpenKey(o ? key : null)}>
       <PopoverTrigger asChild>
-        <button type="button" disabled={disabled} className={pill}>
+        <button type="button" disabled={disabled} className={pill} {...drag(dragPayload)}>
           {icon}
           {label}
         </button>
@@ -83,15 +100,36 @@ export function AddModuleBar({ disabled, onPickImages, onPlace }: Props) {
         aria-label="เพิ่มโมดูล"
         className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-border bg-background/95 p-1.5 backdrop-blur-md"
       >
-        <span className="shrink-0 pl-3 pr-1 text-xs text-muted-foreground">เพิ่ม</span>
-        <button type="button" disabled={disabled} className={pill} onClick={() => fileRef.current?.click()}>
+        <button
+          type="button"
+          disabled={disabled}
+          className={cn(pill, "bg-foreground text-background hover:bg-foreground/90")}
+          onClick={onOpenTemplates}
+        >
+          {icon(LayoutTemplate)}
+          เริ่มง่าย ๆ ด้วย Template
+        </button>
+        <span className="shrink-0 pl-2 pr-1 text-xs text-muted-foreground">เพิ่ม</span>
+        <button
+          type="button"
+          disabled={disabled}
+          className={pill}
+          onClick={() => fileRef.current?.click()}
+          {...drag({ tool: "single" })}
+        >
           {icon(ImagePlus)}
           ภาพ
         </button>
-        {picker("gallery", "แกลเลอรี", icon(GalleryHorizontal), GALLERY_OPTIONS, true)}
-        {picker("text", "ข้อความ", icon(AlignLeft), TEXT_OPTIONS)}
-        {picker("split", "ภาพ + ข้อความ", icon(PanelLeft), IMAGE_TEXT_OPTIONS)}
-        <button type="button" disabled={disabled} className={pill} onClick={() => onPlace({ tool: "video" })}>
+        {picker("gallery", "แกลเลอรี", icon(GalleryHorizontal), GALLERY_OPTIONS, { tool: "gallery" }, true)}
+        {picker("text", "ข้อความ", icon(AlignLeft), TEXT_OPTIONS, { tool: "body" })}
+        {picker("split", "ภาพ + ข้อความ", icon(PanelLeft), IMAGE_TEXT_OPTIONS, { tool: "image_text", side: "image_left" })}
+        <button
+          type="button"
+          disabled={disabled}
+          className={pill}
+          onClick={() => onPlace({ tool: "video" })}
+          {...drag({ tool: "video" })}
+        >
           {icon(Film)}
           วิดีโอ
         </button>

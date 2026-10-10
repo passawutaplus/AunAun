@@ -92,11 +92,13 @@ import { ProjectSeriesPicker } from "@/components/project/ProjectEditorSearchSel
 import { ProjectTaxonomyPicker } from "@/components/project/ProjectTaxonomyPicker";
 import { AddModuleBar } from "@/components/project/AddModuleBar";
 import { EditorTour, hasSeenEditorTour } from "@/components/project/EditorTour";
+import { TemplatePickerDialog } from "@/components/project/TemplatePickerDialog";
 import { WorkspaceHeader } from "@/components/project/WorkspaceHeader";
 import { ProjectConnectProducts } from "@/components/project/ProjectConnectProducts";
 import { connectKey, syncProjectConnections, useProjectConnectItems } from "@/hooks/useProjectConnections";
 import { QuickAdvancedGroup, QuickConnectGroup } from "@/components/project/QuickAdvancedGroup";
 import { ProjectDetailsDialog } from "@/components/project/ProjectDetailsDialog";
+import { ProjectDetailsPreview } from "@/components/project/ProjectDetailsPreview";
 import {
   inferTaxonomySelection,
   mergeCategorySubTag,
@@ -382,6 +384,7 @@ const ProjectEditorPage = () => {
   const emptyStartImageInputRef = useRef<HTMLInputElement>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const tourCheckedRef = useRef(false);
   useEffect(() => {
     // First-time uploaders get the guided tour once (remembered in this browser only).
@@ -2915,6 +2918,28 @@ const ProjectEditorPage = () => {
             </div>
   );
 
+  const coverField = (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                ภาพปก <span className="text-primary">*</span>
+                <EditorInfoButton topic="cover" />
+              </Label>
+              <CoverDrop
+                url={cover}
+                loading={uploadingCover}
+                onPick={(f) => {
+                  clearPublishFieldError("cover");
+                  void handleCoverPick(f);
+                }}
+                onClear={() => {
+                  setCover("");
+                }}
+                compact
+                invalid={publishFieldHighlight(publishFieldErrors.cover)}
+              />
+            </div>
+  );
+
   const connectProducts = (
     <ProjectConnectProducts
       items={connectItems}
@@ -3514,6 +3539,7 @@ const ProjectEditorPage = () => {
               disabled={editorLocked}
               onPickImages={(files) => void handleCanvasDropFiles(files)}
               onPlace={(payload) => handlePlaceTool(payload)}
+              onOpenTemplates={() => setTemplatePickerOpen(true)}
             />
           )}
 
@@ -3521,7 +3547,24 @@ const ProjectEditorPage = () => {
         </div>
         </div>
 
-        <ProjectDetailsDialog open={detailsOpen} onOpenChange={setDetailsOpen} footer={detailsFooter}>
+        <ProjectDetailsDialog
+          open={detailsOpen}
+          onOpenChange={setDetailsOpen}
+          footer={detailsFooter}
+          preview={
+            <ProjectDetailsPreview
+              cover={cover}
+              title={title}
+              shortDescription={shortDescription}
+              category={category}
+              tags={tags}
+              hiringOn={allowHire}
+              collabOn={allowCollab}
+              ownerName={"คุณ"}
+              coverControl={coverField}
+            />
+          }
+        >
           <div className="rounded-2xl border border-border bg-card p-4 space-y-4 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
             <div className="space-y-2">
               <Label className="text-xs font-semibold text-muted-foreground">
@@ -3549,25 +3592,6 @@ const ProjectEditorPage = () => {
               <FieldError
                 id="project-title-error"
                 message={publishFieldErrors.title}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                ภาพปก <span className="text-primary">*</span>
-                <EditorInfoButton topic="cover" />
-              </Label>
-              <CoverDrop
-                url={cover}
-                loading={uploadingCover}
-                onPick={(f) => {
-                  clearPublishFieldError("cover");
-                  void handleCoverPick(f);
-                }}
-                onClear={() => {
-                  setCover("");
-                }}
-                compact
-                invalid={publishFieldHighlight(publishFieldErrors.cover)}
               />
             </div>
 
@@ -3720,6 +3744,8 @@ const ProjectEditorPage = () => {
 
         </ProjectDetailsDialog>
       </div>
+
+      <TemplatePickerDialog open={templatePickerOpen} onOpenChange={setTemplatePickerOpen} onPick={pickStarterTemplate} />
 
       <EditorTour
         open={tourOpen}
