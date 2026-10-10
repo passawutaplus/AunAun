@@ -799,7 +799,7 @@ export function ProjectEditorToolsSidebar({
         {expanded ? (
           <div className="flex h-full flex-col lg:h-[calc(100dvh-4rem)]">
             <div className="flex items-center justify-between gap-2 px-3 pb-1 pt-3 lg:pt-4">
-              <p className="inline-flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
+              <p className="inline-flex items-center gap-2 font-display text-base font-normal tracking-tight text-foreground">
                 {sidebarTab === "template" ? (
                   <LayoutTemplate className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
                 ) : (
@@ -824,7 +824,7 @@ export function ProjectEditorToolsSidebar({
                 onClick={() => setSidebarTab("module")}
                 aria-pressed={sidebarTab === "module"}
                 className={cn(
-                  "flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors",
+                  "flex items-center justify-center gap-1 rounded-md px-2 py-1.5 font-display text-[11px] font-normal transition-colors",
                   sidebarTab === "module"
                     ? "bg-primary/15 text-primary"
                     : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
@@ -838,7 +838,7 @@ export function ProjectEditorToolsSidebar({
                 onClick={() => setSidebarTab("template")}
                 aria-pressed={sidebarTab === "template"}
                 className={cn(
-                  "flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors",
+                  "flex items-center justify-center gap-1 rounded-md px-2 py-1.5 font-display text-[11px] font-normal transition-colors",
                   sidebarTab === "template"
                     ? "bg-primary/15 text-primary"
                     : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",

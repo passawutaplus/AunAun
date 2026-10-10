@@ -4,6 +4,8 @@
  * to leak and `prefers-reduced-motion` simply shows the finished frame.
  */
 
+import { Grab } from "lucide-react";
+
 const IMG = {
   a: "/editor-help/orbit-12.webp",
   b: "/editor-help/orbit-13.webp",
@@ -28,15 +30,25 @@ export const SCENES_CSS = `
 @keyframes es-in{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
 @keyframes es-hl{0%,100%{background:#1b1d21;border-color:#2a2d33;color:#9a9893}}
 .es-m1{animation:es-m1 9s infinite}.es-m2{animation:es-m2 9s infinite}.es-m3{animation:es-m3 9s infinite}
-@keyframes es-m1{0%,10%{opacity:0;transform:translateY(10px)}16%,92%{opacity:1;transform:none}98%,100%{opacity:0}}
-@keyframes es-m2{0%,36%{opacity:0;transform:translateY(10px)}42%,92%{opacity:1;transform:none}98%,100%{opacity:0}}
-@keyframes es-m3{0%,62%{opacity:0;transform:translateY(10px)}68%,92%{opacity:1;transform:none}98%,100%{opacity:0}}
+@keyframes es-m1{0%,22%{opacity:0;transform:scale(.92)}26%{opacity:1;transform:scale(1.03)}29%,94%{opacity:1;transform:none}98%,100%{opacity:0}}
+@keyframes es-m2{0%,52%{opacity:0;transform:scale(.92)}56%{opacity:1;transform:scale(1.03)}59%,94%{opacity:1;transform:none}98%,100%{opacity:0}}
+@keyframes es-m3{0%,82%{opacity:0;transform:scale(.92)}86%{opacity:1;transform:scale(1.03)}89%,94%{opacity:1;transform:none}98%,100%{opacity:0}}
 .es-t1{animation:es-t1 9s infinite}.es-t2{animation:es-t2 9s infinite}.es-t3{animation:es-t3 9s infinite}
-@keyframes es-t1{0%,3%{background:#1b1d21;color:#9a9893}6%,18%{background:#e8e6e1;color:#101114;border-color:#e8e6e1}22%,100%{background:#1b1d21;color:#9a9893}}
-@keyframes es-t2{0%,29%{background:#1b1d21;color:#9a9893}32%,44%{background:#e8e6e1;color:#101114;border-color:#e8e6e1}48%,100%{background:#1b1d21;color:#9a9893}}
-@keyframes es-t3{0%,55%{background:#1b1d21;color:#9a9893}58%,70%{background:#e8e6e1;color:#101114;border-color:#e8e6e1}74%,100%{background:#1b1d21;color:#9a9893}}
-.es-cur1{animation:es-cur1 9s infinite ease-in-out}
-@keyframes es-cur1{0%{transform:translate(70px,40px)}6%{transform:translate(52px,36px) scale(.88)}13%{transform:translate(180px,50px)}28%{transform:translate(180px,50px)}32%{transform:translate(52px,100px) scale(.88)}40%{transform:translate(180px,100px)}54%{transform:translate(180px,100px)}58%{transform:translate(52px,164px) scale(.88)}66%{transform:translate(180px,170px)}92%{transform:translate(180px,170px)}100%{transform:translate(70px,40px)}}
+@keyframes es-t1{0%,2%{background:#1b1d21;color:#9a9893}4%,20%{background:#0d0e10;color:#5d5b57;border-style:dashed}22%,100%{background:#1b1d21;color:#9a9893;border-style:solid}}
+@keyframes es-t2{0%,32%{background:#1b1d21;color:#9a9893}34%,50%{background:#0d0e10;color:#5d5b57;border-style:dashed}52%,100%{background:#1b1d21;color:#9a9893;border-style:solid}}
+@keyframes es-t3{0%,62%{background:#1b1d21;color:#9a9893}64%,80%{background:#0d0e10;color:#5d5b57;border-style:dashed}82%,100%{background:#1b1d21;color:#9a9893;border-style:solid}}
+.es-ghost{position:absolute;z-index:6;width:92px;height:70px;border-radius:10px;background:#e8e6e1;color:#101114;border:1px solid #fff;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;box-shadow:0 10px 24px rgba(0,0,0,.55)}
+.es-ghost svg{position:absolute;right:-8px;bottom:-12px;color:#fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
+.es-g1{animation:es-g1 9s infinite ease-in-out}.es-g2{animation:es-g2 9s infinite ease-in-out}.es-g3{animation:es-g3 9s infinite ease-in-out}
+@keyframes es-g1{0%,3%{opacity:0;left:12px;top:12px;transform:scale(1)}5%{opacity:1;left:12px;top:12px;transform:scale(1.06) rotate(-3deg)}17%{opacity:1;left:190px;top:20px;transform:scale(.62) rotate(2deg)}21%{opacity:1;left:190px;top:20px;transform:scale(.6)}23%,100%{opacity:0;left:190px;top:20px;transform:scale(.5)}}
+@keyframes es-g2{0%,33%{opacity:0;left:12px;top:90px;transform:scale(1)}35%{opacity:1;left:12px;top:90px;transform:scale(1.06) rotate(-3deg)}47%{opacity:1;left:190px;top:56px;transform:scale(.62) rotate(2deg)}51%{opacity:1;left:190px;top:56px;transform:scale(.6)}53%,100%{opacity:0;left:190px;top:56px;transform:scale(.5)}}
+@keyframes es-g3{0%,63%{opacity:0;left:12px;top:168px;transform:scale(1)}65%{opacity:1;left:12px;top:168px;transform:scale(1.06) rotate(-3deg)}77%{opacity:1;left:190px;top:128px;transform:scale(.62) rotate(2deg)}81%{opacity:1;left:190px;top:128px;transform:scale(.6)}83%,100%{opacity:0;left:190px;top:128px;transform:scale(.5)}}
+.es-ind{position:absolute;left:10px;right:10px;height:3px;border-radius:99px;background:#e8e6e1;opacity:0}
+.es-i1{top:8px;animation:es-i1 9s infinite}.es-i2{top:38px;animation:es-i2 9s infinite}.es-i3{top:128px;animation:es-i3 9s infinite}
+@keyframes es-i1{0%,12%{opacity:0}15%,21%{opacity:1}23%,100%{opacity:0}}
+@keyframes es-i2{0%,42%{opacity:0}45%,51%{opacity:1}53%,100%{opacity:0}}
+@keyframes es-i3{0%,72%{opacity:0}75%,81%{opacity:1}83%,100%{opacity:0}}
+.es-cap2{position:absolute;left:116px;right:12px;bottom:14px;text-align:center;color:#6f6d69;opacity:.0}
 .es-tpl{flex:1;border-radius:9px;background:#1b1d21;border:1px solid #2a2d33;padding:7px;display:flex;flex-direction:column;gap:4px;justify-content:center}
 .es-tpl.pick{animation:es-pick 9s infinite}
 @keyframes es-pick{0%,14%{border-color:#2a2d33;background:#1b1d21}18%,92%{border-color:#e8e6e1;background:#23262b}98%,100%{border-color:#2a2d33;background:#1b1d21}}
@@ -75,8 +87,9 @@ export const SCENES_CSS = `
 .es-prog{animation:es-prog 9s infinite;transform-origin:left}
 @keyframes es-prog{0%,52%{transform:scaleX(0);opacity:0}54%{opacity:1;transform:scaleX(.04)}90%{transform:scaleX(.9);opacity:1}97%,100%{transform:scaleX(.9);opacity:0}}
 @media (prefers-reduced-motion:reduce){
+  .es-g1,.es-g2,.es-g3,.es-ind{display:none}
   .es-m1,.es-m2,.es-m3,.es-f1,.es-f2,.es-f3,.es-f4,.es-fill,.es-swap,.es-vposter,.es-prog{animation:none;opacity:1;transform:none}
-  .es-t1,.es-t2,.es-t3,.es-cur1,.es-cur2,.es-strip,.es-d1,.es-d2,.es-d3,.es-play,.es-vph,.es-ph-ico,.es-tpl.pick{animation:none}
+  .es-t1,.es-t2,.es-t3,.es-cur2,.es-strip,.es-d1,.es-d2,.es-d3,.es-play,.es-vph,.es-ph-ico,.es-tpl.pick{animation:none}
   .es-play,.es-vph,.es-ph-ico{opacity:0}.es-prog{transform:scaleX(.6)}
 }
 `;
@@ -97,6 +110,9 @@ export function ModulesScene() {
         <div className="es-tile es-t3">แกลเลอรี</div>
       </div>
       <div className="es-canvas">
+        <i className="es-ind es-i1" />
+        <i className="es-ind es-i2" />
+        <i className="es-ind es-i3" />
         <div className="es-blk es-m1">
           <div className="es-bar" />
         </div>
@@ -111,7 +127,9 @@ export function ModulesScene() {
           </div>
         </div>
       </div>
-      <Cursor className="es-cur1" />
+      <div className="es-ghost es-g1">หัวข้อ<Grab size={22} /></div>
+      <div className="es-ghost es-g2">ภาพ<Grab size={22} /></div>
+      <div className="es-ghost es-g3">แกลเลอรี<Grab size={22} /></div>
     </div>
   );
 }
