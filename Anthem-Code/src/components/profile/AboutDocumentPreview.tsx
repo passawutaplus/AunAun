@@ -19,30 +19,19 @@ import {
 } from "lucide-react";
 import LineMarkIcon from "@/components/icons/LineMarkIcon";
 import { toast } from "sonner";
-import { aboutCvPdfFilename, downloadAboutCvPdf } from "@/lib/aboutCvPdf";
+import { aboutCvPdfFilename } from "@/lib/aboutCvPdf";
+import { downloadAboutCvDocument } from "@/lib/aboutCvDownload";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { ExperienceItem, SocialLinkItem } from "@/lib/validators";
-import {
-  EXPERIENCE_EMPLOYMENT_LABELS,
-  formatExperiencePeriod,
-  type ExperienceEmploymentType,
-} from "@/lib/validators";
-import { displayProfileAddress } from "@/lib/profileAddress";
 import { displayInitials } from "@/lib/avatarPool";
-import { safeHttpUrl } from "@/lib/safeUrl";
-import { socialDisplayId } from "@/lib/externalUrl";
+import { parseProfileCv } from "@/lib/profileCv";
 import {
-  cvPhotoVisible,
-  cvPortraitUrl,
-  CV_LANGUAGE_LEVEL_LABELS,
-  educationDetailLines,
-  experienceBullets,
-  formatEducationPeriod,
-  cvAboutText,
-  parseProfileCv,
-  partitionSkillsAndSoftware,
-} from "@/lib/profileCv";
+  buildAboutCvModel,
+  type AboutCvProfile,
+  type CvContactKind,
+  type CvSectionKey,
+} from "@/lib/aboutCvModel";
 import {
   ABOUT_CV_THEMES,
   type AboutCvTheme,
@@ -51,20 +40,32 @@ import {
 } from "@/lib/aboutCvTheme";
 import { cn } from "@/lib/utils";
 
-type ProfileAbout = {
-  display_name?: string | null;
-  username?: string | null;
-  avatar_url?: string | null;
-  cv_photo_url?: string | null;
-  cv?: unknown;
-  role: string | null;
-  location: string | null;
-  profile_address?: unknown;
-  bio: string | null;
-  website: string | null;
-  line_id: string | null;
-  facebook?: string | null;
-  instagram?: string | null;
+type ProfileAbout = AboutCvProfile;
+
+const CONTACT_ICONS: Record<CvContactKind, React.ComponentType<{ className?: string }>> = {
+  profile: Link2,
+  portfolio: Briefcase,
+  email: Mail,
+  phone: Phone,
+  line: LineMarkIcon,
+  website: Link2,
+  instagram: Instagram,
+  facebook: Facebook,
+  social: Link2,
+};
+
+const SECTION_ICONS: Record<CvSectionKey, React.ComponentType<{ className?: string }>> = {
+  experience: Briefcase,
+  education: GraduationCap,
+  certification: BadgeCheck,
+  awards: Award,
+};
+
+const SECTION_TITLES: Record<CvSectionKey, string> = {
+  experience: "Experience",
+  education: "Education",
+  certification: "Certification",
+  awards: "Awards",
 };
 
 export type CvDensity = "normal" | "compact";
@@ -85,10 +86,6 @@ type DocProps = {
   onFit?: (fit: CvFit) => void;
 };
 
-function hrefLabel(url: string) {
-  return url.replace(/^https?:\/\//i, "").replace(/\/$/, "");
-}
-
 const sameText = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 export function AboutDocumentSheet({
@@ -104,103 +101,23 @@ export function AboutDocumentSheet({
 }: DocProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const lastFit = useRef<CvFit | null>(null);
-  const cv = parseProfileCv(profile.cv);
-  const vis = cv.visibility;
-  const layout = cv.layout;
-  const showPhoto = cvPhotoVisible(cv);
-  const portrait = cvPortraitUrl(profile.cv_photo_url, profile.avatar_url);
-  const name = cv.fullName.trim();
-  const desiredRole = cv.desiredRole.trim();
-  const contactEmail = forceShowApplicationContact || vis.contactEmail ? cv.contactEmail.trim() : "";
-  const contactPhone = forceShowApplicationContact || vis.contactPhone ? cv.contactPhone.trim() : "";
+  const model = buildAboutCvModel({
+    profile,
+    experience,
+    skills,
+    socialLinks,
+    profileUrl,
+    forceShowApplicationContact,
+  });
+  const { layout, name, desiredRole, bio, place, qrTarget, showPhoto } = model;
+  const portrait = model.portraitUrl;
   const initials = displayInitials(name || profile.username || profile.display_name, 2);
-  const bio = vis.about ? cvAboutText(cv, profile.bio) : "";
-  const place = vis.location
-    ? displayProfileAddress(profile.profile_address, profile.location, cv.addressDetail)
-    : "";
-  const website = vis.website ? safeHttpUrl(profile.website) : undefined;
-  const lineId =
-    forceShowApplicationContact || vis.contactLine
-      ? cv.contactLine.trim() || profile.line_id?.trim() || ""
-      : "";
-  const instagramHandle = vis.socials
-    ? (profile.instagram?.trim() ?? "")
-        .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
-        .replace(/^@/, "")
-        .replace(/\/.*$/, "")
-    : "";
-  const facebookHref = vis.socials
-    ? profile.facebook?.trim()
-      ? safeHttpUrl(profile.facebook) ??
-        (/^[a-zA-Z0-9.\-_]+$/.test(profile.facebook.trim())
-          ? `https://facebook.com/${encodeURIComponent(profile.facebook.trim())}`
-          : undefined)
-      : undefined
-    : undefined;
-  const extraSocials = vis.socials
-    ? socialLinks
-        .map((l) => {
-          const href = safeHttpUrl(l.url);
-          if (!href || !l.title.trim()) return null;
-          return { title: l.title.trim(), href };
-        })
-        .filter((x): x is { title: string; href: string } => !!x)
-    : [];
-  const portfolio = vis.portfolio ? safeHttpUrl(cv.portfolioUrl) : undefined;
-  const profileLink = profileUrl ? safeHttpUrl(profileUrl) : undefined;
-  const qrTarget = profileLink ?? portfolio;
-  const { craftSkills, software } = partitionSkillsAndSoftware(
-    vis.skills ? skills : [],
-    vis.software ? cv.tools : [],
-  );
 
-  const contactLines = [
-    profileLink ? (
-      <CvContactLine key="profile" icon={Link2} label="SAMECOR">
-        {hrefLabel(profileLink)}
-      </CvContactLine>
-    ) : null,
-    portfolio && portfolio !== profileLink ? (
-      <CvContactLine key="portfolio" icon={Briefcase} label="Portfolio">
-        {hrefLabel(portfolio)}
-      </CvContactLine>
-    ) : null,
-    contactEmail ? (
-      <CvContactLine key="email" icon={Mail} label="Email">
-        {contactEmail}
-      </CvContactLine>
-    ) : null,
-    contactPhone ? (
-      <CvContactLine key="phone" icon={Phone} label="Phone">
-        {contactPhone}
-      </CvContactLine>
-    ) : null,
-    lineId ? (
-      <CvContactLine key="line" icon={LineMarkIcon} label="LINE">
-        {lineId}
-      </CvContactLine>
-    ) : null,
-    website && website !== portfolio && website !== profileLink ? (
-      <CvContactLine key="website" icon={Link2} label="Website">
-        {hrefLabel(website)}
-      </CvContactLine>
-    ) : null,
-    instagramHandle ? (
-      <CvContactLine key="instagram" icon={Instagram} label="Instagram">
-        {socialDisplayId(instagramHandle)}
-      </CvContactLine>
-    ) : null,
-    facebookHref ? (
-      <CvContactLine key="facebook" icon={Facebook} label="Facebook">
-        {socialDisplayId(facebookHref)}
-      </CvContactLine>
-    ) : null,
-    ...extraSocials.map((item) => (
-      <CvContactLine key={item.href} icon={Link2} label={item.title}>
-        {socialDisplayId(item.href)}
-      </CvContactLine>
-    )),
-  ].filter(Boolean);
+  const contactLines = model.contacts.map((c) => (
+    <CvContactLine key={c.key} icon={CONTACT_ICONS[c.kind]} label={c.label}>
+      {c.value}
+    </CvContactLine>
+  ));
 
   const contactBlock =
     contactLines.length > 0 || qrTarget ? (
@@ -222,22 +139,21 @@ export function AboutDocumentSheet({
         <p className="about-cv-copy">{place}</p>
       </DocBlock>
     ) : null,
-    vis.languages && cv.languages.length > 0 ? (
+    model.languages.length > 0 ? (
       <DocBlock key="languages" icon={Languages} title="Languages">
         <ul className="space-y-1">
-          {cv.languages.map((item) => (
-            <li key={item.name} className="about-cv-copy">
-              {item.name}
-              {item.level ? ` — ${CV_LANGUAGE_LEVEL_LABELS[item.level]}` : ""}
+          {model.languages.map((item) => (
+            <li key={item} className="about-cv-copy">
+              {item}
             </li>
           ))}
         </ul>
       </DocBlock>
     ) : null,
-    craftSkills.length > 0 ? (
+    model.craftSkills.length > 0 ? (
       <DocBlock key="skills" icon={Sparkles} title="Skills">
         <ul className="space-y-1">
-          {craftSkills.map((s) => (
+          {model.craftSkills.map((s) => (
             <li key={s} className="about-cv-copy">
               {s}
             </li>
@@ -245,90 +161,38 @@ export function AboutDocumentSheet({
         </ul>
       </DocBlock>
     ) : null,
-    software.length > 0 ? (
+    model.software.length > 0 ? (
       <DocBlock key="software" icon={Monitor} title="Design Software">
-        <p className="about-cv-copy">{software.join(" · ")}</p>
+        <p className="about-cv-copy">{model.software.join(" · ")}</p>
       </DocBlock>
     ) : null,
   ].filter(Boolean);
 
   const asideBlocks = layout === "one" ? sideBlocks : [contactBlock, ...sideBlocks].filter(Boolean);
-  const hasHero = !!((showPhoto && portrait) || name || desiredRole || bio);
+  const hasHero = !!(portrait || name || desiredRole || bio);
   const renderPhoto = showPhoto && hasHero;
 
-  const mainBlocks = [
-    vis.experience && experience.length > 0 ? (
-      <div key="experience">
-        <PrintHeading icon={Briefcase} title="Experience" />
-        <ol className="about-cv-entries">
-          {experience.map((it, i) => {
-            const period = formatExperiencePeriod(it) || it.period;
-            const typeLabel = it.employmentType
-              ? EXPERIENCE_EMPLOYMENT_LABELS[it.employmentType as ExperienceEmploymentType]
-              : null;
-            const bullets = experienceBullets(it);
-            return (
-              <CvEntry
-                key={`${it.title}-${i}`}
-                period={period}
-                title={it.title}
-                lines={[[it.company, typeLabel].filter(Boolean).join(" · ")]}
-              >
-                {bullets.length ? (
-                  <ul className="about-cv-entry-bullets">
-                    {bullets.map((b) => (
-                      <li key={b} className="flex gap-2 about-cv-copy leading-relaxed">
-                        <span className="mt-[0.4em] h-1 w-1 shrink-0 rounded-full bg-[var(--cv-accent)]" />
-                        <span>{b}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </CvEntry>
-            );
-          })}
-        </ol>
-      </div>
-    ) : null,
-    vis.education && cv.education.length > 0 ? (
-      <div key="education">
-        <PrintHeading icon={GraduationCap} title="Education" />
-        <ol className="about-cv-entries">
-          {cv.education.map((it, i) => {
-            const { lead, tail } = educationDetailLines(it);
-            return (
-              <CvEntry
-                key={`${it.school}-${i}`}
-                period={formatEducationPeriod(it) || it.period}
-                title={it.school}
-                lines={[lead, tail]}
-              />
-            );
-          })}
-        </ol>
-      </div>
-    ) : null,
-    vis.certification && cv.certifications.length > 0 ? (
-      <div key="certs">
-        <PrintHeading icon={BadgeCheck} title="Certification" />
-        <ol className="about-cv-entries">
-          {cv.certifications.map((it, i) => (
-            <CvEntry key={`${it.title}-${i}`} period={it.year} title={it.title} lines={[it.issuer]} />
-          ))}
-        </ol>
-      </div>
-    ) : null,
-    vis.awards && cv.awards.length > 0 ? (
-      <div key="awards">
-        <PrintHeading icon={Award} title="Awards" />
-        <ol className="about-cv-entries">
-          {cv.awards.map((it, i) => (
-            <CvEntry key={`${it.event}-${i}`} period={it.year} title={it.award} lines={[it.event]} />
-          ))}
-        </ol>
-      </div>
-    ) : null,
-  ].filter(Boolean);
+  const mainBlocks = model.sections.map((section) => (
+    <div key={section.key}>
+      <PrintHeading icon={SECTION_ICONS[section.key]} title={SECTION_TITLES[section.key]} />
+      <ol className="about-cv-entries">
+        {section.entries.map((it, i) => (
+          <CvEntry key={`${it.title}-${i}`} period={it.period} title={it.title} lines={it.lines}>
+            {it.bullets.length ? (
+              <ul className="about-cv-entry-bullets">
+                {it.bullets.map((b) => (
+                  <li key={b} className="flex gap-2 about-cv-copy leading-relaxed">
+                    <span className="mt-[0.4em] h-1 w-1 shrink-0 rounded-full bg-[var(--cv-accent)]" />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </CvEntry>
+        ))}
+      </ol>
+    </div>
+  ));
 
   // The print root (fixed 210mm) is the source of truth for fit: try the
   // normal density, fall back to compact, and report whether it still overflows.
@@ -541,7 +405,12 @@ export default function AboutDocumentPreviewDialog({
   const handleDownloadPdf = async () => {
     setDownloading(true);
     try {
-      await downloadAboutCvPdf(aboutCvPdfFilename(previewName === "Creator" ? "" : previewName));
+      const { photoSkipped } = await downloadAboutCvDocument({
+        input: doc,
+        theme: activeTheme,
+        filename: aboutCvPdfFilename(previewName === "Creator" ? "" : previewName),
+      });
+      if (photoSkipped) toast.info("สร้าง PDF แล้ว แต่ใส่รูปโปรไฟล์ไม่ได้");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "ดาวน์โหลด PDF ไม่สำเร็จ");
     } finally {

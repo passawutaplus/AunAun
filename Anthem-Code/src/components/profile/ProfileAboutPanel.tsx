@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Download, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { readAboutCvTheme, type AboutCvTheme } from "@/lib/aboutCvTheme";
-import { aboutCvPdfFilename, downloadAboutCvPdf } from "@/lib/aboutCvPdf";
+import { aboutCvPdfFilename } from "@/lib/aboutCvPdf";
+import { downloadAboutCvDocument } from "@/lib/aboutCvDownload";
 import { parseProfileCv } from "@/lib/profileCv";
 import { ProfileAboutToolbar } from "@/components/profile/ProfileAboutReadOnly";
 import ProfileAboutEditor from "@/components/profile/ProfileAboutEditor";
@@ -88,7 +89,12 @@ export default function ProfileAboutPanel({
   const handleDownloadPdf = async () => {
     setDownloading(true);
     try {
-      await downloadAboutCvPdf(pdfName);
+      const { photoSkipped } = await downloadAboutCvDocument({
+        input: printProps,
+        theme: liveTheme,
+        filename: pdfName,
+      });
+      if (photoSkipped) toast.info("สร้าง PDF แล้ว แต่ใส่รูปโปรไฟล์ไม่ได้");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "ดาวน์โหลด PDF ไม่สำเร็จ");
     } finally {
