@@ -17,6 +17,7 @@ import { DemoLoginHint, DemoSignupBlocked } from "@/components/DemoAuthHints";
 import { BRAND_STORAGE_NO_PERSIST } from "@/lib/brandConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthDialog } from "@/stores/authDialogStore";
+import { useAuthWallCovers } from "@/hooks/useAuthWallCovers";
 import { ReferralSignupHint } from "@/components/referral/ReferralSignupHint";
 import LegalSignupConsents from "@/components/legal/LegalSignupConsents";
 import { recordSignupConsents, markPendingSignupConsent } from "@/lib/legalCompliance";
@@ -80,10 +81,16 @@ const AuthDialog = () => {
     >
       {step === "choose" ? (
         <ChooseStep
-          mode={mode}
+          open={open}
           redirectPath={redirectPath}
-          onEmail={() => setStep("email")}
-          onSwitchMode={() => setMode(mode === "signup" ? "login" : "signup")}
+          onLoginEmail={() => {
+            setMode("login");
+            setStep("email");
+          }}
+          onSignupEmail={() => {
+            setMode("signup");
+            setStep("email");
+          }}
         />
       ) : (
         <>
@@ -130,78 +137,96 @@ const AuthDialog = () => {
   );
 };
 
-const WALL = [
-  "/auth-wall/orbit-14.webp",
-  "/auth-wall/orbit-13.webp",
-  "/auth-wall/orbit-12.webp",
-  "/auth-wall/orbit-15.webp",
-];
+const WALL_CSS = `
+@keyframes aw-up{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+@keyframes aw-down{from{transform:translateY(-50%)}to{transform:translateY(0)}}
+.aw-col{display:flex;flex-direction:column;gap:8px;will-change:transform}
+.aw-up{animation:aw-up 26s linear infinite}
+.aw-down{animation:aw-down 26s linear infinite}
+@media (prefers-reduced-motion: reduce){.aw-up,.aw-down{animation:none}}
+`;
+
+/** Three columns of random work covers drifting in opposite directions (a zig-zag wall). */
+const CoverWall = ({ covers }: { covers: string[] }) => {
+  const cols = [0, 1, 2].map((c) => covers.filter((_, i) => i % 3 === c));
+  return (
+    <div
+      aria-hidden
+      className="relative mt-5 h-[13.5rem] w-full overflow-hidden rounded-2xl"
+      style={{
+        WebkitMaskImage: "linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent)",
+        maskImage: "linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent)",
+      }}
+    >
+      <style>{WALL_CSS}</style>
+      <div className="grid h-full grid-cols-3 gap-2">
+        {cols.map((col, ci) => (
+          <div key={ci} className="overflow-hidden">
+            <div className={cn("aw-col", ci === 1 ? "aw-down" : "aw-up")}>
+              {[...col, ...col].map((src, i) => (
+                <img
+                  key={`${src}-${i}`}
+                  src={src}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="aspect-[4/5] w-full rounded-xl bg-muted object-cover"
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const ChooseStep = ({
-  mode,
+  open,
   redirectPath,
-  onEmail,
-  onSwitchMode,
+  onLoginEmail,
+  onSignupEmail,
 }: {
-  mode: "signup" | "login";
+  open: boolean;
   redirectPath?: string;
-  onEmail: () => void;
-  onSwitchMode: () => void;
+  onLoginEmail: () => void;
+  onSignupEmail: () => void;
 }) => {
-  const signup = mode === "signup";
+  const covers = useAuthWallCovers(9, open);
   return (
     <div className="flex flex-col items-center text-center">
       <BrandLogo size="sm" />
       <DialogTitle className="mt-5 text-[1.7rem] font-semibold leading-tight tracking-tight thai-display text-balance">
-        {signup ? "รวมผลงานและโอกาสไว้ในที่เดียว" : "ยินดีต้อนรับกลับมา"}
+        รวมผลงานและโอกาสไว้ในที่เดียว
       </DialogTitle>
-      <DialogDescription className="mt-2 text-sm text-muted-foreground thai-body">
-        {signup ? "เข้าร่วมชุมชนครีเอทีฟ สมัครไม่ถึง 1 นาที" : "เข้าสู่ระบบเพื่อใช้ฟีเจอร์ทั้งหมด"}
-      </DialogDescription>
+      <DialogDescription className="sr-only">เข้าสู่ระบบหรือสมัครด้วย Google หรืออีเมล</DialogDescription>
 
-      <div className="mt-5 grid w-full grid-cols-4 gap-2" aria-hidden>
-        {WALL.map((src, i) => (
-          <div key={src} className={cn("overflow-hidden rounded-xl bg-muted", i % 2 === 1 ? "mt-3" : "mb-3")}>
-            <img src={src} alt="" loading="lazy" className="aspect-[3/4] h-full w-full object-cover" />
-          </div>
-        ))}
-      </div>
+      <CoverWall covers={covers} />
 
-      <div className="mt-1 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
-        <span className="rounded-full bg-muted px-3 py-1">ฟรี</span>
-        <span className="rounded-full bg-muted px-3 py-1">สมัครไม่ถึง 1 นาที</span>
-        <span className="rounded-full bg-muted px-3 py-1">ข้อมูลเป็นของคุณ</span>
-      </div>
-
-      <div className="mt-6 w-full space-y-2.5">
-        {isDemoMode() && signup ? null : (
-          <SocialButtons
-            redirectTo={redirectPath}
-            label={signup ? "ต่อด้วย Google" : "เข้าสู่ระบบด้วย Google"}
-            buttonClassName="h-12 border-0 bg-foreground text-background hover:bg-foreground/90 hover:text-background"
-          />
-        )}
+      <div className="mt-5 w-full space-y-2.5">
+        <SocialButtons
+          redirectTo={redirectPath}
+          label="ต่อด้วย Google"
+          buttonClassName="h-12 border-0 bg-foreground text-background hover:bg-foreground/90 hover:text-background"
+        />
         <Button
           type="button"
           variant="outline"
-          onClick={onEmail}
+          onClick={onLoginEmail}
           className="h-12 w-full gap-2 rounded-xl border-border bg-transparent text-sm text-foreground hover:bg-muted hover:text-foreground"
         >
           <Mail className="h-4 w-4" aria-hidden />
-          {signup ? "ต่อด้วยอีเมล" : "เข้าสู่ระบบด้วยอีเมล"}
+          เข้าสู่ระบบด้วยอีเมล
         </Button>
       </div>
 
-      <p className="mt-4 text-xs text-muted-foreground">
-        {signup ? "มีบัญชีอยู่แล้ว?" : "ยังไม่มีบัญชี?"}{" "}
-        <button
-          type="button"
-          onClick={onSwitchMode}
-          className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
-        >
-          {signup ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
-        </button>
-      </p>
+      <button
+        type="button"
+        onClick={onSignupEmail}
+        className="mt-4 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        สมัครด้วยอีเมลอื่น
+      </button>
     </div>
   );
 };
