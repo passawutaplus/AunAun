@@ -24,7 +24,7 @@ function aplus1BaseUrl() {
   return APLUS1_SHOWCASE_URL.replace(/\/$/, "");
 }
 
-/** Public showcase feed (Aplus1). */
+/** Public showcase feed (SAMECOR). */
 export function aplus1ShowcaseUrl() {
   return `${aplus1BaseUrl()}/`;
 }
@@ -33,7 +33,7 @@ export function aplus1ShowcaseUrl() {
 export const anthemShowcaseUrl = aplus1ShowcaseUrl;
 
 /**
- * Handoff to Aplus1 profile — resolves `so1o_uid` when SSO is unified.
+ * Handoff to SAMECOR profile — resolves `so1o_uid` when SSO is unified.
  */
 export function aplus1ProfileUrl(so1oUserId?: string | null) {
   const base = aplus1BaseUrl();
@@ -49,7 +49,7 @@ export const anthemProfileUrl = aplus1ProfileUrl;
 export const FREE_QUOTATION_URL = "https://freelance-invoice-taupe.vercel.app/";
 
 /**
- * Target Supabase project for unified auth (Aplus1 backend).
+ * Target Supabase project for unified auth (SAMECOR backend).
  * Set VITE_SUPABASE_* in both apps to the same project when consolidating accounts.
  */
 export const UNIFIED_SUPABASE_PROJECT_ID =

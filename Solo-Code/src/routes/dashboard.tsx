@@ -205,7 +205,7 @@ function Dashboard() {
     trackFeature(`dashboard.${section}`);
   }, [section]);
 
-  // Aplus1 → So1o studio combined quote deep-link handoff
+  // SAMECOR → So1o studio combined quote deep-link handoff
   React.useEffect(() => {
     if (typeof window === "undefined" || !user?.id) return;
     if (studioUrlHandoffRef.current) return;
@@ -235,7 +235,7 @@ function Dashboard() {
     })();
   }, [updateSection, user?.id]);
 
-  // Aplus1 → So1o solo quotation deep-link handoff
+  // SAMECOR → So1o solo quotation deep-link handoff
   React.useEffect(() => {
     if (typeof window === "undefined" || !user?.id) return;
     if (new URLSearchParams(window.location.search).get("handoff") === "studio") return;
@@ -272,11 +272,11 @@ function Dashboard() {
       const notesParts: string[] = [];
       if (message) notesParts.push(message);
       if (deadline) notesParts.push(`กำหนดส่ง: ${deadline}`);
-      if (params.conversationId) notesParts.push(`แชท Aplus1: ${params.conversationId}`);
+      if (params.conversationId) notesParts.push(`แชท SAMECOR: ${params.conversationId}`);
 
       storeAnthemQuotationHandoff({
-        projectName: projectTitle || "งานจาก Aplus1",
-        clientName: clientName || "ลูกค้า Aplus1",
+        projectName: projectTitle || "งานจาก SAMECOR",
+        clientName: clientName || "ลูกค้า SAMECOR",
         clientEmail,
         clientPhone,
         endDate: deadline,

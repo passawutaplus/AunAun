@@ -1,5 +1,5 @@
 /**
- * Cross-link helper for the So1o ↔ Aplus1 ecosystem.
+ * Cross-link helper for the So1o ↔ SAMECOR ecosystem.
  */
 import { supabase } from "@/integrations/supabase/client";
 import { APLUS1_SHOWCASE_URL } from "@/lib/productLinks";
@@ -12,7 +12,7 @@ export type CrossLinkContext = {
 };
 
 /**
- * Build an Aplus1 URL with cross-link query params.
+ * Build an SAMECOR URL with cross-link query params.
  */
 export function aplus1Url(path: string, params: Record<string, string | undefined> = {}): string {
   const base = APLUS1_SHOWCASE_URL.replace(/\/$/, "");
@@ -27,7 +27,7 @@ export function aplus1Url(path: string, params: Record<string, string | undefine
 /** @deprecated use aplus1Url */
 export const anthemUrl = aplus1Url;
 
-/** Deep-link to Aplus1 portfolio editor with So1o job context. */
+/** Deep-link to SAMECOR portfolio editor with So1o job context. */
 export function aplus1PortfolioNewUrl(params: {
   jobTitle: string;
   clientName?: string | null;
@@ -60,7 +60,7 @@ export function aplus1PortfolioNewUrl(params: {
 /** @deprecated use aplus1PortfolioNewUrl */
 export const anthemPortfolioNewUrl = aplus1PortfolioNewUrl;
 
-/** Deep-link to Aplus1 portfolio editor with So1o Design Drill context. */
+/** Deep-link to SAMECOR portfolio editor with So1o Design Drill context. */
 export function aplus1DesignDrillUrl(params: {
   brief: string;
   description: string;

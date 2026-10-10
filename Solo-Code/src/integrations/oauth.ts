@@ -118,7 +118,7 @@ export async function signInWithOAuth(options?: {
   if (!ok) return {}; // user closed the popup or timed out — no toast, just re-enable the button
 
   // Main tab never left this page during the whole flow, so its history stays
-  // clean — no Google or Aplus1 pages to land on when the user presses back.
+  // clean — no Google or SAMECOR pages to land on when the user presses back.
   window.location.assign(afterAuth);
   return { redirected: true };
 }

@@ -1,4 +1,4 @@
-/** Session keys for cross-app quotation handoff (Aplus1 → So1o). */
+/** Session keys for cross-app quotation handoff (SAMECOR → So1o). */
 
 export const ANTHEM_QUOTATION_HANDOFF_KEY = "so1o.openQuotationFromAnthem";
 export const STUDIO_QUOTATION_HANDOFF_KEY = "so1o.openQuotationFromStudio";
@@ -133,7 +133,7 @@ export type ParsedStudioDashboardParams =
       members?: StudioQuotationHandoff["members"];
     };
 
-/** Parse Aplus1 → So1o studio combined quote deep-link params. */
+/** Parse SAMECOR → So1o studio combined quote deep-link params. */
 export function parseStudioDashboardParams(search: string): ParsedStudioDashboardParams {
   const sp = new URLSearchParams(search);
   const from = sp.get("from");
@@ -203,7 +203,7 @@ export const STUDIO_DASHBOARD_PARAM_KEYS = [
   "link_id",
 ] as const;
 
-/** Parse Aplus1 deep-link query params from dashboard URL (`from=anthem` legacy alias). */
+/** Parse SAMECOR deep-link query params from dashboard URL (`from=anthem` legacy alias). */
 export function parseAplus1DashboardParams(search: string): {
   fromAplus1: boolean;
   /** @deprecated use fromAplus1 */

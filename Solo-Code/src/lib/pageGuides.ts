@@ -210,7 +210,7 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
       "จัดเรียงลำดับที่อยากโชว์",
       "แชร์ลิงก์ portfolio ตอนเสนองาน",
     ],
-    tips: ["เชื่อมกับ Aplus1 ได้ถ้ามีบัญชี ecosystem"],
+    tips: ["เชื่อมกับ SAMECOR ได้ถ้ามีบัญชี ecosystem"],
   },
   assets: {
     title: "Assets",

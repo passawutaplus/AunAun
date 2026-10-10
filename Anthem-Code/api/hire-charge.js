@@ -233,7 +233,7 @@ export default async function handler(req, res) {
     const params = new URLSearchParams();
     params.set("amount", String(amountSatang));
     params.set("currency", "thb");
-    params.set("description", String(body.title || "Aplus1 hire").slice(0, 240));
+    params.set("description", String(body.title || "SAMECOR hire").slice(0, 240));
 
     if (method === "promptpay") {
       params.set("source[type]", "promptpay");

@@ -43,7 +43,7 @@ export const HELP_GUIDE_SEO = {
   "/help/plans": {
     title: "แพ็กเกจ & เครดิต AI — Free vs Pro",
     description:
-      "เปรียบเทียบแพ็ก Free Pro Pro+ In-House Credit AI storage white-label และ ecosystem So1o + Aplus1",
+      "เปรียบเทียบแพ็ก Free Pro Pro+ In-House Credit AI storage white-label และ ecosystem So1o + SAMECOR",
   },
   "/help/line": {
     title: "แจ้งเตือน LINE",

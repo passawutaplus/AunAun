@@ -1,4 +1,4 @@
-/** Aplus1 transactional email sender — separate from So1o / Lovable. */
+/** SAMECOR transactional email sender — separate from So1o / Lovable. */
 
 export const APLUS1_FROM_DOMAIN =
   (process.env.APLUS1_EMAIL_FROM_DOMAIN as string | undefined) ?? "aplus1.app";
@@ -8,7 +8,7 @@ export const APLUS1_SENDER_DOMAIN =
 
 export const APLUS1_EMAIL_FROM =
   (process.env.APLUS1_EMAIL_FROM as string | undefined) ??
-  `Aplus1 <noreply@${APLUS1_FROM_DOMAIN}>`;
+  `SAMECOR <noreply@${APLUS1_FROM_DOMAIN}>`;
 
 export function isAplus1SenderDomain(senderDomain: string | undefined | null): boolean {
   if (!senderDomain) return false;
