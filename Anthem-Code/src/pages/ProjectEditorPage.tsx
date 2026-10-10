@@ -2804,6 +2804,71 @@ const ProjectEditorPage = () => {
   const publishRemaining = collectPublishGaps().checklist.length;
   const publishLabel = publishRemaining > 0 ? `เผยแพร่ · เหลือ ${publishRemaining} อย่าง` : "เผยแพร่";
 
+  const renderDetailsExtras = (stacked: boolean) => (
+    <>
+          <ProjectContextEditorFields
+            value={projectContext}
+            onChange={patchProjectContext}
+            shortDescription={shortDescription}
+            onShortDescriptionChange={(v) => {
+              setShortDescription(v.slice(0, PROJECT_SHORT_DESCRIPTION_MAX));
+              clearPublishFieldError("shortDescription");
+            }}
+            enabled={contextEnabled}
+            onEnabledChange={setContextEnabled}
+            disabled={editorLocked}
+            shortDescriptionInvalid={publishFieldHighlight(publishFieldErrors.shortDescription)}
+          />
+
+          {user ? (
+            <div className={cn("grid grid-cols-1 gap-4", !stacked && "md:grid-cols-2")}>
+              <CollapsibleEditorCard
+                title="สิทธิ์การใช้งาน"
+                icon={Scale}
+                hint={getLicenseMeta(licenseType).shortLabel}
+              >
+                <LicensePicker
+                  hideHeading
+                  value={licenseType}
+                  onChange={(v) => {
+                    setLicenseType(v);
+                    if (v !== "custom") clearPublishFieldError("licenseNote");
+                  }}
+                  licenseNote={licenseNote}
+                  onLicenseNoteChange={(v) => {
+                    setLicenseNote(v);
+                    clearPublishFieldError("licenseNote");
+                  }}
+                  noteInvalid={publishFieldHighlight(publishFieldErrors.licenseNote)}
+                />
+                <AiDisclosureToggle
+                  enabled={aiAssisted}
+                  onEnabledChange={setAiAssisted}
+                  level={aiUseLevel}
+                  onLevelChange={setAiUseLevel}
+                />
+              </CollapsibleEditorCard>
+              <CollapsibleEditorCard
+                title="ไฟล์แนบ / ลิงก์"
+                icon={Paperclip}
+                hint={projectAssets.length > 0 ? `${projectAssets.length} รายการ` : undefined}
+              >
+                <ProjectAssetsEditor
+                  ref={projectAssetsEditorRef}
+                  bare
+                  assets={projectAssets}
+                  onChange={setProjectAssets}
+                  userId={user.id}
+                  folder={folderRef.current}
+                  projectId={editing && id && isUuid(id) ? id : undefined}
+                  tier={tier}
+                />
+              </CollapsibleEditorCard>
+            </div>
+          ) : null}
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-0">
       {/* Sticky header — full-bleed to align with Module / Work Details sidebars */}
@@ -3309,67 +3374,9 @@ const ProjectEditorPage = () => {
             />
           ) : null}
 
+          {uploadMode === "quick" ? null : (
           <div className="mx-auto w-full max-w-4xl space-y-6 border-t border-border/70 px-1 pt-6">
-          <ProjectContextEditorFields
-            value={projectContext}
-            onChange={patchProjectContext}
-            shortDescription={shortDescription}
-            onShortDescriptionChange={(v) => {
-              setShortDescription(v.slice(0, PROJECT_SHORT_DESCRIPTION_MAX));
-              clearPublishFieldError("shortDescription");
-            }}
-            enabled={contextEnabled}
-            onEnabledChange={setContextEnabled}
-            disabled={editorLocked}
-            shortDescriptionInvalid={publishFieldHighlight(publishFieldErrors.shortDescription)}
-          />
-
-          {user ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <CollapsibleEditorCard
-                title="สิทธิ์การใช้งาน"
-                icon={Scale}
-                hint={getLicenseMeta(licenseType).shortLabel}
-              >
-                <LicensePicker
-                  hideHeading
-                  value={licenseType}
-                  onChange={(v) => {
-                    setLicenseType(v);
-                    if (v !== "custom") clearPublishFieldError("licenseNote");
-                  }}
-                  licenseNote={licenseNote}
-                  onLicenseNoteChange={(v) => {
-                    setLicenseNote(v);
-                    clearPublishFieldError("licenseNote");
-                  }}
-                  noteInvalid={publishFieldHighlight(publishFieldErrors.licenseNote)}
-                />
-                <AiDisclosureToggle
-                  enabled={aiAssisted}
-                  onEnabledChange={setAiAssisted}
-                  level={aiUseLevel}
-                  onLevelChange={setAiUseLevel}
-                />
-              </CollapsibleEditorCard>
-              <CollapsibleEditorCard
-                title="ไฟล์แนบ / ลิงก์"
-                icon={Paperclip}
-                hint={projectAssets.length > 0 ? `${projectAssets.length} รายการ` : undefined}
-              >
-                <ProjectAssetsEditor
-                  ref={projectAssetsEditorRef}
-                  bare
-                  assets={projectAssets}
-                  onChange={setProjectAssets}
-                  userId={user.id}
-                  folder={folderRef.current}
-                  projectId={editing && id && isUuid(id) ? id : undefined}
-                  tier={tier}
-                />
-              </CollapsibleEditorCard>
-            </div>
-          ) : null}
+          {renderDetailsExtras(false)}
 
           {!isAplus1LaunchMinimal() ? (
             <section className="space-y-4 rounded-2xl border border-border bg-card/40 p-4">
@@ -3382,6 +3389,7 @@ const ProjectEditorPage = () => {
             </section>
           ) : null}
           </div>
+          )}
           </div>
         </div>
         </div>
@@ -3583,6 +3591,7 @@ const ProjectEditorPage = () => {
             )}
 
             </CollapsibleEditorCard>
+            {uploadMode === "quick" ? renderDetailsExtras(true) : null}
           </div>
 
         </ProjectEditorMetaSidebar>
