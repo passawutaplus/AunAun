@@ -1394,7 +1394,6 @@ export function ProjectCanvasEditor({
           <MascotCharacter className="-mt-2 mb-1 h-24 w-28" />
         )}
         <span className="font-display text-xl font-normal tracking-tight text-foreground">Start Here!! Drag &amp; Drop</span>
-        <span className="text-sm text-muted-foreground">หรือคลิกเพื่อเลือกรูป · รูปแรกจะเป็นภาพปกให้อัตโนมัติ</span>
         <span className="text-xs text-muted-foreground">อยากใส่ข้อความ วิดีโอ หรือจัดเลย์เอาต์? เลือกจากแถบด้านล่างได้เลย</span>
         {uploading ? (
           <CanvasUploadProgress label={uploadStageLabel} percent={uploadStagePercent} onCancel={onCancelUpload} />
