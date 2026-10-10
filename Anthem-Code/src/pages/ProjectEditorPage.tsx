@@ -3075,15 +3075,6 @@ const ProjectEditorPage = () => {
           <div className="hidden lg:flex items-center gap-2 shrink-0">
             <Button
               variant="outline"
-              size="sm"
-              className="rounded-full"
-              onClick={() => setDetailsOpen(true)}
-              disabled={editorLocked}
-            >
-              {detailsLabel}
-            </Button>
-            <Button
-              variant="outline"
               size="icon"
               className="rounded-full shrink-0"
               onClick={() => {
@@ -3098,16 +3089,26 @@ const ProjectEditorPage = () => {
             <Button
               variant="outline"
               size="sm"
+              className="rounded-full"
+              onClick={() => setDetailsOpen(true)}
+              disabled={editorLocked}
+            >
+              {detailsLabel}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => void handleSaveDraft(true)}
               disabled={editorLocked}
               className="rounded-full"
+              title="บันทึกฉบับร่าง"
             >
               {savingDraft ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Save className="w-4 h-4 mr-1" />
+                <Save className="w-4 h-4" />
               )}
-              บันทึกฉบับร่าง
+              <span className="sr-only">บันทึกฉบับร่าง</span>
             </Button>
             <div className="relative">
               <Button
@@ -3391,10 +3392,6 @@ const ProjectEditorPage = () => {
               }}
               disabled={editorLocked}
               invalid={!!publishFieldErrors.title}
-              statusLabel={status === "Published" ? "เผยแพร่แล้ว" : "ยังไม่เผยแพร่"}
-              hasCategory={!!categoryParentId}
-              moduleCount={contentBlocks.length}
-              imageCount={countMediaByKind(mediaItemsFromBlocks(contentBlocks), "image")}
             />
           )}
 
