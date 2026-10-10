@@ -3056,8 +3056,8 @@ const ProjectEditorPage = () => {
               onClick={() => setTourOpen(true)}
             />
             <div className="min-w-0">
-              <h1 className="text-base font-semibold text-foreground truncate">
-                {editing ? "แก้ไขผลงาน" : "ลงผลงานใหม่"}
+              <h1 className="truncate font-display text-2xl font-normal tracking-tight text-foreground">
+                {editing ? "Edit Project" : "New Project"}
               </h1>
             </div>
             {isLaunchFullGridEditorEnabled() ? (
