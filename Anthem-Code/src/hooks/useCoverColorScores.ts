@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import {
+  parseColorList,
   peekSearchPalette,
-  scorePaletteAgainstColor,
+  scorePaletteAgainstColors,
   subscribeSearchPalettes,
   warmSearchPalettes,
 } from "@/lib/colorSearch";
 
 export type ColorSearchTarget = { id: string; image: string };
 
-/** Measure cover colors in the background, then score them against the picked hex. */
+/** Measure cover colors in the background, then score them against the picked colors ("#a,#b,#c"). */
 export function useCoverColorScores(items: ColorSearchTarget[], hex: string | null): {
   scores: Map<string, number>;
   pending: boolean;
@@ -17,10 +18,11 @@ export function useCoverColorScores(items: ColorSearchTarget[], hex: string | nu
   measured: number;
 } {
   const [, setTick] = useState(0);
+  const hexes = parseColorList(hex);
 
   useEffect(() => subscribeSearchPalettes(() => setTick((n) => n + 1)), []);
 
-  const urlKey = hex
+  const urlKey = hexes.length
     ? items
         .map((item) => item.image.trim())
         .filter(Boolean)
@@ -29,15 +31,15 @@ export function useCoverColorScores(items: ColorSearchTarget[], hex: string | nu
     : "";
 
   useEffect(() => {
-    if (!hex || !urlKey) return;
+    if (!hexes.length || !urlKey) return;
     warmSearchPalettes(urlKey.split("\0"));
-  }, [hex, urlKey]);
+  }, [hexes.length, urlKey]);
 
   const scores = new Map<string, number>();
   let pending = false;
   let measured = 0;
   let unreadable = 0;
-  if (hex) {
+  if (hexes.length) {
     for (const item of items) {
       const url = item.image.trim();
       if (!url) {
@@ -51,7 +53,7 @@ export function useCoverColorScores(items: ColorSearchTarget[], hex: string | nu
       }
       measured += 1;
       if (!palette) unreadable += 1;
-      scores.set(item.id, palette ? scorePaletteAgainstColor(hex, palette) : 0);
+      scores.set(item.id, palette ? scorePaletteAgainstColors(hexes, palette) : 0);
     }
   }
   return { scores, pending, unreadable, measured };

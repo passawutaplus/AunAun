@@ -16,7 +16,7 @@ import FeedToolbar from "@/components/feed/FeedToolbar";
 import HomeHeroWash from "@/components/feed/HomeHeroWash";
 import SeoHead from "@/components/SeoHead";
 import { shouldNoindexSearchParams } from "@/lib/seo";
-import { COLOR_MATCH_MIN, normalizeColorQuery } from "@/lib/colorSearch";
+import { COLOR_MATCH_MIN, normalizeColorList } from "@/lib/colorSearch";
 import { similarSearchSuggestions } from "@/lib/searchSuggestions";
 import { useCoverColorScores } from "@/hooks/useCoverColorScores";
 import DrillFeedPanel from "@/components/drill/DrillFeedPanel";
@@ -109,7 +109,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const showFirstPostLabel = useShowFirstPostLabel(user?.id);
   const [search, setSearch] = useState("");
   const [colorQuery, setColorQuery] = useState<string | null>(() =>
-    normalizeColorQuery(searchParams.get("color")),
+    normalizeColorList(searchParams.get("color")),
   );
   /** Hero field searches the full project catalog and falls back to nearest matches. */
   const [heroProjectSearch, setHeroProjectSearch] = useState(false);
@@ -309,7 +309,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   };
 
   const applyColorQuery = (hex: string | null) => {
-    const next = normalizeColorQuery(hex);
+    const next = normalizeColorList(hex);
     setColorQuery(next);
     const params = new URLSearchParams(searchParams);
     if (next) params.set("color", next);
@@ -473,7 +473,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   }, [searchParams]);
 
   useEffect(() => {
-    const next = normalizeColorQuery(searchParams.get("color"));
+    const next = normalizeColorList(searchParams.get("color"));
     setColorQuery(next);
     if (!next) return;
     const view = searchParams.get("mode");

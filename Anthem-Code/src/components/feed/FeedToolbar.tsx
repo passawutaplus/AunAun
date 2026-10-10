@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
+import { parseColorList } from "@/lib/colorSearch";
 import { ArrowRight, Plus, X } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { ScrollBlur } from "@/components/ScrollBlur";
@@ -469,6 +470,16 @@ const FeedToolbar = ({
                 {catalogTitle}
               </h2>
               <div data-feed-mode-cluster="" className="col-start-2 row-start-1 flex min-w-0 items-center justify-end gap-3">
+                {showCreate && !isCommunity ? (
+                  <button
+                    type="button"
+                    onClick={onCreateClick}
+                    className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-foreground px-4 text-sm font-medium text-background transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  >
+                    <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                    {isObjects ? "ลงสินค้าใหม่" : "ลงผลงานใหม่"}
+                  </button>
+                ) : null}
                 <div className="shrink-0">
                   <SearchBar
                     value={search}
@@ -811,12 +822,16 @@ const FeedToolbar = ({
             onClick={() => onColorQueryChange?.(null)}
             className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-1 text-[11px] text-foreground"
           >
-            <span
-              aria-hidden
-              className="h-3 w-3 rounded-full border border-black/10"
-              style={{ backgroundColor: colorQuery }}
-            />
-            สี {colorQuery}
+            <span aria-hidden className="flex -space-x-1">
+              {parseColorList(colorQuery).map((hex) => (
+                <span
+                  key={hex}
+                  className="h-3 w-3 rounded-full border border-background shadow-[0_0_0_1px_rgba(0,0,0,0.12)]"
+                  style={{ backgroundColor: hex }}
+                />
+              ))}
+            </span>
+            {parseColorList(colorQuery).length > 1 ? `${parseColorList(colorQuery).length} สี` : `สี ${colorQuery}`}
             <X className="h-3 w-3 text-muted-foreground" />
             <span className="sr-only">ล้างสี</span>
           </button>
