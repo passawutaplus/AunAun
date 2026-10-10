@@ -188,12 +188,12 @@ export const PLAN_COMPARISON_CATEGORIES: PlanComparisonCategory[] = [
   },
   {
     id: "an1hem",
-    title: "Aplus1 Showcase",
+    title: "SAMECOR Showcase",
     description: "หน้าร้องโชว์ผลงานและรับงานจากชุมชน",
     info: "โชว์เคสผลงานรับงานจากชุมชน — บัญชีเดียวกับ So1o สมัคร Pro ครั้งเดียวใช้ทั้งสองแอป",
     rows: [
       {
-        label: "So1o + Aplus1 บัญชีเดียว",
+        label: "So1o + SAMECOR บัญชีเดียว",
         values: {
           free: ecosystemUnlock("free"),
           pro: ecosystemUnlock("pro"),
@@ -202,7 +202,7 @@ export const PLAN_COMPARISON_CATEGORIES: PlanComparisonCategory[] = [
         },
       },
       {
-        label: "Aplus1 Storage",
+        label: "SAMECOR Storage",
         values: {
           free: ANTHEM_STORAGE_LABEL.free,
           pro: ANTHEM_STORAGE_LABEL.pro,
@@ -251,7 +251,7 @@ export const PLAN_COMPARISON_CATEGORIES: PlanComparisonCategory[] = [
   {
     id: "integrations",
     title: "การเชื่อมต่อ & แจ้งเตือน",
-    info: "LINE แจ้งเตือนเมื่องาน/การชำระมีอัปเดต — Pro+ จะมี Auto CRM จากแชท Aplus1 (เร็วๆ นี้)",
+    info: "LINE แจ้งเตือนเมื่องาน/การชำระมีอัปเดต — Pro+ จะมี Auto CRM จากแชท SAMECOR (เร็วๆ นี้)",
     rows: [
       {
         label: "LINE แจ้งเตือน",
@@ -263,7 +263,7 @@ export const PLAN_COMPARISON_CATEGORIES: PlanComparisonCategory[] = [
         },
       },
       {
-        label: "Auto CRM จากแชท Aplus1",
+        label: "Auto CRM จากแชท SAMECOR",
         values: {
           free: false,
           pro: false,
@@ -289,7 +289,7 @@ export const PLAN_COMPARISON_CATEGORIES: PlanComparisonCategory[] = [
         },
       },
       {
-        label: "ใบเสนอราคารวม Studio (Aplus1 nest)",
+        label: "ใบเสนอราคารวม Studio (SAMECOR nest)",
         values: {
           free: false,
           pro: false,

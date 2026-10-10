@@ -34,6 +34,6 @@ export default async function handler(req, res) {
     message:
       kind === "reconcile"
         ? "compare Omise vs ledger and alert admin — do not auto-adjust"
-        : "enqueue payout candidates per Aplus1 payout policy",
+        : "enqueue payout candidates per SAMECOR payout policy",
   });
 }

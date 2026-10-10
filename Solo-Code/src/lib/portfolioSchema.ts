@@ -239,6 +239,6 @@ export const LINK_PLATFORM_OPTIONS = [
   { value: "github", label: "GitHub" },
   { value: "linkedin", label: "LinkedIn" },
   { value: "instagram", label: "Instagram" },
-  { value: "pixel100", label: "Aplus1" },
+  { value: "pixel100", label: "SAMECOR" },
   { value: "other", label: "อื่นๆ" },
 ] as const;

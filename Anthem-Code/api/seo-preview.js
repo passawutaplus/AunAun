@@ -37,7 +37,7 @@ function shell({ title, description, url, image, noindex, jsonLd, type }) {
   <meta name="description" content="${escapeHtml(description)}" />
   <meta name="robots" content="${robots}" />
   <link rel="canonical" href="${escapeHtml(url)}" />
-  <meta property="og:site_name" content="Aplus1" />
+  <meta property="og:site_name" content="SAMECOR" />
   <meta property="og:title" content="${escapeHtml(title)}" />
   <meta property="og:description" content="${escapeHtml(description)}" />
   <meta property="og:url" content="${escapeHtml(url)}" />
@@ -56,7 +56,7 @@ function shell({ title, description, url, image, noindex, jsonLd, type }) {
   <main>
     <h1>${escapeHtml(title)}</h1>
     <p>${escapeHtml(description)}</p>
-    <p><a href="${escapeHtml(url)}">เปิดใน Aplus1</a></p>
+    <p><a href="${escapeHtml(url)}">เปิดใน SAMECOR</a></p>
   </main>
 </body>
 </html>`;
@@ -90,9 +90,9 @@ function isKnownPublicPath(pathname) {
 
 async function resolveMeta(pathname, base) {
   const defaultMeta = {
-    title: "Aplus1 — 1 โปรไฟล์ สู่ 100+ โอกาส",
+    title: "SAMECOR — 1 โปรไฟล์ สู่ 100+ โอกาส",
     description:
-      "Aplus1 ช่วยค้นหาครีเอเตอร์จากผลงานจริง — ดูสไตล์และบริบทงานก่อนคุยโอกาส ไม่ใช่แพ็กเกจราคา",
+      "SAMECOR ช่วยค้นหาครีเอเตอร์จากผลงานจริง — ดูสไตล์และบริบทงานก่อนคุยโอกาส ไม่ใช่แพ็กเกจราคา",
     url: `${base}${pathname === "/" ? "/" : pathname}`,
     image: `${base}/icons/icon-512.png`,
     noindex: false,
@@ -104,8 +104,8 @@ async function resolveMeta(pathname, base) {
   if (!isKnownPublicPath(pathname)) {
     return {
       ...defaultMeta,
-      title: "ไม่พบหน้า | Aplus1",
-      description: "หน้าที่คุณค้นหาไม่มีบน Aplus1",
+      title: "ไม่พบหน้า | SAMECOR",
+      description: "หน้าที่คุณค้นหาไม่มีบน SAMECOR",
       noindex: true,
       status: 404,
     };
@@ -140,7 +140,7 @@ async function resolveMeta(pathname, base) {
       return {
         ...defaultMeta,
         noindex: true,
-        title: "ไม่พบผลงาน | Aplus1",
+        title: "ไม่พบผลงาน | SAMECOR",
         status: 404,
       };
     }
@@ -150,7 +150,7 @@ async function resolveMeta(pathname, base) {
         : `${base}${p.cover_url.startsWith("/") ? "" : "/"}${p.cover_url}`
       : defaultMeta.image;
     return {
-      title: `${p.title} | Aplus1`,
+      title: `${p.title} | SAMECOR`,
       description: (p.description || p.title || "").slice(0, 160),
       url: `${base}/project/${p.id}`,
       image: cover,
@@ -179,13 +179,13 @@ async function resolveMeta(pathname, base) {
       return {
         ...defaultMeta,
         noindex: true,
-        title: "ไม่พบงาน | Aplus1",
+        title: "ไม่พบงาน | SAMECOR",
         status: 404,
       };
     }
     const open = j.status === "open";
     return {
-      title: `${j.title} | Aplus1`,
+      title: `${j.title} | SAMECOR`,
       description: (j.description || j.title || "").slice(0, 160),
       url: `${base}/jobs/${j.id}`,
       image: j.cover_image_url || defaultMeta.image,
@@ -219,7 +219,7 @@ async function resolveMeta(pathname, base) {
       return {
         ...defaultMeta,
         noindex: true,
-        title: "ไม่พบโปรไฟล์ | Aplus1",
+        title: "ไม่พบโปรไฟล์ | SAMECOR",
         status: 404,
       };
     }
@@ -227,8 +227,8 @@ async function resolveMeta(pathname, base) {
     const path = profile.username ? `/@${profile.username}` : `/u/${profile.user_id}`;
     const thin = !(profile.bio && profile.bio.trim().length >= 40);
     return {
-      title: `${name} | Aplus1`,
-      description: (profile.bio || `ดูพอร์ตโฟลิโอของ ${name} บน Aplus1`).slice(0, 160),
+      title: `${name} | SAMECOR`,
+      description: (profile.bio || `ดูพอร์ตโฟลิโอของ ${name} บน SAMECOR`).slice(0, 160),
       url: `${base}${path}`,
       image: profile.avatar_url || defaultMeta.image,
       noindex: thin,
@@ -245,8 +245,8 @@ async function resolveMeta(pathname, base) {
   if (pathname.startsWith("/explore/")) {
     return {
       ...defaultMeta,
-      title: `สำรวจผลงาน | Aplus1`,
-      description: "สำรวจผลงานตามเครื่องมือและแท็กบน Aplus1",
+      title: `สำรวจผลงาน | SAMECOR`,
+      description: "สำรวจผลงานตามเครื่องมือและแท็กบน SAMECOR",
       url: `${base}${pathname}`,
     };
   }

@@ -26,7 +26,7 @@ export const Route = createFileRoute("/llms.txt")({
 
 ## Related products (external)
 
-- [Aplus1 Community Showcase](${ANTHEM_SHOWCASE_URL}): ฟีดผลงานชุมชนฟรีแลนซ์สไตล์ Pinterest — แยกจาก My Desk
+- [SAMECOR Community Showcase](${ANTHEM_SHOWCASE_URL}): ฟีดผลงานชุมชนฟรีแลนซ์สไตล์ Pinterest — แยกจาก My Desk
 `;
         return new Response(body, {
           status: 200,

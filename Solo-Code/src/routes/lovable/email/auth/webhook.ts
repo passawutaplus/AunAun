@@ -399,7 +399,7 @@ async function deliverAuthEmail(
 
       });
 
-      console.log("Aplus1 auth email sent via Resend", {
+      console.log("SAMECOR auth email sent via Resend", {
 
         emailType,
 
