@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { User as UserIcon, Loader2 } from "lucide-react";
+import { User as UserIcon, Loader2, ChevronLeft, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { SocialButtons, AuthEmailSeparator } from "@/components/auth/SocialButtons";
@@ -38,6 +38,11 @@ const AuthDialog = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  // First screen is just two choices (Google / e-mail); the forms open only after "e-mail".
+  const [step, setStep] = useState<"choose" | "email">("choose");
+  useEffect(() => {
+    if (open) setStep("choose");
+  }, [open]);
 
   // Auto-close on successful login — send first-time users home for interest survey
   useEffect(() => {
@@ -73,43 +78,47 @@ const AuthDialog = () => {
       bodyClassName="px-6 sm:px-7 pt-6 pb-6"
       showGrabHandle
     >
-      <div className="mb-4">
-        <BrandLogo size="sm" />
-      </div>
+      {step === "choose" ? (
+        <ChooseStep
+          mode={mode}
+          redirectPath={redirectPath}
+          onEmail={() => setStep("email")}
+          onSwitchMode={() => setMode(mode === "signup" ? "login" : "signup")}
+        />
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={() => setStep("choose")}
+            className="mb-3 -ml-1 inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+            กลับ
+          </button>
 
-      <DialogTitle className="text-xl font-medium tracking-tight thai-display">
-        {mode === "signup" ? "สมัครสมาชิกเพื่อใช้งาน" : "ยินดีต้อนรับกลับมา 👋"}
-      </DialogTitle>
-      <DialogDescription className="text-sm text-muted-foreground mt-1 thai-body">
-        {mode === "signup"
-          ? "เข้าร่วมชุมชนฟรีแลนซ์ — ใช้เวลาไม่ถึง 1 นาที"
-          : "เข้าสู่ระบบเพื่อใช้ฟีเจอร์ทั้งหมด"}
-      </DialogDescription>
+          <DialogTitle className="text-xl font-medium tracking-tight thai-display">
+            {mode === "signup" ? "สมัครด้วยอีเมล" : "เข้าสู่ระบบด้วยอีเมล"}
+          </DialogTitle>
+          <DialogDescription className="sr-only">กรอกอีเมลและรหัสผ่านเพื่อดำเนินการต่อ</DialogDescription>
 
-      <Tabs value={mode} onValueChange={(v) => setMode(v as "signup" | "login")} className="w-full mt-5">
-        <TabsList className="grid w-full grid-cols-2 mb-4 rounded-xl bg-muted/60 p-1 h-11">
-          <TabsTrigger value="signup" className="rounded-lg">สมัครสมาชิก</TabsTrigger>
-          <TabsTrigger value="login" className="rounded-lg">เข้าสู่ระบบ</TabsTrigger>
-        </TabsList>
+          <Tabs value={mode} onValueChange={(v) => setMode(v as "signup" | "login")} className="w-full mt-4">
+            <TabsList className="grid w-full grid-cols-2 mb-4 rounded-xl bg-muted/60 p-1 h-11">
+              <TabsTrigger value="signup" className="rounded-lg">สมัครสมาชิก</TabsTrigger>
+              <TabsTrigger value="login" className="rounded-lg">เข้าสู่ระบบ</TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="signup" className="space-y-3.5 mt-0">
-          {isDemoMode() ? null : (
-            <>
-              <SocialButtons redirectTo={redirectPath} />
-              <AuthEmailSeparator />
-            </>
-          )}
-          <SignupForm onSwitch={() => setMode("login")} />
-        </TabsContent>
+            <TabsContent value="signup" className="space-y-3.5 mt-0">
+              <SignupForm onSwitch={() => setMode("login")} />
+            </TabsContent>
 
-        <TabsContent value="login" className="space-y-3.5 mt-0">
-          <SocialButtons redirectTo={redirectPath} />
-          <AuthEmailSeparator />
-          <LoginForm onSwitch={() => setMode("signup")} />
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="login" className="space-y-3.5 mt-0">
+              <LoginForm onSwitch={() => setMode("signup")} />
+            </TabsContent>
+          </Tabs>
+        </>
+      )}
 
-      <p className="mt-5 text-center text-[11px] text-muted-foreground">
+      <p className="mt-6 text-center text-[11px] leading-relaxed text-muted-foreground">
         ดำเนินการต่อเท่ากับยอมรับ{" "}
         <Link to="/legal/terms" onClick={close} className="hover:text-foreground underline underline-offset-2">ข้อกำหนด</Link>
         {" "}และ{" "}
@@ -118,6 +127,82 @@ const AuthDialog = () => {
         <Link to="/legal/cookies" onClick={close} className="hover:text-foreground underline underline-offset-2">คุกกี้</Link>
       </p>
     </ResponsiveOverlay>
+  );
+};
+
+const WALL = [
+  "/auth-wall/orbit-14.webp",
+  "/auth-wall/orbit-13.webp",
+  "/auth-wall/orbit-12.webp",
+  "/auth-wall/orbit-15.webp",
+];
+
+const ChooseStep = ({
+  mode,
+  redirectPath,
+  onEmail,
+  onSwitchMode,
+}: {
+  mode: "signup" | "login";
+  redirectPath?: string;
+  onEmail: () => void;
+  onSwitchMode: () => void;
+}) => {
+  const signup = mode === "signup";
+  return (
+    <div className="flex flex-col items-center text-center">
+      <BrandLogo size="sm" />
+      <DialogTitle className="mt-5 text-[1.7rem] font-semibold leading-tight tracking-tight thai-display text-balance">
+        {signup ? "รวมผลงานและโอกาสไว้ในที่เดียว" : "ยินดีต้อนรับกลับมา"}
+      </DialogTitle>
+      <DialogDescription className="mt-2 text-sm text-muted-foreground thai-body">
+        {signup ? "เข้าร่วมชุมชนครีเอทีฟ สมัครไม่ถึง 1 นาที" : "เข้าสู่ระบบเพื่อใช้ฟีเจอร์ทั้งหมด"}
+      </DialogDescription>
+
+      <div className="mt-5 grid w-full grid-cols-4 gap-2" aria-hidden>
+        {WALL.map((src, i) => (
+          <div key={src} className={cn("overflow-hidden rounded-xl bg-muted", i % 2 === 1 ? "mt-3" : "mb-3")}>
+            <img src={src} alt="" loading="lazy" className="aspect-[3/4] h-full w-full object-cover" />
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
+        <span className="rounded-full bg-muted px-3 py-1">ฟรี</span>
+        <span className="rounded-full bg-muted px-3 py-1">สมัครไม่ถึง 1 นาที</span>
+        <span className="rounded-full bg-muted px-3 py-1">ข้อมูลเป็นของคุณ</span>
+      </div>
+
+      <div className="mt-6 w-full space-y-2.5">
+        {isDemoMode() && signup ? null : (
+          <SocialButtons
+            redirectTo={redirectPath}
+            label={signup ? "ต่อด้วย Google" : "เข้าสู่ระบบด้วย Google"}
+            buttonClassName="h-12 border-0 bg-foreground text-background hover:bg-foreground/90 hover:text-background"
+          />
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onEmail}
+          className="h-12 w-full gap-2 rounded-xl border-border bg-transparent text-sm text-foreground hover:bg-muted hover:text-foreground"
+        >
+          <Mail className="h-4 w-4" aria-hidden />
+          {signup ? "ต่อด้วยอีเมล" : "เข้าสู่ระบบด้วยอีเมล"}
+        </Button>
+      </div>
+
+      <p className="mt-4 text-xs text-muted-foreground">
+        {signup ? "มีบัญชีอยู่แล้ว?" : "ยังไม่มีบัญชี?"}{" "}
+        <button
+          type="button"
+          onClick={onSwitchMode}
+          className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
+        >
+          {signup ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
+        </button>
+      </p>
+    </div>
   );
 };
 
