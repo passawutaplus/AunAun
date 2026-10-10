@@ -1,5 +1,3 @@
-import type { ProjectContentBlock } from "@/lib/projectContentBlocks";
-
 /** Quick drop = one-column fast post. Studio = full module editor. */
 export type UploadMode = "quick" | "studio";
 
@@ -21,12 +19,3 @@ export function writeUploadMode(mode: UploadMode): void {
   }
 }
 
-/** Quick drop can show single images and plain body text only. */
-export function isQuickDropCompatible(blocks: ProjectContentBlock[], editorMode: string): boolean {
-  if (editorMode !== "casual") return false;
-  return blocks.every((b) => {
-    if (b.type === "body") return true;
-    if (b.type === "image") return !b.urls?.length && (!b.mediaLayout || b.mediaLayout === "single");
-    return false;
-  });
-}

@@ -91,8 +91,8 @@ import {
 import { CanvasTemplatePreviewDialog } from "@/components/project/CanvasTemplatePreviewDialog";
 import { ProjectSeriesPicker } from "@/components/project/ProjectEditorSearchSelects";
 import { ProjectTaxonomyPicker } from "@/components/project/ProjectTaxonomyPicker";
-import { QuickDropPanel } from "@/components/project/QuickDropPanel";
-import { isQuickDropCompatible, readUploadMode, writeUploadMode, type UploadMode } from "@/lib/uploadMode";
+import { AddModuleBar } from "@/components/project/AddModuleBar";
+import { readUploadMode, writeUploadMode, type UploadMode } from "@/lib/uploadMode";
 import {
   inferTaxonomySelection,
   mergeCategorySubTag,
@@ -709,17 +709,6 @@ const ProjectEditorPage = () => {
           ? parseEditorMode((existing as { editor_mode?: string }).editor_mode)
           : "casual",
       );
-      // Quick drop only shows single images + body text; richer works open in Studio (preference stays).
-      if (
-        !isQuickDropCompatible(
-          nextCanvas,
-          isLaunchFullGridEditorEnabled()
-            ? parseEditorMode((existing as { editor_mode?: string }).editor_mode)
-            : "casual",
-        )
-      ) {
-        setUploadModeState("studio");
-      }
       setFlexGridLayout(storedFlexLayout);
       setFlexGridSelection([]);
       flexHistory.resetHistory();
@@ -2839,27 +2828,16 @@ const ProjectEditorPage = () => {
                 ] as const
               ).map((m) => {
                 const active = uploadMode === m.value;
-                const blocked = m.value === "quick" && !isQuickDropCompatible(contentBlocks, editorMode);
                 return (
                   <button
                     key={m.value}
                     type="button"
                     role="tab"
                     aria-selected={active}
-                    title={blocked ? "ผลงานนี้มีโมดูลที่ Quick drop แสดงไม่ได้ ใช้ Studio แทน" : undefined}
-                    onClick={() => {
-                      if (blocked) {
-                        toast.message("ผลงานนี้มีโมดูลที่ Quick drop แสดงไม่ได้", {
-                          description: "ข้อมูลยังอยู่ครบ แก้ต่อใน Studio ได้เลย",
-                        });
-                        return;
-                      }
-                      setUploadMode(m.value);
-                    }}
+                    onClick={() => setUploadMode(m.value)}
                     className={cn(
                       "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                       active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-                      blocked && "opacity-50",
                     )}
                   >
                     {m.label}
@@ -2985,62 +2963,9 @@ const ProjectEditorPage = () => {
         </div>
       ) : null}
 
-      {uploadMode === "quick" ? (
-        <QuickDropPanel
-          coverUrl={cover}
-          imageUrls={contentBlocks.filter((b) => b.type === "image" && b.url).map((b) => b.url as string)}
-          uploading={uploadingGallery || uploadingCover}
-          disabled={editorLocked}
-          onFiles={(files) => void handleCanvasDropFiles(files)}
-          onRemoveImage={(url) => {
-            const rest = contentBlocks.filter((b) => b.url !== url);
-            setContentBlocks(rest);
-            if (cover === url) setCover(rest.find((b) => b.type === "image" && b.url)?.url ?? "");
-          }}
-          title={title}
-          onTitleChange={(value) => {
-            setTitle(value);
-            clearPublishFieldError("title");
-          }}
-          titleRef={titleInputRef}
-          titleInvalid={!!publishFieldErrors.title}
-          taxonomy={
-            <ProjectTaxonomyPicker
-              parentId={categoryParentId}
-              subId={categorySubId}
-              disabled={editorLocked}
-              invalid={publishFieldHighlight(publishFieldErrors.category)}
-              onChange={({ parentId, subId }) => {
-                setCategoryParentId(parentId);
-                setCategorySubId(subId);
-                if (parentId) {
-                  setCategory(resolveDbCategory(parentId, subId));
-                  setTags((prev) => mergeCategorySubTag(prev, subId));
-                } else {
-                  setCategory("");
-                  setTags((prev) => mergeCategorySubTag(prev, null));
-                }
-                clearPublishFieldError("category");
-              }}
-            />
-          }
-          shortDescription={shortDescription}
-          onShortDescriptionChange={setShortDescription}
-          shortDescriptionMax={PROJECT_SHORT_DESCRIPTION_MAX}
-          defaultsSummary={[
-            licenseType === "all_rights" ? "สงวนสิทธิ์ทั้งหมด" : "สิทธิ์: กำหนดเอง",
-            allowCollab ? "รับงาน: คอลแลป" : "ไม่รับคอลแลป",
-            ...(allowHire ? ["รับจ้างงาน"] : []),
-          ]}
-          onEditDefaults={() => {
-            setUploadMode("studio");
-            setMetaExpanded(true);
-          }}
-        />
-      ) : (
       <div className="flex w-full flex-col lg:flex-row">
         <div className="flex min-w-0 flex-1">
-        {editorMode === "flex_grid" ? (
+        {uploadMode === "quick" ? null : editorMode === "flex_grid" ? (
           <FlexGridToolsSidebar
             layout={flexGridLayout}
             selected={flexGridSelected}
@@ -3282,6 +3207,7 @@ const ProjectEditorPage = () => {
               editorMode === "flex_grid"
                 ? "max-w-[min(100%,calc(52rem+3.5rem))]"
                 : "max-w-[min(100%,calc(56rem+3.5rem))]",
+              uploadMode === "quick" && "pl-3 sm:pl-4",
             )}
           >
           {/* Left: canvas — content max-w-4xl (match published detail); side rail uses the extra gutter */}
@@ -3374,6 +3300,14 @@ const ProjectEditorPage = () => {
               }}
             />
           </section>
+
+          {uploadMode === "quick" ? (
+            <AddModuleBar
+              disabled={editorLocked}
+              onPickImages={(files) => void handleCanvasDropFiles(files)}
+              onPlace={(payload) => handlePlaceTool(payload)}
+            />
+          ) : null}
 
           <div className="mx-auto w-full max-w-4xl space-y-6 border-t border-border/70 px-1 pt-6">
           <ProjectContextEditorFields
@@ -3653,7 +3587,6 @@ const ProjectEditorPage = () => {
 
         </ProjectEditorMetaSidebar>
       </div>
-      )}
 
       {/* Mobile sticky actions */}
       <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
