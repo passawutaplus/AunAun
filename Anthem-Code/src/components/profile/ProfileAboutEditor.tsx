@@ -24,6 +24,7 @@ import {
   type SocialLinkItem,
 } from "@/lib/validators";
 import { parseSocialLinks } from "@/lib/parseSocialLinks";
+import { readAboutEditLang } from "@/lib/aboutEditCopy";
 import {
   parseProfileCv,
   partitionSkillsAndSoftware,
@@ -34,6 +35,8 @@ import {
   type AwardItem,
   type CertificationItem,
   type CvAddressDetail,
+  type CvLayout,
+  defaultCvShowPhoto,
   type CvLanguageItem,
   type CvVisibility,
   type CvVisibilityKey,
@@ -93,6 +96,8 @@ type FormState = {
   skills: string[];
   experience: ExperienceItem[];
   cvPhotoUrl: string;
+  cvLayout: CvLayout;
+  cvShowPhoto: boolean;
   education: EducationItem[];
   cvTools: string[];
   cvLanguages: CvLanguageItem[];
@@ -182,6 +187,8 @@ function formFromProfile(profile: ProfileLike): FormState {
     skills: craftSkills,
     experience: parseExperience(profile.experience),
     cvPhotoUrl: profile.cv_photo_url ?? "",
+    cvLayout: cv.layout,
+    cvShowPhoto: defaultCvShowPhoto(profile.cv, readAboutEditLang()),
     education: cv.education,
     cvTools: software,
     cvLanguages: cv.languages,
@@ -291,6 +298,8 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
         form.visibility.contactEmail || form.visibility.contactLine || form.visibility.contactPhone,
       about: form.about,
       addressDetail: form.addressDetail,
+      layout: form.cvLayout,
+      showPhoto: form.cvShowPhoto,
       visibility: form.visibility,
     });
     if (form.contactEmail.trim() && !isSimpleEmail(form.contactEmail)) {
@@ -329,6 +338,8 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
         cvContactPhone: cv.contactPhone,
         cvContactPublic: cv.contactPublic,
         cvAddressDetail: cv.addressDetail,
+        cvLayout: cv.layout,
+        cvShowPhoto: cv.showPhoto,
         cvVisibility: cv.visibility,
         profileAddress: address,
         location: formatProfileAddressShort(address),
@@ -479,6 +490,36 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                   username={profile.username}
                   onChange={(cvPhotoUrl) => update("cvPhotoUrl", cvPhotoUrl)}
                 />
+                <div className="mt-3 space-y-1">
+                  <ShowOnCvTick
+                    checked={form.cvShowPhoto}
+                    label={t.photoShowOnCv}
+                    onChange={(v) => update("cvShowPhoto", v)}
+                  />
+                  <p className="text-xs text-muted-foreground">{t.photoShowOnCvHint}</p>
+                </div>
+              </EditorBlock>
+              <EditorBlock title={t.layoutTitle}>
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t.layoutTitle}>
+                  {(["two", "one"] as const).map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      role="radio"
+                      aria-checked={form.cvLayout === id}
+                      onClick={() => update("cvLayout", id)}
+                      className={cn(
+                        "rounded-full border px-3 py-1 text-xs transition-colors",
+                        form.cvLayout === id
+                          ? "border-foreground font-medium text-foreground"
+                          : "border-black/20 text-foreground hover:border-foreground",
+                      )}
+                    >
+                      {id === "two" ? t.layoutTwo : t.layoutOne}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">{t.layoutHint}</p>
               </EditorBlock>
               <EditorBlock title={t.name}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

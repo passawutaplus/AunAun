@@ -102,6 +102,8 @@ export const useUpdateProfile = (userId: string | undefined) => {
         p.cvContactPublic !== undefined ||
         p.cvAbout !== undefined ||
         p.cvAddressDetail !== undefined ||
+        p.cvLayout !== undefined ||
+        p.cvShowPhoto !== undefined ||
         p.cvVisibility !== undefined
       ) {
         const firstName = (p.cvFirstName ?? "").trim();
@@ -126,6 +128,8 @@ export const useUpdateProfile = (userId: string | undefined) => {
           contactPublic: p.cvContactPublic === true,
           about: (p.cvAbout ?? "").trim().slice(0, 500),
           addressDetail: p.cvAddressDetail === "full" ? "full" : "short",
+          layout: p.cvLayout === "one" ? "one" : "two",
+          showPhoto: typeof p.cvShowPhoto === "boolean" ? p.cvShowPhoto : null,
           visibility: p.cvVisibility ?? {},
         } as unknown as Json;
       }

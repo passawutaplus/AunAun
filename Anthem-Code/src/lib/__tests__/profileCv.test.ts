@@ -6,7 +6,11 @@ import {
   parseCvAddressDetail,
   parseCvVisibility,
   cvPortraitUrl,
+  cvPhotoVisible,
   cvReadiness,
+  defaultCvShowPhoto,
+  parseCvLayout,
+  profileCvToJson,
   educationDetailLine,
   educationDetailLines,
   educationNeedsFaculty,
@@ -21,7 +25,7 @@ import {
   splitFullName,
   isSimpleThaiPhone,
 } from "@/lib/profileCv";
-import { normalizeExperienceItem } from "@/lib/validators";
+import { experienceItemSchema, normalizeExperienceItem } from "@/lib/validators";
 import { profileAboutPath, profileAboutUrl } from "@/lib/profileRoutes";
 
 describe("parseProfileCv", () => {
@@ -296,5 +300,45 @@ describe("profileAboutUrl", () => {
     expect(profileAboutUrl({ user_id: "u1", username: "momo" }, "https://aplus1.app")).toBe(
       "https://aplus1.app/@momo?tab=about",
     );
+  });
+});
+
+describe("cv layout and photo", () => {
+  it("defaults to two columns and keeps the photo for legacy CVs", () => {
+    const cv = parseProfileCv({ fullName: "Momo" });
+    expect(cv.layout).toBe("two");
+    expect(cv.showPhoto).toBeNull();
+    expect(cvPhotoVisible(cv)).toBe(true);
+  });
+
+  it("round-trips layout and showPhoto through parse and profileCvToJson", () => {
+    const cv = parseProfileCv({ layout: "one", showPhoto: false });
+    expect(cv).toMatchObject({ layout: "one", showPhoto: false });
+    expect(cvPhotoVisible(cv)).toBe(false);
+    expect(profileCvToJson(cv)).toMatchObject({ layout: "one", showPhoto: false });
+  });
+
+  it("rejects unknown layouts", () => {
+    expect(parseCvLayout("three")).toBe("two");
+    expect(parseCvLayout(undefined)).toBe("two");
+  });
+
+  it("photo default: on for Thai, off for English, existing CVs keep their photo", () => {
+    expect(defaultCvShowPhoto(null, "th")).toBe(true);
+    expect(defaultCvShowPhoto({}, "en")).toBe(false);
+    expect(defaultCvShowPhoto({ fullName: "Momo" }, "en")).toBe(true);
+    expect(defaultCvShowPhoto({ fullName: "Momo", showPhoto: false }, "th")).toBe(false);
+  });
+});
+
+describe("experience description limit", () => {
+  it("accepts four 200-char highlights joined into the description", () => {
+    const highlights = Array.from({ length: 4 }, () => "ก".repeat(200));
+    const parsed = experienceItemSchema.safeParse({
+      title: "Designer",
+      highlights,
+      description: highlights.join("\n"),
+    });
+    expect(parsed.success).toBe(true);
   });
 });

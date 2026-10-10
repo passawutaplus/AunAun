@@ -162,7 +162,8 @@ export const experienceItemSchema = z.object({
   periodEnd: z.string().trim().max(40).optional().default(""),
   isCurrent: z.boolean().optional().default(false),
   employmentType: z.enum(experienceEmploymentTypes).optional().nullable().default(null),
-  description: z.string().trim().max(400).optional().default(""),
+  /** Holds the highlights joined by newlines (4 × 200 chars + separators). */
+  description: z.string().trim().max(810).optional().default(""),
   highlights: z.array(z.string().trim().min(1).max(200)).max(4).optional().default([]),
 });
 export type ExperienceItem = z.infer<typeof experienceItemSchema>;
@@ -416,6 +417,8 @@ export const profileSchema = z.object({
   cvContactPublic: z.boolean().optional().default(false),
   cvAbout: z.string().trim().max(500).optional().default(""),
   cvAddressDetail: z.enum(["short", "full"]).optional().default("short"),
+  cvLayout: z.enum(["two", "one"]).optional().default("two"),
+  cvShowPhoto: z.boolean().nullable().optional().default(null),
   cvVisibility: z
     .object({
       about: z.boolean().optional(),

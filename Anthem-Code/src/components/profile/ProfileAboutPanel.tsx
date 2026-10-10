@@ -9,6 +9,7 @@ import ProfileAboutEditor from "@/components/profile/ProfileAboutEditor";
 import { cn } from "@/lib/utils";
 import AboutDocumentPreviewDialog, {
   AboutDocumentSheet,
+  type CvFit,
 } from "@/components/profile/AboutDocumentPreview";
 import type { ExperienceItem, SocialLinkItem } from "@/lib/validators";
 
@@ -59,17 +60,22 @@ export default function ProfileAboutPanel({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [cvTheme, setCvTheme] = useState<AboutCvTheme>(readAboutCvTheme);
   const [downloading, setDownloading] = useState(false);
+  const [fit, setFit] = useState<CvFit>({ density: "normal", overflow: false });
   const canEdit = mode === "owner" && !!userId;
-  const liveTheme: AboutCvTheme = "orange";
+  // Owners see (and print) the theme they picked; visitors always get the default look.
+  const liveTheme: AboutCvTheme = mode === "owner" ? cvTheme : "orange";
   const sheetProps = {
     profile,
     experience,
     skills,
     socialLinks,
     profileUrl,
-    theme: liveTheme,
-    forceShowApplicationContact: mode === "owner",
+    density: fit.density,
   };
+  // Print/PDF are for job applications: the owner's copy always carries application contacts.
+  const printProps = { ...sheetProps, theme: liveTheme, forceShowApplicationContact: mode === "owner" };
+  const handleFit = (next: CvFit) =>
+    setFit((prev) => (prev.density === next.density && prev.overflow === next.overflow ? prev : next));
   const frameClass = cn(
     "glass-panel p-5 md:p-6",
     mode === "owner" ? "rounded-3xl" : "rounded-2xl",
@@ -124,9 +130,14 @@ export default function ProfileAboutPanel({
               onPrint={printAboutCv}
             />
           )}
+          {mode === "owner" && fit.overflow ? (
+            <p role="status" className="rounded-xl bg-amber-100 px-3 py-2 text-xs text-amber-950">
+              เนื้อหายาวเกิน 1 หน้า A4 — ลดข้อความ ปิดบางหัวข้อ หรือเลือกคอลัมน์เดียวในหน้าแก้ไข
+            </p>
+          ) : null}
           <div className="flex justify-center">
             <div className="about-cv-a4-frame">
-              <AboutDocumentSheet {...sheetProps} />
+              <AboutDocumentSheet {...sheetProps} theme={liveTheme} />
             </div>
           </div>
         </>
@@ -138,11 +149,13 @@ export default function ProfileAboutPanel({
           onPrint={printAboutCv}
           onThemeChange={setCvTheme}
           {...sheetProps}
+          forceShowApplicationContact
+          fit={fit}
           theme={cvTheme}
         />
       ) : null}
       <div id="about-cv-print" className="about-cv-print-root" aria-hidden="true">
-        <AboutDocumentSheet {...sheetProps} />
+        <AboutDocumentSheet {...printProps} onFit={handleFit} />
       </div>
     </div>
   );

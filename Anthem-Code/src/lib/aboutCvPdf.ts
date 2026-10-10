@@ -88,9 +88,10 @@ export function jpegDataUrlToA4Pdf(dataUrl: string): Blob {
 }
 
 export async function downloadAboutCvPdf(filename: string): Promise<void> {
+  // The print sheet is fixed at A4 and already carries the chosen theme, density and contacts.
   const sheet =
-    (document.querySelector(".about-cv-a4-frame .about-cv-sheet") as HTMLElement | null) ??
-    (document.querySelector("#about-cv-print .about-cv-sheet") as HTMLElement | null);
+    (document.querySelector("#about-cv-print .about-cv-sheet") as HTMLElement | null) ??
+    (document.querySelector(".about-cv-a4-frame .about-cv-sheet") as HTMLElement | null);
   if (!sheet) throw new Error("ไม่พบเอกสารพรีวิว");
 
   const { toJpeg } = await import("html-to-image");

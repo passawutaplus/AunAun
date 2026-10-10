@@ -305,6 +305,9 @@ export const profileCvSchema = z.object({
   contactPublic: z.boolean().optional().default(false),
   about: z.string().trim().max(500).optional().default(""),
   addressDetail: z.enum(["short", "full"]).optional().default("short"),
+  layout: z.enum(["two", "one"]).optional().default("two"),
+  /** null = never chosen (legacy CVs keep showing the photo). */
+  showPhoto: z.boolean().nullable().optional().default(null),
   visibility: z
     .object({
       about: z.boolean().optional().default(true),
@@ -330,6 +333,27 @@ export type ProfileCv = z.infer<typeof profileCvSchema>;
 export type CvVisibility = ProfileCv["visibility"];
 export type CvVisibilityKey = keyof CvVisibility;
 export type CvAddressDetail = ProfileCv["addressDetail"];
+export type CvLayout = ProfileCv["layout"];
+
+export function parseCvLayout(raw: unknown): CvLayout {
+  return raw === "one" ? "one" : "two";
+}
+
+/** Photo is shown unless the owner switched it off (legacy CVs: shown). */
+export function cvPhotoVisible(cv: Pick<ProfileCv, "showPhoto">): boolean {
+  return cv.showPhoto !== false;
+}
+
+/**
+ * First-time default for the photo switch: Thai résumés usually carry a photo,
+ * English ones usually do not. An existing CV that never chose keeps its photo.
+ */
+export function defaultCvShowPhoto(rawCv: unknown, lang: "th" | "en"): boolean {
+  const o = rawCv && typeof rawCv === "object" && !Array.isArray(rawCv) ? (rawCv as Record<string, unknown>) : null;
+  if (o && typeof o.showPhoto === "boolean") return o.showPhoto;
+  if (o && Object.keys(o).length > 0) return true;
+  return lang === "th";
+}
 
 export const CV_VISIBILITY_KEYS = [
   "about",
@@ -402,6 +426,8 @@ export const EMPTY_PROFILE_CV: ProfileCv = {
   contactPublic: false,
   about: "",
   addressDetail: "short",
+  layout: "two",
+  showPhoto: null,
   visibility: defaultCvVisibility(false),
 };
 
@@ -628,6 +654,8 @@ export function parseProfileCv(raw: unknown): ProfileCv {
     contactPublic,
     about,
     addressDetail,
+    layout: parseCvLayout(o.layout),
+    showPhoto: typeof o.showPhoto === "boolean" ? o.showPhoto : null,
     visibility,
   };
 }
@@ -656,6 +684,8 @@ export function profileCvToJson(cv: ProfileCv): ProfileCv {
       cv.visibility.contactEmail || cv.visibility.contactLine || cv.visibility.contactPhone,
     about: (cv.about ?? "").trim().slice(0, 500),
     addressDetail: parseCvAddressDetail(cv.addressDetail),
+    layout: parseCvLayout(cv.layout),
+    showPhoto: typeof cv.showPhoto === "boolean" ? cv.showPhoto : null,
     visibility: parseCvVisibility(cv.visibility, cv.contactPublic === true),
   };
 }
