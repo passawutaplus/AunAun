@@ -342,3 +342,50 @@ describe("experience description limit", () => {
     expect(parsed.success).toBe(true);
   });
 });
+
+describe("Phase 3 CV fields", () => {
+  it("defaults the new opt-in blocks to hidden and the language to English", () => {
+    const cv = parseProfileCv({});
+    expect(cv.docLang).toBe("en");
+    expect(cv.visibility).toMatchObject({
+      birthDate: false,
+      nationality: false,
+      military: false,
+      references: false,
+      projects: false,
+    });
+    expect(cv.references).toEqual([]);
+    expect(cv.featuredProjectIds).toEqual([]);
+  });
+
+  it("round-trips the new fields and clamps them", () => {
+    const parsed = parseProfileCv({
+      nameEn: "  Sam   Ple ",
+      docLang: "th",
+      nationality: " Thai ",
+      military: "exempt",
+      references: [
+        { name: "A", role: "r", contact: "c" },
+        { name: "  " },
+        { name: "B" },
+        { name: "C" },
+        { name: "D" },
+      ],
+      featuredProjectIds: ["p1", "p1", "p2", "p3", "p4"],
+      visibility: { references: true, military: true },
+    });
+    expect(parsed.nameEn).toBe("Sam Ple");
+    expect(parsed.docLang).toBe("th");
+    expect(parsed.nationality).toBe("Thai");
+    expect(parsed.military).toBe("exempt");
+    expect(parsed.references.map((r) => r.name)).toEqual(["A", "B", "C"]);
+    expect(parsed.featuredProjectIds).toEqual(["p1", "p2", "p3"]);
+    expect(parseProfileCv(profileCvToJson(parsed))).toEqual(parsed);
+  });
+
+  it("ignores unknown language and military values", () => {
+    const cv = parseProfileCv({ docLang: "fr", military: "other" });
+    expect(cv.docLang).toBe("en");
+    expect(cv.military).toBeNull();
+  });
+});

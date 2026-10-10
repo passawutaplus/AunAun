@@ -115,3 +115,30 @@ describe("layoutAboutCv", () => {
     expect(texts(pages)).toContain("SKILLS");
   });
 });
+
+describe("layoutAboutCv — Phase 3 blocks", () => {
+  it("prints Thai headings, personal details, and links featured projects", () => {
+    const base = input(1, {
+      docLang: "th",
+      birthDate: "1995-08-02",
+      nationality: "ไทย",
+      military: "completed",
+      visibility: { birthDate: true, nationality: true, military: true, projects: true, references: true },
+      references: [{ name: "Dani Martinez", role: "CEO", contact: "0812345678" }],
+      featuredProjectIds: ["p1"],
+    });
+    const model = buildAboutCvModel({
+      ...base,
+      projects: [{ id: "p1", title: "Brand Refresh", views: 3 }],
+      siteOrigin: "https://samecor.com",
+    });
+    const { pages } = layoutAboutCv(model, measure, "orange", false);
+    const all = texts(pages).join("\n");
+    expect(all).toContain("ข้อมูลส่วนตัว".toUpperCase());
+    expect(all).toContain("สัญชาติ: ไทย");
+    expect(all).toContain("ผลงานเด่น".toUpperCase());
+    expect(all).toContain("บุคคลอ้างอิง".toUpperCase());
+    const urls = pages.flatMap((p) => p.flatMap((o) => (o.t === "link" ? [o.url] : [])));
+    expect(urls).toContain("https://samecor.com/project/p1");
+  });
+});

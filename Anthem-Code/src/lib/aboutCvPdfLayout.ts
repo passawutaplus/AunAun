@@ -1,4 +1,4 @@
-import type { AboutCvModel, CvContactItem, CvEntryModel, CvSectionKey } from "@/lib/aboutCvModel";
+import type { AboutCvModel, CvContactItem, CvEntryModel } from "@/lib/aboutCvModel";
 import type { AboutCvTheme } from "@/lib/aboutCvTheme";
 
 /**
@@ -36,12 +36,6 @@ const SOFT = "#444444";
 const RULE = "#d6d6d6";
 const ACCENT: Record<AboutCvTheme, string> = { orange: "#e85d04", mono: "#111111", slate: "#111111" };
 
-const SECTION_TITLES: Record<CvSectionKey, string> = {
-  experience: "Experience",
-  education: "Education",
-  certification: "Certification",
-  awards: "Awards",
-};
 
 // Intl.Segmenter is not in this project's TS lib target, so type the slice we use.
 type Segmenter = { segment(input: string): Iterable<{ segment: string }> };
@@ -203,6 +197,7 @@ function runLayout(
       ops.push(...shift(p.ops, 0, y));
       y += p.h;
     }
+    if (e.href) ops.push({ t: "link", x: 0, y: 0, w, h: y, url: e.href });
     return { h: y, ops };
   };
 
@@ -228,7 +223,7 @@ function runLayout(
 
   const contactBlock = (w: number): Block | null => {
     if (!model.contacts.length && !model.qrTarget) return null;
-    const parts: Block[] = [heading("Contact", w)];
+    const parts: Block[] = [heading(model.labels.blocks.contact, w)];
     if (twoCol) {
       if (model.contacts.length) parts.push(contactRows(model.contacts, w, 40 * S));
       if (model.qrTarget) {
@@ -258,19 +253,30 @@ function runLayout(
 
   const sideBlocks = (w: number): Block[] => {
     const out: Block[] = [];
-    if (model.place) out.push(stack([heading("Location", w), paragraph(model.place, body, w)], 5 * S));
+    if (model.place) out.push(stack([heading(model.labels.blocks.location, w), paragraph(model.place, body, w)], 5 * S));
+    if (model.personal.length) {
+      out.push(
+        stack(
+          [
+            heading(model.labels.blocks.personal, w),
+            ...model.personal.map((p) => paragraph(`${p.label}: ${p.value}`, body, w)),
+          ],
+          2 * S,
+        ),
+      );
+    }
     if (model.languages.length) {
       out.push(
-        stack([heading("Languages", w), ...model.languages.map((l) => paragraph(l, body, w))], 5 * S),
+        stack([heading(model.labels.blocks.languages, w), ...model.languages.map((l) => paragraph(l, body, w))], 5 * S),
       );
     }
     if (model.craftSkills.length) {
       out.push(
-        stack([heading("Skills", w), ...model.craftSkills.map((s) => paragraph(s, body, w))], 2 * S),
+        stack([heading(model.labels.blocks.skills, w), ...model.craftSkills.map((s) => paragraph(s, body, w))], 2 * S),
       );
     }
     if (model.software.length) {
-      out.push(stack([heading("Design Software", w), paragraph(model.software.join(" · "), body, w)], 5 * S));
+      out.push(stack([heading(model.labels.blocks.software, w), paragraph(model.software.join(" · "), body, w)], 5 * S));
     }
     return out;
   };
@@ -386,7 +392,7 @@ function runLayout(
   };
 
   model.sections.forEach((section, si) => {
-    const headBlock = (width: number) => heading(SECTION_TITLES[section.key], width);
+    const headBlock = (width: number) => heading(section.title, width);
     if (si > 0) y += 8 * S;
     section.entries.forEach((e, ei) => {
       if (ei === 0) {

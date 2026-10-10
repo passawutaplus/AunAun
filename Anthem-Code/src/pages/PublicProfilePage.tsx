@@ -245,6 +245,16 @@ const PublicProfilePage = () => {
     [orderedProjects],
   );
 
+  const cvProjects = useMemo(
+    () =>
+      portfolioProjects.map((p) => ({
+        id: p.id,
+        title: String((p as { title?: string }).title ?? ""),
+        views: (p as { views?: number | null }).views ?? 0,
+      })),
+    [portfolioProjects],
+  );
+
   const portfolioProjectIds = useMemo(
     () => portfolioProjects.map((p) => p.id).filter(Boolean),
     [portfolioProjects],
@@ -928,6 +938,7 @@ const PublicProfilePage = () => {
 
           {activeTab === "about" && (
             <ProfileAboutPanel
+                projects={cvProjects}
                 profile={{
                   display_name: profile.display_name ?? null,
                   username: profile.username ?? null,

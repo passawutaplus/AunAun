@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Download, Printer } from "lucide-react";
+import { Download, Link2, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { readAboutCvTheme, type AboutCvTheme } from "@/lib/aboutCvTheme";
 import { aboutCvPdfFilename } from "@/lib/aboutCvPdf";
 import { downloadAboutCvDocument } from "@/lib/aboutCvDownload";
 import { parseProfileCv } from "@/lib/profileCv";
 import { ProfileAboutToolbar } from "@/components/profile/ProfileAboutReadOnly";
+import type { CvProjectInput } from "@/lib/aboutCvModel";
 import ProfileTabHeading from "@/components/profile/ProfileTabHeading";
 import ProfileAboutEditor from "@/components/profile/ProfileAboutEditor";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,8 @@ type Props = {
   experience: ExperienceItem[];
   skills: string[];
   socialLinks?: SocialLinkItem[];
+  /** Published projects for the CV's Selected Work block. */
+  projects?: CvProjectInput[];
   mode?: "owner" | "public";
   profileUrl?: string | null;
   sectionClassName?: string;
@@ -48,12 +51,25 @@ function printAboutCv() {
   window.print();
 }
 
+/** Public link that opens straight on the About Me tab. */
+function cvShareUrl(profileUrl: string | null | undefined): string | null {
+  if (!profileUrl) return null;
+  try {
+    const url = new URL(profileUrl, window.location.origin);
+    url.searchParams.set("tab", "about");
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 export default function ProfileAboutPanel({
   userId,
   profile,
   experience,
   skills,
   socialLinks,
+  projects,
   mode = "public",
   profileUrl,
   sectionClassName,
@@ -72,6 +88,7 @@ export default function ProfileAboutPanel({
     skills,
     socialLinks,
     profileUrl,
+    projects,
     density: fit.density,
   };
   // Print/PDF are for job applications: the owner's copy always carries application contacts.
@@ -86,6 +103,17 @@ export default function ProfileAboutPanel({
   const aboutActionClass =
     "inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-xs text-foreground hover:bg-black/5 disabled:opacity-60";
   const pdfName = aboutCvPdfFilename(parseProfileCv(profile.cv).fullName.trim());
+
+  const shareUrl = cvShareUrl(profileUrl);
+  const handleCopyLink = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("คัดลอกลิงก์ CV แล้ว");
+    } catch {
+      toast.error("คัดลอกลิงก์ไม่สำเร็จ");
+    }
+  };
 
   const handleDownloadPdf = async () => {
     setDownloading(true);
@@ -109,6 +137,8 @@ export default function ProfileAboutPanel({
         <ProfileAboutEditor
           userId={userId!}
           profile={profile}
+          projects={projects}
+          profileUrl={profileUrl}
           onSaved={() => setEditing(false)}
           sectionClassName={frameClass}
         />
@@ -119,6 +149,12 @@ export default function ProfileAboutPanel({
               title="About Me"
               actions={
                 <>
+                  {shareUrl ? (
+                    <button type="button" onClick={() => void handleCopyLink()} className={aboutActionClass}>
+                      <Link2 className="h-3.5 w-3.5" />
+                      Copy link
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     disabled={downloading}
@@ -140,6 +176,7 @@ export default function ProfileAboutPanel({
               onEdit={canEdit ? () => setEditing(true) : undefined}
               onPreview={() => setPreviewOpen(true)}
               onPrint={printAboutCv}
+              onCopyLink={shareUrl ? () => void handleCopyLink() : undefined}
             />
           )}
           {mode === "owner" && fit.overflow ? (

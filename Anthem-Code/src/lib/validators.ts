@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { formatPeriodRange } from "@/lib/cvDates";
 import { LICENSE_TYPES } from "@/lib/licenses";
 import {
   COMMUNITY_MEDIA_MAX_IMAGES,
@@ -177,16 +178,9 @@ export function formatExperiencePeriod(
     isCurrent?: boolean | null;
   },
   presentLabel = "Present",
+  lang: "th" | "en" = "en",
 ): string {
-  const start = (item.periodStart ?? "").trim();
-  const end = (item.periodEnd ?? "").trim();
-  const current = !!item.isCurrent;
-  if (start) {
-    if (current) return `${start} - ${presentLabel}`;
-    if (end) return `${start} - ${end}`;
-    return start;
-  }
-  return (item.period ?? "").trim();
+  return formatPeriodRange(item, presentLabel, lang);
 }
 
 export function normalizeExperienceItem(raw: unknown): ExperienceItem | null {
@@ -410,6 +404,22 @@ export const profileSchema = z.object({
   cvFirstName: z.string().trim().max(40).optional().default(""),
   cvLastName: z.string().trim().max(40).optional().default(""),
   cvBirthDate: z.string().trim().max(10).optional().default(""),
+  cvNameEn: z.string().trim().max(80).optional().default(""),
+  cvDocLang: z.enum(["en", "th"]).optional().default("en"),
+  cvNationality: z.string().trim().max(40).optional().default(""),
+  cvMilitary: z.enum(["completed", "exempt", "not_required"]).nullable().optional().default(null),
+  cvReferences: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1).max(60),
+        role: z.string().trim().max(80).optional().default(""),
+        contact: z.string().trim().max(80).optional().default(""),
+      }),
+    )
+    .max(3)
+    .optional()
+    .default([]),
+  cvFeaturedProjectIds: z.array(z.string().max(64)).max(3).optional().default([]),
   cvDesiredRole: z.string().trim().max(60).optional().default(""),
   cvContactEmail: z.string().trim().max(120).optional().default(""),
   cvContactLine: z.string().trim().max(50).optional().default(""),
@@ -436,6 +446,11 @@ export const profileSchema = z.object({
       portfolio: z.boolean().optional(),
       website: z.boolean().optional(),
       socials: z.boolean().optional(),
+      birthDate: z.boolean().optional(),
+      nationality: z.boolean().optional(),
+      military: z.boolean().optional(),
+      references: z.boolean().optional(),
+      projects: z.boolean().optional(),
     })
     .optional(),
 });

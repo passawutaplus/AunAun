@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Instagram,
   Languages,
+  LayoutGrid,
   Link2,
   Mail,
   MapPin,
@@ -16,6 +17,8 @@ import {
   Phone,
   Printer,
   Sparkles,
+  UserRound,
+  Users,
 } from "lucide-react";
 import LineMarkIcon from "@/components/icons/LineMarkIcon";
 import { toast } from "sonner";
@@ -30,6 +33,7 @@ import {
   buildAboutCvModel,
   type AboutCvProfile,
   type CvContactKind,
+  type CvProjectInput,
   type CvSectionKey,
 } from "@/lib/aboutCvModel";
 import {
@@ -57,15 +61,10 @@ const CONTACT_ICONS: Record<CvContactKind, React.ComponentType<{ className?: str
 const SECTION_ICONS: Record<CvSectionKey, React.ComponentType<{ className?: string }>> = {
   experience: Briefcase,
   education: GraduationCap,
+  projects: LayoutGrid,
   certification: BadgeCheck,
   awards: Award,
-};
-
-const SECTION_TITLES: Record<CvSectionKey, string> = {
-  experience: "Experience",
-  education: "Education",
-  certification: "Certification",
-  awards: "Awards",
+  references: Users,
 };
 
 export type CvDensity = "normal" | "compact";
@@ -77,6 +76,8 @@ type DocProps = {
   skills: string[];
   socialLinks?: SocialLinkItem[];
   profileUrl?: string | null;
+  /** Owner's published projects, for the optional Selected Work section. */
+  projects?: CvProjectInput[];
   theme?: AboutCvTheme;
   /** Owner print/PDF — always include application email/LINE/phone. */
   forceShowApplicationContact?: boolean;
@@ -94,6 +95,7 @@ export function AboutDocumentSheet({
   skills,
   socialLinks = [],
   profileUrl,
+  projects,
   theme = "orange",
   forceShowApplicationContact = false,
   density = "normal",
@@ -107,6 +109,7 @@ export function AboutDocumentSheet({
     skills,
     socialLinks,
     profileUrl,
+    projects,
     forceShowApplicationContact,
   });
   const { layout, name, desiredRole, bio, place, qrTarget, showPhoto } = model;
@@ -121,7 +124,7 @@ export function AboutDocumentSheet({
 
   const contactBlock =
     contactLines.length > 0 || qrTarget ? (
-      <DocBlock key="contact" icon={Link2} title="Contact">
+      <DocBlock key="contact" icon={Link2} title={model.labels.blocks.contact}>
         <div className="about-cv-contact-body">
           <div className="about-cv-contact-lines">{contactLines}</div>
           {qrTarget ? (
@@ -135,12 +138,24 @@ export function AboutDocumentSheet({
 
   const sideBlocks = [
     place ? (
-      <DocBlock key="location" icon={MapPin} title="Location">
+      <DocBlock key="location" icon={MapPin} title={model.labels.blocks.location}>
         <p className="about-cv-copy">{place}</p>
       </DocBlock>
     ) : null,
+    model.personal.length > 0 ? (
+      <DocBlock key="personal" icon={UserRound} title={model.labels.blocks.personal}>
+        <dl className="space-y-1">
+          {model.personal.map((item) => (
+            <div key={item.key} className="about-cv-copy">
+              <dt className="inline text-[var(--cv-muted)]">{item.label}: </dt>
+              <dd className="inline">{item.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </DocBlock>
+    ) : null,
     model.languages.length > 0 ? (
-      <DocBlock key="languages" icon={Languages} title="Languages">
+      <DocBlock key="languages" icon={Languages} title={model.labels.blocks.languages}>
         <ul className="space-y-1">
           {model.languages.map((item) => (
             <li key={item} className="about-cv-copy">
@@ -151,7 +166,7 @@ export function AboutDocumentSheet({
       </DocBlock>
     ) : null,
     model.craftSkills.length > 0 ? (
-      <DocBlock key="skills" icon={Sparkles} title="Skills">
+      <DocBlock key="skills" icon={Sparkles} title={model.labels.blocks.skills}>
         <ul className="space-y-1">
           {model.craftSkills.map((s) => (
             <li key={s} className="about-cv-copy">
@@ -162,7 +177,7 @@ export function AboutDocumentSheet({
       </DocBlock>
     ) : null,
     model.software.length > 0 ? (
-      <DocBlock key="software" icon={Monitor} title="Design Software">
+      <DocBlock key="software" icon={Monitor} title={model.labels.blocks.software}>
         <p className="about-cv-copy">{model.software.join(" · ")}</p>
       </DocBlock>
     ) : null,
@@ -174,10 +189,10 @@ export function AboutDocumentSheet({
 
   const mainBlocks = model.sections.map((section) => (
     <div key={section.key}>
-      <PrintHeading icon={SECTION_ICONS[section.key]} title={SECTION_TITLES[section.key]} />
+      <PrintHeading icon={SECTION_ICONS[section.key]} title={section.title} />
       <ol className="about-cv-entries">
         {section.entries.map((it, i) => (
-          <CvEntry key={`${it.title}-${i}`} period={it.period} title={it.title} lines={it.lines}>
+          <CvEntry key={`${it.title}-${i}`} period={it.period} title={it.title} lines={it.lines} href={it.href}>
             {it.bullets.length ? (
               <ul className="about-cv-entry-bullets">
                 {it.bullets.map((b) => (
@@ -289,11 +304,13 @@ function CvEntry({
   period,
   title,
   lines = [],
+  href,
   children,
 }: {
   period?: string;
   title: string;
   lines?: (string | undefined)[];
+  href?: string;
   children?: React.ReactNode;
 }) {
   // Drop detail lines that just repeat the title (e.g. issuer == certificate name).
@@ -306,7 +323,15 @@ function CvEntry({
   return (
     <li className="about-cv-entry">
       <div className="about-cv-entry-head">
-        <p className="about-cv-entry-title">{title}</p>
+        <p className="about-cv-entry-title">
+          {href ? (
+            <a href={href} target="_blank" rel="noopener noreferrer" className="hover:underline">
+              {title}
+            </a>
+          ) : (
+            title
+          )}
+        </p>
         {period ? <p className="about-cv-entry-date">{period}</p> : null}
       </div>
       {shown.map((line) => (

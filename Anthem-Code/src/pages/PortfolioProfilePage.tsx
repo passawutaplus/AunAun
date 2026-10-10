@@ -142,6 +142,10 @@ const PortfolioProfilePage = () => {
 
   const published = useMemo(() => myProjects.filter((p) => p.status === "Published"), [myProjects]);
   const projectIds = useMemo(() => myProjects.map((p) => p.id), [myProjects]);
+  const cvProjects = useMemo(
+    () => published.map((p) => ({ id: p.id, title: p.title, views: (p as { views?: number | null }).views ?? 0 })),
+    [published],
+  );
   const projectIdsKey = useMemo(() => [...projectIds].sort().join(","), [projectIds]);
 
   useEffect(() => {
@@ -326,6 +330,7 @@ const PortfolioProfilePage = () => {
             <ProfileAboutPanel
                 userId={user!.id}
                 profile={profile}
+                projects={cvProjects}
                 experience={experience}
                 skills={skills}
                 socialLinks={socialLinks}

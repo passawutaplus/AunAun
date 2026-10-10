@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { formatPeriodRange, type CvDateLang } from "@/lib/cvDates";
 import { hasCatalogToolIcon } from "@/lib/toolIcons";
 import { canonicalizeSkillChip } from "@/data/skillChipOptions";
 
@@ -286,6 +287,59 @@ export const cvLanguageItemSchema = z.object({
   level: z.enum(CV_LANGUAGE_LEVELS).or(z.literal("")).optional().default(""),
 });
 
+export const CV_DOC_LANGS = ["en", "th"] as const;
+export type CvDocLang = (typeof CV_DOC_LANGS)[number];
+
+/** Language of the CV document itself (headings, month names, labels) — not the editor UI. */
+export function parseCvDocLang(raw: unknown): CvDocLang {
+  return raw === "th" ? "th" : "en";
+}
+
+export const CV_MILITARY_STATUSES = ["completed", "exempt", "not_required"] as const;
+export type CvMilitaryStatus = (typeof CV_MILITARY_STATUSES)[number];
+
+export function parseCvMilitary(raw: unknown): CvMilitaryStatus | null {
+  return CV_MILITARY_STATUSES.includes(raw as CvMilitaryStatus) ? (raw as CvMilitaryStatus) : null;
+}
+
+export const referenceItemSchema = z.object({
+  name: z.string().trim().min(1).max(60),
+  role: z.string().trim().max(80).optional().default(""),
+  contact: z.string().trim().max(80).optional().default(""),
+});
+export type ReferenceItem = z.infer<typeof referenceItemSchema>;
+
+export const CV_REFERENCES_MAX = 3;
+export const CV_FEATURED_PROJECTS_MAX = 3;
+
+export function normalizeReferences(raw: unknown): ReferenceItem[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ReferenceItem[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const r = item as Record<string, unknown>;
+    const name = typeof r.name === "string" ? r.name.trim().slice(0, 60) : "";
+    if (!name) continue;
+    out.push({
+      name,
+      role: typeof r.role === "string" ? r.role.trim().slice(0, 80) : "",
+      contact: typeof r.contact === "string" ? r.contact.trim().slice(0, 80) : "",
+    });
+    if (out.length >= CV_REFERENCES_MAX) break;
+  }
+  return out;
+}
+
+export function parseFeaturedProjectIds(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  for (const id of raw) {
+    if (typeof id === "string" && id.trim() && id.length <= 64) seen.add(id.trim());
+    if (seen.size >= CV_FEATURED_PROJECTS_MAX) break;
+  }
+  return [...seen];
+}
+
 export const profileCvSchema = z.object({
   education: z.array(educationItemSchema).max(10).default([]),
   certifications: z.array(certificationItemSchema).max(8).default([]),
@@ -297,6 +351,12 @@ export const profileCvSchema = z.object({
   firstName: z.string().trim().max(40).optional().default(""),
   lastName: z.string().trim().max(40).optional().default(""),
   fullName: z.string().trim().max(80).optional().default(""),
+  nameEn: z.string().trim().max(80).optional().default(""),
+  docLang: z.enum(CV_DOC_LANGS).optional().default("en"),
+  nationality: z.string().trim().max(40).optional().default(""),
+  military: z.enum(CV_MILITARY_STATUSES).nullable().optional().default(null),
+  references: z.array(referenceItemSchema).max(CV_REFERENCES_MAX).optional().default([]),
+  featuredProjectIds: z.array(z.string().max(64)).max(CV_FEATURED_PROJECTS_MAX).optional().default([]),
   birthDate: z.string().trim().max(10).optional().default(""),
   desiredRole: z.string().trim().max(60).optional().default(""),
   contactEmail: z.string().trim().max(120).optional().default(""),
@@ -325,6 +385,12 @@ export const profileCvSchema = z.object({
       portfolio: z.boolean().optional().default(true),
       website: z.boolean().optional().default(true),
       socials: z.boolean().optional().default(true),
+      // Sensitive or opt-in blocks stay hidden until the owner switches them on.
+      birthDate: z.boolean().optional().default(false),
+      nationality: z.boolean().optional().default(false),
+      military: z.boolean().optional().default(false),
+      references: z.boolean().optional().default(false),
+      projects: z.boolean().optional().default(false),
     })
     .optional()
     .default({}),
@@ -371,6 +437,11 @@ export const CV_VISIBILITY_KEYS = [
   "portfolio",
   "website",
   "socials",
+  "birthDate",
+  "nationality",
+  "military",
+  "references",
+  "projects",
 ] as const;
 
 export function defaultCvVisibility(contactPublic = false): CvVisibility {
@@ -390,6 +461,11 @@ export function defaultCvVisibility(contactPublic = false): CvVisibility {
     portfolio: true,
     website: true,
     socials: true,
+    birthDate: false,
+    nationality: false,
+    military: false,
+    references: false,
+    projects: false,
   };
 }
 
@@ -418,6 +494,12 @@ export const EMPTY_PROFILE_CV: ProfileCv = {
   firstName: "",
   lastName: "",
   fullName: "",
+  nameEn: "",
+  docLang: "en",
+  nationality: "",
+  military: null,
+  references: [],
+  featuredProjectIds: [],
   birthDate: "",
   desiredRole: "",
   contactEmail: "",
@@ -510,16 +592,9 @@ export function formatEducationPeriod(
     isCurrent?: boolean | null;
   },
   presentLabel = "Present",
+  lang: CvDateLang = "en",
 ): string {
-  const start = (item.periodStart ?? "").trim();
-  const end = (item.periodEnd ?? "").trim();
-  const current = !!item.isCurrent;
-  if (start) {
-    if (current) return `${start} - ${presentLabel}`;
-    if (end) return `${start} - ${end}`;
-    return start;
-  }
-  return (item.period ?? "").trim();
+  return formatPeriodRange(item, presentLabel, lang);
 }
 
 export function normalizeEducationItem(raw: unknown): EducationItem | null {
@@ -646,6 +721,12 @@ export function parseProfileCv(raw: unknown): ProfileCv {
     firstName: names.firstName,
     lastName: names.lastName,
     fullName,
+    nameEn: typeof o.nameEn === "string" ? o.nameEn.trim().replace(/\s+/g, " ").slice(0, 80) : "",
+    docLang: parseCvDocLang(o.docLang),
+    nationality: typeof o.nationality === "string" ? o.nationality.trim().slice(0, 40) : "",
+    military: parseCvMilitary(o.military),
+    references: normalizeReferences(o.references),
+    featuredProjectIds: parseFeaturedProjectIds(o.featuredProjectIds),
     birthDate,
     desiredRole,
     contactEmail,
@@ -675,6 +756,12 @@ export function profileCvToJson(cv: ProfileCv): ProfileCv {
     firstName,
     lastName,
     fullName: composeFullName(firstName, lastName),
+    nameEn: (cv.nameEn ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
+    docLang: parseCvDocLang(cv.docLang),
+    nationality: (cv.nationality ?? "").trim().slice(0, 40),
+    military: parseCvMilitary(cv.military),
+    references: normalizeReferences(cv.references),
+    featuredProjectIds: parseFeaturedProjectIds(cv.featuredProjectIds),
     birthDate: normalizeBirthDate(cv.birthDate ?? ""),
     desiredRole: (cv.desiredRole ?? "").trim().slice(0, 60),
     contactEmail: normalizeContactEmail(cv.contactEmail ?? ""),

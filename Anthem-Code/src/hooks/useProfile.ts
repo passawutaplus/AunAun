@@ -102,6 +102,12 @@ export const useUpdateProfile = (userId: string | undefined) => {
         p.cvContactPublic !== undefined ||
         p.cvAbout !== undefined ||
         p.cvAddressDetail !== undefined ||
+        p.cvNameEn !== undefined ||
+        p.cvDocLang !== undefined ||
+        p.cvNationality !== undefined ||
+        p.cvMilitary !== undefined ||
+        p.cvReferences !== undefined ||
+        p.cvFeaturedProjectIds !== undefined ||
         p.cvLayout !== undefined ||
         p.cvShowPhoto !== undefined ||
         p.cvVisibility !== undefined
@@ -128,6 +134,12 @@ export const useUpdateProfile = (userId: string | undefined) => {
           contactPublic: p.cvContactPublic === true,
           about: (p.cvAbout ?? "").trim().slice(0, 500),
           addressDetail: p.cvAddressDetail === "full" ? "full" : "short",
+          nameEn: (p.cvNameEn ?? "").trim(),
+          docLang: p.cvDocLang === "th" ? "th" : "en",
+          nationality: (p.cvNationality ?? "").trim(),
+          military: p.cvMilitary ?? null,
+          references: p.cvReferences ?? [],
+          featuredProjectIds: p.cvFeaturedProjectIds ?? [],
           layout: p.cvLayout === "one" ? "one" : "two",
           showPhoto: typeof p.cvShowPhoto === "boolean" ? p.cvShowPhoto : null,
           visibility: p.cvVisibility ?? {},

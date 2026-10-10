@@ -546,11 +546,13 @@ export function ProfileAboutToolbar({
   onPreview,
   onPrint,
   onEdit,
+  onCopyLink,
 }: {
   title?: string;
   onPreview?: () => void;
   onPrint?: () => void;
   onEdit?: () => void;
+  onCopyLink?: () => void;
 }) {
   return (
     <div className="flex items-end justify-between gap-3">
@@ -566,6 +568,16 @@ export function ProfileAboutToolbar({
           >
             <Eye className="h-3.5 w-3.5" />
             Preview
+          </button>
+        ) : null}
+        {onCopyLink ? (
+          <button
+            type="button"
+            onClick={onCopyLink}
+            className="inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-xs text-foreground hover:bg-black/5"
+          >
+            <Link2 className="h-3.5 w-3.5" />
+            Copy link
           </button>
         ) : null}
         {onPrint ? (

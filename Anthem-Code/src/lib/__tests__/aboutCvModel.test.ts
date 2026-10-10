@@ -79,3 +79,77 @@ describe("buildAboutCvModel", () => {
     expect(buildAboutCvModel(on).portraitUrl).toBe("https://img.example/a.jpg");
   });
 });
+
+describe("buildAboutCvModel — Phase 3 blocks", () => {
+  it("switches headings, months and the name with the CV language", () => {
+    const en = buildAboutCvModel(
+      base({ nameEn: "Sam Ple", fullName: "สมชาย ใจดี", docLang: "en" }),
+    );
+    expect(en.name).toBe("Sam Ple");
+    expect(en.sections[0].title).toBe("Experience");
+    const th = buildAboutCvModel(base({ nameEn: "Sam Ple", fullName: "สมชาย ใจดี", docLang: "th" }));
+    expect(th.name).toBe("สมชาย ใจดี");
+    expect(th.sections[0].title).toBe("ประสบการณ์ทำงาน");
+    expect(th.sections[0].entries[0].period).toBe("2020 - ปัจจุบัน");
+    expect(th.labels.blocks.contact).toBe("ติดต่อ");
+  });
+
+  it("falls back to the other name when only one exists", () => {
+    expect(buildAboutCvModel(base({ fullName: "สมชาย ใจดี", docLang: "en" })).name).toBe("สมชาย ใจดี");
+    expect(buildAboutCvModel(base({ fullName: "", nameEn: "Sam", docLang: "th" })).name).toBe("Sam");
+  });
+
+  it("renders month names from YYYY-MM periods", () => {
+    const input = base({ docLang: "th" });
+    input.experience = [job({ periodStart: "2020-05", periodEnd: "2022-03", isCurrent: false })];
+    expect(buildAboutCvModel(input).sections[0].entries[0].period).toBe("พ.ค. 2020 - มี.ค. 2022");
+  });
+
+  it("keeps personal details hidden until each one is switched on", () => {
+    const cv = { birthDate: "1995-08-02", nationality: "Thai", military: "exempt" };
+    expect(buildAboutCvModel(base(cv)).personal).toEqual([]);
+    const shown = buildAboutCvModel(
+      base({ ...cv, docLang: "en", visibility: { birthDate: true, nationality: true, military: true } }),
+    );
+    expect(shown.personal.map((p) => p.key)).toEqual(["birthDate", "nationality", "military"]);
+    expect(shown.personal[0].value).toMatch(/^2 Aug 1995 \(\d+ yrs\)$/);
+    expect(shown.personal[2].value).toBe("Exempt");
+    const th = buildAboutCvModel(
+      base({ ...cv, docLang: "th", visibility: { birthDate: true, military: true } }),
+    );
+    expect(th.personal[0].value).toMatch(/^2 ส\.ค\. 2538 \(\d+ ปี\)$/);
+    expect(th.personal[1].value).toBe("ได้รับการยกเว้น");
+  });
+
+  it("adds references only when switched on", () => {
+    const cv = { references: [{ name: "Dani Martinez", role: "CEO, Studio X", contact: "0812345678" }] };
+    expect(buildAboutCvModel(base(cv)).sections.some((s) => s.key === "references")).toBe(false);
+    const m = buildAboutCvModel(base({ ...cv, visibility: { references: true } }));
+    const refs = m.sections.find((s) => s.key === "references");
+    expect(refs?.entries[0]).toMatchObject({ title: "Dani Martinez", lines: ["CEO, Studio X", "0812345678"] });
+  });
+
+  it("features the picked projects in order, else the top three by views", () => {
+    const projects = [
+      { id: "a", title: "A", views: 5 },
+      { id: "b", title: "B", views: 50 },
+      { id: "c", title: "C", views: 20 },
+      { id: "d", title: "D", views: 10 },
+    ];
+    const picked = buildAboutCvModel({
+      ...base({ featuredProjectIds: ["c", "a"], visibility: { projects: true } }),
+      projects,
+      siteOrigin: "https://samecor.com",
+    });
+    const sec = picked.sections.find((s) => s.key === "projects");
+    expect(sec?.entries.map((e) => e.title)).toEqual(["C", "A"]);
+    expect(sec?.entries[0].href).toBe("https://samecor.com/project/c");
+    const auto = buildAboutCvModel({
+      ...base({ visibility: { projects: true } }),
+      projects,
+      siteOrigin: "https://samecor.com",
+    });
+    expect(auto.sections.find((s) => s.key === "projects")?.entries.map((e) => e.title)).toEqual(["B", "C", "D"]);
+    expect(buildAboutCvModel({ ...base(), projects }).sections.some((s) => s.key === "projects")).toBe(false);
+  });
+});
