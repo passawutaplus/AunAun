@@ -91,7 +91,7 @@ export async function uploadProjectImage(
   if (options?.signal?.aborted) {
     throw new DOMException("Upload cancelled", "AbortError");
   }
-  await uploadToSharedMedia(path, compressed, contentType, 2, options?.signal);
+  await uploadToSharedMedia(path, compressed, contentType, 2, options?.signal, options?.reporter?.onPercent);
 
   bumpAnthemStorageCache(userId, compressed.size);
 

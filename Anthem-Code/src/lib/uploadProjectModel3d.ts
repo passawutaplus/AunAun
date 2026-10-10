@@ -27,6 +27,7 @@ export async function uploadProjectModel3d(
   folder: string,
   tier: Tier = "free",
   reporter?: UploadStageReporter,
+  signal?: AbortSignal,
 ): Promise<{ url: string; format: Model3dFormat }> {
   const format = model3dFormatFromFile(file);
   if (!format) throw new Error("รองรับเฉพาะไฟล์ .stl และ .obj");
@@ -41,7 +42,7 @@ export async function uploadProjectModel3d(
   const path = `anthem/${userId}/${folder}/${name}`;
 
   reporter?.onStage?.(UPLOAD_STAGE.uploadingModel3d);
-  await uploadToSharedMedia(path, file, CONTENT_TYPE[format]);
+  await uploadToSharedMedia(path, file, CONTENT_TYPE[format], 2, signal, reporter?.onPercent);
 
   bumpAnthemStorageCache(userId, file.size);
 

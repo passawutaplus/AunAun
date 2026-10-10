@@ -24,6 +24,7 @@ import { uploadProjectImage } from "@/lib/uploadImage";
 import { uploadProjectVideoWithPoster } from "@/lib/uploadVideo";
 import { uploadProjectModel3d } from "@/lib/uploadProjectModel3d";
 import { uploadProjectGif, isGifFile } from "@/lib/uploadProjectGif";
+import { GIF_CONVERT_ABOVE_BYTES } from "@/lib/compressGif";
 import { isVideoFile } from "@/lib/videoAccept";
 import { isModel3dFile } from "@/lib/model3dAccept";
 import { useUploadStageReporter } from "@/hooks/useUploadStageReporter";
@@ -290,6 +291,20 @@ const ProjectEditorPage = () => {
       tracked.clear();
     };
   }, []);
+  // Flows that did not create their own AbortController share one, so "ยกเลิก" really stops them.
+  const activeUploadsRef = useRef(0);
+  const beginUpload = useCallback((): AbortSignal => {
+    if (!uploadAbortRef.current || uploadAbortRef.current.signal.aborted) {
+      uploadAbortRef.current = new AbortController();
+    }
+    activeUploadsRef.current += 1;
+    return uploadAbortRef.current.signal;
+  }, []);
+  const endUpload = useCallback(() => {
+    activeUploadsRef.current = Math.max(0, activeUploadsRef.current - 1);
+    if (activeUploadsRef.current === 0) uploadAbortRef.current = null;
+  }, []);
+
   const cancelActiveUpload = useCallback(() => {
     uploadAbortRef.current?.abort();
     uploadAbortRef.current = null;
@@ -1131,7 +1146,7 @@ const ProjectEditorPage = () => {
       toast.success("อัปโหลดภาพปกสำเร็จ");
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return;
-      toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+      if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
     } finally {
       if (uploadAbortRef.current === ac) uploadAbortRef.current = null;
       setUploadingCover(false);
@@ -1165,29 +1180,61 @@ const ProjectEditorPage = () => {
     [],
   );
 
+  const uploadVideoCancellable: typeof uploadProjectVideoWithPoster = async (...args) => {
+    const signal = beginUpload();
+    try {
+      return await uploadProjectVideoWithPoster(args[0], args[1], args[2], args[3], args[4], signal);
+    } finally {
+      endUpload();
+    }
+  };
+  const uploadModelCancellable: typeof uploadProjectModel3d = async (...args) => {
+    const signal = beginUpload();
+    try {
+      return await uploadProjectModel3d(args[0], args[1], args[2], args[3], args[4], signal);
+    } finally {
+      endUpload();
+    }
+  };
+  const uploadGifCancellable: typeof uploadProjectGif = async (...args) => {
+    const signal = beginUpload();
+    try {
+      return await uploadProjectGif(args[0], args[1], args[2], args[3], args[4], signal);
+    } finally {
+      endUpload();
+    }
+  };
+
   const uploadRasterOrGif = useCallback(
-    async (file: File, signal?: AbortSignal): Promise<{ url: string; asVideo: boolean }> => {
+    async (file: File, passedSignal?: AbortSignal): Promise<{ url: string; asVideo: boolean }> => {
       if (!user) throw new Error("UNAUTHORIZED");
-      if (signal?.aborted) throw new DOMException("Upload cancelled", "AbortError");
-      if (isGifFile(file)) {
-        const { url, isVideo } = await uploadProjectGif(
-          file,
-          user.id,
-          folderRef.current,
-          tier,
-          uploadReporter,
-        );
-        return { url, asVideo: isVideo };
+      const own = !passedSignal;
+      const signal = passedSignal ?? beginUpload();
+      try {
+        if (signal.aborted) throw new DOMException("Upload cancelled", "AbortError");
+        if (isGifFile(file)) {
+          const { url, isVideo } = await uploadProjectGif(
+            file,
+            user.id,
+            folderRef.current,
+            tier,
+            uploadReporter,
+            signal,
+          );
+          return { url, asVideo: isVideo };
+        }
+        const prepared = await normalizeImageForUpload(file, uploadReporter);
+        if (signal.aborted) throw new DOMException("Upload cancelled", "AbortError");
+        const url = await uploadProjectImage(prepared, user.id, folderRef.current, tier, {
+          reporter: uploadReporter,
+          signal,
+        });
+        return { url, asVideo: false };
+      } finally {
+        if (own) endUpload();
       }
-      const prepared = await normalizeImageForUpload(file, uploadReporter);
-      if (signal?.aborted) throw new DOMException("Upload cancelled", "AbortError");
-      const url = await uploadProjectImage(prepared, user.id, folderRef.current, tier, {
-        reporter: uploadReporter,
-        signal,
-      });
-      return { url, asVideo: false };
     },
-    [user, tier, uploadReporter],
+    [user, tier, uploadReporter, beginUpload, endUpload],
   );
 
   const handleGallery = async (files: FileList | File[]) => {
@@ -1254,7 +1301,7 @@ const ProjectEditorPage = () => {
           } catch (e) {
             dropBatchPreviews(new Set([item.block.id]));
             if (e instanceof DOMException && e.name === "AbortError") return;
-            if (!failed) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+            if (!failed) if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
             failed = true;
             return;
           }
@@ -1294,7 +1341,7 @@ const ProjectEditorPage = () => {
       const urls: string[] = [];
       const posters: (string | null)[] = [];
       for (const f of toUpload) {
-        const { url, posterUrl } = await uploadProjectVideoWithPoster(
+        const { url, posterUrl } = await uploadVideoCancellable(
           f,
           user.id,
           folderRef.current,
@@ -1309,7 +1356,7 @@ const ProjectEditorPage = () => {
       if (!cover && firstPoster) setCover(firstPoster);
       toast.success(`อัปโหลด ${urls.length} วิดีโอสำเร็จ`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+      if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
     } finally {
       resetUploadStage();
       setUploadingVideo(false);
@@ -1872,7 +1919,7 @@ const ProjectEditorPage = () => {
           if (!cover) setCover(url);
           toast.success("อัปโหลดภาพสำเร็จ");
         } catch (e) {
-          toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+          if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
         } finally {
           setUploadingBlockId(null);
           setUploadingGallery(false);
@@ -1886,16 +1933,21 @@ const ProjectEditorPage = () => {
           toast.error("รองรับ JPG, PNG, GIF, WebP, HEIC");
           return;
         }
+        const multi =
+          block.mediaLayout === "gallery" ||
+          block.mediaLayout === "grid" ||
+          block.mediaLayout === "multi" ||
+          blockImageUrls(block).length > 1;
+        // A big GIF becomes a video, which a multi-image slot cannot hold: refuse before compressing/uploading.
+        if (multi && isGifFile(file) && file.size > GIF_CONVERT_ABOVE_BYTES) {
+          toast.error("GIF ใหญ่จะถูกแปลงเป็นวิดีโอ — ใช้โมดูลวิดีโอหรือย่อไฟล์ก่อน");
+          return;
+        }
         setUploadingBlockId(blockId);
         setUploadingGallery(true);
         try {
           if (isGifFile(file)) {
             const { url, asVideo } = await uploadRasterOrGif(file);
-            const multi =
-              block.mediaLayout === "gallery" ||
-              block.mediaLayout === "grid" ||
-              block.mediaLayout === "multi" ||
-              blockImageUrls(block).length > 1;
             if (asVideo) {
               if (multi) {
                 toast.error("GIF ใหญ่จะถูกแปลงเป็นวิดีโอ — ใช้โมดูลวิดีโอหรือย่อไฟล์ก่อน");
@@ -1994,7 +2046,7 @@ const ProjectEditorPage = () => {
           if (!cover) setCover(url);
           toast.success("อัปโหลดภาพสำเร็จ");
         } catch (e) {
-          toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+          if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
         } finally {
           setUploadingBlockId(null);
           setUploadingGallery(false);
@@ -2017,7 +2069,7 @@ const ProjectEditorPage = () => {
       setUploadingBlockId(blockId);
       setUploadingVideo(true);
       try {
-        const { url, posterUrl } = await uploadProjectVideoWithPoster(
+        const { url, posterUrl } = await uploadVideoCancellable(
           file,
           user.id,
           folderRef.current,
@@ -2039,7 +2091,7 @@ const ProjectEditorPage = () => {
         if (!cover && posterUrl) setCover(posterUrl);
         toast.success("อัปโหลดวิดีโอสำเร็จ");
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+        if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
       } finally {
         setUploadingBlockId(null);
         setUploadingVideo(false);
@@ -2168,7 +2220,7 @@ const ProjectEditorPage = () => {
           if (!cover && uploaded[0]) setCover(uploaded[0]);
           toast.success(uploaded.length > 1 ? `อัปโหลด ${uploaded.length} ภาพสำเร็จ` : "อัปโหลดภาพสำเร็จ");
         } catch (e) {
-          toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+          if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
         } finally {
           setUploadingBlockId(null);
           setUploadingGallery(false);
@@ -2236,7 +2288,7 @@ const ProjectEditorPage = () => {
         if (!cover && uploaded[0]) setCover(uploaded[0].url);
         toast.success(uploaded.length > 1 ? `อัปโหลด ${uploaded.length} ภาพสำเร็จ` : "อัปโหลดภาพสำเร็จ");
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+        if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
       } finally {
         setUploadingBlockId(null);
         setUploadingGallery(false);
@@ -2564,7 +2616,7 @@ const ProjectEditorPage = () => {
         setUploadingFlexModuleId(moduleId);
         setUploadingGallery(true);
         try {
-          const { url, isVideo } = await uploadProjectGif(
+          const { url, isVideo } = await uploadGifCancellable(
             file,
             user.id,
             folderRef.current,
@@ -2602,7 +2654,7 @@ const ProjectEditorPage = () => {
         }
         setUploadingFlexModuleId(moduleId);
         try {
-          const { url, format } = await uploadProjectModel3d(
+          const { url, format } = await uploadModelCancellable(
             file,
             user.id,
             folderRef.current,
@@ -2647,7 +2699,7 @@ const ProjectEditorPage = () => {
         setUploadingFlexModuleId(moduleId);
         setUploadingVideo(true);
         try {
-          const { url, posterUrl } = await uploadProjectVideoWithPoster(
+          const { url, posterUrl } = await uploadVideoCancellable(
             file,
             user.id,
             folderRef.current,

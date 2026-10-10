@@ -8,6 +8,7 @@ import { compressCommunityVideo } from "@/lib/compressCommunityVideo";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { isVideoFile } from "@/lib/videoAccept";
 import { extractVideoPosterFile } from "@/lib/videoPoster";
+import { abortable } from "@/lib/ffmpegCore";
 import { uploadToSharedMedia } from "@/lib/sharedMediaUpload";
 import { UPLOAD_STAGE, type UploadStageReporter } from "@/lib/uploadProgress";
 
@@ -26,10 +27,11 @@ export async function uploadProjectVideo(
   folder: string,
   tier: Tier = "free",
   reporter?: UploadStageReporter,
+  signal?: AbortSignal,
 ): Promise<string> {
   if (!isVideoFile(file)) throw new Error("ไฟล์ไม่ใช่วิดีโอ");
 
-  const prepared = await compressCommunityVideo(file, reporter);
+  const prepared = await abortable(compressCommunityVideo(file, reporter), signal, true);
 
   if (prepared.size > MAX_VIDEO_MB * 1024 * 1024) {
     throw new Error(`วิดีโอใหญ่เกิน ${MAX_VIDEO_MB}MB หลังบีบอัด — ลองคลิปสั้นลง`);
@@ -41,7 +43,7 @@ export async function uploadProjectVideo(
   const path = `anthem/${userId}/${folder}/${name}`;
 
   reporter?.onStage?.(UPLOAD_STAGE.uploadingVideo);
-  await uploadToSharedMedia(path, prepared, "video/mp4");
+  await uploadToSharedMedia(path, prepared, "video/mp4", 2, signal, reporter?.onPercent);
   bumpAnthemStorageCache(userId, prepared.size);
 
   const { data } = sharedStorage.storage.from(SHARED_MEDIA_BUCKET).getPublicUrl(path);
@@ -55,11 +57,12 @@ export async function uploadProjectVideoWithPoster(
   folder: string,
   tier: Tier = "free",
   reporter?: UploadStageReporter,
+  signal?: AbortSignal,
 ): Promise<UploadedProjectVideo> {
   // Grab the poster while the video is compressing/uploading instead of before it.
   const posterPromise = extractVideoPosterFile(file).catch(() => null);
 
-  const url = await uploadProjectVideo(file, userId, folder, tier, reporter);
+  const url = await uploadProjectVideo(file, userId, folder, tier, reporter, signal);
   const posterFile = await posterPromise;
 
   if (!posterFile) return { url, posterUrl: null };

@@ -8,6 +8,7 @@ import {
   bumpAnthemStorageCache,
 } from "@/lib/anthemStorageUsage";
 import { prepareGif } from "@/lib/compressGif";
+import { abortable } from "@/lib/ffmpegCore";
 import { uploadToSharedMedia } from "@/lib/sharedMediaUpload";
 import { UPLOAD_STAGE, type UploadStageReporter } from "@/lib/uploadProgress";
 
@@ -31,13 +32,14 @@ export async function uploadProjectGif(
   folder: string,
   tier: Tier = "free",
   reporter?: UploadStageReporter,
+  signal?: AbortSignal,
 ): Promise<{ url: string; isVideo: boolean }> {
   if (!isGifFile(file)) throw new Error("รองรับเฉพาะไฟล์ .gif");
   if (file.size > MAX_GIF_MB * 1024 * 1024) {
     throw new Error(`ไฟล์ GIF ใหญ่เกิน ${MAX_GIF_MB}MB`);
   }
 
-  const prepared = await prepareGif(file, reporter);
+  const prepared = await abortable(prepareGif(file, reporter), signal, true);
   const upload = prepared.file;
 
   await assertAnthemStorageAvailable(userId, tier, upload.size);
@@ -48,7 +50,7 @@ export async function uploadProjectGif(
   const path = `anthem/${userId}/${folder}/${name}`;
 
   reporter?.onStage?.(prepared.isVideo ? UPLOAD_STAGE.uploadingVideo : UPLOAD_STAGE.uploadingGif);
-  await uploadToSharedMedia(path, upload, contentType);
+  await uploadToSharedMedia(path, upload, contentType, 2, signal, reporter?.onPercent);
 
   bumpAnthemStorageCache(userId, upload.size);
 
