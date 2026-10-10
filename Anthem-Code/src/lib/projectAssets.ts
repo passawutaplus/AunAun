@@ -209,6 +209,32 @@ export function fileExtension(name: string): string {
   return base.slice(idx + 1).toLowerCase();
 }
 
+/** Leading bytes each allowed type must start with (client-side sanity check; the server scan stays authoritative). */
+const FILE_SIGNATURES: Record<string, (b: Uint8Array) => boolean> = {
+  pdf: (b) => b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46,
+  zip: (b) => b[0] === 0x50 && b[1] === 0x4b && (b[2] === 0x03 || b[2] === 0x05 || b[2] === 0x07),
+  png: (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47,
+  jpg: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  jpeg: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  webp: (b) => b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45,
+  ttf: (b) => (b[0] === 0x00 && b[1] === 0x01 && b[2] === 0x00 && b[3] === 0x00) || (b[0] === 0x74 && b[1] === 0x72),
+  otf: (b) => b[0] === 0x4f && b[1] === 0x54 && b[2] === 0x54 && b[3] === 0x4f,
+  woff: (b) => b[0] === 0x77 && b[1] === 0x4f && b[2] === 0x46 && b[3] === 0x46,
+  woff2: (b) => b[0] === 0x77 && b[1] === 0x4f && b[2] === 0x46 && b[3] === 0x32,
+};
+
+/** True when the file's first bytes match its extension (e.g. an .exe renamed to .pdf fails). */
+export async function fileSignatureMatchesExtension(file: File): Promise<boolean> {
+  const check = FILE_SIGNATURES[fileExtension(file.name)];
+  if (!check) return false;
+  try {
+    const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    return check(head);
+  } catch {
+    return false;
+  }
+}
+
 export function isAllowedProjectAssetFile(file: File): boolean {
   const ext = fileExtension(file.name);
   if (!ext || !PROJECT_ASSET_ALLOWED_EXTENSIONS.has(ext)) return false;

@@ -107,16 +107,14 @@ const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(functio
   { assets, onChange, userId, folder, projectId, tier = "free", bare = false },
   ref,
 ) {
-  const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
-  const [fileLabel, setFileLabel] = useState("");
   const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const skipRenameCommitRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const draftRef = useRef({ label: "", url: "" });
-  draftRef.current = { label, url };
+  const draftRef = useRef({ url: "" });
+  draftRef.current = { url };
 
   const atLimit = assets.length >= PROJECT_ASSETS_MAX;
 
@@ -133,11 +131,11 @@ const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(functio
 
   useImperativeHandle(ref, () => ({
     commitPending: () => {
-      const { label: draftLabel, url: draftUrl } = draftRef.current;
+      const { url: draftUrl } = draftRef.current;
       if (!draftUrl.trim()) {
         return { assets, added: false };
       }
-      const built = tryBuildLinkAsset(draftLabel, draftUrl, assets);
+      const built = tryBuildLinkAsset("", draftUrl, assets);
       if (built.error) {
         return { assets, added: false, error: built.error };
       }
@@ -146,14 +144,13 @@ const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(functio
       }
       const next = [...assets, built.asset];
       onChange(next);
-      setLabel("");
       setUrl("");
       return { assets: next, added: true };
     },
   }));
 
   const addLink = () => {
-    const built = tryBuildLinkAsset(label, url, assets);
+    const built = tryBuildLinkAsset("", url, assets);
     if (!url.trim()) {
       toast.error("กรุณาใส่ URL");
       return;
@@ -165,19 +162,15 @@ const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(functio
     if (!built.asset) return;
 
     onChange([...assets, built.asset]);
-    setLabel("");
     setUrl("");
-    toast.success("เพิ่มลิงก์แล้ว — ผ่านการตรวจสอบความปลอดภัย");
+    toast.success("เพิ่มลิงก์แล้ว — กดดินสอเพื่อเปลี่ยนชื่อที่แสดง");
   };
 
   const onPickFile = async (files: FileList | null) => {
     if (!files?.length || atLimit) return;
     const file = files[0];
-    const name = fileLabel.trim() || file.name.replace(/\.[^.]+$/, "");
-    if (!name.trim()) {
-      toast.error("กรุณาตั้งชื่อไฟล์");
-      return;
-    }
+    // Name comes from the file itself; the owner can rename it afterwards with the pencil.
+    const name = file.name.replace(/\.[^.]+$/, "").trim() || file.name;
 
     setUploading(true);
     try {
@@ -185,7 +178,6 @@ const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(functio
       const draft = createProjectFileAsset({ label: name.trim(), ...uploaded });
       const scanned = applyScanResult(draft, evaluateProjectAssetOnAdd(draft));
       onChange([...assets, scanned]);
-      setFileLabel("");
       if (fileInputRef.current) fileInputRef.current.value = "";
 
       if (scanned.scan_status === "blocked") {
@@ -407,13 +399,6 @@ const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(functio
           <ExternalLink className="h-3 w-3 text-primary shrink-0" aria-hidden />
           External Link
         </p>
-        <Input
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          placeholder="ชื่อลิงก์ เช่น Prototype, Figma"
-          disabled={atLimit}
-          maxLength={80}
-        />
         <div className="flex gap-2">
           <Input
             value={url}
@@ -468,13 +453,6 @@ const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(functio
           <Paperclip className="h-3 w-3 text-primary shrink-0" aria-hidden />
           Add File
         </p>
-        <Input
-          value={fileLabel}
-          onChange={(e) => setFileLabel(e.target.value)}
-          placeholder="ชื่อไฟล์ เช่น Brand guideline, Font pack"
-          disabled={atLimit || uploading}
-          maxLength={80}
-        />
         <input
           ref={fileInputRef}
           type="file"

@@ -4,7 +4,7 @@ import {
   assertAnthemStorageAvailable,
   bumpAnthemStorageCache,
 } from "@/lib/anthemStorageUsage";
-import { isAllowedProjectAssetFile } from "@/lib/projectAssets";
+import { fileSignatureMatchesExtension, isAllowedProjectAssetFile } from "@/lib/projectAssets";
 import { PROJECT_ASSETS_BUCKET } from "@/lib/projectAssetStorage";
 
 export async function uploadProjectAssetFile(
@@ -15,6 +15,9 @@ export async function uploadProjectAssetFile(
 ): Promise<{ storage_path: string; file_name: string; mime_type: string; size_bytes: number }> {
   if (!isAllowedProjectAssetFile(file)) {
     throw new Error("ประเภทหรือขนาดไฟล์ไม่รองรับ");
+  }
+  if (!(await fileSignatureMatchesExtension(file))) {
+    throw new Error("เนื้อไฟล์ไม่ตรงกับนามสกุลไฟล์ — ไม่รองรับไฟล์ที่เปลี่ยนนามสกุล");
   }
 
   await assertAnthemStorageAvailable(userId, tier, file.size);
