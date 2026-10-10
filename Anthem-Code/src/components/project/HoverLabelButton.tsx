@@ -16,13 +16,13 @@ export const HoverLabelButton = forwardRef<HTMLButtonElement, Props>(
       variant={variant}
       size="sm"
       aria-label={label}
-      className={cn("group h-9 shrink-0 rounded-full px-2.5", className)}
+      className={cn("group h-9 shrink-0 gap-0 rounded-full px-[9px]", className)}
       {...rest}
     >
       {icon}
       <span
         className={cn(
-          "max-w-0 overflow-hidden whitespace-nowrap text-xs opacity-0 transition-all duration-200 ease-out",
+          "hover-label max-w-0 overflow-hidden whitespace-nowrap text-xs opacity-0 transition-all duration-200 ease-out",
           "group-hover:ml-1.5 group-hover:max-w-[12rem] group-hover:opacity-100",
           "group-focus-visible:ml-1.5 group-focus-visible:max-w-[12rem] group-focus-visible:opacity-100",
         )}

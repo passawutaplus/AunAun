@@ -2041,3 +2041,10 @@ html [data-feed-catalog-head] .gap-y-1 {
   outline-offset: 4px;
   border-radius: 16px;
 }
+
+/* Tour spotlight on an icon button: show its label so the step reads clearly */
+[data-tour-active="true"] .hover-label {
+  margin-left: 0.375rem;
+  max-width: 12rem;
+  opacity: 1;
+}
