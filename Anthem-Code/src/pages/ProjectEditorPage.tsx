@@ -2870,16 +2870,7 @@ const ProjectEditorPage = () => {
 
   const detailsFooter = (
     <div className="flex items-center gap-2">
-      <HoverLabelButton
-        icon={<Eye className="h-4 w-4" />}
-        label="ดูตัวอย่าง"
-        className="mr-auto"
-        onClick={() => {
-          setPreviewMode("pc");
-          setPreviewOpen(true);
-        }}
-      />
-      <Button type="button" variant="ghost" className="rounded-full" onClick={() => setDetailsOpen(false)}>
+      <Button type="button" variant="ghost" className="ml-auto rounded-full" onClick={() => setDetailsOpen(false)}>
         ปิด
       </Button>
       <HoverLabelButton
@@ -3533,6 +3524,16 @@ const ProjectEditorPage = () => {
           open={detailsOpen}
           onOpenChange={setDetailsOpen}
           footer={detailsFooter}
+          headerAction={
+            <HoverLabelButton
+              icon={<Eye className="h-4 w-4" />}
+              label="ดูตัวอย่าง"
+              onClick={() => {
+                setPreviewMode("pc");
+                setPreviewOpen(true);
+              }}
+            />
+          }
           preview={
             <ProjectDetailsPreview
               cover={cover}

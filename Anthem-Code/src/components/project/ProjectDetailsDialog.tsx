@@ -6,6 +6,8 @@ import { TOUR_DIALOG_SLOT_ID } from "@/components/project/EditorTour";
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Sits next to the title (e.g. the preview button). */
+  headerAction?: ReactNode;
   /** Left side: live preview of the work. */
   preview: ReactNode;
   /** Right side: the fields. */
@@ -18,7 +20,7 @@ type Props = {
  * a full-height sheet rising from the bottom on phones. Closing it never discards what was typed —
  * the fields live in the editor page's own state.
  */
-export function ProjectDetailsDialog({ open, onOpenChange, preview, children, footer }: Props) {
+export function ProjectDetailsDialog({ open, onOpenChange, headerAction, preview, children, footer }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -31,7 +33,10 @@ export function ProjectDetailsDialog({ open, onOpenChange, preview, children, fo
         )}
       >
         <div className="border-b border-border px-5 py-4 pr-12">
-          <DialogTitle className="font-display text-lg font-normal tracking-tight">Work details</DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle className="font-display text-lg font-normal tracking-tight">Work details</DialogTitle>
+            {headerAction}
+          </div>
           <DialogDescription className="sr-only">ปิดหน้าต่างนี้ได้ ข้อมูลที่กรอกจะไม่หาย</DialogDescription>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:overflow-hidden">
