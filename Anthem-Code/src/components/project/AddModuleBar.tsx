@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
-import { AlignLeft, Film, GalleryHorizontal, ImagePlus, LayoutTemplate, PanelLeft } from "lucide-react";
+import { AlignLeft, Film, GalleryHorizontal, ImagePlus, LayoutGrid, LayoutTemplate, PanelLeft } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { setCanvasToolDragData, type CanvasToolPayload } from "@/lib/canvasToolDrag";
@@ -19,7 +19,6 @@ const pill =
   "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-50";
 
 const GALLERY_OPTIONS: Option[] = [
-  { label: "สไลด์เลื่อนดู", hint: "หลายภาพ เลื่อนซ้าย-ขวา", payload: { tool: "gallery" } },
   { label: "เรียงแถว 2 ภาพ", payload: { tool: "multi", columns: 2 } },
   { label: "เรียงแถว 3 ภาพ", payload: { tool: "multi", columns: 3 } },
   { label: "เรียงแถว 4 ภาพ", payload: { tool: "multi", columns: 4 } },
@@ -132,7 +131,17 @@ export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates 
           {icon(ImagePlus)}
           ภาพ
         </button>
-        {picker("gallery", "แกลเลอรี", icon(GalleryHorizontal), GALLERY_OPTIONS, { tool: "gallery" }, true)}
+        {picker("gallery", "แกลเลอรี", icon(LayoutGrid), GALLERY_OPTIONS, { tool: "multi", columns: 3 }, true)}
+        <button
+          type="button"
+          disabled={disabled}
+          className={pill}
+          onClick={() => onPlace({ tool: "gallery" })}
+          {...drag({ tool: "gallery" })}
+        >
+          {icon(GalleryHorizontal)}
+          สไลด์
+        </button>
         {picker("text", "ข้อความ", icon(AlignLeft), TEXT_OPTIONS, { tool: "body" })}
         {picker("split", "ภาพ + ข้อความ", icon(PanelLeft), IMAGE_TEXT_OPTIONS, { tool: "image_text", side: "image_left" })}
         <button

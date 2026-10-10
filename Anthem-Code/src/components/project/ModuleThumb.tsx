@@ -1,29 +1,22 @@
-import { Play } from "lucide-react";
+import { ImageIcon, Play } from "lucide-react";
 import type { CanvasToolPayload } from "@/lib/canvasToolDrag";
 import { PHOTO_GRID_LAYOUTS } from "@/lib/photoGridLayouts";
 import { cn } from "@/lib/utils";
 
-/** Real sample artwork (public/editor-help) so the mockups look like a finished page, not grey boxes. */
-const IMGS = [
-  "/editor-help/orbit-14.webp",
-  "/editor-help/orbit-13.webp",
-  "/editor-help/orbit-12.webp",
-  "/editor-help/orbit-15.webp",
-];
-
-const Photo = ({ i, className, style }: { i: number; className?: string; style?: React.CSSProperties }) => (
-  <img
-    src={IMGS[i % IMGS.length]}
-    alt=""
-    loading="lazy"
-    draggable={false}
-    className={cn("h-full w-full rounded-[3px] object-cover", className)}
-    style={style}
-  />
+/** Grey placeholder tile — same look as the Photo grid thumbnails in the module library. */
+const Photo = ({ className }: { className?: string }) => (
+  <div
+    className={cn(
+      "flex h-full w-full items-center justify-center rounded-[3px] bg-muted-foreground/25 text-muted-foreground/45",
+      className,
+    )}
+  >
+    <ImageIcon className="h-3 w-3" aria-hidden />
+  </div>
 );
 
 const Bar = ({ w = "60%", strong = false }: { w?: string; strong?: boolean }) => (
-  <div className={cn("h-1.5 rounded-full", strong ? "bg-foreground/80" : "bg-foreground/25")} style={{ width: w }} />
+  <div className={cn("h-1.5 rounded-full", strong ? "bg-muted-foreground/70" : "bg-muted-foreground/30")} style={{ width: w }} />
 );
 
 const Lines = ({ n = 3 }: { n?: number }) => (
@@ -39,13 +32,13 @@ function Mock({ payload }: { payload: CanvasToolPayload }) {
     case "heading":
       return (
         <div className="flex h-full items-center justify-center">
-          <div className="h-2.5 w-3/5 rounded-full bg-foreground/85" />
+          <div className="h-2.5 w-3/5 rounded-full bg-muted-foreground/70" />
         </div>
       );
     case "heading_body":
       return (
         <div className="flex h-full flex-col justify-center gap-2 px-1">
-          <div className="h-2.5 w-1/2 rounded-full bg-foreground/85" />
+          <div className="h-2.5 w-1/2 rounded-full bg-muted-foreground/70" />
           <Lines n={3} />
         </div>
       );
@@ -56,13 +49,13 @@ function Mock({ payload }: { payload: CanvasToolPayload }) {
         </div>
       );
     case "single":
-      return <Photo i={0} />;
+      return <Photo />;
     case "video":
       return (
         <div className="relative h-full">
-          <Photo i={1} />
+          <Photo />
           <span className="absolute inset-0 flex items-center justify-center">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-background/70 text-foreground">
               <Play className="h-3.5 w-3.5" aria-hidden />
             </span>
           </span>
@@ -71,17 +64,17 @@ function Mock({ payload }: { payload: CanvasToolPayload }) {
     case "gallery":
       return (
         <div className="relative h-full">
-          <Photo i={2} />
-          <span className="absolute left-1 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-black/55 text-center text-[10px] leading-4 text-white">
+          <Photo />
+          <span className="absolute left-1 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-background/70 text-center text-[10px] leading-4 text-foreground">
             ‹
           </span>
-          <span className="absolute right-1 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-black/55 text-center text-[10px] leading-4 text-white">
+          <span className="absolute right-1 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-background/70 text-center text-[10px] leading-4 text-foreground">
             ›
           </span>
           <div className="absolute inset-x-0 bottom-1 flex justify-center gap-1">
-            <i className="h-1 w-1 rounded-full bg-white" />
-            <i className="h-1 w-1 rounded-full bg-white/50" />
-            <i className="h-1 w-1 rounded-full bg-white/50" />
+            <i className="h-1 w-1 rounded-full bg-foreground/80" />
+            <i className="h-1 w-1 rounded-full bg-foreground/35" />
+            <i className="h-1 w-1 rounded-full bg-foreground/35" />
           </div>
         </div>
       );
@@ -89,7 +82,7 @@ function Mock({ payload }: { payload: CanvasToolPayload }) {
       return (
         <div className="grid h-full gap-1" style={{ gridTemplateColumns: `repeat(${payload.columns}, minmax(0, 1fr))` }}>
           {Array.from({ length: payload.columns }, (_, i) => (
-            <Photo key={i} i={i} />
+            <Photo key={i} />
           ))}
         </div>
       );
@@ -97,7 +90,7 @@ function Mock({ payload }: { payload: CanvasToolPayload }) {
       return (
         <div className={cn("flex h-full gap-1.5", payload.side === "text_left" && "flex-row-reverse")}>
           <div className="w-1/2">
-            <Photo i={3} />
+            <Photo />
           </div>
           <div className="flex w-1/2 flex-col justify-center gap-1.5">
             <Bar w="70%" strong />
@@ -124,7 +117,7 @@ function Mock({ payload }: { payload: CanvasToolPayload }) {
                   gridRow: `${c.row} / span ${c.rowSpan ?? 1}`,
                 }}
               >
-                <Photo i={i} />
+                <Photo />
               </div>
             ))}
           </div>
@@ -134,7 +127,7 @@ function Mock({ payload }: { payload: CanvasToolPayload }) {
         return (
           <div className="grid h-full grid-cols-2 grid-rows-2 gap-1">
             {[0, 1, 2, 3].map((i) => (
-              <Photo key={i} i={i} />
+              <Photo key={i} />
             ))}
           </div>
         );
@@ -142,30 +135,30 @@ function Mock({ payload }: { payload: CanvasToolPayload }) {
       // three_split / three_split_rev: one tall + two stacked
       return (
         <div
-          className={cn("grid h-full grid-cols-2 grid-rows-2 gap-1")}
+          className="grid h-full grid-cols-2 grid-rows-2 gap-1"
           style={{ gridTemplateAreas: payload.layout === "three_split_rev" ? '"a c" "b c"' : '"c a" "c b"' }}
         >
           <div style={{ gridArea: "c" }}>
-            <Photo i={0} />
+            <Photo />
           </div>
           <div style={{ gridArea: "a" }}>
-            <Photo i={1} />
+            <Photo />
           </div>
           <div style={{ gridArea: "b" }}>
-            <Photo i={2} />
+            <Photo />
           </div>
         </div>
       );
     }
     default:
-      return <Photo i={0} />;
+      return <Photo />;
   }
 }
 
-/** A small mockup of what a module looks like once placed. */
+/** A small grey-on-grey mockup of what a module looks like once placed. */
 export function ModuleThumb({ payload, className }: { payload: CanvasToolPayload; className?: string }) {
   return (
-    <div className={cn("aspect-[5/3] w-full overflow-hidden rounded-lg bg-background p-1.5", className)} aria-hidden>
+    <div className={cn("aspect-[5/3] w-full overflow-hidden rounded-lg bg-muted p-1.5", className)} aria-hidden>
       <Mock payload={payload} />
     </div>
   );
