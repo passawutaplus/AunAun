@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { TOUR_DIALOG_SLOT_ID } from "@/components/project/EditorTour";
 
 type Props = {
   open: boolean;
@@ -32,7 +33,10 @@ export function ProjectDetailsDialog({ open, onOpenChange, children, footer }: P
             ปิดหน้าต่างนี้ได้ ข้อมูลที่กรอกจะไม่หาย
           </DialogDescription>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <div id={TOUR_DIALOG_SLOT_ID} />
+          {children}
+        </div>
         <div className="border-t border-border px-5 py-3">{footer}</div>
       </DialogContent>
     </Dialog>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Eye, Handshake, ImagePlus, Loader2, Paperclip, Save, Scale, Tags, X } from "lucide-react";
+import { CircleHelp, Eye, Handshake, ImagePlus, Loader2, Paperclip, Save, Scale, Tags, X } from "lucide-react";
 import CatalogIcon from "@/components/icons/CatalogIcon";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
@@ -91,6 +91,7 @@ import { CanvasTemplatePreviewDialog } from "@/components/project/CanvasTemplate
 import { ProjectSeriesPicker } from "@/components/project/ProjectEditorSearchSelects";
 import { ProjectTaxonomyPicker } from "@/components/project/ProjectTaxonomyPicker";
 import { AddModuleBar } from "@/components/project/AddModuleBar";
+import { EditorTour, hasSeenEditorTour } from "@/components/project/EditorTour";
 import { WorkspaceHeader } from "@/components/project/WorkspaceHeader";
 import { ProjectConnectProducts } from "@/components/project/ProjectConnectProducts";
 import { connectKey, syncProjectConnections, useProjectConnectItems } from "@/hooks/useProjectConnections";
@@ -380,6 +381,16 @@ const ProjectEditorPage = () => {
   const [toolsTab, setToolsTab] = useState<"template" | "module">("module");
   const emptyStartImageInputRef = useRef<HTMLInputElement>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+  const tourCheckedRef = useRef(false);
+  useEffect(() => {
+    // First-time uploaders get the guided tour once (remembered in this browser only).
+    if (tourCheckedRef.current || authLoading || !user || editing) return;
+    tourCheckedRef.current = true;
+    if (hasSeenEditorTour()) return;
+    const timer = window.setTimeout(() => setTourOpen(true), 800);
+    return () => window.clearTimeout(timer);
+  }, [authLoading, user, editing]);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -2870,6 +2881,7 @@ const ProjectEditorPage = () => {
         <Button
           type="button"
           className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+          data-tour="publish-dialog"
           disabled={editorLocked}
           onClick={() => void handleDialogPublish()}
         >
@@ -3003,6 +3015,15 @@ const ProjectEditorPage = () => {
         <div className="flex w-full items-center gap-3 px-3 py-3 sm:px-4">
           <BackButton onClick={handleBackClick} />
           <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-1">
+            <button
+              type="button"
+              onClick={() => setTourOpen(true)}
+              aria-label="ดูทัวร์แนะนำการลงผลงาน"
+              title="ดูทัวร์แนะนำ"
+              className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground sm:inline-flex"
+            >
+              <CircleHelp className="h-4 w-4" aria-hidden />
+            </button>
             <div className="min-w-0">
               <h1 className="text-base font-semibold text-foreground truncate">
                 {editing ? "แก้ไขผลงาน" : "ลงผลงานใหม่"}
@@ -3077,6 +3098,7 @@ const ProjectEditorPage = () => {
               variant="outline"
               size="icon"
               className="rounded-full shrink-0"
+              data-tour="preview"
               onClick={() => {
                 setPreviewMode("pc");
                 setPreviewOpen(true);
@@ -3090,6 +3112,7 @@ const ProjectEditorPage = () => {
               variant="outline"
               size="sm"
               className="rounded-full"
+              data-tour="details"
               onClick={() => setDetailsOpen(true)}
               disabled={editorLocked}
             >
@@ -3549,6 +3572,7 @@ const ProjectEditorPage = () => {
             </div>
 
             <div
+              data-tour="category"
               className={cn(
                 "rounded-md transition-colors duration-500 ease-out",
                 publishFieldHighlight(publishFieldErrors.category) && "ring-2 ring-destructive/40 p-2 -m-2",
@@ -3697,6 +3721,19 @@ const ProjectEditorPage = () => {
         </ProjectDetailsDialog>
       </div>
 
+      <EditorTour
+        open={tourOpen}
+        facts={{
+          hasImage: countMediaByKind(mediaItemsFromBlocks(contentBlocks), "image") > 0,
+          title,
+          categorySet: !!categoryParentId,
+          shortDescription,
+          detailsOpen,
+        }}
+        onClose={() => setTourOpen(false)}
+        onOpenDetails={() => setDetailsOpen(true)}
+      />
+
       {/* Mobile sticky actions */}
       <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="max-w-6xl mx-auto flex gap-2">
@@ -3704,6 +3741,7 @@ const ProjectEditorPage = () => {
             type="button"
             variant="outline"
             className="shrink-0 rounded-xl px-3 text-sm"
+            data-tour="details"
             onClick={() => setDetailsOpen(true)}
             disabled={editorLocked}
           >

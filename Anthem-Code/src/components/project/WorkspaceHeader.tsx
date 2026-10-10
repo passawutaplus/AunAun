@@ -11,7 +11,7 @@ type Props = {
 /** The workspace card: just the work's name, editable in place (synced with the details dialog). */
 export function WorkspaceHeader({ title, onTitleChange, disabled, invalid }: Props) {
   return (
-    <header className="rounded-[28px] border border-border bg-card px-5 py-3 sm:px-6">
+    <header data-tour="title" className="rounded-[28px] border border-border bg-card px-5 py-3 sm:px-6">
       <Input
         value={title}
         onChange={(e) => onTitleChange(e.target.value)}

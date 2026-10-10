@@ -95,7 +95,7 @@ const ProjectContextEditorFields = ({
 
   return (
     <section className="space-y-3">
-      <div className="space-y-1.5" id="project-short-description">
+      <div className="space-y-1.5" id="project-short-description" data-tour="shortdesc">
         <Label className={fieldLabel}>
           รายละเอียดแบบย่อ <span className="text-primary">*</span>
         </Label>

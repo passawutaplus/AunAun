@@ -2034,3 +2034,10 @@ html [data-feed-catalog-head] .gap-y-1 {
   .status-screen-panel { animation: none; transform: none; }
   .status-screen-link svg { transition: none; }
 }
+
+/* First-run upload tour: ring on the real control being explained */
+[data-tour-active="true"] {
+  outline: 2px solid hsl(var(--foreground));
+  outline-offset: 4px;
+  border-radius: 16px;
+}

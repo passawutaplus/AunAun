@@ -794,6 +794,7 @@ export function ProjectEditorToolsSidebar({
           className,
         )}
         aria-label="เครื่องมือเพิ่มเนื้อหา"
+        data-tour="library"
       >
         {expanded ? (
           <div className="flex h-full flex-col lg:h-[calc(100dvh-4rem)]">
