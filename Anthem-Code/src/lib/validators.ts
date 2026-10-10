@@ -565,12 +565,16 @@ export const projectDraftSchema = projectSchema;
 export type ProjectDraftInput = z.infer<typeof projectDraftSchema>;
 
 /** Missing title/cover — shared by draft + publish gates. */
-export function validateProjectBasics(input: {
-  title?: string | null;
-  cover_url?: string | null;
-}): string | null {
+export function validateProjectBasics(
+  input: {
+    title?: string | null;
+    cover_url?: string | null;
+  },
+  /** A draft only needs a title; publishing also needs a cover. */
+  opts: { requireCover?: boolean } = {},
+): string | null {
   if (!input.title?.trim()) return "กรอกชื่องานก่อน";
-  if (!input.cover_url?.trim()) return "อัปโหลดภาพปกก่อน";
+  if (opts.requireCover && !input.cover_url?.trim()) return "อัปโหลดภาพปกก่อน";
   return null;
 }
 

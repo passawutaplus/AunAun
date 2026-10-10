@@ -94,7 +94,7 @@ const ProjectContextEditorFields = ({
     <section className="space-y-3">
       <div className="space-y-1.5" id="project-short-description">
         <Label className={fieldLabel}>
-          รายละเอียดแบบย่อ <span className="text-primary">*</span>
+          รายละเอียดแบบย่อ <span className="font-normal text-muted-foreground">ไม่บังคับ</span>
         </Label>
         <Textarea
           value={shortDescription}
@@ -104,7 +104,6 @@ const ProjectContextEditorFields = ({
           placeholder="สรุปสั้น ๆ ว่างานนี้คืออะไร ทำอะไร หรือจุดเด่นที่อยากให้จำ..."
           rows={3}
           maxLength={PROJECT_SHORT_DESCRIPTION_MAX}
-          required
           disabled={disabled}
           aria-invalid={shortDescriptionInvalid || undefined}
           className={cn(
