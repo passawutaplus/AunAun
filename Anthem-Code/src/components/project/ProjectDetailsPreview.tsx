@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  cover: string;
   title: string;
   shortDescription: string;
   category: string;
@@ -10,13 +9,14 @@ type Props = {
   hiringOn: boolean;
   collabOn: boolean;
   ownerName: string;
-  /** The cover picker, shown right under the card so changing the cover is one click away. */
+  /** The cover uploader; it fills the card's picture area so the card itself is where you set the cover. */
   coverControl: ReactNode;
+  /** Small extras next to the heading (e.g. the cover ⓘ). */
+  headingExtra?: ReactNode;
 };
 
 /** Left side of the details dialog: how the work looks as a card, updating live as the form is filled. */
 export function ProjectDetailsPreview({
-  cover,
   title,
   shortDescription,
   category,
@@ -25,19 +25,17 @@ export function ProjectDetailsPreview({
   collabOn,
   ownerName,
   coverControl,
+  headingExtra,
 }: Props) {
   const shownTags = tags.slice(0, 6);
   return (
     <div className="space-y-4">
-      <p className="text-xs font-semibold text-muted-foreground">ตัวอย่างที่คนเห็น</p>
+      <p id="project-details-cover" className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+        ตัวอย่างที่คนเห็น · ภาพปก <span className="text-primary">*</span>
+        {headingExtra}
+      </p>
       <article className="overflow-hidden rounded-3xl border border-border bg-card">
-        <div className="relative aspect-[4/3] w-full bg-muted">
-          {cover ? (
-            <img src={cover} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full items-center justify-center text-xs text-muted-foreground">ยังไม่มีภาพปก</div>
-          )}
-        </div>
+        <div className="p-2 pb-0">{coverControl}</div>
         <div className="space-y-2 px-4 py-3">
           <h3 className={cn("font-display text-lg font-normal leading-snug", !title.trim() && "text-muted-foreground/70")}>
             {title.trim() || "ผลงานที่ยังไม่มีชื่อ"}
@@ -74,7 +72,6 @@ export function ProjectDetailsPreview({
           ) : null}
         </div>
       </article>
-      {coverControl}
     </div>
   );
 }

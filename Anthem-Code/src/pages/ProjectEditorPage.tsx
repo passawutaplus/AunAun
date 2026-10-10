@@ -1658,6 +1658,10 @@ const ProjectEditorPage = () => {
       if (firstKey === "title") titleInputRef.current?.focus();
       else if (firstKey === "shortDescription") {
         document.getElementById("project-short-description")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (firstKey === "category") {
+        document.querySelector('[data-tour="category"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (firstKey === "cover") {
+        document.getElementById("project-details-cover")?.scrollIntoView({ behavior: "smooth", block: "center" });
       } else if (firstKey === "canvasImage") {
         setDetailsOpen(false);
         document.getElementById("project-canvas-editor")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -2862,6 +2866,7 @@ const ProjectEditorPage = () => {
     }
     if (!publishAttestChecked) {
       toast.error("ติ๊กยืนยันสิทธิ์ในผลงานก่อนเผยแพร่");
+      document.getElementById("project-details-confirm")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     setDetailsOpen(false);
@@ -2870,6 +2875,13 @@ const ProjectEditorPage = () => {
 
   const detailsFooter = (
     <div className="flex items-center gap-2">
+      {publishRemaining > 0 || !publishAttestChecked ? (
+        <span className="mr-auto text-xs text-muted-foreground">
+          {publishRemaining > 0
+            ? `ยังขาด ${publishRemaining} อย่าง${publishAttestChecked ? "" : " + ติ๊กยืนยันสิทธิ์"}`
+            : "ติ๊กยืนยันสิทธิ์ก่อนเผยแพร่"}
+        </span>
+      ) : null}
       <Button type="button" variant="ghost" className="ml-auto rounded-full" onClick={() => setDetailsOpen(false)}>
         ปิด
       </Button>
@@ -2917,10 +2929,6 @@ const ProjectEditorPage = () => {
 
   const coverField = (
             <div className="space-y-2">
-              <Label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                ภาพปก <span className="text-primary">*</span>
-                <EditorInfoButton topic="cover" />
-              </Label>
               <CoverDrop
                 url={cover}
                 loading={uploadingCover}
@@ -3536,7 +3544,6 @@ const ProjectEditorPage = () => {
           }
           preview={
             <ProjectDetailsPreview
-              cover={cover}
               title={title}
               shortDescription={shortDescription}
               category={category}
@@ -3545,6 +3552,7 @@ const ProjectEditorPage = () => {
               collabOn={allowCollab}
               ownerName={"คุณ"}
               coverControl={coverField}
+              headingExtra={<EditorInfoButton topic="cover" />}
             />
           }
         >
@@ -3609,6 +3617,11 @@ const ProjectEditorPage = () => {
             {catalogField}
             {renderDetailsExtras(true, "context")}
             </CollapsibleEditorCard>
+
+            <div className="flex items-center gap-3 pt-1">
+              <span className="font-display text-xs text-muted-foreground">Optional</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
 
             <CollapsibleEditorCard
               title="Hiring"
@@ -3720,9 +3733,15 @@ const ProjectEditorPage = () => {
             )}
             {renderDetailsExtras(true, "rights")}
 
+            <div className="flex items-center gap-3 pt-1">
+              <span className="font-display text-xs text-muted-foreground">Before you publish</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <div id="project-details-confirm">
             <CollapsibleEditorCard title="Confirm" icon={ShieldCheck} framed>
               <OriginalWorkAttestation checked={publishAttestChecked} onCheckedChange={setPublishAttestChecked} />
             </CollapsibleEditorCard>
+            </div>
           </div>
 
         </ProjectDetailsDialog>
