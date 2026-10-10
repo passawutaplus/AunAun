@@ -3521,6 +3521,7 @@ const ProjectEditorPage = () => {
               onPickImages={(files) => void handleCanvasDropFiles(files)}
               onPlace={(payload) => handlePlaceTool(payload)}
               onOpenTemplates={() => setTemplatePickerOpen(true)}
+              showTemplates={contentBlocks.length === 0}
             />
           )}
 

@@ -11,6 +11,8 @@ type Props = {
   onPickImages: (files: File[]) => void;
   onPlace: (payload: CanvasToolPayload) => void;
   onOpenTemplates: () => void;
+  /** The Template shortcut only makes sense on an empty artboard. */
+  showTemplates?: boolean;
 };
 
 type Option = { label: string; hint?: string; payload: CanvasToolPayload };
@@ -41,7 +43,7 @@ const IMAGE_TEXT_OPTIONS: Option[] = [
 ];
 
 /** Quick drop's one-tap module bar. Modules with several layouts open a short picker. */
-export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates }: Props) {
+export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates, showTemplates = true }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
 
@@ -111,15 +113,17 @@ export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates 
         aria-label="เพิ่มโมดูล"
         className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-border bg-background/95 p-1.5 backdrop-blur-md"
       >
-        <button
-          type="button"
-          disabled={disabled}
-          className={cn(pill, "bg-foreground text-background hover:bg-foreground/90")}
-          onClick={onOpenTemplates}
-        >
-          {icon(LayoutTemplate)}
-          เริ่มง่าย ๆ ด้วย Template
-        </button>
+        {showTemplates ? (
+          <button
+            type="button"
+            disabled={disabled}
+            className={cn(pill, "bg-foreground text-background hover:bg-foreground/90")}
+            onClick={onOpenTemplates}
+          >
+            {icon(LayoutTemplate)}
+            เริ่มง่าย ๆ ด้วย Template
+          </button>
+        ) : null}
         <span className="shrink-0 pl-2 pr-1 text-xs text-muted-foreground">เพิ่ม</span>
         <button
           type="button"
