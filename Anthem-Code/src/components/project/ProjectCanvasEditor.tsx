@@ -1349,8 +1349,9 @@ export function ProjectCanvasEditor({
     return (
       <label
         className={cn(
-          "flex min-h-[420px] cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border border-dashed px-5 py-10 text-center transition-colors",
-          toolDragOver ? "border-foreground bg-card" : "border-border/80 bg-muted/20 hover:border-foreground/40",
+          "group flex min-h-[420px] cursor-pointer items-center justify-center rounded-[28px] px-4 py-10 transition-colors",
+          "bg-[radial-gradient(60%_75%_at_50%_100%,hsl(36_80%_55%/0.26),hsl(40_90%_70%/0.12)_55%,transparent_80%)]",
+          "dark:bg-[radial-gradient(60%_75%_at_50%_100%,hsl(34_70%_50%/0.20),hsl(36_60%_45%/0.08)_55%,transparent_80%)]",
           disabled && "pointer-events-none opacity-60",
         )}
         onDragOver={handleCanvasDragOver}
@@ -1374,13 +1375,27 @@ export function ProjectCanvasEditor({
             e.target.value = "";
           }}
         />
-        {uploading ? <Loader2 className="h-8 w-8 animate-spin" /> : <ImagePlus className="h-8 w-8 text-muted-foreground" />}
+        <div
+          className={cn(
+            "flex w-full max-w-md flex-col items-center gap-2 rounded-3xl border-[1.5px] border-dashed bg-background/70 px-5 py-8 text-center backdrop-blur-sm transition-colors",
+            toolDragOver ? "border-foreground" : "border-border group-hover:border-foreground/40",
+          )}
+        >
+        {uploading ? (
+          <Loader2 className="h-6 w-6 animate-spin" />
+        ) : (
+          <span className="mb-1 flex gap-2" aria-hidden>
+            <i className="block h-5 w-3 rotate-[14deg] rounded-full bg-foreground" />
+            <i className="block h-5 w-3 rotate-[14deg] rounded-full bg-foreground" />
+          </span>
+        )}
         <span className="text-base font-medium text-foreground">วางรูปผลงานของคุณตรงนี้ได้เลย</span>
         <span className="text-sm text-muted-foreground">หรือคลิกเพื่อเลือกรูป · รูปแรกจะเป็นภาพปกให้อัตโนมัติ</span>
         <span className="text-xs text-muted-foreground">อยากใส่ข้อความ วิดีโอ หรือจัดเลย์เอาต์? เลือกจากแถบด้านล่างได้เลย</span>
         {uploading ? (
           <CanvasUploadProgress label={uploadStageLabel} percent={uploadStagePercent} onCancel={onCancelUpload} />
         ) : null}
+        </div>
       </label>
     );
   }

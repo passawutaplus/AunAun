@@ -92,6 +92,7 @@ import { CanvasTemplatePreviewDialog } from "@/components/project/CanvasTemplate
 import { ProjectSeriesPicker } from "@/components/project/ProjectEditorSearchSelects";
 import { ProjectTaxonomyPicker } from "@/components/project/ProjectTaxonomyPicker";
 import { AddModuleBar } from "@/components/project/AddModuleBar";
+import { WorkspaceHeader } from "@/components/project/WorkspaceHeader";
 import { QuickAdvancedGroup, QuickConnectGroup } from "@/components/project/QuickAdvancedGroup";
 import { readUploadMode, writeUploadMode, type UploadMode } from "@/lib/uploadMode";
 import {
@@ -3319,6 +3320,22 @@ const ProjectEditorPage = () => {
             )}
           >
           {/* Left: canvas — content max-w-4xl (match published detail); side rail uses the extra gutter */}
+          {uploadMode === "quick" ? (
+            <WorkspaceHeader
+              title={title}
+              onTitleChange={(value) => {
+                setTitle(value);
+                clearPublishFieldError("title");
+              }}
+              disabled={editorLocked}
+              invalid={!!publishFieldErrors.title}
+              statusLabel={status === "Published" ? "เผยแพร่แล้ว" : "ยังไม่เผยแพร่"}
+              hasCategory={!!categoryParentId}
+              moduleCount={contentBlocks.length}
+              imageCount={countMediaByKind(mediaItemsFromBlocks(contentBlocks), "image")}
+            />
+          ) : null}
+
           <section
             id="project-canvas-editor"
             className={cn(
