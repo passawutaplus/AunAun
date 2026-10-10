@@ -8,7 +8,8 @@ import {
   type ScanAsset,
 } from "../_shared/project-asset-notify.ts";
 import { anthemDb } from "../_shared/ecosystem-db.ts";
-import { virusTotalScanFile, virusTotalScanUrl } from "../_shared/virustotal.ts";
+import { virusTotalConfigured, virusTotalScanFile, virusTotalScanUrl } from "../_shared/virustotal.ts";
+import { checkAttachmentBytes } from "../_shared/asset-content-checks.ts";
 
 const BodySchema = z.object({ project_id: z.string().uuid() });
 
@@ -44,11 +45,38 @@ function isValidPath(p?: string): boolean {
   return p.includes("/assets/");
 }
 
+/** Bump when the scan rules get stricter; older results are re-scanned the next time the owner saves. */
+const ENGINE = "v2";
+
+/**
+ * Only the server writes a verdict: `server_scanned_at` + `scan_engine` mark it as ours. A database trigger
+ * (anthem.guard_project_assets) strips these from anything the browser sends, so a client-claimed "clean" is
+ * treated as pending and scanned here.
+ */
+function stamp(asset: ScanAsset, status: "clean" | "blocked" | "pending", reason: string | null): ScanAsset {
+  const now = new Date().toISOString();
+  return {
+    ...asset,
+    scan_status: status,
+    scan_reason: reason,
+    scanned_at: status === "pending" ? null : now,
+    server_scanned_at: status === "pending" ? null : now,
+    scan_engine: ENGINE,
+  };
+}
+
+function needsScan(a: ScanAsset): boolean {
+  return a.scan_status === "pending" || !a.server_scanned_at || a.scan_engine !== ENGINE;
+}
+
 async function basicFileCheck(asset: ScanAsset): Promise<{ ok: boolean; reason: string | null }> {
-  const name = asset.file_name ?? asset.storage_path ?? "";
-  const e = ext(name);
+  // The object's own name is authoritative; the client-supplied file_name must agree with it.
+  const e = ext(asset.storage_path ?? "");
   if (!e || !ALLOWED_EXT.has(e)) {
     return { ok: false, reason: "ประเภทไฟล์นี้ไม่รองรับ" };
+  }
+  if (asset.file_name && ext(asset.file_name) !== e) {
+    return { ok: false, reason: "ชื่อไฟล์ไม่ตรงกับไฟล์ที่อัปโหลดจริง" };
   }
   if (typeof asset.size_bytes === "number" && asset.size_bytes > 25 * 1024 * 1024) {
     return { ok: false, reason: "ไฟล์ใหญ่เกินกำหนด" };
@@ -63,46 +91,33 @@ async function deepScanFile(
   admin: ReturnType<typeof createClient>,
   asset: ScanAsset,
 ): Promise<ScanAsset> {
-  const basic = await basicFileCheck(asset);
-  if (!basic.ok) {
+  const blockFile = async (reason: string | null) => {
     await deleteBlockedAssetFile(admin, asset);
-    return {
-      ...asset,
-      scan_status: "blocked",
-      scan_reason: basic.reason,
-      scanned_at: new Date().toISOString(),
-    };
-  }
+    return stamp(asset, "blocked", reason);
+  };
+
+  const basic = await basicFileCheck(asset);
+  if (!basic.ok) return blockFile(basic.reason);
 
   const { bucket, path } = resolveAssetStorage(asset.storage_path!);
   const { data: blob, error } = await admin.storage.from(bucket).download(path);
-  if (error || !blob) {
-    return {
-      ...asset,
-      scan_status: "blocked",
-      scan_reason: "ไม่พบไฟล์ในระบบ",
-      scanned_at: new Date().toISOString(),
-    };
-  }
+  if (error || !blob) return stamp(asset, "blocked", "ไม่พบไฟล์ในระบบ");
 
   const bytes = new Uint8Array(await blob.arrayBuffer());
-  const vt = await virusTotalScanFile(bytes);
-  if (!vt.clean) {
-    await deleteBlockedAssetFile(admin, asset);
-    return {
-      ...asset,
-      scan_status: "blocked",
-      scan_reason: vt.reason ?? "ไฟล์ไม่ผ่านการสแกน",
-      scanned_at: new Date().toISOString(),
-    };
+  if (bytes.length > 25 * 1024 * 1024) return blockFile("ไฟล์ใหญ่เกินกำหนด");
+
+  // Local checks on the real bytes: signature vs extension, ZIP contents, PDF launch actions.
+  const content = checkAttachmentBytes(ext(path), bytes);
+  if (!content.ok) return blockFile(content.reason);
+
+  if (virusTotalConfigured()) {
+    const vt = await virusTotalScanFile(bytes);
+    // Service down / timed out: do not wave it through — keep it pending so it is retried.
+    if (vt.unavailable) return stamp(asset, "pending", "รอผลตรวจสอบเพิ่มเติม — ลองใหม่อีกครั้งภายหลัง");
+    if (!vt.clean) return blockFile(vt.reason ?? "ไฟล์ไม่ผ่านการสแกน");
   }
 
-  return {
-    ...asset,
-    scan_status: "clean",
-    scan_reason: null,
-    scanned_at: new Date().toISOString(),
-  };
+  return stamp(asset, "clean", null);
 }
 
 const URL_SHORTENER_HOSTS = new Set([
@@ -196,6 +211,9 @@ async function deepScanLink(asset: ScanAsset): Promise<ScanAsset> {
   }
 
   const vt = await virusTotalScanUrl(safe);
+  if (vt.unavailable) {
+    return { ...asset, scan_status: "pending", scan_reason: "รอผลตรวจสอบเพิ่มเติม — ลองใหม่อีกครั้งภายหลัง", scanned_at: null };
+  }
   if (!vt.clean) {
     return {
       ...asset,
@@ -217,15 +235,13 @@ async function deepScan(
   admin: ReturnType<typeof createClient>,
   asset: ScanAsset,
 ): Promise<ScanAsset> {
-  if (asset.scan_status !== "pending") return asset;
-  if (asset.kind === "link" && asset.url) return deepScanLink(asset);
+  if (!needsScan(asset)) return asset;
+  if (asset.kind === "link" && asset.url) {
+    const r = await deepScanLink(asset);
+    return r.scan_status === "pending" ? stamp(r, "pending", r.scan_reason ?? null) : stamp(r, r.scan_status, r.scan_reason ?? null);
+  }
   if (asset.kind === "file") return deepScanFile(admin, asset);
-  return {
-    ...asset,
-    scan_status: "blocked",
-    scan_reason: "ข้อมูลไม่ครบ",
-    scanned_at: new Date().toISOString(),
-  };
+  return stamp(asset, "blocked", "ข้อมูลไม่ครบ");
 }
 
 Deno.serve(async (req) => {

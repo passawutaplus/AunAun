@@ -1,16 +1,16 @@
 import { supabase } from "@/integrations/supabase/client";
-import { scanProjectAssets } from "@/lib/projectAssetScan";
-import {
-  parseProjectAssets,
-  projectAssetsToExternalLinks,
-  toStoredProjectAssets,
-} from "@/lib/projectAssets";
+import { parseProjectAssets } from "@/lib/projectAssets";
 
 export type ProjectAssetScanResult = {
   assets: ReturnType<typeof parseProjectAssets>;
   blockedCount: number;
 };
 
+/**
+ * When the scan Edge Function cannot be reached the browser must NOT declare anything clean: the database
+ * strips any client-written verdict anyway. Just report what is stored; the items stay pending and are
+ * scanned the next time the function is reachable (the owner saving again triggers it).
+ */
 async function clientFallbackScan(projectId: string): Promise<ProjectAssetScanResult> {
   const { data: row } = await supabase
     .from("projects")
@@ -19,19 +19,7 @@ async function clientFallbackScan(projectId: string): Promise<ProjectAssetScanRe
     .maybeSingle();
 
   const assets = parseProjectAssets(row?.project_assets, row?.external_links);
-  const scanned = scanProjectAssets(assets, true);
-  const blockedCount = scanned.filter((a) => a.scan_status === "blocked").length;
-  const cleanLinks = projectAssetsToExternalLinks(scanned);
-
-  await supabase
-    .from("projects")
-    .update({
-      project_assets: toStoredProjectAssets(scanned),
-      external_links: cleanLinks,
-    })
-    .eq("id", projectId);
-
-  return { assets: scanned, blockedCount };
+  return { assets, blockedCount: assets.filter((a) => a.scan_status === "blocked").length };
 }
 
 /** Run deep scan (Edge Function or client fallback). */

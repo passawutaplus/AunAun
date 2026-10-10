@@ -92,6 +92,8 @@ function tryBuildLinkAsset(
   if (scanned.scan_status === "blocked") {
     return { error: scanned.scan_reason ?? "ลิงก์ไม่ผ่านการตรวจสอบความปลอดภัย" };
   }
+  // The browser's own check can only block. "Clean" is the server's call, made after the work is saved.
+  const pendingLink: ProjectAsset = { ...scanned, scan_status: "pending", scan_reason: null, scanned_at: null };
 
   const dup = existing.some(
     (a) => a.kind === "link" && (a.url ?? "").replace(/\/$/, "") === safe.replace(/\/$/, ""),
@@ -100,7 +102,7 @@ function tryBuildLinkAsset(
     return { error: "ลิงก์นี้ถูกเพิ่มแล้ว" };
   }
 
-  return { asset: scanned };
+  return { asset: pendingLink };
 }
 
 const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(function ProjectAssetsEditor(
@@ -126,7 +128,7 @@ const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(functio
     if (result.scan_status === "blocked") {
       return { tone: "error" as const, message: result.scan_reason ?? "ลิงก์ไม่ปลอดภัย" };
     }
-    return { tone: "ok" as const, message: "ลิงก์ผ่านการตรวจสอบเบื้องต้น — กดเพิ่มลิงก์ก่อนบันทึก" };
+    return { tone: "ok" as const, message: "ลิงก์ผ่านการตรวจสอบเบื้องต้น — กดเพิ่มลิงก์ก่อนบันทึก (ตรวจละเอียดอีกครั้งหลังบันทึก)" };
   }, [url]);
 
   useImperativeHandle(ref, () => ({
@@ -163,7 +165,7 @@ const ProjectAssetsEditor = forwardRef<ProjectAssetsEditorHandle, Props>(functio
 
     onChange([...assets, built.asset]);
     setUrl("");
-    toast.success("เพิ่มลิงก์แล้ว — กดดินสอเพื่อเปลี่ยนชื่อที่แสดง");
+    toast.success("เพิ่มลิงก์แล้ว — จะตรวจสอบความปลอดภัยหลังบันทึก กดดินสอเพื่อเปลี่ยนชื่อที่แสดง");
   };
 
   const onPickFile = async (files: FileList | null) => {

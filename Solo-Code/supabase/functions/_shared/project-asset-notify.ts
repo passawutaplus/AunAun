@@ -1,6 +1,14 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
-import { anthemSiteUrl } from "./anthem-email-html.ts";
 import { sharedDb } from "./ecosystem-db.ts";
+
+/** Same lookup as anthem-email-html.ts, kept local so the scan functions do not bundle the whole email template file. */
+function anthemSiteUrl(): string {
+  return (
+    Deno.env.get("APLUS1_APP_URL") ??
+    Deno.env.get("ANTHEM_APP_URL") ??
+    "https://aplus1.app"
+  ).replace(/\/$/, "");
+}
 
 export type ScanAsset = {
   id?: string;
@@ -14,6 +22,9 @@ export type ScanAsset = {
   scan_status: "pending" | "clean" | "blocked";
   scan_reason?: string | null;
   scanned_at?: string | null;
+  /** Set only by the scan function (service role); the database strips it from client writes. */
+  server_scanned_at?: string | null;
+  scan_engine?: string;
 };
 
 export function resolveAssetStorage(storagePath: string): { bucket: string; path: string } {

@@ -70,6 +70,7 @@ import {
   toStoredProjectAssets,
   projectAssetsToExternalLinks,
   hasPendingProjectAssets,
+  needsServerScan,
   type ProjectAsset,
 } from "@/lib/projectAssets";
 import { enqueueProjectAssetScan } from "@/lib/triggerProjectAssetScan";
@@ -454,7 +455,7 @@ const ProjectEditorPage = () => {
     setProjectContext((c) => ({ ...c, ...patch }));
   }, []);
   const scheduleBackgroundAssetScan = useCallback((projectId: string) => {
-    if (!hasPendingProjectAssets(projectAssets)) return;
+    if (!needsServerScan(projectAssets)) return;
     toast.message("กำลังตรวจสอบไฟล์แนบ/ลิงก์ในพื้นหลัง — จะแจ้งเมื่อเสร็จ");
     enqueueProjectAssetScan(projectId, ({ blockedCount }) => {
       if (blockedCount > 0) {

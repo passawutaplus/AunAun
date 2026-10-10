@@ -19,6 +19,9 @@ export type ProjectAsset = {
   scan_status: ProjectAssetScanStatus;
   scan_reason?: string | null;
   scanned_at?: string | null;
+  /** Written only by the scan Edge Function; the database strips it from anything the browser sends. */
+  server_scanned_at?: string | null;
+  scan_engine?: string;
 };
 
 export type StoredProjectAsset = Omit<ProjectAsset, "id"> & { id?: string };
@@ -101,6 +104,8 @@ function normalizeStoredAsset(raw: Record<string, unknown>): ProjectAsset | null
       scan_status,
       scan_reason: raw.scan_reason != null ? String(raw.scan_reason) : null,
       scanned_at: typeof raw.scanned_at === "string" ? raw.scanned_at : null,
+      server_scanned_at: typeof raw.server_scanned_at === "string" ? raw.server_scanned_at : null,
+      scan_engine: typeof raw.scan_engine === "string" ? raw.scan_engine : undefined,
     };
   }
 
@@ -117,6 +122,8 @@ function normalizeStoredAsset(raw: Record<string, unknown>): ProjectAsset | null
     scan_status,
     scan_reason: raw.scan_reason != null ? String(raw.scan_reason) : null,
     scanned_at: typeof raw.scanned_at === "string" ? raw.scanned_at : null,
+    server_scanned_at: typeof raw.server_scanned_at === "string" ? raw.server_scanned_at : null,
+    scan_engine: typeof raw.scan_engine === "string" ? raw.scan_engine : undefined,
   };
 }
 
@@ -166,6 +173,8 @@ export function toStoredProjectAssets(assets: ProjectAsset[]): StoredProjectAsse
       scan_status: a.scan_status,
       scan_reason: a.scan_reason ?? null,
       scanned_at: a.scanned_at ?? null,
+      server_scanned_at: a.server_scanned_at ?? null,
+      scan_engine: a.scan_engine,
     };
     if (a.kind === "link") {
       return { ...base, url: a.url?.trim() ?? "" };
@@ -195,6 +204,11 @@ export function filterPublicProjectAssets(assets: ProjectAsset[]): ProjectAsset[
 
 export function hasPendingProjectAssets(assets: ProjectAsset[]): boolean {
   return assets.some((a) => a.scan_status === "pending");
+}
+
+/** Anything the server has not judged under the current rules (pending, unstamped or an older engine). */
+export function needsServerScan(assets: ProjectAsset[]): boolean {
+  return assets.some((a) => a.scan_status === "pending" || !a.server_scanned_at || a.scan_engine !== "v2");
 }
 
 export function projectAssetDownloadUrl(asset: ProjectAsset): string | undefined {

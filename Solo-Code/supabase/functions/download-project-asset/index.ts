@@ -43,10 +43,13 @@ function isValidPath(p?: string): boolean {
 }
 
 function basicFileStillOk(asset: ScanAsset): { ok: boolean; reason: string | null } {
-  const name = asset.file_name ?? asset.storage_path ?? "";
-  const e = fileExt(name);
+  // The stored object's own name is authoritative, not the client-supplied file_name.
+  const e = fileExt(asset.storage_path ?? "");
   if (!e || !ALLOWED_EXT.has(e)) {
     return { ok: false, reason: "ประเภทไฟล์นี้ไม่รองรับ" };
+  }
+  if (asset.file_name && fileExt(asset.file_name) !== e) {
+    return { ok: false, reason: "ชื่อไฟล์ไม่ตรงกับไฟล์ที่อัปโหลดจริง" };
   }
   if (typeof asset.size_bytes === "number" && asset.size_bytes > 25 * 1024 * 1024) {
     return { ok: false, reason: "ไฟล์ใหญ่เกินกำหนด" };
@@ -144,6 +147,11 @@ Deno.serve(async (req) => {
       error: "blocked",
       reason: asset.scan_reason ?? "ไม่ผ่านการตรวจสอบความปลอดภัย",
     }, 403);
+  }
+
+  // A verdict only counts if the scan function wrote it (a database trigger strips this stamp from client writes).
+  if (!asset.server_scanned_at) {
+    return json(req, { error: "pending_scan", reason: "กำลังตรวจสอบความปลอดภัย" }, 403);
   }
 
   const isPublished = project.status === "Published";
