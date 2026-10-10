@@ -93,6 +93,8 @@ import { ProjectSeriesPicker } from "@/components/project/ProjectEditorSearchSel
 import { ProjectTaxonomyPicker } from "@/components/project/ProjectTaxonomyPicker";
 import { AddModuleBar } from "@/components/project/AddModuleBar";
 import { WorkspaceHeader } from "@/components/project/WorkspaceHeader";
+import { ProjectConnectProducts } from "@/components/project/ProjectConnectProducts";
+import { connectKey, syncProjectConnections, useProjectConnectItems } from "@/hooks/useProjectConnections";
 import { QuickAdvancedGroup, QuickConnectGroup } from "@/components/project/QuickAdvancedGroup";
 import { readUploadMode, writeUploadMode, type UploadMode } from "@/lib/uploadMode";
 import {
@@ -216,6 +218,39 @@ const ProjectEditorPage = () => {
   /** Prevent re-applying DB → form when auth refreshes / query identity churns (loses in-progress edits). */
   const formHydratedForIdRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
+  const { items: connectItems, loading: connectLoading } = useProjectConnectItems(user?.id);
+  const [connectSelected, setConnectSelected] = useState<Set<string>>(() => new Set());
+  const connectSeededRef = useRef(false);
+  useEffect(() => {
+    if (connectSeededRef.current || connectLoading) return;
+    connectSeededRef.current = true;
+    if (!editing || !id || !isUuid(id)) return;
+    setConnectSelected(
+      new Set(connectItems.filter((item) => item.refs.includes(id)).map((item) => connectKey(item.kind, item.id))),
+    );
+  }, [connectItems, connectLoading, editing, id]);
+  const toggleConnect = (key: string) =>
+    setConnectSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  const syncConnections = async (projectId: string, targetStatus: Status) => {
+    if (targetStatus !== "Published" || !user) return;
+    try {
+      const failed = await syncProjectConnections({
+        projectId,
+        ownerId: user.id,
+        selected: connectSelected,
+        items: connectItems,
+        queryClient,
+      });
+      if (failed > 0) toast.warning(`เชื่อมสินค้าไม่สำเร็จ ${failed} รายการ — ลองอีกครั้งจากหน้าแก้ไขผลงาน`);
+    } catch {
+      toast.warning("เชื่อมสินค้าไม่สำเร็จ — ลองอีกครั้งจากหน้าแก้ไขผลงาน");
+    }
+  };
 
   const [title, setTitle] = useState("");
   const [shortDescription, setShortDescription] = useState("");
@@ -1400,6 +1435,7 @@ const ProjectEditorPage = () => {
         await update.mutateAsync({ id: savedId, patch: payload });
         await runProjectLinkSideEffects(savedId);
         await completeLinkedCollab(savedId, targetStatus);
+        await syncConnections(savedId, targetStatus);
         toast.success(targetStatus === "Published" ? "เผยแพร่ผลงานแล้ว" : "บันทึกการเปลี่ยนแปลงแล้ว");
         scheduleBackgroundAssetScan(savedId);
         if (
@@ -1418,6 +1454,7 @@ const ProjectEditorPage = () => {
         const created = await create.mutateAsync({ ...payload, owner_id: user.id });
         await runProjectLinkSideEffects(created.id);
         await completeLinkedCollab(created.id, targetStatus);
+        await syncConnections(created.id, targetStatus);
         toast.success(targetStatus === "Published" ? "เผยแพร่ผลงานแล้ว" : "บันทึกฉบับร่างแล้ว");
         scheduleBackgroundAssetScan(created.id);
         if (
@@ -2831,6 +2868,17 @@ const ProjectEditorPage = () => {
             </div>
   );
 
+  const connectProducts = (
+    <ProjectConnectProducts
+      items={connectItems}
+      loading={connectLoading}
+      selected={connectSelected}
+      onToggle={toggleConnect}
+      projectId={editing && id && isUuid(id) ? id : undefined}
+      disabled={editorLocked}
+    />
+  );
+
   const collabField = (
     <>
             {user && (
@@ -3633,11 +3681,17 @@ const ProjectEditorPage = () => {
                 />
               </div>
             </div>
-            {uploadMode === "quick" ? null : collabField}
+            {uploadMode === "quick" ? null : (
+              <>
+                {connectProducts}
+                {collabField}
+              </>
+            )}
 
             </CollapsibleEditorCard>
             {uploadMode === "quick" ? (
               <QuickConnectGroup>
+                {connectProducts}
                 {collabField}
                 {!isAplus1LaunchMinimal() ? (
                   <PortfolioLinkedPostPicker
