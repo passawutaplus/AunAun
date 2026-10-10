@@ -93,6 +93,8 @@ import { ProjectTaxonomyPicker } from "@/components/project/ProjectTaxonomyPicke
 import { AddModuleBar } from "@/components/project/AddModuleBar";
 import { EditorTour, hasSeenEditorTour } from "@/components/project/EditorTour";
 import { TemplatePickerDialog } from "@/components/project/TemplatePickerDialog";
+import { HoverLabelButton } from "@/components/project/HoverLabelButton";
+import { DetailsListIcon } from "@/components/icons/DetailsListIcon";
 import { WorkspaceHeader } from "@/components/project/WorkspaceHeader";
 import { ProjectConnectProducts } from "@/components/project/ProjectConnectProducts";
 import { connectKey, syncProjectConnections, useProjectConnectItems } from "@/hooks/useProjectConnections";
@@ -2868,35 +2870,24 @@ const ProjectEditorPage = () => {
 
   const detailsFooter = (
     <div className="flex items-center gap-2">
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="mr-auto rounded-full"
-        title="ดูตัวอย่าง"
-        aria-label="ดูตัวอย่าง"
+      <HoverLabelButton
+        icon={<Eye className="h-4 w-4" />}
+        label="ดูตัวอย่าง"
+        className="mr-auto"
         onClick={() => {
           setPreviewMode("pc");
           setPreviewOpen(true);
         }}
-      >
-        <Eye className="h-4 w-4" />
-      </Button>
+      />
       <Button type="button" variant="ghost" className="rounded-full" onClick={() => setDetailsOpen(false)}>
         ปิด
       </Button>
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="rounded-full"
-        title="บันทึกฉบับร่าง"
-        aria-label="บันทึกฉบับร่าง"
+      <HoverLabelButton
+        icon={savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        label="บันทึกฉบับร่าง"
         disabled={editorLocked}
         onClick={() => void handleSaveDraft(true)}
-      >
-        {savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-      </Button>
+      />
       <Button
         type="button"
         className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
@@ -3057,15 +3048,13 @@ const ProjectEditorPage = () => {
         <div className="flex w-full items-center gap-3 px-3 py-3 sm:px-4">
           <BackButton onClick={handleBackClick} />
           <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-1">
-            <button
-              type="button"
+            <HoverLabelButton
+              variant="ghost"
+              icon={<CircleHelp className="h-4 w-4" aria-hidden />}
+              label="ดูทัวร์แนะนำ"
+              className="hidden text-muted-foreground hover:text-foreground sm:inline-flex"
               onClick={() => setTourOpen(true)}
-              aria-label="ดูทัวร์แนะนำการลงผลงาน"
-              title="ดูทัวร์แนะนำ"
-              className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground sm:inline-flex"
-            >
-              <CircleHelp className="h-4 w-4" aria-hidden />
-            </button>
+            />
             <div className="min-w-0">
               <h1 className="text-base font-semibold text-foreground truncate">
                 {editing ? "แก้ไขผลงาน" : "ลงผลงานใหม่"}
@@ -3136,45 +3125,32 @@ const ProjectEditorPage = () => {
             <Eye className="w-4 h-4" />
           </Button>
           <div className="hidden lg:flex items-center gap-2 shrink-0">
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full shrink-0"
+            <HoverLabelButton
+              icon={<Eye className="h-4 w-4" />}
+              label="ดูตัวอย่าง"
               data-tour="preview"
               onClick={() => {
                 setPreviewMode("pc");
                 setPreviewOpen(true);
               }}
-              title="ดูตัวอย่าง"
-              aria-label="ดูตัวอย่าง"
-            >
-              <Eye className="w-4 h-4" />
-            </Button>
+            />
             <Button
               variant="outline"
               size="sm"
-              className="rounded-full"
+              className="h-9 gap-1.5 rounded-full px-3"
               data-tour="details"
               onClick={() => setDetailsOpen(true)}
               disabled={editorLocked}
             >
+              <DetailsListIcon className="h-4 w-4" />
               {detailsLabel}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
+            <HoverLabelButton
+              icon={savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              label="บันทึกฉบับร่าง"
               onClick={() => void handleSaveDraft(true)}
               disabled={editorLocked}
-              className="rounded-full"
-              title="บันทึกฉบับร่าง"
-            >
-              {savingDraft ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              <span className="sr-only">บันทึกฉบับร่าง</span>
-            </Button>
+            />
             <div className="relative">
               <Button
                 size="sm"
