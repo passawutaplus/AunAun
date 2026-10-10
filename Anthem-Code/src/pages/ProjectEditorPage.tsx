@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Eye, Handshake, ImagePlus, Loader2, Paperclip, Save, Scale, X } from "lucide-react";
+import { Eye, Handshake, ImagePlus, Loader2, Paperclip, Save, Scale, Tags, X } from "lucide-react";
 import CatalogIcon from "@/components/icons/CatalogIcon";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
@@ -64,6 +64,7 @@ import ProjectAssetsEditor, {
   type ProjectAssetsEditorHandle,
 } from "@/components/project/ProjectAssetsEditor";
 import { CollapsibleEditorCard } from "@/components/project/CollapsibleEditorCard";
+import { EditorInfoButton } from "@/components/project/EditorInfoPopover";
 import {
   parseProjectAssets,
   toStoredProjectAssets,
@@ -90,6 +91,8 @@ import {
 import { CanvasTemplatePreviewDialog } from "@/components/project/CanvasTemplatePreviewDialog";
 import { ProjectSeriesPicker } from "@/components/project/ProjectEditorSearchSelects";
 import { ProjectTaxonomyPicker } from "@/components/project/ProjectTaxonomyPicker";
+import { QuickDropPanel } from "@/components/project/QuickDropPanel";
+import { isQuickDropCompatible, readUploadMode, writeUploadMode, type UploadMode } from "@/lib/uploadMode";
 import {
   inferTaxonomySelection,
   mergeCategorySubTag,
@@ -218,6 +221,11 @@ const ProjectEditorPage = () => {
   const [galleryDisplayMode, setGalleryDisplayMode] = useState<GalleryDisplayMode>("gallery");
   const [gridLayout, setGridLayout] = useState<PhotoGridLayout>("three_split");
   const [editorMode, setEditorMode] = useState<ProjectEditorMode>("casual");
+  const [uploadMode, setUploadModeState] = useState<UploadMode>(readUploadMode);
+  const setUploadMode = (mode: UploadMode) => {
+    setUploadModeState(mode);
+    writeUploadMode(mode);
+  };
   const [flexGridLayout, setFlexGridLayout] = useState<FlexGridLayout>(() => defaultFlexGridLayout());
   const flexHistory = useFlexGridHistory(flexGridLayout, setFlexGridLayout);
   const flexGridLayoutRef = useRef(flexGridLayout);
@@ -701,6 +709,17 @@ const ProjectEditorPage = () => {
           ? parseEditorMode((existing as { editor_mode?: string }).editor_mode)
           : "casual",
       );
+      // Quick drop only shows single images + body text; richer works open in Studio (preference stays).
+      if (
+        !isQuickDropCompatible(
+          nextCanvas,
+          isLaunchFullGridEditorEnabled()
+            ? parseEditorMode((existing as { editor_mode?: string }).editor_mode)
+            : "casual",
+        )
+      ) {
+        setUploadModeState("studio");
+      }
       setFlexGridLayout(storedFlexLayout);
       setFlexGridSelection([]);
       flexHistory.resetHistory();
@@ -1308,7 +1327,10 @@ const ProjectEditorPage = () => {
       projectIdOverride ?? (editing && id && isUuid(id) ? id : undefined);
     const attested = options?.rightsAttested ?? rightsAttested;
 
-    const basicsErr = validateProjectBasics({ title, cover_url: cover });
+    const basicsErr = validateProjectBasics(
+      { title, cover_url: cover },
+      { requireCover: targetStatus === "Published" },
+    );
     if (basicsErr) {
       toast.error(basicsErr);
       return;
@@ -1365,10 +1387,6 @@ const ProjectEditorPage = () => {
     const parsed = projectSchema.safeParse(payload);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
-      return;
-    }
-    if (targetStatus === "Published" && !shortDescription.trim()) {
-      toast.error("กรุณากรอกรายละเอียดแบบย่อ");
       return;
     }
     if (targetStatus === "Published" && !attested) {
@@ -1446,16 +1464,12 @@ const ProjectEditorPage = () => {
       checklist.push("กรอกชื่องาน");
     }
     if (!cover.trim()) {
-      errors.cover = "อัปโหลดภาพปก";
-      checklist.push("อัปโหลดภาพปก");
+      errors.cover = "เพิ่มภาพปก (ใช้รูปแรกในเรื่องได้)";
+      checklist.push("เพิ่มภาพปก");
     }
     if (!categoryParentId) {
       errors.category = "เลือกหมวดใหญ่";
       checklist.push("เลือกหมวดใหญ่");
-    }
-    if (!shortDescription.trim()) {
-      errors.shortDescription = "กรอกรายละเอียดแบบย่อ";
-      checklist.push("กรอกรายละเอียดแบบย่อ");
     }
     const canvasImages =
       editorMode === "flex_grid"
@@ -2798,6 +2812,9 @@ const ProjectEditorPage = () => {
     );
   }
 
+  const publishRemaining = collectPublishGaps().checklist.length;
+  const publishLabel = publishRemaining > 0 ? `เผยแพร่ · เหลือ ${publishRemaining} อย่าง` : "เผยแพร่";
+
   return (
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-0">
       {/* Sticky header — full-bleed to align with Module / Work Details sidebars */}
@@ -2807,8 +2824,48 @@ const ProjectEditorPage = () => {
           <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-1">
             <div className="min-w-0">
               <h1 className="text-base font-semibold text-foreground truncate">
-                {editing ? "แก้ไขผลงาน" : "Share your Project"}
+                {editing ? "แก้ไขผลงาน" : "ลงผลงานใหม่"}
               </h1>
+            </div>
+            <div
+              role="tablist"
+              aria-label="โหมดลงผลงาน"
+              className="inline-flex shrink-0 items-center rounded-full border border-border/80 bg-card p-0.5"
+            >
+              {(
+                [
+                  { value: "quick" as const, label: "Quick drop" },
+                  { value: "studio" as const, label: "Studio" },
+                ] as const
+              ).map((m) => {
+                const active = uploadMode === m.value;
+                const blocked = m.value === "quick" && !isQuickDropCompatible(contentBlocks, editorMode);
+                return (
+                  <button
+                    key={m.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    title={blocked ? "ผลงานนี้มีโมดูลที่ Quick drop แสดงไม่ได้ ใช้ Studio แทน" : undefined}
+                    onClick={() => {
+                      if (blocked) {
+                        toast.message("ผลงานนี้มีโมดูลที่ Quick drop แสดงไม่ได้", {
+                          description: "ข้อมูลยังอยู่ครบ แก้ต่อใน Studio ได้เลย",
+                        });
+                        return;
+                      }
+                      setUploadMode(m.value);
+                    }}
+                    className={cn(
+                      "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                      active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+                      blocked && "opacity-50",
+                    )}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
             </div>
             {isLaunchFullGridEditorEnabled() ? (
               <LayoutGroup id="project-editor-mode">
@@ -2819,8 +2876,8 @@ const ProjectEditorPage = () => {
                 >
                   {(
                     [
-                      { value: "casual" as const, label: "Casual" },
-                      { value: "flex_grid" as const, label: "Full Grid" },
+                      { value: "casual" as const, label: "เรียงต่อกัน" },
+                      { value: "flex_grid" as const, label: "จัดวางอิสระ" },
                     ] as const
                   ).map((mode) => {
                     const active = editorMode === mode.value;
@@ -2910,7 +2967,7 @@ const ProjectEditorPage = () => {
                 className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
                 {publishing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                เผยแพร่
+                {publishLabel}
               </Button>
               {publishChecklist.length > 0 ? (
                 <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 hidden lg:block">
@@ -2928,6 +2985,59 @@ const ProjectEditorPage = () => {
         </div>
       ) : null}
 
+      {uploadMode === "quick" ? (
+        <QuickDropPanel
+          coverUrl={cover}
+          imageUrls={contentBlocks.filter((b) => b.type === "image" && b.url).map((b) => b.url as string)}
+          uploading={uploadingGallery || uploadingCover}
+          disabled={editorLocked}
+          onFiles={(files) => void handleCanvasDropFiles(files)}
+          onRemoveImage={(url) => {
+            const rest = contentBlocks.filter((b) => b.url !== url);
+            setContentBlocks(rest);
+            if (cover === url) setCover(rest.find((b) => b.type === "image" && b.url)?.url ?? "");
+          }}
+          title={title}
+          onTitleChange={(value) => {
+            setTitle(value);
+            clearPublishFieldError("title");
+          }}
+          titleRef={titleInputRef}
+          titleInvalid={!!publishFieldErrors.title}
+          taxonomy={
+            <ProjectTaxonomyPicker
+              parentId={categoryParentId}
+              subId={categorySubId}
+              disabled={editorLocked}
+              invalid={publishFieldHighlight(publishFieldErrors.category)}
+              onChange={({ parentId, subId }) => {
+                setCategoryParentId(parentId);
+                setCategorySubId(subId);
+                if (parentId) {
+                  setCategory(resolveDbCategory(parentId, subId));
+                  setTags((prev) => mergeCategorySubTag(prev, subId));
+                } else {
+                  setCategory("");
+                  setTags((prev) => mergeCategorySubTag(prev, null));
+                }
+                clearPublishFieldError("category");
+              }}
+            />
+          }
+          shortDescription={shortDescription}
+          onShortDescriptionChange={setShortDescription}
+          shortDescriptionMax={PROJECT_SHORT_DESCRIPTION_MAX}
+          defaultsSummary={[
+            licenseType === "all_rights" ? "สงวนสิทธิ์ทั้งหมด" : "สิทธิ์: กำหนดเอง",
+            allowCollab ? "รับงาน: คอลแลป" : "ไม่รับคอลแลป",
+            ...(allowHire ? ["รับจ้างงาน"] : []),
+          ]}
+          onEditDefaults={() => {
+            setUploadMode("studio");
+            setMetaExpanded(true);
+          }}
+        />
+      ) : (
       <div className="flex w-full flex-col lg:flex-row">
         <div className="flex min-w-0 flex-1">
         {editorMode === "flex_grid" ? (
@@ -3374,8 +3484,9 @@ const ProjectEditorPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs font-semibold text-muted-foreground">
+              <Label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                 ภาพปก <span className="text-primary">*</span>
+                <EditorInfoButton topic="cover" />
               </Label>
               <CoverDrop
                 url={cover}
@@ -3418,26 +3529,17 @@ const ProjectEditorPage = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-                <CatalogIcon className="h-4 w-4 text-primary shrink-0" />
-                Catalog
-              </Label>
-              <ProjectSeriesPicker
-                value={seriesId}
-                options={mySeries}
-                onChange={setSeriesId}
-                onCreateNew={() => setSeriesCreateOpen(true)}
-                disabled={editorLocked}
-              />
-              {mySeries.length === 0 && (
-                <p className="text-[11px] text-muted-foreground leading-snug">
-                  ยังไม่มี Catalog — กดเปิดรายการแล้วเลือก「เพิ่ม Catalog ใหม่」ได้เลย
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-3 border-t border-border/60 !mt-6 pt-5">
+            <CollapsibleEditorCard
+              title="การรับงาน"
+              icon={Handshake}
+              defaultOpen={false}
+              hint={
+                [allowHire && hireSeller.ready ? "รับจ้าง" : null, allowCollab ? "คอลแลป" : null]
+                  .filter(Boolean)
+                  .join(" · ") || "ปิดอยู่"
+              }
+            >
+            <div className="space-y-3">
               <StartingPriceField
                 showPrice={showPrice}
                 onShowPriceChange={setShowPrice}
@@ -3449,6 +3551,7 @@ const ProjectEditorPage = () => {
                 <label htmlFor="allow-hire" className="min-w-0 flex flex-1 items-center gap-2 cursor-pointer">
                   <BriefcaseIcon className="w-4 h-4 text-primary shrink-0" aria-hidden />
                   <p className="text-sm text-foreground">เปิดปุ่ม &quot;สนใจจ้างงาน&quot;</p>
+                  <EditorInfoButton topic="hire" />
                 </label>
                 <Switch
                   id="allow-hire"
@@ -3486,17 +3589,34 @@ const ProjectEditorPage = () => {
               )}
             </div>
 
-            {user && (
-              <PortfolioCollabUserPicker
-                userId={user.id}
-                selected={collabSelected}
-                onChange={setCollabSelected}
-                acceptedUsers={collabAccepted}
-                pendingUsers={collabPending}
-              />
-            )}
+            </CollapsibleEditorCard>
 
-            <div className="border-t border-border/60 !mt-6 pt-5">
+            <CollapsibleEditorCard
+              title="รายละเอียดเพิ่มเติม"
+              icon={Tags}
+              defaultOpen={false}
+              hint={`${tags.length} แท็ก · ${tools.length} เครื่องมือ`}
+            >
+            <div className="space-y-2">
+              <Label className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                <CatalogIcon className="h-4 w-4 text-primary shrink-0" />
+                Catalog
+              </Label>
+              <ProjectSeriesPicker
+                value={seriesId}
+                options={mySeries}
+                onChange={setSeriesId}
+                onCreateNew={() => setSeriesCreateOpen(true)}
+                disabled={editorLocked}
+              />
+              {mySeries.length === 0 && (
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  ยังไม่มี Catalog — กดเปิดรายการแล้วเลือก「เพิ่ม Catalog ใหม่」ได้เลย
+                </p>
+              )}
+            </div>
+
+            <div>
               <ToolPicker
                 userId={user?.id}
                 tools={tools}
@@ -3518,10 +3638,22 @@ const ProjectEditorPage = () => {
                 />
               </div>
             </div>
+            {user && (
+              <PortfolioCollabUserPicker
+                userId={user.id}
+                selected={collabSelected}
+                onChange={setCollabSelected}
+                acceptedUsers={collabAccepted}
+                pendingUsers={collabPending}
+              />
+            )}
+
+            </CollapsibleEditorCard>
           </div>
 
         </ProjectEditorMetaSidebar>
       </div>
+      )}
 
       {/* Mobile sticky actions */}
       <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
@@ -3553,7 +3685,7 @@ const ProjectEditorPage = () => {
                   กำลังเผยแพร่…
                 </>
               ) : (
-                "เผยแพร่"
+                publishLabel
               )}
             </Button>
             {publishChecklist.length > 0 ? (
