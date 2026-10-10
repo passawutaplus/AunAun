@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { CircleHelp, Eye, Handshake, ImagePlus, Loader2, Paperclip, Save, Scale, Tags, X } from "lucide-react";
+import { CircleHelp, Eye, FileText, Handshake, ShieldCheck, ImagePlus, Loader2, Paperclip, Save, Scale, Tags, X } from "lucide-react";
 import CatalogIcon from "@/components/icons/CatalogIcon";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
@@ -96,7 +96,7 @@ import { TemplatePickerDialog } from "@/components/project/TemplatePickerDialog"
 import { WorkspaceHeader } from "@/components/project/WorkspaceHeader";
 import { ProjectConnectProducts } from "@/components/project/ProjectConnectProducts";
 import { connectKey, syncProjectConnections, useProjectConnectItems } from "@/hooks/useProjectConnections";
-import { QuickAdvancedGroup, QuickConnectGroup } from "@/components/project/QuickAdvancedGroup";
+import { QuickConnectGroup } from "@/components/project/QuickAdvancedGroup";
 import { ProjectDetailsDialog } from "@/components/project/ProjectDetailsDialog";
 import { ProjectDetailsPreview } from "@/components/project/ProjectDetailsPreview";
 import {
@@ -2867,31 +2867,46 @@ const ProjectEditorPage = () => {
   };
 
   const detailsFooter = (
-    <div className="space-y-3">
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button type="button" variant="ghost" className="rounded-full" onClick={() => setDetailsOpen(false)}>
-          ปิด
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="rounded-full"
-          disabled={editorLocked}
-          onClick={() => void handleSaveDraft(true)}
-        >
-          บันทึกฉบับร่าง
-        </Button>
-        <Button
-          type="button"
-          className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-          data-tour="publish-dialog"
-          disabled={editorLocked}
-          onClick={() => void handleDialogPublish()}
-        >
-          {publishing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
-          เผยแพร่
-        </Button>
-      </div>
+    <div className="flex items-center gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="mr-auto rounded-full"
+        title="ดูตัวอย่าง"
+        aria-label="ดูตัวอย่าง"
+        onClick={() => {
+          setPreviewMode("pc");
+          setPreviewOpen(true);
+        }}
+      >
+        <Eye className="h-4 w-4" />
+      </Button>
+      <Button type="button" variant="ghost" className="rounded-full" onClick={() => setDetailsOpen(false)}>
+        ปิด
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="rounded-full"
+        title="บันทึกฉบับร่าง"
+        aria-label="บันทึกฉบับร่าง"
+        disabled={editorLocked}
+        onClick={() => void handleSaveDraft(true)}
+      >
+        {savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+      </Button>
+      <Button
+        type="button"
+        className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+        data-tour="publish-dialog"
+        disabled={editorLocked}
+        onClick={() => void handleDialogPublish()}
+      >
+        {publishing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+        เผยแพร่
+      </Button>
     </div>
   );
 
@@ -2987,7 +3002,8 @@ const ProjectEditorPage = () => {
           {part !== "context" && user ? (
             <div className={cn("grid grid-cols-1 gap-4", !stacked && "md:grid-cols-2")}>
               <CollapsibleEditorCard
-                title="สิทธิ์การใช้งาน"
+                title="Rights"
+                framed
                 icon={Scale}
                 hint={getLicenseMeta(licenseType).shortLabel}
               >
@@ -3013,7 +3029,8 @@ const ProjectEditorPage = () => {
                 />
               </CollapsibleEditorCard>
               <CollapsibleEditorCard
-                title="ไฟล์แนบ / ลิงก์"
+                title="Files & links"
+                framed
                 icon={Paperclip}
                 hint={projectAssets.length > 0 ? `${projectAssets.length} รายการ` : undefined}
               >
@@ -3565,7 +3582,8 @@ const ProjectEditorPage = () => {
             />
           }
         >
-          <div className="rounded-2xl border border-border bg-card p-4 space-y-4 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
+          <div className="space-y-4">
+            <CollapsibleEditorCard title="Basics" icon={FileText} framed>
             <div className="space-y-2">
               <Label className="text-xs font-semibold text-muted-foreground">
                 ชื่องาน <span className="text-primary">*</span>
@@ -3624,10 +3642,11 @@ const ProjectEditorPage = () => {
 
             {catalogField}
             {renderDetailsExtras(true, "context")}
+            </CollapsibleEditorCard>
 
             <CollapsibleEditorCard
-              title="การรับงาน"
-              borderless
+              title="Hiring"
+              framed
               icon={Handshake}
               defaultOpen={false}
               hint={
@@ -3689,8 +3708,8 @@ const ProjectEditorPage = () => {
             </CollapsibleEditorCard>
 
             <CollapsibleEditorCard
-              title="รายละเอียดเพิ่มเติม"
-              borderless
+              title="Tags & tools"
+              framed
               icon={Tags}
               defaultOpen={false}
               hint={`${tags.length} แท็ก · ${tools.length} เครื่องมือ`}
@@ -3733,13 +3752,11 @@ const ProjectEditorPage = () => {
                 ) : null}
               </QuickConnectGroup>
             )}
-            <QuickAdvancedGroup quick>
             {renderDetailsExtras(true, "rights")}
-            </QuickAdvancedGroup>
 
-            <div className="border-t border-border/60 pt-4">
+            <CollapsibleEditorCard title="Confirm" icon={ShieldCheck} framed>
               <OriginalWorkAttestation checked={publishAttestChecked} onCheckedChange={setPublishAttestChecked} />
-            </div>
+            </CollapsibleEditorCard>
           </div>
 
         </ProjectDetailsDialog>

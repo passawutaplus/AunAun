@@ -11,11 +11,25 @@ type Props = {
   defaultOpen?: boolean;
   /** Still collapsible, but drawn without the card border/background. */
   borderless?: boolean;
+  /** Always open, in its own bordered frame, heading with its icon (used by the details dialog). */
+  framed?: boolean;
   children: ReactNode;
 };
 
-export function CollapsibleEditorCard({ title, icon: Icon, hint, defaultOpen = true, borderless = false, children }: Props) {
+export function CollapsibleEditorCard({ title, icon: Icon, hint, defaultOpen = true, borderless = false, framed = false, children }: Props) {
   const [open, setOpen] = useState(defaultOpen);
+
+  if (framed) {
+    return (
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
+        <h3 className="flex items-center gap-2 font-display text-sm font-normal text-foreground">
+          <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          {title}
+        </h3>
+        <div className="space-y-4">{children}</div>
+      </section>
+    );
+  }
 
 
   return (

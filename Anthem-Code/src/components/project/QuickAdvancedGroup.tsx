@@ -15,7 +15,7 @@ export function QuickAdvancedGroup({ quick, children }: { quick: boolean; childr
 /** People and works this piece connects to (credits, linked posts — products later). */
 export function QuickConnectGroup({ children }: { children: ReactNode }) {
   return (
-    <CollapsibleEditorCard title="Connect" icon={Link2} defaultOpen={false} borderless>
+    <CollapsibleEditorCard title="Connect" icon={Link2} framed>
       <div className="space-y-4">{children}</div>
     </CollapsibleEditorCard>
   );
