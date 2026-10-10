@@ -1,15 +1,10 @@
-import {
-  sharedStorage,
-  SHARED_MEDIA_BUCKET,
-} from "@/integrations/supabase/sharedStorageClient";
 import type { Tier } from "@/core/subscription/useSubscription";
-import { assertAnthemStorageAvailable, bumpAnthemStorageCache } from "@/lib/anthemStorageUsage";
 import { compressCommunityVideo } from "@/lib/compressCommunityVideo";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { isVideoFile } from "@/lib/videoAccept";
 import { extractVideoPosterFile } from "@/lib/videoPoster";
 import { abortable } from "@/lib/ffmpegCore";
-import { uploadToSharedMedia } from "@/lib/sharedMediaUpload";
+import { uploadAnthemMedia } from "@/lib/sharedMediaUpload";
 import { UPLOAD_STAGE, type UploadStageReporter } from "@/lib/uploadProgress";
 
 const MAX_VIDEO_MB = 50;
@@ -37,17 +32,17 @@ export async function uploadProjectVideo(
     throw new Error(`วิดีโอใหญ่เกิน ${MAX_VIDEO_MB}MB หลังบีบอัด — ลองคลิปสั้นลง`);
   }
 
-  await assertAnthemStorageAvailable(userId, tier, prepared.size);
-
-  const name = `${crypto.randomUUID()}.mp4`;
-  const path = `anthem/${userId}/${folder}/${name}`;
-
-  reporter?.onStage?.(UPLOAD_STAGE.uploadingVideo);
-  await uploadToSharedMedia(path, prepared, "video/mp4", 2, signal, reporter?.onPercent);
-  bumpAnthemStorageCache(userId, prepared.size);
-
-  const { data } = sharedStorage.storage.from(SHARED_MEDIA_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return uploadAnthemMedia({
+    file: prepared,
+    ext: "mp4",
+    contentType: "video/mp4",
+    userId,
+    folder,
+    tier,
+    stage: UPLOAD_STAGE.uploadingVideo,
+    reporter,
+    signal,
+  });
 }
 
 /** Upload video and best-effort auto poster from the first readable frame. */

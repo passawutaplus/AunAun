@@ -1,14 +1,6 @@
 import imageCompression from "browser-image-compression";
-import {
-  sharedStorage,
-  SHARED_MEDIA_BUCKET,
-} from "@/integrations/supabase/sharedStorageClient";
 import type { Tier } from "@/core/subscription/useSubscription";
-import {
-  assertAnthemStorageAvailable,
-  bumpAnthemStorageCache,
-} from "@/lib/anthemStorageUsage";
-import { uploadToSharedMedia } from "@/lib/sharedMediaUpload";
+import { uploadAnthemMedia } from "@/lib/sharedMediaUpload";
 import { assertRealImage } from "@/lib/imageSignature";
 import { normalizeImageForUpload } from "@/lib/normalizeImageUpload";
 import { UPLOAD_STAGE, type UploadStageReporter } from "@/lib/uploadProgress";
@@ -78,25 +70,17 @@ export async function uploadProjectImage(
 
   const compressed = await compressForUpload(normalized, options?.skipCompression, options?.reporter);
 
-  await assertAnthemStorageAvailable(userId, tier, compressed.size, {
-    nonBlocking: options?.fastQuotaCheck,
+  const isPng = compressed.type === "image/png";
+  return uploadAnthemMedia({
+    file: compressed,
+    ext: isPng ? "png" : "webp",
+    contentType: isPng ? "image/png" : "image/webp",
+    userId,
+    folder,
+    tier,
+    stage: UPLOAD_STAGE.uploadingImage,
+    reporter: options?.reporter,
+    signal: options?.signal,
+    fastQuotaCheck: options?.fastQuotaCheck,
   });
-
-  const ext = compressed.type === "image/png" ? "png" : "webp";
-  const contentType = compressed.type === "image/png" ? "image/png" : "image/webp";
-  const name = `${crypto.randomUUID()}.${ext}`;
-  const path = `anthem/${userId}/${folder}/${name}`;
-
-  options?.reporter?.onStage?.(UPLOAD_STAGE.uploadingImage);
-  if (options?.signal?.aborted) {
-    throw new DOMException("Upload cancelled", "AbortError");
-  }
-  await uploadToSharedMedia(path, compressed, contentType, 2, options?.signal, options?.reporter?.onPercent);
-
-  bumpAnthemStorageCache(userId, compressed.size);
-
-  const { data } = sharedStorage.storage
-    .from(SHARED_MEDIA_BUCKET)
-    .getPublicUrl(path);
-  return data.publicUrl;
 }

@@ -2,6 +2,9 @@ import {
   sharedStorage,
   SHARED_MEDIA_BUCKET,
 } from "@/integrations/supabase/sharedStorageClient";
+import type { Tier } from "@/core/subscription/useSubscription";
+import { assertAnthemStorageAvailable, bumpAnthemStorageCache } from "@/lib/anthemStorageUsage";
+import type { UploadStageReporter } from "@/lib/uploadProgress";
 
 /** Below this the SDK upload is instant enough that a progress bar adds nothing. */
 const XHR_MIN_BYTES = 1.5 * 1024 * 1024;
@@ -122,4 +125,37 @@ export async function uploadToSharedMedia(
     await sleep(500 * (attempt + 1));
   }
   throw lastErr;
+}
+
+export type UploadAnthemMediaOptions = {
+  /** The final bytes to store (already compressed / converted). */
+  file: Blob | File;
+  ext: string;
+  contentType: string;
+  userId: string;
+  folder: string;
+  tier?: Tier;
+  /** Stage label shown while the bytes go up. */
+  stage: string;
+  reporter?: UploadStageReporter;
+  signal?: AbortSignal;
+  /** Do not block on a cold storage scan (quota refresh runs in the background). */
+  fastQuotaCheck?: boolean;
+};
+
+/**
+ * The shared tail of every media upload: quota check, unique `anthem/<user>/<folder>/<uuid>.<ext>` path,
+ * upload (with progress + cancel), quota-cache bump, public URL. Callers only differ in how they prepare the bytes.
+ */
+export async function uploadAnthemMedia(opts: UploadAnthemMediaOptions): Promise<string> {
+  const { file, ext, contentType, userId, folder, tier = "free", stage, reporter, signal } = opts;
+  await assertAnthemStorageAvailable(userId, tier, file.size, { nonBlocking: opts.fastQuotaCheck });
+  const path = `anthem/${userId}/${folder}/${crypto.randomUUID()}.${ext}`;
+
+  reporter?.onStage?.(stage);
+  if (signal?.aborted) throw new DOMException("Upload cancelled", "AbortError");
+  await uploadToSharedMedia(path, file, contentType, 2, signal, reporter?.onPercent);
+
+  bumpAnthemStorageCache(userId, file.size);
+  return sharedStorage.storage.from(SHARED_MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;
 }

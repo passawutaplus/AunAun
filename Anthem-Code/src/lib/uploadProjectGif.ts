@@ -1,15 +1,7 @@
-import {
-  sharedStorage,
-  SHARED_MEDIA_BUCKET,
-} from "@/integrations/supabase/sharedStorageClient";
 import type { Tier } from "@/core/subscription/useSubscription";
-import {
-  assertAnthemStorageAvailable,
-  bumpAnthemStorageCache,
-} from "@/lib/anthemStorageUsage";
 import { prepareGif } from "@/lib/compressGif";
 import { abortable } from "@/lib/ffmpegCore";
-import { uploadToSharedMedia } from "@/lib/sharedMediaUpload";
+import { uploadAnthemMedia } from "@/lib/sharedMediaUpload";
 import { UPLOAD_STAGE, type UploadStageReporter } from "@/lib/uploadProgress";
 
 /** Raw GIFs are capped low since large ones are auto-converted to mp4 first. */
@@ -42,18 +34,16 @@ export async function uploadProjectGif(
   const prepared = await abortable(prepareGif(file, reporter), signal, true);
   const upload = prepared.file;
 
-  await assertAnthemStorageAvailable(userId, tier, upload.size);
-
-  const ext = prepared.isVideo ? "mp4" : "gif";
-  const contentType = prepared.isVideo ? "video/mp4" : "image/gif";
-  const name = `${crypto.randomUUID()}.${ext}`;
-  const path = `anthem/${userId}/${folder}/${name}`;
-
-  reporter?.onStage?.(prepared.isVideo ? UPLOAD_STAGE.uploadingVideo : UPLOAD_STAGE.uploadingGif);
-  await uploadToSharedMedia(path, upload, contentType, 2, signal, reporter?.onPercent);
-
-  bumpAnthemStorageCache(userId, upload.size);
-
-  const { data } = sharedStorage.storage.from(SHARED_MEDIA_BUCKET).getPublicUrl(path);
-  return { url: data.publicUrl, isVideo: prepared.isVideo };
+  const url = await uploadAnthemMedia({
+    file: upload,
+    ext: prepared.isVideo ? "mp4" : "gif",
+    contentType: prepared.isVideo ? "video/mp4" : "image/gif",
+    userId,
+    folder,
+    tier,
+    stage: prepared.isVideo ? UPLOAD_STAGE.uploadingVideo : UPLOAD_STAGE.uploadingGif,
+    reporter,
+    signal,
+  });
+  return { url, isVideo: prepared.isVideo };
 }
