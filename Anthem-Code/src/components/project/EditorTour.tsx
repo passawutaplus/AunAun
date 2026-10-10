@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TourMascot } from "@/components/project/TourMascot";
+import { ModulesScene, SCENES_CSS, TemplatesScene } from "@/components/project/EditorInfoScenes";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "samecor.uploadTour.v1";
@@ -91,7 +92,7 @@ const STEPS: Step[] = [
   {
     id: "library",
     title: "Module & Template",
-    body: "อยู่แถบซ้าย ลากมาวางได้ กด ⓘ เพื่อดูภาพเคลื่อนไหวอธิบายแต่ละแบบ",
+    body: "อยู่แถบซ้าย กด ⓘ ข้างชื่อแต่ละแบบเพื่อดูภาพเคลื่อนไหวอธิบายเพิ่ม",
     target: "library",
     next: "ถัดไป",
   },
@@ -252,10 +253,10 @@ export function EditorTour({ open, facts, onClose, onOpenDetails }: Props) {
       aria-label="ทัวร์แนะนำการลงผลงาน"
       className={cn(
         "rounded-2xl border border-border bg-card p-4 text-left",
-        step.id === "welcome" ? "w-[320px]" : "w-[280px]",
+        step.id === "welcome" ? "w-[320px]" : step.id === "library" ? "w-[400px]" : "w-[280px]",
         step.inDialog ? "mb-4 w-full" : "pointer-events-auto fixed z-[70]",
       )}
-      style={step.inDialog ? undefined : cardPosition(rect)}
+      style={step.inDialog ? undefined : cardPosition(rect, step.id)}
     >
       {step.id === "welcome" ? <TourMascot /> : null}
       <div className="mb-1 flex items-start justify-between gap-2">
@@ -270,6 +271,7 @@ export function EditorTour({ open, facts, onClose, onOpenDetails }: Props) {
         </button>
       </div>
       <p className="text-xs leading-relaxed text-muted-foreground">{step.body}</p>
+      {step.id === "library" ? <LibraryScenes /> : null}
       {step.actionHint ? <p className="mt-2 text-[11px] text-muted-foreground/80">{step.actionHint}</p> : null}
       <div className="mt-3 flex items-center gap-2">
         <span className="mr-auto text-[11px] text-muted-foreground">{progress}</span>
@@ -302,7 +304,31 @@ export function EditorTour({ open, facts, onClose, onOpenDetails }: Props) {
   );
 }
 
-function cardPosition(rect: DOMRect | null): React.CSSProperties {
+/** Module (top) and Template (bottom) motion graphics, scaled down to sit inside the tour card. */
+function LibraryScenes() {
+  const scaled = (children: React.ReactNode) => (
+    <div className="overflow-hidden rounded-xl" style={{ height: 150 }}>
+      <div style={{ transform: "scale(.6)", transformOrigin: "top left", width: "166.6%" }}>{children}</div>
+    </div>
+  );
+  return (
+    <div className="mt-3 space-y-3">
+      <style>{SCENES_CSS}</style>
+      <div>
+        <p className="mb-1 font-display text-xs text-foreground">Module</p>
+        {scaled(<ModulesScene />)}
+        <p className="mt-1 text-[11px] text-muted-foreground">ลากชิ้นส่วนไปวางบนผลงาน หรือกดเพื่อต่อท้าย</p>
+      </div>
+      <div>
+        <p className="mb-1 font-display text-xs text-foreground">Template</p>
+        {scaled(<TemplatesScene />)}
+        <p className="mt-1 text-[11px] text-muted-foreground">เลือกโครงสำเร็จรูป แล้วใส่รูปของคุณแทนช่องตัวอย่าง</p>
+      </div>
+    </div>
+  );
+}
+
+function cardPosition(rect: DOMRect | null, stepId?: string): React.CSSProperties {
   const W = 280;
   const H = 190;
   if (!rect) {
@@ -310,6 +336,10 @@ function cardPosition(rect: DOMRect | null): React.CSSProperties {
   }
   const vw = window.innerWidth;
   const vh = window.innerHeight;
+  if (stepId === "library") {
+    // Beside the sidebar, never on top of it.
+    return { left: Math.min(rect.right + 16, vw - 412), top: Math.max(12, rect.top + 8) };
+  }
   let left = rect.left + rect.width / 2 - W / 2;
   let top = rect.bottom + 16;
   if (rect.width < 120 && rect.left < 140) {

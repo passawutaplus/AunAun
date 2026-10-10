@@ -871,7 +871,7 @@ function SortableCanvasBlock({
                   placeholder="พิมพ์ข้อความ..."
                   maxLength={PROJECT_BLOCK_BODY_MAX}
                   disabled={disabled}
-                  minHeightClass="min-h-[120px]"
+                  minHeightClass="min-h-[38px]"
                   className="w-full"
                   verticalAlign={block.textVerticalAlign ?? "middle"}
                   onVerticalAlignChange={(textVerticalAlign) => onPatch({ textVerticalAlign })}
@@ -1175,7 +1175,7 @@ function SortableCanvasBlock({
             placeholder="เล่าที่มา แนวคิด กระบวนการ หรือผลลัพธ์..."
             maxLength={PROJECT_BLOCK_BODY_MAX}
             disabled={disabled}
-            minHeightClass={block.type === "body" ? "min-h-[120px]" : "min-h-[96px]"}
+            minHeightClass="min-h-[38px]"
           />
         ) : null}
       </div>
