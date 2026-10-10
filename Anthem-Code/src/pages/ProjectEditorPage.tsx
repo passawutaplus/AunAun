@@ -3048,6 +3048,11 @@ const ProjectEditorPage = () => {
         <div className="flex w-full items-center gap-3 px-3 py-3 sm:px-4">
           <BackButton onClick={handleBackClick} />
           <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-1">
+            <div className="min-w-0">
+              <h1 className="truncate font-display text-2xl font-normal tracking-tight text-foreground">
+                {editing ? "Edit Project" : "New Project"}
+              </h1>
+            </div>
             <HoverLabelButton
               variant="ghost"
               icon={<CircleHelp className="h-4 w-4" aria-hidden />}
@@ -3055,11 +3060,6 @@ const ProjectEditorPage = () => {
               className="hidden text-muted-foreground hover:text-foreground sm:inline-flex"
               onClick={() => setTourOpen(true)}
             />
-            <div className="min-w-0">
-              <h1 className="truncate font-display text-2xl font-normal tracking-tight text-foreground">
-                {editing ? "Edit Project" : "New Project"}
-              </h1>
-            </div>
             {isLaunchFullGridEditorEnabled() ? (
               <LayoutGroup id="project-editor-mode">
                 <div
