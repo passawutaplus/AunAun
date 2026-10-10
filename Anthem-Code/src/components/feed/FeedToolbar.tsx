@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
+import { parseColorList } from "@/lib/colorSearch";
 import { ArrowRight, Plus, X } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { ScrollBlur } from "@/components/ScrollBlur";
@@ -469,6 +470,19 @@ const FeedToolbar = ({
                 {catalogTitle}
               </h2>
               <div data-feed-mode-cluster="" className="col-start-2 row-start-1 flex min-w-0 items-center justify-end gap-3">
+                {showCreate && !isCommunity ? (
+                  <button
+                    type="button"
+                    onClick={onCreateClick}
+                    aria-label={isObjects ? "ลงสินค้าใหม่" : "ลงผลงานใหม่"}
+                    className="group inline-flex h-9 shrink-0 items-center overflow-hidden rounded-full bg-foreground px-[0.6rem] text-sm font-medium text-background transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:px-4 focus-visible:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
+                  >
+                    <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
+                    <span className="ml-0 max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[9rem] group-hover:opacity-100 group-focus-visible:ml-1.5 group-focus-visible:max-w-[9rem] group-focus-visible:opacity-100 motion-reduce:transition-none">
+                      {isObjects ? "ลงสินค้าใหม่" : "ลงผลงานใหม่"}
+                    </span>
+                  </button>
+                ) : null}
                 <div className="shrink-0">
                   <SearchBar
                     value={search}
@@ -811,12 +825,16 @@ const FeedToolbar = ({
             onClick={() => onColorQueryChange?.(null)}
             className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-1 text-[11px] text-foreground"
           >
-            <span
-              aria-hidden
-              className="h-3 w-3 rounded-full border border-black/10"
-              style={{ backgroundColor: colorQuery }}
-            />
-            สี {colorQuery}
+            <span aria-hidden className="flex -space-x-1">
+              {parseColorList(colorQuery).map((hex) => (
+                <span
+                  key={hex}
+                  className="h-3 w-3 rounded-full border border-background shadow-[0_0_0_1px_rgba(0,0,0,0.12)]"
+                  style={{ backgroundColor: hex }}
+                />
+              ))}
+            </span>
+            {parseColorList(colorQuery).length > 1 ? `${parseColorList(colorQuery).length} สี` : `สี ${colorQuery}`}
             <X className="h-3 w-3 text-muted-foreground" />
             <span className="sr-only">ล้างสี</span>
           </button>
