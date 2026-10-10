@@ -94,6 +94,7 @@ import { ProjectTaxonomyPicker } from "@/components/project/ProjectTaxonomyPicke
 import { AddModuleBar } from "@/components/project/AddModuleBar";
 import { EditorTour, hasSeenEditorTour } from "@/components/project/EditorTour";
 import { TemplatePickerDialog } from "@/components/project/TemplatePickerDialog";
+import { useProfile } from "@/hooks/useProfile";
 import { HoverLabelButton } from "@/components/project/HoverLabelButton";
 import { DetailsListIcon } from "@/components/icons/DetailsListIcon";
 import { ProjectConnectProducts } from "@/components/project/ProjectConnectProducts";
@@ -386,6 +387,12 @@ const ProjectEditorPage = () => {
   const emptyStartImageInputRef = useRef<HTMLInputElement>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const { data: myProfile } = useProfile(user?.id);
+  const previewOwnerName =
+    (myProfile as { display_name?: string | null; username?: string | null } | null | undefined)?.display_name ??
+    (myProfile as { username?: string | null } | null | undefined)?.username ??
+    user?.email?.split("@")[0] ??
+    "คุณ";
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const tourCheckedRef = useRef(false);
   useEffect(() => {
@@ -2970,7 +2977,7 @@ const ProjectEditorPage = () => {
     </>
   );
 
-  const renderDetailsExtras = (stacked: boolean, part: "all" | "context" | "rights" = "all") => (
+  const renderDetailsExtras = (stacked: boolean, part: "all" | "context" | "rights" | "files" = "all") => (
     <>
           {part === "rights" ? null : (
           <ProjectContextEditorFields
@@ -2991,50 +2998,54 @@ const ProjectEditorPage = () => {
 
           {part !== "context" && user ? (
             <div className={cn("grid grid-cols-1 gap-4", !stacked && "md:grid-cols-2")}>
-              <CollapsibleEditorCard
-                title="Rights"
-                framed
-                icon={Scale}
-                hint={getLicenseMeta(licenseType).shortLabel}
-              >
-                <LicensePicker
-                  hideHeading
-                  value={licenseType}
-                  onChange={(v) => {
-                    setLicenseType(v);
-                    if (v !== "custom") clearPublishFieldError("licenseNote");
-                  }}
-                  licenseNote={licenseNote}
-                  onLicenseNoteChange={(v) => {
-                    setLicenseNote(v);
-                    clearPublishFieldError("licenseNote");
-                  }}
-                  noteInvalid={publishFieldHighlight(publishFieldErrors.licenseNote)}
-                />
-                <AiDisclosureToggle
-                  enabled={aiAssisted}
-                  onEnabledChange={setAiAssisted}
-                  level={aiUseLevel}
-                  onLevelChange={setAiUseLevel}
-                />
-              </CollapsibleEditorCard>
-              <CollapsibleEditorCard
-                title="Files & links"
-                framed
-                icon={Paperclip}
-                hint={projectAssets.length > 0 ? `${projectAssets.length} รายการ` : undefined}
-              >
-                <ProjectAssetsEditor
-                  ref={projectAssetsEditorRef}
-                  bare
-                  assets={projectAssets}
-                  onChange={setProjectAssets}
-                  userId={user.id}
-                  folder={folderRef.current}
-                  projectId={editing && id && isUuid(id) ? id : undefined}
-                  tier={tier}
-                />
-              </CollapsibleEditorCard>
+              {part !== "files" ? (
+                <CollapsibleEditorCard
+                  title="Rights"
+                  framed
+                  icon={Scale}
+                  hint={getLicenseMeta(licenseType).shortLabel}
+                >
+                  <LicensePicker
+                    hideHeading
+                    value={licenseType}
+                    onChange={(v) => {
+                      setLicenseType(v);
+                      if (v !== "custom") clearPublishFieldError("licenseNote");
+                    }}
+                    licenseNote={licenseNote}
+                    onLicenseNoteChange={(v) => {
+                      setLicenseNote(v);
+                      clearPublishFieldError("licenseNote");
+                    }}
+                    noteInvalid={publishFieldHighlight(publishFieldErrors.licenseNote)}
+                  />
+                  <AiDisclosureToggle
+                    enabled={aiAssisted}
+                    onEnabledChange={setAiAssisted}
+                    level={aiUseLevel}
+                    onLevelChange={setAiUseLevel}
+                  />
+                </CollapsibleEditorCard>
+              ) : null}
+              {part !== "rights" ? (
+                <CollapsibleEditorCard
+                  title="Files & links"
+                  framed
+                  icon={Paperclip}
+                  hint={projectAssets.length > 0 ? `${projectAssets.length} รายการ` : undefined}
+                >
+                  <ProjectAssetsEditor
+                    ref={projectAssetsEditorRef}
+                    bare
+                    assets={projectAssets}
+                    onChange={setProjectAssets}
+                    userId={user.id}
+                    folder={folderRef.current}
+                    projectId={editing && id && isUuid(id) ? id : undefined}
+                    tier={tier}
+                  />
+                </CollapsibleEditorCard>
+              ) : null}
             </div>
           ) : null}
     </>
@@ -3550,7 +3561,7 @@ const ProjectEditorPage = () => {
               tags={tags}
               hiringOn={allowHire}
               collabOn={allowCollab}
-              ownerName={"คุณ"}
+              ownerName={previewOwnerName}
               coverControl={coverField}
               headingExtra={<EditorInfoButton topic="cover" />}
             />
@@ -3686,6 +3697,8 @@ const ProjectEditorPage = () => {
 
             </CollapsibleEditorCard>
 
+            {renderDetailsExtras(true, "files")}
+
             <CollapsibleEditorCard
               title="Tags & tools"
               framed
@@ -3719,15 +3732,19 @@ const ProjectEditorPage = () => {
             </CollapsibleEditorCard>
             {(
               <QuickConnectGroup>
-                {connectProducts}
                 {collabField}
+                <div className="h-px bg-border" />
+                {connectProducts}
                 {!isAplus1LaunchMinimal() ? (
+                  <>
+                    <div className="h-px bg-border" />
                   <PortfolioLinkedPostPicker
                     userId={user?.id ?? ""}
                     selected={linkedOwnPosts}
                     onChange={setLinkedOwnPosts}
                     readOnlyPosts={linkedCollabPosts}
                   />
+                  </>
                 ) : null}
               </QuickConnectGroup>
             )}

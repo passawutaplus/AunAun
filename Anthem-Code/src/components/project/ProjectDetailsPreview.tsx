@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Briefcase, Handshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -58,19 +59,23 @@ export function ProjectDetailsPreview({
               ))}
             </div>
           ) : null}
-          {hiringOn || collabOn ? (
-            <div className="flex gap-1.5 pt-1">
-              {hiringOn ? (
-                <span className="rounded-full bg-foreground px-2.5 py-0.5 text-[11px] text-background">สนใจจ้าง</span>
-              ) : null}
-              {collabOn ? (
-                <span className="rounded-full border border-foreground/60 px-2.5 py-0.5 text-[11px] text-foreground">
-                  สนใจคอลแลป
-                </span>
-              ) : null}
-            </div>
-          ) : null}
         </div>
+        {hiringOn || collabOn ? (
+          <div className="flex gap-2 border-t border-border px-4 py-3">
+            {hiringOn ? (
+              <span className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[hsl(var(--chat-hire))] px-3 py-1.5 text-xs font-medium text-white">
+                <Briefcase className="h-3.5 w-3.5" aria-hidden />
+                สนใจจ้าง
+              </span>
+            ) : null}
+            {collabOn ? (
+              <span className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-foreground/40 px-3 py-1.5 text-xs font-medium text-foreground">
+                <Handshake className="h-3.5 w-3.5" aria-hidden />
+                สนใจคอลแลป
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </article>
     </div>
   );

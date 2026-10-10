@@ -16,7 +16,7 @@ type Props = {
 export function ProjectConnectProducts({ items, loading, selected, onToggle, projectId, disabled }: Props) {
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold text-muted-foreground">สินค้าและแพ็กเกจของฉัน</p>
+      <p className="text-xs font-semibold text-muted-foreground">แพ็กเกจและสินค้าของฉัน</p>
       {loading ? (
         <p className="text-xs text-muted-foreground">กำลังโหลด…</p>
       ) : items.length === 0 ? (
