@@ -42,9 +42,10 @@ const Star = ({ x, y, s = 1, className }: { x: number; y: number; s?: number; cl
   />
 );
 
-export function TourMascot() {
+/** The character on its own (used on the empty artboard too). */
+export function MascotCharacter({ className }: { className?: string }) {
   return (
-    <div className="relative mx-auto mb-3 h-[168px] w-[240px]" aria-hidden>
+    <div className={className} aria-hidden>
       <style>{CSS}</style>
       <svg viewBox="0 0 200 170" className="h-full w-full overflow-visible">
         <defs>
@@ -85,6 +86,14 @@ export function TourMascot() {
         <Star x={182} y={36} s={0.8} className="tm-s2" />
         <Star x={176} y={118} s={0.9} className="tm-s3" />
       </svg>
+    </div>
+  );
+}
+
+export function TourMascot() {
+  return (
+    <div className="relative mx-auto mb-3 h-[168px] w-[240px]" aria-hidden>
+      <MascotCharacter className="h-full w-full" />
       <span className="tm-hi absolute right-0 top-0 rounded-2xl rounded-bl-sm border border-border bg-card px-2.5 py-1 font-display text-xs text-foreground">
         hello!
       </span>

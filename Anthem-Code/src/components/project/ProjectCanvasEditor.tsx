@@ -75,6 +75,7 @@ import {
   PORTFOLIO_STILL_IMAGE_ACCEPT,
 } from "@/lib/normalizeImageUpload";
 import { cn } from "@/lib/utils";
+import { MascotCharacter } from "@/components/project/TourMascot";
 import { toast } from "sonner";
 
 type Props = {
@@ -1390,10 +1391,7 @@ export function ProjectCanvasEditor({
         {uploading ? (
           <Loader2 className="h-6 w-6 animate-spin" />
         ) : (
-          <span className="mb-1 flex gap-2" aria-hidden>
-            <i className="block h-5 w-3 rotate-[14deg] rounded-full bg-foreground" />
-            <i className="block h-5 w-3 rotate-[14deg] rounded-full bg-foreground" />
-          </span>
+          <MascotCharacter className="-mt-2 mb-1 h-24 w-28" />
         )}
         <span className="text-base font-medium text-foreground">วางรูปผลงานของคุณตรงนี้ได้เลย</span>
         <span className="text-sm text-muted-foreground">หรือคลิกเพื่อเลือกรูป · รูปแรกจะเป็นภาพปกให้อัตโนมัติ</span>
