@@ -83,6 +83,8 @@ type Props = {
   disabled?: boolean;
   emptyHint?: string;
   onEmptyDropImages?: (files: FileList) => void;
+  /** "upload" = Quick drop: an empty board is just an image drop zone, no template starters. */
+  emptyVariant?: "starter" | "upload";
   /** Quick-pick system templates shown above the starter action buttons. */
   starterTemplates?: Array<{ id: string; name: string; recommended?: boolean }>;
   /** First-time empty canvas: pick a named starter template. */
@@ -1214,6 +1216,7 @@ export function ProjectCanvasEditor({
   disabled,
   emptyHint = "หรือลากไฟล์มาวาง / ลากโมดูลจากแถบเครื่องมือ",
   onEmptyDropImages,
+  emptyVariant = "starter",
   starterTemplates,
   onPickStarterTemplate,
   onStartFromImage,
@@ -1341,6 +1344,45 @@ export function ProjectCanvasEditor({
       setToolDragOver(true);
     }
   };
+
+  if (blocks.length === 0 && emptyVariant === "upload") {
+    return (
+      <label
+        className={cn(
+          "flex min-h-[420px] cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border border-dashed px-5 py-10 text-center transition-colors",
+          toolDragOver ? "border-foreground bg-card" : "border-border/80 bg-muted/20 hover:border-foreground/40",
+          disabled && "pointer-events-none opacity-60",
+        )}
+        onDragOver={handleCanvasDragOver}
+        onDragLeave={() => setToolDragOver(false)}
+        onDrop={(e) => {
+          if (disabled) return;
+          e.preventDefault();
+          setToolDragOver(false);
+          if (onEmptyDropImages && e.dataTransfer.files?.length) onEmptyDropImages(e.dataTransfer.files);
+        }}
+      >
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          className="sr-only"
+          aria-label="เลือกรูปผลงาน"
+          disabled={disabled}
+          onChange={(e) => {
+            if (onEmptyDropImages && e.target.files?.length) onEmptyDropImages(e.target.files);
+            e.target.value = "";
+          }}
+        />
+        {uploading ? <Loader2 className="h-8 w-8 animate-spin" /> : <ImagePlus className="h-8 w-8 text-muted-foreground" />}
+        <span className="text-base font-medium text-foreground">ลากรูปมาวาง หรือคลิกเพื่อเลือกรูป</span>
+        <span className="text-xs text-muted-foreground">รูปแรกจะเป็นภาพปก · เพิ่มโมดูลอื่นได้จากแถบด้านล่าง</span>
+        {uploading ? (
+          <CanvasUploadProgress label={uploadStageLabel} percent={uploadStagePercent} onCancel={onCancelUpload} />
+        ) : null}
+      </label>
+    );
+  }
 
   if (blocks.length === 0) {
     const hasStarterActions = Boolean(

@@ -92,6 +92,7 @@ import { CanvasTemplatePreviewDialog } from "@/components/project/CanvasTemplate
 import { ProjectSeriesPicker } from "@/components/project/ProjectEditorSearchSelects";
 import { ProjectTaxonomyPicker } from "@/components/project/ProjectTaxonomyPicker";
 import { AddModuleBar } from "@/components/project/AddModuleBar";
+import { QuickAdvancedGroup } from "@/components/project/QuickAdvancedGroup";
 import { readUploadMode, writeUploadMode, type UploadMode } from "@/lib/uploadMode";
 import {
   inferTaxonomySelection,
@@ -3338,6 +3339,7 @@ const ProjectEditorPage = () => {
               uploadStagePercent={uploadStage?.percent}
               onCancelUpload={uploadStage ? cancelActiveUpload : undefined}
               onEmptyDropImages={(files) => void handleCanvasDropFiles(files)}
+              emptyVariant={uploadMode === "quick" ? "upload" : "starter"}
               starterTemplates={starterTemplates}
               onPickStarterTemplate={pickStarterTemplate}
               onStartFromVideo={() => handlePlaceTool({ tool: "video" })}
@@ -3472,6 +3474,7 @@ const ProjectEditorPage = () => {
               />
             </div>
 
+            <QuickAdvancedGroup quick={uploadMode === "quick"}>
             <CollapsibleEditorCard
               title="การรับงาน"
               icon={Handshake}
@@ -3593,6 +3596,7 @@ const ProjectEditorPage = () => {
 
             </CollapsibleEditorCard>
             {uploadMode === "quick" ? renderDetailsExtras(true) : null}
+            </QuickAdvancedGroup>
           </div>
 
         </ProjectEditorMetaSidebar>
