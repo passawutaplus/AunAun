@@ -1,5 +1,17 @@
 /* Fonts load async from main.tsx — avoid render-blocking @import (mobile FCP). */
 
+/* Agrandir Wide Light: English headings only (the file has no Thai glyphs, so Thai falls through to IBM Plex Sans Thai). */
+@font-face {
+  font-family: "Agrandir Wide";
+  src:
+    url("/fonts/Agrandir-Wide-Light.woff2") format("woff2"),
+    local("Agrandir Wide Light"),
+    local("Agrandir Wide");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,6 +24,9 @@
 
 @layer base {
   :root {
+    /* Type: IBM Plex Sans for English, IBM Plex Sans Thai for Thai (per-glyph fallback), Agrandir Wide Light for English headings. */
+    --font-body: "IBM Plex Sans", "IBM Plex Sans Thai", "Sarabun", "IBM Plex Sans Thai Looped", ui-sans-serif, system-ui, sans-serif;
+    --font-heading: "Agrandir Wide", "IBM Plex Sans Thai", "IBM Plex Sans", "Sarabun", ui-sans-serif, system-ui, sans-serif;
     /* Soft cool off-white — app shell sits behind white cards */
     --background: 220 24% 97%;
     /* Coal Black #141517 */
@@ -139,7 +154,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: "IBM Plex Sans Thai", "Sarabun", "IBM Plex Sans Thai Looped", ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-body);
     font-weight: 400;
     letter-spacing: 0.012em;
     line-height: 1.6;
@@ -196,8 +211,10 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: "IBM Plex Sans Thai", "Sarabun", "IBM Plex Sans Thai Looped", ui-sans-serif, system-ui, sans-serif;
-    font-weight: 400;
+    font-family: var(--font-heading);
+    /* Agrandir has one weight (Light); never fake a bold for the Latin letters. */
+    font-synthesis-weight: none;
+    font-weight: 300;
     letter-spacing: 0;
     line-height: 1.3;
   }
@@ -1534,9 +1551,9 @@ strong, b,
 .font-legal h3,
 .font-legal h4 { font-weight: 500; }
 
-.monolith-hero-copy h1 { font-weight: 500; }
+.monolith-hero-copy h1 { font-weight: 300; }
 
-.monolith-hero-word { font-weight: 500; }
+.monolith-hero-word { font-weight: 300; }
 
 /* Closed: word gap between Profile and to. Open: mode toggle sits between e and t. */
 .monolith-hero-word--split {
