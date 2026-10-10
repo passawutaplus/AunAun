@@ -3580,20 +3580,6 @@ const ProjectEditorPage = () => {
 
             </CollapsibleEditorCard>
 
-            {uploadMode === "quick" ? (
-              <QuickConnectGroup>
-                {collabField}
-                {!isAplus1LaunchMinimal() ? (
-                  <PortfolioLinkedPostPicker
-                    userId={user?.id ?? ""}
-                    selected={linkedOwnPosts}
-                    onChange={setLinkedOwnPosts}
-                    readOnlyPosts={linkedCollabPosts}
-                  />
-                ) : null}
-              </QuickConnectGroup>
-            ) : null}
-            <QuickAdvancedGroup quick={uploadMode === "quick"}>
             <CollapsibleEditorCard
               title="รายละเอียดเพิ่มเติม"
               icon={Tags}
@@ -3627,6 +3613,20 @@ const ProjectEditorPage = () => {
             {uploadMode === "quick" ? null : collabField}
 
             </CollapsibleEditorCard>
+            {uploadMode === "quick" ? (
+              <QuickConnectGroup>
+                {collabField}
+                {!isAplus1LaunchMinimal() ? (
+                  <PortfolioLinkedPostPicker
+                    userId={user?.id ?? ""}
+                    selected={linkedOwnPosts}
+                    onChange={setLinkedOwnPosts}
+                    readOnlyPosts={linkedCollabPosts}
+                  />
+                ) : null}
+              </QuickConnectGroup>
+            ) : null}
+            <QuickAdvancedGroup quick={uploadMode === "quick"}>
             {uploadMode === "quick" ? renderDetailsExtras(true, "rights") : null}
             </QuickAdvancedGroup>
           </div>
