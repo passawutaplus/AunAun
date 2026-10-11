@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Share2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
-import SharePopover from "@/components/SharePopover";
 import { Button } from "@/components/ui/button";
 import PageLoader from "@/components/ui/PageLoader";
 import { useChatAboutPackage, type PackageChoice } from "@/hooks/useChatAboutPackage";
@@ -22,7 +20,7 @@ import { recordCreatorServiceView } from "@/hooks/usePackageOverviewSeries";
 import { HeaderAccountActions } from "@/components/HeaderAccountActions";
 import Footer from "@/components/Footer";
 import { navigateToAuth } from "@/lib/authRedirect";
-import { absoluteUrl, truncateDescription } from "@/lib/seo";
+import { truncateDescription } from "@/lib/seo";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { PACKAGE_INQUIRY_PLATFORM_DISCLAIMER } from "@/lib/legalSignupCopy";
 import { isLocalDevSelfHirePreview } from "@/lib/localDevSelfHire";
@@ -120,7 +118,6 @@ export default function ServiceDetailPage() {
     ownerProfile?.display_name?.trim() ||
     ownerProfile?.username?.trim() ||
     "ครีเอเตอร์";
-  const shareUrl = absoluteUrl(`/service/${service.id}`);
   const desc = truncateDescription(service.summary || `${service.title} — แพ็กเกจบน ${BRAND_NAME}`);
   const profilePackagesHref = `/u/${ownerProfile?.username || service.owner_id}?tab=services`;
 
@@ -162,11 +159,6 @@ export default function ServiceDetailPage() {
             ) : null}
           </div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-            <SharePopover url={shareUrl} title={service.title}>
-              <Button type="button" variant="ghost" size="icon" className="shrink-0" aria-label="แชร์">
-                <Share2 className="h-4 w-4" />
-              </Button>
-            </SharePopover>
             <HeaderAccountActions />
           </div>
         </div>

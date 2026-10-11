@@ -132,7 +132,11 @@ const PackageCard = ({ data, search = "", stats = EMPTY_PACKAGE_FEED_STATS }: Pr
           aria-label={isSaved ? "เอาออกจากที่บันทึก" : "บันทึกแพ็กเกจไว้ดูทีหลัง"}
           title={isSaved ? "เอาออกจากที่บันทึก" : "บันทึกไว้ดูทีหลัง"}
           aria-pressed={isSaved}
-          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-background/90 text-foreground shadow-sm backdrop-blur-sm hover:bg-background"
+          className={cn(
+            "absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-background/90 text-foreground shadow-sm backdrop-blur-sm hover:bg-background transition-opacity duration-200",
+            // Like work cards: shown on hover (desktop) or once saved; always reachable on touch.
+            !isSaved && "md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100",
+          )}
         >
           <Bookmark className={cn("h-4 w-4", isSaved && "fill-current text-foreground")} strokeWidth={1.8} />
         </button>

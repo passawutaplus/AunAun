@@ -16,6 +16,7 @@ import {
 import { isVideoUrl } from "@/lib/videoAccept";
 import { packageDetailTags, packageTagFeedUrl } from "@/lib/packageRoutes";
 import HireTargetProfilePreview from "@/components/opportunity/HireTargetProfilePreview";
+import ServicePackageActions from "@/components/services/ServicePackageActions";
 import ServicePackageWorksSection from "@/components/services/ServicePackageWorksSection";
 import ImageLightbox from "@/components/project/ImageLightbox";
 import { cn } from "@/lib/utils";
@@ -79,6 +80,8 @@ export default function ServiceDetailView({
   const flatRevisions = formatServiceRevisions(service.revisions_label);
   const flatExclusions = service.exclusions_note?.trim() || "";
   const isPage = variant === "page";
+  // Save / share only on the real page, not in editor previews.
+  const showActions = isPage && !previewOnly;
   const tiers = service.tiers ?? [];
   const addons = service.addons ?? [];
   const faq = service.faq ?? [];
@@ -256,8 +259,14 @@ export default function ServiceDetailView({
         {service.title}
       </h2>
 
-      {detailTags.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5">
+      {showActions || detailTags.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {showActions ? (
+            <>
+              <ServicePackageActions serviceId={service.id} title={service.title} />
+              {detailTags.length > 0 ? <span className="mx-1.5 h-5 w-px bg-border" aria-hidden /> : null}
+            </>
+          ) : null}
           {detailTags.map((tag) => (
             <Link
               key={tag}
