@@ -3,11 +3,11 @@ import { useAboutEditLocale } from "@/components/profile/AboutEditLocale";
 import { cn } from "@/lib/utils";
 
 const SAMPLE_FAMILY: Record<CvHeadingFont, string> = {
-  standard: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+  poppins: '"Poppins", sans-serif',
   ibm: '"IBM Plex Sans", sans-serif',
   agrandir: '"Agrandir Wide", sans-serif',
 };
-const SAMPLE_WEIGHT: Record<CvHeadingFont, number> = { standard: 600, ibm: 600, agrandir: 400 };
+const SAMPLE_WEIGHT: Record<CvHeadingFont, number> = { poppins: 600, ibm: 600, agrandir: 400 };
 
 type Props = {
   value: CvHeadingFont;

@@ -7,7 +7,7 @@ import type { AboutCvTheme } from "@/lib/aboutCvTheme";
 import type { CvHeadingFont } from "@/lib/profileCv";
 import { layoutAboutCv, type PdfFont, type PdfOp } from "@/lib/aboutCvPdfLayout";
 
-type FontFace = "body" | "bodyBold" | "agrandir";
+type FontFace = "body" | "bodyBold" | "agrandir" | "poppins";
 
 /**
  * Body text is one loopless Thai face (IBM Plex Sans Thai, which also carries the Latin set).
@@ -18,6 +18,7 @@ const FONT_SOURCES: Record<FontFace, string[]> = {
   bodyBold: ["/fonts/IBMPlexSansThai-Bold.ttf", "/fonts/Sarabun-Bold.ttf"],
   // Light TTF = the on-screen face (fontkit in the browser build cannot read WOFF2).
   agrandir: ["/fonts/Agrandir-Wide-Light.ttf", "/fonts/Agrandir-Wide.ttf"],
+  poppins: ["/fonts/Poppins-SemiBold.ttf"],
 };
 
 const PHOTO_MAX_PX = 1100;
@@ -129,12 +130,11 @@ function qrVector(value: string): { d: string; cells: number } | null {
 }
 
 /** Which registered face draws this text. Thai never uses a Latin-only heading face. */
-function pickFace(font: PdfFont, text: string, heading: CvHeadingFont, hasAgrandir: boolean): string {
+function pickFace(font: PdfFont, text: string, heading: CvHeadingFont, hasHeadingFace: boolean): string {
   if (font === "r") return "body";
   if (font === "b") return "bodyBold";
   if (THAI.test(text)) return "bodyBold";
-  if (heading === "agrandir" && hasAgrandir) return "agrandir";
-  if (heading === "standard") return "Helvetica-Bold";
+  if ((heading === "agrandir" || heading === "poppins") && hasHeadingFace) return heading;
   return "bodyBold";
 }
 
@@ -146,12 +146,12 @@ export async function buildAboutCvTextPdf(
   theme: AboutCvTheme,
   meta: { title: string },
 ): Promise<TextPdfResult> {
-  const needsAgrandir = model.headingFont === "agrandir";
-  const [kitModule, regular, bold, agrandir] = await Promise.all([
+  const headingKey = model.headingFont === "agrandir" || model.headingFont === "poppins" ? model.headingFont : null;
+  const [kitModule, regular, bold, headingBuf] = await Promise.all([
     import("pdfkit/js/pdfkit.standalone.js"),
     loadFont("body"),
     loadFont("bodyBold"),
-    needsAgrandir ? loadFont("agrandir", true) : Promise.resolve(null),
+    headingKey ? loadFont(headingKey, true) : Promise.resolve(null),
   ]);
   const PDFDocument = kitModule.default as unknown as PdfKitCtor;
 
@@ -167,13 +167,13 @@ export async function buildAboutCvTextPdf(
   });
   doc.registerFont("body", regular!);
   doc.registerFont("bodyBold", bold!);
-  if (agrandir) doc.registerFont("agrandir", agrandir);
+  if (headingKey && headingBuf) doc.registerFont(headingKey, headingBuf);
 
   const chunks: Uint8Array[] = [];
   doc.on("data", (c) => chunks.push(c));
   const finished = new Promise<void>((resolve) => doc.on("end", resolve));
 
-  const face = (font: PdfFont, text: string) => pickFace(font, text, model.headingFont, !!agrandir);
+  const face = (font: PdfFont, text: string) => pickFace(font, text, model.headingFont, !!headingBuf);
   const measure = (text: string, font: PdfFont, size: number) =>
     doc.font(face(font, text)).fontSize(size).widthOfString(text);
   const layout = layoutAboutCv(model, measure, theme, !!photo);

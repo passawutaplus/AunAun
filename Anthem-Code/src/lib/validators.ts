@@ -419,7 +419,6 @@ export const profileSchema = z.object({
     .max(3)
     .optional()
     .default([]),
-  cvFeaturedProjectIds: z.array(z.string().max(64)).max(3).optional().default([]),
   cvDesiredRole: z.string().trim().max(60).optional().default(""),
   cvContactEmail: z.string().trim().max(120).optional().default(""),
   cvContactLine: z.string().trim().max(50).optional().default(""),
@@ -427,8 +426,8 @@ export const profileSchema = z.object({
   cvContactPublic: z.boolean().optional().default(false),
   cvAbout: z.string().trim().max(500).optional().default(""),
   cvAddressDetail: z.enum(["short", "full"]).optional().default("short"),
-  cvTemplate: z.enum(["editorial", "index", "grid"]).optional().default("editorial"),
-  cvHeadingFont: z.enum(["standard", "ibm", "agrandir"]).optional().default("agrandir"),
+  cvTemplate: z.enum(["editorial", "index", "grid"]).optional().default("grid"),
+  cvHeadingFont: z.enum(["poppins", "ibm", "agrandir"]).optional().default("agrandir"),
   cvShowPhoto: z.boolean().nullable().optional().default(null),
   cvVisibility: z
     .object({
@@ -451,7 +450,6 @@ export const profileSchema = z.object({
       nationality: z.boolean().optional(),
       military: z.boolean().optional(),
       references: z.boolean().optional(),
-      projects: z.boolean().optional(),
     })
     .optional(),
 });

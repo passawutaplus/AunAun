@@ -1,12 +1,12 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Download, Link2, Printer } from "lucide-react";
 import { toast } from "sonner";
-import { readAboutCvTheme, type AboutCvTheme } from "@/lib/aboutCvTheme";
+import type { AboutCvTheme } from "@/lib/aboutCvTheme";
 import { aboutCvPdfFilename } from "@/lib/aboutCvPdf";
 import { downloadAboutCvDocument } from "@/lib/aboutCvDownload";
 import { parseProfileCv } from "@/lib/profileCv";
 import { ProfileAboutToolbar } from "@/components/profile/ProfileAboutReadOnly";
-import type { CvProjectInput } from "@/lib/aboutCvModel";
 import ProfileTabHeading from "@/components/profile/ProfileTabHeading";
 import ProfileAboutEditor from "@/components/profile/ProfileAboutEditor";
 import CvSheetScaler from "@/components/profile/CvSheetScaler";
@@ -41,8 +41,6 @@ type Props = {
   experience: ExperienceItem[];
   skills: string[];
   socialLinks?: SocialLinkItem[];
-  /** Published projects for the CV's Selected Work block. */
-  projects?: CvProjectInput[];
   mode?: "owner" | "public";
   profileUrl?: string | null;
   sectionClassName?: string;
@@ -70,32 +68,28 @@ export default function ProfileAboutPanel({
   experience,
   skills,
   socialLinks,
-  projects,
   mode = "public",
   profileUrl,
   sectionClassName,
 }: Props) {
   const [editing, setEditing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [cvTheme, setCvTheme] = useState<AboutCvTheme>(readAboutCvTheme);
   const [downloading, setDownloading] = useState(false);
-  const [fit, setFit] = useState<CvFit>({ density: "normal", overflow: false });
+  const [fit, setFit] = useState<CvFit>({ scale: 1, overflow: false });
   const canEdit = mode === "owner" && !!userId;
-  // Owners see (and print) the theme they picked; visitors always get the default look.
-  const liveTheme: AboutCvTheme = mode === "owner" ? cvTheme : "mono";
+  // One fixed look for everyone — there is no colour choice.
+  const liveTheme: AboutCvTheme = "mono";
   const sheetProps = {
     profile,
     experience,
     skills,
     socialLinks,
     profileUrl,
-    projects,
-    density: fit.density,
   };
   // Print/PDF are for job applications: the owner's copy always carries application contacts.
   const printProps = { ...sheetProps, theme: liveTheme, forceShowApplicationContact: mode === "owner" };
   const handleFit = (next: CvFit) =>
-    setFit((prev) => (prev.density === next.density && prev.overflow === next.overflow ? prev : next));
+    setFit((prev) => (prev.scale === next.scale && prev.overflow === next.overflow ? prev : next));
   const frameClass = cn(
     "glass-panel p-5 md:p-6",
     mode === "owner" ? "rounded-3xl" : "rounded-2xl",
@@ -138,9 +132,9 @@ export default function ProfileAboutPanel({
         <ProfileAboutEditor
           userId={userId!}
           profile={profile}
-          projects={projects}
           profileUrl={profileUrl}
           onSaved={() => setEditing(false)}
+          onCancel={() => setEditing(false)}
           sectionClassName={frameClass}
         />
       ) : (
@@ -199,16 +193,19 @@ export default function ProfileAboutPanel({
           open={previewOpen}
           onOpenChange={setPreviewOpen}
           onPrint={printAboutCv}
-          onThemeChange={setCvTheme}
           {...sheetProps}
           forceShowApplicationContact
           fit={fit}
-          theme={cvTheme}
+          theme={liveTheme}
         />
       ) : null}
-      <div id="about-cv-print" className="about-cv-print-root" aria-hidden="true">
-        <AboutDocumentSheet {...printProps} onFit={handleFit} />
-      </div>
+      {/* Portalled to <body> so print can hide the whole app and show only this A4 sheet. */}
+      {createPortal(
+        <div id="about-cv-print" className="about-cv-print-root" aria-hidden="true">
+          <AboutDocumentSheet {...printProps} onFit={handleFit} />
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildAboutCvModel, type AboutCvModelInput } from "@/lib/aboutCvModel";
+import { buildAboutCvModel, CV_FIT_SCALES, type AboutCvModelInput } from "@/lib/aboutCvModel";
 import { A4_H, A4_W, layoutAboutCv, wrapText, type PdfMeasure, type PdfOp } from "@/lib/aboutCvPdfLayout";
 import type { ExperienceItem } from "@/lib/validators";
 
@@ -101,16 +101,26 @@ describe.each(TEMPLATES)("layoutAboutCv — %s", (template) => {
     for (let i = 1; i <= 14; i += 1) expect(all.some((t) => new RegExp(`Role ${i}(?: [|]|$)`).test(t))).toBe(true);
   });
 
-  it("uses the compact density only when it saves a page", () => {
-    let compact: ReturnType<typeof layoutAboutCv> | null = null;
-    for (let n = 2; n < 14 && !compact; n += 1) {
+  it("auto-fits: shrinks along the ladder only when that saves a page, never below the last step", () => {
+    const lowest = CV_FIT_SCALES[CV_FIT_SCALES.length - 1];
+    let shrunk = 0;
+    for (let n = 2; n < 14; n += 1) {
       const out = layoutAboutCv(make(n), measure, "orange", false);
-      if (out.scale < 1) compact = out;
+      expect(CV_FIT_SCALES as readonly number[]).toContain(out.scale);
+      expect(out.scale).toBeGreaterThanOrEqual(lowest);
+      if (out.scale < 1) {
+        shrunk += 1;
+        expect(out.pages).toHaveLength(1);
+      }
     }
-    if (compact) expect(compact.pages).toHaveLength(1);
+    expect(shrunk).toBeGreaterThan(0);
   });
 
-  it("prints Thai headings, personal details, and links featured projects", () => {
+  it("paginates at full size when even the smallest step overflows", () => {
+    expect(layoutAboutCv(make(40), measure, "mono", false).scale).toBe(1);
+  });
+
+  it("prints Thai headings and personal details", () => {
     const model = buildAboutCvModel({
       ...input(1, {
         template,
@@ -118,21 +128,14 @@ describe.each(TEMPLATES)("layoutAboutCv — %s", (template) => {
         birthDate: "1995-08-02",
         nationality: "ไทย",
         military: "completed",
-        visibility: { birthDate: true, nationality: true, military: true, projects: true, references: true },
+        visibility: { birthDate: true, nationality: true, military: true, references: true },
         references: [{ name: "Dani Martinez", role: "CEO", contact: "0812345678" }],
-        featuredProjectIds: ["p1"],
       }),
-      projects: [{ id: "p1", title: "Brand Refresh", views: 3 }],
-      siteOrigin: "https://samecor.com",
     });
     const { pages } = layoutAboutCv(model, measure, "orange", false);
     const all = texts(pages).join("\n").toLowerCase();
     expect(all).toContain("สัญชาติ: ไทย");
-    expect(all).toContain("ผลงานเด่น");
     expect(all).toContain("บุคคลอ้างอิง");
-    expect(all).toContain("brand refresh");
-    const urls = pages.flatMap((p) => p.flatMap((o) => (o.t === "link" ? [o.url] : [])));
-    expect(urls).toContain("https://samecor.com/project/p1");
   });
 
   it("draws headings with the heading font role", () => {

@@ -149,7 +149,7 @@ type Block = { title: string; body: ReactNode } | null;
 export function TemplateEditorial({ model, initials }: TemplateProps) {
   const blocks = sideBlocks(model);
   const left = pick(model, ["education"]);
-  const right = pick(model, ["experience", "projects", "certification", "awards", "references"]);
+  const right = pick(model, ["experience", "certification", "awards", "references"]);
   const leftBlocks: Block[] = [blocks.personal, blocks.skills, blocks.software, blocks.languages, blocks.location];
   const { first, rest } = splitName(model.name);
   const photo = model.showPhoto;
@@ -246,7 +246,7 @@ function ASectionEntry({ entry }: { entry: CvEntryModel }) {
 // ── B · Bold index ───────────────────────────────────────────────────────────
 export function TemplateIndex({ model, initials }: TemplateProps) {
   const blocks = sideBlocks(model);
-  const main = pick(model, ["experience", "projects", "education", "certification", "awards"]);
+  const main = pick(model, ["experience", "education", "certification", "awards"]);
   const refs = pick(model, ["references"])[0];
   const lists: Block[] = [blocks.skills, blocks.software, blocks.languages];
   const { first, rest } = splitName(model.name);
@@ -354,7 +354,7 @@ const HEADER_ICON: Partial<Record<CvContactItem["kind"], ReactNode>> = {
 
 export function TemplateGrid({ model, initials }: TemplateProps) {
   const blocks = sideBlocks(model);
-  const main = pick(model, ["experience", "projects", "education", "certification", "awards", "references"]);
+  const main = pick(model, ["experience", "education", "certification", "awards", "references"]);
   const headerContacts = model.contacts.filter((c) => c.kind in HEADER_ICON);
   const links = model.contacts.filter((c) => !(c.kind in HEADER_ICON));
   const { first, rest } = splitName(model.name);

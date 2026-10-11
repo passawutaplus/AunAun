@@ -41,30 +41,33 @@ export function useAboutEditLocale(): Ctx {
 export function AboutEditLangToggle() {
   const { lang, setLang, t } = useAboutEditLocale();
   return (
-    <div
-      className="inline-flex rounded-full border border-border p-0.5"
-      role="group"
-      aria-label={t.langSwitch}
-    >
-      {(["th", "en"] as const).map((id) => {
-        const active = lang === id;
-        return (
-          <button
-            key={id}
-            type="button"
-            aria-pressed={active}
-            onClick={() => setLang(id)}
-            className={cn(
-              "rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide transition-colors",
-              active
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {id.toUpperCase()}
-          </button>
-        );
-      })}
+    <div className="flex items-center gap-1.5">
+      <span className="hidden text-[11px] text-muted-foreground sm:inline">{t.langSwitch}</span>
+      <div
+        className="inline-flex rounded-full border border-border p-0.5"
+        role="group"
+        aria-label={t.langSwitch}
+      >
+        {(["th", "en"] as const).map((id) => {
+          const active = lang === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setLang(id)}
+              className={cn(
+                "rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {id.toUpperCase()}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -292,14 +292,16 @@ export const CV_TEMPLATES = ["editorial", "index", "grid"] as const;
 export type CvTemplate = (typeof CV_TEMPLATES)[number];
 
 export function parseCvTemplate(raw: unknown): CvTemplate {
-  return CV_TEMPLATES.includes(raw as CvTemplate) ? (raw as CvTemplate) : "editorial";
+  return CV_TEMPLATES.includes(raw as CvTemplate) ? (raw as CvTemplate) : "grid";
 }
 
-/** Latin heading face: neutral standard, IBM Plex Sans, or the brand display face. Thai is always IBM Plex Sans Thai. */
-export const CV_HEADING_FONTS = ["standard", "ibm", "agrandir"] as const;
+/** Latin heading face: Poppins (geometric), IBM Plex Sans, or the brand display face. Thai is always IBM Plex Sans Thai. */
+export const CV_HEADING_FONTS = ["poppins", "ibm", "agrandir"] as const;
 export type CvHeadingFont = (typeof CV_HEADING_FONTS)[number];
 
 export function parseCvHeadingFont(raw: unknown): CvHeadingFont {
+  // "standard" (system Helvetica) was replaced by Poppins; keep old profiles on a bold sans.
+  if (raw === "standard") return "poppins";
   return CV_HEADING_FONTS.includes(raw as CvHeadingFont) ? (raw as CvHeadingFont) : "agrandir";
 }
 
@@ -326,7 +328,6 @@ export const referenceItemSchema = z.object({
 export type ReferenceItem = z.infer<typeof referenceItemSchema>;
 
 export const CV_REFERENCES_MAX = 3;
-export const CV_FEATURED_PROJECTS_MAX = 3;
 
 export function normalizeReferences(raw: unknown): ReferenceItem[] {
   if (!Array.isArray(raw)) return [];
@@ -346,16 +347,6 @@ export function normalizeReferences(raw: unknown): ReferenceItem[] {
   return out;
 }
 
-export function parseFeaturedProjectIds(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  const seen = new Set<string>();
-  for (const id of raw) {
-    if (typeof id === "string" && id.trim() && id.length <= 64) seen.add(id.trim());
-    if (seen.size >= CV_FEATURED_PROJECTS_MAX) break;
-  }
-  return [...seen];
-}
-
 export const profileCvSchema = z.object({
   education: z.array(educationItemSchema).max(10).default([]),
   certifications: z.array(certificationItemSchema).max(8).default([]),
@@ -372,7 +363,6 @@ export const profileCvSchema = z.object({
   nationality: z.string().trim().max(40).optional().default(""),
   military: z.enum(CV_MILITARY_STATUSES).nullable().optional().default(null),
   references: z.array(referenceItemSchema).max(CV_REFERENCES_MAX).optional().default([]),
-  featuredProjectIds: z.array(z.string().max(64)).max(CV_FEATURED_PROJECTS_MAX).optional().default([]),
   birthDate: z.string().trim().max(10).optional().default(""),
   desiredRole: z.string().trim().max(60).optional().default(""),
   contactEmail: z.string().trim().max(120).optional().default(""),
@@ -381,7 +371,7 @@ export const profileCvSchema = z.object({
   contactPublic: z.boolean().optional().default(false),
   about: z.string().trim().max(500).optional().default(""),
   addressDetail: z.enum(["short", "full"]).optional().default("short"),
-  template: z.enum(CV_TEMPLATES).optional().default("editorial"),
+  template: z.enum(CV_TEMPLATES).optional().default("grid"),
   headingFont: z.enum(CV_HEADING_FONTS).optional().default("agrandir"),
   /** null = never chosen (legacy CVs keep showing the photo). */
   showPhoto: z.boolean().nullable().optional().default(null),
@@ -407,7 +397,6 @@ export const profileCvSchema = z.object({
       nationality: z.boolean().optional().default(false),
       military: z.boolean().optional().default(false),
       references: z.boolean().optional().default(false),
-      projects: z.boolean().optional().default(false),
     })
     .optional()
     .default({}),
@@ -453,7 +442,6 @@ export const CV_VISIBILITY_KEYS = [
   "nationality",
   "military",
   "references",
-  "projects",
 ] as const;
 
 export function defaultCvVisibility(contactPublic = false): CvVisibility {
@@ -477,7 +465,6 @@ export function defaultCvVisibility(contactPublic = false): CvVisibility {
     nationality: false,
     military: false,
     references: false,
-    projects: false,
   };
 }
 
@@ -511,7 +498,6 @@ export const EMPTY_PROFILE_CV: ProfileCv = {
   nationality: "",
   military: null,
   references: [],
-  featuredProjectIds: [],
   birthDate: "",
   desiredRole: "",
   contactEmail: "",
@@ -520,7 +506,7 @@ export const EMPTY_PROFILE_CV: ProfileCv = {
   contactPublic: false,
   about: "",
   addressDetail: "short",
-  template: "editorial",
+  template: "grid",
   headingFont: "agrandir",
   showPhoto: null,
   visibility: defaultCvVisibility(false),
@@ -739,7 +725,6 @@ export function parseProfileCv(raw: unknown): ProfileCv {
     nationality: typeof o.nationality === "string" ? o.nationality.trim().slice(0, 40) : "",
     military: parseCvMilitary(o.military),
     references: normalizeReferences(o.references),
-    featuredProjectIds: parseFeaturedProjectIds(o.featuredProjectIds),
     birthDate,
     desiredRole,
     contactEmail,
@@ -775,7 +760,6 @@ export function profileCvToJson(cv: ProfileCv): ProfileCv {
     nationality: (cv.nationality ?? "").trim().slice(0, 40),
     military: parseCvMilitary(cv.military),
     references: normalizeReferences(cv.references),
-    featuredProjectIds: parseFeaturedProjectIds(cv.featuredProjectIds),
     birthDate: normalizeBirthDate(cv.birthDate ?? ""),
     desiredRole: (cv.desiredRole ?? "").trim().slice(0, 60),
     contactEmail: normalizeContactEmail(cv.contactEmail ?? ""),

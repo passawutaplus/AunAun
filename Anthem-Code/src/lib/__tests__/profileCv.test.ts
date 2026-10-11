@@ -10,6 +10,7 @@ import {
   cvReadiness,
   defaultCvShowPhoto,
   parseCvTemplate,
+  parseCvHeadingFont,
   profileCvToJson,
   educationDetailLine,
   educationDetailLines,
@@ -304,9 +305,9 @@ describe("profileAboutUrl", () => {
 });
 
 describe("cv layout and photo", () => {
-  it("defaults to two columns and keeps the photo for legacy CVs", () => {
+  it("defaults to the wide grid and keeps the photo for legacy CVs", () => {
     const cv = parseProfileCv({ fullName: "Momo" });
-    expect(cv.template).toBe("editorial");
+    expect(cv.template).toBe("grid");
     expect(cv.showPhoto).toBeNull();
     expect(cvPhotoVisible(cv)).toBe(true);
   });
@@ -319,8 +320,17 @@ describe("cv layout and photo", () => {
   });
 
   it("rejects unknown layouts", () => {
-    expect(parseCvTemplate("three")).toBe("editorial");
-    expect(parseCvTemplate(undefined)).toBe("editorial");
+    expect(parseCvTemplate("three")).toBe("grid");
+    expect(parseCvTemplate(undefined)).toBe("grid");
+    expect(parseCvTemplate("editorial")).toBe("editorial");
+  });
+
+  it("maps the retired standard heading font onto Poppins and rejects unknown ones", () => {
+    expect(parseCvHeadingFont("standard")).toBe("poppins");
+    expect(parseCvHeadingFont("poppins")).toBe("poppins");
+    expect(parseCvHeadingFont("ibm")).toBe("ibm");
+    expect(parseCvHeadingFont("comic")).toBe("agrandir");
+    expect(profileCvToJson(parseProfileCv({ headingFont: "standard" })).headingFont).toBe("poppins");
   });
 
   it("photo default: on for Thai, off for English, existing CVs keep their photo", () => {
@@ -352,10 +362,8 @@ describe("Phase 3 CV fields", () => {
       nationality: false,
       military: false,
       references: false,
-      projects: false,
     });
     expect(cv.references).toEqual([]);
-    expect(cv.featuredProjectIds).toEqual([]);
   });
 
   it("round-trips the new fields and clamps them", () => {
@@ -371,7 +379,6 @@ describe("Phase 3 CV fields", () => {
         { name: "C" },
         { name: "D" },
       ],
-      featuredProjectIds: ["p1", "p1", "p2", "p3", "p4"],
       visibility: { references: true, military: true },
     });
     expect(parsed.nameEn).toBe("Sam Ple");
@@ -379,7 +386,6 @@ describe("Phase 3 CV fields", () => {
     expect(parsed.nationality).toBe("Thai");
     expect(parsed.military).toBe("exempt");
     expect(parsed.references.map((r) => r.name)).toEqual(["A", "B", "C"]);
-    expect(parsed.featuredProjectIds).toEqual(["p1", "p2", "p3"]);
     expect(parseProfileCv(profileCvToJson(parsed))).toEqual(parsed);
   });
 

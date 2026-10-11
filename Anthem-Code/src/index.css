@@ -12,6 +12,15 @@
   font-display: swap;
 }
 
+/* Poppins SemiBold: English CV headings only (no Thai glyphs; Thai falls through to IBM Plex Sans Thai). */
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -841,6 +850,14 @@
     -webkit-text-fill-color: unset;
   }
 
+  /* These overrides pin the fill to ink in every mode, so the label must stay paper-light
+     (otherwise .dark's dark --primary-foreground lands on #2f2e2c and the text vanishes). */
+  html.learn-paper .bg-gradient-brand,
+  .dark [data-studio-home] .bg-gradient-brand,
+  [data-studio-home] .bg-gradient-brand {
+    color: #f5f5f5 !important;
+  }
+
   .dark [data-studio-home] .bg-gradient-brand,
   [data-studio-home] .bg-gradient-brand {
     background-image: none;
@@ -1298,14 +1315,11 @@
   line-height: 1.6;
 }
 
-.about-cv-sheet[data-density="compact"] {
-  --cv-scale: 0.88;
-}
-
-.about-cv-sheet[data-cv-heading="standard"] {
-  --cv-display: "Helvetica Neue", Helvetica, Arial, "IBM Plex Sans Thai", sans-serif;
+/* --cv-scale is set by the sheet itself (auto-fit to one A4 page); 1 = full size. */
+.about-cv-sheet[data-cv-heading="poppins"] {
+  --cv-display: "Poppins", "IBM Plex Sans Thai", sans-serif;
   --cv-hw: 600;
-  --cv-hw-strong: 700;
+  --cv-hw-strong: 600;
 }
 
 .about-cv-sheet[data-cv-heading="ibm"] {
@@ -1867,21 +1881,26 @@
     -webkit-print-color-adjust: exact;
   }
 
-  body * {
-    visibility: hidden;
+  /* While the CV print sheet exists: print nothing but that one A4 page.
+     (Hidden-but-laid-out content used to push the sheet onto extra pages.) */
+  html:has(> body > #about-cv-print),
+  body:has(> #about-cv-print) {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 297mm !important;
+    overflow: hidden !important;
   }
 
-  #about-cv-print,
-  #about-cv-print * {
-    visibility: visible;
+  body:has(> #about-cv-print) > *:not(#about-cv-print) {
+    display: none !important;
   }
 
   .about-cv-print-root {
-    position: absolute;
-    left: 0;
-    top: 0;
+    position: static;
     width: 210mm;
     height: 297mm;
+    overflow: hidden;
+    break-inside: avoid;
   }
 
   .about-cv-print-root .about-cv-sheet {

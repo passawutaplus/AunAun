@@ -38,19 +38,12 @@ export type AboutCvProfile = {
   instagram?: string | null;
 };
 
-/** A SAMECOR project the owner may feature on the CV. */
-export type CvProjectInput = { id: string; title: string; views?: number | null };
-
 export type AboutCvModelInput = {
   profile: AboutCvProfile;
   experience: ExperienceItem[];
   skills: string[];
   socialLinks?: SocialLinkItem[];
   profileUrl?: string | null;
-  /** Published projects of the owner; the CV picks `featuredProjectIds` (or the top 3 by views). */
-  projects?: CvProjectInput[];
-  /** Used to build project links, e.g. https://samecor.com. */
-  siteOrigin?: string;
   /** Owner print/PDF — always include application email/LINE/phone. */
   forceShowApplicationContact?: boolean;
 };
@@ -80,13 +73,12 @@ export type CvEntryModel = {
   period?: string;
   lines: string[];
   bullets: string[];
-  /** Whole entry links here (featured projects). */
+  /** Whole entry links here. */
   href?: string;
 };
 
 export type CvSectionKey =
   | "experience"
-  | "projects"
   | "education"
   | "certification"
   | "awards"
@@ -117,7 +109,13 @@ export type AboutCvModel = {
   sections: CvSectionModel[];
 };
 
-export const CV_TOP_PROJECTS_FALLBACK = 3;
+
+/**
+ * Auto-fit ladder: the CV shrinks step by step (sheet and PDF alike) until it
+ * fits one A4 page. Below the last step text would be too small to read, so a
+ * longer CV overflows instead (the PDF then continues on a second page).
+ */
+export const CV_FIT_SCALES = [1, 0.94, 0.88, 0.82, 0.76] as const;
 
 export function hrefLabel(url: string): string {
   return url.replace(/^https?:\/\//i, "").replace(/\/$/, "");
@@ -163,8 +161,6 @@ export function buildAboutCvModel({
   skills,
   socialLinks = [],
   profileUrl,
-  projects = [],
-  siteOrigin = typeof window !== "undefined" ? window.location.origin : "",
   forceShowApplicationContact = false,
 }: AboutCvModelInput): AboutCvModel {
   const cv = parseProfileCv(profile.cv);
@@ -293,25 +289,6 @@ export function buildAboutCvModel({
         };
       }),
     });
-  }
-  if (vis.projects) {
-    const byId = new Map(projects.map((p) => [p.id, p]));
-    const picked = cv.featuredProjectIds.map((id) => byId.get(id)).filter((p): p is CvProjectInput => !!p);
-    const chosen = picked.length
-      ? picked
-      : [...projects]
-          .sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
-          .slice(0, CV_TOP_PROJECTS_FALLBACK);
-    if (chosen.length) {
-      sections.push({
-        key: "projects",
-        title: copy.sections.projects,
-        entries: chosen.map((p) => {
-          const href = `${siteOrigin}/project/${p.id}`;
-          return { title: p.title, lines: [hrefLabel(href)], bullets: [], href };
-        }),
-      });
-    }
   }
   if (vis.education && cv.education.length > 0) {
     sections.push({

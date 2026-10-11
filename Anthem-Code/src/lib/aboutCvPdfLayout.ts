@@ -1,4 +1,11 @@
-import type { AboutCvModel, CvContactItem, CvEntryModel, CvSectionKey, CvSectionModel } from "@/lib/aboutCvModel";
+import {
+  CV_FIT_SCALES,
+  type AboutCvModel,
+  type CvContactItem,
+  type CvEntryModel,
+  type CvSectionKey,
+  type CvSectionModel,
+} from "@/lib/aboutCvModel";
 import type { AboutCvTheme } from "@/lib/aboutCvTheme";
 
 /**
@@ -39,7 +46,7 @@ export type PdfMeasure = (text: string, font: PdfFont, size: number) => number;
 
 export type PdfLayout = {
   pages: PdfOp[][];
-  /** Density that was used (1 = normal, <1 = compact). */
+  /** Auto-fit scale that was used (1 = full size, <1 = shrunk to fit one page). */
   scale: number;
 };
 
@@ -121,10 +128,14 @@ export function layoutAboutCv(
   /** True when the portrait bytes were fetched and can be drawn. */
   photoReady: boolean,
 ): PdfLayout {
-  const one = runLayout(model, measure, theme, photoReady, 1);
-  if (one.pages.length <= 1) return one;
-  const compact = runLayout(model, measure, theme, photoReady, 0.88);
-  return compact.pages.length <= 1 ? compact : one;
+  const full = runLayout(model, measure, theme, photoReady, CV_FIT_SCALES[0]);
+  if (full.pages.length <= 1) return full;
+  for (const scale of CV_FIT_SCALES.slice(1)) {
+    const shrunk = runLayout(model, measure, theme, photoReady, scale);
+    if (shrunk.pages.length <= 1) return shrunk;
+  }
+  // Even the smallest readable size overflows: paginate at full size instead.
+  return full;
 }
 
 function pick(model: AboutCvModel, keys: CvSectionKey[]): CvSectionModel[] {
@@ -438,7 +449,7 @@ function runLayout(
         7.5,
       ),
     ];
-    const rightItems = sectionItems(pick(model, ["experience", "projects", "certification", "awards", "references"]), style);
+    const rightItems = sectionItems(pick(model, ["experience", "certification", "awards", "references"]), style);
 
     const colTop = colsY + 16.5;
     const innerColW = half - 18;
@@ -556,7 +567,7 @@ function runLayout(
     };
     const style: SectionStyle = { heading, entry, headGap: 6, entryGap: 9, sectionGap: 19.5 };
     const items: Item[] = [
-      ...sectionItems(pick(model, ["experience", "projects", "education", "certification", "awards"]), style),
+      ...sectionItems(pick(model, ["experience", "education", "certification", "awards"]), style),
       ...pieceItems([pieces.skills, pieces.software, pieces.languages], heading, 19.5, 6),
       ...sectionItems(pick(model, ["references"]), style).map((it, i) => (i === 0 ? { ...it, gapBefore: 19.5 } : it)),
     ];
@@ -641,7 +652,7 @@ function runLayout(
     const mainItems: Item[] = [
       ...(introBlock.h ? [{ gapBefore: 0, build: () => introBlock }] : []),
       ...sectionItems(
-        pick(model, ["experience", "projects", "education", "certification", "awards", "references"]),
+        pick(model, ["experience", "education", "certification", "awards", "references"]),
         style,
       ).map((it, i) => (i === 0 && introBlock.h ? { ...it, gapBefore: 19.5 } : it)),
     ];

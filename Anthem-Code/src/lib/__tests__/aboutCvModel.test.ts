@@ -129,27 +129,8 @@ describe("buildAboutCvModel — Phase 3 blocks", () => {
     expect(refs?.entries[0]).toMatchObject({ title: "Dani Martinez", lines: ["CEO, Studio X", "0812345678"] });
   });
 
-  it("features the picked projects in order, else the top three by views", () => {
-    const projects = [
-      { id: "a", title: "A", views: 5 },
-      { id: "b", title: "B", views: 50 },
-      { id: "c", title: "C", views: 20 },
-      { id: "d", title: "D", views: 10 },
-    ];
-    const picked = buildAboutCvModel({
-      ...base({ featuredProjectIds: ["c", "a"], visibility: { projects: true } }),
-      projects,
-      siteOrigin: "https://samecor.com",
-    });
-    const sec = picked.sections.find((s) => s.key === "projects");
-    expect(sec?.entries.map((e) => e.title)).toEqual(["C", "A"]);
-    expect(sec?.entries[0].href).toBe("https://samecor.com/project/c");
-    const auto = buildAboutCvModel({
-      ...base({ visibility: { projects: true } }),
-      projects,
-      siteOrigin: "https://samecor.com",
-    });
-    expect(auto.sections.find((s) => s.key === "projects")?.entries.map((e) => e.title)).toEqual(["B", "C", "D"]);
-    expect(buildAboutCvModel({ ...base(), projects }).sections.some((s) => s.key === "projects")).toBe(false);
+  it("has no Selected Work section, even for CVs saved with the old fields", () => {
+    const m = buildAboutCvModel(base({ featuredProjectIds: ["a"], visibility: { projects: true } }));
+    expect((m.sections.map((s) => s.key) as string[]).includes("projects")).toBe(false);
   });
 });

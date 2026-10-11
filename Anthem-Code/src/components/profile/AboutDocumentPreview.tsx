@@ -8,21 +8,16 @@ import { Button } from "@/components/ui/button";
 import type { ExperienceItem, SocialLinkItem } from "@/lib/validators";
 import { displayInitials } from "@/lib/avatarPool";
 import { parseProfileCv } from "@/lib/profileCv";
-import { buildAboutCvModel, type AboutCvProfile, type CvProjectInput } from "@/lib/aboutCvModel";
-import {
-  ABOUT_CV_THEMES,
-  type AboutCvTheme,
-  readAboutCvTheme,
-  writeAboutCvTheme,
-} from "@/lib/aboutCvTheme";
+import { buildAboutCvModel, CV_FIT_SCALES, type AboutCvProfile } from "@/lib/aboutCvModel";
+import type { AboutCvTheme } from "@/lib/aboutCvTheme";
 import { CvTemplateBody } from "@/components/profile/CvTemplates";
 import CvSheetScaler from "@/components/profile/CvSheetScaler";
 import { cn } from "@/lib/utils";
 
 type ProfileAbout = AboutCvProfile;
 
-export type CvDensity = "normal" | "compact";
-export type CvFit = { density: CvDensity; overflow: boolean };
+/** Result of the auto-fit: the scale picked and whether it still overflows one A4 page. */
+export type CvFit = { scale: number; overflow: boolean };
 
 type DocProps = {
   profile: ProfileAbout;
@@ -30,16 +25,28 @@ type DocProps = {
   skills: string[];
   socialLinks?: SocialLinkItem[];
   profileUrl?: string | null;
-  /** Owner's published projects, for the optional Selected Work section. */
-  projects?: CvProjectInput[];
   theme?: AboutCvTheme;
   /** Owner print/PDF — always include application email/LINE/phone. */
   forceShowApplicationContact?: boolean;
-  /** Spacing scale; the measuring sheet (onFit) picks its own. */
-  density?: CvDensity;
-  /** Set on the fixed-size print sheet only: reports which density fits A4. */
+  /** Reports the auto-fit result (the sheet shrinks itself to fit one A4 page). */
   onFit?: (fit: CvFit) => void;
 };
+
+/**
+ * True when something inside a clipping column ends below it. Measured from
+ * rects rather than scrollHeight, which over-reports by a few px in some
+ * templates even when every line is visible.
+ */
+function contentOverflows(part: HTMLElement): boolean {
+  const box = part.getBoundingClientRect();
+  if (!part.clientHeight || !box.height) return false;
+  const k = box.height / part.clientHeight; // the sheet is CSS-scaled on screen
+  const limit = box.bottom + 0.5 * k;
+  for (const node of Array.from(part.querySelectorAll("*"))) {
+    if (node.getBoundingClientRect().bottom > limit) return true;
+  }
+  return false;
+}
 
 export function AboutDocumentSheet({
   profile,
@@ -47,10 +54,8 @@ export function AboutDocumentSheet({
   skills,
   socialLinks = [],
   profileUrl,
-  projects,
   theme = "mono",
   forceShowApplicationContact = false,
-  density = "normal",
   onFit,
 }: DocProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -61,32 +66,29 @@ export function AboutDocumentSheet({
     skills,
     socialLinks,
     profileUrl,
-    projects,
     forceShowApplicationContact,
   });
   const initials = displayInitials(model.name || profile.username || profile.display_name, 2);
 
-  // The print root (fixed A4) is the source of truth for fit: try the normal
-  // density, fall back to compact, and report whether it still overflows.
+  // Every sheet sits in a fixed A4 box: try full size, then shrink step by step
+  // until nothing overflows, and report whether even the smallest step does.
   useLayoutEffect(() => {
     const el = sheetRef.current;
-    if (!onFit || !el) return;
+    if (!el) return;
     const overflows = () =>
       el.scrollHeight > el.clientHeight + 1 ||
-      Array.from(el.querySelectorAll<HTMLElement>(".cv-fit")).some(
-        (part) => part.scrollHeight > part.clientHeight + 1,
-      );
+      Array.from(el.querySelectorAll<HTMLElement>(".cv-fit")).some(contentOverflows);
     const measure = () => {
-      el.dataset.density = "normal";
-      let next: CvFit = { density: "normal", overflow: overflows() };
-      if (next.overflow) {
-        el.dataset.density = "compact";
-        next = { density: "compact", overflow: overflows() };
+      let next: CvFit = { scale: CV_FIT_SCALES[0], overflow: true };
+      for (const scale of CV_FIT_SCALES) {
+        el.style.setProperty("--cv-scale", String(scale));
+        next = { scale, overflow: overflows() };
+        if (!next.overflow) break;
       }
       const prev = lastFit.current;
-      if (prev && prev.density === next.density && prev.overflow === next.overflow) return;
+      if (prev && prev.scale === next.scale && prev.overflow === next.overflow) return;
       lastFit.current = next;
-      onFit(next);
+      onFit?.(next);
     };
     measure();
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
@@ -102,7 +104,6 @@ export function AboutDocumentSheet({
       data-cv-theme={theme}
       data-cv-template={model.template}
       data-cv-heading={model.headingFont}
-      data-density={onFit ? undefined : density}
     >
       <CvTemplateBody model={model} initials={initials} />
     </div>
@@ -115,36 +116,25 @@ type DialogProps = DocProps & {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onPrint?: () => void;
-  onThemeChange?: (theme: AboutCvTheme) => void;
 };
 
 export default function AboutDocumentPreviewDialog({
   open,
   onOpenChange,
   onPrint,
-  theme,
-  onThemeChange,
+  theme = "mono",
   fit,
   ...doc
 }: DialogProps) {
-  const [localTheme, setLocalTheme] = useState<AboutCvTheme>(() => theme ?? readAboutCvTheme());
   const [downloading, setDownloading] = useState(false);
-  const activeTheme = theme ?? localTheme;
-  const themeMeta = ABOUT_CV_THEMES.find((item) => item.id === activeTheme) ?? ABOUT_CV_THEMES[0];
   const previewName = parseProfileCv(doc.profile.cv).fullName.trim() || "Creator";
-
-  const setTheme = (next: AboutCvTheme) => {
-    writeAboutCvTheme(next);
-    setLocalTheme(next);
-    onThemeChange?.(next);
-  };
 
   const handleDownloadPdf = async () => {
     setDownloading(true);
     try {
       const { photoSkipped } = await downloadAboutCvDocument({
         input: doc,
-        theme: activeTheme,
+        theme,
         filename: aboutCvPdfFilename(previewName === "Creator" ? "" : previewName),
       });
       if (photoSkipped) toast.info("สร้าง PDF แล้ว แต่ใส่รูปโปรไฟล์ไม่ได้");
@@ -163,37 +153,13 @@ export default function AboutDocumentPreviewDialog({
           "w-fit max-w-[min(210mm,calc(100vw-1.25rem))] gap-2.5 rounded-2xl border-0 p-3 sm:p-3.5",
           "print:hidden",
         )}
-        style={{ background: themeMeta.frame }}
+        style={{ background: "#ffffff" }}
       >
         <DialogTitle className="sr-only">About Me preview for {previewName}</DialogTitle>
         <DialogDescription className="sr-only">
           A4 portrait preview for printing or job applications
         </DialogDescription>
-        <div className="flex flex-wrap items-center justify-between gap-2 pr-8">
-          <div className="flex items-center gap-1.5" role="radiogroup" aria-label="ธีมพรีวิว">
-            {ABOUT_CV_THEMES.filter((item) => item.id !== "slate").map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                role="radio"
-                aria-checked={activeTheme === item.id}
-                onClick={() => setTheme(item.id)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] border bg-white transition-colors",
-                  activeTheme === item.id
-                    ? "border-black font-medium text-foreground"
-                    : "border-black/20 text-foreground hover:border-black",
-                )}
-              >
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ background: item.swatch }}
-                  aria-hidden
-                />
-                {item.label}
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-wrap items-center justify-end gap-2 pr-8">
           <div className="flex items-center gap-1.5">
             <Button
               type="button"
@@ -224,12 +190,16 @@ export default function AboutDocumentPreviewDialog({
         </div>
         {fit?.overflow ? (
           <p role="status" className="rounded-lg bg-amber-100 px-2.5 py-1.5 text-[11px] text-amber-950">
-            เนื้อหายาวเกิน 1 หน้า A4 — ลดข้อความ ปิดบางหัวข้อ หรือเลือกเทมเพลตอื่น
+            ย่อตัวอักษรอัตโนมัติสุดแล้วแต่ยังเกิน 1 หน้า A4 — PDF จะต่อเป็นหน้า 2 ลดข้อความหรือปิดบางหัวข้อได้
+          </p>
+        ) : fit && fit.scale < 1 ? (
+          <p role="status" className="rounded-lg bg-black/5 px-2.5 py-1.5 text-[11px] text-black/70">
+            ย่อตัวอักษรอัตโนมัติ {Math.round(fit.scale * 100)}% ให้พอดี 1 หน้า A4
           </p>
         ) : null}
         <div className="about-cv-a4-frame">
           <CvSheetScaler>
-            <AboutDocumentSheet {...doc} theme={activeTheme} />
+            <AboutDocumentSheet {...doc} theme={theme} />
           </CvSheetScaler>
         </div>
       </DialogContent>

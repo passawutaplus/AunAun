@@ -26,3 +26,4 @@ scripts/_tmp-*.json
 Vault-Code/outputs/*-extension-unpacked/
 Vault-Code/outputs/*-extension-*.zip
 Vault-Code/outputs/*-unpacked.zip
+.claude/HANDOFF.md

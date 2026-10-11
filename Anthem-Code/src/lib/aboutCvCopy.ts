@@ -37,7 +37,6 @@ export const CV_DOC_COPY: Record<CvDocLang, CvDocCopy> = {
     },
     sections: {
       experience: "Experience",
-      projects: "Selected Work",
       education: "Education",
       certification: "Certification",
       awards: "Awards",
@@ -79,7 +78,6 @@ export const CV_DOC_COPY: Record<CvDocLang, CvDocCopy> = {
     },
     sections: {
       experience: "ประสบการณ์ทำงาน",
-      projects: "ผลงานเด่น",
       education: "การศึกษา",
       certification: "ใบรับรอง",
       awards: "รางวัล",
