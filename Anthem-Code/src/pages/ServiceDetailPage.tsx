@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Share2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import SharePopover from "@/components/SharePopover";
 import { Button } from "@/components/ui/button";
 import PageLoader from "@/components/ui/PageLoader";
-import HireDialog from "@/components/HireDialog";
+import { useChatAboutPackage } from "@/hooks/useChatAboutPackage";
 import ServiceDetailView from "@/components/services/ServiceDetailView";
 import ServiceRelatedPackages from "@/components/services/ServiceRelatedPackages";
 import SeoHead from "@/components/SeoHead";
@@ -31,23 +31,25 @@ export default function ServiceDetailPage() {
   const { user } = useAuth();
   const { data: service, isLoading, isError, refetch, isFetching } = useCreatorService(id);
   const { data: ownerProfile } = useProfile(service?.owner_id);
-  const [hireOpen, setHireOpen] = useState(false);
-  const [autoSubmitId, setAutoSubmitId] = useState<string | null>(null);
+  // A package already carries its brief, so "ขอใช้บริการนี้" opens the chat directly — no hire form.
+  const { start: startPackageChat, busyId: chatBusyId } = useChatAboutPackage();
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [id]);
 
-  // Deep link from Packages Saved ("ขอใบเสนอราคา"): open the hire dialog once the package has loaded.
+  // Deep link from Packages Saved ("ขอใบเสนอราคา"): open the chat once the package has loaded.
   const [searchParams, setSearchParams] = useSearchParams();
   const wantsHire = searchParams.get("hire") === "1";
+  const deepLinkHandled = useRef(false);
   useEffect(() => {
-    if (!wantsHire || !service || !user || user.id === service.owner_id) return;
-    setHireOpen(true);
+    if (!wantsHire || deepLinkHandled.current || !service || !user || user.id === service.owner_id) return;
+    deepLinkHandled.current = true;
     const next = new URLSearchParams(searchParams);
     next.delete("hire");
     setSearchParams(next, { replace: true });
-  }, [wantsHire, service, user, searchParams, setSearchParams]);
+    void startPackageChat(service, ownerProfile?.display_name || ownerProfile?.username);
+  }, [wantsHire, service, user, searchParams, setSearchParams, startPackageChat, ownerProfile]);
 
   useEffect(() => {
     if (!service?.id || !user?.id) return;
@@ -118,8 +120,7 @@ export default function ServiceDetailPage() {
     ) {
       return;
     }
-    setAutoSubmitId(service.id);
-    setHireOpen(true);
+    void startPackageChat(service, creatorName);
   };
 
   return (
@@ -165,6 +166,7 @@ export default function ServiceDetailPage() {
             creatorId={service.owner_id}
             variant="page"
             onRequest={() => requestService()}
+            busy={chatBusyId === service.id}
           />
         </div>
 
@@ -184,20 +186,6 @@ export default function ServiceDetailPage() {
 
       <Footer />
 
-      <HireDialog
-        open={hireOpen}
-        onOpenChange={(next) => {
-          setHireOpen(next);
-          if (!next) setAutoSubmitId(null);
-        }}
-        freelancerId={service.owner_id}
-        freelancerUsername={ownerProfile?.username}
-        profileName={creatorName}
-        source="service"
-        initialPanel="services"
-        autoSubmitServiceId={autoSubmitId}
-        onAutoSubmitHandled={() => setAutoSubmitId(null)}
-      />
     </div>
   );
 }

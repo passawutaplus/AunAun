@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useChatAboutPackage } from "@/hooks/useChatAboutPackage";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatServicePrice } from "@/hooks/useCreatorServices";
 import type { PackageFeedCard } from "@/hooks/usePackageFeed";
@@ -33,6 +34,7 @@ function text(value: string | null | undefined): ReactNode {
 
 /** Side-by-side look at 2–3 saved packages: price, time, what is included. */
 export default function SavedPackagesCompareDialog({ open, onOpenChange, cards, stats, viewerId }: Props) {
+  const { start, busyId } = useChatAboutPackage();
   const rows: { label: string; render: (c: PackageFeedCard) => ReactNode }[] = [
     { label: "ครีเอเตอร์", render: (c) => c.profile.display_name || c.profile.username || dash },
     { label: "ราคา", render: (c) => <span className="font-semibold tabular-nums">{price(c)}</span> },
@@ -116,10 +118,15 @@ export default function SavedPackagesCompareDialog({ open, onOpenChange, cards, 
                 {cards.map((c) => (
                   <td key={c.service.id} className="p-2">
                     {c.service.owner_id === viewerId ? null : (
-                      <Button asChild size="sm" className="w-full rounded-full">
-                        <Link to={`/service/${c.service.id}?hire=1`}>
-                          <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> ทักแชท
-                        </Link>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="w-full rounded-full"
+                        disabled={busyId === c.service.id}
+                        onClick={() => void start(c.service, c.profile.display_name || c.profile.username)}
+                      >
+                        <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden />
+                        {busyId === c.service.id ? "กำลังเปิดแชท..." : "ทักแชท"}
                       </Button>
                     )}
                   </td>
