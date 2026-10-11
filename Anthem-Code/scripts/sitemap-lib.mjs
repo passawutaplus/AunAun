@@ -88,6 +88,7 @@ export function catalogProjectId(i) {
  *   vanityHandles?: string[],
  *   seriesIds?: string[],
  *   jobIds?: string[],
+ *   serviceIds?: string[],
  *   explorePaths?: string[],
  *   images?: { loc: string, imageLoc: string, title?: string }[],
  * }} [opts]
@@ -106,6 +107,7 @@ export function buildSitemapUrls(opts = {}) {
   const vanityHandles = (opts.vanityHandles || []).filter(Boolean);
   const seriesIds = opts.seriesIds || [];
   const collectionIds = opts.collectionIds || [];
+  const serviceIds = opts.serviceIds || [];
   const jobIds = hiringBoard ? opts.jobIds || [] : [];
   const explorePaths = opts.explorePaths || [];
 
@@ -154,6 +156,12 @@ export function buildSitemapUrls(opts = {}) {
       priority: "0.6",
       changefreq: "weekly",
       group: "collections",
+    })),
+    ...serviceIds.map((id) => ({
+      loc: `/service/${id}`,
+      priority: "0.7",
+      changefreq: "weekly",
+      group: "packages",
     })),
     ...explorePaths.map((loc) => ({
       loc,
@@ -239,6 +247,7 @@ export function buildSitemapBundles(base, opts = {}) {
     profiles: urls.filter((u) => u.group === "profiles"),
     series: urls.filter((u) => u.group === "series"),
     collections: urls.filter((u) => u.group === "collections"),
+    packages: urls.filter((u) => u.group === "packages"),
     explore: urls.filter((u) => u.group === "explore"),
     jobs: urls.filter((u) => u.group === "jobs"),
     studios: urls.filter((u) => u.group === "studios"),

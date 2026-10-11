@@ -131,3 +131,9 @@ export function rankPackagesNewest<T extends RankablePackage>(rows: T[]): T[] {
 export function rankPackagesByPrice<T extends RankablePackage>(rows: T[]): T[] {
   return [...rows].sort((a, b) => startPrice(b) - startPrice(a) || updatedMs(b) - updatedMs(a));
 }
+
+/** Cheapest starting price first; "ask for price" (0) goes last. */
+export function rankPackagesByPriceAsc<T extends RankablePackage>(rows: T[]): T[] {
+  const key = (r: T) => startPrice(r) || Number.MAX_SAFE_INTEGER;
+  return [...rows].sort((a, b) => key(a) - key(b) || updatedMs(b) - updatedMs(a));
+}

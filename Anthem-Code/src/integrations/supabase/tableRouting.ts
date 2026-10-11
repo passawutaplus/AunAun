@@ -82,6 +82,10 @@ export type SharedTableName = (typeof SHARED_TABLE_NAMES)[number];
  * (the root client only sees `public`). Keep in sync with the database.
  */
 export const ANTHEM_RPC_NAMES = [
+  "record_service_view_anon",
+  "package_public_stats",
+  "package_owner_stats",
+  "creator_response_minutes",
   "admin_ad_overview",
   "admin_dismiss_notification",
   "admin_gift_overview",

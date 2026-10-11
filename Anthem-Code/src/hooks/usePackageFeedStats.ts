@@ -1,14 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchPackagePublicStats } from "@/hooks/usePackageSignals";
 import { isBenignQueryError } from "@/lib/supabaseErrors";
 
 export type PackageFeedListingStats = {
   hireCount: number;
+  /** Signed-in + guest views. */
+  views: number;
   reviewCount: number;
   ratingAvg: number | null;
 };
 
 export const EMPTY_PACKAGE_FEED_STATS: PackageFeedListingStats = {
+  views: 0,
   hireCount: 0,
   reviewCount: 0,
   ratingAvg: null,
@@ -26,20 +30,25 @@ export async function fetchPackageFeedStats(
   for (const id of serviceIds) map[id] = { ...EMPTY_PACKAGE_FEED_STATS };
   if (!serviceIds.length) return map;
 
-  const [reviewsRes, hiresRes] = await Promise.all([
-    supabase
-      .from("work_reviews" as never)
-      .select("service_id, rating, kind")
-      .in("service_id", serviceIds)
-      .eq("visibility", "public"),
-    supabase.from("hiring_requests").select("service_id").in("service_id", serviceIds),
+  // Long id lists are split so the request URL stays short.
+  const chunks: string[][] = [];
+  for (let i = 0; i < serviceIds.length; i += 150) chunks.push(serviceIds.slice(i, i + 150));
+  const [reviewParts, publicStats] = await Promise.all([
+    Promise.all(
+      chunks.map((ids) =>
+        supabase
+          .from("work_reviews" as never)
+          .select("service_id, rating, kind")
+          .in("service_id", ids)
+          .eq("visibility", "public"),
+      ),
+    ),
+    // Real hires (accepted / closed) + views via a public RPC — readable by guests too.
+    fetchPackagePublicStats(serviceIds).catch(() => null),
   ]);
-
-  if (reviewsRes.error && !swallow(reviewsRes.error)) throw reviewsRes.error;
-  // Hire rows may be RLS-empty for guests — treat as optional.
-  if (hiresRes.error && !swallow(hiresRes.error)) {
-    // keep hire counts at 0
-  }
+  const reviewErr = reviewParts.find((r) => r.error)?.error;
+  if (reviewErr && !swallow(reviewErr)) throw reviewErr;
+  const reviewsRes = { data: reviewParts.flatMap((r) => (r.data ?? []) as unknown[]) };
 
   const ratingSum = new Map<string, number>();
   const ratingN = new Map<string, number>();
@@ -68,18 +77,11 @@ export async function fetchPackageFeedStats(
     if (n > 0) map[id].ratingAvg = Math.round((sum / n) * 10) / 10;
   }
 
-  const hireFromRequests = new Map<string, number>();
-  if (!hiresRes.error) {
-    for (const row of (hiresRes.data ?? []) as { service_id: string | null }[]) {
-      if (!row.service_id) continue;
-      hireFromRequests.set(row.service_id, (hireFromRequests.get(row.service_id) ?? 0) + 1);
-    }
-  }
-
   for (const id of serviceIds) {
-    const fromReq = hireFromRequests.get(id) ?? 0;
+    const fromRpc = publicStats?.get(id);
     const fromRev = hireFromReview.get(id) ?? 0;
-    map[id].hireCount = fromReq > 0 ? fromReq : fromRev;
+    map[id].hireCount = Math.max(fromRpc?.hires ?? 0, fromRev);
+    map[id].views = fromRpc?.views ?? 0;
   }
 
   return map;

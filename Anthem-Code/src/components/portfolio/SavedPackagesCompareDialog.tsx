@@ -4,7 +4,11 @@ import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useChatAboutPackage } from "@/hooks/useChatAboutPackage";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { formatServicePrice } from "@/hooks/useCreatorServices";
+import {
+  formatServiceDurationDays,
+  formatServicePriceRange,
+  formatServiceRevisions,
+} from "@/hooks/useCreatorServices";
 import type { PackageFeedCard } from "@/hooks/usePackageFeed";
 import type { PackageFeedListingStats } from "@/hooks/usePackageFeedStats";
 import { thumbFeedCoverUrl } from "@/lib/feedProjectCover";
@@ -20,12 +24,9 @@ type Props = {
 
 const dash = <span className="text-muted-foreground">–</span>;
 
+/** Same price wording as the package page. */
 function price(card: PackageFeedCard): ReactNode {
-  const min = Number(card.service.price_min_thb) || 0;
-  const max = Number(card.service.price_thb) || 0;
-  const start = min > 0 ? min : max;
-  if (start <= 0) return "คุยรายละเอียดราคา";
-  return max > min && min > 0 ? `${formatServicePrice(min)} – ${formatServicePrice(max)}` : formatServicePrice(start);
+  return formatServicePriceRange(card.service.price_min_thb, card.service.price_thb);
 }
 
 function text(value: string | null | undefined): ReactNode {
@@ -40,10 +41,9 @@ export default function SavedPackagesCompareDialog({ open, onOpenChange, cards, 
     { label: "ราคา", render: (c) => <span className="font-semibold tabular-nums">{price(c)}</span> },
     {
       label: "ระยะเวลา",
-      render: (c) => (c.service.duration_label?.trim() ? `${c.service.duration_label} วัน` : dash),
+      render: (c) => formatServiceDurationDays(c.service.duration_label) || dash,
     },
-    { label: "แบบร่าง", render: (c) => text(c.service.concepts_label) },
-    { label: "แก้ไขได้", render: (c) => text(c.service.revisions_label) },
+    { label: "แก้ไขได้", render: (c) => formatServiceRevisions(c.service.revisions_label) || dash },
     {
       label: "ได้รับ",
       render: (c) =>

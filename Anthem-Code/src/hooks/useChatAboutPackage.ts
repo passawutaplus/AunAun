@@ -6,7 +6,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useCreateHireRequest } from "@/hooks/useHiringRequests";
 import { useOpenHireCollabChat } from "@/hooks/useChat";
-import { formatServicePriceRange, type CreatorService } from "@/hooks/useCreatorServices";
+import {
+  formatServicePrice,
+  formatServicePriceRange,
+  type CreatorService,
+  type PackageAddon,
+  type PackageTier,
+} from "@/hooks/useCreatorServices";
+
+/** What the client picked on the package page (level + extras). */
+export type PackageChoice = { tier?: PackageTier | null; addons?: PackageAddon[] };
+
+const CLOSED_STATUSES = '("ปฏิเสธ","ยกเลิก","ปิดแล้ว")';
 import { isBlockedFromOpportunity } from "@/hooks/useCommunityPostInteractions";
 import { buildHireContextMessage } from "@/lib/chatContext";
 import { validateProjectInquiry } from "@/domain/inquiry";
@@ -35,7 +46,7 @@ export function useChatAboutPackage() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const start = useCallback(
-    async (svc: CreatorService, creatorName?: string | null) => {
+    async (svc: CreatorService, creatorName?: string | null, choice?: PackageChoice) => {
       if (!user) {
         navigateToAuth(navigate, { hire: "1" });
         return;
@@ -73,8 +84,16 @@ export function useChatAboutPackage() {
           return;
         }
 
-        const priceMax = Math.max(0, Math.round(svc.price_thb));
-        const priceMin = Math.max(0, Math.round(svc.price_min_thb || priceMax));
+        const addons = choice?.addons ?? [];
+        const extra = addons.reduce((sum, a) => sum + a.price_thb, 0);
+        const tier = choice?.tier ?? null;
+        const priceMax = Math.max(0, Math.round(tier ? tier.price_thb : svc.price_thb)) + extra;
+        const priceMin = tier ? priceMax : Math.max(0, Math.round(svc.price_min_thb || svc.price_thb)) + extra;
+        const choiceLines =
+          (tier ? `\nระดับ: ${tier.name} (${formatServicePrice(tier.price_thb)})` : "") +
+          (addons.length
+            ? `\nบริการเสริม: ${addons.map((a) => `${a.label} +${formatServicePrice(a.price_thb)}`).join(", ")}`
+            : "");
 
         // Talking about the same package again continues the same chat instead of opening a new request.
         let requestId: string | null = null;
@@ -85,6 +104,8 @@ export function useChatAboutPackage() {
             .eq("client_id", user.id)
             .eq("freelancer_id", freelancerId)
             .eq("service_id" as never, svc.id as never)
+            // A closed / declined request starts a fresh one.
+            .not("status", "in", CLOSED_STATUSES)
             .order("created_at", { ascending: false })
             .limit(1);
           requestId = (prev as { id: string }[] | null)?.[0]?.id ?? null;
@@ -106,9 +127,10 @@ export function useChatAboutPackage() {
             budget_amount: priceMax || null,
             budget_min: priceMin || null,
             budget_max: priceMax || null,
-            deadline: deadlineFor(svc.duration_label),
+            deadline: deadlineFor(tier?.duration_days ? String(tier.duration_days) : svc.duration_label),
             message:
               `สนใจแพ็กเกจ «${svc.title}» (${formatServicePriceRange(priceMin, priceMax)})` +
+              choiceLines +
               (svc.summary?.trim() ? `\n${svc.summary.trim()}` : "") +
               "\nอยากคุยรายละเอียดในแชท",
             job_type: "Service",
@@ -131,7 +153,7 @@ export function useChatAboutPackage() {
           serviceId: svc.id,
           contextMessage: buildHireContextMessage({
             source: "service",
-            serviceTitle: svc.title,
+            serviceTitle: tier ? `${svc.title} · ${tier.name}` : svc.title,
             servicePriceThb: priceMax,
             profileName: creatorName ?? null,
             projectTitle: null,

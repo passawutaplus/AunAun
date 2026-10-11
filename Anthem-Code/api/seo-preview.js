@@ -305,6 +305,65 @@ async function resolveMeta(pathname, base) {
     };
   }
 
+  const serviceMatch = pathname.match(/^\/service\/([0-9a-f-]{36})$/i);
+  if (serviceMatch) {
+    const id = serviceMatch[1];
+    const rows = await fetchJson(
+      `${rest}/creator_services?select=id,title,summary,cover_url,gallery_urls,price_min_thb,price_thb,owner_id&id=eq.${id}&status=eq.Published&limit=1`,
+      anthemHeaders,
+    );
+    const s = rows?.[0];
+    if (!s) {
+      return {
+        ...defaultMeta,
+        noindex: true,
+        title: "ไม่พบแพ็กเกจ | Aplus1",
+        status: 404,
+      };
+    }
+    const owners = await fetchJson(
+      `${rest}/profiles_public?select=display_name,username&user_id=eq.${s.owner_id}&limit=1`,
+      headers,
+    );
+    const ownerName = owners?.[0]?.display_name || owners?.[0]?.username || "ครีเอเตอร์";
+    const raw = s.cover_url || s.gallery_urls?.[0] || "";
+    const image = raw
+      ? raw.startsWith("http")
+        ? raw
+        : `${base}${raw.startsWith("/") ? "" : "/"}${raw}`
+      : defaultMeta.image;
+    const low = Number(s.price_min_thb) || Number(s.price_thb) || 0;
+    const high = Math.max(low, Number(s.price_thb) || 0);
+    const priceText = low > 0 ? ` · เริ่มต้น ฿${low.toLocaleString("th-TH")}` : "";
+    const url = `${base}/service/${s.id}`;
+    return {
+      title: `${s.title} · แพ็กเกจโดย ${ownerName} | Aplus1`,
+      description: `${(s.summary || s.title || "").trim()}${priceText}`.slice(0, 160),
+      url,
+      image,
+      noindex: false,
+      status: 200,
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        name: s.title,
+        url,
+        image,
+        provider: { "@type": "Person", name: ownerName },
+        ...(low > 0
+          ? {
+              offers: {
+                "@type": "AggregateOffer",
+                priceCurrency: "THB",
+                lowPrice: low,
+                highPrice: high,
+              },
+            }
+          : {}),
+      },
+    };
+  }
+
   const exploreMatch = pathname.match(/^\/explore\/(tool|tag)\/([^/]+)$/i);
   if (exploreMatch) {
     const kind = exploreMatch[1].toLowerCase();
