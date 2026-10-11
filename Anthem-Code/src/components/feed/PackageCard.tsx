@@ -131,6 +131,7 @@ const PackageCard = ({ data, search = "", stats = EMPTY_PACKAGE_FEED_STATS }: Pr
           disabled={toggleSave.isPending}
           aria-label={isSaved ? "เอาออกจากที่บันทึก" : "บันทึกแพ็กเกจไว้ดูทีหลัง"}
           title={isSaved ? "เอาออกจากที่บันทึก" : "บันทึกไว้ดูทีหลัง"}
+          aria-pressed={isSaved}
           className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-background/90 text-foreground shadow-sm backdrop-blur-sm hover:bg-background"
         >
           <Bookmark className={cn("h-4 w-4", isSaved && "fill-current text-foreground")} strokeWidth={1.8} />
@@ -175,24 +176,28 @@ const PackageCard = ({ data, search = "", stats = EMPTY_PACKAGE_FEED_STATS }: Pr
               {highlight(service.title, search)}
             </h3>
           </button>
-          <div
-            className="shrink-0 space-y-0.5 pt-0.5 text-right text-[11px] leading-tight text-muted-foreground"
-            aria-label={`จ้าง ${stats.hireCount} ครั้ง · รีวิว ${stats.reviewCount} รายการ`}
-          >
-            <p className="inline-flex items-center justify-end gap-0.5 tabular-nums text-foreground">
-              <Star className="h-3 w-3 fill-primary text-primary" aria-hidden />
-              <span className="font-semibold">
-                {stats.ratingAvg != null ? stats.ratingAvg.toFixed(1) : "–"}
-              </span>
-              {stats.reviewCount > 0 ? (
-                <span className="text-muted-foreground">({formatCompact(stats.reviewCount)})</span>
+          {stats.ratingAvg != null || stats.hireCount > 0 ? (
+            <div
+              className="shrink-0 space-y-0.5 pt-0.5 text-right text-[11px] leading-tight text-muted-foreground"
+              aria-label={`จ้าง ${stats.hireCount} ครั้ง · รีวิว ${stats.reviewCount} รายการ`}
+            >
+              {stats.ratingAvg != null ? (
+                <p className="inline-flex items-center justify-end gap-0.5 tabular-nums text-foreground">
+                  <Star className="h-3 w-3 fill-primary text-primary" aria-hidden />
+                  <span className="font-semibold">{stats.ratingAvg.toFixed(1)}</span>
+                  {stats.reviewCount > 0 ? (
+                    <span className="text-muted-foreground">({formatCompact(stats.reviewCount)})</span>
+                  ) : null}
+                </p>
               ) : null}
-            </p>
-            <p className="inline-flex items-center justify-end gap-0.5 tabular-nums">
-              <Briefcase className="h-3 w-3" aria-hidden />
-              <span>จ้าง {formatCompact(stats.hireCount)}</span>
-            </p>
-          </div>
+              {stats.hireCount > 0 ? (
+                <p className="flex items-center justify-end gap-0.5 tabular-nums">
+                  <Briefcase className="h-3 w-3" aria-hidden />
+                  <span>จ้าง {formatCompact(stats.hireCount)}</span>
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-auto flex min-w-0 flex-wrap items-end justify-between gap-x-2 gap-y-2 pt-3.5">

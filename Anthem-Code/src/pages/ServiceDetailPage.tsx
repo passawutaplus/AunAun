@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Share2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import SharePopover from "@/components/SharePopover";
@@ -37,6 +37,17 @@ export default function ServiceDetailPage() {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [id]);
+
+  // Deep link from Packages Saved ("ขอใบเสนอราคา"): open the hire dialog once the package has loaded.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const wantsHire = searchParams.get("hire") === "1";
+  useEffect(() => {
+    if (!wantsHire || !service || !user || user.id === service.owner_id) return;
+    setHireOpen(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete("hire");
+    setSearchParams(next, { replace: true });
+  }, [wantsHire, service, user, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!service?.id || !user?.id) return;
