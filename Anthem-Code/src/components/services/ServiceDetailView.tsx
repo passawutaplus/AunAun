@@ -83,6 +83,7 @@ export default function ServiceDetailView({
   const addons = service.addons ?? [];
   const faq = service.faq ?? [];
   const [tierIdx, setTierIdx] = useState(0);
+  const [requestedTier, setRequestedTier] = useState<number | null>(null);
   const [pickedAddons, setPickedAddons] = useState<number[]>([]);
   const tier = tiers.length ? tiers[Math.min(tierIdx, tiers.length - 1)] : null;
   const addonTotal = pickedAddons.reduce((sum, i) => sum + (addons[i]?.price_thb ?? 0), 0);
@@ -449,21 +450,11 @@ export default function ServiceDetailView({
                 <tr className="bg-muted/30">
                   <th className="w-28 p-3 text-left text-xs font-normal text-muted-foreground" />
                   {tiers.map((t, i) => (
-                    <th key={`${t.name}-${i}`} scope="col" className="p-2 text-left align-top">
-                      <button
-                        type="button"
-                        onClick={() => setTierIdx(i)}
-                        aria-pressed={i === tierIdx}
-                        className={cn(
-                          "w-full rounded-lg px-2 py-1.5 text-left transition-colors",
-                          i === tierIdx ? "bg-primary/15 text-primary" : "hover:bg-muted/60",
-                        )}
-                      >
-                        <span className="block text-sm font-semibold">{t.name}</span>
-                        <span className="block text-base font-semibold tabular-nums">
-                          {formatServicePrice(t.price_thb)}
-                        </span>
-                      </button>
+                    <th key={`${t.name}-${i}`} scope="col" className="p-3 text-left align-top">
+                      <span className="block text-sm font-semibold text-foreground">{t.name}</span>
+                      <span className="block text-base font-semibold tabular-nums text-foreground">
+                        {formatServicePrice(t.price_thb)}
+                      </span>
                     </th>
                   ))}
                 </tr>
@@ -490,7 +481,6 @@ export default function ServiceDetailView({
                           "–"
                         ),
                     ],
-                    ["ไม่รวม", (t) => t.exclusions || "–"],
                   ] as [string, (t: (typeof tiers)[number]) => ReactNode][]
                 ).map(([label, render]) => (
                   <tr key={label} className="border-t border-border/50 align-top">
@@ -500,16 +490,40 @@ export default function ServiceDetailView({
                     {tiers.map((t, i) => (
                       <td
                         key={`${label}-${i}`}
-                        className={cn(
-                          "whitespace-pre-wrap p-3 text-muted-foreground",
-                          i === tierIdx && "bg-primary/5 text-foreground",
-                        )}
+                        className="whitespace-pre-wrap p-3 text-foreground/90"
                       >
                         {render(t)}
                       </td>
                     ))}
                   </tr>
                 ))}
+                {onEdit ? null : (
+                  <tr className="border-t border-border/50">
+                    <td />
+                    {tiers.map((t, i) => (
+                      <td key={`req-${i}`} className="p-3">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="w-full gap-1.5 rounded-full"
+                          disabled={previewOnly || busy}
+                          onClick={() => {
+                            if (previewOnly) return;
+                            setRequestedTier(i);
+                            onRequest(service, { tier: t, addons: choice.addons });
+                          }}
+                        >
+                          {busy && requestedTier === i ? (
+                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                          ) : (
+                            <MessageCircle className="h-4 w-4" aria-hidden />
+                          )}
+                          ขอใช้บริการนี้
+                        </Button>
+                      </td>
+                    ))}
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

@@ -160,6 +160,16 @@ export function useChatAboutPackage() {
           }),
         });
 
+        // Chat already existed (seeded earlier): say which level / extras the client picked this time.
+        if (!isNew && choiceLines) {
+          await supabase.from("messages").insert({
+            conversation_id: convId,
+            sender_id: user.id,
+            content: `สนใจแพ็กเกจ «${svc.title}»${choiceLines}`,
+            message_type: "text",
+          } as never);
+        }
+
         if (isNew) {
           void trackProductEvent(
             "hire_submit",

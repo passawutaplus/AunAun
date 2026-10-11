@@ -2,7 +2,6 @@ import { Copy, Layers, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { PACKAGE_TIERS_MAX, sortTiers, type PackageTier } from "@/hooks/useCreatorServices";
 
 type Props = {
@@ -179,29 +178,16 @@ export default function PackageTiersEditor({ tiers, disabled, onChange }: Props)
             ) : null}
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-[8rem_1fr]">
-            <div className="space-y-1">
-              <Label className="text-xs">รอบแก้ไข (ไม่บังคับ)</Label>
-              <Input
-                inputMode="numeric"
-                value={t.revisions ? String(t.revisions) : ""}
-                onChange={(e) => set(i, { revisions: Math.min(99, num(e.target.value)) })}
-                placeholder="เช่น 2"
-                className="h-9"
-                disabled={disabled}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">สิ่งที่ไม่รวม (ไม่บังคับ)</Label>
-              <Textarea
-                value={t.exclusions}
-                onChange={(e) => set(i, { exclusions: e.target.value.slice(0, 500) })}
-                placeholder="เช่น ไม่รวมไฟล์ต้นฉบับ"
-                rows={1}
-                className="min-h-9"
-                disabled={disabled}
-              />
-            </div>
+          <div className="w-40 space-y-1">
+            <Label className="text-xs">รอบแก้ไข (ไม่บังคับ)</Label>
+            <Input
+              inputMode="numeric"
+              value={t.revisions ? String(t.revisions) : ""}
+              onChange={(e) => set(i, { revisions: Math.min(99, num(e.target.value)) })}
+              placeholder="เช่น 2"
+              className="h-9"
+              disabled={disabled}
+            />
           </div>
         </div>
       ))}

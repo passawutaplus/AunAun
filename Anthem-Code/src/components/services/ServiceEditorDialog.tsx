@@ -179,7 +179,7 @@ export default function ServiceEditorDialog({
           tags: initial.tags ?? [],
           reference_project_ids: initial.reference_project_ids ?? [],
           status: initial.status,
-          tiers: tiersOf(initial).map((t) => ({ ...t, deliverables: t.deliverables.length ? [...t.deliverables] : [""] })),
+          tiers: tiersOf(initial).map((t) => ({ ...t, exclusions: "", deliverables: t.deliverables.length ? [...t.deliverables] : [""] })),
           addons: initial.addons ?? [],
           faq: initial.faq ?? [],
         }
