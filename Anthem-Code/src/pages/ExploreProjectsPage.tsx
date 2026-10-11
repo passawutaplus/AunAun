@@ -1,18 +1,36 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { SearchX, Hash } from "lucide-react";
+import { SearchX, Hash, Bell, BellRing, ArrowUpDown, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  ExploreCategoryChips,
+  ExplorePalette,
+  ExploreRelatedChips,
+  ExploreTopCreators,
+} from "@/components/explore/ExploreInsights";
+import { useExploreFollow } from "@/hooks/useExploreFollow";
+import { HeaderAccountActions } from "@/components/HeaderAccountActions";
+import { parentIdForProjectCategory, type CategoryParentId } from "@/data/categoryTaxonomy";
 import { BackButton } from "@/components/ui/BackButton";
 import ToolIcon from "@/components/ToolIcon";
 import ExploreToolFilterBar from "@/components/explore/ExploreToolFilterBar";
 import ProjectCard from "@/components/ProjectCard";
 import { StaggerGrid } from "@/components/motion/StaggerGrid";
-import PageLoader from "@/components/ui/PageLoader";
 import EmptyState from "@/components/ui/EmptyState";
 import HireDialog from "@/components/HireDialog";
 import CollabDialog from "@/components/CollabDialog";
 import { useProfilesByIds } from "@/core/profiles";
 import { useProjectsByTag, useProjectsByTool, filterProjectsByTools } from "@/hooks/useExploreProjects";
-import { decodeExploreParam, normalizeToolName, parseExtraTools, exploreProjectsUrl, type ExploreKind } from "@/lib/exploreRoutes";
+import {
+  decodeExploreParam,
+  normalizeTag,
+  normalizeToolName,
+  parseExtraTags,
+  parseExtraTools,
+  exploreProjectsUrl,
+  type ExploreKind,
+} from "@/lib/exploreRoutes";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth, stashPendingHire, consumePendingHire } from "@/lib/authRedirect";
@@ -21,7 +39,6 @@ import { DEFAULT_PROJECT_CATEGORY, normalizeProjectCategory } from "@/data/proje
 import { projectAiCardFields } from "@/lib/aiDisclosure";
 import type { DBProject } from "@/hooks/useProjects";
 import SeoHead from "@/components/SeoHead";
-import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
 import { shouldNoindexSearchParams } from "@/lib/seo";
 import { breadcrumbJsonLd, collectionPageJsonLd } from "@/lib/seoSchemas";
 import { absoluteUrl } from "@/lib/seo";
@@ -70,10 +87,15 @@ function mapToCard(
 
 type ToolExploreSort = "newest" | "views" | "likes";
 
-const TOOL_SORT_OPTIONS: { key: Exclude<ToolExploreSort, "newest">; label: string }[] = [
+const SORT_OPTIONS: { key: ToolExploreSort; label: string }[] = [
+  { key: "newest", label: "ใหม่สุด" },
   { key: "views", label: "วิวเยอะสุด" },
-  { key: "likes", label: "กดใจเยอะสุด" },
+  { key: "likes", label: "ถูกใจเยอะสุด" },
 ];
+
+const PAGE_SIZE = 24;
+const EXPLORE_GRID =
+  "grid grid-cols-2 gap-x-4 gap-y-6 sm:gap-x-5 sm:gap-y-7 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5";
 
 const ExploreProjectsPage = () => {
   const navigate = useNavigate();
@@ -82,30 +104,48 @@ const ExploreProjectsPage = () => {
   const { kind, value: rawValue } = useParams<{ kind: string; value: string }>();
   const exploreKind = (kind === "tool" || kind === "tag" ? kind : null) as ExploreKind | null;
   const value = decodeExploreParam(rawValue);
-  const extraTools = exploreKind === "tool" ? parseExtraTools(searchParams) : [];
+  // Refinements stack on both pages: ?with=<tools> and ?tags=<tags> — a work must match all of them.
+  const extraTools = parseExtraTools(searchParams);
+  const extraTags = parseExtraTags(searchParams);
+  const refined = extraTools.length > 0 || extraTags.length > 0;
 
-  const syncExtraTools = useCallback(
-    (next: string[]) => {
-      const trimmed = next.map((t) => t.trim()).filter(Boolean);
-      if (trimmed.length === 0) {
-        setSearchParams({}, { replace: true });
-        return;
-      }
-      setSearchParams({ with: trimmed.join(",") }, { replace: true });
+  const syncRefine = useCallback(
+    (tools: string[], tags: string[]) => {
+      const next: Record<string, string> = {};
+      const t = tools.map((x) => x.trim()).filter(Boolean);
+      const g = tags.map((x) => x.trim().replace(/^#+/, "")).filter(Boolean);
+      if (t.length) next.with = t.join(",");
+      if (g.length) next.tags = g.join(",");
+      setSearchParams(next, { replace: true });
     },
     [setSearchParams],
+  );
+  const syncExtraTools = useCallback((next: string[]) => syncRefine(next, extraTags), [syncRefine, extraTags]);
+
+  const addExtraTag = useCallback(
+    (tag: string) => {
+      const key = normalizeTag(tag);
+      if (!key || (exploreKind === "tag" && key === normalizeTag(value))) return;
+      if (extraTags.some((t) => normalizeTag(t) === key) || extraTags.length >= 4) return;
+      syncRefine(extraTools, [...extraTags, tag]);
+    },
+    [exploreKind, value, extraTags, extraTools, syncRefine],
+  );
+  const removeExtraTag = useCallback(
+    (tag: string) => syncRefine(extraTools, extraTags.filter((t) => normalizeTag(t) !== normalizeTag(tag))),
+    [extraTools, extraTags, syncRefine],
   );
 
   const addExtraTool = useCallback(
     (tool: string) => {
       const label = tool.trim();
       const key = normalizeToolName(label);
-      if (!key || key === normalizeToolName(value)) return;
+      if (!key || (exploreKind === "tool" && key === normalizeToolName(value))) return;
       if (extraTools.some((t) => normalizeToolName(t) === key)) return;
       if (extraTools.length >= 4) return;
       syncExtraTools([...extraTools, label]);
     },
-    [extraTools, syncExtraTools, value],
+    [extraTools, syncExtraTools, value, exploreKind],
   );
 
   const removeExtraTool = useCallback(
@@ -121,13 +161,36 @@ const ExploreProjectsPage = () => {
   const { data: rows = [], isLoading } = exploreKind === "tool" ? byTool : byTag;
   const [toolSort, setToolSort] = useState<ToolExploreSort>("newest");
 
-  const filteredRows = useMemo(() => {
-    if (exploreKind !== "tool" || extraTools.length === 0) return rows;
-    return filterProjectsByTools(rows, extraTools);
-  }, [rows, exploreKind, extraTools]);
+  const [categoryFilter, setCategoryFilter] = useState<CategoryParentId | "all">("all");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const follow = useExploreFollow(exploreKind, value);
+
+  // Works matching the tool combo (tool page) — the base for chips, creators and the category filter.
+  const baseRows = useMemo(() => {
+    let out = extraTools.length ? filterProjectsByTools(rows, extraTools) : rows;
+    if (extraTags.length) {
+      const need = extraTags.map(normalizeTag);
+      out = out.filter((p) => {
+        const have = new Set((p.tags ?? []).map(normalizeTag));
+        return need.every((t) => have.has(t));
+      });
+    }
+    return out;
+  }, [rows, extraTools, extraTags]);
+
+  const filteredRows = useMemo(
+    () =>
+      categoryFilter === "all"
+        ? baseRows
+        : baseRows.filter((p) => parentIdForProjectCategory(p.category) === categoryFilter),
+    [baseRows, categoryFilter],
+  );
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [value, categoryFilter, extraTools.length, extraTags.length]);
 
   const sortedRows = useMemo(() => {
-    if (exploreKind !== "tool") return filteredRows;
     if (toolSort === "views") {
       return [...filteredRows].sort((a, b) => b.views - a.views || b.likes - a.likes);
     }
@@ -135,24 +198,24 @@ const ExploreProjectsPage = () => {
       return [...filteredRows].sort((a, b) => b.likes - a.likes || b.views - a.views);
     }
     return filteredRows;
-  }, [filteredRows, exploreKind, toolSort]);
+  }, [filteredRows, toolSort]);
 
   const creatorIds = useMemo(
     () =>
       Array.from(
         new Set(
-          sortedRows
+          baseRows
             .flatMap((p) => [p.owner_id, ...((p.collab_user_ids ?? []) as string[])])
             .filter(Boolean),
         ),
       ),
-    [sortedRows],
+    [baseRows],
   );
   const { data: creatorsData } = useProfilesByIds(creatorIds);
   const creatorsMap = useMemo(() => {
     const map: Record<string, { name: string; avatar: string; username?: string; verified?: boolean }> = {};
     (creatorsData?.list ?? []).forEach((p) => {
-      map[p.user_id ?? p.id] = {
+      map[p.id] = {
         name: p.display_name || p.username || "ฟรีแลนซ์",
         avatar: p.avatar_url || "",
         username: p.username ?? undefined,
@@ -163,6 +226,7 @@ const ExploreProjectsPage = () => {
   }, [creatorsData]);
 
   const projects = useMemo(() => mapToCard(sortedRows, creatorsMap), [sortedRows, creatorsMap]);
+  const shownProjects = projects.slice(0, visibleCount);
 
   const [hireOpen, setHireOpen] = useState(false);
   const [hireProject, setHireProject] = useState("");
@@ -216,23 +280,25 @@ const ExploreProjectsPage = () => {
 
   const title =
     exploreKind === "tool"
-      ? extraTools.length > 0
-        ? "ผลงานที่ใช้ร่วมกัน"
+      ? refined
+        ? `ผลงานที่ใช้ ${value} + ตัวกรองเพิ่ม`
         : `ผลงานที่ใช้ ${value}`
-      : `ผลงานแท็ก #${value.replace(/^#+/, "")}`;
+      : refined
+        ? `ผลงานแท็ก #${value.replace(/^#+/, "")} + ตัวกรองเพิ่ม`
+        : `ผลงานแท็ก #${value.replace(/^#+/, "")}`;
 
   const emptyToolDescription =
     extraTools.length > 0
       ? `ยังไม่มีผลงานที่ใช้ ${[value, ...extraTools].join(" + ")} ครบทุกเครื่องมือ`
       : `ยังไม่มีผลงานเผยแพร่ที่ระบุเครื่องมือ "${value}"`;
 
+  const followTarget = exploreKind === "tool" ? `เครื่องมือ ${value}` : `แท็ก #${value.replace(/^#+/, "")}`;
   const explorePath = exploreProjectsUrl(exploreKind, value);
   const crumbs = [
     { name: "หน้าแรก", path: "/" },
-    { name: "สำรวจ", path: "/" },
     { name: title, path: explorePath },
   ];
-  const seoNoindex = extraTools.length > 0 || shouldNoindexSearchParams(searchParams);
+  const seoNoindex = refined || shouldNoindexSearchParams(searchParams);
   const seoDesc =
     exploreKind === "tool"
       ? `ค้นพบผลงานครีเอเตอร์ที่ใช้ ${value} บน SAMECOR`
@@ -251,18 +317,43 @@ const ExploreProjectsPage = () => {
         ]}
       />
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="mx-auto flex max-w-[1920px] flex-wrap items-center gap-3 px-4 py-3 lg:px-8">
           <BackButton className="shrink-0" />
-          <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-            <SeoBreadcrumb items={crumbs} className="mb-0" />
-            <div className="flex items-center gap-2 min-w-0">
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <div className="flex min-w-0 items-center gap-2">
               {exploreKind === "tool" && extraTools.length === 0 ? (
                 <ToolIcon name={value} size="sm" />
               ) : exploreKind === "tag" ? (
-                <Hash className="w-4 h-4 text-primary shrink-0" />
+                <Hash className="h-4 w-4 shrink-0 text-primary" />
               ) : null}
-              <h1 className="text-sm font-semibold truncate">{title}</h1>
+              <h1 className="truncate text-base font-semibold">{title}</h1>
             </div>
+            {extraTags.length > 0 || (exploreKind === "tag" && extraTools.length > 0) ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(exploreKind === "tag" ? extraTools : []).map((t) => (
+                  <button
+                    key={`t-${t}`}
+                    type="button"
+                    onClick={() => syncExtraTools(extraTools.filter((x) => normalizeToolName(x) !== normalizeToolName(t)))}
+                    className="inline-flex items-center gap-1 rounded-full border border-border/70 px-2 py-0.5 text-xs hover:bg-accent"
+                    aria-label={`เอา ${t} ออก`}
+                  >
+                    <ToolIcon name={t} size="sm" /> {t} <X className="h-3 w-3" aria-hidden />
+                  </button>
+                ))}
+                {extraTags.map((t) => (
+                  <button
+                    key={`g-${t}`}
+                    type="button"
+                    onClick={() => removeExtraTag(t)}
+                    className="inline-flex items-center gap-1 rounded-full border border-border/70 px-2 py-0.5 text-xs hover:bg-accent"
+                    aria-label={`เอา #${t} ออก`}
+                  >
+                    <Hash className="h-3 w-3" aria-hidden /> {t} <X className="h-3 w-3" aria-hidden />
+                  </button>
+                ))}
+              </div>
+            ) : null}
             {exploreKind === "tool" && (
               <ExploreToolFilterBar
                 primaryTool={value}
@@ -272,39 +363,83 @@ const ExploreProjectsPage = () => {
               />
             )}
           </div>
-          <div className="ml-auto flex items-center gap-2 shrink-0">
-            {exploreKind === "tool" && (
-              <div className="flex items-center gap-1">
-                {TOOL_SORT_OPTIONS.map(({ key, label }) => {
-                  const active = toolSort === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setToolSort((prev) => (prev === key ? "newest" : key))}
-                      className={cn(
-                        "px-2 py-0.5 rounded-full text-[10px] sm:text-xs border transition-colors whitespace-nowrap",
-                        active
-                          ? "border-primary bg-primary/10 text-primary font-medium"
-                          : "border-border text-muted-foreground hover:text-foreground hover:border-primary/40",
-                      )}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {isLoading ? "…" : `${projects.length} ผลงาน`}
-            </span>
+          <div className="ml-auto flex shrink-0 items-center gap-2 self-start">
+            <HeaderAccountActions />
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="mx-auto grid max-w-[1920px] gap-6 px-4 py-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-8 lg:px-8">
+        <aside
+          className="space-y-5 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto lg:border-r lg:border-border/50 lg:pr-6 [scrollbar-width:none]"
+          aria-label="ตัวกรองและข้อมูลเพิ่มเติม"
+        >
+          {!refined ? (
+            <div className="space-y-1.5 rounded-xl border border-border/60 bg-card/40 p-3">
+              <Button
+                type="button"
+                size="sm"
+                variant={follow.following ? "default" : "outline"}
+                className="h-9 w-full rounded-full"
+                aria-pressed={follow.following}
+                disabled={follow.toggle.isPending}
+                onClick={() => (follow.signedIn ? follow.toggle.mutate(follow.following) : navigateToAuth(navigate))}
+              >
+                {follow.following ? <BellRing className="mr-1.5 h-4 w-4" aria-hidden /> : <Bell className="mr-1.5 h-4 w-4" aria-hidden />}
+                {follow.following ? `ติดตาม${followTarget}อยู่` : `ติดตาม${followTarget}`}
+              </Button>
+              <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
+                {`รับแจ้งเตือนเมื่อมีผลงานใหม่ใน${exploreKind === "tool" ? "เครื่องมือนี้" : "แท็กนี้"}${follow.following ? " · กดเพื่อเลิกติดตาม" : ""}`}
+              </p>
+            </div>
+          ) : null}
+
+          <div className="space-y-1.5">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <ArrowUpDown className="h-3.5 w-3.5" aria-hidden /> เรียงตาม
+            </span>
+            <Select value={toolSort} onValueChange={(v) => setToolSort(v as ToolExploreSort)}>
+              <SelectTrigger aria-label="เรียงตาม" className="h-9 w-full rounded-full border-border/50 bg-transparent text-xs">
+                <ArrowUpDown className="mr-1.5 h-3.5 w-3.5 shrink-0 opacity-70" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SORT_OPTIONS.map((o) => (
+                  <SelectItem key={o.key} value={o.key}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {!isLoading && baseRows.length > 0 ? (
+            <>
+              <ExploreRelatedChips
+                rows={baseRows}
+                kind={exploreKind}
+                value={value}
+                selectedTools={extraTools}
+                selectedTags={extraTags}
+                onAddTool={addExtraTool}
+                onAddTag={addExtraTag}
+              />
+              <ExploreCategoryChips rows={baseRows} value={categoryFilter} onChange={setCategoryFilter} />
+              <ExplorePalette rows={baseRows} />
+              <ExploreTopCreators rows={baseRows} creators={creatorsMap} />
+            </>
+          ) : null}
+        </aside>
+        <div className="min-w-0 space-y-6 lg:col-start-2">
         {isLoading ? (
-          <PageLoader fullPage={false} label="กำลังโหลดผลงาน..." />
+          <div className={EXPLORE_GRID} aria-hidden>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="aspect-[4/3] animate-pulse rounded-[6px] bg-muted" />
+                <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+              </div>
+            ))}
+          </div>
         ) : projects.length === 0 ? (
           <EmptyState
             icon={SearchX}
@@ -324,11 +459,8 @@ const ExploreProjectsPage = () => {
             }
           />
         ) : (
-          <StaggerGrid
-            dense
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-x-2 sm:gap-x-3 lg:gap-x-4 gap-y-[26px] sm:gap-y-[30px] lg:gap-y-[34px]"
-          >
-            {projects.map((p) => (
+          <StaggerGrid dense className={EXPLORE_GRID}>
+            {shownProjects.map((p) => (
               <ProjectCard
                 key={p.id}
                 project={p}
@@ -347,6 +479,14 @@ const ExploreProjectsPage = () => {
             ))}
           </StaggerGrid>
         )}
+        {!isLoading && projects.length > visibleCount ? (
+          <div className="flex justify-center">
+            <Button type="button" variant="outline" className="rounded-full" onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}>
+              ดูเพิ่ม ({projects.length - visibleCount})
+            </Button>
+          </div>
+        ) : null}
+        </div>
       </div>
 
       <HireDialog

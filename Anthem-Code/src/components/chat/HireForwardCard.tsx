@@ -55,7 +55,7 @@ const HireForwardCard = ({ payload, canOpenChat }: Props) => {
             size="sm"
             disabled={openChat.isPending}
             onClick={() => void openForwardedChat()}
-            className="w-full rounded-full h-9 gap-1.5 bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+            className="w-full rounded-full h-9 gap-1.5 bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90"
           >
             <MessageCircle className="w-4 h-4" />
             แชทกับ {payload.toName}

@@ -17,6 +17,7 @@ import { DemoLoginHint, DemoSignupBlocked } from "@/components/DemoAuthHints";
 import { BRAND_STORAGE_NO_PERSIST } from "@/lib/brandConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthDialog } from "@/stores/authDialogStore";
+import { useAuthWallCovers } from "@/hooks/useAuthWallCovers";
 import { ReferralSignupHint } from "@/components/referral/ReferralSignupHint";
 import LegalSignupConsents from "@/components/legal/LegalSignupConsents";
 import { recordSignupConsents, markPendingSignupConsent } from "@/lib/legalCompliance";
@@ -38,7 +39,8 @@ const AuthDialog = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
-
+  const covers = useAuthWallCovers(9, open);
+  const googleBtn = "h-12 rounded-full border-border bg-background text-foreground hover:bg-muted";
   // Auto-close on successful login — send first-time users home for interest survey
   useEffect(() => {
     if (!user || !open) return;
@@ -73,43 +75,37 @@ const AuthDialog = () => {
       bodyClassName="px-6 sm:px-7 pt-6 pb-6"
       showGrabHandle
     >
-      <div className="mb-4">
+      <div className="flex flex-col items-center text-center">
         <BrandLogo size="sm" />
+        <DialogTitle className="sr-only">รวมผลงานและโอกาสไว้ในที่เดียว</DialogTitle>
+        <DialogDescription className="sr-only">เข้าสู่ระบบหรือสมัครสมาชิกด้วย Google หรืออีเมล</DialogDescription>
+        <CoverWall covers={covers} />
       </div>
 
-      <DialogTitle className="text-xl font-medium tracking-tight thai-display">
-        {mode === "signup" ? "สมัครสมาชิกเพื่อใช้งาน" : "ยินดีต้อนรับกลับมา 👋"}
-      </DialogTitle>
-      <DialogDescription className="text-sm text-muted-foreground mt-1 thai-body">
-        {mode === "signup"
-          ? "เข้าร่วมชุมชนฟรีแลนซ์ — ใช้เวลาไม่ถึง 1 นาที"
-          : "เข้าสู่ระบบเพื่อใช้ฟีเจอร์ทั้งหมด"}
-      </DialogDescription>
-
-      <Tabs value={mode} onValueChange={(v) => setMode(v as "signup" | "login")} className="w-full mt-5">
-        <TabsList className="grid w-full grid-cols-2 mb-4 rounded-xl bg-muted/60 p-1 h-11">
-          <TabsTrigger value="signup" className="rounded-lg">สมัครสมาชิก</TabsTrigger>
-          <TabsTrigger value="login" className="rounded-lg">เข้าสู่ระบบ</TabsTrigger>
+      <Tabs value={mode} onValueChange={(v) => setMode(v as "signup" | "login")} className="mt-5 w-full">
+        <TabsList className="mb-4 grid h-11 w-full grid-cols-2 rounded-full bg-muted/60 p-1">
+          <TabsTrigger value="login" className="rounded-full">เข้าสู่ระบบ</TabsTrigger>
+          <TabsTrigger value="signup" className="rounded-full">สมัครสมาชิก</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="signup" className="space-y-3.5 mt-0">
+        <TabsContent value="login" className="mt-0 space-y-3.5">
+          <SocialButtons redirectTo={redirectPath} buttonClassName={googleBtn} />
+          <AuthEmailSeparator />
+          <LoginForm />
+        </TabsContent>
+
+        <TabsContent value="signup" className="mt-0 space-y-3.5">
           {isDemoMode() ? null : (
             <>
-              <SocialButtons redirectTo={redirectPath} />
+              <SocialButtons redirectTo={redirectPath} label="สมัครด้วย Google" buttonClassName={googleBtn} />
               <AuthEmailSeparator />
             </>
           )}
           <SignupForm onSwitch={() => setMode("login")} />
         </TabsContent>
-
-        <TabsContent value="login" className="space-y-3.5 mt-0">
-          <SocialButtons redirectTo={redirectPath} />
-          <AuthEmailSeparator />
-          <LoginForm onSwitch={() => setMode("signup")} />
-        </TabsContent>
       </Tabs>
 
-      <p className="mt-5 text-center text-[11px] text-muted-foreground">
+      <p className="mt-6 text-center text-[11px] leading-relaxed text-muted-foreground">
         ดำเนินการต่อเท่ากับยอมรับ{" "}
         <Link to="/legal/terms" onClick={close} className="hover:text-foreground underline underline-offset-2">ข้อกำหนด</Link>
         {" "}และ{" "}
@@ -121,7 +117,51 @@ const AuthDialog = () => {
   );
 };
 
-const LoginForm = ({ onSwitch }: { onSwitch: () => void }) => {
+const WALL_CSS = `
+@keyframes aw-up{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+@keyframes aw-down{from{transform:translateY(-50%)}to{transform:translateY(0)}}
+.aw-col{display:flex;flex-direction:column;gap:8px;will-change:transform}
+.aw-up{animation:aw-up 26s linear infinite}
+.aw-down{animation:aw-down 26s linear infinite}
+@media (prefers-reduced-motion: reduce){.aw-up,.aw-down{animation:none}}
+`;
+
+/** Three columns of random work covers drifting in opposite directions (a zig-zag wall). */
+const CoverWall = ({ covers }: { covers: string[] }) => {
+  const cols = [0, 1, 2].map((c) => covers.filter((_, i) => i % 3 === c));
+  return (
+    <div
+      aria-hidden
+      className="relative mt-4 h-[10.5rem] w-full overflow-hidden rounded-2xl"
+      style={{
+        WebkitMaskImage: "linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent)",
+        maskImage: "linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent)",
+      }}
+    >
+      <style>{WALL_CSS}</style>
+      <div className="grid h-full grid-cols-3 gap-2">
+        {cols.map((col, ci) => (
+          <div key={ci} className="overflow-hidden">
+            <div className={cn("aw-col", ci === 1 ? "aw-down" : "aw-up")}>
+              {[...col, ...col].map((src, i) => (
+                <img
+                  key={`${src}-${i}`}
+                  src={src}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="aspect-[4/5] w-full rounded-xl bg-muted object-cover"
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const LoginForm = () => {
   const navigate = useNavigate();
   const { close } = useAuthDialog();
   const [email, setEmail] = useState("");
@@ -188,7 +228,7 @@ const LoginForm = ({ onSwitch }: { onSwitch: () => void }) => {
           aria-invalid={!!emailError || undefined}
           aria-describedby={emailError ? "ad-li-email-error" : undefined}
           className={cn(
-            "h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40",
+            "h-12 rounded-full bg-background/60 backdrop-blur border-border/60 px-4 focus-visible:ring-primary/40",
             emailError && "border-destructive",
           )}
           required />
@@ -217,15 +257,9 @@ const LoginForm = ({ onSwitch }: { onSwitch: () => void }) => {
         </button>
       </div>
       <Button type="submit" disabled={busy}
-        className="w-full h-11 rounded-xl text-base font-medium bg-gradient-brand text-white hover:opacity-95 border-0 shadow-md shadow-primary/20">
+        className="w-full h-12 rounded-full text-base font-medium bg-foreground text-background hover:bg-foreground/90 border-0">
         {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />} เข้าสู่ระบบ
       </Button>
-      <p className="text-center text-xs text-muted-foreground">
-        ยังไม่มีบัญชี?{" "}
-        <button type="button" onClick={onSwitch} className="text-primary hover:underline font-medium">
-          สมัครสมาชิกที่นี่
-        </button>
-      </p>
     </form>
   );
 };
@@ -234,11 +268,11 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
   if (import.meta.env.VITE_DEMO_MODE === "true") {
     return <DemoSignupBlocked onSwitchToLogin={onSwitch} />;
   }
-  return <SignupFormFields onSwitch={onSwitch} />;
+  return <SignupFormFields />;
 };
 
 /** Hooks live here so they always run in the same order (rules of hooks). */
-const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
+const SignupFormFields = () => {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -297,7 +331,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
           <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input id="ad-su-name" placeholder="ชื่อของคุณ" value={displayName}
             onChange={(e) => setDisplayName(e.target.value)} maxLength={80}
-            className="pl-9 h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40" />
+            className="pl-9 h-12 rounded-full bg-background/60 backdrop-blur border-border/60 px-4 focus-visible:ring-primary/40" />
         </div>
       </div>
       <div className="space-y-1.5">
@@ -308,7 +342,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
           aria-invalid={!!emailError || undefined}
           aria-describedby={emailError ? "ad-su-email-error" : undefined}
           className={cn(
-            "h-11 rounded-xl bg-background/60 backdrop-blur border-border/60 focus-visible:ring-primary/40",
+            "h-12 rounded-full bg-background/60 backdrop-blur border-border/60 px-4 focus-visible:ring-primary/40",
             emailError && "border-destructive"
           )} />
         <FieldError id="ad-su-email-error" message={emailError} />
@@ -332,15 +366,9 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
       <FieldError message={consentError} />
 
       <Button type="submit" disabled={busy || !consents.terms || !consents.privacy}
-        className="w-full h-11 rounded-xl text-base font-medium bg-gradient-brand text-white hover:opacity-95 border-0 shadow-md shadow-primary/20">
+        className="w-full h-12 rounded-full text-base font-medium bg-foreground text-background hover:bg-foreground/90 border-0">
         {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />} สมัครสมาชิก
       </Button>
-      <p className="text-center text-xs text-muted-foreground">
-        มีบัญชีอยู่แล้ว?{" "}
-        <button type="button" onClick={onSwitch} className="text-primary hover:underline font-medium">
-          เข้าสู่ระบบ
-        </button>
-      </p>
     </form>
   );
 };

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { isInspireEnabled } from "@/lib/aplus1Launch";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, Share2, ImageIcon } from "lucide-react";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
@@ -84,11 +85,13 @@ const ImageActionBar = ({
       <PlusOneControl
         active={liked}
         count={likes}
+        showCount={likes > 0}
         onClick={handleLike}
         ariaLabel={liked ? "ยกเลิกถูกใจ" : "ถูกใจ"}
         className={`${btn} text-white hover:text-white hover:bg-black/45 [&_span]:text-white/90`}
       />
 
+      {isInspireEnabled() ? (
       <InspirePopover
         open={inspireOpen}
         onOpenChange={(o) => {
@@ -103,6 +106,7 @@ const ImageActionBar = ({
           <span className={labelClass}>Inspire</span>
         </button>
       </InspirePopover>
+      ) : null}
 
       {!vertical ? (
         <span aria-hidden="true" className="w-px h-6 bg-white/30 self-center mx-0.5 rounded-full" />

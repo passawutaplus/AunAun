@@ -228,7 +228,7 @@ export function ChatQuoteActions({ conversation }: Props) {
                 type="button"
                 size="sm"
                 disabled={busy}
-                className="flex-1 rounded-xl bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+                className="flex-1 rounded-xl bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90"
                 onClick={() => void handleAccept()}
               >
                 {busy ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Check className="w-3.5 h-3.5 mr-1" />}
@@ -253,7 +253,7 @@ export function ChatQuoteActions({ conversation }: Props) {
             className={cn(
               "quote-offer-btn w-full rounded-xl border-[hsl(var(--chat-hire)/0.7)] bg-transparent text-[hsl(var(--chat-hire))]",
               "transition-colors duration-200",
-              "hover:bg-[hsl(var(--chat-hire))] hover:text-white hover:border-[hsl(var(--chat-hire))]",
+              "hover:bg-[hsl(var(--chat-hire))] hover:text-[hsl(var(--chat-hire-foreground))] hover:border-[hsl(var(--chat-hire))]",
             )}
             title="เสนอราคาออเดอร์ใหม่ในแชทนี้"
             onClick={() => setOfferOpen(true)}

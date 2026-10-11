@@ -163,14 +163,23 @@ export function ProjectRichTextField({
   return (
     <div
       className={cn(
-        "rounded-md border border-input bg-background focus-within:ring-1 focus-within:ring-ring",
+        // Chrome (frame + toolbar) only shows while hovering or editing; otherwise the text reads as it will be published.
+        "group relative rounded-lg border border-transparent transition-colors",
+        "hover:border-border focus-within:border-border focus-within:bg-background",
+        "[&:has([role=textbox]:empty)]:border-dashed [&:has([role=textbox]:empty)]:border-border/60",
         disabled && "opacity-60",
         className,
       )}
       onClick={(e) => e.stopPropagation()}
     >
       <div
-        className="flex flex-wrap items-center gap-0.5 border-b border-border/60 px-1.5 py-1"
+        className={cn(
+          "invisible absolute inset-x-0 bottom-full z-30 pb-1.5 opacity-0 transition-opacity duration-150",
+          "group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100",
+        )}
+      >
+      <div
+        className="flex flex-wrap items-center gap-0.5 rounded-xl border border-border bg-card px-1.5 py-1"
         role="toolbar"
         aria-label="จัดรูปแบบข้อความ"
       >
@@ -258,6 +267,7 @@ export function ProjectRichTextField({
           </>
         ) : null}
       </div>
+      </div>
 
       <div
         ref={ref}
@@ -271,7 +281,7 @@ export function ProjectRichTextField({
           "px-3 py-2 text-sm text-foreground outline-none empty:before:pointer-events-none empty:before:text-muted-foreground/45 empty:before:font-light empty:before:content-[attr(data-placeholder)]",
           // Keep heading size, but don't force semibold — it hides <b> toggles.
           variant === "heading" && "text-base",
-          minHeightClass ?? (variant === "heading" ? "min-h-[42px]" : "min-h-[96px]"),
+          minHeightClass ?? (variant === "heading" ? "min-h-[42px]" : "min-h-[38px]"),
           "[&_p]:my-0 [&_p+p]:mt-2",
           "[&_b]:font-bold [&_strong]:font-bold",
         )}

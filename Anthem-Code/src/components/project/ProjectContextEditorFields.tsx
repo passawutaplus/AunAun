@@ -38,6 +38,8 @@ type Props = {
   onEnabledChange: (enabled: boolean) => void;
   disabled?: boolean;
   shortDescriptionInvalid?: boolean;
+  /** Quick drop: short description only, no background-story toggle/fields. */
+  hideBackstory?: boolean;
 };
 
 const fieldLabel = "text-xs font-semibold text-muted-foreground";
@@ -54,6 +56,7 @@ const ProjectContextEditorFields = ({
   onEnabledChange,
   disabled,
   shortDescriptionInvalid,
+  hideBackstory,
 }: Props) => {
   const [roleMode, setRoleMode] = useState<CreatorRoleMode | "">(() =>
     creatorRoleModeFromValue(value.creatorRole),
@@ -92,7 +95,7 @@ const ProjectContextEditorFields = ({
 
   return (
     <section className="space-y-3">
-      <div className="space-y-1.5" id="project-short-description">
+      <div className="space-y-1.5" id="project-short-description" data-tour="shortdesc">
         <Label className={fieldLabel}>
           รายละเอียดแบบย่อ <span className="text-primary">*</span>
         </Label>
@@ -104,7 +107,6 @@ const ProjectContextEditorFields = ({
           placeholder="สรุปสั้น ๆ ว่างานนี้คืออะไร ทำอะไร หรือจุดเด่นที่อยากให้จำ..."
           rows={3}
           maxLength={PROJECT_SHORT_DESCRIPTION_MAX}
-          required
           disabled={disabled}
           aria-invalid={shortDescriptionInvalid || undefined}
           className={cn(
@@ -118,6 +120,8 @@ const ProjectContextEditorFields = ({
         </p>
       </div>
 
+      {hideBackstory ? null : (
+      <>
       <div
         id="project-context-toggle"
         className={cn(
@@ -320,6 +324,8 @@ const ProjectContextEditorFields = ({
           </div>
         </div>
       </div>
+      </>
+      )}
     </section>
   );
 };

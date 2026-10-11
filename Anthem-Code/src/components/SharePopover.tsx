@@ -37,8 +37,9 @@ const SharePopover = ({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent
-        overlayClassName="bg-black/50"
-        className="max-w-[min(28rem,calc(100vw-1.5rem))] gap-0 overflow-hidden rounded-2xl p-0 sm:rounded-2xl"
+        // Above the image lightbox (z-100), which also opens this dialog.
+        overlayClassName="z-[130] bg-black/50"
+        className="z-[130] max-w-[min(28rem,calc(100vw-1.5rem))] gap-0 overflow-hidden rounded-2xl p-0 sm:rounded-2xl"
       >
         <ShareDialogPanel
           title={title}

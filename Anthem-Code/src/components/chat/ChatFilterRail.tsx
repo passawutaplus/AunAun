@@ -39,11 +39,11 @@ export function ChatFilterRail({ tab, onTabChange, className }: Props) {
           const accent =
             key === "hire"
               ? active
-                ? "bg-[hsl(var(--chat-hire))] text-white"
+                ? "bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))]"
                 : "bg-muted/70 text-muted-foreground hover:text-foreground"
               : key === "collab"
                 ? active
-                  ? "bg-[hsl(var(--chat-collab))] text-white"
+                  ? "bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))]"
                   : "bg-muted/70 text-muted-foreground hover:text-foreground"
                 : key === "group"
                   ? active

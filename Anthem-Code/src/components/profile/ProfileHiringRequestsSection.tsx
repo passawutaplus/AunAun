@@ -575,7 +575,7 @@ export function ProfileHiringRequestsSection({
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="font-medium text-foreground">คำขอจ้างงาน</h2>
               {pendingCount > 0 && (
-                <Badge className="bg-[hsl(var(--chat-hire))] text-white border-0 text-[10px] px-1.5">
+                <Badge className="bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] border-0 text-[10px] px-1.5">
                   {pendingCount} รอตอบ
                 </Badge>
               )}
@@ -635,7 +635,7 @@ export function ProfileHiringRequestsSection({
             onClick={() => setHiringTab(s)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
               hiringTab === s
-                ? "bg-primary-bright text-white"
+                ? "bg-primary-bright text-primary-foreground"
                 : "bg-card text-secondary-foreground border border-border hover:bg-secondary"
             }`}
           >
@@ -799,7 +799,7 @@ export function ProfileHiringRequestsSection({
                     size="sm"
                     onClick={openChat}
                     disabled={rejectBusy}
-                    className="h-8 rounded-full px-3 text-xs bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+                    className="h-8 rounded-full px-3 text-xs bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90"
                   >
                     <MessageCircle className="mr-1 h-3.5 w-3.5" />
                     แชท

@@ -40,6 +40,7 @@ type Props = {
   onBecomeCreator?: () => void;
   onStudio?: () => void;
   onSettings?: () => void;
+  onWallet?: () => void;
   onFollowersClick?: () => void;
   onFollowingClick?: () => void;
   /** Hide works/followers/following under the name (moved to sidebar). */
@@ -80,6 +81,7 @@ export default function ProfileCoverHeader({
   onBecomeCreator,
   onStudio,
   onSettings,
+  onWallet,
   onFollowersClick,
   onFollowingClick,
   showFollowStats = true,
@@ -188,7 +190,7 @@ export default function ProfileCoverHeader({
 
   return (
     <section className="mb-4 md:mb-6">
-      <div className="relative aspect-[32/9] w-full bg-muted overflow-hidden rounded-b-2xl md:rounded-b-3xl group/cover">
+      <div data-tour="profile-cover" className="relative aspect-[32/9] md:aspect-[40/9] w-full bg-muted overflow-hidden rounded-b-2xl md:rounded-b-3xl group/cover">
         {hasCover ? (
           <img loading="lazy" decoding="async" src={coverUrl} alt="" className="w-full h-full object-cover" />
         ) : (
@@ -271,7 +273,7 @@ export default function ProfileCoverHeader({
 
       <div className="relative -mt-12 md:mt-8">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
-          <div className="relative z-10 shrink-0 group/avatar self-start">
+          <div data-tour="profile-avatar" className="relative z-10 shrink-0 group/avatar self-start">
             <UserAvatar
               src={profile.avatar_url}
               name={profile.display_name}
@@ -314,11 +316,12 @@ export default function ProfileCoverHeader({
                 <span className="truncate">{profile.display_name || "ยังไม่ได้ตั้งชื่อ"}</span>
                 <VerifiedBadge verified={!!profile.is_verified} />
               </h1>
-              {profile.username && (
-                <p className="text-sm text-muted-foreground">@{profile.username}</p>
-              )}
+              {profile.username &&
+                profile.username.trim().toLowerCase() !== (profile.display_name ?? "").trim().toLowerCase() && (
+                  <p className="text-sm text-muted-foreground">@{profile.username}</p>
+                )}
 
-              <div className="mt-2.5 space-y-2">
+              <div data-tour="profile-edit" className="mt-2.5 space-y-2">
                 <DisciplineChips disciplines={disciplines} size="md" />
                 <div className="flex flex-wrap items-start gap-2">
                   <OpportunityTypeChips
@@ -334,18 +337,18 @@ export default function ProfileCoverHeader({
                       variant="ghost"
                       onClick={onOpportunityEdit}
                       className="h-8 w-8 shrink-0 rounded-full text-primary hover:text-primary hover:bg-primary/10"
-                      title="แก้ไขกำลังมองหาและสายงาน"
-                      aria-label="แก้ไขกำลังมองหาและสายงาน"
+                      title="แก้ไขโปรไฟล์"
+                      aria-label="แก้ไขโปรไฟล์"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
                   ) : null}
                 </div>
-                <ProfileIntroLine userId={userId} bio={profile.bio} canEdit />
+                <ProfileIntroLine userId={userId} bio={profile.bio} />
               </div>
 
               {showFollowStats ? (
-                <div className="mt-3 flex items-center gap-4 text-sm">
+                <div data-tour="profile-stats" className="mt-3 flex items-center gap-4 text-sm">
                   <span>
                     <strong className="text-foreground">{stats.works}</strong>{" "}
                     <span className="text-muted-foreground">ผลงาน</span>
@@ -372,13 +375,15 @@ export default function ProfileCoverHeader({
               ) : null}
             </div>
 
+            <div data-tour="profile-actions" className="hidden lg:block lg:self-start">
             <ProfileOwnerActions
-              className="hidden lg:flex lg:self-start"
+              className="flex"
               onBecomeCreator={onBecomeCreator}
               onStudio={onStudio}
               onPost={onPost}
               onPreview={onPreview}
               onSettings={onSettings}
+              onWallet={onWallet}
               shareUrl={shareUrl}
               shareTitle={shareTitle}
               shareMessage={shareMessage}
@@ -390,6 +395,7 @@ export default function ProfileCoverHeader({
               }
               onShareInteract={onShareInteract}
             />
+            </div>
           </div>
         </div>
       </div>

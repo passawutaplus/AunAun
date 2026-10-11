@@ -356,7 +356,7 @@ const CollabRequestsSection = ({
             onClick={() => setTab(s)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
               tab === s
-                ? "bg-primary-bright text-white"
+                ? "bg-primary-bright text-primary-foreground"
                 : "bg-card text-secondary-foreground border border-border hover:bg-secondary"
             }`}
           >
@@ -505,7 +505,7 @@ const CollabRequestsSection = ({
                     size="sm"
                     onClick={() => void openChat(req)}
                     disabled={busy}
-                    className="h-8 rounded-full px-3 text-xs bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                    className="h-8 rounded-full px-3 text-xs bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
                   >
                     <MessageCircle className="mr-1 h-3.5 w-3.5" />
                     แชท

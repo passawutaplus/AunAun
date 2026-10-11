@@ -37,6 +37,8 @@ import {
   useUserBlocks,
 } from "@/hooks/useCommunityPostInteractions";
 import { useMyProjectSeries, usePublicProjectSeries } from "@/hooks/useProjectSeries";
+import { usePublicCollections } from "@/hooks/useCollections";
+import CollectionCard from "@/components/collections/CollectionCard";
 import PortfolioGrid from "@/components/profile/PortfolioGrid";
 import { ProfileBrowseToolbar } from "@/components/profile/ProfileBrowseToolbar";
 import { SeriesCard } from "@/components/series/SeriesCard";
@@ -124,7 +126,7 @@ const PublicProfilePage = () => {
       ? "medium"
       : readSeriesDensity("aplus1.profile.public.catalog.density", "medium"),
   );
-  const PROFILE_TABS = ["works", "series", "services", "objects", "about", "reviews"] as const;
+  const PROFILE_TABS = ["works", "series", "services", "objects", "collections", "about", "reviews"] as const;
   type ProfileTab = (typeof PROFILE_TABS)[number];
   const tabFromUrl = params.get("tab");
   const [activeTab, setActiveTab] = useState<ProfileTab>(() =>
@@ -193,6 +195,7 @@ const PublicProfilePage = () => {
   const unblockUser = useUnblockUser();
   const iBlockedThem = !!(resolvedUserId && blockedSet?.has(resolvedUserId));
   const { data: publicSeries = [] } = usePublicProjectSeries(resolvedUserId);
+  const { data: publicCollections = [] } = usePublicCollections(resolvedUserId);
   const { data: ownerSeries = [] } = useMyProjectSeries(
     isSelf && !visitorPreview ? resolvedUserId : undefined,
   );
@@ -804,12 +807,15 @@ const PublicProfilePage = () => {
           value={activeTab}
           onValueChange={setProfileTab}
           tabs={[
-            { value: "works", label: `Project (${portfolioProjects.length})` },
-            { value: "series", label: `Catalog (${seriesList.length})` },
-            { value: "services", label: `Packages (${servicesTabCount})` },
-            { value: "objects", label: `Objects (${profileObjects.length})` },
-            { value: "about", label: "About Me" },
-            { value: "reviews", label: "Review" },
+            { value: "works", label: "Projects", count: portfolioProjects.length },
+            { value: "series", label: "Catalog", count: seriesList.length },
+            { value: "services", label: "Packages", count: servicesTabCount },
+            { value: "objects", label: "Objects", count: profileObjects.length },
+            ...(publicCollections.length > 0
+              ? [{ value: "collections", label: "Collections", count: publicCollections.length }]
+              : []),
+            { value: "about", label: "About Me", ownHeading: true },
+            { value: "reviews", label: "Reviews" },
           ]}
         >
           {activeTab === "works" &&
@@ -956,6 +962,14 @@ const PublicProfilePage = () => {
                 })}
               />
           )}
+
+          {activeTab === "collections" ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+              {publicCollections.map((c) => (
+                <CollectionCard key={c.id} collection={c} compact />
+              ))}
+            </div>
+          ) : null}
 
           {activeTab === "reviews" && resolvedUserId ? (
             <div className="rounded-2xl glass-panel p-5 md:p-6">

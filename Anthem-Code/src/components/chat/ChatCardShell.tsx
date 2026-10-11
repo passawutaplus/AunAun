@@ -133,7 +133,7 @@ export function ChatCardOrderMenu({ onOpenOrderDetail }: { onOpenOrderDetail: ()
 
 /** Primary hire action button classes (fill). */
 export const CHAT_CARD_PRIMARY_BTN =
-  "flex-1 rounded-full bg-[hsl(var(--chat-hire))] text-white hover:opacity-90";
+  "flex-1 rounded-full bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90";
 
 /** Destructive/decline outline button classes. */
 export const CHAT_CARD_DECLINE_BTN =

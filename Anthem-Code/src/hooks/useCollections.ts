@@ -10,32 +10,15 @@ export interface CollectionWithCovers extends Collection {
   covers: string[];
 }
 
-const fetchItemCounts = async (collectionIds: string[]): Promise<Record<string, number>> => {
-  if (!collectionIds.length) return {};
-  try {
-    const { data, error } = await supabase
-      .from("collection_items")
-      .select("collection_id")
-      .in("collection_id", collectionIds);
-    if (error) return {};
-    const map: Record<string, number> = {};
-    (data ?? []).forEach((row: { collection_id: string }) => {
-      map[row.collection_id] = (map[row.collection_id] ?? 0) + 1;
-    });
-    return map;
-  } catch {
-    return {};
-  }
-};
-
 const fetchCovers = async (collectionIds: string[]): Promise<Record<string, string[]>> => {
   if (!collectionIds.length) return {};
   try {
     // No PostgREST embed: collection_items.project_id may lack an FK (embeds fail silently for UI).
     const { data: rows, error } = await supabase
       .from("collection_items")
-      .select("collection_id, project_id, added_at")
+      .select("collection_id, project_id, added_at, position")
       .in("collection_id", collectionIds)
+      .order("position", { ascending: true, nullsFirst: true })
       .order("added_at", { ascending: false });
     if (error) return {};
     const projectIds = [
@@ -68,6 +51,12 @@ const fetchCovers = async (collectionIds: string[]): Promise<Record<string, stri
   }
 };
 
+/** A cover the owner picked wins; otherwise the mosaic of the first four works in the shown order. */
+const withCovers = async (rows: Collection[]): Promise<CollectionWithCovers[]> => {
+  const auto = await fetchCovers(rows.filter((c) => !c.cover_url).map((c) => c.id));
+  return rows.map((c) => ({ ...c, covers: c.cover_url ? [c.cover_url] : (auto[c.id] ?? []) }));
+};
+
 export const useCollections = (ownerId: string | undefined) =>
   useQuery({
     queryKey: ["collections", ownerId],
@@ -79,13 +68,7 @@ export const useCollections = (ownerId: string | undefined) =>
         .eq("owner_id", ownerId!)
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      const ids = (data ?? []).map((c) => c.id);
-      const [coverMap, countMap] = await Promise.all([fetchCovers(ids), fetchItemCounts(ids)]);
-      return (data ?? []).map((c) => ({
-        ...c,
-        item_count: countMap[c.id] ?? c.item_count ?? 0,
-        covers: coverMap[c.id] ?? [],
-      }));
+      return withCovers(data ?? []);
     },
   });
 
@@ -101,13 +84,7 @@ export const usePublicCollections = (ownerId: string | undefined) =>
         .eq("is_public", true)
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      const ids = (data ?? []).map((c) => c.id);
-      const [coverMap, countMap] = await Promise.all([fetchCovers(ids), fetchItemCounts(ids)]);
-      return (data ?? []).map((c) => ({
-        ...c,
-        item_count: countMap[c.id] ?? c.item_count ?? 0,
-        covers: coverMap[c.id] ?? [],
-      }));
+      return withCovers(data ?? []);
     },
   });
 
@@ -134,8 +111,9 @@ export const useCollectionItems = (collectionId: string | undefined) =>
       // Two-step fetch: PostgREST embed needs an FK on project_id which may be missing.
       const { data: rows, error } = await supabase
         .from("collection_items")
-        .select("project_id, added_at")
+        .select("project_id, added_at, position")
         .eq("collection_id", collectionId!)
+        .order("position", { ascending: true, nullsFirst: true })
         .order("added_at", { ascending: false });
       if (error) throw error;
       const projectIds = [
@@ -152,9 +130,14 @@ export const useCollectionItems = (collectionId: string | undefined) =>
         .in("id", projectIds);
       if (pErr) throw pErr;
       const byId = new Map((projects ?? []).map((p: { id: string }) => [p.id, p]));
-      return (rows ?? [])
-        .map((r: { project_id: string | null }) => (r.project_id ? byId.get(r.project_id) : null))
-        .filter((p): p is NonNullable<typeof p> => !!p);
+      // Rows arrive in the owner's order (new saves first). Keep added_at / position so the views
+      // can also sort by save date, and so a reorder can be written back.
+      return (rows ?? []).flatMap(
+        (r: { project_id: string | null; added_at: string | null; position: number | null }) => {
+          const project = r.project_id ? byId.get(r.project_id) : null;
+          return project ? [{ ...project, added_at: r.added_at, position: r.position }] : [];
+        },
+      );
     },
   });
 
@@ -291,21 +274,10 @@ export const useToggleCollectionItem = () => {
           project_id: input.projectId ?? null,
           community_post_id: input.communityPostId ?? null,
         });
-        if (error && !`${error.message}`.includes("duplicate")) throw error;
+        if (error && error.code !== "23505") throw error;
       }
 
-      const { count } = await supabase
-        .from("collection_items")
-        .select("collection_id", { count: "exact", head: true })
-        .eq("collection_id", input.collectionId);
-      await supabase
-        .from("collections")
-        .update({
-          item_count: count ?? 0,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", input.collectionId);
-
+      // item_count and updated_at are kept by the collection_items_count_* DB triggers.
       return input.remove ? ("removed" as const) : ("added" as const);
     },
     onMutate: async (vars) => {
@@ -334,6 +306,7 @@ export const useToggleCollectionItem = () => {
           return old;
         });
       }
+      const previousCollections = qc.getQueriesData<CollectionWithCovers[]>({ queryKey: ["collections"] });
       qc.setQueriesData<CollectionWithCovers[]>({ queryKey: ["collections"] }, (old) => {
         if (!old) return old;
         return old.map((c) => {
@@ -342,7 +315,7 @@ export const useToggleCollectionItem = () => {
           return { ...c, item_count: nextCount };
         });
       });
-      return { previous, previousSaved };
+      return { previous, previousSaved, previousCollections };
     },
     onError: (_err, vars, ctx) => {
       if (!vars.projectId) return;
@@ -350,6 +323,9 @@ export const useToggleCollectionItem = () => {
         qc.setQueryData(key, data);
       }
       for (const [key, data] of ctx?.previousSaved ?? []) {
+        qc.setQueryData(key, data);
+      }
+      for (const [key, data] of ctx?.previousCollections ?? []) {
         qc.setQueryData(key, data);
       }
     },
@@ -386,3 +362,101 @@ export const useCommunityPostCollectionIds = (
       return (data ?? []).map((r: { collection_id: string }) => r.collection_id);
     },
   });
+
+const invalidateCollectionItems = (qc: ReturnType<typeof useQueryClient>, collectionIds: string[]) => {
+  qc.invalidateQueries({ queryKey: ["collections"] });
+  qc.invalidateQueries({ queryKey: ["collections-public"] });
+  qc.invalidateQueries({ queryKey: ["saved-project-ids"] });
+  qc.invalidateQueries({ queryKey: ["project-in-collections"] });
+  for (const id of collectionIds) {
+    qc.invalidateQueries({ queryKey: ["collection", id] });
+    qc.invalidateQueries({ queryKey: ["collection-items", id] });
+  }
+};
+
+/** Save the owner's manual order. One upsert; relies on the owner UPDATE policy on collection_items. */
+export const useReorderCollectionItems = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { collectionId: string; projectIds: string[] }) => {
+      const rows = input.projectIds.map((project_id, position) => ({
+        collection_id: input.collectionId,
+        project_id,
+        position,
+      }));
+      const { error } = await supabase
+        .from("collection_items")
+        .upsert(rows, { onConflict: "collection_id,project_id" });
+      if (error) throw error;
+    },
+    onMutate: async (vars) => {
+      const key = ["collection-items", vars.collectionId];
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<{ id: string }[]>(key);
+      if (previous) {
+        const byId = new Map(previous.map((p) => [p.id, p]));
+        qc.setQueryData(
+          key,
+          vars.projectIds.flatMap((id, position) => {
+            const item = byId.get(id);
+            return item ? [{ ...item, position }] : [];
+          }),
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["collection-items", vars.collectionId], ctx.previous);
+    },
+    onSettled: (_data, _err, vars) => {
+      qc.invalidateQueries({ queryKey: ["collection-items", vars.collectionId] });
+      qc.invalidateQueries({ queryKey: ["collections"] });
+    },
+  });
+};
+
+/** Take several works out of one collection in a single request. */
+export const useRemoveCollectionItems = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { collectionId: string; projectIds: string[] }) => {
+      if (!input.projectIds.length) return;
+      const { error } = await supabase
+        .from("collection_items")
+        .delete()
+        .eq("collection_id", input.collectionId)
+        .in("project_id", input.projectIds);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => invalidateCollectionItems(qc, [vars.collectionId]),
+  });
+};
+
+/** Copy or move works to another of the owner's collections (works already there are skipped). */
+export const useTransferCollectionItems = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      fromCollectionId: string;
+      toCollectionId: string;
+      projectIds: string[];
+      mode: "copy" | "move";
+    }) => {
+      if (!input.projectIds.length || input.fromCollectionId === input.toCollectionId) return;
+      const { error } = await supabase.from("collection_items").upsert(
+        input.projectIds.map((project_id) => ({ collection_id: input.toCollectionId, project_id })),
+        { onConflict: "collection_id,project_id", ignoreDuplicates: true },
+      );
+      if (error) throw error;
+      if (input.mode === "move") {
+        const { error: delError } = await supabase
+          .from("collection_items")
+          .delete()
+          .eq("collection_id", input.fromCollectionId)
+          .in("project_id", input.projectIds);
+        if (delError) throw delError;
+      }
+    },
+    onSuccess: (_, vars) => invalidateCollectionItems(qc, [vars.fromCollectionId, vars.toCollectionId]),
+  });
+};

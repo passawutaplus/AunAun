@@ -75,6 +75,8 @@ import {
   PORTFOLIO_STILL_IMAGE_ACCEPT,
 } from "@/lib/normalizeImageUpload";
 import { cn } from "@/lib/utils";
+import { MascotCharacter } from "@/components/project/TourMascot";
+import { UploadProgressCard } from "@/components/project/UploadProgressCard";
 import { toast } from "sonner";
 
 type Props = {
@@ -83,6 +85,8 @@ type Props = {
   disabled?: boolean;
   emptyHint?: string;
   onEmptyDropImages?: (files: FileList) => void;
+  /** "upload" = Quick drop: an empty board is just an image drop zone, no template starters. */
+  emptyVariant?: "starter" | "upload";
   /** Quick-pick system templates shown above the starter action buttons. */
   starterTemplates?: Array<{ id: string; name: string; recommended?: boolean }>;
   /** First-time empty canvas: pick a named starter template. */
@@ -113,34 +117,7 @@ type Props = {
   onSelectedBlockIdChange?: (id: string | null) => void;
 };
 
-function CanvasUploadProgress({
-  label,
-  onCancel,
-  className,
-}: {
-  label?: string | null;
-  percent?: number | null;
-  onCancel?: () => void;
-  className?: string;
-}) {
-  return (
-    <div className={cn("flex flex-col items-center gap-2", className)}>
-      <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
-      <p className="max-w-[220px] text-center text-xs font-medium text-foreground">
-        {label ?? "กำลังอัปโหลด..."}
-      </p>
-      {onCancel ? (
-        <button
-          type="button"
-          onClick={onCancel}
-          className="pointer-events-auto text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
-        >
-          ยกเลิก
-        </button>
-      ) : null}
-    </div>
-  );
-}
+const CanvasUploadProgress = UploadProgressCard;
 
 type InsertEdge = "before" | "after";
 type InsertHint = { blockId: string; edge: InsertEdge };
@@ -340,7 +317,7 @@ function ModuleVideoWithReplace({
             const file = e.target.files?.[0];
             if (file) {
               if (!isAllowedPortfolioStillImage(file)) {
-                toast.error("รองรับเฉพาะ JPG, PNG");
+                toast.error("รองรับ JPG, PNG, WebP, HEIC");
               } else {
                 onSetPoster(file);
               }
@@ -475,7 +452,7 @@ function EmptyImageTile({
     if (!list || list.length === 0) return;
     const files = takeImageFiles(list);
     if (!files.length) {
-      toast.error("รองรับเฉพาะ JPG, PNG, GIF");
+      toast.error("รองรับ JPG, PNG, GIF, WebP, HEIC");
       return;
     }
     if (allowMany) onPickMany?.(files);
@@ -869,7 +846,7 @@ function SortableCanvasBlock({
                   placeholder="พิมพ์ข้อความ..."
                   maxLength={PROJECT_BLOCK_BODY_MAX}
                   disabled={disabled}
-                  minHeightClass="min-h-[120px]"
+                  minHeightClass="min-h-[38px]"
                   className="w-full"
                   verticalAlign={block.textVerticalAlign ?? "middle"}
                   onVerticalAlignChange={(textVerticalAlign) => onPatch({ textVerticalAlign })}
@@ -1173,7 +1150,7 @@ function SortableCanvasBlock({
             placeholder="เล่าที่มา แนวคิด กระบวนการ หรือผลลัพธ์..."
             maxLength={PROJECT_BLOCK_BODY_MAX}
             disabled={disabled}
-            minHeightClass={block.type === "body" ? "min-h-[120px]" : "min-h-[96px]"}
+            minHeightClass="min-h-[38px]"
           />
         ) : null}
       </div>
@@ -1214,6 +1191,7 @@ export function ProjectCanvasEditor({
   disabled,
   emptyHint = "หรือลากไฟล์มาวาง / ลากโมดูลจากแถบเครื่องมือ",
   onEmptyDropImages,
+  emptyVariant = "starter",
   starterTemplates,
   onPickStarterTemplate,
   onStartFromImage,
@@ -1341,6 +1319,63 @@ export function ProjectCanvasEditor({
       setToolDragOver(true);
     }
   };
+
+  if (blocks.length === 0 && emptyVariant === "upload") {
+    return (
+      <label
+        data-tour="drop"
+        className={cn(
+          "group flex min-h-[420px] cursor-pointer items-center justify-center rounded-[28px] px-4 py-10 transition-colors",
+          "bg-[radial-gradient(60%_75%_at_50%_100%,hsl(36_80%_55%/0.26),hsl(40_90%_70%/0.12)_55%,transparent_80%)]",
+          "dark:bg-[radial-gradient(60%_75%_at_50%_100%,hsl(34_70%_50%/0.20),hsl(36_60%_45%/0.08)_55%,transparent_80%)]",
+          disabled && "pointer-events-none opacity-60",
+        )}
+        onDragOver={handleCanvasDragOver}
+        onDragLeave={() => setToolDragOver(false)}
+        onDrop={(e) => {
+          if (disabled) return;
+          e.preventDefault();
+          setToolDragOver(false);
+          const tool = readCanvasToolDragData(e.dataTransfer);
+          if (tool && onPlaceTool) {
+            onPlaceTool(tool);
+            return;
+          }
+          if (onEmptyDropImages && e.dataTransfer.files?.length) onEmptyDropImages(e.dataTransfer.files);
+        }}
+      >
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          className="sr-only"
+          aria-label="เลือกรูปผลงาน"
+          disabled={disabled}
+          onChange={(e) => {
+            if (onEmptyDropImages && e.target.files?.length) onEmptyDropImages(e.target.files);
+            e.target.value = "";
+          }}
+        />
+        <div
+          className={cn(
+            "flex w-full max-w-md flex-col items-center gap-2 rounded-3xl border-[1.5px] border-dashed bg-background/70 px-5 py-8 text-center backdrop-blur-sm transition-colors",
+            toolDragOver ? "border-foreground" : "border-border group-hover:border-foreground/40",
+          )}
+        >
+        {uploading ? (
+          <Loader2 className="h-6 w-6 animate-spin" />
+        ) : (
+          <MascotCharacter className="-mt-2 mb-1 h-24 w-28" />
+        )}
+        <span className="font-display text-xl font-normal tracking-tight text-foreground">Start Here!! Drag &amp; Drop</span>
+        <span className="text-xs text-muted-foreground">อยากใส่ข้อความ วิดีโอ หรือจัดเลย์เอาต์? เลือกจากแถบด้านล่างได้เลย</span>
+        {uploading ? (
+          <CanvasUploadProgress label={uploadStageLabel} percent={uploadStagePercent} onCancel={onCancelUpload} />
+        ) : null}
+        </div>
+      </label>
+    );
+  }
 
   if (blocks.length === 0) {
     const hasStarterActions = Boolean(

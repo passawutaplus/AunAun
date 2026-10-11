@@ -33,7 +33,7 @@ export function CollabPlanDocCard({ content, onOpenPlan }: Props) {
           <Button
             type="button"
             size="sm"
-            className="w-full rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+            className="w-full rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
             onClick={onOpenPlan}
           >
             <ClipboardList className="w-3.5 h-3.5 mr-1.5" />

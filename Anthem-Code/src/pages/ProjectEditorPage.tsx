@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Eye, Handshake, ImagePlus, Loader2, Paperclip, Save, Scale, X } from "lucide-react";
+import { CircleHelp, Eye, FileText, Handshake, ShieldCheck, ImagePlus, Loader2, Paperclip, Save, Scale, Tags, X } from "lucide-react";
 import CatalogIcon from "@/components/icons/CatalogIcon";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
@@ -24,6 +24,7 @@ import { uploadProjectImage } from "@/lib/uploadImage";
 import { uploadProjectVideoWithPoster } from "@/lib/uploadVideo";
 import { uploadProjectModel3d } from "@/lib/uploadProjectModel3d";
 import { uploadProjectGif, isGifFile } from "@/lib/uploadProjectGif";
+import { GIF_CONVERT_ABOVE_BYTES } from "@/lib/compressGif";
 import { isVideoFile } from "@/lib/videoAccept";
 import { isModel3dFile } from "@/lib/model3dAccept";
 import { useUploadStageReporter } from "@/hooks/useUploadStageReporter";
@@ -64,11 +65,13 @@ import ProjectAssetsEditor, {
   type ProjectAssetsEditorHandle,
 } from "@/components/project/ProjectAssetsEditor";
 import { CollapsibleEditorCard } from "@/components/project/CollapsibleEditorCard";
+import { EditorInfoButton } from "@/components/project/EditorInfoPopover";
 import {
   parseProjectAssets,
   toStoredProjectAssets,
   projectAssetsToExternalLinks,
   hasPendingProjectAssets,
+  needsServerScan,
   type ProjectAsset,
 } from "@/lib/projectAssets";
 import { enqueueProjectAssetScan } from "@/lib/triggerProjectAssetScan";
@@ -80,7 +83,6 @@ import { LEGAL_ATTESTATION_VERSION } from "@/lib/legalConfig";
 import { parseAiUseLevel, serializeAiUseLevel, type AiUseLevel } from "@/lib/aiDisclosure";
 import { type LicenseType, isLicenseType, getLicenseMeta } from "@/lib/licenses";
 import { ProjectEditorToolsSidebar } from "@/components/project/ProjectEditorToolsSidebar";
-import { ProjectEditorMetaSidebar } from "@/components/project/ProjectEditorMetaSidebar";
 import { ProjectCanvasEditor } from "@/components/project/ProjectCanvasEditor";
 import { FlexGridToolsSidebar, type FlexGridLayerRef } from "@/components/project/FlexGridToolsSidebar";
 import {
@@ -90,6 +92,17 @@ import {
 import { CanvasTemplatePreviewDialog } from "@/components/project/CanvasTemplatePreviewDialog";
 import { ProjectSeriesPicker } from "@/components/project/ProjectEditorSearchSelects";
 import { ProjectTaxonomyPicker } from "@/components/project/ProjectTaxonomyPicker";
+import { AddModuleBar } from "@/components/project/AddModuleBar";
+import { EditorTour, hasSeenEditorTour } from "@/components/project/EditorTour";
+import { TemplatePickerDialog } from "@/components/project/TemplatePickerDialog";
+import { useProfile } from "@/hooks/useProfile";
+import { HoverLabelButton } from "@/components/project/HoverLabelButton";
+import { DetailsListIcon } from "@/components/icons/DetailsListIcon";
+import { ProjectConnectProducts } from "@/components/project/ProjectConnectProducts";
+import { connectKey, syncProjectConnections, useProjectConnectItems } from "@/hooks/useProjectConnections";
+import { QuickConnectGroup } from "@/components/project/QuickAdvancedGroup";
+import { ProjectDetailsDialog } from "@/components/project/ProjectDetailsDialog";
+import { ProjectDetailsPreview } from "@/components/project/ProjectDetailsPreview";
 import {
   inferTaxonomySelection,
   mergeCategorySubTag,
@@ -211,6 +224,39 @@ const ProjectEditorPage = () => {
   /** Prevent re-applying DB → form when auth refreshes / query identity churns (loses in-progress edits). */
   const formHydratedForIdRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
+  const { items: connectItems, loading: connectLoading } = useProjectConnectItems(user?.id);
+  const [connectSelected, setConnectSelected] = useState<Set<string>>(() => new Set());
+  const connectSeededRef = useRef(false);
+  useEffect(() => {
+    if (connectSeededRef.current || connectLoading) return;
+    connectSeededRef.current = true;
+    if (!editing || !id || !isUuid(id)) return;
+    setConnectSelected(
+      new Set(connectItems.filter((item) => item.refs.includes(id)).map((item) => connectKey(item.kind, item.id))),
+    );
+  }, [connectItems, connectLoading, editing, id]);
+  const toggleConnect = (key: string) =>
+    setConnectSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  const syncConnections = async (projectId: string, targetStatus: Status) => {
+    if (targetStatus !== "Published" || !user) return;
+    try {
+      const failed = await syncProjectConnections({
+        projectId,
+        ownerId: user.id,
+        selected: connectSelected,
+        items: connectItems,
+        queryClient,
+      });
+      if (failed > 0) toast.warning(`เชื่อมสินค้าไม่สำเร็จ ${failed} รายการ — ลองอีกครั้งจากหน้าแก้ไขผลงาน`);
+    } catch {
+      toast.warning("เชื่อมสินค้าไม่สำเร็จ — ลองอีกครั้งจากหน้าแก้ไขผลงาน");
+    }
+  };
 
   const [title, setTitle] = useState("");
   const [shortDescription, setShortDescription] = useState("");
@@ -245,6 +291,20 @@ const ProjectEditorPage = () => {
       tracked.clear();
     };
   }, []);
+  // Flows that did not create their own AbortController share one, so "ยกเลิก" really stops them.
+  const activeUploadsRef = useRef(0);
+  const beginUpload = useCallback((): AbortSignal => {
+    if (!uploadAbortRef.current || uploadAbortRef.current.signal.aborted) {
+      uploadAbortRef.current = new AbortController();
+    }
+    activeUploadsRef.current += 1;
+    return uploadAbortRef.current.signal;
+  }, []);
+  const endUpload = useCallback(() => {
+    activeUploadsRef.current = Math.max(0, activeUploadsRef.current - 1);
+    if (activeUploadsRef.current === 0) uploadAbortRef.current = null;
+  }, []);
+
   const cancelActiveUpload = useCallback(() => {
     uploadAbortRef.current?.abort();
     uploadAbortRef.current = null;
@@ -340,7 +400,24 @@ const ProjectEditorPage = () => {
   const [toolsExpanded, setToolsExpanded] = useState(false);
   const [toolsTab, setToolsTab] = useState<"template" | "module">("module");
   const emptyStartImageInputRef = useRef<HTMLInputElement>(null);
-  const [metaExpanded, setMetaExpanded] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+  const { data: myProfile } = useProfile(user?.id);
+  const previewOwnerName =
+    (myProfile as { display_name?: string | null; username?: string | null } | null | undefined)?.display_name ??
+    (myProfile as { username?: string | null } | null | undefined)?.username ??
+    user?.email?.split("@")[0] ??
+    "คุณ";
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const tourCheckedRef = useRef(false);
+  useEffect(() => {
+    // First-time uploaders get the guided tour once (remembered in this browser only).
+    if (tourCheckedRef.current || authLoading || !user || editing) return;
+    tourCheckedRef.current = true;
+    if (hasSeenEditorTour()) return;
+    const timer = window.setTimeout(() => setTourOpen(true), 800);
+    return () => window.clearTimeout(timer);
+  }, [authLoading, user, editing]);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -400,7 +477,7 @@ const ProjectEditorPage = () => {
     setProjectContext((c) => ({ ...c, ...patch }));
   }, []);
   const scheduleBackgroundAssetScan = useCallback((projectId: string) => {
-    if (!hasPendingProjectAssets(projectAssets)) return;
+    if (!needsServerScan(projectAssets)) return;
     toast.message("กำลังตรวจสอบไฟล์แนบ/ลิงก์ในพื้นหลัง — จะแจ้งเมื่อเสร็จ");
     enqueueProjectAssetScan(projectId, ({ blockedCount }) => {
       if (blockedCount > 0) {
@@ -635,7 +712,6 @@ const ProjectEditorPage = () => {
     const mq = window.matchMedia("(min-width: 1024px)");
     const sync = () => {
       setToolsExpanded(mq.matches);
-      setMetaExpanded(mq.matches);
     };
     sync();
     mq.addEventListener("change", sync);
@@ -716,7 +792,8 @@ const ProjectEditorPage = () => {
       setPrice(existing.price_thb ? String(existing.price_thb) : "");
       setShowPrice(!!existing.price_thb);
       setStatus(existing.status as Status);
-      setAllowHire(!!(existing as { allow_hire?: boolean }).allow_hire);
+      // Same default as the public page: a legacy row with no value is open for hire.
+      setAllowHire((existing as { allow_hire?: boolean | null }).allow_hire ?? true);
       setAllowCollab((existing as any).allow_collab ?? true);
       setStudioId((existing as any).studio_id ?? null);
       setCreditedIds(((existing as any).credited_user_ids as string[]) ?? []);
@@ -1070,7 +1147,7 @@ const ProjectEditorPage = () => {
       toast.success("อัปโหลดภาพปกสำเร็จ");
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return;
-      toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+      if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
     } finally {
       if (uploadAbortRef.current === ac) uploadAbortRef.current = null;
       setUploadingCover(false);
@@ -1080,7 +1157,7 @@ const ProjectEditorPage = () => {
 
   const handleCoverPick = async (file: File) => {
     if (!isAllowedPortfolioStillImage(file)) {
-      toast.error("ภาพปกรองรับเฉพาะ JPG, PNG");
+      toast.error("ภาพปกรองรับ JPG, PNG, WebP, HEIC");
       return;
     }
     try {
@@ -1104,36 +1181,68 @@ const ProjectEditorPage = () => {
     [],
   );
 
+  const uploadVideoCancellable: typeof uploadProjectVideoWithPoster = async (...args) => {
+    const signal = beginUpload();
+    try {
+      return await uploadProjectVideoWithPoster(args[0], args[1], args[2], args[3], args[4], signal);
+    } finally {
+      endUpload();
+    }
+  };
+  const uploadModelCancellable: typeof uploadProjectModel3d = async (...args) => {
+    const signal = beginUpload();
+    try {
+      return await uploadProjectModel3d(args[0], args[1], args[2], args[3], args[4], signal);
+    } finally {
+      endUpload();
+    }
+  };
+  const uploadGifCancellable: typeof uploadProjectGif = async (...args) => {
+    const signal = beginUpload();
+    try {
+      return await uploadProjectGif(args[0], args[1], args[2], args[3], args[4], signal);
+    } finally {
+      endUpload();
+    }
+  };
+
   const uploadRasterOrGif = useCallback(
-    async (file: File, signal?: AbortSignal): Promise<{ url: string; asVideo: boolean }> => {
+    async (file: File, passedSignal?: AbortSignal): Promise<{ url: string; asVideo: boolean }> => {
       if (!user) throw new Error("UNAUTHORIZED");
-      if (signal?.aborted) throw new DOMException("Upload cancelled", "AbortError");
-      if (isGifFile(file)) {
-        const { url, isVideo } = await uploadProjectGif(
-          file,
-          user.id,
-          folderRef.current,
-          tier,
-          uploadReporter,
-        );
-        return { url, asVideo: isVideo };
+      const own = !passedSignal;
+      const signal = passedSignal ?? beginUpload();
+      try {
+        if (signal.aborted) throw new DOMException("Upload cancelled", "AbortError");
+        if (isGifFile(file)) {
+          const { url, isVideo } = await uploadProjectGif(
+            file,
+            user.id,
+            folderRef.current,
+            tier,
+            uploadReporter,
+            signal,
+          );
+          return { url, asVideo: isVideo };
+        }
+        const prepared = await normalizeImageForUpload(file, uploadReporter);
+        if (signal.aborted) throw new DOMException("Upload cancelled", "AbortError");
+        const url = await uploadProjectImage(prepared, user.id, folderRef.current, tier, {
+          reporter: uploadReporter,
+          signal,
+        });
+        return { url, asVideo: false };
+      } finally {
+        if (own) endUpload();
       }
-      const prepared = await normalizeImageForUpload(file, uploadReporter);
-      if (signal?.aborted) throw new DOMException("Upload cancelled", "AbortError");
-      const url = await uploadProjectImage(prepared, user.id, folderRef.current, tier, {
-        reporter: uploadReporter,
-        signal,
-      });
-      return { url, asVideo: false };
     },
-    [user, tier, uploadReporter],
+    [user, tier, uploadReporter, beginUpload, endUpload],
   );
 
   const handleGallery = async (files: FileList | File[]) => {
     if (!user) return;
     const arr = Array.from(files).filter(isAllowedPortfolioImage);
     if (!arr.length) {
-      toast.error("รองรับเฉพาะ JPG, PNG, GIF");
+      toast.error("รองรับ JPG, PNG, GIF, WebP, HEIC");
       return;
     }
     const maxImages = Number.isFinite(limits.galleryImages) ? limits.galleryImages : 20;
@@ -1167,36 +1276,44 @@ const ProjectEditorPage = () => {
     let ok = 0;
     let failed = false;
     try {
-      for (const item of batch) {
-        if (ac.signal.aborted) break;
-        setUploadingBlockId(item.block.id);
-        try {
-          const { url, asVideo } = await uploadRasterOrGif(item.file, ac.signal);
-          if (ac.signal.aborted) {
+      // Up to 3 images at a time: compression is CPU-bound and the upload is network-bound, so they overlap.
+      let nextIndex = 0;
+      const worker = async () => {
+        while (!ac.signal.aborted && !failed) {
+          const item = batch[nextIndex++];
+          if (!item) return;
+          setUploadingBlockId(item.block.id);
+          try {
+            const { url, asVideo } = await uploadRasterOrGif(item.file, ac.signal);
+            if (ac.signal.aborted) {
+              dropBatchPreviews(new Set([item.block.id]));
+              return;
+            }
+            setContentBlocks((prev) =>
+              prev.map((b) => {
+                if (b.id !== item.block.id) return b;
+                if (asVideo) return createMediaBlock("video", url, b.id);
+                return { ...b, url };
+              }),
+            );
+            revokeBlobUrl(item.previewUrl);
+            if (!asVideo) setCover((prev) => prev || url);
+            ok += 1;
+          } catch (e) {
             dropBatchPreviews(new Set([item.block.id]));
-            break;
+            if (e instanceof DOMException && e.name === "AbortError") return;
+            if (!failed) if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+            failed = true;
+            return;
           }
-          setContentBlocks((prev) =>
-            prev.map((b) => {
-              if (b.id !== item.block.id) return b;
-              if (asVideo) return createMediaBlock("video", url, b.id);
-              return { ...b, url };
-            }),
-          );
-          revokeBlobUrl(item.previewUrl);
-          if (!asVideo) setCover((prev) => prev || url);
-          ok += 1;
-        } catch (e) {
-          const remaining = new Set(
-            batch.filter((b) => blobUrlsRef.current.has(b.previewUrl)).map((b) => b.block.id),
-          );
-          dropBatchPreviews(remaining);
-          if (e instanceof DOMException && e.name === "AbortError") break;
-          failed = true;
-          toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
-          break;
         }
-      }
+      };
+      await Promise.all(Array.from({ length: Math.min(3, batch.length) }, worker));
+      // Anything not started (or still showing a local preview) after a failure is dropped.
+      const leftover = new Set(
+        batch.filter((b) => blobUrlsRef.current.has(b.previewUrl)).map((b) => b.block.id),
+      );
+      if (leftover.size) dropBatchPreviews(leftover);
       if (ac.signal.aborted) {
         dropBatchPreviews(batchIds);
       } else if (ok > 0 && !failed) {
@@ -1225,7 +1342,7 @@ const ProjectEditorPage = () => {
       const urls: string[] = [];
       const posters: (string | null)[] = [];
       for (const f of toUpload) {
-        const { url, posterUrl } = await uploadProjectVideoWithPoster(
+        const { url, posterUrl } = await uploadVideoCancellable(
           f,
           user.id,
           folderRef.current,
@@ -1240,7 +1357,7 @@ const ProjectEditorPage = () => {
       if (!cover && firstPoster) setCover(firstPoster);
       toast.success(`อัปโหลด ${urls.length} วิดีโอสำเร็จ`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+      if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
     } finally {
       resetUploadStage();
       setUploadingVideo(false);
@@ -1308,7 +1425,10 @@ const ProjectEditorPage = () => {
       projectIdOverride ?? (editing && id && isUuid(id) ? id : undefined);
     const attested = options?.rightsAttested ?? rightsAttested;
 
-    const basicsErr = validateProjectBasics({ title, cover_url: cover });
+    const basicsErr = validateProjectBasics(
+      { title, cover_url: cover },
+      { requireCover: targetStatus === "Published" },
+    );
     if (basicsErr) {
       toast.error(basicsErr);
       return;
@@ -1367,10 +1487,6 @@ const ProjectEditorPage = () => {
       toast.error(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
       return;
     }
-    if (targetStatus === "Published" && !shortDescription.trim()) {
-      toast.error("กรุณากรอกรายละเอียดแบบย่อ");
-      return;
-    }
     if (targetStatus === "Published" && !attested) {
       toast.error("กรุณายืนยันสิทธิ์ในผลงานก่อนเผยแพร่");
       return;
@@ -1391,6 +1507,7 @@ const ProjectEditorPage = () => {
         await update.mutateAsync({ id: savedId, patch: payload });
         await runProjectLinkSideEffects(savedId);
         await completeLinkedCollab(savedId, targetStatus);
+        await syncConnections(savedId, targetStatus);
         toast.success(targetStatus === "Published" ? "เผยแพร่ผลงานแล้ว" : "บันทึกการเปลี่ยนแปลงแล้ว");
         scheduleBackgroundAssetScan(savedId);
         if (
@@ -1409,6 +1526,7 @@ const ProjectEditorPage = () => {
         const created = await create.mutateAsync({ ...payload, owner_id: user.id });
         await runProjectLinkSideEffects(created.id);
         await completeLinkedCollab(created.id, targetStatus);
+        await syncConnections(created.id, targetStatus);
         toast.success(targetStatus === "Published" ? "เผยแพร่ผลงานแล้ว" : "บันทึกฉบับร่างแล้ว");
         scheduleBackgroundAssetScan(created.id);
         if (
@@ -1446,16 +1564,16 @@ const ProjectEditorPage = () => {
       checklist.push("กรอกชื่องาน");
     }
     if (!cover.trim()) {
-      errors.cover = "อัปโหลดภาพปก";
-      checklist.push("อัปโหลดภาพปก");
+      errors.cover = "เพิ่มภาพปก (ใช้รูปแรกในเรื่องได้)";
+      checklist.push("เพิ่มภาพปก");
     }
     if (!categoryParentId) {
       errors.category = "เลือกหมวดใหญ่";
       checklist.push("เลือกหมวดใหญ่");
     }
     if (!shortDescription.trim()) {
-      errors.shortDescription = "กรอกรายละเอียดแบบย่อ";
-      checklist.push("กรอกรายละเอียดแบบย่อ");
+      errors.shortDescription = "เขียนรายละเอียดสั้น ๆ";
+      checklist.push("เขียนรายละเอียดสั้น ๆ");
     }
     const canvasImages =
       editorMode === "flex_grid"
@@ -1597,33 +1715,32 @@ const ProjectEditorPage = () => {
     }
   };
 
+  const focusFirstPublishError = (errors: typeof publishFieldErrors) => {
+    const firstKey = Object.keys(errors)[0];
+    window.setTimeout(() => {
+      if (firstKey === "title") titleInputRef.current?.focus();
+      else if (firstKey === "shortDescription") {
+        document.getElementById("project-short-description")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (firstKey === "category") {
+        document.querySelector('[data-tour="category"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (firstKey === "cover") {
+        document.getElementById("project-details-cover")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (firstKey === "canvasImage") {
+        setDetailsOpen(false);
+        document.getElementById("project-canvas-editor")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 120);
+  };
+
+  /** Publish = open the details dialog; it holds the last required fields and the final confirm. */
   const handlePublishClick = () => {
     if (warnIfMediaStillUploading("publish")) return;
-    const { errors, checklist } = collectPublishGaps();
+    const { errors } = collectPublishGaps();
     setPublishFieldErrors(errors);
-    if (checklist.length > 0) {
-      setPublishChecklist(checklist);
-      setPublishPopupOpaque(true);
-      setPublishFieldHighlightOpaque(true);
-      setPublishChecklistTick((n) => n + 1);
-      if (errors.title || errors.cover || errors.category) setMetaExpanded(true);
-      const firstKey = Object.keys(errors)[0];
-      window.setTimeout(() => {
-        if (firstKey === "title") titleInputRef.current?.focus();
-        else if (firstKey === "shortDescription") {
-          document.getElementById("project-short-description")?.scrollIntoView({ behavior: "smooth", block: "center" });
-        } else if (firstKey === "cover" || firstKey === "category") {
-          document.getElementById("project-meta-sidebar")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        } else if (firstKey === "canvasImage") {
-          document.getElementById("project-canvas-editor")?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      }, 80);
-      return;
-    }
+    setPublishFieldHighlightOpaque(true);
     setPublishChecklist([]);
-    setPublishPopupOpaque(false);
-    setPublishAttestChecked(false);
-    setPublishConfirmOpen(true);
+    setDetailsOpen(true);
+    focusFirstPublishError(errors);
   };
 
   useEffect(() => {
@@ -1786,7 +1903,7 @@ const ProjectEditorPage = () => {
 
       if (block.type === "image_text") {
         if (!isAllowedPortfolioImage(file)) {
-          toast.error("รองรับเฉพาะ JPG, PNG, GIF");
+          toast.error("รองรับ JPG, PNG, GIF, WebP, HEIC");
           return;
         }
         setUploadingBlockId(blockId);
@@ -1803,7 +1920,7 @@ const ProjectEditorPage = () => {
           if (!cover) setCover(url);
           toast.success("อัปโหลดภาพสำเร็จ");
         } catch (e) {
-          toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+          if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
         } finally {
           setUploadingBlockId(null);
           setUploadingGallery(false);
@@ -1814,7 +1931,17 @@ const ProjectEditorPage = () => {
 
       if (block.type === "image") {
         if (!isAllowedPortfolioImage(file)) {
-          toast.error("รองรับเฉพาะ JPG, PNG, GIF");
+          toast.error("รองรับ JPG, PNG, GIF, WebP, HEIC");
+          return;
+        }
+        const multi =
+          block.mediaLayout === "gallery" ||
+          block.mediaLayout === "grid" ||
+          block.mediaLayout === "multi" ||
+          blockImageUrls(block).length > 1;
+        // A big GIF becomes a video, which a multi-image slot cannot hold: refuse before compressing/uploading.
+        if (multi && isGifFile(file) && file.size > GIF_CONVERT_ABOVE_BYTES) {
+          toast.error("GIF ใหญ่จะถูกแปลงเป็นวิดีโอ — ใช้โมดูลวิดีโอหรือย่อไฟล์ก่อน");
           return;
         }
         setUploadingBlockId(blockId);
@@ -1822,11 +1949,6 @@ const ProjectEditorPage = () => {
         try {
           if (isGifFile(file)) {
             const { url, asVideo } = await uploadRasterOrGif(file);
-            const multi =
-              block.mediaLayout === "gallery" ||
-              block.mediaLayout === "grid" ||
-              block.mediaLayout === "multi" ||
-              blockImageUrls(block).length > 1;
             if (asVideo) {
               if (multi) {
                 toast.error("GIF ใหญ่จะถูกแปลงเป็นวิดีโอ — ใช้โมดูลวิดีโอหรือย่อไฟล์ก่อน");
@@ -1925,7 +2047,7 @@ const ProjectEditorPage = () => {
           if (!cover) setCover(url);
           toast.success("อัปโหลดภาพสำเร็จ");
         } catch (e) {
-          toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+          if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
         } finally {
           setUploadingBlockId(null);
           setUploadingGallery(false);
@@ -1948,7 +2070,7 @@ const ProjectEditorPage = () => {
       setUploadingBlockId(blockId);
       setUploadingVideo(true);
       try {
-        const { url, posterUrl } = await uploadProjectVideoWithPoster(
+        const { url, posterUrl } = await uploadVideoCancellable(
           file,
           user.id,
           folderRef.current,
@@ -1970,7 +2092,7 @@ const ProjectEditorPage = () => {
         if (!cover && posterUrl) setCover(posterUrl);
         toast.success("อัปโหลดวิดีโอสำเร็จ");
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+        if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
       } finally {
         setUploadingBlockId(null);
         setUploadingVideo(false);
@@ -2063,7 +2185,7 @@ const ProjectEditorPage = () => {
 
       const images = files.filter(isAllowedPortfolioImage);
       if (!images.length) {
-        toast.error("รองรับเฉพาะ JPG, PNG, GIF");
+        toast.error("รองรับ JPG, PNG, GIF, WebP, HEIC");
         return;
       }
 
@@ -2099,7 +2221,7 @@ const ProjectEditorPage = () => {
           if (!cover && uploaded[0]) setCover(uploaded[0]);
           toast.success(uploaded.length > 1 ? `อัปโหลด ${uploaded.length} ภาพสำเร็จ` : "อัปโหลดภาพสำเร็จ");
         } catch (e) {
-          toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+          if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
         } finally {
           setUploadingBlockId(null);
           setUploadingGallery(false);
@@ -2167,7 +2289,7 @@ const ProjectEditorPage = () => {
         if (!cover && uploaded[0]) setCover(uploaded[0].url);
         toast.success(uploaded.length > 1 ? `อัปโหลด ${uploaded.length} ภาพสำเร็จ` : "อัปโหลดภาพสำเร็จ");
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+        if (!(e instanceof DOMException && e.name === "AbortError")) toast.error(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
       } finally {
         setUploadingBlockId(null);
         setUploadingGallery(false);
@@ -2495,7 +2617,7 @@ const ProjectEditorPage = () => {
         setUploadingFlexModuleId(moduleId);
         setUploadingGallery(true);
         try {
-          const { url, isVideo } = await uploadProjectGif(
+          const { url, isVideo } = await uploadGifCancellable(
             file,
             user.id,
             folderRef.current,
@@ -2533,7 +2655,7 @@ const ProjectEditorPage = () => {
         }
         setUploadingFlexModuleId(moduleId);
         try {
-          const { url, format } = await uploadProjectModel3d(
+          const { url, format } = await uploadModelCancellable(
             file,
             user.id,
             folderRef.current,
@@ -2578,7 +2700,7 @@ const ProjectEditorPage = () => {
         setUploadingFlexModuleId(moduleId);
         setUploadingVideo(true);
         try {
-          const { url, posterUrl } = await uploadProjectVideoWithPoster(
+          const { url, posterUrl } = await uploadVideoCancellable(
             file,
             user.id,
             folderRef.current,
@@ -2798,6 +2920,198 @@ const ProjectEditorPage = () => {
     );
   }
 
+  const publishRemaining = collectPublishGaps().checklist.length;
+  const publishLabel = "เผยแพร่";
+  const handleDialogPublish = async () => {
+    if (warnIfMediaStillUploading("publish")) return;
+    const { errors, checklist } = collectPublishGaps();
+    if (checklist.length > 0) {
+      setPublishFieldErrors(errors);
+      setPublishFieldHighlightOpaque(true);
+      toast.error("ยังขาด: " + checklist.join(" · "));
+      focusFirstPublishError(errors);
+      return;
+    }
+    if (!publishAttestChecked) {
+      toast.error("ติ๊กยืนยันสิทธิ์ในผลงานก่อนเผยแพร่");
+      document.getElementById("project-details-confirm")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    setDetailsOpen(false);
+    await handleConfirmPublish();
+  };
+
+  const detailsFooter = (
+    <div className="flex items-center gap-2">
+      {publishRemaining > 0 || !publishAttestChecked ? (
+        <span className="mr-auto text-xs text-muted-foreground">
+          {publishRemaining > 0
+            ? `ยังขาด ${publishRemaining} อย่าง${publishAttestChecked ? "" : " + ติ๊กยืนยันสิทธิ์"}`
+            : "ติ๊กยืนยันสิทธิ์ก่อนเผยแพร่"}
+        </span>
+      ) : null}
+      <Button type="button" variant="ghost" className="ml-auto rounded-full" onClick={() => setDetailsOpen(false)}>
+        ปิด
+      </Button>
+      <HoverLabelButton
+        icon={savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        label="บันทึกฉบับร่าง"
+        disabled={editorLocked}
+        onClick={() => void handleSaveDraft(true)}
+      />
+      <Button
+        type="button"
+        className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+        data-tour="publish-dialog"
+        disabled={editorLocked}
+        onClick={() => void handleDialogPublish()}
+      >
+        {publishing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+        เผยแพร่
+      </Button>
+    </div>
+  );
+
+  const detailsLabel = publishRemaining > 0 ? `รายละเอียดงาน · เหลือ ${publishRemaining}` : "รายละเอียดงาน";
+
+  const catalogField = (
+            <div className="space-y-2">
+              <Label className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                <CatalogIcon className="h-4 w-4 text-primary shrink-0" />
+                Catalog
+              </Label>
+              <ProjectSeriesPicker
+                value={seriesId}
+                options={mySeries}
+                onChange={setSeriesId}
+                onCreateNew={() => setSeriesCreateOpen(true)}
+                disabled={editorLocked}
+              />
+              {mySeries.length === 0 && (
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  ยังไม่มี Catalog — กดเปิดรายการแล้วเลือก「เพิ่ม Catalog ใหม่」ได้เลย
+                </p>
+              )}
+            </div>
+  );
+
+  const coverField = (
+            <div className="space-y-2">
+              <CoverDrop
+                url={cover}
+                loading={uploadingCover}
+                onPick={(f) => {
+                  clearPublishFieldError("cover");
+                  void handleCoverPick(f);
+                }}
+                onClear={() => {
+                  setCover("");
+                }}
+                compact
+                invalid={publishFieldHighlight(publishFieldErrors.cover)}
+              />
+            </div>
+  );
+
+  const connectProducts = (
+    <ProjectConnectProducts
+      items={connectItems}
+      loading={connectLoading}
+      selected={connectSelected}
+      onToggle={toggleConnect}
+      projectId={editing && id && isUuid(id) ? id : undefined}
+      disabled={editorLocked}
+    />
+  );
+
+  const collabField = (
+    <>
+            {user && (
+              <PortfolioCollabUserPicker
+                userId={user.id}
+                selected={collabSelected}
+                onChange={setCollabSelected}
+                acceptedUsers={collabAccepted}
+                pendingUsers={collabPending}
+              />
+            )}
+    </>
+  );
+
+  const renderDetailsExtras = (stacked: boolean, part: "all" | "context" | "rights" | "files" = "all") => (
+    <>
+          {part === "rights" || part === "files" ? null : (
+          <ProjectContextEditorFields
+            value={projectContext}
+            onChange={patchProjectContext}
+            shortDescription={shortDescription}
+            onShortDescriptionChange={(v) => {
+              setShortDescription(v.slice(0, PROJECT_SHORT_DESCRIPTION_MAX));
+              clearPublishFieldError("shortDescription");
+            }}
+            enabled={contextEnabled}
+            onEnabledChange={setContextEnabled}
+            disabled={editorLocked}
+            shortDescriptionInvalid={publishFieldHighlight(publishFieldErrors.shortDescription)}
+            hideBackstory={stacked}
+          />
+          )}
+
+          {part !== "context" && user ? (
+            <div className={cn("grid grid-cols-1 gap-4", !stacked && "md:grid-cols-2")}>
+              {part !== "files" ? (
+                <CollapsibleEditorCard
+                  title="Rights"
+                  framed
+                  icon={Scale}
+                  hint={getLicenseMeta(licenseType).shortLabel}
+                >
+                  <LicensePicker
+                    hideHeading
+                    value={licenseType}
+                    onChange={(v) => {
+                      setLicenseType(v);
+                      if (v !== "custom") clearPublishFieldError("licenseNote");
+                    }}
+                    licenseNote={licenseNote}
+                    onLicenseNoteChange={(v) => {
+                      setLicenseNote(v);
+                      clearPublishFieldError("licenseNote");
+                    }}
+                    noteInvalid={publishFieldHighlight(publishFieldErrors.licenseNote)}
+                  />
+                  <AiDisclosureToggle
+                    enabled={aiAssisted}
+                    onEnabledChange={setAiAssisted}
+                    level={aiUseLevel}
+                    onLevelChange={setAiUseLevel}
+                  />
+                </CollapsibleEditorCard>
+              ) : null}
+              {part !== "rights" ? (
+                <CollapsibleEditorCard
+                  title="Files & links"
+                  framed
+                  icon={Paperclip}
+                  hint={projectAssets.length > 0 ? `${projectAssets.length} รายการ` : undefined}
+                >
+                  <ProjectAssetsEditor
+                    ref={projectAssetsEditorRef}
+                    bare
+                    assets={projectAssets}
+                    onChange={setProjectAssets}
+                    userId={user.id}
+                    folder={folderRef.current}
+                    projectId={editing && id && isUuid(id) ? id : undefined}
+                    tier={tier}
+                  />
+                </CollapsibleEditorCard>
+              ) : null}
+            </div>
+          ) : null}
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-0">
       {/* Sticky header — full-bleed to align with Module / Work Details sidebars */}
@@ -2806,10 +3120,17 @@ const ProjectEditorPage = () => {
           <BackButton onClick={handleBackClick} />
           <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-1">
             <div className="min-w-0">
-              <h1 className="text-base font-semibold text-foreground truncate">
-                {editing ? "แก้ไขผลงาน" : "Share your Project"}
+              <h1 className="truncate font-display text-2xl font-normal tracking-tight text-foreground">
+                {editing ? "Edit Project" : "New Project"}
               </h1>
             </div>
+            <HoverLabelButton
+              variant="ghost"
+              icon={<CircleHelp className="h-4 w-4" aria-hidden />}
+              label="ดูทัวร์แนะนำ"
+              className="hidden text-muted-foreground hover:text-foreground sm:inline-flex"
+              onClick={() => setTourOpen(true)}
+            />
             {isLaunchFullGridEditorEnabled() ? (
               <LayoutGroup id="project-editor-mode">
                 <div
@@ -2819,8 +3140,8 @@ const ProjectEditorPage = () => {
                 >
                   {(
                     [
-                      { value: "casual" as const, label: "Casual" },
-                      { value: "flex_grid" as const, label: "Full Grid" },
+                      { value: "casual" as const, label: "เรียงต่อกัน" },
+                      { value: "flex_grid" as const, label: "จัดวางอิสระ" },
                     ] as const
                   ).map((mode) => {
                     const active = editorMode === mode.value;
@@ -2875,33 +3196,32 @@ const ProjectEditorPage = () => {
             <Eye className="w-4 h-4" />
           </Button>
           <div className="hidden lg:flex items-center gap-2 shrink-0">
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full shrink-0"
+            <HoverLabelButton
+              icon={<Eye className="h-4 w-4" />}
+              label="ดูตัวอย่าง"
+              data-tour="preview"
               onClick={() => {
                 setPreviewMode("pc");
                 setPreviewOpen(true);
               }}
-              title="ดูตัวอย่าง"
-              aria-label="ดูตัวอย่าง"
-            >
-              <Eye className="w-4 h-4" />
-            </Button>
+            />
             <Button
               variant="outline"
               size="sm"
+              className="h-9 gap-1.5 rounded-full px-3"
+              data-tour="details"
+              onClick={() => setDetailsOpen(true)}
+              disabled={editorLocked}
+            >
+              <DetailsListIcon className="h-4 w-4" />
+              {detailsLabel}
+            </Button>
+            <HoverLabelButton
+              icon={savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              label="บันทึกฉบับร่าง"
               onClick={() => void handleSaveDraft(true)}
               disabled={editorLocked}
-              className="rounded-full"
-            >
-              {savingDraft ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-1" />
-              ) : (
-                <Save className="w-4 h-4 mr-1" />
-              )}
-              บันทึกฉบับร่าง
-            </Button>
+            />
             <div className="relative">
               <Button
                 size="sm"
@@ -2910,7 +3230,7 @@ const ProjectEditorPage = () => {
                 className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
                 {publishing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                เผยแพร่
+                {publishLabel}
               </Button>
               {publishChecklist.length > 0 ? (
                 <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 hidden lg:block">
@@ -3236,6 +3556,7 @@ const ProjectEditorPage = () => {
               uploadStagePercent={uploadStage?.percent}
               onCancelUpload={uploadStage ? cancelActiveUpload : undefined}
               onEmptyDropImages={(files) => void handleCanvasDropFiles(files)}
+              emptyVariant="upload"
               starterTemplates={starterTemplates}
               onPickStarterTemplate={pickStarterTemplate}
               onStartFromVideo={() => handlePlaceTool({ tool: "video" })}
@@ -3265,87 +3586,51 @@ const ProjectEditorPage = () => {
             />
           </section>
 
-          <div className="mx-auto w-full max-w-4xl space-y-6 border-t border-border/70 px-1 pt-6">
-          <ProjectContextEditorFields
-            value={projectContext}
-            onChange={patchProjectContext}
-            shortDescription={shortDescription}
-            onShortDescriptionChange={(v) => {
-              setShortDescription(v.slice(0, PROJECT_SHORT_DESCRIPTION_MAX));
-              clearPublishFieldError("shortDescription");
-            }}
-            enabled={contextEnabled}
-            onEnabledChange={setContextEnabled}
-            disabled={editorLocked}
-            shortDescriptionInvalid={publishFieldHighlight(publishFieldErrors.shortDescription)}
-          />
+          {(
+            <AddModuleBar
+              disabled={editorLocked}
+              onPickImages={(files) => void handleCanvasDropFiles(files)}
+              onPlace={(payload) => handlePlaceTool(payload)}
+              onOpenTemplates={() => setTemplatePickerOpen(true)}
+              showTemplates={contentBlocks.length === 0}
+            />
+          )}
 
-          {user ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <CollapsibleEditorCard
-                title="สิทธิ์การใช้งาน"
-                icon={Scale}
-                hint={getLicenseMeta(licenseType).shortLabel}
-              >
-                <LicensePicker
-                  hideHeading
-                  value={licenseType}
-                  onChange={(v) => {
-                    setLicenseType(v);
-                    if (v !== "custom") clearPublishFieldError("licenseNote");
-                  }}
-                  licenseNote={licenseNote}
-                  onLicenseNoteChange={(v) => {
-                    setLicenseNote(v);
-                    clearPublishFieldError("licenseNote");
-                  }}
-                  noteInvalid={publishFieldHighlight(publishFieldErrors.licenseNote)}
-                />
-                <AiDisclosureToggle
-                  enabled={aiAssisted}
-                  onEnabledChange={setAiAssisted}
-                  level={aiUseLevel}
-                  onLevelChange={setAiUseLevel}
-                />
-              </CollapsibleEditorCard>
-              <CollapsibleEditorCard
-                title="ไฟล์แนบ / ลิงก์"
-                icon={Paperclip}
-                hint={projectAssets.length > 0 ? `${projectAssets.length} รายการ` : undefined}
-              >
-                <ProjectAssetsEditor
-                  ref={projectAssetsEditorRef}
-                  bare
-                  assets={projectAssets}
-                  onChange={setProjectAssets}
-                  userId={user.id}
-                  folder={folderRef.current}
-                  projectId={editing && id && isUuid(id) ? id : undefined}
-                  tier={tier}
-                />
-              </CollapsibleEditorCard>
-            </div>
-          ) : null}
-
-          {!isAplus1LaunchMinimal() ? (
-            <section className="space-y-4 rounded-2xl border border-border bg-card/40 p-4">
-              <PortfolioLinkedPostPicker
-                userId={user?.id ?? ""}
-                selected={linkedOwnPosts}
-                onChange={setLinkedOwnPosts}
-                readOnlyPosts={linkedCollabPosts}
-              />
-            </section>
-          ) : null}
-          </div>
           </div>
         </div>
         </div>
 
-        {/* Right: meta sidebar (docked, collapsible) */}
-        <ProjectEditorMetaSidebar expanded={metaExpanded} onExpandedChange={setMetaExpanded}>
-          <div className="rounded-2xl border border-border bg-card p-4 space-y-4 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
-            <div className="space-y-2">
+        <ProjectDetailsDialog
+          open={detailsOpen}
+          onOpenChange={setDetailsOpen}
+          footer={detailsFooter}
+          headerAction={
+            <HoverLabelButton
+              icon={<Eye className="h-4 w-4" />}
+              label="ดูตัวอย่าง"
+              onClick={() => {
+                setPreviewMode("pc");
+                setPreviewOpen(true);
+              }}
+            />
+          }
+          preview={
+            <ProjectDetailsPreview
+              title={title}
+              shortDescription={shortDescription}
+              category={category}
+              tags={tags}
+              hiringOn={allowHire}
+              collabOn={allowCollab}
+              ownerName={previewOwnerName}
+              coverControl={coverField}
+              headingExtra={<EditorInfoButton topic="cover" />}
+            />
+          }
+        >
+          <div className="space-y-4">
+            <CollapsibleEditorCard title="Basics" icon={FileText} framed>
+            <div className="space-y-2" data-tour="title">
               <Label className="text-xs font-semibold text-muted-foreground">
                 ชื่องาน <span className="text-primary">*</span>
               </Label>
@@ -3373,26 +3658,9 @@ const ProjectEditorPage = () => {
                 message={publishFieldErrors.title}
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold text-muted-foreground">
-                ภาพปก <span className="text-primary">*</span>
-              </Label>
-              <CoverDrop
-                url={cover}
-                loading={uploadingCover}
-                onPick={(f) => {
-                  clearPublishFieldError("cover");
-                  void handleCoverPick(f);
-                }}
-                onClear={() => {
-                  setCover("");
-                }}
-                compact
-                invalid={publishFieldHighlight(publishFieldErrors.cover)}
-              />
-            </div>
 
             <div
+              data-tour="category"
               className={cn(
                 "rounded-md transition-colors duration-500 ease-out",
                 publishFieldHighlight(publishFieldErrors.category) && "ring-2 ring-destructive/40 p-2 -m-2",
@@ -3418,26 +3686,27 @@ const ProjectEditorPage = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-                <CatalogIcon className="h-4 w-4 text-primary shrink-0" />
-                Catalog
-              </Label>
-              <ProjectSeriesPicker
-                value={seriesId}
-                options={mySeries}
-                onChange={setSeriesId}
-                onCreateNew={() => setSeriesCreateOpen(true)}
-                disabled={editorLocked}
-              />
-              {mySeries.length === 0 && (
-                <p className="text-[11px] text-muted-foreground leading-snug">
-                  ยังไม่มี Catalog — กดเปิดรายการแล้วเลือก「เพิ่ม Catalog ใหม่」ได้เลย
-                </p>
-              )}
+            {catalogField}
+            {renderDetailsExtras(true, "context")}
+            </CollapsibleEditorCard>
+
+            <div className="flex items-center gap-3 pt-1">
+              <span className="font-display text-xs text-muted-foreground">Optional</span>
+              <div className="h-px flex-1 bg-border" />
             </div>
 
-            <div className="space-y-3 border-t border-border/60 !mt-6 pt-5">
+            <CollapsibleEditorCard
+              title="Hiring"
+              framed
+              icon={Handshake}
+              defaultOpen={false}
+              hint={
+                [allowHire && hireSeller.ready ? "รับจ้าง" : null, allowCollab ? "คอลแลป" : null]
+                  .filter(Boolean)
+                  .join(" · ") || "ปิดอยู่"
+              }
+            >
+            <div className="space-y-3">
               <StartingPriceField
                 showPrice={showPrice}
                 onShowPriceChange={setShowPrice}
@@ -3449,6 +3718,7 @@ const ProjectEditorPage = () => {
                 <label htmlFor="allow-hire" className="min-w-0 flex flex-1 items-center gap-2 cursor-pointer">
                   <BriefcaseIcon className="w-4 h-4 text-primary shrink-0" aria-hidden />
                   <p className="text-sm text-foreground">เปิดปุ่ม &quot;สนใจจ้างงาน&quot;</p>
+                  <EditorInfoButton topic="hire" />
                 </label>
                 <Switch
                   id="allow-hire"
@@ -3486,17 +3756,18 @@ const ProjectEditorPage = () => {
               )}
             </div>
 
-            {user && (
-              <PortfolioCollabUserPicker
-                userId={user.id}
-                selected={collabSelected}
-                onChange={setCollabSelected}
-                acceptedUsers={collabAccepted}
-                pendingUsers={collabPending}
-              />
-            )}
+            </CollapsibleEditorCard>
 
-            <div className="border-t border-border/60 !mt-6 pt-5">
+            {renderDetailsExtras(true, "files")}
+
+            <CollapsibleEditorCard
+              title="Tags & tools"
+              framed
+              icon={Tags}
+              defaultOpen={false}
+              hint={`${tags.length} แท็ก · ${tools.length} เครื่องมือ`}
+            >
+            <div>
               <ToolPicker
                 userId={user?.id}
                 tools={tools}
@@ -3518,10 +3789,56 @@ const ProjectEditorPage = () => {
                 />
               </div>
             </div>
+
+            </CollapsibleEditorCard>
+            {(
+              <QuickConnectGroup>
+                {collabField}
+                <div className="h-px bg-border" />
+                {connectProducts}
+                {!isAplus1LaunchMinimal() ? (
+                  <>
+                    <div className="h-px bg-border" />
+                  <PortfolioLinkedPostPicker
+                    userId={user?.id ?? ""}
+                    selected={linkedOwnPosts}
+                    onChange={setLinkedOwnPosts}
+                    readOnlyPosts={linkedCollabPosts}
+                  />
+                  </>
+                ) : null}
+              </QuickConnectGroup>
+            )}
+            {renderDetailsExtras(true, "rights")}
+
+            <div className="flex items-center gap-3 pt-1">
+              <span className="font-display text-xs text-muted-foreground">Before you publish</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <div id="project-details-confirm">
+            <CollapsibleEditorCard title="Confirm" icon={ShieldCheck} framed>
+              <OriginalWorkAttestation checked={publishAttestChecked} onCheckedChange={setPublishAttestChecked} />
+            </CollapsibleEditorCard>
+            </div>
           </div>
 
-        </ProjectEditorMetaSidebar>
+        </ProjectDetailsDialog>
       </div>
+
+      <TemplatePickerDialog open={templatePickerOpen} onOpenChange={setTemplatePickerOpen} onPick={pickStarterTemplate} />
+
+      <EditorTour
+        open={tourOpen}
+        facts={{
+          hasImage: countMediaByKind(mediaItemsFromBlocks(contentBlocks), "image") > 0,
+          title,
+          categorySet: !!categoryParentId,
+          shortDescription,
+          detailsOpen,
+        }}
+        onClose={() => setTourOpen(false)}
+        onOpenDetails={() => setDetailsOpen(true)}
+      />
 
       {/* Mobile sticky actions */}
       <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
@@ -3529,7 +3846,17 @@ const ProjectEditorPage = () => {
           <Button
             type="button"
             variant="outline"
-            className="shrink-0 w-[28%] min-w-[6.5rem] rounded-xl px-2 text-sm"
+            className="shrink-0 rounded-xl px-3 text-sm"
+            data-tour="details"
+            onClick={() => setDetailsOpen(true)}
+            disabled={editorLocked}
+          >
+            {publishRemaining > 0 ? `รายละเอียด · ${publishRemaining}` : "รายละเอียด"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="shrink-0 rounded-xl px-3 text-sm"
             onClick={() => void handleSaveDraft()}
             disabled={editorLocked}
             aria-busy={savingDraft}
@@ -3553,7 +3880,7 @@ const ProjectEditorPage = () => {
                   กำลังเผยแพร่…
                 </>
               ) : (
-                "เผยแพร่"
+                publishLabel
               )}
             </Button>
             {publishChecklist.length > 0 ? (
@@ -3642,71 +3969,6 @@ const ProjectEditorPage = () => {
             >
               {leavingBusy ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
               บันทึกฉบับร่างแล้วออก
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={publishConfirmOpen}
-        onOpenChange={(open) => {
-          if (publishing) return;
-          setPublishConfirmOpen(open);
-          if (!open) setPublishAttestChecked(false);
-        }}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>ยืนยันก่อนเผยแพร่</DialogTitle>
-            <DialogDescription>
-              ติ๊กยืนยันสิทธิ์ในผลงาน แล้วกดยืนยันเผยแพร่
-            </DialogDescription>
-          </DialogHeader>
-          <OriginalWorkAttestation
-            checked={publishAttestChecked}
-            onCheckedChange={setPublishAttestChecked}
-          />
-          <DialogFooter className="gap-2 sm:justify-end flex-col-reverse sm:flex-row">
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={publishing}
-              onClick={() => {
-                setPublishConfirmOpen(false);
-                setPublishAttestChecked(false);
-              }}
-            >
-              ยกเลิก
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={publishing}
-              className="rounded-full"
-              onClick={() => {
-                setPublishConfirmOpen(false);
-                setPublishAttestChecked(false);
-                setPreviewMode("pc");
-                setPreviewOpen(true);
-              }}
-            >
-              <Eye className="w-4 h-4 mr-1" />
-              ดูตัวอย่าง
-            </Button>
-            <Button
-              type="button"
-              disabled={publishing || !publishAttestChecked}
-              className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={() => void handleConfirmPublish()}
-            >
-              {publishing ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                  กำลังเผยแพร่…
-                </>
-              ) : (
-                "ยืนยันเผยแพร่"
-              )}
             </Button>
           </DialogFooter>
         </DialogContent>

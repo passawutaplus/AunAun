@@ -9,19 +9,39 @@ type Props = {
   icon: LucideIcon;
   hint?: string;
   defaultOpen?: boolean;
+  /** Still collapsible, but drawn without the card border/background. */
+  borderless?: boolean;
+  /** Always open, in its own bordered frame, heading with its icon (used by the details dialog). */
+  framed?: boolean;
   children: ReactNode;
 };
 
-export function CollapsibleEditorCard({ title, icon: Icon, hint, defaultOpen = true, children }: Props) {
+export function CollapsibleEditorCard({ title, icon: Icon, hint, defaultOpen = true, borderless = false, framed = false, children }: Props) {
   const [open, setOpen] = useState(defaultOpen);
+
+  if (framed) {
+    return (
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
+        <h3 className="flex items-center gap-2 font-display text-sm font-normal text-foreground">
+          <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          {title}
+        </h3>
+        <div className="space-y-4">{children}</div>
+      </section>
+    );
+  }
+
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className={cn(!borderless && "rounded-2xl border border-border bg-card overflow-hidden")}>
         <CollapsibleTrigger asChild>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-muted/30 transition-colors"
+            className={cn(
+              "flex w-full items-center gap-2 py-3 text-left transition-colors",
+              borderless ? "px-0" : "px-4 hover:bg-muted/30",
+            )}
             aria-expanded={open}
           >
             <span className="flex min-w-0 items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
@@ -43,7 +63,7 @@ export function CollapsibleEditorCard({ title, icon: Icon, hint, defaultOpen = t
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="space-y-4 px-4 pb-4">{children}</div>
+          <div className={cn("space-y-4", borderless ? "pb-2" : "px-4 pb-4")}>{children}</div>
         </CollapsibleContent>
       </div>
     </Collapsible>

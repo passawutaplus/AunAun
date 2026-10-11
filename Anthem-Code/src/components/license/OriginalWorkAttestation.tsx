@@ -23,7 +23,7 @@ interface Props {
 }
 
 const OriginalWorkAttestation = ({ checked, onCheckedChange, required = true }: Props) => {
-  const [detailsOpen, setDetailsOpen] = useState(true);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
     <div

@@ -112,7 +112,7 @@ export function ChatCollabActions({ conversation }: Props) {
             type="button"
             size="sm"
             disabled={busy}
-            className="w-full rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+            className="w-full rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
             onClick={() => {
               void (async () => {
                 try {

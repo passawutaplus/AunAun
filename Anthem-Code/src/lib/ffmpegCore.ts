@@ -60,6 +60,35 @@ export function resetSharedFfmpeg(): void {
   progressCb = null;
 }
 
+/**
+ * Reject with AbortError as soon as `signal` aborts. When `killFfmpeg` is set the shared transcoder is
+ * terminated too, so a cancelled compress stops using CPU instead of finishing in the background.
+ */
+export function abortable<T>(promise: Promise<T>, signal?: AbortSignal, killFfmpeg = false): Promise<T> {
+  if (!signal) return promise;
+  return new Promise<T>((resolve, reject) => {
+    const abort = () => {
+      if (killFfmpeg) resetSharedFfmpeg();
+      reject(new DOMException("Upload cancelled", "AbortError"));
+    };
+    if (signal.aborted) {
+      abort();
+      return;
+    }
+    signal.addEventListener("abort", abort, { once: true });
+    promise.then(
+      (v) => {
+        signal.removeEventListener("abort", abort);
+        resolve(v);
+      },
+      (e) => {
+        signal.removeEventListener("abort", abort);
+        reject(e);
+      },
+    );
+  });
+}
+
 export function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {

@@ -10,13 +10,13 @@ import { formatThaiDate } from "@/lib/format";
 interface Row {
   id: string;
   name: string;
-  user_id: string;
+  owner_id: string;
   is_public: boolean;
   created_at: string;
 }
 
 export default function AdminCollectionsPage() {
-  const { data, isLoading } = useAdminList<Row>("collections", "id,name,user_id,is_public,created_at");
+  const { data, isLoading } = useAdminList<Row>("collections", "id,name,owner_id,is_public,created_at");
   const { q, setQ, filtered } = useSearch(data, ["name"]);
   const remove = useAdminDeleteCollection();
 
@@ -26,8 +26,8 @@ export default function AdminCollectionsPage() {
       key: "owner",
       header: "เจ้าของ",
       render: (r) => (
-        <a href={`/u/${r.user_id}`} className="font-mono text-xs text-admin-accent hover:underline">
-          {r.user_id.slice(0, 8)}…
+        <a href={`/u/${r.owner_id}`} className="font-mono text-xs text-admin-accent hover:underline">
+          {r.owner_id.slice(0, 8)}…
         </a>
       ),
     },

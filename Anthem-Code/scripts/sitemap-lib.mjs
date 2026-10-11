@@ -105,6 +105,7 @@ export function buildSitemapUrls(opts = {}) {
       : Array.from({ length: CATALOG_PROFILE_COUNT }, (_, i) => catalogUid(i));
   const vanityHandles = (opts.vanityHandles || []).filter(Boolean);
   const seriesIds = opts.seriesIds || [];
+  const collectionIds = opts.collectionIds || [];
   const jobIds = hiringBoard ? opts.jobIds || [] : [];
   const explorePaths = opts.explorePaths || [];
 
@@ -148,6 +149,12 @@ export function buildSitemapUrls(opts = {}) {
       changefreq: "weekly",
       group: "series",
     })),
+    ...collectionIds.map((id) => ({
+      loc: `/collections/${id}`,
+      priority: "0.6",
+      changefreq: "weekly",
+      group: "collections",
+    })),
     ...explorePaths.map((loc) => ({
       loc,
       priority: "0.6",
@@ -173,7 +180,12 @@ export function buildSitemapUrls(opts = {}) {
     );
   }
 
-  return urls.filter((u) => !EXCLUDED_PATHS.some((ex) => u.loc === ex || u.loc.startsWith(`${ex}/`)));
+  // "/collections" is excluded as a list page; individual public collections are listed on purpose.
+  return urls.filter(
+    (u) =>
+      u.group === "collections" ||
+      !EXCLUDED_PATHS.some((ex) => u.loc === ex || u.loc.startsWith(`${ex}/`)),
+  );
 }
 
 function urlsetXml(normalizedBase, urls, { images = [] } = {}) {
@@ -226,6 +238,7 @@ export function buildSitemapBundles(base, opts = {}) {
     projects: urls.filter((u) => u.group === "projects"),
     profiles: urls.filter((u) => u.group === "profiles"),
     series: urls.filter((u) => u.group === "series"),
+    collections: urls.filter((u) => u.group === "collections"),
     explore: urls.filter((u) => u.group === "explore"),
     jobs: urls.filter((u) => u.group === "jobs"),
     studios: urls.filter((u) => u.group === "studios"),

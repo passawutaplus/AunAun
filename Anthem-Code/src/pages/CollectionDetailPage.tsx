@@ -1,93 +1,43 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Pencil, Trash2, Layers3, Lock, Globe2, Share2 } from "lucide-react";
+import { useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { Pencil, Trash2, Lock, Globe2, Share2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import {
-  useCollection, useCollectionItems, useDeleteCollection, useToggleCollectionItem, useUpdateCollection,
+  useCollection, useCollectionItems, useDeleteCollection, useUpdateCollection,
 } from "@/hooks/useCollections";
+import UserAvatar from "@/components/UserAvatar";
+import { InlineLoader } from "@/components/ui/BanterLoader";
 import CollectionFormDialog from "@/components/collections/CollectionFormDialog";
-import {
-  CollectionBrowseToolbar,
-  type CollectionItemsSortMode,
-} from "@/components/collections/CollectionBrowseToolbar";
 import SharePopover from "@/components/SharePopover";
 import SeoHead from "@/components/SeoHead";
 import PageLoader from "@/components/ui/PageLoader";
-import { CollectionWorkItemsGrid } from "@/components/collections/CollectionWorkCard";
+import CollectionItemsSection, { type CollectionSectionProject } from "@/components/collections/CollectionItemsSection";
 import { toast } from "sonner";
-import {
-  COLLECTION_ITEMS_GRID_STORAGE_KEY,
-  readCollectionGridDensity,
-  writeCollectionGridDensity,
-  type CollectionGridDensity,
-} from "@/lib/collectionGridDensity";
-
-type CollectionProject = {
-  id: string;
-  title?: string | null;
-  cover_url?: string | null;
-  status?: string | null;
-  likes?: number | null;
-  views?: number | null;
-  created_at?: string | null;
-  owner_id?: string | null;
-};
 
 const CollectionDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: collection, isLoading } = useCollection(id);
-  const { data: items = [] } = useCollectionItems(id);
-  const remove = useToggleCollectionItem();
+  const { data: items = [], isLoading: itemsLoading, isError: itemsError, refetch: refetchItems } = useCollectionItems(id);
+  const { data: ownerProfile } = useProfile(collection?.owner_id ?? undefined);
   const del = useDeleteCollection();
   const update = useUpdateCollection();
   const [editOpen, setEditOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [sortMode, setSortMode] = useState<CollectionItemsSortMode>("newest");
-  const [density, setDensity] = useState<CollectionGridDensity>(() =>
-    readCollectionGridDensity(COLLECTION_ITEMS_GRID_STORAGE_KEY, "large"),
-  );
 
   const isOwner = !!user?.id && !!collection && user.id === collection.owner_id;
-  const projects = items as CollectionProject[];
+  const projects = items as CollectionSectionProject[];
   const shareUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/collections/${collection?.id ?? id}`
       : `/collections/${collection?.id ?? id}`;
-
-  useEffect(() => {
-    writeCollectionGridDensity(COLLECTION_ITEMS_GRID_STORAGE_KEY, density);
-  }, [density]);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let list = projects;
-    if (q) list = list.filter((p) => (p.title ?? "").toLowerCase().includes(q));
-    const next = [...list];
-    const ts = (p: CollectionProject) => {
-      const n = Date.parse(p.created_at ?? "");
-      return Number.isNaN(n) ? 0 : n;
-    };
-    switch (sortMode) {
-      case "oldest":
-        return next.sort((a, b) => ts(a) - ts(b));
-      case "likes":
-        return next.sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0));
-      case "views":
-        return next.sort((a, b) => (b.views ?? 0) - (a.views ?? 0));
-      case "newest":
-      default:
-        return next.sort((a, b) => ts(b) - ts(a));
-    }
-  }, [projects, query, sortMode]);
 
   const makePublic = async () => {
     if (!collection || collection.is_public) return;
@@ -124,7 +74,7 @@ const CollectionDetailPage = () => {
           `คอลเลกชัน ${collection.name} · ${collection.item_count} ผลงาน`
         }
         path={`/collections/${collection.id}`}
-        noindex={!collection.is_public}
+        noindex={!collection.is_public || collection.item_count < 3}
       />
 
       <div className="sticky top-0 z-20 glass-panel border-x-0 border-t-0 rounded-none">
@@ -138,7 +88,9 @@ const CollectionDetailPage = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="rounded-full"
+                  className="h-9 w-9 rounded-full p-0"
+                  aria-label="แชร์คอลเลกชัน"
+                  title="แชร์"
                   onClick={() => {
                     if (isOwner && !collection.is_public) {
                       toast.message("คอลเลกชันยังเป็นส่วนตัว", {
@@ -151,18 +103,31 @@ const CollectionDetailPage = () => {
                     }
                   }}
                 >
-                  <Share2 className="w-4 h-4 mr-1" /> แชร์
+                  <Share2 className="w-4 h-4" />
                 </Button>
               </SharePopover>
             )}
             {isOwner && (
               <>
-                <Button size="sm" variant="outline" onClick={() => setEditOpen(true)} className="rounded-full">
-                  <Pencil className="w-4 h-4 mr-1" /> แก้ไข
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setEditOpen(true)}
+                  className="h-9 w-9 rounded-full p-0"
+                  aria-label="แก้ไขคอลเลกชัน"
+                  title="แก้ไข"
+                >
+                  <Pencil className="w-4 h-4" />
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="outline" className="rounded-full text-destructive hover:text-destructive">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-9 w-9 rounded-full p-0 text-destructive hover:text-destructive dark:text-red-400 dark:hover:text-red-300"
+                      aria-label="ลบคอลเลกชัน"
+                      title="ลบ"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </AlertDialogTrigger>
@@ -177,8 +142,12 @@ const CollectionDetailPage = () => {
                       <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={async () => {
-                          await del.mutateAsync(collection.id);
-                          navigate("/collections");
+                          try {
+                            await del.mutateAsync(collection.id);
+                            navigate("/collections");
+                          } catch (e) {
+                            toast.error((e as Error).message || "ลบคอลเลกชันไม่สำเร็จ");
+                          }
                         }}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
@@ -196,7 +165,6 @@ const CollectionDetailPage = () => {
       <div className="max-w-6xl mx-auto px-4 pt-8 space-y-6">
         <header className="space-y-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Layers3 className="w-3.5 h-3.5" /> คอลเลกชัน
             {collection.is_public ? (
               <span className="inline-flex items-center gap-1"><Globe2 className="w-3 h-3" /> สาธารณะ</span>
             ) : (
@@ -204,17 +172,26 @@ const CollectionDetailPage = () => {
             )}
           </div>
           <h1 className="text-2xl md:text-4xl font-medium text-foreground leading-tight">{collection.name}</h1>
-          {collection.category && (
-            <Badge className="bg-primary/15 text-primary border-0 hover:bg-primary/15 rounded-full">
-              {collection.category}
-            </Badge>
-          )}
           {collection.description && (
             <p className="text-base text-foreground max-w-2xl leading-7 whitespace-pre-wrap">
               {collection.description}
             </p>
           )}
-          <p className="text-xs text-muted-foreground">{collection.item_count} ผลงานในนิทรรศการ</p>
+          {ownerProfile && collection.owner_id ? (
+            <Link
+              to={`/u/${collection.owner_id}`}
+              className="inline-flex items-center gap-2 text-sm text-foreground hover:underline"
+            >
+              <UserAvatar
+                src={ownerProfile.avatar_url}
+                name={ownerProfile.display_name}
+                username={ownerProfile.username}
+                className="h-6 w-6"
+              />
+              <span>{ownerProfile.display_name || ownerProfile.username}</span>
+            </Link>
+          ) : null}
+          <p className="text-xs text-muted-foreground">{collection.item_count} ผลงานในคอลเลกชันนี้</p>
           {isOwner && !collection.is_public ? (
             <p className="text-xs text-muted-foreground">
               ต้องการแชร์ให้คนอื่นดูได้?{" "}
@@ -225,56 +202,25 @@ const CollectionDetailPage = () => {
           ) : null}
         </header>
 
-        {projects.length === 0 ? (
-          <div className="text-center py-16 glass-panel rounded-2xl">
-            <Layers3 className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-            <p className="text-foreground font-medium mb-1">ยังไม่มีผลงานในคอลเลกชันนี้</p>
-            <p className="text-sm text-muted-foreground">
-              {isOwner
-                ? "เลื่อนดูฟีดแล้วกดไอคอน Layers เพื่อเก็บเข้านี่"
-                : "เจ้าของยังไม่ได้เพิ่มผลงาน"}
-            </p>
+        {itemsLoading ? (
+          <div className="flex min-h-[240px] items-center justify-center">
+            <InlineLoader />
+          </div>
+        ) : itemsError ? (
+          <div className="text-center py-16 glass-panel rounded-2xl space-y-3">
+            <p className="text-foreground font-medium">โหลดผลงานไม่สำเร็จ</p>
+            <Button size="sm" variant="outline" className="rounded-full" onClick={() => void refetchItems()}>
+              ลองอีกครั้ง
+            </Button>
           </div>
         ) : (
-          <>
-            <CollectionBrowseToolbar
-              mode="items"
-              searchPlaceholder="ค้นหาชื่องาน..."
-              query={query}
-              onQueryChange={setQuery}
-              density={density}
-              onDensityChange={setDensity}
-              sortMode={sortMode}
-              onSortModeChange={setSortMode}
-              resultCount={filtered.length}
-              densityPreset="profile"
-            />
-
-            {filtered.length === 0 ? (
-              <div className="text-center py-12 glass-panel rounded-2xl">
-                <p className="text-foreground font-medium mb-1">ไม่พบผลงานที่ตรงเงื่อนไข</p>
-                <p className="text-sm text-muted-foreground">ลองเปลี่ยนคำค้น</p>
-              </div>
-            ) : (
-              <CollectionWorkItemsGrid
-                projects={filtered}
-                density={density}
-                layoutGroupId="collection-items-layout"
-                onRemove={
-                  isOwner
-                    ? async (projectId) => {
-                        await remove.mutateAsync({
-                          collectionId: collection.id,
-                          projectId,
-                          remove: true,
-                        });
-                        toast.success("เอาออกจากคอลเลกชันแล้ว");
-                      }
-                    : undefined
-                }
-              />
-            )}
-          </>
+          <CollectionItemsSection
+            collectionId={collection.id}
+            coverUrl={collection.cover_url}
+            projects={projects}
+            isOwner={isOwner}
+            layoutGroupId="collection-items-layout"
+          />
         )}
       </div>
 

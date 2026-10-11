@@ -92,7 +92,7 @@ const CollabInviteCard = ({ content, mine, actions, inviteRef }: Props) => {
               type="button"
               size="sm"
               disabled={actions.busy}
-              className="flex-1 rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+              className="flex-1 rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
               onClick={actions.onAccept}
             >
               {actions.busy ? (
