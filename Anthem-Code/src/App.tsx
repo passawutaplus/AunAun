@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SensitiveActionReauthProvider } from "@/components/legal/SensitiveActionReauthProvider";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { isInspireEnabled } from "@/lib/aplus1Launch";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -276,8 +277,14 @@ const App = () => (
               <Route path="/drill" element={<DrillGalleryPage />} />
               <Route path="/explore/:kind/:value" element={<ExploreProjectsPage />} />
               <Route path="/similar/:projectId" element={<SimilarImagesPage />} />
-              <Route path="/inspire" element={<RequireAuth><InspireBoardsPage /></RequireAuth>} />
-              <Route path="/inspire/:boardId" element={<RequireAuth><InspireBoardDetailPage /></RequireAuth>} />
+              {isInspireEnabled() ? (
+                <>
+                  <Route path="/inspire" element={<RequireAuth><InspireBoardsPage /></RequireAuth>} />
+                  <Route path="/inspire/:boardId" element={<RequireAuth><InspireBoardDetailPage /></RequireAuth>} />
+                </>
+              ) : (
+                <Route path="/inspire/*" element={<Navigate to="/portfolio" replace />} />
+              )}
               <Route path="/u/:userId" element={<PublicProfilePage />} />
               <Route path="/u/:userId/followers" element={<FollowConnectionsPage />} />
               <Route path="/earnings" element={<RequireAuth><EarningsPage /></RequireAuth>} />

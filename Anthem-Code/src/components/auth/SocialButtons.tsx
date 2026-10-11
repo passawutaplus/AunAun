@@ -25,10 +25,12 @@ export function SocialButtons({
   className,
   buttonClassName,
   redirectTo,
+  label = "เข้าสู่ระบบด้วย Google",
 }: {
   className?: string;
   buttonClassName?: string;
   redirectTo?: string;
+  label?: string;
 }) {
   const [busy, setBusy] = useState(false);
 
@@ -52,7 +54,7 @@ export function SocialButtons({
         className={cn("h-11 w-full gap-2 rounded-xl bg-background/60 backdrop-blur", buttonClassName)}
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
-        <span className="text-sm">เข้าสู่ระบบด้วย Google</span>
+        <span className="text-sm">{label}</span>
       </Button>
     </div>
   );

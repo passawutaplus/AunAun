@@ -87,10 +87,20 @@ export function jpegDataUrlToA4Pdf(dataUrl: string): Blob {
   return new Blob([concat([header, ...objs, xrefBytes, trailer])], { type: "application/pdf" });
 }
 
+export function saveBlob(blob: Blob, filename: string): void {
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
+  a.click();
+  URL.revokeObjectURL(href);
+}
+
 export async function downloadAboutCvPdf(filename: string): Promise<void> {
+  // The print sheet is fixed at A4 and already carries the chosen theme, density and contacts.
   const sheet =
-    (document.querySelector(".about-cv-a4-frame .about-cv-sheet") as HTMLElement | null) ??
-    (document.querySelector("#about-cv-print .about-cv-sheet") as HTMLElement | null);
+    (document.querySelector("#about-cv-print .about-cv-sheet") as HTMLElement | null) ??
+    (document.querySelector(".about-cv-a4-frame .about-cv-sheet") as HTMLElement | null);
   if (!sheet) throw new Error("ไม่พบเอกสารพรีวิว");
 
   const { toJpeg } = await import("html-to-image");
@@ -101,11 +111,5 @@ export async function downloadAboutCvPdf(filename: string): Promise<void> {
     skipFonts: true,
     backgroundColor: "#ffffff",
   });
-  const blob = jpegDataUrlToA4Pdf(dataUrl);
-  const href = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = href;
-  a.download = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
-  a.click();
-  URL.revokeObjectURL(href);
+  saveBlob(jpegDataUrlToA4Pdf(dataUrl), filename);
 }

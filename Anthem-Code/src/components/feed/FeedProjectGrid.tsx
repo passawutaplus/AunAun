@@ -41,13 +41,13 @@ export function FeedProjectGrid({ className, itemClassName, columnsClass, masonr
   if (masonry) {
     return (
       <div
-        className={cn("columns-2 gap-2 sm:columns-3 sm:gap-2.5 lg:columns-4 xl:columns-5", className)}
+        className={cn("columns-2 gap-4 sm:columns-3 sm:gap-5 lg:columns-4 xl:columns-5", className)}
         data-feed-results=""
         data-feed-density="masonry"
       >
         {items.map((child, i) =>
           isValidElement(child) ? (
-            <div key={child.key ?? `feed-item-${i}`} className={cn("mb-2 break-inside-avoid sm:mb-2.5", itemClassName)}>
+            <div key={child.key ?? `feed-item-${i}`} className={cn("mb-4 break-inside-avoid sm:mb-5", itemClassName)}>
               {child}
             </div>
           ) : (

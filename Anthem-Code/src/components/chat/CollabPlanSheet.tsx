@@ -1299,7 +1299,7 @@ export function CollabPlanSheet({
                     "rounded-full h-8 text-[11px]",
                     myAcked || doc.status === "step_locked"
                       ? "bg-muted text-muted-foreground hover:bg-muted"
-                      : "bg-[hsl(var(--chat-collab))] text-white hover:opacity-90",
+                      : "bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90",
                   )}
                   disabled={busy || locked || dirty || !!pendingChange || isLoading}
                   onClick={() => void onToggleAck()}
@@ -1431,9 +1431,9 @@ export function CollabPlanSheet({
                           className={cn(
                             "relative z-[1] flex h-[22px] w-[22px] items-center justify-center rounded-full text-[10px] font-semibold tabular-nums border",
                             active
-                              ? "bg-[hsl(var(--chat-collab))] border-[hsl(var(--chat-collab))] text-white"
+                              ? "bg-[hsl(var(--chat-collab))] border-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))]"
                               : past || doneHere
-                                ? "bg-[hsl(var(--chat-collab)/0.85)] border-[hsl(var(--chat-collab)/0.85)] text-white"
+                                ? "bg-[hsl(var(--chat-collab)/0.85)] border-[hsl(var(--chat-collab)/0.85)] text-[hsl(var(--chat-collab-foreground))]"
                                 : "bg-background border-border text-muted-foreground",
                           )}
                           aria-current={active ? "step" : undefined}
@@ -1541,7 +1541,7 @@ export function CollabPlanSheet({
                     className={cn(
                       "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
                       formStatus === "step_locked"
-                        ? "bg-[hsl(var(--chat-collab))] text-white"
+                        ? "bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))]"
                         : "bg-[hsl(var(--chat-collab-soft))] text-[hsl(var(--chat-collab))]",
                     )}
                   >
@@ -1593,7 +1593,7 @@ export function CollabPlanSheet({
                         <Button
                           type="button"
                           size="sm"
-                          className="h-8 rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                          className="h-8 rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
                           disabled={busy}
                           onClick={() => void onApproveChange()}
                         >
@@ -1844,7 +1844,7 @@ export function CollabPlanSheet({
                                     className={cn(
                                       "text-[11px] px-2.5 py-1 rounded-full border transition-colors",
                                       active
-                                        ? "bg-[hsl(var(--chat-collab))] text-white border-transparent"
+                                        ? "bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] border-transparent"
                                         : "bg-muted/40 text-foreground border-border",
                                     )}
                                   >
@@ -1892,7 +1892,7 @@ export function CollabPlanSheet({
                                         >
                                           <PortfolioThumb coverUrl={p.cover_url} title={p.title} />
                                           {on ? (
-                                            <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-[hsl(var(--chat-collab))] text-white flex items-center justify-center">
+                                            <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] flex items-center justify-center">
                                               <Check className="w-2.5 h-2.5" strokeWidth={3} />
                                             </span>
                                           ) : null}
@@ -2394,7 +2394,7 @@ export function CollabPlanSheet({
               {!isFinalSummary ? (
                 <Button
                   type="button"
-                  className="rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                  className="rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
                   disabled={!editable || !dirty || saving || busy || isLoading || isViewingHistory}
                   onClick={() => void onSave()}
                 >
@@ -2425,7 +2425,7 @@ export function CollabPlanSheet({
               ) : (
                 <Button
                   type="button"
-                  className="rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                  className="rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
                   disabled={busy || isLoading}
                   onClick={downloadCollabPdf}
                 >
@@ -2439,7 +2439,7 @@ export function CollabPlanSheet({
                   {!myChangeApproved ? (
                     <Button
                       type="button"
-                      className="rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                      className="rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
                       disabled={busy || isLoading}
                       onClick={() => void onApproveChange()}
                     >
@@ -2511,7 +2511,7 @@ export function CollabPlanSheet({
               {canGoNext ? (
                 <Button
                   type="button"
-                  className="rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                  className="rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
                   disabled={busy || isLoading || isViewingHistory}
                   onClick={() => void onAdvance()}
                 >
@@ -2533,7 +2533,7 @@ export function CollabPlanSheet({
               ) : hasNextStep ? (
                 <Button
                   type="button"
-                  className="rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                  className="rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
                   disabled
                   title="ต้องให้สมาชิกทุกคนกดยืนยันครบก่อน"
                 >
@@ -2649,7 +2649,7 @@ export function CollabPlanSheet({
             </Button>
             <Button
               type="button"
-              className="rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+              className="rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
               onClick={printDocPreview}
             >
               <Download className="w-4 h-4 mr-1.5" />
@@ -2681,7 +2681,7 @@ export function CollabPlanSheet({
           />
           <Button
             type="button"
-            className="rounded-full bg-[hsl(var(--chat-collab))] text-white"
+            className="rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))]"
             disabled={busy}
             onClick={() => void onRequestChange()}
           >
@@ -2790,7 +2790,7 @@ function CollabFinalSummary({
             {publishPath ? (
               <Button
                 type="button"
-                className="h-16 rounded-[10px] text-sm font-semibold px-5 bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                className="h-16 rounded-[10px] text-sm font-semibold px-5 bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
                 onClick={onGoPublish}
               >
                 <Send className="w-5 h-5 mr-2 shrink-0" />
@@ -2800,7 +2800,7 @@ function CollabFinalSummary({
             <Button
               type="button"
               size="sm"
-              className="rounded-[10px] bg-[hsl(var(--chat-collab))] text-white hover:opacity-90 shrink-0 h-9"
+              className="rounded-[10px] bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90 shrink-0 h-9"
               onClick={onDownloadPdf}
             >
               <Download className="w-3.5 h-3.5 mr-1.5" />

@@ -470,7 +470,7 @@ const NotificationsPanel = ({
                 <Button
                   type="button"
                   size="sm"
-                  className="shrink-0 h-8 rounded-full px-3 bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+                  className="shrink-0 h-8 rounded-full px-3 bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90"
                   disabled={accept.isPending || openHireCollabChat.isPending}
                   onClick={() => void openHireChat(h)}
                 >
@@ -555,7 +555,7 @@ const NotificationsPanel = ({
                     type="button"
                     size="sm"
                     disabled={accept.isPending || reject.isPending}
-                    className="ml-auto h-8 rounded-full px-3 bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                    className="ml-auto h-8 rounded-full px-3 bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
                     onClick={() => void acceptCollab(c)}
                   >
                     <Check className="w-3.5 h-3.5 mr-1" />

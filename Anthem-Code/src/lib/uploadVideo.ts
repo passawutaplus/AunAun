@@ -1,14 +1,10 @@
-import {
-  sharedStorage,
-  SHARED_MEDIA_BUCKET,
-} from "@/integrations/supabase/sharedStorageClient";
 import type { Tier } from "@/core/subscription/useSubscription";
-import { assertAnthemStorageAvailable } from "@/lib/anthemStorageUsage";
 import { compressCommunityVideo } from "@/lib/compressCommunityVideo";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { isVideoFile } from "@/lib/videoAccept";
 import { extractVideoPosterFile } from "@/lib/videoPoster";
-import { uploadToSharedMedia } from "@/lib/sharedMediaUpload";
+import { abortable } from "@/lib/ffmpegCore";
+import { uploadAnthemMedia } from "@/lib/sharedMediaUpload";
 import { UPLOAD_STAGE, type UploadStageReporter } from "@/lib/uploadProgress";
 
 const MAX_VIDEO_MB = 50;
@@ -26,25 +22,27 @@ export async function uploadProjectVideo(
   folder: string,
   tier: Tier = "free",
   reporter?: UploadStageReporter,
+  signal?: AbortSignal,
 ): Promise<string> {
   if (!isVideoFile(file)) throw new Error("ไฟล์ไม่ใช่วิดีโอ");
 
-  const prepared = await compressCommunityVideo(file, reporter);
+  const prepared = await abortable(compressCommunityVideo(file, reporter), signal, true);
 
   if (prepared.size > MAX_VIDEO_MB * 1024 * 1024) {
     throw new Error(`วิดีโอใหญ่เกิน ${MAX_VIDEO_MB}MB หลังบีบอัด — ลองคลิปสั้นลง`);
   }
 
-  await assertAnthemStorageAvailable(userId, tier, prepared.size);
-
-  const name = `${crypto.randomUUID()}.mp4`;
-  const path = `anthem/${userId}/${folder}/${name}`;
-
-  reporter?.onStage?.(UPLOAD_STAGE.uploadingVideo);
-  await uploadToSharedMedia(path, prepared, "video/mp4");
-
-  const { data } = sharedStorage.storage.from(SHARED_MEDIA_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return uploadAnthemMedia({
+    file: prepared,
+    ext: "mp4",
+    contentType: "video/mp4",
+    userId,
+    folder,
+    tier,
+    stage: UPLOAD_STAGE.uploadingVideo,
+    reporter,
+    signal,
+  });
 }
 
 /** Upload video and best-effort auto poster from the first readable frame. */
@@ -54,15 +52,13 @@ export async function uploadProjectVideoWithPoster(
   folder: string,
   tier: Tier = "free",
   reporter?: UploadStageReporter,
+  signal?: AbortSignal,
 ): Promise<UploadedProjectVideo> {
-  let posterFile: File | null = null;
-  try {
-    posterFile = await extractVideoPosterFile(file);
-  } catch {
-    posterFile = null;
-  }
+  // Grab the poster while the video is compressing/uploading instead of before it.
+  const posterPromise = extractVideoPosterFile(file).catch(() => null);
 
-  const url = await uploadProjectVideo(file, userId, folder, tier, reporter);
+  const url = await uploadProjectVideo(file, userId, folder, tier, reporter, signal);
+  const posterFile = await posterPromise;
 
   if (!posterFile) return { url, posterUrl: null };
 

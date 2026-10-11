@@ -14,6 +14,14 @@ export function isAplus1LaunchMinimal(): boolean {
   return !isAplus1FullProduct();
 }
 
+/**
+ * Inspiration (save images to mood boards): switched off for launch. Opt-in with VITE_INSPIRE_ENABLED=true.
+ * Hides the profile tab, the "Inspire" button on images and the /inspire routes.
+ */
+export function isInspireEnabled(): boolean {
+  return import.meta.env.VITE_INSPIRE_ENABLED === "true";
+}
+
 export const LAUNCH_FEED_MODES = ["projects", "designers", "packages", "objects"] as const;
 export type LaunchFeedMode = (typeof LAUNCH_FEED_MODES)[number];
 

@@ -57,6 +57,8 @@ import {
 import { profilesPublicFrom, PUBLIC_PROFILE_READ_SELECT } from "@/lib/profileAccess";
 import PackageReturnBanner from "@/components/services/PackageReturnBanner";
 import { cn } from "@/lib/utils";
+import UserAvatar from "@/components/UserAvatar";
+import { RelatedObjectsRow, RelatedPackagesRow, SimilarWorksRow } from "@/components/project/ProjectMoreSections";
 import { isVideoUrl } from "@/lib/videoAccept";
 
 const ProjectDetailPage = () => {
@@ -175,7 +177,8 @@ const ProjectDetailPage = () => {
   const canvasBlocks = dbProject
     ? resolveProjectCanvas({
         content_blocks: (dbProject as { content_blocks?: unknown }).content_blocks,
-        description: dbProject.description,
+        // The short description already has its own card in the side panel; do not repeat it in the canvas.
+        description: null,
         gallery_urls: dbProject.gallery_urls ?? [],
         video_urls: ((dbProject as { video_urls?: string[] }).video_urls) ?? [],
       })
@@ -406,9 +409,24 @@ const ProjectDetailPage = () => {
           </div>
         ) : null}
         {/* Centered canvas + sidebar cluster — wider than old 1fr|320 so margins balance. */}
-        <div className="mx-auto flex w-full max-w-[84rem] flex-col gap-8 lg:flex-row lg:items-start lg:justify-center lg:gap-10 xl:gap-12">
-          {/* Left: Gallery + below-fold content */}
-          <div className="min-w-0 w-full max-w-4xl space-y-4 overflow-x-clip lg:flex-1">
+        {/* Grid so phones read: work → creator & actions → comments / more works; desktop keeps the sticky side panel. */}
+        <div className="mx-auto grid w-full max-w-[84rem] grid-cols-1 gap-8 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12">
+          <div className="min-w-0 w-full space-y-4 overflow-x-clip lg:col-start-1 lg:row-start-1">
+            <div className="flex items-center gap-3 lg:hidden">
+              <Link to={`/u/${project.ownerId}`} className="flex min-w-0 flex-1 items-center gap-2">
+                <UserAvatar src={project.ownerAvatar} name={project.owner} className="h-8 w-8" fallbackClassName="text-[10px]" />
+                <span className="truncate text-sm font-medium text-foreground">{project.owner}</span>
+              </Link>
+              {isOwner && dbProject ? (
+                <Button asChild size="sm" variant="outline" className="h-8 rounded-full">
+                  <Link to={`/portfolio/${dbProject.id}/edit`}>แก้ไขผลงาน</Link>
+                </Button>
+              ) : project.allowHire ?? true ? (
+                <Button size="sm" className="h-8 rounded-full" onClick={openHire}>
+                  สนใจจ้างงาน
+                </Button>
+              ) : null}
+            </div>
             {dbProject && (
               <ProjectCreditsBlock
                 studioId={(dbProject as any).studio_id}
@@ -436,21 +454,11 @@ const ProjectDetailPage = () => {
               </div>
             )}
 
-            <div className="pt-12 lg:pt-16 space-y-6">
-              {linkedPosts.length > 0 && <ProjectLinkedPostsBlock posts={linkedPosts} />}
-              <ProjectContextCard context={project.context} />
-              <CommentSection projectId={project.id} />
-              <OwnerOtherWorks
-                ownerId={project.ownerId}
-                excludeProjectId={project.id}
-                ownerName={project.owner}
-              />
-            </div>
           </div>
 
           {/* Right: Side panel — sticky + self-scroll when hovered */}
           <FadeUp
-            className="w-full min-w-0 shrink-0 lg:sticky lg:top-20 lg:w-[22.5rem] lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:overscroll-contain xl:w-[24rem] scrollbar-hide"
+            className="w-full min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:overscroll-contain scrollbar-hide"
             delay={0.06}
           >
             <ProjectSidePanel
@@ -494,8 +502,29 @@ const ProjectDetailPage = () => {
               shareImageUrl={coverImage || undefined}
               onHidden={() => navigate("/", { replace: true })}
               onBlocked={() => navigate("/", { replace: true })}
+              collaboratorIds={((dbProject as { collab_user_ids?: string[] | null } | undefined)?.collab_user_ids) ?? []}
             />
           </FadeUp>
+
+          <div className="min-w-0 w-full space-y-6 pt-4 lg:col-start-1 lg:row-start-2 lg:pt-8">
+            {linkedPosts.length > 0 && <ProjectLinkedPostsBlock posts={linkedPosts} />}
+            <ProjectContextCard context={project.context} />
+            <CommentSection projectId={project.id} />
+            <OwnerOtherWorks
+              ownerId={project.ownerId}
+              excludeProjectId={project.id}
+              ownerName={project.owner}
+            />
+            <RelatedPackagesRow projectId={dbProject?.id} />
+            <RelatedObjectsRow projectId={dbProject?.id} />
+            <SimilarWorksRow
+              projectId={dbProject?.id}
+              ownerId={project.ownerId}
+              category={dbProject?.category ?? undefined}
+              tags={project.tags}
+              tools={project.tools}
+            />
+          </div>
         </div>
       </div>
 
@@ -505,7 +534,7 @@ const ProjectDetailPage = () => {
         onOpenChange={setHireOpen}
         projectTitle={project.title}
         projectId={project.id}
-        projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.[0]}
+        projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.find((u) => !/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u))}
         freelancerId={project.ownerId}
         freelancerUsername={ownerUsername ?? project.owner}
       />
@@ -517,7 +546,7 @@ const ProjectDetailPage = () => {
         recipientName={project.owner}
         projectId={project.id}
         projectTitle={project.title}
-        projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.[0]}
+        projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.find((u) => !/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u))}
       />
     </main>
   );

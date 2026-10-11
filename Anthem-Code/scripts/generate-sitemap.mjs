@@ -55,7 +55,7 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
   };
   const rest = `${supabaseUrl.replace(/\/$/, "")}/rest/v1`;
 
-  const [projectsRes, profilesRes, seriesRes, jobsRes] = await Promise.all([
+  const [projectsRes, profilesRes, seriesRes, jobsRes, collectionsRes] = await Promise.all([
     fetch(
       `${rest}/projects?select=id,cover_url,title&status=eq.Published&order=created_at.desc&limit=120`,
       { headers: anthemHeaders },
@@ -66,6 +66,11 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
     ),
     fetch(
       `${rest}/project_series?select=id&is_public=eq.true&order=updated_at.desc&limit=40`,
+      { headers: anthemHeaders },
+    ),
+    // Public collections with enough works to be worth indexing (thin ones stay out).
+    fetch(
+      `${rest}/collections?select=id&is_public=eq.true&item_count=gte.3&order=updated_at.desc&limit=60`,
       { headers: anthemHeaders },
     ),
     hiringBoard
@@ -120,7 +125,15 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
     jobIds = jobs.map((j) => j.id).filter(Boolean);
   }
 
-  return { projectIds, profileUserIds, vanityHandles, seriesIds, jobIds, images };
+  let collectionIds = [];
+  if (collectionsRes.ok) {
+    const collections = await collectionsRes.json();
+    collectionIds = collections.map((c) => c.id).filter(Boolean);
+  } else {
+    console.warn(`collections fetch ${collectionsRes.status} — skipping collection URLs`);
+  }
+
+  return { projectIds, profileUserIds, vanityHandles, seriesIds, collectionIds, jobIds, images };
 }
 
 loadDotEnv();
@@ -136,7 +149,7 @@ if (supabaseUrl && anonKey) {
   try {
     live = await fetchLiveCatalog(supabaseUrl, anonKey);
     console.log(
-      `Live catalog: ${live.projectIds.length} projects, ${live.profileUserIds.length} profiles, ${live.vanityHandles.length} @handles, ${live.seriesIds.length} series, ${live.jobIds.length} jobs`,
+      `Live catalog: ${live.projectIds.length} projects, ${live.profileUserIds.length} profiles, ${live.vanityHandles.length} @handles, ${live.seriesIds.length} series, ${live.collectionIds.length} collections, ${live.jobIds.length} jobs`,
     );
   } catch (err) {
     console.warn(`Live catalog fetch failed — using seed catalog. (${err.message})`);

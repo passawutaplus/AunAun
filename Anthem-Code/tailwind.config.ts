@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["IBM Plex Sans Thai", "ui-sans-serif", "system-ui", "sans-serif"],
-        display: ["IBM Plex Sans Thai", "sans-serif"],
+        sans: ["IBM Plex Sans", "IBM Plex Sans Thai", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Agrandir Wide", "IBM Plex Sans Thai", "IBM Plex Sans", "sans-serif"],
         legal: ["Sarabun", "IBM Plex Sans Thai Looped", "IBM Plex Sans Thai", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {

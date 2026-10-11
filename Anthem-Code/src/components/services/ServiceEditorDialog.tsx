@@ -414,7 +414,7 @@ export default function ServiceEditorDialog({
     const file = files?.[0];
     if (!file) return;
     if (!isAllowedPortfolioStillImage(file)) {
-      toast.error("ภาพปกรองรับเฉพาะ JPG หรือ PNG");
+      toast.error("ภาพปกรองรับ JPG, PNG, WebP, HEIC");
       if (coverInputRef.current) coverInputRef.current.value = "";
       return;
     }

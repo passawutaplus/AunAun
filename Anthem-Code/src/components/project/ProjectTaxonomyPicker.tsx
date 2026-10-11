@@ -98,14 +98,21 @@ export function ProjectTaxonomyPicker({
     setDraftSubId(null);
   };
 
+  /** Picking a sub-category (or "whole category") applies right away — no confirm step. */
   const selectSub = (parent: CategoryParentId, nextSub: string | null) => {
     setDraftParentId(parent);
     setDraftSubId(nextSub);
+    onChange({ parentId: parent, subId: nextSub });
+    setOpen(false);
+    setQuery("");
   };
 
   const clearDraft = () => {
     setDraftParentId(null);
     setDraftSubId(null);
+    onChange({ parentId: null, subId: null });
+    setOpen(false);
+    setQuery("");
   };
 
   const confirm = () => {
@@ -155,7 +162,7 @@ export function ProjectTaxonomyPicker({
           className="w-[min(100vw-2rem,32rem)] sm:w-[34rem] p-0 overflow-hidden"
           align="start"
           sideOffset={6}
-          collisionPadding={12}
+          collisionPadding={16}
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <div className="border-b border-border/60 p-2">
@@ -171,7 +178,7 @@ export function ProjectTaxonomyPicker({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 divide-x divide-border/60 h-[min(60vh,24rem)]">
+          <div className="grid h-[min(60vh,24rem,calc(var(--radix-popover-content-available-height)_-_7rem))] min-h-[10rem] grid-cols-2 divide-x divide-border/60">
             <div className="overflow-y-auto overscroll-contain p-1">
               <p className="sticky top-0 z-[1] bg-popover px-2 py-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 หมวดใหญ่
@@ -263,22 +270,13 @@ export function ProjectTaxonomyPicker({
               size="sm"
               className="shrink-0 text-muted-foreground"
               onClick={clearDraft}
-              disabled={!hasDraft}
+              disabled={!parentId && !subId}
             >
               ล้าง
             </Button>
             <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-              {draftPreview || "ยังไม่ได้เลือก"}
+              {displayValue || "ยังไม่ได้เลือก"}
             </p>
-            <Button
-              type="button"
-              size="sm"
-              className="shrink-0 rounded-full bg-gradient-brand px-4 text-white hover:opacity-90"
-              onClick={confirm}
-              disabled={!draftParentId && !dirty}
-            >
-              ยืนยัน
-            </Button>
           </div>
         </PopoverContent>
       </Popover>

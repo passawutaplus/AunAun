@@ -275,30 +275,27 @@ const DesktopTopNav = () => {
             <button
               type="button"
               onClick={onShareProject}
-              aria-label="Share your Project"
+              aria-label="ลงผลงานใหม่"
               className={cn(
                 "group relative hidden h-9 items-center overflow-visible rounded-full sm:inline-flex",
-                isLearn ? "bg-[#2f2e2c] px-1.5" : "first-post-create first-post-create-idle",
+                "bg-foreground px-1.5",
               )}
             >
-              {isLearn ? null : <span className="first-post-create-beam rounded-full" aria-hidden />}
               <span
                 className={cn(
                   "relative z-10 inline-flex h-full items-center gap-2 rounded-full py-0 pl-1.5 pr-3.5 text-sm font-medium",
-                  isLearn
-                    ? "bg-transparent text-[#f5f5f5]"
-                    : "first-post-create-inner m-[1.5px] border border-border/60 bg-foreground text-background",
+                  "bg-transparent text-background",
                 )}
               >
                 <span
                   className={cn(
                     "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
-                    isLearn ? "bg-[#f5f5f5] text-[#2f2e2c]" : "bg-gradient-brand text-white",
+                    "bg-background text-foreground",
                   )}
                 >
                   <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
                 </span>
-                <span className="whitespace-nowrap">Share your Project</span>
+                <span className="whitespace-nowrap">ลงผลงานใหม่</span>
               </span>
             </button>
           )}
@@ -336,10 +333,9 @@ const DesktopTopNav = () => {
               className={
                 isHome || isLearn
                   ? "h-8 rounded-sm bg-[#2f2e2c] px-3 text-[13px] font-normal text-[#f5f5f5] hover:bg-[#2f2e2c]/90"
-                  : "rounded-full bg-gradient-brand text-white hover:opacity-90"
+                  : "h-8 rounded-full bg-foreground px-4 text-[13px] font-normal text-background hover:bg-foreground/90"
               }
             >
-              {isHome || isLearn ? null : <User className="mr-1.5 h-4 w-4" />}
               เข้าสู่ระบบ
             </Button>
           )}

@@ -92,6 +92,9 @@ export type CreatorServiceBookmarkRow = {
   service_id: string;
   user_id: string;
   created_at?: string;
+  status?: string;
+  note?: string;
+  folder?: string;
 };
 
 /** Narrow query results to CreatorServiceRow without `as never` at call sites. */

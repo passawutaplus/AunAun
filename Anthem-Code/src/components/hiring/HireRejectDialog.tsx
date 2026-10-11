@@ -332,7 +332,7 @@ const HireRejectDialog = ({ open, onOpenChange, request, busy, onConfirm }: Prop
             <Button
               type="button"
               disabled={busy || !forwardTo || (reason === "other" && !note.trim())}
-              className="rounded-full bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+              className="rounded-full bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90"
               onClick={() => {
                 if (!forwardTo) return;
                 const friend = following.find((f) => f.userId === forwardTo);

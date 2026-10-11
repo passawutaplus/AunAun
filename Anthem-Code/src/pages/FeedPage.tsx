@@ -16,7 +16,7 @@ import FeedToolbar from "@/components/feed/FeedToolbar";
 import HomeHeroWash from "@/components/feed/HomeHeroWash";
 import SeoHead from "@/components/SeoHead";
 import { shouldNoindexSearchParams } from "@/lib/seo";
-import { COLOR_MATCH_MIN, normalizeColorQuery } from "@/lib/colorSearch";
+import { COLOR_MATCH_MIN, normalizeColorList } from "@/lib/colorSearch";
 import { similarSearchSuggestions } from "@/lib/searchSuggestions";
 import { useCoverColorScores } from "@/hooks/useCoverColorScores";
 import DrillFeedPanel from "@/components/drill/DrillFeedPanel";
@@ -51,6 +51,7 @@ import {
   projectMatchesSubs,
   type CategoryParentId,
 } from "@/data/categoryTaxonomy";
+import { getCategoryParent as getFeedCategoryParent, getCategorySub as getFeedCategorySub } from "@/data/categoryTaxonomy";
 import { isCategoryAllowed } from "@/lib/cookieConsent";
 import {
   usePublishedProjects,
@@ -109,7 +110,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const showFirstPostLabel = useShowFirstPostLabel(user?.id);
   const [search, setSearch] = useState("");
   const [colorQuery, setColorQuery] = useState<string | null>(() =>
-    normalizeColorQuery(searchParams.get("color")),
+    normalizeColorList(searchParams.get("color")),
   );
   /** Hero field searches the full project catalog and falls back to nearest matches. */
   const [heroProjectSearch, setHeroProjectSearch] = useState(false);
@@ -309,7 +310,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   };
 
   const applyColorQuery = (hex: string | null) => {
-    const next = normalizeColorQuery(hex);
+    const next = normalizeColorList(hex);
     setColorQuery(next);
     const params = new URLSearchParams(searchParams);
     if (next) params.set("color", next);
@@ -355,6 +356,18 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     navigate("/?drill=1", { replace: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // Deep link from a project's category badge: /?cat=<parent>&sub=<sub> opens the project feed filtered.
+  useEffect(() => {
+    const parent = getFeedCategoryParent(searchParams.get("cat"));
+    if (!parent) return;
+    const subId = searchParams.get("sub");
+    setMode("projects");
+    setCategory(parent.id);
+    setProjectLeaves([]);
+    setProjectStyles(subId && getFeedCategorySub(parent, subId) ? [subId] : []);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [searchParams]);
 
   const setFeedCategory = (next: FeedCategoryChip) => {
     setCategory(next);
@@ -473,7 +486,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   }, [searchParams]);
 
   useEffect(() => {
-    const next = normalizeColorQuery(searchParams.get("color"));
+    const next = normalizeColorList(searchParams.get("color"));
     setColorQuery(next);
     if (!next) return;
     const view = searchParams.get("mode");
@@ -746,6 +759,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               "--accent": "40 6% 92%",
               "--accent-foreground": "40 3% 18%",
               "--primary": "40 3% 18%",
+              "--primary-foreground": "0 0% 96%",
               "--primary-bright": "40 3% 18%",
               "--ring": "40 3% 18%",
               color: "#2f2e2c",

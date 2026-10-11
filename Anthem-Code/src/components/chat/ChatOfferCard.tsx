@@ -185,7 +185,7 @@ export function ChatOfferCard({
             <Button
               type="button"
               size="sm"
-              className="w-full rounded-full bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+              className="w-full rounded-full bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90"
               disabled={send.isPending}
               onClick={() => setQuoteOpen(true)}
             >

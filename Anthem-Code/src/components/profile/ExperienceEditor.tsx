@@ -12,6 +12,7 @@ import {
 } from "@/lib/validators";
 import { cn } from "@/lib/utils";
 import { useAboutEditLocale } from "@/components/profile/AboutEditLocale";
+import MonthYearField from "@/components/profile/MonthYearField";
 
 interface Props {
   value: ExperienceItem[];
@@ -49,7 +50,7 @@ function composeItem(draft: ExperienceItem): ExperienceItem {
 }
 
 const ExperienceEditor = ({ value, onChange }: Props) => {
-  const { t } = useAboutEditLocale();
+  const { t, lang } = useAboutEditLocale();
   const [draft, setDraft] = useState<ExperienceItem>(emptyDraft);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -159,18 +160,23 @@ const ExperienceEditor = ({ value, onChange }: Props) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Field
+          <MonthYearField
             label={t.start}
             value={draft.periodStart ?? ""}
             onChange={(v) => patchDraft({ periodStart: v })}
-            placeholder="e.g. 2566"
+            lang={lang}
+            monthPlaceholder={t.monthPh}
+            yearPlaceholder={t.yearPh}
           />
-          <Field
+          <MonthYearField
             label={t.end}
-            value={draft.isCurrent ? t.present : (draft.periodEnd ?? "")}
+            value={draft.periodEnd ?? ""}
             onChange={(v) => patchDraft({ periodEnd: v, isCurrent: false })}
-            placeholder="e.g. 2568"
+            lang={lang}
+            monthPlaceholder={t.monthPh}
+            yearPlaceholder={t.yearPh}
             disabled={!!draft.isCurrent}
+            disabledText={t.present}
           />
         </div>
 

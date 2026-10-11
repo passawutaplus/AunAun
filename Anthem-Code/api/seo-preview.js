@@ -242,6 +242,100 @@ async function resolveMeta(pathname, base) {
     };
   }
 
+  const collectionMatch = pathname.match(/^\/collections\/([0-9a-f-]{36})$/i);
+  if (collectionMatch) {
+    const id = collectionMatch[1];
+    // Anonymous reads only see public collections (RLS), so private ones fall into the 404 shell below.
+    const rows = await fetchJson(
+      `${rest}/collections?select=id,name,description,cover_url,item_count,owner_id&id=eq.${id}&is_public=eq.true&limit=1`,
+      anthemHeaders,
+    );
+    const c = rows?.[0];
+    if (!c) {
+      return {
+        ...defaultMeta,
+        noindex: true,
+        title: "ไม่พบคอลเลกชัน | Aplus1",
+        status: 404,
+      };
+    }
+    const [owners, firstItems] = await Promise.all([
+      fetchJson(
+        `${rest}/profiles_public?select=display_name,username&user_id=eq.${c.owner_id}&limit=1`,
+        headers,
+      ),
+      c.cover_url
+        ? Promise.resolve(null)
+        : fetchJson(
+            `${rest}/collection_items?select=project_id&collection_id=eq.${id}&order=position.asc.nullsfirst,added_at.desc&limit=1`,
+            anthemHeaders,
+          ),
+    ]);
+    const ownerName = owners?.[0]?.display_name || owners?.[0]?.username || "ครีเอเตอร์";
+    let cover = c.cover_url || "";
+    if (!cover && firstItems?.[0]?.project_id) {
+      const projects = await fetchJson(
+        `${rest}/projects?select=cover_url&id=eq.${firstItems[0].project_id}&status=eq.Published&limit=1`,
+        anthemHeaders,
+      );
+      cover = projects?.[0]?.cover_url || "";
+    }
+    const image = cover
+      ? cover.startsWith("http")
+        ? cover
+        : `${base}${cover.startsWith("/") ? "" : "/"}${cover}`
+      : defaultMeta.image;
+    const url = `${base}/collections/${c.id}`;
+    return {
+      title: `${c.name} · คอลเลกชันโดย ${ownerName} | Aplus1`,
+      description: (c.description?.trim() || `${c.item_count} ผลงานที่คัดโดย ${ownerName} บน Aplus1`).slice(0, 160),
+      url,
+      image,
+      // Same bar as the sitemap (3+ works): thinner collections stay out of search, links still preview.
+      noindex: !(c.item_count >= 3),
+      status: 200,
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: c.name,
+        url,
+        image,
+        author: { "@type": "Person", name: ownerName },
+      },
+    };
+  }
+
+  const exploreMatch = pathname.match(/^\/explore\/(tool|tag)\/([^/]+)$/i);
+  if (exploreMatch) {
+    const kind = exploreMatch[1].toLowerCase();
+    let value = exploreMatch[2];
+    try {
+      value = decodeURIComponent(value);
+    } catch {
+      /* keep raw */
+    }
+    value = value.replace(/^#+/, "").trim();
+    const column = kind === "tool" ? "tools" : "tags";
+    // Cover of the most viewed work that uses this tool / tag, so shared links look like the page.
+    const rows = await fetchJson(
+      `${rest}/projects?select=cover_url&status=eq.Published&${column}=cs.{${encodeURIComponent(`"${value}"`)}}&order=views.desc&limit=1`,
+      anthemHeaders,
+    );
+    const cover = rows?.[0]?.cover_url || "";
+    const image = cover ? (cover.startsWith("http") ? cover : `${base}${cover.startsWith("/") ? "" : "/"}${cover}`) : defaultMeta.image;
+    const title = kind === "tool" ? `ผลงานที่ใช้ ${value} | Aplus1` : `ผลงานแท็ก #${value} | Aplus1`;
+    return {
+      ...defaultMeta,
+      title,
+      description:
+        kind === "tool"
+          ? `ค้นพบผลงานครีเอเตอร์ที่ใช้ ${value} บน Aplus1`
+          : `ค้นพบผลงานแท็ก #${value} บน Aplus1`,
+      url: `${base}${pathname}`,
+      image,
+    };
+  }
+
   if (pathname.startsWith("/explore/")) {
     return {
       ...defaultMeta,

@@ -63,7 +63,7 @@ const Footer = ({ className }: Props) => {
         </a>
       </nav>
 
-      <p className="sr-only">aplus1</p>
+      <p className="sr-only">sameCOR</p>
       <p className="mt-4 px-[6vw] text-center text-[13px] text-[#bcbab4]">
         © {year} {BRAND_NAME} · สงวนลิขสิทธิ์ · {LEGAL_COMPANY_NAME} · {LEGAL_COMPANY_ADDRESS}
       </p>
@@ -72,14 +72,14 @@ const Footer = ({ className }: Props) => {
         className="mt-9 flex select-none items-start justify-center overflow-hidden"
         style={{
           height: "0.82em",
-          fontSize: "clamp(5.75rem, 13.6vw, 14.25rem)",
+          fontSize: "clamp(4.75rem, 11.4vw, 12rem)",
           fontWeight: 500,
           letterSpacing: "-0.06em",
           lineHeight: 0.9,
         }}
         aria-hidden
       >
-        <span>ap</span>
+        <span>same</span>
         {reel.length > 0 ? (
           <div className="mx-[0.045em] mt-[0.02em] h-[0.36em] w-[1.7em] self-center overflow-hidden">
             <div className="aplus-foot-track flex h-full w-max">
@@ -89,7 +89,7 @@ const Footer = ({ className }: Props) => {
             </div>
           </div>
         ) : null}
-        <span>lus1</span>
+        <span>COR</span>
       </div>
     </footer>
   );

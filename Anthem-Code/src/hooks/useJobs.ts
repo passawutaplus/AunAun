@@ -385,11 +385,11 @@ export const useRelatedHiringJobs = (job?: JobPost | null) =>
     },
   });
 
-export const useMyApplications = () => {
+export const useMyApplications = (options?: { enabled?: boolean }) => {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["my-applications", user?.id],
-    enabled: !!user,
+    enabled: !!user && options?.enabled !== false,
     queryFn: async (): Promise<JobApplication[]> => {
       await expirePendingJobApplicationsQuietly();
       const { data, error } = await supabase
@@ -592,11 +592,11 @@ export const useToggleSaveJob = () => {
   });
 };
 
-export const useMySavedJobs = () => {
+export const useMySavedJobs = (options?: { enabled?: boolean }) => {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["my-saved-jobs", user?.id],
-    enabled: !!user,
+    enabled: !!user && options?.enabled !== false,
     queryFn: async (): Promise<JobPost[]> => {
       const { data: saved, error } = await supabase
         .from("job_saved")

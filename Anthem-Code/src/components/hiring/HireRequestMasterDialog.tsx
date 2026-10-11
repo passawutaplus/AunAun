@@ -220,7 +220,7 @@ export default function HireRequestMasterDialog({
         <DialogContent className="rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-start gap-3">
-              <div className="w-11 h-11 rounded-xl bg-[hsl(var(--chat-hire))] flex items-center justify-center shrink-0 text-white font-medium text-sm">
+              <div className="w-11 h-11 rounded-xl bg-[hsl(var(--chat-hire))] flex items-center justify-center shrink-0 text-[hsl(var(--chat-hire-foreground))] font-medium text-sm">
                 {request.client_name[0]}
               </div>
               <div className="min-w-0 flex-1">
@@ -332,7 +332,7 @@ export default function HireRequestMasterDialog({
                   size="sm"
                   disabled={busy}
                   onClick={onOpenChat}
-                  className="rounded-full h-8 text-xs bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+                  className="rounded-full h-8 text-xs bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90"
                 >
                   <MessageCircle className="w-3.5 h-3.5 mr-1" /> เปิดแชท
                 </Button>

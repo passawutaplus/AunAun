@@ -1,20 +1,38 @@
-import { useEffect, useState, type ComponentType, type ReactNode } from "react";
+import { useDeferredValue, useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import {
   Award,
   BadgeCheck,
   Briefcase,
+  CalendarDays,
+  Camera,
+  Eye,
+  FileText,
+  Flag,
+  FolderOpen,
+  Globe,
   GraduationCap,
-  History,
   Languages,
+  LayoutTemplate,
   Link2,
+  Mail,
+  MapPin,
+  MessageCircle,
   Monitor,
+  Phone,
+  Share2,
+  ShieldCheck,
   Sparkles,
+  Target,
+  Type,
   User,
   UserRound,
+  Users,
+  UserRoundCog,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useUpdateProfile } from "@/hooks/useProfile";
 import {
   experienceItemSchema,
@@ -24,6 +42,7 @@ import {
   type SocialLinkItem,
 } from "@/lib/validators";
 import { parseSocialLinks } from "@/lib/parseSocialLinks";
+import { readAboutEditLang } from "@/lib/aboutEditCopy";
 import {
   parseProfileCv,
   partitionSkillsAndSoftware,
@@ -34,6 +53,13 @@ import {
   type AwardItem,
   type CertificationItem,
   type CvAddressDetail,
+  type CvTemplate,
+  type CvHeadingFont,
+  type CvDocLang,
+  type CvMilitaryStatus,
+  type ReferenceItem,
+  CV_MILITARY_STATUSES,
+  defaultCvShowPhoto,
   type CvLanguageItem,
   type CvVisibility,
   type CvVisibilityKey,
@@ -55,6 +81,13 @@ import SkillsEditor from "@/components/profile/SkillsEditor";
 import CvToolsEditor from "@/components/profile/CvToolsEditor";
 import ProfileLinksEditor from "@/components/profile/ProfileLinksEditor";
 import ProfileAddressEditor from "@/components/profile/ProfileAddressEditor";
+import CvReferencesEditor from "@/components/profile/CvReferencesEditor";
+import BirthDateField from "@/components/profile/BirthDateField";
+import CvLivePreview from "@/components/profile/CvLivePreview";
+import CvTemplatePicker from "@/components/profile/CvTemplatePicker";
+import CvHeadingFontPicker from "@/components/profile/CvHeadingFontPicker";
+import { CV_DOC_COPY } from "@/lib/aboutCvCopy";
+import type { CvFit } from "@/components/profile/AboutDocumentPreview";
 import { AboutEditLangToggle, AboutEditLocaleProvider, useAboutEditLocale } from "@/components/profile/AboutEditLocale";
 import { cn } from "@/lib/utils";
 
@@ -80,6 +113,11 @@ type ProfileLike = {
 type FormState = {
   firstName: string;
   lastName: string;
+  nameEn: string;
+  docLang: CvDocLang;
+  nationality: string;
+  military: CvMilitaryStatus | null;
+  references: ReferenceItem[];
   desiredRole: string;
   birthDate: string;
   contactEmail: string;
@@ -93,6 +131,9 @@ type FormState = {
   skills: string[];
   experience: ExperienceItem[];
   cvPhotoUrl: string;
+  cvTemplate: CvTemplate;
+  cvHeadingFont: CvHeadingFont;
+  cvShowPhoto: boolean;
   education: EducationItem[];
   cvTools: string[];
   cvLanguages: CvLanguageItem[];
@@ -103,31 +144,36 @@ type FormState = {
 };
 
 type SectionId =
+  | "layout"
   | "identity"
   | "contact"
+  | "details"
   | "skills"
   | "experience"
   | "education"
   | "certification"
   | "awards"
-  | "languages";
+  | "languages"
+  | "references";
 
 const ABOUT_EDIT_GROUPS: {
-  id: "profile" | "work" | "background";
-  icon: ComponentType<{ className?: string }>;
+  id: "design" | "profile" | "work" | "background";
   items: { id: SectionId; icon: ComponentType<{ className?: string }> }[];
 }[] = [
   {
+    id: "design",
+    items: [{ id: "layout", icon: LayoutTemplate }],
+  },
+  {
     id: "profile",
-    icon: UserRound,
     items: [
       { id: "identity", icon: User },
       { id: "contact", icon: Link2 },
+      { id: "details", icon: UserRoundCog },
     ],
   },
   {
     id: "work",
-    icon: Briefcase,
     items: [
       { id: "skills", icon: Sparkles },
       { id: "experience", icon: Briefcase },
@@ -135,12 +181,12 @@ const ABOUT_EDIT_GROUPS: {
   },
   {
     id: "background",
-    icon: History,
     items: [
       { id: "education", icon: GraduationCap },
       { id: "certification", icon: BadgeCheck },
       { id: "awards", icon: Award },
       { id: "languages", icon: Languages },
+      { id: "references", icon: Users },
     ],
   },
 ];
@@ -153,6 +199,7 @@ const SECTION_CV_KEY: Partial<Record<SectionId, CvVisibilityKey>> = {
   certification: "certification",
   awards: "awards",
   languages: "languages",
+  references: "references",
 };
 
 const parseSkills = (raw: unknown): string[] =>
@@ -169,6 +216,11 @@ function formFromProfile(profile: ProfileLike): FormState {
   return {
     firstName: cv.firstName,
     lastName: cv.lastName,
+    nameEn: cv.nameEn,
+    docLang: cv.docLang,
+    nationality: cv.nationality,
+    military: cv.military,
+    references: cv.references,
     desiredRole: cv.desiredRole,
     birthDate: cv.birthDate,
     contactEmail: cv.contactEmail,
@@ -182,6 +234,9 @@ function formFromProfile(profile: ProfileLike): FormState {
     skills: craftSkills,
     experience: parseExperience(profile.experience),
     cvPhotoUrl: profile.cv_photo_url ?? "",
+    cvTemplate: cv.template,
+    cvHeadingFont: cv.headingFont,
+    cvShowPhoto: defaultCvShowPhoto(profile.cv, readAboutEditLang()),
     education: cv.education,
     cvTools: software,
     cvLanguages: cv.languages,
@@ -198,6 +253,7 @@ function sectionCount(id: SectionId, form: FormState): number | null {
   if (id === "certification") return form.certifications.length || null;
   if (id === "awards") return form.awards.length || null;
   if (id === "languages") return form.cvLanguages.length || null;
+  if (id === "references") return form.references.filter((r) => r.name.trim()).length || null;
   if (id === "skills") {
     const n = form.skills.length + form.cvTools.length;
     return n || null;
@@ -210,7 +266,44 @@ type Props = {
   profile: ProfileLike;
   onSaved: () => void;
   sectionClassName?: string;
+  profileUrl?: string | null;
+  /** Leave the editor without saving (the editor asks first when there are unsaved changes). */
+  onCancel?: () => void;
 };
+
+/** The cv object exactly as it is saved — also what the live preview renders. */
+function buildCvFromForm(form: FormState, existingWorkArrangement: ReturnType<typeof parseProfileCv>["workArrangement"]) {
+  return profileCvToJson({
+    education: form.education,
+    tools: form.cvTools,
+    workArrangement: existingWorkArrangement,
+    languages: form.cvLanguages,
+    certifications: form.certifications,
+    awards: form.awards,
+    portfolioUrl: form.portfolioUrl,
+    firstName: form.firstName,
+    lastName: form.lastName,
+    fullName: composeFullName(form.firstName, form.lastName),
+    nameEn: form.nameEn,
+    docLang: form.docLang,
+    nationality: form.nationality,
+    military: form.military,
+    references: form.references,
+    birthDate: form.birthDate,
+    desiredRole: form.desiredRole,
+    contactEmail: form.contactEmail,
+    contactLine: form.contactLine,
+    contactPhone: form.contactPhone,
+    contactPublic:
+      form.visibility.contactEmail || form.visibility.contactLine || form.visibility.contactPhone,
+    about: form.about,
+    addressDetail: form.addressDetail,
+    template: form.cvTemplate,
+    headingFont: form.cvHeadingFont,
+    showPhoto: form.cvShowPhoto,
+    visibility: form.visibility,
+  });
+}
 
 export default function ProfileAboutEditor(props: Props) {
   return (
@@ -220,15 +313,38 @@ export default function ProfileAboutEditor(props: Props) {
   );
 }
 
-function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }: Props) {
-  const { t } = useAboutEditLocale();
+function ProfileAboutEditorInner({ userId, profile, onSaved, onCancel, sectionClassName, profileUrl }: Props) {
+  const { t, lang } = useAboutEditLocale();
   const updateMut = useUpdateProfile(userId);
   const [form, setForm] = useState<FormState>(() => formFromProfile(profile));
+  const [baseline, setBaseline] = useState(() => JSON.stringify(formFromProfile(profile)));
   const [section, setSection] = useState<SectionId>("identity");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [fit, setFit] = useState<CvFit>({ scale: 1, overflow: false });
 
   useEffect(() => {
-    setForm(formFromProfile(profile));
+    const next = formFromProfile(profile);
+    setForm(next);
+    setBaseline(JSON.stringify(next));
   }, [profile]);
+
+  const dirty = useMemo(() => JSON.stringify(form) !== baseline, [form, baseline]);
+
+  // The browser's own "leave site?" prompt while there are unsaved edits.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  const handleCancel = () => {
+    if (dirty && !window.confirm(t.discardConfirm)) return;
+    onCancel?.();
+  };
 
   const update = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -237,6 +353,26 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
     setForm((f) => ({ ...f, visibility: { ...f.visibility, [key]: value } }));
 
   const sectionVisKey = SECTION_CV_KEY[section];
+
+  const deferredForm = useDeferredValue(form);
+  const previewProfile = useMemo(() => {
+    const address = profileAddressToJson(deferredForm.profileAddress);
+    return {
+      display_name: profile.display_name ?? null,
+      username: profile.username ?? null,
+      avatar_url: profile.avatar_url ?? null,
+      cv_photo_url: deferredForm.cvPhotoUrl || null,
+      cv: buildCvFromForm(deferredForm, parseProfileCv(profile.cv).workArrangement),
+      role: profile.role ?? null,
+      location: formatProfileAddressShort(address),
+      profile_address: address,
+      bio: profile.bio ?? null,
+      website: deferredForm.website.trim() || null,
+      line_id: profile.line_id ?? null,
+      facebook: null,
+      instagram: null,
+    };
+  }, [deferredForm, profile]);
 
   const goSection = (id: SectionId) => {
     setSection(id);
@@ -271,28 +407,7 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
       }
     }
     const existingCv = parseProfileCv(profile.cv);
-    const cv = profileCvToJson({
-      education: form.education,
-      tools: form.cvTools,
-      workArrangement: existingCv.workArrangement,
-      languages: form.cvLanguages,
-      certifications: form.certifications,
-      awards: form.awards,
-      portfolioUrl: form.portfolioUrl,
-      firstName: form.firstName,
-      lastName: form.lastName,
-      fullName: composeFullName(form.firstName, form.lastName),
-      birthDate: form.birthDate,
-      desiredRole: form.desiredRole,
-      contactEmail: form.contactEmail,
-      contactLine: form.contactLine,
-      contactPhone: form.contactPhone,
-      contactPublic:
-        form.visibility.contactEmail || form.visibility.contactLine || form.visibility.contactPhone,
-      about: form.about,
-      addressDetail: form.addressDetail,
-      visibility: form.visibility,
-    });
+    const cv = buildCvFromForm(form, existingCv.workArrangement);
     if (form.contactEmail.trim() && !isSimpleEmail(form.contactEmail)) {
       goSection("contact");
       toast.error(t.invalidEmail);
@@ -323,16 +438,25 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
         cvFirstName: cv.firstName,
         cvLastName: cv.lastName,
         cvBirthDate: cv.birthDate,
+        cvNameEn: cv.nameEn,
+        cvDocLang: cv.docLang,
+        cvNationality: cv.nationality,
+        cvMilitary: cv.military,
+        cvReferences: cv.references,
         cvDesiredRole: cv.desiredRole,
         cvContactEmail: cv.contactEmail,
         cvContactLine: cv.contactLine,
         cvContactPhone: cv.contactPhone,
         cvContactPublic: cv.contactPublic,
         cvAddressDetail: cv.addressDetail,
+        cvTemplate: cv.template,
+        cvHeadingFont: cv.headingFont,
+        cvShowPhoto: cv.showPhoto,
         cvVisibility: cv.visibility,
         profileAddress: address,
         location: formatProfileAddressShort(address),
       });
+      setBaseline(JSON.stringify(form));
       toast.success(exitAfter ? t.saved : t.savedStay);
       if (exitAfter) onSaved();
     } catch (err: unknown) {
@@ -341,8 +465,28 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
   };
 
   const saveBar = (
-    <div className="flex items-center gap-2 shrink-0">
+    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+      {dirty ? (
+        <span role="status" className="text-xs text-amber-600 dark:text-amber-400">
+          • {t.unsaved}
+        </span>
+      ) : null}
       <AboutEditLangToggle />
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="rounded-full xl:hidden"
+        onClick={() => setPreviewOpen(true)}
+      >
+        <Eye className="h-3.5 w-3.5" />
+        {t.previewButton}
+      </Button>
+      {onCancel ? (
+        <Button type="button" size="sm" variant="ghost" className="rounded-full" onClick={handleCancel}>
+          {t.cancel}
+        </Button>
+      ) : null}
       <Button
         type="button"
         size="sm"
@@ -350,12 +494,23 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
         disabled={updateMut.isPending}
         onClick={() => void handleSave(true)}
       >
-        {updateMut.isPending ? t.saving : t.save}
+        {updateMut.isPending ? t.saving : t.saveAndBack}
       </Button>
     </div>
   );
 
+  const livePreviewProps = {
+    profile: previewProfile,
+    experience: deferredForm.experience,
+    skills: deferredForm.skills,
+    socialLinks: deferredForm.socialLinks,
+    profileUrl,
+    forceShowApplicationContact: true,
+    onFit: setFit,
+  };
+
   const groupLabel = {
+    design: t.groupDesign,
     profile: t.groupProfile,
     work: t.groupWork,
     background: t.groupBackground,
@@ -364,7 +519,7 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-foreground">{t.pageTitle}</h2>
           <p className="text-xs text-muted-foreground mt-0.5">{t.pageHint}</p>
@@ -399,18 +554,16 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[12.5rem_minmax(0,1fr)] lg:items-start">
+      <div className="grid gap-6 lg:grid-cols-[12.5rem_minmax(0,1fr)] xl:grid-cols-[12.5rem_minmax(0,1fr)_minmax(0,26rem)] lg:items-start">
         <nav
           aria-label={t.pageTitle}
           className="hidden lg:block sticky top-20 self-start"
         >
           <div className="overflow-hidden rounded-2xl border border-border/70 bg-background/40">
             {ABOUT_EDIT_GROUPS.map((group, index) => {
-              const GroupIcon = group.icon;
               return (
               <div key={group.id} className={cn(index > 0 && "border-t border-border/70")}>
-                <p className="flex items-center gap-1.5 px-3.5 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  <GroupIcon className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden />
+                <p className="px-3.5 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                   {groupLabel[group.id]}
                 </p>
                 <ul className="flex flex-col pb-1.5">
@@ -464,13 +617,47 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
               <ShowOnCvTick
                 checked={form.visibility[sectionVisKey]}
                 label={t.showOnCv}
+                note={!form.visibility[sectionVisKey] && (sectionCount(section, form) ?? 0) > 0 ? t.notOnCvYet : undefined}
                 onChange={(v) => setVis(sectionVisKey, v)}
               />
             ) : null}
           </h3>
 
+          <SectionPanel id="layout" current={section}>
+              <EditorBlock icon={LayoutTemplate} title={t.layoutTitle}>
+                <CvTemplatePicker value={form.cvTemplate} onChange={(next) => update("cvTemplate", next)} />
+                <p className="text-xs text-muted-foreground">{t.layoutHint}</p>
+              </EditorBlock>
+              <EditorBlock icon={Type} title={t.headingFontTitle}>
+                <CvHeadingFontPicker value={form.cvHeadingFont} onChange={(next) => update("cvHeadingFont", next)} />
+                <p className="text-xs text-muted-foreground">{t.headingFontHint}</p>
+              </EditorBlock>
+              <EditorBlock icon={Languages} title={t.cvLangTitle}>
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t.cvLangTitle}>
+                  {(["en", "th"] as const).map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      role="radio"
+                      aria-checked={form.docLang === id}
+                      onClick={() => update("docLang", id)}
+                      className={cn(
+                        "rounded-full border px-3 py-1 text-xs transition-colors",
+                        form.docLang === id
+                          ? "border-foreground font-medium text-foreground"
+                          : "border-black/20 text-foreground hover:border-foreground",
+                      )}
+                    >
+                      {id === "en" ? "English" : "ไทย"}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">{t.cvLangHint}</p>
+              </EditorBlock>
+          </SectionPanel>
+
           <SectionPanel id="identity" current={section}>
-              <EditorBlock title={t.photo}>
+              <EditorBlock icon={Camera} title={t.photo}>
                 <CvPhotoEditor
                   userId={userId}
                   cvPhotoUrl={form.cvPhotoUrl}
@@ -479,8 +666,16 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                   username={profile.username}
                   onChange={(cvPhotoUrl) => update("cvPhotoUrl", cvPhotoUrl)}
                 />
+                <div className="mt-3 space-y-1">
+                  <ShowOnCvTick
+                    checked={form.cvShowPhoto}
+                    label={t.photoShowOnCv}
+                    onChange={(v) => update("cvShowPhoto", v)}
+                  />
+                  <p className="text-xs text-muted-foreground">{t.photoShowOnCvHint}</p>
+                </div>
               </EditorBlock>
-              <EditorBlock title={t.name}>
+              <EditorBlock icon={UserRound} title={t.name}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <AboutInput
                     label={t.firstName}
@@ -500,8 +695,16 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                 <p className="text-xs text-muted-foreground">
                   {t.nameHint}
                 </p>
+                <AboutInput
+                  label={t.nameEn}
+                  value={form.nameEn}
+                  onChange={(nameEn) => update("nameEn", nameEn)}
+                  maxLength={80}
+                  placeholder={t.nameEnPh}
+                />
+                <p className="text-xs text-muted-foreground">{t.nameEnHint}</p>
               </EditorBlock>
-              <EditorBlock title={t.desiredPosition}>
+              <EditorBlock icon={Target} title={t.desiredPosition}>
                 <input
                   value={form.desiredRole}
                   onChange={(e) => update("desiredRole", e.target.value)}
@@ -511,6 +714,7 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                 />
               </EditorBlock>
               <EditorBlock
+                icon={MapPin}
                 title={t.addressUi.title}
                 showOnCv={form.visibility.location}
                 showOnCvLabel={t.showOnCv}
@@ -539,6 +743,7 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                 </label>
               </EditorBlock>
               <EditorBlock
+                icon={FileText}
                 title={t.aboutMe}
                 hint={`${form.about.length}/500`}
                 showOnCv={form.visibility.about}
@@ -558,8 +763,11 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
           </SectionPanel>
 
           <SectionPanel id="contact" current={section}>
+              <div className="space-y-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <EditorBlock
+                  icon={Mail}
+                  filled={!!form.contactEmail.trim()}
                   title={t.email}
                   showOnCv={form.visibility.contactEmail}
                   showOnCvLabel={t.showOnCv}
@@ -576,6 +784,8 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                   />
                 </EditorBlock>
                 <EditorBlock
+                  icon={MessageCircle}
+                  filled={!!form.contactLine.trim()}
                   title={t.line}
                   showOnCv={form.visibility.contactLine}
                   showOnCvLabel={t.showOnCv}
@@ -591,6 +801,8 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                   />
                 </EditorBlock>
                 <EditorBlock
+                  icon={Phone}
+                  filled={!!form.contactPhone.trim()}
                   title={t.phone}
                   showOnCv={form.visibility.contactPhone}
                   showOnCvLabel={t.showOnCv}
@@ -607,10 +819,10 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                   />
                 </EditorBlock>
               </div>
-              <p className="text-xs text-muted-foreground -mt-2">
-                {t.contactHint}
-              </p>
+              <p className="text-xs text-muted-foreground">{t.contactHint}</p>
+              </div>
               <EditorBlock
+                icon={FolderOpen}
                 title={t.portfolio}
                 showOnCv={form.visibility.portfolio}
                 showOnCvLabel={t.showOnCv}
@@ -628,6 +840,7 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                 </p>
               </EditorBlock>
               <EditorBlock
+                icon={Globe}
                 title={t.website}
                 showOnCv={form.visibility.website}
                 showOnCvLabel={t.showOnCv}
@@ -642,6 +855,7 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                 />
               </EditorBlock>
               <EditorBlock
+                icon={Share2}
                 title={t.socials}
                 showOnCv={form.visibility.socials}
                 showOnCvLabel={t.showOnCv}
@@ -681,6 +895,70 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
                 </p>
                 <CvToolsEditor value={form.cvTools} onChange={(cvTools) => update("cvTools", cvTools)} />
               </EditorBlock>
+          </SectionPanel>
+
+          <SectionPanel id="details" current={section} hint={t.detailsHint}>
+            <EditorBlock
+              icon={CalendarDays}
+              filled={!!form.birthDate}
+              title={t.birthDate}
+              showOnCv={form.visibility.birthDate}
+              showOnCvLabel={t.showOnCv}
+              onShowOnCvChange={(v) => setVis("birthDate", v)}
+            >
+              <BirthDateField
+                value={form.birthDate}
+                onChange={(birthDate) => update("birthDate", birthDate)}
+                lang={lang}
+                labels={{ day: t.birthDay, month: t.monthPh, year: t.birthYearPh, invalid: t.birthDateInvalid }}
+              />
+            </EditorBlock>
+            <EditorBlock
+              icon={Flag}
+              filled={!!form.nationality.trim()}
+              title={t.nationality}
+              showOnCv={form.visibility.nationality}
+              showOnCvLabel={t.showOnCv}
+              onShowOnCvChange={(v) => setVis("nationality", v)}
+            >
+              <input
+                value={form.nationality}
+                maxLength={40}
+                onChange={(e) => update("nationality", e.target.value)}
+                placeholder={t.nationalityPh}
+                className={ABOUT_INPUT_CLASS}
+              />
+            </EditorBlock>
+            <EditorBlock
+              icon={ShieldCheck}
+              filled={!!form.military}
+              title={t.military}
+              showOnCv={form.visibility.military}
+              showOnCvLabel={t.showOnCv}
+              onShowOnCvChange={(v) => setVis("military", v)}
+            >
+              <select
+                value={form.military ?? ""}
+                onChange={(e) =>
+                  update("military", (e.target.value || null) as CvMilitaryStatus | null)
+                }
+                className={ABOUT_INPUT_CLASS}
+              >
+                <option value="">{t.militaryNone}</option>
+                {CV_MILITARY_STATUSES.map((id) => (
+                  <option key={id} value={id}>
+                    {CV_DOC_COPY[lang].military[id]}
+                  </option>
+                ))}
+              </select>
+            </EditorBlock>
+          </SectionPanel>
+
+          <SectionPanel id="references" current={section}>
+            <CvReferencesEditor
+              value={form.references}
+              onChange={(references) => update("references", references)}
+            />
           </SectionPanel>
 
           <SectionPanel id="experience" current={section}>
@@ -726,25 +1004,69 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, sectionClassName }:
             </Button>
           </div>
         </div>
+
+        <aside
+          aria-label={t.livePreview}
+          className="hidden xl:block sticky top-20 self-start space-y-2"
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {t.livePreview}
+          </p>
+          <CvLivePreview {...livePreviewProps} />
+          <FitNote fit={fit} />
+        </aside>
       </div>
       </div>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="w-fit max-h-[calc(100dvh-1rem)] max-w-[calc(100vw-1.25rem)] gap-2 overflow-y-auto rounded-2xl p-3">
+          <DialogTitle className="sr-only">{t.livePreview}</DialogTitle>
+          <DialogDescription className="sr-only">{t.livePreview}</DialogDescription>
+          {/* A4 portrait: as wide as fits, but never taller than the screen. */}
+          <div style={{ width: "min(210mm, calc(100vw - 3rem), calc((100dvh - 7rem) * 0.707))" }}>
+            <CvLivePreview {...livePreviewProps} />
+          </div>
+          <FitNote fit={fit} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
+/** Tells the owner when auto-fit shrank the CV, or when even the smallest step overflows. */
+function FitNote({ fit }: { fit: CvFit }) {
+  const { t } = useAboutEditLocale();
+  if (!fit.overflow && fit.scale >= 1) return null;
+  return fit.overflow ? (
+    <p role="status" className="rounded-lg bg-amber-100 px-2.5 py-1.5 text-[11px] text-amber-950">
+      {t.fitOverflow}
+    </p>
+  ) : (
+    <p role="status" className="text-[11px] text-muted-foreground">
+      {t.fitShrunk(Math.round(fit.scale * 100))}
+    </p>
+  );
+}
+
+/** One editor page: blocks are separated by thin rules, with a short hint above the list. */
 function SectionPanel({
   id,
   current,
+  hint,
   children,
 }: {
   id: SectionId;
   current: SectionId;
+  hint?: string;
   children: ReactNode;
 }) {
   const active = id === current;
   return (
-    <div className="space-y-6" hidden={!active} aria-hidden={!active}>
-      {children}
+    <div className="space-y-4" hidden={!active} aria-hidden={!active}>
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+      <div className="divide-y divide-border/60 [&>*]:py-5 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
+        {children}
+      </div>
     </div>
   );
 }
@@ -752,17 +1074,23 @@ function SectionPanel({
 function ShowOnCvTick({
   checked,
   label,
+  note,
   onChange,
 }: {
   checked: boolean;
   label: string;
+  /** Shown beside the tick, e.g. "Not on CV yet" for a filled field that is switched off. */
+  note?: string;
   onChange: (next: boolean) => void;
 }) {
   return (
-    <label className="flex shrink-0 items-center gap-1.5 text-xs font-normal text-foreground cursor-pointer select-none">
-      <Checkbox checked={checked} onCheckedChange={(v) => onChange(v === true)} />
-      {label}
-    </label>
+    <div className="flex shrink-0 items-center gap-2">
+      {note ? <span className="text-[11px] text-amber-600 dark:text-amber-400">{note}</span> : null}
+      <label className="flex items-center gap-1.5 text-xs font-normal text-foreground cursor-pointer select-none">
+        <Checkbox checked={checked} onCheckedChange={(v) => onChange(v === true)} />
+        {label}
+      </label>
+    </div>
   );
 }
 
@@ -770,6 +1098,7 @@ function EditorBlock({
   icon: Icon,
   title,
   hint,
+  filled,
   showOnCv,
   showOnCvLabel,
   onShowOnCvChange,
@@ -778,11 +1107,14 @@ function EditorBlock({
   icon?: ComponentType<{ className?: string }>;
   title: string;
   hint?: string;
+  /** The field has content — if it is switched off, say so beside the tick. */
+  filled?: boolean;
   showOnCv?: boolean;
   showOnCvLabel?: string;
   onShowOnCvChange?: (next: boolean) => void;
   children: ReactNode;
 }) {
+  const { t } = useAboutEditLocale();
   return (
     <section className="space-y-2.5">
       <div className="flex items-center justify-between gap-2">
@@ -793,7 +1125,12 @@ function EditorBlock({
         <div className="flex items-center gap-2 shrink-0">
           {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
           {showOnCv != null && showOnCvLabel && onShowOnCvChange ? (
-            <ShowOnCvTick checked={showOnCv} label={showOnCvLabel} onChange={onShowOnCvChange} />
+            <ShowOnCvTick
+              checked={showOnCv}
+              label={showOnCvLabel}
+              note={filled && !showOnCv ? t.notOnCvYet : undefined}
+              onChange={onShowOnCvChange}
+            />
           ) : null}
         </div>
       </div>

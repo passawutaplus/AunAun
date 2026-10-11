@@ -22,7 +22,7 @@ describe("Footer", () => {
     expect(screen.getByText(/สงวนลิขสิทธิ์/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "ข้อกำหนด" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "ศูนย์ช่วยเหลือ" })).toBeInTheDocument();
-    expect(screen.getByText("aplus1")).toBeInTheDocument();
+    expect(screen.getByText("sameCOR")).toBeInTheDocument();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
 });

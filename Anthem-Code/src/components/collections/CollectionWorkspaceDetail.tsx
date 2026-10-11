@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { Pencil, Trash2, Layers3, Lock, Globe2, Share2 } from "lucide-react";
+import { useState } from "react";
+import { Pencil, Trash2, Lock, Globe2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,35 +16,13 @@ import {
   useCollection,
   useCollectionItems,
   useDeleteCollection,
-  useToggleCollectionItem,
   useUpdateCollection,
 } from "@/hooks/useCollections";
 import CollectionFormDialog from "@/components/collections/CollectionFormDialog";
-import {
-  CollectionBrowseToolbar,
-  type CollectionItemsSortMode,
-} from "@/components/collections/CollectionBrowseToolbar";
 import SharePopover from "@/components/SharePopover";
 import { InlineLoader } from "@/components/ui/BanterLoader";
-import { CollectionWorkItemsGrid } from "@/components/collections/CollectionWorkCard";
+import CollectionItemsSection, { type CollectionSectionProject } from "@/components/collections/CollectionItemsSection";
 import { toast } from "sonner";
-import {
-  COLLECTION_ITEMS_GRID_STORAGE_KEY,
-  readCollectionGridDensity,
-  writeCollectionGridDensity,
-  type CollectionGridDensity,
-} from "@/lib/collectionGridDensity";
-
-type CollectionProject = {
-  id: string;
-  title?: string | null;
-  cover_url?: string | null;
-  status?: string | null;
-  likes?: number | null;
-  views?: number | null;
-  created_at?: string | null;
-  owner_id?: string | null;
-};
 
 type Props = {
   collectionId: string;
@@ -55,48 +32,16 @@ type Props = {
 
 export function CollectionWorkspaceDetail({ collectionId, isOwner, onDeleted }: Props) {
   const { data: collection, isLoading } = useCollection(collectionId);
-  const { data: items = [], isLoading: itemsLoading } = useCollectionItems(collectionId);
-  const remove = useToggleCollectionItem();
+  const { data: items = [], isLoading: itemsLoading, isError: itemsError, refetch: refetchItems } = useCollectionItems(collectionId);
   const del = useDeleteCollection();
   const update = useUpdateCollection();
   const [editOpen, setEditOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [sortMode, setSortMode] = useState<CollectionItemsSortMode>("newest");
-  const [density, setDensity] = useState<CollectionGridDensity>(() =>
-    readCollectionGridDensity(COLLECTION_ITEMS_GRID_STORAGE_KEY, "large"),
-  );
 
-  const projects = items as CollectionProject[];
+  const projects = items as CollectionSectionProject[];
   const shareUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/collections/${collection?.id ?? collectionId}`
       : `/collections/${collection?.id ?? collectionId}`;
-
-  useEffect(() => {
-    writeCollectionGridDensity(COLLECTION_ITEMS_GRID_STORAGE_KEY, density);
-  }, [density]);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let list = projects;
-    if (q) list = list.filter((p) => (p.title ?? "").toLowerCase().includes(q));
-    const next = [...list];
-    const ts = (p: CollectionProject) => {
-      const n = Date.parse(p.created_at ?? "");
-      return Number.isNaN(n) ? 0 : n;
-    };
-    switch (sortMode) {
-      case "oldest":
-        return next.sort((a, b) => ts(a) - ts(b));
-      case "likes":
-        return next.sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0));
-      case "views":
-        return next.sort((a, b) => (b.views ?? 0) - (a.views ?? 0));
-      case "newest":
-      default:
-        return next.sort((a, b) => ts(b) - ts(a));
-    }
-  }, [projects, query, sortMode]);
 
   const makePublic = async () => {
     if (!collection || collection.is_public) return;
@@ -131,9 +76,6 @@ export function CollectionWorkspaceDetail({ collectionId, isOwner, onDeleted }: 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1">
-                <Layers3 className="h-3.5 w-3.5" /> คอลเลกชัน
-              </span>
               {collection.is_public ? (
                 <span className="inline-flex items-center gap-1">
                   <Globe2 className="h-3 w-3" /> สาธารณะ
@@ -147,18 +89,13 @@ export function CollectionWorkspaceDetail({ collectionId, isOwner, onDeleted }: 
             <h2 className="text-xl md:text-2xl font-medium text-foreground leading-tight">
               {collection.name}
             </h2>
-            {collection.category && (
-              <Badge className="bg-primary/15 text-primary border-0 hover:bg-primary/15 rounded-full">
-                {collection.category}
-              </Badge>
-            )}
             {collection.description && (
               <p className="text-sm text-foreground/90 max-w-2xl leading-relaxed whitespace-pre-wrap">
                 {collection.description}
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              {collection.item_count} ผลงานในนิทรรศการ
+              {collection.item_count} ผลงานในคอลเลกชันนี้
             </p>
             {isOwner && !collection.is_public ? (
               <p className="text-xs text-muted-foreground">
@@ -176,7 +113,9 @@ export function CollectionWorkspaceDetail({ collectionId, isOwner, onDeleted }: 
                 <Button
                   size="sm"
                   variant="outline"
-                  className="rounded-full"
+                  className="h-9 w-9 rounded-full p-0"
+                  aria-label="แชร์คอลเลกชัน"
+                  title="แชร์"
                   onClick={() => {
                     if (isOwner && !collection.is_public) {
                       toast.message("คอลเลกชันยังเป็นส่วนตัว", {
@@ -189,18 +128,31 @@ export function CollectionWorkspaceDetail({ collectionId, isOwner, onDeleted }: 
                     }
                   }}
                 >
-                  <Share2 className="w-4 h-4 mr-1" /> แชร์
+                  <Share2 className="w-4 h-4" />
                 </Button>
               </SharePopover>
             )}
             {isOwner && (
               <>
-                <Button size="sm" variant="outline" onClick={() => setEditOpen(true)} className="rounded-full">
-                  <Pencil className="w-4 h-4 mr-1" /> แก้ไข
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setEditOpen(true)}
+                  className="h-9 w-9 rounded-full p-0"
+                  aria-label="แก้ไขคอลเลกชัน"
+                  title="แก้ไข"
+                >
+                  <Pencil className="w-4 h-4" />
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="outline" className="rounded-full text-destructive hover:text-destructive">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-9 w-9 rounded-full p-0 text-destructive hover:text-destructive dark:text-red-400 dark:hover:text-red-300"
+                      aria-label="ลบคอลเลกชัน"
+                      title="ลบ"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </AlertDialogTrigger>
@@ -215,8 +167,12 @@ export function CollectionWorkspaceDetail({ collectionId, isOwner, onDeleted }: 
                       <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={async () => {
-                          await del.mutateAsync(collection.id);
-                          onDeleted?.();
+                          try {
+                            await del.mutateAsync(collection.id);
+                            onDeleted?.();
+                          } catch (e) {
+                            toast.error((e as Error).message || "ลบคอลเลกชันไม่สำเร็จ");
+                          }
                         }}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
@@ -231,56 +187,21 @@ export function CollectionWorkspaceDetail({ collectionId, isOwner, onDeleted }: 
         </div>
       </header>
 
-      {projects.length === 0 ? (
-        <div className="text-center py-16 glass-panel rounded-2xl">
-          <Layers3 className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-foreground font-medium mb-1">ยังไม่มีผลงานในคอลเลกชันนี้</p>
-          <p className="text-sm text-muted-foreground">
-            {isOwner
-              ? "เลื่อนดูฟีดแล้วกดไอคอน Layers เพื่อเก็บเข้านี่"
-              : "เจ้าของยังไม่ได้เพิ่มผลงาน"}
-          </p>
+      {itemsError ? (
+        <div className="text-center py-16 glass-panel rounded-2xl space-y-3">
+          <p className="text-foreground font-medium">โหลดผลงานไม่สำเร็จ</p>
+          <Button size="sm" variant="outline" className="rounded-full" onClick={() => void refetchItems()}>
+            ลองอีกครั้ง
+          </Button>
         </div>
       ) : (
-        <>
-          <CollectionBrowseToolbar
-            mode="items"
-            searchPlaceholder="ค้นหาชื่องาน..."
-            query={query}
-            onQueryChange={setQuery}
-            density={density}
-            onDensityChange={setDensity}
-            sortMode={sortMode}
-            onSortModeChange={setSortMode}
-            resultCount={filtered.length}
-            densityPreset="profile"
-          />
-
-          {filtered.length === 0 ? (
-            <div className="text-center py-12 glass-panel rounded-2xl">
-              <p className="text-foreground font-medium mb-1">ไม่พบผลงานที่ตรงเงื่อนไข</p>
-              <p className="text-sm text-muted-foreground">ลองเปลี่ยนคำค้น</p>
-            </div>
-          ) : (
-            <CollectionWorkItemsGrid
-              projects={filtered}
-              density={density}
-              layoutGroupId="collection-workspace-items-layout"
-              onRemove={
-                isOwner
-                  ? async (projectId) => {
-                      await remove.mutateAsync({
-                        collectionId: collection.id,
-                        projectId,
-                        remove: true,
-                      });
-                      toast.success("เอาออกจากคอลเลกชันแล้ว");
-                    }
-                  : undefined
-              }
-            />
-          )}
-        </>
+        <CollectionItemsSection
+          collectionId={collection.id}
+          coverUrl={collection.cover_url}
+          projects={projects}
+          isOwner={isOwner}
+          layoutGroupId="collection-workspace-items-layout"
+        />
       )}
 
       <CollectionFormDialog open={editOpen} onOpenChange={setEditOpen} initial={collection} />

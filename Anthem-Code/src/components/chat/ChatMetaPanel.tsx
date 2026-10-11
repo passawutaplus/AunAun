@@ -235,7 +235,7 @@ const ChatMetaPanel = ({
               <Button
                 type="button"
                 size="sm"
-                className="h-8 rounded-full text-[11px] bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                className="h-8 rounded-full text-[11px] bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
                 onClick={() => openPlan(conversation.id)}
               >
                 <Handshake className="w-3.5 h-3.5 mr-1" />
@@ -359,7 +359,7 @@ const ChatMetaPanel = ({
                         className={cn(
                           "flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px]",
                           done
-                            ? "bg-[hsl(var(--chat-collab))] text-white"
+                            ? "bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))]"
                             : current
                               ? "bg-[hsl(var(--chat-collab)/0.2)] text-[hsl(var(--chat-collab))] ring-1 ring-[hsl(var(--chat-collab)/0.45)]"
                               : "bg-muted text-muted-foreground",

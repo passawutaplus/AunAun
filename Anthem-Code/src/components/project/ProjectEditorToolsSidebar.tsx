@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { PhotoGridLayoutWireframe } from "@/components/project/PhotoGridLayoutPicker";
 import { Input } from "@/components/ui/input";
+import { EditorInfoButton, type EditorInfoTopic } from "@/components/project/EditorInfoPopover";
 import {
   Tooltip,
   TooltipContent,
@@ -470,6 +471,7 @@ function ToolPreview({ kind, compact }: { kind: PreviewKind; compact?: boolean }
 function ToolRowButton({
   label,
   hint,
+  infoTopic,
   preview,
   active,
   disabled,
@@ -479,6 +481,7 @@ function ToolRowButton({
 }: {
   label: string;
   hint: string;
+  infoTopic?: EditorInfoTopic;
   preview: PreviewKind;
   active?: boolean;
   disabled?: boolean;
@@ -517,21 +520,7 @@ function ToolRowButton({
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-1">
           <span className="text-xs font-medium text-foreground">{label}</span>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span
-                className="shrink-0 text-muted-foreground/50"
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => e.stopPropagation()}
-                role="presentation"
-              >
-                <CircleHelp className="h-3 w-3" />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="max-w-[220px] text-xs">
-              {hint}
-            </TooltipContent>
-          </Tooltip>
+          {infoTopic ? <EditorInfoButton topic={infoTopic} inline /> : null}
         </div>
       </div>
     </button>
@@ -805,17 +794,19 @@ export function ProjectEditorToolsSidebar({
           className,
         )}
         aria-label="เครื่องมือเพิ่มเนื้อหา"
+        data-tour="library"
       >
         {expanded ? (
           <div className="flex h-full flex-col lg:h-[calc(100dvh-4rem)]">
             <div className="flex items-center justify-between gap-2 px-3 pb-1 pt-3 lg:pt-4">
-              <p className="inline-flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
+              <p className="inline-flex items-center gap-2 font-display text-base font-normal tracking-tight text-foreground">
                 {sidebarTab === "template" ? (
                   <LayoutTemplate className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
                 ) : (
                   <Blocks className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
                 )}
                 {sidebarTab === "template" ? "Template" : "Module"}
+                <EditorInfoButton topic={sidebarTab === "template" ? "templates" : "modules"} />
               </p>
               <button
                 type="button"
@@ -833,7 +824,7 @@ export function ProjectEditorToolsSidebar({
                 onClick={() => setSidebarTab("module")}
                 aria-pressed={sidebarTab === "module"}
                 className={cn(
-                  "flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors",
+                  "flex items-center justify-center gap-1 rounded-md px-2 py-1.5 font-display text-[11px] font-normal transition-colors",
                   sidebarTab === "module"
                     ? "bg-primary/15 text-primary"
                     : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
@@ -847,7 +838,7 @@ export function ProjectEditorToolsSidebar({
                 onClick={() => setSidebarTab("template")}
                 aria-pressed={sidebarTab === "template"}
                 className={cn(
-                  "flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors",
+                  "flex items-center justify-center gap-1 rounded-md px-2 py-1.5 font-display text-[11px] font-normal transition-colors",
                   sidebarTab === "template"
                     ? "bg-primary/15 text-primary"
                     : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
@@ -1021,6 +1012,7 @@ export function ProjectEditorToolsSidebar({
                 <ToolRowButton
                   label="ภาพเดี่ยว"
                   hint="ลากหรือกดเพื่อวางช่องภาพ — อัปโหลดทีหลังได้"
+                  infoTopic="single"
                   preview="single"
                   active={singleMode}
                   disabled={imageDisabled}
@@ -1037,6 +1029,7 @@ export function ProjectEditorToolsSidebar({
                 <ToolRowButton
                   label="แกลเลอรีสไลด์"
                   hint="วางช่องภาพเพิ่มได้เรื่อย ๆ แล้วอัปโหลดทีหลัง"
+                  infoTopic="gallery"
                   preview="gallery"
                   active={galleryMode}
                   disabled={imageDisabled}
@@ -1126,6 +1119,7 @@ export function ProjectEditorToolsSidebar({
                 <ToolRowButton
                   label="วิดีโอ"
                   hint="วางช่องวิดีโอก่อน แล้วค่อยอัปโหลดคลิป"
+                  infoTopic="video"
                   preview="video"
                   disabled={videoDisabled}
                   loading={uploadingVideo}

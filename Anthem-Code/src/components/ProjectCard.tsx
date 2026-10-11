@@ -1,7 +1,7 @@
 import BriefcaseIcon from "./icons/BriefcaseIcon";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Bookmark, Eye, MoreHorizontal, Handshake } from "lucide-react";
+import { Bookmark, Eye, Handshake } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Project } from "@/data/projectTypes";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
@@ -148,7 +148,7 @@ const ProjectCard = ({
         ref={wrapRef}
         className={cn(
           "relative w-full overflow-hidden bg-[#e5e4e2]",
-          "rounded-none",
+          "rounded-[6px]",
           !showNatural && "aspect-[4/3]",
         )}
       >
@@ -194,7 +194,7 @@ const ProjectCard = ({
               type="button"
               aria-label={savedInCollection ? "เก็บในคอลเลกชันแล้ว" : "เก็บเข้าคอลเลกชัน"}
               aria-pressed={savedInCollection}
-              title="Keep Collection"
+              title="เก็บเข้าคอลเลกชัน"
               className={cn(
                 "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/90 text-foreground shadow-sm backdrop-blur-sm hover:bg-background transition-opacity duration-200",
                 menuOpen || collectionOpen || savedInCollection
@@ -276,21 +276,6 @@ const ProjectCard = ({
           ) : null}
         </div>
 
-        {hasCardActions ? (
-        <button
-          onClick={stop(() => setMenuOpen((v) => !v))}
-          aria-label="ตัวเลือก"
-          aria-expanded={menuOpen}
-          className={cn(
-            "absolute bottom-2 right-2 p-1.5 rounded-full transition-all hover:scale-110 text-white md:hidden",
-            menuOpen
-              ? "bg-white/20 border border-white/25 backdrop-blur-md opacity-100"
-              : "bg-background/15 border border-white/10 backdrop-blur-md"
-          )}
-        >
-          <MoreHorizontal className="w-4 h-4" />
-        </button>
-        ) : null}
       </div>
 
       {gallery ? null : (

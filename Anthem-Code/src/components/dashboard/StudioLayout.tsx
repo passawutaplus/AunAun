@@ -90,16 +90,16 @@ export default function StudioLayout({
           <div className="hidden lg:block">
             <BackButton to={backTo} label={backLabel} />
           </div>
-          <p className="mt-4 text-xs font-medium text-white/80">My Studio</p>
+          <p className="mt-4 text-xs font-medium text-muted-foreground">My Studio</p>
           {item ? (
             <div className="mt-1">
-              <h1 className="text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
+              <h1 className="text-5xl font-light tracking-tight text-foreground sm:text-6xl lg:text-7xl">
                 {item.heroTitle}
               </h1>
-              <p className="mt-2 max-w-xl text-sm text-white/85 sm:text-base">{item.hint}</p>
+              <p className="mt-2 max-w-xl text-sm text-muted-foreground sm:text-base">{item.hint}</p>
             </div>
           ) : (
-            <h1 className="mt-1 text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
+            <h1 className="mt-1 text-5xl font-light tracking-tight text-foreground sm:text-6xl lg:text-7xl">
               My Studio
             </h1>
           )}

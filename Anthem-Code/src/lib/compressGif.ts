@@ -3,7 +3,7 @@ import { getSharedFfmpeg, resetSharedFfmpeg, withTimeout } from "@/lib/ffmpegCor
 import { UPLOAD_STAGE, type UploadStageReporter } from "@/lib/uploadProgress";
 
 /** GIFs at or below this size upload as-is (animation preserved, cheap to serve). */
-const GIF_CONVERT_ABOVE_BYTES = 2 * 1024 * 1024;
+export const GIF_CONVERT_ABOVE_BYTES = 2 * 1024 * 1024;
 const TRANSCODE_TIMEOUT_MS = 3 * 60_000;
 
 export type PreparedGif =

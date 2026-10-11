@@ -350,9 +350,9 @@ const MessageBubble = ({
 
   const mineBg =
     kind === "hire"
-      ? "bg-[hsl(var(--chat-hire))] text-white"
+      ? "bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))]"
       : kind === "collab"
-        ? "bg-gradient-to-br from-[hsl(var(--chat-collab))] to-[hsl(var(--chat-collab)/0.8)] text-white"
+        ? "bg-gradient-to-br from-[hsl(var(--chat-collab))] to-[hsl(var(--chat-collab)/0.8)] text-[hsl(var(--chat-collab-foreground))]"
         : "bg-primary text-primary-foreground";
   const theirBg =
     kind === "hire"
@@ -581,10 +581,10 @@ const MessageBubble = ({
           mine ? "bg-black/15 border-white/70" : "bg-black/5 border-primary/50",
         )}
       >
-        <span className={cn("block text-[10px] font-semibold truncate", mine ? "text-white/90" : "text-primary")}>
+        <span className={cn("block text-[10px] font-semibold truncate", mine ? "opacity-90" : "text-primary")}>
           {getSenderLabel?.(replyTo.sender_id) ?? "ข้อความเดิม"}
         </span>
-        <span className={cn("block text-[11px] truncate mt-0.5", mine ? "text-white/75" : "text-muted-foreground")}>
+        <span className={cn("block text-[11px] truncate mt-0.5", mine ? "opacity-75" : "text-muted-foreground")}>
           {replyPreviewText(replyTo)}
         </span>
       </button>
@@ -736,7 +736,7 @@ const MessageBubble = ({
                       <p
                         className={cn(
                           "text-[10px] truncate",
-                          mine ? "text-white/75" : "text-muted-foreground",
+                          mine ? "opacity-75" : "text-muted-foreground",
                         )}
                       >
                         #{projectFromLabel.replace(/^#/, "")}
@@ -802,7 +802,7 @@ const MessageBubble = ({
                     <div className="flex h-16 items-center justify-center bg-muted text-xs text-muted-foreground">สินค้า</div>
                   )}
                   <div className={cn("space-y-0.5 px-3 py-2", mine ? "bg-black/10" : "bg-card")}>
-                    <p className={cn("text-[10px]", mine ? "text-white/75" : "text-muted-foreground")}>สินค้า</p>
+                    <p className={cn("text-[10px]", mine ? "opacity-75" : "text-muted-foreground")}>สินค้า</p>
                     <div className="flex items-center justify-between gap-2">
                       <span className="truncate text-sm font-medium">{objectCard.title}</span>
                       <span className="shrink-0 text-sm">{formatBaht(objectCard.price_thb)}</span>
@@ -838,14 +838,14 @@ const MessageBubble = ({
                     </div>
                   )}
                   <div className={cn("px-3 py-2 space-y-0.5", mine ? "bg-black/10" : "bg-card")}>
-                    <p className={cn("text-[10px]", mine ? "text-white/75" : "text-muted-foreground")}>
+                    <p className={cn("text-[10px]", mine ? "opacity-75" : "text-muted-foreground")}>
                       Package
                     </p>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-medium truncate">{serviceCard.title}</span>
                       <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-70" />
                     </div>
-                    <p className={cn("text-xs font-semibold tabular-nums", mine ? "text-white" : "text-primary")}>
+                    <p className={cn("text-xs font-semibold tabular-nums", mine ? "" : "text-primary")}>
                       {formatServicePrice(serviceCard.price_thb)}
                     </p>
                   </div>
