@@ -10,6 +10,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useMotionValue } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import ImageActionBar from "@/components/project/ImageActionBar";
+import LightboxColorTools from "@/components/project/LightboxColorTools";
 import { lightboxBackdropVariants, lightboxTransition } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,48 @@ type Props = {
 };
 
 const SWIPE_PX = 56;
+
+/** Read one pixel of the image at a relative point (0–1). Null when the host blocks reading pixels. */
+async function sampleImageColor(src: string, rx: number, ry: number): Promise<string | null> {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.src = src;
+  try {
+    await img.decode();
+  } catch {
+    return null;
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+  const sx = Math.min(img.naturalWidth - 1, Math.max(0, Math.floor(rx * img.naturalWidth)));
+  const sy = Math.min(img.naturalHeight - 1, Math.max(0, Math.floor(ry * img.naturalHeight)));
+  ctx.drawImage(img, sx, sy, 1, 1, 0, 0, 1, 1);
+  try {
+    const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+    return `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+  } catch {
+    return null;
+  }
+}
+
+/** Golden-ratio guide: lines at 38.2% / 61.8% both ways. */
+function GoldenRatioOverlay() {
+  const phi = 0.381966;
+  const pos = [phi, 1 - phi].map((v) => `${(v * 100).toFixed(1)}%`);
+  return (
+    <svg aria-hidden className="pointer-events-none absolute inset-0 z-10 h-full w-full" preserveAspectRatio="none">
+      {pos.map((p) => (
+        <line key={`v${p}`} x1={p} x2={p} y1="0" y2="100%" stroke="rgba(255,255,255,.75)" strokeWidth="1" strokeDasharray="6 4" />
+      ))}
+      {pos.map((p) => (
+        <line key={`h${p}`} x1="0" x2="100%" y1={p} y2={p} stroke="rgba(255,255,255,.75)" strokeWidth="1" strokeDasharray="6 4" />
+      ))}
+    </svg>
+  );
+}
 const ZOOM_SCALE = 2;
 const CLICK_MOVE_PX = 6;
 
@@ -68,6 +111,10 @@ const ImageLightbox = ({
   const [dragHint, setDragHint] = useState(0);
   const [zoomed, setZoomed] = useState(false);
   const [panning, setPanning] = useState(false);
+  const [grayscale, setGrayscale] = useState(false);
+  const [golden, setGolden] = useState(false);
+  const [pickMode, setPickMode] = useState(false);
+  const [pickedHex, setPickedHex] = useState<string | null>(null);
 
   // Direct motion values so pan updates every frame without React re-render lag.
   const x = useMotionValue(0);
@@ -116,6 +163,8 @@ const ImageLightbox = ({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
+      // A dialog opened from inside the lightbox (e.g. share) handles its own keys first.
+      if (document.querySelector('[role="dialog"][data-state="open"]')) return;
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
@@ -147,6 +196,8 @@ const ImageLightbox = ({
 
   useEffect(() => {
     resetView();
+    setPickMode(false);
+    setPickedHex(null);
   }, [open, safeIndex, resetView]);
 
   // Keep swipe-nav when not zoomed (touch on backdrop/stage).
@@ -302,13 +353,28 @@ const ImageLightbox = ({
             </>
           ) : null}
 
+          {!zoomed ? (
+            <div className="absolute bottom-4 left-1/2 z-30 -translate-x-1/2">
+              <LightboxColorTools
+                src={currentSrc}
+                grayscale={grayscale}
+                onGrayscaleChange={setGrayscale}
+                golden={golden}
+                onGoldenChange={setGolden}
+                pickMode={pickMode}
+                onPickModeChange={setPickMode}
+                pickedHex={pickedHex}
+              />
+            </div>
+          ) : null}
+
           {/* Full-stage drag surface when zoomed so pan isn't limited to the unscaled box. */}
           <div
             className={cn(
               "group z-10 flex items-center justify-center",
               zoomed
                 ? "absolute inset-0 cursor-grab touch-none"
-                : "relative max-h-[92vh] max-w-[95vw]",
+                : "relative max-h-[78vh] max-w-[95vw] -translate-y-6",
               zoomed && panning && "cursor-grabbing",
               !zoomed && "cursor-zoom-in",
             )}
@@ -327,11 +393,31 @@ const ImageLightbox = ({
               }}
               exit={{ opacity: 0 }}
               transition={lightboxTransition}
-              style={zoomed ? { x, y, scale } : { scale }}
-              className="pointer-events-none max-h-[92vh] max-w-[95vw] origin-center rounded-lg object-contain shadow-2xl select-none"
+              style={{ ...(zoomed ? { x, y, scale } : { scale }), filter: grayscale ? "grayscale(1)" : undefined }}
+              className="pointer-events-none max-h-[78vh] max-w-[95vw] origin-center rounded-lg object-contain shadow-2xl select-none transition-[filter] duration-300"
               draggable={false}
             />
 
+            {golden && !zoomed ? <GoldenRatioOverlay /> : null}
+            {pickMode && !zoomed ? (
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label="แตะเพื่อเลือกสีจากภาพ"
+                className="absolute inset-0 z-20 cursor-crosshair"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const box = e.currentTarget.getBoundingClientRect();
+                  const rx = (e.clientX - box.left) / box.width;
+                  const ry = (e.clientY - box.top) / box.height;
+                  void sampleImageColor(currentSrc, rx, ry).then((hex) => {
+                    if (hex) setPickedHex(hex);
+                    setPickMode(false);
+                  });
+                }}
+              />
+            ) : null}
             {/* Bottom-center actions: always on mobile; hover on desktop. Hidden while zoomed 200%. */}
             {showActions && !zoomed ? (
               <div

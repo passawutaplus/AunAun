@@ -51,6 +51,7 @@ import {
   projectMatchesSubs,
   type CategoryParentId,
 } from "@/data/categoryTaxonomy";
+import { getCategoryParent as getFeedCategoryParent, getCategorySub as getFeedCategorySub } from "@/data/categoryTaxonomy";
 import { isCategoryAllowed } from "@/lib/cookieConsent";
 import {
   usePublishedProjects,
@@ -355,6 +356,18 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     navigate("/?drill=1", { replace: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // Deep link from a project's category badge: /?cat=<parent>&sub=<sub> opens the project feed filtered.
+  useEffect(() => {
+    const parent = getFeedCategoryParent(searchParams.get("cat"));
+    if (!parent) return;
+    const subId = searchParams.get("sub");
+    setMode("projects");
+    setCategory(parent.id);
+    setProjectLeaves([]);
+    setProjectStyles(subId && getFeedCategorySub(parent, subId) ? [subId] : []);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [searchParams]);
 
   const setFeedCategory = (next: FeedCategoryChip) => {
     setCategory(next);
@@ -746,6 +759,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               "--accent": "40 6% 92%",
               "--accent-foreground": "40 3% 18%",
               "--primary": "40 3% 18%",
+              "--primary-foreground": "0 0% 96%",
               "--primary-bright": "40 3% 18%",
               "--ring": "40 3% 18%",
               color: "#2f2e2c",

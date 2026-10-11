@@ -85,6 +85,7 @@ const ImageActionBar = ({
       <PlusOneControl
         active={liked}
         count={likes}
+        showCount={likes > 0}
         onClick={handleLike}
         ariaLabel={liked ? "ยกเลิกถูกใจ" : "ถูกใจ"}
         className={`${btn} text-white hover:text-white hover:bg-black/45 [&_span]:text-white/90`}

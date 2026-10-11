@@ -45,6 +45,22 @@ export function parseExtraTools(searchParams: URLSearchParams): string[] {
   return out;
 }
 
+/** Extra tags that narrow an explore page (`?tags=abstract,poster`). */
+export function parseExtraTags(searchParams: URLSearchParams): string[] {
+  const raw = searchParams.get("tags");
+  if (!raw) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of raw.split(",")) {
+    const label = part.trim().replace(/^#+/, "");
+    const key = normalizeTag(label);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(label);
+  }
+  return out;
+}
+
 export function extraToolsQuery(extraTools: string[]): string {
   if (extraTools.length === 0) return "";
   return `with=${extraTools.map((t) => encodeURIComponent(t.trim())).join(",")}`;

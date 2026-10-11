@@ -90,6 +90,14 @@ describe("sitemap-lib", () => {
     expect(paths).toContain("/u/uid-1");
   });
 
+  it("lists individual public collections but never the /collections list page", () => {
+    const id = "651b6236-e503-45c6-9950-3bad5e9a7b89";
+    const paths = buildSitemapUrls({ collectionIds: [id] }).map((u) => u.loc);
+    expect(paths).toContain(`/collections/${id}`);
+    expect(paths).not.toContain("/collections");
+    expect(buildSitemapUrls().map((u) => u.loc).some((p) => p.startsWith("/collections"))).toBe(false);
+  });
+
   it("generates well-formed XML with absolute URLs", () => {
     const xml = buildSitemapXml("https://aplus1.app");
     expect(xml).toContain("<urlset");

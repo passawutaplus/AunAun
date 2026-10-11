@@ -792,7 +792,8 @@ const ProjectEditorPage = () => {
       setPrice(existing.price_thb ? String(existing.price_thb) : "");
       setShowPrice(!!existing.price_thb);
       setStatus(existing.status as Status);
-      setAllowHire(!!(existing as { allow_hire?: boolean }).allow_hire);
+      // Same default as the public page: a legacy row with no value is open for hire.
+      setAllowHire((existing as { allow_hire?: boolean | null }).allow_hire ?? true);
       setAllowCollab((existing as any).allow_collab ?? true);
       setStudioId((existing as any).studio_id ?? null);
       setCreditedIds(((existing as any).credited_user_ids as string[]) ?? []);

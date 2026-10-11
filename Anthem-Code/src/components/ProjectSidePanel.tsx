@@ -1,6 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { exploreProjectsUrl } from "@/lib/exploreRoutes";
-import { Bookmark, Eye, MessageCircle, Sparkles, Calendar, Handshake, AlignLeft, Palette, Hash, Share2 } from "lucide-react";
+import { Bookmark, Eye, MessageCircle, Sparkles, Calendar, Handshake, AlignLeft, Palette, Hash, Share2, Pencil, Users } from "lucide-react";
+import UserAvatar from "@/components/UserAvatar";
+import { useProfilesByIds } from "@/core/profiles";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import { Button } from "@/components/ui/button";
@@ -19,7 +21,14 @@ import ProjectAssetsSection from "@/components/project/ProjectAssetsSection";
 import LicenseDetailBlock from "@/components/license/LicenseDetailBlock";
 import { ProjectSeriesBlock } from "@/components/series/ProjectSeriesBlock";
 import { PriceCurrencyAmount } from "@/components/payments/PriceCurrencySelect";
-import { formatCategoryBreadcrumb, stripCategorySubTags } from "@/data/categoryTaxonomy";
+import {
+  formatCategoryBreadcrumb,
+  findSubAcrossParents,
+  getCategoryParent,
+  parentIdForProjectCategory,
+  parseCategorySubId,
+  stripCategorySubTags,
+} from "@/data/categoryTaxonomy";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedProjectIds } from "@/hooks/useCollections";
 import { cn } from "@/lib/utils";
@@ -65,6 +74,8 @@ interface Props {
   shareImageUrl?: string;
   onHidden?: () => void;
   onBlocked?: () => void;
+  /** People the owner credited as co-creators (editor: ผู้ร่วมงาน). */
+  collaboratorIds?: string[];
 }
 
 const ProjectSidePanel = (p: Props) => {
@@ -76,14 +87,48 @@ const ProjectSidePanel = (p: Props) => {
   const showCollab = p.allowCollab ?? true;
   const ownerView = !!p.isOwner;
   const hireLocked = ownerView && !p.localSelfHirePreview;
+  const collaboratorIds = (p.collaboratorIds ?? []).filter((id) => id && id !== p.ownerId);
+  const { data: collaboratorData } = useProfilesByIds(collaboratorIds);
+  const collaborators = collaboratorData?.list ?? [];
+  const visibleTags = stripCategorySubTags(p.tags);
+  const hasDetails = !!p.description || p.tools.length > 0 || visibleTags.length > 0;
 
   return (
     <aside className="space-y-4">
       <div className="rounded-2xl glass-panel p-5 space-y-4 backdrop-blur-sm">
         <div className="flex items-start justify-between gap-2">
-          <Badge className="bg-primary/15 text-primary border-0 hover:bg-primary/15">
-            <Sparkles className="w-3 h-3 mr-1" /> {formatCategoryBreadcrumb(p.category, p.tags)}
-          </Badge>
+          {(() => {
+            // Parent and sub each open the project feed filtered to that category.
+            const found = findSubAcrossParents(parseCategorySubId(p.tags));
+            const parent = found?.parent ?? getCategoryParent(parentIdForProjectCategory(p.category));
+            const crumb = "rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary";
+            return (
+              <Badge className="bg-primary/15 text-primary border-0 hover:bg-primary/15">
+                <Sparkles className="w-3 h-3 mr-1" aria-hidden />
+                {parent ? (
+                  <>
+                    <Link to={`/?cat=${parent.id}`} className={crumb} title={`ดูผลงานหมวด ${parent.label}`}>
+                      {parent.label}
+                    </Link>
+                    {found ? (
+                      <>
+                        <span className="mx-1 opacity-70" aria-hidden>&gt;</span>
+                        <Link
+                          to={`/?cat=${parent.id}&sub=${found.sub.id}`}
+                          className={crumb}
+                          title={`ดูผลงานหมวด ${found.sub.label}`}
+                        >
+                          {found.sub.label}
+                        </Link>
+                      </>
+                    ) : null}
+                  </>
+                ) : (
+                  formatCategoryBreadcrumb(p.category, p.tags)
+                )}
+              </Badge>
+            );
+          })()}
           <div className="flex items-center shrink-0 -mr-1">
             {p.shareUrl ? (
               <SharePopover
@@ -152,10 +197,36 @@ const ProjectSidePanel = (p: Props) => {
               </div>
             </div>
           )}
-          <FollowButton freelancerId={p.ownerId} size="sm" variant="compact" />
+          {!ownerView ? <FollowButton freelancerId={p.ownerId} size="sm" variant="compact" /> : null}
         </div>
 
-        {showHire && (
+        {collaborators.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <Users className="h-3.5 w-3.5" aria-hidden /> ทำร่วมกับ
+            </span>
+            {collaborators.map((c) => (
+              <Link
+                key={c.id}
+                to={`/u/${c.id}`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 py-0.5 pl-0.5 pr-2 text-foreground hover:bg-muted"
+              >
+                <UserAvatar src={c.avatar_url} name={c.display_name} username={c.username} className="h-5 w-5" fallbackClassName="text-[8px]" />
+                <span className="max-w-[8rem] truncate">{c.display_name || c.username}</span>
+              </Link>
+            ))}
+          </div>
+        ) : null}
+
+        {ownerView && p.projectId ? (
+          <Button asChild size="lg" className="w-full rounded-full">
+            <Link to={`/portfolio/${p.projectId}/edit`}>
+              <Pencil className="mr-1.5 h-4 w-4" aria-hidden /> แก้ไขผลงาน
+            </Link>
+          </Button>
+        ) : null}
+
+        {showHire && !hireLocked && (
           <Button
             onClick={p.onHire}
             disabled={hireLocked}
@@ -174,7 +245,7 @@ const ProjectSidePanel = (p: Props) => {
           </Button>
         )}
 
-        {showCollab && (
+        {showCollab && !ownerView && (
           <Button
             onClick={p.onCollab}
             disabled={ownerView}
@@ -201,7 +272,7 @@ const ProjectSidePanel = (p: Props) => {
 
         {(typeof p.priceThb === "number" && p.priceThb > 0) || p.price ? (
           <p className="text-center text-sm flex flex-wrap items-center justify-center gap-1">
-            <span className="text-muted-foreground">งบประมาณงานนี้ : </span>
+            <span className="text-muted-foreground">ราคาเริ่มต้นงานนี้ : </span>
             {typeof p.priceThb === "number" && p.priceThb > 0 ? (
               <PriceCurrencyAmount amountThb={p.priceThb} />
             ) : (
@@ -214,7 +285,7 @@ const ProjectSidePanel = (p: Props) => {
           <PlusOneControl
             active={p.liked}
             count={p.likes}
-            showCount={false}
+            showCount
             size="md"
             ariaLabel={p.liked ? "เลิกถูกใจ" : "ถูกใจ"}
             onClick={p.onLike}
@@ -222,12 +293,11 @@ const ProjectSidePanel = (p: Props) => {
           />
           <SaveToCollectionPopover projectId={p.projectId}>
             <Button
-              variant="outline"
-              className="rounded-full w-full"
-              size="sm"
+              variant="ghost"
+              className="inline-flex h-9 w-full items-center justify-center rounded-full border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
               aria-pressed={savedInCollection}
-              aria-label={savedInCollection ? "เก็บใน Keep Collection แล้ว" : "Keep Collection"}
-              title="Keep Collection"
+              aria-label={savedInCollection ? "เก็บเข้าคอลเลกชันแล้ว" : "เก็บเข้าคอลเลกชัน"}
+              title="เก็บเข้าคอลเลกชัน"
             >
               <Bookmark
                 className={cn("w-4 h-4", savedInCollection && "fill-primary text-primary")}
@@ -239,7 +309,6 @@ const ProjectSidePanel = (p: Props) => {
 
         <div className="flex items-center justify-around text-xs text-muted-foreground pt-3 border-t border-border/50">
           <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {formatCompact(p.views)} วิว</span>
-          <PlusOneControl active={false} count={p.likes} showCount ariaLabel="ถูกใจ" />
           <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> {formatCompact(p.commentsCount)}</span>
         </div>
 
@@ -254,19 +323,53 @@ const ProjectSidePanel = (p: Props) => {
           aiAssisted={p.aiAssisted}
           aiDisclosureNote={p.aiDisclosureNote}
           allowHire={p.allowHire}
-          onHire={p.onHire}
+          onHire={hireLocked ? undefined : p.onHire}
         />
+
       </div>
 
-      {p.description && (
-        <div className="rounded-2xl glass-panel p-5 space-y-2">
-          <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
-            <AlignLeft className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
-            รายละเอียดแบบย่อ
-          </h3>
-          <p className="text-base text-foreground leading-6 whitespace-pre-wrap">{p.description}</p>
+      {hasDetails ? (
+        <div className="rounded-2xl glass-panel divide-y divide-border/50">
+          {p.description ? (
+            <section className="space-y-2 p-5">
+              <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                <AlignLeft className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
+                รายละเอียดแบบย่อ
+              </h3>
+              <p className="text-base text-foreground leading-6 whitespace-pre-wrap">{p.description}</p>
+            </section>
+          ) : null}
+          {p.tools.length > 0 ? (
+            <section className="space-y-3 p-5">
+              <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                <Palette className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
+                เครื่องมือ &amp; เทคโนโลยี
+              </h3>
+              <ToolsGrid tools={p.tools} compact />
+            </section>
+          ) : null}
+          {visibleTags.length > 0 ? (
+            <section className="space-y-3 p-5">
+              <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                <Hash className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
+                แท็ก
+              </h3>
+              <div className="flex flex-wrap gap-1.5">
+                {visibleTags.map((t) => (
+                  <button key={t} type="button" onClick={() => navigate(exploreProjectsUrl("tag", t))} className="inline-flex">
+                    <Badge
+                      variant="secondary"
+                      className="rounded-full font-normal hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+                    >
+                      #{t}
+                    </Badge>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
-      )}
+      ) : null}
 
       {p.projectId && (
         <ProjectAssetsSection
@@ -276,45 +379,6 @@ const ProjectSidePanel = (p: Props) => {
         />
       )}
 
-      {p.tools.length > 0 && (
-        <div className="rounded-2xl glass-panel p-5 space-y-3">
-          <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
-            <Palette className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
-            เครื่องมือ &amp; เทคโนโลยี
-          </h3>
-          <ToolsGrid tools={p.tools} compact />
-        </div>
-      )}
-
-      {(() => {
-        const visibleTags = stripCategorySubTags(p.tags);
-        if (!visibleTags.length) return null;
-        return (
-          <div className="rounded-2xl glass-panel p-5 space-y-3">
-            <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
-              <Hash className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
-              แท็ก
-            </h3>
-            <div className="flex flex-wrap gap-1.5">
-              {visibleTags.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => navigate(exploreProjectsUrl("tag", t))}
-                  className="inline-flex"
-                >
-                  <Badge
-                    variant="secondary"
-                    className="rounded-full font-normal hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
-                  >
-                    #{t}
-                  </Badge>
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
 
       <ProjectSeriesBlock projectId={p.projectId} compact />
     </aside>

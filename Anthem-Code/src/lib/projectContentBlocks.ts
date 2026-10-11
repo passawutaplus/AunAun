@@ -1,4 +1,4 @@
-import { sanitizeProjectRichText } from "@/lib/projectRichText";
+import { isBlankRichText, sanitizeProjectRichText } from "@/lib/projectRichText";
 import {
   mediaItemsFromProject,
   type PortfolioMediaItem,
@@ -402,7 +402,7 @@ export function parseContentBlocks(raw: unknown): ProjectContentBlock[] {
         ? row.textVerticalAlign
         : "middle";
       const safeUrl = url && isHttpUrl(url) ? url : "";
-      if (!safeUrl && !body.trim()) continue;
+      if (!safeUrl && isBlankRichText(body)) continue;
       out.push({
         id,
         type: "image_text",
@@ -417,9 +417,9 @@ export function parseContentBlocks(raw: unknown): ProjectContentBlock[] {
 
     const heading = sanitizeProjectRichText(typeof row.heading === "string" ? row.heading : "");
     const body = sanitizeProjectRichText(typeof row.body === "string" ? row.body : "");
-    if (row.type === "heading" && !heading.trim()) continue;
-    if (row.type === "body" && !body.trim()) continue;
-    if (row.type === "heading_body" && !heading.trim() && !body.trim()) continue;
+    if (row.type === "heading" && isBlankRichText(heading)) continue;
+    if (row.type === "body" && isBlankRichText(body)) continue;
+    if (row.type === "heading_body" && isBlankRichText(heading) && isBlankRichText(body)) continue;
     out.push({
       id,
       type: row.type,
@@ -648,7 +648,7 @@ export function toStoredContentBlocks(blocks: ProjectContentBlock[]): ProjectCon
       const url = (b.url ?? "").trim();
       const body = sanitizeProjectRichText(b.body ?? "").slice(0, PROJECT_BLOCK_BODY_MAX);
       const safeUrl = url && isHttpUrl(url) ? url : "";
-      if (!safeUrl && !body.trim()) continue;
+      if (!safeUrl && isBlankRichText(body)) continue;
       out.push({
         id: b.id,
         type: "image_text",
@@ -720,9 +720,9 @@ export function toStoredContentBlocks(blocks: ProjectContentBlock[]): ProjectCon
 
     const heading = sanitizeProjectRichText(b.heading ?? "").slice(0, PROJECT_BLOCK_HEADING_MAX);
     const body = sanitizeProjectRichText(b.body ?? "").slice(0, PROJECT_BLOCK_BODY_MAX);
-    if (b.type === "heading" && !heading.trim()) continue;
-    if (b.type === "body" && !body.trim()) continue;
-    if (b.type === "heading_body" && !heading.trim() && !body.trim()) continue;
+    if (b.type === "heading" && isBlankRichText(heading)) continue;
+    if (b.type === "body" && isBlankRichText(body)) continue;
+    if (b.type === "heading_body" && isBlankRichText(heading) && isBlankRichText(body)) continue;
     out.push({
       id: b.id,
       type: b.type,
