@@ -1,5 +1,8 @@
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
+import { CircleHelp } from "lucide-react";
+import { ProfileTour, hasSeenProfileTour } from "@/components/profile/ProfileTour";
 import { isInspireEnabled } from "@/lib/aplus1Launch";
+import { profileTabIcon } from "@/lib/profileTabIcons";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { BackButton } from "@/components/ui/BackButton";
@@ -84,6 +87,15 @@ const PortfolioProfilePage = () => {
   );
 
   const [opportunityOpen, setOpportunityOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+  const tourCheckedRef = useRef(false);
+  useEffect(() => {
+    // First visit to your own profile: offer the walkthrough once (remembered in this browser).
+    if (tourCheckedRef.current || isLoading || !profile) return;
+    tourCheckedRef.current = true;
+    if (hasSeenProfileTour()) return;
+    window.setTimeout(() => setTourOpen(true), 900);
+  }, [isLoading, profile]);
   const activeTab = resolveTab(searchParams.get("tab"), hiringBoardEnabled);
 
   const setTab = (tab: ProfileTab) => {
@@ -142,10 +154,6 @@ const PortfolioProfilePage = () => {
 
   const published = useMemo(() => myProjects.filter((p) => p.status === "Published"), [myProjects]);
   const projectIds = useMemo(() => myProjects.map((p) => p.id), [myProjects]);
-  const cvProjects = useMemo(
-    () => published.map((p) => ({ id: p.id, title: p.title, views: (p as { views?: number | null }).views ?? 0 })),
-    [published],
-  );
   const projectIdsKey = useMemo(() => [...projectIds].sort().join(","), [projectIds]);
 
   useEffect(() => {
@@ -193,7 +201,7 @@ const PortfolioProfilePage = () => {
   const tabs: { id: ProfileTab; label: string; count?: number }[] = [
     { id: "overall", label: "My Projects", count: published.length },
     { id: "collections", label: "Collections", count: collections.length },
-    { id: "booking", label: "Packages", count: savedPackageIds?.size ?? 0 },
+    { id: "booking", label: "Packages Saved", count: savedPackageIds?.size ?? 0 },
     ...(hiringBoardEnabled
       ? [{ id: "hiring" as const, label: "Hiring", count: myApplications.length + mySavedJobs.length }]
       : []),
@@ -231,6 +239,7 @@ const PortfolioProfilePage = () => {
       <div className="sticky top-0 z-30 lg:hidden border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30">
         <div className={cn(PAGE_SHELL, "px-4 py-2 flex items-center justify-between gap-2")}>
           <BackButton to="/" label="กลับฟีด" />
+          <div data-tour="profile-actions">
           <ProfileOwnerActions
             compact
             onPost={() => navigate("/portfolio/new")}
@@ -248,6 +257,7 @@ const PortfolioProfilePage = () => {
             shareImageUrl={shareImageUrl}
             onShareInteract={() => markOnboardingVisit(user!.id, "share_profile")}
           />
+          </div>
         </div>
       </div>
 
@@ -281,17 +291,20 @@ const PortfolioProfilePage = () => {
 
       <div className={cn(PAGE_SHELL, "pt-2 pb-8 space-y-4")}>
         <main className="min-w-0 space-y-4">
-          <div className="border-b border-border/70">
+          <div className="flex items-center gap-1 border-b border-border/70">
             <nav
+              data-tour="profile-tabs"
               aria-label="เมนูโปรไฟล์"
               className="flex items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {tabs.map((tab) => {
                 const active = activeTab === tab.id;
+                const TabIcon = profileTabIcon(tab.label);
                 return (
                   <button
                     key={tab.id}
                     type="button"
+                    data-tour={`profile-tab-${tab.id}`}
                     onClick={() => setTab(tab.id)}
                     aria-current={active ? "page" : undefined}
                     className={cn(
@@ -301,13 +314,16 @@ const PortfolioProfilePage = () => {
                         : "font-medium text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    <span className="min-w-0 truncate">
-                      {tab.label}
-                      {typeof tab.count === "number" && tab.count > 0 ? (
-                        <span className="ml-1.5 text-[11px] font-normal tabular-nums tracking-normal text-muted-foreground">
-                          {tab.count}
-                        </span>
-                      ) : null}
+                    <span className="inline-flex min-w-0 items-center gap-1.5">
+                      {TabIcon ? <TabIcon className="h-3.5 w-3.5 shrink-0" aria-hidden /> : null}
+                      <span className="min-w-0 truncate">
+                        {tab.label}
+                        {typeof tab.count === "number" && tab.count > 0 ? (
+                          <span className="ml-1.5 text-[11px] font-normal tabular-nums tracking-normal text-muted-foreground">
+                            {tab.count}
+                          </span>
+                        ) : null}
+                      </span>
                     </span>
                     {active ? (
                       <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-foreground" />
@@ -316,6 +332,15 @@ const PortfolioProfilePage = () => {
                 );
               })}
             </nav>
+            <button
+              type="button"
+              onClick={() => setTourOpen(true)}
+              aria-label="แนะนำหน้านี้"
+              title="แนะนำหน้านี้"
+              className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <CircleHelp className="h-4 w-4" aria-hidden />
+            </button>
           </div>
 
           {activeTab === "overall" ? (
@@ -330,7 +355,6 @@ const PortfolioProfilePage = () => {
             <ProfileAboutPanel
                 userId={user!.id}
                 profile={profile}
-                projects={cvProjects}
                 experience={experience}
                 skills={skills}
                 socialLinks={socialLinks}
@@ -359,6 +383,12 @@ const PortfolioProfilePage = () => {
       </div>
       <Footer />
       <OpportunityStatusDialog open={opportunityOpen} onOpenChange={setOpportunityOpen} />
+      <ProfileTour
+        open={tourOpen}
+        onClose={() => setTourOpen(false)}
+        currentTab={activeTab}
+        onShowTab={(t) => setTab(t as ProfileTab)}
+      />
     </div>
   );
 };

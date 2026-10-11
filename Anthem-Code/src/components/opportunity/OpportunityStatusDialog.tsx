@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Palette, Search, UserRound } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { toast } from "sonner";
 import {
@@ -17,6 +17,7 @@ import OpportunityProfilePreview from "@/components/opportunity/OpportunityProfi
 import WorkDisciplineEditor from "@/components/profile/WorkDisciplineEditor";
 import DisciplineChips from "@/components/profile/DisciplineChips";
 import { ChipMultiSelectWithOther } from "@/components/ui/ChipMultiSelectWithOther";
+import { PROFILE_INTRO_MAX, profileIntroText } from "@/lib/profileCv";
 import {
   OPPORTUNITY_TYPE_KEYS,
   labelOpportunityType,
@@ -36,6 +37,7 @@ const OpportunityStatusDialog = ({ open, onOpenChange }: Props) => {
 
   const [types, setTypes] = useState<string[]>([]);
   const [disciplines, setDisciplines] = useState<string[]>([]);
+  const [intro, setIntro] = useState("");
 
   useEffect(() => {
     if (!open || !profile) return;
@@ -44,6 +46,7 @@ const OpportunityStatusDialog = ({ open, onOpenChange }: Props) => {
       (profile as { opportunity_types?: string[] }).opportunity_types,
     );
     setTypes(normalized.types);
+    setIntro(profileIntroText((profile as { bio?: string | null }).bio));
     const cats = (profile as { preferred_categories?: unknown }).preferred_categories;
     setDisciplines(
       Array.isArray(cats) ? cats.filter((s): s is string => typeof s === "string") : [],
@@ -60,6 +63,7 @@ const OpportunityStatusDialog = ({ open, onOpenChange }: Props) => {
         opportunityTypes: types,
         opportunityNote: "",
         preferredCategories: disciplines,
+        bio: intro.trim().slice(0, PROFILE_INTRO_MAX),
       });
       toast.success("อัปเดตโปรไฟล์แล้ว");
       onOpenChange(false);
@@ -83,20 +87,43 @@ const OpportunityStatusDialog = ({ open, onOpenChange }: Props) => {
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto gap-0 p-0">
         <DialogHeader className="px-5 pt-5 pb-4 space-y-2 text-left border-b border-border/50">
           <DialogTitle className="text-lg font-semibold leading-snug pr-8">
-            แก้ไขกำลังมองหาและสายงาน
+            แก้ไขโปรไฟล์
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
-            ตั้งสเตตัสบนโปรไฟล์ และเลือกสายงานที่ทำ — แสดงใต้ชื่อในหน้าโปรไฟล์
+            แนะนำตัว สายงาน และสิ่งที่กำลังมองหา — แสดงใต้ชื่อในหน้าโปรไฟล์
           </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
           <InlineLoader />
         ) : (
-          <div className="px-5 py-4 space-y-6">
-            <section className="space-y-3">
+          <div className="divide-y divide-border/50">
+            <section className="space-y-3 px-5 py-5">
               <div>
-                <h3 className="text-sm font-semibold text-foreground">สายงาน</h3>
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <UserRound className="h-4 w-4 text-muted-foreground" aria-hidden /> แนะนำตัวโปรไฟล์
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">บรรทัดสั้นบนการ์ดโปรไฟล์ — ไม่ใช่ About Me ใน CV</p>
+              </div>
+              <textarea
+                value={intro}
+                onChange={(e) => setIntro(e.target.value.slice(0, PROFILE_INTRO_MAX))}
+                rows={3}
+                maxLength={PROFILE_INTRO_MAX}
+                aria-label="แนะนำตัวโปรไฟล์"
+                placeholder="เช่น นักออกแบบแพ็กเกจ รับงานแบรนด์และงานพิมพ์"
+                className="w-full px-3 py-2 rounded-xl bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40"
+              />
+              <p className="text-[11px] text-muted-foreground text-right">
+                {intro.length}/{PROFILE_INTRO_MAX}
+              </p>
+            </section>
+
+            <section className="space-y-3 px-5 py-5">
+              <div>
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Palette className="h-4 w-4 text-muted-foreground" aria-hidden /> สายงาน
+                </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">หมวดงานที่คุณทำ — แสดงเป็นชิปแถวบน</p>
               </div>
               <WorkDisciplineEditor value={disciplines} onChange={setDisciplines} />
@@ -108,9 +135,11 @@ const OpportunityStatusDialog = ({ open, onOpenChange }: Props) => {
               ) : null}
             </section>
 
-            <section className="space-y-3">
+            <section className="space-y-3 px-5 py-5">
               <div>
-                <h3 className="text-sm font-semibold text-foreground">กำลังมองหา</h3>
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Search className="h-4 w-4 text-muted-foreground" aria-hidden /> กำลังมองหา
+                </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">เลือกได้หลายข้อ — แสดงเป็นชิปแถวล่าง</p>
               </div>
               <ChipMultiSelectWithOther
@@ -130,7 +159,9 @@ const OpportunityStatusDialog = ({ open, onOpenChange }: Props) => {
               )}
             </section>
 
-            <OpportunityProfilePreview status="open_to_opportunities" types={types} />
+            <div className="px-5 py-5">
+              <OpportunityProfilePreview status="open_to_opportunities" types={types} />
+            </div>
           </div>
         )}
 

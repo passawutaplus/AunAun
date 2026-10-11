@@ -145,7 +145,7 @@ function stepsForViewport(): Step[] {
   return wide ? STEPS : STEPS.filter((s) => s.id !== "library" && s.id !== "preview");
 }
 
-function findTarget(name: string): HTMLElement | null {
+export function findTarget(name: string): HTMLElement | null {
   const nodes = Array.from(document.querySelectorAll<HTMLElement>(`[data-tour="${name}"]`));
   return nodes.find((el) => el.getBoundingClientRect().width > 0) ?? null;
 }
@@ -355,7 +355,7 @@ function cardPosition(rect: DOMRect | null, stepId?: string): React.CSSPropertie
 }
 
 /** Dim everything except the target; clicks still pass through to the real page. */
-function Spotlight({ rect }: { rect: DOMRect | null }) {
+export function Spotlight({ rect }: { rect: DOMRect | null }) {
   const pad = 8;
   const vw = typeof window === "undefined" ? 0 : window.innerWidth;
   const vh = typeof window === "undefined" ? 0 : window.innerHeight;

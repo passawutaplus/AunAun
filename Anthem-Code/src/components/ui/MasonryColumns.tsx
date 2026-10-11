@@ -54,7 +54,8 @@ export default function MasonryColumns<T>({ items, density, getKey, renderItem }
     items.forEach((item, i) => cols[i % n].push(item));
     return cols;
   }, [items, density, count]);
-  const gap = density === "small" ? "gap-1.5" : "gap-2";
+  // Same breathing room as the home feed grid.
+  const gap = "gap-4 sm:gap-5";
 
   return (
     <div className={`flex items-start ${gap}`}>

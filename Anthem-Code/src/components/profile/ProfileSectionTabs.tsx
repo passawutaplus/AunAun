@@ -2,6 +2,7 @@ import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import ProfileTabHeading from "@/components/profile/ProfileTabHeading";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
+import { profileTabIcon } from "@/lib/profileTabIcons";
 import { cn } from "@/lib/utils";
 
 export type ProfileSectionTab = {
@@ -41,6 +42,7 @@ function TabTrigger({
   reduced: boolean;
   onSelect: () => void;
 }) {
+  const Icon = profileTabIcon(tab.label);
   return (
     <button
       type="button"
@@ -66,13 +68,16 @@ function TabTrigger({
             aria-hidden
           />
         ))}
-      <span className="relative z-10">
+      <span className="relative z-10 inline-flex items-center gap-1.5">
+        {Icon ? <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden /> : null}
+        <span>
         {tab.label}
         {typeof tab.count === "number" && tab.count > 0 ? (
           <span className="ml-1.5 text-[11px] font-normal tabular-nums tracking-normal opacity-70">
             {tab.count}
           </span>
         ) : null}
+        </span>
       </span>
     </button>
   );

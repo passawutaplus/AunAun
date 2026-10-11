@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { profileTabIcon } from "@/lib/profileTabIcons";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -13,10 +14,12 @@ type Props = {
 
 /** Big section title shared by every profile tab (owner and public). */
 export default function ProfileTabHeading({ title, count, description, actions, className }: Props) {
+  const Icon = profileTabIcon(title);
   return (
     <div className={cn("flex flex-wrap items-end justify-between gap-x-4 gap-y-2", className)}>
       <div className="min-w-0">
         <h2 className="flex min-w-0 items-baseline gap-2.5 font-display text-2xl font-normal uppercase leading-tight tracking-tight text-foreground sm:text-3xl">
+          {Icon ? <Icon className="h-5 w-5 shrink-0 self-center sm:h-6 sm:w-6" strokeWidth={1.5} aria-hidden /> : null}
           <span className="truncate">{title}</span>
           {typeof count === "number" && count > 0 ? (
             <span className="shrink-0 font-sans text-sm font-medium tabular-nums tracking-normal text-muted-foreground">
