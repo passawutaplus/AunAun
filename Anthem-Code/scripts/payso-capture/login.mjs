@@ -26,11 +26,21 @@ const page = await context.newPage();
 await page.goto(`${BASE}/auth`);
 
 console.log(`\nA window opened at ${BASE}/auth`);
-console.log(`1) Sign in or sign up as the "${role}" TEST account in that window (confirm the e-mail if asked).`);
-console.log("2) Make sure you can see the signed-in app (not the login page).");
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-await rl.question("3) Press Enter here when you are signed in > ");
-rl.close();
+console.log(`Sign in or sign up as the "${role}" TEST account in that window (confirm the e-mail if asked).`);
+if (process.argv.includes("--auto")) {
+  // Wait until the app has stored a Supabase session (up to 15 min), then save it.
+  console.log("Waiting for the sign-in to finish …");
+  await page.waitForFunction(
+    () => Object.keys(localStorage).some((k) => /^sb-.+-auth-token$/.test(k)),
+    null,
+    { timeout: 15 * 60 * 1000, polling: 1000 },
+  );
+  await page.waitForTimeout(2000);
+} else {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  await rl.question("Press Enter here when you are signed in > ");
+  rl.close();
+}
 
 fs.mkdirSync(AUTH_DIR, { recursive: true });
 await context.storageState({ path: statePath(role) });

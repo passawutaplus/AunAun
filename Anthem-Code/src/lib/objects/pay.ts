@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { canChargeOmiseClient, DEFAULT_PAYMENT_FEATURE_FLAGS } from "@/lib/payments/flags";
+import { canChargeOnlineClient, DEFAULT_PAYMENT_FEATURE_FLAGS } from "@/lib/payments/flags";
 
 export type ObjectChargeResult = {
   chargeId: string;
@@ -21,7 +21,7 @@ async function authHeaders(): Promise<Record<string, string>> {
 }
 
 export function objectPayEnabled(): boolean {
-  return canChargeOmiseClient(DEFAULT_PAYMENT_FEATURE_FLAGS, "promptpay");
+  return canChargeOnlineClient(DEFAULT_PAYMENT_FEATURE_FLAGS, "promptpay");
 }
 
 export async function createObjectCharge(orderId: string, title: string): Promise<ObjectChargeResult> {
@@ -42,12 +42,12 @@ export async function createObjectCharge(orderId: string, title: string): Promis
   };
 }
 
-export async function syncObjectCharge(orderId: string, chargeId: string, markTestPaid = false): Promise<ObjectChargeResult> {
+export async function syncObjectCharge(orderId: string, chargeId: string): Promise<ObjectChargeResult> {
   const res = await fetch("/api/object-charge", {
     method: "POST",
     headers: await authHeaders(),
     body: JSON.stringify({
-      action: markTestPaid ? "mark_paid" : "sync",
+      action: "sync",
       orderId,
       chargeId,
     }),
@@ -65,7 +65,7 @@ export async function syncObjectCharge(orderId: string, chargeId: string, markTe
 }
 
 function chargeErrorText(code: string | undefined): string {
-  if (code === "omise_not_configured" || code === "provider_disabled" || code === "service_not_configured") {
+  if (code === "payso_not_integrated" || code === "provider_disabled" || code === "service_not_configured") {
     return "ยังเปิดรับเงิน Payso ไม่ได้บนระบบนี้";
   }
   if (code === "live_blocked_until_marketplace_approved") return "รอเปิดรับเงินจริงกับ Payso ก่อน";

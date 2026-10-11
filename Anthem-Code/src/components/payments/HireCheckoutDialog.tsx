@@ -92,7 +92,7 @@ const METHOD_OPTIONS: {
   },
 ];
 
-/** Buyer checkout for an accepted in-chat hire quote (UI-first; Omise charge mocked when flags off). */
+/** Buyer checkout for an accepted in-chat hire quote (UI-first; Payso charge mocked when flags off). */
 export default function HireCheckoutDialog({
   open,
   onOpenChange,
@@ -104,7 +104,7 @@ export default function HireCheckoutDialog({
   const qc = useQueryClient();
   const markOfferAccepted = useMarkHireOfferAccepted();
   const send = useSendMessage();
-  const { createCharge, markTestPaid, fetchChargeStatus, pending } = useHireCharge();
+  const { createCharge, fetchChargeStatus, pending } = useHireCharge();
   const announcedRef = useRef<string | null>(null);
   const [method, setMethod] = useState<PaymentMethod>("promptpay");
   const [step, setStep] = useState<Step>("method");
@@ -294,13 +294,8 @@ export default function HireCheckoutDialog({
 
   const handleSimulatePaid = async () => {
     if (!charge) return;
-    if (charge.live && charge.chargeId.startsWith("chrg_")) {
-      const ok = await markTestPaid(charge.chargeId);
-      if (!ok) {
-        toast.error("ยืนยันชำระทดสอบไม่สำเร็จ — ลองใหม่หรือ Mark as paid ใน Omise Dashboard");
-        return;
-      }
-    }
+    // Real provider charges are confirmed only by the Payso webhook, never from the browser.
+    if (charge.live) return;
     if (announcedRef.current === charge.chargeId) return;
     announcedRef.current = charge.chargeId;
     await announcePaid(charge);

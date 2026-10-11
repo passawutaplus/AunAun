@@ -1,7 +1,7 @@
 /**
  * @deprecated Solo Stripe hub for SAMECOR — CUT OVER.
  * Do not call Solo `/api/payments/*` for new SAMECOR flows.
- * Use `src/lib/payments/*` + Omise (see docs/payments-omise.md).
+ * Use `src/lib/payments/*` + Payso (see docs/payments-payso.md).
  *
  * Exports kept so existing UI can show a controlled coming-soon error.
  */
@@ -42,7 +42,7 @@ export async function startConnectOnboarding(_opts: {
   refuseSoloPayment();
 }
 
-/** @deprecated Cut — admin must use Omise/manual payout path. */
+/** @deprecated Cut — admin must use the Payso/manual payout path. */
 export async function processCashoutViaStripe(
   _cashoutId: string,
   _opts?: { admin?: boolean },

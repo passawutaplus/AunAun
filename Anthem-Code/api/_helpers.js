@@ -20,21 +20,6 @@ export function safeBearerMatches(req, secret) {
   return crypto.timingSafeEqual(sha(header), sha(`Bearer ${secret}`));
 }
 
-/**
- * Omise mode comes from the secret key itself (skey_test_* / skey_live_*), never from a flag alone.
- * OMISE_MODE, when set, must agree with the key; a mismatch is a misconfiguration and fails closed.
- * Returns { mode: "test" | "live" } or { error }.
- */
-export function omiseModeFromKey(secretKey, flag) {
-  const key = String(secretKey || "");
-  const keyMode = key.startsWith("skey_live_") ? "live" : key.startsWith("skey_test_") ? "test" : "";
-  if (!keyMode) return { error: "omise_key_unrecognized" };
-  const declared = String(flag || "").trim().toLowerCase();
-  if (declared && declared !== keyMode) return { error: "omise_mode_mismatch" };
-  if (keyMode === "live" && declared !== "live") return { error: "omise_mode_mismatch" };
-  return { mode: keyMode };
-}
-
 export function json(res, status, body, { cache = "no-store" } = {}) {
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json");

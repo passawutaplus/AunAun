@@ -1,5 +1,5 @@
 /**
- * Minimal local API server for Omise hire-charge + webhook (port 8787).
+ * Minimal local API server for the hire-charge route (port 8787).
  * Use with: npm run dev (8080) + npm run dev:api
  */
 import http from "node:http";
@@ -36,7 +36,6 @@ loadEnvFile(path.join(root, ".env.local"));
 
 const routes = {
   "/api/hire-charge": path.join(root, "api", "hire-charge.js"),
-  "/api/omise-webhook": path.join(root, "api", "omise-webhook.js"),
 };
 
 function readRawBody(req) {
@@ -94,5 +93,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`[local-api] http://127.0.0.1:${port}  (hire-charge, omise-webhook)`);
+  console.log(`[local-api] http://127.0.0.1:${port}  (hire-charge)`);
 });

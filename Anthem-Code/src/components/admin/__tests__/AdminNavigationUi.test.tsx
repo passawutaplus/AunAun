@@ -102,7 +102,7 @@ describe("AdminSidebar", () => {
         <AdminSidebar />
       </MemoryRouter>,
     );
-    const finance = screen.getByRole("link", { name: /การเงิน \(Omise\)/ });
+    const finance = screen.getByRole("link", { name: /การเงิน \(Payso\)/ });
     expect(within(finance).getByText("รอ DB")).toBeInTheDocument();
     expect(finance).toHaveAttribute("title", expect.stringContaining("รอ DB"));
   });

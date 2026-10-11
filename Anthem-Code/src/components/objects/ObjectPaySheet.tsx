@@ -143,25 +143,6 @@ export default function ObjectPaySheet({
           <div className="grid justify-items-center gap-3">
             {qr ? <img src={qr} alt="คิวอาร์พร้อมเพย์" className="h-52 w-52 bg-white object-contain" /> : <p className="text-sm">กำลังเตรียมคิวอาร์</p>}
             <p className="text-center text-xs text-muted-foreground">หลังจ่ายสำเร็จ หน้านี้จะไปต่อเอง</p>
-            {import.meta.env.VITE_OMISE_MODE !== "live" && chargeId.startsWith("chrg_") ? (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={paying}
-                onClick={() => {
-                  setPaying(true);
-                  void syncObjectCharge(activeOrderId!, chargeId, true)
-                    .then((result) => {
-                      if (result.paid) setPaid(true);
-                      else toast.error("ยังยืนยันยอดไม่ได้");
-                    })
-                    .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "ยืนยันยอดไม่สำเร็จ"))
-                    .finally(() => setPaying(false));
-                }}
-              >
-                จำลองว่าจ่ายแล้ว (ทดสอบ)
-              </Button>
-            ) : null}
           </div>
         ) : (
           <div className="grid gap-3">

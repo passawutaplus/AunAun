@@ -1,6 +1,6 @@
 /** SAMECOR payment domain types — amounts are integer satang (THB). */
 
-export type PaymentProviderId = "omise";
+export type PaymentProviderId = "payso";
 
 export type DisplayCurrency = "THB" | "USD";
 

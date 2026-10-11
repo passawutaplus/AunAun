@@ -25,7 +25,7 @@ export type PlannedLedgerEntry = {
 };
 
 /**
- * After Omise webhook paid: credit seller pending only (never available).
+ * After the Payso webhook reports paid: credit seller pending only (never available).
  */
 export function planPaymentReceivedEntries(input: {
   jobPriceSatang: number;

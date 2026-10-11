@@ -53,7 +53,7 @@ export function buildQueuedPayout(input: QueuePayoutInput): QueuedPayout {
   };
 }
 
-export async function executeOmiseTransfer(input: {
+export async function executeProviderTransfer(input: {
   provider: PaymentProvider;
   recipientProviderId: string;
   amountSatang: number;

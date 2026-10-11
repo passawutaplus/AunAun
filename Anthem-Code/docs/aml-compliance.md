@@ -2,7 +2,7 @@
 
 เอกสารอ้างอิงสำหรับทีม ops / admin  
 
-**Fiat / hire payments:** ดู [payments-omise.md](./payments-omise.md) — Aplus1 ใช้ **Omise + internal THB ledger** ไม่พึ่ง So1o เป็น billing hub  
+**Fiat / hire payments:** ดู [payments-payso.md](./payments-payso.md) — Aplus1 ใช้ **Omise + internal THB ledger** ไม่พึ่ง So1o เป็น billing hub  
 
 **PX:** closed-loop ในเว็บเท่านั้น — **ไม่ใช่**ระบบเปลี่ยนค่าเงิน (FX display)
 
@@ -79,7 +79,7 @@ Admin: `/admin/aml`
 
 1. ผู้รับงานมีบัญชีธนาคารที่ verify แล้ว (Omise Recipient)  
 2. ยอด **THB available** จาก hire ledger (ไม่ใช่แค่ earned_px อย่างเดียวในระยะยาว)  
-3. นโยบาย Aplus1 Payout: ขั้นต่ำ 1,000 THB, ฟรี 1 ครั้ง/เดือน, ครั้งถัดไป 25 THB; auto weekly + EOM sweep — ดู [payments-omise.md](./payments-omise.md)  
+3. นโยบาย Aplus1 Payout: ขั้นต่ำ 1,000 THB, ฟรี 1 ครั้ง/เดือน, ครั้งถัดไป 25 THB; auto weekly + EOM sweep — ดู [payments-payso.md](./payments-payso.md)  
 4. Admin คิว payout ใน Aplus1 — **ไม่** `processCashoutViaStripe` / Solo Connect  
 
 ### Legacy (deprecated)

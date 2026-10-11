@@ -106,7 +106,7 @@ export const HIRE_CANCEL_MONEY_OPTIONS: {
   label: string;
   hint?: string;
 }[] = [
-  { id: "full_refund", label: "คืนเต็มจำนวน", hint: "เมื่อชำระผ่าน SAMECOR แล้ว ระบบจะสร้าง refund ตาม ledger/Omise" },
+  { id: "full_refund", label: "คืนเต็มจำนวน", hint: "เมื่อชำระผ่าน SAMECOR แล้ว ระบบจะสร้าง refund ตาม ledger/Payso" },
   { id: "half_refund", label: "คืน 50%", hint: "เมื่อชำระผ่าน SAMECOR แล้ว ระบบจะคืนครึ่งและปรับ ledger" },
   { id: "no_refund", label: "ไม่คืนเงิน", hint: "ใช้เมื่อตกลงกันแล้วว่าไม่คืน — ปรับสถานะออเดอร์ตามนั้น" },
   { id: "none", label: "ไม่ต้องการขอคืน", hint: "ยกเลิกงานโดยไม่ขอคืนเงินจากครีเอเตอร์" },
